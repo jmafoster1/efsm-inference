@@ -37,6 +37,38 @@ defmodule FSMTest do
     }
   end
 
+  test "parse guards with or" do
+    assert FSM.read("fsm_or.json") == %{
+      "q0" => [
+        %{
+          "dest" => "q0",
+          "guards" => [
+            {"r2", ">=", "100"},
+            {{"r1", "=", "coke"}, "|", {"r1", "=", "sprite"}}
+          ],
+          "label" => "vend",
+          "outputs" => [{"o1", ":=", "r1"}, {"o2", ":=", "test"}],
+          "updates" => [{"r2", ":=", "r2", "-", "100"}]
+        }]
+      }
+  end
+
+  test "parse guards with and" do
+    assert FSM.read("fsm_and.json") == %{
+      "q0" => [
+        %{
+          "dest" => "q0",
+          "guards" => [
+            {"r2", ">=", "100"},
+            {{"r1", "=", "coke"}, "&", {"r1", "=", "sprite"}}
+          ],
+          "label" => "vend",
+          "outputs" => [{"o1", ":=", "r1"}, {"o2", ":=", "test"}],
+          "updates" => [{"r2", ":=", "r2", "-", "100"}]
+        }]
+      }
+  end
+
   test "apply guards true" do
     guards = [{"r2", ">=", "100"}, {"r1", "=", "coke"}]
     registers = %{"r1" => "coke", "r2" => "100"}
@@ -90,6 +122,24 @@ defmodule FSMTest do
   test "reject a string of inputs" do
     input = FSM.parseInputList("select(coke),coin(50),vend()")
     fsm = assert FSM.read("fsm.json")
+    assert FSM.accepts(input, fsm, "q0", %{}) == false
+  end
+
+  test "accepts a string of inputs with or" do
+    input = FSM.parseInputList("select(coke),coin(50),coin(20),coin(20),coin(20),vend()")
+    fsm = assert FSM.read("drinks_machine.json")
+    assert FSM.accepts(input, fsm, "q0", %{}) == true
+  end
+
+  test "accepts a string of inputs with or if price not enough" do
+    input = FSM.parseInputList("select(pepsi),coin(50),coin(20),coin(20),vend()")
+    fsm = assert FSM.read("drinks_machine.json")
+    assert FSM.accepts(input, fsm, "q0", %{}) == false
+  end
+
+  test "rejects a string of inputs with or" do
+    input = FSM.parseInputList("select(juice),coin(100),vend()")
+    fsm = FSM.read("drinks_machine.json")
     assert FSM.accepts(input, fsm, "q0", %{}) == false
   end
 end

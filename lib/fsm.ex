@@ -50,7 +50,8 @@ defmodule FSM do
 
   defp transition_regex() do
     label = "(?<label>\\w+)"
-    guard = "(\\w+(=|>|(>=)|(<=)|(~=))\\w+)"
+    guard = "(~{0,1}\\w+(=|>|(>=)|(<=)|(!=))\\w+)"
+    guard = guard <> "((\\|" <> guard <> ")|" <> "(\\&" <> guard <> "))*"
     guards = "(\\[(?<guards>("<>guard<>"(,"<>guard<>")*"<>"))\\]){0,1}"
     output = "o\\d:=\\w+"
     outputs = "(?<outputs>("<>output<>"(,"<>output<>")*"<>")){0,1}"
@@ -61,6 +62,29 @@ defmodule FSM do
     transition
   end
 
+  def logicSplit(string) do
+    disj = ~r{(?<first>(.*))\|(?<second>(.*))}
+    conj = ~r{(?<first>(.*))\&(?<second>(.*))}
+    neg  = ~r{~(?<first>(.*))}
+
+    split =  Regex.named_captures(conj, string)
+    if split != nil do
+      {logicSplit(split["first"]), "&", logicSplit(split["second"])}
+    else
+        split =  Regex.named_captures(disj, string)
+      if split != nil do
+        {logicSplit(split["first"]), "|", logicSplit(split["second"])}
+      else
+        split =  Regex.named_captures(neg, string)
+        if split != nil do
+          {"~", logicSplit(split["first"])}
+        else
+          List.to_tuple(Regex.split(~r{(>=|<=|<|>|=|!=)} , string, include_captures: true))
+        end
+      end
+    end
+  end
+
   def parse_transition(transitionString, dest) do
     parts = Regex.named_captures(transition_regex(), transitionString)
 
@@ -68,7 +92,7 @@ defmodule FSM do
       Map.put(parts, "guards", [])
     else
           parts = Map.put(parts, "guards", String.split(parts["guards"], ","))
-          Map.put(parts, "guards", Enum.map(parts["guards"], fn x -> List.to_tuple(Regex.split(~r{(>=|<=|<|>|=)} , x, include_captures: true)) end))
+          parts = Map.put(parts, "guards", Enum.map(parts["guards"], fn x -> logicSplit(x) end))
     end
     parts = if parts["outputs"] == "" do
       Map.put(parts, "outputs", [])
@@ -85,7 +109,16 @@ defmodule FSM do
     Map.put(parts, "dest", dest)
   end
 
-  defp applyGuard(guard, store) do
+  def applyGuard({term1, "|", term2}, store) do
+    applyGuard(term1, store) or applyGuard(term2, store)
+  end
+  def applyGuard({term1, "&", term2}, store) do
+    applyGuard(term1, store) and applyGuard(term2, store)
+  end
+  def applyGuard({"~", term1}, store) do
+    not applyGuard(term1, store)
+  end
+  def applyGuard(guard, store) do
     {key, operator, value} = guard
     case operator do
       "=" ->
@@ -98,6 +131,8 @@ defmodule FSM do
         Float.parse(store[key]) <= Float.parse(value)
       ">=" ->
         Float.parse(store[key]) >= Float.parse(value)
+      "!=" ->
+        Float.parse(store[key]) != Float.parse(value)
     end
   end
 
@@ -181,12 +216,13 @@ defmodule FSM do
   def accepts([], _efsm, state, registers, verbosity) do
     if verbosity > 0 do
       IO.inspect {state, registers}
+      IO.puts "Finished"
     end
     true
   end
   def accepts([h|t], efsm, state, registers, verbosity) do
     if verbosity > 0 do
-      IO.inspect {state, registers, h["inputs"]}
+      IO.inspect {state, registers, h["label"], h["inputs"]}
     end
     possibleTransitions = Enum.filter(efsm[state], fn(tran) -> tran["label"] == h["label"] && applyGuards(tran["guards"], registers, h["inputs"]) end)
     case possibleTransitions do
