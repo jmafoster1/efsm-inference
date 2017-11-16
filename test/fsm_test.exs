@@ -16,6 +16,17 @@ defmodule FSMTest do
 
   end
 
+  test "writes to json" do
+    fsm = FSM.read("fsm_test.json")
+    FSM.save_json("fsm_test_output.json", fsm)
+    assert FSM.read("fsm_test.json") == FSM.read("fsm_test_output.json")
+  end
+
+  test "writes to dot" do
+    fsm = FSM.read("fsm_test.json")
+    FSM.save_dot("fsm.dot", fsm) 
+  end
+
   test "parse a transition string" do
     assert FSM.parse_transition("vend[r2>100,r1=coke]/o1:=r1,o2:=test[r2:=r2-100,r1:=test]", "q2") == %{
       "label" => "vend",

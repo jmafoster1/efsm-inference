@@ -1,3 +1,5 @@
 {
-  "q0":{"select/[r1:=i1]":"q1"}
+  "q0":{"select/[r1:=i1,r2:=test]":"q1"},
+  "q1":{"coin/[r2:=r2+i1]":"q1", "vend[r2>=100,r1=coke]/o1:=r1,o2:=test[r2:=r2-100]":"q2"},
+  "q2":{}
 }
