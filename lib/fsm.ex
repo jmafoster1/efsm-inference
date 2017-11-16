@@ -4,92 +4,48 @@ defmodule FSM do
   """
 
   @doc """
-  Writes an fsm to json
+  Writes data to file
   """
   def write(filename, data) do
     File.write(filename, data, [:binary])
   end
 
+  @doc """
+  Writes an efsm to json
+  """
   def save_json(filename, fsm) do
     write(filename, Poison.encode!(fsm_to_json(fsm)))
   end
 
+  @doc """
+  Writes an efsm to dot
+  """
   def save_dot(filename, fsm) do
     write(filename, fsm_to_dot(fsm))
   end
 
+  @doc """
+  Converts an EFSM to dot format for visual representation
+  """
   def fsm_to_dot(fsm) do
     json = fsm_to_json(fsm)
     {states, transitions} = fsm_to_dot(Map.keys(json), json, [], [])
     "digraph G {\n  " <> Enum.join(states, ";\n  ") <> ";\n  " <> Enum.join(transitions, ";\n  ") <> ";\n}"
   end
-  def fsm_to_dot([], _fsm, states, transitions) do
-    {Enum.reverse(states), transitions}
-  end
-  def fsm_to_dot([h|t], fsm, states, transitions) do
-    state = if h == "q0" do
-      "q0 [color=\"black\" fillcolor=\"green\" shape=\"doublecircle\" style=\"filled\"]"
-    else
-      h <> " [color=\"black\" fillcolor=\"white\" shape=\"circle\" style=\"filled\"]"
-    end
-    transitions_dot = transitions_to_dot(Map.keys(fsm[h]), h,fsm[h])
-    fsm_to_dot(t, fsm, [state | states], transitions ++ transitions_dot)
-  end
 
-  def transitions_to_dot([], _state, _transitions) do
-    []
-  end
-  def transitions_to_dot([h|t], state, transitions) do
-    transition = state <> " -> " <> transitions[h] <> " [label=\"" <> h <> "\"]"
-    [transition | transitions_to_dot(t, state, transitions)]
-  end
-
+  @doc """
+  Converts an EFSM to json format for textual representation
+  """
   def fsm_to_json(fsm) do
     fsm_to_json(Map.keys(fsm), fsm)
   end
 
-  defp fsm_to_json([], _fsm) do
-    %{}
-  end
-  defp fsm_to_json([h|t], fsm) do
-    transitions = fsm[h]
-    Map.put(fsm_to_json(t, fsm), h, transitions_to_json(transitions))
-  end
-
-  defp transitions_to_json([]) do
-    %{}
-  end
-  defp transitions_to_json([h|t]) do
-    transition = h["label"]<>list_to_string(h["guards"], "[", "]")<>"/"<>list_to_string(h["outputs"])<>list_to_string(h["updates"], "[", "]")
-    Map.put(transitions_to_json(t), transition, h["dest"])
-  end
-
-  defp list_to_string(lst, pre \\ "", post \\ "") do
-    str = Enum.join(Enum.map(lst, fn tuple -> Enum.join(Tuple.to_list(tuple)) end), ",")
-    if str == "" do
-      ""
-    else
-      pre <> str <> post
-    end
-  end
-
-  def parseFSM([], _map, parsed) do
-    parsed
-  end
-  def parseFSM([h|t], map, parsed) do
-    parseFSM(t, map, Map.put(parsed, h, parseTransitions(Map.keys(map[h]), map[h], [])))
-  end
-
-  def parseTransitions([], _map, parsed) do
-    parsed
-  end
-  def parseTransitions([h|t], map, parsed) do
-    parseTransitions(t, map, [parse_transition(h, map[h])|parsed])
-  end
-
+  @doc """
+  Reads an EFSM from json format
+  """
   def read(filename) do
     initial = Poison.decode!(File.read!(filename))
-    parseFSM(Map.keys(initial), initial, %{})
+    parseFSM(Map.keys(initial), initial)
   end
 
   defp transition_regex() do
@@ -238,6 +194,66 @@ defmodule FSM do
       [transition] ->
         accepts(t, efsm, transition["dest"], applyUpdates(transition["updates"], registers, h["inputs"]), verbosity)
     end
+  end
+
+  defp fsm_to_dot([], _fsm, states, transitions) do
+    {Enum.reverse(states), transitions}
+  end
+  defp fsm_to_dot([h|t], fsm, states, transitions) do
+    state = if h == "q0" do
+      "q0 [color=\"black\" fillcolor=\"green\" shape=\"doublecircle\" style=\"filled\"]"
+    else
+      h <> " [color=\"black\" fillcolor=\"white\" shape=\"circle\" style=\"filled\"]"
+    end
+    transitions_dot = transitions_to_dot(Map.keys(fsm[h]), h,fsm[h])
+    fsm_to_dot(t, fsm, [state | states], transitions ++ transitions_dot)
+  end
+
+  defp transitions_to_dot([], _state, _transitions) do
+    []
+  end
+  defp transitions_to_dot([h|t], state, transitions) do
+    transition = state <> " -> " <> transitions[h] <> " [label=\"" <> h <> "\"]"
+    [transition | transitions_to_dot(t, state, transitions)]
+  end
+
+  defp fsm_to_json([], _fsm) do
+    %{}
+  end
+  defp fsm_to_json([h|t], fsm) do
+    transitions = fsm[h]
+    Map.put(fsm_to_json(t, fsm), h, transitions_to_json(transitions))
+  end
+
+  defp transitions_to_json([]) do
+    %{}
+  end
+  defp transitions_to_json([h|t]) do
+    transition = h["label"]<>list_to_string(h["guards"], "[", "]")<>"/"<>list_to_string(h["outputs"])<>list_to_string(h["updates"], "[", "]")
+    Map.put(transitions_to_json(t), transition, h["dest"])
+  end
+
+  defp list_to_string(lst, pre \\ "", post \\ "") do
+    str = Enum.join(Enum.map(lst, fn tuple -> Enum.join(Tuple.to_list(tuple)) end), ",")
+    if str == "" do
+      ""
+    else
+      pre <> str <> post
+    end
+  end
+
+  defp parseFSM([], _map) do
+    %{}
+  end
+  defp parseFSM([h|t], map) do
+    Map.put(parseFSM(t, map), h, parseTransitions(Map.keys(map[h]), map[h]))
+  end
+
+  defp parseTransitions([], _map) do
+    []
+  end
+  defp parseTransitions([h|t], map) do
+    [parse_transition(h, map[h])|parseTransitions(t, map)]
   end
 
 

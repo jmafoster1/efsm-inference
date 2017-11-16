@@ -8,8 +8,8 @@ defmodule FSMTest do
         %{"guards" => [], "label" => "select", "outputs" => [], "updates" => [{"r1", ":=", "i1"}], "dest" => "q1"}
         ],
       "q1" => [
-        %{"guards" => [{"r2", ">=", "100"}], "label" => "vend", "outputs" => [{"o1", ":=", "r1"}], "updates" => [{"r2", ":=", "r2", "-", "100"}], "dest" => "q2"},
-        %{"guards" => [], "label" => "coin", "outputs" => [], "updates" => [{"r2", ":=", "r2", "+", "i1"}], "dest" => "q1"}
+        %{"guards" => [], "label" => "coin", "outputs" => [], "updates" => [{"r2", ":=", "r2", "+", "i1"}], "dest" => "q1"},
+        %{"guards" => [{"r2", ">=", "100"}], "label" => "vend", "outputs" => [{"o1", ":=", "r1"}], "updates" => [{"r2", ":=", "r2", "-", "100"}], "dest" => "q2"}
         ],
       "q2" => []
     }
@@ -24,7 +24,7 @@ defmodule FSMTest do
 
   test "writes to dot" do
     fsm = FSM.read("fsm_test.json")
-    FSM.save_dot("fsm.dot", fsm) 
+    FSM.save_dot("fsm.dot", fsm)
   end
 
   test "parse a transition string" do
