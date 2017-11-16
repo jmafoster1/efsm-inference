@@ -21,7 +21,7 @@ defmodule FSM do
   def fsm_to_dot(fsm) do
     json = fsm_to_json(fsm)
     {states, transitions} = fsm_to_dot(Map.keys(json), json, [], [])
-    "digraph G {\n" <> Enum.join(states, ";\n") <> Enum.join(transitions, ";\n") <> "}"
+    "digraph G {\n  " <> Enum.join(states, ";\n  ") <> ";\n  " <> Enum.join(transitions, ";\n  ") <> ";\n}"
   end
   def fsm_to_dot([], _fsm, states, transitions) do
     {Enum.reverse(states), transitions}
