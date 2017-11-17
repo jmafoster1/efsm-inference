@@ -130,15 +130,29 @@ defmodule FSM do
       "=" ->
         store[key] == value
       ">" ->
-        Float.parse(store[key]) >  Float.parse(value)
+        applyOp(store[key], value, fn(a, b) -> a > b end)
+        # Float.parse(store[key]) >  Float.parse(value)
       "<" ->
-        Float.parse(store[key]) <  Float.parse(value)
+        applyOp(store[key], value, fn(a, b) -> a < b end)
+        # Float.parse(store[key]) <  Float.parse(value)
       "<=" ->
-        Float.parse(store[key]) <= Float.parse(value)
+        applyOp(store[key], value, fn(a, b) -> a <= b end)
+        # Float.parse(store[key]) <= Float.parse(value)
       ">=" ->
-        Float.parse(store[key]) >= Float.parse(value)
+        applyOp(store[key], value, fn(a, b) -> a >= b end)      
+        # Float.parse(store[key]) >= Float.parse(value)
       "!=" ->
         store[key] != value
+    end
+  end
+
+  defp applyOp(a, b, op) do
+    x = Float.parse(a)
+    y = Float.parse(b)
+    if x != :error and y != :error do
+      op.(x, y)
+    else
+      op.(a, b)
     end
   end
 
