@@ -48,6 +48,13 @@ defmodule FSM do
     parseFSM(Map.keys(initial), initial)
   end
 
+  @doc """
+  Indicates whether a given EFSM accepts a given input
+  """
+  def accepts(efsm, input, verbosity \\ 0, state \\ "q0") do
+    accepts(parseInputList(input), efsm, state, %{}, verbosity, [])
+  end
+
   defp transition_regex() do
     label = "(?<label>\\w+)"
     guard = "(~{0,1}\\w+(=|>|(>=)|(<=)|(!=))\\w+)"
@@ -62,7 +69,7 @@ defmodule FSM do
     transition
   end
 
-  def logicSplit(string) do
+  defp logicSplit(string) do
     disj = ~r{(?<first>(.*))\|(?<second>(.*))}
     conj = ~r{(?<first>(.*))\&(?<second>(.*))}
     neg  = ~r{~(?<first>(.*))}
@@ -85,14 +92,13 @@ defmodule FSM do
     end
   end
 
-  def parse_transition(transitionString, dest) do
+  defp parse_transition(transitionString, dest) do
     parts = Regex.named_captures(transition_regex(), transitionString)
-
     parts = if parts["guards"] == "" do
       Map.put(parts, "guards", [])
     else
           parts = Map.put(parts, "guards", String.split(parts["guards"], ","))
-          parts = Map.put(parts, "guards", Enum.map(parts["guards"], fn x -> logicSplit(x) end))
+          Map.put(parts, "guards", Enum.map(parts["guards"], fn x -> logicSplit(x) end))
     end
     parts = if parts["outputs"] == "" do
       Map.put(parts, "outputs", [])
@@ -109,16 +115,16 @@ defmodule FSM do
     Map.put(parts, "dest", dest)
   end
 
-  def applyGuard({term1, "|", term2}, store) do
+  defp applyGuard({term1, "|", term2}, store) do
     applyGuard(term1, store) or applyGuard(term2, store)
   end
-  def applyGuard({term1, "&", term2}, store) do
+  defp applyGuard({term1, "&", term2}, store) do
     applyGuard(term1, store) and applyGuard(term2, store)
   end
-  def applyGuard({"~", term1}, store) do
+  defp applyGuard({"~", term1}, store) do
     not applyGuard(term1, store)
   end
-  def applyGuard(guard, store) do
+  defp applyGuard(guard, store) do
     {key, operator, value} = guard
     case operator do
       "=" ->
@@ -132,11 +138,11 @@ defmodule FSM do
       ">=" ->
         Float.parse(store[key]) >= Float.parse(value)
       "!=" ->
-        Float.parse(store[key]) != Float.parse(value)
+        store[key] != value
     end
   end
 
-  def applyGuards(guards, registers, inputs) do
+  defp applyGuards(guards, registers, inputs) do
     Enum.all?(guards, fn(g) -> applyGuard(g, Map.merge(registers, inputs)) end)
   end
 
@@ -148,12 +154,17 @@ defmodule FSM do
     end
   end
 
-  def applyOutputs(outputs, registers, inputs) do
-    store = Map.merge(registers, inputs)
-    for {key, ":=", value} <- outputs, do: {key, applyOutput(value, store)}
+  defp applyOutputs([], _registers, _inputs) do
+    %{}
   end
 
-  def applyUpdate(update, registers, inputs) do
+  defp applyOutputs([h|t], registers, inputs) do
+    store = Map.merge(registers, inputs)
+    {key, ":=", value} = h
+    Map.put(applyOutputs(t, registers, inputs), key, applyOutput(value, store))
+  end
+
+  defp applyUpdate(update, registers, inputs) do
     store = Map.merge(registers, inputs)
     {r1, ":=", r2, op, value} = update
     {r2, _} = if Map.has_key?(store, r2)  do
@@ -174,10 +185,10 @@ defmodule FSM do
     end
   end
 
-  def applyUpdates([], registers, _inputs) do
+  defp applyUpdates([], registers, _inputs) do
     registers
   end
-  def applyUpdates([h|t], registers, inputs) do
+  defp applyUpdates([h|t], registers, inputs) do
     store = Map.merge(registers, inputs)
     case h do
       {r1, ":=", r2, op, value} ->
@@ -195,7 +206,7 @@ defmodule FSM do
     end
   end
 
-  def parseInput(input) do
+  defp parseInput(input) do
     {:ok, regex} = Regex.compile("(?<label>\\w+)\\((?<inputs>(\\w+)(,\\w+)*){0,1}\\)")
     captures = Regex.named_captures(regex, input)
     case captures["inputs"] do
@@ -208,27 +219,31 @@ defmodule FSM do
     end
   end
 
-  def parseInputList(inputList) do
+  defp parseInputList(inputList) do
     for s <- String.split(inputList, ","), do: parseInput(s)
   end
 
-  def accepts(list, efsm, state, registers, verbosity \\ 0)
-  def accepts([], _efsm, state, registers, verbosity) do
+  defp accepts([], _efsm, state, registers, verbosity, trace) do
     if verbosity > 0 do
-      IO.inspect {state, registers}
-      IO.puts "Finished"
+      trace = [{state, registers} | trace]
+      trace = ["Finished" | trace]
+      {true, Enum.reverse(trace)}
+    else
+      true
     end
-    true
   end
-  def accepts([h|t], efsm, state, registers, verbosity) do
-    if verbosity > 0 do
-      IO.inspect {state, registers, h["label"], h["inputs"]}
-    end
+  defp accepts([h|t], efsm, state, registers, verbosity, trace) do
     possibleTransitions = Enum.filter(efsm[state], fn(tran) -> tran["label"] == h["label"] && applyGuards(tran["guards"], registers, h["inputs"]) end)
     case possibleTransitions do
       [] -> false
       [transition] ->
-        accepts(t, efsm, transition["dest"], applyUpdates(transition["updates"], registers, h["inputs"]), verbosity)
+        registers = applyUpdates(transition["updates"], registers, h["inputs"])
+        trace = if verbosity > 0 do
+          [{state, registers, h["label"], h["inputs"], applyOutputs(transition["outputs"], registers, h["inputs"])} | trace]
+        else
+          trace
+        end
+        accepts(t, efsm, transition["dest"], registers, verbosity, trace)
     end
   end
 

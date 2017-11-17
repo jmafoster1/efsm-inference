@@ -9,7 +9,7 @@ updates = "(\\[(?<updates>("<>update<>"(,"<>update<>")*"<>"))\\]){0,1}"
 rhs = "("<>"\\/"<>outputs<>updates<>"){0,1}"
 {:ok, transition} = Regex.compile(label<>guards<>rhs)
 
-IO.inspect Regex.named_captures(transition, "vend[r2>=100&r1=coke|r1=pepsi]/o1:=r1[r2:=r2-100]")
+IO.inspect Regex.named_captures(transition, "vend[r2>=100&r1!=water]/o1:=r1[r2:=r2-100]")
 
 
 defmodule Logic do
