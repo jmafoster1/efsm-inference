@@ -139,7 +139,7 @@ defmodule FSM do
         applyOp(store[key], value, fn(a, b) -> a <= b end)
         # Float.parse(store[key]) <= Float.parse(value)
       ">=" ->
-        applyOp(store[key], value, fn(a, b) -> a >= b end)      
+        applyOp(store[key], value, fn(a, b) -> a >= b end)
         # Float.parse(store[key]) >= Float.parse(value)
       "!=" ->
         store[key] != value
@@ -234,7 +234,7 @@ defmodule FSM do
   end
 
   defp parseInputList(inputList) do
-    for s <- String.split(inputList, ","), do: parseInput(s)
+    for s <- inputList, do: parseInput(s)
   end
 
   defp accepts([], _efsm, state, registers, verbosity, trace) do

@@ -61,32 +61,37 @@ defmodule FSMTest do
 
   test "accepts a string of inputs" do
     fsm = assert FSM.read("fsm.json")
-    assert FSM.accepts(fsm, "select(coke),coin(50),coin(20),coin(20),coin(20),vend()") == true
+    assert FSM.accepts(fsm, ["select(coke)","coin(50)","coin(20)","coin(20)","coin(20)","vend()"]) == true
   end
 
   test "reject a string of inputs" do
     fsm = assert FSM.read("fsm.json")
-    assert FSM.accepts(fsm, "select(coke),coin(50),vend()") == false
+    assert FSM.accepts(fsm, ["select(coke)","coin(50)","vend()"]) == false
   end
 
   test "accepts a string of inputs with or" do
     fsm = assert FSM.read("drinks_machine.json")
-    assert FSM.accepts(fsm, "select(coke),coin(50),coin(20),coin(20),coin(20),vend()") == true
+    assert FSM.accepts(fsm, ["select(coke)","coin(50)","coin(20)","coin(20)","coin(20)","vend()"]) == true
   end
 
   test "accepts a string of inputs with or if price not enough" do
     fsm = assert FSM.read("drinks_machine.json")
-    assert FSM.accepts(fsm, "select(pepsi),coin(50),coin(20),coin(20),vend()") == false
+    assert FSM.accepts(fsm, ["select(pepsi)","coin(50)","coin(20)","coin(20)","vend()"]) == false
   end
 
   test "rejects a string of inputs with or" do
     fsm = FSM.read("drinks_machine.json")
-    assert FSM.accepts(fsm, "select(water),coin(100),vend()") == false
+    assert FSM.accepts(fsm, ["select(water)","coin(100)","vend()"]) == false
+  end
+
+  test "rejects a string of inputs with spurious inputs" do
+    fsm = FSM.read("drinks_machine.json")
+    assert FSM.accepts(fsm, ["select(water)","coin(100,20)","vend()"]) == false
   end
 
   test "gives outputs" do
     fsm = FSM.read("drinks_machine.json")
-    assert FSM.accepts(fsm, "select(coke),coin(100),vend()", 1) == {
+    assert FSM.accepts(fsm, ["select(coke)","coin(100)","vend()"], 1) == {
       true, [
         {"q0", %{"r1" => "coke"}, "select", %{"i1" => "coke"}, %{"o1" => "coke"}},
         {"q1", %{"r1" => "coke", "r2" => "100.0"}, "coin", %{"i1" => "100"}, %{}},
