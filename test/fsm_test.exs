@@ -86,7 +86,7 @@ defmodule FSMTest do
 
   test "rejects a string of inputs with spurious inputs" do
     fsm = FSM.read("drinks_machine.json")
-    assert FSM.accepts(fsm, ["select(water)","coin(100,20)","vend()"]) == false
+    assert FSM.accepts(fsm, ["select(cat)","coin(100,20)","vend()"]) == false
   end
 
   test "gives outputs" do

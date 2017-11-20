@@ -115,6 +115,7 @@ defmodule FSM do
     Map.put(parts, "dest", dest)
   end
 
+  # TODO: Allow arithmetic in here, e.g. r1 > i1 + 7
   defp applyGuard({term1, "|", term2}, store) do
     applyGuard(term1, store) or applyGuard(term2, store)
   end
@@ -146,6 +147,7 @@ defmodule FSM do
     end
   end
 
+  # TODO: remove this in favour of a function which returns either parsed number or original value
   defp applyOp(a, b, op) do
     x = Float.parse(a)
     y = Float.parse(b)
@@ -181,6 +183,7 @@ defmodule FSM do
   defp applyUpdate(update, registers, args) do
     store = Map.merge(registers, args)
     {r1, ":=", r2, op, value} = update
+    # TODO: Improve this to make store lookup explicit
     {r2, _} = if Map.has_key?(store, r2)  do
       Float.parse(store[r2])
     else
@@ -234,7 +237,7 @@ defmodule FSM do
   end
 
   defp parseInputList(inputList) do
-    for s <- inputList, do: parseInput(s)
+    for s <- inputList, do: IO.inspect(parseInput(s))
   end
 
   defp accepts([], _efsm, state, registers, verbosity, trace) do
