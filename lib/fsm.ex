@@ -156,8 +156,8 @@ defmodule FSM do
     end
   end
 
-  defp applyGuards(guards, registers, inputs) do
-    Enum.all?(guards, fn(g) -> applyGuard(g, Map.merge(registers, inputs)) end)
+  defp applyGuards(guards, registers, args) do
+    Enum.all?(guards, fn(g) -> applyGuard(g, Map.merge(registers, args)) end)
   end
 
   defp applyOutput(output, store) do
@@ -168,18 +168,18 @@ defmodule FSM do
     end
   end
 
-  defp applyOutputs([], _registers, _inputs) do
+  defp applyOutputs([], _registers, _args) do
     %{}
   end
 
-  defp applyOutputs([h|t], registers, inputs) do
-    store = Map.merge(registers, inputs)
+  defp applyOutputs([h|t], registers, args) do
+    store = Map.merge(registers, args)
     {key, ":=", value} = h
-    Map.put(applyOutputs(t, registers, inputs), key, applyOutput(value, store))
+    Map.put(applyOutputs(t, registers, args), key, applyOutput(value, store))
   end
 
-  defp applyUpdate(update, registers, inputs) do
-    store = Map.merge(registers, inputs)
+  defp applyUpdate(update, registers, args) do
+    store = Map.merge(registers, args)
     {r1, ":=", r2, op, value} = update
     {r2, _} = if Map.has_key?(store, r2)  do
       Float.parse(store[r2])
@@ -199,37 +199,37 @@ defmodule FSM do
     end
   end
 
-  defp applyUpdates([], registers, _inputs) do
+  defp applyUpdates([], registers, _args) do
     registers
   end
-  defp applyUpdates([h|t], registers, inputs) do
-    store = Map.merge(registers, inputs)
+  defp applyUpdates([h|t], registers, args) do
+    store = Map.merge(registers, args)
     case h do
       {r1, ":=", r2, op, value} ->
         if Map.has_key?(store, value) do
-          applyUpdates(t, applyUpdate({r1, ":=", r2, op, store[value]}, registers, inputs), inputs)
+          applyUpdates(t, applyUpdate({r1, ":=", r2, op, store[value]}, registers, args), args)
         else
-          applyUpdates(t, applyUpdate(h, registers, inputs), inputs)
+          applyUpdates(t, applyUpdate(h, registers, args), args)
         end
       {r1, ":=", value} ->
         if Map.has_key?(store, value) do
-          applyUpdates(t, Map.put(registers, r1, store[value]), inputs)
+          applyUpdates(t, Map.put(registers, r1, store[value]), args)
         else
-          applyUpdates(t, Map.put(registers, r1, value), inputs)
+          applyUpdates(t, Map.put(registers, r1, value), args)
         end
     end
   end
 
   defp parseInput(input) do
-    {:ok, regex} = Regex.compile("(?<label>\\w+)\\((?<inputs>(\\w+)(,\\w+)*){0,1}\\)")
+    {:ok, regex} = Regex.compile("(?<label>\\w+)\\((?<args>(\\w+)(,\\w+)*){0,1}\\)")
     captures = Regex.named_captures(regex, input)
-    case captures["inputs"] do
-      "" -> Map.put(captures, "inputs", %{})
+    case captures["args"] do
+      "" -> Map.put(captures, "args", %{})
       _ ->
-      captures = Map.put(captures, "inputs", String.split(captures["inputs"], ","))
-      enumerated = List.zip([Enum.to_list(1..length(captures["inputs"])), captures["inputs"]])
+      captures = Map.put(captures, "args", String.split(captures["args"], ","))
+      enumerated = List.zip([Enum.to_list(1..length(captures["args"])), captures["args"]])
       pairs = for {key, value} <- enumerated, do: {"i"<>Integer.to_string(key), value}
-      %{"label" => captures["label"], "inputs" => Enum.into(pairs, %{})}
+      %{"label" => captures["label"], "args" => Enum.into(pairs, %{})}
     end
   end
 
@@ -247,13 +247,13 @@ defmodule FSM do
     end
   end
   defp accepts([h|t], efsm, state, registers, verbosity, trace) do
-    possibleTransitions = Enum.filter(efsm[state], fn(tran) -> tran["label"] == h["label"] && applyGuards(tran["guards"], registers, h["inputs"]) end)
+    possibleTransitions = Enum.filter(efsm[state], fn(tran) -> tran["label"] == h["label"] && applyGuards(tran["guards"], registers, h["args"]) end)
     case possibleTransitions do
       [] -> false
       [transition] ->
-        registers = applyUpdates(transition["updates"], registers, h["inputs"])
+        registers = applyUpdates(transition["updates"], registers, h["args"])
         trace = if verbosity > 0 do
-          [{state, registers, h["label"], h["inputs"], applyOutputs(transition["outputs"], registers, h["inputs"])} | trace]
+          [{state, registers, h["label"], h["args"], applyOutputs(transition["outputs"], registers, h["args"])} | trace]
         else
           trace
         end
