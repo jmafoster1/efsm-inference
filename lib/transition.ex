@@ -179,5 +179,41 @@ defmodule Transition do
     ref
   end
 
+  def compatible(transitionTable, ref1, ref2) do
+    details1 = TransitionTable.get(transitionTable,ref1)
+    details2 = TransitionTable.get(transitionTable,ref1)
+    if (details1["label"] == details2["label"] &&
+        Guard.compatible(details1["guards"], details2["guards"])) do
+      true
+    else
+      false
+    end
+  end
+
+  def to_json(transitionTable, ref) do
+    details = TransitionTable.get(transitionTable, ref)
+    str = details["label"]<>":"<>Integer.to_string(details["arity"])
+    str = str <> if details["guards"] == [] do
+      ""
+    else
+      list_to_string(details["guards"], "[", "]")
+    end
+    str = str <> if details["outputs"] == [] and details["updates"] == [] do
+      ""
+    else
+      "/"<>list_to_string(details["outputs"])<>list_to_string(details["updates"], "[", "]")
+    end
+    str
+  end
+
+    defp list_to_string(lst, pre \\ "", post \\ "") do
+    str = Enum.join(Enum.map(lst, fn tuple -> Enum.join(Tuple.to_list(tuple)) end), ",")
+    if str == "" do
+      ""
+    else
+      pre <> str <> post
+    end
+  end
+
 
   end

@@ -1,0 +1,15 @@
+digraph G {
+  q0 [color="black" fillcolor="green" shape="doublecircle" style="filled"];
+  q1 [color="black" fillcolor="white" shape="circle" style="filled"];
+  q2 [color="black" fillcolor="white" shape="circle" style="filled"];
+  q3 [color="black" fillcolor="white" shape="circle" style="filled"];
+  q4 [color="black" fillcolor="white" shape="circle" style="filled"];
+  q5 [color="black" fillcolor="white" shape="circle" style="filled"];
+  q6 [color="black" fillcolor="white" shape="circle" style="filled"];
+  q0 -> q1 [label="select:1[i1=coke]"];
+  q1 -> q5 [label="coin:1[i1=100]"];
+  q1 -> q2 [label="coin:1[i1=50]"];
+  q2 -> q3 [label="coin:1[i1=50]"];
+  q3 -> q4 [label="vend:0/o1:=coke"];
+  q5 -> q6 [label="vend:0/o1:=coke"];
+}
