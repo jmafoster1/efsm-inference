@@ -37,7 +37,9 @@ defmodule Update do
           Map.put(registers, r1, value)
         end
     end
-
   end
 
+  def parseUpdate(update) do
+    List.to_tuple(Regex.split(~r{(\/|\*|\+|-|:=)} , update, include_captures: true))
+  end
 end

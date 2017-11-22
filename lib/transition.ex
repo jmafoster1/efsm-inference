@@ -64,8 +64,8 @@ defmodule Transition do
     parts = if parts["guards"] == "" do
       Map.put(parts, "guards", [])
     else
-          guards = String.split(parts["guards"], ",")
-          Map.put(parts, "guards", Enum.map(guards, fn x -> Guard.parseGuard(x) end))
+      guards = String.split(parts["guards"], ",")
+      Map.put(parts, "guards", Enum.map(guards, fn x -> Guard.parseGuard(x) end))
     end
     parts = if parts["outputs"] == "" do
       Map.put(parts, "outputs", [])
@@ -76,8 +76,8 @@ defmodule Transition do
     parts = if parts["updates"] == "" do
       Map.put(parts, "updates", [])
     else
-      parts = Map.put(parts, "updates", String.split(parts["updates"], ","))
-      Map.put(parts, "updates", Enum.map(parts["updates"], fn x -> List.to_tuple(Regex.split(~r{(\/|\*|\+|-|:=)} , x, include_captures: true)) end))
+      updates = String.split(parts["updates"], ",")
+      Map.put(parts, "updates", Enum.map(updates, fn x -> Update.parseUpdate(x)  end))
     end
     ref = make_ref()
     TransitionTable.put(transitionTable, ref, parts)
