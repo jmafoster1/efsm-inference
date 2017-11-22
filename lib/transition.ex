@@ -5,42 +5,7 @@ defmodule Transition do
   end
 
   defp applyGuards(guards, registers, args) do
-    Enum.all?(guards, fn(g) -> applyGuard(g, Map.merge(registers, args)) end)
-  end
-
-  # TODO: Allow arithmetic in here, e.g. r1 > i1 + 7
-  defp applyGuard({term1, "|", term2}, store) do
-    applyGuard(term1, store) or applyGuard(term2, store)
-  end
-  defp applyGuard({term1, "&", term2}, store) do
-    applyGuard(term1, store) and applyGuard(term2, store)
-  end
-  defp applyGuard({"~", term1}, store) do
-    not applyGuard(term1, store)
-  end
-  defp applyGuard(guard, store) do
-    {key, operator, value} = guard
-    case operator do
-      "=" ->
-        store[key] == value
-      ">" ->
-        number(store[key]) >  number(value)
-      "<" ->
-        number(store[key]) <  number(value)
-      "<=" ->
-        number(store[key]) <= number(value)
-      ">=" ->
-        number(store[key]) >= number(value)
-      "!=" ->
-        store[key] != value
-    end
-  end
-
-  def number(value) do
-    case Float.parse(value) do
-      :error -> value
-      {float, _} -> float
-    end
+    Enum.all?(guards, fn(g) -> Guard.applyGuard(g, Map.merge(registers, args)) end)
   end
 
   def applyTransition(details, registers, args) do
@@ -125,29 +90,6 @@ defmodule Transition do
     transition
   end
 
-  defp logicSplit(string) do
-    disj = ~r{(?<first>(.*))\|(?<second>(.*))}
-    conj = ~r{(?<first>(.*))\&(?<second>(.*))}
-    neg  = ~r{~(?<first>(.*))}
-
-    split =  Regex.named_captures(conj, string)
-    if split != nil do
-      {logicSplit(split["first"]), "&", logicSplit(split["second"])}
-    else
-        split =  Regex.named_captures(disj, string)
-      if split != nil do
-        {logicSplit(split["first"]), "|", logicSplit(split["second"])}
-      else
-        split =  Regex.named_captures(neg, string)
-        if split != nil do
-          {"~", logicSplit(split["first"])}
-        else
-          List.to_tuple(Regex.split(~r{(>=|<=|<|>|=|!=)} , string, include_captures: true))
-        end
-      end
-    end
-  end
-
   def parseTransition(transitionString, transitionTable) do
     parts = Regex.named_captures(transition_regex(), transitionString)
     parts = if parts["arity"] == "" do
@@ -159,8 +101,8 @@ defmodule Transition do
     parts = if parts["guards"] == "" do
       Map.put(parts, "guards", [])
     else
-          parts = Map.put(parts, "guards", String.split(parts["guards"], ","))
-          Map.put(parts, "guards", Enum.map(parts["guards"], fn x -> logicSplit(x) end))
+          guards = String.split(parts["guards"], ",")
+          Map.put(parts, "guards", Enum.map(guards, fn x -> Guard.parseGuard(x) end))
     end
     parts = if parts["outputs"] == "" do
       Map.put(parts, "outputs", [])
@@ -181,7 +123,7 @@ defmodule Transition do
 
   def compatible(transitionTable, ref1, ref2) do
     details1 = TransitionTable.get(transitionTable,ref1)
-    details2 = TransitionTable.get(transitionTable,ref1)
+    details2 = TransitionTable.get(transitionTable,ref2)
     if (details1["label"] == details2["label"] &&
         Guard.compatible(details1["guards"], details2["guards"])) do
       true
