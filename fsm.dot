@@ -1,8 +1,0 @@
-digraph G {
-  q0 [color="black" fillcolor="green" shape="doublecircle" style="filled"];
-  q1 [color="black" fillcolor="white" shape="circle" style="filled"];
-  q2 [color="black" fillcolor="white" shape="circle" style="filled"];
-  q0 -> q1 [label="select/[r1:=i1,r2:=test]"];
-  q1 -> q1 [label="coin/[r2:=r2+i1]"];
-  q1 -> q2 [label="vend[r2>=100,r1=coke]/o1:=r1,o2:=test[r2:=r2-100]"];
-}
