@@ -1,4 +1,4 @@
-defmodule FSM do
+defmodule EFSM do
   def getMatchingTransition(efsm, state, label, arity, args, registers, transitionTable) do
     outs = efsm[state][:outs]
     Enum.filter(outs, fn({_dest, ref}) -> Transition.matchTransition(transitionTable, ref, label, arity, args, registers) end)

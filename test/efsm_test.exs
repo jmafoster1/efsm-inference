@@ -1,4 +1,4 @@
-defmodule FSMTest do
+defmodule EFSMTest do
   use ExUnit.Case
 
   setup do
@@ -7,8 +7,8 @@ defmodule FSMTest do
   end
 
   test "reads efsm from file" do
-    {efsm, transitionTable} = FSM.read("test/support_files/drinks_machine.json")
-    assert FSM.acceptsTrace([
+    {efsm, transitionTable} = EFSM.read("test/support_files/drinks_machine.json")
+    assert EFSM.acceptsTrace([
       %{"label" => "select", "arity" => 1, "args" => %{"i1" => "coke"}},
       %{"label" => "coin", "arity" => 1, "args" => %{"i1" => "100"}}
     ], efsm, transitionTable, "q0", %{}, 0, []) == true
@@ -33,8 +33,8 @@ defmodule FSMTest do
         outs: %{}
       }
     }
-    File.write("test/support_files/fsm.json", Poison.encode!(efsm), [:binary])
-    assert FSM.acceptsTrace([
+    File.write("test/support_files/efsm.json", Poison.encode!(efsm), [:binary])
+    assert EFSM.acceptsTrace([
       %{"label" => "select", "arity" => 1, "args" => %{"i1" => "coke"}},
       %{"label" => "coin", "arity" => 1, "args" => %{"i1" => "110"}},
       %{"label" => "vend", "arity" => 0, "args" => %{}}
@@ -59,8 +59,8 @@ defmodule FSMTest do
         outs: %{}
       }
     }
-    File.write("test/support_files/fsm.json", Poison.encode!(efsm), [:binary])
-    assert FSM.acceptsTrace([
+    File.write("test/support_files/efsm.json", Poison.encode!(efsm), [:binary])
+    assert EFSM.acceptsTrace([
       %{"label" => "select", "arity" => 1, "args" => %{"i1" => "coke"}},
       %{"label" => "coin", "arity" => 1, "args" => %{"i1" => "10"}},
       %{"label" => "vend", "arity" => 0, "args" => %{}}
