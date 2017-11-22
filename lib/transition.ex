@@ -1,7 +1,7 @@
 defmodule Transition do
   def matchTransition(transitionTable, ref, label, arity, args, registers) do
     details = TransitionTable.get(transitionTable, ref)
-    details[:label] == label && details[:arity] == arity && applyGuards(details[:guards], registers, args)
+    details["label"] == label && details["arity"] == arity && applyGuards(details["guards"], registers, args)
   end
 
   defp applyGuards(guards, registers, args) do
@@ -44,8 +44,8 @@ defmodule Transition do
   end
 
   def applyTransition(details, registers, args) do
-    outputs = applyOutputs(details[:outputs], registers, args)
-    updated = applyUpdates(details[:updates], registers, args)
+    outputs = applyOutputs(details["outputs"], registers, args)
+    updated = applyUpdates(details["updates"], registers, args)
     {outputs, updated}
   end
 
@@ -112,6 +112,7 @@ defmodule Transition do
 
   defp transition_regex() do
     label = "(?<label>\\w+)"
+    arity = "(:(?<arity>\\d+){0,1})"
     guard = "(~{0,1}\\w+(=|>|(>=)|(<=)|(!=))\\w+)"
     guard = guard <> "((\\|" <> guard <> ")|" <> "(\\&" <> guard <> "))*"
     guards = "(\\[(?<guards>("<>guard<>"(,"<>guard<>")*"<>"))\\]){0,1}"
@@ -120,7 +121,7 @@ defmodule Transition do
     update = "((r\\d:=r\\d(\\+|-|\\*|\\/)\\w+)|(r\\d:=\\w+))"
     updates = "(\\[(?<updates>("<>update<>"(,"<>update<>")*"<>"))\\]){0,1}"
     rhs = "("<>"\\/"<>outputs<>updates<>"){0,1}"
-    {:ok, transition} = Regex.compile(label<>guards<>rhs)
+    {:ok, transition} = Regex.compile(label<>arity<>guards<>rhs)
     transition
   end
 
@@ -149,6 +150,12 @@ defmodule Transition do
 
   def parseTransition(transitionString, transitionTable) do
     parts = Regex.named_captures(transition_regex(), transitionString)
+    parts = if parts["arity"] == "" do
+      Map.put(parts, "arity", 0)
+    else
+      {arity, _} = Integer.parse(parts["arity"])
+        Map.put(parts, "arity", arity)
+    end
     parts = if parts["guards"] == "" do
       Map.put(parts, "guards", [])
     else

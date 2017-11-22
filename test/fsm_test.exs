@@ -8,20 +8,17 @@ defmodule FSMTest do
 
   test "reads efsm from file" do
     {efsm, transitionTable} = FSM.read("test/support_files/drinks_machine.json")
-    IO.inspect efsm
-    IO.inspect TransitionTable.get(transitionTable,efsm["q0"][:outs]["q1"])
     assert FSM.acceptsTrace([
-      %{label: "select", arity: 1, args: %{"i1" => "coke"}},
-      %{label: "coin", arity: 1, args: %{"i1" => "10"}},
-      %{label: "vend", arity: 0, args: %{}}
-    ], efsm, transitionTable, "q0", %{}, 0, []) == false
+      %{"label" => "select", "arity" => 1, "args" => %{"i1" => "coke"}},
+      %{"label" => "coin", "arity" => 1, "args" => %{"i1" => "100"}}
+    ], efsm, transitionTable, "q0", %{}, 0, []) == true
     TransitionTable.stop(transitionTable)
   end
 
   test "accepts a trace", %{details: transitionTable} do
-    TransitionTable.put(transitionTable, "q0->q1", %{guards: [], label: "select", outputs: [], updates: [{"r1", ":=", "i1"}], arity: 1})
-    TransitionTable.put(transitionTable, "q1->q1", %{guards: [], label: "coin", outputs: [], updates: [{"r2", ":=", "r2", "+", "i1"}], arity: 1})
-    TransitionTable.put(transitionTable, "q1->q2", %{guards: [{"r2", ">=", "100"}], label: "vend", outputs: [{"o1", ":=", "r1"}], updates: [{"r2", ":=", "r2", "-", "100"}], arity: 0})
+    TransitionTable.put(transitionTable, "q0->q1", %{"guards" => [], "label" => "select", "outputs" => [], "updates" => [{"r1", ":=", "i1"}], "arity" => 1})
+    TransitionTable.put(transitionTable, "q1->q1", %{"guards" => [], "label" => "coin", "outputs" => [], "updates" => [{"r2", ":=", "r2", "+", "i1"}], "arity" => 1})
+    TransitionTable.put(transitionTable, "q1->q2", %{"guards" => [{"r2", ">=", "100"}], "label" => "vend", "outputs" => [{"o1", ":=", "r1"}], "updates" => [{"r2", ":=", "r2", "-", "100"}], "arity" => 0})
     efsm = %{
     "q0" => %{
         ins: %{},
@@ -38,16 +35,16 @@ defmodule FSMTest do
     }
     File.write("test/support_files/fsm.json", Poison.encode!(efsm), [:binary])
     assert FSM.acceptsTrace([
-      %{label: "select", arity: 1, args: %{"i1" => "coke"}},
-      %{label: "coin", arity: 1, args: %{"i1" => "110"}},
-      %{label: "vend", arity: 0, args: %{}}
+      %{"label" => "select", "arity" => 1, "args" => %{"i1" => "coke"}},
+      %{"label" => "coin", "arity" => 1, "args" => %{"i1" => "110"}},
+      %{"label" => "vend", "arity" => 0, "args" => %{}}
     ], efsm, transitionTable, "q0", %{}, 0, []) == true
   end
 
   test "rejects a trace", %{details: transitionTable} do
-    TransitionTable.put(transitionTable, "q0->q1", %{guards: [], label: "select", outputs: [], updates: [{"r1", ":=", "i1"}], arity: 1})
-    TransitionTable.put(transitionTable, "q1->q1", %{guards: [], label: "coin", outputs: [], updates: [{"r2", ":=", "r2", "+", "i1"}], arity: 1})
-    TransitionTable.put(transitionTable, "q1->q2", %{guards: [{"r2", ">=", "100"}], label: "vend", outputs: [{"o1", ":=", "r1"}], updates: [{"r2", ":=", "r2", "-", "100"}], arity: 0})
+    TransitionTable.put(transitionTable, "q0->q1", %{"guards" => [], "label" => "select", "outputs" => [], "updates" => [{"r1", ":=", "i1"}], "arity" => 1})
+    TransitionTable.put(transitionTable, "q1->q1", %{"guards" => [], "label" => "coin", "outputs" => [], "updates" => [{"r2", ":=", "r2", "+", "i1"}], "arity" => 1})
+    TransitionTable.put(transitionTable, "q1->q2", %{"guards" => [{"r2", ">=", "100"}], "label" => "vend", "outputs" => [{"o1", ":=", "r1"}], "updates" => [{"r2", ":=", "r2", "-", "100"}], "arity" => 0})
     efsm = %{
     "q0" => %{
         ins: %{},
@@ -64,9 +61,9 @@ defmodule FSMTest do
     }
     File.write("test/support_files/fsm.json", Poison.encode!(efsm), [:binary])
     assert FSM.acceptsTrace([
-      %{label: "select", arity: 1, args: %{"i1" => "coke"}},
-      %{label: "coin", arity: 1, args: %{"i1" => "10"}},
-      %{label: "vend", arity: 0, args: %{}}
+      %{"label" => "select", "arity" => 1, "args" => %{"i1" => "coke"}},
+      %{"label" => "coin", "arity" => 1, "args" => %{"i1" => "10"}},
+      %{"label" => "vend", "arity" => 0, "args" => %{}}
     ], efsm, transitionTable, "q0", %{}, 0, []) == false
   end
 end

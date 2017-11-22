@@ -14,12 +14,12 @@ defmodule FSM do
     end
   end
   def acceptsTrace([h|t], efsm, transitionTable, state, registers, verbosity, trace) do
-    possibleTransitions = getMatchingTransition(efsm, state, h[:label], h[:arity], h[:args], registers, transitionTable)
+    possibleTransitions = getMatchingTransition(efsm, state, h["label"], h["arity"], h["args"], registers, transitionTable)
     case possibleTransitions do
       [] -> false
       [{dest, ref}] ->
         details = TransitionTable.get(transitionTable, ref)
-        {outputs, updated} = Transition.applyTransition(details, registers, h[:args])
+        {outputs, updated} = Transition.applyTransition(details, registers, h["args"])
         acceptsTrace(t, efsm, transitionTable, dest, updated, verbosity, [{outputs, updated} | trace])
     end
   end
@@ -57,18 +57,17 @@ defmodule FSM do
   end
   def addTransitions(state, [h|t], efsm, transitionTable) do
     {details, dest} = h
-    addTransitions(state, t, addTransition(state, details, dest, efsm, transitionTable), transitionTable)
+    efsm = addTransition(state, details, dest, efsm, transitionTable)
+    addTransitions(state, t, efsm, transitionTable)
   end
 
   def addTransition(from, details, dest, efsm, transitionTable) do
     ref = Transition.parseTransition(details, transitionTable)
     newIns = Map.put(efsm[dest][:ins], from, ref)
     newOuts = Map.put(efsm[from][:outs], dest, ref)
-
     newFrom = Map.put(efsm[from], :outs, newOuts)
+    efsm = Map.put(efsm, from, newFrom)
     newDest = Map.put(efsm[dest], :ins, newIns)
-
-    outEFSM = Map.put(efsm, from, newFrom)
-    Map.put(outEFSM, dest, newDest)
+    Map.put(efsm, dest, newDest)
   end
 end
