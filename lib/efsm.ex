@@ -4,6 +4,10 @@ defmodule EFSM do
     Enum.filter(outs, fn({_dest, ref}) -> Transition.matchTransition(transitionTable, ref, label, arity, args, registers) end)
   end
 
+  def acceptsTraceSet(traces, efsm, transitionTable, state, registers) do
+    Enum.all?((for t <- traces, do: acceptsTrace(t, efsm, transitionTable, state, registers, 0, [])))
+  end
+
   def acceptsTrace([], _efsm, _transitionTable, state, registers, verbosity, trace) do
     if verbosity > 0 do
       trace = [{state, registers} | trace]
@@ -14,6 +18,7 @@ defmodule EFSM do
     end
   end
   def acceptsTrace([h|t], efsm, transitionTable, state, registers, verbosity, trace) do
+    h = Trace.parseInput(h)
     possibleTransitions = getMatchingTransition(efsm, state, h["label"], h["arity"], h["args"], registers, transitionTable)
     case possibleTransitions do
       [] -> false

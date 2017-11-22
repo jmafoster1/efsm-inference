@@ -1,11 +1,6 @@
 defmodule EFSMTest do
   use ExUnit.Case
 
-  setup do
-    {:ok, transitionTable} = start_supervised(TransitionTable)
-    %{details: transitionTable}
-  end
-
   test "reads efsm from file" do
     {efsm, transitionTable} = EFSM.read("test/support_files/drinks_machine.json")
     assert EFSM.acceptsTrace([
@@ -15,24 +10,8 @@ defmodule EFSMTest do
     TransitionTable.stop(transitionTable)
   end
 
-  test "accepts a trace", %{details: transitionTable} do
-    TransitionTable.put(transitionTable, "q0->q1", %{"guards" => [], "label" => "select", "outputs" => [], "updates" => [{"r1", ":=", "i1"}], "arity" => 1})
-    TransitionTable.put(transitionTable, "q1->q1", %{"guards" => [], "label" => "coin", "outputs" => [], "updates" => [{"r2", ":=", "r2", "+", "i1"}], "arity" => 1})
-    TransitionTable.put(transitionTable, "q1->q2", %{"guards" => [{"r2", ">=", "100"}], "label" => "vend", "outputs" => [{"o1", ":=", "r1"}], "updates" => [{"r2", ":=", "r2", "-", "100"}], "arity" => 0})
-    efsm = %{
-    "q0" => %{
-        ins: %{},
-        outs: %{"q1" => "q0->q1"}
-      },
-    "q1" => %{
-        ins: %{"q0" => "q0->q1", "q1" => "q1->q1"},
-        outs: %{"q1" => "q1->q1", "q2" => "q1->q2"}
-      },
-    "q2" => %{
-        ins: %{"q1" => "q1->q2"},
-        outs: %{}
-      }
-    }
+  test "accepts a trace" do
+    {efsm, transitionTable} = EFSM.read("test/support_files/drinks_machine.json")
     assert EFSM.acceptsTrace([
       %{"label" => "select", "arity" => 1, "args" => %{"i1" => "coke"}},
       %{"label" => "coin", "arity" => 1, "args" => %{"i1" => "110"}},
@@ -40,24 +19,21 @@ defmodule EFSMTest do
     ], efsm, transitionTable, "q0", %{}, 0, []) == true
   end
 
-  test "rejects a trace", %{details: transitionTable} do
-    TransitionTable.put(transitionTable, "q0->q1", %{"guards" => [], "label" => "select", "outputs" => [], "updates" => [{"r1", ":=", "i1"}], "arity" => 1})
-    TransitionTable.put(transitionTable, "q1->q1", %{"guards" => [], "label" => "coin", "outputs" => [], "updates" => [{"r2", ":=", "r2", "+", "i1"}], "arity" => 1})
-    TransitionTable.put(transitionTable, "q1->q2", %{"guards" => [{"r2", ">=", "100"}], "label" => "vend", "outputs" => [{"o1", ":=", "r1"}], "updates" => [{"r2", ":=", "r2", "-", "100"}], "arity" => 0})
-    efsm = %{
-    "q0" => %{
-        ins: %{},
-        outs: %{"q1" => "q0->q1"}
-      },
-    "q1" => %{
-        ins: %{"q0" => "q0->q1", "q1" => "q1->q1"},
-        outs: %{"q1" => "q1->q1", "q2" => "q1->q2"}
-      },
-    "q2" => %{
-        ins: %{"q1" => "q1->q2"},
-        outs: %{}
-      }
-    }
+  test "accepts a string trace" do
+    {efsm, transitionTable} = EFSM.read("test/support_files/drinks_machine.json")
+    assert EFSM.acceptsTraceSet([
+        ["select(coke)", "coin(100)", "vend()"],
+        ["select(coke)", "coin(50)", "coin(50)", "vend()"]
+      ], efsm, transitionTable, "q0", %{}) == true
+  end
+
+  test "accepts a set of traces" do
+    {efsm, transitionTable} = EFSM.read("test/support_files/drinks_machine.json")
+    IO.inspect EFSM.acceptsTrace(["select(coke)", "coin(100)", "vend()"], efsm, transitionTable, "q0", %{}, 0, []) == true
+  end
+
+  test "rejects a trace" do
+    {efsm, transitionTable} = EFSM.read("test/support_files/drinks_machine.json")
     assert EFSM.acceptsTrace([
       %{"label" => "select", "arity" => 1, "args" => %{"i1" => "coke"}},
       %{"label" => "coin", "arity" => 1, "args" => %{"i1" => "10"}},
