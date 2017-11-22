@@ -25,54 +25,17 @@ defmodule Transition do
   defp applyOutputs([], _registers, _args) do
     %{}
   end
-
   defp applyOutputs([h|t], registers, args) do
     store = Map.merge(registers, args)
     {key, ":=", value} = h
     Map.put(applyOutputs(t, registers, args), key, applyOutput(value, store))
   end
 
-  defp applyUpdate(update, registers, args) do
-    store = Map.merge(registers, args)
-    {r1, ":=", r2, op, value} = update
-    # TODO: Improve this to make store lookup explicit
-    {r2, _} = if Map.has_key?(store, r2)  do
-      Float.parse(store[r2])
-    else
-      {0, 0}
-    end
-    {value, _} = Float.parse(value)
-    case op do
-      "+" ->
-        Map.put(registers, r1, Float.to_string(r2+value))
-      "-" ->
-        Map.put(registers, r1, Float.to_string(r2-value))
-      "*" ->
-        Map.put(registers, r1, Float.to_string(r2*value))
-      "/" ->
-        Map.put(registers, r1, Float.to_string(r2/value))
-    end
-  end
-
-  defp applyUpdates([], registers, _args) do
+  def applyUpdates([], registers, _args) do
     registers
   end
-  defp applyUpdates([h|t], registers, args) do
-    store = Map.merge(registers, args)
-    case h do
-      {r1, ":=", r2, op, value} ->
-        if Map.has_key?(store, value) do
-          applyUpdates(t, applyUpdate({r1, ":=", r2, op, store[value]}, registers, args), args)
-        else
-          applyUpdates(t, applyUpdate(h, registers, args), args)
-        end
-      {r1, ":=", value} ->
-        if Map.has_key?(store, value) do
-          applyUpdates(t, Map.put(registers, r1, store[value]), args)
-        else
-          applyUpdates(t, Map.put(registers, r1, value), args)
-        end
-    end
+  def applyUpdates([h|t], registers, args) do
+    applyUpdates(t, Update.applyUpdate(h, registers, args), args)
   end
 
   defp transition_regex() do
@@ -156,6 +119,4 @@ defmodule Transition do
       pre <> str <> post
     end
   end
-
-
-  end
+end
