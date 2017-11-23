@@ -19,7 +19,7 @@ defmodule Transition do
   end
   defp applyOutputs([h|t], registers, args) do
     store = Map.merge(registers, args)
-    {key, ":=", value} = h
+    {key, value} = h
     Map.put(applyOutputs(t, registers, args), key, Expression.getValue(value, store))
   end
 
@@ -83,28 +83,19 @@ defmodule Transition do
     end
   end
 
-  def to_json(transitionTable, ref) do
+  def toJSON(transitionTable, ref) do
     details = TransitionTable.get(transitionTable, ref)
     str = details["label"]<>":"<>Integer.to_string(details["arity"])
     str = str <> if details["guards"] == [] do
       ""
     else
-      list_to_string(details["guards"], "[", "]")
+      Guard.toJSON(details["guards"])
     end
     str = str <> if details["outputs"] == [] and details["updates"] == [] do
       ""
     else
-      "/"<>list_to_string(details["outputs"])<>list_to_string(details["updates"], "[", "]")
+      "/"<>Output.toJSON(details["outputs"])<>Update.toJSON(details["updates"])
     end
     str
-  end
-
-    defp list_to_string(lst, pre \\ "", post \\ "") do
-    str = Enum.join(Enum.map(lst, fn tuple -> Enum.join(Tuple.to_list(tuple)) end), ",")
-    if str == "" do
-      ""
-    else
-      pre <> str <> post
-    end
   end
 end

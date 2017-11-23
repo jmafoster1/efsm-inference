@@ -1,19 +1,23 @@
 defmodule Expression do
   def getValue(value, store) do
-    literal = String.starts_with?(value, "'") and String.ends_with?(value, "'")
-    value = if literal do
-      String.slice(value, 1, String.length(value)-2)
+    if value == nil do
+      nil
     else
-      val = store[value]
-      if val == nil do
-        "0"
+      literal = String.starts_with?(value, "'") and String.ends_with?(value, "'")
+      value = if literal do
+        String.slice(value, 1, String.length(value)-2)
       else
-        val
+        val = store[value]
+        if val == nil do
+          "0"
+        else
+          val
+        end
       end
-    end
-    case Float.parse(value) do
-      :error -> value
-      {float, _} -> float
+      case Float.parse(value) do
+        :error -> value
+        {float, _} -> float
+      end
     end
   end
 end

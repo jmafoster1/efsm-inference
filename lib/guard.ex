@@ -28,6 +28,15 @@ defmodule Guard do
     end
   end
 
+  def toJSON(guards) do
+    str = Enum.join(Enum.map(guards, fn tuple -> Enum.join(Tuple.to_list(tuple)) end), ",")
+    if str == "" do
+      ""
+    else
+      "[" <> str <> "]"
+    end
+  end
+
   def guardRegex() do
     guard = "(~{0,1}((\\w+)|('\\w+'))(=|>|(>=)|(<=)|(!=))((\\w+)|('\\w+')))"
     guard <> "((\\|" <> guard <> ")|" <> "(\\&" <> guard <> "))*"

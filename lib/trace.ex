@@ -13,7 +13,7 @@ defmodule Trace do
     expected = if captures["outputs"] == "" do
       %{}
     else
-      Enum.into(Enum.map(String.split(captures["outputs"], ","), fn x -> Output.parseOutput(x, false) end), %{})
+      Enum.into(Enum.map(String.split(captures["outputs"], ","), fn x -> Output.parseOutput(x) end), %{})
     end
     %{
       "label" => captures["label"],

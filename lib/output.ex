@@ -3,11 +3,20 @@ defmodule Output do
     "o\\d:=((\\w+)|('\\w+'))"
   end
 
-  def parseOutput(x, include_captures \\ true) do
-    List.to_tuple(Regex.split(~r{(:=)} , x, include_captures: include_captures))
+  def parseOutput(x) do
+    List.to_tuple(Regex.split(~r{(:=)} , x))
   end
 
-  def matchOutputs(expected, actual) do
-    Enum.all?(for key <- Map.keys(expected), do: expected[key] == actual[key]) and Enum.all?(for key <- Map.keys(actual), do: expected[key] == actual[key])
+  def matchOutputs(expected, actual, store) do
+    Enum.all?(for key <- Map.keys(expected), do: Expression.getValue(expected[key], store) == actual[key]) and Enum.all?(for key <- Map.keys(actual), do: Expression.getValue(expected[key], store) == actual[key])
+  end
+
+  def toJSON(outputs) do
+    str = Enum.join(Enum.map(outputs, fn tuple -> Enum.join(Tuple.to_list(tuple), ":=") end), ",")
+    if str == "" do
+      ""
+    else
+      str
+    end
   end
 end

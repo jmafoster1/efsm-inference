@@ -14,7 +14,7 @@ defmodule FSM do
   Writes an efsm to json
   """
   def save_json(filename, fsm) do
-    write(filename, Poison.encode!(fsm_to_json(fsm)))
+    write(filename, Poison.encode!(fsmToJSON(fsm)))
   end
 
   @doc """
@@ -28,7 +28,7 @@ defmodule FSM do
   Converts an EFSM to dot format for visual representation
   """
   def fsm_to_dot(fsm) do
-    json = fsm_to_json(fsm)
+    json = fsmToJSON(fsm)
     {states, transitions} = fsm_to_dot(Map.keys(json), json, [], [])
     "digraph G {\n  " <> Enum.join(states, ";\n  ") <> ";\n  " <> Enum.join(transitions, ";\n  ") <> ";\n}"
   end
@@ -36,8 +36,8 @@ defmodule FSM do
   @doc """
   Converts an EFSM to json format for textual representation
   """
-  def fsm_to_json(fsm) do
-    fsm_to_json(Map.keys(fsm), fsm)
+  def fsmToJSON(fsm) do
+    fsmToJSON(Map.keys(fsm), fsm)
   end
 
   @doc """
@@ -285,20 +285,20 @@ defmodule FSM do
     [transition | transitions_to_dot(t, state, transitions)]
   end
 
-  defp fsm_to_json([], _fsm) do
+  defp fsmToJSON([], _fsm) do
     %{}
   end
-  defp fsm_to_json([h|t], fsm) do
+  defp fsmToJSON([h|t], fsm) do
     transitions = fsm[h]
-    Map.put(fsm_to_json(t, fsm), h, transitions_to_json(transitions))
+    Map.put(fsmToJSON(t, fsm), h, transitionsToJSON(transitions))
   end
 
-  defp transitions_to_json([]) do
+  defp transitionsToJSON([]) do
     %{}
   end
-  defp transitions_to_json([h|t]) do
+  defp transitionsToJSON([h|t]) do
     transition = h["label"]<>list_to_string(h["guards"], "[", "]")<>"/"<>list_to_string(h["outputs"])<>list_to_string(h["updates"], "[", "]")
-    Map.put(transitions_to_json(t), transition, h["dest"])
+    Map.put(transitionsToJSON(t), transition, h["dest"])
   end
 
   defp list_to_string(lst, pre \\ "", post \\ "") do

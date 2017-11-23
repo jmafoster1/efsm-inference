@@ -28,7 +28,14 @@ defmodule Update do
     Expression.getValue(value, store)
   end
 
-
+  def toJSON(outputs) do
+    str = Enum.join(Enum.map(outputs, fn tuple -> Enum.join(Tuple.to_list(tuple), ":=") end), ",")
+    if str == "" do
+      ""
+    else
+      "[" <> str <> "]"
+    end
+  end
 
   def parseUpdate(string) do
     update = ~r/((?<register>(\w+)):=){0,1}(?<aexp>(.*))/

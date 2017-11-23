@@ -1,5 +1,5 @@
 {
-  "q0":{"select:1[i1='coke']/o1:='coke'":"q1"},
+  "q0":{"select:1[i1='coke']/o1:='coke'[r1:='coke']":"q1"},
   "q1":{
       "coin:1[i1='50']":"q2",
       "coin:1[i1='100']":"q5"

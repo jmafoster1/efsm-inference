@@ -25,7 +25,7 @@ defmodule EFSM do
       [{dest, ref}] ->
         details = TransitionTable.get(transitionTable, ref)
         {outputs, updated} = Transition.applyTransition(details, registers, h["args"])
-        case Output.matchOutputs(h["expected"], outputs) do
+        case Output.matchOutputs(h["expected"], outputs, Map.merge(updated, h["args"])) do
           true  -> acceptsTrace(t, efsm, transitionTable, dest, updated, verbosity, [{outputs, updated} | trace])
           false -> false
         end
@@ -155,38 +155,38 @@ defmodule EFSM do
     Map.put(efsm, dest, newDest)
   end
 
-  def to_json_map(efsm, transitionTable) do
-    to_json(Map.keys(efsm), efsm, transitionTable)
+  def toJSON_map(efsm, transitionTable) do
+    toJSON(Map.keys(efsm), efsm, transitionTable)
   end
 
   @doc """
   Converts an EFSM to json format for textual representation
   """
-  def to_json(efsm, transitionTable) do
-    Poison.encode!(to_json_map(efsm, transitionTable))
+  def toJSON(efsm, transitionTable) do
+    Poison.encode!(toJSON_map(efsm, transitionTable))
   end
 
-  defp to_json([], _efsm, _transitionTable) do
+  defp toJSON([], _efsm, _transitionTable) do
     %{}
   end
-  defp to_json([h|t], efsm, transitionTable) do
+  defp toJSON([h|t], efsm, transitionTable) do
     transitions = efsm[h][:outs]
-    Map.put(to_json(t, efsm, transitionTable), h, transitions_to_json(Map.to_list(transitions), transitionTable))
+    Map.put(toJSON(t, efsm, transitionTable), h, transitionsToJSON(Map.to_list(transitions), transitionTable))
   end
 
-  defp transitions_to_json([], _transitionTable) do
+  defp transitionsToJSON([], _transitionTable) do
     %{}
   end
-  defp transitions_to_json([h|t], transitionTable) do
+  defp transitionsToJSON([h|t], transitionTable) do
     {dest, ref} = h
-    Map.put(transitions_to_json(t, transitionTable), Transition.to_json(transitionTable, ref), dest)
+    Map.put(transitionsToJSON(t, transitionTable), Transition.toJSON(transitionTable, ref), dest)
   end
 
   @doc """
   Converts an EFSM to dot format for visual representation
   """
   def to_dot(fsm, transitionTable) do
-    json = to_json_map(fsm, transitionTable)
+    json = toJSON_map(fsm, transitionTable)
     {states, transitions} = fsm_to_dot(Map.keys(json), json, [], [])
     "digraph G {\n  " <> Enum.join(states, ";\n  ") <> ";\n  " <> Enum.join(transitions, ";\n  ") <> ";\n}"
   end
