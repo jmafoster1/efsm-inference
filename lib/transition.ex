@@ -20,7 +20,7 @@ defmodule Transition do
   defp applyOutputs([h|t], registers, args) do
     store = Map.merge(registers, args)
     {key, ":=", value} = h
-    Map.put(applyOutputs(t, registers, args), key, Output.applyOutput(value, store))
+    Map.put(applyOutputs(t, registers, args), key, Expression.getValue(value, store))
   end
 
   def applyUpdates([], registers, _args) do
@@ -59,7 +59,7 @@ defmodule Transition do
       Map.put(parts, "outputs", [])
     else
       outputs = String.split(parts["outputs"], ",")
-      Map.put(parts, "outputs", Enum.map(outputs, fn x -> List.to_tuple(Regex.split(~r{(:=)} , x, include_captures: true)) end))
+      Map.put(parts, "outputs", Enum.map(outputs, fn x -> Output.parseOutput(x) end))
     end
     parts = if parts["updates"] == "" do
       Map.put(parts, "updates", [])

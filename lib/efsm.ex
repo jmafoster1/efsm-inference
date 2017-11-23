@@ -25,7 +25,10 @@ defmodule EFSM do
       [{dest, ref}] ->
         details = TransitionTable.get(transitionTable, ref)
         {outputs, updated} = Transition.applyTransition(details, registers, h["args"])
-        acceptsTrace(t, efsm, transitionTable, dest, updated, verbosity, [{outputs, updated} | trace])
+        case Output.matchOutputs(h["expected"], outputs) do
+          true  -> acceptsTrace(t, efsm, transitionTable, dest, updated, verbosity, [{outputs, updated} | trace])
+          false -> false
+        end
     end
   end
 
