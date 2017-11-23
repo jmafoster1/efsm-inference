@@ -11,6 +11,8 @@ defmodule Guard do
   end
   def applyGuard(guard, store) do
     {key, operator, value} = guard
+    value = Expression.getValue(value, store)
+
     case operator do
       "=" ->
         store[key] == value
@@ -61,9 +63,10 @@ defmodule Guard do
   end
 
   def number(value) do
-    case Float.parse(value) do
+    number = case Float.parse(value) do
       :error -> value
       {float, _} -> float
     end
+    number
   end
 end

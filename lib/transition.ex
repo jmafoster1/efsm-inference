@@ -41,12 +41,12 @@ defmodule Transition do
   defp transition_regex() do
     label = "(?<label>\\w+)"
     arity = "(:(?<arity>\\d+){0,1})"
-    guard = "(~{0,1}\\w+(=|>|(>=)|(<=)|(!=))\\w+)"
+    guard = "(~{0,1}((\\w+)|('\\w+'))(=|>|(>=)|(<=)|(!=))((\\w+)|('\\w+')))"
     guard = guard <> "((\\|" <> guard <> ")|" <> "(\\&" <> guard <> "))*"
     guards = "(\\[(?<guards>("<>guard<>"(,"<>guard<>")*"<>"))\\]){0,1}"
-    output = "o\\d:=\\w+"
+    output = "o\\d:=((\\w+)|('\\w+'))"
     outputs = "(?<outputs>("<>output<>"(,"<>output<>")*"<>")){0,1}"
-    update = "((r\\d:=r\\d(\\+|-|\\*|\\/)\\w+)|(r\\d:=\\w+))"
+    update = "((r\\d:=r\\d(\\+|-|\\*|\\/)((\\w+)|('\\w+')))|(r\\d:=((\\w+)|('\\w+'))))"
     updates = "(\\[(?<updates>("<>update<>"(,"<>update<>")*"<>"))\\]){0,1}"
     rhs = "("<>"\\/"<>outputs<>updates<>"){0,1}"
     {:ok, transition} = Regex.compile(label<>arity<>guards<>rhs)
@@ -70,8 +70,8 @@ defmodule Transition do
     parts = if parts["outputs"] == "" do
       Map.put(parts, "outputs", [])
     else
-      parts = Map.put(parts, "outputs", String.split(parts["outputs"], ","))
-      Map.put(parts, "outputs", Enum.map(parts["outputs"], fn x -> List.to_tuple(Regex.split(~r{(:=)} , x, include_captures: true)) end))
+      outputs = String.split(parts["outputs"], ",")
+      Map.put(parts, "outputs", Enum.map(outputs, fn x -> List.to_tuple(Regex.split(~r{(:=)} , x, include_captures: true)) end))
     end
     parts = if parts["updates"] == "" do
       Map.put(parts, "updates", [])
@@ -79,6 +79,7 @@ defmodule Transition do
       updates = String.split(parts["updates"], ",")
       Map.put(parts, "updates", Enum.map(updates, fn x -> Update.parseUpdate(x)  end))
     end
+    IO.inspect parts
     ref = make_ref()
     TransitionTable.put(transitionTable, ref, parts)
     ref
