@@ -14,21 +14,13 @@ defmodule Transition do
     {outputs, updated}
   end
 
-  defp applyOutput(output, store) do
-    if Map.has_key?(store, output) do
-      store[output]
-    else
-      output
-    end
-  end
-
   defp applyOutputs([], _registers, _args) do
     %{}
   end
   defp applyOutputs([h|t], registers, args) do
     store = Map.merge(registers, args)
     {key, ":=", value} = h
-    Map.put(applyOutputs(t, registers, args), key, applyOutput(value, store))
+    Map.put(applyOutputs(t, registers, args), key, Output.applyOutput(value, store))
   end
 
   def applyUpdates([], registers, _args) do
@@ -41,16 +33,9 @@ defmodule Transition do
   defp transition_regex() do
     label = "(?<label>\\w+)"
     arity = "(:(?<arity>\\d+){0,1})"
-    guard = "(~{0,1}((\\w+)|('\\w+'))(=|>|(>=)|(<=)|(!=))((\\w+)|('\\w+')))"
-    guard = guard <> "((\\|" <> guard <> ")|" <> "(\\&" <> guard <> "))*"
-    guards = "(\\[(?<guards>("<>guard<>"(,"<>guard<>")*"<>"))\\]){0,1}"
-    output = "o\\d:=((\\w+)|('\\w+'))"
-    outputs = "(?<outputs>("<>output<>"(,"<>output<>")*"<>")){0,1}"
-    aexp = "(\\d+|\\w+|'\\w+')"
-    aexp = aexp <> "(" <> "(\\+|-|\\*|\/)" <> aexp <> ")*"
-    update = "r\\d:=" <> aexp
-    update = update <> "((-" <> update <> ")|" <> "(\\+" <> update <> "))*"
-    updates = "(\\[(?<updates>("<>update<>"(,"<>update<>")*"<>"))\\]){0,1}"
+    guards = "(\\[(?<guards>("<>Guard.guardRegex()<>"(,"<>Guard.guardRegex()<>")*"<>"))\\]){0,1}"
+    outputs = "(?<outputs>("<>Output.outputRegex()<>"(,"<>Output.outputRegex()<>")*"<>")){0,1}"
+    updates = "(\\[(?<updates>("<>Update.updateRegex()<>"(,"<>Update.updateRegex()<>")*"<>"))\\]){0,1}"
     rhs = "("<>"\\/"<>outputs<>updates<>"){0,1}"
     {:ok, transition} = Regex.compile(label<>arity<>guards<>rhs)
     transition

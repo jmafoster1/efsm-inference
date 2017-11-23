@@ -28,6 +28,11 @@ defmodule Guard do
     end
   end
 
+  def guardRegex() do
+    guard = "(~{0,1}((\\w+)|('\\w+'))(=|>|(>=)|(<=)|(!=))((\\w+)|('\\w+')))"
+    guard <> "((\\|" <> guard <> ")|" <> "(\\&" <> guard <> "))*"
+  end
+
   def compatible([], _) do
     true
   end

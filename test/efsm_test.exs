@@ -56,4 +56,9 @@ defmodule EFSMTest do
     assert EFSM.to_dot(efsm, transitionTable) == "digraph G {\n  q0 [color=\"black\" fillcolor=\"green\" shape=\"doublecircle\" style=\"filled\"];\n  q1 [color=\"black\" fillcolor=\"white\" shape=\"circle\" style=\"filled\"];\n  q2 [color=\"black\" fillcolor=\"white\" shape=\"circle\" style=\"filled\"];\n  q3 [color=\"black\" fillcolor=\"white\" shape=\"circle\" style=\"filled\"];\n  q4 [color=\"black\" fillcolor=\"white\" shape=\"circle\" style=\"filled\"];\n  q5 [color=\"black\" fillcolor=\"white\" shape=\"circle\" style=\"filled\"];\n  q6 [color=\"black\" fillcolor=\"white\" shape=\"circle\" style=\"filled\"];\n  q0 -> q1 [label=\"select:1[i1='coke']\"];\n  q1 -> q5 [label=\"coin:1[i1='100']\"];\n  q1 -> q2 [label=\"coin:1[i1='50']\"];\n  q2 -> q3 [label=\"coin:1[i1='50']\"];\n  q3 -> q4 [label=\"vend:0/o1:='coke'\"];\n  q5 -> q6 [label=\"vend:0/o1:='coke'\"];\n}"
   end
 
+  # test "expected output" do
+  #   {efsm, transitionTable} = EFSM.read("test/support_files/drinks_machine.json")
+  #   assert EFSM.acceptsTrace(["select(coke)/o1:='coke'", "coin(100)", "vend()/o1:='coke'"], efsm, transitionTable, "q0", %{}, 1, []) == false
+  # end
+
 end

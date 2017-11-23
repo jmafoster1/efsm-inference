@@ -1,34 +1,10 @@
 defmodule Update do
 
-  def applyUpdateOld(update, registers, args) do
-    store = Map.merge(registers, args)
-    case update do
-      {r1, ":=", r2, op, value} ->
-        value = Expression.getValue(value, store)
-        {r2, _} = if Map.has_key?(registers, r2)  do
-          Float.parse(store[r2])
-        else
-          {0, 0}
-        end
-        {value, _} = Float.parse(value)
-        case op do
-          "+" ->
-            Map.put(registers, r1, Float.to_string(r2+value))
-          "-" ->
-            Map.put(registers, r1, Float.to_string(r2-value))
-          "*" ->
-            Map.put(registers, r1, Float.to_string(r2*value))
-          "/" ->
-            Map.put(registers, r1, Float.to_string(r2/value))
-        end
-      {r1, ":=", value} ->
-        value = Expression.getValue(value, store)
-        if Map.has_key?(store, value) do
-          Map.put(registers, r1, store[value])
-        else
-          Map.put(registers, r1, value)
-        end
-    end
+  def updateRegex() do
+    aexp = "(\\d+|\\w+|'\\w+')"
+    aexp = aexp <> "(" <> "(\\+|-|\\*|\/)" <> aexp <> ")*"
+    update = "r\\d:=" <> aexp
+    update <> "((-" <> update <> ")|" <> "(\\+" <> update <> "))*"
   end
 
   def applyUpdate({register, value}, registers, args) do
