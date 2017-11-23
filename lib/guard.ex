@@ -12,20 +12,19 @@ defmodule Guard do
   def applyGuard(guard, store) do
     {key, operator, value} = guard
     value = Expression.getValue(value, store)
-
     case operator do
       "=" ->
-        store[key] == value
+        Expression.getValue(key, store) == value
       ">" ->
-        number(store[key]) >  number(value)
+        Expression.getValue(key, store) >  value
       "<" ->
-        number(store[key]) <  number(value)
+        Expression.getValue(key, store) <  value
       "<=" ->
-        number(store[key]) <= number(value)
+        Expression.getValue(key, store) <= value
       ">=" ->
-        number(store[key]) >= number(value)
+        Expression.getValue(key, store) >= value
       "!=" ->
-        store[key] != value
+        Expression.getValue(key, store) != value
     end
   end
 
@@ -60,13 +59,5 @@ defmodule Guard do
         end
       end
     end
-  end
-
-  def number(value) do
-    number = case Float.parse(value) do
-      :error -> value
-      {float, _} -> float
-    end
-    number
   end
 end

@@ -46,7 +46,10 @@ defmodule Transition do
     guards = "(\\[(?<guards>("<>guard<>"(,"<>guard<>")*"<>"))\\]){0,1}"
     output = "o\\d:=((\\w+)|('\\w+'))"
     outputs = "(?<outputs>("<>output<>"(,"<>output<>")*"<>")){0,1}"
-    update = "((r\\d:=r\\d(\\+|-|\\*|\\/)((\\w+)|('\\w+')))|(r\\d:=((\\w+)|('\\w+'))))"
+    aexp = "(\\d+|\\w+|'\\w+')"
+    aexp = aexp <> "(" <> "(\\+|-|\\*|\/)" <> aexp <> ")*"
+    update = "r\\d:=" <> aexp
+    update = update <> "((-" <> update <> ")|" <> "(\\+" <> update <> "))*"
     updates = "(\\[(?<updates>("<>update<>"(,"<>update<>")*"<>"))\\]){0,1}"
     rhs = "("<>"\\/"<>outputs<>updates<>"){0,1}"
     {:ok, transition} = Regex.compile(label<>arity<>guards<>rhs)
@@ -77,9 +80,10 @@ defmodule Transition do
       Map.put(parts, "updates", [])
     else
       updates = String.split(parts["updates"], ",")
+      IO.inspect updates
       Map.put(parts, "updates", Enum.map(updates, fn x -> Update.parseUpdate(x)  end))
     end
-    IO.inspect parts
+    # IO.inspect parts
     ref = make_ref()
     TransitionTable.put(transitionTable, ref, parts)
     ref

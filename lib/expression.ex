@@ -4,7 +4,16 @@ defmodule Expression do
     value = if literal do
       String.slice(value, 1, String.length(value)-2)
     else
-      store[value]
+      val = store[value]
+      if val == nil do
+        "0"
+      else
+        val
+      end
+    end
+    case Float.parse(value) do
+      :error -> value
+      {float, _} -> float
     end
   end
 end
