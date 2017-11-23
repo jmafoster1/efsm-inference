@@ -80,10 +80,8 @@ defmodule Transition do
       Map.put(parts, "updates", [])
     else
       updates = String.split(parts["updates"], ",")
-      IO.inspect updates
       Map.put(parts, "updates", Enum.map(updates, fn x -> Update.parseUpdate(x)  end))
     end
-    # IO.inspect parts
     ref = make_ref()
     TransitionTable.put(transitionTable, ref, parts)
     ref
