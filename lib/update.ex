@@ -7,29 +7,29 @@ defmodule Update do
     update <> "((-" <> update <> ")|" <> "(\\+" <> update <> "))*"
   end
 
-  def applyUpdate({register, value}, registers, args) do
+  def applyUpdate({{:v, register}, value}, registers, args) do
     store = Map.merge(registers, args)
     Map.put(registers, register, to_string(applyAexp(value, store)))
   end
 
-  def applyAexp({v1, "+", v2}, store) do
+  def applyAexp({:plus, v1, v2}, store) do
     applyAexp(v1, store) + applyAexp(v2, store)
   end
-  def applyAexp({v1, "*", v2}, store) do
+  def applyAexp({:multiply, v1, v2}, store) do
     applyAexp(v1, store) * applyAexp(v2, store)
   end
-  def applyAexp({v1, "-", v2}, store) do
+  def applyAexp({:minus, v1, v2}, store) do
     applyAexp(v1, store) - applyAexp(v2, store)
   end
-  def applyAexp({v1, "/", v2}, store) do
+  def applyAexp({:divide, v1, v2}, store) do
     applyAexp(v1, store) / applyAexp(v2, store)
   end
   def applyAexp(value, store) do
     Expression.getValue(value, store)
   end
 
-  def toJSON(outputs) do
-    str = Enum.join(updatesToString(outputs), ",")
+  def toJSON(updates) do
+    str = Enum.join(Enum.map(updates, fn tuple -> toString(Expression.prefix2Infix(tuple)) end), ",")
     if str == "" do
       ""
     else
@@ -37,22 +37,21 @@ defmodule Update do
     end
   end
 
-  def updatesToString([]) do
-    []
+  def toString({r, ":=", t}) do
+    r <> ":=" <> toString(t)
   end
-  def updatesToString([h|t]) do
-    {r, o} = h
-    if is_tuple(o) do
-      [(r <> ":=" <> Enum.join(Tuple.to_list(o))) | updatesToString(t)]
-    else
-      [(r <> ":=" <> o) | updatesToString(t)]
-    end
+  def toString({r, op, t}) do
+    r <> op <> toString(t)
   end
+  def toString(t) do
+    t
+  end
+
 
   def parseUpdate(string) do
     update = ~r/((?<register>(\w+)):=){0,1}(?<aexp>(.*))/
     captures = Regex.named_captures(update, string)
-    {captures["register"], parseValue(captures["aexp"])}
+    {{:v, captures["register"]}, parseValue(captures["aexp"])}
   end
 
   def parseValue(aexp) do
@@ -63,21 +62,21 @@ defmodule Update do
 
     split = Regex.named_captures(minus, aexp)
     if split != nil do
-      {parseValue(split["first"]), "-", parseValue(split["second"])}
+      {:minus, parseValue(split["first"]), parseValue(split["second"])}
     else
         split =  Regex.named_captures(plus, aexp)
       if split != nil do
-        {parseValue(split["first"]), "+", parseValue(split["second"])}
+        {:plus, parseValue(split["first"]), parseValue(split["second"])}
       else
         split =  Regex.named_captures(times, aexp)
         if split != nil do
-          {parseValue(split["first"]), "*", parseValue(split["second"])}
+          {:multiply, parseValue(split["first"]), parseValue(split["second"])}
         else
           split =  Regex.named_captures(divide, aexp)
           if split != nil do
-            {parseValue(split["first"]), "/", parseValue(split["second"])}
+            {:divide, parseValue(split["first"]), parseValue(split["second"])}
           else
-            aexp
+            Expression.tag(aexp)
           end
         end
       end

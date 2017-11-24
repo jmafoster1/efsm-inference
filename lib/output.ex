@@ -4,19 +4,25 @@ defmodule Output do
   end
 
   def parseOutput(x) do
-    List.to_tuple(Regex.split(~r{(:=)} , x))
+    {o, v} = List.to_tuple(Regex.split(~r{(:=)} , x))
+    {{:v, o}, Expression.tag(v)}
   end
 
   def matchOutputs(expected, actual, store) do
-    Enum.all?(for key <- Map.keys(expected), do: Expression.getValue(expected[key], store) == actual[key]) and Enum.all?(for key <- Map.keys(actual), do: Expression.getValue(expected[key], store) == actual[key])
+    (Enum.all?(for key <- Map.keys(expected), do: Expression.getValue(expected[key], store) == actual[key]) and
+    Enum.all?(for key <- Map.keys(actual), do: Expression.getValue(expected[key], store) == actual[key]))
   end
 
   def toJSON(outputs) do
-    str = Enum.join(Enum.map(outputs, fn tuple -> Enum.join(Tuple.to_list(tuple), ":=") end), ",")
+    str = Enum.join(Enum.map(outputs, fn tuple -> toString(tuple) end), ",")
     if str == "" do
       ""
     else
       str
     end
+  end
+
+  def toString({r, v}) do
+    Expression.untag(r) <> ":=" <> Expression.untag(v)
   end
 end
