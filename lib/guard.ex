@@ -42,14 +42,15 @@ defmodule Guard do
     guard <> "((\\|" <> guard <> ")|" <> "(\\&" <> guard <> "))*"
   end
 
-  def compatible([], _) do
-    true
+  def compatible(g1, g2) when is_list(g1) and is_list(g2) do
+    Enum.all?(for i <- g1, j <- g2, do: compatible(i, j))
   end
-  def compatible(_, []) do
-    true
-  end
-  def compatible([_h1|_t1], [_h2|_t2]) do
-    true
+  def compatible(g1, g2) do
+    if g1 == g2 do
+      true
+    else
+      false
+    end
   end
 
   def parseGuard(string) do

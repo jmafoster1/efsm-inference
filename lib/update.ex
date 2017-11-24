@@ -29,11 +29,23 @@ defmodule Update do
   end
 
   def toJSON(outputs) do
-    str = Enum.join(Enum.map(outputs, fn tuple -> Enum.join(Tuple.to_list(tuple), ":=") end), ",")
+    str = Enum.join(updatesToString(outputs), ",")
     if str == "" do
       ""
     else
       "[" <> str <> "]"
+    end
+  end
+
+  def updatesToString([]) do
+    []
+  end
+  def updatesToString([h|t]) do
+    {r, o} = h
+    if is_tuple(o) do
+      [(r <> ":=" <> Enum.join(Tuple.to_list(o))) | updatesToString(t)]
+    else
+      [(r <> ":=" <> o) | updatesToString(t)]
     end
   end
 

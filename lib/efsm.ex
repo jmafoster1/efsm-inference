@@ -76,7 +76,7 @@ defmodule EFSM do
 
   def removeNondeterminism(efsm, transitionTable, merged) do
     outs = Map.to_list(efsm[merged][:outs])
-    pairs = pairs(outs)
+    pairs = for i <- outs, j <- outs, i < j, do:  {i, j}
     removeNondeterminism(efsm, transitionTable, merged, pairs)
   end
 
@@ -92,20 +92,6 @@ defmodule EFSM do
     else
       removeNondeterminism(efsm, transitionTable, merged, t)
     end
-  end
-
-  def pairs(outs) do
-    for lst <- combination(2, outs), do: List.to_tuple(lst)
-  end
-
-  def combination(0, _) do
-    [[]]
-  end
-  def combination(_, []) do
-    []
-  end
-  def combination(n, [x|xs]) do
-    (for y <- combination(n - 1, xs), do: [x|y]) ++ combination(n, xs)
   end
 
   @doc """
