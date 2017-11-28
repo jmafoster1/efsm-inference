@@ -35,4 +35,8 @@ defmodule TransitionTable do
   def stop(bucket, reason \\ :normal) do
     Agent.stop(bucket, reason)
   end
+
+  def show(bucket) do
+    Enum.into(Agent.get(bucket, &Map.to_list(&1)), %{})
+  end
 end

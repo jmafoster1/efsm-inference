@@ -9,6 +9,8 @@ defmodule EFSMTest do
 
   test "accepts a trace" do
     {efsm, transitionTable} = EFSM.read("test/support_files/drinks_machine.json")
+    # IO.inspect TransitionTable.show(transitionTable)
+    # IO.inspect efsm
     assert EFSM.acceptsTrace(["select(coke)/o1:='coke'", "coin(100)", "vend()/o1:='coke'"], efsm, transitionTable, "q0", %{}, 0, []) == true
   end
 
