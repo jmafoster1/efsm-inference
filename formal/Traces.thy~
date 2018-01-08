@@ -1,9 +1,0 @@
-theory Traces
-  imports EFSM
-begin
-
-type_synonym 'n trace = "(int ^ 'n) list"
-
-
-
-end
