@@ -16,6 +16,7 @@ primrec observe :: "transition_matrix \<Rightarrow> state \<Rightarrow> data \<R
 
 (* Or definition of individual point determinism should mean that an EFSM is observably deterministic *)
 lemma observable_determinism :
+  fixes M
   assumes "\<forall>s . \<forall>d . \<forall>i . deterministic M s d i"
   shows "trace1 = trace2 \<longrightarrow> observe M s d trace1 = observe M s d trace2"
 proof -

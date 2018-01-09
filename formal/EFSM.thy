@@ -8,11 +8,11 @@ type_synonym output_fun = "(data * inputs) \<Rightarrow> outputs"
 type_synonym update = "(data * inputs) \<Rightarrow> data"
 
 (* Produce complete vectors with the unassigned elements filled in Nil *)
-definition output_vexp_to_fun :: "outputindex VExp => output_fun" where
-"output_vexp_to_fun ve \<equiv> \<lambda> (d::data, i::inputs) . veval d i (\<chi> (n::outputindex) . Nil) ve"
+definition output_vexp_to_fun :: "VExp => output_fun" where
+"output_vexp_to_fun ve \<equiv> \<lambda> (d::data, i::inputs) . veval d i empty_outputs ve"
 
 (* Produce a complete vector with unassigned elements unchanged *)
-definition update_vexp_to_fun :: "dataindex VExp \<Rightarrow> update" where
+definition update_vexp_to_fun :: "VExp \<Rightarrow> update" where
 "update_vexp_to_fun ve \<equiv> \<lambda> (d::data, i::inputs) . veval d i d ve"
 
 type_synonym transition = "(guard * output_fun * update)"

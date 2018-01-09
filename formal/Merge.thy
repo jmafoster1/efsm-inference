@@ -9,6 +9,6 @@ definition state_merge :: "transition_matrix \<Rightarrow> state \<Rightarrow> s
               else if s' = s1 \<or> s' = s2 then M(s,s1) \<union> M(s,s2)
               else M(s,s')"
 
-
+(*...*)
 
 end
