@@ -9,7 +9,7 @@ datatype Exp =
   | Multiply Exp Exp | Divide Exp Exp
 (* Boolean expressions produce bool evaluations *)
 datatype BExp = 
-  T | F | Not BExp
+  T | F | Not BExp | Eq Exp Exp
   | Conj BExp BExp | Disj BExp BExp 
   | Lt Exp Exp | Gt Exp Exp
   | Le Exp Exp | Ge Exp Exp
@@ -50,6 +50,10 @@ primrec beval :: "data \<Rightarrow> inputs \<Rightarrow> BExp \<Rightarrow> boo
 |"beval d i (Le l r) = perhaps_true (\<lambda> x . \<lambda> y . x \<le> y) (eval d i l) (eval d i r)"
 |"beval d i (Gt l r) = perhaps_true (\<lambda> x . \<lambda> y . x > y) (eval d i l) (eval d i r)"
 |"beval d i (Ge l r) = perhaps_true (\<lambda> x . \<lambda> y . x \<ge> y) (eval d i l) (eval d i r)"
+|"beval d i (Eq l r) = perhaps_true (\<lambda> x . \<lambda> y . x = y) (eval d i l) (eval d i r)"
+
+definition satisfiable :: "BExp \<Rightarrow> bool" where
+"satisfiable x \<equiv> \<exists> R . \<exists> I . beval R I x"
 
 primrec veval :: "data \<Rightarrow> inputs \<Rightarrow> (nat \<Rightarrow> nil_or_int) \<Rightarrow> VExp \<Rightarrow> (nat \<Rightarrow> nil_or_int)" where
 "veval d i v (Assign n e) = (v \<circ> (n,(eval d i e)))"
