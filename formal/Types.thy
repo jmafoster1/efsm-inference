@@ -1,78 +1,60 @@
 theory Types
-  imports "~~/src/HOL/Analysis/Finite_Cartesian_Product"
+imports Main
 begin
 
-datatype nil_or_int = Nil | I int
+type_synonym inputname = int
+type_synonym dataname = int
+type_synonym outputname = int
 
-type_synonym inputs = "nat => nil_or_int"
-type_synonym outputs = "nat \<Rightarrow> nil_or_int"
-type_synonym data = "nat \<Rightarrow> nil_or_int"
+type_synonym valuetype = "(int + string)"
 
-definition empty_inputs :: "inputs" where
-"empty_inputs \<equiv> \<lambda>x . Nil"
+type_synonym inputs = "inputname \<Rightarrow> valuetype option"
+type_synonym data = "dataname \<Rightarrow> valuetype option"
+type_synonym outvalues = "outputname \<Rightarrow> valuetype option"
 
-definition empty_outputs :: "inputs" where
-"empty_outputs \<equiv> \<lambda>x . Nil"
+type_synonym guard = "(inputs \<times> data) => bool"
+type_synonym outputs = "(inputs \<times> data) => outvalues"
+type_synonym updates = "(inputs \<times> data) => data"
 
-definition empty_data :: "inputs" where
-"empty_data \<equiv> \<lambda>x . Nil"
+type_synonym transition = "(guard \<times> outputs \<times> updates)"
 
-definition overwrite :: "('a => 'b) \<Rightarrow> 'a * 'b \<Rightarrow> ('a \<Rightarrow> 'b)" (infix "\<circ>" 10) where
-(* Definitions not accepting patterns in Isabelle is truly horrible...*)
-"overwrite vs \<equiv> \<lambda>(n,v) . \<lambda> m . if m = n then v else vs(m)"
+type_synonym statename = "int"
 
+record efsm =
+  S :: "statename list"
+  s0 :: "statename"
+  d0 :: data
+  M :: "(statename * statename) \<Rightarrow> transition list"
 
+type_synonym trace = "inputs list"
+type_synonym observation = "outvalues list"
 
+fun MaybeApplyInt :: "(int \<Rightarrow> int \<Rightarrow> int) \<Rightarrow> valuetype option \<Rightarrow> valuetype option \<Rightarrow> valuetype option" where
+"MaybeApplyInt _ None _ = None"
+|"MaybeApplyInt _ _ None = None"
+|"MaybeApplyInt f (Some (Inl a)) (Some (Inl b)) = Some (Inl (f a b))"
+|"MaybeApplyInt _ _ _ = None"
 
-(* We don't know or care how many inputs or outputs there are but there must 
-  be at least one of each, otherwise it doesn't make sense to talk about observability.
-  There also has to be at least one data register 
-  ... otherwise the data vector stuff implodes...*)
-(*
-axiomatization inputsize :: "nat" where at_least_one_input: "inputsize > 0"
-axiomatization outputsize :: "nat" where at_least_one_output: "outputsize > 0"
-axiomatization datasize :: "nat" where at_least_one_register: "datasize > 0"
+fun MaybeBoolInt :: "(int \<Rightarrow> int \<Rightarrow> bool) \<Rightarrow> valuetype option \<Rightarrow> valuetype option \<Rightarrow> bool" where
+"MaybeBoolInt _ None _ = False"
+|"MaybeBoolInt _ _ None = False"
+|"MaybeBoolInt f (Some (Inl a)) (Some (Inl b)) = (f a b)"
+|"MaybeBoolInt _ _ _ = False"
 
-typedef inputindex = "{x::nat .x < inputsize}"
-  apply simp
-  apply (rule_tac x="0" in exI)
-  apply (rule at_least_one_input)
-  done
-instance inputindex :: finite
-  proof
-    show "finite (UNIV :: inputindex set)"
-      unfolding type_definition.univ[OF type_definition_inputindex]
-      by auto
-  qed
+abbreviation MaybePlus :: "valuetype option \<Rightarrow> valuetype option \<Rightarrow> valuetype option" (infix "+" 40) where
+"a + b \<equiv> MaybeApplyInt (\<lambda>x::int.\<lambda>y::int.(x+y)) a b"
+abbreviation MaybeMinus :: "valuetype option \<Rightarrow> valuetype option \<Rightarrow> valuetype option" (infix "-" 40) where
+"a - b \<equiv> MaybeApplyInt (\<lambda>x::int.\<lambda>y::int.(x-y)) a b"
+abbreviation MaybeMul :: "valuetype option \<Rightarrow> valuetype option \<Rightarrow> valuetype option" (infix "*" 40) where
+"a * b \<equiv> MaybeApplyInt (\<lambda>x::int.\<lambda>y::int.(x*y)) a b"
 
-typedef outputindex = "{x::nat . x < outputsize}"
-  apply simp
-  apply (rule_tac x="0" in exI)
-  apply (rule at_least_one_output)
-  done
-instance outputindex :: finite
-  proof
-    show "finite (UNIV :: outputindex set)"
-      unfolding type_definition.univ[OF type_definition_outputindex]
-      by auto
-  qed
-
-typedef dataindex = "{x::nat . x < datasize}"
-  apply simp
-  apply (rule_tac x="0" in exI)
-  apply (rule at_least_one_register)
-  done
-instance dataindex :: finite
-  proof
-    show "finite (UNIV :: dataindex set)"
-      unfolding type_definition.univ[OF type_definition_dataindex]
-      by auto
-  qed
-
-type_synonym inputs = "(nil_or_int ^ inputindex)"
-type_synonym outputs = "(nil_or_int ^ outputindex)"
-type_synonym data = "(nil_or_int ^ dataindex)"
-*)
-
+abbreviation MaybeGt :: "valuetype option \<Rightarrow> valuetype option \<Rightarrow> bool" (infix ">" 40) where
+"a > b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x>y)) a b"
+abbreviation MaybeGtEq :: "valuetype option \<Rightarrow> valuetype option \<Rightarrow> bool" (infix "\<ge>" 40) where
+"a \<ge> b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x\<ge>y)) a b"
+abbreviation MaybeLt :: "valuetype option \<Rightarrow> valuetype option \<Rightarrow> bool" (infix "<" 40) where
+"a < b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x<y)) a b"
+abbreviation MaybeLtEq :: "valuetype option \<Rightarrow> valuetype option \<Rightarrow> bool" (infix "\<le>" 40) where
+"a \<le> b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x\<le>y)) a b"
 
 end

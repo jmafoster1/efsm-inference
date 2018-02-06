@@ -1,46 +1,35 @@
 theory EFSM
-imports Main Expressions 
+imports IO
 begin
 
-type_synonym state = "nat"
-type_synonym guard = "BExp"
-type_synonym output_fun = "(data * inputs) \<Rightarrow> outputs"
-type_synonym update = "(data * inputs) \<Rightarrow> data"
+abbreviation is_possible_step :: "efsm \<Rightarrow> statename \<Rightarrow> statename \<Rightarrow> transition \<Rightarrow> inputs \<Rightarrow> data \<Rightarrow> bool" where
+"is_possible_step e s s' t ip dt \<equiv> 
+  ((find (\<lambda>x . x = t) (M e(s,s')) \<noteq> None) \<and> (fst t)(ip,dt))"
 
-(* Produce complete vectors with the unassigned elements filled in Nil *)
-definition output_vexp_to_fun :: "VExp => output_fun" where
-"output_vexp_to_fun ve \<equiv> \<lambda> (d::data, i::inputs) . veval d i empty_outputs ve"
+abbreviation possible_steps :: "efsm \<Rightarrow> statename \<Rightarrow> inputs \<Rightarrow> data \<Rightarrow> (statename * transition) list" where
+"possible_steps e s ip dt \<equiv> [(s',t) . s' \<leftarrow> S e, t \<leftarrow> M e(s,s'), is_possible_step e s s' t ip dt]"
 
-(* Produce a complete vector with unassigned elements unchanged *)
-definition update_vexp_to_fun :: "VExp \<Rightarrow> update" where
-"update_vexp_to_fun ve \<equiv> \<lambda> (d::data, i::inputs) . veval d i d ve"
+definition step :: "efsm \<Rightarrow> statename \<Rightarrow> inputs \<Rightarrow> data \<Rightarrow> (statename \<times> outvalues \<times> data) option" where
+"step e s ip dt \<equiv>
+  case possible_steps e s ip dt of
+    [] \<Rightarrow> None
+    | [(s',(_,ops,ups))] \<Rightarrow> Some (s', ops (ip,dt), ups (ip,dt))
+    | _ \<Rightarrow> None"
+declare step_def [simp]
 
-type_synonym transition = "(guard * output_fun * update)"
+primrec observe_steps :: "efsm \<Rightarrow> statename \<Rightarrow> data \<Rightarrow> trace \<Rightarrow> observation" where
+"observe_steps _ _ _ [] = []"
+|"observe_steps e s dt (ip#ips) = 
+    (case step e s ip dt of
+      Some (s', ops, dt') \<Rightarrow> ops#(observe_steps e s' dt' ips)
+      | None \<Rightarrow> []
+    )"
+declare observe_steps_def [simp]
 
-type_synonym transition_matrix = "(state * state) \<Rightarrow> transition set"
+definition observe :: "efsm \<Rightarrow> trace \<Rightarrow> observation" where
+"observe e tr \<equiv> observe_steps e (s0 e) (d0 e) tr"
 
-(* An EFSM is defined by its transition matrix, an initial state, and an initial data state *)
-type_synonym EFSM = "(transition_matrix * state * data)"
-
-fun is_possible :: "transition => data => inputs => bool" where
-"is_possible (g,_,_) d i = beval d i g"
-
-fun all_possible :: "transition_matrix => state => data => inputs => (state * transition) set" where
-"all_possible M s d i = {(s',t) . t \<in> (M (s,s')) \<and> is_possible t d i}"
-
-(* The Transition matrix is deterministic at a particular state for a particular set of 
-  data in inputs if there is either one transition or none *)
-fun deterministic :: "transition_matrix \<Rightarrow> state \<Rightarrow> data \<Rightarrow> inputs \<Rightarrow> bool" where
-"deterministic M s d i = (card (all_possible M s d i) \<le> 1)"
-
-datatype maybe_action = Stop | Do "(state * data * outputs)" | NonDet
-
-fun apply_inputs :: "transition_matrix \<Rightarrow> state \<Rightarrow> data \<Rightarrow> inputs \<Rightarrow> maybe_action" where
-"apply_inputs M s d i = 
-  (let pos = all_possible M s d i in
-    if card pos = 0 then Stop
-    else if card pos > 1 then NonDet
-    else (let (s',(_,out,upd)) = SOME a . a \<in> pos in Do (s', upd (d,i), out (d,i)))
-  )"
+definition equiv :: "efsm \<Rightarrow> efsm \<Rightarrow> trace \<Rightarrow> bool" where
+"equiv e1 e2 t \<equiv> (observe e1 t) = (observe e2 t)"
 
 end
