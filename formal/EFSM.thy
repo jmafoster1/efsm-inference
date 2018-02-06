@@ -32,4 +32,13 @@ definition observe :: "efsm \<Rightarrow> trace \<Rightarrow> observation" where
 definition equiv :: "efsm \<Rightarrow> efsm \<Rightarrow> trace \<Rightarrow> bool" where
 "equiv e1 e2 t \<equiv> (observe e1 t) = (observe e2 t)"
 
+lemma equiv_comute: "equiv e1 e2 t \<equiv> equiv e2 e1 t"
+  by (smt EFSM.equiv_def)
+
+lemma equiv_trans: "equiv e1 e2 t \<and> equiv e2 e3 t \<longrightarrow> equiv e1 e3 t"
+  by (simp add: EFSM.equiv_def)
+
+lemma equiv_idem: "equiv e1 e1 t"
+  by (simp add: EFSM.equiv_def)
+
 end
