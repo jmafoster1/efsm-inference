@@ -34,9 +34,9 @@ primrec make_trace_step :: "inputs \<Rightarrow> valuetype list => int \<Rightar
 |"make_trace_step ips (i#is) n = make_trace_step (ips \<oplus> (n,Some i)) is (n+1)"
 
 (* Make a trace (i.e. a list of input partial functions) from a list of literals *)
-primrec make_trace :: "valuetype list list \<Rightarrow> trace" where
+primrec make_trace :: "(label \<times> valuetype list) list \<Rightarrow> trace" where
 "make_trace [] = []"
-|"make_trace (t#ts) = (make_trace_step blankips t 0)#(make_trace ts)"
+|"make_trace (t#ts) = (fst t, (make_trace_step blankips (snd t) 1))#(make_trace ts)"
 
 (* Make an observation (i.e. a list of output partial functions) from a list of literals *)
 primrec make_obs :: "valuetype list list \<Rightarrow> observation" where

@@ -5,6 +5,8 @@ begin
 type_synonym inputname = int
 type_synonym dataname = int
 type_synonym outputname = int
+type_synonym label = string
+type_synonym arity = int
 
 type_synonym valuetype = "(int + string)"
 
@@ -16,22 +18,29 @@ type_synonym guard = "(inputs \<times> data) => bool"
 type_synonym outputs = "(inputs \<times> data) => outvalues"
 type_synonym updates = "(inputs \<times> data) => data"
 
-type_synonym transition = "(guard \<times> outputs \<times> updates)"
+record transition = 
+  label :: "label"
+  arity :: "arity"
+  guard :: "guard"
+  outputs :: "outputs"
+  updates :: "updates"
 
 type_synonym statename = "int"
 
 record efsm =
   S :: "statename list"
   s0 :: "statename"
-  d0 :: data
   M :: "(statename * statename) \<Rightarrow> transition list"
 
-type_synonym trace = "inputs list"
+type_synonym trace = "(label \<times> inputs) list"
 type_synonym observation = "outvalues list"
 
+(* This now treats None as 0. 
+This isn't ideal but it means that we don't have to pre-initialise variables *)
 fun MaybeApplyInt :: "(int \<Rightarrow> int \<Rightarrow> int) \<Rightarrow> valuetype option \<Rightarrow> valuetype option \<Rightarrow> valuetype option" where
-"MaybeApplyInt _ None _ = None"
-|"MaybeApplyInt _ _ None = None"
+"MaybeApplyInt f None None = Some (Inl (f 0 0))"
+|"MaybeApplyInt f None (Some (Inl r)) = (Some (Inl (f 0 r)))"
+|"MaybeApplyInt f (Some (Inl l)) None= (Some (Inl (f l 0)))"
 |"MaybeApplyInt f (Some (Inl a)) (Some (Inl b)) = Some (Inl (f a b))"
 |"MaybeApplyInt _ _ _ = None"
 
