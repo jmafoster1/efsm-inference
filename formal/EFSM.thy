@@ -18,13 +18,21 @@ definition step :: "efsm \<Rightarrow> statename \<Rightarrow> label \<Rightarro
 declare step_def [simp]
 
 primrec observe_steps :: "efsm \<Rightarrow> statename \<Rightarrow> data \<Rightarrow> trace \<Rightarrow> observation" where
-"observe_steps _ _ _ [] = []"
+ "observe_steps _ _ _ [] = []"
 |"observe_steps e s dt (ip#ips) = 
     (case step e s (fst ip) (snd ip) dt of
-      Some (s', ops, dt') \<Rightarrow> ops#(observe_steps e s' dt' ips)
-      | None \<Rightarrow> []
+        Some (s', ops, dt') \<Rightarrow> ops#(observe_steps e s' dt' ips)
+      | None                \<Rightarrow> []
     )"
 declare observe_steps_def [simp]
+
+primrec pairs :: "statename list \<Rightarrow> statename \<Rightarrow> (statename \<times> statename) list" where
+  "pairs [] _ = []"
+|"pairs (h#t) x = (if x = h then (h, x)#(pairs t x) else (h, x)#(x, h)#(pairs t x))"
+
+primrec allPairs :: "statename list \<Rightarrow> (statename \<times> statename) list" where
+  "allPairs [] = []"
+| "allPairs (h#t) = (pairs (h#t) h)@(allPairs t)"
 
 definition observe :: "efsm \<Rightarrow> trace \<Rightarrow> observation" where
 "observe e tr \<equiv> observe_steps e (s0 e) blankdata tr"

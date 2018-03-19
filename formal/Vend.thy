@@ -80,6 +80,9 @@ lemma "observe vend tr2 = ob2"
   by (simp add: vend_def tr2_def observe_def ob2_def t1_def t2_def t3_def)  
 
 lemma "observe vend tr1 = ob1"
-  by (simp add: vend_def tr1_def observe_def ob1_def t1_def t2_def t3_def)  
+  by (simp add: vend_def tr1_def observe_def ob1_def t1_def t2_def t3_def)
+
+lemma  "allPairs [1, 2, 3] = [(1, 1), (2, 1), (1, 2), (3, 1), (1, 3), (2, 2), (3, 2), (2, 3), (3, 3)]"
+  by simp
 
 end
