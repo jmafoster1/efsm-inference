@@ -10,7 +10,7 @@ definition t1 :: "transition" where
 "t1 \<equiv> \<lparr> Label = ''select'',
         Arity = 1,
         Guard = trueguard, 
-        Outputs = blank, (*<>*)
+        Outputs = blank,
         Updates = t1_updates (*<''r1'' := (V ''i1''), ''r2'' := 0>*)
       \<rparr>"
 declare t1_def [simp]
@@ -24,12 +24,13 @@ declare t2_updates_def [simp]
 
 definition t2_outputs :: output_function where
   "t2_outputs i r = [aval (Plus (N (aval (V ''r2'') r)) (N (i!0))) r]"
+declare t2_outputs_def [simp]
 
 definition t2 :: "transition" where
 "t2 \<equiv> \<lparr> Label = ''coin'',
         Arity = 1,
         Guard = trueguard, 
-        Outputs = blank, (*<>*)
+        Outputs = t2_outputs,
         Updates = t2_updates (*<''r1'' := (V ''i1''), ''r2'' := 0>*)
       \<rparr>"
 declare t2_def [simp]
@@ -63,7 +64,7 @@ lemma "apply_updates t1 [1] <> = <''r1'':= 1, ''r2'' := 0>"
 lemma blank_state : "<> = <''r1'' := 0, ''r2'' := 0>"
   by (metis fun_upd_triv null_state_def) (*As soon as I try and use this it crashes*)
 
-lemma "apply_outputs t2 [50] <> = []"
+lemma "apply_outputs t2 [50] <''r2'' := 0> = [50]"
   by simp
 
 lemma "apply_updates t2 [50] <''r1'' := 1, ''r2'' := 0> = <''r1'':= 1, ''r2'' := 50>"
@@ -84,5 +85,17 @@ definition vend :: "efsm" where
               else if (a,b) = (2,3) then [t3]
               else []
          \<rparr>"
+declare vend_def [simp]
+
+lemma "observe_trace vend 1 <''r1'' := 0, ''r2'' := 0> [] = []"
+  by simp
+
+lemma "observe_trace vend 1 <''r1'' := 0, ''r2'' := 0> [(''select'', [1])] = [[]]"
+  by simp
+
+lemma "observe_trace vend 1 <''r1'' := 0, ''r2'' := 0> [(''select'', [1]), (''coin'', [50])] = [[], [50]]"
+  by simp
+
+
 
 end
