@@ -64,11 +64,17 @@ lemma "apply_updates t1 [1] <> = <''r1'':= 1, ''r2'' := 0>"
 lemma blank_state : "<> = <''r1'' := 0, ''r2'' := 0>"
   by (metis fun_upd_triv null_state_def) (*As soon as I try and use this it crashes*)
 
-lemma "apply_outputs t2 [50] <''r2'' := 0> = [50]"
-  by simp
+lemma blank_state2 [intro]:
+  assumes "P <''r1'' := 0, ''r2'' := 0>"
+  shows "P <>"
+  by (metis assms blank_state)
 
-lemma "apply_updates t2 [50] <''r1'' := 1, ''r2'' := 0> = <''r1'':= 1, ''r2'' := 50>"
-  by simp
+lemma "apply_outputs t2 [50] <> = [50]"
+  by auto
+
+lemma "apply_updates t2 [50] <> = <''r1'':= 0, ''r2'' := 50>"
+  apply simp
+  by (metis add.left_neutral fun_upd_triv null_state_def)
 
 lemma "apply_outputs t3 [] <''r1'' := 1, ''r2'' := 100> = [1]"
   by simp
@@ -87,15 +93,13 @@ definition vend :: "efsm" where
          \<rparr>"
 declare vend_def [simp]
 
-lemma "observe_trace vend 1 <''r1'' := 0, ''r2'' := 0> [] = []"
+lemma "observe_trace vend 1 <> [] = []"
   by simp
 
-lemma "observe_trace vend 1 <''r1'' := 0, ''r2'' := 0> [(''select'', [1])] = [[]]"
+lemma "observe_trace vend 1 <> [(''select'', [1])] = [[]]"
   by simp
 
-lemma "observe_trace vend 1 <''r1'' := 0, ''r2'' := 0> [(''select'', [1]), (''coin'', [50])] = [[], [50]]"
+lemma "observe_trace vend 1 <> [(''select'', [1]), (''coin'', [50])] = [[], [50]]"
   by simp
-
-
 
 end
