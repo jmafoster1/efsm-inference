@@ -93,13 +93,25 @@ definition vend :: "efsm" where
          \<rparr>"
 declare vend_def [simp]
 
-lemma "observe_trace vend 1 <> [] = []"
+lemma "observe_trace vend (s0 vend) <> [] = []"
   by simp
 
-lemma "observe_trace vend 1 <> [(''select'', [1])] = [[]]"
+lemma "observe_trace vend (s0 vend) <> [(''select'', [1])] = [[]]"
   by simp
 
-lemma "observe_trace vend 1 <> [(''select'', [1]), (''coin'', [50])] = [[], [50]]"
+lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50])] = [[], [50]]"
   by simp
 
+lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50])] = [[], [50], [100]]"
+  by simp
+
+lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), (''vend'', [])] = [[], [50], [100], [1]]"
+  by simp
+
+(*Stop when we hit a spurious input*)
+lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50])] = [[]]"
+  by simp
+
+lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50]), (''coin'', [50])] = [[]]"
+  by simp
 end
