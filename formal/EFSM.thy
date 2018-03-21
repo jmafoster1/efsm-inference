@@ -2,12 +2,18 @@ theory EFSM
 imports IO
 begin
 
+fun map_or_empty :: "('a, 'b list) map \<Rightarrow> 'a \<Rightarrow> 'b list" where
+"map_or_empty m x = 
+    (case m(x) of
+      None \<Rightarrow> []
+     |  Some ls \<Rightarrow> ls)"
+
 abbreviation is_possible_step :: "efsm \<Rightarrow> statename \<Rightarrow> statename \<Rightarrow> transition \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> data \<Rightarrow> bool" where
 "is_possible_step e s s' t l ip dt \<equiv> 
-  (((label t) = l) \<and> (find (\<lambda>x . x = t) (M e(s,s')) \<noteq> None) \<and> (guard t)(ip,dt))"
+  (((label t) = l) \<and> (find (\<lambda>x . x = t) (map_or_empty (M e) (s,s')) \<noteq> None) \<and> (guard t)(ip,dt))"
 
 abbreviation possible_steps :: "efsm \<Rightarrow> statename \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> data \<Rightarrow> (statename * transition) list" where
-"possible_steps e s l ip dt \<equiv> [(s',t) . s' \<leftarrow> S e, t \<leftarrow> M e(s,s'), is_possible_step e s s' t l ip dt]"
+"possible_steps e s l ip dt \<equiv> [(s',t) . s' \<leftarrow> S e, t \<leftarrow> (map_or_empty (M e) (s,s')), is_possible_step e s s' t l ip dt]"
 
 definition step :: "efsm \<Rightarrow> statename \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> data \<Rightarrow> (statename \<times> outvalues \<times> data) option" where
 "step e s l ip dt \<equiv>

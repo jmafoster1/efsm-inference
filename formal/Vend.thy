@@ -7,7 +7,8 @@ definition t1 :: "transition" where
         arity = 1,
         guard = trueguard, 
         outputs = noouts,
-        updates = \<lambda>(ip,dt) . dt \<oplus> (1,ip(1))
+        (* updates = \<lambda>(ip,dt) . (dt \<oplus> (1,ip(1))) \<oplus> (2, Some (I 0)) *)
+        updates = u [r1 := i1, r2 := I 0]
       \<rparr>"
 
 abbreviation u1 :: "updates" where
@@ -16,7 +17,7 @@ abbreviation u1 :: "updates" where
 definition t2 :: "transition" where
 "t2 \<equiv> \<lparr> label = ''coin'',
         arity = 1,
-        guard = trueguard, 
+        guard = \<lambda>(ip,dt). (ip(1) > (Some (I 0))), (* make_struct ''i1 > 0'' *)
         outputs = noouts,
         updates = u1
       \<rparr>"
@@ -24,7 +25,7 @@ definition t2 :: "transition" where
 definition t3 :: "transition" where
 "t3 \<equiv> \<lparr> label = ''vend'',
         arity = 1,
-        guard = \<lambda>(ip,dt) . (dt(2)) \<ge> (Some (Inl 100)), 
+        guard = \<lambda>(ip,dt) . (dt(2)) \<ge> (Some (I 100)), 
         outputs = \<lambda>(ip,dt) . blankouts \<oplus> (1,dt(1)),
         updates = noupdates
       \<rparr>"
@@ -32,44 +33,43 @@ definition t3 :: "transition" where
 definition vend :: "efsm" where
 "vend \<equiv> \<lparr> S = [1,2,3],
           s0 = 1,
-         (* d0 = ((blankdata \<oplus> (1,Some (Inl 0))) \<oplus> (2,Some (Inl 0))),*)
-          M = \<lambda> (a,b) . 
-              if (a,b) = (1,2) then [t1]
-              else if (a,b) = (2,2) then [t2]
-              else if (a,b) = (2,3) then [t3]
-              else []
+          M = map_of [
+                      ((1,2),[t1]),
+                      ((2,2),[t2]),
+                      ((2,3),[t3])
+                     ]
          \<rparr>"
 
 lemma "possible_steps vend 1 ''coin'' blankips blankdata == []"
   by (simp add: vend_def t1_def)
 lemma "possible_steps vend 1 ''select'' blankips blankdata == [(2,t1)]"
   by (simp add: vend_def t1_def)
-lemma "possible_steps vend 2 ''coin'' blankips blankdata == [(2,t2)]"
+lemma "possible_steps vend 2 ''coin'' (blankips \<oplus> (1,(Some (I 50)))) blankdata == [(2,t2)]"
   by (simp add: vend_def t2_def t3_def)
 lemma "possible_steps vend 2 ''vend'' blankips blankdata \<noteq> [(3,t3)]"
   by (simp add: vend_def t2_def t3_def)
-lemma "possible_steps vend 2 ''vend'' blankips (blankdata \<oplus> (1,Some (Inl 50))) \<noteq> [(3,t3)]"
+lemma "possible_steps vend 2 ''vend'' blankips (blankdata \<oplus> (1,Some (I 50))) \<noteq> [(3,t3)]"
   by (simp add: vend_def t2_def t3_def)
-lemma "possible_steps vend 2 ''vend'' blankips (blankdata \<oplus> (1,Some (Inl 99))) \<noteq> [(3,t3)]"
+lemma "possible_steps vend 2 ''vend'' blankips (blankdata \<oplus> (1,Some (I 99))) \<noteq> [(3,t3)]"
   by (simp add: vend_def t2_def t3_def)
-lemma "possible_steps vend 2''vend'' blankips ((blankdata \<oplus> (1,Some (Inl 42))) \<oplus> (2,Some (Inl 100))) = [(3,t3)]"
+lemma "possible_steps vend 2''vend'' blankips ((blankdata \<oplus> (1,Some (I 42))) \<oplus> (2,Some (I 100))) = [(3,t3)]"
   by (simp add: vend_def t2_def t3_def)
 
-lemma "step vend 2 ''coin'' (blankips  \<oplus> (1,Some (Inl 50))) (blankdata \<oplus> (2,Some (Inl 0))) = Some (2, blankouts, (blankdata \<oplus> (2,Some (Inl 50))))"
-  by (simp add: vend_def step_def t2_def t3_def) auto
+lemma "step vend 2 ''coin'' (blankips  \<oplus> (1,Some (I 50))) (blankdata \<oplus> (2,Some (I 0))) = Some (2, blankouts, (blankdata \<oplus> (2,Some (I 50))))"
+  by (simp add: vend_def t2_def t3_def) auto
 
 definition tr1 :: "trace" where
-"tr1 \<equiv> make_trace [(''select'',[(Inr ''coke'')]),(''coin'',[(Inl 50)]),(''coin'',[(Inl 50)]),(''vend'',[])]"
+"tr1 \<equiv> make_trace [(''select'',[St ''coke'']),(''coin'',[I 50]),(''coin'',[I 50]),(''vend'',[])]"
 definition ob1 :: "observation" where
-"ob1 \<equiv> make_obs [[],[],[],[(Inr ''coke'')]]"
+"ob1 \<equiv> make_obs [[],[],[],[St ''coke'']]"
 
 definition tr2 :: "trace" where
-"tr2 \<equiv> make_trace [(''select'',[(Inr ''coke'')]),(''coin'',[(Inl 50)]),(''coin'',[(Inl 50)])]"
+"tr2 \<equiv> make_trace [(''select'',[St ''coke'']),(''coin'',[I 50]),(''coin'',[I 50])]"
 definition ob2 :: "observation" where
 "ob2 \<equiv> make_obs [[],[],[]]"
 
 definition tr3 :: "trace" where
-"tr3 \<equiv> make_trace [(''select'',[(Inl 42)])]"
+"tr3 \<equiv> make_trace [(''select'',[I 42])]"
 definition ob3 :: "observation" where
 "ob3 \<equiv> make_obs [[]]"
 

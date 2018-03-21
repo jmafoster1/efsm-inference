@@ -5,12 +5,11 @@ begin
 definition vend2 :: "efsm" where
 "vend2 \<equiv> \<lparr>S = [1,2,3,4],
           s0 = 1,
-          M = \<lambda>(s,s') . 
-                if (s,s') = (1,2) then [t1]
-                else if (s,s') = (2,3) then [t2]
-                else if (s,s') = (3,3) then [t2]
-                else if (s,s') = (3,4) then [t3]
-                else []
+          M = map_of [((1,2), [t1]),
+                      ((2,3), [t2]),
+                      ((3,3), [t2]),
+                      ((3,4), [t3])
+                      ]
           \<rparr>"
 
 lemma "equiv vend2 vend tr1"
@@ -22,10 +21,10 @@ theorem "equiv vend2 vend t"
   using observe_steps.simps(1) apply auto[1]
 
   apply (simp only: observe_steps_def)
- 
 
   apply (simp only: step_def)
-  apply (simp only: possible_steps_def)
+
+  apply (simp)
 
   apply (simp split: option.splits)
   
