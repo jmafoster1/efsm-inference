@@ -40,7 +40,8 @@ definition t3_outputs :: output_function where
 declare t3_outputs_def [simp]
 
 definition t3_guard :: guard where
-"t3_guard i r = ((aval (V ''r2'') r) \<ge> 100)"
+(*"t3_guard i r = ((aval (V ''r2'') r) \<ge> 100)"*)
+"t3_guard i r = (bval (Less (N 100) (V ''r2'')) r)"
 declare t3_guard_def [simp]
 
 definition t3 :: "transition" where
@@ -105,7 +106,7 @@ lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50])] = [
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50])] = [[], [50], [100]]"
   by simp
 
-lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), (''vend'', [])] = [[], [50], [100], [1]]"
+lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [51]), (''vend'', [])] = [[], [50], [101], [1]]"
   by simp
 
 (*Stop when we hit a spurious input*)
