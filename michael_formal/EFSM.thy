@@ -8,8 +8,8 @@ primrec apply_updates :: "(string \<times> aexp) list \<Rightarrow> state \<Righ
 declare apply_updates_def [simp]
 
 primrec apply_outputs :: "(string \<times> aexp) list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> outputs" where
-  "apply_outputs [] _ _ = <>" |
-  "apply_outputs (h#t) i r = join <(fst h) := (aval (snd h) (join i r))> (apply_outputs t i r)"
+  "apply_outputs [] _ _ = []" |
+  "apply_outputs (h#t) i r = (aval (snd h) (join i r))#(apply_outputs t i r)"
 declare apply_outputs_def [simp]
 
 primrec apply_guards :: "guard \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> bool" where

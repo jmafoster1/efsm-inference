@@ -9,7 +9,7 @@ declare t1_updates_def [simp]
 definition t1 :: "transition" where
 "t1 \<equiv> \<lparr> Label = ''select'',
         Arity = 1,
-        Guard = trueguard, 
+        Guard = trueguard,
         Outputs = blank,
         Updates = t1_updates (*<''r1'' := (V ''i1''), ''r2'' := 0>*)
       \<rparr>"
@@ -29,7 +29,7 @@ declare t2_outputs_def [simp]
 definition t2 :: "transition" where
 "t2 \<equiv> \<lparr> Label = ''coin'',
         Arity = 1,
-        Guard = trueguard, 
+        Guard = trueguard,
         Outputs = t2_outputs,
         Updates = t2_updates (*<''r1'' := (V ''i1''), ''r2'' := 0>*)
       \<rparr>"
@@ -46,7 +46,7 @@ declare t3_guard_def [simp]
 definition t3 :: "transition" where
 "t3 \<equiv> \<lparr> Label = ''vend'',
         Arity = 0,
-        Guard = t3_guard, 
+        Guard = t3_guard,
         Outputs = t3_outputs,
         Updates = no_updates
       \<rparr>"
@@ -63,7 +63,7 @@ lemma blank_state2 (*[intro]*):
 definition vend :: "efsm" where
 "vend \<equiv> \<lparr> S = [1,2,3],
           s0 = 1,
-          T = \<lambda> (a,b) . 
+          T = \<lambda> (a,b) .
               if (a,b) = (1,2) then [t1]
               else if (a,b) = (2,2) then [t2]
               else if (a,b) = (2,3) then [t3]
@@ -74,26 +74,17 @@ declare vend_def [simp]
 lemma "observe_trace vend (s0 vend) <> [] = []"
   by simp
 
-lemma "observe_trace vend (s0 vend) <> [(''select'', [1])] = [<>]"
+lemma "observe_trace vend (s0 vend) <> [(''select'', [1])] = [[]]"
   by simp
 
-lemma "input2state [1] 1 = <''i1'':=1>"
-  apply (rule ext)
-  apply (simp add: showsp_int_def cong: if_cong)
-  apply (simp add: showsp_nat.simps)
-  apply (simp add: shows_string_def)
-  done
+lemma [intro]: "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50])] = [[], [50]]"
+  by (simp_all add: showsp_int_def showsp_nat.simps shows_string_def null_state_def)
 
-lemma "observe_trace vend (s0 vend) <''r1'':=0, ''r2'':=0> [(''select'', [1]), (''coin'', [50])] = [<>, <''o1'':=50>]"
-  apply (simp cong: if_cong)
-  
-  
-
-lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50])] = [<>, <''o1'':=50>, <''o1'':=100>]"
-  by simp
+lemma [intro]: "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [51])] = [[], [50], [101]]"
+  by (simp add: showsp_int_def showsp_nat.simps shows_string_def null_state_def)
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [51]), (''vend'', [])] = [[], [50], [101], [1]]"
-  by simp
+  by (simp add: showsp_int_def showsp_nat.simps shows_string_def null_state_def)
 
 (*Stop when we hit a spurious input*)
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50])] = [[]]"
