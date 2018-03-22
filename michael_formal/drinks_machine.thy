@@ -3,7 +3,7 @@ theory drinks_machine
 begin
 
 definition t1_updates :: update_function where
-  "t1_updates i _ = <''r1'' := i!0, ''r2'' := 0>"
+  "t1_updates = [(''r1'', (V ''i1'')), (''r2'', (N 0))]"
 declare t1_updates_def [simp]
 
 definition t1 :: "transition" where
@@ -16,14 +16,14 @@ definition t1 :: "transition" where
 declare t1_def [simp]
 
 definition t2_updates :: update_function where
-  "t2_updates i r = <
-                      ''r1'' := aval (V ''r1'') r,
-                      ''r2'' := aval (Plus (N (aval (V ''r2'') r)) (N (i!0))) r
-                    >"
+  "t2_updates = [
+                  (''r1'', (V ''r1'')),
+                  (''r2'', (Plus (V ''r2'') (V ''i1'')))
+                ]"
 declare t2_updates_def [simp]
 
 definition t2_outputs :: output_function where
-  "t2_outputs i r = [aval (Plus (N (aval (V ''r2'') r)) (N (i!0))) r]"
+  "t2_outputs = [ (''o1'', (Plus (V ''r2'') (V ''i1'')))]"
 declare t2_outputs_def [simp]
 
 definition t2 :: "transition" where
@@ -36,12 +36,11 @@ definition t2 :: "transition" where
 declare t2_def [simp]
 
 definition t3_outputs :: output_function where
-  "t3_outputs _ r = [(aval (V ''r1'') r)]"
+  "t3_outputs = [(''o1'', (V ''r1''))]"
 declare t3_outputs_def [simp]
 
 definition t3_guard :: guard where
-(*"t3_guard i r = ((aval (V ''r2'') r) \<ge> 100)"*)
-"t3_guard i r = (bval (Less (N 100) (V ''r2'')) r)"
+"t3_guard = [(Less (N 100) (V ''r2''))]"
 declare t3_guard_def [simp]
 
 definition t3 :: "transition" where
@@ -53,35 +52,13 @@ definition t3 :: "transition" where
       \<rparr>"
 declare t3_def [simp]
 
-lemma "Outputs t1 = blank"
-  by simp
-
-lemma "apply_outputs t1 [1] <> = []"
-  by simp
-
-lemma "apply_updates t1 [1] <> = <''r1'':= 1, ''r2'' := 0>"
-  by simp
-
 lemma blank_state : "<> = <''r1'' := 0, ''r2'' := 0>"
-  by (metis fun_upd_triv null_state_def) (*As soon as I try and use this it crashes*)
+  by (metis fun_upd_triv null_state_def)
 
-lemma blank_state2 [intro]:
+lemma blank_state2 (*[intro]*):
   assumes "P <''r1'' := 0, ''r2'' := 0>"
   shows "P <>"
   by (metis assms blank_state)
-
-lemma "apply_outputs t2 [50] <> = [50]"
-  by auto
-
-lemma "apply_updates t2 [50] <> = <''r1'':= 0, ''r2'' := 50>"
-  apply simp
-  by (metis add.left_neutral fun_upd_triv null_state_def)
-
-lemma "apply_outputs t3 [] <''r1'' := 1, ''r2'' := 100> = [1]"
-  by simp
-
-lemma "apply_updates t3 [] <''r1'' := 1, ''r2'' := 100> = <''r1'' := 1, ''r2'' := 100>"
-  by simp
 
 definition vend :: "efsm" where
 "vend \<equiv> \<lparr> S = [1,2,3],
@@ -97,13 +74,22 @@ declare vend_def [simp]
 lemma "observe_trace vend (s0 vend) <> [] = []"
   by simp
 
-lemma "observe_trace vend (s0 vend) <> [(''select'', [1])] = [[]]"
+lemma "observe_trace vend (s0 vend) <> [(''select'', [1])] = [<>]"
   by simp
 
-lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50])] = [[], [50]]"
-  by simp
+lemma "input2state [1] 1 = <''i1'':=1>"
+  apply (rule ext)
+  apply (simp add: showsp_int_def cong: if_cong)
+  apply (simp add: showsp_nat.simps)
+  apply (simp add: shows_string_def)
+  done
 
-lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50])] = [[], [50], [100]]"
+lemma "observe_trace vend (s0 vend) <''r1'':=0, ''r2'':=0> [(''select'', [1]), (''coin'', [50])] = [<>, <''o1'':=50>]"
+  apply (simp cong: if_cong)
+  
+  
+
+lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50])] = [<>, <''o1'':=50>, <''o1'':=100>]"
   by simp
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [51]), (''vend'', [])] = [[], [50], [101], [1]]"

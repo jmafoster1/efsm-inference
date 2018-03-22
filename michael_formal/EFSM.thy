@@ -2,17 +2,17 @@ theory EFSM
   imports types
 begin
 
-primrec apply_updates :: "(string \<times> aexp) list \<Rightarrow> inputs \<Rightarrow> registers \<Rightarrow> registers" where
+primrec apply_updates :: "(string \<times> aexp) list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> registers" where
   "apply_updates [] _ _ = <>" |
   "apply_updates (h#t) i r = join <(fst h) := (aval (snd h) (join i r))> (apply_updates t i r)"
 declare apply_updates_def [simp]
 
-primrec apply_outputs :: "(string \<times> aexp) list \<Rightarrow> inputs \<Rightarrow> registers \<Rightarrow> outputs" where
+primrec apply_outputs :: "(string \<times> aexp) list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> outputs" where
   "apply_outputs [] _ _ = <>" |
   "apply_outputs (h#t) i r = join <(fst h) := (aval (snd h) (join i r))> (apply_outputs t i r)"
 declare apply_outputs_def [simp]
 
-primrec apply_guards :: "bexp list \<Rightarrow> inputs \<Rightarrow> registers \<Rightarrow> bool" where
+primrec apply_guards :: "guard \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> bool" where
   "apply_guards [] _ _ = True" |
   "apply_guards (h#t) i r =  ((bval h (join i r)) \<and> (apply_guards t i r))"
 declare apply_guards_def [simp]
@@ -30,7 +30,7 @@ definition no_updates :: update_function where
 declare no_updates_def [simp]
 
 abbreviation is_possible_step :: "efsm \<Rightarrow> statename \<Rightarrow> statename \<Rightarrow> transition \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> bool" where
-"is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (find (\<lambda>x . x = t) (T e(s,s')) \<noteq> None) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) i r))"
+"is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (find (\<lambda>x . x = t) (T e(s,s')) \<noteq> None) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (input2state i 1) r))"
 
 abbreviation possible_steps :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename * transition) list" where
 "possible_steps e s r l i \<equiv> [(s',t) . s' \<leftarrow> S e, t \<leftarrow> T e(s,s'), is_possible_step e s s' t r l i]"
@@ -39,7 +39,7 @@ definition step :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Right
 "step e s r l i \<equiv>
   case (possible_steps e s r l i) of
     [] \<Rightarrow> None |
-    [(s',t)] \<Rightarrow> Some (s', (apply_outputs t i r), (apply_updates t i r)) |
+    [(s',t)] \<Rightarrow> Some (s', (apply_outputs (Outputs t) (input2state i 1) r), (apply_updates (Updates t) (input2state i 1) r)) |
     _ \<Rightarrow> None"
 declare step_def [simp]
 
