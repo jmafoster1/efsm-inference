@@ -2,28 +2,35 @@ theory EFSM
   imports types
 begin
 
-definition apply_updates :: "transition \<Rightarrow> inputs \<Rightarrow> registers \<Rightarrow> state" where
-  "apply_updates t i r = (Updates t) i r"
+primrec apply_updates :: "(string \<times> aexp) list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> registers" where
+  "apply_updates [] _ _ = <>" |
+  "apply_updates (h#t) i r = join <(fst h) := (aval (snd h) (join i r))> (apply_updates t i r)"
 declare apply_updates_def [simp]
 
-definition apply_outputs :: "transition \<Rightarrow> inputs \<Rightarrow> registers \<Rightarrow> outputs" where
-  "apply_outputs t i r = (Outputs t) i r"
+primrec apply_outputs :: "(string \<times> aexp) list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> outputs" where
+  "apply_outputs [] _ _ = []" |
+  "apply_outputs (h#t) i r = (aval (snd h) (join i r))#(apply_outputs t i r)"
 declare apply_outputs_def [simp]
 
+primrec apply_guards :: "guard \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> bool" where
+  "apply_guards [] _ _ = True" |
+  "apply_guards (h#t) i r =  ((bval h (join i r)) \<and> (apply_guards t i r))"
+declare apply_guards_def [simp]
+
 definition blank :: output_function where
-  "blank _ _ = []"
+  "blank = []"
 declare blank_def [simp]
 
 definition trueguard :: guard  where
-  "trueguard _ _ = True"
+  "trueguard = [(Bc True)]"
 declare trueguard_def [simp]
 
 definition no_updates :: update_function where
-  "no_updates _ r = r"
+  "no_updates = []"
 declare no_updates_def [simp]
 
 abbreviation is_possible_step :: "efsm \<Rightarrow> statename \<Rightarrow> statename \<Rightarrow> transition \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> bool" where
-"is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (find (\<lambda>x . x = t) (T e(s,s')) \<noteq> None) \<and> ((length i) = (Arity t)) \<and> ((Guard t) i r))"
+"is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (find (\<lambda>x . x = t) (T e(s,s')) \<noteq> None) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (input2state i 1) r))"
 
 abbreviation possible_steps :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename * transition) list" where
 "possible_steps e s r l i \<equiv> [(s',t) . s' \<leftarrow> S e, t \<leftarrow> T e(s,s'), is_possible_step e s s' t r l i]"
@@ -32,7 +39,7 @@ definition step :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Right
 "step e s r l i \<equiv>
   case (possible_steps e s r l i) of
     [] \<Rightarrow> None |
-    [(s',t)] \<Rightarrow> Some (s', (apply_outputs t i r), (apply_updates t i r)) |
+    [(s',t)] \<Rightarrow> Some (s', (apply_outputs (Outputs t) (input2state i 1) r), (apply_updates (Updates t) (input2state i 1) r)) |
     _ \<Rightarrow> None"
 declare step_def [simp]
 
@@ -58,33 +65,4 @@ lemma equiv_trans: "equiv e1 e2 t \<and> equiv e2 e3 t \<longrightarrow> equiv e
 
 lemma equiv_idem: "equiv e1 e1 t"
   by simp
-
-definition all_outs :: "efsm \<Rightarrow> statename \<Rightarrow> destination list" where
-  "all_outs e s = [(s',t) . s' \<leftarrow> S e, t \<leftarrow> T e(s,s'), (find (\<lambda>x . x = t) (T e(s,s')) \<noteq> None)]"
-
-definition can_take :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "can_take t1 t2 \<equiv> ((Label t1) = (Label t2)) \<and> ((Arity t1) = (Arity t2))"
-
-primrec find_match :: "transition \<Rightarrow> destination list \<Rightarrow> destination option" where
-  "find_match _ [] = None" |
-  "find_match t (h#tail) = (if (can_take t (snd h)) then (Some h) else (find_match t tail))"
-
-fun match_all :: "efsm \<Rightarrow> (string, bexp) map \<Rightarrow> destination list \<Rightarrow> efsm \<Rightarrow> (string, bexp) map \<Rightarrow> destination list \<Rightarrow> statename list \<Rightarrow> bool" 
-  and compare :: "efsm \<Rightarrow> statename \<Rightarrow> (string, bexp) map \<Rightarrow> efsm \<Rightarrow> statename \<Rightarrow> (string, bexp) map \<Rightarrow> statename list \<Rightarrow> bool" 
-  where
-  "match_all _ _ [] _ _ _ _ = True" |
-  "match_all e1 c1 (h#t) e2 c2 d2 closed = (
-    case (find_match (snd h) d2) of
-      None \<Rightarrow> False  |
-      Some (s', _) \<Rightarrow> (compare e1 (fst h) c1 e2 s' c2 closed ) \<and> (match_all e1 c1 t e2 c2 d2 closed)
-    )" |
- "compare  e1 s1 c1 e2 s2 c2 closed = (
-    if ((find (\<lambda>x . x = s1) closed) \<noteq> None) then
-      True
-    else (match_all e1 c1 (all_outs e1 s1) e2 c2 (all_outs e2 s2) (s1#closed)
-     ))"
-
-definition simulates :: "efsm \<Rightarrow> efsm \<Rightarrow> bool" where
-  "simulates e1 e2 = compare e1 (s0 e1) empty e2 (s0 e2) empty []"
-
 end
