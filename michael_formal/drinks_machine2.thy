@@ -21,14 +21,14 @@ lemma "observe_trace vend2 (s0 vend2) <> [(''select'', [1])] = [[]]"
   by simp
 
 lemma "observe_trace vend2 (s0 vend2) <> [(''select'', [1]), (''coin'', [50])] = [[], [50]]"
-  by simp
+  by (simp add: showsp_int_def showsp_nat.simps shows_string_def null_state_def)
 
 lemma "observe_trace vend2 (s0 vend2) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50])] = [[], [50], [100]]"
-  by simp
+  by (simp add: showsp_int_def showsp_nat.simps shows_string_def null_state_def)
 
 lemma "observe_trace vend2 (s0 vend2) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), (''vend'', [])] = [[], [50], [100], [1]]"
-  by simp
+  by (simp add: showsp_int_def showsp_nat.simps shows_string_def null_state_def)
 
 lemma "equiv vend vend2 [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), (''vend'', [])]"
-  by simp
+  by (simp add: showsp_int_def showsp_nat.simps shows_string_def null_state_def)
 end
