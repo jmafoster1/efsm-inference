@@ -55,7 +55,7 @@ declare input2state_def [simp]
 
 lemma "input2state [1, 2] 1 = <''i1'':=1, ''i2'':=2>"
   apply (rule ext)
-  apply (simp add: showsp_int_def cong: if_cong)
+  apply (simp add: showsp_int_def)
   apply (simp add: showsp_nat.simps)
   apply (simp add: shows_string_def)
   done

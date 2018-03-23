@@ -1,5 +1,5 @@
 theory EFSM
-  imports types
+  imports Syntax
 begin
 
 primrec apply_updates :: "(string \<times> aexp) list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> registers" where
@@ -16,18 +16,6 @@ primrec apply_guards :: "guard \<Rightarrow> state \<Rightarrow> registers \<Rig
   "apply_guards [] _ _ = True" |
   "apply_guards (h#t) i r =  ((bval h (join i r)) \<and> (apply_guards t i r))"
 declare apply_guards_def [simp]
-
-definition blank :: output_function where
-  "blank = []"
-declare blank_def [simp]
-
-definition trueguard :: guard  where
-  "trueguard = [(Bc True)]"
-declare trueguard_def [simp]
-
-definition no_updates :: update_function where
-  "no_updates = []"
-declare no_updates_def [simp]
 
 abbreviation is_possible_step :: "efsm \<Rightarrow> statename \<Rightarrow> statename \<Rightarrow> transition \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> bool" where
 "is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (find (\<lambda>x . x = t) (T e(s,s')) \<noteq> None) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (input2state i 1) r))"
@@ -51,6 +39,15 @@ primrec observe_trace :: "efsm \<Rightarrow> statename \<Rightarrow> registers \
       Some (s', outputs, updated) \<Rightarrow> (outputs#(observe_trace e s' updated t))
     )"
 declare observe_trace_def [simp]
+
+primrec observe_registers :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> state" where
+  "observe_registers _ _ r [] = r" |
+  "observe_registers e s r (h#t) = 
+    (case (step e s r (fst h) (snd h)) of
+      None \<Rightarrow> <> |
+      Some (s', outputs, updated) \<Rightarrow> (observe_registers e s' updated t)
+    )"
+declare observe_registers_def [simp]
 
 definition equiv :: "efsm \<Rightarrow> efsm \<Rightarrow> trace \<Rightarrow> bool" where
   "equiv e1 e2 t \<equiv> ((observe_trace e1 (s0 e1) <> t) = (observe_trace e2 (s0 e2) <> t))"
