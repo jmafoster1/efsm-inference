@@ -74,6 +74,9 @@ lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50])] = [[]]"
   by simp
 
+lemma "\<not> (valid_trace (vend) [(''select'', [1]), (''cat'', [50])])"
+  by(simp add:valid_trace_def)
+
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50]), (''coin'', [50])] = [[]]"
   by simp
 
@@ -82,10 +85,45 @@ lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50]), (''c
 (*lemma "observe_registers vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [51])] = <''r1'':=1, ''r2'':=101>"
   apply (simp add: showsp_int_def showsp_nat.simps shows_string_def null_state_def)*)
 
+lemma "( t = []) \<Longrightarrow> (observe_trace e (s0 e) <> t = []) "
+  by(simp)
 
-lemma "((observe_trace e (s0 e) <> t) = obs) \<longrightarrow> ((observe_trace e (s0 e) <> (t@t')) = obs@(observe_trace e (s0 e) (observe_registers e (s0 e) <> t) t'))"
-  apply (induct_tac "t")
+lemma "a#l@l' = a#(l@l')" 
+  oops
+
+definition "reg_of t = (if t = [] then <> else snd (snd (last t)))"
+definition "state_of e t = (if t = [] then s0 e else fst (last t))"
+
+lemmas foo = reg_of_def 
+lemmas bar = foo  state_of_def
+
+lemma  valid_trace_non_empty_observe: "valid_trace e (a#list) \<Longrightarrow> [] \<noteq> observe_trace2 e (s0 e) <> (a # list)"
+  apply(simp only:observe_trace2.simps(2) valid_trace_def)
+  by auto
+
+lemma "let obs = (observe_trace2 e (s0 e) <> t) in 
+valid_trace e t \<longrightarrow> ((observe_trace2 e (s0 e) <> (t@t')) = (obs)@(observe_trace2 e (state_of e obs) (reg_of obs) t'))"
+  apply(induct_tac "t")
+  apply(simp add: foo) 
+  apply(insert valid_trace_non_empty_observe)
+
+  apply safe
+lemma prefix_closure: "valid_trace e t \<Longrightarrow> ((observe_trace e (s0 e) <> (t@t')) = ((observe_trace e (s0 e) <> t))@(observe_trace e (s0 e) (observe_registers e (s0 e) <> t) t'))"
+  apply(induct_tac "t'")
+   apply(simp)
+  apply(insert observe_trace.simps(2))
+  
+lemma prefix_closure: "((observe_trace e (s0 e) <> t) = obs) \<and> ( (observe_registers e (s0 e) <> t)= reg) \<longrightarrow> ((observe_trace e (s0 e) <> (t@t')) = obs@(observe_trace e (s0 e) reg  t'))"
+  oops
+
+lemma prefix_closure: "((observe_trace e (s0 e) <> t) = obs) \<longrightarrow> ((observe_trace e (s0 e) <> (t@t')) = obs@(observe_trace e (s0 e) (observe_registers e (s0 e) <> t) t'))"
+  apply (induct_tac "t'")    
    apply (simp)
-  apply (simp only: observe_registers_def)
+  apply (simp)
+
+  apply (auto)
+   apply (simp add: showsp_int_def)
+    apply (simp add: showsp_nat.simps shows_string_def)
+
   sorry
 end

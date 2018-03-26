@@ -31,4 +31,7 @@ lemma "observe_trace vend2 (s0 vend2) <> [(''select'', [1]), (''coin'', [50]), (
 
 lemma "equiv vend vend2 [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), (''vend'', [])]"
   by (simp add: showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+
+lemma "simulates vend2 vend"
+  apply simp
 end

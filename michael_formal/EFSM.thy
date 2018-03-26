@@ -40,11 +40,19 @@ primrec observe_trace :: "efsm \<Rightarrow> statename \<Rightarrow> registers \
     )"
 declare observe_trace_def [simp]
 
+primrec observe_trace2 :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (statename \<times> outputs \<times> registers) list" where
+  "observe_trace2 _ _ _ [] = []" |
+  "observe_trace2 e s r (h#t) = 
+    (case (step e s r (fst h) (snd h)) of
+      None \<Rightarrow> [] |
+      (Some (s', outputs, updated)) \<Rightarrow> (((s', outputs, updated)#(observe_trace2 e s' updated t)))
+    )"
+
 primrec observe_registers :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> state" where
   "observe_registers _ _ r [] = r" |
   "observe_registers e s r (h#t) = 
     (case (step e s r (fst h) (snd h)) of
-      None \<Rightarrow> <> |
+      None \<Rightarrow> r |
       Some (s', outputs, updated) \<Rightarrow> (observe_registers e s' updated t)
     )"
 declare observe_registers_def [simp]
@@ -62,4 +70,42 @@ lemma equiv_trans: "equiv e1 e2 t \<and> equiv e2 e3 t \<longrightarrow> equiv e
 
 lemma equiv_idem: "equiv e1 e1 t"
   by simp
+
+definition valid_trace :: "efsm \<Rightarrow> trace \<Rightarrow> bool" where
+  "valid_trace e t = (length t = length (observe_trace2 e (s0 e) <> t))"
+
+
+lemma empty_trace_valid [simp]: "valid_trace e []"
+  by(simp add:valid_trace_def)
+
+primrec in_list :: "'a \<Rightarrow> 'a list \<Rightarrow> bool" where
+  "in_list _ [] = False" |
+  "in_list x (h#t) = (if (x=h) then True else (in_list x t))"
+
+definition all_outs :: "efsm \<Rightarrow> statename \<Rightarrow> destination list" where
+  "all_outs e s = [(s',t) . s' \<leftarrow> S e, t \<leftarrow> T e(s,s'), (in_list t (T e(s,s')))]"
+declare all_outs_def [simp]
+
+definition can_take :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "can_take t1 t2 \<equiv> ((Label t1) = (Label t2)) \<and> ((Arity t1) = (Arity t2))"
+declare can_take_def [simp]
+
+primrec find_match :: "transition \<Rightarrow> destination list \<Rightarrow> destination option" where
+  "find_match _ [] = None" |
+  "find_match t (h#tail) = (if (can_take t (snd h)) then (Some h) else (find_match t tail))"
+
+fun match_all :: "efsm \<Rightarrow> destination list \<Rightarrow> efsm \<Rightarrow> destination list \<Rightarrow> statename list \<Rightarrow> bool"
+  and compare :: "efsm \<Rightarrow> statename \<Rightarrow> efsm \<Rightarrow> statename \<Rightarrow> statename list \<Rightarrow> bool"
+  where
+  "match_all _  []    _  _  _      = True" |
+  "match_all e1 (h#t) e2 d2 open = (
+    case (find_match (snd h) d2) of
+      None \<Rightarrow> False |
+      Some (s', _) \<Rightarrow> ((compare e1 (fst h) e2 s' open) \<and> (match_all e1 t e2 d2 open))
+    )" |
+  "compare e1 s1 e2 s2 open = (if (in_list s1 open) then (match_all e1 (all_outs e1 s1) e2 (all_outs e2 s2) (removeAll s1 open)) else True)"
+
+definition simulates :: "efsm \<Rightarrow> efsm \<Rightarrow> bool" where
+  "simulates e1 e2 = compare e1 (s0 e1) e2 (s0 e2) (S e1)"
+declare simulates_def [simp]
 end
