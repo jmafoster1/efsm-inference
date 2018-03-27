@@ -35,12 +35,12 @@ primrec observe_trace :: "efsm \<Rightarrow> statename \<Rightarrow> registers \
       Some (s', outputs, updated) \<Rightarrow> (outputs#(observe_trace e s' updated t))
     )"
 
-primrec observe_trace2 :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (statename \<times> outputs \<times> registers) list" where
-  "observe_trace2 _ _ _ [] = []" |
-  "observe_trace2 e s r (h#t) = 
+primrec observe_all :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (statename \<times> outputs \<times> registers) list" where
+  "observe_all _ _ _ [] = []" |
+  "observe_all e s r (h#t) = 
     (case (step e s r (fst h) (snd h)) of
       None \<Rightarrow> [] |
-      (Some (s', outputs, updated)) \<Rightarrow> (((s', outputs, updated)#(observe_trace2 e s' updated t)))
+      (Some (s', outputs, updated)) \<Rightarrow> (((s', outputs, updated)#(observe_all e s' updated t)))
     )"
 
 primrec observe_registers :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> state" where
@@ -65,7 +65,7 @@ lemma equiv_idem: "equiv e1 e1 t"
   by (simp add: equiv_def)
 
 definition valid_trace :: "efsm \<Rightarrow> trace \<Rightarrow> bool" where
-  "valid_trace e t = (length t = length (observe_trace2 e (s0 e) <> t))"
+  "valid_trace e t = (length t = length (observe_all e (s0 e) <> t))"
 
 
 lemma empty_trace_valid [simp]: "valid_trace e []"

@@ -92,20 +92,25 @@ lemma "a#l@l' = a#(l@l')"
 definition "reg_of t = (if t = [] then <> else snd (snd (last t)))"
 definition "state_of e t = (if t = [] then s0 e else fst (last t))"
 
-lemmas foo = reg_of_def 
-lemmas bar = foo  state_of_def
-
-lemma  valid_trace_non_empty_observe: "valid_trace e (a#list) \<Longrightarrow> [] \<noteq> observe_trace2 e (s0 e) <> (a # list)"
-  apply(simp only:observe_trace2.simps(2) valid_trace_def)
+lemma valid_trace_non_empty_observe: "valid_trace e (a#list) \<Longrightarrow> [] \<noteq> observe_all e (s0 e) <> (a # list)"
+  apply(simp only:observe_all.simps(2) valid_trace_def)
   by auto
 
-lemma "let obs = (observe_trace2 e (s0 e) <> t) in 
-valid_trace e t \<longrightarrow> ((observe_trace2 e (s0 e) <> (t@t')) = (obs)@(observe_trace2 e (state_of e obs) (reg_of obs) t'))"
-  apply(induct_tac "t")
-  apply(simp add: foo) 
-  apply(insert valid_trace_non_empty_observe)
+lemma nonempty: "valid_trace e t \<and> t \<noteq> [] \<longrightarrow> observe_all e (s0 e) <> t \<noteq> []"
+  apply (simp add: valid_trace_def)
+  by auto
 
-  apply safe
+lemma prefix_closure: "valid_trace e t \<Longrightarrow>let obs = (observe_all e (s0 e) <> t) in ((observe_all e (s0 e) <> (t@(rev t'))) = (obs)@(observe_all e (state_of e obs) (reg_of obs) (rev t')))"
+  apply(induct_tac "t'")
+   apply(simp add: reg_of_def state_of_def)
+  apply (simp)
+  apply (case_tac "t=[]")
+   apply (simp add: state_of_def reg_of_def)
+
+
+  sorry
+
+(*
 lemma prefix_closure: "valid_trace e t \<Longrightarrow> ((observe_trace e (s0 e) <> (t@t')) = ((observe_trace e (s0 e) <> t))@(observe_trace e (s0 e) (observe_registers e (s0 e) <> t) t'))"
   apply(induct_tac "t'")
    apply(simp)
@@ -124,4 +129,5 @@ lemma prefix_closure: "((observe_trace e (s0 e) <> t) = obs) \<longrightarrow> (
     apply (simp add: showsp_nat.simps shows_string_def)
 
   sorry
+*)
 end
