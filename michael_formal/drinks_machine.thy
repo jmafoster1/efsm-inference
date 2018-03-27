@@ -16,7 +16,7 @@ definition t2 :: "transition" where
         Label = ''coin'',
         Arity = 1,
         Guard = true,
-        Outputs = [(''o1'', (Plus (V ''r2'') (V ''i1'')))],
+        Outputs = [(Plus (V ''r2'') (V ''i1''))],
         Updates = [
                   (''r1'', (V ''r1'')),
                   (''r2'', (Plus (V ''r2'') (V ''i1'')))
@@ -28,7 +28,7 @@ definition t3 :: "transition" where
         Label = ''vend'',
         Arity = 0,
         Guard = [((V ''r2'') \<ge> (N 100))],
-        Outputs =  [(''o1'', (V ''r1''))],
+        Outputs =  [(V ''r1'')],
         Updates = [(''r1'', (V ''r1'')), (''r2'', (V ''r2''))]
       \<rparr>"
 

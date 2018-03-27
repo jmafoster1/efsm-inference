@@ -6,7 +6,7 @@ definition t1up :: "transition" where
         Label = ''goUp'',
         Arity = 1,
         Guard = [((V ''i1'') > (N 0))],
-        Outputs = [(''o1'', V ''i1'')],
+        Outputs = [(V ''i1'')],
         Updates = []
       \<rparr>"
 
@@ -15,7 +15,7 @@ definition t2up :: "transition" where
         Label = ''goUp'',
         Arity = 1,
         Guard = [((V ''i1'') > (N 0))],
-        Outputs = [(''o1'', ((V ''i1'') + (N (-1))))],
+        Outputs = [(((V ''i1'') + (N (-1))))],
         Updates = []
       \<rparr>"
 
@@ -24,7 +24,7 @@ definition t3up :: "transition" where
         Label = ''goUp'',
         Arity = 1,
         Guard = [((V ''r1'') = (N 0))],
-        Outputs = [(''o1'', N 0)],
+        Outputs = [(N 0)],
         Updates = []
       \<rparr>"
 
@@ -33,7 +33,7 @@ definition t1down :: "transition" where
         Label = ''goDown'',
         Arity = 1,
         Guard = [((V ''i1'') > (N 0))],
-        Outputs = [(''o1'', V ''i1'')],
+        Outputs = [(V ''i1'')],
         Updates = []
       \<rparr>"
 
@@ -42,7 +42,7 @@ definition t2down :: "transition" where
         Label = ''goDown'',
         Arity = 1,
         Guard = [((V ''i1'') > (N 0))],
-        Outputs = [(''o1'', ((V ''i1'') + (N (-1))))],
+        Outputs = [(((V ''i1'') + (N (-1))))],
         Updates = []
       \<rparr>"
 
@@ -51,7 +51,7 @@ definition t3down :: "transition" where
         Label = ''goDown'',
         Arity = 1,
         Guard = [((V ''r1'') = (N 0))],
-        Outputs = [(''o1'', N 0)],
+        Outputs = [(N 0)],
         Updates = []
       \<rparr>"
 
@@ -60,7 +60,7 @@ definition openDoors :: transition where
         Label = ''open'',
         Arity = 0,
         Guard = true,
-        Outputs = [(''o1'', N 1)],
+        Outputs = [(N 1)],
         Updates = []
       \<rparr>"
 
@@ -69,7 +69,7 @@ definition closeDoors :: transition where
         Label = ''close'',
         Arity = 0,
         Guard = true,
-        Outputs = [(''o1'', N 0)],
+        Outputs = [(N 0)],
         Updates = []
       \<rparr>"
 
