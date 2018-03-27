@@ -12,26 +12,22 @@ definition vend2 :: "efsm" where
               else if (a,b) = (3,4) then [t3]
               else []
          \<rparr>"
-declare vend2_def [simp]
 
 lemma "observe_trace vend2 (s0 vend2) <> [] = []"
   by simp
 
 lemma "observe_trace vend2 (s0 vend2) <> [(''select'', [1])] = [[]]"
-  by simp
+  by (simp add: vend2_def transitions step_def)
 
 lemma "observe_trace vend2 (s0 vend2) <> [(''select'', [1]), (''coin'', [50])] = [[], [50]]"
-  by (simp add: showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+  by (simp add: step_def vend2_def transitions shows_stuff index_def join_def)
 
 lemma "observe_trace vend2 (s0 vend2) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50])] = [[], [50], [100]]"
-  by (simp add: showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+  by (simp add: step_def vend2_def transitions shows_stuff index_def join_def)
 
 lemma "observe_trace vend2 (s0 vend2) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), (''vend'', [])] = [[], [50], [100], [1]]"
-  by (simp add: showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+  by (simp add: step_def vend2_def transitions shows_stuff index_def join_def)
 
 lemma "equiv vend vend2 [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), (''vend'', [])]"
-  by (simp add: showsp_int_def showsp_nat.simps shows_string_def null_state_def)
-
-lemma "simulates vend2 vend"
-  apply simp
+  by (simp add: equiv_def step_def vend_def vend2_def transitions shows_stuff index_def join_def)
 end

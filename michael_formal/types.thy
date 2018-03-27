@@ -31,34 +31,27 @@ record efsm =
 
 definition join :: "state \<Rightarrow> state \<Rightarrow> state" where
   "join s1 s2 = (\<lambda>x. if (aval (V x) s1) \<noteq> 0 then (aval (V x) s1) else (aval (V x) s2))"
-declare join_def [simp]
 
 lemma "\<forall>z. \<exists>x y. (aval (V v) (join x y) = aval (V v) z)"
+  apply (simp add: join_def)
   by auto
 
 lemma "\<forall> x y. \<exists>z. (aval (V v) z) = aval (V v) (join x y)"
   by auto
 
+lemmas shows_stuff = showsp_int_def showsp_nat.simps shows_string_def null_state_def
+
 definition index :: "int \<Rightarrow> string" where
   "index i = ''i''@(showsp_int (nat i) i '''')"
-declare index_def [simp]
 
 lemma i1: "index 2 = ''i2''"
-  apply (simp add: showsp_int_def)
-  apply (simp add: showsp_nat.simps)
-  apply (simp add: shows_string_def)
-  done
+  by (simp add: shows_stuff index_def)
 
 primrec input2state :: "int list \<Rightarrow> int \<Rightarrow> state" where
   "input2state [] _ = <>" |
   "input2state (h#t) i = (\<lambda>x. if x = (index i) then h else ((input2state t (i+1)) x))"
-declare input2state_def [simp]
 
 lemma "input2state [1, 2] 1 = <''i1'':=1, ''i2'':=2>"
   apply (rule ext)
-  apply (simp add: showsp_int_def)
-  apply (simp add: showsp_nat.simps)
-  apply (simp add: shows_string_def)
-  done
-
+  by (simp add: shows_stuff index_def)
 end

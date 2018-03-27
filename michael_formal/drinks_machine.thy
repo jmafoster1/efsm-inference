@@ -10,7 +10,6 @@ definition t1 :: "transition" where
         Outputs = [],
         Updates = [(''r1'', (V ''i1'')), (''r2'', (N 0))]
       \<rparr>"
-declare t1_def [simp]
 
 definition t2 :: "transition" where
 "t2 \<equiv> \<lparr>
@@ -23,7 +22,6 @@ definition t2 :: "transition" where
                   (''r2'', (Plus (V ''r2'') (V ''i1'')))
                 ]
       \<rparr>"
-declare t2_def [simp]
 
 definition t3 :: "transition" where
 "t3 \<equiv> \<lparr>
@@ -33,7 +31,8 @@ definition t3 :: "transition" where
         Outputs =  [(''o1'', (V ''r1''))],
         Updates = [(''r1'', (V ''r1'')), (''r2'', (V ''r2''))]
       \<rparr>"
-declare t3_def [simp]
+
+lemmas transitions = t1_def t2_def t3_def
 
 lemma blank_state : "<> = <''r1'' := 0, ''r2'' := 0>"
   by (metis fun_upd_triv null_state_def)
@@ -53,32 +52,31 @@ definition vend :: "efsm" where
               else if (a,b) = (2,3) then [t3]
               else []
          \<rparr>"
-declare vend_def [simp]
 
 lemma "observe_trace vend (s0 vend) <> [] = []"
   by simp
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1])] = [[]]"
-  by simp
+  by (simp add: vend_def transitions)
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50])] = [[], [50]]"
-  by (simp_all add: showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+  by (simp_all add: vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50])] = [[], [50], [100]]"
-  by (simp add: showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+  by (simp add: vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), (''vend'', [])] = [[], [50], [100], [1]]"
-  by (simp add: showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+  by (simp add: vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
 
 (*Stop when we hit a spurious input*)
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50])] = [[]]"
-  by simp
+  by (simp add: vend_def transitions)
 
 lemma "\<not> (valid_trace (vend) [(''select'', [1]), (''cat'', [50])])"
-  by(simp add:valid_trace_def)
+  by(simp add: vend_def transitions valid_trace_def)
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50]), (''coin'', [50])] = [[]]"
-  by simp
+  by (simp add: vend_def transitions)
 
 (*This crashes because of showsp_nat.simps*)
 (*What is ".simps"? Why not "showsp_nat_def"?*)
