@@ -53,35 +53,35 @@ definition vend :: "efsm" where
               else []
          \<rparr>"
 
+(*
+  These are lemmas about the machine which could maybe be in another file.
+  They don't need to be translated to SAL
+*)
+
 lemma "observe_trace vend (s0 vend) <> [] = []"
   by simp
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1])] = [[]]"
-  by (simp add: vend_def transitions)
+  by (simp add: vend_def transitions step_def)
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50])] = [[], [50]]"
-  by (simp_all add: vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+  by (simp_all add: step_def join_def index_def vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50])] = [[], [50], [100]]"
-  by (simp add: vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+  by (simp add: step_def index_def join_def vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), (''vend'', [])] = [[], [50], [100], [1]]"
-  by (simp add: vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+  by (simp add: step_def index_def join_def vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
 
 (*Stop when we hit a spurious input*)
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50])] = [[]]"
-  by (simp add: vend_def transitions)
+  by (simp add: step_def vend_def transitions)
 
 lemma "\<not> (valid_trace (vend) [(''select'', [1]), (''cat'', [50])])"
-  by(simp add: vend_def transitions valid_trace_def)
+  by(simp add: step_def vend_def transitions valid_trace_def)
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50]), (''coin'', [50])] = [[]]"
-  by (simp add: vend_def transitions)
-
-(*This crashes because of showsp_nat.simps*)
-(*What is ".simps"? Why not "showsp_nat_def"?*)
-(*lemma "observe_registers vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [51])] = <''r1'':=1, ''r2'':=101>"
-  apply (simp add: showsp_int_def showsp_nat.simps shows_string_def null_state_def)*)
+  by (simp add: step_def vend_def transitions)
 
 lemma "( t = []) \<Longrightarrow> (observe_trace e (s0 e) <> t = []) "
   by(simp)
