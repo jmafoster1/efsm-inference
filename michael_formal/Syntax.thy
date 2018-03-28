@@ -19,7 +19,7 @@ definition and_infix :: "bexp \<Rightarrow> bexp \<Rightarrow> bexp" (infix "\<a
 declare and_infix_def [simp]
 
 definition eq_infix :: "aexp \<Rightarrow> aexp \<Rightarrow> bexp" (infix "=" 100) where
-  "eq_infix a b = And (Not (Gt a b)) (Not (Gt b a))"
+  "eq_infix a b = And (Not (Less a b)) (Not (Less b a))"
 declare eq_infix_def [simp]
 
 definition plus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" (infix "+" 65) where

@@ -100,12 +100,59 @@ lemma nonempty: "valid_trace e t \<and> t \<noteq> [] \<longrightarrow> observe_
   apply (simp add: valid_trace_def)
   by auto
 
+lemma valid_trace_drop: "valid_trace e (t @ xs @ [x]) \<Longrightarrow>  valid_trace e (t @ xs)"
+proof(induct rule: rev_induct)
+  case Nil
+  then show ?case by simp
+next
+  case (snoc x xs)
+  then show ?case 
+qed
+  
+
+lemma prefix_closure_single: 
+"valid_trace e (t@[e']) \<Longrightarrow>let obs = (observe_all e (s0 e) <> t) in ((observe_all e (s0 e) <> (t@([e']))) = (obs)@(observe_all e (state_of e obs) (reg_of obs) ([e'])))"
+proof(induct rule: rev_induct)
+  case Nil
+  then show ?case by simp
+next
+  case (snoc x xs)
+  then show ?case apply (case_tac "t=[]", simp add:state_of_def reg_of_def)
+    using state_of_def reg_of_def nonempty try
+qed
+
+
+  apply(induct_tac t = "xs" in rev_induct)
+  apply(simp)
+   apply(simp add: reg_of_def state_of_def)
+(*  apply (simp) *)
+  apply (case_tac "t=[]")
+apply (simp add: state_of_def reg_of_def)
+   apply (simp add: state_of_def reg_of_def nonempty)
+  apply(case_tac "step e (fst (last (observe_all e (s0 e) <> t))) (snd (snd (last (observe_all e (s0 e) <> t)))) (fst a) (snd a) = None")
+   apply(simp)
+
+
+lemma prefix_closure: "valid_trace e t \<Longrightarrow>let obs = (observe_all e (s0 e) <> t) in ((observe_all e (s0 e) <> (t@(t'))) = (obs)@(observe_all e (state_of e obs) (reg_of obs) (t')))"
+  apply(induct_tac "t'")
+   apply(simp add: reg_of_def state_of_def)
+(*  apply (simp) *)
+  apply (case_tac "t=[]")
+apply (simp add: state_of_def reg_of_def)
+   apply (simp add: state_of_def reg_of_def nonempty)
+  apply(case_tac "step e (fst (last (observe_all e (s0 e) <> t))) (snd (snd (last (observe_all e (s0 e) <> t)))) (fst a) (snd a) = None")
+   apply(simp)
+  oops
+
 lemma prefix_closure: "valid_trace e t \<Longrightarrow>let obs = (observe_all e (s0 e) <> t) in ((observe_all e (s0 e) <> (t@(rev t'))) = (obs)@(observe_all e (state_of e obs) (reg_of obs) (rev t')))"
   apply(induct_tac "t'")
    apply(simp add: reg_of_def state_of_def)
   apply (simp)
   apply (case_tac "t=[]")
    apply (simp add: state_of_def reg_of_def)
+  apply(rule rev_induct, simp)
+   apply (simp add: state_of_def reg_of_def nonempty)
+
 
 
   sorry
