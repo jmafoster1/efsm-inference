@@ -1,5 +1,5 @@
 theory Syntax
-imports "~~/src/HOL/IMP/Hoare" types
+imports "~~/src/HOL/IMP/Hoare" Types
 begin
 
 definition Geq :: "aexp \<Rightarrow> aexp \<Rightarrow> bexp" (infix "\<ge>" 60) where
@@ -26,8 +26,7 @@ definition plus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" (infix "+" 65) w
   "plus a b = Plus a b"
 declare plus_def [simp]
 
-definition true :: guard  where
-  "true = [(Bc True)]"
-declare true_def [simp]
+definition map_update :: "('a \<rightharpoonup> 'b) \<Rightarrow> 'a \<Rightarrow> 'b \<Rightarrow> ('a \<rightharpoonup> 'b)" where
+  "map_update m k v = map_add m (map_of [(k, v)])"
 
 end

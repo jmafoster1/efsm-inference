@@ -6,7 +6,7 @@ definition t1 :: "transition" where
 "t1 \<equiv> \<lparr>
         Label = ''select'',
         Arity = 1,
-        Guard = true,
+        Guard = [],
         Outputs = [],
         Updates = [(''r1'', (V ''i1'')), (''r2'', (N 0))]
       \<rparr>"
@@ -15,7 +15,7 @@ definition t2 :: "transition" where
 "t2 \<equiv> \<lparr>
         Label = ''coin'',
         Arity = 1,
-        Guard = true,
+        Guard = [],
         Outputs = [(Plus (V ''r2'') (V ''i1''))],
         Updates = [
                   (''r1'', (V ''r1'')),

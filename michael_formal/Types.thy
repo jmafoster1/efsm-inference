@@ -1,4 +1,4 @@
-theory types
+theory Types
   imports "~~/src/HOL/IMP/Hoare" "Show.Show_Instances"
 begin
 type_synonym label = string
@@ -6,9 +6,9 @@ type_synonym arity = nat
 type_synonym inputs = "int list"
 type_synonym registers = state
 type_synonym outputs = "int list"
-type_synonym guard = "bexp list"
-type_synonym output_function = "aexp list"
-type_synonym update_function = "(string \<times> aexp) list"
+type_synonym guard = "bexp"
+type_synonym output_function = "aexp"
+type_synonym update_function = "(string \<times> aexp)"
 type_synonym statename = int
 type_synonym trace = "(label \<times> inputs) list" (*Ideally written as label(i1, i2, ...)*)
 type_synonym observation = "outputs list"
@@ -18,9 +18,9 @@ type_synonym restriction = "(string \<times> bexp)"
 record transition =
   Label :: label
   Arity :: arity
-  Guard :: guard
-  Outputs :: output_function
-  Updates :: update_function
+  Guard :: "guard list"
+  Outputs :: "output_function list"
+  Updates :: "update_function list"
 
 type_synonym destination = "(statename \<times> transition)"
 

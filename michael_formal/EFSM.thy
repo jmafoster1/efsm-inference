@@ -6,11 +6,11 @@ primrec apply_updates :: "(string \<times> aexp) list \<Rightarrow> state \<Righ
   "apply_updates [] _ _ = <>" |
   "apply_updates (h#t) i r = join <(fst h) := (aval (snd h) (join i r))> (apply_updates t i r)"
 
-primrec apply_outputs :: "output_function \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> outputs" where
+primrec apply_outputs :: "output_function list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> outputs" where
   "apply_outputs [] _ _ = []" |
   "apply_outputs (h#t) i r = (aval h (join i r))#(apply_outputs t i r)"
 
-primrec apply_guards :: "guard \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> bool" where
+primrec apply_guards :: "guard list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> bool" where
   "apply_guards [] _ _ = True" |
   "apply_guards (h#t) i r =  ((bval h (join i r)) \<and> (apply_guards t i r))"
 
