@@ -22,10 +22,6 @@ definition eq_infix :: "aexp \<Rightarrow> aexp \<Rightarrow> bexp" (infix "=" 1
   "eq_infix a b = And (Not (Less a b)) (Not (Less b a))"
 declare eq_infix_def [simp]
 
-definition plus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" (infix "+" 65) where
-  "plus a b = Plus a b"
-declare plus_def [simp]
-
 definition map_update :: "('a \<rightharpoonup> 'b) \<Rightarrow> 'a \<Rightarrow> 'b \<Rightarrow> ('a \<rightharpoonup> 'b)" where
   "map_update m k v = map_add m (map_of [(k, v)])"
 

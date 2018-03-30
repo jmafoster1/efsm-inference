@@ -1,5 +1,5 @@
 theory drinks_machine
-  imports EFSM
+  imports EFSM CExp
 begin
 
 definition t1 :: "transition" where
@@ -85,6 +85,8 @@ lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50]), (''c
 
 lemma "( t = []) \<Longrightarrow> (observe_trace e (s0 e) <> t = []) "
   by(simp)
+
+(*Prefix closure stuff*)
 
 lemma "a#l@l' = a#(l@l')" 
   oops

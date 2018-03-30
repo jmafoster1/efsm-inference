@@ -12,8 +12,6 @@ type_synonym update_function = "(string \<times> aexp)"
 type_synonym statename = int
 type_synonym trace = "(label \<times> inputs) list" (*Ideally written as label(i1, i2, ...)*)
 type_synonym observation = "outputs list"
-type_synonym restriction = "(string \<times> bexp)"
-
 
 record transition =
   Label :: label
