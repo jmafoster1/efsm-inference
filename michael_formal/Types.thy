@@ -1,12 +1,12 @@
 theory Types
-  imports "~~/src/HOL/IMP/Hoare" "Show.Show_Instances"
+  imports "~~/src/HOL/IMP/Hoare" "Show.Show_Instances" GExp
 begin
 type_synonym label = string
 type_synonym arity = nat
 type_synonym inputs = "int list"
 type_synonym registers = state
 type_synonym outputs = "int list"
-type_synonym guard = "bexp"
+type_synonym guard = "gexp"
 type_synonym output_function = "aexp"
 type_synonym update_function = "(string \<times> aexp)"
 type_synonym statename = int
