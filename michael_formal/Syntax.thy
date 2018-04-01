@@ -2,7 +2,7 @@ theory Syntax
 imports "~~/src/HOL/IMP/Hoare" Types
 begin
 
-definition ge_infix :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix "\<ge>" 60) where
+(*definition ge_infix :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix "\<ge>" 60) where
   "ge_infix a b  = Or (Gt a b) (Eq a b)"
 declare ge_infix_def [simp]
 
@@ -24,9 +24,6 @@ declare eq_infix_def [simp]
 
 definition ne_infix :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix "\<noteq>" 100) where
   "ne_infix a b = Not (Eq a b)"
-declare ne_infix_def [simp]
-
-definition map_update :: "('a \<rightharpoonup> 'b) \<Rightarrow> 'a \<Rightarrow> 'b \<Rightarrow> ('a \<rightharpoonup> 'b)" where
-  "map_update m k v = map_add m (map_of [(k, v)])"
+declare ne_infix_def [simp]*)
 
 end
