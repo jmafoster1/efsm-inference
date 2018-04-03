@@ -1,5 +1,5 @@
 theory simple_drinks_machine
-imports EFSM CExp
+imports EFSM
 begin
 definition t1 :: "transition" where
 "t1 \<equiv> \<lparr>
@@ -42,7 +42,4 @@ definition t4 :: "transition" where
         Outputs =  [(V ''r1'')],
         Updates = [(''r1'', (V ''r1'')), (''r2'', (V ''r2''))]
       \<rparr>"
-
-value "(constraints empty t1) ''r2''"
-value "constraints (constraints empty t1) t2"
 end

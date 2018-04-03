@@ -3,6 +3,7 @@ theory drinks_machine2
 begin
 
 definition vend2 :: "efsm" where
+(* Effectively this is the drinks_machine which has had the loop unrolled by one iteration *)
 "vend2 \<equiv> \<lparr> S = [1,2,3,4],
           s0 = 1,
           T = \<lambda> (a,b) . 

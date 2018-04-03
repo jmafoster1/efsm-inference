@@ -12,7 +12,7 @@ primrec apply_outputs :: "output_function list \<Rightarrow> state \<Rightarrow>
 
 primrec apply_guards :: "guard list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> bool" where
   "apply_guards [] _ _ = True" |
-  "apply_guards (h#t) i r =  ((bval h (join i r)) \<and> (apply_guards t i r))"
+  "apply_guards (h#t) i r =  ((gval h (join i r)) \<and> (apply_guards t i r))"
 
 abbreviation is_possible_step :: "efsm \<Rightarrow> statename \<Rightarrow> statename \<Rightarrow> transition \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> bool" where
 "is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (find (\<lambda>x . x = t) (T e(s,s')) \<noteq> None) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (input2state i 1) r))"

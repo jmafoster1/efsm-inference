@@ -233,15 +233,22 @@ second arg? If so, return it. If not, return false.
 
 fun apply_guard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints" where
   "apply_guard c (gexp.Lt (N n) (N n')) = (if n < n' then c else false)" |
-  "apply_guard c (gexp.Eq (N n) (N n')) = (if n = n' then c else false)" |
+  "apply_guard c (gexp.Not (gexp.Lt (N n) (N n'))) = (if n \<ge> n' then c else false)" |
+  
+"apply_guard c (gexp.Eq (N n) (N n')) = (if n = n' then c else false)" |
+  "apply_guard c (gexp.Not (gexp.Eq (N n) (N n'))) = (if n \<noteq> n' then c else false)" |
+
   "apply_guard c (gexp.Eq (V v) (N n)) = update c v (Eq n)" |
+  "apply_guard c (gexp.Not (gexp.Eq (V v) (N n))) = update c v (Neq n)" |
+
   "apply_guard c (gexp.Eq (N n) (V v)) = update c v (Eq n)" |
-  "apply_guard c (gexp.Eq (V vb) (V v)) = (case ((c vb), (c v)) of
-    (Bc True, Bc True) \<Rightarrow> c |
-    (Bc True, a) \<Rightarrow> update c v a |
-    (a, Bc True) \<Rightarrow> update c vb a |
-    (a, b) \<Rightarrow> (let com = (compose_eq a b) in (update (update c vb com) v com))
+  "apply_guard c (gexp.Not (gexp.Eq (N n) (V v))) = update c v (Neq n)" |
+
+  "apply_guard c (gexp.Eq (V vb) (V v)) = (let com = (compose_eq (c vb) (c v)) in (update (update c vb com) v com))" |
+  "apply_guard c (gexp.Not (gexp.Eq (V vb) (V v))) = (case ((c vb), (c v)) of
+    (Bc True, Bc True) \<Rightarrow> 
   )" |
+
   "apply_guard c (gexp.Eq (V vb) (Plus v va)) = update c vb (apply_plus c v va)" |
   "apply_guard c (gexp.Eq (Plus v va) (V vb)) = update c vb (apply_plus c v va)" |
 
@@ -262,12 +269,46 @@ fun apply_guard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints" w
     (_, Bc False) \<Rightarrow> false |
     (a, _) \<Rightarrow> (update c vb a)
   )"|
-  
+  "apply_guard c (gexp.Gt (N n) (V vb)) = (case (apply_gt (Eq n) (c vb)) of
+    (Bc False, _) \<Rightarrow> false |
+    (_, Bc False) \<Rightarrow> false |
+    (_, a) \<Rightarrow> (update c vb a)
+  )" |
+  "apply_guard c (gexp.Lt (V vb) (N n)) = (case (apply_gt (c vb) (Eq n)) of
+    (Bc False, _) \<Rightarrow> false |
+    (_, Bc False) \<Rightarrow> false |
+    (a, _) \<Rightarrow> (update c vb a)
+  )" |
+  "apply_guard c (gexp.Lt (V v) (V vb)) = (case (apply_gt (c vb) (c v)) of
+    (Bc False, _) \<Rightarrow> false |
+    (_, Bc False) \<Rightarrow> false |
+    (a, b) \<Rightarrow> update (update c vb a) v b
+  )"|
+  "apply_guard c (gexp.Lt (V vb) (Plus v vc)) = (case (apply_gt (apply_plus c v vc) (c vb)) of
+    (Bc False, _) \<Rightarrow> false |
+    (_, Bc False) \<Rightarrow> false |
+    (_, a) \<Rightarrow> update c vb a
+  )" |
+  "apply_guard c (gexp.Lt (Plus v vc) (V vb)) = (case (apply_gt (c vb) (apply_plus c v vc)) of
+    (Bc False, _) \<Rightarrow> false |
+    (_, Bc False) \<Rightarrow> false |
+    (a, _) \<Rightarrow> update c vb a
+  )" |
+  "apply_guard c (gexp.Lt (N va) (V vb)) = (case (apply_gt (c vb) (Eq va)) of 
+    (Bc False, _) \<Rightarrow> false |
+    (_, Bc False) \<Rightarrow> false |
+    (a, _) \<Rightarrow> update c vb a
+  )"|  
   (*Don't phrase your guard like this!*)
   "apply_guard a (gexp.Eq (Plus vb vc) (N v)) = false" |
   "apply_guard a (gexp.Eq (Plus vb vc) (Plus v vd)) = false" |
   "apply_guard a (gexp.Eq (N va) (Plus vb vc)) = false" |
-  "apply_guard a (gexp.Gt (Plus vb vc) (N v)) = false"
+  "apply_guard a (gexp.Gt (Plus vb vc) (N v)) = false" |
+  "apply_guard a (gexp.Gt (Plus vb vc) (Plus v vd)) = false" |
+  "apply_guard a (gexp.Gt (N va) (Plus vb vc)) = false" |
+  "apply_guard a (gexp.Lt (Plus vb vc) (N v)) = false" |
+  "apply_guard a (gexp.Lt (Plus vb vc) (Plus v vd)) = false" |
+  "apply_guard a (gexp.Lt (N va) (Plus vb vc)) = false"
 
 
 fun apply_update :: "constraints \<Rightarrow> update_function \<Rightarrow> constraints" where
