@@ -196,36 +196,14 @@ fun apply_guard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints op
     (Some a, Some b) \<Rightarrow> Some (\<lambda>x. csimp (Or (a x) (b x)))
   )" |
   "apply_guard a (gexp.Eq (N vb) (N v)) = (if vb = v then Some a else None)" |
-  "apply_guard a (gexp.Eq (V vb) (N v)) = (case csimp (And (a vb) (Eq v)) of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  )" |
-  "apply_guard a (gexp.Eq (V vb) (V v)) = (case csimp (And  (a vb) (a v)) of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update (update a vb s) v s)
-  )" |
-  "apply_guard a (gexp.Eq (V vb) (Plus v va)) = (case csimp (And (a vb) (apply_plus a v va)) of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  )" |
-  "apply_guard a (gexp.Eq (Plus vb vc) (V v)) = (case csimp (And (a v) (apply_plus a vb vc)) of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a v s)
-  )" |
-  "apply_guard a (gexp.Eq (N v) (V vb)) = (case csimp (And (a vb) (Eq v)) of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  )" |
+  "apply_guard a (gexp.Eq (V vb) (N v)) = (let s = (And (a vb) (Eq v)) in (if (always_false s) then None else Some (update a vb s)))" |
+  "apply_guard a (gexp.Eq (V vb) (V v)) = (let s = (And  (a vb) (a v)) in (if (always_false s) then None else Some (update (update a vb s) v s)))" |
+  "apply_guard a (gexp.Eq (V vb) (Plus v va)) = (let s = (And (a vb) (apply_plus a v va)) in (if (always_false s) then None else Some (update a vb s)))" |
+  "apply_guard a (gexp.Eq (Plus vb vc) (V v)) = (let s = (And (a v) (apply_plus a vb vc)) in (if (always_false s) then None else Some (update a v s)))" |
+  "apply_guard a (gexp.Eq (N v) (V vb)) = (let s = (And (a vb) (Eq v)) in (if (always_false s) then None else Some (update a vb s)))" |
   "apply_guard a (gexp.Gt (N n) (N n')) = (if n > n' then Some a else None)" |
-  "apply_guard a (gexp.Gt (V vb) (N n)) = (let (cvb, _) = (apply_gt (a vb) (Eq n)) in (case csimp cvb of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  ))" |
-  "apply_guard a (gexp.Gt (V vb) (V v)) = (let (cvb, cv) = (apply_gt (a vb) (a v)) in (case (csimp cvb, csimp cv) of
-    (Bc False, _) \<Rightarrow> None |
-    (_, Bc False) \<Rightarrow> None |
-    (svb, sv) \<Rightarrow> Some (update (update a vb svb) v sv)
-  ))" |
+  "apply_guard a (gexp.Gt (V vb) (N n)) = (let (cvb, _) = (apply_gt (a vb) (Eq n)) in (if (always_false cvb) then None else Some (update a vb s)))" |
+  "apply_guard a (gexp.Gt (V vb) (V v)) = (let (cvb, cv) = (apply_gt (a vb) (a v)) in (if (satisfiable cvb \<and> satisfiable cv) then Some (update (update a vb svb) v sv) else None))"|
   "apply_guard a (gexp.Gt (V vb) (Plus v vc)) = (let (cvb, _) = (apply_gt (a vb) (apply_plus a v vc)) in (case csimp cvb of
     Bc False \<Rightarrow> None |
     s \<Rightarrow> Some (update a vb s)
