@@ -275,6 +275,8 @@ fun csimp :: "cexp \<Rightarrow> cexp" where
   "csimp (Geq n) = Geq n" |
   "csimp (Leq n) = Leq n" |
   "csimp (Not (Not v)) = v" |
+  "csimp (And v (Bc True)) = v" |
+  "csimp (And (Bc True) v) = v" |
 
   (* Catch all so it terminates properly *)
   "csimp (Not (And v va)) = Not (csimp (And v va))" |
@@ -289,16 +291,12 @@ fun apply_guard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints op
       Some y \<Rightarrow> Some y
     )
   ) "|
-  "apply_guard a (gexp.And va vb) = (case (apply_guard a (gexp.Not va)) of
-    Some c \<Rightarrow> (case (apply_guard a (gexp.Not vb)) of
-      Some c' \<Rightarrow> Some (\<lambda>p. csimp (And (c p) (c' p))) |
-      None \<Rightarrow> Some c
-    ) |
-    None \<Rightarrow> (case (apply_guard a (gexp.Not va)) of
-      Some c' \<Rightarrow> Some c' |
-      None \<Rightarrow> None
-    )
-  )"|
+  "apply_guard a (gexp.Not (gexp.And va vb)) = (case ((apply_guard a (gexp.Not va)), (apply_guard a (gexp.Not vb))) of
+    (None, None) \<Rightarrow> None |
+    (None, Some a) \<Rightarrow> Some a |
+    (Some a, None) \<Rightarrow> Some a |
+    (Some a, Some b) \<Rightarrow> Some (\<lambda>x. csimp (Or (a x) (b x)))
+  )" |
   "apply_guard a (gexp.Eq (N vb) (N v)) = (if vb = v then Some a else None)" |
   "apply_guard a (gexp.Eq (V vb) (N v)) = (case csimp (And (a vb) (Eq v)) of
     Bc False \<Rightarrow> None |
@@ -459,16 +457,33 @@ fun apply_guard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints op
 
 
 fun apply_update :: "constraints \<Rightarrow> update_function \<Rightarrow> constraints" where
-  "apply_update c (v, (N n)) = update c v (Eq n)"
+  "apply_update c (v, (N n)) = update c v (Eq n)" |
+  "apply_update c (v, V vb) = update c v (csimp (c vb))" |
+  "apply_update c (v, Plus vb vc) = update c v (csimp (apply_plus c vb vc))"
 
-primrec apply_guards :: "constraints \<Rightarrow> guard list \<Rightarrow> constraints" where
-  "apply_guards c [] = c" |
-  "apply_guards c (h#t) = apply_guards (apply_guard c h) t"
+primrec apply_guards :: "constraints \<Rightarrow> guard list \<Rightarrow> constraints option" where
+  "apply_guards c [] = Some c" |
+  "apply_guards c (h#t) = (let h' = (apply_guard c h) in
+    (case h' of
+      None \<Rightarrow> None |
+      Some a \<Rightarrow> (apply_guards a t)
+    )
+  )"
 
 primrec apply_updates :: "constraints \<Rightarrow> update_function list \<Rightarrow> constraints" where
   "apply_updates c [] = c" |
   "apply_updates c (h#t) = apply_updates (apply_update c h) t"
 
-definition anterior :: "constraints \<Rightarrow> transition \<Rightarrow> constraints" where
-  "anterior c t = apply_updates (apply_guards c (Guard t)) (Updates t)"
+definition anterior :: "constraints \<Rightarrow> transition \<Rightarrow> constraints option" where
+  "anterior c t = (case (apply_guards c (Guard t)) of 
+    None \<Rightarrow> None |
+    Some a \<Rightarrow> Some (apply_updates a (Updates t))
+  )"
+
+lemma "apply_guards empty [] = Some empty"
+  by simp
+
+lemma "apply_guards empty [(gexp.Eq (V ''i1'') (N 0))] = Some (\<lambda>x. if x = ''i1'' then Eq 0 else Bc True)"
+  apply simp
+  by (simp add: update_def)
 end

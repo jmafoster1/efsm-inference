@@ -1,5 +1,5 @@
 theory drinks_machine2
-  imports drinks_machine
+  imports drinks_machine Constraints
 begin
 
 definition vend2 :: "efsm" where
@@ -31,4 +31,20 @@ lemma "observe_trace vend2 (s0 vend2) <> [(''select'', [1]), (''coin'', [50]), (
 
 lemma "equiv vend vend2 [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), (''vend'', [])]"
   by (simp add: equiv_def step_def vend_def vend2_def transitions shows_stuff index_def join_def)
+
+abbreviation t1_anterior :: "constraints" where
+  "t1_anterior \<equiv> (\<lambda>x. if x=''r2'' then Eq 0 else Bc True)"
+
+lemma "anterior empty t1 = Some t1_anterior"
+  by (simp add: anterior_def t1_def update_def)
+
+lemma "anterior t1_anterior t2 = Some empty"
+  apply (simp add: anterior_def t2_def update_def)
+  apply (rule ext)
+  apply (simp add: Constraints.apply_plus.psimps(4))
+
+  
+
+
+
 end

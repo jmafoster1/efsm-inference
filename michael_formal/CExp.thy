@@ -4,17 +4,17 @@ begin
 
 datatype cexp = Bc bool | Eq int | Lt int | Gt int | Not cexp | And cexp cexp
 
-abbreviation
-  Leq :: "int \<Rightarrow> cexp" where
+abbreviation Leq :: "int \<Rightarrow> cexp" where
   "Leq v \<equiv> Not (Gt v)"
 
-abbreviation
-  Geq :: "int \<Rightarrow> cexp" where
+abbreviation Geq :: "int \<Rightarrow> cexp" where
   "Geq v \<equiv> Not (Lt v)"
 
-abbreviation
-  Neq :: "int \<Rightarrow> cexp" where
+abbreviation Neq :: "int \<Rightarrow> cexp" where
   "Neq v \<equiv> Not (Eq v)"
+
+abbreviation Or :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
+  "Or v va \<equiv> Not (And (Not v) (Not va))"
 
 fun ceval :: "cexp \<Rightarrow> vname \<Rightarrow> state \<Rightarrow> bool" where
   "ceval (Bc v) _ _ = v" |
