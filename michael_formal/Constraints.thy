@@ -12,77 +12,12 @@ abbreviation
 definition update :: "constraints \<Rightarrow> vname \<Rightarrow> cexp \<Rightarrow> constraints" where
   "update m k v = (\<lambda>x. if x=k then v else m x)"
 
-fun apply_eq :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
-  "apply_eq v va = And v va"
-  (*"apply_eq (Bc False) _ = (Bc False)" |
-  "apply_eq _ (Bc False) = (Bc False)" |
-  "apply_eq (Not (Bc True)) _ = (Bc False)" |
-  "apply_eq _ (Not (Bc True)) = (Bc False)" |
-  "apply_eq (Bc True) a = a" |
-  "apply_eq a (Bc True) = a" |
-  "apply_eq (Not (Bc False)) a = a" |
-  "apply_eq a (Not (Bc False)) = a" |
-  "apply_eq a (Not (Not vb)) = apply_eq a vb" |
-  "apply_eq (Not (Not vb)) a = apply_eq vb a" |
-  "apply_eq a (And vb vc) = And (apply_eq a vb) (apply_eq a vc)" |
-  "apply_eq (And vb vc) a = And (apply_eq vb a) (apply_eq vc a)" |
-  "apply_eq (Not (And vb vc)) a = Not (And (apply_eq vb a) (apply_eq vc a))" |
-  "apply_eq a (Not (And vb vc)) = Not (And (apply_eq a vb) (apply_eq a vc))" |
-
-  "apply_eq (Eq v) (Eq va) = (if v = va then Eq v else Bc False)" |
-  "apply_eq (Eq v) (Lt va) = (if v < va then Eq v else Bc False)" |
-  "apply_eq (Eq v) (Gt va) = (if v > va then Eq v else Bc False)" |
-  "apply_eq (Eq v) (Neq va) = (if v \<noteq> va then Eq v else Bc False)" |
-  "apply_eq (Eq v) (Geq va) = (if v \<ge> va then Eq v else Bc False)" |
-  "apply_eq (Eq v) (Leq va) = (if v \<le> va then Eq v else Bc False)" |
-
-  "apply_eq (Lt va) (Eq v) = (if v < va then Eq v else Bc False)" |
-  "apply_eq (Lt v) (Lt va) = (if v < va then Lt v else Lt va)" |
-  "apply_eq (Lt v) (Gt va) = (if va < v then And (Lt v) (Gt va) else Bc False)" |
-  "apply_eq (Lt v) (Neq vb) = (if vb \<ge> v then Lt v else Bc False)" |
-  "apply_eq (Lt v) (Geq vb) = (if vb < v then And (Lt v) (Geq vb) else Bc False)" |
-  "apply_eq (Lt v) (Leq vb) = (if v < vb then Lt v else Lt vb)" |
-
-  "apply_eq (Gt va) (Eq v) = (if v > va then Eq v else Bc False)" |
-  "apply_eq (Gt va) (Lt v) = (if va < v then And (Lt v) (Gt va) else Bc False)" |
-  "apply_eq (Gt v) (Gt va) = (if v > va then Gt v else Gt va)" |
-  "apply_eq (Gt v) (Neq vb) = (if vb \<le> v then Gt v else And (Gt v) (Neq vb))" |
-  "apply_eq (Gt v) (Geq vb) = (if v > vb then Gt v else Not (Lt vb))" |
-  "apply_eq (Gt v) (Leq vb) = (if vb > v then And (Gt v) (Leq vb) else Bc False)" |
-
-  "apply_eq (Neq va) (Eq v) = (if v = va then Bc False else Eq v)" |
-  "apply_eq (Neq vb) (Neq v) = (if v = vb then Neq v else And (Neq v) (Neq vb))" |
-  "apply_eq (Neq vb) (Geq v) = (if vb < v then Geq v else (if v = vb then Gt v else And (Neq vb) (Geq v)))" |
-  "apply_eq (Neq vb) (Leq v) = (if vb > v then Leq v else (if v = vb then Lt v else And (Neq vb) (Leq v)))" |
-  "apply_eq (Neq vb) (Lt v) = (if vb \<ge> v then Lt v else Bc False)" |
-  "apply_eq (Neq vb) (Gt v) = (if vb \<le> v then Gt v else And (Gt v) (Neq vb))" |
-
-  "apply_eq (Geq va) (Eq v) = (if v \<ge> va then Eq v else Bc False)" |
-  "apply_eq (Geq vb) (Lt v) = (if vb < v then And (Lt v) (Geq vb) else Bc False)" |
-  "apply_eq (Geq vb) (Gt v) = (if v > vb then Gt v else Not (Lt vb))" |
-  "apply_eq (Geq vb) (Neq v) = (if v < vb then Geq v else (if v = vb then Gt vb else And (Geq vb) (Neq v)))"|
-  "apply_eq (Geq vb) (Geq v) = (if vb > v then Geq vb else Geq v)" |
-  "apply_eq (Geq vb) (Leq v) = (if v > vb then And (Geq vb) (Leq v) else Bc False)" |
-
-  "apply_eq (Leq vb) (Lt v) = (if v < vb then Lt v else Lt vb)" |
-  "apply_eq (Leq va) (Eq v) = (if v \<le> va then Eq v else Bc False)" |
-  "apply_eq (Leq vb) (Gt v) = (if vb > v then And (Gt v) (Leq vb) else Bc False)" |
-  "apply_eq (Leq vb) (Neq v) = (if v > vb then Leq vb else (if v = vb then Lt vb else And (Leq vb) (Neq v)))"|
-  "apply_eq (Leq vb) (Geq v) = (if v < vb then And (Leq vb) (Geq v) else Bc False)"|
-  "apply_eq (Leq vb) (Leq v) = (if v > vb then Leq vb else Leq v)"*)
-
-(* lemma commutative_apply_eq: "\<forall> x y. apply_eq x y = apply_eq y x" *)
-
-
 fun compose_plus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
-  "compose_plus (Bc False) _ = Bc False" |
-  "compose_plus _ (Bc False) = Bc False" |
-  "compose_plus (Not (Bc True)) _ = Bc False" |
-  "compose_plus _ (Not (Bc True)) = Bc False" |
-  "compose_plus (Bc True) _ = Bc True" |
-  "compose_plus _ (Bc True) = Bc True" |
-  "compose_plus (Not (Bc False)) _ = Bc True" |
-  "compose_plus _ (Not (Bc False)) = Bc True" |
+  "compose_plus (Bc v) _ = Bc v" |
+  "compose_plus _ (Bc v) = Bc v" |
+  "compose_plus (Not (Bc v)) _ = Bc (\<not>v)" |
+  "compose_plus _ (Not (Bc v)) = Bc (\<not>v)" |
+
   "compose_plus a (Not (Not vb)) = compose_plus a vb"|
   "compose_plus (Not (Not vb)) a = compose_plus vb a"|
   "compose_plus a (And va vb) = And (compose_plus a va) (compose_plus a vb)"|
@@ -129,8 +64,11 @@ function apply_plus :: "constraints \<Rightarrow> aexp \<Rightarrow> aexp \<Righ
   "apply_plus c (Plus v va) (V vb) = compose_plus (apply_plus c v va) (c vb)" |
   "apply_plus c (Plus vb vc) (Plus v va) = compose_plus (apply_plus c vb vc) (apply_plus c v va)"
     apply pat_completeness
-    by simp_all
-  
+  by simp_all
+
+termination apply_plus
+  apply (relation "measure (\<lambda>(c, x, y). (size x) + (size y))")
+  by simp_all
 
 (*
 If the second arg is always bigger than the first (e.g. if they're both literals with the first
@@ -154,54 +92,32 @@ fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" whe
   "apply_gt (Not (And va vb)) v = (Not (And (fst (apply_gt va v)) (fst (apply_gt vb v))), Not (And (snd (apply_gt va v)) (snd (apply_gt vb v))))" |
   
   "apply_gt (Bc True) (Bc True) = (Bc True, Bc True)" |
-  "apply_gt (Bc True) (Eq v) = (Gt v, Eq v)" |
-  "apply_gt (Bc True) (Lt v) = (Bc True, Lt v)" |
-  "apply_gt (Bc True) (Gt v) = (Gt v, Gt v)" |
-  "apply_gt (Bc True) (Neq v) = (Bc True, Neq v)" |
-  "apply_gt (Bc True) (Geq v) = (Gt v, Geq v)" |
-  "apply_gt (Bc True) (Leq v) = (Bc True, Leq v)" |
-  "apply_gt (Eq v) (Bc True) = (Eq v, Lt v)" |
-  "apply_gt (Eq v) (Eq va) = (if v > va then (Eq v, Eq va) else (Bc False, Bc False))" |
-  "apply_gt (Eq v) (Lt va) = (if v > va then (Eq v, Lt va) else (Eq v, Lt v))" |
-  "apply_gt (Eq v) (Gt va) = (if v > va then (Eq v, And (Gt va) (Lt v)) else (Bc False, Bc False))" |
-  "apply_gt (Eq v) (Neq va) = (if va \<le> v then (Eq v, Lt v) else (Eq v, And (Lt v) (Neq va)))" |
-  "apply_gt (Eq v) (Geq va) = (if v \<le> va then (Bc False, Bc False) else (Eq v, And (Geq va) (Lt v)))" |
-  "apply_gt (Eq v) (Leq va) = (if va < v then (Eq v, (Leq va)) else (Eq v, Lt v))" |
-  "apply_gt (Lt v) (Bc True) = (Lt v, Lt v)" |
-  "apply_gt (Lt v) (Eq va) = (if v \<le> va then (Bc False, Bc False) else (And (Lt v) (Gt va), Eq va))" |
-  "apply_gt (Lt v) (Lt va) = (if v \<le> va then (Bc False, Bc False) else (Lt v, Lt va))" |
-  "apply_gt (Lt v) (Gt va) = (if v \<le> va then (Bc False, Bc False) else (And (Lt v) (Gt va), And (Gt va) (Lt v)))" |
-  "apply_gt (Lt v) (Neq vb) = (if vb \<ge> v then (Lt v, Lt v) else (Lt v, And (Lt v) (Neq vb)))" |
-  "apply_gt (Lt v) (Geq va) = (if v \<le> va then (Bc False, Bc False) else (And (Lt v) (Gt va), And (Lt v) (Geq va)))" |
-  "apply_gt (Lt v) (Leq va) = (if v \<le> va then (Bc False, Bc False) else (Lt v, Leq va))" |
-  "apply_gt (Gt v) (Bc True) = (Gt v, Bc True)" |
-  "apply_gt (Gt v) (Eq va) = (if v > va then (Gt v, Eq va) else (Gt va, Eq va))" |
-  "apply_gt (Gt v) (Lt va) = (Gt v, Lt va)" |
-  "apply_gt (Gt v) (Gt va) = (if va \<ge> v then (Gt va, Gt va) else (Gt v, Gt va))" |
-  "apply_gt (Gt v) (Neq vb) = (if vb > v then (Gt v, Leq v) else (Gt v, And (Leq v) (Neq vb)))" |
-  "apply_gt (Gt v) (Geq va) = (if va \<ge> v then (Gt va, Not (Lt va)) else (Gt v, Not (Lt va)))" |
-  "apply_gt (Gt v) (Leq va) = (Gt v, Leq va)" |
   "apply_gt (Neq va) (Bc True) = (Neq va, Bc True)" |
+  "apply_gt (Gt v) (Bc True) = (Gt v, Bc True)" |
+  "apply_gt (Eq v) (Bc True)   = (Eq v, Lt v)" |
+  "apply_gt (Lt v) (Bc True)   = (Lt v, Lt v)" |
   "apply_gt (Geq va) (Bc True) = (Geq va, Lt va)" |
   "apply_gt (Leq va) (Bc True) = (Leq va, Lt va)" |
-  "apply_gt (Neq vb) (Eq va) = (if vb \<le> va then (Gt va, Eq va) else (And (Gt va) (Neq vb), Eq va))" |
-  "apply_gt (Geq vb) (Eq va) = (if vb \<le> va then (Gt va, Eq va) else (Geq vb, Eq va))" |
-  "apply_gt (Leq vb) (Eq va) = (if vb \<le> va then (Bc False, Bc False) else (And (Leq vb) (Gt va), Eq va))" |
-  "apply_gt (Neq vb) (Lt va) = (Neq vb, Lt va)" |
-  "apply_gt (Geq vb) (Lt va) = (Geq vb, Lt va)" |
-  "apply_gt (Leq vb) (Lt va) = (if vb \<le> va then (Bc False, Bc False) else (And (Leq vb) (Geq va), Lt va))" |
-  "apply_gt (Neq vb) (Gt va) = (if vb \<le> va then (Gt va, Gt va) else (And (Gt va) (Neq vb), Gt va))" |
-  "apply_gt (Geq vb) (Gt va) = (if vb \<le> va then (Gt va, Gt va) else (Geq vb, Gt va))" |
-  "apply_gt (Leq vb) (Gt va) = (if vb \<le> va then (Bc False, Bc False) else (And (Leq vb) (Gt va), And (Lt vb) (Gt va)))" |
-  "apply_gt (Neq va) (Neq vb) = ((Neq va), (Neq vb))" |
-  "apply_gt (Geq va) (Neq vb) = (Not (Lt va), Neq vb)" |
-  "apply_gt (Leq va) (Neq vb) = (if vb \<ge> va then (Leq va, Lt va) else (Leq va, And (Lt va) (Neq vb)))" |
-  "apply_gt (Neq va) (Geq vb) = (if va \<le> vb then (Gt vb, Geq vb) else (And (Gt vb) (Neq va), Geq vb))" |
-  "apply_gt (Geq va) (Geq vb) = (if va \<le> vb then (Gt vb, Geq vb) else (Geq va, Geq vb))" |
-  "apply_gt (Leq va) (Geq vb) = (if va \<le> vb then (Bc False, Bc False) else (And (Gt vb) (Leq va) , Geq vb))" |
-  "apply_gt (Neq va) (Leq vb) = (Neq va, Leq vb)" |
-  "apply_gt (Geq va) (Leq vb) = (Geq va, Leq vb)" |
-  "apply_gt (Leq va) (Leq vb) = (if va \<le> vb then (Bc False, Bc False) else (Leq va, Leq vb))"
+
+  "apply_gt (Bc True) (Eq v) = (Gt v, Eq v)" |
+  "apply_gt (Bc True) (Geq v) = (Gt v, Geq v)" |
+  "apply_gt (Bc True) (Gt v) = (Gt v, Gt v)" |
+  "apply_gt (Bc True) v = (Bc True, v)" |
+
+  "apply_gt (Lt v) (Gt va) = (And (Lt v)  (Gt va), And (Gt va) (Lt v))" |
+  "apply_gt v (Leq vb) = (And v (Gt vb), Leq vb)" |
+  "apply_gt v (Gt va) =  (And v (Gt va), Gt va)" |
+  "apply_gt v (Lt va) = (And v (Geq va), Lt va)" |
+  "apply_gt (Lt v)  (Neq vb) = (Lt v,  And (Neq vb) (Lt v))" |
+  "apply_gt (Leq v) (Neq vb) = (Leq v, And (Neq vb) (Lt v))" |
+  
+  "apply_gt (Eq v) va = (Eq v, And va (Lt v))" |
+  "apply_gt v (Eq va) = (And v (Gt va), Eq va)" |
+
+  "apply_gt (Lt v) (Geq va) = (And (Lt v) (Gt va), And (Geq va) (Lt v))" |
+  "apply_gt v      (Geq vb) = (And v  (Gt vb), Geq vb)" |
+
+  "apply_gt va vb = (va, vb)"
 
 fun apply_geq :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where
   "apply_geq (Bc False) v = (Bc False, v)" |
@@ -263,24 +179,6 @@ definition apply_leq :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> ce
 
 definition apply_lt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where
   "apply_lt a b = (let (ca, cb) = (apply_gt b a) in (cb, ca))"
-
-fun csimp :: "cexp \<Rightarrow> cexp" where
-  "csimp (Bc a) = Bc a" |
-  "csimp (Eq n) = Eq n" |
-  "csimp (Lt n) = Lt n" |
-  "csimp (Gt n) = Gt n" |
-  "csimp (Not (Bc True)) = Bc False" |
-  "csimp (Not (Bc False)) = Bc True" |
-  "csimp (Neq n) = Neq n" |
-  "csimp (Geq n) = Geq n" |
-  "csimp (Leq n) = Leq n" |
-  "csimp (Not (Not v)) = v" |
-  "csimp (And v (Bc True)) = v" |
-  "csimp (And (Bc True) v) = v" |
-
-  (* Catch all so it terminates properly *)
-  "csimp (Not (And v va)) = Not (csimp (And v va))" |
-  "csimp (And v va) = And (csimp v) (csimp va)"
 
 fun apply_guard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints option" where
   "apply_guard a (gexp.Not (gexp.Not va)) = apply_guard a va" |
@@ -474,8 +372,8 @@ primrec apply_updates :: "constraints \<Rightarrow> update_function list \<Right
   "apply_updates c [] = c" |
   "apply_updates c (h#t) = apply_updates (apply_update c h) t"
 
-definition anterior :: "constraints \<Rightarrow> transition \<Rightarrow> constraints option" where
-  "anterior c t = (case (apply_guards c (Guard t)) of 
+definition posterior :: "constraints \<Rightarrow> transition \<Rightarrow> constraints option" where
+  "posterior c t = (case (apply_guards c (Guard t)) of 
     None \<Rightarrow> None |
     Some a \<Rightarrow> Some (apply_updates a (Updates t))
   )"
