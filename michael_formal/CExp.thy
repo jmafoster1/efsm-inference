@@ -24,8 +24,11 @@ fun ceval :: "cexp \<Rightarrow> (int \<Rightarrow> bool)" where
   "ceval (Not v) = (\<lambda>i. \<not>(ceval v i))" |
   "ceval (And v va) = (\<lambda>i. (ceval v i \<and> ceval va i))"
 
-abbreviation always_false :: "cexp \<Rightarrow> bool" where
-  "always_false v \<equiv> (\<forall> i. ceval v i = False)"
+definition cexp_equiv :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
+  "cexp_equiv c c' = (\<forall>i. (ceval c i) = (ceval c' i))"
+
+abbreviation valid :: "cexp \<Rightarrow> bool" where
+  "valid v \<equiv> (\<forall> i. ceval v i = True)"
 
 abbreviation satisfiable :: "cexp \<Rightarrow> bool" where
   "satisfiable v \<equiv> (\<exists> i. ceval v i = True)"

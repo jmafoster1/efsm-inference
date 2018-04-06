@@ -5,12 +5,20 @@ begin
 
 type_synonym constraints = "vname \<Rightarrow> cexp"
 
-abbreviation
-  empty :: constraints where
+abbreviation empty :: constraints where
   "empty \<equiv> \<lambda>x. Bc True"
+
+abbreviation inconsistent :: constraints where
+  "inconsistent \<equiv> \<lambda>x. Bc False"
 
 definition update :: "constraints \<Rightarrow> vname \<Rightarrow> cexp \<Rightarrow> constraints" where
   "update m k v = (\<lambda>x. if x=k then v else m x)"
+
+definition constraints_equiv :: "constraints \<Rightarrow> constraints \<Rightarrow> bool" where
+  "constraints_equiv c c' = (\<forall>i. cexp_equiv (c i) (c' i))"
+
+definition consistent :: "constraints \<Rightarrow> bool" where
+  "consistent c = (\<forall>i. satisfiable (c i))"
 
 fun compose_plus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "compose_plus (Bc v) _ = Bc v" |
@@ -180,186 +188,92 @@ definition apply_leq :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> ce
 definition apply_lt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where
   "apply_lt a b = (let (ca, cb) = (apply_gt b a) in (cb, ca))"
 
-fun apply_guard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints option" where
+fun apply_guard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints" where
   "apply_guard a (gexp.Not (gexp.Not va)) = apply_guard a va" |
-  "apply_guard a (gexp.And va vb) = (case apply_guard a va of
-    None \<Rightarrow> None |
-    Some x \<Rightarrow> (case apply_guard x vb of
-      None \<Rightarrow> None |
-      Some y \<Rightarrow> Some y
-    )
-  ) "|
-  "apply_guard a (gexp.Not (gexp.And va vb)) = (case ((apply_guard a (gexp.Not va)), (apply_guard a (gexp.Not vb))) of
-    (None, None) \<Rightarrow> None |
-    (None, Some a) \<Rightarrow> Some a |
-    (Some a, None) \<Rightarrow> Some a |
-    (Some a, Some b) \<Rightarrow> Some (\<lambda>x. csimp (Or (a x) (b x)))
-  )" |
-  "apply_guard a (gexp.Eq (N vb) (N v)) = (if vb = v then Some a else None)" |
-  "apply_guard a (gexp.Eq (V vb) (N v)) = (let s = (And (a vb) (Eq v)) in (if (always_false s) then None else Some (update a vb s)))" |
-  "apply_guard a (gexp.Eq (V vb) (V v)) = (let s = (And  (a vb) (a v)) in (if (always_false s) then None else Some (update (update a vb s) v s)))" |
-  "apply_guard a (gexp.Eq (V vb) (Plus v va)) = (let s = (And (a vb) (apply_plus a v va)) in (if (always_false s) then None else Some (update a vb s)))" |
-  "apply_guard a (gexp.Eq (Plus vb vc) (V v)) = (let s = (And (a v) (apply_plus a vb vc)) in (if (always_false s) then None else Some (update a v s)))" |
-  "apply_guard a (gexp.Eq (N v) (V vb)) = (let s = (And (a vb) (Eq v)) in (if (always_false s) then None else Some (update a vb s)))" |
-  "apply_guard a (gexp.Gt (N n) (N n')) = (if n > n' then Some a else None)" |
-  "apply_guard a (gexp.Gt (V vb) (N n)) = (let (cvb, _) = (apply_gt (a vb) (Eq n)) in (if (always_false cvb) then None else Some (update a vb s)))" |
-  "apply_guard a (gexp.Gt (V vb) (V v)) = (let (cvb, cv) = (apply_gt (a vb) (a v)) in (if (satisfiable cvb \<and> satisfiable cv) then Some (update (update a vb svb) v sv) else None))"|
-  "apply_guard a (gexp.Gt (V vb) (Plus v vc)) = (let (cvb, _) = (apply_gt (a vb) (apply_plus a v vc)) in (case csimp cvb of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  ))" |
-  "apply_guard a (gexp.Gt (Plus v vc) (V vb)) = (let (_, cvb) = (apply_gt (apply_plus a v vc) (a vb)) in (case csimp cvb of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  ))" |
-  "apply_guard a (gexp.Gt (N n) (V vb)) = (let (_, cvb) = (apply_gt (Eq n) (a vb)) in (case csimp cvb of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  ))" |
-  "apply_guard a (gexp.Lt (N n) (N n')) = (if n < n' then Some a else None)" |
-  "apply_guard a (gexp.Lt (V vb) (N n)) = (let (cvb, _) = (apply_lt (a vb) (Eq n)) in (case csimp cvb of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  ))" |
-  "apply_guard a (gexp.Lt (V vb) (V v)) = (let (cvb, cv) = (apply_lt (a vb) (a v)) in (case (csimp cvb, csimp cv) of
-    (Bc False, _) \<Rightarrow> None |
-    (_, Bc False) \<Rightarrow> None |
-    (svb, sv) \<Rightarrow> Some (update (update a vb svb) v sv)
-  ))" |
-  "apply_guard a (gexp.Lt (V vb) (Plus v vc)) = (let (cvb, _) = (apply_lt (a vb) (apply_plus a v vc)) in (case csimp cvb of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  ))" |
-  "apply_guard a (gexp.Lt (Plus v vc) (V vb)) = (let (_, cvb) = (apply_lt (apply_plus a v vc) (a vb)) in (case csimp cvb of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  ))" |
-  "apply_guard a (gexp.Lt (N n) (V vb)) = (let (_, cvb) = (apply_lt (Eq n) (a vb)) in (case csimp cvb of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  ))" |
+  "apply_guard a (gexp.And va vb) = apply_guard (apply_guard a va) vb"|
+  "apply_guard a (gexp.Not (gexp.And va vb)) = (\<lambda>x. Or ((apply_guard a (gexp.Not va)) x) ((apply_guard a (gexp.Not vb)) x))" |
+  "apply_guard a (gexp.Eq (N vb) (N v)) = (if vb = v then a else inconsistent)" |
+  "apply_guard a (gexp.Eq (V vb) (N v)) = update a vb (And (a vb) (Eq v))" |
+  "apply_guard a (gexp.Eq (N v) (V vb)) = update a vb (And (a vb) (Eq v))" |
+  "apply_guard a (gexp.Eq (V vb) (V v)) = update a vb (And  (a vb) (a v))" |
+  "apply_guard a (gexp.Eq (V vb) (Plus v va)) = update a vb (And (a vb) (apply_plus a v va))" |
+  "apply_guard a (gexp.Eq (Plus vb vc) (V v)) = update a v (And (a v) (apply_plus a vb vc))" |
+ 
+  "apply_guard a (gexp.Gt (N n) (N n')) = (if n > n' then a else inconsistent)" |
+  "apply_guard a (gexp.Gt (V vb) (N n)) = update a vb (And (a vb) (Gt n))" |
+  "apply_guard a (gexp.Gt (N n) (V vb)) = update a vb (And (a vb) (Lt n))" |
+  "apply_guard a (gexp.Gt (V vb) (V v)) = (let (cvb, cv) = (apply_gt (a vb) (a v)) in (if (satisfiable cvb \<and> satisfiable cv) then (update (update a vb cvb) v cv) else inconsistent))"|
+  "apply_guard a (gexp.Gt (V vb) (Plus v vc)) = (let (cvb, _) = (apply_gt (a vb) (apply_plus a v vc)) in (if satisfiable cvb then (update a vb cvb) else inconsistent))" |
+  "apply_guard a (gexp.Gt (Plus v vc) (V vb)) = (let (_, cvb) = (apply_gt (apply_plus a v vc) (a vb)) in (if satisfiable cvb then (update a vb cvb) else inconsistent))" |
+ 
+  "apply_guard a (gexp.Lt (N n) (N n')) = (if n < n' then a else inconsistent)" |
+  "apply_guard a (gexp.Lt (V vb) (N n)) = (let cvb = (And (a vb) (Lt n)) in (if (satisfiable cvb) then (update a vb cvb) else inconsistent))" |
+  "apply_guard a (gexp.Lt (N n) (V vb)) = (let cvb = (And (a vb) (Gt n)) in (if (satisfiable cvb) then (update a vb cvb) else inconsistent))" |
+  "apply_guard a (gexp.Lt (V vb) (V v)) = (let (cvb, cv) = (apply_lt (a vb) (a v)) in (if (satisfiable cvb \<and> satisfiable cv) then (update (update a vb cvb) v cv) else inconsistent))" |
+  "apply_guard a (gexp.Lt (V vb) (Plus v vc)) = (let (cvb, _) = (apply_lt (a vb) (apply_plus a v vc)) in (if satisfiable cvb then (update a vb cvb) else inconsistent))" |
+  "apply_guard a (gexp.Lt (Plus v vc) (V vb)) = (let (_, cvb) = (apply_lt (apply_plus a v vc) (a vb)) in (if satisfiable cvb then (update a vb cvb) else inconsistent))" |
 
-  "apply_guard a (Ge (N n) (N n')) = (if n \<ge> n' then Some a else None)" |
-  "apply_guard a (Ge (V vb) (N n)) = (let (cvb, _) = (apply_geq (a vb) (Eq n)) in (case csimp cvb of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  ))" |
-  "apply_guard a (Ge (V vb) (V v)) = (let (cvb, cv) = (apply_geq (a vb) (a v)) in (case (csimp cvb, csimp cv) of
-    (Bc False, _) \<Rightarrow> None |
-    (_, Bc False) \<Rightarrow> None |
-    (svb, sv) \<Rightarrow> Some (update (update a vb svb) v sv)
-  ))" |
-  "apply_guard a (Ge (V vb) (Plus v vc)) = (let (cvb, _) = (apply_geq (a vb) (apply_plus a v vc)) in (case csimp cvb of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  ))" |
-  "apply_guard a (Ge (Plus v vc) (V vb)) = (let (_, cvb) = (apply_geq (apply_plus a v vc) (a vb)) in (case csimp cvb of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  ))" |
-  "apply_guard a (Ge (N n) (V vb)) = (let (_, cvb) = (apply_geq (Eq n) (a vb)) in (case csimp cvb of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  ))" |
-  "apply_guard a (Le (N n) (N n')) = (if n \<le> n' then Some a else None)" |
-  "apply_guard a (Le (V vb) (N n)) = (let (cvb, _) = (apply_leq (a vb) (Eq n)) in (case csimp cvb of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  ))" |
-  "apply_guard a (Le (V vb) (V v)) = (let (cvb, cv) = (apply_leq (a vb) (a v)) in (case (csimp cvb, csimp cv) of
-    (Bc False, _) \<Rightarrow> None |
-    (_, Bc False) \<Rightarrow> None |
-    (svb, sv) \<Rightarrow> Some (update (update a vb svb) v sv)
-  ))" |
-  "apply_guard a (Le (V vb) (Plus v vc)) = (let (cvb, _) = (apply_leq (a vb) (apply_plus a v vc)) in (case csimp cvb of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  ))" |
-  "apply_guard a (Le (Plus v vc) (V vb)) = (let (_, cvb) = (apply_leq (apply_plus a v vc) (a vb)) in (case csimp cvb of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  ))" |
-  "apply_guard a (Le (N n) (V vb)) = (let (_, cvb) = (apply_leq (Eq n) (a vb)) in (case csimp cvb of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a vb s)
-  ))" |
-  "apply_guard a (Ne (N n) (N n')) = (if n = n' then None else Some a)" |
-  "apply_guard a (Ne (V v) (N n)) = (case csimp (And (a v) (Neq n)) of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a v s)
-  )" |
-  "apply_guard a (Ne (V v) (V va)) = (case (csimp (a v), csimp (a va)) of
-    (Bc False, _) \<Rightarrow> None |
-    (_, Bc False) \<Rightarrow> None |
-    (Eq n, Eq n') \<Rightarrow> (if n = n' then None else Some a) |
-    (Eq n, s) \<Rightarrow> Some (update a va (And s (Neq n))) |
-    (s, Eq n) \<Rightarrow> Some (update a v (And s (Neq n))) |
-    (_, _) \<Rightarrow> Some a
-  )" |
-  "apply_guard a (Ne (V v) (Plus va vc)) = (case csimp (apply_plus a va vc) of
-    Bc False \<Rightarrow> None |
-    Eq n \<Rightarrow> Some (update a v (Neq n)) |
-    _ \<Rightarrow> Some a
-  )" |
-  "apply_guard a (Ne (Plus va vc) (V v)) = (case csimp (apply_plus a va vc) of
-    Bc False \<Rightarrow> None |
-    Eq n \<Rightarrow> Some (update a v (Neq n)) |
-    _ \<Rightarrow> Some a
-  )" |
-  "apply_guard a (Ne (N vb) (V v)) = (case csimp (And (a v) (Neq vb)) of
-    Bc False \<Rightarrow> None |
-    s \<Rightarrow> Some (update a v s)
-  )" |
+  "apply_guard a (Ge (N n) (N n')) = (if n \<ge> n' then a else inconsistent)" |
+  "apply_guard a (Ge (V vb) (N n)) = (let cvb = (And (a vb) (Geq n)) in (if (satisfiable cvb) then (update a vb cvb) else inconsistent))" |
+  "apply_guard a (Ge (N n) (V vb)) = (let cvb = (And (a vb) (Leq n)) in (if (satisfiable cvb) then (update a vb cvb) else inconsistent))" |
+  "apply_guard a (Ge (V vb) (V v)) = (let (cvb, cv) = (apply_geq (a vb) (a v)) in (if (satisfiable cvb \<and> satisfiable cv) then (update (update a vb cvb) v cv) else inconsistent))"|
+  "apply_guard a (Ge (V vb) (Plus v vc)) = (let (cvb, _) = (apply_geq (a vb) (apply_plus a v vc)) in (if satisfiable cvb then (update a vb cvb) else inconsistent))" |
+  "apply_guard a (Ge (Plus v vc) (V vb)) = (let (_, cvb) = (apply_geq (apply_plus a v vc) (a vb)) in (if satisfiable cvb then (update a vb cvb) else inconsistent))" |
+  
+  "apply_guard a (Le (N n) (N n')) = (if n \<ge> n' then a else inconsistent)" |
+  "apply_guard a (Le (V vb) (N n)) = (let cvb = (And (a vb) (Leq n)) in (if (satisfiable cvb) then (update a vb cvb) else inconsistent))" |
+  "apply_guard a (Le (N n) (V vb)) = (let cvb = (And (a vb) (Geq n)) in (if (satisfiable cvb) then (update a vb cvb) else inconsistent))" |
+  "apply_guard a (Le (V vb) (V v)) = (let (cvb, cv) = (apply_leq (a vb) (a v)) in (if (satisfiable cvb \<and> satisfiable cv) then (update (update a vb cvb) v cv) else inconsistent))"|
+  "apply_guard a (Le (V vb) (Plus v vc)) = (let (cvb, _) = (apply_leq (a vb) (apply_plus a v vc)) in (if satisfiable cvb then (update a vb cvb) else inconsistent))" |
+  "apply_guard a (Le (Plus v vc) (V vb)) = (let (_, cvb) = (apply_leq (apply_plus a v vc) (a vb)) in (if satisfiable cvb then (update a vb cvb) else inconsistent))" |
 
+  "apply_guard a (Ne (N n) (N n')) = (if n = n' then inconsistent else a)" |
+  "apply_guard a (Ne (V vb) (N v)) = (let s = (And (a vb) (Neq v)) in (if (satisfiable s) then (update a vb s) else inconsistent))" |
+  "apply_guard a (Ne (N v) (V vb)) = (let s = (And (a vb) (Neq v)) in (if (satisfiable s) then (update a vb s) else inconsistent))" |
+  "apply_guard a (Ne (V vb) (V v)) = (let s = (Not (And  (a vb) (a v))) in (if (satisfiable s) then (update (update a vb s) v s) else inconsistent))" |
+  "apply_guard a (Ne (V v) (Plus va vc)) = (let s = (Not (And (a v) (apply_plus a va vc))) in (if (satisfiable s) then (update a v s) else inconsistent))" |
+  "apply_guard a (Ne (Plus va vc) (V v)) = (let s = (Not (And (a v) (apply_plus a va vc))) in (if (satisfiable s) then (update a v s) else inconsistent))" |
+  
   (* Don't phrase your guard like this *)
-  "apply_guard a (Ge (N v) (Plus vc vd)) = None" |
-  "apply_guard a (Ge (Plus vc vd) (Plus v va)) = None" |
-  "apply_guard a (Ge (Plus vc vd) (N v)) = None" |
-  "apply_guard a (Le (N vb) (Plus v vc)) = None" |
-  "apply_guard a (Le (Plus v vc) (Plus va vd)) = None" |
-  "apply_guard a (Le (Plus v vc) (N va)) = None" |
-  "apply_guard a (Ne (N vb) (Plus v vc)) = None" |
-  "apply_guard a (Ne (Plus v vc) (Plus va vd)) = None" |
-  "apply_guard a (Ne (Plus v vc) (N va)) = None" |
-  "apply_guard a (gexp.Lt (N va) (Plus vb vc)) = None" |
-  "apply_guard a (gexp.Lt (Plus vb vc) (Plus v vd)) = None" |
-  "apply_guard a (gexp.Lt (Plus vb vc) (N v)) = None" |
-  "apply_guard a (gexp.Gt (N va) (Plus vb vc)) = None" |
-  "apply_guard a (gexp.Gt (Plus vb vc) (N v)) = None" |
-  "apply_guard a (gexp.Gt (Plus vb vc) (Plus v vd)) = None" |
-  "apply_guard a (gexp.Eq (N va) (Plus vb vc)) = None" |
-  "apply_guard a (gexp.Eq (Plus vb vc) (N v)) = None" |
-  "apply_guard a (gexp.Eq (Plus vb vc) (Plus v vd)) = None"
-
+  "apply_guard a (Ge (N v) (Plus vc vd)) = inconsistent" |
+  "apply_guard a (Ge (Plus vc vd) (Plus v va)) = inconsistent" |
+  "apply_guard a (Ge (Plus vc vd) (N v)) = inconsistent" |
+  "apply_guard a (Le (N vb) (Plus v vc)) = inconsistent" |
+  "apply_guard a (Le (Plus v vc) (Plus va vd)) = inconsistent" |
+  "apply_guard a (Le (Plus v vc) (N va)) = inconsistent" |
+  "apply_guard a (Ne (N vb) (Plus v vc)) = inconsistent" |
+  "apply_guard a (Ne (Plus v vc) (Plus va vd)) = inconsistent" |
+  "apply_guard a (Ne (Plus v vc) (N va)) = inconsistent" |
+  "apply_guard a (gexp.Lt (N va) (Plus vb vc)) = inconsistent" |
+  "apply_guard a (gexp.Lt (Plus vb vc) (Plus v vd)) = inconsistent" |
+  "apply_guard a (gexp.Lt (Plus vb vc) (N v)) = inconsistent" |
+  "apply_guard a (gexp.Gt (N va) (Plus vb vc)) = inconsistent" |
+  "apply_guard a (gexp.Gt (Plus vb vc) (N v)) = inconsistent" |
+  "apply_guard a (gexp.Gt (Plus vb vc) (Plus v vd)) = inconsistent" |
+  "apply_guard a (gexp.Eq (N va) (Plus vb vc)) = inconsistent" |
+  "apply_guard a (gexp.Eq (Plus vb vc) (N v)) = inconsistent" |
+  "apply_guard a (gexp.Eq (Plus vb vc) (Plus v vd)) = inconsistent"
 
 fun apply_update :: "constraints \<Rightarrow> update_function \<Rightarrow> constraints" where
   "apply_update c (v, (N n)) = update c v (Eq n)" |
-  "apply_update c (v, V vb) = update c v (csimp (c vb))" |
-  "apply_update c (v, Plus vb vc) = update c v (csimp (apply_plus c vb vc))"
+  "apply_update c (v, V vb) = update c v (c vb)" |
+  "apply_update c (v, Plus vb vc) = update c v (apply_plus c vb vc)"
 
-primrec apply_guards :: "constraints \<Rightarrow> guard list \<Rightarrow> constraints option" where
-  "apply_guards c [] = Some c" |
-  "apply_guards c (h#t) = (let h' = (apply_guard c h) in
-    (case h' of
-      None \<Rightarrow> None |
-      Some a \<Rightarrow> (apply_guards a t)
-    )
-  )"
+primrec apply_guards :: "constraints \<Rightarrow> guard list \<Rightarrow> constraints" where
+  "apply_guards c [] = c" |
+  "apply_guards c (h#t) = (apply_guards (apply_guard c h) t)"
 
 primrec apply_updates :: "constraints \<Rightarrow> update_function list \<Rightarrow> constraints" where
   "apply_updates c [] = c" |
   "apply_updates c (h#t) = apply_updates (apply_update c h) t"
 
-definition posterior :: "constraints \<Rightarrow> transition \<Rightarrow> constraints option" where
-  "posterior c t = (case (apply_guards c (Guard t)) of 
-    None \<Rightarrow> None |
-    Some a \<Rightarrow> Some (apply_updates a (Updates t))
-  )"
+definition posterior :: "constraints \<Rightarrow> transition \<Rightarrow> constraints" where
+  "posterior c t = (if consistent (apply_guards c (Guard t)) then (apply_updates c (Updates t)) else inconsistent)"
 
-lemma "apply_guards empty [] = Some empty"
+lemma "apply_guards empty [] = empty"
   by simp
 
-lemma "apply_guards empty [(gexp.Eq (V ''i1'') (N 0))] = Some (\<lambda>x. if x = ''i1'' then Eq 0 else Bc True)"
-  apply simp
-  by (simp add: update_def)
+lemma "constraints_equiv (apply_guards empty [(gexp.Eq (V ''i1'') (N 0))]) (\<lambda>x. if x = ''i1'' then Eq 0 else Bc True)"
+  by (simp add: constraints_equiv_def update_def cexp_equiv_def)
+
 end
