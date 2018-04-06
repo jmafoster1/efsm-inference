@@ -17,6 +17,9 @@ definition constraints_equiv :: "constraints \<Rightarrow> constraints \<Rightar
 definition consistent :: "constraints \<Rightarrow> bool" where
   "consistent c = (\<forall>i. satisfiable (c i))"
 
+definition notempty :: "constraints \<Rightarrow> bool" where
+  "notempty c = (\<not> (\<forall>i. (c i) = Bc True))"
+
 fun compose_plus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "compose_plus (Bc v) _ = Bc v" |
   "compose_plus _ (Bc v) = Bc v" |
@@ -235,8 +238,5 @@ lemma "apply_guards empty [] = empty"
 
 lemma "constraints_equiv (apply_guards empty [(gexp.Eq ''i1'' (N 0))]) (\<lambda>x. if x = ''i1'' then Eq 0 else Bc True)"
   by (simp add: constraints_equiv_def update_def cexp_equiv_def)
-
-definition notempty :: "constraints \<Rightarrow> bool" where
-  "notempty c = (\<not> (\<forall>i. (c i) = Bc True))"
 
 end
