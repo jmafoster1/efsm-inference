@@ -33,7 +33,7 @@ definition t3 :: "transition" where
 "t3 \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [((V ''r2'') \<ge> (N 100))], (* This is syntactic sugar for ''Not (Lt (V ''r2'') (N 100))'' which could also appear *)
+        Guard = [(''r2'' \<ge> (N 100))], (* This is syntactic sugar for ''Not (Lt (V ''r2'') (N 100))'' which could also appear *)
         Outputs =  [(V ''r1'')], (* This has one output o1:=r1 where ''r1'' is a variable with a value *)
         Updates = [(''r1'', (V ''r1'')), (''r2'', (V ''r2''))]
       \<rparr>"
@@ -126,7 +126,7 @@ proof(induct rule: rev_induct)
 next
   case (snoc x xs)
   then show ?case apply (case_tac "t=[]", simp add:state_of_def reg_of_def)
-    using state_of_def reg_of_def nonempty try
+    using state_of_def reg_of_def nonempty sorry
 qed
 
 

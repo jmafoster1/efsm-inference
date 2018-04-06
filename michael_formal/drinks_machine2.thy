@@ -35,23 +35,19 @@ lemma "equiv vend vend2 [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), 
 abbreviation t1_posterior :: "constraints" where
   "t1_posterior \<equiv> (\<lambda>x. if x=''r2'' then Eq 0 else Bc True)"
 
-lemma empty_consistent: "consistent empty"
-  by (simp add: consistent_def)
-
 lemma "posterior empty t1 = t1_posterior"
-  apply (simp add: t1_def posterior_def update_def)
-  
+  by (simp add: t1_def posterior_def update_def consistent_def)
 
 lemma "apply_plus empty (V a) (V b) = Bc True"
   by (simp add: apply_plus.psimps)
 
-lemma "posterior t1_posterior t2 = Some empty"
-  apply (simp add: posterior_def t2_def update_def)
+lemma "posterior t1_posterior t2 = empty"
+  apply (simp add: posterior_def t2_def update_def consistent_def)
   apply (rule ext)
   by (simp add: Constraints.apply_plus.psimps(4))
 
-lemma "posterior empty t3 = Some (\<lambda>x. if x = ''r2'' then Geq 100 else Bc True)"
-  apply (simp add: t3_def posterior_def update_def)
-  apply (rule ext)
-  by simp
+lemma "constraints_equiv (posterior empty t3) (\<lambda>i. if i = ''r2'' then Geq 100 else Bc True)"
+  apply (simp add: t3_def constraints_equiv_def posterior_def consistent_def cexp_equiv_def update_def)
+  by auto
+
 end
