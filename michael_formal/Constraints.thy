@@ -100,11 +100,8 @@ fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" whe
   "apply_gt (Not (And va vb)) v = (Not (And (fst (apply_gt va v)) (fst (apply_gt vb v))), Not (And (snd (apply_gt va v)) (snd (apply_gt vb v))))" |
   
   "apply_gt (Bc True) (Bc True) = (Bc True, Bc True)" |
-  "apply_gt (Neq va) (Bc True) = (Neq va, Bc True)" |
-  "apply_gt (Gt v) (Bc True) = (Gt v, Bc True)" |
   "apply_gt (Eq v) (Bc True)   = (Eq v, Lt v)" |
   "apply_gt (Lt v) (Bc True)   = (Lt v, Lt v)" |
-  "apply_gt (Geq va) (Bc True) = (Geq va, Lt va)" |
   "apply_gt (Leq va) (Bc True) = (Leq va, Lt va)" |
 
   "apply_gt (Bc True) (Eq v) = (Gt v, Eq v)" |
@@ -128,59 +125,7 @@ fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" whe
   "apply_gt va vb = (va, vb)"
 
 fun apply_geq :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where
-  "apply_geq (Bc False) v = (Bc False, v)" |
-  "apply_geq v (Bc False) = (v, Bc False)" |
-  "apply_geq v (Not (Bc True)) = (v, Bc False)" |
-  "apply_geq (Not (Bc True)) v = (Bc False, v)" |
-  "apply_geq v (Not (Bc False)) = apply_geq v (Bc True)" |
-  "apply_geq (Not (Bc False)) v = apply_geq (Bc True) v" |
-  "apply_geq v (Not (Not vb)) = apply_geq v vb" |
-  "apply_geq (Not (Not vb)) v = apply_geq vb v" |
-
-  "apply_geq v (And va vb) = (And (fst (apply_geq v va)) (fst (apply_geq v vb)), And (snd (apply_geq v va)) (snd (apply_geq v vb)))" |
-  "apply_geq (And va vb) v = (And (fst (apply_geq va v)) (fst (apply_geq vb v)), And (snd (apply_geq va v)) (snd (apply_geq vb v)))" |
-  "apply_geq v (Not (And va vb)) = (Not (And (fst (apply_geq v va)) (fst (apply_geq v vb))), Not (And (snd (apply_geq v va)) (snd (apply_geq v vb))))" |
-  "apply_geq (Not (And va vb)) v = (Not (And (fst (apply_geq va v)) (fst (apply_geq vb v))), Not (And (snd (apply_geq va v)) (snd (apply_geq vb v))))" |
-  
-  "apply_geq (Bc True) (Bc True) = (Bc True, Bc True)" |
-  "apply_geq (Bc True) (Lt v) = (Bc True, Lt v)" |
-  "apply_geq (Bc True) (Gt v) = (Gt v, Gt v)" |
-  "apply_geq (Bc True) (Neq v) = (Bc True, Neq v)" |
-  "apply_geq (Bc True) (Geq v) = (Geq v, Geq v)" |
-  "apply_geq (Bc True) (Leq v) = (Bc True, Leq v)" |
-
-  "apply_geq (Eq v) va = (Eq v, And va (Leq v))" |
-
-  "apply_geq (Lt v) a = (Lt v, And a (Leq v))" |
-  
-  "apply_geq (Gt v) (Bc True) = (Gt v, Bc True)" |
-  "apply_geq (Gt v) (Eq va) = (And (Gt v) (Geq va), Eq va)" |
-  "apply_geq (Gt v) (Lt va) = (Gt v, Lt va)" |
-  "apply_geq (Gt v) (Gt va) = (And (Gt v) (Gt va), Gt va)" |
-  "apply_geq (Gt v) (Neq vb) = (Gt v, Neq vb)" |
-  "apply_geq (Gt v) (Geq va) = (And (Gt v) (Geq va), (Geq va))" |
-  "apply_geq (Gt v) (Leq va) = (Gt v, Leq va)" |
-
-  "apply_geq (Neq va) (Bc True) = (Neq va, Bc True)" |
-  "apply_geq (Geq va) (Bc True) = (Geq va, Bc True)" |
-  "apply_geq (Leq va) (Bc True) = (Leq va, Leq va)" |
-  "apply_geq v (Eq va) = (And v (Geq va), Eq va)" |
-
-  "apply_geq (Neq vb) (Lt va) = (Neq vb, Lt va)" |
-  "apply_geq (Geq vb) (Lt va) = (Geq vb, Lt va)" |
-  "apply_geq (Leq vb) (Lt va) = (And (Leq vb) (Geq va), Lt va)" |
-  "apply_geq (Neq vb) (Gt va) = (And (Neq vb) (Gt va), Gt va)" |
-  "apply_geq (Geq vb) (Gt va) = (And (Geq vb) (Gt va), Gt va)" |
-  "apply_geq (Leq vb) (Gt va) = (And (Leq vb) (Gt va), Gt va)" |
-  "apply_geq (Neq va) (Neq vb) = (Neq va, Neq vb)" |
-  "apply_geq (Geq va) (Neq vb) = (Geq va, Neq vb)" |
-  "apply_geq (Leq va) (Neq vb) = (Leq va, And (Neq vb) (Leq va))" |
-  "apply_geq (Neq va) (Geq vb) = (And (Neq va) (Geq vb), Geq vb)" |
-  "apply_geq (Geq va) (Geq vb) = (And (Geq va) (Geq vb), Geq vb)" |
-  "apply_geq (Leq va) (Geq vb) = (And (Leq va) (Geq vb), Geq vb)" |
-  "apply_geq (Neq va) (Leq vb) = (Neq va, Leq vb)" |
-  "apply_geq (Geq va) (Leq vb) = (Geq va, Leq vb)" |
-  "apply_geq (Leq va) (Leq vb) = (And (Leq va) (Geq vb), Leq vb)"
+  "apply_geq a b = (let (ca, cb) = (apply_gt a b) in (Or ca b, Or cb a))"
 
 definition apply_leq :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where
   "apply_leq a b = (let (ca, cb) = (apply_geq b a) in (cb, ca))"
@@ -194,7 +139,7 @@ fun apply_guard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints" w
   "apply_guard a (gexp.Not (gexp.And va vb)) = (\<lambda>x. Or ((apply_guard a (gexp.Not va)) x) ((apply_guard a (gexp.Not vb)) x))" |
  
   "apply_guard a (gexp.Eq vb (N v)) = update a vb (And (a vb) (Eq v))" |
-  "apply_guard a (gexp.Eq vb (V v)) = update a vb (And  (a vb) (a v))" |
+  "apply_guard a (gexp.Eq vb (V v)) = (let eq = (And (a vb) (a v)) in update (update a vb eq) v eq)" |
   "apply_guard a (gexp.Eq vb (Plus v va)) = update a vb (And (a vb) (apply_plus a v va))" |
  
   "apply_guard a (gexp.Gt vb (N n)) = update a vb (And (a vb) (Gt n))" |
