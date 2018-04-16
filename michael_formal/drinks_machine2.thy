@@ -47,7 +47,7 @@ lemma "posterior t1_posterior t2 = empty"
   by (simp add: Constraints.apply_plus.psimps(4))
 
 lemma "constraints_equiv (posterior empty t3) (\<lambda>i. if i = ''r2'' then Geq 100 else Bc True)"
-  apply (simp add: t3_def constraints_equiv_def posterior_def consistent_def cexp_equiv_def update_def)
+  apply (simp add: t3_def constraints_equiv_def posterior_def consistent_def update_def)
   by auto
 
 end

@@ -14,19 +14,28 @@ definition t2 :: "transition" where
 "t2 \<equiv> \<lparr>
         Label = ''coin'',
         Arity = 1,
-        Guard = [((V ''i1'') = (N 50))],
+        Guard = [(gexp.Eq ''i1'' (N 50))],
         Outputs = [(Plus (V ''r2'') (V ''i1''))],
+        Updates = [(''r1'', (V ''r1'')),  (''r2'', (Plus (V ''r2'') (V ''i1'')))]
+      \<rparr>"
+
+definition t2' :: "transition" where
+"t2' \<equiv> \<lparr>
+        Label = ''coin'',
+        Arity = 1,
+        Guard = [], (* No guards *)
+        Outputs = [(Plus (V ''r2'') (V ''i1''))], (* This could also be written infix with ''+'' *)
         Updates = [
-                  (''r1'', (V ''r1'')),
-                  (''r2'', (Plus (V ''r2'') (V ''i1'')))
-                ]
+                    (''r1'', (V ''r1'')), (* The value of r1 is unchanged *)
+                    (''r2'', (Plus (V ''r2'') (V ''i1''))) (* The value of r2 is increased by the value of i1 *)
+                  ]
       \<rparr>"
 
 definition t3 :: "transition" where
 "t3 \<equiv> \<lparr>
         Label = ''coin'',
         Arity = 1,
-        Guard = [((V ''i1'') = (N 50))],
+        Guard = [(gexp.Eq ''i1''(N 50))],
         Outputs = [(Plus (V ''r2'') (V ''i1''))],
         Updates = [
                   (''r1'', (V ''r1'')),
@@ -38,8 +47,17 @@ definition t4 :: "transition" where
 "t4 \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [((V ''r2'') \<ge> (N 100))],
+        Guard = [(Ge ''r2'' (N 100))],
         Outputs =  [(V ''r1'')],
         Updates = [(''r1'', (V ''r1'')), (''r2'', (V ''r2''))]
       \<rparr>"
+
+lemma "transition_simulates (posterior empty t1) t2' (posterior empty t1) t2"
+  by (simp add: transition_simulates_def constraints_simulates_def posterior_def consistent_def t1_def t2_def t2'_def update_def)
+
+abbreviation test :: "constraints" where
+  "test \<equiv> Constraints.apply_guards empty [(gexp.Eq ''r1'' (N 5)), (gexp.Eq ''r2'' (N 5)), (gexp.Eq ''d1'' (Plus (V ''r1'') (V ''r2''))), (gexp.Eq ''i1'' (Plus (V ''d1'') (V ''r2'')))]"
+
+value "(Constraints.apply_updates test empty [(''r3'', (Plus (V ''r2'') (V ''d1'')))]) ''r3''"
+  
 end

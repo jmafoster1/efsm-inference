@@ -9,16 +9,19 @@ abbreviation empty :: constraints where
   "empty \<equiv> \<lambda>x. Bc True"
 
 definition update :: "constraints \<Rightarrow> vname \<Rightarrow> cexp \<Rightarrow> constraints" where
-  "update m k v = (\<lambda>x. if x=k then v else m x)"
+  "update c k v = (\<lambda>r. if r=k then v else c r)"
 
 definition constraints_equiv :: "constraints \<Rightarrow> constraints \<Rightarrow> bool" where
-  "constraints_equiv c c' = (\<forall>i. cexp_equiv (c i) (c' i))"
+  "constraints_equiv c c' = (\<forall>r. cexp_equiv (c r) (c' r))"
 
 definition consistent :: "constraints \<Rightarrow> bool" where
-  "consistent c = (\<forall>i. satisfiable (c i))"
+  "consistent c = (\<forall>r. satisfiable (c r))"
 
-definition notempty :: "constraints \<Rightarrow> bool" where
-  "notempty c = (\<not> (\<forall>i. (c i) = Bc True))"
+definition nonempty :: "constraints \<Rightarrow> bool" where
+  "nonempty c = (\<not> (\<forall>r. cexp_equiv (c r) (Bc True)))"
+
+definition constraints_simulates :: "constraints \<Rightarrow> constraints \<Rightarrow> bool" where
+  "constraints_simulates c c' = (\<forall>r. cexp_simulates (c r) (c' r))"
 
 fun compose_plus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "compose_plus (Bc v) _ = Bc v" |
@@ -35,31 +38,28 @@ fun compose_plus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "compose_plus (Neq vb) _ = Bc True" |
   "compose_plus _ (Neq vb) = Bc True" |
 
-  "compose_plus (Eq v) (Eq va) = Eq (v+va)" |
-  "compose_plus (Eq v) (Lt va) = Lt (v+va)" |
-  "compose_plus (Eq v) (Gt va) = Gt (v+va)" |
-  "compose_plus (Eq v) (Geq va) = Geq (v+va)" |
-  "compose_plus (Eq v) (Leq va) = Leq (v+va)" |
-  "compose_plus (Lt v) (Eq va) = Lt (v+va)" |
-  "compose_plus (Lt v) (Lt va) = Lt (v+va)" |
-  "compose_plus (Lt v) (Gt va) = Bc True" |
-  "compose_plus (Lt v) (Geq vb) = Bc True" |
-  "compose_plus (Lt v) (Leq vb) = Lt (v+vb)" |
-  "compose_plus (Gt v) (Eq va) = Gt (v+va)" |
-  "compose_plus (Gt v) (Lt va) = Bc True" |
-  "compose_plus (Gt v) (Gt va) = Gt (v+va)" |
-  "compose_plus (Gt v) (Geq vb) = Gt (v+vb)" |
-  "compose_plus (Gt v) (Leq vb) = Bc True" |
-  "compose_plus (Geq vb) (Eq va) = Geq (vb+va)" |
-  "compose_plus (Leq vb) (Eq va) = Leq (vb+va)" |
-  "compose_plus (Geq vb) (Lt va) = Bc True" |
-  "compose_plus (Leq vb) (Lt va) = Lt (vb+va)" |
-  "compose_plus (Geq vb) (Gt va) = Gt (va+vb)" |
-  "compose_plus (Leq vb) (Gt va) = Bc True" |
-  "compose_plus (Geq vb) (Geq v) = Geq (v+vb)" |
-  "compose_plus (Geq vb) (Leq v) = Bc True" |
-  "compose_plus (Leq vb) (Geq v) = Bc True" |
-  "compose_plus (Leq vb) (Leq v) = Leq (v+vb)"
+  "compose_plus (Eq v)   (Eq va)  = Eq (v+va)" |
+  "compose_plus (Eq v)   (Lt va)  = Lt (v+va)" |
+  "compose_plus (Eq v)   (Gt va)  = Gt (v+va)" |
+  "compose_plus (Eq v)   (Geq va) = Geq (v+va)" |
+  "compose_plus (Eq v)   (Leq va) = Leq (v+va)" |
+  
+  "compose_plus (Lt v)   (Eq va)  = Lt (v+va)" |
+  "compose_plus (Gt v)   (Eq va)  = Gt (v+va)" |
+  "compose_plus (Geq vb) (Eq va)  = Geq (vb+va)" |
+  "compose_plus (Leq vb) (Eq va)  = Leq (vb+va)" |
+
+  "compose_plus (Lt v)   (Lt va)  = Lt (v+va)" |
+  "compose_plus (Lt v)   (Leq vb) = Lt (v+vb)" |
+  "compose_plus (Leq vb) (Lt va)  = Lt (vb+va)" |
+  "compose_plus (Leq vb) (Leq v)  = Leq (v+vb)" |
+  
+  "compose_plus (Gt v)   (Gt va)  = Gt (v+va)" |
+  "compose_plus (Gt v)   (Geq vb) = Gt (v+vb)" |
+  "compose_plus (Geq vb) (Gt va)  = Gt (va+vb)" |
+  "compose_plus (Geq vb) (Geq v)  = Geq (v+vb)" |
+
+  "compose_plus _ _ = Bc True" 
 
 function apply_plus :: "constraints \<Rightarrow> aexp \<Rightarrow> aexp \<Rightarrow> cexp" where
   "apply_plus _ (N n) (N n') = Eq (n+n')" |
@@ -94,10 +94,10 @@ fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" whe
   "apply_gt v (Not (Not vb)) = apply_gt v vb" |
   "apply_gt (Not (Not vb)) v = apply_gt vb v" |
 
-  "apply_gt v (And va vb) = (And (fst (apply_gt v va)) (fst (apply_gt v vb)), And (snd (apply_gt v va)) (snd (apply_gt v vb)))" |
-  "apply_gt (And va vb) v = (And (fst (apply_gt va v)) (fst (apply_gt vb v)), And (snd (apply_gt va v)) (snd (apply_gt vb v)))" |
+  "apply_gt v (And va vb) = (and (fst (apply_gt v va)) (fst (apply_gt v vb)), and (snd (apply_gt v va)) (snd (apply_gt v vb)))" |
+  "apply_gt (And va vb) v = (and (fst (apply_gt va v)) (fst (apply_gt vb v)), and (snd (apply_gt va v)) (snd (apply_gt vb v)))" |
   "apply_gt v (Not (And va vb)) = (Not (And (fst (apply_gt v va)) (fst (apply_gt v vb))), Not (And (snd (apply_gt v va)) (snd (apply_gt v vb))))" |
-  "apply_gt (Not (And va vb)) v = (Not (And (fst (apply_gt va v)) (fst (apply_gt vb v))), Not (And (snd (apply_gt va v)) (snd (apply_gt vb v))))" |
+  "apply_gt (Not (And va vb)) v = (Not (and (fst (apply_gt va v)) (fst (apply_gt vb v))), Not (and (snd (apply_gt va v)) (snd (apply_gt vb v))))" |
   
   "apply_gt (Bc True) (Bc True) = (Bc True, Bc True)" |
   "apply_gt (Eq v) (Bc True)   = (Eq v, Lt v)" |
@@ -109,18 +109,18 @@ fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" whe
   "apply_gt (Bc True) (Gt v) = (Gt v, Gt v)" |
   "apply_gt (Bc True) v = (Bc True, v)" |
 
-  "apply_gt (Lt v) (Gt va) = (And (Lt v)  (Gt va), And (Gt va) (Lt v))" |
-  "apply_gt v (Leq vb) = (And v (Gt vb), Leq vb)" |
-  "apply_gt v (Gt va) =  (And v (Gt va), Gt va)" |
-  "apply_gt v (Lt va) = (And v (Geq va), Lt va)" |
-  "apply_gt (Lt v)  (Neq vb) = (Lt v,  And (Neq vb) (Lt v))" |
-  "apply_gt (Leq v) (Neq vb) = (Leq v, And (Neq vb) (Lt v))" |
+  "apply_gt (Lt v) (Gt va) = (and (Lt v)  (Gt va), and (Gt va) (Lt v))" |
+  "apply_gt v (Leq vb) = (and v (Gt vb), Leq vb)" |
+  "apply_gt v (Gt va) =  (and v (Gt va), Gt va)" |
+  "apply_gt v (Lt va) = (and v (Geq va), Lt va)" |
+  "apply_gt (Lt v)  (Neq vb) = (Lt v,  and (Neq vb) (Lt v))" |
+  "apply_gt (Leq v) (Neq vb) = (Leq v, and (Neq vb) (Lt v))" |
   
-  "apply_gt (Eq v) va = (Eq v, And va (Lt v))" |
-  "apply_gt v (Eq va) = (And v (Gt va), Eq va)" |
+  "apply_gt (Eq v) va = (Eq v, and va (Lt v))" |
+  "apply_gt v (Eq va) = (and v (Gt va), Eq va)" |
 
-  "apply_gt (Lt v) (Geq va) = (And (Lt v) (Gt va), And (Geq va) (Lt v))" |
-  "apply_gt v      (Geq vb) = (And v  (Gt vb), Geq vb)" |
+  "apply_gt (Lt v) (Geq va) = (and (Lt v) (Gt va), and (Geq va) (Lt v))" |
+  "apply_gt v      (Geq vb) = (and v (Gt vb), Geq vb)" |
 
   "apply_gt va vb = (va, vb)"
 
@@ -138,50 +138,53 @@ fun apply_guard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints" w
   "apply_guard a (gexp.And va vb) = apply_guard (apply_guard a va) vb"|
   "apply_guard a (gexp.Not (gexp.And va vb)) = (\<lambda>x. Or ((apply_guard a (gexp.Not va)) x) ((apply_guard a (gexp.Not vb)) x))" |
  
-  "apply_guard a (gexp.Eq vb (N v)) = update a vb (And (a vb) (Eq v))" |
-  "apply_guard a (gexp.Eq vb (V v)) = (let eq = (And (a vb) (a v)) in update (update a vb eq) v eq)" |
-  "apply_guard a (gexp.Eq vb (Plus v va)) = update a vb (And (a vb) (apply_plus a v va))" |
+  "apply_guard a (gexp.Eq vb (N v)) = update a vb (and (a vb) (Eq v))" |
+  "apply_guard a (gexp.Eq vb (V v)) = (let eq = (and (a vb) (a v)) in update (update a vb eq) v eq)" |
+  "apply_guard a (gexp.Eq vb (Plus v va)) = update a vb (and (a vb) (apply_plus a v va))" |
  
-  "apply_guard a (gexp.Gt vb (N n)) = update a vb (And (a vb) (Gt n))" |
+  "apply_guard a (gexp.Gt vb (N n)) = update a vb (and (a vb) (Gt n))" |
   "apply_guard a (gexp.Gt vb (V v)) = (let (cvb, cv) = (apply_gt (a vb) (a v)) in (update (update a vb cvb) v cv))"|
   "apply_guard a (gexp.Gt vb (Plus v vc)) = (let (cvb, _) = (apply_gt (a vb) (apply_plus a v vc)) in (update a vb cvb))" |
  
-  "apply_guard a (gexp.Lt vb (N n)) = update a vb (And (a vb) (Lt n))" |
+  "apply_guard a (gexp.Lt vb (N n)) = update a vb (and (a vb) (Lt n))" |
   "apply_guard a (gexp.Lt vb (V v)) = (let (cvb, cv) = (apply_lt (a vb) (a v)) in (update (update a vb cvb) v cv))"|
   "apply_guard a (gexp.Lt vb (Plus v vc)) = (let (cvb, _) = (apply_lt (a vb) (apply_plus a v vc)) in (update a vb cvb))" |
 
-  "apply_guard a (Ge vb (N n)) = update a vb (And (a vb) (Geq n))" |
+  "apply_guard a (Ge vb (N n)) = update a vb (and (a vb) (Geq n))" |
   "apply_guard a (Ge vb (V v)) = (let (cvb, cv) = (apply_geq (a vb) (a v)) in (update (update a vb cvb) v cv))" |
   "apply_guard a (Ge vb (Plus v vc)) = (let (cvb, _) = (apply_geq (a vb) (apply_plus a v vc)) in (update a vb cvb))" |
   
-  "apply_guard a (Le vb (N n)) = update a vb (And (a vb) (Leq n))" |
+  "apply_guard a (Le vb (N n)) = update a vb (and (a vb) (Leq n))" |
   "apply_guard a (Le vb (V v)) = (let (cvb, cv) = (apply_leq (a vb) (a v)) in (update (update a vb cvb) v cv))" |
   "apply_guard a (Le vb (Plus v vc)) = (let (cvb, _) = (apply_leq (a vb) (apply_plus a v vc)) in (update a vb cvb))" |
 
-  "apply_guard a (Ne vb (N v)) = update a vb (And (a vb) (Neq v))" |
-  "apply_guard a (Ne vb (V v)) = update a vb (Not (And  (a vb) (a v)))" |
-  "apply_guard a (Ne vb (Plus va vc)) = update a vb (Not (And (a vb) (apply_plus a va vc)))"
+  "apply_guard a (Ne vb (N v)) = update a vb (and (a vb) (Neq v))" |
+  "apply_guard a (Ne vb (V v)) = update a vb (Not (and  (a vb) (a v)))" |
+  "apply_guard a (Ne vb (Plus va vc)) = update a vb (Not (and (a vb) (apply_plus a va vc)))"
 
-fun apply_update :: "constraints \<Rightarrow> update_function \<Rightarrow> constraints" where
-  "apply_update c (v, (N n)) = update c v (Eq n)" |
-  "apply_update c (v, V vb) = update c v (c vb)" |
-  "apply_update c (v, Plus vb vc) = update c v (apply_plus c vb vc)"
+fun apply_update :: "constraints \<Rightarrow> constraints \<Rightarrow> update_function \<Rightarrow> constraints" where
+  "apply_update l c (v, (N n)) = update c v (Eq n)" |
+  "apply_update l c (v, V vb) = update c v (l vb)" |
+  "apply_update l c (v, Plus vb vc) = update c v (apply_plus l vb vc)"
 
 primrec apply_guards :: "constraints \<Rightarrow> guard list \<Rightarrow> constraints" where
   "apply_guards c [] = c" |
   "apply_guards c (h#t) = (apply_guards (apply_guard c h) t)"
 
-primrec apply_updates :: "constraints \<Rightarrow> update_function list \<Rightarrow> constraints" where
-  "apply_updates c [] = c" |
-  "apply_updates c (h#t) = apply_updates (apply_update c h) t"
+primrec apply_updates :: "constraints \<Rightarrow> constraints \<Rightarrow> update_function list \<Rightarrow> constraints" where
+  "apply_updates _ c [] = c" |
+  "apply_updates l c (h#t) = apply_updates l (apply_update l c h) t"
 
 definition posterior :: "constraints \<Rightarrow> transition \<Rightarrow> constraints" where
-  "posterior c t = (let c' = (apply_guards c (Guard t)) in (if consistent c' then (apply_updates c' (Updates t)) else (\<lambda>i. Bc False)))"
+  "posterior c t = (let c' = (apply_guards c (Guard t)) in (if consistent c' then (apply_updates c' empty (Updates t)) else (\<lambda>i. Bc False)))"
 
 lemma "apply_guards empty [] = empty"
   by simp
 
 lemma "constraints_equiv (apply_guards empty [(gexp.Eq ''i1'' (N 0))]) (\<lambda>x. if x = ''i1'' then Eq 0 else Bc True)"
-  by (simp add: constraints_equiv_def update_def cexp_equiv_def)
+  by (simp add: constraints_equiv_def update_def)
+
+lemma constraints_simulates_symetry: "constraints_simulates c c"
+  by (simp add: constraints_simulates_def)
 
 end
