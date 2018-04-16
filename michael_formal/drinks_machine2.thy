@@ -42,9 +42,7 @@ lemma "apply_plus empty (V a) (V b) = Bc True"
   by (simp add: apply_plus.psimps)
 
 lemma "posterior t1_posterior t2 = empty"
-  apply (simp add: posterior_def t2_def update_def consistent_def)
-  apply (rule ext)
-  by (simp add: Constraints.apply_plus.psimps(4))
+  by (simp add: posterior_def t2_def update_def consistent_def)
 
 lemma "constraints_equiv (posterior empty t3) (\<lambda>i. if i = ''r2'' then Geq 100 else Bc True)"
   apply (simp add: t3_def constraints_equiv_def posterior_def consistent_def update_def)
