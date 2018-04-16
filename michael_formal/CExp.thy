@@ -45,6 +45,14 @@ abbreviation satisfiable :: "cexp \<Rightarrow> bool" where
 abbreviation cexp_simulates :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
   "cexp_simulates c c' \<equiv> (\<forall>i. ceval c' i \<longrightarrow> ceval c i)"
 
+fun "and" :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
+  "and (Bc True) c = c" |
+  "and c (Bc True) = c" |
+  "and (Bc False) _ = Bc False" |
+  "and _ (Bc False) = Bc False" |
+  "and (Eq i) (Eq i') = (if i = i' then Eq i else Bc False)" |
+  "and c c' = And c c'"
+
 lemma "ceval (Bc True) = ceval (Not (Bc False))"
   by simp
 
