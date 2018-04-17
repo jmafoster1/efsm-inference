@@ -14,8 +14,8 @@ definition t2up :: "transition" where
 "t2up \<equiv> \<lparr>
         Label = ''goUp'',
         Arity = 1,
-        Guard = [((V ''i1'') > (N 0))],
-        Outputs = [(((V ''i1'') + (N (-1))))],
+        Guard = [(Gt (V ''i1'') (N 0))],
+        Outputs = [(Plus (V ''i1'') (N (-1)))],
         Updates = []
       \<rparr>"
 
@@ -42,7 +42,7 @@ definition t2down :: "transition" where
         Label = ''goDown'',
         Arity = 1,
         Guard = [((V ''i1'') > (N 0))],
-        Outputs = [(((V ''i1'') + (N (-1))))],
+        Outputs = [((Plus (V ''i1'') (N (-1))))],
         Updates = []
       \<rparr>"
 
@@ -59,7 +59,7 @@ definition openDoors :: transition where
 "openDoors \<equiv> \<lparr>
         Label = ''open'',
         Arity = 0,
-        Guard = true,
+        Guard = [],
         Outputs = [(N 1)],
         Updates = []
       \<rparr>"
@@ -68,7 +68,7 @@ definition closeDoors :: transition where
 "closeDoors \<equiv> \<lparr>
         Label = ''close'',
         Arity = 0,
-        Guard = true,
+        Guard = [],
         Outputs = [(N 0)],
         Updates = []
       \<rparr>"

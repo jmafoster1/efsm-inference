@@ -2,35 +2,57 @@ theory drinks_machine
   imports EFSM CExp
 begin
 
+(* This version of drinks_machine supercedes all of those before 03/04/18 *)
+(* It also supercedes "vend.thy"*)
+
 definition t1 :: "transition" where
 "t1 \<equiv> \<lparr>
         Label = ''select'',
         Arity = 1,
-        Guard = [],
+        Guard = [], (* No guards *)
         Outputs = [],
-        Updates = [(''r1'', (V ''i1'')), (''r2'', (N 0))]
+        Updates = [ (* Two updates: *)
+                    (''r1'', (V ''i1'')), (*  Firstly set value of r1 to value of i1 *)
+                    (''r2'', (N 0)) (* Secondly set the value of r2 to literal zero *)
+                  ]
       \<rparr>"
 
 definition t2 :: "transition" where
 "t2 \<equiv> \<lparr>
         Label = ''coin'',
         Arity = 1,
-        Guard = [],
-        Outputs = [(Plus (V ''r2'') (V ''i1''))],
+        Guard = [], (* No guards *)
+        Outputs = [(Plus (V ''r2'') (V ''i1''))], (* This could also be written infix with ''+'' *)
         Updates = [
-                  (''r1'', (V ''r1'')),
-                  (''r2'', (Plus (V ''r2'') (V ''i1'')))
-                ]
+                    (''r1'', (V ''r1'')), (* The value of r1 is unchanged *)
+                    (''r2'', (Plus (V ''r2'') (V ''i1''))) (* The value of r2 is increased by the value of i1 *)
+                  ]
       \<rparr>"
 
 definition t3 :: "transition" where
 "t3 \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [((V ''r2'') \<ge> (N 100))],
-        Outputs =  [(V ''r1'')],
+        Guard = [(''r2'' \<ge> (N 100))], (* This is syntactic sugar for ''Not (Lt (V ''r2'') (N 100))'' which could also appear *)
+        Outputs =  [(V ''r1'')], (* This has one output o1:=r1 where ''r1'' is a variable with a value *)
         Updates = [(''r1'', (V ''r1'')), (''r2'', (V ''r2''))]
       \<rparr>"
+
+definition vend :: "efsm" where
+"vend \<equiv> \<lparr> 
+          S = [1,2,3],
+          s0 = 1,
+          T = \<lambda> (a,b) .
+              if (a,b) = (1,2) then [t1] (* If we want to go from state 1 to state 2 then t1 will do that *)
+              else if (a,b) = (2,2) then [t2] (* If we want to go from state 2 to state 2 then t2 will do that *)
+              else if (a,b) = (2,3) then [t3] (* If we want to go from state 2 to state 3 then t3 will do that *)
+              else [] (* There are no other transitions *)
+         \<rparr>"
+
+(*
+  These are lemmas about the machine which could maybe be in another file.
+  They don't need to be translated to SAL
+*)
 
 lemmas transitions = t1_def t2_def t3_def
 
@@ -41,22 +63,6 @@ lemma blank_state2:
   assumes "P <''r1'' := 0, ''r2'' := 0>"
   shows "P <>"
   by (metis assms blank_state)
-
-definition vend :: "efsm" where
-"vend \<equiv> \<lparr> 
-          S = [1,2,3],
-          s0 = 1,
-          T = \<lambda> (a,b) .
-              if (a,b) = (1,2) then [t1]
-              else if (a,b) = (2,2) then [t2]
-              else if (a,b) = (2,3) then [t3]
-              else []
-         \<rparr>"
-
-(*
-  These are lemmas about the machine which could maybe be in another file.
-  They don't need to be translated to SAL
-*)
 
 lemma "observe_trace vend (s0 vend) <> [] = []"
   by simp
@@ -120,7 +126,7 @@ proof(induct rule: rev_induct)
 next
   case (snoc x xs)
   then show ?case apply (case_tac "t=[]", simp add:state_of_def reg_of_def)
-    using state_of_def reg_of_def nonempty try
+    using state_of_def reg_of_def nonempty sorry
 qed
 
 

@@ -1,5 +1,5 @@
 theory EFSM
-  imports Syntax
+  imports Syntax Constraints
 begin
 
 primrec apply_updates :: "(string \<times> aexp) list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> registers" where
@@ -12,7 +12,7 @@ primrec apply_outputs :: "output_function list \<Rightarrow> state \<Rightarrow>
 
 primrec apply_guards :: "guard list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> bool" where
   "apply_guards [] _ _ = True" |
-  "apply_guards (h#t) i r =  ((bval h (join i r)) \<and> (apply_guards t i r))"
+  "apply_guards (h#t) i r =  ((gval h (join i r)) \<and> (apply_guards t i r))"
 
 abbreviation is_possible_step :: "efsm \<Rightarrow> statename \<Rightarrow> statename \<Rightarrow> transition \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> bool" where
 "is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (find (\<lambda>x . x = t) (T e(s,s')) \<noteq> None) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (input2state i 1) r))"
@@ -67,9 +67,14 @@ lemma equiv_idem: "equiv e1 e1 t"
 definition valid_trace :: "efsm \<Rightarrow> trace \<Rightarrow> bool" where
   "valid_trace e t = (length t = length (observe_all e (s0 e) <> t))"
 
-
 lemma empty_trace_valid [simp]: "valid_trace e []"
   by(simp add:valid_trace_def)
+
+definition transition_simulates :: "constraints \<Rightarrow> transition \<Rightarrow> constraints \<Rightarrow> transition \<Rightarrow> bool" where
+  "transition_simulates c t c' t' = constraints_simulates (posterior c t) (posterior c' t')"
+
+lemma transition_simulates_symetry: "transition_simulates c t c t"
+  by (simp add: transition_simulates_def posterior_def constraints_simulates_def)
 
 primrec in_list :: "'a \<Rightarrow> 'a list \<Rightarrow> bool" where
   "in_list _ [] = False" |
