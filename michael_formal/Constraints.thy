@@ -217,11 +217,10 @@ fun apply_guard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints" w
                          a'' = update a'  v  (and (a' v)   (compose_minus (a' vb) (a' va))) in
                                update a'' va (and (a'' va) (compose_minus (a'' vb) (a'' v))))
   )" |
-  "apply_guard a (gexp.Eq _ _) = (\<lambda>x. Bc False)" | (* This covers nested pluses *)
  
   "apply_guard a (gexp.Gt vb (N n)) = update a vb (and (a vb) (Gt n))" |
   "apply_guard a (gexp.Gt vb (V v)) = (let (cvb, cv) = (apply_gt (a vb) (a v)) in (update (update a vb cvb) v cv))"|
-  "apply_guard a (gexp.Gt vb (Plus (N n) (N n'))) = (let (cvb, _) = (apply_gt (a vb) (Eq (n+n'))) in (update a vb cvb))" |
+  "apply_guard a (gexp.Gt vb (Plus (N n) (N n'))) =  update a vb (Gt (n+n'))" |
   "apply_guard a (gexp.Gt vb (Plus (V v) (N n))) = (let (cvb, cplus) = (apply_gt (a vb) (compose_plus (a v) (Eq n))) in (update (update a v (compose_minus cplus (Eq n))) vb cvb))" |
   "apply_guard a (gexp.Gt vb (Plus (N n) (V v))) = (let (cvb, cplus) = (apply_gt (a vb) (compose_plus (a v) (Eq n))) in (update (update a v (compose_minus cplus (Eq n))) vb cvb))" |
   "apply_guard a (gexp.Gt vb (Plus (V v) (V va))) = (case (a vb, a v, a va) of
@@ -244,7 +243,6 @@ fun apply_guard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints" w
                          update (update (update a v cv) vb cvb) va cva
                     )
   )" |
-  "apply_guard _ (gexp.Gt _ _ ) = (\<lambda>x. Bc False)" | (* This covers nested pluses *)
 
   "apply_guard a (gexp.Lt vb (N n)) = update a vb (and (a vb) (Lt n))" |
   "apply_guard a (gexp.Lt vb (V v)) = (let (cvb, cv) = (apply_lt (a vb) (a v)) in (update (update a vb cvb) v cv))"|
@@ -271,7 +269,6 @@ fun apply_guard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints" w
                          update (update (update a v cv) vb cvb) va cva
                     )
   )" |
-  "apply_guard _ (gexp.Lt _ _ ) = (\<lambda>x. Bc False)" | (* This covers nested pluses *)
 
   "apply_guard a (Ge vb (N n)) = update a vb (and (a vb) (Geq n))" |
   "apply_guard a (Ge vb (V v)) = (let (cvb, cv) = (apply_geq (a vb) (a v)) in (update (update a vb cvb) v cv))" |
@@ -298,7 +295,6 @@ fun apply_guard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints" w
                          update (update (update a v cv) vb cvb) va cva
                     )
   )" |
-  "apply_guard _ (Ge _ _ ) = (\<lambda>x. Bc False)" | (* This covers nested pluses *)
   
   "apply_guard a (Le vb (N n)) = update a vb (and (a vb) (Leq n))" |
   "apply_guard a (Le vb (V v)) = (let (cvb, cv) = (apply_leq (a vb) (a v)) in (update (update a vb cvb) v cv))" |
@@ -325,7 +321,6 @@ fun apply_guard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints" w
                          update (update (update a v cv) vb cvb) va cva
                     )
   )" |
-  "apply_guard _ (Le _ _ ) = (\<lambda>x. Bc False)" | (* This covers nested pluses *)
 
   "apply_guard a (Ne vb (N v)) = update a vb (and (a vb) (Neq v))" |
   "apply_guard a (Ne vb (V v)) = update a vb (Not (and  (a vb) (a v)))" |
@@ -354,7 +349,7 @@ fun apply_guard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints" w
                          a'' = update a'  v  (Not (and (a' v)   (compose_minus (a' vb) (a' va)))) in
                                update a'' va (Not (and (a'' va) (compose_minus (a'' vb) (a'' v)))))
   )" |
-  "apply_guard a (Ne _ _) = (\<lambda>x. Bc False)" (* This covers nested pluses *)
+  "apply_guard _ _ = (\<lambda>x. Bc False)" (* This covers nested pluses *)
 
 fun apply_update :: "constraints \<Rightarrow> constraints \<Rightarrow> update_function \<Rightarrow> constraints" where
   "apply_update l c (v, (N n)) = update c v (Eq n)" |
