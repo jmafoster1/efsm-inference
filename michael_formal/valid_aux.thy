@@ -5,7 +5,7 @@ begin
 lemma valid_trace_head_not_none:  "valid_trace efsm [a] \<Longrightarrow> ( step efsm (s0 efsm) <> (fst a) (snd a) \<noteq> None)"
   apply(simp add:valid_trace_def)
   apply(cases  "(step efsm (s0 efsm) <> (fst a) (snd a)) = None")
-   by(simp_all)
+  by(simp_all)
 
 lemma valid_trace_cons: "valid_trace efsm (a#t) \<Longrightarrow> valid_trace efsm [a]"
   apply(unfold valid_trace_def)

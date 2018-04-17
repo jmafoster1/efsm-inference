@@ -74,7 +74,7 @@ definition transition_simulates :: "constraints \<Rightarrow> transition \<Right
   "transition_simulates c t c' t' = constraints_simulates (posterior c t) (posterior c' t')"
 
 lemma transition_simulates_symetry: "transition_simulates c t c t"
-  by (simp add: transition_simulates_def posterior_def constraints_simulates_def)
+  by (simp add: transition_simulates_def constraints_simulates_def)
 
 primrec in_list :: "'a \<Rightarrow> 'a list \<Rightarrow> bool" where
   "in_list _ [] = False" |

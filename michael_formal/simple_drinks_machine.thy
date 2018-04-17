@@ -53,11 +53,5 @@ definition t4 :: "transition" where
       \<rparr>"
 
 lemma "transition_simulates (posterior empty t1) t2' (posterior empty t1) t2"
-  by (simp add: transition_simulates_def constraints_simulates_def posterior_def consistent_def t1_def t2_def t2'_def update_def)
-
-abbreviation test :: "constraints" where
-  "test \<equiv> Constraints.apply_guards empty [(gexp.Eq ''r1'' (N 5)), (gexp.Eq ''r2'' (N 5)), (gexp.Eq ''d1'' (Plus (V ''r1'') (V ''r2''))), (gexp.Eq ''i1'' (Plus (V ''d1'') (V ''r2'')))]"
-
-value "(Constraints.apply_updates test empty [(''r3'', (Plus (V ''r2'') (V ''d1'')))]) ''r3''"
-  
+  by (simp add: transition_simulates_def constraints_simulates_def posterior_def t1_def t2_def t2'_def consistent_def)
 end
