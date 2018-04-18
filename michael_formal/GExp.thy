@@ -16,6 +16,9 @@ abbreviation
   Ne :: "vname \<Rightarrow> aexp \<Rightarrow> gexp" where
   "Ne v va \<equiv> Not (Eq v va)"
 
+abbreviation gOr :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" where
+  "gOr v va \<equiv> Not (And (Not v) (Not va))"
+
 fun gval :: "gexp \<Rightarrow> state \<Rightarrow> bool" where
   "gval (Lt a\<^sub>1 a\<^sub>2) s = (aval (V a\<^sub>1) s < aval a\<^sub>2 s)" |
   "gval (Gt a\<^sub>1 a\<^sub>2) s = (aval (V a\<^sub>1) s > aval a\<^sub>2 s)" |

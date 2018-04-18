@@ -44,8 +44,25 @@ lemma "apply_plus empty (V a) (V b) = Bc True"
 lemma "posterior t1_posterior t2 = empty"
   by (simp add: t2_def posterior_def consistent_def)
 
+lemma not_all_r2: "((\<forall>r. r = ''r2'') \<longrightarrow> (\<forall>i. i < 100))"
+  by auto
+
+lemma "cexp_equiv (Or (Gt 100) (Eq 100)) (Geq 100)"
+  by auto
+
+value "(Constraints.guard2constraints empty (Ge ''r1'' (N 100)))"
+value "(Constraints.guard2constraints empty (gOr (gexp.Gt ''r1'' (N 100)) (gexp.Eq ''r1'' (N 100))))"
+
+lemma "(gOr (gexp.Gt ''r1'' (N 100)) (gexp.Eq ''r1'' (N 100))) = gexp.Not (gexp.And (gexp.Not (gexp.Gt ''r1'' (N 100))) (gexp.Not (gexp.Eq ''r1'' (N 100))))"
+  by simp
+
+lemma "constraints_equiv (Constraints.apply_guard empty (Ge ''r1'' (N 100))) (Constraints.apply_guard empty (gOr (gexp.Gt ''r1'' (N 100)) (gexp.Eq ''r1'' (N 100))))"
+  apply simp
+  apply (simp add: constraints_equiv_def)
+  by auto
+
 lemma "constraints_equiv (posterior empty t3) (\<lambda>i. if i = ''r2'' then Geq 100 else Bc True)"
-  apply (simp add: constraints_equiv_def consistent_def posterior_def t3_def)
+  apply (simp add: posterior_def consistent_def t3_def constraints_equiv_def)
   by auto
 
 (* You can't take t3 immediately after taking t1 *)
@@ -56,5 +73,5 @@ lemma "consistent t1_posterior"
   by (simp add: consistent_def)
 
 lemma "\<forall>n. consistent (posterior_n n t2 t1_posterior)"
-  
+  sorry
 end
