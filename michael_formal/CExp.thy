@@ -45,13 +45,67 @@ abbreviation satisfiable :: "cexp \<Rightarrow> bool" where
 abbreviation cexp_simulates :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
   "cexp_simulates c c' \<equiv> (\<forall>i. ceval c' i \<longrightarrow> ceval c i)"
 
-fun "and" :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
-  "and (Bc True) c = c" |
-  "and c (Bc True) = c" |
-  "and (Bc False) _ = Bc False" |
-  "and _ (Bc False) = Bc False" |
-  "and (Eq i) (Eq i') = (if i = i' then Eq i else Bc False)" |
-  "and c c' = And c c'"
+definition "and" :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
+  "and x y = (case x of
+    Bc True \<Rightarrow> y |
+    Bc False \<Rightarrow> Bc False |
+    Eq i \<Rightarrow> (case y of 
+      Eq i' \<Rightarrow> (if i = i' then Eq i else Bc False) |
+      _ \<Rightarrow> And x y
+    ) |
+    _ \<Rightarrow> (case y of
+      Bc True \<Rightarrow> x |
+      Bc False \<Rightarrow> Bc False |
+      _ \<Rightarrow> And x y
+    )
+  )"
+
+lemma and_is_And:  "ceval (and x y) = ceval (And x y)"
+proof (cases "x")
+  case (Bc x1)
+  then show ?thesis
+    apply (case_tac "x1 = True")
+    by (simp_all add: and_def)
+next
+  case (Eq x2)
+  then show ?thesis
+    apply simp
+    apply (cases "y")
+         apply (simp_all add: and_def)
+    by auto  
+next
+  case (Lt x3)
+  then show ?thesis
+    apply simp
+    apply (cases "y")
+         apply simp_all
+    apply (cases "y = Bc True")
+    by (simp_all add: and_def)
+next
+  case (Gt x4)
+  then show ?thesis
+    apply simp
+    apply (cases "y")
+         apply simp_all
+    apply (cases "y = Bc True")
+    by (simp_all add: and_def)
+next
+  case (Not x5)
+  then show ?thesis
+    apply simp
+    apply (cases "y")
+         apply simp_all
+    apply (cases "y = Bc True")
+    by (simp_all add: and_def)
+next
+  case (And x61 x62)
+  then show ?thesis
+    apply simp
+    apply (cases "y")
+         apply simp_all
+    apply (cases "y = Bc True")
+    by (simp_all add: and_def)
+qed
 
 fun "not" :: "cexp \<Rightarrow> cexp" where
   "not (Bc x) = Bc (\<not>x)" |

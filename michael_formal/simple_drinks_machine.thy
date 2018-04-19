@@ -52,6 +52,6 @@ definition t4 :: "transition" where
         Updates = [(''r1'', (V ''r1'')), (''r2'', (V ''r2''))]
       \<rparr>"
 
-lemma "transition_simulates (posterior empty t1) t2' (posterior empty t1) t2"
+lemma "transition_simulates (posterior empty t1) t2' t2"
   by (simp add: transition_simulates_def constraints_simulates_def posterior_def t1_def t2_def t2'_def consistent_def)
 end

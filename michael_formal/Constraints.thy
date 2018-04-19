@@ -153,6 +153,10 @@ primrec posterior_n :: "nat \<Rightarrow> transition \<Rightarrow> constraints \
   "posterior_n 0 _ c = c " |
   "posterior_n (Suc m) t c = posterior_n m t (posterior c t)"
 
+primrec posterior_sequence :: "transition list \<Rightarrow> constraints \<Rightarrow> constraints" where
+  "posterior_sequence [] c = c" |
+  "posterior_sequence (h#t) c = posterior_sequence t (posterior c h)"
+
 lemma "apply_guards empty [] = empty"
   by simp
 

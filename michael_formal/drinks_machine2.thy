@@ -73,5 +73,5 @@ lemma "consistent t1_posterior"
   by (simp add: consistent_def)
 
 lemma "\<forall>n. consistent (posterior_n n t2 t1_posterior)"
-  sorry
+  apply (simp add: consistent_def t2_def)
 end
