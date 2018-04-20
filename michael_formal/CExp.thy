@@ -60,7 +60,7 @@ definition "and" :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
     )
   )"
 
-lemma and_is_And:  "ceval (and x y) = ceval (And x y)"
+theorem and_is_And:  "ceval (and x y) = ceval (And x y)"
 proof (cases "x")
   case (Bc x1)
   then show ?thesis
@@ -106,12 +106,44 @@ next
     apply (cases "y = Bc True")
     by (simp_all add: and_def)
 qed
+declare and_is_And [simp]
 
-fun "not" :: "cexp \<Rightarrow> cexp" where
-  "not (Bc x) = Bc (\<not>x)" |
-  "not (Not x) = x" |
-  "not (And x y) = Not (and x y)" |
-  "not g = Not g"
+definition "not" :: "cexp \<Rightarrow> cexp" where
+  "not c = (case c of
+    Bc True \<Rightarrow> Bc False |
+    Bc False \<Rightarrow> Bc True |
+    Not x \<Rightarrow> x |
+    c \<Rightarrow> Not c
+  )"
+
+theorem not_is_Not: "ceval (not x) = ceval (Not x)"
+  proof (cases "x")
+  case (Bc x1)
+  then show ?thesis
+    apply (case_tac "x1 = True")
+    by (simp_all add: not_def)
+  next
+  case (Eq x2)
+  then show ?thesis
+    by (simp add: not_def)
+  next
+  case (Lt x3)
+  then show ?thesis
+    by (simp add: not_def)
+  next
+  case (Gt x4)
+  then show ?thesis
+    by (simp add: not_def)
+  next
+  case (Not x5)
+  then show ?thesis
+    by (simp add: not_def)
+  next
+  case (And x61 x62)
+  then show ?thesis
+    by (simp add: not_def)
+qed
+declare not_is_Not [simp]
 
 lemma "ceval (Bc True) = ceval (Not (Bc False))"
   by simp
@@ -145,9 +177,9 @@ fun compose_plus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "compose_plus _ (Bc v) = Bc v" |
   "compose_plus (Not (Bc v)) _ = Bc (\<not>v)" |
   "compose_plus _ (Not (Bc v)) = Bc (\<not>v)" |
-
   "compose_plus a (Not (Not vb)) = compose_plus a vb"|
   "compose_plus (Not (Not vb)) a = compose_plus vb a"|
+
   "compose_plus a (And va vb) = and (compose_plus a va) (compose_plus a vb)"|
   "compose_plus (And va vb) a = and (compose_plus va a) (compose_plus vb a)"|
   "compose_plus a (Not (And va vb)) = Not (and (compose_plus a va) (compose_plus a vb))"|

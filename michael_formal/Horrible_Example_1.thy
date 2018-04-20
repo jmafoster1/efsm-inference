@@ -49,17 +49,5 @@ definition vend :: "efsm" where
          \<rparr>"
 
 lemma "\<forall> i r. \<not> (apply_guards (Guard t3) i r \<and> apply_guards (Guard t4) i r)"
-  by (simp add: t3_def t4_def)
-
-lemma "\<not> (\<forall>x. ceval (c ''r1'') x \<longrightarrow> \<not> x < 10)"
-  apply simp
-  apply (cases "(c ''r1'')")
-
-(* Stuff below this point can be safely ignored if you want *)
-lemma "\<forall> c. \<not> (Constraints.can_take t3 c \<and> Constraints.can_take t4 c)"
-  apply (simp add: consistent_def t3_def t4_def)
-  apply (simp add: and_is_And)
-  
-  
-  
+  by (simp add: t3_def t4_def) 
 end

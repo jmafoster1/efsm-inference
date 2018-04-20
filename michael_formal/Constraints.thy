@@ -161,7 +161,7 @@ lemma "apply_guards empty [] = empty"
   by simp
 
 lemma "constraints_equiv (apply_guards empty [(gexp.Eq ''i1'' (N 0))]) (\<lambda>x. if x = ''i1'' then Eq 0 else Bc True)"
-  by (simp add: constraints_equiv_def)
+  by (simp add: constraints_equiv_def and_is_And)
 
 lemma constraints_simulates_symetry: "constraints_simulates c c"
   by (simp add: constraints_simulates_def)

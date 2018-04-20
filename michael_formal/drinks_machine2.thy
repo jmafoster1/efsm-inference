@@ -50,9 +50,6 @@ lemma not_all_r2: "((\<forall>r. r = ''r2'') \<longrightarrow> (\<forall>i. i < 
 lemma "cexp_equiv (Or (Gt 100) (Eq 100)) (Geq 100)"
   by auto
 
-value "(Constraints.guard2constraints empty (Ge ''r1'' (N 100)))"
-value "(Constraints.guard2constraints empty (gOr (gexp.Gt ''r1'' (N 100)) (gexp.Eq ''r1'' (N 100))))"
-
 lemma "(gOr (gexp.Gt ''r1'' (N 100)) (gexp.Eq ''r1'' (N 100))) = gexp.Not (gexp.And (gexp.Not (gexp.Gt ''r1'' (N 100))) (gexp.Not (gexp.Eq ''r1'' (N 100))))"
   by simp
 
@@ -72,6 +69,59 @@ lemma "\<not>Constraints.can_take t3 t1_posterior"
 lemma "consistent t1_posterior"
   by (simp add: consistent_def)
 
-lemma "\<forall>n. consistent (posterior_n n t2 t1_posterior)"
+lemma can_take_no_guards: "\<forall> c. (Constraints.consistent c \<and> (Guard t) = []) \<longrightarrow> Constraints.can_take t c"
+  by (simp add: consistent_def)
+
+lemma can_take_t2: "consistent c \<longrightarrow> Constraints.can_take t2 c"
+  by (simp add: t2_def)
+
+ lemma apply_plus_consistent: "(\<forall>r. satisfiable (c r)) \<longrightarrow> satisfiable (compose_plus (c x) (c y))"
+  proof (cases "c x")
+    case (Bc x1)
+    then show ?thesis
+      apply simp
+      apply (case_tac "x1 = True")
+       apply simp
+      apply simp
+      by (metis ceval.simps(1) consistent_def)
+    next
+      case (Eq x2)
+      then show ?thesis
+        apply simp
+        apply (cases "c y")
+             apply (case_tac "x1 = True")
+              apply simp_all
+            apply (metis ceval.simps(1) consistent_def)
+           apply presburger
+          apply presburger
+         apply (case_tac "x5")
+        apply simp
+              apply (metis (full_types) ceval.simps(1) ceval.simps(5) consistent_def)
+             apply simp
+            apply auto[1]
+           apply auto[1]
+        apply simp
+    next
+      case (Lt x3)
+      then show ?thesis sorry
+    next
+      case (Gt x4)
+      then show ?thesis sorry
+    next
+      case (Not x5)
+      then show ?thesis sorry
+    next
+      case (And x61 x62)
+      then show ?thesis sorry
+  qed
+
+
+lemma posterior_t2_consistent: "consistent c \<longrightarrow> consistent (posterior c t2)"
+  apply (simp add: t2_def posterior_def consistent_def)
+
+lemma "consistent (posterior_n n t2 t1_posterior)"
+  apply (induct_tac "n")
+   apply (simp add: consistent_def)
   apply (simp add: consistent_def t2_def)
+  apply (simp add: can_take_t2)
 end
