@@ -75,45 +75,37 @@ lemma can_take_no_guards: "\<forall> c. (Constraints.consistent c \<and> (Guard 
 lemma can_take_t2: "consistent c \<longrightarrow> Constraints.can_take t2 c"
   by (simp add: t2_def)
 
- lemma apply_plus_consistent: "(\<forall>r. satisfiable (c r)) \<longrightarrow> satisfiable (compose_plus (c x) (c y))"
-  proof (cases "c x")
-    case (Bc x1)
-    then show ?thesis
-      apply simp
-      apply (case_tac "x1 = True")
+ lemma apply_plus_consistent: "satisfiable x \<and> satisfiable y \<longrightarrow> satisfiable (compose_plus x y)"
+  proof (cases "x")
+case (Bc x1)
+  then show ?thesis
+    by simp
+next
+  case (Eq x2)
+  then show ?thesis
+    apply simp
+    apply (cases "y")
+         apply simp
+        apply simp
        apply simp
+       apply presburger
       apply simp
-      by (metis ceval.simps(1) consistent_def)
-    next
-      case (Eq x2)
-      then show ?thesis
-        apply simp
-        apply (cases "c y")
-             apply (case_tac "x1 = True")
-              apply simp_all
-            apply (metis ceval.simps(1) consistent_def)
-           apply presburger
-          apply presburger
-         apply (case_tac "x5")
-        apply simp
-              apply (metis (full_types) ceval.simps(1) ceval.simps(5) consistent_def)
-             apply simp
-            apply auto[1]
-           apply auto[1]
-        apply simp
-    next
-      case (Lt x3)
-      then show ?thesis sorry
-    next
-      case (Gt x4)
-      then show ?thesis sorry
-    next
-      case (Not x5)
-      then show ?thesis sorry
-    next
-      case (And x61 x62)
-      then show ?thesis sorry
-  qed
+      apply presburger
+    apply simp
+next
+  case (Lt x3)
+  then show ?thesis sorry
+next
+  case (Gt x4)
+  then show ?thesis sorry
+next
+  case (Not x5)
+  then show ?thesis sorry
+next
+  case (And x61 x62)
+  then show ?thesis sorry
+qed
+    
 
 
 lemma posterior_t2_consistent: "consistent c \<longrightarrow> consistent (posterior c t2)"
