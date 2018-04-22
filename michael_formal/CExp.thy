@@ -173,38 +173,38 @@ lemma simulates_symmetry: "cexp_simulates x x"
   by simp
 
 fun compose_plus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
-  "compose_plus (Bc v) _ = Bc v" |
-  "compose_plus _ (Bc v) = Bc v" |
-  "compose_plus (Not (Bc v)) _ = Bc (\<not>v)" |
-  "compose_plus _ (Not (Bc v)) = Bc (\<not>v)" |
-  "compose_plus a (Not (Not vb)) = compose_plus a vb"|
-  "compose_plus (Not (Not vb)) a = compose_plus vb a"|
+  "compose_plus (Not (Not v)) va = compose_plus v va" |
+  "compose_plus v (Not (Not va)) = compose_plus v va" |
+  "compose_plus (And v va) vb = and (compose_plus v vb) (compose_plus va vb)" |
+  "compose_plus v (And va vb) = and (compose_plus v va) (compose_plus v vb)" |
+  "compose_plus (Not (And v va)) vb = not (and (compose_plus v vb) (compose_plus va vb))" |
+  "compose_plus v (Not (And va vb)) = not (and (compose_plus v va) (compose_plus v vb))" |
+  "compose_plus (Eq v) (Eq va) = Eq (v+va)" |
+  "compose_plus (Eq v) (Lt va) = Lt (v+va)" |
+  "compose_plus (Eq v) (Gt va) = Gt (v+va)" |
+  "compose_plus (Eq v) (Leq va) = Leq (v+va)" |
+  "compose_plus (Eq v) (Geq va) = Geq (v+va)" |
 
-  "compose_plus a (And va vb) = and (compose_plus a va) (compose_plus a vb)"|
-  "compose_plus (And va vb) a = and (compose_plus va a) (compose_plus vb a)"|
-  "compose_plus a (Not (And va vb)) = Not (and (compose_plus a va) (compose_plus a vb))"|
-  "compose_plus (Not (And va vb)) a = Not (and (compose_plus va a) (compose_plus vb a))"|
+  "compose_plus (Lt v) (Eq va) = Lt (v+va)" |
+  "compose_plus (Lt v) (Lt va) = Lt (v+va)" |
+  "compose_plus (Lt v) (Leq va) = Lt (v+va)" |
 
-  "compose_plus (Eq v)   (Eq va)  = Eq (v+va)" |
-  "compose_plus (Eq v)   (Lt va)  = Lt (v+va)" |
-  "compose_plus (Eq v)   (Gt va)  = Gt (v+va)" |
-  "compose_plus (Eq v)   (Geq va) = Geq (v+va)" |
-  "compose_plus (Eq v)   (Leq va) = Leq (v+va)" |
-  
-  "compose_plus (Lt v)   (Eq va)  = Lt (v+va)" |
-  "compose_plus (Gt v)   (Eq va)  = Gt (v+va)" |
-  "compose_plus (Geq vb) (Eq va)  = Geq (vb+va)" |
-  "compose_plus (Leq vb) (Eq va)  = Leq (vb+va)" |
+  "compose_plus (Gt v) (Eq va) = Gt (v+va)" |
+  "compose_plus (Gt v) (Gt va) = Gt (v+va)" |
+  "compose_plus (Gt v) (Geq va) = Gt (v+va)" |
 
-  "compose_plus (Lt v)   (Lt va)  = Lt (v+va)" |
-  "compose_plus (Lt v)   (Leq vb) = Lt (v+vb)" |
-  "compose_plus (Leq vb) (Lt va)  = Lt (vb+va)" |
-  "compose_plus (Leq vb) (Leq v)  = Leq (v+vb)" |
-  
-  "compose_plus (Gt v)   (Gt va)  = Gt (v+va)" |
-  "compose_plus (Gt v)   (Geq vb) = Gt (v+vb)" |
-  "compose_plus (Geq vb) (Gt va)  = Gt (va+vb)" |
-  "compose_plus (Geq vb) (Geq v)  = Geq (v+vb)" |
+  "compose_plus (Leq v) (Eq va) = Leq (v+va)" |
+  "compose_plus (Leq v) (Lt va) = Lt (v+va)" |
+  "compose_plus (Leq v) (Leq va) = Leq (v+va)" |
+
+  "compose_plus (Geq v) (Eq va) = Geq (v+va)" |
+  "compose_plus (Geq v) (Gt va) = Gt (v+va)" |
+  "compose_plus (Geq v) (Geq va) = Geq (v+va)" |
+
+  "compose_plus (Bc False) _ = Bc False" |
+  "compose_plus _ (Bc False) = Bc False" |
+  "compose_plus (Not (Bc True)) _ = Bc False" |
+  "compose_plus _ (Not (Bc True)) = Bc False" |
 
   "compose_plus _ _ = Bc True"
 

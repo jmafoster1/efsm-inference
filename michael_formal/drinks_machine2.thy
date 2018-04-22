@@ -75,36 +75,46 @@ lemma can_take_no_guards: "\<forall> c. (Constraints.consistent c \<and> (Guard 
 lemma can_take_t2: "consistent c \<longrightarrow> Constraints.can_take t2 c"
   by (simp add: t2_def)
 
+lemma double_neg_simulates: "cexp_simulates (compose_plus (Not (Not x)) y) (compose_plus x y) \<and> cexp_simulates (compose_plus x y) (compose_plus (Not (Not x)) y)"
+  by simp
+
+lemma bisimulation: "cexp_simulates x y \<and> cexp_simulates y x \<longrightarrow> cexp_equiv x y"
+  by auto
+
+lemma "cexp_equiv (compose_plus (Not (Not x)) y) (compose_plus x y)"
+  by simp
+  
+
  lemma apply_plus_consistent: "satisfiable x \<and> satisfiable y \<longrightarrow> satisfiable (compose_plus x y)"
   proof (cases "x")
-case (Bc x1)
-  then show ?thesis
-    by simp
-next
-  case (Eq x2)
-  then show ?thesis
-    apply simp
-    apply (cases "y")
-         apply simp
-        apply simp
-       apply simp
-       apply presburger
+  case (Bc x1)
+    then show ?thesis
+      by simp
+  next
+    case (Eq x2)
+    then show ?thesis
       apply simp
-      apply presburger
-    apply simp
-next
-  case (Lt x3)
-  then show ?thesis sorry
-next
-  case (Gt x4)
-  then show ?thesis sorry
-next
-  case (Not x5)
-  then show ?thesis sorry
-next
-  case (And x61 x62)
-  then show ?thesis sorry
-qed
+      apply (cases "y")
+           apply simp
+          apply simp
+         apply simp
+         apply presburger
+        apply simp
+        apply presburger
+      apply simp
+  next
+    case (Lt x3)
+    then show ?thesis sorry
+  next
+    case (Gt x4)
+    then show ?thesis sorry
+  next
+    case (Not x5)
+    then show ?thesis sorry
+  next
+    case (And x61 x62)
+    then show ?thesis sorry
+  qed
     
 
 
