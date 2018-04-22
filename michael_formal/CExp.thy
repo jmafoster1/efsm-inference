@@ -172,79 +172,6 @@ lemma "cexp_simulates (Lt 10) (Lt 5)"
 lemma simulates_symmetry: "cexp_simulates x x"
   by simp
 
-fun compose_plus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
-  "compose_plus (Not (Not v)) va = compose_plus v va" |
-  "compose_plus v (Not (Not va)) = compose_plus v va" |
-  "compose_plus (And v va) vb = and (compose_plus v vb) (compose_plus va vb)" |
-  "compose_plus v (And va vb) = and (compose_plus v va) (compose_plus v vb)" |
-  "compose_plus (Not (And v va)) vb = not (and (compose_plus v vb) (compose_plus va vb))" |
-  "compose_plus v (Not (And va vb)) = not (and (compose_plus v va) (compose_plus v vb))" |
-  "compose_plus (Eq v) (Eq va) = Eq (v+va)" |
-  "compose_plus (Eq v) (Lt va) = Lt (v+va)" |
-  "compose_plus (Eq v) (Gt va) = Gt (v+va)" |
-  "compose_plus (Eq v) (Leq va) = Leq (v+va)" |
-  "compose_plus (Eq v) (Geq va) = Geq (v+va)" |
-
-  "compose_plus (Lt v) (Eq va) = Lt (v+va)" |
-  "compose_plus (Lt v) (Lt va) = Lt (v+va)" |
-  "compose_plus (Lt v) (Leq va) = Lt (v+va)" |
-
-  "compose_plus (Gt v) (Eq va) = Gt (v+va)" |
-  "compose_plus (Gt v) (Gt va) = Gt (v+va)" |
-  "compose_plus (Gt v) (Geq va) = Gt (v+va)" |
-
-  "compose_plus (Leq v) (Eq va) = Leq (v+va)" |
-  "compose_plus (Leq v) (Lt va) = Lt (v+va)" |
-  "compose_plus (Leq v) (Leq va) = Leq (v+va)" |
-
-  "compose_plus (Geq v) (Eq va) = Geq (v+va)" |
-  "compose_plus (Geq v) (Gt va) = Gt (v+va)" |
-  "compose_plus (Geq v) (Geq va) = Geq (v+va)" |
-
-  "compose_plus (Bc False) _ = Bc False" |
-  "compose_plus _ (Bc False) = Bc False" |
-  "compose_plus (Not (Bc True)) _ = Bc False" |
-  "compose_plus _ (Not (Bc True)) = Bc False" |
-
-  "compose_plus _ _ = Bc True"
-
-fun compose_minus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
-  "compose_minus (Bc v) _ = Bc v" |
-  "compose_minus _ (Bc v) = Bc v" |
-  "compose_minus (Not (Bc v)) _ = Bc (\<not>v)" |
-  "compose_minus _ (Not (Bc v)) = Bc (\<not>v)" |
-
-  "compose_minus a (Not (Not vb)) = compose_minus a vb"|
-  "compose_minus (Not (Not vb)) a = compose_minus vb a"|
-  "compose_minus a (And va vb) = and (compose_minus a va) (compose_minus a vb)"|
-  "compose_minus (And va vb) a = and (compose_minus va a) (compose_minus vb a)"|
-  "compose_minus a (Not (And va vb)) = Not (and (compose_minus a va) (compose_minus a vb))"|
-  "compose_minus (Not (And va vb)) a = Not (and (compose_minus va a) (compose_minus vb a))"|
-
-  "compose_minus (Eq n) (Eq n') = Eq (n-n')" |
-  "compose_minus (Eq n) (Lt n') = Gt (n-n')" |
-  "compose_minus (Eq n) (Gt n') = Lt (n-n')" |
-  "compose_minus (Eq v) (Geq vb) = Leq (v-vb)" |
-  "compose_minus (Eq v) (Leq vb) = Geq (v-vb)" |
-  
-  "compose_minus (Lt v) (Eq va) = Lt (v-va)" |
-  "compose_minus (Lt v) (Gt va) = Lt (v-va)" |
-  "compose_minus (Lt v) (Geq va) = Lt (v-va)" |
-
-  "compose_minus (Gt v) (Eq va) = Gt (v-va)" |
-  "compose_minus (Gt v) (Lt va) = Gt (v-va)" |
-  "compose_minus (Gt v) (Leq va) = Gt (v-va)" |
-
-  "compose_minus (Geq v) (Eq va) = Geq (v-va)" |
-  "compose_minus (Geq vb) (Lt va) = Geq (vb-va)" |
-  "compose_minus (Geq vb) (Leq v) = Geq (vb-v)" |
-
-  "compose_minus (Leq v) (Eq va) = Leq (v-va)" |
-  "compose_minus (Leq v) (Gt va) = Lt (v-va)" |
-  "compose_minus (Leq vb) (Geq v) = Leq (vb-v)" |
-
-  "compose_minus _ _ = Bc True"
-
 (*
 If the second arg is always bigger than the first (e.g. if they're both literals with the first
 being bigger) then just return that. If not, is there a way for the first arg to be greater than the
@@ -293,4 +220,72 @@ fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" whe
 
 fun apply_lt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where
   "apply_lt a b = (let (ca, cb) = (apply_gt b a) in (cb, ca))"
+
+fun compose_plus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
+  "compose_plus x y = (if satisfiable x \<and> satisfiable y then (if valid x \<or> valid y then Bc True else (case (x, y) of
+  ((Eq v), (Eq va)) \<Rightarrow> Eq (v+va) |
+  ((Eq v), (Lt va)) \<Rightarrow> Lt (v+va) |
+  ((Eq v), (Gt va)) \<Rightarrow> Gt (v+va) |
+  ((Eq v), (Leq va)) \<Rightarrow> Leq (v+va) |
+  ((Eq v), (Geq va)) \<Rightarrow> Geq (v+va) |
+
+  ((Lt v), (Eq va)) \<Rightarrow> Lt (v+va) |
+  ((Lt v), (Lt va)) \<Rightarrow> Lt (v+va) |
+  ((Lt v), (Leq va)) \<Rightarrow> Lt (v+va) |
+
+  ((Gt v), (Eq va)) \<Rightarrow> Gt (v+va) |
+  ((Gt v), (Gt va)) \<Rightarrow> Gt (v+va) |
+  ((Gt v), (Geq va)) \<Rightarrow> Gt (v+va) |
+
+  ((Leq v), (Eq va)) \<Rightarrow> Leq (v+va) |
+  ((Leq v), (Lt va)) \<Rightarrow> Lt (v+va) |
+  ((Leq v), (Leq va)) \<Rightarrow> Leq (v+va) |
+
+  ((Geq v), (Eq va)) \<Rightarrow> Geq (v+va) |
+  ((Geq v), (Gt va)) \<Rightarrow> Gt (v+va) |
+  ((Geq v), (Geq va)) \<Rightarrow> Geq (v+va) |
+
+  ((Neq _), _) \<Rightarrow> Bc True |
+  (_, (Neq _)) \<Rightarrow> Bc True |
+
+  ((Not (Not v)), va) \<Rightarrow> compose_plus v va |
+  (v, (Not (Not va))) \<Rightarrow> compose_plus v va |
+  ((And v va), vb) \<Rightarrow> and (compose_plus v vb) (compose_plus va vb) |
+  (v, (And va vb)) \<Rightarrow> and (compose_plus v va) (compose_plus v vb) |
+  ((Not (And v va)), vb) \<Rightarrow> not (and (compose_plus v vb) (compose_plus va vb)) |
+  (v, (Not (And va vb))) \<Rightarrow> not (and (compose_plus v va) (compose_plus v vb)) |
+  _ \<Rightarrow> Bc True
+  )) else Bc False)"
+
+fun compose_minus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
+  "compose_minus x y = (if satisfiable x \<and> satisfiable y then (if valid x \<or> valid y then Bc True else (case (x, y) of
+  ((Not (Not v)), va) \<Rightarrow> compose_minus v va |
+  (v, (Not (Not va))) \<Rightarrow> compose_minus v va |
+  ((And v va), vb) \<Rightarrow> and (compose_minus v vb) (compose_minus va vb) |
+  (v, (And va vb)) \<Rightarrow> and (compose_minus v va) (compose_minus v vb) |
+  ((Not (And v va)), vb) \<Rightarrow> not (and (compose_minus v vb) (compose_minus va vb)) |
+  (v, (Not (And va vb))) \<Rightarrow> not (and (compose_minus v va) (compose_minus v vb)) |
+  ((Eq v), (Eq va)) \<Rightarrow> Eq (v-va) |
+  ((Eq v), (Lt va)) \<Rightarrow> Lt (v-va) |
+  ((Eq v), (Gt va)) \<Rightarrow> Gt (v-va) |
+  ((Eq v), (Leq va)) \<Rightarrow> Leq (v-va) |
+  ((Eq v), (Geq va)) \<Rightarrow> Geq (v-va) |
+
+  ((Lt v), (Eq va)) \<Rightarrow> Lt (v-va) |
+  ((Lt v), (Lt va)) \<Rightarrow> Lt (v-va) |
+  ((Lt v), (Leq va)) \<Rightarrow> Lt (v-va) |
+
+  ((Gt v), (Eq va)) \<Rightarrow> Gt (v-va) |
+  ((Gt v), (Gt va)) \<Rightarrow> Gt (v-va) |
+  ((Gt v), (Geq va)) \<Rightarrow> Gt (v-va) |
+
+  ((Leq v), (Eq va)) \<Rightarrow> Leq (v-va) |
+  ((Leq v), (Lt va)) \<Rightarrow> Lt (v-va) |
+  ((Leq v), (Leq va)) \<Rightarrow> Leq (v-va) |
+
+  ((Geq v), (Eq va)) \<Rightarrow> Geq (v-va) |
+  ((Geq v), (Gt va)) \<Rightarrow> Gt (v-va) |
+  ((Geq v), (Geq va)) \<Rightarrow> Geq (v-va) |
+  _ \<Rightarrow> Bc True
+  )) else Bc False)"
 end

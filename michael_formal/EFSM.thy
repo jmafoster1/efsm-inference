@@ -1,5 +1,5 @@
 theory EFSM
-  imports Syntax Constraints
+  imports Constraints
 begin
 
 primrec apply_updates :: "(string \<times> aexp) list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> registers" where

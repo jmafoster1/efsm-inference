@@ -14,8 +14,8 @@ fun update :: "constraints \<Rightarrow> vname \<Rightarrow> cexp \<Rightarrow> 
 fun conjoin :: "constraints \<Rightarrow> constraints \<Rightarrow> constraints" where
   "conjoin c c' = (\<lambda>r. (and (c r) (c' r)))"
 
-definition constraints_equiv :: "constraints \<Rightarrow> constraints \<Rightarrow> bool" where
-  "constraints_equiv c c' = (\<forall>r. cexp_equiv (c r) (c' r))"
+abbreviation constraints_equiv :: "constraints \<Rightarrow> constraints \<Rightarrow> bool" where
+  "constraints_equiv c c' \<equiv> (\<forall>r. cexp_equiv (c r) (c' r))"
 
 definition consistent :: "constraints \<Rightarrow> bool" where
   "consistent c = (\<forall>r. satisfiable (c r))"
@@ -161,7 +161,7 @@ lemma "apply_guards empty [] = empty"
   by simp
 
 lemma "constraints_equiv (apply_guards empty [(gexp.Eq ''i1'' (N 0))]) (\<lambda>x. if x = ''i1'' then Eq 0 else Bc True)"
-  by (simp add: constraints_equiv_def and_is_And)
+  by simp
 
 lemma constraints_simulates_symetry: "constraints_simulates c c"
   by (simp add: constraints_simulates_def)

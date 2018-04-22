@@ -55,11 +55,10 @@ lemma "(gOr (gexp.Gt ''r1'' (N 100)) (gexp.Eq ''r1'' (N 100))) = gexp.Not (gexp.
 
 lemma "constraints_equiv (Constraints.apply_guard empty (Ge ''r1'' (N 100))) (Constraints.apply_guard empty (gOr (gexp.Gt ''r1'' (N 100)) (gexp.Eq ''r1'' (N 100))))"
   apply simp
-  apply (simp add: constraints_equiv_def)
   by auto
 
 lemma "constraints_equiv (posterior empty t3) (\<lambda>i. if i = ''r2'' then Geq 100 else Bc True)"
-  apply (simp add: posterior_def consistent_def t3_def constraints_equiv_def)
+  apply (simp add: posterior_def consistent_def t3_def)
   by auto
 
 (* You can't take t3 immediately after taking t1 *)
@@ -75,55 +74,38 @@ lemma can_take_no_guards: "\<forall> c. (Constraints.consistent c \<and> (Guard 
 lemma can_take_t2: "consistent c \<longrightarrow> Constraints.can_take t2 c"
   by (simp add: t2_def)
 
-lemma double_neg_simulates: "cexp_simulates (compose_plus (Not (Not x)) y) (compose_plus x y) \<and> cexp_simulates (compose_plus x y) (compose_plus (Not (Not x)) y)"
-  by simp
-
-lemma bisimulation: "cexp_simulates x y \<and> cexp_simulates y x \<longrightarrow> cexp_equiv x y"
+lemma t2_with_empty: "constraints_equiv x empty \<longrightarrow> constraints_equiv (posterior x t2) (posterior empty t2)"
+  apply (simp add: posterior_def consistent_def t2_def)
   by auto
 
-lemma "cexp_equiv (compose_plus (Not (Not x)) y) (compose_plus x y)"
+lemma t2_empty: "(posterior empty t2) = empty"
+  by (simp add: posterior_def consistent_def t2_def)
+
+lemma valid_t2_empty: "\<forall>r. valid (posterior empty t2 r)"
+  by (simp add: posterior_def t2_def consistent_def)
+
+lemma valid_true: "valid c \<longrightarrow> cexp_equiv c (Bc True)"
   by simp
-  
 
- lemma apply_plus_consistent: "satisfiable x \<and> satisfiable y \<longrightarrow> satisfiable (compose_plus x y)"
-  proof (cases "x")
-  case (Bc x1)
-    then show ?thesis
-      by simp
-  next
-    case (Eq x2)
-    then show ?thesis
-      apply simp
-      apply (cases "y")
-           apply simp
-          apply simp
-         apply simp
-         apply presburger
-        apply simp
-        apply presburger
-      apply simp
-  next
-    case (Lt x3)
-    then show ?thesis sorry
-  next
-    case (Gt x4)
-    then show ?thesis sorry
-  next
-    case (Not x5)
-    then show ?thesis sorry
-  next
-    case (And x61 x62)
-    then show ?thesis sorry
-  qed
-    
+lemma valid_empty: "(\<forall>r. valid(c r)) \<longrightarrow> constraints_equiv c empty"
+  by simp
 
+lemma posterior_n_t2_empty: "(posterior_n n t2 empty) = empty"
+  apply (induct_tac n)
+   apply simp
+  apply (insert t2_with_empty t2_empty valid_empty)
+  by simp
 
-lemma posterior_t2_consistent: "consistent c \<longrightarrow> consistent (posterior c t2)"
-  apply (simp add: t2_def posterior_def consistent_def)
+lemma posterior_t2_is_empty: "(posterior t1_posterior t2) = empty"
+  by (simp add: t2_def posterior_def consistent_def)
 
+(* We can go round t2 as many times as we like *)
 lemma "consistent (posterior_n n t2 t1_posterior)"
-  apply (induct_tac "n")
+  apply (induct_tac n)
    apply (simp add: consistent_def)
-  apply (simp add: consistent_def t2_def)
-  apply (simp add: can_take_t2)
+  apply simp
+  apply (simp add: posterior_t2_is_empty)
+  apply (simp add: posterior_n_t2_empty consistent_def)
+  done
+
 end
