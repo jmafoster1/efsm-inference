@@ -100,12 +100,16 @@ lemma posterior_t2_is_empty: "(posterior t1_posterior t2) = empty"
   by (simp add: t2_def posterior_def consistent_def)
 
 (* We can go round t2 as many times as we like *)
-lemma "consistent (posterior_n n t2 t1_posterior)"
+lemma consistent_posterior_n_t2: "consistent (posterior_n n t2 t1_posterior)"
   apply (induct_tac n)
    apply (simp add: consistent_def)
-  apply simp
-  apply (simp add: posterior_t2_is_empty)
-  apply (simp add: posterior_n_t2_empty consistent_def)
-  done
+  by (simp add: posterior_t2_is_empty posterior_n_t2_empty consistent_def)
 
+(* We have to do a "coin" before we can do a "vend"*)
+lemma "Constraints.can_take t3 (posterior_n n t2 (posterior empty t1)) \<longrightarrow> n > 0"
+  apply (simp add: consistent_def posterior_def)
+  apply (simp add: t1_def)
+  apply (case_tac "n = 0")
+   apply (simp add: t2_def t3_def)
+  by simp
 end
