@@ -107,9 +107,18 @@ lemma consistent_posterior_n_t2: "consistent (posterior_n n t2 t1_posterior)"
 
 (* We have to do a "coin" before we can do a "vend"*)
 lemma "Constraints.can_take t3 (posterior_n n t2 (posterior empty t1)) \<longrightarrow> n > 0"
-  apply (simp add: consistent_def posterior_def)
-  apply (simp add: t1_def)
+  apply (simp add: consistent_def posterior_def t1_def)
   apply (case_tac "n = 0")
    apply (simp add: t2_def t3_def)
   by simp
+
+(* We can do any number of "coin"s before doing a "vend" *)
+lemma "n > 0 \<longrightarrow> Constraints.can_take t3 (posterior_n n t2 (posterior empty t1))"
+  apply (simp add: consistent_def posterior_def t1_def)
+  apply (induct_tac n)
+   apply simp
+  apply (simp add: posterior_t2_is_empty posterior_n_t2_empty t3_def)
+  by auto
+
+  
 end
