@@ -182,7 +182,7 @@ lemma subsumes_reflexivity:  "subsumes x x"
   by simp
 
 (* Widening the precondition and reducing nondeterminism *)
-abbreviation is_generalisation :: "constraints \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "is_generalisation c t t' \<equiv> (subsumes (apply_guards c (Guard t)) (apply_guards c (Guard t'))) \<and> (subsumes (posterior c t') (posterior c t))"
+abbreviation is_generalisation :: "constraints \<Rightarrow> transition \<Rightarrow> constraints \<Rightarrow> transition \<Rightarrow> bool" where
+  "is_generalisation c t c' t' \<equiv> (subsumes (apply_guards c (Guard t)) (apply_guards c' (Guard t'))) \<and> (subsumes (posterior c' t') (posterior c t))"
 
 end

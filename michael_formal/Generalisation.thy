@@ -116,7 +116,15 @@ lemma "posterior vend_start coin_init = vend_g_start"
   apply (rule ext)
   by (simp add: coin_init_def posterior_def)
 
-lemma "is_generalisation vend_start coin_init coin50"
-  apply (simp add: coin50_def coin_init_def posterior_def)
-  by auto
+lemma "is_generalisation vend_g_start coin_init no_regs coin50"
+  by (simp add: coin50_def coin_init_def posterior_def)
+
+lemma "is_generalisation vend_g_start coin_inc no_regs coin50"
+  by (simp add: posterior_def coin_init_def coin_inc_def coin50_def)
+
+lemma "(posterior_sequence [coin_init, coin_inc] vend_g_start) = vend_g_start"
+  by (simp add: coin_init_def coin_inc_def posterior_def)
+
+lemma "is_generalisation vend_g_start vends_g  no_regs vends"
+  by (simp add: coin_init_def coin_inc_def posterior_def vends_def vends_g_def)
 end
