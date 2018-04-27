@@ -49,6 +49,9 @@ definition vend :: "efsm" where
               else [] (* There are no other transitions *)
          \<rparr>"
 
+abbreviation vend_start :: constraints where
+  "vend_start \<equiv> (\<lambda>x. if x = ''r1'' \<or> x = ''r2'' then Bc True else no_regs x)"
+
 (*
   These are lemmas about the machine which could maybe be in another file.
   They don't need to be translated to SAL

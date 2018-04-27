@@ -5,6 +5,9 @@ begin
 
 type_synonym constraints = "vname \<Rightarrow> cexp"
 
+abbreviation no_regs :: constraints where
+  "no_regs \<equiv> (\<lambda>x. if hd x = CHR ''r'' then Undef else Bc True)"
+
 abbreviation empty :: constraints where
   "empty \<equiv> \<lambda>x. Bc True"
 
@@ -17,8 +20,11 @@ fun conjoin :: "constraints \<Rightarrow> constraints \<Rightarrow> constraints"
 abbreviation constraints_equiv :: "constraints \<Rightarrow> constraints \<Rightarrow> bool" where
   "constraints_equiv c c' \<equiv> (\<forall>r. cexp_equiv (c r) (c' r))"
 
-definition consistent :: "constraints \<Rightarrow> bool" where
-  "consistent c = (\<forall>r. satisfiable (c r))"
+abbreviation consistent :: "constraints \<Rightarrow> bool" where
+  "consistent c \<equiv> (\<forall>r. satisfiable (c r) \<or> (c r) = Undef)"
+
+abbreviation valid_constraints :: "constraints \<Rightarrow> bool" where
+  "valid_constraints c \<equiv> (\<forall>r. valid (c r) \<or> (c r) = Undef)"
 
 definition nonempty :: "constraints \<Rightarrow> bool" where
   "nonempty c = (\<not> (\<forall>r. cexp_equiv (c r) (Bc True)))"
@@ -144,7 +150,7 @@ primrec apply_updates :: "constraints \<Rightarrow> constraints \<Rightarrow> up
   "apply_updates l c (h#t) = apply_updates l (apply_update l c h) t"
 
 definition posterior :: "constraints \<Rightarrow> transition \<Rightarrow> constraints" where
-  "posterior c t = (let c' = (apply_guards c (Guard t)) in (if consistent c' then (apply_updates c' empty (Updates t)) else (\<lambda>i. Bc False)))"
+  "posterior c t = (let c' = (apply_guards c (Guard t)) in (if consistent c' then (apply_updates c' no_regs (Updates t)) else (\<lambda>i. Bc False)))"
 
 abbreviation can_take :: "transition \<Rightarrow> constraints \<Rightarrow> bool" where
   "can_take t c \<equiv> consistent (apply_guards c (Guard t))"
@@ -165,5 +171,18 @@ lemma "constraints_equiv (apply_guards empty [(gexp.Eq ''i1'' (N 0))]) (\<lambda
 
 lemma constraints_simulates_symetry: "constraints_simulates c c"
   by (simp add: constraints_simulates_def)
+
+abbreviation subsumes :: "constraints \<Rightarrow> constraints \<Rightarrow> bool" where
+  "subsumes c c' \<equiv> (\<forall> r i. (ceval (c' r) i \<longrightarrow> ceval (c r) i) \<or> ((c r) = Undef))"
+
+lemma "subsumes (\<lambda>x. Bc True) (\<lambda>x. Bc False)"
+  by simp
+
+lemma subsumes_reflexivity:  "subsumes x x"
+  by simp
+
+(* Widening the precondition and reducing nondeterminism *)
+abbreviation is_generalisation :: "constraints \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "is_generalisation c t t' \<equiv> (subsumes (apply_guards c (Guard t)) (apply_guards c (Guard t'))) \<and> (subsumes (posterior c t') (posterior c t))"
 
 end

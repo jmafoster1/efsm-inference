@@ -2,7 +2,7 @@ theory CExp
   imports Main
 begin
 
-datatype cexp = Bc bool | Eq int | Lt int | Gt int | Not cexp | And cexp cexp
+datatype cexp = Undef | Bc bool | Eq int | Lt int | Gt int | Not cexp | And cexp cexp
 
 (* Less than or equal to *)
 abbreviation Leq :: "int \<Rightarrow> cexp" where
@@ -22,6 +22,7 @@ abbreviation Or :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
 
 (* Does a given value of "i" satisfy the given cexp? *)
 fun ceval :: "cexp \<Rightarrow> (int \<Rightarrow> bool)" where
+  "ceval Undef = (\<lambda>i. False)" |
   "ceval (Bc b) = (\<lambda>i. b)" |
   "ceval (Eq v) = (\<lambda>i. i = v)" |
   "ceval (Lt v) = (\<lambda>i. i < v)" |
@@ -45,9 +46,10 @@ abbreviation satisfiable :: "cexp \<Rightarrow> bool" where
 abbreviation cexp_simulates :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
   "cexp_simulates c c' \<equiv> (\<forall>i. ceval c' i \<longrightarrow> ceval c i)"
 
-definition "and" :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
+fun "and" :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "and x y = (case x of
     Bc True \<Rightarrow> y |
+    Undef \<Rightarrow> Undef |
     Bc False \<Rightarrow> Bc False |
     Eq i \<Rightarrow> (case y of 
       Eq i' \<Rightarrow> (if i = i' then Eq i else Bc False) |
@@ -55,6 +57,7 @@ definition "and" :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
     ) |
     _ \<Rightarrow> (case y of
       Bc True \<Rightarrow> x |
+      Undef \<Rightarrow> Undef |
       Bc False \<Rightarrow> Bc False |
       _ \<Rightarrow> And x y
     )
@@ -65,13 +68,13 @@ proof (cases "x")
   case (Bc x1)
   then show ?thesis
     apply (case_tac "x1 = True")
-    by (simp_all add: and_def)
+    by simp_all
 next
   case (Eq x2)
   then show ?thesis
     apply simp
     apply (cases "y")
-         apply (simp_all add: and_def)
+    apply simp_all
     by auto  
 next
   case (Lt x3)
@@ -80,7 +83,7 @@ next
     apply (cases "y")
          apply simp_all
     apply (cases "y = Bc True")
-    by (simp_all add: and_def)
+    by simp_all
 next
   case (Gt x4)
   then show ?thesis
@@ -88,7 +91,7 @@ next
     apply (cases "y")
          apply simp_all
     apply (cases "y = Bc True")
-    by (simp_all add: and_def)
+    by simp_all
 next
   case (Not x5)
   then show ?thesis
@@ -96,7 +99,7 @@ next
     apply (cases "y")
          apply simp_all
     apply (cases "y = Bc True")
-    by (simp_all add: and_def)
+    by simp_all
 next
   case (And x61 x62)
   then show ?thesis
@@ -104,15 +107,18 @@ next
     apply (cases "y")
          apply simp_all
     apply (cases "y = Bc True")
-    by (simp_all add: and_def)
+    by simp_all
+next case (Undef)
+  then show ?thesis by simp
 qed
 declare and_is_And [simp]
 
-definition "not" :: "cexp \<Rightarrow> cexp" where
+fun "not" :: "cexp \<Rightarrow> cexp" where
   "not c = (case c of
     Bc True \<Rightarrow> Bc False |
     Bc False \<Rightarrow> Bc True |
     Not x \<Rightarrow> x |
+    Undef \<Rightarrow> Bc True |
     c \<Rightarrow> Not c
   )"
 
@@ -121,27 +127,30 @@ theorem not_is_Not: "ceval (not x) = ceval (Not x)"
   case (Bc x1)
   then show ?thesis
     apply (case_tac "x1 = True")
-    by (simp_all add: not_def)
+    by simp_all
   next
   case (Eq x2)
   then show ?thesis
-    by (simp add: not_def)
+    by simp_all
   next
   case (Lt x3)
   then show ?thesis
-    by (simp add: not_def)
+    by simp_all
   next
   case (Gt x4)
   then show ?thesis
-    by (simp add: not_def)
+    by simp_all
   next
   case (Not x5)
   then show ?thesis
-    by (simp add: not_def)
+    by simp_all
   next
   case (And x61 x62)
   then show ?thesis
-    by (simp add: not_def)
+    by simp_all
+next
+  case (Undef)
+  then show ?thesis by simp
 qed
 declare not_is_Not [simp]
 
@@ -179,6 +188,8 @@ second arg? If so, return it. If not, return false.
 *)
 (* First element is greater *)
 fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where
+  "apply_gt Undef v = (Undef, v)" |
+  "apply_gt v Undef = (v, Undef)" |
   "apply_gt (Bc False) v = (Bc False, v)" |
   "apply_gt v (Bc False) = (v, Bc False)" |
   "apply_gt v (Not (Bc True)) = (v, Bc False)" |
