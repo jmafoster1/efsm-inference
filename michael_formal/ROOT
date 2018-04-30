@@ -1,0 +1,5 @@
+session "michael-efsm" = HOL +
+sessions Deriving
+theories
+  CExp
+
