@@ -125,6 +125,29 @@ lemma "is_generalisation vend_g_start coin_inc no_regs coin50"
 lemma "(posterior_sequence [coin_init, coin_inc] vend_g_start) = vend_g_start"
   by (simp add: coin_init_def coin_inc_def posterior_def)
 
-lemma "is_generalisation vend_g_start vends_g  no_regs vends"
+lemma "is_generalisation vend_g_start vends_g no_regs vends"
   by (simp add: coin_init_def coin_inc_def posterior_def vends_def vends_g_def)
+
+
+
+definition test1 :: transition where
+"test1 \<equiv> \<lparr>
+        Label = ''foo'',
+        Arity = 1,
+        Guard = [(gexp.Eq ''i1'' (N 6))],
+        Outputs =  [(N 6)],
+        Updates = [(''r1'', (V ''i1''))]
+      \<rparr>"
+
+definition test2 :: transition where
+"test2 \<equiv> \<lparr>
+        Label = ''foo'',
+        Arity = 1,
+        Guard = [(gexp.Gt ''i1'' (N 0))],
+        Outputs =  [(V ''i1'')],
+        Updates = [(''r1'', (V ''i1''))]
+      \<rparr>"
+
+lemma "is_generalisation vend_g_start test2 vend_g_start test1"
+  apply (simp add: test1_def test2_def posterior_def)
 end
