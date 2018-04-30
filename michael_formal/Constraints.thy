@@ -182,7 +182,9 @@ lemma subsumes_reflexivity:  "subsumes x x"
   by simp
 
 (* Widening the precondition and reducing nondeterminism *)
+(* Guards of A imply guards of B and if the precondition of A is satisfied and we do a B then the
+   posterior state of B is consistent with those of A *)
 abbreviation is_generalisation :: "constraints \<Rightarrow> transition \<Rightarrow> constraints \<Rightarrow> transition \<Rightarrow> bool" where
-  "is_generalisation c t c' t' \<equiv> (subsumes (apply_guards c (Guard t)) (apply_guards c' (Guard t'))) \<and> (subsumes (posterior c' t') (posterior c t))"
+  "is_generalisation cb b ca a \<equiv> (subsumes (apply_guards cb (Guard b)) (apply_guards ca (Guard a))) \<and> (subsumes (posterior ca a) (posterior (apply_guards cb (Guard a)) b))"
 
 end

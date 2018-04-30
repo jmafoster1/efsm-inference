@@ -149,5 +149,7 @@ definition test2 :: transition where
       \<rparr>"
 
 lemma "is_generalisation vend_g_start test2 vend_g_start test1"
-  apply (simp add: test1_def test2_def posterior_def)
+  apply (simp add: test2_def posterior_def)
+  by (simp add: test1_def)
+  
 end
