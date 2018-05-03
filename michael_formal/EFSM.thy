@@ -6,14 +6,6 @@ primrec apply_updates :: "(string \<times> aexp) list \<Rightarrow> state \<Righ
   "apply_updates [] _ _ = <>" |
   "apply_updates (h#t) i r = join <(fst h) := (aval (snd h) (join i r))> (apply_updates t i r)"
 
-primrec apply_outputs :: "output_function list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> outputs" where
-  "apply_outputs [] _ _ = []" |
-  "apply_outputs (h#t) i r = (aval h (join i r))#(apply_outputs t i r)"
-
-primrec apply_guards :: "guard list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> bool" where
-  "apply_guards [] _ _ = True" |
-  "apply_guards (h#t) i r =  ((gval h (join i r)) \<and> (apply_guards t i r))"
-
 abbreviation is_possible_step :: "efsm \<Rightarrow> statename \<Rightarrow> statename \<Rightarrow> transition \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> bool" where
 "is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (find (\<lambda>x . x = t) (T e(s,s')) \<noteq> None) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (input2state i 1) r))"
 

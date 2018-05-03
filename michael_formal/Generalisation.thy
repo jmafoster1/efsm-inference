@@ -105,7 +105,7 @@ abbreviation vend_g_start :: constraints where
 lemma "subsumes vend_g_start no_regs"
   by simp
 
-lemma "(subsumes (Constraints.apply_guards vend_start (Guard coin_init)) (Constraints.apply_guards vend_start (Guard coin50)))"
+lemma "(subsumes (constraints_apply_guards vend_start (Guard coin_init)) (constraints_apply_guards vend_start (Guard coin50)))"
   by (simp add: coin50_def coin_init_def)
 
 lemma "(posterior vend_start coin50) =  no_regs"
@@ -150,6 +150,5 @@ definition test2 :: transition where
 
 lemma "is_generalisation vend_g_start test2 vend_g_start test1"
   apply (simp add: test2_def posterior_def)
-  by (simp add: test1_def)
-  
+  by (simp add: test1_def join_def)
 end

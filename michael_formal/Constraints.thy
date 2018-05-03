@@ -141,19 +141,19 @@ fun apply_update :: "constraints \<Rightarrow> constraints \<Rightarrow> update_
   "apply_update l c (v, V vb) = update c v (l vb)" |
   "apply_update l c (v, Plus vb vc) = update c v (apply_plus l vb vc)"
 
-primrec apply_guards :: "constraints \<Rightarrow> guard list \<Rightarrow> constraints" where
-  "apply_guards c [] = c" |
-  "apply_guards c (h#t) = (apply_guards (apply_guard c h) t)"
+primrec constraints_apply_guards :: "constraints \<Rightarrow> guard list \<Rightarrow> constraints" where
+  "constraints_apply_guards c [] = c" |
+  "constraints_apply_guards c (h#t) = (constraints_apply_guards (apply_guard c h) t)"
 
 primrec apply_updates :: "constraints \<Rightarrow> constraints \<Rightarrow> update_function list \<Rightarrow> constraints" where
   "apply_updates _ c [] = c" |
   "apply_updates l c (h#t) = apply_updates l (apply_update l c h) t"
 
 definition posterior :: "constraints \<Rightarrow> transition \<Rightarrow> constraints" where
-  "posterior c t = (let c' = (apply_guards c (Guard t)) in (if consistent c' then (apply_updates c' no_regs (Updates t)) else (\<lambda>i. Bc False)))"
+  "posterior c t = (let c' = (constraints_apply_guards c (Guard t)) in (if consistent c' then (apply_updates c' no_regs (Updates t)) else (\<lambda>i. Bc False)))"
 
 abbreviation can_take :: "transition \<Rightarrow> constraints \<Rightarrow> bool" where
-  "can_take t c \<equiv> consistent (apply_guards c (Guard t))"
+  "can_take t c \<equiv> consistent (constraints_apply_guards c (Guard t))"
 
 primrec posterior_n :: "nat \<Rightarrow> transition \<Rightarrow> constraints \<Rightarrow> constraints" where
   "posterior_n 0 _ c = c " |
@@ -163,10 +163,10 @@ primrec posterior_sequence :: "transition list \<Rightarrow> constraints \<Right
   "posterior_sequence [] c = c" |
   "posterior_sequence (h#t) c = posterior_sequence t (posterior c h)"
 
-lemma "apply_guards empty [] = empty"
+lemma "constraints_apply_guards empty [] = empty"
   by simp
 
-lemma "constraints_equiv (apply_guards empty [(gexp.Eq ''i1'' (N 0))]) (\<lambda>x. if x = ''i1'' then Eq 0 else Bc True)"
+lemma "constraints_equiv (constraints_apply_guards empty [(gexp.Eq ''i1'' (N 0))]) (\<lambda>x. if x = ''i1'' then Eq 0 else Bc True)"
   by simp
 
 lemma constraints_simulates_symetry: "constraints_simulates c c"
@@ -181,10 +181,19 @@ lemma "subsumes (\<lambda>x. Bc True) (\<lambda>x. Bc False)"
 lemma subsumes_reflexivity:  "subsumes x x"
   by simp
 
+primrec apply_outputs :: "output_function list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> outputs" where
+  "apply_outputs [] _ _ = []" |
+  "apply_outputs (h#t) i r = (aval h (join i r))#(apply_outputs t i r)"
+
+primrec apply_guards :: "guard list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> bool" where
+  "apply_guards [] _ _ = True" |
+  "apply_guards (h#t) i r =  ((gval h (join i r)) \<and> (apply_guards t i r))"
+
 (* Widening the precondition and reducing nondeterminism *)
 (* Guards of A imply guards of B and if the precondition of A is satisfied and we do a B then the
    posterior state of B is consistent with those of A *)
 abbreviation is_generalisation :: "constraints \<Rightarrow> transition \<Rightarrow> constraints \<Rightarrow> transition \<Rightarrow> bool" where
-  "is_generalisation cb b ca a \<equiv> (subsumes (apply_guards cb (Guard b)) (apply_guards ca (Guard a))) \<and> (subsumes (posterior ca a) (posterior (apply_guards cb (Guard a)) b))"
-
+  "is_generalisation cb b ca a \<equiv> (subsumes (constraints_apply_guards cb (Guard b)) (constraints_apply_guards ca (Guard a))) \<and>
+                                 (\<forall>i r. (apply_guards (Guard a) i r) \<longrightarrow> (apply_outputs (Outputs b) i r) = (apply_outputs (Outputs a) i r)) \<and>
+                                 (subsumes (posterior ca a) (posterior (constraints_apply_guards cb (Guard a)) b))"
 end
