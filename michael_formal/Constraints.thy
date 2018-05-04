@@ -19,7 +19,7 @@ primrec get :: "constraints \<Rightarrow> aexp \<Rightarrow> cexp" where
     (V v') \<Rightarrow> (if hd v' = CHR ''r'' then Undef else Bc True) |
     _ \<Rightarrow> Bc True
   )" |
-  "get (h#t) v = (if fst h = v then and (snd h) (get t v) else get t v)"
+  "get (h#t) v = (if fst h = v then Nand (snd h) (get t v) else get t v)"
 
 abbreviation constraints_equiv :: "constraints \<Rightarrow> constraints \<Rightarrow> bool" where
   "constraints_equiv c c' \<equiv> (\<forall>r. cexp_equiv (get c r) (get c' r))"
@@ -31,21 +31,20 @@ abbreviation constraints_equiv :: "constraints \<Rightarrow> constraints \<Right
 (*              | r2 < r1-i1 | r1-i1 > r2 | r2+i1-r1 < 0 |                                        *)
 (* It also assumes that the list is sorted to maximise information gain, i.e. literal checks are  *)
 (* before compound checks and that solvable simultaneous guards have been solved                  *)
-fun applyguard :: "constraints \<Rightarrow> guard \<Rightarrow> constraint" where
-  "applyguard a (gexp.Eq va (N n)) = (va, Eq n)" |
-  "applyguard a (gexp.Eq v (V vb)) = (v, get a (V vb))" |
-  "applyguard a (gexp.Eq v (Plus vb vc)) = (v, compose_plus (get a vb) (get a vc))" |
-  "applyguard a (gexp.Eq v (Minus vb vc)) = (v, compose_minus (get a vb) (get a vc))" |
-  "applyguard a (gexp.Gt v (N n)) = (v, Gt n)" |
-  "applyguard a (gexp.Gt v (V vb)) = (v, fst (apply_gt (get a v) (get a (V vb))))" |
-  "applyguard a (gexp.Gt v (Plus vb vc)) = (v, fst (apply_gt (get a v) (compose_plus (get a vb) (get a vc))))" |
-  "applyguard a (gexp.Gt v (Minus vb vc)) = (v, fst (apply_gt (get a v) (compose_minus (get a vb) (get a vc))))" |
-
-  "applyguard a (gexp.Lt v (N n)) = (v, Lt n)" |
-  "applyguard a (gexp.Lt v (V vb)) = (v, fst (apply_lt (get a v) (get a (V vb))))" |
-  "applyguard a (gexp.Lt v (Plus vb vc)) = (v, fst (apply_lt (get a v) (compose_plus (get a vb) (get a vc))))" |
-  "applyguard a (gexp.Lt v (Minus vb vc)) = (v, fst (apply_lt (get a v) (compose_minus (get a vb) (get a vc))))"
-
+fun applyguard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints" where
+  "applyguard a (gexp.Eq va (N n)) = [(va, Eq n)]" |
+  "applyguard a (gexp.Eq v (V vb)) = [(v, get a (V vb))]" |
+  "applyguard a (gexp.Eq v (Plus vb vc)) = [(v, compose_plus (get a vb) (get a vc))]" |
+  "applyguard a (gexp.Eq v (Minus vb vc)) = [(v, compose_minus (get a vb) (get a vc))]" |
+  "applyguard a (gexp.Gt va (N n)) = [(va, Gt n)]" |
+  "applyguard a (gexp.Gt v (V vb)) = [(v, make_gt (get a v) (get a (V vb)))]" |
+  "applyguard a (gexp.Gt v (Plus vb vc)) = [(v, make_gt (get a v) (compose_plus (get a vb) (get a vc)))]" |
+  "applyguard a (gexp.Gt v (Minus vb vc)) = [(v, make_gt (get a v) (compose_minus (get a vb) (get a vc)))]" |
+  "applyguard a (gexp.Lt va (N n)) = [(va, Lt n)]" |
+  "applyguard a (gexp.Lt v (V vb)) = [(v, make_lt (get a v) (get a (V vb)))]" |
+  "applyguard a (gexp.Lt v (Plus vb vc)) = [(v, make_lt (get a v) (compose_plus (get a vb) (get a vc)))]" |
+  "applyguard a (gexp.Lt v (Minus vb vc)) = [(v, make_lt (get a v) (compose_minus (get a vb) (get a vc)))]"
+(* Need to do a nand *)
 
 fun apply_update :: "constraints \<Rightarrow> constraints \<Rightarrow> update_function \<Rightarrow> constraints" where
   "apply_update l c (v, (N n)) = update c v (Eq n)" |
