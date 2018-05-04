@@ -1,5 +1,5 @@
 theory Syntax
-imports "~~/src/HOL/IMP/Hoare" Types
+imports AExp Types
 begin
 
 (* notation (output) *)

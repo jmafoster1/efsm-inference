@@ -1,5 +1,5 @@
 theory Types
-  imports "~~/src/HOL/IMP/Hoare" "Show.Show_Instances" GExp
+  imports AExp "Show.Show_Instances" GExp
 begin
 type_synonym label = string
 type_synonym arity = nat
