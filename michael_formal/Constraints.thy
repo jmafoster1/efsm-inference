@@ -19,10 +19,29 @@ primrec get :: "constraints \<Rightarrow> aexp \<Rightarrow> cexp" where
     (V v') \<Rightarrow> (if hd v' = CHR ''r'' then Undef else Bc True) |
     _ \<Rightarrow> Bc True
   )" |
-  "get (h#t) v = (if fst h = v then Nand (snd h) (get t v) else get t v)"
+  "get (h#t) v = (if fst h = v then snd h else get t v)"
+
+fun constraint2gexp :: "constraint \<Rightarrow> gexp" where
+  "constraint2gexp (_, Bc b) = gexp.Bc b" |
+  "constraint2gexp (v, Undef) = gexp.Bc True" |
+  "constraint2gexp (v, cexp.Eq vb) = gexp.Eq v (N vb)" |
+  "constraint2gexp (v, cexp.Lt vb) = gexp.Lt v (N vb)" |
+  "constraint2gexp (v, cexp.Gt vb) = gexp.Gt v (N vb)" |
+  "constraint2gexp (v, cexp.Nand vb vc) = gexp.Nand (constraint2gexp (v, vb)) (constraint2gexp (v, vc))"
+
+primrec consistent_r :: "constraints \<Rightarrow> gexp \<Rightarrow> bool" where
+  "consistent_r [] g = gexp_satisfiable g" |
+  "consistent_r (h#t) g = consistent_r t (gAnd (constraint2gexp h) g)"
+
+abbreviation consistent :: "constraints \<Rightarrow> bool" where
+  "consistent c \<equiv> consistent_r c (gexp.Bc True)"
 
 abbreviation constraints_equiv :: "constraints \<Rightarrow> constraints \<Rightarrow> bool" where
   "constraints_equiv c c' \<equiv> (\<forall>r. cexp_equiv (get c r) (get c' r))"
+
+primrec constraints_or :: "constraints \<Rightarrow> constraints \<Rightarrow> constraints" where
+  "constraints_or [] c = c" |
+  "constraints_or (h#t) c = constraints_or t (update c (fst h) (Or (snd h) (get c (fst h))))"
 
 (* This assumes the existence of a list of guards which contains all "permutations" of each guard *)
 (* e.g. if r1>r2+i1 is in the list then so are the following:                                     *)
@@ -32,6 +51,7 @@ abbreviation constraints_equiv :: "constraints \<Rightarrow> constraints \<Right
 (* It also assumes that the list is sorted to maximise information gain, i.e. literal checks are  *)
 (* before compound checks and that solvable simultaneous guards have been solved                  *)
 fun applyguard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints" where
+  "applyguard a (gexp.Bc v) = [((V ''''), Bc v)]" |
   "applyguard a (gexp.Eq va (N n)) = [(va, Eq n)]" |
   "applyguard a (gexp.Eq v (V vb)) = [(v, get a (V vb))]" |
   "applyguard a (gexp.Eq v (Plus vb vc)) = [(v, compose_plus (get a vb) (get a vc))]" |
@@ -43,24 +63,25 @@ fun applyguard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints" wh
   "applyguard a (gexp.Lt va (N n)) = [(va, Lt n)]" |
   "applyguard a (gexp.Lt v (V vb)) = [(v, make_lt (get a v) (get a (V vb)))]" |
   "applyguard a (gexp.Lt v (Plus vb vc)) = [(v, make_lt (get a v) (compose_plus (get a vb) (get a vc)))]" |
-  "applyguard a (gexp.Lt v (Minus vb vc)) = [(v, make_lt (get a v) (compose_minus (get a vb) (get a vc)))]"
-(* Need to do a nand *)
+  "applyguard a (gexp.Lt v (Minus vb vc)) = [(v, make_lt (get a v) (compose_minus (get a vb) (get a vc)))]" |
+  "applyguard a (gexp.Nand v va) = constraints_or (applyguard a v) (applyguard a va)"
 
 fun apply_update :: "constraints \<Rightarrow> constraints \<Rightarrow> update_function \<Rightarrow> constraints" where
-  "apply_update l c (v, (N n)) = update c v (Eq n)" |
-  "apply_update l c (v, V vb) = update c v (l vb)" |
-  "apply_update l c (v, Plus vb vc) = update c v (apply_plus l vb vc)"
+  "apply_update l c (v, (N n)) = update c (V v) (Eq n)" |
+  "apply_update l c (v, V vb) = update c (V v) (get l (V vb))" |
+  "apply_update l c (v, Plus vb vc) = update c (V v) (compose_plus (get l vb) (get l vc))" |
+  "apply_update l c (v, Minus vb vc) = update c (V v) (compose_minus (get l vb) (get l vc))"
 
 primrec constraints_apply_guards :: "constraints \<Rightarrow> guard list \<Rightarrow> constraints" where
   "constraints_apply_guards c [] = c" |
-  "constraints_apply_guards c (h#t) = (constraints_apply_guards (apply_guard c h) t)"
+  "constraints_apply_guards c (h#t) = (constraints_apply_guards (applyguard c h) t)"
 
 primrec apply_updates :: "constraints \<Rightarrow> constraints \<Rightarrow> update_function list \<Rightarrow> constraints" where
   "apply_updates _ c [] = c" |
   "apply_updates l c (h#t) = apply_updates l (apply_update l c h) t"
 
 definition posterior :: "constraints \<Rightarrow> transition \<Rightarrow> constraints" where
-  "posterior c t = (let c' = (constraints_apply_guards c (Guard t)) in (if consistent c' then (apply_updates c' no_regs (Updates t)) else (\<lambda>i. Bc False)))"
+  "posterior c t = (let c' = (constraints_apply_guards c (Guard t)) in (if consistent c' then (apply_updates c' [] (Updates t)) else [((V ''''), Bc False)]))"
 
 abbreviation can_take :: "transition \<Rightarrow> constraints \<Rightarrow> bool" where
   "can_take t c \<equiv> consistent (constraints_apply_guards c (Guard t))"
@@ -76,16 +97,13 @@ primrec posterior_sequence :: "transition list \<Rightarrow> constraints \<Right
 lemma "constraints_apply_guards empty [] = empty"
   by simp
 
-lemma "constraints_equiv (constraints_apply_guards empty [(gexp.Eq ''i1'' (N 0))]) (\<lambda>x. if x = ''i1'' then Eq 0 else Bc True)"
+lemma "constraints_equiv (constraints_apply_guards empty [(gexp.Eq (V ''i1'') (N 0))]) [((V ''i1''), Eq 0)]"
   by simp
 
-lemma constraints_simulates_symetry: "constraints_simulates c c"
-  by (simp add: constraints_simulates_def)
-
 abbreviation subsumes :: "constraints \<Rightarrow> constraints \<Rightarrow> bool" where
-  "subsumes c c' \<equiv> (\<forall> r i. (ceval (c' r) i \<longrightarrow> ceval (c r) i) \<or> ((c r) = Undef))"
+  "subsumes c c' \<equiv> (\<forall> r i. (ceval (get c' r) i \<longrightarrow> ceval (get c r) i) \<or> ((get c r) = Undef))"
 
-lemma "subsumes (\<lambda>x. Bc True) (\<lambda>x. Bc False)"
+lemma "subsumes [(x, Bc True)] [(x, Bc False)]"
   by simp
 
 lemma subsumes_reflexivity:  "subsumes x x"
