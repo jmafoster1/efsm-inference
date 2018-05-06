@@ -33,18 +33,18 @@ lemma "equiv vend vend2 [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), 
   by (simp add: equiv_def step_def vend_def transitions shows_stuff index_def join_def)
 
 abbreviation t1_posterior :: "constraints" where
-  "t1_posterior \<equiv> (\<lambda>x. if x=''r2'' then Eq 0 else vend_start x)"
+  "t1_posterior \<equiv> [(V ''r1'', Bc True), (V ''r2'', Eq 0)]"
 
-lemma "posterior vend_start t1 = t1_posterior"
-  apply (rule ext)
+lemma "consistent (constraints_apply_guards [] (Guard t1))"
+  by (simp add: t1_def)
+
+lemma "constraints_equiv (posterior [] t1) t1_posterior"
   by (simp add: posterior_def t1_def)
 
-lemma "apply_plus empty (V a) (V b) = Bc True"
-  by (simp add: apply_plus.psimps)
-
-lemma "posterior t1_posterior t2 = vend_start"
-  apply (rule ext)
-  by (simp add: t2_def posterior_def)
+lemma "posterior t1_posterior t2 = [(V ''r1'', Bc True), (V ''r2'', Bc True)]"
+  apply (simp add: t2_def posterior_def)
+  apply (rule_tac x="\<lambda>s. 0" in exI)
+  by simp
 
 lemma not_all_r2: "((\<forall>r. r = ''r2'') \<longrightarrow> (\<forall>i. i < 100))"
   by auto
@@ -52,10 +52,11 @@ lemma not_all_r2: "((\<forall>r. r = ''r2'') \<longrightarrow> (\<forall>i. i < 
 lemma "cexp_equiv (Or (Gt 100) (Eq 100)) (Geq 100)"
   by auto
 
-lemma "(gOr (gexp.Gt ''r1'' (N 100)) (gexp.Eq ''r1'' (N 100))) = gexp.Not (gexp.And (gexp.Not (gexp.Gt ''r1'' (N 100))) (gexp.Not (gexp.Eq ''r1'' (N 100))))"
+lemma "(gOr (gexp.Gt (V ''r1'') (N 100)) (gexp.Eq (V ''r1'') (N 100))) = (gexp.Nand (gNot (gexp.Gt (V ''r1'') (N 100))) (gNot (gexp.Eq (V ''r1'') (N 100))))"
   by simp
 
-lemma "constraints_equiv (Constraints.apply_guard empty (Ge ''r1'' (N 100))) (Constraints.apply_guard empty (gOr (gexp.Gt ''r1'' (N 100)) (gexp.Eq ''r1'' (N 100))))"
+lemma "constraints_equiv (Constraints.applyguard [(V ''r1'', Bc True)] (Ge (V ''r1'') (N 100)))
+                         (Constraints.applyguard [(V ''r1'', Bc True)] (gOr (gexp.Gt (V ''r1'') (N 100)) (gexp.Eq (V ''r1'') (N 100))))"
   apply simp
   by auto
 

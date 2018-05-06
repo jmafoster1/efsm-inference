@@ -168,6 +168,16 @@ lemma "cexp_simulates (Lt 10) (Lt 5)"
 lemma simulates_symmetry: "cexp_simulates x x"
   by simp
 
+fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where
+  "apply_gt Undef a = (Undef, a)" |
+  "apply_gt a Undef = (a, Undef)" |
+  "apply_gt (Bc False) a = (Bc False, a)" |
+  "apply_gt a (Bc False) = (a, Bc False)" |
+  "apply_gt (Bc True) (Bc True) = (Bc True, Bc True)" |
+  "apply_gt (Bc True) (Eq v) = (Gt v, Eq v)" |
+  "apply_gt (Bc True) (Lt va) = (Bc True, Lt va)" |
+  "apply_gt (Bc True) (Gt va) = (Gt va, Gt va)"
+
 (* Can we restrict the second argument to be greater than the first? *)
 fun make_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "make_gt Undef _ = Undef" |

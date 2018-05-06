@@ -33,7 +33,7 @@ definition t3 :: "transition" where
 "t3 \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [(Ge ''r2'' (N 100))], (* This is syntactic sugar for ''Not (Lt (V ''r2'') (N 100))'' which could also appear *)
+        Guard = [(Ge (V ''r2'') (N 100))], (* This is syntactic sugar for ''Not (Lt (V ''r2'') (N 100))'' which could also appear *)
         Outputs =  [(V ''r1'')], (* This has one output o1:=r1 where ''r1'' is a variable with a value *)
         Updates = [(''r1'', (V ''r1'')), (''r2'', (V ''r2''))]
       \<rparr>"
@@ -48,9 +48,6 @@ definition vend :: "efsm" where
               else if (a,b) = (2,3) then [t3] (* If we want to go from state 2 to state 3 then t3 will do that *)
               else [] (* There are no other transitions *)
          \<rparr>"
-
-abbreviation vend_start :: constraints where
-  "vend_start \<equiv> (\<lambda>x. if x = ''r1'' \<or> x = ''r2'' then Bc True else no_regs x)"
 
 (*
   These are lemmas about the machine which could maybe be in another file.

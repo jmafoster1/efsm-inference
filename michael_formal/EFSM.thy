@@ -62,12 +62,6 @@ definition valid_trace :: "efsm \<Rightarrow> trace \<Rightarrow> bool" where
 lemma empty_trace_valid [simp]: "valid_trace e []"
   by(simp add:valid_trace_def)
 
-definition transition_simulates :: "constraints \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "transition_simulates c t t' = constraints_simulates (posterior c t) (posterior c t')"
-
-lemma transition_simulates_symetry: "transition_simulates c t t"
-  by (simp add: transition_simulates_def constraints_simulates_def)
-
 primrec in_list :: "'a \<Rightarrow> 'a list \<Rightarrow> bool" where
   "in_list _ [] = False" |
   "in_list x (h#t) = (if (x=h) then True else (in_list x t))"

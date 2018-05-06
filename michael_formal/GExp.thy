@@ -31,6 +31,9 @@ fun gval :: "gexp \<Rightarrow> state \<Rightarrow> bool" where
   "gval (Eq a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s = aval a\<^sub>2 s)" |
   "gval (Nand a\<^sub>1 a\<^sub>2) s = (\<not> (gval a\<^sub>1 s \<and> gval a\<^sub>2 s))"
 
+lemma "gval (gNot (gAnd a b)) = gval (Nand a b)"
+  by auto
+
 abbreviation gexp_satisfiable :: "gexp \<Rightarrow> bool" where
   "gexp_satisfiable g \<equiv> (\<exists>s. gval g s)"
 

@@ -39,9 +39,9 @@ abbreviation consistent :: "constraints \<Rightarrow> bool" where
 abbreviation constraints_equiv :: "constraints \<Rightarrow> constraints \<Rightarrow> bool" where
   "constraints_equiv c c' \<equiv> (\<forall>r. cexp_equiv (get c r) (get c' r))"
 
-primrec constraints_or :: "constraints \<Rightarrow> constraints \<Rightarrow> constraints" where
-  "constraints_or [] c = c" |
-  "constraints_or (h#t) c = constraints_or t (update c (fst h) (Or (snd h) (get c (fst h))))"
+primrec constraints_nand :: "constraints \<Rightarrow> constraints \<Rightarrow> constraints" where
+  "constraints_nand [] c = c" |
+  "constraints_nand (h#t) c = constraints_nand t (update c (fst h) (Or (not (snd h)) (not (get c (fst h)))))"
 
 (* This assumes the existence of a list of guards which contains all "permutations" of each guard *)
 (* e.g. if r1>r2+i1 is in the list then so are the following:                                     *)
@@ -51,20 +51,20 @@ primrec constraints_or :: "constraints \<Rightarrow> constraints \<Rightarrow> c
 (* It also assumes that the list is sorted to maximise information gain, i.e. literal checks are  *)
 (* before compound checks and that solvable simultaneous guards have been solved                  *)
 fun applyguard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints" where
-  "applyguard a (gexp.Bc v) = [((V ''''), Bc v)]" |
-  "applyguard a (gexp.Eq va (N n)) = [(va, Eq n)]" |
-  "applyguard a (gexp.Eq v (V vb)) = [(v, get a (V vb))]" |
-  "applyguard a (gexp.Eq v (Plus vb vc)) = [(v, compose_plus (get a vb) (get a vc))]" |
-  "applyguard a (gexp.Eq v (Minus vb vc)) = [(v, compose_minus (get a vb) (get a vc))]" |
-  "applyguard a (gexp.Gt va (N n)) = [(va, Gt n)]" |
-  "applyguard a (gexp.Gt v (V vb)) = [(v, make_gt (get a v) (get a (V vb)))]" |
+  "applyguard a (gexp.Bc v) = update a (V '''') (Bc v)" |
+  "applyguard a (gexp.Eq va (N n)) = update a va (Eq n)" |
+  "applyguard a (gexp.Eq v (V vb)) = update a v (get a (V vb))" |
+  "applyguard a (gexp.Eq v (Plus vb vc)) = update a v (compose_plus (get a vb) (get a vc))" |
+  "applyguard a (gexp.Eq v (Minus vb vc)) = update a v (compose_minus (get a vb) (get a vc))" |
+  "applyguard a (gexp.Gt va (N n)) = update a va (Gt n)" |
+  "applyguard a (gexp.Gt v (V vb)) = update a v (make_gt (get a v) (get a (V vb)))" |
   "applyguard a (gexp.Gt v (Plus vb vc)) = [(v, make_gt (get a v) (compose_plus (get a vb) (get a vc)))]" |
   "applyguard a (gexp.Gt v (Minus vb vc)) = [(v, make_gt (get a v) (compose_minus (get a vb) (get a vc)))]" |
   "applyguard a (gexp.Lt va (N n)) = [(va, Lt n)]" |
   "applyguard a (gexp.Lt v (V vb)) = [(v, make_lt (get a v) (get a (V vb)))]" |
   "applyguard a (gexp.Lt v (Plus vb vc)) = [(v, make_lt (get a v) (compose_plus (get a vb) (get a vc)))]" |
   "applyguard a (gexp.Lt v (Minus vb vc)) = [(v, make_lt (get a v) (compose_minus (get a vb) (get a vc)))]" |
-  "applyguard a (gexp.Nand v va) = constraints_or (applyguard a v) (applyguard a va)"
+  "applyguard a (gexp.Nand v va) = constraints_nand (applyguard a v) (applyguard a va)"
 
 fun apply_update :: "constraints \<Rightarrow> constraints \<Rightarrow> update_function \<Rightarrow> constraints" where
   "apply_update l c (v, (N n)) = update c (V v) (Eq n)" |
