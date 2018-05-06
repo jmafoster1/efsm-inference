@@ -33,18 +33,34 @@ lemma "equiv vend vend2 [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), 
   by (simp add: equiv_def step_def vend_def transitions shows_stuff index_def join_def)
 
 abbreviation t1_posterior :: "constraints" where
-  "t1_posterior \<equiv> [(V ''r1'', Bc True), (V ''r2'', Eq 0)]"
+  "t1_posterior \<equiv> (\<lambda>r. if r = (V ''r1'') then Bc True else (if r = (V ''r2'') then Eq 0 else empty r))"
 
-lemma "consistent (constraints_apply_guards [] (Guard t1))"
+lemma "consistent (constraints_apply_guards empty (Guard t1))"
   by (simp add: t1_def)
 
-lemma "constraints_equiv (posterior [] t1) t1_posterior"
+lemma "(posterior empty t1) =  t1_posterior"
+  apply (rule ext)
   by (simp add: posterior_def t1_def)
 
-lemma "posterior t1_posterior t2 = [(V ''r1'', Bc True), (V ''r2'', Bc True)]"
+lemma empty_not_undef: "empty r \<noteq> Undef \<longrightarrow> empty r = Bc True"
+  apply (insert consistent_empty_1)
+  by auto
+
+lemma empty_never_false: "cexp.Bc False \<noteq> Constraints.empty x"
+  apply (cases x)
+  by simp_all
+
+lemma foo: "\<not> (x \<noteq> V ''r1'' \<and> x \<noteq> V ''r2'' \<and> (x = V ''r1'' \<or> x = V ''r2''))"
+  by auto
+
+lemma "posterior t1_posterior t2 = (\<lambda>x. if x = V ''r1'' \<or> x = V ''r2'' then Bc True else empty x)"
+  apply (rule ext)
   apply (simp add: t2_def posterior_def)
-  apply (rule_tac x="\<lambda>s. 0" in exI)
-  by simp
+  apply (simp add: empty_never_false)
+  apply (simp add: foo)
+    apply (rule_tac x="<''r2'' := 0>" in exI)
+  apply simp
+  using empty_not_undef by force
 
 lemma not_all_r2: "((\<forall>r. r = ''r2'') \<longrightarrow> (\<forall>i. i < 100))"
   by auto
@@ -52,11 +68,11 @@ lemma not_all_r2: "((\<forall>r. r = ''r2'') \<longrightarrow> (\<forall>i. i < 
 lemma "cexp_equiv (Or (Gt 100) (Eq 100)) (Geq 100)"
   by auto
 
-lemma "(gOr (gexp.Gt (V ''r1'') (N 100)) (gexp.Eq (V ''r1'') (N 100))) = (gexp.Nand (gNot (gexp.Gt (V ''r1'') (N 100))) (gNot (gexp.Eq (V ''r1'') (N 100))))"
-  by simp
+lemma "gexp_equiv (gOr (gexp.Gt (V ''r1'') (N 100)) (gexp.Eq (V ''r1'') (N 100)))  (Ge (V ''r1'') (N 100))"
+  by auto
 
-lemma "constraints_equiv (Constraints.applyguard [(V ''r1'', Bc True)] (Ge (V ''r1'') (N 100)))
-                         (Constraints.applyguard [(V ''r1'', Bc True)] (gOr (gexp.Gt (V ''r1'') (N 100)) (gexp.Eq (V ''r1'') (N 100))))"
+lemma "constraints_equiv (Constraints.apply_guard (\<lambda>x. if x = (V ''r1'') then Bc True else empty x) (Ge (V ''r1'') (N 100)))
+                         (Constraints.apply_guard (\<lambda>x. if x = (V ''r1'') then Bc True else empty x) (gOr (gexp.Gt (V ''r1'') (N 100)) (gexp.Eq (V ''r1'') (N 100))))"
   apply simp
   by auto
 
