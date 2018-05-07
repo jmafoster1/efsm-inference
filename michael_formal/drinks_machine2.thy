@@ -55,7 +55,7 @@ lemma foo: "\<not> (x \<noteq> V ''r1'' \<and> x \<noteq> V ''r2'' \<and> (x = V
 
 lemma "posterior t1_posterior t2 = (\<lambda>x. if x = V ''r1'' \<or> x = V ''r2'' then Bc True else empty x)"
   apply (rule ext)
-  apply (simp add: t2_def posterior_def)
+  apply (simp add: t2_def posterior_def consistent_def satisfiable_def valid_def)
   apply (simp add: empty_never_false)
   apply (simp add: foo)
     apply (rule_tac x="<''r2'' := 0>" in exI)
@@ -66,19 +66,30 @@ lemma not_all_r2: "((\<forall>r. r = ''r2'') \<longrightarrow> (\<forall>i. i < 
   by auto
 
 lemma "cexp_equiv (Or (Gt 100) (Eq 100)) (Geq 100)"
+  apply (simp add: cexp_equiv_def)
   by auto
 
 lemma "gexp_equiv (gOr (gexp.Gt (V ''r1'') (N 100)) (gexp.Eq (V ''r1'') (N 100)))  (Ge (V ''r1'') (N 100))"
+  apply (simp add: gexp_equiv_def)
   by auto
 
-lemma "constraints_equiv (Constraints.apply_guard (\<lambda>x. if x = (V ''r1'') then Bc True else empty x) (Ge (V ''r1'') (N 100)))
-                         (Constraints.apply_guard (\<lambda>x. if x = (V ''r1'') then Bc True else empty x) (gOr (gexp.Gt (V ''r1'') (N 100)) (gexp.Eq (V ''r1'') (N 100))))"
+lemma "gval (Ge x y) = gval (gOr (gexp.Eq x y) (gexp.Gt x y))"
+  apply (rule ext)
+  by auto
+
+lemma "constraints_equiv (Constraints.apply_guard (\<lambda>i. if i = (V ''r1'') then Bc True else empty i) (Ge (V ''r1'') (N 100)))
+                         (Constraints.apply_guard (\<lambda>i. if i = (V ''r1'') then Bc True else empty i) (gOr (gexp.Gt (V ''r1'') (N 100)) (gexp.Eq (V ''r1'') (N 100))))"
   apply simp
-  by auto
+  apply (simp add: constraints_equiv_def cexp_equiv_def)
+  sorry
+  
 
-lemma "(posterior vend_start t3) = (\<lambda>i. if i = ''r2'' then Geq 100 else vend_start i)"
-  apply (simp add: posterior_def t3_def)
-  by auto
+
+
+lemma "constraints_equiv (constraints_apply_guards (\<lambda>i. if i = (V ''r1'') \<or> i = (V ''r2'') then Bc True else empty i) (Guard t3)) (\<lambda>i. if i = (V ''r2'') then Geq 100 else (if i = (V ''r1'') then Bc True else empty i))"
+  apply (simp add: t3_def)
+  apply auto
+  
 
 (* You can't take t3 immediately after taking t1 *)
 lemma "\<not>Constraints.can_take t3 t1_posterior"

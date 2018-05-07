@@ -34,9 +34,9 @@ fun gval :: "gexp \<Rightarrow> state \<Rightarrow> bool" where
 lemma "gval (gNot (gOr a b)) = gval (Nor a b)"
   by auto
 
-abbreviation gexp_satisfiable :: "gexp \<Rightarrow> bool" where
+definition gexp_satisfiable :: "gexp \<Rightarrow> bool" where
   "gexp_satisfiable g \<equiv> (\<exists>s. gval g s)"
 
-abbreviation gexp_equiv :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
+definition gexp_equiv :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
   "gexp_equiv v va \<equiv> \<forall>s. gval v s = gval va s"
 end

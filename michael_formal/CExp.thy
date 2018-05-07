@@ -31,23 +31,28 @@ fun ceval :: "cexp \<Rightarrow> (int \<Rightarrow> bool)" where
   "ceval (And v va) = (\<lambda>i. (ceval v i \<and> ceval va i))"
 
 (* Are cexps "c" and "c'" satisfied under the same conditions? *)
-abbreviation cexp_equiv :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
+definition cexp_equiv :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
   "cexp_equiv c c' \<equiv> (\<forall>i. (ceval c i) = (ceval c' i))"
 
 (* Is cexp "c" satisfied under all "i" values? *)
-abbreviation valid :: "cexp \<Rightarrow> bool" where
+definition valid :: "cexp \<Rightarrow> bool" where
   "valid c \<equiv> (\<forall> i. ceval c i)"
 
 (* Is there some value of "i" which satisfies "c"? *)
-abbreviation satisfiable :: "cexp \<Rightarrow> bool" where
+definition satisfiable :: "cexp \<Rightarrow> bool" where
   "satisfiable v \<equiv> (\<exists>i. ceval v i)"
 
 (* Does cexp "c" simulate "c'"? *)
-abbreviation cexp_simulates :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
+definition cexp_simulates :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
   "cexp_simulates c c' \<equiv> (\<forall>i. ceval c' i \<longrightarrow> ceval c i)"
 
 fun "and" :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
-  "and x y = (case x of
+  "and (Bc False) _ = Bc False" |
+  "and _ (Bc False) = Bc False" |
+  "and (Bc True) x = x" |
+  "and x (Bc True) = x" |
+  "and c c' = And c c'"
+  (*"and x y = (case x of
     Bc True \<Rightarrow> y |
     Undef \<Rightarrow> Undef |
     Bc False \<Rightarrow> Bc False |
@@ -61,57 +66,70 @@ fun "and" :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
       Bc False \<Rightarrow> Bc False |
       _ \<Rightarrow> And x y
     )
-  )"
+  )"*)
 
 theorem and_is_And:  "ceval (and x y) = ceval (And x y)"
-proof (cases "x")
-  case (Bc x1)
-  then show ?thesis
-    apply (case_tac "x1 = True")
-    by simp_all
-next
-  case (Eq x2)
+proof (cases x)
+case Undef
   then show ?thesis
     apply simp
-    apply (cases "y")
-    apply simp_all
-    by auto  
-next
-  case (Lt x3)
-  then show ?thesis
-    apply simp
-    apply (cases "y")
-         apply simp_all
-    apply (cases "y = Bc True")
+    apply (cases y)
+    prefer 2
+    apply (case_tac x2)
     by simp_all
 next
-  case (Gt x4)
+  case (Bc x2)
   then show ?thesis
     apply simp
-    apply (cases "y")
-         apply simp_all
-    apply (cases "y = Bc True")
+    apply (cases x2)
+     prefer 2
+     apply simp
+    apply (cases y)
+          apply simp_all
+    apply (case_tac x2a)
     by simp_all
 next
-  case (Not x5)
+  case (Eq x3)
   then show ?thesis
     apply simp
-    apply (cases "y")
-         apply simp_all
-    apply (cases "y = Bc True")
+    apply (cases y)
+          apply simp_all
+    apply (case_tac x2)
     by simp_all
 next
-  case (And x61 x62)
+  case (Lt x4)
   then show ?thesis
     apply simp
-    apply (cases "y")
-         apply simp_all
-    apply (cases "y = Bc True")
+    apply (cases y)
+          apply simp_all
+    apply (case_tac x2)
     by simp_all
-next case (Undef)
-  then show ?thesis by simp
+next
+  case (Gt x5)
+  then show ?thesis
+    apply simp
+    apply (cases y)
+          apply simp_all
+    apply (case_tac x2)
+    by simp_all
+next
+  case (Not x6)
+  then show ?thesis
+        apply simp
+    apply (cases y)
+          apply simp_all
+    apply (case_tac x2)
+    by simp_all
+next
+  case (And x71 x72)
+  then show ?thesis
+    apply simp
+    apply (cases y)
+          apply simp_all
+    apply (case_tac x2)
+    by simp_all
 qed
-declare and_is_And [simp]
+
 
 fun "not" :: "cexp \<Rightarrow> cexp" where
   "not c = (case c of
@@ -167,19 +185,19 @@ lemma "ceval (Not (Not v)) = ceval v"
   by simp
 
 lemma "cexp_simulates (Bc True) a"
-  by simp
+  by (simp add: cexp_simulates_def)
 
 lemma everything_simulates_false: "\<forall>c. cexp_simulates c (Bc False)"
-  by simp
+  by (simp add: cexp_simulates_def)
 
 lemma "cexp_simulates (Bc False) a \<Longrightarrow> cexp_equiv a (Bc False)"
-  by simp
+  by (simp add: cexp_simulates_def cexp_equiv_def)
 
 lemma "cexp_simulates (Lt 10) (Lt 5)"
-  by simp
+  by (simp add: cexp_simulates_def)
 
 lemma simulates_symmetry: "cexp_simulates x x"
-  by simp
+  by (simp add: cexp_simulates_def)
 
 (*
 If the second arg is always bigger than the first (e.g. if they're both literals with the first
