@@ -1,11 +1,11 @@
 theory Generalisation
-imports Constraints drinks_machine
+imports Constraints drinks_machine2
 begin
 definition select :: "transition" where
 "select \<equiv> \<lparr>
         Label = ''select'',
         Arity = 1,
-        Guard = [(gexp.Eq ''i1'' (N 1))],
+        Guard = [(gexp.Eq (V ''i1'') (N 1))],
         Outputs = [],
         Updates = []
       \<rparr>"
@@ -14,7 +14,7 @@ definition coin50 :: "transition" where
 "coin50 \<equiv> \<lparr>
         Label = ''coin'',
         Arity = 1,
-        Guard = [(gexp.Eq ''i1'' (N 50))],
+        Guard = [(gexp.Eq (V ''i1'') (N 50))],
         Outputs = [],
         Updates = []
       \<rparr>"
@@ -50,7 +50,7 @@ definition vends_g :: "transition" where
 "vends_g \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [(Ge ''r1'' (N 100))],
+        Guard = [(Ge (V ''r1'') (N 100))],
         Outputs =  [(N 1)],
         Updates = []
       \<rparr>"
@@ -68,7 +68,7 @@ definition venderr_g :: "transition" where
 "venderr_g \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [(gexp.Lt ''r1'' (N 100))],
+        Guard = [(gexp.Lt (V ''r1'') (N 100))],
         Outputs =  [(N 1)],
         Updates = []
       \<rparr>"
@@ -100,32 +100,31 @@ definition vend_g :: "efsm" where
 
 (* vend_g has one register so this should be derestricted and the rest set to false *)
 abbreviation vend_g_start :: constraints where
-  "vend_g_start \<equiv> (\<lambda>x. if x = ''r1'' then Bc True else no_regs x)"
+  "vend_g_start \<equiv> (\<lambda>x. if x = (V ''r1'') then Bc True else empty x)"
 
-lemma "subsumes vend_g_start no_regs"
-  by simp
+lemma "subsumes vend_g_start empty"
+  by (simp add: subsumes_def)
 
-lemma "(subsumes (constraints_apply_guards vend_start (Guard coin_init)) (constraints_apply_guards vend_start (Guard coin50)))"
-  by (simp add: coin50_def coin_init_def)
+lemma "(subsumes (constraints_apply_guards r1_r2_true (Guard coin_init)) (constraints_apply_guards r1_r2_true (Guard coin50)))"
+  apply (simp add: coin50_def coin_init_def subsumes_def)
+  using consistent_empty_1 by force
 
-lemma "(posterior vend_start coin50) =  no_regs"
+lemma "posterior r1_r2_true coin_init = vend_g_start"
   apply (rule ext)
-  by (simp add: coin50_def posterior_def)
+  apply (simp add: coin_init_def posterior_def consistent_def)
+  using consistent_empty_1 by force
 
-lemma "posterior vend_start coin_init = vend_g_start"
-  apply (rule ext)
-  by (simp add: coin_init_def posterior_def)
+lemma "is_generalisation vend_g_start coin_init r1_r2_true coin50"
+  apply (simp add: coin50_def coin_init_def posterior_def is_generalisation_def subsumes_def consistent_def)
+  using consistent_empty_1 by fastforce
 
-lemma "is_generalisation vend_g_start coin_init no_regs coin50"
-  by (simp add: coin50_def coin_init_def posterior_def)
-
-lemma "is_generalisation vend_g_start coin_inc no_regs coin50"
+lemma "is_generalisation vend_g_start coin_inc r1_r2_true coin50"
   by (simp add: posterior_def coin_init_def coin_inc_def coin50_def)
 
 lemma "(posterior_sequence [coin_init, coin_inc] vend_g_start) = vend_g_start"
   by (simp add: coin_init_def coin_inc_def posterior_def)
 
-lemma "is_generalisation vend_g_start vends_g no_regs vends"
+lemma "is_generalisation vend_g_start vends_g r1_r2_true vends"
   by (simp add: coin_init_def coin_inc_def posterior_def vends_def vends_g_def)
 
 
