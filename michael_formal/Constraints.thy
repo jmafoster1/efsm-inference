@@ -57,13 +57,13 @@ lemma consistent_empty [simp]: "consistent empty"
   by auto
 
 definition valid_constraints :: "constraints \<Rightarrow> bool" where
-  "valid_constraints c \<equiv> \<forall>s. \<forall>r. gval (cexp2gexp r (c r)) s"
+  "valid_constraints c \<equiv> \<forall>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s)"
 
-primrec and_insert :: "(vname \<times> cexp) list \<Rightarrow> (vname \<times> cexp) \<Rightarrow> (vname \<times> cexp) list" where
+primrec and_insert :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) \<Rightarrow> (aexp \<times> cexp) list" where
   "and_insert [] c = [c]" |
   "and_insert (h#t) c = (if fst h = fst c then ((fst h, and (snd h) (snd c))#t) else (h#(and_insert t c)))"
 
-primrec pair_and :: "(vname \<times> cexp) list \<Rightarrow> (vname \<times> cexp) list \<Rightarrow> (vname \<times> cexp) list" where
+primrec pair_and :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) list" where
   "pair_and [] c = c" |
   "pair_and (h#t) c = pair_and t (and_insert c h)"
 
@@ -85,7 +85,7 @@ fun guard2constraints :: "constraints \<Rightarrow> guard \<Rightarrow> (aexp \<
   "guard2constraints a (gexp.Lt v (N n)) = [(v, (Lt n))]" |
   "guard2constraints a (gexp.Lt (N n) v) = [(v, (Gt n))]" |
   "guard2constraints a (gexp.Lt v vb) = (let (cv, cvb) = apply_lt (get a v) (get a vb) in [(v, cv), (vb, cvb)])" |
-  "guard2constraints a (Nor v va) = map (\<lambda>x. ((fst x), not (snd x))) ((guard2constraints a v)@(guard2constraints a va))"
+  "guard2constraints a (Nor v va) = (pair_and (map (\<lambda>x. ((fst x), not (snd x))) (guard2constraints a v)) (map (\<lambda>x. ((fst x), not (snd x))) (guard2constraints a va)))"
 
 primrec pairs2constraints :: "(aexp \<times> cexp) list \<Rightarrow> constraints" where
   "pairs2constraints [] = (\<lambda>i. Bc True)" |

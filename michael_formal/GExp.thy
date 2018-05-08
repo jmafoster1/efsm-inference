@@ -19,7 +19,10 @@ abbreviation
   "Ne v va \<equiv> gNot (Eq v va)"
 
 abbreviation gOr :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" where
-  "gOr v va \<equiv> gNot (Nor v va)"
+  "gOr v va \<equiv> Nor (Nor v va) (Nor v va)"
+
+lemma "\<not> (x \<or> y) = (\<not> x \<and> \<not> y)"
+  by simp
 
 abbreviation gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" where
   "gAnd v va \<equiv> Nor (Nor v v) (Nor va va)"
@@ -30,6 +33,10 @@ fun gval :: "gexp \<Rightarrow> state \<Rightarrow> bool" where
   "gval (Gt a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s > aval a\<^sub>2 s)" |
   "gval (Eq a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s = aval a\<^sub>2 s)" |
   "gval (Nor a\<^sub>1 a\<^sub>2) s = (\<not> (gval a\<^sub>1 s \<or> gval a\<^sub>2 s))"
+
+lemma "gval (gOr x y) r = gval x r \<or> gval y r"
+  apply simp
+  by auto
 
 lemma "\<not> gval x s = gval (gNot x) s"
   by simp

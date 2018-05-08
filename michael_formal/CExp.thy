@@ -32,7 +32,7 @@ fun ceval :: "cexp \<Rightarrow> (int \<Rightarrow> bool)" where
 
 (* Are cexps "c" and "c'" satisfied under the same conditions? *)
 definition cexp_equiv :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
-  "cexp_equiv c c' \<equiv> (\<forall>i. (ceval c i) = (ceval c' i))"
+  "cexp_equiv c c' \<equiv> (\<forall>i. (ceval c i) = (ceval c' i)) \<and> c = Undef \<longleftrightarrow> c' = Undef"
 
 (* Is cexp "c" satisfied under all "i" values? *)
 definition valid :: "cexp \<Rightarrow> bool" where
@@ -44,7 +44,7 @@ definition satisfiable :: "cexp \<Rightarrow> bool" where
 
 (* Does cexp "c" simulate "c'"? *)
 definition cexp_simulates :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
-  "cexp_simulates c c' \<equiv> (\<forall>i. ceval c' i \<longrightarrow> ceval c i)"
+  "cexp_simulates c c' \<equiv> (\<forall>i. ceval c' i \<longrightarrow> ceval c i) \<and> c = Undef \<longrightarrow> c' = Undef"
 
 fun "and" :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "and (Bc False) _ = Bc False" |
@@ -187,10 +187,10 @@ lemma "ceval (Not (Not v)) = ceval v"
 lemma "cexp_simulates (Bc True) a"
   by (simp add: cexp_simulates_def)
 
-lemma everything_simulates_false: "\<forall>c. cexp_simulates c (Bc False)"
+lemma everything_simulates_false: "\<forall>c. c \<noteq> Undef \<longrightarrow> cexp_simulates c (Bc False)"
   by (simp add: cexp_simulates_def)
 
-lemma "cexp_simulates (Bc False) a \<Longrightarrow> cexp_equiv a (Bc False)"
+lemma "a \<noteq> Undef \<longrightarrow> cexp_simulates (Bc False) a \<longrightarrow> cexp_equiv a (Bc False)"
   by (simp add: cexp_simulates_def cexp_equiv_def)
 
 lemma "cexp_simulates (Lt 10) (Lt 5)"
