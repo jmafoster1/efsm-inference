@@ -82,13 +82,13 @@ fun guard2constraints :: "constraints \<Rightarrow> guard \<Rightarrow> (aexp \<
   "guard2constraints a (gexp.Gt (N n) v) = [(v, (Lt n))]" |
   "guard2constraints a (gexp.Gt v vb) = (let (cv, cvb) = apply_gt (get a v) (get a vb) in [(v, cv), (vb, cvb)])" |
 
-  "guard2constraints a (gexp.Lt v (N n)) = [(v, (Gt n))]" |
-  "guard2constraints a (gexp.Lt (N n) v) = [(v, (Lt n))]" |
+  "guard2constraints a (gexp.Lt v (N n)) = [(v, (Lt n))]" |
+  "guard2constraints a (gexp.Lt (N n) v) = [(v, (Gt n))]" |
   "guard2constraints a (gexp.Lt v vb) = (let (cv, cvb) = apply_lt (get a v) (get a vb) in [(v, cv), (vb, cvb)])" |
-  "guard2constraints a (Nor v va) = map (\<lambda>x. ((fst x), Not (snd x))) (guard2constraints a v)@(guard2constraints a va)"
+  "guard2constraints a (Nor v va) = map (\<lambda>x. ((fst x), not (snd x))) ((guard2constraints a v)@(guard2constraints a va))"
 
 primrec pairs2constraints :: "(aexp \<times> cexp) list \<Rightarrow> constraints" where
-  "pairs2constraints [] = empty" |
+  "pairs2constraints [] = (\<lambda>i. Bc True)" |
   "pairs2constraints (h#t) = conjoin (pairs2constraints t) (\<lambda>r. if r = (fst h) then (snd h) else Bc True)"
 
 fun apply_guard :: "constraints \<Rightarrow> guard \<Rightarrow> constraints" where

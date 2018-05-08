@@ -31,6 +31,9 @@ fun gval :: "gexp \<Rightarrow> state \<Rightarrow> bool" where
   "gval (Eq a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s = aval a\<^sub>2 s)" |
   "gval (Nor a\<^sub>1 a\<^sub>2) s = (\<not> (gval a\<^sub>1 s \<or> gval a\<^sub>2 s))"
 
+lemma "\<not> gval x s = gval (gNot x) s"
+  by simp
+
 lemma "gval (gNot (gOr a b)) = gval (Nor a b)"
   by auto
 

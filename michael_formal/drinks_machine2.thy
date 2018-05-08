@@ -77,6 +77,9 @@ lemma "gval (Ge x y) = gval (gOr (gexp.Eq x y) (gexp.Gt x y))"
   apply (rule ext)
   by auto
 
+lemma "Ge (V ''r1'') (N 100) = Nor (gexp.Lt (V ''r1'') (N 100)) (gexp.Lt (V ''r1'') (N 100))"
+  by simp
+
 lemma "constraints_equiv (Constraints.apply_guard (\<lambda>i. if i = (V ''r1'') then Bc True else empty i) (Ge (V ''r1'') (N 100)))
                          (Constraints.apply_guard (\<lambda>i. if i = (V ''r1'') then Bc True else empty i) (gOr (gexp.Gt (V ''r1'') (N 100)) (gexp.Eq (V ''r1'') (N 100))))"
   apply simp
