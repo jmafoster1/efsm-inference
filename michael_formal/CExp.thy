@@ -68,7 +68,7 @@ fun "and" :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
     )
   )"*)
 
-theorem and_is_And:  "ceval (and x y) = ceval (And x y)"
+theorem and_is_And [simp]:  "ceval (and x y) = ceval (And x y)"
 proof (cases x)
 case Undef
   then show ?thesis
@@ -140,7 +140,7 @@ fun "not" :: "cexp \<Rightarrow> cexp" where
     c \<Rightarrow> Not c
   )"
 
-theorem not_is_Not: "ceval (not x) = ceval (Not x)"
+theorem not_is_Not[simp]: "ceval (not x) = ceval (Not x)"
   proof (cases "x")
   case (Bc x1)
   then show ?thesis
@@ -170,7 +170,6 @@ next
   case (Undef)
   then show ?thesis by simp
 qed
-declare not_is_Not [simp]
 
 lemma "ceval (Bc True) = ceval (Not (Bc False))"
   by simp
