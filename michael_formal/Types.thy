@@ -10,7 +10,8 @@ type_synonym guard = "gexp"
 type_synonym output_function = "aexp"
 type_synonym update_function = "(vname \<times> aexp)"
 type_synonym statename = int
-type_synonym trace = "(label \<times> inputs) list" (*Ideally written as label(i1, i2, ...)*)
+type_synonym event = "(label \<times> inputs)"
+type_synonym trace = "event list" (*Ideally written as label(i1, i2, ...)*)
 type_synonym observation = "outputs list"
 
 record transition =
