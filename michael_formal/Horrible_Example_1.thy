@@ -1,5 +1,5 @@
 theory Horrible_Example_1
-imports Constraints EFSM
+imports EFSM
 begin
 definition t1 :: "transition" where
 "t1 \<equiv> \<lparr>

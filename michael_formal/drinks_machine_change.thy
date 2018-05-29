@@ -84,7 +84,7 @@ lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50])] = [[
   by (simp add: step_def vend_def transitions)
 
 lemma "\<not> (valid_trace (vend) [(''select'', [1]), (''cat'', [50])])"
-  by(simp add: step_def vend_def transitions valid_trace_def)
+  by(simp add: step_def vend_def transitions)
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50]), (''coin'', [50])] = [[]]"
   by (simp add: step_def vend_def transitions)

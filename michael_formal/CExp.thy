@@ -130,6 +130,54 @@ next
     by simp_all
 qed
 
+lemma and_true [simp]: "and x (Bc True) = x"
+proof (cases x)
+case Undef
+  then show ?thesis by simp
+next
+  case (Bc x2)
+  then show ?thesis by (cases x2, simp_all)
+next
+  case (Eq x3)
+then show ?thesis by simp
+next
+case (Lt x4)
+then show ?thesis by simp
+next
+case (Gt x5)
+then show ?thesis by simp
+next
+  case (Not x6)
+  then show ?thesis by simp
+next
+  case (And x71 x72)
+  then show ?thesis by simp
+qed
+
+lemma and_true_2 [simp]: "and (Bc True) x = x"
+proof (cases x)
+case Undef
+  then show ?thesis by simp
+next
+  case (Bc x2)
+  then show ?thesis by (cases x2, simp_all)
+next
+  case (Eq x3)
+then show ?thesis by simp
+next
+case (Lt x4)
+then show ?thesis by simp
+next
+case (Gt x5)
+then show ?thesis by simp
+next
+  case (Not x6)
+  then show ?thesis by simp
+next
+  case (And x71 x72)
+  then show ?thesis by simp
+qed
+
 
 fun "not" :: "cexp \<Rightarrow> cexp" where
   "not c = (case c of

@@ -1,5 +1,5 @@
 theory Generalisation
-imports Constraints drinks_machine2
+imports Contexts drinks_machine2
 begin
 definition select :: "transition" where
 "select \<equiv> \<lparr>
@@ -98,34 +98,69 @@ definition vend_g :: "efsm" where
               else [] (* There are no other transitions *)
          \<rparr>"
 
-lemma "(subsumes (constraints_apply_guards r1_r2_true (Guard coin_init)) (constraints_apply_guards r1_r2_true (Guard coin50)))"
-  by (simp add: coin50_def coin_init_def subsumes_def)
-
 lemma "posterior r1_r2_true coin_init = r1_true"
   apply (rule ext)
   apply (simp add: coin_init_def posterior_def consistent_def)
   using consistent_empty_1 by force
 
-lemma "is_generalisation empty coin_init r1_r2_true coin50"
-  apply (simp add: coin50_def coin_init_def posterior_def is_generalisation_def subsumes_def consistent_def)
-  using consistent_empty_1 by fastforce
+lemma posterior_empty_coin_inc_not_consistent: "\<not> consistent (posterior empty coin_inc)"
+  apply (simp add: posterior_def coin_inc_def valid_def satisfiable_def)
+  apply (simp add: consistent_def)
+  apply (rule allI)
+  apply (rule_tac x="V ''r1''" in exI)
+  by simp
 
-lemma "is_generalisation empty coin_inc r1_r2_true coin50"
-  apply (simp add: is_generalisation_def subsumes_def coin50_def coin_inc_def posterior_def)
-  apply (simp add: consistent_def satisfiable_def valid_def)
-  using consistent_empty_1 by fastforce
+lemma posterior_empty_coin_inc: "(posterior empty coin_inc) = (\<lambda>r. if r = V ''r1'' then cexp.Bc False else Contexts.empty r)"
+  by (simp add: posterior_def coin_inc_def satisfiable_def)
+
+lemma foo: "\<not> (\<forall>s. \<exists>r. (r = V ''i1'' \<longrightarrow> s ''i1'' \<noteq> 50) \<and>
+             (r \<noteq> V ''i1'' \<longrightarrow> and (Contexts.empty r) (cexp.Bc True) \<noteq> Undef \<and> \<not> gval (cexp2gexp r (and (Contexts.empty r) (cexp.Bc True))) s))"
+  apply simp
+  apply (rule_tac x="<''i1'' := 50>" in exI, simp)
+  by (metis (no_types, lifting) consistent_empty_1 posterior_r1_r2_true_t2 valid_context_def valid_t2_empty)
+
+lemma empty_neq_false: "(\<lambda>i. cexp.Bc False) \<noteq> Contexts.empty"
+  by (metis empty_never_false)
+
+lemma posterior_empty_coin50: "(posterior empty coin50) = empty"
+  apply (simp add: posterior_def coin50_def satisfiable_def consistent_def empty_neq_false)
+  apply (rule_tac x="<''i1'' := 50>" in exI, simp)
+  using empty_not_undef by force
+
+lemma "subsumes empty coin_init coin50"
+  apply (simp add: subsumes_def coin_init_def coin50_def posterior_def)
+  by (simp add: consistent_def)
+
+lemma "(posterior empty coin_inc) (V ''r1'') = Bc False"
+  by (simp add: posterior_def coin_inc_def valid_def satisfiable_def)
+
+lemma "\<not> subsumes empty coin_inc coin50"
+  apply (simp add: subsumes_def coin_inc_def coin50_def posterior_def valid_def satisfiable_def)
+  apply (simp add: consistent_def)
+  apply safe
+  using consistent_def consistent_empty_1 consistent_empty_3 apply auto[1]
+   apply auto[1]
+  apply (rule_tac x="<''i1'' := 50>" in exI, simp)
+  by (metis cexp2gexp.simps(1) consistent_empty_1 gval.simps(1))
+
+lemma "subsumes r1_true coin_inc coin50"
+  apply (simp add: subsumes_def coin_inc_def coin50_def posterior_def consistent_def satisfiable_def)
+  by auto
 
 lemma "(posterior_sequence [coin_init, coin_inc] empty) = r1_true"
   apply (simp add: posterior_sequence_def posterior_def coin_init_def coin_inc_def satisfiable_def valid_def consistent_def)
-  by (metis (no_types, lifting) consistent_empty_1 posterior_r1_r2_true_t2 valid_constraints_def valid_t2_empty)
+  using consistent_empty_1 by force
 
-lemma "is_generalisation empty vends_g empty vends"
-  apply (simp add: is_generalisation_def)
+lemma "\<not> subsumes empty vends_g vends"
+  apply (simp add: subsumes_def vends_g_def vends_def posterior_def)
+  apply (simp add: consistent_def)
+  by auto
+
+lemma "subsumes r1_true vends_g vends"
+  apply (simp add: subsumes_def vends_def vends_g_def posterior_def)
+  apply (simp add: consistent_def)
   apply safe
-    apply (simp add: subsumes_def vends_def vends_g_def)
-   apply (simp add: vends_def vends_g_def)
-  apply (simp add: posterior_def vends_def vends_g_def consistent_def subsumes_def)
-  using consistent_def consistent_empty by auto
+  by presburger
 
 definition test1 :: transition where
 "test1 \<equiv> \<lparr>
@@ -145,29 +180,37 @@ definition test2 :: transition where
         Updates = [(''r1'', (V ''i1''))]
       \<rparr>"
 
-lemma false_not_equal: "(\<lambda>i. cexp.Bc False) \<noteq> (\<lambda>x. if x = V ''r1'' then cexp.Eq 6 else Constraints.empty x)"
+lemma false_not_equal: "(\<lambda>i. cexp.Bc False) \<noteq> (\<lambda>x. if x = V ''r1'' then cexp.Eq 6 else Contexts.empty x)"
   by (metis cexp.distinct(13))
 
-lemma posterior_test1: "(posterior empty test1) = (\<lambda>x. if x = V ''r1'' then Eq 6 else empty x)"
-  apply (simp add: posterior_def test1_def consistent_def)
-  apply (simp add: false_not_equal)
-  apply (rule_tac x="<''i1'' := 6>" in exI)
-  apply (simp add: null_state_def)
-  by (metis (no_types, lifting) and.simps(10) and.simps(16) consistent_empty_1 posterior_r1_r2_true_t2 valid_constraints_def valid_t2_empty)
-
-lemma apply_guards_test1: "(constraints_apply_guards empty (Guard test1)) = (\<lambda>x. if x = V ''i1'' then Eq 6 else empty x)"
+lemma medial_test1: "medial empty (Guard test1) = (\<lambda>i. if i = V ''i1'' then Eq 6 else empty i)"
   apply (simp add: test1_def)
   apply (rule ext)
-  apply (case_tac "r = V ''i1''")
-   apply simp
-  apply simp
-  by (metis and.simps(10) and.simps(16) consistent_empty_1)
+  by auto
 
-lemma "is_generalisation empty test2 empty test1"
-  apply (simp add: is_generalisation_def)
-  apply safe
-    apply (simp add: subsumes_def test1_def test2_def)
-   apply (simp add: test1_def test2_def)
-  apply (simp add: posterior_test1 apply_guards_test1)
-  by (simp add: subsumes_def posterior_def consistent_def test2_def)
+lemma medial_test2: "medial empty (Guard test2) = (\<lambda>i. if i = V ''i1'' then Gt 0 else empty i)"
+  apply (simp add: test2_def)
+  apply (rule ext)
+  by auto
+
+lemma posterior_test1: "posterior empty test1 = (\<lambda>i. if i = V ''r1'' then Eq 6 else empty i)"
+  apply (simp add: test1_def posterior_def consistent_def false_not_equal)
+  apply (rule_tac x="<''i1'' := 6>" in exI, simp)
+  using consistent_empty_1 by fastforce
+
+lemma false_not_equal_2: "(\<lambda>i. cexp.Bc False) \<noteq> (\<lambda>i. if i = V ''r1'' then cexp.Gt 0 else Contexts.empty i)"
+  by (metis cexp.distinct(17))
+  
+lemma posterior_test2: "posterior empty test2 = (\<lambda>i. if i = V ''r1'' then Gt 0 else empty i)"
+  apply (simp add: test2_def posterior_def consistent_def false_not_equal_2)
+  apply (rule_tac x="<''i1'' := 6>" in exI, simp)
+  using consistent_empty_1 by fastforce
+
+lemma consistent: "consistent (\<lambda>i. if i = V ''r1'' then cexp.Gt 0 else Contexts.empty i)"
+  apply (simp add: consistent_def)
+  apply (rule_tac x="<''r1'' := 6>" in exI, simp)
+  using consistent_empty_1 by fastforce
+
+lemma "subsumes empty test2 test1"
+  by (simp add: subsumes_def medial_test1 medial_test2 posterior_test1 posterior_test2 consistent)
 end

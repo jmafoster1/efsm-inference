@@ -55,7 +55,7 @@ lemma foo: "step e (s0 e) <> (fst a) (snd a) = None \<or>  (\<exists>s' outputs 
    apply simp
   by auto
 
-lemma "(valid_trace_1 e (s0 e) <> (ts@[t]) \<longrightarrow> valid_trace_1 e (s0 e) <> ts)" 
+lemma "(valid_trace_1 e s <> (ts@[t]) \<longrightarrow> valid_trace_1 e s <> ts)" 
 proof (induct ts)
   case Nil
   then show ?case by simp
@@ -63,12 +63,10 @@ next
   case (Cons a ts)
   then show ?case 
     apply simp
-    apply (case_tac "step e (s0 e) <> (fst a) (snd a) = None")
+    apply (case_tac "step e s <> (fst a) (snd a) = None")
      apply simp
     apply simp
-
-     
-
+    apply (rule_tac exE)
 qed
 
 

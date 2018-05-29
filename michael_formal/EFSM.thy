@@ -66,20 +66,6 @@ primrec valid_trace_1 :: "efsm \<Rightarrow> statename \<Rightarrow> registers \
 abbreviation valid_trace :: "efsm \<Rightarrow> trace \<Rightarrow> bool" where
   "valid_trace e t \<equiv> (length t = length (observe_all e (s0 e) <> t))"
 
-lemma "valid_trace e t = valid_trace_1 e (s0 e) <> t"
-proof (induct t)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons a t)
-  then show ?case
-    apply (cases "step e (s0 e) <> (fst a) (snd a)")
-     apply simp
-    apply simp
-    apply safe
-qed
-
-
 lemma empty_trace_valid [simp]: "valid_trace e []"
   by simp
 

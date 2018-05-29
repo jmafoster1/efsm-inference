@@ -84,7 +84,7 @@ lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50])] = [[
   by (simp add: step_def vend_def transitions)
 
 lemma "\<not> (valid_trace (vend) [(''select'', [1]), (''cat'', [50])])"
-  by(simp add: step_def vend_def transitions valid_trace_def)
+  by(simp add: step_def vend_def transitions)
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50]), (''coin'', [50])] = [[]]"
   by (simp add: step_def vend_def transitions)
@@ -101,22 +101,11 @@ definition "reg_of t = (if t = [] then <> else snd (snd (last t)))"
 definition "state_of e t = (if t = [] then s0 e else fst (last t))"
 
 lemma valid_trace_non_empty_observe: "valid_trace e (a#list) \<Longrightarrow> [] \<noteq> observe_all e (s0 e) <> (a # list)"
-  apply(simp only:observe_all.simps(2) valid_trace_def)
+  apply(simp only:observe_all.simps(2))
   by auto
 
 lemma nonempty: "valid_trace e t \<and> t \<noteq> [] \<longrightarrow> observe_all e (s0 e) <> t \<noteq> []"
-  apply (simp add: valid_trace_def)
   by auto
-
-lemma valid_trace_drop: "valid_trace e (t @ xs @ [x]) \<Longrightarrow>  valid_trace e (t @ xs)"
-proof(induct rule: rev_induct)
-  case Nil
-  then show ?case by simp
-next
-  case (snoc x xs)
-  then show ?case 
-qed
-  
 
 lemma prefix_closure_single: 
 "valid_trace e (t@[e']) \<Longrightarrow>let obs = (observe_all e (s0 e) <> t) in ((observe_all e (s0 e) <> (t@([e']))) = (obs)@(observe_all e (state_of e obs) (reg_of obs) ([e'])))"
