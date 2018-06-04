@@ -131,5 +131,5 @@ definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transitio
   "subsumes c t2 t1 \<equiv> (\<forall>r i. ceval (medial c (Guard t1) r) i \<longrightarrow> ceval (medial c (Guard t2) r) i) \<and>
                       (\<forall> i r. apply_guards (Guard t1) i r \<longrightarrow> apply_outputs (Outputs t1) i r = apply_outputs (Outputs t2) i r) \<and>
                       (\<forall>r i. ceval (posterior c t2 r) i \<longrightarrow> ceval (posterior c t1 r) i) \<and>
-                      consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2)"
+                      (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
 end
