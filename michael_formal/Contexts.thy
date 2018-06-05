@@ -64,6 +64,9 @@ lemma consistent_empty_3: "(\<forall>r. empty r = Bc True \<or> empty r = Undef)
   apply (insert consistent_empty_2)
   by simp
 
+lemma consistent_empty_4: "\<lbrakk>\<rbrakk> r = Undef \<or> gval (cexp2gexp r (\<lbrakk>\<rbrakk> r)) c"
+  using consistent_empty_1 by force
+
 lemma consistent_empty [simp]: "consistent empty"
   apply (insert consistent_empty_1 consistent_empty_3)
   by auto
@@ -121,7 +124,7 @@ primrec apply_updates :: "context \<Rightarrow> context \<Rightarrow> update_fun
   "apply_updates l c (h#t) = apply_updates l (apply_update l c h) t"
 
 definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where
-  "posterior c t = (let c' = (medial c (Guard t)) in (if consistent c' then (apply_updates c' empty (Updates t)) else (\<lambda>i. Bc False)))"
+  "posterior c t = (let c' = (medial c (Guard t)) in (if consistent c' then (apply_updates c' \<lbrakk>\<rbrakk> (Updates t)) else (\<lambda>i. Bc False)))"
 
 definition can_take :: "transition \<Rightarrow> context \<Rightarrow> bool" where
   "can_take t c \<equiv> consistent (medial c (Guard t))"
@@ -142,6 +145,6 @@ lemma "medial empty [] = empty"
 definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "subsumes c t2 t1 \<equiv> (\<forall>r i. ceval (medial c (Guard t1) r) i \<longrightarrow> ceval (medial c (Guard t2) r) i) \<and>
                       (\<forall> i r. apply_guards (Guard t1) i r \<longrightarrow> apply_outputs (Outputs t1) i r = apply_outputs (Outputs t2) i r) \<and>
-                      (\<forall>r i. ceval (posterior c t2 r) i \<longrightarrow> ceval (posterior c t1 r) i) \<and>
+                      (\<forall>r i. ceval (posterior (medial c (Guard t1)) t2 r) i \<longrightarrow> (ceval (posterior c t1 r) i) \<or> (posterior c t1 r) = Undef) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
 end
