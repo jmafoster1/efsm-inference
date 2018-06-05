@@ -5,11 +5,23 @@ begin
 
 type_synonym "context" = "aexp \<Rightarrow> cexp"
 
-abbreviation empty :: "context" where
+syntax
+  "_updbind" :: "'a \<Rightarrow> 'a \<Rightarrow> updbind"             ("(2_ \<mapsto>/ _)")
+
+translations
+  "_Update f (_updbinds b bs)" \<rightleftharpoons> "_Update (_Update f b) bs"
+  "f(x:=y)" \<rightleftharpoons> "CONST fun_upd f x y"
+
+abbreviation empty ("\<lbrakk>\<rbrakk>") where
   "empty \<equiv> (\<lambda>x. case x of
     (V v) \<Rightarrow> if hd v = CHR ''r'' then Undef else Bc True |
     _ \<Rightarrow> Bc True
   )"
+syntax 
+  "_Context" :: "updbinds \<Rightarrow> 'a" ("\<lbrakk>_\<rbrakk>")
+translations
+  "_Context ms" == "_Update \<lbrakk>\<rbrakk> ms"
+  "_Context (_updbinds b bs)" <= "_Update (_Context b) bs"
 
 fun get :: "context \<Rightarrow> aexp \<Rightarrow> cexp" where
   "get c (N n) = Eq n" |
