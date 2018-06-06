@@ -63,14 +63,7 @@ definition vend :: "efsm" where
               else [] (* There are no other transitions *)
          \<rparr>"
 
-(*
-  These are lemmas about the machine which could maybe be in another file.
-  They don't need to be translated to SAL
-*)
-
 lemmas transitions = t1_def t2_def t3_def setup_def
-
-value "observe_trace vend (s0 vend) <> [(''setup'', []), (''select'', [1]), (''coin'',[110]), (''vend'', []), (''select'', [1]), (''coin'',[90]), (''vend'', [])]"
 
 lemma "observe_trace vend (s0 vend) <> [(''setup'', []), (''select'', [1]), (''coin'',[110]), (''vend'', []), (''select'', [1]), (''coin'',[90]), (''vend'', [])] = [[],[],[110],[1],[],[100],[1]]"
   by (simp add: step_def index_def join_def vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)

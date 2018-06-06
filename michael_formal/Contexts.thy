@@ -5,21 +5,16 @@ begin
 
 type_synonym "context" = "aexp \<Rightarrow> cexp"
 
-syntax
-  "_updbind" :: "'a \<Rightarrow> 'a \<Rightarrow> updbind"             ("(2_ \<mapsto>/ _)")
-
-translations
-  "_Update f (_updbinds b bs)" \<rightleftharpoons> "_Update (_Update f b) bs"
-  "f(x:=y)" \<rightleftharpoons> "CONST fun_upd f x y"
-
 abbreviation empty ("\<lbrakk>\<rbrakk>") where
   "empty \<equiv> (\<lambda>x. case x of
     (V v) \<Rightarrow> if hd v = CHR ''r'' then Undef else Bc True |
     _ \<Rightarrow> Bc True
   )"
 syntax 
+  "_updbind" :: "'a \<Rightarrow> 'a \<Rightarrow> updbind"             ("(2_ \<mapsto>/ _)")
   "_Context" :: "updbinds \<Rightarrow> 'a" ("\<lbrakk>_\<rbrakk>")
 translations
+  "_Update f (_updbinds b bs)" \<rightleftharpoons> "_Update (_Update f b) bs"
   "_Context ms" == "_Update \<lbrakk>\<rbrakk> ms"
   "_Context (_updbinds b bs)" <= "_Update (_Context b) bs"
 

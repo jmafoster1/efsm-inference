@@ -2,6 +2,16 @@ theory valid_aux
   imports EFSM
 begin
 
+abbreviation "reg_of t \<equiv> (if t = [] then <> else snd (snd (last t)))"
+abbreviation "state_of e t \<equiv> (if t = [] then s0 e else fst (last t))"
+
+lemma valid_trace_non_empty_observe: "valid_trace e (a#list) \<Longrightarrow> [] \<noteq> observe_all e (s0 e) <> (a # list)"
+  apply(simp only:observe_all.simps(2))
+  by auto
+
+lemma nonempty: "valid_trace e t \<and> t \<noteq> [] \<longrightarrow> observe_all e (s0 e) <> t \<noteq> []"
+  by auto
+
 lemma valid_trace_head_not_none:  "valid_trace efsm [a] \<Longrightarrow> ( step efsm (s0 efsm) <> (fst a) (snd a) \<noteq> None)"
   apply simp
   apply(cases  "(step efsm (s0 efsm) <> (fst a) (snd a)) = None")
@@ -28,9 +38,6 @@ next
     with Cons show ?thesis by(auto) 
   qed
 qed
-
-abbreviation "reg_of t \<equiv> (if t = [] then <> else snd (snd (last t)))"
-abbreviation "state_of e t \<equiv> (if t = [] then s0 e else fst (last t))"
 
 (* abbreviation "drop_last a \<equiv> rev (tl (rev a))" *)
 
