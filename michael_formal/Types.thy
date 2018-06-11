@@ -28,16 +28,6 @@ record efsm =
   s0 :: statename
   T :: "(statename \<times> statename) \<Rightarrow> transition list"
 
-definition join :: "state \<Rightarrow> state \<Rightarrow> state" where
-  "join s1 s2 = (\<lambda>x. if (aval (V x) s1) \<noteq> 0 then (aval (V x) s1) else (aval (V x) s2))"
-
-lemma "\<forall>z. \<exists>x y. (aval (V v) (join x y) = aval (V v) z)"
-  apply (simp add: join_def)
-  by auto
-
-lemma "\<forall> x y. \<exists>z. (aval (V v) z) = aval (V v) (join x y)"
-  by auto
-
 lemmas shows_stuff = showsp_int_def showsp_nat.simps shows_string_def null_state_def
 
 definition index :: "int \<Rightarrow> string" where
@@ -46,11 +36,11 @@ definition index :: "int \<Rightarrow> string" where
 lemma i1: "index 2 = ''i2''"
   by (simp add: shows_stuff index_def)
 
-primrec input2state :: "int list \<Rightarrow> int \<Rightarrow> state" where
-  "input2state [] _ = <>" |
-  "input2state (h#t) i = (\<lambda>x. if x = (index i) then h else ((input2state t (i+1)) x))"
+primrec join_ir :: "int list \<Rightarrow> state \<Rightarrow> int \<Rightarrow> state" where
+  "join_ir [] r _ = r" |
+  "join_ir (h#t) r i = (\<lambda>x. if x = (index i) then h else ((join_ir t r (i+1)) x))"
 
-lemma "input2state [1, 2] 1 = <''i1'':=1, ''i2'':=2>"
+lemma "join_ir [1, 2] <> 1 = <''i1'':=1, ''i2'':=2>"
   apply (rule ext)
   by (simp add: shows_stuff index_def)
 end

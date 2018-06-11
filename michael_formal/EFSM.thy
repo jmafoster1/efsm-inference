@@ -2,20 +2,24 @@ theory EFSM
   imports Types
 begin
 
-primrec apply_outputs :: "output_function list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> outputs" where
-  "apply_outputs [] _ _ = []" |
-  "apply_outputs (h#t) i r = (aval h (join i r))#(apply_outputs t i r)"
+primrec apply_outputs :: "output_function list \<Rightarrow> state \<Rightarrow> outputs" where
+  "apply_outputs [] _ = []" |
+  "apply_outputs (h#t) s = (aval h s)#(apply_outputs t s)"
 
-primrec apply_guards :: "guard list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> bool" where
-  "apply_guards [] _ _ = True" |
-  "apply_guards (h#t) i r =  ((gval h (join i r)) \<and> (apply_guards t i r))"
+primrec apply_guards :: "guard list \<Rightarrow> state \<Rightarrow> bool" where
+  "apply_guards [] _ = True" |
+  "apply_guards (h#t) s =  ((gval h s) \<and> (apply_guards t s))"
 
-primrec apply_updates :: "(string \<times> aexp) list \<Rightarrow> state \<Rightarrow> registers \<Rightarrow> registers" where
-  "apply_updates [] _ _ = <>" |
-  "apply_updates (h#t) i r = join <(fst h) := (aval (snd h) (join i r))> (apply_updates t i r)"
+primrec apply_updates :: "(string \<times> aexp) list \<Rightarrow> state \<Rightarrow> state \<Rightarrow> registers" where
+  "apply_updates [] _ new = new" |
+  "apply_updates (h#t) old new = (\<lambda>x. if x = (fst h) then (aval (snd h) old) else (apply_updates t old new) x)"
+
+lemma "apply_updates [(''r1'', N 6)] <> <''r2'':=3> = <''r1'':=6, ''r2'':=3>"
+  apply (rule ext)
+  by simp
 
 abbreviation is_possible_step :: "efsm \<Rightarrow> statename \<Rightarrow> statename \<Rightarrow> transition \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> bool" where
-"is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (find (\<lambda>x . x = t) (T e(s,s')) \<noteq> None) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (input2state i 1) r))"
+"is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (find (\<lambda>x . x = t) (T e(s,s')) \<noteq> None) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (join_ir i r 1)))"
 
 abbreviation possible_steps :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename * transition) list" where
 "possible_steps e s r l i \<equiv> [(s',t) . s' \<leftarrow> S e, t \<leftarrow> T e(s,s'), is_possible_step e s s' t r l i]"
@@ -23,7 +27,7 @@ abbreviation possible_steps :: "efsm \<Rightarrow> statename \<Rightarrow> regis
 definition step :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename \<times> outputs \<times> registers) option" where
 "step e s r l i \<equiv>
   case (possible_steps e s r l i) of
-    [(s',t)] \<Rightarrow> Some (s', (apply_outputs (Outputs t) (input2state i 1) r), (apply_updates (Updates t) (input2state i 1) r)) |
+    [(s',t)] \<Rightarrow> Some (s', (apply_outputs (Outputs t) (join_ir i r 1)), (apply_updates (Updates t) (join_ir i r 1) r)) |
     _ \<Rightarrow> None"
 
 primrec observe_trace :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> observation" where
