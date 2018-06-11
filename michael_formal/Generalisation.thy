@@ -271,7 +271,7 @@ lemma test2_subsumes_test1_aux2: "consistent (posterior \<lbrakk>\<rbrakk> test2
   apply (rule_tac x="<''r1'' := 6>" in exI, simp)
   by (simp add: consistent_empty_4)
 
-lemma test2_subsumes_test1: "subsumes empty test2 test1"
+lemma test2_subsumes_test1: "subsumes \<lbrakk>\<rbrakk> test2 test1"
   apply (simp only: subsumes_def)
   apply safe
      apply (simp add: medial_test1 medial_test2)
