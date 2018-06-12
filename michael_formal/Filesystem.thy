@@ -89,52 +89,39 @@ primrec all :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool
 
 (* noChangeOwner: THEOREM filesystem |- G(cfstate /= NULL_STATE) => FORALL (owner : UID): G((label=write AND r_1=owner) => F(G((label=read AND r_1/=owner) => X(op_1_read_0 = accessDenied)))); *)
 
-lemma aux_write: "concat (map (\<lambda>s'. concat (map (\<lambda>t. if Label t = ''write'' \<and>
-                                                 (\<exists>y. find (\<lambda>x. x = t) (T filesystem (2, s')) = Some y) \<and>
-                                                 Suc 0 = Arity t \<and> apply_guards (Guard t) (\<lambda>x. if x = index 1 then content else join_ir [] r (1 + 1) x) r
-                                              then [(s', t)] else [])
-                                      (T filesystem (2, s'))))
-                   (S filesystem)) = [(2, write)]"
-  by (simp add: fs_simp)
-
-lemma joinir: "(\<lambda>x. if x = index 1 then content else join_ir [] r (1 + 1) x) = (\<lambda>x. if x = ''i1'' then content else r x)"
-  apply (rule ext)
-  by (simp add: index_def shows_stuff)
-
-lemma aux1: "(r ''r3'' \<noteq> r ''r1'') \<Longrightarrow> step filesystem 2 r ''read'' [] = Some (2, [0], r)"
-  apply (simp add: fs_simp step_def index_def shows_stuff join_def)
+lemma r_equals_r [simp]: "<''r1'':=user, ''r2'':=content, ''r3'':=owner> = (\<lambda>a. if a = ''r3'' then owner else if a = ''r2'' then content else if a = ''r1'' then user else <> a)"
   apply (rule ext)
   by simp
 
-lemma aux2: "step filesystem 2 r ''write'' [content] = Some (2, [], (\<lambda>x. if x = ''r1'' \<or> x = ''r3'' then r ''r1'' else (if x = ''r2'' then content else r x)))"
-  apply (simp add: step_def aux_write)
-  apply safe
-   apply (simp add: write_def)
+lemma read_2:  " r = <''r1'':=user, ''r2'':=content, ''r3'':=owner> \<Longrightarrow>
+    owner \<noteq> user \<Longrightarrow>
+    step filesystem 2 r ''read'' [] = Some (2, [0], r)"
+  apply (simp add: fs_simp step_def)
   apply (rule ext)
-  by (simp add: joinir write_def)
+  by simp
 
-lemma "(r ''r3'' \<noteq> r ''r1'') \<Longrightarrow> valid_trace filesystem t \<Longrightarrow> all (observe_trace filesystem 2 r t) (\<lambda>e. e = [] \<or> e = [0])"
+lemma logout_2:  " r = <''r1'':=user, ''r2'':=content, ''r3'':=owner> \<Longrightarrow>
+    owner \<noteq> user \<Longrightarrow>
+    step filesystem 2 r ''logout'' [] = Some (1, [], r)"
+  apply (simp add: fs_simp step_def)
+  apply (rule ext)
+  by simp
+
+lemma "r=<''r1'':=user, ''r2'':=content, ''r3'':=owner> \<Longrightarrow> (user \<noteq> owner) \<Longrightarrow>
+        valid_trace_1 filesystem 2 r t \<Longrightarrow>
+        all (observe_trace filesystem 2 r t) (\<lambda>e. e = [] \<or> e = [0])"
 proof (induction t)
-  case Nil
-  then show ?case by simp
+case Nil
+then show ?case by simp
 next
   case (Cons a t)
   then show ?case
+    apply (case_tac "a = (''read'', [])")
+     apply (simp add: read_2)
+    apply (case_tac "a = (''logout'', [])")
     apply simp
-    apply (cases "step filesystem 2 r (fst a) (snd a)")
-     apply simp
-    apply simp
-    apply safe
-    apply (cases "a = (''read'', [])")
-     apply (simp add: aux1)
-     apply (cases "a = (''write'', [content])")
-    apply simp
-      apply (simp add: aux2)
-    
-
-
-
-qed
-
+    apply (simp add: logout_2)
+    oops
+  qed
 
 end
