@@ -33,14 +33,17 @@ lemmas shows_stuff = showsp_int_def showsp_nat.simps shows_string_def null_state
 definition index :: "int \<Rightarrow> string" where
   "index i = ''i''@(showsp_int (nat i) i '''')"
 
-lemma i1: "index 2 = ''i2''"
+lemma i1 [simp]: "index 1 = ''i1''"
   by (simp add: shows_stuff index_def)
 
-primrec join_ir :: "int list \<Rightarrow> state \<Rightarrow> int \<Rightarrow> state" where
-  "join_ir [] r _ = r" |
-  "join_ir (h#t) r i = (\<lambda>x. if x = (index i) then h else ((join_ir t r (i+1)) x))"
+primrec index2state :: "int list \<Rightarrow> int \<Rightarrow> state" where
+  "index2state [] _ = <>" |
+  "index2state (h#t) i = (\<lambda>x. if x = index i then h else (index2state t (i+1)) x)"
 
-lemma "join_ir [1, 2] <> 1 = <''i1'':=1, ''i2'':=2>"
+abbreviation join_ir :: "int list \<Rightarrow> state \<Rightarrow> state" where
+  "join_ir i r \<equiv> (\<lambda>x. if hd x = CHR ''i'' then index2state i 1 x else r x)"
+
+lemma "join_ir [1, 2] <> = <''i1'':=1, ''i2'':=2>"
   apply (rule ext)
   by (simp add: shows_stuff index_def)
 end

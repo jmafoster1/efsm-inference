@@ -19,7 +19,7 @@ lemma "apply_updates [(''r1'', N 6)] <> <''r2'':=3> = <''r1'':=6, ''r2'':=3>"
   by simp
 
 abbreviation is_possible_step :: "efsm \<Rightarrow> statename \<Rightarrow> statename \<Rightarrow> transition \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> bool" where
-"is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (find (\<lambda>x . x = t) (T e(s,s')) \<noteq> None) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (join_ir i r 1)))"
+"is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (find (\<lambda>x . x = t) (T e(s,s')) \<noteq> None) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (join_ir i r)))"
 
 abbreviation possible_steps :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename * transition) list" where
 "possible_steps e s r l i \<equiv> [(s',t) . s' \<leftarrow> S e, t \<leftarrow> T e(s,s'), is_possible_step e s s' t r l i]"
@@ -27,7 +27,7 @@ abbreviation possible_steps :: "efsm \<Rightarrow> statename \<Rightarrow> regis
 definition step :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename \<times> outputs \<times> registers) option" where
 "step e s r l i \<equiv>
   case (possible_steps e s r l i) of
-    [(s',t)] \<Rightarrow> Some (s', (apply_outputs (Outputs t) (join_ir i r 1)), (apply_updates (Updates t) (join_ir i r 1) r)) |
+    [(s',t)] \<Rightarrow> Some (s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r)) |
     _ \<Rightarrow> None"
 
 primrec observe_trace :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> observation" where
