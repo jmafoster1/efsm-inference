@@ -21,16 +21,16 @@ lemma "observe_trace vend2 (s0 vend2) <> [(''select'', [1])] = [[]]"
   by (simp add: step_def t1_def)
 
 lemma "observe_trace vend2 (s0 vend2) <> [(''select'', [1]), (''coin'', [50])] = [[], [50]]"
-  by (simp add: step_def shows_stuff index_def join_def t1_def t2_def)
+  by (simp add: step_def t1_def t2_def)
 
 lemma "observe_trace vend2 (s0 vend2) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50])] = [[], [50], [100]]"
-  by (simp add: step_def shows_stuff index_def join_def transitions)
+  by (simp add: step_def transitions)
 
 lemma "observe_trace vend2 (s0 vend2) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), (''vend'', [])] = [[], [50], [100], [1]]"
-  by (simp add: step_def shows_stuff index_def join_def transitions)
+  by (simp add: step_def transitions)
 
 lemma "equiv vend vend2 [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), (''vend'', [])]"
-  by (simp add: equiv_def step_def vend_def transitions shows_stuff index_def join_def)
+  by (simp add: equiv_def step_def vend_def transitions)
 
 abbreviation t1_posterior :: "context" where
   "t1_posterior \<equiv> \<lbrakk>(V ''r1'') \<mapsto> Bc True, (V ''r2'') \<mapsto> Eq 0 \<rbrakk>"
