@@ -91,11 +91,11 @@ definition lift :: "efsm" where
          \<rparr>"
 
 lemma "observe_trace lift (s0 lift) <> [(''goUp'', [1]), (''goUp'', [0]), (''open'', [])] = [[1], [0], [1]]"
-  by (simp add: step_def lift_def transitions join_def index_def shows_stuff input2state_def)
+  by (simp add: step_def lift_def transitions null_state_def)
 
 lemma "observe_trace lift (s0 lift) <> [(''goDown'', [1]), (''goDown'', [0]), (''open'', [])] = [[1], [0], [1]]"
-  by (simp add: step_def lift_def transitions join_def index_def shows_stuff input2state_def)
+  by (simp add: step_def lift_def transitions null_state_def)
 
 lemma "observe_trace lift (s0 lift) <> [(''open'', []), (''close'', []), (''open'', [])] = [[1], [0], [1]]"
-  by (simp add: step_def lift_def transitions join_def index_def shows_stuff input2state_def)
+  by (simp add: step_def lift_def transitions)
 end

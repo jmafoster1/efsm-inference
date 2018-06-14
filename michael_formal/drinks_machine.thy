@@ -71,13 +71,13 @@ lemma "observe_trace vend (s0 vend) <> [(''select'', [1])] = [[]]"
   by (simp add: vend_def transitions step_def)
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50])] = [[], [50]]"
-  by (simp_all add: step_def join_def index_def vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+  by (simp_all add: step_def index_def vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50])] = [[], [50], [100]]"
-  by (simp add: step_def index_def join_def vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+  by (simp add: step_def index_def vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), (''vend'', [])] = [[], [50], [100], [1]]"
-  by (simp add: step_def index_def join_def vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+  by (simp add: step_def index_def vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
 
 (*Stop when we hit a spurious input*)
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50])] = [[]]"

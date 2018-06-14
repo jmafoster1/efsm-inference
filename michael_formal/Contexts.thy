@@ -139,7 +139,7 @@ lemma "medial empty [] = empty"
 (* t2 subsumes t1 *)
 definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "subsumes c t2 t1 \<equiv> (\<forall>r i. ceval (medial c (Guard t1) r) i \<longrightarrow> ceval (medial c (Guard t2) r) i) \<and>
-                      (\<forall> i r. apply_guards (Guard t1) (join_ir i r 1) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r 1) = apply_outputs (Outputs t2) (join_ir i r 1)) \<and>
+                      (\<forall> i r. apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<forall>r i. ceval (posterior (medial c (Guard t1)) t2 r) i \<longrightarrow> (ceval (posterior c t1 r) i) \<or> (posterior c t1 r) = Undef) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
 end

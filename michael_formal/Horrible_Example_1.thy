@@ -48,6 +48,6 @@ definition vend :: "efsm" where
               else [] (* There are no other transitions *)
          \<rparr>"
 
-lemma "\<forall> i r. \<not> (apply_guards (Guard t3) (join_ir i r 1) \<and> apply_guards (Guard t4) (join_ir i r 1))"
+lemma "\<forall> i r. \<not> (apply_guards (Guard t3) (join_ir i r) \<and> apply_guards (Guard t4) (join_ir i r))"
   by (simp add: t3_def t4_def) 
 end
