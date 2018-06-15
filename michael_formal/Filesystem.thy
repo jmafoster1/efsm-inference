@@ -32,7 +32,7 @@ definition "write" :: "transition" where
 "write \<equiv> \<lparr>
         Label = ''write'',
         Arity = 1,
-        Guard = [], (* No guards *)
+        Guard = [(Eq (V ''r3'') (V ''r1''))], (* No guards *)
         Outputs = [],
         Updates = [ 
                     (''r1'', (V ''r1'')), (* Value of r1 remains unchanged *)
@@ -106,22 +106,5 @@ lemma logout_2:  " r = <''r1'':=user, ''r2'':=content, ''r3'':=owner> \<Longrigh
   apply (simp add: fs_simp step_def)
   apply (rule ext)
   by simp
-
-lemma "r=<''r1'':=user, ''r2'':=content, ''r3'':=owner> \<Longrightarrow> (user \<noteq> owner) \<Longrightarrow>
-        valid_trace_1 filesystem 2 r t \<Longrightarrow>
-        all (observe_trace filesystem 2 r t) (\<lambda>e. e = [] \<or> e = [0])"
-proof (induction t)
-case Nil
-then show ?case by simp
-next
-  case (Cons a t)
-  then show ?case
-    apply (case_tac "a = (''read'', [])")
-     apply (simp add: read_2)
-    apply (case_tac "a = (''logout'', [])")
-    apply simp
-    apply (simp add: logout_2)
-    oops
-  qed
 
 end
