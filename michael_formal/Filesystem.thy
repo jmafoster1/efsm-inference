@@ -41,6 +41,15 @@ definition "write" :: "transition" where
                   ]
       \<rparr>"
 
+definition "write_fail" :: "transition" where
+"write_fail \<equiv> \<lparr>
+        Label = ''write'',
+        Arity = 1,
+        Guard = [(Ne (V ''r3'') (V ''r1''))], (* No guards *)
+        Outputs = [(N 0)],
+        Updates = []
+      \<rparr>"
+
 definition read_success :: "transition" where
 "read_success \<equiv> \<lparr>
         Label = ''read'',
@@ -74,11 +83,11 @@ definition filesystem :: "efsm" where
           T = \<lambda> (a,b) .
               if (a,b) = (1,2) then [login]
               else if (a,b) = (2,1) then [logout]
-              else if (a,b) = (2,2) then [write, read_success, read_fail]
+              else if (a,b) = (2,2) then [write, read_success, read_fail, write_fail]
               else []
          \<rparr>"
 
-lemmas fs_simp = filesystem_def login_def logout_def write_def read_success_def read_fail_def
+lemmas fs_simp = filesystem_def login_def logout_def write_def read_success_def read_fail_def write_fail_def
 
 primrec all :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" where
   "all [] _ = True" |
