@@ -107,7 +107,7 @@ lemma prependLogin: "\<forall>h t. (globally filesystem (s,outs,r) (h#t) (\<lamb
    apply (simp add: noOtherInputs contra)
   apply (case_tac "s=2")
    apply safe
-   apply (simp add: login_2)
+           apply (simp add: login_2)
   by (simp add: noOtherStates)
 
 lemma loginNot1: "s \<noteq> 1 \<Longrightarrow>step filesystem s r ''login'' (snd x) = (0, [], r)"
@@ -124,8 +124,9 @@ lemma read_2_neq: "r ''r1'' \<noteq> r ''r3'' \<Longrightarrow> step filesystem 
   apply (rule ext)
   by simp
 
-lemma read_2_eq: "r ''r1'' = r ''r3'' \<Longrightarrow> step filesystem 2 r ''read'' [] = (2, [r ''r2''], r)"
+lemma read_2_eq: "r ''r1'' = r ''r3'' \<longrightarrow> step filesystem 2 r ''read'' [] = (2, [r ''r2''], r)"
   apply (simp add: fs_simp step_def)
+  apply safe
   apply (rule ext)
   by simp
 
@@ -143,11 +144,41 @@ lemma write_2_eq: "fst x = ''write'' \<and> length (snd x) = Suc 0 \<Longrightar
   by (metis Suc_length_conv i1 index2state.simps(2) list.sel(1))
 
 lemma write_2_neq: "fst x = ''write'' \<and> length (snd x) = Suc 0 \<Longrightarrow>
-    r ''r1'' = r ''r3'' \<Longrightarrow>
+    r ''r1'' \<noteq> r ''r3'' \<Longrightarrow>
     step filesystem 2 r ''write'' (snd x) = (2, [0], r)"
+  by (simp add: fs_simp step_def)
 
-lemma "globally filesystem (s,outs,r) t (\<lambda>(s, p, r) e. s \<noteq> 0) \<longrightarrow>
-globally filesystem (s,outs,r) t (\<lambda>(s, p, r) e. (fst e = ''write'' \<and> r ''r1'' = 0 \<and> snd e \<noteq> [0]) \<longrightarrow>
+lemma noMoreInputs_2: "x \<noteq> (''read'', []) \<Longrightarrow>
+    x \<noteq> (''logout'', []) \<Longrightarrow>
+    \<not> (fst x = ''write'' \<and> length (snd x) = 1) \<Longrightarrow> step filesystem 2 r (fst x) (snd x) = (0, [], r)"
+  apply (simp add: fs_simp step_def)
+  by (metis prod.collapse)
+
+lemma step_0: "step filesystem 0 r i l = (0, [], r)"
+  by (simp add: fs_simp step_def)
+
+lemma sink: "globally filesystem (0, [], <>) xs (\<lambda>(s', p', r') e'. s' = 2 \<and> fst e' = ''read'' \<and> r' ''r1'' \<noteq> 0 \<longrightarrow> fst (snd (EFSM_LTL.step filesystem 2 r' ''read'' (snd e'))) = [0])"
+proof (induction xs)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a xs)
+  then show ?case by (simp add: step_0)
+qed
+
+lemma aux1: "globally filesystem (1, outs, <>) xs (\<lambda>a. case a of (s, a) \<Rightarrow> \<lambda>a. s \<noteq> 0) \<Longrightarrow>  xs = a # list \<Longrightarrow>
+              \<not> globally filesystem (2, [], \<lambda>i. if i = ''r1'' then hd (snd x) else 0) xs (\<lambda>(s, a) a. s \<noteq> 0)"
+  apply simp
+  apply (case_tac "fst a = ''login'' \<and> length (snd a) = 1")
+   apply (simp add: login_1 login_2 contra)
+  by (simp add: notLogin_1 contra)
+
+lemma empty_equiv: "(\<lambda>i. if i = ''r1'' then 0 else 0) = <>"
+  apply (rule ext)
+  by (simp add: null_state_def)
+
+lemma "globally filesystem (1,outs,<>) t (\<lambda>(s, p, r) e. s \<noteq> 0) \<longrightarrow>
+globally filesystem (1,outs,<>) t (\<lambda>(s, p, r) e. (fst e = ''write'' \<and> r ''r1'' = 0 \<and> snd e \<noteq> [0]) \<longrightarrow>
   globally filesystem (s, p, r) t (\<lambda>(s', p', r') e'. (s' = 2 \<and> fst e' = ''read'' \<and> r' ''r1'' \<noteq> 0)\<longrightarrow>
     (fst (snd (step filesystem s' r' (fst e') (snd e')))) = [0]))"
 proof (induction t)
@@ -156,26 +187,25 @@ then show ?case by simp
 next
   case (Cons x xs)
   then show ?case
-    apply (cases xs)
+    apply simp
+    apply (simp add: write_1)
+    apply (simp add: sink)
+    apply (case_tac "EFSM_LTL.step filesystem 1 <> (fst x) (snd x) = (0, [], r)")
      apply simp
-     apply (case_tac "s = 1")
+    using notZero apply blast
+    apply (case_tac "EFSM_LTL.step filesystem 1 <> (fst x) (snd x) = (2, [], \<lambda>i. if i = ''r1'' then hd (snd x) else 0)")
+     apply simp
+     apply (cases xs)
       apply simp
-      apply (case_tac "fst x = ''login'' \<and> length (snd x) = 1")
-       apply (simp add: login_1)
-      apply (simp add: notLogin_1)
-     apply (case_tac "s = 2")
+    apply (case_tac "globally filesystem (1, outs, <>) xs (\<lambda>a. case a of (s, a) \<Rightarrow> \<lambda>a. s \<noteq> 0)")
+    apply (simp only: aux1)
       apply simp
-      apply (case_tac "x = (''read'', [])")
-       apply simp
-       apply (case_tac "r ''r1'' = r ''r3''")
-        apply (simp add: read_2_eq)
-       apply (simp add: read_2_neq)
-      apply (case_tac "x = (''logout'', [])")
-       apply (simp add: logout_2)
-      apply (case_tac "fst x = ''write'' \<and> length (snd x) = 1")
-       apply (case_tac "r ''r1'' = r ''r3''")
-        apply simp
-       apply (simp add: write_2_eq)
+     apply (simp del: globally.simps)
+     apply safe[1]
+     apply (case_tac "hd (snd x) = 0")
+    apply (simp only: empty_equiv)
+
+
 
 
 
@@ -183,7 +213,4 @@ next
 
 
 qed
-
-
-
 end
