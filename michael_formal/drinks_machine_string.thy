@@ -1,9 +1,6 @@
-theory drinks_machine
+theory drinks_machine_string
   imports EFSM CExp
 begin
-
-(* This version of drinks_machine supercedes all of those before 03/04/18 *)
-(* It also supercedes "vend.thy"*)
 
 definition t1 :: "transition" where
 "t1 \<equiv> \<lparr>
@@ -34,7 +31,7 @@ definition t3 :: "transition" where
         Label = ''vend'',
         Arity = 0,
         Guard = [(Ge (V ''r2'') (N 100))], (* This is syntactic sugar for ''Not (Lt (V ''r2'') (N 100))'' which could also appear *)
-        Outputs =  [(V ''r1'')], (* This has one output o1:=r1 where ''r1'' is a variable with a value *)
+        Outputs =  [(V ''r1''), (Minus (V ''r2'') (N 100))],
         Updates = [(''r1'', (V ''r1'')), (''r2'', (V ''r2''))]
       \<rparr>"
 
@@ -70,25 +67,15 @@ lemma "observe_trace vend (s0 vend) <> [] = []"
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1])] = [[]]"
   by (simp add: vend_def transitions step_def)
 
-lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50])] = [[], [50]]"
-  by (simp_all add: step_def index_def vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+lemma "observe_trace vend (s0 vend) <> [(''select'', [''coke'']), (''coin'', [50])] = [[], [50]]"
+  sorry
 
-lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50])] = [[], [50], [100]]"
-  by (simp add: step_def index_def vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+lemma "observe_trace vend (s0 vend) <> [(''select'', [''coke'']), (''coin'', [50]), (''coin'', [50])] = [[], [50], [100]]"
+  sorry
 
-lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), (''vend'', [])] = [[], [50], [100], [1]]"
-  by (simp add: step_def index_def vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+lemma "observe_trace vend (s0 vend) <> [(''select'', [''pepsi'']), (''coin'', [50]), (''coin'', [50]), (''vend'', [])] = [[], [50], [100], [''pepsi'', 0]]"
+  sorry
 
-(*Stop when we hit a spurious input*)
-lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50])] = [[]]"
-  by (simp add: step_def vend_def transitions)
-
-lemma "\<not> (valid_trace (vend) [(''select'', [1]), (''cat'', [50])])"
-  by(simp add: step_def vend_def transitions)
-
-lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50]), (''coin'', [50])] = [[]]"
-  by (simp add: step_def vend_def transitions)
-
-lemma "( t = []) \<Longrightarrow> (observe_trace e (s0 e) <> t = []) "
-  by(simp)
+lemma "observe_trace vend (s0 vend) <> [(''select'', [''fanta'']), (''coin'', [50]), (''coin'', [100]), (''vend'', [])] = [[], [50], [150], [''fanta'', 50]]"
+  sorry
 end

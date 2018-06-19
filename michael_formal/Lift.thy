@@ -5,7 +5,7 @@ definition t1up :: "transition" where
 "t1up \<equiv> \<lparr>
         Label = ''goUp'',
         Arity = 1,
-        Guard = [((V ''i1'') > (N 0))],
+        Guard = [(gexp.Gt (V ''i1'') (N 0))],
         Outputs = [(V ''i1'')],
         Updates = []
       \<rparr>"
@@ -14,7 +14,7 @@ definition t2up :: "transition" where
 "t2up \<equiv> \<lparr>
         Label = ''goUp'',
         Arity = 1,
-        Guard = [(Gt (V ''i1'') (N 0))],
+        Guard = [(gexp.Gt (V ''i1'') (N 0))],
         Outputs = [(Plus (V ''i1'') (N (-1)))],
         Updates = []
       \<rparr>"
@@ -23,7 +23,7 @@ definition t3up :: "transition" where
 "t3up \<equiv> \<lparr>
         Label = ''goUp'',
         Arity = 1,
-        Guard = [((V ''r1'') = (N 0))],
+        Guard = [(gexp.Eq (V ''r1'') (N 0))],
         Outputs = [(N 0)],
         Updates = []
       \<rparr>"
@@ -32,7 +32,7 @@ definition t1down :: "transition" where
 "t1down \<equiv> \<lparr>
         Label = ''goDown'',
         Arity = 1,
-        Guard = [((V ''i1'') > (N 0))],
+        Guard = [(gexp.Gt (V ''i1'') (N 0))],
         Outputs = [(V ''i1'')],
         Updates = []
       \<rparr>"
@@ -41,7 +41,7 @@ definition t2down :: "transition" where
 "t2down \<equiv> \<lparr>
         Label = ''goDown'',
         Arity = 1,
-        Guard = [((V ''i1'') > (N 0))],
+        Guard = [(gexp.Gt (V ''i1'') (N 0))],
         Outputs = [((Plus (V ''i1'') (N (-1))))],
         Updates = []
       \<rparr>"
@@ -50,7 +50,7 @@ definition t3down :: "transition" where
 "t3down \<equiv> \<lparr>
         Label = ''goDown'',
         Arity = 1,
-        Guard = [((V ''r1'') = (N 0))],
+        Guard = [(gexp.Eq (V ''r1'') (N 0))],
         Outputs = [(N 0)],
         Updates = []
       \<rparr>"
@@ -91,11 +91,11 @@ definition lift :: "efsm" where
          \<rparr>"
 
 lemma "observe_trace lift (s0 lift) <> [(''goUp'', [1]), (''goUp'', [0]), (''open'', [])] = [[1], [0], [1]]"
-  by (simp add: step_def lift_def transitions join_def index_def shows_stuff input2state_def)
+  by (simp add: step_def lift_def transitions null_state_def)
 
 lemma "observe_trace lift (s0 lift) <> [(''goDown'', [1]), (''goDown'', [0]), (''open'', [])] = [[1], [0], [1]]"
-  by (simp add: step_def lift_def transitions join_def index_def shows_stuff input2state_def)
+  by (simp add: step_def lift_def transitions null_state_def)
 
 lemma "observe_trace lift (s0 lift) <> [(''open'', []), (''close'', []), (''open'', [])] = [[1], [0], [1]]"
-  by (simp add: step_def lift_def transitions join_def index_def shows_stuff input2state_def)
+  by (simp add: step_def lift_def transitions)
 end
