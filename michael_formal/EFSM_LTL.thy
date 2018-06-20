@@ -73,7 +73,19 @@ qed
 lemma snoc: "xs@[a, as] = xs@[a]@[as]"
   by simp
 
-lemma "globally e (s, outs, r) (xs @ [x]) f \<Longrightarrow> globally e (s, outs, r) xs f"
+lemma "\<not> globally e (s, outs, r) xs f \<Longrightarrow> \<not> globally e (s, outs, r) (xs @ [a]) f"
+proof (induction xs rule: rev_induct)
+  case Nil
+  then show ?case
+    by (metis globally_empty self_append_conv2)
+next
+  case (snoc a xs)
+  then show ?case
+    apply simp
+qed
+
+
+lemma todo_achim: "globally e (s, outs, r) (xs @ [x]) f \<Longrightarrow> globally e (s, outs, r) xs f"
 proof (induction xs rule: rev_induct)
   case Nil
   then show ?case
@@ -82,7 +94,10 @@ next
   case (snoc a xs)
   then show ?case
     apply (simp del: append.simps)
-    sorry
+    apply (cases "globally e (s, outs, r) (xs @ [a]) f")
+     apply simp
+    apply simp
+    (* try *)
 qed
 
 lemma login_x: "step filesystem 1 r ''login'' [x] = (2, [], (\<lambda>i. if i = ''r1'' then x else r i))"
@@ -199,7 +214,9 @@ lemma empty_equiv: "(\<lambda>i. if i = ''r1'' then 0 else 0) = <>"
   apply (rule ext)
   by (simp add: null_state_def)
 
-lemma "globally filesystem (1,outs,<>) t (\<lambda>(s, p, r) e. s \<noteq> 0) \<longrightarrow>
+definition "fsg = globally filesystem"
+
+lemma "fsg (1,outs,<>) t (\<lambda>(s, p, r) e. s \<noteq> 0) \<longrightarrow>
 globally filesystem (1,outs,<>) t (\<lambda>(s, p, r) e. (fst e = ''write'' \<and> r ''r1'' = 0 \<and> snd e \<noteq> [0]) \<longrightarrow>
   globally filesystem (s, p, r) t (\<lambda>(s', p', r') e'. (s' = 2 \<and> fst e' = ''read'' \<and> r' ''r1'' \<noteq> 0)\<longrightarrow>
     (fst (snd (step filesystem s' r' (fst e') (snd e')))) = [0]))"
