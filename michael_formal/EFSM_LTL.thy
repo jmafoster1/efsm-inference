@@ -19,6 +19,28 @@ primrec globally :: "efsm \<Rightarrow> (statename \<times> outputs \<times> reg
   "globally e spr [] f = (\<exists>e. f spr e)" |
   "globally e spr (h#t) f = conj (f spr h) (globally e (step e (fst spr) (snd (snd spr)) (fst h) (snd h)) t f)"
 
+lemma globally_empty: "globally e spr [t] f \<Longrightarrow> globally e spr [] f"
+    apply simp
+    apply (rule_tac x="fst t" in exI)
+    apply (rule_tac x="snd t" in exI)
+  by simp
+
+lemma aux1: "\<forall>list a t. globally e spr (list @ [a, t]) f \<Longrightarrow> globally e spr (list @ [a]) f \<equiv> globally e spr ((list@[a]) @ [t]) f \<Longrightarrow> globally e spr (list @ [a]) f"
+  by fastforce
+
+lemma "globally e spr (ts@[t]) f \<Longrightarrow> globally e spr ts f"
+proof (induction ts rule: rev_induct)
+  case Nil
+  then show ?case by (metis append_Nil globally_empty)
+next
+  case (snoc a list)
+  then show ?case
+    apply (simp del: globally.simps append.simps)
+    
+    
+    
+qed
+
 lemma login_1: "fst a = ''login'' \<and> length (snd a) = Suc 0 \<Longrightarrow> step filesystem 1 r ''login'' (snd a) = (2, [], (\<lambda>x. if x = ''r1'' then hd (snd a) else r x))"
   apply (simp add: fs_simp step_def)
   apply (rule ext)
