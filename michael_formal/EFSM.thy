@@ -89,7 +89,7 @@ lemma valid_extension:
   shows "valid_trace e (t @ [(l,i)])"
   apply simp
   apply (simp only: observe_all_def)
-
+  sorry
   
   
 
