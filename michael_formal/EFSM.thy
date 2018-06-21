@@ -30,6 +30,14 @@ definition step :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Right
     [(s',t)] \<Rightarrow> Some (s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r)) |
     _ \<Rightarrow> None"
 
+primrec observe_temp :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (statename \<times> event \<times> registers \<times> outputs) list" where
+  "observe_temp e s r [] = []" |
+  "observe_temp e s r (h#t) =
+    (case (step e s r (fst h) (snd h)) of
+      (Some (s', outputs, updated)) \<Rightarrow> (s, h, r, outputs)#(observe_temp e s' updated t) |
+      _ \<Rightarrow> []
+    )"
+
 primrec observe_all :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (statename \<times> outputs \<times> registers) list" where
   "observe_all _ _ _ [] = []" |
   "observe_all e s r (h#t) = 
