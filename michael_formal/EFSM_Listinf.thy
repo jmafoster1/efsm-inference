@@ -41,17 +41,12 @@ lemma read_success_1: "ba ''r1'' = ba ''r3'' \<Longrightarrow>  step filesystem 
   by simp
 
 lemma "globally filesystem s outs reg t 0 (\<lambda>(s, p, r) e. s \<noteq> 0) \<longrightarrow>
-globally filesystem s outs reg t 0 (\<lambda>(s, p, r) e. (fst e = ''write'' \<and> r ''r1'' = 1 \<and> snd e \<noteq> [0]) \<longrightarrow>
-  globally filesystem s outs reg t 0 (\<lambda>(s', p', r') e'. (s' = 2 \<and> fst e' = ''read'' \<and> r' ''r1'' \<noteq> 1)\<longrightarrow>
+globally filesystem s outs reg t j (\<lambda>(s, p, r) e. (fst e = ''write'' \<and> r ''r1'' = 1 \<and> snd e \<noteq> [0]) \<longrightarrow> i > j \<longrightarrow>
+  globally filesystem s p r t i (\<lambda>(s', p', r') e'. (s' = 2 \<and> fst e' = ''read'' \<and> r' ''r1'' \<noteq> 1)\<longrightarrow>
     (fst (snd (step filesystem s' r' (fst e') (snd e')))) = [0])
 )"
   apply safe
-  apply (case_tac "t (na+1) = (''read'', [])")
-   apply simp
-   apply (case_tac "ba ''r3'' = 1")
-    apply (simp add: read_success)
-   apply (case_tac "ba ''r1'' = ba ''r3''")
-    apply (simp add: read_success_1)
-  sorry
+  apply simp
+  apply (case_tac "ba ''r3'' = 1")
 
 end

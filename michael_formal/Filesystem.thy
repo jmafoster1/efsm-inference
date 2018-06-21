@@ -87,6 +87,8 @@ definition filesystem :: "efsm" where
               else []
          \<rparr>"
 
+(* export_code filesystem in "Scala" *)
+
 lemmas fs_simp = filesystem_def login_def logout_def write_def read_success_def read_fail_def write_fail_def
 
 primrec all :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" where
