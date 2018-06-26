@@ -218,10 +218,42 @@ qed
 lemma prefix_zs: "\<exists>zs. t' = t @ zs \<longrightarrow> globally2 t' f = globally2 (t@zs) f"
   by simp
 
-lemma "prefix t t' \<longrightarrow> globally2 t' f \<longrightarrow> globally2 t f"
-  apply (simp add: prefix_def)
-  try
-  
+lemma test1: "\<forall>t. \<exists>zs t'. t = t' @ zs"
+  apply (rule allI)
+  apply (case_tac t)
+   apply (rule_tac x="[]" in exI)
+   apply (rule_tac x="[]" in exI)
+   apply simp
+  apply (rule_tac x="list" in exI)
+  apply (rule_tac x="[a]" in exI)
+  by simp
+
+lemma globally2_prefix: "globally2 (t@t') f \<Longrightarrow> globally2 t f"
+proof (induction t)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a t)
+  then show ?case by simp
+qed
+
+
+lemma globally2_prefix_2: "prefix t t' \<longrightarrow> globally2 t' f \<longrightarrow> globally2 t f"
+proof (induct t' rule:rev_induct)
+  case Nil
+  then show ?case by simp
+next
+  case (snoc x xs)
+  then show ?case by (simp add: globally2_prefix)
+qed
+
+lemma globally2_prefix_3: "\<exists>lst t'. (t=lst@t' \<longrightarrow> globally2 lst f \<longrightarrow> globally2 t f \<longrightarrow> globally2 t' f)"
+  by auto
+
+lemma globally2_prefix_4: "\<exists>lst t'. (t=lst@t' \<longrightarrow> globally2 lst f \<and> globally2 t' f \<longrightarrow> globally2 t f)"
+  by auto
+
+
 
 lemma filesystem_prefix: "\<forall>s r. prefix (observe_temp filesystem s r (t @ x)) (observe_temp filesystem s r (t @ x @ [a]))"
   apply (rule allI, rule allI)
@@ -238,22 +270,89 @@ next
     by simp
 qed
 
+lemma prop_aux_2: "globally2 (observe_temp filesystem 1 <> (x @ [a])) (\<lambda>a. case a of (s, a) \<Rightarrow> s \<noteq> 0) \<Longrightarrow> globally2 (observe_temp filesystem 1 <> (x)) (\<lambda>a. case a of (s, a) \<Rightarrow> s \<noteq> 0)"
+  using globally2_prefix_2 observe_prefix by blast
+
 lemma prop_aux: "prefix (observe_temp filesystem 1 <> (t @ x)) (observe_temp filesystem 1 <> (t @ x @ [a]))"
   by (simp add: filesystem_prefix)
 
-abbreviation "fsg \<equiv> globally filesystem"
+lemma globally2_all_elements: "globally2 (t @ x # xs) f \<Longrightarrow> f x"
+proof (induct t)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a t)
+  then show ?case by simp
+qed
 
-lemma "globally2 (observe_temp filesystem 1 <> (t@t')) (\<lambda>(s, e, r, p). s \<noteq> 0) \<longrightarrow>
-globally2 (observe_temp filesystem 1 <> (t@t')) (\<lambda>(s, e, r, p). (fst e = ''write'' \<and> r ''r1'' = 0 \<and> snd e \<noteq> [0]) \<longrightarrow>
-  globally2 (observe_temp filesystem 1 <> t') (\<lambda>(s', e', r', p'). (s' = 2 \<and> fst e' = ''read'' \<and> r' ''r1'' \<noteq> 0)\<longrightarrow>
-    (fst (snd (step filesystem s' r' (fst e') (snd e')))) = [0]))"
-proof (induction "t'" rule: rev_induct)
-case Nil
-  then show ?case by (simp add: true_fun)
+lemma globally2_all_elements_2: "globally2 t f \<Longrightarrow> f x \<Longrightarrow> globally2 xs f \<Longrightarrow> globally2 (t @ x # xs) f"
+proof (induct t)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a t)
+  then show ?case by simp
+qed
+
+lemma globally2_all_elements_3: "\<not> globally2 xs f \<Longrightarrow> globally2 (t @ x # xs) f \<Longrightarrow> False"
+proof (induct t)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a t)
+  then show ?case by simp
+qed
+
+
+lemma globally_extra_element: "globally2 t f \<Longrightarrow> globally2 (t@t') f = globally2 t' f"
+proof (induct t')
+  case Nil
+  then show ?case by simp
+next
+  case (Cons x xs)
+  then show ?case
+    apply simp
+    apply safe
+       apply (simp add: globally2_all_elements)
+      apply (simp add: globally2_all_elements_2)
+     apply (simp add: globally2_all_elements)
+    using globally2_all_elements_3 by blast    
+qed
+
+(* primrec observe_temp :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (statename \<times> event \<times> registers \<times> outputs) list" where *)
+
+lemma "prefix (observe_temp filesystem 1 <> x) (observe_temp filesystem 1 <> (x @ [a]))"
+  apply (simp add: prefix_def)
+proof (induction x rule: rev_induct)
+  case Nil
+  then show ?case by simp
 next
   case (snoc a x)
   then show ?case
     apply simp
+    apply (rule_tac x="let (s', e, r', o') = observe_temp filesystem 1 <> (x @ [a]) in [observe_temp filesystem s' r' [a]]" in exI)
+
+qed
+
+abbreviation "fsg \<equiv> globally filesystem"
+
+lemma "globally2 (observe_temp filesystem 1 <> t) (\<lambda>(s, e, r, p). s \<noteq> 0) \<longrightarrow>
+globally2 (observe_temp filesystem 1 <> t) (\<lambda>(s, e, r, p). (fst e = ''write'' \<and> r ''r1'' = 0 \<and> snd e \<noteq> [0]) \<longrightarrow>
+  globally2 (observe_temp filesystem 1 <> t) (\<lambda>(s', e', r', p'). (s' = 2 \<and> fst e' = ''read'' \<and> r' ''r1'' \<noteq> 0)\<longrightarrow>
+    (fst (snd (step filesystem s' r' (fst e') (snd e')))) = [0]))"
+proof (induction "t" rule: rev_induct)
+case Nil
+  then show ?case by simp
+next
+  case (snoc a x)
+  then show ?case
+    apply simp
+    apply (cases "globally2 (observe_temp filesystem 1 <> (x @ [a])) (\<lambda>a. case a of (s, a) \<Rightarrow> s \<noteq> 0)")
+     apply (simp add: prop_aux_2)
+    apply (simp add: globally_extra_element)
+
+
+    
 qed
 
 lemma "fsg (1,outs,<>) t (\<lambda>(s, p, r) e. s \<noteq> 0) \<longrightarrow>
