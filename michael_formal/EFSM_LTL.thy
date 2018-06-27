@@ -2,6 +2,8 @@ theory EFSM_LTL
 imports EFSM Filesystem "HOL-Library.Sublist"
 begin
 
+type_synonym ltl_pred2 = "(statename \<times> event \<times> registers \<times> outputs) \<Rightarrow> bool"
+type_synonym ltl_pred = "((statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> bool)"
 definition step :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> event \<Rightarrow> (statename \<times> outputs \<times> registers)" where
 "step e s r ev \<equiv>
   case (possible_steps e s r (fst ev) (snd ev)) of
@@ -15,9 +17,17 @@ primrec globally :: "efsm \<Rightarrow> (statename \<times> outputs \<times> reg
   "globally e spr [] f = (\<exists>e. f spr e)" |
   "globally e spr (h#t) f = conj (f spr h) (globally e (step e (fst spr) (snd (snd spr)) h) t f)"
 
-primrec globally2 :: "(statename \<times> event \<times> registers \<times> outputs) list \<Rightarrow> ((statename \<times> event \<times> registers \<times> outputs) \<Rightarrow> bool) \<Rightarrow> bool" where
+primrec globally2 :: "(statename \<times> event \<times> registers \<times> outputs) list \<Rightarrow> ltl_pred2 \<Rightarrow> bool" where
   "globally2 [] _ = True" |
   "globally2 (h#t) f = conj (f h) (globally2 t f)"
+
+primrec after2 :: "(statename \<times> event \<times> registers \<times> outputs) list \<Rightarrow> ltl_pred2 \<Rightarrow> ltl_pred2 \<Rightarrow> bool" where
+  "after2 [] f f' = True" |
+  "after2 (h#t) f f' = (if f h then globally2 t f' else after2 t f f')"
+
+fun after :: "efsm \<Rightarrow> (statename \<times> outputs \<times> registers) \<Rightarrow> trace \<Rightarrow> ltl_pred \<Rightarrow> ltl_pred \<Rightarrow> bool" where
+  "after _ _ [] _ _ = True" |
+  "after e (s, p, r) (h#t) f f' = (if (f (s, p, r) h) then globally e (step e s r h) t f' else after e (step e s r h) t f f')"
 
 lemma globally_empty: "globally e spr [t] f \<Longrightarrow> globally e spr [] f"
     apply simp
@@ -189,6 +199,28 @@ lemma filesystem_prefix_2: "prefix (observe_temp filesystem 1 <> x) (observe_tem
 
 abbreviation "fsg \<equiv> globally filesystem"
 
+fun login_user :: ltl_pred2 where
+  "login_user (state, (label, inputs), registers, outputs) = (label = ''login'' \<and> hd inputs = 0)"
+
+fun "write" :: ltl_pred2 where
+  "write (state, (label, inputs), registers, outputs) = (label = ''write'')"
+
+fun login_attacker :: ltl_pred2 where
+  "login_attacker (state, (label, inputs), registers, outputs) = (label = ''login'' \<and> hd inputs \<noteq> 0)"
+
+fun access_denied :: ltl_pred2 where
+  "access_denied (state, (label, inputs), registers, outputs) = (label = ''read'' \<longrightarrow> outputs = [0])"
+
+abbreviation  observe_fs :: "trace \<Rightarrow> (statename \<times> event \<times> registers \<times> outputs) list" where
+  "observe_fs t \<equiv> (observe_temp filesystem 1 <> t)"
+
+lemma "after2 (observe_fs t) login_user (\<lambda>e. write e \<longrightarrow> (after2 (observe_fs t) login_attacker access_denied))"
+  sorry
+
+(* type_synonym ltl_pred = "((statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> bool)" *)
+
+
+(* New LTL phrasing *)
 lemma "globally2 (observe_temp filesystem s r (e#t)) (\<lambda>(s, e, r, p). s \<noteq> 0) \<longrightarrow>
 globally2 (observe_temp filesystem s r (e#t)) (\<lambda>(st, ev, re, p). (fst e = ''write'' \<and> r ''r1'' = 0 \<and> snd e \<noteq> [0]) \<longrightarrow>
     globally2 (observe_temp filesystem s' r' t) (\<lambda>(s', e', r', p'). (s' = 2 \<and> fst e' = ''read'' \<and> r' ''r1'' \<noteq> 0)\<longrightarrow>
