@@ -62,42 +62,29 @@ definition vend_equiv :: "efsm" where
               else [] (* There are no other transitions *)
          \<rparr>"
 
-lemma medial_t2: "medial \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq 0\<rbrakk> (Guard t2) =  \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq 0, V (I 1) \<mapsto> Eq 50\<rbrakk>"
-  apply (rule ext)
-  by (simp add: t2_def)
-
-lemma consistent_medial_t2: "consistent \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq 0, V (I (Suc 0)) \<mapsto> cexp.Eq 50\<rbrakk>"
-  apply (simp add: medial_t2 consistent_def)
-  apply (rule_tac x="<I 1 := 50>" in exI, simp)
-  by (simp add: consistent_empty_4)
-
-lemma medial_t2': "medial \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq 0\<rbrakk> (Guard t2') =  \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq 0\<rbrakk>"
-  apply (rule ext)
+lemma guard_t2' [simp]: "(Guard t2') = []"
   by (simp add: t2'_def)
 
-lemma consistent_medial_t2': "consistent \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq 0\<rbrakk> "
-  apply (simp add: consistent_def)
-  apply (rule_tac x="<R 2 := 0>" in exI, simp)
-  using consistent_empty_4 by blast
-
-lemma guard_t2': "(Guard t2') = []"
-  by (simp add: t2'_def)
-
-lemma sucZero: "Suc 0 = 1"
+lemma medial_t2: "medial \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq 0\<rbrakk> (Guard t2) = \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq 0, V (I 1) \<mapsto> Eq 50\<rbrakk>"
+  apply (simp add: t2_def)
+  apply (rule ext)
   by simp
 
+lemma consistent_medial_t2: "consistent (medial \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq 0\<rbrakk> (Guard t2))"
+  apply (simp add: t2_def consistent_def)
+  apply (rule_tac x="<R 1 := Some 1, R 2 := Some 0, I 1 := Some 50>" in exI)
+  by (simp add: consistent_empty_4)
+
 lemma posterior_t2: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq 0\<rbrakk> t2 = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> Eq 50\<rbrakk>"
-  apply (simp add: posterior_def medial_t2)
-  apply (simp add: consistent_medial_t2)
-  apply (simp add: t2_def valid_def satisfiable_def)
-  apply (simp only: sucZero)
+  apply (simp add: posterior_def consistent_medial_t2)
+  apply (simp add: t2_def satisfiable_def valid_def)
   apply safe
     apply presburger
    apply presburger
   by auto
 
 lemma posterior_t2': "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq 0, V (I 1) \<mapsto> cexp.Eq 50\<rbrakk> t2' = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> Eq 50\<rbrakk>"
-  apply (simp add: posterior_def guard_t2')
+  apply (simp add: posterior_def)
   apply (insert medial_t2 consistent_medial_t2)
   apply (simp add: medial_t2 consistent_medial_t2)
   apply (simp add: t2'_def valid_def satisfiable_def)

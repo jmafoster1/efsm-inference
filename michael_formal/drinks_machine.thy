@@ -17,6 +17,9 @@ definition t1 :: "transition" where
                   ]
       \<rparr>"
 
+lemma guard_t1 [simp]: "Guard t1 = []"
+  by (simp add: t1_def)
+
 definition t2 :: "transition" where
 "t2 \<equiv> \<lparr>
         Label = ''coin'',
@@ -28,6 +31,9 @@ definition t2 :: "transition" where
                     (R 2, (Plus (V (R 2)) (V (I 1)))) (* The value of r2 is increased by the value of i1 *)
                   ]
       \<rparr>"
+
+lemma guard_t2 [simp]: "Guard t2 = []"
+  by (simp add: t2_def)
 
 definition t3 :: "transition" where
 "t3 \<equiv> \<lparr>
@@ -55,14 +61,6 @@ definition vend :: "efsm" where
 *)
 
 lemmas transitions = t1_def t2_def t3_def
-
-lemma blank_state : "<> = <''r1'' := 0, ''r2'' := 0>"
-  by (metis fun_upd_triv null_state_def)
-
-lemma blank_state2:
-  assumes "P <''r1'' := 0, ''r2'' := 0>"
-  shows "P <>"
-  by (metis assms blank_state)
 
 lemma "observe_trace vend (s0 vend) <> [] = []"
   by simp

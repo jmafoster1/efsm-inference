@@ -104,14 +104,14 @@ lemma r_equals_r [simp]: "<R 1:=user, R 2:=content, R 3:=owner> = (\<lambda>a. i
   apply (rule ext)
   by simp
 
-lemma read_2:  " r = <R 1:=user, R 2:=content, R 3:=owner> \<Longrightarrow>
+lemma read_2:  " r = <R 1:= Some user, R 2:=Some content, R 3:= Some owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
     step filesystem 2 r ''read'' [] = Some (2, [0], r)"
-  apply (simp add: fs_simp step_def)
+  apply (simp add: step_def fs_simp del: Nat.One_nat_def)
   apply (rule ext)
-  by simp
+  by simp 
 
-lemma logout_2:  " r = <R 1:=user, R 2:=content, R 3:=owner> \<Longrightarrow>
+lemma logout_2:  " r = <R 1:=Some user, R 2:=Some content, R 3:=Some owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
     step filesystem 2 r ''logout'' [] = Some (1, [], r)"
   apply (simp add: fs_simp step_def)

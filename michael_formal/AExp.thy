@@ -4,18 +4,18 @@ begin
 
 datatype vname = I nat | R nat
 type_synonym val = int
-type_synonym state = "vname \<Rightarrow> val"
+type_synonym state = "vname \<Rightarrow> val option"
 
 datatype aexp = N int | V vname | Plus aexp aexp | Minus aexp aexp
 
 fun aval :: "aexp \<Rightarrow> state \<Rightarrow> val" where
 "aval (N n) s = n" |
-"aval (V x) s = s x" |
+"aval (V x) s = (case s x of Some y \<Rightarrow> y)" | (* Leave out when the case is None so we get a nice error *)
 "aval (Plus a\<^sub>1 a\<^sub>2) s = aval a\<^sub>1 s + aval a\<^sub>2 s" |
 "aval (Minus a\<^sub>1 a\<^sub>2) s = aval a\<^sub>1 s - aval a\<^sub>2 s"
 
 definition null_state ("<>") where
-  "null_state \<equiv> \<lambda>x. 0"
+  "null_state \<equiv> \<lambda>x. None"
 syntax 
   "_State" :: "updbinds => 'a" ("<_>")
 translations

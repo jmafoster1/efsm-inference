@@ -51,17 +51,14 @@ lemma empty_never_false: "cexp.Bc False \<noteq> Contexts.empty x"
 lemma foo: "\<not> (x \<noteq> V (R 1) \<and> x \<noteq> V (R 2) \<and> (x = V (R 1) \<or> x = V (R 2)))"
   by auto
 
-lemma guard_t2: "(Guard t2) = []"
-  by (simp add: t2_def)
-
 lemma consistent_medial_t2: "consistent \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq 0\<rbrakk>"
   apply (simp add: consistent_def)
-  apply (rule_tac x="<>" in exI)
+  apply (rule_tac x="<R 1 := Some 0, R 2 := Some 0>" in exI)
   apply simp
   using consistent_empty_4 by auto
 
 lemma posterior_t2_first: "posterior t1_posterior t2 = \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> Bc True\<rbrakk>"
-  apply (simp add: posterior_def guard_t2 consistent_medial_t2)
+  apply (simp add: posterior_def consistent_medial_t2)
   apply (simp add: t2_def valid_def satisfiable_def)
   apply (rule ext)
   by simp
@@ -73,24 +70,10 @@ lemma consistent_medial_t2_2: "consistent \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.
   using consistent_empty_4 by auto
 
 lemma posterior_t2_subsequent: "posterior \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Bc True\<rbrakk> t2 = \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Bc True\<rbrakk>"
-  apply (simp add: posterior_def guard_t2 consistent_medial_t2_2)
+  apply (simp add: posterior_def consistent_medial_t2_2)
   apply (simp add: t2_def valid_def satisfiable_def)
   apply (rule ext)
   by simp
-
-lemma not_all_r2: "((\<forall>r. r = ''r2'') \<longrightarrow> (\<forall>i. i < 100))"
-  by auto
-
-lemma "cexp_equiv (Or (Gt 100) (Eq 100)) (Geq 100)"
-  by (simp add: cexp_equiv_def)
-
-lemma "gexp_equiv (gOr (gexp.Gt (V (R 1)) (N 100)) (gexp.Eq (V (R 1)) (N 100)))  (Ge (V (R 1)) (N 100))"
-  apply (simp add: gexp_equiv_def)
-  by auto
-
-lemma "gval (Ge x y) = gval (gOr (gexp.Eq x y) (gexp.Gt x y))"
-  apply (rule ext)
-  by auto
 
 lemma "Ge (V (R 1)) (N 100) = Nor (gexp.Lt (V (R 1)) (N 100)) (gexp.Lt (V (R 1)) (N 100))"
   by simp
@@ -117,7 +100,7 @@ lemma "\<not>Contexts.can_take t3 t1_posterior"
 
 lemma consistent_t1_posterior: "consistent t1_posterior"
   apply (simp add: consistent_def)
-  apply (rule_tac x="<>" in exI)
+  apply (rule_tac x="<R 1 := Some 0, R 2 := Some 0>" in exI)
   apply simp
   apply (rule allI)
   apply (case_tac r)
@@ -140,11 +123,8 @@ lemma consistent_r1_r2_true: "consistent r1_r2_true"
   apply simp
   using consistent_empty_1 by force
 
-lemma guard_t1: "Guard t1 = []"
-  by (simp add: t1_def)
-
 lemma t1_posterior: "(posterior empty t1) = t1_posterior"
-  apply (simp add: posterior_def guard_t1 t1_def)
+  apply (simp add: posterior_def t1_def)
   apply (rule ext)
   by simp
 
@@ -169,19 +149,25 @@ lemma valid_true: "valid c \<longrightarrow> cexp_equiv c (Bc True)"
   apply (simp add: valid_def cexp_equiv_def)
   by auto
 
+lemma consistent_medial_t2_3: "consistent (\<lambda>a. if a = V (R 2) then cexp.Eq 0 else if a = V (R 1) then cexp.Bc True else \<lbrakk>\<rbrakk> a)"
+  apply (simp add: consistent_def)
+  apply (rule_tac x="<R 1 := Some 0, R 2 := Some 0>" in exI)
+  apply simp
+  by (simp add: consistent_empty_4)
+
 lemma posterior_t2_true: "(posterior (\<lambda>a. if a = V (R 2) then cexp.Eq 0 else if a = V (R 1) then cexp.Bc True else \<lbrakk>\<rbrakk> a) t2) = r1_r2_true"
-  apply (rule ext)
-  apply (simp add: t2_def posterior_def consistent_def valid_def satisfiable_def)
-  using empty_not_undef by fastforce
-
-lemma posterior_t2_true_true: "(posterior (\<lambda>a. if a = V (R 2) then cexp.Bc True else if a = V (R (Suc 0)) then cexp.Bc True else \<lbrakk>\<rbrakk> a) t2) = r1_r2_true"
-  apply (rule ext)
-  apply (simp add: posterior_def t2_def consistent_def valid_def satisfiable_def)
-  using empty_not_undef by fastforce
-
-lemma r1_r2_true_equiv: "(\<lambda>a. if a = V (R 2) then cexp.Bc True else if a = V (R (Suc 0)) then cexp.Bc True else \<lbrakk>\<rbrakk> a) = \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Bc True\<rbrakk>"
+  apply (simp add: posterior_def)
+  apply (simp add: consistent_medial_t2_3)
+  apply (simp add: t2_def valid_def satisfiable_def)
   apply (rule ext)
   by simp
+
+lemma r1_r2_true_equiv: "(\<lambda>a. if a = V (R 2) then cexp.Bc True else if a = V (R (Suc 0)) then cexp.Bc True else \<lbrakk>\<rbrakk> a) = r1_r2_true"
+  apply (rule ext)
+  by simp
+
+lemma posterior_t2_true_true: "(posterior (\<lambda>a. if a = V (R 2) then cexp.Bc True else if a = V (R (Suc 0)) then cexp.Bc True else \<lbrakk>\<rbrakk> a) t2) = r1_r2_true"
+  by (simp only: r1_r2_true_equiv t2_empty)
 
 lemma r2_0_r1_true_equiv: "(\<lambda>a. if a = V (R 2) then cexp.Eq 0 else if a = V (R (Suc 0)) then cexp.Bc True else \<lbrakk>\<rbrakk> a) = t1_posterior"
   apply (rule ext)
@@ -209,8 +195,9 @@ proof(induct n)
   case 0
   then show ?case 
     apply (simp add: consistent_def)
-    apply (rule_tac x="<>" in exI)
-    by (metis (no_types, lifting) cexp2gexp.simps(1) empty_not_undef gval.simps(1) null_state_def)
+    apply (rule_tac x="<R 1 := Some 0, R 2 := Some 0>" in exI)
+    apply simp
+    using consistent_empty_4 by blast
 next
   case (Suc n)
   then show ?case
@@ -251,7 +238,8 @@ qed
 
 lemma can_take_t3: "0 < Suc n \<longrightarrow> Contexts.can_take t3 r1_r2_true"
   apply (simp add: can_take_def consistent_def t3_def)
-  using consistent_empty_1 by fastforce
+  apply (rule_tac x="<R 1 := Some 0, R 2 := Some 100>" in exI)
+  by (simp add: consistent_empty_4)
 
 lemma medial_t3: "medial r1_r2_true (Guard t3) = \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> And (Geq 100) (Geq 100)\<rbrakk>"
   apply (simp add: t3_def)
@@ -260,7 +248,7 @@ lemma medial_t3: "medial r1_r2_true (Guard t3) = \<lbrakk>(V (R 1)) \<mapsto> Bc
 
 lemma consistent_medial_t3: "consistent \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> And (Geq 100) (Geq 100)\<rbrakk>"
   apply (simp add: consistent_def)
-  apply (rule_tac x="<R 2 := 100>" in exI)
+  apply (rule_tac x="<R 1 := Some 0, R 2 := Some 100>" in exI)
   apply simp
   using consistent_empty_4 by auto
  
