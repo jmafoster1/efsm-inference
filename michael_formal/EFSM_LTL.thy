@@ -10,8 +10,16 @@ definition step :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Right
     [(s',t)] \<Rightarrow> (s', (apply_outputs (Outputs t) (join_ir (snd ev) r)), (apply_updates (Updates t) (join_ir (snd ev) r) r)) |
     _ \<Rightarrow> (0, [], r)"
 
-abbreviation neXt :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> event \<Rightarrow> ((statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> bool) \<Rightarrow> bool" where
-  "neXt e s r v f \<equiv> f (step e s r v) v"
+fun neXt :: "efsm \<Rightarrow> (statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> ((statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> bool) \<Rightarrow> bool" where
+  "neXt e spr h f = f (step e (fst spr) (snd (snd spr)) h) h"
+
+primrec until :: "efsm \<Rightarrow> (statename \<times> outputs \<times> registers) \<Rightarrow> trace \<Rightarrow> ltl_pred \<Rightarrow> ltl_pred \<Rightarrow> bool" where
+  "until e spr [] f f' = False" |
+  "until e spr (h#t) f f' = disj (f' spr h) (conj (f spr h) (until e (step e (fst spr) (snd (snd spr)) h) t f f'))"
+
+primrec until2 :: "(statename \<times> event \<times> registers \<times> outputs) list \<Rightarrow> ltl_pred2 \<Rightarrow> ltl_pred2 \<Rightarrow> bool" where
+  "until2 [] _ _ = False" |
+  "until2 (h#t) f f' = disj (f' h) (conj (f h) (until2 t f f'))"
 
 primrec globally :: "efsm \<Rightarrow> (statename \<times> outputs \<times> registers) \<Rightarrow> trace \<Rightarrow> ((statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> bool) \<Rightarrow> bool" where
   "globally e spr [] f = (\<exists>e. f spr e)" |
@@ -20,6 +28,14 @@ primrec globally :: "efsm \<Rightarrow> (statename \<times> outputs \<times> reg
 primrec globally2 :: "(statename \<times> event \<times> registers \<times> outputs) list \<Rightarrow> ltl_pred2 \<Rightarrow> bool" where
   "globally2 [] _ = True" |
   "globally2 (h#t) f = conj (f h) (globally2 t f)"
+
+primrec eventually :: "efsm \<Rightarrow> (statename \<times> outputs \<times> registers) \<Rightarrow> trace \<Rightarrow> ((statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> bool) \<Rightarrow> bool" where
+  "eventually e spr [] f = False" |
+  "eventually e spr (h#t) f = disj (f spr h) (eventually e (step e (fst spr) (snd (snd spr)) h) t f)"
+
+primrec eventually2 :: "(statename \<times> event \<times> registers \<times> outputs) list \<Rightarrow> ltl_pred2 \<Rightarrow> bool" where
+  "eventually2 [] _ = False" |
+  "eventually2 (h#t) f = disj (f h) (eventually2 t f)"
 
 primrec after2 :: "(statename \<times> event \<times> registers \<times> outputs) list \<Rightarrow> ltl_pred2 \<Rightarrow> ltl_pred2 \<Rightarrow> bool" where
   "after2 [] f f' = True" |
@@ -196,101 +212,82 @@ qed
 lemma filesystem_prefix_2: "prefix (observe_temp filesystem 1 <> x) (observe_temp filesystem 1 <> (x @ [a]))"
   by (simp add: observe_prefix)
 
+abbreviation observe_fs :: "trace \<Rightarrow> (statename \<times> event \<times> registers \<times> outputs) list" where
+"observe_fs t \<equiv> observe_temp filesystem 1 <> t"
 
-abbreviation "fsg \<equiv> globally filesystem"
+fun logout2 :: ltl_pred2 where
+  "logout2 (state, (label, inputs), registers, outputs) = (label = ''logout'')"
 
-fun login_user :: ltl_pred2 where
-  "login_user (state, (label, inputs), registers, outputs) = (label = ''login'' \<and> hd inputs = 0)"
+fun read :: ltl_pred2 where
+  "read (state, (label, inputs), registers, outputs) = (label = ''read'')"
+
+fun login_attacker :: ltl_pred2 where
+  "login_attacker (state, (label, inputs), registers, outputs) = (label = ''login'' \<and> inputs \<noteq> [0])"
 
 fun "write" :: ltl_pred2 where
   "write (state, (label, inputs), registers, outputs) = (label = ''write'')"
 
-fun login_attacker :: ltl_pred2 where
-  "login_attacker (state, (label, inputs), registers, outputs) = (label = ''login'' \<and> hd inputs \<noteq> 0)"
+fun access_denied2 :: ltl_pred2 where
+  "access_denied (state, (label, inputs), registers, outputs) = (outputs = [0])"
 
-fun access_denied :: ltl_pred2 where
-  "access_denied (state, (label, inputs), registers, outputs) = (label = ''read'' \<longrightarrow> outputs = [0])"
+lemma observe_append: "\<exists>t'. (observe_fs (t @ [a])) = (observe_fs t)@t'"
+  using observe_prefix prefixE by blast
 
-abbreviation  observe_fs :: "trace \<Rightarrow> (statename \<times> event \<times> registers \<times> outputs) list" where
-  "observe_fs t \<equiv> (observe_temp filesystem 1 <> t)"
+lemma extra_element_2: "\<exists>t'. ts = t@t' \<longrightarrow> globally2 t f \<longrightarrow> globally2 ts f = globally2 t' f"
+  by auto
 
-lemma "after2 (observe_fs t) login_user (\<lambda>e. write e \<longrightarrow> (after2 (observe_fs t) login_attacker access_denied))"
-  sorry
+(*  noChangeOwner: THEOREM filesystem |- G(cfstate /= NULL_STATE) =>
+G(
+    (
+        (label=login AND ip_1_login_1=user) AND U(label/=logout, label=write)
+    ) =>
+    G(
+        label=logout =>
+        X(
+            ((label=login AND ip_1_login_1=attacker) AND F(label=logout)) => U(label=read => X(op_1_read_0=access_denied),label=logout)
+        )
+    )
+);*)
+(* primrec globally2 :: "(statename \<times> event \<times> registers \<times> outputs) list \<Rightarrow> ltl_pred2 \<Rightarrow> bool" where *)
 
-(* type_synonym ltl_pred = "((statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> bool)" *)
+abbreviation "G \<equiv> globally filesystem (1, [], <>)"
+abbreviation "U \<equiv> until filesystem"
+abbreviation "X \<equiv> neXt filesystem"
+abbreviation "F \<equiv> eventually filesystem"
 
+fun logout :: "(statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> bool" where
+"logout (s, p, r) (l, i) = (l=''logout'')"
 
-(* New LTL phrasing *)
-lemma "globally2 (observe_temp filesystem s r (e#t)) (\<lambda>(s, e, r, p). s \<noteq> 0) \<longrightarrow>
-globally2 (observe_temp filesystem s r (e#t)) (\<lambda>(st, ev, re, p). (fst e = ''write'' \<and> r ''r1'' = 0 \<and> snd e \<noteq> [0]) \<longrightarrow>
-    globally2 (observe_temp filesystem s' r' t) (\<lambda>(s', e', r', p'). (s' = 2 \<and> fst e' = ''read'' \<and> r' ''r1'' \<noteq> 0)\<longrightarrow>
-    (fst (snd (step filesystem s' r' e'))) = [0]))"
-proof (induction "t" rule: rev_induct)
-case Nil
-  then show ?case by simp
-next
-  case (snoc a x)
-  then show ?case
-    apply simp
-    apply (cases "EFSM.step filesystem s r (fst e) (snd e)")
-     apply simp
-    apply simp
-    apply (case_tac "aa")
-    apply simp
-    
+fun access_denied :: "(statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> bool" where
+"access_denied (s, p, r) (l, i) = (p=[0])"
 
-qed
+lemma "G (e#t) (\<lambda>(s, p, r) (l, i). 
+    (l=''login'' \<and> i=[0] \<and> (U (1, [], <>) (e#t) (\<lambda>(s, p, r) (l, i). l\<noteq>''logout'') (\<lambda>(s, p, r) (l, i). l=''write''))) \<longrightarrow>
+    G (e#t) (\<lambda>spr e. l=''logout'' \<longrightarrow> X spr e (\<lambda>(s, p, r) (l, i).
+        (l=''login'' \<and> i \<noteq> [0] \<and> (F (s, p, r) t logout)) \<longrightarrow> U (s, p, r) t (\<lambda>(s, p, r) (l, i).l=''read'' \<longrightarrow> (X (s, p, r) (l, i) access_denied)) logout
+      )
+    )
+)"
 
-lemma "globally2 (observe_temp filesystem 1 <> t) (\<lambda>(s, e, r, p). s \<noteq> 0) \<longrightarrow>
-globally2 (observe_temp filesystem 1 <> t) (\<lambda>(s, e, r, p). (fst e = ''write'' \<and> r ''r1'' = 0 \<and> snd e \<noteq> [0]) \<longrightarrow>
-  globally2 (observe_temp filesystem 1 <> t) (\<lambda>(s', e', r', p'). (s' = 2 \<and> fst e' = ''read'' \<and> r' ''r1'' \<noteq> 0)\<longrightarrow>
-    (fst (snd (step filesystem s' r' (fst e') (snd e')))) = [0]))"
-proof (induction "t" rule: rev_induct)
-case Nil
-  then show ?case by simp
-next
-  case (snoc a x)
-  then show ?case
-    apply simp
-    apply (cases "globally2 (observe_temp filesystem 1 <> (x @ [a])) (\<lambda>a. case a of (s, a) \<Rightarrow> s \<noteq> 0)")
-     apply (simp add: prop_aux_2)
-     apply (simp add: globally_extra_element filesystem_prefix_2)
-qed
-
-lemma "fsg (1,outs,<>) t (\<lambda>(s, p, r) e. s \<noteq> 0) \<longrightarrow>
-globally filesystem (1,outs,<>) t (\<lambda>(s, p, r) e. (fst e = ''write'' \<and> r ''r1'' = 0 \<and> snd e \<noteq> [0]) \<longrightarrow>
-  globally filesystem (s, p, r) t (\<lambda>(s', p', r') e'. (s' = 2 \<and> fst e' = ''read'' \<and> r' ''r1'' \<noteq> 0)\<longrightarrow>
-    (fst (snd (step filesystem s' r' (fst e') (snd e')))) = [0]))"
-proof (induction t)
+lemma noChangeOwner: "globally2 (observe_fs t) (\<lambda>(state, (label, inputs), registers, outputs).
+  (
+    (label = ''login'' \<and> inputs = [0] \<and> (until2 (observe_fs t) logout2 write))
+  ) \<longrightarrow>
+globally2 (observe_fs t) (\<lambda>x. 
+logout2 x \<longrightarrow> neXt2 (observe_fs t) (\<lambda>x. (login_attacker x \<and> eventually2 (observe_fs t) logout2)) \<longrightarrow> until2 (observe_fs t) 
+(\<lambda>(s, (l, i), r, p). label = ''read'' \<longrightarrow> p = [0]) logout2 ))"
+proof (induct t rule: rev_induct)
 case Nil
 then show ?case by simp
 next
-  case (Cons x xs)
+  case (snoc a t)
   then show ?case
     apply simp
-    apply (simp add: write_1)
-    apply (simp add: sink)
-    apply (case_tac "EFSM_LTL.step filesystem 1 <> (fst x) (snd x) = (0, [], r)")
-     apply simp
-    using notZero apply blast
-    apply (case_tac "EFSM_LTL.step filesystem 1 <> (fst x) (snd x) = (2, [], \<lambda>i. if i = ''r1'' then hd (snd x) else 0)")
-     apply simp
-     apply (cases xs)
-      apply simp
-    apply (case_tac "globally filesystem (1, outs, <>) xs (\<lambda>a. case a of (s, a) \<Rightarrow> \<lambda>a. s \<noteq> 0)")
-    apply (simp only: aux1)
-      apply simp
-     apply (simp del: globally.simps)
-     apply safe[1]
-     apply (case_tac "hd (snd x) = 0")
-    apply (simp only: empty_equiv)
 
 
+  qed
+
+(* Traces are necessarily infinite *)
 
 
-
-
-
-
-qed
 end

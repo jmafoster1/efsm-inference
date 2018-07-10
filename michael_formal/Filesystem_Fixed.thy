@@ -1,4 +1,4 @@
-theory Filesystem
+theory Filesystem_Fixed
 imports EFSM
 begin
 

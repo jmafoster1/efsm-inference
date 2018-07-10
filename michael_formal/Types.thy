@@ -21,8 +21,6 @@ record transition =
   Outputs :: "output_function list"
   Updates :: "update_function list"
 
-type_synonym destination = "(statename \<times> transition)"
-
 record efsm =
   S :: "statename list"
   s0 :: statename
