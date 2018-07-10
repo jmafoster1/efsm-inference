@@ -14,12 +14,15 @@ type_synonym event = "(label \<times> inputs)"
 type_synonym trace = "event list" (*Ideally written as label(i1, i2, ...)*)
 type_synonym observation = "outputs list"
 
+
 record transition =
   Label :: label
   Arity :: arity
   Guard :: "guard list"
   Outputs :: "output_function list"
   Updates :: "update_function list"
+
+type_synonym destination = "(statename \<times> transition)"
 
 record efsm =
   S :: "statename list"
