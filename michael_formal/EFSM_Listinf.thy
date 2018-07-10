@@ -2,13 +2,13 @@ theory EFSM_Listinf
 imports "List-Infinite.ListInf" EFSM Filesystem
 begin
 
-definition step :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename \<times> outputs \<times> registers)" where
+definition step :: "efsm \<Rightarrow> statename \<Rightarrow> state \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename \<times> outputs \<times> state)" where
   "step e s r l i \<equiv>
     case (possible_steps e s r l i) of
       [(s',t)] \<Rightarrow> (s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r)) |
       _ \<Rightarrow> (0, [], r)"
 
-primrec stepToN :: "efsm \<Rightarrow> (statename \<times> outputs \<times> registers) \<Rightarrow> trace \<Rightarrow> (statename \<times> outputs \<times> registers)" where
+primrec stepToN :: "efsm \<Rightarrow> (statename \<times> outputs \<times> state) \<Rightarrow> trace \<Rightarrow> (statename \<times> outputs \<times> state)" where
   "stepToN e spr [] = spr" |
   "stepToN e spr (h#t) = stepToN e (step e (fst spr) (snd (snd spr)) (fst h) (snd h)) t"
 
@@ -19,10 +19,10 @@ primrec take_n :: "'a ilist \<Rightarrow> nat \<Rightarrow> 'a list \<Rightarrow
 abbreviation take :: "'a ilist \<Rightarrow> nat \<Rightarrow> 'a list" where
   "take i n \<equiv> take_n i n []"
 
-abbreviation neXt :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> event \<Rightarrow> ((statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> bool) \<Rightarrow> bool" where
+abbreviation neXt :: "efsm \<Rightarrow> statename \<Rightarrow> state \<Rightarrow> event \<Rightarrow> ((statename \<times> outputs \<times> state) \<Rightarrow> event \<Rightarrow> bool) \<Rightarrow> bool" where
   "neXt e s r v f \<equiv> f (step e s r (fst v) (snd v)) v"
 
-abbreviation globally :: "efsm \<Rightarrow> statename \<Rightarrow> outputs \<Rightarrow> registers \<Rightarrow> event ilist \<Rightarrow> nat \<Rightarrow> ((statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> bool) \<Rightarrow> bool" where
+abbreviation globally :: "efsm \<Rightarrow> statename \<Rightarrow> outputs \<Rightarrow> state \<Rightarrow> event ilist \<Rightarrow> nat \<Rightarrow> ((statename \<times> outputs \<times> state) \<Rightarrow> event \<Rightarrow> bool) \<Rightarrow> bool" where
 "globally e s p r t n' f \<equiv> \<forall>n. n > n' \<longrightarrow> (f (stepToN e ((s0 e), [], <>) (take t n)) (t (n+1)))"
 
 

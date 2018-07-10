@@ -5,7 +5,7 @@ definition select :: "transition" where
 "select \<equiv> \<lparr>
         Label = ''select'',
         Arity = 1,
-        Guard = [(gexp.Eq (V ''i1'') (N 1))],
+        Guard = [(gexp.Eq (V (I 1)) (N 1))],
         Outputs = [],
         Updates = []
       \<rparr>"
@@ -14,7 +14,7 @@ definition coin50 :: "transition" where
 "coin50 \<equiv> \<lparr>
         Label = ''coin'',
         Arity = 1,
-        Guard = [(gexp.Eq (V ''i1'') (N 50))],
+        Guard = [(gexp.Eq (V (I 1)) (N 50))],
         Outputs = [],
         Updates = []
       \<rparr>"
@@ -25,7 +25,7 @@ definition coin_init :: "transition" where
         Arity = 1,
         Guard = [],
         Outputs = [],
-        Updates = [(''r1'', (V ''i1''))]
+        Updates = [(R 1, (V (I 1)))]
       \<rparr>"
 
 definition coin_inc :: "transition" where
@@ -34,7 +34,7 @@ definition coin_inc :: "transition" where
         Arity = 1,
         Guard = [],
         Outputs = [],
-        Updates = [(''r1'', (Plus (V ''r1'') (V ''i1'')))]
+        Updates = [(R 1, (Plus (V (R 1)) (V (I 1))))]
       \<rparr>"
 
 definition vends :: "transition" where
@@ -50,7 +50,7 @@ definition vends_g :: "transition" where
 "vends_g \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [(Ge (V ''r1'') (N 100))],
+        Guard = [(Ge (V (R 1)) (N 100))],
         Outputs =  [(N 1)],
         Updates = []
       \<rparr>"
@@ -68,7 +68,7 @@ definition venderr_g :: "transition" where
 "venderr_g \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [(gexp.Lt (V ''r1'') (N 100))],
+        Guard = [(gexp.Lt (V (R 1)) (N 100))],
         Outputs =  [(N 1)],
         Updates = []
       \<rparr>"
@@ -98,7 +98,7 @@ definition vend_g :: "efsm" where
               else [] (* There are no other transitions *)
          \<rparr>"
 
-lemma "posterior r1_r2_true coin_init = \<lbrakk>(V ''r1'') \<mapsto> Bc True\<rbrakk>"
+lemma "posterior r1_r2_true coin_init = \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk>"
   apply (rule ext)
   apply (simp add: coin_init_def posterior_def consistent_def)
   using empty_not_undef gval.simps(1) by force
@@ -108,16 +108,15 @@ lemma posterior_empty_coin_inc_not_consistent: "\<not> consistent (posterior emp
   apply (simp add: posterior_def coin_inc_def valid_def satisfiable_def)
   apply (simp add: consistent_def)
   apply (rule allI)
-  apply (rule_tac x="V ''r1''" in exI)
+  apply (rule_tac x="V (R 1)" in exI)
   by simp
 
-lemma posterior_empty_coin_inc: "(posterior empty coin_inc) = (\<lambda>r. if r = V ''r1'' then cexp.Bc False else Contexts.empty r)"
+lemma posterior_empty_coin_inc: "(posterior empty coin_inc) = (\<lambda>r. if r = V (R 1) then cexp.Bc False else Contexts.empty r)"
   by (simp add: posterior_def coin_inc_def satisfiable_def)
 
-lemma foo: "\<not> (\<forall>s. \<exists>r. (r = V ''i1'' \<longrightarrow> s ''i1'' \<noteq> 50) \<and>
-             (r \<noteq> V ''i1'' \<longrightarrow> and (Contexts.empty r) (cexp.Bc True) \<noteq> Undef \<and> \<not> gval (cexp2gexp r (and (Contexts.empty r) (cexp.Bc True))) s))"
+lemma foo: "\<not> (\<forall>s. \<exists>r. (r = V (I 1) \<longrightarrow> s (I 1) \<noteq> 50) \<and>
+             (r \<noteq> V (I 1) \<longrightarrow> and (Contexts.empty r) (cexp.Bc True) \<noteq> Undef \<and> \<not> gval (cexp2gexp r (and (Contexts.empty r) (cexp.Bc True))) s))"
   apply simp
-  apply (rule_tac x="<''i1'' := 50>" in exI, simp)
   using consistent_empty_1 by force
 
 lemma empty_neq_false: "(\<lambda>i. cexp.Bc False) \<noteq> Contexts.empty"
@@ -125,10 +124,9 @@ lemma empty_neq_false: "(\<lambda>i. cexp.Bc False) \<noteq> Contexts.empty"
 
 lemma posterior_empty_coin50: "(posterior \<lbrakk>\<rbrakk> coin50) = \<lbrakk>\<rbrakk>"
   apply (simp add: posterior_def coin50_def satisfiable_def consistent_def empty_neq_false)
-  apply (rule_tac x="<''i1'' := 50>" in exI, simp)
   using empty_not_undef by force
 
-lemma posterior_empty_coin_init: "posterior \<lbrakk>\<rbrakk> coin_init = \<lbrakk>V ''r1'' \<mapsto> Bc True\<rbrakk>"
+lemma posterior_empty_coin_init: "posterior \<lbrakk>\<rbrakk> coin_init = \<lbrakk>V (R 1) \<mapsto> Bc True\<rbrakk>"
   apply (rule ext)
   by (simp add: posterior_def coin_init_def)
 
@@ -145,30 +143,36 @@ lemma "subsumes empty coin_init coin50"
 lemma "\<not> subsumes empty coin_inc coin50"
   by (simp add: subsumes_def posterior_empty_coin50 posterior_empty_coin_inc_not_consistent)
 
-lemma posterior_coin_inc_r1_true: "posterior \<lbrakk>V ''r1'' \<mapsto> cexp.Bc True\<rbrakk> coin_inc = \<lbrakk>V ''r1'' \<mapsto> cexp.Bc True\<rbrakk>"
+lemma posterior_coin_inc_r1_true: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk> coin_inc = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk>"
   apply (simp add: posterior_def coin_inc_def consistent_def valid_def satisfiable_def)
   apply safe
    apply auto[1]
   using consistent_empty_1 by fastforce
 
-lemma posterior_coin50_true: "posterior \<lbrakk>V ''r1'' \<mapsto> cexp.Bc True\<rbrakk> coin50 = \<lbrakk>\<rbrakk>"
+lemma posterior_coin50_true: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk> coin50 = \<lbrakk>\<rbrakk>"
   apply (simp add: posterior_def coin50_def consistent_def empty_neq_false)
-  apply (rule_tac x="<''i1'' := 50>" in exI, simp)
   using empty_not_undef by force
 
-lemma "subsumes \<lbrakk>V ''r1'' \<mapsto> Bc True\<rbrakk> coin_inc coin50"
+lemma medial_coin50: "medial \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True\<rbrakk> (Guard coin50) = \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (I 1) \<mapsto> Eq 50\<rbrakk>"
+  apply (simp add: coin50_def)
+  apply (rule ext)
+  by simp
+
+lemma sucZero: "Suc 0 = 1"
+  by simp
+
+lemma "subsumes \<lbrakk>V (R 1) \<mapsto> Bc True\<rbrakk> coin_inc coin50"
   apply (simp add: subsumes_def)
   apply safe
      apply (simp add: coin50_def coin_inc_def)
-     apply (simp add: coin50_def coin_inc_def)
-   apply (simp add: posterior_coin_inc_r1_true posterior_coin50_true)
-  using consistent_empty_1 apply fastforce
-  apply (simp add: posterior_coin50_true posterior_coin_inc_r1_true consistent_def)
+    apply (simp add: coin50_def coin_inc_def)
+   apply (simp only: sucZero posterior_coin50_true)
+  using consistent_empty_1 apply force
+   apply (simp only: sucZero posterior_coin_inc_r1_true consistent_def)
   apply (rule_tac x="<>" in exI)
-  using empty_not_undef by force
+  by (simp add: consistent_empty_4)
 
-
-lemma "(posterior_sequence [coin_init, coin_inc] empty) = \<lbrakk>V ''r1'' \<mapsto> Bc True\<rbrakk>"
+lemma "(posterior_sequence [coin_init, coin_inc] empty) = \<lbrakk>V (R 1) \<mapsto> Bc True\<rbrakk>"
   apply (simp add: posterior_sequence_def posterior_def coin_init_def coin_inc_def satisfiable_def valid_def consistent_def)
   using consistent_def consistent_empty_1 consistent_empty_3 by auto
 
@@ -177,98 +181,101 @@ lemma "\<not> subsumes empty vends_g vends"
   apply (simp add: consistent_def)
   by auto
 
-lemma posterior_vends_g: "posterior \<lbrakk>V ''r1'' \<mapsto> Geq 100\<rbrakk> vends_g =  \<lbrakk>\<rbrakk>"
+lemma posterior_vends_g: "posterior \<lbrakk>V (R 1) \<mapsto> Geq 100\<rbrakk> vends_g =  \<lbrakk>\<rbrakk>"
   apply (simp add: posterior_def consistent_def vends_g_def)
   using consistent_empty_1 by fastforce
 
-lemma posterior_vends: "posterior \<lbrakk>V ''r1'' \<mapsto> Geq 100\<rbrakk> vends = \<lbrakk>\<rbrakk>"
+lemma posterior_vends: "posterior \<lbrakk>V (R 1) \<mapsto> Geq 100\<rbrakk> vends = \<lbrakk>\<rbrakk>"
   apply (simp add: posterior_def consistent_def vends_def)
   using consistent_empty_1 by fastforce
 
-lemma medial_vends: "medial \<lbrakk>V ''r1'' \<mapsto> Geq 100\<rbrakk> (Guard vends) = \<lbrakk>V ''r1'' \<mapsto> Geq 100\<rbrakk>"
+lemma medial_vends: "medial \<lbrakk>V (R 1) \<mapsto> Geq 100\<rbrakk> (Guard vends) = \<lbrakk>V (R 1) \<mapsto> Geq 100\<rbrakk>"
   by (simp add: vends_def)
 
-lemma "subsumes \<lbrakk>V ''r1'' \<mapsto> Geq 100\<rbrakk> vends_g vends"
+lemma "subsumes \<lbrakk>V (R 1) \<mapsto> Geq 100\<rbrakk> vends_g vends"
   apply (simp only: subsumes_def)
   apply safe
   apply (simp add: vends_def vends_g_def)
      apply auto[1]
     apply (simp add: vends_def vends_g_def)
    apply (simp add: medial_vends posterior_vends)
-   apply (simp add: posterior_vends_g)
-  by (simp add: posterior_vends posterior_vends_g)
+   apply (simp only: sucZero posterior_vends)
+  apply (simp add: empty_not_undef)
+  by (simp only: sucZero posterior_vends posterior_vends_g)
 
 definition test1 :: transition where
 "test1 \<equiv> \<lparr>
         Label = ''foo'',
         Arity = 1,
-        Guard = [(gexp.Eq (V ''i1'') (N 6))],
+        Guard = [(gexp.Eq (V (I 1)) (N 6))],
         Outputs =  [(N 6)],
-        Updates = [(''r1'', (N 6))]
+        Updates = [(R 1, (N 6))]
       \<rparr>"
 
 definition test2 :: transition where
 "test2 \<equiv> \<lparr>
         Label = ''foo'',
         Arity = 1,
-        Guard = [(gexp.Gt (V ''i1'') (N 0))],
-        Outputs =  [(V ''i1'')],
-        Updates = [(''r1'', (V ''i1''))]
+        Guard = [(gexp.Gt (V (I 1)) (N 0))],
+        Outputs =  [(V (I 1))],
+        Updates = [(R 1, (V (I 1)))]
       \<rparr>"
 
-lemma medial_test1: "medial empty (Guard test1) = (\<lambda>i. if i = V ''i1'' then Eq 6 else empty i)"
+lemma medial_test1: "medial empty (Guard test1) = (\<lambda>i. if i = V (I 1) then Eq 6 else empty i)"
   apply (simp add: test1_def)
   apply (rule ext)
   by auto
 
 lemma consistent_medial_test1: "consistent (medial empty (Guard test1))"
   apply (simp add: medial_test1 consistent_def)
-  apply (rule_tac x="<''i1'' := 6>" in exI, simp)
+  apply (rule_tac x="<I 1 := 6>" in exI)
+  apply simp
   by (simp add: consistent_empty_4)
 
-lemma medial_test2: "medial empty (Guard test2) = (\<lambda>i. if i = V ''i1'' then Gt 0 else empty i)"
+lemma medial_test2: "medial empty (Guard test2) = (\<lambda>i. if i = V (I 1) then Gt 0 else empty i)"
   apply (simp add: test2_def)
   apply (rule ext)
   by auto
 
-lemma test2_subsumes_test1_aux1: "let c' = medial (\<lambda>i. if i = V ''i1'' then cexp.Eq 6 else \<lbrakk>\<rbrakk> i) (Guard test2)
+lemma test2_subsumes_test1_aux1: "let c' = medial (\<lambda>i. if i = V (I 1) then cexp.Eq 6 else \<lbrakk>\<rbrakk> i) (Guard test2)
                    in consistent c'"
   apply (simp add: test2_def consistent_def)
-  apply (rule_tac x="<''i1'' := 6>" in exI, simp)
+  apply (rule_tac x="<I 1 := 6>" in exI)
   by (simp add: consistent_empty_4)
 
-lemma posterior_test1: "posterior \<lbrakk>\<rbrakk> test1 = \<lbrakk>V ''r1'' \<mapsto> Eq 6\<rbrakk>"
+lemma posterior_test1: "posterior \<lbrakk>\<rbrakk> test1 = \<lbrakk>V (R 1) \<mapsto> Eq 6\<rbrakk>"
   apply (simp add: posterior_def consistent_medial_test1)
   apply (simp add: medial_test1 test1_def)
   apply (rule ext)
   by simp
 
-lemma posterior_test2: "(posterior \<lbrakk>\<rbrakk> test2) = \<lbrakk>V ''r1'' \<mapsto> Gt 0\<rbrakk>"
+lemma posterior_test2: "(posterior \<lbrakk>\<rbrakk> test2) = \<lbrakk>V (R 1) \<mapsto> Gt 0\<rbrakk>"
   apply (simp add: posterior_def test2_def consistent_def)
   apply safe
    apply auto[1]
   using consistent_empty_4 zero_less_numeral by blast
 
-lemma medial_test2_2: "medial (\<lambda>i. if i = V ''i1'' then cexp.Eq 6 else \<lbrakk>\<rbrakk> i) (Guard test2) = \<lbrakk>V ''i1'' \<mapsto> And (cexp.Eq 6) (cexp.Gt 0)\<rbrakk>"
+lemma medial_test2_2: "medial (\<lambda>i. if i = V (I 1) then cexp.Eq 6 else \<lbrakk>\<rbrakk> i) (Guard test2) = \<lbrakk>V (I 1) \<mapsto> And (cexp.Eq 6) (cexp.Gt 0)\<rbrakk>"
   apply (simp add: test2_def)
   apply (rule ext)
   by (simp)
 
-lemma consistent_medial_test2_2:"consistent \<lbrakk>V ''i1'' \<mapsto> And (cexp.Eq 6) (cexp.Gt 0)\<rbrakk>"
+lemma consistent_medial_test2:"consistent\<lbrakk>V (I (Suc 0)) \<mapsto> And (cexp.Eq 6) (cexp.Gt 0)\<rbrakk>"
   apply (simp add: consistent_def)
-  apply (rule_tac x="<''i1'' := 6>" in exI, simp)
+  apply (rule_tac x="<I 1 := 6>" in exI, simp)
   by (simp add: consistent_empty_4)
 
-lemma posterior_test2_2: "posterior (\<lambda>i. if i = V ''i1'' then cexp.Eq 6 else \<lbrakk>\<rbrakk> i) test2 = \<lbrakk>V ''r1'' \<mapsto> And (cexp.Eq 6) (cexp.Gt 0)\<rbrakk>"
-  apply (simp only: posterior_def)
-  apply (simp add: medial_test2_2 consistent_medial_test2_2)
+lemma posterior_test2_2: "posterior (\<lambda>i. if i = V (I 1) then cexp.Eq 6 else \<lbrakk>\<rbrakk> i) test2 = \<lbrakk>V (R 1) \<mapsto> And (cexp.Eq 6) (cexp.Gt 0)\<rbrakk>"
+  apply (simp add: posterior_def)
+  apply (simp only: sucZero medial_test2_2 )
+  apply (simp add: consistent_medial_test2)
   apply (simp add: test2_def)
   apply (rule ext)
   by simp
 
 lemma test2_subsumes_test1_aux2: "consistent (posterior \<lbrakk>\<rbrakk> test2)"
   apply (simp add: posterior_test2 consistent_def)
-  apply (rule_tac x="<''r1'' := 6>" in exI, simp)
+  apply (rule_tac x="<R 1 := 1>" in exI)
   by (simp add: consistent_empty_4)
 
 lemma test2_subsumes_test1: "subsumes \<lbrakk>\<rbrakk> test2 test1"

@@ -12,8 +12,8 @@ definition t1 :: "transition" where
         Guard = [], (* No guards *)
         Outputs = [],
         Updates = [ (* Two updates: *)
-                    (''r1'', (V ''i1'')), (*  Firstly set value of r1 to value of i1 *)
-                    (''r2'', (N 0)) (* Secondly set the value of r2 to literal zero *)
+                    (R 1, (V (I 1))), (*  Firstly set value of r1 to value of i1 *)
+                    (R 2, (N 0)) (* Secondly set the value of r2 to literal zero *)
                   ]
       \<rparr>"
 
@@ -22,10 +22,10 @@ definition t2 :: "transition" where
         Label = ''coin'',
         Arity = 1,
         Guard = [], (* No guards *)
-        Outputs = [(Plus (V ''r2'') (V ''i1''))], (* This could also be written infix with ''+'' *)
+        Outputs = [(Plus (V (R 2)) (V (I 1)))], (* This could also be written infix with ''+'' *)
         Updates = [
-                    (''r1'', (V ''r1'')), (* The value of r1 is unchanged *)
-                    (''r2'', (Plus (V ''r2'') (V ''i1''))) (* The value of r2 is increased by the value of i1 *)
+                    (R 1, V (R 1)),
+                    (R 2, (Plus (V (R 2)) (V (I 1)))) (* The value of r2 is increased by the value of i1 *)
                   ]
       \<rparr>"
 
@@ -33,9 +33,9 @@ definition t3 :: "transition" where
 "t3 \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [(Ge (V ''r2'') (N 100))], (* This is syntactic sugar for ''Not (Lt (V ''r2'') (N 100))'' which could also appear *)
-        Outputs =  [(V ''r1'')], (* This has one output o1:=r1 where ''r1'' is a variable with a value *)
-        Updates = [(''r1'', (V ''r1'')), (''r2'', (V ''r2''))]
+        Guard = [(Ge (V (R 2)) (N 100))], (* This is syntactic sugar for ''Not (Lt (V ''r2'') (N 100))'' which could also appear *)
+        Outputs =  [(V (R 1))], (* This has one output o1:=r1 where ''r1'' is a variable with a value *)
+        Updates = [(R 1, V (R 1)), (R 2, V (R 2))]
       \<rparr>"
 
 definition vend :: "efsm" where
@@ -71,13 +71,13 @@ lemma "observe_trace vend (s0 vend) <> [(''select'', [1])] = [[]]"
   by (simp add: vend_def transitions step_def)
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50])] = [[], [50]]"
-  by (simp_all add: step_def index_def vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+  by (simp_all add: step_def vend_def transitions)
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50])] = [[], [50], [100]]"
-  by (simp add: step_def index_def vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+  by (simp add: step_def vend_def transitions)
 
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), (''vend'', [])] = [[], [50], [100], [1]]"
-  by (simp add: step_def index_def vend_def transitions showsp_int_def showsp_nat.simps shows_string_def null_state_def)
+  by (simp add: step_def vend_def transitions)
 
 (*Stop when we hit a spurious input*)
 lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50])] = [[]]"

@@ -2,46 +2,46 @@ theory EFSM_LTL
 imports EFSM Filesystem "HOL-Library.Sublist"
 begin
 
-type_synonym ltl_pred2 = "(statename \<times> event \<times> registers \<times> outputs) \<Rightarrow> bool"
-type_synonym ltl_pred = "((statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> bool)"
-definition step :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> event \<Rightarrow> (statename \<times> outputs \<times> registers)" where
+type_synonym ltl_pred2 = "(statename \<times> event \<times> state \<times> outputs) \<Rightarrow> bool"
+type_synonym ltl_pred = "((statename \<times> outputs \<times> state) \<Rightarrow> event \<Rightarrow> bool)"
+definition step :: "efsm \<Rightarrow> statename \<Rightarrow> state \<Rightarrow> event \<Rightarrow> (statename \<times> outputs \<times> state)" where
 "step e s r ev \<equiv>
   case (possible_steps e s r (fst ev) (snd ev)) of
     [(s',t)] \<Rightarrow> (s', (apply_outputs (Outputs t) (join_ir (snd ev) r)), (apply_updates (Updates t) (join_ir (snd ev) r) r)) |
     _ \<Rightarrow> (0, [], r)"
 
-fun neXt :: "efsm \<Rightarrow> (statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> ((statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> bool) \<Rightarrow> bool" where
+fun neXt :: "efsm \<Rightarrow> (statename \<times> outputs \<times> state) \<Rightarrow> event \<Rightarrow> ((statename \<times> outputs \<times> state) \<Rightarrow> event \<Rightarrow> bool) \<Rightarrow> bool" where
   "neXt e spr h f = f (step e (fst spr) (snd (snd spr)) h) h"
 
-primrec until :: "efsm \<Rightarrow> (statename \<times> outputs \<times> registers) \<Rightarrow> trace \<Rightarrow> ltl_pred \<Rightarrow> ltl_pred \<Rightarrow> bool" where
+primrec until :: "efsm \<Rightarrow> (statename \<times> outputs \<times> state) \<Rightarrow> trace \<Rightarrow> ltl_pred \<Rightarrow> ltl_pred \<Rightarrow> bool" where
   "until e spr [] f f' = False" |
   "until e spr (h#t) f f' = disj (f' spr h) (conj (f spr h) (until e (step e (fst spr) (snd (snd spr)) h) t f f'))"
 
-primrec until2 :: "(statename \<times> event \<times> registers \<times> outputs) list \<Rightarrow> ltl_pred2 \<Rightarrow> ltl_pred2 \<Rightarrow> bool" where
+primrec until2 :: "(statename \<times> event \<times> state \<times> outputs) list \<Rightarrow> ltl_pred2 \<Rightarrow> ltl_pred2 \<Rightarrow> bool" where
   "until2 [] _ _ = False" |
   "until2 (h#t) f f' = disj (f' h) (conj (f h) (until2 t f f'))"
 
-primrec globally :: "efsm \<Rightarrow> (statename \<times> outputs \<times> registers) \<Rightarrow> trace \<Rightarrow> ((statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> bool) \<Rightarrow> bool" where
+primrec globally :: "efsm \<Rightarrow> (statename \<times> outputs \<times> state) \<Rightarrow> trace \<Rightarrow> ((statename \<times> outputs \<times> state) \<Rightarrow> event \<Rightarrow> bool) \<Rightarrow> bool" where
   "globally e spr [] f = (\<exists>e. f spr e)" |
   "globally e spr (h#t) f = conj (f spr h) (globally e (step e (fst spr) (snd (snd spr)) h) t f)"
 
-primrec globally2 :: "(statename \<times> event \<times> registers \<times> outputs) list \<Rightarrow> ltl_pred2 \<Rightarrow> bool" where
+primrec globally2 :: "(statename \<times> event \<times> state \<times> outputs) list \<Rightarrow> ltl_pred2 \<Rightarrow> bool" where
   "globally2 [] _ = True" |
   "globally2 (h#t) f = conj (f h) (globally2 t f)"
 
-primrec eventually :: "efsm \<Rightarrow> (statename \<times> outputs \<times> registers) \<Rightarrow> trace \<Rightarrow> ((statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> bool) \<Rightarrow> bool" where
+primrec eventually :: "efsm \<Rightarrow> (statename \<times> outputs \<times> state) \<Rightarrow> trace \<Rightarrow> ((statename \<times> outputs \<times> state) \<Rightarrow> event \<Rightarrow> bool) \<Rightarrow> bool" where
   "eventually e spr [] f = False" |
   "eventually e spr (h#t) f = disj (f spr h) (eventually e (step e (fst spr) (snd (snd spr)) h) t f)"
 
-primrec eventually2 :: "(statename \<times> event \<times> registers \<times> outputs) list \<Rightarrow> ltl_pred2 \<Rightarrow> bool" where
+primrec eventually2 :: "(statename \<times> event \<times> state \<times> outputs) list \<Rightarrow> ltl_pred2 \<Rightarrow> bool" where
   "eventually2 [] _ = False" |
   "eventually2 (h#t) f = disj (f h) (eventually2 t f)"
 
-primrec after2 :: "(statename \<times> event \<times> registers \<times> outputs) list \<Rightarrow> ltl_pred2 \<Rightarrow> ltl_pred2 \<Rightarrow> bool" where
+primrec after2 :: "(statename \<times> event \<times> state \<times> outputs) list \<Rightarrow> ltl_pred2 \<Rightarrow> ltl_pred2 \<Rightarrow> bool" where
   "after2 [] f f' = True" |
   "after2 (h#t) f f' = (if f h then globally2 t f' else after2 t f f')"
 
-fun after :: "efsm \<Rightarrow> (statename \<times> outputs \<times> registers) \<Rightarrow> trace \<Rightarrow> ltl_pred \<Rightarrow> ltl_pred \<Rightarrow> bool" where
+fun after :: "efsm \<Rightarrow> (statename \<times> outputs \<times> state) \<Rightarrow> trace \<Rightarrow> ltl_pred \<Rightarrow> ltl_pred \<Rightarrow> bool" where
   "after _ _ [] _ _ = True" |
   "after e (s, p, r) (h#t) f f' = (if (f (s, p, r) h) then globally e (step e s r h) t f' else after e (step e s r h) t f f')"
 
@@ -207,28 +207,28 @@ next
     using globally2_all_elements_3 by blast    
 qed
 
-(* primrec observe_temp :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (statename \<times> event \<times> registers \<times> outputs) list" where *)
+(* primrec observe_temp :: "efsm \<Rightarrow> statename \<Rightarrow> state \<Rightarrow> trace \<Rightarrow> (statename \<times> event \<times> state \<times> outputs) list" where *)
 
 lemma filesystem_prefix_2: "prefix (observe_temp filesystem 1 <> x) (observe_temp filesystem 1 <> (x @ [a]))"
   by (simp add: observe_prefix)
 
-abbreviation observe_fs :: "trace \<Rightarrow> (statename \<times> event \<times> registers \<times> outputs) list" where
+abbreviation observe_fs :: "trace \<Rightarrow> (statename \<times> event \<times> state \<times> outputs) list" where
 "observe_fs t \<equiv> observe_temp filesystem 1 <> t"
 
 fun logout2 :: ltl_pred2 where
-  "logout2 (state, (label, inputs), registers, outputs) = (label = ''logout'')"
+  "logout2 (state, (label, inputs), state, outputs) = (label = ''logout'')"
 
 fun read :: ltl_pred2 where
-  "read (state, (label, inputs), registers, outputs) = (label = ''read'')"
+  "read (state, (label, inputs), state, outputs) = (label = ''read'')"
 
 fun login_attacker :: ltl_pred2 where
-  "login_attacker (state, (label, inputs), registers, outputs) = (label = ''login'' \<and> inputs \<noteq> [0])"
+  "login_attacker (state, (label, inputs), state, outputs) = (label = ''login'' \<and> inputs \<noteq> [0])"
 
 fun "write" :: ltl_pred2 where
-  "write (state, (label, inputs), registers, outputs) = (label = ''write'')"
+  "write (state, (label, inputs), state, outputs) = (label = ''write'')"
 
 fun access_denied2 :: ltl_pred2 where
-  "access_denied (state, (label, inputs), registers, outputs) = (outputs = [0])"
+  "access_denied (state, (label, inputs), state, outputs) = (outputs = [0])"
 
 lemma observe_append: "\<exists>t'. (observe_fs (t @ [a])) = (observe_fs t)@t'"
   using observe_prefix prefixE by blast
@@ -248,17 +248,17 @@ G(
         )
     )
 );*)
-(* primrec globally2 :: "(statename \<times> event \<times> registers \<times> outputs) list \<Rightarrow> ltl_pred2 \<Rightarrow> bool" where *)
+(* primrec globally2 :: "(statename \<times> event \<times> state \<times> outputs) list \<Rightarrow> ltl_pred2 \<Rightarrow> bool" where *)
 
 abbreviation "G \<equiv> globally filesystem (1, [], <>)"
 abbreviation "U \<equiv> until filesystem"
 abbreviation "X \<equiv> neXt filesystem"
 abbreviation "F \<equiv> eventually filesystem"
 
-fun logout :: "(statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> bool" where
+fun logout :: "(statename \<times> outputs \<times> state) \<Rightarrow> event \<Rightarrow> bool" where
 "logout (s, p, r) (l, i) = (l=''logout'')"
 
-fun access_denied :: "(statename \<times> outputs \<times> registers) \<Rightarrow> event \<Rightarrow> bool" where
+fun access_denied :: "(statename \<times> outputs \<times> state) \<Rightarrow> event \<Rightarrow> bool" where
 "access_denied (s, p, r) (l, i) = (p=[0])"
 
 lemma "G (e#t) (\<lambda>(s, p, r) (l, i). 
@@ -269,7 +269,7 @@ lemma "G (e#t) (\<lambda>(s, p, r) (l, i).
     )
 )"
 
-lemma noChangeOwner: "globally2 (observe_fs t) (\<lambda>(state, (label, inputs), registers, outputs).
+lemma noChangeOwner: "globally2 (observe_fs t) (\<lambda>(state, (label, inputs), state, outputs).
   (
     (label = ''login'' \<and> inputs = [0] \<and> (until2 (observe_fs t) logout2 write))
   ) \<longrightarrow>

@@ -10,27 +10,27 @@ primrec apply_guards :: "guard list \<Rightarrow> state \<Rightarrow> bool" wher
   "apply_guards [] _ = True" |
   "apply_guards (h#t) s =  ((gval h s) \<and> (apply_guards t s))"
 
-primrec apply_updates :: "(string \<times> aexp) list \<Rightarrow> state \<Rightarrow> state \<Rightarrow> registers" where
+primrec apply_updates :: "(vname \<times> aexp) list \<Rightarrow> state \<Rightarrow> state \<Rightarrow> state" where
   "apply_updates [] _ new = new" |
   "apply_updates (h#t) old new = (\<lambda>x. if x = (fst h) then (aval (snd h) old) else (apply_updates t old new) x)"
 
-lemma "apply_updates [(''r1'', N 6)] <> <''r2'':=3> = <''r1'':=6, ''r2'':=3>"
+lemma "apply_updates [(R 1, N 6)] <> <R 2:=3> = <R 1:=6, R 2:=3>"
   apply (rule ext)
   by simp
 
-abbreviation is_possible_step :: "efsm \<Rightarrow> statename \<Rightarrow> statename \<Rightarrow> transition \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> bool" where
+abbreviation is_possible_step :: "efsm \<Rightarrow> statename \<Rightarrow> statename \<Rightarrow> transition \<Rightarrow> state \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> bool" where
 "is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (find (\<lambda>x . x = t) (T e(s,s')) \<noteq> None) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (join_ir i r)))"
 
-abbreviation possible_steps :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename * transition) list" where
+abbreviation possible_steps :: "efsm \<Rightarrow> statename \<Rightarrow> state \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename * transition) list" where
 "possible_steps e s r l i \<equiv> [(s',t) . s' \<leftarrow> S e, t \<leftarrow> T e(s,s'), is_possible_step e s s' t r l i]"
 
-definition step :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename \<times> outputs \<times> registers) option" where
+definition step :: "efsm \<Rightarrow> statename \<Rightarrow> state \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename \<times> outputs \<times> state) option" where
 "step e s r l i \<equiv>
   case (possible_steps e s r l i) of
     [(s',t)] \<Rightarrow> Some (s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r)) |
     _ \<Rightarrow> None"
 
-primrec observe_temp :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (statename \<times> event \<times> registers \<times> outputs) list" where
+primrec observe_temp :: "efsm \<Rightarrow> statename \<Rightarrow> state \<Rightarrow> trace \<Rightarrow> (statename \<times> event \<times> state \<times> outputs) list" where
   "observe_temp e s r [] = []" |
   "observe_temp e s r (h#t) =
     (case (step e s r (fst h) (snd h)) of
@@ -38,7 +38,7 @@ primrec observe_temp :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<
       _ \<Rightarrow> []
     )"
 
-primrec observe_all :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (statename \<times> outputs \<times> registers) list" where
+primrec observe_all :: "efsm \<Rightarrow> statename \<Rightarrow> state \<Rightarrow> trace \<Rightarrow> (statename \<times> outputs \<times> state) list" where
   "observe_all _ _ _ [] = []" |
   "observe_all e s r (h#t) = 
     (case (step e s r (fst h) (snd h)) of
@@ -46,7 +46,7 @@ primrec observe_all :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<R
       _ \<Rightarrow> []
     )"
 
-abbreviation observe_trace :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> observation" where
+abbreviation observe_trace :: "efsm \<Rightarrow> statename \<Rightarrow> state \<Rightarrow> trace \<Rightarrow> observation" where
   "observe_trace e s r t \<equiv> map (\<lambda>(x,y,z). y) (observe_all e s r t)"
 
 definition equiv :: "efsm \<Rightarrow> efsm \<Rightarrow> trace \<Rightarrow> bool" where

@@ -1,10 +1,9 @@
 theory Types
-  imports AExp "Show.Show_Instances" GExp
+  imports AExp GExp
 begin
 type_synonym label = string
 type_synonym arity = nat
 type_synonym inputs = "int list"
-type_synonym registers = state
 type_synonym outputs = "int list"
 type_synonym guard = "gexp"
 type_synonym output_function = "aexp"
@@ -29,22 +28,19 @@ record efsm =
   s0 :: statename
   T :: "(statename \<times> statename) \<Rightarrow> transition list"
 
-lemmas shows_stuff = showsp_int_def showsp_nat.simps shows_string_def null_state_def
-
-definition index :: "int \<Rightarrow> string" where
-  "index i = ''i''@(showsp_int (nat i) i '''')"
-
-lemma i1 [simp]: "index 1 = ''i1''"
-  by (simp add: shows_stuff index_def)
-
-primrec index2state :: "int list \<Rightarrow> int \<Rightarrow> state" where
+primrec index2state :: "int list \<Rightarrow> nat \<Rightarrow> state" where
   "index2state [] _ = <>" |
-  "index2state (h#t) i = (\<lambda>x. if x = index i then h else (index2state t (i+1)) x)"
+  "index2state (h#t) i = (\<lambda>x. if x = I i then h else (index2state t (i+1)) x)"
 
 abbreviation join_ir :: "int list \<Rightarrow> state \<Rightarrow> state" where
-  "join_ir i r \<equiv> (\<lambda>x. if hd x = CHR ''i'' then index2state i 1 x else r x)"
+  "join_ir i r \<equiv> (\<lambda>x. case x of
+    R n \<Rightarrow> r (R n) |
+    I n \<Rightarrow> (index2state i 1) (I n)
+  )"
 
-lemma "join_ir [1, 2] <> = <''i1'':=1, ''i2'':=2>"
+lemma "join_ir [1, 2] <> = <I 1:=1, I 2:=2>"
   apply (rule ext)
-  by (simp add: shows_stuff index_def)
+  apply (case_tac x)
+   apply simp
+  by simp
 end

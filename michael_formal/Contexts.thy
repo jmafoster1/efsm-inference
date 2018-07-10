@@ -7,7 +7,7 @@ type_synonym "context" = "aexp \<Rightarrow> cexp"
 
 abbreviation empty ("\<lbrakk>\<rbrakk>") where
   "empty \<equiv> (\<lambda>x. case x of
-    (V v) \<Rightarrow> if hd v = CHR ''r'' then Undef else Bc True |
+    (V v) \<Rightarrow> (case v of R n \<Rightarrow> Undef | I n \<Rightarrow> Bc True) |
     _ \<Rightarrow> Bc True
   )"
 syntax 
@@ -49,6 +49,8 @@ definition consistent :: "context \<Rightarrow> bool" where
 
 theorem consistent_empty_1: "empty r = Undef \<or> empty r = Bc True"
   apply (cases r)
+  prefer 2
+    apply (case_tac x2)
   by simp_all
 
 theorem consistent_empty_2: "(\<forall>r. c r = Bc True \<or> c r = Undef) \<longrightarrow> consistent c"
@@ -78,11 +80,11 @@ primrec pair_and :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp
   "pair_and (h#t) c = pair_and t (and_insert c h)"
 
 fun guard2context :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cexp) list" where
-  "guard2context a (gexp.Bc v) = [(V '''', Bc v)]" |
+  "guard2context a (gexp.Bc v) = [(N 0, Bc v)]" |
   
-  "guard2context a (gexp.Eq (N n) (N n')) = (if n = n' then [] else [(V '''', Bc False)])" |
-  "guard2context a (gexp.Gt (N n) (N n')) = (if n > n' then [] else [(V '''', Bc False)])" |
-  "guard2context a (gexp.Lt (N n) (N n')) = (if n < n' then [] else [(V '''', Bc False)])" |
+  "guard2context a (gexp.Eq (N n) (N n')) =  [(N n, Eq n')]" |
+  "guard2context a (gexp.Gt (N n) (N n')) =  [(N n, Gt n')]" |
+  "guard2context a (gexp.Lt (N n) (N n')) =  [(N n, Lt n')]" |
 
   "guard2context a (gexp.Eq v (N n)) = [(v, Eq n)]" |
   "guard2context a (gexp.Eq (N n) v) = [(v, Eq n)]" |
@@ -132,7 +134,7 @@ primrec posterior_sequence :: "transition list \<Rightarrow> context \<Rightarro
   "posterior_sequence [] c = c" |
   "posterior_sequence (h#t) c = posterior_sequence t (posterior c h)"
 
-lemma "medial empty [] = empty"
+lemma medial_empty: "medial empty [] = empty"
   by simp
 
 (* Widening the precondition and reducing nondeterminism *)

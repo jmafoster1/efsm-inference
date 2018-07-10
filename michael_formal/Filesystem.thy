@@ -1,13 +1,38 @@
-theory Filesystem_Fixed
-imports Filesystem
+theory Filesystem
+imports EFSM
 begin
 
 (* Takes a user ID and stores it in r1 *)
+definition login :: "transition" where
+"login \<equiv> \<lparr>
+        Label = ''login'',
+        Arity = 1,
+        Guard = [],
+        Outputs = [],
+        Updates = [
+                    (R 1, (V (I 1))) (* Store the user ID in r1 *)
+                  ]
+      \<rparr>"
+
+(* Logs out the current user *)
+definition logout :: "transition" where
+"logout \<equiv> \<lparr>
+        Label = ''logout'',
+        Arity = 0,
+        Guard = [], (* No guards *)
+        Outputs = [],
+        Updates = [ (* Two updates: *)
+                    (R 1, (V (R 1))), (* Value of r1 remains unchanged *)
+                    (R 2, (V (R 2))), (* Value of r2 remains unchanged *)
+                    (R 3, (V (R 3)))  (* Value of r3 remains unchanged *)
+                  ]
+      \<rparr>"
+
 definition "write" :: "transition" where
 "write \<equiv> \<lparr>
         Label = ''write'',
         Arity = 1,
-        Guard = [(Eq (V (R 1)) (V (R 3)))], (* No guards *)
+        Guard = [], (* No guards *)
         Outputs = [],
         Updates = [ 
                     (R 1, (V (R 1))), (* Value of r1 remains unchanged *)
@@ -23,6 +48,32 @@ definition "write_fail" :: "transition" where
         Guard = [(Ne (V (R 3)) (V (R 1)))], (* No guards *)
         Outputs = [(N 0)],
         Updates = []
+      \<rparr>"
+
+definition read_success :: "transition" where
+"read_success \<equiv> \<lparr>
+        Label = ''read'',
+        Arity = 0,
+        Guard = [Eq (V (R 1)) (V (R 3))], (* No guards *)
+        Outputs = [(V (R 2))],
+        Updates = [ (* Two updates: *)
+                    (R 1, (V (R 1))), (* Value of r1 remains unchanged *)
+                    (R 2, (V (R 2))), (* Value of r2 remains unchanged *)
+                    (R 3, (V (R 3)))  (* Value of r3 remains unchanged *)
+                  ]
+      \<rparr>"
+
+definition read_fail :: "transition" where
+"read_fail \<equiv> \<lparr>
+        Label = ''read'',
+        Arity = 0,
+        Guard = [Ne (V (R 1)) (V (R 3))], (* No guards *)
+        Outputs = [(N 0)],
+        Updates = [ 
+                    (R 1, (V (R 1))), (* Value of r1 remains unchanged *)
+                    (R 2, (V (R 2))), (* Value of r2 remains unchanged *)
+                    (R 3, (V (R 3)))  (* Value of r3 remains unchanged *)
+                  ]
       \<rparr>"
 
 definition filesystem :: "efsm" where

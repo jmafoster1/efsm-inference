@@ -2,7 +2,7 @@ theory AExp
   imports Main
 begin
 
-type_synonym vname = string
+datatype vname = I nat | R nat
 type_synonym val = int
 type_synonym state = "vname \<Rightarrow> val"
 
@@ -21,6 +21,7 @@ syntax
 translations
   "_State ms" == "_Update <> ms"
   "_State (_updbinds b bs)" <= "_Update (_State b) bs"
+declare null_state_def [simp]
 
 fun asimp_const :: "aexp \<Rightarrow> aexp" where
 "asimp_const (N n) = N n" |

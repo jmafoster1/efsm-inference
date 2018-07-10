@@ -1,50 +1,8 @@
 theory drinks_machine_string
-  imports EFSM CExp
+  imports drinks_machine
 begin
 
-definition t1 :: "transition" where
-"t1 \<equiv> \<lparr>
-        Label = ''select'',
-        Arity = 1,
-        Guard = [], (* No guards *)
-        Outputs = [],
-        Updates = [ (* Two updates: *)
-                    (''r1'', (V ''i1'')), (*  Firstly set value of r1 to value of i1 *)
-                    (''r2'', (N 0)) (* Secondly set the value of r2 to literal zero *)
-                  ]
-      \<rparr>"
 
-definition t2 :: "transition" where
-"t2 \<equiv> \<lparr>
-        Label = ''coin'',
-        Arity = 1,
-        Guard = [], (* No guards *)
-        Outputs = [(Plus (V ''r2'') (V ''i1''))], (* This could also be written infix with ''+'' *)
-        Updates = [
-                    (''r1'', (V ''r1'')), (* The value of r1 is unchanged *)
-                    (''r2'', (Plus (V ''r2'') (V ''i1''))) (* The value of r2 is increased by the value of i1 *)
-                  ]
-      \<rparr>"
-
-definition t3 :: "transition" where
-"t3 \<equiv> \<lparr>
-        Label = ''vend'',
-        Arity = 0,
-        Guard = [(Ge (V ''r2'') (N 100))], (* This is syntactic sugar for ''Not (Lt (V ''r2'') (N 100))'' which could also appear *)
-        Outputs =  [(V ''r1''), (Minus (V ''r2'') (N 100))],
-        Updates = [(''r1'', (V ''r1'')), (''r2'', (V ''r2''))]
-      \<rparr>"
-
-definition vend :: "efsm" where
-"vend \<equiv> \<lparr> 
-          S = [1,2,3],
-          s0 = 1,
-          T = \<lambda> (a,b) .
-              if (a,b) = (1,2) then [t1] (* If we want to go from state 1 to state 2 then t1 will do that *)
-              else if (a,b) = (2,2) then [t2] (* If we want to go from state 2 to state 2 then t2 will do that *)
-              else if (a,b) = (2,3) then [t3] (* If we want to go from state 2 to state 3 then t3 will do that *)
-              else [] (* There are no other transitions *)
-         \<rparr>"
 
 (*
   These are lemmas about the machine which could maybe be in another file.
