@@ -53,7 +53,7 @@ lemma foo: "\<not> (x \<noteq> V (R 1) \<and> x \<noteq> V (R 2) \<and> (x = V (
 
 lemma consistent_medial_t2: "consistent \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq 0\<rbrakk>"
   apply (simp add: consistent_def)
-  apply (rule_tac x="<R 1 := Some 0, R 2 := Some 0>" in exI)
+  apply (rule_tac x="<R 1 := 0, R 2 := 0>" in exI)
   apply simp
   using consistent_empty_4 by auto
 
@@ -100,7 +100,7 @@ lemma "\<not>Contexts.can_take t3 t1_posterior"
 
 lemma consistent_t1_posterior: "consistent t1_posterior"
   apply (simp add: consistent_def)
-  apply (rule_tac x="<R 1 := Some 0, R 2 := Some 0>" in exI)
+  apply (rule_tac x="<R 1 := 0, R 2 := 0>" in exI)
   apply simp
   apply (rule allI)
   apply (case_tac r)
@@ -151,7 +151,7 @@ lemma valid_true: "valid c \<longrightarrow> cexp_equiv c (Bc True)"
 
 lemma consistent_medial_t2_3: "consistent (\<lambda>a. if a = V (R 2) then cexp.Eq 0 else if a = V (R 1) then cexp.Bc True else \<lbrakk>\<rbrakk> a)"
   apply (simp add: consistent_def)
-  apply (rule_tac x="<R 1 := Some 0, R 2 := Some 0>" in exI)
+  apply (rule_tac x="<R 1 := 0, R 2 := 0>" in exI)
   apply simp
   by (simp add: consistent_empty_4)
 
@@ -195,7 +195,7 @@ proof(induct n)
   case 0
   then show ?case 
     apply (simp add: consistent_def)
-    apply (rule_tac x="<R 1 := Some 0, R 2 := Some 0>" in exI)
+    apply (rule_tac x="<R 1 := 0, R 2 := 0>" in exI)
     apply simp
     using consistent_empty_4 by blast
 next
@@ -238,7 +238,7 @@ qed
 
 lemma can_take_t3: "0 < Suc n \<longrightarrow> Contexts.can_take t3 r1_r2_true"
   apply (simp add: can_take_def consistent_def t3_def)
-  apply (rule_tac x="<R 1 := Some 0, R 2 := Some 100>" in exI)
+  apply (rule_tac x="<R 1 := 0, R 2 := 100>" in exI)
   by (simp add: consistent_empty_4)
 
 lemma medial_t3: "medial r1_r2_true (Guard t3) = \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> And (Geq 100) (Geq 100)\<rbrakk>"
@@ -248,7 +248,7 @@ lemma medial_t3: "medial r1_r2_true (Guard t3) = \<lbrakk>(V (R 1)) \<mapsto> Bc
 
 lemma consistent_medial_t3: "consistent \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> And (Geq 100) (Geq 100)\<rbrakk>"
   apply (simp add: consistent_def)
-  apply (rule_tac x="<R 1 := Some 0, R 2 := Some 100>" in exI)
+  apply (rule_tac x="<R 1 := 0, R 2 := 100>" in exI)
   apply simp
   using consistent_empty_4 by auto
  

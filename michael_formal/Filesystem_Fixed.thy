@@ -49,18 +49,18 @@ primrec all :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool
 
 (* noChangeOwner: THEOREM filesystem |- G(cfstate /= NULL_STATE) => FORALL (owner : UID): G((label=write AND r_1=owner) => F(G((label=read AND r_1/=owner) => X(op_1_read_0 = accessDenied)))); *)
 
-lemma r_equals_r [simp]: "<R 1:=user, R 2:=content, R 3:=owner> = (\<lambda>a. if a = R 3 then owner else if a = R 2 then content else if a = R 1 then user else <> a)"
+lemma r_equals_r [simp]: "<R 1:=user, R 2:=content, R 3:=owner> = (\<lambda>a. if a = R 3 then Some owner else if a = R 2 then Some content else if a = R 1 then Some user else <> a)"
   apply (rule ext)
   by simp
 
-lemma read_2:  " r = <R 1:=Some user, R 2:=Some content, R 3:=Some owner> \<Longrightarrow>
+lemma read_2:  " r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
     step filesystem 2 r ''read'' [] = Some (2, [0], r)"
   apply (simp add: fs_simp step_def)
   apply (rule ext)
   by simp
 
-lemma logout_2:  " r = <R 1:=Some user, R 2:=Some content, R 3:=Some owner> \<Longrightarrow>
+lemma logout_2:  " r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
     step filesystem 2 r ''logout'' [] = Some (1, [], r)"
   apply (simp add: fs_simp step_def)

@@ -38,7 +38,7 @@ abbreviation join_ir :: "int list \<Rightarrow> state \<Rightarrow> state" where
     I n \<Rightarrow> (index2state i 1) (I n)
   )"
 
-lemma "join_ir [1, 2] <> = <I 1:=Some 1, I 2:=Some 2>"
+lemma "join_ir [1, 2] <> = [I 1:=1, I 2:= 2]"
   apply (rule ext)
   apply (case_tac x)
    apply simp

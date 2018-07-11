@@ -75,7 +75,7 @@ lemma medial_t2: "medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<maps
 
 lemma consistent_medial_t2: "consistent (medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq n\<rbrakk> (Guard t2))"
   apply (simp add: t2_def consistent_def del: Nat.One_nat_def)
-  apply (rule_tac x="<R 1 := Some 1, R 2 := Some n, I 1 := Some 50>" in exI)
+  apply (rule_tac x="<R 1 := 1, R 2 := n, I 1 := 50>" in exI)
   by (simp add: consistent_empty_4)
 
 lemma compose_plus_n_50: "(compose_plus (Eq n) (Eq 50)) = Eq (n+50)"
@@ -91,13 +91,13 @@ lemma t2_posterior: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) 
 
 lemma consistent_medial_t2': "consistent (medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq n, V (I 1) \<mapsto> cexp.Eq 50\<rbrakk> (Guard t2'))"
   apply (simp add: t2'_def consistent_def del: One_nat_def)
-  apply (rule_tac x="<R 1 := Some 0, R 2 := Some n, I 1 := Some 50>" in exI)
+  apply (rule_tac x="<R 1 := 0, R 2 := n, I 1 := 50>" in exI)
   apply (simp del: One_nat_def)
   by (simp add: consistent_empty_4)
 
 lemma consistent_medial_t2'_2: "consistent (medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq n\<rbrakk> (Guard t2'))"
   apply (simp add: t2'_def consistent_def del: One_nat_def)
-  apply (rule_tac x="<R 1 := Some 0, R 2 := Some n, I 1 := Some 50>" in exI)
+  apply (rule_tac x="<R 1 := 0, R 2 := n, I 1 := 50>" in exI)
   apply (simp del: One_nat_def)
   by (simp add: consistent_empty_4)
 
@@ -124,7 +124,7 @@ lemma "subsumes \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq n\<rbra
    apply auto[1]
   apply (simp add: posterior_t2' del: Nat.One_nat_def)
   apply (simp add: consistent_def)
-  apply (rule_tac x="<R 1 := Some 0, R 2 := Some 0>" in exI)
+  apply (rule_tac x="<R 1 := 0, R 2 := 0>" in exI)
   apply simp
   by (simp add: consistent_empty_4)
 end

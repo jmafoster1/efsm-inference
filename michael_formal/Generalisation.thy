@@ -121,7 +121,7 @@ lemma medial_coin50: "medial \<lbrakk>\<rbrakk> (Guard coin50) = \<lbrakk>V (I 1
 
 lemma consistent_medial_coin50: "consistent (medial \<lbrakk>\<rbrakk> (Guard coin50))"
   apply (simp add: consistent_def medial_coin50)
-  apply (rule_tac x="<I 1 := Some 50>" in exI)
+  apply (rule_tac x="<I 1 := 50>" in exI)
   apply simp
   by (simp add: consistent_empty_4)
 
@@ -154,7 +154,7 @@ lemma posterior_coin_inc_r1_true: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc 
 
 lemma consistent_medial_coin50_true: "consistent (medial \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True\<rbrakk> (Guard coin50))"
   apply (simp add: coin50_def consistent_def del: Nat.One_nat_def)
-  apply (rule_tac x="<I 1 := Some 50>" in exI)
+  apply (rule_tac x="<I 1 := 50>" in exI)
   apply simp
   using consistent_empty_4 by auto
 
@@ -184,7 +184,7 @@ lemma "\<not> subsumes empty vends_g vends"
 
 lemma consistent_medial_vends_g: "consistent (medial \<lbrakk>V (R (Suc 0)) \<mapsto> Geq 100\<rbrakk> (Guard vends_g))"
   apply (simp add: vends_g_def consistent_def)
-  apply (rule_tac x="<R 1 := Some 100>" in exI)
+  apply (rule_tac x="<R 1 := 100>" in exI)
   by (simp add: consistent_empty_4)
 
 lemma posterior_vends_g: "posterior \<lbrakk>V (R 1) \<mapsto> Geq 100\<rbrakk> vends_g =  \<lbrakk>\<rbrakk>"
@@ -193,7 +193,7 @@ lemma posterior_vends_g: "posterior \<lbrakk>V (R 1) \<mapsto> Geq 100\<rbrakk> 
 
 lemma consistent_medial_vends: "consistent (medial \<lbrakk>V (R (Suc 0)) \<mapsto> Geq 100\<rbrakk> (Guard vends))"
   apply (simp add: vends_def consistent_def)
-  apply (rule_tac x="<R 1 := Some 100>" in exI)
+  apply (rule_tac x="<R 1 := 100>" in exI)
   by (simp add: consistent_empty_4)
 
 lemma posterior_vends: "posterior \<lbrakk>V (R 1) \<mapsto> Geq 100\<rbrakk> vends = \<lbrakk>\<rbrakk>"
@@ -239,7 +239,7 @@ lemma medial_test1: "medial empty (Guard test1) = (\<lambda>i. if i = V (I 1) th
 
 lemma consistent_medial_test1: "consistent (medial empty (Guard test1))"
   apply (simp add: medial_test1 consistent_def)
-  apply (rule_tac x="<I 1 := Some 6>" in exI)
+  apply (rule_tac x="<I 1 := 6>" in exI)
   apply simp
   by (simp add: consistent_empty_4)
 
@@ -251,7 +251,7 @@ lemma medial_test2: "medial empty (Guard test2) = (\<lambda>i. if i = V (I 1) th
 lemma test2_subsumes_test1_aux1: "let c' = medial (\<lambda>i. if i = V (I 1) then cexp.Eq 6 else \<lbrakk>\<rbrakk> i) (Guard test2)
                    in consistent c'"
   apply (simp add: test2_def consistent_def)
-  apply (rule_tac x="<I 1 := Some 6>" in exI)
+  apply (rule_tac x="<I 1 := 6>" in exI)
   by (simp add: consistent_empty_4)
 
 lemma posterior_test1: "posterior \<lbrakk>\<rbrakk> test1 = \<lbrakk>V (R 1) \<mapsto> Eq 6\<rbrakk>"
@@ -262,7 +262,7 @@ lemma posterior_test1: "posterior \<lbrakk>\<rbrakk> test1 = \<lbrakk>V (R 1) \<
 
 lemma consistent_medial_test2: "consistent (medial \<lbrakk>\<rbrakk> (Guard test2))"
   apply (simp add: test2_def consistent_def)
-  apply (rule_tac x="<I 1 := Some 6>" in exI)
+  apply (rule_tac x="<I 1 := 6>" in exI)
   by (simp add: consistent_empty_4)
 
 lemma posterior_test2: "(posterior \<lbrakk>\<rbrakk> test2) = \<lbrakk>V (R 1) \<mapsto> Gt 0\<rbrakk>"
@@ -278,7 +278,7 @@ lemma medial_test2_2: "medial (\<lambda>i. if i = V (I 1) then cexp.Eq 6 else \<
 
 lemma consistent_medial_test2_2:"consistent (medial (\<lambda>i. if i = V (I (Suc 0)) then cexp.Eq 6 else \<lbrakk>\<rbrakk> i) (Guard test2))"
   apply (simp add: consistent_def test2_def)
-  apply (rule_tac x="<I 1 := Some 6>" in exI, simp)
+  apply (rule_tac x="<I 1 := 6>" in exI, simp)
   by (simp add: consistent_empty_4)
 
 lemma posterior_test2_2: "posterior (\<lambda>i. if i = V (I 1) then cexp.Eq 6 else \<lbrakk>\<rbrakk> i) test2 = \<lbrakk>V (R 1) \<mapsto> And (cexp.Eq 6) (cexp.Gt 0)\<rbrakk>"
@@ -289,7 +289,7 @@ lemma posterior_test2_2: "posterior (\<lambda>i. if i = V (I 1) then cexp.Eq 6 e
 
 lemma test2_subsumes_test1_aux2: "consistent (posterior \<lbrakk>\<rbrakk> test2)"
   apply (simp add: posterior_test2 consistent_def)
-  apply (rule_tac x="<R 1 := Some 1>" in exI)
+  apply (rule_tac x="<R 1 := 1>" in exI)
   by (simp add: consistent_empty_4)
 
 lemma test2_subsumes_test1: "subsumes \<lbrakk>\<rbrakk> test2 test1"
