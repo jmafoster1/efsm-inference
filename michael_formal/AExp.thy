@@ -21,22 +21,7 @@ declare null_state_def [simp]
 syntax
   "_maplet"  :: "['a, 'a] \<Rightarrow> maplet"             ("_ /:=/ _")
   "_maplets" :: "['a, 'a] \<Rightarrow> maplet"             ("_ /[:=]/ _")
-  ""         :: "maplet \<Rightarrow> maplets"             ("_")
-  "_Maplets" :: "[maplet, maplets] \<Rightarrow> maplets" ("_,/ _")
-  "_MapUpd"  :: "['a \<rightharpoonup> 'b, maplets] \<Rightarrow> 'a \<rightharpoonup> 'b" ("_/'(_')" [900, 0] 900)
   "_Map"     :: "maplets \<Rightarrow> 'a \<rightharpoonup> 'b"            ("(1<_>)")
-
-syntax (ASCII)
-  "_maplet"  :: "['a, 'a] \<Rightarrow> maplet"             ("_ /|->/ _")
-  "_maplets" :: "['a, 'a] \<Rightarrow> maplet"             ("_ /[|->]/ _")
-
-translations
-  "_MapUpd m (_Maplets xy ms)"  \<rightleftharpoons> "_MapUpd (_MapUpd m xy) ms"
-  "_Map ms"                     \<rightleftharpoons> "_MapUpd (CONST empty) ms"
-  "_Map (_Maplets ms1 ms2)"     \<leftharpoondown> "_MapUpd (_Map ms1) ms2"
-  "_Maplets ms1 (_Maplets ms2 ms3)" \<leftharpoondown> "_Maplets (_Maplets ms1 ms2) ms3"
-
-
 
 fun asimp_const :: "aexp \<Rightarrow> aexp" where
 "asimp_const (N n) = N n" |

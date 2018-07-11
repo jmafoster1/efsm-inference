@@ -14,7 +14,7 @@ primrec apply_updates :: "(vname \<times> aexp) list \<Rightarrow> state \<Right
   "apply_updates [] _ new = new" |
   "apply_updates (h#t) old new = (\<lambda>x. if x = (fst h) then Some (aval (snd h) old) else (apply_updates t old new) x)"
 
-lemma "apply_updates [(R 1, N 6)] <> <R 2:= Some 3> = <R 1:= Some 6, R 2:= Some 3>"
+lemma "apply_updates [(R 1, N 6)] <> <R 2:= 3> = <R 1:= 6, R 2:= 3>"
   apply (rule ext)
   by simp
 
