@@ -1,7 +1,7 @@
 theory GExp
 imports AExp
 begin
-datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Lt aexp aexp | Nor gexp gexp
+datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Lt aexp aexp | Nor gexp gexp | Null vname
 
 abbreviation gNot :: "gexp \<Rightarrow> gexp" where
   "gNot g \<equiv> Nor g g"
@@ -27,12 +27,13 @@ lemma "\<not> (x \<or> y) = (\<not> x \<and> \<not> y)"
 abbreviation gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" where
   "gAnd v va \<equiv> Nor (Nor v v) (Nor va va)"
 
-fun gval :: "gexp \<Rightarrow> state \<Rightarrow> bool" where
+fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool" where
   "gval (Bc b) _ = b" |
   "gval (Lt a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s < aval a\<^sub>2 s)" |
   "gval (Gt a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s > aval a\<^sub>2 s)" |
   "gval (Eq a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s = aval a\<^sub>2 s)" |
-  "gval (Nor a\<^sub>1 a\<^sub>2) s = (\<not> (gval a\<^sub>1 s \<or> gval a\<^sub>2 s))"
+  "gval (Nor a\<^sub>1 a\<^sub>2) s = (\<not> (gval a\<^sub>1 s \<or> gval a\<^sub>2 s))" |
+  "gval (Null v) s = (s v = None)"
 
 lemma "gval (gOr x y) r = gval x r \<or> gval y r"
   apply simp

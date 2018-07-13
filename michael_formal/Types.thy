@@ -28,11 +28,11 @@ record efsm =
   s0 :: statename
   T :: "(statename \<times> statename) \<Rightarrow> transition list"
 
-primrec index2state :: "int list \<Rightarrow> nat \<Rightarrow> state" where
+primrec index2state :: "int list \<Rightarrow> nat \<Rightarrow> datastate" where
   "index2state [] _ = <>" |
   "index2state (h#t) i = (\<lambda>x. if x = I i then Some h else (index2state t (i+1)) x)"
 
-abbreviation join_ir :: "int list \<Rightarrow> state \<Rightarrow> state" where
+abbreviation join_ir :: "int list \<Rightarrow> datastate \<Rightarrow> datastate" where
   "join_ir i r \<equiv> (\<lambda>x. case x of
     R n \<Rightarrow> r (R n) |
     I n \<Rightarrow> (index2state i 1) (I n)

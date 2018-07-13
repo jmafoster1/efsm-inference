@@ -16,6 +16,20 @@ definition "write" :: "transition" where
                   ]
       \<rparr>"
 
+(* Create the file if it doesn't already exist *)
+definition create :: "transition" where
+"create \<equiv> \<lparr>
+        Label = ''create'',
+        Arity = 0,
+        Guard = [(Null (R 3))],
+        Outputs = [],
+        Updates = [ 
+                    (R 1, (V (R 1))),
+                    (R 2, (V (R 2))),
+                    (R 3, (V (R 1)))  (* Initialise the current user as the file owner *)
+                  ]
+      \<rparr>"
+
 definition "write_fail" :: "transition" where
 "write_fail \<equiv> \<lparr>
         Label = ''write'',
@@ -32,17 +46,16 @@ definition filesystem :: "efsm" where
           T = \<lambda> (a,b) .
               if (a,b) = (1,2) then [login]
               else if (a,b) = (2,1) then [logout]
-              else if (a,b) = (2,2) then [write, read_success, read_fail, write_fail]
+              else if (a,b) = (2,2) then [write, read_success, read_fail, write_fail, create]
               else []
          \<rparr>"
 
 (* export_code filesystem in "Scala" *)
 
-lemmas fs_simp = filesystem_def login_def logout_def write_def read_success_def read_fail_def write_fail_def
+lemmas fs_simp = filesystem_def login_def logout_def write_def read_success_def read_fail_def write_fail_def create_def
 
-primrec all :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" where
-  "all [] _ = True" |
-  "all (h#t) f = (if f h then all t f else False)"
+lemma "observe_trace filesystem (s0 filesystem) <> [(''login'', [1]), (''create'', []), (''write'', [50]), (''read'', [])] = [[], [], [], [50]]"
+  by (simp add: fs_simp step_def)
 
 (* step :: efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename \<times> outputs \<times> registers) option *)
 (* observe_trace :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> observation" where *)
