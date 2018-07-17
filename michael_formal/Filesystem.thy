@@ -54,7 +54,7 @@ definition read_success :: "transition" where
 "read_success \<equiv> \<lparr>
         Label = ''read'',
         Arity = 0,
-        Guard = [Eq (V (R 1)) (V (R 3))], (* No guards *)
+        Guard = [Eq (V (R 1)) (V (R 3)), (gNot (Null (R 2)))], (* No guards *)
         Outputs = [(V (R 2))],
         Updates = [ (* Two updates: *)
                     (R 1, (V (R 1))), (* Value of r1 remains unchanged *)
@@ -67,7 +67,7 @@ definition read_fail :: "transition" where
 "read_fail \<equiv> \<lparr>
         Label = ''read'',
         Arity = 0,
-        Guard = [Ne (V (R 1)) (V (R 3))], (* No guards *)
+        Guard = [(gOr (Ne (V (R 1)) (V (R 3))) (Null (R 2)))],
         Outputs = [(N 0)],
         Updates = [ 
                     (R 1, (V (R 1))), (* Value of r1 remains unchanged *)

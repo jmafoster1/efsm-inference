@@ -34,7 +34,7 @@ definition "write_fail" :: "transition" where
 "write_fail \<equiv> \<lparr>
         Label = ''write'',
         Arity = 1,
-        Guard = [(Ne (V (R 3)) (V (R 1)))], (* No guards *)
+        Guard = [(Ne (V (R 3)) (V (R 1)))],
         Outputs = [(N 0)],
         Updates = []
       \<rparr>"

@@ -24,8 +24,8 @@ abbreviation is_possible_step :: "efsm \<Rightarrow> statename \<Rightarrow> sta
 abbreviation possible_steps :: "efsm \<Rightarrow> statename \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename * transition) list" where
 "possible_steps e s r l i \<equiv> [(s',t) . s' \<leftarrow> S e, t \<leftarrow> T e(s,s'), is_possible_step e s s' t r l i]"
 
-definition step :: "efsm \<Rightarrow> statename \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename \<times> outputs \<times> datastate) option" where
-"step e s r l i \<equiv>
+definition step :: "efsm \<Rightarrow> statename \<Rightarrow> datastate \<Rightarrow> (label \<times> inputs) \<Rightarrow> (statename \<times> outputs \<times> datastate) option" where
+"step e s r (l, i) \<equiv>
   case (possible_steps e s r l i) of
     [(s',t)] \<Rightarrow> Some (s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r)) |
     _ \<Rightarrow> None"
