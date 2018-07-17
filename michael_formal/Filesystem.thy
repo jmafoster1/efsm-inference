@@ -86,6 +86,8 @@ definition filesystem :: "efsm" where
               else if (a,b) = (2,2) then [write, read_success, read_fail, write_fail]
               else []
          \<rparr>"
+lemma so_filesystem [simp]: "s0 filesystem = 1"
+  by (simp add: filesystem_def)
 
 (* export_code filesystem in "Scala" *)
 
