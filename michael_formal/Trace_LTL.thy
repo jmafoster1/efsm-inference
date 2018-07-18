@@ -43,31 +43,12 @@ lemma valid_step: "valid_trace_aux e s d t \<Longrightarrow> step e s d (fst (sh
 lemma invalid_step: "step e s d (fst (shd t)) (snd (shd t)) = None \<Longrightarrow> \<not> valid_trace_aux e s d t"
   using valid_step by blast
 
-lemma login_wrong_arity: "\<not> (fst (shd t) = ''login'' \<and> length (snd (shd t)) = Suc 0) \<Longrightarrow> step filesystem 1 <> (fst (shd t)) (snd (shd t)) = None"
-  by (simp add: step_def fs_simp)
-
-lemma "fst (shd t) = ''login'' \<longrightarrow> length (snd (shd t)) \<noteq> Suc 0 \<Longrightarrow> \<not> valid_trace_aux filesystem 1 Map.empty t"
-  apply (rule ccontr)
-  apply simp
-  
-
-
-lemma "valid_trace_aux filesystem 1 Map.empty t \<Longrightarrow> fst (shd t) = ''login'' \<and> length (snd (shd t)) = 1"
-  apply simp
-  apply (rule ccontr)
-  apply simp
-
-
-lemma "valid_trace filesystem t \<Longrightarrow> globally filesystem 1 <> [] t (\<lambda>s d p e. s = 1 \<or> s = 2)"
+lemma globally_true: "valid_trace_aux e s d t \<Longrightarrow> globally e s d p t (\<lambda> s d p e. True)"
 proof (coinduction)
 case globally
   then show ?case
     apply simp
-    apply (rule_tac x=2 in exI)
-    apply (rule_tac x="[]" in exI)
-    apply (rule_tac x="<R 1 := hd (snd (shd t))>" in exI)
-    apply simp
-    apply safe
+    sorry
 qed
   
 end
