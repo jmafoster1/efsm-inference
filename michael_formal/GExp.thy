@@ -27,10 +27,16 @@ lemma "\<not> (x \<or> y) = (\<not> x \<and> \<not> y)"
 abbreviation gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" where
   "gAnd v va \<equiv> Nor (Nor v v) (Nor va va)"
 
+fun MaybeBoolInt :: "(int \<Rightarrow> int \<Rightarrow> bool) \<Rightarrow> value \<Rightarrow> value \<Rightarrow> bool" where
+"MaybeBoolInt _ Nope _ = False"
+|"MaybeBoolInt _ _ Nope = False"
+|"MaybeBoolInt f ((Num a)) ((Num b)) = (f a b)"
+|"MaybeBoolInt _ _ _ = False"
+
 fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool" where
   "gval (Bc b) _ = b" |
-  "gval (Lt a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s < aval a\<^sub>2 s)" |
-  "gval (Gt a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s > aval a\<^sub>2 s)" |
+  "gval (Lt a\<^sub>1 a\<^sub>2) s = MaybeBoolInt less (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
+  "gval (Gt a\<^sub>1 a\<^sub>2) s = MaybeBoolInt greater (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
   "gval (Eq a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s = aval a\<^sub>2 s)" |
   "gval (Nor a\<^sub>1 a\<^sub>2) s = (\<not> (gval a\<^sub>1 s \<or> gval a\<^sub>2 s))" |
   "gval (Null v) s = (s v = None)"
