@@ -1,5 +1,5 @@
 theory Contexts
-imports Types EFSM CExp
+imports EFSM CExp
 
 begin
 
@@ -19,7 +19,8 @@ translations
   "_Context (_updbinds b bs)" <= "_Update (_Context b) bs"
 
 fun get :: "context \<Rightarrow> aexp \<Rightarrow> cexp" where
-  "get c (N n) = Eq n" |
+  "get c (N n) = Eq (Num n)" |
+  "get c (aexp.S n) = Eq (Str n)" |
   "get c (V v) = c (V v)" |
   "get c (Plus v va) = (And (c (Plus v va)) (c (Plus va v)))" |
   "get c (Minus v va) = (c (Minus v va))"
@@ -37,9 +38,15 @@ definition context_equiv :: "context \<Rightarrow> context \<Rightarrow> bool" w
 fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow> gexp" where
   "cexp2gexp _ (Bc b) = gexp.Bc b" |
   "cexp2gexp a Undef = gexp.Bc False" |
-  "cexp2gexp a (Eq v) = gexp.Eq a (N v)" |
-  "cexp2gexp a (Lt v) = gexp.Lt a (N v)" |
-  "cexp2gexp a (Gt v) = gexp.Gt a (N v)" |
+  "cexp2gexp a (Eq (Num v)) = gexp.Eq a (N v)" |
+  "cexp2gexp a (Eq (Str v)) = gexp.Eq a (aexp.S v)" |
+  "cexp2gexp a (Eq Nope) = gexp.Bc False" |
+  "cexp2gexp a (Lt Nope) = gexp.Bc False" |
+  "cexp2gexp a (Gt Nope) = gexp.Bc False" |
+  "cexp2gexp a (Lt (Str va)) = gexp.Bc False" |
+  "cexp2gexp a (Gt (Str va)) = gexp.Bc False" |
+  "cexp2gexp a (Lt (Num v)) = gexp.Lt a (N v)" |
+  "cexp2gexp a (Gt (Num v)) = gexp.Gt a (N v)" |
   "cexp2gexp a (Not v) = gNot (cexp2gexp a v)" |
   "cexp2gexp a (And v va) = gAnd (cexp2gexp a v) (cexp2gexp a va)"
   
@@ -81,21 +88,22 @@ primrec pair_and :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp
 
 fun guard2context :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cexp) list" where
   "guard2context a (gexp.Bc v) = [(N 0, Bc v)]" |
+  "guard2context a (gexp.Null v) = [(V v, Undef)]" |
   
-  "guard2context a (gexp.Eq (N n) (N n')) =  [(N n, Eq n')]" |
-  "guard2context a (gexp.Gt (N n) (N n')) =  [(N n, Gt n')]" |
-  "guard2context a (gexp.Lt (N n) (N n')) =  [(N n, Lt n')]" |
+  "guard2context a (gexp.Eq (N n) (N n')) =  [(N n, Eq (Num n'))]" |
+  "guard2context a (gexp.Gt (N n) (N n')) =  [(N n, Gt (Num n'))]" |
+  "guard2context a (gexp.Lt (N n) (N n')) =  [(N n, Lt (Num n'))]" |
 
-  "guard2context a (gexp.Eq v (N n)) = [(v, Eq n)]" |
-  "guard2context a (gexp.Eq (N n) v) = [(v, Eq n)]" |
+  "guard2context a (gexp.Eq v (N n)) = [(v, Eq (Num n))]" |
+  "guard2context a (gexp.Eq (N n) v) = [(v, Eq (Num n))]" |
   "guard2context a (gexp.Eq v vb) = [(v, get a vb), (vb, get a v)]" |
   
-  "guard2context a (gexp.Gt v (N n)) = [(v, (Gt n))]" |
-  "guard2context a (gexp.Gt (N n) v) = [(v, (Lt n))]" |
+  "guard2context a (gexp.Gt v (N n)) = [(v, (Gt (Num n)))]" |
+  "guard2context a (gexp.Gt (N n) v) = [(v, (Lt (Num n)))]" |
   "guard2context a (gexp.Gt v vb) = (let (cv, cvb) = apply_gt (get a v) (get a vb) in [(v, cv), (vb, cvb)])" |
 
-  "guard2context a (gexp.Lt v (N n)) = [(v, (Lt n))]" |
-  "guard2context a (gexp.Lt (N n) v) = [(v, (Gt n))]" |
+  "guard2context a (gexp.Lt v (N n)) = [(v, (Lt (Num n)))]" |
+  "guard2context a (gexp.Lt (N n) v) = [(v, (Gt (Num n)))]" |
   "guard2context a (gexp.Lt v vb) = (let (cv, cvb) = apply_lt (get a v) (get a vb) in [(v, cv), (vb, cvb)])" |
   "guard2context a (Nor v va) = (pair_and (map (\<lambda>x. ((fst x), not (snd x))) (guard2context a v)) (map (\<lambda>x. ((fst x), not (snd x))) (guard2context a va)))"
 
@@ -107,7 +115,8 @@ fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
   "apply_guard a g = conjoin a (pairs2context (guard2context a g))"
 
 fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function \<Rightarrow> context" where
-  "apply_update l c (v, (N n)) = update c (V v) (Eq n)" |
+  "apply_update l c (v, (N n)) = update c (V v) (Eq (Num n))" |
+  "apply_update l c (v, (aexp.S n)) = update c (V v) (Eq (Str n))" |
   "apply_update l c (v, V vb) = update c (V v) (l (V vb))" |
   "apply_update l c (v, Plus vb vc) = update c (V v) (compose_plus (get l vb) (get l vc))" |
   "apply_update l c (v, Minus vb vc) = update c (V v) (compose_minus (get l vb) (get l vc))"

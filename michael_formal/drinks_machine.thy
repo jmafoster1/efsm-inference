@@ -65,16 +65,18 @@ lemmas transitions = t1_def t2_def t3_def
 lemma "observe_trace vend (s0 vend) <> [] = []"
   by simp
 
-lemma "observe_trace vend (s0 vend) <> [(''select'', [1])] = [[]]"
+lemma "observe_trace vend (s0 vend) <> [(''select'', [Str ''coke''])] = [[]]"
   by (simp add: vend_def transitions step_def)
 
-lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50])] = [[], [50]]"
+lemma "observe_trace vend (s0 vend) <> [(''select'', [Str ''coke'']), (''coin'', [Num 50])] = [[], [Num 50]]"
   by (simp_all add: step_def vend_def transitions)
 
-lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50])] = [[], [50], [100]]"
+lemma "observe_trace vend (s0 vend) <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50])] = [[], [Num 50], [Num 100]]"
   by (simp add: step_def vend_def transitions)
 
-lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''coin'', [50]), (''coin'', [50]), (''vend'', [])] = [[], [50], [100], [1]]"
+value "apply_updates [(R 1, (V (I 1))),(R 2, (N 0))] <> <> (R 1)"
+
+lemma "observe_trace vend (s0 vend) <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] = [[], [Num 50], [Num 100], [Str ''coke'']]"
   by (simp add: step_def vend_def transitions)
 
 (*Stop when we hit a spurious input*)

@@ -12,16 +12,22 @@ fun value_plus :: "value \<Rightarrow> value \<Rightarrow> value" (infix "+" 40)
   "value_plus (Num x) (Num y) = Num (x+y)" |
   "value_plus _ _ = Nope"
 
+lemma plus_no_string [simp]:"value_plus a b \<noteq> Str x"
+  using value_plus.elims by blast
+
 fun value_minus :: "value \<Rightarrow> value \<Rightarrow> value" (infix "-" 40) where
   "value_minus (Num x) (Num y) = Num (x-y)" |
   "value_minus _ _ = Nope"
 
+lemma minus_no_string [simp]:"value_minus a b \<noteq> Str x"
+  using value_minus.elims by blast
+
 fun aval :: "aexp \<Rightarrow> datastate \<Rightarrow> value" where
-"aval (N n) s = Num n" |
-"aval (S n) s = Str n" |
-"aval (V x) s = (case s x of Some (Num y) \<Rightarrow> Num y | _ \<Rightarrow> Nope)" | (* Leave out when the case is None so we get a nice error *)
-"aval (Plus a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s + aval a\<^sub>2 s)" |
-"aval (Minus a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s - aval a\<^sub>2 s)"
+  "aval (N n) s = Num n" |
+  "aval (S n) s = Str n" |
+  "aval (V x) s = (case s x of Some x \<Rightarrow> x)" | (* Leave out when the case is None so we get a nice error *)
+  "aval (Plus a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s + aval a\<^sub>2 s)" |
+  "aval (Minus a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s - aval a\<^sub>2 s)"
 
 definition null_state ("<>") where
   "null_state \<equiv> \<lambda>x. None"
@@ -46,27 +52,20 @@ fun asimp_const :: "aexp \<Rightarrow> aexp" where
     (b\<^sub>1,b\<^sub>2) \<Rightarrow> Minus b\<^sub>1 b\<^sub>2)"
 
 fun plus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" where
-"plus (N i\<^sub>1) (N i\<^sub>2) = N(i\<^sub>1+i\<^sub>2)" |
-"plus (N i) a = (if i=0 then a else Plus (N i) a)" |
-"plus a (N i) = (if i=0 then a else Plus a (N i))" |
+"plus (N i\<^sub>1) (N i\<^sub>2) = N (i\<^sub>1+i\<^sub>2)" |
 "plus a\<^sub>1 a\<^sub>2 = Plus a\<^sub>1 a\<^sub>2"
 
-lemma aval_plus[simp]:
-  "aval (plus a1 a2) s = value_plus (aval a1 s)  (aval a2 s)"
-apply (induction a1 a2 rule: plus.induct)
-                      apply simp_all
-  sorry
+lemma aval_plus[simp]: "aval (plus a1 a2) s = value_plus (aval a1 s)  (aval a2 s)"
+  apply (induction a1 a2 rule: plus.induct)
+  by simp_all
 
 fun minus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" where
 "minus (N i\<^sub>1) (N i\<^sub>2) = N(i\<^sub>1-i\<^sub>2)" |
-"minus a (N i) = (if i=0 then a else Minus a (N i))" |
 "minus a\<^sub>1 a\<^sub>2 = Minus a\<^sub>1 a\<^sub>2"
 
-lemma aval_minus[simp]:
-  "aval (minus a1 a2) s = value_minus (aval a1 s) (aval a2 s)"
-apply(induction a1 a2 rule: minus.induct)
-  apply simp_all (* just for a change from auto *)
-  sorry
+lemma aval_minus[simp]: "aval (minus a1 a2) s = value_minus (aval a1 s) (aval a2 s)"
+  apply(induction a1 a2 rule: minus.induct)
+  by simp_all
 
 fun asimp :: "aexp \<Rightarrow> aexp" where
 "asimp (N n) = N n" |
@@ -75,10 +74,7 @@ fun asimp :: "aexp \<Rightarrow> aexp" where
 "asimp (Plus a\<^sub>1 a\<^sub>2) = plus (asimp a\<^sub>1) (asimp a\<^sub>2)" |
 "asimp (Minus a\<^sub>1 a\<^sub>2) = minus (asimp a\<^sub>1) (asimp a\<^sub>2)"
 
-theorem aval_asimp[simp]:
-  "aval (asimp a) s = aval a s"
-apply(induction a)
-     apply simp_all
-done
-
+theorem aval_asimp[simp]: "aval (asimp a) s = aval a s"
+  apply(induction a)
+  by simp_all
 end

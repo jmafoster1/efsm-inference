@@ -28,10 +28,14 @@ abbreviation gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" where
   "gAnd v va \<equiv> Nor (Nor v v) (Nor va va)"
 
 fun MaybeBoolInt :: "(int \<Rightarrow> int \<Rightarrow> bool) \<Rightarrow> value \<Rightarrow> value \<Rightarrow> bool" where
-"MaybeBoolInt _ Nope _ = False"
-|"MaybeBoolInt _ _ Nope = False"
-|"MaybeBoolInt f ((Num a)) ((Num b)) = (f a b)"
-|"MaybeBoolInt _ _ _ = False"
+  "MaybeBoolInt f ((Num a)) ((Num b)) = (f a b)" |
+  "MaybeBoolInt _ _ _ = False"
+
+abbreviation ValueGt :: "value \<Rightarrow> value \<Rightarrow> bool" (infix ">" 40) where
+  "a > b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x>y)) a b"
+
+abbreviation ValueLt :: "value \<Rightarrow> value \<Rightarrow> bool" (infix "<" 40) where
+  "a < b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x<y)) a b"
 
 fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool" where
   "gval (Bc b) _ = b" |
