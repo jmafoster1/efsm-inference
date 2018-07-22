@@ -46,7 +46,7 @@ definition "write_fail" :: "transition" where
         Label = ''write'',
         Arity = 1,
         Guard = [(Ne (V (R 3)) (V (R 1)))], (* No guards *)
-        Outputs = [(N 0)],
+        Outputs = [(L (Str ''accessDenied''))],
         Updates = []
       \<rparr>"
 
@@ -68,7 +68,7 @@ definition read_fail :: "transition" where
         Label = ''read'',
         Arity = 0,
         Guard = [(gOr (Ne (V (R 1)) (V (R 3))) (Null (R 2)))],
-        Outputs = [(N 0)],
+        Outputs = [(L (Str ''accessDenied''))],
         Updates = [ 
                     (R 1, (V (R 1))), (* Value of r1 remains unchanged *)
                     (R 2, (V (R 2))), (* Value of r2 remains unchanged *)
@@ -108,7 +108,7 @@ lemma r_equals_r [simp]: "<R 1:=user, R 2:=content, R 3:=owner> = (\<lambda>a. i
 
 lemma read_2:  " r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
-    step filesystem 2 r ''read'' [] = Some (2, [0], r)"
+    step filesystem 2 r ''read'' [] = Some (2, [Str ''accessDenied''], r)"
   apply (simp add: step_def fs_simp del: Nat.One_nat_def)
   apply (rule ext)
   by simp 

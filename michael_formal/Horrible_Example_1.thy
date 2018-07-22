@@ -14,16 +14,16 @@ definition t2 :: "transition" where
 "t2 \<equiv> \<lparr>
         Label = ''g'',
         Arity = 0,
-        Guard = [(gexp.Gt (V (R 1)) (N 5))],
+        Guard = [(gexp.Gt (V (R 1)) (L (Num 5)))],
         Outputs = [],
-        Updates = [(R 1, (Plus (V (R 1)) (N 5)))]
+        Updates = [(R 1, (Plus (V (R 1)) (L (Num 5))))]
       \<rparr>"
 
 definition t3 :: "transition" where
 "t3 \<equiv> \<lparr>
         Label = ''h'',
         Arity = 0,
-        Guard = [(gexp.Lt (V (R 1)) (N 10))],
+        Guard = [(gexp.Lt (V (R 1)) (L (Num 10)))],
         Outputs = [],
         Updates = []
       \<rparr>"
@@ -32,7 +32,7 @@ definition t4 :: "transition" where
 "t4 \<equiv> \<lparr>
         Label = ''h'',
         Arity = 0,
-        Guard = [(Ge (V (R 1)) (N 10))],
+        Guard = [(Ge (V (R 1)) (L (Num 10)))],
         Outputs = [],
         Updates = []
       \<rparr>"

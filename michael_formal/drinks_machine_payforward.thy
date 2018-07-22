@@ -12,7 +12,7 @@ definition "setup" :: "transition" where
         Guard = [], (* No guards *)
         Outputs = [],
         Updates = [ (* Two updates: *)
-                    (R 2, (N 0))
+                    (R 2, (L (Num 0)))
                   ]
       \<rparr>"
 
@@ -43,11 +43,11 @@ definition t3 :: "transition" where
 "t3 \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [(Ge (V (R 2)) (N 100))], (* This is syntactic sugar for ''Not (Lt (V (R 2)) (N 100))'' which could also appear *)
+        Guard = [(Ge (V (R 2)) (L (Num 100)))], (* This is syntactic sugar for ''Not (Lt (V (R 2)) (N 100))'' which could also appear *)
         Outputs =  [(V (R 1))], (* This has one output o1:=r1 where ''r1'' is a variable with a value *)
         Updates = [
                     (R 1, (V (R 1))),
-                    (R 2, Minus (V (R 2)) (N 100))
+                    (R 2, Minus (V (R 2)) (L (Num 100)))
                   ]
       \<rparr>"
 
@@ -65,6 +65,6 @@ definition vend :: "efsm" where
 
 lemmas transitions = t1_def t2_def t3_def setup_def
 
-lemma "observe_trace vend (s0 vend) <> [(''setup'', []), (''select'', [1]), (''coin'',[110]), (''vend'', []), (''select'', [1]), (''coin'',[90]), (''vend'', [])] = [[],[],[110],[1],[],[100],[1]]"
+lemma "observe_trace vend (s0 vend) <> [(''setup'', []), (''select'', [Str ''coke'']), (''coin'',[Num 110]), (''vend'', []), (''select'', [Str ''pepsi'']), (''coin'',[Num 90]), (''vend'', [])] = [[],[],[Num 110],[Str ''coke''],[],[Num 100],[Str ''pepsi'']]"
   by (simp add: step_def vend_def transitions)
 end

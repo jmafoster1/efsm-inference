@@ -5,7 +5,7 @@ definition t1up :: "transition" where
 "t1up \<equiv> \<lparr>
         Label = ''goUp'',
         Arity = 1,
-        Guard = [(gexp.Gt (V (I 1)) (N 0))],
+        Guard = [(gexp.Gt (V (I 1)) (L (Num 0)))],
         Outputs = [(V (I 1))],
         Updates = []
       \<rparr>"
@@ -14,8 +14,8 @@ definition t2up :: "transition" where
 "t2up \<equiv> \<lparr>
         Label = ''goUp'',
         Arity = 1,
-        Guard = [(gexp.Gt (V (I 1)) (N 0))],
-        Outputs = [(Plus (V (I 1)) (N (-1)))],
+        Guard = [(gexp.Gt (V (I 1)) (L (Num 0)))],
+        Outputs = [(Plus (V (I 1)) (L (Num (-1))))],
         Updates = []
       \<rparr>"
 
@@ -23,8 +23,8 @@ definition t3up :: "transition" where
 "t3up \<equiv> \<lparr>
         Label = ''goUp'',
         Arity = 1,
-        Guard = [(gexp.Eq (V (I 1)) (N 0))],
-        Outputs = [(N 0)],
+        Guard = [(gexp.Eq (V (I 1)) (L (Num 0)))],
+        Outputs = [(L (Num 0))],
         Updates = []
       \<rparr>"
 
@@ -32,7 +32,7 @@ definition t1down :: "transition" where
 "t1down \<equiv> \<lparr>
         Label = ''goDown'',
         Arity = 1,
-        Guard = [(gexp.Gt (V (I 1)) (N 0))],
+        Guard = [(gexp.Gt (V (I 1)) (L (Num 0)))],
         Outputs = [(V (I 1))],
         Updates = []
       \<rparr>"
@@ -41,8 +41,8 @@ definition t2down :: "transition" where
 "t2down \<equiv> \<lparr>
         Label = ''goDown'',
         Arity = 1,
-        Guard = [(gexp.Gt (V (I 1)) (N 0))],
-        Outputs = [((Plus (V (I 1)) (N (-1))))],
+        Guard = [(gexp.Gt (V (I 1)) (L (Num 0)))],
+        Outputs = [((Plus (V (I 1)) (L (Num (-1)))))],
         Updates = []
       \<rparr>"
 
@@ -50,8 +50,8 @@ definition t3down :: "transition" where
 "t3down \<equiv> \<lparr>
         Label = ''goDown'',
         Arity = 1,
-        Guard = [(gexp.Eq (V (I 1)) (N 0))],
-        Outputs = [(N 0)],
+        Guard = [(gexp.Eq (V (I 1)) (L (Num 0)))],
+        Outputs = [(L (Num 0))],
         Updates = []
       \<rparr>"
 
@@ -60,7 +60,7 @@ definition openDoors :: transition where
         Label = ''open'',
         Arity = 0,
         Guard = [],
-        Outputs = [(N 1)],
+        Outputs = [(L (Num 1))],
         Updates = []
       \<rparr>"
 
@@ -69,7 +69,7 @@ definition closeDoors :: transition where
         Label = ''close'',
         Arity = 0,
         Guard = [],
-        Outputs = [(N 0)],
+        Outputs = [(L (Num 0))],
         Updates = []
       \<rparr>"
 
@@ -90,12 +90,12 @@ definition lift :: "efsm" where
               else []
          \<rparr>"
 
-lemma "observe_trace lift (s0 lift) <> [(''goUp'', [1]), (''goUp'', [0]), (''open'', [])] = [[1], [0], [1]]"
+lemma "observe_trace lift (s0 lift) <> [(''goUp'', [Num 1]), (''goUp'', [Num 0]), (''open'', [])] = [[Num 1], [Num 0], [Num 1]]"
   by (simp add: step_def lift_def transitions)
 
-lemma "observe_trace lift (s0 lift) <> [(''goDown'', [1]), (''goDown'', [0]), (''open'', [])] = [[1], [0], [1]]"
+lemma "observe_trace lift (s0 lift) <> [(''goDown'', [Num 1]), (''goDown'', [Num 0]), (''open'', [])] = [[Num 1], [Num 0], [Num 1]]"
   by (simp add: step_def lift_def transitions)
 
-lemma "observe_trace lift (s0 lift) <> [(''open'', []), (''close'', []), (''open'', [])] = [[1], [0], [1]]"
+lemma "observe_trace lift (s0 lift) <> [(''open'', []), (''close'', []), (''open'', [])] = [[Num 1], [Num 0], [Num 1]]"
   by (simp add: step_def lift_def transitions)
 end

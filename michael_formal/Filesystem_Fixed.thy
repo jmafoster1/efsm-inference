@@ -35,7 +35,7 @@ definition "write_fail" :: "transition" where
         Label = ''write'',
         Arity = 1,
         Guard = [(Ne (V (R 3)) (V (R 1)))],
-        Outputs = [(N 0)],
+        Outputs = [L (Str ''accessDenied'')],
         Updates = []
       \<rparr>"
 
@@ -54,7 +54,7 @@ definition filesystem :: "efsm" where
 
 lemmas fs_simp = filesystem_def login_def logout_def write_def read_success_def read_fail_def write_fail_def create_def
 
-lemma "observe_trace filesystem (s0 filesystem) <> [(''login'', [1]), (''create'', []), (''write'', [50]), (''read'', [])] = [[], [], [], [50]]"
+lemma "observe_trace filesystem (s0 filesystem) <> [(''login'', [Str ''user'']), (''create'', []), (''write'', [Num 50]), (''read'', [])] = [[], [], [], [Num 50]]"
   by (simp add: fs_simp step_def)
 
 (* step :: efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename \<times> outputs \<times> registers) option *)
@@ -68,7 +68,7 @@ lemma r_equals_r [simp]: "<R 1:=user, R 2:=content, R 3:=owner> = (\<lambda>a. i
 
 lemma read_2:  " r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
-    step filesystem 2 r ''read'' [] = Some (2, [0], r)"
+    step filesystem 2 r ''read'' [] = Some (2, [Str ''accessDenied''], r)"
   apply (simp add: fs_simp step_def)
   apply (rule ext)
   by simp

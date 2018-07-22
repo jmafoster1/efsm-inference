@@ -8,13 +8,13 @@ primrec apply_outputs :: "output_function list \<Rightarrow> datastate \<Rightar
 
 primrec apply_guards :: "guard list \<Rightarrow> datastate \<Rightarrow> bool" where
   "apply_guards [] _ = True" |
-  "apply_guards (h#t) s =  ((gval h s) \<and> (apply_guards t s))"
+  "apply_guards (h#t) s =  ((gval h s) = Some True \<and> (apply_guards t s))"
 
 primrec apply_updates :: "(vname \<times> aexp) list \<Rightarrow> datastate \<Rightarrow> datastate \<Rightarrow> datastate" where
   "apply_updates [] _ new = new" |
   "apply_updates (h#t) old new = (\<lambda>x. if x = (fst h) then Some (aval (snd h) old) else (apply_updates t old new) x)"
 
-lemma "apply_updates [(R 1, N 6)] <> <R 2:= Num 3> = <R 1:= Num 6, R 2:= Num 3>"
+lemma "apply_updates [(R 1, L (Num 6))] <> <R 2:= Num 3> = <R 1:= Num 6, R 2:= Num 3>"
   apply (rule ext)
   by simp
 

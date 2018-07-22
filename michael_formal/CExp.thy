@@ -26,10 +26,8 @@ fun ceval :: "cexp \<Rightarrow> (value \<Rightarrow> bool)" where
   "ceval (Bc b) = (\<lambda>i. b)" |
   "ceval (Eq Nope) = (\<lambda>i. False)" |
   "ceval (Eq v) = (\<lambda>i. i = v)" |
-  "ceval (Lt Nope) = (\<lambda>i. False)" |
-  "ceval (Lt v) = (\<lambda>i. i < v)" |
-  "ceval (Gt Nope) = (\<lambda>i. False)" |
-  "ceval (Gt v) = (\<lambda>i. i > v)" |   
+  "ceval (Lt v) = (\<lambda>i. case (i, v) of ((Num a), (Num b)) \<Rightarrow> a < b | _ \<Rightarrow> False)" |
+  "ceval (Gt v) = (\<lambda>i. case (i, v) of ((Num a), (Num b)) \<Rightarrow> a > b | _ \<Rightarrow> False)" |
   "ceval (Not v) = (\<lambda>i. \<not>(ceval v i))" |
   "ceval (And v va) = (\<lambda>i. (ceval v i \<and> ceval va i))"
 

@@ -6,7 +6,7 @@ datatype "value" = Num int | Str string | Nope
 datatype vname = I nat | R nat
 type_synonym datastate = "vname \<Rightarrow> value option"
 
-datatype aexp = N int | V vname | Plus aexp aexp | Minus aexp aexp | S string
+datatype aexp = L "value" | V vname | Plus aexp aexp | Minus aexp aexp
 
 fun value_plus :: "value \<Rightarrow> value \<Rightarrow> value" (infix "+" 40) where
   "value_plus (Num x) (Num y) = Num (x+y)" |
@@ -23,9 +23,8 @@ lemma minus_no_string [simp]:"value_minus a b \<noteq> Str x"
   using value_minus.elims by blast
 
 fun aval :: "aexp \<Rightarrow> datastate \<Rightarrow> value" where
-  "aval (N n) s = Num n" |
-  "aval (S n) s = Str n" |
-  "aval (V x) s = (case s x of Some x \<Rightarrow> x)" | (* Leave out when the case is None so we get a nice error *)
+  "aval (L x) s = x" |
+  "aval (V x) s = (case s x of Some x \<Rightarrow> x | None \<Rightarrow> Nope)" | (* Leave out when the case is None so we get a nice error *)
   "aval (Plus a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s + aval a\<^sub>2 s)" |
   "aval (Minus a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s - aval a\<^sub>2 s)"
 
@@ -39,20 +38,19 @@ syntax
   "_Map"     :: "maplets \<Rightarrow> 'a \<rightharpoonup> 'b"            ("(1<_>)")
 
 fun asimp_const :: "aexp \<Rightarrow> aexp" where
-"asimp_const (N n) = N n" |
-"asimp_const (S n) = S n" |
+"asimp_const (L x) = L x" |
 "asimp_const (V x) = V x" |
 "asimp_const (Plus a\<^sub>1 a\<^sub>2) =
   (case (asimp_const a\<^sub>1, asimp_const a\<^sub>2) of
-    (N n\<^sub>1, N n\<^sub>2) \<Rightarrow> N(n\<^sub>1+n\<^sub>2) |
+    (L (Num n\<^sub>1), L (Num n\<^sub>2)) \<Rightarrow> L (Num (n\<^sub>1+n\<^sub>2)) |
     (b\<^sub>1,b\<^sub>2) \<Rightarrow> Plus b\<^sub>1 b\<^sub>2)" |
 "asimp_const (Minus a\<^sub>1 a\<^sub>2) =
   (case (asimp_const a\<^sub>1, asimp_const a\<^sub>2) of
-    (N n\<^sub>1, N n\<^sub>2) \<Rightarrow> N(n\<^sub>1-n\<^sub>2) |
+    (L (Num n\<^sub>1), L (Num n\<^sub>2)) \<Rightarrow> L (Num (n\<^sub>1-n\<^sub>2)) |
     (b\<^sub>1,b\<^sub>2) \<Rightarrow> Minus b\<^sub>1 b\<^sub>2)"
 
 fun plus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" where
-"plus (N i\<^sub>1) (N i\<^sub>2) = N (i\<^sub>1+i\<^sub>2)" |
+"plus (L (Num i\<^sub>1)) (L (Num i\<^sub>2)) = L (Num (i\<^sub>1+i\<^sub>2))" |
 "plus a\<^sub>1 a\<^sub>2 = Plus a\<^sub>1 a\<^sub>2"
 
 lemma aval_plus[simp]: "aval (plus a1 a2) s = value_plus (aval a1 s)  (aval a2 s)"
@@ -60,7 +58,7 @@ lemma aval_plus[simp]: "aval (plus a1 a2) s = value_plus (aval a1 s)  (aval a2 s
   by simp_all
 
 fun minus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" where
-"minus (N i\<^sub>1) (N i\<^sub>2) = N(i\<^sub>1-i\<^sub>2)" |
+"minus (L (Num i\<^sub>1)) (L (Num i\<^sub>2)) = L (Num (i\<^sub>1-i\<^sub>2))" |
 "minus a\<^sub>1 a\<^sub>2 = Minus a\<^sub>1 a\<^sub>2"
 
 lemma aval_minus[simp]: "aval (minus a1 a2) s = value_minus (aval a1 s) (aval a2 s)"
@@ -68,8 +66,7 @@ lemma aval_minus[simp]: "aval (minus a1 a2) s = value_minus (aval a1 s) (aval a2
   by simp_all
 
 fun asimp :: "aexp \<Rightarrow> aexp" where
-"asimp (N n) = N n" |
-"asimp (S n) = S n" |
+"asimp (L n) = L n" |
 "asimp (V x) = V x" |
 "asimp (Plus a\<^sub>1 a\<^sub>2) = plus (asimp a\<^sub>1) (asimp a\<^sub>2)" |
 "asimp (Minus a\<^sub>1 a\<^sub>2) = minus (asimp a\<^sub>1) (asimp a\<^sub>2)"

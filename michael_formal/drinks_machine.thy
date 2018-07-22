@@ -13,7 +13,7 @@ definition t1 :: "transition" where
         Outputs = [],
         Updates = [ (* Two updates: *)
                     (R 1, (V (I 1))), (*  Firstly set value of r1 to value of i1 *)
-                    (R 2, (N 0)) (* Secondly set the value of r2 to literal zero *)
+                    (R 2, (L (Num 0))) (* Secondly set the value of r2 to literal zero *)
                   ]
       \<rparr>"
 
@@ -39,7 +39,7 @@ definition t3 :: "transition" where
 "t3 \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [(Ge (V (R 2)) (N 100))], (* This is syntactic sugar for ''Not (Lt (V ''r2'') (N 100))'' which could also appear *)
+        Guard = [(Ge (V (R 2)) (L (Num 100)))], (* This is syntactic sugar for ''Not (Lt (V ''r2'') (N 100))'' which could also appear *)
         Outputs =  [(V (R 1))], (* This has one output o1:=r1 where ''r1'' is a variable with a value *)
         Updates = [(R 1, V (R 1)), (R 2, V (R 2))]
       \<rparr>"
@@ -74,19 +74,17 @@ lemma "observe_trace vend (s0 vend) <> [(''select'', [Str ''coke'']), (''coin'',
 lemma "observe_trace vend (s0 vend) <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50])] = [[], [Num 50], [Num 100]]"
   by (simp add: step_def vend_def transitions)
 
-value "apply_updates [(R 1, (V (I 1))),(R 2, (N 0))] <> <> (R 1)"
-
 lemma "observe_trace vend (s0 vend) <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] = [[], [Num 50], [Num 100], [Str ''coke'']]"
   by (simp add: step_def vend_def transitions)
 
 (*Stop when we hit a spurious input*)
-lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50])] = [[]]"
+lemma "observe_trace vend (s0 vend) <> [(''select'', [Str ''coke'']), (''cat'', [Num 50])] = [[]]"
   by (simp add: step_def vend_def transitions)
 
-lemma "\<not> (valid_trace (vend) [(''select'', [1]), (''cat'', [50])])"
+lemma "\<not> (valid_trace (vend) [(''select'', [Str ''coke'']), (''cat'', [Num 50])])"
   by(simp add: step_def vend_def transitions)
 
-lemma "observe_trace vend (s0 vend) <> [(''select'', [1]), (''cat'', [50]), (''coin'', [50])] = [[]]"
+lemma "observe_trace vend (s0 vend) <> [(''select'', [Str ''coke'']), (''cat'', [Num 50]), (''coin'', [Num 50])] = [[]]"
   by (simp add: step_def vend_def transitions)
 
 lemma "( t = []) \<Longrightarrow> (observe_trace e (s0 e) <> t = []) "
