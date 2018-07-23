@@ -2,29 +2,29 @@ theory AExp
   imports Main
 begin
 
-datatype "value" = Num int | Str string | Nope
+datatype "value" = Num int | Str string
 datatype vname = I nat | R nat
 type_synonym datastate = "vname \<Rightarrow> value option"
 
 datatype aexp = L "value" | V vname | Plus aexp aexp | Minus aexp aexp
 
-fun value_plus :: "value \<Rightarrow> value \<Rightarrow> value" (infix "+" 40) where
-  "value_plus (Num x) (Num y) = Num (x+y)" |
-  "value_plus _ _ = Nope"
+fun value_plus :: "value option \<Rightarrow> value option \<Rightarrow> value option" (infix "+" 40) where
+  "value_plus (Some (Num x)) (Some (Num y)) = Some (Num (x+y))" |
+  "value_plus _ _ = None"
 
-lemma plus_no_string [simp]:"value_plus a b \<noteq> Str x"
+lemma plus_no_string [simp]:"value_plus a b \<noteq> Some (Str x)"
   using value_plus.elims by blast
 
-fun value_minus :: "value \<Rightarrow> value \<Rightarrow> value" (infix "-" 40) where
-  "value_minus (Num x) (Num y) = Num (x-y)" |
-  "value_minus _ _ = Nope"
+fun value_minus :: "value option \<Rightarrow> value option \<Rightarrow> value option" (infix "-" 40) where
+  "value_minus (Some (Num x)) (Some (Num y)) = Some (Num (x-y))" |
+  "value_minus _ _ = None"
 
-lemma minus_no_string [simp]:"value_minus a b \<noteq> Str x"
+lemma minus_no_string [simp]:"value_minus a b \<noteq> Some (Str x)"
   using value_minus.elims by blast
 
-fun aval :: "aexp \<Rightarrow> datastate \<Rightarrow> value" where
-  "aval (L x) s = x" |
-  "aval (V x) s = (case s x of Some x \<Rightarrow> x | None \<Rightarrow> Nope)" | (* Leave out when the case is None so we get a nice error *)
+fun aval :: "aexp \<Rightarrow> datastate \<Rightarrow> value option" where
+  "aval (L x) s = Some x" |
+  "aval (V x) s = s x" | (* Leave out when the case is None so we get a nice error *)
   "aval (Plus a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s + aval a\<^sub>2 s)" |
   "aval (Minus a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s - aval a\<^sub>2 s)"
 

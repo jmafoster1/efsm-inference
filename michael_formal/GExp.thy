@@ -27,14 +27,14 @@ lemma "\<not> (x \<or> y) = (\<not> x \<and> \<not> y)"
 abbreviation gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" where
   "gAnd v va \<equiv> Nor (Nor v v) (Nor va va)"
 
-fun MaybeBoolInt :: "(int \<Rightarrow> int \<Rightarrow> bool) \<Rightarrow> value \<Rightarrow> value \<Rightarrow> bool option" where
-  "MaybeBoolInt f ((Num a)) ((Num b)) = Some (f a b)" |
+fun MaybeBoolInt :: "(int \<Rightarrow> int \<Rightarrow> bool) \<Rightarrow> value option \<Rightarrow> value option \<Rightarrow> bool option" where
+  "MaybeBoolInt f (Some (Num a)) (Some (Num b)) = Some (f a b)" |
   "MaybeBoolInt _ _ _ = None"
 
-abbreviation ValueGt :: "value \<Rightarrow> value \<Rightarrow> bool option"  where
+abbreviation ValueGt :: "value option \<Rightarrow> value option \<Rightarrow> bool option"  where
   "ValueGt a b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x>y)) a b"
 
-abbreviation ValueLt :: "value \<Rightarrow> value \<Rightarrow> bool option"  where
+abbreviation ValueLt :: "value option \<Rightarrow> value option \<Rightarrow> bool option"  where
   "ValueLt a b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x<y)) a b"
 
 fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool option" where

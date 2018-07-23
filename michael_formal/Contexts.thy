@@ -37,9 +37,6 @@ definition context_equiv :: "context \<Rightarrow> context \<Rightarrow> bool" w
 fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow> gexp" where
   "cexp2gexp _ (Bc b) = gexp.Bc b" |
   "cexp2gexp a Undef = gexp.Bc False" |
-  "cexp2gexp a (Eq Nope) = gexp.Bc False" |
-  "cexp2gexp a (Lt Nope) = gexp.Bc False" |
-  "cexp2gexp a (Gt Nope) = gexp.Bc False" |
   "cexp2gexp a (Lt (Str va)) = gexp.Bc False" |
   "cexp2gexp a (Gt (Str va)) = gexp.Bc False" |
   "cexp2gexp a (Eq v) = gexp.Eq a (L v)" |
@@ -85,7 +82,7 @@ primrec pair_and :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp
   "pair_and (h#t) c = pair_and t (and_insert c h)"
 
 fun guard2context :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cexp) list" where
-  "guard2context a (gexp.Bc v) = [(L Nope, Bc v)]" |
+  "guard2context a (gexp.Bc v) = [(L (Num 0), Bc v)]" |
   "guard2context a (gexp.Null v) = [(V v, Undef)]" |
   
   "guard2context a (gexp.Eq (L n) (L n')) =  [(L n, Eq n')]" |

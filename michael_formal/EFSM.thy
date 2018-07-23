@@ -4,7 +4,7 @@ begin
 
 primrec apply_outputs :: "output_function list \<Rightarrow> datastate \<Rightarrow> outputs" where
   "apply_outputs [] _ = []" |
-  "apply_outputs (h#t) s = (aval h s)#(apply_outputs t s)"
+  "apply_outputs (h#t) s = (case aval h s of None \<Rightarrow> [] | Some p \<Rightarrow> p#(apply_outputs t s))"
 
 primrec apply_guards :: "guard list \<Rightarrow> datastate \<Rightarrow> bool" where
   "apply_guards [] _ = True" |
@@ -12,7 +12,7 @@ primrec apply_guards :: "guard list \<Rightarrow> datastate \<Rightarrow> bool" 
 
 primrec apply_updates :: "(vname \<times> aexp) list \<Rightarrow> datastate \<Rightarrow> datastate \<Rightarrow> datastate" where
   "apply_updates [] _ new = new" |
-  "apply_updates (h#t) old new = (\<lambda>x. if x = (fst h) then Some (aval (snd h) old) else (apply_updates t old new) x)"
+  "apply_updates (h#t) old new = (\<lambda>x. if x = (fst h) then (aval (snd h) old) else (apply_updates t old new) x)"
 
 lemma "apply_updates [(R 1, L (Num 6))] <> <R 2:= Num 3> = <R 1:= Num 6, R 2:= Num 3>"
   apply (rule ext)
@@ -94,9 +94,7 @@ lemma valid_extension:
   assumes "valid_trace e t" 
   and "observe_all e (s0 e) <> t = (oo @ [(s, outs, r)])"
   and "step e s r l i = Some (s'',outs',r')"
-  shows "valid_trace e (t @ [(l,i)])"
-  apply simp
-  apply (simp only: observe_all_def)
+shows "valid_trace e (t @ [(l,i)])"
   sorry
   
   

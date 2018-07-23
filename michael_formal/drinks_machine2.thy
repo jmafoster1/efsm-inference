@@ -75,13 +75,30 @@ lemma posterior_t2_subsequent: "posterior \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.
   apply (rule ext)
   by simp
 
+lemma value_lt_aval: "aval x r = Some a \<Longrightarrow> aval y r = Some aa \<Longrightarrow> ValueLt (Some a) (Some aa) = Some ab \<Longrightarrow> \<exists>n n'. a = Num n \<and> aa = Num n'"
+  by (metis MaybeBoolInt.elims option.distinct(1) option.sel)
+
 lemma ge_equiv: "gval (Ge x y) r = gval (gOr (gexp.Gt x y) (gexp.Eq x y)) r"
-  apply (simp del: Nat.One_nat_def)
+  apply simp
   apply (cases "aval x r")
-    apply (cases "aval y r")
-      apply (simp del: Nat.One_nat_def)
-      apply auto[1]
-  by simp_all
+   apply (cases "aval y r")
+    apply simp
+   apply simp
+  apply (cases "aval y r")
+   apply simp
+  apply simp
+  apply (case_tac "ValueLt (Some a) (Some aa)")
+   apply simp
+   apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some a) (Some aa)")
+    apply simp
+   apply simp
+  using MaybeBoolInt.elims apply force
+  apply simp
+  apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some a) (Some aa)")
+   apply simp
+  using MaybeBoolInt.elims apply force
+  apply simp
+  using value_lt_aval by fastforce
 
 lemma "(gOr (gexp.Gt (V (R 1)) (N 100)) (gexp.Eq (V (R 1)) (N 100))) = Nor (Nor (gexp.Gt (V (R 1)) (N 100)) (gexp.Eq (V (R 1)) (N 100))) (Nor (gexp.Gt (V (R 1)) (N 100)) (gexp.Eq (V (R 1)) (N 100)))"
   by simp
@@ -102,7 +119,7 @@ lemma "context_equiv (Contexts.apply_guard \<lbrakk>(V (R 1)) \<mapsto> Bc True\
 
 (* You can't take t3 immediately after taking t1 *)
 lemma r2_0_t3: "\<not>Contexts.can_take t3 t1_posterior"
-  apply (simp add: t3_def Contexts.can_take_def del: Nat.One_nat_def)
+  apply (simp only: t3_def Contexts.can_take_def)
   apply (simp only: consistent_def)
   apply (simp del: Nat.One_nat_def)
   apply (rule allI)
@@ -110,7 +127,7 @@ lemma r2_0_t3: "\<not>Contexts.can_take t3 t1_posterior"
    apply (simp del: Nat.One_nat_def)
    apply fastforce
    apply (simp del: Nat.One_nat_def)
-  apply (case_tac "ValueLt a (Num 100)")
+  apply (case_tac "ValueLt (Some a) (Some (Num 100))")
    apply (simp del: Nat.One_nat_def)
    apply fastforce
   apply (simp del: Nat.One_nat_def)
