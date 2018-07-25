@@ -193,13 +193,13 @@ lemma "(posterior_sequence [coin_init, coin_inc] empty) = \<lbrakk>V (R 1) \<map
   using consistent_def consistent_empty_1 consistent_empty_3 by auto
 
 lemma not_consistent_medial_vends_g_empty: "\<not>consistent (\<lambda>r. and (\<lbrakk>\<rbrakk> r) (if r = V (R 1) then snd (V (R 1), And (Geq (Num 100)) (Geq (Num 100))) else cexp.Bc True))"
-  apply (simp add: consistent_def)
+  apply (simp add: consistent_def del: Nat.One_nat_def)
   apply (rule allI)
   apply (case_tac "s (R 1)")
    apply simp
    apply fastforce
-  apply simp
-  apply (case_tac "ValueLt a (Num 100)")
+  apply (simp del: Nat.One_nat_def)
+  apply (case_tac "ValueLt (Some a) (Some (Num 100))")
    apply simp
    apply fastforce
   apply simp

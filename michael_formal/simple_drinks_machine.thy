@@ -10,8 +10,8 @@ definition t1 :: "transition" where
         Updates = [(R 1, (V (I 1))), (R 2, (L (Num 0)))]
       \<rparr>"
 
-definition t2 :: "transition" where
-"t2 \<equiv> \<lparr>
+definition coin50 :: "transition" where
+"coin50 \<equiv> \<lparr>
         Label = ''coin'',
         Arity = 1,
         Guard = [(gexp.Eq (V (I 1)) (L (Num 50)))],
@@ -19,11 +19,11 @@ definition t2 :: "transition" where
         Updates = [(R 1, (V (R 1))),  (R 2, Plus (V (R 2)) (L (Num 50)))]
       \<rparr>"
 
-lemma updates_t2: "Updates t2 = [(R 1, (V (R 1))),  (R 2, Plus (V (R 2)) (L (Num 50)))]"
-  by (simp add: t2_def)
+lemma updates_coin50: "Updates coin50 = [(R 1, (V (R 1))),  (R 2, Plus (V (R 2)) (L (Num 50)))]"
+  by (simp add: coin50_def)
 
-definition t2' :: "transition" where
-"t2' \<equiv> \<lparr>
+definition coin :: "transition" where
+"coin \<equiv> \<lparr>
         Label = ''coin'',
         Arity = 1,
         Guard = [],
@@ -34,8 +34,8 @@ definition t2' :: "transition" where
                 ]
       \<rparr>"
 
-lemma guard_t2': "Guard t2' = []"
-  by (simp add: t2'_def)
+lemma guard_coin: "Guard coin = []"
+  by (simp add: coin_def)
 
 definition t3 :: "transition" where
 "t3 \<equiv> \<lparr>
@@ -52,7 +52,7 @@ definition vend :: "efsm" where
           s0 = 1,
           T = \<lambda> (a,b) .
               if (a,b) = (1,2) then [t1] (* If we want to go from state 1 to state 2 then t1 will do that *)
-              else if (a,b) = (2,2) then [t2] (* If we want to go from state 2 to state 2 then t2 will do that *)
+              else if (a,b) = (2,2) then [coin50] (* If we want to go from state 2 to state 2 then coin50 will do that *)
               else if (a,b) = (2,3) then [t3] (* If we want to go from state 2 to state 3 then t3 will do that *)
               else [] (* There are no other transitions *)
          \<rparr>"
@@ -63,18 +63,18 @@ definition vend_equiv :: "efsm" where
           s0 = 1,
           T = \<lambda> (a,b) .
               if (a,b) = (1,2) then [t1] (* If we want to go from state 1 to state 2 then t1 will do that *)
-              else if (a,b) = (2,2) then [t2'] (* If we want to go from state 2 to state 2 then t2' will do that *)
+              else if (a,b) = (2,2) then [coin] (* If we want to go from state 2 to state 2 then coin will do that *)
               else if (a,b) = (2,3) then [t3] (* If we want to go from state 2 to state 3 then t3 will do that *)
               else [] (* There are no other transitions *)
          \<rparr>"
 
-lemma medial_t2: "medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> (Guard t2) = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n), V (I 1) \<mapsto> Eq (Num 50)\<rbrakk>"
-  apply (simp add: t2_def)
+lemma medial_coin50: "medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> (Guard coin50) = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n), V (I 1) \<mapsto> Eq (Num 50)\<rbrakk>"
+  apply (simp add: coin50_def)
   apply (rule ext)
   by simp
 
-lemma consistent_medial_t2: "consistent (medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> (Guard t2))"
-  apply (simp add: t2_def consistent_def del: Nat.One_nat_def)
+lemma consistent_medial_coin50: "consistent (medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> (Guard coin50))"
+  apply (simp add: coin50_def consistent_def del: Nat.One_nat_def)
   apply (rule_tac x="<R 1 := Num 1, R 2 := Num n, I 1 := Num 50>" in exI)
   by (simp add: consistent_empty_4)
 
@@ -82,49 +82,50 @@ lemma compose_plus_n_50: "(compose_plus (Eq (Num n)) (Eq (Num 50))) = Eq (Num (n
   apply (simp add: valid_def satisfiable_def)
   by auto
 
-lemma t2_posterior: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> t2 = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> Eq (Num (n+50))\<rbrakk>"
-  apply (simp add: posterior_def consistent_medial_t2 del: Nat.One_nat_def)
-  apply (simp only: medial_t2 updates_t2)
+lemma coin50_posterior: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> coin50 = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> Eq (Num (n+50))\<rbrakk>"
+  apply (simp add: posterior_def consistent_medial_coin50 del: Nat.One_nat_def)
+  apply (simp only: medial_coin50 updates_coin50)
   apply (simp add: compose_plus_n_50 del: compose_plus.simps)
   apply (rule ext)
   by simp
 
-lemma consistent_medial_t2': "consistent (medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n), V (I 1) \<mapsto> cexp.Eq (Num 50)\<rbrakk> (Guard t2'))"
-  apply (simp add: t2'_def consistent_def del: One_nat_def)
+lemma consistent_medial_coin: "consistent (medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n), V (I 1) \<mapsto> cexp.Eq (Num 50)\<rbrakk> (Guard coin))"
+  apply (simp add: coin_def consistent_def del: One_nat_def)
   apply (rule_tac x="<R 1 := Num 0, R 2 := Num n, I 1 := Num 50>" in exI)
   apply (simp del: One_nat_def)
   by (simp add: consistent_empty_4)
 
-lemma consistent_medial_t2'_2: "consistent (medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> (Guard t2'))"
-  apply (simp add: t2'_def consistent_def del: One_nat_def)
+lemma consistent_medial_coin_2: "consistent (medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> (Guard coin))"
+  apply (simp add: coin_def consistent_def del: One_nat_def)
   apply (rule_tac x="<R 1 := Num 0, R 2 := Num n, I 1 := Num 50>" in exI)
   apply (simp del: One_nat_def)
   by (simp add: consistent_empty_4)
 
-lemma posterior_t2'_2: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n), V (I 1) \<mapsto> cexp.Eq (Num 50)\<rbrakk> t2' = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> Eq (Num (n+50))\<rbrakk>"
-  apply (simp add: posterior_def consistent_medial_t2' del: Nat.One_nat_def)
-  apply (simp add: t2'_def compose_plus_n_50 del: Nat.One_nat_def compose_plus.simps)
+lemma posterior_coin_2: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n), V (I 1) \<mapsto> cexp.Eq (Num 50)\<rbrakk> coin = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> Eq (Num (n+50))\<rbrakk>"
+  apply (simp add: posterior_def consistent_medial_coin del: Nat.One_nat_def)
+  apply (simp add: coin_def compose_plus_n_50 del: Nat.One_nat_def compose_plus.simps)
   apply (rule ext)
   by simp
 
-lemma posterior_t2': "(posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> t2') = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> Bc True\<rbrakk>"
-  apply (simp add: posterior_def consistent_medial_t2'_2 del: Nat.One_nat_def)
-  apply (simp add: t2'_def compose_plus_n_50 valid_def satisfiable_def del: Nat.One_nat_def)
+lemma posterior_coin: "(posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> coin) = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> Bc True\<rbrakk>"
+  apply (simp add: posterior_def consistent_medial_coin_2 del: Nat.One_nat_def)
+  apply (simp add: coin_def compose_plus_n_50 valid_def satisfiable_def del: Nat.One_nat_def)
   apply (rule ext)
   by simp
 
-(* t2' subsumes t2 no matter how many times it is looped round *)
-lemma "subsumes \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num n)\<rbrakk> t2' t2"
+lemma consistent_true: "\<forall>r. c r = Undef \<or> c r = Bc True \<Longrightarrow> consistent c"
+  apply (simp only: consistent_def)
+  apply (rule_tac x="<>" in exI)
+  apply (rule allI)
+  by auto
+
+
+(* coin subsumes coin50 no matter how many times it is looped round *)
+lemma "subsumes \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num n)\<rbrakk> coin coin50"
   apply (simp only: subsumes_def)
   apply safe
-     apply (simp add: t2'_def t2_def)
-  apply (simp add: t2'_def t2_def)
-   apply (simp add: t2_posterior del: Nat.One_nat_def)
-   apply (simp add: medial_t2 posterior_t2'_2 del: Nat.One_nat_def)
-   apply auto[1]
-  apply (simp add: posterior_t2' del: Nat.One_nat_def)
-  apply (simp add: consistent_def)
-  apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0>" in exI)
-  apply simp
-  by (simp add: consistent_empty_4)
+     apply (simp add: coin_def coin50_def)
+    apply (simp add: coin_def coin50_def)
+   apply (simp add: coin50_posterior medial_coin50 posterior_coin_2 del: Nat.One_nat_def)
+  by (simp add: posterior_coin consistent_empty_1 consistent_true del: Nat.One_nat_def)
 end
