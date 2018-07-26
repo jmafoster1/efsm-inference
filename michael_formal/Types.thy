@@ -23,10 +23,9 @@ record transition =
 
 type_synonym destination = "(statename \<times> transition)"
 
-record efsm =
-  S :: "statename list"
-  s0 :: statename
-  T :: "(statename \<times> statename) \<Rightarrow> transition list"
+record 'statename efsm =
+  s0 :: 'statename
+  T :: "('statename \<times> 'statename) \<Rightarrow> transition set"
 
 primrec index2state :: "value list \<Rightarrow> nat \<Rightarrow> datastate" where
   "index2state [] _ = <>" |

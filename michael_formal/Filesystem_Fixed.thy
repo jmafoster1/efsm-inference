@@ -83,52 +83,66 @@ lemma logout_2:  " r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow
 abbreviation one_or_2 :: "full_observation \<Rightarrow> bool" where
   "one_or_2 s \<equiv> ((statename (shd s)) = Some 1 \<or> (statename (shd s)) = Some 2)"
 
-abbreviation none :: "full_observation \<Rightarrow> bool" where
-  "none s \<equiv> ((statename (shd s)) = None)"
+lemma one_or_2_some: "one_or_2 s \<Longrightarrow> some_state s"
+  by auto
 
-lemma "UNTIL one_or_2 none (make_full_observation filesystem (Some 1) <> i)"
+lemma "(s0 e) \<in> set (S e) \<Longrightarrow> (alw (\<lambda>s. statename (shd s) = Some a \<longrightarrow> a \<in> set (S e))) (make_full_observation e (Some (s0 e)) <> i)"
 proof (coinduction)
-  case UNTIL
+  case alw
   then show ?case
-    apply simp
+    apply (rule_tac x="make_full_observation e (Some (s0 e)) <> i" in exI)
     apply safe
+     apply simp
     sorry
-qed
+  qed
+
+lemma "some_state (make_full_observation Filesystem_Fixed.filesystem s r i ) = one_or_2 (make_full_observation Filesystem_Fixed.filesystem s r i )"
+  apply (case_tac s)
+   apply simp
+  apply simp
+
+lemma start_in_1: "one_or_2 ( make_full_observation Filesystem_Fixed.filesystem (Some 1) <> i )"
+  by (simp add: filesystem_def)
+
+lemma fs_some_until_null: "(some_state until null) (make_full_observation filesystem (Some (s0 filesystem)) <> i)"
+  by (simp add: some_until_none)
+
+
 
 (* G(((label=login AND ip_1_login_1=(attacker)) AND F(label=logout)) => U(label=read=>X(op_1_read_0=0), label=logout)) *)
 abbreviation watch_filesystem :: "event stream \<Rightarrow> full_observation" where
   "watch_filesystem i \<equiv> (make_full_observation filesystem (Some 1) <> i)"
 
-fun label_not_logout :: property where
-  "label_not_logout (h##t) = (label h \<noteq> ''logout'')"
+abbreviation label_not_logout :: property where
+  "label_not_logout s \<equiv> (label (shd s) \<noteq> ''logout'')"
 
-fun label_logout :: property where
-  "label_logout (h##t) = (label h = ''logout'')"
+abbreviation label_logout :: property where
+  "label_logout s \<equiv> (label (shd s) = ''logout'')"
 
-fun label_create :: property where
-  "label_create (h##t) = (label h = ''create'')"
+abbreviation label_create :: property where
+  "label_create s \<equiv> (label (shd s) = ''create'')"
 
-fun read_0 :: property where
-  "read_0 (h##t) = (label h=''read'' \<longrightarrow> output h=[Str ''accessDenied''])"
+abbreviation read_0 :: property where
+  "read_0 s \<equiv> (label (shd s)=''read'' \<longrightarrow> output (shd s)=[Str ''accessDenied''])"
 
-fun login_attacker :: property where
-  "login_attacker (h##t) = (event h = (''login'',  [Str ''attacker'']))"
+abbreviation login_attacker :: property where
+  "login_attacker s \<equiv> (event (shd s) = (''login'',  [Str ''attacker'']))"
 
-fun login_user :: property where
-  "login_user (h##t) = (event h = (''login'',  [Str ''user'']))"
-
-fun non_null :: property where
-  "non_null (h##t) = (statename h \<noteq> None)"
+abbreviation login_user :: property where
+  "login_user s \<equiv> (event (shd s) = (''login'',  [Str ''user'']))"
 
 lemma "login_user (watch_filesystem i) \<Longrightarrow> shd i = (''login'', [Str ''user''])"
-  by (metis login_user.elims(2) make_full_observation.simps(1) state.select_convs(3) stream.sel(1))
+  by simp
 
 lemma login_user_first: "alw non_null (watch_filesystem i) \<Longrightarrow> (login_user (watch_filesystem i) = (shd i = (''login'', [Str ''user''])))"
-  by (metis login_user.simps make_full_observation.simps(1) state.select_convs(3) stream.collapse)
-
-      (* G(cfstate /= NULL_STATE)         =>  ((label=login AND ip_1_login_1=(user)) AND U(label/=logout, label=create))                             => F(G(((label=login AND ip_1_login_1=(attacker)) AND F(label=logout))  =>   U(label=read=>X(op_1_read_0=0), label=logout))) *)
-lemma "alw non_null (watch_filesystem i) \<Longrightarrow> login_user (watch_filesystem i)         \<and> ((label_not_logout until label_create) (watch_filesystem i)) \<Longrightarrow> ev (alw ((login_attacker                      aand ev label_logout) impl (read_0 until label_logout))) (watch_filesystem i)"
+  by simp
+      (* G(cfstate /= NULL_STATE)         =>  ((label=login AND ip_1_login_1=(user)) AND U(label/=logout, label=create))                              => F(G(((label=login AND ip_1_login_1=(attacker)) AND F(label=logout))  =>   U(label=read=>X(op_1_read_0=0), label=logout))) *)
+lemma "alw non_null (watch_filesystem i) \<Longrightarrow> login_user (watch_filesystem i)         \<and> ((label_not_logout suntil label_create) (watch_filesystem i)) \<Longrightarrow> ev (alw ((login_attacker                      aand ev label_logout) impl (read_0 suntil label_logout))) (watch_filesystem i)"
   apply simp
   sorry
+
+      (* G(cfstate /= NULL_STATE)  => ((label=login AND ip_1_login_1=(user)) AND U(label/=logout, label=create)) => F(G(((label=login AND ip_1_login_1=(attacker)) AND F(label=logout))  =>   U(label=read=>X(op_1_read_0=0), label=logout))) *)
+
+lemma "((alw non_null) impl (login_user aand (label_not_logout until label_create))) impl (ev (alw ((login_attacker                      aand ev label_logout) impl (read_0 suntil label_logout))) (watch_filesystem i))"
 
 end
