@@ -1,5 +1,5 @@
 theory simple_drinks_machine
-imports EFSM Contexts
+imports EFSM Contexts drinks_machine
 begin
 definition t1 :: "transition" where
 "t1 \<equiv> \<lparr>
@@ -46,26 +46,24 @@ definition t3 :: "transition" where
         Updates = [(R 1, (V (R 1))), (R 2, (V (R 2)))]
       \<rparr>"
 
-definition vend :: "efsm" where
+definition vend :: "statename efsm" where
 "vend \<equiv> \<lparr> 
-          S = [1,2,3],
-          s0 = 1,
+          s0 = q1,
           T = \<lambda> (a,b) .
-              if (a,b) = (1,2) then [t1] (* If we want to go from state 1 to state 2 then t1 will do that *)
-              else if (a,b) = (2,2) then [coin50] (* If we want to go from state 2 to state 2 then coin50 will do that *)
-              else if (a,b) = (2,3) then [t3] (* If we want to go from state 2 to state 3 then t3 will do that *)
-              else [] (* There are no other transitions *)
+                   if (a,b) = (q1,q2) then {t1} (* If we want to go from state 1 to state 2 then t1 will do that *)
+              else if (a,b) = (q2,q2) then {coin50} (* If we want to go from state 2 to state 2 then coin50 will do that *)
+              else if (a,b) = (q2,q3) then {t3} (* If we want to go from state 2 to state 3 then t3 will do that *)
+              else {} (* There are no other transitions *)
          \<rparr>"
 
-definition vend_equiv :: "efsm" where
+definition vend_equiv :: "statename efsm" where
 "vend_equiv \<equiv> \<lparr> 
-          S = [1,2,3],
-          s0 = 1,
+          s0 = q1,
           T = \<lambda> (a,b) .
-              if (a,b) = (1,2) then [t1] (* If we want to go from state 1 to state 2 then t1 will do that *)
-              else if (a,b) = (2,2) then [coin] (* If we want to go from state 2 to state 2 then coin will do that *)
-              else if (a,b) = (2,3) then [t3] (* If we want to go from state 2 to state 3 then t3 will do that *)
-              else [] (* There are no other transitions *)
+                   if (a,b) = (q1,q2) then {t1} (* If we want to go from state 1 to state 2 then t1 will do that *)
+              else if (a,b) = (q2,q2) then {coin} (* If we want to go from state 2 to state 2 then coin will do that *)
+              else if (a,b) = (q2,q3) then {t3} (* If we want to go from state 2 to state 3 then t3 will do that *)
+              else {} (* There are no other transitions *)
          \<rparr>"
 
 lemma medial_coin50: "medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> (Guard coin50) = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n), V (I 1) \<mapsto> Eq (Num 50)\<rbrakk>"
@@ -118,7 +116,6 @@ lemma consistent_true: "\<forall>r. c r = Undef \<or> c r = Bc True \<Longrighta
   apply (rule_tac x="<>" in exI)
   apply (rule allI)
   by auto
-
 
 (* coin subsumes coin50 no matter how many times it is looped round *)
 lemma "subsumes \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num n)\<rbrakk> coin coin50"

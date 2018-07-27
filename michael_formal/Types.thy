@@ -9,7 +9,6 @@ type_synonym outputs = "value list"
 type_synonym guard = "gexp"
 type_synonym output_function = "aexp"
 type_synonym update_function = "(vname \<times> aexp)"
-type_synonym statename = int
 type_synonym event = "(label \<times> inputs)"
 type_synonym trace = "event list" (*Ideally written as label(i1, i2, ...)*)
 type_synonym observation = "outputs list"
@@ -20,8 +19,6 @@ record transition =
   Guard :: "guard list"
   Outputs :: "output_function list"
   Updates :: "update_function list"
-
-type_synonym destination = "(statename \<times> transition)"
 
 record 'statename efsm =
   s0 :: 'statename

@@ -88,36 +88,35 @@ definition venderr_g :: "transition" where
         Updates = []
       \<rparr>"
 
-definition vend :: "efsm" where
+datatype statename = q1 | q2 | q3 | q4 | q5
+
+definition vend :: "statename efsm" where
 "vend \<equiv> \<lparr> 
-          S = [1,2,3,4,5],
-          s0 = 1,
+          s0 = q1,
           T = \<lambda> (a,b) .
-              if (a,b) = (1,2) then [select] 
-              else if (a,b) = (2,3) then [coin50]
-              else if (a,b) = (3,3) then [venderr]
-              else if (a,b) = (3,4) then [coin50]
-              else if (a,b) = (4,5) then [vends]
-              else [] (* There are no other transitions *)
+              if (a,b) = (q1,q2) then {select} 
+              else if (a,b) = (q2,q3) then {coin50}
+              else if (a,b) = (q3,q3) then {venderr}
+              else if (a,b) = (q3,q4) then {coin50}
+              else if (a,b) = (q4,q5) then {vends}
+              else {} (* There are no other transitions *)
          \<rparr>"
 
-definition vend_g :: "efsm" where
+definition vend_g :: "statename efsm" where
 "vend_g \<equiv> \<lparr> 
-          S = [1,2,3,4],
-          s0 = 1,
+          s0 = q1,
           T = \<lambda> (a,b) .
-              if (a,b) = (1,2) then [select] 
-              else if (a,b) = (2,3) then [coin_init]
-              else if (a,b) = (3,3) then [venderr_g, coin_inc]
-              else if (a,b) = (3,4) then [vends_g]
-              else [] (* There are no other transitions *)
+                   if (a,b) = (q1,q2) then {select}
+              else if (a,b) = (q2,q3) then {coin_init}
+              else if (a,b) = (q3,q3) then {venderr_g, coin_inc}
+              else if (a,b) = (q3,q4) then {vends_g}
+              else {} (* There are no other transitions *)
          \<rparr>"
 
 lemma "posterior r1_r2_true coin_init = \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk>"
   apply (rule ext)
   apply (simp add: coin_init_def posterior_def consistent_def)
   using empty_not_undef gval.simps(1) by force
-  
 
 lemma posterior_empty_coin_inc_not_consistent: "\<not> consistent (posterior empty coin_inc)"
   apply (simp add: posterior_def coin_inc_def valid_def satisfiable_def)

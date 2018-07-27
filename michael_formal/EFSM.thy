@@ -78,10 +78,6 @@ primrec in_list :: "'a \<Rightarrow> 'a list \<Rightarrow> bool" where
 definition can_take :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "can_take t1 t2 \<equiv> ((Label t1) = (Label t2)) \<and> ((Arity t1) = (Arity t2))"
 
-primrec find_match :: "transition \<Rightarrow> destination list \<Rightarrow> destination option" where
-  "find_match _ [] = None" |
-  "find_match t (h#tail) = (if (can_take t (snd h)) then (Some h) else (find_match t tail))"
-
 lemma valid_unit_trace: "step e (s0 e) <> l i = Some (s',outs,r) \<Longrightarrow> valid_trace e [(l,i)]"
   apply (simp add: is_singleton_def the_elem_def possible_steps_def)
   using Suc_length_conv by fastforce
