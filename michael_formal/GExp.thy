@@ -48,6 +48,9 @@ fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool option" where
   )" |
   "gval (Null v) s = Some (s v = None)"
 
+abbreviation gexp_equiv :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
+  "gexp_equiv a b \<equiv> \<forall>s. gval a s = gval b s"
+
 abbreviation maybe_or :: "bool option \<Rightarrow> bool option \<Rightarrow> bool option" where
   "maybe_or x y \<equiv> (case (x, y) of
     (Some a, Some b) \<Rightarrow> Some (a \<or> b) |
@@ -78,7 +81,4 @@ lemma nor_equiv: "gval (gNot (gOr a b)) s = gval (Nor a b) s"
 
 definition gexp_satisfiable :: "gexp \<Rightarrow> bool" where
   "gexp_satisfiable g \<equiv> (\<exists>s. gval g s = Some True)"
-
-definition gexp_equiv :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
-  "gexp_equiv v va \<equiv> \<forall>s. gval v s = gval va s"
 end

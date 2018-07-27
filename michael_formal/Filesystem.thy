@@ -76,17 +76,19 @@ definition read_fail :: "transition" where
                   ]
       \<rparr>"
 
-definition filesystem :: "efsm" where
+datatype statename = q1 | q2
+
+definition filesystem :: "statename efsm" where
 "filesystem \<equiv> \<lparr> 
-          S = [1,2],
-          s0 = 1,
+          s0 = q1,
           T = \<lambda> (a,b) .
-              if (a,b) = (1,2) then [login]
-              else if (a,b) = (2,1) then [logout]
-              else if (a,b) = (2,2) then [write, read_success, read_fail, write_fail]
-              else []
+              if (a,b) = (q1,q2) then {login}
+              else if (a,b) = (q2,q1) then {logout}
+              else if (a,b) = (q2,q2) then {write, read_success, read_fail, write_fail}
+              else {}
          \<rparr>"
-lemma so_filesystem [simp]: "s0 filesystem = 1"
+
+lemma s0_filesystem [simp]: "s0 filesystem = q1"
   by (simp add: filesystem_def)
 
 (* export_code filesystem in "Scala" *)
@@ -106,17 +108,61 @@ lemma r_equals_r [simp]: "<R 1:=user, R 2:=content, R 3:=owner> = (\<lambda>a. i
   apply (rule ext)
   by simp
 
-lemma read_2:  " r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
-    owner \<noteq> user \<Longrightarrow>
-    step filesystem 2 r ''read'' [] = Some (2, [Str ''accessDenied''], r)"
-  apply (simp add: step_def fs_simp del: Nat.One_nat_def)
-  apply (rule ext)
-  by simp 
+lemma label_read_q2: "b \<in> T filesystem (q2, a) \<Longrightarrow> Label b = ''read'' \<Longrightarrow> a = q2 \<and> (b = read_success \<or> b = read_fail)"
+  apply (simp add: filesystem_def)
+  apply (cases a)
+   apply (simp add: logout_def)
+  apply safe
+  apply simp
+  apply (simp add: fs_simp)
+  by auto
 
-lemma logout_2:  " r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
+lemma possible_steps_q2_read: "owner \<noteq> user \<Longrightarrow> possible_steps filesystem q2 <R (Suc 0) := user, R 2 := content, R 3 := owner> ''read'' [] = {(q2, read_fail)}"
+  apply (simp add: possible_steps_def)
+  apply safe
+       apply (simp add: label_read_q2)
+      apply (simp add: label_read_q2)
+      apply (case_tac "b = read_success")
+       apply (simp add: read_success_def read_fail_def)
+      apply (case_tac "b = read_fail")
+       apply simp
+      using label_read_q2 apply blast
+     apply (simp add: read_fail_def)
+    apply (simp add: read_fail_def filesystem_def)
+   apply (simp add: read_fail_def)
+  by (simp add: read_fail_def)
+
+lemma read_2:  "r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
-    step filesystem 2 r ''logout'' [] = Some (1, [], r)"
-  apply (simp add: fs_simp step_def)
+    step filesystem q2 r ''read'' [] = Some (q2, [Str ''accessDenied''], r)"
+  apply simp
+  apply safe
+   apply (simp add: possible_steps_q2_read read_fail_def)
+   apply (rule ext)
+   apply simp
+  by (simp add: possible_steps_q2_read)
+
+lemma label_logout_q1: "Label b = ''logout'' \<Longrightarrow> b \<in> T filesystem (q2, a) \<Longrightarrow> b = logout \<and> a = q1"
+  apply (simp add: filesystem_def)
+  apply (cases a)
+   apply simp
+  apply (simp add: fs_simp)
+  by auto
+
+lemma possible_steps_q2_logout: "possible_steps filesystem q2 r ''logout'' [] = {(q1, logout)}"
+  apply (simp add: possible_steps_def)
+  apply safe
+       apply (simp add: label_logout_q1)
+      apply (simp add: label_logout_q1)
+     apply (simp add: logout_def)
+    apply (simp add: filesystem_def)
+  by (simp_all add: logout_def)
+
+lemma logout_2:  "r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
+    owner \<noteq> user \<Longrightarrow>
+    step filesystem q2 r ''logout'' [] = Some (q1, [], r)"
+  apply (simp add: possible_steps_q2_logout)
+  apply (simp add: logout_def)
   apply (rule ext)
   by simp
 end

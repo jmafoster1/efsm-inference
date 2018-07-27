@@ -82,7 +82,9 @@ primrec pair_and :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp
   "pair_and (h#t) c = pair_and t (and_insert c h)"
 
 fun guard2context :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cexp) list" where
-  "guard2context a (gexp.Bc v) = [(L (Num 0), Bc v)]" |
+  "guard2context a (gexp.Bc True) = []" |
+  "guard2context a (gexp.Bc False) = [(L (Num 0), Bc False)]" |
+
   "guard2context a (gexp.Null v) = [(V v, Undef)]" |
   
   "guard2context a (gexp.Eq (L n) (L n')) =  [(L n, Eq n')]" |
@@ -102,8 +104,9 @@ fun guard2context :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> c
   "guard2context a (gexp.Lt v vb) = (let (cv, cvb) = apply_lt (get a v) (get a vb) in [(v, cv), (vb, cvb)])" |
   "guard2context a (Nor v va) = (pair_and (map (\<lambda>x. ((fst x), not (snd x))) (guard2context a v)) (map (\<lambda>x. ((fst x), not (snd x))) (guard2context a va)))"
 
-primrec pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context" where
+fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context" where
   "pairs2context [] = (\<lambda>i. Bc True)" |
+  "pairs2context ((_, Bc False)#t) = (\<lambda>r. Bc False)" |
   "pairs2context (h#t) = conjoin (pairs2context t) (\<lambda>r. if r = (fst h) then (snd h) else Bc True)"
 
 fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
@@ -147,4 +150,7 @@ definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transitio
                       (\<forall> i r. apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<forall>r i. ceval (posterior (medial c (Guard t1)) t2 r) i \<longrightarrow> (ceval (posterior c t1 r) i) \<or> (posterior c t1 r) = Undef) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
+
+lemma "gexp_equiv x y \<Longrightarrow> context_equiv (Contexts.apply_guard c x) (Contexts.apply_guard c y)"
+  sorry
 end

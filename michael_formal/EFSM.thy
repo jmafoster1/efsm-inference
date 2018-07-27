@@ -52,7 +52,7 @@ primrec observe_all :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> d
 abbreviation observe_trace :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> observation" where
   "observe_trace e s r t \<equiv> map (\<lambda>(x,y,z). y) (observe_all e s r t)"
 
-definition equiv :: "'statename efsm \<Rightarrow> 'statename efsm \<Rightarrow> trace \<Rightarrow> bool" where
+definition equiv :: "'statename efsm \<Rightarrow> 'statename' efsm \<Rightarrow> trace \<Rightarrow> bool" where
   "equiv e1 e2 t \<equiv> ((observe_trace e1 (s0 e1) <> t) = (observe_trace e2 (s0 e2) <> t))"
 
 lemma equiv_comute: "equiv e1 e2 t \<equiv> equiv e2 e1 t"

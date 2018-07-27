@@ -144,7 +144,7 @@ lemma coin_100_updates [simp]: "(apply_updates (Updates coin)
   apply (rule ext)
   by simp
 
-lemma "possible_steps drinks q2 <R (Suc 0) := Str ''coke'', R 2 := Num 100> ''vend'' [] = {(q3, vend)}"
+lemma possible_steps_q3_vend: "possible_steps drinks q2 <R (Suc 0) := Str ''coke'', R 2 := Num 100> ''vend'' [] = {(q3, vend)}"
   apply (simp add: possible_steps_def drinks_def)
   apply safe
        apply (metis coin_def empty_iff old.prod.inject one_neq_zero singletonD transition.select_convs(2))
@@ -152,30 +152,24 @@ lemma "possible_steps drinks q2 <R (Suc 0) := Str ''coke'', R 2 := Num 100> ''ve
   by (simp_all add: vend_def)
 
 lemma "observe_trace drinks (s0 drinks) <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] = [[], [Num 50], [Num 100], [Str ''coke'']]"
-  apply (simp add: is_singleton_def the_elem_def possible_steps_q1 possible_steps_q2_coin possible_steps_q2_coin_2)
+  apply (simp add: is_singleton_def the_elem_def possible_steps_q1 possible_steps_q2_coin possible_steps_q2_coin_2 possible_steps_q3_vend)
   by (simp add: transitions)
 
-lemma label_not_cat: "Label t = ''cat'' \<and>
-                       t \<in> T drinks (q2, s') \<Longrightarrow> False"
-  apply (simp add: drinks_def transitions)
-  apply (cases s')
-    apply simp
-   apply (simp add: coin_def)
-   apply auto[1]
-  apply (simp add: vend_def)
-  by auto
+lemma cat_impossible: "possible_steps drinks q2 <R (Suc 0) := Str ''coke'', R 2 := Num 0> ''cat'' [Num 50] = {}"
+  apply (simp add: possible_steps_def drinks_def)
+  by (simp add: vend_def coin_def)
 
 (*Stop when we hit a spurious input*)
 lemma "observe_trace drinks (s0 drinks) <> [(''select'', [Str ''coke'']), (''cat'', [Num 50])] = [[]]"
-  apply (simp add: is_singleton_def the_elem_def)
-  using label_not_cat by fastforce
+  by (simp add: is_singleton_def the_elem_def possible_steps_q1 cat_impossible)
 
 lemma "\<not> (valid_trace (drinks) [(''select'', [Str ''coke'']), (''cat'', [Num 50])])"
-  apply (simp add: is_singleton_def the_elem_def drinks_def del: possible_steps.simps)
-
+  apply (simp add: possible_steps_q1 cat_impossible)
+  by (simp add: transitions)
 
 lemma "observe_trace drinks (s0 drinks) <> [(''select'', [Str ''coke'']), (''cat'', [Num 50]), (''coin'', [Num 50])] = [[]]"
-  by (simp add: step_def drinks_def transitions)
+  apply (simp add: possible_steps_q1 cat_impossible)
+  by (simp add: transitions)
 
 lemma "( t = []) \<Longrightarrow> (observe_trace e (s0 e) <> t = []) "
   by(simp)

@@ -2,35 +2,134 @@ theory drinks_machine2
   imports drinks_machine Contexts
 begin
 
-abbreviation drinks2 :: "efsm" where
+datatype statename = q1 | q2 | q3 | q4
+
+
+definition drinks2 :: "statename efsm" where
 (* Effectively this is the drinks_machine which has had the loop unrolled by one iteration *)
-"drinks2 \<equiv> \<lparr> S = [1,2,3,4],
-          s0 = 1,
+"drinks2 \<equiv> \<lparr>
+          s0 = q1,
           T = \<lambda> (a,b) . 
-              if (a,b) = (1,2) then [select]
-              else if (a,b) = (2,3) then [coin]
-              else if (a,b) = (3,3) then [coin]
-              else if (a,b) = (3,4) then [vend]
-              else []
+              if (a,b) = (q1,q2) then {select}
+              else if (a,b) = (q2,q3) then {coin}
+              else if (a,b) = (q3,q3) then {coin}
+              else if (a,b) = (q3,q4) then {vend}
+              else {}
          \<rparr>"
+
+lemma s0_drinks2[simp]: "s0 drinks2 = q1"
+  by (simp add: drinks2_def)
 
 lemma "observe_trace drinks2 (s0 drinks2) <> [] = []"
   by simp
 
+lemma label_select_q2: " Label b = ''select'' \<Longrightarrow> b \<in> T drinks2 (q1, s') \<Longrightarrow> b = select \<and> s' = q2"
+  apply (simp add: drinks2_def)
+  apply (cases s')
+  by (simp_all add: select_def)
+
+lemma label_coin_q2: "Label t = ''coin'' \<and> t \<in> T drinks2 (q2, s') \<Longrightarrow> t=coin \<and> s' = q3"
+  apply (simp add: drinks2_def)
+  apply (cases s')
+  by (simp_all add: coin_def)
+
+lemma label_coin_q3: "Label t = ''coin'' \<and> t \<in> T drinks2 (q3, s') \<Longrightarrow> t=coin \<and> s' = q3"
+  apply (simp add: drinks2_def)
+  apply (cases s')
+     apply simp
+    apply simp
+   apply simp
+  apply simp
+  apply (simp add: vend_def)
+  by auto
+
+lemma label_vend_q4: " Label b = ''vend'' \<Longrightarrow>
+           b \<in> T drinks2 (q3, a) \<Longrightarrow> b = vend \<and> a = q4"
+  apply (cases a)
+     apply (simp add: drinks2_def)
+    apply (simp add: drinks2_def)
+   apply (simp add: drinks2_def transitions(2))
+  by (simp add: drinks2_def)
+
+lemma possible_steps_q1:  "possible_steps drinks2 q1 Map.empty ''select'' [Str ''coke''] = {(q2, select)}"
+  apply (simp add: possible_steps_def)
+  apply safe
+       apply (simp add: drinks_machine2.label_select_q2)
+      apply (simp add: drinks_machine2.label_select_q2)
+     apply (simp add: transitions(1))
+    apply (simp add: drinks2_def)
+   apply (simp add: transitions(1))
+  by simp
+
 lemma "observe_trace drinks2 (s0 drinks2) <> [(''select'', [Str ''coke''])] = [[]]"
-  by (simp add: step_def select_def)
+  by (simp add: possible_steps_q1)
+
+lemma possible_steps_q2: "possible_steps drinks2 q2 <R (Suc 0) := Str ''coke'', R 2 := Num 0> ''coin'' [Num 50] = {(q3, coin)}"
+  apply (simp add: possible_steps_def)
+  apply safe
+       apply (simp add: drinks_machine2.label_coin_q2)
+      using drinks_machine2.label_coin_q2 apply blast
+     apply (simp add: transitions(2))
+    apply (simp add: drinks2_def)
+   apply (simp add: transitions(2))
+      by simp
+
+lemma updates_coin_50 [simp]: "(\<lambda>x. if x = R (Suc 0)
+              then aval (snd (R (Suc 0), V (R (Suc 0))))
+                    (case_vname (\<lambda>n. if n = Suc 0 then Some (Num 50) else index2state [] (Suc 0 + 1) (I n))
+                      (\<lambda>n. if n = 2 then Some (Num 0) else <R (Suc 0) := Str ''coke''> (R n)))
+              else EFSM.apply_updates [(R 2, Plus (V (R 2)) (V (I (Suc 0))))]
+                    (case_vname (\<lambda>n. if n = Suc 0 then Some (Num 50) else index2state [] (Suc 0 + 1) (I n))
+                      (\<lambda>n. if n = 2 then Some (Num 0) else <R (Suc 0) := Str ''coke''> (R n)))
+                    <R (Suc 0) := Str ''coke'', R 2 := Num 0> x) = <R 1 := Str ''coke'', R 2 := Num 50>"
+  apply (rule ext)
+  by simp
+
+lemma updates_coin_100 [simp]: "        (\<lambda>x. if x = R (Suc 0)
+              then aval (snd (R (Suc 0), V (R (Suc 0))))
+                    (case_vname (\<lambda>n. if n = Suc 0 then Some (Num 50) else index2state [] (Suc 0 + 1) (I n))
+                      (\<lambda>n. if n = 2 then Some (Num 50) else <R (Suc 0) := Str ''coke''> (R n)))
+              else EFSM.apply_updates [(R 2, Plus (V (R 2)) (V (I (Suc 0))))]
+                    (case_vname (\<lambda>n. if n = Suc 0 then Some (Num 50) else index2state [] (Suc 0 + 1) (I n))
+                      (\<lambda>n. if n = 2 then Some (Num 50) else <R (Suc 0) := Str ''coke''> (R n)))
+                    <R (Suc 0) := Str ''coke'', R 2 := Num 50> x) = <R 1 := Str ''coke'', R 2 := Num 100>"
+  apply (rule ext)
+  by simp
 
 lemma "observe_trace drinks2 (s0 drinks2) <> [(''select'', [Str ''coke'']), (''coin'', [Num 50])] = [[], [Num 50]]"
-  by (simp add: step_def select_def coin_def)
+  by (simp add: possible_steps_q1 possible_steps_q2 coin_def)
+
+lemma possible_steps_q3_coin: "possible_steps drinks2 drinks_machine2.statename.q3 <R (Suc 0) := Str ''coke'', R 2 := Num 50> ''coin'' [Num 50] = {(q3, coin)}"
+  apply (simp add: possible_steps_def)
+  apply safe
+       apply (simp add: label_coin_q3)
+      using label_coin_q3 apply blast
+     apply (simp add: transitions(2))
+    apply (simp add: drinks2_def)
+   apply (simp add: transitions(2))
+  by simp
 
 lemma "observe_trace drinks2 (s0 drinks2) <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50])] = [[], [Num 50], [Num 100]]"
-  by (simp add: step_def transitions)
+  by (simp add: possible_steps_q1 possible_steps_q2 coin_def possible_steps_q3_coin)
+
+lemma possible_steps_q3_vend: "possible_steps drinks2 drinks_machine2.statename.q3 <R (Suc 0) := Str ''coke'', R 2 := Num 100> ''vend'' [] = {(q4, vend)}"
+  apply (simp add: possible_steps_def)
+  apply safe
+       apply (simp add: label_vend_q4)
+      apply (simp add: label_vend_q4)
+     apply (simp add: vend_def)
+    apply (simp add: drinks2_def)
+   apply (simp add: vend_def)
+  by (simp add: vend_def)
 
 lemma "observe_trace drinks2 (s0 drinks2) <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] = [[], [Num 50], [Num 100], [Str ''coke'']]"
-  by (simp add: step_def transitions)
+  by (simp add: possible_steps_q1 possible_steps_q2 coin_def possible_steps_q3_coin possible_steps_q3_vend vend_def)
 
 lemma "equiv drinks drinks2 [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])]"
-  by (simp add: equiv_def step_def drinks_def transitions)
+  apply (simp add: equiv_def possible_steps_q1 drinks_machine.possible_steps_q1)
+  apply (simp add:  possible_steps_q2 drinks_machine.possible_steps_q2_coin)
+  apply (simp add: possible_steps_q3_coin drinks_machine.possible_steps_q2_coin_2)
+  by (simp add: possible_steps_q3_vend drinks_machine.possible_steps_q3_vend)
 
 abbreviation select_posterior :: "context" where
   "select_posterior \<equiv> \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> Eq (Num 0) \<rbrakk>"
@@ -102,13 +201,6 @@ lemma ge_equiv: "gval (Ge x y) r = gval (gOr (gexp.Gt x y) (gexp.Eq x y)) r"
 
 lemma "(gOr (gexp.Gt (V (R 1)) (N 100)) (gexp.Eq (V (R 1)) (N 100))) = Nor (Nor (gexp.Gt (V (R 1)) (N 100)) (gexp.Eq (V (R 1)) (N 100))) (Nor (gexp.Gt (V (R 1)) (N 100)) (gexp.Eq (V (R 1)) (N 100)))"
   by simp
-
-lemma "gval x = gval y \<Longrightarrow> context_equiv (Contexts.apply_guard c x) (Contexts.apply_guard c y)"
-  apply (simp add: context_equiv_def cexp_equiv_def)
-  apply (rule allI)
-  apply safe
-     apply (simp del: Nat.One_nat_def)
-  sorry
 
 lemma "context_equiv (Contexts.apply_guard \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> (Ge (V (R 1)) (L (Num 100))))
                          (Contexts.apply_guard \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> (gOr (gexp.Gt (V (R 1)) (L (Num 100))) (gexp.Eq (V (R 1)) (L (Num 100)))))"
