@@ -48,7 +48,7 @@ fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool option" where
   )" |
   "gval (Null v) s = Some (s v = None)"
 
-abbreviation gexp_equiv :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
+definition gexp_equiv :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
   "gexp_equiv a b \<equiv> \<forall>s. gval a s = gval b s"
 
 abbreviation maybe_or :: "bool option \<Rightarrow> bool option \<Rightarrow> bool option" where
@@ -81,4 +81,36 @@ lemma nor_equiv: "gval (gNot (gOr a b)) s = gval (Nor a b) s"
 
 definition gexp_satisfiable :: "gexp \<Rightarrow> bool" where
   "gexp_satisfiable g \<equiv> (\<exists>s. gval g s = Some True)"
+
+lemma "gexp_equiv s t \<Longrightarrow> gexp_equiv (P s) (P t)"
+proof (induction s)
+case (Bc x)
+  then show ?case
+    apply (cases x)
+     apply (cases t)
+          apply (case_tac x1)
+           apply (simp add: gexp_equiv_def)
+          apply (simp add: gexp_equiv_def)
+         apply simp
+         apply (simp add: gexp_equiv_def)
+         apply (rule allI)
+    try
+
+next
+  case (Eq x1a x2)
+  then show ?case sorry
+next
+  case (Gt x1a x2)
+  then show ?case sorry
+next
+  case (Lt x1a x2)
+  then show ?case sorry
+next
+  case (Nor s1 s2)
+  then show ?case sorry
+next
+  case (Null x)
+  then show ?case sorry
+qed
+
 end

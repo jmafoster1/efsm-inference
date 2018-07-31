@@ -81,28 +81,28 @@ primrec pair_and :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp
   "pair_and [] c = c" |
   "pair_and (h#t) c = pair_and t (and_insert c h)"
 
-fun guard2context :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cexp) list" where
-  "guard2context a (gexp.Bc True) = []" |
-  "guard2context a (gexp.Bc False) = [(L (Num 0), Bc False)]" |
+fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cexp) list" where
+  "guard2pairs a (gexp.Bc True) = []" |
+  "guard2pairs a (gexp.Bc False) = [(L (Num 0), Bc False)]" |
 
-  "guard2context a (gexp.Null v) = [(V v, Undef)]" |
+  "guard2pairs a (gexp.Null v) = [(V v, Undef)]" |
   
-  "guard2context a (gexp.Eq (L n) (L n')) =  [(L n, Eq n')]" |
-  "guard2context a (gexp.Gt (L n) (L n')) =  [(L n, Gt n')]" |
-  "guard2context a (gexp.Lt (L n) (L n')) =  [(L n, Lt n')]" |
+  "guard2pairs a (gexp.Eq (L n) (L n')) =  [(L n, Eq n')]" |
+  "guard2pairs a (gexp.Gt (L n) (L n')) =  [(L n, Gt n')]" |
+  "guard2pairs a (gexp.Lt (L n) (L n')) =  [(L n, Lt n')]" |
 
-  "guard2context a (gexp.Eq v (L n)) = [(v, Eq n)]" |
-  "guard2context a (gexp.Eq (L n) v) = [(v, Eq n)]" |
-  "guard2context a (gexp.Eq v vb) = [(v, get a vb), (vb, get a v)]" |
+  "guard2pairs a (gexp.Eq v (L n)) = [(v, Eq n)]" |
+  "guard2pairs a (gexp.Eq (L n) v) = [(v, Eq n)]" |
+  "guard2pairs a (gexp.Eq v vb) = [(v, get a vb), (vb, get a v)]" |
   
-  "guard2context a (gexp.Gt v (L n)) = [(v, (Gt n))]" |
-  "guard2context a (gexp.Gt (L n) v) = [(v, (Lt n))]" |
-  "guard2context a (gexp.Gt v vb) = (let (cv, cvb) = apply_gt (get a v) (get a vb) in [(v, cv), (vb, cvb)])" |
+  "guard2pairs a (gexp.Gt v (L n)) = [(v, (Gt n))]" |
+  "guard2pairs a (gexp.Gt (L n) v) = [(v, (Lt n))]" |
+  "guard2pairs a (gexp.Gt v vb) = (let (cv, cvb) = apply_gt (get a v) (get a vb) in [(v, cv), (vb, cvb)])" |
 
-  "guard2context a (gexp.Lt v (L n)) = [(v, (Lt n))]" |
-  "guard2context a (gexp.Lt (L n) v) = [(v, (Gt n))]" |
-  "guard2context a (gexp.Lt v vb) = (let (cv, cvb) = apply_lt (get a v) (get a vb) in [(v, cv), (vb, cvb)])" |
-  "guard2context a (Nor v va) = (pair_and (map (\<lambda>x. ((fst x), not (snd x))) (guard2context a v)) (map (\<lambda>x. ((fst x), not (snd x))) (guard2context a va)))"
+  "guard2pairs a (gexp.Lt v (L n)) = [(v, (Lt n))]" |
+  "guard2pairs a (gexp.Lt (L n) v) = [(v, (Gt n))]" |
+  "guard2pairs a (gexp.Lt v vb) = (let (cv, cvb) = apply_lt (get a v) (get a vb) in [(v, cv), (vb, cvb)])" |
+  "guard2pairs a (Nor v va) = (pair_and (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a v)) (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a va)))"
 
 fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context" where
   "pairs2context [] = (\<lambda>i. Bc True)" |
@@ -110,7 +110,7 @@ fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context" where
   "pairs2context (h#t) = conjoin (pairs2context t) (\<lambda>r. if r = (fst h) then (snd h) else Bc True)"
 
 fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
-  "apply_guard a g = conjoin a (pairs2context (guard2context a g))"
+  "apply_guard a g = conjoin a (pairs2context (guard2pairs a g))"
 
 fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function \<Rightarrow> context" where
   "apply_update l c (v, (L n)) = update c (V v) (Eq n)" |
@@ -151,6 +151,69 @@ definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transitio
                       (\<forall>r i. ceval (posterior (medial c (Guard t1)) t2 r) i \<longrightarrow> (ceval (posterior c t1 r) i) \<or> (posterior c t1 r) = Undef) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
 
-lemma "gexp_equiv x y \<Longrightarrow> context_equiv (Contexts.apply_guard c x) (Contexts.apply_guard c y)"
+primrec pairs2guard :: "(aexp \<times> cexp) list \<Rightarrow> guard" where
+  "pairs2guard [] = gexp.Bc True" |
+  "pairs2guard (h#t) = gAnd (cexp2gexp (fst h) (snd h)) (pairs2guard t)"
+
+lemma context_equiv_same_undef: "get c i = Undef \<Longrightarrow> get c' i = cexp.Bc True \<Longrightarrow> \<not> context_equiv c c'"
+  apply (simp add: context_equiv_def cexp_equiv_def)
+  by force
+
+lemma context_equiv_undef: "context_equiv c c' \<Longrightarrow> ((get c i) = Undef) = ((get c' i) = Undef)"
+  by (simp add: cexp_equiv_def context_equiv_def)
+
+lemma 
+
+lemma "gexp_equiv x (pairs2guard (guard2pairs c x))"
+proof (induction x)
+  case (Bc x)
+  then show ?case
+    apply (rule allI)
+    apply (case_tac x)
+    by simp_all
+next
+  case (Eq x1a x2)
+  then show ?case
+    apply (cases x1a)
+       apply (cases x2)
+          apply simp
+         apply auto[1]
+        apply auto[1]
+       apply auto[1]
+
+      apply (cases x2)
+         apply simp
+
+
+next
+  case (Gt x1a x2)
+  then show ?case sorry
+next
+  case (Lt x1a x2)
+  then show ?case sorry
+next
+  case (Nor x1 x2)
+  then show ?case sorry
+next
+  case (Null x)
+  then show ?case sorry
+qed
+
+
+lemma "gexp_equiv x y \<Longrightarrow> context_equiv (pairs2context (guard2pairs c x)) (pairs2context (guard2pairs c y))"
   sorry
+  
+
+
+lemma "gexp_equiv x y \<Longrightarrow> context_equiv (Contexts.apply_guard c x) (Contexts.apply_guard c y)"
+  apply simp
+  apply (simp add: context_equiv_def)
+  apply (rule allI)
+  apply (case_tac r)
+     apply (simp add: cexp_equiv_def)
+    apply simp
+    apply (case_tac "(c (V x2))")
+          apply simp
+  sorry
+
 end
