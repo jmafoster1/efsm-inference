@@ -151,6 +151,18 @@ definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transitio
                       (\<forall>r i. ceval (posterior (medial c (Guard t1)) t2 r) i \<longrightarrow> (ceval (posterior c t1 r) i) \<or> (posterior c t1 r) = Undef) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
 
-lemma "gexp_equiv x y \<Longrightarrow> context_equiv (Contexts.apply_guard c x) (Contexts.apply_guard c y)"
-  sorry
+lemma context_equiv_reflexivity: "context_equiv c c"
+  by (simp add: context_equiv_def cexp_equiv_def)
+
+lemma context_equiv_symmetry: "context_equiv a b \<Longrightarrow> context_equiv b a"
+  by (simp add: context_equiv_def cexp_equiv_def)
+
+lemma context_equiv_transitivity: "context_equiv a b \<Longrightarrow> context_equiv b c \<Longrightarrow> context_equiv a c"
+  by (simp add: context_equiv_def cexp_equiv_def)
+  
+lemma "gexp_equiv x y \<Longrightarrow> context_equiv (apply_guard c x) (apply_guard c y)"
+  apply simp
+  apply (rule_tac s=x in gexp_subst)
+   apply simp
+  by (simp add: context_equiv_reflexivity)
 end

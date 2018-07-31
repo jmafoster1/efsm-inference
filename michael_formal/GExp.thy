@@ -57,6 +57,12 @@ abbreviation maybe_or :: "bool option \<Rightarrow> bool option \<Rightarrow> bo
     _ \<Rightarrow> None
   )"
 
+abbreviation maybe_and :: "bool option \<Rightarrow> bool option \<Rightarrow> bool option" where
+  "maybe_and x y \<equiv> (case (x, y) of
+    (Some a, Some b) \<Rightarrow> Some (a \<and> b) |
+    _ \<Rightarrow> None
+  )"
+
 abbreviation maybe_not :: "bool option \<Rightarrow> bool option" where
   "maybe_not x \<equiv> (case x of Some a \<Rightarrow> Some (\<not>a) | None \<Rightarrow> None)"
 
@@ -81,4 +87,63 @@ lemma nor_equiv: "gval (gNot (gOr a b)) s = gval (Nor a b) s"
 
 definition gexp_satisfiable :: "gexp \<Rightarrow> bool" where
   "gexp_satisfiable g \<equiv> (\<exists>s. gval g s = Some True)"
+
+definition gexp_valid :: "gexp \<Rightarrow> bool" where
+  "gexp_valid g \<equiv> (\<forall>s. gval g s = Some True)"
+
+lemma gexp_equiv_reflexive: "gexp_equiv x x"
+  by simp
+
+lemma gexp_equiv_symmetric: "gexp_equiv b a \<Longrightarrow> gexp_equiv a b"
+  by simp
+
+lemma gexp_equiv_transitive: "gexp_equiv a b \<Longrightarrow> gexp_equiv b c \<Longrightarrow> gexp_equiv a c"
+  by simp
+
+lemma valid_equiv_true:  "gexp_valid x \<Longrightarrow> gexp_equiv x (Bc True)"
+  by (simp add: gexp_valid_def)
+
+lemma gexp_zero: "gexp_equiv x (gAnd (Bc True) x)"
+  apply (rule allI)
+  apply (case_tac "gval x s")
+  by simp_all
+
+lemma nor_symmetry: "gexp_equiv (Nor x y) (Nor y x)"
+  apply simp
+  apply (rule allI)
+  apply (case_tac "gval x s")
+   apply (case_tac "gval y s")
+    apply simp
+   apply simp
+  apply (case_tac "gval y s")
+   apply simp
+  by auto
+
+(* ?s = ?t \<Longrightarrow> ?P ?s \<Longrightarrow> ?P ?t *)
+lemma gexp_subst: "gexp_equiv s t \<Longrightarrow> P s \<Longrightarrow> P t"
+proof (induction s)
+  case (Bc x)
+  then show ?case
+    apply (cases x)
+     apply simp
+     apply (cases t)
+          apply simp
+         apply simp
+    sorry
+next
+  case (Eq x1a x2)
+  then show ?case sorry
+next
+  case (Gt x1a x2)
+  then show ?case sorry
+next
+  case (Lt x1a x2)
+  then show ?case sorry
+next
+  case (Nor s1 s2)
+  then show ?case sorry
+next
+  case (Null x)
+  then show ?case sorry
+qed
 end

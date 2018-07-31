@@ -13,7 +13,7 @@ definition drinks2 :: "statename efsm" where
               if (a,b) = (q1,q2) then {select}
               else if (a,b) = (q2,q3) then {coin}
               else if (a,b) = (q3,q3) then {coin}
-              else if (a,b) = (q3,q4) then {vend}
+              else if (a,b) = (q3,q4) then {vend2}
               else {}
          \<rparr>"
 
@@ -40,11 +40,11 @@ lemma label_coin_q3: "Label t = ''coin'' \<and> t \<in> T drinks2 (q3, s') \<Lon
     apply simp
    apply simp
   apply simp
-  apply (simp add: vend_def)
+  apply (simp add: vend2_def)
   by auto
 
 lemma label_vend_q4: " Label b = ''vend'' \<Longrightarrow>
-           b \<in> T drinks2 (q3, a) \<Longrightarrow> b = vend \<and> a = q4"
+           b \<in> T drinks2 (q3, a) \<Longrightarrow> b = vend2 \<and> a = q4"
   apply (cases a)
      apply (simp add: drinks2_def)
     apply (simp add: drinks2_def)
@@ -112,24 +112,24 @@ lemma possible_steps_q3_coin: "possible_steps drinks2 drinks_machine2.statename.
 lemma "observe_trace drinks2 (s0 drinks2) <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50])] = [[], [Num 50], [Num 100]]"
   by (simp add: possible_steps_q1 possible_steps_q2 coin_def possible_steps_q3_coin)
 
-lemma possible_steps_q3_vend: "possible_steps drinks2 drinks_machine2.statename.q3 <R (Suc 0) := Str ''coke'', R 2 := Num 100> ''vend'' [] = {(q4, vend)}"
+lemma possible_steps_q3_vend: "possible_steps drinks2 drinks_machine2.statename.q3 <R (Suc 0) := Str ''coke'', R 2 := Num 100> ''vend'' [] = {(q4, vend2)}"
   apply (simp add: possible_steps_def)
   apply safe
        apply (simp add: label_vend_q4)
       apply (simp add: label_vend_q4)
-     apply (simp add: vend_def)
+     apply (simp add: vend2_def)
     apply (simp add: drinks2_def)
-   apply (simp add: vend_def)
-  by (simp add: vend_def)
+   apply (simp add: vend2_def)
+  by (simp add: vend2_def)
 
 lemma "observe_trace drinks2 (s0 drinks2) <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] = [[], [Num 50], [Num 100], [Str ''coke'']]"
-  by (simp add: possible_steps_q1 possible_steps_q2 coin_def possible_steps_q3_coin possible_steps_q3_vend vend_def)
+  by (simp add: possible_steps_q1 possible_steps_q2 coin_def possible_steps_q3_coin possible_steps_q3_vend vend2_def)
 
 lemma "equiv drinks drinks2 [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])]"
-  apply (simp add: equiv_def possible_steps_q1 drinks_machine.possible_steps_q1)
-  apply (simp add:  possible_steps_q2 drinks_machine.possible_steps_q2_coin)
-  apply (simp add: possible_steps_q3_coin drinks_machine.possible_steps_q2_coin_2)
-  by (simp add: possible_steps_q3_vend drinks_machine.possible_steps_q3_vend)
+  apply (simp add: equiv_def possible_steps_q1 drinks_machine.possible_steps_q0)
+  apply (simp add:  possible_steps_q2 drinks_machine.possible_steps_q1_coin)
+  apply (simp add: possible_steps_q3_coin)
+  by (simp add: possible_steps_q3_vend drinks_machine.possible_steps_q2_vend)
 
 abbreviation select_posterior :: "context" where
   "select_posterior \<equiv> \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> Eq (Num 0) \<rbrakk>"
@@ -199,19 +199,46 @@ lemma ge_equiv: "gval (Ge x y) r = gval (gOr (gexp.Gt x y) (gexp.Eq x y)) r"
   apply simp
   using value_lt_aval by fastforce
 
-lemma "(gOr (gexp.Gt (V (R 1)) (N 100)) (gexp.Eq (V (R 1)) (N 100))) = Nor (Nor (gexp.Gt (V (R 1)) (N 100)) (gexp.Eq (V (R 1)) (N 100))) (Nor (gexp.Gt (V (R 1)) (N 100)) (gexp.Eq (V (R 1)) (N 100)))"
+lemma "gexp_equiv (Ge (V (R 1)) (L (Num 100))) (Le (L (Num 100)) (V (R 1)))"
+  apply (simp del: One_nat_def)
+  apply (rule allI)
+  apply (case_tac "(s (R 1))")
+   apply simp
+  apply (case_tac a)
+   apply simp
   by simp
 
-lemma "context_equiv (Contexts.apply_guard \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> (Ge (V (R 1)) (L (Num 100))))
-                         (Contexts.apply_guard \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> (gOr (gexp.Gt (V (R 1)) (L (Num 100))) (gexp.Eq (V (R 1)) (L (Num 100)))))"
-  apply (simp add: context_equiv_def cexp_equiv_def del: Nat.One_nat_def)
+lemma medial_ge_100: "(medial \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> [(Ge (V (R 1)) (L (Num 100)))]) = \<lbrakk>(V (R 1)) \<mapsto> Geq (Num 100)\<rbrakk>"
+  apply (rule ext)
+  by simp
+
+lemma medial_eq_100_or_gt_100: "(medial \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> [(gOr (gexp.Gt (V (R 1)) (L (Num 100))) (gexp.Eq (V (R 1)) (L (Num 100))))]) = \<lbrakk>(V (R 1)) \<mapsto> Or (cexp.Eq (Num 100)) (cexp.Gt (Num 100))\<rbrakk>"
+  apply (rule ext)
+  by simp
+
+value "ceval (Geq (Num 100)) (Str ''i'')"
+
+
+lemma "context_equiv (medial \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> [(Ge (V (R 1)) (L (Num 100)))])
+                         (medial \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> [(gOr (gexp.Gt (V (R 1)) (L (Num 100))) (gexp.Eq (V (R 1)) (L (Num 100))))])"
+  apply (simp only: medial_ge_100 medial_eq_100_or_gt_100)
+  apply (simp only: context_equiv_def)
   apply (rule allI)
-  apply (case_tac r)
-  by simp_all
+  apply (case_tac "r = V (R 1)")
+   apply simp
+   apply (simp only: cexp_equiv_def)
+   apply safe
+    apply (case_tac i)
+     apply auto[1]
+  apply simp
+
+
+
+
 
 (* You can't take vend immediately after taking select *)
-lemma r2_0_vend: "\<not>Contexts.can_take vend select_posterior"
-  apply (simp only: vend_def Contexts.can_take_def)
+lemma r2_0_vend: "\<not>Contexts.can_take vend2 select_posterior"
+  apply (simp only: vend2_def Contexts.can_take_def)
   apply (simp only: consistent_def)
   apply (simp del: Nat.One_nat_def)
   apply (rule allI)
@@ -330,7 +357,7 @@ next
 qed
 
 (* We have to do a "coin" before we can do a "vend"*)
-lemma coin_before_vend: "Contexts.can_take vend (posterior_n n coin (posterior \<lbrakk>\<rbrakk> select)) \<longrightarrow> n > 0"
+lemma coin_before_vend: "Contexts.can_take vend2 (posterior_n n coin (posterior \<lbrakk>\<rbrakk> select)) \<longrightarrow> n > 0"
   apply (simp add: select_posterior del: Nat.One_nat_def)
   apply (cases n)
    apply (simp add: r2_0_vend del: Nat.One_nat_def)
@@ -355,13 +382,13 @@ next
     by simp
 qed
 
-lemma can_take_vend: "0 < Suc n \<longrightarrow> Contexts.can_take vend r1_r2_true"
-  apply (simp add: can_take_def consistent_def vend_def)
+lemma can_take_vend: "0 < Suc n \<longrightarrow> Contexts.can_take vend2 r1_r2_true"
+  apply (simp add: can_take_def consistent_def vend2_def)
   apply (rule_tac x="<R 1 := Num 0, R 2 := Num 100>" in exI)
   by (simp add: consistent_empty_4)
 
-lemma medial_vend: "medial r1_r2_true (Guard vend) = \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> And (Geq (Num 100)) (Geq (Num 100))\<rbrakk>"
-  apply (simp add: vend_def)
+lemma medial_vend: "medial r1_r2_true (Guard vend2) = \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> And (Geq (Num 100)) (Geq (Num 100))\<rbrakk>"
+  apply (simp add: vend2_def)
   apply (rule ext)
   by simp
 
@@ -372,7 +399,7 @@ lemma consistent_medial_vend: "consistent \<lbrakk>(V (R 1)) \<mapsto> Bc True, 
   using consistent_empty_4 by auto
  
 (* We can do any number of "coin"s before doing a "vend" *)
-lemma "n > 0 \<longrightarrow> Contexts.can_take vend (posterior_n n coin (posterior empty select))"
+lemma "n > 0 \<longrightarrow> Contexts.can_take vend2 (posterior_n n coin (posterior empty select))"
 proof (induct n)
 case 0
   then show ?case by simp

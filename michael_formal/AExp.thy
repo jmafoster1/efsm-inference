@@ -71,7 +71,31 @@ fun asimp :: "aexp \<Rightarrow> aexp" where
 "asimp (Plus a\<^sub>1 a\<^sub>2) = plus (asimp a\<^sub>1) (asimp a\<^sub>2)" |
 "asimp (Minus a\<^sub>1 a\<^sub>2) = minus (asimp a\<^sub>1) (asimp a\<^sub>2)"
 
-theorem aval_asimp[simp]: "aval (asimp a) s = aval a s"
+lemma aval_asimp[simp]: "aval (asimp a) s = aval a s"
   apply(induction a)
   by simp_all
+
+definition aexp_equiv :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
+  "aexp_equiv a b = (\<forall>s. (aval a s) = (aval b s))"
+
+lemma aexp_equiv_reflexivity: "aexp_equiv a a"
+  by (simp add: aexp_equiv_def)
+
+lemma aexp_equiv_symmetry: "aexp_equiv a b \<Longrightarrow> aexp_equiv b a"
+  by (simp add: aexp_equiv_def)
+
+lemma aexp_equiv_transitivity: "aexp_equiv a b \<Longrightarrow> aexp_equiv b c \<Longrightarrow> aexp_equiv a c"
+  by (simp add: aexp_equiv_def)
+
+lemma literal_neq_variable: "\<not> aexp_equiv (L x) (V xa)"
+  apply (simp add: aexp_equiv_def)
+  apply (rule_tac x="<>" in exI)
+  by simp
+
+lemma aexp_equiv_literals: "aexp_equiv (L x) (L y) \<Longrightarrow> x = y"
+  by (simp add: aexp_equiv_def)
+
+lemma aexp_equiv_plus_num: "aexp_equiv (L x) (Plus t1 t2) \<Longrightarrow> x \<noteq> Str s"
+  apply (simp add: aexp_equiv_def)
+  by (metis plus_no_string)
 end

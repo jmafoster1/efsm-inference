@@ -30,26 +30,22 @@ abbreviation non_null :: "'statename property" where
 abbreviation null :: "'statename property" where
   "null s \<equiv> (statename (shd s) = None)"
 
-lemma null_forever [simp]: "s = make_full_observation e (Some (s0 e)) <> t \<Longrightarrow> null s \<Longrightarrow> nxt (alw null) s"
+lemma null_forever: "s = make_full_observation e (Some (s0 e)) <> t \<Longrightarrow> null s \<Longrightarrow> nxt (alw null) s"
   by simp
 
-abbreviation some_state :: "'statename full_observation \<Rightarrow> bool" where
-  "some_state s \<equiv> (\<exists>state. statename (shd s) = Some state)"
-
-lemma non_null_equiv: "non_null = some_state"
+lemma some_state: "non_null s = (\<exists>state. statename (shd s) = Some state)"
   by simp
 
-lemma start_some_state:  "s = make_full_observation e (Some (s0 e)) <> t \<Longrightarrow> some_state s"
+lemma start_some_state:  "s = make_full_observation e (Some (s0 e)) <> t \<Longrightarrow> non_null s"
   by simp
 
-lemma self_eq:  "make_full_observation e (Some (s0 e)) <> t = make_full_observation e (Some (s0 e)) <> t"
-  by simp
-
-
-lemma some_until_none: "s = make_full_observation e (Some (s0 e)) <> t \<Longrightarrow> (some_state until null) s "
+lemma some_until_none: "s = make_full_observation e (Some (s0 e)) <> t \<Longrightarrow> (non_null until null) s "
 proof (coinduction)
   case UNTIL
   then show ?case
-    by (smt UNTIL.coinduct non_null_equiv)
+    by (smt UNTIL.coinduct)
 qed
+
+lemma in_tail: "ev p s \<and> \<not> p s \<Longrightarrow> ev p (stl s)"
+  using ev.cases by blast
 end

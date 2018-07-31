@@ -21,37 +21,29 @@ abbreviation Or :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "Or v va \<equiv> Not (And (Not v) (Not va))"
 
 (* Does a given value of "i" satisfy the given cexp? *)
-fun ceval :: "cexp \<Rightarrow> (value \<Rightarrow> bool)" where
-  "ceval Undef = (\<lambda>i. False)" |
-  "ceval (Bc b) = (\<lambda>i. b)" |
-  "ceval (Eq v) = (\<lambda>i. i = v)" |
-  "ceval (Lt v) = (\<lambda>i. case (i, v) of ((Num a), (Num b)) \<Rightarrow> a < b | _ \<Rightarrow> False)" |
-  "ceval (Gt v) = (\<lambda>i. case (i, v) of ((Num a), (Num b)) \<Rightarrow> a > b | _ \<Rightarrow> False)" |
-  "ceval (Not v) = (\<lambda>i. \<not>(ceval v i))" |
-  "ceval (And v va) = (\<lambda>i. (ceval v i \<and> ceval va i))"
-
-(* Are cexps "c" and "c'" satisfied under the same conditions? *)
-definition cexp_equiv :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
-  "cexp_equiv c c' \<equiv> (\<forall>i. (ceval c i) = (ceval c' i)) \<and> c = Undef \<longleftrightarrow> c' = Undef"
+fun ceval :: "cexp \<Rightarrow> (value \<Rightarrow> bool option)" where
+  "ceval Undef = (\<lambda>i. Some False)" |
+  "ceval (Bc b) = (\<lambda>i. Some b)" |
+  "ceval (Eq v) = (\<lambda>i. Some (i = v))" |
+  "ceval (Lt v) = (\<lambda>i. ValueLt (Some i) (Some v))" |
+  "ceval (Gt v) = (\<lambda>i. ValueGt (Some i) (Some v))" |
+  "ceval (Not v) = (\<lambda>i. maybe_not (ceval v i))" |
+  "ceval (And v va) = (\<lambda>i. maybe_and (ceval v i) (ceval va i))"
 
 (* Is cexp "c" satisfied under all "i" values? *)
 definition valid :: "cexp \<Rightarrow> bool" where
-  "valid c \<equiv> (\<forall> i. ceval c i)"
+  "valid c \<equiv> (\<forall> i. ceval c i = Some True)"
 
 (* Is there some value of "i" which satisfies "c"? *)
 definition satisfiable :: "cexp \<Rightarrow> bool" where
-  "satisfiable v \<equiv> (\<exists>i. ceval v i)"
-
-(* Does cexp "c" simulate "c'"? *)
-definition cexp_simulates :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
-  "cexp_simulates c c' \<equiv> (\<forall>i. ceval c' i \<longrightarrow> ceval c i) \<and> c = Undef \<longrightarrow> c' = Undef"
+  "satisfiable v \<equiv> (\<exists>i. ceval v i = Some True)"
 
 fun "and" :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "and (Bc False) _ = Bc False" |
   "and _ (Bc False) = Bc False" |
   "and (Bc True) x = x" |
   "and x (Bc True) = x" |
-  "and c c' = And c c'"
+  "and c c' = (if c = c' then c else And c c')"
 
 theorem and_is_And [simp]:  "ceval (and x y) = ceval (And x y)"
 proof (cases x)
@@ -67,12 +59,21 @@ next
   then show ?thesis
     apply simp
     apply (cases x2)
-     prefer 2
+     apply (rule ext)
+     apply (case_tac "ceval y i")
+      apply simp
+      apply (metis and.simps(12) and.simps(13) and.simps(14) and.simps(15) ceval.cases ceval.simps(1) ceval.simps(2) ceval.simps(3) option.distinct(1))
      apply simp
-    apply (cases y)
-          apply simp_all
-    apply (case_tac x2a)
-    by simp_all
+     apply (case_tac a)
+      apply simp
+      apply (metis and.simps(10) and.simps(11) and.simps(12) and.simps(13) and.simps(14) and.simps(15) ceval.simps(1) ceval.simps(2) cexp.exhaust option.sel)
+     apply simp
+     apply (metis and.simps(11) and.simps(12) and.simps(13) and.simps(14) and.simps(15) and.simps(3) and.simps(9) ceval.simps(2) cexp.exhaust option.inject)
+     apply (rule ext)
+    apply (case_tac "ceval y i")
+    apply simp
+
+
 next
   case (Eq x3)
   then show ?thesis
@@ -88,7 +89,7 @@ case (Lt x4)
     apply (cases y)
           apply simp_all
     apply (case_tac x2)
-    by simp_all
+    by auto
 next
   case (Gt x5)
   then show ?thesis
@@ -96,7 +97,7 @@ next
     apply (cases y)
           apply simp_all
     apply (case_tac x2)
-    by simp_all
+    by auto
 next
   case (Not x6)
   then show ?thesis
@@ -112,7 +113,7 @@ next
     apply (cases y)
           apply simp_all
     apply (case_tac x2)
-    by simp_all
+    by auto
 qed
 
 lemma and_true [simp]: "and x (Bc True) = x"
@@ -162,7 +163,6 @@ next
   case (And x71 x72)
   then show ?thesis by simp
 qed
-
 
 fun "not" :: "cexp \<Rightarrow> cexp" where
   "not c = (case c of
@@ -216,9 +216,6 @@ lemma "cexp_simulates (Bc True) a"
 
 lemma everything_simulates_false: "\<forall>c. c \<noteq> Undef \<longrightarrow> cexp_simulates c (Bc False)"
   by (simp add: cexp_simulates_def)
-
-lemma "a \<noteq> Undef \<longrightarrow> cexp_simulates (Bc False) a \<longrightarrow> cexp_equiv a (Bc False)"
-  by (simp add: cexp_simulates_def cexp_equiv_def)
 
 lemma "cexp_simulates (Lt (Num 10)) (Lt (Num 5))"
   by (simp add: cexp_simulates_def)
@@ -339,4 +336,24 @@ fun compose_minus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
 lemma "compose_plus (Eq (Str ''cat'')) (Eq (Num 1)) = Bc False"
   apply (simp add: valid_def satisfiable_def)
   by auto
+
+(* Are cexps "c" and "c'" satisfied under the same conditions? *)
+definition cexp_equiv :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
+  "cexp_equiv c c' \<equiv> (\<forall>i. (ceval c i) = (ceval c' i)) \<and> (c = Undef \<longleftrightarrow> c' = Undef)"
+
+lemma cexp_equiv_undef: "cexp_equiv x Undef \<Longrightarrow> x = Undef"
+  by (simp add: cexp_equiv_def)
+
+lemma ceval_undef:  "\<not> ceval Undef i"
+  by simp
+
+lemma cexp_equiv_reflexivity: "cexp_equiv x x"
+  by (simp add: cexp_equiv_def)
+
+lemma cexp_equiv_symmetry: "cexp_equiv a b \<Longrightarrow> cexp_equiv b a"
+  by (simp add: cexp_equiv_def)
+
+lemma cexp_equiv_transitivity: "cexp_equiv a b \<Longrightarrow> cexp_equiv b c \<Longrightarrow> cexp_equiv a c"
+  by (simp add: cexp_equiv_def)
+
 end
