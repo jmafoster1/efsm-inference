@@ -183,47 +183,75 @@ lemma ge_equiv: "gval (Ge x y) r = gval (gOr (gexp.Gt x y) (gexp.Eq x y)) r"
    apply (cases "aval y r")
     apply simp
    apply simp
-  apply (cases "aval y r")
+   apply (cases "aval y r")
    apply simp
   apply simp
-  apply (case_tac "ValueLt (Some a) (Some aa)")
-   apply simp
-   apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some a) (Some aa)")
-    apply simp
-   apply simp
-  using MaybeBoolInt.elims apply force
-  apply simp
-  apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some a) (Some aa)")
-   apply simp
-  using MaybeBoolInt.elims apply force
-  apply simp
-  using value_lt_aval by fastforce
+  apply (case_tac aa)
+  apply (case_tac a)
+  by auto
 
 lemma "(gOr (gexp.Gt (V (R 1)) (N 100)) (gexp.Eq (V (R 1)) (N 100))) = Nor (Nor (gexp.Gt (V (R 1)) (N 100)) (gexp.Eq (V (R 1)) (N 100))) (Nor (gexp.Gt (V (R 1)) (N 100)) (gexp.Eq (V (R 1)) (N 100)))"
   by simp
 
-lemma "context_equiv (Contexts.apply_guard \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> (Ge (V (R 1)) (L (Num 100))))
-                         (Contexts.apply_guard \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> (gOr (gexp.Gt (V (R 1)) (L (Num 100))) (gexp.Eq (V (R 1)) (L (Num 100)))))"
-  apply (simp add: context_equiv_def cexp_equiv_def del: Nat.One_nat_def)
+lemma apply_ge_100: "(apply_guard \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk> (Ge (V (R 1)) (L (Num 100)))) = \<lbrakk>V (R 1) \<mapsto> Geq (Num 100)\<rbrakk>"
+  apply (rule ext)
+  by simp
+
+lemma apply_gt_100_eq_100: "(apply_guard \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk> (gOr (GExp.Lt (L (Num 100)) (V (R 1))) (gexp.Eq (V (R 1)) (L (Num 100))))) = \<lbrakk>V (R 1) \<mapsto> cexp.Not (And (Neq (Num 100)) (Leq (Num 100)))\<rbrakk>"
+  apply (rule ext)
+  by simp
+
+lemma "cexp_equiv (cexp.Not (And (Neq (Num 100)) (Leq (Num 100)))) (Geq (Num 100))"
+  apply (simp add: cexp_equiv_def)
   apply (rule allI)
+  apply (case_tac i)
+   apply auto[1]
+  apply simp
+
+lemma "context_equiv (apply_guard \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> (Ge (V (R 1)) (L (Num 100))))
+                      (apply_guard \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> (gOr (gexp.Gt (V (R 1)) (L (Num 100))) (gexp.Eq (V (R 1)) (L (Num 100)))))"
+  apply (simp only: apply_ge_100 apply_gt_100_eq_100)
+  apply (simp only: context_equiv_def cexp_equiv_def)
+  apply safe
+    apply (case_tac r)
+       apply simp
+      apply simp
+      apply (case_tac i)
+       apply auto[1]
+      apply auto[1]
+     apply (case_tac r)
+        apply simp
+       apply simp
+      apply simp
+     apply simp
+    apply simp
+   apply (case_tac r)
+      apply simp
+     apply (case_tac "x2=R 1")
+      apply simp
+     apply simp
+    apply simp
+   apply simp
   apply (case_tac r)
-  by simp_all
+     apply simp
+    apply (case_tac "x2=R 1")
+     apply simp
+    apply simp
+   apply simp
+  by simp
+
+lemma medial_select_posterior_vend: "medial select_posterior (Guard vend) = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Eq (Num 0)) (Geq (Num 100))\<rbrakk>"
+  apply (rule ext)
+  by (simp add: guard_vend)
 
 (* You can't take vend immediately after taking select *)
 lemma r2_0_vend: "\<not>Contexts.can_take vend select_posterior"
-  apply (simp only: vend_def Contexts.can_take_def)
-  apply (simp only: consistent_def)
-  apply (simp del: Nat.One_nat_def)
-  apply (rule allI)
-  apply (case_tac "s (R 2)")
-   apply (simp del: Nat.One_nat_def)
-   apply fastforce
-   apply (simp del: Nat.One_nat_def)
-  apply (case_tac "ValueLt (Some a) (Some (Num 100))")
-   apply (simp del: Nat.One_nat_def)
-   apply fastforce
-  apply (simp del: Nat.One_nat_def)
-  by fastforce
+  apply (simp add: Contexts.can_take_def medial_select_posterior_vend del: One_nat_def)
+
+
+
+
+
 
 lemma consistent_select_posterior: "consistent select_posterior"
   apply (simp add: consistent_def)

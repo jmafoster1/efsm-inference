@@ -1,10 +1,13 @@
 theory GExp
-imports AExp
+imports AExp Option_Logic
 begin
-datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Lt aexp aexp | Nor gexp gexp | Null vname
+datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null vname
 
 abbreviation gNot :: "gexp \<Rightarrow> gexp" where
   "gNot g \<equiv> Nor g g"
+
+abbreviation Lt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" where
+  "Lt a b \<equiv> Gt b a"
 
 abbreviation
   Le :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" where
@@ -27,19 +30,8 @@ lemma "\<not> (x \<or> y) = (\<not> x \<and> \<not> y)"
 abbreviation gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" where
   "gAnd v va \<equiv> Nor (Nor v v) (Nor va va)"
 
-fun MaybeBoolInt :: "(int \<Rightarrow> int \<Rightarrow> bool) \<Rightarrow> value option \<Rightarrow> value option \<Rightarrow> bool option" where
-  "MaybeBoolInt f (Some (Num a)) (Some (Num b)) = Some (f a b)" |
-  "MaybeBoolInt _ _ _ = None"
-
-abbreviation ValueGt :: "value option \<Rightarrow> value option \<Rightarrow> bool option"  where
-  "ValueGt a b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x>y)) a b"
-
-abbreviation ValueLt :: "value option \<Rightarrow> value option \<Rightarrow> bool option"  where
-  "ValueLt a b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x<y)) a b"
-
 fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool option" where
   "gval (Bc b) _ = Some b" |
-  "gval (Lt a\<^sub>1 a\<^sub>2) s = ValueLt (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
   "gval (Gt a\<^sub>1 a\<^sub>2) s = ValueGt (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
   "gval (Eq a\<^sub>1 a\<^sub>2) s = Some (aval a\<^sub>1 s = aval a\<^sub>2 s)" |
   "gval (Nor a\<^sub>1 a\<^sub>2) s = (case (gval a\<^sub>1 s, gval a\<^sub>2 s) of 
@@ -47,18 +39,6 @@ fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool option" where
     _ \<Rightarrow> None
   )" |
   "gval (Null v) s = Some (s v = None)"
-
-definition gexp_equiv :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
-  "gexp_equiv a b \<equiv> \<forall>s. gval a s = gval b s"
-
-abbreviation maybe_or :: "bool option \<Rightarrow> bool option \<Rightarrow> bool option" where
-  "maybe_or x y \<equiv> (case (x, y) of
-    (Some a, Some b) \<Rightarrow> Some (a \<or> b) |
-    _ \<Rightarrow> None
-  )"
-
-abbreviation maybe_not :: "bool option \<Rightarrow> bool option" where
-  "maybe_not x \<equiv> (case x of Some a \<Rightarrow> Some (\<not>a) | None \<Rightarrow> None)"
 
 lemma or_equiv: "gval (gOr x y) r = maybe_or (gval x r) (gval y r)"
   apply simp
@@ -79,38 +59,36 @@ lemma not_equiv: "maybe_not (gval x s) = gval (gNot x) s"
 lemma nor_equiv: "gval (gNot (gOr a b)) s = gval (Nor a b) s"
   by (simp add: option.case_eq_if)
 
-definition gexp_satisfiable :: "gexp \<Rightarrow> bool" where
-  "gexp_satisfiable g \<equiv> (\<exists>s. gval g s = Some True)"
+definition satisfiable :: "gexp \<Rightarrow> bool" where
+  "satisfiable g \<equiv> (\<exists>s. gval g s = Some True)"
 
+lemma not_satisfiable_gt_string: "\<not> satisfiable (Gt v (L (Str s)))"
+  by (simp add: satisfiable_def)
+
+definition gexp_valid :: "gexp \<Rightarrow> bool" where
+  "gexp_valid g \<equiv> (\<forall>s. gval g s = Some True)"
+
+definition gexp_equiv :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
+  "gexp_equiv a b \<equiv> \<forall>s. gval a s = gval b s"
+
+lemma gexp_equiv_reflexive: "gexp_equiv x x"
+  by (simp add: gexp_equiv_def)
+
+lemma gexp_equiv_symmetric: "gexp_equiv x y \<Longrightarrow> gexp_equiv y x"
+  by (simp add: gexp_equiv_def)
+
+lemma gexp_equiv_transitive: "gexp_equiv x y \<and> gexp_equiv y z \<Longrightarrow> gexp_equiv x z"
+  by (simp add: gexp_equiv_def)
+
+lemma gval_subst: "gexp_equiv x y \<Longrightarrow> P (gval x s) \<Longrightarrow> P (gval y s)"
+  by (simp add: gexp_equiv_def)
+
+fun counterexample :: "gexp \<Rightarrow> gexp" where
+  "counterexample (Eq x y) = Eq (Plus x (L (Num 1))) y" |
+  "counterexample x = x"
+
+(*This isn't true either because counterexample exists*)
 lemma "gexp_equiv s t \<Longrightarrow> gexp_equiv (P s) (P t)"
-proof (induction s)
-case (Bc x)
-  then show ?case
-    apply (cases x)
-     apply (cases t)
-          apply (case_tac x1)
-           apply (simp add: gexp_equiv_def)
-          apply (simp add: gexp_equiv_def)
-         apply simp
-         apply (simp add: gexp_equiv_def)
-         apply (rule allI)
-    try
-
-next
-  case (Eq x1a x2)
-  then show ?case sorry
-next
-  case (Gt x1a x2)
-  then show ?case sorry
-next
-  case (Lt x1a x2)
-  then show ?case sorry
-next
-  case (Nor s1 s2)
-  then show ?case sorry
-next
-  case (Null x)
-  then show ?case sorry
-qed
+  oops
 
 end

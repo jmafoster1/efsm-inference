@@ -49,6 +49,9 @@ definition vend :: "transition" where
         Updates = [(R 1, V (R 1)), (R 2, V (R 2))]
       \<rparr>"
 
+lemma guard_vend: "Guard vend = [(Ge (V (R 2)) (L (Num 100)))]"
+  by (simp add: vend_def)
+
 definition drinks :: "statename efsm" where
 "drinks \<equiv> \<lparr> 
           s0 = q1,

@@ -1,8 +1,22 @@
 theory CExp
-  imports Types
+  imports AExp Option_Logic
 begin
 
 datatype cexp = Undef | Bc bool | Eq "value" | Lt "value" | Gt "value" | Not cexp | And cexp cexp
+
+fun "and" :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
+  "and (Bc True) x = x" |
+  "and x (Bc True) = x" |
+  "and c c' = (if c = c' then c else And c c')"
+
+fun "not" :: "cexp \<Rightarrow> cexp" where
+  "not c = (case c of
+    Bc True \<Rightarrow> Bc False |
+    Bc False \<Rightarrow> Bc True |
+    Not x \<Rightarrow> x |
+    Undef \<Rightarrow> Bc True |
+    c \<Rightarrow> Not c
+  )"
 
 (* Less than or equal to *)
 abbreviation Leq :: "value \<Rightarrow> cexp" where
@@ -14,197 +28,11 @@ abbreviation Geq :: "value \<Rightarrow> cexp" where
 
 (* Not equal to *)
 abbreviation Neq :: "value \<Rightarrow> cexp" where
-  "Neq v \<equiv> Not (Eq  v)"
+  "Neq v \<equiv> Not (Eq v)"
 
 (* Logical Or in terms of And and Not*)
 abbreviation Or :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
-  "Or v va \<equiv> Not (And (Not v) (Not va))"
-
-(* Does a given value of "i" satisfy the given cexp? *)
-fun ceval :: "cexp \<Rightarrow> (value \<Rightarrow> bool)" where
-  "ceval Undef = (\<lambda>i. False)" |
-  "ceval (Bc b) = (\<lambda>i. b)" |
-  "ceval (Eq v) = (\<lambda>i. i = v)" |
-  "ceval (Lt v) = (\<lambda>i. case (i, v) of ((Num a), (Num b)) \<Rightarrow> a < b | _ \<Rightarrow> False)" |
-  "ceval (Gt v) = (\<lambda>i. case (i, v) of ((Num a), (Num b)) \<Rightarrow> a > b | _ \<Rightarrow> False)" |
-  "ceval (Not v) = (\<lambda>i. \<not>(ceval v i))" |
-  "ceval (And v va) = (\<lambda>i. (ceval v i \<and> ceval va i))"
-
-(* Are cexps "c" and "c'" satisfied under the same conditions? *)
-definition cexp_equiv :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
-  "cexp_equiv c c' \<equiv> (\<forall>i. (ceval c i) = (ceval c' i)) \<and> (c = Undef \<longleftrightarrow> c' = Undef)"
-
-(* Is cexp "c" satisfied under all "i" values? *)
-definition valid :: "cexp \<Rightarrow> bool" where
-  "valid c \<equiv> (\<forall> i. ceval c i)"
-
-(* Is there some value of "i" which satisfies "c"? *)
-definition satisfiable :: "cexp \<Rightarrow> bool" where
-  "satisfiable v \<equiv> (\<exists>i. ceval v i)"
-
-fun "and" :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
-  "and (Bc False) _ = Bc False" |
-  "and _ (Bc False) = Bc False" |
-  "and (Bc True) x = x" |
-  "and x (Bc True) = x" |
-  "and c c' = (if c = c' then c else And c c')"
-
-theorem and_is_And [simp]:  "ceval (and x y) = ceval (And x y)"
-proof (cases x)
-  case Undef
-  then show ?thesis
-    apply simp
-    apply (cases y)
-    prefer 2
-    apply (case_tac x2)
-    by simp_all
-next
-  case (Bc x2)
-  then show ?thesis
-    apply simp
-    apply (cases x2)
-     prefer 2
-     apply simp
-    apply (cases y)
-          apply simp_all
-    apply (case_tac x2a)
-    by simp_all
-next
-  case (Eq x3)
-  then show ?thesis
-    apply simp
-    apply (cases y)
-          apply simp_all
-    apply (case_tac x2)
-    by simp_all
-next
-case (Lt x4)
-  then show ?thesis
-    apply simp
-    apply (cases y)
-          apply simp_all
-    apply (case_tac x2)
-    by auto
-next
-  case (Gt x5)
-  then show ?thesis
-    apply simp
-    apply (cases y)
-          apply simp_all
-    apply (case_tac x2)
-    by auto
-next
-  case (Not x6)
-  then show ?thesis
-        apply simp
-    apply (cases y)
-          apply simp_all
-    apply (case_tac x2)
-    by simp_all
-next
-  case (And x71 x72)
-  then show ?thesis
-    apply simp
-    apply (cases y)
-          apply simp_all
-    apply (case_tac x2)
-    by auto
-qed
-
-lemma and_true [simp]: "and x (Bc True) = x"
-proof (cases x)
-case Undef
-  then show ?thesis by simp
-next
-  case (Bc x2)
-  then show ?thesis by (cases x2, simp_all)
-next
-  case (Eq x3)
-  then show ?thesis by simp
-next
-case (Lt x4)
-then show ?thesis by simp
-next
-case (Gt x5)
-then show ?thesis by simp
-next
-  case (Not x6)
-  then show ?thesis by simp
-next
-  case (And x71 x72)
-  then show ?thesis by simp
-qed
-
-lemma and_true_2 [simp]: "and (Bc True) x = x"
-proof (cases x)
-case Undef
-  then show ?thesis by simp
-next
-  case (Bc x2)
-  then show ?thesis by (cases x2, simp_all)
-next
-  case (Eq x3)
-then show ?thesis by simp
-next
-case (Lt x4)
-then show ?thesis by simp
-next
-case (Gt x5)
-then show ?thesis by simp
-next
-  case (Not x6)
-  then show ?thesis by simp
-next
-  case (And x71 x72)
-  then show ?thesis by simp
-qed
-
-fun "not" :: "cexp \<Rightarrow> cexp" where
-  "not c = (case c of
-    Bc True \<Rightarrow> Bc False |
-    Bc False \<Rightarrow> Bc True |
-    Not x \<Rightarrow> x |
-    Undef \<Rightarrow> Bc True |
-    c \<Rightarrow> Not c
-  )"
-
-theorem not_is_Not[simp]: "ceval (not x) = ceval (Not x)"
-  proof (cases "x")
-    case (Bc x1)
-    then show ?thesis
-      apply (case_tac "x1 = True")
-      by simp_all
-  next
-    case (Eq x2)
-    then show ?thesis by simp_all
-  next
-    case (Lt x3)
-    then show ?thesis by simp_all
-  next
-    case (Gt x4)
-    then show ?thesis by simp_all
-  next
-    case (Not x5)
-    then show ?thesis by simp_all
-  next
-    case (And x61 x62)
-    then show ?thesis by simp_all
-  next
-    case (Undef)
-    then show ?thesis by simp
-  qed
-
-lemma "ceval (Bc True) = ceval (Not (Bc False))"
-  by simp
-
-lemma "ceval (Bc False) = ceval (Not (Bc True))"
-  by simp
-
-lemma "\<forall> i. (ceval (And (Eq (Num 1)) (Gt (Num 2)))) i = False"
-  by simp
-
-lemma "ceval (Not (Not v)) = ceval v"
-  by simp
+  "Or v va \<equiv> not (and (not v) (not va))"
 
 (*
 If the second arg is always bigger than the first (e.g. if they're both literals with the first
@@ -226,8 +54,8 @@ fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" whe
 
   "apply_gt v (And va vb) = (and (fst (apply_gt v va)) (fst (apply_gt v vb)), and (snd (apply_gt v va)) (snd (apply_gt v vb)))" |
   "apply_gt (And va vb) v = (and (fst (apply_gt va v)) (fst (apply_gt vb v)), and (snd (apply_gt va v)) (snd (apply_gt vb v)))" |
-  "apply_gt v (Not (And va vb)) = (Not (and (fst (apply_gt v va)) (fst (apply_gt v vb))), Not (and (snd (apply_gt v va)) (snd (apply_gt v vb))))" |
-  "apply_gt (Not (And va vb)) v = (Not (and (fst (apply_gt va v)) (fst (apply_gt vb v))), Not (and (snd (apply_gt va v)) (snd (apply_gt vb v))))" |
+  "apply_gt v (Not (And va vb)) = (not (and (fst (apply_gt v va)) (fst (apply_gt v vb))), not (and (snd (apply_gt v va)) (snd (apply_gt v vb))))" |
+  "apply_gt (Not (And va vb)) v = (not (and (fst (apply_gt va v)) (fst (apply_gt vb v))), not (and (snd (apply_gt va v)) (snd (apply_gt vb v))))" |
 
   "apply_gt (Bc True) (Bc True) = (Bc True, Bc True)" |
   "apply_gt (Eq v) (Bc True)   = (Eq v, Lt v)" |
@@ -255,6 +83,24 @@ fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" whe
 
 fun apply_lt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where
   "apply_lt a b = (let (ca, cb) = (apply_gt b a) in (cb, ca))"
+
+(* Does a given value of "i" satisfy the given cexp? *)
+fun ceval :: "cexp \<Rightarrow> (value \<Rightarrow> bool option)" where
+  "ceval Undef = (\<lambda>i. Some False)" |
+  "ceval (Bc b) = (\<lambda>i. Some b)" |
+  "ceval (Eq v) = (\<lambda>i. Some (i = v))" |
+  "ceval (Lt v) = (\<lambda>i. ValueLt (Some i) (Some v))" |
+  "ceval (Gt v) = (\<lambda>i. ValueGt (Some i) (Some v))" |
+  "ceval (Not v) = (\<lambda>i. maybe_not (ceval v i))" |
+  "ceval (And v va) = (\<lambda>i. maybe_and (ceval v i) (ceval va i))"
+
+(* Is cexp "c" satisfied under all "i" values? *)
+definition valid :: "cexp \<Rightarrow> bool" where
+  "valid c \<equiv> (\<forall> i. ceval c i = Some True)"
+
+(* Is there some value of "i" which satisfies "c"? *)
+definition satisfiable :: "cexp \<Rightarrow> bool" where
+  "satisfiable v \<equiv> (\<exists>i. ceval v i = Some True)"
 
 fun compose_plus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "compose_plus x y = (if satisfiable x \<and> satisfiable y then (if valid x \<or> valid y then Bc True else (case (x, y) of
@@ -316,10 +162,280 @@ fun compose_minus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   _ \<Rightarrow> Bc True
   )) else Bc False)"
 
-lemma "compose_plus (Eq (Str ''cat'')) (Eq (Num 1)) = Bc False"
+lemma and_is_And [simp]:  "ceval (and x y) = ceval (And x y)"
+proof (cases x)
+  case Undef
+  then show ?thesis
+    apply (cases y)
+          apply simp
+         apply (case_tac x2)
+    by simp_all
+next
+  case (Bc x2)
+  then show ?thesis
+    apply (cases x2)
+     apply (cases y)
+           apply simp
+          apply (case_tac x2a)
+           apply simp
+          apply simp
+         apply simp
+        apply (rule ext)
+        apply (simp add: option.case_eq_if)
+       apply (rule ext)
+       apply (simp add: option.case_eq_if)
+      apply (rule ext)
+      apply (simp add: option.case_eq_if)
+      apply (rule ext)
+     apply (simp add: option.case_eq_if)
+    apply (cases y)
+          apply simp
+         apply (case_tac x2a)
+    by simp_all
+next
+  case (Eq x3)
+  then show ?thesis
+    apply (cases y)
+          apply simp
+         apply (case_tac x2)
+    by simp_all
+next
+  case (Lt x4)
+  then show ?thesis
+    apply (cases y)
+          apply simp
+         apply (case_tac x2)
+          apply simp
+          apply (rule ext)
+          apply (simp add: option.case_eq_if)
+         apply (rule ext)
+         apply (simp add: option.case_eq_if)
+        apply (rule ext)
+        apply (simp add: option.case_eq_if)
+       apply (rule ext)
+       apply (simp add: option.case_eq_if)
+      apply (rule ext)
+      apply (simp add: option.case_eq_if)
+     apply (rule ext)
+     apply (simp add: option.case_eq_if)
+    by simp
+next
+  case (Gt x5)
+  then show ?thesis
+    apply (cases y)
+          apply simp
+         apply (case_tac x2)
+          apply simp
+          apply (rule ext)
+          apply (simp add: option.case_eq_if)
+         apply (rule ext)
+         apply (simp add: option.case_eq_if)
+        apply (rule ext)
+        apply (simp add: option.case_eq_if)
+       apply (rule ext)
+       apply (simp add: option.case_eq_if)
+      apply (rule ext)
+      apply (simp add: option.case_eq_if)
+     apply (rule ext)
+     apply (simp add: option.case_eq_if)
+    by simp
+next
+  case (Not x6)
+  then show ?thesis
+    apply (case_tac "y=Bc True")
+     apply simp
+     apply (rule ext)
+     apply (simp add: option.case_eq_if)
+    apply (cases y)
+          apply simp
+         apply simp
+        apply simp
+       apply simp
+      apply simp
+     apply (case_tac "x6 = x6a")
+      apply (rule ext)
+      apply (simp add: option.case_eq_if)
+     apply simp
+    by simp
+next
+  case (And x71 x72)
+  then show ?thesis
+    apply (cases y)
+          apply simp
+    apply (case_tac x2)
+    apply (rule ext)
+      apply (simp add: option.case_eq_if)
+         apply simp
+        apply simp
+       apply simp
+      apply simp
+     apply simp
+    apply (case_tac "x = y")
+     apply (rule ext)
+     apply (simp add: option.case_eq_if)
+    apply (rule ext)
+    by (simp add: option.case_eq_if)
+qed
+  
+lemma and_true [simp]: "and x (Bc True) = x"
+proof (cases x)
+case Undef
+  then show ?thesis by simp
+next
+  case (Bc x2)
+  then show ?thesis by (cases x2, simp_all)
+next
+  case (Eq x3)
+  then show ?thesis by simp
+next
+case (Lt x4)
+then show ?thesis by simp
+next
+case (Gt x5)
+then show ?thesis by simp
+next
+  case (Not x6)
+  then show ?thesis by simp
+next
+  case (And x71 x72)
+  then show ?thesis by simp
+qed
+
+lemma and_true_2 [simp]: "and (Bc True) x = x"
+proof (cases x)
+case Undef
+  then show ?thesis by simp
+next
+  case (Bc x2)
+  then show ?thesis by (cases x2, simp_all)
+next
+  case (Eq x3)
+then show ?thesis by simp
+next
+case (Lt x4)
+then show ?thesis by simp
+next
+case (Gt x5)
+then show ?thesis by simp
+next
+  case (Not x6)
+  then show ?thesis by simp
+next
+  case (And x71 x72)
+  then show ?thesis by simp
+qed
+
+theorem not_is_Not[simp]: "ceval (not x) = ceval (Not x)"
+  proof (cases "x")
+    case (Bc x1)
+    then show ?thesis
+      apply (case_tac "x1 = True")
+      by simp_all
+  next
+    case (Eq x2)
+    then show ?thesis by simp_all
+  next
+    case (Lt x3)
+    then show ?thesis by simp_all
+  next
+    case (Gt x4)
+    then show ?thesis by simp_all
+  next
+    case (Not x5)
+    then show ?thesis
+      apply simp
+      apply (rule ext)
+      by (simp add: option.case_eq_if)
+  next
+    case (And x61 x62)
+    then show ?thesis by simp_all
+  next
+    case (Undef)
+    then show ?thesis by simp
+  qed
+
+lemma true_not_false: "ceval (Bc True) = ceval (Not (Bc False))"
+  by simp
+
+lemma false_not_true: "ceval (Bc False) = ceval (Not (Bc True))"
+  by simp
+
+lemma satisfiable_eq: "satisfiable (Eq x3)"
+  by (simp add: satisfiable_def)
+
+lemma satisfiable_neq: "satisfiable (Neq x3)"
+  apply (simp add: satisfiable_def)
+  apply (cases x3)
+   apply (rule_tac x="Num (x1+1)" in exI)
+   apply simp
+  apply (rule_tac x="Str (x2@''s'')" in exI)
+  by simp
+
+lemma satisfiable_leq: "satisfiable (Leq (Num x))"
+  apply (simp add: satisfiable_def)
+  apply (rule_tac x="Num (x-1)" in exI)
+  by simp
+
+lemma satisfiable_geq: "satisfiable (Geq (Num x))"
+  apply (simp add: satisfiable_def)
+  apply (rule_tac x="Num (x+1)" in exI)
+  by simp
+
+lemma satisfiable_lt: "satisfiable (Lt (Num x4))"
+  apply (simp add: satisfiable_def)
+  apply (rule_tac x="Num (x4-1)" in exI)
+  by simp
+
+lemma unsatisfiable_lt: "\<not> satisfiable (Lt (Str s))"
+  by (simp add: satisfiable_def)
+
+lemma satisfiable_gt: "satisfiable (Gt (Num x4))"
+  apply (simp add: satisfiable_def)
+  apply (rule_tac x="Num (x4+1)" in exI)
+  by simp
+
+lemma unsatisfiable_gt: "\<not> satisfiable (Gt (Str s))"
+  by (simp add: satisfiable_def)
+
+lemma satisfiable_true: "satisfiable (Bc True)"
+  by (simp add: satisfiable_def)
+
+lemma unsatisfiable_false: "\<not> satisfiable (Bc False)"
+  by (simp add: satisfiable_def)
+
+lemma satisfiable_not_undef: "satisfiable (Not (Undef))"
+  by (simp add: satisfiable_def)
+
+lemma ceval_double_negation: "ceval (Not (Not v)) = ceval v"
+  by (metis cexp.simps(54) not.simps not_is_Not)
+
+lemma ceval_not_true: "ceval (Not (Bc True)) = ceval (Bc False)"
+  by (simp add: satisfiable_def)
+
+lemma ceval_not_false: "ceval (Not (Bc False)) = ceval (Bc True)"
+  by (simp add: satisfiable_def)
+
+lemma plus_num_str: "compose_plus (Eq (Str s)) (Eq (Num n)) = Bc False"
   apply (simp add: valid_def satisfiable_def)
   by auto
 
+
+(* Are cexps "c" and "c'" satisfied under the same conditions? *)
+definition cexp_equiv :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
+  "cexp_equiv c c' \<equiv> (\<forall>i. (ceval c i) = (ceval c' i)) \<and> (c = Undef \<longleftrightarrow> c' = Undef)"
+
+lemma cexp_equiv_reflexive: "cexp_equiv x x"
+  by (simp add: cexp_equiv_def)
+
+lemma cexp_equiv_symmetric: "cexp_equiv x y \<Longrightarrow> cexp_equiv y x"
+  by (simp add: cexp_equiv_def)
+
+lemma cexp_equiv_transitive: "cexp_equiv x y \<Longrightarrow> cexp_equiv y z \<Longrightarrow> cexp_equiv x z"
+  by (simp add: cexp_equiv_def)
+
 lemma cexp_equiv_undef: "cexp_equiv x Undef \<Longrightarrow> x = Undef"
+  by (simp add: cexp_equiv_def)
+
+lemma cexp_equiv_subst: "cexp_equiv x y \<Longrightarrow> P (ceval x i) \<Longrightarrow> P (ceval y i)"
   by (simp add: cexp_equiv_def)
 end
