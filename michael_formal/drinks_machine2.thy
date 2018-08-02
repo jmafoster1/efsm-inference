@@ -206,7 +206,7 @@ lemma "cexp_equiv (cexp.Not (And (Neq (Num 100)) (Leq (Num 100)))) (Geq (Num 100
   apply (rule allI)
   apply (case_tac i)
    apply auto[1]
-  apply simp
+  by simp
 
 lemma "context_equiv (apply_guard \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> (Ge (V (R 1)) (L (Num 100))))
                       (apply_guard \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> (gOr (gexp.Gt (V (R 1)) (L (Num 100))) (gexp.Eq (V (R 1)) (L (Num 100)))))"
@@ -244,14 +244,25 @@ lemma medial_select_posterior_vend: "medial select_posterior (Guard vend) = \<lb
   apply (rule ext)
   by (simp add: guard_vend)
 
+lemma "\<not> GExp.satisfiable (gAnd (gexp.Eq (V (R 2)) (L (Num 0))) (Ge (V (R 2)) (L (Num 100))))"
+  apply (simp add: GExp.satisfiable_def)
+  apply (rule allI)
+  apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
+   apply simp
+  apply simp
+  apply (case_tac "s (R 2) = Some (Num 0)")
+   apply simp
+  by simp
+
 (* You can't take vend immediately after taking select *)
 lemma r2_0_vend: "\<not>Contexts.can_take vend select_posterior"
-  apply (simp add: Contexts.can_take_def medial_select_posterior_vend del: One_nat_def)
-
-
-
-
-
+  apply (simp only: can_take_def medial_select_posterior_vend)
+  apply (simp add: consistent_def)
+  apply (rule allI)
+  apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
+   apply fastforce
+  apply simp
+  by fastforce
 
 lemma consistent_select_posterior: "consistent select_posterior"
   apply (simp add: consistent_def)
@@ -388,12 +399,12 @@ lemma can_take_vend: "0 < Suc n \<longrightarrow> Contexts.can_take vend r1_r2_t
   apply (rule_tac x="<R 1 := Num 0, R 2 := Num 100>" in exI)
   by (simp add: consistent_empty_4)
 
-lemma medial_vend: "medial r1_r2_true (Guard vend) = \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> And (Geq (Num 100)) (Geq (Num 100))\<rbrakk>"
+lemma medial_vend: "medial r1_r2_true (Guard vend) = \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> (Geq (Num 100))\<rbrakk>"
   apply (simp add: vend_def)
   apply (rule ext)
   by simp
 
-lemma consistent_medial_vend: "consistent \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> And (Geq (Num 100)) (Geq (Num 100))\<rbrakk>"
+lemma consistent_medial_vend: "consistent \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> (Geq (Num 100))\<rbrakk>"
   apply (simp add: consistent_def)
   apply (rule_tac x="<R 1 := Num 0, R 2 := Num 100>" in exI)
   apply (simp del: Nat.One_nat_def)

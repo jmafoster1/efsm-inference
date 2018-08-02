@@ -121,8 +121,24 @@ lemma consistent_true: "\<forall>r. c r = Undef \<or> c r = Bc True \<Longrighta
 lemma "subsumes \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num n)\<rbrakk> coin coin50"
   apply (simp only: subsumes_def)
   apply safe
-     apply (simp add: coin_def coin50_def)
-    apply (simp add: coin_def coin50_def)
-   apply (simp add: coin50_posterior medial_coin50 posterior_coin_2 del: Nat.One_nat_def)
-  by (simp add: posterior_coin consistent_empty_1 consistent_true del: Nat.One_nat_def)
+     apply (simp add: coin_def coin50_def del: One_nat_def)
+     apply (case_tac "r = V (R 2)")
+      apply simp
+     apply (simp del: One_nat_def)
+     apply (case_tac "r = V (R 1)")
+      apply simp
+     apply simp
+     apply (case_tac "ceval (\<lbrakk>\<rbrakk> r) i")
+      apply simp
+     apply (simp del: One_nat_def)
+     apply (case_tac "r = V (I 1)")
+      apply simp
+     apply simp
+    apply (simp add: coin50_def coin_def)
+   apply (simp only: medial_coin50 posterior_coin_2 coin50_posterior)
+  apply (simp only: posterior_coin consistent_def)
+  apply (rule_tac x="<>" in exI)
+  apply (rule allI)
+  apply simp
+  using consistent_empty_4 by blast
 end

@@ -19,6 +19,9 @@ definition coin50 :: "transition" where
         Updates = []
       \<rparr>"
 
+lemma guard_coin50: "Guard coin50 = [(gexp.Eq (V (I 1)) (L (Num 50)))]"
+  by (simp add: coin50_def)
+
 definition coin_init :: "transition" where
 "coin_init \<equiv> \<lparr>
         Label = ''coin'',
@@ -27,6 +30,9 @@ definition coin_init :: "transition" where
         Outputs = [],
         Updates = [(R 1, (V (I 1)))]
       \<rparr>"
+
+lemma guard_coin_init: "Guard coin_init = []"
+  by (simp add: coin_init_def)
 
 definition coin_inc :: "transition" where
 "coin_inc \<equiv> \<lparr>
@@ -83,7 +89,7 @@ definition venderr_g :: "transition" where
 "venderr_g \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [(gexp.Lt (V (R 1)) (L (Num 100)))],
+        Guard = [(GExp.Lt (V (R 1)) (L (Num 100)))],
         Outputs =  [L (Num 1)],
         Updates = []
       \<rparr>"
@@ -150,12 +156,29 @@ lemma posterior_empty_coin_init: "posterior \<lbrakk>\<rbrakk> coin_init = \<lbr
 lemma "subsumes empty coin_init coin50"
   apply (simp add: subsumes_def)
   apply safe
-     apply (simp add: coin50_def coin_init_def)
+     apply (simp add: guard_coin50 guard_coin_init)
+     apply (case_tac r)
+        apply simp
+       apply simp
+       apply (case_tac x2)
+        apply simp
+       apply simp
+      apply simp
+     apply simp
+    apply (simp add: guard_coin50)
     apply (simp add: coin50_def coin_init_def)
-   apply (simp add: posterior_empty_coin50 posterior_empty_coin_init empty_not_undef)
-  apply (simp add: posterior_empty_coin50 posterior_empty_coin_init consistent_def)
-  apply (rule_tac x="<>" in exI)
-  using empty_not_undef by force
+   apply (simp add: posterior_empty_coin50)
+   apply (case_tac r)
+      apply simp
+     apply simp
+  apply (case_tac x2)
+      apply simp
+     apply simp
+    apply simp
+   apply simp
+  apply (simp add: posterior_empty_coin_init posterior_empty_coin50)
+  apply (simp add: consistent_def)
+  using consistent_empty_4 by blast
 
 lemma "\<not> subsumes empty coin_inc coin50"
   by (simp add: subsumes_def posterior_empty_coin50 posterior_empty_coin_inc_not_consistent)
@@ -180,29 +203,42 @@ lemma "subsumes \<lbrakk>V (R 1) \<mapsto> Bc True\<rbrakk> coin_inc coin50"
   apply (simp add: subsumes_def del: Nat.One_nat_def)
   apply safe
      apply (simp add: coin50_def coin_inc_def)
-    apply (simp add: coin50_def coin_inc_def)
-   apply (simp only: posterior_coin50_true)
-  using consistent_empty_1 apply force
-   apply (simp only: posterior_coin_inc_r1_true consistent_def)
+     apply (case_tac r)
+        apply simp
+       apply simp
+       apply (case_tac "x2 = R (Suc 0)")
+        apply simp
+       apply simp
+       apply (case_tac x2)
+        apply simp
+       apply simp
+      apply simp
+     apply simp
+     apply (simp add: coin50_def coin_inc_def)
+   apply (simp add: posterior_coin50_true del: One_nat_def)
+   apply (case_tac r)
+      apply simp
+  using consistent_empty_1 apply fastforce
+    apply simp
+   apply simp
+  apply (simp add: posterior_coin_inc_r1_true consistent_def)
   apply (rule_tac x="<>" in exI)
-  by (simp add: consistent_empty_4)
+  apply (rule allI)
+  using consistent_empty_4 posterior_coin_inc_r1_true by auto
+       
 
 lemma "(posterior_sequence [coin_init, coin_inc] empty) = \<lbrakk>V (R 1) \<mapsto> Bc True\<rbrakk>"
   apply (simp add: posterior_sequence_def posterior_def coin_init_def coin_inc_def satisfiable_def valid_def consistent_def)
   using consistent_def consistent_empty_1 consistent_empty_3 by auto
 
-lemma not_consistent_medial_vends_g_empty: "\<not>consistent (\<lambda>r. and (\<lbrakk>\<rbrakk> r) (if r = V (R 1) then snd (V (R 1), And (Geq (Num 100)) (Geq (Num 100))) else cexp.Bc True))"
+lemma not_consistent_medial_vends_g_empty: "\<not>consistent (\<lambda>r. and (\<lbrakk>\<rbrakk> r) (if r = V (R 1) then snd (V (R 1), (Geq (Num 100))) else cexp.Bc True))"
   apply (simp add: consistent_def del: Nat.One_nat_def)
   apply (rule allI)
-  apply (case_tac "s (R 1)")
-   apply simp
-   apply fastforce
-  apply (simp del: Nat.One_nat_def)
-  apply (case_tac "ValueLt (Some a) (Some (Num 100))")
-   apply simp
-   apply fastforce
+  apply (rule_tac x="V (R 1)" in exI)
   apply simp
-  by fastforce
+  apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R (Suc 0)))")
+   apply simp
+  by simp
 
 lemma posterior_empty_vends_g: "posterior \<lbrakk>\<rbrakk> vends_g = (\<lambda>i. Bc False)"
   by (simp add: posterior_def not_consistent_medial_vends_g_empty  del: Nat.One_nat_def)
@@ -223,7 +259,6 @@ lemma "\<not> subsumes empty vends_g vends"
     apply simp
    apply simp
   by simp
-  
 
 lemma consistent_medial_vends_g: "consistent (medial \<lbrakk>V (R 1) \<mapsto> Geq (Num 100)\<rbrakk> (Guard vends_g))"
   apply (simp add: vends_g_def consistent_def)
@@ -264,6 +299,9 @@ definition test1 :: transition where
         Outputs =  [(L (Num 6))],
         Updates = [(R 1, (L (Num 6)))]
       \<rparr>"
+
+lemma guard_test1: "Guard test1 = [(gexp.Eq (V (I 1)) (L (Num 6)))]"
+  by (simp add: test1_def)
 
 definition test2 :: transition where
 "test2 \<equiv> \<lparr>
@@ -340,7 +378,13 @@ lemma test2_subsumes_test1: "subsumes \<lbrakk>\<rbrakk> test2 test1"
      apply (simp add: medial_test1 medial_test2)
      apply auto[1]
     apply (simp add: test1_def test2_def)
-   apply (simp only: medial_test1 posterior_test2_2 posterior_test1)
-   apply auto[1]
-  by (simp add: test2_subsumes_test1_aux2)
+   apply (simp only: posterior_test1 medial_test1 posterior_test2_2)
+   apply (simp del: One_nat_def)
+   apply (case_tac "r = V (R 1)")
+    apply simp
+    apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some i) (Some (Num 0))")
+     apply simp
+    apply simp
+   apply simp
+  by (simp add: test2_subsumes_test1_aux2)  
 end

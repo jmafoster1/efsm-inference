@@ -45,7 +45,7 @@ fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow> gexp" where
   "cexp2gexp a (Eq v) = gexp.Eq a (L v)" |
   "cexp2gexp a (Not v) = gNot (cexp2gexp a v)" |
   "cexp2gexp a (And v va) = gAnd (cexp2gexp a v) (cexp2gexp a va)"
-  
+
 (* Is there a variable evaluation which can satisfy all of the context? *)
 definition consistent :: "context \<Rightarrow> bool" where
   "consistent c \<equiv> \<exists>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
@@ -70,6 +70,16 @@ lemma consistent_empty_4: "\<lbrakk>\<rbrakk> r = Undef \<or> gval (cexp2gexp r 
 lemma consistent_empty [simp]: "consistent empty"
   apply (insert consistent_empty_1 consistent_empty_3)
   by auto
+
+lemma cexp2gexp_double_neg: "gexp_equiv (cexp2gexp r (Not (Not x))) (cexp2gexp r x)"
+  apply (simp add: gexp_equiv_def)
+  apply (rule allI)
+  apply (case_tac "gval (cexp2gexp r x) s")
+   apply simp
+  by simp
+
+lemma gval_cexp2gexp_double_neg: "gval (cexp2gexp r (Not (Not x))) s = gval (cexp2gexp r x) s"
+  using cexp2gexp_double_neg gexp_equiv_def by blast
 
 definition valid_context :: "context \<Rightarrow> bool" where
   "valid_context c \<equiv> \<forall>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
@@ -182,8 +192,83 @@ lemma gexp_equiv_cexp_not_true:  "gexp_equiv (cexp2gexp a (Not (Bc True))) (gexp
 lemma gexp_equiv_cexp_not_false:  "gexp_equiv (cexp2gexp a (Not (Bc False))) (gexp.Bc True)"
   by (simp add: gexp_equiv_def)
 
-lemma aux1: "Geq (Str x2) = c r \<Longrightarrow> (cexp2gexp r (c r)) = Ge r (L (Str x2))"
+lemma geq_to_ge: "Geq x = c r \<Longrightarrow> (cexp2gexp r (c r)) = Ge r (L x)"
   by (metis cexp2gexp.simps(3) cexp2gexp.simps(6))
+
+lemma leq_to_le: "Leq x = c r \<Longrightarrow> (cexp2gexp r (c r)) = Le r (L x)"
+  by (metis cexp2gexp.simps(4) cexp2gexp.simps(6))
+
+lemma lt_to_lt: "Lt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Gt (L x) r"
+  by (metis cexp2gexp.simps(3))
+
+lemma gt_to_gt: "Gt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Gt r (L x)"
+  by (metis cexp2gexp.simps(4))
+
+lemma not_satisfiable_def: "\<not> satisfiable c = (\<forall>i. ceval c i = Some False \<or> ceval c i = None)"
+  apply (simp add: satisfiable_def)
+  apply safe
+   apply (rule_tac x=i in exI)
+   apply auto[1]
+  apply simp
+   apply (rule_tac x=i in exI)
+  by simp
+
+lemma cexp_satisfiable_some_false: "CExp.satisfiable (cexp.Not c) \<Longrightarrow> \<exists>i. ceval c i = Some False"
+  apply (simp add: satisfiable_def)
+  by (metis (full_types) ceval.simps(6) ceval_double_negation map_option_case option.simps(9))
+
+lemma true_or_none_not_false: "(\<forall>i. ceval c i = Some True \<or> ceval c i = None) \<Longrightarrow> \<nexists>i. ceval c i = Some False"
+  by (metis CExp.satisfiable_def not_satisfiable_def option.distinct(1))
+
+lemma not_satisfiable_neg: "\<not> CExp.satisfiable (cexp.Not c) = (\<forall>i. ceval c i = Some True \<or> ceval c i = None)"
+  apply safe
+   apply (simp add: satisfiable_def)
+   apply (metis option.case_eq_if option.sel option.simps(3))
+   apply (simp add: satisfiable_def)
+  by (metis (full_types) map_option_case option.simps(9))  
+
+lemma satisfiable_double_neg: "satisfiable (cexp.Not (cexp.Not x6)) = satisfiable x6"
+  apply (simp add: satisfiable_def)
+  by (metis ceval.simps(6) ceval_double_negation)
+
+lemma "\<not> satisfiable c \<Longrightarrow> \<not> GExp.satisfiable (cexp2gexp r c)"
+proof (induction c)
+case Undef
+  then show ?case
+    by (simp add: CExp.satisfiable_def GExp.satisfiable_def)
+next
+  case (Bc x)
+  then show ?case
+    by (simp add: CExp.satisfiable_def GExp.satisfiable_def)
+next
+  case (Eq x)
+  then show ?case
+    by (simp add: CExp.satisfiable_def GExp.satisfiable_def)
+next
+  case (Lt x)
+  then show ?case
+    apply (cases x)
+     apply (simp add: CExp.satisfiable_def GExp.satisfiable_def)
+    using Lt.prems satisfiable_lt apply blast
+    by (simp add: CExp.satisfiable_def GExp.satisfiable_def)
+next
+  case (Gt x)
+  then show ?case
+    apply (cases x)
+     apply (simp add: CExp.satisfiable_def GExp.satisfiable_def)
+    using Gt.prems satisfiable_gt apply blast
+    by (simp add: not_satisfiable_gt_string)
+next
+  case (Not c)
+  then show ?case
+    apply simp
+    sorry
+
+
+  next
+  case (And c1 c2)
+  then show ?case sorry
+qed
 
 lemma "\<not> satisfiable (c r) \<and> c r \<noteq> Undef \<Longrightarrow> \<not> consistent c"
 proof (induction "c r")
@@ -210,7 +295,7 @@ next
     apply (simp add: satisfiable_def consistent_def)
     apply (rule allI)
     apply (rule_tac x=r in exI)
-    by (metis (full_types) cexp2gexp.simps(3) gval.simps(1) option.sel)
+    by (simp add: lt_to_lt)
 next
   case (Gt x)
   then show ?case
@@ -219,7 +304,7 @@ next
     apply (simp add: satisfiable_def consistent_def)
     apply (rule allI)
     apply (rule_tac x=r in exI)
-    by (metis cexp2gexp.simps(4) gval.simps(1) option.inject)
+    by (simp add: gt_to_gt)
 next
   case (Not x)
   then show ?case
@@ -237,12 +322,21 @@ next
        apply (case_tac x4)
         apply (metis satisfiable_geq)
        apply (simp add: satisfiable_def consistent_def)
-    apply (rule allI)
+       apply (rule allI)
        apply (rule_tac x=r in exI)
-       apply simp
-    apply (simp add: aux1)
-    
+       apply (simp add: geq_to_ge)
+      apply simp
+      apply (case_tac x5)
+       apply (metis satisfiable_leq)
+      apply (simp add: satisfiable_def consistent_def)
+      apply (rule allI)
+      apply (rule_tac x=r in exI)
+      apply (simp add: leq_to_le)
 
+     apply (simp add: consistent_def satisfiable_def)
+     apply (rule allI)
+     apply (rule_tac x=r in exI)
+     apply simp
     
     
 

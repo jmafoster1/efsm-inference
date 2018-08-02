@@ -83,6 +83,36 @@ lemma gexp_equiv_transitive: "gexp_equiv x y \<and> gexp_equiv y z \<Longrightar
 lemma gval_subst: "gexp_equiv x y \<Longrightarrow> P (gval x s) \<Longrightarrow> P (gval y s)"
   by (simp add: gexp_equiv_def)
 
+lemma gexp_equiv_satisfiable: "gexp_equiv x y \<Longrightarrow> satisfiable x = satisfiable y"
+  by (simp add: gexp_equiv_def satisfiable_def)
+
+lemma gAnd_reflexivity: "gexp_equiv (gAnd x x) x"
+  apply (simp add: gexp_equiv_def)
+  apply (rule allI)
+  apply (case_tac "gval x s")
+   apply simp
+  by simp
+
+lemma gAnd_zero: "gexp_equiv (gAnd (Bc True) x) x"
+  apply (simp add: gexp_equiv_def)
+  apply (rule allI)
+  apply (case_tac "gval x s")
+  by simp_all
+
+lemma gAnd_symmetry: "gexp_equiv (gAnd x y) (gAnd y x)"
+  apply (simp add: gexp_equiv_def)
+  apply (rule allI)
+  apply (case_tac "gval y s")
+   apply (case_tac "gval x s")
+    apply simp
+   apply simp
+  apply (case_tac "gval x s")
+   apply simp
+  by auto
+
+lemma satisfiable_gAnd_self: "satisfiable (gAnd x x) = satisfiable x"
+  by (simp add: gAnd_reflexivity gexp_equiv_satisfiable)
+
 fun counterexample :: "gexp \<Rightarrow> gexp" where
   "counterexample (Eq x y) = Eq (Plus x (L (Num 1))) y" |
   "counterexample x = x"

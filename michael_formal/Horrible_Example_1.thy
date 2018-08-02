@@ -23,7 +23,7 @@ definition t3 :: "transition" where
 "t3 \<equiv> \<lparr>
         Label = ''h'',
         Arity = 0,
-        Guard = [(gexp.Lt (V (R 1)) (L (Num 10)))],
+        Guard = [(GExp.Lt (V (R 1)) (L (Num 10)))],
         Outputs = [],
         Updates = []
       \<rparr>"
