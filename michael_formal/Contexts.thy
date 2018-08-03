@@ -234,8 +234,6 @@ lemma satisfiable_double_neg: "satisfiable (cexp.Not (cexp.Not x6)) = satisfiabl
 lemma context_equiv_reflexive: "context_equiv c c"
   by (simp add: context_equiv_def cexp_equiv_reflexive)
 
-lemma "\<not> (\<forall>s. aval x21 s = aval x22 s)"
-
 lemma "gexp_equiv x y \<Longrightarrow> context_equiv (Contexts.apply_guard c x) (Contexts.apply_guard c y)"
 proof (induction x)
 case (Bc x)
