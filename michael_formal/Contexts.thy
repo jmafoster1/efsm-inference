@@ -231,138 +231,30 @@ lemma satisfiable_double_neg: "satisfiable (cexp.Not (cexp.Not x6)) = satisfiabl
   apply (simp add: satisfiable_def)
   by (metis ceval.simps(6) ceval_double_negation)
 
-lemma "\<not> satisfiable c \<Longrightarrow> \<not> GExp.satisfiable (cexp2gexp r c)"
-proof (induction c)
-case Undef
-  then show ?case
-    by (simp add: CExp.satisfiable_def GExp.satisfiable_def)
-next
-  case (Bc x)
-  then show ?case
-    by (simp add: CExp.satisfiable_def GExp.satisfiable_def)
-next
-  case (Eq x)
-  then show ?case
-    by (simp add: CExp.satisfiable_def GExp.satisfiable_def)
-next
-  case (Lt x)
-  then show ?case
-    apply (cases x)
-     apply (simp add: CExp.satisfiable_def GExp.satisfiable_def)
-    using Lt.prems satisfiable_lt apply blast
-    by (simp add: CExp.satisfiable_def GExp.satisfiable_def)
-next
-  case (Gt x)
-  then show ?case
-    apply (cases x)
-     apply (simp add: CExp.satisfiable_def GExp.satisfiable_def)
-    using Gt.prems satisfiable_gt apply blast
-    by (simp add: not_satisfiable_gt_string)
-next
-  case (Not c)
+lemma context_equiv_reflexive: "context_equiv c c"
+  by (simp add: context_equiv_def cexp_equiv_reflexive)
+
+lemma "\<not> (\<forall>s. aval x21 s = aval x22 s)"
+
+lemma "gexp_equiv x y \<Longrightarrow> context_equiv (Contexts.apply_guard c x) (Contexts.apply_guard c y)"
+proof (induction x)
+case (Bc x)
   then show ?case
     apply simp
-    sorry
-
-
-  next
-  case (And c1 c2)
-  then show ?case sorry
-qed
-
-lemma "\<not> satisfiable (c r) \<and> c r \<noteq> Undef \<Longrightarrow> \<not> consistent c"
-proof (induction "c r")
-  case Undef
-  then show ?case by simp
-next
-  case (Bc x)
-  then show ?case
-    apply (cases x)
-     apply simp
-    using satisfiable_true apply auto[1]
-    apply (simp add: consistent_def satisfiable_def)
-    apply (rule allI)
-    apply (rule_tac x=r in exI)
-    by (metis ceval.simps(2) cexp2gexp.simps(1) gval.simps(1))
-next
-  case (Eq x)
-  then show ?case by (metis satisfiable_eq)
-next
-  case (Lt x)
-  then show ?case
-    apply (cases x)
-     apply (metis satisfiable_lt)
-    apply (simp add: satisfiable_def consistent_def)
-    apply (rule allI)
-    apply (rule_tac x=r in exI)
-    by (simp add: lt_to_lt)
-next
-  case (Gt x)
-  then show ?case
-    apply (cases x)
-     apply (metis satisfiable_gt)
-    apply (simp add: satisfiable_def consistent_def)
-    apply (rule allI)
-    apply (rule_tac x=r in exI)
-    by (simp add: gt_to_gt)
-next
-  case (Not x)
-  then show ?case
-    apply (cases x)
-    using satisfiable_not_undef apply auto[1]
-         apply (case_tac x2)
-          apply (simp add: consistent_def satisfiable_def)
-          apply (rule allI)
-          apply (rule_tac x=r in exI)
-    using ceval_not_true gexp_equiv_cexp_not_true gexp_equiv_def apply auto[1]
-         apply (simp add: consistent_def satisfiable_def)
-    using ceval_not_false apply auto[1]
-        apply (metis satisfiable_neq)
-       apply simp
-       apply (case_tac x4)
-        apply (metis satisfiable_geq)
-       apply (simp add: satisfiable_def consistent_def)
-       apply (rule allI)
-       apply (rule_tac x=r in exI)
-       apply (simp add: geq_to_ge)
-      apply simp
-      apply (case_tac x5)
-       apply (metis satisfiable_leq)
-      apply (simp add: satisfiable_def consistent_def)
-      apply (rule allI)
-      apply (rule_tac x=r in exI)
-      apply (simp add: leq_to_le)
-
-     apply (simp add: consistent_def satisfiable_def)
-     apply (rule allI)
-     apply (rule_tac x=r in exI)
-     apply simp
-    
-    
-
-
-next
-  case (And x1 x2)
-  then show ?case sorry
-qed
-
-lemma "gexp_equiv x (pairs2guard (guard2pairs c x))"
-proof (induction x)
-  case (Bc x)
-  then show ?case
     apply (simp add: gexp_equiv_def)
-    apply (rule allI)
-    apply (case_tac x)
-     apply simp
-    by simp
+    apply (case_tac y)
+        apply simp
+        apply (case_tac x)
+         apply (simp add: context_equiv_reflexive)
+        apply simp
+        apply (simp add: context_equiv_def cexp_equiv_def)
+       apply (cases x)
+    apply simp
+        
+
 next
   case (Eq x1a x2)
-  then show ?case
-    apply (simp add: gexp_equiv_def)
-    apply (rule allI)
-    apply (case_tac "(aval x1a s = aval x2 s)")
-     apply simp
-    sorry
+  then show ?case sorry
 next
   case (Gt x1a x2)
   then show ?case sorry
@@ -373,23 +265,5 @@ next
   case (Null x)
   then show ?case sorry
 qed
-
-
-
-lemma "gexp_equiv x y \<Longrightarrow> context_equiv (pairs2context (guard2pairs c x)) (pairs2context (guard2pairs c y))"
-  sorry
-  
-
-
-lemma "gexp_equiv x y \<Longrightarrow> context_equiv (Contexts.apply_guard c x) (Contexts.apply_guard c y)"
-  apply simp
-  apply (simp add: context_equiv_def)
-  apply (rule allI)
-  apply (case_tac r)
-     apply (simp add: cexp_equiv_def)
-    apply simp
-    apply (case_tac "(c (V x2))")
-          apply simp
-  sorry
 
 end

@@ -24,6 +24,12 @@ abbreviation maybe_and :: "bool option \<Rightarrow> bool option \<Rightarrow> b
     _ \<Rightarrow> None
   )"
 
+abbreviation maybe_implies :: "bool option \<Rightarrow> bool option \<Rightarrow> bool option" where
+  "maybe_implies x y \<equiv> (case (x, y) of
+    (Some a, Some b) \<Rightarrow> Some (a \<longrightarrow> b) |
+    _ \<Rightarrow> None
+  )"
+
 abbreviation maybe_not :: "bool option \<Rightarrow> bool option" where
   "maybe_not x \<equiv> (case x of Some a \<Rightarrow> Some (\<not>a) | None \<Rightarrow> None)"
 

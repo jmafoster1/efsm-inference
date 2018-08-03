@@ -113,6 +113,33 @@ lemma gAnd_symmetry: "gexp_equiv (gAnd x y) (gAnd y x)"
 lemma satisfiable_gAnd_self: "satisfiable (gAnd x x) = satisfiable x"
   by (simp add: gAnd_reflexivity gexp_equiv_satisfiable)
 
+definition mutually_exclusive :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
+  "mutually_exclusive x y = (\<forall>i. (gval x i = Some True \<longrightarrow> gval y i \<noteq> Some True) \<and>
+                                 (gval y i = Some True \<longrightarrow> gval x i \<noteq> Some True))"
+
+lemma mutually_exclusive_unsatisfiable_conj: "mutually_exclusive x y = (\<not> satisfiable (gAnd x y))"
+  apply (simp add: mutually_exclusive_def satisfiable_def)
+  apply safe
+    apply (case_tac "gval x s")
+     apply simp
+    apply (case_tac "gval y s")
+     apply simp
+    apply simp
+   apply (metis (mono_tags, lifting) option.simps(5))
+  by (metis (mono_tags, lifting) option.simps(5))
+
+lemma unsatisfiable_conj_mutually_exclusive: "\<not> satisfiable (gAnd x y) = mutually_exclusive x y"
+  by (simp add: mutually_exclusive_unsatisfiable_conj)
+
+lemma mutually_exclusive_reflexive: "satisfiable x \<Longrightarrow> \<not> mutually_exclusive x x"
+  by (simp add: mutually_exclusive_def satisfiable_def)
+
+lemma mutually_exclusive_symmetric: "mutually_exclusive x y \<Longrightarrow> mutually_exclusive y x"
+  by (simp add: mutually_exclusive_def)
+
+lemma not_mutually_exclusive_true: "satisfiable x = (\<not> mutually_exclusive x (Bc True))"
+  by (simp add: mutually_exclusive_def satisfiable_def)
+
 fun counterexample :: "gexp \<Rightarrow> gexp" where
   "counterexample (Eq x y) = Eq (Plus x (L (Num 1))) y" |
   "counterexample x = x"
