@@ -34,7 +34,7 @@ definition "write" :: "transition" where
         Arity = 1,
         Guard = [], (* No guards *)
         Outputs = [],
-        Updates = [ 
+        Updates = [
                     (R 1, (V (R 1))), (* Value of r1 remains unchanged *)
                     (R 2, (V (I 1))), (* Write the input to r2 *)
                     (R 3, (V (R 1)))  (* Store the writer in r3 *)
@@ -69,7 +69,7 @@ definition read_fail :: "transition" where
         Arity = 0,
         Guard = [(gOr (Ne (V (R 1)) (V (R 3))) (Null (R 2)))],
         Outputs = [(L (Str ''accessDenied''))],
-        Updates = [ 
+        Updates = [
                     (R 1, (V (R 1))), (* Value of r1 remains unchanged *)
                     (R 2, (V (R 2))), (* Value of r2 remains unchanged *)
                     (R 3, (V (R 3)))  (* Value of r3 remains unchanged *)
@@ -79,7 +79,7 @@ definition read_fail :: "transition" where
 datatype statename = q1 | q2
 
 definition filesystem :: "statename efsm" where
-"filesystem \<equiv> \<lparr> 
+"filesystem \<equiv> \<lparr>
           s0 = q1,
           T = \<lambda> (a,b) .
               if (a,b) = (q1,q2) then {login}

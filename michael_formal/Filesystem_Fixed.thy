@@ -55,17 +55,20 @@ definition filesystem :: "statename efsm" where
               else {}
          \<rparr>"
 
+lemma s0_filesystem: "s0 filesystem = q1"
+  by (simp add: filesystem_def)
+
 (* export_code filesystem in "Scala" *)
 
 lemmas fs_simp = filesystem_def login_def logout_def write_def read_success_def read_fail_def write_fail_def create_def
 
-lemma label_login_q2: "Label t = ''login'' \<and> t \<in> T filesystem (s0 filesystem, s') \<Longrightarrow> t = login \<and> s' = q2"
+lemma label_login_q2: "Label t = ''login'' \<and> t \<in> T filesystem (q1, s') \<Longrightarrow> t = login \<and> s' = q2"
   apply (simp add: filesystem_def)
   apply (cases s')
    apply simp
   by simp
 
-lemma possible_steps_q1: "possible_steps Filesystem_Fixed.filesystem (s0 Filesystem_Fixed.filesystem) Map.empty ''login'' [Str ''user''] = {(q2, login)}"
+lemma possible_steps_q1: "possible_steps Filesystem_Fixed.filesystem q1 r ''login'' [Str ''user''] = {(q2, login)}"
   apply (simp add: possible_steps_def)
   apply safe
        apply (simp add: label_login_q2)
@@ -151,7 +154,7 @@ lemma possible_steps_q2_read: "possible_steps Filesystem_Fixed.filesystem q2 <R 
        by (simp_all add: read_success_def)
 
 lemma "observe_trace filesystem (s0 filesystem) <> [(''login'', [Str ''user'']), (''create'', []), (''write'', [Num 50]), (''read'', [])] = [[], [], [], [Num 50]]"
-  apply (simp add: possible_steps_q1 possible_steps_q2_create possible_steps_q2_write del: One_nat_def)
+  apply (simp add: possible_steps_q1 possible_steps_q2_create possible_steps_q2_write s0_filesystem del: One_nat_def)
   apply (simp only: apply_updates_write possible_steps_q2_read)
   by (simp add: fs_simp)
 
@@ -230,7 +233,7 @@ lemma fs_some_until_null: "(some_state until null) (make_full_observation filesy
 
 (* G(((label=login AND ip_1_login_1=(attacker)) AND F(label=logout)) => U(label=read=>X(op_1_read_0=0), label=logout)) *)
 abbreviation watch_filesystem :: "event stream \<Rightarrow> statename full_observation" where
-  "watch_filesystem i \<equiv> (make_full_observation filesystem (Some q1) <> i)"
+  "watch_filesystem i \<equiv> (make_full_observation filesystem (Some (s0 filesystem)) <> i)"
 
 abbreviation label_not_logout :: "statename property" where
   "label_not_logout s \<equiv> (label (shd s) \<noteq> ''logout'')"
@@ -252,6 +255,123 @@ abbreviation login_user :: "statename property" where
 
 lemma "login_user (watch_filesystem i) \<Longrightarrow> shd i = (''login'', [Str ''user''])"
   by simp
+
+lemma possible_steps_q1_select: "(possible_steps filesystem q1 r ''login'' [Str ''user'']) = {(q2, login)}"
+  apply (simp add: possible_steps_def)
+  apply safe
+       apply (simp add: filesystem_def)
+  using prod.inject apply fastforce
+       apply (simp add: filesystem_def)
+      apply (metis empty_iff prod.inject singletonD)
+  by (simp_all add: filesystem_def login_def)
+
+lemma logout_label:  "t = logout \<Longrightarrow> Label t = ''logout''"
+  by (simp add: logout_def)
+
+lemma create_label:  "t = create \<Longrightarrow> Label t = ''create''"
+  by (simp add: create_def)
+
+lemma r2_none_read_fail: "r (R 2) = None \<Longrightarrow> Label t = ''read'' \<and> t \<in> T Filesystem_Fixed.filesystem (q2, s') \<and> apply_guards (Guard t) (join_ir [] r) \<Longrightarrow> t = read_fail \<and> s' = q2"
+  apply (simp add: filesystem_def)
+  apply (cases s')
+   apply simp
+  using logout_label apply fastforce
+  apply simp
+  apply (case_tac "t = write")
+  apply (simp add: write_def)
+  apply (case_tac "t = read_success")
+   apply (simp add: read_success_def)
+  apply (case_tac "t = read_fail")
+   apply simp
+  apply (case_tac "t = write_fail")
+   apply (simp add: write_fail_def)
+  using create_label by force
+
+lemma every_event_step: "\<forall>s r. \<exists>e. fst (ltl_step filesystem (Some s) r e) \<noteq> None"
+  apply (rule allI, rule allI)
+  apply (case_tac s)
+   apply (rule_tac x="(''login'', [Str ''user''])" in exI)
+   apply simp
+   apply (simp add: possible_steps_q1_select)
+  apply (rule_tac x="(''read'', [])" in exI)
+  apply simp
+  apply safe
+   apply (rule_tac x=q2 in exI)
+   apply (case_tac "the_elem (possible_steps Filesystem_Fixed.filesystem q2 r ''read'' [])")
+   apply simp
+   apply (simp add: is_singleton_def)
+   apply (simp add: possible_steps_def)
+   apply safe[1]
+   apply (simp add: label_read_q2)
+  using label_read_q2 apply blast
+  apply (simp add: is_singleton_def)
+  apply (rule_tac x=q2 in exI)
+  apply (simp add: possible_steps_def)
+  apply (case_tac "r (R 2) = None")
+   apply (rule_tac x=read_fail in exI)
+   apply safe[1]
+        apply (simp add: label_read_q2)
+  using r2_none_read_fail apply blast
+      apply (simp add: read_fail_def)
+     apply (simp add: filesystem_def)
+  apply (simp add: read_fail_def)
+   apply (simp add: read_fail_def)
+  apply (case_tac "r (R 1) = r (R 3)")
+   apply (simp del: One_nat_def)
+   apply (rule_tac x=read_success in exI)
+   apply safe[1]
+  using label_read_q2 apply blast
+       apply simp
+       apply (case_tac a)
+        apply (simp add: filesystem_def logout_def read_success_def)
+       apply (simp add: filesystem_def)
+       apply (case_tac "b = write")
+        apply (simp add: write_def)
+       apply (case_tac "b = read_success")
+        apply simp
+       apply (case_tac "b = read_fail")
+        apply (simp add: read_fail_def)
+       apply (case_tac "b = write_fail")
+        apply (simp add: write_fail_def)
+       apply (simp add: create_def)
+      apply (simp add: read_success_def)
+     apply (simp add: filesystem_def)
+    apply (simp add: read_success_def)
+   apply (simp add: read_success_def)
+  apply (rule_tac x=read_fail in exI)
+  apply safe
+       apply (simp add: label_read_q2)
+      apply (case_tac a)
+       apply (simp add: filesystem_def logout_def)
+      apply (simp add: filesystem_def)
+      apply (case_tac "b = write")
+       apply (simp add: write_def)
+      apply (case_tac "b = read_success")
+       apply (simp add: read_success_def read_fail_def)
+      apply (case_tac "b = read_fail")
+       apply simp
+      apply (case_tac "b = write_fail")
+       apply (simp add: write_fail_def)
+      apply (simp add: create_def)
+     apply (simp add: read_fail_def)
+    apply (simp add: filesystem_def)
+  by (simp_all add: read_fail_def)
+
+lemma alw_equiv: "alw p s = ((p s) \<and> alw p (stl s))"
+  using alw.intros by auto
+
+lemma user_details_stored_in_r1: "((\<lambda>s. (event (shd s) = (''login'',  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user'')))) (watch_filesystem i)"
+  by (simp add: possible_steps_q1 login_def s0_filesystem)
+
+lemma user_details_stored_in_r1_any_reg: "((\<lambda>s. (event (shd s) = (''login'',  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user'')))) (make_full_observation filesystem (Some (s0 filesystem)) r i)"
+  by (simp add: possible_steps_q1 s0_filesystem login_def)
+
+lemma user_details_stored_in_r1: "alw (non_null impl ((\<lambda>s. (event (shd s) = (''login'',  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user''))))) (watch_filesystem i)"
+proof (coinduction)
+  case alw
+  then show ?case
+    sorry
+qed
 
 lemma login_user_first: "alw non_null (watch_filesystem i) \<Longrightarrow> (login_user (watch_filesystem i) = (shd i = (''login'', [Str ''user''])))"
   by simp
