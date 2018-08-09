@@ -24,6 +24,9 @@ fun ltl_step :: "'statename efsm \<Rightarrow> 'statename option \<Rightarrow> d
 primcorec make_full_observation :: "'statename efsm \<Rightarrow> 'statename option \<Rightarrow> datastate \<Rightarrow> event stream \<Rightarrow> 'statename full_observation" where
   "make_full_observation e s d i = (let (s', o', d') = ltl_step e s d (shd i) in \<lparr>statename = s, datastate = d, event=(shd i), output = o'\<rparr>##(make_full_observation e s' d' (stl i)))"
 
+abbreviation watch :: "'statename efsm \<Rightarrow> event stream \<Rightarrow> 'statename full_observation" where
+  "watch e i \<equiv> (make_full_observation e (Some (s0 e)) <> i)"
+
 abbreviation non_null :: "'statename property" where
   "non_null s \<equiv> (statename (shd s) \<noteq> None)"
 
@@ -52,4 +55,7 @@ proof (coinduction)
   then show ?case
     by (smt UNTIL.coinduct non_null_equiv)
 qed
+
+lemma "ev (\<lambda>s. datastate (shd s) (R 2) = Some (Num 5)) (watch e i)"
+
 end

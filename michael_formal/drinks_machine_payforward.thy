@@ -1,5 +1,5 @@
 theory drinks_machine_payforward
-  imports EFSM CExp drinks_machine
+  imports EFSM drinks_machine
 begin
 
 (* This version of drinks_machine supercedes all of those before 03/04/18 *)

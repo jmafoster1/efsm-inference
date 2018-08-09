@@ -1,5 +1,5 @@
 theory drinks_machine
-  imports EFSM CExp
+  imports EFSM
 begin
 
 (* This version of drinks_machine supercedes all of those before 03/04/18 *)

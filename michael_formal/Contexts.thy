@@ -248,8 +248,7 @@ case (Bc x)
         apply (simp add: context_equiv_def cexp_equiv_def)
        apply (cases x)
     apply simp
-        
-
+    sorry   
 next
   case (Eq x1a x2)
   then show ?case sorry

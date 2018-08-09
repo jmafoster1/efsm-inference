@@ -231,10 +231,6 @@ lemma start_in_1: "one_or_2 ( make_full_observation Filesystem_Fixed.filesystem 
 lemma fs_some_until_null: "(some_state until null) (make_full_observation filesystem (Some (s0 filesystem)) <> i)"
   by (simp add: some_until_none)
 
-(* G(((label=login AND ip_1_login_1=(attacker)) AND F(label=logout)) => U(label=read=>X(op_1_read_0=0), label=logout)) *)
-abbreviation watch_filesystem :: "event stream \<Rightarrow> statename full_observation" where
-  "watch_filesystem i \<equiv> (make_full_observation filesystem (Some (s0 filesystem)) <> i)"
-
 abbreviation label_not_logout :: "statename property" where
   "label_not_logout s \<equiv> (label (shd s) \<noteq> ''logout'')"
 
@@ -253,7 +249,7 @@ abbreviation login_attacker :: "statename property" where
 abbreviation login_user :: "statename property" where
   "login_user s \<equiv> (event (shd s) = (''login'',  [Str ''user'']))"
 
-lemma "login_user (watch_filesystem i) \<Longrightarrow> shd i = (''login'', [Str ''user''])"
+lemma "login_user (watch filesystem i) \<Longrightarrow> shd i = (''login'', [Str ''user''])"
   by simp
 
 lemma possible_steps_q1_select: "(possible_steps filesystem q1 r ''login'' [Str ''user'']) = {(q2, login)}"
@@ -360,24 +356,24 @@ lemma every_event_step: "\<forall>s r. \<exists>e. fst (ltl_step filesystem (Som
 lemma alw_equiv: "alw p s = ((p s) \<and> alw p (stl s))"
   using alw.intros by auto
 
-lemma user_details_stored_in_r1: "((\<lambda>s. (event (shd s) = (''login'',  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user'')))) (watch_filesystem i)"
+lemma user_details_stored_in_r1: "((\<lambda>s. (event (shd s) = (''login'',  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user'')))) (watch filesystem i)"
   by (simp add: possible_steps_q1 login_def s0_filesystem)
 
 lemma user_details_stored_in_r1_any_reg: "((\<lambda>s. (event (shd s) = (''login'',  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user'')))) (make_full_observation filesystem (Some (s0 filesystem)) r i)"
   by (simp add: possible_steps_q1 s0_filesystem login_def)
 
-lemma user_details_stored_in_r1: "alw (non_null impl ((\<lambda>s. (event (shd s) = (''login'',  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user''))))) (watch_filesystem i)"
+lemma globally_user_details_stored_in_r1: "alw (non_null impl ((\<lambda>s. (event (shd s) = (''login'',  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user''))))) (watch filesystem i)"
 proof (coinduction)
   case alw
   then show ?case
     sorry
 qed
 
-lemma login_user_first: "alw non_null (watch_filesystem i) \<Longrightarrow> (login_user (watch_filesystem i) = (shd i = (''login'', [Str ''user''])))"
+lemma login_user_first: "alw non_null (watch filesystem i) \<Longrightarrow> (login_user (watch filesystem i) = (shd i = (''login'', [Str ''user''])))"
   by simp
 
       (* G(cfstate /= NULL_STATE)  => ((label=login AND ip_1_login_1=(user)) AND U(label/=logout, label=create)) => F(G(((label=login AND ip_1_login_1=(attacker)) AND F(label=logout))  =>   U(label=read=>X(op_1_read_0=0), label=logout))) *)
-lemma "(((alw non_null) impl (login_user aand (label_not_logout until label_create))) impl (ev (alw ((login_attacker aand ev label_logout) impl (read_0 suntil label_logout))))) (watch_filesystem i)"
+lemma "(((alw non_null) impl (login_user aand (label_not_logout until label_create))) impl (ev (alw ((login_attacker aand ev label_logout) impl (read_0 suntil label_logout))))) (watch filesystem i)"
   apply simp
   sorry
 
