@@ -1,5 +1,5 @@
 theory AExp
-  imports Main
+  imports Main "~~/src/HOL/Library/LaTeXsugar"
 begin
 
 datatype "value" = Num int | Str string

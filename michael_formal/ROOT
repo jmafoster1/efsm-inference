@@ -1,5 +1,11 @@
-session "michael-efsm" = HOL +
-sessions Deriving
-theories
-  CExp
-
+session "michael-efsm" = "HOL" +
+  options [document = pdf, document_output = "output"]
+  theories [document = false]
+    (* Foo *)
+    (* Bar *)
+  theories
+    Contexts
+    EFSM
+    Filesystem_Fixed
+  document_files
+    "root.tex"

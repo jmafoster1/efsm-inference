@@ -86,13 +86,13 @@ lemma different_observation_techniques:
   shows "length(observe_all e s r t) = length(observe_trace e s r t)"
   by simp
 
-lemma valid_extension:
+  (*lemma valid_extension:
   fixes e and t and l and i and s and r
   assumes "valid_trace e t" 
   and "observe_all e (s0 e) <> t = (oo @ [(s, outs, r)])"
   and "step e s r l i = Some (s'',outs',r')"
 shows "valid_trace e (t @ [(l,i)])"
-  sorry
+  sorry*)
   
   
 

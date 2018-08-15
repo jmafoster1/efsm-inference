@@ -55,7 +55,4 @@ proof (coinduction)
   then show ?case
     by (smt UNTIL.coinduct non_null_equiv)
 qed
-
-lemma "ev (\<lambda>s. datastate (shd s) (R 2) = Some (Num 5)) (watch e i)"
-
 end

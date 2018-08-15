@@ -2,19 +2,20 @@ theory Filesystem_Fixed
 imports Filesystem EFSM_LTL
 begin
 
-(* Takes a user ID and stores it in r1 *)
+text_raw{*\snip{write}{1}{2}{%*}
 definition "write" :: "transition" where
 "write \<equiv> \<lparr>
         Label = ''write'',
         Arity = 1,
-        Guard = [(Eq (V (R 1)) (V (R 3)))], (* No guards *)
+        Guard = [((V (R 1)) = (V (R 3)))], (* No guards *)
         Outputs = [],
-        Updates = [ 
+        Updates = [
                     (R 1, (V (R 1))), (* Value of r1 remains unchanged *)
                     (R 2, (V (I 1))), (* Write the input to r2 *)
                     (R 3, (V (R 1)))  (* Store the writer in r3 *)
                   ]
       \<rparr>"
+text_raw{*}%endsnip*}
 
 (* Create the file if it doesn't already exist *)
 definition create :: "transition" where
@@ -23,7 +24,7 @@ definition create :: "transition" where
         Arity = 0,
         Guard = [(Null (R 3))],
         Outputs = [],
-        Updates = [ 
+        Updates = [
                     (R 1, (V (R 1))),
                     (R 2, (V (R 2))),
                     (R 3, (V (R 1)))  (* Initialise the current user as the file owner *)
@@ -45,8 +46,9 @@ lemma arity_write_fail: "Arity write_fail = 1"
 lemma guard_write_fail: "Guard write_fail = [(Ne (V (R 3)) (V (R 1)))]"
   by (simp add: write_fail_def)
 
+text_raw{*\snip{filesystem}{1}{2}{%*}
 definition filesystem :: "statename efsm" where
-"filesystem \<equiv> \<lparr> 
+"filesystem \<equiv> \<lparr>
           s0 = q1,
           T = \<lambda> (a,b) .
               if (a,b) = (q1,q2) then {login}
@@ -54,6 +56,7 @@ definition filesystem :: "statename efsm" where
               else if (a,b) = (q2,q2) then {write, read_success, read_fail, write_fail, create}
               else {}
          \<rparr>"
+text_raw{*}%endsnip*}
 
 lemma s0_filesystem: "s0 filesystem = q1"
   by (simp add: filesystem_def)
@@ -68,7 +71,7 @@ lemma label_login_q2: "Label t = ''login'' \<and> t \<in> T filesystem (q1, s') 
    apply simp
   by simp
 
-lemma possible_steps_q1: "possible_steps Filesystem_Fixed.filesystem q1 r ''login'' [Str ''user''] = {(q2, login)}"
+lemma possible_steps_q1: "possible_steps Filesystem_Fixed.filesystem q1 r ''login'' [u] = {(q2, login)}"
   apply (simp add: possible_steps_def)
   apply safe
        apply (simp add: label_login_q2)
@@ -356,25 +359,35 @@ lemma every_event_step: "\<forall>s r. \<exists>e. fst (ltl_step filesystem (Som
 lemma alw_equiv: "alw p s = ((p s) \<and> alw p (stl s))"
   using alw.intros by auto
 
-lemma user_details_stored_in_r1: "((\<lambda>s. (event (shd s) = (''login'',  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user'')))) (watch filesystem i)"
-  by (simp add: possible_steps_q1 login_def s0_filesystem)
+text_raw{*\snip{userdetails}{1}{2}{%*}
+lemma user_details_stored_in_r1: "((\<lambda>s. (event (shd s) = (''login'',  [u]))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (u)))) (watch filesystem i)"
+  proof (cases u)
+    case (Num x1)
+    then show ?thesis
+      by (simp add: possible_steps_q1 login_def s0_filesystem)
+  next
+    case (Str x2)
+    then show ?thesis
+      by (simp add: possible_steps_q1 login_def s0_filesystem)
+  qed
+text_raw{*}%endsnip*}
 
-lemma user_details_stored_in_r1_any_reg: "((\<lambda>s. (event (shd s) = (''login'',  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user'')))) (make_full_observation filesystem (Some (s0 filesystem)) r i)"
-  by (simp add: possible_steps_q1 s0_filesystem login_def)
+(*lemma "((\<lambda>s. (event (shd s) = (''login'',  [u]))) impl ((\<lambda>s. datastate (shd s) (R 1) = Some (u)) suntil (\<lambda>s. label (shd s) = ''logout''))) (watch filesystem i)"
+  sorry*)
 
-lemma globally_user_details_stored_in_r1: "alw (non_null impl ((\<lambda>s. (event (shd s) = (''login'',  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user''))))) (watch filesystem i)"
+(*lemma globally_user_details_stored_in_r1: "alw (non_null impl ((\<lambda>s. (event (shd s) = (''login'',  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user''))))) (watch filesystem i)"
 proof (coinduction)
   case alw
   then show ?case
     sorry
-qed
+qed*)
 
 lemma login_user_first: "alw non_null (watch filesystem i) \<Longrightarrow> (login_user (watch filesystem i) = (shd i = (''login'', [Str ''user''])))"
   by simp
 
       (* G(cfstate /= NULL_STATE)  => ((label=login AND ip_1_login_1=(user)) AND U(label/=logout, label=create)) => F(G(((label=login AND ip_1_login_1=(attacker)) AND F(label=logout))  =>   U(label=read=>X(op_1_read_0=0), label=logout))) *)
-lemma "(((alw non_null) impl (login_user aand (label_not_logout until label_create))) impl (ev (alw ((login_attacker aand ev label_logout) impl (read_0 suntil label_logout))))) (watch filesystem i)"
+(*lemma "(((alw non_null) impl (login_user aand (label_not_logout until label_create))) impl (ev (alw ((login_attacker aand ev label_logout) impl (read_0 suntil label_logout))))) (watch filesystem i)"
   apply simp
-  sorry
+  sorry*)
 
 end

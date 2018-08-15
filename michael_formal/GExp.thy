@@ -3,31 +3,29 @@ imports AExp Option_Logic
 begin
 datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null vname
 
-abbreviation gNot :: "gexp \<Rightarrow> gexp" where
+syntax (xsymbols)
+  Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix "=" 60)
+  Gt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix ">" 60)
+
+abbreviation gNot :: "gexp \<Rightarrow> gexp"  where
   "gNot g \<equiv> Nor g g"
 
-abbreviation Lt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" where
+abbreviation Lt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix "<" 60) where
   "Lt a b \<equiv> Gt b a"
 
-abbreviation
-  Le :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" where
+abbreviation Le :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix "\<le>" 60) where
   "Le v va \<equiv> gNot (Gt v va)"
 
-abbreviation
-  Ge :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" where
+abbreviation Ge :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix "\<ge>" 60) where
   "Ge v va \<equiv> gNot (Lt v va)"
 
-abbreviation
-  Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" where
+abbreviation Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix "\<noteq>" 60) where
   "Ne v va \<equiv> gNot (Eq v va)"
 
-abbreviation gOr :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" where
+abbreviation gOr :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (infix "\<or>" 60) where
   "gOr v va \<equiv> Nor (Nor v va) (Nor v va)"
 
-lemma "\<not> (x \<or> y) = (\<not> x \<and> \<not> y)"
-  by simp
-
-abbreviation gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" where
+abbreviation gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (infix "\<and>" 60) where
   "gAnd v va \<equiv> Nor (Nor v v) (Nor va va)"
 
 fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool option" where
