@@ -88,7 +88,15 @@ lemma invalid_conditions: "\<not>valid e s d (h # t) \<Longrightarrow> step e s 
   by (simp add: valid_steps)
 
 lemma "step e s d (fst h) (snd h) = None \<Longrightarrow> \<not>valid e s d (h # t)"
-  sorry
+proof (induction "\<not>valid e s d (h # t)")
+case True
+then show ?case by simp
+next
+  case False
+  then show ?case
+    apply simp
+qed
+
 
 lemma conditions_invalid: "step e s d (fst h) (snd h) = None \<or> (\<exists>s' p' d'. step e s d (fst h) (snd h) =  Some (s', p', d') \<and> \<not>valid e s' d' t) \<Longrightarrow> \<not> valid e s d (h # t)"
   apply safe
