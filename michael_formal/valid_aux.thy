@@ -87,6 +87,15 @@ lemma invalid_conditions: "\<not>valid e s d (h # t) \<Longrightarrow> step e s 
   apply safe
   by (simp add: valid_steps)
 
+lemma "((step e s d (fst h) (snd h)) = None) \<Longrightarrow>\<not> (valid e s d (h#t))"
+  apply(clarify)
+  apply(cases rule:valid.cases)
+    apply(simp)
+   apply simp
+  by(auto)
+
+
+
 lemma "step e s d (fst h) (snd h) = None \<Longrightarrow> \<not>valid e s d (h # t)"
 proof (induction "\<not>valid e s d (h # t)")
 case True
