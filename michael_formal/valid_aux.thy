@@ -1,5 +1,5 @@
 theory valid_aux
-  imports EFSM
+  imports EFSM Filesystem
 begin
 
 abbreviation "reg_of t \<equiv> (if t = [] then <> else snd (snd (last t)))"
@@ -66,6 +66,65 @@ lemma foo: "step e (s0 e) <> (fst a) (snd a) = None \<or>  (\<exists>s' outputs 
   apply (cases "step e (s0 e) <> (fst a) (snd a)")
    apply simp
   by auto
+
+inductive valid :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
+  base: "valid e s d []" |
+  step: "step e s d (fst h) (snd h) = Some (s', p', d') \<Longrightarrow> valid e s' d' t \<Longrightarrow> valid e s d (h#t)"
+
+lemma "\<not> valid filesystem (s0 filesystem) <> [(''lalal'', [])]"
+  sorry
+
+lemma valid_steps: "the_elem (possible_steps e s d (fst h) (snd h)) = (a, b) \<Longrightarrow>
+       is_singleton (possible_steps e s d (fst h) (snd h)) \<Longrightarrow>
+       valid e a (apply_updates (Updates b) (case_vname (\<lambda>n. index2state (snd h) (Suc 0) (I n)) (\<lambda>n. d (R n))) d) t \<Longrightarrow>
+       valid e s d (h#t)"
+  by (simp add: valid.step)
+
+lemma invalid_conditions: "\<not>valid e s d (h # t) \<Longrightarrow> step e s d (fst h) (snd h) = None \<or> (\<exists>s' p' d'. step e s d (fst h) (snd h) =  Some (s', p', d') \<and> \<not>valid e s' d' t)"
+  apply simp
+  apply (case_tac "the_elem (possible_steps e s d (fst h) (snd h))")
+  apply simp
+  apply safe
+  by (simp add: valid_steps)
+
+lemma "step e s d (fst h) (snd h) = None \<Longrightarrow> \<not>valid e s d (h # t)"
+  sorry
+
+lemma conditions_invalid: "step e s d (fst h) (snd h) = None \<or> (\<exists>s' p' d'. step e s d (fst h) (snd h) =  Some (s', p', d') \<and> \<not>valid e s' d' t) \<Longrightarrow> \<not> valid e s d (h # t)"
+  apply safe
+  sorry
+
+lemma valid_head: "valid e s d (h#t) \<Longrightarrow> valid e s d [h]"
+  by (meson base conditions_invalid invalid_conditions)
+
+lemma invalid_prefix: "\<not>valid e s d t \<Longrightarrow> \<not>valid e s d (t@t')"
+proof (induction t)
+  case Nil
+  then show ?case by (simp add: base)
+next
+  case (Cons h t)
+  then show ?case
+    apply simp
+    apply (case_tac "step e s d (fst h) (snd h)")
+qed
+
+lemma prefix_closure: "valid e s d (t@t') \<Longrightarrow> valid e s d t"
+  apply (rule ccontr)
+  by (simp add: invalid_prefix)
+
+
+
+lemma "valid_trace e (t@[t']) \<Longrightarrow> valid_trace e t"
+proof (induct "t@[t']" rule: rev_induct)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (snoc x xs)
+  then show ?case
+    apply simp
+      sorry
+  qed
 
 lemma "(valid_trace e (ts@[t]) \<longrightarrow> valid_trace e ts)" 
 proof (induct ts)

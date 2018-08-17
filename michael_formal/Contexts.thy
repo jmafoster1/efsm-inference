@@ -1,6 +1,16 @@
+section {* Contexts *}
+(* Author: Michael Foster *)
+text{*
+Contexts relate possible register values to observable output. A transition has three contexts
+during its evaluation. The anterior context is the set of constraints which is known before the
+transition is taken. The medial context is the set of constraints immediately after the guard has
+been applied. The posterior context is the set of constraints after the update function has been
+executed. This context forms the anterior context for the next transition. In this way, contexts
+flow through an EFSM tracing constraints on register values.
+*}
 theory Contexts
-imports EFSM CExp GExp
-
+  imports
+    EFSM CExp GExp
 begin
 
 type_synonym "context" = "aexp \<Rightarrow> cexp"
@@ -118,15 +128,6 @@ fun guard2context :: "context \<Rightarrow> guard \<Rightarrow> context" where
   "guard2context a (gexp.Eq v vb) = \<lbrakk>v \<mapsto> get a vb, vb \<mapsto> get a v\<rbrakk>" |
   "guard2context a (gexp.Gt v vb) = (let (cv, cvb) = apply_gt (get a v) (get a vb) in \<lbrakk>v \<mapsto> cv, vb \<mapsto> cvb\<rbrakk>)" |
   "guard2context a (Nor v va) = conjoin (negate (guard2context a v)) (guard2context a va)"
-
-
-(* ////////////////////////////////////////////////////////////////////////////////////////////// *)
-(* value "guard2context \<lbrakk>V (R 1) \<mapsto> Bc True\<rbrakk> (gexp.Gt (L (Num 100)) (V (R 1))) (L (Num 100))" *)
-
-lemma "(Ge (V (R 1)) (L (Num 100))) = Nor (gexp.Gt (L (Num 100)) (V (R 1))) (gexp.Gt (L (Num 100)) (V (R 1)))"
-  by simp
-
-(* ////////////////////////////////////////////////////////////////////////////////////////////// *)
 
 fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context" where
   "pairs2context [] = (\<lambda>i. Bc True)" |

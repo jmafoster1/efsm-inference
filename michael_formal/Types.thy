@@ -1,3 +1,5 @@
+section {* Common Type Definitions *}
+(* Author: Michael Foster *)
 theory Types
   imports AExp GExp
 begin

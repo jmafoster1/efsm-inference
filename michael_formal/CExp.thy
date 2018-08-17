@@ -1,3 +1,5 @@
+section {* Constraint Expressions *}
+(* Author: Michael Foster *)
 theory CExp
   imports AExp Option_Logic
 begin
@@ -34,12 +36,11 @@ abbreviation Neq :: "value \<Rightarrow> cexp" where
 abbreviation Or :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "Or v va \<equiv> not (and (not v) (not va))"
 
-(*
-If the second arg is always bigger than the first (e.g. if they're both literals with the first
-being bigger) then just return that. If not, is there a way for the first arg to be greater than the
-second arg? If so, return it. If not, return false.
-*)
-(* First element is greater *)
+text {*
+This function takes two cexps and tries to make the first one greater than the second one by
+increasing the restriction on either the first or second argument. It returns a pair which contains
+the modified first and second arguments.
+*}
 fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where
   "apply_gt Undef v = (Bc False, v)" |
   "apply_gt v Undef = (v, Bc False)" |

@@ -1,3 +1,5 @@
+section {* Guard Expressions *}
+(* Author: Michael Foster *)
 theory GExp
 imports AExp Option_Logic
 begin

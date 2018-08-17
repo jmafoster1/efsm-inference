@@ -1,3 +1,13 @@
+section {* Option Logic *}
+(* Author: Michael Foster *)
+
+text {*
+EFSMs need to work with a three valued logic: True, False, and None. This is because some boolean
+functions like greater than are impossible over different types. We therefore need to distinguish
+between an attempt to carry out an impossible operation and literal False. The negation of None is
+still None, which prevents the negation of an impossible operation being literal True.
+*}
+
 theory Option_Logic
 imports AExp
 begin

@@ -6,6 +6,5 @@ session "michael-efsm" = "HOL" +
   theories
     Contexts
     EFSM
-    Filesystem_Fixed
   document_files
     "root.tex"

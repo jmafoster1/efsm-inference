@@ -1,5 +1,7 @@
+section {* Arithmetic Expressions *}
+(* Author: Michael Foster *)
 theory AExp
-  imports Main "~~/src/HOL/Library/LaTeXsugar"
+  imports Main
 begin
 
 datatype "value" = Num int | Str string
