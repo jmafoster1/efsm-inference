@@ -71,9 +71,6 @@ inductive valid :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> datas
   base: "valid e s d []" |
   step: "step e s d (fst h) (snd h) = Some (s', p', d') \<Longrightarrow> valid e s' d' t \<Longrightarrow> valid e s d (h#t)"
 
-lemma "\<not> valid filesystem (s0 filesystem) <> [(''lalal'', [])]"
-  sorry
-
 lemma valid_steps: "the_elem (possible_steps e s d (fst h) (snd h)) = (a, b) \<Longrightarrow>
        is_singleton (possible_steps e s d (fst h) (snd h)) \<Longrightarrow>
        valid e a (apply_updates (Updates b) (case_vname (\<lambda>n. index2state (snd h) (Suc 0) (I n)) (\<lambda>n. d (R n))) d) t \<Longrightarrow>
@@ -87,43 +84,39 @@ lemma invalid_conditions: "\<not>valid e s d (h # t) \<Longrightarrow> step e s 
   apply safe
   by (simp add: valid_steps)
 
-lemma "((step e s d (fst h) (snd h)) = None) \<Longrightarrow>\<not> (valid e s d (h#t))"
+lemma step_none_invalid: "((step e s d (fst h) (snd h)) = None) \<Longrightarrow> \<not> (valid e s d (h#t))"
   apply(clarify)
   apply(cases rule:valid.cases)
     apply(simp)
    apply simp
   by(auto)
 
-
-
-lemma "step e s d (fst h) (snd h) = None \<Longrightarrow> \<not>valid e s d (h # t)"
-proof (induction "\<not>valid e s d (h # t)")
-case True
-then show ?case by simp
-next
-  case False
-  then show ?case
+lemma invalid_future_invalid: "(\<exists>s' p' d'. step e s d (fst h) (snd h) =  Some (s', p', d') \<and> \<not>valid e s' d' t) \<Longrightarrow> \<not>valid e s d (h#t)"
+  apply clarify
+    apply(cases rule:valid.cases)
     apply simp
-qed
-
+   apply simp
+  by auto
 
 lemma conditions_invalid: "step e s d (fst h) (snd h) = None \<or> (\<exists>s' p' d'. step e s d (fst h) (snd h) =  Some (s', p', d') \<and> \<not>valid e s' d' t) \<Longrightarrow> \<not> valid e s d (h # t)"
-  apply safe
-  sorry
+  apply clarify
+    apply(cases rule:valid.cases)
+    apply simp
+   apply simp
+  by auto
 
 lemma valid_head: "valid e s d (h#t) \<Longrightarrow> valid e s d [h]"
   by (meson base conditions_invalid invalid_conditions)
 
+lemma invalid_single_event: "\<not> valid e s d [(a, b)] \<Longrightarrow> step e s d (fst (a, b)) (snd (a, b)) = None"
+  by (metis (mono_tags, lifting) base case_prod_beta' invalid_conditions option.simps(3))
+
+lemma step_invalid: "\<not> valid e s d ((a, b) # t) \<Longrightarrow> step e s d (fst (a, b)) (snd (a, b)) = Some (s', p', d') \<Longrightarrow> \<not> valid e s' d' t"
+  using invalid_conditions by force
+
 lemma invalid_prefix: "\<not>valid e s d t \<Longrightarrow> \<not>valid e s d (t@t')"
-proof (induction t)
-  case Nil
-  then show ?case by (simp add: base)
-next
-  case (Cons h t)
-  then show ?case
-    apply simp
-    apply (case_tac "step e s d (fst h) (snd h)")
-qed
+  apply (simp only: invalid_conditions)
+
 
 lemma prefix_closure: "valid e s d (t@t') \<Longrightarrow> valid e s d t"
   apply (rule ccontr)
