@@ -105,12 +105,6 @@ lemma equiv_trans: "equiv e1 e2 t \<and> equiv e2 e3 t \<longrightarrow> equiv e
 lemma equiv_idem: "equiv e1 e1 t"
   by (simp add: equiv_def)
 
-abbreviation valid_trace :: "'statename efsm \<Rightarrow> trace \<Rightarrow> bool" where
-  "valid_trace e t \<equiv> (length t = length (observe_all e (s0 e) <> t))"
-
-lemma empty_trace_valid [simp]: "valid_trace e []"
-  by simp
-
 primrec in_list :: "'a \<Rightarrow> 'a list \<Rightarrow> bool" where
   "in_list _ [] = False" |
   "in_list x (h#t) = (if (x=h) then True else (in_list x t))"
@@ -118,22 +112,200 @@ primrec in_list :: "'a \<Rightarrow> 'a list \<Rightarrow> bool" where
 definition can_take :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "can_take t1 t2 \<equiv> ((Label t1) = (Label t2)) \<and> ((Arity t1) = (Arity t2))"
 
-lemma valid_unit_trace: "step e (s0 e) <> l i = Some (s',outs,r) \<Longrightarrow> valid_trace e [(l,i)]"
-  apply (simp add: is_singleton_def the_elem_def possible_steps_def)
-  using Suc_length_conv by fastforce
-
 lemma different_observation_techniques: 
   shows "length(observe_all e s r t) = length(observe_trace e s r t)"
   by simp
 
-  (*lemma valid_extension:
-  fixes e and t and l and i and s and r
-  assumes "valid_trace e t" 
-  and "observe_all e (s0 e) <> t = (oo @ [(s, outs, r)])"
-  and "step e s r l i = Some (s'',outs',r')"
-shows "valid_trace e (t @ [(l,i)])"
-  sorry*)
-  
-  
+lemma length_observe_all_restricted: "\<And>s r. length (observe_all e s r t) \<le> length t"
+proof (induction t) 
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a t)
+  then show ?case 
+  proof cases 
+    assume "step e s r (fst a) (snd a) = None"
+    then show ?thesis by simp  
+  next 
+    assume "step e s r (fst a) (snd a) \<noteq>  None"
+    with Cons show ?thesis by(auto) 
+  qed
+qed
 
+inductive valid :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
+  base: "valid e s d []" |
+  step: "step e s d (fst h) (snd h) = Some (s', p', d') \<Longrightarrow> valid e s' d' t \<Longrightarrow> valid e s d (h#t)"
+
+lemma valid_steps: "the_elem (possible_steps e s d (fst h) (snd h)) = (a, b) \<Longrightarrow>
+       is_singleton (possible_steps e s d (fst h) (snd h)) \<Longrightarrow>
+       valid e a (apply_updates (Updates b) (case_vname (\<lambda>n. index2state (snd h) (Suc 0) (I n)) (\<lambda>n. d (R n))) d) t \<Longrightarrow>
+       valid e s d (h#t)"
+  by (simp add: valid.step)
+
+lemma invalid_conditions: "\<not>valid e s d (h # t) \<Longrightarrow> step e s d (fst h) (snd h) = None \<or> (\<exists>s' p' d'. step e s d (fst h) (snd h) =  Some (s', p', d') \<and> \<not>valid e s' d' t)"
+  apply simp
+  apply (case_tac "the_elem (possible_steps e s d (fst h) (snd h))")
+  apply simp
+  apply safe
+  by (simp add: valid_steps)
+
+lemma step_none_invalid: "((step e s d (fst h) (snd h)) = None) \<Longrightarrow> \<not> (valid e s d (h#t))"
+  apply(clarify)
+  apply(cases rule:valid.cases)
+    apply(simp)
+   apply simp
+  by(auto)
+
+lemma invalid_future_invalid: "(\<exists>s' p' d'. step e s d (fst h) (snd h) =  Some (s', p', d') \<and> \<not>valid e s' d' t) \<Longrightarrow> \<not>valid e s d (h#t)"
+  apply clarify
+    apply(cases rule:valid.cases)
+    apply simp
+   apply simp
+  by auto
+
+lemma conditions_invalid: "step e s d (fst h) (snd h) = None \<or> (\<exists>s' p' d'. step e s d (fst h) (snd h) =  Some (s', p', d') \<and> \<not>valid e s' d' t) \<Longrightarrow> \<not> valid e s d (h # t)"
+  apply clarify
+    apply(cases rule:valid.cases)
+    apply simp
+   apply simp
+  by auto
+
+lemma valid_head: "valid e s d (h#t) \<Longrightarrow> valid e s d [h]"
+  by (meson base conditions_invalid invalid_conditions)
+
+lemma invalid_single_event: "\<not> valid e s d [(a, b)] \<Longrightarrow> step e s d (fst (a, b)) (snd (a, b)) = None"
+  by (metis (mono_tags, lifting) base case_prod_beta' invalid_conditions option.simps(3))
+
+lemma step_invalid: "\<not> valid e s d ((a, b) # t) \<Longrightarrow> step e s d (fst (a, b)) (snd (a, b)) = Some (s', p', d') \<Longrightarrow> \<not> valid e s' d' t"
+  using invalid_conditions by force
+
+lemma step_none_invalid_append: "step e s d (fst a) (snd a) = None \<Longrightarrow> \<not>valid e s d (a # t) \<and> \<not>valid e s d (a # t @ t')"
+  by (simp add: step_none_invalid)
+
+lemma step_some: "step e s d (fst a) (snd a) = Some (aa, ab, b) \<Longrightarrow> valid e s d (a # t) = valid e aa b t"
+  apply safe
+  using conditions_invalid apply fastforce
+  by (simp add: valid.step)
+
+lemma aux1: "\<forall> s d. valid e s d (t@t') \<longrightarrow> valid e s d t"
+proof (induction t)
+  case Nil
+  then show ?case by (simp add: base)
+next
+  case (Cons a t)
+  then show ?case
+    apply safe
+    apply simp
+    apply (case_tac "step e s d (fst a) (snd a) = None")
+     apply (simp add: step_none_invalid)
+    apply safe
+    by (simp add: step_some)
+qed
+
+lemma prefix_closure: "valid e s d (t@t') \<Longrightarrow> valid e s d t"
+proof (induction "t")
+  case Nil
+  then show ?case by (simp add: base)
+next
+  case (Cons x xs)
+  then show ?case
+    apply simp
+    apply (case_tac "step e s d (fst x) (snd x) = None")
+     apply (simp add: step_none_invalid)
+    apply safe
+    apply (simp add: step_some)
+    using aux1 by force
+qed
+
+lemma invalid_prefix: "\<not>valid e s d t \<Longrightarrow> \<not>valid e s d (t@t')"
+  apply (rule ccontr)
+  by (simp add: prefix_closure)
+
+lemma length_observe_empty_trace: "length (observe_all e aa b []) = 0"
+  by simp
+
+lemma not_single_step_none:  "\<not> is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a)) \<Longrightarrow> (step e (s0 e) <> (fst a) (snd a) = None)"
+  by simp
+
+lemma valid_singleton_first_step: "valid e (s0 e) Map.empty (a # t) \<Longrightarrow> is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a))"
+  by (meson step_none_invalid)
+
+lemma step_length_suc: "step e (s0 e) <> (fst a) (snd a) = Some (aa, ab, b) \<Longrightarrow> length (observe_all e (s0 e) <> (a # t)) = Suc (length (observe_all e aa b t))"
+  apply simp
+  apply (case_tac "is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
+   apply simp
+  by simp
+
+lemma aux2: "\<forall>s d. valid e s d t \<longrightarrow> (length t = length (observe_all e s d t))"
+proof (induction t)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a t)
+  then show ?case
+    apply safe
+    apply simp
+    apply (case_tac "the_elem (possible_steps e s d (fst a) (snd a))")
+    apply simp
+    apply safe
+     apply (simp add: step_some)
+    by (meson step_none_invalid)
+qed
+
+lemma valid_trace_obs_equal_length: "valid e (s0 e) <> t \<Longrightarrow> (length t = length (observe_all e (s0 e) <> t))"
+proof (induction t)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a t)
+  then show ?case
+    apply (case_tac "step e (s0 e) <> (fst a) (snd a) = None")
+     apply simp
+     apply (case_tac "is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
+      apply (case_tac "the_elem (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
+      apply simp
+     apply (simp add: valid_singleton_first_step)
+    apply safe
+    apply (simp only: step_length_suc step_some)
+    by (simp add: aux2)
+qed
+
+lemma aux3: "\<forall>s d. (length t = length (observe_all e s d t)) \<longrightarrow> valid e s d t"
+proof (induction t)
+  case Nil
+  then show ?case by (simp add: valid.base)
+next
+  case (Cons a t)
+  then show ?case
+    apply safe
+    apply simp
+    apply (case_tac "step e s d (fst a) (snd a)")
+     apply simp
+    apply simp
+    apply (case_tac aa)
+    apply simp
+    by (simp only: step_length_suc step_some)
+qed
+
+lemma obs_equal_length_valid: "(length t = length (observe_all e (s0 e) <> t)) \<Longrightarrow> valid e (s0 e) <> t"
+proof (induction t)
+  case Nil
+  then show ?case by (simp add: valid.base)
+next
+  case (Cons a t)
+  then show ?case
+    apply (case_tac "step e (s0 e) <> (fst a) (snd a) = None")
+     apply simp
+     apply (case_tac "is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
+      apply simp
+     apply simp
+    apply safe
+    apply (simp only: step_length_suc step_some)
+    by (simp add: aux3)
+qed
+
+lemma length_equal_valid: "(length t = length (observe_all e (s0 e) <> t)) = valid e (s0 e) <> t"
+  apply safe
+  using obs_equal_length_valid apply auto[1]
+  by (simp add: valid_trace_obs_equal_length)
 end

@@ -1,33 +1,6 @@
 theory valid_aux
-  imports EFSM Filesystem
+  imports EFSM
 begin
-
-abbreviation "reg_of t \<equiv> (if t = [] then <> else snd (snd (last t)))"
-abbreviation "state_of e t \<equiv> (if t = [] then s0 e else fst (last t))"
-
-lemma valid_trace_non_empty_observe: "valid_trace e (a#list) \<Longrightarrow> [] \<noteq> observe_all e (s0 e) <> (a # list)"
-  by fastforce
-
-lemma nonempty: "valid_trace e t \<and> t \<noteq> [] \<longrightarrow> observe_all e (s0 e) <> t \<noteq> []"
-  by auto
-
-lemma first_none_invalid: "step efsm (s0 efsm) <> (fst a) (snd a) = None \<Longrightarrow> \<not> valid_trace efsm [a]"
-  apply (cases "is_singleton (possible_steps efsm (s0 efsm) Map.empty (fst a) (snd a))")
-   apply simp
-  by simp
-
-lemma valid_trace_head_not_none:  "valid_trace efsm [a] \<Longrightarrow> (step efsm (s0 efsm) <> (fst a) (snd a) \<noteq> None)"
-  apply (rule ccontr)
-  using first_none_invalid by blast
-
-lemma valid_trace_cons: "valid_trace efsm (a#t) \<Longrightarrow> valid_trace efsm [a]"
-  apply(simp)
-  apply (cases "is_singleton (possible_steps efsm (s0 efsm) Map.empty (fst a) (snd a))")
-   apply (simp add: the_elem_def)
-   apply (cases "THE x. possible_steps efsm (s0 efsm) Map.empty (fst a) (snd a) = {x}")
-   apply simp
-  by simp
-
 lemma length_observe_all_restricted: "\<And>s r. length (observe_all e s r t) \<le> length t"
 proof (induction t) 
   case Nil
@@ -43,29 +16,6 @@ next
     with Cons show ?thesis by(auto) 
   qed
 qed
-
-(* abbreviation "drop_last a \<equiv> rev (tl (rev a))" *)
-
-function drop_last :: "'a list \<Rightarrow> 'a list" where
-"drop_last [] = []" |
-"drop_last (xs@[x]) = xs"
-  using rev_exhaust apply blast
-  by simp_all
-termination drop_last
-  using "termination" by blast
-
-function last :: "'a list \<Rightarrow> 'a list" where
-"last [] = []" |
-"last (xs@[x]) = [x]"
-  using rev_exhaust apply blast
-  by simp_all
-termination last
-  using "termination" by blast
-
-lemma foo: "step e (s0 e) <> (fst a) (snd a) = None \<or>  (\<exists>s' outputs updated. step e (s0 e) <> (fst a) (snd a) = Some (s', outputs, updated))"
-  apply (cases "step e (s0 e) <> (fst a) (snd a)")
-   apply simp
-  by auto
 
 inductive valid :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
   base: "valid e s d []" |
@@ -156,73 +106,91 @@ lemma invalid_prefix: "\<not>valid e s d t \<Longrightarrow> \<not>valid e s d (
   apply (rule ccontr)
   by (simp add: prefix_closure)
 
-lemma "valid e s d t \<Longrightarrow> (length t = length (observe_all e (s0 e) <> t))"
+lemma length_observe_empty_trace: "length (observe_all e aa b []) = 0"
+  by simp
+
+lemma not_single_step_none:  "\<not> is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a)) \<Longrightarrow> (step e (s0 e) <> (fst a) (snd a) = None)"
+  by simp
+
+lemma valid_singleton_first_step: "valid e (s0 e) Map.empty (a # t) \<Longrightarrow> is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a))"
+  by (meson step_none_invalid)
+
+lemma step_length_suc: "step e (s0 e) <> (fst a) (snd a) = Some (aa, ab, b) \<Longrightarrow> length (observe_all e (s0 e) <> (a # t)) = Suc (length (observe_all e aa b t))"
+  apply simp
+  apply (case_tac "is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
+   apply simp
+  by simp
+
+lemma aux2: "\<forall>s d. valid e s d t \<longrightarrow> (length t = length (observe_all e s d t))"
 proof (induction t)
-case Nil
-then show ?case by simp
-next
-case (Cons a t)
-  then show ?case
-    apply simp
-    apply (case_tac "the_elem (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
-    apply simp
-qed
-
-
-
-  
-
-
-
-lemma "valid_trace e (t@[t']) \<Longrightarrow> valid_trace e t"
-proof (induct "t@[t']" rule: rev_induct)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (snoc x xs)
-  then show ?case
-    apply simp
-      sorry
-  qed
-
-lemma "(valid_trace e (ts@[t]) \<longrightarrow> valid_trace e ts)" 
-proof (induct ts)
   case Nil
   then show ?case by simp
 next
-  case (Cons a ts)
-  then show ?case 
+  case (Cons a t)
+  then show ?case
+    apply safe
     apply simp
-    apply (case_tac "step e s <> (fst a) (snd a) = None")
+    apply (case_tac "the_elem (possible_steps e s d (fst a) (snd a))")
+    apply simp
+    apply safe
+     apply (simp add: step_some)
+    by (meson step_none_invalid)
+qed
+
+lemma valid_trace_obs_equal_length: "valid e (s0 e) <> t \<Longrightarrow> (length t = length (observe_all e (s0 e) <> t))"
+proof (induction t)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a t)
+  then show ?case
+    apply (case_tac "step e (s0 e) <> (fst a) (snd a) = None")
+     apply simp
+     apply (case_tac "is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
+      apply (case_tac "the_elem (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
+      apply simp
+     apply (simp add: valid_singleton_first_step)
+    apply safe
+    apply (simp only: step_length_suc step_some)
+    by (simp add: aux2)
+qed
+
+lemma aux3: "\<forall>s d. (length t = length (observe_all e s d t)) \<longrightarrow> valid e s d t"
+proof (induction t)
+  case Nil
+  then show ?case by (simp add: valid.base)
+next
+  case (Cons a t)
+  then show ?case
+    apply safe
+    apply simp
+    apply (case_tac "step e s d (fst a) (snd a)")
      apply simp
     apply simp
-    apply (rule_tac exE)
-qed
-
-
-  
-
-
-  
-
-lemma "valid_trace e t \<Longrightarrow> ((observe_all e (s0 e) <> (drop_last t)) = xs \<longrightarrow> (observe_all e (s0 e) <> t) = xs@(observe_all e (state_of e xs) (reg_of xs) (last t)))"
-proof (induct t rule: rev_induct)
-  case Nil
-  then show ?case by simp
-next
-  case (snoc y ys)
-  then show ?case 
+    apply (case_tac aa)
     apply simp
-     apply (case_tac "step e (s0 e) <> (fst y) (snd y) = None")
-      apply simp
-
+    by (simp only: step_length_suc step_some)
 qed
 
+lemma obs_equal_length_valid: "(length t = length (observe_all e (s0 e) <> t)) \<Longrightarrow> valid e (s0 e) <> t"
+proof (induction t)
+  case Nil
+  then show ?case by (simp add: valid.base)
+next
+  case (Cons a t)
+  then show ?case
+    apply (case_tac "step e (s0 e) <> (fst a) (snd a) = None")
+     apply simp
+     apply (case_tac "is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
+      apply simp
+     apply simp
+    apply safe
+    apply (simp only: step_length_suc step_some)
+    by (simp add: aux3)
+qed
 
-  
-
-
-
-
+lemma length_equal_valid: "(length t = length (observe_all e (s0 e) <> t)) = valid e (s0 e) <> t"
+  apply safe
+  using obs_equal_length_valid apply auto[1]
+  by (simp add: valid_trace_obs_equal_length)
 end
