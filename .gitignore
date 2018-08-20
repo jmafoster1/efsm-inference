@@ -24,3 +24,7 @@ erl_crash.dump
 
 # Ignore Isabelle temp files
 *.thy#
+root.aux
+root.log
+root.out
+root.toc
