@@ -136,6 +136,9 @@ inductive valid :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> datas
   base: "valid e s d []" |
   step: "step e s d (fst h) (snd h) = Some (s', p', d') \<Longrightarrow> valid e s' d' t \<Longrightarrow> valid e s d (h#t)"
 
+abbreviation valid_trace :: "'statename efsm \<Rightarrow> trace \<Rightarrow> bool" where
+  "valid_trace e t \<equiv> valid e (s0 e) <> t"
+
 lemma valid_steps: "the_elem (possible_steps e s d (fst h) (snd h)) = (a, b) \<Longrightarrow>
        is_singleton (possible_steps e s d (fst h) (snd h)) \<Longrightarrow>
        valid e a (apply_updates (Updates b) (case_vname (\<lambda>n. index2state (snd h) (Suc 0) (I n)) (\<lambda>n. d (R n))) d) t \<Longrightarrow>

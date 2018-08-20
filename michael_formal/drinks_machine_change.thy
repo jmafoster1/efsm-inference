@@ -97,7 +97,7 @@ lemma "observe_trace drinks (s0 drinks) <> [(''select'', [Str ''coke'']), (''coi
   apply (simp add: possible_steps_q1 possible_steps_q2_coin possible_steps_q2_vend)
   by (simp add: transitions)
 
-lemma cat_impossible: "possible_steps drinks q2 <R (Suc 0) := Str ''coke'', R 2 := Num 0> ''cat'' [Num 50] = {}"
+lemma cat_impossible: "possible_steps drinks q2 d ''cat'' [Num 50] = {}"
   apply (simp add: possible_steps_def drinks_def)
   by (simp add: vend_def coin_def)
 
@@ -105,8 +105,21 @@ lemma cat_impossible: "possible_steps drinks q2 <R (Suc 0) := Str ''coke'', R 2 
 lemma "observe_trace drinks (s0 drinks) <> [(''select'', [Str ''coke'']), (''cat'', [Num 50])] = [[]]"
   by (simp add: possible_steps_q1 cat_impossible is_singleton_def)
 
+lemma invalid_cat: "valid drinks q2 d' [(''cat'', [Num 50])] \<Longrightarrow> False"
+  apply (cases rule: valid.cases)
+    apply simp
+   apply simp
+  apply clarify
+  by (simp add: cat_impossible is_singleton_def)
+
 lemma "\<not> (valid_trace (drinks) [(''select'', [Str ''coke'']), (''cat'', [Num 50])])"
-  by (simp add: possible_steps_q1 cat_impossible is_singleton_def)
+  apply clarify
+  apply (cases rule: valid.cases)
+    apply simp
+   apply simp
+  apply clarify
+  apply (simp add: possible_steps_q1 invalid_cat)
+  using invalid_cat by force
 
 lemma "observe_trace drinks (s0 drinks) <> [(''select'', [Str ''coke'']), (''cat'', [Num 50]), (''coin'', [Num 50])] = [[]]"
   by (simp add: possible_steps_q1 cat_impossible is_singleton_def)
