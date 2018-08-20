@@ -114,13 +114,63 @@ lemma invalid_single_event: "\<not> valid e s d [(a, b)] \<Longrightarrow> step 
 lemma step_invalid: "\<not> valid e s d ((a, b) # t) \<Longrightarrow> step e s d (fst (a, b)) (snd (a, b)) = Some (s', p', d') \<Longrightarrow> \<not> valid e s' d' t"
   using invalid_conditions by force
 
-lemma invalid_prefix: "\<not>valid e s d t \<Longrightarrow> \<not>valid e s d (t@t')"
-  apply (simp only: invalid_conditions)
+lemma step_none_invalid_append: "step e s d (fst a) (snd a) = None \<Longrightarrow> \<not>valid e s d (a # t) \<and> \<not>valid e s d (a # t @ t')"
+  by (simp add: step_none_invalid)
 
+lemma step_some: "step e s d (fst a) (snd a) = Some (aa, ab, b) \<Longrightarrow> valid e s d (a # t) = valid e aa b t"
+  apply safe
+  using conditions_invalid apply fastforce
+  by (simp add: valid.step)
+
+lemma aux1: "\<forall> s d. valid e s d (t@t') \<longrightarrow> valid e s d t"
+proof (induction t)
+  case Nil
+  then show ?case by (simp add: base)
+next
+  case (Cons a t)
+  then show ?case
+    apply safe
+    apply simp
+    apply (case_tac "step e s d (fst a) (snd a) = None")
+     apply (simp add: step_none_invalid)
+    apply safe
+    by (simp add: step_some)
+qed
 
 lemma prefix_closure: "valid e s d (t@t') \<Longrightarrow> valid e s d t"
+proof (induction "t")
+  case Nil
+  then show ?case by (simp add: base)
+next
+  case (Cons x xs)
+  then show ?case
+    apply simp
+    apply (case_tac "step e s d (fst x) (snd x) = None")
+     apply (simp add: step_none_invalid)
+    apply safe
+    apply (simp add: step_some)
+    using aux1 by force
+qed
+
+lemma invalid_prefix: "\<not>valid e s d t \<Longrightarrow> \<not>valid e s d (t@t')"
   apply (rule ccontr)
-  by (simp add: invalid_prefix)
+  by (simp add: prefix_closure)
+
+lemma "valid e s d t \<Longrightarrow> (length t = length (observe_all e (s0 e) <> t))"
+proof (induction t)
+case Nil
+then show ?case by simp
+next
+case (Cons a t)
+  then show ?case
+    apply simp
+    apply (case_tac "the_elem (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
+    apply simp
+qed
+
+
+
+  
 
 
 
