@@ -12,7 +12,7 @@ type_synonym guard = "gexp"
 type_synonym output_function = "aexp"
 type_synonym update_function = "(vname \<times> aexp)"
 type_synonym event = "(label \<times> inputs)"
-type_synonym trace = "event list" (*Ideally written as label(i1, i2, ...)*)
+type_synonym trace = "event list"
 type_synonym observation = "outputs list"
 
 record transition =
@@ -30,17 +30,14 @@ primrec index2state :: "value list \<Rightarrow> nat \<Rightarrow> datastate" wh
   "index2state [] _ = <>" |
   "index2state (h#t) i = (\<lambda>x. if x = I i then Some h else (index2state t (i+1)) x)"
 
+lemma hd_input2state: "length i \<ge> 1 \<Longrightarrow> index2state i 1 (I 1) = Some (hd i)"
+  by (metis hd_Cons_tl index2state.simps(2) le_numeral_extra(2) length_0_conv)
+
 abbreviation join_ir :: "value list \<Rightarrow> datastate \<Rightarrow> datastate" where
   "join_ir i r \<equiv> (\<lambda>x. case x of
     R n \<Rightarrow> r (R n) |
     I n \<Rightarrow> (index2state i 1) (I n)
   )"
-
-lemma "join_ir [Num 1, Num 2] <> = [I 1:=Num 1, I 2:= Num 2]"
-  apply (rule ext)
-  apply (case_tac x)
-   apply simp
-  by simp
 
 definition
   S :: "'statename efsm \<Rightarrow> 'statename set" where
@@ -58,15 +55,10 @@ primrec apply_updates :: "(vname \<times> aexp) list \<Rightarrow> datastate \<R
   "apply_updates [] _ new = new" |
   "apply_updates (h#t) old new = (\<lambda>x. if x = (fst h) then (aval (snd h) old) else (apply_updates t old new) x)"
 
-lemma "apply_updates [(R 1, L (Num 6))] <> <R 2:= Num 3> = <R 1:= Num 6, R 2:= Num 3>"
-  apply (rule ext)
-  by simp
-
 abbreviation is_possible_step :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> 'statename \<Rightarrow> transition \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> bool" where
 "is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (t \<in> T e (s,s')) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (join_ir i r)))"
 
 definition possible_steps :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> ('statename \<times> transition) set" where
-(* "possible_steps e s r l i \<equiv> {(s',t) . s' \<in> S e \<and> t \<in> T e (s,s') \<and> is_possible_step e s s' t r l i}" *)
 "possible_steps e s r l i \<equiv> {(s',t). is_possible_step e s s' t r l i}"
 
 abbreviation step :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> ('statename \<times> outputs \<times> datastate) option" where
@@ -191,34 +183,34 @@ lemma step_some: "step e s d (fst a) (snd a) = Some (aa, ab, b) \<Longrightarrow
   by (simp add: valid.step)
 
 lemma aux1: "\<forall> s d. valid e s d (t@t') \<longrightarrow> valid e s d t"
-proof (induction t)
-  case Nil
-  then show ?case by (simp add: base)
-next
-  case (Cons a t)
-  then show ?case
-    apply safe
-    apply simp
-    apply (case_tac "step e s d (fst a) (snd a) = None")
-     apply (simp add: step_none_invalid)
-    apply safe
-    by (simp add: step_some)
-qed
+  proof (induction t)
+    case Nil
+    then show ?case by (simp add: base)
+  next
+    case (Cons a t)
+    then show ?case
+      apply safe
+      apply simp
+      apply (case_tac "step e s d (fst a) (snd a) = None")
+       apply (simp add: step_none_invalid)
+      apply safe
+      by (simp add: step_some)
+  qed
 
 lemma prefix_closure: "valid e s d (t@t') \<Longrightarrow> valid e s d t"
-proof (induction "t")
-  case Nil
-  then show ?case by (simp add: base)
-next
-  case (Cons x xs)
-  then show ?case
-    apply simp
-    apply (case_tac "step e s d (fst x) (snd x) = None")
-     apply (simp add: step_none_invalid)
-    apply safe
-    apply (simp add: step_some)
-    using aux1 by force
-qed
+  proof (induction "t")
+    case Nil
+    then show ?case by (simp add: base)
+  next
+    case (Cons x xs)
+    then show ?case
+      apply simp
+      apply (case_tac "step e s d (fst x) (snd x) = None")
+       apply (simp add: step_none_invalid)
+      apply safe
+      apply (simp add: step_some)
+      using aux1 by force
+  qed
 
 lemma invalid_prefix: "\<not>valid e s d t \<Longrightarrow> \<not>valid e s d (t@t')"
   apply (rule ccontr)
@@ -240,75 +232,76 @@ lemma step_length_suc: "step e (s0 e) <> (fst a) (snd a) = Some (aa, ab, b) \<Lo
   by simp
 
 lemma aux2: "\<forall>s d. valid e s d t \<longrightarrow> (length t = length (observe_all e s d t))"
-proof (induction t)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons a t)
-  then show ?case
-    apply safe
-    apply simp
-    apply (case_tac "the_elem (possible_steps e s d (fst a) (snd a))")
-    apply simp
-    apply safe
-     apply (simp add: step_some)
-    by (meson step_none_invalid)
-qed
+  proof (induction t)
+    case Nil
+    then show ?case by simp
+  next
+    case (Cons a t)
+    then show ?case
+      apply safe
+      apply simp
+      apply (case_tac "the_elem (possible_steps e s d (fst a) (snd a))")
+      apply simp
+      apply safe
+       apply (simp add: step_some)
+      by (meson step_none_invalid)
+  qed
 
 lemma valid_trace_obs_equal_length: "valid e (s0 e) <> t \<Longrightarrow> (length t = length (observe_all e (s0 e) <> t))"
-proof (induction t)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons a t)
-  then show ?case
-    apply (case_tac "step e (s0 e) <> (fst a) (snd a) = None")
-     apply simp
-     apply (case_tac "is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
-      apply (case_tac "the_elem (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
-      apply simp
-     apply (simp add: valid_singleton_first_step)
-    apply safe
-    apply (simp only: step_length_suc step_some)
-    by (simp add: aux2)
-qed
+  proof (induction t)
+    case Nil
+    then show ?case by simp
+  next
+    case (Cons a t)
+    then show ?case
+      apply (case_tac "step e (s0 e) <> (fst a) (snd a) = None")
+       apply simp
+       apply (case_tac "is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
+        apply (case_tac "the_elem (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
+        apply simp
+       apply (simp add: valid_singleton_first_step)
+      apply safe
+      apply (simp only: step_length_suc step_some)
+      by (simp add: aux2)
+  qed
 
 lemma aux3: "\<forall>s d. (length t = length (observe_all e s d t)) \<longrightarrow> valid e s d t"
-proof (induction t)
-  case Nil
-  then show ?case by (simp add: valid.base)
-next
-  case (Cons a t)
-  then show ?case
-    apply safe
-    apply simp
-    apply (case_tac "step e s d (fst a) (snd a)")
-     apply simp
-    apply simp
-    apply (case_tac aa)
-    apply simp
-    by (simp only: step_length_suc step_some)
-qed
+  proof (induction t)
+    case Nil
+    then show ?case by (simp add: valid.base)
+  next
+    case (Cons a t)
+    then show ?case
+      apply safe
+      apply simp
+      apply (case_tac "step e s d (fst a) (snd a)")
+       apply simp
+      apply simp
+      apply (case_tac aa)
+      apply simp
+      by (simp only: step_length_suc step_some)
+  qed
 
 lemma obs_equal_length_valid: "(length t = length (observe_all e (s0 e) <> t)) \<Longrightarrow> valid e (s0 e) <> t"
-proof (induction t)
-  case Nil
-  then show ?case by (simp add: valid.base)
-next
-  case (Cons a t)
-  then show ?case
-    apply (case_tac "step e (s0 e) <> (fst a) (snd a) = None")
-     apply simp
-     apply (case_tac "is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
-      apply simp
-     apply simp
-    apply safe
-    apply (simp only: step_length_suc step_some)
-    by (simp add: aux3)
-qed
+  proof (induction t)
+    case Nil
+    then show ?case by (simp add: valid.base)
+  next
+    case (Cons a t)
+    then show ?case
+      apply (case_tac "step e (s0 e) <> (fst a) (snd a) = None")
+       apply simp
+       apply (case_tac "is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
+        apply simp
+       apply simp
+      apply safe
+      apply (simp only: step_length_suc step_some)
+      by (simp add: aux3)
+  qed
 
 lemma length_equal_valid: "(length t = length (observe_all e (s0 e) <> t)) = valid e (s0 e) <> t"
   apply safe
   using obs_equal_length_valid apply auto[1]
   by (simp add: valid_trace_obs_equal_length)
+
 end

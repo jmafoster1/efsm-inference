@@ -10,7 +10,7 @@ flow through an EFSM tracing constraints on register values.
 *}
 theory Contexts
   imports
-    EFSM CExp GExp
+    EFSM GExp CExp
 begin
 
 type_synonym "context" = "aexp \<Rightarrow> cexp"
@@ -171,9 +171,9 @@ lemma medial_empty: "medial empty [] = empty"
 (* Widening the precondition and reducing nondeterminism *)
 (* t2 subsumes t1 *)
 definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "subsumes c t2 t1 \<equiv> (\<forall>r i. (ceval (medial c (Guard t1) r) i = Some True) \<longrightarrow> (ceval (medial c (Guard t2) r) i) = Some True) \<and>
+  "subsumes c t2 t1 \<equiv> (\<forall>r i. (cval (medial c (Guard t1) r) i = Some True) \<longrightarrow> (cval (medial c (Guard t2) r) i) = Some True) \<and>
                       (\<forall> i r. apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
-                      (\<forall>r i. ceval (posterior (medial c (Guard t1)) t2 r) i = Some True \<longrightarrow> (ceval (posterior c t1 r) i = Some True) \<or> (posterior c t1 r) = Undef) \<and>
+                      (\<forall>r i. cval (posterior (medial c (Guard t1)) t2 r) i = Some True \<longrightarrow> (cval (posterior c t1 r) i = Some True) \<or> (posterior c t1 r) = Undef) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
 
 primrec pairs2guard :: "(aexp \<times> cexp) list \<Rightarrow> guard" where
@@ -205,7 +205,7 @@ lemma lt_to_lt: "Lt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Gt (L x
 lemma gt_to_gt: "Gt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Gt r (L x)"
   by (metis cexp2gexp.simps(4))
 
-lemma not_satisfiable_def: "\<not> satisfiable c = (\<forall>i. ceval c i = Some False \<or> ceval c i = None)"
+lemma not_satisfiable_def: "\<not> satisfiable c = (\<forall>i. cval c i = Some False \<or> cval c i = None)"
   apply (simp add: satisfiable_def)
   apply safe
    apply (rule_tac x=i in exI)
@@ -214,54 +214,25 @@ lemma not_satisfiable_def: "\<not> satisfiable c = (\<forall>i. ceval c i = Some
    apply (rule_tac x=i in exI)
   by simp
 
-lemma cexp_satisfiable_some_false: "CExp.satisfiable (cexp.Not c) \<Longrightarrow> \<exists>i. ceval c i = Some False"
+lemma cexp_satisfiable_some_false: "CExp.satisfiable (cexp.Not c) \<Longrightarrow> \<exists>i. cval c i = Some False"
   apply (simp add: satisfiable_def)
-  by (metis (full_types) ceval.simps(6) ceval_double_negation map_option_case option.simps(9))
+  by (metis (full_types) cval.simps(6) cval_double_negation map_option_case option.simps(9))
 
-lemma true_or_none_not_false: "(\<forall>i. ceval c i = Some True \<or> ceval c i = None) \<Longrightarrow> \<nexists>i. ceval c i = Some False"
+lemma true_or_none_not_false: "(\<forall>i. cval c i = Some True \<or> cval c i = None) \<Longrightarrow> \<nexists>i. cval c i = Some False"
   by (metis CExp.satisfiable_def not_satisfiable_def option.distinct(1))
 
-lemma not_satisfiable_neg: "\<not> CExp.satisfiable (cexp.Not c) = (\<forall>i. ceval c i = Some True \<or> ceval c i = None)"
+lemma not_satisfiable_neg: "\<not> CExp.satisfiable (cexp.Not c) = (\<forall>i. cval c i = Some True \<or> cval c i = None)"
   apply safe
    apply (simp add: satisfiable_def)
    apply (metis option.case_eq_if option.sel option.simps(3))
    apply (simp add: satisfiable_def)
   by (metis (full_types) map_option_case option.simps(9))  
 
-lemma satisfiable_double_neg: "satisfiable (cexp.Not (cexp.Not x6)) = satisfiable x6"
+lemma satisfiable_double_neg: "satisfiable (cexp.Not (cexp.Not x)) = satisfiable x"
   apply (simp add: satisfiable_def)
-  by (metis ceval.simps(6) ceval_double_negation)
+  by (metis cval.simps(6) cval_double_negation)
 
 lemma context_equiv_reflexive: "context_equiv c c"
   by (simp add: context_equiv_def cexp_equiv_reflexive)
-
-(*lemma "gexp_equiv x y \<Longrightarrow> context_equiv (Contexts.apply_guard c x) (Contexts.apply_guard c y)"
-proof (induction x)
-case (Bc x)
-  then show ?case
-    apply simp
-    apply (simp add: gexp_equiv_def)
-    apply (case_tac y)
-        apply simp
-        apply (case_tac x)
-         apply (simp add: context_equiv_reflexive)
-        apply simp
-        apply (simp add: context_equiv_def cexp_equiv_def)
-       apply (cases x)
-    apply simp
-    sorry   
-next
-  case (Eq x1a x2)
-  then show ?case sorry
-next
-  case (Gt x1a x2)
-  then show ?case sorry
-next
-  case (Nor x1 x2)
-  then show ?case sorry
-next
-  case (Null x)
-  then show ?case sorry
-qed*)
 
 end

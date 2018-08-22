@@ -140,12 +140,4 @@ lemma mutually_exclusive_symmetric: "mutually_exclusive x y \<Longrightarrow> mu
 lemma not_mutually_exclusive_true: "satisfiable x = (\<not> mutually_exclusive x (Bc True))"
   by (simp add: mutually_exclusive_def satisfiable_def)
 
-fun counterexample :: "gexp \<Rightarrow> gexp" where
-  "counterexample (Eq x y) = Eq (Plus x (L (Num 1))) y" |
-  "counterexample x = x"
-
-(*This isn't true either because counterexample exists*)
-lemma "gexp_equiv s t \<Longrightarrow> gexp_equiv (P s) (P t)"
-  oops
-
 end
