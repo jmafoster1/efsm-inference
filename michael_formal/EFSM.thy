@@ -30,7 +30,7 @@ primrec index2state :: "value list \<Rightarrow> nat \<Rightarrow> datastate" wh
   "index2state [] _ = <>" |
   "index2state (h#t) i = (\<lambda>x. if x = I i then Some h else (index2state t (i+1)) x)"
 
-lemma hd_input2state: "length i \<ge> 1 \<Longrightarrow> index2state i 1 (I 1) = Some (hd i)"
+lemma hd_index2state: "length i \<ge> 1 \<Longrightarrow> index2state i 1 (I 1) = Some (hd i)"
   by (metis hd_Cons_tl index2state.simps(2) le_numeral_extra(2) length_0_conv)
 
 abbreviation join_ir :: "value list \<Rightarrow> datastate \<Rightarrow> datastate" where

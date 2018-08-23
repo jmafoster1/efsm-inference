@@ -61,6 +61,12 @@ definition vend_fail :: "transition" where
         Updates = [(R 1, V (R 1)), (R 2, V (R 2))]
       \<rparr>"
 
+lemma guard_vend_fail: "Guard vend_fail = [((V (R 2)) < (L (Num 100)))]"
+  by (simp add: vend_fail_def)
+
+lemma outputs_vend_fail: "Outputs vend_fail = []"
+  by (simp add: vend_fail_def)
+
 lemma label_vend_fail: "Label vend_fail = ''vend''"
   by (simp add: vend_fail_def)
 
@@ -86,7 +92,7 @@ lemma s0_drinks [simp]: "s0 drinks = q0"
 lemmas transitions = select_def coin_def vend_def
 
 
-lemma possible_steps_q0:  "possible_steps drinks q0 Map.empty ''select'' [Str ''coke''] = {(q1, select)}"
+lemma possible_steps_q0:  "length i = Suc 0 \<Longrightarrow> possible_steps drinks q0 Map.empty ''select'' i = {(q1, select)}"
   apply (simp add: possible_steps_def drinks_def)
   apply safe
        apply (meson empty_iff old.prod.inject statename.distinct(1))
@@ -209,4 +215,5 @@ lemma invalid_valid_prefix: "\<not> (valid_trace drinks [(''select'', [Str ''cok
 lemma invalid_termination: "observe_trace drinks (s0 drinks) <> [(''select'', [Str ''coke'']), (''invalid'', [Num 50]), (''coin'', [Num 50])] = [[]]"
   apply (simp add: possible_steps_q0 invalid_impossible)
   by (simp add: transitions is_singleton_def)
+
 end
