@@ -1,5 +1,5 @@
-theory drinks_machine_payforward
-  imports EFSM drinks_machine
+theory Drinks_Machine_Payforward
+  imports Drinks_Machine
 begin
 
 (* This version of drinks_machine supercedes all of those before 03/04/18 *)
@@ -37,7 +37,7 @@ definition vend :: "transition" where
                   ]
       \<rparr>"
 
-definition drinks :: "drinks_machine.statename efsm" where
+definition drinks :: "statename efsm" where
 "drinks \<equiv> \<lparr> 
           s0 = q1,
           T = \<lambda> (a,b) .
@@ -68,92 +68,52 @@ lemma possible_steps_q1: "possible_steps drinks q1 Map.empty ''setup'' [] = {(q2
    apply (simp add: setup_def)
   by (simp add: setup_def)
 
-lemma apply_updates_setup [simp]: "(apply_updates (Updates setup) (case_vname Map.empty Map.empty) Map.empty) = <R 2 := Num 0>"
-  apply (simp add: setup_def)
-  apply (rule ext)
-  by simp
-
-lemma label_select_q2: "Label b = ''select'' \<Longrightarrow> b \<in> T drinks (q2, a) \<Longrightarrow> b = select1 \<and> a = q3"
-  apply (simp add: drinks_def)
-  apply (cases a)
-    apply simp
-   apply simp
-  by (simp add: select1_def)
-
-lemma possible_steps_q2: "possible_steps drinks_machine_payforward.drinks q2 d ''select'' [Str s] = {(q3, select1)}"
+lemma possible_steps_q2: "possible_steps drinks q2 d ''select'' [Str s] = {(q3, select1)}"
   apply (simp add: possible_steps_def)
   apply safe
-       apply (simp add: label_select_q2)
-      apply (simp add: label_select_q2)
-     apply (simp add: select1_def)
-    apply (simp add: select1_def drinks_def)
-   apply (simp add: select1_def)
-  by (simp add: select1_def)
+  apply (case_tac a)
+          apply (simp add: drinks_def)
+         apply (simp add: drinks_def)
+        apply (simp add: drinks_def)
+       apply (simp add: drinks_def)
+      apply (case_tac a)
+  by (simp_all add: drinks_def select1_def)
 
-lemma updates_select1: "(apply_updates (Updates select1) (case_vname (\<lambda>n. if n = 1 then Some (Str d) else index2state [] (1 + 1) (I n)) (\<lambda>n. if n = 2 then Some (Num n') else None))
-          <R 2 := Num 0>) = <R 1 := Str d, R 2 := Num n'>"
-  apply (simp add: select1_def)
-  apply (rule ext)
-  by simp
-
-lemma label_coin_q3: "Label b = ''coin'' \<Longrightarrow> b \<in> T drinks_machine_payforward.drinks (q3, a) \<Longrightarrow> b = coin \<and> a = q3"
-  apply (simp add: drinks_def)
-  apply (cases a)
-    apply (simp add: vend_def)
-   apply (simp add: vend_def)
-  by (simp add: select1_def)
-
-lemma apply_updates_coin [simp]: "(apply_updates (Updates coin)
-          (case_vname (\<lambda>n. if n = 1 then Some (Num input) else index2state [] (1 + 1) (I n)) (\<lambda>n. if n = 2 then Some (Num original) else <R 1 := Str s> (R n)))
-          <R 1 := Str s, R 2 := Num original>) = <R 1 := Str s, R 2 := Num (original+input)>"
-  apply (simp add: coin_def)
-  apply (rule ext)
-  by simp
-
-lemma possible_steps_q3_coin: "possible_steps drinks_machine_payforward.drinks q3 d ''coin'' [Num n] = {(q3, coin)}"
+lemma possible_steps_q3_coin: "possible_steps drinks q3 d ''coin'' [Num n] = {(q3, coin)}"
   apply (simp add: possible_steps_def)
   apply safe
-       apply (simp add: label_coin_q3)
-      apply (simp add: label_coin_q3)
-     apply (simp add: coin_def)
-    apply (simp add: coin_def drinks_def)
-   apply (simp add: coin_def)
-  by (simp add: coin_def)
+       apply (case_tac a)
+          apply (simp add: drinks_def)
+         apply (simp add: drinks_def)
+        apply (simp add: drinks_def)
+        apply (metis (no_types, lifting) Drinks_Machine_Payforward.vend_def One_nat_def one_neq_zero transition.simps(2))
+       apply (case_tac a)
+          apply (simp add: drinks_def)
+         apply (simp add: drinks_def)
+        apply (simp add: drinks_def)
+       apply (simp add: drinks_def)
+      apply (simp add: drinks_def)
+      apply (metis (no_types, lifting) Drinks_Machine_Payforward.vend_def One_nat_def empty_iff one_neq_zero singletonD transition.simps(2))
+  by (simp_all add: coin_def drinks_def)
 
-lemma label_vend_q1: "Label b = ''vend'' \<Longrightarrow> b \<in> T drinks (q3, a) \<Longrightarrow> b = vend \<and> a = q2"
-  apply (simp add: drinks_def)
-  apply (cases a)
-    apply simp
-   apply simp
-  by (simp add: coin_def)
-
-lemma possible_steps_q3_vend: "n \<ge> 100 \<Longrightarrow> possible_steps drinks_machine_payforward.drinks q3 <R 1 := Str s, R 2 := Num n> ''vend'' [] = {(q2, vend)}"
+lemma possible_steps_q3_vend: "r (R 2) = Some (Num n) \<Longrightarrow> n \<ge> 100 \<Longrightarrow> possible_steps drinks q3 r ''vend'' [] = {(q2, vend)}"
   apply (simp add: possible_steps_def)
   apply safe
-       apply (simp add: label_vend_q1)
-      apply (simp add: label_vend_q1)
-     apply (simp add: vend_def)
-    apply (simp add: vend_def drinks_def)
-   apply (simp add: vend_def)
-  by (simp add: vend_def)
-
-lemma apply_updates_vend [simp]: "(apply_updates (Updates drinks_machine_payforward.vend) (case_vname Map.empty (\<lambda>n. if n = 2 then Some (Num 110) else <R 1 := Str ''coke''> (R n)))
-          <R 1 := Str ''coke'', R 2 := Num 110>) = <R 1 := Str ''coke'', R 2 := Num 10>"
-  apply (rule ext)
-  by (simp add: vend_def)
-
-lemma apply_updates_coin_2 [simp]:"(apply_updates (Updates coin)
-          (case_vname (\<lambda>n. if n = 1 then Some (Num 90) else index2state [] (1 + 1) (I n))
-            (\<lambda>n. apply_updates (Updates select1)
-                   (case_vname (\<lambda>n. if n = 1 then Some (Str ''pepsi'') else index2state [] (1 + 1) (I n)) (\<lambda>n. if n = 2 then Some (Num 10) else <R 1 := Str ''coke''> (R n)))
-                   <R 1 := Str ''coke'', R 2 := Num 10> (R n)))
-          (apply_updates (Updates select1)
-            (case_vname (\<lambda>n. if n = 1 then Some (Str ''pepsi'') else index2state [] (1 + 1) (I n)) (\<lambda>n. if n = 2 then Some (Num 10) else <R 1 := Str ''coke''> (R n)))
-            <R 1 := Str ''coke'', R 2 := Num 10>)) = <R 1 := Str ''pepsi'', R 2 := Num 100>"
-  apply (rule ext)
-  by (simp add: coin_def select1_def)
+       apply (case_tac a)
+          apply (simp add: drinks_def)
+         apply (simp add: drinks_def)
+        apply (simp add: drinks_def)
+       apply (simp add: drinks_def coin_def)
+      apply (case_tac a)
+  by (simp_all add: drinks_def coin_def vend_def)
 
 lemma "observe_trace drinks (s0 drinks) <> [(''setup'', []), (''select'', [Str ''coke'']), (''coin'',[Num 110]), (''vend'', []), (''select'', [Str ''pepsi'']), (''coin'',[Num 90]), (''vend'', [])] = [[],[],[Num 110],[Str ''coke''],[],[Num 100],[Str ''pepsi'']]"
-  apply (simp add: possible_steps_q1 possible_steps_q2 updates_select1 possible_steps_q3_coin possible_steps_q3_vend del: One_nat_def)
-  by (simp add: transitions)
+  apply (simp add: possible_steps_q1 setup_def del: One_nat_def)
+  apply (simp add: possible_steps_q2 select1_def del: One_nat_def)
+  apply (simp add: possible_steps_q3_coin coin_def del: One_nat_def)
+  apply (simp add: possible_steps_q3_vend vend_def del: One_nat_def)
+  apply (simp add: possible_steps_q2 select1_def del: One_nat_def)
+  apply (simp add: possible_steps_q3_coin coin_def del: One_nat_def)
+  by (simp add: possible_steps_q3_vend vend_def del: One_nat_def)
+
 end

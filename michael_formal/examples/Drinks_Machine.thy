@@ -91,7 +91,6 @@ lemma s0_drinks [simp]: "s0 drinks = q0"
 
 lemmas transitions = select_def coin_def vend_def
 
-
 lemma possible_steps_q0:  "length i = Suc 0 \<Longrightarrow> possible_steps drinks q0 Map.empty ''select'' i = {(q1, select)}"
   apply (simp add: possible_steps_def drinks_def)
   apply safe
@@ -149,16 +148,9 @@ lemma possible_steps_q1_coin_2: "possible_steps drinks q1 <R (Suc 0) := Str ''co
        apply (simp add: drinks_def arity_vend)
   by (simp_all add: drinks_def coin_def)
 
-lemma coin_50_updates [simp]: "(apply_updates (Updates coin)
-               (case_vname (\<lambda>n. if n = Suc 0 then Some (Num 50) else index2state [] (Suc 0 + 1) (I n)) (\<lambda>n. if n = 2 then Some (Num 0) else <R (Suc 0) := Str ''coke''> (R n)))
-               <R (Suc 0) := Str ''coke'', R 2 := Num 0>) = <R 1 := Str ''coke'', R 2 := Num 50>"
-  apply (simp add: transitions)
-  apply (rule ext)
-  by simp
-
-lemma coin_100_updates [simp]: "(apply_updates (Updates coin)
-               (case_vname (\<lambda>n. if n = Suc 0 then Some (Num 50) else index2state [] (Suc 0 + 1) (I n)) (\<lambda>n. if n = 2 then Some (Num 50) else <R (Suc 0) := Str ''coke''> (R n)))
-               <R (Suc 0) := Str ''coke'', R 2 := Num 50>) = <R 1 := Str ''coke'', R 2 := Num 100>"
+lemma coin_updates [simp]: "(apply_updates (Updates coin)
+               (case_vname (\<lambda>n. if n = Suc 0 then Some (Num i) else index2state [] (Suc 0 + 1) (I n)) (\<lambda>n. if n = 2 then Some (Num r2) else <R (Suc 0) := s> (R n)))
+               <R (Suc 0) := s', R 2 := Num r2>) = <R 1 := s, R 2 := Num (i+r2)>"
   apply (simp add: transitions)
   apply (rule ext)
   by simp

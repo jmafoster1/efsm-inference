@@ -1,5 +1,5 @@
-theory drinks_machine_change
-  imports drinks_machine
+theory Drinks_Machine_Change
+  imports Drinks_Machine
 begin
 
 definition vend :: "transition" where
@@ -11,7 +11,7 @@ definition vend :: "transition" where
         Updates = [(R 1, (V (R 1))), (R 2, (V (R 2)))]
       \<rparr>"
 
-definition drinks :: "drinks_machine.statename efsm" where
+definition drinks :: "Drinks_Machine.statename efsm" where
 "drinks \<equiv> \<lparr> 
           s0 = q1,
           T = \<lambda> (a,b) .
@@ -24,18 +24,12 @@ definition drinks :: "drinks_machine.statename efsm" where
 lemma s0_drinks [simp]: "s0 drinks = q1"
   by (simp add: drinks_def)
 
-
-(*
-  These are lemmas about the machine which could maybe be in another file.
-  They don't need to be translated to SAL
-*)
-
 lemmas transitions = select_def coin_def vend_def
 
 lemma "observe_trace drinks (s0 drinks) <> [] = []"
   by simp
 
-lemma label_select_q2: "Label b = ''select'' \<Longrightarrow> b \<in> T drinks_machine_change.drinks (q1, a) \<Longrightarrow> b = select \<and> a = q2"
+lemma label_select_q2: "Label b = ''select'' \<Longrightarrow> b \<in> T drinks (q1, a) \<Longrightarrow> b = select \<and> a = q2"
   apply (simp add: drinks_def)
   apply (cases a)
   by simp_all
@@ -73,7 +67,7 @@ lemma label_vend_q3: "Label b = ''vend'' \<Longrightarrow> b \<in> T drinks (q2,
   apply (cases a)
   by (simp_all add: coin_def)
 
-lemma possible_steps_q2_vend: "n \<ge> 100 \<Longrightarrow> possible_steps drinks_machine_change.drinks q2 <R (Suc 0) := Str ''coke'', R 2 := Num n> ''vend'' [] = {(q3, vend)}"
+lemma possible_steps_q2_vend: "n \<ge> 100 \<Longrightarrow> possible_steps drinks q2 <R (Suc 0) := Str ''coke'', R 2 := Num n> ''vend'' [] = {(q3, vend)}"
   apply (simp add: possible_steps_def)
   apply safe
        apply (simp add: label_vend_q3)
@@ -97,32 +91,32 @@ lemma "observe_trace drinks (s0 drinks) <> [(''select'', [Str ''coke'']), (''coi
   apply (simp add: possible_steps_q1 possible_steps_q2_coin possible_steps_q2_vend)
   by (simp add: transitions)
 
-lemma cat_impossible: "possible_steps drinks q2 d ''cat'' [Num 50] = {}"
+lemma step_invalid: "possible_steps drinks q2 d ''invalid'' [Num 50] = {}"
   apply (simp add: possible_steps_def drinks_def)
   by (simp add: vend_def coin_def)
 
 (*Stop when we hit a spurious input*)
-lemma "observe_trace drinks (s0 drinks) <> [(''select'', [Str ''coke'']), (''cat'', [Num 50])] = [[]]"
-  by (simp add: possible_steps_q1 cat_impossible is_singleton_def)
+lemma "observe_trace drinks (s0 drinks) <> [(''select'', [Str ''coke'']), (''invalid'', [Num 50])] = [[]]"
+  by (simp add: possible_steps_q1 step_invalid is_singleton_def)
 
-lemma invalid_cat: "valid drinks q2 d' [(''cat'', [Num 50])] \<Longrightarrow> False"
+lemma invalid_input: "valid drinks q2 d' [(''invalid'', [Num 50])] \<Longrightarrow> False"
   apply (cases rule: valid.cases)
     apply simp
    apply simp
   apply clarify
-  by (simp add: cat_impossible is_singleton_def)
+  by (simp add: step_invalid is_singleton_def)
 
-lemma "\<not> (valid_trace (drinks) [(''select'', [Str ''coke'']), (''cat'', [Num 50])])"
+lemma invalid_valid_prefix: "\<not> (valid_trace (drinks) [(''select'', [Str ''coke'']), (''invalid'', [Num 50])])"
   apply clarify
   apply (cases rule: valid.cases)
     apply simp
    apply simp
   apply clarify
-  apply (simp add: possible_steps_q1 invalid_cat)
-  using invalid_cat by force
+  apply (simp add: possible_steps_q1 invalid_input)
+  using invalid_input by force
 
-lemma "observe_trace drinks (s0 drinks) <> [(''select'', [Str ''coke'']), (''cat'', [Num 50]), (''coin'', [Num 50])] = [[]]"
-  by (simp add: possible_steps_q1 cat_impossible is_singleton_def)
+lemma "observe_trace drinks (s0 drinks) <> [(''select'', [Str ''coke'']), (''invalid'', [Num 50]), (''coin'', [Num 50])] = [[]]"
+  by (simp add: possible_steps_q1 step_invalid is_singleton_def)
 
 lemma "( t = []) \<Longrightarrow> (observe_trace e (s0 e) <> t = []) "
   by(simp)

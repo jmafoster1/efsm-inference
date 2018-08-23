@@ -1,5 +1,5 @@
 theory Generalisation
-imports Contexts drinks_machine2
+imports "../Contexts" Drinks_Machine_2
 begin
 definition select :: "transition" where
 "select \<equiv> \<lparr>

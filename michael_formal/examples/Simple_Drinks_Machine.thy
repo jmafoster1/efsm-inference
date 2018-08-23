@@ -1,5 +1,5 @@
-theory simple_drinks_machine
-imports EFSM Contexts drinks_machine
+theory Simple_Drinks_Machine
+imports "../Contexts" Drinks_Machine
 begin
 definition t1 :: "transition" where
 "t1 \<equiv> \<lparr>
@@ -111,12 +111,6 @@ lemma posterior_coin: "(posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 
   apply (rule ext)
   by simp
 
-lemma consistent_true: "\<forall>r. c r = Undef \<or> c r = Bc True \<Longrightarrow> consistent c"
-  apply (simp only: consistent_def)
-  apply (rule_tac x="<>" in exI)
-  apply (rule allI)
-  by auto
-
 (* coin subsumes coin50 no matter how many times it is looped round *)
 lemma "subsumes \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num n)\<rbrakk> coin coin50"
   apply (simp only: subsumes_def)
@@ -128,7 +122,7 @@ lemma "subsumes \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num n)
      apply (case_tac "r = V (R 1)")
       apply simp
      apply simp
-     apply (case_tac "ceval (\<lbrakk>\<rbrakk> r) i")
+     apply (case_tac "cval (\<lbrakk>\<rbrakk> r) i")
       apply simp
      apply (simp del: One_nat_def)
      apply (case_tac "r = V (I 1)")

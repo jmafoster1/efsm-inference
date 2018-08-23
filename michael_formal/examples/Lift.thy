@@ -1,5 +1,5 @@
 theory Lift
-  imports EFSM
+  imports "../EFSM"
 begin
 definition t1up :: "transition" where
 "t1up \<equiv> \<lparr>
