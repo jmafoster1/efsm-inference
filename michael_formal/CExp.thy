@@ -1,5 +1,12 @@
 section {* Constraint Expressions *}
 (* Author: Michael Foster *)
+text{*
+This theory defines a language to express constraints on register values. Base restrictions are
+undefined, unrestricted, inconsistent, equal to a value, less than a value, greater than a value.
+Expressions may be combined using either negation or conjunction to form compound expressions. We
+also define syntax hacks for the relations less than or equal to, greater than or equal to, and
+not equal to as well as the expression of logical ``or'' in terms of negation and conjunction.
+*}
 theory CExp
   imports AExp Option_Logic
 begin
@@ -37,9 +44,9 @@ abbreviation Or :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "Or v va \<equiv> not (and (not v) (not va))"
 
 text {*
-This function takes two cexps and tries to make the first one greater than the second one by
-increasing the restriction on either the first or second argument. It returns a pair which contains
-the modified first and second arguments.
+This function takes two cexps and tries to apply restrictions such that the first argument is
+greater than the second. The return value is a pair of the first and second inputs with their
+respective increased restrictions.
 *}
 (* This takes a LONG time to prove *)
 fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where
@@ -397,7 +404,6 @@ lemma plus_num_str: "compose_plus (Eq (Str s)) (Eq (Num n)) = Bc False"
   apply (simp add: valid_def satisfiable_def)
   by auto
 
-(* Are cexps "c" and "c'" satisfied under the same conditions? *)
 definition cexp_equiv :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
   "cexp_equiv c c' \<equiv> (\<forall>i. (cval c i) = (cval c' i)) \<and> (c = Undef \<longleftrightarrow> c' = Undef)"
 
@@ -416,561 +422,98 @@ lemma cexp_equiv_undef: "cexp_equiv x Undef \<Longrightarrow> x = Undef"
 lemma cexp_equiv_subst: "cexp_equiv x y \<Longrightarrow> P (cval x i) \<Longrightarrow> P (cval y i)"
   by (simp add: cexp_equiv_def)
 
+lemma and_x_y_undef: "and x y = Undef \<Longrightarrow> and y x = Undef"
+proof (induction x)
+case Undef
+  then show ?case
+    apply (cases y)
+          prefer 2
+          apply (case_tac x2)
+    by simp_all
+next
+  case (Bc x)
+  then show ?case
+    apply (cases x)
+     apply (cases y)
+           apply (simp, simp, simp, simp, simp, simp, simp)
+    apply (cases y)
+          prefer 2
+          apply (case_tac x2)
+    by simp_all
+next
+  case (Eq x)
+  then show ?case
+    apply (cases y)
+          apply simp
+         apply (case_tac x2)
+          apply simp
+         apply simp
+    apply (metis and.simps(25) cexp.distinct(11))
+    by simp_all
+next
+  case (Lt x)
+  then show ?case
+    apply (cases y)
+          apply simp
+         apply (case_tac x2)
+          apply simp
+         apply simp
+        apply simp
+       apply (metis and.simps(33) cexp.distinct(11))
+    by simp_all
+next
+case (Gt x)
+  then show ?case
+    apply (cases y)
+          apply simp
+         apply (case_tac x2)
+          apply simp
+         apply simp
+        apply simp
+       apply simp
+      apply (metis and.simps(41) cexp.distinct(11))
+    by simp_all
+next
+  case (Not x)
+  then show ?case
+    apply (cases y)
+          apply simp
+         apply (case_tac x2)
+          apply simp
+         apply simp
+        apply simp
+       apply simp
+      apply simp
+     apply (metis and.simps(49) cexp.distinct(11))
+    by simp
+next
+  case (And x1 x2)
+  then show ?case
+    apply (cases y)
+          apply simp
+         apply simp
+         apply (case_tac x2a)
+          apply simp
+         apply simp
+        apply simp
+       apply simp
+      apply simp
+     apply simp
+    by (metis and.simps(57) cexp.distinct(11))
+qed
+
 lemma and_symmetric: "cexp_equiv (and x y) (and y x)"
-  proof (induction x)
-    case Undef
-    then show ?case
-    proof (induction y)
-      case Undef
-      then show ?case by (simp add: cexp_equiv_reflexive)
-    next
-      case (Bc x)
-      then show ?case
-        apply (cases x)
-         apply (simp add: cexp_equiv_reflexive)
-        by (simp add: cexp_equiv_def)
-    next
-      case (Eq x)
-      then show ?case by (simp add: cexp_equiv_def)
-    next
-      case (Lt x)
-      then show ?case
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueLt (Some i) (Some x)")
-         apply simp
-        by simp
-    next
-      case (Gt x)
-      then show ?case
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueGt (Some i) (Some x)")
-         apply simp
-        by simp
-    next
-      case (Not y)
-      then show ?case
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "maybe_not (cval y i)")
-         apply simp
-        by simp
-    next
-      case (And y1 y2)
-      then show ?case
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "cval y1 i")
-         apply simp
-        apply (case_tac "cval y2 i")
-         apply simp
-        by simp
-    qed
-  next
-    case (Bc x)
-    then show ?case
-    proof (cases y)
-      case Undef
-      then show ?thesis
-        apply (cases x)
-        by (simp_all add: cexp_equiv_def)
-    next
-      case (Bc x2)
-      then show ?thesis
-        apply (cases x2)
-         apply (cases x)
-          apply (simp add: cexp_equiv_def)
-         apply (simp add: cexp_equiv_def)
-        apply (cases x)
-        by (simp_all add: cexp_equiv_def)
-    next
-      case (Eq x3)
-      then show ?thesis
-        apply (cases x)
-         apply (simp add: cexp_equiv_def)
-        by (simp add: cexp_equiv_def)
-    next
-      case (Lt x4)
-      then show ?thesis
-        apply (cases x)
-         apply (simp add: cexp_equiv_def)
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueLt (Some i) (Some x4)")
-        by simp_all
-    next
-      case (Gt x5)
-      then show ?thesis
-        apply (cases x)
-         apply (simp add: cexp_equiv_def)
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueGt (Some i) (Some x5)")
-        by simp_all
-    next
-      case (Not x6)
-      then show ?thesis
-        apply (cases x)
-         apply (simp add: cexp_equiv_def)
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "cval x6 i")
-        by simp_all
-    next
-      case (And x71 x72)
-      then show ?thesis
-        apply (cases x)
-         apply (simp add: cexp_equiv_def)
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "cval x71 i")
-         apply simp
-        apply (case_tac "cval x72 i")
-        by simp_all
-    qed
-  next
-    case (Eq x)
-    then show ?case
-    proof (cases y)
-      case Undef
-      then show ?thesis
-        by (simp add: cexp_equiv_def)
-    next
-      case (Bc x2)
-      then show ?thesis
-        apply (cases x2)
-        by (simp_all add: cexp_equiv_def)
-    next
-      case (Eq x3)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        by auto
-    next
-      case (Lt x4)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueLt (Some i) (Some x4)")
-         apply simp
-        by auto
-    next
-      case (Gt x5)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueGt (Some i) (Some x5)")
-         apply simp
-        by auto
-    next
-      case (Not x6)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "cval x6 i")
-        by auto
-    next
-      case (And x71 x72)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "cval x71 i")
-         apply simp
-        apply (case_tac "cval x72 i")
-        by auto
-    qed
-  next
-    case (Lt x)
-    then show ?case
-    proof (cases y)
-      case Undef
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueLt (Some i) (Some x)")
-        by auto
-    next
-      case (Bc x2)
-      then show ?thesis
-        apply (cases x2)
-         apply (simp add: cexp_equiv_def)
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueLt (Some i) (Some x)")
-        by auto
-    next
-      case (Eq x3)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueLt (Some i) (Some x)")
-        by auto
-    next
-      case (Lt x4)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply safe
-        apply (case_tac "ValueLt (Some i) (Some x)")
-         apply simp
-         apply (case_tac "ValueLt (Some i) (Some x4)")
-          apply simp
-         apply simp
-        apply (case_tac "ValueLt (Some i) (Some x4)")
-        by auto
-    next
-      case (Gt x5)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueLt (Some i) (Some x)")
-         apply simp
-         apply (case_tac "ValueGt (Some i) (Some x5)")
-          apply simp
-         apply simp
-        apply (case_tac "ValueGt (Some i) (Some x5)")
-        by auto
-    next
-      case (Not x6)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueLt (Some i) (Some x)")
-         apply (case_tac "cval x6 i")
-          apply simp
-         apply simp
-        apply (case_tac "cval x6 i")
-        by auto
-    next
-      case (And x71 x72)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueLt (Some i) (Some x)")
-         apply (case_tac "cval x71 i")
-          apply simp
-         apply (case_tac "cval x72 i")
-          apply simp
-         apply simp
-        apply (case_tac "cval x71 i")
-         apply simp
-        apply (case_tac "cval x72 i")
-        by auto
-    qed
-  next
-    case (Gt x)
-    then show ?case
-    proof (cases y)
-      case Undef
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueGt (Some i) (Some x)")
-        by auto
-    next
-      case (Bc x2)
-      then show ?thesis
-        apply (cases x2)
-         apply (simp add: cexp_equiv_def)
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueGt (Some i) (Some x)")
-        by auto
-    next
-      case (Eq x3)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueGt (Some i) (Some x)")
-        by auto
-    next
-      case (Lt x4)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueGt (Some i) (Some x)")
-         apply (case_tac "ValueLt (Some i) (Some x4)")
-          apply simp
-         apply simp
-        apply (case_tac "ValueLt (Some i) (Some x4)")
-        by auto
-    next
-      case (Gt x5)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply safe
-        apply (case_tac "ValueGt (Some i) (Some x)")
-         apply (case_tac "ValueGt (Some i) (Some x5)")
-          apply simp
-         apply simp
-        apply (case_tac "ValueGt (Some i) (Some x5)")
-        by auto
-    next
-      case (Not x6)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueGt (Some i) (Some x)")
-         apply (case_tac "cval x6 i")
-          apply simp
-         apply simp
-        apply (case_tac "cval x6 i")
-        by auto
-    next
-      case (And x71 x72)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "ValueGt (Some i) (Some x)")
-         apply (case_tac "cval x71 i")
-          apply simp
-         apply (case_tac "cval x72 i")
-          apply simp
-         apply simp
-        apply (case_tac "cval x71 i")
-         apply simp
-        apply (case_tac "cval x72 i")
-        by auto
-    qed
-  next
-    case (Not x)
-    then show ?case
-    proof (cases y)
-      case Undef
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "cval x i")
-        by auto
-    next
-      case (Bc x2)
-      then show ?thesis
-        apply (cases x2)
-         apply (simp add: cexp_equiv_def)
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "cval x i")
-        by auto
-    next
-      case (Eq x3)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "cval x i")
-        by auto
-    next
-      case (Lt x4)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "cval x i")
-         apply (case_tac "ValueLt (Some i) (Some x4)")
-          apply simp
-         apply simp
-        apply (case_tac "ValueLt (Some i) (Some x4)")
-        by auto
-    next
-      case (Gt x5)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "cval x i")
-         apply (case_tac "ValueGt (Some i) (Some x5)")
-          apply simp
-         apply simp
-        apply (case_tac "ValueGt (Some i) (Some x5)")
-        by auto
-    next
-      case (Not x6)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply safe
-        apply (case_tac "cval x i")
-         apply (case_tac "cval x6 i")
-          apply simp
-         apply simp
-        apply (case_tac "cval x6 i")
-        by auto
-    next
-      case (And x71 x72)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "cval x i")
-         apply (case_tac "cval x71 i")
-          apply simp
-         apply (case_tac "cval x72 i")
-          apply simp
-         apply simp
-        apply (case_tac "cval x71 i")
-         apply simp
-        apply (case_tac "cval x72 i")
-        by auto
-    qed
-  next
-    case (And x1 x2)
-    then show ?case
-    proof (cases y)
-      case Undef
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "cval x1 i")
-         apply simp
-        apply (case_tac "cval x2 i")
-         apply simp
-        by simp
-    next
-      case (Bc v)
-      then show ?thesis
-        apply (cases v)
-         apply (simp add: cexp_equiv_def)
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "cval x1 i")
-        apply simp
-        apply (case_tac "cval x2 i")
-         apply simp
-        by simp
-    next
-      case (Eq x3)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "cval x1 i")
-         apply simp
-        apply (case_tac "cval x2 i")
-        by auto
-    next
-      case (Lt x4)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "cval x1 i")
-         apply (case_tac "ValueLt (Some i) (Some x4)")
-          apply simp
-         apply simp
-        apply (case_tac "ValueLt (Some i) (Some x4)")
-         apply (case_tac "cval x2 i")
-          apply simp
-         apply simp
-        apply (case_tac "cval x2 i")
-        by auto
-    next
-      case (Gt x5)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "cval x1 i")
-         apply (case_tac "ValueGt (Some i) (Some x5)")
-          apply simp
-         apply simp
-        apply (case_tac "ValueGt (Some i) (Some x5)")
-         apply (case_tac "cval x2 i")
-          apply simp
-         apply simp
-        apply (case_tac "cval x2 i")
-        by auto
-    next
-      case (Not x6)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply (rule allI)
-        apply (case_tac "cval x1 i")
-         apply (case_tac "cval x6 i")
-          apply simp
-         apply simp
-        apply (case_tac "cval x6 i")
-         apply (case_tac "cval x2 i")
-          apply simp
-         apply simp
-        apply (case_tac "cval x2 i")
-        by auto
-    next
-      case (And x71 x72)
-      then show ?thesis
-        apply (simp add: cexp_equiv_def)
-        apply safe
-           apply (case_tac "cval x1 i")
-            apply (case_tac "cval x71 i")
-             apply simp
-            apply (case_tac "cval x72 i")
-             apply simp
-            apply simp
-           apply (case_tac "cval x2 i")
-            apply (case_tac "cval x71 i")
-             apply simp
-            apply simp
-            apply (case_tac "cval x72 i")
-             apply simp
-            apply simp
-           apply (case_tac "cval x71 i")
-            apply simp
-           apply (case_tac "cval x72 i")
-            apply simp
-           apply auto[1]
-          apply (case_tac "cval x1 i")
-           apply (case_tac "cval x71 i")
-            apply simp
-           apply simp
-           apply (case_tac "cval x72 i")
-            apply simp
-           apply simp
-          apply (case_tac "cval x2 i")
-           apply (case_tac "cval x71 i")
-            apply simp
-           apply (case_tac "cval x72 i")
-            apply simp
-           apply simp
-          apply (case_tac "cval x71 i")
-           apply simp
-          apply (case_tac "cval x72 i")
-           apply simp
-          apply auto[1]
-         apply (case_tac "cval x1 i")
-          apply (case_tac "cval x71 i")
-           apply simp
-          apply (case_tac "cval x72 i")
-           apply simp
-          apply simp
-         apply (case_tac "cval x2 i")
-          apply simp
-        apply (case_tac "cval x71 i")
-           apply simp
-          apply simp
-          apply (case_tac "cval x72 i")
-           apply simp
-          apply simp
-         apply (case_tac "cval x71 i")
-          apply simp
-         apply (case_tac "cval x72 i")
-         apply simp
-         apply auto[1]
-         apply (case_tac "cval x1 i")
-         apply simp
-         apply (case_tac "cval x71 i")
-          apply simp
-         apply simp
-         apply (case_tac "cval x72 i")
-          apply simp
-         apply simp
-        apply simp
-        apply (case_tac "cval x2 i")
-         apply simp
-         apply (case_tac "cval x71 i")
-          apply simp
-         apply simp
-         apply (case_tac "cval x72 i")
-          apply simp
-         apply simp
-        apply simp
-        apply (case_tac "cval x71 i")
-        apply simp
-        apply simp
-        apply (case_tac "cval x72 i")
-        apply simp
-        by auto
-    qed
-  qed
+    apply (simp add: cexp_equiv_def)
+    apply (safe)
+    apply (case_tac "cval x i")
+     apply (case_tac "cval y i")
+      apply simp
+     apply simp
+     apply (case_tac "cval y i")
+     apply simp
+    apply auto[1]
+   apply (simp add: and_x_y_undef)
+  by (simp add: and_x_y_undef)
 
 definition mutually_exclusive :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
   "mutually_exclusive x y = (\<forall>i. (cval x i = Some True \<longrightarrow> cval y i \<noteq> Some True) \<and>

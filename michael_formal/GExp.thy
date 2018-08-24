@@ -1,5 +1,16 @@
 section {* Guard Expressions *}
 (* Author: Michael Foster *)
+text{*
+This theory defines the guard language of EFSMs which can be translated directly to and from
+contexts. This is similar to boolean expressions from IMP \cite{fixme}. Boolean values true and
+false respectively represent the guards which are always and never satisfied. Guards may test
+for (in)equivalence of two arithmetic expressions or be connected using nor logic into compound
+expressions. Additionally, a guard may also test to see if a particular variable is null. This is
+useful if an EFSM transition is intended only to initialise a register.  We also define syntax hacks
+for the relations less than, less than or equal to, greater than or equal to, and not equal to as
+well as the expression of logical conjunction, disjunction, and negation in terms of nor logic.
+*}
+
 theory GExp
 imports AExp Option_Logic
 begin

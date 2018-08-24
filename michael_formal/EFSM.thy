@@ -1,5 +1,12 @@
 section {* Extended Finite State Machines *}
 (* Author: Michael Foster *)
+text{*
+This theory defines extended finite state machines. Each EFSM takes a type variable which represents
+$S$. This is a slight devaition from the definition presented in \cite{foster2018} as this
+type variable may be of an infinite type such as integers, however the intended use is for custom
+finite types. See the examples for details.
+*}
+
 theory EFSM
   imports AExp GExp
 begin

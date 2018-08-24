@@ -1,5 +1,11 @@
 section {* Arithmetic Expressions *}
 (* Author: Michael Foster *)
+text{*
+This theory defines a language of arithmetic expressions over literal values and variables. Here,
+values are limited to integers and strings. Variables may be either inputs or registers. We also
+limit ourselves to a simple arithmetic of plus and minus as a proof of concept.
+*}
+
 theory AExp
   imports Main
 begin
@@ -62,27 +68,4 @@ syntax
   "_maplet"  :: "['a, 'a] \<Rightarrow> maplet"             ("_ /:=/ _")
   "_maplets" :: "['a, 'a] \<Rightarrow> maplet"             ("_ /[:=]/ _")
   "_Map"     :: "maplets \<Rightarrow> 'a \<rightharpoonup> 'b"            ("(1<_>)")
-
-fun asimp_const :: "aexp \<Rightarrow> aexp" where
-  "asimp_const (L x) = L x" |
-  "asimp_const (V x) = V x" |
-  "asimp_const (Plus a\<^sub>1 a\<^sub>2) =
-    (case (asimp_const a\<^sub>1, asimp_const a\<^sub>2) of
-      (L (Num n\<^sub>1), L (Num n\<^sub>2)) \<Rightarrow> L (Num (n\<^sub>1+n\<^sub>2)) |
-      (b\<^sub>1,b\<^sub>2) \<Rightarrow> Plus b\<^sub>1 b\<^sub>2)" |
-  "asimp_const (Minus a\<^sub>1 a\<^sub>2) =
-    (case (asimp_const a\<^sub>1, asimp_const a\<^sub>2) of
-      (L (Num n\<^sub>1), L (Num n\<^sub>2)) \<Rightarrow> L (Num (n\<^sub>1-n\<^sub>2)) |
-      (b\<^sub>1,b\<^sub>2) \<Rightarrow> Minus b\<^sub>1 b\<^sub>2)"
-
-fun asimp :: "aexp \<Rightarrow> aexp" where
-"asimp (L n) = L n" |
-"asimp (V x) = V x" |
-"asimp (Plus a\<^sub>1 a\<^sub>2) = Plus (asimp a\<^sub>1) (asimp a\<^sub>2)" |
-"asimp (Minus a\<^sub>1 a\<^sub>2) = Minus (asimp a\<^sub>1) (asimp a\<^sub>2)"
-
-theorem aval_asimp[simp]: "aval (asimp a) s = aval a s"
-  apply(induction a)
-  by simp_all
-
 end

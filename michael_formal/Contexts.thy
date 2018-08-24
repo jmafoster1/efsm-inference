@@ -1,13 +1,11 @@
 section {* Contexts *}
 (* Author: Michael Foster *)
 text{*
-Contexts relate possible register values to observable output. A transition has three contexts
-during its evaluation. The anterior context is the set of constraints which is known before the
-transition is taken. The medial context is the set of constraints immediately after the guard has
-been applied. The posterior context is the set of constraints after the update function has been
-executed. This context forms the anterior context for the next transition. In this way, contexts
-flow through an EFSM tracing constraints on register values.
+This theory defines contexts as a way of relating possible constraints on register values to
+observable output. We then use contexts to extend the idea of transition subsumption to EFSM
+transitions with register update functions.
 *}
+
 theory Contexts
   imports
     EFSM GExp CExp
@@ -21,8 +19,8 @@ abbreviation empty ("\<lbrakk>\<rbrakk>") where
     _ \<Rightarrow> Bc True
   )"
 syntax 
-  "_updbind" :: "'a \<Rightarrow> 'a \<Rightarrow> updbind"             ("(2_ \<mapsto>/ _)")
-  "_Context" :: "updbinds \<Rightarrow> 'a" ("\<lbrakk>_\<rbrakk>")
+  "_updbind" :: "'a \<Rightarrow> 'a \<Rightarrow> updbind" ("(2_ \<mapsto>/ _)")
+  "_Context" :: "updbinds \<Rightarrow> 'a"      ("\<lbrakk>_\<rbrakk>")
 translations
   "_Update f (_updbinds b bs)" \<rightleftharpoons> "_Update (_Update f b) bs"
   "_Context ms" == "_Update \<lbrakk>\<rbrakk> ms"
