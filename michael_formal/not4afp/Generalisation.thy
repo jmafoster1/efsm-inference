@@ -1,3 +1,7 @@
+subsection{*Generalisation*}
+text{*This theory presents a simple EFSM definition and uses contexts to prove
+transition subsumption. 
+*}
 theory Generalisation
 imports "../Contexts" Drinks_Machine_2
 begin
@@ -97,10 +101,10 @@ definition venderr_g :: "transition" where
 datatype statename = q1 | q2 | q3 | q4 | q5
 
 definition vend :: "statename efsm" where
-"vend \<equiv> \<lparr> 
+"vend \<equiv> \<lparr>
           s0 = q1,
           T = \<lambda> (a,b) .
-              if (a,b) = (q1,q2) then {select} 
+              if (a,b) = (q1,q2) then {select}
               else if (a,b) = (q2,q3) then {coin50}
               else if (a,b) = (q3,q3) then {venderr}
               else if (a,b) = (q3,q4) then {coin50}
@@ -109,7 +113,7 @@ definition vend :: "statename efsm" where
          \<rparr>"
 
 definition vend_g :: "statename efsm" where
-"vend_g \<equiv> \<lparr> 
+"vend_g \<equiv> \<lparr>
           s0 = q1,
           T = \<lambda> (a,b) .
                    if (a,b) = (q1,q2) then {select}
@@ -225,7 +229,7 @@ lemma "subsumes \<lbrakk>V (R 1) \<mapsto> Bc True\<rbrakk> coin_inc coin50"
   apply (rule_tac x="<>" in exI)
   apply (rule allI)
   using consistent_empty_4 posterior_coin_inc_r1_true by auto
-       
+
 
 lemma "(posterior_sequence [coin_init, coin_inc] empty) = \<lbrakk>V (R 1) \<mapsto> Bc True\<rbrakk>"
   apply (simp add: posterior_sequence_def posterior_def coin_init_def coin_inc_def satisfiable_def valid_def consistent_def)
@@ -386,5 +390,5 @@ lemma test2_subsumes_test1: "subsumes \<lbrakk>\<rbrakk> test2 test1"
      apply simp
     apply simp
    apply simp
-  by (simp add: test2_subsumes_test1_aux2)  
+  by (simp add: test2_subsumes_test1_aux2)
 end

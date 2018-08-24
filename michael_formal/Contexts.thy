@@ -1,5 +1,4 @@
-section {* Contexts *}
-(* Author: Michael Foster *)
+subsection {* Contexts *}
 text{*
 This theory defines contexts as a way of relating possible constraints on register values to
 observable output. We then use contexts to extend the idea of transition subsumption to EFSM
@@ -18,7 +17,7 @@ abbreviation empty ("\<lbrakk>\<rbrakk>") where
     (V v) \<Rightarrow> (case v of R n \<Rightarrow> Undef | I n \<Rightarrow> Bc True) |
     _ \<Rightarrow> Bc True
   )"
-syntax 
+syntax
   "_updbind" :: "'a \<Rightarrow> 'a \<Rightarrow> updbind" ("(2_ \<mapsto>/ _)")
   "_Context" :: "updbinds \<Rightarrow> 'a"      ("\<lbrakk>_\<rbrakk>")
 translations
@@ -45,6 +44,21 @@ fun negate :: "context \<Rightarrow> context" where
 definition context_equiv :: "context \<Rightarrow> context \<Rightarrow> bool" where
   "context_equiv c c' \<equiv> (\<forall>r. cexp_equiv (get c r) (get c' r))"
 
+lemma context_equiv_reflexive: "context_equiv x x"
+  apply (simp add: context_equiv_def)
+  apply (rule allI)
+  by (simp add: cexp_equiv_def)
+
+lemma context_equiv_symmetric: "context_equiv x y \<Longrightarrow> context_equiv y x"
+  apply (simp add: context_equiv_def)
+  apply (rule allI)
+  by (simp add: cexp_equiv_def)
+
+lemma context_equiv_transitive: "context_equiv x y \<and> context_equiv y z \<Longrightarrow> context_equiv x z"
+  apply (simp add: context_equiv_def)
+  apply (rule allI)
+  by (simp add: cexp_equiv_def)
+
 fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow> gexp" where
   "cexp2gexp _ (Bc b) = gexp.Bc b" |
   "cexp2gexp a Undef = gexp.Bc False" |
@@ -54,9 +68,11 @@ fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow> gexp" where
   "cexp2gexp a (Not v) = gNot (cexp2gexp a v)" |
   "cexp2gexp a (And v va) = gAnd (cexp2gexp a v) (cexp2gexp a va)"
 
-(* Is there a variable evaluation which can satisfy all of the context? *)
-definition consistent :: "context \<Rightarrow> bool" where
+definition consistent :: "context \<Rightarrow> bool" where (* Is there a variable evaluation which can satisfy all of the context? *)
   "consistent c \<equiv> \<exists>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
+
+definition valid_context :: "context \<Rightarrow> bool" where (* Is the context satisfied in all variable evaluations? *)
+  "valid_context c \<equiv> \<forall>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
 
 theorem consistent_empty_1: "empty r = Undef \<or> empty r = Bc True"
   apply (cases r)
@@ -89,9 +105,6 @@ lemma cexp2gexp_double_neg: "gexp_equiv (cexp2gexp r (Not (Not x))) (cexp2gexp r
 lemma gval_cexp2gexp_double_neg: "gval (cexp2gexp r (Not (Not x))) s = gval (cexp2gexp r x) s"
   using cexp2gexp_double_neg gexp_equiv_def by blast
 
-definition valid_context :: "context \<Rightarrow> bool" where
-  "valid_context c \<equiv> \<forall>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
-
 primrec and_insert :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) \<Rightarrow> (aexp \<times> cexp) list" where
   "and_insert [] c = [c]" |
   "and_insert (h#t) c = (if fst h = fst c then ((fst h, and (snd h) (snd c))#t) else (h#(and_insert t c)))"
@@ -105,14 +118,14 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
   "guard2pairs a (gexp.Bc False) = [(L (Num 0), Bc False)]" |
 
   "guard2pairs a (gexp.Null v) = [(V v, Undef)]" |
-  
+
   "guard2pairs a (gexp.Eq (L n) (L n')) =  [(L n, Eq n')]" |
   "guard2pairs a (gexp.Gt (L n) (L n')) =  [(L n, Gt n')]" |
 
   "guard2pairs a (gexp.Eq v (L n)) = [(v, Eq n)]" |
   "guard2pairs a (gexp.Eq (L n) v) = [(v, Eq n)]" |
   "guard2pairs a (gexp.Eq v vb) = [(v, get a vb), (vb, get a v)]" |
-  
+
   "guard2pairs a (gexp.Gt v (L n)) = [(v, (Gt n))]" |
   "guard2pairs a (gexp.Gt (L n) v) = [(v, (Lt n))]" |
   "guard2pairs a (gexp.Gt v vb) = (let (cv, cvb) = apply_gt (get a v) (get a vb) in [(v, cv), (vb, cvb)])" |
@@ -141,34 +154,32 @@ fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function
   "apply_update l c (v, Plus vb vc) = update c (V v) (compose_plus (get l vb) (get l vc))" |
   "apply_update l c (v, Minus vb vc) = update c (V v) (compose_minus (get l vb) (get l vc))"
 
-primrec medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
-  "medial c [] = c" |
-  "medial c (h#t) = (medial (apply_guard c h) t)"
-
 primrec apply_updates :: "context \<Rightarrow> context \<Rightarrow> update_function list \<Rightarrow> context" where
   "apply_updates _ c [] = c" |
   "apply_updates l c (h#t) = apply_updates l (apply_update l c h) t"
 
-definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where
-  "posterior c t = (let c' = (medial c (Guard t)) in (if consistent c' then (apply_updates c' \<lbrakk>\<rbrakk> (Updates t)) else (\<lambda>i. Bc False)))"
+primrec medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
+  "medial c [] = c" |
+  "medial c (h#t) = (medial (apply_guard c h) t)"
 
 definition can_take :: "transition \<Rightarrow> context \<Rightarrow> bool" where
   "can_take t c \<equiv> consistent (medial c (Guard t))"
 
-primrec posterior_n :: "nat \<Rightarrow> transition \<Rightarrow> context \<Rightarrow> context" where
+lemma can_take_no_guards: "\<forall> c. (Contexts.consistent c \<and> (Guard t) = []) \<longrightarrow> Contexts.can_take t c"
+  by (simp add: consistent_def Contexts.can_take_def)
+
+definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
+  "posterior c t = (let c' = (medial c (Guard t)) in (if consistent c' then (apply_updates c' \<lbrakk>\<rbrakk> (Updates t)) else (\<lambda>i. Bc False)))"
+
+primrec posterior_n :: "nat \<Rightarrow> transition \<Rightarrow> context \<Rightarrow> context" where (* Apply a given transition to a given context n times - good for reflexive transitions*)
   "posterior_n 0 _ c = c " |
   "posterior_n (Suc m) t c = posterior_n m t (posterior c t)"
 
-primrec posterior_sequence :: "transition list \<Rightarrow> context \<Rightarrow> context" where
+primrec posterior_sequence :: "transition list \<Rightarrow> context \<Rightarrow> context" where (* Calculate the posterior context after a sequence of transitions *)
   "posterior_sequence [] c = c" |
   "posterior_sequence (h#t) c = posterior_sequence t (posterior c h)"
 
-lemma medial_empty: "medial empty [] = empty"
-  by simp
-
-(* Widening the precondition and reducing nondeterminism *)
-(* t2 subsumes t1 *)
-definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
+definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where (* Corresponds to Algorithm 2 in Foster et. al. *)
   "subsumes c t2 t1 \<equiv> (\<forall>r i. (cval (medial c (Guard t1) r) i = Some True) \<longrightarrow> (cval (medial c (Guard t2) r) i) = Some True) \<and>
                       (\<forall> i r. apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<forall>r i. cval (posterior (medial c (Guard t1)) t2 r) i = Some True \<longrightarrow> (cval (posterior c t1 r) i = Some True) \<or> (posterior c t1 r) = Undef) \<and>
@@ -224,13 +235,10 @@ lemma not_satisfiable_neg: "\<not> CExp.satisfiable (cexp.Not c) = (\<forall>i. 
    apply (simp add: satisfiable_def)
    apply (metis option.case_eq_if option.sel option.simps(3))
    apply (simp add: satisfiable_def)
-  by (metis (full_types) map_option_case option.simps(9))  
+  by (metis (full_types) map_option_case option.simps(9))
 
 lemma satisfiable_double_neg: "satisfiable (cexp.Not (cexp.Not x)) = satisfiable x"
   apply (simp add: satisfiable_def)
   by (metis cval.simps(6) cval_double_negation)
-
-lemma context_equiv_reflexive: "context_equiv c c"
-  by (simp add: context_equiv_def cexp_equiv_reflexive)
 
 end

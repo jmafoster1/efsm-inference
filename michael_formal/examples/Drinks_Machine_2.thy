@@ -1,3 +1,7 @@
+subsection{*An Observationally Equivalent Model*}
+text{*This theory defines a second formalisation of the drinks machine example which produces
+identical output to the first model. This property is called \emph{observational equivalence} and is
+discussed in more detail in \cite{foster2018}.*}
 theory Drinks_Machine_2
   imports Drinks_Machine "../Contexts"
 begin
@@ -18,10 +22,9 @@ lemma label_vend_nothing: "Label vend_nothing = ''vend''"
   by (simp add: vend_nothing_def)
 
 definition drinks2 :: "statename efsm" where
-(* Effectively this is the drinks_machine which has had the coin loop unrolled by one iteration *)
 "drinks2 \<equiv> \<lparr>
           s0 = q0,
-          T = \<lambda> (a,b) . 
+          T = \<lambda> (a,b) .
               if (a,b) = (q0,q1) then {select}
               else if (a,b) = (q1,q1) then {vend_nothing}
               else if (a,b) = (q1,q2) then {coin}
@@ -105,9 +108,6 @@ lemma purchase_coke: "observe_trace drinks2 (s0 drinks2) <> [(''select'', [Str '
   apply (simp add: possible_steps_q1)
   apply (simp add: possible_steps_q2_coin)
   by (simp add: possible_steps_q2_vend vend_def coin_def)
-
-abbreviation select_posterior :: "context" where
-  "select_posterior \<equiv> \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> Eq (Num 0) \<rbrakk>"
 
 lemma "consistent (medial empty (Guard select))"
   by (simp add: select_def)
@@ -215,11 +215,7 @@ lemma "context_equiv (apply_guard \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> 
    apply simp
   by simp
 
-lemma medial_select_posterior_vend: "medial select_posterior (Guard vend) = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Eq (Num 0)) (Geq (Num 100))\<rbrakk>"
-  apply (rule ext)
-  by (simp add: guard_vend)
-
-lemma "\<not> GExp.satisfiable (gAnd (gexp.Eq (V (R 2)) (L (Num 0))) (Ge (V (R 2)) (L (Num 100))))"
+lemma not_eq_0_and_ge_100:"\<not> GExp.satisfiable (gAnd (gexp.Eq (V (R 2)) (L (Num 0))) (Ge (V (R 2)) (L (Num 100))))"
   apply (simp add: GExp.satisfiable_def)
   apply (rule allI)
   apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
@@ -228,16 +224,6 @@ lemma "\<not> GExp.satisfiable (gAnd (gexp.Eq (V (R 2)) (L (Num 0))) (Ge (V (R 2
   apply (case_tac "s (R 2) = Some (Num 0)")
    apply simp
   by simp
-
-(* You can't take vend immediately after taking select *)
-lemma r2_0_vend: "\<not>Contexts.can_take vend select_posterior"
-  apply (simp only: can_take_def medial_select_posterior_vend)
-  apply (simp add: consistent_def)
-  apply (rule allI)
-  apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
-   apply fastforce
-  apply simp
-  by fastforce
 
 lemma consistent_select_posterior: "consistent select_posterior"
   apply (simp add: consistent_def)
@@ -248,9 +234,6 @@ lemma consistent_select_posterior: "consistent select_posterior"
      prefer 2
      apply (case_tac x2)
   by simp_all
-
-lemma can_take_no_guards: "\<forall> c. (Contexts.consistent c \<and> (Guard t) = []) \<longrightarrow> Contexts.can_take t c"
-  by (simp add: consistent_def Contexts.can_take_def)
 
 lemma can_take_coin: "consistent c \<longrightarrow> Contexts.can_take coin c"
   by (simp add: coin_def consistent_def Contexts.can_take_def)
@@ -263,11 +246,6 @@ lemma consistent_r1_r2_true: "consistent r1_r2_true"
   apply (rule_tac x="<>" in exI)
   apply (simp del: Nat.One_nat_def)
   using consistent_empty_1 by force
-
-lemma select_posterior: "(posterior empty select) = select_posterior"
-  apply (simp add: posterior_def select_def)
-  apply (rule ext)
-  by simp
 
 lemma posterior_r1_r2_true_coin: "(posterior r1_r2_true coin) = r1_r2_true"
   apply (simp add: posterior_def coin_def consistent_def satisfiable_def valid_def)
@@ -307,9 +285,6 @@ lemma r1_r2_true_equiv: "(\<lambda>a. if a = V (R 2) then cexp.Bc True else if a
   apply (rule ext)
   by simp
 
-lemma posterior_coin_true_true: "posterior r1_r2_true coin = r1_r2_true"
-  using posterior_r1_r2_true_coin by blast
-
 lemma r2_0_r1_true_equiv: "(\<lambda>a. if a = V (R 2) then cexp.Eq (Num 0) else if a = V (R 1) then cexp.Bc True else \<lbrakk>\<rbrakk> a) = select_posterior"
   apply (rule ext)
   by simp
@@ -322,14 +297,13 @@ lemma posterior_n_coin_true_true: "(posterior_n n coin r1_r2_true) = r1_r2_true"
     case (Suc n)
     then show ?case
       apply (simp add: r1_r2_true_equiv posterior_coin_subsequent  del: Nat.One_nat_def)
-      by (simp only: posterior_coin_true_true)
+      using posterior_r1_r2_true_coin by auto
   qed
 
-(* We can go round coin as many times as we like *)
-lemma consistent_posterior_n_coin: "consistent (posterior_n n coin select_posterior)"
+lemma consistent_posterior_n_coin: "consistent (posterior_n n coin select_posterior)" (* We can go round coin as many times as we like *)
   proof(induct n)
     case 0
-    then show ?case 
+    then show ?case
       apply (simp add: consistent_def)
       apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0>" in exI)
       apply (simp del: Nat.One_nat_def)
@@ -343,8 +317,7 @@ lemma consistent_posterior_n_coin: "consistent (posterior_n n coin select_poster
       using consistent_r1_r2_true by blast
   qed
 
-(* We have to do a "coin" before we can do a "vend"*)
-lemma coin_before_vend: "Contexts.can_take vend (posterior_n n coin (posterior \<lbrakk>\<rbrakk> select)) \<longrightarrow> n > 0"
+lemma coin_before_vend: "Contexts.can_take vend (posterior_n n coin (posterior \<lbrakk>\<rbrakk> select)) \<longrightarrow> n > 0" (* We have to do a "coin" before we can do a "vend"*)
   apply (simp add: select_posterior del: Nat.One_nat_def)
   apply (cases n)
    apply (simp add: r2_0_vend del: Nat.One_nat_def)
@@ -384,9 +357,8 @@ lemma consistent_medial_vend: "consistent \<lbrakk>(V (R 1)) \<mapsto> Bc True, 
   apply (rule_tac x="<R 1 := Num 0, R 2 := Num 100>" in exI)
   apply (simp del: Nat.One_nat_def)
   using consistent_empty_4 by auto
- 
-(* We can do any number of "coin"s before doing a "vend" *)
-lemma "n > 0 \<longrightarrow> Contexts.can_take vend (posterior_n n coin (posterior empty select))"
+
+lemma "n > 0 \<longrightarrow> Contexts.can_take vend (posterior_n n coin (posterior empty select))" (* We can do any number of "coin"s before doing a "vend" *)
   proof (induction n)
   case 0
     then show ?case by simp
@@ -397,9 +369,6 @@ lemma "n > 0 \<longrightarrow> Contexts.can_take vend (posterior_n n coin (poste
       apply (simp only: select_posterior posterior_coin_first posterior_n_coin_true_true Contexts.can_take_def)
       by (simp only: medial_vend consistent_medial_vend)
   qed
-
-
-
 
 lemma drinks_q0_invalid: "\<not> (fst a = ''select'' \<and> length (snd a) = 1) \<Longrightarrow>
     (possible_steps drinks q0 Map.empty (fst a) (snd a)) = {}"
@@ -743,7 +712,7 @@ next
     by (simp add: drinks_q1_invalid drinks2_q2_invalid)
 qed
 
-lemma drinks2_q1_incalid: "fst a = ''coin'' \<longrightarrow> length (snd a) \<noteq> Suc 0 \<Longrightarrow>
+lemma drinks2_q1_invalid: "fst a = ''coin'' \<longrightarrow> length (snd a) \<noteq> Suc 0 \<Longrightarrow>
     a \<noteq> (''vend'', []) \<Longrightarrow>
     possible_steps drinks2 q1 r (fst a) (snd a) = {}"
   apply (simp add: possible_steps_def)
@@ -755,7 +724,6 @@ lemma drinks2_q1_incalid: "fst a = ''coin'' \<longrightarrow> length (snd a) \<n
     apply (metis (no_types, lifting) label_vend_nothing length_0_conv prod.collapse statename.distinct(7) transition.simps(2) vend_nothing_def)
    apply (metis One_nat_def label_coin transition.simps(2) transitions(2))
   by simp
-
 
 lemma equal_q1_q1: "observe_trace drinks q1 <R (Suc 0) := s, R 2 := Num 0> t = observe_trace drinks2 q1 <R (Suc 0) := s, R 2 := Num 0> t"
 proof (induction t)
@@ -775,17 +743,17 @@ next
       apply (simp add: apply_updates_vend_fail apply_updates_vend_nothing)
     using Cons.IH apply blast
     apply simp
-    by (simp add: drinks_q1_invalid drinks2_q1_incalid)
+    by (simp add: drinks_q1_invalid drinks2_q1_invalid)
 qed
 
-lemma "equiv drinks drinks2 t"
+lemma observational_equivalence: "efsm_equiv drinks drinks2 t" (* Corresponds to Example 3 in Foster et. al. *)
 proof (induct t)
   case Nil
-    then show ?case by (simp add: equiv_def)
+    then show ?case by (simp add: efsm_equiv_def)
   next
   case (Cons a t)
   then show ?case
-    apply (simp only: equiv_def)
+    apply (simp only: efsm_equiv_def)
     apply (case_tac "fst a = ''select'' \<and> length (snd a) = 1")
      prefer 2
      apply (simp add: drinks2_q0_invalid drinks_q0_invalid is_singleton_def)

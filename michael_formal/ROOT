@@ -4,7 +4,13 @@ session "michael-efsm" = "HOL" +
     (* Foo *)
     (* Bar *)
   theories
-    Contexts
+    AExp
+    Option_Logic
+    GExp
     EFSM
+    CExp
+    Contexts
+    "examples/Drinks_Machine"
+    "examples/Drinks_Machine_2"
   document_files
     "root.tex"

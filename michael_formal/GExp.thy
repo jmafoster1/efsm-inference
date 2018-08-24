@@ -1,5 +1,4 @@
-section {* Guard Expressions *}
-(* Author: Michael Foster *)
+subsection {* Guard Expressions *}
 text{*
 This theory defines the guard language of EFSMs which can be translated directly to and from
 contexts. This is similar to boolean expressions from IMP \cite{fixme}. Boolean values true and
@@ -23,6 +22,12 @@ syntax (xsymbols)
 abbreviation gNot :: "gexp \<Rightarrow> gexp"  where
   "gNot g \<equiv> Nor g g"
 
+abbreviation gOr :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (infix "\<or>" 60) where
+  "gOr v va \<equiv> Nor (Nor v va) (Nor v va)"
+
+abbreviation gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (infix "\<and>" 60) where
+  "gAnd v va \<equiv> Nor (Nor v v) (Nor va va)"
+
 abbreviation Lt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix "<" 60) where
   "Lt a b \<equiv> Gt b a"
 
@@ -35,17 +40,11 @@ abbreviation Ge :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix "\<ge>" 6
 abbreviation Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix "\<noteq>" 60) where
   "Ne v va \<equiv> gNot (Eq v va)"
 
-abbreviation gOr :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (infix "\<or>" 60) where
-  "gOr v va \<equiv> Nor (Nor v va) (Nor v va)"
-
-abbreviation gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (infix "\<and>" 60) where
-  "gAnd v va \<equiv> Nor (Nor v v) (Nor va va)"
-
 fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool option" where
   "gval (Bc b) _ = Some b" |
   "gval (Gt a\<^sub>1 a\<^sub>2) s = ValueGt (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
   "gval (Eq a\<^sub>1 a\<^sub>2) s = Some (aval a\<^sub>1 s = aval a\<^sub>2 s)" |
-  "gval (Nor a\<^sub>1 a\<^sub>2) s = (case (gval a\<^sub>1 s, gval a\<^sub>2 s) of 
+  "gval (Nor a\<^sub>1 a\<^sub>2) s = (case (gval a\<^sub>1 s, gval a\<^sub>2 s) of
     (Some x, Some y) \<Rightarrow> Some (\<not> (x \<or> y)) |
     _ \<Rightarrow> None
   )" |

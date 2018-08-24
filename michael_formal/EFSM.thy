@@ -1,5 +1,4 @@
-section {* Extended Finite State Machines *}
-(* Author: Michael Foster *)
+subsection {* Extended Finite State Machines *}
 text{*
 This theory defines extended finite state machines. Each EFSM takes a type variable which represents
 $S$. This is a slight devaition from the definition presented in \cite{foster2018} as this
@@ -72,17 +71,9 @@ abbreviation step :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> dat
 "step e s r l i \<equiv>
 (if is_singleton (possible_steps e s r l i) then (let (s', t) =  (the_elem (possible_steps e s r l i)) in Some (s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))) else None)"
 
-primrec observe_temp :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> ('statename \<times> event \<times> datastate \<times> outputs) list" where
-  "observe_temp e s r [] = []" |
-  "observe_temp e s r (h#t) =
-    (case (step e s r (fst h) (snd h)) of
-      (Some (s', outputs, updated)) \<Rightarrow> (s, h, r, outputs)#(observe_temp e s' updated t) |
-      _ \<Rightarrow> []
-    )"
-
 primrec observe_all :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> ('statename \<times> outputs \<times> datastate) list" where
   "observe_all _ _ _ [] = []" |
-  "observe_all e s r (h#t) = 
+  "observe_all e s r (h#t) =
     (case (step e s r (fst h) (snd h)) of
       (Some (s', outputs, updated)) \<Rightarrow> (((s', outputs, updated)#(observe_all e s' updated t))) |
       _ \<Rightarrow> []
@@ -91,43 +82,36 @@ primrec observe_all :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> d
 abbreviation observe_trace :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> observation" where
   "observe_trace e s r t \<equiv> map (\<lambda>(x,y,z). y) (observe_all e s r t)"
 
-definition equiv :: "'statename efsm \<Rightarrow> 'statename' efsm \<Rightarrow> trace \<Rightarrow> bool" where
-  "equiv e1 e2 t \<equiv> ((observe_trace e1 (s0 e1) <> t) = (observe_trace e2 (s0 e2) <> t))"
+definition efsm_equiv :: "'statename efsm \<Rightarrow> 'statename' efsm \<Rightarrow> trace \<Rightarrow> bool" where
+  "efsm_equiv e1 e2 t \<equiv> ((observe_trace e1 (s0 e1) <> t) = (observe_trace e2 (s0 e2) <> t))"
 
-lemma equiv_comute: "equiv e1 e2 t \<equiv> equiv e2 e1 t"
-  apply (simp add: equiv_def)
+lemma efsm_equiv_reflexive: "efsm_equiv e1 e1 t"
+  by (simp add: efsm_equiv_def)
+
+lemma efsm_equiv_symmetric: "efsm_equiv e1 e2 t \<equiv> efsm_equiv e2 e1 t"
+  apply (simp add: efsm_equiv_def)
   by argo
 
-lemma equiv_trans: "equiv e1 e2 t \<and> equiv e2 e3 t \<longrightarrow> equiv e1 e3 t"
-  by (simp add: equiv_def)
+lemma efsm_equiv_transitive: "efsm_equiv e1 e2 t \<and> efsm_equiv e2 e3 t \<longrightarrow> efsm_equiv e1 e3 t"
+  by (simp add: efsm_equiv_def)
 
-lemma equiv_idem: "equiv e1 e1 t"
-  by (simp add: equiv_def)
-
-primrec in_list :: "'a \<Rightarrow> 'a list \<Rightarrow> bool" where
-  "in_list _ [] = False" |
-  "in_list x (h#t) = (if (x=h) then True else (in_list x t))"
-
-definition can_take :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "can_take t1 t2 \<equiv> ((Label t1) = (Label t2)) \<and> ((Arity t1) = (Arity t2))"
-
-lemma different_observation_techniques: 
+lemma different_observation_techniques:
   shows "length(observe_all e s r t) = length(observe_trace e s r t)"
   by simp
 
 lemma length_observe_all_restricted: "\<And>s r. length (observe_all e s r t) \<le> length t"
-proof (induction t) 
+proof (induction t)
   case Nil
   then show ?case by simp
 next
   case (Cons a t)
-  then show ?case 
-  proof cases 
+  then show ?case
+  proof cases
     assume "step e s r (fst a) (snd a) = None"
-    then show ?thesis by simp  
-  next 
+    then show ?thesis by simp
+  next
     assume "step e s r (fst a) (snd a) \<noteq>  None"
-    with Cons show ?thesis by(auto) 
+    with Cons show ?thesis by(auto)
   qed
 qed
 

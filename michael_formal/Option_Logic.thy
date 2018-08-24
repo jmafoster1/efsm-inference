@@ -1,11 +1,7 @@
-section {* Option Logic *}
-(* Author: Michael Foster *)
-
+subsection {* Option Logic *}
 text {*
-EFSMs need to work with a three valued logic: True, False, and None. This is because some boolean
-functions like greater than are impossible over different types. We therefore need to distinguish
-between an attempt to carry out an impossible operation and literal False. The negation of None is
-still None, which prevents the negation of an impossible operation being literal True.
+This theory defines a three-valued logic such that nonsensical guard expressions cannot ever
+evaluate to true. Such expressions evaluate instead to None which, when negated, is still None.
 *}
 
 theory Option_Logic
