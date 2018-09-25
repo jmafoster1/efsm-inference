@@ -394,11 +394,11 @@ lemma drinks2_q0_invalid: "\<not> (fst a = ''select'' \<and> length (snd a) = 1)
      apply (simp add: drinks2_def)
   by (simp add: drinks2_def)
 
-lemma updates_select: "length (snd a) = 1 \<Longrightarrow> (EFSM.apply_updates (Updates select) (case_vname (\<lambda>n. index2state (snd a) (Suc 0) (I n)) Map.empty) Map.empty) = <R 1:=hd (snd a), R 2 := Num 0>"
+lemma updates_select: "length (snd a) = 1 \<Longrightarrow> (EFSM.apply_updates (Updates select) (case_vname (\<lambda>n. input2state (snd a) (Suc 0) (I n)) Map.empty) Map.empty) = <R 1:=hd (snd a), R 2 := Num 0>"
   apply (simp add: select_def)
   apply (rule ext)
-  apply (simp add: hd_index2state)
-  by (metis One_nat_def hd_index2state le_numeral_extra(4))
+  apply (simp add: hd_input2state)
+  by (metis One_nat_def hd_input2state le_numeral_extra(4))
 
 lemma drinks_vend_empty: "(possible_steps drinks q0 Map.empty ''vend'' []) = {}"
   apply (simp add: possible_steps_def)
@@ -489,8 +489,8 @@ lemma drinks2_q1_coin: "length (snd a) = Suc 0 \<Longrightarrow> (possible_steps
        apply (simp add: drinks2_def)
   by (simp_all add: drinks2_def coin_def)
 
-lemma coin_updates: "(EFSM.apply_updates (Updates coin) (case_vname (\<lambda>n. index2state (snd a) (Suc 0) (I n)) (\<lambda>n. if n = 2 then Some (Num 0) else if R n = R (Suc 0) then Some s else None))
-       (\<lambda>a. if a = R 2 then Some (Num 0) else if a = R (Suc 0) then Some s else None)) = (\<lambda>u. if u = R 1 then Some s else if u = R 2 then Some (Num 0) + index2state (snd a) 1 (I 1) else None)"
+lemma coin_updates: "(EFSM.apply_updates (Updates coin) (case_vname (\<lambda>n. input2state (snd a) (Suc 0) (I n)) (\<lambda>n. if n = 2 then Some (Num 0) else if R n = R (Suc 0) then Some s else None))
+       (\<lambda>a. if a = R 2 then Some (Num 0) else if a = R (Suc 0) then Some s else None)) = (\<lambda>u. if u = R 1 then Some s else if u = R 2 then Some (Num 0) + input2state (snd a) 1 (I 1) else None)"
   apply (rule ext)
   by (simp add: coin_def)
 
@@ -511,8 +511,8 @@ lemma drinks2_q2_coin: "fst a = ''coin'' \<and> length (snd a) = Suc 0 \<Longrig
       apply (simp add: drinks2_def label_vend)
   by (simp_all add: drinks2_def coin_def)
 
-lemma updates_coin_2: "(EFSM.apply_updates (Updates coin) (case_vname (\<lambda>n. index2state (snd a) (Suc 0) (I n)) (\<lambda>n. if n = Suc 0 then Some s else if R n = R 2 then r2 else None))
-             (\<lambda>u. if u = R (Suc 0) then Some s else if u = R 2 then r2 else None)) = (\<lambda>u. if u = R 1 then Some s else if u = R 2 then r2 + index2state (snd a) 1 (I 1) else None)"
+lemma updates_coin_2: "(EFSM.apply_updates (Updates coin) (case_vname (\<lambda>n. input2state (snd a) (Suc 0) (I n)) (\<lambda>n. if n = Suc 0 then Some s else if R n = R 2 then r2 else None))
+             (\<lambda>u. if u = R (Suc 0) then Some s else if u = R 2 then r2 else None)) = (\<lambda>u. if u = R 1 then Some s else if u = R 2 then r2 + input2state (snd a) 1 (I 1) else None)"
   apply (rule ext)
   by (simp add: coin_def)
 

@@ -1,5 +1,5 @@
 theory Filesystem
-imports EFSM
+imports "../Contexts" "../EFSM" "HOL-Library.Code_Target_Int"
 begin
 
 (* Takes a user ID and stores it in r1 *)
@@ -54,7 +54,7 @@ definition read_success :: "transition" where
 "read_success \<equiv> \<lparr>
         Label = ''read'',
         Arity = 0,
-        Guard = [Eq (V (R 1)) (V (R 3)), (gNot (Null (R 2)))], (* No guards *)
+        Guard = [gexp.Eq (V (R 1)) (V (R 3)), (gNot (Null (R 2)))], (* No guards *)
         Outputs = [(V (R 2))],
         Updates = [ (* Two updates: *)
                     (R 1, (V (R 1))), (* Value of r1 remains unchanged *)
@@ -91,7 +91,16 @@ definition filesystem :: "statename efsm" where
 lemma s0_filesystem [simp]: "s0 filesystem = q1"
   by (simp add: filesystem_def)
 
-(* export_code filesystem in "Scala" *)
+
+code_printing
+  type_constructor bool \<rightharpoonup> (Scala) "Bool"
+  | constant True \<rightharpoonup> (Scala) "true"
+  | constant False \<rightharpoonup> (Scala) "false"
+  | constant HOL.conj \<rightharpoonup> (Scala) "_ && _"
+
+(* export_code GExp.satisfiable in "Scala" *)
+
+value "(Contexts.apply_guard \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Bc True\<rbrakk> ((gexp.Eq (V (R 2)) (L (Num 100))) \<or> (Ne (V (R 1)) (L (Num 100))))) (V (R 2))"
 
 lemmas fs_simp = filesystem_def login_def logout_def write_def read_success_def read_fail_def write_fail_def
 

@@ -81,7 +81,7 @@ lemma possible_steps_q1: "possible_steps Filesystem_Fixed.filesystem q1 r ''logi
    apply (simp add: login_def)
   by (simp add: login_def)
 
-lemma apply_updates_login [simp]: "(apply_updates (Updates login) (case_vname (\<lambda>n. if n = 1 then Some u else index2state [] (1 + 1) (I n)) Map.empty) Map.empty) = <R 1 := u>"
+lemma apply_updates_login [simp]: "(apply_updates (Updates login) (case_vname (\<lambda>n. if n = 1 then Some u else input2state [] (1 + 1) (I n)) Map.empty) Map.empty) = <R 1 := u>"
   apply (rule ext)
   by (simp add: login_def)
 
@@ -127,7 +127,7 @@ lemma possible_steps_q2_write:  "possible_steps Filesystem_Fixed.filesystem q2 <
       by (simp_all add: write_def)
 
 lemma apply_updates_write : "(apply_updates (Updates Filesystem_Fixed.write)
-          (case_vname (\<lambda>n. if n = 1 then Some c else index2state [] (1 + 1) (I n)) (\<lambda>n. if n = 3 then Some u else <R 1 := u> (R n)))
+          (case_vname (\<lambda>n. if n = 1 then Some c else input2state [] (1 + 1) (I n)) (\<lambda>n. if n = 3 then Some u else <R 1 := u> (R n)))
           <R 1 := u, R 3 := u>) = < R 1 := u, R 2 := c, R 3 := u>"
   apply (rule ext)
   by (simp add: write_def)

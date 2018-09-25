@@ -32,17 +32,17 @@ record 'statename efsm =
   s0 :: 'statename
   T :: "('statename \<times> 'statename) \<Rightarrow> transition set"
 
-primrec index2state :: "value list \<Rightarrow> nat \<Rightarrow> datastate" where
-  "index2state [] _ = <>" |
-  "index2state (h#t) i = (\<lambda>x. if x = I i then Some h else (index2state t (i+1)) x)"
+primrec input2state :: "value list \<Rightarrow> nat \<Rightarrow> datastate" where
+  "input2state [] _ = <>" |
+  "input2state (h#t) i = (\<lambda>x. if x = I i then Some h else (input2state t (i+1)) x)"
 
-lemma hd_index2state: "length i \<ge> 1 \<Longrightarrow> index2state i 1 (I 1) = Some (hd i)"
-  by (metis hd_Cons_tl index2state.simps(2) le_numeral_extra(2) length_0_conv)
+lemma hd_input2state: "length i \<ge> 1 \<Longrightarrow> input2state i 1 (I 1) = Some (hd i)"
+  by (metis hd_Cons_tl input2state.simps(2) le_numeral_extra(2) length_0_conv)
 
 abbreviation join_ir :: "value list \<Rightarrow> datastate \<Rightarrow> datastate" where
   "join_ir i r \<equiv> (\<lambda>x. case x of
     R n \<Rightarrow> r (R n) |
-    I n \<Rightarrow> (index2state i 1) (I n)
+    I n \<Rightarrow> (input2state i 1) (I n)
   )"
 
 definition
@@ -124,7 +124,7 @@ abbreviation valid_trace :: "'statename efsm \<Rightarrow> trace \<Rightarrow> b
 
 lemma valid_steps: "the_elem (possible_steps e s d (fst h) (snd h)) = (a, b) \<Longrightarrow>
        is_singleton (possible_steps e s d (fst h) (snd h)) \<Longrightarrow>
-       valid e a (apply_updates (Updates b) (case_vname (\<lambda>n. index2state (snd h) (Suc 0) (I n)) (\<lambda>n. d (R n))) d) t \<Longrightarrow>
+       valid e a (apply_updates (Updates b) (case_vname (\<lambda>n. input2state (snd h) (Suc 0) (I n)) (\<lambda>n. d (R n))) d) t \<Longrightarrow>
        valid e s d (h#t)"
   by (simp add: valid.step)
 

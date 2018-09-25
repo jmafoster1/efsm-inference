@@ -1,5 +1,5 @@
 theory Drinks_Machine_Change
-  imports Drinks_Machine
+  imports "../examples/Drinks_Machine"
 begin
 
 definition vend :: "transition" where
@@ -78,7 +78,7 @@ lemma possible_steps_q2_vend: "n \<ge> 100 \<Longrightarrow> possible_steps drin
   by (simp add: vend_def)
 
 lemma updates_coin_150 [simp]: "(apply_updates (Updates coin)
-          (case_vname (\<lambda>n. if n = Suc 0 then Some (Num 100) else index2state [] (Suc 0 + 1) (I n)) (\<lambda>n. if n = 2 then Some (Num 50) else <R (Suc 0) := Str ''coke''> (R n)))
+          (case_vname (\<lambda>n. if n = Suc 0 then Some (Num 100) else input2state [] (Suc 0 + 1) (I n)) (\<lambda>n. if n = 2 then Some (Num 50) else <R (Suc 0) := Str ''coke''> (R n)))
           <R (Suc 0) := Str ''coke'', R 2 := Num 50>) = <R 1 := Str ''coke'', R 2 := Num 150>"
   apply (rule ext)
   by (simp add: coin_def)
