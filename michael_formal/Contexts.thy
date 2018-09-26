@@ -240,5 +240,4 @@ lemma not_satisfiable_neg: "\<not> CExp.satisfiable (cexp.Not c) = (\<forall>i. 
 lemma satisfiable_double_neg: "satisfiable (cexp.Not (cexp.Not x)) = satisfiable x"
   apply (simp add: satisfiable_def)
   by (metis cval.simps(6) cval_double_negation)
-
 end
