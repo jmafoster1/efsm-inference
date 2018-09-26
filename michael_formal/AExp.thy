@@ -27,6 +27,20 @@ type_synonym datastate = "vname \<Rightarrow> value option"
 
 datatype aexp = L "value" | V vname | Plus aexp aexp | Minus aexp aexp
 
+fun invert :: "aexp \<Rightarrow> aexp" where
+  "invert (L v) = L v" |
+  "invert (V v) = V v" |
+  "invert (Plus a b) = Minus (invert a) (invert b)" |
+  "invert (Minus a b) = Plus (invert a) (invert b)"
+
+fun replace :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp \<Rightarrow> aexp" where
+  "replace old new exp = (if exp = old then new else case exp of 
+    L v \<Rightarrow> L v |
+    V v \<Rightarrow> V v |
+    Plus a b \<Rightarrow> Plus (replace old new a) (replace old new b) |
+    Minus a b \<Rightarrow> Minus (replace old new a) (replace old new b)
+  )"
+
 syntax (xsymbols)
   Plus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" (infix "+" 60)
   Minus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" (infix "-" 60)

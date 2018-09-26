@@ -28,9 +28,11 @@ record transition =
   Outputs :: "output_function list"
   Updates :: "update_function list"
 
+type_synonym 'statename transition_matrix = "('statename \<times> 'statename) \<Rightarrow> transition set"
+
 record 'statename efsm =
   s0 :: 'statename
-  T :: "('statename \<times> 'statename) \<Rightarrow> transition set"
+  T :: "'statename transition_matrix"
 
 primrec input2state :: "value list \<Rightarrow> nat \<Rightarrow> datastate" where
   "input2state [] _ = <>" |
@@ -295,4 +297,26 @@ lemma length_equal_valid: "(length t = length (observe_all e (s0 e) <> t)) = val
   using obs_equal_length_valid apply auto[1]
   by (simp add: valid_trace_obs_equal_length)
 
+definition merge_with :: "'s \<Rightarrow> 's \<Rightarrow> 's list" where
+  "merge_with x y = (if x = y then [x] else [x, y])"
+
+primrec pairs :: "'s \<Rightarrow> 's list \<Rightarrow> 's transition_matrix \<Rightarrow> transition set" where
+  "pairs x [] _ = {}" |
+  "pairs x (h#hs) t = (t (x, h)) \<union> (pairs x hs t)"
+
+primrec all_pairs :: "'s list \<Rightarrow> 's list \<Rightarrow> 's transition_matrix \<Rightarrow> transition set" where
+  "all_pairs [] x _ = {}" |
+  "all_pairs (h#hs) x t = (pairs h x t) \<union> (all_pairs hs x t)"
+
+definition merge_states :: "'s \<Rightarrow> 's \<Rightarrow> 's transition_matrix \<Rightarrow> 's transition_matrix" where
+  "merge_states x y t = (\<lambda>(from, to). if from = y \<or> to = y then {} else (all_pairs (if from = x \<or> from = y then merge_with x y else [from]) (if to = x \<or> to = y then merge_with x y else [to]) t))"
+
+definition choice :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "choice t t' = ((Label t) = (Label t') \<and> (Arity t) = (Arity t') \<and> (\<exists> s. apply_guards (Guard t) s \<and> apply_guards (Guard t') s))"
+
+definition nondeterminism_aux :: "transition set \<Rightarrow> bool" where
+  "nondeterminism_aux s = (\<exists> x \<in> s. \<exists> y \<in> s. x \<noteq> y \<and> choice x y)"
+
+definition nondeterminism :: "'s transition_matrix \<Rightarrow> bool" where
+  "nondeterminism t = (\<exists> from to. (\<exists> x \<in> (t (from, to)). \<exists> y \<in> (t (from, to)). x \<noteq> y \<and> choice x y))"
 end
