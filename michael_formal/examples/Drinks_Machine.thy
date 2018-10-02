@@ -17,6 +17,17 @@ begin
 
 datatype statename = q0 | q1 | q2 | q3
 
+instantiation statename::finite begin
+instance
+proof
+  show "finite UNIV"
+    apply (simp add: finite_def lfp_def)
+    apply (rule allI)
+    
+qed
+
+end
+
 definition select :: "transition" where
 "select \<equiv> \<lparr>
         Label = ''select'',
@@ -40,10 +51,10 @@ definition coin :: "transition" where
         Label = ''coin'',
         Arity = 1,
         Guard = [],
-        Outputs = [(V (R 2)) + (V (I 1))],
+        Outputs = [Plus (V (R 2)) (V (I 1))],
         Updates = [
                     (R 1, V (R 1)),
-                    (R 2, (V (R 2)) + (V (I 1)))
+                    (R 2, Plus (V (R 2)) (V (I 1)))
                   ]
       \<rparr>"
 

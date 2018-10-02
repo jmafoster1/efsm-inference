@@ -15,6 +15,9 @@ imports AExp Option_Logic
 begin
 datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null vname
 
+lemma "x \<ge> 100 = (x > 100 \<or> x = (100::nat))"
+  by auto
+
 syntax (xsymbols)
   Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "=" 60*)
   Gt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix ">" 60*)
