@@ -1,5 +1,5 @@
 theory DM_Inference
-imports Inference Drinks_Machine_2
+imports Inference "../examples/Drinks_Machine_2"
 begin
 lemma merge_q1_q2: "merge_states q1 q2 (T drinks2) = (\<lambda> (a,b) .
   if (a, b) = (q0, q1) then {select} else
@@ -11,10 +11,18 @@ lemma merge_q1_q2: "merge_states q1 q2 (T drinks2) = (\<lambda> (a,b) .
   by auto
 
 lemma "nondeterminism (merge_states q1 q2 (T drinks2))"
-  apply (simp add: nondeterminism_def nondeterminism_aux_def merge_q1_q2 choice_def)
+  apply (simp add: nondeterminism_def merge_q1_q2 choice_def nondeterministic_pairs_def)
   apply (rule_tac x=q1 in exI)
+  apply safe
   apply (rule_tac x=q1 in exI)
-  apply (simp add: vend_fail_def vend_nothing_def coin_def)
+  apply (rule_tac x=vend_nothing in exI)
+  apply (rule_tac x=vend_fail in exI)
+  apply simp
+  apply safe
+  apply (simp add: vend_nothing_def vend_fail_def)
+  apply (simp add: vend_nothing_def vend_fail_def)
+  apply (rule_tac x=q1 in exI)
+  apply (simp add: vend_nothing_def vend_fail_def)
   apply (rule_tac x="<R 2 := Num 0>" in exI)
   by simp
 end

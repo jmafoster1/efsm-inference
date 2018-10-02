@@ -45,9 +45,8 @@ abbreviation join_ir :: "value list \<Rightarrow> datastate \<Rightarrow> datast
     I n \<Rightarrow> (input2state i 1) (I n)
   )"
 
-definition
-  S :: "'statename efsm \<Rightarrow> 'statename set" where
-  "S m = {a. (\<exists>x. (T m) (a, x) \<noteq> {}) \<or> (\<exists>x. (T m) (x, a) \<noteq> {})}"
+definition S :: "'statename efsm \<Rightarrow> 'statename set" where
+  "S m = {a. (\<exists>x. (T m) (a, x) \<noteq> {} \<or> (T m) (x, a) \<noteq> {})}"
 
 primrec apply_outputs :: "output_function list \<Rightarrow> datastate \<Rightarrow> outputs" where
   "apply_outputs [] _ = []" |

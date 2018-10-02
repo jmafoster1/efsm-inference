@@ -57,7 +57,7 @@ definition vend :: "transition" where
 "vend \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [((V (R 2)) \<ge> (L (Num 100)))],
+        Guard = [(Ge (V (R 2)) (L (Num 100)))],
         Outputs =  [(V (R 1))],
         Updates = [(R 1, V (R 1)), (R 2, V (R 2))]
       \<rparr>"
@@ -69,12 +69,12 @@ definition vend_fail :: "transition" where
 "vend_fail \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [((V (R 2)) < (L (Num 100)))],
+        Guard = [(GExp.Lt (V (R 2)) (L (Num 100)))],
         Outputs =  [],
         Updates = [(R 1, V (R 1)), (R 2, V (R 2))]
       \<rparr>"
 
-lemma guard_vend_fail: "Guard vend_fail = [((V (R 2)) < (L (Num 100)))]"
+lemma guard_vend_fail: "Guard vend_fail = [(GExp.Lt(V (R 2)) (L (Num 100)))]"
   by (simp add: vend_fail_def)
 
 lemma outputs_vend_fail: "Outputs vend_fail = []"

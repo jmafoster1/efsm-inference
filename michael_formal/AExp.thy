@@ -28,10 +28,10 @@ type_synonym datastate = "vname \<Rightarrow> value option"
 datatype aexp = L "value" | V vname | Plus aexp aexp | Minus aexp aexp
 
 syntax (xsymbols)
-  Plus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" (infix "+" 60)
-  Minus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" (infix "-" 60)
+  Plus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" (*infix "+" 60*)
+  Minus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" (*infix "-" 60*)
 
-fun value_plus :: "value option \<Rightarrow> value option \<Rightarrow> value option" (infix "+" 40) where
+fun value_plus :: "value option \<Rightarrow> value option \<Rightarrow> value option" (*infix "+" 40*) where
   "value_plus (Some (Num x)) (Some (Num y)) = Some (Num (x+y))" |
   "value_plus _ _ = None"
 
@@ -55,7 +55,7 @@ lemma value_plus_symmetry: "value_plus x y = value_plus y x"
       by simp_all
   qed
 
-fun value_minus :: "value option \<Rightarrow> value option \<Rightarrow> value option" (infix "-" 40) where
+fun value_minus :: "value option \<Rightarrow> value option \<Rightarrow> value option" (*infix "-" 40*) where
   "value_minus (Some (Num x)) (Some (Num y)) = Some (Num (x-y))" |
   "value_minus _ _ = None"
 
@@ -65,8 +65,8 @@ lemma minus_no_string [simp]:"value_minus a b \<noteq> Some (Str x)"
 fun aval :: "aexp \<Rightarrow> datastate \<Rightarrow> value option" where
   "aval (L x) s = Some x" |
   "aval (V x) s = s x" |
-  "aval (Plus a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s + aval a\<^sub>2 s)" |
-  "aval (Minus a\<^sub>1 a\<^sub>2) s = (aval a\<^sub>1 s - aval a\<^sub>2 s)"
+  "aval (Plus a\<^sub>1 a\<^sub>2) s = value_plus (aval a\<^sub>1 s)(aval a\<^sub>2 s)" |
+  "aval (Minus a\<^sub>1 a\<^sub>2) s = value_minus (aval a\<^sub>1 s) (aval a\<^sub>2 s)"
 
 lemma aval_plus_symmetry: "aval (Plus x y) s = aval (Plus y x) s"
   by (simp add: value_plus_symmetry)
