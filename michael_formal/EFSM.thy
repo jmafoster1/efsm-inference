@@ -7,7 +7,7 @@ finite types. See the examples for details.
 *}
 
 theory EFSM
-  imports AExp GExp
+  imports "~~/src/HOL/Library/FSet" AExp GExp
 begin
 
 type_synonym label = string
@@ -17,6 +17,7 @@ type_synonym outputs = "value list"
 type_synonym guard = "gexp"
 type_synonym output_function = "aexp"
 type_synonym update_function = "(vname \<times> aexp)"
+type_synonym updates = "update_function list"
 type_synonym event = "(label \<times> inputs)"
 type_synonym trace = "event list"
 type_synonym observation = "outputs list"
@@ -28,7 +29,7 @@ record transition =
   Outputs :: "output_function list"
   Updates :: "update_function list"
 
-record 'statename efsm =
+record 'statename::finite efsm =
   s0 :: 'statename
   T :: "('statename \<times> 'statename) \<Rightarrow> transition set"
 
@@ -45,9 +46,11 @@ abbreviation join_ir :: "value list \<Rightarrow> datastate \<Rightarrow> datast
     I n \<Rightarrow> (input2state i 1) (I n)
   )"
 
-definition
-  S :: "'statename efsm \<Rightarrow> 'statename set" where
-  "S m = {a. (\<exists>x. (T m) (a, x) \<noteq> {}) \<or> (\<exists>x. (T m) (x, a) \<noteq> {})}"
+definition S :: "'statename::finite efsm \<Rightarrow> 'statename set" where
+  "S m = {a. (\<exists>x. (T m) (a, x) \<noteq> {} \<or> (T m) (x, a) \<noteq> {})}"
+
+lemma finite_S: "finite (S m)"
+  by (simp add: S_def)
 
 primrec apply_outputs :: "output_function list \<Rightarrow> datastate \<Rightarrow> outputs" where
   "apply_outputs [] _ = []" |
@@ -61,17 +64,17 @@ primrec apply_updates :: "(vname \<times> aexp) list \<Rightarrow> datastate \<R
   "apply_updates [] _ new = new" |
   "apply_updates (h#t) old new = (\<lambda>x. if x = (fst h) then (aval (snd h) old) else (apply_updates t old new) x)"
 
-abbreviation is_possible_step :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> 'statename \<Rightarrow> transition \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> bool" where
+abbreviation is_possible_step :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> 'statename \<Rightarrow> transition \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> bool" where
 "is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (t \<in> T e (s,s')) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (join_ir i r)))"
 
-definition possible_steps :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> ('statename \<times> transition) set" where
+definition possible_steps :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> ('statename \<times> transition) set" where
 "possible_steps e s r l i \<equiv> {(s',t). is_possible_step e s s' t r l i}"
 
-abbreviation step :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> ('statename \<times> outputs \<times> datastate) option" where
+abbreviation step :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> ('statename \<times> outputs \<times> datastate) option" where
 "step e s r l i \<equiv>
 (if is_singleton (possible_steps e s r l i) then (let (s', t) =  (the_elem (possible_steps e s r l i)) in Some (s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))) else None)"
 
-primrec observe_all :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> ('statename \<times> outputs \<times> datastate) list" where
+primrec observe_all :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> ('statename \<times> outputs \<times> datastate) list" where
   "observe_all _ _ _ [] = []" |
   "observe_all e s r (h#t) =
     (case (step e s r (fst h) (snd h)) of
@@ -79,10 +82,17 @@ primrec observe_all :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> d
       _ \<Rightarrow> []
     )"
 
-abbreviation observe_trace :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> observation" where
+primrec observe_transitions :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> transition list" where
+  "observe_transitions _ _ _ [] = []" |
+  "observe_transitions e s r (h#t) = (if is_singleton (possible_steps e s r (fst h) (snd h)) then (snd (the_elem (possible_steps e s r (fst h) (snd h))))#(observe_transitions e s r t) else [])"
+
+abbreviation observe_trace :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> observation" where
   "observe_trace e s r t \<equiv> map (\<lambda>(x,y,z). y) (observe_all e s r t)"
 
-definition efsm_equiv :: "'statename efsm \<Rightarrow> 'statename' efsm \<Rightarrow> trace \<Rightarrow> bool" where
+abbreviation state_trace :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> 'statename list" where
+  "state_trace e s r t \<equiv> map (\<lambda>(x,y,z). x) (observe_all e s r t)"
+
+definition efsm_equiv :: "'statename::finite efsm \<Rightarrow> 'statename'::finite efsm \<Rightarrow> trace \<Rightarrow> bool" where
   "efsm_equiv e1 e2 t \<equiv> ((observe_trace e1 (s0 e1) <> t) = (observe_trace e2 (s0 e2) <> t))"
 
 lemma efsm_equiv_reflexive: "efsm_equiv e1 e1 t"
@@ -115,11 +125,11 @@ next
   qed
 qed
 
-inductive valid :: "'statename efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
+inductive valid :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
   base: "valid e s d []" |
   step: "step e s d (fst h) (snd h) = Some (s', p', d') \<Longrightarrow> valid e s' d' t \<Longrightarrow> valid e s d (h#t)"
 
-abbreviation valid_trace :: "'statename efsm \<Rightarrow> trace \<Rightarrow> bool" where
+abbreviation valid_trace :: "'statename::finite efsm \<Rightarrow> trace \<Rightarrow> bool" where
   "valid_trace e t \<equiv> valid e (s0 e) <> t"
 
 lemma valid_steps: "the_elem (possible_steps e s d (fst h) (snd h)) = (a, b) \<Longrightarrow>

@@ -12,10 +12,16 @@ states. The fourth element is included here so that the \emph{statename} datatyp
 the next example.
 *}
 theory Drinks_Machine
-  imports "../Contexts"
+  imports "../Contexts" Finite_Set
 begin
 
 datatype statename = q0 | q1 | q2 | q3
+
+lemma UNIV_statename: "UNIV = {q0 , q1 , q2 , q3}"
+  using statename.exhaust by auto
+
+instance statename :: finite
+  by standard (simp add: UNIV_statename)
 
 definition select :: "transition" where
 "select \<equiv> \<lparr>
@@ -40,10 +46,10 @@ definition coin :: "transition" where
         Label = ''coin'',
         Arity = 1,
         Guard = [],
-        Outputs = [(V (R 2)) + (V (I 1))],
+        Outputs = [Plus (V (R 2)) (V (I 1))],
         Updates = [
                     (R 1, V (R 1)),
-                    (R 2, (V (R 2)) + (V (I 1)))
+                    (R 2, Plus (V (R 2)) (V (I 1)))
                   ]
       \<rparr>"
 
@@ -57,7 +63,7 @@ definition vend :: "transition" where
 "vend \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [((V (R 2)) \<ge> (L (Num 100)))],
+        Guard = [(Ge (V (R 2)) (L (Num 100)))],
         Outputs =  [(V (R 1))],
         Updates = [(R 1, V (R 1)), (R 2, V (R 2))]
       \<rparr>"
@@ -69,12 +75,12 @@ definition vend_fail :: "transition" where
 "vend_fail \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [((V (R 2)) < (L (Num 100)))],
+        Guard = [(GExp.Lt (V (R 2)) (L (Num 100)))],
         Outputs =  [],
         Updates = [(R 1, V (R 1)), (R 2, V (R 2))]
       \<rparr>"
 
-lemma guard_vend_fail: "Guard vend_fail = [((V (R 2)) < (L (Num 100)))]"
+lemma guard_vend_fail: "Guard vend_fail = [(GExp.Lt(V (R 2)) (L (Num 100)))]"
   by (simp add: vend_fail_def)
 
 lemma outputs_vend_fail: "Outputs vend_fail = []"
