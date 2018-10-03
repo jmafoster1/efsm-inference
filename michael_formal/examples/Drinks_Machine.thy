@@ -12,21 +12,16 @@ states. The fourth element is included here so that the \emph{statename} datatyp
 the next example.
 *}
 theory Drinks_Machine
-  imports "../Contexts"
+  imports "../Contexts" Finite_Set
 begin
 
 datatype statename = q0 | q1 | q2 | q3
 
-instantiation statename::finite begin
-instance
-proof
-  show "finite UNIV"
-    apply (simp add: finite_def lfp_def)
-    apply (rule allI)
-    
-qed
+lemma UNIV_statename: "UNIV = {q0 , q1 , q2 , q3}"
+  using statename.exhaust by auto
 
-end
+instance statename :: finite
+  by standard (simp add: UNIV_statename)
 
 definition select :: "transition" where
 "select \<equiv> \<lparr>
