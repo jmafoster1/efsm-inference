@@ -17,6 +17,7 @@ type_synonym outputs = "value list"
 type_synonym guard = "gexp"
 type_synonym output_function = "aexp"
 type_synonym update_function = "(vname \<times> aexp)"
+type_synonym updates = "update_function list"
 type_synonym event = "(label \<times> inputs)"
 type_synonym trace = "event list"
 type_synonym observation = "outputs list"
@@ -81,8 +82,15 @@ primrec observe_all :: "'statename::finite efsm \<Rightarrow> 'statename \<Right
       _ \<Rightarrow> []
     )"
 
+primrec observe_transitions :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> transition list" where
+  "observe_transitions _ _ _ [] = []" |
+  "observe_transitions e s r (h#t) = (if is_singleton (possible_steps e s r (fst h) (snd h)) then (snd (the_elem (possible_steps e s r (fst h) (snd h))))#(observe_transitions e s r t) else [])"
+
 abbreviation observe_trace :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> observation" where
   "observe_trace e s r t \<equiv> map (\<lambda>(x,y,z). y) (observe_all e s r t)"
+
+abbreviation state_trace :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> 'statename list" where
+  "state_trace e s r t \<equiv> map (\<lambda>(x,y,z). x) (observe_all e s r t)"
 
 definition efsm_equiv :: "'statename::finite efsm \<Rightarrow> 'statename'::finite efsm \<Rightarrow> trace \<Rightarrow> bool" where
   "efsm_equiv e1 e2 t \<equiv> ((observe_trace e1 (s0 e1) <> t) = (observe_trace e2 (s0 e2) <> t))"
