@@ -88,6 +88,9 @@ primrec alreadyUpdated :: "updates \<Rightarrow> vname \<Rightarrow> bool" where
     
 *)
 
+definition hilbert_option :: "('a \<Rightarrow> bool) \<Rightarrow> 'a option" where
+  "hilbert_option f = (if {x. f x} = {} then None else Some (Eps f))"
+
 fun makeT :: "'s::finite efsm \<Rightarrow> context \<Rightarrow> 's \<Rightarrow> 's transition_function option" where
   "makeT e c s = (if \<exists>p. posterior_sequence (observe_transitions e (s0 e) <> p) empty = c \<and> last (state_trace e (s0 e) <> p) = s
                   then Some (T e)
@@ -99,19 +102,23 @@ fun makeT :: "'s::finite efsm \<Rightarrow> context \<Rightarrow> 's \<Rightarro
 
 function merge :: "'s::finite efsm \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's transition_function option" where
   "merge e s1 s2 = (let t' = (merge_states s1 s2 (T e)) in
+                       (* Have we got any nondeterminisms? *)
                        (case nondeterministic_transitions t' of
-                        None \<Rightarrow> Some t' |
-                        Some (from, (to1, to2), (t1, t2)) \<Rightarrow> (if s1 = s2 then
-                                                                (* Can we get a context where one subsumes the other directly *)
-                                                                if \<exists>c'. subsumes c' t1 t2 then case 
-                                                                  (makeT e c' (s0 e)) of Some e' \<Rightarrow> Some (replace_transition e' from to1 {t2} t1) |
-                                                                  None \<Rightarrow> None
-                                                                else if \<exists>c'. subsumes c' t2 t1 then case 
-                                                                  (makeT e c' (s0 e)) of Some e' \<Rightarrow> Some (replace_transition e' from to1 {t1} t2) |
-                                                                  None \<Rightarrow> None
-                                                                (* else if \<exists>tr c' . subsumes c' tr t1 \<and> subsumes c' tr t2 then Some (replace_transition t' from to1 {t1} tr) *)
-                                                                else None
-                                                              else merge \<lparr>s0 = s0 e, T = t'\<rparr> to1 to2)))"
+                         (* If not then we're good to go *)
+                         None \<Rightarrow> Some t' |
+                         (* If we have then we need to fix it *)
+                         Some (from, (to1, to2), (t1, t2)) \<Rightarrow> (if s1 \<noteq> s2 then merge \<lparr>s0 = s0 e, T = t'\<rparr> to1 to2 else
+                            (* Can we get a context where one transition subsumes the other directly *)
+                            case (hilbert_option (\<lambda>c'. (subsumes c' t1 t2 \<or> subsumes c' t2 t1) \<and> makeT e c' (s0 e) \<noteq> None)) of
+                              Some c' \<Rightarrow> makeT e c' (s0 e) |
+                                      (* Can we make a transition which subsumes both? *)
+                              None \<Rightarrow> (case (hilbert_option (\<lambda>(c', tr). subsumes c' tr t1 \<and> subsumes c' tr t2)) of
+                                          Some (c', tr) \<Rightarrow> Some (replace_transition t' from to1 {t1} tr) |
+                                          None \<Rightarrow> None
+                                        )
+                        )
+                      )
+                    )"
   by auto
 
 lemma inf_term: "infinite (defined aa) \<Longrightarrow> merge a aa ab b = None"
