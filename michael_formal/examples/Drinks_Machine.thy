@@ -23,6 +23,21 @@ lemma UNIV_statename: "UNIV = {q0 , q1 , q2 , q3}"
 instance statename :: finite
   by standard (simp add: UNIV_statename)
 
+lemma fUNIV_statename: "fUNIV = {|q0 , q1 , q2 , q3|}"
+  oops
+
+lemma fUNIV_1: "x |\<in>| {|q0 , q1 , q2 , q3|} \<Longrightarrow> x |\<in>| fUNIV"
+  by (simp add: fmember.rep_eq)
+
+lemma fUNIV_2: "x |\<in>| fUNIV \<Longrightarrow> x |\<in>| {|q0 , q1 , q2 , q3|}"
+  using UNIV_statename by auto
+
+lemma fUNIV_3: "x |\<in>| fUNIV = (x |\<in>| {|q0 , q1 , q2 , q3|})"
+  using fUNIV_1 fUNIV_2 by blast
+
+lemma statename_UNIV: "fUNIV = {|q0, q1, q2, q3|}"
+  by (simp add: fUNIV_3 fset_eqI)
+
 definition select :: "transition" where
 "select \<equiv> \<lparr>
         Label = ''select'',
@@ -99,22 +114,25 @@ definition drinks :: "statename efsm" where
 "drinks \<equiv> \<lparr>
           s0 = q0,
           T = \<lambda> (a,b) .
-              if (a,b) = (q0,q1) then {select}    (* If we want to go from state 1 to state 2 then select will do that *)
-              else if (a,b) = (q1,q1) then {coin, vend_fail} (* If we want to go from state 2 to state 2 then coin will do that *)
-              else if (a,b) = (q1,q2) then {vend} (* If we want to go from state 2 to state 3 then vend will do that *)
-              else {} (* There are no other transitions *)
+              if (a,b) = (q0,q1) then {|select|}    (* If we want to go from state 1 to state 2 then select will do that *)
+              else if (a,b) = (q1,q1) then {|coin, vend_fail|} (* If we want to go from state 2 to state 2 then coin will do that *)
+              else if (a,b) = (q1,q2) then {|vend|} (* If we want to go from state 2 to state 3 then vend will do that *)
+              else {||} (* There are no other transitions *)
          \<rparr>"
+
+lemma "S drinks = {|q0, q1, q2, q3|}"
+  by (simp add: S_def statename_UNIV)
 
 lemma s0_drinks [simp]: "s0 drinks = q0"
   by (simp add: drinks_def)
 
-lemmas transitions = select_def coin_def vend_def
+lemmas transitions = select_def coin_def vend_def vend_fail_def
 
 lemma possible_steps_q0:  "length i = Suc 0 \<Longrightarrow> possible_steps drinks q0 Map.empty ''select'' i = {(q1, select)}"
   apply (simp add: possible_steps_def drinks_def)
   apply safe
-       apply (meson empty_iff old.prod.inject statename.distinct(1))
-      apply (meson empty_iff old.prod.inject singletonD statename.distinct(1))
+  using prod.inject apply fastforce
+      apply (case_tac a)
   by (simp_all add: select_def)
 
 lemma select_updates [simp]: "(EFSM.apply_updates (Updates select) (case_vname (\<lambda>n. if n = Suc 0 then Some (Str ''coke'') else input2state [] (Suc 0 + 1) (I n)) Map.empty) Map.empty) = <R 1:=Str ''coke'', R 2 := Num 0>"

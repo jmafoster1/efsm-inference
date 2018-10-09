@@ -15,6 +15,8 @@ definition vend_nothing :: "transition" where
         Updates = [(R 1, V (R 1)), (R 2, V (R 2))]
       \<rparr>"
 
+lemmas transitions = select_def coin_def vend_def vend_fail_def vend_nothing_def
+
 lemma outputs_vend_nothing: "Outputs vend_nothing = []"
   by (simp add: vend_nothing_def)
 
@@ -25,19 +27,19 @@ definition drinks2 :: "statename efsm" where
 "drinks2 \<equiv> \<lparr>
           s0 = q0,
           T = \<lambda> (a,b) .
-              if (a,b) = (q0,q1) then {select}
-              else if (a,b) = (q1,q1) then {vend_nothing}
-              else if (a,b) = (q1,q2) then {coin}
-              else if (a,b) = (q2,q2) then {coin, vend_fail}
-              else if (a,b) = (q2,q3) then {vend}
-              else {}
+              if (a,b) = (q0,q1) then {|select|}
+              else if (a,b) = (q1,q1) then {|vend_nothing|}
+              else if (a,b) = (q1,q2) then {|coin|}
+              else if (a,b) = (q2,q2) then {|coin, vend_fail|}
+              else if (a,b) = (q2,q3) then {|vend|}
+              else {||}
          \<rparr>"
+
+lemma s0_drinks2: "s0 drinks2 = q0"
+  by (simp add: drinks2_def)
 
 lemma empty_not_singleton [simp]: "\<not> is_singleton {}"
   by (simp add: is_singleton_def)
-
-lemma s0_drinks2 [simp]: "s0 drinks2 = q0"
-  by (simp add: drinks2_def)
 
 lemma possible_steps_q0:  "length i = Suc 0 \<Longrightarrow> possible_steps drinks2 q0 Map.empty ''select'' i = {(q1, select)}"
   apply (simp add: possible_steps_def)

@@ -29,9 +29,12 @@ record transition =
   Outputs :: "output_function list"
   Updates :: "update_function list"
 
+(* I'd like this to be statename to statename finite set *)
+type_synonym 'statename transition_function = "('statename \<times> 'statename) \<Rightarrow> transition fset"
+
 record 'statename::finite efsm =
   s0 :: 'statename
-  T :: "('statename \<times> 'statename) \<Rightarrow> transition set"
+  T :: "'statename transition_function"
 
 primrec input2state :: "value list \<Rightarrow> nat \<Rightarrow> datastate" where
   "input2state [] _ = <>" |
@@ -46,11 +49,8 @@ abbreviation join_ir :: "value list \<Rightarrow> datastate \<Rightarrow> datast
     I n \<Rightarrow> (input2state i 1) (I n)
   )"
 
-definition S :: "'statename::finite efsm \<Rightarrow> 'statename set" where
-  "S m = {a. (\<exists>x. (T m) (a, x) \<noteq> {} \<or> (T m) (x, a) \<noteq> {})}"
-
-lemma finite_S: "finite (S m)"
-  by (simp add: S_def)
+definition S :: "'statename::finite efsm \<Rightarrow> 'statename fset" where
+  "S m = fUNIV"
 
 primrec apply_outputs :: "output_function list \<Rightarrow> datastate \<Rightarrow> outputs" where
   "apply_outputs [] _ = []" |
@@ -65,7 +65,7 @@ primrec apply_updates :: "(vname \<times> aexp) list \<Rightarrow> datastate \<R
   "apply_updates (h#t) old new = (\<lambda>x. if x = (fst h) then (aval (snd h) old) else (apply_updates t old new) x)"
 
 abbreviation is_possible_step :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> 'statename \<Rightarrow> transition \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> bool" where
-"is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (t \<in> T e (s,s')) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (join_ir i r)))"
+"is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (t |\<in>| T e (s,s')) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (join_ir i r)))"
 
 definition possible_steps :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> ('statename \<times> transition) set" where
 "possible_steps e s r l i \<equiv> {(s',t). is_possible_step e s s' t r l i}"
