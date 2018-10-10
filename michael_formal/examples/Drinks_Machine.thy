@@ -12,7 +12,7 @@ states. The fourth element is included here so that the \emph{statename} datatyp
 the next example.
 *}
 theory Drinks_Machine
-  imports "../Contexts" Finite_Set
+  imports "../Contexts"
 begin
 
 datatype statename = q0 | q1 | q2 | q3
@@ -109,6 +109,9 @@ lemma arity_vend_fail: "Arity vend_fail = 0"
 
 lemma guard_vend: "Guard vend = [(Ge (V (R 2)) (L (Num 100)))]"
   by (simp add: vend_def)
+
+lemma "max coin vend = vend"
+  by (simp add: max_def coin_def vend_def less_eq_transition_ext_def)
 
 definition drinks :: "statename efsm" where
 "drinks \<equiv> \<lparr>

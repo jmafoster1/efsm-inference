@@ -15,12 +15,41 @@ imports AExp Option_Logic
 begin
 datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null vname
 
+fun gexp2string :: "gexp \<Rightarrow> string" where
+  "gexp2string (Bc True) = ''true''" |
+  "gexp2string (Bc False) = ''false''" |
+  "gexp2string (Eq v va) = (aexp2string v)@''=''@(aexp2string va)" |
+  "gexp2string (Gt v va) = (aexp2string v)@''>''@(aexp2string va)" |
+  "gexp2string (Nor v va) = ''!(''@(gexp2string v)@''||''@(gexp2string va)@'')''" |
+  "gexp2string (Null v) = ''NULL(''@(vname2string v)@'')''"
+
 lemma "x \<ge> 100 = (x > 100 \<or> x = (100::nat))"
   by auto
 
 syntax (xsymbols)
   Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "=" 60*)
   Gt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix ">" 60*)
+
+fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool option" where
+  "gval (Bc b) _ = Some b" |
+  "gval (Gt a\<^sub>1 a\<^sub>2) s = ValueGt (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
+  "gval (Eq a\<^sub>1 a\<^sub>2) s = Some (aval a\<^sub>1 s = aval a\<^sub>2 s)" |
+  "gval (Nor a\<^sub>1 a\<^sub>2) s = (case (gval a\<^sub>1 s, gval a\<^sub>2 s) of
+    (Some x, Some y) \<Rightarrow> Some (\<not> (x \<or> y)) |
+    _ \<Rightarrow> None
+  )" |
+  "gval (Null v) s = Some (s v = None)"
+
+instantiation gexp :: ord begin
+definition  less_eq_gexp :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
+  "less_eq_gexp g1 g2 \<equiv> \<forall>s. maybe_implies (gval g1 s) (gval g2 s) = Some True"
+
+definition  less_gexp :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
+  "less_gexp g1 g2 \<equiv> \<forall>s. maybe_implies (gval g1 s) (gval g2 s) = Some True \<and> (gval g1 s) \<noteq> (gval g2 s)"
+
+instance proof
+qed
+end
 
 abbreviation gNot :: "gexp \<Rightarrow> gexp"  where
   "gNot g \<equiv> Nor g g"
@@ -42,16 +71,6 @@ abbreviation Ge :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<ge>" 
 
 abbreviation Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<noteq>" 60*) where
   "Ne v va \<equiv> gNot (Eq v va)"
-
-fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool option" where
-  "gval (Bc b) _ = Some b" |
-  "gval (Gt a\<^sub>1 a\<^sub>2) s = ValueGt (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
-  "gval (Eq a\<^sub>1 a\<^sub>2) s = Some (aval a\<^sub>1 s = aval a\<^sub>2 s)" |
-  "gval (Nor a\<^sub>1 a\<^sub>2) s = (case (gval a\<^sub>1 s, gval a\<^sub>2 s) of
-    (Some x, Some y) \<Rightarrow> Some (\<not> (x \<or> y)) |
-    _ \<Rightarrow> None
-  )" |
-  "gval (Null v) s = Some (s v = None)"
 
 lemma or_equiv: "gval (gOr x y) r = maybe_or (gval x r) (gval y r)"
   apply simp

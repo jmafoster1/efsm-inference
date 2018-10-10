@@ -27,10 +27,10 @@ definition choice :: "transition \<Rightarrow> transition \<Rightarrow> bool" wh
   "choice t t' = ((Label t) = (Label t') \<and> (Arity t) = (Arity t') \<and> (\<exists> s. apply_guards (Guard t) s \<and> apply_guards (Guard t') s))"
 
 definition nondeterministic_pairs :: "'s::finite transition_function \<Rightarrow> ('s \<times> ('s \<times> 's) \<times> (transition \<times> transition)) set" where
-  "nondeterministic_pairs t = {(s', (s1, s2), (t1, t2)). t1 |\<in>| t (s', s1) \<and> t2 |\<in>| t (s', s2) \<and> t1 \<noteq> t2 \<and> choice t1 t2}"
+  "nondeterministic_pairs t = {(s', (s1, s2), (t1, t2)). t1 |\<in>| t (s', s1) \<and> t2 |\<in>| t (s', s2) \<and> t1 < t2 \<and> choice t1 t2}"
 
 definition nondeterministic_transitions :: "'s::finite transition_function \<Rightarrow> ('s \<times> ('s \<times> 's) \<times> (transition \<times> transition)) option" where
-  "nondeterministic_transitions t = (if nondeterministic_pairs t = {} then None else Some (Eps (\<lambda> x. x \<in> nondeterministic_pairs t)))"
+  "nondeterministic_transitions t = (if nondeterministic_pairs t = {} then None else Some (Max (nondeterministic_pairs t)))"
 
 definition nondeterminism :: "'s::finite transition_function \<Rightarrow> bool" where
   "nondeterminism t = (nondeterministic_pairs t \<noteq> {})"
@@ -64,8 +64,8 @@ definition hilbert_option :: "('a \<Rightarrow> bool) \<Rightarrow> 'a option" w
 fun make_context :: "'s::finite efsm \<Rightarrow> context \<Rightarrow> 's \<Rightarrow> 's::finite transition_function option" where
   "make_context e c s = (if \<exists>p. posterior_sequence (observe_transitions e (s0 e) <> p) empty = c \<and> last (state_trace e (s0 e) <> p) = s
                   then Some (T e)
-                  (* else if it is possible to modify the update functions of incoming transitions
-                     to get the right context then do that *)
+                  \<comment> \<open> else if it is possible to modify the update functions of incoming transitions
+                     to get the right context then do that \<close>
                   else None)"
 
 lemma make_context_options: "make_context e c s = None \<or> (\<exists>t. make_context e c s = Some t)"
@@ -75,7 +75,7 @@ lemma make_context_options: "make_context e c s = None \<or> (\<exists>t. make_c
 
 function merge :: "'s::finite efsm \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's::finite transition_function option" where
   "merge e s1 s2 = (let t' = (merge_states s1 s2 (T e)) in
-                       (* Have we got any nondeterminisms? *)
+                       (* Have we got any nondeterminism? *)
                        (case nondeterministic_transitions t' of
                          (* If not then we're good to go *)
                          None \<Rightarrow> Some t' |

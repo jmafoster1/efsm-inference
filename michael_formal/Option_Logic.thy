@@ -18,6 +18,9 @@ abbreviation ValueGt :: "value option \<Rightarrow> value option \<Rightarrow> b
 abbreviation ValueLt :: "value option \<Rightarrow> value option \<Rightarrow> bool option"  where
   "ValueLt a b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x<y)) a b"
 
+abbreviation ValueEq :: "value option \<Rightarrow> value option \<Rightarrow> bool option"  where
+  "ValueEq a b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x=y)) a b"
+
 abbreviation maybe_or :: "bool option \<Rightarrow> bool option \<Rightarrow> bool option" where
   "maybe_or x y \<equiv> (case (x, y) of
     (Some a, Some b) \<Rightarrow> Some (a \<or> b) |

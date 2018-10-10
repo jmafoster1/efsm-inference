@@ -7,7 +7,7 @@ finite types. See the examples for details.
 *}
 
 theory EFSM
-  imports "~~/src/HOL/Library/FSet" AExp GExp
+  imports "~~/src/HOL/Library/FSet" AExp GExp Show.Show
 begin
 
 type_synonym label = string
@@ -28,6 +28,60 @@ record transition =
   Guard :: "guard list"
   Outputs :: "output_function list"
   Updates :: "update_function list"
+
+instantiation transition_ext:: ("show") "show" begin
+
+end
+
+primrec guards2string :: "guard list \<Rightarrow> string" where
+  "guards2string [] = ''''" |
+  "guards2string (h#t) = (gexp2string h)@(guards2string t)"
+
+primrec outputs2string_aux :: "output_function list \<Rightarrow> nat \<Rightarrow> string list" where
+  "outputs2string_aux [] _ = []" |
+  "outputs2string_aux (h#t) n = (''o''@(showsp_nat 1 n '''')@'':=''@(aexp2string h))#(outputs2string_aux t (n+1))"
+
+fun join :: "string list \<Rightarrow> string \<Rightarrow> string" where
+  "join [] _ = ''''" |
+  "join [a] _ = a" |
+  "join (a#t) d = a@d@(join t d)"
+
+fun updates2string_aux :: "update_function list \<Rightarrow> string list" where
+  "updates2string_aux [] = []" |
+  "updates2string_aux ((r, u)#t) = ((vname2string r)@'':=''@(aexp2string u))#(updates2string_aux t)"
+
+definition outputs2string :: "output_function list \<Rightarrow> string" where
+  "outputs2string lst = join (outputs2string_aux lst 1) '',''"
+
+definition updates2string :: "update_function list \<Rightarrow> string" where
+  "updates2string lst = join (updates2string_aux lst) '',''"
+
+definition transition2string :: "transition \<Rightarrow> string" where
+  "transition2string t = (Label t)@'':[''@(guards2string (Guard t))@'']/''@(outputs2string (Outputs t))@''[''@(updates2string (Updates t))@'']''"
+
+(*instantiation "transition_ext" :: (ord) ord
+begin
+definition less_eq_transition_ext :: "'a::ord transition_scheme \<Rightarrow> 'a transition_scheme \<Rightarrow> bool" where
+    "less_eq_transition_ext D1 D2 =                 (String.implode (Label D1) > String.implode (Label D2) \<longrightarrow>
+                                 String.implode (guards2string (Guard D1)) > String.implode (guards2string (Guard D2)) \<longrightarrow>
+                              String.implode (outputs2string (Outputs D1)) > String.implode (outputs2string (Outputs D2)) \<longrightarrow>
+                              String.implode (updates2string (Updates D1)) > String.implode (updates2string (Updates D2)) \<longrightarrow>
+                                                                   more D1 \<le> more D2)"
+
+definition less_transition_ext :: "'a::ord transition_scheme \<Rightarrow> 'a transition_scheme \<Rightarrow> bool" where
+    "less_transition_ext D1 D2 =                    (String.implode (Label D1) \<ge> String.implode (Label D2) \<longrightarrow>
+                                 String.implode (guards2string (Guard D1)) \<ge> String.implode (guards2string (Guard D2)) \<longrightarrow>
+                              String.implode (outputs2string (Outputs D1)) \<ge> String.implode (outputs2string (Outputs D2)) \<longrightarrow>
+                              String.implode (updates2string (Updates D1)) \<ge> String.implode (updates2string (Updates D2)) \<longrightarrow>
+                                                                   more D1 < more D2)"
+instance proof
+qed
+end*)
+
+instantiation "transition_ext" :: (linorder) linorder begin
+definition less_eq_transition_ext :: "'a::linorder transition_scheme \<Rightarrow> 'a transition_scheme \<Rightarrow> bool" where
+"less_eq_transition_ext t1 t2 = less_eq (String.implode (transition2string t1)) (String.implode (transition2string t2))"
+end
 
 (* I'd like this to be statename to statename finite set *)
 type_synonym 'statename transition_function = "('statename \<times> 'statename) \<Rightarrow> transition fset"
