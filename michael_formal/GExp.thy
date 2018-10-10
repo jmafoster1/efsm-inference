@@ -15,13 +15,15 @@ imports AExp Option_Logic
 begin
 datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null vname
 
-fun gexp2string :: "gexp \<Rightarrow> string" where
-  "gexp2string (Bc True) = ''true''" |
-  "gexp2string (Bc False) = ''false''" |
-  "gexp2string (Eq v va) = (aexp2string v)@''=''@(aexp2string va)" |
-  "gexp2string (Gt v va) = (aexp2string v)@''>''@(aexp2string va)" |
-  "gexp2string (Nor v va) = ''!(''@(gexp2string v)@''||''@(gexp2string va)@'')''" |
-  "gexp2string (Null v) = ''NULL(''@(vname2string v)@'')''"
+instantiation gexp :: "show" begin
+fun shows_prec_gexp :: "nat \<Rightarrow> gexp \<Rightarrow> char list \<Rightarrow> char list" where
+  "shows_prec_gexp n (Bc i) c = shows_prec n i c" |
+  "shows_prec_gexp n (Eq v va) c = (shows_prec n v '''')@''=''@(shows_prec n va c)" |
+  "shows_prec_gexp n (Gt v va) c = (shows_prec n v '''')@''>''@(shows_prec n va c)" |
+  "shows_prec_gexp n (Nor v va) c = ''!''@(shows_prec n v '''')@''||''@(shows_prec n va c)" |
+  "shows_prec_gexp n (Null v) c = ''NULL(''@shows_prec n v c@'')''"
+
+end
 
 lemma "x \<ge> 100 = (x > 100 \<or> x = (100::nat))"
   by auto
