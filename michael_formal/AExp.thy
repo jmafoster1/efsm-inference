@@ -18,7 +18,7 @@ limit ourselves to a simple arithmetic of plus and minus as a proof of concept.
 *}
 
 theory AExp
-  imports Value VName "Show.Show_Instances"
+  imports Value VName "Show.Show_Instances" Utils
 begin
 
 type_synonym datastate = "vname \<Rightarrow> value option"
@@ -33,12 +33,15 @@ instantiation aexp :: "show" begin
 fun shows_prec_aexp :: "nat \<Rightarrow> aexp \<Rightarrow> char list \<Rightarrow> char list" where
   "shows_prec_aexp n (L i) c = shows_prec n i c" |
   "shows_prec_aexp n (V i) c = shows_prec n i c" |
-  "shows_prec_aexp a (Plus v va) c = (shows_prec a v '''')@''+''@(shows_prec a va c)"|
-  "shows_prec_aexp a (Minus v va) c = (shows_prec a v '''')@''-''@(shows_prec a va c)"
+  "shows_prec_aexp a (Plus v va) c = ''Plus''@(shows_prec a v '''')@'' ''@(shows_prec a va c)"|
+  "shows_prec_aexp a (Minus v va) c = ''Minus''@(shows_prec a v '''')@'' ''@(shows_prec a va c)"
 
-primrec shows_list_aexp :: "aexp list \<Rightarrow> char list \<Rightarrow> char list" where
-  "shows_list_aexp [] l1 = l1" |
-  "shows_list_aexp (h#t) l1 = (shows_prec 1 h '''')@(shows_list_aexp t l1)"
+primrec shows_list_aexp_aux :: "aexp list \<Rightarrow> string list" where
+  "shows_list_aexp_aux [] = ''''" |
+  "shows_list_aexp_aux (h#t) = (shows_prec 0 h '''')#(shows_list_aexp_aux t)"
+
+definition shows_list_aexp :: "aexp list \<Rightarrow> char list \<Rightarrow> char list" where
+"shows_list_aexp lst c = (join (shows_list_aexp_aux lst) '', '')@c"
 
 instance proof
   fix y :: aexp
@@ -63,13 +66,16 @@ next
   show "shows_list xs (r @ s) = shows_list xs r @ s"
   proof (induction xs)
     case Nil
-    then show ?case by simp
+    then show ?case by (simp add: shows_list_aexp_def)
   next
     case (Cons a xs)
-    then show ?case by simp
+    then show ?case by (simp add: shows_list_aexp_def)
   qed
 qed
 end
+
+lemma aexp_deterministic_string: "(show (x::aexp) = show y) = (x = y)"
+sorry
 
 fun value_plus :: "value option \<Rightarrow> value option \<Rightarrow> value option" (*infix "+" 40*) where
   "value_plus (Some (Num x)) (Some (Num y)) = Some (Num (x+y))" |
