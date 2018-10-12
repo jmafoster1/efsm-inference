@@ -47,7 +47,7 @@ definition t3 :: "transition" where
       \<rparr>"
 
 definition vend :: "statename efsm" where
-"vend \<equiv> \<lparr> 
+"vend \<equiv> \<lparr>
           s0 = q1,
           T = \<lambda> (a,b) .
                    if (a,b) = (q1,q2) then {t1} (* If we want to go from state 1 to state 2 then t1 will do that *)
@@ -57,7 +57,7 @@ definition vend :: "statename efsm" where
          \<rparr>"
 
 definition vend_equiv :: "statename efsm" where
-"vend_equiv \<equiv> \<lparr> 
+"vend_equiv \<equiv> \<lparr>
           s0 = q1,
           T = \<lambda> (a,b) .
                    if (a,b) = (q1,q2) then {t1} (* If we want to go from state 1 to state 2 then t1 will do that *)
