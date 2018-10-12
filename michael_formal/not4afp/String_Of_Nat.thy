@@ -8,6 +8,9 @@ lemma string_of_0: "(string_of_digit x = ''0'') = (x = 0)"
 lemma string_of_1: "(string_of_digit x = ''1'') = (x = 1)"
   by simp
 
+lemma string_of_suc_0: "string_of_digit (Suc 0) = ''1''"
+  by simp
+
 lemma string_of_2: "(string_of_digit x = ''2'') = (x = 2)"
   by simp
 

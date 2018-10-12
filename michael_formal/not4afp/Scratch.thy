@@ -110,7 +110,7 @@ lemma show_div: "showsp_nat 0 (x div 10) (string_of_digit (x mod 10)) = showsp_n
   apply (rule ext)
   by (metis append_equality append_same_eq showsp_append)
 
-lemma "showsp_nat 0 x = showsp_nat 0 y \<Longrightarrow> (showsp_nat 0 (x div 10) (string_of_digit (x mod 10))) = (showsp_nat 0 (y div 10) (string_of_digit (y mod 10)))"
+lemma induct_step: "showsp_nat 0 x = showsp_nat 0 y \<Longrightarrow> (showsp_nat 0 (x div 10) (string_of_digit (x mod 10))) = (showsp_nat 0 (y div 10) (string_of_digit (y mod 10)))"
   by (smt append_same_eq comp_apply length_showsp_nat_2 length_string_of_digit less_numeral_extra(4) mod_div_trivial mod_less mod_less_divisor shows_string_def showsp_append showsp_nat.simps zero_less_numeral)
 
 lemma "showsp_nat 0 x = showsp_nat 0 y \<Longrightarrow> x = y"
@@ -153,19 +153,7 @@ lemma last_string_of_digit: "xs @ [x] = showsp_nat 0 y [] \<Longrightarrow> [x] 
    apply (metis append1_eq_conv showsp_append)
   apply simp
   by (metis append1_eq_conv showsp_append)
-
-lemma "x \<noteq> y \<Longrightarrow> \<not> x < 10 \<Longrightarrow> \<not> y < 10 \<Longrightarrow> showsp_nat 0 x s \<noteq> showsp_nat 0 y s"
-proof (induct "showsp_nat 0 x s" rule: rev_induct)
-  case Nil
-  then show ?case
-    using length_showsp_nat by fastforce
-next
-  case (snoc xa a)
-  then show ?case
-    apply simp
-
-qed
-
+  
 
 lemma "x \<noteq> y \<Longrightarrow> show (x::nat) \<noteq> show y"
   apply safe
@@ -181,7 +169,7 @@ lemma "x \<noteq> y \<Longrightarrow> show (x::nat) \<noteq> show y"
    apply (simp del: string_of_digit.simps add: shows_string_def)
   using bar apply blast
    apply (simp del: string_of_digit.simps add: shows_string_def)
-
+  oops
 
 
 
@@ -200,20 +188,45 @@ lemma foo: "showsp_nat 0 (x div 10) (string_of_digit (x mod 10)) = showsp_nat 0 
     apply (simp only: move_string_of_digit)
     using fourth fifth
     apply (simp del: string_of_digit.simps add: shows_prec_nat_def)
-    sorry
+    oops
+
+lemma same_div_same_length: "(x :: nat) div 10 = (y :: nat) div 10 \<Longrightarrow> length (show x) = length (show y)"
+  proof-
+  fix x
+  show "(x :: nat) div 10 = (y :: nat) div 10 \<Longrightarrow> length (show x) = length (show y)"
+  proof (induct "y div 10")
+    case 0
+    then show ?case
+      apply (simp add: show_zero_nat)
+      apply (simp add: shows_prec_nat_def)
+      using length_string_of_digit shows_string_def showsp_nat.simps by auto
+  next
+    case (Suc m)
+    then show ?case
+      apply (simp add: shows_prec_nat_def)
+      by (smt Zero_not_Suc append_Nil2 div_less length_append length_string_of_digit move_string_of_digit o_def shows_string_def showsp_nat.simps)
+  qed
+qed
+
+lemma drop_last: "show (x div 10) @ string_of_digit (x mod 10) = show (y div 10) @ string_of_digit (y mod 10) \<Longrightarrow> string_of_digit (x mod 10) = string_of_digit (y mod 10)"
+  using append_equality move_string_of_digit by presburger
 
 lemma "show (x::nat) = show y \<Longrightarrow> x = y"
   apply (simp add: shows_prec_nat_def)
   apply (simp add: showsp_nat.simps)
-  apply (case_tac "x \<ge> 10")
-   apply (case_tac "y \<ge> 10")
+  apply (case_tac "x < 10")
+   apply (case_tac "y < 10")
     apply (simp del: string_of_digit.simps add: shows_string_def)
-  using foo apply blast
-   apply (simp del: string_of_digit.simps add: shows_string_def)
-  using bar apply blast
-   apply (case_tac "y \<ge> 10")
+  using string_of_digit_determinism apply blast
     apply (simp del: string_of_digit.simps add: shows_string_def)
    apply (metis bar)
+   apply (case_tac "y < 10")
+   apply (simp del: string_of_digit.simps add: shows_string_def)
+  using bar apply blast
   apply (simp del: string_of_digit.simps add: shows_string_def)
-  by (meson not_less string_of_digit_determinism)
+  apply (simp only: move_string_of_digit)
+  apply (simp only: shows_prec_nat_def)
+  oops
+
+
 end
