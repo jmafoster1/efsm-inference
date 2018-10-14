@@ -211,7 +211,11 @@ qed
 lemma drop_last: "show (x div 10) @ string_of_digit (x mod 10) = show (y div 10) @ string_of_digit (y mod 10) \<Longrightarrow> string_of_digit (x mod 10) = string_of_digit (y mod 10)"
   using append_equality move_string_of_digit by presburger
 
-lemma "show (x::nat) = show y \<Longrightarrow> x = y"
+lemma mod_div: "(x::nat) \<noteq> y \<Longrightarrow> x mod 10 = y mod 10 \<Longrightarrow> x div 10 \<noteq> y div 10"
+  by (metis mult_div_mod_eq)
+
+lemma "\<forall>(x::nat). (\<nexists>y. x \<noteq> y \<and> show x = show y)"
+  apply clarify
   apply (simp add: shows_prec_nat_def)
   apply (simp add: showsp_nat.simps)
   apply (case_tac "x < 10")
@@ -223,10 +227,42 @@ lemma "show (x::nat) = show y \<Longrightarrow> x = y"
    apply (case_tac "y < 10")
    apply (simp del: string_of_digit.simps add: shows_string_def)
   using bar apply blast
-  apply (simp del: string_of_digit.simps add: shows_string_def)
-  apply (simp only: move_string_of_digit)
-  apply (simp only: shows_prec_nat_def)
+  apply (simp del: string_of_digit.simps add: shows_string_def move_string_of_digit)
+  apply (case_tac "x mod 10 \<noteq> y mod 10")
+   apply (meson drop_last mod_less_divisor string_of_digit_determinism zero_less_numeral)
+  apply (simp del: string_of_digit.simps)
   oops
+
+lemma induct_step_2: "show (x::nat) = show (y::nat) \<Longrightarrow> show (x div 10) = show (y div 10)"
+  apply (simp add: shows_prec_nat_def)
+  by (smt append.right_neutral div_less length_showsp_nat_2 length_string_of_digit less_numeral_extra(4) o_def show_div shows_string_def showsp_nat.simps)
+
+lemma induct_step_3: "(show (x::nat) = show (y::nat) \<longrightarrow> x = y) \<Longrightarrow> x mod 10 = y mod 10 \<Longrightarrow> (show (x div 10) = show (y div 10) \<longrightarrow> x = y)"
+  oops
+
+lemma "show (x::nat) = show y \<Longrightarrow> x = y"
+proof-
+  assume premise: "show (x::nat) = show y"
+  show "x=y"
+    using premise apply (simp add: shows_prec_nat_def)
+ apply (simp add: showsp_nat.simps)
+  apply (case_tac "x < 10")
+   apply (case_tac "y < 10")
+    apply (simp del: string_of_digit.simps add: shows_string_def)
+  using string_of_digit_determinism apply blast
+    apply (simp del: string_of_digit.simps add: shows_string_def)
+   apply (metis bar)
+   apply (case_tac "y < 10")
+   apply (simp del: string_of_digit.simps add: shows_string_def)
+  using bar apply blast
+  apply (simp del: string_of_digit.simps add: shows_string_def move_string_of_digit)
+  apply (case_tac "x mod 10 \<noteq> y mod 10")
+   apply (meson drop_last mod_less_divisor string_of_digit_determinism zero_less_numeral)
+  apply (simp del: string_of_digit.simps)
+  apply (case_tac "x mod 10 = 0")
+  apply simp
+
+
 
 
 end
