@@ -1,5 +1,5 @@
 theory Transition
-imports GExp
+imports GExp "not4afp/Show_Unit"
 begin
 
 type_synonym guard = "gexp"
@@ -15,21 +15,21 @@ record transition =
 
 primrec outputs2string_aux :: "output_function list \<Rightarrow> nat \<Rightarrow> string list" where
   "outputs2string_aux [] _ = []" |
-  "outputs2string_aux (h#t) n = (''o''@(showsp_nat 1 n '''')@'':=''@(shows_prec 1 h ''''))#(outputs2string_aux t (n+1))"
+  "outputs2string_aux (h#t) n = (''o''@(show n)@'':=''@(show h))#(outputs2string_aux t (n+1))"
 
 definition outputs2string :: "output_function list \<Rightarrow> string" where
   "outputs2string lst = join (outputs2string_aux lst 1) '',''"
 
 fun updates2string_aux :: "update_function list \<Rightarrow> string list" where
   "updates2string_aux [] = []" |
-  "updates2string_aux ((r, u)#t) = ((shows_prec 1 r '''')@'':=''@(shows_prec 1 u ''''))#(updates2string_aux t)"
+  "updates2string_aux ((r, u)#t) = ((show r)@'':=''@(show u))#(updates2string_aux t)"
 
 definition updates2string :: "update_function list \<Rightarrow> string" where
   "updates2string lst = join (updates2string_aux lst) '',''"
 
 instantiation transition_ext:: ("show") "show" begin
 definition shows_prec_transition_ext :: "nat \<Rightarrow> 'a::show transition_scheme \<Rightarrow> char list \<Rightarrow> char list" where
-  "shows_prec_transition_ext n t c = (Label t)@'':''@(showsp_nat 1 (Arity t) '''')@'':[''@(shows_list (Guard t) '''')@'']/''@(outputs2string (Outputs t))@''[''@(updates2string (Updates t))@'']''@shows_prec n (more t) c"
+  "shows_prec_transition_ext n t l = (Label t)@'':''@(show (Arity t))@'':[''@(show (Guard t))@'']/''@(outputs2string (Outputs t))@''[''@(updates2string (Updates t))@'']''@show (more t)@l"
 
 primrec shows_list_transition_ext_aux :: "'a::show transition_scheme list \<Rightarrow> string list" where
   "shows_list_transition_ext_aux [] = ''''" |
@@ -57,7 +57,7 @@ next
 qed
 end
 
-lemma transition_string_not_empty: "(shows_prec n (t::transition) l) \<noteq> ''''"
+lemma transition_string_not_empty: "(show (t::transition)) \<noteq> ''''"
   apply (case_tac "(Label t) \<noteq> ''''")
    apply (simp add: shows_prec_transition_ext_def)
   by (simp add: shows_prec_transition_ext_def)
@@ -79,23 +79,52 @@ next
     by (simp add: \<open>Label x = Label y \<and> Arity x = Arity y \<and> Guard x = Guard y \<and> Outputs x = Outputs y \<and> Updates x = Updates y\<close>)
 qed
 
-lemma "((shows_prec n (y::transition) l) = (shows_prec n x l)) = (x = y)"
-proof
-  fix x y :: transition
-  fix n l
-  show "shows_prec n y l = shows_prec n x l \<Longrightarrow> x = y"
-    apply (simp add: shows_prec_transition_ext_def)
-    apply (simp add: transition_equality)
-   
+lemma shows_string_deterministic: "show (x::string) = show (y::string) \<Longrightarrow> x = y"
+proof (induct x)
+  case Nil
+  then show ?case
+    apply (simp add: shows_prec_list_def)
+    by (simp add: shows_list_char_def shows_string_def)
+next
+  case (Cons a x)
+  then show ?case
+    apply (simp add: shows_prec_list_def)
+    by (simp add: shows_list_char_def shows_string_def)
+qed
 
-  
+lemma show_transition_deterministic: "(show (y::('a::show) transition_scheme) = (show (x::'a transition_scheme))) \<Longrightarrow> (x = y)"
+  apply (simp add: shows_prec_transition_ext_def)
+  apply (case_tac "Label x = Label y")
+   apply simp
+   apply (case_tac "Arity x = Arity y")
+    apply simp
+    apply (case_tac "Guard x = Guard y")
+     apply simp
+    apply (case_tac "Outputs x = Outputs y")
+      apply simp
+      apply (case_tac "Updates x = Updates y")
+       apply simp
+  sorry 
+
+lemma "String.implode '''' = STR ''''"
+  by (metis String.implode_explode_eq zero_literal.rep_eq)
+
+lemma string_implode_deterministic: "(String.implode (show x) = String.implode (show y)) = ((x::('a::show) transition_scheme) = y)"
+proof
+  show "String.implode (show x) = String.implode (show y) \<Longrightarrow> x = y"
+    apply (simp add: shows_prec_transition_ext_def)
+    sorry
+next
+  show "x = y \<Longrightarrow> String.implode x = String.implode y"
+    by simp
+qed
 
 instantiation "transition_ext" :: ("show") linorder begin
 definition less_eq_transition_ext :: "'a::show transition_scheme \<Rightarrow> 'a transition_scheme \<Rightarrow> bool" where
-"less_eq_transition_ext t1 t2 = less_eq (String.implode (shows_prec 1 t1 '''')) (String.implode (shows_prec 1 t2 ''''))"
+"less_eq_transition_ext t1 t2 = less_eq (String.implode (show t1)) (String.implode (show t2))"
 
 definition less_transition_ext :: "'a::show transition_scheme \<Rightarrow> 'a transition_scheme \<Rightarrow> bool" where
-"less_transition_ext t1 t2 = less (String.implode (shows_prec 1 t1 '''')) (String.implode (shows_prec 1 t2 ''''))"
+"less_transition_ext t1 t2 = less (String.implode (show t1)) (String.implode (show t2))"
 
 instance proof
   fix x y::"'a::show transition_ext"
@@ -114,8 +143,11 @@ next
   fix x y::"'a::show transition_ext"
   show "x \<le> y \<Longrightarrow> y \<le> x \<Longrightarrow> x = y"
     apply (simp add: less_eq_transition_ext_def)
-    
+    apply (string_implode_deterministic show_transition_deterministic)
+next
+  fix x y::"'a::show transition_ext"
+  show "x \<le> y \<or> y \<le> x"
+    using less_eq_transition_ext_def by auto
+qed
 end
-
-
 end

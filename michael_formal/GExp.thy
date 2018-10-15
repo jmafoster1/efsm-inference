@@ -11,16 +11,16 @@ well as the expression of logical conjunction, disjunction, and negation in term
 *}
 
 theory GExp
-imports AExp Option_Logic Utils
+imports AExp Option_Logic Utils "not4afp/Show_Bool"
 begin
 datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null vname
 
 instantiation gexp :: "show" begin
 fun shows_prec_gexp :: "nat \<Rightarrow> gexp \<Rightarrow> char list \<Rightarrow> char list" where
   "shows_prec_gexp n (Bc i) c = shows_prec n i c" |
-  "shows_prec_gexp n (Eq v va) c = ''Eq(''@(shows_prec n v '''')@'' ''@(shows_prec n va '''')@'')''@c" |
-  "shows_prec_gexp n (Gt v va) c = ''Gt(''@(shows_prec n v '''')@'' ''@(shows_prec n va '''')@'')''@c" |
-  "shows_prec_gexp n (Nor v va) c = ''NOR(''@(shows_prec n v '''')@'' ''@(shows_prec n va '''')@'')''@c" |
+  "shows_prec_gexp n (Eq v va) c = ''(''@(shows_prec n v '''')@''=''@(shows_prec n va '''')@'')''@c" |
+  "shows_prec_gexp n (Gt v va) c = ''Gt(''@(shows_prec n v '''')@''>''@(shows_prec n va '''')@'')''@c" |
+  "shows_prec_gexp n (Nor v va) c = ''Nor(''@(shows_prec n v '''')@'' ''@(shows_prec n va '''')@'')''@c" |
   "shows_prec_gexp n (Null v) c = ''NULL(''@(shows_prec n v '''')@'')''@c"
 
 primrec shows_list_gexp_aux :: "gexp list \<Rightarrow> string list" where
@@ -90,8 +90,8 @@ proof (cases g)
 case (Bc x1)
   then show ?thesis
     apply (cases x1)
-     apply (simp add: shows_prec_bool_def shows_string_def)
-    by (simp add: shows_prec_bool_def shows_string_def)
+     apply (simp add: shows_string_def)
+    by (simp add: shows_string_def)
 next
   case (Eq x21 x22)
   then show ?thesis by simp
@@ -121,228 +121,23 @@ proof
     by simp
 qed
 
-lemma show_true: "show True = ''True''"
-  by (simp add: shows_prec_bool_def shows_string_def)
-
-lemma show_false: "show False = ''False''"
-  by (simp add: shows_prec_bool_def shows_string_def)
-
-lemma show_num: "show (Num x1) = show x1"
-proof (cases x1)
-  case (nonneg n)
-  then show ?thesis
-      by (simp add: shows_prec_int_def showsp_int_def showsp_nat.simps shows_string_def shows_prec_value_def)
+lemma deterministic_show_bool: "(show (a::gexp) = show (g::gexp)) \<Longrightarrow> (a = g)"
+proof (induct a)
+case (Bc x)
+  then show ?case sorry
 next
-  case (neg n)
-  then show ?thesis
-      by (simp add: shows_prec_int_def showsp_int_def showsp_nat.simps shows_string_def shows_prec_value_def)
-  qed
-
-lemma show_bool_fst: "hd (show (v::bool)) = CHR ''T'' \<or> hd (show (v::bool)) = CHR ''F''"
-  apply (simp add: shows_prec_bool_def showsp_bool_def shows_string_def)
-  apply (cases v)
-  by auto
-
-lemma prefix_notation: "(show (x::aexp) @ CHR '' '' # show (y::aexp) = show (x1a::aexp) @ CHR '' '' # show (x2::aexp)) = (x = x1a \<and> y = x2)"
-  sorry
-
-lemma prefix_notation_gexp: "(show (g1::gexp) @ CHR '' '' # show (g2::gexp) = show (g1'::gexp) @ CHR '' '' # show (g2'::gexp)) = (g1 = g1' \<and> g2 = g2')"
-  sorry
-
-lemma "(show (a::gexp) = show (g::gexp)) = (a = g)"
-proof (induction a)
-  case (Bc v)
-  then show ?case
-  proof (induction g)
-    case (Bc x)
-    then show ?case
-      apply simp
-      apply (simp add: shows_prec_bool_def showsp_bool_def shows_string_def)
-      using old.bool.simps(6) by fastforce
-  next
-    case (Eq x1a x2)
-    then show ?case
-    proof -
-      have f1: "CHR ''F'' \<noteq> CHR ''E''"
-        by simp
-      have "CHR ''T'' \<noteq> CHR ''E''"
-        by force
-      then show ?thesis
-        using f1 by (metis hd_append list.sel(1) list.simps(3) show_bool_fst shows_prec_gexp.simps(1) shows_prec_gexp.simps(2))
-    qed
-  next
-    case (Gt x1a x2)
-    then show ?case
-    proof -
-      have f1: "CHR ''F'' \<noteq> CHR ''G''"
-        by force
-      have "CHR ''T'' \<noteq> CHR ''G''"
-        by force
-      then show ?thesis
-        using f1 by (metis hd_append list.sel(1) list.simps(3) show_bool_fst shows_prec_gexp.simps(1) shows_prec_gexp.simps(3))
-    qed
-  next
-    case (Nor g1 g2)
-    then show ?case
-      apply simp
-      apply (cases v)
-       apply (simp add: show_true)
-      by (simp add: show_false)
-  next
-    case (Null x)
-    then show ?case
-      apply simp
-      apply (cases v)
-       apply (simp add: show_true)
-      by (simp add: show_false)
-  qed
+  case (Eq x1a x2)
+  then show ?case sorry
 next
-  case (Eq x y)
-  then show ?case
-  proof (induct g)
-    case (Bc x)
-    then show ?case
-      apply simp
-      apply (cases x)
-       apply (simp add: show_true)
-      by (simp add: show_false)
-  next
-    case (Eq x1a x2)
-    then show ?case
-      by (simp add: prefix_notation)
-  next
-    case (Gt x1a x2)
-    then show ?case by simp
-  next
-    case (Nor g1 g2)
-    then show ?case by simp
-  next
-    case (Null x)
-    then show ?case by simp
-  qed
+  case (Gt x1a x2)
+  then show ?case sorry
 next
-  case (Gt x y)
-  then show ?case
-  proof (induction g)
-    case (Bc x)
-    then show ?case 
-      apply simp
-      apply (cases x)
-       apply (simp add: show_true)
-      by (simp add: show_false)
-  next
-    case (Eq x1a x2)
-    then show ?case by simp
-  next
-    case (Gt x1a x2)
-    then show ?case
-      by (simp add: prefix_notation)
-  next
-    case (Nor g1 g2)
-    then show ?case by simp
-  next
-    case (Null x)
-    then show ?case by simp
-  qed
+  case (Nor a1 a2)
+  then show ?case sorry
 next
-  case (Nor g1 g2)
-  then show ?case
-  proof (induction g)
-    case (Bc x)
-    then show ?case
-      apply simp
-      apply (cases x)
-       apply (simp add: show_true)
-      by (simp add: show_false)
-  next
-    case (Eq x1a x2)
-    then show ?case by simp
-  next
-    case (Gt x1a x2)
-    then show ?case by simp
-  next
-    case (Nor g1' g2')
-    then show ?case
-      by (simp add: prefix_notation_gexp)
-  next
-    case (Null x)
-    then show ?case by simp
-  qed
-next
-  case (Null g1)
-  then show ?case
-  proof (induction g)
-    case (Bc x)
-    then show ?case
-      apply (cases x)
-       apply (simp add: show_true)
-      by (simp add: show_false)
-  next
-    case (Eq x1a x2)
-    then show ?case by simp
-  next
-    case (Gt x1a x2)
-    then show ?case by simp
-  next
-    case (Nor g1 g2)
-    then show ?case by simp
-  next
-    case (Null x)
-    then show ?case
-      apply simp
-  qed
-qed
-
-lemma "shows_list ((a::gexp) # g1) l = shows_list [g] l \<Longrightarrow> a = g \<and> g1 = []"
-proof (induction g1)
-  case Nil
-  then show ?case      
-    apply (simp add: shows_list_gexp_def)
- 
-next
-  case (Cons a g1)
+  case (Null x)
   then show ?case sorry
 qed
-
-
-
-lemma "(shows_list (g1::gexp list) l = shows_list g2 l) = (g1 = g2)"
-proof
-  fix g1 :: "gexp list"
-  fix l
-  show "shows_list g1 l = shows_list g2 l \<Longrightarrow> g1 = g2"
-  proof (induct g2)
-    case Nil
-    then show ?case
-      apply (simp add: shows_list_gexp_def)
-      apply (case_tac "shows_list_gexp_aux g1 = []")
-       apply (simp add: empty_guard_list)
-      by (simp add: empty_guard_list show_guard_list_empty)
-    next
-      case (Cons g gs)
-      then show ?case
-      proof (induction gs)
-        case Nil
-        then show ?case
-        proof (induction g1)
-          case Nil
-          then show ?case
-            by (simp add: show_g_not_empty shows_list_gexp_def)
-        next
-          case (Cons a g1)
-          then show ?case
-            apply simp
-        qed
-
-      next
-        case (Cons a gs)
-        then show ?case sorry
-      qed
-
-    qed
-
-lemma "x \<ge> 100 = (x > 100 \<or> x = (100::nat))"
-  by auto
 
 syntax (xsymbols)
   Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "=" 60*)

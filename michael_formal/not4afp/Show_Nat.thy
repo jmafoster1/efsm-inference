@@ -12,9 +12,9 @@ fun natToString :: "nat \<Rightarrow> string" where
   "natToString 0 = ''''" |
   "natToString n = (natToString (n div 10)) @ [(sod n)]"
 
-fun "show" :: "nat \<Rightarrow> string" where
-  "show 0 = ''0''" |
-  "show n = natToString n"
+fun "showNat" :: "nat \<Rightarrow> string" where
+  "showNat 0 = ''0''" |
+  "showNat n = natToString n"
 
 lemma x_div_ten_zero: "((x::nat) div 10 = 0) = (x < 10)"
 proof
@@ -34,7 +34,7 @@ next
   then show ?case by simp
 qed
 
-lemma x_neq_0: "x \<noteq> 0 \<Longrightarrow> show x \<noteq> ''0''"
+lemma x_neq_0: "x \<noteq> 0 \<Longrightarrow> showNat x \<noteq> ''0''"
 proof (induct x)
   case 0
   then show ?case by simp
@@ -75,7 +75,7 @@ lemma n_mod_10: "(Suc n) mod 10 \<noteq> Suc (n mod 10) \<Longrightarrow> (Suc n
 lemma sub4show_y: "(natToString (Suc x div 10) @ [sod (Suc x)] = show y) = (show y = natToString (Suc x div 10) @ [sod (Suc x)])"
   by auto
 
-lemma x_neq_1: "x \<noteq> 1 \<Longrightarrow> show x \<noteq> ''1''"
+lemma x_neq_1: "x \<noteq> 1 \<Longrightarrow> showNat x \<noteq> ''1''"
   proof (induct x)
   case 0
   then show ?case by simp
@@ -106,120 +106,85 @@ next
     by simp
 qed
 
-lemma show_2: "show 2 = ''2''"
-  apply (simp add: numeral_2_eq_2 sod_def char_of_def)
-  by presburger
-
-lemma show_3: "show 3 = ''3''"
-  apply (simp only: eval_nat_numeral)
-  by (simp add: sod_def char_of_def)
-
-lemma show_4: "show 4 = ''4''"
-  apply (simp only: eval_nat_numeral)
-  apply (simp only: show.simps natToString.simps)
-  by (simp add: sod_def char_of_def)
-
-lemma show_5: "show 5 = ''5''"
-  apply (simp only: eval_nat_numeral)
-  apply (simp only: show.simps natToString.simps)
-  by (simp add: sod_def char_of_def)
-
 lemma x_div_10_0: "(x::nat) \<noteq> 0 \<Longrightarrow> x \<noteq> 1 \<Longrightarrow> x \<noteq> 2 \<Longrightarrow> x \<noteq> 3 \<Longrightarrow> x \<noteq> 4 \<Longrightarrow> x \<noteq> 5 \<Longrightarrow> x \<noteq> 6 \<Longrightarrow> x \<noteq> 7 \<Longrightarrow> x \<noteq> 8 \<Longrightarrow> x \<noteq> 9 \<Longrightarrow> (x \<ge> 10)"
   by simp
 
-lemma test: "(x div 10 = 0) = (length (show x) = 1)"
-  apply (case_tac "x div 10 = 0")
-  apply (case_tac "x=0")
-   apply simp
-  apply (case_tac "x=1")
-   apply simp
-  apply (case_tac "x=2")
-   apply (simp add: sod_def show_2)
-  apply (case_tac "x=3")
-   apply (simp add: sod_def show_3)
-  apply (case_tac "x=4")
-   apply (simp add: sod_def show_4)
-  apply (case_tac "x=5")
-   apply (simp add: sod_def show_5)
-  apply (case_tac "x=6")
-  apply (simp only: eval_nat_numeral)
-  apply (simp only: show.simps natToString.simps)
-   apply (simp add: sod_def char_of_def)
-  apply (case_tac "x=7")
-  apply (simp only: eval_nat_numeral)
-  apply (simp only: show.simps natToString.simps)
-   apply (simp add: sod_def char_of_def)
-  apply (case_tac "x=8")
-  apply (simp only: eval_nat_numeral)
-  apply (simp only: show.simps natToString.simps)
-   apply (simp add: sod_def char_of_def)
-  apply (case_tac "x=9")
-  apply (simp only: eval_nat_numeral)
-  apply (simp only: show.simps natToString.simps)
-   apply (simp add: sod_def char_of_def)
-   apply simp
-   apply presburger
-  apply simp
-  apply (cases x)
-   apply simp
-  apply simp
-  by (simp add: natToString_0)
-
-lemma length_equality:  "x div 10 = y div 10 \<Longrightarrow> length (show y) = length (show x)"
-    apply (cases x)
-     apply simp
-     apply (cases y)
-      apply simp
-     apply simp
-    apply simp
-    apply (cases y)
-     apply simp
-  by simp
-
-lemma min_length: "Suc 0 \<le> length (Show_Nat.show y)"
-  by (metis eq_iff le0 length_0_conv length_Cons natToString_0 not_less_eq_eq show.elims)
-
 lemma x_div_10: "Suc x div 10 \<noteq> x div 10 \<Longrightarrow> Suc x div 10 = Suc (x div 10)"
   by simp
-
-lemma "x div 10 \<noteq> y div 10 \<Longrightarrow> length (show y) \<noteq> length (show x)"
-  apply (case_tac "x < y")
-  oops
 
 lemma sod_x_equality: "x div 10 = y div 10 \<Longrightarrow> sod x = sod y \<Longrightarrow> x = y"
   apply (simp add: sod_def)
   by (metis mult_div_mod_eq)
 
-lemma "x \<noteq> y \<Longrightarrow> show x \<noteq> show y"
-proof (induct "show x" rule: rev_induct)
-  case Nil
-  then show ?case by (metis One_nat_def list.size(3) min_length not_one_le_zero)
-next
-  case (snoc as a)
-  then show ?case
-    apply simp
-    apply (cases x)
-     apply (metis show.simps(1) x_neq_0)
-    apply simp
-    sorry
-qed
+instantiation nat :: "show" begin
+definition shows_prec_nat :: "nat \<Rightarrow> nat \<Rightarrow> char list \<Rightarrow> char list" where
+  "shows_prec_nat p n l = showNat n @ l"
 
-lemma "show x = show y \<Longrightarrow> x = y"
+fun shows_list_nat :: "nat list \<Rightarrow> char list \<Rightarrow> char list" where
+  "shows_list_nat [] l = l" |
+  "shows_list_nat [n] l = shows_prec 0 n l" |
+  "shows_list_nat (h#t) l = (shows_prec 0 h '''') @ (shows_list_nat t l)"
+
+instance proof
+  fix x :: nat
+  fix p r s
+  show "shows_prec p x (r @ s) = shows_prec p x r @ s"
+    by (simp add: shows_prec_nat_def)
+next
+  fix xs :: "nat list"
+  fix p r s
+  show "shows_list xs (r @ s) = shows_list xs r @ s"
+  proof (induction xs)
+case Nil
+  then show ?case by simp
+next
+  case (Cons a xs)
+  then show ?case
+  proof (induct xs)
+case Nil
+  then show ?case
+    by (simp add: shows_prec_nat_def)
+next
+  case (Cons a xs)
+  then show ?case
+    by simp
+qed
+qed
+qed
+end
+lemma show_nat_deterministic: "show (v1::nat) = show (v2::nat) \<Longrightarrow> v1 = v2"
+  sorry
+
+lemma show_nat_not_neg: "hd (show (x::nat)) \<noteq> CHR ''-''"
 proof (induct x)
   case 0
   then show ?case
-    using x_neq_0 by auto
+    by (simp add: shows_prec_nat_def)
 next
-  case (Suc m)
+  case (Suc x)
   then show ?case
-    apply simp
-    apply (cases y)
-     apply (metis Suc.prems show.simps(1) x_neq_0)
-    apply simp
-    apply clarify
-    apply (case_tac "(Suc m div 10) = (Suc nat div 10)")
-     apply simp
-    using sod_x_equality apply blast
+    apply (simp add: shows_prec_nat_def)
+    sorry
+qed
+
+lemma show_nat_not_quoted: "hd (show (n :: nat)) = CHR ''0'' \<or>
+hd (show (n :: nat)) = CHR ''1'' \<or>
+hd (show (n :: nat)) = CHR ''2'' \<or>
+hd (show (n :: nat)) = CHR ''3'' \<or>
+hd (show (n :: nat)) = CHR ''4'' \<or>
+hd (show (n :: nat)) = CHR ''5'' \<or>
+hd (show (n :: nat)) = CHR ''6'' \<or>
+hd (show (n :: nat)) = CHR ''7'' \<or>
+hd (show (n :: nat)) = CHR ''8'' \<or>
+hd (show (n :: nat)) = CHR ''9''"
+proof (induct n)
+  case 0
+  then show ?case
+    by (simp add: shows_prec_nat_def)
+next
+  case (Suc n)
+  then show ?case
+    apply (simp add: shows_prec_nat_def)
     sorry
 qed
 end

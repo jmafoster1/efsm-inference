@@ -18,7 +18,7 @@ limit ourselves to a simple arithmetic of plus and minus as a proof of concept.
 *}
 
 theory AExp
-  imports Value VName "Show.Show_Instances" Utils
+  imports Value VName Utils
 begin
 
 type_synonym datastate = "vname \<Rightarrow> value option"
@@ -33,8 +33,8 @@ instantiation aexp :: "show" begin
 fun shows_prec_aexp :: "nat \<Rightarrow> aexp \<Rightarrow> char list \<Rightarrow> char list" where
   "shows_prec_aexp n (L i) c = shows_prec n i c" |
   "shows_prec_aexp n (V i) c = shows_prec n i c" |
-  "shows_prec_aexp a (Plus v va) c = ''Plus''@(shows_prec a v '''')@'' ''@(shows_prec a va c)"|
-  "shows_prec_aexp a (Minus v va) c = ''Minus''@(shows_prec a v '''')@'' ''@(shows_prec a va c)"
+  "shows_prec_aexp a (Plus v va) c = ''(''@(shows_prec a v '''')@''+''@(shows_prec a va '''')@'')''@c"|
+  "shows_prec_aexp a (Minus v va) c = ''(''@(shows_prec a v '''')@''-''@(shows_prec a va '''')@'')''@c"
 
 primrec shows_list_aexp_aux :: "aexp list \<Rightarrow> string list" where
   "shows_list_aexp_aux [] = ''''" |
@@ -73,9 +73,6 @@ next
   qed
 qed
 end
-
-lemma aexp_deterministic_string: "(show (x::aexp) = show y) = (x = y)"
-sorry
 
 fun value_plus :: "value option \<Rightarrow> value option \<Rightarrow> value option" (*infix "+" 40*) where
   "value_plus (Some (Num x)) (Some (Num y)) = Some (Num (x+y))" |
@@ -125,4 +122,19 @@ syntax
   "_maplet"  :: "['a, 'a] \<Rightarrow> maplet"             ("_ /:=/ _")
   "_maplets" :: "['a, 'a] \<Rightarrow> maplet"             ("_ /[:=]/ _")
   "_Map"     :: "maplets \<Rightarrow> 'a \<rightharpoonup> 'b"            ("(1<_>)")
+
+lemma aexp_deterministic_string: "(show (x::aexp) = show y) = (x = y)"
+proof (induct x)
+  case (L x)
+  then show ?case sorry    
+next
+  case (V x)
+  then show ?case sorry
+next
+  case (Plus x1 x2)
+  then show ?case sorry
+next
+  case (Minus x1 x2)
+  then show ?case sorry
+qed
 end

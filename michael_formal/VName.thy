@@ -1,5 +1,5 @@
 theory VName
-imports "Show.Show_Instances" Utils
+imports Utils "not4afp/Show_Nat"
 begin
 datatype vname = I nat | R nat
 
@@ -40,39 +40,13 @@ next
 qed
 end
 
-lemma show_nat_0: "show (0::nat) = ''0''"
-  by (simp add: shows_prec_nat_def showsp_nat.simps shows_string_def)
-
-lemma "show v1 \<noteq> show (Suc v1)"
-  apply (simp add: shows_prec_nat_def)
-  sorry
-
-lemma "\<not> v2 < (10::nat) \<Longrightarrow> ''0'' \<noteq> show v2"
-  apply (simp add: shows_prec_nat_def)
-  sorry
-
-lemma nat_deterministic_string: "(show (v1::nat) = show (v2::nat)) = (v1 = v2)"
-  apply (case_tac "v1 < 10")
-   apply (case_tac "v2 < 10")
-    apply (simp add: shows_prec_nat_def)
-    apply (simp add: showsp_nat.simps)
-    apply (simp add: shows_string_def)
-    apply presburger
+lemma show_vname_deterministic: "show (v1::vname) = show (v2::vname) \<Longrightarrow> v1 = v2"
+  apply (cases v1)
+   apply (cases v2)
+    apply (simp add: show_nat_deterministic)
    apply simp
-   apply (case_tac "v1 = 0")
-    apply (simp add: show_nat_0)
+   apply (cases v2)
+   apply simp
+  by (simp add: show_nat_deterministic)
 
-   
-
-lemma vname_deterministic_string: "(show (v1::vname) = show (v2::vname)) = (v1 = v2)"
-proof (cases v1)
-  case (I x1)
-  then show ?thesis
-    apply (cases v2)
-     apply simp
-
-next
-  case (R x2)
-  then show ?thesis sorry
-qed
 end
