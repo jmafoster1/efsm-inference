@@ -36,17 +36,12 @@ fun shows_prec_aexp :: "nat \<Rightarrow> aexp \<Rightarrow> char list \<Rightar
   "shows_prec_aexp a (Plus v va) c = ''(''@(shows_prec a v '''')@''+''@(shows_prec a va '''')@'')''@c"|
   "shows_prec_aexp a (Minus v va) c = ''(''@(shows_prec a v '''')@''-''@(shows_prec a va '''')@'')''@c"
 
-primrec shows_list_aexp_aux :: "aexp list \<Rightarrow> string list" where
-  "shows_list_aexp_aux [] = ''''" |
-  "shows_list_aexp_aux (h#t) = (shows_prec 0 h '''')#(shows_list_aexp_aux t)"
+fun shows_list_aexp :: "aexp list \<Rightarrow> char list \<Rightarrow> char list" where
+  "shows_list_aexp [] l = l" |
+  "shows_list_aexp [u] l = shows_prec 0 u l" |
+  "shows_list_aexp (h#t) l = (shows_prec 0 h '''')@'',''@(shows_list_aexp t l)"
 
-definition shows_list_aexp :: "aexp list \<Rightarrow> char list \<Rightarrow> char list" where
-"shows_list_aexp lst c = (join (shows_list_aexp_aux lst) '', '')@c"
-
-instance proof
-  fix y :: aexp
-  fix r s p
-  show "shows_prec p y (r @ s) = shows_prec p y r @ s"
+lemma shows_prec_aexp_cases: "shows_prec p (y::aexp) (r @ s) = shows_prec p y r @ s"
   proof (induction y)
     case (L x)
     then show ?case by (simp add: shows_prec_append)
@@ -60,16 +55,29 @@ instance proof
     case (Minus y1 y2)
     then show ?case by (simp add: shows_prec_append)
   qed
+
+instance proof
+  fix y :: aexp
+  fix r s p
+  show "shows_prec p y (r @ s) = shows_prec p y r @ s"
+    by (simp add: shows_prec_aexp_cases)
 next
   fix xs :: "aexp list"
   fix r s p
   show "shows_list xs (r @ s) = shows_list xs r @ s"
   proof (induction xs)
     case Nil
-    then show ?case by (simp add: shows_list_aexp_def)
+    then show ?case by simp
   next
     case (Cons a xs)
-    then show ?case by (simp add: shows_list_aexp_def)
+    then show ?case
+    proof (induct xs)
+      case Nil
+      then show ?case by (simp add: shows_prec_aexp_cases)
+    next
+      case (Cons a xs)
+      then show ?case by simp
+    qed
   qed
 qed
 end
@@ -124,17 +132,5 @@ syntax
   "_Map"     :: "maplets \<Rightarrow> 'a \<rightharpoonup> 'b"            ("(1<_>)")
 
 lemma aexp_deterministic_string: "(show (x::aexp) = show y) = (x = y)"
-proof (induct x)
-  case (L x)
-  then show ?case sorry    
-next
-  case (V x)
-  then show ?case sorry
-next
-  case (Plus x1 x2)
-  then show ?case sorry
-next
-  case (Minus x1 x2)
-  then show ?case sorry
-qed
+  oops
 end

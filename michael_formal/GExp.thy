@@ -23,17 +23,12 @@ fun shows_prec_gexp :: "nat \<Rightarrow> gexp \<Rightarrow> char list \<Rightar
   "shows_prec_gexp n (Nor v va) c = ''Nor(''@(shows_prec n v '''')@'' ''@(shows_prec n va '''')@'')''@c" |
   "shows_prec_gexp n (Null v) c = ''NULL(''@(shows_prec n v '''')@'')''@c"
 
-primrec shows_list_gexp_aux :: "gexp list \<Rightarrow> string list" where
-  "shows_list_gexp_aux [] = ''''" |
-  "shows_list_gexp_aux (h#t) = (shows_prec 0 h '''')#(shows_list_gexp_aux t)"
+fun shows_list_gexp :: "gexp list \<Rightarrow> char list \<Rightarrow> char list" where
+  "shows_list_gexp [] l = l" |
+  "shows_list_gexp [u] l = shows_prec 0 u l" |
+  "shows_list_gexp (h#t) l = (shows_prec 0 h '''')@'',''@(shows_list_gexp t l)"
 
-definition shows_list_gexp :: "gexp list \<Rightarrow> char list \<Rightarrow> char list" where
-"shows_list_gexp lst c = (join (shows_list_gexp_aux lst) '', '')@c"
-
-instance proof
-  fix x::gexp
-  fix p r s
-  show "shows_prec p x (r @ s) = shows_prec p x r @ s"
+lemma shows_prec_cases:  "shows_prec p (x::gexp) (r @ s) = shows_prec p x r @ s"
   proof (cases x)
     case (Bc x1)
     then show ?thesis by (simp add: shows_prec_append)
@@ -51,39 +46,34 @@ instance proof
     then show ?thesis
       by simp
   qed
+
+instance proof
+  fix x::gexp
+  fix p r s
+  show "shows_prec p x (r @ s) = shows_prec p x r @ s"
+    by (simp add: shows_prec_cases)
 next
   fix xs::"gexp list"
   fix p r s
   show "shows_list xs (r @ s) = shows_list xs r @ s"
   proof (induction xs)
     case Nil
-    then show ?case by (simp add: shows_list_gexp_def)
+    then show ?case by simp
   next
     case (Cons a xs)
-    then show ?case by (simp add: shows_list_gexp_def)
+    then show ?case
+    proof (induct xs)
+      case Nil
+      then show ?case
+        by (simp add: shows_prec_cases)
+    next
+      case (Cons a xs)
+      then show ?case
+        by simp
+    qed
   qed
 qed
 end
-
-lemma empty_guard_list: "(shows_list_gexp_aux g1 = []) = (g1 = [])"
-proof
-  show "shows_list_gexp_aux g1 = [] \<Longrightarrow> g1 = []"
-  proof (induct g1)
-    case Nil
-    then show ?case by simp
-  next
-    case (Cons a g1)
-    then show ?case by simp
-  qed
-  show "g1 = [] \<Longrightarrow> shows_list_gexp_aux g1 = []"
-  proof (induct g1)
-    case Nil
-    then show ?case by simp
-  next
-    case (Cons a g1)
-    then show ?case by simp
-  qed
-qed
 
 lemma show_g_not_empty: "show (g::gexp) \<noteq> ''''"
 proof (cases g)
@@ -106,38 +96,8 @@ next
   then show ?thesis by simp
 qed
 
-lemma show_guard_list_empty: "(join (shows_list_gexp_aux g1) '', '' = []) = (g1 = [])"
-proof
-  show "join (shows_list_gexp_aux g1) '', '' = [] \<Longrightarrow> g1 = []"
-  proof (induction g1)
-    case Nil
-    then show ?case by simp
-  next
-    case (Cons a g1)
-    then show ?case
-      using join.elims show_g_not_empty by force
-  qed
-  show "g1 = [] \<Longrightarrow> join (shows_list_gexp_aux g1) '', '' = [] "
-    by simp
-qed
-
 lemma deterministic_show_bool: "(show (a::gexp) = show (g::gexp)) \<Longrightarrow> (a = g)"
-proof (induct a)
-case (Bc x)
-  then show ?case sorry
-next
-  case (Eq x1a x2)
-  then show ?case sorry
-next
-  case (Gt x1a x2)
-  then show ?case sorry
-next
-  case (Nor a1 a2)
-  then show ?case sorry
-next
-  case (Null x)
-  then show ?case sorry
-qed
+  oops
 
 syntax (xsymbols)
   Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "=" 60*)
