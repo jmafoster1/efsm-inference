@@ -75,6 +75,24 @@ next
 qed
 end
 
+lemma string_implode_gexp_deterministic: "String.implode (show (x::gexp)) = String.implode (show (y::gexp)) \<Longrightarrow> show x = show y"
+proof (induct x)
+case (Bc x)
+  then show ?case sorry
+next
+  case (Eq x1a x2)
+  then show ?case sorry
+next
+  case (Gt x1a x2)
+  then show ?case sorry
+next
+  case (Nor x1 x2)
+  then show ?case sorry
+next
+  case (Null x)
+  then show ?case sorry
+qed
+
 lemma show_g_not_empty: "show (g::gexp) \<noteq> ''''"
 proof (cases g)
 case (Bc x1)
