@@ -18,7 +18,7 @@ limit ourselves to a simple arithmetic of plus and minus as a proof of concept.
 *}
 
 theory AExp
-  imports Value VName Utils
+  imports Value VName
 begin
 
 type_synonym datastate = "vname \<Rightarrow> value option"

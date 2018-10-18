@@ -1,5 +1,5 @@
 theory Value
-imports "not4afp/Show_Nat" "not4afp/Show_Int" Utils
+imports "not4afp/Show_Nat" "not4afp/Show_Int"
 begin
 datatype "value" = Num int | Str String.literal
 
@@ -46,12 +46,10 @@ fun shows_prec_value :: "nat \<Rightarrow> value \<Rightarrow> char list \<Right
   "shows_prec_value n (Num v) l =  shows_prec n v l" |
   "shows_prec_value n (Str v) l = ''\"''@shows_prec n v ''''@''\"''@l"
 
-primrec shows_list_value_aux :: "value list \<Rightarrow> string list" where
-  "shows_list_value_aux [] = ''''" |
-  "shows_list_value_aux (h#t) = (shows_prec 0 h '''')#(shows_list_value_aux t)"
-
-definition shows_list_value :: "value list \<Rightarrow> char list \<Rightarrow> char list" where
-"shows_list_value lst c = (join (shows_list_value_aux lst) '', '')@c"
+fun shows_list_value :: "value list \<Rightarrow> char list \<Rightarrow> char list" where
+  "shows_list_value [] l = l" |
+  "shows_list_value [u] l = shows_prec 0 u l" |
+  "shows_list_value (h#t) l = (shows_prec 0 h '''')@'',''@(shows_list_value t l)"
 
 (* apply standard = proof *)
 (* or just do the types in "fix" *)
@@ -69,12 +67,23 @@ next
   fix xs :: "value list"
   fix r s
   show "shows_list xs (r @ s) = shows_list xs r @ s"
-  proof (induction "xs")
+  proof (induction xs)
     case Nil
-    then show ?case by (simp add: shows_list_value_def)
+    then show ?case by simp
   next
     case (Cons a xs)
-    then show ?case by (simp add: shows_list_value_def)
+    then show ?case
+    proof (induct xs)
+      case Nil
+      then show ?case
+        apply (simp add: shows_prec_list_def)
+        apply (cases a)
+         apply (simp add: shows_prec_int_def shows_string_def shows_prec_nat_def)
+        by (simp)
+    next
+      case (Cons a xs)
+      then show ?case by simp
+    qed
   qed
 qed
 end
@@ -115,7 +124,7 @@ next
   next
   case (Str x)
   then show ?case
-    by (simp add: literal.explode_inject shows_prec_literal_def)
+    sorry
 qed
 qed
 end
