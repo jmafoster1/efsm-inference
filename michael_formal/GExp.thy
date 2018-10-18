@@ -75,24 +75,6 @@ next
 qed
 end
 
-lemma string_implode_gexp_deterministic: "String.implode (show (x::gexp)) = String.implode (show (y::gexp)) \<Longrightarrow> show x = show y"
-proof (induct x)
-case (Bc x)
-  then show ?case sorry
-next
-  case (Eq x1a x2)
-  then show ?case sorry
-next
-  case (Gt x1a x2)
-  then show ?case sorry
-next
-  case (Nor x1 x2)
-  then show ?case sorry
-next
-  case (Null x)
-  then show ?case sorry
-qed
-
 lemma show_g_not_empty: "show (g::gexp) \<noteq> ''''"
 proof (cases g)
 case (Bc x1)
@@ -262,5 +244,96 @@ lemma mutually_exclusive_symmetric: "mutually_exclusive x y \<Longrightarrow> mu
 
 lemma not_mutually_exclusive_true: "satisfiable x = (\<not> mutually_exclusive x (Bc True))"
   by (simp add: mutually_exclusive_def satisfiable_def)
+
+lemma show_gexp_determinism: "show (g1::gexp) = show (g2::gexp) \<Longrightarrow> g1 = g2"
+proof (induct g1)
+case (Bc v)
+  then show ?case
+  proof (induct g2)
+    case (Bc x)
+    then show ?case
+      apply simp
+      using list.inject by fastforce
+  next
+    case (Eq a1 a2)
+    then show ?case
+      apply (cases v)
+       apply simp
+      by simp
+  next
+    case (Gt x1a x2)
+    then show ?case
+      apply (cases v)
+       apply simp
+      by simp
+  next
+    case (Nor g21 g22)
+    then show ?case
+      apply (cases v)
+       apply simp
+      by simp
+  next
+    case (Null x)
+    then show ?case
+      apply (cases v)
+       apply simp
+      by simp
+  qed
+next
+  case (Eq a1 a2)
+  then show ?case
+  proof (induct g2)
+    case (Bc x)
+    then show ?case
+      apply (cases x)
+      by auto
+  next
+    case (Eq x1 x2)
+    then show ?case
+      apply (case_tac "show a1 = show x1")
+       apply (simp add: show_aexp_determinism)
+      sorry
+      
+
+  next
+    case (Gt x1a x2)
+    then show ?case sorry
+  next
+    case (Nor g21 g22)
+    then show ?case sorry
+  next
+    case (Null x)
+    then show ?case sorry
+  qed
+next
+  case (Gt a1 a2)
+  then show ?case
+    sorry
+next
+  case (Null x)
+  then show ?case
+  proof (induct g2)
+    case (Bc x)
+    then show ?case
+      apply (cases x)
+      by auto
+  next
+    case (Eq x1a x2)
+    then show ?case
+      by simp
+  next
+    case (Gt x1a x2)
+    then show ?case
+      by simp
+  next
+    case (Nor g21 g22)
+    then show ?case
+      by simp
+  next
+    case (Null v)
+    then show ?case
+      by (simp add: show_vname_deterministic)
+  qed
+qed
 
 end

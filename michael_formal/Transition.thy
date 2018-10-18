@@ -20,12 +20,10 @@ primrec outputs2string_aux :: "output_function list \<Rightarrow> nat \<Rightarr
 definition outputs2string :: "output_function list \<Rightarrow> string" where
   "outputs2string lst = join (outputs2string_aux lst 1) '',''"
 
-fun updates2string_aux :: "update_function list \<Rightarrow> string list" where
-  "updates2string_aux [] = []" |
-  "updates2string_aux ((r, u)#t) = ((show r)@'':=''@(show u))#(updates2string_aux t)"
-
-definition updates2string :: "update_function list \<Rightarrow> string" where
-  "updates2string lst = join (updates2string_aux lst) '',''"
+fun updates2string :: "update_function list \<Rightarrow> string" where
+  "updates2string [] = ''''" |
+  "updates2string [(r, u)] = ((show r)@'':=''@(show u))" |
+  "updates2string ((r, u)#t) = ((show r)@'':=''@(show u))@(updates2string t)"
 
 lemma transition_equality: "((x::transition) = y) = ((Label x) = (Label y) \<and>
                                 (Arity x) = (Arity y) \<and>
@@ -78,6 +76,7 @@ next
   qed
 qed
 
+(* This uses an smt but I'm very very glad it's true! *)
 lemma implode_true: "String.implode ''True'' = STR ''True''"
   apply (simp add: String.implode_def)
   by (metis Literal.rep_eq literal.explode_inverse zero_literal.rep_eq)
@@ -86,44 +85,14 @@ lemma implode_x_equality: "(\<forall>x. x \<in> set X \<longrightarrow> String.a
 proof (induct X)
   case Nil
   then show ?case
-    sorry
+    apply (simp add: string_implode_empty)
+    by (metis Nil_is_map_conv String.explode_implode_eq zero_literal.rep_eq)
 next
   case (Cons a x)
-  then show ?case sorry
+  then show ?case
+    apply simp
+    by (smt Cons.prems(2) String.explode_implode_eq String.implode_explode_eq String.not_digit7_ascii_of list.map(2) literal.explode_cases mem_Collect_eq)
 qed
-
-lemma sod_values: "sod g = CHR ''0'' \<or>
-       sod g = CHR ''1'' \<or>
-       sod g = CHR ''2'' \<or>
-       sod g = CHR ''3'' \<or>
-       sod g = CHR ''4'' \<or>
-       sod g = CHR ''5'' \<or>
-       sod g = CHR ''6'' \<or>
-       sod g = CHR ''7'' \<or>
-       sod g = CHR ''8'' \<or>
-       sod g = CHR ''9''"
-  apply (simp add: sod_def)
-  apply (case_tac "g mod 10 = 0")
-   apply (simp add: char_of_def)
-  apply (case_tac "g mod 10 = 1")
-   apply (simp add: char_of_def)
-  apply (case_tac "g mod 10 = 2")
-   apply (simp add: char_of_def)
-  apply (case_tac "g mod 10 = 3")
-   apply (simp add: char_of_def)
-  apply (case_tac "g mod 10 = 4")
-   apply (simp add: char_of_def)
-  apply (case_tac "g mod 10 = 5")
-   apply (simp add: char_of_def)
-  apply (case_tac "g mod 10 = 6")
-   apply (simp add: char_of_def)
-  apply (case_tac "g mod 10 = 7")
-   apply (simp add: char_of_def)
-  apply (case_tac "g mod 10 = 8")
-   apply (simp add: char_of_def)
-  apply (case_tac "g mod 10 = 9")
-   apply (simp add: char_of_def)
-  by presburger
 
 lemma show_nat_ok: "\<forall>x. x \<in> set (show (g::nat)) \<longrightarrow> String.ascii_of x = x"
 proof (induct g)
@@ -159,7 +128,9 @@ next
     apply (case_tac "Suc g div 10")
      apply simp
     apply simp
-    try
+    apply safe
+     apply (smt String.ascii_of_Char sod_values)
+    sorry
 qed
 
 lemma show_int_ok: "\<forall>x. x \<in> set (show (g::int)) \<longrightarrow> String.ascii_of x = x"
@@ -262,10 +233,55 @@ next
   qed
 qed
 
+lemma show_aexp_list_ok: "\<forall>x. x \<in> set (show (g::aexp list)) \<longrightarrow> String.ascii_of x = x"
+proof (induct g)
+case Nil
+  then show ?case
+      by (simp add: shows_prec_list_def)
+next
+  case (Cons a as)
+  then show ?case
+  proof (induct as)
+    case Nil
+    then show ?case
+      by (simp add: shows_prec_list_def show_aexp_ok)
+  next
+    case (Cons a as)
+    then show ?case
+      by (simp add: shows_prec_list_def show_aexp_ok)
+  qed
+qed
+
+lemma updates2string_ok: "\<forall>x. x \<in> set (updates2string (g::update_function list)) \<longrightarrow> String.ascii_of x = x"
+proof (induct g)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a as)
+  then show ?case
+  proof (induct as)
+    case Nil
+    then show ?case
+      apply simp
+      apply (cases a)
+      apply simp
+      using show_aexp_ok show_vname_ok by blast
+  next
+    case (Cons u us)
+    then show ?case
+      apply (cases a)
+      apply (cases u)
+      apply simp
+      using show_aexp_ok show_vname_ok by blast
+  qed
+qed
+
+
 lemma cons_gexp_show_list: "String.implode (show ((x::gexp) # xs)) = String.implode (show ((y::gexp) # ys)) \<Longrightarrow> show (x # xs) = show (y # ys)"
   using implode_x_equality show_gexp_list_ok shows_string_deterministic by blast
   
-lemma contra: "(show (x::guard list) \<noteq> show (y::guard list)) = (String.implode (show (x::gexp list)) \<noteq> String.implode (show (y::guard list)))"
+lemma string_implode_guards_deterministic_contra: "(show (x::guard list) \<noteq> show (y::guard list)) = (String.implode (show (x::gexp list)) \<noteq> String.implode (show (y::guard list)))"
 proof (induct x)
   case Nil
   then show ?case
@@ -279,23 +295,87 @@ next
 qed
 
 lemma string_implode_guards_deterministic: "String.implode (show (x::gexp list)) = String.implode (show (y::guard list)) = (show (x::guard list) = show (y::guard list))"
-  using contra by auto
+  using string_implode_guards_deterministic_contra by auto
 
-lemma string_implode_outputs_deterministic: "String.implode (show (Outputs x)) = String.implode (show (Outputs y)) = (show (Outputs x) = show (Outputs y))"
-proof (induct "Outputs x")
+lemma cons_aexp_show_list: "String.implode (show ((x::aexp) # xs)) = String.implode (show ((y::aexp) # ys)) \<Longrightarrow> show (x # xs) = show (y # ys)"
+  using implode_x_equality show_aexp_list_ok shows_string_deterministic by blast
+
+lemma string_implode_outputs_deterministic_contra: "(show (x::output_function list) \<noteq> show (y::output_function list)) = (String.implode (show (x::output_function list)) \<noteq> String.implode (show (y::output_function list)))"
+proof (induct x)
   case Nil
   then show ?case
-sorry
+    apply (simp add: shows_prec_list_def string_implode_empty)
+    by (metis implode.rep_eq list.map(2) neq_Nil_conv string_implode_empty zero_literal.rep_eq)
 next
-  case (Cons a xa)
+  case (Cons x xs)
+  then show ?case
+    apply (simp add: shows_prec_list_def string_implode_empty)
+    by (metis implode_x_equality show_aexp_list_ok shows_prec_list_def shows_string_deterministic)
+qed
+
+lemma string_implode_outputs_deterministic: "String.implode (show (Outputs x)) = String.implode (show (Outputs y)) = (show (Outputs x) = show (Outputs y))"
+  using string_implode_outputs_deterministic_contra by auto
+
+lemma string_implode_updates_deterministic_contra: "(updates2string (x::update_function list) \<noteq> updates2string (y::update_function list)) = (String.implode (updates2string (x::update_function list)) \<noteq> String.implode (updates2string (y::update_function list)))"
+  proof (induct x)
+    case Nil
+    then show ?case
+      apply (simp add: string_implode_empty)
+      by (metis Nil_is_map_conv String.explode_implode_eq string_implode_empty)
+  next
+    case (Cons a x)
+    then show ?case
+      apply (simp add: shows_prec_list_def string_implode_empty)
+      by (metis implode_x_equality shows_string_deterministic updates2string_ok)
+  qed
+
+lemma string_implode_updates_deterministic: "(String.implode (updates2string (Updates x)) = String.implode (updates2string (Updates y))) = ((updates2string (Updates x)) = (updates2string (Updates y)))"
+  using string_implode_updates_deterministic_contra by auto
+
+lemma show_guards_determinism_aux: "(show ((g::gexp) # gs) = show ((a::gexp) # as)) = (g # gs = a # as)"
+proof (induct gs)
+  case Nil
+  then show ?case
+  proof
+    show "show [g] = show (a # as) \<Longrightarrow> [g] = a # as"
+    proof (induct as)
+      case Nil
+      then show ?case
+        apply (simp add: shows_prec_list_def)
+        sorry
+    next
+      case (Cons a as)
+      then show ?case sorry
+    qed
+  next
+    show "[g] = a # as \<Longrightarrow> show [g] = show (a # as)"
+      by simp
+  qed
+next
+  case (Cons a gs)
   then show ?case sorry
 qed
 
-lemma string_implode_updates_deterministic: "(String.implode (updates2string (Updates x)) = String.implode (updates2string (Updates y))) = ((updates2string (Updates x)) = (updates2string (Updates y)))"
-  sorry
-
-lemma show_guards_determinism: "(show (Guard x) = show (Guard y)) = (Guard x = Guard y)"
-  sorry
+lemma show_guards_determinism: "(show (x::guard list) = show (y::guard list)) = (x = y)"
+proof (induct x)
+  case Nil
+  then show ?case
+    apply (simp add: shows_prec_list_def string_implode_empty)
+    by (metis append_Cons append_Nil append_is_Nil_conv show_g_not_empty shows_list_gexp.elims shows_list_gexp.simps(1))
+next
+  case (Cons g gs)
+  then show ?case
+  proof (induct y)
+    case Nil
+    then show ?case
+      apply (simp add: shows_prec_list_def)
+      using show_g_not_empty shows_list_gexp.elims by force
+  next
+    case (Cons a as)
+    then show ?case
+      by (simp add: show_guards_determinism_aux)
+  qed
+qed
 
 lemma show_outputs_determinism: "(show (Outputs x) = show (Outputs y)) = (Outputs x = Outputs y)"
   sorry

@@ -5,6 +5,39 @@ begin
 definition sod :: "nat \<Rightarrow> char" where
   "sod n = char_of ((n mod 10) + 48)"
 
+lemma sod_values: "sod g = CHR ''0'' \<or>
+       sod g = CHR ''1'' \<or>
+       sod g = CHR ''2'' \<or>
+       sod g = CHR ''3'' \<or>
+       sod g = CHR ''4'' \<or>
+       sod g = CHR ''5'' \<or>
+       sod g = CHR ''6'' \<or>
+       sod g = CHR ''7'' \<or>
+       sod g = CHR ''8'' \<or>
+       sod g = CHR ''9''"
+  apply (simp add: sod_def)
+  apply (case_tac "g mod 10 = 0")
+   apply (simp add: char_of_def)
+  apply (case_tac "g mod 10 = 1")
+   apply (simp add: char_of_def)
+  apply (case_tac "g mod 10 = 2")
+   apply (simp add: char_of_def)
+  apply (case_tac "g mod 10 = 3")
+   apply (simp add: char_of_def)
+  apply (case_tac "g mod 10 = 4")
+   apply (simp add: char_of_def)
+  apply (case_tac "g mod 10 = 5")
+   apply (simp add: char_of_def)
+  apply (case_tac "g mod 10 = 6")
+   apply (simp add: char_of_def)
+  apply (case_tac "g mod 10 = 7")
+   apply (simp add: char_of_def)
+  apply (case_tac "g mod 10 = 8")
+   apply (simp add: char_of_def)
+  apply (case_tac "g mod 10 = 9")
+   apply (simp add: char_of_def)
+  by presburger
+
 lemma sod_suc_0: "sod (Suc 0) = CHR ''1''"
   by (simp add: sod_def char_of_def)
 
