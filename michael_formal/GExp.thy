@@ -113,40 +113,43 @@ fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool option" where
   )" |
   "gval (Null v) s = Some (s v = None)"
 
-instantiation gexp :: ord begin
-definition  less_eq_gexp :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
-  "less_eq_gexp g1 g2 \<equiv> \<forall>s. maybe_implies (gval g1 s) (gval g2 s) = Some True"
-
-definition  less_gexp :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
-  "less_gexp g1 g2 \<equiv> \<forall>s. maybe_implies (gval g1 s) (gval g2 s) = Some True \<and> (gval g1 s) \<noteq> (gval g2 s)"
-
-instance proof
-qed
-end
-
-abbreviation gNot :: "gexp \<Rightarrow> gexp"  where
+definition gNot :: "gexp \<Rightarrow> gexp"  where
   "gNot g \<equiv> Nor g g"
 
-abbreviation gOr :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<or>" 60*) where
+definition gOr :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<or>" 60*) where
   "gOr v va \<equiv> Nor (Nor v va) (Nor v va)"
 
-abbreviation gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<and>" 60*) where
+definition gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<and>" 60*) where
   "gAnd v va \<equiv> Nor (Nor v v) (Nor va va)"
 
-abbreviation Lt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "<" 60*) where
+lemma inj_gAnd: "inj gAnd"
+  apply (simp add: inj_def)
+  apply clarify
+  by (metis gAnd_def gexp.inject(4))
+
+lemma gAnd_determinism: "(gAnd x y = gAnd x' y') = (x = x' \<and> y = y')"
+proof
+  show "gAnd x y = gAnd x' y' \<Longrightarrow> x = x' \<and> y = y'"
+    by (simp add: gAnd_def)
+next
+  show "x = x' \<and> y = y' \<Longrightarrow> gAnd x y = gAnd x' y' "
+    by simp
+qed
+
+definition Lt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "<" 60*) where
   "Lt a b \<equiv> Gt b a"
 
-abbreviation Le :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<le>" 60*) where
+definition Le :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<le>" 60*) where
   "Le v va \<equiv> gNot (Gt v va)"
 
-abbreviation Ge :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<ge>" 60*) where
+definition Ge :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<ge>" 60*) where
   "Ge v va \<equiv> gNot (Lt v va)"
 
-abbreviation Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<noteq>" 60*) where
+definition Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<noteq>" 60*) where
   "Ne v va \<equiv> gNot (Eq v va)"
 
 lemma or_equiv: "gval (gOr x y) r = maybe_or (gval x r) (gval y r)"
-  apply simp
+  apply (simp add: gOr_def)
   apply (cases "gval x r")
    apply (cases "gval y r")
     apply simp
@@ -156,13 +159,13 @@ lemma or_equiv: "gval (gOr x y) r = maybe_or (gval x r) (gval y r)"
   by simp
 
 lemma not_equiv: "maybe_not (gval x s) = gval (gNot x) s"
-  apply simp
+  apply (simp add: gNot_def)
   apply (cases "gval x s")
    apply simp
   by simp
 
 lemma nor_equiv: "gval (gNot (gOr a b)) s = gval (Nor a b) s"
-  by (simp add: option.case_eq_if)
+  by (simp add: option.case_eq_if gOr_def gNot_def)
 
 definition satisfiable :: "gexp \<Rightarrow> bool" where
   "satisfiable g \<equiv> (\<exists>s. gval g s = Some True)"
@@ -192,20 +195,20 @@ lemma gexp_equiv_satisfiable: "gexp_equiv x y \<Longrightarrow> satisfiable x = 
   by (simp add: gexp_equiv_def satisfiable_def)
 
 lemma gAnd_reflexivity: "gexp_equiv (gAnd x x) x"
-  apply (simp add: gexp_equiv_def)
+  apply (simp add: gexp_equiv_def gAnd_def)
   apply (rule allI)
   apply (case_tac "gval x s")
    apply simp
   by simp
 
 lemma gAnd_zero: "gexp_equiv (gAnd (Bc True) x) x"
-  apply (simp add: gexp_equiv_def)
+  apply (simp add: gexp_equiv_def gAnd_def)
   apply (rule allI)
   apply (case_tac "gval x s")
   by simp_all
 
 lemma gAnd_symmetry: "gexp_equiv (gAnd x y) (gAnd y x)"
-  apply (simp add: gexp_equiv_def)
+  apply (simp add: gexp_equiv_def gAnd_def)
   apply (rule allI)
   apply (case_tac "gval y s")
    apply (case_tac "gval x s")
@@ -223,7 +226,7 @@ definition mutually_exclusive :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" wh
                                  (gval y i = Some True \<longrightarrow> gval x i \<noteq> Some True))"
 
 lemma mutually_exclusive_unsatisfiable_conj: "mutually_exclusive x y = (\<not> satisfiable (gAnd x y))"
-  apply (simp add: mutually_exclusive_def satisfiable_def)
+  apply (simp add: mutually_exclusive_def satisfiable_def gAnd_def)
   apply safe
     apply (case_tac "gval x s")
      apply simp
@@ -247,5 +250,25 @@ lemma not_mutually_exclusive_true: "satisfiable x = (\<not> mutually_exclusive x
 
 lemma show_gexp_determinism: "show (g1::gexp) = show (g2::gexp) \<Longrightarrow> g1 = g2"
   sorry
+
+definition conjoin :: "gexp list \<Rightarrow> gexp" where
+  "conjoin x = fold (\<lambda>h. gAnd h) x (Bc True)"
+
+lemma inj_conjoin: "inj conjoin"
+  apply (simp add: inj_def)
+  apply (simp add: conjoin_def)
+  apply clarify
+  apply (case_tac x)
+   apply simp
+  sorry
+
+lemma conjoin_determinism: "(conjoin x = conjoin y) = (x = y)"
+proof
+  show "conjoin x = conjoin y \<Longrightarrow> x = y"
+    by (simp add: inj_conjoin inj_eq)
+next
+  show "x = y \<Longrightarrow> conjoin x = conjoin y"
+    by simp
+qed
 
 end

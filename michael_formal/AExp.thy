@@ -131,12 +131,10 @@ syntax
   "_maplets" :: "['a, 'a] \<Rightarrow> maplet"             ("_ /[:=]/ _")
   "_Map"     :: "maplets \<Rightarrow> 'a \<rightharpoonup> 'b"            ("(1<_>)")
 
-lemma showNat_not_i: "showNat n \<noteq> CHR ''i'' #anything"
-  sorry
+primrec sum :: "aexp list \<Rightarrow> aexp" where
+  "sum [] = L (Num 0)" |
+  "sum (h#t) = Plus h (sum t)"
 
-lemma showNat_not_r: "showNat n \<noteq> CHR ''r'' #anything"
-  sorry
-
-lemma show_aexp_determinism: "(show (a1::aexp) = show (a2::aexp)) = (a1 = a2)"
+lemma sum_determinism: "(sum x = sum y) = (x = y)"
   sorry
 end
