@@ -185,6 +185,12 @@ qed
 qed
 qed
 end
+
+lemma inj_show_nat: "inj_on show "
+  apply (simp add: inj_on_def)
+  apply clarify
+  sorry
+
 lemma show_nat_deterministic: "show (v1::nat) = show (v2::nat) \<Longrightarrow> v1 = v2"
   sorry
 

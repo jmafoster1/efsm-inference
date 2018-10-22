@@ -1,5 +1,5 @@
 theory VName
-imports "not4afp/Show_Nat"
+imports "Show.Show_Instances"
 begin
 datatype vname = I nat | R nat
 
@@ -33,10 +33,25 @@ next
     then show ?case by simp
   next
     case (Cons a xs)
-    then show ?case sorry
+    then show ?case
+    proof (induct xs)
+      case Nil
+      then show ?case
+        apply (simp add: shows_prec_list_def)
+        apply (cases a)
+         apply (simp add: shows_prec_append)
+        by (simp add: shows_prec_append)
+    next
+      case (Cons a xs)
+      then show ?case by simp
+    qed
   qed
 qed
 end
+
+lemma show_nat_deterministic: "\<forall>(x::nat) (y::nat). show x = show y \<longrightarrow> x = y"
+  apply (simp add: shows_prec_nat_def)
+  sorry
 
 lemma show_vname_deterministic: "show (v1::vname) = show (v2::vname) \<Longrightarrow> v1 = v2"
   apply (cases v1)

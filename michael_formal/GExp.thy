@@ -11,7 +11,7 @@ well as the expression of logical conjunction, disjunction, and negation in term
 *}
 
 theory GExp
-imports AExp Option_Logic "not4afp/Show_Bool"
+imports AExp Option_Logic "Show.Show_Instances"
 begin
 datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null vname
 
@@ -80,8 +80,8 @@ proof (cases g)
 case (Bc x1)
   then show ?thesis
     apply (cases x1)
-     apply (simp add: shows_string_def)
-    by (simp add: shows_string_def)
+     apply (simp add: shows_string_def shows_prec_bool_def)
+    by (simp add: shows_string_def shows_prec_bool_def)
 next
   case (Eq x21 x22)
   then show ?thesis by simp
@@ -252,7 +252,63 @@ lemma show_gexp_determinism: "show (g1::gexp) = show (g2::gexp) \<Longrightarrow
   sorry
 
 definition conjoin :: "gexp list \<Rightarrow> gexp" where
-  "conjoin x = fold (\<lambda>h. gAnd h) x (Bc True)"
+  "conjoin x = foldl (\<lambda>h. gAnd h) (Bc True) x"
+
+lemma "foldr gAnd x (Bc True) = foldr gAnd y (Bc True) \<Longrightarrow> x = y"
+proof (induct x)
+  case Nil
+  then show ?case
+  proof (induct y)
+    case Nil
+    then show ?case
+      by simp
+  next
+    case (Cons a y)
+    then show ?case
+      by (simp add: gAnd_def)
+  qed
+next
+  case (Cons x xs)
+  then show ?case
+  proof (induct y)
+    case Nil
+    then show ?case
+      by (simp add: gAnd_def)
+  next
+    case (Cons y ys)
+    then show ?case
+      apply simp
+      apply safe
+       apply (simp add: gAnd_determinism)
+      apply (simp add: gAnd_def)
+      sorry
+  qed
+qed
+
+lemma contra: "x \<noteq> y \<Longrightarrow> foldl gAnd (Bc True) x \<noteq> foldl gAnd (Bc True) y"
+proof (induct x)
+  case Nil
+  then show ?case
+    apply simp
+    by (metis append_butlast_last_id foldl_Cons foldl_Nil foldl_append gAnd_def gexp.distinct(5))
+next
+  case (Cons a x)
+  then show ?case
+  proof (induct y)
+    case Nil
+    then show ?case
+    by (metis append_butlast_last_id foldl_Cons foldl_Nil foldl_append gAnd_def gexp.distinct(5))
+  next
+    case (Cons y ys)
+    then show ?case
+      apply safe
+      sorry
+  qed
+
+qed
+
+lemma expanded: "foldl gAnd (Bc True) x = foldl gAnd (Bc True) y \<Longrightarrow> x = y"
+  using contra by auto
 
 lemma inj_conjoin: "inj conjoin"
   apply (simp add: inj_def)

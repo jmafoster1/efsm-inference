@@ -1,5 +1,5 @@
 theory Transition
-imports GExp "not4afp/Show_Unit"
+imports GExp "Show.Show_Instances"
 begin
 
 type_synonym guard = "gexp"

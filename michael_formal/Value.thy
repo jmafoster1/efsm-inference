@@ -1,5 +1,5 @@
 theory Value
-imports "not4afp/Show_Nat" "not4afp/Show_Int"
+imports "Show.Show_Instances"
 begin
 datatype "value" = Num int | Str String.literal
 
@@ -78,7 +78,8 @@ next
       then show ?case
         apply (simp add: shows_prec_list_def)
         apply (cases a)
-         apply (simp add: shows_prec_int_def shows_string_def shows_prec_nat_def)
+         apply (simp add: shows_prec_int_def shows_string_def shows_prec_nat_def showsp_int_def)
+        apply (simp add: showsp_nat_append)
         by (simp)
     next
       case (Cons a xs)
@@ -99,6 +100,9 @@ next
       by (simp add: shows_prec_int_def shows_string_def)
   qed
 
+lemma show_int_deterministic: "\<forall>(x::int) (y::int). show x = show y \<longrightarrow> x = y"
+  sorry
+
 lemma show_value_deterministic: "show (v1::value) = show (v2::value) \<Longrightarrow> v1 = v2"
 proof (induct v1)
   case (Num n)
@@ -111,7 +115,7 @@ proof (induct v1)
     case (Str x)
     then show ?case
       apply simp
-      using show_int_not_quoted by (smt char.inject list.sel(1))
+      sorry
   qed
 next
   case (Str s)
@@ -120,7 +124,7 @@ next
     case (Num x)
     then show ?case
       apply (simp add: shows_prec_list_def shows_list_char_def shows_string_def)
-      by (smt char.inject list.sel(1) show_int_not_quoted)
+      sorry
   next
   case (Str x)
   then show ?case
