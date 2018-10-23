@@ -1,5 +1,5 @@
 theory Inference
-  imports "../EFSM" "../Contexts"
+  imports "../EFSM" "../Contexts" Transition_Ordering Prod_Linorder
 begin
 
 definition replace_state :: "'s \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's" where
@@ -27,9 +27,9 @@ definition choice :: "transition \<Rightarrow> transition \<Rightarrow> bool" wh
   "choice t t' = ((Label t) = (Label t') \<and> (Arity t) = (Arity t') \<and> (\<exists> s. apply_guards (Guard t) s \<and> apply_guards (Guard t') s))"
 
 definition nondeterministic_pairs :: "'s::finite transition_function \<Rightarrow> ('s \<times> ('s \<times> 's) \<times> (transition \<times> transition)) set" where
-  "nondeterministic_pairs t = {(s', (s1, s2), (t1, t2)). t1 |\<in>| t (s', s1) \<and> t2 |\<in>| t (s', s2) \<and> t1 < t2 \<and> choice t1 t2}"
+  "nondeterministic_pairs t = {(origin, (dest1, dest2), (t1, t2)). t1 |\<in>| t (origin, dest1) \<and> t2 |\<in>| t (origin, dest2) \<and> t1 < t2 \<and> choice t1 t2}"
 
-definition nondeterministic_transitions :: "'s::finite transition_function \<Rightarrow> ('s \<times> ('s \<times> 's) \<times> (transition \<times> transition)) option" where
+definition nondeterministic_transitions :: "'s::{finite,linorder} transition_function \<Rightarrow> ('s \<times> ('s \<times> 's) \<times> (transition \<times> transition)) option" where
   "nondeterministic_transitions t = (if nondeterministic_pairs t = {} then None else Some (Max (nondeterministic_pairs t)))"
 
 definition nondeterminism :: "'s::finite transition_function \<Rightarrow> bool" where
@@ -73,18 +73,18 @@ lemma make_context_options: "make_context e c s = None \<or> (\<exists>t. make_c
 
 (* The number of states decreases down to one then either we can merge all of the transitons or we can't *)
 
-function merge :: "'s::finite efsm \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's::finite transition_function option" where
+function merge :: "'s::{finite, linorder} efsm \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's transition_function option" where
   "merge e s1 s2 = (let t' = (merge_states s1 s2 (T e)) in
-                       (* Have we got any nondeterminism? *)
+                       \<comment> \<open> Have we got any nondeterminism? \<close>
                        (case nondeterministic_transitions t' of
-                         (* If not then we're good to go *)
+                         \<comment> \<open> If not then we're good to go \<close>
                          None \<Rightarrow> Some t' |
-                         (* If we have then we need to fix it *)
+                         \<comment> \<open> If we have then we need to fix it \<close>
                          Some (from, (to1, to2), (t1, t2)) \<Rightarrow> (if s1 \<noteq> s2 then merge \<lparr>s0 = s0 e, T = t'\<rparr> to1 to2 else
-                            (* Can we get a context where one transition subsumes the other directly *)
+                            \<comment> \<open> Can we get a context where one transition subsumes the other directly \<close>
                             case (hilbert_option (\<lambda>c'. (subsumes c' t1 t2 \<or> subsumes c' t2 t1) \<and> make_context e c' (s0 e) \<noteq> None)) of
                               Some c' \<Rightarrow> make_context e c' (s0 e) |
-                                      (* Can we make a transition which subsumes both? *)
+                                      \<comment> \<open> Can we make a transition which subsumes both? \<close>
                               None \<Rightarrow> (case (hilbert_option (\<lambda>(c', tr). subsumes c' tr t1 \<and> subsumes c' tr t2)) of
                                           Some (c', tr) \<Rightarrow> Some (replace_transition t' from to1 {|t1|} tr) |
                                           None \<Rightarrow> None
@@ -95,7 +95,14 @@ function merge :: "'s::finite efsm \<Rightarrow> 's \<Rightarrow> 's \<Rightarro
   by auto
 
 termination
-  apply clarify
+  apply standard
+   apply auto[1]
+  apply (simp add: nondeterministic_transitions_def)
+  apply (case_tac "nondeterministic_pairs (merge_states s1 s2 (T e)) = {}")
+   apply simp
+  apply simp
+  apply (case_tac x2)
+  apply simp
   sorry
   
 end

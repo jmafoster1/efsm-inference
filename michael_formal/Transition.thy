@@ -95,38 +95,12 @@ lemma show_nat_ok: "\<forall>x. x \<in> set (show (g::nat)) \<longrightarrow> St
 proof (induct g)
   case 0
   then show ?case
-    by (simp add: shows_prec_nat_def)
+    by (simp add: shows_prec_nat_def showsp_nat.simps shows_string_def)
 next
   case (Suc g)
   then show ?case
     apply (simp add: shows_prec_nat_def)
     apply safe
-     apply (case_tac "sod (Suc g) = CHR ''0''")
-      apply simp
-     apply (case_tac "sod (Suc g) = CHR ''1''")
-      apply simp
-     apply (case_tac "sod (Suc g) = CHR ''2''")
-      apply simp
-     apply (case_tac "sod (Suc g) = CHR ''3''")
-      apply simp
-     apply (case_tac "sod (Suc g) = CHR ''4''")
-      apply simp
-     apply (case_tac "sod (Suc g) = CHR ''5''")
-      apply simp
-     apply (case_tac "sod (Suc g) = CHR ''6''")
-      apply simp
-     apply (case_tac "sod (Suc g) = CHR ''7''")
-      apply simp
-     apply (case_tac "sod (Suc g) = CHR ''8''")
-     apply simp
-     apply (case_tac "sod (Suc g) = CHR ''9''")
-      apply simp
-    using sod_values apply blast
-    apply (case_tac "Suc g div 10")
-     apply simp
-    apply simp
-    apply safe
-     apply (smt String.ascii_of_Char sod_values)
     sorry
 qed
 
@@ -134,11 +108,13 @@ lemma show_int_ok: "\<forall>x. x \<in> set (show (g::int)) \<longrightarrow> St
 proof (induct g)
   case (nonneg n)
   then show ?case
-    by (simp add: shows_prec_int_def show_nat_ok)
+    apply (simp add: shows_prec_int_def showsp_int_def)
+    by (simp add: show_nat_ok shows_prec_nat_def)
 next
   case (neg n)
   then show ?case
-    by (simp add: shows_prec_int_def show_nat_ok shows_string_def)
+    apply (simp add: shows_prec_int_def showsp_int_def)
+    by (simp add: show_nat_ok shows_prec_nat_def shows_string_def)
 qed
 
 lemma show_vname_ok: "\<forall>x. x \<in> set (show (g::vname)) \<longrightarrow> String.ascii_of x = x"
@@ -191,8 +167,8 @@ proof (induct g)
   case (Bc v)
   then show ?case
     apply (cases v)
-     apply simp
-    by simp
+     apply (simp add: shows_prec_bool_def shows_string_def)
+    by (simp add: shows_prec_bool_def shows_string_def)
 next
   case (Eq a1 a2)
   then show ?case
@@ -375,9 +351,9 @@ next
 qed
 
 lemma show_outputs_determinism: "(show (Outputs x) = show (Outputs y)) = (Outputs x = Outputs y)"
-  sorry
+  oops
 
 lemma show_updates_determinism: "(updates2string (Updates x) = updates2string (Updates y)) = (Updates x = Updates y)"
-  sorry
+  oops
 
 end

@@ -330,10 +330,7 @@ lemma satisfiable_eq: "satisfiable (Eq x3)"
 lemma satisfiable_neq: "satisfiable (Neq x3)"
   apply (simp add: satisfiable_def)
   apply (cases x3)
-   apply (rule_tac x="Num (x1+1)" in exI)
-   apply simp
-  apply (rule_tac x="Str (x2@''s'')" in exI)
-  by simp
+  by auto
 
 lemma satisfiable_leq: "satisfiable (Leq (Num x))"
   apply (simp add: satisfiable_def)

@@ -99,8 +99,8 @@ lemma cexp2gexp_double_neg: "gexp_equiv (cexp2gexp r (Not (Not x))) (cexp2gexp r
   apply (simp add: gexp_equiv_def)
   apply (rule allI)
   apply (case_tac "gval (cexp2gexp r x) s")
-   apply simp
-  by simp
+   apply (simp add: gNot_def)
+  by (simp add: gNot_def)
 
 lemma gval_cexp2gexp_double_neg: "gval (cexp2gexp r (Not (Not x))) s = gval (cexp2gexp r x) s"
   using cexp2gexp_double_neg gexp_equiv_def by blast
@@ -197,16 +197,16 @@ lemma context_equiv_undef: "context_equiv c c' \<Longrightarrow> ((get c i) = Un
   by (simp add: cexp_equiv_def context_equiv_def)
 
 lemma gexp_equiv_cexp_not_true:  "gexp_equiv (cexp2gexp a (Not (Bc True))) (gexp.Bc False)"
-  by (simp add: gexp_equiv_def)
+  by (simp add: gexp_equiv_def gNot_def)
 
 lemma gexp_equiv_cexp_not_false:  "gexp_equiv (cexp2gexp a (Not (Bc False))) (gexp.Bc True)"
-  by (simp add: gexp_equiv_def)
+  by (simp add: gexp_equiv_def gNot_def)
 
 lemma geq_to_ge: "Geq x = c r \<Longrightarrow> (cexp2gexp r (c r)) = Ge r (L x)"
-  by (metis cexp2gexp.simps(3) cexp2gexp.simps(6))
+  by (metis Ge_def Lt_def cexp2gexp.simps(3) cexp2gexp.simps(6))
 
 lemma leq_to_le: "Leq x = c r \<Longrightarrow> (cexp2gexp r (c r)) = Le r (L x)"
-  by (metis cexp2gexp.simps(4) cexp2gexp.simps(6))
+  by (metis Le_def cexp2gexp.simps(4) cexp2gexp.simps(6))
 
 lemma lt_to_lt: "Lt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Gt (L x) r"
   by (metis cexp2gexp.simps(3))
