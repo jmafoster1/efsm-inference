@@ -7,7 +7,7 @@ finite types. See the examples for details.
 *}
 
 theory EFSM
-  imports "~~/src/HOL/Library/FSet" AExp GExp "Show.Show_Instances" Transition
+  imports "~~/src/HOL/Library/FSet" AExp GExp Transition
 begin
 
 type_synonym label = String.literal
@@ -18,26 +18,6 @@ type_synonym updates = "update_function list"
 type_synonym event = "(label \<times> inputs)"
 type_synonym trace = "event list"
 type_synonym observation = "outputs list"
-
-
-(*instantiation "transition_ext" :: (ord) ord
-begin
-definition less_eq_transition_ext :: "'a::ord transition_scheme \<Rightarrow> 'a transition_scheme \<Rightarrow> bool" where
-    "less_eq_transition_ext D1 D2 =                 (String.implode (Label D1) > String.implode (Label D2) \<longrightarrow>
-                                 String.implode (guards2string (Guard D1)) > String.implode (guards2string (Guard D2)) \<longrightarrow>
-                              String.implode (outputs2string (Outputs D1)) > String.implode (outputs2string (Outputs D2)) \<longrightarrow>
-                              String.implode (updates2string (Updates D1)) > String.implode (updates2string (Updates D2)) \<longrightarrow>
-                                                                   more D1 \<le> more D2)"
-
-definition less_transition_ext :: "'a::ord transition_scheme \<Rightarrow> 'a transition_scheme \<Rightarrow> bool" where
-    "less_transition_ext D1 D2 =                    (String.implode (Label D1) \<ge> String.implode (Label D2) \<longrightarrow>
-                                 String.implode (guards2string (Guard D1)) \<ge> String.implode (guards2string (Guard D2)) \<longrightarrow>
-                              String.implode (outputs2string (Outputs D1)) \<ge> String.implode (outputs2string (Outputs D2)) \<longrightarrow>
-                              String.implode (updates2string (Updates D1)) \<ge> String.implode (updates2string (Updates D2)) \<longrightarrow>
-                                                                   more D1 < more D2)"
-instance proof
-qed
-end*)
 
 (* I'd like this to be statename to statename finite set *)
 type_synonym 'statename transition_function = "('statename \<times> 'statename) \<Rightarrow> transition fset"
@@ -115,8 +95,7 @@ lemma efsm_equiv_symmetric: "efsm_equiv e1 e2 t \<equiv> efsm_equiv e2 e1 t"
 lemma efsm_equiv_transitive: "efsm_equiv e1 e2 t \<and> efsm_equiv e2 e3 t \<longrightarrow> efsm_equiv e1 e3 t"
   by (simp add: efsm_equiv_def)
 
-lemma different_observation_techniques:
-  shows "length(observe_all e s r t) = length(observe_trace e s r t)"
+lemma different_observation_techniques: "length(observe_all e s r t) = length(observe_trace e s r t)"
   by simp
 
 lemma length_observe_all_restricted: "\<And>s r. length (observe_all e s r t) \<le> length t"

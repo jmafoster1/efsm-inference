@@ -222,9 +222,9 @@ fun less_eq_aexp :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
   "less_eq_aexp (V v1) (V v2) = less_eq v1 v2" |
   "less_eq_aexp (V _) _ = True" |
   "less_eq_aexp (Plus _ _) (Minus _ _) = True" |
-  "less_eq_aexp (Plus a1 a2) (Plus b1 b2) = (if a1 = b1 then a2 \<le> b2 else a1 \<le> b1 )" |
+  "less_eq_aexp (Plus f1 s1) (Plus f2 s2) = (if f1 = f2 then s1 \<le> s2 else f1 \<le> f2)" |
   "less_eq_aexp (Plus _ _) _ = False" |
-  "less_eq_aexp (Minus a1 a2) (Minus b1 b2) = (if a1 = b1 then a2 \<le> b2 else a1 \<le> b1 )" |
+  "less_eq_aexp (Minus f1 s1) (Minus f2 s2) = (if f1 = f2 then s1 \<le> s2 else f1 \<le> f2)" |
   "less_eq_aexp (Minus a1 a2) _ = False"
 
 fun less_aexp :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
@@ -234,11 +234,10 @@ fun less_aexp :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
   "less_aexp (V v1) (V v2) = less v1 v2" |
   "less_aexp (V _) _ = True" |
   "less_aexp (Plus _ _) (Minus _ _) = True" |
-  "less_aexp (Plus a1 a2) (Plus b1 b2) = (if a1 = b1 then a2 < b2 else a1 < b1 )" |
+  "less_aexp (Plus f1 s1) (Plus f2 s2) = (if f1 = f2 then s1 < s2 else f1 < f2)" |
   "less_aexp (Plus _ _) _ = False" |
-  "less_aexp (Minus a1 a2) (Minus b1 b2) = (if a1 = b1 then a2 < b2 else a1 < b1 )" |
+  "less_aexp (Minus f1 s1) (Minus f2 s2) = (if f1 = f2 then s1 < s2 else f1 < f2)" |
   "less_aexp (Minus a1 a2) _ = False"
-
 
 instance proof
   fix x y :: aexp
