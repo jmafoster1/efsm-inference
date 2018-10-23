@@ -72,6 +72,9 @@ primrec observe_all :: "'statename::finite efsm \<Rightarrow> 'statename \<Right
       _ \<Rightarrow> []
     )"
 
+abbreviation state :: "('statename \<times> outputs \<times> datastate) \<Rightarrow> 'statename" where
+  "state x \<equiv> fst x"
+
 primrec observe_transitions :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> transition list" where
   "observe_transitions _ _ _ [] = []" |
   "observe_transitions e s r (h#t) = (if is_singleton (possible_steps e s r (fst h) (snd h)) then (snd (the_elem (possible_steps e s r (fst h) (snd h))))#(observe_transitions e s r t) else [])"

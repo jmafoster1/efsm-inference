@@ -35,10 +35,6 @@ definition nondeterministic_transitions :: "'s::{finite,linorder} transition_fun
 definition nondeterminism :: "'s::finite transition_function \<Rightarrow> bool" where
   "nondeterminism t = (nondeterministic_pairs t \<noteq> {})"
 
-definition merge_transitions :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> transition option" where
-  "merge_transitions c t1 t2 = (if subsumes c t1 t2 then Some t1 else
-                             if subsumes c t2 t1 then Some t2 else None)"
-
 definition replace_transition :: "'s::finite transition_function \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> transition fset \<Rightarrow> transition \<Rightarrow> 's::finite transition_function" where
   "replace_transition t from to orig new = (\<lambda>x. if x = (from, to) then (t x |-| orig) |\<union>| {|new|} else t x)"
                                                                                                                               
@@ -71,8 +67,29 @@ fun make_context :: "'s::finite efsm \<Rightarrow> context \<Rightarrow> 's \<Ri
 lemma make_context_options: "make_context e c s = None \<or> (\<exists>t. make_context e c s = Some t)"
   by simp
 
-(* The number of states decreases down to one then either we can merge all of the transitons or we can't *)
+definition gets_us_to :: "'s::finite efsm \<Rightarrow> 's \<Rightarrow> trace \<Rightarrow> bool" where
+  "gets_us_to e s t = (state (last (observe_all e (s0 e) <> t)) = s)"
 
+definition anterior_context :: "'s::finite efsm \<Rightarrow> trace \<Rightarrow> context" where
+ "anterior_context e p = posterior_sequence (observe_transitions e (s0 e) <> p) empty"
+
+(* Does t1 subsume t2 in all possible anterior contexts? *)
+(* For every path which gets us to the problem state, does t1 subsume t2 in the resulting context *)
+definition directly_subsumes :: "'s::finite efsm \<Rightarrow> 's \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "directly_subsumes e s t1 t2 = (\<forall>p. (gets_us_to e s p) \<longrightarrow> subsumes (anterior_context e p) t1 t2)"
+
+fun merge_transitions :: "'s::finite efsm \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> 's transition_function option" where
+  "merge_transitions e from to1 to2 t1 t2 = (
+    \<comment> \<open> If t1 directly subsumes t2 then replace t2 with t1 \<close>
+    if directly_subsumes e from t1 t2 then Some (replace_transition (T e) from to2 {|t2|} t1) else
+    \<comment> \<open> If t2 directly subsumes t1 then replace t1 with t2 \<close>
+    if directly_subsumes e from t2 t1 then Some (replace_transition (T e) from to1 {|t1|} t2) else
+    \<comment> \<open> Can we get a context where one transition subsumes the other directly \<close>
+    \<comment> \<open> Can we make a transition which subsumes both? \<close>
+    None
+  )"
+
+(* The number of states decreases down to one then either we can merge all of the transitons or we can't *)
 function merge :: "'s::{finite, linorder} efsm \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's transition_function option" where
   "merge e s1 s2 = (let t' = (merge_states s1 s2 (T e)) in
                        \<comment> \<open> Have we got any nondeterminism? \<close>
