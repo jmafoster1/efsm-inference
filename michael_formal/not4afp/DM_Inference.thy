@@ -190,14 +190,65 @@ lemma q1_nondeterminism_options_2: "nondeterministic_transitions (merge_states q
 lemma merge_self_state: "merge_states x x t = t"
   by (simp add: merge_states_def)
 
+lemma medial_vend_nothing: "(medial c (Guard vend_nothing)) = c"
+  by (simp add: transitions)
+
+lemma consistent_medial_vend_nothing: "consistent (medial \<lbrakk>V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> (Guard vend_nothing))"
+  apply (simp add: medial_vend_nothing consistent_def)
+  apply (rule_tac x="<R 2 := Num 0>" in exI)
+  apply simp
+  using consistent_empty_4 by blast
+
+lemma posterior_vend_nothing: "posterior \<lbrakk>V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> vend_nothing = \<lbrakk>V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk>"
+  apply (simp add: posterior_def consistent_medial_vend_nothing)
+  apply (simp add: transitions)
+  apply (rule ext)
+  by simp
+
+lemma consistent_medial_vend_fail: "consistent (medial \<lbrakk>V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> (Guard vend_fail))"
+  apply (simp add: transitions consistent_def)
+  apply (rule_tac x="<R 2 := Num 0>" in exI)
+  apply simp
+  using consistent_empty_4 by blast
+
+lemma posterior_vend_fail: "posterior \<lbrakk>V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> vend_fail = \<lbrakk>V (R 2) \<mapsto> And (Eq (Num 0)) (Lt (Num 100))\<rbrakk>"
+  apply (simp add: posterior_def consistent_medial_vend_fail)
+  apply (simp add: transitions)
+  apply (rule ext)
+  by simp
+
+lemma vend_fail_subsumes_vend_nothing: "subsumes \<lbrakk>V (R 2) \<mapsto> Eq (Num 0)\<rbrakk> vend_fail vend_nothing"
+  apply (simp add: subsumes_def)
+  apply safe
+     apply (simp add: transitions)
+     apply auto[1]
+    apply (simp add: transitions)
+   apply (simp add: medial_vend_nothing posterior_vend_nothing posterior_vend_fail)
+   apply safe
+  apply simp
+    apply (case_tac "ValueLt (Some i) (Some (Num 100))")
+     apply simp
+    apply simp
+   apply simp
+  apply (simp add: posterior_vend_nothing posterior_vend_fail consistent_def)
+  apply (rule_tac x="<R 2 := Num 0>" in exI)
+  apply safe
+   apply (simp add: relations connectives)
+  using consistent_empty_4 by auto
+
+lemma medial_vend_fail: "(medial c (Guard vend_fail)) = (\<lambda>r. if r = V (R 2) then and (c r) (Lt (Num 100)) else c r)"
+  apply (simp add: transitions)
+  apply (rule ext)
+  by simp
+
+lemma "merge_transitions \<lparr>s0 = q0, T = (merge_states q1 q2 (T drinks2))\<rparr> q1 q1 q1 vend_nothing vend_fail = None"
+  oops
+
 lemma "let t' = merge_states q1 q2 (T drinks2); t'a = merge_states q1 q1 t'
         in \<exists>x. nondeterministic_transitions t'a = Some x"
-  apply (simp add: merge_q1_q2 nondeterministic_transitions_def nondeterministic_pairs_def)
+  apply (simp add: merge_q1_q2 nondeterministic_transitions_def nondeterminisitic_pairs)
   apply (simp only: merge_self_state)
-  apply simp
-  oops
-  
-  
+  oops 
 
 lemma "merge drinks2 q1 q2 = Some (\<lambda> (a,b) .
   if (a, b) = (q0, q1) then {|select|} else
