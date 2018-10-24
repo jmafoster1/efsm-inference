@@ -26,6 +26,9 @@ definition merge_states :: "'s \<Rightarrow> 's \<Rightarrow> 's::finite transit
 definition choice :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "choice t t' = ((Label t) = (Label t') \<and> (Arity t) = (Arity t') \<and> (\<exists> s. apply_guards (Guard t) s \<and> apply_guards (Guard t') s))"
 
+lemma choice_symmetry: "choice x y = choice y x"
+  using choice_def by auto
+
 definition nondeterministic_pairs :: "'s::finite transition_function \<Rightarrow> ('s \<times> ('s \<times> 's) \<times> (transition \<times> transition)) set" where
   "nondeterministic_pairs t = {(origin, (dest1, dest2), (t1, t2)). t1 |\<in>| t (origin, dest1) \<and> t2 |\<in>| t (origin, dest2) \<and> t1 < t2 \<and> choice t1 t2}"
 

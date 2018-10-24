@@ -38,6 +38,8 @@ definition gOr :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<or>" 6
 definition gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<and>" 60*) where
   "gAnd v va \<equiv> Nor (Nor v v) (Nor va va)"
 
+lemmas connectives = gNot_def gOr_def gAnd_def
+
 lemma inj_gAnd: "inj gAnd"
   apply (simp add: inj_def)
   apply clarify
@@ -63,6 +65,8 @@ definition Ge :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<ge>" 60
 
 definition Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<noteq>" 60*) where
   "Ne v va \<equiv> gNot (Eq v va)"
+
+lemmas relations = Lt_def Le_def Ge_def Ne_def
 
 lemma or_equiv: "gval (gOr x y) r = maybe_or (gval x r) (gval y r)"
   apply (simp add: gOr_def)
