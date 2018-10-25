@@ -61,7 +61,7 @@ definition hilbert_option :: "('a \<Rightarrow> bool) \<Rightarrow> 'a option" w
   "hilbert_option f = (if {x. f x} = {} then None else Some (Eps f))"
 
 fun make_context :: "'s::finite efsm \<Rightarrow> context \<Rightarrow> 's \<Rightarrow> 's::finite transition_function option" where
-  "make_context e c s = (if \<exists>p. posterior_sequence (observe_transitions e (s0 e) <> p) empty = c \<and> last (state_trace e (s0 e) <> p) = s
+  "make_context e c s = (if \<exists>p. posterior_sequence (transition_trace e (s0 e) <> p) empty = c \<and> last (state_trace e (s0 e) <> p) = s
                   then Some (T e)
                   \<comment> \<open> else if it is possible to modify the update functions of incoming transitions
                      to get the right context then do that \<close>
@@ -71,10 +71,12 @@ lemma make_context_options: "make_context e c s = None \<or> (\<exists>t. make_c
   by simp
 
 definition gets_us_to :: "'s::finite efsm \<Rightarrow> 's \<Rightarrow> trace \<Rightarrow> bool" where
-  "gets_us_to e s t = (state (last (observe_all e (s0 e) <> t)) = s)"
+  "gets_us_to e s t = (case (observe_all e (s0 e) <> t) of
+    [] \<Rightarrow> (s0 e) = s |
+    _ \<Rightarrow> (state (last (observe_all e (s0 e) <> t)) = s))"
 
 definition anterior_context :: "'s::finite efsm \<Rightarrow> trace \<Rightarrow> context" where
- "anterior_context e p = posterior_sequence (observe_transitions e (s0 e) <> p) empty"
+ "anterior_context e p = posterior_sequence (transition_trace e (s0 e) <> p) empty"
 
 (* Does t1 subsume t2 in all possible anterior contexts? *)
 (* For every path which gets us to the problem state, does t1 subsume t2 in the resulting context *)

@@ -385,6 +385,11 @@ lemma invalid_termination: "observe_trace drinks (s0 drinks) <> [(STR ''select''
 abbreviation select_posterior :: "context" where
   "select_posterior \<equiv> \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> Eq (Num 0) \<rbrakk>"
 
+lemma consistent_select_posterior: "consistent select_posterior"
+  apply (simp add: consistent_def)
+  apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0>" in exI)
+  by (simp add: consistent_empty_4)
+
 lemma select_posterior: "(posterior empty select) = select_posterior"
   apply (simp add: posterior_def select_def)
   apply (rule ext)

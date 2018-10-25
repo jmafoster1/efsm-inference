@@ -193,52 +193,204 @@ lemma merge_self_state: "merge_states x x t = t"
 lemma medial_vend_nothing: "(medial c (Guard vend_nothing)) = c"
   by (simp add: transitions)
 
-lemma consistent_medial_vend_nothing: "consistent (medial \<lbrakk>V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> (Guard vend_nothing))"
-  apply (simp add: medial_vend_nothing consistent_def)
-  apply (rule_tac x="<R 2 := Num 0>" in exI)
-  apply simp
-  using consistent_empty_4 by blast
-
-lemma posterior_vend_nothing: "posterior \<lbrakk>V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> vend_nothing = \<lbrakk>V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk>"
-  apply (simp add: posterior_def consistent_medial_vend_nothing)
-  apply (simp add: transitions)
+lemma medial_vend_fail: "medial select_posterior (Guard vend_fail) = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Eq (Num 0)) (Lt (Num 100))\<rbrakk>"
   apply (rule ext)
-  by simp
+  by (simp add: transitions)
 
-lemma consistent_medial_vend_fail: "consistent (medial \<lbrakk>V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> (Guard vend_fail))"
-  apply (simp add: transitions consistent_def)
-  apply (rule_tac x="<R 2 := Num 0>" in exI)
-  apply simp
-  using consistent_empty_4 by blast
-
-lemma posterior_vend_fail: "posterior \<lbrakk>V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> vend_fail = \<lbrakk>V (R 2) \<mapsto> And (Eq (Num 0)) (Lt (Num 100))\<rbrakk>"
-  apply (simp add: posterior_def consistent_medial_vend_fail)
-  apply (simp add: transitions)
+lemma vend_nothing_posterior: "posterior select_posterior vend_nothing = select_posterior"
+  apply (simp only: posterior_def medial_vend_nothing)
+  apply (simp add: consistent_select_posterior del: One_nat_def)
   apply (rule ext)
-  by simp
+  by (simp add: transitions)
 
-lemma vend_fail_subsumes_vend_nothing: "subsumes \<lbrakk>V (R 2) \<mapsto> Eq (Num 0)\<rbrakk> vend_fail vend_nothing"
-  apply (simp add: subsumes_def)
+lemma consistent_medial_vend_fail: "consistent \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> And (cexp.Eq (Num 0)) (cexp.Lt (Num 100))\<rbrakk>"
+  apply (simp add: consistent_def)
+  apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0>" in exI)
+  by (simp add: connectives consistent_empty_4)
+
+lemma vend_fail_posterior: "posterior select_posterior vend_fail = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Eq (Num 0)) (Lt (Num 100))\<rbrakk>"
+  apply (simp only: posterior_def medial_vend_fail)
+  apply (simp add: consistent_medial_vend_fail del: One_nat_def)
+  apply (rule ext)
+  by (simp add: transitions)
+
+lemma vend_fail_subsumes_vend_nothing: "subsumes select_posterior vend_fail vend_nothing"
+  apply (simp add: subsumes_def del: One_nat_def)
   apply safe
-     apply (simp add: transitions)
-     apply auto[1]
+  using guard_vend_nothing medial_vend_fail apply auto[1]
     apply (simp add: transitions)
-   apply (simp add: medial_vend_nothing posterior_vend_nothing posterior_vend_fail)
-   apply safe
-  apply simp
+   apply (simp add: medial_vend_nothing del: One_nat_def)
+   apply (simp add: vend_nothing_posterior del: One_nat_def)
+   apply (simp only: vend_fail_posterior)
+   apply (simp del: One_nat_def)
+   apply (case_tac "r = V (R 2)")
+    apply simp
     apply (case_tac "ValueLt (Some i) (Some (Num 100))")
      apply simp
     apply simp
+   apply (case_tac "r = V (R 1)")
+    apply simp
    apply simp
-  apply (simp add: posterior_vend_nothing posterior_vend_fail consistent_def)
-  apply (rule_tac x="<R 2 := Num 0>" in exI)
-  apply safe
-   apply (simp add: relations connectives)
-  using consistent_empty_4 by auto
+   apply (simp only: vend_fail_posterior)
+  apply (simp add: consistent_def)
+  apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0>" in exI)
+  by (simp add: connectives consistent_empty_4)
 
-lemma medial_vend_fail: "(medial c (Guard vend_fail)) = (\<lambda>r. if r = V (R 2) then and (c r) (Lt (Num 100)) else c r)"
-  apply (simp add: transitions)
+lemma posterior_select: "length (snd e) = Suc 0 \<Longrightarrow> (posterior \<lbrakk>\<rbrakk> (snd (the_elem (possible_steps drinks2 q0 Map.empty STR ''select'' (snd e))))) =
+     (\<lambda>a. if a = V (R 2) then cexp.Eq (Num 0) else if a = V (R (Suc 0)) then cexp.Bc True else \<lbrakk>\<rbrakk> a)"
+  apply (simp add: posterior_def)
+  apply (simp add: possible_steps_q0)
+  apply (simp add: select_def)
   apply (rule ext)
+  apply simp
+  by (smt One_nat_def Suc_1 aexp.inject(2) aexp.simps(18) n_not_Suc_n vname.inject(2) vname.simps(5))
+
+lemma apply_updates_vend_nothing_2: "(EFSM.apply_updates (Updates vend_nothing)
+           (case_vname Map.empty (\<lambda>n. if n = 2 then Some (Num 0) else if R n = R 1 then Some (hd (snd e)) else None))
+           (\<lambda>a. if a = R 2 then Some (Num 0) else if a = R 1 then Some (hd (snd e)) else None)) = <R 2 \<mapsto> Num 0, R 1 \<mapsto> (hd (snd e))>"
+  apply (rule ext)
+  by (simp add: transitions)
+
+lemma select_posterior_equiv: "\<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> = select_posterior"
+  apply (rule ext)
+  by simp
+
+lemma select_posterior_equiv_2: "(\<lambda>a. if a = V (R 2) then cexp.Eq (Num 0) else if a = V (R (Suc 0)) then cexp.Bc True else \<lbrakk>\<rbrakk> a) = select_posterior"
+  apply (rule ext)
+  by simp
+
+lemma register_simp: "(\<lambda>x. if x = R (Suc 0)
+          then aval (snd (R (Suc 0), V (R (Suc 0)))) (case_vname Map.empty (\<lambda>n. if n = 2 then Some (Num 0) else <R (Suc 0) := hd (snd e)> (R n)))
+          else EFSM.apply_updates [(R 2, V (R 2))] (case_vname Map.empty (\<lambda>n. if n = 2 then Some (Num 0) else <R (Suc 0) := hd (snd e)> (R n)))
+                <R (Suc 0) := hd (snd e), R 2 := Num 0> x) =  <R (Suc 0) := hd (snd e), R 2 := Num 0>"
+  apply (rule ext)
+  by simp
+
+lemma observe_vend_nothing: "a = (STR ''vend'', []) \<Longrightarrow> (observe_all drinks2 q1 <R (Suc 0) := hd (snd e), R 2 := Num 0> (a # t)) = (vend_nothing, q1, [], <R (Suc 0) := hd (snd e), R 2 := Num 0>)#(observe_all drinks2 q1 <R (Suc 0) := hd (snd e), R 2 := Num 0> t)"
+  apply simp
+  apply (simp add: drinks2_vend_insufficient)
+  apply (simp add: updates_vend_nothing outputs_vend_nothing)
+  apply safe
+   apply (rule ext)
+   apply simp
+  by (simp only: register_simp)
+
+lemma error_trace: "t \<noteq> [] \<Longrightarrow> observe_all drinks2 q0 Map.empty t = [] \<Longrightarrow> observe_all drinks2 q0 Map.empty (t @ [e]) = []"
+  sorry
+  
+lemma "valid_trace drinks2 p \<Longrightarrow> gets_us_to drinks2 q1 p \<Longrightarrow> p = (e#t) \<Longrightarrow> fst e = STR ''select'' \<and> length (snd e) = 1 \<Longrightarrow> t = map (\<lambda>e. (STR ''vend'', [])) t"
+  apply (simp add: gets_us_to_def s0_drinks2)
+  apply (simp add: possible_steps_q0 s0_drinks2 updates_select)
+
+
+
+lemma gets_us_to_q1_anterior_context: "gets_us_to drinks2 q1 p \<Longrightarrow> anterior_context drinks2 p = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num 0)\<rbrakk>"
+proof (induct p rule: rev_induct)
+  case Nil
+  then show ?case
+    by (simp add: s0_drinks2 gets_us_to_def)
+next
+  case (snoc e t)
+  then show ?case
+    apply (simp add: anterior_context_def gets_us_to_def s0_drinks2)
+    apply (case_tac "observe_all drinks2 q0 Map.empty (t @ [e])")
+     apply (simp add: s0_drinks2)
+    apply simp
+    apply (case_tac a)
+    apply (simp add: s0_drinks2)
+    apply (case_tac "observe_all drinks2 q0 Map.empty t")
+
+     apply (simp add: s0_drinks2)
+     apply (case_tac "t=[]")
+      apply simp
+      apply (case_tac "fst e = STR ''select'' \<and> length (snd e) = 1")
+       apply (simp add: possible_steps_q0 s0_drinks2 select_posterior)
+       apply (rule ext)
+       apply simp
+      apply (simp add: drinks2_q0_invalid s0_drinks2)
+     apply (simp add: error_trace)
+    apply (simp add: s0_drinks2)
+    apply (case_tac ab)
+    apply simp
+    apply (case_tac "t")
+     apply simp
+    apply (case_tac "fst ad = STR ''select'' \<and> length (snd ad) = 1")
+     apply (simp add: possible_steps_q0 s0_drinks2 select_posterior updates_select)
+
+    
+
+
+
+
+
+
+
+
+
+    (* apply (case_tac "e=(STR ''vend'', [])") *)
+     (* apply (simp add: anterior_context_def) *)
+     (* apply (simp add: aux1) *)
+
+    (* apply (case_tac t) *)
+     (* apply (simp add: anterior_context_def) *)
+     (* apply (case_tac "fst e = STR ''select'' \<and> length (snd e) = 1") *)
+      (* apply simp *)
+      (* apply (simp add: possible_steps_q0 s0_drinks2 select_posterior) *)
+      (* apply (rule ext) *)
+      (* apply simp *)
+
+     (* apply (simp add: drinks2_q0_invalid s0_drinks2) *)
+     (* apply (rule ext) *)
+     (* apply (simp add: gets_us_to_def) *)
+     (* apply (simp add: drinks2_q0_invalid s0_drinks2) *)
+
+    (* apply (case_tac "\<not> (fst a = STR ''select'' \<and> length (snd a) = 1)") *)
+     (* apply (simp add: gets_us_to_def) *)
+     (* apply (simp add: drinks2_q0_invalid s0_drinks2) *)
+
+    (* apply simp *)
+    (* apply (case_tac "list = []") *)
+     (* apply simp *)
+     (* apply (simp add: anterior_context_def s0_drinks2) *)
+     (* apply (simp add: possible_steps_q0 select_posterior updates_select) *)
+     (* apply (case_tac "\<not> (fst e = STR ''coin'' \<and> length (snd e) = 1)") *)
+      (* apply (simp add: drinks2_q1_invalid) *)
+      (* apply (rule ext) *)
+      (* apply simp *)
+     (* apply (simp add: gets_us_to_def) *)
+     (* apply (simp add: s0_drinks2 possible_steps_q0 select_posterior updates_select) *)
+     (* apply (simp add: drinks2_q1_coin) *)
+    
+    (* apply (case_tac "set list = {(STR ''vend'', [])}") *)
+    
+
+    (* apply (simp add: gets_us_to_def) *)
+    (* apply (simp only: s0_drinks2) *)
+    (* apply (simp add: possible_steps_q0) *)
+    (* apply (simp only: updates_select) *)
+    (* apply (case_tac list) *)
+     (* apply simp *)
+    (* apply (case_tac "\<not> (fst e = STR ''coin'' \<and> length (snd e) = 1)") *)
+      (* apply (simp add: drinks2_q1_invalid) *)
+      (* apply (simp add: anterior_context_def) *)
+      (* apply (simp add: s0_drinks2 possible_steps_q0 updates_select) *)
+      (* apply (simp add: drinks2_q1_invalid) *)
+
+     (* apply simp *)
+     (* apply (simp add: drinks2_q1_coin) *)
+
+    (* apply simp *)
+
+
+
+
+qed
+  
+
+lemma "directly_subsumes drinks2 q1 vend_fail vend_nothing"
+  apply (simp add: directly_subsumes_def s0_drinks2)
+  apply (simp add: gets_us_to_q1_anterior_context del: One_nat_def)
+  using vend_fail_subsumes_vend_nothing
   by simp
 
 lemma "merge_transitions \<lparr>s0 = q0, T = (merge_states q1 q2 (T drinks2))\<rparr> q1 q1 q1 vend_nothing vend_fail = None"

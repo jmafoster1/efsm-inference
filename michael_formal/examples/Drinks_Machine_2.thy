@@ -15,6 +15,12 @@ definition vend_nothing :: "transition" where
         Updates = [(R 1, V (R 1)), (R 2, V (R 2))]
       \<rparr>"
 
+lemma guard_vend_nothing: "Guard vend_nothing = []"
+  by (simp add: vend_nothing_def)
+
+lemma updates_vend_nothing: "Updates vend_nothing = [(R 1, V (R 1)), (R 2, V (R 2))]"
+  by (simp add: vend_nothing_def)
+
 lemmas transitions = select_def coin_def vend_def vend_fail_def vend_nothing_def connectives relations
 
 lemma outputs_vend_nothing: "Outputs vend_nothing = []"
