@@ -278,12 +278,6 @@ lemma observe_vend_nothing: "a = (STR ''vend'', []) \<Longrightarrow> (observe_a
 lemma error_trace: "t \<noteq> [] \<Longrightarrow> observe_all drinks2 q0 Map.empty t = [] \<Longrightarrow> observe_all drinks2 q0 Map.empty (t @ [e]) = []"
   sorry
   
-lemma "valid_trace drinks2 p \<Longrightarrow> gets_us_to drinks2 q1 p \<Longrightarrow> p = (e#t) \<Longrightarrow> fst e = STR ''select'' \<and> length (snd e) = 1 \<Longrightarrow> t = map (\<lambda>e. (STR ''vend'', [])) t"
-  apply (simp add: gets_us_to_def s0_drinks2)
-  apply (simp add: possible_steps_q0 s0_drinks2 updates_select)
-
-
-
 lemma gets_us_to_q1_anterior_context: "gets_us_to drinks2 q1 p \<Longrightarrow> anterior_context drinks2 p = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num 0)\<rbrakk>"
 proof (induct p rule: rev_induct)
   case Nil
@@ -316,6 +310,12 @@ next
      apply simp
     apply (case_tac "fst ad = STR ''select'' \<and> length (snd ad) = 1")
      apply (simp add: possible_steps_q0 s0_drinks2 select_posterior updates_select)
+     apply (case_tac list)
+      apply (rule ext)
+      apply simp
+     apply simp
+     apply (case_tac ae)
+    apply simp
 
     
 
