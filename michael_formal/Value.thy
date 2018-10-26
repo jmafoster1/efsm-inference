@@ -1,5 +1,5 @@
 theory Value
-imports "Show.Show_Instances"
+imports Main
 begin
 datatype "value" = Num int | Str String.literal
 

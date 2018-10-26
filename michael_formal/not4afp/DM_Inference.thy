@@ -276,8 +276,102 @@ lemma observe_vend_nothing: "a = (STR ''vend'', []) \<Longrightarrow> (observe_a
   by (simp only: register_simp)
 
 lemma error_trace: "t \<noteq> [] \<Longrightarrow> observe_all drinks2 q0 Map.empty t = [] \<Longrightarrow> observe_all drinks2 q0 Map.empty (t @ [e]) = []"
-  sorry
-  
+  apply (cases t)
+   apply simp
+  apply simp
+  apply (case_tac "is_singleton (possible_steps drinks2 q0 Map.empty (fst a) (snd a))")
+   apply simp
+   apply (case_tac "the_elem (possible_steps drinks2 q0 Map.empty (fst a) (snd a))")
+   apply simp
+  by simp
+
+lemma reg_simp_3: "(\<lambda>a. if a = R 2 then Some (Num 0) else if a = R (Suc 0) then Some (hd (snd e)) else None) = <R (Suc 0) := hd (snd e), R 2 := Num 0>"
+  apply (rule ext)
+  by simp
+
+lemma coin_updates: "(EFSM.apply_updates (Updates coin)
+            (case_vname (\<lambda>n. input2state (snd a) (Suc 0) (I n)) (\<lambda>n. if n = 2 then Some (Num 0) else <R (Suc 0) := s> (R n)))
+            <R (Suc 0) := s, R 2 := Num 0>) = (\<lambda>u. if u = R 1 then Some s else if u = R 2 then value_plus (Some (Num 0)) (input2state (snd a) 1 (I 1)) else None)"
+  apply (rule ext)
+  by (simp add: coin_def)
+
+lemma aux1: "state (last (observe_all drinks2 (s0 drinks2) Map.empty (t @ [e]))) = q1 \<Longrightarrow>
+       observe_all drinks2 q0 Map.empty t = [] \<Longrightarrow>
+       observe_all drinks2 q0 Map.empty (t @ [e]) = (a, aa, ab, b) # list \<Longrightarrow>
+       posterior_sequence (map (\<lambda>(t, x, y, z). t) list) (posterior \<lbrakk>\<rbrakk> a) =
+       (\<lambda>a. if a = V (R 2) then cexp.Eq (Num 0) else if a = V (R (Suc 0)) then cexp.Bc True else \<lbrakk>\<rbrakk> a)"
+proof (induct t)
+  case Nil
+  then show ?case
+    apply (simp add: s0_drinks2)
+    apply (case_tac "fst e = STR ''select'' \<and> length (snd e) = 1")
+     apply (simp add: possible_steps_q0 s0_drinks2 select_posterior)
+     apply (rule ext)
+     apply simp
+    by (simp add: drinks2_q0_invalid)
+next
+  case (Cons a t)
+  then show ?case
+    apply simp
+    apply (case_tac "fst a = STR ''select'' \<and> length (snd a) = 1")
+     apply (simp add: possible_steps_q0 s0_drinks2 select_posterior)
+    apply simp
+    by (simp add: drinks2_q0_invalid)
+qed
+
+lemma equal_first_event: "observe_all drinks2 q0 Map.empty t = x # list \<Longrightarrow>
+       observe_all drinks2 q0 Map.empty (t @ [e]) = y # lista \<Longrightarrow> x = y"
+proof (induct t)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a t)
+  then show ?case
+    apply simp
+    apply (case_tac "fst a = STR ''select'' \<and> length (snd a) = 1")
+     apply (simp add: possible_steps_q0 s0_drinks2 select_posterior)
+     apply (simp add: updates_select)
+     apply auto[1]
+    by (simp add: drinks2_q0_invalid s0_drinks2)
+qed
+
+lemma first_event_select: "observe_all drinks2 q0 Map.empty t = x # list \<Longrightarrow> x = (select, q1, [], <R 1 := Num 0, R 2 := hd (snd (hd t))>)"
+proof (induct t)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons e t)
+  then show ?case
+    apply (case_tac "fst e = STR ''select'' \<and> length (snd e) = 1")
+     apply (simp add: possible_steps_q0 s0_drinks2 select_posterior updates_select)
+     apply safe
+      apply simp
+      apply (rule ext)
+    sorry
+qed
+
+
+lemma aux2: "(state (if list = [] then (a, aa, ab, b) else last list) = q1 \<Longrightarrow>
+        posterior_sequence (map (\<lambda>(t, x, y, z). t) list) (posterior \<lbrakk>\<rbrakk> a) =
+        (\<lambda>a. if a = V (R 2) then cexp.Eq (Num 0) else if a = V (R (Suc 0)) then cexp.Bc True else \<lbrakk>\<rbrakk> a)) \<Longrightarrow>
+       state (last (observe_all drinks2 (s0 drinks2) Map.empty (t @ [e]))) = q1 \<Longrightarrow>
+       observe_all drinks2 q0 Map.empty t = (a, aa, ab, b) # list \<Longrightarrow>
+       observe_all drinks2 q0 Map.empty (t @ [e]) = (a, aa, ab, b) # lista \<Longrightarrow>
+       posterior_sequence (map (\<lambda>(t, x, y, z). t) lista) (posterior \<lbrakk>\<rbrakk> ac) =
+       (\<lambda>a. if a = V (R 2) then cexp.Eq (Num 0) else if a = V (R (Suc 0)) then cexp.Bc True else \<lbrakk>\<rbrakk> a)"
+proof (induct t)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a as)
+  then show ?case
+
+
+qed
+
 lemma gets_us_to_q1_anterior_context: "gets_us_to drinks2 q1 p \<Longrightarrow> anterior_context drinks2 p = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num 0)\<rbrakk>"
 proof (induct p rule: rev_induct)
   case Nil
@@ -286,6 +380,25 @@ proof (induct p rule: rev_induct)
 next
   case (snoc e t)
   then show ?case
+    apply (simp add: anterior_context_def gets_us_to_def s0_drinks2)
+    apply (case_tac "observe_all drinks2 q0 Map.empty t")
+     apply (simp add: s0_drinks2)
+     apply (case_tac "observe_all drinks2 q0 Map.empty (t @ [e])")
+      apply (simp add: s0_drinks2)
+     apply clarify
+    apply simp
+     apply (simp add: aux1)
+    apply (simp add: s0_drinks2)
+    apply (case_tac "observe_all drinks2 q0 Map.empty (t @ [e])")
+     apply (simp add: s0_drinks2)
+    apply clarify
+    apply simp
+    apply (case_tac "(a, aa, ab, b) = (ac, ad, ae, ba)")
+    using aux2 apply blast
+    using equal_first_event by blast
+
+
+(* This works quite well 
     apply (simp add: anterior_context_def gets_us_to_def s0_drinks2)
     apply (case_tac "observe_all drinks2 q0 Map.empty (t @ [e])")
      apply (simp add: s0_drinks2)
@@ -303,19 +416,29 @@ next
        apply simp
       apply (simp add: drinks2_q0_invalid s0_drinks2)
      apply (simp add: error_trace)
-    apply (simp add: s0_drinks2)
-    apply (case_tac ab)
-    apply simp
-    apply (case_tac "t")
-     apply simp
-    apply (case_tac "fst ad = STR ''select'' \<and> length (snd ad) = 1")
-     apply (simp add: possible_steps_q0 s0_drinks2 select_posterior updates_select)
-     apply (case_tac list)
-      apply (rule ext)
-      apply simp
-     apply simp
-     apply (case_tac ae)
-    apply simp
+
+    apply (case_tac "observe_all drinks2 q0 Map.empty t")
+     apply (simp add: s0_drinks2)
+    apply clarify
+     apply (simp add: s0_drinks2)
+*)
+
+
+
+
+    (* apply (simp add: s0_drinks2) *)
+    (* apply (case_tac ab) *)
+    (* apply simp *)
+    (* apply (case_tac "t") *)
+     (* apply simp *)
+    (* apply (case_tac "fst ad = STR ''select'' \<and> length (snd ad) = 1") *)
+     (* apply (simp add: possible_steps_q0 s0_drinks2 select_posterior updates_select) *)
+     (* apply (case_tac list) *)
+      (* apply (rule ext) *)
+      (* apply simp *)
+     (* apply simp *)
+     (* apply (case_tac ae) *)
+    (* apply simp *)
 
     
 
