@@ -1,8 +1,8 @@
-subsection {* Option Logic *}
-text {*
+subsection \<open>Option Logic\<close>
+text \<open>
 This theory defines a three-valued logic such that nonsensical guard expressions cannot ever
 evaluate to true. Such expressions evaluate instead to None which, when negated, is still None.
-*}
+\<close>
 
 theory Option_Logic
 imports AExp

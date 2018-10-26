@@ -1,5 +1,5 @@
-section{*Extended Finite State Machines*}
-text{*
+section\<open>Extended Finite State Machines\<close>
+text\<open>
 This section presents the theories associated with EFSMs. First we define a language of arithmetic
 expressions for guards, outputs, and updates similar to that in IMP \cite{fixme}. We then go on to
 define the guard logic such that nonsensical guards (such as testing to see if an integer is greater
@@ -9,13 +9,13 @@ to constraints, we use a Nor logic, although we define syntax hacks for the expr
 using other logical operators. With the underlying types defined, we then define EFSMs and prove
 that they are prefix-closed, that is to say that if a string of inputs is accepted by the machine
 then all of its prefixes are also accepted.
-*}
-subsection {* Arithmetic Expressions *}
-text{*
+\<close>
+subsection \<open>Arithmetic Expressions\<close>
+text\<open>
 This theory defines a language of arithmetic expressions over literal values and variables. Here,
 values are limited to integers and strings. Variables may be either inputs or registers. We also
 limit ourselves to a simple arithmetic of plus and minus as a proof of concept.
-*}
+\<close>
 
 theory AExp
   imports Value VName
@@ -82,6 +82,6 @@ primrec sum :: "aexp list \<Rightarrow> aexp" where
   "sum [] = L (Num 0)" |
   "sum (h#t) = Plus h (sum t)"
 
-lemma sum_determinism: "(sum x = sum y) = (x = y)"
-  sorry
+(* lemma sum_determinism: "(sum x = sum y) = (x = y)"
+  sorry *)
 end

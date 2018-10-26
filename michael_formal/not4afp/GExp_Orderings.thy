@@ -226,8 +226,143 @@ fun less_eq_aexp_aux :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
   "less_eq_aexp_aux (Minus f1 s1) (Minus f2 s2) = (if f1 = f2 then less_eq_aexp_aux s1 s2 else less_eq_aexp_aux f1 f2)" |
   "less_eq_aexp_aux (Minus a1 a2) _ = False"
 
+
 definition less_aexp_aux :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
   "less_aexp_aux x y \<equiv> (less_eq_aexp_aux x y) \<and> (\<not>less_eq_aexp_aux y x)"
+
+lemma less_eq_aexp_aux_idem: "less_eq_aexp_aux x x"
+  proof (induct x)
+    case (L x)
+    then show ?case by (simp)
+  next
+    case (V x)
+    then show ?case by (simp)
+  next
+    case (Plus x1 x2)
+    then show ?case by (simp)
+  next
+    case (Minus x1 x2)
+    then show ?case by (simp)
+  qed
+
+lemma "\<lbrakk> less_eq_aexp_aux x y;
+            less_eq_aexp_aux y z \<rbrakk> \<Longrightarrow>
+            less_eq_aexp_aux x z"
+proof (induct x)
+case (L x)
+  then show ?case
+  proof (induct y)
+    case (L x)
+    then show ?case
+      apply (cases z)
+      by auto
+  next
+    case (V x)
+    then show ?case 
+      apply (cases z)
+      by auto
+  next
+    case (Plus y1 y2)
+    then show ?case
+      apply (cases z)
+      by auto
+  next
+    case (Minus y1 y2)
+    then show ?case
+      apply (cases z)
+      by auto
+  qed
+next
+  case (V x)
+  then show ?case
+  proof (induct y)
+    case (L x)
+    then show ?case
+      apply (cases z)
+      by auto
+  next
+    case (V x)
+    then show ?case 
+      apply (cases z)
+      by auto
+  next
+    case (Plus y1 y2)
+    then show ?case
+      apply (cases z)
+      by auto
+  next
+    case (Minus y1 y2)
+    then show ?case
+      apply (cases z)
+      by auto
+  qed
+next
+  case (Plus x1 x2)
+  then show ?case
+  proof (induct y)
+    case (L x)
+    then show ?case
+      apply (cases z)
+      by auto
+  next
+    case (V x)
+    then show ?case 
+      apply (cases z)
+      by auto
+  next
+    case (Plus y1 y2)
+    then show ?case
+    proof (induct z)
+      case (L x)
+      then show ?case by simp
+    next
+      case (V x)
+      then show ?case by simp
+    next
+      case (Plus z1 z2)
+      then show ?case
+        apply simp 
+        apply(case_tac "x1 = y1")
+         apply(simp_all)
+        apply(case_tac "y1 = z1")
+          apply(simp_all)
+        sorry (* try*)
+    
+    next
+      case (Minus z1 z2)
+      then show ?case by simp
+    qed
+  next
+    case (Minus y1 y2)
+    then show ?case
+      apply (cases z)
+      by auto
+  qed
+next
+  case (Minus x1 x2)
+  then show ?case
+  proof (induct y)
+    case (L x)
+    then show ?case
+      apply (cases z)
+      by auto
+  next
+    case (V x)
+    then show ?case 
+      apply (cases z)
+      by auto
+  next
+    case (Plus y1 y2)
+    then show ?case
+      apply (cases z)
+      by auto
+  next
+    case (Minus y1 y2)
+    then show ?case
+      sorry
+  qed
+qed
+
 
 instantiation aexp :: linorder begin
 definition less_eq_aexp :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
@@ -238,26 +373,15 @@ definition less_aexp :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
 
 lemmas less_eq_defs = less_aexp_def less_eq_aexp_def less_aexp_aux_def
 
+declare [[show_sorts, show_types]]
 instance proof
   fix x y :: aexp
   show "(x < y) = (x \<le> y \<and> \<not> y \<le> x)"
     by (simp add: less_eq_defs)
 next
   fix x:: aexp
-  show "x \<le> x"
-  proof (induct x)
-    case (L x)
-    then show ?case by (simp add: less_eq_defs)
-  next
-    case (V x)
-    then show ?case by (simp add: less_eq_defs)
-  next
-    case (Plus x1 x2)
-    then show ?case by (simp add: less_eq_defs)
-  next
-    case (Minus x1 x2)
-    then show ?case by (simp add: less_eq_defs)
-  qed
+  show "x \<le> x" 
+    by (simp add: less_eq_aexp_aux_idem less_eq_aexp_def)
 next
   fix x y z::aexp
   show "x \<le> y \<Longrightarrow> y \<le> z \<Longrightarrow> x \<le> z"
@@ -320,8 +444,17 @@ next
         by auto
     next
       case (Plus y1 y2)
-      then show ?case
-        sorry
+      then show ?case 
+        apply (cases y)
+        apply(simp)        
+          apply(simp)   
+        defer
+         apply(simp)   
+        apply(case_tac "x1 = y1")
+          apply(case_tac "x2 = y2")
+          apply (simp add: less_eq_aexp_aux_idem)
+        apply(simp)
+        try
     next
       case (Minus y1 y2)
       then show ?case

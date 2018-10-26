@@ -1,5 +1,5 @@
-subsection {* Guard Expressions *}
-text{*
+subsection \<open>Guard Expressions\<close>
+text\<open>
 This theory defines the guard language of EFSMs which can be translated directly to and from
 contexts. This is similar to boolean expressions from IMP \cite{fixme}. Boolean values true and
 false respectively represent the guards which are always and never satisfied. Guards may test
@@ -8,7 +8,7 @@ expressions. Additionally, a guard may also test to see if a particular variable
 useful if an EFSM transition is intended only to initialise a register.  We also define syntax hacks
 for the relations less than, less than or equal to, greater than or equal to, and not equal to as
 well as the expression of logical conjunction, disjunction, and negation in terms of nor logic.
-*}
+\<close>
 
 theory GExp
 imports AExp Option_Logic
@@ -171,7 +171,7 @@ lemma not_mutually_exclusive_true: "satisfiable x = (\<not> mutually_exclusive x
 definition conjoin :: "gexp list \<Rightarrow> gexp" where
   "conjoin x = foldl (\<lambda>h. gAnd h) (Bc True) x"
 
-lemma "foldr gAnd x (Bc True) = foldr gAnd y (Bc True) \<Longrightarrow> x = y"
+(* lemma "foldr gAnd x (Bc True) = foldr gAnd y (Bc True) \<Longrightarrow> x = y"
 proof (induct x)
   case Nil
   then show ?case
@@ -200,9 +200,9 @@ next
       apply (simp add: gAnd_def)
       sorry
   qed
-qed
+qed *)
 
-lemma contra: "x \<noteq> y \<Longrightarrow> foldl gAnd (Bc True) x \<noteq> foldl gAnd (Bc True) y"
+(* lemma contra: "x \<noteq> y \<Longrightarrow> foldl gAnd (Bc True) x \<noteq> foldl gAnd (Bc True) y"
 proof (induct x)
   case Nil
   then show ?case
@@ -221,27 +221,26 @@ next
       apply safe
       sorry
   qed
+qed *)
 
-qed
+(* lemma expanded: "foldl gAnd (Bc True) x = foldl gAnd (Bc True) y \<Longrightarrow> x = y"
+  using contra by auto *)
 
-lemma expanded: "foldl gAnd (Bc True) x = foldl gAnd (Bc True) y \<Longrightarrow> x = y"
-  using contra by auto
-
-lemma inj_conjoin: "inj conjoin"
+(* lemma inj_conjoin: "inj conjoin"
   apply (simp add: inj_def)
   apply (simp add: conjoin_def)
   apply clarify
   apply (case_tac x)
    apply simp
-  sorry
+  sorry *)
 
-lemma conjoin_determinism: "(conjoin x = conjoin y) = (x = y)"
+(* lemma conjoin_determinism: "(conjoin x = conjoin y) = (x = y)"
 proof
   show "conjoin x = conjoin y \<Longrightarrow> x = y"
     by (simp add: inj_conjoin inj_eq)
 next
   show "x = y \<Longrightarrow> conjoin x = conjoin y"
     by simp
-qed
+qed*)
 
 end

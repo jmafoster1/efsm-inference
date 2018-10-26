@@ -1,18 +1,18 @@
-section{*Subsumption and Generalisation*}
-text{*
+section\<open>Subsumption and Generalisation\<close>
+text\<open>
 We now define a language of constraint expressions to express restrictions on the known values of
 registers which can be grouped into \emph{contexts} which are used to extend the idea of transition
 subsumption \cite{lorenzoli2008} to transitions with update functions. This forms the
 underpinning of an EFSM inference technique based on transition merging.
-*}
-subsection {* Constraint Expressions *}
-text{*
+\<close>
+subsection \<open>Constraint Expressions\<close>
+text\<open>
 This theory defines a language to express constraints on register values. Base restrictions are
 undefined, unrestricted, inconsistent, equal to a value, less than a value, greater than a value.
 Expressions may be combined using either negation or conjunction to form compound expressions. We
 also define syntax hacks for the relations less than or equal to, greater than or equal to, and
 not equal to as well as the expression of logical ``or'' in terms of negation and conjunction.
-*}
+\<close>
 
 theory CExp
   imports AExp Option_Logic
@@ -46,11 +46,11 @@ abbreviation Neq :: "value \<Rightarrow> cexp" where
 abbreviation Or :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "Or v va \<equiv> not (and (not v) (not va))"
 
-text {*
+text \<open>
 This function takes two cexps and tries to apply restrictions such that the first argument is
 greater than the second. The return value is a pair of the first and second inputs with their
 respective increased restrictions.
-*}
+\<close>
 fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where (* This takes a LONG time to prove *)
   "apply_gt Undef v = (Bc False, v)" |
   "apply_gt v Undef = (v, Bc False)" |
