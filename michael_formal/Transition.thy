@@ -7,7 +7,7 @@ type_synonym output_function = "aexp"
 type_synonym update_function = "(vname \<times> aexp)"
 
 record transition =
-  Label :: String.literal
+  Label :: string
   Arity :: nat
   Guard :: "guard list"
   Outputs :: "output_function list"

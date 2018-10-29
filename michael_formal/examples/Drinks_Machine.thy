@@ -178,7 +178,7 @@ lemma statename_UNIV: "fUNIV = {|q0, q1, q2, q3|}"
 
 definition select :: "transition" where
 "select \<equiv> \<lparr>
-        Label = STR ''select'',
+        Label = ''select'',
         Arity = 1,
         Guard = [], \<comment> \<open> No guards \<close>
         Outputs = [],
@@ -196,7 +196,7 @@ lemma outputs_select [simp]: "Outputs select = []"
 
 definition coin :: "transition" where
 "coin \<equiv> \<lparr>
-        Label = STR ''coin'',
+        Label = ''coin'',
         Arity = 1,
         Guard = [],
         Outputs = [Plus (V (R 2)) (V (I 1))],
@@ -206,7 +206,7 @@ definition coin :: "transition" where
                   ]
       \<rparr>"
 
-lemma label_coin: "Label coin = STR ''coin''"
+lemma label_coin: "Label coin = ''coin''"
   by (simp add: coin_def)
 
 lemma guard_coin [simp]: "Guard coin = []"
@@ -214,19 +214,19 @@ lemma guard_coin [simp]: "Guard coin = []"
 
 definition vend :: "transition" where
 "vend \<equiv> \<lparr>
-        Label = STR ''vend'',
+        Label = ''vend'',
         Arity = 0,
         Guard = [(Ge (V (R 2)) (L (Num 100)))],
         Outputs =  [(V (R 1))],
         Updates = [(R 1, V (R 1)), (R 2, V (R 2))]
       \<rparr>"
 
-lemma label_vend: "Label vend = STR ''vend''"
+lemma label_vend: "Label vend = ''vend''"
   by (simp add: vend_def)
 
 definition vend_fail :: "transition" where
 "vend_fail \<equiv> \<lparr>
-        Label = STR ''vend'',
+        Label = ''vend'',
         Arity = 0,
         Guard = [(GExp.Lt (V (R 2)) (L (Num 100)))],
         Outputs =  [],
@@ -239,7 +239,7 @@ lemma guard_vend_fail: "Guard vend_fail = [(GExp.Lt(V (R 2)) (L (Num 100)))]"
 lemma outputs_vend_fail: "Outputs vend_fail = []"
   by (simp add: vend_fail_def)
 
-lemma label_vend_fail: "Label vend_fail = STR ''vend''"
+lemma label_vend_fail: "Label vend_fail = ''vend''"
   by (simp add: vend_fail_def)
 
 lemma arity_vend_fail: "Arity vend_fail = 0"
@@ -266,7 +266,7 @@ lemma s0_drinks [simp]: "s0 drinks = q0"
 
 lemmas transitions = select_def coin_def vend_def vend_fail_def
 
-lemma possible_steps_q0:  "length i = Suc 0 \<Longrightarrow> possible_steps drinks q0 Map.empty (STR ''select'') i = {(q1, select)}"
+lemma possible_steps_q0:  "length i = Suc 0 \<Longrightarrow> possible_steps drinks q0 Map.empty (''select'') i = {(q1, select)}"
   apply (simp add: possible_steps_def drinks_def)
   apply safe
   using prod.inject apply fastforce
@@ -281,7 +281,7 @@ lemma select_updates [simp]: "(EFSM.apply_updates (Updates select) (case_vname (
 lemma arity_vend: "Arity vend = 0"
   by (simp add: vend_def)
 
-lemma possible_steps_q1_coin: "length i = 1 \<Longrightarrow> possible_steps drinks q1 r (STR ''coin'') i = {(q1, coin)}"
+lemma possible_steps_q1_coin: "length i = 1 \<Longrightarrow> possible_steps drinks q1 r (''coin'') i = {(q1, coin)}"
   apply (simp add: possible_steps_def)
   apply safe
        apply (case_tac a)
@@ -302,7 +302,7 @@ lemma possible_steps_q1_coin: "length i = 1 \<Longrightarrow> possible_steps dri
        apply (simp add: drinks_def label_vend)
   by (simp_all add: drinks_def coin_def)
 
-lemma possible_steps_q1_coin_2: "possible_steps drinks q1 <R (Suc 0) := str ''coke'', R 2 := Num 50> (STR ''coin'') [Num 50] = {(q1, coin)}"
+lemma possible_steps_q1_coin_2: "possible_steps drinks q1 <R (Suc 0) := str ''coke'', R 2 := Num 50> (''coin'') [Num 50] = {(q1, coin)}"
   apply (simp add: possible_steps_def)
   apply safe
        apply (case_tac a)
@@ -330,7 +330,7 @@ lemma coin_updates [simp]: "(EFSM.apply_updates (Updates coin)
   apply (rule ext)
   by simp
 
-lemma possible_steps_q2_vend: "possible_steps drinks q1 <R (Suc 0) := str ''coke'', R 2 := Num 100> (STR ''vend'') [] = {(q2, vend)}"
+lemma possible_steps_q2_vend: "possible_steps drinks q1 <R (Suc 0) := str ''coke'', R 2 := Num 100> (''vend'') [] = {(q2, vend)}"
   apply (simp add: possible_steps_def drinks_def)
   apply safe
        apply (case_tac a)
@@ -355,21 +355,21 @@ lemma possible_steps_q2_vend: "possible_steps drinks q1 <R (Suc 0) := str ''coke
         apply (simp add: vend_fail_def Lt_def)
   by (simp_all add: vend_def Ge_def Lt_def gNot_def)
 
-lemma purchase_coke: "observe_trace drinks (s0 drinks) <> [(STR ''select'', [str ''coke'']), (STR ''coin'', [Num 50]), (STR ''coin'', [Num 50]), (STR ''vend'', [])] = [[], [Num 50], [Num 100], [str ''coke'']]"
+lemma purchase_coke: "observe_trace drinks (s0 drinks) <> [(''select'', [str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] = [[], [Num 50], [Num 100], [str ''coke'']]"
   apply (simp add: is_singleton_def the_elem_def possible_steps_q0 possible_steps_q1_coin possible_steps_q1_coin_2 possible_steps_q2_vend)
   by (simp add: transitions)
 
-lemma invalid_impossible: "possible_steps drinks q1 d (STR ''invalid'') [Num 50] = {}"
+lemma invalid_impossible: "possible_steps drinks q1 d (''invalid'') [Num 50] = {}"
   by (simp add: possible_steps_def drinks_def arity_vend label_coin label_vend_fail)
 
-lemma invalid_input: "EFSM.valid drinks q1 d' [(STR ''invalid'', [Num 50])] \<Longrightarrow> False"
+lemma invalid_input: "EFSM.valid drinks q1 d' [(''invalid'', [Num 50])] \<Longrightarrow> False"
   apply (cases rule: valid.cases)
     apply simp
    apply simp
   apply clarify
   by (simp add: invalid_impossible is_singleton_def)
 
-lemma invalid_valid_prefix: "\<not> (valid_trace drinks [(STR ''select'', [str ''coke'']), (STR ''invalid'', [Num 50])])"
+lemma invalid_valid_prefix: "\<not> (valid_trace drinks [(''select'', [str ''coke'']), (''invalid'', [Num 50])])"
   apply clarify
   apply (cases rule: valid.cases)
     apply simp
@@ -378,7 +378,7 @@ lemma invalid_valid_prefix: "\<not> (valid_trace drinks [(STR ''select'', [str '
   apply (simp add: possible_steps_q0 invalid_input)
   using invalid_input by force
 
-lemma invalid_termination: "observe_trace drinks (s0 drinks) <> [(STR ''select'', [str ''coke'']), (STR ''invalid'', [Num 50]), (STR ''coin'', [Num 50])] = [[]]"
+lemma invalid_termination: "observe_trace drinks (s0 drinks) <> [(''select'', [str ''coke'']), (''invalid'', [Num 50]), (''coin'', [Num 50])] = [[]]"
   apply (simp add: possible_steps_q0 invalid_impossible)
   by (simp add: transitions is_singleton_def)
 

@@ -2,18 +2,8 @@ theory DM_Inference
 imports Inference "../examples/Drinks_Machine_2"
 begin
 
-lemma explode_coin: "(literal.explode STR ''coin'') = ''coin''"
-  by (simp add: Literal.rep_eq zero_literal.rep_eq)
-
-lemma explode_vend: "(literal.explode STR ''vend'') = ''vend''"
-  by (simp add: Literal.rep_eq zero_literal.rep_eq)
-
-(* Plus is append *)
-(* value "STR ''vend'' + STR ''hello''" *)
-
 lemma "max coin vend = vend"
-  apply (simp add: max_def coin_def vend_def less_eq_transition_ext_def)
-  by (simp add: String.less_literal_def explode_coin explode_vend)
+  by (simp add: max_def coin_def vend_def less_eq_transition_ext_def less_transition_ext_def)
 
 lemma merge_q1_q2: "merge_states q1 q2 (T drinks2) = (\<lambda> (a,b) .
   if (a, b) = (q0, q1) then {|select|} else
@@ -46,7 +36,7 @@ lemma choice_vend_vend_nothing: "choice vend vend_nothing"
   by simp
 
 lemma vend_nothing_lt_vend: "vend_nothing < vend"
-  by (simp add: less_transition_ext_def transitions conjoin_def)
+  by (simp add: less_transition_ext_def transitions)
 
 lemma no_choice_vend_coin: "\<not> choice vend coin"
   by (simp add: choice_def transitions)
@@ -62,7 +52,7 @@ lemma no_choice_vend_vend_fail:  "\<not> choice vend vend_fail"
   by simp
 
 lemma vend_nothing_lt_vend_fail: "vend_nothing < vend_fail"
-  by (simp add: less_transition_ext_def transitions conjoin_def)
+  by (simp add: less_transition_ext_def transitions)
 
 lemma choice_vend_nothing_vend_fail: "choice vend_nothing vend_fail"
   apply (simp add: choice_def transitions)
@@ -236,7 +226,7 @@ lemma vend_fail_subsumes_vend_nothing: "subsumes select_posterior vend_fail vend
   apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0>" in exI)
   by (simp add: connectives consistent_empty_4)
 
-lemma posterior_select: "length (snd e) = Suc 0 \<Longrightarrow> (posterior \<lbrakk>\<rbrakk> (snd (the_elem (possible_steps drinks2 q0 Map.empty STR ''select'' (snd e))))) =
+lemma posterior_select: "length (snd e) = Suc 0 \<Longrightarrow> (posterior \<lbrakk>\<rbrakk> (snd (the_elem (possible_steps drinks2 q0 Map.empty ''select'' (snd e))))) =
      (\<lambda>a. if a = V (R 2) then cexp.Eq (Num 0) else if a = V (R (Suc 0)) then cexp.Bc True else \<lbrakk>\<rbrakk> a)"
   apply (simp add: posterior_def)
   apply (simp add: possible_steps_q0)
@@ -266,7 +256,7 @@ lemma register_simp: "(\<lambda>x. if x = R (Suc 0)
   apply (rule ext)
   by simp
 
-lemma observe_vend_nothing: "a = (STR ''vend'', []) \<Longrightarrow> (observe_all drinks2 q1 <R (Suc 0) := hd (snd e), R 2 := Num 0> (a # t)) = (vend_nothing, q1, [], <R (Suc 0) := hd (snd e), R 2 := Num 0>)#(observe_all drinks2 q1 <R (Suc 0) := hd (snd e), R 2 := Num 0> t)"
+lemma observe_vend_nothing: "a = (''vend'', []) \<Longrightarrow> (observe_all drinks2 q1 <R (Suc 0) := hd (snd e), R 2 := Num 0> (a # t)) = (vend_nothing, q1, [], <R (Suc 0) := hd (snd e), R 2 := Num 0>)#(observe_all drinks2 q1 <R (Suc 0) := hd (snd e), R 2 := Num 0> t)"
   apply simp
   apply (simp add: drinks2_vend_insufficient)
   apply (simp add: updates_vend_nothing outputs_vend_nothing)
@@ -304,7 +294,7 @@ proof (induct t)
   case Nil
   then show ?case
     apply (simp add: s0_drinks2)
-    apply (case_tac "fst e = STR ''select'' \<and> length (snd e) = 1")
+    apply (case_tac "fst e = ''select'' \<and> length (snd e) = 1")
      apply (simp add: possible_steps_q0 s0_drinks2 select_posterior)
      apply (rule ext)
      apply simp
@@ -313,7 +303,7 @@ next
   case (Cons a t)
   then show ?case
     apply simp
-    apply (case_tac "fst a = STR ''select'' \<and> length (snd a) = 1")
+    apply (case_tac "fst a = ''select'' \<and> length (snd a) = 1")
      apply (simp add: possible_steps_q0 s0_drinks2 select_posterior)
     apply simp
     by (simp add: drinks2_q0_invalid)
@@ -329,7 +319,7 @@ next
   case (Cons a t)
   then show ?case
     apply simp
-    apply (case_tac "fst a = STR ''select'' \<and> length (snd a) = 1")
+    apply (case_tac "fst a = ''select'' \<and> length (snd a) = 1")
      apply (simp add: possible_steps_q0 s0_drinks2 select_posterior)
      apply (simp add: updates_select)
      apply auto[1]
@@ -344,7 +334,7 @@ proof (induct t)
 next
   case (Cons e t)
   then show ?case
-    apply (case_tac "fst e = STR ''select'' \<and> length (snd e) = 1")
+    apply (case_tac "fst e = ''select'' \<and> length (snd e) = 1")
      apply (simp add: possible_steps_q0 s0_drinks2 select_posterior updates_select)
      apply safe
       apply simp
@@ -368,7 +358,7 @@ proof (induct t)
 next
   case (Cons a as)
   then show ?case
-
+    sorry
 
 qed
 
@@ -410,7 +400,7 @@ next
      apply (simp add: s0_drinks2)
      apply (case_tac "t=[]")
       apply simp
-      apply (case_tac "fst e = STR ''select'' \<and> length (snd e) = 1")
+      apply (case_tac "fst e = ''select'' \<and> length (snd e) = 1")
        apply (simp add: possible_steps_q0 s0_drinks2 select_posterior)
        apply (rule ext)
        apply simp
@@ -431,7 +421,7 @@ next
     (* apply simp *)
     (* apply (case_tac "t") *)
      (* apply simp *)
-    (* apply (case_tac "fst ad = STR ''select'' \<and> length (snd ad) = 1") *)
+    (* apply (case_tac "fst ad = ''select'' \<and> length (snd ad) = 1") *)
      (* apply (simp add: possible_steps_q0 s0_drinks2 select_posterior updates_select) *)
      (* apply (case_tac list) *)
       (* apply (rule ext) *)
@@ -450,13 +440,13 @@ next
 
 
 
-    (* apply (case_tac "e=(STR ''vend'', [])") *)
+    (* apply (case_tac "e=(''vend'', [])") *)
      (* apply (simp add: anterior_context_def) *)
      (* apply (simp add: aux1) *)
 
     (* apply (case_tac t) *)
      (* apply (simp add: anterior_context_def) *)
-     (* apply (case_tac "fst e = STR ''select'' \<and> length (snd e) = 1") *)
+     (* apply (case_tac "fst e = ''select'' \<and> length (snd e) = 1") *)
       (* apply simp *)
       (* apply (simp add: possible_steps_q0 s0_drinks2 select_posterior) *)
       (* apply (rule ext) *)
@@ -467,7 +457,7 @@ next
      (* apply (simp add: gets_us_to_def) *)
      (* apply (simp add: drinks2_q0_invalid s0_drinks2) *)
 
-    (* apply (case_tac "\<not> (fst a = STR ''select'' \<and> length (snd a) = 1)") *)
+    (* apply (case_tac "\<not> (fst a = ''select'' \<and> length (snd a) = 1)") *)
      (* apply (simp add: gets_us_to_def) *)
      (* apply (simp add: drinks2_q0_invalid s0_drinks2) *)
 
@@ -476,7 +466,7 @@ next
      (* apply simp *)
      (* apply (simp add: anterior_context_def s0_drinks2) *)
      (* apply (simp add: possible_steps_q0 select_posterior updates_select) *)
-     (* apply (case_tac "\<not> (fst e = STR ''coin'' \<and> length (snd e) = 1)") *)
+     (* apply (case_tac "\<not> (fst e = ''coin'' \<and> length (snd e) = 1)") *)
       (* apply (simp add: drinks2_q1_invalid) *)
       (* apply (rule ext) *)
       (* apply simp *)
@@ -484,7 +474,7 @@ next
      (* apply (simp add: s0_drinks2 possible_steps_q0 select_posterior updates_select) *)
      (* apply (simp add: drinks2_q1_coin) *)
     
-    (* apply (case_tac "set list = {(STR ''vend'', [])}") *)
+    (* apply (case_tac "set list = {(''vend'', [])}") *)
     
 
     (* apply (simp add: gets_us_to_def) *)
@@ -493,7 +483,7 @@ next
     (* apply (simp only: updates_select) *)
     (* apply (case_tac list) *)
      (* apply simp *)
-    (* apply (case_tac "\<not> (fst e = STR ''coin'' \<and> length (snd e) = 1)") *)
+    (* apply (case_tac "\<not> (fst e = ''coin'' \<and> length (snd e) = 1)") *)
       (* apply (simp add: drinks2_q1_invalid) *)
       (* apply (simp add: anterior_context_def) *)
       (* apply (simp add: s0_drinks2 possible_steps_q0 updates_select) *)

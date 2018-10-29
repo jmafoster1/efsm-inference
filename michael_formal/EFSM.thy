@@ -10,7 +10,7 @@ theory EFSM
   imports "~~/src/HOL/Library/FSet" Transition
 begin
 
-type_synonym label = String.literal
+type_synonym label = string
 type_synonym arity = nat
 type_synonym inputs = "value list"
 type_synonym outputs = "value list"
