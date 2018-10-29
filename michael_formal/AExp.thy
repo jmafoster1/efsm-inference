@@ -78,10 +78,4 @@ syntax
   "_maplets" :: "['a, 'a] \<Rightarrow> maplet"             ("_ /[:=]/ _")
   "_Map"     :: "maplets \<Rightarrow> 'a \<rightharpoonup> 'b"            ("(1<_>)")
 
-primrec sum :: "aexp list \<Rightarrow> aexp" where
-  "sum [] = L (Num 0)" |
-  "sum (h#t) = Plus h (sum t)"
-
-(* lemma sum_determinism: "(sum x = sum y) = (x = y)"
-  sorry *)
 end

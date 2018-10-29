@@ -454,7 +454,7 @@ next
           apply(case_tac "x2 = y2")
           apply (simp add: less_eq_aexp_aux_idem)
         apply(simp)
-        try
+        sorry
     next
       case (Minus y1 y2)
       then show ?case
@@ -469,6 +469,7 @@ next
 next
   fix x y::aexp
   show "x \<le> y \<Longrightarrow> y \<le> x \<Longrightarrow> x = y"
+    apply (simp add: less_eq_defs)
   proof (induct x)
     case (L x)
     then show ?case
@@ -489,6 +490,7 @@ next
 next
   fix x y::aexp
   show "x \<le> y \<or> y \<le> x"
+    apply (simp add: less_eq_defs)
   proof (induct x)
     case (L x)
     then show ?case
