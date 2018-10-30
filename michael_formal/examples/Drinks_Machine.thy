@@ -273,7 +273,7 @@ lemma possible_steps_q0:  "length i = Suc 0 \<Longrightarrow> possible_steps dri
       apply (case_tac a)
   by (simp_all add: select_def)
 
-lemma select_updates [simp]: "(EFSM.apply_updates (Updates select) (case_vname (\<lambda>n. if n = Suc 0 then Some (str ''coke'') else input2state [] (Suc 0 + 1) (I n)) Map.empty) Map.empty) = <R 1:=str ''coke'', R 2 := Num 0>"
+lemma select_updates [simp]: "(EFSM.apply_updates (Updates select) (case_vname (\<lambda>n. if n = Suc 0 then Some (Str ''coke'') else input2state [] (Suc 0 + 1) (I n)) Map.empty) Map.empty) = <R 1:=Str ''coke'', R 2 := Num 0>"
   apply (simp add: select_def)
   apply (rule ext)
   by simp
@@ -302,7 +302,7 @@ lemma possible_steps_q1_coin: "length i = 1 \<Longrightarrow> possible_steps dri
        apply (simp add: drinks_def label_vend)
   by (simp_all add: drinks_def coin_def)
 
-lemma possible_steps_q1_coin_2: "possible_steps drinks q1 <R (Suc 0) := str ''coke'', R 2 := Num 50> (''coin'') [Num 50] = {(q1, coin)}"
+lemma possible_steps_q1_coin_2: "possible_steps drinks q1 <R (Suc 0) := Str ''coke'', R 2 := Num 50> (''coin'') [Num 50] = {(q1, coin)}"
   apply (simp add: possible_steps_def)
   apply safe
        apply (case_tac a)
@@ -330,7 +330,7 @@ lemma coin_updates [simp]: "(EFSM.apply_updates (Updates coin)
   apply (rule ext)
   by simp
 
-lemma possible_steps_q2_vend: "possible_steps drinks q1 <R (Suc 0) := str ''coke'', R 2 := Num 100> (''vend'') [] = {(q2, vend)}"
+lemma possible_steps_q2_vend: "possible_steps drinks q1 <R (Suc 0) := Str ''coke'', R 2 := Num 100> (''vend'') [] = {(q2, vend)}"
   apply (simp add: possible_steps_def drinks_def)
   apply safe
        apply (case_tac a)
@@ -355,7 +355,7 @@ lemma possible_steps_q2_vend: "possible_steps drinks q1 <R (Suc 0) := str ''coke
         apply (simp add: vend_fail_def Lt_def)
   by (simp_all add: vend_def Ge_def Lt_def gNot_def)
 
-lemma purchase_coke: "observe_trace drinks (s0 drinks) <> [(''select'', [str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] = [[], [Num 50], [Num 100], [str ''coke'']]"
+lemma purchase_coke: "observe_trace drinks (s0 drinks) <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] = [[], [Num 50], [Num 100], [Str ''coke'']]"
   apply (simp add: is_singleton_def the_elem_def possible_steps_q0 possible_steps_q1_coin possible_steps_q1_coin_2 possible_steps_q2_vend)
   by (simp add: transitions)
 
@@ -369,7 +369,7 @@ lemma invalid_input: "EFSM.valid drinks q1 d' [(''invalid'', [Num 50])] \<Longri
   apply clarify
   by (simp add: invalid_impossible is_singleton_def)
 
-lemma invalid_valid_prefix: "\<not> (valid_trace drinks [(''select'', [str ''coke'']), (''invalid'', [Num 50])])"
+lemma invalid_valid_prefix: "\<not> (valid_trace drinks [(''select'', [Str ''coke'']), (''invalid'', [Num 50])])"
   apply clarify
   apply (cases rule: valid.cases)
     apply simp
@@ -378,7 +378,7 @@ lemma invalid_valid_prefix: "\<not> (valid_trace drinks [(''select'', [str ''cok
   apply (simp add: possible_steps_q0 invalid_input)
   using invalid_input by force
 
-lemma invalid_termination: "observe_trace drinks (s0 drinks) <> [(''select'', [str ''coke'']), (''invalid'', [Num 50]), (''coin'', [Num 50])] = [[]]"
+lemma invalid_termination: "observe_trace drinks (s0 drinks) <> [(''select'', [Str ''coke'']), (''invalid'', [Num 50]), (''coin'', [Num 50])] = [[]]"
   apply (simp add: possible_steps_q0 invalid_impossible)
   by (simp add: transitions is_singleton_def)
 

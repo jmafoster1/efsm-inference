@@ -70,10 +70,13 @@ fun make_context :: "'s::finite efsm \<Rightarrow> context \<Rightarrow> 's \<Ri
 lemma make_context_options: "make_context e c s = None \<or> (\<exists>t. make_context e c s = Some t)"
   by simp
 
-definition gets_us_to :: "'s::finite efsm \<Rightarrow> 's \<Rightarrow> trace \<Rightarrow> bool" where
-  "gets_us_to e s t = (case (observe_all e (s0 e) <> t) of
-    [] \<Rightarrow> (s0 e) = s |
-    _ \<Rightarrow> (state (last (observe_all e (s0 e) <> t)) = s))"
+primrec gets_us_to :: "'statename::finite \<Rightarrow> 'statename efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
+  "gets_us_to target _ s _ [] = (s = target)" |
+  "gets_us_to target e s r (h#t) =
+    (case (step e s r (fst h) (snd h)) of
+      (Some (_, s', _, r')) \<Rightarrow> gets_us_to target e s' r' t |
+      _ \<Rightarrow> (s = target)
+    )"
 
 definition anterior_context :: "'s::finite efsm \<Rightarrow> trace \<Rightarrow> context" where
  "anterior_context e p = posterior_sequence (transition_trace e (s0 e) <> p) empty"
@@ -81,7 +84,7 @@ definition anterior_context :: "'s::finite efsm \<Rightarrow> trace \<Rightarrow
 (* Does t1 subsume t2 in all possible anterior contexts? *)
 (* For every path which gets us to the problem state, does t1 subsume t2 in the resulting context *)
 definition directly_subsumes :: "'s::finite efsm \<Rightarrow> 's \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "directly_subsumes e s t1 t2 = (\<forall>p. (gets_us_to e s p) \<longrightarrow> subsumes (anterior_context e p) t1 t2)"
+  "directly_subsumes e s t1 t2 = (\<forall>p. (gets_us_to s e (s0 e) <>  p) \<longrightarrow> subsumes (anterior_context e p) t1 t2)"
 
 fun merge_transitions :: "'s::finite efsm \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> 's transition_function option" where
   "merge_transitions e from to1 to2 t1 t2 = (

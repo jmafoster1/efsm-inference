@@ -175,6 +175,14 @@ primrec posterior_n :: "nat \<Rightarrow> transition \<Rightarrow> context \<Rig
   "posterior_n 0 _ c = c " |
   "posterior_n (Suc m) t c = posterior_n m t (posterior c t)"
 
+primrec posterior_sequence :: "context \<Rightarrow> 'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> context" where
+  "posterior_sequence c _ _ _ [] = c" |
+  "posterior_sequence c e s r (h#t) =
+    (case (step e s r (fst h) (snd h)) of
+      (Some (transition, s', outputs, updated)) \<Rightarrow> posterior_sequence c e s r t |
+      _ \<Rightarrow> c
+    )"
+
 primrec posterior_sequence :: "transition list \<Rightarrow> context \<Rightarrow> context" where (* Calculate the posterior context after a sequence of transitions *)
   "posterior_sequence [] c = c" |
   "posterior_sequence (h#t) c = posterior_sequence t (posterior c h)"

@@ -1,5 +1,5 @@
 theory GExp_Orderings
-imports "../GExp"
+imports "../GExp" "~~/src/HOL/Library/List_Lexorder" "~~/src/HOL/Library/Char_ord"
 begin
 
 (* datatype vname = I nat | R nat *)
@@ -373,7 +373,7 @@ definition less_aexp :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
 
 lemmas less_eq_defs = less_aexp_def less_eq_aexp_def less_aexp_aux_def
 
-declare [[show_sorts, show_types]]
+(* declare [[show_sorts, show_types]] *)
 instance proof
   fix x y :: aexp
   show "(x < y) = (x \<le> y \<and> \<not> y \<le> x)"
