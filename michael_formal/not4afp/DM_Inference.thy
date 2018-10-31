@@ -285,30 +285,6 @@ lemma coin_updates: "(EFSM.apply_updates (Updates coin)
   apply (rule ext)
   by (simp add: coin_def)
 
-lemma aux1: "state (last (observe_all drinks2 (s0 drinks2) Map.empty (t @ [e]))) = q1 \<Longrightarrow>
-       observe_all drinks2 q0 Map.empty t = [] \<Longrightarrow>
-       observe_all drinks2 q0 Map.empty (t @ [e]) = (a, aa, ab, b) # list \<Longrightarrow>
-       posterior_sequence (map (\<lambda>(t, x, y, z). t) list) (posterior \<lbrakk>\<rbrakk> a) =
-       (\<lambda>a. if a = V (R 2) then cexp.Eq (Num 0) else if a = V (R (Suc 0)) then cexp.Bc True else \<lbrakk>\<rbrakk> a)"
-proof (induct t)
-  case Nil
-  then show ?case
-    apply (simp add: s0_drinks2)
-    apply (case_tac "fst e = ''select'' \<and> length (snd e) = 1")
-     apply (simp add: possible_steps_q0 s0_drinks2 select_posterior)
-     apply (rule ext)
-     apply simp
-    by (simp add: drinks2_q0_invalid)
-next
-  case (Cons a t)
-  then show ?case
-    apply simp
-    apply (case_tac "fst a = ''select'' \<and> length (snd a) = 1")
-     apply (simp add: possible_steps_q0 s0_drinks2 select_posterior)
-    apply simp
-    by (simp add: drinks2_q0_invalid)
-qed
-
 lemma equal_first_event: "observe_all drinks2 q0 Map.empty t = x # list \<Longrightarrow>
        observe_all drinks2 q0 Map.empty (t @ [e]) = y # lista \<Longrightarrow> x = y"
 proof (induct t)
@@ -324,22 +300,6 @@ next
      apply (simp add: updates_select)
      apply auto[1]
     by (simp add: drinks2_q0_invalid)
-qed
-
-lemma first_event_select: "observe_all drinks2 q0 Map.empty t = x # list \<Longrightarrow> x = (select, q1, [], <R 1 := Num 0, R 2 := hd (snd (hd t))>)"
-proof (induct t)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons e t)
-  then show ?case
-    apply (case_tac "fst e = ''select'' \<and> length (snd e) = 1")
-     apply (simp add: possible_steps_q0 select_posterior updates_select)
-     apply safe
-      apply simp
-      apply (rule ext)
-    sorry
 qed
 
 lemma drinks2_singleton_q0: "is_singleton (possible_steps drinks2 q0 Map.empty (fst e) (snd e)) \<Longrightarrow> fst e = ''select'' \<and> length (snd e) = 1"
@@ -368,17 +328,154 @@ lemma drinks2_singleton_q0_select: "is_singleton (possible_steps drinks2 q0 Map.
        the_elem (possible_steps drinks2 q0 Map.empty (fst e) (snd e)) = (q1, aa) \<Longrightarrow> aa = select"
   using Drinks_Machine_2.possible_steps_q0 drinks2_singleton_q0 by auto
 
-lemma test: "posterior_sequence (t@[e]) c = posterior (posterior_sequence t c) e"
+lemma coin_updates_2: "(EFSM.apply_updates (Updates coin)
+       (case_vname (\<lambda>n. input2state (snd a) (Suc 0) (I n)) (\<lambda>n. if n = 2 then Some (Num 0) else if R n = R (Suc 0) then Some s else None))
+       (\<lambda>a. if a = R 2 then Some (Num 0) else if a = R (Suc 0) then Some (hd (snd e)) else None)) =
+       (\<lambda>u. if u = R 1 then Some s else if u = R 2 then value_plus (Some (Num 0)) (input2state (snd a) 1 (I 1)) else None)"
+  apply (rule ext)
+  by (simp add: coin_def)
+
+lemma r_R2_none: "r (R 2) = None \<Longrightarrow> (possible_steps drinks2 q2 r ''vend'' []) = {}"
+  apply (simp add: possible_steps_def)
+  apply (rule allI)
+  apply (rule allI)
+  apply (case_tac a)
+     apply (simp add: drinks2_def)
+    apply (simp add: drinks2_def)
+   apply (simp add: drinks2_def vend_fail_def coin_def connectives relations)
+  by (simp add: drinks2_def vend_def connectives relations)
+
+lemma drinks2_vend_insufficient2: "r (R 2) = Some (Num x1) \<Longrightarrow> ab = Num x1 \<Longrightarrow> x1 < 100 \<Longrightarrow>
+                possible_steps drinks2 q2 r (''vend'') [] = {(q2, vend_fail)}"
+  apply (simp add: possible_steps_def)
+  apply safe
+       apply (case_tac a)
+          apply (simp add: drinks2_def)
+         apply (simp add: drinks2_def)
+        apply (simp add: drinks2_def)
+       apply (simp add: drinks2_def vend_def connectives relations)
+      apply (case_tac a)
+         apply (simp add: drinks2_def)
+        apply (simp add: drinks2_def)
+       apply (simp add: drinks2_def label_vend_not_coin relations connectives)
+  by (simp_all add: drinks2_def vend_def vend_fail_def connectives relations)
+
+lemma drinks2_vend_sufficient: "r (R 2) = Some (Num x1) \<Longrightarrow>
+                \<not> x1 < 100 \<Longrightarrow>
+                possible_steps drinks2 q2 r (''vend'') [] = {(q3, vend)}"
+  apply (simp add: possible_steps_def)
+  apply safe
+       apply (case_tac a)
+          apply (simp add: drinks2_def)
+         apply (simp add: drinks2_def)
+        apply (simp add: drinks2_def label_vend_not_coin vend_fail_def connectives relations)
+       apply (simp add: drinks2_def)
+      apply (case_tac a)
+         apply (simp add: drinks2_def)
+        apply (simp add: drinks2_def)
+       apply (simp add: drinks2_def label_vend_not_coin vend_fail_def connectives relations)
+  by (simp_all add: drinks2_def vend_def connectives relations)
+
+lemma none_outputs_vend:  "r (R 1) = None \<Longrightarrow> apply_outputs (Outputs vend) r = []"
+  by (simp add: vend_def)
+
+lemma "\<forall>r. \<not> gets_us_to q1 drinks2 q2 r t"
 proof (induct t)
   case Nil
   then show ?case by simp
 next
   case (Cons a t)
   then show ?case
+    apply clarify
     apply simp
-    sorry
+    apply (case_tac "step drinks2 q2 r (fst a) (snd a)")
+     apply simp
+    apply simp
+    apply (case_tac aa)
+    apply simp
+
+    apply (case_tac "a = (''vend'', [])")
+     apply simp
+     apply (case_tac "r (R 2)")
+      apply (simp add: r_R2_none)
+     apply (case_tac "ab")
+      apply simp
+      apply (case_tac "x1 < 100")
+       apply (simp add: drinks2_vend_insufficient2)
+      apply (simp add: drinks2_vend_sufficient)
+      apply (case_tac "r (R 1)")
+    apply (simp add: none_outputs_vend)
+
+
+
+    apply (case_tac "fst a = ''coin'' \<and> length (snd a) = 1 ")
+     apply simp
+     apply (simp add: drinks2_q2_coin)
+    apply simp
+
+
+
 qed
 
+lemma " gets_us_to q1 drinks2 q1 <R (Suc 0) := hd (snd e), R 2 := Num 0> (xs @ [x]) \<Longrightarrow>
+    \<not> gets_us_to q1 drinks2 q1 <R (Suc 0) := hd (snd e), R 2 := Num 0> xs \<Longrightarrow> False"
+proof (induct xs)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a xs)
+  then show ?case
+    apply simp
+    apply (case_tac "a=(''vend'', [])")
+     apply simp
+     apply (simp add: drinks2_vend_insufficient apply_updates_vend_nothing)
+    using Cons.hyps apply blast
+    apply (case_tac "fst a = ''coin'' \<and> length (snd a) = 1 ")
+    apply simp
+     apply (simp add: drinks2_q1_coin)
+     apply (simp add: coin_updates_2)
+    
+qed
+
+
+lemma "gets_us_to q1 drinks2 q0 Map.empty (xs @ [x]) \<Longrightarrow>
+    EFSM.valid drinks2 q0 Map.empty (xs @ [x]) \<Longrightarrow>
+     \<not> gets_us_to q1 drinks2 q0 Map.empty xs \<Longrightarrow> xs = []"
+proof (induct xs)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons e xs)
+  then show ?case
+    apply simp
+    apply (case_tac "fst e = ''select'' \<and> length (snd e) = 1 ")
+     apply (simp add: possible_steps_q0 updates_select)
+
+qed
+
+lemma "gets_us_to q1 drinks2 q0 Map.empty (xs @ [e]) \<Longrightarrow>
+    gets_us_to q1 drinks2 q0 Map.empty xs \<Longrightarrow>
+    EFSM.valid drinks2 q0 Map.empty xs \<Longrightarrow> e = (''vend'', [])"
+proof (induct xs rule: rev_induct)
+  case Nil
+  then show ?case by simp
+next
+  case (snoc x xs)
+  then show ?case
+    apply (case_tac "gets_us_to q1 drinks2 q0 Map.empty (xs @ [e])")
+     apply simp
+     apply (case_tac "gets_us_to q1 drinks2 q0 Map.empty xs")
+      apply simp
+      apply (case_tac "EFSM.valid drinks2 q0 Map.empty xs")
+       apply simp
+      apply (simp add: prefix_closure)
+    apply simp
+    
+
+
+
+
+qed
 
 lemma gets_us_to_q1_anterior_context: "gets_us_to q1 drinks2 q0 <> p \<Longrightarrow> anterior_context drinks2 p = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num 0)\<rbrakk>"
 proof (induct p rule: rev_induct)
@@ -389,22 +486,12 @@ next
   case (snoc e xs)
   then show ?case
     apply simp
-    apply (case_tac xs)
-     apply simp
-     apply (case_tac "fst e = ''select'' \<and> length (snd e) = 1 ")
-      apply (simp add: possible_steps_q0 anterior_context_def)
-      apply (simp add: select_posterior select_posterior_equiv_2)
-     apply (simp add: drinks2_q0_invalid)
-
+    apply (simp add: anterior_context_def)
+    apply (case_tac "gets_us_to q1 drinks2 q0 Map.empty xs")
+     apply (case_tac "valid_trace drinks2 xs")
     apply simp
-    apply (case_tac "fst a = ''select'' \<and> length (snd a) = 1 ")
-     defer
-     apply (simp add: drinks2_q0_invalid)
-     apply (simp add: possible_steps_q0 anterior_context_def updates_select select_posterior)
-     apply (simp only: select_posterior_equiv_2 select_posterior_equiv)
-    apply (simp add: drinks2_q0_invalid)
 
-
+    sorry
 
 
 
@@ -414,7 +501,7 @@ qed
   
 
 lemma "directly_subsumes drinks2 q1 vend_fail vend_nothing"
-  apply (simp add: directly_subsumes_def s0_drinks2)
+  apply (simp add: directly_subsumes_def)
   apply (simp add: gets_us_to_q1_anterior_context del: One_nat_def)
   using vend_fail_subsumes_vend_nothing
   by simp

@@ -179,13 +179,13 @@ primrec posterior_sequence :: "context \<Rightarrow> 'statename::finite efsm \<R
   "posterior_sequence c _ _ _ [] = c" |
   "posterior_sequence c e s r (h#t) =
     (case (step e s r (fst h) (snd h)) of
-      (Some (transition, s', outputs, updated)) \<Rightarrow> posterior_sequence c e s r t |
+      (Some (transition, s', outputs, updated)) \<Rightarrow> posterior (posterior_sequence c e s r t) transition |
       _ \<Rightarrow> c
     )"
 
-primrec posterior_sequence :: "transition list \<Rightarrow> context \<Rightarrow> context" where (* Calculate the posterior context after a sequence of transitions *)
+(*primrec posterior_sequence :: "transition list \<Rightarrow> context \<Rightarrow> context" where (* Calculate the posterior context after a sequence of transitions *)
   "posterior_sequence [] c = c" |
-  "posterior_sequence (h#t) c = posterior_sequence t (posterior c h)"
+  "posterior_sequence (h#t) c = posterior_sequence t (posterior c h)"*)
 
 (* Does t2 subsume t1? *)
 definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where (* Corresponds to Algorithm 2 in Foster et. al. *)

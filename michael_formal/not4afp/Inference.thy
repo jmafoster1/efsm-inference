@@ -61,7 +61,7 @@ definition hilbert_option :: "('a \<Rightarrow> bool) \<Rightarrow> 'a option" w
   "hilbert_option f = (if {x. f x} = {} then None else Some (Eps f))"
 
 fun make_context :: "'s::finite efsm \<Rightarrow> context \<Rightarrow> 's \<Rightarrow> 's::finite transition_function option" where
-  "make_context e c s = (if \<exists>p. posterior_sequence (transition_trace e (s0 e) <> p) empty = c \<and> last (state_trace e (s0 e) <> p) = s
+  "make_context e c s = (if \<exists>p. posterior_sequence empty e (s0 e) <> p = c \<and> last (state_trace e (s0 e) <> p) = s
                   then Some (T e)
                   \<comment> \<open> else if it is possible to modify the update functions of incoming transitions
                      to get the right context then do that \<close>
@@ -78,8 +78,8 @@ primrec gets_us_to :: "'statename::finite \<Rightarrow> 'statename efsm \<Righta
       _ \<Rightarrow> (s = target)
     )"
 
-definition anterior_context :: "'s::finite efsm \<Rightarrow> trace \<Rightarrow> context" where
- "anterior_context e p = posterior_sequence (transition_trace e (s0 e) <> p) empty"
+definition anterior_context :: "'statename::finite efsm \<Rightarrow> trace \<Rightarrow> context" where
+ "anterior_context e t = posterior_sequence \<lbrakk>\<rbrakk> e (s0 e) <> t"
 
 (* Does t1 subsume t2 in all possible anterior contexts? *)
 (* For every path which gets us to the problem state, does t1 subsume t2 in the resulting context *)
