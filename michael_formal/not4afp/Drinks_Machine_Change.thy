@@ -77,7 +77,7 @@ lemma possible_steps_q2_vend: "n \<ge> 100 \<Longrightarrow> possible_steps drin
    apply (simp add: vend_def)
   by (simp add: vend_def)
 
-lemma updates_coin_150 [simp]: "(apply_updates (Updates coin)
+lemma updates_coin_150 [simp]: "(EFSM.apply_updates (Updates coin)
           (case_vname (\<lambda>n. if n = Suc 0 then Some (Num 100) else input2state [] (Suc 0 + 1) (I n)) (\<lambda>n. if n = 2 then Some (Num 50) else <R (Suc 0) := Str ''coke''> (R n)))
           <R (Suc 0) := Str ''coke'', R 2 := Num 50>) = <R 1 := Str ''coke'', R 2 := Num 150>"
   apply (rule ext)
@@ -99,7 +99,7 @@ lemma step_invalid: "possible_steps drinks q2 d ''invalid'' [Num 50] = {}"
 lemma "observe_trace drinks (s0 drinks) <> [(''select'', [Str ''coke'']), (''invalid'', [Num 50])] = [[]]"
   by (simp add: possible_steps_q1 step_invalid is_singleton_def)
 
-lemma invalid_input: "valid drinks q2 d' [(''invalid'', [Num 50])] \<Longrightarrow> False"
+lemma invalid_input: "EFSM.valid drinks q2 d' [(''invalid'', [Num 50])] \<Longrightarrow> False"
   apply (cases rule: valid.cases)
     apply simp
    apply simp

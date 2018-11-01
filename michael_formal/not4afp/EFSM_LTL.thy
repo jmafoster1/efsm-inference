@@ -1,5 +1,5 @@
 theory EFSM_LTL
-imports EFSM "~~/src/HOL/Library/Linear_Temporal_Logic_on_Streams"
+imports "../EFSM" "~~/src/HOL/Library/Linear_Temporal_Logic_on_Streams"
 begin
 
 record 'statename state =
@@ -17,14 +17,14 @@ abbreviation label :: "'statename state \<Rightarrow> string" where
 abbreviation inputs :: "'statename state \<Rightarrow> value list" where
   "inputs s \<equiv> snd (event s)"
 
-fun ltl_step :: "'statename efsm \<Rightarrow> 'statename option \<Rightarrow> datastate \<Rightarrow> event \<Rightarrow> ('statename option \<times> outputs \<times> datastate)" where
+fun ltl_step :: "'statename::finite efsm \<Rightarrow> 'statename option \<Rightarrow> datastate \<Rightarrow> event \<Rightarrow> ('statename option \<times> outputs \<times> datastate)" where
   "ltl_step _ None r _ = (None, [], r)" |
   "ltl_step e (Some s) r (l, i) = (if is_singleton (possible_steps e s r l i) then (let (s', t) =  (the_elem (possible_steps e s r l i)) in (Some s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))) else (None, [], r))"
 
-primcorec make_full_observation :: "'statename efsm \<Rightarrow> 'statename option \<Rightarrow> datastate \<Rightarrow> event stream \<Rightarrow> 'statename full_observation" where
+primcorec make_full_observation :: "'statename::finite efsm \<Rightarrow> 'statename option \<Rightarrow> datastate \<Rightarrow> event stream \<Rightarrow> 'statename full_observation" where
   "make_full_observation e s d i = (let (s', o', d') = ltl_step e s d (shd i) in \<lparr>statename = s, datastate = d, event=(shd i), output = o'\<rparr>##(make_full_observation e s' d' (stl i)))"
 
-abbreviation watch :: "'statename efsm \<Rightarrow> event stream \<Rightarrow> 'statename full_observation" where
+abbreviation watch :: "'statename::finite efsm \<Rightarrow> event stream \<Rightarrow> 'statename full_observation" where
   "watch e i \<equiv> (make_full_observation e (Some (s0 e)) <> i)"
 
 abbreviation non_null :: "'statename property" where

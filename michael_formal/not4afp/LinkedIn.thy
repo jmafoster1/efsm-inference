@@ -93,4 +93,32 @@ definition linkedIn :: "statename efsm" where
               else if (a,b) = (viewDetailed, pdfDetailed) then {pdfFriend, pdfOther} (* If we want to go from state 2 to state 3 then vend will do that *)
               else {} (* There are no other transitions *)
          \<rparr>"
+
+(*neverDetailed: THEOREM linkedIn |- G(
+(label=login AND ip_1_login_1=String_free) => X(G(
+(label=pdf AND ip_1_view_3=String_otherID) => X(op_1_pdf_1 /= String_detailedPDF)
+)
+);*)
+
+(*record 'statename state =
+  statename :: "'statename option"
+  datastate :: datastate
+  event :: event
+  "output" :: outputs*)
+
+definition login_free :: "statename property" where
+  "login_free s \<equiv> (event (shd s) = (''login'',  [Str ''free'']))"
+
+definition pdf_other :: "statename property" where
+  "pdf_other s \<equiv> (let (label, inputs) = event (shd s) in label=''pdf'' \<and> hd inputs = Str ''otherID'')"
+
+definition notDetailedPDF :: "statename property" where
+  "notDetailedPDF s \<equiv> (hd (output (shd s)) \<noteq> Str ''detailedPDF'')"
+
+(*      G(login_free      =>  X(   G(    pdf_other  =>  X(notDetailedPDF))))*)
+lemma "(alw login_free impl   (nxt (alw (pdf_other impl (nxt notDetailedPDF))))) (watch linkedIn i)"
+  apply (simp only: notDetailedPDF_def pdf_other_def login_free_def)
+  sorry
+
+
 end
