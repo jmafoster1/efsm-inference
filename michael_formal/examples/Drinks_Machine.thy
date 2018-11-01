@@ -12,7 +12,7 @@ states. The fourth element is included here so that the \emph{statename} datatyp
 the next example.
 *}
 theory Drinks_Machine
-  imports "../Contexts" Finite_Set
+  imports "../Contexts"
 begin
 
 datatype statename = q0 | q1 | q2 | q3

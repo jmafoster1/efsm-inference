@@ -1,5 +1,5 @@
 theory LinkedIn
-imports "../EFSM"
+imports "../EFSM" EFSM_LTL
 begin
   datatype statename = outside | loggedIn | viewDetailed | pdfDetailed | viewSummary | pdfSummary
 
