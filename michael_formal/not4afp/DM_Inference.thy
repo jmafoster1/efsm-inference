@@ -434,8 +434,8 @@ next
     apply simp
      apply (simp add: drinks2_q1_coin)
      apply (simp add: coin_updates_2)
-    
-qed
+    oops
+
 
 
 lemma "gets_us_to q1 drinks2 q0 Map.empty (xs @ [x]) \<Longrightarrow>
@@ -470,12 +470,8 @@ next
        apply simp
       apply (simp add: prefix_closure)
     apply simp
-    
+    oops
 
-
-
-
-qed
 
 lemma gets_us_to_q1_anterior_context: "gets_us_to q1 drinks2 q0 <> p \<Longrightarrow> anterior_context drinks2 p = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num 0)\<rbrakk>"
 proof (induct p rule: rev_induct)
@@ -506,39 +502,55 @@ lemma "directly_subsumes drinks2 q1 vend_fail vend_nothing"
   using vend_fail_subsumes_vend_nothing
   by simp
 
-lemma "merge_transitions \<lparr>s0 = q0, T = (merge_states q1 q2 (T drinks2))\<rparr> q1 q1 q1 vend_nothing vend_fail = None"
-  oops
+lemma "choice vend_nothing vend"
+  by (simp add: choice_symmetry choice_vend_vend_nothing)
 
-lemma "let t' = merge_states q1 q2 (T drinks2); t'a = merge_states q1 q1 t'
-        in \<exists>x. nondeterministic_transitions t'a = Some x"
-  apply (simp add: merge_q1_q2 nondeterministic_transitions_def nondeterminisitic_pairs)
-  apply (simp only: merge_self_state)
-  oops 
+lemma nondeterministic_transitions: "nondeterministic_transitions (merge_states q1 q2 (T drinks2)) = Some (q1, (q1, q3), vend_nothing, vend)"
+  by (simp add: nondeterministic_transitions_def nondeterminisitic_pairs max_def)
 
-lemma "merge drinks2 q1 q2 = Some (\<lambda> (a,b) .
+lemma vend_doesnt_exit_q1: "\<not>exits_state drinks2 vend q1"
+  apply (simp add: exits_state_def drinks2_def)
+  using label_vend label_vend_not_coin vend_nothing_lt_vend by auto
+
+lemma vend_nothing_exits_q1: "exits_state drinks2 vend_nothing q1"
+  apply (simp add: exits_state_def drinks2_def)
+  by auto
+
+lemma merge_q1_q3: "let t' = merge_states q1 q2 (T drinks2)
+        in merge_states q1 q3 t' = (\<lambda> (a,b) .
+                      if (a, b) = (q0, q1) then {|select|} else
+                      if (a, b) = (q1,q1) then {|vend_nothing, coin, vend_fail, vend|} else {||})"
+  apply (simp add: merge_q1_q2)
+  apply (rule ext)
+  apply clarify
+  apply (simp add: merge_states_def drinks2_def merge_with_def)
+  by auto
+
+lemma merge_q1_q3_2: "(merge_states q1 q3 (merge_states q1 q2 (T drinks2))) = (\<lambda> (a,b) .
+                      if (a, b) = (q0, q1) then {|select|} else
+                      if (a, b) = (q1,q1) then {|vend_nothing, coin, vend_fail, vend|} else {||})"
+  using merge_q1_q3 by auto
+
+lemma "let t' = merge_states q1 q2 (T drinks2); t'a = merge_states q1 q3 t'
+                in nondeterministic_transitions t'a = Some (q1, (q1, q1), vend_nothing, vend)"
+  apply (simp add: merge_q1_q3_2)
+  apply (simp add: nondeterministic_transitions_def)
+
+
+  
+lemma "merge_2 drinks2 q1 q2 = Some (\<lambda> (a,b) .
   if (a, b) = (q0, q1) then {|select|} else
   if (a, b) = (q1,q1) then {|vend_nothing, coin, vend_fail|} else
   if (a, b) = (q1, q3) then {|vend|} else {||})"
-  apply (simp add: s0_drinks2)
-  apply (case_tac "nondeterministic_transitions (merge_states q1 q2 (T drinks2))")
-   apply (simp add: nond_transitions_not_none)
-  apply clarify
-  apply (simp add: only_nondeterminism_q1)
-  apply (case_tac a)
-     apply (simp add: no_nondeterminism_q0_2)
-    prefer 2
-    apply (simp add: no_nondeterminism_q2_2)
-  prefer 2
-   apply (simp add: no_nondeterminism_q3_2)
   apply simp
-  apply (case_tac aa)
-     apply simp
-     apply (simp add: no_transitions_to_q0_2)
-    apply simp
-    apply (case_tac b)
-       apply simp
-       apply (simp add: no_transitions_to_q0_2)
-      apply simp
+  apply (case_tac "nondeterministic_transitions (merge_states q1 q2 (T drinks2))")
+   apply (simp add: nondeterministic_transitions)
+  apply (simp add: nondeterministic_transitions)
+  apply (case_tac a)
+  apply (case_tac b)
+  apply simp
+  apply (simp add: vend_doesnt_exit_q1 vend_nothing_exits_q1)
+
 
 
 

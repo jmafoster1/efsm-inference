@@ -16,10 +16,19 @@ primrec all_pairs :: "'s list \<Rightarrow> 's list \<Rightarrow> 's::finite tra
   "all_pairs [] x _ = {||}" |
   "all_pairs (h#hs) x t = (pairs h x t) |\<union>| (all_pairs hs x t)"
 
-definition merge_states :: "'s \<Rightarrow> 's \<Rightarrow> 's::finite transition_function \<Rightarrow> 's::finite transition_function" where
-  "merge_states x y t = (if x = y then t else (\<lambda>(from, to). if from = y \<or> to = y then {||} 
+definition merge_states :: "'s::{finite,linorder} \<Rightarrow> 's \<Rightarrow> 's transition_function \<Rightarrow> 's transition_function" where
+  "merge_states x y t = (if x < y then (if x = y then t else (\<lambda>(from, to). if from = y \<or> to = y then {||} 
                                       else (all_pairs (if from = x \<or> from = y then merge_with x y else [from])
-                                                      (if to = x \<or> to = y then merge_with x y else [to]) t)))"
+                                                      (if to = x \<or> to = y then merge_with x y else [to]) t)))
+                                  else (if y = x then t else (\<lambda>(from, to). if from = x \<or> to = x then {||} 
+                                      else (all_pairs (if from = y \<or> from = x then merge_with y x else [from])
+                                                      (if to = y \<or> to = x then merge_with y x else [to]) t))))"
+
+lemma merge_states_symmetry: "merge_states x y t = merge_states y x t"
+  apply (simp add: merge_states_def)
+  apply safe
+  apply (rule ext)
+  by simp
 
 (* declare[[show_types,show_sorts]] *)
 
@@ -57,9 +66,6 @@ primrec alreadyUpdated :: "updates \<Rightarrow> vname \<Rightarrow> bool" where
     
 *)
 
-definition hilbert_option :: "('a \<Rightarrow> bool) \<Rightarrow> 'a option" where
-  "hilbert_option f = (if {x. f x} = {} then None else Some (Eps f))"
-
 fun make_context :: "'s::finite efsm \<Rightarrow> context \<Rightarrow> 's \<Rightarrow> 's::finite transition_function option" where
   "make_context e c s = (if \<exists>p. posterior_sequence empty e (s0 e) <> p = c \<and> last (state_trace e (s0 e) <> p) = s
                   then Some (T e)
@@ -86,16 +92,36 @@ definition anterior_context :: "'statename::finite efsm \<Rightarrow> trace \<Ri
 definition directly_subsumes :: "'s::finite efsm \<Rightarrow> 's \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes e s t1 t2 = (\<forall>p. (gets_us_to s e (s0 e) <>  p) \<longrightarrow> subsumes (anterior_context e p) t1 t2)"
 
-fun merge_transitions :: "'s::finite efsm \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> 's transition_function option" where
-  "merge_transitions e from to1 to2 t1 t2 = (
+definition exits_state :: "'s::finite efsm \<Rightarrow> transition \<Rightarrow> 's \<Rightarrow> bool" where
+  "exits_state e t from = (\<exists>to. t |\<in>| (T e) (from, to))"
+
+fun merge_transitions :: "'s::{finite, linorder} efsm \<Rightarrow> 's efsm \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> 's transition_function option" where
+  "merge_transitions oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 t2 = (
     \<comment> \<open> If t1 directly subsumes t2 then replace t2 with t1 \<close>
-    if directly_subsumes e from t1 t2 then Some (replace_transition (T e) from to2 {|t2|} t1) else
+    if directly_subsumes oldEFSM t1FromOld t1 t2 then Some (replace_transition (T newEFSM) newFrom t2NewTo {|t2|} t1) else
     \<comment> \<open> If t2 directly subsumes t1 then replace t1 with t2 \<close>
-    if directly_subsumes e from t2 t1 then Some (replace_transition (T e) from to1 {|t1|} t2) else
+    if directly_subsumes oldEFSM t2FromOld t2 t1 then Some (replace_transition (T newEFSM) newFrom t1NewTo {|t1|} t2) else
     \<comment> \<open> Can we get a context where one transition subsumes the other directly \<close>
     \<comment> \<open> Can we make a transition which subsumes both? \<close>
     None
   )"
+
+function merge_2 :: "'s::{finite, linorder} efsm \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's transition_function option" where
+"merge_2 e s1 s2 = (let t' = (merge_states s1 s2 (T e)) in
+                       \<comment> \<open> Have we got any nondeterminism? \<close>
+                       (case nondeterministic_transitions t' of
+                         \<comment> \<open> If not then we're good to go \<close>
+                         None \<Rightarrow> Some t' |
+                         \<comment> \<open> If we have then we need to fix it \<close>
+                         Some (from, (to1, to2), (t1, t2)) \<Rightarrow> (let t'' = merge_2 \<lparr>s0=(s0 e), T = t'\<rparr> to1 to2 in
+                        case t'' of None \<Rightarrow> None | Some t \<Rightarrow> merge_transitions e \<lparr>s0=(s0 e), T = t\<rparr> (if exits_state e t1 s1 then s1 else s2) (if exits_state e t2 s1 then s1 else s2) from to1 to2 t1 t2 )))"
+  using prod_cases3 apply blast
+  by auto
+termination
+  sorry
+
+definition hilbert_option :: "('a \<Rightarrow> bool) \<Rightarrow> 'a option" where
+  "hilbert_option f = (if {x. f x} = {} then None else Some (Eps f))"
 
 (* The number of states decreases down to one then either we can merge all of the transitons or we can't *)
 function merge :: "'s::{finite, linorder} efsm \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's transition_function option" where

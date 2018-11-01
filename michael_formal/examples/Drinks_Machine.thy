@@ -161,6 +161,26 @@ lemma UNIV_statename: "UNIV = {q0 , q1 , q2 , q3}"
 instance statename :: finite
   by standard (simp add: UNIV_statename)
 
+instantiation statename :: enum begin
+definition "enum_statename = [q0, q1, q2, q3]"
+
+definition
+  "Enum.enum_all P \<longleftrightarrow> list_all P (Enum.enum :: statename list)"
+
+definition
+  "Enum.enum_ex P \<longleftrightarrow> list_ex P (Enum.enum :: statename list)"
+
+instance
+  apply standard
+     apply (simp add: enum_statename_def top_set_def)
+  using UNIV_statename apply auto[1]
+    apply (simp add: enum_statename_def)
+   apply (simp add: enum_all_statename_def enum_statename_def)
+   apply (metis statename.exhaust)
+   apply (simp add: enum_ex_statename_def enum_statename_def)
+  by (metis statename.exhaust)
+end
+
 lemma fUNIV_statename: "fUNIV = {|q0 , q1 , q2 , q3|}"
   oops
 
