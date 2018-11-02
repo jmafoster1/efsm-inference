@@ -411,11 +411,7 @@ next
     apply (case_tac "fst a = ''coin'' \<and> length (snd a) = 1 ")
      apply simp
      apply (simp add: drinks2_q2_coin)
-    apply simp
-
-
-
-qed
+    oops
 
 lemma " gets_us_to q1 drinks2 q1 <R (Suc 0) := hd (snd e), R 2 := Num 0> (xs @ [x]) \<Longrightarrow>
     \<not> gets_us_to q1 drinks2 q1 <R (Suc 0) := hd (snd e), R 2 := Num 0> xs \<Longrightarrow> False"
@@ -450,8 +446,7 @@ next
     apply simp
     apply (case_tac "fst e = ''select'' \<and> length (snd e) = 1 ")
      apply (simp add: possible_steps_q0 updates_select)
-
-qed
+    oops
 
 lemma "gets_us_to q1 drinks2 q0 Map.empty (xs @ [e]) \<Longrightarrow>
     gets_us_to q1 drinks2 q0 Map.empty xs \<Longrightarrow>
@@ -486,12 +481,7 @@ next
     apply (case_tac "gets_us_to q1 drinks2 q0 Map.empty xs")
      apply (case_tac "valid_trace drinks2 xs")
     apply simp
-
     sorry
-
-
-
-
 qed
 
   
@@ -531,11 +521,163 @@ lemma merge_q1_q3_2: "(merge_states q1 q3 (merge_states q1 q2 (T drinks2))) = (\
                       if (a, b) = (q1,q1) then {|vend_nothing, coin, vend_fail, vend|} else {||})"
   using merge_q1_q3 by auto
 
-lemma "let t' = merge_states q1 q2 (T drinks2); t'a = merge_states q1 q3 t'
-                in nondeterministic_transitions t'a = Some (q1, (q1, q1), vend_nothing, vend)"
-  apply (simp add: merge_q1_q3_2)
-  apply (simp add: nondeterministic_transitions_def)
+lemma vend_nothing_vend_nondeterminism: "(q1, (q1, q1), (vend_nothing, vend)) \<in> {(origin, (dest1, dest2), t1, t2).
+            t1 |\<in>|
+            (if origin = q0 \<and> dest1 = q1 then {|select|}
+             else if (origin, dest1) = (q1, q1) then {|vend_nothing, coin, vend_fail, vend|} else {||}) \<and>
+            t2 |\<in>|
+            (if origin = q0 \<and> dest2 = q1 then {|select|}
+             else if (origin, dest2) = (q1, q1) then {|vend_nothing, coin, vend_fail, vend|} else {||}) \<and>
+            t1 < t2 \<and> choice t1 t2}"
+  by (simp add: choice_symmetry choice_vend_vend_nothing vend_nothing_lt_vend)
 
+lemma vend_nothing_vend_fail_nondeterminsim: "(q1, (q1, q1), vend_nothing, vend_fail) \<in> {(origin, (dest1, dest2), t1, t2).
+            t1 |\<in>|
+            (if origin = q0 \<and> dest1 = q1 then {|select|}
+             else if (origin, dest1) = (q1, q1) then {|vend_nothing, coin, vend_fail, vend|} else {||}) \<and>
+            t2 |\<in>|
+            (if origin = q0 \<and> dest2 = q1 then {|select|}
+             else if (origin, dest2) = (q1, q1) then {|vend_nothing, coin, vend_fail, vend|} else {||}) \<and>
+            t1 < t2 \<and> choice t1 t2}"
+  by (simp add: choice_vend_nothing_vend_fail vend_nothing_lt_vend_fail)
+
+lemma aux1: "\<And>a b c d aa ba.
+       c |\<in>| (if aa = q1 then {|vend_nothing, coin, vend_fail, vend|} else {||}) \<and>
+       d |\<in>| (if ba = q1 then {|vend_nothing, coin, vend_fail, vend|} else {||}) \<and> c < d \<and> choice c d \<Longrightarrow>
+       x = (q1, (aa, ba), c, d) \<Longrightarrow>
+       b = (aa, ba) \<Longrightarrow>
+       a = q1 \<Longrightarrow> aa = q1 \<and> ba = q1 \<and> c = vend_nothing \<and> d = vend_fail \<or> aa = q1 \<and> ba = q1 \<and> c = vend_nothing \<and> d = vend"
+proof -
+  fix a :: statename and b :: "statename \<times> statename" and c :: transition and d :: transition and aa :: statename and ba :: statename
+  assume a1: "c |\<in>| (if aa = q1 then {|vend_nothing, coin, vend_fail, vend|} else {||}) \<and> d |\<in>| (if ba = q1 then {|vend_nothing, coin, vend_fail, vend|} else {||}) \<and> c < d \<and> choice c d"
+  have f2: "\<forall>t ta. \<not> (t::transition) < ta \<or> t \<noteq> ta"
+    by blast
+  have f3: "\<forall>f t. f \<noteq> {||} \<or> (t::transition) |\<notin>| f"
+    by blast
+  have f4: "(if aa = q1 then {|vend_nothing, coin, vend_fail, vend|} else {||}) \<noteq> {||}"
+    using a1 by blast
+  then have f5: "c = vend_nothing \<or> c |\<in>| {|coin, vend_fail, vend|}"
+    using a1 by (metis (full_types) finsert_iff)
+  obtain zz :: "transition \<Rightarrow> transition \<Rightarrow> vname \<Rightarrow> value option" where
+    "\<forall>x0 x1. (\<exists>v2. apply_guards (Guard x1) v2 \<and> apply_guards (Guard x0) v2) = (apply_guards (Guard x1) (zz x0 x1) \<and> apply_guards (Guard x0) (zz x0 x1))"
+    by moura
+  then have f6: "Label c = Label d \<and> Arity c = Arity d \<and> apply_guards (Guard c) (zz d c) \<and> apply_guards (Guard d) (zz d c)"
+    using a1 by (simp add: choice_def)
+have f7: "(if ba = q1 then {|vend_nothing, coin, vend_fail, vend|} else {||}) \<noteq> {||}"
+using a1 by blast
+  have f8: "d = vend_nothing \<or> d |\<in>| {|coin, vend_fail, vend|}"
+    using a1 by (metis (full_types) finsert_iff)
+  have f9: "d |\<notin>| {||}"
+    by blast
+  have f10: "Label vend = Label vend_fail"
+    by (simp add: label_vend label_vend_fail)
+  have f11: "c = vend_fail \<longrightarrow> d = vend_fail \<or> d |\<in>| {|vend|}"
+    using f8 f6 f2 a1 by (metis finsert_iff label_vend_fail label_vend_not_coin less_trans vend_nothing_lt_vend_fail)
+    then have "d \<noteq> vend_fail \<and> c = vend_fail \<longrightarrow> Arity vend = Arity c"
+using f9 f6 by (metis (no_types) finsert_iff)
+  then have "d = vend_fail \<or> c \<noteq> vend_fail"
+    using f11 f10 f6 choice_def no_choice_vend_vend_fail by blast
+    then show "aa = q1 \<and> ba = q1 \<and> c = vend_nothing \<and> d = vend_fail \<or> aa = q1 \<and> ba = q1 \<and> c = vend_nothing \<and> d = vend"
+      using f8 f7 f6 f5 f4 f3 f2 a1 by (metis finsert_iff label_vend label_vend_fail label_vend_not_coin label_vend_nothing less_trans no_choice_vend_vend_fail vend_nothing_lt_vend)
+  qed
+
+lemma only_2_nondeterministic_transitions: "x \<in> {(origin, (dest1, dest2), t1, t2).
+            t1 |\<in>|
+            (if origin = q0 \<and> dest1 = q1 then {|select|}
+             else if (origin, dest1) = (q1, q1) then {|vend_nothing, coin, vend_fail, vend|} else {||}) \<and>
+            t2 |\<in>|
+            (if origin = q0 \<and> dest2 = q1 then {|select|}
+             else if (origin, dest2) = (q1, q1) then {|vend_nothing, coin, vend_fail, vend|} else {||}) \<and>
+            t1 < t2 \<and> choice t1 t2} \<Longrightarrow> x = (q1, (q1, q1), vend_nothing, vend_fail) \<or> x = (q1, (q1, q1), (vend_nothing, vend))"
+  apply (cases x)
+  apply (case_tac b)
+  apply simp
+  apply (case_tac a)
+     apply simp
+     apply (smt fempty_iff fsingleton_iff not_less_iff_gr_or_eq prod.inject)
+    apply simp
+  using aux1
+    apply simp
+   apply simp
+  by simp
+
+lemma nondeterministic_transitions_2: "{(origin, (dest1, dest2), t1, t2).
+            t1 |\<in>|
+            (if origin = q0 \<and> dest1 = q1 then {|select|}
+             else if (origin, dest1) = (q1, q1) then {|vend_nothing, coin, vend_fail, vend|} else {||}) \<and>
+            t2 |\<in>|
+            (if origin = q0 \<and> dest2 = q1 then {|select|}
+             else if (origin, dest2) = (q1, q1) then {|vend_nothing, coin, vend_fail, vend|} else {||}) \<and>
+            t1 < t2 \<and> choice t1 t2} = {(q1, (q1, q1), (vend_nothing, vend)), (q1, (q1, q1), vend_nothing, vend_fail)}"
+  using only_2_nondeterministic_transitions vend_nothing_vend_fail_nondeterminsim vend_nothing_vend_nondeterminism
+  by blast
+
+lemma nondet_pairs_simpler:  "nondeterministic_pairs (merge_states q1 q3 (merge_states q1 q2 (T drinks2))) = {(q1, (q1, q1), (vend_nothing, vend)), (q1, (q1, q1), vend_nothing, vend_fail)}"
+  by (simp add: nondeterministic_pairs_def merge_q1_q3_2 nondeterministic_transitions_2)
+  
+lemma vend_fail_leq_vend: "vend_fail \<le> vend"
+  by (simp add: less_eq_transition_ext_def less_transition_ext_def transitions)
+
+lemma max_nondeterministic_transitions: "max (q1, (q1, q1), vend_nothing, vend) (q1, (q1, q1), vend_nothing, vend_fail) = (q1, (q1, q1), vend_nothing, vend)"
+  apply (simp add: max_def)
+  by (simp add: antisym vend_fail_leq_vend)
+
+lemma merge_states_2_nondeterminism: "nondeterministic_transitions (merge_states q1 q3 (merge_states q1 q2 (T drinks2))) = Some (q1, (q1, q1), vend_nothing, vend)"
+  apply (simp add: nondeterministic_transitions_def nondeterministic_pairs_def)
+  apply (simp add: merge_q1_q3_2)
+  apply safe
+              apply (metis choice_vend_nothing_vend_fail vend_nothing_lt_vend_fail)
+  using choice_def label_vend_not_coin label_vend_nothing apply auto[1]
+  using vend_nothing_lt_vend_fail apply auto[1]
+  using vend_nothing_lt_vend apply auto[1]
+  using choice_def label_vend_not_coin label_vend_nothing apply auto[1]
+         apply (simp add: nondeterministic_transitions_2 max_nondeterministic_transitions)
+        apply (simp add: nondeterministic_transitions_2 max_nondeterministic_transitions)
+       apply (simp add: nondeterministic_transitions_2 max_nondeterministic_transitions)
+      apply (simp add: nondeterministic_transitions_2 max_nondeterministic_transitions)
+     apply (simp add: nondeterministic_transitions_2 max_nondeterministic_transitions)
+    apply (simp add: nondeterministic_transitions_2 max_nondeterministic_transitions)
+   apply (simp add: nondeterministic_transitions_2 max_nondeterministic_transitions)
+  by (simp add: nondeterministic_transitions_2 max_nondeterministic_transitions)
+
+lemma vend_exits_q1: "exits_state \<lparr>s0 = q0, T = merge_states q1 q2 (T drinks2)\<rparr> vend q1"
+  apply (simp add: exits_state_def merge_q1_q2)
+  by auto
+
+lemma vend_nothing_exits_q1_2: "exits_state \<lparr>s0 = q0, T = merge_states q1 q2 (T drinks2)\<rparr> vend_nothing q1"
+  apply (simp add: exits_state_def merge_q1_q2)
+  by auto
+
+lemma not_subset: "\<not>{(q1, (q1, q3), vend_nothing, vend), (q1, (q1, q1), vend_nothing, vend_fail)}
+        \<subseteq> {Max {(q1, (q1, q3), vend_nothing, vend), (q1, (q1, q1), vend_nothing, vend_fail)}}"
+  by simp
+
+lemma not_subset_2: "\<not> {(q1, (q1, q1), vend_nothing, vend), (q1, (q1, q1), vend_nothing, vend_fail)}
+     \<subseteq> {Max {(q1, (q1, q1), vend_nothing, vend), (q1, (q1, q1), vend_nothing, vend_fail)}}"
+  using choice_def choice_vend_vend_nothing no_choice_vend_vend_fail nondeterministic_transitions_2 by auto
+
+lemma nondeterminism_merge_q1_q2: "nondeterminism (merge_states q1 q2 (T drinks2))"
+  by (simp add: nondeterminism_def vend_vend_nothing_nondeterminism)
+
+lemma max_nondeterminism: "max (q1, (q1, q3), vend_nothing, vend) (q1, (q1, q1), vend_nothing, vend_fail) = (q1, (q1, q3), vend_nothing, vend)"
+  by (simp add: max_def)
+
+lemma apply_guards_vend_nothing:  "\<forall>i r. apply_guards (Guard vend_nothing) (join_ir i r)"
+  by (simp add: guard_vend_nothing)
+
+lemma "consistent c \<Longrightarrow> (posterior c vend_nothing) = c"
+  apply (simp add: posterior_def guard_vend_nothing)
+
+
+lemma "\<not> subsumes c vend vend_nothing"
+  apply (simp add: subsumes_def apply_guards_vend_nothing)
+  apply (simp add: guard_vend_nothing)
+  apply safe
+   apply simp
+
+
+lemma "\<not>directly_subsumes drinks2 q2 vend vend_nothing"
+  apply (simp add: directly_subsumes_def)
 
   
 lemma "merge_2 drinks2 q1 q2 = Some (\<lambda> (a,b) .
@@ -549,12 +691,25 @@ lemma "merge_2 drinks2 q1 q2 = Some (\<lambda> (a,b) .
   apply (case_tac a)
   apply (case_tac b)
   apply simp
-  apply (simp add: vend_doesnt_exit_q1 vend_nothing_exits_q1)
+  apply (simp add: Let_def)
+  apply clarify
+  apply (simp only: nondeterminisitic_pairs not_subset)
+  apply simp
+  apply (simp add: nondeterminism_merge_q1_q2)
+  apply (simp only: max_nondeterminism)
+  apply simp
+  apply (simp only: nondet_pairs_simpler not_subset_2)
+  apply simp
+  apply (simp add: vend_doesnt_exit_q1)
 
 
-
-
-  
+  (* apply (simp add: vend_doesnt_exit_q1 vend_nothing_exits_q1) *)
+  (* apply clarify *)
+  (* apply simp *)
+  (* apply (simp add: Let_def) *)
+  (* apply (simp add: merge_states_2_nondeterminism) *)
+     (* apply (simp add: vend_exits_q1 vend_nothing_exits_q1_2) *)
+  (* apply (simp add: Let_def) *)
 
 
 

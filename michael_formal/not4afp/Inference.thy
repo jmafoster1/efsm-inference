@@ -24,6 +24,9 @@ definition merge_states :: "'s::{finite,linorder} \<Rightarrow> 's \<Rightarrow>
                                       else (all_pairs (if from = y \<or> from = x then merge_with y x else [from])
                                                       (if to = y \<or> to = x then merge_with y x else [to]) t))))"
 
+lemma merge_states_reflexive: "merge_states x x t = t"
+  by (simp add: merge_states_def)
+
 lemma merge_states_symmetry: "merge_states x y t = merge_states y x t"
   apply (simp add: merge_states_def)
   apply safe
@@ -106,17 +109,20 @@ fun merge_transitions :: "'s::{finite, linorder} efsm \<Rightarrow> 's efsm \<Ri
     None
   )"
 
-function merge_2 :: "'s::{finite, linorder} efsm \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's transition_function option" where
+function merge_2 :: "'s::{finite, linorder} efsm \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's transition_function option" and 
+  resolve_nondeterminism :: "('s \<times> ('s \<times> 's) \<times> (transition \<times> transition)) set \<Rightarrow> 's efsm \<Rightarrow> 's \<Rightarrow> 's  \<Rightarrow> 's::{finite, linorder} transition_function \<Rightarrow> 's transition_function option" where
+  "resolve_nondeterminism s e s1 s2 t = (if s = {} then None else (let (from, (to1, to2), (t1, t2)) = Max s; t' = merge_2 \<lparr>s0=(s0 e), T = t\<rparr> to1 to2 in
+                        case t' of None \<Rightarrow> resolve_nondeterminism (s - {Max s}) e s1 s2 t |
+                                    Some t \<Rightarrow> merge_transitions e \<lparr>s0=(s0 e), T = t\<rparr> (if exits_state e t1 s1 then s1 else s2) (if exits_state e t2 s1 then s1 else s2) from to1 to2 t1 t2 ))" |
+
 "merge_2 e s1 s2 = (let t' = (merge_states s1 s2 (T e)) in
                        \<comment> \<open> Have we got any nondeterminism? \<close>
-                       (case nondeterministic_transitions t' of
+                       (if \<not> nondeterminism t' then
                          \<comment> \<open> If not then we're good to go \<close>
-                         None \<Rightarrow> Some t' |
+                         Some t' else
                          \<comment> \<open> If we have then we need to fix it \<close>
-                         Some (from, (to1, to2), (t1, t2)) \<Rightarrow> (let t'' = merge_2 \<lparr>s0=(s0 e), T = t'\<rparr> to1 to2 in
-                        case t'' of None \<Rightarrow> None | Some t \<Rightarrow> merge_transitions e \<lparr>s0=(s0 e), T = t\<rparr> (if exits_state e t1 s1 then s1 else s2) (if exits_state e t2 s1 then s1 else s2) from to1 to2 t1 t2 )))"
-  using prod_cases3 apply blast
-  by auto
+                         resolve_nondeterminism (nondeterministic_pairs t') e s1 s2 t'))"
+  sorry
 termination
   sorry
 
