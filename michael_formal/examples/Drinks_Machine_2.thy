@@ -112,7 +112,7 @@ lemma possible_steps_q2_vend: "possible_steps drinks2 q2 <R (Suc 0) := Str ''cok
   by (simp_all add: drinks2_def vend_def Lt_def Ge_def gNot_def)
 
 lemma purchase_coke: "observe_trace drinks2 (s0 drinks2) <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] = [[], [Num 50], [Num 100], [Str ''coke'']]"
-  apply (simp add: possible_steps_q0 s0_drinks2)
+  apply (simp add: possible_steps_q0)
   apply (simp add: possible_steps_q1)
   apply (simp add: possible_steps_q2_coin)
   by (simp add: possible_steps_q2_vend vend_def coin_def)
@@ -141,6 +141,7 @@ lemma consistent_medial_coin: "consistent \<lbrakk>V (R 1) \<mapsto> cexp.Bc Tru
 
 lemma posterior_coin_first: "posterior select_posterior coin = \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> Bc True\<rbrakk>"
   apply (simp add: posterior_def consistent_medial_coin del: Nat.One_nat_def)
+  apply (simp add: Let_def)
   apply (simp add: coin_def valid_def satisfiable_def)
   apply (rule ext)
   by simp
@@ -153,6 +154,7 @@ lemma consistent_medial_coin_2: "consistent \<lbrakk>V (R (Suc 0)) \<mapsto> cex
 
 lemma posterior_coin_subsequent: "posterior \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Bc True\<rbrakk> coin = \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Bc True\<rbrakk>"
   apply (simp add: posterior_def consistent_medial_coin_2)
+  apply (simp add: Let_def)
   apply (simp add: coin_def valid_def satisfiable_def)
   apply (rule ext)
   by simp
@@ -253,17 +255,14 @@ lemma consistent_r1_r2_true: "consistent r1_r2_true"
   using consistent_empty_1 by force
 
 lemma posterior_r1_r2_true_coin: "(posterior r1_r2_true coin) = r1_r2_true"
-  apply (simp add: posterior_def coin_def consistent_def satisfiable_def valid_def)
+  apply (simp add: posterior_def)
+  apply (simp add: Let_def)
+  apply (simp add: coin_def consistent_def satisfiable_def valid_def)
   apply safe
    apply auto[1]
   using consistent_empty_1 by force
 
-lemma coin_empty: "(posterior r1_r2_true coin) = r1_r2_true"
-  apply (rule ext)
-  apply (simp add: posterior_def coin_def satisfiable_def consistent_def)
-  using empty_not_undef by force
-
-lemma valid_coin_empty: "valid_context (posterior r1_r2_true coin)"
+lemma valid_posterior_r1_r2_true_coin: "valid_context (posterior r1_r2_true coin)"
   apply (simp add: posterior_r1_r2_true_coin)
   apply (simp add: valid_context_def)
   apply (simp add: posterior_coin_subsequent)

@@ -109,19 +109,21 @@ fun merge_transitions :: "'s::{finite, linorder} efsm \<Rightarrow> 's efsm \<Ri
     None
   )"
 
+declare merge_transitions.simps[simp del]
+
 function merge_2 :: "'s::{finite, linorder} efsm \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's transition_function option" and 
   resolve_nondeterminism :: "('s \<times> ('s \<times> 's) \<times> (transition \<times> transition)) set \<Rightarrow> 's efsm \<Rightarrow> 's \<Rightarrow> 's  \<Rightarrow> 's::{finite, linorder} transition_function \<Rightarrow> 's transition_function option" where
   "resolve_nondeterminism s e s1 s2 t = (if s = {} then None else (let (from, (to1, to2), (t1, t2)) = Max s; t' = merge_2 \<lparr>s0=(s0 e), T = t\<rparr> to1 to2 in
                         case t' of None \<Rightarrow> resolve_nondeterminism (s - {Max s}) e s1 s2 t |
                                     Some t \<Rightarrow> merge_transitions e \<lparr>s0=(s0 e), T = t\<rparr> (if exits_state e t1 s1 then s1 else s2) (if exits_state e t2 s1 then s1 else s2) from to1 to2 t1 t2 ))" |
 
-"merge_2 e s1 s2 = (let t' = (merge_states s1 s2 (T e)) in
+"merge_2 e s1 s2 = (if s1 = s2 then Some (T e) else (let t' = (merge_states s1 s2 (T e)) in
                        \<comment> \<open> Have we got any nondeterminism? \<close>
                        (if \<not> nondeterminism t' then
                          \<comment> \<open> If not then we're good to go \<close>
                          Some t' else
                          \<comment> \<open> If we have then we need to fix it \<close>
-                         resolve_nondeterminism (nondeterministic_pairs t') e s1 s2 t'))"
+                         resolve_nondeterminism (nondeterministic_pairs t') e s1 s2 t')))"
   sorry
 termination
   sorry

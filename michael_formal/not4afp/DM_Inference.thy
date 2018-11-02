@@ -191,6 +191,7 @@ lemma vend_nothing_posterior: "posterior select_posterior vend_nothing = select_
   apply (simp only: posterior_def medial_vend_nothing)
   apply (simp add: consistent_select_posterior del: One_nat_def)
   apply (rule ext)
+  apply (simp add: Let_def)
   by (simp add: transitions)
 
 lemma consistent_medial_vend_fail: "consistent \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> And (cexp.Eq (Num 0)) (cexp.Lt (Num 100))\<rbrakk>"
@@ -665,24 +666,114 @@ lemma max_nondeterminism: "max (q1, (q1, q3), vend_nothing, vend) (q1, (q1, q1),
 lemma apply_guards_vend_nothing:  "\<forall>i r. apply_guards (Guard vend_nothing) (join_ir i r)"
   by (simp add: guard_vend_nothing)
 
-lemma "consistent c \<Longrightarrow> (posterior c vend_nothing) = c"
-  apply (simp add: posterior_def guard_vend_nothing)
+lemma consistent_posterior_vend_nothing: "consistent c \<Longrightarrow> consistent (posterior c vend_nothing)"
+  apply (simp add: posterior_def guard_vend_nothing updates_vend_nothing)
+  apply (simp add: consistent_def)
+  by auto
 
+lemma consistent_posterior_vend_nothing_2: "\<not>consistent c \<Longrightarrow> \<not>consistent (posterior c vend_nothing)"
+  apply (simp add: posterior_def guard_vend_nothing updates_vend_nothing)
+  by (simp add: consistent_def)
 
-lemma "\<not> subsumes c vend vend_nothing"
+lemma outputs_vend_neq_vend_nothing: "(\<exists>i r. [] \<noteq> apply_outputs (Outputs vend) (case_vname (\<lambda>n. input2state i (Suc 0) (I n)) (\<lambda>n. r (R n))))"
+  apply (rule_tac x="[]" in exI)
+  apply (rule_tac x="<R 1 := Str ''coke''>" in exI)
+  by (simp add: vend_def)
+
+lemma vend_doesnt_subsume_vend_nothing: "\<not> subsumes c vend vend_nothing"
   apply (simp add: subsumes_def apply_guards_vend_nothing)
-  apply (simp add: guard_vend_nothing)
+  apply (simp add: guard_vend_nothing outputs_vend_nothing)
+  using outputs_vend_neq_vend_nothing
+  by simp
+
+lemma vend_doesnt_directly_subsume_vend_nothing: "\<not>directly_subsumes drinks2 q2 vend vend_nothing"
+  apply (simp add: directly_subsumes_def vend_doesnt_subsume_vend_nothing)
+  apply (simp add: gets_us_to_def)
+  apply (rule_tac x="[(''select'', [Str ''coke'']), (''coin'', [Num 100])]" in exI)
+  apply simp
+  apply (simp add: possible_steps_q0)
+  by (simp add: possible_steps_q1)
+
+lemma vend_nothing_doesnt_directly_subsume_vend: "directly_subsumes drinks2 q1 vend_nothing vend"
+  sorry
+
+lemma nondeterminsm_merge_q1_q3: "nondeterminism (merge_states q1 q3 (merge_states q1 q2 (T drinks2)))"
+  apply (simp add: nondeterminism_def)
+  by (simp add: nondet_pairs_simpler)
+
+lemma outputs_vend_neq_vend_nothing_2: "(\<exists>i r. apply_guards (Guard vend) (case_vname (\<lambda>n. input2state i (Suc 0) (I n)) (\<lambda>n. r (R n))) \<and>
+           apply_outputs (Outputs vend) (case_vname (\<lambda>n. input2state i (Suc 0) (I n)) (\<lambda>n. r (R n))) \<noteq> [])"
+  apply (rule_tac x="[]" in exI)
+  apply (rule_tac x="<R 1 := Str ''coke'', R 2 := Num 100>" in exI)
+  by (simp add: transitions)
+
+lemma vend_doesnt_subsume_vend_nothing_2: "\<not> subsumes c vend_nothing vend"
+  apply (simp add: subsumes_def apply_guards_vend_nothing)
+  apply (simp add: guard_vend_nothing outputs_vend_nothing)
+  using outputs_vend_neq_vend_nothing_2
+  by simp
+
+lemma possible_steps_q0_2: "(possible_steps \<lparr>s0 = q0, T = merge_states q1 q2 (T drinks2)\<rparr> q0 Map.empty ''select'' [Str ''coke'']) = {(q1, select)}"
+  apply (simp add: possible_steps_def)
   apply safe
-   apply simp
+  using Pair_inject merge_q1_q2 apply force
+      apply (smt finsert_fminus finsert_not_fempty fsingleton_iff merge_q1_q2 old.prod.case prod.inject statename.distinct(1))
+  by (simp_all add: transitions merge_q1_q2)
 
+lemma vend_doesnt_directly_subsume_vend_nothing_2: "\<not>directly_subsumes \<lparr>s0 = q0, T = merge_states q1 q2 (T drinks2)\<rparr> q1 vend_nothing vend"
+  apply (simp add: directly_subsumes_def vend_doesnt_subsume_vend_nothing_2)
+  apply (rule_tac x="[(''select'', [Str ''coke''])]" in exI)
+  by (simp add: gets_us_to_def possible_steps_q0_2)
 
-lemma "\<not>directly_subsumes drinks2 q2 vend vend_nothing"
-  apply (simp add: directly_subsumes_def)
+lemma subset_nondet: "{(q1, (q1, q3), vend_nothing, vend), (q1, (q1, q1), vend_nothing, vend_fail)} -
+     {max (q1, (q1, q3), vend_nothing, vend) (q1, (q1, q1), vend_nothing, vend_fail)}
+     \<subseteq> {Max ({(q1, (q1, q3), vend_nothing, vend), (q1, (q1, q1), vend_nothing, vend_fail)} -
+              {max (q1, (q1, q3), vend_nothing, vend) (q1, (q1, q1), vend_nothing, vend_fail)})}"
+  by (simp add: max_nondeterminism)
 
-  
+lemma vend_nothing_doesnt_directly_subsume_vend_nothing_2: "\<not>directly_subsumes drinks2 q1 vend_nothing vend"
+  apply (simp add: directly_subsumes_def vend_doesnt_subsume_vend_nothing_2)
+  apply (rule_tac x="[(''select'', [Str ''coke''])]" in exI)
+  by (simp add: gets_us_to_def possible_steps_q0)
+
+lemma vend_doesnt_directly_subsume_vend_nothing_3: "\<not> directly_subsumes \<lparr>s0 = q0, T = merge_states q1 q2 (T drinks2)\<rparr> q1 vend vend_nothing"
+  using vend_nothing_doesnt_directly_subsume_vend vend_nothing_doesnt_directly_subsume_vend_nothing_2 by auto
+
+lemma good_max: "Max ({(q1, (q1, q3), vend_nothing, vend), (q1, (q1, q1), vend_nothing, vend_fail)} -
+               {max (q1, (q1, q3), vend_nothing, vend) (q1, (q1, q1), vend_nothing, vend_fail)}) = (q1, (q1, q1), vend_nothing, vend_fail)"
+  by (simp add: max_def)
+
+lemma vend_fail_doesnt_exit_q1: "\<not>exits_state drinks2 vend_fail q1"
+  using vend_nothing_doesnt_directly_subsume_vend vend_nothing_doesnt_directly_subsume_vend_nothing_2 by auto
+
+lemma coin_posterior: "posterior \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> coin = \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> Bc True\<rbrakk>"
+  using posterior_coin_first by auto
+
+lemma vend_nothing_doesnt_directly_subsume_vend_2: "\<not>directly_subsumes drinks2 q2 vend_fail vend_nothing"
+  using vend_nothing_doesnt_directly_subsume_vend vend_nothing_doesnt_directly_subsume_vend_nothing_2 by auto
+
+lemma vend_nothing_directly_subsumes_vend_fail: "directly_subsumes drinks2 q1 vend_nothing vend_fail"
+  using vend_nothing_doesnt_directly_subsume_vend vend_nothing_doesnt_directly_subsume_vend_nothing_2 by auto
+
+lemma finsert_vend_nothing: "finsert vend_nothing ({|vend_nothing, coin, vend_fail|} |-| {|vend_fail|}) = {|coin, vend_nothing|}"
+  apply (simp add: transitions)
+  by auto
+
+definition coin50 :: "transition" where
+"coin50 \<equiv> \<lparr>
+        Label = ''coin'',
+        Arity = 1,
+        Guard = [(gexp.Eq (V (I 1)) (L (Num 50)))],
+        Outputs = [Plus (V (R 2)) (V (I 1))],
+        Updates = [
+                    (R 1, V (R 1)),
+                    (R 2, Plus (V (R 2)) (V (I 1)))
+                  ]
+      \<rparr>"
+
 lemma "merge_2 drinks2 q1 q2 = Some (\<lambda> (a,b) .
   if (a, b) = (q0, q1) then {|select|} else
-  if (a, b) = (q1,q1) then {|vend_nothing, coin, vend_fail|} else
+  if (a, b) = (q1,q1) then {|vend_nothing, coin|} else
   if (a, b) = (q1, q3) then {|vend|} else {||})"
   apply simp
   apply (case_tac "nondeterministic_transitions (merge_states q1 q2 (T drinks2))")
@@ -698,19 +789,24 @@ lemma "merge_2 drinks2 q1 q2 = Some (\<lambda> (a,b) .
   apply (simp add: nondeterminism_merge_q1_q2)
   apply (simp only: max_nondeterminism)
   apply simp
-  apply (simp only: nondet_pairs_simpler not_subset_2)
-  apply simp
-  apply (simp add: vend_doesnt_exit_q1)
+  apply (simp add: vend_doesnt_exit_q1 vend_nothing_exits_q1)
+  apply (simp add: nondeterminsm_merge_q1_q3 nondet_pairs_simpler)
+  apply (simp add: max_nondeterministic_transitions)
+  apply (simp add: vend_exits_q1 vend_nothing_exits_q1_2)
+  apply (simp add: merge_transitions.simps)
+  apply (simp add: subset_nondet)
+  apply (simp add: vend_doesnt_directly_subsume_vend_nothing_2)
+  apply (simp add: vend_doesnt_directly_subsume_vend_nothing)
+  apply (simp add: vend_nothing_doesnt_directly_subsume_vend_nothing_2)
+  apply (simp add: vend_doesnt_directly_subsume_vend_nothing_3)
+  apply (simp add: good_max)
 
+  apply (simp add: vend_nothing_directly_subsumes_vend_fail)
+  apply (simp add: replace_transition_def merge_q1_q2)
+  apply (simp add: vend_nothing_exits_q1)
 
-  (* apply (simp add: vend_doesnt_exit_q1 vend_nothing_exits_q1) *)
-  (* apply clarify *)
-  (* apply simp *)
-  (* apply (simp add: Let_def) *)
-  (* apply (simp add: merge_states_2_nondeterminism) *)
-     (* apply (simp add: vend_exits_q1 vend_nothing_exits_q1_2) *)
-  (* apply (simp add: Let_def) *)
-
-
+  apply (rule ext)
+  apply (simp add: finsert_vend_nothing)
+  by force
 
 end

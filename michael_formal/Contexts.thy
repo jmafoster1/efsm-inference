@@ -169,7 +169,7 @@ lemma can_take_no_guards: "\<forall> c. (Contexts.consistent c \<and> (Guard t) 
   by (simp add: consistent_def Contexts.can_take_def)
 
 definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
-  "posterior c t = (let c' = (medial c (Guard t)) in (if consistent c' then (apply_updates c' \<lbrakk>\<rbrakk> (Updates t)) else (\<lambda>i. Bc False)))"
+  "posterior c t = (let c' = (medial c (Guard t)) in (if consistent c' then (apply_updates c' c (Updates t)) else (\<lambda>i. Bc False)))"
 
 primrec posterior_n :: "nat \<Rightarrow> transition \<Rightarrow> context \<Rightarrow> context" where (* Apply a given transition to a given context n times - good for reflexive transitions*)
   "posterior_n 0 _ c = c " |
@@ -179,7 +179,7 @@ primrec posterior_sequence :: "context \<Rightarrow> 'statename::finite efsm \<R
   "posterior_sequence c _ _ _ [] = c" |
   "posterior_sequence c e s r (h#t) =
     (case (step e s r (fst h) (snd h)) of
-      (Some (transition, s', outputs, updated)) \<Rightarrow> posterior (posterior_sequence c e s r t) transition |
+      (Some (transition, s', outputs, r')) \<Rightarrow> (posterior_sequence (posterior c transition) e s' r' t) |
       _ \<Rightarrow> c
     )"
 
