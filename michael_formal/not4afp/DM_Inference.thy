@@ -71,7 +71,7 @@ lemma vend_vend_nothing_nondeterminism: "nondeterministic_pairs (merge_states q1
   apply (simp add: vend_nothing_lt_vend_fail)
   by (simp add: choice_vend_nothing_vend_fail)
 
-lemma nondeterminism_example: "(q1, (q1, q1), vend_nothing, vend_fail) \<in> nondeterministic_pairs (merge_states q1 q2 (T drinks2))"
+lemma vend_nothing_vend_fail_nondeterminism: "(q1, (q1, q1), vend_nothing, vend_fail) \<in> nondeterministic_pairs (merge_states q1 q2 (T drinks2))"
   apply (simp add: merge_q1_q2 nondeterministic_pairs_def vend_nothing_lt_vend_fail)
   apply (simp add: transitions choice_def)
   apply (rule_tac x="<R 2 := Num 0>" in exI)
@@ -82,7 +82,7 @@ lemma nond_transitions_not_none: "nondeterministic_transitions (merge_states q1 
   apply (simp add: vend_vend_nothing_nondeterminism)
   by (metis surj_pair)
 
-lemma nondeterminism_example_2: "(q1, (q1, q3), (vend_nothing, vend)) \<in> nondeterministic_pairs (merge_states q1 q2 (T drinks2))"
+lemma vend_nothing_vend_nondeterminism: "(q1, (q1, q3), (vend_nothing, vend)) \<in> nondeterministic_pairs (merge_states q1 q2 (T drinks2))"
   apply (simp add: merge_q1_q2 nondeterministic_pairs_def vend_nothing_lt_vend)
   apply (simp add: transitions choice_def)
   apply (rule_tac x="<R 2 := Num 100>" in exI)
@@ -130,7 +130,7 @@ lemma nondeterministic_pairs_members: "x \<in> nondeterministic_pairs (merge_sta
   by (smt fempty_iff fsingleton_iff not_less_iff_gr_or_eq prod.inject)
 
 lemma nondeterminisitic_pairs: "(nondeterministic_pairs (merge_states q1 q2 (T drinks2))) = {(q1, (q1, q3), (vend_nothing, vend)), (q1, (q1, q1), vend_nothing, vend_fail)}"
-  using nondeterministic_pairs_members nondeterminism_example nondeterminism_example_2 by blast        
+  using nondeterministic_pairs_members vend_nothing_vend_fail_nondeterminism vend_nothing_vend_nondeterminism by blast        
 
 lemma no_nondeterminism_q0: "\<forall>aa b ab ba. nondeterministic_transitions (merge_states q1 q2 (T drinks2)) \<noteq> Some (q0, (aa, b), ab, ba)"
   by (simp add: nondeterministic_transitions_def nondeterminisitic_pairs max_def)
@@ -482,8 +482,7 @@ next
     apply (case_tac "gets_us_to q1 drinks2 q0 Map.empty xs")
      apply (case_tac "valid_trace drinks2 xs")
     apply simp
-    sorry
-qed
+    oops
 
   
 
@@ -695,11 +694,12 @@ lemma vend_doesnt_directly_subsume_vend_nothing: "\<not>directly_subsumes drinks
   by (simp add: possible_steps_q1)
 
 lemma vend_nothing_doesnt_directly_subsume_vend: "directly_subsumes drinks2 q1 vend_nothing vend"
-  sorry
+  oops
 
 lemma nondeterminsm_merge_q1_q3: "nondeterminism (merge_states q1 q3 (merge_states q1 q2 (T drinks2)))"
   apply (simp add: nondeterminism_def)
-  by (simp add: nondet_pairs_simpler)
+  (* by (simp add: nondet_pairs_simpler) *)
+  sorry
 
 lemma outputs_vend_neq_vend_nothing_2: "(\<exists>i r. apply_guards (Guard vend) (case_vname (\<lambda>n. input2state i (Suc 0) (I n)) (\<lambda>n. r (R n))) \<and>
            apply_outputs (Outputs vend) (case_vname (\<lambda>n. input2state i (Suc 0) (I n)) (\<lambda>n. r (R n))) \<noteq> [])"
@@ -771,42 +771,96 @@ definition coin50 :: "transition" where
                   ]
       \<rparr>"
 
+lemma no_choice_coin_vend_nothing: "\<not> choice coin vend_nothing"
+  by (simp add: choice_def coin_def vend_nothing_def)
+
+lemma no_choice_vend_nothing_coin: "\<not> choice vend_nothing coin"
+  by (simp add: choice_symmetry no_choice_coin_vend_nothing)
+
+lemma choice_coin_coin: "choice coin coin"
+  by (simp add: choice_def coin_def)
+
+lemma choice_vend_nothing_vend_nothing: "choice vend_nothing vend_nothing"
+  by (simp add: choice_def vend_nothing_def)
+
+lemma no_choice_coin_vend_fail: "\<not> choice coin vend_fail"
+  by (simp add: choice_def transitions)
+
+lemma choice_vend_fail_vend_fail: "choice vend_fail vend_fail"
+  apply (simp add: choice_def transitions)
+  apply (rule_tac x="<R 2 := Num 0>" in exI)
+  by simp
+
+lemma no_choice_vend_fail_coin: "\<not> choice vend_fail coin"
+  by (simp add: choice_symmetry no_choice_coin_vend_fail)
+
+lemma choice_vend_fail_vend_nothing: "choice vend_fail vend_nothing"
+  using choice_symmetry choice_vend_nothing_vend_fail by auto
+
+lemma choice_vend_nothing_vend: "choice vend_nothing vend"
+  by (simp add: choice_symmetry choice_vend_vend_nothing)
+
+lemmas choices = choice_vend_nothing_vend no_choice_vend_vend_fail no_choice_vend_coin choice_vend_vend_nothing no_choice_coin_vend_nothing no_choice_vend_nothing_coin no_choice_vend_fail_coin choice_vend_fail_vend_nothing choice_vend_nothing_vend_fail choice_coin_coin choice_vend_nothing_vend_nothing no_choice_coin_vend_fail choice_vend_fail_vend_fail
+
+lemma vend_nothing_vend_max: "(q1, (q1, q3), vend_nothing, vend) = max (q1, (q1, q3), vend_nothing, vend) (q1, (q1, q1), vend_nothing, vend_fail)"
+  by (simp add: max_nondeterminism)
+
+value "merge_states q1 q3 (merge_states q1 q2 (T drinks2))"
+
+lemma "merge_states q1 q3 (merge_states q1 q2 (T drinks2)) = (\<lambda> (a,b) .
+  if (a, b) = (q0, q1) then {|select|} else
+  if (a, b) = (q1,q1) then {|vend_fail, coin|} else
+  if (a, b) = (q1, q3) then {|vend|} else {||})"
+
+
 lemma "merge_2 drinks2 q1 q2 = Some (\<lambda> (a,b) .
   if (a, b) = (q0, q1) then {|select|} else
-  if (a, b) = (q1,q1) then {|vend_nothing, coin|} else
+  if (a, b) = (q1,q1) then {|vend_fail, coin|} else
   if (a, b) = (q1, q3) then {|vend|} else {||})"
   apply simp
   apply (case_tac "nondeterministic_transitions (merge_states q1 q2 (T drinks2))")
    apply (simp add: nondeterministic_transitions)
   apply (simp add: nondeterministic_transitions)
-  apply (case_tac a)
-  apply (case_tac b)
-  apply simp
-  apply (simp add: Let_def)
+  apply (simp only: Let_def)
   apply clarify
-  apply (simp only: nondeterminisitic_pairs not_subset)
-  apply simp
-  apply (simp add: nondeterminism_merge_q1_q2)
-  apply (simp only: max_nondeterminism)
-  apply simp
-  apply (simp add: vend_doesnt_exit_q1 vend_nothing_exits_q1)
-  apply (simp add: nondeterminsm_merge_q1_q3 nondet_pairs_simpler)
-  apply (simp add: max_nondeterministic_transitions)
-  apply (simp add: vend_exits_q1 vend_nothing_exits_q1_2)
-  apply (simp add: merge_transitions.simps)
-  apply (simp add: subset_nondet)
-  apply (simp add: vend_doesnt_directly_subsume_vend_nothing_2)
-  apply (simp add: vend_doesnt_directly_subsume_vend_nothing)
-  apply (simp add: vend_nothing_doesnt_directly_subsume_vend_nothing_2)
-  apply (simp add: vend_doesnt_directly_subsume_vend_nothing_3)
-  apply (simp add: good_max)
-
-  apply (simp add: vend_nothing_directly_subsumes_vend_fail)
-  apply (simp add: replace_transition_def merge_q1_q2)
+  apply (simp add: nondeterminism_merge_q1_q2 nondeterminisitic_pairs del: resolve_nondeterminism.simps)
   apply (simp add: vend_nothing_exits_q1)
+  apply (simp add: vend_doesnt_exit_q1)
+  apply safe
+   apply simp
+  apply (case_tac "max (q1, (q1, q3), vend_nothing, vend) (q1, (q1, q1), vend_nothing, vend_fail) = (q1, (q1, q3), vend_nothing, vend)")
+   defer
+  using vend_nothing_vend_max apply simp
+  apply simp
+  apply (simp add: vend_nothing_exits_q1 vend_doesnt_exit_q1)
 
-  apply (rule ext)
-  apply (simp add: finsert_vend_nothing)
-  by force
+
+
+  (* apply simp *)
+  (* apply clarify *)
+  (* apply (simp only: nondeterminisitic_pairs not_subset) *)
+  (* apply simp *)
+  (* apply (simp add: nondeterminism_merge_q1_q2) *)
+  (* apply (simp only: max_nondeterminism) *)
+  (* apply simp *)
+  (* apply (simp add: vend_doesnt_exit_q1 vend_nothing_exits_q1) *)
+  (* apply (simp add: nondeterminsm_merge_q1_q3 nondet_pairs_simpler) *)
+  (* apply (simp add: max_nondeterministic_transitions) *)
+  (* apply (simp add: vend_exits_q1 vend_nothing_exits_q1_2) *)
+  (* apply (simp add: merge_transitions.simps) *)
+  (* apply (simp add: subset_nondet) *)
+  (* apply (simp add: vend_doesnt_directly_subsume_vend_nothing_2) *)
+  (* apply (simp add: vend_doesnt_directly_subsume_vend_nothing) *)
+  (* apply (simp add: vend_nothing_doesnt_directly_subsume_vend_nothing_2) *)
+  (* apply (simp add: vend_doesnt_directly_subsume_vend_nothing_3) *)
+  (* apply (simp add: good_max) *)
+
+  (* apply (simp add: vend_nothing_directly_subsumes_vend_fail) *)
+  (* apply (simp add: replace_transition_def merge_q1_q2) *)
+  (* apply (simp add: vend_nothing_exits_q1) *)
+
+  (* apply (rule ext) *)
+  (* apply (simp add: finsert_vend_nothing) *)
+  
 
 end
