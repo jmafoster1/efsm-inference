@@ -175,7 +175,7 @@ primrec posterior_n :: "nat \<Rightarrow> transition \<Rightarrow> context \<Rig
   "posterior_n 0 _ c = c " |
   "posterior_n (Suc m) t c = posterior_n m t (posterior c t)"
 
-primrec posterior_sequence :: "context \<Rightarrow> 'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> context" where
+primrec posterior_sequence :: "context \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> context" where
   "posterior_sequence c _ _ _ [] = c" |
   "posterior_sequence c e s r (h#t) =
     (case (step e s r (fst h) (snd h)) of

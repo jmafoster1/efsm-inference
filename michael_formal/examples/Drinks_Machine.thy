@@ -15,187 +15,6 @@ theory Drinks_Machine
   imports "../Contexts"
 begin
 
-datatype statename = q0 | q1 | q2 | q3
-
-instantiation statename :: linorder begin
-fun less_eq_statename :: "statename \<Rightarrow> statename \<Rightarrow> bool" where
-  "q0 \<le> _ = True" |
-  "q1 \<le> q0 = False" |
-  "q1 \<le> _ = True" |
-  "q2 \<le> q0 = False" |
-  "q2 \<le> q1 = False" |
-  "q2 \<le> _ = True" |
-  "q3 \<le> q3 = True" |
-  "q3 \<le> _ = False"
-
-fun less_statename :: "statename \<Rightarrow> statename \<Rightarrow> bool" where
-  "q0 < q0 = False" |
-  "q0 < _ = True" |
-  "q1 < q0 = False" |
-  "q1 < q1 = False" |
-  "q1 < _ = True" |
-  "q2 < q3 = True" |
-  "q2 < _ = False" |
-  "q3 < _ = False"
-
-instance proof
-  fix x y::statename
-  show "(x < y) = (x \<le> y \<and> \<not> y \<le> x)"
-  proof (induct x)
-    case q0
-    then show ?case
-      apply (cases y)
-      by auto
-  next
-    case q1
-    then show ?case
-      apply (cases y)
-      by auto
-  next
-    case q2
-    then show ?case
-      apply (cases y)
-      by auto
-  next
-    case q3
-    then show ?case
-      apply (cases y)
-      by auto
-  qed
-next
-  fix x::statename
-  show "x \<le> x"
-    apply (cases x)
-    by auto
-next
-  fix x y z::statename
-  show "x \<le> y \<Longrightarrow> y \<le> z \<Longrightarrow> x \<le> z"
-  proof (induct x)
-    case q0
-    then show ?case
-      by simp
-  next
-    case q1
-    then show ?case
-      apply (cases y)
-         apply simp
-        apply simp
-       apply (cases z)
-          prefer 5
-          apply (cases z)
-      by auto
-  next
-    case q2
-    then show ?case
-      apply (cases y)
-         apply simp
-        apply simp
-       apply (cases z)
-          prefer 5
-          apply (cases z)
-      by auto
-  next
-    case q3
-    then show ?case
-      apply (cases y)
-         apply simp
-        apply simp
-       apply (cases z)
-          prefer 5
-          apply (cases z)
-      by auto
-  qed
-next
-  fix x y::statename
-  show "x \<le> y \<Longrightarrow> y \<le> x \<Longrightarrow> x = y"
-  proof (induct x)
-    case q0
-    then show ?case
-      apply (cases y)
-      by auto
-  next
-    case q1
-    then show ?case
-      apply (cases y)
-      by auto
-  next
-    case q2
-    then show ?case
-      apply (cases y)
-      by auto
-  next
-    case q3
-    then show ?case
-      apply (cases y)
-      by auto
-  qed
-next
-  fix x y::statename
-  show "x \<le> y \<or> y \<le> x "
-  proof (induct x)
-    case q0
-    then show ?case
-      by simp
-  next
-    case q1
-    then show ?case
-      apply (cases y)
-      by auto
-  next
-    case q2
-    then show ?case
-      apply (cases y)
-      by auto
-  next
-    case q3
-    then show ?case
-      apply (cases y)
-      by auto
-  qed
-qed
-end
-
-lemma UNIV_statename: "UNIV = {q0 , q1 , q2 , q3}"
-  using statename.exhaust by auto
-
-instance statename :: finite
-  by standard (simp add: UNIV_statename)
-
-instantiation statename :: enum begin
-definition "enum_statename = [q0, q1, q2, q3]"
-
-definition
-  "Enum.enum_all P \<longleftrightarrow> list_all P (Enum.enum :: statename list)"
-
-definition
-  "Enum.enum_ex P \<longleftrightarrow> list_ex P (Enum.enum :: statename list)"
-
-instance
-  apply standard
-     apply (simp add: enum_statename_def top_set_def)
-  using UNIV_statename apply auto[1]
-    apply (simp add: enum_statename_def)
-   apply (simp add: enum_all_statename_def enum_statename_def)
-   apply (metis statename.exhaust)
-   apply (simp add: enum_ex_statename_def enum_statename_def)
-  by (metis statename.exhaust)
-end
-
-lemma fUNIV_statename: "fUNIV = {|q0 , q1 , q2 , q3|}"
-  oops
-
-lemma fUNIV_1: "x |\<in>| {|q0 , q1 , q2 , q3|} \<Longrightarrow> x |\<in>| fUNIV"
-  by (simp add: fmember.rep_eq)
-
-lemma fUNIV_2: "x |\<in>| fUNIV \<Longrightarrow> x |\<in>| {|q0 , q1 , q2 , q3|}"
-  using UNIV_statename by auto
-
-lemma fUNIV_3: "x |\<in>| fUNIV = (x |\<in>| {|q0 , q1 , q2 , q3|})"
-  using fUNIV_1 fUNIV_2 by blast
-
-lemma statename_UNIV: "fUNIV = {|q0, q1, q2, q3|}"
-  by (simp add: fUNIV_3 fset_eqI)
-
 definition select :: "transition" where
 "select \<equiv> \<lparr>
         Label = ''select'',
@@ -268,30 +87,39 @@ lemma arity_vend_fail: "Arity vend_fail = 0"
 lemma guard_vend: "Guard vend = [(Ge (V (R 2)) (L (Num 100)))]"
   by (simp add: vend_def)
 
-definition drinks :: "statename efsm" where
-"drinks \<equiv> \<lparr>
-          s0 = q0,
-          T = \<lambda> (a,b) .
-              if (a,b) = (q0,q1) then {|select|}    (* If we want to go from state 1 to state 2 then select will do that *)
-              else if (a,b) = (q1,q1) then {|coin, vend_fail|} (* If we want to go from state 2 to state 2 then coin will do that *)
-              else if (a,b) = (q1,q2) then {|vend|} (* If we want to go from state 2 to state 3 then vend will do that *)
-              else {||} (* There are no other transitions *)
-         \<rparr>"
+definition drinks :: "transition_matrix" where
+"drinks \<equiv> {|
+          ((0,1), {|select|}),    (* If we want to go from state 1 to state 2 then select will do that *)
+          ((1,1), {|coin, vend_fail|}), (* If we want to go from state 2 to state 2 then coin will do that *)
+          ((1,2), {|vend|}) (* If we want to go from state 2 to state 3 then vend will do that *)
+         |}"
 
-lemma "S drinks = {|q0, q1, q2, q3|}"
-  by (simp add: S_def statename_UNIV)
-
-lemma s0_drinks [simp]: "s0 drinks = q0"
-  by (simp add: drinks_def)
+lemma "S drinks = {|0, 1, 2|}"
+  apply (simp add: S_def drinks_def)
+  by auto
 
 lemmas transitions = select_def coin_def vend_def vend_fail_def
 
-lemma possible_steps_q0:  "length i = Suc 0 \<Longrightarrow> possible_steps drinks q0 Map.empty (''select'') i = {(q1, select)}"
-  apply (simp add: possible_steps_def drinks_def)
-  apply safe
-  using prod.inject apply fastforce
-      apply (case_tac a)
-  by (simp_all add: select_def)
+definition possible_steps_aux :: "transition_matrix \<Rightarrow> nat \<Rightarrow> (nat \<times> transition) fset" where
+  "possible_steps_aux t s = ffUnion (fimage (\<lambda>((origin, dest), t). fimage (\<lambda>x. (dest, x)) t) (ffilter (\<lambda>((origin, destination), t). origin = s) t))"
+
+definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> transition) fset" where
+  "possible_steps e s r l i = ffilter (\<lambda>(dest, t). (((Label t) = l) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (join_ir i r)))) (possible_steps_aux e s)"
+
+lemma possible_steps_0:  "length i = Suc 0 \<Longrightarrow> possible_steps drinks 0 Map.empty (''select'') i = {|(1, select)|}"
+proof
+  have ffilter_drinks_0: "ffilter (\<lambda>((origin, destination), t). origin = 0) drinks = {|((0, 1), {|select|})|}"
+    apply (simp add: drinks_def)
+    by auto
+  have possible_steps_aux_0: "possible_steps_aux drinks 0 = {|(1, select)|}"
+    unfolding possible_steps_aux_def
+    by (simp add: ffilter_drinks_0)
+  show "length i = Suc 0 \<Longrightarrow> Drinks_Machine.possible_steps drinks 0 Map.empty ''select'' i |\<subseteq>| {|(1, select)|}"
+    apply (simp add: possible_steps_def possible_steps_aux_0)
+    by auto
+  show "length i = Suc 0 \<Longrightarrow> {|(1, select)|} |\<subseteq>| Drinks_Machine.possible_steps drinks 0 Map.empty ''select'' i"
+    by (simp add: possible_steps_def possible_steps_aux_0 select_def)
+qed
 
 lemma select_updates [simp]: "(EFSM.apply_updates (Updates select) (case_vname (\<lambda>n. if n = Suc 0 then Some (Str ''coke'') else input2state [] (Suc 0 + 1) (I n)) Map.empty) Map.empty) = <R 1:=Str ''coke'', R 2 := Num 0>"
   apply (simp add: select_def)
@@ -301,47 +129,32 @@ lemma select_updates [simp]: "(EFSM.apply_updates (Updates select) (case_vname (
 lemma arity_vend: "Arity vend = 0"
   by (simp add: vend_def)
 
-lemma possible_steps_q1_coin: "length i = 1 \<Longrightarrow> possible_steps drinks q1 r (''coin'') i = {(q1, coin)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-       apply (case_tac a)
-         apply (simp add: drinks_def)
-        apply (simp add: drinks_def)
-       apply (simp add: drinks_def arity_vend)
-       apply (case_tac a)
-         apply (simp add: drinks_def)
-       apply (simp add: drinks_def)
-        apply (simp add: drinks_def)
-       apply (simp add: drinks_def)
-      apply (case_tac a)
-         apply (simp add: drinks_def)
-        apply (simp add: drinks_def)
-        apply (case_tac "b = coin")
-         apply simp
-        apply (simp add: label_vend_fail)
-       apply (simp add: drinks_def label_vend)
-  by (simp_all add: drinks_def coin_def)
+lemma ffilter_drinks_1: "ffilter (\<lambda>((origin, destination), t). origin = 1) drinks = {|((1, 1), {|coin, vend_fail|}), ((1, 2), {|vend|})|}"
+  apply (simp add: drinks_def)
+  by auto
 
-lemma possible_steps_q1_coin_2: "possible_steps drinks q1 <R (Suc 0) := Str ''coke'', R 2 := Num 50> (''coin'') [Num 50] = {(q1, coin)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-       apply (case_tac a)
-         apply (simp add: drinks_def)
-         apply (simp add: drinks_def)
-         apply (simp add: drinks_def arity_vend)
-       apply (case_tac a)
-         apply (simp add: drinks_def)
-         apply (simp add: drinks_def)
-        apply (simp add: drinks_def)
-       apply (simp add: drinks_def)
-       apply (case_tac a)
-         apply (simp add: drinks_def)
-        apply (simp add: drinks_def)
-        apply (case_tac "b = coin")
-         apply simp
-        apply (simp add: arity_vend_fail)
-       apply (simp add: drinks_def arity_vend)
-  by (simp_all add: drinks_def coin_def)
+lemma possible_steps_aux_1: "possible_steps_aux drinks 1 = {|(1, coin), (1, vend_fail), (2, vend)|}"
+  unfolding possible_steps_aux_def
+  using ffilter_drinks_1
+  by auto
+
+lemma possible_steps_1_coin: "length i = 1 \<Longrightarrow> possible_steps drinks 1 r (''coin'') i = {|(1, coin)|}"
+proof
+  show "length i = 1 \<Longrightarrow> Drinks_Machine.possible_steps drinks 1 r ''coin'' i |\<subseteq>| {|(1, coin)|}"
+    apply (simp add: possible_steps_def possible_steps_aux_1 del: One_nat_def)
+    using Pair_inject label_vend label_vend_fail by auto
+  show "length i = 1 \<Longrightarrow> {|(1, coin)|} |\<subseteq>| Drinks_Machine.possible_steps drinks 1 r ''coin'' i"
+    by (simp add: possible_steps_def possible_steps_aux_1 coin_def del: One_nat_def)
+qed
+
+lemma possible_steps_1_coin_2: "possible_steps drinks 1 <R (Suc 0) := Str ''coke'', R 2 := Num 50> (''coin'') [Num 50] = {|(1, coin)|}"
+proof
+  show "possible_steps drinks 1 <R (Suc 0) := Str ''coke'', R 2 := Num 50> ''coin'' [Num 50] |\<subseteq>| {|(1, coin)|}"
+    apply (simp add: possible_steps_def possible_steps_aux_1 del: One_nat_def)
+    using Pair_inject label_vend label_vend_fail by auto
+  show "{|(1, coin)|} |\<subseteq>| Drinks_Machine.possible_steps drinks 1 <R (Suc 0) := Str ''coke'', R 2 := Num 50> ''coin'' [Num 50]"
+    by (simp add: possible_steps_def possible_steps_aux_1 coin_def del: One_nat_def)
+qed
 
 lemma coin_updates [simp]: "(EFSM.apply_updates (Updates coin)
                (case_vname (\<lambda>n. if n = Suc 0 then Some (Num i) else input2state [] (Suc 0 + 1) (I n)) (\<lambda>n. if n = 2 then Some (Num r2) else <R (Suc 0) := s> (R n)))
@@ -350,39 +163,39 @@ lemma coin_updates [simp]: "(EFSM.apply_updates (Updates coin)
   apply (rule ext)
   by simp
 
-lemma possible_steps_q2_vend: "possible_steps drinks q1 <R (Suc 0) := Str ''coke'', R 2 := Num 100> (''vend'') [] = {(q2, vend)}"
-  apply (simp add: possible_steps_def drinks_def)
-  apply safe
-       apply (case_tac a)
-         apply (simp add: drinks_def)
-        apply (simp add: drinks_def)
-        apply (case_tac "b = coin")
-          apply (simp add: coin_def)
-         apply (simp add: label_vend_fail guard_vend_fail arity_vend_fail Lt_def)
-      apply (case_tac a)
-         apply (simp add: drinks_def)
-       apply (simp add: drinks_def)
-       apply (case_tac "b = coin")
-        apply (simp add: coin_def)
-        apply (simp add: vend_fail_def)
-       apply simp
+lemma possible_steps_2_vend: "possible_steps drinks 1 <R (Suc 0) := Str ''coke'', R 2 := Num 100> (''vend'') [] = {|(2, vend)|}"
+proof
+  show "possible_steps drinks 1 <R (Suc 0) := Str ''coke'', R 2 := Num 100> ''vend'' [] |\<subseteq>| {|(2, vend)|}"
+    apply (simp add: possible_steps_def possible_steps_aux_1 del: One_nat_def)
+    apply safe
+    apply simp
+     apply (case_tac "a=1")
+      apply (case_tac "b=coin")
+       apply (simp add: transitions)
       apply simp
-      apply (case_tac a)
-         apply simp
-        apply simp
-        apply (case_tac "b = coin")
-         apply (simp add: coin_def)
-        apply (simp add: vend_fail_def Lt_def)
-  by (simp_all add: vend_def Ge_def Lt_def gNot_def)
+      apply clarify
+      apply (simp add: transitions relations join_ir_def)
+     apply simp
+    apply simp
+    apply (case_tac "a=1")
+     apply (case_tac "b=coin")
+      apply (simp add: transitions)
+     apply simp
+     apply clarify
+      apply (simp add: transitions relations join_ir_def)
+    by simp
+  show "{|(2, vend)|} |\<subseteq>| Drinks_Machine.possible_steps drinks 1 <R (Suc 0) := Str ''coke'', R 2 := Num 100> ''vend'' []"
+    by (simp add: possible_steps_def possible_steps_aux_1 transitions relations connectives join_ir_def del: One_nat_def)
+qed
 
 lemma purchase_coke: "observe_trace drinks (s0 drinks) <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] = [[], [Num 50], [Num 100], [Str ''coke'']]"
-  apply (simp add: is_singleton_def the_elem_def possible_steps_q0 possible_steps_q1_coin possible_steps_q1_coin_2 possible_steps_q2_vend)
+  apply (simp add: is_singleton_def the_elem_def possible_steps_0 possible_steps_1_coin possible_steps_1_coin_2 possible_steps_2_vend)
   by (simp add: transitions)
 
-lemma invalid_impossible: "possible_steps drinks q1 d (''invalid'') [Num 50] = {}"
+lemma invalid_impossible: "possible_steps drinks 1 d (''invalid'') [Num 50] = {}"
   by (simp add: possible_steps_def drinks_def arity_vend label_coin label_vend_fail)
 
-lemma invalid_input: "EFSM.valid drinks q1 d' [(''invalid'', [Num 50])] \<Longrightarrow> False"
+lemma invalid_input: "EFSM.valid drinks 1 d' [(''invalid'', [Num 50])] \<Longrightarrow> False"
   apply (cases rule: valid.cases)
     apply simp
    apply simp
@@ -395,11 +208,11 @@ lemma invalid_valid_prefix: "\<not> (valid_trace drinks [(''select'', [Str ''cok
     apply simp
    apply simp
   apply clarify
-  apply (simp add: possible_steps_q0 invalid_input)
+  apply (simp add: possible_steps_0 invalid_input)
   using invalid_input by force
 
 lemma invalid_termination: "observe_trace drinks (s0 drinks) <> [(''select'', [Str ''coke'']), (''invalid'', [Num 50]), (''coin'', [Num 50])] = [[]]"
-  apply (simp add: possible_steps_q0 invalid_impossible)
+  apply (simp add: possible_steps_0 invalid_impossible)
   by (simp add: transitions is_singleton_def)
 
 abbreviation select_posterior :: "context" where

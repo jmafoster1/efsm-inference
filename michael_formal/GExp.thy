@@ -13,6 +13,12 @@ well as the expression of logical conjunction, disjunction, and negation in term
 theory GExp
 imports AExp Option_Logic
 begin
+
+(* type_synonym gexp = "(aexp \<times> cexp)" *)
+
+(* abbreviation Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" where *)
+  (* "Eq a b = (a, cexp.Eq b) *)
+
 datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null vname
 
 syntax (xsymbols)

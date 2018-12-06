@@ -19,12 +19,11 @@ type_synonym event = "(label \<times> inputs)"
 type_synonym trace = "event list"
 type_synonym observation = "outputs list"
 
-(* I'd like this to be statename to statename finite set *)
-type_synonym 'statename transition_function = "('statename \<times> 'statename) \<Rightarrow> transition fset"
+type_synonym transition_matrix = "((nat \<times> nat) \<times> transition fset) fset"
+type_synonym transition_function = "(nat \<times> nat) \<Rightarrow> transition fset"
 
-record 'statename::finite efsm =
-  s0 :: 'statename
-  T :: "'statename transition_function"
+definition T :: "transition_matrix \<Rightarrow> transition_function" where
+  "T m = (\<lambda>p. ffUnion (fimage (\<lambda>(s, t). if s = p then t else {||}) m))"
 
 primrec input2state :: "value list \<Rightarrow> nat \<Rightarrow> datastate" where
   "input2state [] _ = <>" |
@@ -33,14 +32,14 @@ primrec input2state :: "value list \<Rightarrow> nat \<Rightarrow> datastate" wh
 lemma hd_input2state: "length i \<ge> 1 \<Longrightarrow> input2state i 1 (I 1) = Some (hd i)"
   by (metis hd_Cons_tl input2state.simps(2) le_numeral_extra(2) length_0_conv)
 
-abbreviation join_ir :: "value list \<Rightarrow> datastate \<Rightarrow> datastate" where
+definition join_ir :: "value list \<Rightarrow> datastate \<Rightarrow> datastate" where
   "join_ir i r \<equiv> (\<lambda>x. case x of
     R n \<Rightarrow> r (R n) |
     I n \<Rightarrow> (input2state i 1) (I n)
   )"
 
-definition S :: "'statename::finite efsm \<Rightarrow> 'statename fset" where
-  "S m = fUNIV"
+definition S :: "transition_matrix \<Rightarrow> nat fset" where
+  "S m = (fimage (\<lambda>((s, s'), t). s) m) |\<union>| fimage (\<lambda>((s, s'), t). s') m"
 
 primrec apply_outputs :: "output_function list \<Rightarrow> datastate \<Rightarrow> outputs" where
   "apply_outputs [] _ = []" |
@@ -54,17 +53,17 @@ primrec apply_updates :: "(vname \<times> aexp) list \<Rightarrow> datastate \<R
   "apply_updates [] _ new = new" |
   "apply_updates (h#t) old new = (\<lambda>x. if x = (fst h) then (aval (snd h) old) else (apply_updates t old new) x)"
 
-abbreviation is_possible_step :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> 'statename \<Rightarrow> transition \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> bool" where
-"is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (t |\<in>| T e (s,s')) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (join_ir i r)))"
+definition is_possible_step :: "transition_function \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> bool" where
+"is_possible_step e s s' t r l i \<equiv> (((Label t) = l) \<and> (t |\<in>| e (s,s')) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (join_ir i r)))"
 
-definition possible_steps :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> ('statename \<times> transition) set" where
-"possible_steps e s r l i \<equiv> {(s',t). is_possible_step e s s' t r l i}"
+definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> transition) set" where
+  "possible_steps e s r l i \<equiv> {(s',t). is_possible_step (T e) s s' t r l i}"
 
-abbreviation step :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> 'statename \<times> outputs \<times> datastate) option" where
+definition step :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> outputs \<times> datastate) option" where
 "step e s r l i \<equiv>
 (if is_singleton (possible_steps e s r l i) then (let (s', t) =  (the_elem (possible_steps e s r l i)) in Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))) else None)"
 
-primrec observe_all :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> (transition \<times> 'statename \<times> outputs \<times> datastate) list" where
+primrec observe_all :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> (transition \<times> nat \<times> outputs \<times> datastate) list" where
   "observe_all _ _ _ [] = []" |
   "observe_all e s r (h#t) =
     (case (step e s r (fst h) (snd h)) of
@@ -72,20 +71,20 @@ primrec observe_all :: "'statename::finite efsm \<Rightarrow> 'statename \<Right
       _ \<Rightarrow> []
     )"
 
-abbreviation state :: "(transition \<times> 'statename \<times> outputs \<times> datastate) \<Rightarrow> 'statename" where
+definition state :: "(transition \<times> nat \<times> outputs \<times> datastate) \<Rightarrow> nat" where
   "state x \<equiv> fst (snd x)"
 
-abbreviation observe_trace :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> observation" where
+definition observe_trace :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> observation" where
   "observe_trace e s r t \<equiv> map (\<lambda>(t,x,y,z). y) (observe_all e s r t)"
 
-abbreviation state_trace :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> 'statename list" where
+definition state_trace :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> nat list" where
   "state_trace e s r t \<equiv> map (\<lambda>(t,x,y,z). x) (observe_all e s r t)"
 
-abbreviation transition_trace :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> transition list" where
+definition transition_trace :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> transition list" where
   "transition_trace e s r t \<equiv> map (\<lambda>(t,x,y,z). t) (observe_all e s r t)"
 
-definition efsm_equiv :: "'statename::finite efsm \<Rightarrow> 'statename'::finite efsm \<Rightarrow> trace \<Rightarrow> bool" where
-  "efsm_equiv e1 e2 t \<equiv> ((observe_trace e1 (s0 e1) <> t) = (observe_trace e2 (s0 e2) <> t))"
+definition efsm_equiv :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> trace \<Rightarrow> bool" where
+  "efsm_equiv e1 e2 t \<equiv> ((observe_trace e1 0 <> t) = (observe_trace e2 0 <> t))"
 
 lemma efsm_equiv_reflexive: "efsm_equiv e1 e1 t"
   by (simp add: efsm_equiv_def)
@@ -97,8 +96,10 @@ lemma efsm_equiv_symmetric: "efsm_equiv e1 e2 t \<equiv> efsm_equiv e2 e1 t"
 lemma efsm_equiv_transitive: "efsm_equiv e1 e2 t \<and> efsm_equiv e2 e3 t \<longrightarrow> efsm_equiv e1 e3 t"
   by (simp add: efsm_equiv_def)
 
+lemmas observations = observe_trace_def step_def possible_steps_def is_possible_step_def join_ir_def
+
 lemma different_observation_techniques: "length(observe_all e s r t) = length(observe_trace e s r t)"
-  by simp
+  by (simp add: observe_trace_def)
 
 lemma length_observe_all_restricted: "\<And>s r. length (observe_all e s r t) \<le> length t"
 proof (induction t)
@@ -116,25 +117,26 @@ next
   qed
 qed
 
-inductive valid :: "'statename::finite efsm \<Rightarrow> 'statename \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
+inductive valid :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
   base: "valid e s d []" |
   step: "step e s d (fst h) (snd h) = Some (tr, s', p', d') \<Longrightarrow> valid e s' d' t \<Longrightarrow> valid e s d (h#t)"
 
-abbreviation valid_trace :: "'statename::finite efsm \<Rightarrow> trace \<Rightarrow> bool" where
-  "valid_trace e t \<equiv> valid e (s0 e) <> t"
+definition valid_trace :: "transition_matrix \<Rightarrow> trace \<Rightarrow> bool" where
+  "valid_trace e t \<equiv> valid e 0 <> t"
 
 lemma valid_steps: "the_elem (possible_steps e s d (fst h) (snd h)) = (a, b) \<Longrightarrow>
        is_singleton (possible_steps e s d (fst h) (snd h)) \<Longrightarrow>
        valid e a (apply_updates (Updates b) (case_vname (\<lambda>n. input2state (snd h) (Suc 0) (I n)) (\<lambda>n. d (R n))) d) t \<Longrightarrow>
        valid e s d (h#t)"
-  by (simp add: valid.step)
+  by (simp add: observations valid.step)
 
 lemma invalid_conditions: "\<not>valid e s d (h # t) \<Longrightarrow> step e s d (fst h) (snd h) = None \<or> (\<exists>tr s' p' d'. step e s d (fst h) (snd h) =  Some (tr, s', p', d') \<and> \<not>valid e s' d' t)"
-  apply simp
+  apply (simp add: step_def)
   apply (case_tac "the_elem (possible_steps e s d (fst h) (snd h))")
   apply simp
-  apply safe
-  by (simp add: valid_steps)
+  apply clarify
+  using observations
+  by (metis (no_types, lifting) old.prod.case valid.step)
 
 lemma step_none_invalid: "((step e s d (fst h) (snd h)) = None) \<Longrightarrow> \<not> (valid e s d (h#t))"
   apply(clarify)
@@ -161,7 +163,7 @@ lemma valid_head: "valid e s d (h#t) \<Longrightarrow> valid e s d [h]"
   by (meson base conditions_invalid invalid_conditions)
 
 lemma invalid_single_event: "\<not> valid e s d [(a, b)] \<Longrightarrow> step e s d (fst (a, b)) (snd (a, b)) = None"
-  by (metis (mono_tags, lifting) base case_prod_beta' invalid_conditions option.simps(3))
+  by (metis (mono_tags, lifting) base invalid_conditions)
 
 lemma step_invalid: "\<not> valid e s d ((a, b) # t) \<Longrightarrow> step e s d (fst (a, b)) (snd (a, b)) = Some (tr, s', p', d') \<Longrightarrow> \<not> valid e s' d' t"
   using invalid_conditions by force
@@ -211,16 +213,13 @@ lemma invalid_prefix: "\<not>valid e s d t \<Longrightarrow> \<not>valid e s d (
 lemma length_observe_empty_trace: "length (observe_all e aa b []) = 0"
   by simp
 
-lemma not_single_step_none:  "\<not> is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a)) \<Longrightarrow> (step e (s0 e) <> (fst a) (snd a) = None)"
-  by simp
+lemma not_single_step_none:  "\<not> is_singleton (possible_steps e 0 Map.empty (fst a) (snd a)) \<Longrightarrow> (step e 0 <> (fst a) (snd a) = None)"
+  by (simp add: observations)
 
-lemma valid_singleton_first_step: "valid e (s0 e) Map.empty (a # t) \<Longrightarrow> is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a))"
-  by (meson step_none_invalid)
+lemma valid_singleton_first_step: "valid e 0 Map.empty (a # t) \<Longrightarrow> is_singleton (possible_steps e 0 Map.empty (fst a) (snd a))"
+  by (meson step_none_invalid observations)
 
-lemma step_length_suc: "step e (s0 e) <> (fst a) (snd a) = Some (tr, aa, ab, b) \<Longrightarrow> length (observe_all e (s0 e) <> (a # t)) = Suc (length (observe_all e aa b t))"
-  apply simp
-  apply (case_tac "is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
-   apply simp
+lemma step_length_suc: "step e 0 <> (fst a) (snd a) = Some (tr, aa, ab, b) \<Longrightarrow> length (observe_all e 0 <> (a # t)) = Suc (length (observe_all e aa b t))"
   by simp
 
 lemma aux2: "\<forall>s d. valid e s d t \<longrightarrow> (length t = length (observe_all e s d t))"
@@ -231,30 +230,49 @@ lemma aux2: "\<forall>s d. valid e s d t \<longrightarrow> (length t = length (o
     case (Cons a t)
     then show ?case
       apply safe
-      apply simp
+      apply (simp add: step_def)
       apply (case_tac "the_elem (possible_steps e s d (fst a) (snd a))")
       apply simp
       apply safe
+      using step_some observations
        apply (simp add: step_some)
-      by (meson step_none_invalid)
+      using step_none_invalid observations
+      by metis
   qed
 
-lemma valid_trace_obs_equal_length: "valid e (s0 e) <> t \<Longrightarrow> (length t = length (observe_all e (s0 e) <> t))"
+lemma singleton_first_step: "is_singleton
+         {(s', t).
+          Label t = fst a \<and>
+          t |\<in>| T e (0, s') \<and>
+          length (snd a) = Arity t \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state (snd a) 1 (I n) | R x \<Rightarrow> Map.empty x)} = is_singleton (possible_steps e 0 Map.empty (fst a) (snd a))"
+  using observations
+  by simp
+
+lemma valid_trace_obs_equal_length: "valid e 0 <> t \<Longrightarrow> (length t = length (observe_all e 0 <> t))"
   proof (induction t)
     case Nil
     then show ?case by simp
   next
     case (Cons a t)
     then show ?case
-      apply (case_tac "step e (s0 e) <> (fst a) (snd a) = None")
-       apply simp
-       apply (case_tac "is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
-        apply (case_tac "the_elem (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
+      apply (case_tac "step e 0 <> (fst a) (snd a) = None")
+       apply (simp add: observations)
+      apply (simp only: singleton_first_step)
+       apply (case_tac "is_singleton (possible_steps e 0 Map.empty (fst a) (snd a))")
+        apply (case_tac "the_elem (possible_steps e 0 Map.empty (fst a) (snd a))")
         apply simp
+       apply (case_tac "the_elem (possible_steps e 0 Map.empty (fst a) (snd a))")
+       apply simp
        apply (simp add: valid_singleton_first_step)
-      apply safe
-      apply (simp only: step_length_suc step_some)
-      by (simp add: aux2)
+
+      apply (simp add: step_def)
+      apply clarify
+      apply (case_tac "is_singleton (possible_steps e 0 Map.empty (fst a) (snd a))")
+       apply (case_tac "the_elem (possible_steps e 0 Map.empty (fst a) (snd a))")
+       apply simp
+      using observations
+      apply (metis (no_types, lifting) aux2 case_prod_conv conditions_invalid)
+      by simp
   qed
 
 lemma aux3: "\<forall>s d. (length t = length (observe_all e s d t)) \<longrightarrow> valid e s d t"
@@ -274,26 +292,25 @@ lemma aux3: "\<forall>s d. (length t = length (observe_all e s d t)) \<longright
       by (simp only: step_length_suc step_some)
   qed
 
-lemma obs_equal_length_valid: "(length t = length (observe_all e (s0 e) <> t)) \<Longrightarrow> valid e (s0 e) <> t"
+lemma obs_equal_length_valid: "(length t = length (observe_all e 0 <> t)) \<Longrightarrow> valid e 0 <> t"
   proof (induction t)
     case Nil
     then show ?case by (simp add: valid.base)
   next
     case (Cons a t)
     then show ?case
-      apply (case_tac "step e (s0 e) <> (fst a) (snd a) = None")
+      apply (case_tac "step e 0 <> (fst a) (snd a) = None")
        apply simp
-       apply (case_tac "is_singleton (possible_steps e (s0 e) Map.empty (fst a) (snd a))")
-        apply simp
+      apply (simp add: step_def)
+      apply (case_tac "is_singleton (possible_steps e 0 Map.empty (fst a) (snd a))")
+      apply (case_tac "the_elem (possible_steps e 0 Map.empty (fst a) (snd a))")
        apply simp
-      apply safe
-      apply (simp only: step_length_suc step_some)
-      by (simp add: aux3)
+      using observations aux3 apply fastforce
+      by simp
   qed
 
-lemma length_equal_valid: "(length t = length (observe_all e (s0 e) <> t)) = valid e (s0 e) <> t"
+lemma length_equal_valid: "(length t = length (observe_all e 0 <> t)) = valid e 0 <> t"
   apply safe
   using obs_equal_length_valid apply auto[1]
   by (simp add: valid_trace_obs_equal_length)
-
 end
