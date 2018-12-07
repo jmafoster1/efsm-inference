@@ -74,6 +74,8 @@ definition Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<noteq>"
 
 lemmas relations = Lt_def Le_def Ge_def Ne_def
 
+lemmas guards = relations connectives
+
 lemma or_equiv: "gval (gOr x y) r = maybe_or (gval x r) (gval y r)"
   apply (simp add: gOr_def)
   apply (cases "gval x r")
