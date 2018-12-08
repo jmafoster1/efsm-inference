@@ -49,12 +49,12 @@ lemma possible_steps_aux_0: "possible_steps_aux drinks2 0 = {|(1, select)|}"
   unfolding possible_steps_aux_def
   by (simp add: ffilter_drinks2_0)
 
-lemma possible_steps_0:  "possible_steps drinks2 0 Map.empty (''select'') [i] = {|(1, select)|}"
+lemma possible_steps_0:  "length i = 1 \<Longrightarrow> possible_steps drinks2 0 Map.empty (''select'') i = {|(1, select)|}"
 proof
-  show "possible_steps drinks2 0 Map.empty ''select'' [i] |\<subseteq>| {|(1, select)|}"
+  show "possible_steps drinks2 0 Map.empty ''select'' i |\<subseteq>| {|(1, select)|}"
     apply (simp add: possible_steps_def possible_steps_aux_0)
     by auto
-  show "{|(1, select)|} |\<subseteq>| possible_steps drinks2 0 Map.empty ''select'' [i]"
+  show "length i = 1 \<Longrightarrow> {|(1, select)|} |\<subseteq>| possible_steps drinks2 0 Map.empty ''select'' i"
     by (simp add: possible_steps_def possible_steps_aux_0 select_def)
 qed
 
@@ -418,18 +418,18 @@ proof
     by (simp add: possible_steps_aux_1 transitions del: One_nat_def)
 qed
 
-lemma apply_updates_vend_fail: "(EFSM.apply_updates (Updates vend_fail) (case_vname Map.empty (\<lambda>na. if na = 2 then Some (Num n) else if R na = R 1 then Some s else None))
-       (\<lambda>a. if a = R 2 then Some (Num n) else if a = R 1 then Some s else None)) = <R 1 := s, R 2 := Num n>"
+lemma apply_updates_vend_fail: "(EFSM.apply_updates (Updates vend_fail) (case_vname Map.empty (\<lambda>n. if n = 2 then Some (Num n') else <R 1 := s> (R n)))
+         <R 1 := s, R 2 := Num 0>) = <R 1 := s, R 2 := Num n'>"
   apply (rule ext)
   by (simp add: vend_fail_def)
 
-lemma apply_updates_vend_nothing: "(EFSM.apply_updates (Updates vend_nothing) (case_vname Map.empty (\<lambda>na. if na = 2 then Some (Num n) else if R na = R 1 then Some s else None))
-       (\<lambda>a. if a = R 2 then Some (Num n) else if a = R 1 then Some s else None)) = <R 1 := s, R 2 := Num n>"
+lemma apply_updates_vend_nothing: "(EFSM.apply_updates (Updates vend_nothing) (case_vname Map.empty (\<lambda>n. if n = 2 then Some (Num n') else <R 1 := s> (R n)))
+         <R 1 := s, R 2 := Num 0>) = <R 1 := s, R 2 := Num n'>"
   apply (rule ext)
   by (simp add: vend_nothing_def)
 
-lemma coin_updates: "(EFSM.apply_updates (Updates coin) (case_vname (\<lambda>n. input2state (snd a) 1 (I n)) (\<lambda>n. if n = 2 then Some (Num 0) else if R n = R 1 then Some s else None))
-       (\<lambda>a. if a = R 2 then Some (Num 0) else if a = R 1 then Some s else None)) = (\<lambda>u. if u = R 1 then Some s else if u = R 2 then value_plus (Some (Num 0)) (input2state (snd a) 1 (I 1)) else None)"
+lemma coin_updates: "(EFSM.apply_updates (Updates coin) (case_vname (\<lambda>n. input2state (snd a) 1 (I n)) (\<lambda>n. if n = 2 then Some v else if R n = R 1 then Some s else None))
+       (\<lambda>a. if a = R 2 then Some v else if a = R 1 then Some s else None)) = (\<lambda>u. if u = R 1 then Some s else if u = R 2 then value_plus (Some v) (input2state (snd a) 1 (I 1)) else None)"
   apply (rule ext)
   by (simp add: coin_def)
 
@@ -701,79 +701,97 @@ lemma equal_1_2: "\<forall>r2. observe_trace drinks 1 (\<lambda>u. if u = R 1 th
     observe_trace drinks2 2 (\<lambda>u. if u = R 1 then Some s else if u = R 2 then r2 else None) t"
 proof (induction t)
   case Nil
-  then show ?case by simp
+  then show ?case
+    by (simp add: observe_trace_def)
 next
   case (Cons a t)
   then show ?case
+    apply clarify
     apply (case_tac "fst a = ''coin'' \<and> length (snd a) = 1")
-     apply (rule allI)
-     apply (simp add: drinks_1_coin coin_updates drinks2_2_coin updates_coin_2)
-    apply (rule allI)
+    unfolding observe_trace_def
+    apply (simp add: step_def del: One_nat_def)
+     apply (simp add: drinks_1_coin coin_updates drinks2_2_coin updates_coin_2 del: One_nat_def)
+     apply (simp add: fis_singleton_def)
+
+    apply (simp add: step_def del: One_nat_def)
     apply (case_tac "a = (''vend'', [])")
      apply (case_tac r2)
-      apply simp
-    apply (simp add: drinks_vend_r2_none drinks2_vend_r2_none)
+      apply (simp add: step_def del: One_nat_def)
+    apply (simp add: drinks_vend_r2_none drinks2_vend_r2_none fis_singleton_def del: One_nat_def)
      apply (case_tac aa)
       apply (case_tac "x1 < 100")
-    apply simp
-    apply (simp add: drinks_vend_insufficient2 drinks2_vend_insufficient2 updates_vend_fail)
-      apply simp
-      apply (simp add: drinks_vend_sufficient drinks2_vend_sufficient vend_updates)
-    using equal_2_3 apply blast
-     apply (simp add: drinks_vend_r2_String drinks2_vend_r2_String)
-    by (simp add: drinks_1_invalid drinks2_2_invalid)
+    apply (simp add: step_def del: One_nat_def)
+    apply (simp add: drinks_vend_insufficient2 drinks2_vend_insufficient2 updates_vend_fail fis_singleton_def del: One_nat_def)
+    apply (simp add: step_def del: One_nat_def)
+      apply (simp add: drinks_vend_sufficient drinks2_vend_sufficient vend_updates fis_singleton_def del: One_nat_def)
+    using equal_2_3 observe_trace_def apply auto[1]
+     apply (simp add: step_def del: One_nat_def)
+     apply (simp add: drinks_vend_r2_String drinks2_vend_r2_String fis_singleton_def del: One_nat_def)
+     apply (simp add: step_def del: One_nat_def)
+    by (simp add: drinks_1_invalid drinks2_2_invalid fis_singleton_def del: One_nat_def)
 qed
 
 lemma drinks2_1_invalid: "fst a = ''coin'' \<longrightarrow> length (snd a) \<noteq> 1 \<Longrightarrow>
     a \<noteq> (''vend'', []) \<Longrightarrow>
-    possible_steps drinks2 1 r (fst a) (snd a) = {}"
-  apply (simp add: possible_steps_def)
-  apply (rule allI)
-  apply (rule allI)
-  apply (simp add: drinks2_def)
-  apply (case_tac aa)
-     apply simp
-    apply (metis (no_types, lifting) label_vend_nothing length_0_conv prod.collapse statename.distinct(7) transition.simps(2) vend_nothing_def)
-   apply (metis One_nat_def label_coin transition.simps(2) transitions(2))
+    possible_steps drinks2 1 r (fst a) (snd a) = {||}"
+  apply (simp add: possible_steps_def possible_steps_aux_1 del: One_nat_def)
+  apply safe
+  apply simp
+   apply (metis Drinks_Machine_2.transitions(5) label_coin label_vend_nothing length_0_conv prod.collapse simps(2))
+  apply simp
+  by (metis Drinks_Machine_2.transitions(2) Drinks_Machine_2.transitions(5) One_nat_def label_vend_nothing length_0_conv prod.collapse simps(2))
+
+lemma coin_updates_equiv: "(EFSM.apply_updates (Updates coin)
+         (case_vname (\<lambda>n. input2state (snd a) 1 (I n)) (\<lambda>n. if n = 2 then Some (Num 0) else <R 1 := s> (R n)))
+         <R 1 := s, R 2 := Num 0>) = (\<lambda>u. if u = R 1 then Some s else if u = R 2 then value_plus (Some (Num 0)) (input2state (snd a) 1 (I 1))
+ else None)"
+  apply (simp add: coin_def)
+  apply (rule ext)
   by simp
+
 
 lemma equal_1_1: "observe_trace drinks 1 <R 1 := s, R 2 := Num 0> t = observe_trace drinks2 1 <R 1 := s, R 2 := Num 0> t"
 proof (induction t)
   case Nil
-  then show ?case by simp
+  then show ?case
+    unfolding observe_trace_def
+    by simp
 next
   case (Cons a t)
   then show ?case
+    unfolding observe_trace_def
     apply (case_tac "fst a = ''coin'' \<and> length (snd a) = 1")
-     apply simp
-     apply (simp add: drinks_1_coin drinks2_1_coin coin_updates)
-    using equal_1_2 apply blast
-    apply (case_tac "a = (''vend'', [])")
-      apply simp
-      apply (simp add: drinks_vend_insufficient drinks2_vend_insufficient)
-      apply (simp add: outputs_vend_fail outputs_vend_nothing)
-      apply (simp add: apply_updates_vend_fail apply_updates_vend_nothing)
-    using Cons.IH apply blast
+     apply (simp add: step_def del: One_nat_def)
+     apply (simp only: drinks_1_coin possible_steps_1)
+     apply (simp add: fis_singleton_def del: One_nat_def)
+    apply (simp only: coin_updates_equiv)
+    using equal_1_2 observe_trace_def
     apply simp
-    by (simp add: drinks_1_invalid drinks2_1_invalid)
+    apply (case_tac "a = (''vend'', [])")
+      apply (simp del: One_nat_def)
+      apply (simp add: step_def drinks_vend_insufficient drinks2_vend_insufficient del: One_nat_def)
+     apply (simp add: outputs_vend_fail outputs_vend_nothing fis_singleton_def del: One_nat_def)
+     apply (simp add: apply_updates_vend_fail apply_updates_vend_nothing del: One_nat_def)
+    apply (simp add: step_def del: One_nat_def)
+    by (simp add: drinks_1_invalid drinks2_1_invalid step_def fis_singleton_def del: One_nat_def)
 qed
 
 lemma observational_equivalence: "efsm_equiv drinks drinks2 t" (* Corresponds to Example 3 in Foster et. al. *)
 proof (induct t)
   case Nil
-    then show ?case by (simp add: efsm_equiv_def)
+    then show ?case by (simp add: efsm_equiv_def observe_trace_def)
   next
   case (Cons a t)
   then show ?case
-    apply (simp only: efsm_equiv_def s0_drinks2)
+    apply (simp only: efsm_equiv_def observe_trace_def)
     apply (case_tac "fst a = ''select'' \<and> length (snd a) = 1")
      prefer 2
-     apply (simp add: drinks2_0_invalid drinks_0_invalid is_singleton_def)
-    apply simp
-    apply (simp add: possible_steps_0 Drinks_Machine.possible_steps_0 updates_select)
+     apply (simp add: drinks2_0_invalid drinks_0_invalid is_singleton_def step_def fis_singleton_def del: One_nat_def)
+    apply (simp del: One_nat_def)
+    apply (simp add: possible_steps_0 Drinks_Machine.possible_steps_0 updates_select step_def del: One_nat_def)
     apply (case_tac t)
      apply simp
-    using equal_1_1 by blast
-  qed
-
+    using equal_1_1
+    by (metis observe_trace_def)
+qed
 end

@@ -136,10 +136,9 @@ lemma possible_steps_aux_1: "possible_steps_aux drinks 1 = {|(1, coin), (1, vend
   by auto
 
 lemma drinks_vend_insufficient: "n < 100 \<Longrightarrow>
-    (possible_steps drinks 1 (\<lambda>a. if a = R 2 then Some (Num n) else if a = R 1 then Some s else None) (''vend'') []) = {|(1, vend_fail)|}"
+    (possible_steps drinks 1 <R 1 := s, R 2 := Num n> (''vend'') []) = {|(1, vend_fail)|}"
 proof
-  show "n < 100 \<Longrightarrow>
-    possible_steps drinks 1 (\<lambda>a. if a = R 2 then Some (Num n) else if a = R 1 then Some s else None) ''vend'' [] |\<subseteq>| {|(1, vend_fail)|}"
+  show "n < 100 \<Longrightarrow> possible_steps drinks 1 <R 1 := s, R 2 := Num n> ''vend'' [] |\<subseteq>| {|(1, vend_fail)|}"
     apply (simp add: possible_steps_def possible_steps_aux_1 del: One_nat_def)
     apply safe
      apply (simp del: One_nat_def)
@@ -156,8 +155,7 @@ proof
      apply simp
     apply (simp add: transitions)
     by auto
-  show "n < 100 \<Longrightarrow>
-    {|(1, vend_fail)|} |\<subseteq>| possible_steps drinks 1 (\<lambda>a. if a = R 2 then Some (Num n) else if a = R 1 then Some s else None) ''vend'' []"
+  show "n < 100 \<Longrightarrow> {|(1, vend_fail)|} |\<subseteq>| possible_steps drinks 1 <R 1 := s, R 2 := Num n> ''vend'' []"
     apply (simp add: possible_steps_def del: One_nat_def)
     apply (simp add: possible_steps_aux_1 del: One_nat_def)
     by (simp add: transitions)
