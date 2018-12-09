@@ -2,36 +2,17 @@ theory Inference
   imports "../EFSM" "../Contexts" Transition_Ordering Prod_Linorder
 begin
 
-definition replace_state :: "'s \<Rightarrow> 's \<Rightarrow> 's \<Rightarrow> 's" where
-  "replace_state s orig new = (if s = orig then new else s)"
+definition merge_states_aux :: "nat \<Rightarrow> nat \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
+  "merge_states_aux x y t = (fimage (\<lambda>((origin, dest), t). ((if origin = x then y else origin , if dest = x then y else dest), t)) t)"
 
-definition merge_with :: "'s \<Rightarrow> 's \<Rightarrow> 's list" where
-  "merge_with x y = (if x = y then [x] else [x, y])"
-
-primrec pairs :: "'s \<Rightarrow> 's list \<Rightarrow> 's::finite transition_function \<Rightarrow> transition fset" where
-  "pairs x [] _ = {||}" |
-  "pairs x (h#hs) t = (t (x, h)) |\<union>| (pairs x hs t)"
-
-primrec all_pairs :: "'s list \<Rightarrow> 's list \<Rightarrow> 's::finite transition_function \<Rightarrow> transition fset" where
-  "all_pairs [] x _ = {||}" |
-  "all_pairs (h#hs) x t = (pairs h x t) |\<union>| (all_pairs hs x t)"
-
-definition merge_states :: "'s::{finite,linorder} \<Rightarrow> 's \<Rightarrow> 's transition_function \<Rightarrow> 's transition_function" where
-  "merge_states x y t = (if x < y then (if x = y then t else (\<lambda>(from, to). if from = y \<or> to = y then {||} 
-                                      else (all_pairs (if from = x \<or> from = y then merge_with x y else [from])
-                                                      (if to = x \<or> to = y then merge_with x y else [to]) t)))
-                                  else (if y = x then t else (\<lambda>(from, to). if from = x \<or> to = x then {||} 
-                                      else (all_pairs (if from = y \<or> from = x then merge_with y x else [from])
-                                                      (if to = y \<or> to = x then merge_with y x else [to]) t))))"
+definition merge_states :: "nat \<Rightarrow> nat \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
+  "merge_states x y t = (if x > y then merge_states_aux x y t else merge_states_aux y x t)"
 
 lemma merge_states_reflexive: "merge_states x x t = t"
-  by (simp add: merge_states_def)
+  by (simp add: merge_states_def merge_states_aux_def)
 
 lemma merge_states_symmetry: "merge_states x y t = merge_states y x t"
-  apply (simp add: merge_states_def)
-  apply safe
-  apply (rule ext)
-  by simp
+  by (simp add: merge_states_def merge_states_aux_def)
 
 (* declare[[show_types,show_sorts]] *)
 
@@ -41,7 +22,7 @@ definition choice :: "transition \<Rightarrow> transition \<Rightarrow> bool" wh
 lemma choice_symmetry: "choice x y = choice y x"
   using choice_def by auto
 
-definition nondeterministic_pairs :: "'s::finite transition_function \<Rightarrow> ('s \<times> ('s \<times> 's) \<times> (transition \<times> transition)) set" where
+definition nondeterministic_pairs :: "transition_matrix \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) set" where
   "nondeterministic_pairs t = {(origin, (dest1, dest2), (t1, t2)). t1 |\<in>| t (origin, dest1) \<and> t2 |\<in>| t (origin, dest2) \<and> t1 < t2 \<and> choice t1 t2}"
 
 definition nondeterministic_transitions :: "'s::{finite,linorder} transition_function \<Rightarrow> ('s \<times> ('s \<times> 's) \<times> (transition \<times> transition)) option" where

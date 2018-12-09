@@ -89,9 +89,10 @@ lemma guard_vend: "Guard vend = [(Ge (V (R 2)) (L (Num 100)))]"
 
 definition drinks :: "transition_matrix" where
 "drinks \<equiv> {|
-          ((0,1), {|select|}),    \<comment> \<open> If we want to go from state 1 to state 2 then select will do that \<close>
-          ((1,1), {|coin, vend_fail|}), \<comment> \<open> If we want to go from state 2 to state 2 then coin will do that \<close>
-          ((1,2), {|vend|}) \<comment> \<open> If we want to go from state 2 to state 3 then vend will do that \<close>
+          ((0,1), select),    \<comment> \<open> If we want to go from state 1 to state 2 then select will do that \<close>
+          ((1,1), coin),
+          ((1, 1), vend_fail), \<comment> \<open> If we want to go from state 2 to state 2 then coin will do that \<close>
+          ((1,2), vend) \<comment> \<open> If we want to go from state 2 to state 3 then vend will do that \<close>
          |}"
 
 lemma "S drinks = {|0, 1, 2|}"
@@ -100,22 +101,9 @@ lemma "S drinks = {|0, 1, 2|}"
 
 lemmas transitions = select_def coin_def vend_def vend_fail_def connectives relations
 
-lemma ffilter_drinks_0: "ffilter (\<lambda>((origin, destination), t). origin = 0) drinks = {|((0, 1), {|select|})|}"
-  apply (simp add: drinks_def)
-  by auto
-
-lemma possible_steps_aux_0: "possible_steps_aux drinks 0 = {|(1, select)|}"
-  unfolding possible_steps_aux_def
-  by (simp add: ffilter_drinks_0)
-
 lemma possible_steps_0:  "length i = 1 \<Longrightarrow> possible_steps drinks 0 Map.empty (''select'') i = {|(1, select)|}"
-proof
-  show "length i = 1 \<Longrightarrow> possible_steps drinks 0 Map.empty ''select'' i |\<subseteq>| {|(1, select)|}"
-    apply (simp add: possible_steps_def possible_steps_aux_0)
-    by auto
-  show "length i = 1 \<Longrightarrow> {|(1, select)|} |\<subseteq>| possible_steps drinks 0 Map.empty ''select'' i"
-    by (simp add: possible_steps_def possible_steps_aux_0 select_def)
-qed
+  apply (simp add: possible_steps_def drinks_def transitions)
+  by force
 
 lemma updates_select: "(EFSM.apply_updates (Updates select)
               (case_vname (\<lambda>n. if n = 1 then Some (Str ''coke'') else input2state [] (1 + 1) (I n)) Map.empty) Map.empty) = <R 1:=Str ''coke'', R 2 := Num 0>"
@@ -126,102 +114,21 @@ lemma updates_select: "(EFSM.apply_updates (Updates select)
 lemma arity_vend: "Arity vend = 0"
   by (simp add: vend_def)
 
-lemma ffilter_drinks_1: "ffilter (\<lambda>((origin, destination), t). origin = 1) drinks = {|((1, 1), {|coin, vend_fail|}), ((1, 2), {|vend|})|}"
-  apply (simp add: drinks_def)
-  by auto
-
-lemma possible_steps_aux_1: "possible_steps_aux drinks 1 = {|(1, coin), (1, vend_fail), (2, vend)|}"
-  unfolding possible_steps_aux_def
-  using ffilter_drinks_1
-  by auto
-
-lemma drinks_vend_insufficient: "n < 100 \<Longrightarrow>
-    (possible_steps drinks 1 <R 1 := s, R 2 := Num n> (''vend'') []) = {|(1, vend_fail)|}"
-proof
-  show "n < 100 \<Longrightarrow> possible_steps drinks 1 <R 1 := s, R 2 := Num n> ''vend'' [] |\<subseteq>| {|(1, vend_fail)|}"
-    apply (simp add: possible_steps_def possible_steps_aux_1 del: One_nat_def)
-    apply safe
-     apply (simp del: One_nat_def)
-     apply (case_tac "a=1")
-      apply simp
-     apply simp
-     apply (simp add: transitions)
-     apply auto[1]
-    apply (simp del: One_nat_def)
-     apply (case_tac "a=1")
-     apply simp
-    apply (case_tac "b=coin")
-      apply (simp add: label_coin)
-     apply simp
-    apply (simp add: transitions)
-    by auto
-  show "n < 100 \<Longrightarrow> {|(1, vend_fail)|} |\<subseteq>| possible_steps drinks 1 <R 1 := s, R 2 := Num n> ''vend'' []"
-    apply (simp add: possible_steps_def del: One_nat_def)
-    apply (simp add: possible_steps_aux_1 del: One_nat_def)
-    by (simp add: transitions)
-qed
+lemma drinks_vend_insufficient: "n < 100 \<Longrightarrow> (possible_steps drinks 1 <R 1 := s, R 2 := Num n> (''vend'') []) = {|(1, vend_fail)|}"
+  apply (simp add: possible_steps_def drinks_def transitions)
+  by force
 
 lemma possible_steps_1_coin: "possible_steps drinks 1 r ''coin'' [i1] = {|(1, coin)|}"
-proof
-  show "possible_steps drinks 1 r ''coin'' [i1] |\<subseteq>| {|(1, coin)|}"
-    apply (simp add: possible_steps_def possible_steps_aux_1 del: One_nat_def)
-    using Pair_inject label_vend label_vend_fail by auto
-  show "{|(1, coin)|} |\<subseteq>| possible_steps drinks 1 r ''coin'' [i1]"
-    by (simp add: possible_steps_def possible_steps_aux_1 coin_def del: One_nat_def)
-qed
+  apply (simp add: possible_steps_def drinks_def transitions)
+  by force
 
 lemma possible_steps_2_vend: "r (R 2) = Some (Num n) \<Longrightarrow> n \<ge> 100 \<Longrightarrow> possible_steps drinks 1 r ''vend'' [] = {|(2, vend)|}"
-proof
-  show "r (R 2) = Some (Num n) \<Longrightarrow> 100 \<le> n \<Longrightarrow> possible_steps drinks 1 r ''vend'' [] |\<subseteq>| {|(2, vend)|}"
-    apply (simp add: possible_steps_def possible_steps_aux_1 del: One_nat_def)
-    apply safe
-    apply simp
-     apply (case_tac "a=1")
-      apply (case_tac "b=coin")
-       apply (simp add: transitions)
-      apply simp
-      apply clarify
-      apply (simp add: transitions)
-     apply simp
-    apply simp
-    apply (case_tac "a=1")
-     apply (case_tac "b=coin")
-      apply (simp add: transitions)
-     apply simp
-     apply clarify
-      apply (simp add: transitions)
-    by simp
-  show "r (R 2) = Some (Num n) \<Longrightarrow> 100 \<le> n \<Longrightarrow> {|(2, vend)|} |\<subseteq>| possible_steps drinks 1 r ''vend'' []"
-    by (simp add: possible_steps_def possible_steps_aux_1 transitions del: One_nat_def)
-qed
+  apply (simp add: possible_steps_def drinks_def transitions)
+  by force
 
 lemma drinks_1_coin: "length (snd a) = 1 \<Longrightarrow> possible_steps drinks 1 r (''coin'') (snd a) = {|(1, coin)|}"
-proof
-  show "length (snd a) = 1 \<Longrightarrow> possible_steps drinks 1 r ''coin'' (snd a) |\<subseteq>| {|(1, coin)|}"
-    unfolding possible_steps_def
-    apply (simp add: Drinks_Machine.possible_steps_aux_1 del: One_nat_def)
-    apply safe
-     apply (simp del: One_nat_def)
-     apply (case_tac "aa=1")
-      apply simp
-     apply simp
-     apply clarify
-     apply (simp add: label_vend)
-     apply (simp del: One_nat_def)
-    apply (case_tac "aa=1")
-     apply simp
-     apply (case_tac "b=coin")
-      apply simp
-     apply simp
-     apply clarify
-     apply (simp add: label_vend_fail)
-    apply simp
-    apply clarify
-    by (simp add: label_vend)
-  show "length (snd a) = 1 \<Longrightarrow> {|(1, coin)|} |\<subseteq>| possible_steps drinks 1 r ''coin'' (snd a)"
-    unfolding possible_steps_def
-    by (simp add: Drinks_Machine.possible_steps_aux_1 coin_def del: One_nat_def)
-qed
+  apply (simp add: possible_steps_def drinks_def transitions)
+  by force
 
 lemma updates_coin: " (EFSM.apply_updates (Updates coin)
             (case_vname (\<lambda>n. if n = 1 then Some (Num i) else input2state [] (1 + 1) (I n))
@@ -238,15 +145,8 @@ lemma purchase_coke: "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (
   by (simp add: transitions)
 
 lemma invalid_impossible: "l \<noteq> ''coin'' \<Longrightarrow> l \<noteq> ''vend'' \<Longrightarrow> possible_steps drinks 1 d l i = {||}"
-proof
-  show "l \<noteq> ''coin'' \<Longrightarrow> l \<noteq> ''vend'' \<Longrightarrow> possible_steps drinks 1 d l i |\<subseteq>| {||}"
-    apply (simp add: possible_steps_def possible_steps_aux_1 del: One_nat_def)
-    apply safe
-    apply simp
-    using label_coin label_vend label_vend_fail by blast
-  show "l \<noteq> ''coin'' \<Longrightarrow> l \<noteq> ''vend'' \<Longrightarrow> {||} |\<subseteq>| possible_steps drinks 1 d l i"
-    by (simp add: possible_steps_def possible_steps_aux_1)
-qed
+  apply (simp add: possible_steps_def drinks_def transitions)
+  by force
 
 lemma invalid_input: "l \<noteq> ''coin'' \<Longrightarrow> l \<noteq> ''vend'' \<Longrightarrow> EFSM.valid drinks 1 d' [(l, i)] \<Longrightarrow> False"
   apply (cases rule: valid.cases)
@@ -256,7 +156,7 @@ lemma invalid_input: "l \<noteq> ''coin'' \<Longrightarrow> l \<noteq> ''vend'' 
   apply (simp add: step_def del: One_nat_def)
   by (simp add: invalid_impossible fis_singleton_def is_singleton_def del: One_nat_def)
 
-lemma invalid_valid_prefix: "\<not> (valid_trace drinks [(''select'', [Str ''coke'']), (''invalid'', [Num 50])])"
+lemma invalid_valid_prefix: "l \<noteq> ''coin'' \<Longrightarrow> l \<noteq> ''vend'' \<Longrightarrow> \<not> (valid_trace drinks [(''select'', [Str ''coke'']), (l, i)])"
   apply clarify
   apply (cases rule: valid.cases)
     apply (simp add: valid_trace_def)
@@ -268,15 +168,6 @@ lemma invalid_valid_prefix: "\<not> (valid_trace drinks [(''select'', [Str ''cok
 lemma invalid_termination: "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''invalid'', [Num 50]), (''coin'', [Num 50])] = [[]]"
   apply (simp add: observe_trace_def step_def possible_steps_0 updates_select del: One_nat_def)
   by (simp add: invalid_impossible fis_singleton_def is_singleton_def transitions del: One_nat_def)
-
-lemma possible_steps_aux_2: "possible_steps_aux drinks 2 = {||}"
-proof-
-  have ffilter: "ffilter (\<lambda>((origin, destination), t). origin = 2) drinks = {||}"
-    apply (simp add: drinks_def)
-    by auto
-  show "possible_steps_aux drinks 2 = {||}"
-    by (simp add: possible_steps_aux_def ffilter)
-qed
 
 abbreviation select_posterior :: "context" where
   "select_posterior \<equiv> \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> Eq (Num 0)\<rbrakk>"
@@ -310,4 +201,54 @@ lemma coin_before_vend: "Contexts.can_take vend (posterior_n n coin (posterior \
    apply (simp add: r2_0_vend del: Nat.One_nat_def)
   by simp
 
+lemma drinks_vend_r2_none: "r2 = None \<Longrightarrow> possible_steps drinks 1 (\<lambda>u. if u = R 1 then Some s else if u = R 2 then r2 else None) (''vend'') [] = {||}"
+  apply (simp add: possible_steps_def drinks_def transitions)
+  by force
+
+lemma drinks_vend_insufficient2: "r2 = Some (Num x1) \<Longrightarrow>
+                x1 < 100 \<Longrightarrow>
+                possible_steps drinks 1 (\<lambda>u. if u = R 1 then Some s else if u = R 2 then r2 else None) (''vend'') [] = {|(1, vend_fail)|}"
+  apply (simp add: possible_steps_def drinks_def transitions)
+  by force
+
+lemma drinks_vend_sufficient: "r2 = Some (Num x1) \<Longrightarrow>
+                \<not> x1 < 100 \<Longrightarrow>
+                (possible_steps drinks 1 (\<lambda>u. if u = R 1 then Some s else if u = R 2 then r2 else None) (''vend'') []) = {|(2, vend)|}"
+  apply (simp add: possible_steps_def drinks_def transitions)
+  by force
+
+lemma drinks_end: "possible_steps drinks 2 r (fst a) (snd a) = {||}"
+  apply (simp add: possible_steps_def drinks_def transitions)
+  by force
+
+lemma drinks_vend_r2_String: "r2 = Some (Str x2) \<Longrightarrow> possible_steps drinks 1 (\<lambda>u. if u = R 1 then Some s else if u = R 2 then r2 else None) (''vend'') [] = {||}"
+  apply (simp add: possible_steps_def drinks_def transitions)
+  by force
+
+lemma drinks_0_invalid: "\<not> (fst a = ''select'' \<and> length (snd a) = 1) \<Longrightarrow>
+    (possible_steps drinks 0 Map.empty (fst a) (snd a)) = {||}"
+  apply (simp add: drinks_def possible_steps_def transitions)
+  by force
+
+lemma drinks_vend_empty: "(possible_steps drinks 0 Map.empty (''vend'') []) = {||}"
+  using drinks_0_invalid
+  by auto
+
+lemma drinks_1_invalid: "fst a = ''coin'' \<longrightarrow> length (snd a) \<noteq> 1 \<Longrightarrow>
+          a \<noteq> (''vend'', []) \<Longrightarrow>
+          possible_steps drinks 1 r (fst a) (snd a) = {||}"
+proof
+  assume not_coin: "fst a = ''coin'' \<longrightarrow> length (snd a) \<noteq> 1"
+  assume not_vend: "a \<noteq> (''vend'', [])"
+  show "possible_steps drinks 1 r (fst a) (snd a) |\<subseteq>| {||}"
+    using not_coin not_vend
+    apply (simp add: drinks_def possible_steps_def)
+    apply safe
+     apply simp
+    apply (metis arity_vend arity_vend_fail label_coin label_vend label_vend_fail length_0_conv numeral_1_eq_Suc_0 prod.collapse zero_neq_numeral)
+    apply simp
+    by (metis One_nat_def arity_vend arity_vend_fail label_vend label_vend_fail length_0_conv numeral_1_eq_Suc_0 prod.collapse simps(2) transitions(2) zero_neq_numeral)
+  show "{||} |\<subseteq>| possible_steps drinks 1 r (fst a) (snd a)"
+    by simp
+qed
 end

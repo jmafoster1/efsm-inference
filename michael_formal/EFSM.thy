@@ -19,11 +19,7 @@ type_synonym event = "(label \<times> inputs)"
 type_synonym trace = "event list"
 type_synonym observation = "outputs list"
 
-type_synonym transition_matrix = "((nat \<times> nat) \<times> transition fset) fset"
-type_synonym transition_function = "(nat \<times> nat) \<Rightarrow> transition fset"
-
-definition T :: "transition_matrix \<Rightarrow> transition_function" where
-  "T m = (\<lambda>p. ffUnion (fimage (\<lambda>(s, t). if s = p then t else {||}) m))"
+type_synonym transition_matrix = "((nat \<times> nat) \<times> transition) fset"
 
 primrec input2state :: "value list \<Rightarrow> nat \<Rightarrow> datastate" where
   "input2state [] _ = <>" |
@@ -54,11 +50,8 @@ primrec apply_updates :: "(vname \<times> aexp) list \<Rightarrow> datastate \<R
   "apply_updates [] _ new = new" |
   "apply_updates (h#t) old new = (\<lambda>x. if x = (fst h) then (aval (snd h) old) else (apply_updates t old new) x)"
 
-definition possible_steps_aux :: "transition_matrix \<Rightarrow> nat \<Rightarrow> (nat \<times> transition) fset" where
-  "possible_steps_aux t s = ffUnion (fimage (\<lambda>((origin, dest), t). fimage (\<lambda>x. (dest, x)) t) (ffilter (\<lambda>((origin, destination), t). origin = s) t))"
-
 definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> transition) fset" where
-  "possible_steps e s r l i = ffilter (\<lambda>(dest, t). (((Label t) = l) \<and> ((length i) = (Arity t)) \<and> (apply_guards (Guard t) (join_ir i r)))) (possible_steps_aux e s)"
+  "possible_steps e s r l i = fimage (\<lambda>((origin, dest), t). (dest, t)) (ffilter (\<lambda>((origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"
 
 definition fis_singleton :: "'a fset \<Rightarrow> bool"
   where "fis_singleton A \<longleftrightarrow> is_singleton {f. f |\<in>| A}"
