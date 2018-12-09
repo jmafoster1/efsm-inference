@@ -56,6 +56,13 @@ definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> 
 definition fis_singleton :: "'a fset \<Rightarrow> bool"
   where "fis_singleton A \<longleftrightarrow> is_singleton {f. f |\<in>| A}"
 
+lemma singleton_singleton [simp]: "fis_singleton {|a|}"
+  by (simp add: fis_singleton_def)
+
+lemma not_singleton_emty [simp]: "\<not>fis_singleton {||}"
+  apply (simp add: fis_singleton_def)
+  by (simp add: is_singleton_altdef)
+
 definition step :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> outputs \<times> datastate) option" where
 "step e s r l i \<equiv>
 (if fis_singleton (possible_steps e s r l i) then (let (s', t) =  (fthe_elem (possible_steps e s r l i)) in Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))) else None)"
@@ -93,7 +100,7 @@ lemma efsm_equiv_symmetric: "efsm_equiv e1 e2 t \<equiv> efsm_equiv e2 e1 t"
 lemma efsm_equiv_transitive: "efsm_equiv e1 e2 t \<and> efsm_equiv e2 e3 t \<longrightarrow> efsm_equiv e1 e3 t"
   by (simp add: efsm_equiv_def)
 
-lemmas observations = observe_trace_def step_def possible_steps_def possible_steps_aux_def
+lemmas observations = observe_trace_def step_def possible_steps_def
 
 lemma different_observation_techniques: "length(observe_all e s r t) = length(observe_trace e s r t)"
   by (simp add: observe_trace_def)
