@@ -85,15 +85,19 @@ lemma posterior_coin_first: "posterior select_posterior coin = \<lbrakk>(V (R 1)
   apply (rule ext)
   by simp
 
-lemma consistent_medial_coin_2: "consistent \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Bc True\<rbrakk>"
+abbreviation r1_r2_true :: "context" where
+"r1_r2_true \<equiv> \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> Bc True\<rbrakk>"
+
+lemma consistent_r1_r2_true: "consistent r1_r2_true"
   apply (simp add: consistent_def)
   apply (rule_tac x="<>" in exI)
   apply (simp del: Nat.One_nat_def)
-  using consistent_empty_4 by auto
+  using consistent_empty_1
+  by fastforce
 
 lemma posterior_coin_subsequent: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Bc True\<rbrakk> coin = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Bc True\<rbrakk>"
   unfolding posterior_def Let_def
-  apply (simp add: guard_coin consistent_medial_coin_2 del: One_nat_def)
+  apply (simp add: guard_coin consistent_r1_r2_true del: One_nat_def)
   apply (rule ext)
   by (simp add: transitions satisfiable_def)
 
@@ -173,25 +177,8 @@ lemma not_eq_0_and_ge_100:"\<not> GExp.satisfiable (gAnd (gexp.Eq (V (R 2)) (L (
 lemma can_take_coin: "consistent c \<longrightarrow> Contexts.can_take coin c"
   by (simp add: coin_def consistent_def Contexts.can_take_def)
 
-abbreviation r1_r2_true :: "context" where
-"r1_r2_true \<equiv> \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> Bc True\<rbrakk>"
-
-lemma consistent_r1_r2_true: "consistent r1_r2_true"
-  apply (simp add: consistent_def)
-  apply (rule_tac x="<>" in exI)
-  apply (simp del: Nat.One_nat_def)
-  using consistent_empty_1 by force
-
-lemma posterior_r1_r2_true_coin: "(posterior r1_r2_true coin) = r1_r2_true"
-  apply (simp add: posterior_def)
-  apply (simp add: Let_def)
-  apply (simp add: coin_def consistent_def satisfiable_def valid_def)
-  apply safe
-   apply auto[1]
-  using consistent_empty_1 by force
-
-lemma valid_posterior_r1_r2_true_coin: "valid_context (posterior r1_r2_true coin)"
-  apply (simp add: posterior_r1_r2_true_coin del: One_nat_def)
+lemma valid_posterior_coin_subsequent: "valid_context (posterior r1_r2_true coin)"
+  apply (simp add: posterior_coin_subsequent del: One_nat_def)
   apply (simp add: valid_context_def del: One_nat_def)
   apply (simp add: posterior_coin_subsequent)
   by (simp add: consistent_empty_4)
@@ -230,7 +217,7 @@ lemma posterior_n_coin_true_true: "(posterior_n n coin r1_r2_true) = r1_r2_true"
     case (Suc n)
     then show ?case
       apply (simp add: r1_r2_true_equiv posterior_coin_subsequent  del: Nat.One_nat_def)
-      using posterior_r1_r2_true_coin by auto
+      using posterior_coin_subsequent by auto
   qed
 
 lemma consistent_posterior_n_coin: "consistent (posterior_n n coin select_posterior)" (* We can go round coin as many times as we like *)
