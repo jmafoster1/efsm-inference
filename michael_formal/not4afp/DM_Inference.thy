@@ -713,15 +713,26 @@ qed
 lemma vend_doesnt_directly_subsume_vend_nothing_2: "\<not>directly_subsumes (merge_states 1 2 drinks2) 1 vend_nothing vend"
   apply (simp add: directly_subsumes_def vend_doesnt_subsume_vend_nothing_2 del: One_nat_def)
   apply (rule_tac x="[(''select'', [Str ''coke''])]" in exI)
-  by (simp add: gets_us_to_def possible_steps_0_2 step_def del: One_nat_def)                                            
-                                                                                                                            
-lemma vend_nothing_doesnt_directly_subsume_vend_nothing_2: "\<not>directly_subsumes drinks2 1 vend_nothing vend"
-  apply (simp add: directly_subsumes_def vend_doesnt_subsume_vend_nothing_2)
-  apply (rule_tac x="[(''select'', [Str ''coke''])]" in exI)
-  by (simp add: gets_us_to_def possible_steps_0 step_def)
+  by (simp add: gets_us_to_def possible_steps_0_2 step_def del: One_nat_def)
 
 lemma vend_doesnt_directly_subsume_vend_nothing_3: "\<not> directly_subsumes (merge_states 1 2 drinks2) 1 vend vend_nothing"
-  using vend_nothing_doesnt_directly_subsume_vend vend_nothing_doesnt_directly_subsume_vend_nothing_2 by auto
+proof-
+  show ?thesis
+    apply (simp add: directly_subsumes_def del: One_nat_def)
+    apply (rule_tac x="[(''select'', [Str ''coke''])]" in exI)
+  proof
+    show "gets_us_to 1 (merge_states 1 2 drinks2) 0 Map.empty [(''select'', [Str ''coke''])]"
+      by (simp add: gets_us_to_def step_def possible_steps_0_2 del: One_nat_def)
+    have medial_vend: "medial select_posterior (Guard vend) = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Eq (Num 0)) (Geq (Num 100))\<rbrakk>"
+      apply (rule ext)
+      by (simp add: transitions del: One_nat_def)
+    show "\<not> subsumes (anterior_context (merge_states 1 2 drinks2) [(''select'', [Str ''coke''])]) vend vend_nothing"
+      apply (simp add: anterior_context_def step_def possible_steps_0_2 del: One_nat_def)
+      apply (simp add: select_posterior del: One_nat_def)
+      apply (simp add: subsumes_def del: One_nat_def)
+      by (simp add: vend_nothing_posterior medial_vend_nothing consistent_select_posterior medial_vend del: One_nat_def)
+  qed
+qed
 
 lemma good_max: "Max ({(1, (1, 3), vend_nothing, vend), (1, (1, 1), vend_nothing, vend_fail)} -
                {max (1, (1, 3), vend_nothing, vend) (1, (1, 1), vend_nothing, vend_fail)}) = (1::nat, (1::nat, 1::nat), vend_nothing, vend_fail)"
@@ -855,6 +866,7 @@ proof-
   show ?thesis
     unfolding directly_subsumes_def
     apply clarify
+oops
     
 
 lemma finsert_vend_nothing: "finsert vend_nothing ({|vend_nothing, coin, vend_fail|} |-| {|vend_fail|}) = {|coin, vend_nothing|}"
@@ -904,38 +916,86 @@ lemma choice_vend_nothing_vend: "choice vend_nothing vend"
 
 lemmas choices = choice_vend_nothing_vend no_choice_vend_vend_fail no_choice_vend_coin choice_vend_vend_nothing no_choice_coin_vend_nothing no_choice_vend_nothing_coin no_choice_vend_fail_coin choice_vend_fail_vend_nothing choice_vend_nothing_vend_fail choice_coin_coin choice_vend_nothing_vend_nothing no_choice_coin_vend_fail choice_vend_fail_vend_fail
 
-lemma vend_nothing_vend_max: "(1, (1, 3), vend_nothing, vend) = max (1, (1, 3), vend_nothing, vend) (1, (1, 1), vend_nothing, vend_fail)"
-  by (simp add: max_nondeterminism)
+lemma vend_nothing_vend_max: "(1::nat, (1::nat, 3::nat), vend_nothing, vend) = max (1, (1, 3), vend_nothing, vend) (1, (1, 1), vend_nothing, vend_fail)"
+  using max_nondeterminism by auto
 
-value "merge_states 1 3 (merge_states 1 2 drinks2)"
+lemma "(Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
+       (fset (all_pairs (merge_states 1 3 (merge_states 1 2 drinks2))))) =
+    {(((1, 1), vend_nothing), ((1, 3), vend)), (((1, 1), vend_nothing), ((1, 1), vend_fail))}"
+    apply (simp add: merge_1_3_2 all_pairs_def del: One_nat_def)
+    apply safe
+                      apply (simp_all del: One_nat_def)
+                      apply auto[1]
+                      apply auto[1]
+                      apply auto[1]
+                      apply auto[1]
+                      apply auto[1]
+                      apply (case_tac "bb=1")
+                      apply (case_tac "b=1")
+                      apply (case_tac "a=1")
+                      apply (case_tac "aa=0")
+                      apply (simp del: One_nat_def)
+                      apply (case_tac "aa=1")
+                      apply (simp del: One_nat_def)
+  using choice_symmetry no_choice_coin_vend_nothing no_choice_vend_coin no_choice_vend_fail_coin no_choice_vend_vend_fail not_less_iff_gr_or_eq vend_nothing_lt_vend vend_nothing_lt_vend_fail apply blast
+                      apply (simp del: One_nat_def)
+                      apply (simp del: One_nat_def)
+                      apply auto[1]
+                      apply (simp del: One_nat_def)
+                      apply (simp del: One_nat_def)
+                      apply auto[1]
+                      apply auto[1]
+                      apply auto[1]
+                      apply auto[1]
+                      apply auto[1]
+  using choice_symmetry no_choice_coin_vend_nothing no_choice_vend_coin no_choice_vend_fail_coin no_choice_vend_vend_fail vend_nothing_lt_vend vend_nothing_lt_vend_fail apply auto[1]
+                     apply auto[1]
+                    apply auto[1]
+                   apply auto[1]
+                  apply auto[1]
+                 apply auto[1]
+  using choice_symmetry no_choice_coin_vend_fail no_choice_coin_vend_nothing no_choice_vend_coin no_choice_vend_vend_fail vend_nothing_lt_vend vend_nothing_lt_vend_fail apply auto[1]
+               apply auto[1]
+              apply auto[1]
+  using no_choice_coin_vend_fail no_choice_coin_vend_nothing no_choice_vend_coin no_choice_vend_fail_coin no_choice_vend_vend_fail vend_nothing_lt_vend vend_nothing_lt_vend_fail apply auto[1]
+            apply auto[1]
+           apply auto[1]
+          apply auto[1]
+         apply auto[1]
+        apply auto[1]
+       apply (case_tac "bb=1")
+        apply (case_tac "b=1")
+         apply (case_tac "a=1")
+          apply (case_tac "aa=0")
+           apply (simp del: One_nat_def)
+          apply (case_tac "aa=1")
+           apply (case_tac "ba=vend")
+           apply (simp add: vend_neq_vend_fail vend_neq_coin del: One_nat_def)
+  using no_choice_vend_coin not_less_iff_gr_or_eq vend_nothing_lt_vend apply blast
+           apply (case_tac "ba=vend_fail")
+           apply (simp del: One_nat_def)
+  using choice_symmetry no_choice_vend_fail_coin no_choice_vend_vend_fail not_less_iff_gr_or_eq vend_nothing_lt_vend_fail apply blast
+           apply (case_tac "ba=coin")
+           apply (simp del: One_nat_def)
+  using choice_symmetry no_choice_coin_vend_nothing no_choice_vend_coin apply blast
+           apply (case_tac "ba=vend_nothing")
+           apply (simp del: One_nat_def)
+  
 
-lemma "merge_states 1 3 (merge_states 1 2 drinks2) = (\<lambda> (a,b) .
-  if (a, b) = (0, 1) then {|select|} else
-  if (a, b) = (1,1) then {|vend_fail, coin|} else
-  if (a, b) = (1, 3) then {|vend|} else {||})"
+lemma "nondeterministic_pairs (merge_states 1 3 (merge_states 1 2 drinks2)) = {|(1, (1, 3), (vend_nothing, vend)), (1, (1, 1), vend_nothing, vend_fail)|}"
+proof-
+  show ?thesis
+    apply (simp add: nondeterministic_pairs_def ffilter_def del: One_nat_def)
+
+lemma "merge_2 drinks2 1 2 = Some drinks"
+proof-
+  show ?thesis
+    apply (simp add: Let_def nondeterminisitic_pairs del: One_nat_def)
+    apply (simp add: vend_nothing_exits_1 vend_doesnt_exit_1 del: One_nat_def)
 
 
-lemma "merge_2 drinks2 1 2 = Some (\<lambda> (a,b) .
-  if (a, b) = (0, 1) then {|select|} else
-  if (a, b) = (1,1) then {|vend_fail, coin|} else
-  if (a, b) = (1, 3) then {|vend|} else {||})"
-  apply simp
-  apply (case_tac "nondeterministic_transitions (merge_states 1 2 drinks2)")
-   apply (simp add: nondeterministic_transitions)
-  apply (simp add: nondeterministic_transitions)
-  apply (simp only: Let_def)
-  apply clarify
-  apply (simp add: nondeterminism_merge_1_2 nondeterminisitic_pairs del: resolve_nondeterminism.simps)
-  apply (simp add: vend_nothing_exits_1)
-  apply (simp add: vend_doesnt_exit_1)
-  apply safe
-   apply simp
-  apply (case_tac "max (1, (1, 3), vend_nothing, vend) (1, (1, 1), vend_nothing, vend_fail) = (1, (1, 3), vend_nothing, vend)")
-   defer
-  using vend_nothing_vend_max apply simp
-  apply simp
-  apply (simp add: vend_nothing_exits_1 vend_doesnt_exit_1)
-
+lemma make_pta_test: "make_pta [[(''select'', [Str ''coke''], [])]] {||} = {|((0, 1), \<lparr>Label=''select'', Arity=1, Guard=[gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs=[], Updates=[]\<rparr>)|}"
+  by simp
 
 
   (* apply simp *)
@@ -953,7 +1013,7 @@ lemma "merge_2 drinks2 1 2 = Some (\<lambda> (a,b) .
   (* apply (simp add: subset_nondet) *)
   (* apply (simp add: vend_doesnt_directly_subsume_vend_nothing_2) *)
   (* apply (simp add: vend_doesnt_directly_subsume_vend_nothing) *)
-  (* apply (simp add: vend_nothing_doesnt_directly_subsume_vend_nothing_2) *)
+  (* apply (simp add: vend_nothing_doesnt_directly_subsume_vend) *)
   (* apply (simp add: vend_doesnt_directly_subsume_vend_nothing_3) *)
   (* apply (simp add: good_max) *)
 

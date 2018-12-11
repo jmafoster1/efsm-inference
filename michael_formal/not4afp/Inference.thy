@@ -96,6 +96,42 @@ fun merge_transitions :: "transition_matrix \<Rightarrow> transition_matrix \<Ri
 
 declare merge_transitions.simps[simp del]
 
+primrec make_guard :: "value list \<Rightarrow> nat \<Rightarrow> guard list" where
+"make_guard [] _ = []" |
+"make_guard (h#t) n = (gexp.Eq (V (I n)) (L h))#(make_guard t (n+1))"
+
+primrec make_outputs :: "value list \<Rightarrow> output_function list" where
+  "make_outputs [] = []" |
+  "make_outputs (h#t) = (L h)#(make_outputs t)"
+
+fun maxS :: "transition_matrix \<Rightarrow> nat" where
+  "maxS t = (if t = {||} then 0 else fMax ((fimage (\<lambda>((origin, dest), t). origin) t) |\<union>| (fimage (\<lambda>((origin, dest), t). dest) t)))"
+
+fun make_branch :: "transition_matrix \<Rightarrow> nat  \<Rightarrow> datastate \<Rightarrow> (char list \<times> value list \<times> value list) list \<Rightarrow> transition_matrix" where
+  "make_branch e _ _ [] = e" |
+  "make_branch e s r ((label, inputs, outputs)#t) =
+    (case (step e s r label inputs) of
+      (Some (transition, s', outputs, updated)) \<Rightarrow> (make_branch e s' updated t) |
+      None \<Rightarrow> make_branch (finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=(make_guard inputs 1), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e) ((maxS e)+1) r t
+    )"
+
+primrec make_pta :: "(char list \<times> value list \<times> value list) list list \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
+  "make_pta [] e = e" |
+  "make_pta (h#t) e = (make_branch e 0 <> h)|\<union>|(make_pta t e)"
+
+lemma step_empty[simp]:"step {||} s r l i = None"
+proof-
+  have ffilter_empty: "ffilter
+       (\<lambda>((origin, dest), t).
+           origin = s \<and>
+           Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))))
+       {||} = {||}"
+    by auto
+  show ?thesis
+    by (simp add: step_def possible_steps_def ffilter_empty)
+qed
+  
+
 function merge_2 :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition_matrix option" and 
   resolve_nondeterminism :: "(nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat  \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix option" where
   "resolve_nondeterminism s e s1 s2 t = (if s = {||} then None else (let (from, (to1, to2), (t1, t2)) = fMax s; t' = merge_2 t to1 to2 in
