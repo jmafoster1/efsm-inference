@@ -99,7 +99,7 @@ lemma "S drinks = {|0, 1, 2|}"
   apply (simp add: S_def drinks_def)
   by auto
 
-lemmas transitions = select_def coin_def vend_def vend_fail_def connectives relations
+lemmas transitions = select_def coin_def vend_def vend_fail_def
 
 lemma possible_steps_0:  "length i = 1 \<Longrightarrow> possible_steps drinks 0 Map.empty (''select'') i = {|(1, select)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
@@ -184,11 +184,11 @@ lemma select_posterior: "(posterior empty select) = select_posterior"
 
 lemma medial_select_posterior_vend: "medial select_posterior (Guard vend) = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Eq (Num 0)) (Geq (Num 100))\<rbrakk>"
   apply (rule ext)
-  by (simp add: guard_vend Ge_def Lt_def gNot_def)
+  by (simp add: guard_vend)
 
 lemma r2_0_vend: "\<not>Contexts.can_take vend select_posterior" (* You can't take vend immediately after taking select *)
   apply (simp only: can_take_def medial_select_posterior_vend)
-  apply (simp add: consistent_def gAnd_def gNot_def)
+  apply (simp add: consistent_def)
   apply (rule allI)
   apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
    apply fastforce

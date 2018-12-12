@@ -35,49 +35,43 @@ fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool option" where
   )" |
   "gval (Null v) s = Some (s v = None)"
 
-definition gNot :: "gexp \<Rightarrow> gexp"  where
+abbreviation gNot :: "gexp \<Rightarrow> gexp"  where
   "gNot g \<equiv> Nor g g"
 
-definition gOr :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<or>" 60*) where
+abbreviation gOr :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<or>" 60*) where
   "gOr v va \<equiv> Nor (Nor v va) (Nor v va)"
 
-definition gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<and>" 60*) where
+abbreviation gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<and>" 60*) where
   "gAnd v va \<equiv> Nor (Nor v v) (Nor va va)"
-
-lemmas connectives = gNot_def gOr_def gAnd_def
 
 lemma inj_gAnd: "inj gAnd"
   apply (simp add: inj_def)
   apply clarify
-  by (metis gAnd_def gexp.inject(4))
+  by (metis  gexp.inject(4))
 
 lemma gAnd_determinism: "(gAnd x y = gAnd x' y') = (x = x' \<and> y = y')"
 proof
   show "gAnd x y = gAnd x' y' \<Longrightarrow> x = x' \<and> y = y'"
-    by (simp add: gAnd_def)
+    by (simp)
 next
   show "x = x' \<and> y = y' \<Longrightarrow> gAnd x y = gAnd x' y' "
     by simp
 qed
 
-definition Lt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "<" 60*) where
+abbreviation Lt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "<" 60*) where
   "Lt a b \<equiv> Gt b a"
 
-definition Le :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<le>" 60*) where
+abbreviation Le :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<le>" 60*) where
   "Le v va \<equiv> gNot (Gt v va)"
 
-definition Ge :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<ge>" 60*) where
+abbreviation Ge :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<ge>" 60*) where
   "Ge v va \<equiv> gNot (Lt v va)"
 
-definition Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<noteq>" 60*) where
+abbreviation Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<noteq>" 60*) where
   "Ne v va \<equiv> gNot (Eq v va)"
 
-lemmas relations = Lt_def Le_def Ge_def Ne_def
-
-lemmas guards = relations connectives
-
 lemma or_equiv: "gval (gOr x y) r = maybe_or (gval x r) (gval y r)"
-  apply (simp add: gOr_def)
+  apply (simp)
   apply (cases "gval x r")
    apply (cases "gval y r")
     apply simp
@@ -87,13 +81,13 @@ lemma or_equiv: "gval (gOr x y) r = maybe_or (gval x r) (gval y r)"
   by simp
 
 lemma not_equiv: "maybe_not (gval x s) = gval (gNot x) s"
-  apply (simp add: gNot_def)
+  apply simp
   apply (cases "gval x s")
    apply simp
   by simp
 
 lemma nor_equiv: "gval (gNot (gOr a b)) s = gval (Nor a b) s"
-  by (simp add: option.case_eq_if gOr_def gNot_def)
+  by (simp add: option.case_eq_if)
 
 definition satisfiable :: "gexp \<Rightarrow> bool" where
   "satisfiable g \<equiv> (\<exists>s. gval g s = Some True)"
@@ -123,20 +117,20 @@ lemma gexp_equiv_satisfiable: "gexp_equiv x y \<Longrightarrow> satisfiable x = 
   by (simp add: gexp_equiv_def satisfiable_def)
 
 lemma gAnd_reflexivity: "gexp_equiv (gAnd x x) x"
-  apply (simp add: gexp_equiv_def gAnd_def)
+  apply (simp add: gexp_equiv_def)
   apply (rule allI)
   apply (case_tac "gval x s")
    apply simp
   by simp
 
 lemma gAnd_zero: "gexp_equiv (gAnd (Bc True) x) x"
-  apply (simp add: gexp_equiv_def gAnd_def)
+  apply (simp add: gexp_equiv_def)
   apply (rule allI)
   apply (case_tac "gval x s")
   by simp_all
 
 lemma gAnd_symmetry: "gexp_equiv (gAnd x y) (gAnd y x)"
-  apply (simp add: gexp_equiv_def gAnd_def)
+  apply (simp add: gexp_equiv_def)
   apply (rule allI)
   apply (case_tac "gval y s")
    apply (case_tac "gval x s")
@@ -154,7 +148,7 @@ definition mutually_exclusive :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" wh
                                  (gval y i = Some True \<longrightarrow> gval x i \<noteq> Some True))"
 
 lemma mutually_exclusive_unsatisfiable_conj: "mutually_exclusive x y = (\<not> satisfiable (gAnd x y))"
-  apply (simp add: mutually_exclusive_def satisfiable_def gAnd_def)
+  apply (simp add: mutually_exclusive_def satisfiable_def)
   apply safe
     apply (case_tac "gval x s")
      apply simp

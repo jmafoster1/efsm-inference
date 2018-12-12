@@ -207,7 +207,7 @@ lemma vend_nothing_posterior: "posterior select_posterior vend_nothing = select_
 lemma consistent_medial_vend_fail: "consistent \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> And (cexp.Eq (Num 0)) (cexp.Lt (Num 100))\<rbrakk>"
   apply (simp add: consistent_def)
   apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0>" in exI)
-  by (simp add: connectives consistent_empty_4)
+  by (simp add: consistent_empty_4)
 
 lemma vend_fail_posterior: "posterior select_posterior vend_fail = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Eq (Num 0)) (Lt (Num 100))\<rbrakk>"
   apply (simp only: posterior_def medial_vend_fail)
@@ -235,7 +235,7 @@ lemma vend_fail_subsumes_vend_nothing: "subsumes select_posterior vend_fail vend
    apply (simp only: vend_fail_posterior)
   apply (simp add: consistent_def)
   apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0>" in exI)
-  by (simp add: connectives consistent_empty_4)
+  by (simp add: consistent_empty_4)
 
 lemma posterior_select: "length (snd e) = 1 \<Longrightarrow> (posterior \<lbrakk>\<rbrakk> (snd (fthe_elem (possible_steps drinks2 0 Map.empty ''select'' (snd e))))) =
      (\<lambda>a. if a = V (R 2) then cexp.Eq (Num 0) else if a = V (R (1)) then cexp.Bc True else \<lbrakk>\<rbrakk> a)"
@@ -450,11 +450,11 @@ lemma "choice vend_nothing vend"
 lemma nondeterministic_transitions: "nondeterministic_transitions (merge_states 1 2 drinks2) = Some (1, (1, 3), vend_nothing, vend)"
   by (simp add: nondeterministic_transitions_def nondeterminisitic_pairs max_def del: One_nat_def)
 
-lemma vend_doesnt_exit_1: "\<not>exits_state drinks2 vend 1"
+lemma vend_doesnt_exit_1[simp]: "\<not>exits_state drinks2 vend 1"
   apply (simp add: exits_state_def drinks2_def transitions del: One_nat_def)
   by auto
 
-lemma vend_nothing_exits_1: "exits_state drinks2 vend_nothing 1"
+lemma vend_nothing_exits_1[simp]: "exits_state drinks2 vend_nothing 1"
   apply (simp add: exits_state_def drinks2_def)
   by auto
 
@@ -565,7 +565,7 @@ lemma filter_all_pairs_2:"Set.filter (\<lambda>(((origin1, dest1), t1), (origin2
                apply (case_tac "ba=coin")
   using choice_def label_coin label_vend_nothing no_choice_vend_coin apply auto[1]
                apply auto[1]
-  apply simp
+              apply simp
              apply auto[1]
             apply simp
            apply simp
@@ -588,17 +588,14 @@ lemma filter_all_pairs_2:"Set.filter (\<lambda>(((origin1, dest1), t1), (origin2
         apply (case_tac "ba=coin")
          apply (case_tac "bc=vend_nothing")
           apply (simp del: One_nat_def)
-          apply (simp add: Drinks_Machine.transitions(2) Drinks_Machine_2.transitions(12) choice_def)
+  using choice_def label_vend_not_coin label_vend_nothing apply auto[1]
          apply auto[1]
-        apply (case_tac "ba=vend_nothing")
-        apply (simp del: One_nat_def)
   using choice_def label_coin label_vend_nothing apply auto[1]
-        apply simp
        apply simp
       apply simp
      apply simp
     apply auto[1]
-  apply (simp add: choice_vend_nothing_vend_fail vend_nothing_lt_vend_fail)
+   apply (simp add: choice_vend_nothing_vend_fail vend_nothing_lt_vend_fail)
   by (simp add: choice_symmetry choice_vend_vend_nothing vend_nothing_lt_vend)
 
 lemma ffilter_all_pairs_2: "ffilter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
@@ -738,7 +735,7 @@ lemma good_max: "Max ({(1, (1, 3), vend_nothing, vend), (1, (1, 1), vend_nothing
                {max (1, (1, 3), vend_nothing, vend) (1, (1, 1), vend_nothing, vend_fail)}) = (1::nat, (1::nat, 1::nat), vend_nothing, vend_fail)"
   by (simp add: max_def)
 
-lemma vend_fail_doesnt_exit_1: "\<not>exits_state drinks2 vend_fail 1"
+lemma vend_fail_doesnt_exit_1[simp]: "\<not>exits_state drinks2 vend_fail 1"
 proof-
   have set_filter: "(Set.filter (\<lambda>((from', to), t'). from' = 1 \<and> t' = vend_fail) (fset drinks2)) = {}"
     unfolding drinks2_def apply safe
@@ -794,12 +791,10 @@ proof-
       apply (simp add: outputs_vend_nothing outputs_vend_fail)
       apply (simp only: select_posterior posterior_coin_first)
       apply (simp add: posterior_vend_fail del: One_nat_def)
-      apply (simp add: connectives relations posterior_vend_nothing consistent_r1_r2_true del: One_nat_def)
+      apply (simp add: posterior_vend_nothing consistent_r1_r2_true del: One_nat_def)
       apply (simp add: consistent_lt_100 del: One_nat_def)
       apply clarify
       apply (simp add: contra del: One_nat_def)
-      apply (rule_tac x="V (R 2)" in exI)
-      apply simp
       apply (rule_tac x="Num 100" in exI)
       by simp
   qed
@@ -835,8 +830,6 @@ proof-
         apply (case_tac "cval (c r) i")
          apply simp
         apply (simp del: One_nat_def)
-        apply (simp add: Drinks_Machine_2.transitions(8))
-       apply simp
       by simp
     have posterior_c_vend_nothing: "consistent c \<Longrightarrow> posterior c vend_nothing = c"
       apply (rule ext)
@@ -852,14 +845,9 @@ proof-
       apply (rule_tac x="V (R 2)" in exI)
       apply simp
       apply safe
+      sorry
 
     show "consistent (posterior c vend_fail) \<Longrightarrow> consistent (posterior c vend_nothing)"
-      apply (case_tac "consistent c")
-      apply (simp add: posterior_c_vend_nothing)
-      apply (simp add: inconsistent_c_posterior_vend_nothing)
-      apply (simp add: posterior_def guard_vend_fail Let_def)
-      apply (case_tac "consistent (\<lambda>r. and (c r) (pairs2context (guard2pairs c (GExp.Lt (V (R 2)) (L (Num 100)))) r))")
-       apply (simp add: vend_fail_def relations del: One_nat_def)
       
       sorry
   qed
@@ -919,80 +907,146 @@ lemmas choices = choice_vend_nothing_vend no_choice_vend_vend_fail no_choice_ven
 lemma vend_nothing_vend_max: "(1::nat, (1::nat, 3::nat), vend_nothing, vend) = max (1, (1, 3), vend_nothing, vend) (1, (1, 1), vend_nothing, vend_fail)"
   using max_nondeterminism by auto
 
-lemma "(Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
-       (fset (all_pairs (merge_states 1 3 (merge_states 1 2 drinks2))))) =
-    {(((1, 1), vend_nothing), ((1, 3), vend)), (((1, 1), vend_nothing), ((1, 1), vend_fail))}"
-    apply (simp add: merge_1_3_2 all_pairs_def del: One_nat_def)
-    apply safe
-                      apply (simp_all del: One_nat_def)
-                      apply auto[1]
-                      apply auto[1]
-                      apply auto[1]
-                      apply auto[1]
-                      apply auto[1]
-                      apply (case_tac "bb=1")
-                      apply (case_tac "b=1")
-                      apply (case_tac "a=1")
-                      apply (case_tac "aa=0")
-                      apply (simp del: One_nat_def)
-                      apply (case_tac "aa=1")
-                      apply (simp del: One_nat_def)
-  using choice_symmetry no_choice_coin_vend_nothing no_choice_vend_coin no_choice_vend_fail_coin no_choice_vend_vend_fail not_less_iff_gr_or_eq vend_nothing_lt_vend vend_nothing_lt_vend_fail apply blast
-                      apply (simp del: One_nat_def)
-                      apply (simp del: One_nat_def)
-                      apply auto[1]
-                      apply (simp del: One_nat_def)
-                      apply (simp del: One_nat_def)
-                      apply auto[1]
-                      apply auto[1]
-                      apply auto[1]
-                      apply auto[1]
-                      apply auto[1]
-  using choice_symmetry no_choice_coin_vend_nothing no_choice_vend_coin no_choice_vend_fail_coin no_choice_vend_vend_fail vend_nothing_lt_vend vend_nothing_lt_vend_fail apply auto[1]
-                     apply auto[1]
-                    apply auto[1]
-                   apply auto[1]
-                  apply auto[1]
-                 apply auto[1]
-  using choice_symmetry no_choice_coin_vend_fail no_choice_coin_vend_nothing no_choice_vend_coin no_choice_vend_vend_fail vend_nothing_lt_vend vend_nothing_lt_vend_fail apply auto[1]
-               apply auto[1]
-              apply auto[1]
-  using no_choice_coin_vend_fail no_choice_coin_vend_nothing no_choice_vend_coin no_choice_vend_fail_coin no_choice_vend_vend_fail vend_nothing_lt_vend vend_nothing_lt_vend_fail apply auto[1]
-            apply auto[1]
-           apply auto[1]
-          apply auto[1]
-         apply auto[1]
-        apply auto[1]
-       apply (case_tac "bb=1")
-        apply (case_tac "b=1")
-         apply (case_tac "a=1")
-          apply (case_tac "aa=0")
-           apply (simp del: One_nat_def)
-          apply (case_tac "aa=1")
-           apply (case_tac "ba=vend")
-           apply (simp add: vend_neq_vend_fail vend_neq_coin del: One_nat_def)
-  using no_choice_vend_coin not_less_iff_gr_or_eq vend_nothing_lt_vend apply blast
-           apply (case_tac "ba=vend_fail")
-           apply (simp del: One_nat_def)
-  using choice_symmetry no_choice_vend_fail_coin no_choice_vend_vend_fail not_less_iff_gr_or_eq vend_nothing_lt_vend_fail apply blast
-           apply (case_tac "ba=coin")
-           apply (simp del: One_nat_def)
-  using choice_symmetry no_choice_coin_vend_nothing no_choice_vend_coin apply blast
-           apply (case_tac "ba=vend_nothing")
-           apply (simp del: One_nat_def)
-  
+lemma vend_nothing_neq_vend: "vend_nothing \<noteq> vend"
+  by (simp add: transitions)
 
-lemma "nondeterministic_pairs (merge_states 1 3 (merge_states 1 2 drinks2)) = {|(1, (1, 3), (vend_nothing, vend)), (1, (1, 1), vend_nothing, vend_fail)|}"
+lemma vend_nothing_neq_vend_fail: "vend_nothing \<noteq> vend_fail"
+  by (simp add: transitions)
+
+lemma vend_nothing_neq_coin: "vend_nothing \<noteq> coin"
+  by (simp add: transitions)
+
+lemma nondeterministic_pairs_1_3: "nondeterministic_pairs (merge_states 1 3 (merge_states 1 2 drinks2)) = {|(1, (1, 1), (vend_nothing, vend)), (1, (1, 1), vend_nothing, vend_fail)|}"
+proof-
+have filter: "(Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
+       (fset (all_pairs (merge_states 1 3 (merge_states 1 2 drinks2))))) =
+    {(((1, 1), vend_nothing), ((1, 1), vend)), (((1, 1), vend_nothing), ((1, 1), vend_fail))}"
+proof
+  show "{(((1, 1), vend_nothing), (1, 1), vend), (((1, 1), vend_nothing), (1, 1), vend_fail)}
+    \<subseteq> Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
+        (fset (all_pairs (merge_states 1 3 (merge_states 1 2 drinks2))))"
+  proof
+    show "\<And>x. x \<in> {(((1, 1), vend_nothing), (1, 1), vend), (((1, 1), vend_nothing), (1, 1), vend_fail)} \<Longrightarrow>
+         x \<in> Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
+               (fset (all_pairs (merge_states 1 3 (merge_states 1 2 drinks2))))"
+      by (metis (no_types, lifting) bot_fset.rep_eq doubleton_eq_iff ffilter.rep_eq ffilter_all_pairs_2 finsert.rep_eq)
+  qed
+  show "Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
+     (fset (all_pairs (merge_states 1 3 (merge_states 1 2 drinks2))))
+    \<subseteq> {(((1, 1), vend_nothing), (1, 1), vend), (((1, 1), vend_nothing), (1, 1), vend_fail)}"
+    by (metis (no_types, lifting) bot_fset.rep_eq doubleton_eq_iff ffilter.rep_eq ffilter_all_pairs_2 finsert.rep_eq set_eq_subset)
+qed
+  have abs_fset: "Abs_fset {(((1, 1), vend_nothing), (1, 1), vend), (((1, 1), vend_nothing), (1, 1), vend_fail)} = {|(((1, 1), vend_nothing), (1, 1), vend), (((1, 1), vend_nothing), (1, 1), vend_fail)|}"
+    by (metis finsert.rep_eq fset_inverse fset_simps(1))
+  show ?thesis
+    by (simp add: nondeterministic_pairs_def ffilter_def filter abs_fset del: One_nat_def)
+qed
+
+lemma "subsumes c vend_nothing vend_fail"
+proof-
+  have guard_implies_guard: "\<And>r i. cval (medial c (Guard vend_fail) r) i = Some True \<Longrightarrow> cval (medial c (Guard vend_nothing) r) i = Some True"
+    apply (simp add: guard_vend_fail guard_vend_nothing)
+    apply (case_tac "cval (c r) i")
+     apply simp
+    apply simp
+    apply (case_tac "r=V (R 2)")
+     apply simp
+    apply (case_tac "ValueLt (Some i) (Some (Num 100))")
+      apply simp
+     apply simp
+    by simp
+  have updates_consistent: "\<And>r i. cval (posterior (medial c (Guard vend_fail)) vend_nothing r) i = Some True \<Longrightarrow>
+           posterior c vend_fail r \<noteq> Undef \<Longrightarrow> cval (posterior c vend_fail r) i = Some True"
+    apply (simp add: guard_vend_fail)
+    unfolding posterior_def Let_def
+    apply (simp add: transitions del: One_nat_def)
+    apply (case_tac "consistent (\<lambda>r. and (c r) (if r = V (R 2) then snd (V (R 2), cexp.Lt (Num 100)) else cexp.Bc True))")
+     apply (simp add: transitions del: One_nat_def)
+     apply (case_tac "r = V (R 2)")
+      apply simp
+     apply (case_tac "r = V (R 1)")
+      apply simp
+     apply (simp del: One_nat_def)
+    by (simp del: One_nat_def)
+  have posterior_vend_nothing_consistent_c: "consistent c \<Longrightarrow>posterior c vend_nothing = c"
+    apply (rule ext)
+    by (simp add: posterior_def Let_def transitions del: One_nat_def)
+  have posterior_vend_nothing_inconsistent_c: "\<not> consistent c \<Longrightarrow> posterior c vend_nothing = (\<lambda>x. Bc False)"
+    by (simp add: posterior_def Let_def transitions)
+  have inconsistent_false: "\<not>consistent (\<lambda>x. cexp.Bc False)"
+    by (simp add: consistent_def)
+  have inconsistent_false_element: "\<exists> i. cexp.Bc False = c i \<Longrightarrow> \<not> consistent c"
+    apply (simp add: consistent_def)
+    apply clarify
+    apply (rule_tac x=i in exI)
+    by (metis cexp.distinct(1) cexp2gexp.simps(1) gval.simps(1) option.inject)
+  have consistent_no_false_elements: "consistent c \<Longrightarrow> \<forall> i. \<not> cexp.Bc False = c i"
+    apply (simp add: consistent_def)
+    using consistent_def inconsistent_false_element by blast
+  have posterior_simp: "(\<lambda>r. if r = V (R 2) then and (c (V (R 2))) (cexp.Lt (Num 100)) else if r = V (R 1) then c (V (R 1)) else c r) = 
+(\<lambda>r. if r = V (R 2) then and (c (V (R 2))) (cexp.Lt (Num 100)) else c r)"
+    apply (rule ext)
+    by simp
+  have medial_simp: "(\<lambda>r. and (c r) (if r = V (R 2) then snd (V (R 2), cexp.Lt (Num 100)) else cexp.Bc True)) = 
+                     (\<lambda>r. if r = V (R 2) then and (c (V (R 2))) (cexp.Lt (Num 100)) else c r)"
+    apply (rule ext)
+    by simp
+  have consistent_posteriors: "consistent (posterior c vend_fail) \<Longrightarrow> consistent (posterior c vend_nothing)"
+    apply (case_tac "consistent c")
+     apply (simp add: posterior_vend_nothing_consistent_c)
+    apply (simp add: posterior_vend_nothing_inconsistent_c inconsistent_false)
+    apply (simp add: posterior_def Let_def guard_vend_fail)
+    apply (case_tac "consistent (\<lambda>r. and (c r) (if r = V (R 2) then snd (V (R 2), cexp.Lt (Num 100)) else cexp.Bc True))")
+     apply (simp add: transitions posterior_simp medial_simp del: One_nat_def)
+     defer
+     apply (simp add: inconsistent_false)
+    sorry
+  show ?thesis
+    unfolding subsumes_def
+    apply safe
+       apply (simp add: guard_implies_guard)
+      apply (simp add: outputs_vend_fail outputs_vend_nothing)
+     apply (simp add: updates_consistent)
+    by (simp add: consistent_posteriors)
+qed
+
+lemma "directly_subsumes drinks2 2 vend_nothing vend_fail"
 proof-
   show ?thesis
-    apply (simp add: nondeterministic_pairs_def ffilter_def del: One_nat_def)
+    unfolding directly_subsumes_def
+
+lemma "merge_transitions drinks2 (merge_states 1 2 drinks2) 1 2 1 1 1 vend_nothing vend_fail = Some drinks"
+  apply (simp add: merge_transitions.simps del: One_nat_def)
 
 lemma "merge_2 drinks2 1 2 = Some drinks"
 proof-
+  have nondeterminism_merge_1_2: "nondeterminism (merge_states 1 2 drinks2)"
+    unfolding nondeterminism_def
+    using vend_vend_nothing_nondeterminism by auto
+  have merge_vend_nothing_vend: "merge_transitions (merge_states 1 2 drinks2) (merge_states 1 3 (merge_states 1 2 drinks2)) 1 1 1 1 1 vend_nothing
+             vend = None"
+    apply (simp only: merge_1_3_2)
+    apply (simp only: merge_1_2)
+    using merge_1_2 merge_transitions.simps vend_doesnt_directly_subsume_vend_nothing_2 vend_doesnt_directly_subsume_vend_nothing_3 by auto
+  have vend_fail_neq_vend: "vend_fail \<noteq> vend"
+    by (simp add: transitions)
+  have fmax: "fMax
+           ({|(1::nat, (1::nat, 3::nat), vend_nothing, vend), (1, (1, 1), vend_nothing, vend_fail)|} |-|
+            {|max (1, (1, 3), vend_nothing, vend) (1, (1, 1), vend_nothing, vend_fail)|}) = (1, (1, 1), vend_nothing, vend_fail)"
+    apply (simp add: fMax_def max_def del: One_nat_def)
+    by (simp add: fMax.semilattice_fset_axioms semilattice_fset.singleton)
   show ?thesis
     apply (simp add: Let_def nondeterminisitic_pairs del: One_nat_def)
-    apply (simp add: vend_nothing_exits_1 vend_doesnt_exit_1 del: One_nat_def)
-
+    apply (simp add: nondeterministic_pairs_1_3 del: One_nat_def)
+    apply (simp add: vend_nothing_exits_1_2 vend_exits_1 nondeterminsm_merge_1_3 nondeterminism_merge_1_2 del: One_nat_def)
+    apply (simp add: merge_vend_nothing_vend del: One_nat_def)
+    apply (simp add: max_nondeterministic_transitions vend_nothing_exits_1_2 vend_exits_1 vend_fail_neq_vend del: One_nat_def)
+    apply (simp add: max_nondeterminism del: One_nat_def)
+    unfolding Let_def
+    apply (simp add: nondeterminsm_merge_1_3 nondeterministic_pairs_1_3 del: One_nat_def)
+    apply (simp add: vend_nothing_exits_1_2 vend_exits_1 del: One_nat_def)
+    apply (simp add: max_nondeterministic_transitions vend_nothing_exits_1_2 vend_exits_1 vend_fail_neq_vend del: One_nat_def)
+    apply (simp add: merge_vend_nothing_vend fmax del: One_nat_def)
 
 lemma make_pta_test: "make_pta [[(''select'', [Str ''coke''], [])]] {||} = {|((0, 1), \<lparr>Label=''select'', Arity=1, Guard=[gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs=[], Updates=[]\<rparr>)|}"
   by simp

@@ -105,7 +105,7 @@ lemma value_lt_aval: "aval x r = Some a \<Longrightarrow> aval y r = Some aa \<L
   by (metis MaybeBoolInt.elims option.sel option.simps(3))
 
 lemma ge_equiv: "gval (Ge x y) r = gval (gOr (gexp.Gt x y) (gexp.Eq x y)) r"
-  apply (simp add: connectives relations)
+  apply simp
   apply (cases "aval x r")
    apply (cases "aval y r")
     apply simp
@@ -119,11 +119,11 @@ lemma ge_equiv: "gval (Ge x y) r = gval (gOr (gexp.Gt x y) (gexp.Eq x y)) r"
 
 lemma apply_guard_ge_100: "(apply_guard \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk> (Ge (V (R 1)) (L (Num 100)))) = \<lbrakk>V (R 1) \<mapsto> Geq (Num 100)\<rbrakk>"
   apply (rule ext)
-  by (simp add: connectives relations)
+  by simp
 
 lemma apply_gt_100_eq_100: "(apply_guard \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk> (gOr (GExp.Lt (L (Num 100)) (V (R 1))) (gexp.Eq (V (R 1)) (L (Num 100))))) = \<lbrakk>V (R 1) \<mapsto> cexp.Not (And (Neq (Num 100)) (Leq (Num 100)))\<rbrakk>"
   apply (rule ext)
-  by (simp add: connectives relations)
+  by simp
 
 lemma "cexp_equiv (cexp.Not (And (Neq (Num 100)) (Leq (Num 100)))) (Geq (Num 100))"
   apply (simp add: cexp_equiv_def)
@@ -134,7 +134,7 @@ lemma "cexp_equiv (cexp.Not (And (Neq (Num 100)) (Leq (Num 100)))) (Geq (Num 100
 
 lemma "context_equiv (apply_guard \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> (Ge (V (R 1)) (L (Num 100))))
                       (apply_guard \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> (gOr (gexp.Gt (V (R 1)) (L (Num 100))) (gexp.Eq (V (R 1)) (L (Num 100)))))"
-  apply (simp only: apply_guard_ge_100 apply_gt_100_eq_100 connectives relations)
+  apply (simp only: apply_guard_ge_100 apply_gt_100_eq_100)
   apply (simp only: context_equiv_def cexp_equiv_def)
   apply safe
     apply (case_tac r)
@@ -165,7 +165,7 @@ lemma "context_equiv (apply_guard \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> 
   by simp
 
 lemma not_eq_0_and_ge_100:"\<not> GExp.satisfiable (gAnd (gexp.Eq (V (R 2)) (L (Num 0))) (Ge (V (R 2)) (L (Num 100))))"
-  apply (simp add: GExp.satisfiable_def connectives relations)
+  apply (simp add: GExp.satisfiable_def)
   apply (rule allI)
   apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
    apply simp
@@ -260,17 +260,17 @@ lemma posterior_n_coin_true_2: "(posterior_n (Suc n) coin select_posterior) = r1
   qed
 
 lemma can_take_vend: "0 < Suc n \<longrightarrow> Contexts.can_take vend r1_r2_true"
-  apply (simp add: can_take_def consistent_def vend_def connectives relations)
+  apply (simp add: can_take_def consistent_def vend_def)
   apply (rule_tac x="<R 1 := Num 0, R 2 := Num 100>" in exI)
   by (simp add: consistent_empty_4)
 
 lemma medial_vend: "medial r1_r2_true (Guard vend) = \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> (Geq (Num 100))\<rbrakk>"
-  apply (simp add: vend_def connectives relations)
+  apply (simp add: vend_def)
   apply (rule ext)
   by simp
 
 lemma consistent_medial_vend: "consistent \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> (Geq (Num 100))\<rbrakk>"
-  apply (simp add: consistent_def connectives relations)
+  apply (simp add: consistent_def)
   apply (rule_tac x="<R 1 := Num 0, R 2 := Num 100>" in exI)
   apply (simp del: Nat.One_nat_def)
   using consistent_empty_4 by auto
