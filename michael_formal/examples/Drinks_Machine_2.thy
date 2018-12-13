@@ -42,7 +42,7 @@ definition drinks2 :: transition_matrix where
 lemma empty_not_singleton [simp]: "\<not> is_singleton {}"
   by (simp add: is_singleton_def)
 
-lemma possible_steps_0:  "length i = 1 \<Longrightarrow> possible_steps drinks2 0 Map.empty (''select'') i = {|(1, select)|}"
+lemma possible_steps_0:  "length i = 1 \<Longrightarrow> possible_steps drinks2 0 r (''select'') i = {|(1, select)|}"
   apply (simp add: possible_steps_def drinks2_def transitions)
   by force
 
@@ -292,6 +292,12 @@ lemma drinks2_0_invalid: "\<not> (fst a = ''select'' \<and> length (snd a) = 1) 
   apply (simp add: drinks2_def possible_steps_def transitions)
   by force
 
+lemma step_0: "length i = 1 \<Longrightarrow> step drinks2 0 Map.empty ''select'' i = Some (select, 1, [], <R 1 := hd i, R 2 := Num 0>)"
+  apply (simp add: step_def possible_steps_0 select_def del: One_nat_def)
+  apply (rule ext)
+  apply (simp del: One_nat_def)
+  using hd_input2state by auto
+
 lemma updates_select: "length (snd a) = 1 \<Longrightarrow> (EFSM.apply_updates (Updates select) (case_vname (\<lambda>n. input2state (snd a) 1 (I n)) Map.empty) Map.empty) = <R 1:=hd (snd a), R 2 := Num 0>"
   apply (simp add: select_def)
   apply (rule ext)
@@ -373,8 +379,8 @@ next
     by (simp add: observe_trace_def step_def drinks2_end drinks_end )
 qed
 
-lemma drinks2_vend_r2_String: "r2 = Some (Str x2) \<Longrightarrow>
-                possible_steps drinks2 2 (\<lambda>u. if u = R 1 then Some s else if u = R 2 then r2 else None) (''vend'') [] = {||}"
+lemma drinks2_vend_r2_String: "r (R 2) = Some (Str x2) \<Longrightarrow>
+                possible_steps drinks2 2 r (''vend'') [] = {||}"
   apply (simp add: possible_steps_def drinks2_def transitions)
   by force
 

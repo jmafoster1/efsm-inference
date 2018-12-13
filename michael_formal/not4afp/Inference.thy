@@ -64,13 +64,18 @@ fun make_context :: "transition_matrix \<Rightarrow> context \<Rightarrow> nat \
 lemma make_context_options: "make_context e c s = None \<or> (\<exists>t. make_context e c s = Some t)"
   by simp
 
-primrec gets_us_to :: "nat \<Rightarrow>transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
+inductive gets_us_to :: "nat \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
+  base: "s = target \<Longrightarrow> gets_us_to target _ s _ []" |
+  step_some: "step e s r (fst h) (snd h) =  Some (_, s', _, r') \<Longrightarrow> gets_us_to target e s' r' t \<Longrightarrow> gets_us_to target e s r (h#t)" |
+  step_none: "step e s r (fst h) (snd h) = None \<Longrightarrow> s=target \<Longrightarrow> gets_us_to target e s r (h#t)"
+
+(*primrec gets_us_to :: "nat \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
   "gets_us_to target _ s _ [] = (s = target)" |
   "gets_us_to target e s r (h#t) =
     (case (step e s r (fst h) (snd h)) of
       (Some (_, s', _, r')) \<Rightarrow> gets_us_to target e s' r' t |
       _ \<Rightarrow> (s = target)
-    )"
+    )"*)
 
 definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> context" where
  "anterior_context e t = posterior_sequence \<lbrakk>\<rbrakk> e 0 <> t"
@@ -82,19 +87,6 @@ definition directly_subsumes :: "transition_matrix \<Rightarrow> nat \<Rightarro
 
 definition exits_state :: "transition_matrix \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> bool" where
   "exits_state e t from = ((ffilter (\<lambda>((from', to), t'). from' = from \<and> t' = t) e) \<noteq> {||})"
-
-fun merge_transitions :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> transition_matrix option" where
-  "merge_transitions oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 t2 = (
-    \<comment> \<open> If t1 directly subsumes t2 then replace t2 with t1 \<close>
-    if directly_subsumes oldEFSM t1FromOld t1 t2 then Some (replace_transition newEFSM newFrom t2NewTo t2 t1) else
-    \<comment> \<open> If t2 directly subsumes t1 then replace t1 with t2 \<close>
-    if directly_subsumes oldEFSM t2FromOld t2 t1 then Some (replace_transition newEFSM newFrom t1NewTo t1 t2) else
-    \<comment> \<open> Can we get a context where one transition subsumes the other directly \<close>
-    \<comment> \<open> Can we make a transition which subsumes both? \<close>
-    None
-  )"
-
-declare merge_transitions.simps[simp del]
 
 primrec make_guard :: "value list \<Rightarrow> nat \<Rightarrow> guard list" where
 "make_guard [] _ = []" |
@@ -130,7 +122,18 @@ proof-
   show ?thesis
     by (simp add: step_def possible_steps_def ffilter_empty)
 qed
-  
+
+
+definition merge_transitions :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> transition_matrix option" where
+  "merge_transitions oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 t2 = (
+    \<comment> \<open> If t1 directly subsumes t2 then replace t2 with t1 \<close>
+    if directly_subsumes oldEFSM t1FromOld t2 t1 then Some (replace_transition newEFSM newFrom t2NewTo t1 t2) else
+    \<comment> \<open> If t2 directly subsumes t1 then replace t1 with t2 \<close>
+    if directly_subsumes oldEFSM t2FromOld t1 t2 then Some (replace_transition newEFSM newFrom t1NewTo t2 t1) else
+    \<comment> \<open> Can we get a context where one transition subsumes the other directly \<close>
+    \<comment> \<open> Can we make a transition which subsumes both? \<close>
+    None
+  )"
 
 function merge_2 :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition_matrix option" and 
   resolve_nondeterminism :: "(nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat  \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix option" where
