@@ -1125,7 +1125,7 @@ proof-
 qed
 
 
-lemma "merge_2 drinks2 1 2 = Some basically_drinks"
+lemma merge_2_1_2: "merge_2 drinks2 1 2 = Some basically_drinks"
 proof-
   have nondeterminism_merge_1_2: "nondeterminism (merge_states 1 2 drinks2)"
     unfolding nondeterminism_def
@@ -1159,4 +1159,199 @@ qed
 
 lemma make_pta_test: "make_pta [[(''select'', [Str ''coke''], [])]] {||} = {|((0, 1), \<lparr>Label=''select'', Arity=1, Guard=[gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs=[], Updates=[]\<rparr>)|}"
   by simp
+
+lemma scoring: "rev (sorted_list_of_fset (score drinks2 naive_score)) = [(3, 1, 2), (0, 2, 3), (0, 1, 3), (0, 0, 3), (0, 0, 2), (0, 0, 1)]"
+proof-
+  have set_filter: "(Set.filter (\<lambda>(x, y). x < y)
+       {(2::nat, 1::nat), (2, 2), (2, 3), (2, 0), (2, 1), (2, 2), (1, 1), (1, 2), (1, 3), (1, 0), (1, 1), (1, 2), (0, 1), (0, 2), (0, 3),
+        (0, 0), (0, 1), (0, 2), (3, 1), (3, 2), (3, 3), (3, 0), (3, 1), (3, 2), (2, 1), (2, 2), (2, 3), (2, 0), (2, 1), (2, 2),
+        (1, 1), (1, 2), (1, 3), (1, 0), (1, 1), (1, 2)}) =
+    {(2, 3), (1, 3), (1, 2), (0, 3), (0, 2), (0, 1)}"
+    apply (simp add: Set.filter_def)
+    by auto
+  have ffilter: "ffilter (\<lambda>(x, y). x < y) (all_pairs (S drinks2)) = {|(2, 3), (1, 3), (1, 2), (0, 3), (0, 2), (0, 1)|}"
+    apply (simp add: drinks2_def all_pairs_def S_def)
+    apply (simp add: ffilter_def set_filter)
+    by (metis finsert.rep_eq fset_inverse fset_simps(1))
+    
+  have outgoing_transitions_0: "(outgoing_transitions 0 drinks2) = {|select|}"
+  proof-
+    have set_filter: "(Set.filter (\<lambda>((origin, dest), t). origin = 0)
+       {((0::nat, 1::nat), select), ((1, 1), vend_nothing), ((1, 2), coin), ((2, 2), coin), ((2, 2), vend_fail), ((2, 3), vend)}) =
+       {((0, 1), select)}"
+      apply (simp add: Set.filter_def)
+      apply safe
+      by (simp_all add: transitions)
+    have abs_fset: "Abs_fset {((0, 1), select)} = {|((0, 1), select)|}"
+      by (metis finsert.rep_eq fset_inverse fset_simps(1))
+    show ?thesis
+      by (simp add: outgoing_transitions_def drinks2_def ffilter_def set_filter abs_fset)
+  qed
+  have outgoing_transitions_1: "(outgoing_transitions 1 drinks2) = {|coin, vend_nothing|}"
+  proof-
+    have set_filter: "(Set.filter (\<lambda>((origin, dest), t). origin = 1)
+       {((0::nat, 1::nat), select), ((1, 1), vend_nothing), ((1, 2), coin), ((2, 2), coin), ((2, 2), vend_fail), ((2, 3), vend)}) =
+       {((1, 1), vend_nothing), ((1, 2), coin)}"
+      apply (simp add: Set.filter_def)
+      apply safe
+      by (simp_all add: transitions)
+    have abs_fset: "Abs_fset {((1, 1), vend_nothing), ((1, 2), coin)} = {|((1, 1), vend_nothing), ((1, 2), coin)|}"
+      by (metis finsert.rep_eq fset_inverse fset_simps(1))
+    show ?thesis
+      apply (simp add: outgoing_transitions_def drinks2_def ffilter_def set_filter abs_fset)
+      by auto
+  qed
+  have outgoing_transitions_2: "(outgoing_transitions 2 drinks2) = {|coin, vend_fail, vend|}"
+  proof-
+    have set_filter: "(Set.filter (\<lambda>((origin, dest), t). origin = 2)
+       {((0::nat, 1::nat), select), ((1, 1), vend_nothing), ((1, 2), coin), ((2, 2), coin), ((2, 2), vend_fail), ((2, 3), vend)}) =
+       {((2, 2), coin), ((2, 2), vend_fail), ((2, 3), vend)}"
+      apply (simp add: Set.filter_def)
+      apply safe
+      by (simp_all add: transitions)
+    have abs_fset: "Abs_fset {((2, 2), coin), ((2, 2), vend_fail), ((2, 3), vend)} = {|((2, 2), coin), ((2, 2), vend_fail), ((2, 3), vend)|}"
+      by (metis finsert.rep_eq fset_inverse fset_simps(1))
+    show ?thesis
+      by (simp add: outgoing_transitions_def drinks2_def ffilter_def set_filter abs_fset)
+  qed
+  have outgoing_transitions_3: "(outgoing_transitions 3 drinks2) = {||}"
+  proof-
+    have set_filter: "(Set.filter (\<lambda>((origin, dest), t). origin = 3)
+       {((0::nat, 1::nat), select), ((1, 1), vend_nothing), ((1, 2), coin), ((2, 2), coin), ((2, 2), vend_fail), ((2, 3), vend)}) = {}"
+      apply (simp add: Set.filter_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      apply (simp add: outgoing_transitions_def drinks2_def ffilter_def set_filter)
+      by (simp add: bot_fset_def)
+  qed
+  have naive_score_1_2: "naive_score {|coin, vend_nothing|} {|coin, vend_fail, vend|} = 3"
+  proof-
+    have abs_fset: "Abs_fset
+         {(coin, coin), (coin, vend_fail), (coin, vend), (vend_nothing, vend), (vend_nothing, vend_fail), (vend_nothing, vend),
+          (vend_nothing, coin), (vend_nothing, vend_fail), (vend_nothing, vend)} = {|(coin, coin), (coin, vend_fail), (coin, vend), (vend_nothing, vend), (vend_nothing, vend_fail), (vend_nothing, vend),
+          (vend_nothing, coin), (vend_nothing, vend_fail), (vend_nothing, vend)|}"
+      by (metis finsert.rep_eq fset_inverse fset_simps(1))
+    have fprod: "(fprod {|coin, vend_nothing|} {|coin, vend_fail, vend|}) = {|(coin, coin), (coin, vend_fail), (coin, vend), (vend_nothing, vend), (vend_nothing, vend_fail), (vend_nothing, vend),
+      (vend_nothing, coin), (vend_nothing, vend_fail), (vend_nothing, vend)|}"
+      by (simp add: fprod_def abs_fset)
+    have set_filter: "(Set.filter (\<lambda>(x, y). Label x = Label y \<and> Arity x = Arity y)
+       {(coin, coin), (coin, vend_fail), (coin, vend), (vend_nothing, vend), (vend_nothing, vend_fail), (vend_nothing, vend),
+        (vend_nothing, coin), (vend_nothing, vend_fail), (vend_nothing, vend)}) =
+    {(coin, coin), (vend_nothing, vend), (vend_nothing, vend_fail), (vend_nothing, vend), (vend_nothing, vend_fail),
+      (vend_nothing, vend)}"
+      apply (simp add: Set.filter_def)
+      apply safe
+      by (simp_all add: transitions)
+    have ffilter: "(ffilter (\<lambda>(x, y). Label x = Label y \<and> Arity x = Arity y)
+       {|(coin, coin), (coin, vend_fail), (coin, vend), (vend_nothing, vend), (vend_nothing, vend_fail), (vend_nothing, vend),
+         (vend_nothing, coin), (vend_nothing, vend_fail), (vend_nothing, vend)|}) = 
+        {|(coin, coin), (vend_nothing, vend), (vend_nothing, vend_fail), (vend_nothing, vend), (vend_nothing, vend_fail), (vend_nothing, vend)|}"
+      apply (simp add: ffilter_def set_filter)
+      by (metis finsert.rep_eq fset_inverse fset_simps(1))
+    have smaller: "{|(coin, coin), (vend_nothing, vend), (vend_nothing, vend_fail), (vend_nothing, vend), (vend_nothing, vend_fail),
+       (vend_nothing, vend)|} = {|(coin, coin), (vend_nothing, vend), (vend_nothing, vend_fail)|}"
+      by auto
+    show ?thesis
+      apply (simp only: naive_score_def fprod ffilter smaller)
+      by (simp add: transitions)
+  qed
+  have naive_score_0_2: "naive_score {|select|} {|coin, vend_fail, vend|} = 0"
+  proof-
+    have abs_fset: "Abs_fset {(select, coin), (select, vend_fail), (select, vend)} = {|(select, coin), (select, vend_fail), (select, vend)|}"
+      by (metis finsert.rep_eq fset_inverse fset_simps(1))
+    show ?thesis
+      unfolding naive_score_def
+      apply (simp add: fprod_def abs_fset)
+      by (simp add: transitions)
+  qed
+  have naive_score_0_1: "naive_score {|select|} {|coin, vend_nothing|} = 0"
+  proof-
+    have abs_fset: "Abs_fset {(select, coin), (select, vend_nothing)} = {|(select, coin), (select, vend_nothing)|}"
+      by (metis finsert.rep_eq fset_inverse fset_simps(1))
+    show ?thesis
+      unfolding naive_score_def
+      apply (simp add: fprod_def abs_fset)
+      by (simp add: transitions)
+  qed
+  have scoring: "(score drinks2 naive_score) = {|(0, 2, 3), (0, 1, 3), (3, 1, 2), (0, 0, 3), (0, 0, 2), (0, 0, 1)|}"
+    apply (simp add: score_def ffilter)
+    apply (simp only: outgoing_transitions_0 outgoing_transitions_1 outgoing_transitions_2 outgoing_transitions_3)
+    by (simp add: naive_score_empty naive_score_empty_2 naive_score_1_2 naive_score_0_2 naive_score_0_1)
+  show ?thesis
+    by (simp add: scoring sorted_list_of_fset_def)
+qed
+
+lemma scoring_2: "(rev (sorted_list_of_fset (score basically_drinks naive_score))) = [ (0, 1, 3), (0, 0, 3), (0, 0, 1)]"
+proof-
+  have set_filter: "(Set.filter (\<lambda>(x, y). x < y)
+       {(1::nat, 1::nat), (1, 3), (1, 1), (1, 0), (1, 1), (0, 1), (0, 3), (0, 1), (0, 0), (0, 1), (1, 1), (1, 3), (1, 1), (1, 0), (1, 1),
+        (3, 1), (3, 3), (3, 1), (3, 0), (3, 1), (1, 1), (1, 3), (1, 1), (1, 0), (1, 1)}) =
+    {(0, 3), (0, 1), (1, 3)}"
+    apply (simp add: Set.filter_def)
+    by auto
+  have ffilter: "ffilter (\<lambda>(x, y). x < y)
+     {|(1::nat, 1::nat), (1, 3), (1, 1), (1, 0), (1, 1), (0, 1), (0, 3), (0, 1), (0, 0), (0, 1), (1, 1), (1, 3), (1, 1), (1, 0), (1, 1),
+       (3, 1), (3, 3), (3, 1), (3, 0), (3, 1), (1, 1), (1, 3), (1, 1), (1, 0), (1, 1)|} = {|(0, 3), (0, 1), (1, 3)|}"
+    apply (simp add: ffilter_def set_filter)
+    by (metis finsert.rep_eq fset_inverse fset_simps(1))
+  have all_pairs: "ffilter (\<lambda>(x, y). x < y) (all_pairs (S basically_drinks)) = {|(0, 3), (0, 1), (1, 3)|}"
+    by (simp add: S_def basically_drinks_def all_pairs_def ffilter)
+  have outgoing_transitions_3: "outgoing_transitions 3 basically_drinks = {||}"
+  proof-
+    have set_filter: "(Set.filter (\<lambda>((origin, dest), t). origin = 3)
+       {((1::nat, 1::nat), vend_fail), ((0, 1), select), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)}) = {}"
+      apply (simp add: Set.filter_def)
+      by auto
+    show ?thesis
+      apply (simp add: outgoing_transitions_def basically_drinks_def ffilter_def set_filter)
+      by (simp add: bot_fset_def)
+  qed
+  have outgoing_transitions_0: "outgoing_transitions 0 basically_drinks = {|select|}"
+  proof-
+    have set_filter: "Set.filter (\<lambda>((origin, dest), t). origin = 0) (fset basically_drinks) = {((0, 1), select)}"
+      apply (simp add: basically_drinks_def Set.filter_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      apply (simp add: outgoing_transitions_def ffilter_def set_filter)
+      by (metis bot_fset.rep_eq fimage_finsert fimage_is_fempty finsert.rep_eq fset_inverse old.prod.case)
+  qed
+  have outgoing_transitions_1: "outgoing_transitions 1 basically_drinks = {|coin, vend_fail, vend|}"
+  proof-
+    have set_filter: "Set.filter (\<lambda>((origin, dest), t). origin = 1) (fset basically_drinks) =
+    {((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)}"
+      apply (simp add: Set.filter_def basically_drinks_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      apply (simp add: outgoing_transitions_def ffilter_def set_filter)
+      by (metis (no_types, lifting) fimage_fempty fimage_finsert finsert.rep_eq fset_inverse fset_simps(1) prod.simps(2))
+  qed
+  have naive_score_0_1: "naive_score {|select|} {|coin, vend_fail, vend|} = 0"
+  proof-
+    have abs_fset: "Abs_fset {(select, coin), (select, vend_fail), (select, vend)} = {|(select, coin), (select, vend_fail), (select, vend)|}"
+      by (metis finsert.rep_eq fset_inverse fset_simps(1))
+    show ?thesis
+      apply (simp add: naive_score_def fprod_def abs_fset)
+      by (simp add: transitions)
+  qed
+  have scoring: "score basically_drinks naive_score = {|(0, 0, 3), (0, 0, 1), (0, 1, 3)|}"
+    apply (simp add: score_def all_pairs)
+    by (simp add: outgoing_transitions_3 naive_score_empty outgoing_transitions_0 outgoing_transitions_1 naive_score_0_1)
+  show ?thesis
+    apply simp
+    by (simp add: scoring sorted_list_of_fset_def)
+qed
+
+lemma "infer drinks2 naive_score = basically_drinks"
+proof-
+  have first_step: "inference_step drinks2 (rev (sorted_list_of_fset (score drinks2 naive_score))) = Some basically_drinks"
+    by (simp add: scoring merge_2_1_2 del: merge_2.simps)
+  have next_step: "inference_step basically_drinks (rev (sorted_list_of_fset (score basically_drinks naive_score))) = None"
+    by (simp add: scoring_2)
+  show ?thesis
+    apply (simp add: first_step)
+    by (simp add: next_step)
+qed
 end

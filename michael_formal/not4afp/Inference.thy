@@ -22,8 +22,19 @@ definition choice :: "transition \<Rightarrow> transition \<Rightarrow> bool" wh
 lemma choice_symmetry: "choice x y = choice y x"
   using choice_def by auto
 
-definition all_pairs :: "transition_matrix \<Rightarrow> (((nat \<times> nat) \<times> transition) \<times> (nat \<times> nat) \<times> transition) fset" where
+definition all_pairs :: "'a fset \<Rightarrow> ('a \<times> 'a) fset" where
   "all_pairs t = ffUnion (fimage (\<lambda>x. fimage (\<lambda>y. (x, y)) t) t)"
+
+definition fprod :: "'a fset \<Rightarrow> 'b fset \<Rightarrow> ('a \<times> 'b) fset" where
+  "fprod a b = Abs_fset ((fset a) \<times> (fset b))"
+
+lemma fprod_empty[simp]: "\<forall>a. fprod {||} a = {||}"
+  apply (simp add: fprod_def)
+  by (simp add: bot_fset_def)
+
+lemma fprod_empty_2[simp]: "\<forall>a. fprod a {||} = {||}"
+  apply (simp add: fprod_def ffUnion_def)
+  by (simp add: bot_fset_def)
 
 (* Get every possible ((origin, dest), transition) pair, filter then for nondeterminism, then put them in the right format *)
 definition nondeterministic_pairs :: "transition_matrix \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset" where
@@ -107,7 +118,9 @@ fun make_branch :: "transition_matrix \<Rightarrow> nat  \<Rightarrow> datastate
       None \<Rightarrow> make_branch (finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=(make_guard inputs 1), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e) ((maxS e)+1) r t
     )"
 
-primrec make_pta :: "(char list \<times> value list \<times> value list) list list \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
+type_synonym log = "(char list \<times> value list \<times> value list) list list"
+
+primrec make_pta :: "log \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
   "make_pta [] e = e" |
   "make_pta (h#t) e = (make_branch e 0 <> h)|\<union>|(make_pta t e)"
 
@@ -130,10 +143,29 @@ definition merge_transitions :: "transition_matrix \<Rightarrow> transition_matr
     if directly_subsumes oldEFSM t1FromOld t2 t1 then Some (replace_transition newEFSM newFrom t2NewTo t1 t2) else
     \<comment> \<open> If t2 directly subsumes t1 then replace t1 with t2 \<close>
     if directly_subsumes oldEFSM t2FromOld t1 t2 then Some (replace_transition newEFSM newFrom t1NewTo t2 t1) else
-    \<comment> \<open> Can we get a context where one transition subsumes the other directly \<close>
     \<comment> \<open> Can we make a transition which subsumes both? \<close>
+    (*if \<exists>t'. directly_subsumes oldEFSM t2FromOld t1 t' \<and> directly_subsumes oldEFSM t1FromOld t2 t' then 
+       Some (replace_transition (replace_transition newEFSM newFrom t1NewTo t2 t') newFrom t2NewTo t1 t') else*)
     None
   )"
+
+type_synonym scoreboard = "(nat \<times> (nat \<times> nat)) fset"
+type_synonym ranker = "transition fset \<Rightarrow> transition fset \<Rightarrow> nat"
+
+definition outgoing_transitions :: "nat \<Rightarrow> transition_matrix \<Rightarrow> transition fset" where
+  "outgoing_transitions n t = fimage (\<lambda>(x, t'). t') (ffilter (\<lambda>((origin, dest), t). origin = n) t)"
+
+definition naive_score :: ranker where
+  "naive_score t1 t2 = size (ffilter (\<lambda>(x, y). Label x = Label y \<and> Arity x = Arity y) (fprod t1 t2))"
+
+lemma naive_score_empty: "\<forall>a. naive_score a {||} = 0"
+  by (simp add: naive_score_def)
+
+lemma naive_score_empty_2: "\<forall>a. naive_score {||} a = 0"
+  by (simp add: naive_score_def)
+
+definition score :: "transition_matrix \<Rightarrow> ranker \<Rightarrow> scoreboard" where
+  "score t rank = fimage (\<lambda>(s1, s2). (rank (outgoing_transitions s1 t) (outgoing_transitions s2 t), (s1, s2))) (ffilter (\<lambda>(x, y). x < y) (all_pairs (S t)))"
 
 function merge_2 :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition_matrix option" and 
   resolve_nondeterminism :: "(nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat  \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix option" where
@@ -152,7 +184,23 @@ function merge_2 :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rig
 termination
   sorry
 
-definition hilbert_option :: "('a \<Rightarrow> bool) \<Rightarrow> 'a option" where
-  "hilbert_option f = (if {x. f x} = {} then None else Some (Eps f))"
- 
+fun inference_step :: "transition_matrix \<Rightarrow> (nat \<times> nat \<times> nat) list \<Rightarrow> transition_matrix option" where
+  "inference_step _ [] = None" |
+  "inference_step T ((s, s1, s2)#t) =
+                                (if s > 0 then
+                                   case merge_2 T s1 s2 of
+                                     Some new \<Rightarrow> Some new |
+                                     None \<Rightarrow> inference_step T t
+                                 else None)"
+
+function infer :: "transition_matrix \<Rightarrow> ranker \<Rightarrow> transition_matrix" where
+  "infer t r = (let ranking = rev (sorted_list_of_fset (score t r)) in
+case inference_step t ranking of None \<Rightarrow> t | Some new \<Rightarrow> infer new r)"
+  by auto
+termination
+  sorry
+
+definition learn :: "log \<Rightarrow> ranker \<Rightarrow> transition_matrix" where
+  "learn l r = infer (make_pta l {||}) r"
+
 end
