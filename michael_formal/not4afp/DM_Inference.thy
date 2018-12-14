@@ -594,15 +594,6 @@ proof-
     by simp
 qed
 
-lemma vend_nothing_doesnt_directly_subsume_vend: "\<not>directly_subsumes drinks2 1 vend_nothing vend"
-  apply (simp add: directly_subsumes_def vend_doesnt_subsume_vend_nothing_2 )
-  apply (rule_tac x="[(''select'', [Str ''coke''])]" in exI)
-  by (simp add: gets_us_to_def step_def possible_steps_0)
-
-lemma nondeterminsm_merge_1_3: "nondeterminism (merge_states 1 3 (merge_states 1 2 drinks2))"
-  apply (simp add: nondeterminism_def merge_1_3_2 nondeterministic_pairs_def )
-  using ffilter_all_pairs_2 merge_1_3 by auto
-
 lemma possible_steps_0_2: "(possible_steps (merge_states 1 2 drinks2) 0 Map.empty ''select'' [Str ''coke'']) = {|(1, select)|}"
 proof
   have set_filter: "(Set.filter
@@ -625,11 +616,29 @@ proof
   show "{|(1, select)|} |\<subseteq>| possible_steps (merge_states 1 2 drinks2) 0 Map.empty ''select'' [Str ''coke'']"
     by (simp add: merge_1_2 possible_steps_def ffilter_def set_filter abs_fset )             
 qed
-                                                                                
+
+lemma select_gets_us_to_1: "gets_us_to 1 (merge_states 1 2 drinks2) 0 Map.empty [(''select'', [Str ''coke''])]"
+  apply (rule gets_us_to.step_some)
+   apply (simp add: step_def possible_steps_0_2)
+  apply (rule gets_us_to.base)
+  by simp  
+
+lemma vend_nothing_doesnt_directly_subsume_vend: "\<not>directly_subsumes drinks2 1 vend_nothing vend"
+  apply (simp add: directly_subsumes_def vend_doesnt_subsume_vend_nothing_2 )
+  apply (rule_tac x="[(''select'', [Str ''coke''])]" in exI)
+  apply (rule gets_us_to.step_some)
+   apply (simp add: step_def possible_steps_0)
+  apply (rule gets_us_to.base)
+  by simp
+
+lemma nondeterminsm_merge_1_3: "nondeterminism (merge_states 1 3 (merge_states 1 2 drinks2))"
+  apply (simp add: nondeterminism_def merge_1_3_2 nondeterministic_pairs_def )
+  using ffilter_all_pairs_2 merge_1_3 by auto                   
+
 lemma vend_doesnt_directly_subsume_vend_nothing_2: "\<not>directly_subsumes (merge_states 1 2 drinks2) 1 vend_nothing vend"
   apply (simp add: directly_subsumes_def vend_doesnt_subsume_vend_nothing_2 )
   apply (rule_tac x="[(''select'', [Str ''coke''])]" in exI)
-  by (simp add: gets_us_to_def possible_steps_0_2 step_def )
+  by (simp add: select_gets_us_to_1)
 
 lemma vend_doesnt_directly_subsume_vend_nothing_3: "\<not> directly_subsumes (merge_states 1 2 drinks2) 1 vend vend_nothing"
 proof-
@@ -638,7 +647,7 @@ proof-
     apply (rule_tac x="[(''select'', [Str ''coke''])]" in exI)
   proof
     show "gets_us_to 1 (merge_states 1 2 drinks2) 0 Map.empty [(''select'', [Str ''coke''])]"
-      by (simp add: gets_us_to_def step_def possible_steps_0_2 )
+      by (simp add: select_gets_us_to_1)
     have medial_vend: "medial select_posterior (Guard vend) = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Eq (Num 0)) (Geq (Num 100))\<rbrakk>"
       apply (rule ext)
       by (simp add: transitions )
@@ -702,7 +711,12 @@ proof-
     have contra: "\<not>(\<exists>i. cval (\<lbrakk>\<rbrakk> r) i = Some True \<and> cval (\<lbrakk>\<rbrakk> r) i \<noteq> Some True)"
       by simp
     show "gets_us_to 2 drinks2 0 Map.empty [(''select'', [Str ''coke'']), (''coin'', [Num n])]"
-      by (simp add: gets_us_to_def possible_steps_0 possible_steps_1 step_def )
+      apply (rule gets_us_to.step_some)
+       apply (simp add: step_def possible_steps_0)
+      apply (rule gets_us_to.step_some)
+       apply (simp add: step_def possible_steps_1)
+      apply (rule gets_us_to.base)
+      by simp
     show "\<not> subsumes (anterior_context drinks2 [(''select'', [Str ''coke'']), (''coin'', [Num n])]) vend_fail vend_nothing"
       apply (simp add: anterior_context_def step_def possible_steps_0 )
       apply (simp add: subsumes_def guard_vend_nothing guard_vend_fail )
@@ -717,64 +731,7 @@ proof-
       apply (rule_tac x="Num 100" in exI)
       by simp
   qed
-qed
-
-lemma vend_nothing_directly_subsumes_vend_fail: "directly_subsumes drinks2 1 vend_nothing vend_fail"
-proof-
-  have "subsumes c vend_nothing vend_fail"
-    unfolding subsumes_def
-    apply safe
-  proof-
-    show "\<And>r i. cval (medial c (Guard vend_fail) r) i = Some True \<Longrightarrow> cval (medial c (Guard vend_nothing) r) i = Some True"
-      apply (simp add: guard_vend_fail guard_vend_nothing)
-      apply (case_tac "cval (c r) i")
-       apply simp
-      apply simp
-      apply (case_tac "cval (pairs2context (guard2pairs c (GExp.Lt (V (R 2)) (L (Num 100)))) r) i")
-       apply simp
-      by simp
-    show "\<And>i r. apply_guards (Guard vend_fail) (join_ir i r) \<Longrightarrow>
-           apply_outputs (Outputs vend_fail) (join_ir i r) = apply_outputs (Outputs vend_nothing) (join_ir i r)"
-      by (simp add: transitions)
-    show "\<And>r i. cval (posterior (medial c (Guard vend_fail)) vend_nothing r) i = Some True \<Longrightarrow>
-           posterior c vend_fail r \<noteq> Undef \<Longrightarrow> cval (posterior c vend_fail r) i = Some True"
-      apply (simp add: guard_vend_fail)
-      apply (simp add: posterior_def guard_vend_nothing Let_def)
-      apply (case_tac "consistent (\<lambda>r. and (c r) (pairs2context (guard2pairs c (GExp.Lt (V (R 2)) (L (Num 100)))) r))")
-       apply (simp add: vend_nothing_def vend_fail_def )
-       apply safe
-          apply (simp )
-         apply simp
-        apply (simp )
-        apply (case_tac "cval (c r) i")
-         apply simp
-        apply (simp )
-      by simp
-    have posterior_c_vend_nothing: "consistent c \<Longrightarrow> posterior c vend_nothing = c"
-      apply (rule ext)
-      by (simp add: posterior_def vend_nothing_def)
-    have inconsistent_c_posterior_vend_nothing: "\<not> consistent c \<Longrightarrow> \<not> consistent (posterior c vend_nothing)"
-      unfolding posterior_def
-      apply (simp add: vend_nothing_def)
-      by (simp add: consistent_def)
-    have "\<not> consistent c \<Longrightarrow> \<not> consistent (\<lambda>r. and (c r) (if r = V (R 2) then snd (V (R 2), cexp.Lt (Num 100)) else cexp.Bc True))"
-      unfolding consistent_def
-      apply simp
-      apply (rule allI)
-      apply (rule_tac x="V (R 2)" in exI)
-      apply simp
-      apply safe
-      sorry
-
-    show "consistent (posterior c vend_fail) \<Longrightarrow> consistent (posterior c vend_nothing)"
-      
-      sorry
-  qed
-  show ?thesis
-    unfolding directly_subsumes_def
-    apply clarify
-oops
-    
+qed    
 
 lemma finsert_vend_nothing: "finsert vend_nothing ({|vend_nothing, coin, vend_fail|} |-| {|vend_fail|}) = {|coin, vend_nothing|}"
   apply (simp add: transitions)
@@ -860,85 +817,6 @@ qed
   show ?thesis
     by (simp add: nondeterministic_pairs_def ffilter_def filter abs_fset )
 qed
-
-lemma vend_nothing_subsumes_vend_fail: "subsumes c vend_nothing vend_fail"
-proof-
-  have guard_implies_guard: "\<And>r i. cval (medial c (Guard vend_fail) r) i = Some True \<Longrightarrow> cval (medial c (Guard vend_nothing) r) i = Some True"
-    apply (simp add: guard_vend_fail guard_vend_nothing)
-    apply (case_tac "cval (c r) i")
-     apply simp
-    apply simp
-    apply (case_tac "r=V (R 2)")
-     apply simp
-    apply (case_tac "ValueLt (Some i) (Some (Num 100))")
-      apply simp
-     apply simp
-    by simp
-  have updates_consistent: "\<And>r i. cval (posterior (medial c (Guard vend_fail)) vend_nothing r) i = Some True \<Longrightarrow>
-           posterior c vend_fail r \<noteq> Undef \<Longrightarrow> cval (posterior c vend_fail r) i = Some True"
-    apply (simp add: guard_vend_fail)
-    unfolding posterior_def Let_def
-    apply (simp add: transitions )
-    apply (case_tac "consistent (\<lambda>r. and (c r) (if r = V (R 2) then snd (V (R 2), cexp.Lt (Num 100)) else cexp.Bc True))")
-     apply (simp add: transitions )
-     apply (case_tac "r = V (R 2)")
-      apply simp
-     apply (case_tac "r = V (R 1)")
-      apply simp
-     apply (simp )
-    by (simp )
-  have posterior_vend_nothing_consistent_c: "consistent c \<Longrightarrow>posterior c vend_nothing = c"
-    apply (rule ext)
-    by (simp add: posterior_def Let_def transitions )
-  have posterior_vend_nothing_inconsistent_c: "\<not> consistent c \<Longrightarrow> posterior c vend_nothing = (\<lambda>x. Bc False)"
-    by (simp add: posterior_def Let_def transitions)
-  have inconsistent_false: "\<not>consistent (\<lambda>x. cexp.Bc False)"
-    by (simp add: consistent_def)
-  have inconsistent_false_element: "\<exists> i. cexp.Bc False = c i \<Longrightarrow> \<not> consistent c"
-    apply (simp add: consistent_def)
-    apply clarify
-    apply (rule_tac x=i in exI)
-    by (metis cexp.distinct(1) cexp2gexp.simps(1) gval.simps(1) option.inject)
-  have consistent_no_false_elements: "consistent c \<Longrightarrow> \<forall> i. \<not> cexp.Bc False = c i"
-    apply (simp add: consistent_def)
-    using consistent_def inconsistent_false_element by blast
-  have posterior_simp: "(\<lambda>r. if r = V (R 2) then and (c (V (R 2))) (cexp.Lt (Num 100)) else if r = V (R 1) then c (V (R 1)) else c r) = 
-(\<lambda>r. if r = V (R 2) then and (c (V (R 2))) (cexp.Lt (Num 100)) else c r)"
-    apply (rule ext)
-    by simp
-  have medial_simp: "(\<lambda>r. and (c r) (if r = V (R 2) then snd (V (R 2), cexp.Lt (Num 100)) else cexp.Bc True)) = 
-                     (\<lambda>r. if r = V (R 2) then and (c (V (R 2))) (cexp.Lt (Num 100)) else c r)"
-    apply (rule ext)
-    by simp
-  have consistent_posteriors: "consistent (posterior c vend_fail) \<Longrightarrow> consistent (posterior c vend_nothing)"
-    apply (case_tac "consistent c")
-     apply (simp add: posterior_vend_nothing_consistent_c)
-    apply (simp add: posterior_vend_nothing_inconsistent_c inconsistent_false)
-    apply (simp add: posterior_def Let_def guard_vend_fail)
-    apply (case_tac "consistent (\<lambda>r. and (c r) (if r = V (R 2) then snd (V (R 2), cexp.Lt (Num 100)) else cexp.Bc True))")
-     apply (simp add: transitions posterior_simp medial_simp )
-     defer
-     apply (simp add: inconsistent_false)
-    sorry
-  show ?thesis
-    unfolding subsumes_def
-    apply safe
-       apply (simp add: guard_implies_guard)
-      apply (simp add: outputs_vend_fail outputs_vend_nothing)
-     apply (simp add: updates_consistent)
-    by (simp add: consistent_posteriors)
-qed
-
-lemma vend_nothing_directly_subsumes_vend_fail: "directly_subsumes drinks2 2 vend_nothing vend_fail"
-proof-
-  show ?thesis
-    unfolding directly_subsumes_def
-    using vend_nothing_subsumes_vend_fail
-    by simp
-qed
-
-lemma vend_nothing_directly_subsumes_vend_fail_1: "directly_subsumes drinks2 1 vend_nothing vend_fail"
-  by (simp add: directly_subsumes_def vend_nothing_subsumes_vend_fail)
 
 lemma finsert_vend_nothing_1: "finsert ((1, 1), vend_nothing)
      (ffilter (\<lambda>x. x \<noteq> ((1, 1), vend_fail))
@@ -1101,10 +979,81 @@ next
     by (simp add: coin_step)
 qed
 
+lemma posterior_vend_nothing_cons: "posterior_sequence select_posterior drinks2 1 <R 1 := hd bb, R 2 := Num 0> ((''vend'', []) # xs) =
+posterior_sequence select_posterior drinks2 1 <R 1 := hd bb, R 2 := Num 0> xs"
+proof-
+  have updates: "(EFSM.apply_updates (Updates vend_nothing) (case_vname Map.empty (\<lambda>n. if n = 2 then Some (Num 0) else <R 1 := hd bb> (R n)))
+       <R 1 := hd bb, R 2 := Num 0>) = <R 1 := hd bb, R 2 := Num 0>"
+    apply (rule ext)
+    by (simp add: vend_nothing_def)
+  show ?thesis
+  apply simp
+  apply (simp add: step_def drinks2_vend_insufficient)
+    by (simp add: vend_nothing_posterior updates)
+qed
+
+lemma vend_nothing_does_nothing: "gets_us_to 1 drinks2 1 <R 1 := hd bb, R 2 := Num 0> ((''vend'', []) # x) = gets_us_to 1 drinks2 1 <R 1 := hd bb, R 2 := Num 0> x"
+proof
+  have updates: "EFSM.apply_updates (Updates vend_nothing)
+        (case_vname Map.empty (\<lambda>n. if n = 2 then Some (Num 0) else <R 1 := hd bb> (R n))) <R 1 := hd bb, R 2 := Num 0> = <R 1 := hd bb, R 2 := Num 0>"
+    apply (rule ext)
+    by (simp add: vend_nothing_def)
+  show " gets_us_to 1 drinks2 1 <R 1 := hd bb, R 2 := Num 0> ((''vend'', []) # x) \<Longrightarrow>
+    gets_us_to 1 drinks2 1 <R 1 := hd bb, R 2 := Num 0> x"
+    apply (rule gets_us_to.cases)
+       apply simp
+      apply simp
+     apply clarify
+     apply (simp add: step_def drinks2_vend_insufficient outputs_vend_nothing updates)
+    apply clarify
+    by (simp add: step_def drinks2_vend_insufficient)
+  show "gets_us_to 1 drinks2 1 <R 1 := hd bb, R 2 := Num 0> x \<Longrightarrow>
+    gets_us_to 1 drinks2 1 <R 1 := hd bb, R 2 := Num 0> ((''vend'', []) # x)"
+    apply (rule gets_us_to.step_some)
+     apply (simp add: step_def drinks2_vend_insufficient outputs_vend_nothing updates)
+    by simp
+qed
+
+lemma coin_takes_us_away: "gets_us_to 1 drinks2 1 <R 1 := hd bb, R 2 := Num 0> (x # xs) \<Longrightarrow> fst x = ''coin'' \<and> length (snd x) = 1 \<Longrightarrow> False"
+  apply (rule gets_us_to.cases)
+     apply simp
+    apply simp
+   apply clarify
+   apply (simp add: step_def possible_steps_1)
+  using no_route_from_2_to_1
+   apply simp
+  apply simp
+  by (simp add: step_def possible_steps_1)
+
+lemma test: "\<And>bb a b.
+       gets_us_to 1 drinks2 1 <R 1 := hd bb, R 2 := Num 0> ((''vend'', []) # list) \<Longrightarrow>
+       length bb = 1 \<Longrightarrow>
+       a = ''vend'' \<and> b = [] \<Longrightarrow>
+       posterior_sequence select_posterior drinks2 1 <R 1 := hd bb, R 2 := Num 0> list = select_posterior"
+proof (induct list)
+case Nil
+  then show ?case by simp
+next
+  case (Cons x xs)
+  then show ?case
+    apply clarify
+    apply (case_tac "x = (''vend'', [])")
+     apply (simp only: vend_nothing_does_nothing posterior_vend_nothing_cons)
+    apply (case_tac "fst x = ''coin'' \<and> length (snd x) = 1")
+     apply (simp only: vend_nothing_does_nothing)
+     apply simp
+    using coin_takes_us_away
+     apply blast
+    apply simp
+    by (simp add: drinks2_1_invalid step_def)
+qed
+
 lemma vend_fail_directly_subsumes_vend_nothing_1: "(directly_subsumes drinks2 1 vend_fail vend_nothing)"
 proof-
   have empty: "\<not>gets_us_to 1 drinks2 0 Map.empty []"
-    sorry
+    apply safe
+    apply (rule gets_us_to.cases)
+    by auto
   have gets_us_to_1: "\<forall>p. gets_us_to 1 drinks2 0 Map.empty p \<longrightarrow> (anterior_context drinks2 p) = select_posterior"
     apply (rule allI)
     apply (case_tac p)
@@ -1147,11 +1096,8 @@ proof-
      apply clarify
      apply (simp add: coin_updates_1 posterior_coin_first no_more_coins)
      apply (simp add: step_def drinks2_vend_insufficient apply_updates_vend_nothing vend_nothing_posterior)
-
-
-
-
-    sorry
+    using test
+    by auto
   show ?thesis
     apply (simp add: directly_subsumes_def)
     by (simp add: gets_us_to_1 vend_fail_subsumes_vend_nothing)
