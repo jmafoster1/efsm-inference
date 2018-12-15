@@ -81,6 +81,9 @@ definition state :: "(transition \<times> nat \<times> outputs \<times> datastat
 definition observe_trace :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> observation" where
   "observe_trace e s r t \<equiv> map (\<lambda>(t,x,y,z). y) (observe_all e s r t)"
 
+lemma observe_empty: "t = [] \<Longrightarrow> observe_trace e 0 <> t = []"
+  by (simp add: observe_trace_def)
+
 definition state_trace :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> nat list" where
   "state_trace e s r t \<equiv> map (\<lambda>(t,x,y,z). x) (observe_all e s r t)"
 

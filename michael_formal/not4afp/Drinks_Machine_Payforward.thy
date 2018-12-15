@@ -1,5 +1,5 @@
 theory Drinks_Machine_Payforward
-  imports Drinks_Machine
+  imports "../examples/Drinks_Machine"
 begin
 
 (* This version of drinks_machine supercedes all of those before 03/04/18 *)
@@ -14,7 +14,8 @@ definition "setup" :: "transition" where
         Updates = [(R 2, (L (Num 0)))]
       \<rparr>"
 
-definition "select1 \<equiv> \<lparr>
+definition "select" :: transition where
+"select \<equiv> \<lparr>
         Label = ''select'',
         Arity = 1,
         Guard = [], (* No guards *)
@@ -37,83 +38,41 @@ definition vend :: "transition" where
                   ]
       \<rparr>"
 
-definition drinks :: "statename efsm" where
-"drinks \<equiv> \<lparr> 
-          s0 = q1,
-          T = \<lambda> (a,b) .
-                   if (a,b) = (q1,q2) then {setup} (* If we want to go from state 1 to state 2 then select will do that *)
-              else if (a,b) = (q2,q3) then {select1} (* If we want to go from state 2 to state 2 then coin will do that *)
-              else if (a,b) = (q3,q3) then {coin} (* If we want to go from state 2 to state 3 then drinks will do that *)
-              else if (a,b) = (q3,q2) then {vend} (* If we want to go from state 2 to state 3 then drinks will do that *)
-              else {} (* There are no other transitions *)
-         \<rparr>"
+definition drinks :: transition_matrix where
+"drinks \<equiv> {|
+             ((0,1), setup),  (* If we want to go from state 0 to state 1 then select will do that *)
+             ((1,2), select), (* If we want to go from state 1 to state 2 then coin will do that *)
+             ((2,2), coin),   (* If we want to go from state 2 to state 2 then drinks will do that *)
+             ((2,1), vend)    (* If we want to go from state 2 to state 1 then drinks will do that *)
+         |}"
 
-lemma s0_drinks [simp]: "s0 drinks = q1"
-  by (simp add: drinks_def)
+lemmas transitions = select_def coin_def vend_def setup_def
 
-lemmas transitions = select1_def coin_def vend_def setup_def
+lemma possible_steps_0: "possible_steps drinks 0 Map.empty ''setup'' [] = {|(1, setup)|}"
+  apply (simp add: possible_steps_def drinks_def transitions)
+  by force
 
-lemma label_setup_q2: "Label b = ''setup'' \<Longrightarrow> b \<in> T drinks (q1, a) \<Longrightarrow> b = setup \<and> a = q2"
-  apply (simp add: drinks_def)
-  apply (cases a)
-  by simp_all
+lemma possible_steps_1: "possible_steps drinks 1 d ''select'' [Str s] = {|(2, select)|}"
+  apply (simp add: possible_steps_def drinks_def transitions)
+  by force
 
-lemma possible_steps_q1: "possible_steps drinks q1 Map.empty ''setup'' [] = {(q2, setup)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-       apply (simp add: label_setup_q2)
-      apply (simp add: label_setup_q2)
-     apply (simp add: setup_def)
-    apply (simp add: drinks_def)
-   apply (simp add: setup_def)
-  by (simp add: setup_def)
+lemma possible_steps_2_coin: "possible_steps drinks 2 d ''coin'' [Num n] = {|(2, coin)|}"
+  apply (simp add: possible_steps_def drinks_def transitions)
+  by force
 
-lemma possible_steps_q2: "possible_steps drinks q2 d ''select'' [Str s] = {(q3, select1)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-  apply (case_tac a)
-          apply (simp add: drinks_def)
-         apply (simp add: drinks_def)
-        apply (simp add: drinks_def)
-       apply (simp add: drinks_def)
-      apply (case_tac a)
-  by (simp_all add: drinks_def select1_def)
+lemma possible_steps_2_vend: "r (R 2) = Some (Num n) \<Longrightarrow> n \<ge> 100 \<Longrightarrow> possible_steps drinks 2 r ''vend'' [] = {|(1, vend)|}"
+  apply (simp add: possible_steps_def drinks_def transitions)
+  by force
 
-lemma possible_steps_q3_coin: "possible_steps drinks q3 d ''coin'' [Num n] = {(q3, coin)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-       apply (case_tac a)
-          apply (simp add: drinks_def)
-         apply (simp add: drinks_def)
-        apply (simp add: drinks_def)
-        apply (metis (no_types, lifting) Drinks_Machine_Payforward.vend_def One_nat_def one_neq_zero transition.simps(2))
-       apply (case_tac a)
-          apply (simp add: drinks_def)
-         apply (simp add: drinks_def)
-        apply (simp add: drinks_def)
-       apply (simp add: drinks_def)
-      apply (simp add: drinks_def)
-      apply (metis (no_types, lifting) Drinks_Machine_Payforward.vend_def One_nat_def empty_iff one_neq_zero singletonD transition.simps(2))
-  by (simp_all add: coin_def drinks_def)
+declare One_nat_def [simp del]
 
-lemma possible_steps_q3_vend: "r (R 2) = Some (Num n) \<Longrightarrow> n \<ge> 100 \<Longrightarrow> possible_steps drinks q3 r ''vend'' [] = {(q2, vend)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-       apply (case_tac a)
-          apply (simp add: drinks_def)
-         apply (simp add: drinks_def)
-        apply (simp add: drinks_def)
-       apply (simp add: drinks_def coin_def)
-      apply (case_tac a)
-  by (simp_all add: drinks_def coin_def vend_def)
-
-lemma "observe_trace drinks (s0 drinks) <> [(''setup'', []), (''select'', [Str ''coke'']), (''coin'',[Num 110]), (''vend'', []), (''select'', [Str ''pepsi'']), (''coin'',[Num 90]), (''vend'', [])] = [[],[],[Num 110],[Str ''coke''],[],[Num 100],[Str ''pepsi'']]"
-  apply (simp add: possible_steps_q1 setup_def del: One_nat_def)
-  apply (simp add: possible_steps_q2 select1_def del: One_nat_def)
-  apply (simp add: possible_steps_q3_coin coin_def del: One_nat_def)
-  apply (simp add: possible_steps_q3_vend vend_def del: One_nat_def)
-  apply (simp add: possible_steps_q2 select1_def del: One_nat_def)
-  apply (simp add: possible_steps_q3_coin coin_def del: One_nat_def)
-  by (simp add: possible_steps_q3_vend vend_def del: One_nat_def)
-
+lemma "observe_trace drinks 0 <> [(''setup'', []), (''select'', [Str ''coke'']), (''coin'',[Num 110]), (''vend'', []), (''select'', [Str ''pepsi'']), (''coin'',[Num 90]), (''vend'', [])] = [[],[],[Num 110],[Str ''coke''],[],[Num 100],[Str ''pepsi'']]"
+  unfolding observe_trace_def observe_all_def step_def
+  apply (simp add: possible_steps_0 setup_def)
+  apply (simp add: possible_steps_1 select_def)
+  apply (simp add: possible_steps_2_coin coin_def)
+  apply (simp add: possible_steps_2_vend vend_def)
+  apply (simp add: possible_steps_1 select_def)
+  apply (simp add: possible_steps_2_coin coin_def)
+  by (simp add: possible_steps_2_vend vend_def)
 end

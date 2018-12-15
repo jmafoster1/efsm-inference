@@ -110,6 +110,9 @@ definition valid :: "cexp \<Rightarrow> bool" where (* Is cexp "c" satisfied und
 definition satisfiable :: "cexp \<Rightarrow> bool" where (* Is there some value of "i" which satisfies "c"? *)
   "satisfiable v \<equiv> (\<exists>i. cval v i = Some True)"
 
+lemma valid_implies_satisfiable: "valid c \<Longrightarrow> satisfiable c"
+  by (simp add: valid_def satisfiable_def)
+
 fun compose_plus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "compose_plus x y = (if satisfiable x \<and> satisfiable y then (if valid x \<or> valid y then Bc True else (case (x, y) of
   ((Eq v), (Eq va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Eq c') |
@@ -358,10 +361,13 @@ lemma satisfiable_gt: "satisfiable (Gt (Num x4))"
 lemma unsatisfiable_gt: "\<not> satisfiable (Gt (Str s))"
   by (simp add: satisfiable_def)
 
-lemma satisfiable_true: "satisfiable (Bc True)"
+lemma satisfiable_true[simp]: "satisfiable (Bc True)"
   by (simp add: satisfiable_def)
 
-lemma unsatisfiable_false: "\<not> satisfiable (Bc False)"
+lemma valid_true[simp]: "valid (Bc True)"
+  by (simp add: valid_def)
+
+lemma unsatisfiable_false[simp]: "\<not> satisfiable (Bc False)"
   by (simp add: satisfiable_def)
 
 lemma satisfiable_not_undef: "satisfiable (Not (Undef))"

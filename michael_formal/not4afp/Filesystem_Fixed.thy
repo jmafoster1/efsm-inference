@@ -7,7 +7,7 @@ definition "write" :: "transition" where
 "write \<equiv> \<lparr>
         Label = ''write'',
         Arity = 1,
-        Guard = [((V (R 1)) = (V (R 3)))], (* No guards *)
+        Guard = [gexp.Eq (V (R 1)) (V (R 3))], (* No guards *)
         Outputs = [],
         Updates = [
                     (R 1, (V (R 1))), (* Value of r1 remains unchanged *)
@@ -47,119 +47,64 @@ lemma guard_write_fail: "Guard write_fail = [(Ne (V (R 3)) (V (R 1)))]"
   by (simp add: write_fail_def)
 
 text_raw{*\snip{filesystem}{1}{2}{%*}
-definition filesystem :: "statename efsm" where
-"filesystem \<equiv> \<lparr>
-          s0 = q1,
-          T = \<lambda> (a,b) .
-              if (a,b) = (q1,q2) then {login}
-              else if (a,b) = (q2,q1) then {logout}
-              else if (a,b) = (q2,q2) then {write, read_success, read_fail, write_fail, create}
-              else {}
-         \<rparr>"
+definition filesystem :: "transition_matrix" where
+"filesystem \<equiv> {|
+              ((0,1), login),
+              ((1,0), logout),
+              ((1,1), write),
+              ((1,1), read_success),
+              ((1,1), read_fail),
+              ((1,1), write_fail),
+              ((1,1), create)
+         |}"
 text_raw{*}%endsnip*}
-
-lemma s0_filesystem: "s0 filesystem = q1"
-  by (simp add: filesystem_def)
 
 (* export_code filesystem in "Scala" *)
 
+declare One_nat_def [simp del]
+
 lemmas fs_simp = filesystem_def login_def logout_def write_def read_success_def read_fail_def write_fail_def create_def
 
-lemma label_login_q2: "Label t = ''login'' \<and> t \<in> T filesystem (q1, s') \<Longrightarrow> t = login \<and> s' = q2"
-  apply (simp add: filesystem_def)
-  apply (cases s')
-   apply simp
-  by simp
+lemma possible_steps_0: "possible_steps Filesystem_Fixed.filesystem 0 r ''login'' [u] = {|(1, login)|}"
+  apply (simp add: possible_steps_def fs_simp)
+  by force
 
-lemma possible_steps_q1: "possible_steps Filesystem_Fixed.filesystem q1 r ''login'' [u] = {(q2, login)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-       apply (simp add: label_login_q2)
-      apply (simp add: label_login_q2)
-     apply (simp add: login_def)
-    apply (simp add: filesystem_def)
-   apply (simp add: login_def)
-  by (simp add: login_def)
+lemma possible_steps_1_create: "possible_steps filesystem 1 <R 1 := Str ''user''> ''create'' [] = {|(1, create)|}"
+  apply (simp add: possible_steps_def fs_simp)
+  by force
 
-lemma apply_updates_login [simp]: "(apply_updates (Updates login) (case_vname (\<lambda>n. if n = 1 then Some u else input2state [] (1 + 1) (I n)) Map.empty) Map.empty) = <R 1 := u>"
-  apply (rule ext)
-  by (simp add: login_def)
+lemma possible_steps_1_write:  "possible_steps Filesystem_Fixed.filesystem 1 <R 1 := Str ''user'', R 3 := Str ''user''> ''write'' [Num 50] = {|(1, write)|}"
+  apply (simp add: possible_steps_def fs_simp)
+  by force
 
-lemma label_create_q2: " Label b = ''create'' \<Longrightarrow> b \<in> T Filesystem_Fixed.filesystem (q2, a) \<Longrightarrow> b = create \<and> a = q2"
-  apply (simp add: filesystem_def)
-  apply (cases a)
-   apply (simp add: logout_def)
-  apply (simp add: fs_simp)
-  by auto
+lemma possible_steps_1_read: "possible_steps Filesystem_Fixed.filesystem 1 <R 1 := u, R 2 := c, R 3 := u> ''read'' [] = {|(1, read_success)|}"
+  apply (simp add: possible_steps_def fs_simp)
+  by force
 
-lemma possible_steps_q2_create: "possible_steps filesystem q2 <R 1 := Str ''user''> ''create'' [] = {(q2, create)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-       apply (simp add: label_create_q2)
-      apply (simp add: label_create_q2)
-     apply (simp add: create_def)
-    apply (simp add: filesystem_def)
-  by (simp_all add: create_def)
-
-lemma apply_updates_create [simp]: "(apply_updates (Updates create) (case_vname Map.empty (\<lambda>n. if n = 1 then Some u else None)) <R 1 := Str ''user''>) = <R 1 := u, R 3 := u>"
-  apply (rule ext)
-  by (simp add: create_def)
-
-lemma label_write_q2: "Label t = ''write'' \<and> t \<in> T filesystem (q2, s') \<Longrightarrow> (t = write \<or> t = write_fail) \<and> s' = q2"
-  apply (simp add: filesystem_def)
-  apply (cases s')
-   apply (simp add: logout_def)
-   apply auto[1]
-  apply (simp add: fs_simp)
-  by auto
-
-lemma possible_steps_q2_write:  "possible_steps Filesystem_Fixed.filesystem q2 <R 1 := Str ''user'', R 3 := Str ''user''> ''write'' [Num 50] = {(q2, write)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-       apply (simp add: label_write_q2)
-      apply (case_tac "b = write")
-       apply simp
-      apply (case_tac "b = write_fail")
-       apply (simp add: arity_write_fail guard_write_fail)
-      using label_write_q2 apply blast
-     apply (simp add: write_def)
-    apply (simp add: filesystem_def)
-      by (simp_all add: write_def)
-
-lemma apply_updates_write : "(apply_updates (Updates Filesystem_Fixed.write)
-          (case_vname (\<lambda>n. if n = 1 then Some c else input2state [] (1 + 1) (I n)) (\<lambda>n. if n = 3 then Some u else <R 1 := u> (R n)))
-          <R 1 := u, R 3 := u>) = < R 1 := u, R 2 := c, R 3 := u>"
-  apply (rule ext)
-  by (simp add: write_def)
-
-lemma label_read_q2: "b \<in> T filesystem (q2, a) \<Longrightarrow> Label b = ''read'' \<Longrightarrow> a = q2 \<and> (b = read_success \<or> b = read_fail)"
-  apply (simp add: filesystem_def)
-  apply (cases a)
-   apply (simp add: logout_def)
-  apply safe
-  apply simp
-  apply (simp add: fs_simp)
-  by auto
-
-lemma possible_steps_q2_read: "possible_steps Filesystem_Fixed.filesystem q2 <R 1 := u, R 2 := c, R 3 := u> ''read'' [] = {(q2, read_success)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-       apply (simp add: label_read_q2)
-      apply (simp add: label_read_q2)
-      apply (case_tac "b = read_success")
-       apply simp
-      apply (case_tac "b = read_fail")
-       apply simp
-       apply (simp add: read_fail_def)
-       using label_read_q2 apply blast
-          apply (simp add: read_success_def)
-         apply (simp add: filesystem_def)
-       by (simp_all add: read_success_def)
-
-lemma "observe_trace filesystem (s0 filesystem) <> [(''login'', [Str ''user'']), (''create'', []), (''write'', [Num 50]), (''read'', [])] = [[], [], [], [Num 50]]"
-  apply (simp add: possible_steps_q1 possible_steps_q2_create possible_steps_q2_write s0_filesystem del: One_nat_def)
-  apply (simp only: apply_updates_write possible_steps_q2_read)
-  by (simp add: fs_simp)
+lemma "observe_trace filesystem 0 <> [(''login'', [Str ''user'']), (''create'', []), (''write'', [Num 50]), (''read'', [])] = [[], [], [], [Num 50]]"
+proof-
+  have updates_login: "(EFSM.apply_updates (Updates login)
+          (case_vname (\<lambda>n. if n = 1 then Some (Str ''user'') else input2state [] (1 + 1) (I n)) Map.empty) Map.empty) = <R 1 := Str ''user''>"
+    apply (rule ext)
+    by (simp add: login_def)
+  have updates_create: "(EFSM.apply_updates (Updates create) (case_vname Map.empty (\<lambda>n. if n = 1 then Some (Str ''user'') else None))
+          <R 1 := Str ''user''>) = <R 1 := Str ''user'', R 3 := Str ''user''>"
+    apply (rule ext)
+    by (simp add: create_def)
+  have updates_write: " (EFSM.apply_updates (Updates Filesystem_Fixed.write)
+          (case_vname (\<lambda>n. if n = 1 then Some (Num 50) else input2state [] (1 + 1) (I n))
+            (\<lambda>n. if n = 3 then Some (Str ''user'') else <R 1 := Str ''user''> (R n)))
+          <R 1 := Str ''user'', R 3 := Str ''user''>) = <R 1 := Str ''user'', R 2 := Num 50, R 3 := Str ''user''>"
+    apply (rule ext)
+    by (simp add: write_def)
+  show ?thesis
+    unfolding observe_trace_def observe_all_def step_def
+    apply (simp add: possible_steps_0 updates_login)
+    apply (simp add: possible_steps_1_create updates_create)
+    apply (simp add: possible_steps_1_write)
+    apply (simp only: updates_write possible_steps_1_read)
+    by (simp add: fs_simp)
+qed
 
 (* step :: efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename \<times> outputs \<times> registers) option *)
 (* observe_trace :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> observation" where *)
@@ -170,99 +115,68 @@ lemma r_equals_r [simp]: "<R 1:=user, R 2:=content, R 3:=owner> = (\<lambda>a. i
   apply (rule ext)
   by simp
 
-lemma possible_steps_q2_read_fail: "owner \<noteq> user \<Longrightarrow> possible_steps Filesystem_Fixed.filesystem q2 <R (Suc 0) := user, R 2 := content, R 3 := owner> ''read'' [] = {(q2, read_fail)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-       apply (simp add: label_read_q2)
-      apply (simp add: label_read_q2)
-      apply (case_tac "b = read_fail")
-       apply simp
-      apply (case_tac "b = read_success")
-       apply (simp add: read_success_def)
-       using label_read_q2 apply blast
-     apply (simp add: read_fail_def)
-    apply (simp add: filesystem_def)
-  by (simp_all add: read_fail_def)
+lemma possible_steps_1_read_fail: "r (R 3) = Some owner \<and> r (R 1) = Some user \<and> owner \<noteq> user \<Longrightarrow> possible_steps Filesystem_Fixed.filesystem 1 r ''read'' [] = {|(1, read_fail)|}"
+  apply (simp add: possible_steps_def fs_simp)
+  by force
 
 lemma read_2:  " r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
-    step filesystem q2 r ''read'' [] = Some (q2, [Str ''accessDenied''], r)"
-  apply (simp add: possible_steps_q2_read_fail read_fail_def)
+    step filesystem 1 r ''read'' [] = Some (read_fail, 1, [Str ''accessDenied''], r)"
+  apply (simp add: step_def possible_steps_1_read_fail)
+  apply (simp add: read_fail_def)
   apply (rule ext)
   by simp
 
-lemma label_logout_q1: "Label b = ''logout'' \<Longrightarrow> b \<in> T Filesystem_Fixed.filesystem (q2, a) \<Longrightarrow> b = logout \<and> a = q1"
-  apply (simp add: filesystem_def)
-  apply (cases a)
-   apply simp
-  apply (simp add: fs_simp)
-  by auto
+lemma possible_steps_1_logout:  "possible_steps Filesystem_Fixed.filesystem 1 r ''logout'' [] = {|(0, logout)|}"
+  apply (simp add: possible_steps_def fs_simp)
+  by force
 
-lemma possible_steps_q2_logout:  "possible_steps Filesystem_Fixed.filesystem q2 r ''logout'' [] = {(q1, logout)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-       apply (simp add: label_logout_q1)
-      apply (simp add: label_logout_q1)
-     prefer 2
-  apply (simp add: filesystem_def)
-  by (simp_all add: logout_def)
-
-lemma logout_2:  "step filesystem q2 r ''logout'' [] = Some (q1, [], r)"
-  apply (simp add: possible_steps_q2_logout logout_def)
+lemma logout_2:  "step filesystem 1 r ''logout'' [] = Some (logout, 0, [], r)"
+  unfolding step_def
+  apply (simp add: possible_steps_1_logout)
+  apply (simp add: logout_def)
   apply (rule ext)
   by simp
 
-abbreviation one_or_2 :: "statename full_observation \<Rightarrow> bool" where
-  "one_or_2 s \<equiv> ((statename (shd s)) = Some q1 \<or> (statename (shd s)) = Some q2)"
+abbreviation one_or_2 :: "full_observation \<Rightarrow> bool" where
+  "one_or_2 s \<equiv> ((statename (shd s)) = Some 0 \<or> (statename (shd s)) = Some 1)"
 
 lemma one_or_2_some: "one_or_2 s \<Longrightarrow> some_state s"
   by auto
 
-lemma filesystem_states: "S filesystem = {q1, q2}"
+lemma filesystem_states: "S filesystem = {|0, 1|}"
   apply (simp add: fs_simp S_def)
   by auto
 
-lemma states_1_2: "some_state (make_full_observation Filesystem_Fixed.filesystem s r i ) = one_or_2 (make_full_observation Filesystem_Fixed.filesystem s r i )"
-  apply (case_tac s)
-   apply simp
-  apply simp
-  using statename.exhaust by blast
+lemma states_1_2: "s = Some s' \<Longrightarrow> s' |\<in>| S filesystem \<Longrightarrow> some_state (make_full_observation Filesystem_Fixed.filesystem s r i ) = one_or_2 (make_full_observation Filesystem_Fixed.filesystem s r i )"
+  by (simp add: filesystem_states)
 
-lemma start_in_1: "one_or_2 ( make_full_observation Filesystem_Fixed.filesystem (Some q1) <> i )"
+lemma start_in_1: "one_or_2 ( make_full_observation Filesystem_Fixed.filesystem (Some 0) <> i )"
   by (simp add: filesystem_def)
 
-lemma fs_some_until_null: "(some_state until null) (make_full_observation filesystem (Some (s0 filesystem)) <> i)"
+lemma fs_some_until_null: "(some_state until null) (make_full_observation filesystem (Some 0) <> i)"
   by (simp add: some_until_none)
 
-abbreviation label_not_logout :: "statename property" where
+abbreviation label_not_logout :: "property" where
   "label_not_logout s \<equiv> (label (shd s) \<noteq> ''logout'')"
 
-abbreviation label_logout :: "statename property" where
+abbreviation label_logout :: "property" where
   "label_logout s \<equiv> (label (shd s) = ''logout'')"
 
-abbreviation label_create :: "statename property" where
+abbreviation label_create :: "property" where
   "label_create s \<equiv> (label (shd s) = ''create'')"
 
-abbreviation read_0 :: "statename property" where
+abbreviation read_0 :: "property" where
   "read_0 s \<equiv> (label (shd s)=''read'' \<longrightarrow> output (shd s)=[Str ''accessDenied''])"
 
-abbreviation login_attacker :: "statename property" where
+abbreviation login_attacker :: "property" where
   "login_attacker s \<equiv> (event (shd s) = (''login'',  [Str ''attacker'']))"
 
-abbreviation login_user :: "statename property" where
+abbreviation login_user :: "property" where
   "login_user s \<equiv> (event (shd s) = (''login'',  [Str ''user'']))"
 
 lemma "login_user (watch filesystem i) \<Longrightarrow> shd i = (''login'', [Str ''user''])"
   by simp
-
-lemma possible_steps_q1_select: "(possible_steps filesystem q1 r ''login'' [Str ''user'']) = {(q2, login)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-       apply (simp add: filesystem_def)
-  using prod.inject apply fastforce
-       apply (simp add: filesystem_def)
-      apply (metis empty_iff prod.inject singletonD)
-  by (simp_all add: filesystem_def login_def)
 
 lemma logout_label:  "t = logout \<Longrightarrow> Label t = ''logout''"
   by (simp add: logout_def)
@@ -270,91 +184,18 @@ lemma logout_label:  "t = logout \<Longrightarrow> Label t = ''logout''"
 lemma create_label:  "t = create \<Longrightarrow> Label t = ''create''"
   by (simp add: create_def)
 
-lemma r2_none_read_fail: "r (R 2) = None \<Longrightarrow> Label t = ''read'' \<and> t \<in> T Filesystem_Fixed.filesystem (q2, s') \<and> apply_guards (Guard t) (join_ir [] r) \<Longrightarrow> t = read_fail \<and> s' = q2"
-  apply (simp add: filesystem_def)
-  apply (cases s')
-   apply simp
-  using logout_label apply fastforce
-  apply simp
-  apply (case_tac "t = write")
-  apply (simp add: write_def)
-  apply (case_tac "t = read_success")
-   apply (simp add: read_success_def)
-  apply (case_tac "t = read_fail")
-   apply simp
-  apply (case_tac "t = write_fail")
-   apply (simp add: write_fail_def)
-  using create_label by force
-
-lemma every_event_step: "\<forall>s r. \<exists>e. fst (ltl_step filesystem (Some s) r e) \<noteq> None"
-  apply (rule allI, rule allI)
-  apply (case_tac s)
-   apply (rule_tac x="(''login'', [Str ''user''])" in exI)
-   apply simp
-   apply (simp add: possible_steps_q1_select)
-  apply (rule_tac x="(''read'', [])" in exI)
-  apply simp
+lemma every_event_step: "\<forall>s r.  s |\<in>| S filesystem \<longrightarrow> (\<exists>e. fst (ltl_step filesystem (Some s) r e) \<noteq> None)"
   apply safe
-   apply (rule_tac x=q2 in exI)
-   apply (case_tac "the_elem (possible_steps Filesystem_Fixed.filesystem q2 r ''read'' [])")
+  apply (simp only: "filesystem_states")
+  apply (case_tac "s = 0")
    apply simp
-   apply (simp add: is_singleton_def)
-   apply (simp add: possible_steps_def)
-   apply safe[1]
-   apply (simp add: label_read_q2)
-  using label_read_q2 apply blast
-  apply (simp add: is_singleton_def)
-  apply (rule_tac x=q2 in exI)
-  apply (simp add: possible_steps_def)
-  apply (case_tac "r (R 2) = None")
-   apply (rule_tac x=read_fail in exI)
-   apply safe[1]
-        apply (simp add: label_read_q2)
-  using r2_none_read_fail apply blast
-      apply (simp add: read_fail_def)
-     apply (simp add: filesystem_def)
-  apply (simp add: read_fail_def)
-   apply (simp add: read_fail_def)
-  apply (case_tac "r (R 1) = r (R 3)")
-   apply (simp del: One_nat_def)
-   apply (rule_tac x=read_success in exI)
-   apply safe[1]
-  using label_read_q2 apply blast
-       apply simp
-       apply (case_tac a)
-        apply (simp add: filesystem_def logout_def read_success_def)
-       apply (simp add: filesystem_def)
-       apply (case_tac "b = write")
-        apply (simp add: write_def)
-       apply (case_tac "b = read_success")
-        apply simp
-       apply (case_tac "b = read_fail")
-        apply (simp add: read_fail_def)
-       apply (case_tac "b = write_fail")
-        apply (simp add: write_fail_def)
-       apply (simp add: create_def)
-      apply (simp add: read_success_def)
-     apply (simp add: filesystem_def)
-    apply (simp add: read_success_def)
-   apply (simp add: read_success_def)
-  apply (rule_tac x=read_fail in exI)
-  apply safe
-       apply (simp add: label_read_q2)
-      apply (case_tac a)
-       apply (simp add: filesystem_def logout_def)
-      apply (simp add: filesystem_def)
-      apply (case_tac "b = write")
-       apply (simp add: write_def)
-      apply (case_tac "b = read_success")
-       apply (simp add: read_success_def read_fail_def)
-      apply (case_tac "b = read_fail")
-       apply simp
-      apply (case_tac "b = write_fail")
-       apply (simp add: write_fail_def)
-      apply (simp add: create_def)
-     apply (simp add: read_fail_def)
-    apply (simp add: filesystem_def)
-  by (simp_all add: read_fail_def)
+   apply (rule_tac x="''login''" in exI)
+   apply (rule_tac x="[x]" in exI)
+   apply (simp add: possible_steps_0)
+  apply simp
+  apply (rule_tac x="''logout''" in exI)
+  apply (rule_tac x="[]" in exI)
+  by (simp add: possible_steps_1_logout)
 
 lemma alw_equiv: "alw p s = ((p s) \<and> alw p (stl s))"
   using alw.intros by auto
@@ -364,11 +205,11 @@ lemma user_details_stored_in_r1: "((\<lambda>s. (event (shd s) = (''login'',  [u
   proof (cases u)
     case (Num x1)
     then show ?thesis
-      by (simp add: possible_steps_q1 login_def s0_filesystem)
+      by (simp add: possible_steps_0 login_def)
   next
     case (Str x2)
     then show ?thesis
-      by (simp add: possible_steps_q1 login_def s0_filesystem)
+      by (simp add: possible_steps_0 login_def)
   qed
 text_raw{*}%endsnip*}
 

@@ -3,8 +3,10 @@ text{*This theory presents a simple EFSM definition and uses contexts to prove
 transition subsumption. 
 *}
 theory Generalisation
-imports "../Contexts" Drinks_Machine_2
+imports "../Contexts" "../examples/Drinks_Machine_2"
 begin
+declare One_nat_def[simp del]
+
 definition select :: "transition" where
 "select \<equiv> \<lparr>
         Label = ''select'',
@@ -98,35 +100,32 @@ definition venderr_g :: "transition" where
         Updates = []
       \<rparr>"
 
-datatype statename = q1 | q2 | q3 | q4 | q5
+definition vend :: transition_matrix where
+"vend \<equiv> {|
+              ((0,1), select),
+              ((1,2), coin50),
+              ((2,2), venderr),
+              ((2,3), coin50),
+              ((3,4), vends)
+         |}"
 
-definition vend :: "statename efsm" where
-"vend \<equiv> \<lparr>
-          s0 = q1,
-          T = \<lambda> (a,b) .
-              if (a,b) = (q1,q2) then {select}
-              else if (a,b) = (q2,q3) then {coin50}
-              else if (a,b) = (q3,q3) then {venderr}
-              else if (a,b) = (q3,q4) then {coin50}
-              else if (a,b) = (q4,q5) then {vends}
-              else {} (* There are no other transitions *)
-         \<rparr>"
+definition vend_g :: transition_matrix where
+"vend_g \<equiv> {|
+              ((0,1), select),
+              ((1,2), coin_init),
+              ((2,2), venderr_g),
+              ((2,2), coin_inc),
+              ((2,3), vends_g)
+         |}"
 
-definition vend_g :: "statename efsm" where
-"vend_g \<equiv> \<lparr>
-          s0 = q1,
-          T = \<lambda> (a,b) .
-                   if (a,b) = (q1,q2) then {select}
-              else if (a,b) = (q2,q3) then {coin_init}
-              else if (a,b) = (q3,q3) then {venderr_g, coin_inc}
-              else if (a,b) = (q3,q4) then {vends_g}
-              else {} (* There are no other transitions *)
-         \<rparr>"
-
-lemma "posterior r1_r2_true coin_init = \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk>"
-  apply (rule ext)
-  apply (simp add: coin_init_def posterior_def consistent_def)
-  using empty_not_undef gval.simps(1) by force
+lemma posterior_coin_init_r1_r2_true: "posterior r1_r2_true coin_init = r1_r2_true"
+proof-
+  show ?thesis
+    unfolding posterior_def Let_def
+    apply (simp add: consistent_r1_r2_true coin_init_def)
+    apply (rule ext)
+    by simp
+qed
 
 lemma posterior_empty_coin_inc_not_consistent: "\<not> consistent (posterior empty coin_inc)"
   apply (simp add: posterior_def coin_inc_def valid_def satisfiable_def)
@@ -188,55 +187,44 @@ lemma "\<not> subsumes empty coin_inc coin50"
   by (simp add: subsumes_def posterior_empty_coin50 posterior_empty_coin_inc_not_consistent)
 
 lemma posterior_coin_inc_r1_true: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk> coin_inc = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk>"
-  apply (simp add: posterior_def coin_inc_def consistent_def valid_def satisfiable_def)
-  apply safe
-   apply auto[1]
-  using consistent_empty_1 by fastforce
+proof-
+  have consistent: "consistent \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk>"
+    apply (simp add: consistent_def)
+    apply (rule_tac x="<>" in exI)
+    by (simp add: consistent_empty_4)
+  show ?thesis
+    unfolding posterior_def Let_def
+    apply (simp add: coin_inc_def consistent)
+    apply (rule ext)
+    by simp
+qed
 
 lemma consistent_medial_coin50_true: "consistent (medial \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True\<rbrakk> (Guard coin50))"
-  apply (simp add: coin50_def consistent_def del: Nat.One_nat_def)
+  apply (simp add: coin50_def consistent_def)
   apply (rule_tac x="<I 1 := Num 50>" in exI)
   apply simp
   using consistent_empty_4 by auto
 
-lemma posterior_coin50_true: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk> coin50 = \<lbrakk>\<rbrakk>"
-  apply (simp add: posterior_def consistent_medial_coin50_true)
-  by (simp add: coin50_def)
-
-lemma "subsumes \<lbrakk>V (R 1) \<mapsto> Bc True\<rbrakk> coin_inc coin50"
-  apply (simp add: subsumes_def del: Nat.One_nat_def)
-  apply safe
-     apply (simp add: coin50_def coin_inc_def)
-     apply (case_tac r)
-        apply simp
-       apply simp
-       apply (case_tac "x2 = R (Suc 0)")
-        apply simp
-       apply simp
-       apply (case_tac x2)
-        apply simp
-       apply simp
-      apply simp
-     apply simp
-     apply (simp add: coin50_def coin_inc_def)
-   apply (simp add: posterior_coin50_true del: One_nat_def)
-   apply (case_tac r)
-      apply simp
-  using consistent_empty_1 apply fastforce
+lemma posterior_coin50_true: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk> coin50 = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk>"
+proof-
+  have consistent_medial: "consistent (medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk> (Guard coin50))"
+    apply (simp add: coin50_def)
+    unfolding consistent_def
+    apply (rule_tac x="<I 1 := Num 50>" in exI)
     apply simp
-   apply simp
-  apply (simp add: posterior_coin_inc_r1_true consistent_def)
-  apply (rule_tac x="<>" in exI)
-  apply (rule allI)
-  using consistent_empty_4 posterior_coin_inc_r1_true by auto
+    by (simp add: consistent_empty_4)
+  show ?thesis
+    unfolding posterior_def Let_def
+    apply (simp add: consistent_medial)
+    by (simp add: coin50_def)
+qed
 
-
-lemma "(posterior_sequence [coin_init, coin_inc] empty) = \<lbrakk>V (R 1) \<mapsto> Bc True\<rbrakk>"
+lemma "(posterior_sequence empty vend_g 0 <> [(''select'', [c]), (''coin'', [v1]), (''coin'', [v2])]) = \<lbrakk>V (R 1) \<mapsto> Bc True\<rbrakk>"
   apply (simp add: posterior_sequence_def posterior_def coin_init_def coin_inc_def satisfiable_def valid_def consistent_def)
-  using consistent_def consistent_empty_1 consistent_empty_3 by auto
+  sorry
 
 lemma not_consistent_medial_vends_g_empty: "\<not>consistent (\<lambda>r. and (\<lbrakk>\<rbrakk> r) (if r = V (R 1) then snd (V (R 1), (Geq (Num 100))) else cexp.Bc True))"
-  apply (simp add: consistent_def del: Nat.One_nat_def)
+  apply (simp add: consistent_def)
   apply (rule allI)
   apply (rule_tac x="V (R 1)" in exI)
   apply simp
@@ -245,7 +233,7 @@ lemma not_consistent_medial_vends_g_empty: "\<not>consistent (\<lambda>r. and (\
   by simp
 
 lemma posterior_empty_vends_g: "posterior \<lbrakk>\<rbrakk> vends_g = (\<lambda>i. Bc False)"
-  by (simp add: posterior_def not_consistent_medial_vends_g_empty  del: Nat.One_nat_def)
+  by (simp add: posterior_def not_consistent_medial_vends_g_empty )
 
 lemma posterior_empty_vends: "posterior \<lbrakk>\<rbrakk> vends = \<lbrakk>\<rbrakk>"
   by (simp add: posterior_def)
@@ -290,7 +278,7 @@ lemma "subsumes \<lbrakk>V (R 1) \<mapsto> Geq (Num 100)\<rbrakk> vends_g vends"
   apply (simp add: vends_def vends_g_def)
      apply auto[1]
     apply (simp add: vends_def vends_g_def)
-   apply (simp add: medial_vends posterior_vends del: Nat.One_nat_def)
+   apply (simp add: medial_vends posterior_vends)
   using posterior_vends_g apply auto[1]
   apply (simp only: posterior_vends_g)
   by simp
