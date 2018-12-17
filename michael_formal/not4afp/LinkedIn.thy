@@ -1,13 +1,6 @@
 theory LinkedIn
 imports "../EFSM"
 begin
-  datatype statename = outside | loggedIn | viewDetailed | pdfDetailed | viewSummary | pdfSummary
-
-lemma UNIV_statename: "UNIV = {outside, loggedIn, viewDetailed, pdfDetailed, viewSummary, pdfSummary}"
-  using statename.exhaust by auto
-
-instance statename :: finite
-  by standard (simp add: UNIV_statename)
 
 definition login :: "transition" where
 "login \<equiv> \<lparr>
@@ -81,16 +74,23 @@ definition pdfOtherOON :: "transition" where
         Updates = []
       \<rparr>"
 
-definition linkedIn :: "statename efsm" where
-"linkedIn \<equiv> \<lparr>
-          s0 = outside,
-          T = \<lambda> (a,b) .
-              if (a,b) = (outside,loggedIn) then {login}    (* If we want to go from state 1 to state 2 then select will do that *)
-              else if (a,b) = (loggedIn,viewDetailed) then {viewFriend, viewOther} (* If we want to go from state 2 to state 3 then vend will do that *)
-              else if (a,b) = (loggedIn,viewSummary) then {viewOtherOON, viewOtherFuzz} (* If we want to go from state 2 to state 3 then vend will do that *)
-              else if (a,b) = (viewSummary, pdfSummary) then {pdfOtherOON} (* If we want to go from state 2 to state 3 then vend will do that *)
-              else if (a,b) = (viewSummary, pdfDetailed) then {pdfOther} (* If we want to go from state 2 to state 3 then vend will do that *)
-              else if (a,b) = (viewDetailed, pdfDetailed) then {pdfFriend, pdfOther} (* If we want to go from state 2 to state 3 then vend will do that *)
-              else {} (* There are no other transitions *)
-         \<rparr>"
+abbreviation "outside \<equiv> (0::nat)"
+abbreviation "loggedIn \<equiv> (1::nat)"
+abbreviation "viewDetailed \<equiv> (2::nat)"
+abbreviation "viewSummary \<equiv> (3::nat)"
+abbreviation "pdfDetailed \<equiv> (4::nat)"
+abbreviation "pdfSummary \<equiv> (5::nat)"
+
+definition linkedIn :: transition_matrix where
+"linkedIn \<equiv> {|
+              ((outside,loggedIn), login),    (* If we want to go from state 1 to state 2, select will do that *)
+              ((loggedIn,viewDetailed), viewFriend),
+              ((loggedIn, viewDetailed), viewOther), (* If we want to go from state 2 to state 3, vend will do that *)
+              ((loggedIn,viewSummary), viewOtherOON),
+              ((loggedIn, viewSummary), viewOtherFuzz), (* If we want to go from state 2 to state 3, vend will do that *)
+              ((viewSummary, pdfSummary), pdfOtherOON), (* If we want to go from state 2 to state 3, vend will do that *)
+              ((viewSummary, pdfDetailed), pdfOther), (* If we want to go from state 2 to state 3, vend will do that *)
+              ((viewDetailed, pdfDetailed), pdfFriend),
+              ((viewDetailed, pdfDetailed), pdfOther) (* If we want to go from state 2 to state 3, vend will do that *)
+         |}"
 end

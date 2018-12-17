@@ -1,5 +1,5 @@
 theory DM_Inference
-imports Inference "../examples/Drinks_Machine_2"
+imports Inference SelectionStrategies "../examples/Drinks_Machine_2"
 begin
 
 declare One_nat_def[simp del]
@@ -204,7 +204,7 @@ lemma vend_nothing_posterior: "posterior select_posterior vend_nothing = select_
   apply (simp add: consistent_select_posterior )
   apply (rule ext)
   apply (simp add: Let_def)
-  by (simp add: transitions)
+  by (simp add: transitions remove_input_constraints_def)
 
 lemma consistent_medial_vend_fail: "consistent \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> And (cexp.Eq (Num 0)) (cexp.Lt (Num 100))\<rbrakk>"
   apply (simp add: consistent_def)
@@ -215,7 +215,7 @@ lemma vend_fail_posterior: "posterior select_posterior vend_fail = \<lbrakk>V (R
   apply (simp only: posterior_def medial_vend_fail)
   apply (simp add: consistent_medial_vend_fail )
   apply (rule ext)
-  by (simp add: transitions)
+  by (simp add: transitions remove_input_constraints_def)
 
 lemma vend_fail_subsumes_vend_nothing: "subsumes select_posterior vend_fail vend_nothing"
   apply (simp add: subsumes_def )
@@ -241,7 +241,9 @@ lemma vend_fail_subsumes_vend_nothing: "subsumes select_posterior vend_fail vend
 
 lemma posterior_select: "length (snd e) = 1 \<Longrightarrow> (posterior \<lbrakk>\<rbrakk> (snd (fthe_elem (possible_steps drinks2 0 Map.empty ''select'' (snd e))))) =
      (\<lambda>a. if a = V (R 2) then cexp.Eq (Num 0) else if a = V (R (1)) then cexp.Bc True else \<lbrakk>\<rbrakk> a)"
-  by (simp add: posterior_def fthe_elem_def possible_steps_0 select_def Let_def  )
+  apply (simp add: posterior_def fthe_elem_def possible_steps_0 select_def Let_def remove_input_constraints_def)
+  apply (rule ext)
+  by simp
 
 lemma apply_updates_vend_nothing_2: "(EFSM.apply_updates (Updates vend_nothing)
            (case_vname Map.empty (\<lambda>n. if n = 2 then Some (Num 0) else if R n = R 1 then Some (hd (snd e)) else None))
@@ -550,9 +552,18 @@ lemma apply_guards_vend_nothing:  "\<forall>i r. apply_guards (Guard vend_nothin
   by (simp add: guard_vend_nothing)
 
 lemma consistent_posterior_vend_nothing: "consistent c \<Longrightarrow> consistent (posterior c vend_nothing)"
-  apply (simp add: posterior_def guard_vend_nothing updates_vend_nothing)
-  apply (simp add: consistent_def)
-  by auto
+proof-
+  assume premise: "consistent c"
+  have medial_vend_nothing: "medial c (Guard vend_nothing) = c"
+    by (simp add: vend_nothing_def)
+  have updates_vend_nothing: "Contexts.apply_updates c c (Updates vend_nothing) = c"
+    apply (rule ext)
+    by (simp add: vend_nothing_def)
+  show ?thesis
+    unfolding posterior_def Let_def
+    apply (simp add: medial_vend_nothing premise)
+    by (simp add: updates_vend_nothing premise)
+qed
 
 lemma consistent_posterior_vend_nothing_2: "\<not>consistent c \<Longrightarrow> \<not>consistent (posterior c vend_nothing)"
   apply (simp add: posterior_def guard_vend_nothing updates_vend_nothing)
@@ -689,13 +700,13 @@ proof-
     unfolding posterior_def
     apply (simp add: medial_vend_fail Let_def consistent_medial )
     apply (rule ext)
-    by (simp add: transitions )
+    by (simp add: transitions remove_input_constraints_def)
 qed
 
 lemma posterior_vend_nothing: "posterior r1_r2_true vend_nothing = r1_r2_true"
   apply (rule ext)
   unfolding posterior_def
-  by (simp add: guard_vend_nothing Let_def consistent_r1_r2_true updates_vend_nothing )
+  by (simp add: guard_vend_nothing Let_def consistent_r1_r2_true updates_vend_nothing remove_input_constraints_def)
 
 lemma vend_nothing_doesnt_directly_subsume_vend_2: "\<not>directly_subsumes drinks2 2 vend_fail vend_nothing"
 proof-

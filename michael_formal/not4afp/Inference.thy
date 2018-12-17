@@ -150,21 +150,12 @@ definition merge_transitions :: "transition_matrix \<Rightarrow> transition_matr
   )"
 
 type_synonym scoreboard = "(nat \<times> (nat \<times> nat)) fset"
-type_synonym ranker = "transition fset \<Rightarrow> transition fset \<Rightarrow> nat"
+type_synonym strategy = "transition fset \<Rightarrow> transition fset \<Rightarrow> nat"
 
 definition outgoing_transitions :: "nat \<Rightarrow> transition_matrix \<Rightarrow> transition fset" where
   "outgoing_transitions n t = fimage (\<lambda>(x, t'). t') (ffilter (\<lambda>((origin, dest), t). origin = n) t)"
 
-definition naive_score :: ranker where
-  "naive_score t1 t2 = size (ffilter (\<lambda>(x, y). Label x = Label y \<and> Arity x = Arity y) (fprod t1 t2))"
-
-lemma naive_score_empty: "\<forall>a. naive_score a {||} = 0"
-  by (simp add: naive_score_def)
-
-lemma naive_score_empty_2: "\<forall>a. naive_score {||} a = 0"
-  by (simp add: naive_score_def)
-
-definition score :: "transition_matrix \<Rightarrow> ranker \<Rightarrow> scoreboard" where
+definition score :: "transition_matrix \<Rightarrow> strategy \<Rightarrow> scoreboard" where
   "score t rank = fimage (\<lambda>(s1, s2). (rank (outgoing_transitions s1 t) (outgoing_transitions s2 t), (s1, s2))) (ffilter (\<lambda>(x, y). x < y) (all_pairs (S t)))"
 
 function merge_2 :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition_matrix option" and 
@@ -193,14 +184,14 @@ fun inference_step :: "transition_matrix \<Rightarrow> (nat \<times> nat \<times
                                      None \<Rightarrow> inference_step T t
                                  else None)"
 
-function infer :: "transition_matrix \<Rightarrow> ranker \<Rightarrow> transition_matrix" where
+function infer :: "transition_matrix \<Rightarrow> strategy \<Rightarrow> transition_matrix" where
   "infer t r = (let ranking = rev (sorted_list_of_fset (score t r)) in
 case inference_step t ranking of None \<Rightarrow> t | Some new \<Rightarrow> infer new r)"
   by auto
 termination
   sorry
 
-definition learn :: "log \<Rightarrow> ranker \<Rightarrow> transition_matrix" where
+definition learn :: "log \<Rightarrow> strategy \<Rightarrow> transition_matrix" where
   "learn l r = infer (make_pta l {||}) r"
 
 end

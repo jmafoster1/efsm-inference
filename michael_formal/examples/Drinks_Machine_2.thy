@@ -81,7 +81,7 @@ lemma empty_never_false: "cexp.Bc False \<noteq> Contexts.empty x"
 lemma posterior_coin_first: "posterior select_posterior coin = \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> Bc True\<rbrakk>"
   unfolding posterior_def Let_def
   apply (simp add: guard_coin consistent_select_posterior del: One_nat_def)
-  apply (simp add: transitions valid_def satisfiable_def)
+  apply (simp add: transitions valid_def satisfiable_def remove_input_constraints_def)
   apply (rule ext)
   by simp
 
@@ -97,7 +97,7 @@ lemma consistent_r1_r2_true: "consistent r1_r2_true"
 
 lemma posterior_coin_subsequent: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Bc True\<rbrakk> coin = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Bc True\<rbrakk>"
   unfolding posterior_def Let_def
-  apply (simp add: guard_coin consistent_r1_r2_true del: One_nat_def)
+  apply (simp add: guard_coin consistent_r1_r2_true remove_input_constraints_def del: One_nat_def)
   apply (rule ext)
   by (simp add: transitions satisfiable_def)
 
@@ -201,7 +201,7 @@ lemma posterior_coin_true: "(posterior (\<lambda>a. if a = V (R 2) then cexp.Eq 
   unfolding posterior_def Let_def
   apply (simp add: guard_coin del: One_nat_def)
   apply (simp only: select_posterior_equiv consistent_select_posterior)
-  apply (simp add: coin_def valid_def satisfiable_def)
+  apply (simp add: coin_def valid_def satisfiable_def remove_input_constraints_def)
   apply (rule ext)
   by simp
 

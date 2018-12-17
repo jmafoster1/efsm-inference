@@ -184,7 +184,7 @@ lemma consistent_select_posterior: "consistent select_posterior"
   by (simp add: consistent_empty_4)
 
 lemma select_posterior: "(posterior empty select) = select_posterior"
-  apply (simp add: posterior_def select_def)
+  apply (simp add: posterior_def select_def remove_input_constraints_def)
   apply (rule ext)
   by simp
 

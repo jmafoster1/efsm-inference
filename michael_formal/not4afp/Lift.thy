@@ -1,6 +1,9 @@
 theory Lift
   imports "../EFSM"
 begin
+
+declare One_nat_def [simp del]
+
 definition t1up :: "transition" where
 "t1up \<equiv> \<lparr>
         Label = ''goUp'',
@@ -87,86 +90,32 @@ definition closeDoors :: transition where
 
 lemmas transitions = t1up_def t2up_def t3up_def t1down_def t2down_def t3down_def openDoors_def closeDoors_def
 
-datatype statename = q1 | q2 | q3 | q4
+definition lift :: transition_matrix where
+"lift \<equiv> {|
+              ((0,1), t1up),
+              ((1,1), t2up),
+              ((1,0), t3up),
+              ((0,2), t1down),
+              ((2,2), t2down),
+              ((2,0), t3down),
+              ((0,3), openDoors),
+              ((3,0), closeDoors)
+         |}"
 
-definition lift :: "statename efsm" where
-"lift \<equiv> \<lparr>
-          s0 = q1,
-          T = \<lambda> (a,b) . 
-                   if (a,b) = (q1,q2) then {t1up}
-              else if (a,b) = (q2,q2) then {t2up}
-              else if (a,b) = (q2,q1) then {t3up}
-              else if (a,b) = (q1,q3) then {t1down}
-              else if (a,b) = (q3,q3) then {t2down}
-              else if (a,b) = (q3,q1) then {t3down}
-              else if (a,b) = (q1,q4) then {openDoors}
-              else if (a,b) = (q4,q1) then {closeDoors}
-              else {}
-         \<rparr>"
-
-lemma label_goup_q2: "Label b = ''goUp'' \<Longrightarrow> b \<in> T lift (s0 lift, a) \<Longrightarrow> a = q2 \<and> b = t1up"
-  apply (simp add: lift_def)
-  apply (cases a)
-     apply simp
-    apply simp
-   apply (simp add: t1down_def)
-  by (simp add: openDoors_def)
-
-lemma possible_steps_q1_goup: "possible_steps lift (s0 lift) Map.empty ''goUp'' [Num 1] = {(q2, t1up)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-       apply (simp add: label_goup_q2)
-      apply (simp add: label_goup_q2)
-  prefer 2
-  apply (simp add: lift_def)
-  by (simp_all add: t1up_def)
-
-lemma label_goup_q2_2: "Label b = ''goUp'' \<Longrightarrow> b \<in> T lift (q2, a) \<Longrightarrow> a = q2 \<or> a = q1"
-  apply (simp add: lift_def)
-  apply (cases a)
-  by simp_all
-
-lemma t2up_q2_q2:  "Label b = ''goUp'' \<Longrightarrow> b \<in> T lift (q2, q2) = (b = t2up)"
-  by (simp add: lift_def)
-
-lemma t3up_q2_q1: "Label b = ''goUp'' \<Longrightarrow> b \<in> T lift (q2, q1) = (b = t3up)"
-  by (simp add: lift_def)
-
-lemma possible_steps_q2_goup: "possible_steps lift q2 Map.empty ''goUp'' [Num 0] = {(q1, t3up)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-       apply (case_tac "a=q1")
-        apply simp
-       apply (case_tac "a=q2")
-        apply (simp add: t2up_q2_q2 guard_t2up)
-  using label_goup_q2_2 apply blast
-      apply (case_tac "a=q1")
-       apply (simp add: t3up_q2_q1)
-      apply (case_tac "a=q2")
-       apply (simp add: t2up_q2_q2 guard_t2up)
-  using label_goup_q2_2 apply blast
-     prefer 2
-     apply (simp add: lift_def)
-  by (simp_all add: t3up_def)
-
-lemma label_open_q4: "Label b = ''open'' \<Longrightarrow> b \<in> T lift (q1, a) \<Longrightarrow> b = openDoors \<and> a = q4"
-  apply (simp add: lift_def)
-  apply (cases a)
-     apply simp
-    apply (simp add: t1up_def)
-   apply (simp add: t1down_def)
-  by simp
-
-lemma possible_steps_open_q1: "(possible_steps lift q1 Map.empty ''open'' []) = {(q4, openDoors)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-       apply (simp add: label_open_q4)
-      apply (simp add: label_open_q4)
-  prefer 2
-  apply (simp add: lift_def)
-  by (simp_all add: openDoors_def)
-
-lemma "observe_trace lift (s0 lift) <> [(''goUp'', [Num 1]), (''goUp'', [Num 0]), (''open'', [])] = [[Num 1], [Num 0], [Num 1]]"
-  apply (simp add: possible_steps_q1_goup possible_steps_q2_goup possible_steps_open_q1 del: One_nat_def)
-  by (simp add: transitions)
+lemma "observe_trace lift 0 <> [(''goUp'', [Num 1]), (''goUp'', [Num 0]), (''open'', [])] = [[Num 1], [Num 0], [Num 1]]"
+proof-
+  have possible_steps_0_goup: "possible_steps lift 0 Map.empty ''goUp'' [Num 1] = {|(1, t1up)|}"
+    apply (simp add: possible_steps_def lift_def transitions)
+    by force
+  have possible_steps_1_goup: "possible_steps lift 1 Map.empty ''goUp'' [Num 0] = {|(0, t3up)|}"
+    apply (simp add: possible_steps_def lift_def transitions)
+    by force
+  have possible_steps_open_0: "possible_steps lift 0 Map.empty ''open'' [] = {|(3, openDoors)|}"
+    apply (simp add: possible_steps_def lift_def transitions)
+    by force
+  show ?thesis
+    apply (simp add: observe_trace_def observe_all_def step_def)
+    apply (simp add: possible_steps_0_goup possible_steps_1_goup possible_steps_open_0)
+    by (simp add: transitions)
+qed
 end

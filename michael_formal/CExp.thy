@@ -110,6 +110,9 @@ definition valid :: "cexp \<Rightarrow> bool" where (* Is cexp "c" satisfied und
 definition satisfiable :: "cexp \<Rightarrow> bool" where (* Is there some value of "i" which satisfies "c"? *)
   "satisfiable v \<equiv> (\<exists>i. cval v i = Some True)"
 
+lemma unsatisfiable_undef[simp]: "\<not> satisfiable Undef"
+  by (simp add: satisfiable_def)
+
 lemma valid_implies_satisfiable: "valid c \<Longrightarrow> satisfiable c"
   by (simp add: valid_def satisfiable_def)
 
