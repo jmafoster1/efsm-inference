@@ -122,15 +122,15 @@ lemma updates_select: "(EFSM.apply_updates (Updates select)
 lemma arity_vend: "Arity vend = 0"
   by (simp add: vend_def)
 
-lemma drinks_vend_insufficient: "n < 100 \<Longrightarrow> (possible_steps drinks 1 <R 1 := s, R 2 := Num n> (''vend'') []) = {|(1, vend_fail)|}"
+lemma drinks_vend_insufficient: "\<exists>x1. r (R 2) = Some (Num x1) \<and> x1 < 100 \<Longrightarrow> possible_steps drinks 1 r (''vend'') [] = {|(1, vend_fail)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma possible_steps_1_coin: "possible_steps drinks 1 r ''coin'' [i1] = {|(1, coin)|}"
+lemma possible_steps_1_coin: "length i = 1 \<Longrightarrow> possible_steps drinks 1 r ''coin'' i = {|(1, coin)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma possible_steps_2_vend: "r (R 2) = Some (Num n) \<Longrightarrow> n \<ge> 100 \<Longrightarrow> possible_steps drinks 1 r ''vend'' [] = {|(2, vend)|}"
+lemma possible_steps_2_vend: "\<exists>n. r (R 2) = Some (Num n) \<and> n \<ge> 100 \<Longrightarrow> possible_steps drinks 1 r ''vend'' [] = {|(2, vend)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
@@ -213,19 +213,13 @@ lemma drinks_vend_r2_none: "r2 = None \<Longrightarrow> possible_steps drinks 1 
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma drinks_vend_insufficient2: "r2 = Some (Num x1) \<Longrightarrow>
-                x1 < 100 \<Longrightarrow>
-                possible_steps drinks 1 (\<lambda>u. if u = R 1 then Some s else if u = R 2 then r2 else None) (''vend'') [] = {|(1, vend_fail)|}"
-  apply (simp add: possible_steps_def drinks_def transitions)
-  by force
-
 lemma drinks_vend_sufficient: "r2 = Some (Num x1) \<Longrightarrow>
                 \<not> x1 < 100 \<Longrightarrow>
                 (possible_steps drinks 1 (\<lambda>u. if u = R 1 then Some s else if u = R 2 then r2 else None) (''vend'') []) = {|(2, vend)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma drinks_end: "possible_steps drinks 2 r (fst a) (snd a) = {||}"
+lemma drinks_end: "possible_steps drinks 2 r a b = {||}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 

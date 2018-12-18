@@ -298,4 +298,12 @@ lemma length_equal_valid: "(length t = length (observe_all e 0 <> t)) = valid e 
   apply safe
   using obs_equal_length_valid apply auto[1]
   by (simp add: valid_trace_obs_equal_length)
+
+type_synonym simulation_relation = "nat \<Rightarrow> nat"
+
+definition simulates_with :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> simulation_relation \<Rightarrow> bool" where
+  "simulates_with m1 m2 H = (\<forall>s r l i s' t. (s', t) |\<in>| possible_steps m1 s r l i \<longrightarrow> (\<exists>t'. (H s', t') |\<in>|possible_steps m2 (H s) r l i))"
+
+definition simulates :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> bool" where
+  "simulates m1 m2 = (\<exists>r. simulates_with m1 m2 r)"
 end

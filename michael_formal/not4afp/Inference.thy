@@ -80,14 +80,6 @@ inductive gets_us_to :: "nat \<Rightarrow> transition_matrix \<Rightarrow> nat \
   step_some: "step e s r (fst h) (snd h) =  Some (_, s', _, r') \<Longrightarrow> gets_us_to target e s' r' t \<Longrightarrow> gets_us_to target e s r (h#t)" |
   step_none: "step e s r (fst h) (snd h) = None \<Longrightarrow> s=target \<Longrightarrow> gets_us_to target e s r (h#t)"
 
-(*primrec gets_us_to :: "nat \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
-  "gets_us_to target _ s _ [] = (s = target)" |
-  "gets_us_to target e s r (h#t) =
-    (case (step e s r (fst h) (snd h)) of
-      (Some (_, s', _, r')) \<Rightarrow> gets_us_to target e s' r' t |
-      _ \<Rightarrow> (s = target)
-    )"*)
-
 definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> context" where
  "anterior_context e t = posterior_sequence \<lbrakk>\<rbrakk> e 0 <> t"
 
@@ -136,17 +128,19 @@ proof-
     by (simp add: step_def possible_steps_def ffilter_empty)
 qed
 
+type_synonym generator_function = "transition_matrix \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition option"
 
-definition merge_transitions :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> transition_matrix option" where
-  "merge_transitions oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 t2 = (
+definition merge_transitions :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> generator_function \<Rightarrow> transition_matrix option" where
+  "merge_transitions oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 t2 maker = (
     \<comment> \<open> If t1 directly subsumes t2 then replace t2 with t1 \<close>
     if directly_subsumes oldEFSM t1FromOld t2 t1 then Some (replace_transition newEFSM newFrom t2NewTo t1 t2) else
     \<comment> \<open> If t2 directly subsumes t1 then replace t1 with t2 \<close>
     if directly_subsumes oldEFSM t2FromOld t1 t2 then Some (replace_transition newEFSM newFrom t1NewTo t2 t1) else
     \<comment> \<open> Can we make a transition which subsumes both? \<close>
-    (*if \<exists>t'. directly_subsumes oldEFSM t2FromOld t1 t' \<and> directly_subsumes oldEFSM t1FromOld t2 t' then 
-       Some (replace_transition (replace_transition newEFSM newFrom t1NewTo t2 t') newFrom t2NewTo t1 t') else*)
-    None
+    (case maker oldEFSM t1FromOld t1 t2FromOld t2 of None \<Rightarrow> None | Some t' \<Rightarrow>
+    if  directly_subsumes oldEFSM t2FromOld t1 t' \<and> directly_subsumes oldEFSM t1FromOld t2 t' then 
+       Some (replace_transition (replace_transition newEFSM newFrom t1NewTo t2 t') newFrom t2NewTo t1 t') else
+    None)
   )"
 
 type_synonym scoreboard = "(nat \<times> (nat \<times> nat)) fset"
@@ -158,40 +152,44 @@ definition outgoing_transitions :: "nat \<Rightarrow> transition_matrix \<Righta
 definition score :: "transition_matrix \<Rightarrow> strategy \<Rightarrow> scoreboard" where
   "score t rank = fimage (\<lambda>(s1, s2). (rank (outgoing_transitions s1 t) (outgoing_transitions s2 t), (s1, s2))) (ffilter (\<lambda>(x, y). x < y) (all_pairs (S t)))"
 
-function merge_2 :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition_matrix option" and 
-  resolve_nondeterminism :: "(nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat  \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix option" where
-  "resolve_nondeterminism s e s1 s2 t = (if s = {||} then None else (let (from, (to1, to2), (t1, t2)) = fMax s; t' = merge_2 t to1 to2 in
-                        case t' of None \<Rightarrow> resolve_nondeterminism (s - {|fMax s|}) e s1 s2 t |
-                                    Some t \<Rightarrow> merge_transitions e t (if exits_state e t1 s1 then s1 else s2) (if exits_state e t2 s1 then s1 else s2) from to1 to2 t1 t2 ))" |
+function merge_2 :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> generator_function \<Rightarrow> transition_matrix option" and 
+  resolve_nondeterminism :: "(nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat  \<Rightarrow> transition_matrix \<Rightarrow> generator_function \<Rightarrow> transition_matrix option" where
+  "resolve_nondeterminism s e s1 s2 t g = (if s = {||} then None else (let (from, (to1, to2), (t1, t2)) = fMax s in
+                        case merge_2 t to1 to2 g of None \<Rightarrow> resolve_nondeterminism (s - {|fMax s|}) e s1 s2 t g |
+                                    Some t \<Rightarrow> merge_transitions e t (if exits_state e t1 s1 then s1 else s2) (if exits_state e t2 s1 then s1 else s2) from to1 to2 t1 t2 g))" |
 
-"merge_2 e s1 s2 = (if s1 = s2 then Some (e) else (let t' = (merge_states s1 s2 (e)) in
+"merge_2 e s1 s2 g = (if s1 = s2 then Some (e) else (let t' = (merge_states s1 s2 (e)) in
                        \<comment> \<open> Have we got any nondeterminism? \<close>
                        (if \<not> nondeterminism t' then
                          \<comment> \<open> If not then we're good to go \<close>
                          Some t' else
                          \<comment> \<open> If we have then we need to fix it \<close>
-                         resolve_nondeterminism (nondeterministic_pairs t') e s1 s2 t')))"
+                         resolve_nondeterminism (nondeterministic_pairs t') e s1 s2 t' g)))"
+     defer
+     apply auto[1]
+    apply simp
+   apply auto[1]
   sorry
 termination
   sorry
 
-fun inference_step :: "transition_matrix \<Rightarrow> (nat \<times> nat \<times> nat) list \<Rightarrow> transition_matrix option" where
-  "inference_step _ [] = None" |
-  "inference_step T ((s, s1, s2)#t) =
+fun inference_step :: "transition_matrix \<Rightarrow> (nat \<times> nat \<times> nat) list \<Rightarrow> generator_function \<Rightarrow> transition_matrix option" where
+  "inference_step _ [] _ = None" |
+  "inference_step T ((s, s1, s2)#t) g =
                                 (if s > 0 then
-                                   case merge_2 T s1 s2 of
+                                   case merge_2 T s1 s2 g of
                                      Some new \<Rightarrow> Some new |
-                                     None \<Rightarrow> inference_step T t
+                                     None \<Rightarrow> inference_step T t g
                                  else None)"
 
-function infer :: "transition_matrix \<Rightarrow> strategy \<Rightarrow> transition_matrix" where
-  "infer t r = (let ranking = rev (sorted_list_of_fset (score t r)) in
-case inference_step t ranking of None \<Rightarrow> t | Some new \<Rightarrow> infer new r)"
+function infer :: "transition_matrix \<Rightarrow> strategy \<Rightarrow> generator_function \<Rightarrow> transition_matrix" where
+  "infer t r g = (let ranking = rev (sorted_list_of_fset (score t r)) in
+case inference_step t ranking g of None \<Rightarrow> t | Some new \<Rightarrow> infer new r g)"
   by auto
 termination
   sorry
 
-definition learn :: "log \<Rightarrow> strategy \<Rightarrow> transition_matrix" where
-  "learn l r = infer (make_pta l {||}) r"
+definition learn :: "log \<Rightarrow> strategy \<Rightarrow> generator_function \<Rightarrow> transition_matrix" where
+  "learn l r g = infer (make_pta l {||}) r g"
 
 end

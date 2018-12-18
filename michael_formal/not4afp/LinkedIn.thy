@@ -83,14 +83,14 @@ abbreviation "pdfSummary \<equiv> (5::nat)"
 
 definition linkedIn :: transition_matrix where
 "linkedIn \<equiv> {|
-              ((outside,loggedIn), login),    (* If we want to go from state 1 to state 2, select will do that *)
+              ((outside,loggedIn), login),    \<comment> \<open> If we want to go from state 1 to state 2, select will do that \<close>
               ((loggedIn,viewDetailed), viewFriend),
-              ((loggedIn, viewDetailed), viewOther), (* If we want to go from state 2 to state 3, vend will do that *)
+              ((loggedIn, viewDetailed), viewOther), \<comment> \<open> If we want to go from state 2 to state 3, vend will do that \<close>
               ((loggedIn,viewSummary), viewOtherOON),
-              ((loggedIn, viewSummary), viewOtherFuzz), (* If we want to go from state 2 to state 3, vend will do that *)
-              ((viewSummary, pdfSummary), pdfOtherOON), (* If we want to go from state 2 to state 3, vend will do that *)
-              ((viewSummary, pdfDetailed), pdfOther), (* If we want to go from state 2 to state 3, vend will do that *)
+              ((loggedIn, viewSummary), viewOtherFuzz), \<comment> \<open> If we want to go from state 2 to state 3, vend will do that \<close>
+              ((viewSummary, pdfSummary), pdfOtherOON), \<comment> \<open> If we want to go from state 2 to state 3, vend will do that \<close>
+              ((viewSummary, pdfDetailed), pdfOther), \<comment> \<open> If we want to go from state 2 to state 3, vend will do that \<close>
               ((viewDetailed, pdfDetailed), pdfFriend),
-              ((viewDetailed, pdfDetailed), pdfOther) (* If we want to go from state 2 to state 3, vend will do that *)
+              ((viewDetailed, pdfDetailed), pdfOther) \<comment> \<open> If we want to go from state 2 to state 3, vend will do that \<close>
          |}"
 end
