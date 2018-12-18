@@ -74,6 +74,8 @@ definition drinks2 :: transition_matrix where
               ((2,3), Drinks_Machine.vend)
          |}"
 
+lemmas transitions = Drinks_Machine_2.transitions coin_def coin50_def
+
 lemma medial_coin50: "medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> (Guard coin50) = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n), V (I 1) \<mapsto> Eq (Num 50)\<rbrakk>"
   apply (simp add: coin50_def)
   apply (rule ext)
@@ -173,16 +175,117 @@ lemma next_step_1: "step Simple_Drinks_Machine.drinks2 1 r aa b = Some (uw, s', 
   using invalid_step
   by simp
 
+lemma set_filter_vend_fail: "ra (R 2) = Some (Num x1) \<and> x1 < 100 \<Longrightarrow> (Set.filter
+       (\<lambda>((origin, dest), t).
+           origin = 2 \<and> Label t = ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. ra (R n))))
+       (fset Simple_Drinks_Machine.drinks2)) =
+    {((2, 2), vend_fail)}"
+    apply (simp add: drinks2_def Set.filter_def)
+    apply safe
+    by (simp_all add: transitions)
+lemma possible_steps_vend_fail: "ra (R 2) = Some (Num x1) \<and> x1 < 100 \<Longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 2 ra ''vend'' [] = {|(2, vend_fail)|}"
+    by (simp add: possible_steps_def ffilter_def set_filter_vend_fail)
+
 lemma no_route_from_3_to_0: "\<forall>r. \<not>gets_us_to 0 Simple_Drinks_Machine.drinks2 3 r t"
 proof (induct t)
   case Nil
-  then show ?case sorry
+  then show ?case
+    apply clarify
+    apply (rule gets_us_to.cases)
+    by auto
 next
+  have set_filter: "\<forall>ra aa b. (Set.filter
+       (\<lambda>((origin, dest), t).
+           origin = 3 \<and> Label t = aa \<and> length b = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state b 1 (I n)) (\<lambda>n. ra (R n))))
+       (fset Simple_Drinks_Machine.drinks2)) = {}"
+    by (simp add: drinks2_def Set.filter_def)
+  have possible_steps: "\<forall>ra aa b. possible_steps Simple_Drinks_Machine.drinks2 3 ra aa b = {||}"
+    apply (simp add: possible_steps_def ffilter_def set_filter)
+    by (simp add: bot_fset.abs_eq)
+  have step: "\<forall>ra aa b. step Simple_Drinks_Machine.drinks2 3 ra aa b = None"
+    by (simp add: step_def possible_steps)
   case (Cons a t)
-  then show ?case sorry
+  then show ?case
+    apply clarify
+    apply (rule gets_us_to.cases)
+       apply simp
+      apply simp
+     defer
+     apply simp
+    apply clarify
+    apply simp
+    using step
+    by simp
 qed
 
 lemma next_step_2: "step Simple_Drinks_Machine.drinks2 2 ra aa b = Some (uw, s', u, r') \<Longrightarrow> s' = 2 \<or> s' = 3"
+proof-
+  assume premise: "step Simple_Drinks_Machine.drinks2 2 ra aa b = Some (uw, s', u, r')"
+  have set_filter: "(Set.filter
+       (\<lambda>((origin, dest), t).
+           origin = 2 \<and> Label t = ''coin'' \<and> Arity t = 1 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state b 1 (I n)) (\<lambda>n. ra (R n))))
+       (fset Simple_Drinks_Machine.drinks2)) =
+    {((2, 2), Simple_Drinks_Machine.coin)}"
+    apply (simp add: Set.filter_def drinks2_def)
+    apply safe
+    by (simp_all add: transitions)
+  have possible_steps_coin: "length b = 1 \<Longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 2 ra ''coin'' b = {|(2, coin)|}"
+    by (simp add: possible_steps_def ffilter_def set_filter)
+  have possible_steps_vend_r2_none: "\<nexists> n. ra (R 2) = Some (Num n) \<Longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 2 ra ''vend'' [] = {||}"
+  proof-
+    assume premise: "\<nexists> n. ra (R 2) = Some (Num n)"
+    have set_filter: "(Set.filter
+       (\<lambda>((origin, dest), t).
+           origin = 2 \<and> Label t = ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. ra (R n))))
+       (fset Simple_Drinks_Machine.drinks2)) = {}"
+      using premise
+      apply (simp add: Set.filter_def drinks2_def)
+      apply safe
+        apply (simp add: transitions)
+       apply (simp add: transitions)
+      using MaybeBoolInt.elims apply force
+       apply (simp add: transitions)
+      apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (ra (R 2))")
+       apply simp
+      apply simp
+      by (metis MaybeBoolInt.elims option.simps(3))
+    show ?thesis
+      using premise
+      apply (simp add: possible_steps_def ffilter_def set_filter)
+      by (simp add: bot_fset_def)
+  qed
+  have set_filter_invalid: "\<not> (aa = ''coin'' \<and> length b = 1) \<Longrightarrow> \<not> (aa = ''vend'' \<and> b = []) \<Longrightarrow> (Set.filter
+       (\<lambda>((origin, dest), t).
+           origin = 2 \<and> Label t = aa \<and> length b = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state b 1 (I n)) (\<lambda>n. ra (R n))))
+       (fset Simple_Drinks_Machine.drinks2)) = {}"
+    apply (simp add: drinks2_def Set.filter_def)
+    apply safe
+    by (simp_all add: transitions)
+  have possible_steps_invalid: "\<not> (aa = ''coin'' \<and> length b = 1) \<Longrightarrow> \<not> (aa = ''vend'' \<and> b = []) \<Longrightarrow>
+                      possible_steps Simple_Drinks_Machine.drinks2 2 ra aa b = {||}"
+    apply (simp add: possible_steps_def ffilter_def set_filter_invalid)
+    by (simp add: bot_fset_def)
+  show ?thesis
+    using premise
+    apply (simp add: step_def)
+    apply (case_tac "aa = ''coin'' \<and> length b = 1")
+     apply clarify
+     apply (simp add: possible_steps_coin)
+    apply (case_tac "aa = ''vend'' \<and> b = []")
+     apply clarify
+     apply (case_tac "ra (R 2)")
+      apply (simp add: possible_steps_vend_r2_none)
+     apply (case_tac a)
+      apply simp
+      defer
+      apply (simp add: possible_steps_vend_r2_none)
+    using possible_steps_invalid
+     apply simp
+    apply (case_tac "x1 < 100")
+     apply (simp add: possible_steps_vend_fail)
+
+
+
   sorry
 
 lemma no_route_from_2_to_0: "\<forall>r. \<not>gets_us_to 0 Simple_Drinks_Machine.drinks2 2 r t"

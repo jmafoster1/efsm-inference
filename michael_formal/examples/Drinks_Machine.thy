@@ -27,6 +27,8 @@ definition select :: "transition" where
                   ]
       \<rparr>"
 
+(*select:1[]/[][(R 1, (V (I 1))), (R 2, (L (Num 0)))]*)
+
 lemma guard_select: "Guard select = []"
   by (simp add: select_def)
 
