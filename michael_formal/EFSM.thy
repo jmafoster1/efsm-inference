@@ -7,7 +7,7 @@ finite types. See the examples for details.
 *}
 
 theory EFSM
-  imports "~~/src/HOL/Library/FSet" AExp GExp
+  imports "~~/src/HOL/Library/FSet" "efsm-exp.AExp"  GExp
 begin
 
 type_synonym label = string

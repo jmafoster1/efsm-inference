@@ -11,7 +11,7 @@ well as the expression of logical conjunction, disjunction, and negation in term
 *}
 
 theory GExp
-imports AExp Option_Logic
+imports "efsm-exp.AExp" "efsm-exp.Option_Logic"
 begin
 datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null vname
 

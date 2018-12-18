@@ -7,7 +7,7 @@ transitions with register update functions.
 
 theory Contexts
   imports
-    EFSM GExp CExp
+    EFSM GExp "efsm-exp.CExp"
 begin
 
 type_synonym "context" = "aexp \<Rightarrow> cexp"

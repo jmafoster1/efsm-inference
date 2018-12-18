@@ -1,32 +1,24 @@
-session "efsm-cexp" = "HOL" +
+session "efsm-exp" = "HOL" +
   options [document = pdf, document_output = "output"]
   theories
-    Option_Logic (global)
-    AExp (global)
-    CExp (global)
-
-session "michael-efsm" = "HOL" +
-  options [document = pdf, document_output = "output"]
-  theories
-    AExp
     Option_Logic
-    GExp
-    EFSM
+    AExp
     CExp
+
+session "michael-efsm" = "efsm-exp" +
+  options [document = pdf, document_output = "output"]
+  theories
+    EFSM
     Contexts
     "examples/Drinks_Machine"
     "examples/Drinks_Machine_2"
 
 
 chapter AFP
-session "EFSM" (AFP) = "HOL" + 
+session "EFSM" (AFP) = "efsm-exp" + 
   options [timeout = 120000, document = pdf, document_variants="document:outline=/proof,/ML",document_output=output]
   theories
-    AExp
-    Option_Logic
-    GExp
     EFSM
-    CExp
     Contexts
     "examples/Drinks_Machine"
     "examples/Drinks_Machine_2"
