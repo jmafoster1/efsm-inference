@@ -109,6 +109,8 @@ lemma consistent_medial_coin_2: "consistent (medial \<lbrakk>V (R 1) \<mapsto> c
   apply (simp)
   by (simp add: consistent_empty_4)
 
+(*select_posterior(V (R 2) \<mapsto> Bc True)*)
+
 lemma posterior_coin: "(posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> coin) = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> Bc True\<rbrakk>"
   apply (simp add: posterior_def consistent_medial_coin_2)
   apply (simp add: coin_def compose_plus_n_50 valid_def satisfiable_def remove_input_constraints_def)
@@ -146,7 +148,7 @@ proof-
     apply safe
     by (simp_all add: select_def coin50_def vend_nothing_def)
   show ?thesis
-    by (simp add: possible_steps_def ffilter_def set_filter abs_fset_singleton)
+    by (simp add: possible_steps_def ffilter_def set_filter)
 qed
 
 lemma invalid_step: "\<not> (aa = ''coin'' \<and> b = [Num 50]) \<Longrightarrow> \<not> (aa = ''vend'' \<and> b = []) \<Longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 1 r aa b = {||}"
@@ -175,16 +177,19 @@ lemma next_step_1: "step Simple_Drinks_Machine.drinks2 1 r aa b = Some (uw, s', 
   using invalid_step
   by simp
 
-lemma set_filter_vend_fail: "ra (R 2) = Some (Num x1) \<and> x1 < 100 \<Longrightarrow> (Set.filter
+lemma set_filter_vend_fail: "ra (R 2) = Some (Num x1) \<and> x1 < 100 \<Longrightarrow>  (Set.filter
        (\<lambda>((origin, dest), t).
            origin = 2 \<and> Label t = ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. ra (R n))))
        (fset Simple_Drinks_Machine.drinks2)) =
     {((2, 2), vend_fail)}"
     apply (simp add: drinks2_def Set.filter_def)
     apply safe
-    by (simp_all add: transitions)
+  by (simp_all add: transitions)
+
 lemma possible_steps_vend_fail: "ra (R 2) = Some (Num x1) \<and> x1 < 100 \<Longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 2 ra ''vend'' [] = {|(2, vend_fail)|}"
-    by (simp add: possible_steps_def ffilter_def set_filter_vend_fail)
+  apply (simp add: possible_steps_def ffilter_def)
+  using set_filter_vend_fail
+  by auto
 
 lemma no_route_from_3_to_0: "\<forall>r. \<not>gets_us_to 0 Simple_Drinks_Machine.drinks2 3 r t"
 proof (induct t)
@@ -265,6 +270,30 @@ proof-
                       possible_steps Simple_Drinks_Machine.drinks2 2 ra aa b = {||}"
     apply (simp add: possible_steps_def ffilter_def set_filter_invalid)
     by (simp add: bot_fset_def)
+  have set_filter_vend_fail: "\<forall>ra x1. ra (R 2) = Some (Num x1) \<and> x1 < 100 \<longrightarrow>  (Set.filter
+       (\<lambda>((origin, dest), t).
+           origin = 2 \<and> Label t = ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. ra (R n))))
+       (fset Simple_Drinks_Machine.drinks2)) =
+    {((2, 2), vend_fail)}"
+    apply (simp add: drinks2_def Set.filter_def)
+    apply safe
+    by (simp_all add: transitions)
+  have possible_steps_vend_fail: "\<forall>ra x1. ra (R 2) = Some (Num x1) \<and> x1 < 100 \<longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 2 ra ''vend'' [] = {|(2, vend_fail)|}"
+  apply (simp add: possible_steps_def ffilter_def)
+  using set_filter_vend_fail
+  by auto
+  have set_filter_vend: "\<forall>ra x1. ra (R 2) = Some (Num x1) \<and> x1 \<ge> 100 \<longrightarrow> (Set.filter
+            (\<lambda>((origin, dest), t).
+                origin = 2 \<and> Label t = ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname Map.empty (\<lambda>n. ra (R n))))
+            (fset Simple_Drinks_Machine.drinks2)) =
+         {((2,3), Drinks_Machine.vend)}"
+    apply (simp add: drinks2_def Set.filter_def)
+    apply safe
+    by (simp_all add: transitions)
+  have possible_steps_vend: "\<forall>ra x1. ra (R 2) = Some (Num x1) \<and> x1 \<ge> 100 \<longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 2 ra ''vend'' [] = {|(3, Drinks_Machine.vend)|}"
+    apply (simp add: possible_steps_def ffilter_def)
+    using set_filter_vend
+    by simp
   show ?thesis
     using premise
     apply (simp add: step_def)
@@ -282,11 +311,10 @@ proof-
     using possible_steps_invalid
      apply simp
     apply (case_tac "x1 < 100")
-     apply (simp add: possible_steps_vend_fail)
-
-
-
-  sorry
+    apply (simp add: possible_steps_vend_fail)
+    using possible_steps_vend
+    by simp
+qed
 
 lemma no_route_from_2_to_0: "\<forall>r. \<not>gets_us_to 0 Simple_Drinks_Machine.drinks2 2 r t"
 proof (induct t)

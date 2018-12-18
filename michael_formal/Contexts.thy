@@ -23,7 +23,7 @@ syntax
 translations
   "_Update f (_updbinds b bs)" \<rightleftharpoons> "_Update (_Update f b) bs"
   "_Context ms" == "_Update \<lbrakk>\<rbrakk> ms"
-  "_Context (_updbinds b bs)" <= "_Update (_Context b) bs"
+  "_Context (_updbinds b bs)" \<rightleftharpoons> "_Update (_Context b) bs"
 
 lemma empty_not_false[simp]: "cexp.Bc False \<noteq> \<lbrakk>\<rbrakk> i"
 proof (induct i)

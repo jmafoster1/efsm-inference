@@ -213,14 +213,13 @@ lemma user_details_stored_in_r1: "((\<lambda>s. (event (shd s) = (''login'',  [u
   qed
 text_raw{*}%endsnip*}
 
-(*lemma "((\<lambda>s. (event (shd s) = (''login'',  [u]))) impl ((\<lambda>s. datastate (shd s) (R 1) = Some (u)) suntil (\<lambda>s. label (shd s) = ''logout''))) (watch filesystem i)"
-  sorry*)
+(*lemma "((\<lambda>s. (event (shd s) = (''login'',  [u]))) impl ((\<lambda>s. datastate (shd s) (R 1) = Some (u)) suntil (\<lambda>s. label (shd s) = ''logout''))) (watch filesystem i)"*)
 
 (*lemma globally_user_details_stored_in_r1: "alw (non_null impl ((\<lambda>s. (event (shd s) = (''login'',  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user''))))) (watch filesystem i)"
 proof (coinduction)
   case alw
   then show ?case
-    sorry
+    
 qed*)
 
 lemma login_user_first: "alw non_null (watch filesystem i) \<Longrightarrow> (login_user (watch filesystem i) = (shd i = (''login'', [Str ''user''])))"
@@ -228,7 +227,6 @@ lemma login_user_first: "alw non_null (watch filesystem i) \<Longrightarrow> (lo
 
       (* G(cfstate /= NULL_STATE)  => ((label=login AND ip_1_login_1=(user)) AND U(label/=logout, label=create)) => F(G(((label=login AND ip_1_login_1=(attacker)) AND F(label=logout))  =>   U(label=read=>X(op_1_read_0=0), label=logout))) *)
 (*lemma "(((alw non_null) impl (login_user aand (label_not_logout until label_create))) impl (ev (alw ((login_attacker aand ev label_logout) impl (read_0 suntil label_logout))))) (watch filesystem i)"
-  apply simp
-  sorry*)
+  apply simp *)
 
 end
