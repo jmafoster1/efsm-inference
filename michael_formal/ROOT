@@ -1,3 +1,10 @@
+session "efsm-cexp" = "HOL" +
+  options [document = pdf, document_output = "output"]
+  theories
+    Option_Logic (global)
+    AExp (global)
+    CExp (global)
+
 session "michael-efsm" = "HOL" +
   options [document = pdf, document_output = "output"]
   theories
