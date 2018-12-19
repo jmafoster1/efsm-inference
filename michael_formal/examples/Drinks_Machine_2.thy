@@ -56,7 +56,7 @@ lemma possible_steps_2_coin: "length i = 1 \<Longrightarrow> possible_steps drin
   apply (simp add: possible_steps_def drinks2_def transitions)
   by force
 
-lemma possible_steps_2_vend: "\<exists>n. r (R 2) = Some (Num n) \<and> n \<ge> 100 \<Longrightarrow> possible_steps drinks2 2 r (''vend'') [] = {|(3, vend)|}"
+lemma possible_steps_2_vend: "r (R 2) = Some (Num n) \<Longrightarrow> n \<ge> 100 \<Longrightarrow> possible_steps drinks2 2 r (''vend'') [] = {|(3, vend)|}"
   apply (simp add: possible_steps_def drinks2_def transitions)
   by force
 
@@ -418,7 +418,7 @@ next
      apply (case_tac aa)
       apply (case_tac "x1 < 100")
     apply (simp add: step_def)
-    apply (simp add: drinks_vend_insufficient2 drinks2_vend_insufficient2 updates_vend_fail )
+    apply (simp add: drinks_vend_insufficient drinks2_vend_insufficient2 updates_vend_fail )
     apply (simp add: step_def)
       apply (simp add: drinks_vend_sufficient drinks2_vend_sufficient vend_updates )
     using equal_2_3 observe_trace_def apply auto[1]
@@ -491,112 +491,169 @@ proof (induct t)
     by (metis observe_trace_def)
 qed
 
-lemma "fset (Abs_fset s) = s"
-proof (induct "Abs_fset s")
-  case empty
-  then show ?case
-    apply simp
-    sorry
+lemma finite_filter_fset: "finite (Set.filter f (fset s))"
+  by simp
+
+lemma finite_filter_fset_2: "(Set.filter f (fset s)) \<in> {A. finite A}"
+  by simp
+
+lemma filter_elements: "x |\<in>| Abs_fset (Set.filter f (fset s)) = (x \<in> (Set.filter f (fset s)))"
+  by (metis ffilter.rep_eq fset_inverse notin_fset)
+
+lemma simulation_aux_aux: "\<forall>r s. EFSM.valid drinks 1 r t \<longrightarrow> EFSM.valid drinks2 2 r t"
+proof (induct t)
+  case Nil
+then show ?case
+  by (simp add: base)
 next
-  case (insert x1 x2)
+  case (Cons a t)
   then show ?case
-    sorry
-qed
-
-lemma "simulates_with drinks2 drinks (\<lambda>x. if x = 0 then 0 else if x = 1 then 1 else if x = 2 then 1 else if x = 3 then 2 else x)"
-proof-
-  have set_filter: "\<forall>s t l i r. ((s, 0), t) \<notin> (Set.filter
-          (\<lambda>((origin, dest), t).
-              origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))))
-          (fset drinks2))"
-    by (simp add: Set.filter_def drinks2_def)
-  have test: "\<forall>s t i l r.((s, 0), t) |\<notin>| ffilter
-        (\<lambda>((origin, dest), t).
-            origin = s \<and>
-            Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state i 1 (I n) | R n \<Rightarrow> r (R n))) drinks2"
-    apply (simp add: ffilter_def)
-    sorry
-  have "\<forall>s t r l i. (0, t) |\<notin>| possible_steps drinks2 s r l i"
     apply clarify
-    apply (simp add: possible_steps_def)
-    using test
-    by auto
+    apply (case_tac a)
+    apply (case_tac "aa = ''vend'' \<and> b = []")
+     apply simp
+     apply (rule valid.cases)
+       apply simp
+      apply simp
+     apply clarify
+     apply (case_tac "d (R 2)")
+      apply (simp add: drinks_vend_r2_invalid)
+     apply (case_tac ab)
+      prefer 2
+      apply (simp add: drinks_vend_r2_invalid)
+     apply (case_tac "x1 < 100")
+      apply (simp add: step_def drinks_vend_insufficient outputs_vend_fail updates_vend_fail)
+      apply (rule EFSM.valid.step)
+       apply clarify
+       apply simp
+       apply (simp add: step_def drinks2_vend_insufficient2 outputs_vend_fail updates_vend_fail)
+      apply (simp add: updates_vend_nothing vend_fail_def)
+     apply (simp add: step_def drinks_vend_sufficient)
+     apply (rule EFSM.valid.step)
+      apply clarify
+      apply (simp add: step_def)
+      apply (simp add: possible_steps_2_vend)
+     apply (metis base drinks_invalid_future)
+    apply (case_tac "aa = ''coin'' \<and> length b = 1")
+     prefer 2
+     apply clarify
+     apply (simp add: drinks_1_invalid_trace)
+    apply clarify
+    apply simp
+    apply (rule valid.cases)
+      apply simp
+     apply simp
+    apply clarify
+    apply (simp add: step_def Drinks_Machine.possible_steps_1_coin)
+    apply clarify
+    apply (rule EFSM.valid.step)
+     apply (simp add: step_def possible_steps_2_coin)
+    by simp
 qed
-    
 
-
-
-  show ?thesis
-    apply (simp add: simulates_with_def)
+lemma simulation_aux: "\<forall>r s. EFSM.valid drinks s r t \<longrightarrow> EFSM.valid drinks2 s r t"
+proof (induct t)
+  case Nil
+  then show ?case
+    by (simp add: base)
+next
+  have valid_select: "\<forall>b. length b = 1 \<longrightarrow> EFSM.valid drinks2 0 Map.empty [(''select'', b)]"
     apply safe
-    apply simp_all
-                        apply (simp add: drinks2_end)
-                        apply (simp add: drinks2_end drinks_end)
-                        apply (simp add: drinks2_end drinks_end)
-                        apply (simp add: drinks2_end drinks_end)
-                        apply (simp add: drinks2_end drinks_end)
-                       apply (case_tac "l = ''coin'' \<and> length i = 1")
-                        apply (simp add: possible_steps_2_coin)
-                       apply (case_tac "l = ''vend'' \<and> i = []")
-                        apply (case_tac "r (R 2)")
-                        apply (simp add: drinks2_vend_r2_none)
-                        apply simp
-                        apply (case_tac a)
-                        prefer 2
-                        apply (simp add: drinks2_vend_r2_String)
-                        apply (case_tac "x1 \<ge> 100")
-                        apply (simp add: possible_steps_2_vend Drinks_Machine.possible_steps_2_vend)
-                        apply (simp add: drinks2_vend_insufficient2)
-                       apply simp
-    using drinks2_2_invalid
-                       apply auto[1]
-                      apply (case_tac "l = ''coin'' \<and> length i = 1")
-                       apply (simp add: possible_steps_2_coin possible_steps_1_coin)
-                      apply simp
-                       apply (case_tac "l = ''vend'' \<and> i = []")
-                        apply (case_tac "r (R 2)")
-                        apply (simp add: drinks2_vend_r2_none)
-                       apply simp
-                       apply (case_tac a)
-                        prefer 2
-                        apply (simp add: drinks2_vend_r2_String)
-                       apply (case_tac "x1 \<ge> 100")
-                        apply simp
-                        apply (simp add: possible_steps_2_vend)
-                       apply (simp add: drinks_vend_insufficient)
-                      apply simp
-    using drinks2_2_invalid
-                      apply auto[1]
-                     apply (case_tac "l = ''coin'' \<and> length i = 1")
-                      apply (simp add: Drinks_Machine.possible_steps_1_coin)
-                     apply simp
-                     apply (case_tac "l = ''vend'' \<and> i = []")
-                      apply simp
-                      apply (case_tac "r (R 2)")
-                       apply (simp add: drinks2_vend_r2_none)
-                       apply (case_tac a)
-                        prefer 2
-                        apply (simp add: drinks2_vend_r2_String)
-                       apply (case_tac "x1 \<ge> 100")
-                        apply (simp add: possible_steps_2_vend)
-                      apply (simp add: drinks_vend_insufficient)
-    using drinks2_2_invalid
-                     apply auto[1]
+    apply (rule valid.step)
+     apply (simp add: step_def possible_steps_0)
+    by (simp add: base)
+  have invalid_not_select: "\<forall>aa b t r. \<not> (aa = ''select'' \<and> length b = 1) \<longrightarrow> \<not> EFSM.valid drinks 0 r ((aa, b) # t)"
+    apply safe
+     apply (rule valid.cases)
+       apply simp
+      apply clarify
+     apply (simp add: step_def)
+    using drinks_0_invalid
+     apply (metis (no_types, lifting) fst_conv not_singleton_emty option.simps(3))
+    apply (rule valid.cases)
+      apply simp
+     apply simp
+    apply (simp add: step_def)
+    using drinks_0_invalid
+    by (metis not_singleton_emty option.simps(3) snd_conv)
+  case (Cons a t)
+  then show ?case
+    apply (case_tac a)
+    apply simp
+    apply clarify
+    (* Both can do a select from 0 *)
+    apply (case_tac "s = 0")
+     apply (case_tac "aa = ''select'' \<and> length b = 1")
+     apply simp
+     apply (rule valid.cases)
+       apply simp
+      apply simp
+     apply clarify
+     apply (simp add: step_def Drinks_Machine.possible_steps_0 outputs_select)
+     apply clarify
+     apply (rule EFSM.valid.step)
+       apply (simp add: step_def possible_steps_0)
+      apply simp
+    apply clarify
+     apply (simp add: invalid_not_select)
 
+    (* Both can do a coin and a vend from 1 *)
+    apply (case_tac "s = 1")
+     apply (case_tac "aa = ''vend'' \<and> b = []")
+      apply simp
+      apply (rule valid.cases)
+        apply simp
+       apply simp
+      apply clarify
+      apply (case_tac "d (R 2)")
+       apply (simp add: drinks_vend_r2_invalid)
+      apply (case_tac ab)
+       prefer 2
+       apply (simp add: drinks_vend_r2_invalid)
+      apply (case_tac "x1 < 100")
+       apply (simp add: step_def drinks_vend_insufficient outputs_vend_fail updates_vend_fail)
+       apply (rule EFSM.valid.step)
+        apply clarify
+        apply simp
+        apply (simp add: step_def drinks2_vend_insufficient outputs_vend_fail updates_vend_fail)
+       apply (simp add: updates_vend_nothing vend_fail_def)
+      apply (simp add: step_def drinks_vend_sufficient)
+      apply (rule EFSM.valid.step)
+       apply clarify
+       apply simp
+       apply (simp add: step_def drinks2_vend_insufficient outputs_vend_fail updates_vend_fail)
+      apply (case_tac t)
+    using base apply blast
+      apply (simp add: drinks_invalid_future)
 
+     apply (case_tac "aa = ''coin'' \<and> length b = 1")
+      prefer 2
+      apply clarify
+      apply (simp add: drinks_1_invalid_trace)
 
+      apply simp
+      apply (rule valid.cases)
+        apply simp
+       apply simp
+      apply clarify
+      apply (simp add: step_def Drinks_Machine.possible_steps_1_coin)
+      apply clarify
+     apply (rule EFSM.valid.step)
+       apply (simp add: step_def possible_steps_1)
+     apply (simp add: simulation_aux_aux)
 
+    apply (case_tac "s > 1")
+     defer
+     apply simp
+    by (simp add: invalid_other_states)
+qed
 
-   
-
-
-
-
-
-
-
-
-    
-
-
+lemma "simulates drinks2 drinks"
+proof-
+  show ?thesis
+    unfolding simulates_def valid_trace_def
+    apply safe
+    using simulation_aux
+    by simp
+qed
 end
