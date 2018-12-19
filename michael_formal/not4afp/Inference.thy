@@ -130,6 +130,9 @@ qed
 
 type_synonym generator_function = "transition_matrix \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition option"
 
+definition null_generator :: generator_function where
+  "null_generator a b c d e = None"
+
 definition merge_transitions :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> generator_function \<Rightarrow> transition_matrix option" where
   "merge_transitions oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 t2 maker = (
     \<comment> \<open> If t1 directly subsumes t2 then replace t2 with t1 \<close>

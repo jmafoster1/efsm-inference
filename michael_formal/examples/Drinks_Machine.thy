@@ -154,30 +154,30 @@ lemma purchase_coke: "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (
   apply (simp add: step_def possible_steps_2_vend)
   by (simp add: transitions)
 
-lemma invalid_impossible: "l \<noteq> ''coin'' \<Longrightarrow> l \<noteq> ''vend'' \<Longrightarrow> possible_steps drinks 1 d l i = {||}"
+lemma inaccepts_impossible: "l \<noteq> ''coin'' \<Longrightarrow> l \<noteq> ''vend'' \<Longrightarrow> possible_steps drinks 1 d l i = {||}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma invalid_input: "l \<noteq> ''coin'' \<Longrightarrow> l \<noteq> ''vend'' \<Longrightarrow> EFSM.valid drinks 1 d' [(l, i)] \<Longrightarrow> False"
-  apply (cases rule: valid.cases)
+lemma inaccepts_input: "l \<noteq> ''coin'' \<Longrightarrow> l \<noteq> ''vend'' \<Longrightarrow> accepts drinks 1 d' [(l, i)] \<Longrightarrow> False"
+  apply (cases rule: accepts.cases)
     apply (simp)
    apply simp
   apply clarify
   apply (simp add: step_def)
-  by (simp add: invalid_impossible fis_singleton_def is_singleton_def)
+  by (simp add: inaccepts_impossible fis_singleton_def is_singleton_def)
 
-lemma invalid_valid_prefix: "l \<noteq> ''coin'' \<Longrightarrow> l \<noteq> ''vend'' \<Longrightarrow> \<not> (valid_trace drinks [(''select'', [Str ''coke'']), (l, i)])"
+lemma inaccepts_accepts_prefix: "l \<noteq> ''coin'' \<Longrightarrow> l \<noteq> ''vend'' \<Longrightarrow> \<not> (accepts_trace drinks [(''select'', [Str ''coke'']), (l, i)])"
   apply clarify
-  apply (cases rule: valid.cases)
-    apply (simp add: valid_trace_def)
-  apply (simp add: valid_trace_def)
+  apply (cases rule: accepts.cases)
+    apply (simp add: accepts_trace_def)
+  apply (simp add: accepts_trace_def)
   apply clarify
-  apply (simp add: step_def possible_steps_0 invalid_input fis_singleton_def)
-  using invalid_input by force
+  apply (simp add: step_def possible_steps_0 inaccepts_input fis_singleton_def)
+  using inaccepts_input by force
 
-lemma invalid_termination: "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''invalid'', [Num 50]), (''coin'', [Num 50])] = [[]]"
+lemma inaccepts_termination: "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''inaccepts'', [Num 50]), (''coin'', [Num 50])] = [[]]"
   apply (simp add: observe_trace_def step_def possible_steps_0 updates_select)
-  by (simp add: invalid_impossible fis_singleton_def is_singleton_def transitions)
+  by (simp add: inaccepts_impossible fis_singleton_def is_singleton_def transitions)
 
 abbreviation select_posterior :: "context" where
   "select_posterior \<equiv> \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> Eq (Num 0)\<rbrakk>"
@@ -229,7 +229,7 @@ lemma drinks_vend_r2_String: "r (R 2) = Some (Str x2) \<Longrightarrow> possible
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma drinks_vend_r2_invalid: "\<nexists>n. r (R 2) = Some (Num n) \<Longrightarrow> step drinks 1 r ''vend'' [] = None"
+lemma drinks_vend_r2_inaccepts: "\<nexists>n. r (R 2) = Some (Num n) \<Longrightarrow> step drinks 1 r ''vend'' [] = None"
   apply (simp add: step_def)
   apply (case_tac "r (R 2)")
    apply (simp add: drinks_vend_r2_none)
@@ -238,16 +238,16 @@ lemma drinks_vend_r2_invalid: "\<nexists>n. r (R 2) = Some (Num n) \<Longrightar
    apply simp
   by (simp add: drinks_vend_r2_String)
 
-lemma drinks_0_invalid: "\<not> (fst a = ''select'' \<and> length (snd a) = 1) \<Longrightarrow>
+lemma drinks_0_inaccepts: "\<not> (fst a = ''select'' \<and> length (snd a) = 1) \<Longrightarrow>
     (possible_steps drinks 0 r (fst a) (snd a)) = {||}"
   apply (simp add: drinks_def possible_steps_def transitions)
   by force
 
 lemma drinks_vend_empty: "(possible_steps drinks 0 Map.empty (''vend'') []) = {||}"
-  using drinks_0_invalid
+  using drinks_0_inaccepts
   by auto
 
-lemma drinks_1_invalid: "fst a = ''coin'' \<longrightarrow> length (snd a) \<noteq> 1 \<Longrightarrow>
+lemma drinks_1_inaccepts: "fst a = ''coin'' \<longrightarrow> length (snd a) \<noteq> 1 \<Longrightarrow>
           a \<noteq> (''vend'', []) \<Longrightarrow>
           possible_steps drinks 1 r (fst a) (snd a) = {||}"
 proof
@@ -269,23 +269,23 @@ lemma step_drinks_end: "step drinks 2 da (fst h) (snd h) = None"
   apply (simp add: step_def)
   by (simp add: drinks_end)
 
-lemma drinks_invalid_future: "t \<noteq> [] \<Longrightarrow> \<not>EFSM.valid drinks 2 d t"
+lemma drinks_inaccepts_future: "t \<noteq> [] \<Longrightarrow> \<not>accepts drinks 2 d t"
   apply safe
-  apply (rule valid.cases)
+  apply (rule accepts.cases)
     apply simp
    apply simp
   by (simp add: step_drinks_end)
 
-lemma drinks_1_invalid_trace: "\<not> (aa = ''vend'' \<and> b = []) \<Longrightarrow> \<not> (aa = ''coin'' \<and> length b = 1) \<Longrightarrow> \<not>EFSM.valid drinks 1 r ((aa, b) # t)"
+lemma drinks_1_inaccepts_trace: "\<not> (aa = ''vend'' \<and> b = []) \<Longrightarrow> \<not> (aa = ''coin'' \<and> length b = 1) \<Longrightarrow> \<not>accepts drinks 1 r ((aa, b) # t)"
   apply clarify
-  apply (rule valid.cases)
+  apply (rule accepts.cases)
     apply simp
    apply simp
   apply clarify
   unfolding step_def
-  using drinks_1_invalid by auto
+  using drinks_1_inaccepts by auto
 
-lemma invalid_state_step: "s > 1 \<Longrightarrow> step drinks s r l i = None"
+lemma inaccepts_state_step: "s > 1 \<Longrightarrow> step drinks s r l i = None"
 proof-
   assume premise: "s > 1"
   have set_filter: "(Set.filter
@@ -303,13 +303,13 @@ proof-
     by simp
 qed
 
-lemma invalid_other_states: "s > 1 \<Longrightarrow> \<not>EFSM.valid drinks s r ((aa, b) # t)"
+lemma inaccepts_other_states: "s > 1 \<Longrightarrow> \<not>accepts drinks s r ((aa, b) # t)"
   apply clarify
-  apply (rule valid.cases)
+  apply (rule accepts.cases)
     apply simp
    apply simp
   apply clarify
-  using invalid_state_step
+  using inaccepts_state_step
   by simp
   
 end

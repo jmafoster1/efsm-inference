@@ -6,8 +6,6 @@ theory Drinks_Machine_2
   imports Drinks_Machine "../Contexts"
 begin
 
-declare One_nat_def [simp del]
-
 definition vend_nothing :: "transition" where
 "vend_nothing \<equiv> \<lparr>
         Label = ''vend'',
@@ -94,7 +92,7 @@ abbreviation r1_r2_true :: "context" where
 lemma consistent_r1_r2_true: "consistent r1_r2_true"
   apply (simp add: consistent_def)
   apply (rule_tac x="<>" in exI)
-  apply (simp del: Nat.One_nat_def)
+  apply (simp )
   using consistent_empty_1
   by fastforce
 
@@ -180,20 +178,16 @@ lemma not_eq_0_and_ge_100:"\<not> GExp.satisfiable (gAnd (gexp.Eq (V (R 2)) (L (
 lemma can_take_coin: "consistent c \<longrightarrow> Contexts.can_take coin c"
   by (simp add: coin_def consistent_def Contexts.can_take_def)
 
-lemma valid_posterior_coin_subsequent: "valid_context (posterior r1_r2_true coin)"
+lemma accepts_posterior_coin_subsequent: "valid_context (posterior r1_r2_true coin)"
   apply (simp add: posterior_coin_subsequent)
   apply (simp add: valid_context_def)
   apply (simp add: posterior_coin_subsequent One_nat_def)
   by (simp add: consistent_empty_4)
 
-lemma valid_true: "valid c \<longrightarrow> cexp_equiv c (Bc True)"
-  apply (simp add: valid_def cexp_equiv_def)
-  by auto
-
 lemma consistent_medial_coin_3: "consistent (\<lambda>a. if a = V (R 2) then cexp.Eq (Num 0) else if a = V (R 1) then cexp.Bc True else \<lbrakk>\<rbrakk> a)"
   apply (simp add: consistent_def)
   apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0>" in exI)
-  apply (simp del: Nat.One_nat_def)
+  apply (simp )
   by (simp add: consistent_empty_4)
 
 lemma select_posterior_equiv: "(\<lambda>a. if a = V (R 2) then cexp.Eq (Num 0) else if a = V (R 1) then cexp.Bc True else \<lbrakk>\<rbrakk> a) = select_posterior"
@@ -219,7 +213,7 @@ lemma posterior_n_coin_true_true: "(posterior_n n coin r1_r2_true) = r1_r2_true"
   next
     case (Suc n)
     then show ?case
-      apply (simp add: r1_r2_true_equiv posterior_coin_subsequent  del: Nat.One_nat_def)
+      apply (simp add: r1_r2_true_equiv posterior_coin_subsequent)
       using posterior_coin_subsequent by auto
   qed
 
@@ -229,35 +223,35 @@ lemma consistent_posterior_n_coin: "consistent (posterior_n n coin select_poster
     then show ?case
       apply (simp add: consistent_def)
       apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0>" in exI)
-      apply (simp del: Nat.One_nat_def)
+      apply (simp )
       using consistent_empty_4 by blast
   next
     case (Suc n)
     then show ?case
-      apply (simp del: Nat.One_nat_def)
-      apply (simp add: select_posterior_equiv del: Nat.One_nat_def)
+      apply (simp )
+      apply (simp add: select_posterior_equiv )
       apply (simp only:  posterior_coin_first posterior_n_coin_true_true)
       using consistent_r1_r2_true by blast
   qed
 
 lemma coin_before_vend: "Contexts.can_take vend (posterior_n n coin (posterior \<lbrakk>\<rbrakk> select)) \<longrightarrow> n > 0" (* We have to do a "coin" before we can do a "vend"*)
-  apply (simp add: select_posterior del: Nat.One_nat_def)
+  apply (simp add: select_posterior )
   apply (cases n)
-   apply (simp add: r2_0_vend del: Nat.One_nat_def)
+   apply (simp add: r2_0_vend )
   by simp
 
 lemma posterior_n_coin_true_2: "(posterior_n (Suc n) coin select_posterior) = r1_r2_true"
   proof (induction n)
     case 0
     then show ?case
-      apply (simp del: Nat.One_nat_def)
+      apply (simp )
       apply (simp only: select_posterior_equiv posterior_coin_first)
       apply (rule ext)
       by simp
   next
     case (Suc n)
     then show ?case
-      apply (simp add: select_posterior_equiv del: Nat.One_nat_def)
+      apply (simp add: select_posterior_equiv )
       apply (simp only: posterior_coin_first)
       by (simp only: posterior_coin_subsequent)
   qed
@@ -275,7 +269,7 @@ lemma medial_vend: "medial r1_r2_true (Guard vend) = \<lbrakk>(V (R 1)) \<mapsto
 lemma consistent_medial_vend: "consistent \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> (Geq (Num 100))\<rbrakk>"
   apply (simp add: consistent_def)
   apply (rule_tac x="<R 1 := Num 0, R 2 := Num 100>" in exI)
-  apply (simp del: Nat.One_nat_def)
+  apply (simp )
   using consistent_empty_4 by auto
 
 lemma "n > 0 \<longrightarrow> Contexts.can_take vend (posterior_n n coin (posterior empty select))" (* We can do any number of "coin"s before doing a "vend" *)
@@ -285,7 +279,7 @@ lemma "n > 0 \<longrightarrow> Contexts.can_take vend (posterior_n n coin (poste
   next
     case (Suc n)
     then show ?case
-      apply (simp del: Nat.One_nat_def)
+      apply (simp )
       apply (simp only: select_posterior posterior_coin_first posterior_n_coin_true_true Contexts.can_take_def)
       by (simp only: medial_vend consistent_medial_vend)
   qed
@@ -425,10 +419,10 @@ next
      apply (simp add: step_def)
      apply (simp add: drinks_vend_r2_String drinks2_vend_r2_String )
      apply (simp add: step_def)
-    by (simp add: drinks_1_invalid drinks2_2_invalid )
+    by (simp add: drinks_1_inaccepts drinks2_2_invalid )
 qed
 
-lemma drinks2_1_invalid: "fst a = ''coin'' \<longrightarrow> length (snd a) \<noteq> 1 \<Longrightarrow>
+lemma drinks2_1_inaccepts: "fst a = ''coin'' \<longrightarrow> length (snd a) \<noteq> 1 \<Longrightarrow>
     a \<noteq> (''vend'', []) \<Longrightarrow>
     possible_steps drinks2 1 r (fst a) (snd a) = {||}"
   apply (simp add: drinks2_def possible_steps_def transitions)
@@ -469,7 +463,7 @@ next
      apply (simp add: outputs_vend_fail outputs_vend_nothing )
      apply (simp add: apply_updates_vend_fail apply_updates_vend_nothing)
     apply (simp add: step_def)
-    by (simp add: drinks_1_invalid drinks2_1_invalid step_def )
+    by (simp add: drinks_1_inaccepts drinks2_1_inaccepts step_def )
 qed
 
 lemma observational_equivalence: "efsm_equiv drinks drinks2 t" (* Corresponds to Example 3 in Foster et. al. *)
@@ -482,7 +476,7 @@ proof (induct t)
     apply (simp only: efsm_equiv_def observe_trace_def)
     apply (case_tac "fst a = ''select'' \<and> length (snd a) = 1")
      prefer 2
-     apply (simp add: drinks2_0_invalid drinks_0_invalid is_singleton_def step_def )
+     apply (simp add: drinks2_0_invalid drinks_0_inaccepts is_singleton_def step_def )
     apply (simp)
     apply (simp add: possible_steps_0 Drinks_Machine.possible_steps_0 updates_select step_def)
     apply (case_tac t)
@@ -500,7 +494,7 @@ lemma finite_filter_fset_2: "(Set.filter f (fset s)) \<in> {A. finite A}"
 lemma filter_elements: "x |\<in>| Abs_fset (Set.filter f (fset s)) = (x \<in> (Set.filter f (fset s)))"
   by (metis ffilter.rep_eq fset_inverse notin_fset)
 
-lemma simulation_aux_aux: "\<forall>r s. EFSM.valid drinks 1 r t \<longrightarrow> EFSM.valid drinks2 2 r t"
+lemma simulation_aux_aux: "\<forall>r s. accepts drinks 1 r t \<longrightarrow> accepts drinks2 2 r t"
 proof (induct t)
   case Nil
 then show ?case
@@ -512,69 +506,69 @@ next
     apply (case_tac a)
     apply (case_tac "aa = ''vend'' \<and> b = []")
      apply simp
-     apply (rule valid.cases)
+     apply (rule accepts.cases)
        apply simp
       apply simp
      apply clarify
      apply (case_tac "d (R 2)")
-      apply (simp add: drinks_vend_r2_invalid)
+      apply (simp add: drinks_vend_r2_inaccepts)
      apply (case_tac ab)
       prefer 2
-      apply (simp add: drinks_vend_r2_invalid)
+      apply (simp add: drinks_vend_r2_inaccepts)
      apply (case_tac "x1 < 100")
       apply (simp add: step_def drinks_vend_insufficient outputs_vend_fail updates_vend_fail)
-      apply (rule EFSM.valid.step)
+      apply (rule accepts.step)
        apply clarify
        apply simp
        apply (simp add: step_def drinks2_vend_insufficient2 outputs_vend_fail updates_vend_fail)
       apply (simp add: updates_vend_nothing vend_fail_def)
      apply (simp add: step_def drinks_vend_sufficient)
-     apply (rule EFSM.valid.step)
+     apply (rule accepts.step)
       apply clarify
       apply (simp add: step_def)
       apply (simp add: possible_steps_2_vend)
-     apply (metis base drinks_invalid_future)
+     apply (metis base drinks_inaccepts_future)
     apply (case_tac "aa = ''coin'' \<and> length b = 1")
      prefer 2
      apply clarify
-     apply (simp add: drinks_1_invalid_trace)
+     apply (simp add: drinks_1_inaccepts_trace)
     apply clarify
     apply simp
-    apply (rule valid.cases)
+    apply (rule accepts.cases)
       apply simp
      apply simp
     apply clarify
     apply (simp add: step_def Drinks_Machine.possible_steps_1_coin)
     apply clarify
-    apply (rule EFSM.valid.step)
+    apply (rule accepts.step)
      apply (simp add: step_def possible_steps_2_coin)
     by simp
 qed
 
-lemma simulation_aux: "\<forall>r s. EFSM.valid drinks s r t \<longrightarrow> EFSM.valid drinks2 s r t"
+lemma simulation_aux: "\<forall>r s. accepts drinks s r t \<longrightarrow> accepts drinks2 s r t"
 proof (induct t)
   case Nil
   then show ?case
     by (simp add: base)
 next
-  have valid_select: "\<forall>b. length b = 1 \<longrightarrow> EFSM.valid drinks2 0 Map.empty [(''select'', b)]"
+  have accepts_select: "\<forall>b. length b = 1 \<longrightarrow> accepts drinks2 0 Map.empty [(''select'', b)]"
     apply safe
-    apply (rule valid.step)
+    apply (rule accepts.step)
      apply (simp add: step_def possible_steps_0)
     by (simp add: base)
-  have invalid_not_select: "\<forall>aa b t r. \<not> (aa = ''select'' \<and> length b = 1) \<longrightarrow> \<not> EFSM.valid drinks 0 r ((aa, b) # t)"
+  have inaccepts_not_select: "\<forall>aa b t r. \<not> (aa = ''select'' \<and> length b = 1) \<longrightarrow> \<not> accepts drinks 0 r ((aa, b) # t)"
     apply safe
-     apply (rule valid.cases)
+     apply (rule accepts.cases)
        apply simp
       apply clarify
      apply (simp add: step_def)
-    using drinks_0_invalid
+    using drinks_0_inaccepts
      apply (metis (no_types, lifting) fst_conv not_singleton_emty option.simps(3))
-    apply (rule valid.cases)
+    apply (rule accepts.cases)
       apply simp
      apply simp
     apply (simp add: step_def)
-    using drinks_0_invalid
+    using drinks_0_inaccepts
     by (metis not_singleton_emty option.simps(3) snd_conv)
   case (Cons a t)
   then show ?case
@@ -585,73 +579,74 @@ next
     apply (case_tac "s = 0")
      apply (case_tac "aa = ''select'' \<and> length b = 1")
      apply simp
-     apply (rule valid.cases)
+     apply (rule accepts.cases)
        apply simp
       apply simp
      apply clarify
      apply (simp add: step_def Drinks_Machine.possible_steps_0 outputs_select)
      apply clarify
-     apply (rule EFSM.valid.step)
+     apply (rule accepts.step)
        apply (simp add: step_def possible_steps_0)
       apply simp
     apply clarify
-     apply (simp add: invalid_not_select)
+     apply (simp add: inaccepts_not_select)
 
     (* Both can do a coin and a vend from 1 *)
     apply (case_tac "s = 1")
      apply (case_tac "aa = ''vend'' \<and> b = []")
       apply simp
-      apply (rule valid.cases)
+      apply (rule accepts.cases)
         apply simp
        apply simp
       apply clarify
       apply (case_tac "d (R 2)")
-       apply (simp add: drinks_vend_r2_invalid)
+       apply (simp add: drinks_vend_r2_inaccepts)
       apply (case_tac ab)
        prefer 2
-       apply (simp add: drinks_vend_r2_invalid)
+       apply (simp add: drinks_vend_r2_inaccepts)
       apply (case_tac "x1 < 100")
        apply (simp add: step_def drinks_vend_insufficient outputs_vend_fail updates_vend_fail)
-       apply (rule EFSM.valid.step)
+       apply (rule accepts.step)
         apply clarify
         apply simp
         apply (simp add: step_def drinks2_vend_insufficient outputs_vend_fail updates_vend_fail)
        apply (simp add: updates_vend_nothing vend_fail_def)
       apply (simp add: step_def drinks_vend_sufficient)
-      apply (rule EFSM.valid.step)
+      apply (rule accepts.step)
        apply clarify
        apply simp
        apply (simp add: step_def drinks2_vend_insufficient outputs_vend_fail updates_vend_fail)
       apply (case_tac t)
     using base apply blast
-      apply (simp add: drinks_invalid_future)
+      apply (simp add: drinks_inaccepts_future)
 
      apply (case_tac "aa = ''coin'' \<and> length b = 1")
       prefer 2
       apply clarify
-      apply (simp add: drinks_1_invalid_trace)
+      apply (simp add: drinks_1_inaccepts_trace)
 
       apply simp
-      apply (rule valid.cases)
+      apply (rule accepts.cases)
         apply simp
        apply simp
       apply clarify
       apply (simp add: step_def Drinks_Machine.possible_steps_1_coin)
       apply clarify
-     apply (rule EFSM.valid.step)
+     apply (rule accepts.step)
        apply (simp add: step_def possible_steps_1)
      apply (simp add: simulation_aux_aux)
 
+    (* All traces are invalid for drinks in states greater than 1 *)
     apply (case_tac "s > 1")
      defer
      apply simp
-    by (simp add: invalid_other_states)
+    by (simp add: inaccepts_other_states)
 qed
 
 lemma "simulates drinks2 drinks"
 proof-
   show ?thesis
-    unfolding simulates_def valid_trace_def
+    unfolding simulates_def accepts_trace_def
     apply safe
     using simulation_aux
     by simp

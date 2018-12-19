@@ -1117,7 +1117,7 @@ qed
 definition basically_drinks :: transition_matrix where
   "basically_drinks = {|((1, 1), vend_fail), ((0, 1), select), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)|}"
 
-lemma merge_transitions: "merge_transitions drinks2 (merge_states 1 2 drinks2) 1 2 1 1 1 vend_nothing vend_fail = Some basically_drinks"
+lemma merge_transitions: "merge_transitions drinks2 (merge_states 1 2 drinks2) 1 2 1 1 1 vend_nothing vend_fail null_generator = Some basically_drinks"
 proof-
   have set_filter: "Set.filter (\<lambda>x. x \<noteq> ((1, 1), vend_nothing))
          {((0, 1), select), ((1, 1), vend_nothing), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)} = 
@@ -1135,36 +1135,38 @@ proof-
     by (simp add: set_filter abs_fset basically_drinks_def)
 qed
 
+lemma vend_fail_exits_1: "exits_state (merge_states 1 2 drinks2) vend_fail 1"
+proof-
+  show ?thesis
+    apply (simp add: exits_state_def merge_1_2)
+    by auto
+qed
 
-lemma merge_2_1_2: "merge_2 drinks2 1 2 = Some basically_drinks"
+lemma merge_2_1_2: "merge_2 drinks2 1 2 null_generator = Some basically_drinks"
 proof-
   have nondeterminism_merge_1_2: "nondeterminism (merge_states 1 2 drinks2)"
     unfolding nondeterminism_def
     using vend_vend_nothing_nondeterminism by auto
   have merge_vend_nothing_vend: "merge_transitions (merge_states 1 2 drinks2) (merge_states 1 3 (merge_states 1 2 drinks2)) 1 1 1 1 1 vend_nothing
-             vend = None"
+             vend null_generator = None"
     apply (simp only: merge_1_3_2)
     apply (simp only: merge_1_2)
-    using merge_1_2 merge_transitions_def vend_doesnt_directly_subsume_vend_nothing_2 vend_doesnt_directly_subsume_vend_nothing_3 by auto
-  have vend_fail_neq_vend: "vend_fail \<noteq> vend"
-    by (simp add: transitions)
+    using merge_1_2 merge_transitions_def vend_doesnt_directly_subsume_vend_nothing_2 vend_doesnt_directly_subsume_vend_nothing_3
+    by (simp add: null_generator_def)
+  have vend_fail_lt_vend: "vend_fail < vend"
+    using vend_fail_leq_vend vend_neq_vend_fail by auto
+  have vend_fail_lt_vend_2: "\<not>vend \<le> vend_fail"
+    using vend_fail_lt_vend by auto
   have fmax: "fMax
            ({|(1::nat, (1::nat, 3::nat), vend_nothing, vend), (1, (1, 1), vend_nothing, vend_fail)|} |-|
             {|max (1, (1, 3), vend_nothing, vend) (1, (1, 1), vend_nothing, vend_fail)|}) = (1, (1, 1), vend_nothing, vend_fail)"
     apply (simp add: fMax_def max_def )
     by (simp add: fMax.semilattice_fset_axioms semilattice_fset.singleton)
   show ?thesis
-    apply (simp add: Let_def nondeterminisitic_pairs )
-    apply (simp add: nondeterministic_pairs_1_3 )
+    apply (simp add: Let_def nondeterminisitic_pairs nondeterminism_def max_def)
+    apply (simp add: nondeterministic_pairs_1_3 max_def)
     apply (simp add: vend_nothing_exits_1_2 vend_exits_1 nondeterminsm_merge_1_3 nondeterminism_merge_1_2 )
-    apply (simp add: merge_vend_nothing_vend )
-    apply (simp add: max_nondeterministic_transitions vend_nothing_exits_1_2 vend_exits_1 vend_fail_neq_vend )
-    apply (simp add: max_nondeterminism )
-    unfolding Let_def
-    apply (simp add: nondeterminsm_merge_1_3 nondeterministic_pairs_1_3 )
-    apply (simp add: vend_nothing_exits_1_2 vend_exits_1 )
-    apply (simp add: max_nondeterministic_transitions vend_nothing_exits_1_2 vend_exits_1 vend_fail_neq_vend )
-    apply (simp add: merge_vend_nothing_vend fmax)
+    apply (simp add: merge_vend_nothing_vend max_def vend_fail_exits_1 vend_fail_lt_vend_2)
     by (simp add: merge_transitions)
 qed
 
@@ -1325,8 +1327,7 @@ proof-
       apply safe
       by (simp_all add: transitions)
     show ?thesis
-      apply (simp add: outgoing_transitions_def ffilter_def set_filter)
-      by (metis bot_fset.rep_eq fimage_finsert fimage_is_fempty finsert.rep_eq fset_inverse old.prod.case)
+      by (simp add: outgoing_transitions_def ffilter_def set_filter)
   qed
   have outgoing_transitions_1: "outgoing_transitions 1 basically_drinks = {|coin, vend_fail, vend|}"
   proof-
@@ -1355,11 +1356,11 @@ proof-
     by (simp add: scoring sorted_list_of_fset_def)
 qed
 
-lemma "infer drinks2 naive_score = basically_drinks"
+lemma "infer drinks2 naive_score null_generator = basically_drinks"
 proof-
-  have first_step: "inference_step drinks2 (rev (sorted_list_of_fset (score drinks2 naive_score))) = Some basically_drinks"
+  have first_step: "inference_step drinks2 (rev (sorted_list_of_fset (score drinks2 naive_score))) null_generator = Some basically_drinks"
     by (simp add: scoring merge_2_1_2 del: merge_2.simps)
-  have next_step: "inference_step basically_drinks (rev (sorted_list_of_fset (score basically_drinks naive_score))) = None"
+  have next_step: "inference_step basically_drinks (rev (sorted_list_of_fset (score basically_drinks naive_score))) null_generator = None"
     by (simp add: scoring_2)
   show ?thesis
     apply (simp add: first_step)

@@ -127,65 +127,65 @@ next
   qed
 qed
 
-inductive valid :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
-  base: "valid e s d []" |
-  step: "step e s d (fst h) (snd h) = Some (tr, s', p', d') \<Longrightarrow> valid e s' d' t \<Longrightarrow> valid e s d (h#t)"
+inductive accepts :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
+  base: "accepts e s d []" |
+  step: "step e s d (fst h) (snd h) = Some (tr, s', p', d') \<Longrightarrow> accepts e s' d' t \<Longrightarrow> accepts e s d (h#t)"
 
-definition valid_trace :: "transition_matrix \<Rightarrow> trace \<Rightarrow> bool" where
-  "valid_trace e t \<equiv> valid e 0 <> t"
+definition accepts_trace :: "transition_matrix \<Rightarrow> trace \<Rightarrow> bool" where
+  "accepts_trace e t = accepts e 0 <> t"
 
-lemma valid_steps: "fthe_elem (possible_steps e s d (fst h) (snd h)) = (a, b) \<Longrightarrow>
+lemma accepts_steps: "fthe_elem (possible_steps e s d (fst h) (snd h)) = (a, b) \<Longrightarrow>
        fis_singleton (possible_steps e s d (fst h) (snd h)) \<Longrightarrow>
-       valid e a (apply_updates (Updates b) (case_vname (\<lambda>n. input2state (snd h) (Suc 0) (I n)) (\<lambda>n. d (R n))) d) t \<Longrightarrow>
-       valid e s d (h#t)"
-  by (simp add: observations valid.step)
+       accepts e a (apply_updates (Updates b) (case_vname (\<lambda>n. input2state (snd h) (Suc 0) (I n)) (\<lambda>n. d (R n))) d) t \<Longrightarrow>
+       accepts e s d (h#t)"
+  by (simp add: observations accepts.step)
 
-lemma invalid_conditions: "\<not>valid e s d (h # t) \<Longrightarrow> step e s d (fst h) (snd h) = None \<or> (\<exists>tr s' p' d'. step e s d (fst h) (snd h) =  Some (tr, s', p', d') \<and> \<not>valid e s' d' t)"
-  apply (rule valid.cases)
-  using valid.base
+lemma inaccepts_conditions: "\<not>accepts e s d (h # t) \<Longrightarrow> step e s d (fst h) (snd h) = None \<or> (\<exists>tr s' p' d'. step e s d (fst h) (snd h) =  Some (tr, s', p', d') \<and> \<not>accepts e s' d' t)"
+  apply (rule accepts.cases)
+  using accepts.base
     apply auto[1]
-   apply (metis option.exhaust prod_cases4 valid.step)
+   apply (metis option.exhaust prod_cases4 accepts.step)
   by simp
 
-lemma step_none_invalid: "((step e s d (fst h) (snd h)) = None) \<Longrightarrow> \<not> (valid e s d (h#t))"
+lemma step_none_inaccepts: "((step e s d (fst h) (snd h)) = None) \<Longrightarrow> \<not> (accepts e s d (h#t))"
   apply(clarify)
-  apply(cases rule:valid.cases)
+  apply(cases rule:accepts.cases)
     apply(simp)
    apply simp
   by(auto)
 
-lemma invalid_future_invalid: "(\<exists>tr s' p' d'. step e s d (fst h) (snd h) =  Some (tr, s', p', d') \<and> \<not>valid e s' d' t) \<Longrightarrow> \<not>valid e s d (h#t)"
+lemma inaccepts_future_inaccepts: "(\<exists>tr s' p' d'. step e s d (fst h) (snd h) =  Some (tr, s', p', d') \<and> \<not>accepts e s' d' t) \<Longrightarrow> \<not>accepts e s d (h#t)"
   apply clarify
-    apply(cases rule:valid.cases)
+    apply(cases rule: accepts.cases)
     apply simp
    apply simp
   by auto
 
-lemma conditions_invalid: "step e s d (fst h) (snd h) = None \<or> (\<exists>tr s' p' d'. step e s d (fst h) (snd h) =  Some (tr, s', p', d') \<and> \<not>valid e s' d' t) \<Longrightarrow> \<not> valid e s d (h # t)"
+lemma conditions_inaccepts: "step e s d (fst h) (snd h) = None \<or> (\<exists>tr s' p' d'. step e s d (fst h) (snd h) =  Some (tr, s', p', d') \<and> \<not>accepts e s' d' t) \<Longrightarrow> \<not> accepts e s d (h # t)"
   apply clarify
-    apply(cases rule:valid.cases)
+    apply(cases rule:accepts.cases)
     apply simp
    apply simp
   by auto
 
-lemma valid_head: "valid e s d (h#t) \<Longrightarrow> valid e s d [h]"
-  by (meson base conditions_invalid invalid_conditions)
+lemma accepts_head: "accepts e s d (h#t) \<Longrightarrow> accepts e s d [h]"
+  by (meson base conditions_inaccepts inaccepts_conditions)
 
-lemma invalid_single_event: "\<not> valid e s d [(a, b)] \<Longrightarrow> step e s d (fst (a, b)) (snd (a, b)) = None"
-  by (metis (mono_tags, lifting) base invalid_conditions)
+lemma inaccepts_single_event: "\<not> accepts e s d [(a, b)] \<Longrightarrow> step e s d (fst (a, b)) (snd (a, b)) = None"
+  by (metis (mono_tags, lifting) base inaccepts_conditions)
 
-lemma step_invalid: "\<not> valid e s d ((a, b) # t) \<Longrightarrow> step e s d (fst (a, b)) (snd (a, b)) = Some (tr, s', p', d') \<Longrightarrow> \<not> valid e s' d' t"
-  using invalid_conditions by force
+lemma step_inaccepts: "\<not> accepts e s d ((a, b) # t) \<Longrightarrow> step e s d (fst (a, b)) (snd (a, b)) = Some (tr, s', p', d') \<Longrightarrow> \<not> accepts e s' d' t"
+  using inaccepts_conditions by force
 
-lemma step_none_invalid_append: "step e s d (fst a) (snd a) = None \<Longrightarrow> \<not>valid e s d (a # t) \<and> \<not>valid e s d (a # t @ t')"
-  by (simp add: step_none_invalid)
+lemma step_none_inaccepts_append: "step e s d (fst a) (snd a) = None \<Longrightarrow> \<not>accepts e s d (a # t) \<and> \<not>accepts e s d (a # t @ t')"
+  by (simp add: step_none_inaccepts)
 
-lemma step_some: "step e s d (fst a) (snd a) = Some (tr, aa, ab, b) \<Longrightarrow> valid e s d (a # t) = valid e aa b t"
+lemma step_some: "step e s d (fst a) (snd a) = Some (tr, aa, ab, b) \<Longrightarrow> accepts e s d (a # t) = accepts e aa b t"
   apply safe
-  using conditions_invalid apply fastforce
-  by (simp add: valid.step)
+  using conditions_inaccepts apply fastforce
+  by (simp add: accepts.step)
 
-lemma aux1: "\<forall> s d. valid e s d (t@t') \<longrightarrow> valid e s d t"
+lemma aux1: "\<forall> s d. accepts e s d (t@t') \<longrightarrow> accepts e s d t"
   proof (induction t)
     case Nil
     then show ?case by (simp add: base)
@@ -195,12 +195,12 @@ lemma aux1: "\<forall> s d. valid e s d (t@t') \<longrightarrow> valid e s d t"
       apply safe
       apply simp
       apply (case_tac "step e s d (fst a) (snd a) = None")
-       apply (simp add: step_none_invalid)
+       apply (simp add: step_none_inaccepts)
       apply safe
       by (simp add: step_some)
   qed
 
-lemma prefix_closure: "valid e s d (t@t') \<Longrightarrow> valid e s d t"
+lemma prefix_closure: "accepts e s d (t@t') \<Longrightarrow> accepts e s d t"
   proof (induction "t")
     case Nil
     then show ?case by (simp add: base)
@@ -209,13 +209,13 @@ lemma prefix_closure: "valid e s d (t@t') \<Longrightarrow> valid e s d t"
     then show ?case
       apply simp
       apply (case_tac "step e s d (fst x) (snd x) = None")
-       apply (simp add: step_none_invalid)
+       apply (simp add: step_none_inaccepts)
       apply safe
       apply (simp add: step_some)
       using aux1 by force
   qed
 
-lemma invalid_prefix: "\<not>valid e s d t \<Longrightarrow> \<not>valid e s d (t@t')"
+lemma inaccepts_prefix: "\<not>accepts e s d t \<Longrightarrow> \<not>accepts e s d (t@t')"
   apply (rule ccontr)
   by (simp add: prefix_closure)
 
@@ -225,13 +225,13 @@ lemma length_observe_empty_trace: "length (observe_all e aa b []) = 0"
 lemma not_single_step_none:  "\<not> fis_singleton (possible_steps e 0 Map.empty (fst a) (snd a)) \<Longrightarrow> (step e 0 <> (fst a) (snd a) = None)"
   by (simp add: observations)
 
-lemma valid_singleton_first_step: "valid e 0 Map.empty (a # t) \<Longrightarrow> fis_singleton (possible_steps e 0 Map.empty (fst a) (snd a))"
-  by (meson step_none_invalid observations)
+lemma accepts_singleton_first_step: "accepts e 0 Map.empty (a # t) \<Longrightarrow> fis_singleton (possible_steps e 0 Map.empty (fst a) (snd a))"
+  by (meson step_none_inaccepts observations)
 
 lemma step_length_suc: "step e 0 <> (fst a) (snd a) = Some (tr, aa, ab, b) \<Longrightarrow> length (observe_all e 0 <> (a # t)) = Suc (length (observe_all e aa b t))"
   by simp
 
-lemma aux2: "\<forall>s d. valid e s d t \<longrightarrow> (length t = length (observe_all e s d t))"
+lemma aux2: "\<forall>s d. accepts e s d t \<longrightarrow> (length t = length (observe_all e s d t))"
   proof (induction t)
     case Nil
     then show ?case by simp
@@ -245,12 +245,12 @@ lemma aux2: "\<forall>s d. valid e s d t \<longrightarrow> (length t = length (o
       apply safe
       using step_some observations
        apply (simp add: step_some)
-      using step_none_invalid observations
+      using step_none_inaccepts observations
       by metis
   qed
 
-lemma valid_trace_obs_equal_length: "valid e 0 <> t \<Longrightarrow> (length t = length (observe_all e 0 <> t))"
-  proof (induction t rule: valid.induct)
+lemma accepts_trace_obs_equal_length: "accepts e 0 <> t \<Longrightarrow> (length t = length (observe_all e 0 <> t))"
+  proof (induction t rule: accepts.induct)
     case (base e s d)
     then show ?case
       by simp
@@ -260,10 +260,10 @@ lemma valid_trace_obs_equal_length: "valid e 0 <> t \<Longrightarrow> (length t 
       by simp
   qed
 
-lemma aux3: "\<forall>s d. (length t = length (observe_all e s d t)) \<longrightarrow> valid e s d t"
+lemma aux3: "\<forall>s d. (length t = length (observe_all e s d t)) \<longrightarrow> accepts e s d t"
   proof (induction t)
     case Nil
-    then show ?case by (simp add: valid.base)
+    then show ?case by (simp add: accepts.base)
   next
     case (Cons a t)
     then show ?case
@@ -277,10 +277,10 @@ lemma aux3: "\<forall>s d. (length t = length (observe_all e s d t)) \<longright
       by (simp only: step_length_suc step_some)
   qed
 
-lemma obs_equal_length_valid: "(length t = length (observe_all e 0 <> t)) \<Longrightarrow> valid e 0 <> t"
+lemma obs_equal_length_accepts: "(length t = length (observe_all e 0 <> t)) \<Longrightarrow> accepts e 0 <> t"
   proof (induction t)
     case Nil
-    then show ?case by (simp add: valid.base)
+    then show ?case by (simp add: accepts.base)
   next
     case (Cons a t)
     then show ?case
@@ -294,13 +294,13 @@ lemma obs_equal_length_valid: "(length t = length (observe_all e 0 <> t)) \<Long
       by simp
   qed
 
-lemma length_equal_valid: "(length t = length (observe_all e 0 <> t)) = valid e 0 <> t"
+lemma length_equal_accepts: "(length t = length (observe_all e 0 <> t)) = accepts e 0 <> t"
   apply safe
-  using obs_equal_length_valid apply auto[1]
-  by (simp add: valid_trace_obs_equal_length)
+  using obs_equal_length_accepts apply auto[1]
+  by (simp add: accepts_trace_obs_equal_length)
 
 type_synonym simulation_relation = "nat \<Rightarrow> nat"
 
 definition simulates :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> bool" where
-  "simulates m2 m1 = (\<forall>t. valid_trace m1 t \<longrightarrow> valid_trace m2 t)"
+  "simulates m2 m1 = (\<forall>t. accepts_trace m1 t \<longrightarrow> accepts_trace m2 t)"
 end

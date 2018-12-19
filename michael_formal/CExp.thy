@@ -521,4 +521,8 @@ lemma mutually_exclusive_symmetric: "mutually_exclusive x y \<Longrightarrow> mu
 lemma not_mutually_exclusive_true: "satisfiable x = (\<not> mutually_exclusive x (Bc True))"
   by (simp add: mutually_exclusive_def satisfiable_def)
 
+lemma vexp_equiv_valid: "valid c \<longrightarrow> cexp_equiv c (Bc True)"
+  apply (simp add: valid_def cexp_equiv_def)
+  by auto
+
 end
