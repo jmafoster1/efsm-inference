@@ -76,27 +76,15 @@ definition read_fail :: "transition" where
                   ]
       \<rparr>"
 
-datatype statename = q1 | q2
-
-lemma UNIV_statename: "UNIV = {q1 , q2}"
-  using statename.exhaust by auto
-
-instance statename :: finite
-  by standard (simp add: UNIV_statename)
-
-definition filesystem :: "statename efsm" where
-"filesystem \<equiv> \<lparr>
-          s0 = q1,
-          T = \<lambda> (a,b) .
-              if (a,b) = (q1,q2) then {login}
-              else if (a,b) = (q2,q1) then {logout}
-              else if (a,b) = (q2,q2) then {write, read_success, read_fail, write_fail}
-              else {}
-         \<rparr>"
-
-lemma s0_filesystem [simp]: "s0 filesystem = q1"
-  by (simp add: filesystem_def)
-
+definition filesystem :: "transition_matrix" where
+"filesystem \<equiv> {|
+              ((0,1), login),
+              ((1,0), logout),
+              ((1,1), write),
+              ((1,1), read_success),
+              ((1,1), read_fail),
+              ((1,1), write_fail)
+         |}"
 
 code_printing
   type_constructor bool \<rightharpoonup> (Scala) "Bool"
@@ -105,8 +93,6 @@ code_printing
   | constant HOL.conj \<rightharpoonup> (Scala) "_ && _"
 
 \<comment> \<open> export_code GExp.satisfiable in "Scala" \<close>
-
-value "(Contexts.apply_guard \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Bc True\<rbrakk> ((gexp.Eq (V (R 2)) (L (Num 100))) \<or> (Ne (V (R 1)) (L (Num 100))))) (V (R 2))"
 
 lemmas fs_simp = filesystem_def login_def logout_def write_def read_success_def read_fail_def write_fail_def
 
@@ -123,62 +109,30 @@ lemma r_equals_r [simp]: "<R 1:=user, R 2:=content, R 3:=owner> = (\<lambda>a. i
   apply (rule ext)
   by simp
 
-\<comment> \<open> This one takes longer than you think to prove \<close>
-lemma label_read_q2: "b \<in> T filesystem (q2, a) \<Longrightarrow> Label b = ''read'' \<Longrightarrow> a = q2 \<and> (b = read_success \<or> b = read_fail)"
-  apply (simp add: filesystem_def)
-  apply (cases a)
-   apply (simp add: logout_def)
-  apply safe
-  apply simp
-  apply (simp add: fs_simp)
-  by auto
+declare One_nat_def [simp del]
 
-lemma possible_steps_q2_read: "owner \<noteq> user \<Longrightarrow> possible_steps filesystem q2 <R (Suc 0) := user, R 2 := content, R 3 := owner> ''read'' [] = {(q2, read_fail)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-       apply (simp add: label_read_q2)
-      apply (simp add: label_read_q2)
-      apply (case_tac "b = read_success")
-       apply (simp add: read_success_def read_fail_def)
-      apply (case_tac "b = read_fail")
-       apply simp
-      using label_read_q2 apply blast
-     apply (simp add: read_fail_def)
-    apply (simp add: read_fail_def filesystem_def)
-   apply (simp add: read_fail_def)
-  by (simp add: read_fail_def)
+(* This takes a while to go through but it does *)
+lemma possible_steps_1_read: "r (R 1) = user \<and> r (R 3) = owner \<Longrightarrow> owner \<noteq> user \<Longrightarrow> possible_steps filesystem 1 r ''read'' [] = {|(1, read_fail)|}"
+  apply (simp add: fs_simp possible_steps_def)
+  by force
 
 lemma read_2:  "r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
-    step filesystem q2 r ''read'' [] = Some (q2, [Str ''accessDenied''], r)"
-  apply simp
-  apply safe
-   apply (simp add: possible_steps_q2_read read_fail_def)
-   apply (rule ext)
-   apply simp
-  by (simp add: possible_steps_q2_read)
-
-lemma label_logout_q1: "Label b = ''logout'' \<Longrightarrow> b \<in> T filesystem (q2, a) \<Longrightarrow> b = logout \<and> a = q1"
-  apply (simp add: filesystem_def)
-  apply (cases a)
-   apply simp
+    step filesystem 1 r ''read'' [] = Some (read_fail, 1, [Str ''accessDenied''], r)"
+  apply (simp add: step_def possible_steps_1_read)
   apply (simp add: fs_simp)
-  by auto
+  apply (rule ext)
+  by simp
 
-lemma possible_steps_q2_logout: "possible_steps filesystem q2 r ''logout'' [] = {(q1, logout)}"
-  apply (simp add: possible_steps_def)
-  apply safe
-       apply (simp add: label_logout_q1)
-      apply (simp add: label_logout_q1)
-     apply (simp add: logout_def)
-    apply (simp add: filesystem_def)
-  by (simp_all add: logout_def)
+lemma possible_steps_1_logout: "possible_steps filesystem 1 r ''logout'' [] = {|(0, logout)|}"
+  apply (simp add: possible_steps_def fs_simp)
+  by force
 
 lemma logout_2:  "r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
-    step filesystem q2 r ''logout'' [] = Some (q1, [], r)"
-  apply (simp add: possible_steps_q2_logout)
-  apply (simp add: logout_def)
+    step filesystem 1 r ''logout'' [] = Some (logout, 0, [], r)"
+  apply (simp add: step_def possible_steps_1_logout)
+  apply (simp add: fs_simp)
   apply (rule ext)
   by simp
 end

@@ -1,8 +1,8 @@
-subsection {* Option Logic *}
-text {*
+subsection \<open>Option Logic\<close>
+text \<open>
 This theory defines a three-valued logic such that nonsensical guard expressions cannot ever
 evaluate to true. Such expressions evaluate instead to None which, when negated, is still None.
-*}
+\<close>
 
 theory Option_Logic
 imports AExp
@@ -17,6 +17,9 @@ abbreviation ValueGt :: "value option \<Rightarrow> value option \<Rightarrow> b
 
 abbreviation ValueLt :: "value option \<Rightarrow> value option \<Rightarrow> bool option"  where
   "ValueLt a b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x<y)) a b"
+
+abbreviation ValueEq :: "value option \<Rightarrow> value option \<Rightarrow> bool option"  where
+  "ValueEq a b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x=y)) a b"
 
 abbreviation maybe_or :: "bool option \<Rightarrow> bool option \<Rightarrow> bool option" where
   "maybe_or x y \<equiv> (case (x, y) of

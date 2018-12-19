@@ -1,18 +1,18 @@
-section{*Subsumption and Generalisation*}
-text{*
+section\<open>Subsumption and Generalisation\<close>
+text\<open>
 We now define a language of constraint expressions to express restrictions on the known values of
 registers which can be grouped into \emph{contexts} which are used to extend the idea of transition
 subsumption \cite{lorenzoli2008} to transitions with update functions. This forms the
 underpinning of an EFSM inference technique based on transition merging.
-*}
-subsection {* Constraint Expressions *}
-text{*
+\<close>
+subsection \<open>Constraint Expressions\<close>
+text\<open>
 This theory defines a language to express constraints on register values. Base restrictions are
 undefined, unrestricted, inconsistent, equal to a value, less than a value, greater than a value.
 Expressions may be combined using either negation or conjunction to form compound expressions. We
 also define syntax hacks for the relations less than or equal to, greater than or equal to, and
 not equal to as well as the expression of logical ``or'' in terms of negation and conjunction.
-*}
+\<close>
 
 theory CExp
   imports AExp Option_Logic
@@ -46,11 +46,11 @@ abbreviation Neq :: "value \<Rightarrow> cexp" where
 abbreviation Or :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "Or v va \<equiv> not (and (not v) (not va))"
 
-text {*
+text \<open>
 This function takes two cexps and tries to apply restrictions such that the first argument is
 greater than the second. The return value is a pair of the first and second inputs with their
 respective increased restrictions.
-*}
+\<close>
 fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where (* This takes a LONG time to prove *)
   "apply_gt Undef v = (Bc False, v)" |
   "apply_gt v Undef = (v, Bc False)" |
@@ -109,6 +109,12 @@ definition valid :: "cexp \<Rightarrow> bool" where (* Is cexp "c" satisfied und
 
 definition satisfiable :: "cexp \<Rightarrow> bool" where (* Is there some value of "i" which satisfies "c"? *)
   "satisfiable v \<equiv> (\<exists>i. cval v i = Some True)"
+
+lemma unsatisfiable_undef[simp]: "\<not> satisfiable Undef"
+  by (simp add: satisfiable_def)
+
+lemma valid_implies_satisfiable: "valid c \<Longrightarrow> satisfiable c"
+  by (simp add: valid_def satisfiable_def)
 
 fun compose_plus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "compose_plus x y = (if satisfiable x \<and> satisfiable y then (if valid x \<or> valid y then Bc True else (case (x, y) of
@@ -330,10 +336,7 @@ lemma satisfiable_eq: "satisfiable (Eq x3)"
 lemma satisfiable_neq: "satisfiable (Neq x3)"
   apply (simp add: satisfiable_def)
   apply (cases x3)
-   apply (rule_tac x="Num (x1+1)" in exI)
-   apply simp
-  apply (rule_tac x="Str (x2@''s'')" in exI)
-  by simp
+  by auto
 
 lemma satisfiable_leq: "satisfiable (Leq (Num x))"
   apply (simp add: satisfiable_def)
@@ -361,10 +364,13 @@ lemma satisfiable_gt: "satisfiable (Gt (Num x4))"
 lemma unsatisfiable_gt: "\<not> satisfiable (Gt (Str s))"
   by (simp add: satisfiable_def)
 
-lemma satisfiable_true: "satisfiable (Bc True)"
+lemma satisfiable_true[simp]: "satisfiable (Bc True)"
   by (simp add: satisfiable_def)
 
-lemma unsatisfiable_false: "\<not> satisfiable (Bc False)"
+lemma valid_true[simp]: "valid (Bc True)"
+  by (simp add: valid_def)
+
+lemma unsatisfiable_false[simp]: "\<not> satisfiable (Bc False)"
   by (simp add: satisfiable_def)
 
 lemma satisfiable_not_undef: "satisfiable (Not (Undef))"
@@ -514,5 +520,9 @@ lemma mutually_exclusive_symmetric: "mutually_exclusive x y \<Longrightarrow> mu
 
 lemma not_mutually_exclusive_true: "satisfiable x = (\<not> mutually_exclusive x (Bc True))"
   by (simp add: mutually_exclusive_def satisfiable_def)
+
+lemma vexp_equiv_valid: "valid c \<longrightarrow> cexp_equiv c (Bc True)"
+  apply (simp add: valid_def cexp_equiv_def)
+  by auto
 
 end

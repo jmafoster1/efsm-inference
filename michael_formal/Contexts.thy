@@ -1,9 +1,9 @@
-subsection {* Contexts *}
-text{*
+subsection \<open>Contexts\<close>
+text\<open>
 This theory defines contexts as a way of relating possible constraints on register values to
 observable output. We then use contexts to extend the idea of transition subsumption to EFSM
 transitions with register update functions.
-*}
+\<close>
 
 theory Contexts
   imports
@@ -23,7 +23,27 @@ syntax
 translations
   "_Update f (_updbinds b bs)" \<rightleftharpoons> "_Update (_Update f b) bs"
   "_Context ms" == "_Update \<lbrakk>\<rbrakk> ms"
-  "_Context (_updbinds b bs)" <= "_Update (_Context b) bs"
+  "_Context (_updbinds b bs)" \<rightleftharpoons> "_Update (_Context b) bs"
+
+lemma empty_not_false[simp]: "cexp.Bc False \<noteq> \<lbrakk>\<rbrakk> i"
+proof (induct i)
+case (L x)
+then show ?case by simp
+next
+  case (V x)
+  then show ?case
+    apply (case_tac x)
+    by simp_all
+next
+  case (Plus i1 i2)
+  then show ?case
+    by simp
+next
+  case (Minus i1 i2)
+  then show ?case
+    by simp
+qed
+
 
 fun get :: "context \<Rightarrow> aexp \<Rightarrow> cexp" where
   "get c (L n) = Eq n" |
@@ -71,6 +91,14 @@ fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow> gexp" where
 definition consistent :: "context \<Rightarrow> bool" where (* Is there a variable evaluation which can satisfy all of the context? *)
   "consistent c \<equiv> \<exists>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
 
+lemma possible_false_not_consistent: "\<exists>r. c r = Bc False \<Longrightarrow> \<not> consistent c"
+  unfolding consistent_def
+  apply simp
+  apply (rule allI)
+  apply clarify
+  apply (rule_tac x=r in exI)
+  by simp
+
 definition valid_context :: "context \<Rightarrow> bool" where (* Is the context satisfied in all variable evaluations? *)
   "valid_context c \<equiv> \<forall>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
 
@@ -99,8 +127,8 @@ lemma cexp2gexp_double_neg: "gexp_equiv (cexp2gexp r (Not (Not x))) (cexp2gexp r
   apply (simp add: gexp_equiv_def)
   apply (rule allI)
   apply (case_tac "gval (cexp2gexp r x) s")
-   apply simp
-  by simp
+   apply (simp)
+  by (simp)
 
 lemma gval_cexp2gexp_double_neg: "gval (cexp2gexp r (Not (Not x))) s = gval (cexp2gexp r x) s"
   using cexp2gexp_double_neg gexp_equiv_def by blast
@@ -168,17 +196,50 @@ definition can_take :: "transition \<Rightarrow> context \<Rightarrow> bool" whe
 lemma can_take_no_guards: "\<forall> c. (Contexts.consistent c \<and> (Guard t) = []) \<longrightarrow> Contexts.can_take t c"
   by (simp add: consistent_def Contexts.can_take_def)
 
+fun constrains_an_input :: "aexp \<Rightarrow> bool" where
+  "constrains_an_input (L v) = False" |
+  "constrains_an_input (V (R x)) = False" |
+  "constrains_an_input (V (I x)) = True" |
+  "constrains_an_input (Plus v va) = (constrains_an_input v \<and> constrains_an_input va)" |
+  "constrains_an_input (Minus v va) = (constrains_an_input v \<and> constrains_an_input va)"
+
+definition remove_input_constraints :: "context \<Rightarrow> context" where
+  "remove_input_constraints c = (\<lambda>x. if constrains_an_input x then \<lbrakk>\<rbrakk> x else c x)"
+
+lemma consistent_remove_input_constraints[simp]: "consistent c \<Longrightarrow> consistent (remove_input_constraints c)"
+proof-
+  assume premise: "consistent c"
+  show ?thesis
+    using premise
+    apply (simp add: remove_input_constraints_def consistent_def)
+    apply clarify
+    apply (rule_tac x=s in exI)
+    apply (rule allI)
+    apply (case_tac "constrains_an_input r")
+     apply (simp add: consistent_empty_4)
+    by simp
+qed
+
 definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
-  "posterior c t = (let c' = (medial c (Guard t)) in (if consistent c' then (apply_updates c' \<lbrakk>\<rbrakk> (Updates t)) else (\<lambda>i. Bc False)))"
+  "posterior c t = (let c' = (medial c (Guard t)) in (if consistent c' then remove_input_constraints (apply_updates c' c (Updates t)) else (\<lambda>i. Bc False)))"
 
 primrec posterior_n :: "nat \<Rightarrow> transition \<Rightarrow> context \<Rightarrow> context" where (* Apply a given transition to a given context n times - good for reflexive transitions*)
   "posterior_n 0 _ c = c " |
   "posterior_n (Suc m) t c = posterior_n m t (posterior c t)"
 
-primrec posterior_sequence :: "transition list \<Rightarrow> context \<Rightarrow> context" where (* Calculate the posterior context after a sequence of transitions *)
-  "posterior_sequence [] c = c" |
-  "posterior_sequence (h#t) c = posterior_sequence t (posterior c h)"
+primrec posterior_sequence :: "context \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> context" where
+  "posterior_sequence c _ _ _ [] = c" |
+  "posterior_sequence c e s r (h#t) =
+    (case (step e s r (fst h) (snd h)) of
+      (Some (transition, s', outputs, r')) \<Rightarrow> (posterior_sequence (posterior c transition) e s' r' t) |
+      _ \<Rightarrow> c
+    )"
 
+(*primrec posterior_sequence :: "transition list \<Rightarrow> context \<Rightarrow> context" where (* Calculate the posterior context after a sequence of transitions *)
+  "posterior_sequence [] c = c" |
+  "posterior_sequence (h#t) c = posterior_sequence t (posterior c h)"*)
+
+(* Does t2 subsume t1? *)
 definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where (* Corresponds to Algorithm 2 in Foster et. al. *)
   "subsumes c t2 t1 \<equiv> (\<forall>r i. (cval (medial c (Guard t1) r) i = Some True) \<longrightarrow> (cval (medial c (Guard t2) r) i) = Some True) \<and>
                       (\<forall> i r. apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
@@ -240,5 +301,132 @@ lemma not_satisfiable_neg: "\<not> CExp.satisfiable (cexp.Not c) = (\<forall>i. 
 lemma satisfiable_double_neg: "satisfiable (cexp.Not (cexp.Not x)) = satisfiable x"
   apply (simp add: satisfiable_def)
   by (metis cval.simps(6) cval_double_negation)
+
+lemma cval_empty_r_neq_none[simp]: "cval (\<lbrakk>\<rbrakk> r) i \<noteq> None"
+proof (induct "\<lbrakk>\<rbrakk> r")
+case Undef
+  then show ?case
+    by simp
+next
+  case (Bc x)
+  then show ?case
+    apply (case_tac x)
+    by (simp_all)
+next
+  case (Eq x)
+  have empty_neq_eq: "cexp.Eq x \<noteq> \<lbrakk>\<rbrakk> r"
+  proof (induct r)
+    case (L x)
+    then show ?case
+      by simp
+  next
+    case (V x)
+    then show ?case
+      apply (cases x)
+      by (simp_all)
+  next
+    case (Plus r1 r2)
+    then show ?case
+      by simp
+  next
+    case (Minus r1 r2)
+    then show ?case
+      by simp
+  qed
+  then show ?case
+    using Eq.hyps by blast
+next
+  case (Lt x)
+  have empty_neq_lt: "cexp.Lt x \<noteq> \<lbrakk>\<rbrakk> r"
+  proof (induct r)
+    case (L x)
+    then show ?case
+      by simp
+  next
+    case (V x)
+    then show ?case
+      apply (cases x)
+      by (simp_all)
+  next
+    case (Plus r1 r2)
+    then show ?case
+      by simp
+  next
+    case (Minus r1 r2)
+    then show ?case
+      by simp
+  qed
+  then show ?case
+    by (simp add: Lt.hyps)
+next
+  case (Gt x)
+  have empty_neq_lt: "cexp.Gt x \<noteq> \<lbrakk>\<rbrakk> r"
+  proof (induct r)
+    case (L x)
+    then show ?case
+      by simp
+  next
+    case (V x)
+    then show ?case
+      apply (cases x)
+      by (simp_all)
+  next
+    case (Plus r1 r2)
+    then show ?case
+      by simp
+  next
+    case (Minus r1 r2)
+    then show ?case
+      by simp
+  qed
+  then show ?case
+    by (simp add: Gt.hyps)
+next
+  have empty_neq_not: "cexp.Not x \<noteq> \<lbrakk>\<rbrakk> r"
+  proof (induct r)
+    case (L x)
+    then show ?case
+      by simp
+  next
+    case (V x)
+    then show ?case
+      apply (cases x)
+      by (simp_all)
+  next
+    case (Plus r1 r2)
+    then show ?case
+      by simp
+  next
+    case (Minus r1 r2)
+    then show ?case
+      by simp
+  qed
+  case (Not x)
+  then show ?case
+    by (metis cexp.distinct(19) cexp.simps(16) consistent_empty_1)
+next
+have empty_neq_and: "cexp.And x y \<noteq> \<lbrakk>\<rbrakk> r"
+  proof (induct r)
+    case (L x)
+    then show ?case
+      by simp
+  next
+    case (V x)
+    then show ?case
+      apply (cases x)
+      by (simp_all)
+  next
+    case (Plus r1 r2)
+    then show ?case
+      by simp
+  next
+    case (Minus r1 r2)
+    then show ?case
+      by simp
+  qed
+  case (And x1 x2)
+  then show ?case
+    by (metis cexp.distinct(11) cexp.distinct(21) consistent_empty_1)
+qed
 
 end

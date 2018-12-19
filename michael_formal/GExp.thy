@@ -1,5 +1,5 @@
-subsection {* Guard Expressions *}
-text{*
+subsection \<open>Guard Expressions\<close>
+text\<open>
 This theory defines the guard language of EFSMs which can be translated directly to and from
 contexts. This is similar to boolean expressions from IMP \cite{fixme}. Boolean values true and
 false respectively represent the guards which are always and never satisfied. Guards may test
@@ -8,37 +8,22 @@ expressions. Additionally, a guard may also test to see if a particular variable
 useful if an EFSM transition is intended only to initialise a register.  We also define syntax hacks
 for the relations less than, less than or equal to, greater than or equal to, and not equal to as
 well as the expression of logical conjunction, disjunction, and negation in terms of nor logic.
-*}
+\<close>
 
 theory GExp
 imports "efsm-exp.AExp" "efsm-exp.Option_Logic"
 begin
+
+(* type_synonym gexp = "(aexp \<times> cexp)" *)
+
+(* abbreviation Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" where *)
+  (* "Eq a b = (a, cexp.Eq b) *)
+
 datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null vname
 
 syntax (xsymbols)
-  Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix "=" 60)
-  Gt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix ">" 60)
-
-abbreviation gNot :: "gexp \<Rightarrow> gexp"  where
-  "gNot g \<equiv> Nor g g"
-
-abbreviation gOr :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (infix "\<or>" 60) where
-  "gOr v va \<equiv> Nor (Nor v va) (Nor v va)"
-
-abbreviation gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (infix "\<and>" 60) where
-  "gAnd v va \<equiv> Nor (Nor v v) (Nor va va)"
-
-abbreviation Lt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix "<" 60) where
-  "Lt a b \<equiv> Gt b a"
-
-abbreviation Le :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix "\<le>" 60) where
-  "Le v va \<equiv> gNot (Gt v va)"
-
-abbreviation Ge :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix "\<ge>" 60) where
-  "Ge v va \<equiv> gNot (Lt v va)"
-
-abbreviation Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (infix "\<noteq>" 60) where
-  "Ne v va \<equiv> gNot (Eq v va)"
+  Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "=" 60*)
+  Gt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix ">" 60*)
 
 fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool option" where
   "gval (Bc b) _ = Some b" |
@@ -50,8 +35,43 @@ fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool option" where
   )" |
   "gval (Null v) s = Some (s v = None)"
 
+abbreviation gNot :: "gexp \<Rightarrow> gexp"  where
+  "gNot g \<equiv> Nor g g"
+
+abbreviation gOr :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<or>" 60*) where
+  "gOr v va \<equiv> Nor (Nor v va) (Nor v va)"
+
+abbreviation gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<and>" 60*) where
+  "gAnd v va \<equiv> Nor (Nor v v) (Nor va va)"
+
+lemma inj_gAnd: "inj gAnd"
+  apply (simp add: inj_def)
+  apply clarify
+  by (metis  gexp.inject(4))
+
+lemma gAnd_determinism: "(gAnd x y = gAnd x' y') = (x = x' \<and> y = y')"
+proof
+  show "gAnd x y = gAnd x' y' \<Longrightarrow> x = x' \<and> y = y'"
+    by (simp)
+next
+  show "x = x' \<and> y = y' \<Longrightarrow> gAnd x y = gAnd x' y' "
+    by simp
+qed
+
+abbreviation Lt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "<" 60*) where
+  "Lt a b \<equiv> Gt b a"
+
+abbreviation Le :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<le>" 60*) where
+  "Le v va \<equiv> gNot (Gt v va)"
+
+abbreviation Ge :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<ge>" 60*) where
+  "Ge v va \<equiv> gNot (Lt v va)"
+
+abbreviation Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<noteq>" 60*) where
+  "Ne v va \<equiv> gNot (Eq v va)"
+
 lemma or_equiv: "gval (gOr x y) r = maybe_or (gval x r) (gval y r)"
-  apply simp
+  apply (simp)
   apply (cases "gval x r")
    apply (cases "gval y r")
     apply simp

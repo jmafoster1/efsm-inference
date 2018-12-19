@@ -1,13 +1,6 @@
 theory LinkedIn
 imports "../EFSM" EFSM_LTL
 begin
-  datatype statename = outside | loggedIn | viewDetailed | pdfDetailed | viewSummary | pdfSummary
-
-lemma UNIV_statename: "UNIV = {outside, loggedIn, viewDetailed, pdfDetailed, viewSummary, pdfSummary}"
-  using statename.exhaust by auto
-
-instance statename :: finite
-  by standard (simp add: UNIV_statename)
 
 definition login :: "transition" where
 "login \<equiv> \<lparr>
@@ -81,44 +74,23 @@ definition pdfOtherOON :: "transition" where
         Updates = []
       \<rparr>"
 
-definition linkedIn :: "statename efsm" where
-"linkedIn \<equiv> \<lparr>
-          s0 = outside,
-          T = \<lambda> (a,b) .
-              if (a,b) = (outside,loggedIn) then {login}    (* If we want to go from state 1 to state 2 then select will do that *)
-              else if (a,b) = (loggedIn,viewDetailed) then {viewFriend, viewOther} (* If we want to go from state 2 to state 3 then vend will do that *)
-              else if (a,b) = (loggedIn,viewSummary) then {viewOtherOON, viewOtherFuzz} (* If we want to go from state 2 to state 3 then vend will do that *)
-              else if (a,b) = (viewSummary, pdfSummary) then {pdfOtherOON} (* If we want to go from state 2 to state 3 then vend will do that *)
-              else if (a,b) = (viewSummary, pdfDetailed) then {pdfOther} (* If we want to go from state 2 to state 3 then vend will do that *)
-              else if (a,b) = (viewDetailed, pdfDetailed) then {pdfFriend, pdfOther} (* If we want to go from state 2 to state 3 then vend will do that *)
-              else {} (* There are no other transitions *)
-         \<rparr>"
+abbreviation "outside \<equiv> (0::nat)"
+abbreviation "loggedIn \<equiv> (1::nat)"
+abbreviation "viewDetailed \<equiv> (2::nat)"
+abbreviation "viewSummary \<equiv> (3::nat)"
+abbreviation "pdfDetailed \<equiv> (4::nat)"
+abbreviation "pdfSummary \<equiv> (5::nat)"
 
-(*neverDetailed: THEOREM linkedIn |- G(
-(label=login AND ip_1_login_1=String_free) => X(G(
-(label=pdf AND ip_1_view_3=String_otherID) => X(op_1_pdf_1 /= String_detailedPDF)
-)
-);*)
-
-(*record 'statename state =
-  statename :: "'statename option"
-  datastate :: datastate
-  event :: event
-  "output" :: outputs*)
-
-definition login_free :: "statename property" where
-  "login_free s \<equiv> (event (shd s) = (''login'',  [Str ''free'']))"
-
-definition pdf_other :: "statename property" where
-  "pdf_other s \<equiv> (let (label, inputs) = event (shd s) in label=''pdf'' \<and> hd inputs = Str ''otherID'')"
-
-definition notDetailedPDF :: "statename property" where
-  "notDetailedPDF s \<equiv> (hd (output (shd s)) \<noteq> Str ''detailedPDF'')"
-
-(*      G(login_free      =>  X(   G(    pdf_other  =>  X(notDetailedPDF))))*)
-lemma "(alw login_free impl   (nxt (alw (pdf_other impl (nxt notDetailedPDF))))) (watch linkedIn i)"
-  apply (simp only: notDetailedPDF_def pdf_other_def login_free_def)
-  sorry
-
-
+definition linkedIn :: transition_matrix where
+"linkedIn \<equiv> {|
+              ((outside,loggedIn), login),    \<comment> \<open> If we want to go from state 1 to state 2, select will do that \<close>
+              ((loggedIn,viewDetailed), viewFriend),
+              ((loggedIn, viewDetailed), viewOther), \<comment> \<open> If we want to go from state 2 to state 3, vend will do that \<close>
+              ((loggedIn,viewSummary), viewOtherOON),
+              ((loggedIn, viewSummary), viewOtherFuzz), \<comment> \<open> If we want to go from state 2 to state 3, vend will do that \<close>
+              ((viewSummary, pdfSummary), pdfOtherOON), \<comment> \<open> If we want to go from state 2 to state 3, vend will do that \<close>
+              ((viewSummary, pdfDetailed), pdfOther), \<comment> \<open> If we want to go from state 2 to state 3, vend will do that \<close>
+              ((viewDetailed, pdfDetailed), pdfFriend),
+              ((viewDetailed, pdfDetailed), pdfOther) \<comment> \<open> If we want to go from state 2 to state 3, vend will do that \<close>
+         |}"
 end
