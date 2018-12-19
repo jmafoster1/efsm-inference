@@ -1019,7 +1019,7 @@ proof-
     apply (simp only: merge_1_3_2)
     apply (simp only: merge_1_2)
     using merge_1_2 merge_transitions_def vend_doesnt_directly_subsume_vend_nothing_2 vend_doesnt_directly_subsume_vend_nothing_3
-    by (simp add: null_generator_def)
+    by (simp add: null_generator_def null_modifier_def)
   have vend_fail_lt_vend: "vend_fail < vend"
     using vend_fail_leq_vend vend_neq_vend_fail by auto
   have vend_fail_lt_vend_2: "\<not>vend \<le> vend_fail"
