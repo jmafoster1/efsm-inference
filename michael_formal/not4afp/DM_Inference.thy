@@ -56,87 +56,32 @@ lemma choice_vend_nothing_vend_fail: "choice vend_nothing vend_fail"
 
 lemma filter_all_pairs: "(Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
        (fset (all_pairs (merge_states 1 2 drinks2)))) = {(((1, 1), vend_nothing), (1, 1), vend_fail), (((1, 1), vend_nothing), (1, 3), vend)}"
-  apply (simp add: merge_1_2 all_pairs_def )
-  apply safe
-                      apply auto[1]
-                      apply simp
-                      apply auto[1]
-                      apply (simp )
-  using no_choice_vend_coin no_choice_vend_vend_fail vend_nothing_lt_vend apply auto[1]
-                      apply auto[1]
-                      apply (simp )
-  using less_imp_le no_choice_vend_coin no_choice_vend_vend_fail vend_nothing_lt_vend apply auto[1]
-                      apply auto[1]
-                      apply (simp )
-  using no_choice_vend_coin no_choice_vend_vend_fail vend_nothing_lt_vend apply auto[1]
-                      apply (simp )
-                      defer
-                      apply auto[1]
-                      apply auto[1]
-                      apply auto[1]
-                      apply (simp )
-  using no_choice_vend_coin no_choice_vend_vend_fail vend_nothing_lt_vend apply auto[1]
-                      apply auto[1]
-                      apply (simp )
-  using no_choice_vend_coin no_choice_vend_vend_fail vend_nothing_lt_vend apply auto[1]
-                      apply auto[1]
-                      apply (simp )
-  using choice_def label_coin label_vend_fail label_vend_nothing no_choice_vend_coin no_choice_vend_vend_fail vend_nothing_lt_vend vend_nothing_lt_vend_fail apply fastforce
-                      apply (simp )
-  using choice_def label_coin label_vend_fail label_vend_nothing no_choice_vend_coin no_choice_vend_vend_fail vend_nothing_lt_vend vend_nothing_lt_vend_fail apply fastforce
-                      apply auto[1]
-                     apply auto[1]
-                    apply auto[1]
-                   apply auto[1]
-                  apply auto[1]
-                 apply (simp )
-  using choice_symmetry no_choice_vend_coin no_choice_vend_vend_fail zero_neq_one apply blast
-                apply auto[1]
-               apply (simp )
-  using less_imp_le no_choice_vend_coin vend_nothing_lt_vend apply auto[1]
-              apply (simp )
-  defer
-              apply auto[1]
-             apply auto[1]
-            apply auto[1]
-           apply auto[1]
-          apply auto[1]
-         apply auto[1]
-        apply auto[1]
-       apply (simp )
-  using choice_def label_coin label_vend_fail label_vend_nothing no_choice_vend_coin vend_nothing_lt_vend vend_nothing_lt_vend_fail apply auto[1]
-      apply (simp )
-  using choice_def label_coin label_vend_fail label_vend_nothing no_choice_vend_coin vend_nothing_lt_vend vend_nothing_lt_vend_fail apply auto[1]
-     apply (simp add: choice_vend_nothing_vend_fail vend_nothing_lt_vend_fail)
-      apply (simp )
-    apply (simp add: choice_symmetry choice_vend_vend_nothing vend_nothing_lt_vend)
-   apply (case_tac "a=1")
-    apply (case_tac "b=3")
-     apply (simp )
-  using no_choice_vend_coin no_choice_vend_vend_fail vend_nothing_lt_vend apply auto[1]
-    apply (case_tac "b=1")
-     apply (simp )
-  apply (metis (mono_tags, hide_lams) choice_def choice_symmetry label_vend label_vend_fail label_vend_not_coin label_vend_nothing no_choice_vend_vend_fail not_less_iff_gr_or_eq vend_nothing_lt_vend_fail zero_neq_one)
-     apply (simp )
-     apply (simp )
-   apply auto[1]
-  apply (case_tac "a=1")
-   apply (case_tac "b=3")
-    apply (simp )
-  using no_choice_vend_coin vend_nothing_lt_vend apply auto[1]
-   apply (simp )
-  apply (case_tac "b=1")
-    apply (simp )
-  using choice_def label_coin label_vend_fail label_vend_nothing no_choice_vend_coin no_choice_vend_vend_fail vend_nothing_lt_vend_fail apply fastforce
-    apply (simp )
-    apply (simp )
-  by auto
+proof
+  show "Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
+     (fset (all_pairs (merge_states 1 2 drinks2)))
+    \<subseteq> {(((1, 1), vend_nothing), (1, 1), vend_fail), (((1, 1), vend_nothing), (1, 3), vend)}"
+    apply (simp add: merge_1_2 all_pairs_def Set.filter_def)
+    apply clarify
+    apply simp
+    apply (case_tac "bb=1")
+     apply (case_tac "aa=1")
+     apply (case_tac "ba=vend_nothing")
+       apply simp
+       apply (metis (no_types, hide_lams) coin_def Updates_coin arity_vend choice_def choice_vend_vend_nothing label_coin not_less_iff_gr_or_eq select_convs(2) vend_nothing_lt_vend zero_neq_one)
+      apply simp
+    using choice_def label_coin label_vend_fail label_vend_nothing no_choice_vend_coin no_choice_vend_vend_fail vend_nothing_lt_vend vend_nothing_lt_vend_fail apply fastforce
+     apply simp
+    apply simp
+    using choice_symmetry no_choice_vend_coin no_choice_vend_vend_fail by auto
+  show "{(((1, 1), vend_nothing), (1, 1), vend_fail), (((1, 1), vend_nothing), (1, 3), vend)}
+    \<subseteq> Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
+        (fset (all_pairs (merge_states 1 2 drinks2)))"
+    apply (simp add: merge_1_2 all_pairs_def Set.filter_def)
+    using choice_symmetry choice_vend_nothing_vend_fail choice_vend_vend_nothing vend_nothing_lt_vend vend_nothing_lt_vend_fail by blast
+qed
 
 lemma ffilter_all_pairs: "ffilter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2) (all_pairs (merge_states 1 2 drinks2)) = 
-{|
-(((1, 1), vend_nothing), (1, 1), vend_fail), 
-(((1, 1), vend_nothing), (1, 3), vend)
-|}"
+                          {|(((1, 1), vend_nothing), (1, 1), vend_fail), (((1, 1), vend_nothing), (1, 3), vend)|}"
   apply (simp add: ffilter_def )
   using filter_all_pairs
   by (metis (no_types, lifting) bot_fset.rep_eq finsert.rep_eq fset_inverse)
@@ -411,110 +356,32 @@ lemma vend_fail_neq_vend_nothing: "vend_fail \<noteq> vend_nothing"
 
 lemma filter_all_pairs_2:"Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
        (fset (ffUnion ((\<lambda>x. Pair x |`| merge_states 1 3 (merge_states 1 2 drinks2)) |`| merge_states 1 3 (merge_states 1 2 drinks2)))) = 
-{
-(((1, 1), vend_nothing), (1, 1), vend_fail),
-(((1, 1), vend_nothing), (1, 1), vend)
-}"
-  apply (simp add: merge_1_3_2 )
-  apply safe
-                      apply (simp_all )
-                      apply auto[1]
-                      apply auto[1]
-                      apply auto[1]
-                      apply auto[1]
-                      apply auto[1]
-                      apply (case_tac "a=1")
-                      apply (case_tac "b=1")
-                      apply (case_tac "ba=vend")
-                      apply (case_tac "bb=1")
-                      apply (case_tac "aa=0")
-                      apply (simp add: vend_neq_vend_fail vend_neq_coin )
-                      apply (case_tac "aa=1")
-                      apply (simp add: vend_neq_vend_fail vend_neq_coin )
-                      apply (case_tac "bc=vend_nothing")
-                      apply (simp add: choice_vend_vend_nothing )
-  using not_less_iff_gr_or_eq vend_nothing_lt_vend apply blast
-                      apply (case_tac "bc=coin")
-                      apply simp
-  using no_choice_vend_coin apply blast
-                      apply (case_tac "bc=vend_fail")
-                      apply simp
-  using no_choice_vend_vend_fail apply blast
-                      apply simp
-                      apply auto[1]
-                      apply simp
-                      apply simp
-  using choice_def label_coin label_vend_fail label_vend_nothing no_choice_vend_coin no_choice_vend_vend_fail vend_nothing_lt_vend_fail apply fastforce
-                      apply simp
-                      apply auto[1]
-                      apply auto[1]
-                      apply auto[1]
-                     apply auto[1]
-                    apply auto[1]
-                   apply auto[1]
-                  apply (case_tac "a=1")
-                   apply (case_tac "b=1")
-                    apply (case_tac "ba=vend")
-                     apply (simp )
-  using no_choice_vend_coin no_choice_vend_vend_fail not_less_iff_gr_or_eq vend_nothing_lt_vend zero_neq_one apply blast
-                    apply (case_tac "ba=vend_fail")
-                     apply (simp )
-  using Drinks_Machine.transitions(2) arity_vend_fail choice_def vend_nothing_lt_vend_fail zero_neq_one apply force
-                     apply (simp )
-  using Drinks_Machine.transitions(2) arity_vend_fail choice_def choice_vend_nothing_vend_fail apply fastforce
-                   apply simp
-                  apply auto[1]
-                 apply auto[1]
-                apply auto[1]
-               apply auto[1]
-              apply auto[1]
-             apply auto[1]
-            apply auto[1]
-           apply (case_tac "b=1")
-            apply (case_tac "bb=1")
-             apply (case_tac "a=1")
-              apply (case_tac "aa=1")
-               apply (case_tac "ba=vend")
-               apply (simp )
-  using no_choice_vend_coin order.asym vend_nothing_lt_vend apply blast
-               apply (case_tac "ba=vend_fail")
-               apply (simp add: vend_fail_neq_vend_nothing )
-  using Drinks_Machine.transitions(2) arity_vend_fail choice_def no_choice_vend_vend_fail vend_nothing_lt_vend_fail apply fastforce
-               apply (case_tac "ba=coin")
-  using choice_def label_coin label_vend_nothing no_choice_vend_coin apply auto[1]
-               apply auto[1]
-              apply simp
-             apply auto[1]
-            apply simp
-           apply simp
-          apply auto[1]
-         apply auto[1]
-        apply auto[1]
-       apply auto[1]
-      apply auto[1]
-     apply auto[1]
-    apply (case_tac "a=1")
-     apply (case_tac "b=1")
-      apply (case_tac "bb=1")
-       apply (case_tac "aa=1")
-        apply (case_tac "ba=vend")
-        apply (simp )
-  using no_choice_vend_coin not_less_iff_gr_or_eq vend_nothing_lt_vend apply blast
-        apply (case_tac "ba=vend_fail")
-        apply (simp )
-  using Drinks_Machine.transitions(2) arity_vend_fail choice_def vend_nothing_lt_vend_fail apply fastforce
-        apply (case_tac "ba=coin")
-         apply (case_tac "bc=vend_nothing")
-          apply (simp )
-  using choice_def label_vend_not_coin label_vend_nothing apply auto[1]
-         apply auto[1]
-  using choice_def label_coin label_vend_nothing apply auto[1]
+      {
+      (((1, 1), vend_nothing), (1, 1), vend_fail),
+      (((1, 1), vend_nothing), (1, 1), vend)
+      }"
+proof
+  show "Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
+     (fset (ffUnion ((\<lambda>x. Pair x |`| merge_states 1 3 (merge_states 1 2 drinks2)) |`| merge_states 1 3 (merge_states 1 2 drinks2))))
+    \<subseteq> {(((1, 1), vend_nothing), (1, 1), vend_fail), (((1, 1), vend_nothing), (1, 1), vend)}"
+    apply (simp add: merge_1_3_2 Set.filter_def)
+    apply clarify
+    apply simp
+    apply (case_tac "bb=1")
+     apply (case_tac "aa=1")
+      apply (case_tac "ba=vend_nothing")
        apply simp
+    using Drinks_Machine.transitions(2) arity_vend_fail choice_def choice_vend_nothing_vend_fail apply fastforce
       apply simp
+    using choice_def label_coin label_vend_fail label_vend_nothing no_choice_vend_coin no_choice_vend_vend_fail vend_nothing_lt_vend vend_nothing_lt_vend_fail apply fastforce
      apply simp
-    apply auto[1]
-   apply (simp add: choice_vend_nothing_vend_fail vend_nothing_lt_vend_fail)
-  by (simp add: choice_symmetry choice_vend_vend_nothing vend_nothing_lt_vend)
+    by simp
+  show "{(((1, 1), vend_nothing), (1, 1), vend_fail), (((1, 1), vend_nothing), (1, 1), vend)}
+    \<subseteq> Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
+        (fset (ffUnion ((\<lambda>x. Pair x |`| merge_states 1 3 (merge_states 1 2 drinks2)) |`| merge_states 1 3 (merge_states 1 2 drinks2))))"
+    apply (simp add: merge_1_3_2 Set.filter_def)
+    using choice_symmetry choice_vend_nothing_vend_fail choice_vend_vend_nothing vend_nothing_lt_vend vend_nothing_lt_vend_fail by blast
+qed
 
 lemma ffilter_all_pairs_2: "ffilter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
      (all_pairs (merge_states 1 3 (merge_states 1 2 drinks2))) = {|(((1, 1), vend_nothing), (1, 1), vend_fail), (((1, 1), vend_nothing), (1, 1), vend)|}"
@@ -612,7 +479,7 @@ proof
            origin = 0 \<and>
            Label t = ''select'' \<and> Suc 0 = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [Str ''coke''] 1 (I n)) Map.empty))
        {((0, 1), select), ((1, 1), vend_nothing), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)}) =  {((0, 1), select)}"
-    apply (simp )
+    apply simp
     apply safe
        apply simp
       apply (simp )
@@ -1117,7 +984,7 @@ qed
 definition basically_drinks :: transition_matrix where
   "basically_drinks = {|((1, 1), vend_fail), ((0, 1), select), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)|}"
 
-lemma merge_transitions: "merge_transitions drinks2 (merge_states 1 2 drinks2) 1 2 1 1 1 vend_nothing vend_fail null_generator = Some basically_drinks"
+lemma merge_transitions: "merge_transitions drinks2 (merge_states 1 2 drinks2) 1 2 1 1 1 vend_nothing vend_fail null_generator null_modifier = Some basically_drinks"
 proof-
   have set_filter: "Set.filter (\<lambda>x. x \<noteq> ((1, 1), vend_nothing))
          {((0, 1), select), ((1, 1), vend_nothing), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)} = 
@@ -1142,13 +1009,13 @@ proof-
     by auto
 qed
 
-lemma merge_2_1_2: "merge_2 drinks2 1 2 null_generator = Some basically_drinks"
+lemma merge_2_1_2: "merge_2 drinks2 1 2 null_generator null_modifier = Some basically_drinks"
 proof-
   have nondeterminism_merge_1_2: "nondeterminism (merge_states 1 2 drinks2)"
     unfolding nondeterminism_def
     using vend_vend_nothing_nondeterminism by auto
   have merge_vend_nothing_vend: "merge_transitions (merge_states 1 2 drinks2) (merge_states 1 3 (merge_states 1 2 drinks2)) 1 1 1 1 1 vend_nothing
-             vend null_generator = None"
+             vend null_generator null_modifier = None"
     apply (simp only: merge_1_3_2)
     apply (simp only: merge_1_2)
     using merge_1_2 merge_transitions_def vend_doesnt_directly_subsume_vend_nothing_2 vend_doesnt_directly_subsume_vend_nothing_3
@@ -1356,11 +1223,11 @@ proof-
     by (simp add: scoring sorted_list_of_fset_def)
 qed
 
-lemma "infer drinks2 naive_score null_generator = basically_drinks"
+lemma "infer drinks2 naive_score null_generator null_modifier = basically_drinks"
 proof-
-  have first_step: "inference_step drinks2 (rev (sorted_list_of_fset (score drinks2 naive_score))) null_generator = Some basically_drinks"
+  have first_step: "inference_step drinks2 (rev (sorted_list_of_fset (score drinks2 naive_score))) null_generator null_modifier = Some basically_drinks"
     by (simp add: scoring merge_2_1_2 del: merge_2.simps)
-  have next_step: "inference_step basically_drinks (rev (sorted_list_of_fset (score basically_drinks naive_score))) null_generator = None"
+  have next_step: "inference_step basically_drinks (rev (sorted_list_of_fset (score basically_drinks naive_score))) null_generator null_modifier = None"
     by (simp add: scoring_2)
   show ?thesis
     apply (simp add: first_step)
