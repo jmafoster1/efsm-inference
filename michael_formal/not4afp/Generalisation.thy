@@ -5,7 +5,6 @@ transition subsumption.
 theory Generalisation
 imports "../Contexts" "../examples/Drinks_Machine_2"
 begin
-declare One_nat_def[simp del]
 
 definition select :: "transition" where
 "select \<equiv> \<lparr>

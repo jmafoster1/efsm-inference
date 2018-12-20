@@ -2,22 +2,20 @@ theory Drinks_Machine_Change
   imports "../examples/Drinks_Machine"
 begin
 
-declare One_nat_def[simp del]
-
 definition vend :: "transition" where
 "vend \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [(Ge (V (R 2)) (L (Num 100)))], (* This is syntactic sugar for ''Not (Lt (V (R 2)) (N 100))'' which could also appear *)
+        Guard = [(Ge (V (R 2)) (L (Num 100)))], \<comment>\<open> This is syntactic sugar for ''Not (Lt (V (R 2)) (N 100))'' which could also appear \<close>
         Outputs =  [(V (R 1)), (Minus (V (R 2)) (L (Num 100)))],
         Updates = [(R 1, (V (R 1))), (R 2, (V (R 2)))]
       \<rparr>"
 
 definition drinks :: transition_matrix where
 "drinks \<equiv> {|
-             ((0,1), select), (* If we want to go from state 0 to state 1 then select will do that *)
-             ((1,1), coin),   (* If we want to go from state 1 to state 1 then coin will do that *)
-             ((1,2), vend)    (* If we want to go from state 1 to state 2 then vend will do that *)
+             ((0,1), select), \<comment>\<open> If we want to go from state 0 to state 1 then select will do that \<close>
+             ((1,1), coin),   \<comment>\<open> If we want to go from state 1 to state 1 then coin will do that \<close>
+             ((1,2), vend)    \<comment>\<open> If we want to go from state 1 to state 2 then vend will do that \<close>
          |}"
 
 lemmas transitions = select_def coin_def vend_def
@@ -60,30 +58,30 @@ lemma possible_steps_invalid: "l \<noteq> ''coin'' \<and> l \<noteq> ''vend'' \<
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-(*Stop when we hit a spurious input*)
+(* Stop when we hit a spurious input *)
 lemma "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''invalid'', [Num 50])] = [[]]"
   unfolding observe_trace_def observe_all_def step_def
   apply (simp add: possible_steps_0 updates_select outputs_select)
   by (simp add: possible_steps_invalid)
 
-lemma invalid_input: "\<not> EFSM.valid drinks 1 d' [(''invalid'', [Num 50])]"
+lemma invalid_input: "\<not> accepts drinks 1 d' [(''invalid'', [Num 50])]"
   apply safe
-  apply (rule EFSM.valid.cases)
+  apply (rule EFSM.accepts.cases)
     apply simp
    apply simp
   apply (simp add: step_def)
   using possible_steps_invalid
   by auto
 
-lemma invalid_valid_prefix: "\<not> (valid_trace (drinks) [(''select'', [Str ''coke'']), (''invalid'', [Num 50])])"
-  unfolding valid_trace_def
+lemma invalid_valid_prefix: "\<not> (accepts_trace (drinks) [(''select'', [Str ''coke'']), (''invalid'', [Num 50])])"
+  unfolding accepts_trace_def
   apply clarify
-  apply (rule EFSM.valid.induct)
+  apply (rule EFSM.accepts.induct)
     apply simp
    apply simp
    defer
    apply simp
-  apply (rule EFSM.valid.cases)
+  apply (rule EFSM.accepts.cases)
     apply simp
    apply simp
   apply (simp add: step_def)

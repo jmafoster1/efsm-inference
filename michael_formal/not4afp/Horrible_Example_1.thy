@@ -37,17 +37,13 @@ definition t4 :: "transition" where
         Updates = []
       \<rparr>"
 
-datatype statename = q1 | q2 | q3
-
-definition vend :: "statename efsm" where
-"vend \<equiv> \<lparr> 
-          s0 = q1,
-          T = \<lambda> (a,b) .
-                   if (a,b) = (q1,q2) then {t1} (* If we want to go from state 1 to state 2 then t1 will do that *)
-              else if (a,b) = (q2,q2) then {t2} (* If we want to go from state 2 to state 2 then t2 will do that *)
-              else if (a,b) = (q2,q3) then {t3, t4} (* If we want to go from state 2 to state 3 then t3 or t4 will do that *)
-              else {} (* There are no other transitions *)
-         \<rparr>"
+definition vend :: transition_matrix where
+"vend \<equiv> {| 
+              ((0,1), t1),    \<comment>\<open> If we want to go from state 1 to state 2, t1 will do that \<close>
+              ((1,1), t2),    \<comment>\<open> If we want to go from state 2 to state 2, t2 will do that \<close>
+              ((1,2), t3),    \<comment>\<open> If we want to go from state 2 to state 3, t3 or t4 will do that \<close>
+              ((1, 2), t4)
+         |}"
 
 lemma "\<forall> i r. \<not> (apply_guards (Guard t3) (join_ir i r) \<and> apply_guards (Guard t4) (join_ir i r))"
   by (simp add: t3_def t4_def) 

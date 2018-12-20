@@ -1,5 +1,6 @@
 theory Inference
-  imports "../EFSM" "../Contexts" Transition_Ordering Prod_Linorder
+  imports "../EFSM" "../Contexts" Transition_Ordering
+          "~~/src/HOL/Library/Product_Lexorder"
 begin
 
 definition merge_states_aux :: "nat \<Rightarrow> nat \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where

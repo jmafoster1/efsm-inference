@@ -10,13 +10,10 @@ definition t3 :: "transition" where
         Updates = []
       \<rparr>"
 
-definition h2 :: "statename efsm" where
-"h2 \<equiv> \<lparr> 
-          s0 = q1,
-          T = \<lambda> (a,b) .
-                   if (a,b) = (q1,q2) then {t1} (* If we want to go from state 1 to state 2 then t1 will do that *)
-              else if (a,b) = (q2,q2) then {t2} (* If we want to go from state 2 to state 2 then t2 will do that *)
-              else if (a,b) = (q2,q3) then {t3} (* If we want to go from state 2 to state 3 then t3 or t4 will do that *)
-              else {} (* There are no other transitions *)
-         \<rparr>"
+definition h2 :: transition_matrix where
+"h2 \<equiv> {|
+              ((0,1), t1), \<comment>\<open> If we want to go from state 1 to state 2, t1 will do that \<close>
+              ((1,1), t2), \<comment>\<open> If we want to go from state 2 to state 2, t2 will do that \<close>
+              ((1,2), t3)  \<comment>\<open> If we want to go from state 2 to state 3, t3 will do that \<close>
+       |}"
 end

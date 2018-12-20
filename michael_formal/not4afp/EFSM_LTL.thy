@@ -21,6 +21,11 @@ fun ltl_step :: "transition_matrix \<Rightarrow> nat option \<Rightarrow> datast
   "ltl_step _ None r _ = (None, [], r)" |
   "ltl_step e (Some s) r (l, i) = (if fis_singleton (possible_steps e s r l i) then (let (s', t) =  (fthe_elem (possible_steps e s r l i)) in (Some s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))) else (None, [], r))"
 
+primcorec make_full_observation :: "transition_matrix \<Rightarrow> nat option \<Rightarrow> datastate \<Rightarrow> event stream \<Rightarrow> full_observation" where
+  "make_full_observation e s d i = (let (s', o', d') = ltl_step e s d (shd i) in \<lparr>statename = s, datastate = d, event=(shd i), output = o'\<rparr>##(make_full_observation e s' d' (stl i)))"
+
+abbreviation watch :: "transition_matrix \<Rightarrow> event stream \<Rightarrow> full_observation" where
+  "watch e i \<equiv> (make_full_observation e (Some 0) <> i)"
 
 abbreviation non_null :: "property" where
   "non_null s \<equiv> (statename (shd s) \<noteq> None)"

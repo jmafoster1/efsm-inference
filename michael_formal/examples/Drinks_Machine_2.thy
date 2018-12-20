@@ -422,7 +422,7 @@ next
     by (simp add: drinks_1_inaccepts drinks2_2_invalid )
 qed
 
-lemma drinks2_1_inaccepts: "fst a = ''coin'' \<longrightarrow> length (snd a) \<noteq> 1 \<Longrightarrow>
+lemma drinks2_1_invalid: "fst a = ''coin'' \<longrightarrow> length (snd a) \<noteq> 1 \<Longrightarrow>
     a \<noteq> (''vend'', []) \<Longrightarrow>
     possible_steps drinks2 1 r (fst a) (snd a) = {||}"
   apply (simp add: drinks2_def possible_steps_def transitions)
@@ -463,7 +463,7 @@ next
      apply (simp add: outputs_vend_fail outputs_vend_nothing )
      apply (simp add: apply_updates_vend_fail apply_updates_vend_nothing)
     apply (simp add: step_def)
-    by (simp add: drinks_1_inaccepts drinks2_1_inaccepts step_def )
+    by (simp add: drinks_1_inaccepts drinks2_1_invalid step_def )
 qed
 
 lemma observational_equivalence: "efsm_equiv drinks drinks2 t" (* Corresponds to Example 3 in Foster et. al. *)

@@ -7,17 +7,17 @@ definition "write" :: "transition" where
 "write \<equiv> \<lparr>
         Label = ''write'',
         Arity = 1,
-        Guard = [gexp.Eq (V (R 1)) (V (R 3))], (* No guards *)
+        Guard = [gexp.Eq (V (R 1)) (V (R 3))], \<comment>\<open> No guards \<close>
         Outputs = [],
         Updates = [
-                    (R 1, (V (R 1))), \<comment> \<open> Value of r1 remains unchanged \<close>
-                    (R 2, (V (I 1))), \<comment> \<open> Write the input to r2 \<close>
-                    (R 3, (V (R 1)))  \<comment> \<open> Store the writer in r3 \<close>
+                    (R 1, (V (R 1))), \<comment>\<open> Value of r1 remains unchanged \<close>
+                    (R 2, (V (I 1))), \<comment>\<open> Write the input to r2 \<close>
+                    (R 3, (V (R 1)))  \<comment>\<open> Store the writer in r3 \<close>
                   ]
       \<rparr>"
 text_raw{*}%endsnip*}
 
-\<comment> \<open> Create the file if it doesn't already exist \<close>
+\<comment>\<open> Create the file if it doesn't already exist \<close>
 definition create :: "transition" where
 "create \<equiv> \<lparr>
         Label = ''create'',
@@ -27,7 +27,7 @@ definition create :: "transition" where
         Updates = [
                     (R 1, (V (R 1))),
                     (R 2, (V (R 2))),
-                    (R 3, (V (R 1)))  \<comment> \<open> Initialise the current user as the file owner \<close>
+                    (R 3, (V (R 1)))  \<comment>\<open> Initialise the current user as the file owner \<close>
                   ]
       \<rparr>"
 
@@ -46,12 +46,6 @@ lemma arity_write_fail: "Arity write_fail = 1"
 lemma guard_write_fail: "Guard write_fail = [(Ne (V (R 3)) (V (R 1)))]"
   by (simp add: write_fail_def)
 
-lemma UNIV_statename: "UNIV = {q1 , q2}"
-  using statename.exhaust by auto
-
-instance statename :: finite
-  by standard (simp add: UNIV_statename)
-
 text_raw{*\snip{filesystem}{1}{2}{%*}
 definition filesystem :: "transition_matrix" where
 "filesystem \<equiv> {|
@@ -65,7 +59,7 @@ definition filesystem :: "transition_matrix" where
          |}"
 text_raw{*}%endsnip*}
 
-(* export_code filesystem in "Scala" *)
+\<comment>\<open> export_code filesystem in "Scala" \<close>
 
 declare One_nat_def [simp del]
 
@@ -112,10 +106,10 @@ proof-
     by (simp add: fs_simp)
 qed
 
-\<comment> \<open> step :: efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename \<times> outputs \<times> registers) option \<close>
-\<comment> \<open> observe_trace :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> observation" where \<close>
+\<comment>\<open> step :: efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename \<times> outputs \<times> registers) option \<close>
+\<comment>\<open> observe_trace :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> observation" where \<close>
 
-\<comment> \<open> noChangeOwner: THEOREM filesystem |- G(cfstate /= NULL_STATE) => FORALL (owner : UID): G((label=write AND r_1=owner) => F(G((label=read AND r_1/=owner) => X(op_1_read_0 = accessDenied)))); \<close>
+\<comment>\<open> noChangeOwner: THEOREM filesystem |- G(cfstate /= NULL_STATE) => FORALL (owner : UID): G((label=write AND r_1=owner) => F(G((label=read AND r_1/=owner) => X(op_1_read_0 = accessDenied)))); \<close>
 
 lemma r_equals_r [simp]: "<R 1:=user, R 2:=content, R 3:=owner> = (\<lambda>a. if a = R 3 then Some owner else if a = R 2 then Some content else if a = R 1 then Some user else <> a)"
   apply (rule ext)
@@ -219,20 +213,20 @@ lemma user_details_stored_in_r1: "((\<lambda>s. (event (shd s) = (''login'',  [u
   qed
 text_raw{*}%endsnip*}
 
-(*lemma "((\<lambda>s. (event (shd s) = (''login'',  [u]))) impl ((\<lambda>s. datastate (shd s) (R 1) = Some (u)) suntil (\<lambda>s. label (shd s) = ''logout''))) (watch filesystem i)"*)
+\<comment>\<open>lemma "((\<lambda>s. (event (shd s) = (''login'',  [u]))) impl ((\<lambda>s. datastate (shd s) (R 1) = Some (u)) suntil (\<lambda>s. label (shd s) = ''logout''))) (watch filesystem i)"\<close>
 
-\<comment> \<open>lemma globally_user_details_stored_in_r1: "alw (non_null impl ((\<lambda>s. (event (shd s) = (''login'',  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user''))))) (watch filesystem i)"
+\<comment>\<open>lemma globally_user_details_stored_in_r1: "alw (non_null impl ((\<lambda>s. (event (shd s) = (''login'',  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user''))))) (watch filesystem i)"
 proof (coinduction)
   case alw
   then show ?case
-
-qed*)
+    
+qed\<close>
 
 lemma login_user_first: "alw non_null (watch filesystem i) \<Longrightarrow> (login_user (watch filesystem i) = (shd i = (''login'', [Str ''user''])))"
   by simp
 
-      (* G(cfstate /= NULL_STATE)  => ((label=login AND ip_1_login_1=(user)) AND U(label/=logout, label=create)) => F(G(((label=login AND ip_1_login_1=(attacker)) AND F(label=logout))  =>   U(label=read=>X(op_1_read_0=0), label=logout))) *)
-(*lemma "(((alw non_null) impl (login_user aand (label_not_logout until label_create))) impl (ev (alw ((login_attacker aand ev label_logout) impl (read_0 suntil label_logout))))) (watch filesystem i)"
-  apply simp *)
+      \<comment>\<open> G(cfstate /= NULL_STATE)  => ((label=login AND ip_1_login_1=(user)) AND U(label/=logout, label=create)) => F(G(((label=login AND ip_1_login_1=(attacker)) AND F(label=logout))  =>   U(label=read=>X(op_1_read_0=0), label=logout))) \<close>
+\<comment>\<open>lemma "(((alw non_null) impl (login_user aand (label_not_logout until label_create))) impl (ev (alw ((login_attacker aand ev label_logout) impl (read_0 suntil label_logout))))) (watch filesystem i)"
+  apply simp \<close>
 
 end

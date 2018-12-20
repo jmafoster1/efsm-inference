@@ -210,9 +210,6 @@ lemma observe_vend_nothing: "a = (''vend'', []) \<Longrightarrow> (observe_all d
    apply simp
   by (simp only: register_simp)
 
-  apply (rule ext)
-  by simp
-
 lemma coin_updates: "(EFSM.apply_updates (Updates coin)
             (case_vname (\<lambda>n. input2state (snd a) (1) (I n)) (\<lambda>n. if n = 2 then Some (Num 0) else <R (1) := s> (R n)))
             <R (1) := s, R 2 := Num 0>) = (\<lambda>u. if u = R 1 then Some s else if u = R 2 then value_plus (Some (Num 0)) (input2state (snd a) 1 (I 1)) else None)"
@@ -247,6 +244,8 @@ proof (induct t)
   then show ?case
     apply simp
     apply (case_tac "fst e = ''select'' \<and> length (snd e) = 1 ")
+     apply (simp add: possible_steps_0 step_def)
+    by (simp add: drinks2_0_invalid step_def)
 next
   case (Cons e t)
   then show ?case
@@ -328,9 +327,9 @@ lemma merge_1_3_2: "(merge_states 1 3 (merge_states 1 2 drinks2)) = {|((0, 1), s
 lemma vend_fail_leq_vend: "vend_fail \<le> vend"
   by (simp add: less_eq_transition_ext_def less_transition_ext_def transitions less_gexp_def)
 
-lemma max_nondeterministic_transitions: "max (1, (1, 1), vend_nothing, vend) (1, (1, 1), vend_nothing, vend_fail) = (1, (1, 1), vend_nothing, vend)"
+lemma max_nondeterministic_transitions: "max (1::nat, (1::nat, 1::nat), vend_nothing, vend) (1, (1, 1), vend_nothing, vend_fail) = (1, (1, 1), vend_nothing, vend)"
   apply (simp add: max_def)
-  by (simp add: antisym vend_fail_leq_vend)
+  by (simp add: eq_iff vend_fail_leq_vend)
 
 lemma vend_neq_vend_fail: "vend \<noteq> vend_fail"
   by (simp add: transitions)
