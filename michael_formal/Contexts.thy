@@ -442,5 +442,6 @@ lemma "subsumes c t t"
   apply standard
    defer
    apply simp
+  oops
 
 end
