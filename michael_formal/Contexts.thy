@@ -176,6 +176,10 @@ fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context" where
 fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
   "apply_guard a g = conjoin a (pairs2context (guard2pairs a g))"
 
+primrec medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
+  "medial c [] = c" |
+  "medial c (h#t) = (medial (apply_guard c h) t)"
+
 fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function \<Rightarrow> context" where
   "apply_update l c (v, (L n)) = update c (V v) (Eq n)" |
   "apply_update l c (v, V vb) = update c (V v) (l (V vb))" |
@@ -185,10 +189,6 @@ fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function
 primrec apply_updates :: "context \<Rightarrow> context \<Rightarrow> update_function list \<Rightarrow> context" where
   "apply_updates _ c [] = c" |
   "apply_updates l c (h#t) = apply_updates l (apply_update l c h) t"
-
-primrec medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
-  "medial c [] = c" |
-  "medial c (h#t) = (medial (apply_guard c h) t)"
 
 definition can_take :: "transition \<Rightarrow> context \<Rightarrow> bool" where
   "can_take t c \<equiv> consistent (medial c (Guard t))"
@@ -235,16 +235,20 @@ primrec posterior_sequence :: "context \<Rightarrow> transition_matrix \<Rightar
       _ \<Rightarrow> c
     )"
 
-(*primrec posterior_sequence :: "transition list \<Rightarrow> context \<Rightarrow> context" where (* Calculate the posterior context after a sequence of transitions *)
-  "posterior_sequence [] c = c" |
-  "posterior_sequence (h#t) c = posterior_sequence t (posterior c h)"*)
-
 (* Does t2 subsume t1? *)
 definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where (* Corresponds to Algorithm 2 in Foster et. al. *)
   "subsumes c t2 t1 \<equiv> (\<forall>r i. (cval (medial c (Guard t1) r) i = Some True) \<longrightarrow> (cval (medial c (Guard t2) r) i) = Some True) \<and>
                       (\<forall> i r. apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<forall>r i. cval (posterior (medial c (Guard t1)) t2 r) i = Some True \<longrightarrow> (cval (posterior c t1 r) i = Some True) \<or> (posterior c t1 r) = Undef) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
+
+definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> context" where
+ "anterior_context e t = posterior_sequence \<lbrakk>\<rbrakk> e 0 <> t"
+
+(* Does t1 subsume t2 in all possible anterior contexts? *)
+(* For every path which gets us to the problem state, does t1 subsume t2 in the resulting context *)
+definition directly_subsumes :: "transition_matrix \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "directly_subsumes e s t1 t2 = (\<forall>p. (gets_us_to s e 0 <>  p) \<longrightarrow> subsumes (anterior_context e p) t1 t2)"
 
 primrec pairs2guard :: "(aexp \<times> cexp) list \<Rightarrow> guard" where
   "pairs2guard [] = gexp.Bc True" |
@@ -428,5 +432,15 @@ have empty_neq_and: "cexp.And x y \<noteq> \<lbrakk>\<rbrakk> r"
   then show ?case
     by (metis cexp.distinct(11) cexp.distinct(21) consistent_empty_1)
 qed
+
+lemma "subsumes c t t"
+  unfolding subsumes_def
+  apply standard
+   apply simp
+  apply standard
+   apply simp
+  apply standard
+   defer
+   apply simp
 
 end

@@ -303,7 +303,7 @@ proof-
     by simp
 qed
 
-lemma inaccepts_other_states: "s > 1 \<Longrightarrow> \<not>accepts drinks s r ((aa, b) # t)"
+lemma invalid_other_states: "s > 1 \<Longrightarrow> \<not>accepts drinks s r ((aa, b) # t)"
   apply clarify
   apply (rule accepts.cases)
     apply simp

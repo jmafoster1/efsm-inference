@@ -16,9 +16,6 @@ lemma merge_1_2: "merge_states 1 2 drinks2 = {|
          |}"
   by (simp add: merge_states_def merge_states_aux_def drinks2_def )
 
-lemma defined_drinks2: "(defined drinks2) = {|(0,1), (1,1), (1,2), (2,2), (2,3)|}"
-  by (simp add: defined_def drinks2_def)
-
 lemma unequal_labels[simp]: "Label t1 \<noteq> Label t2 \<Longrightarrow> t1 \<noteq> t2"
   by auto
 
@@ -289,9 +286,6 @@ lemma drinks2_vend_sufficient: "r (R 2) = Some (Num x1) \<Longrightarrow>
 
 lemma none_outputs_vend:  "r (R 1) = None \<Longrightarrow> apply_outputs (Outputs vend) r = []"
   by (simp add: vend_def)
-
-lemma "directly_subsumes drinks2 1 vend_fail vend_nothing"
-  oops
 
 lemma "choice vend_nothing vend"
   by (simp add: choice_symmetry choice_vend_vend_nothing)
@@ -970,7 +964,7 @@ qed
 definition basically_drinks :: transition_matrix where
   "basically_drinks = {|((1, 1), vend_fail), ((0, 1), select), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)|}"
 
-lemma merge_transitions: "merge_transitions drinks2 (merge_states 1 2 drinks2) 1 2 1 1 1 vend_nothing vend_fail null_generator null_modifier = Some basically_drinks"
+lemma merge_transitions: "merge_transitions drinks2 (merge_states 1 2 drinks2) 1 2 1 1 1 vend_nothing vend_fail null_generator null_modifier a = Some basically_drinks"
 proof-
   have set_filter: "Set.filter (\<lambda>x. x \<noteq> ((1, 1), vend_nothing))
          {((0, 1), select), ((1, 1), vend_nothing), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)} =
@@ -982,7 +976,7 @@ proof-
  {|((0, 1), select), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)|}"
     by (metis finsert.rep_eq fset_inverse fset_simps(1))
   show ?thesis
-    unfolding merge_transitions_def
+    unfolding merge_transitions_def easy_merge_def
     apply (simp add: vend_fail_directly_subsumes_vend_nothing_1)
     apply (simp add: merge_1_2 replace_transition_def ffilter_def)
     by (simp add: set_filter abs_fset basically_drinks_def)
@@ -1000,12 +994,12 @@ proof-
   have nondeterminism_merge_1_2: "nondeterminism (merge_states 1 2 drinks2)"
     unfolding nondeterminism_def
     using vend_vend_nothing_nondeterminism by auto
-  have merge_vend_nothing_vend: "merge_transitions (merge_states 1 2 drinks2) (merge_states 1 3 (merge_states 1 2 drinks2)) 1 1 1 1 1 vend_nothing
-             vend null_generator null_modifier = None"
+  have merge_vend_nothing_vend: "\<forall>a. merge_transitions (merge_states 1 2 drinks2) (merge_states 1 3 (merge_states 1 2 drinks2)) 1 1 1 1 1 vend_nothing
+             vend null_generator null_modifier a = None"
     apply (simp only: merge_1_3_2)
     apply (simp only: merge_1_2)
     using merge_1_2 merge_transitions_def vend_doesnt_directly_subsume_vend_nothing_2 vend_doesnt_directly_subsume_vend_nothing_3
-    by (simp add: null_generator_def null_modifier_def)
+    by (simp add: null_generator_def null_modifier_def easy_merge_def)
   have vend_fail_lt_vend: "vend_fail < vend"
     using vend_fail_leq_vend vend_neq_vend_fail by auto
   have vend_fail_lt_vend_2: "\<not>vend \<le> vend_fail"
@@ -1016,6 +1010,7 @@ proof-
     apply (simp add: fMax_def max_def )
     by (simp add: fMax.semilattice_fset_axioms semilattice_fset.singleton)
   show ?thesis
+    unfolding easy_merge_def
     apply (simp add: Let_def nondeterminisitic_pairs nondeterminism_def max_def)
     apply (simp add: nondeterministic_pairs_1_3 max_def)
     apply (simp add: vend_nothing_exits_1_2 vend_exits_1 nondeterminsm_merge_1_3 nondeterminism_merge_1_2 )

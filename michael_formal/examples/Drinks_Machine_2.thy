@@ -497,8 +497,8 @@ lemma filter_elements: "x |\<in>| Abs_fset (Set.filter f (fset s)) = (x \<in> (S
 lemma simulation_aux_aux: "\<forall>r s. accepts drinks 1 r t \<longrightarrow> accepts drinks2 2 r t"
 proof (induct t)
   case Nil
-then show ?case
-  by (simp add: base)
+  then show ?case
+    by (simp add: accepts.base)
 next
   case (Cons a t)
   then show ?case
@@ -527,7 +527,7 @@ next
       apply clarify
       apply (simp add: step_def)
       apply (simp add: possible_steps_2_vend)
-     apply (metis base drinks_inaccepts_future)
+     apply (metis accepts.base drinks_inaccepts_future)
     apply (case_tac "aa = ''coin'' \<and> length b = 1")
      prefer 2
      apply clarify
@@ -549,13 +549,13 @@ lemma simulation_aux: "\<forall>r s. accepts drinks s r t \<longrightarrow> acce
 proof (induct t)
   case Nil
   then show ?case
-    by (simp add: base)
+    by (simp add: accepts.base)
 next
   have accepts_select: "\<forall>b. length b = 1 \<longrightarrow> accepts drinks2 0 Map.empty [(''select'', b)]"
     apply safe
     apply (rule accepts.step)
      apply (simp add: step_def possible_steps_0)
-    by (simp add: base)
+    by (simp add: accepts.base)
   have inaccepts_not_select: "\<forall>aa b t r. \<not> (aa = ''select'' \<and> length b = 1) \<longrightarrow> \<not> accepts drinks 0 r ((aa, b) # t)"
     apply safe
      apply (rule accepts.cases)
@@ -617,7 +617,7 @@ next
        apply simp
        apply (simp add: step_def drinks2_vend_insufficient outputs_vend_fail updates_vend_fail)
       apply (case_tac t)
-    using base apply blast
+    using accepts.base apply blast
       apply (simp add: drinks_inaccepts_future)
 
      apply (case_tac "aa = ''coin'' \<and> length b = 1")
@@ -640,7 +640,7 @@ next
     apply (case_tac "s > 1")
      defer
      apply simp
-    by (simp add: inaccepts_other_states)
+    by (simp add: invalid_other_states)
 qed
 
 lemma "simulates drinks2 drinks"

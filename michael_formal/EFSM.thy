@@ -67,6 +67,18 @@ definition step :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate 
 "step e s r l i \<equiv>
 (if fis_singleton (possible_steps e s r l i) then (let (s', t) =  (fthe_elem (possible_steps e s r l i)) in Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))) else None)"
 
+lemma step_empty[simp]:"step {||} s r l i = None"
+proof-
+  have ffilter_empty: "ffilter
+       (\<lambda>((origin, dest), t).
+           origin = s \<and>
+           Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))))
+       {||} = {||}"
+    by auto
+  show ?thesis
+    by (simp add: step_def possible_steps_def ffilter_empty)
+qed
+
 primrec observe_all :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> (transition \<times> nat \<times> outputs \<times> datastate) list" where
   "observe_all _ _ _ [] = []" |
   "observe_all e s r (h#t) =
@@ -303,4 +315,9 @@ type_synonym simulation_relation = "nat \<Rightarrow> nat"
 
 definition simulates :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> bool" where
   "simulates m2 m1 = (\<forall>t. accepts_trace m1 t \<longrightarrow> accepts_trace m2 t)"
+
+inductive gets_us_to :: "nat \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
+  base: "s = target \<Longrightarrow> gets_us_to target _ s _ []" |
+  step_some: "step e s r (fst h) (snd h) =  Some (_, s', _, r') \<Longrightarrow> gets_us_to target e s' r' t \<Longrightarrow> gets_us_to target e s r (h#t)" |
+  step_none: "step e s r (fst h) (snd h) = None \<Longrightarrow> s=target \<Longrightarrow> gets_us_to target e s r (h#t)"
 end
