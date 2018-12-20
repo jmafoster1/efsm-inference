@@ -160,14 +160,6 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
 
   "guard2pairs a (Nor v va) = (pair_and (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a v)) (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a va)))"
 
-fun guard2context :: "context \<Rightarrow> guard \<Rightarrow> context" where
-  "guard2context a (gexp.Bc True) = (\<lambda>x. Bc True)" |
-  "guard2context a (gexp.Bc False) = (\<lambda>x. Bc False)" |
-  "guard2context a (gexp.Null v) = \<lbrakk>V v \<mapsto> Undef\<rbrakk>" |
-  "guard2context a (gexp.Eq v vb) = \<lbrakk>v \<mapsto> get a vb, vb \<mapsto> get a v\<rbrakk>" |
-  "guard2context a (gexp.Gt v vb) = (let (cv, cvb) = apply_gt (get a v) (get a vb) in \<lbrakk>v \<mapsto> cv, vb \<mapsto> cvb\<rbrakk>)" |
-  "guard2context a (Nor v va) = conjoin (negate (guard2context a v)) (guard2context a va)"
-
 fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context" where
   "pairs2context [] = (\<lambda>i. Bc True)" |
   "pairs2context ((_, Bc False)#t) = (\<lambda>r. Bc False)" |
@@ -176,9 +168,9 @@ fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context" where
 fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
   "apply_guard a g = conjoin a (pairs2context (guard2pairs a g))"
 
-primrec medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
-  "medial c [] = c" |
-  "medial c (h#t) = (medial (apply_guard c h) t)"
+ primrec medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
+   "medial c [] = c" |
+   "medial c (h#t) = (medial (apply_guard c h) t)"
 
 fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function \<Rightarrow> context" where
   "apply_update l c (v, (L n)) = update c (V v) (Eq n)" |
@@ -433,6 +425,24 @@ have empty_neq_and: "cexp.And x y \<noteq> \<lbrakk>\<rbrakk> r"
     by (metis cexp.distinct(11) cexp.distinct(21) consistent_empty_1)
 qed
 
+lemma "consistent (medial (medial c g) g) = consistent (medial c g)"
+proof (induct g)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a x)
+  then show ?case
+    apply (simp add: consistent_def)
+    apply safe
+    apply (case_tac a)
+        apply (case_tac x1)
+            apply auto[1]
+           apply simp
+    sorry  
+  qed
+
+
 lemma "subsumes c t t"
   unfolding subsumes_def
   apply standard
@@ -442,6 +452,7 @@ lemma "subsumes c t t"
   apply standard
    defer
    apply simp
+  unfolding posterior_def Let_def
   oops
 
 end

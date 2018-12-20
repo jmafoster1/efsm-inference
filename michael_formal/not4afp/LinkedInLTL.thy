@@ -59,7 +59,7 @@ definition pdfFriend :: "transition" where
         Label = ''pdf'',
         Arity = 3,
         Guard = [Eq (V (I 1)) (L (Str ''friendID'')), Eq (V (I 2)) (L (Str ''name'')), Eq (V (I 3)) (L (Str ''HM8p''))],
-        Outputs = [],
+        Outputs = [L (Str ''detailedPDF'')],
         Updates = []
       \<rparr>"
 
@@ -68,7 +68,7 @@ definition pdfOther :: "transition" where
         Label = ''pdf'',
         Arity = 3,
         Guard = [Eq (V (I 1)) (L (Str ''otherID'')), Eq (V (I 2)) (L (Str ''name'')), Eq (V (I 3)) (L (Str ''4Zof''))],
-        Outputs = [],
+        Outputs = [L (Str ''detailedPDF'')],
         Updates = []
       \<rparr>"
 
@@ -77,7 +77,7 @@ definition pdfOtherOON :: "transition" where
         Label = ''pdf'',
         Arity = 3,
         Guard = [Eq (V (I 1)) (L (Str ''otherID'')), Eq (V (I 2)) (L (Str ''OUT_OF_NETWORK'')), Eq (V (I 3)) (L (Str ''MNn5''))],
-        Outputs = [],
+        Outputs = [L (Str ''summaryPDF'')],
         Updates = []
       \<rparr>"
 
