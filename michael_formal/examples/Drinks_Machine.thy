@@ -194,7 +194,7 @@ lemma select_posterior: "(posterior empty select) = select_posterior"
 
 lemma medial_select_posterior_vend: "medial select_posterior (Guard vend) = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Eq (Num 0)) (Geq (Num 100))\<rbrakk>"
   apply (rule ext)
-  by (simp add: guard_vend)
+  by (simp add: guard_vend Let_def)
 
 lemma r2_0_vend: "\<not>Contexts.can_take vend select_posterior" (* You can't take vend immediately after taking select *)
   apply (simp only: can_take_def medial_select_posterior_vend)
