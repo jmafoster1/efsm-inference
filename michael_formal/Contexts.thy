@@ -190,11 +190,11 @@ fun guard2context :: "guard \<Rightarrow> context \<Rightarrow> (vname \<Rightar
 
 fun medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
   "medial c [] = c" |
-  "medial c (h#t) = conjoin (\<lambda>x. case guard2context h c x of None \<Rightarrow> \<lbrakk>\<rbrakk> x | Some y \<Rightarrow> y) (medial c t)"
+  "medial c (h#t) = conjoin (medial c t) (\<lambda>x. case guard2context h c x of None \<Rightarrow> Bc True | Some y \<Rightarrow> y)"
 
 primrec apply_updates :: "context \<Rightarrow> context \<Rightarrow> update_function list \<Rightarrow> context" where
   "apply_updates _ c [] = c" |
-  "apply_updates l c (h#t) = apply_updates l (update l (fst h) (context_eval (snd h) l)) t"
+  "apply_updates l c (h#t) = (\<lambda>x. if x = fst h then context_eval (snd h) l else (apply_updates l c t) x )"
 
 definition can_take :: "transition \<Rightarrow> context \<Rightarrow> bool" where
   "can_take t c \<equiv> consistent (medial c (Guard t))"
