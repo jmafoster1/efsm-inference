@@ -14,7 +14,7 @@ theory GExp
 imports "efsm-exp.AExp" "efsm-exp.Option_Logic"
 begin
 
-datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null vname
+datatype gexp = Bc bool | Eq vname aexp | Gt vname aexp | Lt vname aexp | Nor gexp gexp | Null vname
 
 syntax (xsymbols)
   Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "=" 60*)
@@ -22,8 +22,9 @@ syntax (xsymbols)
 
 fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool option" where
   "gval (Bc b) _ = Some b" |
-  "gval (Gt a\<^sub>1 a\<^sub>2) s = ValueGt (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
-  "gval (Eq a\<^sub>1 a\<^sub>2) s = Some (aval a\<^sub>1 s = aval a\<^sub>2 s)" |
+  "gval (Gt v a) s = ValueGt (aval (V v) s) (aval a s)" |
+  "gval (Lt v a) s = ValueLt (aval (V v) s) (aval a s)" |
+  "gval (Eq v a) s = Some (aval (V v) s = aval a s)" |
   "gval (Nor a\<^sub>1 a\<^sub>2) s = (case (gval a\<^sub>1 s, gval a\<^sub>2 s) of
     (Some x, Some y) \<Rightarrow> Some (\<not> (x \<or> y)) |
     _ \<Rightarrow> None
@@ -42,7 +43,7 @@ abbreviation gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<and
 lemma inj_gAnd: "inj gAnd"
   apply (simp add: inj_def)
   apply clarify
-  by (metis  gexp.inject(4))
+  by (meson gexp.inject(5))
 
 lemma gAnd_determinism: "(gAnd x y = gAnd x' y') = (x = x' \<and> y = y')"
 proof
@@ -53,16 +54,13 @@ next
     by simp
 qed
 
-abbreviation Lt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "<" 60*) where
-  "Lt a b \<equiv> Gt b a"
-
-abbreviation Le :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<le>" 60*) where
+abbreviation Le :: "vname \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<le>" 60*) where
   "Le v va \<equiv> gNot (Gt v va)"
 
-abbreviation Ge :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<ge>" 60*) where
+abbreviation Ge :: "vname \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<ge>" 60*) where
   "Ge v va \<equiv> gNot (Lt v va)"
 
-abbreviation Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<noteq>" 60*) where
+abbreviation Ne :: "vname \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<noteq>" 60*) where
   "Ne v va \<equiv> gNot (Eq v va)"
 
 lemma or_equiv: "gval (gOr x y) r = maybe_or (gval x r) (gval y r)"
@@ -137,7 +135,14 @@ next
   case (Gt x1a x2)
   then show ?case
     apply simp
-    apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (aval x1a s) (aval x2 s)")
+    apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (s x1a) (aval x2 s)")
+     apply simp
+    by simp
+next
+  case (Lt x1a x2)
+  then show ?case
+    apply simp
+    apply (case_tac "ValueLt (s x1a) (aval x2 s)")
      apply simp
     by simp
 next
@@ -204,61 +209,65 @@ lemma gOr_symmetry: "gexp_equiv (gOr x y) (gOr y x)"
   by auto
 
 lemma gor_is_gOr: "gexp_equiv (gor a b) (gOr a b)"
-  unfolding gexp_equiv_def
-  apply (rule allI)
-  apply (case_tac a)
-      apply (case_tac b)
-          apply (case_tac x1)
-           apply (case_tac x1a)
-            apply simp
-           apply simp
-          apply simp
-         apply (case_tac x1)
-          apply simp
-         apply simp
-        apply (case_tac x1)
-         apply simp
-        apply simp
-        apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (aval x31 s) (aval x32 s)")
-         apply simp
-        apply simp
-       apply (case_tac x1)
-        apply simp
-  using gor.simps(1) gval_gOr_false apply presburger
+proof (induct a)
+  case (Bc x)
+  then show ?case
+  proof (cases x)
+    case True
+    then show ?thesis
+      apply (cases b)
       apply (case_tac x1)
-       apply simp
-      apply simp
-     apply clarify
-     apply (case_tac b)
+            apply (simp add: gAnd_zero gexp_equiv_symmetric)
+      using gexp_equiv_def apply auto[1]
+      by (simp_all add: gexp_equiv_def)
+  next
+    case False
+    then show ?thesis
+      apply (cases b)
+           apply (case_tac x1)
+      by (simp_all add: gOr_zero gexp_equiv_symmetric)
+  qed
+next
+  case (Eq x1a x2)
+  then show ?case
+    apply (cases b)
          apply (case_tac x1)
-          apply simp
-         apply simp
-        apply simp
-       apply simp
-      apply simp
-     apply simp
-    apply clarify
-    apply (case_tac b)
-        apply (case_tac x1)
-         apply simp
-        apply (metis (full_types) gOr_symmetry gexp_equiv_def gor.simps(4) gval_gOr_false)
-       apply simp
-      apply (metis gor.simps(19) gval_gOr_false nor_equiv not_equiv)
-     apply simp
-    apply simp
-   apply clarify
-   apply (case_tac b)
-       apply (case_tac x1)
-        apply simp
-       apply (metis (full_types) gOr_symmetry gexp_equiv_def gor.simps(5) gval_gOr_false)
-      apply simp
-     apply simp
-  using nor_equiv apply auto[1]
-   apply simp
-  apply clarify
-  apply (case_tac b)
-      apply (case_tac x1)
-  by auto
+          apply (simp add: gexp_equiv_reflexive)
+    using gexp_equiv_def apply auto[1]
+    by (simp_all add: gAnd_reflexivity gexp_equiv_reflexive gexp_equiv_symmetric)
+next
+  case (Gt x1a x2)
+  then show ?case
+    apply (cases b)
+         apply (case_tac x1)
+          apply (simp add: gexp_equiv_reflexive)
+         apply (metis (full_types) gOr_symmetry gexp_equiv_def gor.simps(4) gval_gOr_false)
+    by (simp_all add: gAnd_reflexivity gexp_equiv_reflexive gexp_equiv_symmetric)
+next
+  case (Lt x1a x2)
+  then show ?case
+    apply (cases b)
+         apply (case_tac x1)
+          apply (simp add: gexp_equiv_reflexive)
+         apply (metis (full_types) gOr_symmetry gexp_equiv_def gor.simps(5) gval_gOr_false)
+    by (simp_all add: gAnd_reflexivity gexp_equiv_reflexive gexp_equiv_symmetric)
+next
+  case (Nor a1 a2)
+  then show ?case
+    apply (cases b)
+         apply (case_tac x1)
+          apply (simp add: gexp_equiv_reflexive)
+         apply (metis (full_types) gOr_symmetry gexp_equiv_def gor.simps(6) gval_gOr_false)
+    by (simp_all add: gAnd_reflexivity gexp_equiv_reflexive gexp_equiv_symmetric)
+next
+  case (Null x)
+  then show ?case
+    apply (cases b)
+         apply (case_tac x1)
+          apply (simp add: gexp_equiv_reflexive)
+         apply (metis (full_types) gOr_symmetry gOr_zero gexp_equiv_symmetric gexp_equiv_transitive gor.simps(7))
+    by (simp_all add: gAnd_reflexivity gexp_equiv_reflexive gexp_equiv_symmetric)
+qed
 
 fun gand :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" where
   "gand b (Bc True) = b" |
@@ -267,77 +276,62 @@ fun gand :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" where
 
 lemma gand_bc_true[simp]: "gand (gexp.Bc True) a = a"
   apply (case_tac a)
-      apply (metis gand.simps(1) gand.simps(2))
+      apply (metis (full_types) gand.simps(1) gand.simps(2))
   by auto
 
 lemma gand_is_gAnd: "gexp_equiv (gand x y) (gAnd x y)"
-proof (cases x)
-case (Bc x1)
-  then show ?thesis
-    unfolding gexp_equiv_def
-    apply clarify
-    apply (cases x1)
-     apply (cases y)
-         prefer 6
-         apply (cases y)
-             apply (metis (full_types) gAnd_symmetry gAnd_zero gand.simps(1) gand.simps(7) gexp_equiv_def gexp_equiv_symmetric gval_gOr_false)
-            apply simp
-           apply simp
-          apply simp
-         apply simp
-        apply (metis (mono_tags, hide_lams) Bc gAnd_zero gand.simps(1) gand.simps(2) gexp.inject(1) gexp_equiv_def gval.simps(1))
-       apply simp
-      apply (metis (full_types) gAnd_zero gand.simps(4) gexp_equiv_def)
-     apply (metis (full_types) gAnd_zero gand.simps(5) gexp_equiv_def)
-    by simp
+proof (induct x)
+case (Bc x)
+  then show ?case
+  proof (cases x)
+    case True
+    then show ?thesis
+      apply simp
+      apply (cases y)
+      by (simp_all add: gAnd_zero gexp_equiv_symmetric)
+  next
+    case False
+    then show ?thesis
+      apply simp
+      apply (cases y)
+           apply (metis (full_types) gAnd_symmetry gAnd_zero gand.simps(1) gand.simps(8) gexp_equiv_symmetric gexp_equiv_transitive gor.simps(1) gor_is_gOr)
+      by (simp_all add: gexp_equiv_reflexive)
+  qed
 next
-case (Eq x21 x22)
-  then show ?thesis
-    apply clarify
+  case (Eq x1a x2)
+  then show ?case
     apply (cases y)
-        apply (case_tac x1)
-         apply (metis (mono_tags, lifting) gAnd_symmetry gAnd_zero gand.simps(1) gexp_equiv_symmetric gexp_equiv_transitive)
-        apply (simp add: gexp_equiv_reflexive)
-       apply (simp add: gAnd_reflexivity gexp_equiv_reflexive gexp_equiv_symmetric)
-      apply (simp add: gexp_equiv_reflexive)
-     apply (simp add: gexp_equiv_reflexive)
-    by (simp add: gexp_equiv_reflexive)
+         apply (case_tac x1)
+          apply (metis (full_types) gAnd_symmetry gAnd_zero gand.simps(1) gexp_equiv_symmetric gexp_equiv_transitive)
+    by (simp_all add: gAnd_reflexivity gexp_equiv_reflexive gexp_equiv_symmetric)
 next
-  case (Gt x31 x32)
-  then show ?thesis
-    apply clarify
+  case (Gt x1a x2)
+  then show ?case
     apply (cases y)
-        apply (case_tac x1)
-         apply (metis (mono_tags, lifting) gAnd_symmetry gAnd_zero gand.simps(1) gexp_equiv_symmetric gexp_equiv_transitive)
-        apply (simp add: gexp_equiv_reflexive)
-       apply (simp add: gexp_equiv_reflexive)
-      apply (simp add: gAnd_reflexivity gexp_equiv_reflexive gexp_equiv_symmetric)
-     apply (simp add: gexp_equiv_reflexive)
-    by (simp add: gexp_equiv_reflexive)
+         apply (case_tac x1)
+          apply (metis (full_types) gAnd_symmetry gAnd_zero gand.simps(1) gexp_equiv_symmetric gexp_equiv_transitive)
+    by (simp_all add: gAnd_reflexivity gexp_equiv_reflexive gexp_equiv_symmetric)
 next
-  case (Nor x41 x42)
-  then show ?thesis
-    apply clarify
+  case (Lt x1a x2)
+  then show ?case
     apply (cases y)
-        apply (case_tac x1)
-         apply (metis (mono_tags, lifting) gAnd_symmetry gAnd_zero gand.simps(1) gexp_equiv_symmetric gexp_equiv_transitive)
-        apply (simp add: gexp_equiv_reflexive)
-       apply (simp add: gexp_equiv_reflexive)
-      apply (simp add: gexp_equiv_reflexive)
-     apply (simp add: gAnd_reflexivity gAnd_symmetry gexp_equiv_reflexive gexp_equiv_symmetric)
-    by (simp add: gexp_equiv_reflexive)
+         apply (case_tac x1)
+          apply (metis (full_types) gAnd_symmetry gAnd_zero gand.simps(1) gexp_equiv_symmetric gexp_equiv_transitive)
+    by (simp_all add: gAnd_reflexivity gexp_equiv_reflexive gexp_equiv_symmetric)
 next
-  case (Null x5)
-  then show ?thesis
-    apply clarify
+  case (Nor x1 x2)
+  then show ?case
     apply (cases y)
-        apply (case_tac x1)
-         apply (metis (mono_tags, lifting) gAnd_symmetry gAnd_zero gand.simps(1) gexp_equiv_symmetric gexp_equiv_transitive)
-        apply (simp add: gexp_equiv_reflexive)
-       apply (simp add: gexp_equiv_reflexive)
-      apply (simp add: gexp_equiv_reflexive)
-     apply (simp add: gAnd_reflexivity gAnd_symmetry gexp_equiv_reflexive gexp_equiv_symmetric)
-    by (simp add: gAnd_reflexivity gexp_equiv_reflexive gexp_equiv_symmetric)
+         apply (case_tac x1a)
+          apply (metis (full_types) gAnd_symmetry gAnd_zero gand.simps(1) gexp_equiv_symmetric gexp_equiv_transitive)
+    by (simp_all add: gAnd_reflexivity gexp_equiv_reflexive gexp_equiv_symmetric)
+next
+  case (Null x)
+  then show ?case
+    apply (cases y)
+         apply (case_tac x1)
+          apply (metis (full_types) gAnd_symmetry gAnd_zero gand.simps(1) gexp_equiv_symmetric gexp_equiv_transitive)
+    by (simp_all add: gAnd_reflexivity gexp_equiv_reflexive gexp_equiv_symmetric)
 qed
 
 lemma satisfiable_gAnd_self: "satisfiable (gAnd x x) = satisfiable x"
