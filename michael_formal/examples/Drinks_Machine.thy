@@ -201,8 +201,7 @@ lemma select_posterior: "(posterior empty select) = select_posterior"
 lemma medial_select_posterior_vend: "medial select_posterior (Guard vend) = \<lbrakk>(R 1) \<mapsto> Bc True, (R 2) \<mapsto> And (Eq (Num 0)) (Geq (Num 100))\<rbrakk>"
   apply (simp add: guard_vend Let_def)
   apply (rule ext)
-  by simp
-
+  by (simp add: guard_vend)
 
 lemma r2_0_vend: "\<not>Contexts.can_take vend select_posterior" (* You can't take vend immediately after taking select *)
   apply (simp only: can_take_def medial_select_posterior_vend)
@@ -319,5 +318,5 @@ lemma invalid_other_states: "s > 1 \<Longrightarrow> \<not>accepts drinks s r ((
   apply clarify
   using inaccepts_state_step
   by simp
-  
+
 end

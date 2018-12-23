@@ -10,10 +10,13 @@ theory Contexts
     EFSM GExp "efsm-exp.CExp"
 begin
 
-type_synonym "context" = "vname \<Rightarrow> cexp"
+type_synonym "context" = "aexp \<Rightarrow> cexp"
 
 abbreviation empty ("\<lbrakk>\<rbrakk>") where
-  "empty \<equiv> (\<lambda>x. (case x of R n \<Rightarrow> Undef | _ \<Rightarrow> Bc True))"
+  "empty \<equiv> (\<lambda>x. case x of
+    (V v) \<Rightarrow> (case v of R n \<Rightarrow> Undef | I n \<Rightarrow> Bc True) |
+    _ \<Rightarrow> Bc True
+  )"
 syntax
   "_updbind" :: "'a \<Rightarrow> 'a \<Rightarrow> updbind" ("(2_ \<mapsto>/ _)")
   "_Context" :: "updbinds \<Rightarrow> 'a"      ("\<lbrakk>_\<rbrakk>")
@@ -23,10 +26,33 @@ translations
   "_Context (_updbinds b bs)" \<rightleftharpoons> "_Update (_Context b) bs"
 
 lemma empty_not_false[simp]: "cexp.Bc False \<noteq> \<lbrakk>\<rbrakk> i"
-  apply (case_tac i)
-  by simp_all
+proof (induct i)
+case (L x)
+then show ?case by simp
+next
+  case (V x)
+  then show ?case
+    apply (case_tac x)
+    by simp_all
+next
+  case (Plus i1 i2)
+  then show ?case
+    by simp
+next
+  case (Minus i1 i2)
+  then show ?case
+    by simp
+qed
 
-fun update :: "context \<Rightarrow> vname \<Rightarrow> cexp \<Rightarrow> context" where
+
+fun get :: "context \<Rightarrow> aexp \<Rightarrow> cexp" where
+  "get c (L n) = Eq n" |
+  "get c (V v) = c (V v)" |
+  "get c (Plus v va) = (And (c (Plus v va)) (c (Plus va v)))" |
+  "get c (Minus v va) = (c (Minus v va))"
+
+fun update :: "context \<Rightarrow> aexp \<Rightarrow> cexp \<Rightarrow> context" where
+  "update c (L n) _ = c" |
   "update c k v = (\<lambda>r. if r=k then v else c r)"
 
 fun conjoin :: "context \<Rightarrow> context \<Rightarrow> context" where
@@ -36,7 +62,7 @@ fun negate :: "context \<Rightarrow> context" where
   "negate c = (\<lambda>r. not (c r))"
 
 definition context_equiv :: "context \<Rightarrow> context \<Rightarrow> bool" where
-  "context_equiv c c' \<equiv> (\<forall>r. cexp_equiv (c r) (c' r))"
+  "context_equiv c c' \<equiv> (\<forall>r. cexp_equiv (get c r) (get c' r))"
 
 lemma context_equiv_reflexive: "context_equiv x x"
   apply (simp add: context_equiv_def)
@@ -53,10 +79,10 @@ lemma context_equiv_transitive: "context_equiv x y \<and> context_equiv y z \<Lo
   apply (rule allI)
   by (simp add: cexp_equiv_def)
 
-fun cexp2gexp :: "vname \<Rightarrow> cexp \<Rightarrow> gexp" where
+fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow> gexp" where
   "cexp2gexp _ (Bc b) = gexp.Bc b" |
   "cexp2gexp a Undef = gexp.Bc False" |
-  "cexp2gexp a (Lt v) = gexp.Lt a (L v)" |
+  "cexp2gexp a (Lt v) = gexp.Gt (L v) a" |
   "cexp2gexp a (Gt v) = gexp.Gt a (L v)" |
   "cexp2gexp a (Eq v) = gexp.Eq a (L v)" |
   "cexp2gexp a (Not v) = gNot (cexp2gexp a v)" |
@@ -107,94 +133,54 @@ lemma cexp2gexp_double_neg: "gexp_equiv (cexp2gexp r (Not (Not x))) (cexp2gexp r
 lemma gval_cexp2gexp_double_neg: "gval (cexp2gexp r (Not (Not x))) s = gval (cexp2gexp r x) s"
   using cexp2gexp_double_neg gexp_equiv_def by blast
 
-primrec and_insert :: "(vname \<times> cexp) list \<Rightarrow> (vname \<times> cexp) \<Rightarrow> (vname \<times> cexp) list" where
+primrec and_insert :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) \<Rightarrow> (aexp \<times> cexp) list" where
   "and_insert [] c = [c]" |
   "and_insert (h#t) c = (if fst h = fst c then ((fst h, and (snd h) (snd c))#t) else (h#(and_insert t c)))"
 
-primrec pair_and :: "(vname \<times> cexp) list \<Rightarrow> (vname \<times> cexp) list \<Rightarrow> (vname \<times> cexp) list" where
+primrec pair_and :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) list" where
   "pair_and [] c = c" |
   "pair_and (h#t) c = pair_and t (and_insert c h)"
 
-fun context_eval :: "aexp \<Rightarrow> context \<Rightarrow> cexp" where
-  "context_eval (L n) _ = Eq n" |
-  "context_eval (V v) c = c v" |
-  "context_eval (Plus x y) c = compose_plus (context_eval x c) (context_eval y c)" |
-  "context_eval (Minus x y) c = compose_minus (context_eval x c) (context_eval y c)"
-
-fun make_gt :: "cexp \<Rightarrow> cexp" where
-  "make_gt Undef = Undef" |
-  "make_gt (Not Undef) = Bc True" |
-  "make_gt (Bc b) = Bc b" |
-  "make_gt (Not (Bc b)) = Bc (\<not> b)" |
-  "make_gt (Eq v) = Gt v" |
-  "make_gt (Neq v) = Bc True" |
-  "make_gt (Geq v) = Gt v" |
-  "make_gt (Gt v) = Gt v" |
-  "make_gt (Lt v) = Bc True" |
-  "make_gt (Leq v) = Bc True" |
-  "make_gt (Not (Not v)) = make_gt v" |
-  "make_gt (And v1 v2) = and (make_gt v1) (make_gt v2)" |
-  "make_gt (Not (And v1 v2)) = Or (make_gt (Not v1)) (make_gt (Not v2))"
-
-fun make_lt :: "cexp \<Rightarrow> cexp" where
-  "make_lt Undef = Undef" |
-  "make_lt (Not Undef) = Bc True" |
-  "make_lt (Bc b) = Bc b" |
-  "make_lt (Not (Bc b)) = Bc (\<not> b)" |
-  "make_lt (Eq v) = Lt v" |
-  "make_lt (Neq v) = Bc True" |
-  "make_lt (Geq v) = Bc True" |
-  "make_lt (Gt v) = Bc True" |
-  "make_lt (Lt v) = Lt v" |
-  "make_lt (Leq v) = Lt v" |
-  "make_lt (Not (Not v)) = make_gt v" |
-  "make_lt (And v1 v2) = and (make_gt v1) (make_gt v2)" |
-  "make_lt (Not (And v1 v2)) = Or (make_gt (Not v1)) (make_gt (Not v2))"
-
-fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (vname \<times> cexp) list" where
+fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cexp) list" where
   "guard2pairs a (gexp.Bc True) = []" |
-  "guard2pairs a (gexp.Bc False) = [(I 0, Bc False)]" |
-  "guard2pairs a (gexp.Null v) = [(v, Undef)]" |
-  "guard2pairs a (gexp.Eq v vb) = [(v, context_eval vb a)]" |
-  "guard2pairs a (gexp.Gt v vb) = [(v, make_gt (context_eval vb a))]" |
-  "guard2pairs a (gexp.Lt v vb) = [(v, make_lt (context_eval vb a))]" |
-  "guard2pairs a (Nor v va) = (pair_and (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a v))
-                                        (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a va)))"
+  "guard2pairs a (gexp.Bc False) = [(L (Num 0), Bc False)]" |
 
-fun pairs2context :: "(vname \<times> cexp) list \<Rightarrow> context \<Rightarrow> context" where
-  "pairs2context [] c = c" |
-  \<comment>\<open>This deals with literal guard (Bc False) which doesn't go through guard2pairs well\<close>
-  "pairs2context ((_, Bc False)#t) c = (\<lambda>r. Bc False)" |
-  "pairs2context (h#t) c = (let c' = (pairs2context t c) in (\<lambda>r. if r = (fst h) then and (c' r) (snd h) else c' r))"
+  "guard2pairs a (gexp.Null v) = [(V v, Undef)]" |
 
-fun context_nor :: "cexp option \<Rightarrow> cexp option \<Rightarrow> cexp option" where
-  "context_nor None None = None" |
-  "context_nor None (Some c) = Some (not c)" |
-  "context_nor (Some c) None = Some (not c)" |
-  "context_nor (Some c1) (Some c2) = Some (not (Or c1 c2))"
+  "guard2pairs a (gexp.Eq (L n) (L n')) =  [(L n, Eq n')]" |
+  "guard2pairs a (gexp.Gt (L n) (L n')) =  [(L n, Gt n')]" |
 
-fun guard2context :: "guard \<Rightarrow> context \<Rightarrow> (vname \<Rightarrow> cexp option)" where
-  "guard2context (gexp.Bc True) c = (\<lambda>x. None)" |
-  "guard2context (gexp.Bc False) c = (\<lambda>x. Some (Bc False))" |
-  "guard2context (gexp.Eq v a) c = (\<lambda>x. if x = v then Some (context_eval a c) else None)" |
-  "guard2context (gexp.Gt v a) c = (\<lambda>x. if x = v then Some (make_gt (context_eval a c)) else None)" |
-  "guard2context (gexp.Lt v a) c = (\<lambda>x. if x = v then Some (make_lt (context_eval a c)) else None)" |
-  "guard2context (Nor g1 g2) c = (\<lambda>x. context_nor (guard2context g1 c x) (guard2context g2 c x))" |
-  "guard2context (Null v) c = (\<lambda>x. if x = v then Some Undef else None)"
+  "guard2pairs a (gexp.Eq v (L n)) = [(v, Eq n)]" |
+  "guard2pairs a (gexp.Eq (L n) v) = [(v, Eq n)]" |
+  "guard2pairs a (gexp.Eq v vb) = [(v, get a vb), (vb, get a v)]" |
 
-(*fun medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
-  "medial c [] = c" |
-  "medial c ((gexp.Bc True)#t) = medial c t"|
-  "medial c ((gexp.Bc False)#t) = (\<lambda>r. Bc False)"|
-  "medial c l = pairs2context (concat (map (\<lambda>g. guard2pairs c g) l)) c"*)
+  "guard2pairs a (gexp.Gt v (L n)) = [(v, (Gt n))]" |
+  "guard2pairs a (gexp.Gt (L n) v) = [(v, (Lt n))]" |
+  "guard2pairs a (gexp.Gt v vb) = (let (cv, cvb) = apply_gt (get a v) (get a vb) in [(v, cv), (vb, cvb)])" |
 
-fun medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
-  "medial c [] = c" |
-  "medial c (h#t) = conjoin (medial c t) (\<lambda>x. case guard2context h c x of None \<Rightarrow> Bc True | Some y \<Rightarrow> y)"
+  "guard2pairs a (Nor v va) = (pair_and (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a v)) (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a va)))"
+
+fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context" where
+  "pairs2context [] = (\<lambda>i. Bc True)" |
+  "pairs2context ((_, Bc False)#t) = (\<lambda>r. Bc False)" |
+  "pairs2context (h#t) = conjoin (pairs2context t) (\<lambda>r. if r = (fst h) then (snd h) else Bc True)"
+
+fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
+  "apply_guard a g = conjoin a (pairs2context (guard2pairs a g))"
+
+ primrec medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
+   "medial c [] = c" |
+   "medial c (h#t) = (medial (apply_guard c h) t)"
+
+fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function \<Rightarrow> context" where
+  "apply_update l c (v, (L n)) = update c (V v) (Eq n)" |
+  "apply_update l c (v, V vb) = update c (V v) (l (V vb))" |
+  "apply_update l c (v, Plus vb vc) = update c (V v) (compose_plus (get l vb) (get l vc))" |
+  "apply_update l c (v, Minus vb vc) = update c (V v) (compose_minus (get l vb) (get l vc))"
 
 primrec apply_updates :: "context \<Rightarrow> context \<Rightarrow> update_function list \<Rightarrow> context" where
   "apply_updates _ c [] = c" |
-  "apply_updates l c (h#t) = (\<lambda>x. if x = fst h then context_eval (snd h) l else (apply_updates l c t) x )"
+  "apply_updates l c (h#t) = apply_updates l (apply_update l c h) t"
 
 definition can_take :: "transition \<Rightarrow> context \<Rightarrow> bool" where
   "can_take t c \<equiv> consistent (medial c (Guard t))"
@@ -209,8 +195,25 @@ fun constrains_an_input :: "aexp \<Rightarrow> bool" where
   "constrains_an_input (Plus v va) = (constrains_an_input v \<and> constrains_an_input va)" |
   "constrains_an_input (Minus v va) = (constrains_an_input v \<and> constrains_an_input va)"
 
+definition remove_input_constraints :: "context \<Rightarrow> context" where
+  "remove_input_constraints c = (\<lambda>x. if constrains_an_input x then \<lbrakk>\<rbrakk> x else c x)"
+
+lemma consistent_remove_input_constraints[simp]: "consistent c \<Longrightarrow> consistent (remove_input_constraints c)"
+proof-
+  assume premise: "consistent c"
+  show ?thesis
+    using premise
+    apply (simp add: remove_input_constraints_def consistent_def)
+    apply clarify
+    apply (rule_tac x=s in exI)
+    apply (rule allI)
+    apply (case_tac "constrains_an_input r")
+     apply (simp add: consistent_empty_4)
+    by simp
+qed
+
 definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
-  "posterior c t = (let c' = (medial c (Guard t)) in (if consistent c' then (apply_updates c' c (Updates t)) else (\<lambda>i. Bc False)))"
+  "posterior c t = (let c' = (medial c (Guard t)) in (if consistent c' then remove_input_constraints (apply_updates c' c (Updates t)) else (\<lambda>i. Bc False)))"
 
 primrec posterior_n :: "nat \<Rightarrow> transition \<Rightarrow> context \<Rightarrow> context" where (* Apply a given transition to a given context n times - good for reflexive transitions*)
   "posterior_n 0 _ c = c " |
@@ -239,11 +242,15 @@ definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarr
 definition directly_subsumes :: "transition_matrix \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes e s t1 t2 = (\<forall>p. (gets_us_to s e 0 <>  p) \<longrightarrow> subsumes (anterior_context e p) t1 t2)"
 
-lemma context_equiv_same_undef: "c i = Undef \<Longrightarrow> c' i = cexp.Bc True \<Longrightarrow> \<not> context_equiv c c'"
+primrec pairs2guard :: "(aexp \<times> cexp) list \<Rightarrow> guard" where
+  "pairs2guard [] = gexp.Bc True" |
+  "pairs2guard (h#t) = gAnd (cexp2gexp (fst h) (snd h)) (pairs2guard t)"
+
+lemma context_equiv_same_undef: "get c i = Undef \<Longrightarrow> get c' i = cexp.Bc True \<Longrightarrow> \<not> context_equiv c c'"
   apply (simp add: context_equiv_def cexp_equiv_def)
   by force
 
-lemma context_equiv_undef: "context_equiv c c' \<Longrightarrow> ((c i) = Undef) = ((c' i) = Undef)"
+lemma context_equiv_undef: "context_equiv c c' \<Longrightarrow> ((get c i) = Undef) = ((get c' i) = Undef)"
   by (simp add: cexp_equiv_def context_equiv_def)
 
 lemma gexp_equiv_cexp_not_true:  "gexp_equiv (cexp2gexp a (Not (Bc True))) (gexp.Bc False)"
@@ -258,7 +265,7 @@ lemma geq_to_ge: "Geq x = c r \<Longrightarrow> (cexp2gexp r (c r)) = Ge r (L x)
 lemma leq_to_le: "Leq x = c r \<Longrightarrow> (cexp2gexp r (c r)) = Le r (L x)"
   by (metis cexp2gexp.simps(4) cexp2gexp.simps(6))
 
-lemma lt_to_lt: "Lt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Lt r (L x)"
+lemma lt_to_lt: "Lt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Gt (L x) r"
   by (metis cexp2gexp.simps(3))
 
 lemma gt_to_gt: "Gt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Gt r (L x)"
@@ -292,28 +299,148 @@ lemma satisfiable_double_neg: "satisfiable (cexp.Not (cexp.Not x)) = satisfiable
   by (metis cval.simps(6) cval_double_negation)
 
 lemma cval_empty_r_neq_none[simp]: "cval (\<lbrakk>\<rbrakk> r) i \<noteq> None"
-  apply (cases r)
-  by auto
-
-lemma gand_gAnd_equiv: "a \<noteq> gexp.Bc True \<Longrightarrow> a \<noteq> gexp.Bc False \<Longrightarrow> gand (gexp.Bc False) a = gAnd (gexp.Bc False) a"
-  apply (case_tac a)
-  by auto
-
-lemma "consistent (medial c g) \<Longrightarrow> consistent (medial (medial c g) g)"
-proof (induct g)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons x xs)
+proof (induct "\<lbrakk>\<rbrakk> r")
+case Undef
   then show ?case
-    apply simp
-    sorry
-    
-
-    
-
+    by simp
+next
+  case (Bc x)
+  then show ?case
+    apply (case_tac x)
+    by (simp_all)
+next
+  case (Eq x)
+  have empty_neq_eq: "cexp.Eq x \<noteq> \<lbrakk>\<rbrakk> r"
+  proof (induct r)
+    case (L x)
+    then show ?case
+      by simp
+  next
+    case (V x)
+    then show ?case
+      apply (cases x)
+      by (simp_all)
+  next
+    case (Plus r1 r2)
+    then show ?case
+      by simp
+  next
+    case (Minus r1 r2)
+    then show ?case
+      by simp
+  qed
+  then show ?case
+    using Eq.hyps by blast
+next
+  case (Lt x)
+  have empty_neq_lt: "cexp.Lt x \<noteq> \<lbrakk>\<rbrakk> r"
+  proof (induct r)
+    case (L x)
+    then show ?case
+      by simp
+  next
+    case (V x)
+    then show ?case
+      apply (cases x)
+      by (simp_all)
+  next
+    case (Plus r1 r2)
+    then show ?case
+      by simp
+  next
+    case (Minus r1 r2)
+    then show ?case
+      by simp
+  qed
+  then show ?case
+    by (simp add: Lt.hyps)
+next
+  case (Gt x)
+  have empty_neq_lt: "cexp.Gt x \<noteq> \<lbrakk>\<rbrakk> r"
+  proof (induct r)
+    case (L x)
+    then show ?case
+      by simp
+  next
+    case (V x)
+    then show ?case
+      apply (cases x)
+      by (simp_all)
+  next
+    case (Plus r1 r2)
+    then show ?case
+      by simp
+  next
+    case (Minus r1 r2)
+    then show ?case
+      by simp
+  qed
+  then show ?case
+    by (simp add: Gt.hyps)
+next
+  have empty_neq_not: "cexp.Not x \<noteq> \<lbrakk>\<rbrakk> r"
+  proof (induct r)
+    case (L x)
+    then show ?case
+      by simp
+  next
+    case (V x)
+    then show ?case
+      apply (cases x)
+      by (simp_all)
+  next
+    case (Plus r1 r2)
+    then show ?case
+      by simp
+  next
+    case (Minus r1 r2)
+    then show ?case
+      by simp
+  qed
+  case (Not x)
+  then show ?case
+    by (metis cexp.distinct(19) cexp.simps(16) consistent_empty_1)
+next
+have empty_neq_and: "cexp.And x y \<noteq> \<lbrakk>\<rbrakk> r"
+  proof (induct r)
+    case (L x)
+    then show ?case
+      by simp
+  next
+    case (V x)
+    then show ?case
+      apply (cases x)
+      by (simp_all)
+  next
+    case (Plus r1 r2)
+    then show ?case
+      by simp
+  next
+    case (Minus r1 r2)
+    then show ?case
+      by simp
+  qed
+  case (And x1 x2)
+  then show ?case
+    by (metis cexp.distinct(11) cexp.distinct(21) consistent_empty_1)
 qed
 
+lemma "consistent (medial (medial c g) g) = consistent (medial c g)"
+proof (induct g)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a x)
+  then show ?case
+    apply (simp add: consistent_def)
+    apply safe
+    apply (case_tac a)
+        apply (case_tac x1)
+            apply auto[1]
+           apply simp
+    sorry
+  qed
 
 
 lemma "subsumes c t t"
