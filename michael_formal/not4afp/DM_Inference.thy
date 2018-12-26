@@ -7,7 +7,7 @@ declare One_nat_def[simp del]
 lemma "max coin vend = vend"
   by (simp add: max_def coin_def vend_def less_eq_transition_ext_def less_transition_ext_def)
 
-lemma merge_1_2: "merge_states 1 2 drinks2 = {|
+lemma merge_states_1_2: "merge_states 1 2 drinks2 = {|
               ((0,1), select),
               ((1,1), vend_nothing),
               ((1,1), coin),
@@ -57,7 +57,7 @@ proof
   show "Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
      (fset (all_pairs (merge_states 1 2 drinks2)))
     \<subseteq> {(((1, 1), vend_nothing), (1, 1), vend_fail), (((1, 1), vend_nothing), (1, 3), vend)}"
-    apply (simp add: merge_1_2 all_pairs_def Set.filter_def)
+    apply (simp add: merge_states_1_2 all_pairs_def Set.filter_def)
     apply clarify
     apply simp
     apply (case_tac "bb=1")
@@ -73,7 +73,7 @@ proof
   show "{(((1, 1), vend_nothing), (1, 1), vend_fail), (((1, 1), vend_nothing), (1, 3), vend)}
     \<subseteq> Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
         (fset (all_pairs (merge_states 1 2 drinks2)))"
-    apply (simp add: merge_1_2 all_pairs_def Set.filter_def)
+    apply (simp add: merge_states_1_2 all_pairs_def Set.filter_def)
     using choice_symmetry choice_vend_nothing_vend_fail choice_vend_vend_nothing vend_nothing_lt_vend vend_nothing_lt_vend_fail by blast
 qed
 
@@ -307,7 +307,7 @@ lemma merge_1_3: "let t' = merge_states 1 2 drinks2
                                    ((1,1), coin),
                                    ((1,1), vend_fail),
                                    ((1,1), vend)|}"
-  apply (simp add: merge_1_2 )
+  apply (simp add: merge_states_1_2 )
   by (simp add:  merge_states_def merge_states_aux_def )
 
 lemma merge_1_3_2: "(merge_states 1 3 (merge_states 1 2 drinks2)) = {|((0, 1), select),
@@ -374,11 +374,11 @@ lemma merge_states_2_nondeterminism: "nondeterministic_transitions (merge_states
   by (metis max.commute max_nondeterministic_transitions)
 
 lemma vend_exits_1: "exits_state (merge_states 1 2 drinks2) vend 1"
-  apply (simp add: exits_state_def merge_1_2 )
+  apply (simp add: exits_state_def merge_states_1_2 )
   by auto
 
 lemma vend_nothing_exits_1_2: "exits_state (merge_states 1 2 drinks2) vend_nothing 1"
-  apply (simp add: exits_state_def merge_1_2 )
+  apply (simp add: exits_state_def merge_states_1_2 )
   by auto
 
 lemma not_subset: "\<not>{(1, (1, 3), vend_nothing, vend), (1, (1, 1), vend_nothing, vend_fail)}
@@ -389,7 +389,7 @@ lemma not_subset_2: "\<not> {(1, (1, 1), vend_nothing, vend), (1, (1, 1), vend_n
      \<subseteq> {Max {(1, (1, 1), vend_nothing, vend), (1, (1, 1), vend_nothing, vend_fail)}}"
   using choice_def choice_vend_vend_nothing no_choice_vend_vend_fail by auto
 
-lemma nondeterminism_merge_1_2: "nondeterminism (merge_states 1 2 drinks2)"
+lemma nondeterminism_merge_states_1_2: "nondeterminism (merge_states 1 2 drinks2)"
   by (simp add: nondeterminism_def vend_vend_nothing_nondeterminism )
 
 lemma max_nondeterminism: "max (1::nat, (1::nat, 3::nat), vend_nothing, vend) (1, (1, 1), vend_nothing, vend_fail) = (1, (1, 3), vend_nothing, vend)"
@@ -470,9 +470,9 @@ proof
   have abs_fset: "Abs_fset {((0, 1), select)} = {|((0, 1), select)|}"
     by (metis fset_inverse fset_simps(1) fset_simps(2))
   show "possible_steps (merge_states 1 2 drinks2) 0 Map.empty ''select'' [Str ''coke''] |\<subseteq>| {|(1, select)|}"
-    by (simp add: merge_1_2 possible_steps_def ffilter_def set_filter abs_fset )
+    by (simp add: merge_states_1_2 possible_steps_def ffilter_def set_filter abs_fset )
   show "{|(1, select)|} |\<subseteq>| possible_steps (merge_states 1 2 drinks2) 0 Map.empty ''select'' [Str ''coke'']"
-    by (simp add: merge_1_2 possible_steps_def ffilter_def set_filter abs_fset )
+    by (simp add: merge_states_1_2 possible_steps_def ffilter_def set_filter abs_fset )
 qed
 
 lemma select_gets_us_to_1: "gets_us_to 1 (merge_states 1 2 drinks2) 0 Map.empty [(''select'', [Str ''coke''])]"
@@ -978,27 +978,27 @@ proof-
   show ?thesis
     unfolding merge_transitions_def easy_merge_def
     apply (simp add: vend_fail_directly_subsumes_vend_nothing_1)
-    apply (simp add: merge_1_2 replace_transition_def ffilter_def)
+    apply (simp add: merge_states_1_2 replace_transition_def ffilter_def)
     by (simp add: set_filter abs_fset basically_drinks_def)
 qed
 
 lemma vend_fail_exits_1: "exits_state (merge_states 1 2 drinks2) vend_fail 1"
 proof-
   show ?thesis
-    apply (simp add: exits_state_def merge_1_2)
+    apply (simp add: exits_state_def merge_states_1_2)
     by auto
 qed
 
-lemma merge_2_1_2: "merge_2 drinks2 1 2 null_generator null_modifier = Some basically_drinks"
+lemma merge_1_2: "merge drinks2 1 2 null_generator null_modifier = Some basically_drinks"
 proof-
-  have nondeterminism_merge_1_2: "nondeterminism (merge_states 1 2 drinks2)"
+  have nondeterminism_merge_states_1_2: "nondeterminism (merge_states 1 2 drinks2)"
     unfolding nondeterminism_def
     using vend_vend_nothing_nondeterminism by auto
   have merge_vend_nothing_vend: "\<forall>a. merge_transitions (merge_states 1 2 drinks2) (merge_states 1 3 (merge_states 1 2 drinks2)) 1 1 1 1 1 vend_nothing
              vend null_generator null_modifier a = None"
     apply (simp only: merge_1_3_2)
-    apply (simp only: merge_1_2)
-    using merge_1_2 merge_transitions_def vend_doesnt_directly_subsume_vend_nothing_2 vend_doesnt_directly_subsume_vend_nothing_3
+    apply (simp only: merge_states_1_2)
+    using merge_states_1_2 merge_transitions_def vend_doesnt_directly_subsume_vend_nothing_2 vend_doesnt_directly_subsume_vend_nothing_3
     by (simp add: null_generator_def null_modifier_def easy_merge_def)
   have vend_fail_lt_vend: "vend_fail < vend"
     using vend_fail_leq_vend vend_neq_vend_fail by auto
@@ -1013,7 +1013,7 @@ proof-
     unfolding easy_merge_def
     apply (simp add: Let_def nondeterminisitic_pairs nondeterminism_def max_def)
     apply (simp add: nondeterministic_pairs_1_3 max_def)
-    apply (simp add: vend_nothing_exits_1_2 vend_exits_1 nondeterminsm_merge_1_3 nondeterminism_merge_1_2 )
+    apply (simp add: vend_nothing_exits_1_2 vend_exits_1 nondeterminsm_merge_1_3 nondeterminism_merge_states_1_2 )
     apply (simp add: merge_vend_nothing_vend max_def vend_fail_exits_1 vend_fail_lt_vend_2)
     by (simp add: merge_transitions)
 qed
@@ -1207,7 +1207,7 @@ qed
 lemma "infer drinks2 naive_score null_generator null_modifier = basically_drinks"
 proof-
   have first_step: "inference_step drinks2 (rev (sorted_list_of_fset (score drinks2 naive_score))) null_generator null_modifier = Some basically_drinks"
-    by (simp add: scoring merge_2_1_2 del: merge_2.simps)
+    by (simp add: scoring merge_1_2 del: merge.simps)
   have next_step: "inference_step basically_drinks (rev (sorted_list_of_fset (score basically_drinks naive_score))) null_generator null_modifier = None"
     by (simp add: scoring_2)
   show ?thesis

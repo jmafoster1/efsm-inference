@@ -64,7 +64,7 @@ lemma not_singleton_emty [simp]: "\<not>fis_singleton {||}"
   by (simp add: is_singleton_altdef)
 
 definition step :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> outputs \<times> datastate) option" where
-"step e s r l i \<equiv>
+"step e s r l i =
 (if fis_singleton (possible_steps e s r l i) then (let (s', t) =  (fthe_elem (possible_steps e s r l i)) in Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))) else None)"
 
 lemma step_empty[simp]:"step {||} s r l i = None"
@@ -313,8 +313,14 @@ lemma length_equal_accepts: "(length t = length (observe_all e 0 <> t)) = accept
 
 type_synonym simulation_relation = "nat \<Rightarrow> nat"
 
+inductive simulates_trace :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
+  base: "simulates_trace e1 e2 s1 s2 d1 d2 []" |
+  step: "step e1 s1 d1 (fst h) (snd h) = Some (tr1, s1', p', d1') \<Longrightarrow>
+         step e2 s2 d2 (fst h) (snd h) = Some (tr2, s2', p', d2') \<Longrightarrow>
+         simulates_trace e1 e2 s1' s2' d1' d2' t \<Longrightarrow> simulates_trace e1 e2 s1 s2 d1 d2 (h#t)"
+
 definition simulates :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> bool" where
-  "simulates m2 m1 = (\<forall>t. accepts_trace m1 t \<longrightarrow> accepts_trace m2 t)"
+  "simulates m1 m2 = (\<forall>t. simulates_trace m1 m2 0 0 <> <> t)"
 
 inductive gets_us_to :: "nat \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
   base: "s = target \<Longrightarrow> gets_us_to target _ s _ []" |

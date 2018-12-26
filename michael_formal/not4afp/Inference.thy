@@ -1,5 +1,5 @@
 theory Inference
-  imports "../EFSM" "../Contexts" Transition_Ordering
+  imports "../Nondeterministic_EFSM" "../EFSM" "../Contexts" Transition_Ordering
           "~~/src/HOL/Library/Product_Lexorder"
 begin
 
@@ -116,7 +116,7 @@ definition merge_transitions :: "transition_matrix \<Rightarrow> transition_matr
         if modify then
           (case modifier t1 t2 newFrom newEFSM of
             None \<Rightarrow> None |
-            Some (t', H) \<Rightarrow> easy_merge t' t' (H newFrom) (H newFrom) (H newFrom) (H t1NewTo) (H t2NewTo) t1 t2 maker
+            Some (t', H) \<Rightarrow> (if nondeterministic_simulates t' oldEFSM then easy_merge t' t' (H newFrom) (H newFrom) (H newFrom) (H t1NewTo) (H t2NewTo) t1 t2 maker else None)
           )
         else None
       )
@@ -132,12 +132,12 @@ definition score :: "transition_matrix \<Rightarrow> strategy \<Rightarrow> scor
   "score t rank = fimage (\<lambda>(s1, s2). (rank (outgoing_transitions s1 t) (outgoing_transitions s2 t), (s1, s2))) (ffilter (\<lambda>(x, y). x < y) (all_pairs (S t)))"
 
 function resolve_nondeterminism :: "(nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition_matrix \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix option" and
-                        merge_2 :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix option" where
+                        merge :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix option" where
   "resolve_nondeterminism s e s1 s2 t g m = (if s = {||} then None else (let (from, (to1, to2), (t1, t2)) = fMax s in
-                        case merge_2 t to1 to2 g m of None \<Rightarrow> resolve_nondeterminism (s - {|fMax s|}) e s1 s2 t g m |
+                        case merge t to1 to2 g m of None \<Rightarrow> resolve_nondeterminism (s - {|fMax s|}) e s1 s2 t g m |
                                     Some t \<Rightarrow> merge_transitions e t (if exits_state e t1 s1 then s1 else s2) (if exits_state e t2 s1 then s1 else s2) from to1 to2 t1 t2 g m True))" |
 
-"merge_2 e s1 s2 g m = (if s1 = s2 then Some (e) else (let t' = (merge_states s1 s2 (e)) in
+"merge e s1 s2 g m = (if s1 = s2 then Some (e) else (let t' = (merge_states s1 s2 (e)) in
                        \<comment> \<open> Have we got any nondeterminism? \<close>
                        (if \<not> nondeterminism t' then
                          \<comment> \<open> If not then we're good to go \<close>
@@ -152,11 +152,13 @@ function resolve_nondeterminism :: "(nat \<times> (nat \<times> nat) \<times> (t
 termination
   sorry
 
+(* export_code resolve_nondeterminism in "Scala" *)
+
 fun inference_step :: "transition_matrix \<Rightarrow> (nat \<times> nat \<times> nat) list \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix option" where
   "inference_step _ [] _ _ = None" |
   "inference_step T ((s, s1, s2)#t) g m =
                                 (if s > 0 then
-                                   case merge_2 T s1 s2 g m of
+                                   case merge T s1 s2 g m of
                                      Some new \<Rightarrow> Some new |
                                      None \<Rightarrow> inference_step T t g m
                                  else None)"
