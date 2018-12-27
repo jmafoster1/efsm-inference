@@ -1,5 +1,5 @@
 theory Paper_Example
-imports Inference
+imports Inference SelectionStrategies
 begin
 
 definition select :: transition where
@@ -56,13 +56,23 @@ definition select_update :: transition where
               Updates = [(R 1, V (I 1)), (R 2, L (Num 0))]
             \<rparr>"
 
+lemmas transitions = select_def coin_def coin50_def vend_fail_def vend_success_def select_update_def
+
 declare One_nat_def [simp del]
+
+lemma select_update_posterior: "posterior \<lbrakk>\<rbrakk> select_update = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num 0)\<rbrakk>"
+proof-
+  show ?thesis
+    unfolding posterior_def Let_def
+    apply (rule ext)
+    by (simp add: transitions remove_input_constraints_def)
+qed
 
 definition drinks_before :: transition_matrix where
   "drinks_before = {|((0, 1), select), ((1, 2), coin50), ((2, 2), coin), ((2, 2), vend_fail), ((2, 3), vend_success)|}"
 
 definition drinks_after :: transition_matrix where
-  "drinks_after = {|((0, 1), select_update), ((1, 1), coin), ((1, 1), vend_fail), ((1, 2), vend_success)|}"
+  "drinks_after = {|((0, 1), select_update), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend_success)|}"
 
 definition merge_1_2 :: transition_matrix where
   "merge_1_2 = {|((0, 1), select), ((1, 1), coin50), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend_success)|}"
@@ -73,7 +83,8 @@ lemma merge_1_2: "merge_states 1 2 drinks_before = merge_1_2"
 definition merge_1_2_update :: transition_matrix where
   "merge_1_2_update = {|((0, 1), select_update), ((1, 1), coin50), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend_success)|}"
 
-lemmas transitions = select_def coin_def coin50_def vend_fail_def vend_success_def select_update_def
+definition mapping :: "nat \<Rightarrow> nat" where
+  "mapping x = (if x = 0 then 0 else if x = 1 then 1 else if x = 2 then 1 else x)"
 
 lemma possible_steps_drinks_before_select: "length b = 1 \<Longrightarrow> possible_steps drinks_before 0 r ''select'' b = {|(1, select)|}"
 proof-
@@ -135,8 +146,7 @@ proof-
     using premise
     by (simp_all add: transitions)
   show ?thesis
-    apply (simp add: nondeterministic_step_def possible_steps_def ffilter_def set_filter)
-    using bot_fset.abs_eq by auto
+    by (simp add: nondeterministic_step_def possible_steps_def ffilter_def set_filter)
 qed
 
 lemma possible_steps_drinks_before_coin_50: "possible_steps drinks_before 1 r ''coin'' [Num 50] = {|(2, coin50)|}"
@@ -168,8 +178,7 @@ proof-
     apply (simp add: drinks_before_def Set.filter_def coin50_def)
     by (metis One_nat_def input2state.simps(2) length_0_conv length_Suc_conv option.inject)
   show ?thesis
-    apply (simp add: nondeterministic_step_def possible_steps_def ffilter_def set_filter)
-    using bot_fset.abs_eq by auto
+    by (simp add: nondeterministic_step_def possible_steps_def ffilter_def set_filter)
 qed
 
 lemma merge_1_2_invalid_coin_input: "aa = ''coin'' \<Longrightarrow> length b \<noteq> 1 \<Longrightarrow> nondeterministic_step merge_1_2 1 <R 1 := d> ''coin'' b = None"
@@ -187,8 +196,7 @@ proof-
     apply safe
     by (simp_all add: transitions)
   show ?thesis
-    apply (simp add: nondeterministic_step_def possible_steps_def ffilter_def set_filter)
-    using bot_fset_def by force
+    by (simp add: nondeterministic_step_def possible_steps_def ffilter_def set_filter)
 qed
 
 lemma merge_1_2_possible_steps_coin_not_50: "aa = ''coin'' \<Longrightarrow>
@@ -278,8 +286,7 @@ proof-
     apply safe
     by (simp_all add: transitions)
   show ?thesis
-    apply (simp add: nondeterministic_step_def possible_steps_def ffilter_def set_filter)
-    using bot_fset_def by force
+    by (simp add: nondeterministic_step_def possible_steps_def ffilter_def set_filter)
 qed
 
 lemma impossible_steps_drinks_before_vend: "\<nexists>n. r (R 2) = Some (Num n) \<Longrightarrow> nondeterministic_step drinks_before 2 r ''vend'' i = None"
@@ -302,8 +309,7 @@ proof-
     apply simp
     by (metis MaybeBoolInt.elims option.simps(3))
   show ?thesis
-    apply (simp add: nondeterministic_step_def possible_steps_def ffilter_def set_filter)
-    using bot_fset_def by force
+    by (simp add: nondeterministic_step_def possible_steps_def ffilter_def set_filter)
 qed
 
 lemma drinks_before_vend_fail: "r (R 2) = Some (Num x1) \<Longrightarrow> x1 < 100 \<Longrightarrow> possible_steps drinks_before 2 r ''vend'' [] = {|(2, vend_fail)|}"
@@ -379,8 +385,7 @@ proof-
            (fset drinks_before)) = {}"
     by (simp add: drinks_before_def Set.filter_def)
   show ?thesis
-    apply (simp add: nondeterministic_step_def possible_steps_def ffilter_def set_filter)
-    using bot_fset_def by force
+    by (simp add: nondeterministic_step_def possible_steps_def ffilter_def set_filter)
 qed
 
 lemma simulation_2_1: "\<forall>r. nondeterministic_simulates_trace drinks_before merge_1_2_update 2 1 r r lst"
@@ -517,5 +522,310 @@ lemma simulation: "nondeterministic_simulates drinks_before merge_1_2_update"
   apply (rule allI)
   by (simp add: simulation_aux)
 
+lemma score: "(score drinks_before naive_score) = {|(0, 2, 3), (0, 1, 3), (1, 1, 2), (0, 0, 3), (0, 0, 2), (0, 0, 1)|}"
+proof-
+  have set_filter: "(Set.filter (\<lambda>(x, y). x < y) (fset (all_pairs (S drinks_before)))) = {(2, 3), (1, 3), (1, 2), (0, 3), (0, 2), (0, 1)}"
+    apply (simp add: S_def drinks_before_def all_pairs_def Set.filter_def)
+    by auto
+  have ffilter: "ffilter (\<lambda>(x, y). x < y) (all_pairs (S drinks_before)) = {|(2, 3), (1, 3), (1, 2), (0, 3), (0, 2), (0, 1)|}"
+    apply (simp add: ffilter_def set_filter)
+    by (metis finsert.rep_eq fset_inverse fset_simps(1))
+  have outgoing_transitions_2: "Set.filter (\<lambda>((origin, dest), t). origin = 2) (fset drinks_before) = {((2, 2), coin), ((2, 2), vend_fail), ((2, 3), vend_success)}"
+    apply (simp add: drinks_before_def Set.filter_def)
+    apply safe
+    by (simp_all add: transitions)
+  have abs_fset_2: "Abs_fset {((2, 2), coin), ((2, 2), vend_fail), ((2, 3), vend_success)} = {|((2, 2), coin), ((2, 2), vend_fail), ((2, 3), vend_success)|}"
+    by (metis finsert.rep_eq fset_inverse fset_simps(1))
+  have outgoing_transitions_3: "Set.filter (\<lambda>((origin, dest), t). origin = 3) (fset drinks_before) = {}"
+    apply (simp add: drinks_before_def Set.filter_def)
+    apply safe
+    by (simp_all add: transitions)
+  have outgoing_transitions_1: "Set.filter (\<lambda>((origin, dest), t). origin = 1) (fset drinks_before) = {((1, 2), coin50)}"
+    apply (simp add: drinks_before_def Set.filter_def)
+    apply safe
+    by (simp_all add: transitions)
+  have outgoing_transitions_0: "Set.filter (\<lambda>((origin, dest), t). origin = 0) (fset drinks_before) = {((0, 1), select)}"
+    apply (simp add: drinks_before_def Set.filter_def)
+    apply safe
+    by (simp_all add: transitions)
+  have naive_score_1_2: "naive_score {|coin50|} {|coin, vend_fail, vend_success|} = 1"
+    proof-
+      have abs_fset: "(Abs_fset {(coin50, coin), (coin50, vend_fail), (coin50, vend_success)}) = {|(coin50, coin), (coin50, vend_fail), (coin50, vend_success)|}"
+        by (metis finsert.rep_eq fset_inverse fset_simps(1))
+      have filter: "{(x, y). Label x = Label y \<and> Arity x = Arity y} \<inter> {(coin50, coin), (coin50, vend_fail), (coin50, vend_success)} = {(coin50, coin)}"
+        by (simp add: transitions)
+      show ?thesis
+        by (simp add: naive_score_def fprod_def abs_fset filter)
+    qed
+    have naive_score_0_2: "naive_score {|select|} {|coin, vend_fail, vend_success|} = 0"
+    proof-
+      have abs_fset: "Abs_fset {(select, coin), (select, vend_fail), (select, vend_success)} = {|(select, coin), (select, vend_fail), (select, vend_success)|}"
+        by (metis finsert.rep_eq fset_inverse fset_simps(1))
+      show ?thesis
+        apply (simp add: naive_score_def fprod_def abs_fset)
+        by (simp add: transitions)
+    qed
+    have naive_score_0_1: "naive_score {|select|} {|coin50|} = 0"
+      by (simp add: naive_score_def fprod_def transitions)
+  show ?thesis
+    apply (simp add: score_def ffilter)
+    apply (simp add: outgoing_transitions_def ffilter_def)
+    apply (simp add: outgoing_transitions_2 abs_fset_2)
+    apply (simp add: outgoing_transitions_3)
+    apply (simp add: outgoing_transitions_1)
+    apply (simp add: outgoing_transitions_0)
+    by (simp add: naive_score_empty naive_score_1_2 naive_score_0_1 naive_score_0_2)
+qed
+
+lemma nondeterministic_pairs: "nondeterministic_pairs merge_1_2 = {|(1, (1, 1), coin, coin50)|}"
+proof-
+  have set_filter: "(Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
+       (fset (all_pairs merge_1_2))) = {(((1, 1), coin), (1, 1), coin50)}"
+    apply (simp add: all_pairs_def merge_1_2_def Set.filter_def)
+    apply safe
+                        apply (simp_all add: transitions less_transition_ext_def less_gexp_def choice_def)
+       apply clarify
+       apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
+        apply simp
+       apply simp
+      apply clarify
+      apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
+       apply simp
+      apply simp
+     apply clarify
+    apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
+    by auto
+  show ?thesis
+    by (simp add: nondeterministic_pairs_def ffilter_def set_filter)
+qed
+
+lemma coin_doesnt_exit_1_drinks_before: "\<not>exits_state drinks_before coin 1"
+proof-
+  have set_filter: "Set.filter (\<lambda>((from', to), t'). from' = 1 \<and> t' = coin) (fset drinks_before) = {}"
+    apply (simp add: drinks_before_def Set.filter_def)
+    apply safe
+    by (simp_all add: transitions)
+  show ?thesis
+    by (simp add: exits_state_def ffilter_def set_filter)
+qed
+
+lemma coin50_exits_1_drinks_before: "exits_state drinks_before coin50 1"
+proof-
+  have set_filter: "Set.filter (\<lambda>((from', to), t'). from' = 1 \<and> t' = coin50) (fset drinks_before) = {((1, 2), coin50)}"
+    apply (simp add: drinks_before_def Set.filter_def)
+    apply safe
+    by (simp_all add: transitions)
+  show ?thesis
+    by (simp add: exits_state_def ffilter_def set_filter)
+qed
+
+lemma select_first: "\<not> (aa = ''select'' \<and> length b = 1) \<Longrightarrow> \<not>gets_us_to 1 merge_1_2_update 0 Map.empty ((aa, b) # p)"
+      proof-
+        assume premise: "\<not> (aa = ''select'' \<and> length b = 1)"
+        have set_filter: "(Set.filter
+                (\<lambda>((origin, dest), t).
+                    origin = 0 \<and>
+                    Label t = aa \<and> length b = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state b 1 (I n)) Map.empty))
+                (fset merge_1_2_update)) = {}"
+          using premise
+          apply (simp add: Set.filter_def merge_1_2_update_def)
+          apply safe
+          by (simp_all add: transitions)
+      show ?thesis
+        apply safe
+        apply (rule gets_us_to.cases)
+           apply simp
+          apply simp
+         apply clarify
+         apply (simp add: step_def possible_steps_def ffilter_def set_filter)
+        apply clarify
+        by (simp add: step_def possible_steps_def ffilter_def set_filter)
+    qed
+
+lemma no_subsumption_empty: "\<not> subsumes \<lbrakk>\<rbrakk> coin coin50"
+proof-
+  have violation: "(\<exists>i r. apply_guards (Guard coin50) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<and>
+           apply_outputs (Outputs coin50) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<noteq>
+           apply_outputs (Outputs coin) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))))"
+    apply (rule_tac x="[Num 50]" in exI)
+    apply (rule_tac x="<>" in exI)
+    by (simp add: transitions)
+  show ?thesis
+    by (simp add: subsumes_def violation)
+qed
+
+lemma "gets_us_to 1 merge_1_2_update 0 Map.empty p \<longrightarrow> subsumes (anterior_context merge_1_2_update p) coin coin50"
+proof(induct p)
+  case Nil
+  have "\<not>gets_us_to 1 merge_1_2_update 0 Map.empty []"
+    apply safe
+    apply (rule gets_us_to.cases)
+    by auto
+  then show ?case
+    by simp
+next
+  case (Cons a p)
+    then show ?case
+    proof-
+      have select_updates: "\<forall>b. length b = 1 \<longrightarrow> (EFSM.apply_updates (Updates select_update) (case_vname (\<lambda>n. input2state b 1 (I n)) Map.empty) Map.empty) = <R 1 := hd b, R 2 := Num 0>"
+        apply clarify
+        apply (rule ext)
+        apply (simp add: transitions)
+        by (simp add: hd_input2state)
+      show ?thesis
+        apply (case_tac a)
+        apply clarify
+        apply (case_tac "aa = ''select'' \<and> length b = 1")
+         defer
+         apply (simp add: select_first)
+        apply (simp add: anterior_context_def step_def)
+        apply (simp add: possible_steps_merge_1_2_update_select select_update_posterior select_updates)
+        apply (case_tac p)
+        apply simp
+    qed
+qed
+
+lemma merge_transitions: "merge_transitions drinks_before merge_1_2 2 1 1 1 1 coin coin50 (\<lambda>a b c d. Map.empty)
+                (\<lambda>a b c d. Some (merge_1_2_update, mapping)) True = Some drinks_after"
+proof-
+  have no_direct_subsumption_coin_coin50: "\<not> directly_subsumes drinks_before 1 coin coin50"
+  proof-
+    have subsumption_violation: "(\<exists>i r. apply_guards (Guard coin50) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<and>
+           apply_outputs (Outputs coin50) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<noteq>
+           apply_outputs (Outputs coin) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))))"
+      apply (rule_tac x="[Num 50]" in exI)
+      apply (rule_tac x="<>" in exI)
+      by (simp add: transitions)
+    show ?thesis
+      apply (simp add: directly_subsumes_def)
+      apply (rule_tac x="[(''select'', [Str ''coke''])]" in exI)
+      apply safe
+      apply (rule gets_us_to.step_some)
+        apply (simp add: step_def possible_steps_drinks_before_select)
+       apply (simp add: gets_us_to.base)
+      apply (simp add: subsumes_def)
+      using subsumption_violation
+      by auto
+  qed
+  have no_direct_subsumption_coin50_coin: "\<not> directly_subsumes drinks_before 2 coin50 coin"
+  proof-
+    have subsumption_violation: "(\<exists>i r. apply_guards (Guard coin) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<and>
+         apply_outputs (Outputs coin50) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<noteq>
+         apply_outputs (Outputs coin) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))))"
+      apply (rule_tac x="[Num 50]" in exI)
+      apply (rule_tac x="<>" in exI)
+      by (simp add: transitions)
+    show ?thesis
+      apply (simp add: directly_subsumes_def)
+      apply (rule_tac x="[(''select'', [Str ''coke'']), (''coin'', [Num 50])]" in exI)
+      apply safe
+       apply (rule gets_us_to.step_some)
+        apply (simp add: step_def possible_steps_drinks_before_select)
+       apply (rule gets_us_to.step_some)
+        apply (simp add: step_def possible_steps_drinks_before_coin_50)
+       apply (simp add: gets_us_to.base)
+      apply (simp add: subsumes_def)
+      using subsumption_violation
+      by auto
+  qed
+  have easy_merge_none: "easy_merge drinks_before merge_1_2 2 1 1 1 1 coin coin50 (\<lambda>a b c d. Map.empty) = None"
+    by (simp add: easy_merge_def no_direct_subsumption_coin_coin50 no_direct_subsumption_coin50_coin)
+  have easy_merge_some: "easy_merge merge_1_2_update merge_1_2_update 1 1 1 1 1 coin coin50 (\<lambda>a b c d. Map.empty) = Some drinks_after"
+  proof-
+    have coin_directly_subsumes_coin50: "directly_subsumes merge_1_2_update 1 coin coin50"
+    proof-
+      show ?thesis
+        apply (simp add: directly_subsumes_def)
+        sorry
+    qed
+    have no_direct_subsumption_coin50_coin: "\<not> directly_subsumes merge_1_2_update 1 coin50 coin"
+    proof-
+      have subsumption_violation:  "\<not>(\<forall>i r. apply_guards (Guard coin) (\<lambda>x. case x of I n \<Rightarrow> input2state i 1 (I n) | R n \<Rightarrow> r (R n)) \<longrightarrow>
+           apply_outputs (Outputs coin) (\<lambda>x. case x of I n \<Rightarrow> input2state i 1 (I n) | R n \<Rightarrow> r (R n)) =
+           apply_outputs (Outputs coin50) (\<lambda>x. case x of I n \<Rightarrow> input2state i 1 (I n) | R n \<Rightarrow> r (R n)))"
+        apply simp
+        apply (rule_tac x="[Num 50]" in exI)
+        apply (rule_tac x="<>" in exI)
+        by (simp add: transitions)
+      show ?thesis
+        apply (simp add: directly_subsumes_def)
+        apply (rule_tac x="[(''select'', [Str ''coke''])]" in exI)
+        apply safe
+         apply (rule gets_us_to.step_some)
+          apply (simp add: step_def possible_steps_merge_1_2_update_select)
+         apply (simp add: gets_us_to.base)
+        by (simp add: subsumes_def subsumption_violation)
+    qed
+    have set_filter: "Set.filter (\<lambda>x. x \<noteq> ((1, 1), coin50)) (fset merge_1_2_update) =
+          {((0, 1), select_update), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend_success)}"
+      apply (simp add: merge_1_2_update_def Set.filter_def)
+      apply safe
+      by (simp_all add: transitions)
+    have abs_fset: "Abs_fset {((0, 1), select_update), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend_success)} =
+                            {|((0, 1), select_update), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend_success)|}"
+      by (metis finsert.rep_eq fset_inverse fset_simps(1))
+    show ?thesis
+      apply (simp add: easy_merge_def coin_directly_subsumes_coin50 no_direct_subsumption_coin50_coin)
+      apply (simp add: replace_transition_def ffilter_def set_filter abs_fset)
+      apply (simp add: drinks_after_def)
+      by auto
+  qed
+  show ?thesis
+    apply (simp add: merge_transitions_def easy_merge_none mapping_def)
+    by (simp add: simulation easy_merge_some)
+qed
+
+lemma score_2: "sorted_list_of_fset (score drinks_after naive_score) = [(0, 0, 1), (0, 0, 3), (0, 1, 3)]"
+proof-
+  have set_filter: "Set.filter (\<lambda>(x, y). x < y) (fset (all_pairs (S drinks_after))) = {(1, 3), (0, 3), (0, 1)}"
+    apply (simp add: Set.filter_def all_pairs_def S_def drinks_after_def)
+    by auto
+  have abs_fset: "Abs_fset {(1, 3), (0, 3), (0, 1)} = {|(1, 3), (0, 3), (0, 1)|}"
+    by (metis finsert.rep_eq fset_inverse fset_simps(1))
+  have outgoing_transitions_1: "Set.filter (\<lambda>((origin, dest), t). origin = 1) (fset drinks_after) = {((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend_success)}"
+    apply (simp add: drinks_after_def Set.filter_def)
+    apply safe
+    by (simp_all add: transitions)
+  have abs_fset_1: "Abs_fset {((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend_success)} =
+                            {|((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend_success)|}"
+    by (metis finsert.rep_eq fset_inverse fset_simps(1))
+  have outgoing_transitions_3: "Set.filter (\<lambda>((origin, dest), t). origin = 3) (fset drinks_after) = {}"
+    apply (simp add: drinks_after_def Set.filter_def)
+    apply safe
+    by (simp_all add: transitions)
+  have outgoing_transitions_0: "Set.filter (\<lambda>((origin, dest), t). origin = 0) (fset drinks_after) = {((0, 1), select_update)}"
+    apply (simp add: drinks_after_def Set.filter_def)
+    apply safe
+    by (simp_all add: transitions)
+  have score_0_1: "naive_score {|select_update|} {|coin, vend_fail, vend_success|} = 0"
+  proof-
+    have abs_fset: "Abs_fset {(select_update, coin), (select_update, vend_fail), (select_update, vend_success)} = 
+                  {|(select_update, coin), (select_update, vend_fail), (select_update, vend_success)|}"
+      by (metis finsert.rep_eq fset_inverse fset_simps(1))
+    show ?thesis
+      apply (simp add: naive_score_def fprod_def abs_fset)
+      by (simp add: transitions)
+  qed
+  show ?thesis
+    apply (simp add: score_def ffilter_def set_filter abs_fset)
+    apply (simp add: outgoing_transitions_def ffilter_def)
+    apply (simp add: outgoing_transitions_1 abs_fset_1)
+    apply (simp add: outgoing_transitions_3)
+    apply (simp add: outgoing_transitions_0)
+    apply (simp add: naive_score_empty score_0_1)
+    by (simp add: sorted_list_of_fset_def)
+qed
+
+lemma "infer drinks_before naive_score (\<lambda>a b c d e. None) (\<lambda>a b c d. Some (merge_1_2_update, mapping)) = drinks_after"
+proof-
+  have nondeterminism_merge_1_2: "nondeterminism merge_1_2"
+    by (simp add: nondeterminism_def nondeterministic_pairs)
+  show ?thesis
+    apply (simp add: score sorted_list_of_fset_def Let_def)
+    apply (simp add: merge_1_2 nondeterministic_pairs)
+    apply (simp add: coin_doesnt_exit_1_drinks_before coin50_exits_1_drinks_before)
+    apply (simp add: nondeterminism_merge_1_2 merge_transitions)
+    by (simp add: score_2)
+qed
 
 end

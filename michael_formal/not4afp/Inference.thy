@@ -30,12 +30,10 @@ definition fprod :: "'a fset \<Rightarrow> 'b fset \<Rightarrow> ('a \<times> 'b
   "fprod a b = Abs_fset ((fset a) \<times> (fset b))"
 
 lemma fprod_empty[simp]: "\<forall>a. fprod {||} a = {||}"
-  apply (simp add: fprod_def)
-  by (simp add: bot_fset_def)
+  by (simp add: fprod_def)
 
 lemma fprod_empty_2[simp]: "\<forall>a. fprod a {||} = {||}"
-  apply (simp add: fprod_def ffUnion_def)
-  by (simp add: bot_fset_def)
+  by (simp add: fprod_def ffUnion_def)
 
 (* Get every possible ((origin, dest), transition) pair, filter then for nondeterminism, then put them in the right format *)
 definition nondeterministic_pairs :: "transition_matrix \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset" where
@@ -116,7 +114,7 @@ definition merge_transitions :: "transition_matrix \<Rightarrow> transition_matr
         if modify then
           (case modifier t1 t2 newFrom newEFSM of
             None \<Rightarrow> None |
-            Some (t', H) \<Rightarrow> (if nondeterministic_simulates t' oldEFSM then easy_merge t' t' (H newFrom) (H newFrom) (H newFrom) (H t1NewTo) (H t2NewTo) t1 t2 maker else None)
+            Some (t', H) \<Rightarrow> (if nondeterministic_simulates oldEFSM t' then easy_merge t' t' (H newFrom) (H newFrom) (H newFrom) (H t1NewTo) (H t2NewTo) t1 t2 maker else None)
           )
         else None
       )

@@ -90,6 +90,9 @@ primrec observe_all :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datast
 lemma abs_fset_singleton[simp]: "Abs_fset {a} = {|a|}"
   by (metis bot_fset.rep_eq finsert.rep_eq fset_inverse)
 
+lemma abs_fset_empty[simp]: "Abs_fset {} = {||}"
+  by (simp add: bot_fset_def)
+
 definition state :: "(transition \<times> nat \<times> outputs \<times> datastate) \<Rightarrow> nat" where
   "state x \<equiv> fst (snd x)"
 
