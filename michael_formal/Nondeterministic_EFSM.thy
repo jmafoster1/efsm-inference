@@ -22,11 +22,12 @@ definition nondeterministic_observe_trace :: "transition_matrix \<Rightarrow> na
 
 inductive nondeterministic_simulates_trace :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
   base: "nondeterministic_simulates_trace e1 e2 s1 s2 d1 d2 []" |
-  step_some: "nondeterministic_step e1 s1 d1 (fst h) (snd h) = Some (tr1, s1', p', d1') \<Longrightarrow>
-              \<exists>tr2. nondeterministic_step e2 s2 d2 (fst h) (snd h) = Some (tr2, s2', p', d2') \<and>
+  step_some: "nondeterministic_step e1 s1 d1 l i = Some (tr1, s1', p', d1') \<Longrightarrow>
+              (s2', tr2) |\<in>| possible_steps e2 s2 d2 l i \<Longrightarrow>
+              d2' = (apply_updates (Updates tr2) (join_ir i d2) d2) \<Longrightarrow>
               nondeterministic_simulates_trace e1 e2 s1' s2' d1' d2' t \<Longrightarrow>
-              nondeterministic_simulates_trace e1 e2 s1 s2 d1 d2 (h#t)" |
-  step_none: "nondeterministic_step e1 s1 d1 (fst h) (snd h) = None \<Longrightarrow> nondeterministic_simulates_trace e1 e2 s1 s2 d1 d2 (h#t)"
+              nondeterministic_simulates_trace e1 e2 s1 s2 d1 d2 ((l, i)#t)" |
+  step_none: "nondeterministic_step e1 s1 d1 l i = None \<Longrightarrow> nondeterministic_simulates_trace e1 e2 s1 s2 d1 d2 ((l, i)#t)"
 
 definition nondeterministic_simulates :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> bool" where
   "nondeterministic_simulates m1 m2 = (\<forall>t. nondeterministic_simulates_trace m1 m2 0 0 <> <> t)"
