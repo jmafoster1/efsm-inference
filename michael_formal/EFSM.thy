@@ -54,7 +54,7 @@ definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> 
   "possible_steps e s r l i = fimage (\<lambda>((origin, dest), t). (dest, t)) (ffilter (\<lambda>((origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"
 
 definition fis_singleton :: "'a fset \<Rightarrow> bool"
-  where "fis_singleton A \<longleftrightarrow> is_singleton {f. f |\<in>| A}"
+  where "fis_singleton A \<longleftrightarrow> is_singleton (fset A)"
 
 lemma singleton_singleton [simp]: "fis_singleton {|a|}"
   by (simp add: fis_singleton_def)
@@ -148,6 +148,13 @@ inductive accepts :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastat
 
 definition accepts_trace :: "transition_matrix \<Rightarrow> trace \<Rightarrow> bool" where
   "accepts_trace e t = accepts e 0 <> t"
+
+lemma no_step_none: "step e s r aa ba = None \<Longrightarrow> \<not>accepts e s r ((aa, ba) # p)"
+  apply safe
+  apply (rule accepts.cases)
+    apply simp
+   apply simp
+  by auto
 
 lemma accepts_steps: "fthe_elem (possible_steps e s d (fst h) (snd h)) = (a, b) \<Longrightarrow>
        fis_singleton (possible_steps e s d (fst h) (snd h)) \<Longrightarrow>
@@ -329,4 +336,9 @@ inductive gets_us_to :: "nat \<Rightarrow> transition_matrix \<Rightarrow> nat \
   base: "s = target \<Longrightarrow> gets_us_to target _ s _ []" |
   step_some: "step e s r (fst h) (snd h) =  Some (_, s', _, r') \<Longrightarrow> gets_us_to target e s' r' t \<Longrightarrow> gets_us_to target e s r (h#t)" |
   step_none: "step e s r (fst h) (snd h) = None \<Longrightarrow> s=target \<Longrightarrow> gets_us_to target e s r (h#t)"
+
+lemma no_further_steps: "s \<noteq> s' \<Longrightarrow> \<not> gets_us_to s e s' r []"
+  apply safe
+  apply (rule gets_us_to.cases)
+  by auto
 end

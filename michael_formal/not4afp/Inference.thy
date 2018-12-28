@@ -81,29 +81,25 @@ type_synonym generator_function = "transition_matrix \<Rightarrow> nat \<Rightar
 definition null_generator :: generator_function where
   "null_generator a b c d e = None"
 
-type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition_matrix \<Rightarrow> (transition_matrix \<times> (nat \<Rightarrow> nat)) option"
+type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> (transition_matrix \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option"
 
 definition null_modifier :: update_modifier where
-  "null_modifier a b c d = None"
+  "null_modifier a b c d e = None"
 
 definition easy_merge :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> generator_function \<Rightarrow> transition_matrix option" where
   "easy_merge oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 t2 maker = (
     \<comment> \<open> If t1 directly subsumes t2 then replace t2 with t1 \<close>
-    if directly_subsumes oldEFSM t1FromOld t2 t1 then Some (replace_transition newEFSM newFrom t2NewTo t1 t2) else
+    if directly_subsumes oldEFSM newEFSM t1FromOld t2 t1 then Some (replace_transition newEFSM newFrom t2NewTo t1 t2) else
     \<comment> \<open> If t2 directly subsumes t1 then replace t1 with t2 \<close>
-    if directly_subsumes oldEFSM t2FromOld t1 t2 then Some (replace_transition newEFSM newFrom t1NewTo t2 t1) else
+    if directly_subsumes oldEFSM newEFSM t2FromOld t1 t2 then Some (replace_transition newEFSM newFrom t1NewTo t2 t1) else
     \<comment> \<open> Can we make a transition which subsumes both? \<close>
     (case maker oldEFSM t1FromOld t1 t2FromOld t2 of
     Some t' \<Rightarrow>
-    if directly_subsumes oldEFSM t2FromOld t1 t' \<and> directly_subsumes oldEFSM t1FromOld t2 t' then
+    if directly_subsumes oldEFSM newEFSM t2FromOld t1 t' \<and> directly_subsumes oldEFSM newEFSM t1FromOld t2 t' then
        Some (replace_transition (replace_transition newEFSM newFrom t1NewTo t2 t') newFrom t2NewTo t1 t') else
     None |
     None \<Rightarrow> None)
   )"
-
-definition same_structure :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> bool" where
-  "same_structure t1 t2 \<equiv> (\<forall>s1 s2 t. ((s1, s2), t) |\<in>| t1 \<longrightarrow> (\<exists>t'. ((s1, s2), t') |\<in>| t2 \<and> directly_subsumes t1 s1 t' t)) \<and>
-                          (\<forall>s1 s2 t. ((s1, s2), t) |\<in>| t2 \<longrightarrow> (\<exists>t'. ((s1, s2), t') |\<in>| t1 \<and> directly_subsumes t1 s1 t' t))"
 
 definition merge_transitions :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> bool \<Rightarrow> transition_matrix option" where
   "merge_transitions oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 t2 maker modifier modify = (
@@ -112,9 +108,13 @@ definition merge_transitions :: "transition_matrix \<Rightarrow> transition_matr
       \<comment> \<open> Can we modify the updates such that subsumption can occur? \<close>
       None \<Rightarrow> (
         if modify then
-          (case modifier t1 t2 newFrom newEFSM of
+          (case modifier t1 t2 newFrom newEFSM oldEFSM of
             None \<Rightarrow> None |
-            Some (t', H) \<Rightarrow> (if nondeterministic_simulates oldEFSM t' then easy_merge t' t' (H newFrom) (H newFrom) (H newFrom) (H t1NewTo) (H t2NewTo) t1 t2 maker else None)
+            Some (t', H\<^sub>n\<^sub>e\<^sub>w, H\<^sub>o\<^sub>l\<^sub>d) \<Rightarrow> (
+              if nondeterministic_simulates t' oldEFSM H\<^sub>o\<^sub>l\<^sub>d then
+                easy_merge oldEFSM t' t1FromOld t2FromOld (H\<^sub>n\<^sub>e\<^sub>w newFrom) (H\<^sub>n\<^sub>e\<^sub>w t1NewTo) (H\<^sub>n\<^sub>e\<^sub>w t2NewTo) t1 t2 maker
+              else None
+            )
           )
         else None
       )

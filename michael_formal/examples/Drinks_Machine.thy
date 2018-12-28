@@ -296,7 +296,7 @@ proof-
     by (simp add: Set.filter_def drinks_def)
   have ffilter: "ffilter (\<lambda>((origin, dest), t). origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (join_ir i r)) drinks = {||}"
     using premise
-    by (simp add: ffilter_def set_filter bot_fset_def)
+    by (simp add: ffilter_def set_filter)
   show ?thesis
     apply (simp add: step_def possible_steps_def)
     using ffilter
