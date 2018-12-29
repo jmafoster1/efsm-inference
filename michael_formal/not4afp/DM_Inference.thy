@@ -1094,17 +1094,88 @@ proof-
     by auto
 qed
 
+lemma step_merged_2_select: "step (merge_states 1 3 (merge_states 1 2 drinks2)) 0 Map.empty ''select'' [d] = Some (select, 1, [], <R 1 := d, R 2 := Num 0>)"
+proof-
+  have set_filter: "Set.filter
+          (\<lambda>((origin, dest), t).
+              origin = 0 \<and>
+              Label t = ''select'' \<and>
+              Suc 0 = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. if n = 1 then Some d else input2state [] (1 + 1) (I n)) Map.empty))
+          (fset (merge_states 1 3 (merge_states 1 2 drinks2))) = {((0, 1), select)}"
+    apply (simp add: Set.filter_def merge_1_3_2)
+    apply safe
+    by (simp_all add: transitions)
+  show ?thesis
+    apply (simp add: step_def possible_steps_def ffilter_def set_filter)
+    apply (simp add: set_filter)
+    apply (simp add: select_def)
+    apply (rule ext)
+    by simp
+qed
+
+lemma satisfies_must_have_r2_0: "satisfies_context d \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> \<Longrightarrow> d (R 2) = Some (Num 0)"
+proof-
+  have contrapositive: "\<not> d (R 2) = Some (Num 0) \<Longrightarrow> \<not>satisfies_context d \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk>"
+    apply (simp add: satisfies_context_def datastate2context_def consistent_def)
+    apply (rule allI)
+    apply (rule_tac x="V (R 2)" in exI)
+    apply simp
+    apply (case_tac "d (R 2)")
+     apply simp
+    by simp
+  show "satisfies_context d \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> \<Longrightarrow> d (R 2) = Some (Num 0)"
+    using contrapositive
+    by auto
+qed
+
+lemma inconsistent_medial_vend: "\<not>consistent \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> And (cexp.Eq (Num 0)) (Geq (Num 100))\<rbrakk>"
+  apply (simp add: consistent_def)
+  apply clarify
+  apply (rule_tac x="V (R 2)" in exI)
+  apply simp
+  apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
+   apply simp
+  apply simp
+  by auto
+
+lemma posterior_vend_false: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> And (cexp.Eq (Num 0)) (Geq (Num 100))\<rbrakk> vend_nothing = (\<lambda>x. Bc False)"
+  apply (simp add: posterior_def)
+  by (simp add: vend_nothing_def Let_def inconsistent_medial_vend)
+
+lemma vend_nothing_subsumes_vend: "subsumes select_posterior vend_nothing vend"
+  apply (simp add: subsumes_def)
+  apply standard
+   apply (simp add: transitions)
+   apply safe
+      apply (case_tac "cval (select_posterior (V (R 2))) i")
+       apply simp
+      apply simp
+      apply (case_tac "maybe_not (ValueLt (Some i) (Some (Num 100)))")
+       apply simp
+      apply simp
+     apply (case_tac "cval (select_posterior r) i")
+      apply simp
+     apply simp
+    apply (simp add: select_posterior_def)
+    apply (case_tac "r (R 2) = Some (Num 0)")
+     apply (simp add: transitions)
+    apply (simp add: satisfies_must_have_r2_0)
+   apply (simp add: medial_select_posterior_vend posterior_vend_false)
+  by (simp add: vend_nothing_posterior consistent_select_posterior)
+
+lemma directly_subsumes_bad: "directly_subsumes (merge_states 1 2 drinks2) (merge_states 1 3 (merge_states 1 2 drinks2)) 1 vend_nothing vend"
+  sorry
+
 lemma merge_1_2: "merge drinks2 1 2 null_generator null_modifier = Some basically_drinks"
 proof-
   have nondeterminism_merge_states_1_2: "nondeterminism (merge_states 1 2 drinks2)"
     unfolding nondeterminism_def
     using vend_vend_nothing_nondeterminism by auto
-  have merge_vend_nothing_vend: "\<forall>a. merge_transitions (merge_states 1 2 drinks2) (merge_states 1 3 (merge_states 1 2 drinks2)) 1 1 1 1 1 vend_nothing
+  (*have merge_vend_nothing_vend: "\<forall>a. merge_transitions (merge_states 1 2 drinks2) (merge_states 1 3 (merge_states 1 2 drinks2)) 1 1 1 1 1 vend_nothing
              vend null_generator null_modifier a = None"
-    apply (simp only: merge_1_3_2)
-    apply (simp only: merge_states_1_2)
-    using merge_states_1_2 merge_transitions_def vend_doesnt_directly_subsume_vend_nothing_2 vend_doesnt_directly_subsume_vend_nothing_3
-    by (simp add: null_generator_def null_modifier_def easy_merge_def)
+    apply (simp add: merge_transitions_def null_generator_def null_modifier_def easy_merge_def)
+    apply (simp add: directly_subsumes_bad)
+    oops*)
   have vend_fail_lt_vend: "vend_fail < vend"
     using vend_fail_leq_vend vend_neq_vend_fail by auto
   have vend_fail_lt_vend_2: "\<not>vend \<le> vend_fail"
@@ -1119,7 +1190,7 @@ proof-
     apply (simp add: Let_def nondeterminisitic_pairs nondeterminism_def max_def)
     apply (simp add: nondeterministic_pairs_1_3 max_def)
     apply (simp add: vend_nothing_exits_1_2 vend_exits_1 nondeterminsm_merge_1_3 nondeterminism_merge_states_1_2 )
-    apply (simp add: merge_vend_nothing_vend max_def vend_fail_exits_1 vend_fail_lt_vend_2)
+    apply (simp add: (*merge_vend_nothing_vend*) max_def vend_fail_exits_1 vend_fail_lt_vend_2)
     by (simp add: merge_transitions)
 qed
 
