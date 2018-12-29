@@ -99,6 +99,9 @@ lemma possible_false_not_consistent: "\<exists>r. c r = Bc False \<Longrightarro
   apply (rule_tac x=r in exI)
   by simp
 
+lemma inconsistent_false: "\<not>consistent (\<lambda>i. cexp.Bc False)"
+  by (simp add: consistent_def)
+
 definition valid_context :: "context \<Rightarrow> bool" where (* Is the context satisfied in all variable evaluations? *)
   "valid_context c \<equiv> \<forall>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
 
