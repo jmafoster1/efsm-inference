@@ -746,6 +746,12 @@ proof-
     unfolding subsumes_def
     apply standard
      apply (simp add: transitions)
+    apply standard
+     apply (simp add: transitions)
+    apply standard
+     apply (simp add: transitions)
+    apply standard
+     apply (simp add: transitions)
      apply clarify
      apply (case_tac "cval (\<lbrakk>\<rbrakk> r) i")
       apply simp
@@ -863,7 +869,7 @@ proof-
     by (simp add: nondeterministic_step_def possible_steps_def ffilter_def set_filter)
 qed
 
-lemma nondeterministic_step_merge_1_2_1_silly_coin: "length b = 1 \<Longrightarrow> b \<noteq> [Num 50] \<Longrightarrow> nondeterministic_step merge_1_2 1 <R 1 := d> ''coin'' b = Some (coin, 1, [], <R 1 := d>)"
+lemma nondeterministic_step_merge_1_2_1_silly_coin: "length b = 1 \<Longrightarrow> b \<noteq> [Num 50] \<Longrightarrow> nondeterministic_step merge_1_2 1 <R 1 := d> ''coin'' b = Some (coin, 1, [None], <R 1 := d>)"
 proof-
   assume premise1: "length b = 1"
   assume premise2: "b \<noteq> [Num 50]"
@@ -993,7 +999,7 @@ proof-
     by (simp add: possible_steps_def ffilter_def set_filter abs_fset)
 qed
 
-lemma step_drinks_before_coin_50: "step drinks_before 1 <R 1 := d> ''coin'' [Num 50] = Some (coin50, 2, [Num 50], <R 1 := d, R 2 := Num 50>)"
+lemma step_drinks_before_coin_50: "step drinks_before 1 <R 1 := d> ''coin'' [Num 50] = Some (coin50, 2, [Some (Num 50)], <R 1 := d, R 2 := Num 50>)"
 proof-
   have set_filter: "Set.filter
           (\<lambda>((origin, dest), t).

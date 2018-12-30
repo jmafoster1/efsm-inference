@@ -147,7 +147,8 @@ lemma updates_coin: " (EFSM.apply_updates (Updates coin)
   apply (rule ext)
   by (simp add: coin_def)
 
-lemma purchase_coke: "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] = [[], [Num 50], [Num 100], [Str ''coke'']]"
+lemma purchase_coke: "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] =
+                       [[], [Some (Num 50)], [Some (Num 100)], [Some (Str ''coke'')]]"
   apply (simp add: observe_trace_def)
   apply (simp add: step_def possible_steps_0 fis_singleton_def outputs_select updates_select)
   apply (simp add: step_def possible_steps_1_coin updates_coin fis_singleton_def)

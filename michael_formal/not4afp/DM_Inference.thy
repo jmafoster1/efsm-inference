@@ -161,6 +161,9 @@ lemma vend_fail_posterior: "posterior select_posterior vend_fail = \<lbrakk>V (R
 lemma vend_fail_subsumes_vend_nothing: "subsumes select_posterior vend_fail vend_nothing"
   apply (simp add: subsumes_def)
   apply safe
+        apply (simp add: transitions)
+       apply (simp add: transitions)
+      apply (simp add: transitions)
      apply (simp add: guard_vend_nothing medial_vend_fail)
      apply (simp add: select_posterior_def)
      apply auto[1]  
@@ -287,7 +290,7 @@ lemma drinks2_vend_sufficient: "r (R 2) = Some (Num x1) \<Longrightarrow>
   apply (simp add: possible_steps_def drinks2_def transitions )
   by force
 
-lemma none_outputs_vend:  "r (R 1) = None \<Longrightarrow> apply_outputs (Outputs vend) r = []"
+lemma none_outputs_vend:  "r (R 1) = None \<Longrightarrow> apply_outputs (Outputs vend) r = [None]"
   by (simp add: vend_def)
 
 lemma "choice vend_nothing vend"
@@ -1142,40 +1145,40 @@ lemma posterior_vend_false: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, 
   apply (simp add: posterior_def)
   by (simp add: vend_nothing_def Let_def inconsistent_medial_vend)
 
-lemma vend_nothing_subsumes_vend: "subsumes select_posterior vend_nothing vend"
-  apply (simp add: subsumes_def)
-  apply standard
-   apply (simp add: transitions)
-   apply safe
-      apply (case_tac "cval (select_posterior (V (R 2))) i")
-       apply simp
-      apply simp
-      apply (case_tac "maybe_not (ValueLt (Some i) (Some (Num 100)))")
-       apply simp
-      apply simp
-     apply (case_tac "cval (select_posterior r) i")
-      apply simp
-     apply simp
-    apply (simp add: select_posterior_def)
-    apply (case_tac "r (R 2) = Some (Num 0)")
-     apply (simp add: transitions)
-    apply (simp add: satisfies_must_have_r2_0)
-   apply (simp add: medial_select_posterior_vend posterior_vend_false)
-  by (simp add: vend_nothing_posterior consistent_select_posterior)
+lemma no_subsumption_vend_nothing_vend: "\<not>subsumes c vend_nothing vend"
+  by (simp add: subsumes_def transitions)
 
-lemma directly_subsumes_bad: "directly_subsumes (merge_states 1 2 drinks2) (merge_states 1 3 (merge_states 1 2 drinks2)) 1 vend_nothing vend"
-  sorry
+lemma vend_nothing_doesn_directly_subsume_vend: "\<not> directly_subsumes (merge_states 1 2 drinks2) (merge_states 1 3 (merge_states 1 2 drinks2)) 1 vend_nothing vend"
+  apply (simp add: directly_subsumes_def subsumes_def transitions accepts_trace_def)
+  apply (rule_tac x="[(''select'', [d])]" in exI)
+  apply standard
+   apply (rule accepts.step)
+    apply (simp add: step_merge_1_2_select)
+   apply (simp add: accepts.base)
+  apply (rule gets_us_to.step_some)
+    apply (simp add: step_merge_1_2_select)
+  by (simp add: gets_us_to.base)
+
+lemma vend_doesn_directly_subsume_vend_nothing: "\<not> directly_subsumes (merge_states 1 2 drinks2) (merge_states 1 3 (merge_states 1 2 drinks2)) 1 vend vend_nothing"
+  apply (simp add: directly_subsumes_def subsumes_def transitions accepts_trace_def)
+  apply (rule_tac x="[(''select'', [d])]" in exI)
+  apply standard
+   apply (rule accepts.step)
+    apply (simp add: step_merge_1_2_select)
+   apply (simp add: accepts.base)
+  apply (rule gets_us_to.step_some)
+    apply (simp add: step_merge_1_2_select)
+  by (simp add: gets_us_to.base)
 
 lemma merge_1_2: "merge drinks2 1 2 null_generator null_modifier = Some basically_drinks"
 proof-
   have nondeterminism_merge_states_1_2: "nondeterminism (merge_states 1 2 drinks2)"
     unfolding nondeterminism_def
     using vend_vend_nothing_nondeterminism by auto
-  (*have merge_vend_nothing_vend: "\<forall>a. merge_transitions (merge_states 1 2 drinks2) (merge_states 1 3 (merge_states 1 2 drinks2)) 1 1 1 1 1 vend_nothing
+  have merge_vend_nothing_vend: "\<forall>a. merge_transitions (merge_states 1 2 drinks2) (merge_states 1 3 (merge_states 1 2 drinks2)) 1 1 1 1 1 vend_nothing
              vend null_generator null_modifier a = None"
     apply (simp add: merge_transitions_def null_generator_def null_modifier_def easy_merge_def)
-    apply (simp add: directly_subsumes_bad)
-    oops*)
+    by (simp add: vend_nothing_doesn_directly_subsume_vend vend_doesn_directly_subsume_vend_nothing)
   have vend_fail_lt_vend: "vend_fail < vend"
     using vend_fail_leq_vend vend_neq_vend_fail by auto
   have vend_fail_lt_vend_2: "\<not>vend \<le> vend_fail"
@@ -1190,7 +1193,7 @@ proof-
     apply (simp add: Let_def nondeterminisitic_pairs nondeterminism_def max_def)
     apply (simp add: nondeterministic_pairs_1_3 max_def)
     apply (simp add: vend_nothing_exits_1_2 vend_exits_1 nondeterminsm_merge_1_3 nondeterminism_merge_states_1_2 )
-    apply (simp add: (*merge_vend_nothing_vend*) max_def vend_fail_exits_1 vend_fail_lt_vend_2)
+    apply (simp add: merge_vend_nothing_vend max_def vend_fail_exits_1 vend_fail_lt_vend_2)
     by (simp add: merge_transitions)
 qed
 
@@ -1259,8 +1262,7 @@ proof-
       apply safe
       by (simp_all add: transitions)
     show ?thesis
-      apply (simp add: outgoing_transitions_def drinks2_def ffilter_def set_filter)
-      by (simp add: bot_fset_def)
+      by (simp add: outgoing_transitions_def drinks2_def ffilter_def set_filter)
   qed
   have naive_score_1_2: "naive_score {|coin, vend_nothing|} {|coin, vend_fail, vend|} = 3"
   proof-
@@ -1341,8 +1343,7 @@ proof-
       apply (simp add: Set.filter_def)
       by auto
     show ?thesis
-      apply (simp add: outgoing_transitions_def basically_drinks_def ffilter_def set_filter)
-      by (simp add: bot_fset_def)
+      by (simp add: outgoing_transitions_def basically_drinks_def ffilter_def set_filter)
   qed
   have outgoing_transitions_0: "outgoing_transitions 0 basically_drinks = {|select|}"
   proof-

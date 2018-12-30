@@ -13,7 +13,7 @@ begin
 type_synonym label = string
 type_synonym arity = nat
 type_synonym inputs = "value list"
-type_synonym outputs = "value list"
+type_synonym outputs = "value option list"
 type_synonym updates = "update_function list"
 type_synonym event = "(label \<times> inputs)"
 type_synonym trace = "event list"
@@ -40,7 +40,7 @@ definition S :: "transition_matrix \<Rightarrow> nat fset" where
 
 primrec apply_outputs :: "output_function list \<Rightarrow> datastate \<Rightarrow> outputs" where
   "apply_outputs [] _ = []" |
-  "apply_outputs (h#t) s = (case aval h s of None \<Rightarrow> [] | Some p \<Rightarrow> p#(apply_outputs t s))"
+  "apply_outputs (h#t) s = (aval h s)#(apply_outputs t s)"
 
 primrec apply_guards :: "guard list \<Rightarrow> datastate \<Rightarrow> bool" where
   "apply_guards [] _ = True" |

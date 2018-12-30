@@ -58,7 +58,8 @@ lemma possible_steps_2_vend: "r (R 2) = Some (Num n) \<Longrightarrow> n \<ge> 1
   apply (simp add: possible_steps_def drinks2_def transitions)
   by force
 
-lemma purchase_coke: "observe_trace drinks2 0 <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] = [[], [Num 50], [Num 100], [Str ''coke'']]"
+lemma purchase_coke: "observe_trace drinks2 0 <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] =
+                       [[], [Some (Num 50)], [Some (Num 100)], [Some (Str ''coke'')]]"
   apply (simp add: observe_trace_def step_def possible_steps_0 updates_select)
   apply (simp add: possible_steps_1 step_def updates_coin)
   apply (simp add: possible_steps_2_coin step_def updates_coin)
@@ -449,8 +450,11 @@ next
       apply (simp add: step_def drinks_vend_insufficient drinks2_vend_insufficient)
      apply (simp add: outputs_vend_fail outputs_vend_nothing )
      apply (simp add: apply_updates_vend_fail apply_updates_vend_nothing)
+
+    apply (case_tac a)
     apply (simp add: step_def)
-    by (simp add: drinks_1_inaccepts drinks2_1_invalid step_def )
+    using drinks_1_inaccepts drinks2_1_invalid step_def
+    by auto
 qed
 
 lemma observational_equivalence: "efsm_equiv drinks drinks2 t" (* Corresponds to Example 3 in Foster et. al. *)
