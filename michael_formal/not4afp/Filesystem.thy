@@ -118,7 +118,7 @@ lemma possible_steps_1_read: "r (R 1) = user \<and> r (R 3) = owner \<Longrighta
 
 lemma read_2:  "r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
-    step filesystem 1 r ''read'' [] = Some (read_fail, 1, [Str ''accessDenied''], r)"
+    step filesystem 1 r ''read'' [] = Some (read_fail, 1, [Some (Str ''accessDenied'')], r)"
   apply (simp add: step_def possible_steps_1_read)
   apply (simp add: fs_simp)
   apply (rule ext)

@@ -40,14 +40,14 @@ lemma possible_steps_1_vend: "n \<ge> 100 \<Longrightarrow> possible_steps drink
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] = [[], [Num 50], [Num 100], [Str ''coke'', Num 0]]"
+lemma "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] = [[], [Some (Num 50)], [Some (Num 100)], [Some (Str ''coke''), Some (Num 0)]]"
   unfolding observe_trace_def observe_all_def step_def
   apply (simp add: possible_steps_0 updates_select outputs_select)
   apply (simp add: possible_steps_1_coin updates_coin)
   apply (simp add: possible_steps_1_vend)
   by (simp add: coin_def vend_def)
 
-lemma "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 100]), (''vend'', [])] = [[], [Num 50], [Num 150], [Str ''coke'', Num 50]]"
+lemma "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 100]), (''vend'', [])] = [[], [Some (Num 50)], [Some (Num 150)], [Some (Str ''coke''), Some (Num 50)]]"
   unfolding observe_trace_def observe_all_def step_def
   apply (simp add: possible_steps_0 updates_select outputs_select)
   apply (simp add: possible_steps_1_coin updates_coin)

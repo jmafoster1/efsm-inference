@@ -81,7 +81,7 @@ lemma possible_steps_1_read: "possible_steps Filesystem_Fixed.filesystem 1 <R 1 
   apply (simp add: possible_steps_def fs_simp)
   by force
 
-lemma "observe_trace filesystem 0 <> [(''login'', [Str ''user'']), (''create'', []), (''write'', [Num 50]), (''read'', [])] = [[], [], [], [Num 50]]"
+lemma "observe_trace filesystem 0 <> [(''login'', [Str ''user'']), (''create'', []), (''write'', [Num 50]), (''read'', [])] = [[], [], [], [Some (Num 50)]]"
 proof-
   have updates_login: "(EFSM.apply_updates (Updates login)
           (case_vname (\<lambda>n. if n = 1 then Some (Str ''user'') else input2state [] (1 + 1) (I n)) Map.empty) Map.empty) = <R 1 := Str ''user''>"
@@ -121,7 +121,7 @@ lemma possible_steps_1_read_fail: "r (R 3) = Some owner \<and> r (R 1) = Some us
 
 lemma read_2:  " r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
-    step filesystem 1 r ''read'' [] = Some (read_fail, 1, [Str ''accessDenied''], r)"
+    step filesystem 1 r ''read'' [] = Some (read_fail, 1, [Some (Str ''accessDenied'')], r)"
   apply (simp add: step_def possible_steps_1_read_fail)
   apply (simp add: read_fail_def)
   apply (rule ext)
@@ -167,7 +167,7 @@ abbreviation label_create :: "property" where
   "label_create s \<equiv> (label (shd s) = ''create'')"
 
 abbreviation read_0 :: "property" where
-  "read_0 s \<equiv> (label (shd s)=''read'' \<longrightarrow> output (shd s)=[Str ''accessDenied''])"
+  "read_0 s \<equiv> (label (shd s)=''read'' \<longrightarrow> output (shd s)=[Some (Str ''accessDenied'')])"
 
 abbreviation login_attacker :: "property" where
   "login_attacker s \<equiv> (event (shd s) = (''login'',  [Str ''attacker'']))"
