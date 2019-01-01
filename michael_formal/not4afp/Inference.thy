@@ -62,7 +62,7 @@ primrec make_outputs :: "value list \<Rightarrow> output_function list" where
 fun maxS :: "transition_matrix \<Rightarrow> nat" where
   "maxS t = (if t = {||} then 0 else fMax ((fimage (\<lambda>((origin, dest), t). origin) t) |\<union>| (fimage (\<lambda>((origin, dest), t). dest) t)))"
 
-fun make_branch :: "transition_matrix \<Rightarrow> nat  \<Rightarrow> datastate \<Rightarrow> (char list \<times> value list \<times> value list) list \<Rightarrow> transition_matrix" where
+fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> (char list \<times> value list \<times> value list) list \<Rightarrow> transition_matrix" where
   "make_branch e _ _ [] = e" |
   "make_branch e s r ((label, inputs, outputs)#t) =
     (case (step e s r label inputs) of
@@ -74,7 +74,7 @@ type_synonym log = "(char list \<times> value list \<times> value list) list lis
 
 primrec make_pta :: "log \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
   "make_pta [] e = e" |
-  "make_pta (h#t) e = (make_branch e 0 <> h)|\<union>|(make_pta t e)"
+  "make_pta (h#t) e = (make_pta t (make_branch e 0 <> h))"
 
 type_synonym generator_function = "transition_matrix \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition option"
 
