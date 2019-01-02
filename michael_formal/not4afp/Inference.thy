@@ -35,9 +35,12 @@ lemma fprod_empty[simp]: "\<forall>a. fprod {||} a = {||}"
 lemma fprod_empty_2[simp]: "\<forall>a. fprod a {||} = {||}"
   by (simp add: fprod_def ffUnion_def)
 
+definition outgoing_transitions_with_dest :: "nat \<Rightarrow> transition_matrix \<Rightarrow> (nat \<times> transition) fset" where
+  "outgoing_transitions_with_dest n t = fimage (\<lambda>(x, t'). (snd x, t')) (ffilter (\<lambda>((origin, dest), t). origin = n) t)"
+
 (* Get every possible ((origin, dest), transition) pair, filter then for nondeterminism, then put them in the right format *)
 definition nondeterministic_pairs :: "transition_matrix \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset" where
-  "nondeterministic_pairs t = fimage (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). (origin1, (dest1, dest2), (t1, t2))) (ffilter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2) (all_pairs t))"
+  "nondeterministic_pairs t = fimage (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). (origin1, (dest1, dest2), (t1, t2))) (ffilter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> choice t1 t2) (ffilter (\<lambda>(x, y). x < y) (all_pairs t)))"
 
 definition nondeterministic_transitions :: "transition_matrix \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) option" where
   "nondeterministic_transitions t = (if nondeterministic_pairs t = {||} then None else Some (fMax (nondeterministic_pairs t)))"

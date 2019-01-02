@@ -87,6 +87,9 @@ primrec observe_all :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datast
       _ \<Rightarrow> []
     )"
 
+lemma abs_fset_doubleton[simp]: "Abs_fset {a, b} = {|a, b|}"
+  by (metis bot_fset.rep_eq finsert.rep_eq fset_inverse)
+
 lemma abs_fset_singleton[simp]: "Abs_fset {a} = {|a|}"
   by (metis bot_fset.rep_eq finsert.rep_eq fset_inverse)
 

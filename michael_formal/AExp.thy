@@ -78,4 +78,34 @@ syntax
   "_maplets" :: "['a, 'a] \<Rightarrow> maplet"             ("_ /[:=]/ _")
   "_Map"     :: "maplets \<Rightarrow> 'a \<rightharpoonup> 'b"            ("(1<_>)")
 
+instantiation aexp :: plus begin
+fun plus_aexp :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" where
+  "plus_aexp (L (Num n1)) (L (Num n2)) = L (Num (n1+n2))" |
+  "plus_aexp x y = Plus x y"
+
+instance by standard
+end
+
+instantiation aexp :: minus begin
+fun minus_aexp :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" where
+  "minus_aexp (L (Num n1)) (L (Num n2)) = L (Num (n1-n2))" |
+  "minus_aexp x y = Minus x y"
+
+instance by standard
+end
+
+lemma aval_plus_aexp: "aval (a+b) s = aval (Plus a b) s"
+  apply (case_tac a)
+     apply (case_tac x1)
+      apply (case_tac b)
+         apply (case_tac x1b)
+  by auto
+
+lemma aval_minus_aexp: "aval (a-b) s = aval (Minus a b) s"
+  apply (case_tac a)
+     apply (case_tac x1)
+      apply (case_tac b)
+         apply (case_tac x1b)
+  by auto
+
 end
