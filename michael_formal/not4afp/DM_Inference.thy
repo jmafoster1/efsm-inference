@@ -7,7 +7,7 @@ declare One_nat_def[simp del]
 lemma "max coin vend = vend"
   by (simp add: max_def coin_def vend_def less_eq_transition_ext_def less_transition_ext_def)
 
-lemma merge_1_2: "merge_states 1 2 drinks2 = {|
+lemma merge_states_1_2: "merge_states 1 2 drinks2 = {|
               ((0,1), select),
               ((1,1), vend_nothing),
               ((1,1), coin),
@@ -57,7 +57,7 @@ proof
   show "Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
      (fset (all_pairs (merge_states 1 2 drinks2)))
     \<subseteq> {(((1, 1), vend_nothing), (1, 1), vend_fail), (((1, 1), vend_nothing), (1, 3), vend)}"
-    apply (simp add: merge_1_2 all_pairs_def Set.filter_def)
+    apply (simp add: merge_states_1_2 all_pairs_def Set.filter_def)
     apply clarify
     apply simp
     apply (case_tac "bb=1")
@@ -73,7 +73,7 @@ proof
   show "{(((1, 1), vend_nothing), (1, 1), vend_fail), (((1, 1), vend_nothing), (1, 3), vend)}
     \<subseteq> Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
         (fset (all_pairs (merge_states 1 2 drinks2)))"
-    apply (simp add: merge_1_2 all_pairs_def Set.filter_def)
+    apply (simp add: merge_states_1_2 all_pairs_def Set.filter_def)
     using choice_symmetry choice_vend_nothing_vend_fail choice_vend_vend_nothing vend_nothing_lt_vend vend_nothing_lt_vend_fail by blast
 qed
 
@@ -139,14 +139,13 @@ lemma medial_vend_nothing: "(medial c (Guard vend_nothing)) = c"
 
 lemma medial_vend_fail: "medial select_posterior (Guard vend_fail) = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Eq (Num 0)) (Lt (Num 100))\<rbrakk>"
   apply (rule ext)
-  by (simp add: transitions)
+  by (simp add: transitions select_posterior_def)
 
 lemma vend_nothing_posterior: "posterior select_posterior vend_nothing = select_posterior"
   apply (simp only: posterior_def medial_vend_nothing)
-  apply (simp add: consistent_select_posterior )
+  apply (simp add: consistent_select_posterior)
   apply (rule ext)
-  apply (simp add: Let_def)
-  by (simp add: transitions remove_input_constraints_def)
+  by (simp add: transitions remove_input_constraints_def select_posterior_def)
 
 lemma consistent_medial_vend_fail: "consistent \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> And (cexp.Eq (Num 0)) (cexp.Lt (Num 100))\<rbrakk>"
   apply (simp add: consistent_def)
@@ -157,12 +156,17 @@ lemma vend_fail_posterior: "posterior select_posterior vend_fail = \<lbrakk>V (R
   apply (simp only: posterior_def medial_vend_fail)
   apply (simp add: consistent_medial_vend_fail )
   apply (rule ext)
-  by (simp add: transitions remove_input_constraints_def)
+  by (simp add: transitions remove_input_constraints_def select_posterior_def)
 
 lemma vend_fail_subsumes_vend_nothing: "subsumes select_posterior vend_fail vend_nothing"
-  apply (simp add: subsumes_def )
+  apply (simp add: subsumes_def)
   apply safe
-  using guard_vend_nothing medial_vend_fail apply auto[1]
+        apply (simp add: transitions)
+       apply (simp add: transitions)
+      apply (simp add: transitions)
+     apply (simp add: guard_vend_nothing medial_vend_fail)
+     apply (simp add: select_posterior_def)
+     apply auto[1]  
     apply (simp add: transitions)
    apply (simp add: medial_vend_nothing )
    apply (simp add: vend_nothing_posterior )
@@ -176,10 +180,12 @@ lemma vend_fail_subsumes_vend_nothing: "subsumes select_posterior vend_fail vend
    apply (case_tac "r = V (R 1)")
     apply simp
    apply simp
-   apply (simp only: vend_fail_posterior)
+    apply (simp add: vend_fail_posterior select_posterior_def)
+  apply (simp add: select_posterior_def)
   apply (simp add: consistent_def)
   apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0>" in exI)
-  by (simp add: consistent_empty_4)
+  apply (simp add: vend_fail_posterior)
+  by (simp add: consistent_empty_4 )
 
 lemma posterior_select: "length (snd e) = 1 \<Longrightarrow> (posterior \<lbrakk>\<rbrakk> (snd (fthe_elem (possible_steps drinks2 0 Map.empty ''select'' (snd e))))) =
      (\<lambda>a. if a = V (R 2) then cexp.Eq (Num 0) else if a = V (R (1)) then cexp.Bc True else \<lbrakk>\<rbrakk> a)"
@@ -284,7 +290,7 @@ lemma drinks2_vend_sufficient: "r (R 2) = Some (Num x1) \<Longrightarrow>
   apply (simp add: possible_steps_def drinks2_def transitions )
   by force
 
-lemma none_outputs_vend:  "r (R 1) = None \<Longrightarrow> apply_outputs (Outputs vend) r = []"
+lemma none_outputs_vend:  "r (R 1) = None \<Longrightarrow> apply_outputs (Outputs vend) r = [None]"
   by (simp add: vend_def)
 
 lemma "choice vend_nothing vend"
@@ -307,7 +313,7 @@ lemma merge_1_3: "let t' = merge_states 1 2 drinks2
                                    ((1,1), coin),
                                    ((1,1), vend_fail),
                                    ((1,1), vend)|}"
-  apply (simp add: merge_1_2 )
+  apply (simp add: merge_states_1_2 )
   by (simp add:  merge_states_def merge_states_aux_def )
 
 lemma merge_1_3_2: "(merge_states 1 3 (merge_states 1 2 drinks2)) = {|((0, 1), select),
@@ -374,11 +380,11 @@ lemma merge_states_2_nondeterminism: "nondeterministic_transitions (merge_states
   by (metis max.commute max_nondeterministic_transitions)
 
 lemma vend_exits_1: "exits_state (merge_states 1 2 drinks2) vend 1"
-  apply (simp add: exits_state_def merge_1_2 )
+  apply (simp add: exits_state_def merge_states_1_2 )
   by auto
 
 lemma vend_nothing_exits_1_2: "exits_state (merge_states 1 2 drinks2) vend_nothing 1"
-  apply (simp add: exits_state_def merge_1_2 )
+  apply (simp add: exits_state_def merge_states_1_2 )
   by auto
 
 lemma not_subset: "\<not>{(1, (1, 3), vend_nothing, vend), (1, (1, 1), vend_nothing, vend_fail)}
@@ -389,7 +395,7 @@ lemma not_subset_2: "\<not> {(1, (1, 1), vend_nothing, vend), (1, (1, 1), vend_n
      \<subseteq> {Max {(1, (1, 1), vend_nothing, vend), (1, (1, 1), vend_nothing, vend_fail)}}"
   using choice_def choice_vend_vend_nothing no_choice_vend_vend_fail by auto
 
-lemma nondeterminism_merge_1_2: "nondeterminism (merge_states 1 2 drinks2)"
+lemma nondeterminism_merge_states_1_2: "nondeterminism (merge_states 1 2 drinks2)"
   by (simp add: nondeterminism_def vend_vend_nothing_nondeterminism )
 
 lemma max_nondeterminism: "max (1::nat, (1::nat, 3::nat), vend_nothing, vend) (1, (1, 1), vend_nothing, vend_fail) = (1, (1, 3), vend_nothing, vend)"
@@ -421,58 +427,31 @@ lemma outputs_vend_neq_vend_nothing: "(\<exists>i r. [] \<noteq> apply_outputs (
   apply (rule_tac x="<R 1 := Str ''coke''>" in exI)
   by (simp add: vend_def)
 
-lemma vend_doesnt_subsume_vend_nothing: "\<not> subsumes c vend vend_nothing"
-  apply (simp add: subsumes_def apply_guards_vend_nothing)
-  apply (simp add: guard_vend_nothing outputs_vend_nothing)
-  using outputs_vend_neq_vend_nothing
+lemma inconsistent_undef: "\<not> consistent
+         (\<lambda>x. if constrains_an_input x then \<lbrakk>\<rbrakk> x
+              else if x = V (R 2) then And Undef (Geq (Num 100)) else if x = V (R 1) then c (V (R 1)) else c x)"
+  apply (simp add: consistent_def)
+  apply clarify
+  apply (rule_tac x="V (R 2)" in exI)
+  apply simp
+  apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
+   apply simp
   by simp
 
-lemma vend_doesnt_directly_subsume_vend_nothing: "\<not>directly_subsumes drinks2 2 vend vend_nothing"
-  apply (simp add: directly_subsumes_def vend_doesnt_subsume_vend_nothing)
-  apply (rule_tac x="[(''select'', [Str ''coke'']), (''coin'', [Num 100])]" in exI)
-  apply (rule gets_us_to.step_some)
-   apply (simp add: step_def possible_steps_0)
-  apply (simp add: select_def)
-  apply (rule gets_us_to.step_some)
-   apply (simp add: step_def possible_steps_1)
-  apply (rule gets_us_to.base)
-  by simp
-
-lemma vend_doesnt_subsume_vend_nothing_2: "\<not> subsumes c vend_nothing vend"
+lemma possible_steps_0_2: "length i = 1 \<Longrightarrow> (possible_steps (merge_states 1 2 drinks2) 0 Map.empty ''select'' i) = {|(1, select)|}"
 proof-
-  have outputs_vend_neq_vend_nothing_2: "(\<exists>i r. apply_guards (Guard vend) (case_vname (\<lambda>n. input2state i (1) (I n)) (\<lambda>n. r (R n))) \<and>
-           apply_outputs (Outputs vend) (case_vname (\<lambda>n. input2state i (1) (I n)) (\<lambda>n. r (R n))) \<noteq> [])"
-    apply (rule_tac x="[]" in exI)
-    apply (rule_tac x="<R 1 := Str ''coke'', R 2 := Num 100>" in exI)
-    by (simp add: transitions)
-  show "\<not> subsumes c vend_nothing vend"
-    apply (simp add: subsumes_def apply_guards_vend_nothing)
-    apply (simp add: guard_vend_nothing outputs_vend_nothing)
-    using outputs_vend_neq_vend_nothing_2
-    by simp
-qed
-
-lemma possible_steps_0_2: "(possible_steps (merge_states 1 2 drinks2) 0 Map.empty ''select'' [Str ''coke'']) = {|(1, select)|}"
-proof
+  assume premise: "length i = 1"
   have set_filter: "(Set.filter
        (\<lambda>((origin, dest), t).
            origin = 0 \<and>
-           Label t = ''select'' \<and> Suc 0 = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [Str ''coke''] 1 (I n)) Map.empty))
-       {((0, 1), select), ((1, 1), vend_nothing), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)}) =  {((0, 1), select)}"
-    apply simp
+           Label t = ''select'' \<and> length i = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state i 1 (I n)) Map.empty))
+       (fset (merge_states 1 2 drinks2))) = {((0, 1), select)}"
+    using premise
+    apply (simp add: Set.filter_def merge_states_1_2)
     apply safe
-       apply simp
-      apply (simp )
-    using arity_vend apply fastforce
-      apply (simp add: transitions )
-     apply auto[1]
-    by (simp add: transitions )
-  have abs_fset: "Abs_fset {((0, 1), select)} = {|((0, 1), select)|}"
-    by (metis fset_inverse fset_simps(1) fset_simps(2))
-  show "possible_steps (merge_states 1 2 drinks2) 0 Map.empty ''select'' [Str ''coke''] |\<subseteq>| {|(1, select)|}"
-    by (simp add: merge_1_2 possible_steps_def ffilter_def set_filter abs_fset )
-  show "{|(1, select)|} |\<subseteq>| possible_steps (merge_states 1 2 drinks2) 0 Map.empty ''select'' [Str ''coke'']"
-    by (simp add: merge_1_2 possible_steps_def ffilter_def set_filter abs_fset )
+    by (simp_all add: transitions)
+  show ?thesis
+    by (simp add: possible_steps_def ffilter_def set_filter)
 qed
 
 lemma select_gets_us_to_1: "gets_us_to 1 (merge_states 1 2 drinks2) 0 Map.empty [(''select'', [Str ''coke''])]"
@@ -481,41 +460,9 @@ lemma select_gets_us_to_1: "gets_us_to 1 (merge_states 1 2 drinks2) 0 Map.empty 
   apply (rule gets_us_to.base)
   by simp
 
-lemma vend_nothing_doesnt_directly_subsume_vend: "\<not>directly_subsumes drinks2 1 vend_nothing vend"
-  apply (simp add: directly_subsumes_def vend_doesnt_subsume_vend_nothing_2 )
-  apply (rule_tac x="[(''select'', [Str ''coke''])]" in exI)
-  apply (rule gets_us_to.step_some)
-   apply (simp add: step_def possible_steps_0)
-  apply (rule gets_us_to.base)
-  by simp
-
 lemma nondeterminsm_merge_1_3: "nondeterminism (merge_states 1 3 (merge_states 1 2 drinks2))"
   apply (simp add: nondeterminism_def merge_1_3_2 nondeterministic_pairs_def )
   using ffilter_all_pairs_2 merge_1_3 by auto
-
-lemma vend_doesnt_directly_subsume_vend_nothing_2: "\<not>directly_subsumes (merge_states 1 2 drinks2) 1 vend_nothing vend"
-  apply (simp add: directly_subsumes_def vend_doesnt_subsume_vend_nothing_2 )
-  apply (rule_tac x="[(''select'', [Str ''coke''])]" in exI)
-  by (simp add: select_gets_us_to_1)
-
-lemma vend_doesnt_directly_subsume_vend_nothing_3: "\<not> directly_subsumes (merge_states 1 2 drinks2) 1 vend vend_nothing"
-proof-
-  show ?thesis
-    apply (simp add: directly_subsumes_def )
-    apply (rule_tac x="[(''select'', [Str ''coke''])]" in exI)
-  proof
-    show "gets_us_to 1 (merge_states 1 2 drinks2) 0 Map.empty [(''select'', [Str ''coke''])]"
-      by (simp add: select_gets_us_to_1)
-    have medial_vend: "medial select_posterior (Guard vend) = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Eq (Num 0)) (Geq (Num 100))\<rbrakk>"
-      apply (rule ext)
-      by (simp add: transitions )
-    show "\<not> subsumes (anterior_context (merge_states 1 2 drinks2) [(''select'', [Str ''coke''])]) vend vend_nothing"
-      apply (simp add: anterior_context_def step_def possible_steps_0_2 )
-      apply (simp add: select_posterior )
-      apply (simp add: subsumes_def )
-      by (simp add: vend_nothing_posterior medial_vend_nothing consistent_select_posterior medial_vend )
-  qed
-qed
 
 lemma good_max: "Max ({(1, (1, 3), vend_nothing, vend), (1, (1, 1), vend_nothing, vend_fail)} -
                {max (1, (1, 3), vend_nothing, vend) (1, (1, 1), vend_nothing, vend_fail)}) = (1::nat, (1::nat, 1::nat), vend_nothing, vend_fail)"
@@ -528,16 +475,16 @@ proof-
     apply (simp )
     using coin_not_vend_fail vend_fail_neq_vend_nothing by auto
   show "\<not> exits_state drinks2 vend_fail 1"
-    apply (simp add: exits_state_def ffilter_def set_filter )
-    by (simp add: bot_fset_def)
+    by (simp add: exits_state_def ffilter_def set_filter )
 qed
+
+lemma medial_r1_r2_true_vend_fail: "medial r1_r2_true (Guard vend_fail) = \<lbrakk>V (R 2) \<mapsto> Lt (Num 100), V (R 1) \<mapsto> Bc True\<rbrakk>"
+    apply (simp add: guard_vend_fail )
+    apply (rule ext)
+    by (simp add: transitions r1_r2_true_def)
 
 lemma posterior_vend_fail: "posterior r1_r2_true vend_fail = \<lbrakk>V (R 2) \<mapsto> cexp.Lt (Num 100), V (R 1) \<mapsto> cexp.Bc True\<rbrakk>"
 proof-
-  have medial_vend_fail: "medial r1_r2_true (Guard vend_fail) = \<lbrakk>V (R 2) \<mapsto> Lt (Num 100), V (R 1) \<mapsto> Bc True\<rbrakk>"
-    apply (simp add: guard_vend_fail )
-    apply (rule ext)
-    by (simp add: transitions)
   have consistent_medial: "consistent \<lbrakk>V (R 2) \<mapsto> cexp.Lt (Num 100), V (R 1) \<mapsto> cexp.Bc True\<rbrakk>"
     unfolding consistent_def
     apply (rule_tac x="<R 2 := Num 0, R 1 := Str ''coke''>" in exI)
@@ -545,51 +492,16 @@ proof-
     using consistent_empty_4 by auto
   show ?thesis
     unfolding posterior_def
-    apply (simp add: medial_vend_fail Let_def consistent_medial )
+    apply (simp add: medial_r1_r2_true_vend_fail Let_def consistent_medial )
     apply (rule ext)
-    by (simp add: transitions remove_input_constraints_def)
+    by (simp add: transitions remove_input_constraints_def r1_r2_true_def)
 qed
 
 lemma posterior_vend_nothing: "posterior r1_r2_true vend_nothing = r1_r2_true"
   apply (rule ext)
   unfolding posterior_def
-  by (simp add: guard_vend_nothing Let_def consistent_r1_r2_true updates_vend_nothing remove_input_constraints_def)
-
-lemma vend_nothing_doesnt_directly_subsume_vend_2: "\<not>directly_subsumes drinks2 2 vend_fail vend_nothing"
-proof-
-  show "\<not> directly_subsumes drinks2 2 vend_fail vend_nothing"
-    apply (simp add: directly_subsumes_def)
-    apply (rule_tac x="[(''select'', [Str ''coke'']), (''coin'', [Num n])]" in exI)
-  proof
-    have consistent_lt_100: "consistent \<lbrakk>V (R 2) \<mapsto> cexp.Lt (Num 100), V (R 1) \<mapsto> cexp.Bc True\<rbrakk>"
-      unfolding consistent_def
-      apply (rule_tac x="<R 2 := Num 0, R 1 := Str ''coke''>" in exI)
-      apply simp
-      using consistent_empty_4 by blast
-    have contra: "\<not>(\<exists>i. cval (\<lbrakk>\<rbrakk> r) i = Some True \<and> cval (\<lbrakk>\<rbrakk> r) i \<noteq> Some True)"
-      by simp
-    show "gets_us_to 2 drinks2 0 Map.empty [(''select'', [Str ''coke'']), (''coin'', [Num n])]"
-      apply (rule gets_us_to.step_some)
-       apply (simp add: step_def possible_steps_0)
-      apply (rule gets_us_to.step_some)
-       apply (simp add: step_def possible_steps_1)
-      apply (rule gets_us_to.base)
-      by simp
-    show "\<not> subsumes (anterior_context drinks2 [(''select'', [Str ''coke'']), (''coin'', [Num n])]) vend_fail vend_nothing"
-      apply (simp add: anterior_context_def step_def possible_steps_0 )
-      apply (simp add: subsumes_def guard_vend_nothing guard_vend_fail )
-      apply (simp add: possible_steps_1 )
-      apply (simp add: outputs_vend_nothing outputs_vend_fail)
-      apply (simp only: select_posterior posterior_coin_first)
-      apply (simp add: posterior_vend_fail )
-      apply (simp add: posterior_vend_nothing consistent_r1_r2_true )
-      apply (simp add: consistent_lt_100 )
-      apply clarify
-      apply (simp add: contra )
-      apply (rule_tac x="Num 100" in exI)
-      by simp
-  qed
-qed
+  apply (simp add: guard_vend_nothing Let_def consistent_r1_r2_true updates_vend_nothing remove_input_constraints_def)
+  by (simp add: r1_r2_true_def)
 
 lemma finsert_vend_nothing: "finsert vend_nothing ({|vend_nothing, coin, vend_fail|} |-| {|vend_fail|}) = {|coin, vend_nothing|}"
   apply (simp add: transitions)
@@ -883,86 +795,282 @@ lemma coin_takes_us_away: "gets_us_to 1 drinks2 1 <R 1 := hd bb, R 2 := Num 0> (
   apply simp
   by (simp add: step_def possible_steps_1)
 
-lemma test: "\<And>bb a b.
-       gets_us_to 1 drinks2 1 <R 1 := hd bb, R 2 := Num 0> ((''vend'', []) # list) \<Longrightarrow>
-       length bb = 1 \<Longrightarrow>
-       a = ''vend'' \<and> b = [] \<Longrightarrow>
-       posterior_sequence select_posterior drinks2 1 <R 1 := hd bb, R 2 := Num 0> list = select_posterior"
-proof (induct list)
-case Nil
-  then show ?case by simp
-next
-  case (Cons x xs)
-  then show ?case
-    apply clarify
-    apply (case_tac "x = (''vend'', [])")
-     apply (simp only: vend_nothing_does_nothing posterior_vend_nothing_cons)
-    apply (case_tac "fst x = ''coin'' \<and> length (snd x) = 1")
-     apply (simp only: vend_nothing_does_nothing)
-     apply simp
-    using coin_takes_us_away
-     apply blast
-    apply simp
-    by (simp add: drinks2_1_invalid step_def)
-qed
-
-lemma vend_fail_directly_subsumes_vend_nothing_1: "(directly_subsumes drinks2 1 vend_fail vend_nothing)"
-proof-
-  have empty: "\<not>gets_us_to 1 drinks2 0 Map.empty []"
-    apply safe
-    apply (rule gets_us_to.cases)
-    by auto
-  have gets_us_to_1: "\<forall>p. gets_us_to 1 drinks2 0 Map.empty p \<longrightarrow> (anterior_context drinks2 p) = select_posterior"
-    apply (rule allI)
-    apply (case_tac p)
-     apply (simp add: empty)
-    apply simp
-    apply (case_tac a)
-    apply clarify
-    apply (case_tac "aa = ''select'' \<and> length ba = 1")
-     apply (rule gets_us_to.cases)
-        apply simp
-       apply simp
-    defer
-      apply simp
-     apply (rule gets_us_to.cases)
-        apply simp
-       apply simp
-      defer
-      apply simp
-     apply clarify
-     apply (simp add: step_0 anterior_context_def)
-    defer
-     apply clarify
-     apply (simp add: step_def)
-    apply (metis (no_types, lifting) drinks2_singleton_0 fst_conv option.simps(3) snd_conv)
-    apply clarify
-    apply (simp add: select_posterior)
-    apply (case_tac t)
-     apply simp
-    apply simp
-    apply clarify
-    apply simp
-    apply (case_tac "a = ''coin'' \<and> length b = 1")
-     defer
-    apply (case_tac "a = ''vend'' \<and> b = []")
-      defer
-      apply (simp add: step_def)
-    using drinks2_1_invalid
-      apply auto[1]
-     apply (simp add: step_def possible_steps_1)
-     apply clarify
-     apply (simp add: coin_updates_1 posterior_coin_first no_more_coins)
-     apply (simp add: step_def drinks2_vend_insufficient apply_updates_vend_nothing vend_nothing_posterior)
-    using test
-    by auto
-  show ?thesis
-    apply (simp add: directly_subsumes_def)
-    by (simp add: gets_us_to_1 vend_fail_subsumes_vend_nothing)
-qed
-
 definition basically_drinks :: transition_matrix where
   "basically_drinks = {|((1, 1), vend_fail), ((0, 1), select), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)|}"
+
+lemma possible_steps_merge_coin: "length i = 1 \<Longrightarrow> possible_steps (merge_states 1 2 drinks2) 1 r ''coin'' i = {|(1, coin)|}"
+proof-
+  assume premise: "length i = 1"
+  have set_filter: "Set.filter
+       (\<lambda>((origin, dest), t).
+           origin = 1 \<and>
+           Label t = ''coin'' \<and>
+           length i = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))))
+       (fset (merge_states 1 2 drinks2)) = {((1, 1), coin)}"
+    using premise
+    apply (simp add: merge_states_1_2 Set.filter_def)
+    apply safe
+    by (simp_all add: transitions)
+  show ?thesis
+    by (simp add: possible_steps_def ffilter_def set_filter)
+qed
+
+lemma step_merge_1_2_select: "(aa = ''select'' \<and> length b = 1) \<Longrightarrow> step (merge_states 1 2 drinks2) 0 Map.empty aa b = Some (select, 1, [], <R 1 := hd b, R 2 := Num 0>)"
+proof-
+  assume premise: "(aa = ''select'' \<and> length b = 1)"
+  show ?thesis
+    using premise
+    apply (simp add: step_def possible_steps_0_2)
+    apply (simp add: select_def)
+    apply (rule ext)
+    by (simp add: hd_input2state)
+qed
+
+lemma step_merge_1_2_0_invalid: "\<not> (aa = ''select'' \<and> length b = 1) \<Longrightarrow> step (merge_states 1 2 drinks2) 0 Map.empty aa b = None"
+proof-
+  assume premise: "\<not> (aa = ''select'' \<and> length b = 1)"
+  have set_filter: "Set.filter
+         (\<lambda>((origin, dest), t).
+             origin = 0 \<and> Label t = aa \<and> length b = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state b 1 (I n)) Map.empty))
+         (fset (merge_states 1 2 drinks2)) = {}"
+    using premise
+    apply (simp add: Set.filter_def merge_states_1_2)
+    apply safe
+    by (simp_all add: transitions)
+  show ?thesis
+    by (simp add: step_def possible_steps_def ffilter_def set_filter)
+qed
+
+lemma select_first: "\<not> (aa = ''select'' \<and> length b = 1) \<Longrightarrow> \<not>gets_us_to 1 drinks2 0 Map.empty ((aa, b) # p)"
+proof-
+  assume premise: "\<not> (aa = ''select'' \<and> length b = 1)"
+  show ?thesis
+    apply safe
+    apply (rule gets_us_to.cases)
+       apply simp
+      apply simp
+     apply clarify
+    apply (simp add: step_def)
+    using premise drinks2_0_invalid
+    by auto
+qed
+
+lemma select_updates: "length b = 1 \<Longrightarrow> (EFSM.apply_updates (Updates select) (case_vname (\<lambda>n. input2state b 1 (I n)) Map.empty) Map.empty) = <R 1 := hd b, R 2 := Num 0>"
+  apply (rule ext)
+  by (simp add: select_def hd_input2state)
+
+lemma step_drinks_2: "step drinks2 0 Map.empty aa ba = Some (uw, s', ux, r') \<Longrightarrow> (uw, s', ux, r') = (select, 1, [], <R 1 := hd ba, R 2 := Num 0>)"
+  apply (simp add: step_def)
+  apply (case_tac "aa = ''select'' \<and> length ba = 1")
+   apply (simp add: possible_steps_0)
+   apply clarify
+   apply (simp add: select_def)
+   apply (rule ext)
+   apply (simp add: hd_input2state)
+  by (simp add: drinks2_0_invalid)
+
+lemma update_simp: "(\<lambda>x. if x = R 1
+            then aval (snd (R 1, V (R 1))) (case_vname Map.empty (\<lambda>n. if n = 2 then Some (Num 0) else if R n = R 1 then Some d else None))
+            else EFSM.apply_updates [(R 2, V (R 2))]
+                  (case_vname Map.empty (\<lambda>n. if n = 2 then Some (Num 0) else if R n = R 1 then Some d else None))
+                  (\<lambda>a. if a = R 2 then Some (Num 0) else if a = R 1 then Some d else None) x) = <R 1 := d, R 2 := Num 0>"
+  apply (rule ext)
+  by simp
+
+lemma possible_steps_merge_1_2_vend: "possible_steps (merge_states 1 2 drinks2) 1 (\<lambda>a. if a = R 2 then Some (Num 0) else if a = R 1 then Some d else None) ''vend'' [] = {|(1, vend_fail), (1, vend_nothing)|}" 
+proof-
+  have set_filter: "(Set.filter
+       (\<lambda>((origin, dest), t).
+           origin = 1 \<and>
+           Label t = ''vend'' \<and>
+           Arity t = 0 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. (\<lambda>a. if a = R 2 then Some (Num 0) else if a = R 1 then Some d else None) (R n))))
+       (fset (merge_states 1 2 drinks2))) = {((1, 1), vend_nothing), ((1, 1), vend_fail)}"
+    apply (simp add: Set.filter_def merge_states_1_2)
+    apply safe
+    by (simp_all add: transitions)
+  have abs_fset: "Abs_fset {((1, 1), vend_nothing), ((1, 1), vend_fail)} =  {|((1, 1), vend_nothing), ((1, 1), vend_fail)|}"
+    by (metis finsert.rep_eq fset_inverse fset_simps(1))
+  show ?thesis
+    apply (simp add: possible_steps_def ffilter_def set_filter abs_fset)
+    by auto
+qed
+
+lemma step_merge_1_2_vend_nothing: "\<nexists>n. ra (R 2) = Some (Num n) \<Longrightarrow>
+       step (merge_states 1 2 drinks2) 1 ra ''vend'' [] = Some (vend_nothing, 1, [], ra)"
+proof-
+  assume premise: "\<nexists>n. ra (R 2) = Some (Num n)"
+  have set_filter: "Set.filter
+          (\<lambda>((origin, dest), t).
+              origin = 1 \<and> Label t = ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname Map.empty (\<lambda>n. ra (R n))))
+          (fset (merge_states 1 2 drinks2)) = {((1, 1), vend_nothing)}"
+    using premise
+    apply (simp add: Set.filter_def merge_states_1_2)
+    apply safe
+           apply (simp_all add: transitions)
+      apply (metis MaybeBoolInt.elims option.simps(3))
+     apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (ra (R 2))")
+      apply simp
+     apply simp
+     apply (metis MaybeBoolInt.elims option.simps(3))
+    apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (ra (R 2))")
+     apply simp
+    apply simp
+    by (metis MaybeBoolInt.elims option.simps(3))
+  show ?thesis
+    apply (simp add: step_def possible_steps_def ffilter_def set_filter)
+    apply (simp add: set_filter)
+    apply (simp add: vend_nothing_def)
+    apply (rule ext)
+    by simp
+qed
+
+lemma step_drinks2_vend_fail: "step drinks2 1 ra ''vend'' [] = Some (vend_nothing, 1, [], ra)"
+  apply (simp add: step_def drinks2_vend_insufficient)
+  apply (simp add: vend_nothing_def)
+  apply (rule ext)
+  by simp
+
+lemma step_merge_1_2_vend: "d' (R 2) = Some (Num x1) \<Longrightarrow>
+       x1 < 100 \<Longrightarrow>
+       step (merge_states 1 2 drinks2) 1 d' ''vend'' [] = None"
+proof-
+  assume premise1: "d' (R 2) = Some (Num x1)"
+  assume premise2: "x1 < 100"
+  have set_filter: "Set.filter
+               (\<lambda>((origin, dest), t).
+                   origin = 1 \<and>
+                   Label t = ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. d' (R n))))
+               (fset (merge_states 1 2 drinks2)) = {((1, 1), vend_fail), ((1, 1), vend_nothing)}"
+    using premise1 premise2
+    apply (simp add: Set.filter_def merge_states_1_2)
+    apply safe
+    by (simp_all add: transitions)
+  have abs_fset: "Abs_fset {((1, 1), vend_fail), ((1, 1), vend_nothing)} = {|((1, 1), vend_fail), ((1, 1), vend_nothing)|}"
+    by (metis finsert.rep_eq fset_inverse fset_simps(1))
+  show ?thesis
+    apply (simp add: step_def possible_steps_def ffilter_def set_filter abs_fset fis_singleton_def is_singleton_def)
+    by (simp add: transitions)
+qed
+
+lemma step_merge_1_2_vend_2: "d' (R 2) = Some (Num n) \<Longrightarrow> n \<ge> 100 \<Longrightarrow> step (merge_states 1 2 drinks2) 1 d' ''vend'' [] = None"
+proof-
+  assume premise1: "d' (R 2) = Some (Num n)"
+  assume premise2: "n \<ge> 100"
+  have set_filter: "Set.filter
+       (\<lambda>((origin, dest), t).
+           origin = 1 \<and> Label t = ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. d' (R n))))
+       (fset (merge_states 1 2 drinks2)) = {((1, 3), vend), ((1, 1), vend_nothing)}"
+    using premise1 premise2
+    apply (simp add: Set.filter_def merge_states_1_2)
+    apply safe
+    by (simp_all add: transitions)
+  have abs_fset: "Abs_fset {((1, 3), vend), ((1, 1), vend_nothing)} = {|((1, 3), vend), ((1, 1), vend_nothing)|}"
+    by (metis finsert.rep_eq fset_inverse fset_simps(1))
+  show ?thesis
+    by (simp add: step_def possible_steps_def ffilter_def set_filter abs_fset fis_singleton_def is_singleton_def)
+qed
+
+lemma gets_us_to_aux: "\<forall>r. gets_us_to 1 drinks2 1 r p \<longrightarrow>
+       accepts drinks2 1 r p \<longrightarrow>
+       posterior_sequence select_posterior (merge_states 1 2 drinks2) 1 r p = select_posterior"
+proof(induct p)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a p)
+  then show ?case
+    apply simp
+    apply clarify
+    apply (rule gets_us_to.cases)
+       apply simp
+      apply simp
+     defer
+     apply clarify
+     apply (simp add: no_step_none)
+    apply clarify
+    apply simp
+
+    apply (case_tac "aa = ''vend'' \<and> b = []")
+     apply simp
+     apply (rule accepts.cases)
+       apply simp
+      apply simp
+     apply simp
+     apply clarify
+     apply (simp add: step_drinks2_vend_fail)
+     apply clarify
+     apply simp
+     apply (case_tac "d' (R 2)")
+      apply (simp add: step_merge_1_2_vend_nothing vend_nothing_posterior)
+
+     apply (case_tac aa)
+      defer
+      apply (simp add: step_merge_1_2_vend_nothing vend_nothing_posterior)
+
+     apply (case_tac "aa = ''coin'' \<and> length b = 1")
+      apply (rule accepts.cases)
+        apply simp
+       apply simp
+      apply simp
+      apply (simp add: step_def)
+      apply (simp add: possible_steps_merge_coin possible_steps_1 posterior_coin_first)
+      apply clarify
+      apply simp
+      apply (simp add: possible_steps_1)
+      apply clarify
+      apply simp
+    using no_route_from_2_to_1 apply blast
+     apply (simp add: step_def drinks2_1_invalid)
+    apply clarify
+    apply simp
+    apply (case_tac "x1 < 100")
+     apply (simp add: step_merge_1_2_vend)
+    by (simp add: step_merge_1_2_vend_2)
+qed
+
+lemma directly_subsumes_aux: "accepts_trace drinks2 p \<Longrightarrow> gets_us_to 1 drinks2 0 Map.empty p \<Longrightarrow>
+anterior_context (merge_states 1 2 drinks2) p = select_posterior"
+proof(induct p)
+  case Nil
+  then show ?case
+    by (simp add: no_further_steps)
+next
+  case (Cons a p)
+  then show ?case
+    apply (case_tac a)
+    apply simp
+    apply (rule gets_us_to.cases)
+       apply simp
+      apply simp
+     apply clarify
+     apply simp
+     apply (case_tac "step drinks2 0 Map.empty aa ba = Some (select, 1, [], <R 1 := hd ba, R 2 := Num 0>)")
+      prefer 2
+    using step_drinks_2
+      apply simp
+
+      apply simp
+     apply clarify
+    apply (case_tac "aa = ''select'' \<and> length ba = 1")
+      apply (simp add: anterior_context_def step_merge_1_2_select select_posterior)
+      apply (simp add: accepts_trace_def)
+      apply (rule accepts.cases)
+        apply simp
+       apply simp
+      apply clarify
+      apply simp
+      apply clarify
+      apply simp
+      defer
+     apply (simp add: step_def drinks2_0_invalid)
+     apply clarify
+     apply simp
+    by (simp add: gets_us_to_aux)
+qed
+
+lemma vend_fail_directly_subsumes_vend_nothing: "directly_subsumes drinks2 (merge_states 1 2 drinks2) 1 vend_fail vend_nothing"
+  by (simp add: directly_subsumes_def directly_subsumes_aux vend_fail_subsumes_vend_nothing)
 
 lemma merge_transitions: "merge_transitions drinks2 (merge_states 1 2 drinks2) 1 2 1 1 1 vend_nothing vend_fail null_generator null_modifier a = Some basically_drinks"
 proof-
@@ -976,30 +1084,101 @@ proof-
  {|((0, 1), select), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)|}"
     by (metis finsert.rep_eq fset_inverse fset_simps(1))
   show ?thesis
-    unfolding merge_transitions_def easy_merge_def
-    apply (simp add: vend_fail_directly_subsumes_vend_nothing_1)
-    apply (simp add: merge_1_2 replace_transition_def ffilter_def)
+    apply (simp add: merge_transitions_def easy_merge_def)
+    apply (simp add: vend_fail_directly_subsumes_vend_nothing)
+    apply (simp add: merge_states_1_2 replace_transition_def ffilter_def)
     by (simp add: set_filter abs_fset basically_drinks_def)
 qed
 
 lemma vend_fail_exits_1: "exits_state (merge_states 1 2 drinks2) vend_fail 1"
 proof-
   show ?thesis
-    apply (simp add: exits_state_def merge_1_2)
+    apply (simp add: exits_state_def merge_states_1_2)
     by auto
 qed
 
-lemma merge_2_1_2: "merge_2 drinks2 1 2 null_generator null_modifier = Some basically_drinks"
+lemma step_merged_2_select: "step (merge_states 1 3 (merge_states 1 2 drinks2)) 0 Map.empty ''select'' [d] = Some (select, 1, [], <R 1 := d, R 2 := Num 0>)"
 proof-
-  have nondeterminism_merge_1_2: "nondeterminism (merge_states 1 2 drinks2)"
+  have set_filter: "Set.filter
+          (\<lambda>((origin, dest), t).
+              origin = 0 \<and>
+              Label t = ''select'' \<and>
+              Suc 0 = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. if n = 1 then Some d else input2state [] (1 + 1) (I n)) Map.empty))
+          (fset (merge_states 1 3 (merge_states 1 2 drinks2))) = {((0, 1), select)}"
+    apply (simp add: Set.filter_def merge_1_3_2)
+    apply safe
+    by (simp_all add: transitions)
+  show ?thesis
+    apply (simp add: step_def possible_steps_def ffilter_def set_filter)
+    apply (simp add: set_filter)
+    apply (simp add: select_def)
+    apply (rule ext)
+    by simp
+qed
+
+lemma satisfies_must_have_r2_0: "satisfies_context d \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> \<Longrightarrow> d (R 2) = Some (Num 0)"
+proof-
+  have contrapositive: "\<not> d (R 2) = Some (Num 0) \<Longrightarrow> \<not>satisfies_context d \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk>"
+    apply (simp add: satisfies_context_def datastate2context_def consistent_def)
+    apply (rule allI)
+    apply (rule_tac x="V (R 2)" in exI)
+    apply simp
+    apply (case_tac "d (R 2)")
+     apply simp
+    by simp
+  show "satisfies_context d \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> \<Longrightarrow> d (R 2) = Some (Num 0)"
+    using contrapositive
+    by auto
+qed
+
+lemma inconsistent_medial_vend: "\<not>consistent \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> And (cexp.Eq (Num 0)) (Geq (Num 100))\<rbrakk>"
+  apply (simp add: consistent_def)
+  apply clarify
+  apply (rule_tac x="V (R 2)" in exI)
+  apply simp
+  apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
+   apply simp
+  apply simp
+  by auto
+
+lemma posterior_vend_false: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> And (cexp.Eq (Num 0)) (Geq (Num 100))\<rbrakk> vend_nothing = (\<lambda>x. Bc False)"
+  apply (simp add: posterior_def)
+  by (simp add: vend_nothing_def Let_def inconsistent_medial_vend)
+
+lemma no_subsumption_vend_nothing_vend: "\<not>subsumes c vend_nothing vend"
+  by (simp add: subsumes_def transitions)
+
+lemma vend_nothing_doesn_directly_subsume_vend: "\<not> directly_subsumes (merge_states 1 2 drinks2) (merge_states 1 3 (merge_states 1 2 drinks2)) 1 vend_nothing vend"
+  apply (simp add: directly_subsumes_def subsumes_def transitions accepts_trace_def)
+  apply (rule_tac x="[(''select'', [d])]" in exI)
+  apply standard
+   apply (rule accepts.step)
+    apply (simp add: step_merge_1_2_select)
+   apply (simp add: accepts.base)
+  apply (rule gets_us_to.step_some)
+    apply (simp add: step_merge_1_2_select)
+  by (simp add: gets_us_to.base)
+
+lemma vend_doesn_directly_subsume_vend_nothing: "\<not> directly_subsumes (merge_states 1 2 drinks2) (merge_states 1 3 (merge_states 1 2 drinks2)) 1 vend vend_nothing"
+  apply (simp add: directly_subsumes_def subsumes_def transitions accepts_trace_def)
+  apply (rule_tac x="[(''select'', [d])]" in exI)
+  apply standard
+   apply (rule accepts.step)
+    apply (simp add: step_merge_1_2_select)
+   apply (simp add: accepts.base)
+  apply (rule gets_us_to.step_some)
+    apply (simp add: step_merge_1_2_select)
+  by (simp add: gets_us_to.base)
+
+lemma merge_1_2: "merge drinks2 1 2 null_generator null_modifier = Some basically_drinks"
+proof-
+  have nondeterminism_merge_states_1_2: "nondeterminism (merge_states 1 2 drinks2)"
     unfolding nondeterminism_def
     using vend_vend_nothing_nondeterminism by auto
   have merge_vend_nothing_vend: "\<forall>a. merge_transitions (merge_states 1 2 drinks2) (merge_states 1 3 (merge_states 1 2 drinks2)) 1 1 1 1 1 vend_nothing
              vend null_generator null_modifier a = None"
-    apply (simp only: merge_1_3_2)
-    apply (simp only: merge_1_2)
-    using merge_1_2 merge_transitions_def vend_doesnt_directly_subsume_vend_nothing_2 vend_doesnt_directly_subsume_vend_nothing_3
-    by (simp add: null_generator_def null_modifier_def easy_merge_def)
+    apply (simp add: merge_transitions_def null_generator_def null_modifier_def easy_merge_def)
+    by (simp add: vend_nothing_doesn_directly_subsume_vend vend_doesn_directly_subsume_vend_nothing)
   have vend_fail_lt_vend: "vend_fail < vend"
     using vend_fail_leq_vend vend_neq_vend_fail by auto
   have vend_fail_lt_vend_2: "\<not>vend \<le> vend_fail"
@@ -1013,7 +1192,7 @@ proof-
     unfolding easy_merge_def
     apply (simp add: Let_def nondeterminisitic_pairs nondeterminism_def max_def)
     apply (simp add: nondeterministic_pairs_1_3 max_def)
-    apply (simp add: vend_nothing_exits_1_2 vend_exits_1 nondeterminsm_merge_1_3 nondeterminism_merge_1_2 )
+    apply (simp add: vend_nothing_exits_1_2 vend_exits_1 nondeterminsm_merge_1_3 nondeterminism_merge_states_1_2 )
     apply (simp add: merge_vend_nothing_vend max_def vend_fail_exits_1 vend_fail_lt_vend_2)
     by (simp add: merge_transitions)
 qed
@@ -1083,8 +1262,7 @@ proof-
       apply safe
       by (simp_all add: transitions)
     show ?thesis
-      apply (simp add: outgoing_transitions_def drinks2_def ffilter_def set_filter)
-      by (simp add: bot_fset_def)
+      by (simp add: outgoing_transitions_def drinks2_def ffilter_def set_filter)
   qed
   have naive_score_1_2: "naive_score {|coin, vend_nothing|} {|coin, vend_fail, vend|} = 3"
   proof-
@@ -1165,8 +1343,7 @@ proof-
       apply (simp add: Set.filter_def)
       by auto
     show ?thesis
-      apply (simp add: outgoing_transitions_def basically_drinks_def ffilter_def set_filter)
-      by (simp add: bot_fset_def)
+      by (simp add: outgoing_transitions_def basically_drinks_def ffilter_def set_filter)
   qed
   have outgoing_transitions_0: "outgoing_transitions 0 basically_drinks = {|select|}"
   proof-
@@ -1207,7 +1384,7 @@ qed
 lemma "infer drinks2 naive_score null_generator null_modifier = basically_drinks"
 proof-
   have first_step: "inference_step drinks2 (rev (sorted_list_of_fset (score drinks2 naive_score))) null_generator null_modifier = Some basically_drinks"
-    by (simp add: scoring merge_2_1_2 del: merge_2.simps)
+    by (simp add: scoring merge_1_2 del: merge.simps)
   have next_step: "inference_step basically_drinks (rev (sorted_list_of_fset (score basically_drinks naive_score))) null_generator null_modifier = None"
     by (simp add: scoring_2)
   show ?thesis

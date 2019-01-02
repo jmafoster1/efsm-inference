@@ -107,14 +107,14 @@ definition pdf_other :: "property" where
   "pdf_other s \<equiv> (let (label, inputs) = event (shd s) in label=''pdf'' \<and> hd inputs = Str ''otherID'')"
 
 definition notDetailedPDF :: "property" where
-  "notDetailedPDF s \<equiv> (hd (output (shd s)) \<noteq> Str ''detailedPDF'')"
+  "notDetailedPDF s \<equiv> (hd (output (shd s)) \<noteq> Some (Str ''detailedPDF''))"
 
 (*      G(login_free      =>  X(   G(    pdf_other  =>  X(notDetailedPDF))))*)
 lemma neverDetailed: "(alw login_free impl   (nxt (alw (pdf_other impl (nxt notDetailedPDF))))) 
      (watch linkedIn i)"
   oops
 
-lemma neverDetailed_full: "(alw (\<lambda>s. event (shd s) = (''login'',  [Str ''free''])) impl   (nxt (alw ((\<lambda>s. (let (label, inputs) = event (shd s) in label=''pdf'' \<and> hd inputs = Str ''otherID'')) impl (nxt (\<lambda>s. hd (output (shd s)) \<noteq> Str ''detailedPDF'')))))) 
+lemma neverDetailed_full: "(alw (\<lambda>s. event (shd s) = (''login'',  [Str ''free''])) impl   (nxt (alw ((\<lambda>s. (let (label, inputs) = event (shd s) in label=''pdf'' \<and> hd inputs = Str ''otherID'')) impl (nxt (\<lambda>s. hd (output (shd s)) \<noteq> Some (Str ''detailedPDF''))))))) 
      (watch linkedIn i)"
   oops
 

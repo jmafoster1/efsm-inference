@@ -1,5 +1,5 @@
 theory Inference
-  imports "../EFSM" "../Contexts" Transition_Ordering
+  imports "../Nondeterministic_EFSM" "../EFSM" "../Contexts" Transition_Ordering
           "~~/src/HOL/Library/Product_Lexorder"
 begin
 
@@ -30,12 +30,10 @@ definition fprod :: "'a fset \<Rightarrow> 'b fset \<Rightarrow> ('a \<times> 'b
   "fprod a b = Abs_fset ((fset a) \<times> (fset b))"
 
 lemma fprod_empty[simp]: "\<forall>a. fprod {||} a = {||}"
-  apply (simp add: fprod_def)
-  by (simp add: bot_fset_def)
+  by (simp add: fprod_def)
 
 lemma fprod_empty_2[simp]: "\<forall>a. fprod a {||} = {||}"
-  apply (simp add: fprod_def ffUnion_def)
-  by (simp add: bot_fset_def)
+  by (simp add: fprod_def ffUnion_def)
 
 (* Get every possible ((origin, dest), transition) pair, filter then for nondeterminism, then put them in the right format *)
 definition nondeterministic_pairs :: "transition_matrix \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset" where
@@ -64,7 +62,7 @@ primrec make_outputs :: "value list \<Rightarrow> output_function list" where
 fun maxS :: "transition_matrix \<Rightarrow> nat" where
   "maxS t = (if t = {||} then 0 else fMax ((fimage (\<lambda>((origin, dest), t). origin) t) |\<union>| (fimage (\<lambda>((origin, dest), t). dest) t)))"
 
-fun make_branch :: "transition_matrix \<Rightarrow> nat  \<Rightarrow> datastate \<Rightarrow> (char list \<times> value list \<times> value list) list \<Rightarrow> transition_matrix" where
+fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> (char list \<times> value list \<times> value list) list \<Rightarrow> transition_matrix" where
   "make_branch e _ _ [] = e" |
   "make_branch e s r ((label, inputs, outputs)#t) =
     (case (step e s r label inputs) of
@@ -76,36 +74,32 @@ type_synonym log = "(char list \<times> value list \<times> value list) list lis
 
 primrec make_pta :: "log \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
   "make_pta [] e = e" |
-  "make_pta (h#t) e = (make_branch e 0 <> h)|\<union>|(make_pta t e)"
+  "make_pta (h#t) e = (make_pta t (make_branch e 0 <> h))"
 
 type_synonym generator_function = "transition_matrix \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition option"
 
 definition null_generator :: generator_function where
   "null_generator a b c d e = None"
 
-type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition_matrix \<Rightarrow> (transition_matrix \<times> (nat \<Rightarrow> nat)) option"
+type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> (transition_matrix \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option"
 
 definition null_modifier :: update_modifier where
-  "null_modifier a b c d = None"
+  "null_modifier a b c d e = None"
 
 definition easy_merge :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> generator_function \<Rightarrow> transition_matrix option" where
   "easy_merge oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 t2 maker = (
     \<comment> \<open> If t1 directly subsumes t2 then replace t2 with t1 \<close>
-    if directly_subsumes oldEFSM t1FromOld t2 t1 then Some (replace_transition newEFSM newFrom t2NewTo t1 t2) else
+    if directly_subsumes oldEFSM newEFSM t1FromOld t2 t1 then Some (replace_transition newEFSM newFrom t2NewTo t1 t2) else
     \<comment> \<open> If t2 directly subsumes t1 then replace t1 with t2 \<close>
-    if directly_subsumes oldEFSM t2FromOld t1 t2 then Some (replace_transition newEFSM newFrom t1NewTo t2 t1) else
+    if directly_subsumes oldEFSM newEFSM t2FromOld t1 t2 then Some (replace_transition newEFSM newFrom t1NewTo t2 t1) else
     \<comment> \<open> Can we make a transition which subsumes both? \<close>
     (case maker oldEFSM t1FromOld t1 t2FromOld t2 of
     Some t' \<Rightarrow>
-    if directly_subsumes oldEFSM t2FromOld t1 t' \<and> directly_subsumes oldEFSM t1FromOld t2 t' then
+    if directly_subsumes oldEFSM newEFSM t2FromOld t1 t' \<and> directly_subsumes oldEFSM newEFSM t1FromOld t2 t' then
        Some (replace_transition (replace_transition newEFSM newFrom t1NewTo t2 t') newFrom t2NewTo t1 t') else
     None |
     None \<Rightarrow> None)
   )"
-
-definition same_structure :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> bool" where
-  "same_structure t1 t2 \<equiv> (\<forall>s1 s2 t. ((s1, s2), t) |\<in>| t1 \<longrightarrow> (\<exists>t'. ((s1, s2), t') |\<in>| t2 \<and> directly_subsumes t1 s1 t' t)) \<and>
-                          (\<forall>s1 s2 t. ((s1, s2), t) |\<in>| t2 \<longrightarrow> (\<exists>t'. ((s1, s2), t') |\<in>| t1 \<and> directly_subsumes t1 s1 t' t))"
 
 definition merge_transitions :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> bool \<Rightarrow> transition_matrix option" where
   "merge_transitions oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 t2 maker modifier modify = (
@@ -114,9 +108,13 @@ definition merge_transitions :: "transition_matrix \<Rightarrow> transition_matr
       \<comment> \<open> Can we modify the updates such that subsumption can occur? \<close>
       None \<Rightarrow> (
         if modify then
-          (case modifier t1 t2 newFrom newEFSM of
+          (case modifier t1 t2 newFrom newEFSM oldEFSM of
             None \<Rightarrow> None |
-            Some (t', H) \<Rightarrow> easy_merge t' t' (H newFrom) (H newFrom) (H newFrom) (H t1NewTo) (H t2NewTo) t1 t2 maker
+            Some (t', H\<^sub>n\<^sub>e\<^sub>w, H\<^sub>o\<^sub>l\<^sub>d) \<Rightarrow> (
+              if nondeterministic_simulates t' oldEFSM H\<^sub>o\<^sub>l\<^sub>d then
+                easy_merge oldEFSM t' t1FromOld t2FromOld (H\<^sub>n\<^sub>e\<^sub>w newFrom) (H\<^sub>n\<^sub>e\<^sub>w t1NewTo) (H\<^sub>n\<^sub>e\<^sub>w t2NewTo) t1 t2 maker
+              else None
+            )
           )
         else None
       )
@@ -132,12 +130,12 @@ definition score :: "transition_matrix \<Rightarrow> strategy \<Rightarrow> scor
   "score t rank = fimage (\<lambda>(s1, s2). (rank (outgoing_transitions s1 t) (outgoing_transitions s2 t), (s1, s2))) (ffilter (\<lambda>(x, y). x < y) (all_pairs (S t)))"
 
 function resolve_nondeterminism :: "(nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition_matrix \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix option" and
-                        merge_2 :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix option" where
+                        merge :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix option" where
   "resolve_nondeterminism s e s1 s2 t g m = (if s = {||} then None else (let (from, (to1, to2), (t1, t2)) = fMax s in
-                        case merge_2 t to1 to2 g m of None \<Rightarrow> resolve_nondeterminism (s - {|fMax s|}) e s1 s2 t g m |
+                        case merge t to1 to2 g m of None \<Rightarrow> resolve_nondeterminism (s - {|fMax s|}) e s1 s2 t g m |
                                     Some t \<Rightarrow> merge_transitions e t (if exits_state e t1 s1 then s1 else s2) (if exits_state e t2 s1 then s1 else s2) from to1 to2 t1 t2 g m True))" |
 
-"merge_2 e s1 s2 g m = (if s1 = s2 then Some (e) else (let t' = (merge_states s1 s2 (e)) in
+"merge e s1 s2 g m = (if s1 = s2 then Some (e) else (let t' = (merge_states s1 s2 (e)) in
                        \<comment> \<open> Have we got any nondeterminism? \<close>
                        (if \<not> nondeterminism t' then
                          \<comment> \<open> If not then we're good to go \<close>
@@ -152,11 +150,13 @@ function resolve_nondeterminism :: "(nat \<times> (nat \<times> nat) \<times> (t
 termination
   sorry
 
+(* export_code resolve_nondeterminism in "Scala" *)
+
 fun inference_step :: "transition_matrix \<Rightarrow> (nat \<times> nat \<times> nat) list \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix option" where
   "inference_step _ [] _ _ = None" |
   "inference_step T ((s, s1, s2)#t) g m =
                                 (if s > 0 then
-                                   case merge_2 T s1 s2 g m of
+                                   case merge T s1 s2 g m of
                                      Some new \<Rightarrow> Some new |
                                      None \<Rightarrow> inference_step T t g m
                                  else None)"

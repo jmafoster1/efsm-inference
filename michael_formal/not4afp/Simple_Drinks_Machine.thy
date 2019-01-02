@@ -164,8 +164,7 @@ proof-
      apply (metis One_nat_def input2state.simps(2) length_0_conv length_Suc_conv option.sel)
     by (metis One_nat_def input2state.simps(2) length_0_conv length_Suc_conv option.inject)
   show "\<not> (aa = ''coin'' \<and> b = [Num 50]) \<Longrightarrow> \<not> (aa = ''vend'' \<and> b = []) \<Longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 1 r aa b = {||}"
-    apply (simp add: possible_steps_def ffilter_def set_filter)
-    by (simp add: bot_fset.abs_eq)
+    by (simp add: possible_steps_def ffilter_def set_filter)
 qed
 
 lemma next_step_1: "step Simple_Drinks_Machine.drinks2 1 r aa b = Some (uw, s', ux, r') \<Longrightarrow> s' = 1 \<or> s' = 2"
@@ -205,8 +204,7 @@ next
        (fset Simple_Drinks_Machine.drinks2)) = {}"
     by (simp add: drinks2_def Set.filter_def)
   have possible_steps: "\<forall>ra aa b. possible_steps Simple_Drinks_Machine.drinks2 3 ra aa b = {||}"
-    apply (simp add: possible_steps_def ffilter_def set_filter)
-    by (simp add: bot_fset.abs_eq)
+    by (simp add: possible_steps_def ffilter_def set_filter)
   have step: "\<forall>ra aa b. step Simple_Drinks_Machine.drinks2 3 ra aa b = None"
     by (simp add: step_def possible_steps)
   case (Cons a t)
@@ -256,8 +254,7 @@ proof-
       by (metis MaybeBoolInt.elims option.simps(3))
     show ?thesis
       using premise
-      apply (simp add: possible_steps_def ffilter_def set_filter)
-      by (simp add: bot_fset_def)
+      by (simp add: possible_steps_def ffilter_def set_filter)
   qed
   have set_filter_invalid: "\<not> (aa = ''coin'' \<and> length b = 1) \<Longrightarrow> \<not> (aa = ''vend'' \<and> b = []) \<Longrightarrow> (Set.filter
        (\<lambda>((origin, dest), t).
@@ -268,8 +265,7 @@ proof-
     by (simp_all add: transitions)
   have possible_steps_invalid: "\<not> (aa = ''coin'' \<and> length b = 1) \<Longrightarrow> \<not> (aa = ''vend'' \<and> b = []) \<Longrightarrow>
                       possible_steps Simple_Drinks_Machine.drinks2 2 ra aa b = {||}"
-    apply (simp add: possible_steps_def ffilter_def set_filter_invalid)
-    by (simp add: bot_fset_def)
+    by (simp add: possible_steps_def ffilter_def set_filter_invalid)
   have set_filter_vend_fail: "\<forall>ra x1. ra (R 2) = Some (Num x1) \<and> x1 < 100 \<longrightarrow>  (Set.filter
        (\<lambda>((origin, dest), t).
            origin = 2 \<and> Label t = ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. ra (R n))))
@@ -367,190 +363,6 @@ next
     using next_step_1 by blast
 qed
 
-(* Prove this to make sure that you've got "directly_subsumes" the right way round *)
-lemma "directly_subsumes drinks2 0 coin coin50"
-proof-
-  have coin_subsumes_coin50: "subsumes \<lbrakk>\<rbrakk> Simple_Drinks_Machine.coin coin50"
-  proof-
-    have aux1: "(\<forall>r i. cval (medial \<lbrakk>\<rbrakk> (Guard coin50) r) i = Some True \<longrightarrow> cval (medial \<lbrakk>\<rbrakk> (Guard Simple_Drinks_Machine.coin) r) i = Some True)"
-      apply (simp add: coin50_def coin_def)
-      apply clarify
-      apply (case_tac "cval (\<lbrakk>\<rbrakk> r) i")
-       apply simp
-      by simp
-    have aux2: "(\<forall>i r. apply_guards (Guard coin50) (join_ir i r) \<longrightarrow>
-           apply_outputs (Outputs coin50) (join_ir i r) = apply_outputs (Outputs Simple_Drinks_Machine.coin) (join_ir i r))"
-      by (simp add: coin50_def coin_def)
-    have medial_coin_50: "medial \<lbrakk>\<rbrakk> (Guard coin50) = \<lbrakk>V (I 1) \<mapsto> Eq (Num 50)\<rbrakk>"
-      apply (rule ext)
-      by (simp add: coin50_def)
-    have consistent_medial_coin: "consistent \<lbrakk>V (I 1) \<mapsto> cexp.Eq (Num 50)\<rbrakk>"
-      apply (simp add: consistent_def)
-      apply (rule_tac x="<I 1 := Num 50>" in exI)
-      apply (rule allI)
-      by (simp add: consistent_empty_4)
-    have posterior_coin50: "posterior \<lbrakk>\<rbrakk> coin50 = \<lbrakk>V (R 2) \<mapsto> Bc False\<rbrakk>"
-      unfolding posterior_def Let_def
-      apply (simp only: medial_coin_50)
-      apply (simp add: consistent_medial_coin remove_input_constraints_def)
-      apply (rule ext)
-      by (simp add: coin50_def)
-    have aux3: "(\<forall>r i. cval (posterior (medial \<lbrakk>\<rbrakk> (Guard coin50)) Simple_Drinks_Machine.coin r) i = Some True \<longrightarrow>
-           cval (posterior \<lbrakk>\<rbrakk> coin50 r) i = Some True \<or> posterior \<lbrakk>\<rbrakk> coin50 r = Undef)"
-    proof-
-      have posterior_coin: "posterior \<lbrakk>V (I 1) \<mapsto> cexp.Eq (Num 50)\<rbrakk> Simple_Drinks_Machine.coin = \<lbrakk>V (R 2) \<mapsto> Bc False\<rbrakk>"
-        unfolding posterior_def Let_def
-        apply (simp add: medial_coin consistent_medial_coin remove_input_constraints_def)
-        apply (rule ext)
-        by (simp add: coin_def)
-      show ?thesis
-        apply (simp only: medial_coin_50)
-        by (simp add: posterior_coin posterior_coin50)
-    qed
-    have aux4: "(consistent (posterior \<lbrakk>\<rbrakk> coin50) \<longrightarrow> consistent (posterior \<lbrakk>\<rbrakk> Simple_Drinks_Machine.coin))"
-      apply (simp only: posterior_coin50)
-      using possible_false_not_consistent
-      by (meson fun_upd_same)
-    show ?thesis
-      unfolding subsumes_def
-      using aux1 aux2 aux3 aux4
-      by simp
-  qed
-  have step_select: "\<forall>i. length i = 1 \<longrightarrow> step Simple_Drinks_Machine.drinks2 0 Map.empty ''select'' i = Some (select, 1, [], <R 1 := hd i, R 2 := Num 0>)"
-  proof-
-    have possible_steps: "\<forall>i. length i = 1 \<longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 0 Map.empty ''select'' i = {|(1, select)|}"
-    proof-
-      have set_filter: "\<forall>i. length i = 1 \<longrightarrow> (Set.filter
-            (\<lambda>((origin, dest), t).
-                origin = 0 \<and> Label t = ''select'' \<and> Arity t = 1 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state i 1 (I n)) Map.empty))
-            (fset Simple_Drinks_Machine.drinks2)) = {((0, 1), select)}"
-        apply (simp add: Set.filter_def drinks2_def)
-        apply safe
-        by (simp_all add: transitions)
-      have abs_fset: "Abs_fset {((0, 1), select)} = {|((0, 1), select)|}"
-        by (metis fset_inverse fset_simps(1) fset_simps(2))
-      show ?thesis
-        apply (rule allI)
-        apply clarify
-        apply (simp add: possible_steps_def ffilter_def)
-        by (simp add: set_filter abs_fset)
-    qed
-    show ?thesis
-      unfolding step_def
-      apply (rule allI)
-      apply (simp add: possible_steps)
-      apply (simp add: select_def)
-      apply clarify
-      apply (rule ext)
-      apply simp
-      by (simp add: hd_input2state)
-  qed
-  have coin_subsumes_coin50_2: "subsumes select_posterior Simple_Drinks_Machine.coin coin50"
-  proof-
-    have aux1: "(\<forall>r i. cval (medial select_posterior (Guard coin50) r) i = Some True \<longrightarrow>
-           cval (medial select_posterior (Guard Simple_Drinks_Machine.coin) r) i = Some True)"
-      apply (simp add: coin50_def coin_def)
-      apply safe
-      apply (case_tac "cval (\<lbrakk>\<rbrakk> r) i")
-       apply simp
-      by simp
-    have aux2: "(\<forall>i r. apply_guards (Guard coin50) (join_ir i r) \<longrightarrow>
-           apply_outputs (Outputs coin50) (join_ir i r) = apply_outputs (Outputs Simple_Drinks_Machine.coin) (join_ir i r))"
-      by (simp add: coin50_def coin_def)
-    have aux3: "(\<forall>r i. cval (posterior (medial select_posterior (Guard coin50)) Simple_Drinks_Machine.coin r) i = Some True \<longrightarrow>
-           cval (posterior select_posterior coin50 r) i = Some True \<or> posterior select_posterior coin50 r = Undef)"
-    proof-
-      have medial_coin50: "medial select_posterior (Guard coin50) = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num 0), V (I 1) \<mapsto> Eq (Num 50)\<rbrakk>"
-        apply (rule ext)
-        by (simp add: coin50_def)
-      have consistent_medial_coin50: "consistent \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num 0), V (I 1) \<mapsto> Eq (Num 50)\<rbrakk>"
-        apply (simp add: consistent_def)
-        apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0, I 1 := Num 50>" in exI)
-        apply (rule allI)
-        by (simp add: consistent_empty_4)
-      have posterior_coin50: "posterior select_posterior coin50 = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num 50)\<rbrakk>"
-        unfolding posterior_def Let_def
-        apply (simp only: medial_coin50)
-        apply (simp add: consistent_medial_coin50)
-        apply (simp add: remove_input_constraints_def)
-        apply (rule ext)
-        apply (simp add: coin50_def valid_def satisfiable_def)
-        by auto
-      have medial_coin: "\<forall>c. medial c (Guard coin) = c"
-        by (simp add: coin_def)
-      have consistent_medial_coin: "consistent \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num 0), V (I 1) \<mapsto> Eq (Num 50)\<rbrakk>"
-        unfolding consistent_def
-        apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0, I 1 := Num 50>" in exI)
-        apply (rule allI)
-        by (simp add: consistent_empty_4)
-      have posterior_coin: "posterior \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num 0), V (I 1) \<mapsto> Eq (Num 50)\<rbrakk> Simple_Drinks_Machine.coin = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num 50)\<rbrakk>"
-        unfolding posterior_def Let_def
-        apply (simp add: medial_coin consistent_medial_coin remove_input_constraints_def)
-        apply (rule ext)
-        apply (simp add: coin_def valid_def satisfiable_def)
-        by auto
-      show ?thesis
-        apply clarify
-        by (simp add: posterior_coin50 medial_coin50 posterior_coin)
-    qed
-    have aux4: "(consistent (posterior select_posterior coin50) \<longrightarrow> consistent (posterior select_posterior Simple_Drinks_Machine.coin))"
-      apply (simp only: posterior_coin)
-      using consistent_r1_r2_true by auto
-    show ?thesis
-      unfolding subsumes_def
-      using aux1 aux2 aux3 aux4
-      by simp
-  qed
-  have test: "\<forall>list aa ba. aa = ''select'' \<and> length ba = 1 \<longrightarrow> \<not>gets_us_to 0 Simple_Drinks_Machine.drinks2 0 Map.empty ((''select'', ba) # list)"
-  proof-
-    show ?thesis
-      apply clarify
-      apply (rule gets_us_to.cases)
-         apply simp
-        apply simp
-       apply clarify
-       apply simp
-       apply (simp add: step_select no_route_from_1_to_0)
-      apply clarify
-      by (simp add: step_select)
-  qed
-  have test2: "\<forall>aa ba. \<not> (aa = ''select'' \<and> length ba = 1) \<longrightarrow> step Simple_Drinks_Machine.drinks2 0 Map.empty aa ba = None"
-  proof-
-    have possible_steps_invalid: "\<forall>aa ba. \<not> (aa = ''select'' \<and> length ba = 1) \<longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 0 Map.empty aa ba = {||}"
-    proof-
-      have set_filter: "\<forall>aa ba. \<not> (aa = ''select'' \<and> length ba = 1) \<longrightarrow> (Set.filter
-          (\<lambda>((origin, dest), t).
-              origin = 0 \<and> Label t = aa \<and> length ba = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state ba 1 (I n)) Map.empty))
-          (fset Simple_Drinks_Machine.drinks2)) = {}"
-        apply (simp add: drinks2_def Set.filter_def)
-        apply safe
-        by (simp_all add: select_def)
-      show ?thesis
-        apply (clarify)
-        apply (simp add: possible_steps_def ffilter_def)
-        apply (simp add: set_filter)
-        by (simp add: bot_fset_def)
-    qed
-    show ?thesis
-      apply clarify
-      apply (simp only: step_def)
-      by (simp add: possible_steps_invalid)
-  qed
-  show ?thesis
-    unfolding directly_subsumes_def anterior_context_def
-    apply (rule allI)
-    apply (case_tac p)
-     apply (simp add: coin_subsumes_coin50)
-    apply simp
-    apply (case_tac a)
-    apply clarify
-    apply (case_tac "aa = ''select'' \<and> length ba = 1")
-     apply (simp add: step_select select_posterior)
-     apply (simp add: test)
-     apply simp
-    by (simp add: test2 coin_subsumes_coin50)
-qed
-
 \<comment> \<open> coin subsumes coin50 no matter how many times it is looped round \<close>
 lemma "subsumes \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num n)\<rbrakk> coin coin50"
 proof-
@@ -561,9 +373,6 @@ proof-
     apply (case_tac "cval (\<lbrakk>\<rbrakk> r) i")
      apply simp
     by simp
-  have aux2: "(\<forall>i r. apply_guards (Guard coin50) (join_ir i r) \<longrightarrow>
-           apply_outputs (Outputs coin50) (join_ir i r) = apply_outputs (Outputs Simple_Drinks_Machine.coin) (join_ir i r))"
-    by (simp add: coin50_def coin_def)
   have medial_coin50: "medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> (Guard coin50) = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n), V (I 1) \<mapsto> Eq (Num 50)\<rbrakk>"
     apply (rule ext)
     by (simp add: coin50_def)
@@ -589,12 +398,6 @@ proof-
     apply (rule ext)
     apply (simp add: coin_def valid_def satisfiable_def)
     by auto
-  have aux3: "(\<forall>r i. cval (posterior (medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> (Guard coin50)) Simple_Drinks_Machine.coin r) i =
-           Some True \<longrightarrow>
-           cval (posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> coin50 r) i = Some True \<or>
-           posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> coin50 r = Undef)"
-    apply (simp only: medial_coin50 posterior_coin50 posterior_coin)
-    by simp
   have aux4: "(consistent (posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> coin50) \<longrightarrow>
      consistent (posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num n)\<rbrakk> Simple_Drinks_Machine.coin))"
   proof-
@@ -607,13 +410,19 @@ proof-
     unfolding posterior_def Let_def
     apply (simp add: medial_coin consistent_medial_coin remove_input_constraints_def)
     apply (rule ext)
-    by (simp add: coin_def valid_def satisfiable_def)
+    by (simp add: coin_def valid_def satisfiable_def r1_r2_true_def)
   show ?thesis
     by (simp add: posterior_coin consistent_r1_r2_true)
 qed
   show ?thesis
-    unfolding subsumes_def
-    using aux1 aux2 aux3 aux4
-    by simp
+    apply (simp add: subsumes_def)
+    apply safe
+          apply (simp add: transitions)
+         apply (simp add: transitions)
+        apply (simp add: transitions)
+       apply (simp add: local.aux1)
+      apply (simp add: Simple_Drinks_Machine.coin_def Simple_Drinks_Machine.transitions(7))
+     apply (simp add: local.medial_coin50 local.posterior_coin posterior_coin50)
+    using aux4 by blast
 qed
 end

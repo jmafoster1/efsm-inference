@@ -102,7 +102,7 @@ definition lift :: transition_matrix where
               ((3,0), closeDoors)
          |}"
 
-lemma "observe_trace lift 0 <> [(''goUp'', [Num 1]), (''goUp'', [Num 0]), (''open'', [])] = [[Num 1], [Num 0], [Num 1]]"
+lemma "observe_trace lift 0 <> [(''goUp'', [Num 1]), (''goUp'', [Num 0]), (''open'', [])] = [[Some (Num 1)], [Some (Num 0)], [Some (Num 1)]]"
 proof-
   have possible_steps_0_goup: "possible_steps lift 0 Map.empty ''goUp'' [Num 1] = {|(1, t1up)|}"
     apply (simp add: possible_steps_def lift_def transitions)

@@ -2,9 +2,6 @@ theory Drinks_Machine_Payforward
   imports "../examples/Drinks_Machine"
 begin
 
-\<comment>\<open> This version of drinks_machine supercedes all of those before 03/04/18 \<close>
-\<comment>\<open> It also supercedes "vend.thy"\<close>
-
 definition "setup" :: "transition" where
 "setup \<equiv> \<lparr>
         Label = ''setup'',
@@ -64,7 +61,7 @@ lemma possible_steps_2_vend: "r (R 2) = Some (Num n) \<Longrightarrow> n \<ge> 1
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma "observe_trace drinks 0 <> [(''setup'', []), (''select'', [Str ''coke'']), (''coin'',[Num 110]), (''vend'', []), (''select'', [Str ''pepsi'']), (''coin'',[Num 90]), (''vend'', [])] = [[],[],[Num 110],[Str ''coke''],[],[Num 100],[Str ''pepsi'']]"
+lemma "observe_trace drinks 0 <> [(''setup'', []), (''select'', [Str ''coke'']), (''coin'',[Num 110]), (''vend'', []), (''select'', [Str ''pepsi'']), (''coin'',[Num 90]), (''vend'', [])] = [[],[],[Some (Num 110)],[Some (Str ''coke'')],[],[Some (Num 100)],[Some (Str ''pepsi'')]]"
   unfolding observe_trace_def observe_all_def step_def
   apply (simp add: possible_steps_0 setup_def)
   apply (simp add: possible_steps_1 select_def)

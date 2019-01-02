@@ -13,7 +13,7 @@ begin
 type_synonym label = string
 type_synonym arity = nat
 type_synonym inputs = "value list"
-type_synonym outputs = "value list"
+type_synonym outputs = "value option list"
 type_synonym updates = "update_function list"
 type_synonym event = "(label \<times> inputs)"
 type_synonym trace = "event list"
@@ -40,7 +40,7 @@ definition S :: "transition_matrix \<Rightarrow> nat fset" where
 
 primrec apply_outputs :: "output_function list \<Rightarrow> datastate \<Rightarrow> outputs" where
   "apply_outputs [] _ = []" |
-  "apply_outputs (h#t) s = (case aval h s of None \<Rightarrow> [] | Some p \<Rightarrow> p#(apply_outputs t s))"
+  "apply_outputs (h#t) s = (aval h s)#(apply_outputs t s)"
 
 primrec apply_guards :: "guard list \<Rightarrow> datastate \<Rightarrow> bool" where
   "apply_guards [] _ = True" |
@@ -54,7 +54,7 @@ definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> 
   "possible_steps e s r l i = fimage (\<lambda>((origin, dest), t). (dest, t)) (ffilter (\<lambda>((origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"
 
 definition fis_singleton :: "'a fset \<Rightarrow> bool"
-  where "fis_singleton A \<longleftrightarrow> is_singleton {f. f |\<in>| A}"
+  where "fis_singleton A \<longleftrightarrow> is_singleton (fset A)"
 
 lemma singleton_singleton [simp]: "fis_singleton {|a|}"
   by (simp add: fis_singleton_def)
@@ -64,7 +64,7 @@ lemma not_singleton_emty [simp]: "\<not>fis_singleton {||}"
   by (simp add: is_singleton_altdef)
 
 definition step :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> outputs \<times> datastate) option" where
-"step e s r l i \<equiv>
+"step e s r l i =
 (if fis_singleton (possible_steps e s r l i) then (let (s', t) =  (fthe_elem (possible_steps e s r l i)) in Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))) else None)"
 
 lemma step_empty[simp]:"step {||} s r l i = None"
@@ -89,6 +89,9 @@ primrec observe_all :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datast
 
 lemma abs_fset_singleton[simp]: "Abs_fset {a} = {|a|}"
   by (metis bot_fset.rep_eq finsert.rep_eq fset_inverse)
+
+lemma abs_fset_empty[simp]: "Abs_fset {} = {||}"
+  by (simp add: bot_fset_def)
 
 definition state :: "(transition \<times> nat \<times> outputs \<times> datastate) \<Rightarrow> nat" where
   "state x \<equiv> fst (snd x)"
@@ -145,6 +148,13 @@ inductive accepts :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastat
 
 definition accepts_trace :: "transition_matrix \<Rightarrow> trace \<Rightarrow> bool" where
   "accepts_trace e t = accepts e 0 <> t"
+
+lemma no_step_none: "step e s r aa ba = None \<Longrightarrow> \<not>accepts e s r ((aa, ba) # p)"
+  apply safe
+  apply (rule accepts.cases)
+    apply simp
+   apply simp
+  by auto
 
 lemma accepts_steps: "fthe_elem (possible_steps e s d (fst h) (snd h)) = (a, b) \<Longrightarrow>
        fis_singleton (possible_steps e s d (fst h) (snd h)) \<Longrightarrow>
@@ -313,11 +323,22 @@ lemma length_equal_accepts: "(length t = length (observe_all e 0 <> t)) = accept
 
 type_synonym simulation_relation = "nat \<Rightarrow> nat"
 
+inductive simulates_trace :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
+  base: "simulates_trace e1 e2 s1 s2 d1 d2 []" |
+  step: "step e1 s1 d1 (fst h) (snd h) = Some (tr1, s1', p', d1') \<Longrightarrow>
+         step e2 s2 d2 (fst h) (snd h) = Some (tr2, s2', p', d2') \<Longrightarrow>
+         simulates_trace e1 e2 s1' s2' d1' d2' t \<Longrightarrow> simulates_trace e1 e2 s1 s2 d1 d2 (h#t)"
+
 definition simulates :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> bool" where
-  "simulates m2 m1 = (\<forall>t. accepts_trace m1 t \<longrightarrow> accepts_trace m2 t)"
+  "simulates m1 m2 = (\<forall>t. simulates_trace m1 m2 0 0 <> <> t)"
 
 inductive gets_us_to :: "nat \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
   base: "s = target \<Longrightarrow> gets_us_to target _ s _ []" |
   step_some: "step e s r (fst h) (snd h) =  Some (_, s', _, r') \<Longrightarrow> gets_us_to target e s' r' t \<Longrightarrow> gets_us_to target e s r (h#t)" |
   step_none: "step e s r (fst h) (snd h) = None \<Longrightarrow> s=target \<Longrightarrow> gets_us_to target e s r (h#t)"
+
+lemma no_further_steps: "s \<noteq> s' \<Longrightarrow> \<not> gets_us_to s e s' r []"
+  apply safe
+  apply (rule gets_us_to.cases)
+  by auto
 end

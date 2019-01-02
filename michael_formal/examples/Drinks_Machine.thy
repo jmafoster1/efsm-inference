@@ -147,7 +147,8 @@ lemma updates_coin: " (EFSM.apply_updates (Updates coin)
   apply (rule ext)
   by (simp add: coin_def)
 
-lemma purchase_coke: "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] = [[], [Num 50], [Num 100], [Str ''coke'']]"
+lemma purchase_coke: "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] =
+                       [[], [Some (Num 50)], [Some (Num 100)], [Some (Str ''coke'')]]"
   apply (simp add: observe_trace_def)
   apply (simp add: step_def possible_steps_0 fis_singleton_def outputs_select updates_select)
   apply (simp add: step_def possible_steps_1_coin updates_coin fis_singleton_def)
@@ -179,22 +180,25 @@ lemma inaccepts_termination: "observe_trace drinks 0 <> [(''select'', [Str ''cok
   apply (simp add: observe_trace_def step_def possible_steps_0 updates_select)
   by (simp add: inaccepts_impossible fis_singleton_def is_singleton_def transitions)
 
-abbreviation select_posterior :: "context" where
+definition select_posterior :: "context" where
   "select_posterior \<equiv> \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> Eq (Num 0)\<rbrakk>"
+
+definition vend_fail_posterior :: "context" where
+  "vend_fail_posterior \<equiv> \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> Lt (Num 100)\<rbrakk>"
 
 lemma consistent_select_posterior: "consistent select_posterior"
   apply (simp add: consistent_def)
   apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0>" in exI)
-  by (simp add: consistent_empty_4)
+  by (simp add: consistent_empty_4 select_posterior_def)
 
 lemma select_posterior: "(posterior empty select) = select_posterior"
   apply (simp add: posterior_def select_def remove_input_constraints_def)
   apply (rule ext)
-  by simp
+  by (simp add: select_posterior_def)
 
 lemma medial_select_posterior_vend: "medial select_posterior (Guard vend) = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Eq (Num 0)) (Geq (Num 100))\<rbrakk>"
   apply (rule ext)
-  by (simp add: guard_vend)
+  by (simp add: guard_vend select_posterior_def)
 
 lemma r2_0_vend: "\<not>Contexts.can_take vend select_posterior" (* You can't take vend immediately after taking select *)
   apply (simp only: can_take_def medial_select_posterior_vend)
@@ -296,7 +300,7 @@ proof-
     by (simp add: Set.filter_def drinks_def)
   have ffilter: "ffilter (\<lambda>((origin, dest), t). origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (join_ir i r)) drinks = {||}"
     using premise
-    by (simp add: ffilter_def set_filter bot_fset_def)
+    by (simp add: ffilter_def set_filter)
   show ?thesis
     apply (simp add: step_def possible_steps_def)
     using ffilter
