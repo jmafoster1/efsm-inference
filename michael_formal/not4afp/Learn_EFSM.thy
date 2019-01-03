@@ -1,5 +1,5 @@
 theory Learn_EFSM
-  imports Inference SelectionStrategies "../examples/Drinks_Machine"
+  imports Inference SelectionStrategies "../examples/Drinks_Machine" FSet_Utils
 begin
 
 definition selectCoke :: transition where
@@ -389,7 +389,7 @@ proof-
       show ?thesis
         by (simp add: outgoing_transitions_def ffilter_def set_filter)
     qed
-    have outgoing_transitions_9: "outgoing_transitions 9 pta = {|vend_pepsi|}"
+    have outgoing_transitions_9: "outgoing_transitions 9 pta = {|(10, vend_pepsi)|}"
     proof-
       have set_filter: "Set.filter (\<lambda>((origin, dest), t). origin = 9) (fset pta) = {((9, 10), vend_pepsi)}"
         apply (simp add: pta_def Set.filter_def)
@@ -398,7 +398,7 @@ proof-
       show ?thesis
         by (simp add: outgoing_transitions_def ffilter_def set_filter)
     qed
-    have outgoing_transitions_8: "outgoing_transitions 8 pta = {|coin50_100|}"
+    have outgoing_transitions_8: "outgoing_transitions 8 pta = {|(9, coin50_100)|}"
     proof-
       have set_filter: "Set.filter (\<lambda>((origin, dest), t). origin = 8) (fset pta) = {((8, 9), coin50_100)}"
         apply (simp add: pta_def Set.filter_def)
@@ -407,7 +407,7 @@ proof-
       show ?thesis
         by (simp add: outgoing_transitions_def ffilter_def set_filter)
     qed
-    have outgoing_transitions_7: "outgoing_transitions 7 pta = {|coin50_50|}"
+    have outgoing_transitions_7: "outgoing_transitions 7 pta = {|(8, coin50_50)|}"
          proof-
       have set_filter: "Set.filter (\<lambda>((origin, dest), t). origin = 7) (fset pta) = {((7, 8), coin50_50)}"
         apply (simp add: pta_def Set.filter_def)
@@ -425,7 +425,7 @@ proof-
       show ?thesis
         by (simp add: outgoing_transitions_def ffilter_def set_filter)
     qed
-    have outgoing_transitions_5: "outgoing_transitions 5 pta = {|vend_coke|}"
+    have outgoing_transitions_5: "outgoing_transitions 5 pta = {|(6, vend_coke)|}"
     proof-
       have set_filter: "Set.filter (\<lambda>((origin, dest), t). origin = 5) (fset pta) = {((5, 6), vend_coke)}"
         apply (simp add: Set.filter_def pta_def)
@@ -443,7 +443,7 @@ proof-
       show ?thesis
         by (simp add: outgoing_transitions_def ffilter_def set_filter)
     qed
-    have outgoing_transitions_3: "outgoing_transitions 3 pta = {|vend_coke|}"
+    have outgoing_transitions_3: "outgoing_transitions 3 pta = {|(4, vend_coke)|}"
     proof-
       have set_filter: "Set.filter (\<lambda>((origin, dest), t). origin = 3) (fset pta) = {((3, 4), vend_coke)}"
         apply (simp add: Set.filter_def pta_def)
@@ -452,7 +452,7 @@ proof-
       show ?thesis
         by (simp add: outgoing_transitions_def ffilter_def set_filter)
     qed
-    have outgoing_transitions_2: "outgoing_transitions 2 pta = {|coin50_100|}"
+    have outgoing_transitions_2: "outgoing_transitions 2 pta = {|(3, coin50_100)|}"
     proof-
       have set_filter: "Set.filter (\<lambda>((origin, dest), t). origin = 2) (fset pta) = {((2, 3), coin50_100)}"
         apply (simp add: Set.filter_def pta_def)
@@ -461,18 +461,21 @@ proof-
       show ?thesis
         by (simp add: outgoing_transitions_def ffilter_def set_filter)
     qed
-    have outgoing_transitions_1: "outgoing_transitions 1 pta = {|coin50_50, coin100_100|}"
+    have outgoing_transitions_1: "outgoing_transitions 1 pta = {|(2, coin50_50), (5, coin100_100)|}"
     proof-
-      have set_filter: "Set.filter (\<lambda>((origin, dest), t). origin = 1) (fset pta) = {((1, 2), coin50_50), ((1, 5), coin100_100)}"
+      have set_filter: "Set.filter (\<lambda>((origin::nat, dest::nat), t). origin = 1) (fset pta) = {((1::nat, 2::nat), coin50_50), ((1, 5), coin100_100)}"
         apply (simp add: Set.filter_def pta_def)
-        apply safe
-        by (simp_all add: pta_transitions)
+        apply standard
+         apply clarify
+         apply auto[1]
+        apply clarify
+        by auto
       have abs_fset: "Abs_fset {((1, 2), coin50_50), ((1, 5), coin100_100)} = {|((1, 2), coin50_50), ((1, 5), coin100_100)|}"
         by (metis fset_inverse fset_simps(1) fset_simps(2))
       show ?thesis
         by (simp add: outgoing_transitions_def ffilter_def set_filter abs_fset)
     qed
-    have outgoing_transitions_0: "outgoing_transitions 0 pta = {|selectCoke, selectPepsi|}"
+    have outgoing_transitions_0: "outgoing_transitions 0 pta = {|(1, selectCoke), (7, selectPepsi)|}"
     proof-
       have set_filter: "Set.filter (\<lambda>((origin, dest), t). origin = 0) (fset pta) = {((0, 1), selectCoke), ((0, 7), selectPepsi)}"
         apply (simp add: Set.filter_def pta_def)
@@ -532,6 +535,7 @@ proof-
     show ?thesis
       apply (simp add: score_def ffilter filtered_pairs_def)
       apply (simp only: outgoing_transitions_0 outgoing_transitions_1 outgoing_transitions_2 outgoing_transitions_3 outgoing_transitions_4 outgoing_transitions_5 outgoing_transitions_6 outgoing_transitions_7 outgoing_transitions_8 outgoing_transitions_9 outgoing_transitions_10)
+      apply (simp add: fimage_def)
       by (simp only: naive_score_empty naive_score_empty_2 naive_score_8_9 naive_score_7_9 naive_score_7_8
                         naive_score_5_9 naive_score_5_8 naive_score_5_7 naive_score_3_5 naive_score_2_8 naive_score_2_7 naive_score_2_5
                         naive_score_1_9 naive_score_1_8 naive_score_1_7 naive_score_1_5
@@ -549,103 +553,227 @@ definition merged_1_7 :: transition_matrix where
 lemma merge_states_1_7: "merge_states 1 7 pta = merged_1_7"
   by (simp add: merge_states_def merge_states_aux_def pta_def merged_1_7_def)
 
+lemma no_choice_coin50_50_coin_100_100: "\<not>choice coin50_50 coin100_100"
+  by (simp add: choice_def pta_transitions)
 
-lemma "nondeterministic_pairs merged_1_7 = {|(1, (8, 2), coin50_50, coin50_50)|}"
+lemma no_choice_coin_100_100_coin_50_50: "\<not>choice coin100_100 coin50_50"
+  using choice_symmetry no_choice_coin50_50_coin_100_100 by blast
+
+lemma choice_coin50_50_coin50_50: "choice coin50_50 coin50_50"
+  apply (simp add: choice_def pta_transitions)
+  by auto
+
+lemma no_choice_selectPepsi_selectCoke: "\<not>choice selectPepsi selectCoke"
+  by (simp add: choice_def pta_transitions)
+
+lemma no_choice_selectCoke_selectPepsi: "\<not>choice selectCoke selectPepsi"
+  by (simp add: choice_def pta_transitions)
+
+lemma choice_coin50_100_coin50_100: "choice coin50_100 coin50_100"
+  apply (simp add: choice_def pta_transitions)
+  by auto
+
+lemma choice_vend_coke_vend_pepsi: "choice vend_coke vend_pepsi"
+  by (simp add: choice_def pta_transitions)
+
+lemmas choices = choice_vend_coke_vend_pepsi choice_symmetry choice_coin50_100_coin50_100 no_choice_selectCoke_selectPepsi no_choice_selectPepsi_selectCoke choice_coin50_50_coin50_50 no_choice_coin50_50_coin_100_100 no_choice_coin_100_100_coin_50_50
+
+lemma nondeterministic_pairs_merged_1_7: "nondeterministic_pairs merged_1_7 = {|(1, (2, 8), coin50_50, coin50_50)|}"
 proof-
- have set_filter: "Set.filter (\<lambda>(x, y). x < y) (fset (all_pairs merged_1_7)) = {(((8, 9), \<lparr>Label = ''coin'', Arity = 1, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>), (9, 10),
-   vend_pepsi),
-  (((1, 8), coin50_50), (9, 10),
-   vend_pepsi),
-  (((1, 8), coin50_50), (8, 9),
-   coin50_100),
-  (((1, 8), coin50_50), (5, 6),
-   vend_coke),
-  (((1, 8), coin50_50), (3, 4),
-   vend_coke),
-  (((1, 8), coin50_50), (2, 3),
-   coin50_100),
-  (((0, 1), selectPepsi), (9, 10),
-   vend_pepsi),
-  (((0, 1), selectPepsi), (8, 9),
-   coin50_100),
-  (((0, 1), selectPepsi), (1, 8),
-   coin50_50),
-  (((0, 1), selectPepsi), (5, 6),
-   vend_coke),
-  (((0, 1), selectPepsi), (1, 5),
-   coin100_100),
-  (((0, 1), selectPepsi), (3, 4),
-   vend_coke),
-  (((0, 1), selectPepsi), (2, 3),
-   coin50_100),
-  (((0, 1), selectPepsi), (1, 2),
-   coin50_50),
-  (((5, 6), vend_coke), (9, 10),
-   vend_pepsi),
-  (((5, 6), vend_coke), (8, 9),
-   coin50_100),
-  (((1, 5), coin100_100), (9, 10),
-   vend_pepsi),
-  (((1, 5), coin100_100), (8, 9),
-   coin50_100),
-  (((1, 5), coin100_100), (1, 8),
-   coin50_50),
-  (((1, 5), coin100_100), (5, 6),
-   vend_coke),
-  (((1, 5), coin100_100), (3, 4),
-   vend_coke),
-  (((1, 5), coin100_100), (2, 3),
-   coin50_100),
-  (((3, 4), vend_coke), (9, 10),
-   vend_pepsi),
-  (((3, 4), vend_coke), (8, 9),
-   coin50_100),
-  (((3, 4), vend_coke), (5, 6),
-   vend_coke),
-  (((2, 3), coin50_100), (9, 10),
-   vend_pepsi),
-  (((2, 3), coin50_100), (8, 9),
-   coin50_100),
-  (((2, 3), coin50_100), (5, 6),
-   vend_coke),
-  (((2, 3), coin50_100), (3, 4),
-   vend_coke),
-  (((1, 2), coin50_50), (9, 10),
-   vend_pepsi),
-  (((1, 2), coin50_50), (8, 9),
-   coin50_100),
-  (((1, 2), coin50_50), (1, 8),
-   coin50_50),
-  (((1, 2), coin50_50), (5, 6),
-   vend_coke),
-  (((1, 2), coin50_50), (1, 5),
-   coin100_100),
-  (((1, 2), coin50_50), (3, 4),
-   vend_coke),
-  (((1, 2), coin50_50), (2, 3),
-   coin50_100),
-  (((0, 1), selectCoke), (9, 10),
-   vend_pepsi),
-  (((0, 1), selectCoke), (8, 9),
-   coin50_100),
-  (((0, 1), selectCoke), (1, 8),
-   coin50_50),
-  (((0, 1), selectCoke), (0, 1),
-   selectPepsi),
-  (((0, 1), selectCoke), (5, 6),
-   vend_coke),
-  (((0, 1), selectCoke), (1, 5),
-   coin100_100),
-  (((0, 1), selectCoke), (3, 4),
-   vend_coke),
-  (((0, 1), selectCoke), (2, 3),
-   coin50_100),
-  (((0, 1), selectCoke), (1, 2),
-   coin50_50)}"
-   sorry
-    show ?thesis
-  apply (simp add: nondeterministic_pairs_def ffilter_def)
+  have card1: "card {(1, selectCoke), (1, selectPepsi)} = 2"
+    by (simp add: pta_transitions)
+  have minus_1: "{(2, coin50_50), (5, coin100_100), (8, coin50_50)} - {(5, coin100_100)} = {(2, coin50_50), (8, coin50_50)}"
+    apply (simp add: pta_transitions)
+    by auto
+  have minus_2: "{(2::nat, coin50_50), (5, coin100_100), (8, coin50_50)} - {(8, coin50_50)} = {(2, coin50_50), (5,coin100_100)}"
+    apply (simp add: pta_transitions)
+    by auto
+  have set_filter_1: "Set.filter (\<lambda>(uu, uu, t, t'). t \<le> t' \<and> choice t t')
+       {(1, (2, 5), coin50_50, coin100_100), (1, (2, 8), coin50_50, coin50_50), (1, (8, 2), coin50_50, coin50_50),
+        (1, (8, 5), coin50_50, coin100_100), (1, (5, 2), coin100_100, coin50_50), (1, (5, 8), coin100_100, coin50_50)} =
+       {(1, (2, 8), coin50_50, coin50_50), (1, (8, 2), coin50_50, coin50_50)}"
+    apply (simp add: Set.filter_def)
+    apply safe
+    by (simp_all add: choices)
 
+  have minus_3: "{(1::nat, selectPepsi)} - {(1::nat, selectCoke)} = {(1::nat, selectPepsi)}"
+    by (simp add: pta_transitions)
+  have minus_4: "{(1::nat, selectCoke), (1, selectPepsi)} - {(1::nat, selectPepsi)} = {(1::nat, selectCoke)}"
+    apply (simp add: pta_transitions)
+    by auto
+  have set_filter_2: "Set.filter (\<lambda>(uu, u, t, t'). t \<le> t' \<and> choice t t')
+                   {(0, (1, 1), selectPepsi, selectCoke), (0, (1, 1), selectCoke, selectPepsi)} = {}"
+    apply (simp add: Set.filter_def)
+    apply safe
+    by (simp_all add: choices)
+
+  have state_nondeterminism_1:  "state_nondeterminism 1 {|(2, coin50_50), (5, coin100_100), (8, coin50_50)|} = {|
+   (1, (5, 8), coin100_100, coin50_50),
+   (1, (2, 8), coin50_50, coin50_50),
+   (1, (2, 5), coin50_50, coin100_100)|}"
+    apply (simp add: state_nondeterminism_def ffilter_def card1 fimage_def)
+    apply (simp add: minus_1 minus_2)
+    apply (simp add: fset_both_sides Abs_fset_inverse)
+    by auto
+  have state_nondeterminism_0: "state_nondeterminism 0 {|(1, selectCoke), (1, selectPepsi)|} = {|(0, (1, 1), selectPepsi, selectCoke), (0, (1, 1), selectCoke, selectPepsi)|}"
+    apply (simp add: state_nondeterminism_def ffilter_def card1 fimage_def)
+    by (simp add: minus_3 minus_4)
+
+  show ?thesis
+    apply (simp add: nondeterministic_pairs_def)
+    apply (simp add: S_def merged_1_7_def)
+    apply (simp add: outgoing_transitions_def Set.filter_def fimage_def)
+    apply (simp add: state_nondeterminism_1 state_nondeterminism_0)
+    apply (simp add: ffilter_def Set.filter_def)
+    apply (simp add: fset_both_sides Abs_fset_inverse)
+    apply safe
+    by (simp_all add: choices)
+qed
+
+lemma nondeterminism_merged_1_7: "nondeterminism merged_1_7"
+  by (simp add: nondeterminism_def nondeterministic_pairs_merged_1_7)
+
+definition merged_2_8 :: transition_matrix where
+  "merged_2_8 = {|((0, 1), selectCoke), ((1, 2), coin50_50), ((2, 3), coin50_100), ((3, 4), vend_coke),
+                  ((1, 5), coin100_100), ((5, 6), vend_coke), ((0, 1), selectPepsi), ((1, 2), coin50_50),
+                  ((2, 9), coin50_100), ((9, 10), vend_pepsi)|}"
+
+lemma merge_states_2_8: "merge_states 2 8 merged_1_7 = merged_2_8"
+  by (simp add: merge_states_def merge_states_aux_def merged_1_7_def merged_2_8_def)
+
+lemma nondeterministic_pairs_merged_2_8: "nondeterministic_pairs merged_2_8 = {|(2, (3, 9), coin50_100, coin50_100)|}"
+proof-
+  have card1: "card {(1, selectCoke), (1, selectPepsi)} = 2"
+    by (simp add: pta_transitions)
+  have card2_aux: "{(2, coin50_50), (5, coin100_100), (2, coin50_50)} = {(5, coin100_100), (2, coin50_50)}"
+    by auto
+
+  have minus_1: "{(5::nat, coin100_100), (2, coin50_50)} - {(2, coin50_50)} = {(5, coin100_100)}"
+    by auto
+  have minus_2: "{(3::nat, coin50_100), (9, coin50_100)} - {(9, coin50_100)} = {(3, coin50_100)}"
+    by auto
+  have minus_3: "{(1::nat, selectPepsi)} - {(1, selectCoke)} = {(1, selectPepsi)}"
+    by (simp add: pta_transitions)
+  have minus_4: "{(1, selectCoke), (1, selectPepsi)} - {(1, selectPepsi)} = {(1, selectCoke)}"
+    apply (simp add: pta_transitions)
+    by auto
+  have state_nondeterminism_1: "state_nondeterminism 1 {|(2, coin50_50), (5, coin100_100), (2, coin50_50)|} = {|(1, (2, 5), coin50_50, coin100_100), (1, (2, 5), coin50_50, coin100_100)|}"
+    apply (simp add: state_nondeterminism_def card1 Set.filter_def fimage_def)
+    apply (simp add: minus_1 minus_2 minus_3 minus_4)
+    by (simp add: fset_both_sides Abs_fset_inverse card2_aux)
+  have state_nondeterminism_2: "state_nondeterminism 2 {|(3, coin50_100), (9, coin50_100)|} = {|(2, (3, 9), coin50_100, coin50_100)|}"
+    apply (simp add: state_nondeterminism_def card1 Set.filter_def fimage_def)
+    by (simp add: minus_1 minus_2 minus_3 minus_4)
+  have state_nondeterminism_0: "state_nondeterminism 0 {|(1, selectCoke), (1, selectPepsi)|} = {|(0, (1, 1), selectPepsi, selectCoke), (0, (1, 1), selectCoke, selectPepsi)|}"
+    apply (simp add: state_nondeterminism_def card1 Set.filter_def fimage_def)
+    by (simp add: minus_1 minus_2 minus_3 minus_4)
+  show ?thesis
+    apply (simp add: nondeterministic_pairs_def)
+    apply (simp add: S_def merged_2_8_def)
+    apply (simp add: outgoing_transitions_def Set.filter_def fimage_def)
+    apply (simp add: state_nondeterminism_1 state_nondeterminism_2 state_nondeterminism_0)
+    apply (simp add: ffilter_def Set.filter_def)
+    apply (simp add: fset_both_sides Abs_fset_inverse)
+    apply safe
+    by (simp_all add: choices)
+qed
+
+lemma nondeterminism_merged_2_8: "nondeterminism merged_2_8"
+  by (simp add: nondeterminism_def nondeterministic_pairs_merged_2_8)
+
+definition merged_3_9 :: transition_matrix where
+ "merged_3_9 = {|
+((0, 1), selectCoke), ((1, 2), coin50_50), ((2, 3), coin50_100), ((3, 4), vend_coke), 
+                                           ((1, 5), coin100_100), ((5, 6), vend_coke),
+((0, 1), selectPepsi), ((1, 2), coin50_50), ((3, 10), vend_pepsi)|}"
+
+lemma merge_states_3_9: "merge_states 3 9 merged_2_8 = merged_3_9"
+  apply (simp add: merge_states_def merge_states_aux_def merged_2_8_def merged_3_9_def)
+  by auto
+
+lemma card1: "card {(1, selectCoke), (1, selectPepsi)} = 2"
+    by (simp add: pta_transitions)
+
+lemma minus_3: "{(1::nat, selectPepsi)} - {(1, selectCoke)} = {(1, selectPepsi)}"
+  by (simp add: pta_transitions)
+
+lemma minus_4: "{(1, selectCoke), (1, selectPepsi)} - {(1, selectPepsi)} = {(1, selectCoke)}"
+    apply (simp add: pta_transitions)
+  by auto
+
+lemma minus_1: "{(5::nat, coin100_100), (2, coin50_50)} - {(2, coin50_50)} = {(5, coin100_100)}"
+  by auto
+
+lemma minus_2: "{(4::nat, vend_coke), (10, vend_pepsi)} - {(10, vend_pepsi)} = {(4, vend_coke)}"
+  by auto
+
+lemma card2_aux: "{(2, coin50_50), (5, coin100_100), (2, coin50_50)} = {(5, coin100_100), (2, coin50_50)}"
+  by auto
+
+lemma state_nondeterminism_1:  "state_nondeterminism 1 {|(2, coin50_50), (5, coin100_100), (2, coin50_50)|} = {|
+   (1, (2, 5), coin50_50, coin100_100), (1, (2, 5), coin50_50, coin100_100)|}"
+    apply (simp add: state_nondeterminism_def Set.filter_def fimage_def card1 card2_aux)
+    by (simp add: minus_1)
+
+lemma state_nondeterminism_0: "state_nondeterminism 0 {|(1, selectCoke), (1, selectPepsi)|} = {|(0, (1, 1), selectPepsi, selectCoke), (0, (1, 1), selectCoke, selectPepsi)|}"
+  apply (simp add: state_nondeterminism_def card1 Set.filter_def fimage_def)
+  by (simp add: minus_3 minus_4)
+
+lemma nondeterministic_pairs_merged_3_9: "nondeterministic_pairs merged_3_9 = {|(3, (4, 10), vend_coke, vend_pepsi)|}"
+proof-
+  have state_nondeterminism_3: "state_nondeterminism 3 {|(4, vend_coke), (10, vend_pepsi)|} = {|(3, (4, 10), vend_coke, vend_pepsi)|}"
+    apply (simp add: state_nondeterminism_def card1 Set.filter_def fimage_def)
+    by (simp add: minus_2)
+  show ?thesis
+    apply (simp add: nondeterministic_pairs_def)
+    apply (simp add: S_def merged_3_9_def)
+    apply (simp add: outgoing_transitions_def Set.filter_def fimage_def)
+    apply (simp add: state_nondeterminism_0 state_nondeterminism_1 state_nondeterminism_3)
+    apply (simp add: ffilter_def Set.filter_def)
+    apply (simp add: fset_both_sides Abs_fset_inverse)
+    apply safe
+                        apply (simp_all add: choices)
+    by (simp add: pta_transitions less_eq_transition_ext_def less_transition_ext_def less_aexp_def)
+qed
+
+lemma nondeterminism_merged_3_9: "nondeterminism merged_3_9"
+  by (simp add: nondeterminism_def nondeterministic_pairs_merged_3_9)
+
+definition merged_4_10 :: transition_matrix where
+  "merged_4_10 = {|
+((0, 1), selectCoke), ((1, 2), coin50_50), ((2, 3), coin50_100), ((3, 4), vend_coke), 
+                                           ((1, 5), coin100_100), ((5, 6), vend_coke),
+((0, 1), selectPepsi), ((1, 2), coin50_50), ((3, 4), vend_pepsi)|}"
+
+lemma merge_states_4_10: "merge_states 4 10 merged_3_9 = merged_4_10"
+  by (simp add: merge_states_def merge_states_aux_def merged_4_10_def merged_3_9_def)
+
+lemma nondeterministic_pairs_merged_4_10: "nondeterministic_pairs merged_4_10 = {|(3, (4, 4), vend_coke, vend_pepsi)|}"
+proof-
+  have minus: "{(4::nat, vend_pepsi)} - {(4, vend_coke)} = {(4, vend_pepsi)}"
+    by (simp add: pta_transitions)
+  have card: "card {(4, vend_coke), (4, vend_pepsi)} = 2"
+    by (simp add: pta_transitions)
+  have minus_2: "{(4::nat, vend_coke), (4, vend_pepsi)} - {(4::nat, vend_pepsi)} = {(4::nat, vend_coke)}"
+    apply (simp add: pta_transitions)
+    by auto
+  have state_nondeterminism_4: "state_nondeterminism 3 {|(4, vend_coke), (4, vend_pepsi)|} = {|(3, (4, 4), vend_pepsi, vend_coke), (3, (4, 4), vend_coke, vend_pepsi)|}"
+    apply (simp add: state_nondeterminism_def Set.filter_def fimage_def card1 card2_aux)
+    by (simp add: minus card minus_2)
+  show ?thesis
+    apply (simp add: nondeterministic_pairs_def)
+    apply (simp add: S_def merged_4_10_def)
+    apply (simp add: outgoing_transitions_def Set.filter_def fimage_def)
+    apply (simp add: state_nondeterminism_0 state_nondeterminism_1 state_nondeterminism_4)
+    apply (simp add: ffilter_def Set.filter_def)
+    apply (simp add: fset_both_sides Abs_fset_inverse)
+    apply safe
+                        apply (simp_all add: choices)
+    by (simp_all add: pta_transitions less_eq_transition_ext_def less_transition_ext_def less_aexp_def)
+qed
+
+lemma nondeterminism_merged_4_10: "nondeterminism merged_4_10"
+  by (simp add: nondeterminism_def nondeterministic_pairs_merged_4_10)
 
 lemma first_step: "inference_step pta
              [(2, 1, 7), (2, 1, 2), (1, 7, 8), (1, 5, 9), (1, 3, 9), (1, 3, 5), (1, 2, 8), (1, 2, 7), (0, 9, 10), (0, 8, 10), (0, 8, 9),
@@ -654,7 +782,32 @@ lemma first_step: "inference_step pta
               (0, 2, 9), (0, 2, 6), (0, 2, 5), (0, 2, 4), (0, 2, 3), (0, 1, 10), (0, 1, 9), (0, 1, 6), (0, 1, 5), (0, 1, 4), (0, 1, 3),
               (0, 0, 10), (0, 0, 9), (0, 0, 8), (0, 0, 7), (0, 0, 6), (0, 0, 5), (0, 0, 4), (0, 0, 3), (0, 0, 2), (0, 0, 1)]
              (\<lambda>a b c d e. Some t) (\<lambda>a b c d e. Some e') = Some drinks"
-  apply (simp add: merge_states_1_7)
+proof-
+  have exits_state_pta_coin50_50_1: "exits_state pta coin50_50 1"
+    by (simp add: exits_state_def pta_def pta_transitions)
+  have exits_state_merged_1_7_coin50_100_2: "exits_state merged_1_7 coin50_100 2"
+    by (simp add: exits_state_def pta_transitions merged_1_7_def)
+  have exits_state_merged_2_8_vend_coke_3: "exits_state merged_2_8 vend_coke 3"
+    by (simp add: exits_state_def pta_transitions merged_2_8_def)
+  have not_exits_state_merged_2_8_vend_pepsi_3: "\<not>exits_state merged_2_8 vend_pepsi 3"
+    by (simp add: exits_state_def pta_transitions merged_2_8_def)
+  have not_exits_state_merged_3_9_vend_coke_4: "\<not>exits_state merged_3_9 vend_coke 4"
+    by (simp add: exits_state_def pta_transitions merged_3_9_def)
+  have not_exits_state_merged_3_9_vend_pepsi_4: "\<not>exits_state merged_3_9 vend_pepsi 4"
+    by (simp add: exits_state_def pta_transitions merged_3_9_def)
+
+  show ?thesis
+    apply simp
+    apply (simp add: merge_states_1_7)
+    apply (simp add: nondeterministic_pairs_merged_1_7 nondeterminism_merged_1_7 max_def exits_state_pta_coin50_50_1)
+    apply (simp add: merge_states_2_8)
+    apply (simp add: exits_state_merged_1_7_coin50_100_2 nondeterministic_pairs_merged_2_8 nondeterminism_merged_2_8)
+    apply (simp add: merge_states_3_9)
+    apply (simp add: nondeterministic_pairs_merged_3_9 nondeterminism_merged_3_9 exits_state_merged_2_8_vend_coke_3 not_exits_state_merged_2_8_vend_pepsi_3)
+    apply (simp add: merge_states_4_10)
+    apply (simp add: nondeterministic_pairs_merged_4_10 not_exits_state_merged_3_9_vend_coke_4 not_exits_state_merged_3_9_vend_pepsi_4 nondeterminism_merged_4_10)
+
+
 
 lemma "learn traces naive_score (\<lambda>a b c d e. Some t) (\<lambda>a b c d e. Some e') = drinks"
   apply (simp add: learn_def pta_of_log scoring)

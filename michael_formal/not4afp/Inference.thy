@@ -39,7 +39,7 @@ definition outgoing_transitions :: "nat \<Rightarrow> transition_matrix \<Righta
   "outgoing_transitions n t = fimage (\<lambda>(x, t'). (snd x, t')) (ffilter (\<lambda>((origin, dest), t). origin = n) t)"
 
 definition state_nondeterminism :: "nat \<Rightarrow> (nat \<times> transition) fset \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset" where
-  "state_nondeterminism origin nt = ffilter (\<lambda>(_, _, t, t'). t \<le> t' \<and> choice t t') (if size nt < 2 then {||} else ffUnion (fimage (\<lambda>x. let (dest, t) = x in fimage (\<lambda>y. let (dest', t') = y in (origin, (dest, dest'), (t, t'))) (nt - {|x|})) nt))"
+  "state_nondeterminism origin nt = fimage (\<lambda>x. let (origin, (d1, d2), t, t') = x in if d1 > d2 then (origin, (d2, d1), t', t) else x) (if size nt < 2 then {||} else ffUnion (fimage (\<lambda>x. let (dest, t) = x in fimage (\<lambda>y. let (dest', t') = y in (origin, (dest, dest'), (t, t'))) (nt - {|x|})) nt))"
 
 lemma state_nondeterminism_empty[simp]: "state_nondeterminism a {||} = {||}"
   by (simp add: state_nondeterminism_def ffilter_def Set.filter_def)
@@ -49,7 +49,7 @@ lemma state_nondeterminism_singleton[simp]: "state_nondeterminism a {|x|} = {||}
 
 (* For each state, get its outgoing transitions and see if there's any nondeterminism there *)
 definition nondeterministic_pairs :: "transition_matrix \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset" where
-  "nondeterministic_pairs t = ffUnion (fimage (\<lambda>s. state_nondeterminism s (outgoing_transitions s t)) (S t))"
+  "nondeterministic_pairs t = ffilter (\<lambda>(_, (d1, d2), t, t'). choice t t' \<and> t \<le> t') (ffUnion (fimage (\<lambda>s. state_nondeterminism s (outgoing_transitions s t)) (S t)))"
 
 (* Get every possible ((origin, dest), transition) pair, filter then for nondeterminism, then put them in the right format 
 definition nondeterministic_pairs :: "transition_matrix \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset" where
@@ -66,7 +66,7 @@ definition replace_transition :: "transition_matrix \<Rightarrow> nat \<Rightarr
   "replace_transition t from to orig new = (ffilter (\<lambda>x. x \<noteq> ((from, to), orig)) t) |\<union>| {|((from, to), new)|}"
 
 definition exits_state :: "transition_matrix \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> bool" where
-  "exits_state e t from = ((ffilter (\<lambda>((from', to), t'). from' = from \<and> t' = t) e) \<noteq> {||})"
+  "exits_state e t from = (\<exists>dest. ((from, dest), t) |\<in>| e)"
 
 primrec make_guard :: "value list \<Rightarrow> nat \<Rightarrow> guard list" where
 "make_guard [] _ = []" |
