@@ -35,12 +35,26 @@ lemma fprod_empty[simp]: "\<forall>a. fprod {||} a = {||}"
 lemma fprod_empty_2[simp]: "\<forall>a. fprod a {||} = {||}"
   by (simp add: fprod_def ffUnion_def)
 
-definition outgoing_transitions_with_dest :: "nat \<Rightarrow> transition_matrix \<Rightarrow> (nat \<times> transition) fset" where
-  "outgoing_transitions_with_dest n t = fimage (\<lambda>(x, t'). (snd x, t')) (ffilter (\<lambda>((origin, dest), t). origin = n) t)"
+definition outgoing_transitions :: "nat \<Rightarrow> transition_matrix \<Rightarrow> (nat \<times> transition) fset" where
+  "outgoing_transitions n t = fimage (\<lambda>(x, t'). (snd x, t')) (ffilter (\<lambda>((origin, dest), t). origin = n) t)"
 
-(* Get every possible ((origin, dest), transition) pair, filter then for nondeterminism, then put them in the right format *)
+definition state_nondeterminism :: "nat \<Rightarrow> (nat \<times> transition) fset \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset" where
+  "state_nondeterminism origin nt = ffilter (\<lambda>(_, _, t, t'). t \<le> t' \<and> choice t t') (if size nt < 2 then {||} else ffUnion (fimage (\<lambda>x. let (dest, t) = x in fimage (\<lambda>y. let (dest', t') = y in (origin, (dest, dest'), (t, t'))) (nt - {|x|})) nt))"
+
+lemma state_nondeterminism_empty[simp]: "state_nondeterminism a {||} = {||}"
+  by (simp add: state_nondeterminism_def ffilter_def Set.filter_def)
+
+lemma state_nondeterminism_singleton[simp]: "state_nondeterminism a {|x|} = {||}"
+  by (simp add: state_nondeterminism_def ffilter_def Set.filter_def)
+
+(* For each state, get its outgoing transitions and see if there's any nondeterminism there *)
+definition nondeterministic_pairs :: "transition_matrix \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset" where
+  "nondeterministic_pairs t = ffUnion (fimage (\<lambda>s. state_nondeterminism s (outgoing_transitions s t)) (S t))"
+
+(* Get every possible ((origin, dest), transition) pair, filter then for nondeterminism, then put them in the right format 
 definition nondeterministic_pairs :: "transition_matrix \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset" where
   "nondeterministic_pairs t = fimage (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). (origin1, (dest1, dest2), (t1, t2))) (ffilter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> choice t1 t2) (ffilter (\<lambda>(x, y). x < y) (all_pairs t)))"
+*)
 
 definition nondeterministic_transitions :: "transition_matrix \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) option" where
   "nondeterministic_transitions t = (if nondeterministic_pairs t = {||} then None else Some (fMax (nondeterministic_pairs t)))"
@@ -126,11 +140,8 @@ definition merge_transitions :: "transition_matrix \<Rightarrow> transition_matr
 type_synonym scoreboard = "(nat \<times> (nat \<times> nat)) fset"
 type_synonym strategy = "transition fset \<Rightarrow> transition fset \<Rightarrow> nat"
 
-definition outgoing_transitions :: "nat \<Rightarrow> transition_matrix \<Rightarrow> transition fset" where
-  "outgoing_transitions n t = fimage (\<lambda>(x, t'). t') (ffilter (\<lambda>((origin, dest), t). origin = n) t)"
-
 definition score :: "transition_matrix \<Rightarrow> strategy \<Rightarrow> scoreboard" where
-  "score t rank = fimage (\<lambda>(s1, s2). (rank (outgoing_transitions s1 t) (outgoing_transitions s2 t), (s1, s2))) (ffilter (\<lambda>(x, y). x < y) (all_pairs (S t)))"
+  "score t rank = fimage (\<lambda>(s1, s2). (rank (fimage (\<lambda>x. snd x) (outgoing_transitions s1 t)) (fimage (\<lambda>x. snd x) (outgoing_transitions s2 t)), (s1, s2))) (ffilter (\<lambda>(x, y). x < y) (all_pairs (S t)))"
 
 function resolve_nondeterminism :: "(nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition_matrix \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix option" and
                         merge :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix option" where
