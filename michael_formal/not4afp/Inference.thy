@@ -3,14 +3,41 @@ theory Inference
           "~~/src/HOL/Library/Product_Lexorder"
 begin
 
-definition merge_states_aux :: "nat \<Rightarrow> nat \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
-  "merge_states_aux x y t = (fimage (\<lambda>((origin, dest), t). ((if origin = x then y else origin , if dest = x then y else dest), t)) t)"
+(* I'd like to have unique uids as part of the type if I can *)
 
-definition merge_states :: "nat \<Rightarrow> nat \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
+type_synonym iEFSM = "(nat \<times> (nat \<times> nat) \<times> transition) fset"
+
+(*definition unique_uid :: "uEFSM \<Rightarrow> bool" where
+  "unique_uid u = (size (fimage (\<lambda>(uid, _). uid) u) = size u)"
+
+typedef iEFSM = "{A :: uEFSM. unique_uid A}"  morphisms iEFSM Abs_iEFSM
+  apply (rule_tac x="{||}" in exI)
+  by (simp add: unique_uid_def)*)
+
+primrec toiEFSM_aux :: "nat \<Rightarrow> ((nat \<times> nat) \<times> transition) list \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> transition) list" where
+  "toiEFSM_aux _ [] = []" |
+  "toiEFSM_aux n (h#t) = (n, h)#(toiEFSM_aux (n+1) t)"
+
+definition toiEFSM :: "transition_matrix \<Rightarrow> iEFSM" where
+  "toiEFSM e = fset_of_list (toiEFSM_aux 0 (sorted_list_of_fset e))"
+
+definition tm :: "iEFSM \<Rightarrow> transition_matrix" where
+  "tm t = fimage (\<lambda>x. snd x) t"
+
+definition maxUID :: "iEFSM \<Rightarrow> nat" where
+  "maxUID e = fMax (fimage (\<lambda>x. fst x) e)"
+
+definition merge_states_aux :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "merge_states_aux x y t = (fimage (\<lambda>(uid, (origin, dest), t). (uid, (if origin = x then y else origin , if dest = x then y else dest), t)) t)"
+
+definition merge_states :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "merge_states x y t = (if x > y then merge_states_aux x y t else merge_states_aux y x t)"
 
 lemma merge_states_reflexive: "merge_states x x t = t"
-  by (simp add: merge_states_def merge_states_aux_def)
+  apply (simp add: merge_states_def merge_states_aux_def)
+  apply (simp add: fimage_def)
+  apply (simp add: fset_both_sides Abs_fset_inverse)
+  by force
 
 lemma merge_states_symmetry: "merge_states x y t = merge_states y x t"
   by (simp add: merge_states_def merge_states_aux_def)
@@ -35,10 +62,12 @@ lemma fprod_empty[simp]: "\<forall>a. fprod {||} a = {||}"
 lemma fprod_empty_2[simp]: "\<forall>a. fprod a {||} = {||}"
   by (simp add: fprod_def ffUnion_def)
 
-definition outgoing_transitions :: "nat \<Rightarrow> transition_matrix \<Rightarrow> (nat \<times> transition) fset" where
-  "outgoing_transitions n t = fimage (\<lambda>(x, t'). (snd x, t')) (ffilter (\<lambda>((origin, dest), t). origin = n) t)"
+definition outgoing_transitions :: "nat \<Rightarrow> iEFSM \<Rightarrow> (nat \<times> transition \<times> nat) fset" where
+  "outgoing_transitions n t = fimage (\<lambda>(uid, x, t'). (snd x, t', uid)) (ffilter (\<lambda>(uid, (origin, dest), t). origin = n) t)"
 
-definition state_nondeterminism :: "nat \<Rightarrow> (nat \<times> transition) fset \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset" where
+type_synonym nondeterministic_pair = "(nat \<times> (nat \<times> nat) \<times> ((transition \<times> nat) \<times> (transition \<times> nat)))"
+
+definition state_nondeterminism :: "nat \<Rightarrow> (nat \<times> transition \<times> nat) fset \<Rightarrow> nondeterministic_pair fset" where
   "state_nondeterminism origin nt = fimage (\<lambda>x. let (origin, (d1, d2), t, t') = x in if d1 > d2 then (origin, (d2, d1), t', t) else x) (if size nt < 2 then {||} else ffUnion (fimage (\<lambda>x. let (dest, t) = x in fimage (\<lambda>y. let (dest', t') = y in (origin, (dest, dest'), (t, t'))) (nt - {|x|})) nt))"
 
 lemma state_nondeterminism_empty[simp]: "state_nondeterminism a {||} = {||}"
@@ -47,26 +76,24 @@ lemma state_nondeterminism_empty[simp]: "state_nondeterminism a {||} = {||}"
 lemma state_nondeterminism_singleton[simp]: "state_nondeterminism a {|x|} = {||}"
   by (simp add: state_nondeterminism_def ffilter_def Set.filter_def)
 
+definition S :: "iEFSM \<Rightarrow> nat fset" where
+  "S m = (fimage (\<lambda>(uid, (s, s'), t). s) m) |\<union>| fimage (\<lambda>(uid, (s, s'), t). s') m"
+
 (* For each state, get its outgoing transitions and see if there's any nondeterminism there *)
-definition nondeterministic_pairs :: "transition_matrix \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset" where
-  "nondeterministic_pairs t = ffilter (\<lambda>(_, (d1, d2), t, t'). choice t t' \<and> t \<le> t') (ffUnion (fimage (\<lambda>s. state_nondeterminism s (outgoing_transitions s t)) (S t)))"
+definition nondeterministic_pairs :: "iEFSM \<Rightarrow> nondeterministic_pair fset" where
+  "nondeterministic_pairs t = ffilter (\<lambda>(_, (d1, d2), t, t'). choice (fst t) (fst t') \<and> t \<le> t') (ffUnion (fimage (\<lambda>s. state_nondeterminism s (outgoing_transitions s t)) (S t)))"
 
-(* Get every possible ((origin, dest), transition) pair, filter then for nondeterminism, then put them in the right format 
-definition nondeterministic_pairs :: "transition_matrix \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset" where
-  "nondeterministic_pairs t = fimage (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). (origin1, (dest1, dest2), (t1, t2))) (ffilter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> choice t1 t2) (ffilter (\<lambda>(x, y). x < y) (all_pairs t)))"
-*)
-
-definition nondeterministic_transitions :: "transition_matrix \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) option" where
+definition nondeterministic_transitions :: "iEFSM \<Rightarrow> nondeterministic_pair option" where
   "nondeterministic_transitions t = (if nondeterministic_pairs t = {||} then None else Some (fMax (nondeterministic_pairs t)))"
 
-definition nondeterminism :: "transition_matrix \<Rightarrow> bool" where
+definition nondeterminism :: "iEFSM \<Rightarrow> bool" where
   "nondeterminism t = (nondeterministic_pairs t \<noteq> {||})"
 
-definition replace_transition :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> transition_matrix" where
-  "replace_transition t from to orig new = (ffilter (\<lambda>x. x \<noteq> ((from, to), orig)) t) |\<union>| {|((from, to), new)|}"
+definition replace_transition :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
+  "replace_transition t uid from to orig new = (ffilter (\<lambda>x. x \<noteq> (uid, (from, to), orig)) t) |\<union>| {|(uid, (from, to), new)|}"
 
-definition exits_state :: "transition_matrix \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> bool" where
-  "exits_state e t from = (\<exists>dest. ((from, dest), t) |\<in>| e)"
+definition exits_state :: "iEFSM \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> bool" where
+  "exits_state e t from = (\<exists>dest uid. (uid, (from, dest), t) |\<in>| e)"
 
 primrec make_guard :: "value list \<Rightarrow> nat \<Rightarrow> guard list" where
 "make_guard [] _ = []" |
@@ -93,43 +120,43 @@ primrec make_pta :: "log \<Rightarrow> transition_matrix \<Rightarrow> transitio
   "make_pta [] e = e" |
   "make_pta (h#t) e = (make_pta t (make_branch e 0 <> h))"
 
-type_synonym generator_function = "transition_matrix \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition option"
+type_synonym generator_function = "iEFSM \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition option"
 
 definition null_generator :: generator_function where
   "null_generator a b c d e = None"
 
-type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> (transition_matrix \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option"
+type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option"
 
 definition null_modifier :: update_modifier where
   "null_modifier a b c d e = None"
 
-definition easy_merge :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> generator_function \<Rightarrow> transition_matrix option" where
-  "easy_merge oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 t2 maker = (
+definition easy_merge :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> generator_function \<Rightarrow> iEFSM option" where
+  "easy_merge oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 u1 t2 u2 maker = (
     \<comment> \<open> If t1 directly subsumes t2 then replace t2 with t1 \<close>
-    if directly_subsumes oldEFSM newEFSM t1FromOld t2 t1 then Some (replace_transition newEFSM newFrom t2NewTo t1 t2) else
+    if directly_subsumes (tm oldEFSM) (tm newEFSM) t1FromOld t2 t1 then Some (replace_transition newEFSM u1 newFrom t2NewTo t1 t2) else
     \<comment> \<open> If t2 directly subsumes t1 then replace t1 with t2 \<close>
-    if directly_subsumes oldEFSM newEFSM t2FromOld t1 t2 then Some (replace_transition newEFSM newFrom t1NewTo t2 t1) else
+    if directly_subsumes (tm oldEFSM) (tm newEFSM) t2FromOld t1 t2 then Some (replace_transition newEFSM u2 newFrom t1NewTo t2 t1) else
     \<comment> \<open> Can we make a transition which subsumes both? \<close>
     (case maker oldEFSM t1FromOld t1 t2FromOld t2 of
     Some t' \<Rightarrow>
-    if directly_subsumes oldEFSM newEFSM t2FromOld t1 t' \<and> directly_subsumes oldEFSM newEFSM t1FromOld t2 t' then
-       Some (replace_transition (replace_transition newEFSM newFrom t1NewTo t2 t') newFrom t2NewTo t1 t') else
+    if directly_subsumes (tm oldEFSM) (tm newEFSM) t2FromOld t1 t' \<and> directly_subsumes (tm oldEFSM) (tm newEFSM) t1FromOld t2 t' then
+       Some (replace_transition (replace_transition newEFSM ((maxUID newEFSM) + 1) newFrom t1NewTo t2 t') ((maxUID newEFSM) + 2) newFrom t2NewTo t1 t') else
     None |
     None \<Rightarrow> None)
   )"
 
-definition merge_transitions :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> bool \<Rightarrow> transition_matrix option" where
-  "merge_transitions oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 t2 maker modifier modify = (
-     case easy_merge oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 t2 maker of
+definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> bool \<Rightarrow> iEFSM option" where
+  "merge_transitions oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 u1 t2 u2 maker modifier modify = (
+     case easy_merge oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 u1 t2 u2 maker of
       Some x \<Rightarrow> Some x |
       \<comment> \<open> Can we modify the updates such that subsumption can occur? \<close>
       None \<Rightarrow> (
         if modify then
           (case modifier t1 t2 newFrom newEFSM oldEFSM of
             None \<Rightarrow> None |
-            Some (t', H\<^sub>n\<^sub>e\<^sub>w, H\<^sub>o\<^sub>l\<^sub>d) \<Rightarrow> (
-              if nondeterministic_simulates t' oldEFSM H\<^sub>o\<^sub>l\<^sub>d then
-                easy_merge oldEFSM t' t1FromOld t2FromOld (H\<^sub>n\<^sub>e\<^sub>w newFrom) (H\<^sub>n\<^sub>e\<^sub>w t1NewTo) (H\<^sub>n\<^sub>e\<^sub>w t2NewTo) t1 t2 maker
+            Some (t', H\<^sub>n\<^sub>e\<^sub>w, H\<^sub>o\<^sub>l\<^sub>d, H\<^sub>u\<^sub>i\<^sub>d) \<Rightarrow> (
+              if nondeterministic_simulates (tm t') (tm oldEFSM) H\<^sub>o\<^sub>l\<^sub>d then
+                easy_merge oldEFSM t' t1FromOld t2FromOld (H\<^sub>n\<^sub>e\<^sub>w newFrom) (H\<^sub>n\<^sub>e\<^sub>w t1NewTo) (H\<^sub>n\<^sub>e\<^sub>w t2NewTo) t1 u1 t2 u2 maker
               else None
             )
           )
@@ -140,16 +167,27 @@ definition merge_transitions :: "transition_matrix \<Rightarrow> transition_matr
 type_synonym scoreboard = "(nat \<times> (nat \<times> nat)) fset"
 type_synonym strategy = "transition fset \<Rightarrow> transition fset \<Rightarrow> nat"
 
-definition score :: "transition_matrix \<Rightarrow> strategy \<Rightarrow> scoreboard" where
-  "score t rank = fimage (\<lambda>(s1, s2). (rank (fimage (\<lambda>x. snd x) (outgoing_transitions s1 t)) (fimage (\<lambda>x. snd x) (outgoing_transitions s2 t)), (s1, s2))) (ffilter (\<lambda>(x, y). x < y) (all_pairs (S t)))"
+definition score :: "iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
+  "score t rank = fimage (\<lambda>(s1, s2). (rank (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s1 t)) (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s2 t)), (s1, s2))) (ffilter (\<lambda>(x, y). x < y) (all_pairs (S t)))"
 
-function resolve_nondeterminism :: "(nat \<times> (nat \<times> nat) \<times> (transition \<times> transition)) fset \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition_matrix \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix option" and
-                        merge :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix option" where
-  "resolve_nondeterminism s e s1 s2 t g m = (if s = {||} then None else (let (from, (to1, to2), (t1, t2)) = fMax s in
-                        case merge t to1 to2 g m of None \<Rightarrow> resolve_nondeterminism (s - {|fMax s|}) e s1 s2 t g m |
-                                    Some t \<Rightarrow> merge_transitions e t (if exits_state e t1 s1 then s1 else s2) (if exits_state e t2 s1 then s1 else s2) from to1 to2 t1 t2 g m True))" |
+definition leaves :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
+  "leaves uid t = fst (fst (snd (Eps (\<lambda>x. x |\<in>| t \<and> (\<exists>s. x = (uid, s))))))"
 
-"merge e s1 s2 g m = (if s1 = s2 then Some (e) else (let t' = (merge_states s1 s2 (e)) in
+(* resolve_nondeterminism: tries to resolve any nondeterminism in a given EFSM                    *)
+(* @param n - The nondeterministic pairs of the form (origin, (dest1, dest2), t1, t2)             *)
+(* @param e - The EFSM before states s1 and s2 were merged                                        *)
+(* @param s1 - The state to be merged with s2                                                     *)
+(* @param s2 - The state to be merged with s1                                                     *)
+(* @param t - The nondeterministic EFSM arising from merging s1 with s2                           *)
+(* @param g - A function which takes two transitions and generates one which subsumes them both   *)
+(* @param m - A function which modifies the nondeterministic EFSM                                 *)
+function resolve_nondeterminism :: "nondeterministic_pair fset \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" and
+                        merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" where
+  "resolve_nondeterminism n e s1 s2 t g m = (if n = {||} then None else (let (from, (to1, to2), ((t1, u1), (t2, u2))) = fMax n in
+                        case merge t to1 to2 g m of None \<Rightarrow> resolve_nondeterminism (n - {|fMax n|}) e s1 s2 t g m |
+                                    Some t \<Rightarrow> merge_transitions e t (leaves u1 e) (leaves u2 e) from to1 to2 t1 u1 t2 u2 g m True))" |
+
+"merge e s1 s2 g m = (if s1 = s2 then Some (e) else (let t' = (merge_states s1 s2 e) in
                        \<comment> \<open> Have we got any nondeterminism? \<close>
                        (if \<not> nondeterminism t' then
                          \<comment> \<open> If not then we're good to go \<close>
@@ -166,7 +204,7 @@ termination
 
 (* export_code resolve_nondeterminism in "Scala" *)
 
-fun inference_step :: "transition_matrix \<Rightarrow> (nat \<times> nat \<times> nat) list \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix option" where
+fun inference_step :: "iEFSM \<Rightarrow> (nat \<times> nat \<times> nat) list \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" where
   "inference_step _ [] _ _ = None" |
   "inference_step T ((s, s1, s2)#t) g m =
                                 (if s > 0 then
@@ -175,7 +213,7 @@ fun inference_step :: "transition_matrix \<Rightarrow> (nat \<times> nat \<times
                                      None \<Rightarrow> inference_step T t g m
                                  else None)"
 
-function infer :: "transition_matrix \<Rightarrow> strategy \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix" where
+function infer :: "iEFSM \<Rightarrow> strategy \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM" where
   "infer t r g m = (case inference_step t (rev (sorted_list_of_fset (score t r))) g m of None \<Rightarrow> t | Some new \<Rightarrow> infer new r g m)"
   by auto
 termination
@@ -186,7 +224,7 @@ proof-
     sorry
 qed
 
-definition learn :: "log \<Rightarrow> strategy \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix" where
-  "learn l r g m = infer (make_pta l {||}) r g m"
+definition learn :: "log \<Rightarrow> strategy \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM" where
+  "learn l r g m = infer (toiEFSM (make_pta l {||})) r g m"
 
 end

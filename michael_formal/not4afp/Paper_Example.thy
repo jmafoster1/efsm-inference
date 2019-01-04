@@ -1,5 +1,5 @@
 theory Paper_Example
-imports Inference SelectionStrategies
+imports Inference SelectionStrategies FSet_Utils
 begin
 
 definition select :: transition where
@@ -601,26 +601,74 @@ proof-
     by (simp add: naive_score_empty naive_score_1_2 naive_score_0_1 naive_score_0_2)
 qed
 
+lemma no_choice_vend_fail_vend_success: "\<not>choice vend_fail vend_success"
+  by (simp add: choice_def transitions)
+
+lemma no_choice_coin_vend_success: "\<not>choice coin vend_success"
+  by (simp add: choice_def transitions)
+
+lemma no_choice_coin50_vend_success: "\<not>choice coin50 vend_success"
+  by (simp add: choice_def transitions)
+
+lemma no_choice_vend_fail_coin: "\<not>choice vend_fail coin"
+  by (simp add: choice_def transitions)
+
+lemma no_choice_vend_fail_coin50: "\<not>choice vend_fail coin50"
+  by (simp add: choice_def transitions)
+
+lemma no_choice_coin_vend_fail: "\<not>choice coin vend_fail"
+  by (simp add: choice_def transitions)
+
+lemma no_choice_coin50_vend_fail: "\<not>choice coin50 vend_fail"
+  by (simp add: choice_def transitions)
+
+lemma choice_coin50_coin: "choice coin50 coin"
+  apply (simp add: choice_def transitions)
+  by auto
+
+lemma coin50_gt_coin: "coin50 > coin"
+  by (simp add: transitions less_transition_ext_def)
+
+lemmas choices = choice_symmetry choice_coin50_coin no_choice_coin50_vend_fail no_choice_coin_vend_fail no_choice_vend_fail_vend_success no_choice_coin_vend_success no_choice_coin50_vend_success no_choice_vend_fail_coin no_choice_vend_fail_coin50
+
 lemma nondeterministic_pairs: "nondeterministic_pairs merge_1_2 = {|(1, (1, 1), coin, coin50)|}"
 proof-
-  have set_filter: "(Set.filter (\<lambda>(((origin1, dest1), t1), (origin2, dest2), t2). origin1 = origin2 \<and> t1 < t2 \<and> choice t1 t2)
-       (fset (all_pairs merge_1_2))) = {(((1, 1), coin), (1, 1), coin50)}"
-    apply (simp add: all_pairs_def merge_1_2_def Set.filter_def)
-    apply safe
-                        apply (simp_all add: transitions less_transition_ext_def less_gexp_def choice_def)
-       apply clarify
-       apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
-        apply simp
-       apply simp
-      apply clarify
-      apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
-       apply simp
-      apply simp
-     apply clarify
-    apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
+    have card1: "card {(1, coin50), (1, coin), (1, vend_fail), (3, vend_success)} = 4"
+      by (simp add: transitions)
+    have minus_1: "{|(1, coin), (1, vend_fail), (3, vend_success)|} |-| {|(1, coin50)|} = {|(1, coin), (1, vend_fail), (3, vend_success)|}"
+      by (simp add: transitions)
+    have minus_2: "{|(1, coin50), (1, coin), (1, vend_fail), (3, vend_success)|} |-| {|(1, coin)|} = {|(1, coin50), (1, vend_fail), (3, vend_success)|}"
+      apply (simp add: transitions)
+      by auto
+    have minus_3: "{|(1, coin50), (1, coin), (1, vend_fail), (3, vend_success)|} |-| {|(1, vend_fail)|} = {|(1, coin50), (1, coin), (3, vend_success)|}"
+      apply (simp add: transitions)
+      by auto
+    have minus_4: "{|(1, coin50), (1, coin), (1, vend_fail), (3, vend_success)|} |-| {|(3, vend_success)|} = {|(1, coin50), (1, coin), (1, vend_fail)|}"
+      apply (simp add: transitions)
+      by auto
+  have state_nondeterminism:  "state_nondeterminism 1 {|(1, coin50), (1, coin), (1, vend_fail), (3, vend_success)|} = {|
+   (1, (1, 3), vend_fail, vend_success),
+   (1, (1, 3), coin,    vend_success),
+   (1, (1, 3), coin50,    vend_success),
+   (1, (1, 1), vend_fail,    coin),
+   (1, (1, 1), vend_fail,    coin50),
+   (1, (1, 1), coin,    vend_fail),
+   (1, (1, 1), coin,    coin50),
+   (1, (1, 1), coin50,    vend_fail),
+   (1, (1, 1), coin50,    coin)|}"
+    apply (simp add: state_nondeterminism_def card1)
+    apply (simp only: minus_1 minus_2 minus_3 minus_4)
+    apply (simp add: fimage_def fset_both_sides Abs_fset_inverse)
     by auto
   show ?thesis
-    by (simp add: nondeterministic_pairs_def ffilter_def set_filter)
+    apply (simp add: nondeterministic_pairs_def)
+    apply (simp add: S_def merge_1_2_def)
+    apply (simp add: outgoing_transitions_def Set.filter_def fimage_def)
+    apply (simp add: ffilter_def state_nondeterminism)
+    apply (simp add: fset_both_sides Abs_fset_inverse Set.filter_def)
+    apply safe
+                        apply (simp_all add: choices)
+    using coin50_gt_coin choice_coin50_coin choice_symmetry by auto
 qed
 
 lemma coin_doesnt_exit_1_drinks_before: "\<not>exits_state drinks_before coin 1"

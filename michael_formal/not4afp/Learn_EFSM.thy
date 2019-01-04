@@ -775,13 +775,30 @@ qed
 lemma nondeterminism_merged_4_10: "nondeterminism merged_4_10"
   by (simp add: nondeterminism_def nondeterministic_pairs_merged_4_10)
 
+definition vend_general :: transition where
+  "vend_general = \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [V (R 1)], Updates = []\<rparr>"
+
+definition selectGeneral :: transition where
+  "selectGeneral = \<lparr>Label = ''select'', Arity = 1, Guard = [], Outputs = [], Updates = [(R 1, (V (I 1)))]\<rparr>"
+
+definition merged_vends :: transition_matrix where
+  "merged_vends = {|
+((0, 1), selectGeneral), ((1, 2), coin50_50), ((2, 3), coin50_100), ((3, 4), vend_general), 
+                         ((1, 5), coin100_100), ((5, 6), vend_coke)|}"
+
+definition mapping :: "nat \<Rightarrow> nat" where
+  "mapping n = (if n = 7 then 1 else if n = 8 then 2 else if n = 9 then 3 else if n = 10 then 4 else n)"
+
+definition modify :: update_modifier where
+  "modify t1 t2 newFrom newEFSM oldEFSM = (if newEFSM = merged_4_10 then Some (merged_vends, (\<lambda>n. n), mapping) else None)"
+
 lemma first_step: "inference_step pta
              [(2, 1, 7), (2, 1, 2), (1, 7, 8), (1, 5, 9), (1, 3, 9), (1, 3, 5), (1, 2, 8), (1, 2, 7), (0, 9, 10), (0, 8, 10), (0, 8, 9),
               (0, 7, 10), (0, 7, 9), (0, 6, 10), (0, 6, 9), (0, 6, 8), (0, 6, 7), (0, 5, 10), (0, 5, 8), (0, 5, 7), (0, 5, 6), (0, 4, 10),
               (0, 4, 9), (0, 4, 8), (0, 4, 7), (0, 4, 6), (0, 4, 5), (0, 3, 10), (0, 3, 8), (0, 3, 7), (0, 3, 6), (0, 3, 4), (0, 2, 10),
               (0, 2, 9), (0, 2, 6), (0, 2, 5), (0, 2, 4), (0, 2, 3), (0, 1, 10), (0, 1, 9), (0, 1, 6), (0, 1, 5), (0, 1, 4), (0, 1, 3),
               (0, 0, 10), (0, 0, 9), (0, 0, 8), (0, 0, 7), (0, 0, 6), (0, 0, 5), (0, 0, 4), (0, 0, 3), (0, 0, 2), (0, 0, 1)]
-             (\<lambda>a b c d e. Some t) (\<lambda>a b c d e. Some e') = Some drinks"
+             (\<lambda>a b c d e. Some t) modify = Some drinks"
 proof-
   have exits_state_pta_coin50_50_1: "exits_state pta coin50_50 1"
     by (simp add: exits_state_def pta_def pta_transitions)

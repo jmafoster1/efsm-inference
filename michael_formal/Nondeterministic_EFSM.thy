@@ -51,4 +51,19 @@ qed
 definition nondeterministic_simulates :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> bool" where
   "nondeterministic_simulates m2 m1 H = (\<forall>t. nondeterministic_simulates_trace m2 m1 0 0 <> <> t H)"
 
+inductive nondeterministic_accepts :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
+  base: "nondeterministic_accepts e s d []" |
+  step: "nondeterministic_step e s d (fst h) (snd h) = Some (tr, s', p', d') \<Longrightarrow> nondeterministic_accepts e s' d' t \<Longrightarrow> nondeterministic_accepts e s d (h#t)"
+
+definition nondeterministic_accepts_trace :: "transition_matrix \<Rightarrow> trace \<Rightarrow> bool" where
+  "nondeterministic_accepts_trace e t = nondeterministic_accepts e 0 <> t"
+
+lemma no_nondeterministic_step_none: "nondeterministic_step e s r aa ba = None \<Longrightarrow> \<not>nondeterministic_accepts e s r ((aa, ba) # p)"
+  apply safe
+  apply (rule nondeterministic_accepts.cases)
+    apply simp
+   apply simp
+  by auto
+
+
 end
