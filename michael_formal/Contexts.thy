@@ -169,7 +169,7 @@ fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context" where
   "pairs2context (h#t) = conjoin (pairs2context t) (\<lambda>r. if r = (fst h) then (snd h) else Bc True)"
 
 fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
-  "apply_guard a g = conjoin a (pairs2context (guard2pairs a g))"
+  "apply_guard a g = conjoin (pairs2context (guard2pairs a g)) a"
 
  primrec medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
    "medial c [] = c" |

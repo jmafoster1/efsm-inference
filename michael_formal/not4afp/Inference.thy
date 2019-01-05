@@ -78,7 +78,7 @@ definition nondeterminism :: "iEFSM \<Rightarrow> bool" where
   "nondeterminism t = (nondeterministic_pairs t \<noteq> {||})"
 
 definition replace_transition :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
-  "replace_transition t uid from to orig new = (ffilter (\<lambda>x. x \<noteq> (uid, (from, to), orig)) t) |\<union>| {|(uid, (from, to), new)|}"
+  "replace_transition t uid from to orig new = (ffilter (\<lambda>x. snd x \<noteq> ((from, to), orig) \<and> snd x \<noteq> ((from, to), new)) t) |\<union>| {|(uid, (from, to), new)|}"
 
 definition exits_state :: "iEFSM \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> bool" where
   "exits_state e t from = (\<exists>dest uid. (uid, (from, dest), t) |\<in>| e)"
@@ -161,6 +161,18 @@ definition score :: "iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" wher
 definition leaves :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
   "leaves uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (\<exists>s. x = (uid, s))) t))))"
 
+function resolve_nondeterminism :: "nondeterministic_pair fset \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" where
+  "resolve_nondeterminism s e t g m = (if s = {||} then if nondeterminism t then None else Some t else 
+    (let (from, (to1, to2), ((t1, u1), (t2, u2))) = fMax s; t' = merge_states to1 to2 t in 
+      (case merge_transitions e t (leaves u1 e) (leaves u2 e) from to1 to2 t1 u1 t2 u2 g m True of
+        None \<Rightarrow> resolve_nondeterminism (s - {|fMax s|}) e t g m |
+        Some new \<Rightarrow> resolve_nondeterminism (nondeterministic_pairs new) e new g m
+      )
+    )
+  )"
+  sorry
+termination sorry
+
 (* resolve_nondeterminism: tries to resolve any nondeterminism in a given EFSM                    *)
 (* @param n - The nondeterministic pairs of the form (origin, (dest1, dest2), t1, t2)             *)
 (* @param e - The EFSM before states s1 and s2 were merged                                        *)
@@ -169,26 +181,14 @@ definition leaves :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
 (* @param t - The nondeterministic EFSM arising from merging s1 with s2                           *)
 (* @param g - A function which takes two transitions and generates one which subsumes them both   *)
 (* @param m - A function which modifies the nondeterministic EFSM                                 *)
-function resolve_nondeterminism :: "nondeterministic_pair fset \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" and
-                        merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" where
-  "resolve_nondeterminism n e s1 s2 t g m = (if n = {||} then None else (let (from, (to1, to2), ((t1, u1), (t2, u2))) = fMax n in
-                        case merge t to1 to2 g m of None \<Rightarrow> resolve_nondeterminism (n - {|fMax n|}) e s1 s2 t g m |
-                                    Some t \<Rightarrow> merge_transitions e t (leaves u1 e) (leaves u2 e) from to1 to2 t1 u1 t2 u2 g m True))" |
-
+definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" where
 "merge e s1 s2 g m = (if s1 = s2 then Some (e) else (let t' = (merge_states s1 s2 e) in
                        \<comment> \<open> Have we got any nondeterminism? \<close>
                        (if \<not> nondeterminism t' then
                          \<comment> \<open> If not then we're good to go \<close>
                          Some t' else
                          \<comment> \<open> If we have then we need to fix it \<close>
-                         resolve_nondeterminism (nondeterministic_pairs t') e s1 s2 t' g m)))"
-     defer
-     apply auto[1]
-    apply simp
-   apply auto[1]
-  sorry
-termination
-  sorry
+                         resolve_nondeterminism (nondeterministic_pairs t') e t' g m)))"
 
 (* export_code resolve_nondeterminism in "Scala" *)
 

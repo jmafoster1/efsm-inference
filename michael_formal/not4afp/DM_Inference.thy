@@ -150,7 +150,7 @@ value "Set.filter (\<lambda>(_, (d1, d2), t, t'). t \<le> t' \<and> (fst t = coi
 lemma medial_vend_nothing: "(medial c (Guard vend_nothing)) = c"
   by (simp add: transitions)
 
-lemma medial_vend_fail: "medial select_posterior (Guard vend_fail) = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Eq (Num 0)) (Lt (Num 100))\<rbrakk>"
+lemma medial_vend_fail: "medial select_posterior (Guard vend_fail) = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Lt (Num 100)) (Eq (Num 0))\<rbrakk>"
   apply (rule ext)
   by (simp add: transitions select_posterior_def)
 
@@ -160,12 +160,12 @@ lemma vend_nothing_posterior: "posterior select_posterior vend_nothing = select_
   apply (rule ext)
   by (simp add: transitions remove_input_constraints_def select_posterior_def)
 
-lemma consistent_medial_vend_fail: "consistent \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> And (cexp.Eq (Num 0)) (cexp.Lt (Num 100))\<rbrakk>"
+lemma consistent_medial_vend_fail: "consistent \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> And (cexp.Lt (Num 100)) (cexp.Eq (Num 0))\<rbrakk>"
   apply (simp add: consistent_def)
   apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0>" in exI)
   by (simp add: consistent_empty_4)
 
-lemma vend_fail_posterior: "posterior select_posterior vend_fail = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Eq (Num 0)) (Lt (Num 100))\<rbrakk>"
+lemma vend_fail_posterior: "posterior select_posterior vend_fail = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Lt (Num 100)) (Eq (Num 0))\<rbrakk>"
   apply (simp only: posterior_def medial_vend_fail)
   apply (simp add: consistent_medial_vend_fail )
   apply (rule ext)
@@ -440,8 +440,8 @@ lemma coin_updates_1:  "(EFSM.apply_updates (Updates coin)
   apply (rule ext)
   by (simp add: coin_def)
 
-definition basically_drinks :: transition_matrix where
-  "basically_drinks = {|((1, 1), vend_fail), ((0, 1), select), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)|}"
+definition basically_drinks :: iEFSM where
+  "basically_drinks = {|(2, (1, 1), coin), (1, (1, 1), vend_fail), (0, (0, 1), select), (5, (1, 3), vend)|}"
 
 lemma select_updates: "length b = 1 \<Longrightarrow> (EFSM.apply_updates (Updates select) (case_vname (\<lambda>n. input2state b 1 (I n)) Map.empty) Map.empty) = <R 1 := hd b, R 2 := Num 0>"
   apply (rule ext)
@@ -637,41 +637,6 @@ qed
 lemma coin_lt_vend_nothing: "coin < vend_nothing"
   by (simp add: transitions less_transition_ext_def)
 
-lemma merge_vend_nothing_vend: "merge_transitions merged_1_2 merged_1_3 1 1 1 1 1 vend_nothing 1 vend 5 null_generator null_modifier True = None"
-proof-
-  have easy_merge: "easy_merge merged_1_2 merged_1_3 1 1 1 1 1 vend_nothing 1 vend 5 null_generator = None"
-  proof-
-    have possible_steps: "possible_steps (tm merged_1_2) 0 Map.empty ''select'' [Str ''coke''] = {|(1, select)|}"
-      apply (simp add: tm_def merged_1_2_def possible_steps_def ffilter_def fimage_def fset_both_sides Abs_fset_inverse)
-      apply (simp add: Set.filter_def)
-      apply safe
-           apply (simp_all add: transitions)
-      by force
-    have accepts_and_gets_us_to: "accepts_trace (tm merged_1_2) [(''select'', [Str ''coke''])] \<and>
-    gets_us_to 1 (tm merged_1_2) 0 Map.empty [(''select'', [Str ''coke''])]"
-      apply standard
-        apply (simp add: accepts_trace_def)
-        apply (rule accepts.step)
-         apply simp
-         apply (simp add: step_def possible_steps)
-        apply (rule accepts.base)
-       apply (rule gets_us_to.step_some)
-        apply (simp add: step_def possible_steps)
-      by (simp add: gets_us_to.base)
-    show ?thesis
-      apply (simp add: easy_merge_def null_generator_def)
-      apply (simp add: directly_subsumes_def)
-      apply standard
-       apply (rule_tac x="[(''select'', [Str ''coke''])]" in exI)
-       apply (simp add: accepts_and_gets_us_to no_subsumption_vend_nothing_vend)
-      apply standard
-       apply (rule_tac x="[(''select'', [Str ''coke''])]" in exI)
-      by (simp add: accepts_and_gets_us_to no_subsumption_vend_vend_nothing)
-  qed
-  show ?thesis
-    by (simp add: merge_transitions_def easy_merge null_modifier_def)
-qed
-
 lemma tm_drinks2: "tm drinks2 = Drinks_Machine_2.drinks2"
   by (simp add: tm_def drinks2_def Drinks_Machine_2.drinks2_def)
 
@@ -835,9 +800,9 @@ lemma directly_subsumes_vend_fail_vend_nothing: "directly_subsumes (tm DM_Infere
   by (simp add: tm_drinks2 directly_subsumes_def directly_subsumes_aux vend_fail_subsumes_vend_nothing)
 
 definition two_coins :: iEFSM where
-  "two_coins = {|(1, (1, 1), vend_fail), (0, (0, 1), select), (2, (1, 1), coin), (3, (1, 1), coin), (4, (1, 1), vend_fail), (5, (1, 3), vend)|}"
+  "two_coins = {|(1, (1, 1), vend_fail), (0, (0, 1), select), (2, (1, 1), coin), (3, (1, 1), coin), (5, (1, 3), vend)|}"
 
-lemma merge_transitions_vend_nothing_vend_fail: "merge_transitions drinks2 merged_1_2 1 2 1 1 1 vend_nothing 1 vend_fail 4 null_generator null_modifier True = Some two_coins"
+lemma merge_vend_nothing_vend_fail: "merge_transitions drinks2 merged_1_2 1 2 1 1 1 vend_nothing 1 vend_fail 4 null_generator null_modifier True = Some two_coins"
 proof-
   have minus_1: "{((0, 1), select), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)} - {((1, 1), vend_fail)} = {((0, 1), select), ((1, 1), coin), ((1, 3), vend)}"
     apply (simp add: transitions)
@@ -853,10 +818,132 @@ proof-
     apply (simp add: directly_subsumes_vend_fail_vend_nothing)
     apply (simp add: replace_transition_def)
     apply (simp add: finsert_def Abs_fset_inverse fset_both_sides)
-    by (simp add: merged_1_2_def two_coins_def)
+    by (simp add: merged_1_2_def two_coins_def transitions)
 qed
 
-lemma "infer drinks2 naive_score null_generator null_modifier = toiEFSM basically_drinks"
+lemma merge_vend_nothing_vend: "merge_transitions DM_Inference.drinks2 merged_1_2 1 2 1 1 3 vend_nothing 1 vend 5 null_generator null_modifier True = None"
+proof-
+  have accepts_and_gets_us_to: " accepts_trace Drinks_Machine_2.drinks2 [(''select'', [Str ''coke'']), (''coin'', [Num 50])] \<and>
+    gets_us_to 2 Drinks_Machine_2.drinks2 0 Map.empty [(''select'', [Str ''coke'']), (''coin'', [Num 50])]"
+    apply standard
+     apply (simp add: accepts_trace_def)
+     apply (rule accepts.step)
+      apply simp
+      apply (simp add: step_def possible_steps_0)
+     apply (rule accepts.step)
+      apply (simp add: step_def possible_steps_1)
+     apply (rule accepts.base)
+    apply (rule gets_us_to.step_some)
+     apply (simp add: step_def possible_steps_0)
+    apply (rule gets_us_to.step_some)
+     apply (simp add: step_def possible_steps_1)
+    by (simp add: gets_us_to.base)
+  show ?thesis
+  apply (simp add: merge_transitions_def easy_merge_def tm_drinks2 null_generator_def null_modifier_def)
+  apply (simp add: directly_subsumes_def)
+  apply standard
+     apply (rule_tac x="[(''select'', [Str ''coke'']), (''coin'', [Num 50])]" in exI)
+     apply (simp add: accepts_and_gets_us_to no_subsumption_vend_nothing_vend)
+    apply standard
+     apply (simp add: no_subsumption_vend_vend_nothing)
+    apply (rule_tac x="[(''select'', [Str ''coke''])]" in exI)
+    apply standard
+     apply (simp add: accepts_trace_def)
+     apply (rule accepts.step)
+      apply simp
+      apply (simp add: step_def possible_steps_0)
+     apply (rule accepts.base)
+    apply (rule gets_us_to.step_some)
+     apply (simp add: step_def possible_steps_0)
+    by (simp add: gets_us_to.base)
+qed
+
+lemma nondeterministic_pairs_two_coins: "nondeterministic_pairs two_coins = {|(1, (1, 1), (coin, 2), (coin, 3))|}"
+proof-
+  have minus_1: "{(1, vend_fail, 1::nat), (1, coin, 2), (1, coin, 3), (3, vend, 5)} - {(1, coin, 2)} = {(1, vend_fail, 1), (1, coin, 3), (3, vend, 5)}"
+    apply (simp add: transitions)
+    by auto
+  have minus_2: "{(1, vend_fail, 1::nat), (1, coin, 2), (1, coin, 3), (3, vend, 5)} - {(1, coin, 3)} = {(1, vend_fail, 1), (1, coin, 2), (3, vend, 5)}"
+    apply (simp add: transitions)
+    by auto
+  have minus_4: "{(1, vend_fail, 1::nat), (1, coin, 2), (1, coin, 3), (3, vend, 5)} - {(3, vend, 5)} = {(1, vend_fail, 1), (1, coin, 2), (1, coin, 3)}"
+    apply (simp add: transitions)
+    by auto
+  have state_nondeterminism_1: "state_nondeterminism 1 {|(1, vend_fail, 1), (1, coin, 2), (1, coin, 3), (3, vend, 5)|} = {|
+    (1, (1, 3),(coin, 3),vend, 5),
+    (1, (1, 1),(coin, 3),coin, 2),
+    (1, (1, 1),(coin, 3),vend_fail, 1),
+    (1, (1, 3),(coin, 2),vend, 5),
+    (1, (1, 1),(coin, 2),coin, 3),
+    (1, (1, 1),(coin, 2),vend_fail, 1),
+    (1, (1, 3), (vend_fail, 1),vend, 5),
+    (1, (1, 1), (vend_fail, 1),coin, 3),
+    (1, (1, 1), (vend_fail, 1),coin, 2)
+  |}"
+    apply (simp add: state_nondeterminism_def fimage_def)
+    apply (simp add: minus_1 minus_2 minus_4)
+    apply (simp add: fset_both_sides Abs_fset_inverse)
+    by auto
+  show ?thesis
+    apply (simp add: nondeterministic_pairs_def S_def two_coins_def fimage_def)
+    apply (simp add: outgoing_transitions_def fimage_def state_nondeterminism_1)
+    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def)
+    apply safe
+    by (simp_all add: choices)
+qed
+
+lemma coin_lt_vend_fail: "coin < vend_fail"
+  by (simp add: transitions less_transition_ext_def)
+
+lemma subsumes_coin_coin: "subsumes c coin coin"
+  sorry
+
+lemma merge_coin_coin: "merge_transitions DM_Inference.drinks2 two_coins 1 2 1 1 1 coin 2 coin 3 null_generator null_modifier True = Some basically_drinks"
+proof-
+  have set_filter: "ffilter (\<lambda>x. snd x \<noteq> ((1, 1), coin)) two_coins = {|(1, (1, 1), vend_fail), (0, (0, 1), select), (5, (1, 3), vend)|}"
+    apply (simp add: ffilter_def Set.filter_def two_coins_def)
+    apply (simp add: fset_both_sides Abs_fset_inverse)
+    apply (safe)
+    by (simp_all add: transitions)
+  have easy_merge: "easy_merge DM_Inference.drinks2 two_coins 1 2 1 1 1 coin 2 coin 3 null_generator = Some basically_drinks"
+    apply (simp add: easy_merge_def null_generator_def directly_subsumes_def subsumes_coin_coin)
+    by (simp add: replace_transition_def set_filter basically_drinks_def)
+  show ?thesis
+    by (simp add: merge_transitions_def easy_merge)
+qed
+
+lemma nondetermnistic_pairs_basically_drinks: "nondeterministic_pairs basically_drinks = {||}"
+proof-
+  have minus_1: "{(1, coin, 2), (1, vend_fail, 1), (3, vend, 5)} - {(1, vend_fail, 1)} = {(1, coin, 2), (3, vend, 5)}"
+    apply (simp add: transitions)
+    by auto
+  have minus_2: "{(1, coin, 2), (1, vend_fail, 1), (3, vend, 5)} - {(3, vend, 5)} = {(1, coin, 2), (1, vend_fail, 1)}"
+    apply (simp add: transitions)
+    by auto
+  have state_nondetermininism: "state_nondeterminism 1 {|(1, coin, 2), (1, vend_fail, 1), (3, vend, 5)|} = {|
+    (1, (1, 3), (vend_fail, 1),vend, 5),
+    (1, (1, 3),(coin, 2),vend, 5),
+    (1, (1, 1), (vend_fail, 1),coin, 2),
+    (1, (1, 3),(coin, 2),vend, 5),
+    (1, (1, 1),(coin, 2),vend_fail, 1)
+  |}"
+    apply (simp add: state_nondeterminism_def fimage_def)
+    apply (simp add: minus_1 minus_2)
+    by auto
+  show ?thesis
+    apply (simp add: nondeterministic_pairs_def fimage_def S_def basically_drinks_def outgoing_transitions_def state_nondetermininism)
+    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def)
+    apply clarify
+    apply simp
+    apply (case_tac "a = 1 \<and> aa = 1")
+    defer
+     apply simp
+    apply simp
+    using choice_symmetry no_choice_coin_vend no_choice_vend_fail_coin no_choice_vend_vend_fail by blast
+qed
+
+
+lemma "infer drinks2 naive_score null_generator null_modifier = basically_drinks"
 proof-
   have leaves_1_merged_1_2: "leaves 1 merged_1_2 = 1"
   proof-
@@ -890,17 +977,47 @@ proof-
     show ?thesis
       by (simp add: leaves_def ffilter_def fthe_elem_def Abs_fset_inverse set_filter)
   qed
+  have leaves_5_drinks2: "leaves 5 drinks2 = 2"
+  proof-
+    have set_filter: "Set.filter (\<lambda>x. \<exists>a b ba. x = (5, (a, b), ba)) (fset drinks2) = {(5, (2, 3), vend)}"
+      apply (simp add: Set.filter_def drinks2_def)
+      by auto
+    show ?thesis
+      by (simp add: leaves_def ffilter_def fthe_elem_def Abs_fset_inverse set_filter)
+  qed
   have next_nondet: "{|(1, (1, 1), (coin, 2), coin, 3), (1, (1, 3), (vend_nothing, 1), vend, 5), (1, (1, 1), (vend_nothing, 1), vend_fail, 4)|} |-|
                       {|(1, (1, 3), (vend_nothing, 1), vend, 5)|} = {|(1, (1, 1), (coin, 2), coin, 3), (1, (1, 1), (vend_nothing, 1), vend_fail, 4)|}"
     apply (simp add: transitions)
     by auto
+  have minus_1: "{|(1, (1, 1), (coin, 2), coin, 3), (1, (1, 3), (vend_nothing, 1), vend, 5), (1, (1, 1), (vend_nothing, 1), vend_fail, 4)|} |-|
+                      {|(1, (1, 3), (vend_nothing, 1), vend, 5)|} = {|(1, (1, 1), (coin, 2), coin, 3), (1, (1, 1), (vend_nothing, 1), vend_fail, 4)|}"
+    apply (simp add: transitions)
+    by auto
+  have leaves_2_drinks2: "leaves 2 drinks2 = 1"
+  proof-
+    have set_filter: "Set.filter (\<lambda>x. \<exists>a b ba. x = (2, (a, b), ba)) (fset drinks2) = {(2, (1, 2), coin)}"
+      apply (simp add: Set.filter_def drinks2_def)
+      by auto
+    show ?thesis
+      by (simp add: leaves_def ffilter_def fthe_elem_def Abs_fset_inverse set_filter)
+  qed
+  have leaves_3_drinks2: "leaves 3 drinks2 = 2"
+  proof-
+    have set_filter: "Set.filter (\<lambda>x. \<exists>a b ba. x = (3, (a, b), ba)) (fset drinks2) = {(3, (2, 2), coin)}"
+      apply (simp add: Set.filter_def drinks2_def)
+      by auto
+    show ?thesis
+      by (simp add: leaves_def ffilter_def fthe_elem_def Abs_fset_inverse set_filter)
+  qed
   show ?thesis
-    apply (simp add: scoring)
+    apply (simp add: scoring merge_def)
     apply (simp add: merge_states_1_2 nondeterminism_def nondeterministic_pairs_merged_1_2 max_def)
-    apply (simp add: merge_states_1_3 nondeterminism_def nondeterministic_pairs_merged_1_3 max_def)
-    apply (simp add: vend_not_lt_vend_fail coin_lt_vend_nothing leaves_1_merged_1_2 leaves_5_merged_1_2)
-    apply (simp add: merge_vend_nothing_vend)
-    apply (simp add: max_def next_nondet coin_lt_vend_nothing leaves_1_drinks2 leaves_4_drinks2)
-    apply (simp add: merge_transitions_vend_nothing_vend_fail)
+    apply (simp add: leaves_1_drinks2 leaves_5_drinks2 merge_vend_nothing_vend)
+    apply (simp add: nondeterminism_def nondeterministic_pairs_merged_1_2 max_def minus_1 coin_lt_vend_nothing)
+    apply (simp add: leaves_1_drinks2 leaves_4_drinks2 merge_vend_nothing_vend_fail)
+    apply (simp add: nondeterminism_def nondeterministic_pairs_two_coins max_def coin_lt_vend_fail)
+    apply (simp add: leaves_2_drinks2 leaves_3_drinks2 merge_coin_coin)
+    apply (simp add: nondeterminism_def nondetermnistic_pairs_basically_drinks)
+
 qed
 end
