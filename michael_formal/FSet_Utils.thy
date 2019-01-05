@@ -1,6 +1,7 @@
 theory FSet_Utils
   imports "~~/src/HOL/Library/FSet"
 begin
+
 lemma fset_both_sides: "(Abs_fset s = f) = (fset (Abs_fset s) = fset f)"
   by (simp add: fset_inject)
 
@@ -31,4 +32,17 @@ lemma abs_fset_singleton[simp]: "Abs_fset {a} = {|a|}"
 
 lemma abs_fset_empty[simp]: "Abs_fset {} = {||}"
   by (simp add: bot_fset_def)
+
+definition fprod :: "'a fset \<Rightarrow> 'b fset \<Rightarrow> ('a \<times> 'b) fset" (infixr "|\<times>|" 80) where
+  "a |\<times>| b = Abs_fset ((fset a) \<times> (fset b))"
+
+lemma fprod_empty[simp]: "\<forall>a. fprod {||} a = {||}"
+  by (simp add: fprod_def)
+
+lemma fprod_empty_2[simp]: "\<forall>a. fprod a {||} = {||}"
+  by (simp add: fprod_def ffUnion_def)
+
+lemma set_equiv: "(f1 = f2) = (fset f1 = fset f2)"
+  by (simp add: fset_inject)
+
 end

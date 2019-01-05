@@ -50,18 +50,6 @@ definition choice :: "transition \<Rightarrow> transition \<Rightarrow> bool" wh
 lemma choice_symmetry: "choice x y = choice y x"
   using choice_def by auto
 
-definition all_pairs :: "'a fset \<Rightarrow> ('a \<times> 'a) fset" where
-  "all_pairs t = ffUnion (fimage (\<lambda>x. fimage (\<lambda>y. (x, y)) t) t)"
-
-definition fprod :: "'a fset \<Rightarrow> 'b fset \<Rightarrow> ('a \<times> 'b) fset" where
-  "fprod a b = Abs_fset ((fset a) \<times> (fset b))"
-
-lemma fprod_empty[simp]: "\<forall>a. fprod {||} a = {||}"
-  by (simp add: fprod_def)
-
-lemma fprod_empty_2[simp]: "\<forall>a. fprod a {||} = {||}"
-  by (simp add: fprod_def ffUnion_def)
-
 definition outgoing_transitions :: "nat \<Rightarrow> iEFSM \<Rightarrow> (nat \<times> transition \<times> nat) fset" where
   "outgoing_transitions n t = fimage (\<lambda>(uid, x, t'). (snd x, t', uid)) (ffilter (\<lambda>(uid, (origin, dest), t). origin = n) t)"
 
@@ -168,10 +156,10 @@ type_synonym scoreboard = "(nat \<times> (nat \<times> nat)) fset"
 type_synonym strategy = "transition fset \<Rightarrow> transition fset \<Rightarrow> nat"
 
 definition score :: "iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
-  "score t rank = fimage (\<lambda>(s1, s2). (rank (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s1 t)) (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s2 t)), (s1, s2))) (ffilter (\<lambda>(x, y). x < y) (all_pairs (S t)))"
+  "score t rank = fimage (\<lambda>(s1, s2). (rank (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s1 t)) (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s2 t)), (s1, s2))) (ffilter (\<lambda>(x, y). x < y) ((S t) |\<times>| (S t)))"
 
 definition leaves :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
-  "leaves uid t = fst (fst (snd (Eps (\<lambda>x. x |\<in>| t \<and> (\<exists>s. x = (uid, s))))))"
+  "leaves uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (\<exists>s. x = (uid, s))) t))))"
 
 (* resolve_nondeterminism: tries to resolve any nondeterminism in a given EFSM                    *)
 (* @param n - The nondeterministic pairs of the form (origin, (dest1, dest2), t1, t2)             *)

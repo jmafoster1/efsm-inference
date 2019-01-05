@@ -319,7 +319,7 @@ lemma drinks2_vend_r2_none: "r (R 2) = None \<Longrightarrow> possible_steps dri
 lemma label_vend_not_coin: "Label b = (''vend'') \<Longrightarrow> b \<noteq> coin"
   using label_coin by auto
 
-lemma drinks2_vend_insufficient2: "\<exists>x1. r (R 2) = Some (Num x1) \<and> x1 < 100 \<Longrightarrow> possible_steps drinks2 2 r (''vend'') [] = {|(2, vend_fail)|}"
+lemma drinks2_vend_insufficient2: "r (R 2) = Some (Num x1) \<and> x1 < 100 \<Longrightarrow> possible_steps drinks2 2 r (''vend'') [] = {|(2, vend_fail)|}"
   apply (simp add: possible_steps_def drinks2_def transitions)
   by force
 
@@ -328,9 +328,9 @@ lemma updates_vend_fail: "(EFSM.apply_updates (Updates vend_fail) (case_vname Ma
   apply (rule ext)
   by (simp add: vend_fail_def)
 
-lemma drinks2_vend_sufficient: "r2 = Some (Num x1) \<Longrightarrow>
+lemma drinks2_vend_sufficient: "r (R 2) = Some (Num x1) \<Longrightarrow>
                 \<not> x1 < 100 \<Longrightarrow>
-                possible_steps drinks2 2 (\<lambda>u. if u = R 1 then Some s else if u = R 2 then r2 else None) (''vend'') [] = {|(3, vend)|}"
+                possible_steps drinks2 2 r (''vend'') [] = {|(3, vend)|}"
   apply (simp add: possible_steps_def drinks2_def transitions)
   by force
 
@@ -632,5 +632,96 @@ next
      defer
      apply simp
     by (simp add: invalid_other_states)
+qed
+
+lemma step_drinks_2: "step drinks2 0 Map.empty aa ba = Some (uw, s', ux, r') \<Longrightarrow> (uw, s', ux, r') = (select, 1, [], <R 1 := hd ba, R 2 := Num 0>)"
+  apply (simp add: step_def)
+  apply (case_tac "aa = ''select'' \<and> length ba = 1")
+   apply (simp add: possible_steps_0)
+   apply clarify
+   apply (simp add: select_def)
+   apply (rule ext)
+   apply (simp add: hd_input2state)
+  by (simp add: drinks2_0_invalid)
+
+lemma step_drinks2_vend_fail: "step drinks2 1 ra ''vend'' [] = Some (vend_nothing, 1, [], ra)"
+  apply (simp add: step_def drinks2_vend_insufficient)
+  apply (simp add: vend_nothing_def)
+  apply (rule ext)
+  by simp
+
+lemma step_2_or_3: "step drinks2 2 r a b = Some (uw, s', ux, r') \<Longrightarrow> s' = 2 \<or> s' = 3"
+  apply (simp add: step_def)
+  apply (case_tac "a = ''coin'' \<and> length b = 1")
+   apply simp
+  using drinks2_2_coin
+   apply auto[1]
+  apply simp
+  apply (case_tac "a = ''vend'' \<and> b = []")
+   apply simp
+   apply clarify
+   apply (case_tac "r (R 2)")
+    apply (simp add: drinks2_vend_r2_none)
+   apply (case_tac aa)
+    prefer 2
+    apply (simp add: drinks2_vend_r2_String)
+   apply simp
+   apply (case_tac "x1 < 100")
+    apply (simp add: drinks2_vend_insufficient2)
+    apply (simp add: drinks2_vend_sufficient)
+  using drinks2_2_invalid
+  by auto
+
+lemma no_route_from_3_to_1: "\<forall>r. \<not> gets_us_to 1 drinks2 3 r lst"
+proof (induct lst)
+  case Nil
+  then show ?case
+    apply safe
+    apply (rule gets_us_to.cases)
+    by auto
+next
+  case (Cons a lst)
+  then show ?case
+    apply safe
+    apply (rule gets_us_to.cases)
+       apply simp
+      apply simp
+     apply simp
+     apply clarify
+     apply simp
+     apply (simp add: step_def)
+    using drinks2_end
+     apply auto[1]
+    by simp
+qed
+
+lemma no_route_from_2_to_1: "\<forall>r. \<not> gets_us_to 1 drinks2 2 r lst"
+proof (induct lst)
+  case Nil
+  then show ?case
+    apply safe
+    apply (rule gets_us_to.cases)
+    by auto
+next
+  case (Cons a lst)
+  then show ?case
+    apply safe
+    apply (rule gets_us_to.cases)
+       apply simp
+      apply simp
+    defer
+     apply simp
+    apply simp
+    apply clarify
+    apply simp
+    apply (case_tac "s'=2")
+    apply simp
+    apply (case_tac "s'=3")
+    defer
+    using step_2_or_3
+     apply blast
+    apply simp
+    using no_route_from_3_to_1
+    by simp
 qed
 end
