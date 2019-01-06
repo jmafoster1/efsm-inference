@@ -139,14 +139,6 @@ lemma no_choice_coin_vend: "\<not>choice coin vend"
 
 lemmas choices = choice_symmetry no_choice_coin_vend choice_vend_nothing_vend no_choice_vend_vend_fail no_choice_vend_coin choice_vend_vend_nothing no_choice_coin_vend_nothing no_choice_vend_nothing_coin no_choice_vend_fail_coin choice_vend_fail_vend_nothing choice_vend_nothing_vend_fail choice_coin_coin choice_vend_nothing_vend_nothing no_choice_coin_vend_fail choice_vend_fail_vend_fail
 
-value "Set.filter (\<lambda>(_, (d1, d2), t, t'). t \<le> t' \<and> (fst t = coin \<longrightarrow> fst t' = coin))
-       {(1::nat, (1::nat, 3::nat), (vend_fail, 4::nat), vend, 5::nat), (1, (1, 1), (vend_fail, 4), coin, 3), (1, (1, 1), (vend_fail, 4), coin, 2),
-        (1, (1, 1), (vend_fail, 4), vend_nothing, 1), (1, (1, 1), (coin, 3), vend_fail, 4), (1, (1, 1), (coin, 3), coin, 2),
-        (1, (1, 1), (coin, 3), vend_nothing, 1), (1, (1, 3), (coin, 3), vend, 5), (1, (1, 1), (coin, 2), vend_fail, 4),
-        (1, (1, 1), (coin, 2), coin, 3), (1, (1, 1), (coin, 2), vend_nothing, 1), (1, (1, 3), (coin, 2), vend, 5),
-        (1, (1, 3), (vend_nothing, 1), vend, 5), (1, (1, 1), (vend_nothing, 1), vend_fail, 4), (1, (1, 1), (vend_nothing, 1), coin, 3),
-        (1, (1, 1), (vend_nothing, 1), coin, 2)}"
-
 lemma medial_vend_nothing: "(medial c (Guard vend_nothing)) = c"
   by (simp add: transitions)
 
@@ -661,39 +653,72 @@ lemma step_merge_1_2_vend_nothing: "\<nexists>n. ra (R 2) = Some (Num n) \<Longr
        step (tm merged_1_2) 1 ra ''vend'' [] = Some (vend_nothing, 1, [], ra)"
 proof-
   assume premise: "\<nexists>n. ra (R 2) = Some (Num n)"
+  have possible_steps: "possible_steps (tm merged_1_2) 1 ra ''vend'' [] = {|(1, vend_nothing)|}"
+    apply (case_tac "ra (R 2)")
+    apply (simp add: possible_steps_def ffilter_def tm_def merged_1_2_def fimage_def)
+    apply (simp add: fset_both_sides Abs_fset_inverse)
+     apply (simp add: Set.filter_def)
+     apply (simp add: transitions)
+     apply force
+    apply (case_tac a)
+    using premise apply simp
+    apply (simp add: possible_steps_def ffilter_def tm_def merged_1_2_def fimage_def)
+    apply (simp add: fset_both_sides Abs_fset_inverse)
+     apply (simp add: Set.filter_def)
+     apply (simp add: transitions)
+    by force
   show ?thesis
-    apply (simp add: step_def)
-    sorry
+    apply (simp add: step_def possible_steps)
+    apply (simp add: vend_nothing_def)
+    apply (rule ext)
+    by simp
 qed
 
 lemma possible_steps_merge_coin: "length i = 1 \<Longrightarrow> possible_steps (tm merged_1_2) 1 r ''coin'' i = {|(1, coin)|}"
-proof-
-  assume premise: "length i = 1"
-  show ?thesis
-    sorry
-qed
+  apply (simp add: possible_steps_def ffilter_def tm_def merged_1_2_def fimage_def)
+  apply (simp add: fset_both_sides Abs_fset_inverse)
+  apply (simp add: Set.filter_def transitions)
+  by force
 
 lemma step_merge_1_2_vend: "d' (R 2) = Some (Num x1) \<Longrightarrow>
        x1 < 100 \<Longrightarrow>
        step (tm merged_1_2) 1 d' ''vend'' [] = None"
+
 proof-
   assume premise1: "d' (R 2) = Some (Num x1)"
   assume premise2: "x1 < 100"
-  have abs_fset: "Abs_fset {((1, 1), vend_fail), ((1, 1), vend_nothing)} = {|((1, 1), vend_fail), ((1, 1), vend_nothing)|}"
-    by (metis finsert.rep_eq fset_inverse fset_simps(1))
+  have possible_steps: "possible_steps (tm merged_1_2) 1 d' ''vend'' [] = {|(1, vend_nothing), (1, vend_fail)|}"
+    apply (simp add: possible_steps_def ffilter_def tm_def merged_1_2_def fimage_def)
+    apply (simp add: fset_both_sides Abs_fset_inverse)
+    apply (simp add: Set.filter_def)
+    apply safe
+           apply (simp_all add: transitions premise1 premise2)
+     apply force
+    using premise1 premise2
+    by force
   show ?thesis
-    apply (simp add: step_def possible_steps_def ffilter_def set_filter abs_fset fis_singleton_def is_singleton_def)
-    sorry
+    apply (simp add: step_def possible_steps)
+    by (simp add: transitions fis_singleton_def is_singleton_def)
 qed
 
 lemma step_merge_1_2_vend_2: "d' (R 2) = Some (Num n) \<Longrightarrow> n \<ge> 100 \<Longrightarrow> step (tm merged_1_2) 1 d' ''vend'' [] = None"
 proof-
   assume premise1: "d' (R 2) = Some (Num n)"
   assume premise2: "n \<ge> 100"
-  have abs_fset: "Abs_fset {((1, 3), vend), ((1, 1), vend_nothing)} = {|((1, 3), vend), ((1, 1), vend_nothing)|}"
-    by (metis finsert.rep_eq fset_inverse fset_simps(1))
+  have possible_steps: "possible_steps (tm merged_1_2) 1 d' ''vend'' [] = {|(1, vend_nothing), (3, vend)|}"
+    apply (simp add: possible_steps_def ffilter_def tm_def merged_1_2_def fimage_def)
+    apply (simp add: fset_both_sides Abs_fset_inverse)
+    apply (simp add: Set.filter_def)
+    apply safe
+           apply (simp_all add: transitions premise1 premise2)
+    using premise2 apply auto[1]
+    using premise2 apply auto[1]
+     apply force
+    using premise1 premise2
+    by force
   show ?thesis
-    sorry
+    apply (simp add: step_def possible_steps)
+    by (simp add: transitions fis_singleton_def is_singleton_def)
 qed
 
 lemma gets_us_to_aux: "\<forall>r. gets_us_to 1 Drinks_Machine_2.drinks2 1 r p \<longrightarrow>
@@ -807,12 +832,6 @@ proof-
   have minus_1: "{((0, 1), select), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)} - {((1, 1), vend_fail)} = {((0, 1), select), ((1, 1), coin), ((1, 3), vend)}"
     apply (simp add: transitions)
     by auto
-  have sorted_list: "sorted_list_of_fset basically_drinks = [((0, 1), select),
-  ((1, 1), coin),
-  ((1, 1), vend_fail),
-  ((1, 3), vend)]"
-    apply (simp add: basically_drinks_def sorted_list_of_fset_def)
-    by (simp add: minus_1 le_less vend_fail_not_lt_coin)
   show ?thesis
     apply (simp add: merge_transitions_def easy_merge_def)
     apply (simp add: directly_subsumes_vend_fail_vend_nothing)
@@ -896,7 +915,8 @@ lemma coin_lt_vend_fail: "coin < vend_fail"
   by (simp add: transitions less_transition_ext_def)
 
 lemma subsumes_coin_coin: "subsumes c coin coin"
-  sorry
+  apply (simp add: subsumes_def)
+  by (simp add: guard_coin)
 
 lemma merge_coin_coin: "merge_transitions DM_Inference.drinks2 two_coins 1 2 1 1 1 coin 2 coin 3 null_generator null_modifier True = Some basically_drinks"
 proof-
@@ -942,6 +962,23 @@ proof-
     using choice_symmetry no_choice_coin_vend no_choice_vend_fail_coin no_choice_vend_vend_fail by blast
 qed
 
+lemma score_2: "sorted_list_of_fset (score basically_drinks naive_score) = [(0, 0, 1), (0, 0, 3), (0, 1, 3)]"
+proof-
+  have ffilter: "ffilter (\<lambda>(x, y). x < y) (Inference.S basically_drinks |\<times>| Inference.S basically_drinks) =
+    {|(0, 1), (0, 3), (1, 3)|}"
+    apply (simp add: S_def basically_drinks_def)
+    apply (simp add: fprod_def ffilter_def Abs_fset_inverse fset_both_sides)
+    apply (simp add: Set.filter_def)
+    by auto
+  have score: "score basically_drinks naive_score = {|(0, 0, 1), (0, 0, 3), (0, 1, 3)|}"
+    apply (simp add: score_def ffilter)
+    apply (simp add: outgoing_transitions_def basically_drinks_def fimage_def)
+    apply (simp add: naive_score_empty set_equiv)
+    apply (simp add: naive_score_def fprod_def)
+    by (simp add: transitions Abs_fset_inverse)
+  show ?thesis
+    by (simp add: score sorted_list_of_fset_def)
+qed
 
 lemma "infer drinks2 naive_score null_generator null_modifier = basically_drinks"
 proof-
@@ -1018,6 +1055,6 @@ proof-
     apply (simp add: nondeterminism_def nondeterministic_pairs_two_coins max_def coin_lt_vend_fail)
     apply (simp add: leaves_2_drinks2 leaves_3_drinks2 merge_coin_coin)
     apply (simp add: nondeterminism_def nondetermnistic_pairs_basically_drinks)
-
+    by (simp add: score_2)
 qed
 end

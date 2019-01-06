@@ -449,8 +449,7 @@ next
         apply (case_tac x1)
             apply auto[1]
            apply simp
-    sorry
-  qed
+    oops
 
 
 lemma "subsumes c t t"
