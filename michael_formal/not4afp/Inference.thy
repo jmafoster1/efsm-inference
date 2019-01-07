@@ -113,7 +113,7 @@ type_synonym generator_function = "iEFSM \<Rightarrow> nat \<Rightarrow> transit
 definition null_generator :: generator_function where
   "null_generator a b c d e = None"
 
-type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option"
+type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option"
 
 definition null_modifier :: update_modifier where
   "null_modifier a b c d e = None"
@@ -142,7 +142,7 @@ definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<R
         if modify then
           (case modifier t1 t2 newFrom newEFSM oldEFSM of
             None \<Rightarrow> None |
-            Some (t', H\<^sub>n\<^sub>e\<^sub>w, H\<^sub>o\<^sub>l\<^sub>d, H\<^sub>u\<^sub>i\<^sub>d) \<Rightarrow> (
+            Some (t', H\<^sub>n\<^sub>e\<^sub>w, H\<^sub>o\<^sub>l\<^sub>d) \<Rightarrow> (
               if nondeterministic_simulates (tm t') (tm oldEFSM) H\<^sub>o\<^sub>l\<^sub>d then
                 easy_merge oldEFSM t' t1FromOld t2FromOld (H\<^sub>n\<^sub>e\<^sub>w newFrom) (H\<^sub>n\<^sub>e\<^sub>w t1NewTo) (H\<^sub>n\<^sub>e\<^sub>w t2NewTo) t1 u1 t2 u2 maker
               else None
@@ -160,6 +160,16 @@ definition score :: "iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" wher
 
 definition leaves :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
   "leaves uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (\<exists>s. x = (uid, s))) t))))"
+
+lemma "(leaves uid t = n) = (\<exists>b ba. Set.filter (\<lambda>x. \<exists>a b ba. x = (uid, (a, b), ba)) (fset t) = {(uid, (n, b), ba)})"
+  apply (simp add: leaves_def ffilter_def fthe_elem_def Abs_fset_inverse)
+  apply standard
+   apply (rule_tac x="snd (fst (snd (the_elem (Set.filter (\<lambda>x. \<exists>a b ba. x = (uid, (a, b), ba)) (fset t)))))" in exI)
+   apply (rule_tac x="snd (snd (the_elem (Set.filter (\<lambda>x. \<exists>a b ba. x = (uid, (a, b), ba)) (fset t))))" in exI)
+   apply (simp add: Set.filter_def)
+   apply clarify
+   apply simp
+  oops
 
 function resolve_nondeterminism :: "nondeterministic_pair fset \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" where
   "resolve_nondeterminism s e t g m = (if s = {||} then if nondeterminism t then None else Some t else 
