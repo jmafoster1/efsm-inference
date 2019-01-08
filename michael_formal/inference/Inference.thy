@@ -222,7 +222,7 @@ proof-
     sorry
 qed
 
-definition learn :: "log \<Rightarrow> strategy \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM" where
-  "learn l r g m = infer (toiEFSM (make_pta l {||})) r g m"
+definition learn :: "log \<Rightarrow> strategy \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix" where
+  "learn l r g m = tm (infer (toiEFSM (make_pta l {||})) r g m)"
 
 end

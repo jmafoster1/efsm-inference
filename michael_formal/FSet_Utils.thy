@@ -45,4 +45,6 @@ lemma fprod_empty_2[simp]: "\<forall>a. fprod a {||} = {||}"
 lemma set_equiv: "(f1 = f2) = (fset f1 = fset f2)"
   by (simp add: fset_inject)
 
+lemma fprod_equiv: "(fset (f |\<times>| f') = s) = (((fset f) \<times> (fset f')) = s)"
+  by (simp add: fprod_def Abs_fset_inverse)
 end
