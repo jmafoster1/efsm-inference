@@ -123,7 +123,7 @@ definition easy_merge :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarr
     \<comment> \<open> If t1 directly subsumes t2 then replace t2 with t1 \<close>
     if directly_subsumes (tm oldEFSM) (tm newEFSM) t1FromOld t2 t1 then Some (replace_transition newEFSM u1 newFrom t2NewTo t1 t2) else
     \<comment> \<open> If t2 directly subsumes t1 then replace t1 with t2 \<close>
-    if directly_subsumes (tm oldEFSM) (tm newEFSM) t2FromOld t1 t2 then Some (replace_transition newEFSM u2 newFrom t1NewTo t2 t1) else
+    if directly_subsumes (tm oldEFSM) (tm newEFSM) t2FromOld t1 t2 then Some (replace_transition newEFSM u1 newFrom t1NewTo t2 t1) else
     \<comment> \<open> Can we make a transition which subsumes both? \<close>
     (case maker oldEFSM t1FromOld t1 t2FromOld t2 of
     Some t' \<Rightarrow>
