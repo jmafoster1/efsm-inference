@@ -161,6 +161,9 @@ definition score :: "iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" wher
 definition leaves :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
   "leaves uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (\<exists>s. x = (uid, s))) t))))"
 
+definition arrives :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
+  "arrives uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. (\<exists>s. x = (uid, s))) t))))"
+
 lemma "(leaves uid t = n) = (\<exists>b ba. Set.filter (\<lambda>x. \<exists>a b ba. x = (uid, (a, b), ba)) (fset t) = {(uid, (n, b), ba)})"
   apply (simp add: leaves_def ffilter_def fthe_elem_def Abs_fset_inverse)
   apply standard
@@ -173,8 +176,9 @@ lemma "(leaves uid t = n) = (\<exists>b ba. Set.filter (\<lambda>x. \<exists>a b
 
 function resolve_nondeterminism :: "nondeterministic_pair fset \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" where
   "resolve_nondeterminism s e t g m = (if s = {||} then if nondeterminism t then None else Some t else 
-    (let (from, (to1, to2), ((t1, u1), (t2, u2))) = fMax s; t' = merge_states to1 to2 t in 
-      (case merge_transitions e t (leaves u1 e) (leaves u2 e) from to1 to2 t1 u1 t2 u2 g m True of
+    (let (from, (to1, to2), ((t1, u1), (t2, u2))) = fMax s; t' = merge_states to1 to2 t; z=(merge_states (arrives u1 t) (arrives u2 t) t) in 
+      \<comment> \<open>   merge_transitions oldEFSM newEFSM t1FromOld     t2FromOld    newFrom t1NewTo t2NewTo t1 u1 t2 u2 maker modifier modify\<close>
+      (case merge_transitions  e       z      (leaves u1 e) (leaves u2 e) (leaves u1 z)    (arrives u1 z) (arrives u2 z)     t1 u1 t2 u2 g     m        True of
         None \<Rightarrow> resolve_nondeterminism (s - {|fMax s|}) e t g m |
         Some new \<Rightarrow> resolve_nondeterminism (nondeterministic_pairs new) e new g m
       )

@@ -403,11 +403,18 @@ definition merged_1_8 :: iEFSM where
 (9, (9, 10), vend_pepsi)
 |}"
 
-lemma step_merged_1_8_selectPepsi: "step (tm merged_1_8) 0 Map.empty ''select'' [Str ''pepsi''] = Some (selectPepsi, 7, [], <>)"
+definition merged_2_9 :: iEFSM where
+  "merged_2_9 = {|(0, (0, 1), selectCoke), (1, (0, 7), selectPepsi), (2, (1, 2), coin50_50), (3, (1, 5), coin100_100), (4, (2, 3), coin50_100),
+      (5, (3, 4), vend_coke), (6, (5, 6), vend_coke), (7, (7, 1), coin50_50), (8, (1, 2), coin50_100), (9, (2, 10), vend_pepsi)|}"
+
+lemma merge_states_2_9: "merge_states 2 9 merged_1_8 = merged_2_9"
+  by (simp add: merge_states_def merge_states_aux_def merged_1_8_def merged_2_9_def)
+
+lemma step_merged_2_9_selectPepsi: "step (tm merged_2_9) 0 Map.empty ''select'' [Str ''pepsi''] = Some (selectPepsi, 7, [], <>)"
 proof-
-  have possible_steps: "possible_steps (tm merged_1_8) 0 Map.empty ''select'' [Str ''pepsi''] = {|(7, selectPepsi)|}"
+  have possible_steps: "possible_steps (tm merged_2_9) 0 Map.empty ''select'' [Str ''pepsi''] = {|(7, selectPepsi)|}"
     apply (simp add: possible_steps_fst)
-    apply (simp add: tm_def merged_1_8_def Set.filter_def)
+    apply (simp add: tm_def merged_2_9_def Set.filter_def)
     apply safe
                       apply (simp_all add: transitions)
     by force
@@ -416,11 +423,11 @@ proof-
     by (simp add: selectPepsi_def)
 qed
 
-lemma step_merged_1_8_coin50_7: "step (tm merged_1_8) 7 r ''coin'' [Num 50] = Some (coin50_50, 1, [Some (Num 50)], r)"
+lemma step_merged_2_9_coin50_7: "step (tm merged_2_9) 7 r ''coin'' [Num 50] = Some (coin50_50, 1, [Some (Num 50)], r)"
 proof-
-  have possible_steps: "possible_steps (tm merged_1_8) 7 r ''coin'' [Num 50] = {|(1, coin50_50)|}"
+  have possible_steps: "possible_steps (tm merged_2_9) 7 r ''coin'' [Num 50] = {|(1, coin50_50)|}"
     apply (simp add: possible_steps_fst)
-    apply (simp add: tm_def merged_1_8_def Set.filter_def)
+    apply (simp add: tm_def merged_2_9_def Set.filter_def)
     apply safe
                       apply (simp_all add: transitions)
     by force
@@ -460,6 +467,50 @@ proof-
   show ?thesis
     apply (simp add: posterior_def Let_def consistent_medial)
     by (simp add: coin50_50_def)
+qed
+
+lemma posterior_coin50_100: "posterior \<lbrakk>\<rbrakk> coin50_100 = \<lbrakk>\<rbrakk>"
+proof-
+  have consistent_medial: "consistent (medial \<lbrakk>\<rbrakk> (Guard coin50_100))"
+    apply (simp add: coin50_100_def consistent_def)
+    apply (rule_tac x="<I 1 := Num 50>" in exI)
+    by (simp add: consistent_empty_4)
+  show ?thesis
+    apply (simp add: posterior_def Let_def consistent_medial)
+    by (simp add: coin50_100_def)
+qed
+
+lemma posterior_coin100_100: "posterior \<lbrakk>\<rbrakk> coin100_100 = \<lbrakk>\<rbrakk>"
+proof-
+  have consistent_medial: "consistent (medial \<lbrakk>\<rbrakk> (Guard coin100_100))"
+    apply (simp add: coin100_100_def consistent_def)
+    apply (rule_tac x="<I 1 := Num 100>" in exI)
+    by (simp add: consistent_empty_4)
+  show ?thesis
+    apply (simp add: posterior_def Let_def consistent_medial)
+    by (simp add: coin100_100_def)
+qed
+
+lemma posterior_vend_coke: "posterior \<lbrakk>\<rbrakk> vend_coke = \<lbrakk>\<rbrakk>"
+proof-
+  have consistent_medial: "consistent (medial \<lbrakk>\<rbrakk> (Guard vend_coke))"
+    apply (simp add: vend_coke_def consistent_def)
+    apply (rule_tac x="<>" in exI)
+    by (simp add: consistent_empty_4)
+  show ?thesis
+    apply (simp add: posterior_def Let_def consistent_medial)
+    by (simp add: vend_coke_def)
+qed
+
+lemma posterior_vend_pepsi: "posterior \<lbrakk>\<rbrakk> vend_pepsi = \<lbrakk>\<rbrakk>"
+proof-
+  have consistent_medial: "consistent (medial \<lbrakk>\<rbrakk> (Guard vend_pepsi))"
+    apply (simp add: vend_pepsi_def consistent_def)
+    apply (rule_tac x="<>" in exI)
+    by (simp add: consistent_empty_4)
+  show ?thesis
+    apply (simp add: posterior_def Let_def consistent_medial)
+    by (simp add: vend_pepsi_def)
 qed
 
 lemma no_subsumption_coin50_50_coin50_100:  "\<not> subsumes \<lbrakk>\<rbrakk> coin50_50 coin50_100"
@@ -521,21 +572,41 @@ proof-
     by (simp add: selectCoke_def)
 qed
 
-lemma step_merged_1_8_selectCoke: "step (tm merged_1_8) 0 Map.empty ''select'' [Str ''coke''] = Some (selectCoke, 1, [], <>)"
+lemma step_merged_2_9_selectCoke: "step (tm merged_2_9) 0 Map.empty ''select'' [Str ''coke''] = Some (selectCoke, 1, [], <>)"
 proof-
-  have possible_steps: "possible_steps (tm merged_1_8) 0 Map.empty ''select'' [Str ''coke''] = {|(1, selectCoke)|}"
+  have possible_steps: "possible_steps (tm merged_2_9) 0 Map.empty ''select'' [Str ''coke''] = {|(1, selectCoke)|}"
     apply (simp add: possible_steps_fst)
-    apply (simp add: tm_def merged_1_8_def Set.filter_def)
+    apply (simp add: tm_def merged_2_9_def Set.filter_def)
     apply safe
-                      apply (simp_all add: transitions)
+      apply (simp_all add: transitions)
     by force
   show ?thesis
     apply (simp add: step_def possible_steps)
     by (simp add: selectCoke_def)
 qed
 
+definition merged_1_7 :: iEFSM where
+  "merged_1_7 = {|(0, (0, 1), selectCoke), (2, (1, 2), coin50_50), (4, (2, 3), coin50_100),  (5, (3, 4), vend_coke), 
+                                                                   (3, (1, 5), coin100_100), (6, (5, 6), vend_coke),
+                 (1, (0, 1), selectPepsi), (7, (1, 8), coin50_50), (8, (8, 9), coin50_100),  (9, (9, 10), vend_pepsi)|}"
+
+lemma merge_states_1_7: "merge_states 1 7 pta = merged_1_7"
+  by (simp add: merge_states_def pta_def merge_states_aux_def merged_1_7_def)
+
+definition merge_2_8 :: iEFSM where
+  "merge_2_8 = {|(0, (0, 1), selectCoke),  (2, (1, 2), coin50_50),  (4, (2, 3), coin50_100),  (5, (3, 4), vend_coke),
+                                                                      (3, (1, 5), coin100_100), (6, (5, 6), vend_coke),
+                   (1, (0, 1), selectPepsi), (7, (1, 2), coin50_50),  (8, (2, 9), coin50_100),  (9, (9, 10), vend_pepsi)|}"
+
+lemma merge_states_2_8: "merge_states 2 8 merged_1_7 = merge_2_8"
+  by (simp add: merge_states_def merge_states_aux_def merged_1_7_def merge_2_8_def)
+
 lemma no_choice_coin50_50_coin100_100: "\<not>choice coin50_50 coin100_100"
   by (simp add: choice_def transitions)
+
+definition merge_2_8_no_nondet :: iEFSM where
+  "merge_2_8_no_nondet = {|(0, (0, 1), selectCoke), (2, (1, 2), coin50_50), (4, (2, 3), coin50_100), (5, (3, 4), vend_coke), (3, (1, 5), coin100_100),
+      (6, (5, 6), vend_coke), (1, (0, 1), selectPepsi), (7, (1, 2), coin50_50), (8, (2, 9), coin50_100), (9, (9, 10), vend_pepsi)|}"
 
 lemma no_choice_coin100_100_coin50_50: "\<not>choice coin100_100 coin50_50"
   by (simp add: choice_def transitions)
@@ -550,7 +621,11 @@ lemma choice_coin50_100_coin50_50: "choice coin50_100 coin50_50"
   apply (simp add: choice_def transitions)
   by auto
 
-lemmas choices = choice_coin50_100_coin50_50 no_choice_selectCoke_selectPepsi no_choice_coin100_100_coin50_100 no_choice_coin100_100_coin50_50 no_choice_coin50_50_coin100_100 choice_symmetry
+lemma choice_coin50_50_coin50_50: "choice coin50_50 coin50_50"
+  apply (simp add: choice_def transitions)
+  by auto
+
+lemmas choices = choice_coin50_50_coin50_50 choice_coin50_100_coin50_50 no_choice_selectCoke_selectPepsi no_choice_coin100_100_coin50_100 no_choice_coin100_100_coin50_50 no_choice_coin50_50_coin100_100 choice_symmetry
 
 lemma coin50_50_lt_coin50_100: "coin50_50 < coin50_100"
   by (simp add: transitions less_transition_ext_def less_aexp_def)

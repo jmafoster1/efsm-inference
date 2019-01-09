@@ -1,0 +1,14 @@
+digraph EFSM{
+graph [rankdir="LR", fontname="Latin Modern Math"];
+node [color="black", fillcolor="white", shape="circle", style="filled", fontname="Latin Modern Math"];
+edge [fontname="Latin Modern Math"];
+0->1[label=<select:1&#91;i1 = coke&#93;>]
+0->1[label=<select:1&#91;i1 = pepsi&#93;>]
+1->2[label=<coin:1&#91;i1 = 50&#93;/o1 := 50>]
+1->5[label=<coin:1&#91;i1 = 100&#93;/o1 := 100>]
+2->3[label=<coin:1&#91;i1 = 50&#93;/o1 := 100>]
+2->9[label=<coin:1&#91;i1 = 50&#93;/o1 := 100>]
+3->4[label=<vend:0/o1 := coke>]
+5->6[label=<vend:0/o1 := coke>]
+9->10[label=<vend:0/o1 := pepsi>]
+}

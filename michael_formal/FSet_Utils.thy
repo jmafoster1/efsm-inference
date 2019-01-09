@@ -47,4 +47,7 @@ lemma set_equiv: "(f1 = f2) = (fset f1 = fset f2)"
 
 lemma fprod_equiv: "(fset (f |\<times>| f') = s) = (((fset f) \<times> (fset f')) = s)"
   by (simp add: fprod_def Abs_fset_inverse)
+
+lemma finsert_equiv: "(finsert e f = f') = (insert e (fset f) = (fset f'))"
+  by (simp add: finsert_def fset_both_sides Abs_fset_inverse)
 end
