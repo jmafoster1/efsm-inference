@@ -201,6 +201,9 @@ fun constrains_an_input :: "aexp \<Rightarrow> bool" where
 definition remove_input_constraints :: "context \<Rightarrow> context" where
   "remove_input_constraints c = (\<lambda>x. if constrains_an_input x then \<lbrakk>\<rbrakk> x else c x)"
 
+lemma remove_input_constraints_empty[simp]: "remove_input_constraints \<lbrakk>\<rbrakk> = \<lbrakk>\<rbrakk>"
+  by (simp add: remove_input_constraints_def)
+
 lemma consistent_remove_input_constraints[simp]: "consistent c \<Longrightarrow> consistent (remove_input_constraints c)"
 proof-
   assume premise: "consistent c"

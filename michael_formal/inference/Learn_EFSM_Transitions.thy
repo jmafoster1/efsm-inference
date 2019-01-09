@@ -32,6 +32,19 @@ definition pta :: iEFSM where
                                                              (3, (1, 5), coin100_100), (6, (5, 6), vend_coke),
            (1, (0, 7), selectPepsi), (7, (7, 8), coin50_50), (8, (8, 9), coin50_100),  (9, (9, 10), vend_pepsi)|}"
 
+lemma step_pta_selectPepsi: "step (tm pta) 0 Map.empty ''select'' [Str ''pepsi''] = Some (selectPepsi, 7, [], <>)"
+proof-
+  have possible_steps: "possible_steps (tm pta) 0 Map.empty ''select'' [Str ''pepsi''] = {|(7, selectPepsi)|}"
+    apply (simp add: possible_steps_def ffilter_def fimage_def fset_both_sides Abs_fset_inverse)
+    apply (simp add: tm_def pta_def Set.filter_def)
+    apply safe
+                      apply (simp_all add: transitions)
+    by force
+  show ?thesis
+    apply (simp add: step_def possible_steps)
+    by (simp add: selectPepsi_def)
+qed
+
 definition traces :: log where
   "traces = [[(''select'', [Str ''coke''], []), (''coin'', [Num 50], [Num 50]), (''coin'', [Num 50], [Num 100]), (''vend'', [], [Str ''coke''])],
              [(''select'', [Str ''coke''], []), (''coin'', [Num 100], [Num 100]), (''vend'', [], [Str ''coke''])],
@@ -359,6 +372,166 @@ proof-
     by (simp add: One_nat_def Two_nat_def)
   show ?thesis
     by (simp add: scores sorted_list_of_fset_def)
+qed
+
+lemmas possible_steps_fst = possible_steps_def ffilter_def fimage_def fset_both_sides Abs_fset_inverse
+
+lemma step_pta_coin50_7: "step (tm pta) 7 r ''coin'' [Num 50] = Some (coin50_50, 8, [Some (Num 50)], r)"
+proof-
+  have possible_steps: "possible_steps (tm pta) 7 r ''coin'' [Num 50] = {|(8, coin50_50)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: Set.filter_def tm_def pta_def)
+    apply safe
+                     apply (simp_all add: transitions)
+    by force
+  show ?thesis
+    apply (simp add: step_def possible_steps)
+    by (simp add: coin50_50_def)
+qed
+
+definition merged_1_8 :: iEFSM where
+  "merged_1_8 = {|
+(0, (0, 1), selectCoke),
+(1, (0, 7), selectPepsi),
+(2, (1, 2), coin50_50),
+(3, (1, 5), coin100_100),
+(4, (2, 3), coin50_100),
+(5, (3, 4), vend_coke),
+(6, (5, 6), vend_coke),
+(7, (7, 1), coin50_50),
+(8, (1, 9), coin50_100),
+(9, (9, 10), vend_pepsi)
+|}"
+
+lemma step_merged_1_8_selectPepsi: "step (tm merged_1_8) 0 Map.empty ''select'' [Str ''pepsi''] = Some (selectPepsi, 7, [], <>)"
+proof-
+  have possible_steps: "possible_steps (tm merged_1_8) 0 Map.empty ''select'' [Str ''pepsi''] = {|(7, selectPepsi)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_1_8_def Set.filter_def)
+    apply safe
+                      apply (simp_all add: transitions)
+    by force
+  show ?thesis
+    apply (simp add: step_def possible_steps)
+    by (simp add: selectPepsi_def)
+qed
+
+lemma step_merged_1_8_coin50_7: "step (tm merged_1_8) 7 r ''coin'' [Num 50] = Some (coin50_50, 1, [Some (Num 50)], r)"
+proof-
+  have possible_steps: "possible_steps (tm merged_1_8) 7 r ''coin'' [Num 50] = {|(1, coin50_50)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_1_8_def Set.filter_def)
+    apply safe
+                      apply (simp_all add: transitions)
+    by force
+  show ?thesis
+    apply (simp add: step_def possible_steps)
+    by (simp add: coin50_50_def)
+qed
+
+lemma posterior_selectPepsi: "posterior \<lbrakk>\<rbrakk> selectPepsi = \<lbrakk>\<rbrakk>"
+proof-
+  have consistent_medial: "consistent (medial \<lbrakk>\<rbrakk> (Guard selectPepsi))"
+    apply (simp add: selectPepsi_def consistent_def)
+    apply (rule_tac x="<I 1 := Str ''pepsi''>" in exI)
+    by (simp add: consistent_empty_4)
+  show ?thesis
+    apply (simp add: posterior_def Let_def consistent_medial)
+    by (simp add: selectPepsi_def)
+qed
+
+lemma posterior_selectCoke: "posterior \<lbrakk>\<rbrakk> selectCoke = \<lbrakk>\<rbrakk>"
+proof-
+  have consistent_medial: "consistent (medial \<lbrakk>\<rbrakk> (Guard selectCoke))"
+    apply (simp add: selectCoke_def consistent_def)
+    apply (rule_tac x="<I 1 := Str ''coke''>" in exI)
+    by (simp add: consistent_empty_4)
+  show ?thesis
+    apply (simp add: posterior_def Let_def consistent_medial)
+    by (simp add: selectCoke_def)
+qed
+
+lemma posterior_coin50_50: "posterior \<lbrakk>\<rbrakk> coin50_50 = \<lbrakk>\<rbrakk>"
+proof-
+  have consistent_medial: "consistent (medial \<lbrakk>\<rbrakk> (Guard coin50_50))"
+    apply (simp add: coin50_50_def consistent_def)
+    apply (rule_tac x="<I 1 := Num 50>" in exI)
+    by (simp add: consistent_empty_4)
+  show ?thesis
+    apply (simp add: posterior_def Let_def consistent_medial)
+    by (simp add: coin50_50_def)
+qed
+
+lemma no_subsumption_coin50_50_coin50_100:  "\<not> subsumes \<lbrakk>\<rbrakk> coin50_50 coin50_100"
+proof-
+  have subsumption_violation: "(\<exists>i r. satisfies_context r \<lbrakk>\<rbrakk> \<and>
+           apply_guards (Guard coin50_100) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<and>
+           apply_outputs (Outputs coin50_100) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<noteq>
+           apply_outputs (Outputs coin50_50) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))))"
+    apply (simp add: coin50_50_def coin50_100_def)
+    apply standard
+     apply (rule_tac x="<>" in exI)
+     apply (simp add: satisfies_context_def datastate2context_def consistent_def)
+     apply (rule_tac x="<>" in exI)
+     apply clarify
+     defer
+    apply (rule_tac x="[Num 50]" in exI)
+    apply simp
+     apply (case_tac r)
+        apply simp
+       apply (case_tac x2)
+    by auto
+  show ?thesis
+    by (simp add: subsumes_def subsumption_violation)
+qed
+
+lemma no_subsumption_coin50_100_coin50_50: " \<not> subsumes \<lbrakk>\<rbrakk> coin50_100 coin50_50"
+proof-
+  have subsumption_violation: "(\<exists>i r. satisfies_context r \<lbrakk>\<rbrakk> \<and>
+           apply_guards (Guard coin50_50) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<and>
+           apply_outputs (Outputs coin50_50) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<noteq>
+           apply_outputs (Outputs coin50_100) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))))"
+        apply (simp add: coin50_50_def coin50_100_def)
+    apply standard
+     apply (rule_tac x="<>" in exI)
+     apply (simp add: satisfies_context_def datastate2context_def consistent_def)
+     apply (rule_tac x="<>" in exI)
+     apply clarify
+     defer
+    apply (rule_tac x="[Num 50]" in exI)
+    apply simp
+     apply (case_tac r)
+        apply simp
+       apply (case_tac x2)
+    by auto
+  show ?thesis
+    by (simp add: subsumes_def subsumption_violation)
+qed
+
+lemma step_pta_selectCoke: "step (tm pta) 0 Map.empty ''select'' [Str ''coke''] = Some (selectCoke, 1, [], <>)"
+proof-
+  have possible_steps: "possible_steps (tm pta) 0 Map.empty ''select'' [Str ''coke''] = {|(1, selectCoke)|}"
+    apply (simp add: possible_steps_def ffilter_def fimage_def fset_both_sides Abs_fset_inverse)
+    apply (simp add: tm_def pta_def Set.filter_def)
+    apply safe
+                      apply (simp_all add: transitions)
+    by force
+  show ?thesis
+    apply (simp add: step_def possible_steps)
+    by (simp add: selectCoke_def)
+qed
+
+lemma step_merged_1_8_selectCoke: "step (tm merged_1_8) 0 Map.empty ''select'' [Str ''coke''] = Some (selectCoke, 1, [], <>)"
+proof-
+  have possible_steps: "possible_steps (tm merged_1_8) 0 Map.empty ''select'' [Str ''coke''] = {|(1, selectCoke)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_1_8_def Set.filter_def)
+    apply safe
+                      apply (simp_all add: transitions)
+    by force
+  show ?thesis
+    apply (simp add: step_def possible_steps)
+    by (simp add: selectCoke_def)
 qed
 
 lemma no_choice_coin50_50_coin100_100: "\<not>choice coin50_50 coin100_100"
