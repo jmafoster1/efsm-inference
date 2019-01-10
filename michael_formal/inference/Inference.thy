@@ -144,7 +144,7 @@ definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<R
             None \<Rightarrow> None |
             Some (t', H\<^sub>n\<^sub>e\<^sub>w, H\<^sub>o\<^sub>l\<^sub>d) \<Rightarrow> (
               if nondeterministic_simulates (tm t') (tm oldEFSM) H\<^sub>o\<^sub>l\<^sub>d then
-                easy_merge oldEFSM t' t1FromOld t2FromOld (H\<^sub>n\<^sub>e\<^sub>w newFrom) (H\<^sub>n\<^sub>e\<^sub>w t1NewTo) (H\<^sub>n\<^sub>e\<^sub>w t2NewTo) t1 u1 t2 u2 maker
+                Some t'
               else None
             )
           )

@@ -389,6 +389,84 @@ proof-
     by (simp add: coin50_50_def)
 qed
 
+lemma step_pta_coin50_1: "step (tm pta) 1 r ''coin'' [Num 50] = Some (coin50_50, 2, [Some (Num 50)], r)"
+proof-
+  have possible_steps: "possible_steps (tm pta) 1 r ''coin'' [Num 50] = {|(2, coin50_50)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: Set.filter_def tm_def pta_def)
+    apply safe
+                     apply (simp_all add: transitions)
+    by force
+  show ?thesis
+    apply (simp add: step_def possible_steps)
+    by (simp add: coin50_50_def)
+qed
+
+lemma step_pta_coin100_1: "step (tm pta) 1 r ''coin'' [Num 100] = Some (coin100_100, 5, [Some (Num 100)], r)"
+proof-
+  have possible_steps: "possible_steps (tm pta) 1 r ''coin'' [Num 100] = {|(5, coin100_100)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: Set.filter_def tm_def pta_def)
+    apply safe
+                     apply (simp_all add: transitions)
+    by force
+  show ?thesis
+    apply (simp add: step_def possible_steps)
+    by (simp add: coin100_100_def)
+qed
+
+lemma step_pta_coin50_2: "step (tm pta) 2 r ''coin'' [Num 50] = Some (coin50_100, 3, [Some (Num 100)], r)"
+proof-
+  have possible_steps: "possible_steps (tm pta) 2 r ''coin'' [Num 50] = {|(3, coin50_100)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: Set.filter_def tm_def pta_def)
+    apply safe
+                     apply (simp_all add: transitions)
+    by force
+  show ?thesis
+    apply (simp add: step_def possible_steps)
+    by (simp add: coin50_100_def)
+qed
+
+lemma step_pta_coin50_8: "step (tm pta) 8 r ''coin'' [Num 50] = Some (coin50_100, 9, [Some (Num 100)], r)"
+proof-
+  have possible_steps: "possible_steps (tm pta) 8 r ''coin'' [Num 50] = {|(9, coin50_100)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: Set.filter_def tm_def pta_def)
+    apply safe
+                     apply (simp_all add: transitions)
+    by force
+  show ?thesis
+    apply (simp add: step_def possible_steps)
+    by (simp add: coin50_100_def)
+qed
+
+lemma step_pta_vend_3: "step (tm pta) 3 r ''vend'' [] = Some (vend_coke, 4, [Some (Str ''coke'')], r)"
+proof-
+  have possible_steps: "possible_steps (tm pta) 3 r ''vend'' [] = {|(4, vend_coke)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: Set.filter_def tm_def pta_def)
+    apply safe
+                     apply (simp_all add: transitions)
+    by force
+  show ?thesis
+    apply (simp add: step_def possible_steps)
+    by (simp add: vend_coke_def)
+qed
+
+lemma step_pta_vend_9: "step (tm pta) 9 r ''vend'' [] = Some (vend_pepsi, 10, [Some (Str ''pepsi'')], r)"
+proof-
+  have possible_steps: "possible_steps (tm pta) 9 r ''vend'' [] = {|(10, vend_pepsi)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: Set.filter_def tm_def pta_def)
+    apply safe
+                     apply (simp_all add: transitions)
+    by force
+  show ?thesis
+    apply (simp add: step_def possible_steps)
+    by (simp add: vend_pepsi_def)
+qed
+
 definition merged_1_8 :: iEFSM where
   "merged_1_8 = {|
 (0, (0, 1), selectCoke),
@@ -551,6 +629,44 @@ proof-
      defer
     apply (rule_tac x="[Num 50]" in exI)
     apply simp
+     apply (case_tac r)
+        apply simp
+       apply (case_tac x2)
+    by auto
+  show ?thesis
+    by (simp add: subsumes_def subsumption_violation)
+qed
+
+lemma no_subsumption_vend_coke_vend_pepsi: "\<not> subsumes \<lbrakk>\<rbrakk> vend_coke vend_pepsi"
+proof-
+  have subsumption_violation: "(\<exists>i r. satisfies_context r \<lbrakk>\<rbrakk> \<and>
+           apply_guards (Guard vend_pepsi) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<and>
+           apply_outputs (Outputs vend_pepsi) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<noteq>
+           apply_outputs (Outputs vend_coke) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))))"
+    apply (simp add: transitions)
+        apply (rule_tac x="<>" in exI)
+     apply (simp add: satisfies_context_def datastate2context_def consistent_def)
+     apply (rule_tac x="<>" in exI)
+     apply clarify
+     apply (case_tac r)
+        apply simp
+       apply (case_tac x2)
+    by auto
+  show ?thesis
+    by (simp add: subsumes_def subsumption_violation)
+qed
+
+lemma no_subsumption_vend_pepsi_vend_coke: "\<not> subsumes \<lbrakk>\<rbrakk> vend_pepsi vend_coke"
+proof-
+  have subsumption_violation: "(\<exists>i r. satisfies_context r \<lbrakk>\<rbrakk> \<and>
+           apply_guards (Guard vend_coke) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<and>
+           apply_outputs (Outputs vend_coke) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<noteq>
+           apply_outputs (Outputs vend_pepsi) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))))"
+    apply (simp add: transitions)
+        apply (rule_tac x="<>" in exI)
+     apply (simp add: satisfies_context_def datastate2context_def consistent_def)
+     apply (rule_tac x="<>" in exI)
+     apply clarify
      apply (case_tac r)
         apply simp
        apply (case_tac x2)
