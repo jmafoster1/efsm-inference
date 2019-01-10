@@ -593,13 +593,13 @@ definition merged_1_7 :: iEFSM where
 lemma merge_states_1_7: "merge_states 1 7 pta = merged_1_7"
   by (simp add: merge_states_def pta_def merge_states_aux_def merged_1_7_def)
 
-definition merge_2_8 :: iEFSM where
-  "merge_2_8 = {|(0, (0, 1), selectCoke),  (2, (1, 2), coin50_50),  (4, (2, 3), coin50_100),  (5, (3, 4), vend_coke),
+definition merged_2_8 :: iEFSM where
+  "merged_2_8 = {|(0, (0, 1), selectCoke),  (2, (1, 2), coin50_50),  (4, (2, 3), coin50_100),  (5, (3, 4), vend_coke),
                                                                       (3, (1, 5), coin100_100), (6, (5, 6), vend_coke),
                    (1, (0, 1), selectPepsi), (7, (1, 2), coin50_50),  (8, (2, 9), coin50_100),  (9, (9, 10), vend_pepsi)|}"
 
-lemma merge_states_2_8: "merge_states 2 8 merged_1_7 = merge_2_8"
-  by (simp add: merge_states_def merge_states_aux_def merged_1_7_def merge_2_8_def)
+lemma merge_states_2_8: "merge_states 2 8 merged_1_7 = merged_2_8"
+  by (simp add: merge_states_def merge_states_aux_def merged_1_7_def merged_2_8_def)
 
 lemma no_choice_coin50_50_coin100_100: "\<not>choice coin50_50 coin100_100"
   by (simp add: choice_def transitions)
@@ -625,11 +625,21 @@ lemma choice_coin50_50_coin50_50: "choice coin50_50 coin50_50"
   apply (simp add: choice_def transitions)
   by auto
 
-lemmas choices = choice_coin50_50_coin50_50 choice_coin50_100_coin50_50 no_choice_selectCoke_selectPepsi no_choice_coin100_100_coin50_100 no_choice_coin100_100_coin50_50 no_choice_coin50_50_coin100_100 choice_symmetry
+lemma choice_coin50_100_coin50_100: "choice coin50_100 coin50_100"
+  apply (simp add: choice_def transitions)
+  by auto
+
+lemma choice_vend_coke_vend_pepsi: "choice vend_coke vend_pepsi"
+  by (simp add: choice_def transitions)
+
+lemmas choices = choice_vend_coke_vend_pepsi choice_coin50_100_coin50_100 choice_coin50_50_coin50_50 choice_coin50_100_coin50_50 no_choice_selectCoke_selectPepsi no_choice_coin100_100_coin50_100 no_choice_coin100_100_coin50_50 no_choice_coin50_50_coin100_100 choice_symmetry
 
 lemma coin50_50_lt_coin50_100: "coin50_50 < coin50_100"
   by (simp add: transitions less_transition_ext_def less_aexp_def)
 
-lemmas orders = coin50_50_lt_coin50_100
+lemma vend_coke_lt_vend_pepsi: "vend_coke < vend_pepsi"
+  by (simp add: transitions less_transition_ext_def less_aexp_def)
+
+lemmas orders = vend_coke_lt_vend_pepsi coin50_50_lt_coin50_100
 
 end

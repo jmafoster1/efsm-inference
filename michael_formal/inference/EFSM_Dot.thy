@@ -1,5 +1,5 @@
 theory EFSM_Dot
-imports "../EFSM" Show.Show_Instances "~~/src/HOL/Library/List_Lexorder" "~~/src/HOL/Library/Char_ord"
+imports Show.Show_Instances Inference
 begin
 
 fun value2dot :: "value \<Rightarrow> string" where
@@ -7,8 +7,8 @@ fun value2dot :: "value \<Rightarrow> string" where
   "value2dot (Num n) = show n"
 
 fun vname2dot :: "vname \<Rightarrow> string" where
-  "vname2dot (I n) = ''i''@(show n)" |
-  "vname2dot (R n) = ''r''@(show n)"
+  "vname2dot (I n) = ''i<sub>''@(show n)@''</sub>''" |
+  "vname2dot (R n) = ''r<sub>''@(show n)@''</sub>''"
 
 fun aexp2dot :: "aexp \<Rightarrow> string" where
   "aexp2dot (L v) = value2dot v" |
@@ -17,9 +17,9 @@ fun aexp2dot :: "aexp \<Rightarrow> string" where
   "aexp2dot (Minus a1 a2) = (aexp2dot a1)@''-''@(aexp2dot a2)"
 
 fun gexp2dot :: "gexp \<Rightarrow> string" where
-  "gexp2dot (Bc b) = show b" |
-  "gexp2dot (Eq a1 a2) = (aexp2dot a1)@'' = ''@(aexp2dot a2)" |
-  "gexp2dot (Lt a1 a2) = (aexp2dot a1)@'' < ''@(aexp2dot a2)" |
+  "gexp2dot (GExp.Bc b) = show b" |
+  "gexp2dot (GExp.Eq a1 a2) = (aexp2dot a1)@'' = ''@(aexp2dot a2)" |
+  "gexp2dot (GExp.Lt a1 a2) = (aexp2dot a1)@'' < ''@(aexp2dot a2)" |
   "gexp2dot (Nor g1 g2) = ''!(''@(gexp2dot g1)@''||''@(gexp2dot g2)@'')''" |
   "gexp2dot (Null v) = (vname2dot v)@'' = NULL''"
 
@@ -38,7 +38,7 @@ primrec updates2dot_aux :: "update_function list \<Rightarrow> string list" wher
 
 primrec outputs2dot :: "output_function list \<Rightarrow> nat \<Rightarrow> string list" where
   "outputs2dot [] _ = []" |
-  "outputs2dot (h#t) n = ((''o''@(show n))@'' := ''@(aexp2dot h))#(outputs2dot t (n+1))"
+  "outputs2dot (h#t) n = ((''o<sub>''@(show n))@''</sub> := ''@(aexp2dot h))#(outputs2dot t (n+1))"
 
 fun updates2dot :: "update_function list \<Rightarrow> string" where
   "updates2dot [] = []" |
@@ -67,6 +67,14 @@ definition efsm2dot :: "transition_matrix \<Rightarrow> string" where
                   ''node [color=''@quote@''black''@quote@'', fillcolor=''@quote@''white''@quote@'', shape=''@quote@''circle''@quote@'', style=''@quote@''filled''@quote@'', fontname=''@quote@''Latin Modern Math''@quote@''];''@newline@
                   ''edge [fontname=''@quote@''Latin Modern Math''@quote@''];''@newline@
                   (join (sorted_list_of_fset (fimage (\<lambda>((from, to), t). (show from)@''->''@(show to)@''[label=<''@(transition2dot t)@''>]'') e)) newline)@newline@
+                ''}''"
+
+definition iefsm2dot :: "iEFSM \<Rightarrow> string" where
+  "iefsm2dot e = ''digraph EFSM{''@newline@
+                  ''graph [rankdir=''@quote@''LR''@quote@'', fontname=''@quote@''Latin Modern Math''@quote@''];''@newline@
+                  ''node [color=''@quote@''black''@quote@'', fillcolor=''@quote@''white''@quote@'', shape=''@quote@''circle''@quote@'', style=''@quote@''filled''@quote@'', fontname=''@quote@''Latin Modern Math''@quote@''];''@newline@
+                  ''edge [fontname=''@quote@''Latin Modern Math''@quote@''];''@newline@
+                  (join (sorted_list_of_fset (fimage (\<lambda>(uid, (from, to), t). (show from)@''->''@(show to)@''[label=<(''@(show uid)@'') ''@(transition2dot t)@''>]'') e)) newline)@newline@
                 ''}''"
 
 
