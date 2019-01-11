@@ -402,6 +402,19 @@ proof-
     by (simp add: coin50_50_def)
 qed
 
+lemma step_pta_vend_5: "step (tm pta) 5 r ''vend'' [] = Some (vend_coke, 6, [Some (Str ''coke'')], r)"
+proof-
+  have possible_steps: "possible_steps (tm pta) 5 r ''vend'' [] = {|(6, vend_coke)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: Set.filter_def tm_def pta_def)
+    apply safe
+                     apply (simp_all add: transitions)
+    by force
+  show ?thesis
+    apply (simp add: step_def possible_steps)
+    by (simp add: transitions)
+qed
+
 lemma step_pta_coin100_1: "step (tm pta) 1 r ''coin'' [Num 100] = Some (coin100_100, 5, [Some (Num 100)], r)"
 proof-
   have possible_steps: "possible_steps (tm pta) 1 r ''coin'' [Num 100] = {|(5, coin100_100)|}"

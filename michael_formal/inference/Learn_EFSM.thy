@@ -94,11 +94,33 @@ definition H_pta :: "nat \<Rightarrow> nat" where
 definition H_merged_4_10 :: "nat \<Rightarrow> nat" where
   "H_merged_4_10 n = n"
 
+definition H_merged_1_2 :: "nat \<Rightarrow> nat" where
+  "H_merged_1_2 n = (if n = 2 then 1 else if n = 3 then 1 else n)"
+
+definition merged_1_3 :: iEFSM where
+  "merged_1_3 = {|(0, (0, 1), selectGeneral), (2, (1, 1), coin50_50), (4, (1, 1), coin50_100), (5, (1, 4), vend_general),
+                                              (3, (1, 5), coin100_100), (6, (5, 6), vend_general)|}"
+definition coinGeneral :: transition where
+  "coinGeneral = \<lparr>Label = ''coin'', Arity = 1, Guard = [], Outputs = [Plus (V (I 1)) (V (R 2))], Updates = [(R 2, Plus (V (I 1)) (V (R 2)))]\<rparr>"
+
+definition selectGeneral_2 :: transition where
+  "selectGeneral_2 = \<lparr>Label = ''select'', Arity = 1, Guard = [], Outputs = [], Updates = [(R 1, V (I 1)), (R 2, (L (Num 0)))]\<rparr>"
+
+definition merged_1_3_coin :: iEFSM where
+  "merged_1_3_coin = {|(0, (0, 1), selectGeneral_2), (2, (1, 1), coinGeneral), (5, (1, 4), vend_general),
+                                              (3, (1, 5), coin100_100), (6, (5, 6), vend_general)|}"
+
 definition modifier :: update_modifier where
   "modifier t1 t2 newFrom newEFSM oldEFSM = (if (t1, t2, newFrom, newEFSM, oldEFSM) = (coin50_50, coin50_100, 1, merged_1_8, pta) then None
                                         else if (t1, t2, newFrom, newEFSM, oldEFSM) = (vend_coke, vend_pepsi, 3, merged_4_10, pta) then Some (merged_vends, H_merged_4_10, H_pta)
+                                        else if (t1, t2, newFrom, newEFSM, oldEFSM) = (coin50_50, coin50_100, 1, merged_1_3, merged_vends) then Some (merged_1_3_coin, H_merged_1_2, H_merged_1_2)
                                         else None)"
-         
+
+lemma set_nequiv_def: "(s \<noteq> s') = (\<exists>e. (e \<in> s \<and> e \<notin> s') \<or> (e \<in> s' \<and> e \<notin> s))"
+  apply safe
+   apply simp
+  by simp
+
 lemma merge_1_8: "merge pta 1 8 generator modifier = None"
 proof-
   have leaves_2_pta: "leaves 2 pta = 1"
@@ -153,10 +175,15 @@ proof-
     apply (simp add: anterior_context_def)
     apply (simp add: step_merged_2_9_selectCoke)
     by (simp add: posterior_selectCoke no_subsumption_coin50_100_coin50_50)
+  have merged_2_9_neq_merged_1_3: "merged_2_9 \<noteq> merged_1_3"
+    apply (simp add: merged_2_9_def merged_1_3_def set_equiv)
+    apply (simp only: set_nequiv_def)
+    apply (rule_tac x="(0, (0, 1), selectCoke)" in exI)
+    by (simp add: transitions selectGeneral_def)
   have merge_transitions: "merge_transitions pta merged_2_9 1 8 1 2 2 coin50_50 2 coin50_100 8 generator modifier True = None"
     apply (simp add: merge_transitions_def easy_merge_def)
     by (simp add: generator_def modifier_def no_direct_subsumption_coin_50_50_coin50_100
-                     no_direct_subsumption_coin50_100_coin_50_50)
+                     no_direct_subsumption_coin50_100_coin_50_50 merged_2_9_neq_merged_1_3)
   have arrives_2_merged_1_8: "arrives 2 merged_1_8 = 2"
   proof-
     have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (2, (a, b), ba)) merged_1_8 = {|(2, (1, 2), coin50_50)|}"
@@ -599,18 +626,19 @@ lemma possible_steps_pta_2_not_coin50: "aa = ''coin'' \<longrightarrow> b \<note
   apply (simp add: coin50_100_def hd_input2state)
   by (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
 
+lemma possible_steps_merged_vends_coin50_2: "\<forall>r. possible_steps (tm merged_vends) 2 r ''coin'' [Num 50] = {|(3, coin50_100)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_vends_def Set.filter_def)
+    apply safe
+              apply (simp_all add: transitions selectGeneral_def)
+    by force
+
 lemma nondeterministic_simulates_trace_merged_vends_pta_2_2: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 2 2 <R 1 := Str ''coke''> Map.empty t H_pta"
 proof(induct t)
   case Nil
   then show ?case
     by (simp add: nondeterministic_simulates_trace.base)
 next
-  have possible_steps_coin50: "\<forall>r. possible_steps (tm merged_vends) 2 r ''coin'' [Num 50] = {|(3, coin50_100)|}"
-    apply (simp add: possible_steps_fst)
-    apply (simp add: tm_def merged_vends_def Set.filter_def)
-    apply safe
-              apply (simp_all add: transitions selectGeneral_def)
-    by force
   have coin50_updates: "\<forall>r. EFSM.apply_updates (Updates coin50_100) (join_ir [Num 50] r) r = r"
     apply clarify
     apply (rule ext)
@@ -625,7 +653,7 @@ next
      apply (rule nondeterministic_simulates_trace.step_some)
          apply (simp add: H_pta_def)
         apply (simp add: step_nondet_step_equiv step_pta_coin50_2)
-       apply (simp add: possible_steps_coin50)
+       apply (simp add: possible_steps_merged_vends_coin50_2)
       apply (simp only: coin50_updates regsimp)
      apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_3_3)
     apply (case_tac a)
@@ -634,7 +662,215 @@ next
     by (simp add: nondeterministic_step_def possible_steps_pta_2_not_coin50)
 qed
 
-lemma "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 1 1 <R 1 := Str ''coke''> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_6_6: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 6 6 <R 1 := Str ''coke''> Map.empty t H_pta"
+proof(induct t)
+  case Nil
+  then show ?case
+    by (simp add: nondeterministic_simulates_trace.base)
+next
+  have possible_steps: "\<forall>aa b. possible_steps (tm pta) 6 Map.empty aa b = {||}"
+    apply (simp add: possible_steps_fst)
+    by (simp add: tm_def pta_def Set.filter_def)
+  case (Cons a t)
+  then show ?case
+    apply (case_tac a)
+    apply simp
+    apply (rule nondeterministic_simulates_trace.step_none)
+    by (simp add: nondeterministic_step_def possible_steps)
+qed
+
+lemma possible_steps_pta_5_not_vend: "a = ''vend'' \<longrightarrow> b \<noteq> [] \<Longrightarrow> possible_steps (tm pta) 5 Map.empty a b = {||}"
+  apply (simp add: possible_steps_fst)
+  apply (simp add: tm_def pta_def Set.filter_def vend_coke_def)
+  by force
+
+lemma nondeterministic_simulates_trace_merged_vends_pta_5_5: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 5 5 <R 1 := Str ''coke''> Map.empty t H_pta"
+proof(induct t)
+  case Nil
+  then show ?case
+    by (simp add: nondeterministic_simulates_trace.base)
+next
+  have regsimp: "(\<lambda>a. if a = R 1 then Some (Str ''coke'') else None) = <R 1 := Str ''coke''>"
+    apply (rule ext)
+    by simp
+  have possible_steps_vend: "possible_steps (tm merged_vends) 5 <R 1 := Str ''coke''> ''vend'' [] = {|(6, vend_general)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_vends_def Set.filter_def)
+    apply (simp add: transitions vend_general_def)
+    by force
+  case (Cons a t)
+  case (Cons a t)
+  then show ?case
+    apply (case_tac "a = (''vend'', [])")
+     apply (simp add: regsimp)
+     apply (rule nondeterministic_simulates_trace.step_some)
+         apply (simp add: H_pta_def)
+        apply (simp add: step_nondet_step_equiv step_pta_vend_5)
+       apply (simp add: possible_steps_vend)
+      apply (simp add: vend_general_def regsimp)
+     apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_6_6)
+    apply (case_tac a)
+    apply (simp add: regsimp)
+    apply (rule nondeterministic_simulates_trace.step_none)
+    by (simp add: nondeterministic_step_def possible_steps_pta_5_not_vend)
+qed
+
+lemma possible_steps_pta_1_not_coin: "aa = ''coin'' \<longrightarrow> b \<noteq> [Num 50] \<Longrightarrow>
+       aa = ''coin'' \<longrightarrow> b \<noteq> [Num 100] \<Longrightarrow>
+       possible_steps (tm pta) 1 Map.empty aa b = {||}"
+  apply (simp add: possible_steps_fst)
+  apply (simp add: tm_def pta_def Set.filter_def)
+  apply clarify
+  apply (case_tac "Label baa = ''coin''")
+   apply simp
+   apply (case_tac "ba = 2")
+    apply (simp add: transitions hd_input2state)
+    apply (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
+   apply (simp add: transitions hd_input2state)
+   apply (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
+  apply (simp add: transitions)
+  by auto
+
+lemma possible_steps_merged_vends_coin50_1: "possible_steps (tm merged_vends) 1 r ''coin'' [Num 50] = {|(2, coin50_50)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_vends_def Set.filter_def)
+    apply safe
+              apply (simp_all add: transitions selectGeneral_def)
+  by force
+
+lemma possible_steps_merged_vends_coin100: "possible_steps (tm merged_vends) 1 r ''coin'' [Num 100] = {|(5, coin100_100)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_vends_def Set.filter_def)
+    apply safe
+              apply (simp_all add: transitions selectGeneral_def vend_general_def)
+    by force
+
+lemma nondeterministic_simulates_trace_merged_vends_pta_1_1: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 1 1 <R 1 := Str ''coke''> Map.empty t H_pta"
+proof(induct t)
+  case Nil
+  then show ?case
+    by (simp add: nondeterministic_simulates_trace.base)
+next
+  have coin50_updates: "\<forall>r. EFSM.apply_updates (Updates coin50_50) (join_ir [Num 50] r) r = r"
+    apply clarify
+    apply (rule ext)
+    by (simp add: transitions)
+  have regsimp: "(\<lambda>a. if a = R 1 then Some (Str ''coke'') else None) = <R 1 := Str ''coke''>"
+    apply (rule ext)
+    by simp
+  case (Cons a t)
+  then show ?case
+    apply (case_tac "a=(''coin'', [Num 50])")
+     apply simp
+     apply (rule nondeterministic_simulates_trace.step_some)
+         apply (simp add: H_pta_def)
+        apply (simp add: step_nondet_step_equiv step_pta_coin50_1)
+       apply (simp add: possible_steps_merged_vends_coin50_1)
+      apply (simp only: coin50_updates regsimp)
+     apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_2_2)
+    apply (case_tac "a=(''coin'', [Num 100])")
+     apply (simp add: regsimp)
+     apply (rule nondeterministic_simulates_trace.step_some)
+         apply (simp add: H_pta_def)
+        apply (simp add: step_nondet_step_equiv step_pta_coin100_1)
+       apply (simp add: possible_steps_merged_vends_coin100)
+      apply (simp add: coin100_100_def)
+     apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_5_5)
+    apply (case_tac a)
+    apply (simp add: regsimp)
+    apply (rule nondeterministic_simulates_trace.step_none)
+    by (simp add: nondeterministic_step_def possible_steps_pta_1_not_coin)
+qed
+
+lemma possible_steps_pta_9_not_vend: "aa = ''vend'' \<longrightarrow> b \<noteq> [] \<Longrightarrow>
+       possible_steps (tm pta) 9 Map.empty aa b = {||}"
+  apply (simp add: possible_steps_fst)
+  apply (simp add: tm_def pta_def Set.filter_def)
+  apply (simp add: vend_pepsi_def)
+  by auto
+
+lemma nondeterministic_simulates_trace_merged_vends_pta_3_9: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 3 9 <R 1 := Str ''pepsi''> Map.empty t H_pta"
+proof(induct t)
+  case Nil
+  then show ?case
+    by (simp add: nondeterministic_simulates_trace.base)
+next
+  have possible_steps: "\<forall>r. possible_steps (tm merged_vends) 3 r ''vend'' [] = {|(4, vend_general)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_vends_def Set.filter_def)
+    apply safe
+    apply (simp_all add: transitions vend_general_def)
+    by force
+  have possible_steps_10: "\<forall>aaa b. possible_steps (tm pta) 10 Map.empty aaa b = {||}"
+    apply (simp add: possible_steps_fst)
+    by (simp add: tm_def pta_def Set.filter_def)
+  case (Cons a t)
+  then show ?case
+    apply (case_tac "a=(''vend'', [])")
+    apply simp
+     apply (rule nondeterministic_simulates_trace.step_some)
+         apply (simp add: H_pta_def)
+        apply (simp add: step_nondet_step_equiv step_pta_vend_9)
+       apply (simp add: possible_steps)
+      apply (simp add: vend_general_def)
+     apply (case_tac t)
+      apply (simp add: nondeterministic_simulates_trace.base)
+     apply (case_tac aa)
+     apply simp
+     apply (rule nondeterministic_simulates_trace.step_none)
+     apply (simp add: nondeterministic_step_def possible_steps_10)
+    apply (case_tac a)
+    apply simp
+    apply (rule nondeterministic_simulates_trace.step_none)
+    by (simp add: nondeterministic_step_def possible_steps_pta_9_not_vend)
+qed
+
+lemma possible_steps_pta_8_not_coin: "aa = ''coin'' \<longrightarrow> b \<noteq> [Num 50] \<Longrightarrow>
+       possible_steps (tm pta) 8 Map.empty aa b = {||}"
+  apply (simp add: possible_steps_fst)
+  apply (simp add: tm_def pta_def Set.filter_def)
+  apply (simp add: coin50_100_def hd_input2state)
+  by (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
+
+lemma nondeterministic_simulates_trace_merged_vends_pta_2_8: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 2 8 <R 1 := Str ''pepsi''> Map.empty t H_pta"
+proof(induct t)
+  case Nil
+  then show ?case
+    by (simp add: nondeterministic_simulates_trace.base)
+next
+  have possible_steps: "possible_steps (tm merged_vends) 2 <R 1 := Str ''pepsi''> ''coin'' [Num 50] = {|(3, coin50_100)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_vends_def Set.filter_def)
+    apply safe
+              apply (simp_all add: transitions selectGeneral_def vend_general_def)
+    by force
+  case (Cons a t)
+  have regsimp: "\<forall>d. (\<lambda>a. if a = R 1 then Some d else None) = <R 1 := d>"
+    apply clarify
+    apply (rule ext)
+    by simp
+  then show ?case
+    apply (case_tac "a=(''coin'', [Num 50])")
+     apply (simp add: regsimp)
+     apply (rule nondeterministic_simulates_trace.step_some)
+         apply (simp add: H_pta_def)
+        apply (simp add: step_nondet_step_equiv step_pta_coin50_8)
+       apply (simp add: possible_steps)
+      apply (simp add: coin50_100_def)
+     apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_3_9)
+    apply (case_tac a)
+    apply simp
+    apply (rule nondeterministic_simulates_trace.step_none)
+    by (simp add: nondeterministic_step_def possible_steps_pta_8_not_coin)
+qed
+
+lemma possible_steps_pt_7_not_coin: "aa = ''coin'' \<longrightarrow> b \<noteq> [Num 50] \<Longrightarrow>
+       possible_steps (tm pta) 7 Map.empty aa b = {||}"
+  apply (simp add: possible_steps_fst)
+  apply (simp add: tm_def pta_def Set.filter_def coin50_50_def hd_input2state)
+  by (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
+
+lemma nondeterministic_simulates_trace_merged_vends_pta_1_7: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 1 7 <R 1 := Str ''pepsi''> Map.empty t H_pta"
 proof(induct t)
   case Nil
   then show ?case
@@ -646,56 +882,53 @@ next
     apply safe
               apply (simp_all add: transitions selectGeneral_def)
     by force
-  have coin50_updates: "\<forall>r. EFSM.apply_updates (Updates coin50_50) (join_ir [Num 50] r) r = r"
+  have regsimp: "\<forall>d. (\<lambda>a. if a = R 1 then Some d else None) = <R 1 := d>"
     apply clarify
-    apply (rule ext)
-    by (simp add: transitions)
-  have regsimp: "(\<lambda>a. if a = R 1 then Some (Str ''coke'') else None) = <R 1 := Str ''coke''>"
     apply (rule ext)
     by simp
   case (Cons a t)
-  have possible_steps_coin100: "possible_steps (tm merged_vends) 1 <R 1 := Str ''coke''> ''coin'' [Num 100] = {|(5, coin100_100)|}"
-    apply (simp add: possible_steps_fst)
-    apply (simp add: tm_def merged_vends_def Set.filter_def)
-    apply safe
-              apply (simp_all add: transitions selectGeneral_def vend_general_def)
-    by force
   then show ?case
     apply (case_tac "a=(''coin'', [Num 50])")
-     apply simp
-     apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_pta_def)
-        apply (simp add: step_nondet_step_equiv step_pta_coin50_1)
-       apply (simp add: possible_steps_coin50)
-      apply (simp only: coin50_updates regsimp)
-     apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_2_2)
-    apply (case_tac "a=(''coin'', [Num 100])")
      apply (simp add: regsimp)
      apply (rule nondeterministic_simulates_trace.step_some)
          apply (simp add: H_pta_def)
-        apply (simp add: step_nondet_step_equiv step_pta_coin100_1)
-       apply (simp add: possible_steps_coin100)
-
-
-
-
-
-
+        apply (simp add: step_nondet_step_equiv step_pta_coin50_7)
+       apply (simp add: possible_steps_coin50)
+      apply (simp add: coin50_50_def)
+     apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_2_8)
+    apply (case_tac a)
+    apply simp
+    apply (rule nondeterministic_simulates_trace.step_none)
+    by (simp add: nondeterministic_step_def possible_steps_pt_7_not_coin)
 qed
 
-lemma "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 0 0 Map.empty Map.empty t H_pta"
+lemma possible_steps_pta_0_not_select: " aa = ''select'' \<longrightarrow> b \<noteq> [Str ''coke''] \<Longrightarrow>
+       aa = ''select'' \<longrightarrow> b \<noteq> [Str ''pepsi''] \<Longrightarrow>
+       possible_steps (tm pta) 0 Map.empty aa b = {||}"
+  apply (simp add: possible_steps_fst)
+  apply (simp add: tm_def pta_def Set.filter_def)
+  apply clarify
+  apply simp
+  apply (case_tac "ba = 1")
+   apply (simp add: transitions hd_input2state)
+   apply (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
+  apply (simp add: transitions hd_input2state)
+  by (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
+
+lemma nondeterministic_simulates_trace_merged_vends_pta_0_0: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 0 0 Map.empty Map.empty t H_pta"
 proof(induct t)
   case Nil
   then show ?case
     by (simp add: nondeterministic_simulates_trace.base)
 next
-  have possible_steps: "possible_steps (tm merged_vends) 0 Map.empty ''select'' [Str ''coke''] = {|(1, selectGeneral)|}"
+  have possible_steps: "\<forall>d. possible_steps (tm merged_vends) 0 Map.empty ''select'' [d] = {|(1, selectGeneral)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
     apply safe
               apply (simp_all add: transitions selectGeneral_def)
     by force
-  have selectGeneral_updates: "EFSM.apply_updates (Updates selectGeneral) (join_ir [Str ''coke''] Map.empty) Map.empty = <R 1 := Str ''coke''>"
+  have selectGeneral_updates: "\<forall>d. EFSM.apply_updates (Updates selectGeneral) (join_ir [d] Map.empty) Map.empty = <R 1 := d>"
+    apply clarify
     apply (rule ext)
     by (simp add: selectGeneral_def)
   case (Cons a t)
@@ -706,12 +939,37 @@ next
          apply (simp add: H_pta_def)
         apply (simp add: step_nondet_step_equiv step_pta_selectCoke)
        apply (simp add: possible_steps)
-    apply (simp only: selectGeneral_updates)
-
-
+      apply (simp only: selectGeneral_updates)
+     apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_1_1)
+    apply (case_tac "a=(''select'', [Str ''pepsi''])")
+     apply simp
+     apply (rule nondeterministic_simulates_trace.step_some)
+         apply (simp add: H_pta_def)
+        apply (simp add: step_nondet_step_equiv step_pta_selectPepsi)
+       apply (simp add: possible_steps)
+      apply (simp only: selectGeneral_updates)
+     apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_1_7)
+    apply (case_tac a)
+    apply simp
+    apply (rule nondeterministic_simulates_trace.step_none)
+    by (simp add: nondeterministic_step_def possible_steps_pta_0_not_select)
 qed
 
-lemma merge_1_7: "merge pta 1 7 generator modifier = Some x"
+lemma nondeterministic_pairs_merged_vends: "nondeterministic_pairs merged_vends = {||}"
+proof-
+  have minus_1: "{|(2, coin50_50, 2), (5, coin100_100, 3)|} |-| {|(5, coin100_100, 3)|} = {|(2, coin50_50, 2)|}"
+    apply (simp add: transitions)
+    by auto
+  have state_nondeterminism_1: "state_nondeterminism 1 {|(2, coin50_50, 2), (5, coin100_100, 3)|} = {|(1, (2, 5), (coin50_50, 2), coin100_100, 3)|}"
+    by (simp add: state_nondeterminism_def minus_1)
+  show ?thesis
+    apply (simp add: nondeterministic_pairs_def S_def merged_vends_def)
+    apply (simp add: outgoing_transitions_def fimage_def state_nondeterminism_1)
+    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def)
+    by (simp add: choices)
+qed
+
+lemma merge_1_7: "merge pta 1 7 generator modifier = Some merged_vends"
 proof-
   have leaves_2_pta: "leaves 2 pta = 1"
   proof-
@@ -960,14 +1218,15 @@ proof-
     apply (rule gets_us_to.step_some)
      apply (simp add: step_pta_coin50_2)
     by (simp add: gets_us_to.base)
-  have "merge_transitions pta merged_4_10 3 9 3 4 4 vend_coke 5 vend_pepsi 9 generator modifier True = Some merged_vends"
+  have merge_vend_coke_vend_pepsi: "merge_transitions pta merged_4_10 3 9 3 4 4 vend_coke 5 vend_pepsi 9 generator modifier True = Some merged_vends"
   proof-
     have easy_merge: "easy_merge pta merged_4_10 3 9 3 4 4 vend_coke 5 vend_pepsi 9 generator = None"
       apply (simp add: easy_merge_def generator_def)
       by (simp add: no_direct_subsumption_vend_coke_vend_pepsi no_direct_subsumption_vend_pepsi_vend_coke)
     show ?thesis
       apply (simp add: merge_transitions_def easy_merge modifier_def)
-      apply (simp add: nondeterministic_simulates_def)
+      by (simp add: nondeterministic_simulates_def nondeterministic_simulates_trace_merged_vends_pta_0_0)
+  qed
   show ?thesis
     apply (simp add: merge_def merge_states_1_7 nondeterminism_def nondeterministic_pairs_merged_1_7)
     apply (simp add: leaves_2_pta leaves_7_pta arrives_2_merged_1_7 arrives_7_merged_1_7)
@@ -978,9 +1237,1085 @@ proof-
     apply (simp add: merge_transitions_2 nondeterminism_def nondeterministic_pairs_merged_3_9_coin100)
     apply (simp add: arrives_5_merged_3_9_coin100 arrives_9_merged_3_9_coin100 merge_states_4_10)
     apply (simp add: leaves_5_pta leaves_9_pta leaves_5_merged_4_10 arrives_9_merged_4_10)
+    by (simp add: merge_vend_coke_vend_pepsi nondeterministic_pairs_merged_vends nondeterminism_def)
+qed
 
-lemma "learn traces naive_score generator modifier = drinks"
-  apply (simp add: learn_def build_pta scoring_1 merge_1_8)
+lemma scoring_2: "sorted_list_of_fset (score merged_vends naive_score) = [(0, 0, 1), (0, 0, 2), (0, 0, 3), (0, 0, 4), (0, 0, 5), (0, 0, 6), (0, 1, 3), (0, 1, 4), (0, 1, 5), (0, 1, 6), (0, 2, 3), (0, 2, 4),
+     (0, 2, 5), (0, 2, 6), (0, 3, 4), (0, 3, 6), (0, 4, 5), (0, 4, 6), (0, 5, 6), (1, 3, 5), (2, 1, 2)]"
+proof-
+  have S_merged_vends: "S merged_vends = {|0, 1, 2, 3, 4, 5, 6|}"
+    apply (simp add: S_def merged_vends_def)
+    by auto
+  have fset_S: "fset {|0, 1, 2, 3, 4, 5, 6|} = {0, 1, 2, 3, 4, 5, 6}"
+    by simp
+  have ffilter: "ffilter (\<lambda>(x, y). x < y) (Inference.S merged_vends |\<times>| Inference.S merged_vends) = {|
+    (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6),
+    (1, 2), (1, 3), (1, 4), (1, 5), (1, 6),
+    (2, 3), (2, 4), (2, 5), (2, 6),
+    (3, 4), (3, 5), (3, 6),
+    (4, 5), (4, 6),
+    (5, 6)
+  |}"
+    apply (simp add: filtered_pairs_def ffilter_def fset_both_sides Abs_fset_inverse fprod_def)
+    apply (simp only: S_merged_vends fprod_equiv fset_S Set.filter_def)
+    apply standard
+     apply clarify
+     apply simp
+      apply (case_tac "a=6")
+       apply auto[1]
+      apply simp
+      apply (case_tac "a=5")
+       apply auto[1]
+      apply simp
+      apply (case_tac "a=4")
+       apply auto[1]
+      apply simp
+      apply (case_tac "a=3")
+       apply auto[1]
+      apply simp
+      apply (case_tac "a=2")
+        apply auto[1]
+      apply simp
+      apply (case_tac "a=1")
+        apply auto[1]
+     apply simp
+    apply clarify
+    apply safe
+    by auto
+  have Two_nat_def: "2 = Suc (Suc 0)"
+    by simp
+  have scores: "score merged_vends naive_score = {|(0, 0, 1), (0, 0, 2), (0, 0, 3), (0, 0, 4), (0, 0, 5), (0, 0, 6), (2, 1, 2), (0, 1, 3), (0, 1, 4), (0, 1, 5), (0, 1, 6),
+     (0, 2, 3), (0, 2, 4), (0, 2, 5), (0, 2, 6), (0, 3, 4), (1, 3, 5), (0, 3, 6), (0, 4, 5), (0, 4, 6), (0, 5, 6)|}"
+    apply (simp add: score_def ffilter)
+    apply (simp add: outgoing_transitions_def merged_vends_def fimage_def)
+    apply (simp add: naive_score_empty set_equiv)
+    apply (simp add: naive_score_def fprod_def)
+    apply (simp add: transitions selectGeneral_def vend_general_def Abs_fset_inverse)
+    by (simp add: One_nat_def Two_nat_def)
+  show ?thesis
+    by (simp add: scores sorted_list_of_fset_def)
+qed
+
+definition merged_1_2 :: iEFSM where
+  "merged_1_2 = {|(0, (0, 1), selectGeneral), (2, (1, 1), coin50_50),  (4, (1, 3), coin50_100), (5, (3, 4), vend_general),
+                                              (3, (1, 5), coin100_100), (6, (5, 6), vend_general)|}"
+
+lemma merge_states_1_2: "merge_states 1 2 merged_vends = merged_1_2"
+  by (simp add: merge_states_def merge_states_aux_def merged_vends_def merged_1_2_def)
+
+lemma nondeterministic_pairs_merged_1_2: "nondeterministic_pairs merged_1_2 = {|(1, (1, 3), (coin50_50, 2), coin50_100, 4)|}"
+proof-
+  have minus_1: "{|(1, coin50_50, 2), (3, coin50_100, 4), (5, coin100_100, 3)|} |-| {|(3, coin50_100, 4)|} = {|(1, coin50_50, 2), (5, coin100_100, 3)|}"
+    apply (simp add: transitions)
+    by auto
+  have minus_2: "{|(1, coin50_50, 2), (3, coin50_100, 4), (5, coin100_100, 3)|} |-| {|(5, coin100_100, 3)|} = {|(1, coin50_50, 2), (3, coin50_100, 4)|}"
+    apply (simp add: transitions)
+    by auto
+  have state_nondeterminism_1: "state_nondeterminism 1 {|(1, coin50_50, 2), (3, coin50_100, 4), (5, coin100_100, 3)|} = {|(1, (1, 5), (coin50_50, 2), coin100_100, 3), (1, (3, 5), (coin50_100, 4), coin100_100, 3), (1, (1, 3), (coin50_50, 2), coin50_100, 4),
+      (1, (3, 5), (coin50_100, 4), coin100_100, 3), (1, (1, 3), (coin50_50, 2), coin50_100, 4),
+      (1, (1, 5), (coin50_50, 2), coin100_100, 3)|}"
+    by (simp add: state_nondeterminism_def minus_1 minus_2)
+  show ?thesis
+    apply (simp add: nondeterministic_pairs_def S_def merged_1_2_def)
+    apply (simp add: outgoing_transitions_def fimage_def state_nondeterminism_1)
+    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def)
+    apply safe
+                       apply (simp_all add: choices)
+    by (simp add: transitions less_transition_ext_def less_aexp_def)
+qed
+
+lemma merge_states_1_3: "merge_states 1 3 merged_1_2 = merged_1_3"
+  by (simp add: merge_states_def merge_states_aux_def merged_1_2_def merged_1_3_def)
+
+lemma step_merged_1_3_select: "length b = 1 \<Longrightarrow> step (tm merged_1_3) 0 Map.empty ''select'' b = Some (selectGeneral, 1, [], <R 1 := hd b>)"
+proof-
+  assume premise: "length b = 1"
+  have possible_steps: "possible_steps (tm merged_1_3) 0 Map.empty ''select'' b = {|(1, selectGeneral)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_1_3_def Set.filter_def)
+    apply safe
+            apply (simp_all add: selectGeneral_def transitions vend_general_def premise)
+    by force
+  show ?thesis
+    apply (simp add: step_def possible_steps)
+    apply (simp add: selectGeneral_def)
+    apply (rule ext)
+    by (simp add: hd_input2state premise)
+qed
+
+definition r1_true :: "context" where
+  "r1_true = \<lbrakk>V (R 1) \<mapsto> Bc True\<rbrakk>"
+
+lemma posterior_selectGeneral: "posterior \<lbrakk>\<rbrakk> selectGeneral = r1_true"
+  apply (simp add: posterior_def selectGeneral_def remove_input_constraints_def r1_true_def)
+  apply (rule ext)
+  by simp
+
+lemma posterior_selectGeneral2: "posterior r1_true selectGeneral = r1_true"
+proof-
+  have consistent_medial:  "consistent \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk>"
+    by (simp add: consistent_def consistent_empty_4)
+  show ?thesis
+  apply (simp add: posterior_def selectGeneral_def remove_input_constraints_def r1_true_def Let_def consistent_medial)
+  apply (rule ext)
+    by simp
+qed
+
+lemma posterior_r1_true_coin50_50: "posterior r1_true coin50_50 = r1_true"
+proof-
+  have consistent_medial: "consistent (medial r1_true (Guard coin50_50))"
+    apply (simp add: consistent_def coin50_50_def r1_true_def)
+    apply (rule_tac x="<R 1 := d, I 1 := Num 50>" in exI)
+    by (simp add: consistent_empty_4)
+  show ?thesis
+    apply (simp add: posterior_def Let_def consistent_medial remove_input_constraints_def)
+    apply (rule ext)
+    by (simp add: coin50_50_def r1_true_def)
+qed
+
+lemma posterior_r1_true_coin50_100: "posterior r1_true coin50_100 = r1_true"
+proof-
+  have consistent_medial: "consistent (medial r1_true (Guard coin50_100))"
+    apply (simp add: consistent_def coin50_100_def r1_true_def)
+    apply (rule_tac x="<R 1 := d, I 1 := Num 50>" in exI)
+    by (simp add: consistent_empty_4)
+  show ?thesis
+    apply (simp add: posterior_def Let_def consistent_medial remove_input_constraints_def)
+    apply (rule ext)
+    by (simp add: coin50_100_def r1_true_def)
+qed
+
+lemma posterior_r1_true_coin100_100: "posterior r1_true coin100_100 = r1_true"
+proof-
+  have consistent_medial: "consistent (medial r1_true (Guard coin100_100))"
+    apply (simp add: consistent_def coin100_100_def r1_true_def)
+    apply (rule_tac x="<R 1 := d, I 1 := Num 100>" in exI)
+    by (simp add: consistent_empty_4)
+  show ?thesis
+    apply (simp add: posterior_def Let_def consistent_medial remove_input_constraints_def)
+    apply (rule ext)
+    by (simp add: coin100_100_def r1_true_def)
+qed
+
+lemma posterior_r1_true_vend_general: "posterior r1_true vend_general = r1_true"
+proof-
+  have consistent_medial: "consistent (medial r1_true (Guard vend_general))"
+    apply (simp add: consistent_def vend_general_def r1_true_def)
+    apply (rule_tac x="<R 1 := d, I 1 := Num 100>" in exI)
+    by (simp add: consistent_empty_4)
+  show ?thesis
+    apply (simp add: posterior_def Let_def consistent_medial remove_input_constraints_def)
+    apply (rule ext)
+    by (simp add: vend_general_def r1_true_def)
+qed
+
+lemma posterior_sequence_merged_1_3: "\<forall>r s. posterior_sequence r1_true (tm merged_1_3) s r p = r1_true"
+proof(induct p)
+  case Nil
+  then show ?case
+    by simp
+next
+  have regsimp: "\<forall>d. (\<lambda>a. if a = R 1 then Some d else None) = <R 1 := d>"
+    apply clarify
+    apply (rule ext)
+    by simp
+  have possible_transitions: "\<forall>aba. aba \<noteq> selectGeneral \<longrightarrow>
+       aba \<noteq> coin50_50 \<longrightarrow>
+       aba \<noteq> coin50_100 \<longrightarrow>
+       aba \<noteq> coin100_100 \<longrightarrow>
+       aba \<noteq> vend_general \<longrightarrow>
+       (\<nexists>fst. (fst, aba) |\<in>| (tm merged_1_3))"
+  by (simp add: tm_def merged_1_3_def)
+  case (Cons a as)
+  then show ?case
+    apply clarify
+    apply (case_tac a)
+    apply (simp add: regsimp)
+    apply (case_tac "step (tm merged_1_3) s r aa b")
+     apply simp
+    apply simp
+    apply (case_tac aaa)
+    apply simp
+    apply (case_tac "ab = selectGeneral")
+     apply (simp add: posterior_selectGeneral2)
+    apply (case_tac "ab = coin50_50")
+    apply (simp add: posterior_r1_true_coin50_50)
+    apply (case_tac "ab = coin50_100")
+     apply (simp add: posterior_r1_true_coin50_100)
+    apply (case_tac "ab = coin100_100")
+     apply (simp add: posterior_r1_true_coin100_100)
+    apply (case_tac "ab = vend_general")
+     apply (simp add: posterior_r1_true_vend_general)
+    apply (simp add: step_def)
+    apply (case_tac "fis_singleton (possible_steps (tm merged_1_3) s r aa b)")
+     defer
+     apply simp
+    apply (case_tac "fthe_elem (possible_steps (tm merged_1_3) s r aa b)")
+    apply simp
+    apply clarify
+    apply simp
+    using possible_transitions singleton_dest by blast
+qed
+
+lemma merged_1_3_anterior_context: "accepts_trace (tm merged_vends) p \<and>
+       gets_us_to 2 (tm merged_vends) 0 Map.empty p \<longrightarrow>
+       anterior_context (tm merged_1_3) p = r1_true"
+proof(induct p)
+  case Nil
+  then show ?case
+    by (simp add: no_further_steps)
+next
+  have must_do_select: "\<forall>aa b p. \<not> (aa = ''select'' \<and> length b = 1) \<longrightarrow>
+       \<not>accepts_trace (tm merged_vends) ((aa, b) # p)"
+  proof-
+    have possible_steps: "\<And>a ba.
+       a = ''select'' \<longrightarrow> length ba \<noteq> 1 \<Longrightarrow>
+       possible_steps (tm merged_vends) 0 Map.empty a ba = {||}"
+      apply (simp add: possible_steps_fst)
+      apply (simp add: tm_def merged_vends_def Set.filter_def)
+      apply safe
+      by (simp_all add: selectGeneral_def)
+    show ?thesis
+      apply (simp add: accepts_trace_def)
+      apply clarify
+      apply (rule accepts.cases)
+        apply simp
+       apply simp
+      apply clarify
+      by (simp add: step_def possible_steps)
+  qed
+  case (Cons a p)
+  then show ?case
+    apply (case_tac a)
+    apply simp
+    apply (case_tac "aa = ''select'' \<and> length b = 1")
+     apply (simp add: anterior_context_def step_merged_1_3_select posterior_selectGeneral)
+     apply (simp add: posterior_sequence_merged_1_3)
+    by (simp add: must_do_select)
+qed
+
+lemma merged_1_3_anterior_context_1: "accepts_trace (tm merged_vends) p \<and>
+       gets_us_to 1 (tm merged_vends) 0 Map.empty p \<longrightarrow>
+       anterior_context (tm merged_1_3) p = r1_true"
+proof(induct p)
+  case Nil
+  then show ?case
+    by (simp add: no_further_steps)
+next
+  have must_do_select: "\<forall>aa b p. \<not> (aa = ''select'' \<and> length b = 1) \<longrightarrow>
+       \<not>accepts_trace (tm merged_vends) ((aa, b) # p)"
+  proof-
+    have possible_steps: "\<And>a ba.
+       a = ''select'' \<longrightarrow> length ba \<noteq> 1 \<Longrightarrow>
+       possible_steps (tm merged_vends) 0 Map.empty a ba = {||}"
+      apply (simp add: possible_steps_fst)
+      apply (simp add: tm_def merged_vends_def Set.filter_def)
+      apply safe
+      by (simp_all add: selectGeneral_def)
+    show ?thesis
+      apply (simp add: accepts_trace_def)
+      apply clarify
+      apply (rule accepts.cases)
+        apply simp
+       apply simp
+      apply clarify
+      by (simp add: step_def possible_steps)
+  qed
+  case (Cons a p)
+  then show ?case
+    apply (case_tac a)
+    apply simp
+    apply (case_tac "aa = ''select'' \<and> length b = 1")
+     apply (simp add: anterior_context_def step_merged_1_3_select posterior_selectGeneral)
+     apply (simp add: posterior_sequence_merged_1_3)
+    by (simp add: must_do_select)
+qed
+
+lemma no_direct_subsumption_coin50_50_coin_50_100: "\<not> directly_subsumes (tm merged_vends) (tm merged_1_3) 2 coin50_50 coin50_100"
+proof-
+  have possible_steps_select: "possible_steps (tm merged_vends) 0 Map.empty ''select'' [d] = {|(1, selectGeneral)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_vends_def Set.filter_def)
+    apply safe
+              apply (simp_all add: selectGeneral_def)
+    by force
+  have possible_steps_coin: "\<forall>r. possible_steps (tm merged_vends) 1 r ''coin'' [Num 50] = {|(2, coin50_50)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_vends_def Set.filter_def)
+    apply safe
+              apply (simp_all add: transitions)
+    by force
+  have subsumption_violation: "(\<exists>i r. satisfies_context r r1_true \<and>
+           apply_guards (Guard coin50_100) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<and>
+           apply_outputs (Outputs coin50_100) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<noteq>
+           apply_outputs (Outputs coin50_50) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))))"
+    apply (simp add: transitions satisfies_context_def consistent_def datastate2context_def r1_true_def)
+    apply standard
+     apply (rule_tac x="<R 1 := d>" in exI)
+     apply (rule_tac x="<R 1 := d>" in exI)
+     apply clarify
+     defer
+     apply (meson input2state.simps(2))
+    apply (case_tac r)
+       apply simp
+      apply (case_tac x2)
+    by auto
+    show ?thesis
+    apply (simp add: directly_subsumes_def merged_1_3_anterior_context accepts_trace_def)
+    apply (rule_tac x="[(''select'', [d]), (''coin'', [Num 50])]" in exI)
+    apply standard
+     apply (rule accepts.step)
+      apply (simp add: step_def possible_steps_select)
+     apply (rule accepts.step)
+      apply (simp add: step_def possible_steps_coin)
+     apply (simp add: accepts.base)
+    apply standard
+     apply (rule gets_us_to.step_some)
+      apply (simp add: step_def possible_steps_select)
+     apply (rule gets_us_to.step_some)
+      apply (simp add: step_def possible_steps_coin)
+     apply (simp add: gets_us_to.base)
+      by (simp add: subsumes_def subsumption_violation)
+  qed
+
+lemma no_direct_subsumption_coin50_100_coin_50_50: "\<not> directly_subsumes (tm merged_vends) (tm merged_1_3) 1 coin50_100 coin50_50"
+proof-
+  have possible_steps_select: "possible_steps (tm merged_vends) 0 Map.empty ''select'' [d] = {|(1, selectGeneral)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_vends_def Set.filter_def)
+    apply safe
+              apply (simp_all add: selectGeneral_def)
+    by force
+  have subsumption_violation: "\<exists>i r. satisfies_context r r1_true \<and>
+           apply_guards (Guard coin50_50) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<and>
+           apply_outputs (Outputs coin50_50) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<noteq>
+           apply_outputs (Outputs coin50_100) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n)))"
+    apply (simp add: transitions satisfies_context_def consistent_def datastate2context_def r1_true_def)
+    apply standard
+     apply (rule_tac x="<R 1 := d>" in exI)
+     apply (rule_tac x="<R 1 := d>" in exI)
+     apply clarify
+     defer
+     apply (meson input2state.simps(2))
+    apply (case_tac r)
+       apply simp
+      apply (case_tac x2)
+    by auto
+  show ?thesis
+    apply (simp add: directly_subsumes_def merged_1_3_anterior_context_1 accepts_trace_def)
+    apply (rule_tac x="[(''select'', [d])]" in exI)
+    apply standard
+     apply (rule accepts.step)
+      apply (simp add: step_def possible_steps_select)
+     apply (simp add: accepts.base)
+    apply standard
+     apply (rule gets_us_to.step_some)
+      apply (simp add: step_def possible_steps_select)
+     apply (simp add: gets_us_to.base)
+    by (simp add: subsumes_def subsumption_violation)
+qed
+
+lemma nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_1_3: "nondeterministic_simulates_trace (tm merged_1_3_coin) (tm merged_vends) 1 3 <R 1 := hd b, R 2 := Num 100> <R 1 := hd b> t H_merged_1_2"
+proof(induct t)
+  case Nil
+  then show ?case
+    by (simp add: nondeterministic_simulates_trace.base)
+next
+  have regsimp_1: "\<forall>d. (\<lambda>a. if a = R 1 then Some d else None) = <R 1 := d>"
+    apply clarify
+    apply (rule ext)
+    by simp
+  have regsimp_2: "\<forall>d. (\<lambda>a. if a = R 2 then Some (Num 100) else if a = R 1 then Some d else None) = <R 1 := d, R 2 := Num 100>"
+    apply clarify
+    apply (rule ext)
+    by simp
+  have possible_steps_merged_vends_vend: "\<forall>r. possible_steps (tm merged_vends) 3 r ''vend'' [] = {|(4, vend_general)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: merged_vends_def Set.filter_def tm_def)
+    apply safe
+             apply (simp_all add: transitions vend_general_def)
+    by force
+  have possible_steps_merged_1_3_coin_vend: "\<forall>r. possible_steps (tm merged_1_3_coin) 1 r ''vend'' [] = {|(4, vend_general)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_1_3_coin_def Set.filter_def)
+    apply safe
+           apply (simp_all add: transitions coinGeneral_def vend_general_def)
+    by force
+  have possible_steps_merged_vends_4: "\<forall>r l i. possible_steps (tm merged_vends) 4 r l i = {||}"
+    apply (simp add: possible_steps_fst)
+    by (simp add: merged_vends_def Set.filter_def tm_def)
+  have possible_steps_not_vend: "\<And>aa ba.
+       aa = ''vend'' \<longrightarrow> ba \<noteq> [] \<Longrightarrow>
+       possible_steps (tm merged_vends) 3 (\<lambda>a. if a = R 1 then Some (hd b) else None) aa ba = {||}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: merged_vends_def Set.filter_def tm_def)
+    apply safe
+    by (simp_all add: transitions vend_general_def)
+  case (Cons a t)
+  then show ?case
+    apply (case_tac "a= (''vend'', [])")
+    apply simp
+     apply (rule nondeterministic_simulates_trace.step_some)
+         apply (simp add: H_merged_1_2_def)
+        apply (simp add: nondeterministic_step_def possible_steps_merged_vends_vend)
+       apply (simp add: possible_steps_merged_1_3_coin_vend)
+      apply (simp add: vend_general_def)
+     apply (simp add: regsimp_1 vend_general_def regsimp_2)
+     apply (case_tac t)
+      apply (simp add: nondeterministic_simulates_trace.base)
+     apply (case_tac aa)
+     apply simp
+     apply (rule nondeterministic_simulates_trace.step_none)
+    apply (simp add: nondeterministic_step_def possible_steps_merged_vends_4)
+    apply (case_tac a)
+    apply simp
+    apply (rule nondeterministic_simulates_trace.step_none)
+    by (simp add: nondeterministic_step_def possible_steps_not_vend)
+qed
+
+
+lemma nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_1_2: "nondeterministic_simulates_trace (tm merged_1_3_coin) (tm merged_vends) 1 2 <R 1 := hd b, R 2 := Num 50> <R 1 := hd b> t H_merged_1_2"
+proof(induct t)
+  case Nil
+  then show ?case
+    by (simp add: nondeterministic_simulates_trace.base)
+next
+  have possible_steps_merged_1_3_coin_1_coin: "\<forall>r. possible_steps (tm merged_1_3_coin) 1 r ''coin'' [Num 50] = {|(1, coinGeneral)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_1_3_coin_def Set.filter_def)
+    apply safe
+           apply (simp_all add: coinGeneral_def transitions selectGeneral_2_def vend_general_def)
+    by force
+  have regsimp_1: "\<forall>d. (\<lambda>a. if a = R 1 then Some d else None) = <R 1 := d>"
+    apply clarify
+    apply (rule ext)
+    by simp
+  have regsimp_2: "\<forall>d. (\<lambda>x. if x = R 2
+          then aval (snd (R 2, Plus (V (I 1)) (V (R 2))))
+                (case_vname (\<lambda>n. input2state [Num 50] 1 (I n))
+                  (\<lambda>n. if R n = R 2 then Some (Num 50) else if R n = R 1 then Some d else None))
+          else EFSM.apply_updates []
+                (case_vname (\<lambda>n. input2state [Num 50] 1 (I n))
+                  (\<lambda>n. if R n = R 2 then Some (Num 50) else if R n = R 1 then Some d else None))
+                (\<lambda>a. if a = R 2 then Some (Num 50) else if a = R 1 then Some d else None) x) = <R 1 := d, R 2 := Num 100>"
+    apply clarify
+    apply (rule ext)
+    by simp
+  have possible_steps_not_coin: "\<And>aa ba r.
+       aa = ''coin'' \<longrightarrow> ba \<noteq> [Num 50] \<Longrightarrow>
+       possible_steps (tm merged_vends) 2 r aa ba = {||}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_vends_def Set.filter_def)
+    apply (simp add: coin50_100_def hd_input2state)
+    by (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
+  case (Cons a t)
+  then show ?case
+    apply (case_tac "a = (''coin'', [Num 50])")
+     apply simp
+     apply (rule nondeterministic_simulates_trace.step_some)
+         apply (simp add: H_merged_1_2_def)
+        apply (simp add: nondeterministic_step_def possible_steps_merged_vends_coin50_2)
+       apply (simp add: possible_steps_merged_1_3_coin_1_coin)
+      apply simp
+     apply (simp add: coinGeneral_def coin50_100_def regsimp_1 regsimp_2)
+     apply (simp add: nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_1_3)
+    apply (case_tac a)
+    apply simp
+    apply (rule nondeterministic_simulates_trace.step_none)
+    by (simp add: nondeterministic_step_def possible_steps_not_coin)
+qed
+
+lemma nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_5_5: "nondeterministic_simulates_trace (tm merged_1_3_coin) (tm merged_vends) 5 5 <R 1 := hd b, R 2 := Num 0> <R 1 := hd b> t H_merged_1_2"
+proof(induct t)
+  case Nil
+  then show ?case
+    by (simp add: nondeterministic_simulates_trace.base)
+next
+  have possible_steps_merged_vends_vend: "\<forall>r. possible_steps (tm merged_vends) 5 r ''vend'' [] = {|(6, vend_general)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_vends_def Set.filter_def)
+    apply safe
+             apply (simp_all add: vend_general_def)
+    by force
+  have possible_steps_other_vend: "\<forall>r. possible_steps (tm merged_1_3_coin) 5 r ''vend'' [] = {|(6, vend_general)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_1_3_coin_def Set.filter_def)
+    apply safe
+             apply (simp_all add: vend_general_def)
+    by force
+  have stop: "\<forall>r aaa ba. possible_steps (tm merged_vends) 6 r aaa ba = {||}"
+    apply (simp add: possible_steps_fst)
+    by (simp add: tm_def merged_vends_def Set.filter_def)
+  have stop_2: "\<And>aa ba.
+       aa = ''vend'' \<longrightarrow> ba \<noteq> [] \<Longrightarrow>
+       possible_steps (tm merged_vends) 5 (\<lambda>a. if a = R 1 then Some (hd b) else None) aa ba = {||}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_vends_def Set.filter_def vend_general_def)
+    by auto
+  case (Cons a t)
+  then show ?case
+    apply (case_tac "a=(''vend'', [])")
+     apply simp
+     apply (rule nondeterministic_simulates_trace.step_some)
+         apply (simp add: H_merged_1_2_def)
+        apply (simp add: nondeterministic_step_def possible_steps_merged_vends_vend)
+       apply (simp add: possible_steps_other_vend)
+      apply simp
+     apply (simp add: vend_general_def)
+     apply (case_tac t)
+      apply (simp add: nondeterministic_simulates_trace.base)
+    apply (case_tac aa)
+    apply simp
+     apply (rule nondeterministic_simulates_trace.step_none)
+     apply (simp add: nondeterministic_step_def stop)
+    apply (case_tac a)
+    apply simp
+    apply (rule nondeterministic_simulates_trace.step_none)
+    by (simp add: nondeterministic_step_def stop_2)
+qed
+
+lemma nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_1_1: "nondeterministic_simulates_trace (tm merged_1_3_coin) (tm merged_vends) 1 1 <R 1 := hd b, R 2 := Num 0> <R 1 := hd b> t H_merged_1_2"
+proof(induct t)
+  case Nil
+  then show ?case
+    by (simp add: nondeterministic_simulates_trace.base)
+next
+  have regsimp_1: "\<forall>d. (\<lambda>a. if a = R 1 then Some d else None) = <R 1 := d>"
+    apply clarify
+    apply (rule ext)
+    by simp
+  have possible_steps_merged_1_3_coin_coin: "\<forall>r. possible_steps (tm merged_1_3_coin) 1 r ''coin'' [Num 50] = {|(1, coinGeneral)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_1_3_coin_def Set.filter_def)
+    apply safe
+           apply (simp_all add: coinGeneral_def vend_general_def transitions)
+    by force
+  have regsimp_2: "\<forall>d. (\<lambda>x. if x = R 2
+          then aval (snd (R 2, Plus (V (I 1)) (V (R 2))))
+                (case_vname (\<lambda>n. input2state [Num 50] 1 (I n))
+                  (\<lambda>n. if R n = R 2 then Some (Num 0) else if R n = R 1 then Some d else None))
+          else EFSM.apply_updates []
+                (case_vname (\<lambda>n. input2state [Num 50] 1 (I n))
+                  (\<lambda>n. if R n = R 2 then Some (Num 0) else if R n = R 1 then Some d else None))
+                (\<lambda>a. if a = R 2 then Some (Num 0) else if a = R 1 then Some d else None) x) = <R 1 := d, R 2 := Num 50>"
+    apply clarify
+    apply (rule ext)
+    by simp
+  have possible_steps_coin_100: "\<forall>r. possible_steps (tm merged_vends) 1 r ''coin'' [Num 100] = {|(5, coin100_100)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_vends_def Set.filter_def)
+    apply safe
+              apply (simp_all add: transitions)
+    by force
+  have possible_steps_merged_1_3_coin_coin100: "\<forall>r. possible_steps (tm merged_1_3_coin) 1 r ''coin'' [Num 100] = {|(1, coinGeneral), (5, coin100_100)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_1_3_coin_def Set.filter_def)
+    apply safe
+               apply (simp_all add: transitions coinGeneral_def vend_general_def)
+    apply force
+    by force
+  have go_to_5: "\<forall>r. (5, coin100_100) |\<in>|
+    possible_steps (tm merged_1_3_coin) 1 r ''coin'' [Num 100]"
+    by (simp add: possible_steps_merged_1_3_coin_coin100)
+  have regsimp_3: "\<forall>d. (\<lambda>a. if a = R 2 then Some (Num 0) else if a = R 1 then Some d else None) = <R 1 := d, R 2 := Num 0>"
+    apply clarify
+    apply (rule ext)
+    by simp
+  have stop: "\<And>aa ba.
+       aa = ''coin'' \<longrightarrow> ba \<noteq> [Num 50] \<Longrightarrow>
+       aa = ''coin'' \<longrightarrow> ba \<noteq> [Num 100] \<Longrightarrow>
+       possible_steps (tm merged_vends) 1 (\<lambda>a. if a = R 1 then Some (hd b) else None) aa ba = {||}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_vends_def Set.filter_def)
+    apply (simp add: coin50_50_def coin100_100_def)
+    apply clarify
+    apply simp
+    apply (case_tac "bb=2")
+     apply (simp add: hd_input2state)
+     apply (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
+    apply (case_tac "bb=5")
+     apply (simp add: hd_input2state)
+     apply (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
+    by simp
+  case (Cons a t)
+  then show ?case
+    apply (case_tac "a = (''coin'', [Num 50])")
+     apply simp
+     apply (rule nondeterministic_simulates_trace.step_some)
+         apply (simp add: H_merged_1_2_def)
+        apply (simp add: nondeterministic_step_def possible_steps_merged_vends_coin50_1)
+       apply (simp add: possible_steps_merged_1_3_coin_coin)
+      apply (simp add: coinGeneral_def regsimp_2)
+     apply (simp add: transitions regsimp_1)
+     apply (simp add: nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_1_2)
+    apply (case_tac "a = (''coin'', [Num 100])")
+     apply simp
+     apply (rule nondeterministic_simulates_trace.step_some)
+         apply (simp add: H_merged_1_2_def)
+        apply (simp add: nondeterministic_step_def possible_steps_coin_100)
+    using go_to_5 apply auto[1]
+      apply simp
+     apply (simp add: regsimp_1 regsimp_3 coin100_100_def)
+     apply (simp add: nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_5_5)
+    apply (case_tac a)
+    apply simp
+    apply (rule nondeterministic_simulates_trace.step_none)
+    by (simp add: nondeterministic_step_def stop)
+qed
+
+lemma nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_0_0:"nondeterministic_simulates_trace (tm merged_1_3_coin) (tm merged_vends) 0 0 Map.empty Map.empty t H_merged_1_2"
+proof(induct t)
+  case Nil
+  then show ?case
+  by (simp add: nondeterministic_simulates_trace.base)
+next
+  have possible_steps_merged_vends_select: "\<forall>b. length b = 1 \<longrightarrow> possible_steps (tm merged_vends) 0 Map.empty ''select'' b = {|(1, selectGeneral)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_vends_def Set.filter_def)
+    apply safe
+              apply (simp_all add: selectGeneral_def)
+    by force
+  have possible_steps_merged_1_3_coin_select: "\<forall>b. length b = 1 \<longrightarrow> possible_steps (tm merged_1_3_coin) 0 Map.empty ''select'' b = {|(1, selectGeneral_2)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_1_3_coin_def Set.filter_def)
+    apply safe
+            apply (simp_all add: selectGeneral_2_def)
+    by force
+  have regsimp_1: "\<forall>b. length b = 1 \<longrightarrow>(\<lambda>a. if a = R 1 then aval (snd (R 1, V (I 1))) (case_vname (\<lambda>n. input2state b 1 (I n)) Map.empty)
+             else EFSM.apply_updates [(R 2, L (Num 0))] (case_vname (\<lambda>n. input2state b 1 (I n)) Map.empty) Map.empty a) = <R 1 := hd b, R 2 := Num 0>"
+    apply clarify
+    apply (rule ext)
+    by (simp add: hd_input2state)
+  have regsimp_2: "\<forall>b. length b = 1 \<longrightarrow> (\<lambda>a. if a = R 1 then aval (snd (R 1, V (I 1))) (case_vname (\<lambda>n. input2state b 1 (I n)) Map.empty)
+             else EFSM.apply_updates [] (case_vname (\<lambda>n. input2state b 1 (I n)) Map.empty) Map.empty a) = <R 1 := hd b>"
+    apply clarify
+    apply (rule ext)
+    by (simp add: hd_input2state)
+  have stop: "\<And>aa b.
+       aa = ''select'' \<longrightarrow> length b \<noteq> 1 \<Longrightarrow>
+       possible_steps (tm merged_vends) 0 Map.empty aa b = {||}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_vends_def Set.filter_def)
+    apply safe
+    by (simp_all add: transitions selectGeneral_def)
+  case (Cons a t)
+  then show ?case
+    apply (case_tac a)
+    apply (case_tac "aa = ''select'' \<and> length b = 1")
+     apply simp
+     apply (rule nondeterministic_simulates_trace.step_some)
+         apply (simp add: H_merged_1_2_def)
+        apply (simp add: nondeterministic_step_def possible_steps_merged_vends_select)
+       apply (simp add: possible_steps_merged_1_3_coin_select)
+      apply simp
+     apply (simp add: selectGeneral_2_def selectGeneral_def)
+     apply (simp add: regsimp_1 regsimp_2)
+     apply (simp add: nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_1_1)
+    apply (case_tac a)
+    apply simp
+    apply (rule nondeterministic_simulates_trace.step_none)
+    by (simp add: nondeterministic_step_def stop)
+qed
+
+lemma nondeterministic_simulates_merged_1_3_coin_merged_vends: "nondeterministic_simulates (tm merged_1_3_coin) (tm merged_vends) H_merged_1_2"
+  apply (simp add: nondeterministic_simulates_def)
+  by (simp add: nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_0_0)
+
+lemma no_coice_vend_general_coin100_100:  "\<not>choice vend_general coin100_100"
+  by (simp add: choice_def transitions vend_general_def)
+
+lemma no_choice_coinGeneral_vend_general: "\<not>choice coinGeneral vend_general"
+  by (simp add: choice_def coinGeneral_def vend_general_def)
+
+lemma choice_coinGeneral_coin100_100: "choice coinGeneral coin100_100"
+  apply (simp add: transitions coinGeneral_def choice_def)
+  by auto
+
+lemma nondeterministic_pairs_merged_1_3_coin: "nondeterministic_pairs merged_1_3_coin = {|(1, (1, 5), (coinGeneral, 2), coin100_100, 3)|}"
+proof-
+  have minus_1: "{|(1, coinGeneral, 2), (4, vend_general, 5), (5, coin100_100, 3)|} |-| {|(4, vend_general, 5)|} = {|(1, coinGeneral, 2), (5, coin100_100, 3)|}"
+    apply (simp add: transitions coinGeneral_def vend_general_def)
+    by auto
+  have minus_2: "{|(1, coinGeneral, 2), (4, vend_general, 5), (5, coin100_100, 3)|} |-| {|(5, coin100_100, 3)|} = {|(1, coinGeneral, 2), (4, vend_general, 5)|}"
+    apply (simp add: transitions coinGeneral_def vend_general_def)
+    by auto
+  have state_nondeterminism_1: "state_nondeterminism 1 {|(1, coinGeneral, 2), (4, vend_general, 5), (5, coin100_100, 3)|} = {|(1, (1, 5), (coinGeneral, 2), coin100_100, 3), (1, (4, 5), (vend_general, 5), coin100_100, 3),
+      (1, (1, 4), (coinGeneral, 2), vend_general, 5), (1, (4, 5), (vend_general, 5), coin100_100, 3),
+      (1, (1, 4), (coinGeneral, 2), vend_general, 5), (1, (1, 5), (coinGeneral, 2), coin100_100, 3)|}"
+    by (simp add: state_nondeterminism_def minus_1 minus_2)
+  show ?thesis
+    apply (simp add: nondeterministic_pairs_def S_def merged_1_3_coin_def)
+    apply (simp add: outgoing_transitions_def fimage_def state_nondeterminism_1)
+    apply (simp add: ffilter_def Set.filter_def fset_both_sides Abs_fset_inverse)
+    apply safe
+                 apply (simp_all add: choices no_coice_vend_general_coin100_100 no_choice_coinGeneral_vend_general choice_coinGeneral_coin100_100)
+    by (simp add: coinGeneral_def transitions less_transition_ext_def)
+qed
+
+definition merged_1_5 :: iEFSM where
+  "merged_1_5 = {|(0, (0, 1), selectGeneral_2), (2, (1, 1), coinGeneral), (5, (1, 4), vend_general), (3, (1, 1), coin100_100),
+      (6, (1, 6), vend_general)|}"
+
+definition merged_1_5_coin :: iEFSM where
+  "merged_1_5_coin = {|(0, (0, 1), selectGeneral_2), (2, (1, 1), coinGeneral), (5, (1, 4), vend_general),
+      (6, (1, 6), vend_general)|}"
+
+definition merged_4_6 :: iEFSM where
+  "merged_4_6 = {|(0, (0, 1), selectGeneral_2), (2, (1, 1), coinGeneral), (5, (1, 4), vend_general), (6, (1, 4), vend_general)|}"
+
+definition final :: iEFSM where
+  "final = {|(0, (0, 1), selectGeneral_2), (2, (1, 1), coinGeneral), (5, (1, 4), vend_general)|}"
+
+lemma choice_vend_general_vend_general: "choice vend_general vend_general"
+  by (simp add: choice_def vend_general_def)
+
+lemma directly_subsumes_vend_general_self: "directly_subsumes (tm merged_vends) (tm merged_4_6) 5 vend_general vend_general"
+proof-
+  have self_subsumpion: "\<forall>c. subsumes c vend_general vend_general"
+    by (simp add: subsumes_def vend_general_def)
+  show ?thesis
+    by (simp add: directly_subsumes_def self_subsumpion)
+qed
+
+lemma nondeterministic_pairs_merged_1_5_coin: "nondeterministic_pairs merged_1_5_coin = {|(1, (4, 6), (vend_general, 5), vend_general, 6)|}"
+proof-
+  have minus_1: "{|(1, coinGeneral, 2::nat), (4, vend_general, 5), (6, vend_general, 6)|} |-| {|(4, vend_general, 5)|} = {|(1, coinGeneral, 2), (6, vend_general, 6)|}"
+    apply (simp add: vend_general_def coinGeneral_def)
+    by auto
+  have minus_2: "{|(1, coinGeneral, 2::nat), (4, vend_general, 5), (6, vend_general, 6)|} |-| {|(6, vend_general, 6)|} = {|(1, coinGeneral, 2), (4, vend_general, 5)|}"
+    apply (simp add: vend_general_def coinGeneral_def)
+    by auto
+  have state_nondeterminim_1: "state_nondeterminism 1 {|(1, coinGeneral, 2), (4, vend_general, 5), (6, vend_general, 6)|} = {|(1, (1, 6), (coinGeneral, 2), vend_general, 6), (1, (4, 6), (vend_general, 5), vend_general, 6),
+      (1, (1, 4), (coinGeneral, 2), vend_general, 5), (1, (4, 6), (vend_general, 5), vend_general, 6),
+      (1, (1, 4), (coinGeneral, 2), vend_general, 5), (1, (1, 6), (coinGeneral, 2), vend_general, 6)|}"
+    by (simp add: state_nondeterminism_def minus_1 minus_2)
+  show ?thesis
+    apply (simp add: nondeterministic_pairs_def S_def merged_1_5_coin_def)
+    apply (simp add: outgoing_transitions_def fimage_def state_nondeterminim_1)
+    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def)
+    apply safe
+    by (simp_all add: choices no_choice_coinGeneral_vend_general choice_vend_general_vend_general)
+qed
+
+lemma not_go_to_1: "\<not>gets_us_to 1 (tm merged_vends) 0 Map.empty ((''select'', b) # p)"
   sorry
+
+lemma invalid_input: "aa = ''select'' \<longrightarrow> length b \<noteq> 1 \<Longrightarrow>
+       \<not>accepts_trace (tm merged_vends) ((aa, b) # p)"
+proof-
+  assume premise: "aa = ''select'' \<longrightarrow> length b \<noteq> 1"
+  have invalid_possible_steps: "possible_steps (tm merged_vends) 0 Map.empty aa b = {||}"
+    using premise
+    apply (simp add: possible_steps_fst)
+    apply (simp add: Set.filter_def tm_def merged_vends_def)
+    apply safe
+    by (simp_all add: selectGeneral_def)
+  show ?thesis
+    apply clarify
+    apply (simp add: accepts_trace_def)
+    apply (rule accepts.cases)
+      apply simp
+     apply simp
+    apply (simp add: step_def)
+    apply clarify
+    by (simp add: invalid_possible_steps)
+qed
+
+
+lemma merged_1_5_anterior: " accepts_trace (tm merged_vends) p \<longrightarrow>
+        gets_us_to 1 (tm merged_vends) 0 Map.empty p \<longrightarrow>
+        anterior_context (tm merged_1_5) p = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num 0)\<rbrakk>"
+proof (induct p)
+  case Nil
+  then show ?case
+    by (simp add: no_further_steps)
+next
+  have possible_steps_select: "\<forall>b. length b = 1 \<longrightarrow> possible_steps (tm merged_1_5) 0 Map.empty ''select'' b = {|(1, selectGeneral_2)|}"
+    apply (simp add: possible_steps_fst)
+    apply (simp add: tm_def merged_1_5_def Set.filter_def)
+    apply safe
+          apply (simp_all add: selectGeneral_2_def)
+    by force
+  have posterior_empty_selectGeneral_2: "posterior \<lbrakk>\<rbrakk> selectGeneral_2 = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num 0)\<rbrakk>"
+    apply (rule ext)
+    by (simp add: posterior_def selectGeneral_2_def remove_input_constraints_def)
+  case (Cons a p)
+  then show ?case
+    apply (case_tac a)
+    apply (case_tac "aa = ''select'' \<and> length b = 1")
+     apply (simp add: anterior_context_def step_def possible_steps_select posterior_empty_selectGeneral_2)
+     apply (case_tac p)
+      apply simp
+      apply clarify
+      apply (rule ext)
+      apply simp
+     apply (simp add: not_go_to_1)
+    apply simp
+    by (simp add: invalid_input)
+qed
+
+lemma satisfies_context: "satisfies_context r \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> \<Longrightarrow> r (R 2) = Some (Num 0)"
+proof-
+  assume premise: "satisfies_context r \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk>"
+  have contra: "\<not>r (R 2) = Some (Num 0)  \<Longrightarrow> \<not>satisfies_context r \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk>"
+    apply (simp add: satisfies_context_def datastate2context_def consistent_def)
+    apply clarify
+    apply (rule_tac x="V (R 2)" in exI)
+    apply simp
+    apply (case_tac "r (R 2)")
+     apply simp
+    by simp
+  show ?thesis
+    using premise contra
+    by auto
+qed
+
+(*This isn't true because coin100_100 doesn't update r2*)
+lemma directly_subsumes_coinGeneral_coin100_100:  "directly_subsumes (tm merged_vends) (tm merged_1_5) 1 coinGeneral coin100_100"
+  sorry
+
+lemma no_direct_subsumption_coin100_100_coinGeneral: "\<not> directly_subsumes (tm merged_vends) (tm merged_1_5) 1 coin100_100 coinGeneral"
+  sorry
+
+lemma nondeterministic_pairs_final: "nondeterministic_pairs final = {||}"
+proof-
+  have minus_1: "{|(1, coinGeneral, 2), (4, vend_general, 5)|} |-| {|(4, vend_general, 5)|} = {|(1, coinGeneral, 2)|}"
+    apply (simp add: coinGeneral_def vend_general_def)
+    by auto
+  have state_nondeterminism_1: "state_nondeterminism 1 {|(1, coinGeneral, 2), (4, vend_general, 5)|} = {|(1, (1, 4), (coinGeneral, 2), vend_general, 5)|}"
+    by (simp add: state_nondeterminism_def minus_1)
+  show ?thesis
+    apply (simp add: nondeterministic_pairs_def S_def final_def)
+    apply (simp add: outgoing_transitions_def fimage_def state_nondeterminism_1)
+    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def)
+    by (simp add: choice_def coinGeneral_def vend_general_def)
+qed
+
+lemma merge_1_2: "merge merged_vends 1 2 generator modifier = Some final"
+proof-
+  have arrives_2_merged_1_2: "arrives 2 merged_1_2 = 1"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (2, (a, b), ba)) merged_1_2 = {|(2, (1, 1), coin50_50)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse merged_1_2_def Set.filter_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      by (simp add: arrives_def ffilter)
+  qed
+  have arrives_4_merged_1_2: "arrives 4 merged_1_2 = 3"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (4, (a, b), ba)) merged_1_2 = {|(4, (1, 3), coin50_100)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse merged_1_2_def Set.filter_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      by (simp add: arrives_def ffilter)
+  qed
+  have leaves_2_merged_vends: "leaves 2 merged_vends = 1"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (2, (a, b), ba)) merged_vends = {|(2, (1, 2), coin50_50)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse merged_vends_def Set.filter_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      by (simp add: leaves_def ffilter)
+  qed
+  have leaves_2_merged_1_3: "(leaves 2 merged_1_3 = 1) \<and> (arrives 2 merged_1_3 = 1)"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (2, (a, b), ba)) merged_1_3 = {|(2, (1, 1), coin50_50)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse merged_1_3_def Set.filter_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      by (simp add: leaves_def arrives_def ffilter)
+  qed
+  have leaves_4_merged_vends: "leaves 4 merged_vends = 2"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (4, (a, b), ba)) merged_vends = {|(4, (2, 3), coin50_100)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse merged_vends_def Set.filter_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      by (simp add: leaves_def ffilter)
+  qed
+  have arrives_4_merged_1_3: "arrives 4 merged_1_3 = 1"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (4, (a, b), ba)) merged_1_3 = {|(4, (1, 1), coin50_100)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse merged_1_3_def Set.filter_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      by (simp add: arrives_def ffilter)
+  qed
+  have merged_1_3_neq_merged_1_8: "merged_1_3 \<noteq> merged_1_8"
+    apply (simp add: merged_1_3_def merged_1_8_def set_equiv)
+    apply (simp only: set_nequiv_def)
+    apply (rule_tac x="(5, (3, 4), vend_coke)" in exI)
+    by simp
+  have easy_merge: "easy_merge merged_vends merged_1_3 1 2 1 1 1 coin50_50 2 coin50_100 4 generator = None"
+    apply (simp add: easy_merge_def generator_def no_direct_subsumption_coin50_50_coin_50_100)
+    by (simp add: no_direct_subsumption_coin50_100_coin_50_50)
+  have merge_vends: "merge_transitions merged_vends merged_1_3 1 2 1 1 1 coin50_50 2 coin50_100 4 generator modifier True = Some merged_1_3_coin"
+    apply (simp add: merge_transitions_def easy_merge modifier_def merged_1_3_neq_merged_1_8)
+    by (simp add: nondeterministic_simulates_merged_1_3_coin_merged_vends)
+  have arrives_2_merged_1_3_coin: "arrives 2 merged_1_3_coin = 1"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (2, (a, b), ba)) merged_1_3_coin =  {|(2, (1, 1), coinGeneral)|}"
+      apply (simp add: ffilter_def merged_1_3_coin_def fset_both_sides Abs_fset_inverse Set.filter_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      by (simp add: arrives_def ffilter)
+  qed
+  have arrives_3_merged_1_3_coin: "arrives 3 merged_1_3_coin = 5"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (3, (a, b), ba)) merged_1_3_coin = {|(3, (1, 5), coin100_100)|}"
+      apply (simp add: ffilter_def merged_1_3_coin_def fset_both_sides Abs_fset_inverse Set.filter_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      by (simp add: arrives_def ffilter)
+  qed
+  have merge_states_1_5:  "merge_states 1 5 merged_1_3_coin = merged_1_5"
+    by (simp add: merge_states_def merge_states_aux_def merged_1_3_coin_def merged_1_5_def)
+  have leaves_3_merged_vends: "leaves 3 merged_vends = 1"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (3, (a, b), ba)) merged_vends = {|(3, (1, 5), coin100_100)|}"
+      apply (simp add: ffilter_def merged_vends_def Abs_fset_inverse fset_both_sides Set.filter_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      by (simp add: leaves_def ffilter)
+  qed
+  have leaves_2_merged_1_5: "leaves 2 merged_1_5= 1 \<and> arrives 2 merged_1_5 = 1"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (2, (a, b), ba)) merged_1_5 = {|(2, (1, 1), coinGeneral)|}"
+      apply (simp add: ffilter_def merged_1_5_def Abs_fset_inverse fset_both_sides Set.filter_def)
+      apply safe
+      by (simp_all add: coinGeneral_def)
+    show ?thesis
+      by (simp add: leaves_def arrives_def ffilter)
+  qed
+  have arrives_3_merged_1_5: "arrives 3 merged_1_5 = 1"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (3, (a, b), ba)) merged_1_5 = {|(3, (1, 1), coin100_100)|}"
+      apply (simp add: ffilter_def merged_1_5_def Abs_fset_inverse fset_both_sides Set.filter_def)
+      apply safe
+      by (simp_all add: coinGeneral_def)
+    show ?thesis
+      by (simp add: leaves_def arrives_def ffilter)
+  qed
+  have easy_merge_1_5: "easy_merge merged_vends merged_1_5 1 1 1 1 1 coinGeneral 2 coin100_100 3 generator = Some merged_1_5_coin"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. snd x \<noteq> ((1, 1), coin100_100) \<and> snd x \<noteq> ((1, 1), coinGeneral)) merged_1_5 = {|(0, (0, 1), selectGeneral_2), (5, (1, 4), vend_general),
+      (6, (1, 6), vend_general)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse merged_1_5_def Set.filter_def)
+      by auto
+    show ?thesis
+    apply (simp add: easy_merge_def directly_subsumes_coinGeneral_coin100_100 no_direct_subsumption_coin100_100_coinGeneral)
+      apply (simp add: replace_transition_def ffilter merged_1_5_coin_def)
+      by auto
+  qed
+  have merge_coins: "merge_transitions merged_vends merged_1_5 1 1 1 1 1 coinGeneral 2 coin100_100 3 generator modifier True = Some merged_1_5_coin"
+    by (simp add: merge_transitions_def easy_merge_1_5)
+  have arrives_5_merged_1_5_coin: "arrives 5 merged_1_5_coin = 4"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (5, (a, b), ba)) merged_1_5_coin = {|(5, (1, 4), vend_general)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse merged_1_5_coin_def Set.filter_def)
+      apply safe
+      by (simp_all add: vend_general_def)
+    show ?thesis
+      by (simp add: arrives_def ffilter)
+  qed
+  have arrives_6_merged_1_5_coin: "arrives 6 merged_1_5_coin = 6"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (6, (a, b), ba)) merged_1_5_coin = {|(6, (1, 6), vend_general)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse merged_1_5_coin_def Set.filter_def)
+      apply safe
+      by (simp_all add: vend_general_def)
+    show ?thesis
+      by (simp add: arrives_def ffilter)
+  qed
+  have merge_states_4_6_merged_1_5_coin: "merge_states 4 6 merged_1_5_coin = merged_4_6"
+    by (simp add: merge_states_def merge_states_aux_def merged_1_5_coin_def merged_4_6_def)
+  have leaves_5_merged_vends: "leaves 5 merged_vends = 3"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (5, (a, b), ba)) merged_vends = {|(5, (3, 4), vend_general)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse merged_vends_def Set.filter_def)
+      apply safe
+      by (simp_all add: vend_general_def)
+    show ?thesis
+      by (simp add: leaves_def ffilter)
+  qed
+  have leaves_6_merged_vends: "leaves 6 merged_vends = 5"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (6, (a, b), ba)) merged_vends = {|(6, (5, 6), vend_general)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse merged_vends_def Set.filter_def)
+      apply safe
+      by (simp_all add: vend_general_def)
+    show ?thesis
+      by (simp add: leaves_def ffilter)
+  qed
+  have leaves_5_merged_4_6: "leaves 5 merged_4_6 = 1 \<and> arrives 5 merged_4_6 = 4"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (5, (a, b), ba)) merged_4_6 = {|(5, (1, 4), vend_general)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse merged_4_6_def Set.filter_def)
+      apply safe
+      by (simp_all add: vend_general_def)
+    show ?thesis
+      by (simp add: leaves_def arrives_def ffilter)
+  qed
+  have arrives_6_merged_4_6: "arrives 6 merged_4_6 = 4"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (6, (a, b), ba)) merged_4_6 = {|(6, (1, 4), vend_general)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse merged_4_6_def Set.filter_def)
+      apply safe
+      by (simp_all add: vend_general_def)
+    show ?thesis
+      by (simp add: arrives_def ffilter)
+  qed
+  have easy_merge_vends: "easy_merge merged_vends merged_4_6 3 5 1 4 4 vend_general 5 vend_general 6 generator = Some final"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. snd x \<noteq> ((1, 4), vend_general)) merged_4_6 = {|(0, (0, 1), selectGeneral_2), (2, (1, 1), coinGeneral)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def merged_4_6_def)
+      apply safe
+      by (simp_all add: vend_general_def)
+    show ?thesis
+      apply (simp add: easy_merge_def generator_def directly_subsumes_vend_general_self)
+      apply (simp add: replace_transition_def ffilter final_def)
+      by auto
+  qed
+  have merge_vends_2: "merge_transitions merged_vends merged_4_6 3 5 1 4 4 vend_general 5 vend_general 6 generator modifier True = Some final"
+    by (simp add: merge_transitions_def easy_merge_vends)
+  show ?thesis
+    apply (simp add: merge_def merge_states_1_2 nondeterminism_def nondeterministic_pairs_merged_1_2)
+    apply (simp add: arrives_2_merged_1_2 arrives_4_merged_1_2 merge_states_1_3 leaves_2_merged_vends)
+    apply (simp add: leaves_2_merged_1_3 leaves_4_merged_vends arrives_4_merged_1_3 merge_vends)
+    apply (simp add: nondeterminism_def nondeterministic_pairs_merged_1_3_coin)
+    apply (simp add: arrives_2_merged_1_3_coin arrives_3_merged_1_3_coin merge_states_1_5)
+    apply (simp add: leaves_2_merged_vends leaves_3_merged_vends leaves_2_merged_1_5 arrives_3_merged_1_5)
+    apply (simp add: merge_coins nondeterminism_def nondeterministic_pairs_merged_1_5_coin)
+    apply (simp add: arrives_5_merged_1_5_coin arrives_6_merged_1_5_coin merge_states_4_6_merged_1_5_coin)
+    apply (simp add: leaves_5_merged_vends leaves_6_merged_vends leaves_5_merged_4_6 arrives_6_merged_4_6)
+    by (simp add: merge_vends_2 nondeterminism_def nondeterministic_pairs_final)
+qed
+
+lemma score_final: "score final naive_score = {|(0, 0, 1), (0, 0, 4), (0, 1, 4)|}"
+proof-
+  have ffilter: "ffilter (\<lambda>(x, y). x < y) (Inference.S final |\<times>| Inference.S final) = {|(0, 1), (0, 4), (1, 4)|}"
+    apply (simp add: S_def final_def fprod_def ffilter_def fset_both_sides Abs_fset_inverse)
+    apply (simp add: Set.filter_def)
+    by auto
+  show ?thesis
+    apply (simp add: score_def ffilter)
+    apply (simp add: outgoing_transitions_def final_def fimage_def)
+    apply (simp add: naive_score_empty)
+    by (simp add: naive_score_def selectGeneral_2_def coinGeneral_def vend_general_def fprod_def)
+qed
+
+lemma "learn traces naive_score generator modifier = (tm final)"
+  apply (simp add: learn_def build_pta scoring_1 merge_1_8 merge_1_7)
+  apply (simp add: scoring_2 merge_1_2)
+  by (simp add: score_final sorted_list_of_fset_def)
 
 end
