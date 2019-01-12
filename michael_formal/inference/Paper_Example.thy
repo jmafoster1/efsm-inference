@@ -1,5 +1,5 @@
 theory Paper_Example
-imports Inference SelectionStrategies
+imports Inference SelectionStrategies EFSM_Dot
 begin
 
 definition select :: transition where
@@ -890,7 +890,7 @@ proof-
 qed
 
 lemma merge_transitions: "merge_transitions drinks_before merged_1_2 (leaves 2 drinks_before) (leaves 1 drinks_before) 1 1 1 coin 2 coin50 1 null_generator
-           (\<lambda>a b c d e. Some (merge_1_2_update, update_mapping, update_before)) True = Some drinks_after"
+           (\<lambda>a b c d e. Some (merge_1_2_update, update_mapping, update_before)) True = Some merge_1_2_update"
 proof-
   have leaves_1_drinks_before: "leaves 1 drinks_before = 1"
   proof-
@@ -929,10 +929,7 @@ proof-
     by (simp_all add: transitions)
   show ?thesis
     apply (simp add: merge_transitions_def easy_merge)
-    apply (simp add: simulation update_mapping_def leaves_2_drinks_before leaves_1_drinks_before)
-    apply (simp add: easy_merge_def coin_directly_subsumes_coin50 not_coin50_directly_subsumes_coin)
-    apply (simp add: replace_transition_def ffilter drinks_after_def)
-    by auto
+    by (simp add: simulation update_mapping_def leaves_2_drinks_before leaves_1_drinks_before)
 qed
 
 lemma nondeterministic_pairs_drinks_after: "nondeterministic_pairs drinks_after = {||}"
@@ -961,9 +958,107 @@ proof-
 qed
 
 lemma merge_1_2_drinks_before: "merge drinks_before 1 2 null_generator (\<lambda>a b c d e. Some (merge_1_2_update, update_mapping, update_before)) = Some drinks_after"
-  apply (simp add: merge_def merge_states_1_2)
-  apply (simp add: nondeterminism_def nondeterministic_pairs_merged_1_2)
-  by (simp add: merge_transitions nondeterminism_def nondeterministic_pairs_drinks_after)
+proof-
+  have arrives_2_merged_1_2: "arrives 2 merged_1_2 = 1 \<and> leaves 2 merged_1_2 = 1"
+  proof-                                                
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (2, (a, b), ba)) merged_1_2 = {|(2, (1, 1), coin)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def merged_1_2_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      by (simp add: arrives_def leaves_def ffilter)
+  qed
+  have arrives_1_merged_1_2: "arrives 1 merged_1_2 = 1"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (1, (a, b), ba)) merged_1_2 = {|(1, (1, 1), coin50)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def merged_1_2_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      by (simp add: arrives_def ffilter)
+  qed
+  have nondeterministic_pairs_merge_1_2_update: "nondeterministic_pairs merge_1_2_update = {|(1, (1, 1), (coin, 2), coin50, 1)|}"
+  proof-
+    have minus_1: "{|(1, coin50, 1), (1, coin, 2), (1, vend_fail, 3), (3, vend_success, 4)|} |-| {|(1, coin, 2)|} = {|(1, coin50, 1), (1, vend_fail, 3), (3, vend_success, 4)|}"
+      apply (simp add: transitions)
+      by auto
+    have minus_2: "{|(1, coin50, 1), (1, coin, 2), (1, vend_fail, 3), (3, vend_success, 4)|} |-| {|(1, vend_fail, 3)|} = {|(1, coin50, 1), (1, coin, 2), (3, vend_success, 4)|}"
+      apply (simp add: transitions)
+      by auto
+    have minus_3: "{|(1, coin50, 1), (1, coin, 2), (1, vend_fail, 3), (3, vend_success, 4)|} |-| {|(3, vend_success, 4)|} = {|(1, coin50, 1), (1, coin, 2), (1, vend_fail, 3)|}"
+      apply (simp add: transitions)
+      by auto
+    have state_nondeterminism_1: "state_nondeterminism 1 {|(1, coin50, 1), (1, coin, 2), (1, vend_fail, 3), (3, vend_success, 4)|} = {|(1, (1, 3), (coin50, 1), vend_success, 4), (1, (1, 3), (coin, 2), vend_success, 4), (1, (1, 3), (vend_fail, 3), vend_success, 4),
+      (1, (1, 1), (vend_fail, 3), coin50, 1), (1, (1, 1), (vend_fail, 3), coin, 2), (1, (1, 3), (vend_fail, 3), vend_success, 4),
+      (1, (1, 1), (coin, 2), coin50, 1), (1, (1, 1), (coin, 2), vend_fail, 3), (1, (1, 3), (coin, 2), vend_success, 4), (1, (1, 1), (coin50, 1), coin, 2),
+      (1, (1, 1), (coin50, 1), vend_fail, 3), (1, (1, 3), (coin50, 1), vend_success, 4)|}"
+      by (simp add: state_nondeterminism_def minus_1 minus_2 minus_3)
+    show ?thesis
+      apply (simp add: nondeterministic_pairs_def S_def merge_1_2_update_def)
+      apply (simp add: outgoing_transitions_def fimage_def state_nondeterminism_1)
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def)
+      apply safe
+                          apply (simp_all add: choices)
+      by (simp_all add: transitions less_transition_ext_def less_eq_transition_ext_def)
+  qed
+  have arrives_2_merge_1_2_update: "arrives 2 merge_1_2_update = 1 \<and> leaves 2 merge_1_2_update = 1"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (2, (a, b), ba)) merge_1_2_update = {|(2, (1, 1), coin)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def merge_1_2_update_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      by (simp add: arrives_def ffilter leaves_def)
+  qed
+  have arrives_1_merge_1_2_update: "arrives 1 merge_1_2_update = 1"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (1, (a, b), ba)) merge_1_2_update = {|(1, (1, 1), coin50)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def merge_1_2_update_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      by (simp add: arrives_def ffilter)
+  qed
+  have leaves_2_drinks_before: "leaves 2 drinks_before = 2"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (2, (a, b), ba)) drinks_before = {|(2, (2, 2), coin)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def drinks_before_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      by (simp add: leaves_def ffilter)
+  qed
+  have leaves_1_drinks_before: "leaves 1 drinks_before = 1"
+  proof-
+      have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (1, (a, b), ba)) drinks_before = {|(1, (1, 2), coin50)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def drinks_before_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      by (simp add: leaves_def ffilter)
+  qed
+  have easy_merge: "easy_merge drinks_before merge_1_2_update 2 1 1 1 1 coin 2 coin50 1 null_generator = Some drinks_after"
+  proof-
+    have ffilter: "ffilter (\<lambda>x. snd x \<noteq> ((1, 1), coin50) \<and> snd x \<noteq> ((1, 1), coin)) merge_1_2_update = {|(0, (0, 1), select_update), (3, (1, 1), vend_fail), (4, (1, 3), vend_success)|}"
+      apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def merge_1_2_update_def)
+      apply safe
+      by (simp_all add: transitions)
+    show ?thesis
+      apply (simp add: easy_merge_def null_generator_def coin_directly_subsumes_coin50 not_coin50_directly_subsumes_coin)
+      apply (simp add: replace_transition_def ffilter drinks_after_def)
+      by auto
+  qed
+  have merge_coins: "merge_transitions drinks_before merge_1_2_update 2 1 1 1 1 coin 2 coin50 1 null_generator
+           (\<lambda>a b c d e. Some (merge_1_2_update, update_mapping, update_before)) True = Some drinks_after"
+    by (simp add: merge_transitions_def easy_merge)
+  show ?thesis
+    apply (simp add: merge_def merge_states_1_2)
+    apply (simp add: nondeterminism_def nondeterministic_pairs_merged_1_2 arrives_2_merged_1_2
+           arrives_1_merged_1_2 merge_states_reflexive)
+    apply (simp add: merge_transitions nondeterminism_def nondeterministic_pairs_drinks_after)
+    apply (simp add: nondeterministic_pairs_merge_1_2_update arrives_2_merge_1_2_update arrives_1_merge_1_2_update merge_states_reflexive)
+    by (simp add: leaves_2_drinks_before leaves_1_drinks_before merge_coins nondeterministic_pairs_drinks_after nondeterminism_def)
+qed
 
 lemma scoring_2: "sorted_list_of_fset (score drinks_after naive_score) = [(0, 0, 1), (0, 0, 3), (0, 1, 3)]"
 proof-

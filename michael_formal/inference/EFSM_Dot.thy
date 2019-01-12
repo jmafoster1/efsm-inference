@@ -19,8 +19,8 @@ fun aexp2dot :: "aexp \<Rightarrow> string" where
 fun gexp2dot :: "gexp \<Rightarrow> string" where
   "gexp2dot (GExp.Bc b) = show b" |
   "gexp2dot (GExp.Eq a1 a2) = (aexp2dot a1)@'' = ''@(aexp2dot a2)" |
-  "gexp2dot (GExp.Lt a1 a2) = (aexp2dot a1)@'' < ''@(aexp2dot a2)" |
-  "gexp2dot (Nor g1 g2) = ''!(''@(gexp2dot g1)@''||''@(gexp2dot g2)@'')''" |
+  "gexp2dot (GExp.Lt a1 a2) = (aexp2dot a1)@'' &lt; ''@(aexp2dot a2)" |
+  "gexp2dot (Nor g1 g2) = ''!(''@(gexp2dot g1)@''&or;''@(gexp2dot g2)@'')''" |
   "gexp2dot (Null v) = (vname2dot v)@'' = NULL''"
 
 fun join :: "string list \<Rightarrow> string \<Rightarrow> string" where
