@@ -42,17 +42,11 @@ lemma choice_vend_vend_nothing: "choice vend vend_nothing"
   apply (rule_tac x="<R 2 := Num 100>" in exI)
   by simp
 
-lemma vend_neq_coin: "vend \<noteq> coin"
-  by (simp add: transitions)
-
 lemma vend_nothing_lt_vend: "vend_nothing < vend"
   by (simp add: less_transition_ext_def transitions)
 
 lemma no_choice_vend_coin: "\<not> choice vend coin"
   by (simp add: choice_def transitions)
-
-lemma coin_neq_vend_fail: "coin \<noteq> vend_fail"
-  by (simp add: transitions)
 
 lemma no_choice_vend_vend_fail:  "\<not> choice vend vend_fail"
   apply (simp add: choice_def transitions)
@@ -69,44 +63,8 @@ lemma choice_vend_nothing_vend_fail: "choice vend_nothing vend_fail"
   apply (rule_tac x="<R 2 := Num 0>" in exI)
   by simp
 
-lemma vend_not_lt_vend_nothing: "\<not>vend < vend_nothing"
-  by (simp add: not_less_iff_gr_or_eq vend_nothing_lt_vend)
-
-lemma vend_neq_vend_nothing: "vend \<noteq> vend_nothing"
-  by (simp add: transitions)
-
-lemma coin_neq_vend: "coin \<noteq> vend"
-  by (simp add: transitions)
-
-lemma vend_fail_neq_vend: "vend_fail \<noteq> vend"
-  by (simp add: transitions)
-
-lemma vend_neq_vend_fail: "vend \<noteq> vend_fail"
-  by (simp add: transitions)
-
-lemma vend_not_lt_vend_fail: "\<not>vend < vend_fail"
-  by (simp add: less_transition_ext_def transitions less_gexp_def)
-
-lemma vend_fail_neq_coin: "vend_fail \<noteq> coin"
-  by (simp add: transitions)
-
-lemma vend_fail_neq_vend_nothing: "vend_fail \<noteq> vend_nothing"
-  by (simp add: transitions)
-
 lemma vend_fail_not_lt_vend_nothing: "\<not>vend_fail < vend_nothing"
   by (simp add: transitions less_transition_ext_def)
-
-lemma vend_fail_not_lt_coin:"\<not>vend_fail < coin"
-  by (simp add: transitions less_transition_ext_def)
-
-lemma coin_neq_vend_nothing: "coin \<noteq> vend_nothing"
-  by (simp add: transitions)
-
-lemma vend_nothing_neq_vend_fail: "vend_nothing \<noteq> vend_fail"
-  by (simp add: transitions)
-
-lemma vend_nothing_neq_coin: "vend_nothing \<noteq> coin"
-  by (simp add: transitions)
 
 lemma no_choice_coin_vend_nothing: "\<not> choice coin vend_nothing"
   by (simp add: choice_def coin_def vend_nothing_def)
@@ -195,197 +153,11 @@ lemma vend_fail_subsumes_vend_nothing: "subsumes select_posterior vend_fail vend
   apply (simp add: vend_fail_posterior)
   by (simp add: consistent_empty_4 )
 
-lemma posterior_select: "length (snd e) = 1 \<Longrightarrow> (posterior \<lbrakk>\<rbrakk> (snd (fthe_elem (possible_steps Drinks_Machine_2.drinks2 0 Map.empty ''select'' (snd e))))) =
-     (\<lambda>a. if a = V (R 2) then cexp.Eq (Num 0) else if a = V (R (1)) then cexp.Bc True else \<lbrakk>\<rbrakk> a)"
-  apply (simp add: posterior_def fthe_elem_def possible_steps_0 select_def Let_def remove_input_constraints_def)
-  apply (rule ext)
-  by simp
-
-lemma apply_updates_vend_nothing_2: "(EFSM.apply_updates (Updates vend_nothing)
-           (case_vname Map.empty (\<lambda>n. if n = 2 then Some (Num 0) else if R n = R 1 then Some (hd (snd e)) else None))
-           (\<lambda>a. if a = R 2 then Some (Num 0) else if a = R 1 then Some (hd (snd e)) else None)) = <R 2 \<mapsto> Num 0, R 1 \<mapsto> (hd (snd e))>"
-  apply (rule ext)
-  by (simp add: transitions)
-
-lemma register_simp: "(\<lambda>x. if x = R (1)
-          then aval (snd (R (1), V (R (1)))) (case_vname Map.empty (\<lambda>n. if n = 2 then Some (Num 0) else <R (1) := hd (snd e)> (R n)))
-          else EFSM.apply_updates [(R 2, V (R 2))] (case_vname Map.empty (\<lambda>n. if n = 2 then Some (Num 0) else <R (1) := hd (snd e)> (R n)))
-                <R (1) := hd (snd e), R 2 := Num 0> x) =  <R (1) := hd (snd e), R 2 := Num 0>"
-  apply (rule ext)
-  by simp
-
-lemma observe_vend_nothing: "a = (''vend'', []) \<Longrightarrow> (observe_all Drinks_Machine_2.drinks2 1 <R (1) := hd (snd e), R 2 := Num 0> (a # t)) = (vend_nothing, 1, [], <R (1) := hd (snd e), R 2 := Num 0>)#(observe_all Drinks_Machine_2.drinks2 1 <R (1) := hd (snd e), R 2 := Num 0> t)"
-  apply (simp add: step_def drinks2_vend_insufficient fis_singleton_def updates_vend_nothing outputs_vend_nothing )
-  apply safe
-   apply (rule ext)
-   apply simp
-  by (simp only: register_simp)
-
-lemma coin_updates: "(EFSM.apply_updates (Updates coin)
-            (case_vname (\<lambda>n. input2state (snd a) (1) (I n)) (\<lambda>n. if n = 2 then Some (Num 0) else <R (1) := s> (R n)))
-            <R (1) := s, R 2 := Num 0>) = (\<lambda>u. if u = R 1 then Some s else if u = R 2 then value_plus (Some (Num 0)) (input2state (snd a) 1 (I 1)) else None)"
-  apply (rule ext)
-  by (simp add: coin_def)
-
-lemma equal_first_event: "observe_all Drinks_Machine_2.drinks2 0 Map.empty t = x # list \<Longrightarrow>
-       observe_all Drinks_Machine_2.drinks2 0 Map.empty (t @ [e]) = y # lista \<Longrightarrow> x = y"
-proof (induct t)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a t)
-  then show ?case
-    apply simp
-    apply (case_tac "fst a = ''select'' \<and> length (snd a) = 1")
-     apply (simp add: step_def possible_steps_0 select_posterior )
-     apply (simp add: updates_select )
-     apply auto[1]
-    by (simp add: drinks2_0_invalid step_def)
-qed
-
-lemma drinks2_singleton_0: "fis_singleton (possible_steps Drinks_Machine_2.drinks2 0 Map.empty (fst e) (snd e)) \<Longrightarrow> fst e = ''select'' \<and> length (snd e) = 1"
-  apply (case_tac "fst e = ''select'' \<and> length (snd e) = 1 ")
-   apply simp
-  by (simp add: drinks2_0_invalid)
-
-lemma drinks2_observe_all_fst_select: "observe_all Drinks_Machine_2.drinks2 0 Map.empty (t @ [e]) = [(aaa, 1, c, d)] \<Longrightarrow> aaa = select"
-proof (induct t)
-  case Nil
-  then show ?case
-    apply simp
-    apply (case_tac "fst e = ''select'' \<and> length (snd e) = 1 ")
-     apply (simp add: possible_steps_0 step_def)
-    by (simp add: drinks2_0_invalid step_def)
-next
-  case (Cons e t)
-  then show ?case
-    apply simp
-    apply (case_tac "fst e = ''select'' \<and> length (snd e) = 1 ")
-     apply (simp add: possible_steps_0 step_def)
-    by (simp add: drinks2_0_invalid step_def)
-qed
-
-lemma drinks2_singleton_0_select: "fis_singleton (possible_steps Drinks_Machine_2.drinks2 0 Map.empty (fst e) (snd e)) \<Longrightarrow>
-       fthe_elem (possible_steps Drinks_Machine_2.drinks2 0 Map.empty (fst e) (snd e)) = (1, aa) \<Longrightarrow> aa = select"
-  using Drinks_Machine_2.possible_steps_0 drinks2_singleton_0 by auto
-
-lemma coin_updates_2: "(EFSM.apply_updates (Updates coin)
-       (case_vname (\<lambda>n. input2state (snd a) (1) (I n)) (\<lambda>n. if n = 2 then Some (Num 0) else if R n = R (1) then Some s else None))
-       (\<lambda>a. if a = R 2 then Some (Num 0) else if a = R (1) then Some (hd (snd e)) else None)) =
-       (\<lambda>u. if u = R 1 then Some s else if u = R 2 then value_plus (Some (Num 0)) (input2state (snd a) 1 (I 1)) else None)"
-  apply (rule ext)
-  by (simp add: coin_def)
-
-lemma drinks2_vend_insufficient2: "r (R 2) = Some (Num x1) \<Longrightarrow> ab = Num x1 \<Longrightarrow> x1 < 100 \<Longrightarrow>
-                possible_steps Drinks_Machine_2.drinks2 2 r (''vend'') [] = {|(2, vend_fail)|}"
-  apply (simp add: possible_steps_def Drinks_Machine_2.drinks2_def transitions )
-  apply safe
-    apply (simp)
-    apply auto[1]
-    apply (simp )
-   apply auto[1]
-  apply (simp )
-  by force
-
-lemma drinks2_vend_sufficient: "r (R 2) = Some (Num x1) \<Longrightarrow>
-                \<not> x1 < 100 \<Longrightarrow>
-                possible_steps Drinks_Machine_2.drinks2 2 r (''vend'') [] = {|(3, vend)|}"
-  apply (simp add: possible_steps_def Drinks_Machine_2.drinks2_def transitions )
-  by force
-
-lemma none_outputs_vend:  "r (R 1) = None \<Longrightarrow> apply_outputs (Outputs vend) r = [None]"
-  by (simp add: vend_def)
-
 lemma vend_doesnt_exit_1[simp]: "\<not>exits_state drinks2 vend 1"
   by (simp add: exits_state_def drinks2_def transitions )
 
 lemma vend_nothing_exits_1[simp]: "exits_state drinks2 vend_nothing 1"
   apply (simp add: exits_state_def drinks2_def)
-  by auto
-
-lemma vend_fail_leq_vend: "vend_fail \<le> vend"
-  by (simp add: less_eq_transition_ext_def less_transition_ext_def transitions less_gexp_def)
-
-lemma vend_nothing_neq_vend: "vend_nothing \<noteq> vend"
-  by (simp add: transitions)
-
-lemma not_subset: "\<not>{(1, (1, 3), vend_nothing, vend), (1, (1, 1), vend_nothing, vend_fail)}
-        \<subseteq> {Max {(1, (1, 3), vend_nothing, vend), (1, (1, 1), vend_nothing, vend_fail)}}"
-  using vend_neq_vend_fail by auto
-
-lemma not_subset_2: "\<not> {(1, (1, 1), vend_nothing, vend), (1, (1, 1), vend_nothing, vend_fail)}
-     \<subseteq> {Max {(1, (1, 1), vend_nothing, vend), (1, (1, 1), vend_nothing, vend_fail)}}"
-  using choice_def choice_vend_vend_nothing no_choice_vend_vend_fail by auto
-
-lemma apply_guards_vend_nothing:  "\<forall>i r. apply_guards (Guard vend_nothing) (join_ir i r)"
-  by (simp add: guard_vend_nothing)
-
-lemma consistent_posterior_vend_nothing: "consistent c \<Longrightarrow> consistent (posterior c vend_nothing)"
-proof-
-  assume premise: "consistent c"
-  have medial_vend_nothing: "medial c (Guard vend_nothing) = c"
-    by (simp add: vend_nothing_def)
-  have updates_vend_nothing: "Contexts.apply_updates c c (Updates vend_nothing) = c"
-    apply (rule ext)
-    by (simp add: vend_nothing_def)
-  show ?thesis
-    unfolding posterior_def Let_def
-    apply (simp add: medial_vend_nothing premise)
-    by (simp add: updates_vend_nothing premise)
-qed
-
-lemma consistent_posterior_vend_nothing_2: "\<not>consistent c \<Longrightarrow> \<not>consistent (posterior c vend_nothing)"
-  apply (simp add: posterior_def guard_vend_nothing updates_vend_nothing)
-  by (simp add: consistent_def)
-
-lemma outputs_vend_neq_vend_nothing: "(\<exists>i r. [] \<noteq> apply_outputs (Outputs vend) (case_vname (\<lambda>n. input2state i (1) (I n)) (\<lambda>n. r (R n))))"
-  apply (rule_tac x="[]" in exI)
-  apply (rule_tac x="<R 1 := Str ''coke''>" in exI)
-  by (simp add: vend_def)
-
-lemma inconsistent_undef: "\<not> consistent
-         (\<lambda>x. if constrains_an_input x then \<lbrakk>\<rbrakk> x
-              else if x = V (R 2) then And Undef (Geq (Num 100)) else if x = V (R 1) then c (V (R 1)) else c x)"
-  apply (simp add: consistent_def)
-  apply clarify
-  apply (rule_tac x="V (R 2)" in exI)
-  apply simp
-  apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
-   apply simp
-  by simp
-
-lemma good_max: "Max ({(1, (1, 3), vend_nothing, vend), (1, (1, 1), vend_nothing, vend_fail)} -
-               {max (1, (1, 3), vend_nothing, vend) (1, (1, 1), vend_nothing, vend_fail)}) = (1::nat, (1::nat, 1::nat), vend_nothing, vend_fail)"
-  by (simp add: max_def)
-
-lemma medial_r1_r2_true_vend_fail: "medial r1_r2_true (Guard vend_fail) = \<lbrakk>V (R 2) \<mapsto> Lt (Num 100), V (R 1) \<mapsto> Bc True\<rbrakk>"
-    apply (simp add: guard_vend_fail )
-    apply (rule ext)
-    by (simp add: transitions r1_r2_true_def)
-
-lemma posterior_vend_fail: "posterior r1_r2_true vend_fail = \<lbrakk>V (R 2) \<mapsto> cexp.Lt (Num 100), V (R 1) \<mapsto> cexp.Bc True\<rbrakk>"
-proof-
-  have consistent_medial: "consistent \<lbrakk>V (R 2) \<mapsto> cexp.Lt (Num 100), V (R 1) \<mapsto> cexp.Bc True\<rbrakk>"
-    unfolding consistent_def
-    apply (rule_tac x="<R 2 := Num 0, R 1 := Str ''coke''>" in exI)
-    apply (simp add: transitions)
-    using consistent_empty_4 by auto
-  show ?thesis
-    unfolding posterior_def
-    apply (simp add: medial_r1_r2_true_vend_fail Let_def consistent_medial )
-    apply (rule ext)
-    by (simp add: transitions remove_input_constraints_def r1_r2_true_def)
-qed
-
-lemma posterior_vend_nothing: "posterior r1_r2_true vend_nothing = r1_r2_true"
-  apply (rule ext)
-  unfolding posterior_def
-  apply (simp add: guard_vend_nothing Let_def consistent_r1_r2_true updates_vend_nothing remove_input_constraints_def)
-  by (simp add: r1_r2_true_def)
-
-lemma finsert_vend_nothing: "finsert vend_nothing ({|vend_nothing, coin, vend_fail|} |-| {|vend_fail|}) = {|coin, vend_nothing|}"
-  apply (simp add: transitions)
   by auto
 
 definition coin50 :: "transition" where
@@ -400,84 +172,8 @@ definition coin50 :: "transition" where
                   ]
       \<rparr>"
 
-lemma finsert_vend_nothing_1: "finsert ((1, 1), vend_nothing)
-     (ffilter (\<lambda>x. x \<noteq> ((1, 1), vend_fail))
-       {|((0, 1), select), ((1, 1), vend_nothing), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)|}) =
- {|((0, 1), select), ((1, 1), vend_nothing), ((1, 1), coin), ((1, 1), vend_nothing), ((1, 3), vend)|}"
-proof-
-  have set_filter: "(Set.filter (\<lambda>x. x \<noteq> ((1, 1), vend_fail))
-         {((0, 1), select), ((1, 1), vend_nothing), ((1, 1), coin), ((1, 1), vend_fail), ((1, 3), vend)}) =
-    {((0, 1), select), ((1, 1), vend_nothing), ((1, 1), coin), ((1, 3), vend)}"
-    apply (simp add: Set.filter_def)
-    apply safe
-    by (simp_all add: transitions)
-  have abs_fset: "Abs_fset {((0, 1), select), ((1, 1), vend_nothing), ((1, 1), coin), ((1, 3), vend)} = {|((0, 1), select), ((1, 1), vend_nothing), ((1, 1), coin), ((1, 3), vend)|}"
-    by (metis finsert.rep_eq fset_inverse fset_simps(1))
-  show ?thesis
-    apply (simp add: ffilter_def set_filter abs_fset)
-    by auto
-qed
-
-lemma select_updates_general: "length (snd h) = 1 \<Longrightarrow> EFSM.apply_updates (Updates select) (case_vname (\<lambda>n. input2state (snd h) 1 (I n)) (\<lambda>n. r (R n))) r = (\<lambda>u. if u = R 1 then Some (hd (snd h)) else if u = R 2 then Some (Num 0) else r u)"
-  apply (rule ext)
-  apply (simp add: select_def)
-  using hd_input2state by auto
-
-lemma select_updates_simp: "(\<lambda>u. if u = R 1 then Some (hd (snd (aa, b))) else if u = R 2 then Some (Num 0) else None) =
-(\<lambda>u. if u = R 1 then Some (hd b) else if u = R 2 then Some (Num 0) else None)"
-  apply (rule ext)
-  by simp
-
-lemma coin_updates_1:  "(EFSM.apply_updates (Updates coin)
-          (case_vname (\<lambda>n. input2state b 1 (I n)) (\<lambda>n. if n = 2 then Some (Num 0) else <R 1 := hd bb> (R n)))
-          <R 1 := hd bb, R 2 := Num 0>) = (\<lambda>u. if u = R 1 then Some (hd bb)
-     else if u = R 2 then value_plus (Some (Num 0)) (input2state b 1 (I 1)) else None)"
-  apply (rule ext)
-  by (simp add: coin_def)
-
 definition basically_drinks :: iEFSM where
   "basically_drinks = {|(2, (1, 1), coin), (1, (1, 1), vend_fail), (0, (0, 1), select), (5, (1, 3), vend)|}"
-
-lemma select_updates: "length b = 1 \<Longrightarrow> (EFSM.apply_updates (Updates select) (case_vname (\<lambda>n. input2state b 1 (I n)) Map.empty) Map.empty) = <R 1 := hd b, R 2 := Num 0>"
-  apply (rule ext)
-  by (simp add: select_def hd_input2state)
-
-lemma update_simp: "(\<lambda>x. if x = R 1
-            then aval (snd (R 1, V (R 1))) (case_vname Map.empty (\<lambda>n. if n = 2 then Some (Num 0) else if R n = R 1 then Some d else None))
-            else EFSM.apply_updates [(R 2, V (R 2))]
-                  (case_vname Map.empty (\<lambda>n. if n = 2 then Some (Num 0) else if R n = R 1 then Some d else None))
-                  (\<lambda>a. if a = R 2 then Some (Num 0) else if a = R 1 then Some d else None) x) = <R 1 := d, R 2 := Num 0>"
-  apply (rule ext)
-  by simp
-
-lemma satisfies_must_have_r2_0: "satisfies_context d \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> \<Longrightarrow> d (R 2) = Some (Num 0)"
-proof-
-  have contrapositive: "\<not> d (R 2) = Some (Num 0) \<Longrightarrow> \<not>satisfies_context d \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk>"
-    apply (simp add: satisfies_context_def datastate2context_def consistent_def)
-    apply (rule allI)
-    apply (rule_tac x="V (R 2)" in exI)
-    apply simp
-    apply (case_tac "d (R 2)")
-     apply simp
-    by simp
-  show "satisfies_context d \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> \<Longrightarrow> d (R 2) = Some (Num 0)"
-    using contrapositive
-    by auto
-qed
-
-lemma inconsistent_medial_vend: "\<not>consistent \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> And (cexp.Eq (Num 0)) (Geq (Num 100))\<rbrakk>"
-  apply (simp add: consistent_def)
-  apply clarify
-  apply (rule_tac x="V (R 2)" in exI)
-  apply simp
-  apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
-   apply simp
-  apply simp
-  by auto
-
-lemma posterior_vend_false: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> And (cexp.Eq (Num 0)) (Geq (Num 100))\<rbrakk> vend_nothing = (\<lambda>x. Bc False)"
-  apply (simp add: posterior_def)
-  by (simp add: vend_nothing_def Let_def inconsistent_medial_vend)
 
 lemma no_subsumption_vend_nothing_vend: "\<not>subsumes c vend_nothing vend"
   by (simp add: subsumes_def transitions)
@@ -564,61 +260,6 @@ proof-
     apply (simp add: ffilter_def Set.filter_def fset_both_sides Abs_fset_inverse)
     apply safe
     by (simp_all add: choices vend_fail_not_lt_vend_nothing vend_nothing_lt_vend vend_nothing_lt_vend_fail)
-qed
-
-lemma merge_states_1_3: "merge_states 1 3 merged_1_2 = merged_1_3"
-  by (simp add: merge_states_def merge_states_aux_def merged_1_2_def merged_1_3_def)
-
-lemma nondeterministic_pairs_merged_1_3: "nondeterministic_pairs merged_1_3 = {|
-  (1, (1, 1),(coin,2),coin,3),
-  (1, (1, 1), (vend_nothing, 1),vend, 5),
-  (1, (1, 1), (vend_nothing, 1),vend_fail, 4)
-|}"
-proof-
-  have minus_1: "{(1, vend_nothing, 1), (1, coin, 2), (1, coin, 3), (1, vend_fail, 4), (1, vend, 5)} - {(1, vend, 5)} = {(1, vend_nothing, 1), (1, coin, 2), (1, coin, 3), (1, vend_fail, 4)}"
-    apply (simp add: transitions)
-    by auto
-  have minus_2: "{(1, vend_nothing, 1), (1, coin, 2), (1, coin, 3), (1, vend_fail, 4), (1, vend, 5)} - {(1, vend_fail, 4)} = {(1, vend_nothing, 1), (1, coin, 2), (1, coin, 3), (1, vend, 5)}"
-    apply (simp add: transitions)
-    by auto
-  have minus_3: "{(1, vend_nothing, 1::nat), (1, coin, 2), (1, coin, 3), (1, vend_fail, 4), (1, vend, 5)} - {(1, coin, 3)} = {(1, vend_nothing, 1), (1, coin, 2), (1, vend_fail, 4), (1, vend, 5)}"
-    apply (simp add: transitions)
-    by auto
-  have minus_4: "{(1, vend_nothing, 1::nat), (1, coin, 2), (1, coin, 3), (1, vend_fail, 4), (1, vend, 5)} -
-                                     {(1, coin, 2)} = {(1, vend_nothing, 1), (1, coin, 3), (1, vend_fail, 4), (1, vend, 5)}"
-    apply (simp add: transitions)
-    by auto
-  have state_nondeterminism_1: "state_nondeterminism 1 {|(1, vend_nothing, 1), (1, coin, 2), (1, coin, 3), (1, vend_fail, 4), (1, vend, 5)|} = {|
-      (1, (1, 1), (vend, 5), vend_fail, 4),
-      (1, (1, 1), (vend, 5), coin, 3),
-      (1, (1, 1), (vend, 5), coin, 2),
-      (1, (1, 1), (vend, 5), vend_nothing, 1),
-      (1, (1, 1), (vend_fail, 4), vend, 5),
-      (1, (1, 1), (vend_fail, 4), coin, 3),
-      (1, (1, 1), (vend_fail, 4), coin, 2),
-      (1, (1, 1), (vend_fail, 4), vend_nothing, 1),
-      (1, (1, 1),(coin, 3), vend, 5),
-      (1, (1, 1),(coin, 3), vend_fail, 4),
-      (1, (1, 1),(coin, 3), coin, 2),
-      (1, (1, 1),(coin, 3), vend_nothing, 1),
-      (1, (1, 1),(coin, 2), vend, 5),
-      (1, (1, 1),(coin, 2), vend_fail, 4),
-      (1, (1, 1),(coin, 2), coin, 3),
-      (1, (1, 1),(coin, 2), vend_nothing, 1),
-      (1, (1, 1), (vend_nothing, 1), vend, 5),
-      (1, (1, 1), (vend_nothing, 1), vend_fail, 4),
-      (1, (1, 1), (vend_nothing, 1), coin, 3),
-      (1, (1, 1), (vend_nothing, 1), coin, 2)
-    |}"
-    apply (simp add: state_nondeterminism_def fimage_def fset_both_sides Abs_fset_inverse)
-    apply (simp add: minus_1 minus_2 minus_3 minus_4)
-    by auto
-  show ?thesis
-    apply (simp add: nondeterministic_pairs_def S_def merged_1_3_def)
-    apply (simp add: outgoing_transitions_def fimage_def state_nondeterminism_1)
-    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def)
-    apply safe
-    by (simp_all add: choices vend_not_lt_vend_nothing vend_fail_not_lt_vend_nothing vend_nothing_lt_vend vend_nothing_lt_vend_fail)
 qed
 
 lemma coin_lt_vend_nothing: "coin < vend_nothing"
@@ -985,14 +626,6 @@ proof-
     show ?thesis
       by (simp add: leaves_def ffilter_def fthe_elem_def Abs_fset_inverse set_filter)
   qed
-  have leaves_5_merged_1_2: "leaves 5 merged_1_2 = 1"
-  proof-
-    have set_filter: "Set.filter (\<lambda>x. \<exists>a b ba. x = (5, (a, b), ba)) (fset merged_1_2) = {(5, (1, 3), vend)}"
-      apply (simp add: Set.filter_def merged_1_2_def)
-      by auto
-    show ?thesis
-      by (simp add: leaves_def ffilter_def fthe_elem_def Abs_fset_inverse set_filter)
-  qed
   have leaves_1_drinks2: "leaves 1 drinks2 = 1"
   proof-
     have set_filter: "Set.filter (\<lambda>x. \<exists>a b ba. x = (1, (a, b), ba)) (fset DM_Inference.drinks2) = {(1, (1, 1), vend_nothing)}"
@@ -1017,10 +650,6 @@ proof-
     show ?thesis
       by (simp add: leaves_def ffilter_def fthe_elem_def Abs_fset_inverse set_filter)
   qed
-  have next_nondet: "{|(1, (1, 1), (coin, 2), coin, 3), (1, (1, 3), (vend_nothing, 1), vend, 5), (1, (1, 1), (vend_nothing, 1), vend_fail, 4)|} |-|
-                      {|(1, (1, 3), (vend_nothing, 1), vend, 5)|} = {|(1, (1, 1), (coin, 2), coin, 3), (1, (1, 1), (vend_nothing, 1), vend_fail, 4)|}"
-    apply (simp add: transitions)
-    by auto
   have minus_1: "{|(1, (1, 1), (coin, 2), coin, 3), (1, (1, 3), (vend_nothing, 1), vend, 5), (1, (1, 1), (vend_nothing, 1), vend_fail, 4)|} |-|
                       {|(1, (1, 3), (vend_nothing, 1), vend, 5)|} = {|(1, (1, 1), (coin, 2), coin, 3), (1, (1, 1), (vend_nothing, 1), vend_fail, 4)|}"
     apply (simp add: transitions)
