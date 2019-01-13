@@ -28,9 +28,6 @@ definition t2up :: "transition" where
 lemma updates_t2up [simp]:"Updates t2up = []"
   by (simp add: t2up_def)
 
-lemma guard_t2up: "Guard t2up = [(gexp.Gt (V (I 1)) (L (Num 0)))]"
-  by (simp add: t2up_def)
-
 definition t3up :: "transition" where
 "t3up \<equiv> \<lparr>
         Label = ''goUp'',

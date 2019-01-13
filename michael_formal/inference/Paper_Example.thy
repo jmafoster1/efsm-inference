@@ -76,15 +76,6 @@ lemma select_posterior: "posterior \<lbrakk>\<rbrakk> select = \<lbrakk>V (R 1) 
   apply (rule ext)
   by (simp add: transitions remove_input_constraints_def)
 
-lemma coin50_posterior: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk> coin50 = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> Eq (Num 50)\<rbrakk>"
-  unfolding posterior_def Let_def
-  apply (rule ext)
-  apply (simp add: transitions remove_input_constraints_def)
-  apply (simp add: consistent_def)
-  apply (rule_tac x="<I 1 := Num 50>" in exI)
-  apply clarify
-  by (simp add: consistent_empty_4)
-
 definition drinks_before :: iEFSM where
   "drinks_before = {|(0, (0, 1), select), (1, (1, 2), coin50), (2, (2, 2), coin), (3, (2, 2), vend_fail), (4, (2, 3), vend_success)|}"
 

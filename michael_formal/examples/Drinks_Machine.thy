@@ -49,12 +49,6 @@ definition coin :: "transition" where
                   ]
       \<rparr>"
 
-lemma Updates_coin: "Updates coin = [
-                    (R 1, V (R 1)),
-                    (R 2, Plus (V (R 2)) (V (I 1)))
-                  ]"
-  by (simp add: coin_def)
-
 lemma label_coin: "Label coin = ''coin''"
   by (simp add: coin_def)
 

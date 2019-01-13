@@ -618,14 +618,6 @@ qed
 
 lemma "infer drinks2 naive_score null_generator null_modifier = basically_drinks"
 proof-
-  have leaves_1_merged_1_2: "leaves 1 merged_1_2 = 1"
-  proof-
-    have set_filter: "Set.filter (\<lambda>x. \<exists>a b ba. x = (1, (a, b), ba)) (fset merged_1_2) = {(1, (1, 1), vend_nothing)}"
-      apply (simp add: Set.filter_def merged_1_2_def)
-      by auto
-    show ?thesis
-      by (simp add: leaves_def ffilter_def fthe_elem_def Abs_fset_inverse set_filter)
-  qed
   have leaves_1_drinks2: "leaves 1 drinks2 = 1"
   proof-
     have set_filter: "Set.filter (\<lambda>x. \<exists>a b ba. x = (1, (a, b), ba)) (fset DM_Inference.drinks2) = {(1, (1, 1), vend_nothing)}"

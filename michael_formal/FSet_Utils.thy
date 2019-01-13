@@ -50,4 +50,7 @@ lemma fprod_equiv: "(fset (f |\<times>| f') = s) = (((fset f) \<times> (fset f')
 
 lemma finsert_equiv: "(finsert e f = f') = (insert e (fset f) = (fset f'))"
   by (simp add: finsert_def fset_both_sides Abs_fset_inverse)
+
+lemma filter_elements: "x |\<in>| Abs_fset (Set.filter f (fset s)) = (x \<in> (Set.filter f (fset s)))"
+  by (metis ffilter.rep_eq fset_inverse notin_fset)
 end

@@ -213,12 +213,6 @@ proof-
     by simp
 qed
 
-lemma consistent_medial_coin50_true: "consistent (medial \<lbrakk>V (R (Suc 0)) \<mapsto> cexp.Bc True\<rbrakk> (Guard coin50))"
-  apply (simp add: coin50_def consistent_def)
-  apply (rule_tac x="<I 1 := Num 50>" in exI)
-  apply simp
-  using consistent_empty_4 by auto
-
 lemma posterior_coin50_true: "posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk> coin50 = \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk>"
 proof-
   have consistent_medial: "consistent (medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk> (Guard coin50))"
@@ -232,28 +226,6 @@ proof-
     apply (simp add: consistent_medial remove_input_constraints_def)
     apply (rule ext)
     by (simp add: coin50_def)
-qed
-
-lemma step_select: "step vend_g 0 Map.empty ''select'' [Str ''coke''] = Some (select, 1, [], <>)"
-proof-
-  have possible_steps_select: "possible_steps vend_g 0 Map.empty ''select'' [Str ''coke''] = {|(1, select)|}"
-    apply (simp add: possible_steps_def vend_g_def transitions)
-    by force
-  show ?thesis
-    apply (simp add: step_def possible_steps_select)
-    by (simp add: select_def)
-qed
-
-lemma step_coin: "step vend_g 1 Map.empty ''coin'' [v1] = Some (coin_init, 2, [], <R 1 := v1>)"
-proof-
-  have possible_steps_coin: "possible_steps vend_g 1 Map.empty ''coin'' [v1] = {|(2, coin_init)|}"
-    apply (simp add: possible_steps_def vend_g_def transitions)
-    by force
-  show ?thesis
-    apply (simp add: step_def possible_steps_coin)
-    apply (simp add: coin_init_def)
-    apply (rule ext)
-    by simp
 qed
 
 lemma posterior_select: "posterior \<lbrakk>\<rbrakk> Generalisation.select = \<lbrakk>\<rbrakk>"
@@ -274,10 +246,10 @@ qed
 
 lemma posterior_empty_vends_g: "posterior \<lbrakk>\<rbrakk> vends_g = (\<lambda>i. Bc False)"
 proof-
-  have medial: "medial \<lbrakk>\<rbrakk> (Guard vends_g) = \<lbrakk>V (R 1) \<mapsto> And Undef (Geq (Num 100))\<rbrakk>"
+  have medial: "medial \<lbrakk>\<rbrakk> (Guard vends_g) = \<lbrakk>V (R 1) \<mapsto> And (Geq (Num 100)) Undef\<rbrakk>"
     apply (rule ext)
     by (simp add: vends_g_def)
-  have inconsistent: "\<not> consistent \<lbrakk>V (R 1) \<mapsto> And Undef (Geq (Num 100))\<rbrakk>"
+  have inconsistent: "\<not> consistent \<lbrakk>V (R 1) \<mapsto> And (Geq (Num 100)) Undef\<rbrakk>"
     apply (simp add: consistent_def)
     apply (rule allI)
     apply (rule_tac x="V (R 1)" in exI)
@@ -296,11 +268,6 @@ lemma posterior_empty_vends: "posterior \<lbrakk>\<rbrakk> vends = \<lbrakk>\<rb
 
 lemma "\<not> subsumes empty vends_g vends"
   by (simp add: subsumes_def consistent_def posterior_empty_vends_g posterior_empty_vends consistent_empty_4)
-
-lemma consistent_medial_vends_g: "consistent (medial \<lbrakk>V (R 1) \<mapsto> Geq (Num 100)\<rbrakk> (Guard vends_g))"
-  apply (simp add: vends_g_def consistent_def)
-  apply (rule_tac x="<R 1 := Num 100>" in exI)
-  by (simp add: consistent_empty_4)
 
 lemma posterior_vends_g: "posterior \<lbrakk>V (R 1) \<mapsto> Geq (Num 100)\<rbrakk> vends_g = \<lbrakk>V (R 1) \<mapsto> Geq (Num 100)\<rbrakk>"
 proof-
@@ -367,9 +334,6 @@ definition test1 :: transition where
         Updates = [(R 1, (L (Num 6)))]
       \<rparr>"
 
-lemma guard_test1: "Guard test1 = [(gexp.Eq (V (I 1)) (L (Num 6)))]"
-  by (simp add: test1_def)
-
 definition test2 :: transition where
 "test2 \<equiv> \<lparr>
         Label = ''foo'',
@@ -395,12 +359,6 @@ lemma medial_test2: "medial empty (Guard test2) = (\<lambda>i. if i = V (I 1) th
   apply (rule ext)
   by auto
 
-lemma test2_subsumes_test1_aux1: "let c' = medial (\<lambda>i. if i = V (I 1) then cexp.Eq (Num 6) else \<lbrakk>\<rbrakk> i) (Guard test2)
-                   in consistent c'"
-  apply (simp add: test2_def consistent_def)
-  apply (rule_tac x="<I 1 := Num 6>" in exI)
-  by (simp add: consistent_empty_4)
-
 lemma posterior_test1: "posterior \<lbrakk>\<rbrakk> test1 = \<lbrakk>V (R 1) \<mapsto> Eq (Num 6)\<rbrakk>"
   apply (simp add: posterior_def consistent_medial_test1)
   apply (simp add: medial_test1 test1_def remove_input_constraints_def)
@@ -418,22 +376,12 @@ lemma posterior_test2: "(posterior \<lbrakk>\<rbrakk> test2) = \<lbrakk>V (R 1) 
   apply (rule ext)
   by simp
 
-lemma medial_test2_2: "medial (\<lambda>i. if i = V (I 1) then cexp.Eq (Num 6) else \<lbrakk>\<rbrakk> i) (Guard test2) = \<lbrakk>V (I 1) \<mapsto> And (cexp.Eq (Num 6)) (cexp.Gt (Num 0))\<rbrakk>"
-  apply (simp add: test2_def)
-  apply (rule ext)
-  by (simp)
-
-lemma consistent_medial_test2_2:"consistent (medial (\<lambda>i. if i = V (I (Suc 0)) then cexp.Eq (Num 6) else \<lbrakk>\<rbrakk> i) (Guard test2))"
-  apply (simp add: consistent_def test2_def)
-  apply (rule_tac x="<I 1 := Num 6>" in exI, simp)
-  by (simp add: consistent_empty_4)
-
-lemma posterior_test2_2: "posterior (\<lambda>i. if i = V (I 1) then cexp.Eq (Num 6) else \<lbrakk>\<rbrakk> i) test2 = \<lbrakk>V (R 1) \<mapsto> And (cexp.Eq (Num 6)) (cexp.Gt (Num 0))\<rbrakk>"
+lemma posterior_test2_2: "posterior (\<lambda>i. if i = V (I 1) then cexp.Eq (Num 6) else \<lbrakk>\<rbrakk> i) test2 = \<lbrakk>V (R 1) \<mapsto> And (cexp.Gt (Num 0)) (cexp.Eq (Num 6))\<rbrakk>"
 proof-
-  have medial: "medial (\<lambda>i. if i = V (I 1) then cexp.Eq (Num 6) else \<lbrakk>\<rbrakk> i) (Guard test2) = \<lbrakk>V (I 1) \<mapsto> And (cexp.Eq (Num 6)) (cexp.Gt (Num 0))\<rbrakk>"
+  have medial: "medial (\<lambda>i. if i = V (I 1) then cexp.Eq (Num 6) else \<lbrakk>\<rbrakk> i) (Guard test2) = \<lbrakk>V (I 1) \<mapsto> And (cexp.Gt (Num 0)) (cexp.Eq (Num 6))\<rbrakk>"
     apply (rule ext)
     by (simp add: test2_def)
-  have consistent: "consistent \<lbrakk>V (I 1) \<mapsto> And (cexp.Eq (Num 6)) (cexp.Gt (Num 0))\<rbrakk>"
+  have consistent: "consistent \<lbrakk>V (I 1) \<mapsto> And (cexp.Gt (Num 0)) (cexp.Eq (Num 6))\<rbrakk>"
     apply (simp add: consistent_def)
     apply (rule_tac x="<I 1 := Num 6>" in exI)
     apply (rule allI)
@@ -467,14 +415,14 @@ proof-
     apply (rule ext)
     apply (simp add: posterior_def medial_test1 Let_def consistent_medial_test1)
     by (simp add: test1_def remove_input_constraints_def)
-  have medial_test2: "medial \<lbrakk>V (I 1) \<mapsto> cexp.Eq (Num 6)\<rbrakk> (Guard test2) = \<lbrakk>V (I 1) \<mapsto> And (cexp.Eq (Num 6)) (Gt (Num 0))\<rbrakk>"
+  have medial_test2: "medial \<lbrakk>V (I 1) \<mapsto> cexp.Eq (Num 6)\<rbrakk> (Guard test2) = \<lbrakk>V (I 1) \<mapsto> And (Gt (Num 0)) (cexp.Eq (Num 6))\<rbrakk>"
     apply (rule ext)
     by (simp add: test2_def)
-  have consistent_medial_test2: "consistent \<lbrakk>V (I 1) \<mapsto> And (cexp.Eq (Num 6)) (cexp.Gt (Num 0))\<rbrakk>"
+  have consistent_medial_test2: "consistent \<lbrakk>V (I 1) \<mapsto> And (cexp.Gt (Num 0)) (cexp.Eq (Num 6))\<rbrakk>"
     apply (simp add: consistent_def)
     apply (rule_tac x="<I 1 := Num 6>" in exI)
     by (simp add: consistent_empty_4)
-  have posterior_test2: "posterior \<lbrakk>V (I 1) \<mapsto> cexp.Eq (Num 6)\<rbrakk> test2 = \<lbrakk>V (R 1) \<mapsto> And (cexp.Eq (Num 6)) (cexp.Gt (Num 0))\<rbrakk>"
+  have posterior_test2: "posterior \<lbrakk>V (I 1) \<mapsto> cexp.Eq (Num 6)\<rbrakk> test2 = \<lbrakk>V (R 1) \<mapsto> And (cexp.Gt (Num 0)) (cexp.Eq (Num 6))\<rbrakk>"
     apply (rule ext)
     apply (simp add: posterior_def medial_test2 Let_def consistent_medial_test2)
     by (simp add: test2_def remove_input_constraints_def)

@@ -1,5 +1,5 @@
 theory Simple_Drinks_Machine
-imports "../Contexts" "../examples/Drinks_Machine_2" Inference
+imports "../Contexts" "../examples/Drinks_Machine_2" "../inference/Inference"
 begin
 
 declare One_nat_def [simp del]
@@ -420,7 +420,7 @@ qed
           apply (simp add: transitions)
          apply (simp add: transitions)
         apply (simp add: transitions)
-       apply (simp add: local.aux1)
+       apply (simp add: aux1)
       apply (simp add: Simple_Drinks_Machine.coin_def Simple_Drinks_Machine.transitions(7))
      apply (simp add: local.medial_coin50 local.posterior_coin posterior_coin50)
     using aux4 by blast
