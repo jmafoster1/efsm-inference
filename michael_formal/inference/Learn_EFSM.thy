@@ -3332,20 +3332,20 @@ lemma "learn traces naive_score generator modifier = (tm final)"
   apply (simp add: scoring_2 merge_1_2)
   by (simp add: score_final sorted_list_of_fset_def)
 
-value "iefsm2dot pta"
-value "iefsm2dot merged_1_8"
-value "iefsm2dot merged_1_7"
-value "iefsm2dot merged_2_8"
-value "iefsm2dot merged_2_8coin"
-value "iefsm2dot merged_3_9"
-value "iefsm2dot merged_3_9_coin100"
-value "iefsm2dot merged_4_10"
-value "iefsm2dot merged_vends"
-value "iefsm2dot merged_1_2"
-value "iefsm2dot merged_1_3"
-value "iefsm2dot merged_1_3_coin"
-value "iefsm2dot merged_1_5"
-value "iefsm2dot merged_1_5_coin"
-value "iefsm2dot final"
+(* value "iefsm2dot pta" *)
+(* value "iefsm2dot merged_1_8" *)
+(* value "iefsm2dot merged_1_7" *)
+(* value "iefsm2dot merged_2_8" *)
+(* value "iefsm2dot merged_2_8_coin50" *)
+(* value "iefsm2dot merged_3_9" *)
+(* value "iefsm2dot merged_3_9_coin100" *)
+(* value "iefsm2dot merged_4_10" *)
+(* value "iefsm2dot merged_vends" *)
+(* value "iefsm2dot merged_1_2" *)
+(* value "iefsm2dot merged_1_3" *)
+(* value "iefsm2dot merged_1_3_coin" *)
+(* value "iefsm2dot merged_1_5" *)
+(* value "iefsm2dot merged_1_5_coin" *)
+(* value "iefsm2dot final" *)
 
 end
