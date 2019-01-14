@@ -71,10 +71,10 @@ definition efsm2dot :: "transition_matrix \<Rightarrow> string" where
 
 definition iefsm2dot :: "iEFSM \<Rightarrow> string" where
   "iefsm2dot e = ''digraph EFSM{''@newline@
-                  ''graph [rankdir=''@quote@''LR''@quote@'', fontname=''@quote@''Latin Modern Math''@quote@''];''@newline@
-                  ''node [color=''@quote@''black''@quote@'', fillcolor=''@quote@''white''@quote@'', shape=''@quote@''circle''@quote@'', style=''@quote@''filled''@quote@'', fontname=''@quote@''Latin Modern Math''@quote@''];''@newline@
-                  ''edge [fontname=''@quote@''Latin Modern Math''@quote@''];''@newline@
-                  (join (sorted_list_of_fset (fimage (\<lambda>(uid, (from, to), t). (show from)@''->''@(show to)@''[label=<(''@(show uid)@'') ''@(transition2dot t)@''>]'') e)) newline)@newline@
+                  ''  graph [rankdir=''@quote@''LR''@quote@'', fontname=''@quote@''Latin Modern Math''@quote@''];''@newline@
+                  ''  node [color=''@quote@''black''@quote@'', fillcolor=''@quote@''white''@quote@'', shape=''@quote@''circle''@quote@'', style=''@quote@''filled''@quote@'', fontname=''@quote@''Latin Modern Math''@quote@''];''@newline@
+                  ''  edge [fontname=''@quote@''Latin Modern Math''@quote@''];''@newline@
+                  (join (sorted_list_of_fset (fimage (\<lambda>(uid, (from, to), t). ''  ''@(show from)@''->''@(show to)@''[label=<(''@(show uid)@'') ''@(transition2dot t)@''>]'') e)) newline)@newline@
                 ''}''"
 
 
