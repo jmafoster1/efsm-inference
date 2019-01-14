@@ -128,7 +128,7 @@ definition easy_merge :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarr
     (case maker oldEFSM t1FromOld t1 t2FromOld t2 of
     Some t' \<Rightarrow>
     if directly_subsumes (tm oldEFSM) (tm newEFSM) t1FromOld t1 t' \<and> directly_subsumes (tm oldEFSM) (tm newEFSM) t2FromOld t2 t' then
-       Some (replace_transition (replace_transition newEFSM ((maxUID newEFSM) + 1) newFrom t1NewTo t2 t') ((maxUID newEFSM) + 2) newFrom t2NewTo t1 t') else
+       Some (replace_transition (replace_transition newEFSM ((maxUID newEFSM) + 1) newFrom t2NewTo t2 t') ((maxUID newEFSM) + 2) newFrom t1NewTo t1 t') else
     None |
     None \<Rightarrow> None)
   )"
