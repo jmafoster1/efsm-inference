@@ -7,7 +7,7 @@ finite types. See the examples for details.
 \<close>
 
 theory EFSM
-  imports "~~/src/HOL/Library/FSet" Transition
+  imports "~~/src/HOL/Library/FSet" Transition FSet_Utils
 begin
 
 type_synonym label = string
@@ -53,16 +53,6 @@ primrec apply_updates :: "(vname \<times> aexp) list \<Rightarrow> datastate \<R
 definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> transition) fset" where
   "possible_steps e s r l i = fimage (\<lambda>((origin, dest), t). (dest, t)) (ffilter (\<lambda>((origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"
 
-definition fis_singleton :: "'a fset \<Rightarrow> bool"
-  where "fis_singleton A \<longleftrightarrow> is_singleton (fset A)"
-
-lemma singleton_singleton [simp]: "fis_singleton {|a|}"
-  by (simp add: fis_singleton_def)
-
-lemma not_singleton_emty [simp]: "\<not>fis_singleton {||}"
-  apply (simp add: fis_singleton_def)
-  by (simp add: is_singleton_altdef)
-
 definition step :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> outputs \<times> datastate) option" where
 "step e s r l i =
 (if fis_singleton (possible_steps e s r l i) then (let (s', t) =  (fthe_elem (possible_steps e s r l i)) in Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))) else None)"
@@ -86,12 +76,6 @@ primrec observe_all :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datast
       (Some (transition, s', outputs, updated)) \<Rightarrow> (((transition, s', outputs, updated)#(observe_all e s' updated t))) |
       _ \<Rightarrow> []
     )"
-
-lemma abs_fset_singleton[simp]: "Abs_fset {a} = {|a|}"
-  by (metis bot_fset.rep_eq finsert.rep_eq fset_inverse)
-
-lemma abs_fset_empty[simp]: "Abs_fset {} = {||}"
-  by (simp add: bot_fset_def)
 
 definition state :: "(transition \<times> nat \<times> outputs \<times> datastate) \<Rightarrow> nat" where
   "state x \<equiv> fst (snd x)"

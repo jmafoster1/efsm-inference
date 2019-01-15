@@ -49,12 +49,6 @@ definition coin :: "transition" where
                   ]
       \<rparr>"
 
-lemma Updates_coin: "Updates coin = [
-                    (R 1, V (R 1)),
-                    (R 2, Plus (V (R 2)) (V (I 1)))
-                  ]"
-  by (simp add: coin_def)
-
 lemma label_coin: "Label coin = ''coin''"
   by (simp add: coin_def)
 
@@ -196,7 +190,7 @@ lemma select_posterior: "(posterior empty select) = select_posterior"
   apply (rule ext)
   by (simp add: select_posterior_def)
 
-lemma medial_select_posterior_vend: "medial select_posterior (Guard vend) = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Eq (Num 0)) (Geq (Num 100))\<rbrakk>"
+lemma medial_select_posterior_vend: "medial select_posterior (Guard vend) = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> And (Geq (Num 100)) (Eq (Num 0))\<rbrakk>"
   apply (rule ext)
   by (simp add: guard_vend select_posterior_def)
 
