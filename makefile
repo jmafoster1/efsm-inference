@@ -1,4 +1,5 @@
 DATE=`date +'%d/%m/%y'`
+BRANCH=$(shell git branch | grep \* | cut -d ' ' -f2)
 
 eod:
 	git add -A ; \
