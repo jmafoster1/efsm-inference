@@ -42,13 +42,14 @@ primrec apply_outputs :: "output_function list \<Rightarrow> datastate \<Rightar
   "apply_outputs [] _ = []" |
   "apply_outputs (h#t) s = (aval h s)#(apply_outputs t s)"
 
-primrec apply_guards :: "guard list \<Rightarrow> datastate \<Rightarrow> bool" where
-  "apply_guards [] _ = True" |
-  "apply_guards (h#t) s =  ((gval h s) = Some True \<and> (apply_guards t s))"
+definition apply_guards :: "guards \<Rightarrow> datastate \<Rightarrow> bool" where
+  "apply_guards G s = (\<forall>g. g |\<in>| G \<longrightarrow> (gval g s) = Some True)"
 
-primrec apply_updates :: "(vname \<times> aexp) list \<Rightarrow> datastate \<Rightarrow> datastate \<Rightarrow> datastate" where
-  "apply_updates [] _ new = new" |
-  "apply_updates (h#t) old new = (\<lambda>x. if x = (fst h) then (aval (snd h) old) else (apply_updates t old new) x)"
+definition apply_update :: "update_function \<Rightarrow> datastate \<Rightarrow> datastate \<Rightarrow> datastate" where
+  "apply_update u old new = (\<lambda>x. if x = (fst u) then (aval (snd u) old) else new x)"
+
+definition apply_updates :: "update_functions \<Rightarrow> datastate \<Rightarrow> datastate \<Rightarrow> datastate" where
+  "apply_updates U old new = ffold (\<lambda>u n. apply_update u old n) old U"
 
 definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> transition) fset" where
   "possible_steps e s r l i = fimage (\<lambda>((origin, dest), t). (dest, t)) (ffilter (\<lambda>((origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"

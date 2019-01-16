@@ -1,17 +1,22 @@
 theory Transition
-imports GExp
+imports GExp FSet
 begin
 
 type_synonym guard = "gexp"
+type_synonym guards = "guard fset"
+
 type_synonym output_function = "aexp"
+type_synonym output_functions = "output_function list"
+
 type_synonym update_function = "(vname \<times> aexp)"
+type_synonym update_functions = "update_function fset"
 
 record transition =
   Label :: string
   Arity :: nat
-  Guard :: "guard list"
-  Outputs :: "output_function list"
-  Updates :: "update_function list"
+  Guard :: guards
+  Outputs :: output_functions
+  Updates :: update_functions
 
 lemma transition_equality: "((x::transition) = y) = ((Label x) = (Label y) \<and>
                                 (Arity x) = (Arity y) \<and>
