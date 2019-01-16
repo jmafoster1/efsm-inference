@@ -21,17 +21,17 @@ definition select :: "transition" where
 "select \<equiv> \<lparr>
         Label = ''select'',
         Arity = 1,
-        Guard = [], \<comment> \<open> No guards \<close>
+        Guard = {||}, \<comment> \<open> No guards \<close>
         Outputs = [],
-        Updates = [ \<comment> \<open> Two updates: \<close>
+        Updates = {| \<comment> \<open> Two updates: \<close>
                     (R 1, (V (I 1))), \<comment> \<open>  Firstly set value of r1 to value of i1 \<close>
                     (R 2, (L (Num 0))) \<comment> \<open> Secondly set the value of r2 to literal zero \<close>
-                  ]
+                  |}
       \<rparr>"
 
 (*select:1[]/[][(R 1, (V (I 1))), (R 2, (L (Num 0)))]*)
 
-lemma guard_select: "Guard select = []"
+lemma guard_select: "Guard select = {||}"
   by (simp add: select_def)
 
 lemma outputs_select: "Outputs select = []"
@@ -41,27 +41,27 @@ definition coin :: "transition" where
 "coin \<equiv> \<lparr>
         Label = ''coin'',
         Arity = 1,
-        Guard = [],
+        Guard = {||},
         Outputs = [Plus (V (R 2)) (V (I 1))],
-        Updates = [
+        Updates = {|
                     (R 1, V (R 1)),
                     (R 2, Plus (V (R 2)) (V (I 1)))
-                  ]
+                  |}
       \<rparr>"
 
 lemma label_coin: "Label coin = ''coin''"
   by (simp add: coin_def)
 
-lemma guard_coin: "Guard coin = []"
+lemma guard_coin: "Guard coin = {||}"
   by (simp add: coin_def)
 
 definition vend :: "transition" where
 "vend \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [(Ge (V (R 2)) (L (Num 100)))],
+        Guard = {|(Ge (V (R 2)) (L (Num 100)))|},
         Outputs =  [(V (R 1))],
-        Updates = [(R 1, V (R 1)), (R 2, V (R 2))]
+        Updates = {|(R 1, V (R 1)), (R 2, V (R 2))|}
       \<rparr>"
 
 lemma label_vend: "Label vend = ''vend''"
@@ -71,12 +71,12 @@ definition vend_fail :: "transition" where
 "vend_fail \<equiv> \<lparr>
         Label = ''vend'',
         Arity = 0,
-        Guard = [(GExp.Lt (V (R 2)) (L (Num 100)))],
+        Guard = {|(GExp.Lt (V (R 2)) (L (Num 100)))|},
         Outputs =  [],
-        Updates = [(R 1, V (R 1)), (R 2, V (R 2))]
+        Updates = {|(R 1, V (R 1)), (R 2, V (R 2))|}
       \<rparr>"
 
-lemma guard_vend_fail: "Guard vend_fail = [(GExp.Lt(V (R 2)) (L (Num 100)))]"
+lemma guard_vend_fail: "Guard vend_fail = {|(GExp.Lt(V (R 2)) (L (Num 100)))|}"
   by (simp add: vend_fail_def)
 
 lemma outputs_vend_fail: "Outputs vend_fail = []"
@@ -88,7 +88,7 @@ lemma label_vend_fail: "Label vend_fail = ''vend''"
 lemma arity_vend_fail: "Arity vend_fail = 0"
   by (simp add: vend_fail_def)
 
-lemma guard_vend: "Guard vend = [(Ge (V (R 2)) (L (Num 100)))]"
+lemma guard_vend: "Guard vend = {|(Ge (V (R 2)) (L (Num 100)))|}"
   by (simp add: vend_def)
 
 definition drinks :: "transition_matrix" where
@@ -113,7 +113,10 @@ lemma updates_select: "(EFSM.apply_updates (Updates select)
               (case_vname (\<lambda>n. if n = 1 then Some (Str ''coke'') else input2state [] (1 + 1) (I n)) Map.empty) Map.empty) = <R 1:=Str ''coke'', R 2 := Num 0>"
   apply (simp add: select_def)
   apply (rule ext)
-  by simp
+  apply (simp add: apply_updates_def apply_update_def)
+  apply (case_tac "x = R 1")
+   apply simp
+  try
 
 lemma arity_vend: "Arity vend = 0"
   by (simp add: vend_def)
