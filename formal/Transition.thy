@@ -1,5 +1,5 @@
 theory Transition
-imports GExp FSet
+imports GExp FSet_Utils
 begin
 
 type_synonym guard = "gexp"
