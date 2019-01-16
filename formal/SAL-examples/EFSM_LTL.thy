@@ -33,6 +33,27 @@ abbreviation non_null :: "property" where
 abbreviation null :: "property" where
   "null s \<equiv> (statename (shd s) = None)"
 
+definition Out :: "nat \<Rightarrow> state stream \<Rightarrow> value option" where
+  "Out n s \<equiv> nth (output (shd s)) n"
+
+definition In :: "nat \<Rightarrow> state stream \<Rightarrow> value" where
+  "In n s \<equiv> nth (inputs (shd s)) n"
+
+definition EventLabel :: "state stream \<Rightarrow> string" where
+  "EventLabel s = fst (event (shd s))"
+
+definition LabelEq :: "string \<Rightarrow> state stream \<Rightarrow> bool" where
+  "LabelEq v s \<equiv> EventLabel s = v"
+
+definition InputEq :: "nat \<Rightarrow> value \<Rightarrow> state stream \<Rightarrow> bool" where
+  "InputEq n v s \<equiv> In n s = v"
+
+definition OutputEq :: "nat \<Rightarrow> value option \<Rightarrow> state stream \<Rightarrow> bool" where
+  "OutputEq n v s \<equiv> Out n s = v"
+
+definition notDetailedPDFslicker :: "property" where
+  "notDetailedPDFslicker s \<equiv> (Out 1 s) \<noteq> Some (Str ''detailedPDF'')"
+
 lemma null_forever [simp]: "s = make_full_observation e (Some 0) <> t \<Longrightarrow> null s \<Longrightarrow> nxt (alw null) s"
   by simp
 

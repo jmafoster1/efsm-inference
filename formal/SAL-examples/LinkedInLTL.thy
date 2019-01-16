@@ -1,5 +1,5 @@
 theory LinkedInLTL
-imports "../EFSM" "../not4afp/EFSM_LTL"
+imports EFSM_LTL
 
 begin
 abbreviation "outside \<equiv> (0::nat)"
@@ -9,7 +9,7 @@ abbreviation "viewSummary \<equiv> (3::nat)"
 abbreviation "pdfDetailed \<equiv> (4::nat)"
 abbreviation "pdfSummary \<equiv> (5::nat)"
 
-definition login :: "transition" where
+definition login :: transition where
 "login \<equiv> \<lparr>
         Label = ''login'',
         Arity = 1,
@@ -110,13 +110,8 @@ definition notDetailedPDF :: "property" where
   "notDetailedPDF s \<equiv> (hd (output (shd s)) \<noteq> Some (Str ''detailedPDF''))"
 
 (*      G(login_free      =>  X(   G(    pdf_other  =>  X(notDetailedPDF))))*)
-lemma neverDetailed: "(alw login_free impl   (nxt (alw (pdf_other impl (nxt notDetailedPDF))))) 
+lemma neverDetailed: "(alw (LabelEq ''login'' aand InputEq 1 (Str ''free'') ) impl (nxt (alw ((LabelEq ''pdf'' aand InputEq 1 (Str ''otherID'')) impl (nxt (not (OutputEq 1 (Some (Str ''pdfDetailed''))))))))) 
      (watch linkedIn i)"
   oops
-
-lemma neverDetailed_full: "(alw (\<lambda>s. event (shd s) = (''login'',  [Str ''free''])) impl   (nxt (alw ((\<lambda>s. (let (label, inputs) = event (shd s) in label=''pdf'' \<and> hd inputs = Str ''otherID'')) impl (nxt (\<lambda>s. hd (output (shd s)) \<noteq> Some (Str ''detailedPDF''))))))) 
-     (watch linkedIn i)"
-  oops
-
 
 end
