@@ -9,6 +9,14 @@ definition nondeterministic_step :: "transition_matrix \<Rightarrow> nat \<Right
     Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r)))
   else None)"
 
+lemma [code]: "nondeterministic_step e s r l i = (
+  if possible_steps e s r l i \<noteq> {||} then (
+    let (s', t) =  (Eps (\<lambda>x. x |\<in>| (possible_steps e s r l i))) in
+    Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r)))
+  else None)"
+  apply (simp add: nondeterministic_step_def)
+  by auto
+
 lemma fis_singleton_possible_steps: "fis_singleton (possible_steps e s r l i) \<Longrightarrow> \<exists>a b. (a, b) |\<in>| possible_steps e s r l i"
   by (metis fempty_iff fset_eqI not_singleton_emty prod.exhaust_sel)
 
@@ -45,6 +53,7 @@ inductive nondeterministic_simulates_trace :: "transition_matrix \<Rightarrow> t
               nondeterministic_step e1 s1 d1 l i = Some (tr1, s1', p', d1') \<Longrightarrow>
               (s2', tr2) |\<in>| possible_steps e2 s2 d2 l i \<Longrightarrow>
               d2' = (apply_updates (Updates tr2) (join_ir i d2) d2) \<Longrightarrow>
+              p' = (apply_outputs (Outputs tr2) (join_ir i r)) \<Longrightarrow>
               nondeterministic_simulates_trace e2 e1 s2' s1' d2' d1' t H \<Longrightarrow>
               nondeterministic_simulates_trace e2 e1 s2 s1 d2 d1 ((l, i)#t) H" |
   step_none: "nondeterministic_step e1 s1 d1 l i = None \<Longrightarrow> nondeterministic_simulates_trace e2 e1 s2 s1 d2 d1 ((l, i)#t) _"

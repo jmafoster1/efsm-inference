@@ -54,8 +54,20 @@ definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> 
   "possible_steps e s r l i = fimage (\<lambda>((origin, dest), t). (dest, t)) (ffilter (\<lambda>((origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"
 
 definition step :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> outputs \<times> datastate) option" where
-"step e s r l i =
-(if fis_singleton (possible_steps e s r l i) then (let (s', t) =  (fthe_elem (possible_steps e s r l i)) in Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))) else None)"
+"step e s r l i = (if fis_singleton (possible_steps e s r l i) then (
+                     let (s', t) = (fthe_elem (possible_steps e s r l i)) in
+                     Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))
+                   )
+                   else None)"
+
+lemma [code]: "step e s r l i = (if size (possible_steps e s r l i) = 1 then (
+                     let (s', t) = (fthe_elem (possible_steps e s r l i)) in
+                     Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))
+                   )
+                   else None)"
+  apply (simp add: step_def)
+  apply (simp add: is_singleton_altdef)
+  by (metis One_nat_def fis_singleton.transfer is_singleton_altdef)
 
 lemma step_empty[simp]:"step {||} s r l i = None"
 proof-

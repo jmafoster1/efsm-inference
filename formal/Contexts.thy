@@ -253,7 +253,9 @@ definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarr
 (* Does t1 subsume t2 in all possible anterior contexts? *)
 (* For every path which gets us to the problem state, does t1 subsume t2 in the resulting context *)
 definition directly_subsumes :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "directly_subsumes e1 e2 s t1 t2 = (\<forall>p. accepts_trace e1 p \<longrightarrow> (gets_us_to s e1 0 <>  p) \<longrightarrow> subsumes (anterior_context e2 p) t1 t2)"
+  "directly_subsumes e1 e2 s t1 t2 = (\<forall>p. accepts_trace e1 p \<longrightarrow>
+                                          gets_us_to s e1 0 <>  p \<longrightarrow>
+                                          subsumes (anterior_context e2 p) t1 t2)"
 
 primrec pairs2guard :: "(aexp \<times> cexp) list \<Rightarrow> guard" where
   "pairs2guard [] = gexp.Bc True" |

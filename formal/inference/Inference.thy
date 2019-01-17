@@ -102,7 +102,9 @@ fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate 
       None \<Rightarrow> make_branch (finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=(make_guard inputs 1), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e) ((maxS e)+1) r t
     )"
 
-type_synonym log = "(char list \<times> value list \<times> value list) list list"
+(* An execution represents a run of the software and has the form [(label, inputs, outputs)]*)
+type_synonym execution = "(label \<times> value list \<times> value list) list"
+type_synonym log = "execution list"
 
 primrec make_pta :: "log \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
   "make_pta [] e = e" |
@@ -163,6 +165,17 @@ definition leaves :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
 
 definition arrives :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
   "arrives uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. (\<exists>s. x = (uid, s))) t))))"
+
+lemma exists_is_fst: "(\<lambda>x. (\<exists>s. x = (uid, s))) = (\<lambda>x. fst x = uid)"
+  apply (rule ext)
+  apply clarify
+  by simp
+
+lemma[code]: "leaves uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (fst x = uid)) t))))"
+  by (simp only: leaves_def exists_is_fst)
+
+lemma[code]: "arrives uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. (fst x = uid)) t))))"
+  by (simp only: arrives_def exists_is_fst)
 
 lemma "(leaves uid t = n) = (\<exists>b ba. Set.filter (\<lambda>x. \<exists>a b ba. x = (uid, (a, b), ba)) (fset t) = {(uid, (n, b), ba)})"
   apply (simp add: leaves_def ffilter_def fthe_elem_def Abs_fset_inverse)

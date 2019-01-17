@@ -2,11 +2,14 @@ theory FSet_Utils
   imports "~~/src/HOL/Library/FSet"
 begin
 
+setup_lifting type_definition_fset
+lift_definition fprod  :: "'a fset \<Rightarrow> 'b fset \<Rightarrow> ('a \<times> 'b) fset " (infixr "|\<times>|" 80) is "\<lambda>a b. fset a \<times> fset b"
+  by simp
+
+lift_definition fis_singleton :: "'a fset \<Rightarrow> bool" is "\<lambda>A. is_singleton (fset A)".
+
 lemma fset_both_sides: "(Abs_fset s = f) = (fset (Abs_fset s) = fset f)"
   by (simp add: fset_inject)
-
-definition fis_singleton :: "'a fset \<Rightarrow> bool"
-  where "fis_singleton A \<longleftrightarrow> is_singleton (fset A)"
 
 lemma singleton_singleton [simp]: "fis_singleton {|a|}"
   by (simp add: fis_singleton_def)
@@ -32,9 +35,6 @@ lemma abs_fset_singleton[simp]: "Abs_fset {a} = {|a|}"
 
 lemma abs_fset_empty[simp]: "Abs_fset {} = {||}"
   by (simp add: bot_fset_def)
-
-definition fprod :: "'a fset \<Rightarrow> 'b fset \<Rightarrow> ('a \<times> 'b) fset" (infixr "|\<times>|" 80) where
-  "a |\<times>| b = Abs_fset ((fset a) \<times> (fset b))"
 
 lemma fprod_empty[simp]: "\<forall>a. fprod {||} a = {||}"
   by (simp add: fprod_def)
