@@ -62,35 +62,6 @@ def eq[A : equal](a: A, b: A): Boolean = equal[A](a, b)
 
 } /* object HOL */
 
-object Code_Numeral {
-
-def integer_of_int(x0: Int.int): BigInt = x0 match {
-  case Int.int_of_integer(k) => k
-}
-
-} /* object Code_Numeral */
-
-object Int {
-
-abstract sealed class int
-final case class int_of_integer(a: BigInt) extends int
-
-def less_int(k: int, l: int): Boolean =
-  Code_Numeral.integer_of_int(k) < Code_Numeral.integer_of_int(l)
-
-def plus_int(k: int, l: int): int =
-  int_of_integer(Code_Numeral.integer_of_int(k) +
-                   Code_Numeral.integer_of_int(l))
-
-def equal_int(k: int, l: int): Boolean =
-  Code_Numeral.integer_of_int(k) == Code_Numeral.integer_of_int(l)
-
-def minus_int(k: int, l: int): int =
-  int_of_integer(Code_Numeral.integer_of_int(k) -
-                   Code_Numeral.integer_of_int(l))
-
-} /* object Int */
-
 object Orderings {
 
 trait ord[A] {
@@ -111,6 +82,10 @@ object ord {
     val `Orderings.less` =
       (a: Transition.transition_ext[A], b: Transition.transition_ext[A]) =>
       Transition_Ordering.less_transition_ext[A](a, b)
+  }
+  implicit def `Code_Numeral.ord_integer`: ord[BigInt] = new ord[BigInt] {
+    val `Orderings.less_eq` = (a: BigInt, b: BigInt) => a <= b
+    val `Orderings.less` = (a: BigInt, b: BigInt) => a < b
   }
   implicit def `Product_Type.ord_unit`: ord[Unit] = new ord[Unit] {
     val `Orderings.less_eq` = (a: Unit, b: Unit) =>
@@ -323,19 +298,6 @@ def less_bool(x0: Boolean, b: Boolean): Boolean = (x0, b) match {
 
 } /* object Orderings */
 
-object Power {
-
-trait power[A] extends Groups.one[A] with Groups.times[A] {
-}
-object power {
-  implicit def `Nat.power_nat`: power[Nat.nat] = new power[Nat.nat] {
-    val `Groups.times` = (a: Nat.nat, b: Nat.nat) => Nat.times_nata(a, b)
-    val `Groups.one` = Nat.one_nata
-  }
-}
-
-} /* object Power */
-
 object Groups {
 
 trait plus[A] {
@@ -362,8 +324,11 @@ trait zero[A] {
 }
 def zero[A](implicit A: zero[A]): A = A.`Groups.zero`
 object zero {
+  implicit def `Code_Numeral.zero_integer`: zero[BigInt] = new zero[BigInt] {
+    val `Groups.zero` = BigInt(0)
+  }
   implicit def `Nat.zero_nat`: zero[Nat.nat] = new zero[Nat.nat] {
-    val `Groups.zero` = Nat.zero_nata()
+    val `Groups.zero` = Nat.zero_nata
   }
 }
 
@@ -372,37 +337,8 @@ trait monoid_add[A] extends semigroup_add[A] with zero[A] {
 object monoid_add {
   implicit def `Nat.monoid_add_nat`: monoid_add[Nat.nat] = new
     monoid_add[Nat.nat] {
-    val `Groups.zero` = Nat.zero_nata()
+    val `Groups.zero` = Nat.zero_nata
     val `Groups.plus` = (a: Nat.nat, b: Nat.nat) => Nat.plus_nata(a, b)
-  }
-}
-
-trait times[A] {
-  val `Groups.times`: (A, A) => A
-}
-def times[A](a: A, b: A)(implicit A: times[A]): A = A.`Groups.times`(a, b)
-object times {
-  implicit def `Nat.times_nat`: times[Nat.nat] = new times[Nat.nat] {
-    val `Groups.times` = (a: Nat.nat, b: Nat.nat) => Nat.times_nata(a, b)
-  }
-}
-
-trait semigroup_mult[A] extends times[A] {
-}
-object semigroup_mult {
-  implicit def `Nat.semigroup_mult_nat`: semigroup_mult[Nat.nat] = new
-    semigroup_mult[Nat.nat] {
-    val `Groups.times` = (a: Nat.nat, b: Nat.nat) => Nat.times_nata(a, b)
-  }
-}
-
-trait monoid_mult[A] extends semigroup_mult[A] with Power.power[A] {
-}
-object monoid_mult {
-  implicit def `Nat.monoid_mult_nat`: monoid_mult[Nat.nat] = new
-    monoid_mult[Nat.nat] {
-    val `Groups.one` = Nat.one_nata
-    val `Groups.times` = (a: Nat.nat, b: Nat.nat) => Nat.times_nata(a, b)
   }
 }
 
@@ -420,28 +356,8 @@ trait comm_monoid_add[A] extends ab_semigroup_add[A] with monoid_add[A] {
 object comm_monoid_add {
   implicit def `Nat.comm_monoid_add_nat`: comm_monoid_add[Nat.nat] = new
     comm_monoid_add[Nat.nat] {
-    val `Groups.zero` = Nat.zero_nata()
+    val `Groups.zero` = Nat.zero_nata
     val `Groups.plus` = (a: Nat.nat, b: Nat.nat) => Nat.plus_nata(a, b)
-  }
-}
-
-trait ab_semigroup_mult[A] extends semigroup_mult[A] {
-}
-object ab_semigroup_mult {
-  implicit def `Nat.ab_semigroup_mult_nat`: ab_semigroup_mult[Nat.nat] = new
-    ab_semigroup_mult[Nat.nat] {
-    val `Groups.times` = (a: Nat.nat, b: Nat.nat) => Nat.times_nata(a, b)
-  }
-}
-
-trait comm_monoid_mult[A]
-  extends ab_semigroup_mult[A] with monoid_mult[A] with Rings.dvd[A] {
-}
-object comm_monoid_mult {
-  implicit def `Nat.comm_monoid_mult_nat`: comm_monoid_mult[Nat.nat] = new
-    comm_monoid_mult[Nat.nat] {
-    val `Groups.one` = Nat.one_nata
-    val `Groups.times` = (a: Nat.nat, b: Nat.nat) => Nat.times_nata(a, b)
   }
 }
 
@@ -450,8 +366,8 @@ trait one[A] {
 }
 def one[A](implicit A: one[A]): A = A.`Groups.one`
 object one {
-  implicit def `Nat.one_nat`: one[Nat.nat] = new one[Nat.nat] {
-    val `Groups.one` = Nat.one_nata
+  implicit def `Code_Numeral.one_integer`: one[BigInt] = new one[BigInt] {
+    val `Groups.one` = Code_Numeral.one_integera
   }
 }
 
@@ -459,101 +375,13 @@ object one {
 
 object Rings {
 
-trait dvd[A] extends Groups.times[A] {
-}
-object dvd {
-  implicit def `Nat.dvd_nat`: dvd[Nat.nat] = new dvd[Nat.nat] {
-    val `Groups.times` = (a: Nat.nat, b: Nat.nat) => Nat.times_nata(a, b)
-  }
-}
-
-trait semiring[A]
-  extends Groups.ab_semigroup_add[A] with Groups.semigroup_mult[A] {
-}
-object semiring {
-  implicit def `Nat.semiring_nat`: semiring[Nat.nat] = new semiring[Nat.nat] {
-    val `Groups.times` = (a: Nat.nat, b: Nat.nat) => Nat.times_nata(a, b)
-    val `Groups.plus` = (a: Nat.nat, b: Nat.nat) => Nat.plus_nata(a, b)
-  }
-}
-
-trait mult_zero[A] extends Groups.times[A] with Groups.zero[A] {
-}
-object mult_zero {
-  implicit def `Nat.mult_zero_nat`: mult_zero[Nat.nat] = new mult_zero[Nat.nat]
-    {
-    val `Groups.zero` = Nat.zero_nata()
-    val `Groups.times` = (a: Nat.nat, b: Nat.nat) => Nat.times_nata(a, b)
-  }
-}
-
-trait semiring_0[A]
-  extends Groups.comm_monoid_add[A] with mult_zero[A] with semiring[A] {
-}
-object semiring_0 {
-  implicit def `Nat.semiring_0_nat`: semiring_0[Nat.nat] = new
-    semiring_0[Nat.nat] {
-    val `Groups.times` = (a: Nat.nat, b: Nat.nat) => Nat.times_nata(a, b)
-    val `Groups.zero` = Nat.zero_nata()
-    val `Groups.plus` = (a: Nat.nat, b: Nat.nat) => Nat.plus_nata(a, b)
-  }
-}
-
 trait zero_neq_one[A] extends Groups.one[A] with Groups.zero[A] {
 }
 object zero_neq_one {
-  implicit def `Nat.zero_neq_one_nat`: zero_neq_one[Nat.nat] = new
-    zero_neq_one[Nat.nat] {
-    val `Groups.zero` = Nat.zero_nata()
-    val `Groups.one` = Nat.one_nata
-  }
-}
-
-trait semiring_1[A]
-  extends Num.semiring_numeral[A] with semiring_0[A] with zero_neq_one[A] {
-}
-object semiring_1 {
-  implicit def `Nat.semiring_1_nat`: semiring_1[Nat.nat] = new
-    semiring_1[Nat.nat] {
-    val `Groups.zero` = Nat.zero_nata()
-    val `Groups.one` = Nat.one_nata
-    val `Groups.times` = (a: Nat.nat, b: Nat.nat) => Nat.times_nata(a, b)
-    val `Groups.plus` = (a: Nat.nat, b: Nat.nat) => Nat.plus_nata(a, b)
-  }
-}
-
-trait comm_semiring[A] extends Groups.ab_semigroup_mult[A] with semiring[A] {
-}
-object comm_semiring {
-  implicit def `Nat.comm_semiring_nat`: comm_semiring[Nat.nat] = new
-    comm_semiring[Nat.nat] {
-    val `Groups.plus` = (a: Nat.nat, b: Nat.nat) => Nat.plus_nata(a, b)
-    val `Groups.times` = (a: Nat.nat, b: Nat.nat) => Nat.times_nata(a, b)
-  }
-}
-
-trait comm_semiring_0[A] extends comm_semiring[A] with semiring_0[A] {
-}
-object comm_semiring_0 {
-  implicit def `Nat.comm_semiring_0_nat`: comm_semiring_0[Nat.nat] = new
-    comm_semiring_0[Nat.nat] {
-    val `Groups.zero` = Nat.zero_nata()
-    val `Groups.plus` = (a: Nat.nat, b: Nat.nat) => Nat.plus_nata(a, b)
-    val `Groups.times` = (a: Nat.nat, b: Nat.nat) => Nat.times_nata(a, b)
-  }
-}
-
-trait comm_semiring_1[A]
-  extends Groups.comm_monoid_mult[A] with comm_semiring_0[A] with semiring_1[A]
-  {
-}
-object comm_semiring_1 {
-  implicit def `Nat.comm_semiring_1_nat`: comm_semiring_1[Nat.nat] = new
-    comm_semiring_1[Nat.nat] {
-    val `Groups.zero` = Nat.zero_nata()
-    val `Groups.plus` = (a: Nat.nat, b: Nat.nat) => Nat.plus_nata(a, b)
-    val `Groups.one` = Nat.one_nata
-    val `Groups.times` = (a: Nat.nat, b: Nat.nat) => Nat.times_nata(a, b)
+  implicit def `Code_Numeral.zero_neq_one_integer`: zero_neq_one[BigInt] = new
+    zero_neq_one[BigInt] {
+    val `Groups.zero` = BigInt(0)
+    val `Groups.one` = Code_Numeral.one_integera
   }
 }
 
@@ -566,94 +394,75 @@ def of_bool[A : zero_neq_one](x0: Boolean): A = x0 match {
 
 object Num {
 
-trait numeral[A] extends Groups.one[A] with Groups.semigroup_add[A] {
-}
-object numeral {
-  implicit def `Nat.numeral_nat`: numeral[Nat.nat] = new numeral[Nat.nat] {
-    val `Groups.plus` = (a: Nat.nat, b: Nat.nat) => Nat.plus_nata(a, b)
-    val `Groups.one` = Nat.one_nata
-  }
-}
-
-trait semiring_numeral[A]
-  extends Groups.monoid_mult[A] with numeral[A] with Rings.semiring[A] {
-}
-object semiring_numeral {
-  implicit def `Nat.semiring_numeral_nat`: semiring_numeral[Nat.nat] = new
-    semiring_numeral[Nat.nat] {
-    val `Groups.plus` = (a: Nat.nat, b: Nat.nat) => Nat.plus_nata(a, b)
-    val `Groups.one` = Nat.one_nata
-    val `Groups.times` = (a: Nat.nat, b: Nat.nat) => Nat.times_nata(a, b)
-  }
-}
-
 abstract sealed class num
 final case class One() extends num
 final case class Bit0(a: num) extends num
 final case class Bit1(a: num) extends num
-
-def nat_of_num(x0: num): Nat.nat = x0 match {
-  case Bit1(n) => {
-                    val m: Nat.nat = nat_of_num(n);
-                    Nat.Suc(Nat.plus_nata(m, m))
-                  }
-  case Bit0(n) => {
-                    val m: Nat.nat = nat_of_num(n);
-                    Nat.plus_nata(m, m)
-                  }
-  case One() => Nat.one_nata
-}
-
-def numeral[A : numeral](x0: num): A = x0 match {
-  case Bit1(n) => {
-                    val m: A = numeral[A](n);
-                    Groups.plus[A](Groups.plus[A](m, m), Groups.one[A])
-                  }
-  case Bit0(n) => {
-                    val m: A = numeral[A](n);
-                    Groups.plus[A](m, m)
-                  }
-  case One() => Groups.one[A]
-}
 
 } /* object Num */
 
 object Nat {
 
 abstract sealed class nat
-final case class zero_nata() extends nat
-final case class Suc(a: nat) extends nat
+final case class Nata(a: BigInt) extends nat
 
-def equal_nata(x0: nat, x1: nat): Boolean = (x0, x1) match {
-  case (zero_nata(), Suc(x2)) => false
-  case (Suc(x2), zero_nata()) => false
-  case (Suc(x2), Suc(y2)) => equal_nata(x2, y2)
-  case (zero_nata(), zero_nata()) => true
-}
+def equal_nata(m: nat, n: nat): Boolean =
+  Code_Numeral.integer_of_nat(m) == Code_Numeral.integer_of_nat(n)
 
-def plus_nata(x0: nat, n: nat): nat = (x0, n) match {
-  case (Suc(m), n) => plus_nata(m, Suc(n))
-  case (zero_nata(), n) => n
-}
+def plus_nata(m: nat, n: nat): nat =
+  Nata(Code_Numeral.integer_of_nat(m) + Code_Numeral.integer_of_nat(n))
 
-def times_nata(x0: nat, n: nat): nat = (x0, n) match {
-  case (zero_nata(), n) => zero_nata()
-  case (Suc(m), n) => plus_nata(n, times_nata(m, n))
-}
+def zero_nata: nat = Nata(BigInt(0))
 
-def one_nata: nat = Suc(zero_nata())
+def less_eq_nat(m: nat, n: nat): Boolean =
+  Code_Numeral.integer_of_nat(m) <= Code_Numeral.integer_of_nat(n)
 
-def less_nat(m: nat, x1: nat): Boolean = (m, x1) match {
-  case (m, Suc(n)) => less_eq_nat(m, n)
-  case (n, zero_nata()) => false
-}
+def less_nat(m: nat, n: nat): Boolean =
+  Code_Numeral.integer_of_nat(m) < Code_Numeral.integer_of_nat(n)
 
-def less_eq_nat(x0: nat, n: nat): Boolean = (x0, n) match {
-  case (Suc(m), n) => less_nat(m, n)
-  case (zero_nata(), n) => true
-}
+def one_nat: nat = Nata(BigInt(1))
+
+def Suc(n: nat): nat = plus_nata(n, one_nat)
 
 } /* object Nat */
+
+object Code_Numeral {
+
+def one_integera: BigInt = BigInt(1)
+
+def integer_of_nat(x0: Nat.nat): BigInt = x0 match {
+  case Nat.Nata(x) => x
+}
+
+def nat_of_integer(k: BigInt): Nat.nat =
+  Nat.Nata(Orderings.max[BigInt](BigInt(0), k))
+
+def integer_of_int(x0: Int.int): BigInt = x0 match {
+  case Int.int_of_integer(k) => k
+}
+
+} /* object Code_Numeral */
+
+object Int {
+
+abstract sealed class int
+final case class int_of_integer(a: BigInt) extends int
+
+def less_int(k: int, l: int): Boolean =
+  Code_Numeral.integer_of_int(k) < Code_Numeral.integer_of_int(l)
+
+def plus_int(k: int, l: int): int =
+  int_of_integer(Code_Numeral.integer_of_int(k) +
+                   Code_Numeral.integer_of_int(l))
+
+def equal_int(k: int, l: int): Boolean =
+  Code_Numeral.integer_of_int(k) == Code_Numeral.integer_of_int(l)
+
+def minus_int(k: int, l: int): int =
+  int_of_integer(Code_Numeral.integer_of_int(k) -
+                   Code_Numeral.integer_of_int(l))
+
+} /* object Int */
 
 object Lista {
 
@@ -682,7 +491,7 @@ def filter[A](p: A => Boolean, x1: List[A]): List[A] = (p, x1) match {
 
 def member[A : HOL.equal](x0: List[A], y: A): Boolean = (x0, y) match {
   case (Nil, y) => false
-  case (x :: xs, y) => HOL.eq[A](x, y) || member[A](xs, y)
+  case (x :: xs, y) => (HOL.eq[A](x, y)) || (member[A](xs, y))
 }
 
 def insert[A : HOL.equal](x: A, xs: List[A]): List[A] =
@@ -712,7 +521,7 @@ def gen_length[A](n: Nat.nat, x1: List[A]): Nat.nat = (n, x1) match {
 
 def list_all[A](p: A => Boolean, x1: List[A]): Boolean = (p, x1) match {
   case (p, Nil) => true
-  case (p, x :: xs) => p(x) && list_all[A](p, xs)
+  case (p, x :: xs) => (p(x)) && (list_all[A](p, xs))
 }
 
 def insort_key[A, B : Orderings.linorder](f: A => B, x: A, xa2: List[A]):
@@ -730,14 +539,14 @@ def sort_key[A, B : Orderings.linorder](f: A => B, xs: List[A]): List[A] =
                       xs)).apply(Nil)
 
 def size_list[A]: (List[A]) => Nat.nat =
-  ((a: List[A]) => gen_length[A](Nat.zero_nata(), a))
+  ((a: List[A]) => gen_length[A](Nat.zero_nata, a))
 
 def equal_list[A : HOL.equal](x0: List[A], x1: List[A]): Boolean = (x0, x1)
   match {
   case (Nil, x21 :: x22) => false
   case (x21 :: x22, Nil) => false
   case (x21 :: x22, y21 :: y22) =>
-    HOL.eq[A](x21, y21) && equal_list[A](x22, y22)
+    (HOL.eq[A](x21, y21)) && (equal_list[A](x22, y22))
   case (Nil, Nil) => true
 }
 
@@ -818,7 +627,7 @@ def equal_boola(p: Boolean, pa: Boolean): Boolean = (p, pa) match {
 
 def equal_proda[A : HOL.equal, B : HOL.equal](x0: (A, B), x1: (A, B)): Boolean =
   (x0, x1) match {
-  case ((x1, x2), (y1, y2)) => HOL.eq[A](x1, y1) && HOL.eq[B](x2, y2)
+  case ((x1, x2), (y1, y2)) => (HOL.eq[A](x1, y1)) && (HOL.eq[B](x2, y2))
 }
 
 def equal_unita(u: Unit, v: Unit): Boolean = true
@@ -856,64 +665,31 @@ final case class
 def equal_chara(x0: char, x1: char): Boolean = (x0, x1) match {
   case (Char(x1, x2, x3, x4, x5, x6, x7, x8),
          Char(y1, y2, y3, y4, y5, y6, y7, y8))
-    => Product_Type.equal_boola(x1, y1) &&
-         (Product_Type.equal_boola(x2, y2) &&
-           (Product_Type.equal_boola(x3, y3) &&
-             (Product_Type.equal_boola(x4, y4) &&
-               (Product_Type.equal_boola(x5, y5) &&
-                 (Product_Type.equal_boola(x6, y6) &&
-                   (Product_Type.equal_boola(x7, y7) &&
-                     Product_Type.equal_boola(x8, y8)))))))
+    => (Product_Type.equal_boola(x1, y1)) && ((Product_Type.equal_boola(x2,
+                                 y2)) && ((Product_Type.equal_boola(x3,
+                             y3)) && ((Product_Type.equal_boola(x4,
+                         y4)) && ((Product_Type.equal_boola(x5,
+                     y5)) && ((Product_Type.equal_boola(x6,
+                 y6)) && ((Product_Type.equal_boola(x7,
+             y7)) && (Product_Type.equal_boola(x8, y8))))))))
 }
 
-def digit0(x0: char): Boolean = x0 match {
-  case Char(x1, x2, x3, x4, x5, x6, x7, x8) => x1
+def integer_of_char(x0: char): BigInt = x0 match {
+  case Char(b0, b1, b2, b3, b4, b5, b6, b7) =>
+    ((((((Rings.of_bool[BigInt](b7) * BigInt(2) + Rings.of_bool[BigInt](b6)) *
+           BigInt(2) +
+          Rings.of_bool[BigInt](b5)) *
+          BigInt(2) +
+         Rings.of_bool[BigInt](b4)) *
+         BigInt(2) +
+        Rings.of_bool[BigInt](b3)) *
+        BigInt(2) +
+       Rings.of_bool[BigInt](b2)) *
+       BigInt(2) +
+      Rings.of_bool[BigInt](b1)) *
+      BigInt(2) +
+      Rings.of_bool[BigInt](b0)
 }
-
-def digit1(x0: char): Boolean = x0 match {
-  case Char(x1, x2, x3, x4, x5, x6, x7, x8) => x2
-}
-
-def digit2(x0: char): Boolean = x0 match {
-  case Char(x1, x2, x3, x4, x5, x6, x7, x8) => x3
-}
-
-def digit3(x0: char): Boolean = x0 match {
-  case Char(x1, x2, x3, x4, x5, x6, x7, x8) => x4
-}
-
-def digit4(x0: char): Boolean = x0 match {
-  case Char(x1, x2, x3, x4, x5, x6, x7, x8) => x5
-}
-
-def digit5(x0: char): Boolean = x0 match {
-  case Char(x1, x2, x3, x4, x5, x6, x7, x8) => x6
-}
-
-def digit6(x0: char): Boolean = x0 match {
-  case Char(x1, x2, x3, x4, x5, x6, x7, x8) => x7
-}
-
-def digit7(x0: char): Boolean = x0 match {
-  case Char(x1, x2, x3, x4, x5, x6, x7, x8) => x8
-}
-
-def of_char[A : Rings.comm_semiring_1](c: char): A =
-  Groups.plus[A](Groups.times[A](Groups.plus[A](Groups.times[A](Groups.plus[A](Groups.times[A](Groups.plus[A](Groups.times[A](Groups.plus[A](Groups.times[A](Groups.plus[A](Groups.times[A](Groups.plus[A](Groups.times[A](Rings.of_bool[A](digit7(c)),
-                    Num.numeral[A](Num.Bit0(Num.One()))),
-    Rings.of_bool[A](digit6(c))),
-                             Num.numeral[A](Num.Bit0(Num.One()))),
-             Rings.of_bool[A](digit5(c))),
-                                      Num.numeral[A](Num.Bit0(Num.One()))),
-                      Rings.of_bool[A](digit4(c))),
-       Num.numeral[A](Num.Bit0(Num.One()))),
-                               Rings.of_bool[A](digit3(c))),
-                Num.numeral[A](Num.Bit0(Num.One()))),
-Rings.of_bool[A](digit2(c))),
-                         Num.numeral[A](Num.Bit0(Num.One()))),
-         Rings.of_bool[A](digit1(c))),
-                                  Num.numeral[A](Num.Bit0(Num.One()))),
-                  Rings.of_bool[A](digit0(c)))
 
 } /* object String */
 
@@ -969,9 +745,9 @@ def equal_aexpa(x0: aexp, x1: aexp): Boolean = (x0, x1) match {
   case (L(x1), V(x2)) => false
   case (V(x2), L(x1)) => false
   case (Minus(x41, x42), Minus(y41, y42)) =>
-    equal_aexpa(x41, y41) && equal_aexpa(x42, y42)
+    (equal_aexpa(x41, y41)) && (equal_aexpa(x42, y42))
   case (Plus(x31, x32), Plus(y31, y32)) =>
-    equal_aexpa(x31, y31) && equal_aexpa(x32, y32)
+    (equal_aexpa(x31, y31)) && (equal_aexpa(x32, y32))
   case (V(x2), V(y2)) => VName.equal_vnamea(x2, y2)
   case (L(x1), L(y1)) => Value.equal_valuea(x1, y1)
 }
@@ -1077,11 +853,11 @@ def equal_gexpa(x0: gexp, x1: gexp): Boolean = (x0, x1) match {
   case (Eq(x21, x22), Bc(x1)) => false
   case (Null(x5), Null(y5)) => VName.equal_vnamea(x5, y5)
   case (Nor(x41, x42), Nor(y41, y42)) =>
-    equal_gexpa(x41, y41) && equal_gexpa(x42, y42)
+    (equal_gexpa(x41, y41)) && (equal_gexpa(x42, y42))
   case (Gt(x31, x32), Gt(y31, y32)) =>
-    AExp.equal_aexpa(x31, y31) && AExp.equal_aexpa(x32, y32)
+    (AExp.equal_aexpa(x31, y31)) && (AExp.equal_aexpa(x32, y32))
   case (Eq(x21, x22), Eq(y21, y22)) =>
-    AExp.equal_aexpa(x21, y21) && AExp.equal_aexpa(x22, y22)
+    (AExp.equal_aexpa(x21, y21)) && (AExp.equal_aexpa(x22, y22))
   case (Bc(x1), Bc(y1)) => Product_Type.equal_boola(x1, y1)
 }
 
@@ -1122,12 +898,13 @@ def equal_transition_exta[A : HOL.equal](x0: transition_ext[A],
   (x0, x1) match {
   case (transition_exta(labela, aritya, guarda, outputsa, updatesa, morea),
          transition_exta(label, arity, guard, outputs, updates, more))
-    => Lista.equal_list[String.char](labela, label) &&
-         (Nat.equal_nata(aritya, arity) &&
-           (Lista.equal_list[GExp.gexp](guarda, guard) &&
-             (Lista.equal_list[AExp.aexp](outputsa, outputs) &&
-               (Lista.equal_list[(VName.vname, AExp.aexp)](updatesa, updates) &&
-                 HOL.eq[A](morea, more)))))
+    => (Lista.equal_list[String.char](labela,
+                                       label)) && ((Nat.equal_nata(aritya,
+                            arity)) && ((Lista.equal_list[GExp.gexp](guarda,
+                              guard)) && ((Lista.equal_list[AExp.aexp](outputsa,
+                                outputs)) && ((Lista.equal_list[(VName.vname,
+                          AExp.aexp)](updatesa,
+                                       updates)) && (HOL.eq[A](morea, more))))))
 }
 
 def more[A](x0: transition_ext[A]): A = x0 match {
@@ -1242,13 +1019,13 @@ def sup_fset[A : HOL.equal](xb: fset[A], xc: fset[A]): fset[A] =
   Abs_fset[A](Set.sup_set[A](fset[A](xb), fset[A](xc)))
 
 def size_fseta[A : HOL.equal]: (fset[A]) => Nat.nat =
-  ((a: fset[A]) => size_fset[A](((_: A) => Nat.zero_nata()), a))
+  ((a: fset[A]) => size_fset[A](((_: A) => Nat.zero_nata), a))
 
 def less_eq_fset[A : HOL.equal](xa: fset[A], xc: fset[A]): Boolean =
   Set.less_eq_set[A](fset[A](xa), fset[A](xc))
 
 def equal_fset[A : HOL.equal](a: fset[A], b: fset[A]): Boolean =
-  less_eq_fset[A](a, b) && less_eq_fset[A](b, a)
+  (less_eq_fset[A](a, b)) && (less_eq_fset[A](b, a))
 
 def minus_fset[A : HOL.equal](xb: fset[A], xc: fset[A]): fset[A] =
   Abs_fset[A](Set.minus_set[A](fset[A](xb), fset[A](xc)))
@@ -1263,8 +1040,9 @@ def apply_guards(x0: List[GExp.gexp], uu: VName.vname => Option[Value.value]):
   (x0, uu) match {
   case (Nil, uu) => true
   case (h :: t, s) =>
-    Optiona.equal_option[Boolean](GExp.gval(h, s), Some[Boolean](true)) &&
-      apply_guards(t, s)
+    (Optiona.equal_option[Boolean](GExp.gval(h, s),
+                                    Some[Boolean](true))) && (apply_guards(t,
+                                    s))
 }
 
 def input2state(x0: List[Value.value], uu: Nat.nat):
@@ -1275,7 +1053,7 @@ def input2state(x0: List[Value.value], uu: Nat.nat):
   case (h :: t, i) =>
     ((x: VName.vname) =>
       (if (VName.equal_vnamea(x, VName.I(i))) Some[Value.value](h)
-        else (input2state(t, Nat.plus_nata(i, Nat.one_nata))).apply(x)))
+        else (input2state(t, Nat.plus_nata(i, Nat.one_nat))).apply(x)))
 }
 
 def join_ir(i: List[Value.value], r: VName.vname => Option[Value.value]):
@@ -1283,7 +1061,7 @@ def join_ir(i: List[Value.value], r: VName.vname => Option[Value.value]):
   =
   ((a: VName.vname) =>
     (a match {
-       case VName.I(n) => (input2state(i, Nat.one_nata)).apply(VName.I(n))
+       case VName.I(n) => (input2state(i, Nat.one_nat)).apply(VName.I(n))
        case VName.R(n) => r(VName.R(n))
      }))
 
@@ -1319,13 +1097,11 @@ def possible_steps(e: FSet.fset[((Nat.nat, Nat.nat),
                          ({
                             val (origin, _): (Nat.nat, Nat.nat) = aa;
                             ((t: Transition.transition_ext[Unit]) =>
-                              Nat.equal_nata(origin, s) &&
-                                (Lista.equal_list[String.char](Transition.Label[Unit](t),
-                        l) &&
-                                  (Nat.equal_nata(Lista.size_list[Value.value].apply(i),
-           Transition.Arity[Unit](t)) &&
-                                    apply_guards(Transition.Guard[Unit](t),
-          join_ir(i, r)))))
+                              (Nat.equal_nata(origin,
+       s)) && ((Lista.equal_list[String.char](Transition.Label[Unit](t),
+       l)) && ((Nat.equal_nata(Lista.size_list[Value.value].apply(i),
+                                Transition.Arity[Unit](t))) && (apply_guards(Transition.Guard[Unit](t),
+                                      join_ir(i, r))))))
                           })(b)
                        }),
                       e))
@@ -1362,7 +1138,7 @@ def step(e: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
   =
   (if (Nat.equal_nata(FSet.size_fseta[(Nat.nat,
 Transition.transition_ext[Unit])].apply(possible_steps(e, s, r, l, i)),
-                       Nat.one_nata))
+                       Nat.one_nat))
     {
       val (sa, t): (Nat.nat, Transition.transition_ext[Unit]) =
         FSet.fthe_elem[(Nat.nat,
@@ -1378,62 +1154,22 @@ Transition.transition_ext[Unit])].apply(possible_steps(e, s, r, l, i)),
     }
     else None)
 
-def observe_all(uu: FSet.fset[((Nat.nat, Nat.nat),
-                                Transition.transition_ext[Unit])],
-                 uv: Nat.nat, uw: VName.vname => Option[Value.value],
-                 x3: List[(List[String.char], List[Value.value])]):
-      List[(Transition.transition_ext[Unit],
-             (Nat.nat,
-               (List[Option[Value.value]],
-                 VName.vname => Option[Value.value])))]
-  =
-  (uu, uv, uw, x3) match {
-  case (uu, uv, uw, Nil) => Nil
-  case (e, s, r, h :: t) =>
-    (step(e, s, r, Product_Type.fst[List[String.char], List[Value.value]](h),
-           Product_Type.snd[List[String.char], List[Value.value]](h))
-       match {
-       case None => Nil
-       case Some((transition, (sa, (outputs, updated)))) =>
-         (transition, (sa, (outputs, updated))) ::
-           observe_all(e, sa, updated, t)
-     })
-}
-
-def observe_trace(e: FSet.fset[((Nat.nat, Nat.nat),
-                                 Transition.transition_ext[Unit])],
-                   s: Nat.nat, r: VName.vname => Option[Value.value],
-                   t: List[(List[String.char], List[Value.value])]):
-      List[List[Option[Value.value]]]
-  =
-  Lista.map[(Transition.transition_ext[Unit],
-              (Nat.nat,
-                (List[Option[Value.value]],
-                  VName.vname => Option[Value.value]))),
-             List[Option[Value.value]]](((a:
-    (Transition.transition_ext[Unit],
-      (Nat.nat,
-        (List[Option[Value.value]], VName.vname => Option[Value.value]))))
-   =>
-  {
-    val (_, (_, (y, _))):
-          (Transition.transition_ext[Unit],
-            (Nat.nat,
-              (List[Option[Value.value]], VName.vname => Option[Value.value])))
-      = a;
-    y
-  }),
- observe_all(e, s, r, t))
-
 } /* object EFSM */
+
+object Code_Target_Nat {
+
+def nat_of_char(c: String.char): Nat.nat = Nat.Nata(String.integer_of_char(c))
+
+} /* object Code_Target_Nat */
 
 object Char_ord {
 
 def less_eq_char(c1: String.char, c2: String.char): Boolean =
-  Nat.less_eq_nat(String.of_char[Nat.nat](c1), String.of_char[Nat.nat](c2))
+  Nat.less_eq_nat(Code_Target_Nat.nat_of_char(c1),
+                   Code_Target_Nat.nat_of_char(c2))
 
 def less_char(c1: String.char, c2: String.char): Boolean =
-  Nat.less_nat(String.of_char[Nat.nat](c1), String.of_char[Nat.nat](c2))
+  Nat.less_nat(Code_Target_Nat.nat_of_char(c1), Code_Target_Nat.nat_of_char(c2))
 
 } /* object Char_ord */
 
@@ -1444,8 +1180,8 @@ def less_eq_prod[A : Orderings.ord, B : Orderings.ord](x0: (A, B), x1: (A, B)):
   =
   (x0, x1) match {
   case ((x1, y1), (x2, y2)) =>
-    Orderings.less[A](x1, x2) ||
-      Orderings.less_eq[A](x1, x2) && Orderings.less_eq[B](y1, y2)
+    (Orderings.less[A](x1, x2)) || ((Orderings.less_eq[A](x1,
+                   x2)) && (Orderings.less_eq[B](y1, y2)))
 }
 
 def less_prod[A : Orderings.ord, B : Orderings.ord](x0: (A, B), x1: (A, B)):
@@ -1453,8 +1189,8 @@ def less_prod[A : Orderings.ord, B : Orderings.ord](x0: (A, B), x1: (A, B)):
   =
   (x0, x1) match {
   case ((x1, y1), (x2, y2)) =>
-    Orderings.less[A](x1, x2) ||
-      Orderings.less_eq[A](x1, x2) && Orderings.less[B](y1, y2)
+    (Orderings.less[A](x1, x2)) || ((Orderings.less_eq[A](x1,
+                   x2)) && (Orderings.less[B](y1, y2)))
 }
 
 } /* object Product_Lexorder */
@@ -1466,7 +1202,7 @@ def less_list[A : HOL.equal : Orderings.order](xs: List[A], x1: List[A]):
   =
   (xs, x1) match {
   case (x :: xs, y :: ys) =>
-    Orderings.less[A](x, y) || HOL.eq[A](x, y) && less_list[A](xs, ys)
+    (Orderings.less[A](x, y)) || ((HOL.eq[A](x, y)) && (less_list[A](xs, ys)))
   case (Nil, x :: xs) => true
   case (xs, Nil) => false
 }
@@ -1502,17 +1238,19 @@ def less_aexpr(x0: AExp.aexp, x1: AExp.aexp): Boolean = (x0, x1) match {
   case (AExp.Plus(e1, e2), AExp.L(l2)) => false
   case (AExp.Plus(e1, e2), AExp.V(v2)) => false
   case (AExp.Plus(e1a, e2a), AExp.Plus(e1, e2)) =>
-    less_aexpr(e1a, e1) || AExp.equal_aexpa(e1a, e1) && less_aexpr(e2a, e2)
+    (less_aexpr(e1a, e1)) || ((AExp.equal_aexpa(e1a,
+         e1)) && (less_aexpr(e2a, e2)))
   case (AExp.Plus(e1a, e2a), AExp.Minus(e1, e2)) => true
   case (AExp.Minus(e1, e2), AExp.L(l2)) => false
   case (AExp.Minus(e1, e2), AExp.V(v2)) => false
   case (AExp.Minus(e1a, e2a), AExp.Plus(e1, e2)) => false
   case (AExp.Minus(e1a, e2a), AExp.Minus(e1, e2)) =>
-    less_aexpr(e1a, e1) || AExp.equal_aexpa(e1a, e1) && less_aexpr(e2a, e2)
+    (less_aexpr(e1a, e1)) || ((AExp.equal_aexpa(e1a,
+         e1)) && (less_aexpr(e2a, e2)))
 }
 
 def less_eq_aexp(e1: AExp.aexp, e2: AExp.aexp): Boolean =
-  less_aexpr(e1, e2) || AExp.equal_aexpa(e1, e2)
+  (less_aexpr(e1, e2)) || (AExp.equal_aexpa(e1, e2))
 
 def less_aexp(e1: AExp.aexp, e2: AExp.aexp): Boolean = less_aexpr(e1, e2)
 
@@ -1524,21 +1262,24 @@ def less_gexpr(x0: GExp.gexp, x1: GExp.gexp): Boolean = (x0, x1) match {
   case (GExp.Bc(b1), GExp.Null(v)) => true
   case (GExp.Eq(e1, e2), GExp.Bc(b2)) => false
   case (GExp.Eq(e1a, e2a), GExp.Eq(e1, e2)) =>
-    less_aexpr(e1a, e1) || AExp.equal_aexpa(e1a, e1) && less_aexpr(e2a, e2)
+    (less_aexpr(e1a, e1)) || ((AExp.equal_aexpa(e1a,
+         e1)) && (less_aexpr(e2a, e2)))
   case (GExp.Eq(e1a, e2a), GExp.Gt(e1, e2)) => true
   case (GExp.Eq(e1, e2), GExp.Nor(g1, g2)) => true
   case (GExp.Eq(e1, e2), GExp.Null(v)) => true
   case (GExp.Gt(e1, e2), GExp.Bc(b2)) => false
   case (GExp.Gt(e1a, e2a), GExp.Eq(e1, e2)) => false
   case (GExp.Gt(e1a, e2a), GExp.Gt(e1, e2)) =>
-    less_aexpr(e1a, e1) || AExp.equal_aexpa(e1a, e1) && less_aexpr(e2a, e2)
+    (less_aexpr(e1a, e1)) || ((AExp.equal_aexpa(e1a,
+         e1)) && (less_aexpr(e2a, e2)))
   case (GExp.Gt(e1, e2), GExp.Nor(g1, g2)) => true
   case (GExp.Gt(e1, e2), GExp.Null(v)) => true
   case (GExp.Nor(g1, g2), GExp.Bc(b2)) => false
   case (GExp.Nor(g1, g2), GExp.Eq(e1, e2)) => false
   case (GExp.Nor(g1, g2), GExp.Gt(e1, e2)) => false
   case (GExp.Nor(g1a, g2a), GExp.Nor(g1, g2)) =>
-    less_gexpr(g1a, g1) || GExp.equal_gexpa(g1a, g1) && less_gexpr(g2a, g2)
+    (less_gexpr(g1a, g1)) || ((GExp.equal_gexpa(g1a,
+         g1)) && (less_gexpr(g2a, g2)))
   case (GExp.Nor(g1, g2), GExp.Null(v)) => true
   case (GExp.Null(v), GExp.Bc(b2)) => false
   case (GExp.Null(v), GExp.Eq(e1, e2)) => false
@@ -1548,7 +1289,7 @@ def less_gexpr(x0: GExp.gexp, x1: GExp.gexp): Boolean = (x0, x1) match {
 }
 
 def less_eq_gexp(e1: GExp.gexp, e2: GExp.gexp): Boolean =
-  less_gexpr(e1, e2) || GExp.equal_gexpa(e1, e2)
+  (less_gexpr(e1, e2)) || (GExp.equal_gexpa(e1, e2))
 
 def less_gexp(e1: GExp.gexp, e2: GExp.gexp): Boolean = less_gexpr(e1, e2)
 
@@ -1594,9 +1335,28 @@ def less_eq_transition_ext[A : HOL.equal : Orderings.linorder](t1:
                         t2: Transition.transition_ext[A]):
       Boolean
   =
-  less_transition_ext[A](t1, t2) || Transition.equal_transition_exta[A](t1, t2)
+  (less_transition_ext[A](t1, t2)) || (Transition.equal_transition_exta[A](t1,
+                                    t2))
 
 } /* object Transition_Ordering */
+
+object Code_Generation {
+
+  def scalaChoiceAux(ta: Transition.transition_ext[Unit],
+                   t: Transition.transition_ext[Unit]):
+        Boolean
+    =
+  false
+
+def choice_code(ta: Transition.transition_ext[Unit],
+                 t: Transition.transition_ext[Unit]):
+      Boolean
+  =
+  (Lista.equal_list[String.char](Transition.Label[Unit](ta),
+                                  Transition.Label[Unit](t))) && ((Nat.equal_nata(Transition.Arity[Unit](ta),
+   Transition.Arity[Unit](t))) && (scalaChoiceAux(ta, t)))
+
+} /* object Code_Generation */
 
 object FSet_Utils {
 
@@ -1671,7 +1431,7 @@ def maxS(t: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]):
                          Transition.transition_ext[Unit])](t,
                     FSet.bot_fset[((Nat.nat, Nat.nat),
                                     Transition.transition_ext[Unit])]))
-    Nat.zero_nata()
+    Nat.zero_nata
     else FSet.fMax[Nat.nat](FSet.sup_fset[Nat.nat](FSet.fimage[((Nat.nat,
                           Nat.nat),
                          Transition.transition_ext[Unit]),
@@ -1758,7 +1518,7 @@ val (ab, b):
                                      (if (Nat.less_nat(FSet.size_fseta[(Nat.nat,
                                  (Transition.transition_ext[Unit],
                                    Nat.nat))].apply(nt),
-                Num.nat_of_num(Num.Bit0(Num.One()))))
+                Code_Numeral.nat_of_integer(BigInt(2))))
                                        FSet.bot_fset[(Nat.nat,
                ((Nat.nat, Nat.nat),
                  ((Transition.transition_ext[Unit], Nat.nat),
@@ -1835,6 +1595,13 @@ def outgoing_transitions(n: Nat.nat,
      }),
     t))
 
+def choice:
+      (Transition.transition_ext[Unit]) =>
+        (Transition.transition_ext[Unit]) => Boolean
+  =
+  ((a: Transition.transition_ext[Unit]) =>
+    (b: Transition.transition_ext[Unit]) => Code_Generation.choice_code(a, b))
+
 def nondeterministic_pairs(t: FSet.fset[(Nat.nat,
   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
       FSet.fset[(Nat.nat,
@@ -1874,12 +1641,10 @@ val (ab, b):
              ((Transition.transition_ext[Unit], Nat.nat),
                (Transition.transition_ext[Unit], Nat.nat))
          = ac;
-       ScalaChoice(Product_Type.fst[Transition.transition_ext[Unit],
-                                     Nat.nat](tb),
-                    Product_Type.fst[Transition.transition_ext[Unit],
-                                      Nat.nat](ta)) &&
-         Product_Lexorder.less_eq_prod[Transition.transition_ext[Unit],
-Nat.nat](tb, ta)
+       choice.apply(Product_Type.fst[Transition.transition_ext[Unit],
+                                      Nat.nat](tb)).apply(Product_Type.fst[Transition.transition_ext[Unit],
+                                    Nat.nat](ta)) && (Product_Lexorder.less_eq_prod[Transition.transition_ext[Unit],
+     Nat.nat](tb, ta))
      })
  })(b)
                                       }),
@@ -1915,16 +1680,16 @@ Transition.transition_ext[Unit]))],
                                  ((Nat.nat, Nat.nat),
                                    Transition.transition_ext[Unit])))
                               =>
-                             ! (Product_Type.equal_proda[(Nat.nat, Nat.nat),
-                  Transition.transition_ext[Unit]](Product_Type.snd[Nat.nat,
-                             ((Nat.nat, Nat.nat),
-                               Transition.transition_ext[Unit])](x),
-            ((from, to), orig))) &&
-                               ! (Product_Type.equal_proda[(Nat.nat, Nat.nat),
-                    Transition.transition_ext[Unit]](Product_Type.snd[Nat.nat,
-                               ((Nat.nat, Nat.nat),
-                                 Transition.transition_ext[Unit])](x),
-              ((from, to), newa)))),
+                             (! (Product_Type.equal_proda[(Nat.nat, Nat.nat),
+                   Transition.transition_ext[Unit]](Product_Type.snd[Nat.nat,
+                              ((Nat.nat, Nat.nat),
+                                Transition.transition_ext[Unit])](x),
+             ((from, to),
+               orig)))) && (! (Product_Type.equal_proda[(Nat.nat, Nat.nat),
+                 Transition.transition_ext[Unit]](Product_Type.snd[Nat.nat,
+                            ((Nat.nat, Nat.nat),
+                              Transition.transition_ext[Unit])](x),
+           ((from, to), newa))))),
                             t),
                 FSet.finsert[(Nat.nat,
                                ((Nat.nat, Nat.nat),
@@ -1948,6 +1713,17 @@ def maxUID(e: FSet.fset[(Nat.nat,
                        ((Nat.nat, Nat.nat),
                          Transition.transition_ext[Unit])](a)),
     e))
+
+    def scalaDirectlySubsumes(a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
+                           b: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])], c: Nat.nat,
+                           d: Transition.transition_ext[Unit], e: Transition.transition_ext[Unit]):
+      Boolean
+  =
+  false
+
+  def scalaNondeterministicSimulates(a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
+                                     b: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
+                                     c: Nat.nat => Nat.nat): Boolean = false
 
 def easy_merge(oldEFSM:
                  FSet.fset[(Nat.nat,
@@ -1974,12 +1750,12 @@ def easy_merge(oldEFSM:
                          ((Nat.nat, Nat.nat),
                            Transition.transition_ext[Unit]))]]
   =
-  (if (ScalaDirectlySubsumes(tm(oldEFSM), tm(newEFSM), t1FromOld, t2, t1))
+  (if (scalaDirectlySubsumes(tm(oldEFSM), tm(newEFSM), t1FromOld, t2, t1))
     Some[FSet.fset[(Nat.nat,
                      ((Nat.nat, Nat.nat),
                        Transition.transition_ext[Unit]))]](replace_transition(newEFSM,
                                        u1, newFrom, t2NewTo, t1, t2))
-    else (if (ScalaDirectlySubsumes(tm(oldEFSM), tm(newEFSM), t2FromOld, t1,
+    else (if (scalaDirectlySubsumes(tm(oldEFSM), tm(newEFSM), t2FromOld, t1,
                                      t2))
            Some[FSet.fset[(Nat.nat,
                             ((Nat.nat, Nat.nat),
@@ -1988,18 +1764,18 @@ def easy_merge(oldEFSM:
            else (((((maker(oldEFSM))(t1FromOld))(t1))(t2FromOld))(t2) match {
                    case None => None
                    case Some(t) =>
-                     (if (ScalaDirectlySubsumes(tm(oldEFSM), tm(newEFSM),
-         t1FromOld, t1, t) &&
-                            ScalaDirectlySubsumes(tm(oldEFSM), tm(newEFSM),
-           t2FromOld, t2, t))
+                     (if ((scalaDirectlySubsumes(tm(oldEFSM), tm(newEFSM),
+          t1FromOld, t1,
+          t)) && (scalaDirectlySubsumes(tm(oldEFSM), tm(newEFSM), t2FromOld, t2,
+ t)))
                        Some[FSet.fset[(Nat.nat,
 ((Nat.nat, Nat.nat),
   Transition.transition_ext[Unit]))]](replace_transition(replace_transition(newEFSM,
                                      Nat.plus_nata(maxUID(newEFSM),
-            Nat.one_nata),
+            Nat.one_nat),
                                      newFrom, t2NewTo, t2, t),
                   Nat.plus_nata(maxUID(newEFSM),
-                                 Num.nat_of_num(Num.Bit0(Num.One()))),
+                                 Code_Numeral.nat_of_integer(BigInt(2))),
                   newFrom, t1NewTo, t1, t))
                        else None)
                  })))
@@ -2049,7 +1825,7 @@ Transition.transition_ext[Unit]))]) =>
          (((((modifier(t1))(t2))(newFrom))(newEFSM))(oldEFSM) match {
             case None => None
             case Some((t, (_, h_o_l_d))) =>
-              (if (ScalaNondeterministicSimulates(tm(t), tm(oldEFSM), h_o_l_d))
+              (if (scalaNondeterministicSimulates(tm(t), tm(oldEFSM), h_o_l_d))
                 Some[FSet.fset[(Nat.nat,
                                  ((Nat.nat, Nat.nat),
                                    Transition.transition_ext[Unit]))]](t)
@@ -2353,7 +2129,7 @@ def inference_step(uu: FSet.fset[(Nat.nat,
   (uu, x1, uv, uw) match {
   case (uu, Nil, uv, uw) => None
   case (ta, (s, (s1, s2)) :: t, g, m) =>
-    (if (Nat.less_nat(Nat.zero_nata(), s))
+    (if (Nat.less_nat(Nat.zero_nata, s))
       (merge(ta, s1, s2, g, m) match {
          case None => inference_step(ta, t, g, m)
          case Some(a) =>
@@ -2457,7 +2233,7 @@ def make_guard(x0: List[Value.value], uu: Nat.nat): List[GExp.gexp] = (x0, uu)
   case (Nil, uu) => Nil
   case (h :: t, n) =>
     GExp.Eq(AExp.V(VName.I(n)), AExp.L(h)) ::
-      make_guard(t, Nat.plus_nata(n, Nat.one_nata))
+      make_guard(t, Nat.plus_nata(n, Nat.one_nat))
 }
 
 def make_branch(e: FSet.fset[((Nat.nat, Nat.nat),
@@ -2474,13 +2250,13 @@ def make_branch(e: FSet.fset[((Nat.nat, Nat.nat),
        case None =>
          make_branch(FSet.finsert[((Nat.nat, Nat.nat),
                                     Transition.transition_ext[Unit])](((s,
-                                 Nat.plus_nata(maxS(e), Nat.one_nata)),
+                                 Nat.plus_nata(maxS(e), Nat.one_nat)),
                                 Transition.transition_exta[Unit](label,
                           Lista.size_list[Value.value].apply(inputs),
-                          make_guard(inputs, Nat.one_nata),
+                          make_guard(inputs, Nat.one_nat),
                           make_outputs(outputs), Nil, ())),
                                e),
-                      Nat.plus_nata(maxS(e), Nat.one_nata), r, t)
+                      Nat.plus_nata(maxS(e), Nat.one_nat), r, t)
        case Some((_, (sa, (_, updated)))) => make_branch(e, sa, updated, t)
      })
 }
@@ -2494,7 +2270,7 @@ def make_pta(x0: List[List[(List[String.char],
   (x0, e) match {
   case (Nil, e) => e
   case (h :: t, e) =>
-    make_pta(t, make_branch(e, Nat.zero_nata(),
+    make_pta(t, make_branch(e, Nat.zero_nata,
                              AExp.null_state[VName.vname, Value.value], h))
 }
 
@@ -2505,7 +2281,7 @@ def toiEFSM_aux(uu: Nat.nat,
   =
   (uu, x1) match {
   case (uu, Nil) => Nil
-  case (n, h :: t) => (n, h) :: toiEFSM_aux(Nat.plus_nata(n, Nat.one_nata), t)
+  case (n, h :: t) => (n, h) :: toiEFSM_aux(Nat.plus_nata(n, Nat.one_nat), t)
 }
 
 def toiEFSM(e: FSet.fset[((Nat.nat, Nat.nat),
@@ -2515,7 +2291,7 @@ def toiEFSM(e: FSet.fset[((Nat.nat, Nat.nat),
   =
   FSet.fset_of_list[(Nat.nat,
                       ((Nat.nat, Nat.nat),
-                        Transition.transition_ext[Unit]))](toiEFSM_aux(Nat.zero_nata(),
+                        Transition.transition_ext[Unit]))](toiEFSM_aux(Nat.zero_nata,
                                 FSet.sorted_list_of_fset[((Nat.nat, Nat.nat),
                    Transition.transition_ext[Unit])](e)))
 

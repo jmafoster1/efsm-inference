@@ -28,3 +28,6 @@ root.aux
 root.log
 root.out
 root.toc
+
+#Ignore Scala class files
+*.class
