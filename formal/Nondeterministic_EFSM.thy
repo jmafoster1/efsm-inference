@@ -45,7 +45,7 @@ inductive nondeterministic_simulates_trace :: "transition_matrix \<Rightarrow> t
               nondeterministic_step e1 s1 d1 l i = Some (tr1, s1', p', d1') \<Longrightarrow>
               (s2', tr2) |\<in>| possible_steps e2 s2 d2 l i \<Longrightarrow>
               d2' = (apply_updates (Updates tr2) (join_ir i d2) d2) \<Longrightarrow>
-              p' = (apply_outputs (Outputs tr2) (join_ir i r)) \<Longrightarrow>
+              p' = (apply_outputs (Outputs tr2) (join_ir i d2)) \<Longrightarrow>
               nondeterministic_simulates_trace e2 e1 s2' s1' d2' d1' t H \<Longrightarrow>
               nondeterministic_simulates_trace e2 e1 s2 s1 d2 d1 ((l, i)#t) H" |
   step_none: "nondeterministic_step e1 s1 d1 l i = None \<Longrightarrow> nondeterministic_simulates_trace e2 e1 s2 s1 d2 d1 ((l, i)#t) _"

@@ -1,5 +1,5 @@
 theory Learn_EFSM
-  imports Inference SelectionStrategies EFSM_Dot
+  imports Inference SelectionStrategies EFSM_Dot Trace_Matches
 begin
 
 declare One_nat_def [simp del]
@@ -1415,7 +1415,8 @@ next
          apply (simp add: H_pta_def)
         apply (simp add: step_nondet_step_equiv step_pta_vend_3)
        apply (simp add: possible_steps_vend)
-      apply (simp add: vend_general_def regsimp)
+       apply (simp add: vend_general_def regsimp)
+      apply (simp add: vend_general_def)
      apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_4_4)
     apply (case_tac a)
     apply simp
@@ -1457,7 +1458,8 @@ next
          apply (simp add: H_pta_def)
         apply (simp add: step_nondet_step_equiv step_pta_coin50_2)
        apply (simp add: possible_steps_merged_vends_coin50_2)
-      apply (simp only: coin50_updates regsimp)
+       apply (simp only: coin50_updates regsimp)
+      apply (simp add: coin50_100_def)
      apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_3_3)
     apply (case_tac a)
     apply simp
@@ -1510,7 +1512,8 @@ next
          apply (simp add: H_pta_def)
         apply (simp add: step_nondet_step_equiv step_pta_vend_5)
        apply (simp add: possible_steps_vend)
-      apply (simp add: vend_general_def regsimp)
+       apply (simp add: vend_general_def regsimp)
+      apply (simp add: vend_general_def)
      apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_6_6)
     apply (case_tac a)
     apply (simp add: regsimp)
@@ -1569,14 +1572,16 @@ next
          apply (simp add: H_pta_def)
         apply (simp add: step_nondet_step_equiv step_pta_coin50_1)
        apply (simp add: possible_steps_merged_vends_coin50_1)
-      apply (simp only: coin50_updates regsimp)
-     apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_2_2)
-    apply (case_tac "a=(''coin'', [Num 100])")
-     apply (simp add: regsimp)
+       apply (simp only: coin50_updates regsimp)
+      apply (simp add: coin50_50_def)
+      apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_2_2)
+      apply (case_tac "a=(''coin'', [Num 100])")
+       apply (simp add: regsimp)
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_pta_def)
-        apply (simp add: step_nondet_step_equiv step_pta_coin100_1)
-       apply (simp add: possible_steps_merged_vends_coin100)
+          apply (simp add: H_pta_def)
+         apply (simp add: step_nondet_step_equiv step_pta_coin100_1)
+        apply (simp add: possible_steps_merged_vends_coin100)
+       apply (simp add: coin100_100_def)
       apply (simp add: coin100_100_def)
      apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_5_5)
     apply (case_tac a)
@@ -1615,6 +1620,7 @@ next
          apply (simp add: H_pta_def)
         apply (simp add: step_nondet_step_equiv step_pta_vend_9)
        apply (simp add: possible_steps)
+       apply (simp add: vend_general_def)
       apply (simp add: vend_general_def)
      apply (case_tac t)
       apply (simp add: nondeterministic_simulates_trace.base)
@@ -1659,6 +1665,7 @@ next
          apply (simp add: H_pta_def)
         apply (simp add: step_nondet_step_equiv step_pta_coin50_8)
        apply (simp add: possible_steps)
+       apply (simp add: coin50_100_def)
       apply (simp add: coin50_100_def)
      apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_3_9)
     apply (case_tac a)
@@ -1694,9 +1701,10 @@ next
     apply (case_tac "a=(''coin'', [Num 50])")
      apply (simp add: regsimp)
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_pta_def)
-        apply (simp add: step_nondet_step_equiv step_pta_coin50_7)
-       apply (simp add: possible_steps_coin50)
+          apply (simp add: H_pta_def)
+         apply (simp add: step_nondet_step_equiv step_pta_coin50_7)
+        apply (simp add: possible_steps_coin50)
+       apply (simp add: coin50_50_def)
       apply (simp add: coin50_50_def)
      apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_2_8)
     apply (case_tac a)
@@ -1739,18 +1747,20 @@ next
     apply (case_tac "a=(''select'', [Str ''coke''])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_pta_def)
-        apply (simp add: step_nondet_step_equiv step_pta_selectCoke)
-       apply (simp add: possible_steps)
-      apply (simp only: selectGeneral_updates)
+          apply (simp add: H_pta_def)
+         apply (simp add: step_nondet_step_equiv step_pta_selectCoke)
+        apply (simp add: possible_steps)
+       apply (simp only: selectGeneral_updates)
+      apply (simp add: selectGeneral_def)
      apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_1_1)
     apply (case_tac "a=(''select'', [Str ''pepsi''])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_pta_def)
-        apply (simp add: step_nondet_step_equiv step_pta_selectPepsi)
-       apply (simp add: possible_steps)
-      apply (simp only: selectGeneral_updates)
+          apply (simp add: H_pta_def)
+         apply (simp add: step_nondet_step_equiv step_pta_selectPepsi)
+        apply (simp add: possible_steps)
+       apply (simp only: selectGeneral_updates)
+      apply (simp add: selectGeneral_def)
      apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_1_7)
     apply (case_tac a)
     apply simp
@@ -2476,7 +2486,6 @@ next
     by (simp add: nondeterministic_step_def possible_steps_not_vend)
 qed
 
-
 lemma nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_1_2: "nondeterministic_simulates_trace (tm merged_1_3_coin) (tm merged_vends) 1 2 <R 1 := hd b, R 2 := Num 50> <R 1 := hd b> t H_merged_1_2"
 proof(induct t)
   case Nil
@@ -2516,10 +2525,11 @@ next
     apply (case_tac "a = (''coin'', [Num 50])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_merged_1_2_def)
-        apply (simp add: nondeterministic_step_def possible_steps_merged_vends_coin50_2)
-       apply (simp add: possible_steps_merged_1_3_coin_1_coin)
-      apply simp
+          apply (simp add: H_merged_1_2_def)
+         apply (simp add: nondeterministic_step_def possible_steps_merged_vends_coin50_2)
+        apply (simp add: possible_steps_merged_1_3_coin_1_coin)
+       apply simp
+      apply (simp add: coin50_100_def coinGeneral_def)
      apply (simp add: coinGeneral_def coin50_100_def regsimp_1 regsimp_2)
      apply (simp add: nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_1_3)
     apply (case_tac a)
@@ -2645,10 +2655,11 @@ next
     apply (case_tac "a = (''coin'', [Num 50])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_merged_1_2_def)
-        apply (simp add: nondeterministic_step_def possible_steps_merged_vends_coin50_1)
-       apply (simp add: possible_steps_merged_1_3_coin_coin)
-      apply (simp add: coinGeneral_def regsimp_2)
+          apply (simp add: H_merged_1_2_def)
+         apply (simp add: nondeterministic_step_def possible_steps_merged_vends_coin50_1)
+        apply (simp add: possible_steps_merged_1_3_coin_coin)
+       apply (simp add: coinGeneral_def regsimp_2)
+      apply (simp add: coin50_50_def coinGeneral_def)
      apply (simp add: transitions regsimp_1)
      apply (simp add: nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_1_2)
     apply (case_tac "a = (''coin'', [Num 100])")
@@ -2657,7 +2668,8 @@ next
          apply (simp add: H_merged_1_2_def)
         apply (simp add: nondeterministic_step_def possible_steps_coin_100)
     using go_to_5 apply auto[1]
-      apply simp
+       apply simp
+      apply (simp add: coin100_100_def)
      apply (simp add: regsimp_1 regsimp_3 coin100_100_def)
      apply (simp add: nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_5_5)
     apply (case_tac a)
@@ -2707,10 +2719,11 @@ next
     apply (case_tac "aa = ''select'' \<and> length b = 1")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_merged_1_2_def)
-        apply (simp add: nondeterministic_step_def possible_steps_merged_vends_select)
-       apply (simp add: possible_steps_merged_1_3_coin_select)
-      apply simp
+          apply (simp add: H_merged_1_2_def)
+         apply (simp add: nondeterministic_step_def possible_steps_merged_vends_select)
+        apply (simp add: possible_steps_merged_1_3_coin_select)
+       apply simp
+      apply (simp add: selectGeneral_def selectGeneral_2_def)
      apply (simp add: selectGeneral_2_def selectGeneral_def)
      apply (simp add: regsimp_1 regsimp_2)
      apply (simp add: nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_1_1)
@@ -2901,7 +2914,7 @@ lemma possible_steps_merged_1_5_coin_vend: "possible_steps (tm merged_1_5_coin) 
    apply force
   by force
 
-lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_3: "\<forall>r r'. nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 1 3 r r' t H_merged_1_5"
+lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_3: "nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 1 3 <R 1 := b, R 2 := Num 100> <R 1 := b> t H_merged_1_5"
 proof(induct t)
   case Nil
   then show ?case
@@ -2919,7 +2932,6 @@ next
     by auto
   case (Cons a t)
   then show ?case
-    apply clarify
     apply (case_tac "a = (''vend'', [])")
     apply simp
     apply (rule nondeterministic_simulates_trace.step_some)
@@ -2927,7 +2939,8 @@ next
         apply (simp add: nondeterministic_step_def possible_steps_vend)
        apply (simp add: possible_steps_merged_1_5_coin_vend)
        apply auto[1]
-      apply simp
+       apply simp
+      apply (simp add: vend_general_def)
      apply (case_tac t)
       apply (simp add: nondeterministic_simulates_trace.base)
      apply (case_tac aa)
@@ -2940,8 +2953,7 @@ next
     by (simp add: nondeterministic_step_def possible_steps_not_vend)
 qed
 
-
-lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_2: "\<forall>r r'. nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 1 2 r r' t H_merged_1_5"
+lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_2: "nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 1 2 <R 1 := b, R 2 := Num 50> <R 1 := b> t H_merged_1_5"
 proof(induct t)
   case Nil
   then show ?case
@@ -2954,16 +2966,30 @@ next
     apply (simp add: tm_def merged_vends_def Set.filter_def)
     apply (simp add: coin50_100_def hd_input2state)
     by (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
+  have coin_general_updates: "\<forall>b. (EFSM.apply_updates (Updates coinGeneral)
+       (\<lambda>x. case x of I n \<Rightarrow> input2state [Num 50] 1 (I n)
+            | R n \<Rightarrow> if R n = R 2 then Some (Num 50) else if R n = R 1 then Some (b) else None)
+       (\<lambda>a. if a = R 2 then Some (Num 50) else if a = R 1 then Some (b) else None)) = <R 1 := b, R 2 := Num 100>"
+    apply clarify
+    apply (rule ext)
+    by (simp add: coinGeneral_def)
+  have coin50_100_updates: "\<forall> b. (EFSM.apply_updates (Updates coin50_100)
+       (case_vname (\<lambda>n. if n = 1 then Some (Num 50) else input2state [] (1 + 1) (I n)) (\<lambda>n. if n = 1 then Some (b) else None))
+       (\<lambda>a. if a = R 1 then Some (b) else None)) = <R 1 := b>"
+    apply clarify
+    apply (rule ext)
+    by (simp add: coin50_100_def)
   case (Cons a t)
   then show ?case
-    apply clarify
     apply (case_tac "a = (''coin'', [Num 50])")
     apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_merged_1_5_def)
-        apply (simp add: nondeterministic_step_def possible_steps_merged_vends_coin50_2)
-       apply (simp add: possible_steps_merged_1_5_coin_coin)
-      apply simp
+          apply (simp add: H_merged_1_5_def)
+         apply (simp add: nondeterministic_step_def possible_steps_merged_vends_coin50_2)
+        apply (simp add: possible_steps_merged_1_5_coin_coin)
+       apply simp
+      apply (simp add: coin50_100_def coinGeneral_def)
+     apply (simp add: coin_general_updates coin50_100_updates)
      apply (simp add: nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_3)
     apply (case_tac a)
     apply simp
@@ -2971,7 +2997,7 @@ next
     by (simp add: nondeterministic_step_def possible_steps_not_coin)
 qed
 
-lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_5: "\<forall>r r'. nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 1 5 r r' t H_merged_1_5"
+lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_5: "nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 1 5 <R 1 := hd b, R 2 := Num 100> <R 1 := hd b> t H_merged_1_5"
 proof(induct t)
   case Nil
   then show ?case
@@ -2993,7 +3019,6 @@ next
     by auto
   case (Cons a t)
   then show ?case
-    apply clarify
     apply (case_tac "a = (''vend'', [])")
     apply simp
     apply (rule nondeterministic_simulates_trace.step_some)
@@ -3001,9 +3026,11 @@ next
         apply (simp add: nondeterministic_step_def possible_steps_vend)
        apply (simp add: possible_steps_merged_1_5_coin_vend)
        apply auto[1]
-      apply simp
-     apply (case_tac t)
-      apply simp
+       apply simp
+       apply (simp add: vend_general_def)
+      apply (case_tac t)
+       apply simp
+       apply (simp add: vend_general_def)
       apply (rule nondeterministic_simulates_trace.base)
      apply (case_tac aa)
      apply simp
@@ -3015,7 +3042,7 @@ next
     by (simp add: nondeterministic_step_def stop_2)
 qed
 
-lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_1: "\<forall>r r'. nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 1 1 r r' t H_merged_1_5"
+lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_1: "nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 1 1 <R 1 := hd b, R 2 := Num 0> <R 1 := hd b> t H_merged_1_5"
 proof (induct t)
   case Nil
   then show ?case
@@ -3037,24 +3064,53 @@ next
      apply (simp add: hd_input2state)
      apply (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
     by simp
+  have coin_general_updates: "\<forall>b. (EFSM.apply_updates (Updates coinGeneral)
+       (\<lambda>x. case x of I n \<Rightarrow> input2state [Num 50] 1 (I n)
+            | R n \<Rightarrow> if R n = R 2 then Some (Num 0) else if R n = R 1 then Some b else None)
+       (\<lambda>a. if a = R 2 then Some (Num 0) else if a = R 1 then Some b else None)) = <R 1 := b, R 2 := Num 50>"
+    apply clarify
+    apply (rule ext)
+    by (simp add: coinGeneral_def)
+  have updates_coin50_50: "\<forall>b. (EFSM.apply_updates (Updates coin50_50)
+       (case_vname (\<lambda>n. if n = 1 then Some (Num 50) else input2state [] (1 + 1) (I n)) (\<lambda>n. if n = 1 then Some (b) else None))
+       (\<lambda>a. if a = R 1 then Some (b) else None)) = <R 1 := b>"
+    apply clarify
+    apply (rule ext)
+    by (simp add: coin50_50_def)
+  have updates_coin100_100: "\<forall>b. (EFSM.apply_updates (Updates coin100_100)
+       (case_vname (\<lambda>n. if n = 1 then Some (Num 100) else input2state [] (1 + 1) (I n)) (\<lambda>n. if n = 1 then Some (b) else None))
+       (\<lambda>a. if a = R 1 then Some (b) else None)) = <R 1 := b>"
+    apply clarify
+    apply (rule ext)
+    by (simp add: coin100_100_def)
+  have coin_general_updates_100: "\<forall>b. (EFSM.apply_updates (Updates coinGeneral)
+       (\<lambda>x. case x of I n \<Rightarrow> input2state [Num 100] 1 (I n)
+            | R n \<Rightarrow> if R n = R 2 then Some (Num 0) else if R n = R 1 then Some (b) else None)
+       (\<lambda>a. if a = R 2 then Some (Num 0) else if a = R 1 then Some (b) else None)) = <R 1 := b, R 2 := Num 100>"
+    apply clarify
+    apply (rule ext)
+    by (simp add: coinGeneral_def)
   case (Cons a t)
   then show ?case
-    apply clarify
     apply (case_tac "a = (''coin'', [Num 50])")
     apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_merged_1_5_def)
-        apply (simp add: nondeterministic_step_def possible_steps_merged_vends_coin50_1)
-       apply (simp add: possible_steps_merged_1_5_coin_coin)
-      apply simp
+          apply (simp add: H_merged_1_5_def)
+         apply (simp add: nondeterministic_step_def possible_steps_merged_vends_coin50_1)
+        apply (simp add: possible_steps_merged_1_5_coin_coin)
+       apply simp
+      apply (simp add: coin50_50_def coinGeneral_def)
+     apply (simp only: coin_general_updates updates_coin50_50)
      apply (simp add: nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_2)
     apply (case_tac "a = (''coin'', [Num 100])")
-     apply simp
+       apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_merged_1_5_def)
-        apply (simp add: nondeterministic_step_def possible_steps_merged_vends_coin100)
-       apply (simp add: possible_steps_merged_1_5_coin_coin)
-      apply simp
+          apply (simp add: H_merged_1_5_def)
+         apply (simp add: nondeterministic_step_def possible_steps_merged_vends_coin100)
+        apply (simp add: possible_steps_merged_1_5_coin_coin)
+       apply simp
+      apply (simp add: coin100_100_def coinGeneral_def)
+    apply (simp only: coin_general_updates_100 updates_coin100_100)
     apply (simp add: nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_5)
     apply (case_tac a)
     apply simp
@@ -3087,17 +3143,28 @@ next
       apply (simp add: tm_def merged_vends_def Set.filter_def)
       apply safe
       by (simp_all add: selectGeneral_def)
+    have selectGeneral_2_updates: "\<forall>b. length b = 1 \<longrightarrow> (EFSM.apply_updates (Updates selectGeneral_2) (\<lambda>x. case x of I n \<Rightarrow> input2state b 1 (I n) | R x \<Rightarrow> Map.empty x) Map.empty) = <R 1 := hd b, R 2 := Num 0>"
+      apply clarify
+      apply (rule ext)
+      by (simp add: selectGeneral_2_def hd_input2state)
+    have selectGeneral_updates: "\<forall>b. length b = 1 \<longrightarrow> (EFSM.apply_updates (Updates selectGeneral) (\<lambda>a. case a of I n \<Rightarrow> input2state b 1 (I n) | R x \<Rightarrow> Map.empty x) Map.empty) = <R 1 := hd b>"
+      apply clarify
+      apply (rule ext)
+      by (simp add: selectGeneral_def hd_input2state)
   case (Cons a t)
   then show ?case
     apply (case_tac a)
     apply (case_tac "aa = ''select'' \<and> length b = 1")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_merged_1_5_def)
-        apply (simp add: nondeterministic_step_def possible_steps_merged_vends_select)
-       apply (simp add: possible_steps_merged_1_5_coin_select)
-      apply simp
-     apply (simp add: nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_1)
+          apply (simp add: H_merged_1_5_def)
+         apply (simp add: nondeterministic_step_def possible_steps_merged_vends_select)
+        apply (simp add: possible_steps_merged_1_5_coin_select)
+       apply simp
+      apply (simp add: selectGeneral_def selectGeneral_2_def)
+     apply (simp only: selectGeneral_2_updates selectGeneral_updates)
+    using nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_1 try
+    apply blast
     apply (case_tac a)
     apply simp
     apply (rule nondeterministic_simulates_trace.step_none)
@@ -3347,5 +3414,44 @@ lemma "learn traces naive_score generator modifier = (tm final)"
 (* value "iefsm2dot merged_1_5" *)
 (* value "iefsm2dot merged_1_5_coin" *)
 (* value "iefsm2dot final" *)
+
+lemma Suc_0_simp: "Suc 0 = 1"
+  by simp
+
+lemma Suc_1_simp: "Suc 1 = 2"
+  by simp
+
+lemma Suc_2_simp: "Suc 2 = 3"
+  by simp
+
+lemma io_index_singleton: "io_index n [a] [] = {|(n, In, 0)|}"
+  by (simp add: io_index_def)
+
+lemma "(ffilter (\<lambda>(a, b). eventNum a \<le> eventNum b \<and> a \<noteq> b)
+       ({|(3, Out, 0), (2, Out, 0), (2, In, 0), (1, Out, 0), (1, In, 0), (0, In, 0)|} |\<times>|
+        {|(3, Out, 0), (2, Out, 0), (2, In, 0), (1, Out, 0), (1, In, 0), (0, In, 0)|})) = {|
+((2, Out, 0), 3, Out, 0), ((2, Out, 0), 2, In, 0), ((2, In, 0), 3, Out, 0), ((2, In, 0), 2, Out, 0), ((1, Out, 0), 3, Out, 0),
+  ((1, Out, 0), 2, Out, 0), ((1, Out, 0), 2, In, 0), ((1, Out, 0), 1, In, 0), ((1, In, 0), 3, Out, 0), ((1, In, 0), 2, Out, 0),
+  ((1, In, 0), 2, In, 0), ((1, In, 0), 1, Out, 0), ((0, In, 0), 3, Out, 0), ((0, In, 0), 2, Out, 0), ((0, In, 0), 2, In, 0),
+  ((0, In, 0), 1, Out, 0), ((0, In, 0), 1, In, 0)|}"
+  apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def)
+  apply (simp add: fprod_def)
+  apply (simp add: Abs_fset_inverse)
+  apply standard
+   apply clarify
+  oops
+
+
+lemma "get_intratrace_matches_alt
+      [(''select'', [Str ''coke''], []), (''coin'', [Num 50], [Num 50]), (''coin'', [Num 50], [Num 100]), (''vend'', [], [Str ''coke''])] = b"
+  apply (simp add: get_intratrace_matches_preproces)
+  apply (simp add: indices_def)
+  apply (simp only: Suc_0_simp Suc_1_simp Suc_2_simp)
+  apply (simp add: io_index_def)
+
+
+lemma "get_all_intratrace_matches_alt traces = a"
+  apply (simp add: traces_def)
+  apply (simp add: get_intratrace_matches_alt_def)
 
 end

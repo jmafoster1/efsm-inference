@@ -51,10 +51,6 @@ lemma [code]: "nondeterministic_step e s r l i = (
   apply (simp add: nondeterministic_step_def)
   by auto
 
-export_code scalaChoiceAux scalaNondeterministicSimulates scalaDirectlySubsumes in Scala
-  module_name Dirties
-  (* file "../../src/Dirties.scala" *)
-
 export_code learn in Scala
   file "../../src/Inference.scala"
 
