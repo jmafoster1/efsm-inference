@@ -2,12 +2,12 @@ theory FSet_Utils
   imports "~~/src/HOL/Library/FSet"
 begin
 
-setup_lifting type_definition_fset
+context includes fset.lifting begin
 lift_definition fprod  :: "'a fset \<Rightarrow> 'b fset \<Rightarrow> ('a \<times> 'b) fset " (infixr "|\<times>|" 80) is "\<lambda>a b. fset a \<times> fset b"
   by simp
 
 lift_definition fis_singleton :: "'a fset \<Rightarrow> bool" is "\<lambda>A. is_singleton (fset A)".
-
+end
 lemma fset_both_sides: "(Abs_fset s = f) = (fset (Abs_fset s) = fset f)"
   by (simp add: fset_inject)
 
