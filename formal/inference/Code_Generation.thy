@@ -34,6 +34,23 @@ lemma [code]: "choice = choice_code"
   apply (rule ext)+
   by (simp add: choice_def choice_code_def choice_aux_def)
 
+lemma [code]: "step e s r l i = (if size (possible_steps e s r l i) = 1 then (
+                     let (s', t) = (fthe_elem (possible_steps e s r l i)) in
+                     Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (EFSM.apply_updates (Updates t) (join_ir i r) r))
+                   )
+                   else None)"
+  apply (simp add: step_def)
+  apply (simp add: is_singleton_altdef)
+  by (metis One_nat_def fis_singleton.transfer is_singleton_altdef)
+
+lemma [code]: "nondeterministic_step e s r l i = (
+  if possible_steps e s r l i \<noteq> {||} then (
+    let (s', t) =  (Eps (\<lambda>x. x |\<in>| (possible_steps e s r l i))) in
+    Some (t, s', (EFSM.apply_outputs (Outputs t) (join_ir i r)), (EFSM.apply_updates (Updates t) (join_ir i r) r)))
+  else None)"
+  apply (simp add: nondeterministic_step_def)
+  by auto
+
 export_code scalaChoiceAux scalaNondeterministicSimulates scalaDirectlySubsumes in Scala
   module_name Dirties
   (* file "../../src/Dirties.scala" *)

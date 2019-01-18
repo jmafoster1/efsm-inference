@@ -1342,12 +1342,6 @@ def less_eq_transition_ext[A : HOL.equal : Orderings.linorder](t1:
 
 object Code_Generation {
 
-  def scalaChoiceAux(ta: Transition.transition_ext[Unit],
-                   t: Transition.transition_ext[Unit]):
-        Boolean
-    =
-  false
-
 def choice_code(ta: Transition.transition_ext[Unit],
                  t: Transition.transition_ext[Unit]):
       Boolean
@@ -1713,17 +1707,6 @@ def maxUID(e: FSet.fset[(Nat.nat,
                        ((Nat.nat, Nat.nat),
                          Transition.transition_ext[Unit])](a)),
     e))
-
-    def scalaDirectlySubsumes(a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
-                           b: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])], c: Nat.nat,
-                           d: Transition.transition_ext[Unit], e: Transition.transition_ext[Unit]):
-      Boolean
-  =
-  false
-
-  def scalaNondeterministicSimulates(a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
-                                     b: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
-                                     c: Nat.nat => Nat.nat): Boolean = false
 
 def easy_merge(oldEFSM:
                  FSet.fset[(Nat.nat,

@@ -9,14 +9,6 @@ definition nondeterministic_step :: "transition_matrix \<Rightarrow> nat \<Right
     Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r)))
   else None)"
 
-lemma [code]: "nondeterministic_step e s r l i = (
-  if possible_steps e s r l i \<noteq> {||} then (
-    let (s', t) =  (Eps (\<lambda>x. x |\<in>| (possible_steps e s r l i))) in
-    Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r)))
-  else None)"
-  apply (simp add: nondeterministic_step_def)
-  by auto
-
 lemma fis_singleton_possible_steps: "fis_singleton (possible_steps e s r l i) \<Longrightarrow> \<exists>a b. (a, b) |\<in>| possible_steps e s r l i"
   by (metis fempty_iff fset_eqI not_singleton_emty prod.exhaust_sel)
 

@@ -60,15 +60,6 @@ definition step :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate 
                    )
                    else None)"
 
-lemma [code]: "step e s r l i = (if size (possible_steps e s r l i) = 1 then (
-                     let (s', t) = (fthe_elem (possible_steps e s r l i)) in
-                     Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))
-                   )
-                   else None)"
-  apply (simp add: step_def)
-  apply (simp add: is_singleton_altdef)
-  by (metis One_nat_def fis_singleton.transfer is_singleton_altdef)
-
 lemma step_empty[simp]:"step {||} s r l i = None"
 proof-
   have ffilter_empty: "ffilter
