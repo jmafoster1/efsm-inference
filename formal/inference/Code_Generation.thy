@@ -1,5 +1,5 @@
 theory Code_Generation
-  imports Inference "HOL-Library.Code_Target_Numeral" "../FSet_Utils"
+  imports Inference "HOL-Library.Code_Target_Numeral" "../FSet_Utils" SelectionStrategies
 begin
 
 definition scalaChoiceAux :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
@@ -52,6 +52,9 @@ lemma [code]: "nondeterministic_step e s r l i = (
   by auto
 
 export_code learn in Scala
-  file "../../src/Inference.scala"
+  file "../../src/Inference.scala.is"
+
+export_code naive_score in Scala
+  file "../../src/SelectionStrategies.scala.is"
 
 end

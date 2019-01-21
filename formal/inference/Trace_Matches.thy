@@ -52,4 +52,30 @@ primrec get_all_intratrace_matches_alt :: "log \<Rightarrow> (index \<times> ind
   the corresponding transition's uid. If the uids match then there's an intertrace match.
 *)
 
+definition possible_steps :: "iEFSM \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> nat \<times> transition) fset" where
+  "possible_steps e s r l i = fimage (\<lambda>(uid, (origin, dest), t). (uid, dest, t)) (ffilter (\<lambda>(uid, (origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"
+
+
+definition step :: "iEFSM \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> nat \<times> datastate) option" where
+"step e s r l i = (if fis_singleton (possible_steps e s r l i) then (
+                     let (u, s', t) = (fthe_elem (possible_steps e s r l i)) in
+                     Some (t, s', u, (EFSM.apply_updates (Updates t) (join_ir i r) r))
+                   )
+                   else None)"
+
+fun walk_up_to :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> nat option" where
+  "walk_up_to _ _ _ _ [] = None" |
+  "walk_up_to 0 e s r (h#t) =
+    (case (step e s r (fst h) (snd h)) of
+      (Some (transition, s', uid, updated)) \<Rightarrow> Some uid |
+      _ \<Rightarrow> None
+    )"|
+  "walk_up_to n e s r (h#t) =
+    (case (step e s r (fst h) (snd h)) of
+      (Some (transition, s', uid, updated)) \<Rightarrow> walk_up_to (n-1) e s' updated t |
+      _ \<Rightarrow> None
+    )"
+
+definition find_intertrace_matches_aux :: "(index \<times> index) fset \<Rightarrow> (index \<times> index) fset" where
+  "find_intertrace_matches_aux intras = fimage (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). (walk_up_to e1)) intras" 
 end

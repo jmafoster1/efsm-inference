@@ -31,3 +31,4 @@ root.toc
 
 #Ignore Scala class files
 *.class
+bin/
