@@ -2,6 +2,26 @@ theory Trace_Matches
 imports Inference
 begin
 datatype ioTag = In | Out
+
+instantiation ioTag :: linorder begin
+fun less_ioTag :: "ioTag \<Rightarrow> ioTag \<Rightarrow> bool" where
+  "In < Out = True" |
+  "Out < _ = False" |
+  "In < In = False"
+
+definition less_eq_ioTag :: "ioTag \<Rightarrow> ioTag \<Rightarrow> bool" where
+  "less_eq_ioTag x y = (x < y \<or> x = y)"
+declare less_eq_ioTag_def [simp]
+
+instance
+  apply standard
+  using less_ioTag.elims(2) apply fastforce
+     apply simp
+    apply (metis ioTag.exhaust less_eq_ioTag_def)
+  using less_eq_ioTag_def less_ioTag.elims(2) apply blast
+  by (metis (full_types) ioTag.exhaust less_eq_ioTag_def less_ioTag.simps(1))
+end
+
 type_synonym index = "nat \<times> ioTag \<times> nat"
 
 fun lookup :: "index \<Rightarrow> execution \<Rightarrow> value" where
@@ -63,15 +83,29 @@ definition i_step :: "iEFSM \<Rightarrow> nat \<Rightarrow> datastate \<Rightarr
                    )
                    else None)"
 
-primrec (nonexhaustive) walk_up_to :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> execution \<Rightarrow> nat" where
+type_synonym match = "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> ((transition \<times> nat) \<times> ioTag \<times> nat))"
+
+primrec (nonexhaustive) walk_up_to :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> execution \<Rightarrow> (transition \<times> nat)" where
   "walk_up_to n e s r (h#t) =
     (case (i_step e s r (fst h) (fst (snd h))) of
-      (Some (transition, s', uid, updated)) \<Rightarrow> (case n of 0 \<Rightarrow> uid | Suc m \<Rightarrow> walk_up_to m e s' updated t)
+      (Some (transition, s', uid, updated)) \<Rightarrow> (case n of 0 \<Rightarrow> (transition, uid) | Suc m \<Rightarrow> walk_up_to m e s' updated t)
     )"
 
-definition find_intertrace_matches_aux :: "(index \<times> index) fset \<Rightarrow> iEFSM \<Rightarrow> execution \<Rightarrow> (index \<times> index) fset" where
+definition find_intertrace_matches_aux :: "(index \<times> index) fset \<Rightarrow> iEFSM \<Rightarrow> execution \<Rightarrow> match fset" where
   "find_intertrace_matches_aux intras e t = fimage (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). (((walk_up_to e1 e 0 <> t), io1, inx1), ((walk_up_to e2 e 0 <> t), io2, inx2))) intras" 
 
-definition find_intratrace_matches :: "log \<Rightarrow> iEFSM \<Rightarrow> (index \<times> index) fset" where
-  "find_intratrace_matches l e = ffilter (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). e1 \<noteq> e2) (ffUnion (fset_of_list (map (\<lambda>(t, m). find_intertrace_matches_aux m e t) (zip l (get_all_intratrace_matches_alt l)))))"
+definition find_intratrace_matches :: "log \<Rightarrow> iEFSM \<Rightarrow> match list" where
+  "find_intratrace_matches l e = filter (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). e1 \<noteq> e2) (concat (map (\<lambda>(t, m). sorted_list_of_fset (find_intertrace_matches_aux m e t)) (zip l (get_all_intratrace_matches_alt l))))"
+
+definition get :: "iEFSM \<Rightarrow> nat \<Rightarrow> transition" where
+  "get e u = snd (snd (fthe_elem (ffilter (\<lambda>(uid, _). uid = u) e)))"
+
+definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+  "modify matches u1 u2 old = (let relevant = filter (\<lambda>(((_, u1'), _, _), (_, u2'), _, _). u1 = u1' \<or> u2 = u1' \<or> u1 = u2' \<or> u2 = u2') matches in
+                                None
+                              )"
+(*
+Are either of the two transitions we're in in the list?
+If they are, do we have a match?
+*)
 end
