@@ -101,7 +101,9 @@ definition get :: "iEFSM \<Rightarrow> nat \<Rightarrow> transition" where
   "get e u = snd (snd (fthe_elem (ffilter (\<lambda>(uid, _). uid = u) e)))"
 
 definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
-  "modify matches u1 u2 old = (let relevant = filter (\<lambda>(((_, u1'), _, _), (_, u2'), _, _). u1 = u1' \<or> u2 = u1' \<or> u1 = u2' \<or> u2 = u2') matches in
+  "modify matches u1 u2 old = (let relevant = filter (\<lambda>(((_, u1'), _, _), (_, u2'), _, _). u1 = u1' \<or> u2 = u1' \<or> u1 = u2' \<or> u2 = u2') matches;
+                                   t1 = get old u1;
+                                   t2 = get old u2 in
                                 None
                               )"
 (*
