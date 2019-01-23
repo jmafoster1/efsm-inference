@@ -287,12 +287,16 @@ primrec generalise_transitions :: "((((transition \<times> nat) \<times> ioTag \
   "generalise_transitions (h#t) e = (let ((((orig1, u1), _), (orig2, u2), _), (((gen1, u1'), _), (gen2, u2), _)) = h in
                                          replace (replace e u1 gen1) u2 gen2)"
 
+definition strip_uids :: "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> (transition \<times> nat) \<times> ioTag \<times> nat) \<Rightarrow> ((transition \<times> ioTag \<times> nat) \<times> (transition \<times> ioTag \<times> nat))" where
+  "strip_uids x = (let (((t1, u1), io1, in1), (t2, u2), io2, in2) = x in ((t1, io1, in1), (t2, io2, in2)))"
+
 definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
   "modify matches u1 u2 old = (let relevant = filter (\<lambda>(((_, u1'), io, _), (_, u2'), io', _). io = In \<and> io' = Out \<and> (u1 = u1' \<or> u2 = u1' \<or> u1 = u2' \<or> u2 = u2')) matches;
                                    newReg = new_reg old;
                                    replacements = map (\<lambda>(((t1, u1), io1, inx1), (t2, u2), io2, inx2). (((remove_guard_add_update t1 (inx1+1) newReg, u1), io1, inx1), (generalise_output t2 newReg inx2, u2), io2, inx2)) relevant;
                                    comparisons = zip relevant replacements;
-                                   to_replace = filter (\<lambda>(_, s). count s replacements > 1) comparisons in
+                                   stripped_replacements = map strip_uids replacements;
+                                   to_replace = filter (\<lambda>(_, s). count (strip_uids s) stripped_replacements > 1) comparisons in
                                 if to_replace = [] then None else Some (generalise_transitions to_replace old)
                               )"
 
@@ -338,8 +342,25 @@ lemma replacements: "map (\<lambda>(((t1, u1), io1, inx1), (t2, u2), io2, inx2).
   apply (simp add: relevant_def)
   by (simp add: generalise_selectCoke generalise_vend_coke generalise_selectPepsi generalise_vend_pepsi replacements_def)
 
+lemma zip_relevant_replacements: "zip relevant replacements = [
+((((selectCoke, 0), In, 0),
+    (vend_coke, 5), Out, 0),
+   ((selectGeneral, 0), In, 0),
+   (vend_general, 5), Out, 0),
+  ((((selectPepsi, 1), In, 0),
+    (vend_pepsi, 9), Out, 0),
+   ((selectGeneral, 1), In, 0),
+   (vend_general, 9), Out, 0)
+]"
+  by eval
+
+value "iefsm2dot (replace (replace pta 0 selectGeneral) 5 vend_general)"
+
 lemma "modify (find_intratrace_matches traces pta) 5 9 pta = Some merged_vends"
   apply (simp add: modify_def new_reg_pta)
   apply (simp add: relevant replacements)
+  apply (simp add: zip_relevant_replacements)
+  apply (simp add: strip_uids_def relevant_def)
+  apply (simp add: generalise_selectPepsi generalise_vend_pepsi generalise_selectCoke generalise_vend_coke)
 
 end
