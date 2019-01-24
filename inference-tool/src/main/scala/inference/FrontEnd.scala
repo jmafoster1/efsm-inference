@@ -18,7 +18,7 @@ object FrontEnd {
 
 
     println("Hello inference!")
-    println(Inference.learn(log, (SelectionStrategies.naive_score _).curried, (Inference.null_generator _).curried, (Inference.null_modifier _).curried))
+    println(PrettyPrinter.efsm2dot(Inference.learn(log, (SelectionStrategies.naive_score _).curried, (Inference.null_generator _).curried, (Inference.null_modifier _).curried)))
     println("Goodbye inference!")
 
     println("=================================================================")

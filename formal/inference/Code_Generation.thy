@@ -1,5 +1,5 @@
 theory Code_Generation
-  imports Inference "HOL-Library.Code_Target_Numeral" "../FSet_Utils" SelectionStrategies
+  imports Inference "HOL-Library.Code_Target_Numeral" "../FSet_Utils" SelectionStrategies EFSM_Dot
 begin
 
 definition scalaChoiceAux :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
@@ -30,6 +30,10 @@ code_printing
   constant HOL.conj \<rightharpoonup> (Scala) "_ && _" |
   constant HOL.disj \<rightharpoonup> (Scala) "_ || _"
 
+(*code_printing
+  type_constructor prod \<rightharpoonup> (Scala) infix 2 "," |
+  constant Pair \<rightharpoonup> (Scala) "!((_),/ (_))"*)
+
 lemma [code]: "choice = choice_code"
   apply (rule ext)+
   by (simp add: choice_def choice_code_def choice_aux_def)
@@ -51,7 +55,7 @@ lemma [code]: "nondeterministic_step e s r l i = (
   apply (simp add: nondeterministic_step_def)
   by auto
 
-export_code String.explode String.implode naive_score null_generator null_modifier learn in Scala
+export_code String.explode String.implode naive_score null_generator null_modifier learn efsm2dot in Scala
   (* module_name "Inference"  *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
