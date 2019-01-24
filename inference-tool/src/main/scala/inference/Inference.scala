@@ -373,6 +373,15 @@ object one {
 
 } /* object Groups */
 
+object Num {
+
+abstract sealed class num
+final case class One() extends num
+final case class Bit0(a: num) extends num
+final case class Bit1(a: num) extends num
+
+} /* object Num */
+
 object Rings {
 
 trait zero_neq_one[A] extends Groups.one[A] with Groups.zero[A] {
@@ -392,77 +401,100 @@ def of_bool[A : zero_neq_one](x0: Boolean): A = x0 match {
 
 } /* object Rings */
 
-object Num {
+object Product_Type {
 
-abstract sealed class num
-final case class One() extends num
-final case class Bit0(a: num) extends num
-final case class Bit1(a: num) extends num
-
-} /* object Num */
-
-object Nat {
-
-abstract sealed class nat
-final case class Nata(a: BigInt) extends nat
-
-def equal_nata(m: nat, n: nat): Boolean =
-  Code_Numeral.integer_of_nat(m) == Code_Numeral.integer_of_nat(n)
-
-def plus_nata(m: nat, n: nat): nat =
-  Nata(Code_Numeral.integer_of_nat(m) + Code_Numeral.integer_of_nat(n))
-
-def zero_nata: nat = Nata(BigInt(0))
-
-def less_eq_nat(m: nat, n: nat): Boolean =
-  Code_Numeral.integer_of_nat(m) <= Code_Numeral.integer_of_nat(n)
-
-def less_nat(m: nat, n: nat): Boolean =
-  Code_Numeral.integer_of_nat(m) < Code_Numeral.integer_of_nat(n)
-
-def one_nat: nat = Nata(BigInt(1))
-
-def Suc(n: nat): nat = plus_nata(n, one_nat)
-
-} /* object Nat */
-
-object Code_Numeral {
-
-def one_integera: BigInt = BigInt(1)
-
-def integer_of_nat(x0: Nat.nat): BigInt = x0 match {
-  case Nat.Nata(x) => x
+def equal_boola(p: Boolean, pa: Boolean): Boolean = (p, pa) match {
+  case (p, true) => p
+  case (p, false) => ! p
+  case (true, p) => p
+  case (false, p) => ! p
 }
 
-def nat_of_integer(k: BigInt): Nat.nat =
-  Nat.Nata(Orderings.max[BigInt](BigInt(0), k))
-
-def integer_of_int(x0: Int.int): BigInt = x0 match {
-  case Int.int_of_integer(k) => k
+def equal_proda[A : HOL.equal, B : HOL.equal](x0: (A, B), x1: (A, B)): Boolean =
+  (x0, x1) match {
+  case ((x1, x2), (y1, y2)) => (HOL.eq[A](x1, y1)) && (HOL.eq[B](x2, y2))
 }
 
-} /* object Code_Numeral */
+def equal_unita(u: Unit, v: Unit): Boolean = true
 
-object Int {
+def less_eq_unit(uu: Unit, uv: Unit): Boolean = true
 
-abstract sealed class int
-final case class int_of_integer(a: BigInt) extends int
+def less_unit(uu: Unit, uv: Unit): Boolean = false
 
-def less_int(k: int, l: int): Boolean =
-  Code_Numeral.integer_of_int(k) < Code_Numeral.integer_of_int(l)
+def product[A, B](x0: Set.set[A], x1: Set.set[B]): Set.set[(A, B)] = (x0, x1)
+  match {
+  case (Set.seta(xs), Set.seta(ys)) =>
+    Set.seta[(A, B)](Lista.maps[A, (A, B)](((x: A) =>
+     Lista.map[B, (A, B)](((a: B) => (x, a)), ys)),
+    xs))
+}
 
-def plus_int(k: int, l: int): int =
-  int_of_integer(Code_Numeral.integer_of_int(k) +
-                   Code_Numeral.integer_of_int(l))
+def fst[A, B](x0: (A, B)): A = x0 match {
+  case (x1, x2) => x1
+}
 
-def equal_int(k: int, l: int): Boolean =
-  Code_Numeral.integer_of_int(k) == Code_Numeral.integer_of_int(l)
+def snd[A, B](x0: (A, B)): B = x0 match {
+  case (x1, x2) => x2
+}
 
-def minus_int(k: int, l: int): int =
-  int_of_integer(Code_Numeral.integer_of_int(k) -
-                   Code_Numeral.integer_of_int(l))
+} /* object Product_Type */
 
-} /* object Int */
+object Set {
+
+abstract sealed class set[A]
+final case class seta[A](a: List[A]) extends set[A]
+final case class coset[A](a: List[A]) extends set[A]
+
+def image[A, B](f: A => B, x1: set[A]): set[B] = (f, x1) match {
+  case (f, seta(xs)) => seta[B](Lista.map[A, B](f, xs))
+}
+
+def filter[A](p: A => Boolean, x1: set[A]): set[A] = (p, x1) match {
+  case (p, seta(xs)) => seta[A](Lista.filter[A](p, xs))
+}
+
+def insert[A : HOL.equal](x: A, xa1: set[A]): set[A] = (x, xa1) match {
+  case (x, coset(xs)) => coset[A](Lista.removeAll[A](x, xs))
+  case (x, seta(xs)) => seta[A](Lista.insert[A](x, xs))
+}
+
+def member[A : HOL.equal](x: A, xa1: set[A]): Boolean = (x, xa1) match {
+  case (x, coset(xs)) => ! (Lista.member[A](xs, x))
+  case (x, seta(xs)) => Lista.member[A](xs, x)
+}
+
+def remove[A : HOL.equal](x: A, xa1: set[A]): set[A] = (x, xa1) match {
+  case (x, coset(xs)) => coset[A](Lista.insert[A](x, xs))
+  case (x, seta(xs)) => seta[A](Lista.removeAll[A](x, xs))
+}
+
+def the_elem[A](x0: set[A]): A = x0 match {
+  case seta(List(x)) => x
+}
+
+def bot_set[A]: set[A] = seta[A](Nil)
+
+def sup_set[A : HOL.equal](x0: set[A], a: set[A]): set[A] = (x0, a) match {
+  case (coset(xs), a) =>
+    coset[A](Lista.filter[A](((x: A) => ! (member[A](x, a))), xs))
+  case (seta(xs), a) =>
+    Lista.fold[A, set[A]](((aa: A) => (b: set[A]) => insert[A](aa, b)), xs, a)
+}
+
+def minus_set[A : HOL.equal](a: set[A], x1: set[A]): set[A] = (a, x1) match {
+  case (a, coset(xs)) =>
+    seta[A](Lista.filter[A](((x: A) => member[A](x, a)), xs))
+  case (a, seta(xs)) =>
+    Lista.fold[A, set[A]](((aa: A) => (b: set[A]) => remove[A](aa, b)), xs, a)
+}
+
+def less_eq_set[A : HOL.equal](a: set[A], b: set[A]): Boolean = (a, b) match {
+  case (coset(Nil), seta(Nil)) => false
+  case (a, coset(ys)) => Lista.list_all[A](((y: A) => ! (member[A](y, a))), ys)
+  case (seta(xs), b) => Lista.list_all[A](((x: A) => member[A](x, b)), xs)
+}
+
+} /* object Set */
 
 object Lista {
 
@@ -559,100 +591,77 @@ def sorted_list_of_set[A : HOL.equal : Orderings.linorder](x0: Set.set[A]):
 
 } /* object Lista */
 
-object Set {
+object Nat {
 
-abstract sealed class set[A]
-final case class seta[A](a: List[A]) extends set[A]
-final case class coset[A](a: List[A]) extends set[A]
+abstract sealed class nat
+final case class Nata(a: BigInt) extends nat
 
-def image[A, B](f: A => B, x1: set[A]): set[B] = (f, x1) match {
-  case (f, seta(xs)) => seta[B](Lista.map[A, B](f, xs))
+def equal_nata(m: nat, n: nat): Boolean =
+  Code_Numeral.integer_of_nat(m) == Code_Numeral.integer_of_nat(n)
+
+def plus_nata(m: nat, n: nat): nat =
+  Nata(Code_Numeral.integer_of_nat(m) + Code_Numeral.integer_of_nat(n))
+
+def zero_nata: nat = Nata(BigInt(0))
+
+def less_eq_nat(m: nat, n: nat): Boolean =
+  Code_Numeral.integer_of_nat(m) <= Code_Numeral.integer_of_nat(n)
+
+def less_nat(m: nat, n: nat): Boolean =
+  Code_Numeral.integer_of_nat(m) < Code_Numeral.integer_of_nat(n)
+
+def one_nat: nat = Nata(BigInt(1))
+
+def Suc(n: nat): nat = plus_nata(n, one_nat)
+
+} /* object Nat */
+
+object Code_Numeral {
+
+def one_integera: BigInt = BigInt(1)
+
+def integer_of_nat(x0: Nat.nat): BigInt = x0 match {
+  case Nat.Nata(x) => x
 }
 
-def filter[A](p: A => Boolean, x1: set[A]): set[A] = (p, x1) match {
-  case (p, seta(xs)) => seta[A](Lista.filter[A](p, xs))
+def nat_of_integer(k: BigInt): Nat.nat =
+  Nat.Nata(Orderings.max[BigInt](BigInt(0), k))
+
+def bit_cut_integer(k: BigInt): (BigInt, Boolean) =
+  (if (k == BigInt(0)) (BigInt(0), false)
+    else {
+           val (r, s): (BigInt, BigInt) =
+             ((k: BigInt) => (l: BigInt) => if (l == 0) (BigInt(0), k) else
+               (k.abs /% l.abs)).apply(k).apply(BigInt(2));
+           ((if (BigInt(0) < k) r else (- r) - s), s == BigInt(1))
+         })
+
+def integer_of_int(x0: Int.int): BigInt = x0 match {
+  case Int.int_of_integer(k) => k
 }
 
-def insert[A : HOL.equal](x: A, xa1: set[A]): set[A] = (x, xa1) match {
-  case (x, coset(xs)) => coset[A](Lista.removeAll[A](x, xs))
-  case (x, seta(xs)) => seta[A](Lista.insert[A](x, xs))
-}
+} /* object Code_Numeral */
 
-def member[A : HOL.equal](x: A, xa1: set[A]): Boolean = (x, xa1) match {
-  case (x, coset(xs)) => ! (Lista.member[A](xs, x))
-  case (x, seta(xs)) => Lista.member[A](xs, x)
-}
+object Int {
 
-def remove[A : HOL.equal](x: A, xa1: set[A]): set[A] = (x, xa1) match {
-  case (x, coset(xs)) => coset[A](Lista.insert[A](x, xs))
-  case (x, seta(xs)) => seta[A](Lista.removeAll[A](x, xs))
-}
+abstract sealed class int
+final case class int_of_integer(a: BigInt) extends int
 
-def the_elem[A](x0: set[A]): A = x0 match {
-  case seta(List(x)) => x
-}
+def less_int(k: int, l: int): Boolean =
+  Code_Numeral.integer_of_int(k) < Code_Numeral.integer_of_int(l)
 
-def bot_set[A]: set[A] = seta[A](Nil)
+def plus_int(k: int, l: int): int =
+  int_of_integer(Code_Numeral.integer_of_int(k) +
+                   Code_Numeral.integer_of_int(l))
 
-def sup_set[A : HOL.equal](x0: set[A], a: set[A]): set[A] = (x0, a) match {
-  case (coset(xs), a) =>
-    coset[A](Lista.filter[A](((x: A) => ! (member[A](x, a))), xs))
-  case (seta(xs), a) =>
-    Lista.fold[A, set[A]](((aa: A) => (b: set[A]) => insert[A](aa, b)), xs, a)
-}
+def equal_int(k: int, l: int): Boolean =
+  Code_Numeral.integer_of_int(k) == Code_Numeral.integer_of_int(l)
 
-def minus_set[A : HOL.equal](a: set[A], x1: set[A]): set[A] = (a, x1) match {
-  case (a, coset(xs)) =>
-    seta[A](Lista.filter[A](((x: A) => member[A](x, a)), xs))
-  case (a, seta(xs)) =>
-    Lista.fold[A, set[A]](((aa: A) => (b: set[A]) => remove[A](aa, b)), xs, a)
-}
+def minus_int(k: int, l: int): int =
+  int_of_integer(Code_Numeral.integer_of_int(k) -
+                   Code_Numeral.integer_of_int(l))
 
-def less_eq_set[A : HOL.equal](a: set[A], b: set[A]): Boolean = (a, b) match {
-  case (coset(Nil), seta(Nil)) => false
-  case (a, coset(ys)) => Lista.list_all[A](((y: A) => ! (member[A](y, a))), ys)
-  case (seta(xs), b) => Lista.list_all[A](((x: A) => member[A](x, b)), xs)
-}
-
-} /* object Set */
-
-object Product_Type {
-
-def equal_boola(p: Boolean, pa: Boolean): Boolean = (p, pa) match {
-  case (p, true) => p
-  case (p, false) => ! p
-  case (true, p) => p
-  case (false, p) => ! p
-}
-
-def equal_proda[A : HOL.equal, B : HOL.equal](x0: (A, B), x1: (A, B)): Boolean =
-  (x0, x1) match {
-  case ((x1, x2), (y1, y2)) => (HOL.eq[A](x1, y1)) && (HOL.eq[B](x2, y2))
-}
-
-def equal_unita(u: Unit, v: Unit): Boolean = true
-
-def less_eq_unit(uu: Unit, uv: Unit): Boolean = true
-
-def less_unit(uu: Unit, uv: Unit): Boolean = false
-
-def product[A, B](x0: Set.set[A], x1: Set.set[B]): Set.set[(A, B)] = (x0, x1)
-  match {
-  case (Set.seta(xs), Set.seta(ys)) =>
-    Set.seta[(A, B)](Lista.maps[A, (A, B)](((x: A) =>
-     Lista.map[B, (A, B)](((a: B) => (x, a)), ys)),
-    xs))
-}
-
-def fst[A, B](x0: (A, B)): A = x0 match {
-  case (x1, x2) => x1
-}
-
-def snd[A, B](x0: (A, B)): B = x0 match {
-  case (x1, x2) => x2
-}
-
-} /* object Product_Type */
+} /* object Int */
 
 object String {
 
@@ -690,6 +699,30 @@ def integer_of_char(x0: char): BigInt = x0 match {
       BigInt(2) +
       Rings.of_bool[BigInt](b0)
 }
+
+def implode(cs: List[char]): String =
+  "" ++ (Lista.map[char,
+                    BigInt](((a: char) => integer_of_char(a)),
+                             cs)).map((k: BigInt) => if (BigInt(0) <= k && k < BigInt(128)) k.charValue else sys.error("Non-ASCII character in literal"))
+
+def char_of_integer(k: BigInt): char =
+  {
+    val (q0, b0): (BigInt, Boolean) = Code_Numeral.bit_cut_integer(k)
+    val (q1, b1): (BigInt, Boolean) = Code_Numeral.bit_cut_integer(q0)
+    val (q2, b2): (BigInt, Boolean) = Code_Numeral.bit_cut_integer(q1)
+    val (q3, b3): (BigInt, Boolean) = Code_Numeral.bit_cut_integer(q2)
+    val (q4, b4): (BigInt, Boolean) = Code_Numeral.bit_cut_integer(q3)
+    val (q5, b5): (BigInt, Boolean) = Code_Numeral.bit_cut_integer(q4)
+    val (q6, b6): (BigInt, Boolean) = Code_Numeral.bit_cut_integer(q5)
+    val a: (BigInt, Boolean) = Code_Numeral.bit_cut_integer(q6)
+    val (_, aa): (BigInt, Boolean) = a;
+    Char(b0, b1, b2, b3, b4, b5, b6, aa)
+  }
+
+def explode(s: String): List[char] =
+  Lista.map[BigInt,
+             char](((a: BigInt) => char_of_integer(a)),
+                    (s.toList.map(c => { val k: Int = c.toInt; if (k < 128) BigInt(k) else sys.error("Non-ASCII character in literal") })))
 
 } /* object String */
 

@@ -1,40 +1,4 @@
-[0m[[0m[33mwarn[0m] [0m[0m/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/Inference.scala:556:3: match may not be exhaustive.[0m
-[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following input: coset(_)[0m
-[0m[[0m[33mwarn[0m] [0m[0m  x0 match {[0m
-[0m[[0m[33mwarn[0m] [0m[0m  ^[0m
-[0m[[0m[33mwarn[0m] [0m[0m/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/Inference.scala:568:50: match may not be exhaustive.[0m
-[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following input: (_, coset(_))[0m
-[0m[[0m[33mwarn[0m] [0m[0mdef image[A, B](f: A => B, x1: set[A]): set[B] = (f, x1) match {[0m
-[0m[[0m[33mwarn[0m] [0m[0m                                                 ^[0m
-[0m[[0m[33mwarn[0m] [0m[0m/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/Inference.scala:572:54: match may not be exhaustive.[0m
-[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following input: (_, coset(_))[0m
-[0m[[0m[33mwarn[0m] [0m[0mdef filter[A](p: A => Boolean, x1: set[A]): set[A] = (p, x1) match {[0m
-[0m[[0m[33mwarn[0m] [0m[0m                                                     ^[0m
-[0m[[0m[33mwarn[0m] [0m[0m/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/Inference.scala:611:65: match may not be exhaustive.[0m
-[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following inputs: (coset(List(_)), seta(List(_))), (coset(List(_)), seta(Nil)), (coset(Nil), seta(List(_)))[0m
-[0m[[0m[33mwarn[0m] [0m[0mdef less_eq_set[A : HOL.equal](a: set[A], b: set[A]): Boolean = (a, b) match {[0m
-[0m[[0m[33mwarn[0m] [0m[0m                                                                ^[0m
-[0m[[0m[33mwarn[0m] [0m[0m/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/Inference.scala:624:21: unreachable code[0m
-[0m[[0m[33mwarn[0m] [0m[0m  case (true, p) => p[0m
-[0m[[0m[33mwarn[0m] [0m[0m                    ^[0m
-[0m[[0m[33mwarn[0m] [0m[0m/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/Inference.scala:639:70: match may not be exhaustive.[0m
-[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following inputs: (coset(_), coset(_)), (coset(_), seta(_)), (seta(_), coset(_))[0m
-[0m[[0m[33mwarn[0m] [0m[0mdef product[A, B](x0: Set.set[A], x1: Set.set[B]): Set.set[(A, B)] = (x0, x1)[0m
-[0m[[0m[33mwarn[0m] [0m[0m                                                                     ^[0m
-[0m[[0m[33mwarn[0m] [0m[0m/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/Inference.scala:939:67: match may not be exhaustive.[0m
-[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following input: coset(_)[0m
-[0m[[0m[33mwarn[0m] [0m[0mdef Sup_set[A : HOL.equal](x0: Set.set[Set.set[A]]): Set.set[A] = x0 match {[0m
-[0m[[0m[33mwarn[0m] [0m[0m                                                                  ^[0m
-[0m[[0m[33mwarn[0m] [0m[0m/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/Inference.scala:951:54: match may not be exhaustive.[0m
-[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following inputs: coset(_), seta(Nil)[0m
-[0m[[0m[33mwarn[0m] [0m[0mdef Max[A : Orderings.linorder](x0: Set.set[A]): A = x0 match {[0m
-[0m[[0m[33mwarn[0m] [0m[0m                                                     ^[0m
-[0m[[0m[33mwarn[0m] [0m[0m/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/Inference.scala:970:3: match may not be exhaustive.[0m
-[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following input: (_, coset(_))[0m
-[0m[[0m[33mwarn[0m] [0m[0m  (g, x1) match {[0m
-[0m[[0m[33mwarn[0m] [0m[0m  ^[0m
-[0m[[0m[33mwarn[0m] [0m[0m/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/Inference.scala:661:3: Generated class String$Char differs only in case from String$char.[0m
-[0m[[0m[33mwarn[0m] [0m[0m  Such classes will overwrite one another on case-insensitive filesystems.[0m
-[0m[[0m[33mwarn[0m] [0m[0m  Char(a: Boolean, b: Boolean, c: Boolean, d: Boolean, e: Boolean, f: Boolean,[0m
-[0m[[0m[33mwarn[0m] [0m[0m  ^[0m
-[0m[[0m[33mwarn[0m] [0m[0m10 warnings found[0m
+[0m[[0m[31merror[0m] [0m[0m/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/TypeConversion.scala:26:32: ';' expected but ':' found.[0m
+[0m[[0m[31merror[0m] [0m[0mtype Event = (Map[String, Any]):(List[String.char],[0m
+[0m[[0m[31merror[0m] [0m[0m                               ^[0m
+[0m[[0m[31merror[0m] [0m[0mone error found[0m

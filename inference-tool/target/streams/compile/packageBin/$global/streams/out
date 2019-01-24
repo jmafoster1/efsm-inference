@@ -214,6 +214,10 @@
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/michael/Documents/efsm-inference/inference-tool/target/scala-2.12/classes/Orderings$ord$$anon$13.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	Set$set.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/michael/Documents/efsm-inference/inference-tool/target/scala-2.12/classes/Set$set.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	TypeConversion.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/michael/Documents/efsm-inference/inference-tool/target/scala-2.12/classes/TypeConversion.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	TypeConversion$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/michael/Documents/efsm-inference/inference-tool/target/scala-2.12/classes/TypeConversion$.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	Groups$semigroup_add.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/michael/Documents/efsm-inference/inference-tool/target/scala-2.12/classes/Groups$semigroup_add.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	AExp$Minus.class[0m

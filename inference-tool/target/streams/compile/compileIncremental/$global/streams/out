@@ -1,14 +1,33 @@
-[0m[[0m[0mdebug[0m] [0m[0mFull compilation, no sources in previous analysis.[0m
-[0m[[0m[0mdebug[0m] [0m[0mAll sources are invalidated.[0m
-[0m[[0m[0mdebug[0m] [0m[0mRecompiling all 3 sources: invalidated sources (3) exceeded 50.0% of all sources[0m
-[0m[[0m[0minfo[0m] [0m[0mCompiling 3 Scala sources to /home/michael/Documents/efsm-inference/inference-tool/target/scala-2.12/classes ...[0m
+[0m[[0m[0mdebug[0m] [0m[0m[0m
+[0m[[0m[0mdebug[0m] [0m[0mInitial source changes: [0m
+[0m[[0m[0mdebug[0m] [0m[0m	removed:Set()[0m
+[0m[[0m[0mdebug[0m] [0m[0m	added: Set()[0m
+[0m[[0m[0mdebug[0m] [0m[0m	modified: Set(/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/FrontEnd.scala)[0m
+[0m[[0m[0mdebug[0m] [0m[0mInvalidated products: Set()[0m
+[0m[[0m[0mdebug[0m] [0m[0mExternal API changes: API Changes: Set()[0m
+[0m[[0m[0mdebug[0m] [0m[0mModified binary dependencies: Set()[0m
+[0m[[0m[0mdebug[0m] [0m[0mInitial directly invalidated classes: Set(FrontEnd)[0m
+[0m[[0m[0mdebug[0m] [0m[0m[0m
+[0m[[0m[0mdebug[0m] [0m[0mSources indirectly invalidated by:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	product: Set()[0m
+[0m[[0m[0mdebug[0m] [0m[0m	binary dep: Set()[0m
+[0m[[0m[0mdebug[0m] [0m[0m	external source: Set()[0m
+[0m[[0m[0mdebug[0m] [0m[0mAll initially invalidated classes: Set(FrontEnd)[0m
+[0m[[0m[0mdebug[0m] [0m[0mAll initially invalidated sources:Set(/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/FrontEnd.scala)[0m
+[0m[[0m[0minfo[0m] [0m[0mCompiling 1 Scala source to /home/michael/Documents/efsm-inference/inference-tool/target/scala-2.12/classes ...[0m
 [0m[[0m[0mdebug[0m] [0m[0mGetting org.scala-sbt:compiler-bridge_2.12:1.2.5:compile for Scala 2.12.8[0m
 [0m[[0m[0mdebug[0m] [0m[0mGetting org.scala-sbt:compiler-bridge_2.12:1.2.5:compile for Scala 2.12.8[0m
-[0m[[0m[0mdebug[0m] [0m[0m[zinc] Running cached compiler 30651cbd for Scala compiler version 2.12.8[0m
+[0m[[0m[0mdebug[0m] [0m[0m[zinc] Running cached compiler 20773675 for Scala compiler version 2.12.8[0m
 [0m[[0m[0mdebug[0m] [0m[0m[zinc] The Scala compiler is invoked with:[0m
 [0m[[0m[0mdebug[0m] [0m[0m	-bootclasspath[0m
 [0m[[0m[0mdebug[0m] [0m[0m	/home/michael/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.12.8.jar[0m
 [0m[[0m[0mdebug[0m] [0m[0m	-classpath[0m
-[0m[[0m[0mdebug[0m] [0m[0m	/home/michael/Documents/efsm-inference/inference-tool/target/scala-2.12/classes[0m
-[0m[[0m[0mdebug[0m] [0m[0mScala compilation took 7.023104275 s[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/home/michael/Documents/efsm-inference/inference-tool/target/scala-2.12/classes:/home/michael/.ivy2/cache/net.liftweb/lift-json_2.12/jars/lift-json_2.12-3.3.0.jar:/home/michael/.ivy2/cache/org.scala-lang/scalap/jars/scalap-2.12.8.jar:/home/michael/.ivy2/cache/org.scala-lang/scala-compiler/jars/scala-compiler-2.12.8.jar:/home/michael/.ivy2/cache/org.scala-lang/scala-reflect/jars/scala-reflect-2.12.8.jar:/home/michael/.ivy2/cache/org.scala-lang.modules/scala-xml_2.12/bundles/scala-xml_2.12-1.0.6.jar:/home/michael/.ivy2/cache/com.thoughtworks.paranamer/paranamer/bundles/paranamer-2.8.jar[0m
+[0m[[0m[0mdebug[0m] [0m[0mScala compilation took 0.154194925 s[0m
 [0m[[0m[0minfo[0m] [0m[0mDone compiling.[0m
+[0m[[0m[0mdebug[0m] [0m[0mNew invalidations:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	Set()[0m
+[0m[[0m[0mdebug[0m] [0m[0mInitial set of included nodes: Set()[0m
+[0m[[0m[0mdebug[0m] [0m[0mPreviously invalidated, but (transitively) depend on new invalidations:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	Set()[0m
+[0m[[0m[0mdebug[0m] [0m[0mAll newly invalidated classes after taking into account (previously) recompiled classes:Set()[0m

@@ -1,0 +1,59 @@
+[
+[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+]
+]

@@ -8,7 +8,8 @@ ThisBuild / organizationName := "example"
 lazy val root = (project in file("."))
   .settings(
     name := "inference-tool",
-    libraryDependencies += scalaTest % Test
+    libraryDependencies += scalaTest % Test,
+    libraryDependencies += "net.liftweb" %% "lift-json" % "3.3.0"
   )
 
 // Uncomment the following for publishing to Sonatype.
