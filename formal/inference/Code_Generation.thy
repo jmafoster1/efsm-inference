@@ -22,9 +22,9 @@ declare nondeterministic_simulates_def [code del]
 declare directly_subsumes_def [code del]
 
 code_printing
-  constant "choice_aux" \<rightharpoonup> (Scala) "scalaChoiceAux" |
-  constant "nondeterministic_simulates" \<rightharpoonup> (Scala) "scalaNondeterministicSimulates" |
-  constant "directly_subsumes" \<rightharpoonup> (Scala) "scalaDirectlySubsumes"
+  constant "choice_aux" \<rightharpoonup> (Scala) "Dirties.scalaChoiceAux" |
+  constant "nondeterministic_simulates" \<rightharpoonup> (Scala) "Dirties.scalaNondeterministicSimulates" |
+  constant "directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes"
 
 code_printing
   constant HOL.conj \<rightharpoonup> (Scala) "_ && _" |
@@ -51,10 +51,8 @@ lemma [code]: "nondeterministic_step e s r l i = (
   apply (simp add: nondeterministic_step_def)
   by auto
 
-export_code learn in Scala
-  file "../../src/Inference.scala.is"
-
-export_code naive_score in Scala
-  file "../../src/SelectionStrategies.scala.is"
+export_code naive_score null_generator null_modifier learn in Scala
+  (* module_name "Inference"  *)
+  file "../../src/Inference.scala"
 
 end
