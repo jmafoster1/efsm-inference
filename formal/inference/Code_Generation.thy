@@ -53,6 +53,6 @@ lemma [code]: "nondeterministic_step e s r l i = (
 
 export_code naive_score null_generator null_modifier learn in Scala
   (* module_name "Inference"  *)
-  file "../../src/Inference.scala"
+  file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
 end
