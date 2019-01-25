@@ -15,10 +15,8 @@ object FrontEnd {
     val coin = list(0)(0)("inputs").asInstanceOf[List[Any]].map(x => TypeConversion.toValue(x))
     val log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)))
 
-
-
     println("Hello inference!")
-    println(PrettyPrinter.efsm2dot(Inference.learn(log, (SelectionStrategies.naive_score _).curried, (Inference.null_generator _).curried, (Inference.null_modifier _).curried)))
+    println((Inference.learn(log, (SelectionStrategies.naive_score _).curried, (Inference.null_generator _).curried, (Inference.null_modifier _).curried)))
     println("Goodbye inference!")
 
     println("=================================================================")

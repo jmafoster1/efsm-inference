@@ -29,5 +29,8 @@ root.log
 root.out
 root.toc
 
-#Ignore Scala class files
+# Ignore Scala class files
 *.class
+
+# Ignore active.json
+inference-tool/project/target/active.json

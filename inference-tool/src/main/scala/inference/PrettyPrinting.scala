@@ -49,7 +49,7 @@ object PrettyPrinter {
     FSet.fimage(efsmToStringAux, e).toString()
   }
 
-  def efsm2dot(e: TypeConversion.TransitionMatrix): String = {
-    String.implode(EFSM_Dot.efsm2dot(e))
-  }
+  // def efsm2dot(e: TypeConversion.TransitionMatrix): String = {
+  //   String.implode(EFSM_Dot.efsm2dot(e))
+  // }
 }

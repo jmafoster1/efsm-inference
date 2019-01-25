@@ -44,10 +44,6 @@ object equal {
     val `HOL.equal` = (a: String.char, b: String.char) =>
       String.equal_chara(a, b)
   }
-  implicit def `Lista.equal_list`[A : equal]: equal[List[A]] = new
-    equal[List[A]] {
-    val `HOL.equal` = (a: List[A], b: List[A]) => Lista.equal_lista[A](a, b)
-  }
   implicit def `GExp.equal_gexp`: equal[GExp.gexp] = new equal[GExp.gexp] {
     val `HOL.equal` = (a: GExp.gexp, b: GExp.gexp) => GExp.equal_gexpa(a, b)
   }
@@ -116,13 +112,6 @@ object ord {
     val `Orderings.less` = (a: String.char, b: String.char) =>
       Char_ord.less_char(a, b)
   }
-  implicit def `List_Lexorder.ord_list`[A : HOL.equal : order]: ord[List[A]] =
-    new ord[List[A]] {
-    val `Orderings.less_eq` = (a: List[A], b: List[A]) =>
-      List_Lexorder.less_eq_list[A](a, b)
-    val `Orderings.less` = (a: List[A], b: List[A]) =>
-      List_Lexorder.less_list[A](a, b)
-  }
   implicit def `GExp_Orderings.ord_gexp`: ord[GExp.gexp] = new ord[GExp.gexp] {
     val `Orderings.less_eq` = (a: GExp.gexp, b: GExp.gexp) =>
       GExp_Orderings.less_eq_gexp(a, b)
@@ -183,14 +172,6 @@ object preorder {
       Char_ord.less_eq_char(a, b)
     val `Orderings.less` = (a: String.char, b: String.char) =>
       Char_ord.less_char(a, b)
-  }
-  implicit def
-    `List_Lexorder.preorder_list`[A : HOL.equal : order]: preorder[List[A]] =
-    new preorder[List[A]] {
-    val `Orderings.less_eq` = (a: List[A], b: List[A]) =>
-      List_Lexorder.less_eq_list[A](a, b)
-    val `Orderings.less` = (a: List[A], b: List[A]) =>
-      List_Lexorder.less_list[A](a, b)
   }
   implicit def `GExp_Orderings.preorder_gexp`: preorder[GExp.gexp] = new
     preorder[GExp.gexp] {
@@ -253,13 +234,6 @@ object order {
     val `Orderings.less` = (a: String.char, b: String.char) =>
       Char_ord.less_char(a, b)
   }
-  implicit def `List_Lexorder.order_list`[A : HOL.equal : order]: order[List[A]]
-    = new order[List[A]] {
-    val `Orderings.less_eq` = (a: List[A], b: List[A]) =>
-      List_Lexorder.less_eq_list[A](a, b)
-    val `Orderings.less` = (a: List[A], b: List[A]) =>
-      List_Lexorder.less_list[A](a, b)
-  }
   implicit def `GExp_Orderings.order_gexp`: order[GExp.gexp] = new
     order[GExp.gexp] {
     val `Orderings.less_eq` = (a: GExp.gexp, b: GExp.gexp) =>
@@ -308,21 +282,6 @@ object linorder {
       Product_Lexorder.less_eq_prod[A, B](a, b)
     val `Orderings.less` = (a: (A, B), b: (A, B)) =>
       Product_Lexorder.less_prod[A, B](a, b)
-  }
-  implicit def `Char_ord.linorder_char`: linorder[String.char] = new
-    linorder[String.char] {
-    val `Orderings.less_eq` = (a: String.char, b: String.char) =>
-      Char_ord.less_eq_char(a, b)
-    val `Orderings.less` = (a: String.char, b: String.char) =>
-      Char_ord.less_char(a, b)
-  }
-  implicit def
-    `List_Lexorder.linorder_list`[A : HOL.equal : linorder]: linorder[List[A]] =
-    new linorder[List[A]] {
-    val `Orderings.less_eq` = (a: List[A], b: List[A]) =>
-      List_Lexorder.less_eq_list[A](a, b)
-    val `Orderings.less` = (a: List[A], b: List[A]) =>
-      List_Lexorder.less_list[A](a, b)
   }
   implicit def `Nat.linorder_nat`: linorder[Nat.nat] = new linorder[Nat.nat] {
     val `Orderings.less_eq` = (a: Nat.nat, b: Nat.nat) => Nat.less_eq_nat(a, b)
@@ -462,10 +421,6 @@ def less_eq_unit(uu: Unit, uv: Unit): Boolean = true
 
 def less_unit(uu: Unit, uv: Unit): Boolean = false
 
-def apsnd[A, B, C](f: A => B, x1: (C, A)): (C, B) = (f, x1) match {
-  case (f, (x, y)) => (x, f(y))
-}
-
 def product[A, B](x0: Set.set[A], x1: Set.set[B]): Set.set[(A, B)] = (x0, x1)
   match {
   case (Set.seta(xs), Set.seta(ys)) =>
@@ -543,15 +498,6 @@ def less_eq_set[A : HOL.equal](a: set[A], b: set[A]): Boolean = (a, b) match {
 
 object Lista {
 
-def equal_lista[A : HOL.equal](x0: List[A], x1: List[A]): Boolean = (x0, x1)
-  match {
-  case (Nil, x21 :: x22) => false
-  case (x21 :: x22, Nil) => false
-  case (x21 :: x22, y21 :: y22) =>
-    (HOL.eq[A](x21, y21)) && (equal_lista[A](x22, y22))
-  case (Nil, Nil) => true
-}
-
 def fold[A, B](f: A => B => B, x1: List[A], s: B): B = (f, x1, s) match {
   case (f, x :: xs, s) => fold[A, B](f, xs, (f(x))(s))
   case (f, Nil, s) => s
@@ -563,11 +509,6 @@ def rev[A](xs: List[A]): List[A] =
 def maps[A, B](f: A => List[B], x1: List[A]): List[B] = (f, x1) match {
   case (f, Nil) => Nil
   case (f, x :: xs) => f(x) ++ maps[A, B](f, xs)
-}
-
-def nulla[A](x0: List[A]): Boolean = x0 match {
-  case Nil => true
-  case x :: xs => false
 }
 
 def foldr[A, B](f: A => B => B, x1: List[A]): B => B = (f, x1) match {
@@ -632,6 +573,15 @@ def sort_key[A, B : Orderings.linorder](f: A => B, xs: List[A]): List[A] =
 def size_list[A]: (List[A]) => Nat.nat =
   ((a: List[A]) => gen_length[A](Nat.zero_nata, a))
 
+def equal_list[A : HOL.equal](x0: List[A], x1: List[A]): Boolean = (x0, x1)
+  match {
+  case (Nil, x21 :: x22) => false
+  case (x21 :: x22, Nil) => false
+  case (x21 :: x22, y21 :: y22) =>
+    (HOL.eq[A](x21, y21)) && (equal_list[A](x22, y22))
+  case (Nil, Nil) => true
+}
+
 def sorted_list_of_set[A : HOL.equal : Orderings.linorder](x0: Set.set[A]):
       List[A]
   =
@@ -670,32 +620,6 @@ object Code_Numeral {
 
 def one_integera: BigInt = BigInt(1)
 
-def sgn_integer(k: BigInt): BigInt =
-  (if (k == BigInt(0)) BigInt(0)
-    else (if (k < BigInt(0)) BigInt(-1) else BigInt(1)))
-
-def divmod_integer(k: BigInt, l: BigInt): (BigInt, BigInt) =
-  (if (k == BigInt(0)) (BigInt(0), BigInt(0))
-    else (if (l == BigInt(0)) (BigInt(0), k)
-           else (Fun.comp[BigInt, ((BigInt, BigInt)) => (BigInt, BigInt),
-                           BigInt](Fun.comp[BigInt => BigInt,
-     ((BigInt, BigInt)) => (BigInt, BigInt),
-     BigInt](((a: BigInt => BigInt) => (b: (BigInt, BigInt)) =>
-               Product_Type.apsnd[BigInt, BigInt, BigInt](a, b)),
-              ((a: BigInt) => (b: BigInt) => a * b)),
-                                    ((a: BigInt) =>
-                                      sgn_integer(a)))).apply(l).apply((if (sgn_integer(k) ==
-                                      sgn_integer(l))
-                                 ((k: BigInt) => (l: BigInt) => if (l == 0)
-                                   (BigInt(0), k) else
-                                   (k.abs /% l.abs)).apply(k).apply(l)
-                                 else {
-val (r, s): (BigInt, BigInt) =
-  ((k: BigInt) => (l: BigInt) => if (l == 0) (BigInt(0), k) else
-    (k.abs /% l.abs)).apply(k).apply(l);
-(if (s == BigInt(0)) ((- r), BigInt(0)) else ((- r) - BigInt(1), l.abs - s))
-                                      }))))
-
 def integer_of_nat(x0: Nat.nat): BigInt = x0 match {
   case Nat.Nata(x) => x
 }
@@ -716,21 +640,12 @@ def integer_of_int(x0: Int.int): BigInt = x0 match {
   case Int.int_of_integer(k) => k
 }
 
-def divide_integer(k: BigInt, l: BigInt): BigInt =
-  Product_Type.fst[BigInt, BigInt](divmod_integer(k, l))
-
-def modulo_integer(k: BigInt, l: BigInt): BigInt =
-  Product_Type.snd[BigInt, BigInt](divmod_integer(k, l))
-
 } /* object Code_Numeral */
 
 object Int {
 
 abstract sealed class int
 final case class int_of_integer(a: BigInt) extends int
-
-def nat(k: int): Nat.nat =
-  Nat.Nata(Orderings.max[BigInt](BigInt(0), Code_Numeral.integer_of_int(k)))
 
 def less_int(k: int, l: int): Boolean =
   Code_Numeral.integer_of_int(k) < Code_Numeral.integer_of_int(l)
@@ -739,17 +654,12 @@ def plus_int(k: int, l: int): int =
   int_of_integer(Code_Numeral.integer_of_int(k) +
                    Code_Numeral.integer_of_int(l))
 
-def zero_int: int = int_of_integer(BigInt(0))
-
 def equal_int(k: int, l: int): Boolean =
   Code_Numeral.integer_of_int(k) == Code_Numeral.integer_of_int(l)
 
 def minus_int(k: int, l: int): int =
   int_of_integer(Code_Numeral.integer_of_int(k) -
                    Code_Numeral.integer_of_int(l))
-
-def uminus_int(k: int): int =
-  int_of_integer((- (Code_Numeral.integer_of_int(k))))
 
 } /* object Int */
 
@@ -825,7 +735,7 @@ final case class Str(a: List[String.char]) extends value
 def equal_valuea(x0: value, x1: value): Boolean = (x0, x1) match {
   case (Numa(x1), Str(x2)) => false
   case (Str(x2), Numa(x1)) => false
-  case (Str(x2), Str(y2)) => Lista.equal_lista[String.char](x2, y2)
+  case (Str(x2), Str(y2)) => Lista.equal_list[String.char](x2, y2)
   case (Numa(x1), Numa(y1)) => Int.equal_int(x1, y1)
 }
 
@@ -1021,13 +931,13 @@ def equal_transition_exta[A : HOL.equal](x0: transition_ext[A],
   (x0, x1) match {
   case (transition_exta(labela, aritya, guarda, outputsa, updatesa, morea),
          transition_exta(label, arity, guard, outputs, updates, more))
-    => (Lista.equal_lista[String.char](labela,
-label)) && ((Nat.equal_nata(aritya,
-                             arity)) && ((Lista.equal_lista[GExp.gexp](guarda,
-                                guard)) && ((Lista.equal_lista[AExp.aexp](outputsa,
-                                   outputs)) && ((Lista.equal_lista[(VName.vname,
-                              AExp.aexp)](updatesa,
-   updates)) && (HOL.eq[A](morea, more))))))
+    => (Lista.equal_list[String.char](labela,
+                                       label)) && ((Nat.equal_nata(aritya,
+                            arity)) && ((Lista.equal_list[GExp.gexp](guarda,
+                              guard)) && ((Lista.equal_list[AExp.aexp](outputsa,
+                                outputs)) && ((Lista.equal_list[(VName.vname,
+                          AExp.aexp)](updatesa,
+                                       updates)) && (HOL.eq[A](morea, more))))))
 }
 
 def more[A](x0: transition_ext[A]): A = x0 match {
@@ -1221,10 +1131,10 @@ def possible_steps(e: FSet.fset[((Nat.nat, Nat.nat),
                             val (origin, _): (Nat.nat, Nat.nat) = aa;
                             ((t: Transition.transition_ext[Unit]) =>
                               (Nat.equal_nata(origin,
-       s)) && ((Lista.equal_lista[String.char](Transition.Label[Unit](t),
-        l)) && ((Nat.equal_nata(Lista.size_list[Value.value].apply(i),
-                                 Transition.Arity[Unit](t))) && (apply_guards(Transition.Guard[Unit](t),
-                                       join_ir(i, r))))))
+       s)) && ((Lista.equal_list[String.char](Transition.Label[Unit](t),
+       l)) && ((Nat.equal_nata(Lista.size_list[Value.value].apply(i),
+                                Transition.Arity[Unit](t))) && (apply_guards(Transition.Guard[Unit](t),
+                                      join_ir(i, r))))))
                           })(b)
                        }),
                       e))
@@ -1279,15 +1189,6 @@ Transition.transition_ext[Unit])].apply(possible_steps(e, s, r, l, i)),
 
 } /* object EFSM */
 
-object Show {
-
-def shows_string:
-      (List[String.char]) => (List[String.char]) => List[String.char]
-  =
-  ((a: List[String.char]) => (b: List[String.char]) => a ++ b)
-
-} /* object Show */
-
 object Code_Target_Nat {
 
 def nat_of_char(c: String.char): Nat.nat = Nat.Nata(String.integer_of_char(c))
@@ -1304,810 +1205,6 @@ def less_char(c1: String.char, c2: String.char): Boolean =
   Nat.less_nat(Code_Target_Nat.nat_of_char(c1), Code_Target_Nat.nat_of_char(c2))
 
 } /* object Char_ord */
-
-object Euclidean_Division {
-
-def divide_nat(m: Nat.nat, n: Nat.nat): Nat.nat =
-  Nat.Nata(Code_Numeral.divide_integer(Code_Numeral.integer_of_nat(m),
-Code_Numeral.integer_of_nat(n)))
-
-def modulo_nat(m: Nat.nat, n: Nat.nat): Nat.nat =
-  Nat.Nata(Code_Numeral.modulo_integer(Code_Numeral.integer_of_nat(m),
-Code_Numeral.integer_of_nat(n)))
-
-} /* object Euclidean_Division */
-
-object Show_Instances {
-
-def string_of_digit(n: Nat.nat): List[String.char] =
-  (if (Nat.equal_nata(n, Nat.zero_nata))
-    List(String.Char(false, false, false, false, true, true, false, false))
-    else (if (Nat.equal_nata(n, Nat.one_nat))
-           List(String.Char(true, false, false, false, true, true, false,
-                             false))
-           else (if (Nat.equal_nata(n, Code_Numeral.nat_of_integer(BigInt(2))))
-                  List(String.Char(false, true, false, false, true, true, false,
-                                    false))
-                  else (if (Nat.equal_nata(n,
-    Code_Numeral.nat_of_integer(BigInt(3))))
-                         List(String.Char(true, true, false, false, true, true,
-   false, false))
-                         else (if (Nat.equal_nata(n,
-           Code_Numeral.nat_of_integer(BigInt(4))))
-                                List(String.Char(false, false, true, false,
-          true, true, false, false))
-                                else (if (Nat.equal_nata(n,
-                  Code_Numeral.nat_of_integer(BigInt(5))))
-                                       List(String.Char(true, false, true,
-                 false, true, true, false, false))
-                                       else (if (Nat.equal_nata(n,
-                         Code_Numeral.nat_of_integer(BigInt(6))))
-      List(String.Char(false, true, true, false, true, true, false, false))
-      else (if (Nat.equal_nata(n, Code_Numeral.nat_of_integer(BigInt(7))))
-             List(String.Char(true, true, true, false, true, true, false,
-                               false))
-             else (if (Nat.equal_nata(n, Code_Numeral.nat_of_integer(BigInt(8))))
-                    List(String.Char(false, false, false, true, true, true,
-                                      false, false))
-                    else List(String.Char(true, false, false, true, true, true,
-   false, false)))))))))))
-
-def showsp_nat(p: Nat.nat, n: Nat.nat): (List[String.char]) => List[String.char]
-  =
-  (if (Nat.less_nat(n, Code_Numeral.nat_of_integer(BigInt(10))))
-    Show.shows_string.apply(string_of_digit(n))
-    else Fun.comp[List[String.char], List[String.char],
-                   List[String.char]](showsp_nat(p,
-          Euclidean_Division.divide_nat(n,
- Code_Numeral.nat_of_integer(BigInt(10)))),
-                                       Show.shows_string.apply(string_of_digit(Euclidean_Division.modulo_nat(n,
-                              Code_Numeral.nat_of_integer(BigInt(10)))))))
-
-def showsp_int(p: Nat.nat, i: Int.int): (List[String.char]) => List[String.char]
-  =
-  (if (Int.less_int(i, Int.zero_int))
-    Fun.comp[List[String.char], List[String.char],
-              List[String.char]](Show.shows_string.apply(List(String.Char(true,
-                                   false, true, true, false, true, false,
-                                   false))),
-                                  showsp_nat(p, Int.nat(Int.uminus_int(i))))
-    else showsp_nat(p, Int.nat(i)))
-
-def showsp_bool(p: Nat.nat, x1: Boolean):
-      (List[String.char]) => List[String.char]
-  =
-  (p, x1) match {
-  case (p, true) =>
-    Show.shows_string.apply(List(String.Char(false, false, true, false, true,
-      false, true, false),
-                                  String.Char(false, true, false, false, true,
-       true, true, false),
-                                  String.Char(true, false, true, false, true,
-       true, true, false),
-                                  String.Char(true, false, true, false, false,
-       true, true, false)))
-  case (p, false) =>
-    Show.shows_string.apply(List(String.Char(false, true, true, false, false,
-      false, true, false),
-                                  String.Char(true, false, false, false, false,
-       true, true, false),
-                                  String.Char(false, false, true, true, false,
-       true, true, false),
-                                  String.Char(true, true, false, false, true,
-       true, true, false),
-                                  String.Char(true, false, true, false, false,
-       true, true, false)))
-}
-
-def shows_prec_int:
-      Nat.nat => Int.int => (List[String.char]) => List[String.char]
-  =
-  ((a: Nat.nat) => (b: Int.int) => showsp_int(a, b))
-
-def shows_prec_nat:
-      Nat.nat => Nat.nat => (List[String.char]) => List[String.char]
-  =
-  ((a: Nat.nat) => (b: Nat.nat) => showsp_nat(a, b))
-
-def shows_prec_bool:
-      Nat.nat => Boolean => (List[String.char]) => List[String.char]
-  =
-  ((a: Nat.nat) => (b: Boolean) => showsp_bool(a, b))
-
-} /* object Show_Instances */
-
-object List_Lexorder {
-
-def less_eq_list[A : HOL.equal : Orderings.order](x0: List[A], xs: List[A]):
-      Boolean
-  =
-  (x0, xs) match {
-  case (x :: xs, y :: ys) =>
-    (Orderings.less[A](x, y)) || ((HOL.eq[A](x,
-      y)) && (less_eq_list[A](xs, ys)))
-  case (Nil, xs) => true
-  case (x :: xs, Nil) => false
-}
-
-def less_list[A : HOL.equal : Orderings.order](xs: List[A], x1: List[A]):
-      Boolean
-  =
-  (xs, x1) match {
-  case (x :: xs, y :: ys) =>
-    (Orderings.less[A](x, y)) || ((HOL.eq[A](x, y)) && (less_list[A](xs, ys)))
-  case (Nil, x :: xs) => true
-  case (xs, Nil) => false
-}
-
-} /* object List_Lexorder */
-
-object EFSM_Dot {
-
-def join(x0: List[List[String.char]], uu: List[String.char]): List[String.char]
-  =
-  (x0, uu) match {
-  case (Nil, uu) => Nil
-  case (List(a), uv) => a
-  case (h :: v :: va, s) => h ++ (s ++ join(v :: va, s))
-}
-
-def vname2dot(x0: VName.vname): List[String.char] = x0 match {
-  case VName.I(n) =>
-    List(String.Char(true, false, false, true, false, true, true, false),
-          String.Char(false, false, true, true, true, true, false, false),
-          String.Char(true, true, false, false, true, true, true, false),
-          String.Char(true, false, true, false, true, true, true, false),
-          String.Char(false, true, false, false, false, true, true, false),
-          String.Char(false, true, true, true, true, true, false, false)) ++
-      (Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(n).apply(Nil) ++
-        List(String.Char(false, false, true, true, true, true, false, false),
-              String.Char(true, true, true, true, false, true, false, false),
-              String.Char(true, true, false, false, true, true, true, false),
-              String.Char(true, false, true, false, true, true, true, false),
-              String.Char(false, true, false, false, false, true, true, false),
-              String.Char(false, true, true, true, true, true, false, false)))
-  case VName.R(n) =>
-    List(String.Char(false, true, false, false, true, true, true, false),
-          String.Char(false, false, true, true, true, true, false, false),
-          String.Char(true, true, false, false, true, true, true, false),
-          String.Char(true, false, true, false, true, true, true, false),
-          String.Char(false, true, false, false, false, true, true, false),
-          String.Char(false, true, true, true, true, true, false, false)) ++
-      (Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(n).apply(Nil) ++
-        List(String.Char(false, false, true, true, true, true, false, false),
-              String.Char(true, true, true, true, false, true, false, false),
-              String.Char(true, true, false, false, true, true, true, false),
-              String.Char(true, false, true, false, true, true, true, false),
-              String.Char(false, true, false, false, false, true, true, false),
-              String.Char(false, true, true, true, true, true, false, false)))
-}
-
-def value2dot(x0: Value.value): List[String.char] = x0 match {
-  case Value.Str(s) => s
-  case Value.Numa(n) =>
-    Show_Instances.shows_prec_int.apply(Nat.zero_nata).apply(n).apply(Nil)
-}
-
-def aexp2dot(x0: AExp.aexp): List[String.char] = x0 match {
-  case AExp.L(v) => value2dot(v)
-  case AExp.V(v) => vname2dot(v)
-  case AExp.Plus(a1, a2) =>
-    aexp2dot(a1) ++
-      (List(String.Char(true, true, false, true, false, true, false, false)) ++
-        aexp2dot(a2))
-  case AExp.Minus(a1, a2) =>
-    aexp2dot(a1) ++
-      (List(String.Char(true, false, true, true, false, true, false, false)) ++
-        aexp2dot(a2))
-}
-
-def updates2dot_aux(x0: List[(VName.vname, AExp.aexp)]): List[List[String.char]]
-  =
-  x0 match {
-  case Nil => Nil
-  case h :: t =>
-    vname2dot(Product_Type.fst[VName.vname, AExp.aexp](h)) ++
-      (List(String.Char(false, false, false, false, false, true, false, false),
-             String.Char(false, true, false, true, true, true, false, false),
-             String.Char(true, false, true, true, true, true, false, false),
-             String.Char(false, false, false, false, false, true, false,
-                          false)) ++
-        aexp2dot(Product_Type.snd[VName.vname, AExp.aexp](h))) ::
-      updates2dot_aux(t)
-}
-
-def updates2dot(x0: List[(VName.vname, AExp.aexp)]): List[String.char] = x0
-  match {
-  case Nil => Nil
-  case v :: va =>
-    List(String.Char(false, true, true, false, false, true, false, false),
-          String.Char(true, true, false, false, false, true, false, false),
-          String.Char(true, false, false, true, true, true, false, false),
-          String.Char(true, false, false, false, true, true, false, false),
-          String.Char(true, true, false, true, true, true, false, false)) ++
-      (join(updates2dot_aux(v :: va),
-             List(String.Char(false, false, true, true, false, true, false,
-                               false))) ++
-        List(String.Char(false, true, true, false, false, true, false, false),
-              String.Char(true, true, false, false, false, true, false, false),
-              String.Char(true, false, false, true, true, true, false, false),
-              String.Char(true, true, false, false, true, true, false, false),
-              String.Char(true, true, false, true, true, true, false, false)))
-}
-
-def outputs2dot(x0: List[AExp.aexp], uu: Nat.nat): List[List[String.char]] =
-  (x0, uu) match {
-  case (Nil, uu) => Nil
-  case (h :: t, n) =>
-    List(String.Char(true, true, true, true, false, true, true, false),
-          String.Char(false, false, true, true, true, true, false, false),
-          String.Char(true, true, false, false, true, true, true, false),
-          String.Char(true, false, true, false, true, true, true, false),
-          String.Char(false, true, false, false, false, true, true, false),
-          String.Char(false, true, true, true, true, true, false, false)) ++
-      Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(n).apply(Nil) ++
-      (List(String.Char(false, false, true, true, true, true, false, false),
-             String.Char(true, true, true, true, false, true, false, false),
-             String.Char(true, true, false, false, true, true, true, false),
-             String.Char(true, false, true, false, true, true, true, false),
-             String.Char(false, true, false, false, false, true, true, false),
-             String.Char(false, true, true, true, true, true, false, false),
-             String.Char(false, false, false, false, false, true, false, false),
-             String.Char(false, true, false, true, true, true, false, false),
-             String.Char(true, false, true, true, true, true, false, false),
-             String.Char(false, false, false, false, false, true, false,
-                          false)) ++
-        aexp2dot(h)) ::
-      outputs2dot(t, Nat.plus_nata(n, Nat.one_nat))
-}
-
-def latter2dot(t: Transition.transition_ext[Unit]): List[String.char] =
-  {
-    val l: List[String.char] =
-      join(outputs2dot(Transition.Outputs[Unit](t), Nat.one_nat),
-            List(String.Char(false, false, true, true, false, true, false,
-                              false))) ++
-        updates2dot(Transition.Updates[Unit](t));
-    (if (Lista.nulla[String.char](l)) Nil
-      else List(String.Char(true, true, true, true, false, true, false,
-                             false)) ++
-             l)
-  }
-
-def gexp2dot(x0: GExp.gexp): List[String.char] = x0 match {
-  case GExp.Bc(b) =>
-    Show_Instances.shows_prec_bool.apply(Nat.zero_nata).apply(b).apply(Nil)
-  case GExp.Eq(a1, a2) =>
-    aexp2dot(a1) ++
-      (List(String.Char(false, false, false, false, false, true, false, false),
-             String.Char(true, false, true, true, true, true, false, false),
-             String.Char(false, false, false, false, false, true, false,
-                          false)) ++
-        aexp2dot(a2))
-  case GExp.Gt(a2, a1) =>
-    aexp2dot(a1) ++
-      (List(String.Char(false, false, false, false, false, true, false, false),
-             String.Char(false, true, true, false, false, true, false, false),
-             String.Char(false, false, true, true, false, true, true, false),
-             String.Char(false, false, true, false, true, true, true, false),
-             String.Char(true, true, false, true, true, true, false, false),
-             String.Char(false, false, false, false, false, true, false,
-                          false)) ++
-        aexp2dot(a2))
-  case GExp.Nor(g1, g2) =>
-    List(String.Char(true, false, false, false, false, true, false, false),
-          String.Char(false, false, false, true, false, true, false, false)) ++
-      (gexp2dot(g1) ++
-        (List(String.Char(false, true, true, false, false, true, false, false),
-               String.Char(true, true, true, true, false, true, true, false),
-               String.Char(false, true, false, false, true, true, true, false),
-               String.Char(true, true, false, true, true, true, false,
-                            false)) ++
-          (gexp2dot(g2) ++
-            List(String.Char(true, false, false, true, false, true, false,
-                              false)))))
-  case GExp.Null(v) =>
-    vname2dot(v) ++
-      List(String.Char(false, false, false, false, false, true, false, false),
-            String.Char(true, false, true, true, true, true, false, false),
-            String.Char(false, false, false, false, false, true, false, false),
-            String.Char(false, true, true, true, false, false, true, false),
-            String.Char(true, false, true, false, true, false, true, false),
-            String.Char(false, false, true, true, false, false, true, false),
-            String.Char(false, false, true, true, false, false, true, false))
-}
-
-def guards2dot_aux(x0: List[GExp.gexp]): List[List[String.char]] = x0 match {
-  case Nil => Nil
-  case h :: t => gexp2dot(h) :: guards2dot_aux(t)
-}
-
-def guards2dot(x0: List[GExp.gexp]): List[String.char] = x0 match {
-  case Nil => Nil
-  case v :: va =>
-    List(String.Char(false, true, true, false, false, true, false, false),
-          String.Char(true, true, false, false, false, true, false, false),
-          String.Char(true, false, false, true, true, true, false, false),
-          String.Char(true, false, false, false, true, true, false, false),
-          String.Char(true, true, false, true, true, true, false, false)) ++
-      (join(guards2dot_aux(v :: va),
-             List(String.Char(false, false, true, true, false, true, false,
-                               false))) ++
-        List(String.Char(false, true, true, false, false, true, false, false),
-              String.Char(true, true, false, false, false, true, false, false),
-              String.Char(true, false, false, true, true, true, false, false),
-              String.Char(true, true, false, false, true, true, false, false),
-              String.Char(true, true, false, true, true, true, false, false)))
-}
-
-def transition2dot(t: Transition.transition_ext[Unit]): List[String.char] =
-  Transition.Label[Unit](t) ++
-    (List(String.Char(false, true, false, true, true, true, false, false)) ++
-      (Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(Transition.Arity[Unit](t)).apply(Nil) ++
-        (guards2dot(Transition.Guard[Unit](t)) ++ latter2dot(t))))
-
-def efsm2dot(e: FSet.fset[((Nat.nat, Nat.nat),
-                            Transition.transition_ext[Unit])]):
-      List[String.char]
-  =
-  List(String.Char(false, false, true, false, false, true, true, false),
-        String.Char(true, false, false, true, false, true, true, false),
-        String.Char(true, true, true, false, false, true, true, false),
-        String.Char(false, true, false, false, true, true, true, false),
-        String.Char(true, false, false, false, false, true, true, false),
-        String.Char(false, false, false, false, true, true, true, false),
-        String.Char(false, false, false, true, false, true, true, false),
-        String.Char(false, false, false, false, false, true, false, false),
-        String.Char(true, false, true, false, false, false, true, false),
-        String.Char(false, true, true, false, false, false, true, false),
-        String.Char(true, true, false, false, true, false, true, false),
-        String.Char(true, false, true, true, false, false, true, false),
-        String.Char(true, true, false, true, true, true, true, false)) ++
-    (List(String.Char(false, true, false, true, false, false, false, false)) ++
-      (List(String.Char(true, true, true, false, false, true, true, false),
-             String.Char(false, true, false, false, true, true, true, false),
-             String.Char(true, false, false, false, false, true, true, false),
-             String.Char(false, false, false, false, true, true, true, false),
-             String.Char(false, false, false, true, false, true, true, false),
-             String.Char(false, false, false, false, false, true, false, false),
-             String.Char(true, true, false, true, true, false, true, false),
-             String.Char(false, true, false, false, true, true, true, false),
-             String.Char(true, false, false, false, false, true, true, false),
-             String.Char(false, true, true, true, false, true, true, false),
-             String.Char(true, true, false, true, false, true, true, false),
-             String.Char(false, false, true, false, false, true, true, false),
-             String.Char(true, false, false, true, false, true, true, false),
-             String.Char(false, true, false, false, true, true, true, false),
-             String.Char(true, false, true, true, true, true, false, false)) ++
-        (List(String.Char(false, false, false, false, true, true, false, false),
-               String.Char(false, false, false, true, true, true, true, false),
-               String.Char(false, true, false, false, true, true, false, false),
-               String.Char(false, true, false, false, true, true, false,
-                            false)) ++
-          (List(String.Char(false, false, true, true, false, false, true,
-                             false),
-                 String.Char(false, true, false, false, true, false, true,
-                              false)) ++
-            (List(String.Char(false, false, false, false, true, true, false,
-                               false),
-                   String.Char(false, false, false, true, true, true, true,
-                                false),
-                   String.Char(false, true, false, false, true, true, false,
-                                false),
-                   String.Char(false, true, false, false, true, true, false,
-                                false)) ++
-              (List(String.Char(false, false, true, true, false, true, false,
-                                 false),
-                     String.Char(false, false, false, false, false, true, false,
-                                  false),
-                     String.Char(false, true, true, false, false, true, true,
-                                  false),
-                     String.Char(true, true, true, true, false, true, true,
-                                  false),
-                     String.Char(false, true, true, true, false, true, true,
-                                  false),
-                     String.Char(false, false, true, false, true, true, true,
-                                  false),
-                     String.Char(false, true, true, true, false, true, true,
-                                  false),
-                     String.Char(true, false, false, false, false, true, true,
-                                  false),
-                     String.Char(true, false, true, true, false, true, true,
-                                  false),
-                     String.Char(true, false, true, false, false, true, true,
-                                  false),
-                     String.Char(true, false, true, true, true, true, false,
-                                  false)) ++
-                (List(String.Char(false, false, false, false, true, true, false,
-                                   false),
-                       String.Char(false, false, false, true, true, true, true,
-                                    false),
-                       String.Char(false, true, false, false, true, true, false,
-                                    false),
-                       String.Char(false, true, false, false, true, true, false,
-                                    false)) ++
-                  (List(String.Char(false, false, true, true, false, false,
-                                     true, false),
-                         String.Char(true, false, false, false, false, true,
-                                      true, false),
-                         String.Char(false, false, true, false, true, true,
-                                      true, false),
-                         String.Char(true, false, false, true, false, true,
-                                      true, false),
-                         String.Char(false, true, true, true, false, true, true,
-                                      false),
-                         String.Char(false, false, false, false, false, true,
-                                      false, false),
-                         String.Char(true, false, true, true, false, false,
-                                      true, false),
-                         String.Char(true, true, true, true, false, true, true,
-                                      false),
-                         String.Char(false, false, true, false, false, true,
-                                      true, false),
-                         String.Char(true, false, true, false, false, true,
-                                      true, false),
-                         String.Char(false, true, false, false, true, true,
-                                      true, false),
-                         String.Char(false, true, true, true, false, true, true,
-                                      false),
-                         String.Char(false, false, false, false, false, true,
-                                      false, false),
-                         String.Char(true, false, true, true, false, false,
-                                      true, false),
-                         String.Char(true, false, false, false, false, true,
-                                      true, false),
-                         String.Char(false, false, true, false, true, true,
-                                      true, false),
-                         String.Char(false, false, false, true, false, true,
-                                      true, false)) ++
-                    (List(String.Char(false, false, false, false, true, true,
-                                       false, false),
-                           String.Char(false, false, false, true, true, true,
-true, false),
-                           String.Char(false, true, false, false, true, true,
-false, false),
-                           String.Char(false, true, false, false, true, true,
-false, false)) ++
-                      (List(String.Char(true, false, true, true, true, false,
- true, false),
-                             String.Char(true, true, false, true, true, true,
-  false, false)) ++
-                        (List(String.Char(false, true, false, true, false,
-   false, false, false)) ++
-                          (List(String.Char(false, true, true, true, false,
-     true, true, false),
-                                 String.Char(true, true, true, true, false,
-      true, true, false),
-                                 String.Char(false, false, true, false, false,
-      true, true, false),
-                                 String.Char(true, false, true, false, false,
-      true, true, false),
-                                 String.Char(false, false, false, false, false,
-      true, false, false),
-                                 String.Char(true, true, false, true, true,
-      false, true, false),
-                                 String.Char(true, true, false, false, false,
-      true, true, false),
-                                 String.Char(true, true, true, true, false,
-      true, true, false),
-                                 String.Char(false, false, true, true, false,
-      true, true, false),
-                                 String.Char(true, true, true, true, false,
-      true, true, false),
-                                 String.Char(false, true, false, false, true,
-      true, true, false),
-                                 String.Char(true, false, true, true, true,
-      true, false, false)) ++
-                            (List(String.Char(false, false, false, false, true,
-       true, false, false),
-                                   String.Char(false, false, false, true, true,
-        true, true, false),
-                                   String.Char(false, true, false, false, true,
-        true, false, false),
-                                   String.Char(false, true, false, false, true,
-        true, false, false)) ++
-                              (List(String.Char(false, true, false, false,
-         false, true, true, false),
-                                     String.Char(false, false, true, true,
-          false, true, true, false),
-                                     String.Char(true, false, false, false,
-          false, true, true, false),
-                                     String.Char(true, true, false, false,
-          false, true, true, false),
-                                     String.Char(true, true, false, true, false,
-          true, true, false)) ++
-                                (List(String.Char(false, false, false, false,
-           true, true, false, false),
-                                       String.Char(false, false, false, true,
-            true, true, true, false),
-                                       String.Char(false, true, false, false,
-            true, true, false, false),
-                                       String.Char(false, true, false, false,
-            true, true, false, false)) ++
-                                  (List(String.Char(false, false, true, true,
-             false, true, false, false),
- String.Char(false, false, false, false, false, true, false, false),
- String.Char(false, true, true, false, false, true, true, false),
- String.Char(true, false, false, true, false, true, true, false),
- String.Char(false, false, true, true, false, true, true, false),
- String.Char(false, false, true, true, false, true, true, false),
- String.Char(true, true, false, false, false, true, true, false),
- String.Char(true, true, true, true, false, true, true, false),
- String.Char(false, false, true, true, false, true, true, false),
- String.Char(true, true, true, true, false, true, true, false),
- String.Char(false, true, false, false, true, true, true, false),
- String.Char(true, false, true, true, true, true, false, false)) ++
-                                    (List(String.Char(false, false, false,
-               false, true, true, false, false),
-   String.Char(false, false, false, true, true, true, true, false),
-   String.Char(false, true, false, false, true, true, false, false),
-   String.Char(false, true, false, false, true, true, false, false)) ++
-                                      (List(String.Char(true, true, true, false,
-                 true, true, true, false),
-     String.Char(false, false, false, true, false, true, true, false),
-     String.Char(true, false, false, true, false, true, true, false),
-     String.Char(false, false, true, false, true, true, true, false),
-     String.Char(true, false, true, false, false, true, true, false)) ++
-(List(String.Char(false, false, false, false, true, true, false, false),
-       String.Char(false, false, false, true, true, true, true, false),
-       String.Char(false, true, false, false, true, true, false, false),
-       String.Char(false, true, false, false, true, true, false, false)) ++
-  (List(String.Char(false, false, true, true, false, true, false, false),
-         String.Char(false, false, false, false, false, true, false, false),
-         String.Char(true, true, false, false, true, true, true, false),
-         String.Char(false, false, false, true, false, true, true, false),
-         String.Char(true, false, false, false, false, true, true, false),
-         String.Char(false, false, false, false, true, true, true, false),
-         String.Char(true, false, true, false, false, true, true, false),
-         String.Char(true, false, true, true, true, true, false, false)) ++
-    (List(String.Char(false, false, false, false, true, true, false, false),
-           String.Char(false, false, false, true, true, true, true, false),
-           String.Char(false, true, false, false, true, true, false, false),
-           String.Char(false, true, false, false, true, true, false, false)) ++
-      (List(String.Char(true, true, false, false, false, true, true, false),
-             String.Char(true, false, false, true, false, true, true, false),
-             String.Char(false, true, false, false, true, true, true, false),
-             String.Char(true, true, false, false, false, true, true, false),
-             String.Char(false, false, true, true, false, true, true, false),
-             String.Char(true, false, true, false, false, true, true, false)) ++
-        (List(String.Char(false, false, false, false, true, true, false, false),
-               String.Char(false, false, false, true, true, true, true, false),
-               String.Char(false, true, false, false, true, true, false, false),
-               String.Char(false, true, false, false, true, true, false,
-                            false)) ++
-          (List(String.Char(false, false, true, true, false, true, false,
-                             false),
-                 String.Char(false, false, false, false, false, true, false,
-                              false),
-                 String.Char(true, true, false, false, true, true, true, false),
-                 String.Char(false, false, true, false, true, true, true,
-                              false),
-                 String.Char(true, false, false, true, true, true, true, false),
-                 String.Char(false, false, true, true, false, true, true,
-                              false),
-                 String.Char(true, false, true, false, false, true, true,
-                              false),
-                 String.Char(true, false, true, true, true, true, false,
-                              false)) ++
-            (List(String.Char(false, false, false, false, true, true, false,
-                               false),
-                   String.Char(false, false, false, true, true, true, true,
-                                false),
-                   String.Char(false, true, false, false, true, true, false,
-                                false),
-                   String.Char(false, true, false, false, true, true, false,
-                                false)) ++
-              (List(String.Char(false, true, true, false, false, true, true,
-                                 false),
-                     String.Char(true, false, false, true, false, true, true,
-                                  false),
-                     String.Char(false, false, true, true, false, true, true,
-                                  false),
-                     String.Char(false, false, true, true, false, true, true,
-                                  false),
-                     String.Char(true, false, true, false, false, true, true,
-                                  false),
-                     String.Char(false, false, true, false, false, true, true,
-                                  false)) ++
-                (List(String.Char(false, false, false, false, true, true, false,
-                                   false),
-                       String.Char(false, false, false, true, true, true, true,
-                                    false),
-                       String.Char(false, true, false, false, true, true, false,
-                                    false),
-                       String.Char(false, true, false, false, true, true, false,
-                                    false)) ++
-                  (List(String.Char(false, false, true, true, false, true,
-                                     false, false),
-                         String.Char(false, false, false, false, false, true,
-                                      false, false),
-                         String.Char(false, true, true, false, false, true,
-                                      true, false),
-                         String.Char(true, true, true, true, false, true, true,
-                                      false),
-                         String.Char(false, true, true, true, false, true, true,
-                                      false),
-                         String.Char(false, false, true, false, true, true,
-                                      true, false),
-                         String.Char(false, true, true, true, false, true, true,
-                                      false),
-                         String.Char(true, false, false, false, false, true,
-                                      true, false),
-                         String.Char(true, false, true, true, false, true, true,
-                                      false),
-                         String.Char(true, false, true, false, false, true,
-                                      true, false),
-                         String.Char(true, false, true, true, true, true, false,
-                                      false)) ++
-                    (List(String.Char(false, false, false, false, true, true,
-                                       false, false),
-                           String.Char(false, false, false, true, true, true,
-true, false),
-                           String.Char(false, true, false, false, true, true,
-false, false),
-                           String.Char(false, true, false, false, true, true,
-false, false)) ++
-                      (List(String.Char(false, false, true, true, false, false,
- true, false),
-                             String.Char(true, false, false, false, false, true,
-  true, false),
-                             String.Char(false, false, true, false, true, true,
-  true, false),
-                             String.Char(true, false, false, true, false, true,
-  true, false),
-                             String.Char(false, true, true, true, false, true,
-  true, false),
-                             String.Char(false, false, false, false, false,
-  true, false, false),
-                             String.Char(true, false, true, true, false, false,
-  true, false),
-                             String.Char(true, true, true, true, false, true,
-  true, false),
-                             String.Char(false, false, true, false, false, true,
-  true, false),
-                             String.Char(true, false, true, false, false, true,
-  true, false),
-                             String.Char(false, true, false, false, true, true,
-  true, false),
-                             String.Char(false, true, true, true, false, true,
-  true, false),
-                             String.Char(false, false, false, false, false,
-  true, false, false),
-                             String.Char(true, false, true, true, false, false,
-  true, false),
-                             String.Char(true, false, false, false, false, true,
-  true, false),
-                             String.Char(false, false, true, false, true, true,
-  true, false),
-                             String.Char(false, false, false, true, false, true,
-  true, false)) ++
-                        (List(String.Char(false, false, false, false, true,
-   true, false, false),
-                               String.Char(false, false, false, true, true,
-    true, true, false),
-                               String.Char(false, true, false, false, true,
-    true, false, false),
-                               String.Char(false, true, false, false, true,
-    true, false, false)) ++
-                          (List(String.Char(true, false, true, true, true,
-     false, true, false),
-                                 String.Char(true, true, false, true, true,
-      true, false, false)) ++
-                            (List(String.Char(false, true, false, true, false,
-       false, false, false)) ++
-                              (List(String.Char(true, false, true, false, false,
-         true, true, false),
-                                     String.Char(false, false, true, false,
-          false, true, true, false),
-                                     String.Char(true, true, true, false, false,
-          true, true, false),
-                                     String.Char(true, false, true, false,
-          false, true, true, false),
-                                     String.Char(false, false, false, false,
-          false, true, false, false),
-                                     String.Char(true, true, false, true, true,
-          false, true, false),
-                                     String.Char(false, true, true, false,
-          false, true, true, false),
-                                     String.Char(true, true, true, true, false,
-          true, true, false),
-                                     String.Char(false, true, true, true, false,
-          true, true, false),
-                                     String.Char(false, false, true, false,
-          true, true, true, false),
-                                     String.Char(false, true, true, true, false,
-          true, true, false),
-                                     String.Char(true, false, false, false,
-          false, true, true, false),
-                                     String.Char(true, false, true, true, false,
-          true, true, false),
-                                     String.Char(true, false, true, false,
-          false, true, true, false),
-                                     String.Char(true, false, true, true, true,
-          true, false, false)) ++
-                                (List(String.Char(false, false, false, false,
-           true, true, false, false),
-                                       String.Char(false, false, false, true,
-            true, true, true, false),
-                                       String.Char(false, true, false, false,
-            true, true, false, false),
-                                       String.Char(false, true, false, false,
-            true, true, false, false)) ++
-                                  (List(String.Char(false, false, true, true,
-             false, false, true, false),
- String.Char(true, false, false, false, false, true, true, false),
- String.Char(false, false, true, false, true, true, true, false),
- String.Char(true, false, false, true, false, true, true, false),
- String.Char(false, true, true, true, false, true, true, false),
- String.Char(false, false, false, false, false, true, false, false),
- String.Char(true, false, true, true, false, false, true, false),
- String.Char(true, true, true, true, false, true, true, false),
- String.Char(false, false, true, false, false, true, true, false),
- String.Char(true, false, true, false, false, true, true, false),
- String.Char(false, true, false, false, true, true, true, false),
- String.Char(false, true, true, true, false, true, true, false),
- String.Char(false, false, false, false, false, true, false, false),
- String.Char(true, false, true, true, false, false, true, false),
- String.Char(true, false, false, false, false, true, true, false),
- String.Char(false, false, true, false, true, true, true, false),
- String.Char(false, false, false, true, false, true, true, false)) ++
-                                    (List(String.Char(false, false, false,
-               false, true, true, false, false),
-   String.Char(false, false, false, true, true, true, true, false),
-   String.Char(false, true, false, false, true, true, false, false),
-   String.Char(false, true, false, false, true, true, false, false)) ++
-                                      (List(String.Char(true, false, true, true,
-                 true, false, true, false),
-     String.Char(true, true, false, true, true, true, false, false)) ++
-(List(String.Char(false, true, false, true, false, false, false, false)) ++
-  (join(FSet.sorted_list_of_fset[List[String.char]](FSet.fimage[((Nat.nat,
-                           Nat.nat),
-                          Transition.transition_ext[Unit]),
-                         List[String.char]](((a:
-        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))
-       =>
-      {
-        val (aa, b): ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]) = a;
-        ({
-           val (from, to): (Nat.nat, Nat.nat) = aa;
-           ((t: Transition.transition_ext[Unit]) =>
-             Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(from).apply(Nil) ++
-               (List(String.Char(true, false, true, true, false, true, false,
-                                  false),
-                      String.Char(false, true, true, true, true, true, false,
-                                   false)) ++
-                 (Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(to).apply(Nil) ++
-                   (List(String.Char(true, true, false, true, true, false, true,
-                                      false),
-                          String.Char(false, false, true, true, false, true,
-                                       true, false),
-                          String.Char(true, false, false, false, false, true,
-                                       true, false),
-                          String.Char(false, true, false, false, false, true,
-                                       true, false),
-                          String.Char(true, false, true, false, false, true,
-                                       true, false),
-                          String.Char(false, false, true, true, false, true,
-                                       true, false),
-                          String.Char(true, false, true, true, true, true,
-                                       false, false),
-                          String.Char(false, false, true, true, true, true,
-                                       false, false)) ++
-                     (transition2dot(t) ++
-                       List(String.Char(false, true, true, true, true, true,
- false, false),
-                             String.Char(true, false, true, true, true, false,
-  true, false)))))))
-         })(b)
-      }),
-     e)),
-         List(String.Char(false, true, false, true, false, false, false,
-                           false))) ++
-    (List(String.Char(false, true, false, true, false, false, false, false)) ++
-      List(String.Char(true, false, true, true, true, true, true,
-                        false)))))))))))))))))))))))))))))))))))))))))))
-
-} /* object EFSM_Dot */
 
 object Product_Lexorder {
 
@@ -2130,6 +1227,20 @@ def less_prod[A : Orderings.ord, B : Orderings.ord](x0: (A, B), x1: (A, B)):
 }
 
 } /* object Product_Lexorder */
+
+object List_Lexorder {
+
+def less_list[A : HOL.equal : Orderings.order](xs: List[A], x1: List[A]):
+      Boolean
+  =
+  (xs, x1) match {
+  case (x :: xs, y :: ys) =>
+    (Orderings.less[A](x, y)) || ((HOL.eq[A](x, y)) && (less_list[A](xs, ys)))
+  case (Nil, x :: xs) => true
+  case (xs, Nil) => false
+}
+
+} /* object List_Lexorder */
 
 object GExp_Orderings {
 
@@ -2231,16 +1342,16 @@ def less_transition_ext[A : Orderings.linorder](t1:
          t2: Transition.transition_ext[A]):
       Boolean
   =
-  (if (Lista.equal_lista[String.char](Transition.Label[A](t1),
-                                       Transition.Label[A](t2)))
+  (if (Lista.equal_list[String.char](Transition.Label[A](t1),
+                                      Transition.Label[A](t2)))
     (if (Nat.equal_nata(Transition.Arity[A](t1), Transition.Arity[A](t2)))
-      (if (Lista.equal_lista[GExp.gexp](Transition.Guard[A](t1),
- Transition.Guard[A](t2)))
-        (if (Lista.equal_lista[AExp.aexp](Transition.Outputs[A](t1),
-   Transition.Outputs[A](t2)))
-          (if (Lista.equal_lista[(VName.vname,
-                                   AExp.aexp)](Transition.Updates[A](t1),
-        Transition.Updates[A](t2)))
+      (if (Lista.equal_list[GExp.gexp](Transition.Guard[A](t1),
+Transition.Guard[A](t2)))
+        (if (Lista.equal_list[AExp.aexp](Transition.Outputs[A](t1),
+  Transition.Outputs[A](t2)))
+          (if (Lista.equal_list[(VName.vname,
+                                  AExp.aexp)](Transition.Updates[A](t1),
+       Transition.Updates[A](t2)))
             Orderings.less[A](Transition.more[A](t1), Transition.more[A](t2))
             else List_Lexorder.less_list[(VName.vname,
    AExp.aexp)](Transition.Updates[A](t1), Transition.Updates[A](t2)))
@@ -2264,13 +1375,16 @@ def less_eq_transition_ext[A : HOL.equal : Orderings.linorder](t1:
 
 object Code_Generation {
 
+def show: (List[String.char]) => String =
+  ((a: List[String.char]) => String.implode(a))
+
 def choice_code(ta: Transition.transition_ext[Unit],
                  t: Transition.transition_ext[Unit]):
       Boolean
   =
-  (Lista.equal_lista[String.char](Transition.Label[Unit](ta),
-                                   Transition.Label[Unit](t))) && ((Nat.equal_nata(Transition.Arity[Unit](ta),
-    Transition.Arity[Unit](t))) && (Dirties.scalaChoiceAux(ta, t)))
+  (Lista.equal_list[String.char](Transition.Label[Unit](ta),
+                                  Transition.Label[Unit](t))) && ((Nat.equal_nata(Transition.Arity[Unit](ta),
+   Transition.Arity[Unit](t))) && (Dirties.scalaChoiceAux(ta, t)))
 
 } /* object Code_Generation */
 
@@ -3275,9 +2389,9 @@ def naive_score(t1: FSet.fset[Transition.transition_ext[Unit]],
                                        (Transition.transition_ext[Unit],
  Transition.transition_ext[Unit])
                                    = a;
-                                 (Lista.equal_lista[String.char](Transition.Label[Unit](x),
-                          Transition.Label[Unit](y))) && (Nat.equal_nata(Transition.Arity[Unit](x),
-                                  Transition.Arity[Unit](y)))
+                                 (Lista.equal_list[String.char](Transition.Label[Unit](x),
+                         Transition.Label[Unit](y))) && (Nat.equal_nata(Transition.Arity[Unit](x),
+                                 Transition.Arity[Unit](y)))
                                }),
                               FSet_Utils.fprod[Transition.transition_ext[Unit],
         Transition.transition_ext[Unit]](t1, t2)))
