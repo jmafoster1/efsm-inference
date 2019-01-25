@@ -1375,9 +1375,6 @@ def less_eq_transition_ext[A : HOL.equal : Orderings.linorder](t1:
 
 object Code_Generation {
 
-def show: (List[String.char]) => String =
-  ((a: List[String.char]) => String.implode(a))
-
 def choice_code(ta: Transition.transition_ext[Unit],
                  t: Transition.transition_ext[Unit]):
       Boolean

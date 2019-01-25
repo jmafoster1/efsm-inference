@@ -1,5 +1,8 @@
 import net.liftweb.json._
 import scala.io.Source
+import native.R
+import com.microsoft.z3
+
 
 object FrontEnd {
 
@@ -18,6 +21,11 @@ object FrontEnd {
     println("Hello inference!")
     println((Inference.learn(log, (SelectionStrategies.naive_score _).curried, (Inference.null_generator _).curried, (Inference.null_modifier _).curried)))
     println("Goodbye inference!")
+
+    val ctx = new z3.Context
+    val sort = ctx.mkUninterpretedSort("U")
+    val id = ""
+    println(R(5).toZ3(ctx, sort, id))
 
     println("=================================================================")
   }

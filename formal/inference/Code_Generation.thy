@@ -55,9 +55,7 @@ lemma [code]: "nondeterministic_step e s r l i = (
   apply (simp add: nondeterministic_step_def)
   by auto
 
-definition "show = String.implode"
-
-export_code "show" String.explode String.implode naive_score null_generator null_modifier learn in Scala
+export_code String.explode String.implode naive_score null_generator null_modifier learn in Scala
   (* module_name "Inference"  *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

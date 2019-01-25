@@ -17,13 +17,13 @@
 [0m[[0m[0minfo[0m] [0m[0mCompiling 1 Scala source to /home/michael/Documents/efsm-inference/inference-tool/target/scala-2.12/classes ...[0m
 [0m[[0m[0mdebug[0m] [0m[0mGetting org.scala-sbt:compiler-bridge_2.12:1.2.5:compile for Scala 2.12.8[0m
 [0m[[0m[0mdebug[0m] [0m[0mGetting org.scala-sbt:compiler-bridge_2.12:1.2.5:compile for Scala 2.12.8[0m
-[0m[[0m[0mdebug[0m] [0m[0m[zinc] Running cached compiler 44c16c3a for Scala compiler version 2.12.8[0m
+[0m[[0m[0mdebug[0m] [0m[0m[zinc] Running cached compiler 308bf4a8 for Scala compiler version 2.12.8[0m
 [0m[[0m[0mdebug[0m] [0m[0m[zinc] The Scala compiler is invoked with:[0m
 [0m[[0m[0mdebug[0m] [0m[0m	-bootclasspath[0m
 [0m[[0m[0mdebug[0m] [0m[0m	/home/michael/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.12.8.jar[0m
 [0m[[0m[0mdebug[0m] [0m[0m	-classpath[0m
-[0m[[0m[0mdebug[0m] [0m[0m	/home/michael/Documents/efsm-inference/inference-tool/target/scala-2.12/classes:/home/michael/.ivy2/cache/net.liftweb/lift-json_2.12/jars/lift-json_2.12-3.3.0.jar:/home/michael/.ivy2/cache/org.scala-lang/scalap/jars/scalap-2.12.8.jar:/home/michael/.ivy2/cache/org.scala-lang/scala-compiler/jars/scala-compiler-2.12.8.jar:/home/michael/.ivy2/cache/org.scala-lang/scala-reflect/jars/scala-reflect-2.12.8.jar:/home/michael/.ivy2/cache/org.scala-lang.modules/scala-xml_2.12/bundles/scala-xml_2.12-1.0.6.jar:/home/michael/.ivy2/cache/com.thoughtworks.paranamer/paranamer/bundles/paranamer-2.8.jar[0m
-[0m[[0m[0mdebug[0m] [0m[0mScala compilation took 2.624870155 s[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/home/michael/Documents/efsm-inference/inference-tool/target/scala-2.12/classes:/home/michael/Documents/efsm-inference/inference-tool/lib/com.microsoft.z3.jar:/home/michael/.ivy2/cache/net.liftweb/lift-json_2.12/jars/lift-json_2.12-3.3.0.jar:/home/michael/.ivy2/cache/org.scala-lang/scalap/jars/scalap-2.12.8.jar:/home/michael/.ivy2/cache/org.scala-lang/scala-compiler/jars/scala-compiler-2.12.8.jar:/home/michael/.ivy2/cache/org.scala-lang/scala-reflect/jars/scala-reflect-2.12.8.jar:/home/michael/.ivy2/cache/org.scala-lang.modules/scala-xml_2.12/bundles/scala-xml_2.12-1.0.6.jar:/home/michael/.ivy2/cache/com.thoughtworks.paranamer/paranamer/bundles/paranamer-2.8.jar[0m
+[0m[[0m[0mdebug[0m] [0m[0mScala compilation took 0.167784224 s[0m
 [0m[[0m[0minfo[0m] [0m[0mDone compiling.[0m
 [0m[[0m[0mdebug[0m] [0m[0mNew invalidations:[0m
 [0m[[0m[0mdebug[0m] [0m[0m	Set()[0m
