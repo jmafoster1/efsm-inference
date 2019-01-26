@@ -1,7 +1,5 @@
-[0m[[0m[31merror[0m] [0m[0m/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/FrontEnd.scala:26:20: overloaded method value mkUninterpretedSort with alternatives:[0m
-[0m[[0m[31merror[0m] [0m[0m  (x$1: String)com.microsoft.z3.UninterpretedSort <and>[0m
-[0m[[0m[31merror[0m] [0m[0m  (x$1: com.microsoft.z3.Symbol)com.microsoft.z3.UninterpretedSort[0m
-[0m[[0m[31merror[0m] [0m[0m cannot be applied to ()[0m
-[0m[[0m[31merror[0m] [0m[0m    val sort = ctx.mkUninterpretedSort()[0m
-[0m[[0m[31merror[0m] [0m[0m                   ^[0m
-[0m[[0m[31merror[0m] [0m[0mone error found[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/Dirties.scala:78:110: match may not be exhaustive.[0m
+[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following input: Eq(V(_), _)[0m
+[0m[[0m[33mwarn[0m] [0m[0m  def typeCheck(g: GExp.gexp, t: Map[VName.vname, DataType.DataType]): Map[VName.vname, DataType.DataType] = g match {[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                                                                                             ^[0m
+[0m[[0m[33mwarn[0m] [0m[0mone warning found[0m

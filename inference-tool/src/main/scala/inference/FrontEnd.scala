@@ -2,7 +2,8 @@ import net.liftweb.json._
 import scala.io.Source
 import native.R
 import com.microsoft.z3
-
+// PrintWriter
+import java.io._
 
 object FrontEnd {
 
@@ -19,13 +20,18 @@ object FrontEnd {
     val log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)))
 
     println("Hello inference!")
-    println((Inference.learn(log, (SelectionStrategies.naive_score _).curried, (Inference.null_generator _).curried, (Inference.null_modifier _).curried)))
+    val inferred = (Inference.learn(log, (SelectionStrategies.naive_score _).curried, (Inference.null_generator _).curried, (Inference.null_modifier _).curried))
+
+    val pw = new PrintWriter(new File("dotfiles/drinks.dot" ))
+    pw.write(EFSM_Dot.efsm2dot(inferred))
+    pw.close
+
     println("Goodbye inference!")
 
-    val ctx = new z3.Context
-    val sort = ctx.mkUninterpretedSort("U")
-    val id = ""
-    println(R(5).toZ3(ctx, sort, id))
+    // val ctx = new z3.Context
+    // val sort = ctx.mkUninterpretedSort("U")
+    // val id = ""
+    // println(R(5).toZ3(ctx, sort, id))
 
     println("=================================================================")
   }

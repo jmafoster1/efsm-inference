@@ -29,6 +29,9 @@ object equal {
     val `HOL.equal` = (a: (A, B), b: (A, B)) =>
       Product_Type.equal_proda[A, B](a, b)
   }
+  implicit def `String.equal_literal`: equal[String] = new equal[String] {
+    val `HOL.equal` = (a: String, b: String) => a == b
+  }
   implicit def `Value.equal_value`: equal[Value.value] = new equal[Value.value]
     {
     val `HOL.equal` = (a: Value.value, b: Value.value) =>
@@ -99,6 +102,10 @@ object ord {
     val `Orderings.less` = (a: (A, B), b: (A, B)) =>
       Product_Lexorder.less_prod[A, B](a, b)
   }
+  implicit def `String.ord_literal`: ord[String] = new ord[String] {
+    val `Orderings.less_eq` = (a: String, b: String) => a <= b
+    val `Orderings.less` = (a: String, b: String) => a < b
+  }
   implicit def `GExp_Orderings.ord_vname`: ord[VName.vname] = new
     ord[VName.vname] {
     val `Orderings.less_eq` = (a: VName.vname, b: VName.vname) =>
@@ -158,6 +165,11 @@ object preorder {
       Product_Lexorder.less_eq_prod[A, B](a, b)
     val `Orderings.less` = (a: (A, B), b: (A, B)) =>
       Product_Lexorder.less_prod[A, B](a, b)
+  }
+  implicit def `String.preorder_literal`: preorder[String] = new
+    preorder[String] {
+    val `Orderings.less_eq` = (a: String, b: String) => a <= b
+    val `Orderings.less` = (a: String, b: String) => a < b
   }
   implicit def `GExp_Orderings.preorder_vname`: preorder[VName.vname] = new
     preorder[VName.vname] {
@@ -219,6 +231,10 @@ object order {
       Product_Lexorder.less_eq_prod[A, B](a, b)
     val `Orderings.less` = (a: (A, B), b: (A, B)) =>
       Product_Lexorder.less_prod[A, B](a, b)
+  }
+  implicit def `String.order_literal`: order[String] = new order[String] {
+    val `Orderings.less_eq` = (a: String, b: String) => a <= b
+    val `Orderings.less` = (a: String, b: String) => a < b
   }
   implicit def `GExp_Orderings.order_vname`: order[VName.vname] = new
     order[VName.vname] {
@@ -282,6 +298,11 @@ object linorder {
       Product_Lexorder.less_eq_prod[A, B](a, b)
     val `Orderings.less` = (a: (A, B), b: (A, B)) =>
       Product_Lexorder.less_prod[A, B](a, b)
+  }
+  implicit def `String.linorder_literal`: linorder[String] = new
+    linorder[String] {
+    val `Orderings.less_eq` = (a: String, b: String) => a <= b
+    val `Orderings.less` = (a: String, b: String) => a < b
   }
   implicit def `Nat.linorder_nat`: linorder[Nat.nat] = new linorder[Nat.nat] {
     val `Orderings.less_eq` = (a: Nat.nat, b: Nat.nat) => Nat.less_eq_nat(a, b)
@@ -420,6 +441,10 @@ def equal_unita(u: Unit, v: Unit): Boolean = true
 def less_eq_unit(uu: Unit, uv: Unit): Boolean = true
 
 def less_unit(uu: Unit, uv: Unit): Boolean = false
+
+def apsnd[A, B, C](f: A => B, x1: (C, A)): (C, B) = (f, x1) match {
+  case (f, (x, y)) => (x, f(y))
+}
 
 def product[A, B](x0: Set.set[A], x1: Set.set[B]): Set.set[(A, B)] = (x0, x1)
   match {
@@ -620,6 +645,32 @@ object Code_Numeral {
 
 def one_integera: BigInt = BigInt(1)
 
+def sgn_integer(k: BigInt): BigInt =
+  (if (k == BigInt(0)) BigInt(0)
+    else (if (k < BigInt(0)) BigInt(-1) else BigInt(1)))
+
+def divmod_integer(k: BigInt, l: BigInt): (BigInt, BigInt) =
+  (if (k == BigInt(0)) (BigInt(0), BigInt(0))
+    else (if (l == BigInt(0)) (BigInt(0), k)
+           else (Fun.comp[BigInt, ((BigInt, BigInt)) => (BigInt, BigInt),
+                           BigInt](Fun.comp[BigInt => BigInt,
+     ((BigInt, BigInt)) => (BigInt, BigInt),
+     BigInt](((a: BigInt => BigInt) => (b: (BigInt, BigInt)) =>
+               Product_Type.apsnd[BigInt, BigInt, BigInt](a, b)),
+              ((a: BigInt) => (b: BigInt) => a * b)),
+                                    ((a: BigInt) =>
+                                      sgn_integer(a)))).apply(l).apply((if (sgn_integer(k) ==
+                                      sgn_integer(l))
+                                 ((k: BigInt) => (l: BigInt) => if (l == 0)
+                                   (BigInt(0), k) else
+                                   (k.abs /% l.abs)).apply(k).apply(l)
+                                 else {
+val (r, s): (BigInt, BigInt) =
+  ((k: BigInt) => (l: BigInt) => if (l == 0) (BigInt(0), k) else
+    (k.abs /% l.abs)).apply(k).apply(l);
+(if (s == BigInt(0)) ((- r), BigInt(0)) else ((- r) - BigInt(1), l.abs - s))
+                                      }))))
+
 def integer_of_nat(x0: Nat.nat): BigInt = x0 match {
   case Nat.Nata(x) => x
 }
@@ -640,12 +691,21 @@ def integer_of_int(x0: Int.int): BigInt = x0 match {
   case Int.int_of_integer(k) => k
 }
 
+def divide_integer(k: BigInt, l: BigInt): BigInt =
+  Product_Type.fst[BigInt, BigInt](divmod_integer(k, l))
+
+def modulo_integer(k: BigInt, l: BigInt): BigInt =
+  Product_Type.snd[BigInt, BigInt](divmod_integer(k, l))
+
 } /* object Code_Numeral */
 
 object Int {
 
 abstract sealed class int
 final case class int_of_integer(a: BigInt) extends int
+
+def nat(k: int): Nat.nat =
+  Nat.Nata(Orderings.max[BigInt](BigInt(0), Code_Numeral.integer_of_int(k)))
 
 def less_int(k: int, l: int): Boolean =
   Code_Numeral.integer_of_int(k) < Code_Numeral.integer_of_int(l)
@@ -654,12 +714,17 @@ def plus_int(k: int, l: int): int =
   int_of_integer(Code_Numeral.integer_of_int(k) +
                    Code_Numeral.integer_of_int(l))
 
+def zero_int: int = int_of_integer(BigInt(0))
+
 def equal_int(k: int, l: int): Boolean =
   Code_Numeral.integer_of_int(k) == Code_Numeral.integer_of_int(l)
 
 def minus_int(k: int, l: int): int =
   int_of_integer(Code_Numeral.integer_of_int(k) -
                    Code_Numeral.integer_of_int(l))
+
+def uminus_int(k: int): int =
+  int_of_integer((- (Code_Numeral.integer_of_int(k))))
 
 } /* object Int */
 
@@ -911,6 +976,11 @@ def gval(x0: gexp, uu: VName.vname => Option[Value.value]): Option[Boolean] =
        case (Some(x), Some(y)) => Some[Boolean](! (x || y))
      })
   case (Null(v), s) => Some[Boolean](Optiona.is_none[Value.value](s(v)))
+}
+
+def conjoin(x0: List[gexp]): gexp = x0 match {
+  case Nil => Bc(true)
+  case h :: t => Nor(Nor(h, h), Nor(conjoin(t), conjoin(t)))
 }
 
 } /* object GExp */
@@ -1189,6 +1259,15 @@ Transition.transition_ext[Unit])].apply(possible_steps(e, s, r, l, i)),
 
 } /* object EFSM */
 
+object Show {
+
+def shows_string:
+      (List[String.char]) => (List[String.char]) => List[String.char]
+  =
+  ((a: List[String.char]) => (b: List[String.char]) => a ++ b)
+
+} /* object Show */
+
 object Code_Target_Nat {
 
 def nat_of_char(c: String.char): Nat.nat = Nat.Nata(String.integer_of_char(c))
@@ -1205,6 +1284,243 @@ def less_char(c1: String.char, c2: String.char): Boolean =
   Nat.less_nat(Code_Target_Nat.nat_of_char(c1), Code_Target_Nat.nat_of_char(c2))
 
 } /* object Char_ord */
+
+object Euclidean_Division {
+
+def divide_nat(m: Nat.nat, n: Nat.nat): Nat.nat =
+  Nat.Nata(Code_Numeral.divide_integer(Code_Numeral.integer_of_nat(m),
+Code_Numeral.integer_of_nat(n)))
+
+def modulo_nat(m: Nat.nat, n: Nat.nat): Nat.nat =
+  Nat.Nata(Code_Numeral.modulo_integer(Code_Numeral.integer_of_nat(m),
+Code_Numeral.integer_of_nat(n)))
+
+} /* object Euclidean_Division */
+
+object Show_Instances {
+
+def string_of_digit(n: Nat.nat): List[String.char] =
+  (if (Nat.equal_nata(n, Nat.zero_nata))
+    List(String.Char(false, false, false, false, true, true, false, false))
+    else (if (Nat.equal_nata(n, Nat.one_nat))
+           List(String.Char(true, false, false, false, true, true, false,
+                             false))
+           else (if (Nat.equal_nata(n, Code_Numeral.nat_of_integer(BigInt(2))))
+                  List(String.Char(false, true, false, false, true, true, false,
+                                    false))
+                  else (if (Nat.equal_nata(n,
+    Code_Numeral.nat_of_integer(BigInt(3))))
+                         List(String.Char(true, true, false, false, true, true,
+   false, false))
+                         else (if (Nat.equal_nata(n,
+           Code_Numeral.nat_of_integer(BigInt(4))))
+                                List(String.Char(false, false, true, false,
+          true, true, false, false))
+                                else (if (Nat.equal_nata(n,
+                  Code_Numeral.nat_of_integer(BigInt(5))))
+                                       List(String.Char(true, false, true,
+                 false, true, true, false, false))
+                                       else (if (Nat.equal_nata(n,
+                         Code_Numeral.nat_of_integer(BigInt(6))))
+      List(String.Char(false, true, true, false, true, true, false, false))
+      else (if (Nat.equal_nata(n, Code_Numeral.nat_of_integer(BigInt(7))))
+             List(String.Char(true, true, true, false, true, true, false,
+                               false))
+             else (if (Nat.equal_nata(n, Code_Numeral.nat_of_integer(BigInt(8))))
+                    List(String.Char(false, false, false, true, true, true,
+                                      false, false))
+                    else List(String.Char(true, false, false, true, true, true,
+   false, false)))))))))))
+
+def showsp_nat(p: Nat.nat, n: Nat.nat): (List[String.char]) => List[String.char]
+  =
+  (if (Nat.less_nat(n, Code_Numeral.nat_of_integer(BigInt(10))))
+    Show.shows_string.apply(string_of_digit(n))
+    else Fun.comp[List[String.char], List[String.char],
+                   List[String.char]](showsp_nat(p,
+          Euclidean_Division.divide_nat(n,
+ Code_Numeral.nat_of_integer(BigInt(10)))),
+                                       Show.shows_string.apply(string_of_digit(Euclidean_Division.modulo_nat(n,
+                              Code_Numeral.nat_of_integer(BigInt(10)))))))
+
+def showsp_int(p: Nat.nat, i: Int.int): (List[String.char]) => List[String.char]
+  =
+  (if (Int.less_int(i, Int.zero_int))
+    Fun.comp[List[String.char], List[String.char],
+              List[String.char]](Show.shows_string.apply(List(String.Char(true,
+                                   false, true, true, false, true, false,
+                                   false))),
+                                  showsp_nat(p, Int.nat(Int.uminus_int(i))))
+    else showsp_nat(p, Int.nat(i)))
+
+def shows_prec_int:
+      Nat.nat => Int.int => (List[String.char]) => List[String.char]
+  =
+  ((a: Nat.nat) => (b: Int.int) => showsp_int(a, b))
+
+def shows_prec_nat:
+      Nat.nat => Nat.nat => (List[String.char]) => List[String.char]
+  =
+  ((a: Nat.nat) => (b: Nat.nat) => showsp_nat(a, b))
+
+} /* object Show_Instances */
+
+object EFSM_Dot {
+
+def join(x0: List[String], uu: String): String = (x0, uu) match {
+  case (Nil, uu) => ""
+  case (List(a), uv) => a
+  case (h :: v :: va, s) => h + s + join(v :: va, s)
+}
+
+def vname2dot(x0: VName.vname): String = x0 match {
+  case VName.I(n) =>
+    "i<sub>" +
+      String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(n).apply(Nil)) +
+      "</sub>"
+  case VName.R(n) =>
+    "r<sub>" +
+      String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(n).apply(Nil)) +
+      "</sub>"
+}
+
+def value2dot(x0: Value.value): String = x0 match {
+  case Value.Str(s) => String.implode(s)
+  case Value.Numa(n) =>
+    String.implode(Show_Instances.shows_prec_int.apply(Nat.zero_nata).apply(n).apply(Nil))
+}
+
+def aexp2dot(x0: AExp.aexp): String = x0 match {
+  case AExp.L(v) => value2dot(v)
+  case AExp.V(v) => vname2dot(v)
+  case AExp.Plus(a1, a2) => aexp2dot(a1) + " + " + aexp2dot(a2)
+  case AExp.Minus(a1, a2) => aexp2dot(a1) + " - " + aexp2dot(a2)
+}
+
+def updates2dot_aux(x0: List[(VName.vname, AExp.aexp)]): List[String] = x0 match
+  {
+  case Nil => Nil
+  case h :: t =>
+    vname2dot(Product_Type.fst[VName.vname, AExp.aexp](h)) + " := " +
+      aexp2dot(Product_Type.snd[VName.vname, AExp.aexp](h)) ::
+      updates2dot_aux(t)
+}
+
+def updates2dot(x0: List[(VName.vname, AExp.aexp)]): String = x0 match {
+  case Nil => ""
+  case v :: va => "&#91;" + join(updates2dot_aux(v :: va), ",") + "&#93;"
+}
+
+def outputs2dot(x0: List[AExp.aexp], uu: Nat.nat): List[String] = (x0, uu) match
+  {
+  case (Nil, uu) => Nil
+  case (h :: t, n) =>
+    "o<sub>" +
+      String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(n).apply(Nil)) +
+      "</sub> := " +
+      aexp2dot(h) ::
+      outputs2dot(t, Nat.plus_nata(n, Nat.one_nat))
+}
+
+def latter2dot(t: Transition.transition_ext[Unit]): String =
+  {
+    val l: String =
+      join(outputs2dot(Transition.Outputs[Unit](t), Nat.one_nat), ",") +
+        updates2dot(Transition.Updates[Unit](t));
+    (if (l == "") "" else "/" + l)
+  }
+
+def gexp2dot(x0: GExp.gexp): String = x0 match {
+  case GExp.Bc(true) => "True"
+  case GExp.Bc(false) => "False"
+  case GExp.Eq(a1, a2) => aexp2dot(a1) + " = " + aexp2dot(a2)
+  case GExp.Gt(a2, a1) => aexp2dot(a1) + " &lt; " + aexp2dot(a2)
+  case GExp.Nor(g1, g2) => "!(" + gexp2dot(g1) + "&or;" + gexp2dot(g2) + ")"
+  case GExp.Null(v) => vname2dot(v) + " = NULL"
+}
+
+def guards2dot_aux(x0: List[GExp.gexp]): List[String] = x0 match {
+  case Nil => Nil
+  case h :: t => gexp2dot(h) :: guards2dot_aux(t)
+}
+
+def guards2dot(x0: List[GExp.gexp]): String = x0 match {
+  case Nil => ""
+  case v :: va => "&#91;" + join(guards2dot_aux(v :: va), ",") + "&#93;"
+}
+
+def transition2dot(t: Transition.transition_ext[Unit]): String =
+  String.implode(Transition.Label[Unit](t)) + ":" +
+    String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(Transition.Arity[Unit](t)).apply(Nil)) +
+    guards2dot(Transition.Guard[Unit](t)) +
+    latter2dot(t)
+
+def efsm2dot(e: FSet.fset[((Nat.nat, Nat.nat),
+                            Transition.transition_ext[Unit])]):
+      String
+  =
+  "digraph EFSM{" + "\u000A" + "graph [rankdir=" + "\"" + "LR" + "\"" +
+    ", fontname=" +
+    "\"" +
+    "Latin Modern Math" +
+    "\"" +
+    "];" +
+    "\u000A" +
+    "node [color=" +
+    "\"" +
+    "black" +
+    "\"" +
+    ", fillcolor=" +
+    "\"" +
+    "white" +
+    "\"" +
+    ", shape=" +
+    "\"" +
+    "circle" +
+    "\"" +
+    ", style=" +
+    "\"" +
+    "filled" +
+    "\"" +
+    ", fontname=" +
+    "\"" +
+    "Latin Modern Math" +
+    "\"" +
+    "];" +
+    "\u000A" +
+    "edge [fontname=" +
+    "\"" +
+    "Latin Modern Math" +
+    "\"" +
+    "];" +
+    "\u000A" +
+    join(FSet.sorted_list_of_fset[String](FSet.fimage[((Nat.nat, Nat.nat),
+                Transition.transition_ext[Unit]),
+               String](((a: ((Nat.nat, Nat.nat),
+                              Transition.transition_ext[Unit]))
+                          =>
+                         {
+                           val (aa, b):
+                                 ((Nat.nat, Nat.nat),
+                                   Transition.transition_ext[Unit])
+                             = a;
+                           ({
+                              val (from, to): (Nat.nat, Nat.nat) = aa;
+                              ((t: Transition.transition_ext[Unit]) =>
+                                String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(from).apply(Nil)) +
+                                  "->" +
+                                  String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(to).apply(Nil)) +
+                                  "[label=<" +
+                                  transition2dot(t) +
+                                  ">]")
+                            })(b)
+                         }),
+                        e)),
+          "\u000A") +
+    "\u000A" +
+    "}"
+
+} /* object EFSM_Dot */
 
 object Product_Lexorder {
 
@@ -1372,18 +1688,6 @@ def less_eq_transition_ext[A : HOL.equal : Orderings.linorder](t1:
                                     t2))
 
 } /* object Transition_Ordering */
-
-object Code_Generation {
-
-def choice_code(ta: Transition.transition_ext[Unit],
-                 t: Transition.transition_ext[Unit]):
-      Boolean
-  =
-  (Lista.equal_list[String.char](Transition.Label[Unit](ta),
-                                  Transition.Label[Unit](t))) && ((Nat.equal_nata(Transition.Arity[Unit](ta),
-   Transition.Arity[Unit](t))) && (Dirties.scalaChoiceAux(ta, t)))
-
-} /* object Code_Generation */
 
 object FSet_Utils {
 
@@ -1622,12 +1926,16 @@ def outgoing_transitions(n: Nat.nat,
      }),
     t))
 
-def choice:
-      (Transition.transition_ext[Unit]) =>
-        (Transition.transition_ext[Unit]) => Boolean
+def choice(t1: Transition.transition_ext[Unit],
+            t2: Transition.transition_ext[Unit]):
+      Boolean
   =
-  ((a: Transition.transition_ext[Unit]) =>
-    (b: Transition.transition_ext[Unit]) => Code_Generation.choice_code(a, b))
+  (Lista.equal_list[String.char](Transition.Label[Unit](t1),
+                                  Transition.Label[Unit](t2))) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
+    Transition.Arity[Unit](t2))) && (Dirties.satisfiable(GExp.Nor(GExp.Nor(GExp.conjoin(Transition.Guard[Unit](t1)),
+                                    GExp.conjoin(Transition.Guard[Unit](t1))),
+                           GExp.Nor(GExp.conjoin(Transition.Guard[Unit](t2)),
+                                     GExp.conjoin(Transition.Guard[Unit](t2)))))))
 
 def nondeterministic_pairs(t: FSet.fset[(Nat.nat,
   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
@@ -1668,10 +1976,10 @@ val (ab, b):
              ((Transition.transition_ext[Unit], Nat.nat),
                (Transition.transition_ext[Unit], Nat.nat))
          = ac;
-       choice.apply(Product_Type.fst[Transition.transition_ext[Unit],
-                                      Nat.nat](tb)).apply(Product_Type.fst[Transition.transition_ext[Unit],
-                                    Nat.nat](ta)) && (Product_Lexorder.less_eq_prod[Transition.transition_ext[Unit],
-     Nat.nat](tb, ta))
+       (choice(Product_Type.fst[Transition.transition_ext[Unit], Nat.nat](tb),
+                Product_Type.fst[Transition.transition_ext[Unit],
+                                  Nat.nat](ta))) && (Product_Lexorder.less_eq_prod[Transition.transition_ext[Unit],
+    Nat.nat](tb, ta))
      })
  })(b)
                                       }),

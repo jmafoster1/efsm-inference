@@ -170,4 +170,8 @@ lemma mutually_exclusive_symmetric: "mutually_exclusive x y \<Longrightarrow> mu
 lemma not_mutually_exclusive_true: "satisfiable x = (\<not> mutually_exclusive x (Bc True))"
   by (simp add: mutually_exclusive_def satisfiable_def)
 
+primrec conjoin :: "gexp list \<Rightarrow> gexp" where
+  "conjoin [] = gexp.Bc True" |
+  "conjoin (h#t) = gAnd h (conjoin t)"
+
 end

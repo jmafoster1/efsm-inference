@@ -1,5 +1,6 @@
 theory Code_Generation
-  imports Inference "HOL-Library.Code_Target_Numeral" "../FSet_Utils" SelectionStrategies
+  imports 
+   "HOL-Library.Code_Target_Numeral" Inference "../FSet_Utils" SelectionStrategies EFSM_Dot
 begin
 
 definition scalaChoiceAux :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
@@ -11,18 +12,12 @@ definition scalaNondeterministicSimulates :: "transition_matrix \<Rightarrow> tr
 definition scalaDirectlySubsumes :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "scalaDirectlySubsumes a b c d e = False"
 
-definition choice_aux :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "choice_aux t t' = (\<exists> s. apply_guards (Guard t) s \<and> apply_guards (Guard t') s)"
-
-definition choice_code :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "choice_code t t' = ((Label t) = (Label t') \<and> (Arity t) = (Arity t') \<and> choice_aux t t')"
-
-declare choice_aux_def [code del]
+declare GExp.satisfiable_def [code del]
 declare nondeterministic_simulates_def [code del]
 declare directly_subsumes_def [code del]
 
 code_printing
-  constant "choice_aux" \<rightharpoonup> (Scala) "Dirties.scalaChoiceAux" |
+  constant "GExp.satisfiable" \<rightharpoonup> (Scala) "Dirties.satisfiable" |
   constant "nondeterministic_simulates" \<rightharpoonup> (Scala) "Dirties.scalaNondeterministicSimulates" |
   constant "directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes"
 
@@ -33,10 +28,6 @@ code_printing
 (*code_printing
   type_constructor prod \<rightharpoonup> (Scala) infix 2 "," |
   constant Pair \<rightharpoonup> (Scala) "!((_),/ (_))"*)
-
-lemma [code]: "choice = choice_code"
-  apply (rule ext)+
-  by (simp add: choice_def choice_code_def choice_aux_def)
 
 lemma [code]: "step e s r l i = (if size (possible_steps e s r l i) = 1 then (
                      let (s', t) = (fthe_elem (possible_steps e s r l i)) in
@@ -55,8 +46,37 @@ lemma [code]: "nondeterministic_step e s r l i = (
   apply (simp add: nondeterministic_step_def)
   by auto
 
-export_code String.explode String.implode naive_score null_generator null_modifier learn in Scala
-  (* module_name "Inference"  *)
+lemma apply_guards_equals_conjoin: "apply_guards g s = (gval (GExp.conjoin g) s = Some True)"
+proof(induct g)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a g)
+  then show ?case
+    apply simp
+    apply (case_tac "gval a s")
+     apply simp
+    apply simp
+    apply (case_tac "gval (GExp.conjoin g) s")
+     apply simp
+    by simp
+qed
+
+lemma [code]: "(choice t1 t2) = (Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> GExp.satisfiable (gAnd (GExp.conjoin (Guard t1)) (GExp.conjoin (Guard t2))))"
+  apply (simp add: choice_def GExp.satisfiable_def)
+  apply safe
+   apply (rule_tac x=s in exI)
+   apply (simp add: apply_guards_equals_conjoin)
+  apply (rule_tac x=s in exI)
+  apply (case_tac "gval (GExp.conjoin (Guard t1)) s")
+   apply (simp add: apply_guards_equals_conjoin)
+  apply (case_tac "gval (GExp.conjoin (Guard t2)) s")
+  apply (simp add: apply_guards_equals_conjoin)
+  by (simp add: apply_guards_equals_conjoin)
+
+export_code efsm2dot GExp.conjoin String.explode String.implode naive_score null_generator null_modifier learn in Scala
+  (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
 end
