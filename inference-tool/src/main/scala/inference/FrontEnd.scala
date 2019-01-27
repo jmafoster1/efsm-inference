@@ -1,6 +1,5 @@
 import net.liftweb.json._
 import scala.io.Source
-import native.R
 import com.microsoft.z3
 // PrintWriter
 import java.io._

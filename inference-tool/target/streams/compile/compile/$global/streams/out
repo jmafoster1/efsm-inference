@@ -1,5 +1,4 @@
-[0m[[0m[33mwarn[0m] [0m[0m/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/Dirties.scala:78:110: match may not be exhaustive.[0m
-[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following input: Eq(V(_), _)[0m
-[0m[[0m[33mwarn[0m] [0m[0m  def typeCheck(g: GExp.gexp, t: Map[VName.vname, DataType.DataType]): Map[VName.vname, DataType.DataType] = g match {[0m
-[0m[[0m[33mwarn[0m] [0m[0m                                                                                                             ^[0m
-[0m[[0m[33mwarn[0m] [0m[0mone warning found[0m
+[0m[[0m[31merror[0m] [0m[0m/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/Dirties.scala:58:43: not found: type SatisfiabilityUnknownException[0m
+[0m[[0m[31merror[0m] [0m[0m      case z3.Status.UNKNOWN => throw new SatisfiabilityUnknownException(g.toString())[0m
+[0m[[0m[31merror[0m] [0m[0m                                          ^[0m
+[0m[[0m[31merror[0m] [0m[0mone error found[0m

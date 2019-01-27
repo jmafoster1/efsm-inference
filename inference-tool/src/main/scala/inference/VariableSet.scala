@@ -1,10 +1,9 @@
-package native
 import DataType._;
 
-class VariableSet(var asSet: Set[Variable]) extends Set[Variable] with Serializable {
+class VariableSet(var asSet: scala.collection.immutable.Set[Variable]) extends Set[Variable] with Serializable {
 
   def this(variables: Variable*) = {
-    this(Set[Variable]())
+    this(scala.collection.immutable.Set[Variable]())
     for (v <- variables) this += v
   }
 
@@ -16,7 +15,7 @@ class VariableSet(var asSet: Set[Variable]) extends Set[Variable] with Serializa
   }
 
   def +(newV: Variable): VariableSet = {
-    val possibleClash = get(v => (v.name == newV.name && v.dataType != newV.dataType && v.id == newV.id))
+    val possibleClash = get(v => (v.name == newV.name && v.dataType != newV.dataType))
     if (possibleClash == null) return new VariableSet(asSet + newV)
     else
       (newV.dataType, possibleClash.dataType) match {
