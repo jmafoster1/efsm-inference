@@ -69,7 +69,7 @@ definition S :: "iEFSM \<Rightarrow> nat fset" where
 
 (* For each state, get its outgoing transitions and see if there's any nondeterminism there *)
 definition nondeterministic_pairs :: "iEFSM \<Rightarrow> nondeterministic_pair fset" where
-  "nondeterministic_pairs t = ffilter (\<lambda>(_, (d1, d2), t, t'). choice (fst t) (fst t') \<and> t \<le> t') (ffUnion (fimage (\<lambda>s. state_nondeterminism s (outgoing_transitions s t)) (S t)))"
+  "nondeterministic_pairs t = ffilter (\<lambda>(_, (d1, d2), t, t'). choice (fst t) (fst t')) (ffUnion (fimage (\<lambda>s. state_nondeterminism s (outgoing_transitions s t)) (S t)))"
 
 definition nondeterministic_transitions :: "iEFSM \<Rightarrow> nondeterministic_pair option" where
   "nondeterministic_transitions t = (if nondeterministic_pairs t = {||} then None else Some (fMax (nondeterministic_pairs t)))"
@@ -158,7 +158,7 @@ type_synonym scoreboard = "(nat \<times> (nat \<times> nat)) fset"
 type_synonym strategy = "transition fset \<Rightarrow> transition fset \<Rightarrow> nat"
 
 definition score :: "iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
-  "score t rank = fimage (\<lambda>(s1, s2). (rank (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s1 t)) (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s2 t)), (s1, s2))) (ffilter (\<lambda>(x, y). x < y) ((S t) |\<times>| (S t)))"
+  "score t rank = ffilter (\<lambda>(score, _). score > 0) (fimage (\<lambda>(s1, s2). (rank (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s1 t)) (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s2 t)), (s1, s2))) (ffilter (\<lambda>(x, y). x < y) ((S t) |\<times>| (S t))))"
 
 definition leaves :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
   "leaves uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (\<exists>s. x = (uid, s))) t))))"
@@ -188,16 +188,21 @@ lemma "(leaves uid t = n) = (\<exists>b ba. Set.filter (\<lambda>x. \<exists>a b
   oops
 
 function resolve_nondeterminism :: "nondeterministic_pair fset \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" where
-  "resolve_nondeterminism s e t g m = (if s = {||} then if nondeterminism t then None else Some t else 
-    (let (from, (to1, to2), ((t1, u1), (t2, u2))) = fMax s; t' = merge_states to1 to2 t; z=(merge_states (arrives u1 t) (arrives u2 t) t) in 
+  "resolve_nondeterminism s e t g m = (
+    if s = {||} then
+      if nondeterminism t then None else Some t
+    else 
+      let (from, (to1, to2), ((t1, u1), (t2, u2))) = fMax s;
+          t' = merge_states to1 to2 t;
+          z = (merge_states (arrives u1 t) (arrives u2 t) t)
+      in 
       \<comment> \<open>   merge_transitions oldEFSM newEFSM t1FromOld     t2FromOld    newFrom t1NewTo t2NewTo t1 u1 t2 u2 maker modifier modify\<close>
       (case merge_transitions  e       z      (leaves u1 e) (leaves u2 e) (leaves u1 z)    (arrives u1 z) (arrives u2 z)     t1 u1 t2 u2 g     m        True of
-        None \<Rightarrow> resolve_nondeterminism (s - {|fMax s|}) e t g m |
-        Some new \<Rightarrow> resolve_nondeterminism (nondeterministic_pairs new) e new g m
+      None \<Rightarrow> resolve_nondeterminism (s - {|fMax s|}) e t g m |
+      Some new \<Rightarrow> resolve_nondeterminism (nondeterministic_pairs new) e new g m
       )
-    )
   )"
-  sorry
+sorry
 termination sorry
 
 (* resolve_nondeterminism: tries to resolve any nondeterminism in a given EFSM                    *)

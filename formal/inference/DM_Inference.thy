@@ -181,7 +181,7 @@ lemma no_subsumption_vend_nothing_vend: "\<not>subsumes c vend_nothing vend"
 lemma no_subsumption_vend_vend_nothing: "\<not>subsumes c vend vend_nothing"
   by (simp add: subsumes_def transitions)
 
-lemma scoring: "rev (sorted_list_of_fset (score drinks2 naive_score)) = [(3, 1, 2), (0, 2, 3), (0, 1, 3), (0, 0, 3), (0, 0, 2), (0, 0, 1)]"
+lemma scoring: "rev (sorted_list_of_fset (score drinks2 naive_score)) = [(3, 1, 2)]"
 proof-
   have S_drinks2: "S drinks2 = {|0, 1, 2, 3|}"
     apply (simp add: S_def drinks2_def)
@@ -202,13 +202,12 @@ proof-
     apply (simp add: S_drinks2 S_drinks2_squared)
     apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def)
     by auto
-  have score: "score DM_Inference.drinks2 naive_score = {|(0, 0, 1), (0, 0, 2), (0, 0, 3), (0, 1, 3), (0, 2, 3), (3, 1, 2)|}"
+  have score: "score DM_Inference.drinks2 naive_score = {|(3, 1, 2)|}"
     apply (simp add: score_def ffilter)
     apply (simp add: outgoing_transitions_def drinks2_def fimage_def)
     apply (simp add: naive_score_empty set_equiv)
     apply (simp add: naive_score_def fprod_def)
-    apply (simp add: transitions Abs_fset_inverse)
-    by auto
+    by (simp add: transitions Abs_fset_inverse)
   show ?thesis
     by (simp add: score sorted_list_of_fset_def)
 qed

@@ -1,7 +1,16 @@
 import com.microsoft.z3
 import exceptions.SatisfiabilityUnknownException
-
+// PrintWriter
+import java.io._
 object Dirties {
+
+  def writeiDot(e: FSet.fset[(Nat.nat,
+                               ((Nat.nat, Nat.nat),
+                                 Transition.transition_ext[Unit]))], f: String): Unit = {
+                                   val pw = new PrintWriter(new File(f))
+                                   pw.write(EFSM_Dot.iefsm2dot(e))
+                                   pw.close
+                                 }
 
   type Set[A] = scala.collection.immutable.Set[A]
 
@@ -48,11 +57,11 @@ object Dirties {
   def satisfiable(g: GExp.gexp): Boolean = {
     val tc = new TypeChecker()
     tc.inferTypes(g)
-    println(tc.variables)
+    // println(tc.variables)
     val ctx = new z3.Context
     val solver = ctx.mkSimpleSolver()
     solver.add(toZ3(g, ctx, tc.variables))
-    print(solver)
+    // print(solver)
     solver.check() match {
       case z3.Status.SATISFIABLE => true
       case z3.Status.UNSATISFIABLE => false

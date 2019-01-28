@@ -1520,6 +1520,81 @@ def efsm2dot(e: FSet.fset[((Nat.nat, Nat.nat),
     "\u000A" +
     "}"
 
+def iefsm2dot(e: FSet.fset[(Nat.nat,
+                             ((Nat.nat, Nat.nat),
+                               Transition.transition_ext[Unit]))]):
+      String
+  =
+  "digraph EFSM{" + "\u000A" + "  graph [rankdir=" + "\"" + "LR" + "\"" +
+    ", fontname=" +
+    "\"" +
+    "Latin Modern Math" +
+    "\"" +
+    "];" +
+    "\u000A" +
+    "  node [color=" +
+    "\"" +
+    "black" +
+    "\"" +
+    ", fillcolor=" +
+    "\"" +
+    "white" +
+    "\"" +
+    ", shape=" +
+    "\"" +
+    "circle" +
+    "\"" +
+    ", style=" +
+    "\"" +
+    "filled" +
+    "\"" +
+    ", fontname=" +
+    "\"" +
+    "Latin Modern Math" +
+    "\"" +
+    "];" +
+    "\u000A" +
+    "  edge [fontname=" +
+    "\"" +
+    "Latin Modern Math" +
+    "\"" +
+    "];" +
+    "\u000A" +
+    join(FSet.sorted_list_of_fset[String](FSet.fimage[(Nat.nat,
+                ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])),
+               String](((a: (Nat.nat,
+                              ((Nat.nat, Nat.nat),
+                                Transition.transition_ext[Unit])))
+                          =>
+                         {
+                           val (uid, aa):
+                                 (Nat.nat,
+                                   ((Nat.nat, Nat.nat),
+                                     Transition.transition_ext[Unit]))
+                             = a
+                           val (ab, b):
+                                 ((Nat.nat, Nat.nat),
+                                   Transition.transition_ext[Unit])
+                             = aa;
+                           ({
+                              val (from, to): (Nat.nat, Nat.nat) = ab;
+                              ((t: Transition.transition_ext[Unit]) =>
+                                "  " +
+                                  String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(from).apply(Nil)) +
+                                  "->" +
+                                  String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(to).apply(Nil)) +
+                                  "[label=<(" +
+                                  String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(uid).apply(Nil)) +
+                                  ") " +
+                                  transition2dot(t) +
+                                  ">]")
+                            })(b)
+                         }),
+                        e)),
+          "\u000A") +
+    "\u000A" +
+    "}"
+
 } /* object EFSM_Dot */
 
 object Product_Lexorder {
@@ -1976,10 +2051,8 @@ val (ab, b):
              ((Transition.transition_ext[Unit], Nat.nat),
                (Transition.transition_ext[Unit], Nat.nat))
          = ac;
-       (choice(Product_Type.fst[Transition.transition_ext[Unit], Nat.nat](tb),
-                Product_Type.fst[Transition.transition_ext[Unit],
-                                  Nat.nat](ta))) && (Product_Lexorder.less_eq_prod[Transition.transition_ext[Unit],
-    Nat.nat](tb, ta))
+       choice(Product_Type.fst[Transition.transition_ext[Unit], Nat.nat](tb),
+               Product_Type.fst[Transition.transition_ext[Unit], Nat.nat](ta))
      })
  })(b)
                                       }),
@@ -2473,43 +2546,54 @@ def score(t: FSet.fset[(Nat.nat,
                    (FSet.fset[Transition.transition_ext[Unit]]) => Nat.nat):
       FSet.fset[(Nat.nat, (Nat.nat, Nat.nat))]
   =
-  FSet.fimage[(Nat.nat, Nat.nat),
-               (Nat.nat,
+  FSet.ffilter[(Nat.nat,
                  (Nat.nat,
-                   Nat.nat))](((a: (Nat.nat, Nat.nat)) =>
+                   Nat.nat))](((a: (Nat.nat, (Nat.nat, Nat.nat))) =>
                                 {
-                                  val (s1, s2): (Nat.nat, Nat.nat) = a;
-                                  ((rank(FSet.fimage[(Nat.nat,
-               (Transition.transition_ext[Unit], Nat.nat)),
-              Transition.transition_ext[Unit]](((aa:
-           (Nat.nat, (Transition.transition_ext[Unit], Nat.nat)))
-          =>
-         {
-           val (_, (ta, _)):
-                 (Nat.nat, (Transition.transition_ext[Unit], Nat.nat))
-             = aa;
-           ta
-         }),
-        outgoing_transitions(s1, t))))(FSet.fimage[(Nat.nat,
-             (Transition.transition_ext[Unit], Nat.nat)),
-            Transition.transition_ext[Unit]](((aa:
-         (Nat.nat, (Transition.transition_ext[Unit], Nat.nat)))
-        =>
-       {
-         val (_, (ta, _)): (Nat.nat, (Transition.transition_ext[Unit], Nat.nat))
-           = aa;
-         ta
-       }),
-      outgoing_transitions(s2, t))),
-                                    (s1, s2))
+                                  val (score, _): (Nat.nat, (Nat.nat, Nat.nat))
+                                    = a;
+                                  Nat.less_nat(Nat.zero_nata, score)
                                 }),
-                               FSet.ffilter[(Nat.nat,
-      Nat.nat)](((a: (Nat.nat, Nat.nat)) =>
-                  {
-                    val (aa, b): (Nat.nat, Nat.nat) = a;
-                    Nat.less_nat(aa, b)
-                  }),
-                 FSet_Utils.fprod[Nat.nat, Nat.nat](S(t), S(t))))
+                               FSet.fimage[(Nat.nat, Nat.nat),
+    (Nat.nat,
+      (Nat.nat,
+        Nat.nat))](((a: (Nat.nat, Nat.nat)) =>
+                     {
+                       val (s1, s2): (Nat.nat, Nat.nat) = a;
+                       ((rank(FSet.fimage[(Nat.nat,
+    (Transition.transition_ext[Unit], Nat.nat)),
+   Transition.transition_ext[Unit]](((aa:
+(Nat.nat, (Transition.transition_ext[Unit], Nat.nat)))
+                                       =>
+                                      {
+val (_, (ta, _)): (Nat.nat, (Transition.transition_ext[Unit], Nat.nat)) = aa;
+ta
+                                      }),
+                                     outgoing_transitions(s1,
+                   t))))(FSet.fimage[(Nat.nat,
+                                       (Transition.transition_ext[Unit],
+ Nat.nat)),
+                                      Transition.transition_ext[Unit]](((aa:
+                                   (Nat.nat,
+                                     (Transition.transition_ext[Unit],
+                                       Nat.nat)))
+                                  =>
+                                 {
+                                   val (_, (ta, _)):
+ (Nat.nat, (Transition.transition_ext[Unit], Nat.nat))
+                                     = aa;
+                                   ta
+                                 }),
+                                outgoing_transitions(s2, t))),
+                         (s1, s2))
+                     }),
+                    FSet.ffilter[(Nat.nat,
+                                   Nat.nat)](((a: (Nat.nat, Nat.nat)) =>
+       {
+         val (aa, b): (Nat.nat, Nat.nat) = a;
+         Nat.less_nat(aa, b)
+       }),
+      FSet_Utils.fprod[Nat.nat, Nat.nat](S(t), S(t)))))
 
 def infer(t: FSet.fset[(Nat.nat,
                          ((Nat.nat, Nat.nat),

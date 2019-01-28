@@ -307,11 +307,7 @@ definition filtered_pairs :: "(nat \<times> nat) set" where
   (2, 5), (2, 4), (2, 3), (1, 10), (1, 9), (1, 8), (1, 7), (1, 6), (1, 5), (1, 4), (1, 3), (1, 2), (0, 10), (0, 9), (0, 8), (0, 7), (0, 6),
   (0, 5), (0, 4), (0, 3), (0, 2), (0, 1)}"
 
-lemma scoring_1: "sorted_list_of_fset (score pta naive_score) = [(0, 0, 1), (0, 0, 2), (0, 0, 3), (0, 0, 4), (0, 0, 5), (0, 0, 6), (0, 0, 7), (0, 0, 8), (0, 0, 9), (0, 0, 10), (0, 1, 3), (0, 1, 4),
-     (0, 1, 5), (0, 1, 6), (0, 1, 9), (0, 1, 10), (0, 2, 3), (0, 2, 4), (0, 2, 5), (0, 2, 6), (0, 2, 9), (0, 2, 10), (0, 3, 4), (0, 3, 6),
-     (0, 3, 7), (0, 3, 8), (0, 3, 10), (0, 4, 5), (0, 4, 6), (0, 4, 7), (0, 4, 8), (0, 4, 9), (0, 4, 10), (0, 5, 6), (0, 5, 7), (0, 5, 8),
-     (0, 5, 10), (0, 6, 7), (0, 6, 8), (0, 6, 9), (0, 6, 10), (0, 7, 9), (0, 7, 10), (0, 8, 9), (0, 8, 10), (0, 9, 10), (1, 2, 7), (1, 2, 8),
-     (1, 3, 5), (1, 3, 9), (1, 5, 9), (1, 7, 8), (2, 1, 2), (2, 1, 7), (2, 1, 8)]"
+lemma scoring_1: "sorted_list_of_fset (score pta naive_score) = [(1, 2, 7), (1, 2, 8), (1, 3, 5), (1, 3, 9), (1, 5, 9), (1, 7, 8), (2, 1, 2), (2, 1, 7), (2, 1, 8)]"
 proof-
   have S_pta: "S pta = {|0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10|}"
     apply (simp add: S_def pta_def)
@@ -358,18 +354,13 @@ proof-
     by auto
   have Two_nat_def: "2 = Suc (Suc 0)"
     by simp
-  have scores: "score pta naive_score = {|(0, 9, 10), (0, 8, 10), (0, 8, 9), (0, 7, 10), (0, 7, 9), (1, 7, 8), (0, 6, 10), (0, 6, 9), (0, 6, 8), (0, 6, 7), (0, 5, 10),
-     (1, 5, 9), (0, 5, 8), (0, 5, 7), (0, 5, 6), (0, 4, 10), (0, 4, 9), (0, 4, 8), (0, 4, 7), (0, 4, 6), (0, 4, 5), (0, 3, 10),
-     (1, 3, 9), (0, 3, 8), (0, 3, 7), (0, 3, 6), (1, 3, 5), (0, 3, 4), (0, 2, 10), (0, 2, 9), (1, 2, 8), (1, 2, 7),
-     (0, 2, 6), (0, 2, 5), (0, 2, 4), (0, 2, 3), (0, 1, 10), (0, 1, 9), (2, 1, 8), (2, 1, 7), (0, 1, 6), (0, 1, 5),
-     (0, 1, 4), (0, 1, 3), (2, 1, 2), (0, 0, 10), (0, 0, 9), (0, 0, 8), (0, 0, 7), (0, 0, 6), (0, 0, 5), (0, 0, 4), (0, 0, 3),
-     (0, 0, 2), (0, 0, 1)|}"
+  have scores: "score pta naive_score = {|(Suc 0, 7, 8), (Suc 0, 5, 9), (Suc 0, 3, 9), (Suc 0, 3, 5), (Suc 0, 2, 8), (Suc 0, 2, 7), (Suc (Suc 0), 1, 8), (Suc (Suc 0), 1, 7),
+     (Suc (Suc 0), 1, 2)|}"
     apply (simp add: score_def ffilter filtered_pairs_def)
     apply (simp add: outgoing_transitions_def pta_def fimage_def)
     apply (simp add: naive_score_empty set_equiv)
     apply (simp add: naive_score_def fprod_def)
-    apply (simp add: transitions Abs_fset_inverse)
-    by (simp add: One_nat_def Two_nat_def)
+    by (simp add: transitions Abs_fset_inverse)
   show ?thesis
     by (simp add: scores sorted_list_of_fset_def)
 qed
@@ -2053,8 +2044,7 @@ proof-
     by (simp add: merge_vend_coke_vend_pepsi nondeterministic_pairs_merged_vends nondeterminism_def)
 qed
 
-lemma scoring_2: "sorted_list_of_fset (score merged_vends naive_score) = [(0, 0, 1), (0, 0, 2), (0, 0, 3), (0, 0, 4), (0, 0, 5), (0, 0, 6), (0, 1, 3), (0, 1, 4), (0, 1, 5), (0, 1, 6), (0, 2, 3), (0, 2, 4),
-     (0, 2, 5), (0, 2, 6), (0, 3, 4), (0, 3, 6), (0, 4, 5), (0, 4, 6), (0, 5, 6), (1, 3, 5), (2, 1, 2)]"
+lemma scoring_2: "sorted_list_of_fset (score merged_vends naive_score) = [(1, 3, 5), (2, 1, 2)]"
 proof-
   have S_merged_vends: "S merged_vends = {|0, 1, 2, 3, 4, 5, 6|}"
     apply (simp add: S_def merged_vends_def)
@@ -2097,8 +2087,7 @@ proof-
     by auto
   have Two_nat_def: "2 = Suc (Suc 0)"
     by simp
-  have scores: "score merged_vends naive_score = {|(0, 0, 1), (0, 0, 2), (0, 0, 3), (0, 0, 4), (0, 0, 5), (0, 0, 6), (2, 1, 2), (0, 1, 3), (0, 1, 4), (0, 1, 5), (0, 1, 6),
-     (0, 2, 3), (0, 2, 4), (0, 2, 5), (0, 2, 6), (0, 3, 4), (1, 3, 5), (0, 3, 6), (0, 4, 5), (0, 4, 6), (0, 5, 6)|}"
+  have scores: "score merged_vends naive_score = {|(2, 1, 2), (1, 3, 5)|}"
     apply (simp add: score_def ffilter)
     apply (simp add: outgoing_transitions_def merged_vends_def fimage_def)
     apply (simp add: naive_score_empty set_equiv)
@@ -2133,8 +2122,7 @@ proof-
     apply (simp add: outgoing_transitions_def fimage_def state_nondeterminism_1)
     apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def)
     apply safe
-                       apply (simp_all add: choices)
-    by (simp add: transitions less_transition_ext_def less_aexp_def)
+    by (simp_all add: choices)
 qed
 
 lemma merge_states_1_3: "merge_states 1 3 merged_1_2 = merged_1_3"
@@ -2754,8 +2742,7 @@ proof-
     apply (simp add: outgoing_transitions_def fimage_def state_nondeterminism_1)
     apply (simp add: ffilter_def Set.filter_def fset_both_sides Abs_fset_inverse)
     apply safe
-                 apply (simp_all add: choices)
-    by (simp add: coinGeneral_def transitions less_transition_ext_def)
+    by (simp_all add: choices)
 qed
 
 definition merged_4_6 :: iEFSM where
@@ -3381,7 +3368,7 @@ proof-
     by (simp add: merge_vends_2 nondeterminism_def nondeterministic_pairs_final)
 qed
 
-lemma score_final: "score final naive_score = {|(0, 0, 1), (0, 0, 4), (0, 1, 4)|}"
+lemma score_final: "score final naive_score = {||}"
 proof-
   have ffilter: "ffilter (\<lambda>(x, y). x < y) (Inference.S final |\<times>| Inference.S final) = {|(0, 1), (0, 4), (1, 4)|}"
     apply (simp add: S_def final_def fprod_def ffilter_def fset_both_sides Abs_fset_inverse)
@@ -3391,7 +3378,9 @@ proof-
     apply (simp add: score_def ffilter)
     apply (simp add: outgoing_transitions_def final_def fimage_def)
     apply (simp add: naive_score_empty)
-    by (simp add: naive_score_def selectGeneral_2_def coinGeneral_def vend_general_def fprod_def)
+    apply (simp add: naive_score_def selectGeneral_2_def coinGeneral_def vend_general_def fprod_def)
+    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def)
+    by auto
 qed
 
 lemma "learn traces naive_score generator modifier = (tm final)"

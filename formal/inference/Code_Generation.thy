@@ -75,7 +75,7 @@ lemma [code]: "(choice t1 t2) = (Label t1 = Label t2 \<and> Arity t1 = Arity t2 
   apply (simp add: apply_guards_equals_conjoin)
   by (simp add: apply_guards_equals_conjoin)
 
-export_code efsm2dot GExp.conjoin String.explode String.implode naive_score null_generator null_modifier learn in Scala
+export_code iefsm2dot efsm2dot GExp.conjoin String.explode String.implode naive_score null_generator null_modifier learn in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

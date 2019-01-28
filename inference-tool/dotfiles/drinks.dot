@@ -3,12 +3,12 @@ graph [rankdir="LR", fontname="Latin Modern Math"];
 node [color="black", fillcolor="white", shape="circle", style="filled", fontname="Latin Modern Math"];
 edge [fontname="Latin Modern Math"];
 0->1[label=<select:1&#91;i<sub>1</sub> = coke&#93;>]
-0->2[label=<select:1&#91;i<sub>1</sub> = pepsi&#93;>]
+0->7[label=<select:1&#91;i<sub>1</sub> = pepsi&#93;>]
 1->2[label=<coin:1&#91;i<sub>1</sub> = 50&#93;/o<sub>1</sub> := 50>]
 1->3[label=<coin:1&#91;i<sub>1</sub> = 100&#93;/o<sub>1</sub> := 100>]
 2->3[label=<coin:1&#91;i<sub>1</sub> = 50&#93;/o<sub>1</sub> := 100>]
-2->8[label=<coin:1&#91;i<sub>1</sub> = 50&#93;/o<sub>1</sub> := 50>]
 3->4[label=<vend:0/o<sub>1</sub> := coke>]
+7->8[label=<coin:1&#91;i<sub>1</sub> = 50&#93;/o<sub>1</sub> := 50>]
 8->9[label=<coin:1&#91;i<sub>1</sub> = 50&#93;/o<sub>1</sub> := 100>]
 9->10[label=<vend:0/o<sub>1</sub> := pepsi>]
 }

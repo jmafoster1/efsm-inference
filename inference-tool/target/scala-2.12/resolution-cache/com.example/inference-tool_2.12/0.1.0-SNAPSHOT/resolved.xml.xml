@@ -4,7 +4,7 @@
 		module="inference-tool_2.12"
 		revision="0.1.0-SNAPSHOT"
 		status="integration"
-		publication="20190127111411"
+		publication="20190128154652"
 	>
 		<description>
 		inference-tool

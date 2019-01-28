@@ -33,4 +33,4 @@ root.toc
 *.class
 
 # Ignore active.json
-inference-tool/project/target/active.json
+inference-tool/project/target/

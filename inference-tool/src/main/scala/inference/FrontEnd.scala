@@ -21,6 +21,8 @@ object FrontEnd {
     println("Hello inference!")
     val inferred = (Inference.learn(log, (SelectionStrategies.naive_score _).curried, (Inference.null_generator _).curried, (Inference.null_modifier _).curried))
 
+    // println("The inferred machine is deterministic?"+Inference.nondeterminism(Inference.toiEFSM(inferred)))
+
     val pw = new PrintWriter(new File("dotfiles/drinks.dot" ))
     pw.write(EFSM_Dot.efsm2dot(inferred))
     pw.close

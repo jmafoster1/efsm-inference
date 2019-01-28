@@ -76,4 +76,18 @@ definition iefsm2dot :: "iEFSM \<Rightarrow> String.literal" where
                  STR ''  edge [fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
                   (join (sorted_list_of_fset (fimage (\<lambda>(uid, (from, to), t).STR ''  ''+String.implode (show from)+STR ''->''+String.implode (show to)+STR ''[label=<(''+String.implode (show uid)+STR '') ''+(transition2dot t)+STR ''>]'') e)) newline)+newline+
                 STR ''}''"
+
+abbreviation newline_str :: string where
+  "newline_str \<equiv> ''\010''"
+
+abbreviation quote_str :: string where
+  "quote_str \<equiv> ''0x22''"
+
+definition iefsm2dot_str :: "iEFSM \<Rightarrow> string" where
+  "iefsm2dot_str e = ''digraph EFSM{''@newline_str@
+                 ''  graph [rankdir=''@quote_str@''LR''@quote_str@'', fontname=''@quote_str@''Latin Modern Math''@quote_str@''];''@newline_str@
+                 ''  node [color=''@quote_str@''black''@quote_str@'', fillcolor=''@quote_str@''white''@quote_str@'', shape=''@quote_str@''circle''@quote_str@'', style=''@quote_str@''filled''@quote_str@'', fontname=''@quote_str@''Latin Modern Math''@quote_str@''];''@newline_str@
+                 ''  edge [fontname=''@quote_str@''Latin Modern Math''@quote_str@''];''@newline_str@
+                  (String.explode (join (sorted_list_of_fset (fimage (\<lambda>(uid, (from, to), t).STR ''  ''+String.implode (show from)+STR ''->''+String.implode (show to)+STR ''[label=<(''+String.implode (show uid)+STR '') ''+(transition2dot t)+STR ''>]'') e)) newline)@newline_str)@
+                ''}''"
 end
