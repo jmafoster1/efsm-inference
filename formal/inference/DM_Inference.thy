@@ -213,10 +213,12 @@ proof-
 qed
 
 lemma nondeterministic_pairs_merged_1_2: "nondeterministic_pairs merged_1_2 = {|
-    (1, (1, 1),(coin,2),coin,3),
-    (1, (1, 3), (vend_nothing, 1),vend, 5),
-    (1, (1, 1), (vend_nothing, 1),vend_fail, 4)
-  |}"
+(1, (1, 1), (vend_fail, 4), vend_nothing, 1),
+(1, (1, 1), (coin, 3), coin, 2),
+(1, (1, 1), (coin, 2), coin, 3),
+(1, (1, 3), (vend_nothing, 1), vend, 5),
+(1, (1, 1), (vend_nothing, 1), vend_fail, 4)
+|}"
 proof-
   have minus_1: "{(1, vend_nothing, 1::nat), (1, coin, 2), (1, coin, 3), (1, vend_fail, 4), (3, vend, 5)} - {(1, coin, 2)} = {(1, vend_nothing, 1), (1, coin, 3), (1, vend_fail, 4), (3, vend, 5)}"
     apply (simp add: transitions)
@@ -257,8 +259,16 @@ proof-
     apply (simp add: nondeterministic_pairs_def S_def merged_1_2_def)
     apply (simp add: outgoing_transitions_def fimage_def state_nondeterminism_1)
     apply (simp add: ffilter_def Set.filter_def fset_both_sides Abs_fset_inverse)
-    apply safe
-    by (simp_all add: choices vend_fail_not_lt_vend_nothing vend_nothing_lt_vend vend_nothing_lt_vend_fail)
+    apply standard
+     apply clarify
+     apply simp
+     apply (case_tac "a=1 \<and> aa = 1")
+      apply simp
+      apply (case_tac "b=1")
+    using no_choice_coin_vend_fail no_choice_coin_vend_nothing no_choice_vend_fail_coin no_choice_vend_nothing_coin apply auto[1]
+    using choice_symmetry no_choice_coin_vend no_choice_vend_vend_fail apply auto[1]
+     apply auto[1]
+    by (simp add: choice_coin_coin choice_vend_fail_vend_nothing choice_vend_nothing_vend choice_vend_nothing_vend_fail)
 qed
 
 lemma coin_lt_vend_nothing: "coin < vend_nothing"
@@ -512,7 +522,7 @@ proof-
     by (simp add: gets_us_to.base)
 qed
 
-lemma nondeterministic_pairs_two_coins: "nondeterministic_pairs two_coins = {|(1, (1, 1), (coin, 2), (coin, 3))|}"
+lemma nondeterministic_pairs_two_coins: "nondeterministic_pairs two_coins = {|(1, (1, 1), (coin, 3), coin, 2), (1, (1, 1), (coin, 2), coin, 3)|}"
 proof-
   have minus_1: "{(1, vend_fail, 1::nat), (1, coin, 2), (1, coin, 3), (3, vend, 5)} - {(1, coin, 2)} = {(1, vend_fail, 1), (1, coin, 3), (3, vend, 5)}"
     apply (simp add: transitions)
@@ -590,14 +600,10 @@ proof-
     apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def)
     apply clarify
     apply simp
-    apply (case_tac "a = 1 \<and> aa = 1")
-    defer
-     apply simp
-    apply simp
     using choice_symmetry no_choice_coin_vend no_choice_vend_fail_coin no_choice_vend_vend_fail by blast
 qed
 
-lemma score_2: "sorted_list_of_fset (score basically_drinks naive_score) = [(0, 0, 1), (0, 0, 3), (0, 1, 3)]"
+lemma score_2: "sorted_list_of_fset (score basically_drinks naive_score) = []"
 proof-
   have ffilter: "ffilter (\<lambda>(x, y). x < y) (Inference.S basically_drinks |\<times>| Inference.S basically_drinks) =
     {|(0, 1), (0, 3), (1, 3)|}"
@@ -605,7 +611,7 @@ proof-
     apply (simp add: fprod_def ffilter_def Abs_fset_inverse fset_both_sides)
     apply (simp add: Set.filter_def)
     by auto
-  have score: "score basically_drinks naive_score = {|(0, 0, 1), (0, 0, 3), (0, 1, 3)|}"
+  have score: "score basically_drinks naive_score = {||}"
     apply (simp add: score_def ffilter)
     apply (simp add: outgoing_transitions_def basically_drinks_def fimage_def)
     apply (simp add: naive_score_empty set_equiv)
@@ -614,6 +620,136 @@ proof-
   show ?thesis
     by (simp add: score sorted_list_of_fset_def)
 qed
+
+lemma possible_steps_select_dm_2:  "possible_steps (tm DM_Inference.drinks2) 0 Map.empty ''select'' [Str ''coke''] = {|(1, select)|}"
+  by eval
+
+lemma consistent_posterior_vend_nothing: "consistent c \<Longrightarrow> consistent (posterior c vend_nothing)"
+  apply (simp add: posterior_def vend_nothing_def remove_input_constraints_def consistent_def)
+  apply clarify
+  apply (rule_tac x=s in exI)
+  apply clarify
+  apply (case_tac "r = V (R 1)")
+   apply simp
+  apply simp
+  using consistent_empty_4 by blast
+
+lemma aux1: "c r \<noteq> Undef \<and> gval (cexp2gexp r (c r)) s \<noteq> Some True \<Longrightarrow>
+       (r = V (R 2) \<longrightarrow>
+             and (cexp.Lt (Num 100)) (c (V (R 2))) \<noteq> Undef \<and>
+             gval (cexp2gexp (V (R 2)) (and (cexp.Lt (Num 100)) (c (V (R 2))))) s \<noteq> Some True) \<and>
+            (r \<noteq> V (R 2) \<longrightarrow> c r \<noteq> Undef \<and> gval (cexp2gexp r (c r)) s \<noteq> Some True)"
+  apply simp
+  apply (case_tac "r = V (R 2)")
+   apply simp
+   apply (case_tac "c (V (R 2))")
+         apply simp
+        apply (simp add: option.case_eq_if)
+       apply simp
+       apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
+        apply simp
+       apply simp
+      apply simp
+      apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
+       apply simp
+      apply simp
+      apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some x4) (s (R 2))")
+       apply simp
+      apply simp
+     apply simp
+     apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
+      apply simp
+     apply simp
+     apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (s (R 2)) (Some x5)")
+      apply simp
+     apply simp
+    apply simp
+    apply (case_tac "gval (cexp2gexp (V (R 2)) x6) s")
+     apply simp
+     apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
+      apply simp
+     apply simp
+    apply simp
+  apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
+     apply simp
+    apply simp
+   apply simp
+   apply (case_tac "gval (cexp2gexp (V (R 2)) x71) s")
+    apply simp
+    apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
+     apply simp
+    apply simp
+   apply simp
+   apply (case_tac "gval (cexp2gexp (V (R 2)) x72) s")
+    apply simp
+    apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
+     apply simp
+    apply simp
+   apply simp
+   apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
+    apply simp
+   apply simp
+  by simp
+
+lemma inconsistent_c: "\<not> consistent c \<Longrightarrow>
+    \<not> consistent (\<lambda>r. and (if r = V (R 2) then snd (V (R 2), cexp.Lt (Num 100)) else cexp.Bc True) (c r))"
+  apply (simp add: consistent_def)
+  using aux1
+  by blast
+
+lemma inconsistent_posterior_vend_fail: "\<not> consistent c \<Longrightarrow> \<not>consistent (posterior c vend_fail)"
+  apply (simp add: posterior_def vend_fail_def Let_def inconsistent_c)
+  by (simp add: inconsistent_false)
+
+lemma vend_nothing_subsumes_vend_fail: "subsumes c vend_nothing vend_fail"
+  apply (simp add: subsumes_def)
+  apply (standard, simp add: transitions)+
+   apply clarify
+   apply (case_tac "r = V (R 2)")
+    apply simp
+    apply clarify
+    apply (case_tac "ValueLt (Some i) (Some (Num 100))")
+     apply simp
+    apply simp
+    apply (case_tac "cval (c (V (R 2))) i")
+     apply simp
+    apply simp
+   apply simp
+   apply clarify
+   apply (case_tac "cval (c r) i")
+    apply simp
+   apply simp
+  apply standard
+   apply (simp add: transitions)
+  apply standard
+   defer
+   apply (case_tac "consistent c")
+    apply (simp add: consistent_posterior_vend_nothing)
+   apply (simp add: inconsistent_posterior_vend_fail)
+
+  apply clarify
+  apply (case_tac "consistent (\<lambda>r. and (if r = V (R 2) then snd (V (R 2), cexp.Lt (Num 100)) else cexp.Bc True) (c r))")
+  apply (simp add: posterior_def vend_nothing_def remove_input_constraints_def vend_fail_def)
+   apply (case_tac "ValueLt (Some i) (Some (Num 100))")
+    apply auto[1]
+   apply auto[1]
+  by (simp add: posterior_def vend_nothing_def remove_input_constraints_def vend_fail_def)
+
+lemma directly_subsumes_vend_nothing_vend_fail: "directly_subsumes (tm DM_Inference.drinks2) (tm merged_1_2) 2 vend_nothing vend_fail"
+  by (simp add: directly_subsumes_def vend_nothing_subsumes_vend_fail)
+
+lemma merge_vend_fail_vend_nothing: "merge_transitions DM_Inference.drinks2 merged_1_2 2 1 1 1 1 vend_fail 4 vend_nothing 1 null_generator null_modifier
+                     True = Some {|(5, (1, 3),
+    vend),
+   (3, (1, 1),
+    coin),
+   (2, (1, 1),
+   coin),
+   (0, (0, 1), select),
+   (4, (1, 1), vend_nothing)|}"
+  apply (simp add: merge_transitions_def easy_merge_def null_generator_def null_modifier_def)
+  apply (simp add: directly_subsumes_vend_fail_vend_nothing directly_subsumes_vend_nothing_vend_fail)
+  by eval
 
 lemma "infer drinks2 naive_score null_generator null_modifier = basically_drinks"
 proof-
@@ -735,6 +871,26 @@ proof-
     show ?thesis
       by (simp add: arrives_def ffilter)
   qed
+  have fminus: "{|(1, (1, 1), (vend_fail, 4), vend_nothing, 1), (1, (1, 1), (coin, 3), coin, 2), (1, (1, 1), (coin, 2), coin, 3),
+                        (1, (1, 3), (vend_nothing, 1), vend, 5), (1, (1, 1), (vend_nothing, 1), vend_fail, 4)|} |-|
+                      {|(1, (1, 3), (vend_nothing, 1), vend, 5)|} = {|(1, (1, 1), (vend_fail, 4), vend_nothing, 1), (1, (1, 1), (coin, 3), coin, 2), (1, (1, 1), (coin, 2), coin, 3),
+                        (1, (1, 1), (vend_nothing, 1), vend_fail, 4)|}"
+    apply (simp add: minus_fset_def fset_both_sides Abs_fset_inverse transitions)
+    by auto
+  have fmax: "fMax
+                     {|(1::nat, (1::nat, 1::nat), (vend_fail, 4::nat), vend_nothing, 1::nat), (1, (1, 1), (coin, 3), coin, 2), (1, (1, 1), (coin, 2), coin, 3),
+                       (1, (1, 1), (vend_nothing, 1), vend_fail, 4)|} = (1, (1, 1), (vend_fail, 4), vend_nothing, 1)"
+    apply (simp add: transitions max_def)
+    using coin_def coin_lt_vend_nothing vend_fail_def vend_fail_not_lt_vend_nothing vend_nothing_def by auto
+  have arrives_4_merged_1_2:  "arrives 4 merged_1_2 = 1"
+    by eval
+  have arrives_1_merged_1_2: "arrives 1 merged_1_2 = 1"
+    by eval
+  have merge_states_1_1: "merge_states 1 1 merged_1_2 = merged_1_2"
+    apply (simp add: merge_states_def merge_states_aux_def)
+    by force
+  have leaves_4_merged_1_2: "leaves 4 merged_1_2 = 1"
+    by eval
   show ?thesis
     apply (simp add: scoring merge_def)
     apply (simp add: merge_states_1_2 nondeterminism_def nondeterministic_pairs_merged_1_2 max_def)
@@ -743,7 +899,11 @@ proof-
                       arrives_5_merged_1_3)
     apply (simp add: nondeterminism_def nondeterministic_pairs_merged_1_2 max_def minus_1 coin_lt_vend_nothing
                       arrives_1_merged_1_2 arrives_4_merged_1_2 merge_states_reflexive)
+    apply (simp only: fminus fmax)
+    apply (simp add: arrives_4_merged_1_2 arrives_1_merged_1_2 merge_states_1_1 leaves_4_merged_1_2)
     apply (simp add: leaves_1_drinks2 leaves_4_drinks2 merge_vend_nothing_vend_fail)
+    apply (simp add: merge_vend_fail_vend_nothing nondeterminism_def)
+    (* Start from here *)
     apply (simp add: nondeterminism_def nondeterministic_pairs_two_coins max_def coin_lt_vend_fail)
     apply (simp add: leaves_2_drinks2 leaves_3_drinks2 merge_coin_coin arrives_2_two_coins arrives_3_two_coins merge_states_reflexive)
     apply (simp add: nondeterminism_def nondetermnistic_pairs_basically_drinks)
