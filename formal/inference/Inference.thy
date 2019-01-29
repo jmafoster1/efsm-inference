@@ -56,7 +56,7 @@ definition outgoing_transitions :: "nat \<Rightarrow> iEFSM \<Rightarrow> (nat \
 type_synonym nondeterministic_pair = "(nat \<times> (nat \<times> nat) \<times> ((transition \<times> nat) \<times> (transition \<times> nat)))"
 
 definition state_nondeterminism :: "nat \<Rightarrow> (nat \<times> transition \<times> nat) fset \<Rightarrow> nondeterministic_pair fset" where
-  "state_nondeterminism origin nt = fimage (\<lambda>x. let (origin, (d1, d2), t, t') = x in if d1 > d2 then (origin, (d2, d1), t', t) else x) (if size nt < 2 then {||} else ffUnion (fimage (\<lambda>x. let (dest, t) = x in fimage (\<lambda>y. let (dest', t') = y in (origin, (dest, dest'), (t, t'))) (nt - {|x|})) nt))"
+  "state_nondeterminism origin nt = (if size nt < 2 then {||} else ffUnion (fimage (\<lambda>x. let (dest, t) = x in fimage (\<lambda>y. let (dest', t') = y in (origin, (dest, dest'), (t, t'))) (nt - {|x|})) nt))"
 
 lemma state_nondeterminism_empty[simp]: "state_nondeterminism a {||} = {||}"
   by (simp add: state_nondeterminism_def ffilter_def Set.filter_def)
@@ -199,7 +199,7 @@ function resolve_nondeterminism :: "nondeterministic_pair fset \<Rightarrow> iEF
       \<comment> \<open>   merge_transitions oldEFSM newEFSM t1FromOld     t2FromOld    newFrom t1NewTo t2NewTo t1 u1 t2 u2 maker modifier modify\<close>
       (case merge_transitions  e       z      (leaves u1 e) (leaves u2 e) (leaves u1 z)    (arrives u1 z) (arrives u2 z)     t1 u1 t2 u2 g     m        True of
       None \<Rightarrow> resolve_nondeterminism (s - {|fMax s|}) e t g m |
-      Some new \<Rightarrow> resolve_nondeterminism (nondeterministic_pairs new) e new g m
+      Some new \<Rightarrow> resolve_nondeterminism (nondeterministic_pairs new) e new g m (* Here's the problem! We need to backtrack this if it's none. *)
       )
   )"
 sorry
