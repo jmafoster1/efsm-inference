@@ -199,7 +199,9 @@ function resolve_nondeterminism :: "nondeterministic_pair fset \<Rightarrow> iEF
       \<comment> \<open>   merge_transitions oldEFSM newEFSM t1FromOld     t2FromOld    newFrom t1NewTo t2NewTo t1 u1 t2 u2 maker modifier modify\<close>
       (case merge_transitions  e       z      (leaves u1 e) (leaves u2 e) (leaves u1 z)    (arrives u1 z) (arrives u2 z)     t1 u1 t2 u2 g     m        True of
       None \<Rightarrow> resolve_nondeterminism (s - {|fMax s|}) e t g m |
-      Some new \<Rightarrow> resolve_nondeterminism (nondeterministic_pairs new) e new g m (* Here's the problem! We need to backtrack this if it's none. *)
+      Some new \<Rightarrow> case resolve_nondeterminism (nondeterministic_pairs new) e new g m of
+                  Some new' \<Rightarrow> Some new' |
+                  None \<Rightarrow> resolve_nondeterminism (s |-| {|fMax s|}) e t g m
       )
   )"
 sorry
@@ -232,6 +234,9 @@ fun inference_step :: "iEFSM \<Rightarrow> (nat \<times> nat \<times> nat) list 
                                      Some new \<Rightarrow> Some new |
                                      None \<Rightarrow> inference_step T t g m
                                  else None)"
+
+lemma inference_step_none: "inference_step e [] g m = None"
+  by simp
 
 function infer :: "iEFSM \<Rightarrow> strategy \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM" where
   "infer t r g m = (case inference_step t (rev (sorted_list_of_fset (score t r))) g m of None \<Rightarrow> t | Some new \<Rightarrow> infer new r g m)"
