@@ -9,7 +9,7 @@ Created on Sun Jan 13 14:20:44 2019
 import re
 import os
 
-root = '/home/michael/Documents/elixir/athena2/michael_formal/'
+root = '/home/michael/Documents/efsm-inference/'
 
 for root, dirs, files in os.walk(root):
     for file in files:

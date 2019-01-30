@@ -239,11 +239,21 @@ definition datastate2context :: "datastate \<Rightarrow> context" where
 definition satisfies_context :: "datastate \<Rightarrow> context \<Rightarrow> bool" where
   "satisfies_context d c = consistent (conjoin (datastate2context d) c)"
 
+lemma satisfies_context_empty: "satisfies_context <> \<lbrakk>\<rbrakk> \<and> satisfies_context Map.empty \<lbrakk>\<rbrakk>"
+  apply (simp add: satisfies_context_def consistent_def datastate2context_def)
+  apply (rule_tac x="<>" in exI)
+  apply clarify
+  apply (case_tac r)
+     apply simp
+    apply (case_tac x2)
+  by auto
+
 (* Does t2 subsume t1? *)
 definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where (* Corresponds to Algorithm 2 in Foster et. al. *)
   "subsumes c t2 t1 \<equiv> Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) \<and>
                       (\<forall>r i. (cval (medial c (Guard t1) r) i = Some True) \<longrightarrow> (cval (medial c (Guard t2) r) i) = Some True) \<and>
                       (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
+                      (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<forall>r i. cval (posterior (medial c (Guard t1)) t2 r) i = Some True \<longrightarrow> (cval (posterior c t1 r) i = Some True) \<or> (posterior c t1 r) = Undef) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
 
@@ -253,9 +263,11 @@ definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarr
 (* Does t1 subsume t2 in all possible anterior contexts? *)
 (* For every path which gets us to the problem state, does t1 subsume t2 in the resulting context *)
 definition directly_subsumes :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "directly_subsumes e1 e2 s t1 t2 = (\<forall>p. accepts_trace e1 p \<longrightarrow>
-                                          gets_us_to s e1 0 <>  p \<longrightarrow>
-                                          subsumes (anterior_context e2 p) t1 t2)"
+  "directly_subsumes e1 e2 s t1 t2 \<equiv> (\<forall>p. accepts_trace e1 p \<and> gets_us_to s e1 0 <>  p \<longrightarrow> subsumes (anterior_context e2 p) t1 t2) \<and>
+                                     (\<exists>c. subsumes c t1 t2)"
+
+lemma cant_directly_subsume: "\<forall>c. \<not> subsumes c t t' \<Longrightarrow> \<not> directly_subsumes m m' s t t'"
+  by (simp add: directly_subsumes_def)
 
 primrec pairs2guard :: "(aexp \<times> cexp) list \<Rightarrow> guard" where
   "pairs2guard [] = gexp.Bc True" |

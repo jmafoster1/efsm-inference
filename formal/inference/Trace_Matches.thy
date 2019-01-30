@@ -107,7 +107,7 @@ definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarro
                                 None
                               )"
 (*
-Are either of the two transitions we're in in the list?
+Are either of the two transitions we're interested in in the list?
 If they are, do we have a match?
 *)
 end

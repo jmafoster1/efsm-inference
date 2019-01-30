@@ -53,4 +53,7 @@ lemma finsert_equiv: "(finsert e f = f') = (insert e (fset f) = (fset f'))"
 
 lemma filter_elements: "x |\<in>| Abs_fset (Set.filter f (fset s)) = (x \<in> (Set.filter f (fset s)))"
   by (metis ffilter.rep_eq fset_inverse notin_fset)
+
+lemma singleton_equiv: "is_singleton s \<Longrightarrow> (the_elem s = i) = (s = {i})"
+  by (meson is_singleton_the_elem the_elem_eq)
 end

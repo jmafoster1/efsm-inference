@@ -1876,94 +1876,51 @@ def state_nondeterminism(origin: Nat.nat,
                     ((Transition.transition_ext[Unit], Nat.nat),
                       (Transition.transition_ext[Unit], Nat.nat))))]
   =
-  FSet.fimage[(Nat.nat,
-                ((Nat.nat, Nat.nat),
-                  ((Transition.transition_ext[Unit], Nat.nat),
-                    (Transition.transition_ext[Unit], Nat.nat)))),
-               (Nat.nat,
-                 ((Nat.nat, Nat.nat),
-                   ((Transition.transition_ext[Unit], Nat.nat),
-                     (Transition.transition_ext[Unit],
-                       Nat.nat))))](((x:
-(Nat.nat,
-  ((Nat.nat, Nat.nat),
-    ((Transition.transition_ext[Unit], Nat.nat),
-      (Transition.transition_ext[Unit], Nat.nat)))))
-                                       =>
-                                      {
-val a: (Nat.nat,
-         ((Nat.nat, Nat.nat),
-           ((Transition.transition_ext[Unit], Nat.nat),
-             (Transition.transition_ext[Unit], Nat.nat))))
-  = x
-val (origina, aa):
-      (Nat.nat,
-        ((Nat.nat, Nat.nat),
-          ((Transition.transition_ext[Unit], Nat.nat),
-            (Transition.transition_ext[Unit], Nat.nat))))
-  = a
-val (ab, b):
-      ((Nat.nat, Nat.nat),
-        ((Transition.transition_ext[Unit], Nat.nat),
-          (Transition.transition_ext[Unit], Nat.nat)))
-  = aa;
-({
-   val (d1, d2): (Nat.nat, Nat.nat) = ab;
-   ((ac: ((Transition.transition_ext[Unit], Nat.nat),
-           (Transition.transition_ext[Unit], Nat.nat)))
-      =>
-     {
-       val (t, ta):
-             ((Transition.transition_ext[Unit], Nat.nat),
-               (Transition.transition_ext[Unit], Nat.nat))
-         = ac;
-       (if (Nat.less_nat(d2, d1)) (origina, ((d2, d1), (ta, t))) else x)
-     })
- })(b)
-                                      }),
-                                     (if (Nat.less_nat(FSet.size_fseta[(Nat.nat,
-                                 (Transition.transition_ext[Unit],
-                                   Nat.nat))].apply(nt),
-                Code_Numeral.nat_of_integer(BigInt(2))))
-                                       FSet.bot_fset[(Nat.nat,
-               ((Nat.nat, Nat.nat),
-                 ((Transition.transition_ext[Unit], Nat.nat),
-                   (Transition.transition_ext[Unit], Nat.nat))))]
-                                       else FSet.ffUnion[(Nat.nat,
-                   ((Nat.nat, Nat.nat),
-                     ((Transition.transition_ext[Unit], Nat.nat),
-                       (Transition.transition_ext[Unit],
-                         Nat.nat))))](FSet.fimage[(Nat.nat,
-            (Transition.transition_ext[Unit], Nat.nat)),
-           FSet.fset[(Nat.nat,
-                       ((Nat.nat, Nat.nat),
-                         ((Transition.transition_ext[Unit], Nat.nat),
-                           (Transition.transition_ext[Unit],
-                             Nat.nat))))]](((x:
-       (Nat.nat, (Transition.transition_ext[Unit], Nat.nat)))
-      =>
-     {
-       val (dest, t): (Nat.nat, (Transition.transition_ext[Unit], Nat.nat)) = x;
-       FSet.fimage[(Nat.nat, (Transition.transition_ext[Unit], Nat.nat)),
-                    (Nat.nat,
-                      ((Nat.nat, Nat.nat),
-                        ((Transition.transition_ext[Unit], Nat.nat),
-                          (Transition.transition_ext[Unit],
-                            Nat.nat))))](((y:
-     (Nat.nat, (Transition.transition_ext[Unit], Nat.nat)))
-    =>
-   {
-     val (desta, ta): (Nat.nat, (Transition.transition_ext[Unit], Nat.nat)) = y;
-     (origin, ((dest, desta), (t, ta)))
-   }),
-  FSet.minus_fset[(Nat.nat,
-                    (Transition.transition_ext[Unit],
-                      Nat.nat))](nt, FSet.finsert[(Nat.nat,
-            (Transition.transition_ext[Unit],
-              Nat.nat))](x, FSet.bot_fset[(Nat.nat,
-    (Transition.transition_ext[Unit], Nat.nat))])))
-     }),
-    nt))))
+  (if (Nat.less_nat(FSet.size_fseta[(Nat.nat,
+                                      (Transition.transition_ext[Unit],
+Nat.nat))].apply(nt),
+                     Code_Numeral.nat_of_integer(BigInt(2))))
+    FSet.bot_fset[(Nat.nat,
+                    ((Nat.nat, Nat.nat),
+                      ((Transition.transition_ext[Unit], Nat.nat),
+                        (Transition.transition_ext[Unit], Nat.nat))))]
+    else FSet.ffUnion[(Nat.nat,
+                        ((Nat.nat, Nat.nat),
+                          ((Transition.transition_ext[Unit], Nat.nat),
+                            (Transition.transition_ext[Unit],
+                              Nat.nat))))](FSet.fimage[(Nat.nat,
+                 (Transition.transition_ext[Unit], Nat.nat)),
+                FSet.fset[(Nat.nat,
+                            ((Nat.nat, Nat.nat),
+                              ((Transition.transition_ext[Unit], Nat.nat),
+                                (Transition.transition_ext[Unit],
+                                  Nat.nat))))]](((x:
+            (Nat.nat, (Transition.transition_ext[Unit], Nat.nat)))
+           =>
+          {
+            val (dest, t): (Nat.nat, (Transition.transition_ext[Unit], Nat.nat))
+              = x;
+            FSet.fimage[(Nat.nat, (Transition.transition_ext[Unit], Nat.nat)),
+                         (Nat.nat,
+                           ((Nat.nat, Nat.nat),
+                             ((Transition.transition_ext[Unit], Nat.nat),
+                               (Transition.transition_ext[Unit],
+                                 Nat.nat))))](((y:
+          (Nat.nat, (Transition.transition_ext[Unit], Nat.nat)))
+         =>
+        {
+          val (desta, ta): (Nat.nat, (Transition.transition_ext[Unit], Nat.nat))
+            = y;
+          (origin, ((dest, desta), (t, ta)))
+        }),
+       FSet.minus_fset[(Nat.nat,
+                         (Transition.transition_ext[Unit],
+                           Nat.nat))](nt, FSet.finsert[(Nat.nat,
+                 (Transition.transition_ext[Unit],
+                   Nat.nat))](x, FSet.bot_fset[(Nat.nat,
+         (Transition.transition_ext[Unit], Nat.nat))])))
+          }),
+         nt)))
 
 def outgoing_transitions(n: Nat.nat,
                           t: FSet.fset[(Nat.nat,
@@ -2447,8 +2404,33 @@ def resolve_nondeterminism(s: FSet.fset[(Nat.nat,
                           (Transition.transition_ext[Unit], Nat.nat))))])),
               e, t, g, m)
                             case Some(newa) =>
-                              resolve_nondeterminism(nondeterministic_pairs(newa),
-              e, newa, g, m)
+                              (resolve_nondeterminism(nondeterministic_pairs(newa),
+               e, newa, g, m)
+                                 match {
+                                 case None =>
+                                   resolve_nondeterminism(FSet.minus_fset[(Nat.nat,
+                                    ((Nat.nat, Nat.nat),
+                                      ((Transition.transition_ext[Unit],
+ Nat.nat),
+(Transition.transition_ext[Unit],
+  Nat.nat))))](s, FSet.finsert[(Nat.nat,
+                                 ((Nat.nat, Nat.nat),
+                                   ((Transition.transition_ext[Unit], Nat.nat),
+                                     (Transition.transition_ext[Unit],
+                                       Nat.nat))))](FSet.fMax[(Nat.nat,
+                        ((Nat.nat, Nat.nat),
+                          ((Transition.transition_ext[Unit], Nat.nat),
+                            (Transition.transition_ext[Unit], Nat.nat))))](s),
+             FSet.bot_fset[(Nat.nat,
+                             ((Nat.nat, Nat.nat),
+                               ((Transition.transition_ext[Unit], Nat.nat),
+                                 (Transition.transition_ext[Unit],
+                                   Nat.nat))))])),
+                   e, t, g, m)
+                                 case Some(af) =>
+                                   Some[FSet.fset[(Nat.nat,
+            ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]](af)
+                               })
                           })
                        })
                    })(ba)

@@ -54,6 +54,13 @@ primrec apply_updates :: "(vname \<times> aexp) list \<Rightarrow> datastate \<R
 definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> transition) fset" where
   "possible_steps e s r l i = fimage (\<lambda>((origin, dest), t). (dest, t)) (ffilter (\<lambda>((origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"
 
+lemma singleton_dest: "fis_singleton (possible_steps e s r aa b) \<Longrightarrow>
+       fthe_elem (possible_steps e s r aa b) = (baa, aba) \<Longrightarrow>
+       ((s, baa), aba) |\<in>| e"
+  apply (simp add: fis_singleton_def fthe_elem_def singleton_equiv)
+  apply (simp add: possible_steps_def fmember_def)
+  by auto
+
 definition step :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> outputs \<times> datastate) option" where
 "step e s r l i = (if fis_singleton (possible_steps e s r l i) then (
                      let (s', t) = (fthe_elem (possible_steps e s r l i)) in
