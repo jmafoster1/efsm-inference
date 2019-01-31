@@ -36,7 +36,7 @@ abbreviation "show_int n  \<equiv> showsp_int (STR '''') n (STR '''')"
 abbreviation "show_nat n  \<equiv> showsp_nat (STR '''') n (STR '''')"
 
 fun value2dot :: "value \<Rightarrow> String.literal" where
-  "value2dot (Str s) = s" |
+  "value2dot (value.Str s) = s" |
   "value2dot (Num n) = show_int n"
 
 fun vname2dot :: "vname \<Rightarrow> String.literal" where

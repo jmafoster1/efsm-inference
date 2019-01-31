@@ -23,7 +23,12 @@ code_printing
 
 code_printing
   constant HOL.conj \<rightharpoonup> (Scala) "_ && _" |
-  constant HOL.disj \<rightharpoonup> (Scala) "_ || _"
+  constant HOL.disj \<rightharpoonup> (Scala) "_ || _" |
+  constant Cons \<rightharpoonup> (Scala) "_::_" |
+  constant rev \<rightharpoonup> (Scala) "_.reverse" |
+  constant List.member \<rightharpoonup> (Scala) "_ contains _" |
+  constant "List.remdups" \<rightharpoonup> (Scala) "_.distinct" |
+  constant "List.length" \<rightharpoonup> (Scala) "Nat.Nata(_.length)"
 
 (*code_printing
   type_constructor prod \<rightharpoonup> (Scala) infix 2 "," |

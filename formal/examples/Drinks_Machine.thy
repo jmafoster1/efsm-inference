@@ -19,7 +19,7 @@ declare One_nat_def [simp del]
 
 definition select :: "transition" where
 "select \<equiv> \<lparr>
-        Label = ''select'',
+        Label = STR ''select'',
         Arity = 1,
         Guard = [], \<comment> \<open> No guards \<close>
         Outputs = [],
@@ -39,7 +39,7 @@ lemma outputs_select: "Outputs select = []"
 
 definition coin :: "transition" where
 "coin \<equiv> \<lparr>
-        Label = ''coin'',
+        Label = STR ''coin'',
         Arity = 1,
         Guard = [],
         Outputs = [Plus (V (R 2)) (V (I 1))],
@@ -49,7 +49,7 @@ definition coin :: "transition" where
                   ]
       \<rparr>"
 
-lemma label_coin: "Label coin = ''coin''"
+lemma label_coin: "Label coin = STR ''coin''"
   by (simp add: coin_def)
 
 lemma guard_coin: "Guard coin = []"
@@ -57,19 +57,19 @@ lemma guard_coin: "Guard coin = []"
 
 definition vend :: "transition" where
 "vend \<equiv> \<lparr>
-        Label = ''vend'',
+        Label = STR ''vend'',
         Arity = 0,
         Guard = [(Ge (V (R 2)) (L (Num 100)))],
         Outputs =  [(V (R 1))],
         Updates = [(R 1, V (R 1)), (R 2, V (R 2))]
       \<rparr>"
 
-lemma label_vend: "Label vend = ''vend''"
+lemma label_vend: "Label vend = STR ''vend''"
   by (simp add: vend_def)
 
 definition vend_fail :: "transition" where
 "vend_fail \<equiv> \<lparr>
-        Label = ''vend'',
+        Label = STR ''vend'',
         Arity = 0,
         Guard = [(GExp.Lt (V (R 2)) (L (Num 100)))],
         Outputs =  [],
@@ -82,7 +82,7 @@ lemma guard_vend_fail: "Guard vend_fail = [(GExp.Lt(V (R 2)) (L (Num 100)))]"
 lemma outputs_vend_fail: "Outputs vend_fail = []"
   by (simp add: vend_fail_def)
 
-lemma label_vend_fail: "Label vend_fail = ''vend''"
+lemma label_vend_fail: "Label vend_fail = STR ''vend''"
   by (simp add: vend_fail_def)
 
 lemma arity_vend_fail: "Arity vend_fail = 0"
@@ -105,7 +105,7 @@ lemma "S drinks = {|0, 1, 2|}"
 
 lemmas transitions = select_def coin_def vend_def vend_fail_def
 
-lemma possible_steps_0:  "length i = 1 \<Longrightarrow> possible_steps drinks 0 r (''select'') i = {|(1, select)|}"
+lemma possible_steps_0:  "length i = 1 \<Longrightarrow> possible_steps drinks 0 r (STR ''select'') i = {|(1, select)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
@@ -118,19 +118,19 @@ lemma updates_select: "(EFSM.apply_updates (Updates select)
 lemma arity_vend: "Arity vend = 0"
   by (simp add: vend_def)
 
-lemma drinks_vend_insufficient: "r (R 2) = Some (Num x1) \<Longrightarrow> x1 < 100 \<Longrightarrow> possible_steps drinks 1 r (''vend'') [] = {|(1, vend_fail)|}"
+lemma drinks_vend_insufficient: "r (R 2) = Some (Num x1) \<Longrightarrow> x1 < 100 \<Longrightarrow> possible_steps drinks 1 r (STR ''vend'') [] = {|(1, vend_fail)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma possible_steps_1_coin: "length i = 1 \<Longrightarrow> possible_steps drinks 1 r ''coin'' i = {|(1, coin)|}"
+lemma possible_steps_1_coin: "length i = 1 \<Longrightarrow> possible_steps drinks 1 r (STR ''coin'') i = {|(1, coin)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma possible_steps_2_vend: "\<exists>n. r (R 2) = Some (Num n) \<and> n \<ge> 100 \<Longrightarrow> possible_steps drinks 1 r ''vend'' [] = {|(2, vend)|}"
+lemma possible_steps_2_vend: "\<exists>n. r (R 2) = Some (Num n) \<and> n \<ge> 100 \<Longrightarrow> possible_steps drinks 1 r (STR ''vend'') [] = {|(2, vend)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma drinks_1_coin: "length (snd a) = 1 \<Longrightarrow> possible_steps drinks 1 r (''coin'') (snd a) = {|(1, coin)|}"
+lemma drinks_1_coin: "length (snd a) = 1 \<Longrightarrow> possible_steps drinks 1 r (STR ''coin'') (snd a) = {|(1, coin)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
@@ -141,7 +141,7 @@ lemma updates_coin: " (EFSM.apply_updates (Updates coin)
   apply (rule ext)
   by (simp add: coin_def)
 
-lemma purchase_coke: "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] =
+lemma purchase_coke: "observe_trace drinks 0 <> [(STR ''select'', [Str ''coke'']), (STR ''coin'', [Num 50]), (STR ''coin'', [Num 50]), (STR ''vend'', [])] =
                        [[], [Some (Num 50)], [Some (Num 100)], [Some (Str ''coke'')]]"
   apply (simp add: observe_trace_def)
   apply (simp add: step_def possible_steps_0 fis_singleton_def outputs_select updates_select)
@@ -149,11 +149,11 @@ lemma purchase_coke: "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (
   apply (simp add: step_def possible_steps_2_vend)
   by (simp add: transitions)
 
-lemma inaccepts_impossible: "l \<noteq> ''coin'' \<Longrightarrow> l \<noteq> ''vend'' \<Longrightarrow> possible_steps drinks 1 d l i = {||}"
+lemma inaccepts_impossible: "l \<noteq> STR ''coin'' \<Longrightarrow> l \<noteq> STR ''vend'' \<Longrightarrow> possible_steps drinks 1 d l i = {||}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma inaccepts_input: "l \<noteq> ''coin'' \<Longrightarrow> l \<noteq> ''vend'' \<Longrightarrow> accepts drinks 1 d' [(l, i)] \<Longrightarrow> False"
+lemma inaccepts_input: "l \<noteq> STR ''coin'' \<Longrightarrow> l \<noteq> STR ''vend'' \<Longrightarrow> accepts drinks 1 d' [(l, i)] \<Longrightarrow> False"
   apply (cases rule: accepts.cases)
     apply (simp)
    apply simp
@@ -161,7 +161,7 @@ lemma inaccepts_input: "l \<noteq> ''coin'' \<Longrightarrow> l \<noteq> ''vend'
   apply (simp add: step_def)
   by (simp add: inaccepts_impossible fis_singleton_def is_singleton_def)
 
-lemma inaccepts_accepts_prefix: "l \<noteq> ''coin'' \<Longrightarrow> l \<noteq> ''vend'' \<Longrightarrow> \<not> (accepts_trace drinks [(''select'', [Str ''coke'']), (l, i)])"
+lemma inaccepts_accepts_prefix: "l \<noteq> STR ''coin'' \<Longrightarrow> l \<noteq> STR ''vend'' \<Longrightarrow> \<not> (accepts_trace drinks [(STR ''select'', [Str ''coke'']), (l, i)])"
   apply clarify
   apply (cases rule: accepts.cases)
     apply (simp add: accepts_trace_def)
@@ -170,7 +170,7 @@ lemma inaccepts_accepts_prefix: "l \<noteq> ''coin'' \<Longrightarrow> l \<noteq
   apply (simp add: step_def possible_steps_0 inaccepts_input fis_singleton_def)
   using inaccepts_input by force
 
-lemma inaccepts_termination: "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''inaccepts'', [Num 50]), (''coin'', [Num 50])] = [[]]"
+lemma inaccepts_termination: "observe_trace drinks 0 <> [(STR ''select'', [Str ''coke'']), (STR ''inaccepts'', [Num 50]), (STR ''coin'', [Num 50])] = [[]]"
   apply (simp add: observe_trace_def step_def possible_steps_0 updates_select)
   by (simp add: inaccepts_impossible fis_singleton_def is_singleton_def transitions)
 
@@ -209,13 +209,13 @@ lemma coin_before_vend: "Contexts.can_take vend (posterior_n n coin (posterior \
    apply (simp add: r2_0_vend)
   by simp
 
-lemma drinks_vend_r2_none: "r (R 2) = None \<Longrightarrow> possible_steps drinks 1 r ''vend'' [] = {||}"
+lemma drinks_vend_r2_none: "r (R 2) = None \<Longrightarrow> possible_steps drinks 1 r (STR ''vend'') [] = {||}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
 lemma drinks_vend_sufficient: "r (R 2) = Some (Num x1) \<Longrightarrow>
                 x1 \<ge> 100 \<Longrightarrow>
-                possible_steps drinks 1 r ''vend'' [] = {|(2, vend)|}"
+                possible_steps drinks 1 r (STR ''vend'') [] = {|(2, vend)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
@@ -223,11 +223,11 @@ lemma drinks_end: "possible_steps drinks 2 r a b = {||}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma drinks_vend_r2_String: "r (R 2) = Some (Str x2) \<Longrightarrow> possible_steps drinks 1 r ''vend'' [] = {||}"
+lemma drinks_vend_r2_String: "r (R 2) = Some (value.Str x2) \<Longrightarrow> possible_steps drinks 1 r (STR ''vend'') [] = {||}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma drinks_vend_r2_inaccepts: "\<nexists>n. r (R 2) = Some (Num n) \<Longrightarrow> step drinks 1 r ''vend'' [] = None"
+lemma drinks_vend_r2_inaccepts: "\<nexists>n. r (R 2) = Some (Num n) \<Longrightarrow> step drinks 1 r (STR ''vend'') [] = None"
   apply (simp add: step_def)
   apply (case_tac "r (R 2)")
    apply (simp add: drinks_vend_r2_none)
@@ -236,21 +236,21 @@ lemma drinks_vend_r2_inaccepts: "\<nexists>n. r (R 2) = Some (Num n) \<Longright
    apply simp
   by (simp add: drinks_vend_r2_String)
 
-lemma drinks_0_inaccepts: "\<not> (fst a = ''select'' \<and> length (snd a) = 1) \<Longrightarrow>
+lemma drinks_0_inaccepts: "\<not> (fst a = STR ''select'' \<and> length (snd a) = 1) \<Longrightarrow>
     (possible_steps drinks 0 r (fst a) (snd a)) = {||}"
   apply (simp add: drinks_def possible_steps_def transitions)
   by force
 
-lemma drinks_vend_empty: "(possible_steps drinks 0 Map.empty (''vend'') []) = {||}"
+lemma drinks_vend_empty: "(possible_steps drinks 0 Map.empty (STR ''vend'') []) = {||}"
   using drinks_0_inaccepts
   by auto
 
 lemma drinks_1_inaccepts: "fst a = ''coin'' \<longrightarrow> length (snd a) \<noteq> 1 \<Longrightarrow>
-          a \<noteq> (''vend'', []) \<Longrightarrow>
+          a \<noteq> (STR ''vend'', []) \<Longrightarrow>
           possible_steps drinks 1 r (fst a) (snd a) = {||}"
 proof
   assume not_coin: "fst a = ''coin'' \<longrightarrow> length (snd a) \<noteq> 1"
-  assume not_vend: "a \<noteq> (''vend'', [])"
+  assume not_vend: "a \<noteq> (STR ''vend'', [])"
   show "possible_steps drinks 1 r (fst a) (snd a) |\<subseteq>| {||}"
     using not_coin not_vend
     apply (simp add: drinks_def possible_steps_def)
@@ -309,5 +309,5 @@ lemma invalid_other_states: "s > 1 \<Longrightarrow> \<not>accepts drinks s r ((
   apply clarify
   using inaccepts_state_step
   by simp
-  
+
 end

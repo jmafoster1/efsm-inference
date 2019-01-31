@@ -12,8 +12,12 @@
 ]
 ,[
     {"label":"select","inputs":["pepsi"],"outputs":[]}
-    ,{"label":"coin","inputs":[50],"outputs":[50]}
-    ,{"label":"coin","inputs":[50],"outputs":[100]}
+    ,{"label":"coin","inputs":[100],"outputs":[100]}
     ,{"label":"vend","inputs":[],"outputs":["pepsi"]}
+],
+,[
+    {"label":"select","inputs":["mountain dew"],"outputs":[]}
+    ,{"label":"coin","inputs":[100],"outputs":[100]}
+    ,{"label":"vend","inputs":[],"outputs":["mountain dew"]}
 ]
 ]
