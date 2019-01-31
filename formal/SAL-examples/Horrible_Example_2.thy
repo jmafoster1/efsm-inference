@@ -3,7 +3,7 @@ imports Horrible_Example_1
 begin
 definition t3 :: "transition" where
 "t3 \<equiv> \<lparr>
-        Label = ''h'',
+        Label = (STR ''h''),
         Arity = 0,
         Guard = [],
         Outputs = [],

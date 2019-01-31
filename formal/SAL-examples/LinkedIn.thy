@@ -4,7 +4,7 @@ begin
 
 definition login :: "transition" where
 "login \<equiv> \<lparr>
-        Label = ''login'',
+        Label = (STR ''login''),
         Arity = 1,
         Guard = [Eq (V (I 1)) (L (Str ''free''))],
         Outputs = [],
@@ -13,7 +13,7 @@ definition login :: "transition" where
 
 definition viewFriend :: "transition" where
 "viewFriend \<equiv> \<lparr>
-        Label = ''view'',
+        Label = (STR ''view''),
         Arity = 3,
         Guard = [Eq (V (I 1)) (L (Str ''friendID'')), Eq (V (I 2)) (L (Str ''name'')), Eq (V (I 3)) (L (Str ''HM8p''))],
         Outputs = [L (Str ''friendID''), L (Str ''name''), L (Str ''HM8p'')],
@@ -22,7 +22,7 @@ definition viewFriend :: "transition" where
 
 definition viewOther :: "transition" where
 "viewOther \<equiv> \<lparr>
-        Label = ''view'',
+        Label = (STR ''view''),
         Arity = 3,
         Guard = [Eq (V (I 1)) (L (Str ''otherID'')), Eq (V (I 2)) (L (Str ''name'')), Eq (V (I 3)) (L (Str ''4Zof''))],
         Outputs = [L (Str ''otherID''), L (Str ''name''), L (Str ''4Zof'')],
@@ -31,7 +31,7 @@ definition viewOther :: "transition" where
 
 definition viewOtherOON :: "transition" where
 "viewOtherOON \<equiv> \<lparr>
-        Label = ''view'',
+        Label = (STR ''view''),
         Arity = 3,
         Guard = [Eq (V (I 1)) (L (Str ''otherID'')), Eq (V (I 2)) (L (Str ''OUT_OF_NETWORK'')), Eq (V (I 3)) (L (Str ''MNn5''))],
         Outputs = [L (Str ''otherID''), L (Str ''OUT_OF_NETWORK''), L (Str ''MNn5'')],
@@ -40,7 +40,7 @@ definition viewOtherOON :: "transition" where
 
 definition viewOtherFuzz :: "transition" where
 "viewOtherFuzz \<equiv> \<lparr>
-        Label = ''view'',
+        Label = (STR ''view''),
         Arity = 3,
         Guard = [Eq (V (I 1)) (L (Str ''otherID'')), Eq (V (I 2)) (L (Str ''name'')), Eq (V (I 3)) (L (Str ''MNn5''))],
         Outputs = [L (Str ''otherID''), L (Str ''name''), L (Str ''MNn5'')],
@@ -49,7 +49,7 @@ definition viewOtherFuzz :: "transition" where
 
 definition pdfFriend :: "transition" where
 "pdfFriend \<equiv> \<lparr>
-        Label = ''pdf'',
+        Label = (STR ''pdf''),
         Arity = 3,
         Guard = [Eq (V (I 1)) (L (Str ''friendID'')), Eq (V (I 2)) (L (Str ''name'')), Eq (V (I 3)) (L (Str ''HM8p''))],
         Outputs = [],
@@ -58,7 +58,7 @@ definition pdfFriend :: "transition" where
 
 definition pdfOther :: "transition" where
 "pdfOther \<equiv> \<lparr>
-        Label = ''pdf'',
+        Label = (STR ''pdf''),
         Arity = 3,
         Guard = [Eq (V (I 1)) (L (Str ''otherID'')), Eq (V (I 2)) (L (Str ''name'')), Eq (V (I 3)) (L (Str ''4Zof''))],
         Outputs = [],
@@ -67,7 +67,7 @@ definition pdfOther :: "transition" where
 
 definition pdfOtherOON :: "transition" where
 "pdfOtherOON \<equiv> \<lparr>
-        Label = ''pdf'',
+        Label = (STR ''pdf''),
         Arity = 3,
         Guard = [Eq (V (I 1)) (L (Str ''otherID'')), Eq (V (I 2)) (L (Str ''OUT_OF_NETWORK'')), Eq (V (I 3)) (L (Str ''MNn5''))],
         Outputs = [],

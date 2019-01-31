@@ -4,7 +4,7 @@ begin
 
 definition vend :: "transition" where
 "vend \<equiv> \<lparr>
-        Label = ''vend'',
+        Label = (STR ''vend''),
         Arity = 0,
         Guard = [(Ge (V (R 2)) (L (Num 100)))], \<comment>\<open> This is syntactic sugar for ''Not (Lt (V (R 2)) (N 100))'' which could also appear \<close>
         Outputs =  [(V (R 1)), (Minus (V (R 2)) (L (Num 100)))],
@@ -23,48 +23,48 @@ lemmas transitions = select_def coin_def vend_def
 lemma "observe_trace drinks 0 <> [] = []"
   by (simp add: observe_trace_def)
 
-lemma possible_steps_0:  "length i = 1 \<Longrightarrow> possible_steps drinks 0 Map.empty (''select'') i = {|(1, select)|}"
+lemma possible_steps_0:  "length i = 1 \<Longrightarrow> possible_steps drinks 0 Map.empty ((STR ''select'')) i = {|(1, select)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma "observe_trace drinks 0 <> [(''select'', [Str ''coke''])] = [[]]"
+lemma "observe_trace drinks 0 <> [((STR ''select''), [Str ''coke''])] = [[]]"
   unfolding observe_trace_def observe_all_def step_def
   apply (simp add: possible_steps_0)
   by (simp add: transitions)
 
-lemma possible_steps_1_coin: "possible_steps drinks 1 r ''coin'' [Num n'] = {|(1, coin)|}"
+lemma possible_steps_1_coin: "possible_steps drinks 1 r (STR ''coin'') [Num n'] = {|(1, coin)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma possible_steps_1_vend: "n \<ge> 100 \<Longrightarrow> possible_steps drinks 1 <R 1 := Str ''coke'', R 2 := Num n> ''vend'' [] = {|(2, vend)|}"
+lemma possible_steps_1_vend: "n \<ge> 100 \<Longrightarrow> possible_steps drinks 1 <R 1 := Str ''coke'', R 2 := Num n> (STR ''vend'') [] = {|(2, vend)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 50]), (''vend'', [])] = [[], [Some (Num 50)], [Some (Num 100)], [Some (Str ''coke''), Some (Num 0)]]"
+lemma "observe_trace drinks 0 <> [((STR ''select''), [Str ''coke'']), ((STR ''coin''), [Num 50]), ((STR ''coin''), [Num 50]), ((STR ''vend''), [])] = [[], [Some (Num 50)], [Some (Num 100)], [Some (Str ''coke''), Some (Num 0)]]"
   unfolding observe_trace_def observe_all_def step_def
   apply (simp add: possible_steps_0 updates_select outputs_select)
   apply (simp add: possible_steps_1_coin updates_coin)
   apply (simp add: possible_steps_1_vend)
   by (simp add: coin_def vend_def)
 
-lemma "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''coin'', [Num 50]), (''coin'', [Num 100]), (''vend'', [])] = [[], [Some (Num 50)], [Some (Num 150)], [Some (Str ''coke''), Some (Num 50)]]"
+lemma "observe_trace drinks 0 <> [((STR ''select''), [Str ''coke'']), ((STR ''coin''), [Num 50]), ((STR ''coin''), [Num 100]), ((STR ''vend''), [])] = [[], [Some (Num 50)], [Some (Num 150)], [Some (Str ''coke''), Some (Num 50)]]"
   unfolding observe_trace_def observe_all_def step_def
   apply (simp add: possible_steps_0 updates_select outputs_select)
   apply (simp add: possible_steps_1_coin updates_coin)
   apply (simp add: possible_steps_1_vend)
   by (simp add: coin_def vend_def)
 
-lemma possible_steps_invalid: "l \<noteq> ''coin'' \<and> l \<noteq> ''vend'' \<Longrightarrow> possible_steps drinks 1 d l i = {||}"
+lemma possible_steps_invalid: "l \<noteq> (STR ''coin'') \<and> l \<noteq> (STR ''vend'') \<Longrightarrow> possible_steps drinks 1 d l i = {||}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
 (* Stop when we hit a spurious input *)
-lemma "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''invalid'', [Num 50])] = [[]]"
+lemma "observe_trace drinks 0 <> [((STR ''select''), [Str ''coke'']), ((STR ''invalid''), [Num 50])] = [[]]"
   unfolding observe_trace_def observe_all_def step_def
   apply (simp add: possible_steps_0 updates_select outputs_select)
   by (simp add: possible_steps_invalid)
 
-lemma invalid_input: "\<not> accepts drinks 1 d' [(''invalid'', [Num 50])]"
+lemma invalid_input: "\<not> accepts drinks 1 d' [((STR ''invalid''), [Num 50])]"
   apply safe
   apply (rule EFSM.accepts.cases)
     apply simp
@@ -73,7 +73,7 @@ lemma invalid_input: "\<not> accepts drinks 1 d' [(''invalid'', [Num 50])]"
   using possible_steps_invalid
   by auto
 
-lemma invalid_valid_prefix: "\<not> (accepts_trace (drinks) [(''select'', [Str ''coke'']), (''invalid'', [Num 50])])"
+lemma invalid_valid_prefix: "\<not> (accepts_trace (drinks) [((STR ''select''), [Str ''coke'']), ((STR ''invalid''), [Num 50])])"
   unfolding accepts_trace_def
   apply clarify
   apply (rule EFSM.accepts.induct)
@@ -90,7 +90,7 @@ lemma invalid_valid_prefix: "\<not> (accepts_trace (drinks) [(''select'', [Str '
   using invalid_input
   by simp
 
-lemma "observe_trace drinks 0 <> [(''select'', [Str ''coke'']), (''invalid'', [Num 50]), (''coin'', [Num 50])] = [[]]"
+lemma "observe_trace drinks 0 <> [((STR ''select''), [Str ''coke'']), ((STR ''invalid''), [Num 50]), ((STR ''coin''), [Num 50])] = [[]]"
   unfolding observe_trace_def observe_all_def step_def
   apply (simp add: possible_steps_0 outputs_select updates_select)
   by (simp add: possible_steps_invalid)

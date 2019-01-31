@@ -5,7 +5,7 @@ begin
 text_raw{*\snip{write}{1}{2}{%*}
 definition "write" :: "transition" where
 "write \<equiv> \<lparr>
-        Label = ''write'',
+        Label = (STR ''write''),
         Arity = 1,
         Guard = [gexp.Eq (V (R 1)) (V (R 3))], \<comment>\<open> No guards \<close>
         Outputs = [],
@@ -20,7 +20,7 @@ text_raw{*}%endsnip*}
 \<comment>\<open> Create the file if it doesn't already exist \<close>
 definition create :: "transition" where
 "create \<equiv> \<lparr>
-        Label = ''create'',
+        Label = (STR ''create''),
         Arity = 0,
         Guard = [(Null (R 3))],
         Outputs = [],
@@ -33,7 +33,7 @@ definition create :: "transition" where
 
 definition "write_fail" :: "transition" where
 "write_fail \<equiv> \<lparr>
-        Label = ''write'',
+        Label = (STR ''write''),
         Arity = 1,
         Guard = [(Ne (V (R 3)) (V (R 1)))],
         Outputs = [L (Str ''accessDenied'')],
@@ -65,23 +65,23 @@ declare One_nat_def [simp del]
 
 lemmas fs_simp = filesystem_def login_def logout_def write_def read_success_def read_fail_def write_fail_def create_def
 
-lemma possible_steps_0: "possible_steps Filesystem_Fixed.filesystem 0 r ''login'' [u] = {|(1, login)|}"
+lemma possible_steps_0: "possible_steps Filesystem_Fixed.filesystem 0 r (STR ''login'') [u] = {|(1, login)|}"
   apply (simp add: possible_steps_def fs_simp)
   by force
 
-lemma possible_steps_1_create: "possible_steps filesystem 1 <R 1 := Str ''user''> ''create'' [] = {|(1, create)|}"
+lemma possible_steps_1_create: "possible_steps filesystem 1 <R 1 := Str ''user''> (STR ''create'') [] = {|(1, create)|}"
   apply (simp add: possible_steps_def fs_simp)
   by force
 
-lemma possible_steps_1_write:  "possible_steps Filesystem_Fixed.filesystem 1 <R 1 := Str ''user'', R 3 := Str ''user''> ''write'' [Num 50] = {|(1, write)|}"
+lemma possible_steps_1_write:  "possible_steps Filesystem_Fixed.filesystem 1 <R 1 := Str ''user'', R 3 := Str ''user''> (STR ''write'') [Num 50] = {|(1, write)|}"
   apply (simp add: possible_steps_def fs_simp)
   by force
 
-lemma possible_steps_1_read: "possible_steps Filesystem_Fixed.filesystem 1 <R 1 := u, R 2 := c, R 3 := u> ''read'' [] = {|(1, read_success)|}"
+lemma possible_steps_1_read: "possible_steps Filesystem_Fixed.filesystem 1 <R 1 := u, R 2 := c, R 3 := u> (STR ''read'') [] = {|(1, read_success)|}"
   apply (simp add: possible_steps_def fs_simp)
   by force
 
-lemma "observe_trace filesystem 0 <> [(''login'', [Str ''user'']), (''create'', []), (''write'', [Num 50]), (''read'', [])] = [[], [], [], [Some (Num 50)]]"
+lemma "observe_trace filesystem 0 <> [((STR ''login''), [Str ''user'']), ((STR ''create''), []), ((STR ''write''), [Num 50]), ((STR ''read''), [])] = [[], [], [], [Some (Num 50)]]"
 proof-
   have updates_login: "(EFSM.apply_updates (Updates login)
           (case_vname (\<lambda>n. if n = 1 then Some (Str ''user'') else input2state [] (1 + 1) (I n)) Map.empty) Map.empty) = <R 1 := Str ''user''>"
@@ -115,23 +115,23 @@ lemma r_equals_r [simp]: "<R 1:=user, R 2:=content, R 3:=owner> = (\<lambda>a. i
   apply (rule ext)
   by simp
 
-lemma possible_steps_1_read_fail: "r (R 3) = Some owner \<and> r (R 1) = Some user \<and> owner \<noteq> user \<Longrightarrow> possible_steps Filesystem_Fixed.filesystem 1 r ''read'' [] = {|(1, read_fail)|}"
+lemma possible_steps_1_read_fail: "r (R 3) = Some owner \<and> r (R 1) = Some user \<and> owner \<noteq> user \<Longrightarrow> possible_steps Filesystem_Fixed.filesystem 1 r (STR ''read'') [] = {|(1, read_fail)|}"
   apply (simp add: possible_steps_def fs_simp)
   by force
 
 lemma read_2:  " r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
-    step filesystem 1 r ''read'' [] = Some (read_fail, 1, [Some (Str ''accessDenied'')], r)"
+    step filesystem 1 r (STR ''read'') [] = Some (read_fail, 1, [Some (Str ''accessDenied'')], r)"
   apply (simp add: step_def possible_steps_1_read_fail)
   apply (simp add: read_fail_def)
   apply (rule ext)
   by simp
 
-lemma possible_steps_1_logout:  "possible_steps Filesystem_Fixed.filesystem 1 r ''logout'' [] = {|(0, logout)|}"
+lemma possible_steps_1_logout:  "possible_steps Filesystem_Fixed.filesystem 1 r (STR ''logout'') [] = {|(0, logout)|}"
   apply (simp add: possible_steps_def fs_simp)
   by force
 
-lemma logout_2:  "step filesystem 1 r ''logout'' [] = Some (logout, 0, [], r)"
+lemma logout_2:  "step filesystem 1 r (STR ''logout'') [] = Some (logout, 0, [], r)"
   unfolding step_def
   apply (simp add: possible_steps_1_logout)
   apply (simp add: logout_def)
@@ -158,30 +158,30 @@ lemma fs_some_until_null: "(some_state until null) (make_full_observation filesy
   by (simp add: some_until_none)
 
 abbreviation label_not_logout :: "property" where
-  "label_not_logout s \<equiv> (label (shd s) \<noteq> ''logout'')"
+  "label_not_logout s \<equiv> (label (shd s) \<noteq> (STR ''logout''))"
 
 abbreviation label_logout :: "property" where
-  "label_logout s \<equiv> (label (shd s) = ''logout'')"
+  "label_logout s \<equiv> (label (shd s) = (STR ''logout''))"
 
 abbreviation label_create :: "property" where
-  "label_create s \<equiv> (label (shd s) = ''create'')"
+  "label_create s \<equiv> (label (shd s) = (STR ''create''))"
 
 abbreviation read_0 :: "property" where
-  "read_0 s \<equiv> (label (shd s)=''read'' \<longrightarrow> output (shd s)=[Some (Str ''accessDenied'')])"
+  "read_0 s \<equiv> (label (shd s)=(STR ''read'') \<longrightarrow> output (shd s)=[Some (Str ''accessDenied'')])"
 
 abbreviation login_attacker :: "property" where
-  "login_attacker s \<equiv> (event (shd s) = (''login'',  [Str ''attacker'']))"
+  "login_attacker s \<equiv> (event (shd s) = ((STR ''login''),  [Str ''attacker'']))"
 
 abbreviation login_user :: "property" where
-  "login_user s \<equiv> (event (shd s) = (''login'',  [Str ''user'']))"
+  "login_user s \<equiv> (event (shd s) = ((STR ''login''),  [Str ''user'']))"
 
-lemma "login_user (watch filesystem i) \<Longrightarrow> shd i = (''login'', [Str ''user''])"
+lemma "login_user (watch filesystem i) \<Longrightarrow> shd i = ((STR ''login''), [Str ''user''])"
   by simp
 
-lemma logout_label:  "t = logout \<Longrightarrow> Label t = ''logout''"
+lemma logout_label:  "t = logout \<Longrightarrow> Label t = (STR ''logout'')"
   by (simp add: logout_def)
 
-lemma create_label:  "t = create \<Longrightarrow> Label t = ''create''"
+lemma create_label:  "t = create \<Longrightarrow> Label t = (STR ''create'')"
   by (simp add: create_def)
 
 lemma every_event_step: "\<forall>s r.  s |\<in>| S filesystem \<longrightarrow> (\<exists>e. fst (ltl_step filesystem (Some s) r e) \<noteq> None)"
@@ -189,11 +189,11 @@ lemma every_event_step: "\<forall>s r.  s |\<in>| S filesystem \<longrightarrow>
   apply (simp only: "filesystem_states")
   apply (case_tac "s = 0")
    apply simp
-   apply (rule_tac x="''login''" in exI)
+   apply (rule_tac x="(STR ''login'')" in exI)
    apply (rule_tac x="[x]" in exI)
    apply (simp add: possible_steps_0)
   apply simp
-  apply (rule_tac x="''logout''" in exI)
+  apply (rule_tac x="(STR ''logout'')" in exI)
   apply (rule_tac x="[]" in exI)
   by (simp add: possible_steps_1_logout)
 
@@ -201,7 +201,7 @@ lemma alw_equiv: "alw p s = ((p s) \<and> alw p (stl s))"
   using alw.intros by auto
 
 text_raw{*\snip{userdetails}{1}{2}{%*}
-lemma user_details_stored_in_r1: "((\<lambda>s. (event (shd s) = (''login'',  [u]))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (u)))) (watch filesystem i)"
+lemma user_details_stored_in_r1: "((\<lambda>s. (event (shd s) = ((STR ''login''),  [u]))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (u)))) (watch filesystem i)"
   proof (cases u)
     case (Num x1)
     then show ?thesis
@@ -213,16 +213,16 @@ lemma user_details_stored_in_r1: "((\<lambda>s. (event (shd s) = (''login'',  [u
   qed
 text_raw{*}%endsnip*}
 
-\<comment>\<open>lemma "((\<lambda>s. (event (shd s) = (''login'',  [u]))) impl ((\<lambda>s. datastate (shd s) (R 1) = Some (u)) suntil (\<lambda>s. label (shd s) = ''logout''))) (watch filesystem i)"\<close>
+\<comment>\<open>lemma "((\<lambda>s. (event (shd s) = ((STR ''login''),  [u]))) impl ((\<lambda>s. datastate (shd s) (R 1) = Some (u)) suntil (\<lambda>s. label (shd s) = (STR ''logout'')))) (watch filesystem i)"\<close>
 
-\<comment>\<open>lemma globally_user_details_stored_in_r1: "alw (non_null impl ((\<lambda>s. (event (shd s) = (''login'',  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user''))))) (watch filesystem i)"
+\<comment>\<open>lemma globally_user_details_stored_in_r1: "alw (non_null impl ((\<lambda>s. (event (shd s) = ((STR ''login''),  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user''))))) (watch filesystem i)"
 proof (coinduction)
   case alw
   then show ?case
     
 qed\<close>
 
-lemma login_user_first: "alw non_null (watch filesystem i) \<Longrightarrow> (login_user (watch filesystem i) = (shd i = (''login'', [Str ''user''])))"
+lemma login_user_first: "alw non_null (watch filesystem i) \<Longrightarrow> (login_user (watch filesystem i) = (shd i = ((STR ''login''), [Str ''user''])))"
   by simp
 
       \<comment>\<open> G(cfstate /= NULL_STATE)  => ((label=login AND ip_1_login_1=(user)) AND U(label/=logout, label=create)) => F(G(((label=login AND ip_1_login_1=(attacker)) AND F(label=logout))  =>   U(label=read=>X(op_1_read_0=0), label=logout))) \<close>

@@ -4,7 +4,7 @@ begin
 
 definition "setup" :: "transition" where
 "setup \<equiv> \<lparr>
-        Label = ''setup'',
+        Label = (STR ''setup''),
         Arity = 0,
         Guard = [], \<comment>\<open> No guards \<close>
         Outputs = [],
@@ -13,7 +13,7 @@ definition "setup" :: "transition" where
 
 definition "select" :: transition where
 "select \<equiv> \<lparr>
-        Label = ''select'',
+        Label = (STR ''select''),
         Arity = 1,
         Guard = [], \<comment>\<open> No guards \<close>
         Outputs = [],
@@ -25,10 +25,10 @@ definition "select" :: transition where
 
 definition vend :: "transition" where
 "vend \<equiv> \<lparr>
-        Label = ''vend'',
+        Label = (STR ''vend''),
         Arity = 0,
         Guard = [(Ge (V (R 2)) (L (Num 100)))], \<comment>\<open> This is syntactic sugar for ''Not (Lt (V (R 2)) (N 100))'' which could also appear \<close>
-        Outputs =  [(V (R 1))], \<comment>\<open> This has one output o1:=r1 where ''r1'' is a variable with a value \<close>
+        Outputs =  [(V (R 1))], \<comment>\<open> This has one output o1:=r1 where (STR ''r1'') is a variable with a value \<close>
         Updates = [
                     (R 1, (V (R 1))),
                     (R 2, Minus (V (R 2)) (L (Num 100)))
@@ -45,23 +45,23 @@ definition drinks :: transition_matrix where
 
 lemmas transitions = select_def coin_def vend_def setup_def
 
-lemma possible_steps_0: "possible_steps drinks 0 Map.empty ''setup'' [] = {|(1, setup)|}"
+lemma possible_steps_0: "possible_steps drinks 0 Map.empty (STR ''setup'') [] = {|(1, setup)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma possible_steps_1: "possible_steps drinks 1 d ''select'' [Str s] = {|(2, select)|}"
+lemma possible_steps_1: "possible_steps drinks 1 d (STR ''select'') [Str s] = {|(2, select)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma possible_steps_2_coin: "possible_steps drinks 2 d ''coin'' [Num n] = {|(2, coin)|}"
+lemma possible_steps_2_coin: "possible_steps drinks 2 d (STR ''coin'') [Num n] = {|(2, coin)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma possible_steps_2_vend: "r (R 2) = Some (Num n) \<Longrightarrow> n \<ge> 100 \<Longrightarrow> possible_steps drinks 2 r ''vend'' [] = {|(1, vend)|}"
+lemma possible_steps_2_vend: "r (R 2) = Some (Num n) \<Longrightarrow> n \<ge> 100 \<Longrightarrow> possible_steps drinks 2 r (STR ''vend'') [] = {|(1, vend)|}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma "observe_trace drinks 0 <> [(''setup'', []), (''select'', [Str ''coke'']), (''coin'',[Num 110]), (''vend'', []), (''select'', [Str ''pepsi'']), (''coin'',[Num 90]), (''vend'', [])] = [[],[],[Some (Num 110)],[Some (Str ''coke'')],[],[Some (Num 100)],[Some (Str ''pepsi'')]]"
+lemma "observe_trace drinks 0 <> [((STR ''setup''), []), ((STR ''select''), [Str ''coke'']), ((STR ''coin''),[Num 110]), ((STR ''vend''), []), ((STR ''select''), [Str ''pepsi'']), ((STR ''coin''),[Num 90]), ((STR ''vend''), [])] = [[],[],[Some (Num 110)],[Some (Str ''coke'')],[],[Some (Num 100)],[Some (Str ''pepsi'')]]"
   unfolding observe_trace_def observe_all_def step_def
   apply (simp add: possible_steps_0 setup_def)
   apply (simp add: possible_steps_1 select_def)

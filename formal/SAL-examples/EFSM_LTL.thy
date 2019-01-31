@@ -11,7 +11,7 @@ record state =
 type_synonym full_observation = "state stream"
 type_synonym property = "full_observation \<Rightarrow> bool"
 
-abbreviation label :: "state \<Rightarrow> string" where
+abbreviation label :: "state \<Rightarrow> String.literal" where
   "label s \<equiv> fst (event s)"
 
 abbreviation inputs :: "state \<Rightarrow> value list" where
@@ -39,11 +39,11 @@ definition Out :: "nat \<Rightarrow> state stream \<Rightarrow> value option" wh
 definition In :: "nat \<Rightarrow> state stream \<Rightarrow> value" where
   "In n s \<equiv> nth (inputs (shd s)) n"
 
-definition EventLabel :: "state stream \<Rightarrow> string" where
+definition EventLabel :: "state stream \<Rightarrow> String.literal" where
   "EventLabel s = fst (event (shd s))"
 
 definition LabelEq :: "string \<Rightarrow> state stream \<Rightarrow> bool" where
-  "LabelEq v s \<equiv> EventLabel s = v"
+  "LabelEq v s \<equiv> EventLabel s = (String.implode v)"
 
 definition InputEq :: "nat \<Rightarrow> value \<Rightarrow> state stream \<Rightarrow> bool" where
   "InputEq n v s \<equiv> In n s = v"

@@ -5,16 +5,16 @@ begin
 fun string_of_digit :: "nat \<Rightarrow> String.literal"
 where
   "string_of_digit n =
-    (if n = 0 then STR ''0''
-    else if n = 1 then STR ''1''
-    else if n = 2 then STR ''2''
-    else if n = 3 then STR ''3''
-    else if n = 4 then STR ''4''
-    else if n = 5 then STR ''5''
-    else if n = 6 then STR ''6''
-    else if n = 7 then STR ''7''
-    else if n = 8 then STR ''8''
-    else STR ''9'')"
+    (if n = 0 then (STR ''0'')
+    else if n = 1 then (STR ''1'')
+    else if n = 2 then (STR ''2'')
+    else if n = 3 then (STR ''3'')
+    else if n = 4 then (STR ''4'')
+    else if n = 5 then (STR ''5'')
+    else if n = 6 then (STR ''6'')
+    else if n = 7 then (STR ''7'')
+    else if n = 8 then (STR ''8'')
+    else (STR ''9''))"
 
 definition shows_string :: "String.literal \<Rightarrow> String.literal \<Rightarrow> String.literal"
 where
@@ -32,8 +32,8 @@ where
   "showsp_int p i =
     (if i < 0 then shows_string STR ''-'' o showsp_nat p (nat (- i)) else showsp_nat p (nat i))"
 
-abbreviation "show_int n  \<equiv> showsp_int (STR '''') n (STR '''')"
-abbreviation "show_nat n  \<equiv> showsp_nat (STR '''') n (STR '''')"
+abbreviation "show_int n  \<equiv> showsp_int ((STR '''')) n ((STR ''''))"
+abbreviation "show_nat n  \<equiv> showsp_nat ((STR '''')) n ((STR ''''))"
 
 fun value2dot :: "value \<Rightarrow> String.literal" where
   "value2dot (value.Str s) = s" |
@@ -50,15 +50,15 @@ fun aexp2dot :: "aexp \<Rightarrow> String.literal" where
   "aexp2dot (Minus a1 a2) = (aexp2dot a1)+STR '' - ''+(aexp2dot a2)"
 
 fun gexp2dot :: "gexp \<Rightarrow> String.literal" where
-  "gexp2dot (GExp.Bc True) = STR ''True''" |
-  "gexp2dot (GExp.Bc False) = STR ''False''" |
+  "gexp2dot (GExp.Bc True) = (STR ''True'')" |
+  "gexp2dot (GExp.Bc False) = (STR ''False'')" |
   "gexp2dot (GExp.Eq a1 a2) = (aexp2dot a1)+STR '' = ''+(aexp2dot a2)" |
   "gexp2dot (GExp.Lt a1 a2) = (aexp2dot a1)+STR '' &lt; ''+(aexp2dot a2)" |
   "gexp2dot (Nor g1 g2) = STR ''!(''+(gexp2dot g1)+STR ''&or;''+(gexp2dot g2)+STR '')''" |
   "gexp2dot (Null v) = (vname2dot v)+STR '' = NULL''"
 
 fun join :: "String.literal list \<Rightarrow> String.literal \<Rightarrow> String.literal" where
-  "join [] _ = STR ''''" |
+  "join [] _ = (STR '''')" |
   "join [a] _ = a" |
   "join (h#t) s = h+s+(join t s)"
 
@@ -75,15 +75,15 @@ primrec outputs2dot :: "output_function list \<Rightarrow> nat \<Rightarrow> Str
   "outputs2dot (h#t) n = ((STR ''o<sub>''+(show_nat n))+STR ''</sub> := ''+(aexp2dot h))#(outputs2dot t (n+1))"
 
 fun updates2dot :: "update_function list \<Rightarrow> String.literal" where
-  "updates2dot [] = STR ''''" |
+  "updates2dot [] = (STR '''')" |
   "updates2dot a = STR ''&#91;''+(join (updates2dot_aux a) STR '','')+STR ''&#93;''"
 
 fun guards2dot :: "guard list \<Rightarrow> String.literal" where
-  "guards2dot [] = STR ''''" |
+  "guards2dot [] = (STR '''')" |
   "guards2dot a = STR ''&#91;''+(join (guards2dot_aux a) STR '','')+STR ''&#93;''"
 
 definition latter2dot :: "transition \<Rightarrow> String.literal" where
-  "latter2dot t = (let l = (join (outputs2dot (Outputs t) 1) STR '','')+(updates2dot (Updates t)) in (if l = STR '''' then STR '''' else STR ''/''+l))"
+  "latter2dot t = (let l = (join (outputs2dot (Outputs t) 1) STR '','')+(updates2dot (Updates t)) in (if l = (STR '''') then (STR '''') else STR ''/''+l))"
 
 definition transition2dot :: "transition \<Rightarrow> String.literal" where
   "transition2dot t = (Label t)+STR '':''+(show_nat (Arity t))+(guards2dot (Guard t))+(latter2dot t)"
@@ -96,16 +96,16 @@ abbreviation quote :: String.literal where
 
 definition efsm2dot :: "transition_matrix \<Rightarrow> String.literal" where
   "efsm2dot e = STR ''digraph EFSM{''+newline+
-                STR ''graph [rankdir=''+quote+STR ''LR''+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
-                STR ''node [color=''+quote+STR ''black''+quote+STR '', fillcolor=''+quote+STR ''white''+quote+STR '', shape=''+quote+STR ''circle''+quote+STR '', style=''+quote+STR ''filled''+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
+                STR ''graph [rankdir=''+quote+(STR ''LR'')+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
+                STR ''node [color=''+quote+(STR ''black'')+quote+STR '', fillcolor=''+quote+(STR ''white'')+quote+STR '', shape=''+quote+(STR ''circle'')+quote+STR '', style=''+quote+(STR ''filled'')+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
                 STR ''edge [fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
                   (join (sorted_list_of_fset (fimage (\<lambda>((from, to), t). (show_nat from)+STR ''->''+(show_nat to)+STR ''[label=<''+(transition2dot t)+STR ''>]'') e)) newline)+newline+
                 STR ''}''"
 
 definition iefsm2dot :: "iEFSM \<Rightarrow> String.literal" where
   "iefsm2dot e = STR ''digraph EFSM{''+newline+
-                 STR ''  graph [rankdir=''+quote+STR ''LR''+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
-                 STR ''  node [color=''+quote+STR ''black''+quote+STR '', fillcolor=''+quote+STR ''white''+quote+STR '', shape=''+quote+STR ''circle''+quote+STR '', style=''+quote+STR ''filled''+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
+                 STR ''  graph [rankdir=''+quote+(STR ''LR'')+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
+                 STR ''  node [color=''+quote+(STR ''black'')+quote+STR '', fillcolor=''+quote+(STR ''white'')+quote+STR '', shape=''+quote+(STR ''circle'')+quote+STR '', style=''+quote+(STR ''filled'')+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
                  STR ''  edge [fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
                   (join (sorted_list_of_fset (fimage (\<lambda>(uid, (from, to), t).STR ''  ''+(show_nat from)+STR ''->''+(show_nat to)+STR ''[label=<(''+(show_nat uid)+STR '') ''+(transition2dot t)+STR ''>]'') e)) newline)+newline+
                 STR ''}''"

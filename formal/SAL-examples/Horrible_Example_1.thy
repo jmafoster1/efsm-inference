@@ -3,7 +3,7 @@ imports "../EFSM"
 begin
 definition t1 :: "transition" where
 "t1 \<equiv> \<lparr>
-        Label = ''f'',
+        Label = (STR ''f''),
         Arity = 1,
         Guard = [],
         Outputs = [],
@@ -12,7 +12,7 @@ definition t1 :: "transition" where
 
 definition t2 :: "transition" where
 "t2 \<equiv> \<lparr>
-        Label = ''g'',
+        Label = (STR ''g''),
         Arity = 0,
         Guard = [(gexp.Gt (V (R 1)) (L (Num 5)))],
         Outputs = [],
@@ -21,7 +21,7 @@ definition t2 :: "transition" where
 
 definition t3 :: "transition" where
 "t3 \<equiv> \<lparr>
-        Label = ''h'',
+        Label = (STR ''h''),
         Arity = 0,
         Guard = [(GExp.Lt (V (R 1)) (L (Num 10)))],
         Outputs = [],
@@ -30,7 +30,7 @@ definition t3 :: "transition" where
 
 definition t4 :: "transition" where
 "t4 \<equiv> \<lparr>
-        Label = ''h'',
+        Label = (STR ''h''),
         Arity = 0,
         Guard = [(Ge (V (R 1)) (L (Num 10)))],
         Outputs = [],

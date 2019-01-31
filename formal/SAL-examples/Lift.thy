@@ -6,7 +6,7 @@ declare One_nat_def [simp del]
 
 definition t1up :: "transition" where
 "t1up \<equiv> \<lparr>
-        Label = ''goUp'',
+        Label = (STR ''goUp''),
         Arity = 1,
         Guard = [(gexp.Gt (V (I 1)) (L (Num 0)))],
         Outputs = [(V (I 1))],
@@ -18,7 +18,7 @@ lemma updates_t1up [simp]:"Updates t1up = []"
 
 definition t2up :: "transition" where
 "t2up \<equiv> \<lparr>
-        Label = ''goUp'',
+        Label = (STR ''goUp''),
         Arity = 1,
         Guard = [(gexp.Gt (V (I 1)) (L (Num 0)))],
         Outputs = [(Plus (V (I 1)) (L (Num (-1))))],
@@ -30,7 +30,7 @@ lemma updates_t2up [simp]:"Updates t2up = []"
 
 definition t3up :: "transition" where
 "t3up \<equiv> \<lparr>
-        Label = ''goUp'',
+        Label = (STR ''goUp''),
         Arity = 1,
         Guard = [(gexp.Eq (V (I 1)) (L (Num 0)))],
         Outputs = [(L (Num 0))],
@@ -42,7 +42,7 @@ lemma updates_t3up [simp]:"Updates t3up = []"
 
 definition t1down :: "transition" where
 "t1down \<equiv> \<lparr>
-        Label = ''goDown'',
+        Label = (STR ''goDown''),
         Arity = 1,
         Guard = [(gexp.Gt (V (I 1)) (L (Num 0)))],
         Outputs = [(V (I 1))],
@@ -51,7 +51,7 @@ definition t1down :: "transition" where
 
 definition t2down :: "transition" where
 "t2down \<equiv> \<lparr>
-        Label = ''goDown'',
+        Label = (STR ''goDown''),
         Arity = 1,
         Guard = [(gexp.Gt (V (I 1)) (L (Num 0)))],
         Outputs = [((Plus (V (I 1)) (L (Num (-1)))))],
@@ -60,7 +60,7 @@ definition t2down :: "transition" where
 
 definition t3down :: "transition" where
 "t3down \<equiv> \<lparr>
-        Label = ''goDown'',
+        Label = (STR ''goDown''),
         Arity = 1,
         Guard = [(gexp.Eq (V (I 1)) (L (Num 0)))],
         Outputs = [(L (Num 0))],
@@ -69,7 +69,7 @@ definition t3down :: "transition" where
 
 definition openDoors :: transition where
 "openDoors \<equiv> \<lparr>
-        Label = ''open'',
+        Label = (STR ''open''),
         Arity = 0,
         Guard = [],
         Outputs = [(L (Num 1))],
@@ -78,7 +78,7 @@ definition openDoors :: transition where
 
 definition closeDoors :: transition where
 "closeDoors \<equiv> \<lparr>
-        Label = ''close'',
+        Label = (STR ''close''),
         Arity = 0,
         Guard = [],
         Outputs = [(L (Num 0))],
@@ -99,15 +99,15 @@ definition lift :: transition_matrix where
               ((3,0), closeDoors)
          |}"
 
-lemma "observe_trace lift 0 <> [(''goUp'', [Num 1]), (''goUp'', [Num 0]), (''open'', [])] = [[Some (Num 1)], [Some (Num 0)], [Some (Num 1)]]"
+lemma "observe_trace lift 0 <> [((STR ''goUp''), [Num 1]), ((STR ''goUp''), [Num 0]), ((STR ''open''), [])] = [[Some (Num 1)], [Some (Num 0)], [Some (Num 1)]]"
 proof-
-  have possible_steps_0_goup: "possible_steps lift 0 Map.empty ''goUp'' [Num 1] = {|(1, t1up)|}"
+  have possible_steps_0_goup: "possible_steps lift 0 Map.empty (STR ''goUp'') [Num 1] = {|(1, t1up)|}"
     apply (simp add: possible_steps_def lift_def transitions)
     by force
-  have possible_steps_1_goup: "possible_steps lift 1 Map.empty ''goUp'' [Num 0] = {|(0, t3up)|}"
+  have possible_steps_1_goup: "possible_steps lift 1 Map.empty (STR ''goUp'') [Num 0] = {|(0, t3up)|}"
     apply (simp add: possible_steps_def lift_def transitions)
     by force
-  have possible_steps_open_0: "possible_steps lift 0 Map.empty ''open'' [] = {|(3, openDoors)|}"
+  have possible_steps_open_0: "possible_steps lift 0 Map.empty (STR ''open'') [] = {|(3, openDoors)|}"
     apply (simp add: possible_steps_def lift_def transitions)
     by force
   show ?thesis

@@ -245,11 +245,11 @@ lemma drinks_vend_empty: "(possible_steps drinks 0 Map.empty (STR ''vend'') []) 
   using drinks_0_inaccepts
   by auto
 
-lemma drinks_1_inaccepts: "fst a = ''coin'' \<longrightarrow> length (snd a) \<noteq> 1 \<Longrightarrow>
+lemma drinks_1_inaccepts: "fst a = STR ''coin'' \<longrightarrow> length (snd a) \<noteq> 1 \<Longrightarrow>
           a \<noteq> (STR ''vend'', []) \<Longrightarrow>
           possible_steps drinks 1 r (fst a) (snd a) = {||}"
 proof
-  assume not_coin: "fst a = ''coin'' \<longrightarrow> length (snd a) \<noteq> 1"
+  assume not_coin: "fst a = STR ''coin'' \<longrightarrow> length (snd a) \<noteq> 1"
   assume not_vend: "a \<noteq> (STR ''vend'', [])"
   show "possible_steps drinks 1 r (fst a) (snd a) |\<subseteq>| {||}"
     using not_coin not_vend
@@ -274,7 +274,7 @@ lemma drinks_inaccepts_future: "t \<noteq> [] \<Longrightarrow> \<not>accepts dr
    apply simp
   by (simp add: step_drinks_end)
 
-lemma drinks_1_inaccepts_trace: "\<not> (aa = ''vend'' \<and> b = []) \<Longrightarrow> \<not> (aa = ''coin'' \<and> length b = 1) \<Longrightarrow> \<not>accepts drinks 1 r ((aa, b) # t)"
+lemma drinks_1_inaccepts_trace: "\<not> (aa = STR ''vend'' \<and> b = []) \<Longrightarrow> \<not> (aa = STR ''coin'' \<and> length b = 1) \<Longrightarrow> \<not>accepts drinks 1 r ((aa, b) # t)"
   apply clarify
   apply (rule accepts.cases)
     apply simp

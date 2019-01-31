@@ -5,7 +5,7 @@ begin
 \<comment> \<open> Takes a user ID and stores it in r1 \<close>
 definition login :: "transition" where
 "login \<equiv> \<lparr>
-        Label = ''login'',
+        Label = (STR ''login''),
         Arity = 1,
         Guard = [],
         Outputs = [],
@@ -17,7 +17,7 @@ definition login :: "transition" where
 \<comment> \<open> Logs out the current user \<close>
 definition logout :: "transition" where
 "logout \<equiv> \<lparr>
-        Label = ''logout'',
+        Label = (STR ''logout''),
         Arity = 0,
         Guard = [], \<comment> \<open> No guards \<close>
         Outputs = [],
@@ -30,7 +30,7 @@ definition logout :: "transition" where
 
 definition "write" :: "transition" where
 "write \<equiv> \<lparr>
-        Label = ''write'',
+        Label = (STR ''write''),
         Arity = 1,
         Guard = [], \<comment> \<open> No guards \<close>
         Outputs = [],
@@ -43,7 +43,7 @@ definition "write" :: "transition" where
 
 definition "write_fail" :: "transition" where
 "write_fail \<equiv> \<lparr>
-        Label = ''write'',
+        Label = (STR ''write''),
         Arity = 1,
         Guard = [(Ne (V (R 3)) (V (R 1)))], \<comment> \<open> No guards \<close>
         Outputs = [(L (Str ''accessDenied''))],
@@ -52,7 +52,7 @@ definition "write_fail" :: "transition" where
 
 definition read_success :: "transition" where
 "read_success \<equiv> \<lparr>
-        Label = ''read'',
+        Label = (STR ''read''),
         Arity = 0,
         Guard = [gexp.Eq (V (R 1)) (V (R 3)), (gNot (Null (R 2)))], \<comment> \<open> No guards \<close>
         Outputs = [(V (R 2))],
@@ -65,7 +65,7 @@ definition read_success :: "transition" where
 
 definition read_fail :: "transition" where
 "read_fail \<equiv> \<lparr>
-        Label = ''read'',
+        Label = (STR ''read''),
         Arity = 0,
         Guard = [(gOr (Ne (V (R 1)) (V (R 3))) (Null (R 2)))],
         Outputs = [(L (Str ''accessDenied''))],
@@ -112,25 +112,25 @@ lemma r_equals_r [simp]: "<R 1:=user, R 2:=content, R 3:=owner> = (\<lambda>a. i
 declare One_nat_def [simp del]
 
 (* This takes a while to go through but it does *)
-lemma possible_steps_1_read: "r (R 1) = user \<and> r (R 3) = owner \<Longrightarrow> owner \<noteq> user \<Longrightarrow> possible_steps filesystem 1 r ''read'' [] = {|(1, read_fail)|}"
+lemma possible_steps_1_read: "r (R 1) = user \<and> r (R 3) = owner \<Longrightarrow> owner \<noteq> user \<Longrightarrow> possible_steps filesystem 1 r (STR ''read'') [] = {|(1, read_fail)|}"
   apply (simp add: fs_simp possible_steps_def)
   by force
 
 lemma read_2:  "r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
-    step filesystem 1 r ''read'' [] = Some (read_fail, 1, [Some (Str ''accessDenied'')], r)"
+    step filesystem 1 r (STR ''read'') [] = Some (read_fail, 1, [Some (Str ''accessDenied'')], r)"
   apply (simp add: step_def possible_steps_1_read)
   apply (simp add: fs_simp)
   apply (rule ext)
   by simp
 
-lemma possible_steps_1_logout: "possible_steps filesystem 1 r ''logout'' [] = {|(0, logout)|}"
+lemma possible_steps_1_logout: "possible_steps filesystem 1 r (STR ''logout'') [] = {|(0, logout)|}"
   apply (simp add: possible_steps_def fs_simp)
   by force
 
 lemma logout_2:  "r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
-    step filesystem 1 r ''logout'' [] = Some (logout, 0, [], r)"
+    step filesystem 1 r (STR ''logout'') [] = Some (logout, 0, [], r)"
   apply (simp add: step_def possible_steps_1_logout)
   apply (simp add: fs_simp)
   apply (rule ext)

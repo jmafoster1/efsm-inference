@@ -8,7 +8,7 @@ begin
 
 definition select :: "transition" where
 "select \<equiv> \<lparr>
-        Label = ''select'',
+        Label = (STR ''select''),
         Arity = 1,
         Guard = [(gexp.Eq (V (I 1)) (L (Str ''coke'')))],
         Outputs = [],
@@ -17,7 +17,7 @@ definition select :: "transition" where
 
 definition coin50 :: "transition" where
 "coin50 \<equiv> \<lparr>
-        Label = ''coin'',
+        Label = (STR ''coin''),
         Arity = 1,
         Guard = [(gexp.Eq (V (I 1)) (L (Num 50)))],
         Outputs = [],
@@ -29,7 +29,7 @@ lemma guard_coin50: "Guard coin50 = [(gexp.Eq (V (I 1)) (L (Num 50)))]"
 
 definition coin_init :: "transition" where
 "coin_init \<equiv> \<lparr>
-        Label = ''coin'',
+        Label = (STR ''coin''),
         Arity = 1,
         Guard = [],
         Outputs = [],
@@ -41,7 +41,7 @@ lemma guard_coin_init: "Guard coin_init = []"
 
 definition coin_inc :: "transition" where
 "coin_inc \<equiv> \<lparr>
-        Label = ''coin'',
+        Label = (STR ''coin''),
         Arity = 1,
         Guard = [],
         Outputs = [],
@@ -50,7 +50,7 @@ definition coin_inc :: "transition" where
 
 definition vends :: "transition" where
 "vends \<equiv> \<lparr>
-        Label = ''vend'',
+        Label = (STR ''vend''),
         Arity = 0,
         Guard = [],
         Outputs =  [L (Num 1)],
@@ -68,7 +68,7 @@ lemma updates_vends [simp]: "Updates vends = []"
 
 definition vends_g :: "transition" where
 "vends_g \<equiv> \<lparr>
-        Label = ''vend'',
+        Label = (STR ''vend''),
         Arity = 0,
         Guard = [(Ge (V (R 1)) (L (Num 100)))],
         Outputs =  [L (Num 1)],
@@ -83,7 +83,7 @@ lemma guard_vends_g [simp]: "Guard vends_g = [(Ge (V (R 1)) (L (Num 100)))]"
 
 definition venderr :: "transition" where
 "venderr \<equiv> \<lparr>
-        Label = ''vend'',
+        Label = (STR ''vend''),
         Arity = 0,
         Guard = [],
         Outputs =  [],
@@ -92,7 +92,7 @@ definition venderr :: "transition" where
 
 definition venderr_g :: "transition" where
 "venderr_g \<equiv> \<lparr>
-        Label = ''vend'',
+        Label = (STR ''vend''),
         Arity = 0,
         Guard = [(GExp.Lt (V (R 1)) (L (Num 100)))],
         Outputs =  [L (Num 1)],
@@ -183,7 +183,8 @@ lemma "subsumes empty coin_init coin50"
       apply simp
      apply simp
     apply (simp add: guard_coin50)
-    apply (simp add: coin50_def coin_init_def)
+     apply (simp add: coin50_def coin_init_def)
+    apply (simp add: transitions)
    apply (simp add: posterior_empty_coin50)
    apply (case_tac r)
       apply simp
@@ -316,18 +317,14 @@ proof-
   show ?thesis
     unfolding subsumes_def
     apply safe
-          apply (simp add: transitions)
-         apply (simp add: transitions)
-        apply (simp add: transitions)
-       apply auto[1]
-      apply (simp add: medial_vends posterior_vends posterior_vends_g)
-     apply (simp add: posterior_vends posterior_vends_g)
-    by (simp add: posterior_vends posterior_vends_g)
+           apply (simp add: transitions)+
+        apply auto[1]
+    by (simp_all add: medial_vends posterior_vends posterior_vends_g)
 qed
 
 definition test1 :: transition where
 "test1 \<equiv> \<lparr>
-        Label = ''foo'',
+        Label = (STR ''foo''),
         Arity = 1,
         Guard = [(gexp.Eq (V (I 1)) (L (Num 6)))],
         Outputs =  [(L (Num 6))],
@@ -336,7 +333,7 @@ definition test1 :: transition where
 
 definition test2 :: transition where
 "test2 \<equiv> \<lparr>
-        Label = ''foo'',
+        Label = (STR ''foo''),
         Arity = 1,
         Guard = [(gexp.Gt (V (I 1)) (L (Num 0)))],
         Outputs =  [(V (I 1))],
@@ -436,7 +433,10 @@ proof-
      apply (simp only: medial_test1 posterior_test1 posterior_test2 medial_test2 Generalisation.medial_test2)
      apply auto[1]
     apply (simp add: test1_def test2_def)
-   apply (simp add: Generalisation.medial_test1 Generalisation.posterior_test1 posterior_test2_2)
+    apply (simp add: Generalisation.medial_test1 Generalisation.posterior_test1 posterior_test2_2)
+    apply (simp add: test1_def test2_def)
+    apply (metis input2state.simps(2))
+   apply (simp add: posterior_test1 medial_test1 posterior_test2)
    apply (case_tac "r = V (R 1)")
     apply simp
     apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some i) (Some (Num 0))")

@@ -100,11 +100,11 @@ text\<open>
 subsection\<open>Example\<close>
 definition example01::json where 
 "example01 = 
-  OBJECT [(''menu'', OBJECT [(''id'', STRING ''file''), (''value'', STRING ''File''),
-          (''popup'', OBJECT [(''menuitem'', ARRAY
-                       [OBJECT [(''value'', STRING ''New''), (''onclick'', STRING ''CreateNewDoc()'')], 
-                        OBJECT [(''value'', STRING ''Open''), (''onclick'', STRING ''OpenDoc()'')],
-                        OBJECT [(''value'', STRING ''Close''), (''onclick'', STRING ''CloseDoc()'')]
+  OBJECT [((''menu''), OBJECT [((''id''), STRING (''file'')), ((''value''), STRING (''File'')),
+          ((''popup''), OBJECT [((''menuitem''), ARRAY
+                       [OBJECT [((''value''), STRING (''New'')), ((''onclick''), STRING ''CreateNewDoc()'')], 
+                        OBJECT [((''value''), STRING (''Open'')), ((''onclick''), STRING ''OpenDoc()'')],
+                        OBJECT [((''value''), STRING (''Close'')), ((''onclick''), STRING ''CloseDoc()'')]
                        ])]
            )])]"
 

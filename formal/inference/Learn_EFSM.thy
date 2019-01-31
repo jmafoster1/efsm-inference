@@ -5,25 +5,25 @@ begin
 declare One_nat_def [simp del]
 
 definition selectCoke :: transition where
-  "selectCoke = \<lparr>Label = ''select'', Arity = 1, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>"
+  "selectCoke = \<lparr>Label = (STR ''select''), Arity = 1, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>"
 
 definition coin50_50 :: transition where
-  "coin50_50 = \<lparr>Label = ''coin'', Arity = 1, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>"
+  "coin50_50 = \<lparr>Label = (STR ''coin''), Arity = 1, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>"
 
 definition coin50_100 :: transition where
-  "coin50_100 = \<lparr>Label = ''coin'', Arity = 1, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>"
+  "coin50_100 = \<lparr>Label = (STR ''coin''), Arity = 1, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>"
 
 definition vend_coke :: transition where
-  "vend_coke = \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>"
+  "vend_coke = \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>"
 
 definition coin100_100 :: transition where
-  "coin100_100 = \<lparr>Label = ''coin'', Arity = 1, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>"
+  "coin100_100 = \<lparr>Label = (STR ''coin''), Arity = 1, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>"
 
 definition selectPepsi :: transition where
-  "selectPepsi = \<lparr>Label = ''select'', Arity = 1, Guard = [gexp.Eq (V (I 1)) (L (Str ''pepsi''))], Outputs = [], Updates = []\<rparr>"
+  "selectPepsi = \<lparr>Label = (STR ''select''), Arity = 1, Guard = [gexp.Eq (V (I 1)) (L ((Str ''pepsi'')))], Outputs = [], Updates = []\<rparr>"
 
 definition vend_pepsi :: transition where
-  "vend_pepsi = \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''pepsi'')], Updates = []\<rparr>"
+  "vend_pepsi = \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''pepsi''))], Updates = []\<rparr>"
 
 lemmas transitions = selectCoke_def coin50_50_def coin50_100_def vend_coke_def selectPepsi_def coin100_100_def vend_pepsi_def
 
@@ -32,86 +32,104 @@ definition pta :: iEFSM where
                                                              (3, (1, 5), coin100_100), (6, (5, 6), vend_coke),
            (1, (0, 7), selectPepsi), (7, (7, 8), coin50_50), (8, (8, 9), coin50_100),  (9, (9, 10), vend_pepsi)|}"
 
-lemma step_pta_selectPepsi: "step (tm pta) 0 Map.empty ''select'' [Str ''pepsi''] = Some (selectPepsi, 7, [], <>)"
+lemma implode_pepsi: "String.implode ''pepsi'' = STR ''pepsi''"
+  by (metis Literal.rep_eq String.implode_explode_eq zero_literal.rep_eq)
+
+lemma implode_coke: "String.implode ''coke'' = STR ''coke''"
+  by (metis Literal.rep_eq String.implode_explode_eq zero_literal.rep_eq)
+
+lemma Str_pepsi: "EFSM.Str ''pepsi'' = value.Str (STR ''pepsi'')"
+  by (simp add: implode_pepsi)
+
+lemma Str_coke: "EFSM.Str ''coke'' = value.Str (STR ''coke'')"
+  by (simp add: implode_coke)
+
+lemma explode_coke: "String.explode (STR ''coke'') = ''coke''"
+  by (simp add: Literal.rep_eq zero_literal.rep_eq)
+
+lemma explode_pepsi: "String.explode (STR ''pepsi'') = ''pepsi''"
+  by (simp add: Literal.rep_eq zero_literal.rep_eq)
+
+lemma step_pta_selectPepsi: "step (tm pta) 0 Map.empty (STR ''select'') [(Str ''pepsi'')] = Some (selectPepsi, 7, [], <>)"
 proof-
-  have possible_steps: "possible_steps (tm pta) 0 Map.empty ''select'' [Str ''pepsi''] = {|(7, selectPepsi)|}"
+  have possible_steps: "possible_steps (tm pta) 0 Map.empty (STR ''select'') [(Str ''pepsi'')] = {|(7, selectPepsi)|}"
     apply (simp add: possible_steps_def ffilter_def fimage_def fset_both_sides Abs_fset_inverse)
     apply (simp add: tm_def pta_def Set.filter_def)
     apply safe
-                      apply (simp_all add: transitions)
-    by force
+                      apply (simp_all add: transitions implode_coke implode_pepsi)
+    using Str_pepsi by force
   show ?thesis
     apply (simp add: step_def possible_steps)
     by (simp add: selectPepsi_def)
 qed
 
 definition traces :: log where
-  "traces = [[(''select'', [Str ''coke''], []), (''coin'', [Num 50], [Num 50]), (''coin'', [Num 50], [Num 100]), (''vend'', [], [Str ''coke''])],
-             [(''select'', [Str ''coke''], []), (''coin'', [Num 100], [Num 100]), (''vend'', [], [Str ''coke''])],
-             [(''select'', [Str ''pepsi''], []), (''coin'', [Num 50], [Num 50]), (''coin'', [Num 50], [Num 100]), (''vend'', [], [Str ''pepsi''])]]"
+  "traces = [[((STR ''select''), [(Str ''coke'')], []), ((STR ''coin''), [Num 50], [Num 50]), ((STR ''coin''), [Num 50], [Num 100]), ((STR ''vend''), [], [(Str ''coke'')])],
+             [((STR ''select''), [(Str ''coke'')], []), ((STR ''coin''), [Num 100], [Num 100]), ((STR ''vend''), [], [(Str ''coke'')])],
+             [((STR ''select''), [(Str ''pepsi'')], []), ((STR ''coin''), [Num 50], [Num 50]), ((STR ''coin''), [Num 50], [Num 100]), ((STR ''vend''), [], [(Str ''pepsi'')])]]"
 
 
 lemma build_pta: "toiEFSM (make_pta traces {||}) = pta"
 proof-
- have step_coin50: "step {|((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)|} 1 Map.empty
-           ''coin'' [Num 50] = None"
+ have step_coin50: "step {|((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)|} 1 Map.empty
+           (STR ''coin'') [Num 50] = None"
     proof-
       have set_filter: "(Set.filter
          (\<lambda>((origin, dest), t).
              origin = 1 \<and>
-             Label t = ''coin'' \<and>
+             Label t = (STR ''coin'') \<and>
              Suc 0 = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. if n = 1 then Some (Num 50) else input2state [] (1 + 1) (I n)) Map.empty))
-         {((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)}) = {}"
+         {((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)}) = {}"
         by (simp add: Set.filter_def)
       show ?thesis
         by (simp add: step_def possible_steps_def ffilter_def set_filter)
     qed
     have step_coin50_2: "step
-           {|((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-             ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)|}
-           2 Map.empty ''coin'' [Num 50] = None"
+           {|((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+             ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)|}
+           2 Map.empty (STR ''coin'') [Num 50] = None"
     proof-
       have set_filter: "Set.filter
          (\<lambda>((origin, dest), t).
              origin = (2::nat) \<and>
-             Label t = ''coin'' \<and>
+             Label t = (STR ''coin'') \<and>
              Suc 0 = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. if n = 1 then Some (Num 50) else input2state [] (1 + 1) (I n)) Map.empty))
-         {((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-          ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)} = {}"
+         {((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+          ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)} = {}"
         by (simp add: Set.filter_def)
       show ?thesis
         by (simp add: step_def possible_steps_def ffilter_def set_filter)
     qed
     have step_vend_coke: "step
-           {|((2, 3), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-             ((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-             ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)|}
-           3 Map.empty ''vend'' [] = None"
+           {|((2, 3), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+             ((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+             ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)|}
+           3 Map.empty (STR ''vend'') [] = None"
     proof-
-      have set_filter: "Set.filter (\<lambda>((origin, dest), t). origin = (3::nat) \<and> Label t = ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname Map.empty Map.empty))
-         {((2, 3), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-          ((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-          ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)} = {}"
+      have set_filter: "Set.filter (\<lambda>((origin, dest), t). origin = (3::nat) \<and> Label t = (STR ''vend'') \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname Map.empty Map.empty))
+         {((2, 3), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+          ((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+          ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)} = {}"
         by (simp add: Set.filter_def)
       show ?thesis
         by (simp add: step_def possible_steps_def ffilter_def set_filter)
     qed
     have step_selectCoke_2: "step
-                  {|((3, 4), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-                    ((2, 3), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-                    ((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-                    ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)|}
-                  0 Map.empty ''select'' [Str ''coke''] = Some (selectCoke, 1, [], <>)"
+                  {|((3, 4), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+                    ((2, 3), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+                    ((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+                    ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)|}
+                  0 Map.empty (STR ''select'') [(Str ''coke'')] = Some (selectCoke, 1, [], <>)"
     proof-
       have set_filter: "Set.filter
           (\<lambda>((origin, dest), t).
               origin = 0 \<and>
-              Label t = ''select'' \<and>
-              Suc 0 = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. if n = 1 then Some (Str ''coke'') else input2state [] (1 + 1) (I n)) Map.empty))
-          {((3, 4), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-           ((2, 3), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-           ((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-           ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)} = {((0, 1), selectCoke)}"
+              Label t = (STR ''select'') \<and>
+              Suc 0 = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. if n = 1 then Some ((Str ''coke'')) else input2state [] (1 + 1) (I n)) Map.empty))
+          {((3, 4), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+           ((2, 3), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+           ((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+           ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)} = {((0, 1), selectCoke)}"
         apply (simp add: Set.filter_def)
         apply safe
         by (simp_all add: selectCoke_def)
@@ -120,23 +138,23 @@ proof-
         by (simp add: set_filter selectCoke_def)
     qed
     have step_coin100: "step
-                  {|((3, 4), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-                    ((2, 3), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-                    ((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-                    ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)|}
-                  1 Map.empty ''coin'' [Num 100] = None"
+                  {|((3, 4), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+                    ((2, 3), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+                    ((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+                    ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)|}
+                  1 Map.empty (STR ''coin'') [Num 100] = None"
     proof-
       have applyGuards: "\<not> apply_guards [gexp.Eq (V (I 1)) (L (Num 50))] (case_vname (\<lambda>n. if n = 1 then Some (Num 100) else input2state [] (1 + 1) (I n)) Map.empty)"
         by simp
       have set_filter: "Set.filter
          (\<lambda>((origin::nat, dest), t).
              origin = 1 \<and>
-             Label t = ''coin'' \<and>
+             Label t = (STR ''coin'') \<and>
              Suc 0 = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. if n = 1 then Some (Num 100) else input2state [] (1 + 1) (I n)) Map.empty))
-         {((3, 4), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-          ((2, 3), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-          ((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-          ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)} = {}"
+         {((3, 4), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+          ((2, 3), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+          ((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+          ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)} = {}"
         apply (simp add: Set.filter_def)
         apply clarify
         using applyGuards
@@ -145,45 +163,45 @@ proof-
         by (simp add: step_def possible_steps_def ffilter_def set_filter)
     qed
     have step_vend_coke_2: "step
-                  {|((1, 5), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-                    ((3, 4), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-                    ((2, 3), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-                    ((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-                    ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)|}
-                  5 Map.empty ''vend'' [] = None"
+                  {|((1, 5), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+                    ((3, 4), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+                    ((2, 3), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+                    ((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+                    ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)|}
+                  5 Map.empty (STR ''vend'') [] = None"
     proof-
-      have set_filter: "Set.filter (\<lambda>((origin::nat, dest), t). origin = 5 \<and> Label t = ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname Map.empty Map.empty))
-         {((1, 5), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-          ((3, 4), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-          ((2, 3), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-          ((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-          ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)} = {}"
+      have set_filter: "Set.filter (\<lambda>((origin::nat, dest), t). origin = 5 \<and> Label t = (STR ''vend'') \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname Map.empty Map.empty))
+         {((1, 5), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+          ((3, 4), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+          ((2, 3), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+          ((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+          ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)} = {}"
         by (simp add: Set.filter_def)
       show ?thesis
         by (simp add: step_def possible_steps_def ffilter_def set_filter)
     qed
     have step_select_pepsi: "step
-           {|((5, 6), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-             ((1, 5), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-             ((3, 4), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-             ((2, 3), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-             ((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-             ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)|}
-           0 Map.empty ''select'' [Str ''pepsi''] = None"
+           {|((5, 6), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+             ((1, 5), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+             ((3, 4), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+             ((2, 3), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+             ((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+             ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)|}
+           0 Map.empty (STR ''select'') [(Str ''pepsi'')] = None"
     proof-
-      have applyGuards: "\<not>apply_guards [gexp.Eq (V (I 1)) (L (Str ''coke''))] (case_vname (\<lambda>n. if n = 1 then Some (Str ''pepsi'') else input2state [] (1 + 1) (I n)) Map.empty)"
-        by simp
+      have applyGuards: "\<not>apply_guards [gexp.Eq (V (I 1)) (L ((Str ''coke'')))] (case_vname (\<lambda>n. if n = 1 then Some ((Str ''pepsi'')) else input2state [] (1 + 1) (I n)) Map.empty)"
+        by (simp add: implode_coke implode_pepsi)
       have set_filter: "Set.filter
          (\<lambda>((origin::nat, dest::nat), t).
              origin = 0 \<and>
-             Label t = ''select'' \<and>
-             Suc 0 = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. if n = 1 then Some (Str ''pepsi'') else input2state [] (1 + 1) (I n)) Map.empty))
-         {((5, 6), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-          ((1, 5), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-          ((3, 4), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-          ((2, 3), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-          ((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-          ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)} = {}"
+             Label t = (STR ''select'') \<and>
+             Suc 0 = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. if n = 1 then Some ((Str ''pepsi'')) else input2state [] (1 + 1) (I n)) Map.empty))
+         {((5, 6), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+          ((1, 5), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+          ((3, 4), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+          ((2, 3), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+          ((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+          ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)} = {}"
         apply (simp add: Set.filter_def)
         apply clarify
         apply simp
@@ -192,98 +210,98 @@ proof-
         by (simp add: step_def possible_steps_def ffilter_def set_filter)
     qed
     have step_coin50_3:  "step
-           {|((0, 7), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''pepsi''))], Outputs = [], Updates = []\<rparr>),
-             ((5, 6), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-             ((1, 5), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-             ((3, 4), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-             ((2, 3), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-             ((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-             ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)|}
-           7 Map.empty ''coin'' [Num 50] = None"
+           {|((0, 7), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''pepsi'')))], Outputs = [], Updates = []\<rparr>),
+             ((5, 6), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+             ((1, 5), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+             ((3, 4), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+             ((2, 3), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+             ((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+             ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)|}
+           7 Map.empty (STR ''coin'') [Num 50] = None"
     proof-
       have set_filter: "Set.filter
          (\<lambda>((origin::nat, dest::nat), t).
              origin = 7 \<and>
-             Label t = ''coin'' \<and>
+             Label t = (STR ''coin'') \<and>
              Suc 0 = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. if n = 1 then Some (Num 50) else input2state [] (1 + 1) (I n)) Map.empty))
-         {((0, 7), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''pepsi''))], Outputs = [], Updates = []\<rparr>),
-          ((5, 6), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-          ((1, 5), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-          ((3, 4), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-          ((2, 3), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-          ((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-          ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)} = {}"
+         {((0, 7), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''pepsi'')))], Outputs = [], Updates = []\<rparr>),
+          ((5, 6), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+          ((1, 5), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+          ((3, 4), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+          ((2, 3), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+          ((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+          ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)} = {}"
         by (simp add: Set.filter_def)
     show ?thesis
       by (simp add: step_def possible_steps_def ffilter_def set_filter)
   qed
   have step_coin50_4: "step
-           {|((7, 8), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-             ((0, 7), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''pepsi''))], Outputs = [], Updates = []\<rparr>),
-             ((5, 6), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-             ((1, 5), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-             ((3, 4), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-             ((2, 3), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-             ((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-             ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)|}
-           8 Map.empty ''coin'' [Num 50] = None"
+           {|((7, 8), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+             ((0, 7), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''pepsi'')))], Outputs = [], Updates = []\<rparr>),
+             ((5, 6), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+             ((1, 5), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+             ((3, 4), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+             ((2, 3), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+             ((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+             ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)|}
+           8 Map.empty (STR ''coin'') [Num 50] = None"
   proof-
     have set_filter: "Set.filter
          (\<lambda>((origin::nat, dest::nat), t).
              origin = 8 \<and>
-             Label t = ''coin'' \<and>
+             Label t = (STR ''coin'') \<and>
              Suc 0 = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. if n = 1 then Some (Num 50) else input2state [] (1 + 1) (I n)) Map.empty))
-         {((7, 8), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-          ((0, 7), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''pepsi''))], Outputs = [], Updates = []\<rparr>),
-          ((5, 6), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-          ((1, 5), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-          ((3, 4), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-          ((2, 3), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-          ((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-          ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)} = {}"
+         {((7, 8), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+          ((0, 7), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''pepsi'')))], Outputs = [], Updates = []\<rparr>),
+          ((5, 6), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+          ((1, 5), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+          ((3, 4), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+          ((2, 3), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+          ((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+          ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)} = {}"
       by (simp add: Set.filter_def)
     show ?thesis
       by (simp add: step_def possible_steps_def ffilter_def set_filter)
   qed
   have step_vend_pepsi: "step
-           {|((8, 9), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-             ((7, 8), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-             ((0, 7), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''pepsi''))], Outputs = [], Updates = []\<rparr>),
-             ((5, 6), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-             ((1, 5), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-             ((3, 4), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-             ((2, 3), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-             ((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-             ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)|}
-           9 Map.empty ''vend'' [] = None"
+           {|((8, 9), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+             ((7, 8), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+             ((0, 7), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''pepsi'')))], Outputs = [], Updates = []\<rparr>),
+             ((5, 6), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+             ((1, 5), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+             ((3, 4), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+             ((2, 3), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+             ((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+             ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)|}
+           9 Map.empty (STR ''vend'') [] = None"
   proof-
-    have set_filter: "Set.filter (\<lambda>((origin::nat, dest::nat), t). origin = 9 \<and> Label t = ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname Map.empty Map.empty))
-         {((8, 9), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-         ((7, 8), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-         ((0, 7), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''pepsi''))], Outputs = [], Updates = []\<rparr>),
-         ((5, 6), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-         ((1, 5), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-         ((3, 4), \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr>),
-         ((2, 3), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
-         ((1, 2), \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
-         ((0, 1), \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr>)} = {}"
+    have set_filter: "Set.filter (\<lambda>((origin::nat, dest::nat), t). origin = 9 \<and> Label t = (STR ''vend'') \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname Map.empty Map.empty))
+         {((8, 9), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+         ((7, 8), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+         ((0, 7), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''pepsi'')))], Outputs = [], Updates = []\<rparr>),
+         ((5, 6), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+         ((1, 5), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+         ((3, 4), \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr>),
+         ((2, 3), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr>),
+         ((1, 2), \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr>),
+         ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)} = {}"
       by (simp add: Set.filter_def)
     show ?thesis
       by (simp add: step_def possible_steps_def ffilter_def set_filter)
   qed
-  have select_coke: " \<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''coke''))], Outputs = [], Updates = []\<rparr> = selectCoke"
+  have select_coke: " \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr> = selectCoke"
     by (simp add: selectCoke_def)
-  have coin50_50: "\<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr> = coin50_50"
+  have coin50_50: "\<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 50)], Updates = []\<rparr> = coin50_50"
     by (simp add: coin50_50_def)
-  have coin100_100: " \<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr> = coin100_100"
+  have coin100_100: " \<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 100))], Outputs = [L (Num 100)], Updates = []\<rparr> = coin100_100"
     by (simp add: coin100_100_def)
-  have coin50_100: "\<lparr>Label = ''coin'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr> = coin50_100"
+  have coin50_100: "\<lparr>Label = (STR ''coin''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Num 50))], Outputs = [L (Num 100)], Updates = []\<rparr> = coin50_100"
     by (simp add: coin50_100_def)
-  have selectPepsi: "\<lparr>Label = ''select'', Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L (Str ''pepsi''))], Outputs = [], Updates = []\<rparr> = selectPepsi"
+  have selectPepsi: "\<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''pepsi'')))], Outputs = [], Updates = []\<rparr> = selectPepsi"
     by (simp add: selectPepsi_def)
-  have vendCoke: "\<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''coke'')], Updates = []\<rparr> = vend_coke"
+  have vendCoke: "\<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''coke''))], Updates = []\<rparr> = vend_coke"
     by (simp add: vend_coke_def)
-  have vendPepsi: "\<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [L (Str ''pepsi'')], Updates = []\<rparr> = vend_pepsi"
+  have vendPepsi: "\<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str ''pepsi''))], Updates = []\<rparr> = vend_pepsi"
     by (simp add: vend_pepsi_def)
   have sorted_list_of_fset: "sorted_list_of_fset
          {|((9::nat, 10::nat), vend_pepsi), ((8, 9), coin50_100), ((7, 8), coin50_50), ((0, 7), selectPepsi), ((5, 6), vend_coke),
@@ -365,9 +383,9 @@ qed
 
 lemmas possible_steps_fst = possible_steps_def ffilter_def fimage_def fset_both_sides Abs_fset_inverse
 
-lemma step_pta_coin50_7: "step (tm pta) 7 r ''coin'' [Num 50] = Some (coin50_50, 8, [Some (Num 50)], r)"
+lemma step_pta_coin50_7: "step (tm pta) 7 r (STR ''coin'') [Num 50] = Some (coin50_50, 8, [Some (Num 50)], r)"
 proof-
-  have possible_steps: "possible_steps (tm pta) 7 r ''coin'' [Num 50] = {|(8, coin50_50)|}"
+  have possible_steps: "possible_steps (tm pta) 7 r (STR ''coin'') [Num 50] = {|(8, coin50_50)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: Set.filter_def tm_def pta_def)
     apply safe
@@ -378,9 +396,9 @@ proof-
     by (simp add: coin50_50_def)
 qed
 
-lemma step_pta_coin50_1: "step (tm pta) 1 r ''coin'' [Num 50] = Some (coin50_50, 2, [Some (Num 50)], r)"
+lemma step_pta_coin50_1: "step (tm pta) 1 r (STR ''coin'') [Num 50] = Some (coin50_50, 2, [Some (Num 50)], r)"
 proof-
-  have possible_steps: "possible_steps (tm pta) 1 r ''coin'' [Num 50] = {|(2, coin50_50)|}"
+  have possible_steps: "possible_steps (tm pta) 1 r (STR ''coin'') [Num 50] = {|(2, coin50_50)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: Set.filter_def tm_def pta_def)
     apply safe
@@ -391,9 +409,9 @@ proof-
     by (simp add: coin50_50_def)
 qed
 
-lemma step_pta_vend_5: "step (tm pta) 5 r ''vend'' [] = Some (vend_coke, 6, [Some (Str ''coke'')], r)"
+lemma step_pta_vend_5: "step (tm pta) 5 r (STR ''vend'') [] = Some (vend_coke, 6, [Some ((Str ''coke''))], r)"
 proof-
-  have possible_steps: "possible_steps (tm pta) 5 r ''vend'' [] = {|(6, vend_coke)|}"
+  have possible_steps: "possible_steps (tm pta) 5 r (STR ''vend'') [] = {|(6, vend_coke)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: Set.filter_def tm_def pta_def)
     apply safe
@@ -404,9 +422,9 @@ proof-
     by (simp add: transitions)
 qed
 
-lemma step_pta_coin100_1: "step (tm pta) 1 r ''coin'' [Num 100] = Some (coin100_100, 5, [Some (Num 100)], r)"
+lemma step_pta_coin100_1: "step (tm pta) 1 r (STR ''coin'') [Num 100] = Some (coin100_100, 5, [Some (Num 100)], r)"
 proof-
-  have possible_steps: "possible_steps (tm pta) 1 r ''coin'' [Num 100] = {|(5, coin100_100)|}"
+  have possible_steps: "possible_steps (tm pta) 1 r (STR ''coin'') [Num 100] = {|(5, coin100_100)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: Set.filter_def tm_def pta_def)
     apply safe
@@ -417,9 +435,9 @@ proof-
     by (simp add: coin100_100_def)
 qed
 
-lemma step_pta_coin50_2: "step (tm pta) 2 r ''coin'' [Num 50] = Some (coin50_100, 3, [Some (Num 100)], r)"
+lemma step_pta_coin50_2: "step (tm pta) 2 r (STR ''coin'') [Num 50] = Some (coin50_100, 3, [Some (Num 100)], r)"
 proof-
-  have possible_steps: "possible_steps (tm pta) 2 r ''coin'' [Num 50] = {|(3, coin50_100)|}"
+  have possible_steps: "possible_steps (tm pta) 2 r (STR ''coin'') [Num 50] = {|(3, coin50_100)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: Set.filter_def tm_def pta_def)
     apply safe
@@ -430,9 +448,9 @@ proof-
     by (simp add: coin50_100_def)
 qed
 
-lemma step_pta_coin50_8: "step (tm pta) 8 r ''coin'' [Num 50] = Some (coin50_100, 9, [Some (Num 100)], r)"
+lemma step_pta_coin50_8: "step (tm pta) 8 r (STR ''coin'') [Num 50] = Some (coin50_100, 9, [Some (Num 100)], r)"
 proof-
-  have possible_steps: "possible_steps (tm pta) 8 r ''coin'' [Num 50] = {|(9, coin50_100)|}"
+  have possible_steps: "possible_steps (tm pta) 8 r (STR ''coin'') [Num 50] = {|(9, coin50_100)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: Set.filter_def tm_def pta_def)
     apply safe
@@ -443,9 +461,9 @@ proof-
     by (simp add: coin50_100_def)
 qed
 
-lemma step_pta_vend_3: "step (tm pta) 3 r ''vend'' [] = Some (vend_coke, 4, [Some (Str ''coke'')], r)"
+lemma step_pta_vend_3: "step (tm pta) 3 r (STR ''vend'') [] = Some (vend_coke, 4, [Some ((Str ''coke''))], r)"
 proof-
-  have possible_steps: "possible_steps (tm pta) 3 r ''vend'' [] = {|(4, vend_coke)|}"
+  have possible_steps: "possible_steps (tm pta) 3 r (STR ''vend'') [] = {|(4, vend_coke)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: Set.filter_def tm_def pta_def)
     apply safe
@@ -456,9 +474,9 @@ proof-
     by (simp add: vend_coke_def)
 qed
 
-lemma step_pta_vend_9: "step (tm pta) 9 r ''vend'' [] = Some (vend_pepsi, 10, [Some (Str ''pepsi'')], r)"
+lemma step_pta_vend_9: "step (tm pta) 9 r (STR ''vend'') [] = Some (vend_pepsi, 10, [Some ((Str ''pepsi''))], r)"
 proof-
-  have possible_steps: "possible_steps (tm pta) 9 r ''vend'' [] = {|(10, vend_pepsi)|}"
+  have possible_steps: "possible_steps (tm pta) 9 r (STR ''vend'') [] = {|(10, vend_pepsi)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: Set.filter_def tm_def pta_def)
     apply safe
@@ -497,19 +515,19 @@ lemma no_subsumption_coin50_50_coin50_100: "\<not> subsumes c coin50_50 coin50_1
   by (simp add: subsumes_def transitions)
 
 lemma no_subsumption_vend_coke_vend_pepsi: "\<not> subsumes c vend_coke vend_pepsi"
-  by (simp add: subsumes_def transitions)
+  by (simp add: subsumes_def transitions Str_coke implode_pepsi)
 
 lemma vend_pepsi_not_subsumes_vend_coke: "\<not> subsumes c vend_pepsi vend_coke"
-  by (simp add: subsumes_def transitions)
+  by (simp add: subsumes_def transitions Str_coke implode_pepsi)
 
-lemma step_pta_selectCoke: "step (tm pta) 0 Map.empty ''select'' [Str ''coke''] = Some (selectCoke, 1, [], <>)"
+lemma step_pta_selectCoke: "step (tm pta) 0 Map.empty (STR ''select'') [(Str ''coke'')] = Some (selectCoke, 1, [], <>)"
 proof-
-  have possible_steps: "possible_steps (tm pta) 0 Map.empty ''select'' [Str ''coke''] = {|(1, selectCoke)|}"
+  have possible_steps: "possible_steps (tm pta) 0 Map.empty (STR ''select'') [(Str ''coke'')] = {|(1, selectCoke)|}"
     apply (simp add: possible_steps_def ffilter_def fimage_def fset_both_sides Abs_fset_inverse)
     apply (simp add: tm_def pta_def Set.filter_def)
     apply safe
-                      apply (simp_all add: transitions)
-    by force
+                      apply (simp_all add: transitions implode_coke implode_pepsi)
+    using Str_coke by force
   show ?thesis
     apply (simp add: step_def possible_steps)
     by (simp add: selectCoke_def)
@@ -539,10 +557,10 @@ definition merge_2_8_no_nondet :: iEFSM where
       (6, (5, 6), vend_coke), (1, (0, 1), selectPepsi), (7, (1, 2), coin50_50), (8, (2, 9), coin50_100), (9, (9, 10), vend_pepsi)|}"
 
 definition selectGeneral :: transition where
-  "selectGeneral = \<lparr>Label = ''select'', Arity = 1, Guard = [], Outputs = [], Updates = [(R 1, V (I 1))]\<rparr>"
+  "selectGeneral = \<lparr>Label = (STR ''select''), Arity = 1, Guard = [], Outputs = [], Updates = [(R 1, V (I 1))]\<rparr>"
 
 definition vend_general :: transition where
-  "vend_general = \<lparr>Label = ''vend'', Arity = 0, Guard = [], Outputs = [V (R 1)], Updates = []\<rparr>"
+  "vend_general = \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [V (R 1)], Updates = []\<rparr>"
 
 definition merged_4_10 :: iEFSM where
   "merged_4_10 = {|(0, (0, 1), selectCoke), (7, (1, 2), coin50_50), (8, (2, 3), coin50_100), (5, (3, 4), vend_coke) ,
@@ -554,7 +572,7 @@ definition merged_vends :: iEFSM where
                                             (3, (1, 5), coin100_100), (6, (5, 6), vend_general)|}"
 
 definition coinGeneral :: transition where
-  "coinGeneral = \<lparr>Label = ''coin'', Arity = 1, Guard = [], Outputs = [Plus (V (I 1)) (V (R 2))], Updates = [(R 2, Plus (V (I 1)) (V (R 2)))]\<rparr>"
+  "coinGeneral = \<lparr>Label = (STR ''coin''), Arity = 1, Guard = [], Outputs = [Plus (V (I 1)) (V (R 2))], Updates = [(R 2, Plus (V (I 1)) (V (R 2)))]\<rparr>"
 
 lemma no_choice_coin100_100_coin50_50: "\<not>choice coin100_100 coin50_50"
   by (simp add: choice_def transitions)
@@ -563,7 +581,7 @@ lemma no_choice_coin100_100_coin50_100: "\<not>choice coin100_100 coin50_100"
   by (simp add: choice_def transitions)
 
 lemma no_choice_selectCoke_selectPepsi: "\<not>choice selectCoke selectPepsi"
-  by (simp add: choice_def transitions)
+  by (simp add: choice_def transitions Str_coke Str_pepsi)
 
 lemma choice_coin50_100_coin50_50: "choice coin50_100 coin50_50"
   apply (simp add: choice_def transitions)
@@ -606,7 +624,8 @@ lemma coin50_50_lt_coin50_100: "coin50_50 < coin50_100"
   by (simp add: transitions less_transition_ext_def less_aexp_def)
 
 lemma vend_coke_lt_vend_pepsi: "vend_coke < vend_pepsi"
-  by (simp add: transitions less_transition_ext_def less_aexp_def)
+  apply (simp add: transitions less_transition_ext_def less_aexp_def Str_coke Str_pepsi)
+  by (simp add: String.less_literal_def explode_coke explode_pepsi)
 
 lemmas orders = vend_coke_lt_vend_pepsi coin50_50_lt_coin50_100
 
@@ -620,7 +639,7 @@ lemma nondeterministic_pairs_merged_1_8: "nondeterministic_pairs merged_1_8 = {|
   |}"
 proof-
   have minus_1: "{|(1, selectCoke, 0), (7, selectPepsi, 1)|} |-| {|(7, selectPepsi, 1)|} = {|(1, selectCoke, 0)|}"
-    apply (simp add: transitions)
+    apply (simp add: transitions Str_coke Str_pepsi)
     by auto
   have minus_2: "{|(2, coin50_50, 2), (5, coin100_100, 3), (9, coin50_100, 8)|} |-| {|(5, coin100_100, 3)|} = {|(2, coin50_50, 2), (9, coin50_100, 8)|}"
     apply (simp add: transitions)
@@ -670,7 +689,7 @@ proof-
     apply (simp add: state_nondeterminism_def fimage_def minus_1 minus_2)
     by auto
   have minus_3: "{(1, selectCoke, 0), (1, selectPepsi, 1)} - {(1, selectPepsi, 1)} = {(1, selectCoke, 0)}"
-    apply (simp add: transitions)
+    apply (simp add: transitions Str_coke Str_pepsi)
     by auto
   have state_nondeterminism_0: "state_nondeterminism 0 {|(1, selectCoke, 0), (1, selectPepsi, 1)|} = {|(0, (1, 1), (selectPepsi, 1), selectCoke, 0), (0, (1, 1), (selectCoke, 0), selectPepsi, 1)|}"
     by (simp add: state_nondeterminism_def fimage_def minus_3)
@@ -701,7 +720,7 @@ definition merged_1_3 :: iEFSM where
                                               (3, (1, 5), coin100_100), (6, (5, 6), vend_general)|}"
 
 definition selectGeneral_2 :: transition where
-  "selectGeneral_2 = \<lparr>Label = ''select'', Arity = 1, Guard = [], Outputs = [], Updates = [(R 1, V (I 1)), (R 2, (L (Num 0)))]\<rparr>"
+  "selectGeneral_2 = \<lparr>Label = (STR ''select''), Arity = 1, Guard = [], Outputs = [], Updates = [(R 1, V (I 1)), (R 2, (L (Num 0)))]\<rparr>"
 
 definition merged_1_3_coin :: iEFSM where
   "merged_1_3_coin = {|(0, (0, 1), selectGeneral_2), (2, (1, 1), coinGeneral), (5, (1, 4), vend_general),
@@ -1005,7 +1024,7 @@ proof-
     apply (simp add: transitions)
     by auto
   have minus_3: "{(1, selectCoke, 0), (1, selectPepsi, 1)} - {(1, selectPepsi, 1)} = {(1, selectCoke, 0)}"
-    apply (simp add: transitions)
+    apply (simp add: transitions Str_coke Str_pepsi)
     by auto
   have minus_2: "{|(9, coin50_100, 8::nat), (3, coin50_100, 4)|} |-| {|(3, coin50_100, 4)|} = {|(9, coin50_100, 8)|}"
     apply (simp add: transitions)
@@ -1036,10 +1055,10 @@ proof-
     apply (simp add: transitions)
     by auto
   have minus_2: "{|(4, vend_coke, 5), (10, vend_pepsi, 9)|} |-| {|(10, vend_pepsi, 9)|} = {|(4, vend_coke, 5)|}"
-    apply (simp add: transitions)
+    apply (simp add: transitions Str_coke Str_pepsi)
     by auto
   have minus_3: "{(1, selectCoke, 0), (1, selectPepsi, 1)} - {(1, selectPepsi, 1)} = {(1, selectCoke, 0)}"
-    apply (simp add: transitions)
+    apply (simp add: transitions Str_coke Str_pepsi)
     by auto
   have state_nondeterminism_0: "state_nondeterminism 0 {|(1, selectCoke, 0), (1, selectPepsi, 1)|} = {|(0, (1, 1), (selectPepsi, 1), selectCoke, 0), (0, (1, 1), (selectCoke, 0), selectPepsi, 1)|}"
     by (simp add: state_nondeterminism_def fimage_def minus_3)
@@ -1060,7 +1079,7 @@ proof-
     using choices by auto
 qed
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_4_4: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 4 4 <R 1 := Str ''coke''> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_4_4: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 4 4 <R 1 := (Str ''coke'')> Map.empty t H_pta"
 proof(induct t)
   case Nil
   then show ?case
@@ -1077,34 +1096,34 @@ next
     by (simp add: nondeterministic_step_def possible_steps)
 qed
 
-lemma possible_steps_not_vend: "aa = ''vend'' \<longrightarrow> b \<noteq> [] \<Longrightarrow> possible_steps (tm pta) 3 Map.empty aa b = {||}"
+lemma possible_steps_not_vend: "aa = (STR ''vend'') \<longrightarrow> b \<noteq> [] \<Longrightarrow> possible_steps (tm pta) 3 Map.empty aa b = {||}"
   apply (simp add: possible_steps_fst)
   apply (simp add: tm_def pta_def Set.filter_def)
   apply (simp add: vend_coke_def)
   by auto
 
-lemma nondetermnistic_step_not_vend: "aa = ''vend'' \<longrightarrow> b \<noteq> [] \<Longrightarrow> nondeterministic_step (tm pta) 3 Map.empty aa b = None"
+lemma nondetermnistic_step_not_vend: "aa = (STR ''vend'') \<longrightarrow> b \<noteq> [] \<Longrightarrow> nondeterministic_step (tm pta) 3 Map.empty aa b = None"
   by (simp add: nondeterministic_step_def possible_steps_not_vend)
 
-lemma possible_steps_vend: "possible_steps (tm merged_vends) 3 r ''vend'' [] = {|(4, vend_general)|}"
+lemma possible_steps_vend: "possible_steps (tm merged_vends) 3 r (STR ''vend'') [] = {|(4, vend_general)|}"
   apply (simp add: possible_steps_fst)
   apply (simp add: tm_def merged_vends_def Set.filter_def)
   apply safe
            apply (simp_all add: transitions selectGeneral_def vend_general_def)
   by force
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_3_3: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 3 3 <R 1 := Str ''coke''> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_3_3: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 3 3 <R 1 := (Str ''coke'')> Map.empty t H_pta"
 proof(induct t)
   case Nil
   then show ?case
     by (simp add: nondeterministic_simulates_trace.base)
 next
-  have regsimp: "(\<lambda>a. if a = R 1 then Some (Str ''coke'') else None) = <R 1 := Str ''coke''>"
+  have regsimp: "(\<lambda>a. if a = R 1 then Some ((Str ''coke'')) else None) = <R 1 := (Str ''coke'')>"
     apply (rule ext)
     by simp
   case (Cons a t)
   then show ?case
-    apply (case_tac "a=(''vend'', [])")
+    apply (case_tac "a=((STR ''vend''), [])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
          apply (simp add: H_pta_def)
@@ -1119,20 +1138,20 @@ next
     by (simp add: nondetermnistic_step_not_vend)
 qed
 
-lemma possible_steps_pta_2_not_coin50: "aa = ''coin'' \<longrightarrow> b \<noteq> [Num 50] \<Longrightarrow> possible_steps (tm pta) 2 Map.empty aa b = {||}"
+lemma possible_steps_pta_2_not_coin50: "aa = (STR ''coin'') \<longrightarrow> b \<noteq> [Num 50] \<Longrightarrow> possible_steps (tm pta) 2 Map.empty aa b = {||}"
   apply (simp add: possible_steps_fst)
   apply (simp add: Set.filter_def tm_def pta_def)
   apply (simp add: coin50_100_def hd_input2state)
   by (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
 
-lemma possible_steps_merged_vends_coin50_2: "\<forall>r. possible_steps (tm merged_vends) 2 r ''coin'' [Num 50] = {|(3, coin50_100)|}"
+lemma possible_steps_merged_vends_coin50_2: "\<forall>r. possible_steps (tm merged_vends) 2 r (STR ''coin'') [Num 50] = {|(3, coin50_100)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
     apply safe
               apply (simp_all add: transitions selectGeneral_def)
     by force
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_2_2: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 2 2 <R 1 := Str ''coke''> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_2_2: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 2 2 <R 1 := (Str ''coke'')> Map.empty t H_pta"
 proof(induct t)
   case Nil
   then show ?case
@@ -1142,12 +1161,12 @@ next
     apply clarify
     apply (rule ext)
     by (simp add: transitions)
-  have regsimp: "(\<lambda>a. if a = R 1 then Some (Str ''coke'') else None) = <R 1 := Str ''coke''>"
+  have regsimp: "(\<lambda>a. if a = R 1 then Some ((Str ''coke'')) else None) = <R 1 := (Str ''coke'')>"
     apply (rule ext)
     by simp
   case (Cons a t)
   then show ?case
-    apply (case_tac "a=(''coin'', [Num 50])")
+    apply (case_tac "a=((STR ''coin''), [Num 50])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
          apply (simp add: H_pta_def)
@@ -1162,7 +1181,7 @@ next
     by (simp add: nondeterministic_step_def possible_steps_pta_2_not_coin50)
 qed
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_6_6: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 6 6 <R 1 := Str ''coke''> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_6_6: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 6 6 <R 1 := (Str ''coke'')> Map.empty t H_pta"
 proof(induct t)
   case Nil
   then show ?case
@@ -1179,21 +1198,21 @@ next
     by (simp add: nondeterministic_step_def possible_steps)
 qed
 
-lemma possible_steps_pta_5_not_vend: "a = ''vend'' \<longrightarrow> b \<noteq> [] \<Longrightarrow> possible_steps (tm pta) 5 Map.empty a b = {||}"
+lemma possible_steps_pta_5_not_vend: "a = (STR ''vend'') \<longrightarrow> b \<noteq> [] \<Longrightarrow> possible_steps (tm pta) 5 Map.empty a b = {||}"
   apply (simp add: possible_steps_fst)
   apply (simp add: tm_def pta_def Set.filter_def vend_coke_def)
   by force
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_5_5: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 5 5 <R 1 := Str ''coke''> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_5_5: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 5 5 <R 1 := (Str ''coke'')> Map.empty t H_pta"
 proof(induct t)
   case Nil
   then show ?case
     by (simp add: nondeterministic_simulates_trace.base)
 next
-  have regsimp: "(\<lambda>a. if a = R 1 then Some (Str ''coke'') else None) = <R 1 := Str ''coke''>"
+  have regsimp: "(\<lambda>a. if a = R 1 then Some ((Str ''coke'')) else None) = <R 1 := (Str ''coke'')>"
     apply (rule ext)
     by simp
-  have possible_steps_vend: "possible_steps (tm merged_vends) 5 <R 1 := Str ''coke''> ''vend'' [] = {|(6, vend_general)|}"
+  have possible_steps_vend: "possible_steps (tm merged_vends) 5 <R 1 := (Str ''coke'')> (STR ''vend'') [] = {|(6, vend_general)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
     apply (simp add: transitions vend_general_def)
@@ -1201,7 +1220,7 @@ next
   case (Cons a t)
   case (Cons a t)
   then show ?case
-    apply (case_tac "a = (''vend'', [])")
+    apply (case_tac "a = ((STR ''vend''), [])")
      apply (simp add: regsimp)
      apply (rule nondeterministic_simulates_trace.step_some)
          apply (simp add: H_pta_def)
@@ -1216,13 +1235,13 @@ next
     by (simp add: nondeterministic_step_def possible_steps_pta_5_not_vend)
 qed
 
-lemma possible_steps_pta_1_not_coin: "aa = ''coin'' \<longrightarrow> b \<noteq> [Num 50] \<Longrightarrow>
-       aa = ''coin'' \<longrightarrow> b \<noteq> [Num 100] \<Longrightarrow>
+lemma possible_steps_pta_1_not_coin: "aa = (STR ''coin'') \<longrightarrow> b \<noteq> [Num 50] \<Longrightarrow>
+       aa = (STR ''coin'') \<longrightarrow> b \<noteq> [Num 100] \<Longrightarrow>
        possible_steps (tm pta) 1 Map.empty aa b = {||}"
   apply (simp add: possible_steps_fst)
   apply (simp add: tm_def pta_def Set.filter_def)
   apply clarify
-  apply (case_tac "Label baa = ''coin''")
+  apply (case_tac "Label baa = (STR ''coin'')")
    apply simp
    apply (case_tac "ba = 2")
     apply (simp add: transitions hd_input2state)
@@ -1232,21 +1251,21 @@ lemma possible_steps_pta_1_not_coin: "aa = ''coin'' \<longrightarrow> b \<noteq>
   apply (simp add: transitions)
   by auto
 
-lemma possible_steps_merged_vends_coin50_1: "possible_steps (tm merged_vends) 1 r ''coin'' [Num 50] = {|(2, coin50_50)|}"
+lemma possible_steps_merged_vends_coin50_1: "possible_steps (tm merged_vends) 1 r (STR ''coin'') [Num 50] = {|(2, coin50_50)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
     apply safe
               apply (simp_all add: transitions selectGeneral_def)
   by force
 
-lemma possible_steps_merged_vends_coin100: "possible_steps (tm merged_vends) 1 r ''coin'' [Num 100] = {|(5, coin100_100)|}"
+lemma possible_steps_merged_vends_coin100: "possible_steps (tm merged_vends) 1 r (STR ''coin'') [Num 100] = {|(5, coin100_100)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
     apply safe
               apply (simp_all add: transitions selectGeneral_def vend_general_def)
     by force
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_1_1: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 1 1 <R 1 := Str ''coke''> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_1_1: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 1 1 <R 1 := (Str ''coke'')> Map.empty t H_pta"
 proof(induct t)
   case Nil
   then show ?case
@@ -1256,12 +1275,12 @@ next
     apply clarify
     apply (rule ext)
     by (simp add: transitions)
-  have regsimp: "(\<lambda>a. if a = R 1 then Some (Str ''coke'') else None) = <R 1 := Str ''coke''>"
+  have regsimp: "(\<lambda>a. if a = R 1 then Some ((Str ''coke'')) else None) = <R 1 := (Str ''coke'')>"
     apply (rule ext)
     by simp
   case (Cons a t)
   then show ?case
-    apply (case_tac "a=(''coin'', [Num 50])")
+    apply (case_tac "a=((STR ''coin''), [Num 50])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
          apply (simp add: H_pta_def)
@@ -1270,7 +1289,7 @@ next
        apply (simp only: coin50_updates regsimp)
       apply (simp add: coin50_50_def)
       apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_2_2)
-      apply (case_tac "a=(''coin'', [Num 100])")
+      apply (case_tac "a=((STR ''coin''), [Num 100])")
        apply (simp add: regsimp)
      apply (rule nondeterministic_simulates_trace.step_some)
           apply (simp add: H_pta_def)
@@ -1285,20 +1304,20 @@ next
     by (simp add: nondeterministic_step_def possible_steps_pta_1_not_coin)
 qed
 
-lemma possible_steps_pta_9_not_vend: "aa = ''vend'' \<longrightarrow> b \<noteq> [] \<Longrightarrow>
+lemma possible_steps_pta_9_not_vend: "aa = (STR ''vend'') \<longrightarrow> b \<noteq> [] \<Longrightarrow>
        possible_steps (tm pta) 9 Map.empty aa b = {||}"
   apply (simp add: possible_steps_fst)
   apply (simp add: tm_def pta_def Set.filter_def)
   apply (simp add: vend_pepsi_def)
   by auto
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_3_9: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 3 9 <R 1 := Str ''pepsi''> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_3_9: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 3 9 <R 1 := (Str ''pepsi'')> Map.empty t H_pta"
 proof(induct t)
   case Nil
   then show ?case
     by (simp add: nondeterministic_simulates_trace.base)
 next
-  have possible_steps: "\<forall>r. possible_steps (tm merged_vends) 3 r ''vend'' [] = {|(4, vend_general)|}"
+  have possible_steps: "\<forall>r. possible_steps (tm merged_vends) 3 r (STR ''vend'') [] = {|(4, vend_general)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
     apply safe
@@ -1309,7 +1328,7 @@ next
     by (simp add: tm_def pta_def Set.filter_def)
   case (Cons a t)
   then show ?case
-    apply (case_tac "a=(''vend'', [])")
+    apply (case_tac "a=((STR ''vend''), [])")
     apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
          apply (simp add: H_pta_def)
@@ -1329,20 +1348,20 @@ next
     by (simp add: nondeterministic_step_def possible_steps_pta_9_not_vend)
 qed
 
-lemma possible_steps_pta_8_not_coin: "aa = ''coin'' \<longrightarrow> b \<noteq> [Num 50] \<Longrightarrow>
+lemma possible_steps_pta_8_not_coin: "aa = (STR ''coin'') \<longrightarrow> b \<noteq> [Num 50] \<Longrightarrow>
        possible_steps (tm pta) 8 Map.empty aa b = {||}"
   apply (simp add: possible_steps_fst)
   apply (simp add: tm_def pta_def Set.filter_def)
   apply (simp add: coin50_100_def hd_input2state)
   by (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_2_8: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 2 8 <R 1 := Str ''pepsi''> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_2_8: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 2 8 <R 1 := (Str ''pepsi'')> Map.empty t H_pta"
 proof(induct t)
   case Nil
   then show ?case
     by (simp add: nondeterministic_simulates_trace.base)
 next
-  have possible_steps: "possible_steps (tm merged_vends) 2 <R 1 := Str ''pepsi''> ''coin'' [Num 50] = {|(3, coin50_100)|}"
+  have possible_steps: "possible_steps (tm merged_vends) 2 <R 1 := (Str ''pepsi'')> (STR ''coin'') [Num 50] = {|(3, coin50_100)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
     apply safe
@@ -1354,7 +1373,7 @@ next
     apply (rule ext)
     by simp
   then show ?case
-    apply (case_tac "a=(''coin'', [Num 50])")
+    apply (case_tac "a=((STR ''coin''), [Num 50])")
      apply (simp add: regsimp)
      apply (rule nondeterministic_simulates_trace.step_some)
          apply (simp add: H_pta_def)
@@ -1369,19 +1388,19 @@ next
     by (simp add: nondeterministic_step_def possible_steps_pta_8_not_coin)
 qed
 
-lemma possible_steps_pt_7_not_coin: "aa = ''coin'' \<longrightarrow> b \<noteq> [Num 50] \<Longrightarrow>
+lemma possible_steps_pt_7_not_coin: "aa = (STR ''coin'') \<longrightarrow> b \<noteq> [Num 50] \<Longrightarrow>
        possible_steps (tm pta) 7 Map.empty aa b = {||}"
   apply (simp add: possible_steps_fst)
   apply (simp add: tm_def pta_def Set.filter_def coin50_50_def hd_input2state)
   by (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_1_7: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 1 7 <R 1 := Str ''pepsi''> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_1_7: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 1 7 <R 1 := (Str ''pepsi'')> Map.empty t H_pta"
 proof(induct t)
   case Nil
   then show ?case
     by (simp add: nondeterministic_simulates_trace.base)
 next
-  have possible_steps_coin50: "\<forall>r. possible_steps (tm merged_vends) 1 r ''coin'' [Num 50] = {|(2, coin50_50)|}"
+  have possible_steps_coin50: "\<forall>r. possible_steps (tm merged_vends) 1 r (STR ''coin'') [Num 50] = {|(2, coin50_50)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
     apply safe
@@ -1393,7 +1412,7 @@ next
     by simp
   case (Cons a t)
   then show ?case
-    apply (case_tac "a=(''coin'', [Num 50])")
+    apply (case_tac "a=((STR ''coin''), [Num 50])")
      apply (simp add: regsimp)
      apply (rule nondeterministic_simulates_trace.step_some)
           apply (simp add: H_pta_def)
@@ -1408,8 +1427,8 @@ next
     by (simp add: nondeterministic_step_def possible_steps_pt_7_not_coin)
 qed
 
-lemma possible_steps_pta_0_not_select: " aa = ''select'' \<longrightarrow> b \<noteq> [Str ''coke''] \<Longrightarrow>
-       aa = ''select'' \<longrightarrow> b \<noteq> [Str ''pepsi''] \<Longrightarrow>
+lemma possible_steps_pta_0_not_select: " aa = (STR ''select'') \<longrightarrow> b \<noteq> [(Str ''coke'')] \<Longrightarrow>
+       aa = (STR ''select'') \<longrightarrow> b \<noteq> [(Str ''pepsi'')] \<Longrightarrow>
        possible_steps (tm pta) 0 Map.empty aa b = {||}"
   apply (simp add: possible_steps_fst)
   apply (simp add: tm_def pta_def Set.filter_def)
@@ -1427,7 +1446,7 @@ proof(induct t)
   then show ?case
     by (simp add: nondeterministic_simulates_trace.base)
 next
-  have possible_steps: "\<forall>d. possible_steps (tm merged_vends) 0 Map.empty ''select'' [d] = {|(1, selectGeneral)|}"
+  have possible_steps: "\<forall>d. possible_steps (tm merged_vends) 0 Map.empty (STR ''select'') [d] = {|(1, selectGeneral)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
     apply safe
@@ -1439,7 +1458,7 @@ next
     by (simp add: selectGeneral_def)
   case (Cons a t)
   then show ?case
-    apply (case_tac "a=(''select'', [Str ''coke''])")
+    apply (case_tac "a=((STR ''select''), [(Str ''coke'')])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
           apply (simp add: H_pta_def)
@@ -1448,7 +1467,7 @@ next
        apply (simp only: selectGeneral_updates)
       apply (simp add: selectGeneral_def)
      apply (simp add: nondeterministic_simulates_trace_merged_vends_pta_1_1)
-    apply (case_tac "a=(''select'', [Str ''pepsi''])")
+    apply (case_tac "a=((STR ''select''), [(Str ''pepsi'')])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
           apply (simp add: H_pta_def)
@@ -1811,13 +1830,13 @@ next
     apply clarify
     apply (rule ext)
     by simp
-  have possible_steps_merged_vends_vend: "\<forall>r. possible_steps (tm merged_vends) 3 r ''vend'' [] = {|(4, vend_general)|}"
+  have possible_steps_merged_vends_vend: "\<forall>r. possible_steps (tm merged_vends) 3 r (STR ''vend'') [] = {|(4, vend_general)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: merged_vends_def Set.filter_def tm_def)
     apply safe
              apply (simp_all add: transitions vend_general_def)
     by force
-  have possible_steps_merged_1_3_coin_vend: "\<forall>r. possible_steps (tm merged_1_3_coin) 1 r ''vend'' [] = {|(4, vend_general)|}"
+  have possible_steps_merged_1_3_coin_vend: "\<forall>r. possible_steps (tm merged_1_3_coin) 1 r (STR ''vend'') [] = {|(4, vend_general)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_1_3_coin_def Set.filter_def)
     apply safe
@@ -1827,7 +1846,7 @@ next
     apply (simp add: possible_steps_fst)
     by (simp add: merged_vends_def Set.filter_def tm_def)
   have possible_steps_not_vend: "\<And>aa ba.
-       aa = ''vend'' \<longrightarrow> ba \<noteq> [] \<Longrightarrow>
+       aa = (STR ''vend'') \<longrightarrow> ba \<noteq> [] \<Longrightarrow>
        possible_steps (tm merged_vends) 3 (\<lambda>a. if a = R 1 then Some (hd b) else None) aa ba = {||}"
     apply (simp add: possible_steps_fst)
     apply (simp add: merged_vends_def Set.filter_def tm_def)
@@ -1835,7 +1854,7 @@ next
     by (simp_all add: transitions vend_general_def)
   case (Cons a t)
   then show ?case
-    apply (case_tac "a= (''vend'', [])")
+    apply (case_tac "a= ((STR ''vend''), [])")
     apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
          apply (simp add: H_merged_1_2_def)
@@ -1861,7 +1880,7 @@ proof(induct t)
   then show ?case
     by (simp add: nondeterministic_simulates_trace.base)
 next
-  have possible_steps_merged_1_3_coin_1_coin: "\<forall>r. possible_steps (tm merged_1_3_coin) 1 r ''coin'' [Num 50] = {|(1, coinGeneral)|}"
+  have possible_steps_merged_1_3_coin_1_coin: "\<forall>r. possible_steps (tm merged_1_3_coin) 1 r (STR ''coin'') [Num 50] = {|(1, coinGeneral)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_1_3_coin_def Set.filter_def)
     apply safe
@@ -1883,7 +1902,7 @@ next
     apply (rule ext)
     by simp
   have possible_steps_not_coin: "\<And>aa ba r.
-       aa = ''coin'' \<longrightarrow> ba \<noteq> [Num 50] \<Longrightarrow>
+       aa = (STR ''coin'') \<longrightarrow> ba \<noteq> [Num 50] \<Longrightarrow>
        possible_steps (tm merged_vends) 2 r aa ba = {||}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
@@ -1891,7 +1910,7 @@ next
     by (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
   case (Cons a t)
   then show ?case
-    apply (case_tac "a = (''coin'', [Num 50])")
+    apply (case_tac "a = ((STR ''coin''), [Num 50])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
           apply (simp add: H_merged_1_2_def)
@@ -1913,13 +1932,13 @@ proof(induct t)
   then show ?case
     by (simp add: nondeterministic_simulates_trace.base)
 next
-  have possible_steps_merged_vends_vend: "\<forall>r. possible_steps (tm merged_vends) 5 r ''vend'' [] = {|(6, vend_general)|}"
+  have possible_steps_merged_vends_vend: "\<forall>r. possible_steps (tm merged_vends) 5 r (STR ''vend'') [] = {|(6, vend_general)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
     apply safe
              apply (simp_all add: vend_general_def)
     by force
-  have possible_steps_other_vend: "\<forall>r. possible_steps (tm merged_1_3_coin) 5 r ''vend'' [] = {|(6, vend_general)|}"
+  have possible_steps_other_vend: "\<forall>r. possible_steps (tm merged_1_3_coin) 5 r (STR ''vend'') [] = {|(6, vend_general)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_1_3_coin_def Set.filter_def)
     apply safe
@@ -1929,14 +1948,14 @@ next
     apply (simp add: possible_steps_fst)
     by (simp add: tm_def merged_vends_def Set.filter_def)
   have stop_2: "\<And>aa ba.
-       aa = ''vend'' \<longrightarrow> ba \<noteq> [] \<Longrightarrow>
+       aa = (STR ''vend'') \<longrightarrow> ba \<noteq> [] \<Longrightarrow>
        possible_steps (tm merged_vends) 5 (\<lambda>a. if a = R 1 then Some (hd b) else None) aa ba = {||}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def vend_general_def)
     by auto
   case (Cons a t)
   then show ?case
-    apply (case_tac "a=(''vend'', [])")
+    apply (case_tac "a=((STR ''vend''), [])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
          apply (simp add: H_merged_1_2_def)
@@ -1966,7 +1985,7 @@ next
     apply clarify
     apply (rule ext)
     by simp
-  have possible_steps_merged_1_3_coin_coin: "\<forall>r. possible_steps (tm merged_1_3_coin) 1 r ''coin'' [Num 50] = {|(1, coinGeneral)|}"
+  have possible_steps_merged_1_3_coin_coin: "\<forall>r. possible_steps (tm merged_1_3_coin) 1 r (STR ''coin'') [Num 50] = {|(1, coinGeneral)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_1_3_coin_def Set.filter_def)
     apply safe
@@ -1983,13 +2002,13 @@ next
     apply clarify
     apply (rule ext)
     by simp
-  have possible_steps_coin_100: "\<forall>r. possible_steps (tm merged_vends) 1 r ''coin'' [Num 100] = {|(5, coin100_100)|}"
+  have possible_steps_coin_100: "\<forall>r. possible_steps (tm merged_vends) 1 r (STR ''coin'') [Num 100] = {|(5, coin100_100)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
     apply safe
               apply (simp_all add: transitions)
     by force
-  have possible_steps_merged_1_3_coin_coin100: "\<forall>r. possible_steps (tm merged_1_3_coin) 1 r ''coin'' [Num 100] = {|(1, coinGeneral), (5, coin100_100)|}"
+  have possible_steps_merged_1_3_coin_coin100: "\<forall>r. possible_steps (tm merged_1_3_coin) 1 r (STR ''coin'') [Num 100] = {|(1, coinGeneral), (5, coin100_100)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_1_3_coin_def Set.filter_def)
     apply safe
@@ -1997,15 +2016,15 @@ next
     apply force
     by force
   have go_to_5: "\<forall>r. (5, coin100_100) |\<in>|
-    possible_steps (tm merged_1_3_coin) 1 r ''coin'' [Num 100]"
+    possible_steps (tm merged_1_3_coin) 1 r (STR ''coin'') [Num 100]"
     by (simp add: possible_steps_merged_1_3_coin_coin100)
   have regsimp_3: "\<forall>d. (\<lambda>a. if a = R 2 then Some (Num 0) else if a = R 1 then Some d else None) = <R 1 := d, R 2 := Num 0>"
     apply clarify
     apply (rule ext)
     by simp
   have stop: "\<And>aa ba.
-       aa = ''coin'' \<longrightarrow> ba \<noteq> [Num 50] \<Longrightarrow>
-       aa = ''coin'' \<longrightarrow> ba \<noteq> [Num 100] \<Longrightarrow>
+       aa = (STR ''coin'') \<longrightarrow> ba \<noteq> [Num 50] \<Longrightarrow>
+       aa = (STR ''coin'') \<longrightarrow> ba \<noteq> [Num 100] \<Longrightarrow>
        possible_steps (tm merged_vends) 1 (\<lambda>a. if a = R 1 then Some (hd b) else None) aa ba = {||}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
@@ -2021,7 +2040,7 @@ next
     by simp
   case (Cons a t)
   then show ?case
-    apply (case_tac "a = (''coin'', [Num 50])")
+    apply (case_tac "a = ((STR ''coin''), [Num 50])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
           apply (simp add: H_merged_1_2_def)
@@ -2031,7 +2050,7 @@ next
       apply (simp add: coin50_50_def coinGeneral_def)
      apply (simp add: transitions regsimp_1)
      apply (simp add: nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_1_2)
-    apply (case_tac "a = (''coin'', [Num 100])")
+    apply (case_tac "a = ((STR ''coin''), [Num 100])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
          apply (simp add: H_merged_1_2_def)
@@ -2047,7 +2066,7 @@ next
     by (simp add: nondeterministic_step_def stop)
 qed
 
-lemma possible_steps_merged_vends_select: "\<forall>b. length b = 1 \<longrightarrow> possible_steps (tm merged_vends) 0 Map.empty ''select'' b = {|(1, selectGeneral)|}"
+lemma possible_steps_merged_vends_select: "\<forall>b. length b = 1 \<longrightarrow> possible_steps (tm merged_vends) 0 Map.empty (STR ''select'') b = {|(1, selectGeneral)|}"
   apply (simp add: possible_steps_fst)
   apply (simp add: tm_def merged_vends_def Set.filter_def)
   apply safe
@@ -2060,7 +2079,7 @@ proof(induct t)
   then show ?case
   by (simp add: nondeterministic_simulates_trace.base)
 next
-  have possible_steps_merged_1_3_coin_select: "\<forall>b. length b = 1 \<longrightarrow> possible_steps (tm merged_1_3_coin) 0 Map.empty ''select'' b = {|(1, selectGeneral_2)|}"
+  have possible_steps_merged_1_3_coin_select: "\<forall>b. length b = 1 \<longrightarrow> possible_steps (tm merged_1_3_coin) 0 Map.empty (STR ''select'') b = {|(1, selectGeneral_2)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_1_3_coin_def Set.filter_def)
     apply safe
@@ -2077,7 +2096,7 @@ next
     apply (rule ext)
     by (simp add: hd_input2state)
   have stop: "\<And>aa b.
-       aa = ''select'' \<longrightarrow> length b \<noteq> 1 \<Longrightarrow>
+       aa = (STR ''select'') \<longrightarrow> length b \<noteq> 1 \<Longrightarrow>
        possible_steps (tm merged_vends) 0 Map.empty aa b = {||}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
@@ -2086,7 +2105,7 @@ next
   case (Cons a t)
   then show ?case
     apply (case_tac a)
-    apply (case_tac "aa = ''select'' \<and> length b = 1")
+    apply (case_tac "aa = (STR ''select'') \<and> length b = 1")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
           apply (simp add: H_merged_1_2_def)
@@ -2175,13 +2194,13 @@ qed
 
 lemma no_direct_subsumption_coinGeneral_coin100_100:  "\<not>directly_subsumes (tm merged_vends) (tm merged_1_5) 1 coinGeneral coin100_100"
 proof-
-  have possible_steps: "\<forall>d. possible_steps (tm merged_vends) 0 Map.empty ''select'' [d] = {|(1, selectGeneral)|}"
+  have possible_steps: "\<forall>d. possible_steps (tm merged_vends) 0 Map.empty (STR ''select'') [d] = {|(1, selectGeneral)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
     apply safe
               apply (simp_all add: transitions selectGeneral_def)
     by force
-  have possible_steps_merged_1_5: "\<forall>b. length b = 1 \<longrightarrow> possible_steps (tm merged_1_5) 0 Map.empty ''select'' b = {|(1, selectGeneral_2)|}"
+  have possible_steps_merged_1_5: "\<forall>b. length b = 1 \<longrightarrow> possible_steps (tm merged_1_5) 0 Map.empty (STR ''select'') b = {|(1, selectGeneral_2)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_1_5_def Set.filter_def)
     apply safe
@@ -2211,7 +2230,7 @@ proof-
   show ?thesis
     apply (simp add: directly_subsumes_def accepts_trace_def)
     apply standard
-    apply (rule_tac x="[(''select'', [d])]" in exI)
+    apply (rule_tac x="[((STR ''select''), [d])]" in exI)
     apply standard
      apply (rule accepts.step)
       apply (simp add: step_def possible_steps)
@@ -2226,13 +2245,13 @@ qed
 
 lemma no_direct_subsumption_coin100_100_coinGeneral: "\<not> directly_subsumes (tm merged_vends) (tm merged_1_5) 1 coin100_100 coinGeneral"
 proof-
-have possible_steps: "\<forall>d. possible_steps (tm merged_vends) 0 Map.empty ''select'' [d] = {|(1, selectGeneral)|}"
+have possible_steps: "\<forall>d. possible_steps (tm merged_vends) 0 Map.empty (STR ''select'') [d] = {|(1, selectGeneral)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
     apply safe
               apply (simp_all add: transitions selectGeneral_def)
     by force
-  have possible_steps_merged_1_5: "\<forall>b. length b = 1 \<longrightarrow> possible_steps (tm merged_1_5) 0 Map.empty ''select'' b = {|(1, selectGeneral_2)|}"
+  have possible_steps_merged_1_5: "\<forall>b. length b = 1 \<longrightarrow> possible_steps (tm merged_1_5) 0 Map.empty (STR ''select'') b = {|(1, selectGeneral_2)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_1_5_def Set.filter_def)
     apply safe
@@ -2255,7 +2274,7 @@ have possible_steps: "\<forall>d. possible_steps (tm merged_vends) 0 Map.empty '
   show ?thesis
     apply (simp add: directly_subsumes_def accepts_trace_def)
     apply standard
-    apply (rule_tac x="[(''select'', [d])]" in exI)
+    apply (rule_tac x="[((STR ''select''), [d])]" in exI)
     apply standard
      apply (rule accepts.step)
       apply (simp add: step_def possible_steps)
@@ -2282,14 +2301,14 @@ proof-
     using choices by auto
 qed
 
-lemma possible_steps_merged_1_5_coin_coin: "\<forall>r. possible_steps (tm merged_1_5_coin) 1 r ''coin'' [Num n] = {|(1, coinGeneral)|}"
+lemma possible_steps_merged_1_5_coin_coin: "\<forall>r. possible_steps (tm merged_1_5_coin) 1 r (STR ''coin'') [Num n] = {|(1, coinGeneral)|}"
   apply (simp add: possible_steps_fst)
   apply (simp add: tm_def merged_1_5_coin_def Set.filter_def)
   apply safe
        apply (simp_all add: coinGeneral_def vend_general_def selectGeneral_2_def)
   by force
 
-lemma possible_steps_merged_1_5_coin_vend: "possible_steps (tm merged_1_5_coin) 1 r ''vend'' [] = {|(4, vend_general), (6, vend_general)|}"
+lemma possible_steps_merged_1_5_coin_vend: "possible_steps (tm merged_1_5_coin) 1 r (STR ''vend'') [] = {|(4, vend_general), (6, vend_general)|}"
   apply (simp add: possible_steps_fst)
   apply (simp add: tm_def merged_1_5_coin_def Set.filter_def)
   apply safe
@@ -2307,7 +2326,7 @@ next
     apply (simp add: possible_steps_fst)
     by (simp add: merged_vends_def Set.filter_def tm_def)
   have possible_steps_not_vend: "\<And>aa ba r.
-       aa = ''vend'' \<longrightarrow> ba \<noteq> [] \<Longrightarrow>
+       aa = (STR ''vend'') \<longrightarrow> ba \<noteq> [] \<Longrightarrow>
        possible_steps (tm merged_vends) 3 r aa ba = {||}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
@@ -2315,7 +2334,7 @@ next
     by auto
   case (Cons a t)
   then show ?case
-    apply (case_tac "a = (''vend'', [])")
+    apply (case_tac "a = ((STR ''vend''), [])")
     apply simp
     apply (rule nondeterministic_simulates_trace.step_some)
          apply (simp add: H_merged_1_5_def)
@@ -2343,7 +2362,7 @@ proof(induct t)
     by (simp add: nondeterministic_simulates_trace.base)
 next
   have possible_steps_not_coin: "\<And>aa ba r.
-       aa = ''coin'' \<longrightarrow> ba \<noteq> [Num 50] \<Longrightarrow>
+       aa = (STR ''coin'') \<longrightarrow> ba \<noteq> [Num 50] \<Longrightarrow>
        possible_steps (tm merged_vends) 2 r aa ba = {||}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
@@ -2364,7 +2383,7 @@ next
     by (simp add: coin50_100_def)
   case (Cons a t)
   then show ?case
-    apply (case_tac "a = (''coin'', [Num 50])")
+    apply (case_tac "a = ((STR ''coin''), [Num 50])")
     apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
           apply (simp add: H_merged_1_5_def)
@@ -2386,7 +2405,7 @@ proof(induct t)
   then show ?case
     by (simp add: nondeterministic_simulates_trace.base)
 next
-  have possible_steps_vend: "\<forall>r. possible_steps (tm merged_vends) 5 r ''vend'' [] = {|(6, vend_general)|}"
+  have possible_steps_vend: "\<forall>r. possible_steps (tm merged_vends) 5 r (STR ''vend'') [] = {|(6, vend_general)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
     apply (simp add: transitions vend_general_def)
@@ -2395,14 +2414,14 @@ next
     apply (simp add: possible_steps_fst)
     by (simp add: tm_def merged_vends_def Set.filter_def)
   have stop_2: "\<And>aa ba r.
-       aa = ''vend'' \<longrightarrow> ba \<noteq> [] \<Longrightarrow>
+       aa = (STR ''vend'') \<longrightarrow> ba \<noteq> [] \<Longrightarrow>
        possible_steps (tm merged_vends) 5 r aa ba = {||}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def vend_general_def)
     by auto
   case (Cons a t)
   then show ?case
-    apply (case_tac "a = (''vend'', [])")
+    apply (case_tac "a = ((STR ''vend''), [])")
     apply simp
     apply (rule nondeterministic_simulates_trace.step_some)
          apply (simp add: H_merged_1_5_def)
@@ -2432,8 +2451,8 @@ proof (induct t)
     by (simp add: nondeterministic_simulates_trace.base)
 next
   have stop: "\<And>aa ba r.
-       aa = ''coin'' \<longrightarrow> ba \<noteq> [Num 50] \<Longrightarrow>
-       aa = ''coin'' \<longrightarrow> ba \<noteq> [Num 100] \<Longrightarrow>
+       aa = (STR ''coin'') \<longrightarrow> ba \<noteq> [Num 50] \<Longrightarrow>
+       aa = (STR ''coin'') \<longrightarrow> ba \<noteq> [Num 100] \<Longrightarrow>
        possible_steps (tm merged_vends) 1 r aa ba = {||}"
     apply (simp add: possible_steps_fst)
     apply (simp add: tm_def merged_vends_def Set.filter_def)
@@ -2475,7 +2494,7 @@ next
     by (simp add: coinGeneral_def)
   case (Cons a t)
   then show ?case
-    apply (case_tac "a = (''coin'', [Num 50])")
+    apply (case_tac "a = ((STR ''coin''), [Num 50])")
     apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
           apply (simp add: H_merged_1_5_def)
@@ -2485,7 +2504,7 @@ next
       apply (simp add: coin50_50_def coinGeneral_def)
      apply (simp only: coin_general_updates updates_coin50_50)
      apply (simp add: nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_2)
-    apply (case_tac "a = (''coin'', [Num 100])")
+    apply (case_tac "a = ((STR ''coin''), [Num 100])")
        apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
           apply (simp add: H_merged_1_5_def)
@@ -2507,14 +2526,14 @@ proof(induct t)
   then show ?case
     by (simp add: nondeterministic_simulates_trace.base)
 next
-  have possible_steps_merged_1_5_coin_select: "\<forall>aa b. aa = ''select'' \<and> length b = 1 \<longrightarrow> possible_steps (tm merged_1_5_coin) 0 Map.empty ''select'' b = {|(1, selectGeneral_2)|}"
+  have possible_steps_merged_1_5_coin_select: "\<forall>aa b. aa = (STR ''select'') \<and> length b = 1 \<longrightarrow> possible_steps (tm merged_1_5_coin) 0 Map.empty (STR ''select'') b = {|(1, selectGeneral_2)|}"
     apply (simp add: possible_steps_fst)
     apply (simp add: merged_1_5_coin_def tm_def Set.filter_def)
     apply safe
               apply (simp_all add: selectGeneral_2_def)
     by force
     have stop: "\<And>a ba r.
-       a = ''select'' \<longrightarrow> length ba \<noteq> 1 \<Longrightarrow>
+       a = (STR ''select'') \<longrightarrow> length ba \<noteq> 1 \<Longrightarrow>
        possible_steps (tm merged_vends) 0r a ba = {||}"
       apply (simp add: possible_steps_fst)
       apply (simp add: tm_def merged_vends_def Set.filter_def)
@@ -2531,7 +2550,7 @@ next
   case (Cons a t)
   then show ?case
     apply (case_tac a)
-    apply (case_tac "aa = ''select'' \<and> length b = 1")
+    apply (case_tac "aa = (STR ''select'') \<and> length b = 1")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
           apply (simp add: H_merged_1_5_def)

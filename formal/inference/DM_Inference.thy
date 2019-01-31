@@ -4,11 +4,11 @@ begin
 
 declare One_nat_def[simp del]
 
-lemma str_coin_lt_str_vend: "STR ''coin'' < STR ''vend''"
+lemma str_coin_lt_str_vend: "(STR ''coin'') < (STR ''vend'')"
 proof-
-  have explode_coin: "literal.explode STR ''coin'' = ''coin''"
+  have explode_coin: "literal.explode (STR ''coin'') = ''coin''"
     using Literal.rep_eq zero_literal.rep_eq by auto
-  have explode_vend: "literal.explode STR ''vend'' = ''vend''"
+  have explode_vend: "literal.explode (STR ''vend'') = ''vend''"
     using Literal.rep_eq zero_literal.rep_eq by auto
   show ?thesis
     by (simp add: String.less_literal_def explode_coin explode_vend)
@@ -170,7 +170,7 @@ lemma vend_nothing_exits_1[simp]: "exits_state drinks2 vend_nothing 1"
 
 definition coin50 :: "transition" where
 "coin50 \<equiv> \<lparr>
-        Label = STR ''coin'',
+        Label = (STR ''coin''),
         Arity = 1,
         Guard = [(gexp.Eq (V (I 1)) (L (Num 50)))],
         Outputs = [Plus (V (R 2)) (V (I 1))],
@@ -288,10 +288,10 @@ lemma coin_lt_vend_nothing: "coin < vend_nothing"
 lemma tm_drinks2: "tm drinks2 = Drinks_Machine_2.drinks2"
   by (simp add: tm_def drinks2_def Drinks_Machine_2.drinks2_def)
 
-lemma step_merge_1_2_select: " length b = 1 \<Longrightarrow> step (tm merged_1_2) 0 Map.empty (STR ''select'') b = Some (select, 1, [], <R 1 := hd b, R 2 := Num 0>)"
+lemma step_merge_1_2_select: " length b = 1 \<Longrightarrow> step (tm merged_1_2) 0 Map.empty ((STR ''select'')) b = Some (select, 1, [], <R 1 := hd b, R 2 := Num 0>)"
 proof-
   assume premise: "length b = 1"
-  have possible_steps: "possible_steps (tm merged_1_2) 0 Map.empty (STR ''select'') b = {|(1, select)|}"
+  have possible_steps: "possible_steps (tm merged_1_2) 0 Map.empty ((STR ''select'')) b = {|(1, select)|}"
     apply (simp add: possible_steps_def ffilter_def tm_def merged_1_2_def fimage_def fset_both_sides Abs_fset_inverse)
     apply (simp add: Set.filter_def)
     apply safe
@@ -306,10 +306,10 @@ proof-
 qed
 
 lemma step_merge_1_2_vend_nothing: "\<nexists>n. ra (R 2) = Some (Num n) \<Longrightarrow>
-       step (tm merged_1_2) 1 ra (STR ''vend'') [] = Some (vend_nothing, 1, [], ra)"
+       step (tm merged_1_2) 1 ra ((STR ''vend'')) [] = Some (vend_nothing, 1, [], ra)"
 proof-
   assume premise: "\<nexists>n. ra (R 2) = Some (Num n)"
-  have possible_steps: "possible_steps (tm merged_1_2) 1 ra (STR ''vend'') [] = {|(1, vend_nothing)|}"
+  have possible_steps: "possible_steps (tm merged_1_2) 1 ra ((STR ''vend'')) [] = {|(1, vend_nothing)|}"
     apply (case_tac "ra (R 2)")
     apply (simp add: possible_steps_def ffilter_def tm_def merged_1_2_def fimage_def)
     apply (simp add: fset_both_sides Abs_fset_inverse)
@@ -330,7 +330,7 @@ proof-
     by simp
 qed
 
-lemma possible_steps_merge_coin: "length i = 1 \<Longrightarrow> possible_steps (tm merged_1_2) 1 r (STR ''coin'') i = {|(1, coin)|}"
+lemma possible_steps_merge_coin: "length i = 1 \<Longrightarrow> possible_steps (tm merged_1_2) 1 r ((STR ''coin'')) i = {|(1, coin)|}"
   apply (simp add: possible_steps_def ffilter_def tm_def merged_1_2_def fimage_def)
   apply (simp add: fset_both_sides Abs_fset_inverse)
   apply (simp add: Set.filter_def transitions)
@@ -338,12 +338,12 @@ lemma possible_steps_merge_coin: "length i = 1 \<Longrightarrow> possible_steps 
 
 lemma step_merge_1_2_vend: "d' (R 2) = Some (Num x1) \<Longrightarrow>
        x1 < 100 \<Longrightarrow>
-       step (tm merged_1_2) 1 d' (STR ''vend'') [] = None"
+       step (tm merged_1_2) 1 d' ((STR ''vend'')) [] = None"
 
 proof-
   assume premise1: "d' (R 2) = Some (Num x1)"
   assume premise2: "x1 < 100"
-  have possible_steps: "possible_steps (tm merged_1_2) 1 d' (STR ''vend'') [] = {|(1, vend_nothing), (1, vend_fail)|}"
+  have possible_steps: "possible_steps (tm merged_1_2) 1 d' ((STR ''vend'')) [] = {|(1, vend_nothing), (1, vend_fail)|}"
     apply (simp add: possible_steps_def ffilter_def tm_def merged_1_2_def fimage_def)
     apply (simp add: fset_both_sides Abs_fset_inverse)
     apply (simp add: Set.filter_def)
@@ -357,11 +357,11 @@ proof-
     by (simp add: transitions fis_singleton_def is_singleton_def)
 qed
 
-lemma step_merge_1_2_vend_2: "d' (R 2) = Some (Num n) \<Longrightarrow> n \<ge> 100 \<Longrightarrow> step (tm merged_1_2) 1 d' (STR ''vend'') [] = None"
+lemma step_merge_1_2_vend_2: "d' (R 2) = Some (Num n) \<Longrightarrow> n \<ge> 100 \<Longrightarrow> step (tm merged_1_2) 1 d' ((STR ''vend'')) [] = None"
 proof-
   assume premise1: "d' (R 2) = Some (Num n)"
   assume premise2: "n \<ge> 100"
-  have possible_steps: "possible_steps (tm merged_1_2) 1 d' (STR ''vend'') [] = {|(1, vend_nothing), (3, vend)|}"
+  have possible_steps: "possible_steps (tm merged_1_2) 1 d' ((STR ''vend'')) [] = {|(1, vend_nothing), (3, vend)|}"
     apply (simp add: possible_steps_def ffilter_def tm_def merged_1_2_def fimage_def)
     apply (simp add: fset_both_sides Abs_fset_inverse)
     apply (simp add: Set.filter_def)
@@ -398,7 +398,7 @@ next
     apply clarify
     apply simp
 
-    apply (case_tac "aa = STR ''vend'' \<and> b = []")
+    apply (case_tac "aa = (STR ''vend'') \<and> b = []")
      apply simp
      apply (rule accepts.cases)
        apply simp
@@ -415,7 +415,7 @@ next
       defer
       apply (simp add: step_merge_1_2_vend_nothing vend_nothing_posterior)
 
-     apply (case_tac "aa = STR ''coin'' \<and> length b = 1")
+     apply (case_tac "aa = (STR ''coin'') \<and> length b = 1")
       apply (rule accepts.cases)
         apply simp
        apply simp
@@ -460,7 +460,7 @@ next
 
       apply simp
      apply clarify
-     apply (case_tac "aa = STR ''select'' \<and> length ba = 1")
+     apply (case_tac "aa = (STR ''select'') \<and> length ba = 1")
       apply (simp add: anterior_context_def step_merge_1_2_select select_posterior)
       apply (simp add: accepts_trace_def)
       apply (rule accepts.cases)
@@ -557,31 +557,31 @@ proof-
     apply (simp add: transitions)
     by auto
   have state_nondeterminism_1: "state_nondeterminism 1 {|(1, coin, 3), (1, vend_fail, 1), (3, vend, 5)|} = {|(1, (3, 1),
-    (\<lparr>Label = STR ''vend'', Arity = 0, Guard = [Ge (V (R 2)) (L (Num 100))], Outputs = [V (R 1)], Updates = [(R 1, V (R 1)), (R 2, V (R 2))]\<rparr>, 5),
-    \<lparr>Label = STR ''vend'', Arity = 0, Guard = [GExp.Lt (V (R 2)) (L (Num 100))], Outputs = [], Updates = [(R 1, V (R 1)), (R 2, V (R 2))]\<rparr>, 1),
+    (\<lparr>Label = (STR ''vend''), Arity = 0, Guard = [Ge (V (R 2)) (L (Num 100))], Outputs = [V (R 1)], Updates = [(R 1, V (R 1)), (R 2, V (R 2))]\<rparr>, 5),
+    \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [GExp.Lt (V (R 2)) (L (Num 100))], Outputs = [], Updates = [(R 1, V (R 1)), (R 2, V (R 2))]\<rparr>, 1),
    (1, (3, 1),
-    (\<lparr>Label = STR ''vend'', Arity = 0, Guard = [Ge (V (R 2)) (L (Num 100))], Outputs = [V (R 1)], Updates = [(R 1, V (R 1)), (R 2, V (R 2))]\<rparr>, 5),
-    \<lparr>Label = STR ''coin'', Arity = 1, Guard = [], Outputs = [Plus (V (R 2)) (V (I 1))],
+    (\<lparr>Label = (STR ''vend''), Arity = 0, Guard = [Ge (V (R 2)) (L (Num 100))], Outputs = [V (R 1)], Updates = [(R 1, V (R 1)), (R 2, V (R 2))]\<rparr>, 5),
+    \<lparr>Label = (STR ''coin''), Arity = 1, Guard = [], Outputs = [Plus (V (R 2)) (V (I 1))],
        Updates = [(R 1, V (R 1)), (R 2, Plus (V (R 2)) (V (I 1)))]\<rparr>,
     3),
    (1, (1, 3),
-    (\<lparr>Label = STR ''vend'', Arity = 0, Guard = [GExp.Lt (V (R 2)) (L (Num 100))], Outputs = [], Updates = [(R 1, V (R 1)), (R 2, V (R 2))]\<rparr>, 1),
-    \<lparr>Label = STR ''vend'', Arity = 0, Guard = [Ge (V (R 2)) (L (Num 100))], Outputs = [V (R 1)], Updates = [(R 1, V (R 1)), (R 2, V (R 2))]\<rparr>, 5),
+    (\<lparr>Label = (STR ''vend''), Arity = 0, Guard = [GExp.Lt (V (R 2)) (L (Num 100))], Outputs = [], Updates = [(R 1, V (R 1)), (R 2, V (R 2))]\<rparr>, 1),
+    \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [Ge (V (R 2)) (L (Num 100))], Outputs = [V (R 1)], Updates = [(R 1, V (R 1)), (R 2, V (R 2))]\<rparr>, 5),
    (1, (1, 1),
-    (\<lparr>Label = STR ''vend'', Arity = 0, Guard = [GExp.Lt (V (R 2)) (L (Num 100))], Outputs = [], Updates = [(R 1, V (R 1)), (R 2, V (R 2))]\<rparr>, 1),
-    \<lparr>Label = STR ''coin'', Arity = 1, Guard = [], Outputs = [Plus (V (R 2)) (V (I 1))],
+    (\<lparr>Label = (STR ''vend''), Arity = 0, Guard = [GExp.Lt (V (R 2)) (L (Num 100))], Outputs = [], Updates = [(R 1, V (R 1)), (R 2, V (R 2))]\<rparr>, 1),
+    \<lparr>Label = (STR ''coin''), Arity = 1, Guard = [], Outputs = [Plus (V (R 2)) (V (I 1))],
        Updates = [(R 1, V (R 1)), (R 2, Plus (V (R 2)) (V (I 1)))]\<rparr>,
     3),
    (1, (1, 3),
-    (\<lparr>Label = STR ''coin'', Arity = 1, Guard = [], Outputs = [Plus (V (R 2)) (V (I 1))],
+    (\<lparr>Label = (STR ''coin''), Arity = 1, Guard = [], Outputs = [Plus (V (R 2)) (V (I 1))],
         Updates = [(R 1, V (R 1)), (R 2, Plus (V (R 2)) (V (I 1)))]\<rparr>,
      3),
-    \<lparr>Label = STR ''vend'', Arity = 0, Guard = [Ge (V (R 2)) (L (Num 100))], Outputs = [V (R 1)], Updates = [(R 1, V (R 1)), (R 2, V (R 2))]\<rparr>, 5),
+    \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [Ge (V (R 2)) (L (Num 100))], Outputs = [V (R 1)], Updates = [(R 1, V (R 1)), (R 2, V (R 2))]\<rparr>, 5),
    (1, (1, 1),
-    (\<lparr>Label = STR ''coin'', Arity = 1, Guard = [], Outputs = [Plus (V (R 2)) (V (I 1))],
+    (\<lparr>Label = (STR ''coin''), Arity = 1, Guard = [], Outputs = [Plus (V (R 2)) (V (I 1))],
         Updates = [(R 1, V (R 1)), (R 2, Plus (V (R 2)) (V (I 1)))]\<rparr>,
      3),
-    \<lparr>Label = STR ''vend'', Arity = 0, Guard = [GExp.Lt (V (R 2)) (L (Num 100))], Outputs = [], Updates = [(R 1, V (R 1)), (R 2, V (R 2))]\<rparr>, 1)|}"
+    \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [GExp.Lt (V (R 2)) (L (Num 100))], Outputs = [], Updates = [(R 1, V (R 1)), (R 2, V (R 2))]\<rparr>, 1)|}"
     by eval
   show ?thesis
     apply (simp add: nondeterministic_pairs_def fimage_def S_def basically_drinks_def outgoing_transitions_def state_nondeterminism_1)
@@ -609,7 +609,7 @@ proof-
     by (simp add: score sorted_list_of_fset_def)
 qed
 
-lemma possible_steps_select_dm_2:  "possible_steps (tm DM_Inference.drinks2) 0 Map.empty (STR ''select'') [Str ''coke''] = {|(1, select)|}"
+lemma possible_steps_select_dm_2:  "possible_steps (tm DM_Inference.drinks2) 0 Map.empty ((STR ''select'')) [(Str ''coke'')] = {|(1, select)|}"
   by eval
 
 lemma consistent_posterior_vend_nothing: "consistent c \<Longrightarrow> consistent (posterior c vend_nothing)"
@@ -780,7 +780,7 @@ definition "merged_1_3_2 = {|(5, (1, 1),
 lemma merge_1_3_2: "merge_states 3 1 merged_wrong_vends = merged_1_3_2 \<and> merge_states 1 3 merged_wrong_vends = merged_1_3_2"
   by eval
 
-lemma possible_steps_coin_dm_2: "possible_steps (tm drinks2) 1 r (STR ''coin'') [Num n] = {|(2, coin)|}"
+lemma possible_steps_coin_dm_2: "possible_steps (tm drinks2) 1 r ((STR ''coin'')) [Num n] = {|(2, coin)|}"
     apply (simp add: possible_steps_def drinks2_def ffilter_def fimage_def fset_both_sides Abs_fset_inverse tm_def)
     apply (simp add: Set.filter_def)
     apply safe
@@ -790,7 +790,7 @@ lemma possible_steps_coin_dm_2: "possible_steps (tm drinks2) 1 r (STR ''coin'') 
 lemma no_direct_subsumption_vend_nothing_vend: "\<not> directly_subsumes (tm DM_Inference.drinks2) (tm merged_1_3_2) 2 vend_nothing vend"
   apply (simp add: directly_subsumes_def)
   apply standard
-    apply (rule_tac x="[(STR ''select'', [Str ''coke'']), (STR ''coin'', [Num 50])]" in exI)
+    apply (rule_tac x="[((STR ''select''), [(Str ''coke'')]), ((STR ''coin''), [Num 50])]" in exI)
     apply standard
      apply (simp add: accepts_trace_def)
      apply (rule accepts.step)
@@ -814,7 +814,7 @@ proof-
     apply (simp add: no_direct_subsumption_vend_nothing_vend)
     apply (simp add: directly_subsumes_def)
     apply standard
-    apply (rule_tac x="[(STR ''select'', [Str ''coke'']), (STR ''coin'', [Num 50])]" in exI)
+    apply (rule_tac x="[((STR ''select''), [(Str ''coke'')]), ((STR ''coin''), [Num 50])]" in exI)
     apply standard
      apply (simp add: accepts_trace_def)
      apply (rule accepts.step)
@@ -906,7 +906,7 @@ proof-
   have no_direct_subsumption_vend_nothing_vend: "\<not> directly_subsumes (tm DM_Inference.drinks2) (tm merged_4_5) 2 vend_nothing vend"
     apply (simp add: directly_subsumes_def)
     apply standard
-    apply (rule_tac x="[(STR ''select'', [Str ''coke'']), (STR ''coin'', [Num 50])]" in exI)
+    apply (rule_tac x="[((STR ''select''), [(Str ''coke'')]), ((STR ''coin''), [Num 50])]" in exI)
     apply standard
      apply (simp add: accepts_trace_def)
      apply (rule accepts.step)
@@ -926,7 +926,7 @@ proof-
     apply (simp add: no_direct_subsumption_vend_nothing_vend)
     apply (simp add: directly_subsumes_def)
     apply standard
-    apply (rule_tac x="[(STR ''select'', [Str ''coke'']), (STR ''coin'', [Num 50])]" in exI)
+    apply (rule_tac x="[((STR ''select''), [(Str ''coke'')]), ((STR ''coin''), [Num 50])]" in exI)
     apply standard
      apply (simp add: accepts_trace_def)
      apply (rule accepts.step)
@@ -960,8 +960,8 @@ lemma cant_merge_vends_merged_1_3: "merge_transitions DM_Inference.drinks2 merge
   apply (simp add: merge_transitions_def easy_merge_def null_generator_def null_modifier_def)
   by (simp add: directly_subsumes_def no_subsumption_vend_vend_nothing no_subsumption_vend_nothing_vend)
 
-lemma gets_us_to_2_dm_2: "accepts_trace (tm DM_Inference.drinks2) [(STR ''select'', [Str ''coke'']), (STR ''coin'', [Num 50])] \<and>
-    gets_us_to 2 (tm DM_Inference.drinks2) 0 Map.empty [(STR ''select'', [Str ''coke'']), (STR ''coin'', [Num 50])]"
+lemma gets_us_to_2_dm_2: "accepts_trace (tm DM_Inference.drinks2) [((STR ''select''), [(Str ''coke'')]), ((STR ''coin''), [Num 50])] \<and>
+    gets_us_to 2 (tm DM_Inference.drinks2) 0 Map.empty [((STR ''select''), [(Str ''coke'')]), ((STR ''coin''), [Num 50])]"
   apply standard
   apply (simp add: accepts_trace_def)
      apply (rule accepts.step)
@@ -975,8 +975,8 @@ lemma gets_us_to_2_dm_2: "accepts_trace (tm DM_Inference.drinks2) [(STR ''select
       apply (simp add: step_def possible_steps_coin_dm_2)
   by (simp add: gets_us_to.base)
 
-lemma gets_us_to_1_dm_2: "accepts_trace (tm DM_Inference.drinks2) [(STR ''select'', [Str ''coke''])] \<and>
-    gets_us_to 1 (tm DM_Inference.drinks2) 0 Map.empty [(STR ''select'', [Str ''coke''])]"
+lemma gets_us_to_1_dm_2: "accepts_trace (tm DM_Inference.drinks2) [((STR ''select''), [(Str ''coke'')])] \<and>
+    gets_us_to 1 (tm DM_Inference.drinks2) 0 Map.empty [((STR ''select''), [(Str ''coke'')])]"
   apply standard
   apply (simp add: accepts_trace_def)
      apply (rule accepts.step)

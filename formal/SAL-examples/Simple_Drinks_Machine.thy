@@ -6,7 +6,7 @@ declare One_nat_def [simp del]
 
 definition t1 :: "transition" where
 "t1 \<equiv> \<lparr>
-        Label = ''select'',
+        Label = (STR ''select''),
         Arity = 1,
         Guard = [],
         Outputs = [],
@@ -15,7 +15,7 @@ definition t1 :: "transition" where
 
 definition coin50 :: "transition" where
 "coin50 \<equiv> \<lparr>
-        Label = ''coin'',
+        Label = (STR ''coin''),
         Arity = 1,
         Guard = [(gexp.Eq (V (I 1)) (L (Num 50)))],
         Outputs = [(Plus (V (R 2)) (V (I 1)))],
@@ -27,7 +27,7 @@ lemma updates_coin50: "Updates coin50 = [(R 1, (V (R 1))),  (R 2, Plus (V (R 2))
 
 definition coin :: "transition" where
 "coin \<equiv> \<lparr>
-        Label = ''coin'',
+        Label = (STR ''coin''),
         Arity = 1,
         Guard = [],
         Outputs = [(Plus (V (R 2)) (V (I 1)))],
@@ -42,7 +42,7 @@ lemma guard_coin: "Guard coin = []"
 
 definition t3 :: "transition" where
 "t3 \<equiv> \<lparr>
-        Label = ''vend'',
+        Label = (STR ''vend''),
         Arity = 0,
         Guard = [(Ge (V (R 2)) (L (Num 100)))],
         Outputs =  [(V (R 1))],
@@ -120,12 +120,12 @@ lemma posterior_coin: "(posterior \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 
 lemma medial_coin: "\<forall>c. medial c (Guard Simple_Drinks_Machine.coin) = c"
   by (simp add: coin_def)
 
-lemma possible_steps_coin_50: "possible_steps Simple_Drinks_Machine.drinks2 1 r ''coin'' [Num 50] = {|(2, coin50)|}"
+lemma possible_steps_coin_50: "possible_steps Simple_Drinks_Machine.drinks2 1 r (STR ''coin'') [Num 50] = {|(2, coin50)|}"
 proof-
   have set_filter: "(Set.filter
        (\<lambda>((origin, dest), t).
            origin = 1 \<and>
-           Label t = ''coin'' \<and> Suc 0 = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [Num 50] 1 (I n)) (\<lambda>n. r (R n))))
+           Label t = (STR ''coin'') \<and> Suc 0 = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [Num 50] 1 (I n)) (\<lambda>n. r (R n))))
        (fset Simple_Drinks_Machine.drinks2)) =
     {((1, 2), coin50)}"
     apply (simp add: Set.filter_def drinks2_def)
@@ -137,11 +137,11 @@ proof-
     by (simp add: possible_steps_def ffilter_def set_filter abs_fset)
 qed
 
-lemma possible_steps_1_vend: "possible_steps Simple_Drinks_Machine.drinks2 1 r ''vend'' [] = {|(1, vend_nothing)|}"
+lemma possible_steps_1_vend: "possible_steps Simple_Drinks_Machine.drinks2 1 r (STR ''vend'') [] = {|(1, vend_nothing)|}"
 proof-
   have set_filter: "(Set.filter
        (\<lambda>((origin, dest), t).
-           origin = 1 \<and> Label t = ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. r (R n))))
+           origin = 1 \<and> Label t = (STR ''vend'') \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. r (R n))))
        (fset Simple_Drinks_Machine.drinks2)) =
     {((1, 1), vend_nothing)}"
     apply (simp add: drinks2_def Set.filter_def)
@@ -151,9 +151,9 @@ proof-
     by (simp add: possible_steps_def ffilter_def set_filter)
 qed
 
-lemma invalid_step: "\<not> (aa = ''coin'' \<and> b = [Num 50]) \<Longrightarrow> \<not> (aa = ''vend'' \<and> b = []) \<Longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 1 r aa b = {||}"
+lemma invalid_step: "\<not> (aa = (STR ''coin'') \<and> b = [Num 50]) \<Longrightarrow> \<not> (aa = (STR ''vend'') \<and> b = []) \<Longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 1 r aa b = {||}"
 proof-
-  have set_filter: "\<not> (aa = ''coin'' \<and> b = [Num 50]) \<Longrightarrow> \<not> (aa = ''vend'' \<and> b = []) \<Longrightarrow> (Set.filter
+  have set_filter: "\<not> (aa = (STR ''coin'') \<and> b = [Num 50]) \<Longrightarrow> \<not> (aa = (STR ''vend'') \<and> b = []) \<Longrightarrow> (Set.filter
        (\<lambda>((origin, dest), t).
            origin = 1 \<and> Label t = aa \<and> length b = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state b 1 (I n)) (\<lambda>n. r (R n))))
        (fset Simple_Drinks_Machine.drinks2)) =
@@ -163,14 +163,14 @@ proof-
     apply (simp_all add: vend_nothing_def coin50_def)
      apply (metis One_nat_def input2state.simps(2) length_0_conv length_Suc_conv option.sel)
     by (metis One_nat_def input2state.simps(2) length_0_conv length_Suc_conv option.inject)
-  show "\<not> (aa = ''coin'' \<and> b = [Num 50]) \<Longrightarrow> \<not> (aa = ''vend'' \<and> b = []) \<Longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 1 r aa b = {||}"
+  show "\<not> (aa = (STR ''coin'') \<and> b = [Num 50]) \<Longrightarrow> \<not> (aa = (STR ''vend'') \<and> b = []) \<Longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 1 r aa b = {||}"
     by (simp add: possible_steps_def ffilter_def set_filter)
 qed
 
 lemma next_step_1: "step Simple_Drinks_Machine.drinks2 1 r aa b = Some (uw, s', ux, r') \<Longrightarrow> s' = 1 \<or> s' = 2"
-  apply (case_tac "aa = ''coin'' \<and> b = [Num 50]")
+  apply (case_tac "aa = (STR ''coin'') \<and> b = [Num 50]")
    apply (simp add: step_def possible_steps_coin_50)
-  apply (case_tac "aa = ''vend'' \<and> b = []")
+  apply (case_tac "aa = (STR ''vend'') \<and> b = []")
    apply (simp add: step_def possible_steps_1_vend)
   apply (simp only: step_def)
   using invalid_step
@@ -178,14 +178,14 @@ lemma next_step_1: "step Simple_Drinks_Machine.drinks2 1 r aa b = Some (uw, s', 
 
 lemma set_filter_vend_fail: "ra (R 2) = Some (Num x1) \<and> x1 < 100 \<Longrightarrow>  (Set.filter
        (\<lambda>((origin, dest), t).
-           origin = 2 \<and> Label t = ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. ra (R n))))
+           origin = 2 \<and> Label t = (STR ''vend'') \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. ra (R n))))
        (fset Simple_Drinks_Machine.drinks2)) =
     {((2, 2), vend_fail)}"
     apply (simp add: drinks2_def Set.filter_def)
     apply safe
   by (simp_all add: transitions)
 
-lemma possible_steps_vend_fail: "ra (R 2) = Some (Num x1) \<and> x1 < 100 \<Longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 2 ra ''vend'' [] = {|(2, vend_fail)|}"
+lemma possible_steps_vend_fail: "ra (R 2) = Some (Num x1) \<and> x1 < 100 \<Longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 2 ra (STR ''vend'') [] = {|(2, vend_fail)|}"
   apply (simp add: possible_steps_def ffilter_def)
   using set_filter_vend_fail
   by auto
@@ -226,20 +226,20 @@ proof-
   assume premise: "step Simple_Drinks_Machine.drinks2 2 ra aa b = Some (uw, s', u, r')"
   have set_filter: "(Set.filter
        (\<lambda>((origin, dest), t).
-           origin = 2 \<and> Label t = ''coin'' \<and> Arity t = 1 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state b 1 (I n)) (\<lambda>n. ra (R n))))
+           origin = 2 \<and> Label t = (STR ''coin'') \<and> Arity t = 1 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state b 1 (I n)) (\<lambda>n. ra (R n))))
        (fset Simple_Drinks_Machine.drinks2)) =
     {((2, 2), Simple_Drinks_Machine.coin)}"
     apply (simp add: Set.filter_def drinks2_def)
     apply safe
     by (simp_all add: transitions)
-  have possible_steps_coin: "length b = 1 \<Longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 2 ra ''coin'' b = {|(2, coin)|}"
+  have possible_steps_coin: "length b = 1 \<Longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 2 ra (STR ''coin'') b = {|(2, coin)|}"
     by (simp add: possible_steps_def ffilter_def set_filter)
-  have possible_steps_vend_r2_none: "\<nexists> n. ra (R 2) = Some (Num n) \<Longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 2 ra ''vend'' [] = {||}"
+  have possible_steps_vend_r2_none: "\<nexists> n. ra (R 2) = Some (Num n) \<Longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 2 ra (STR ''vend'') [] = {||}"
   proof-
     assume premise: "\<nexists> n. ra (R 2) = Some (Num n)"
     have set_filter: "(Set.filter
        (\<lambda>((origin, dest), t).
-           origin = 2 \<and> Label t = ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. ra (R n))))
+           origin = 2 \<and> Label t = (STR ''vend'') \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. ra (R n))))
        (fset Simple_Drinks_Machine.drinks2)) = {}"
       using premise
       apply (simp add: Set.filter_def drinks2_def)
@@ -256,47 +256,47 @@ proof-
       using premise
       by (simp add: possible_steps_def ffilter_def set_filter)
   qed
-  have set_filter_invalid: "\<not> (aa = ''coin'' \<and> length b = 1) \<Longrightarrow> \<not> (aa = ''vend'' \<and> b = []) \<Longrightarrow> (Set.filter
+  have set_filter_invalid: "\<not> (aa = (STR ''coin'') \<and> length b = 1) \<Longrightarrow> \<not> (aa = (STR ''vend'') \<and> b = []) \<Longrightarrow> (Set.filter
        (\<lambda>((origin, dest), t).
            origin = 2 \<and> Label t = aa \<and> length b = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state b 1 (I n)) (\<lambda>n. ra (R n))))
        (fset Simple_Drinks_Machine.drinks2)) = {}"
     apply (simp add: drinks2_def Set.filter_def)
     apply safe
     by (simp_all add: transitions)
-  have possible_steps_invalid: "\<not> (aa = ''coin'' \<and> length b = 1) \<Longrightarrow> \<not> (aa = ''vend'' \<and> b = []) \<Longrightarrow>
+  have possible_steps_invalid: "\<not> (aa = (STR ''coin'') \<and> length b = 1) \<Longrightarrow> \<not> (aa = (STR ''vend'') \<and> b = []) \<Longrightarrow>
                       possible_steps Simple_Drinks_Machine.drinks2 2 ra aa b = {||}"
     by (simp add: possible_steps_def ffilter_def set_filter_invalid)
   have set_filter_vend_fail: "\<forall>ra x1. ra (R 2) = Some (Num x1) \<and> x1 < 100 \<longrightarrow>  (Set.filter
        (\<lambda>((origin, dest), t).
-           origin = 2 \<and> Label t = ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. ra (R n))))
+           origin = 2 \<and> Label t = (STR ''vend'') \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. ra (R n))))
        (fset Simple_Drinks_Machine.drinks2)) =
     {((2, 2), vend_fail)}"
     apply (simp add: drinks2_def Set.filter_def)
     apply safe
     by (simp_all add: transitions)
-  have possible_steps_vend_fail: "\<forall>ra x1. ra (R 2) = Some (Num x1) \<and> x1 < 100 \<longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 2 ra ''vend'' [] = {|(2, vend_fail)|}"
+  have possible_steps_vend_fail: "\<forall>ra x1. ra (R 2) = Some (Num x1) \<and> x1 < 100 \<longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 2 ra (STR ''vend'') [] = {|(2, vend_fail)|}"
   apply (simp add: possible_steps_def ffilter_def)
   using set_filter_vend_fail
   by auto
   have set_filter_vend: "\<forall>ra x1. ra (R 2) = Some (Num x1) \<and> x1 \<ge> 100 \<longrightarrow> (Set.filter
             (\<lambda>((origin, dest), t).
-                origin = 2 \<and> Label t = ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname Map.empty (\<lambda>n. ra (R n))))
+                origin = 2 \<and> Label t = (STR ''vend'') \<and> Arity t = 0 \<and> apply_guards (Guard t) (case_vname Map.empty (\<lambda>n. ra (R n))))
             (fset Simple_Drinks_Machine.drinks2)) =
          {((2,3), Drinks_Machine.vend)}"
     apply (simp add: drinks2_def Set.filter_def)
     apply safe
     by (simp_all add: transitions)
-  have possible_steps_vend: "\<forall>ra x1. ra (R 2) = Some (Num x1) \<and> x1 \<ge> 100 \<longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 2 ra ''vend'' [] = {|(3, Drinks_Machine.vend)|}"
+  have possible_steps_vend: "\<forall>ra x1. ra (R 2) = Some (Num x1) \<and> x1 \<ge> 100 \<longrightarrow> possible_steps Simple_Drinks_Machine.drinks2 2 ra (STR ''vend'') [] = {|(3, Drinks_Machine.vend)|}"
     apply (simp add: possible_steps_def ffilter_def)
     using set_filter_vend
     by simp
   show ?thesis
     using premise
     apply (simp add: step_def)
-    apply (case_tac "aa = ''coin'' \<and> length b = 1")
+    apply (case_tac "aa = (STR ''coin'') \<and> length b = 1")
      apply clarify
      apply (simp add: possible_steps_coin)
-    apply (case_tac "aa = ''vend'' \<and> b = []")
+    apply (case_tac "aa = (STR ''vend'') \<and> b = []")
      apply clarify
      apply (case_tac "ra (R 2)")
       apply (simp add: possible_steps_vend_r2_none)
@@ -421,7 +421,8 @@ qed
          apply (simp add: transitions)
         apply (simp add: transitions)
        apply (simp add: aux1)
-      apply (simp add: Simple_Drinks_Machine.coin_def Simple_Drinks_Machine.transitions(7))
+       apply (simp add: Simple_Drinks_Machine.coin_def Simple_Drinks_Machine.transitions(7))
+      apply (simp add: transitions)
      apply (simp add: local.medial_coin50 local.posterior_coin posterior_coin50)
     using aux4 by blast
 qed

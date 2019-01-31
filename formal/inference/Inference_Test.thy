@@ -10,7 +10,7 @@ definition convert_args :: "json list \<Rightarrow> value list" where
 
 definition convert_event :: "json \<Rightarrow> (label \<times> value list \<times> value list)" where
   "convert_event e = (case e of 
-    (OBJECT [(''label'', STRING l), (''inputs'', ARRAY i), (''outputs'', ARRAY p)]) \<Rightarrow> (l, convert_args i, convert_args p)
+    (OBJECT [((''label''), STRING l), ((''inputs''), ARRAY i), ((''outputs''), ARRAY p)]) \<Rightarrow> (String.implode l, convert_args i, convert_args p)
   )"
 
 definition convert_aux :: "json \<Rightarrow> execution" where
@@ -21,7 +21,8 @@ definition convert :: "json \<Rightarrow> log" where
 
 lemma "convert json_traces = traces"
   apply (simp add: json_traces_def traces_def)
-  by (simp add: convert_def convert_aux_def convert_event_def convert_args_def)
+  apply (simp add: convert_def convert_aux_def convert_event_def convert_args_def)
+  by (metis Literal.rep_eq String.implode_explode_eq zero_literal.rep_eq)
 
 lemma merge_1_8: "merge pta 1 8 null_generator null_modifier = None"
   sorry
@@ -56,21 +57,26 @@ definition "merged_3_5 = {|
 lemma merged_3_5: "merge_states 3 5 pta = merged_3_5"
   by eval
 
-lemma nondeterministic_pairs_merged_3_5: "nondeterministic_pairs merged_3_5 = {|(3, (4, 6), (vend_coke, 5), vend_coke, 6)|}"
+lemma nondeterministic_pairs_merged_3_5: "nondeterministic_pairs merged_3_5 = {|(3, (4, 6), (vend_coke, 5), vend_coke, 6), (3, (6, 4), (vend_coke, 6), vend_coke, 5)|}"
 proof-
   have state_nondeterminism_1: "state_nondeterminism 1 {|(2, coin50_50, 2), (3, coin100_100, 3)|} = {|
-    (1, (2, 3), (coin50_50, 2), coin100_100, 3),
-    (1, (2, 3), (coin50_50, 2),
-    coin100_100, 3)|}"
+(1, (3, 2), (coin100_100, 3),    coin50_50, 2),
+   (1, (2, 3), (coin50_50, 2),    coin100_100, 3)
+|}"
     by eval
-  have state_nondeterminism_3: "state_nondeterminism 3 {|(4, vend_coke, 5), (6, vend_coke, 6)|} = {|(3, (4, 6), (vend_coke, 5),    vend_coke, 6),
-   (3, (4, 6), (vend_coke, 5),    vend_coke, 6)|}"
+  have state_nondeterminism_3: "state_nondeterminism 3 {|(4, vend_coke, 5), (6, vend_coke, 6)|} = {|
+(3, (6, 4), (vend_coke, 6),
+    vend_coke, 5),
+   (3, (4, 6), (vend_coke, 5),
+    vend_coke, 6)|}"
     by eval
-have state_nondeterminism_0: "state_nondeterminism 0 {|(1, selectCoke, 0), (7, selectPepsi, 1)|} = {|
-  (0, (1, 7), (selectCoke, 0),
-    selectPepsi, 1),
+  have state_nondeterminism_0: "state_nondeterminism 0 {|(1, selectCoke, 0), (7, selectPepsi, 1)|} = {|
+(0, (7, 1),
+    (selectPepsi, 1),
+    selectCoke, 0),
    (0, (1, 7), (selectCoke, 0),
-    selectPepsi, 1)|}"
+    selectPepsi, 1)
+|}"
   by eval
   show ?thesis
     apply (simp add: S_def merged_3_5_def nondeterministic_pairs_def)
