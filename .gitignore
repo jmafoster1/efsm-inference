@@ -34,3 +34,4 @@ root.toc
 
 # Ignore active.json
 inference-tool/project/target/
+inference-tool/target/
