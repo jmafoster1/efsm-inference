@@ -1,14 +1,47 @@
 theory EFSM_Dot
-imports Show.Show_Instances Inference
+imports Inference
 begin
 
+fun string_of_digit :: "nat \<Rightarrow> String.literal"
+where
+  "string_of_digit n =
+    (if n = 0 then STR ''0''
+    else if n = 1 then STR ''1''
+    else if n = 2 then STR ''2''
+    else if n = 3 then STR ''3''
+    else if n = 4 then STR ''4''
+    else if n = 5 then STR ''5''
+    else if n = 6 then STR ''6''
+    else if n = 7 then STR ''7''
+    else if n = 8 then STR ''8''
+    else STR ''9'')"
+
+definition shows_string :: "String.literal \<Rightarrow> String.literal \<Rightarrow> String.literal"
+where
+  "shows_string = (+)"
+
+fun showsp_nat :: "String.literal \<Rightarrow> nat \<Rightarrow> String.literal \<Rightarrow> String.literal"
+where
+  "showsp_nat p n =
+    (if n < 10 then shows_string (string_of_digit n)
+    else showsp_nat p (n div 10) o shows_string (string_of_digit (n mod 10)))"
+declare showsp_nat.simps [simp del]
+
+definition showsp_int :: "String.literal \<Rightarrow> int \<Rightarrow> String.literal \<Rightarrow> String.literal"
+where
+  "showsp_int p i =
+    (if i < 0 then shows_string STR ''-'' o showsp_nat p (nat (- i)) else showsp_nat p (nat i))"
+
+abbreviation "show_int n  \<equiv> showsp_int (STR '''') n (STR '''')"
+abbreviation "show_nat n  \<equiv> showsp_nat (STR '''') n (STR '''')"
+
 fun value2dot :: "value \<Rightarrow> String.literal" where
-  "value2dot (Str s) = String.implode s" |
-  "value2dot (Num n) = String.implode (show n)"
+  "value2dot (Str s) = s" |
+  "value2dot (Num n) = show_int n"
 
 fun vname2dot :: "vname \<Rightarrow> String.literal" where
-  "vname2dot (I n) = STR ''i<sub>''+String.implode (show n)+STR ''</sub>''" |
-  "vname2dot (R n) = STR ''r<sub>''+String.implode (show n)+STR ''</sub>''"
+  "vname2dot (I n) = STR ''i<sub>''+(show_nat n)+STR ''</sub>''" |
+  "vname2dot (R n) = STR ''r<sub>''+(show_nat n)+STR ''</sub>''"
 
 fun aexp2dot :: "aexp \<Rightarrow> String.literal" where
   "aexp2dot (L v) = value2dot v" |
@@ -39,7 +72,7 @@ primrec updates2dot_aux :: "update_function list \<Rightarrow> String.literal li
 
 primrec outputs2dot :: "output_function list \<Rightarrow> nat \<Rightarrow> String.literal list" where
   "outputs2dot [] _ = []" |
-  "outputs2dot (h#t) n = ((STR ''o<sub>''+String.implode (show n))+STR ''</sub> := ''+(aexp2dot h))#(outputs2dot t (n+1))"
+  "outputs2dot (h#t) n = ((STR ''o<sub>''+(show_nat n))+STR ''</sub> := ''+(aexp2dot h))#(outputs2dot t (n+1))"
 
 fun updates2dot :: "update_function list \<Rightarrow> String.literal" where
   "updates2dot [] = STR ''''" |
@@ -53,7 +86,7 @@ definition latter2dot :: "transition \<Rightarrow> String.literal" where
   "latter2dot t = (let l = (join (outputs2dot (Outputs t) 1) STR '','')+(updates2dot (Updates t)) in (if l = STR '''' then STR '''' else STR ''/''+l))"
 
 definition transition2dot :: "transition \<Rightarrow> String.literal" where
-  "transition2dot t = String.implode (Label t)+STR '':''+String.implode (show (Arity t))+(guards2dot (Guard t))+(latter2dot t)"
+  "transition2dot t = (Label t)+STR '':''+(show_nat (Arity t))+(guards2dot (Guard t))+(latter2dot t)"
 
 abbreviation newline :: String.literal where
   "newline \<equiv> STR ''\010''"
@@ -66,7 +99,7 @@ definition efsm2dot :: "transition_matrix \<Rightarrow> String.literal" where
                 STR ''graph [rankdir=''+quote+STR ''LR''+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
                 STR ''node [color=''+quote+STR ''black''+quote+STR '', fillcolor=''+quote+STR ''white''+quote+STR '', shape=''+quote+STR ''circle''+quote+STR '', style=''+quote+STR ''filled''+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
                 STR ''edge [fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
-                  (join (sorted_list_of_fset (fimage (\<lambda>((from, to), t). String.implode (show from)+STR ''->''+String.implode (show to)+STR ''[label=<''+(transition2dot t)+STR ''>]'') e)) newline)+newline+
+                  (join (sorted_list_of_fset (fimage (\<lambda>((from, to), t). (show_nat from)+STR ''->''+(show_nat to)+STR ''[label=<''+(transition2dot t)+STR ''>]'') e)) newline)+newline+
                 STR ''}''"
 
 definition iefsm2dot :: "iEFSM \<Rightarrow> String.literal" where
@@ -74,7 +107,7 @@ definition iefsm2dot :: "iEFSM \<Rightarrow> String.literal" where
                  STR ''  graph [rankdir=''+quote+STR ''LR''+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
                  STR ''  node [color=''+quote+STR ''black''+quote+STR '', fillcolor=''+quote+STR ''white''+quote+STR '', shape=''+quote+STR ''circle''+quote+STR '', style=''+quote+STR ''filled''+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
                  STR ''  edge [fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
-                  (join (sorted_list_of_fset (fimage (\<lambda>(uid, (from, to), t).STR ''  ''+String.implode (show from)+STR ''->''+String.implode (show to)+STR ''[label=<(''+String.implode (show uid)+STR '') ''+(transition2dot t)+STR ''>]'') e)) newline)+newline+
+                  (join (sorted_list_of_fset (fimage (\<lambda>(uid, (from, to), t).STR ''  ''+(show_nat from)+STR ''->''+(show_nat to)+STR ''[label=<(''+(show_nat uid)+STR '') ''+(transition2dot t)+STR ''>]'') e)) newline)+newline+
                 STR ''}''"
 
 abbreviation newline_str :: string where
@@ -88,6 +121,6 @@ definition iefsm2dot_str :: "iEFSM \<Rightarrow> string" where
                  ''  graph [rankdir=''@quote_str@''LR''@quote_str@'', fontname=''@quote_str@''Latin Modern Math''@quote_str@''];''@newline_str@
                  ''  node [color=''@quote_str@''black''@quote_str@'', fillcolor=''@quote_str@''white''@quote_str@'', shape=''@quote_str@''circle''@quote_str@'', style=''@quote_str@''filled''@quote_str@'', fontname=''@quote_str@''Latin Modern Math''@quote_str@''];''@newline_str@
                  ''  edge [fontname=''@quote_str@''Latin Modern Math''@quote_str@''];''@newline_str@
-                  (String.explode (join (sorted_list_of_fset (fimage (\<lambda>(uid, (from, to), t).STR ''  ''+String.implode (show from)+STR ''->''+String.implode (show to)+STR ''[label=<(''+String.implode (show uid)+STR '') ''+(transition2dot t)+STR ''>]'') e)) newline)@newline_str)@
+                  (String.explode (join (sorted_list_of_fset (fimage (\<lambda>(uid, (from, to), t).STR ''  ''+(show_nat from)+STR ''->''+(show_nat to)+STR ''[label=<(''+(show_nat uid)+STR '') ''+(transition2dot t)+STR ''>]'') e)) newline)@newline_str)@
                 ''}''"
 end

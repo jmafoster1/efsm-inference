@@ -1,0 +1,6 @@
+clean
+run
+clean
+compile
+cd ..
+exit

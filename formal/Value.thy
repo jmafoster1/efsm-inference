@@ -1,6 +1,6 @@
 theory Value
 imports Main
 begin
-datatype "value" = Num int | Str string
+datatype "value" = Num int | Str String.literal
 
 end

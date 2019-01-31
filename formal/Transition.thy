@@ -2,12 +2,17 @@ theory Transition
 imports GExp
 begin
 
+type_synonym label = String.literal
+type_synonym arity = nat
+type_synonym inputs = "value list"
+type_synonym outputs = "value option list"
 type_synonym guard = "gexp"
 type_synonym output_function = "aexp"
 type_synonym update_function = "(vname \<times> aexp)"
+type_synonym updates = "update_function list"
 
 record transition =
-  Label :: string
+  Label :: label
   Arity :: nat
   Guard :: "guard list"
   Outputs :: "output_function list"

@@ -10,11 +10,6 @@ theory EFSM
   imports "~~/src/HOL/Library/FSet" Transition FSet_Utils
 begin
 
-type_synonym label = string
-type_synonym arity = nat
-type_synonym inputs = "value list"
-type_synonym outputs = "value option list"
-type_synonym updates = "update_function list"
 type_synonym event = "(label \<times> inputs)"
 type_synonym trace = "event list"
 type_synonym observation = "outputs list"

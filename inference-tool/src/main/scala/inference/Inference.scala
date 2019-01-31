@@ -42,11 +42,6 @@ object equal {
     val `HOL.equal` = (a: VName.vname, b: VName.vname) =>
       VName.equal_vnamea(a, b)
   }
-  implicit def `String.equal_char`: equal[String.char] = new equal[String.char]
-    {
-    val `HOL.equal` = (a: String.char, b: String.char) =>
-      String.equal_chara(a, b)
-  }
   implicit def `GExp.equal_gexp`: equal[GExp.gexp] = new equal[GExp.gexp] {
     val `HOL.equal` = (a: GExp.gexp, b: GExp.gexp) => GExp.equal_gexpa(a, b)
   }
@@ -113,12 +108,6 @@ object ord {
     val `Orderings.less` = (a: VName.vname, b: VName.vname) =>
       GExp_Orderings.less_vname(a, b)
   }
-  implicit def `Char_ord.ord_char`: ord[String.char] = new ord[String.char] {
-    val `Orderings.less_eq` = (a: String.char, b: String.char) =>
-      Char_ord.less_eq_char(a, b)
-    val `Orderings.less` = (a: String.char, b: String.char) =>
-      Char_ord.less_char(a, b)
-  }
   implicit def `GExp_Orderings.ord_gexp`: ord[GExp.gexp] = new ord[GExp.gexp] {
     val `Orderings.less_eq` = (a: GExp.gexp, b: GExp.gexp) =>
       GExp_Orderings.less_eq_gexp(a, b)
@@ -178,13 +167,6 @@ object preorder {
     val `Orderings.less` = (a: VName.vname, b: VName.vname) =>
       GExp_Orderings.less_vname(a, b)
   }
-  implicit def `Char_ord.preorder_char`: preorder[String.char] = new
-    preorder[String.char] {
-    val `Orderings.less_eq` = (a: String.char, b: String.char) =>
-      Char_ord.less_eq_char(a, b)
-    val `Orderings.less` = (a: String.char, b: String.char) =>
-      Char_ord.less_char(a, b)
-  }
   implicit def `GExp_Orderings.preorder_gexp`: preorder[GExp.gexp] = new
     preorder[GExp.gexp] {
     val `Orderings.less_eq` = (a: GExp.gexp, b: GExp.gexp) =>
@@ -242,13 +224,6 @@ object order {
       GExp_Orderings.less_eq_vname(a, b)
     val `Orderings.less` = (a: VName.vname, b: VName.vname) =>
       GExp_Orderings.less_vname(a, b)
-  }
-  implicit def `Char_ord.order_char`: order[String.char] = new
-    order[String.char] {
-    val `Orderings.less_eq` = (a: String.char, b: String.char) =>
-      Char_ord.less_eq_char(a, b)
-    val `Orderings.less` = (a: String.char, b: String.char) =>
-      Char_ord.less_char(a, b)
   }
   implicit def `GExp_Orderings.order_gexp`: order[GExp.gexp] = new
     order[GExp.gexp] {
@@ -345,9 +320,6 @@ trait zero[A] {
 }
 def zero[A](implicit A: zero[A]): A = A.`Groups.zero`
 object zero {
-  implicit def `Code_Numeral.zero_integer`: zero[BigInt] = new zero[BigInt] {
-    val `Groups.zero` = BigInt(0)
-  }
   implicit def `Nat.zero_nat`: zero[Nat.nat] = new zero[Nat.nat] {
     val `Groups.zero` = Nat.zero_nata
   }
@@ -382,16 +354,6 @@ object comm_monoid_add {
   }
 }
 
-trait one[A] {
-  val `Groups.one`: A
-}
-def one[A](implicit A: one[A]): A = A.`Groups.one`
-object one {
-  implicit def `Code_Numeral.one_integer`: one[BigInt] = new one[BigInt] {
-    val `Groups.one` = Code_Numeral.one_integera
-  }
-}
-
 } /* object Groups */
 
 object Num {
@@ -402,25 +364,6 @@ final case class Bit0(a: num) extends num
 final case class Bit1(a: num) extends num
 
 } /* object Num */
-
-object Rings {
-
-trait zero_neq_one[A] extends Groups.one[A] with Groups.zero[A] {
-}
-object zero_neq_one {
-  implicit def `Code_Numeral.zero_neq_one_integer`: zero_neq_one[BigInt] = new
-    zero_neq_one[BigInt] {
-    val `Groups.zero` = BigInt(0)
-    val `Groups.one` = Code_Numeral.one_integera
-  }
-}
-
-def of_bool[A : zero_neq_one](x0: Boolean): A = x0 match {
-  case true => Groups.one[A]
-  case false => Groups.zero[A]
-}
-
-} /* object Rings */
 
 object Product_Type {
 
@@ -643,8 +586,6 @@ def Suc(n: nat): nat = plus_nata(n, one_nat)
 
 object Code_Numeral {
 
-def one_integera: BigInt = BigInt(1)
-
 def sgn_integer(k: BigInt): BigInt =
   (if (k == BigInt(0)) BigInt(0)
     else (if (k < BigInt(0)) BigInt(-1) else BigInt(1)))
@@ -677,15 +618,6 @@ def integer_of_nat(x0: Nat.nat): BigInt = x0 match {
 
 def nat_of_integer(k: BigInt): Nat.nat =
   Nat.Nata(Orderings.max[BigInt](BigInt(0), k))
-
-def bit_cut_integer(k: BigInt): (BigInt, Boolean) =
-  (if (k == BigInt(0)) (BigInt(0), false)
-    else {
-           val (r, s): (BigInt, BigInt) =
-             ((k: BigInt) => (l: BigInt) => if (l == 0) (BigInt(0), k) else
-               (k.abs /% l.abs)).apply(k).apply(BigInt(2));
-           ((if (BigInt(0) < k) r else (- r) - s), s == BigInt(1))
-         })
 
 def integer_of_int(x0: Int.int): BigInt = x0 match {
   case Int.int_of_integer(k) => k
@@ -728,79 +660,16 @@ def uminus_int(k: int): int =
 
 } /* object Int */
 
-object String {
-
-abstract sealed class char
-final case class
-  Char(a: Boolean, b: Boolean, c: Boolean, d: Boolean, e: Boolean, f: Boolean,
-        g: Boolean, h: Boolean)
-  extends char
-
-def equal_chara(x0: char, x1: char): Boolean = (x0, x1) match {
-  case (Char(x1, x2, x3, x4, x5, x6, x7, x8),
-         Char(y1, y2, y3, y4, y5, y6, y7, y8))
-    => (Product_Type.equal_boola(x1, y1)) && ((Product_Type.equal_boola(x2,
-                                 y2)) && ((Product_Type.equal_boola(x3,
-                             y3)) && ((Product_Type.equal_boola(x4,
-                         y4)) && ((Product_Type.equal_boola(x5,
-                     y5)) && ((Product_Type.equal_boola(x6,
-                 y6)) && ((Product_Type.equal_boola(x7,
-             y7)) && (Product_Type.equal_boola(x8, y8))))))))
-}
-
-def integer_of_char(x0: char): BigInt = x0 match {
-  case Char(b0, b1, b2, b3, b4, b5, b6, b7) =>
-    ((((((Rings.of_bool[BigInt](b7) * BigInt(2) + Rings.of_bool[BigInt](b6)) *
-           BigInt(2) +
-          Rings.of_bool[BigInt](b5)) *
-          BigInt(2) +
-         Rings.of_bool[BigInt](b4)) *
-         BigInt(2) +
-        Rings.of_bool[BigInt](b3)) *
-        BigInt(2) +
-       Rings.of_bool[BigInt](b2)) *
-       BigInt(2) +
-      Rings.of_bool[BigInt](b1)) *
-      BigInt(2) +
-      Rings.of_bool[BigInt](b0)
-}
-
-def implode(cs: List[char]): String =
-  "" ++ (Lista.map[char,
-                    BigInt](((a: char) => integer_of_char(a)),
-                             cs)).map((k: BigInt) => if (BigInt(0) <= k && k < BigInt(128)) k.charValue else sys.error("Non-ASCII character in literal"))
-
-def char_of_integer(k: BigInt): char =
-  {
-    val (q0, b0): (BigInt, Boolean) = Code_Numeral.bit_cut_integer(k)
-    val (q1, b1): (BigInt, Boolean) = Code_Numeral.bit_cut_integer(q0)
-    val (q2, b2): (BigInt, Boolean) = Code_Numeral.bit_cut_integer(q1)
-    val (q3, b3): (BigInt, Boolean) = Code_Numeral.bit_cut_integer(q2)
-    val (q4, b4): (BigInt, Boolean) = Code_Numeral.bit_cut_integer(q3)
-    val (q5, b5): (BigInt, Boolean) = Code_Numeral.bit_cut_integer(q4)
-    val (q6, b6): (BigInt, Boolean) = Code_Numeral.bit_cut_integer(q5)
-    val a: (BigInt, Boolean) = Code_Numeral.bit_cut_integer(q6)
-    val (_, aa): (BigInt, Boolean) = a;
-    Char(b0, b1, b2, b3, b4, b5, b6, aa)
-  }
-
-def explode(s: String): List[char] =
-  Lista.map[BigInt,
-             char](((a: BigInt) => char_of_integer(a)),
-                    (s.toList.map(c => { val k: Int = c.toInt; if (k < 128) BigInt(k) else sys.error("Non-ASCII character in literal") })))
-
-} /* object String */
-
 object Value {
 
 abstract sealed class value
 final case class Numa(a: Int.int) extends value
-final case class Str(a: List[String.char]) extends value
+final case class Str(a: String) extends value
 
 def equal_valuea(x0: value, x1: value): Boolean = (x0, x1) match {
   case (Numa(x1), Str(x2)) => false
   case (Str(x2), Numa(x1)) => false
-  case (Str(x2), Str(y2)) => Lista.equal_list[String.char](x2, y2)
+  case (Str(x2), Str(y2)) => x2 == y2
   case (Numa(x1), Numa(y1)) => Int.equal_int(x1, y1)
 }
 
@@ -989,7 +858,7 @@ object Transition {
 
 abstract sealed class transition_ext[A]
 final case class
-  transition_exta[A](a: List[String.char], b: Nat.nat, c: List[GExp.gexp],
+  transition_exta[A](a: String, b: Nat.nat, c: List[GExp.gexp],
                       d: List[AExp.aexp], e: List[(VName.vname, AExp.aexp)],
                       f: A)
   extends transition_ext[A]
@@ -1001,13 +870,13 @@ def equal_transition_exta[A : HOL.equal](x0: transition_ext[A],
   (x0, x1) match {
   case (transition_exta(labela, aritya, guarda, outputsa, updatesa, morea),
          transition_exta(label, arity, guard, outputs, updates, more))
-    => (Lista.equal_list[String.char](labela,
-                                       label)) && ((Nat.equal_nata(aritya,
-                            arity)) && ((Lista.equal_list[GExp.gexp](guarda,
-                              guard)) && ((Lista.equal_list[AExp.aexp](outputsa,
-                                outputs)) && ((Lista.equal_list[(VName.vname,
-                          AExp.aexp)](updatesa,
-                                       updates)) && (HOL.eq[A](morea, more))))))
+    => (labela ==
+         label) && ((Nat.equal_nata(aritya,
+                                     arity)) && ((Lista.equal_list[GExp.gexp](guarda,
+                                       guard)) && ((Lista.equal_list[AExp.aexp](outputsa,
+ outputs)) && ((Lista.equal_list[(VName.vname,
+                                   AExp.aexp)](updatesa,
+        updates)) && (HOL.eq[A](morea, more))))))
 }
 
 def more[A](x0: transition_ext[A]): A = x0 match {
@@ -1022,7 +891,7 @@ def Guard[A](x0: transition_ext[A]): List[GExp.gexp] = x0 match {
   case transition_exta(label, arity, guard, outputs, updates, more) => guard
 }
 
-def Label[A](x0: transition_ext[A]): List[String.char] = x0 match {
+def Label[A](x0: transition_ext[A]): String = x0 match {
   case transition_exta(label, arity, guard, outputs, updates, more) => label
 }
 
@@ -1171,7 +1040,7 @@ def join_ir(i: List[Value.value], r: VName.vname => Option[Value.value]):
 def possible_steps(e: FSet.fset[((Nat.nat, Nat.nat),
                                   Transition.transition_ext[Unit])],
                     s: Nat.nat, r: VName.vname => Option[Value.value],
-                    l: List[String.char], i: List[Value.value]):
+                    l: String, i: List[Value.value]):
       FSet.fset[(Nat.nat, Transition.transition_ext[Unit])]
   =
   FSet.fimage[((Nat.nat, Nat.nat), Transition.transition_ext[Unit]),
@@ -1201,10 +1070,10 @@ def possible_steps(e: FSet.fset[((Nat.nat, Nat.nat),
                             val (origin, _): (Nat.nat, Nat.nat) = aa;
                             ((t: Transition.transition_ext[Unit]) =>
                               (Nat.equal_nata(origin,
-       s)) && ((Lista.equal_list[String.char](Transition.Label[Unit](t),
-       l)) && ((Nat.equal_nata(Lista.size_list[Value.value].apply(i),
-                                Transition.Arity[Unit](t))) && (apply_guards(Transition.Guard[Unit](t),
-                                      join_ir(i, r))))))
+       s)) && ((Transition.Label[Unit](t) ==
+                 l) && ((Nat.equal_nata(Lista.size_list[Value.value].apply(i),
+ Transition.Arity[Unit](t))) && (apply_guards(Transition.Guard[Unit](t),
+       join_ir(i, r))))))
                           })(b)
                        }),
                       e))
@@ -1232,8 +1101,8 @@ def apply_outputs(x0: List[AExp.aexp], uu: VName.vname => Option[Value.value]):
 }
 
 def step(e: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
-          s: Nat.nat, r: VName.vname => Option[Value.value],
-          l: List[String.char], i: List[Value.value]):
+          s: Nat.nat, r: VName.vname => Option[Value.value], l: String,
+          i: List[Value.value]):
       Option[(Transition.transition_ext[Unit],
                (Nat.nat,
                  (List[Option[Value.value]],
@@ -1259,32 +1128,6 @@ Transition.transition_ext[Unit])].apply(possible_steps(e, s, r, l, i)),
 
 } /* object EFSM */
 
-object Show {
-
-def shows_string:
-      (List[String.char]) => (List[String.char]) => List[String.char]
-  =
-  ((a: List[String.char]) => (b: List[String.char]) => a ++ b)
-
-} /* object Show */
-
-object Code_Target_Nat {
-
-def nat_of_char(c: String.char): Nat.nat = Nat.Nata(String.integer_of_char(c))
-
-} /* object Code_Target_Nat */
-
-object Char_ord {
-
-def less_eq_char(c1: String.char, c2: String.char): Boolean =
-  Nat.less_eq_nat(Code_Target_Nat.nat_of_char(c1),
-                   Code_Target_Nat.nat_of_char(c2))
-
-def less_char(c1: String.char, c2: String.char): Boolean =
-  Nat.less_nat(Code_Target_Nat.nat_of_char(c1), Code_Target_Nat.nat_of_char(c2))
-
-} /* object Char_ord */
-
 object Euclidean_Division {
 
 def divide_nat(m: Nat.nat, n: Nat.nat): Nat.nat =
@@ -1297,74 +1140,6 @@ Code_Numeral.integer_of_nat(n)))
 
 } /* object Euclidean_Division */
 
-object Show_Instances {
-
-def string_of_digit(n: Nat.nat): List[String.char] =
-  (if (Nat.equal_nata(n, Nat.zero_nata))
-    List(String.Char(false, false, false, false, true, true, false, false))
-    else (if (Nat.equal_nata(n, Nat.one_nat))
-           List(String.Char(true, false, false, false, true, true, false,
-                             false))
-           else (if (Nat.equal_nata(n, Code_Numeral.nat_of_integer(BigInt(2))))
-                  List(String.Char(false, true, false, false, true, true, false,
-                                    false))
-                  else (if (Nat.equal_nata(n,
-    Code_Numeral.nat_of_integer(BigInt(3))))
-                         List(String.Char(true, true, false, false, true, true,
-   false, false))
-                         else (if (Nat.equal_nata(n,
-           Code_Numeral.nat_of_integer(BigInt(4))))
-                                List(String.Char(false, false, true, false,
-          true, true, false, false))
-                                else (if (Nat.equal_nata(n,
-                  Code_Numeral.nat_of_integer(BigInt(5))))
-                                       List(String.Char(true, false, true,
-                 false, true, true, false, false))
-                                       else (if (Nat.equal_nata(n,
-                         Code_Numeral.nat_of_integer(BigInt(6))))
-      List(String.Char(false, true, true, false, true, true, false, false))
-      else (if (Nat.equal_nata(n, Code_Numeral.nat_of_integer(BigInt(7))))
-             List(String.Char(true, true, true, false, true, true, false,
-                               false))
-             else (if (Nat.equal_nata(n, Code_Numeral.nat_of_integer(BigInt(8))))
-                    List(String.Char(false, false, false, true, true, true,
-                                      false, false))
-                    else List(String.Char(true, false, false, true, true, true,
-   false, false)))))))))))
-
-def showsp_nat(p: Nat.nat, n: Nat.nat): (List[String.char]) => List[String.char]
-  =
-  (if (Nat.less_nat(n, Code_Numeral.nat_of_integer(BigInt(10))))
-    Show.shows_string.apply(string_of_digit(n))
-    else Fun.comp[List[String.char], List[String.char],
-                   List[String.char]](showsp_nat(p,
-          Euclidean_Division.divide_nat(n,
- Code_Numeral.nat_of_integer(BigInt(10)))),
-                                       Show.shows_string.apply(string_of_digit(Euclidean_Division.modulo_nat(n,
-                              Code_Numeral.nat_of_integer(BigInt(10)))))))
-
-def showsp_int(p: Nat.nat, i: Int.int): (List[String.char]) => List[String.char]
-  =
-  (if (Int.less_int(i, Int.zero_int))
-    Fun.comp[List[String.char], List[String.char],
-              List[String.char]](Show.shows_string.apply(List(String.Char(true,
-                                   false, true, true, false, true, false,
-                                   false))),
-                                  showsp_nat(p, Int.nat(Int.uminus_int(i))))
-    else showsp_nat(p, Int.nat(i)))
-
-def shows_prec_int:
-      Nat.nat => Int.int => (List[String.char]) => List[String.char]
-  =
-  ((a: Nat.nat) => (b: Int.int) => showsp_int(a, b))
-
-def shows_prec_nat:
-      Nat.nat => Nat.nat => (List[String.char]) => List[String.char]
-  =
-  ((a: Nat.nat) => (b: Nat.nat) => showsp_nat(a, b))
-
-} /* object Show_Instances */
-
 object EFSM_Dot {
 
 def join(x0: List[String], uu: String): String = (x0, uu) match {
@@ -1373,21 +1148,49 @@ def join(x0: List[String], uu: String): String = (x0, uu) match {
   case (h :: v :: va, s) => h + s + join(v :: va, s)
 }
 
+def string_of_digit(n: Nat.nat): String =
+  (if (Nat.equal_nata(n, Nat.zero_nata)) "0"
+    else (if (Nat.equal_nata(n, Nat.one_nat)) "1"
+           else (if (Nat.equal_nata(n, Code_Numeral.nat_of_integer(BigInt(2))))
+                  "2" else (if (Nat.equal_nata(n,
+        Code_Numeral.nat_of_integer(BigInt(3))))
+                             "3" else (if (Nat.equal_nata(n,
+                   Code_Numeral.nat_of_integer(BigInt(4))))
+"4" else (if (Nat.equal_nata(n, Code_Numeral.nat_of_integer(BigInt(5)))) "5"
+           else (if (Nat.equal_nata(n, Code_Numeral.nat_of_integer(BigInt(6))))
+                  "6" else (if (Nat.equal_nata(n,
+        Code_Numeral.nat_of_integer(BigInt(7))))
+                             "7" else (if (Nat.equal_nata(n,
+                   Code_Numeral.nat_of_integer(BigInt(8))))
+"8" else "9")))))))))
+
+def shows_string: String => String => String =
+  ((a: String) => (b: String) => a + b)
+
+def showsp_nat(p: String, n: Nat.nat): String => String =
+  (if (Nat.less_nat(n, Code_Numeral.nat_of_integer(BigInt(10))))
+    shows_string.apply(string_of_digit(n))
+    else Fun.comp[String, String,
+                   String](showsp_nat(p, Euclidean_Division.divide_nat(n,
+                                Code_Numeral.nat_of_integer(BigInt(10)))),
+                            shows_string.apply(string_of_digit(Euclidean_Division.modulo_nat(n,
+              Code_Numeral.nat_of_integer(BigInt(10)))))))
+
 def vname2dot(x0: VName.vname): String = x0 match {
-  case VName.I(n) =>
-    "i<sub>" +
-      String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(n).apply(Nil)) +
-      "</sub>"
-  case VName.R(n) =>
-    "r<sub>" +
-      String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(n).apply(Nil)) +
-      "</sub>"
+  case VName.I(n) => "i<sub>" + (showsp_nat("", n)).apply("") + "</sub>"
+  case VName.R(n) => "r<sub>" + (showsp_nat("", n)).apply("") + "</sub>"
 }
 
+def showsp_int(p: String, i: Int.int): String => String =
+  (if (Int.less_int(i, Int.zero_int))
+    Fun.comp[String, String,
+              String](shows_string.apply("-"),
+                       showsp_nat(p, Int.nat(Int.uminus_int(i))))
+    else showsp_nat(p, Int.nat(i)))
+
 def value2dot(x0: Value.value): String = x0 match {
-  case Value.Str(s) => String.implode(s)
-  case Value.Numa(n) =>
-    String.implode(Show_Instances.shows_prec_int.apply(Nat.zero_nata).apply(n).apply(Nil))
+  case Value.Str(s) => s
+  case Value.Numa(n) => (showsp_int("", n)).apply("")
 }
 
 def aexp2dot(x0: AExp.aexp): String = x0 match {
@@ -1415,10 +1218,7 @@ def outputs2dot(x0: List[AExp.aexp], uu: Nat.nat): List[String] = (x0, uu) match
   {
   case (Nil, uu) => Nil
   case (h :: t, n) =>
-    "o<sub>" +
-      String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(n).apply(Nil)) +
-      "</sub> := " +
-      aexp2dot(h) ::
+    "o<sub>" + (showsp_nat("", n)).apply("") + "</sub> := " + aexp2dot(h) ::
       outputs2dot(t, Nat.plus_nata(n, Nat.one_nat))
 }
 
@@ -1450,8 +1250,8 @@ def guards2dot(x0: List[GExp.gexp]): String = x0 match {
 }
 
 def transition2dot(t: Transition.transition_ext[Unit]): String =
-  String.implode(Transition.Label[Unit](t)) + ":" +
-    String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(Transition.Arity[Unit](t)).apply(Nil)) +
+  Transition.Label[Unit](t) + ":" +
+    (showsp_nat("", Transition.Arity[Unit](t))).apply("") +
     guards2dot(Transition.Guard[Unit](t)) +
     latter2dot(t)
 
@@ -1507,9 +1307,8 @@ def efsm2dot(e: FSet.fset[((Nat.nat, Nat.nat),
                            ({
                               val (from, to): (Nat.nat, Nat.nat) = aa;
                               ((t: Transition.transition_ext[Unit]) =>
-                                String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(from).apply(Nil)) +
-                                  "->" +
-                                  String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(to).apply(Nil)) +
+                                (showsp_nat("", from)).apply("") + "->" +
+                                  (showsp_nat("", to)).apply("") +
                                   "[label=<" +
                                   transition2dot(t) +
                                   ">]")
@@ -1579,12 +1378,10 @@ def iefsm2dot(e: FSet.fset[(Nat.nat,
                            ({
                               val (from, to): (Nat.nat, Nat.nat) = ab;
                               ((t: Transition.transition_ext[Unit]) =>
-                                "  " +
-                                  String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(from).apply(Nil)) +
-                                  "->" +
-                                  String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(to).apply(Nil)) +
+                                "  " + (showsp_nat("", from)).apply("") + "->" +
+                                  (showsp_nat("", to)).apply("") +
                                   "[label=<(" +
-                                  String.implode(Show_Instances.shows_prec_nat.apply(Nat.zero_nata).apply(uid).apply(Nil)) +
+                                  (showsp_nat("", uid)).apply("") +
                                   ") " +
                                   transition2dot(t) +
                                   ">]")
@@ -1619,20 +1416,6 @@ def less_prod[A : Orderings.ord, B : Orderings.ord](x0: (A, B), x1: (A, B)):
 
 } /* object Product_Lexorder */
 
-object List_Lexorder {
-
-def less_list[A : HOL.equal : Orderings.order](xs: List[A], x1: List[A]):
-      Boolean
-  =
-  (xs, x1) match {
-  case (x :: xs, y :: ys) =>
-    (Orderings.less[A](x, y)) || ((HOL.eq[A](x, y)) && (less_list[A](xs, ys)))
-  case (Nil, x :: xs) => true
-  case (xs, Nil) => false
-}
-
-} /* object List_Lexorder */
-
 object GExp_Orderings {
 
 def less_vname(x0: VName.vname, x1: VName.vname): Boolean = (x0, x1) match {
@@ -1645,8 +1428,7 @@ def less_vname(x0: VName.vname, x1: VName.vname): Boolean = (x0, x1) match {
 def less_value(x0: Value.value, x1: Value.value): Boolean = (x0, x1) match {
   case (Value.Numa(n), Value.Str(s)) => true
   case (Value.Str(s), Value.Numa(n)) => false
-  case (Value.Str(n), Value.Str(s)) =>
-    List_Lexorder.less_list[String.char](n, s)
+  case (Value.Str(n), Value.Str(s)) => n < s
   case (Value.Numa(n), Value.Numa(s)) => Int.less_int(n, s)
 }
 
@@ -1726,6 +1508,20 @@ def less_eq_vname(x0: VName.vname, x1: VName.vname): Boolean = (x0, x1) match {
 
 } /* object GExp_Orderings */
 
+object List_Lexorder {
+
+def less_list[A : HOL.equal : Orderings.order](xs: List[A], x1: List[A]):
+      Boolean
+  =
+  (xs, x1) match {
+  case (x :: xs, y :: ys) =>
+    (Orderings.less[A](x, y)) || ((HOL.eq[A](x, y)) && (less_list[A](xs, ys)))
+  case (Nil, x :: xs) => true
+  case (xs, Nil) => false
+}
+
+} /* object List_Lexorder */
+
 object Transition_Ordering {
 
 def less_transition_ext[A : Orderings.linorder](t1:
@@ -1733,8 +1529,7 @@ def less_transition_ext[A : Orderings.linorder](t1:
          t2: Transition.transition_ext[A]):
       Boolean
   =
-  (if (Lista.equal_list[String.char](Transition.Label[A](t1),
-                                      Transition.Label[A](t2)))
+  (if (Transition.Label[A](t1) == Transition.Label[A](t2))
     (if (Nat.equal_nata(Transition.Arity[A](t1), Transition.Arity[A](t2)))
       (if (Lista.equal_list[GExp.gexp](Transition.Guard[A](t1),
 Transition.Guard[A](t2)))
@@ -1751,8 +1546,7 @@ Transition.Guard[A](t2)))
         else List_Lexorder.less_list[GExp.gexp](Transition.Guard[A](t1),
          Transition.Guard[A](t2)))
       else Nat.less_nat(Transition.Arity[A](t1), Transition.Arity[A](t2)))
-    else List_Lexorder.less_list[String.char](Transition.Label[A](t1),
-       Transition.Label[A](t2)))
+    else Transition.Label[A](t1) < Transition.Label[A](t2))
 
 def less_eq_transition_ext[A : HOL.equal : Orderings.linorder](t1:
                          Transition.transition_ext[A],
@@ -1962,12 +1756,12 @@ def choice(t1: Transition.transition_ext[Unit],
             t2: Transition.transition_ext[Unit]):
       Boolean
   =
-  (Lista.equal_list[String.char](Transition.Label[Unit](t1),
-                                  Transition.Label[Unit](t2))) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
-    Transition.Arity[Unit](t2))) && (Dirties.satisfiable(GExp.Nor(GExp.Nor(GExp.conjoin(Transition.Guard[Unit](t1)),
-                                    GExp.conjoin(Transition.Guard[Unit](t1))),
-                           GExp.Nor(GExp.conjoin(Transition.Guard[Unit](t2)),
-                                     GExp.conjoin(Transition.Guard[Unit](t2)))))))
+  (Transition.Label[Unit](t1) ==
+    Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
+             Transition.Arity[Unit](t2))) && (Dirties.satisfiable(GExp.Nor(GExp.Nor(GExp.conjoin(Transition.Guard[Unit](t1)),
+     GExp.conjoin(Transition.Guard[Unit](t1))),
+                                    GExp.Nor(GExp.conjoin(Transition.Guard[Unit](t2)),
+      GExp.conjoin(Transition.Guard[Unit](t2)))))))
 
 def nondeterministic_pairs(t: FSet.fset[(Nat.nat,
   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
@@ -2631,8 +2425,7 @@ def make_guard(x0: List[Value.value], uu: Nat.nat): List[GExp.gexp] = (x0, uu)
 def make_branch(e: FSet.fset[((Nat.nat, Nat.nat),
                                Transition.transition_ext[Unit])],
                  uu: Nat.nat, uv: VName.vname => Option[Value.value],
-                 x3: List[(List[String.char],
-                            (List[Value.value], List[Value.value]))]):
+                 x3: List[(String, (List[Value.value], List[Value.value]))]):
       FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]
   =
   (e, uu, uv, x3) match {
@@ -2653,8 +2446,7 @@ def make_branch(e: FSet.fset[((Nat.nat, Nat.nat),
      })
 }
 
-def make_pta(x0: List[List[(List[String.char],
-                             (List[Value.value], List[Value.value]))]],
+def make_pta(x0: List[List[(String, (List[Value.value], List[Value.value]))]],
               e: FSet.fset[((Nat.nat, Nat.nat),
                              Transition.transition_ext[Unit])]):
       FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]
@@ -2687,8 +2479,7 @@ def toiEFSM(e: FSet.fset[((Nat.nat, Nat.nat),
                                 FSet.sorted_list_of_fset[((Nat.nat, Nat.nat),
                    Transition.transition_ext[Unit])](e)))
 
-def learn(l: List[List[(List[String.char],
-                         (List[Value.value], List[Value.value]))]],
+def learn(l: List[List[(String, (List[Value.value], List[Value.value]))]],
            r: (FSet.fset[Transition.transition_ext[Unit]]) =>
                 (FSet.fset[Transition.transition_ext[Unit]]) => Nat.nat,
            g: (FSet.fset[(Nat.nat,
@@ -2760,9 +2551,9 @@ def naive_score(t1: FSet.fset[Transition.transition_ext[Unit]],
                                        (Transition.transition_ext[Unit],
  Transition.transition_ext[Unit])
                                    = a;
-                                 (Lista.equal_list[String.char](Transition.Label[Unit](x),
-                         Transition.Label[Unit](y))) && (Nat.equal_nata(Transition.Arity[Unit](x),
-                                 Transition.Arity[Unit](y)))
+                                 (Transition.Label[Unit](x) ==
+                                   Transition.Label[Unit](y)) && (Nat.equal_nata(Transition.Arity[Unit](x),
+  Transition.Arity[Unit](y)))
                                }),
                               FSet_Utils.fprod[Transition.transition_ext[Unit],
         Transition.transition_ext[Unit]](t1, t2)))

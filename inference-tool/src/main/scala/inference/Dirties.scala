@@ -24,7 +24,7 @@ object Dirties {
 
   def toZ3(v: Value.value, ctx: z3.Context): z3.Expr = v match {
     case Value.Numa(n) => ctx.mkInt(valueOf(n))
-    case Value.Str(s) => ctx.mkString(String.implode(s))
+    case Value.Str(s) => ctx.mkString(s)
   }
 
   def toZ3(v: VName.vname, ctx: z3.Context, datatype: z3.Sort): z3.Expr = v match {

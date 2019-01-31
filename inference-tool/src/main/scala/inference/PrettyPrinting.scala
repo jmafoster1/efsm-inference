@@ -13,7 +13,7 @@ object PrettyPrinter {
   def valueToString(v: Value.value): String = {
     v match {
       case Value.Numa(n) => n.toString()
-      case Value.Str(s) => String.implode(s)
+      case Value.Str(s) => s
     }
   }
 
@@ -34,7 +34,7 @@ object PrettyPrinter {
   }
 
   def transitionToString(t: Transition.transition_ext[Unit]): String = {
-    String.implode(Transition.Label(t)) +
+    (Transition.Label(t)) +
     ":" + natToString(Transition.Arity(t))
   }
 
@@ -50,6 +50,6 @@ object PrettyPrinter {
   }
 
   // def efsm2dot(e: TypeConversion.TransitionMatrix): String = {
-  //   String.implode(EFSM_Dot.efsm2dot(e))
+  //   (EFSM_Dot.efsm2dot(e))
   // }
 }
