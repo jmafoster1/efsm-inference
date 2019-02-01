@@ -85,13 +85,10 @@ definition i_step :: "iEFSM \<Rightarrow> nat \<Rightarrow> datastate \<Rightarr
 
 type_synonym match = "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> ((transition \<times> nat) \<times> ioTag \<times> nat))"
 
-definition "ThrowNone = (\<lparr>Label=STR '''', Arity=0, Guard=[], Outputs=[], Updates=[]\<rparr>, 0)"
-
 primrec (nonexhaustive) walk_up_to :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> execution \<Rightarrow> (transition \<times> nat)" where
   "walk_up_to n e s r (h#t) =
     (case (i_step e s r (fst h) (fst (snd h))) of
-      (Some (transition, s', uid, updated)) \<Rightarrow> (case n of 0 \<Rightarrow> (transition, uid) | Suc m \<Rightarrow> walk_up_to m e s' updated t) |
-      None \<Rightarrow> ThrowNone
+      (Some (transition, s', uid, updated)) \<Rightarrow> (case n of 0 \<Rightarrow> (transition, uid) | Suc m \<Rightarrow> walk_up_to m e s' updated t)
     )"
 
 definition find_intertrace_matches_aux :: "(index \<times> index) fset \<Rightarrow> iEFSM \<Rightarrow> execution \<Rightarrow> match fset" where

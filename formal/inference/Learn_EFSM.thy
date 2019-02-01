@@ -204,7 +204,6 @@ proof-
           ((0, 1), \<lparr>Label = (STR ''select''), Arity = Suc 0, Guard = [gexp.Eq (V (I 1)) (L ((Str ''coke'')))], Outputs = [], Updates = []\<rparr>)} = {}"
         apply (simp add: Set.filter_def)
         apply clarify
-        apply simp
         by (metis (no_types, lifting) applyGuards select_convs(3))
       show ?thesis
         by (simp add: step_def possible_steps_def ffilter_def set_filter)
@@ -848,7 +847,7 @@ proof-
   qed
   show ?thesis
     apply (simp add: merge_def merge_states_1_8 nondeterminism_def nondeterministic_pairs_merged_1_8)
-    apply (simp add: max_def)
+    apply (simp add: sorted_list_of_fset_def)
     apply (simp add: leaves_2_pta leaves_1_8_pta merge_transitions arrives_8_merged_1_8 arrives_2_merged_1_8)
     apply (simp add: merge_states_2_9 leaves_2_merged_2_9 arrives_2_merged_2_9 arrives_8_merged_2_9)
     apply (simp add: cant_merge_coins max_def Let_def cant_merge_coins_2)
@@ -1232,8 +1231,7 @@ lemma possible_steps_pta_1_not_coin: "aa = (STR ''coin'') \<longrightarrow> b \<
     apply (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
    apply (simp add: transitions hd_input2state)
    apply (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
-  apply (simp add: transitions)
-  by auto
+  by (simp add: transitions)
 
 lemma possible_steps_merged_vends_coin50_1: "possible_steps (tm merged_vends) 1 r (STR ''coin'') [Num 50] = {|(2, coin50_50)|}"
     apply (simp add: possible_steps_fst)
@@ -1688,13 +1686,15 @@ proof-
     by eval
   show ?thesis
     apply (simp add: merge_def merge_states_1_7 nondeterminism_def nondeterministic_pairs_merged_1_7)
-    apply (simp add: max_def)
+    apply (simp add: sorted_list_of_fset_def)
     apply (simp add: leaves_2_pta leaves_7_pta arrives_2_merged_1_7 arrives_7_merged_1_7)
     apply (simp add: leaves_2_merged_2_8 merge_states_2_8 arrives_2_merged_2_8 arrives_7_merged_2_8 leaves_7_merged_2_8)
-    apply (simp add: merge_transitions nondeterminism_def nondeterministic_pairs_merged_2_8_coin50 max_def)
+    apply (simp add: merge_transitions nondeterminism_def nondeterministic_pairs_merged_2_8_coin50)
+    apply (simp add: sorted_list_of_fset_def rev_def)
     apply (simp add: arrives_4_merged_2_8_coin50 arrives_8_merged_2_8_coin50 merge_states_3_9_merged_2_8_coin50)
     apply (simp add: leaves_4_pta leaves_8_pta leaves_4_merged_3_9 arrives_8_merged_3_9)
-    apply (simp add: merge_transitions_2 nondeterminism_def nondeterministic_pairs_merged_3_9_coin100 max_def)
+    apply (simp add: merge_transitions_2 nondeterminism_def nondeterministic_pairs_merged_3_9_coin100)
+    apply (simp add: sorted_list_of_fset_def)
     apply (simp add: arrives_5_merged_3_9_coin100 arrives_9_merged_3_9_coin100 merge_states_4_10)
     apply (simp add: leaves_5_pta leaves_9_pta leaves_5_merged_4_10 arrives_9_merged_4_10)
     by (simp add: merge_vend_coke_vend_pepsi nondeterministic_pairs_merged_vends nondeterminism_def)
@@ -2732,14 +2732,14 @@ proof-
   have merge_vends_2: "merge_transitions merged_vends merged_4_6 5 3 1 4 4 vend_general 6 vend_general 5 generator modifier True = Some final"
     by (simp add: merge_transitions_def easy_merge_vends)
   show ?thesis
-    apply (simp add: merge_def merge_states_1_2 nondeterminism_def nondeterministic_pairs_merged_1_2 max_def)
+    apply (simp add: merge_def merge_states_1_2 nondeterminism_def nondeterministic_pairs_merged_1_2 sorted_list_of_fset_def)
     apply (simp add: arrives_2_merged_1_2 arrives_4_merged_1_2 merge_states_1_3 leaves_2_merged_vends)
     apply (simp add: leaves_2_merged_1_3 leaves_4_merged_vends arrives_4_merged_1_3 merge_vends)
     apply (simp add: nondeterminism_def nondeterministic_pairs_merged_1_3_coin)
-    apply (simp add: nondeterministic_pairs_merged_1_2 max_def)
+    apply (simp add: nondeterministic_pairs_merged_1_2 sorted_list_of_fset_def)
     apply (simp add: arrives_2_merged_1_3_coin arrives_3_merged_1_3_coin merge_states_1_5)
     apply (simp add: leaves_2_merged_vends leaves_3_merged_vends leaves_2_merged_1_5 arrives_3_merged_1_5)
-    apply (simp add: merge_coins nondeterminism_def nondeterministic_pairs_merged_1_5_coin max_def)
+    apply (simp add: merge_coins nondeterminism_def nondeterministic_pairs_merged_1_5_coin sorted_list_of_fset_def)
     apply (simp add: arrives_5_merged_1_5_coin arrives_6_merged_1_5_coin merge_states_4_6_merged_1_5_coin)
     apply (simp add: leaves_5_merged_vends leaves_6_merged_vends leaves_5_merged_4_6 arrives_6_merged_4_6)
     by (simp add: merge_vends_2 nondeterminism_def nondeterministic_pairs_final)

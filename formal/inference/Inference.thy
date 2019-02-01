@@ -187,26 +187,29 @@ lemma "(leaves uid t = n) = (\<exists>b ba. Set.filter (\<lambda>x. \<exists>a b
    apply simp
   oops
 
-function resolve_nondeterminism :: "nondeterministic_pair fset \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" where
-  "resolve_nondeterminism s e t g m = (
-    if s = {||} then
-      if nondeterminism t then None else Some t
-    else 
-      let (from, (to1, to2), ((t1, u1), (t2, u2))) = fMax s;
+function resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" where
+  "resolve_nondeterminism [] e t g m = (if nondeterminism t then None else Some t)" |
+  "resolve_nondeterminism (s#ss) e t g m = (
+      let (from, (to1, to2), ((t1, u1), (t2, u2))) = s;
           t' = merge_states to1 to2 t;
           z = (merge_states (arrives u1 t) (arrives u2 t) t)
       in 
       \<comment> \<open>   merge_transitions oldEFSM newEFSM t1FromOld     t2FromOld    newFrom t1NewTo t2NewTo t1 u1 t2 u2 maker modifier modify\<close>
       (case merge_transitions  e       z      (leaves u1 e) (leaves u2 e) (leaves u1 z)    (arrives u1 z) (arrives u2 z)     t1 u1 t2 u2 g     m        True of
-      None \<Rightarrow> resolve_nondeterminism (s - {|fMax s|}) e t g m |
-      Some new \<Rightarrow> case resolve_nondeterminism (nondeterministic_pairs new) e new g m of
+        None \<Rightarrow> resolve_nondeterminism ss e t g m |
+        Some new \<Rightarrow> (case resolve_nondeterminism (rev (sorted_list_of_fset (nondeterministic_pairs new))) e new g m of
                   Some new' \<Rightarrow> Some new' |
-                  None \<Rightarrow> resolve_nondeterminism (s |-| {|fMax s|}) e t g m
+                  None \<Rightarrow> resolve_nondeterminism ss e t g m)
       )
   )"
-sorry
-termination sorry
-
+  sorry
+termination
+  apply standard
+     apply auto[1]
+    apply simp
+    defer apply simp
+    defer apply simp
+  sorry
 (* resolve_nondeterminism: tries to resolve any nondeterminism in a given EFSM                    *)
 (* @param n - The nondeterministic pairs of the form (origin, (dest1, dest2), t1, t2)             *)
 (* @param e - The EFSM before states s1 and s2 were merged                                        *)
@@ -222,9 +225,7 @@ definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> gen
                          \<comment> \<open> If not then we're good to go \<close>
                          Some t' else
                          \<comment> \<open> If we have then we need to fix it \<close>
-                         resolve_nondeterminism (nondeterministic_pairs t') e t' g m)))"
-
-(* export_code resolve_nondeterminism in "Scala" *)
+                         resolve_nondeterminism (rev (sorted_list_of_fset (nondeterministic_pairs t'))) e t' g m)))"
 
 fun inference_step :: "iEFSM \<Rightarrow> (nat \<times> nat \<times> nat) list \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" where
   "inference_step _ [] _ _ = None" |

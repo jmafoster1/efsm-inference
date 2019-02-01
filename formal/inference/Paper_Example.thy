@@ -85,14 +85,8 @@ definition drinks_after :: iEFSM where
 definition merge_1_2_update :: iEFSM where
   "merge_1_2_update = {|(0, (0, 1), select_update), (1, (1, 1), coin50), (2, (1, 1), coin), (3, (1, 1), vend_fail), (4, (1, 3), vend_success)|}"
 
-definition update_mapping :: "nat \<Rightarrow> nat" where
-  "update_mapping x = x"
-
-definition update_before :: "nat \<Rightarrow> nat" where
-  "update_before x = (if x = 2 then 1 else x)"
-
 definition modifier :: update_modifier where
-  "modifier a b c d e =  Some (merge_1_2_update, update_mapping, update_before)"
+  "modifier a b c d e =  Some merge_1_2_update"
 
 lemma scoring_1: "sorted_list_of_fset (score drinks_before naive_score) = [(1, 1, 2)]"
 proof-
@@ -162,15 +156,6 @@ lemmas orders = coin_lt_coin50
 
 lemma nondeterministic_pairs_merged_1_2: "nondeterministic_pairs merged_1_2 = {|(1, (1, 1), (coin, 2), coin50, 1), (1, (1, 1), (coin50, 1), coin, 2)|}"
 proof-
-  have minus_1: "{(1, coin50, 1), (1, coin, 2), (1, vend_fail, 3), (3, vend_success, 4)} - {(1, coin, 2)} = {(1, coin50, 1), (1, vend_fail, 3), (3, vend_success, 4)}"
-    apply (simp add: transitions)
-    by auto
-  have minus_2: "{(1, coin50, 1), (1, coin, 2), (1, vend_fail, 3), (3, vend_success, 4)} - {(1, vend_fail, 3)} = {(1, coin50, 1), (1, coin, 2), (3, vend_success, 4)}"
-    apply (simp add: transitions)
-    by auto
-  have minus_3: "{(1, coin50, 1), (1, coin, 2), (1, vend_fail, 3), (3, vend_success, 4)} - {(3, vend_success, 4)} = {(1, coin50, 1), (1, coin, 2), (1, vend_fail, 3)}"
-    apply (simp add: transitions)
-    by auto
   have state_nondeterminism_1: "state_nondeterminism 1 {|(1, coin50, 1), (1, coin, 2), (1, vend_fail, 3), (3, vend_success, 4)|} = {|
      (1, (3, 1), (vend_success, 4), vend_fail, 3),
      (1, (3, 1), (vend_success, 4), coin, 2),
@@ -451,7 +436,7 @@ proof-
     by (simp add: nondeterministic_step_def possible_steps)
 qed
 
-lemma simulation_2_1: "\<forall>r. nondeterministic_simulates_trace (tm merge_1_2_update) (tm drinks_before) 1 2 r r lst update_before"
+lemma simulation_2_1: "\<forall>r. nondeterministic_simulates_trace (tm merge_1_2_update) (tm drinks_before) 1 2 r r lst"
 proof (induct lst)
   case Nil
   then show ?case
@@ -465,7 +450,6 @@ next
     apply (case_tac "aa = (STR ''coin'') \<and> length b = 1")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: update_before_def)
         apply (simp add: nondeterministic_step_def possible_steps_drinks_before_coin)
     using possible_steps_merge_1_2_update_coin  apply blast
       apply simp
@@ -489,14 +473,14 @@ next
     apply simp
     apply (case_tac "x1 < 100")
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: update_before_def)
+         
         apply (simp add: nondeterministic_step_def drinks_before_vend_fail)
        apply (simp add: merge_1_2_update_vend_fail)
       apply simp
       apply (simp add: vend_fail_def)
     apply (simp add: transitions(4))
     apply (rule nondeterministic_simulates_trace.step_some)
-        apply (simp add: update_before_def)
+        
        apply (simp add: nondeterministic_step_def drinks_before_vend_success)
       apply (simp add: merge_1_2_update_vend_success)
      apply simp
@@ -509,7 +493,7 @@ next
     by (simp add: drinks_before_ends_at_3)
   qed
 
-lemma simulation_1_1: "nondeterministic_simulates_trace (tm merge_1_2_update) (tm drinks_before) 1 1 <R 1 := d, R 2 := Num 0> <R 1 := d> ((aa, b) # list) update_before"
+lemma simulation_1_1: "nondeterministic_simulates_trace (tm merge_1_2_update) (tm drinks_before) 1 1 <R 1 := d, R 2 := Num 0> <R 1 := d> ((aa, b) # list)"
 proof-
   have coin50_updates: "(EFSM.apply_updates (Updates coin50) (\<lambda>x. case x of I n \<Rightarrow> input2state [Num 50] 1 (I n) | R n \<Rightarrow> <R 1 := d, R 2 := Num 0> (R n))
        <R 1 := d, R 2 := Num 0>) = <R 1 := d, R 2 := Num 50>"
@@ -529,7 +513,7 @@ proof-
     using drinks_before_1_invalid
     apply auto[1]
     apply (rule nondeterministic_simulates_trace.step_some)
-        apply (simp add: update_before_def)
+        
        apply (simp add: step_drinks_before_coin_50 step_nondet_step_equiv)
        apply (simp add: merge_1_2_update_possible_steps_coin_50)
       apply auto[1]
@@ -539,7 +523,7 @@ proof-
     by (simp add: simulation_2_1)
 qed
 
-lemma simulation_0_0: "nondeterministic_simulates_trace (tm merge_1_2_update) (tm drinks_before) 0 0 Map.empty Map.empty ((aa, b) # t) update_before"
+lemma simulation_0_0: "nondeterministic_simulates_trace (tm merge_1_2_update) (tm drinks_before) 0 0 Map.empty Map.empty ((aa, b) # t)"
 proof-
   have select_updates: "length b = 1 \<Longrightarrow> EFSM.apply_updates (Updates select_update) (\<lambda>x. case x of I n \<Rightarrow> input2state b 1 (I n) | R x \<Rightarrow> Map.empty x) Map.empty = <R 1 := hd b, R 2 := Num 0>"
     apply (simp add: select_update_def)
@@ -548,7 +532,7 @@ proof-
   show ?thesis
   apply (case_tac "aa = (STR ''select'') \<and> length b = 1")
      apply (rule nondeterministic_simulates_trace.step_some)
-          apply (simp add: update_before_def)
+          
          apply (simp add: step_nondet_step_equiv step_drinks_before_select)
         apply (simp add: possible_steps_merge_1_2_update_select)
        apply simp
@@ -563,7 +547,7 @@ proof-
     by (simp add: simulation_1_1)
 qed
 
-lemma simulation_aux: "nondeterministic_simulates_trace (tm merge_1_2_update) (tm drinks_before) 0 0 Map.empty Map.empty t update_before"
+lemma simulation_aux: "nondeterministic_simulates_trace (tm merge_1_2_update) (tm drinks_before) 0 0 Map.empty Map.empty t"
 proof (induct t)
 case Nil
   then show ?case
@@ -576,7 +560,7 @@ next
     by (simp add: simulation_0_0)
 qed
 
-lemma simulation: "nondeterministic_simulates (tm merge_1_2_update) (tm drinks_before) update_before"
+lemma simulation: "nondeterministic_simulates (tm merge_1_2_update) (tm drinks_before)"
   apply (simp add:nondeterministic_simulates_def)
   apply (rule allI)
   by (simp add: simulation_aux)
@@ -672,84 +656,6 @@ lemma stop_at_1: "step (tm drinks_before) 1 <R 1 := d> aa ba = Some (uw, s', ux,
    apply clarify
   by simp
 
-lemma gets_us_to_aux: "gets_us_to 1 (tm drinks_before) 1 <R 1 := d> p \<Longrightarrow> accepts (tm drinks_before) 1 <R 1 := d> p \<Longrightarrow>
-          posterior_sequence \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> (tm merge_1_2_update) 1 <R 1 := d, R 2 := Num 0> p =
-          \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk>"
-proof (induct p)
-  case Nil
-  then show ?case
-  by simp
-next
-  case (Cons a p)
-  then show ?case
-    apply (case_tac a)
-    apply clarify
-    apply (simp del: posterior_sequence.simps)
-    apply (simp only: regsimp1 regsimp2 contextsimp1) \<comment> \<open>This makes it print nicely again\<close>
-    apply (rule gets_us_to.cases)
-       apply simp
-      apply simp
-     apply simp
-    apply clarify
-     apply (simp del: posterior_sequence.simps)
-     apply (simp add: stop_at_1)
-    apply clarify
-    apply simp
-    apply (case_tac "step (tm merge_1_2_update) 1 <R 1 := d, R 2 := Num 0> aa ba")
-     apply simp
-    apply simp
-    apply clarify
-    by (simp add: no_step_none)
-qed
-
-lemma accepts_trace_anterior: "accepts_trace (tm drinks_before) p \<Longrightarrow> gets_us_to 1 (tm drinks_before) 0 Map.empty p \<Longrightarrow> anterior_context (tm merge_1_2_update) p = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num 0)\<rbrakk>"
-proof(induct p)
-  case Nil
-  then show ?case
-    apply simp
-    apply (rule gets_us_to.cases)
-    by auto
-next
-  have select_update_updates: "\<forall>ba. length ba = 1 \<longrightarrow> (EFSM.apply_updates (Updates select_update) (case_vname (\<lambda>n. input2state ba 1 (I n)) Map.empty) Map.empty) =
-        <R 1 := hd ba, R 2 := Num 0>"
-    apply clarify
-    apply (rule ext)
-    by (simp add: transitions hd_input2state)
-  case (Cons a p)
-  then show ?case
-    apply (case_tac a)
-    apply (case_tac "aa = (STR ''select'') \<and> length b = 1")
-    defer
-     apply clarify
-     apply (rule gets_us_to.cases)
-        apply simp
-       apply simp
-    using drinks_before_step_0_invalid nondeterministic_step_none
-      apply auto[1]
-     apply simp
-
-    apply (rule gets_us_to.cases)
-       apply simp
-      apply simp
-     defer
-     apply clarify
-     apply (simp add: step_drinks_before_select)
-    apply clarify
-    apply (simp add: step_drinks_before_select)
-    apply clarify
-    apply (simp add: anterior_context_def step_def possible_steps_merge_1_2_update_select)
-    apply (simp add: accepts_trace_def)
-    apply (rule accepts.cases)
-      apply simp
-     apply simp
-    apply simp
-    apply clarify
-    apply (simp add: step_drinks_before_select)
-    apply clarify
-    apply (simp add: select_update_posterior select_update_updates)
-    by (simp add: gets_us_to_aux)
-qed
-
 lemma satisfies_must_have_r2_0: "satisfies_context d \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> \<Longrightarrow> d (R 2) = Some (Num 0)"
 proof-
   have contrapositive: "\<not> d (R 2) = Some (Num 0) \<Longrightarrow> \<not>satisfies_context d \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk>"
@@ -838,13 +744,15 @@ proof-
     by (simp add: consistent_empty_4)
 qed
 
-lemma coin_directly_subsumes_coin50: "directly_subsumes (tm drinks_before) (tm merge_1_2_update) 1 coin coin50"
-  apply (simp add: directly_subsumes_def)
-  apply standard
-  apply clarify
-   apply (simp add: accepts_trace_anterior coin_subsumes_coin50)
-  apply (rule_tac x="\<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk>" in exI)
-  by (simp add: coin_subsumes_coin50)
+lemma coin50_doesnt_subsume_coin: "\<not>subsumes \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> coin50 coin"
+proof-
+  have violation: "\<exists>r i. cval (medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> (Guard coin) r) i = Some True \<and>
+           cval (medial \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> (Guard coin50) r) i \<noteq> Some True"
+    apply (simp add: transitions)
+    by auto
+  show ?thesis
+    by (simp add: subsumes_def violation)
+qed
 
 lemma not_coin50_directly_subsumes_coin: "\<not> directly_subsumes (tm drinks_before) (tm merge_1_2_update) 2 coin50 coin"
 proof-
@@ -899,7 +807,7 @@ proof-
 qed
 
 lemma merge_transitions: "merge_transitions drinks_before merged_1_2 (leaves 1 drinks_before) (leaves 2 drinks_before) (leaves 1 merged_1_2) 1 1 coin50 1
-           coin 2 null_generator (\<lambda>a b c d e. Some (merge_1_2_update, update_mapping, update_before)) True = Some merge_1_2_update"
+           coin 2 null_generator (\<lambda>a b c d e. Some merge_1_2_update) True = Some merge_1_2_update"
 proof-
   have leaves_1_drinks_before: "leaves 1 drinks_before = 1"
   proof-
@@ -939,17 +847,11 @@ proof-
     by (simp_all add: transitions)
   show ?thesis
     apply (simp add: merge_transitions_def easy_merge)
-    by (simp add: simulation update_mapping_def leaves_2_drinks_before leaves_1_drinks_before)
+    by (simp add: simulation leaves_2_drinks_before leaves_1_drinks_before)
 qed
 
 lemma nondeterministic_pairs_drinks_after: "nondeterministic_pairs drinks_after = {||}"
 proof-
-  have minus_1: "{(1, coin, 2), (1, vend_fail, 3), (3, vend_success, 4)} - {(1, vend_fail, 3)} = {(1, coin, 2), (3, vend_success, 4)}"
-    apply (simp add: transitions)
-    by auto
-  have minus_2: "{(1, coin, 2), (1, vend_fail, 3), (3, vend_success, 4)} - {(3, vend_success, 4)} = {(1, coin, 2), (1, vend_fail, 3)}"
-    apply (simp add: transitions)
-    by auto
   have state_nondeterminism: "state_nondeterminism 1 {|(1, coin, 1), (1, vend_fail, 3), (3, vend_success, 4)|} = {|
 (1, (3, 1), (vend_success, 4),
     vend_fail, 3),
@@ -974,7 +876,104 @@ proof-
     by (simp_all add: choices)
 qed
 
-lemma merge_1_2_drinks_before: "merge drinks_before 1 2 null_generator (\<lambda>a b c d e. Some (merge_1_2_update, update_mapping, update_before)) = Some drinks_after"
+lemma gets_us_to_aux_update: "gets_us_to 1 (tm drinks_before) 1 <R 1 := d> p \<Longrightarrow> accepts (tm drinks_before) 1 <R 1 := d> p \<Longrightarrow>
+              posterior_sequence \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk> (tm merge_1_2_update) 1 <R 1 := d, R 2 := Num 0> p =
+              \<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk>"
+    proof (induct p)
+      case Nil
+      then show ?case
+      by simp
+    next
+      case (Cons a p)
+      then show ?case
+        apply (case_tac a)
+        apply clarify
+        apply (simp del: posterior_sequence.simps)
+        apply (simp only: regsimp1 regsimp2 contextsimp1) \<comment> \<open>This makes it print nicely again\<close>
+        apply (rule gets_us_to.cases)
+           apply simp
+          apply simp
+         apply simp
+        apply clarify
+         apply (simp del: posterior_sequence.simps)
+         apply (simp add: stop_at_1)
+        apply clarify
+        apply simp
+        apply (case_tac "step (tm merge_1_2_update) 1 <R 1 := d, R 2 := Num 0> aa ba")
+         apply simp
+        apply simp
+        apply clarify
+        by (simp add: no_step_none)
+    qed
+
+lemma accepts_trace_anterior_update: "accepts_trace (tm drinks_before) p \<Longrightarrow> gets_us_to 1 (tm drinks_before) 0 Map.empty p \<Longrightarrow> anterior_context (tm merge_1_2_update) p = \<lbrakk>V (R 1) \<mapsto> Bc True, V (R 2) \<mapsto> Eq (Num 0)\<rbrakk>"
+proof(induct p)
+  case Nil
+  then show ?case
+    apply simp
+    apply (rule gets_us_to.cases)
+    by auto
+next
+  have select_update_updates: "\<forall>ba. length ba = 1 \<longrightarrow> (EFSM.apply_updates (Updates select_update) (case_vname (\<lambda>n. input2state ba 1 (I n)) Map.empty) Map.empty) =
+        <R 1 := hd ba, R 2 := Num 0>"
+    apply clarify
+    apply (rule ext)
+    by (simp add: transitions hd_input2state)
+  case (Cons a p)
+  then show ?case
+    apply (case_tac a)
+    apply (case_tac "aa = (STR ''select'') \<and> length b = 1")
+    defer
+     apply clarify
+     apply (rule gets_us_to.cases)
+        apply simp
+       apply simp
+    using drinks_before_step_0_invalid nondeterministic_step_none
+      apply auto[1]
+     apply simp
+
+    apply (rule gets_us_to.cases)
+       apply simp
+      apply simp
+     defer
+     apply clarify
+     apply (simp add: step_drinks_before_select)
+    apply clarify
+    apply (simp add: step_drinks_before_select)
+    apply clarify
+    apply (simp add: anterior_context_def step_def possible_steps_merge_1_2_update_select)
+    apply (simp add: accepts_trace_def)
+    apply (rule accepts.cases)
+      apply simp
+     apply simp
+    apply simp
+    apply clarify
+    apply (simp add: step_drinks_before_select)
+    apply clarify
+    apply (simp add: select_update_posterior select_update_updates)
+    by (simp add: gets_us_to_aux_update)
+qed
+
+lemma coin_directly_subsumes_coin50: "directly_subsumes (tm drinks_before) (tm merge_1_2_update) 1 coin coin50"
+  apply (simp add: directly_subsumes_def)
+  apply standard
+  apply clarify
+   apply (simp add: accepts_trace_anterior_update coin_subsumes_coin50)
+  apply (rule_tac x="\<lbrakk>V (R 1) \<mapsto> cexp.Bc True, V (R 2) \<mapsto> cexp.Eq (Num 0)\<rbrakk>" in exI)
+  by (simp add: coin_subsumes_coin50)
+
+lemma merge_coins: "merge_transitions drinks_before merge_1_2_update 1 2 1 1 1 coin50 1 coin 2 null_generator (\<lambda>a b c d e. Some merge_1_2_update)
+                True = Some drinks_after"
+proof-
+  have easy_merge: "easy_merge drinks_before merge_1_2_update 1 2 1 1 1 coin50 1 coin 2 null_generator = Some drinks_after"
+    apply (simp add: easy_merge_def)
+    apply (simp add: not_coin50_directly_subsumes_coin  coin_directly_subsumes_coin50)
+    by eval
+  show ?thesis
+    by (simp add: merge_transitions_def easy_merge)
+qed
+
+lemma merge_1_2_drinks_before: "merge drinks_before 1 2 null_generator (\<lambda>a b c d e. Some merge_1_2_update) = Some drinks_after"
 proof-
   have arrives_2_merged_1_2: "arrives 2 merged_1_2 = 1 \<and> leaves 2 merged_1_2 = 1"
   proof-                                                
@@ -996,15 +995,6 @@ proof-
   qed
   have nondeterministic_pairs_merge_1_2_update: "nondeterministic_pairs merge_1_2_update = {|(1, (1, 1), (coin, 2), coin50, 1), (1, (1, 1), (coin50, 1), coin, 2)|}"
   proof-
-    have minus_1: "{|(1, coin50, 1), (1, coin, 2), (1, vend_fail, 3), (3, vend_success, 4)|} |-| {|(1, coin, 2)|} = {|(1, coin50, 1), (1, vend_fail, 3), (3, vend_success, 4)|}"
-      apply (simp add: transitions)
-      by auto
-    have minus_2: "{|(1, coin50, 1), (1, coin, 2), (1, vend_fail, 3), (3, vend_success, 4)|} |-| {|(1, vend_fail, 3)|} = {|(1, coin50, 1), (1, coin, 2), (3, vend_success, 4)|}"
-      apply (simp add: transitions)
-      by auto
-    have minus_3: "{|(1, coin50, 1), (1, coin, 2), (1, vend_fail, 3), (3, vend_success, 4)|} |-| {|(3, vend_success, 4)|} = {|(1, coin50, 1), (1, coin, 2), (1, vend_fail, 3)|}"
-      apply (simp add: transitions)
-      by auto
     have state_nondeterminism_1: "state_nondeterminism 1 {|(1, coin50, 1), (1, coin, 2), (1, vend_fail, 3), (3, vend_success, 4)|} = {|
         (1, (3, 1), (vend_success, 4), vend_fail, 3),
         (1, (3, 1), (vend_success, 4), coin, 2),
@@ -1063,30 +1053,39 @@ proof-
     show ?thesis
       by (simp add: leaves_def ffilter)
   qed
-  have easy_merge: "easy_merge drinks_before merge_1_2_update 1 2 1 1 1 coin50 1 coin 2 null_generator = Some drinks_after"
+  have easy_merge: "easy_merge drinks_before merged_1_2 1 2 1 1 1 coin50 1 coin 2 null_generator = None"
   proof-
     have ffilter: "ffilter (\<lambda>x. snd x \<noteq> ((1, 1), coin50) \<and> snd x \<noteq> ((1, 1), coin)) merge_1_2_update = {|(0, (0, 1), select_update), (3, (1, 1), vend_fail), (4, (1, 3), vend_success)|}"
       apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def merge_1_2_update_def)
       apply safe
       by (simp_all add: transitions)
     show ?thesis
-      apply (simp add: easy_merge_def null_generator_def coin_directly_subsumes_coin50 not_coin50_directly_subsumes_coin)
-      by (simp add: replace_transition_def ffilter drinks_after_def)
+      apply (simp add: easy_merge_def null_generator_def)
+      apply (simp add: no_direct_subsumption_coin50_coin not_coin50_directly_subsumes_coin)
+      by (simp add: no_direct_subsumption_coin_coin50)
   qed
-  have merge_coins: "merge_transitions drinks_before merge_1_2_update 1 2 1 1 1 coin50 1 coin 2 null_generator
-                (\<lambda>a b c d e. Some (merge_1_2_update, update_mapping, update_before)) True = Some drinks_after"
-    by (simp add: merge_transitions_def easy_merge)
+  have merge_coins: "merge_transitions drinks_before merged_1_2 1 2 1 1 1 coin50 1 coin 2 null_generator (\<lambda>a b c d e. Some merge_1_2_update) True = Some merge_1_2_update"
+    by (simp add: merge_transitions_def easy_merge simulation)
   have arrives_1_merge_1_2_update: "arrives 1 merge_1_2_update = 1"
     by eval
   have leaves_1_merge_1_2_update:  "leaves 1 merge_1_2_update = 1"
+    by eval
+  have leaves_1_merged_1_2: "leaves 1 merged_1_2 = 1 \<and> arrives 1 merged_1_2 = 1"
     by eval
   show ?thesis
     apply (simp add: merge_def merge_states_1_2)
     apply (simp add: nondeterminism_def nondeterministic_pairs_merged_1_2 arrives_2_merged_1_2
            arrives_1_merged_1_2 merge_states_reflexive max_def coin_lt_coin50)
-    apply (simp add: merge_transitions nondeterminism_def nondeterministic_pairs_drinks_after)
+    apply (simp add: merge_transitions nondeterminism_def nondeterministic_pairs_drinks_after sorted_list_of_fset_def)
+    apply (simp add: coin_lt_coin50)
+    apply (simp add: arrives_1_merged_1_2 arrives_2_merged_1_2)
     apply (simp add: nondeterministic_pairs_merge_1_2_update arrives_2_merge_1_2_update merge_states_reflexive max_def coin_lt_coin50 arrives_1_merge_1_2_update)
-    by (simp add: leaves_2_drinks_before leaves_1_merge_1_2_update leaves_1_drinks_before merge_coins nondeterministic_pairs_drinks_after nondeterminism_def)
+    apply (simp add: leaves_1_drinks_before leaves_2_drinks_before leaves_1_merged_1_2 arrives_2_merged_1_2)
+    apply (simp add:  merge_coins nondeterministic_pairs_drinks_after nondeterminism_def sorted_list_of_fset_def nondeterministic_pairs_merge_1_2_update )
+    apply (simp add: arrives_1_merge_1_2_update arrives_2_merge_1_2_update merge_states_reflexive coin_lt_coin50)
+    apply (simp add: leaves_1_drinks_before leaves_2_drinks_before leaves_1_merge_1_2_update)
+    apply (simp add: Paper_Example.merge_coins)
+    by (simp add: nondeterministic_pairs_drinks_after nondeterminism_def)
 qed
 
 lemma scoring_2: "sorted_list_of_fset (score drinks_after naive_score) = []"
@@ -1102,7 +1101,7 @@ proof-
     by (simp add: sorted_list_of_fset_def)
 qed
     
-lemma "infer drinks_before naive_score null_generator (\<lambda>a b c d e. Some (merge_1_2_update, update_mapping, update_before)) = drinks_after"
+lemma "infer drinks_before naive_score null_generator (\<lambda>a b c d e. Some merge_1_2_update) = drinks_after"
 proof-
   show ?thesis
     by (simp add: scoring_1 merge_1_2_drinks_before scoring_2)

@@ -126,8 +126,8 @@ instance proof
             apply auto[1]
            apply auto[1]
           apply auto[1]
-         apply auto[1]
-    by auto[1]
+                   apply auto[1]
+    using less_linear order.strict_trans by fastforce+
   fix x y::"'a transition_ext"
   show "x \<le> y \<Longrightarrow> y \<le> x \<Longrightarrow> x = y"
     apply (simp add: less_eq_transition_ext_def less_transition_ext_def)
