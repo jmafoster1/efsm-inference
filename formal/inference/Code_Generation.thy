@@ -1,6 +1,7 @@
 theory Code_Generation
   imports 
    "HOL-Library.Code_Target_Numeral" Inference "../FSet_Utils" SelectionStrategies EFSM_Dot
+   Trace_Matches
 begin
 
 definition scalaChoiceAux :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
@@ -80,7 +81,26 @@ lemma [code]: "(choice t1 t2) = (Label t1 = Label t2 \<and> Arity t1 = Arity t2 
   apply (simp add: apply_guards_equals_conjoin)
   by (simp add: apply_guards_equals_conjoin)
 
-export_code iefsm2dot efsm2dot GExp.conjoin naive_score null_generator null_modifier learn in Scala
+fun guard_filter_code :: "nat \<Rightarrow> guard \<Rightarrow> bool" where
+  "guard_filter_code inputX (gexp.Eq a b) = (a \<noteq> (V (I inputX)) \<and> b \<noteq> (V (I inputX)))" |
+  "guard_filter_code _ _ = True"
+
+lemma[code]: "guard_filter = guard_filter_code"
+  unfolding guard_filter_def
+  apply (rule ext)+
+  apply (case_tac g)
+  prefer 2
+    apply (case_tac "x21 = (V (I inputX))")
+     apply auto[1]
+    apply (case_tac "x22 = (V (I inputX))")
+  by auto
+
+code_printing constant ThrowNone \<rightharpoonup> (Scala) "{
+Dirties.writeiDot(e, \"dotfiles/error.dot\")
+println(n, s, r, h)
+throw new scala.MatchError()}"
+
+export_code heuristic_1 iefsm2dot efsm2dot GExp.conjoin naive_score null_generator null_modifier learn in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

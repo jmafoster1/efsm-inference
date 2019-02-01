@@ -78,7 +78,6 @@ object Dirties {
   = HOL.equal(t1, t2)
 
     def scalaNondeterministicSimulates(a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
-                                       b: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
-                                       c: Nat.nat => Nat.nat): Boolean
+                                       b: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]): Boolean
      = true
   }

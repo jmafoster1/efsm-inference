@@ -706,15 +706,6 @@ definition generator :: generator_function where
   "generator oldEFSM t1FromOld t1 t2FromOld t2 = (if (oldEFSM, t1FromOld, t1, t2FromOld, t2) = (pta, 1, coin50_50, 8, coin50_100) then None
                                                   else None)"
 
-definition H_pta :: "nat \<Rightarrow> nat" where
-  "H_pta n = (if n = 7 then 1 else if n = 8 then 2 else if n = 9 then 3 else if n = 10 then 4 else n)"
-
-definition H_merged_4_10 :: "nat \<Rightarrow> nat" where
-  "H_merged_4_10 n = n"
-
-definition H_merged_1_2 :: "nat \<Rightarrow> nat" where
-  "H_merged_1_2 n = (if n = 2 then 1 else if n = 3 then 1 else n)"
-
 definition merged_1_3 :: iEFSM where
   "merged_1_3 = {|(0, (0, 1), selectGeneral), (2, (1, 1), coin50_50), (4, (1, 1), coin50_100), (5, (1, 4), vend_general),
                                               (3, (1, 5), coin100_100), (6, (5, 6), vend_general)|}"
@@ -734,14 +725,11 @@ definition merged_1_5_coin :: iEFSM where
   "merged_1_5_coin = {|(0, (0, 1), selectGeneral_2), (2, (1, 1), coinGeneral), (5, (1, 4), vend_general),
       (6, (1, 6), vend_general)|}"
 
-definition H_merged_1_5 :: "nat \<Rightarrow> nat" where
-  "H_merged_1_5 n = (if n = 2 then 1 else if n = 3 then 1 else if n = 5 then 1 else n)"
-
 definition modifier :: update_modifier where
   "modifier t1 t2 newFrom newEFSM oldEFSM = (if (newFrom, newEFSM, oldEFSM) = (1, merged_1_8, pta) then None
-                                        else if (t1, t2, newFrom, newEFSM, oldEFSM) = (9, 5, 3, merged_4_10, pta) then Some (merged_vends, H_merged_4_10, H_pta)
-                                        else if (t1, t2, newFrom, newEFSM, oldEFSM) = (4, 2, 1, merged_1_3, merged_vends) then Some (merged_1_3_coin, H_merged_1_2, H_merged_1_2)
-                                        else if (t1, t2, newFrom, newEFSM, oldEFSM) = (3, 2, 1, merged_1_5, merged_vends) then Some (merged_1_5_coin, H_merged_1_5, H_merged_1_5)
+                                        else if (t1, t2, newFrom, newEFSM, oldEFSM) = (9, 5, 3, merged_4_10, pta) then Some merged_vends
+                                        else if (t1, t2, newFrom, newEFSM, oldEFSM) = (4, 2, 1, merged_1_3, merged_vends) then Some merged_1_3_coin
+                                        else if (t1, t2, newFrom, newEFSM, oldEFSM) = (3, 2, 1, merged_1_5, merged_vends) then Some merged_1_5_coin
                                         else None)"
 
 lemma set_nequiv_def: "(s \<noteq> s') = (\<exists>e. (e \<in> s \<and> e \<notin> s') \<or> (e \<in> s' \<and> e \<notin> s))"
@@ -1078,7 +1066,7 @@ proof-
     using choices by auto
 qed
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_4_4: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 4 4 <R 1 := (Str ''coke'')> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_4_4: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 4 4 <R 1 := (Str ''coke'')> Map.empty t"
 proof(induct t)
   case Nil
   then show ?case
@@ -1111,7 +1099,7 @@ lemma possible_steps_vend: "possible_steps (tm merged_vends) 3 r (STR ''vend'') 
            apply (simp_all add: transitions selectGeneral_def vend_general_def)
   by force
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_3_3: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 3 3 <R 1 := (Str ''coke'')> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_3_3: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 3 3 <R 1 := (Str ''coke'')> Map.empty t"
 proof(induct t)
   case Nil
   then show ?case
@@ -1125,7 +1113,6 @@ next
     apply (case_tac "a=((STR ''vend''), [])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_pta_def)
         apply (simp add: step_nondet_step_equiv step_pta_vend_3)
        apply (simp add: possible_steps_vend)
        apply (simp add: vend_general_def regsimp)
@@ -1150,7 +1137,7 @@ lemma possible_steps_merged_vends_coin50_2: "\<forall>r. possible_steps (tm merg
               apply (simp_all add: transitions selectGeneral_def)
     by force
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_2_2: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 2 2 <R 1 := (Str ''coke'')> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_2_2: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 2 2 <R 1 := (Str ''coke'')> Map.empty t"
 proof(induct t)
   case Nil
   then show ?case
@@ -1168,7 +1155,6 @@ next
     apply (case_tac "a=((STR ''coin''), [Num 50])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_pta_def)
         apply (simp add: step_nondet_step_equiv step_pta_coin50_2)
        apply (simp add: possible_steps_merged_vends_coin50_2)
        apply (simp only: coin50_updates regsimp)
@@ -1180,7 +1166,7 @@ next
     by (simp add: nondeterministic_step_def possible_steps_pta_2_not_coin50)
 qed
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_6_6: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 6 6 <R 1 := (Str ''coke'')> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_6_6: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 6 6 <R 1 := (Str ''coke'')> Map.empty t"
 proof(induct t)
   case Nil
   then show ?case
@@ -1202,7 +1188,7 @@ lemma possible_steps_pta_5_not_vend: "a = (STR ''vend'') \<longrightarrow> b \<n
   apply (simp add: tm_def pta_def Set.filter_def vend_coke_def)
   by force
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_5_5: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 5 5 <R 1 := (Str ''coke'')> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_5_5: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 5 5 <R 1 := (Str ''coke'')> Map.empty t"
 proof(induct t)
   case Nil
   then show ?case
@@ -1222,7 +1208,6 @@ next
     apply (case_tac "a = ((STR ''vend''), [])")
      apply (simp add: regsimp)
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_pta_def)
         apply (simp add: step_nondet_step_equiv step_pta_vend_5)
        apply (simp add: possible_steps_vend)
        apply (simp add: vend_general_def regsimp)
@@ -1264,7 +1249,7 @@ lemma possible_steps_merged_vends_coin100: "possible_steps (tm merged_vends) 1 r
               apply (simp_all add: transitions selectGeneral_def vend_general_def)
     by force
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_1_1: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 1 1 <R 1 := (Str ''coke'')> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_1_1: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 1 1 <R 1 := (Str ''coke'')> Map.empty t"
 proof(induct t)
   case Nil
   then show ?case
@@ -1282,7 +1267,6 @@ next
     apply (case_tac "a=((STR ''coin''), [Num 50])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_pta_def)
         apply (simp add: step_nondet_step_equiv step_pta_coin50_1)
        apply (simp add: possible_steps_merged_vends_coin50_1)
        apply (simp only: coin50_updates regsimp)
@@ -1291,7 +1275,6 @@ next
       apply (case_tac "a=((STR ''coin''), [Num 100])")
        apply (simp add: regsimp)
      apply (rule nondeterministic_simulates_trace.step_some)
-          apply (simp add: H_pta_def)
          apply (simp add: step_nondet_step_equiv step_pta_coin100_1)
         apply (simp add: possible_steps_merged_vends_coin100)
        apply (simp add: coin100_100_def)
@@ -1310,7 +1293,7 @@ lemma possible_steps_pta_9_not_vend: "aa = (STR ''vend'') \<longrightarrow> b \<
   apply (simp add: vend_pepsi_def)
   by auto
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_3_9: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 3 9 <R 1 := (Str ''pepsi'')> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_3_9: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 3 9 <R 1 := (Str ''pepsi'')> Map.empty t"
 proof(induct t)
   case Nil
   then show ?case
@@ -1330,7 +1313,6 @@ next
     apply (case_tac "a=((STR ''vend''), [])")
     apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_pta_def)
         apply (simp add: step_nondet_step_equiv step_pta_vend_9)
        apply (simp add: possible_steps)
        apply (simp add: vend_general_def)
@@ -1354,7 +1336,7 @@ lemma possible_steps_pta_8_not_coin: "aa = (STR ''coin'') \<longrightarrow> b \<
   apply (simp add: coin50_100_def hd_input2state)
   by (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_2_8: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 2 8 <R 1 := (Str ''pepsi'')> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_2_8: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 2 8 <R 1 := (Str ''pepsi'')> Map.empty t"
 proof(induct t)
   case Nil
   then show ?case
@@ -1375,7 +1357,6 @@ next
     apply (case_tac "a=((STR ''coin''), [Num 50])")
      apply (simp add: regsimp)
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_pta_def)
         apply (simp add: step_nondet_step_equiv step_pta_coin50_8)
        apply (simp add: possible_steps)
        apply (simp add: coin50_100_def)
@@ -1393,7 +1374,7 @@ lemma possible_steps_pt_7_not_coin: "aa = (STR ''coin'') \<longrightarrow> b \<n
   apply (simp add: tm_def pta_def Set.filter_def coin50_50_def hd_input2state)
   by (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_1_7: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 1 7 <R 1 := (Str ''pepsi'')> Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_1_7: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 1 7 <R 1 := (Str ''pepsi'')> Map.empty t"
 proof(induct t)
   case Nil
   then show ?case
@@ -1414,7 +1395,6 @@ next
     apply (case_tac "a=((STR ''coin''), [Num 50])")
      apply (simp add: regsimp)
      apply (rule nondeterministic_simulates_trace.step_some)
-          apply (simp add: H_pta_def)
          apply (simp add: step_nondet_step_equiv step_pta_coin50_7)
         apply (simp add: possible_steps_coin50)
        apply (simp add: coin50_50_def)
@@ -1439,7 +1419,7 @@ lemma possible_steps_pta_0_not_select: " aa = (STR ''select'') \<longrightarrow>
   apply (simp add: transitions hd_input2state)
   by (metis One_nat_def length_0_conv length_Suc_conv list.sel(1))
 
-lemma nondeterministic_simulates_trace_merged_vends_pta_0_0: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 0 0 Map.empty Map.empty t H_pta"
+lemma nondeterministic_simulates_trace_merged_vends_pta_0_0: "nondeterministic_simulates_trace (tm merged_vends) (tm pta) 0 0 Map.empty Map.empty t"
 proof(induct t)
   case Nil
   then show ?case
@@ -1460,7 +1440,6 @@ next
     apply (case_tac "a=((STR ''select''), [(Str ''coke'')])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-          apply (simp add: H_pta_def)
          apply (simp add: step_nondet_step_equiv step_pta_selectCoke)
         apply (simp add: possible_steps)
        apply (simp only: selectGeneral_updates)
@@ -1469,7 +1448,6 @@ next
     apply (case_tac "a=((STR ''select''), [(Str ''pepsi'')])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-          apply (simp add: H_pta_def)
          apply (simp add: step_nondet_step_equiv step_pta_selectPepsi)
         apply (simp add: possible_steps)
        apply (simp only: selectGeneral_updates)
@@ -1815,7 +1793,7 @@ lemma merge_states_1_3: "merge_states 1 3 merged_1_2 = merged_1_3 \<and> merge_s
 definition r1_true :: "context" where
   "r1_true = \<lbrakk>V (R 1) \<mapsto> Bc True\<rbrakk>"
 
-lemma nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_1_3: "nondeterministic_simulates_trace (tm merged_1_3_coin) (tm merged_vends) 1 3 <R 1 := hd b, R 2 := Num 100> <R 1 := hd b> t H_merged_1_2"
+lemma nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_1_3: "nondeterministic_simulates_trace (tm merged_1_3_coin) (tm merged_vends) 1 3 <R 1 := hd b, R 2 := Num 100> <R 1 := hd b> t"
 proof(induct t)
   case Nil
   then show ?case
@@ -1856,7 +1834,6 @@ next
     apply (case_tac "a= ((STR ''vend''), [])")
     apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_merged_1_2_def)
         apply (simp add: nondeterministic_step_def possible_steps_merged_vends_vend)
        apply (simp add: possible_steps_merged_1_3_coin_vend)
       apply (simp add: vend_general_def)
@@ -1873,7 +1850,7 @@ next
     by (simp add: nondeterministic_step_def possible_steps_not_vend)
 qed
 
-lemma nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_1_2: "nondeterministic_simulates_trace (tm merged_1_3_coin) (tm merged_vends) 1 2 <R 1 := hd b, R 2 := Num 50> <R 1 := hd b> t H_merged_1_2"
+lemma nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_1_2: "nondeterministic_simulates_trace (tm merged_1_3_coin) (tm merged_vends) 1 2 <R 1 := hd b, R 2 := Num 50> <R 1 := hd b> t"
 proof(induct t)
   case Nil
   then show ?case
@@ -1912,7 +1889,6 @@ next
     apply (case_tac "a = ((STR ''coin''), [Num 50])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-          apply (simp add: H_merged_1_2_def)
          apply (simp add: nondeterministic_step_def possible_steps_merged_vends_coin50_2)
         apply (simp add: possible_steps_merged_1_3_coin_1_coin)
        apply simp
@@ -1925,7 +1901,7 @@ next
     by (simp add: nondeterministic_step_def possible_steps_not_coin)
 qed
 
-lemma nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_5_5: "nondeterministic_simulates_trace (tm merged_1_3_coin) (tm merged_vends) 5 5 <R 1 := hd b, R 2 := Num 0> <R 1 := hd b> t H_merged_1_2"
+lemma nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_5_5: "nondeterministic_simulates_trace (tm merged_1_3_coin) (tm merged_vends) 5 5 <R 1 := hd b, R 2 := Num 0> <R 1 := hd b> t"
 proof(induct t)
   case Nil
   then show ?case
@@ -1957,7 +1933,6 @@ next
     apply (case_tac "a=((STR ''vend''), [])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_merged_1_2_def)
         apply (simp add: nondeterministic_step_def possible_steps_merged_vends_vend)
        apply (simp add: possible_steps_other_vend)
       apply simp
@@ -1974,7 +1949,7 @@ next
     by (simp add: nondeterministic_step_def stop_2)
 qed
 
-lemma nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_1_1: "nondeterministic_simulates_trace (tm merged_1_3_coin) (tm merged_vends) 1 1 <R 1 := hd b, R 2 := Num 0> <R 1 := hd b> t H_merged_1_2"
+lemma nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_1_1: "nondeterministic_simulates_trace (tm merged_1_3_coin) (tm merged_vends) 1 1 <R 1 := hd b, R 2 := Num 0> <R 1 := hd b> t"
 proof(induct t)
   case Nil
   then show ?case
@@ -2042,7 +2017,6 @@ next
     apply (case_tac "a = ((STR ''coin''), [Num 50])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-          apply (simp add: H_merged_1_2_def)
          apply (simp add: nondeterministic_step_def possible_steps_merged_vends_coin50_1)
         apply (simp add: possible_steps_merged_1_3_coin_coin)
        apply (simp add: coinGeneral_def regsimp_2)
@@ -2052,7 +2026,6 @@ next
     apply (case_tac "a = ((STR ''coin''), [Num 100])")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_merged_1_2_def)
         apply (simp add: nondeterministic_step_def possible_steps_coin_100)
     using go_to_5 apply auto[1]
        apply simp
@@ -2072,7 +2045,7 @@ lemma possible_steps_merged_vends_select: "\<forall>b. length b = 1 \<longrighta
             apply (simp_all add: selectGeneral_def)
   by force
 
-lemma nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_0_0:"nondeterministic_simulates_trace (tm merged_1_3_coin) (tm merged_vends) 0 0 Map.empty Map.empty t H_merged_1_2"
+lemma nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_0_0:"nondeterministic_simulates_trace (tm merged_1_3_coin) (tm merged_vends) 0 0 Map.empty Map.empty t"
 proof(induct t)
   case Nil
   then show ?case
@@ -2107,7 +2080,6 @@ next
     apply (case_tac "aa = (STR ''select'') \<and> length b = 1")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-          apply (simp add: H_merged_1_2_def)
          apply (simp add: nondeterministic_step_def possible_steps_merged_vends_select)
         apply (simp add: possible_steps_merged_1_3_coin_select)
        apply simp
@@ -2121,7 +2093,7 @@ next
     by (simp add: nondeterministic_step_def stop)
 qed
 
-lemma nondeterministic_simulates_merged_1_3_coin_merged_vends: "nondeterministic_simulates (tm merged_1_3_coin) (tm merged_vends) H_merged_1_2"
+lemma nondeterministic_simulates_merged_1_3_coin_merged_vends: "nondeterministic_simulates (tm merged_1_3_coin) (tm merged_vends)"
   apply (simp add: nondeterministic_simulates_def)
   by (simp add: nondeterministic_simulates_trace_merged_1_3_coin_merged_vends_0_0)
 
@@ -2315,7 +2287,7 @@ lemma possible_steps_merged_1_5_coin_vend: "possible_steps (tm merged_1_5_coin) 
    apply force
   by force
 
-lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_3: "nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 1 3 <R 1 := b, R 2 := Num 100> <R 1 := b> t H_merged_1_5"
+lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_3: "nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 1 3 <R 1 := b, R 2 := Num 100> <R 1 := b> t"
 proof(induct t)
   case Nil
   then show ?case
@@ -2336,7 +2308,6 @@ next
     apply (case_tac "a = ((STR ''vend''), [])")
     apply simp
     apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_merged_1_5_def)
         apply (simp add: nondeterministic_step_def possible_steps_vend)
        apply (simp add: possible_steps_merged_1_5_coin_vend)
        apply auto[1]
@@ -2354,7 +2325,7 @@ next
     by (simp add: nondeterministic_step_def possible_steps_not_vend)
 qed
 
-lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_2: "nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 1 2 <R 1 := b, R 2 := Num 50> <R 1 := b> t H_merged_1_5"
+lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_2: "nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 1 2 <R 1 := b, R 2 := Num 50> <R 1 := b> t"
 proof(induct t)
   case Nil
   then show ?case
@@ -2385,7 +2356,6 @@ next
     apply (case_tac "a = ((STR ''coin''), [Num 50])")
     apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-          apply (simp add: H_merged_1_5_def)
          apply (simp add: nondeterministic_step_def possible_steps_merged_vends_coin50_2)
         apply (simp add: possible_steps_merged_1_5_coin_coin)
        apply simp
@@ -2398,7 +2368,7 @@ next
     by (simp add: nondeterministic_step_def possible_steps_not_coin)
 qed
 
-lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_5: "nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 1 5 <R 1 := hd b, R 2 := Num 100> <R 1 := hd b> t H_merged_1_5"
+lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_5: "nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 1 5 <R 1 := hd b, R 2 := Num 100> <R 1 := hd b> t"
 proof(induct t)
   case Nil
   then show ?case
@@ -2423,7 +2393,6 @@ next
     apply (case_tac "a = ((STR ''vend''), [])")
     apply simp
     apply (rule nondeterministic_simulates_trace.step_some)
-         apply (simp add: H_merged_1_5_def)
         apply (simp add: nondeterministic_step_def possible_steps_vend)
        apply (simp add: possible_steps_merged_1_5_coin_vend)
        apply auto[1]
@@ -2443,7 +2412,7 @@ next
     by (simp add: nondeterministic_step_def stop_2)
 qed
 
-lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_1: "nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 1 1 <R 1 := hd b, R 2 := Num 0> <R 1 := hd b> t H_merged_1_5"
+lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_1_1: "nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 1 1 <R 1 := hd b, R 2 := Num 0> <R 1 := hd b> t"
 proof (induct t)
   case Nil
   then show ?case
@@ -2496,7 +2465,6 @@ next
     apply (case_tac "a = ((STR ''coin''), [Num 50])")
     apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-          apply (simp add: H_merged_1_5_def)
          apply (simp add: nondeterministic_step_def possible_steps_merged_vends_coin50_1)
         apply (simp add: possible_steps_merged_1_5_coin_coin)
        apply simp
@@ -2506,7 +2474,6 @@ next
     apply (case_tac "a = ((STR ''coin''), [Num 100])")
        apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-          apply (simp add: H_merged_1_5_def)
          apply (simp add: nondeterministic_step_def possible_steps_merged_vends_coin100)
         apply (simp add: possible_steps_merged_1_5_coin_coin)
        apply simp
@@ -2519,7 +2486,7 @@ next
     by (simp add: nondeterministic_step_def stop)
 qed
 
-lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_0_0: "nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 0 0 Map.empty Map.empty t H_merged_1_5"
+lemma nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_0_0: "nondeterministic_simulates_trace (tm merged_1_5_coin) (tm merged_vends) 0 0 Map.empty Map.empty t"
 proof(induct t)
   case Nil
   then show ?case
@@ -2552,7 +2519,6 @@ next
     apply (case_tac "aa = (STR ''select'') \<and> length b = 1")
      apply simp
      apply (rule nondeterministic_simulates_trace.step_some)
-          apply (simp add: H_merged_1_5_def)
          apply (simp add: nondeterministic_step_def possible_steps_merged_vends_select)
         apply (simp add: possible_steps_merged_1_5_coin_select)
        apply simp

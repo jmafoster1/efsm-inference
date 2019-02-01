@@ -18,8 +18,10 @@ object FrontEnd {
     val coin = list(0)(0)("inputs").asInstanceOf[List[Any]].map(x => TypeConversion.toValue(x))
     val log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)))
 
+    val heuristic = Trace_Matches.heuristic_1(log)
+
     println("Hello inference!")
-    val inferred = (Inference.learn(log, (SelectionStrategies.naive_score _).curried, (Inference.null_generator _).curried, (Inference.null_modifier _).curried))
+    val inferred = (Inference.learn(log, (SelectionStrategies.naive_score _).curried, (Inference.null_generator _).curried, heuristic))
 
     println("The inferred machine is "+(if (Inference.nondeterminism(Inference.toiEFSM(inferred))) "non" else "")+"deterministic")
 

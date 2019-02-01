@@ -85,10 +85,13 @@ definition i_step :: "iEFSM \<Rightarrow> nat \<Rightarrow> datastate \<Rightarr
 
 type_synonym match = "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> ((transition \<times> nat) \<times> ioTag \<times> nat))"
 
+definition "ThrowNone = (\<lparr>Label=STR '''', Arity=0, Guard=[], Outputs=[], Updates=[]\<rparr>, 0)"
+
 primrec (nonexhaustive) walk_up_to :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> execution \<Rightarrow> (transition \<times> nat)" where
   "walk_up_to n e s r (h#t) =
     (case (i_step e s r (fst h) (fst (snd h))) of
-      (Some (transition, s', uid, updated)) \<Rightarrow> (case n of 0 \<Rightarrow> (transition, uid) | Suc m \<Rightarrow> walk_up_to m e s' updated t)
+      (Some (transition, s', uid, updated)) \<Rightarrow> (case n of 0 \<Rightarrow> (transition, uid) | Suc m \<Rightarrow> walk_up_to m e s' updated t) |
+      None \<Rightarrow> ThrowNone
     )"
 
 definition find_intertrace_matches_aux :: "(index \<times> index) fset \<Rightarrow> iEFSM \<Rightarrow> execution \<Rightarrow> match fset" where
@@ -122,8 +125,11 @@ definition get_biggest_t_reg :: "transition \<Rightarrow> nat" where
 definition new_reg :: "iEFSM \<Rightarrow> nat" where
   "new_reg e = (fMax (fimage (\<lambda>(_, (_, _), t). get_biggest_t_reg t) e)) + 1"
 
+definition "guard_filter inputX = (\<lambda>g. \<nexists>a. g = gexp.Eq (V (I inputX)) a \<or> g = gexp.Eq a (V (I inputX)))"
+declare guard_filter_def [simp]
+
 definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
-  "remove_guard_add_update t inputX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (filter (\<lambda>g. \<nexists>a. g = gexp.Eq (V (I inputX)) a \<or> g = gexp.Eq a (V (I inputX))) (Guard t)), Outputs = (Outputs t), Updates = (R outputX, (V (I inputX)))#(Updates t)\<rparr>"
+  "remove_guard_add_update t inputX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (filter (guard_filter inputX) (Guard t)), Outputs = (Outputs t), Updates = (R outputX, (V (I inputX)))#(Updates t)\<rparr>"
 
 definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
   "generalise_output t regX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (Guard t), Outputs = list_update (Outputs t) outputX (V (R regX)), Updates = (Updates t)\<rparr>"
@@ -158,8 +164,5 @@ definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarro
 
 (* type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option" *)
 definition heuristic_1 :: "log \<Rightarrow> update_modifier" where
-  "heuristic_1 l = (\<lambda>t1 t2 s old new. case modify (find_intratrace_matches l old) t1 t2 old of
-                                        None \<Rightarrow> None |
-                                        Some x \<Rightarrow> Some (x, H, H)
-                   )"
-end
+  "heuristic_1 l = (\<lambda>t1 t2 s old new. modify (find_intratrace_matches l new) t1 t2 new)"
+end                                                   
