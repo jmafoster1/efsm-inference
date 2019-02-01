@@ -217,42 +217,9 @@ lemma i_possible_steps_coin50_2: "i_possible_steps merged_4_10 2 r (STR ''coin''
   apply (simp_all add: transitions)
   by force
 
-(*definition pta :: iEFSM where
-  "pta = {|(0, (0, 1), selectCoke),  (2, (1, 2), coin50_50), (4, (2, 3), coin50_100),  (5, (3, 4), vend_coke),
-                                                             (3, (1, 5), coin100_100), (6, (5, 6), vend_coke),
-           (1, (0, 7), selectPepsi), (7, (7, 8), coin50_50), (8, (8, 9), coin50_100),  (9, (9, 10), vend_pepsi)|}"*)
-
-fun get_aexp_biggest_reg :: "aexp \<Rightarrow> nat" where
-  "get_aexp_biggest_reg (L _) = 0" |
-  "get_aexp_biggest_reg (V (R n)) = n" |
-  "get_aexp_biggest_reg (V (I _)) = 0" |
-  "get_aexp_biggest_reg (Plus a1 a2) = max (get_aexp_biggest_reg a1) (get_aexp_biggest_reg a2)" |
-  "get_aexp_biggest_reg (Minus a1 a2) = max (get_aexp_biggest_reg a1) (get_aexp_biggest_reg a2)"
-
-fun get_gexp_biggest_reg :: "gexp \<Rightarrow> nat" where
-  "get_gexp_biggest_reg (gexp.Bc _) = 0" |
-  "get_gexp_biggest_reg (gexp.Eq a1 a2) = max (get_aexp_biggest_reg a1) (get_aexp_biggest_reg a2)" |
-  "get_gexp_biggest_reg (gexp.Gt a1 a2) = max (get_aexp_biggest_reg a1) (get_aexp_biggest_reg a2)" |
-  "get_gexp_biggest_reg (gexp.Nor g1 g2) = max (get_gexp_biggest_reg g1) (get_gexp_biggest_reg g2)" |
-  "get_gexp_biggest_reg (gexp.Null (R n)) = n" |
-  "get_gexp_biggest_reg (gexp.Null (I n)) = 0"
-
-definition get_biggest_t_reg :: "transition \<Rightarrow> nat" where
-  "get_biggest_t_reg t = (let s = (fset_of_list ((map get_gexp_biggest_reg (Guard t))@ (map (\<lambda>(_, a). get_aexp_biggest_reg a) (Updates t)))) in 
-                          if s = {||} then 0 else fMax s)"
-
-definition new_reg :: "iEFSM \<Rightarrow> nat" where
-  "new_reg e = (fMax (fimage (\<lambda>(_, (_, _), t). get_biggest_t_reg t) e)) + 1"
-
 lemma new_reg_pta: "new_reg pta = 1"
   apply (simp add: new_reg_def)
   by (simp add: pta_def get_biggest_t_reg_def transitions)
-
-definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
-  "remove_guard_add_update t inputX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (filter (\<lambda>g. \<nexists>a. g = gexp.Eq (V (I inputX)) a \<or> g = gexp.Eq a (V (I inputX))) (Guard t)), Outputs = (Outputs t), Updates = (R outputX, (V (I inputX)))#(Updates t)\<rparr>"
-
-definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
-  "generalise_output t regX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (Guard t), Outputs = list_update (Outputs t) outputX (V (R regX)), Updates = (Updates t)\<rparr>"
 
 lemma generalise_selectCoke: "remove_guard_add_update selectCoke 1 1 = selectGeneral"
   apply (simp add: selectCoke_def remove_guard_add_update_def)
@@ -272,50 +239,16 @@ lemma generalise_vend_pepsi: "generalise_output vend_pepsi 1 0 = vend_general"
   apply (simp add: vend_pepsi_def)
   by (simp add: vend_general_def)
 
-primrec count :: "'a \<Rightarrow> 'a list \<Rightarrow> nat" where
-  "count _ [] = 0" |
-  "count a (h#t) = (if a = h then 1+(count a t) else count a t)"
-
-definition replaceAll :: "iEFSM \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
-  "replaceAll e old new = fimage (\<lambda>(uid, (from, to), t). if t = old then (uid, (from, to), new) else (uid, (from, to), t)) e"
-
-primrec generalise_transitions :: "((((transition \<times> nat) \<times> ioTag \<times> nat) \<times>
-     (transition \<times> nat) \<times> ioTag \<times> nat) \<times>
-    ((transition \<times> nat) \<times> ioTag \<times> nat) \<times>
-    (transition \<times> nat) \<times> ioTag \<times> nat) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "generalise_transitions [] e = e" |
-  "generalise_transitions (h#t) e = (let ((((orig1, u1), _), (orig2, u2), _), (((gen1, u1'), _), (gen2, u2), _)) = h in
-                                         generalise_transitions t (replaceAll (replaceAll e orig1 gen1) orig2 gen2))"
-
-definition strip_uids :: "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> (transition \<times> nat) \<times> ioTag \<times> nat) \<Rightarrow> ((transition \<times> ioTag \<times> nat) \<times> (transition \<times> ioTag \<times> nat))" where
-  "strip_uids x = (let (((t1, u1), io1, in1), (t2, u2), io2, in2) = x in ((t1, io1, in1), (t2, io2, in2)))"
-
-definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
-  "modify matches u1 u2 old = (let relevant = filter (\<lambda>(((_, u1'), io, _), (_, u2'), io', _). io = In \<and> io' = Out \<and> (u1 = u1' \<or> u2 = u1' \<or> u1 = u2' \<or> u2 = u2')) matches;
-                                   newReg = new_reg old;
-                                   replacements = map (\<lambda>(((t1, u1), io1, inx1), (t2, u2), io2, inx2). (((remove_guard_add_update t1 (inx1+1) newReg, u1), io1, inx1), (generalise_output t2 newReg inx2, u2), io2, inx2)) relevant;
-                                   comparisons = zip relevant replacements;
-                                   stripped_replacements = map strip_uids replacements;
-                                   to_replace = filter (\<lambda>(_, s). count (strip_uids s) stripped_replacements > 1) comparisons in
-                                if to_replace = [] then None else Some (generalise_transitions to_replace old)
-                              )"
-
-lemma intertrace_matches: "find_intratrace_matches traces pta = [
-(((coin50_50, 2), In, 0),
-   (coin50_100, 4), In, 0),
-  (((coin50_50, 2), Out, 0),
-   (coin50_100, 4), In, 0),
-  (((selectCoke, 0), In, 0),
-   (vend_coke, 5), Out, 0),
-  (((selectCoke, 0), In, 0),
-   (vend_coke, 6), Out, 0),
-  (((coin50_50, 7), In, 0),
-   (coin50_100, 8), In, 0),
-  (((coin50_50, 7), Out, 0),
-   (coin50_100, 8), In, 0),
-  (((selectPepsi, 1), In, 0),
-   (vend_pepsi, 9), Out, 0)
-]"
+lemma intertrace_matches: "find_intratrace_matches traces pta =
+  [
+    (((coin50_50, 2), In, 0),   (coin50_100, 4), In, 0),
+    (((coin50_50, 2), Out, 0),   (coin50_100, 4), In, 0),
+    (((selectCoke, 0), In, 0),   (vend_coke, 5), Out, 0),
+    (((selectCoke, 0), In, 0),   (vend_coke, 6), Out, 0),
+    (((coin50_50, 7), In, 0),   (coin50_100, 8), In, 0),
+    (((coin50_50, 7), Out, 0),   (coin50_100, 8), In, 0),
+    (((selectPepsi, 1), In, 0),   (vend_pepsi, 9), Out, 0)
+  ]"
   by eval
 
 definition relevant :: "match list" where
@@ -326,15 +259,16 @@ definition relevant :: "match list" where
    (vend_pepsi, 9), Out, 0)
 ]"
 
+definition replacements :: "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times>
+    (transition \<times> nat) \<times> ioTag \<times> nat) list" where
+  "replacements = [(((selectGeneral, 0), In, 0), (vend_general, 5), Out, 0), (((selectGeneral, 1), In, 0), (vend_general, 9), Out, 0)]"
+
+
 lemma relevant:  "filter
             (\<lambda>(((uu, u1'), io, uu), (uu, u2'), ab).
                 io = In \<and> (case ab of (io', uu) \<Rightarrow> io' = Out \<and> (u1' = 5 \<or> u1' = 9 \<or> u2' = 5 \<or> u2' = 9)))
             (find_intratrace_matches traces pta) = relevant"
   by eval
-
-definition replacements :: "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times>
-    (transition \<times> nat) \<times> ioTag \<times> nat) list" where
-  "replacements = [(((selectGeneral, 0), In, 0), (vend_general, 5), Out, 0), (((selectGeneral, 1), In, 0), (vend_general, 9), Out, 0)]"
 
 lemma replacements: "map (\<lambda>(((t1, u1), io1, inx1), (t2, u2), io2, inx2).
                    (((remove_guard_add_update t1 (inx1 + 1) 1, u1), io1, inx1), (generalise_output t2 1 inx2, u2), io2, inx2))
@@ -667,5 +601,6 @@ qed
 
 lemma "nondeterministic_simulates (tm nondeterministic_merged_vends) (tm pta) H"
   by (simp add: nondeterministic_simulates_def nondeterministic_simulates_trace_0_0)
+
 
 end

@@ -738,10 +738,10 @@ definition H_merged_1_5 :: "nat \<Rightarrow> nat" where
   "H_merged_1_5 n = (if n = 2 then 1 else if n = 3 then 1 else if n = 5 then 1 else n)"
 
 definition modifier :: update_modifier where
-  "modifier t1 t2 newFrom newEFSM oldEFSM = (if (t1, t2, newFrom, newEFSM, oldEFSM) = (coin50_50, coin50_100, 1, merged_1_8, pta) then None
-                                        else if (t1, t2, newFrom, newEFSM, oldEFSM) = (vend_pepsi, vend_coke, 3, merged_4_10, pta) then Some (merged_vends, H_merged_4_10, H_pta)
-                                        else if (t1, t2, newFrom, newEFSM, oldEFSM) = (coin50_100, coin50_50, 1, merged_1_3, merged_vends) then Some (merged_1_3_coin, H_merged_1_2, H_merged_1_2)
-                                        else if (t1, t2, newFrom, newEFSM, oldEFSM) = (coin100_100, coinGeneral, 1, merged_1_5, merged_vends) then Some (merged_1_5_coin, H_merged_1_5, H_merged_1_5)
+  "modifier t1 t2 newFrom newEFSM oldEFSM = (if (newFrom, newEFSM, oldEFSM) = (1, merged_1_8, pta) then None
+                                        else if (t1, t2, newFrom, newEFSM, oldEFSM) = (9, 5, 3, merged_4_10, pta) then Some (merged_vends, H_merged_4_10, H_pta)
+                                        else if (t1, t2, newFrom, newEFSM, oldEFSM) = (4, 2, 1, merged_1_3, merged_vends) then Some (merged_1_3_coin, H_merged_1_2, H_merged_1_2)
+                                        else if (t1, t2, newFrom, newEFSM, oldEFSM) = (3, 2, 1, merged_1_5, merged_vends) then Some (merged_1_5_coin, H_merged_1_5, H_merged_1_5)
                                         else None)"
 
 lemma set_nequiv_def: "(s \<noteq> s') = (\<exists>e. (e \<in> s \<and> e \<notin> s') \<or> (e \<in> s' \<and> e \<notin> s))"
@@ -759,7 +759,7 @@ lemma coin50_100_cant_directly_subsume_coin50_50: "\<not> directly_subsumes e t 
 
 lemma cant_merge_coins: "merge_transitions pta merged_2_9 8 1 1 2 2 coin50_100 8 coin50_50 2 generator modifier True = None"
 proof-
-  have modify_none: "modifier coin50_100 coin50_50 1 merged_2_9 pta = None"
+  have modify_none: "modifier 8 2 1 merged_2_9 pta = None"
     by eval
   show ?thesis
     apply (simp add: merge_transitions_def easy_merge_def modify_none generator_def)
@@ -773,7 +773,7 @@ lemma cant_merge_coins_2: "merge_transitions pta (merge_states (arrives 2 merged
            (arrives 8 (merge_states (arrives 2 merged_1_8) (arrives 8 merged_1_8) merged_1_8)) coin50_50 2 coin50_100 8 generator modifier
            True = None"
 proof-
-  have modify_none: "modifier coin50_50 coin50_100 (leaves 2 (merge_states (arrives 2 merged_1_8) (arrives 8 merged_1_8) merged_1_8))
+  have modify_none: "modifier 2 8 (leaves 2 (merge_states (arrives 2 merged_1_8) (arrives 8 merged_1_8) merged_1_8))
              (merge_states (arrives 2 merged_1_8) (arrives 8 merged_1_8) merged_1_8) pta = None"
     by (simp add: modifier_def transitions)
   show ?thesis
@@ -811,9 +811,8 @@ proof-
     by (simp add: coin50_50_def coinGeneral_def)
   have merge_transitions: "merge_transitions pta merged_2_9 1 8 1 2 2 coin50_50 2 coin50_100 8 generator modifier True = None"
     apply (simp add: merge_transitions_def easy_merge_def)
-    apply (simp add: generator_def modifier_def coin50_50_cant_directly_subsume_coin50_100 coin50_50_neq_coinGeneral
+    by (simp add: generator_def modifier_def coin50_50_cant_directly_subsume_coin50_100 coin50_50_neq_coinGeneral
                      coin50_100_cant_directly_subsume_coin50_50 merged_2_9_neq_merged_1_3)
-    by (simp add: transitions)
   have arrives_2_merged_1_8: "arrives 2 merged_1_8 = 2"
   proof-
     have ffilter: "ffilter (\<lambda>x. \<exists>a b ba. x = (2, (a, b), ba)) merged_1_8 = {|(2, (1, 2), coin50_50)|}"
@@ -2695,7 +2694,6 @@ proof-
   have merge_coins: "merge_transitions merged_vends merged_1_5 1 1 1 1 1 coin100_100 3 coinGeneral 2 generator modifier True = Some merged_1_5_coin"
     apply (simp add: merge_transitions_def easy_merge_1_5)
     apply (simp add: modifier_def)
-    apply (simp add: coinGeneral_def coin50_50_def)
     apply (simp add: nondeterministic_simulates_def nondeterministic_simulates_trace_merged_1_5_coin_merged_vends_0_0)
     by eval
   have arrives_5_merged_1_5_coin: "arrives 5 merged_1_5_coin = 4"
@@ -2808,7 +2806,7 @@ lemma "learn traces naive_score generator modifier = (tm final)"
 (* value "iefsm2dot merged_2_8_coin50" *)
 (* value "iefsm2dot merged_3_9" *)
 (* value "iefsm2dot merged_3_9_coin100" *)
-(* value "iefsm2dot merged_4_10" *)
+(* value "iefsm2dot_str merged_4_10" *)
 (* value "iefsm2dot merged_vends" *)
 (* value "iefsm2dot merged_1_2" *)
 (* value "iefsm2dot merged_1_3" *)

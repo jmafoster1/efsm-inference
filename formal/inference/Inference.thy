@@ -115,7 +115,7 @@ type_synonym generator_function = "iEFSM \<Rightarrow> nat \<Rightarrow> transit
 definition null_generator :: generator_function where
   "null_generator a b c d e = None"
 
-type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option"
+type_synonym update_modifier = "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option"
 
 definition null_modifier :: update_modifier where
   "null_modifier a b c d e = None"
@@ -142,7 +142,7 @@ definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<R
       \<comment> \<open> Can we modify the updates such that subsumption can occur? \<close>
       None \<Rightarrow> (
         if modify then
-          (case modifier t1 t2 newFrom newEFSM oldEFSM of
+          (case modifier u1 u2 newFrom newEFSM oldEFSM of
             None \<Rightarrow> None |
             Some (t', H\<^sub>n\<^sub>e\<^sub>w, H\<^sub>o\<^sub>l\<^sub>d) \<Rightarrow> (
               if nondeterministic_simulates (tm t') (tm oldEFSM) H\<^sub>o\<^sub>l\<^sub>d then

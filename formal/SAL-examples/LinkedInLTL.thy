@@ -110,7 +110,7 @@ definition notDetailedPDF :: "property" where
   "notDetailedPDF s \<equiv> (hd (output (shd s)) \<noteq> Some (Str ''detailedPDF''))"
 
 (*      G(login_free      =>  X(   G(    pdf_other  =>  X(notDetailedPDF))))*)
-lemma neverDetailed: "(alw (LabelEq ''login'' aand InputEq 1 (Str ''free'') ) impl (nxt (alw ((LabelEq ''pdf'' aand InputEq 1 (Str ''otherID'')) impl (nxt (not (OutputEq 1 (Some (Str ''pdfDetailed''))))))))) 
+lemma neverDetailed: "(alw (LabelEq ''login'' aand InputInxEq 1 (Str ''free'') ) impl (nxt (alw ((LabelEq ''pdf'' aand InputInxEq 1 (Str ''otherID'')) impl (nxt (not (OutputEq 1 (Some (Str ''pdfDetailed''))))))))) 
      (watch linkedIn i)"
   oops
 

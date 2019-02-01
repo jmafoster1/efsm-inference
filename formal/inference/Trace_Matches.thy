@@ -100,14 +100,66 @@ definition find_intratrace_matches :: "log \<Rightarrow> iEFSM \<Rightarrow> mat
 definition get :: "iEFSM \<Rightarrow> nat \<Rightarrow> transition" where
   "get e u = snd (snd (fthe_elem (ffilter (\<lambda>(uid, _). uid = u) e)))"
 
+fun get_aexp_biggest_reg :: "aexp \<Rightarrow> nat" where
+  "get_aexp_biggest_reg (L _) = 0" |
+  "get_aexp_biggest_reg (V (R n)) = n" |
+  "get_aexp_biggest_reg (V (I _)) = 0" |
+  "get_aexp_biggest_reg (Plus a1 a2) = max (get_aexp_biggest_reg a1) (get_aexp_biggest_reg a2)" |
+  "get_aexp_biggest_reg (Minus a1 a2) = max (get_aexp_biggest_reg a1) (get_aexp_biggest_reg a2)"
+
+fun get_gexp_biggest_reg :: "gexp \<Rightarrow> nat" where
+  "get_gexp_biggest_reg (gexp.Bc _) = 0" |
+  "get_gexp_biggest_reg (gexp.Eq a1 a2) = max (get_aexp_biggest_reg a1) (get_aexp_biggest_reg a2)" |
+  "get_gexp_biggest_reg (gexp.Gt a1 a2) = max (get_aexp_biggest_reg a1) (get_aexp_biggest_reg a2)" |
+  "get_gexp_biggest_reg (gexp.Nor g1 g2) = max (get_gexp_biggest_reg g1) (get_gexp_biggest_reg g2)" |
+  "get_gexp_biggest_reg (gexp.Null (R n)) = n" |
+  "get_gexp_biggest_reg (gexp.Null (I n)) = 0"
+
+definition get_biggest_t_reg :: "transition \<Rightarrow> nat" where
+  "get_biggest_t_reg t = (let s = (fset_of_list ((map get_gexp_biggest_reg (Guard t))@ (map (\<lambda>(_, a). get_aexp_biggest_reg a) (Updates t)))) in 
+                          if s = {||} then 0 else fMax s)"
+
+definition new_reg :: "iEFSM \<Rightarrow> nat" where
+  "new_reg e = (fMax (fimage (\<lambda>(_, (_, _), t). get_biggest_t_reg t) e)) + 1"
+
+definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
+  "remove_guard_add_update t inputX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (filter (\<lambda>g. \<nexists>a. g = gexp.Eq (V (I inputX)) a \<or> g = gexp.Eq a (V (I inputX))) (Guard t)), Outputs = (Outputs t), Updates = (R outputX, (V (I inputX)))#(Updates t)\<rparr>"
+
+definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
+  "generalise_output t regX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (Guard t), Outputs = list_update (Outputs t) outputX (V (R regX)), Updates = (Updates t)\<rparr>"
+
+primrec count :: "'a \<Rightarrow> 'a list \<Rightarrow> nat" where
+  "count _ [] = 0" |
+  "count a (h#t) = (if a = h then 1+(count a t) else count a t)"
+
+definition replaceAll :: "iEFSM \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
+  "replaceAll e old new = fimage (\<lambda>(uid, (from, to), t). if t = old then (uid, (from, to), new) else (uid, (from, to), t)) e"
+
+primrec generalise_transitions :: "((((transition \<times> nat) \<times> ioTag \<times> nat) \<times>
+     (transition \<times> nat) \<times> ioTag \<times> nat) \<times>
+    ((transition \<times> nat) \<times> ioTag \<times> nat) \<times>
+    (transition \<times> nat) \<times> ioTag \<times> nat) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "generalise_transitions [] e = e" |
+  "generalise_transitions (h#t) e = (let ((((orig1, u1), _), (orig2, u2), _), (((gen1, u1'), _), (gen2, u2), _)) = h in
+                                         generalise_transitions t (replaceAll (replaceAll e orig1 gen1) orig2 gen2))"
+
+definition strip_uids :: "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> (transition \<times> nat) \<times> ioTag \<times> nat) \<Rightarrow> ((transition \<times> ioTag \<times> nat) \<times> (transition \<times> ioTag \<times> nat))" where
+  "strip_uids x = (let (((t1, u1), io1, in1), (t2, u2), io2, in2) = x in ((t1, io1, in1), (t2, io2, in2)))"
+
 definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
-  "modify matches u1 u2 old = (let relevant = filter (\<lambda>(((_, u1'), _, _), (_, u2'), _, _). u1 = u1' \<or> u2 = u1' \<or> u1 = u2' \<or> u2 = u2') matches;
-                                   t1 = get old u1;
-                                   t2 = get old u2 in
-                                None
+  "modify matches u1 u2 old = (let relevant = filter (\<lambda>(((_, u1'), io, _), (_, u2'), io', _). io = In \<and> io' = Out \<and> (u1 = u1' \<or> u2 = u1' \<or> u1 = u2' \<or> u2 = u2')) matches;
+                                   newReg = new_reg old;
+                                   replacements = map (\<lambda>(((t1, u1), io1, inx1), (t2, u2), io2, inx2). (((remove_guard_add_update t1 (inx1+1) newReg, u1), io1, inx1), (generalise_output t2 newReg inx2, u2), io2, inx2)) relevant;
+                                   comparisons = zip relevant replacements;
+                                   stripped_replacements = map strip_uids replacements;
+                                   to_replace = filter (\<lambda>(_, s). count (strip_uids s) stripped_replacements > 1) comparisons in
+                                if to_replace = [] then None else Some (generalise_transitions to_replace old)
                               )"
-(*
-Are either of the two transitions we're interested in in the list?
-If they are, do we have a match?
-*)
+
+(* type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option" *)
+definition heuristic_1 :: "log \<Rightarrow> update_modifier" where
+  "heuristic_1 l = (\<lambda>t1 t2 s old new. case modify (find_intratrace_matches l old) t1 t2 old of
+                                        None \<Rightarrow> None |
+                                        Some x \<Rightarrow> Some (x, H, H)
+                   )"
 end

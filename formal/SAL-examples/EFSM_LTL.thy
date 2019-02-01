@@ -42,14 +42,23 @@ definition In :: "nat \<Rightarrow> state stream \<Rightarrow> value" where
 definition EventLabel :: "state stream \<Rightarrow> String.literal" where
   "EventLabel s = fst (event (shd s))"
 
+definition StateEq :: "nat option \<Rightarrow> state stream \<Rightarrow> bool" where
+  "StateEq v s \<equiv> statename (shd s) = v"
+
 definition LabelEq :: "string \<Rightarrow> state stream \<Rightarrow> bool" where
   "LabelEq v s \<equiv> EventLabel s = (String.implode v)"
 
-definition InputEq :: "nat \<Rightarrow> value \<Rightarrow> state stream \<Rightarrow> bool" where
-  "InputEq n v s \<equiv> In n s = v"
+definition InputInxEq :: "nat \<Rightarrow> value \<Rightarrow> state stream \<Rightarrow> bool" where
+  "InputInxEq n v s \<equiv> In n s = v"
+
+definition InputEq :: "value list \<Rightarrow> state stream \<Rightarrow> bool" where
+  "InputEq v s \<equiv> inputs (shd s) = v"
 
 definition OutputEq :: "nat \<Rightarrow> value option \<Rightarrow> state stream \<Rightarrow> bool" where
   "OutputEq n v s \<equiv> Out n s = v"
+
+definition RegGt :: "nat \<Rightarrow> int \<Rightarrow> state stream \<Rightarrow> bool" where
+  "RegGt n v s \<equiv> ValueGt (datastate (shd s) (R n)) (Some (Num v)) = Some True"
 
 definition notDetailedPDFslicker :: "property" where
   "notDetailedPDFslicker s \<equiv> (Out 1 s) \<noteq> Some (Str ''detailedPDF'')"
