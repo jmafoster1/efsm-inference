@@ -3252,6 +3252,10 @@ def indices(e: List[(String, (List[Value.value], List[Value.value]))]):
                       (List[Value.value],
                         List[Value.value]))](Nat.zero_nata, e))
 
+def ThrowNone[A : Groups.zero]: (Transition.transition_ext[Unit], A) =
+  (Transition.transition_exta[Unit]("", Nat.zero_nata, Nil, Nil, Nil, ()),
+    Groups.zero[A])
+
 def walk_up_to(n: Nat.nat,
                 e: FSet.fset[(Nat.nat,
                                ((Nat.nat, Nat.nat),
@@ -3269,11 +3273,7 @@ def walk_up_to(n: Nat.nat,
                                List[Value.value]](Product_Type.snd[String,
                             (List[Value.value], List[Value.value])](h)))
        match {
-       case None =>
-         {
-Dirties.writeiDot(e, "dotfiles/error.dot")
-println(n, s, r, h)
-throw new scala.MatchError()}
+       case None => ThrowNone[Nat.nat]
        case Some((transition, (sa, (uid, updated)))) =>
          (if (Nat.equal_nata(n, Nat.zero_nata)) (transition, uid)
            else walk_up_to(Nat.minus_nat(n, Nat.one_nat), e, sa, updated, t))
@@ -3435,10 +3435,10 @@ def heuristic_1(l: List[List[(String,
     (_: FSet.fset[(Nat.nat,
                     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))])
       =>
-    (newa: FSet.fset[(Nat.nat,
-                       ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))])
+    (old: FSet.fset[(Nat.nat,
+                      ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))])
       =>
-    modify(find_intratrace_matches(l, newa), t1, t2, newa))
+    modify(find_intratrace_matches(l, old), t1, t2, old))
 
 } /* object Trace_Matches */
 

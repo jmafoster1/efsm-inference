@@ -164,5 +164,5 @@ definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarro
 
 (* type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option" *)
 definition heuristic_1 :: "log \<Rightarrow> update_modifier" where
-  "heuristic_1 l = (\<lambda>t1 t2 s old new. modify (find_intratrace_matches l new) t1 t2 new)"
+  "heuristic_1 l = (\<lambda>t1 t2 s new old. modify (find_intratrace_matches l old) t1 t2 old)"
 end                                                   
