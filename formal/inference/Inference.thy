@@ -135,13 +135,12 @@ definition easy_merge :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarr
     None \<Rightarrow> None)
   )"
 
-definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> bool \<Rightarrow> iEFSM option" where
-  "merge_transitions oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 u1 t2 u2 maker modifier modify = (
+definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" where
+  "merge_transitions oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 u1 t2 u2 maker modifier = (
      case easy_merge oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 u1 t2 u2 maker of
       Some x \<Rightarrow> Some x |
       \<comment> \<open> Can we modify the updates such that subsumption can occur? \<close>
       None \<Rightarrow> (
-        if modify then
           (case modifier u1 u2 newFrom newEFSM oldEFSM of
             None \<Rightarrow> None |
             Some t' \<Rightarrow> (
@@ -150,7 +149,6 @@ definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<R
               else None
             )
           )
-        else None
       )
     )"
 
@@ -171,35 +169,17 @@ lemma exists_is_fst: "(\<lambda>x. (\<exists>s. x = (uid, s))) = (\<lambda>x. fs
   apply clarify
   by simp
 
-lemma[code]: "leaves uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (fst x = uid)) t))))"
-  by (simp only: leaves_def exists_is_fst)
-
-lemma[code]: "arrives uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. (fst x = uid)) t))))"
-  by (simp only: arrives_def exists_is_fst)
-
-lemma "(leaves uid t = n) = (\<exists>b ba. Set.filter (\<lambda>x. \<exists>a b ba. x = (uid, (a, b), ba)) (fset t) = {(uid, (n, b), ba)})"
-  apply (simp add: leaves_def ffilter_def fthe_elem_def Abs_fset_inverse)
-  apply standard
-   apply (rule_tac x="snd (fst (snd (the_elem (Set.filter (\<lambda>x. \<exists>a b ba. x = (uid, (a, b), ba)) (fset t)))))" in exI)
-   apply (rule_tac x="snd (snd (the_elem (Set.filter (\<lambda>x. \<exists>a b ba. x = (uid, (a, b), ba)) (fset t))))" in exI)
-   apply (simp add: Set.filter_def)
-   apply clarify
-   apply simp
-  oops
-
 function resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" where
-  "resolve_nondeterminism [] e t g m = (if nondeterminism t then None else Some t)" |
-  "resolve_nondeterminism (s#ss) e t g m = (
+  "resolve_nondeterminism [] _ t _ _ = (if nondeterminism t then None else Some t)" |
+  "resolve_nondeterminism (s#ss) oldEFSM newEFSM g m = (
       let (from, (to1, to2), ((t1, u1), (t2, u2))) = s;
-          t' = merge_states to1 to2 t;
-          z = (merge_states (arrives u1 t) (arrives u2 t) t)
+          destMerge = (merge_states (arrives u1 newEFSM) (arrives u2 newEFSM) newEFSM)
       in 
-      \<comment> \<open>   merge_transitions oldEFSM newEFSM t1FromOld     t2FromOld    newFrom t1NewTo t2NewTo t1 u1 t2 u2 maker modifier modify\<close>
-      (case merge_transitions  e       z      (leaves u1 e) (leaves u2 e) (leaves u1 z)    (arrives u1 z) (arrives u2 z)     t1 u1 t2 u2 g     m        True of
-        None \<Rightarrow> resolve_nondeterminism ss e t g m |
-        Some new \<Rightarrow> (case resolve_nondeterminism (rev (sorted_list_of_fset (nondeterministic_pairs new))) e new g m of
+      (case merge_transitions  oldEFSM destMerge (leaves u1 oldEFSM) (leaves u2 oldEFSM) (leaves u1 destMerge) (arrives u1 destMerge) (arrives u2 destMerge) t1 u1 t2 u2 g m of
+        None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM g m |
+        Some new \<Rightarrow> (case resolve_nondeterminism (rev (sorted_list_of_fset (nondeterministic_pairs new))) oldEFSM new g m of
                   Some new' \<Rightarrow> Some new' |
-                  None \<Rightarrow> resolve_nondeterminism ss e t g m)
+                  None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM g m)
       )
   )"
   sorry
@@ -210,6 +190,7 @@ termination
     defer apply simp
     defer apply simp
   sorry
+
 (* resolve_nondeterminism: tries to resolve any nondeterminism in a given EFSM                    *)
 (* @param n - The nondeterministic pairs of the form (origin, (dest1, dest2), t1, t2)             *)
 (* @param e - The EFSM before states s1 and s2 were merged                                        *)
