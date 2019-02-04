@@ -69,13 +69,48 @@ object Dirties {
     }
   }
 
+  def lengthAndPrint(x:List[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))],
+                     y:List[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))]): Boolean = {
+   print("newScores: ")
+   for (x1 <- x) {
+     print(PrettyPrinter.pp(x1)+", ")
+   }
+   println()
+   print("oldScores: ")
+   for (y1 <- y) {
+     print(PrettyPrinter.pp(y1)+", ")
+   }
+   println("\n")
+
+    x.length < y.length
+  }
+
+  def compareLiteralOutputs(x: List[(AExp.aexp, AExp.aexp)]) : Boolean = x match {
+    case Nil => true
+    case (s :: ss) => {
+      s match {
+        case (AExp.L(a), AExp.L(b)) => if (a != b) false else compareLiteralOutputs(ss)
+        case _ => compareLiteralOutputs(ss)
+      }
+    }
+  }
+
   def scalaDirectlySubsumes(a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
                             b: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
                             c: Nat.nat,
                             t1: Transition.transition_ext[Unit],
-                            t2: Transition.transition_ext[Unit]):
-  Boolean
-  = HOL.equal(t1, t2)
+                            t2: Transition.transition_ext[Unit]): Boolean = {
+                              if (HOL.equal(t1, t2)) {
+                                true
+                              }
+                              else if (!compareLiteralOutputs(Transition.Outputs(t1) zip Transition.Outputs(t2))) {
+                                false
+                              }
+                              else {
+                                val subsumes = readLine(f"Does\n${PrettyPrinter.transitionToString(t1)}\ndirectly subsume\n${PrettyPrinter.transitionToString(t2)}? y/n\n") == "y"
+                                subsumes
+                              }
+                            }
 
     def scalaNondeterministicSimulates(a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
                                        b: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]): Boolean

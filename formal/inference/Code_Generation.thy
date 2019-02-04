@@ -101,6 +101,9 @@ lemma[code]: "leaves uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (fst
 lemma[code]: "arrives uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. (fst x = uid)) t))))"
   by (simp only: arrives_def exists_is_fst)
 
+code_printing
+  constant compare \<rightharpoonup> (Scala) "Dirties.lengthAndPrint(_, _)"
+
 export_code heuristic_1 iefsm2dot efsm2dot GExp.conjoin naive_score null_generator null_modifier learn in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"

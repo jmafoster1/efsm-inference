@@ -9,7 +9,7 @@ object FrontEnd {
   def main(args: Array[String]): Unit = {
     println("=================================================================")
 
-    val filename = "sample-traces/vend1.json"
+    val filename = "sample-traces/vend2.json"
     val rawJson = Source.fromFile(filename).getLines.mkString
     val parsed = (parse(rawJson))
 

@@ -12,15 +12,15 @@ object PrettyPrinter {
 
   def valueToString(v: Value.value): String = {
     v match {
-      case Value.Numa(n) => n.toString()
+      case Value.Numa(Int.int_of_integer(n)) => n.toString()
       case Value.Str(s) => s
     }
   }
 
   def vnameToString(v: VName.vname): String = {
     v match {
-      case VName.I(n) => "i"+n
-      case VName.R(n) => "r"+n
+      case VName.I(Nat.Nata(n)) => "i"+n
+      case VName.R(Nat.Nata(n)) => "r"+n
     }
   }
 
@@ -33,9 +33,33 @@ object PrettyPrinter {
     }
   }
 
+  def gexpToString(g: GExp.gexp): String = g match {
+    case GExp.Bc(v) => v.toString()
+    case GExp.Eq(a, b) => (aexpToString(a) + "="+aexpToString(b))
+    case GExp.Gt(a, b) => (aexpToString(a) + ">"+aexpToString(b))
+    case GExp.Null(v) => (vnameToString(v) + "= NULL")
+    case GExp.Nor(g1, g2) => ("!("+gexpToString(g1)+"||"+gexpToString(g2)+")")
+  }
+
+  def guardsToString(g: List[GExp.gexp]): String = {
+    "["+g.map(x => gexpToString(x)).mkString(", ")+"]"
+  }
+
+  def outputsToString(g: List[AExp.aexp]): String = {
+    g.zipWithIndex.map(x => "o"+(x._2+1)+":="+aexpToString(x._1)).mkString(", ")
+  }
+
+  def updatesToString(g: List[(VName.vname, AExp.aexp)]): String = {
+    "["+g.map(a => (vnameToString(a._1)+":="+aexpToString(a._2))).mkString(", ")+"]"
+  }
+
   def transitionToString(t: Transition.transition_ext[Unit]): String = {
     (Transition.Label(t)) +
-    ":" + natToString(Transition.Arity(t))
+    ":" + natToString(Transition.Arity(t)) +
+    guardsToString(Transition.Guard(t)) +
+    "/" +
+    outputsToString(Transition.Outputs(t)) +
+    updatesToString(Transition.Updates(t))
   }
 
   def efsmToStringAux(t: ((Nat.nat, Nat.nat),
@@ -47,6 +71,12 @@ object PrettyPrinter {
   def efsmToString(e: FSet.fset[((Nat.nat, Nat.nat),
   Transition.transition_ext[Unit])]): String = {
     FSet.fimage(efsmToStringAux, e).toString()
+  }
+
+  def pp(x: (Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))) : String = x match {
+    case (Nat.Nata(from), ((Nat.Nata(to1), Nat.Nata(to2)), ((t1, Nat.Nata(u1)), (t2, Nat.Nata(u2))))) => {
+      ((from, (to1, to2), (transitionToString(t1), u1), (transitionToString(t2), u2))).toString()
+    }
   }
 
   // def efsm2dot(e: TypeConversion.TransitionMatrix): String = {

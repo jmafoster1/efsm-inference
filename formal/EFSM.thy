@@ -316,13 +316,73 @@ lemma length_equal_accepts: "(length t = length (observe_all e 0 <> t)) = accept
 type_synonym simulation_relation = "nat \<Rightarrow> nat"
 
 inductive simulates_trace :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
-  base: "simulates_trace e1 e2 s1 s2 d1 d2 []" |
-  step: "step e1 s1 d1 (fst h) (snd h) = Some (tr1, s1', p', d1') \<Longrightarrow>
-         step e2 s2 d2 (fst h) (snd h) = Some (tr2, s2', p', d2') \<Longrightarrow>
-         simulates_trace e1 e2 s1' s2' d1' d2' t \<Longrightarrow> simulates_trace e1 e2 s1 s2 d1 d2 (h#t)"
+  base: "simulates_trace e2 e1 s2 s1 d2 d1 []" |
+  step_some: "step e1 s1 d1 l i = Some (tr1, s1', p', d1') \<Longrightarrow>
+              step e2 s2 d2 l i = Some (tr2, s2', p', d2') \<Longrightarrow>
+              simulates_trace e2 e1 s2' s1' d2' d1' t \<Longrightarrow>
+              simulates_trace e2 e1 s2 s1 d2 d1 ((l, i)#t)" |
+  step_none: "step e1 s1 d1 l i = None \<Longrightarrow> simulates_trace e2 e1 s2 s1 d2 d1 ((l, i)#t)"
 
 definition simulates :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> bool" where
-  "simulates m1 m2 = (\<forall>t. simulates_trace m1 m2 0 0 <> <> t)"
+  "simulates m2 m1 = (\<forall>t. simulates_trace m2 m1 0 0 <> <> t)"
+
+lemma simulates_trace_self: "\<forall>s r. simulates_trace x x s s r r t"
+proof(induct t)
+  case Nil
+  then show ?case
+    by (simp add: simulates_trace.base)
+next
+  case (Cons a t)
+  then show ?case
+    apply (case_tac a)
+    apply simp
+    apply (rule simulates_trace.cases)
+       apply auto[1]
+      apply (metis (mono_tags, lifting) observations(2) prod.case_eq_if simulates_trace.step_some step_none)
+     apply (metis (mono_tags, lifting) observations(2) prod.case_eq_if simulates_trace.step_some step_none)
+    by (metis (mono_tags, lifting) observations(2) prod.case_eq_if simulates_trace.step_some step_none)
+qed
+
+lemma simulates_self: "simulates x x"
+  by (simp add: simulates_def simulates_trace_self)
+
+lemma test: "simulates_trace x y s2 s1 d2 d1 ((l, i) # t) \<Longrightarrow> step y s1 d1 l i = None \<Longrightarrow> step x s2 d2 l i = None"
+  sorry
+
+lemma "\<forall>sx sy sz rx ry rz. simulates_trace x y sx sy rx ry t \<longrightarrow>
+                           simulates_trace y z sy sz ry rz t \<longrightarrow>
+                           simulates_trace x z sx sz rx rz t"
+proof(induct t)
+case Nil
+  then show ?case
+    by (simp add: simulates_trace.base)
+next
+case (Cons a t)
+  then show ?case
+    apply (case_tac a)
+    apply simp
+    apply (rule simulates_trace.cases)
+    using simulates_trace.base apply blast
+      defer
+      apply simp
+     apply simp
+    apply clarify
+    apply simp
+    apply (rule simulates_trace.cases)
+       apply simp
+      apply simp
+     apply clarify
+     apply simp
+     defer
+     apply clarify
+     apply simp
+    using test
+     apply (meson step_none)
+
+qed
+
+lemma "simulates x y \<Longrightarrow> simulates y x \<Longrightarrow> simulates x z"
+  apply (simp add: simulates_def)
 
 inductive gets_us_to :: "nat \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
   base: "s = target \<Longrightarrow> gets_us_to target _ s _ []" |

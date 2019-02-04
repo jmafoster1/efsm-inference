@@ -74,8 +74,11 @@ definition nondeterministic_pairs :: "iEFSM \<Rightarrow> nondeterministic_pair 
 definition nondeterministic_transitions :: "iEFSM \<Rightarrow> nondeterministic_pair option" where
   "nondeterministic_transitions t = (if nondeterministic_pairs t = {||} then None else Some (fMax (nondeterministic_pairs t)))"
 
-definition nondeterminism :: "iEFSM \<Rightarrow> bool" where
-  "nondeterminism t = (nondeterministic_pairs t \<noteq> {||})"
+definition deterministic :: "iEFSM \<Rightarrow> bool" where
+  "deterministic t = (nondeterministic_pairs t = {||})"
+
+definition nondeterministic :: "iEFSM \<Rightarrow> bool" where
+  "nondeterministic t = (\<not> deterministic t)"
 
 definition replace_transition :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
   "replace_transition t uid from to orig new = (ffilter (\<lambda>x. snd x \<noteq> ((from, to), orig) \<and> snd x \<noteq> ((from, to), new)) t) |\<union>| {|(uid, (from, to), new)|}"
@@ -143,11 +146,7 @@ definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<R
       None \<Rightarrow> (
           (case modifier u1 u2 newFrom newEFSM oldEFSM of
             None \<Rightarrow> None |
-            Some t' \<Rightarrow> (
-              if nondeterministic_simulates (tm t') (tm oldEFSM) then
-                Some t'
-              else None
-            )
+            Some t' \<Rightarrow> Some t'
           )
       )
     )"
@@ -169,27 +168,27 @@ lemma exists_is_fst: "(\<lambda>x. (\<exists>s. x = (uid, s))) = (\<lambda>x. fs
   apply clarify
   by simp
 
+definition "compare x y = (length x < length y)"
+
 function resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" where
-  "resolve_nondeterminism [] _ t _ _ = (if nondeterminism t then None else Some t)" |
+  "resolve_nondeterminism [] old new _ _ = (if deterministic new \<and> simulates (tm new) (tm old) then Some new else None)" |
   "resolve_nondeterminism (s#ss) oldEFSM newEFSM g m = (
       let (from, (to1, to2), ((t1, u1), (t2, u2))) = s;
           destMerge = (merge_states (arrives u1 newEFSM) (arrives u2 newEFSM) newEFSM)
       in 
-      (case merge_transitions  oldEFSM destMerge (leaves u1 oldEFSM) (leaves u2 oldEFSM) (leaves u1 destMerge) (arrives u1 destMerge) (arrives u2 destMerge) t1 u1 t2 u2 g m of
+      (case merge_transitions oldEFSM destMerge (leaves u1 oldEFSM) (leaves u2 oldEFSM) (leaves u1 destMerge) (arrives u1 destMerge) (arrives u2 destMerge) t1 u1 t2 u2 g m of
         None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM g m |
-        Some new \<Rightarrow> (case resolve_nondeterminism (rev (sorted_list_of_fset (nondeterministic_pairs new))) oldEFSM new g m of
-                  Some new' \<Rightarrow> Some new' |
-                  None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM g m)
+        Some new \<Rightarrow> (let newScores = (rev (sorted_list_of_fset (nondeterministic_pairs new))) in 
+                        (case resolve_nondeterminism newScores oldEFSM new g m of
+                          Some new' \<Rightarrow> Some new' |
+                          None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM g m
+                        )
+                    )
       )
   )"
   sorry
 termination
-  apply standard
-     apply auto[1]
-    apply simp
-    defer apply simp
-    defer apply simp
-  sorry
+sorry
 
 (* resolve_nondeterminism: tries to resolve any nondeterminism in a given EFSM                    *)
 (* @param n - The nondeterministic pairs of the form (origin, (dest1, dest2), t1, t2)             *)
@@ -200,7 +199,7 @@ termination
 (* @param g - A function which takes two transitions and generates one which subsumes them both   *)
 (* @param m - A function which modifies the nondeterministic EFSM                                 *)
 definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" where
-"merge e s1 s2 g m = (if s1 = s2 then Some (e) else (let t' = (merge_states s1 s2 e) in
+"merge e s1 s2 g m = (if s1 = s2 then None else (let t' = (merge_states s1 s2 e) in
                        \<comment> \<open> Have we got any nondeterminism? \<close>
                        (if \<not> nondeterminism t' then
                          \<comment> \<open> If not then we're good to go \<close>
@@ -221,7 +220,10 @@ lemma inference_step_none: "inference_step e [] g m = None"
   by simp
 
 function infer :: "iEFSM \<Rightarrow> strategy \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> iEFSM" where
-  "infer t r g m = (case inference_step t (rev (sorted_list_of_fset (score t r))) g m of None \<Rightarrow> t | Some new \<Rightarrow> infer new r g m)"
+  "infer t r g m = (case inference_step t (rev (sorted_list_of_fset (score t r))) g m of
+                      None \<Rightarrow> t |
+                      Some new \<Rightarrow> infer new r g m
+                    )"
   by auto
 termination
 proof-

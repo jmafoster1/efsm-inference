@@ -149,6 +149,13 @@ primrec generalise_transitions :: "((((transition \<times> nat) \<times> ioTag \
 definition strip_uids :: "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> (transition \<times> nat) \<times> ioTag \<times> nat) \<Rightarrow> ((transition \<times> ioTag \<times> nat) \<times> (transition \<times> ioTag \<times> nat))" where
   "strip_uids x = (let (((t1, u1), io1, in1), (t2, u2), io2, in2) = x in ((t1, io1, in1), (t2, io2, in2)))"
 
+primrec distinct_aux :: "(nat \<times> (nat \<times> nat) \<times> transition) list \<Rightarrow> transition_matrix \<Rightarrow> iEFSM" where
+  "distinct_aux [] d = toiEFSM d" |
+  "distinct_aux (h#t) d = (if snd h |\<in>| d then distinct_aux t d else distinct_aux t (finsert (snd h) d))"
+
+definition make_distinct :: "iEFSM \<Rightarrow> iEFSM" where
+  "make_distinct e = distinct_aux (sorted_list_of_fset e) {||}"
+
 definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
   "modify matches u1 u2 old = (let relevant = filter (\<lambda>(((_, u1'), io, _), (_, u2'), io', _). io = In \<and> io' = Out \<and> (u1 = u1' \<or> u2 = u1' \<or> u1 = u2' \<or> u2 = u2')) matches;
                                    newReg = new_reg old;
@@ -156,7 +163,7 @@ definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarro
                                    comparisons = zip relevant replacements;
                                    stripped_replacements = map strip_uids replacements;
                                    to_replace = filter (\<lambda>(_, s). count (strip_uids s) stripped_replacements > 1) comparisons in
-                                if to_replace = [] then None else Some (generalise_transitions to_replace old)
+                                if to_replace = [] then None else Some (make_distinct (generalise_transitions to_replace old))
                               )"
 
 (* type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option" *)
