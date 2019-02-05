@@ -452,6 +452,9 @@ have empty_neq_and: "cexp.And x y \<noteq> \<lbrakk>\<rbrakk> r"
     by (metis cexp.distinct(11) cexp.distinct(21) consistent_empty_1)
 qed
 
+lemma different_literal_outputs: "v \<noteq> v' \<Longrightarrow> \<not> subsumes c \<lparr>Label=l, Arity=n, Guard=g, Outputs = [L v], Updates = u\<rparr> \<lparr>Label=l, Arity=n, Guard=g, Outputs = [L v'], Updates = u\<rparr>"
+    by (simp add: subsumes_def)
+
 lemma "consistent (medial (medial c g) g) = consistent (medial c g)"
 proof (induct g)
   case Nil

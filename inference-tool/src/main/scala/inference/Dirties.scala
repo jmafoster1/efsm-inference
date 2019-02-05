@@ -111,8 +111,4 @@ object Dirties {
                                 subsumes
                               }
                             }
-
-    def scalaNondeterministicSimulates(a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
-                                       b: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]): Boolean
-     = true
   }

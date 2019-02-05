@@ -346,44 +346,6 @@ qed
 lemma simulates_self: "simulates x x"
   by (simp add: simulates_def simulates_trace_self)
 
-lemma test: "simulates_trace x y s2 s1 d2 d1 ((l, i) # t) \<Longrightarrow> step y s1 d1 l i = None \<Longrightarrow> step x s2 d2 l i = None"
-  sorry
-
-lemma "\<forall>sx sy sz rx ry rz. simulates_trace x y sx sy rx ry t \<longrightarrow>
-                           simulates_trace y z sy sz ry rz t \<longrightarrow>
-                           simulates_trace x z sx sz rx rz t"
-proof(induct t)
-case Nil
-  then show ?case
-    by (simp add: simulates_trace.base)
-next
-case (Cons a t)
-  then show ?case
-    apply (case_tac a)
-    apply simp
-    apply (rule simulates_trace.cases)
-    using simulates_trace.base apply blast
-      defer
-      apply simp
-     apply simp
-    apply clarify
-    apply simp
-    apply (rule simulates_trace.cases)
-       apply simp
-      apply simp
-     apply clarify
-     apply simp
-     defer
-     apply clarify
-     apply simp
-    using test
-     apply (meson step_none)
-
-qed
-
-lemma "simulates x y \<Longrightarrow> simulates y x \<Longrightarrow> simulates x z"
-  apply (simp add: simulates_def)
-
 inductive gets_us_to :: "nat \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
   base: "s = target \<Longrightarrow> gets_us_to target _ s _ []" |
   step_some: "step e s r (fst h) (snd h) =  Some (_, s', _, r') \<Longrightarrow> gets_us_to target e s' r' t \<Longrightarrow> gets_us_to target e s r (h#t)" |
