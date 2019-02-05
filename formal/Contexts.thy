@@ -7,7 +7,7 @@ transitions with register update functions.
 
 theory Contexts
   imports
-    EFSM GExp "efsm-exp.CExp" FinFun.FinFunPred
+    EFSM GExp "efsm-exp.CExp" FinFun.FinFun "inference/Transition_Ordering"
 begin
 unbundle finfun_syntax
 type_synonym "context" = "aexp \<Rightarrow>f cexp"
@@ -18,6 +18,12 @@ abbreviation empty ("\<lbrakk>\<rbrakk>") where
     _ \<Rightarrow> Bc True
   )"*)
   "empty \<equiv> (K$ Undef)"
+
+definition fun_upd :: "('a \<Rightarrow>f 'b) \<Rightarrow> 'a \<Rightarrow> 'b \<Rightarrow> ('a \<Rightarrow>f 'b)"
+  where "fun_upd f a b = f(a$:=b)"
+
+nonterminal updbinds and updbind
+
 syntax
   "_updbind" :: "'a \<Rightarrow> 'a \<Rightarrow> updbind" ("(2_ \<mapsto>/ _)")
   "_Context" :: "updbinds \<Rightarrow> 'a"      ("\<lbrakk>_\<rbrakk>")
@@ -25,6 +31,9 @@ translations
   "_Update f (_updbinds b bs)" \<rightleftharpoons> "_Update (_Update f b) bs"
   "_Context ms" == "_Update \<lbrakk>\<rbrakk> ms"
   "_Context (_updbinds b bs)" \<rightleftharpoons> "_Update (_Context b) bs"
+
+definition select_posterior :: "context" where
+  "select_posterior \<equiv> \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk>"
 
 lemma empty_not_false[simp]: "\<lbrakk>\<rbrakk> $ i \<noteq> cexp.Bc False"
   by simp
@@ -181,12 +190,35 @@ fun constrains_an_input :: "aexp \<Rightarrow> bool" where
   "constrains_an_input (Plus v va) = (constrains_an_input v \<and> constrains_an_input va)" |
   "constrains_an_input (Minus v va) = (constrains_an_input v \<and> constrains_an_input va)"
 
+primrec finfun_of :: "('a \<times> 'b) list \<Rightarrow> 'b  \<Rightarrow> 'a \<Rightarrow>f 'b"
+where
+  "finfun_of [] b = (K$ b)" |
+  "finfun_of (p # ps) b = (finfun_of ps b)(fst p $:= snd p)"
+
 definition remove_input_constraints :: "context \<Rightarrow> context" where
-  "remove_input_constraints c = Abs_finfun (\<lambda>x. if constrains_an_input x then \<lbrakk>\<rbrakk> $ x else c $ x)"
+  "remove_input_constraints c = (let d = finfun_to_list c;
+                                     safe = filter (\<lambda>x. \<not> constrains_an_input x) (finfun_to_list c)
+                                  in finfun_of (zip safe (map (\<lambda>x. c $ x) safe)) Undef)"
+
+lemma finfun_default_empty: "finfun_default empty = Undef"
+  apply (simp add: finfun_default_def)
+  apply (simp add: finfun_default_aux_def)
+  sorry
 
 lemma remove_input_constraints_empty[simp]: "remove_input_constraints \<lbrakk>\<rbrakk> = \<lbrakk>\<rbrakk>"
-  apply (simp add: remove_input_constraints_def)
-  by (simp add: finfun_const.abs_eq)
+proof-
+  have abs_finfun_false: "Abs_finfun (\<lambda>a. False) = (K$ False)"
+    using FinFun.finfun_const.abs_eq
+    by metis
+  have finfun_to_list: "finfun_to_list \<lbrakk>\<rbrakk> = []"
+    apply (simp add: finfun_to_list_def)
+     apply (simp add: finfun_dom_def)
+     apply (simp add: finfun_default_empty abs_finfun_false)
+    by auto
+  show ?thesis
+    apply (simp add: remove_input_constraints_def)
+    by (simp add: finfun_to_list)
+qed
 
 lemma consistent_remove_input_constraints[simp]: "consistent c \<Longrightarrow> consistent (remove_input_constraints c)"
 proof-
@@ -204,7 +236,7 @@ proof-
 qed
 
 definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
-  "posterior c t = (let c' = (medial c (Guard t)) in (if consistent c' then remove_input_constraints (apply_updates c' c (Updates t)) else (\<lambda>i. Bc False)))"
+  "posterior c t = (let c' = (medial c (Guard t)) in (if consistent c' then remove_input_constraints (apply_updates c' c (Updates t)) else (K$ Bc False)))"
 
 primrec posterior_n :: "nat \<Rightarrow> transition \<Rightarrow> context \<Rightarrow> context" where (* Apply a given transition to a given context n times - good for reflexive transitions*)
   "posterior_n 0 _ c = c " |
@@ -219,7 +251,7 @@ primrec posterior_sequence :: "context \<Rightarrow> transition_matrix \<Rightar
     )"
 
 definition datastate2context :: "datastate \<Rightarrow> context" where
-  "datastate2context d = (\<lambda>x. case x of V r \<Rightarrow> (case d r of None \<Rightarrow> Undef | Some v \<Rightarrow> Eq v) | _ \<Rightarrow> \<lbrakk>\<rbrakk> x)"
+  "datastate2context d = Abs_finfun (\<lambda>x. case x of V r \<Rightarrow> (case d r of None \<Rightarrow> Undef | Some v \<Rightarrow> Eq v) | _ \<Rightarrow> \<lbrakk>\<rbrakk> $ x)"
 
 definition satisfies_context :: "datastate \<Rightarrow> context \<Rightarrow> bool" where
   "satisfies_context d c = consistent (conjoin (datastate2context d) c)"
