@@ -37,11 +37,6 @@ object equal {
   implicit def `String.equal_literal`: equal[String] = new equal[String] {
     val `HOL.equal` = (a: String, b: String) => a == b
   }
-  implicit def `Optiona.equal_option`[A : equal]: equal[Option[A]] = new
-    equal[Option[A]] {
-    val `HOL.equal` = (a: Option[A], b: Option[A]) =>
-      Optiona.equal_optiona[A](a, b)
-  }
   implicit def `Value.equal_value`: equal[Value.value] = new equal[Value.value]
     {
     val `HOL.equal` = (a: Value.value, b: Value.value) =>
@@ -451,10 +446,6 @@ abstract sealed class set[A]
 final case class seta[A](a: List[A]) extends set[A]
 final case class coset[A](a: List[A]) extends set[A]
 
-def Ball[A](x0: set[A], p: A => Boolean): Boolean = (x0, p) match {
-  case (seta(xs), p) => Lista.list_all[A](p, xs)
-}
-
 def image[A, B](f: A => B, x1: set[A]): set[B] = (f, x1) match {
   case (f, seta(xs)) => seta[B](Lista.map[A, B](f, xs))
 }
@@ -814,1286 +805,6 @@ def null_state[A, B]: A => Option[B] = ((_: A) => None)
 
 } /* object AExp */
 
-object Optiona {
-
-def equal_optiona[A : HOL.equal](x0: Option[A], x1: Option[A]): Boolean =
-  (x0, x1) match {
-  case (None, Some(x2)) => false
-  case (Some(x2), None) => false
-  case (Some(x2), Some(y2)) => HOL.eq[A](x2, y2)
-  case (None, None) => true
-}
-
-def is_none[A](x0: Option[A]): Boolean = x0 match {
-  case Some(x) => false
-  case None => true
-}
-
-} /* object Optiona */
-
-object CExp {
-
-abstract sealed class cexp
-final case class Undef() extends cexp
-final case class Bc(a: Boolean) extends cexp
-final case class Eq(a: Value.value) extends cexp
-final case class Lt(a: Value.value) extends cexp
-final case class Gt(a: Value.value) extends cexp
-final case class Not(a: cexp) extends cexp
-final case class And(a: cexp, b: cexp) extends cexp
-
-def equal_cexp(x0: cexp, x1: cexp): Boolean = (x0, x1) match {
-  case (Not(x6), And(x71, x72)) => false
-  case (And(x71, x72), Not(x6)) => false
-  case (Gt(x5), And(x71, x72)) => false
-  case (And(x71, x72), Gt(x5)) => false
-  case (Gt(x5), Not(x6)) => false
-  case (Not(x6), Gt(x5)) => false
-  case (Lt(x4), And(x71, x72)) => false
-  case (And(x71, x72), Lt(x4)) => false
-  case (Lt(x4), Not(x6)) => false
-  case (Not(x6), Lt(x4)) => false
-  case (Lt(x4), Gt(x5)) => false
-  case (Gt(x5), Lt(x4)) => false
-  case (Eq(x3), And(x71, x72)) => false
-  case (And(x71, x72), Eq(x3)) => false
-  case (Eq(x3), Not(x6)) => false
-  case (Not(x6), Eq(x3)) => false
-  case (Eq(x3), Gt(x5)) => false
-  case (Gt(x5), Eq(x3)) => false
-  case (Eq(x3), Lt(x4)) => false
-  case (Lt(x4), Eq(x3)) => false
-  case (Bc(x2), And(x71, x72)) => false
-  case (And(x71, x72), Bc(x2)) => false
-  case (Bc(x2), Not(x6)) => false
-  case (Not(x6), Bc(x2)) => false
-  case (Bc(x2), Gt(x5)) => false
-  case (Gt(x5), Bc(x2)) => false
-  case (Bc(x2), Lt(x4)) => false
-  case (Lt(x4), Bc(x2)) => false
-  case (Bc(x2), Eq(x3)) => false
-  case (Eq(x3), Bc(x2)) => false
-  case (Undef(), And(x71, x72)) => false
-  case (And(x71, x72), Undef()) => false
-  case (Undef(), Not(x6)) => false
-  case (Not(x6), Undef()) => false
-  case (Undef(), Gt(x5)) => false
-  case (Gt(x5), Undef()) => false
-  case (Undef(), Lt(x4)) => false
-  case (Lt(x4), Undef()) => false
-  case (Undef(), Eq(x3)) => false
-  case (Eq(x3), Undef()) => false
-  case (Undef(), Bc(x2)) => false
-  case (Bc(x2), Undef()) => false
-  case (And(x71, x72), And(y71, y72)) =>
-    (equal_cexp(x71, y71)) && (equal_cexp(x72, y72))
-  case (Not(x6), Not(y6)) => equal_cexp(x6, y6)
-  case (Gt(x5), Gt(y5)) => Value.equal_valuea(x5, y5)
-  case (Lt(x4), Lt(y4)) => Value.equal_valuea(x4, y4)
-  case (Eq(x3), Eq(y3)) => Value.equal_valuea(x3, y3)
-  case (Bc(x2), Bc(y2)) => Product_Type.equal_boola(x2, y2)
-  case (Undef(), Undef()) => true
-}
-
-def and(xa0: cexp, x: cexp): cexp = (xa0, x) match {
-  case (Bc(true), x) => x
-  case (Undef(), Bc(true)) => Undef()
-  case (Bc(false), Bc(true)) => Bc(false)
-  case (Eq(v), Bc(true)) => Eq(v)
-  case (Lt(v), Bc(true)) => Lt(v)
-  case (Gt(v), Bc(true)) => Gt(v)
-  case (Not(v), Bc(true)) => Not(v)
-  case (And(v, va), Bc(true)) => And(v, va)
-  case (Undef(), Undef()) =>
-    (if (equal_cexp(Undef(), Undef())) Undef() else And(Undef(), Undef()))
-  case (Undef(), Bc(false)) =>
-    (if (equal_cexp(Undef(), Bc(false))) Undef() else And(Undef(), Bc(false)))
-  case (Undef(), Eq(v)) =>
-    (if (equal_cexp(Undef(), Eq(v))) Undef() else And(Undef(), Eq(v)))
-  case (Undef(), Lt(v)) =>
-    (if (equal_cexp(Undef(), Lt(v))) Undef() else And(Undef(), Lt(v)))
-  case (Undef(), Gt(v)) =>
-    (if (equal_cexp(Undef(), Gt(v))) Undef() else And(Undef(), Gt(v)))
-  case (Undef(), Not(v)) =>
-    (if (equal_cexp(Undef(), Not(v))) Undef() else And(Undef(), Not(v)))
-  case (Undef(), And(v, va)) =>
-    (if (equal_cexp(Undef(), And(v, va))) Undef() else And(Undef(), And(v, va)))
-  case (Bc(false), Undef()) =>
-    (if (equal_cexp(Bc(false), Undef())) Bc(false) else And(Bc(false), Undef()))
-  case (Bc(false), Bc(false)) =>
-    (if (equal_cexp(Bc(false), Bc(false))) Bc(false)
-      else And(Bc(false), Bc(false)))
-  case (Bc(false), Eq(v)) =>
-    (if (equal_cexp(Bc(false), Eq(v))) Bc(false) else And(Bc(false), Eq(v)))
-  case (Bc(false), Lt(v)) =>
-    (if (equal_cexp(Bc(false), Lt(v))) Bc(false) else And(Bc(false), Lt(v)))
-  case (Bc(false), Gt(v)) =>
-    (if (equal_cexp(Bc(false), Gt(v))) Bc(false) else And(Bc(false), Gt(v)))
-  case (Bc(false), Not(v)) =>
-    (if (equal_cexp(Bc(false), Not(v))) Bc(false) else And(Bc(false), Not(v)))
-  case (Bc(false), And(v, va)) =>
-    (if (equal_cexp(Bc(false), And(v, va))) Bc(false)
-      else And(Bc(false), And(v, va)))
-  case (Eq(v), Undef()) =>
-    (if (equal_cexp(Eq(v), Undef())) Eq(v) else And(Eq(v), Undef()))
-  case (Eq(v), Bc(false)) =>
-    (if (equal_cexp(Eq(v), Bc(false))) Eq(v) else And(Eq(v), Bc(false)))
-  case (Eq(v), Eq(va)) =>
-    (if (equal_cexp(Eq(v), Eq(va))) Eq(v) else And(Eq(v), Eq(va)))
-  case (Eq(v), Lt(va)) =>
-    (if (equal_cexp(Eq(v), Lt(va))) Eq(v) else And(Eq(v), Lt(va)))
-  case (Eq(v), Gt(va)) =>
-    (if (equal_cexp(Eq(v), Gt(va))) Eq(v) else And(Eq(v), Gt(va)))
-  case (Eq(v), Not(va)) =>
-    (if (equal_cexp(Eq(v), Not(va))) Eq(v) else And(Eq(v), Not(va)))
-  case (Eq(v), And(va, vb)) =>
-    (if (equal_cexp(Eq(v), And(va, vb))) Eq(v) else And(Eq(v), And(va, vb)))
-  case (Lt(v), Undef()) =>
-    (if (equal_cexp(Lt(v), Undef())) Lt(v) else And(Lt(v), Undef()))
-  case (Lt(v), Bc(false)) =>
-    (if (equal_cexp(Lt(v), Bc(false))) Lt(v) else And(Lt(v), Bc(false)))
-  case (Lt(v), Eq(va)) =>
-    (if (equal_cexp(Lt(v), Eq(va))) Lt(v) else And(Lt(v), Eq(va)))
-  case (Lt(v), Lt(va)) =>
-    (if (equal_cexp(Lt(v), Lt(va))) Lt(v) else And(Lt(v), Lt(va)))
-  case (Lt(v), Gt(va)) =>
-    (if (equal_cexp(Lt(v), Gt(va))) Lt(v) else And(Lt(v), Gt(va)))
-  case (Lt(v), Not(va)) =>
-    (if (equal_cexp(Lt(v), Not(va))) Lt(v) else And(Lt(v), Not(va)))
-  case (Lt(v), And(va, vb)) =>
-    (if (equal_cexp(Lt(v), And(va, vb))) Lt(v) else And(Lt(v), And(va, vb)))
-  case (Gt(v), Undef()) =>
-    (if (equal_cexp(Gt(v), Undef())) Gt(v) else And(Gt(v), Undef()))
-  case (Gt(v), Bc(false)) =>
-    (if (equal_cexp(Gt(v), Bc(false))) Gt(v) else And(Gt(v), Bc(false)))
-  case (Gt(v), Eq(va)) =>
-    (if (equal_cexp(Gt(v), Eq(va))) Gt(v) else And(Gt(v), Eq(va)))
-  case (Gt(v), Lt(va)) =>
-    (if (equal_cexp(Gt(v), Lt(va))) Gt(v) else And(Gt(v), Lt(va)))
-  case (Gt(v), Gt(va)) =>
-    (if (equal_cexp(Gt(v), Gt(va))) Gt(v) else And(Gt(v), Gt(va)))
-  case (Gt(v), Not(va)) =>
-    (if (equal_cexp(Gt(v), Not(va))) Gt(v) else And(Gt(v), Not(va)))
-  case (Gt(v), And(va, vb)) =>
-    (if (equal_cexp(Gt(v), And(va, vb))) Gt(v) else And(Gt(v), And(va, vb)))
-  case (Not(v), Undef()) =>
-    (if (equal_cexp(Not(v), Undef())) Not(v) else And(Not(v), Undef()))
-  case (Not(v), Bc(false)) =>
-    (if (equal_cexp(Not(v), Bc(false))) Not(v) else And(Not(v), Bc(false)))
-  case (Not(v), Eq(va)) =>
-    (if (equal_cexp(Not(v), Eq(va))) Not(v) else And(Not(v), Eq(va)))
-  case (Not(v), Lt(va)) =>
-    (if (equal_cexp(Not(v), Lt(va))) Not(v) else And(Not(v), Lt(va)))
-  case (Not(v), Gt(va)) =>
-    (if (equal_cexp(Not(v), Gt(va))) Not(v) else And(Not(v), Gt(va)))
-  case (Not(v), Not(va)) =>
-    (if (equal_cexp(Not(v), Not(va))) Not(v) else And(Not(v), Not(va)))
-  case (Not(v), And(va, vb)) =>
-    (if (equal_cexp(Not(v), And(va, vb))) Not(v) else And(Not(v), And(va, vb)))
-  case (And(v, va), Undef()) =>
-    (if (equal_cexp(And(v, va), Undef())) And(v, va)
-      else And(And(v, va), Undef()))
-  case (And(v, va), Bc(false)) =>
-    (if (equal_cexp(And(v, va), Bc(false))) And(v, va)
-      else And(And(v, va), Bc(false)))
-  case (And(v, va), Eq(vb)) =>
-    (if (equal_cexp(And(v, va), Eq(vb))) And(v, va)
-      else And(And(v, va), Eq(vb)))
-  case (And(v, va), Lt(vb)) =>
-    (if (equal_cexp(And(v, va), Lt(vb))) And(v, va)
-      else And(And(v, va), Lt(vb)))
-  case (And(v, va), Gt(vb)) =>
-    (if (equal_cexp(And(v, va), Gt(vb))) And(v, va)
-      else And(And(v, va), Gt(vb)))
-  case (And(v, va), Not(vb)) =>
-    (if (equal_cexp(And(v, va), Not(vb))) And(v, va)
-      else And(And(v, va), Not(vb)))
-  case (And(v, va), And(vb, vc)) =>
-    (if (equal_cexp(And(v, va), And(vb, vc))) And(v, va)
-      else And(And(v, va), And(vb, vc)))
-}
-
-def not(c: cexp): cexp = (c match {
-                            case Undef() => Bc(true)
-                            case Bc(true) => Bc(false)
-                            case Bc(false) => Bc(true)
-                            case Eq(value) => Not(Eq(value))
-                            case Lt(value) => Not(Lt(value))
-                            case Gt(value) => Not(Gt(value))
-                            case Not(x) => x
-                            case And(cexp1, cexp2) => Not(And(cexp1, cexp2))
-                          })
-
-def apply_gt(x0: cexp, v: cexp): (cexp, cexp) = (x0, v) match {
-  case (Undef(), v) => (Bc(false), v)
-  case (Bc(va), Undef()) => (Bc(va), Bc(false))
-  case (Eq(va), Undef()) => (Eq(va), Bc(false))
-  case (Lt(va), Undef()) => (Lt(va), Bc(false))
-  case (Gt(va), Undef()) => (Gt(va), Bc(false))
-  case (Not(va), Undef()) => (Not(va), Bc(false))
-  case (And(va, vb), Undef()) => (And(va, vb), Bc(false))
-  case (Bc(false), Bc(va)) => (Bc(false), Bc(va))
-  case (Bc(false), Eq(va)) => (Bc(false), Eq(va))
-  case (Bc(false), Lt(va)) => (Bc(false), Lt(va))
-  case (Bc(false), Gt(va)) => (Bc(false), Gt(va))
-  case (Bc(false), Not(va)) => (Bc(false), Not(va))
-  case (Bc(false), And(va, vb)) => (Bc(false), And(va, vb))
-  case (Bc(true), Bc(false)) => (Bc(true), Bc(false))
-  case (Eq(va), Bc(false)) => (Eq(va), Bc(false))
-  case (Lt(va), Bc(false)) => (Lt(va), Bc(false))
-  case (Gt(va), Bc(false)) => (Gt(va), Bc(false))
-  case (Not(va), Bc(false)) => (Not(va), Bc(false))
-  case (And(va, vb), Bc(false)) => (And(va, vb), Bc(false))
-  case (Bc(true), Not(Bc(true))) => (Bc(true), Bc(false))
-  case (Eq(va), Not(Bc(true))) => (Eq(va), Bc(false))
-  case (Lt(va), Not(Bc(true))) => (Lt(va), Bc(false))
-  case (Gt(va), Not(Bc(true))) => (Gt(va), Bc(false))
-  case (Not(va), Not(Bc(true))) => (Not(va), Bc(false))
-  case (And(va, vb), Not(Bc(true))) => (And(va, vb), Bc(false))
-  case (Not(Bc(true)), Bc(true)) => (Bc(false), Bc(true))
-  case (Not(Bc(true)), Eq(va)) => (Bc(false), Eq(va))
-  case (Not(Bc(true)), Lt(va)) => (Bc(false), Lt(va))
-  case (Not(Bc(true)), Gt(va)) => (Bc(false), Gt(va))
-  case (Not(Bc(true)), Not(Undef())) => (Bc(false), Not(Undef()))
-  case (Not(Bc(true)), Not(Bc(false))) => (Bc(false), Not(Bc(false)))
-  case (Not(Bc(true)), Not(Eq(v))) => (Bc(false), Not(Eq(v)))
-  case (Not(Bc(true)), Not(Lt(v))) => (Bc(false), Not(Lt(v)))
-  case (Not(Bc(true)), Not(Gt(v))) => (Bc(false), Not(Gt(v)))
-  case (Not(Bc(true)), Not(Not(v))) => (Bc(false), Not(Not(v)))
-  case (Not(Bc(true)), Not(And(v, vb))) => (Bc(false), Not(And(v, vb)))
-  case (Not(Bc(true)), And(va, vb)) => (Bc(false), And(va, vb))
-  case (Bc(true), Not(Bc(false))) => apply_gt(Bc(true), Bc(true))
-  case (Eq(va), Not(Bc(false))) => apply_gt(Eq(va), Bc(true))
-  case (Lt(va), Not(Bc(false))) => apply_gt(Lt(va), Bc(true))
-  case (Gt(va), Not(Bc(false))) => apply_gt(Gt(va), Bc(true))
-  case (Not(Undef()), Not(Bc(false))) => apply_gt(Not(Undef()), Bc(true))
-  case (Not(Bc(false)), Not(Bc(false))) => apply_gt(Not(Bc(false)), Bc(true))
-  case (Not(Eq(v)), Not(Bc(false))) => apply_gt(Not(Eq(v)), Bc(true))
-  case (Not(Lt(v)), Not(Bc(false))) => apply_gt(Not(Lt(v)), Bc(true))
-  case (Not(Gt(v)), Not(Bc(false))) => apply_gt(Not(Gt(v)), Bc(true))
-  case (Not(Not(v)), Not(Bc(false))) => apply_gt(Not(Not(v)), Bc(true))
-  case (Not(And(v, vb)), Not(Bc(false))) => apply_gt(Not(And(v, vb)), Bc(true))
-  case (And(va, vb), Not(Bc(false))) => apply_gt(And(va, vb), Bc(true))
-  case (Not(Bc(false)), Bc(true)) => apply_gt(Bc(true), Bc(true))
-  case (Not(Bc(false)), Eq(va)) => apply_gt(Bc(true), Eq(va))
-  case (Not(Bc(false)), Lt(va)) => apply_gt(Bc(true), Lt(va))
-  case (Not(Bc(false)), Gt(va)) => apply_gt(Bc(true), Gt(va))
-  case (Not(Bc(false)), Not(Undef())) => apply_gt(Bc(true), Not(Undef()))
-  case (Not(Bc(false)), Not(Eq(v))) => apply_gt(Bc(true), Not(Eq(v)))
-  case (Not(Bc(false)), Not(Lt(v))) => apply_gt(Bc(true), Not(Lt(v)))
-  case (Not(Bc(false)), Not(Gt(v))) => apply_gt(Bc(true), Not(Gt(v)))
-  case (Not(Bc(false)), Not(Not(v))) => apply_gt(Bc(true), Not(Not(v)))
-  case (Not(Bc(false)), Not(And(v, vb))) => apply_gt(Bc(true), Not(And(v, vb)))
-  case (Not(Bc(false)), And(va, vb)) => apply_gt(Bc(true), And(va, vb))
-  case (Bc(true), Not(Not(vb))) => apply_gt(Bc(true), vb)
-  case (Eq(va), Not(Not(vb))) => apply_gt(Eq(va), vb)
-  case (Lt(va), Not(Not(vb))) => apply_gt(Lt(va), vb)
-  case (Gt(va), Not(Not(vb))) => apply_gt(Gt(va), vb)
-  case (Not(Undef()), Not(Not(vb))) => apply_gt(Not(Undef()), vb)
-  case (Not(Eq(v)), Not(Not(vb))) => apply_gt(Not(Eq(v)), vb)
-  case (Not(Lt(v)), Not(Not(vb))) => apply_gt(Not(Lt(v)), vb)
-  case (Not(Gt(v)), Not(Not(vb))) => apply_gt(Not(Gt(v)), vb)
-  case (Not(Not(v)), Not(Not(vb))) => apply_gt(Not(Not(v)), vb)
-  case (Not(And(v, vc)), Not(Not(vb))) => apply_gt(Not(And(v, vc)), vb)
-  case (And(va, vc), Not(Not(vb))) => apply_gt(And(va, vc), vb)
-  case (Not(Not(vb)), Bc(true)) => apply_gt(vb, Bc(true))
-  case (Not(Not(vb)), Eq(va)) => apply_gt(vb, Eq(va))
-  case (Not(Not(vb)), Lt(va)) => apply_gt(vb, Lt(va))
-  case (Not(Not(vb)), Gt(va)) => apply_gt(vb, Gt(va))
-  case (Not(Not(vb)), Not(Undef())) => apply_gt(vb, Not(Undef()))
-  case (Not(Not(vb)), Not(Eq(v))) => apply_gt(vb, Not(Eq(v)))
-  case (Not(Not(vb)), Not(Lt(v))) => apply_gt(vb, Not(Lt(v)))
-  case (Not(Not(vb)), Not(Gt(v))) => apply_gt(vb, Not(Gt(v)))
-  case (Not(Not(vb)), Not(And(v, vc))) => apply_gt(vb, Not(And(v, vc)))
-  case (Not(Not(vb)), And(va, vc)) => apply_gt(vb, And(va, vc))
-  case (Bc(true), And(va, vb)) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(Bc(true), va)),
-          Product_Type.fst[cexp, cexp](apply_gt(Bc(true), vb))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(Bc(true), va)),
-           Product_Type.snd[cexp, cexp](apply_gt(Bc(true), vb))))
-  case (Eq(vc), And(va, vb)) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(Eq(vc), va)),
-          Product_Type.fst[cexp, cexp](apply_gt(Eq(vc), vb))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(Eq(vc), va)),
-           Product_Type.snd[cexp, cexp](apply_gt(Eq(vc), vb))))
-  case (Lt(vc), And(va, vb)) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(Lt(vc), va)),
-          Product_Type.fst[cexp, cexp](apply_gt(Lt(vc), vb))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(Lt(vc), va)),
-           Product_Type.snd[cexp, cexp](apply_gt(Lt(vc), vb))))
-  case (Gt(vc), And(va, vb)) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(Gt(vc), va)),
-          Product_Type.fst[cexp, cexp](apply_gt(Gt(vc), vb))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(Gt(vc), va)),
-           Product_Type.snd[cexp, cexp](apply_gt(Gt(vc), vb))))
-  case (Not(Undef()), And(va, vb)) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(Not(Undef()), va)),
-          Product_Type.fst[cexp, cexp](apply_gt(Not(Undef()), vb))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(Not(Undef()), va)),
-           Product_Type.snd[cexp, cexp](apply_gt(Not(Undef()), vb))))
-  case (Not(Eq(v)), And(va, vb)) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(Not(Eq(v)), va)),
-          Product_Type.fst[cexp, cexp](apply_gt(Not(Eq(v)), vb))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(Not(Eq(v)), va)),
-           Product_Type.snd[cexp, cexp](apply_gt(Not(Eq(v)), vb))))
-  case (Not(Lt(v)), And(va, vb)) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(Not(Lt(v)), va)),
-          Product_Type.fst[cexp, cexp](apply_gt(Not(Lt(v)), vb))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(Not(Lt(v)), va)),
-           Product_Type.snd[cexp, cexp](apply_gt(Not(Lt(v)), vb))))
-  case (Not(Gt(v)), And(va, vb)) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(Not(Gt(v)), va)),
-          Product_Type.fst[cexp, cexp](apply_gt(Not(Gt(v)), vb))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(Not(Gt(v)), va)),
-           Product_Type.snd[cexp, cexp](apply_gt(Not(Gt(v)), vb))))
-  case (Not(And(v, vd)), And(va, vb)) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(Not(And(v, vd)), va)),
-          Product_Type.fst[cexp, cexp](apply_gt(Not(And(v, vd)), vb))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(Not(And(v, vd)), va)),
-           Product_Type.snd[cexp, cexp](apply_gt(Not(And(v, vd)), vb))))
-  case (And(vc, vd), And(va, vb)) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(And(vc, vd), va)),
-          Product_Type.fst[cexp, cexp](apply_gt(And(vc, vd), vb))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(And(vc, vd), va)),
-           Product_Type.snd[cexp, cexp](apply_gt(And(vc, vd), vb))))
-  case (And(va, vb), Bc(true)) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(va, Bc(true))),
-          Product_Type.fst[cexp, cexp](apply_gt(vb, Bc(true)))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(va, Bc(true))),
-           Product_Type.snd[cexp, cexp](apply_gt(vb, Bc(true)))))
-  case (And(va, vb), Eq(vc)) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(va, Eq(vc))),
-          Product_Type.fst[cexp, cexp](apply_gt(vb, Eq(vc)))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(va, Eq(vc))),
-           Product_Type.snd[cexp, cexp](apply_gt(vb, Eq(vc)))))
-  case (And(va, vb), Lt(vc)) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(va, Lt(vc))),
-          Product_Type.fst[cexp, cexp](apply_gt(vb, Lt(vc)))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(va, Lt(vc))),
-           Product_Type.snd[cexp, cexp](apply_gt(vb, Lt(vc)))))
-  case (And(va, vb), Gt(vc)) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(va, Gt(vc))),
-          Product_Type.fst[cexp, cexp](apply_gt(vb, Gt(vc)))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(va, Gt(vc))),
-           Product_Type.snd[cexp, cexp](apply_gt(vb, Gt(vc)))))
-  case (And(va, vb), Not(Undef())) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(va, Not(Undef()))),
-          Product_Type.fst[cexp, cexp](apply_gt(vb, Not(Undef())))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(va, Not(Undef()))),
-           Product_Type.snd[cexp, cexp](apply_gt(vb, Not(Undef())))))
-  case (And(va, vb), Not(Eq(v))) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(va, Not(Eq(v)))),
-          Product_Type.fst[cexp, cexp](apply_gt(vb, Not(Eq(v))))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(va, Not(Eq(v)))),
-           Product_Type.snd[cexp, cexp](apply_gt(vb, Not(Eq(v))))))
-  case (And(va, vb), Not(Lt(v))) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(va, Not(Lt(v)))),
-          Product_Type.fst[cexp, cexp](apply_gt(vb, Not(Lt(v))))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(va, Not(Lt(v)))),
-           Product_Type.snd[cexp, cexp](apply_gt(vb, Not(Lt(v))))))
-  case (And(va, vb), Not(Gt(v))) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(va, Not(Gt(v)))),
-          Product_Type.fst[cexp, cexp](apply_gt(vb, Not(Gt(v))))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(va, Not(Gt(v)))),
-           Product_Type.snd[cexp, cexp](apply_gt(vb, Not(Gt(v))))))
-  case (And(va, vb), Not(And(v, vd))) =>
-    (and(Product_Type.fst[cexp, cexp](apply_gt(va, Not(And(v, vd)))),
-          Product_Type.fst[cexp, cexp](apply_gt(vb, Not(And(v, vd))))),
-      and(Product_Type.snd[cexp, cexp](apply_gt(va, Not(And(v, vd)))),
-           Product_Type.snd[cexp, cexp](apply_gt(vb, Not(And(v, vd))))))
-  case (Bc(true), Not(And(va, vb))) =>
-    (not(and(Product_Type.fst[cexp, cexp](apply_gt(Bc(true), va)),
-              Product_Type.fst[cexp, cexp](apply_gt(Bc(true), vb)))),
-      not(and(Product_Type.snd[cexp, cexp](apply_gt(Bc(true), va)),
-               Product_Type.snd[cexp, cexp](apply_gt(Bc(true), vb)))))
-  case (Eq(vc), Not(And(va, vb))) =>
-    (not(and(Product_Type.fst[cexp, cexp](apply_gt(Eq(vc), va)),
-              Product_Type.fst[cexp, cexp](apply_gt(Eq(vc), vb)))),
-      not(and(Product_Type.snd[cexp, cexp](apply_gt(Eq(vc), va)),
-               Product_Type.snd[cexp, cexp](apply_gt(Eq(vc), vb)))))
-  case (Lt(vc), Not(And(va, vb))) =>
-    (not(and(Product_Type.fst[cexp, cexp](apply_gt(Lt(vc), va)),
-              Product_Type.fst[cexp, cexp](apply_gt(Lt(vc), vb)))),
-      not(and(Product_Type.snd[cexp, cexp](apply_gt(Lt(vc), va)),
-               Product_Type.snd[cexp, cexp](apply_gt(Lt(vc), vb)))))
-  case (Gt(vc), Not(And(va, vb))) =>
-    (not(and(Product_Type.fst[cexp, cexp](apply_gt(Gt(vc), va)),
-              Product_Type.fst[cexp, cexp](apply_gt(Gt(vc), vb)))),
-      not(and(Product_Type.snd[cexp, cexp](apply_gt(Gt(vc), va)),
-               Product_Type.snd[cexp, cexp](apply_gt(Gt(vc), vb)))))
-  case (Not(Undef()), Not(And(va, vb))) =>
-    (not(and(Product_Type.fst[cexp, cexp](apply_gt(Not(Undef()), va)),
-              Product_Type.fst[cexp, cexp](apply_gt(Not(Undef()), vb)))),
-      not(and(Product_Type.snd[cexp, cexp](apply_gt(Not(Undef()), va)),
-               Product_Type.snd[cexp, cexp](apply_gt(Not(Undef()), vb)))))
-  case (Not(Eq(v)), Not(And(va, vb))) =>
-    (not(and(Product_Type.fst[cexp, cexp](apply_gt(Not(Eq(v)), va)),
-              Product_Type.fst[cexp, cexp](apply_gt(Not(Eq(v)), vb)))),
-      not(and(Product_Type.snd[cexp, cexp](apply_gt(Not(Eq(v)), va)),
-               Product_Type.snd[cexp, cexp](apply_gt(Not(Eq(v)), vb)))))
-  case (Not(Lt(v)), Not(And(va, vb))) =>
-    (not(and(Product_Type.fst[cexp, cexp](apply_gt(Not(Lt(v)), va)),
-              Product_Type.fst[cexp, cexp](apply_gt(Not(Lt(v)), vb)))),
-      not(and(Product_Type.snd[cexp, cexp](apply_gt(Not(Lt(v)), va)),
-               Product_Type.snd[cexp, cexp](apply_gt(Not(Lt(v)), vb)))))
-  case (Not(Gt(v)), Not(And(va, vb))) =>
-    (not(and(Product_Type.fst[cexp, cexp](apply_gt(Not(Gt(v)), va)),
-              Product_Type.fst[cexp, cexp](apply_gt(Not(Gt(v)), vb)))),
-      not(and(Product_Type.snd[cexp, cexp](apply_gt(Not(Gt(v)), va)),
-               Product_Type.snd[cexp, cexp](apply_gt(Not(Gt(v)), vb)))))
-  case (Not(And(v, vd)), Not(And(va, vb))) =>
-    (not(and(Product_Type.fst[cexp, cexp](apply_gt(Not(And(v, vd)), va)),
-              Product_Type.fst[cexp, cexp](apply_gt(Not(And(v, vd)), vb)))),
-      not(and(Product_Type.snd[cexp, cexp](apply_gt(Not(And(v, vd)), va)),
-               Product_Type.snd[cexp, cexp](apply_gt(Not(And(v, vd)), vb)))))
-  case (Not(And(va, vb)), Bc(true)) =>
-    (not(and(Product_Type.fst[cexp, cexp](apply_gt(va, Bc(true))),
-              Product_Type.fst[cexp, cexp](apply_gt(vb, Bc(true))))),
-      not(and(Product_Type.snd[cexp, cexp](apply_gt(va, Bc(true))),
-               Product_Type.snd[cexp, cexp](apply_gt(vb, Bc(true))))))
-  case (Not(And(va, vb)), Eq(vc)) =>
-    (not(and(Product_Type.fst[cexp, cexp](apply_gt(va, Eq(vc))),
-              Product_Type.fst[cexp, cexp](apply_gt(vb, Eq(vc))))),
-      not(and(Product_Type.snd[cexp, cexp](apply_gt(va, Eq(vc))),
-               Product_Type.snd[cexp, cexp](apply_gt(vb, Eq(vc))))))
-  case (Not(And(va, vb)), Lt(vc)) =>
-    (not(and(Product_Type.fst[cexp, cexp](apply_gt(va, Lt(vc))),
-              Product_Type.fst[cexp, cexp](apply_gt(vb, Lt(vc))))),
-      not(and(Product_Type.snd[cexp, cexp](apply_gt(va, Lt(vc))),
-               Product_Type.snd[cexp, cexp](apply_gt(vb, Lt(vc))))))
-  case (Not(And(va, vb)), Gt(vc)) =>
-    (not(and(Product_Type.fst[cexp, cexp](apply_gt(va, Gt(vc))),
-              Product_Type.fst[cexp, cexp](apply_gt(vb, Gt(vc))))),
-      not(and(Product_Type.snd[cexp, cexp](apply_gt(va, Gt(vc))),
-               Product_Type.snd[cexp, cexp](apply_gt(vb, Gt(vc))))))
-  case (Not(And(va, vb)), Not(Undef())) =>
-    (not(and(Product_Type.fst[cexp, cexp](apply_gt(va, Not(Undef()))),
-              Product_Type.fst[cexp, cexp](apply_gt(vb, Not(Undef()))))),
-      not(and(Product_Type.snd[cexp, cexp](apply_gt(va, Not(Undef()))),
-               Product_Type.snd[cexp, cexp](apply_gt(vb, Not(Undef()))))))
-  case (Not(And(va, vb)), Not(Eq(v))) =>
-    (not(and(Product_Type.fst[cexp, cexp](apply_gt(va, Not(Eq(v)))),
-              Product_Type.fst[cexp, cexp](apply_gt(vb, Not(Eq(v)))))),
-      not(and(Product_Type.snd[cexp, cexp](apply_gt(va, Not(Eq(v)))),
-               Product_Type.snd[cexp, cexp](apply_gt(vb, Not(Eq(v)))))))
-  case (Not(And(va, vb)), Not(Lt(v))) =>
-    (not(and(Product_Type.fst[cexp, cexp](apply_gt(va, Not(Lt(v)))),
-              Product_Type.fst[cexp, cexp](apply_gt(vb, Not(Lt(v)))))),
-      not(and(Product_Type.snd[cexp, cexp](apply_gt(va, Not(Lt(v)))),
-               Product_Type.snd[cexp, cexp](apply_gt(vb, Not(Lt(v)))))))
-  case (Not(And(va, vb)), Not(Gt(v))) =>
-    (not(and(Product_Type.fst[cexp, cexp](apply_gt(va, Not(Gt(v)))),
-              Product_Type.fst[cexp, cexp](apply_gt(vb, Not(Gt(v)))))),
-      not(and(Product_Type.snd[cexp, cexp](apply_gt(va, Not(Gt(v)))),
-               Product_Type.snd[cexp, cexp](apply_gt(vb, Not(Gt(v)))))))
-  case (Bc(true), Bc(true)) => (Bc(true), Bc(true))
-  case (Eq(v), Bc(true)) => (Eq(v), Lt(v))
-  case (Lt(v), Bc(true)) => (Lt(v), Lt(v))
-  case (Not(Gt(va)), Bc(true)) => (Not(Gt(va)), Lt(va))
-  case (Bc(true), Eq(v)) => (Gt(v), Eq(v))
-  case (Bc(true), Not(Lt(v))) => (Gt(v), Not(Lt(v)))
-  case (Bc(true), Gt(v)) => (Gt(v), Gt(v))
-  case (Bc(true), Lt(va)) => (Bc(true), Lt(va))
-  case (Bc(true), Not(Undef())) => (Bc(true), Not(Undef()))
-  case (Bc(true), Not(Eq(v))) => (Bc(true), Not(Eq(v)))
-  case (Bc(true), Not(Gt(v))) => (Bc(true), Not(Gt(v)))
-  case (Lt(v), Gt(va)) => (and(Lt(v), Gt(va)), and(Gt(va), Lt(v)))
-  case (Eq(va), Not(Gt(vb))) => (and(Eq(va), Gt(vb)), Not(Gt(vb)))
-  case (Lt(va), Not(Gt(vb))) => (and(Lt(va), Gt(vb)), Not(Gt(vb)))
-  case (Gt(va), Not(Gt(vb))) => (and(Gt(va), Gt(vb)), Not(Gt(vb)))
-  case (Not(Undef()), Not(Gt(vb))) => (and(Not(Undef()), Gt(vb)), Not(Gt(vb)))
-  case (Not(Eq(v)), Not(Gt(vb))) => (and(Not(Eq(v)), Gt(vb)), Not(Gt(vb)))
-  case (Not(Lt(v)), Not(Gt(vb))) => (and(Not(Lt(v)), Gt(vb)), Not(Gt(vb)))
-  case (Not(Gt(v)), Not(Gt(vb))) => (and(Not(Gt(v)), Gt(vb)), Not(Gt(vb)))
-  case (Eq(vb), Gt(va)) => (and(Eq(vb), Gt(va)), Gt(va))
-  case (Gt(vb), Gt(va)) => (and(Gt(vb), Gt(va)), Gt(va))
-  case (Not(Undef()), Gt(va)) => (and(Not(Undef()), Gt(va)), Gt(va))
-  case (Not(Eq(v)), Gt(va)) => (and(Not(Eq(v)), Gt(va)), Gt(va))
-  case (Not(Lt(v)), Gt(va)) => (and(Not(Lt(v)), Gt(va)), Gt(va))
-  case (Not(Gt(v)), Gt(va)) => (and(Not(Gt(v)), Gt(va)), Gt(va))
-  case (Eq(vb), Lt(va)) => (and(Eq(vb), Not(Lt(va))), Lt(va))
-  case (Lt(vb), Lt(va)) => (and(Lt(vb), Not(Lt(va))), Lt(va))
-  case (Gt(vb), Lt(va)) => (and(Gt(vb), Not(Lt(va))), Lt(va))
-  case (Not(Undef()), Lt(va)) => (and(Not(Undef()), Not(Lt(va))), Lt(va))
-  case (Not(Eq(v)), Lt(va)) => (and(Not(Eq(v)), Not(Lt(va))), Lt(va))
-  case (Not(Lt(v)), Lt(va)) => (and(Not(Lt(v)), Not(Lt(va))), Lt(va))
-  case (Not(Gt(v)), Lt(va)) => (and(Not(Gt(v)), Not(Lt(va))), Lt(va))
-  case (Lt(v), Not(Eq(vb))) => (Lt(v), and(Not(Eq(vb)), Lt(v)))
-  case (Not(Gt(v)), Not(Eq(vb))) => (Not(Gt(v)), and(Not(Eq(vb)), Lt(v)))
-  case (Eq(v), Eq(vb)) => (Eq(v), and(Eq(vb), Lt(v)))
-  case (Eq(v), Not(Undef())) => (Eq(v), and(Not(Undef()), Lt(v)))
-  case (Eq(v), Not(Eq(va))) => (Eq(v), and(Not(Eq(va)), Lt(v)))
-  case (Eq(v), Not(Lt(va))) => (Eq(v), and(Not(Lt(va)), Lt(v)))
-  case (Lt(vb), Eq(va)) => (and(Lt(vb), Gt(va)), Eq(va))
-  case (Gt(vb), Eq(va)) => (and(Gt(vb), Gt(va)), Eq(va))
-  case (Not(Undef()), Eq(va)) => (and(Not(Undef()), Gt(va)), Eq(va))
-  case (Not(Eq(v)), Eq(va)) => (and(Not(Eq(v)), Gt(va)), Eq(va))
-  case (Not(Lt(v)), Eq(va)) => (and(Not(Lt(v)), Gt(va)), Eq(va))
-  case (Not(Gt(v)), Eq(va)) => (and(Not(Gt(v)), Gt(va)), Eq(va))
-  case (Lt(v), Not(Lt(va))) => (and(Lt(v), Gt(va)), and(Not(Lt(va)), Lt(v)))
-  case (Gt(va), Not(Lt(vb))) => (and(Gt(va), Gt(vb)), Not(Lt(vb)))
-  case (Not(Undef()), Not(Lt(vb))) => (and(Not(Undef()), Gt(vb)), Not(Lt(vb)))
-  case (Not(Eq(v)), Not(Lt(vb))) => (and(Not(Eq(v)), Gt(vb)), Not(Lt(vb)))
-  case (Not(Lt(v)), Not(Lt(vb))) => (and(Not(Lt(v)), Gt(vb)), Not(Lt(vb)))
-  case (Not(Gt(v)), Not(Lt(vb))) => (and(Not(Gt(v)), Gt(vb)), Not(Lt(vb)))
-  case (Lt(vb), Not(Undef())) => (Lt(vb), Not(Undef()))
-  case (Gt(vb), Bc(true)) => (Gt(vb), Bc(true))
-  case (Gt(vb), Not(Undef())) => (Gt(vb), Not(Undef()))
-  case (Gt(vb), Not(Eq(va))) => (Gt(vb), Not(Eq(va)))
-  case (Not(Undef()), Bc(true)) => (Not(Undef()), Bc(true))
-  case (Not(Eq(v)), Bc(true)) => (Not(Eq(v)), Bc(true))
-  case (Not(Lt(v)), Bc(true)) => (Not(Lt(v)), Bc(true))
-  case (Not(Undef()), Not(Undef())) => (Not(Undef()), Not(Undef()))
-  case (Not(Eq(v)), Not(Undef())) => (Not(Eq(v)), Not(Undef()))
-  case (Not(Lt(v)), Not(Undef())) => (Not(Lt(v)), Not(Undef()))
-  case (Not(Gt(v)), Not(Undef())) => (Not(Gt(v)), Not(Undef()))
-  case (Not(Undef()), Not(Eq(va))) => (Not(Undef()), Not(Eq(va)))
-  case (Not(Eq(v)), Not(Eq(va))) => (Not(Eq(v)), Not(Eq(va)))
-  case (Not(Lt(v)), Not(Eq(va))) => (Not(Lt(v)), Not(Eq(va)))
-}
-
-def compose_plus(x: cexp, y: cexp): cexp =
-  (if ((Dirties.cexpxsatisfiable) && (Dirties.cexpysatisfiable))
-    (if ((Dirties.cexpxvalid) || (Dirties.cexpyvalid)) Bc(true)
-      else ((x, y) match {
-              case (Undef(), Undef()) => Bc(true)
-              case (Undef(), Bc(_)) => Bc(true)
-              case (Undef(), Eq(_)) => Bc(true)
-              case (Undef(), Lt(_)) => Bc(true)
-              case (Undef(), Gt(_)) => Bc(true)
-              case (Undef(), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(_) => Bc(true)
-                   case Gt(_) => Bc(true)
-                   case Not(aa) => compose_plus(Undef(), aa)
-                   case And(va, vb) =>
-                     not(and(compose_plus(Undef(), va),
-                              compose_plus(Undef(), vb)))
-                 })
-              case (Undef(), And(va, vb)) =>
-                and(compose_plus(Undef(), va), compose_plus(Undef(), vb))
-              case (Bc(_), Undef()) => Bc(true)
-              case (Bc(_), Bc(_)) => Bc(true)
-              case (Bc(_), Eq(_)) => Bc(true)
-              case (Bc(_), Lt(_)) => Bc(true)
-              case (Bc(_), Gt(_)) => Bc(true)
-              case (Bc(bool), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(_) => Bc(true)
-                   case Gt(_) => Bc(true)
-                   case Not(aa) => compose_plus(Bc(bool), aa)
-                   case And(va, vb) =>
-                     not(and(compose_plus(Bc(bool), va),
-                              compose_plus(Bc(bool), vb)))
-                 })
-              case (Bc(bool), And(va, vb)) =>
-                and(compose_plus(Bc(bool), va), compose_plus(Bc(bool), vb))
-              case (Eq(_), Undef()) => Bc(true)
-              case (Eq(_), Bc(_)) => Bc(true)
-              case (Eq(v), Eq(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Eq(a)
-                 })
-              case (Eq(v), Lt(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Lt(a)
-                 })
-              case (Eq(v), Gt(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Gt(a)
-                 })
-              case (Eq(v), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(va) =>
-                     (AExp.value_plus(Some[Value.value](v),
-                                       Some[Value.value](va))
-                        match {
-                        case None => Bc(false)
-                        case Some(c) => Not(Lt(c))
-                      })
-                   case Gt(va) =>
-                     (AExp.value_plus(Some[Value.value](v),
-                                       Some[Value.value](va))
-                        match {
-                        case None => Bc(false)
-                        case Some(c) => Not(Gt(c))
-                      })
-                   case Not(aa) => compose_plus(Eq(v), aa)
-                   case And(va, vb) =>
-                     not(and(compose_plus(Eq(v), va), compose_plus(Eq(v), vb)))
-                 })
-              case (Eq(v), And(va, vb)) =>
-                and(compose_plus(Eq(v), va), compose_plus(Eq(v), vb))
-              case (Lt(_), Undef()) => Bc(true)
-              case (Lt(_), Bc(_)) => Bc(true)
-              case (Lt(v), Eq(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Lt(a)
-                 })
-              case (Lt(v), Lt(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Lt(a)
-                 })
-              case (Lt(_), Gt(_)) => Bc(true)
-              case (Lt(v), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(_) => Bc(true)
-                   case Gt(va) =>
-                     (AExp.value_plus(Some[Value.value](v),
-                                       Some[Value.value](va))
-                        match {
-                        case None => Bc(false)
-                        case Some(aa) => Lt(aa)
-                      })
-                   case Not(aa) => compose_plus(Lt(v), aa)
-                   case And(va, vb) =>
-                     not(and(compose_plus(Lt(v), va), compose_plus(Lt(v), vb)))
-                 })
-              case (Lt(v), And(va, vb)) =>
-                and(compose_plus(Lt(v), va), compose_plus(Lt(v), vb))
-              case (Gt(_), Undef()) => Bc(true)
-              case (Gt(_), Bc(_)) => Bc(true)
-              case (Gt(v), Eq(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Gt(a)
-                 })
-              case (Gt(_), Lt(_)) => Bc(true)
-              case (Gt(v), Gt(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Gt(a)
-                 })
-              case (Gt(v), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(va) =>
-                     (AExp.value_plus(Some[Value.value](v),
-                                       Some[Value.value](va))
-                        match {
-                        case None => Bc(false)
-                        case Some(aa) => Gt(aa)
-                      })
-                   case Gt(_) => Bc(true)
-                   case Not(aa) => compose_plus(Gt(v), aa)
-                   case And(va, vb) =>
-                     not(and(compose_plus(Gt(v), va), compose_plus(Gt(v), vb)))
-                 })
-              case (Gt(v), And(va, vb)) =>
-                and(compose_plus(Gt(v), va), compose_plus(Gt(v), vb))
-              case (Not(Undef()), Undef()) => Bc(true)
-              case (Not(Undef()), Bc(_)) => Bc(true)
-              case (Not(Undef()), Eq(_)) => Bc(true)
-              case (Not(Undef()), Lt(_)) => Bc(true)
-              case (Not(Undef()), Gt(_)) => Bc(true)
-              case (Not(Undef()), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(_) => Bc(true)
-                   case Gt(_) => Bc(true)
-                   case Not(aa) => compose_plus(Not(Undef()), aa)
-                   case And(va, vb) =>
-                     not(and(compose_plus(Not(Undef()), va),
-                              compose_plus(Not(Undef()), vb)))
-                 })
-              case (Not(Undef()), And(va, vb)) =>
-                and(compose_plus(Not(Undef()), va),
-                     compose_plus(Not(Undef()), vb))
-              case (Not(Bc(_)), Undef()) => Bc(true)
-              case (Not(Bc(_)), Bc(_)) => Bc(true)
-              case (Not(Bc(_)), Eq(_)) => Bc(true)
-              case (Not(Bc(_)), Lt(_)) => Bc(true)
-              case (Not(Bc(_)), Gt(_)) => Bc(true)
-              case (Not(Bc(bool)), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(_) => Bc(true)
-                   case Gt(_) => Bc(true)
-                   case Not(aa) => compose_plus(Not(Bc(bool)), aa)
-                   case And(va, vb) =>
-                     not(and(compose_plus(Not(Bc(bool)), va),
-                              compose_plus(Not(Bc(bool)), vb)))
-                 })
-              case (Not(Bc(bool)), And(va, vb)) =>
-                and(compose_plus(Not(Bc(bool)), va),
-                     compose_plus(Not(Bc(bool)), vb))
-              case (Not(Eq(_)), _) => Bc(true)
-              case (Not(Lt(_)), Undef()) => Bc(true)
-              case (Not(Lt(_)), Bc(_)) => Bc(true)
-              case (Not(Lt(v)), Eq(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(c) => Not(Lt(c))
-                 })
-              case (Not(Lt(_)), Lt(_)) => Bc(true)
-              case (Not(Lt(v)), Gt(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Gt(a)
-                 })
-              case (Not(Lt(v)), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(va) =>
-                     (AExp.value_plus(Some[Value.value](v),
-                                       Some[Value.value](va))
-                        match {
-                        case None => Bc(false)
-                        case Some(c) => Not(Lt(c))
-                      })
-                   case Gt(_) => Bc(true)
-                   case Not(aa) => compose_plus(Not(Lt(v)), aa)
-                   case And(va, vb) =>
-                     not(and(compose_plus(Not(Lt(v)), va),
-                              compose_plus(Not(Lt(v)), vb)))
-                 })
-              case (Not(Lt(v)), And(va, vb)) =>
-                and(compose_plus(Not(Lt(v)), va), compose_plus(Not(Lt(v)), vb))
-              case (Not(Gt(_)), Undef()) => Bc(true)
-              case (Not(Gt(_)), Bc(_)) => Bc(true)
-              case (Not(Gt(v)), Eq(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(c) => Not(Gt(c))
-                 })
-              case (Not(Gt(v)), Lt(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Lt(a)
-                 })
-              case (Not(Gt(_)), Gt(_)) => Bc(true)
-              case (Not(Gt(v)), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(_) => Bc(true)
-                   case Gt(va) =>
-                     (AExp.value_plus(Some[Value.value](v),
-                                       Some[Value.value](va))
-                        match {
-                        case None => Bc(false)
-                        case Some(c) => Not(Gt(c))
-                      })
-                   case Not(aa) => compose_plus(Not(Gt(v)), aa)
-                   case And(va, vb) =>
-                     not(and(compose_plus(Not(Gt(v)), va),
-                              compose_plus(Not(Gt(v)), vb)))
-                 })
-              case (Not(Gt(v)), And(va, vb)) =>
-                and(compose_plus(Not(Gt(v)), va), compose_plus(Not(Gt(v)), vb))
-              case (Not(Not(cexpa)), Undef()) => compose_plus(cexpa, Undef())
-              case (Not(Not(cexpa)), Bc(bool)) => compose_plus(cexpa, Bc(bool))
-              case (Not(Not(cexpa)), Eq(value)) =>
-                compose_plus(cexpa, Eq(value))
-              case (Not(Not(cexpa)), Lt(value)) =>
-                compose_plus(cexpa, Lt(value))
-              case (Not(Not(cexpa)), Gt(value)) =>
-                compose_plus(cexpa, Gt(value))
-              case (Not(Not(cexpa)), Not(Undef())) =>
-                compose_plus(cexpa, Not(Undef()))
-              case (Not(Not(cexpa)), Not(Bc(bool))) =>
-                compose_plus(cexpa, Not(Bc(bool)))
-              case (Not(Not(_)), Not(Eq(_))) => Bc(true)
-              case (Not(Not(cexpa)), Not(Lt(value))) =>
-                compose_plus(cexpa, Not(Lt(value)))
-              case (Not(Not(cexpa)), Not(Gt(value))) =>
-                compose_plus(cexpa, Not(Gt(value)))
-              case (Not(Not(cexpa)), Not(Not(cexpb))) =>
-                compose_plus(cexpa, Not(Not(cexpb)))
-              case (Not(Not(cexpa)), Not(And(cexp1, cexp2))) =>
-                compose_plus(cexpa, Not(And(cexp1, cexp2)))
-              case (Not(Not(cexpa)), And(cexp1, cexp2)) =>
-                compose_plus(cexpa, And(cexp1, cexp2))
-              case (Not(And(cexp1, cexp2)), Undef()) =>
-                not(and(compose_plus(cexp1, Undef()),
-                         compose_plus(cexp2, Undef())))
-              case (Not(And(cexp1, cexp2)), Bc(bool)) =>
-                not(and(compose_plus(cexp1, Bc(bool)),
-                         compose_plus(cexp2, Bc(bool))))
-              case (Not(And(cexp1, cexp2)), Eq(value)) =>
-                not(and(compose_plus(cexp1, Eq(value)),
-                         compose_plus(cexp2, Eq(value))))
-              case (Not(And(cexp1, cexp2)), Lt(value)) =>
-                not(and(compose_plus(cexp1, Lt(value)),
-                         compose_plus(cexp2, Lt(value))))
-              case (Not(And(cexp1, cexp2)), Gt(value)) =>
-                not(and(compose_plus(cexp1, Gt(value)),
-                         compose_plus(cexp2, Gt(value))))
-              case (Not(And(cexp1, cexp2)), Not(a)) =>
-                (a match {
-                   case Undef() =>
-                     not(and(compose_plus(cexp1, Not(Undef())),
-                              compose_plus(cexp2, Not(Undef()))))
-                   case Bc(bool) =>
-                     not(and(compose_plus(cexp1, Not(Bc(bool))),
-                              compose_plus(cexp2, Not(Bc(bool)))))
-                   case Eq(_) => Bc(true)
-                   case Lt(value) =>
-                     not(and(compose_plus(cexp1, Not(Lt(value))),
-                              compose_plus(cexp2, Not(Lt(value)))))
-                   case Gt(value) =>
-                     not(and(compose_plus(cexp1, Not(Gt(value))),
-                              compose_plus(cexp2, Not(Gt(value)))))
-                   case Not(aa) => compose_plus(Not(And(cexp1, cexp2)), aa)
-                   case And(cexp1a, cexp2a) =>
-                     not(and(compose_plus(cexp1, Not(And(cexp1a, cexp2a))),
-                              compose_plus(cexp2, Not(And(cexp1a, cexp2a)))))
-                 })
-              case (Not(And(cexp1, cexp2)), And(va, vb)) =>
-                and(compose_plus(Not(And(cexp1, cexp2)), va),
-                     compose_plus(Not(And(cexp1, cexp2)), vb))
-              case (And(cexp1, cexp2), Undef()) =>
-                and(compose_plus(cexp1, Undef()), compose_plus(cexp2, Undef()))
-              case (And(cexp1, cexp2), Bc(bool)) =>
-                and(compose_plus(cexp1, Bc(bool)),
-                     compose_plus(cexp2, Bc(bool)))
-              case (And(cexp1, cexp2), Eq(value)) =>
-                and(compose_plus(cexp1, Eq(value)),
-                     compose_plus(cexp2, Eq(value)))
-              case (And(cexp1, cexp2), Lt(value)) =>
-                and(compose_plus(cexp1, Lt(value)),
-                     compose_plus(cexp2, Lt(value)))
-              case (And(cexp1, cexp2), Gt(value)) =>
-                and(compose_plus(cexp1, Gt(value)),
-                     compose_plus(cexp2, Gt(value)))
-              case (And(cexp1, cexp2), Not(a)) =>
-                (a match {
-                   case Undef() =>
-                     and(compose_plus(cexp1, Not(Undef())),
-                          compose_plus(cexp2, Not(Undef())))
-                   case Bc(bool) =>
-                     and(compose_plus(cexp1, Not(Bc(bool))),
-                          compose_plus(cexp2, Not(Bc(bool))))
-                   case Eq(_) => Bc(true)
-                   case Lt(value) =>
-                     and(compose_plus(cexp1, Not(Lt(value))),
-                          compose_plus(cexp2, Not(Lt(value))))
-                   case Gt(value) =>
-                     and(compose_plus(cexp1, Not(Gt(value))),
-                          compose_plus(cexp2, Not(Gt(value))))
-                   case Not(aa) => compose_plus(And(cexp1, cexp2), aa)
-                   case And(cexp1a, cexp2a) =>
-                     and(compose_plus(cexp1, Not(And(cexp1a, cexp2a))),
-                          compose_plus(cexp2, Not(And(cexp1a, cexp2a))))
-                 })
-              case (And(cexp1, cexp2), And(cexp1a, cexp2a)) =>
-                and(compose_plus(cexp1, And(cexp1a, cexp2a)),
-                     compose_plus(cexp2, And(cexp1a, cexp2a)))
-            }))
-    else Bc(false))
-
-def compose_minus(x: cexp, y: cexp): cexp =
-  (if ((Dirties.cexpxsatisfiable) && (Dirties.cexpysatisfiable))
-    (if ((Dirties.cexpxvalid) || (Dirties.cexpyvalid)) Bc(true)
-      else ((x, y) match {
-              case (Undef(), Undef()) => Bc(true)
-              case (Undef(), Bc(_)) => Bc(true)
-              case (Undef(), Eq(_)) => Bc(true)
-              case (Undef(), Lt(_)) => Bc(true)
-              case (Undef(), Gt(_)) => Bc(true)
-              case (Undef(), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(_) => Bc(true)
-                   case Gt(_) => Bc(true)
-                   case Not(aa) => compose_minus(Undef(), aa)
-                   case And(va, vb) =>
-                     not(and(compose_minus(Undef(), va),
-                              compose_minus(Undef(), vb)))
-                 })
-              case (Undef(), And(va, vb)) =>
-                and(compose_minus(Undef(), va), compose_minus(Undef(), vb))
-              case (Bc(_), Undef()) => Bc(true)
-              case (Bc(_), Bc(_)) => Bc(true)
-              case (Bc(_), Eq(_)) => Bc(true)
-              case (Bc(_), Lt(_)) => Bc(true)
-              case (Bc(_), Gt(_)) => Bc(true)
-              case (Bc(bool), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(_) => Bc(true)
-                   case Gt(_) => Bc(true)
-                   case Not(aa) => compose_minus(Bc(bool), aa)
-                   case And(va, vb) =>
-                     not(and(compose_minus(Bc(bool), va),
-                              compose_minus(Bc(bool), vb)))
-                 })
-              case (Bc(bool), And(va, vb)) =>
-                and(compose_minus(Bc(bool), va), compose_minus(Bc(bool), vb))
-              case (Eq(_), Undef()) => Bc(true)
-              case (Eq(_), Bc(_)) => Bc(true)
-              case (Eq(v), Eq(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Eq(a)
-                 })
-              case (Eq(v), Lt(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Lt(a)
-                 })
-              case (Eq(v), Gt(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Gt(a)
-                 })
-              case (Eq(v), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(va) =>
-                     (AExp.value_plus(Some[Value.value](v),
-                                       Some[Value.value](va))
-                        match {
-                        case None => Bc(false)
-                        case Some(c) => Not(Lt(c))
-                      })
-                   case Gt(va) =>
-                     (AExp.value_plus(Some[Value.value](v),
-                                       Some[Value.value](va))
-                        match {
-                        case None => Bc(false)
-                        case Some(c) => Not(Gt(c))
-                      })
-                   case Not(aa) => compose_minus(Eq(v), aa)
-                   case And(va, vb) =>
-                     not(and(compose_minus(Eq(v), va),
-                              compose_minus(Eq(v), vb)))
-                 })
-              case (Eq(v), And(va, vb)) =>
-                and(compose_minus(Eq(v), va), compose_minus(Eq(v), vb))
-              case (Lt(_), Undef()) => Bc(true)
-              case (Lt(_), Bc(_)) => Bc(true)
-              case (Lt(v), Eq(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Lt(a)
-                 })
-              case (Lt(v), Lt(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Lt(a)
-                 })
-              case (Lt(_), Gt(_)) => Bc(true)
-              case (Lt(v), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(_) => Bc(true)
-                   case Gt(va) =>
-                     (AExp.value_plus(Some[Value.value](v),
-                                       Some[Value.value](va))
-                        match {
-                        case None => Bc(false)
-                        case Some(aa) => Lt(aa)
-                      })
-                   case Not(aa) => compose_minus(Lt(v), aa)
-                   case And(va, vb) =>
-                     not(and(compose_minus(Lt(v), va),
-                              compose_minus(Lt(v), vb)))
-                 })
-              case (Lt(v), And(va, vb)) =>
-                and(compose_minus(Lt(v), va), compose_minus(Lt(v), vb))
-              case (Gt(_), Undef()) => Bc(true)
-              case (Gt(_), Bc(_)) => Bc(true)
-              case (Gt(v), Eq(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Gt(a)
-                 })
-              case (Gt(_), Lt(_)) => Bc(true)
-              case (Gt(v), Gt(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Gt(a)
-                 })
-              case (Gt(v), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(va) =>
-                     (AExp.value_plus(Some[Value.value](v),
-                                       Some[Value.value](va))
-                        match {
-                        case None => Bc(false)
-                        case Some(aa) => Gt(aa)
-                      })
-                   case Gt(_) => Bc(true)
-                   case Not(aa) => compose_minus(Gt(v), aa)
-                   case And(va, vb) =>
-                     not(and(compose_minus(Gt(v), va),
-                              compose_minus(Gt(v), vb)))
-                 })
-              case (Gt(v), And(va, vb)) =>
-                and(compose_minus(Gt(v), va), compose_minus(Gt(v), vb))
-              case (Not(Undef()), Undef()) => Bc(true)
-              case (Not(Undef()), Bc(_)) => Bc(true)
-              case (Not(Undef()), Eq(_)) => Bc(true)
-              case (Not(Undef()), Lt(_)) => Bc(true)
-              case (Not(Undef()), Gt(_)) => Bc(true)
-              case (Not(Undef()), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(_) => Bc(true)
-                   case Gt(_) => Bc(true)
-                   case Not(aa) => compose_minus(Not(Undef()), aa)
-                   case And(va, vb) =>
-                     not(and(compose_minus(Not(Undef()), va),
-                              compose_minus(Not(Undef()), vb)))
-                 })
-              case (Not(Undef()), And(va, vb)) =>
-                and(compose_minus(Not(Undef()), va),
-                     compose_minus(Not(Undef()), vb))
-              case (Not(Bc(_)), Undef()) => Bc(true)
-              case (Not(Bc(_)), Bc(_)) => Bc(true)
-              case (Not(Bc(_)), Eq(_)) => Bc(true)
-              case (Not(Bc(_)), Lt(_)) => Bc(true)
-              case (Not(Bc(_)), Gt(_)) => Bc(true)
-              case (Not(Bc(bool)), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(_) => Bc(true)
-                   case Gt(_) => Bc(true)
-                   case Not(aa) => compose_minus(Not(Bc(bool)), aa)
-                   case And(va, vb) =>
-                     not(and(compose_minus(Not(Bc(bool)), va),
-                              compose_minus(Not(Bc(bool)), vb)))
-                 })
-              case (Not(Bc(bool)), And(va, vb)) =>
-                and(compose_minus(Not(Bc(bool)), va),
-                     compose_minus(Not(Bc(bool)), vb))
-              case (Not(Eq(_)), _) => Bc(true)
-              case (Not(Lt(_)), Undef()) => Bc(true)
-              case (Not(Lt(_)), Bc(_)) => Bc(true)
-              case (Not(Lt(v)), Eq(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(c) => Not(Lt(c))
-                 })
-              case (Not(Lt(_)), Lt(_)) => Bc(true)
-              case (Not(Lt(v)), Gt(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Gt(a)
-                 })
-              case (Not(Lt(v)), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(va) =>
-                     (AExp.value_plus(Some[Value.value](v),
-                                       Some[Value.value](va))
-                        match {
-                        case None => Bc(false)
-                        case Some(c) => Not(Lt(c))
-                      })
-                   case Gt(_) => Bc(true)
-                   case Not(aa) => compose_minus(Not(Lt(v)), aa)
-                   case And(va, vb) =>
-                     not(and(compose_minus(Not(Lt(v)), va),
-                              compose_minus(Not(Lt(v)), vb)))
-                 })
-              case (Not(Lt(v)), And(va, vb)) =>
-                and(compose_minus(Not(Lt(v)), va),
-                     compose_minus(Not(Lt(v)), vb))
-              case (Not(Gt(_)), Undef()) => Bc(true)
-              case (Not(Gt(_)), Bc(_)) => Bc(true)
-              case (Not(Gt(v)), Eq(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(c) => Not(Gt(c))
-                 })
-              case (Not(Gt(v)), Lt(va)) =>
-                (AExp.value_plus(Some[Value.value](v), Some[Value.value](va))
-                   match {
-                   case None => Bc(false)
-                   case Some(a) => Lt(a)
-                 })
-              case (Not(Gt(_)), Gt(_)) => Bc(true)
-              case (Not(Gt(v)), Not(a)) =>
-                (a match {
-                   case Undef() => Bc(true)
-                   case Bc(_) => Bc(true)
-                   case Eq(_) => Bc(true)
-                   case Lt(_) => Bc(true)
-                   case Gt(va) =>
-                     (AExp.value_plus(Some[Value.value](v),
-                                       Some[Value.value](va))
-                        match {
-                        case None => Bc(false)
-                        case Some(c) => Not(Gt(c))
-                      })
-                   case Not(aa) => compose_minus(Not(Gt(v)), aa)
-                   case And(va, vb) =>
-                     not(and(compose_minus(Not(Gt(v)), va),
-                              compose_minus(Not(Gt(v)), vb)))
-                 })
-              case (Not(Gt(v)), And(va, vb)) =>
-                and(compose_minus(Not(Gt(v)), va),
-                     compose_minus(Not(Gt(v)), vb))
-              case (Not(Not(cexpa)), Undef()) => compose_minus(cexpa, Undef())
-              case (Not(Not(cexpa)), Bc(bool)) => compose_minus(cexpa, Bc(bool))
-              case (Not(Not(cexpa)), Eq(value)) =>
-                compose_minus(cexpa, Eq(value))
-              case (Not(Not(cexpa)), Lt(value)) =>
-                compose_minus(cexpa, Lt(value))
-              case (Not(Not(cexpa)), Gt(value)) =>
-                compose_minus(cexpa, Gt(value))
-              case (Not(Not(cexpa)), Not(Undef())) =>
-                compose_minus(cexpa, Not(Undef()))
-              case (Not(Not(cexpa)), Not(Bc(bool))) =>
-                compose_minus(cexpa, Not(Bc(bool)))
-              case (Not(Not(_)), Not(Eq(_))) => Bc(true)
-              case (Not(Not(cexpa)), Not(Lt(value))) =>
-                compose_minus(cexpa, Not(Lt(value)))
-              case (Not(Not(cexpa)), Not(Gt(value))) =>
-                compose_minus(cexpa, Not(Gt(value)))
-              case (Not(Not(cexpa)), Not(Not(cexpb))) =>
-                compose_minus(cexpa, Not(Not(cexpb)))
-              case (Not(Not(cexpa)), Not(And(cexp1, cexp2))) =>
-                compose_minus(cexpa, Not(And(cexp1, cexp2)))
-              case (Not(Not(cexpa)), And(cexp1, cexp2)) =>
-                compose_minus(cexpa, And(cexp1, cexp2))
-              case (Not(And(cexp1, cexp2)), Undef()) =>
-                not(and(compose_minus(cexp1, Undef()),
-                         compose_minus(cexp2, Undef())))
-              case (Not(And(cexp1, cexp2)), Bc(bool)) =>
-                not(and(compose_minus(cexp1, Bc(bool)),
-                         compose_minus(cexp2, Bc(bool))))
-              case (Not(And(cexp1, cexp2)), Eq(value)) =>
-                not(and(compose_minus(cexp1, Eq(value)),
-                         compose_minus(cexp2, Eq(value))))
-              case (Not(And(cexp1, cexp2)), Lt(value)) =>
-                not(and(compose_minus(cexp1, Lt(value)),
-                         compose_minus(cexp2, Lt(value))))
-              case (Not(And(cexp1, cexp2)), Gt(value)) =>
-                not(and(compose_minus(cexp1, Gt(value)),
-                         compose_minus(cexp2, Gt(value))))
-              case (Not(And(cexp1, cexp2)), Not(a)) =>
-                (a match {
-                   case Undef() =>
-                     not(and(compose_minus(cexp1, Not(Undef())),
-                              compose_minus(cexp2, Not(Undef()))))
-                   case Bc(bool) =>
-                     not(and(compose_minus(cexp1, Not(Bc(bool))),
-                              compose_minus(cexp2, Not(Bc(bool)))))
-                   case Eq(_) => Bc(true)
-                   case Lt(value) =>
-                     not(and(compose_minus(cexp1, Not(Lt(value))),
-                              compose_minus(cexp2, Not(Lt(value)))))
-                   case Gt(value) =>
-                     not(and(compose_minus(cexp1, Not(Gt(value))),
-                              compose_minus(cexp2, Not(Gt(value)))))
-                   case Not(aa) => compose_minus(Not(And(cexp1, cexp2)), aa)
-                   case And(cexp1a, cexp2a) =>
-                     not(and(compose_minus(cexp1, Not(And(cexp1a, cexp2a))),
-                              compose_minus(cexp2, Not(And(cexp1a, cexp2a)))))
-                 })
-              case (Not(And(cexp1, cexp2)), And(va, vb)) =>
-                and(compose_minus(Not(And(cexp1, cexp2)), va),
-                     compose_minus(Not(And(cexp1, cexp2)), vb))
-              case (And(cexp1, cexp2), Undef()) =>
-                and(compose_minus(cexp1, Undef()),
-                     compose_minus(cexp2, Undef()))
-              case (And(cexp1, cexp2), Bc(bool)) =>
-                and(compose_minus(cexp1, Bc(bool)),
-                     compose_minus(cexp2, Bc(bool)))
-              case (And(cexp1, cexp2), Eq(value)) =>
-                and(compose_minus(cexp1, Eq(value)),
-                     compose_minus(cexp2, Eq(value)))
-              case (And(cexp1, cexp2), Lt(value)) =>
-                and(compose_minus(cexp1, Lt(value)),
-                     compose_minus(cexp2, Lt(value)))
-              case (And(cexp1, cexp2), Gt(value)) =>
-                and(compose_minus(cexp1, Gt(value)),
-                     compose_minus(cexp2, Gt(value)))
-              case (And(cexp1, cexp2), Not(a)) =>
-                (a match {
-                   case Undef() =>
-                     and(compose_minus(cexp1, Not(Undef())),
-                          compose_minus(cexp2, Not(Undef())))
-                   case Bc(bool) =>
-                     and(compose_minus(cexp1, Not(Bc(bool))),
-                          compose_minus(cexp2, Not(Bc(bool))))
-                   case Eq(_) => Bc(true)
-                   case Lt(value) =>
-                     and(compose_minus(cexp1, Not(Lt(value))),
-                          compose_minus(cexp2, Not(Lt(value))))
-                   case Gt(value) =>
-                     and(compose_minus(cexp1, Not(Gt(value))),
-                          compose_minus(cexp2, Not(Gt(value))))
-                   case Not(aa) => compose_minus(And(cexp1, cexp2), aa)
-                   case And(cexp1a, cexp2a) =>
-                     and(compose_minus(cexp1, Not(And(cexp1a, cexp2a))),
-                          compose_minus(cexp2, Not(And(cexp1a, cexp2a))))
-                 })
-              case (And(cexp1, cexp2), And(cexp1a, cexp2a)) =>
-                and(compose_minus(cexp1, And(cexp1a, cexp2a)),
-                     compose_minus(cexp2, And(cexp1a, cexp2a)))
-            }))
-    else Bc(false))
-
-} /* object CExp */
-
 object Option_Logic {
 
 def MaybeBoolInt(f: Int.int => Int.int => Boolean, uv: Option[Value.value],
@@ -2109,6 +820,23 @@ def MaybeBoolInt(f: Int.int => Int.int => Boolean, uv: Option[Value.value],
 }
 
 } /* object Option_Logic */
+
+object Optiona {
+
+def is_none[A](x0: Option[A]): Boolean = x0 match {
+  case Some(x) => false
+  case None => true
+}
+
+def equal_option[A : HOL.equal](x0: Option[A], x1: Option[A]): Boolean =
+  (x0, x1) match {
+  case (None, Some(x2)) => false
+  case (Some(x2), None) => false
+  case (Some(x2), Some(y2)) => HOL.eq[A](x2, y2)
+  case (None, None) => true
+}
+
+} /* object Optiona */
 
 object GExp {
 
@@ -2158,8 +886,8 @@ def gval(x0: gexp, uu: VName.vname => Option[Value.value]): Option[Boolean] =
                                 Int.less_int(y, x)),
                                AExp.aval(a_1, s), AExp.aval(a_2, s))
   case (Eq(a_1, a_2), s) =>
-    Some[Boolean](Optiona.equal_optiona[Value.value](AExp.aval(a_1, s),
-              AExp.aval(a_2, s)))
+    Some[Boolean](Optiona.equal_option[Value.value](AExp.aval(a_1, s),
+             AExp.aval(a_2, s)))
   case (Nor(a_1, a_2), s) =>
     ((gval(a_1, s), gval(a_2, s)) match {
        case (None, _) => None
@@ -2337,9 +1065,9 @@ def apply_guards(x0: List[GExp.gexp], uu: VName.vname => Option[Value.value]):
   (x0, uu) match {
   case (Nil, uu) => true
   case (h::t, s) =>
-    (Optiona.equal_optiona[Boolean](GExp.gval(h, s),
-                                     Some[Boolean](true))) && (apply_guards(t,
-                                     s))
+    (Optiona.equal_option[Boolean](GExp.gval(h, s),
+                                    Some[Boolean](true))) && (apply_guards(t,
+                                    s))
 }
 
 def input2state(x0: List[Value.value], uu: Nat.nat):
@@ -2452,310 +1180,6 @@ Transition.transition_ext[Unit])].apply(possible_steps(e, s, r, l, i)),
     else None)
 
 } /* object EFSM */
-
-object Contexts {
-
-def get(c: AExp.aexp => CExp.cexp, x1: AExp.aexp): CExp.cexp = (c, x1) match {
-  case (c, AExp.L(n)) => CExp.Eq(n)
-  case (c, AExp.V(v)) => c(AExp.V(v))
-  case (c, AExp.Plus(v, va)) =>
-    CExp.And(c(AExp.Plus(v, va)), c(AExp.Plus(va, v)))
-  case (c, AExp.Minus(v, va)) => c(AExp.Minus(v, va))
-}
-
-def conjoin(ca: AExp.aexp => CExp.cexp, c: AExp.aexp => CExp.cexp):
-      AExp.aexp => CExp.cexp
-  =
-  ((r: AExp.aexp) => CExp.and(ca(r), c(r)))
-
-def pairs2context(x0: List[(AExp.aexp, CExp.cexp)]): AExp.aexp => CExp.cexp = x0
-  match {
-  case Nil => ((_: AExp.aexp) => CExp.Bc(true))
-  case (uu, CExp.Bc(false))::t => ((_: AExp.aexp) => CExp.Bc(false))
-  case (v, CExp.Undef())::t =>
-    conjoin(pairs2context(t),
-             ((r: AExp.aexp) =>
-               (if (AExp.equal_aexpa(r, Product_Type.fst[AExp.aexp,
-                  CExp.cexp]((v, CExp.Undef()))))
-                 Product_Type.snd[AExp.aexp, CExp.cexp]((v, CExp.Undef()))
-                 else CExp.Bc(true))))
-  case (v, CExp.Bc(true))::t =>
-    conjoin(pairs2context(t),
-             ((r: AExp.aexp) =>
-               (if (AExp.equal_aexpa(r, Product_Type.fst[AExp.aexp,
-                  CExp.cexp]((v, CExp.Bc(true)))))
-                 Product_Type.snd[AExp.aexp, CExp.cexp]((v, CExp.Bc(true)))
-                 else CExp.Bc(true))))
-  case (v, CExp.Eq(vb))::t =>
-    conjoin(pairs2context(t),
-             ((r: AExp.aexp) =>
-               (if (AExp.equal_aexpa(r, Product_Type.fst[AExp.aexp,
-                  CExp.cexp]((v, CExp.Eq(vb)))))
-                 Product_Type.snd[AExp.aexp, CExp.cexp]((v, CExp.Eq(vb)))
-                 else CExp.Bc(true))))
-  case (v, CExp.Lt(vb))::t =>
-    conjoin(pairs2context(t),
-             ((r: AExp.aexp) =>
-               (if (AExp.equal_aexpa(r, Product_Type.fst[AExp.aexp,
-                  CExp.cexp]((v, CExp.Lt(vb)))))
-                 Product_Type.snd[AExp.aexp, CExp.cexp]((v, CExp.Lt(vb)))
-                 else CExp.Bc(true))))
-  case (v, CExp.Gt(vb))::t =>
-    conjoin(pairs2context(t),
-             ((r: AExp.aexp) =>
-               (if (AExp.equal_aexpa(r, Product_Type.fst[AExp.aexp,
-                  CExp.cexp]((v, CExp.Gt(vb)))))
-                 Product_Type.snd[AExp.aexp, CExp.cexp]((v, CExp.Gt(vb)))
-                 else CExp.Bc(true))))
-  case (v, CExp.Not(vb))::t =>
-    conjoin(pairs2context(t),
-             ((r: AExp.aexp) =>
-               (if (AExp.equal_aexpa(r, Product_Type.fst[AExp.aexp,
-                  CExp.cexp]((v, CExp.Not(vb)))))
-                 Product_Type.snd[AExp.aexp, CExp.cexp]((v, CExp.Not(vb)))
-                 else CExp.Bc(true))))
-  case (v, CExp.And(vb, vc))::t =>
-    conjoin(pairs2context(t),
-             ((r: AExp.aexp) =>
-               (if (AExp.equal_aexpa(r, Product_Type.fst[AExp.aexp,
-                  CExp.cexp]((v, CExp.And(vb, vc)))))
-                 Product_Type.snd[AExp.aexp, CExp.cexp]((v, CExp.And(vb, vc)))
-                 else CExp.Bc(true))))
-}
-
-def and_insert(x0: List[(AExp.aexp, CExp.cexp)], c: (AExp.aexp, CExp.cexp)):
-      List[(AExp.aexp, CExp.cexp)]
-  =
-  (x0, c) match {
-  case (Nil, c) => c::Nil
-  case (h::t, c) =>
-    (if (AExp.equal_aexpa(Product_Type.fst[AExp.aexp, CExp.cexp](h),
-                           Product_Type.fst[AExp.aexp, CExp.cexp](c)))
-      (Product_Type.fst[AExp.aexp, CExp.cexp](h),
-        CExp.and(Product_Type.snd[AExp.aexp, CExp.cexp](h),
-                  Product_Type.snd[AExp.aexp, CExp.cexp](c)))::t
-      else h::(and_insert(t, c)))
-}
-
-def pair_and(x0: List[(AExp.aexp, CExp.cexp)], c: List[(AExp.aexp, CExp.cexp)]):
-      List[(AExp.aexp, CExp.cexp)]
-  =
-  (x0, c) match {
-  case (Nil, c) => c
-  case (h::t, c) => pair_and(t, and_insert(c, h))
-}
-
-def guard2pairs(a: AExp.aexp => CExp.cexp, x1: GExp.gexp):
-      List[(AExp.aexp, CExp.cexp)]
-  =
-  (a, x1) match {
-  case (a, GExp.Bc(true)) => Nil
-  case (a, GExp.Bc(false)) =>
-    (AExp.L(Value.Numa(Int.zero_int)), CExp.Bc(false))::Nil
-  case (a, GExp.Null(v)) => (AExp.V(v), CExp.Undef())::Nil
-  case (a, GExp.Eq(AExp.L(na), AExp.L(n))) => (AExp.L(na), CExp.Eq(n))::Nil
-  case (a, GExp.Gt(AExp.L(na), AExp.L(n))) => (AExp.L(na), CExp.Gt(n))::Nil
-  case (a, GExp.Eq(AExp.V(va), AExp.L(n))) => (AExp.V(va), CExp.Eq(n))::Nil
-  case (a, GExp.Eq(AExp.Plus(va, vb), AExp.L(n))) =>
-    (AExp.Plus(va, vb), CExp.Eq(n))::Nil
-  case (a, GExp.Eq(AExp.Minus(va, vb), AExp.L(n))) =>
-    (AExp.Minus(va, vb), CExp.Eq(n))::Nil
-  case (a, GExp.Eq(AExp.L(n), AExp.V(va))) => (AExp.V(va), CExp.Eq(n))::Nil
-  case (a, GExp.Eq(AExp.L(n), AExp.Plus(va, vb))) =>
-    (AExp.Plus(va, vb), CExp.Eq(n))::Nil
-  case (a, GExp.Eq(AExp.L(n), AExp.Minus(va, vb))) =>
-    (AExp.Minus(va, vb), CExp.Eq(n))::Nil
-  case (a, GExp.Eq(AExp.V(va), AExp.V(v))) =>
-    (AExp.V(va), get(a, AExp.V(v)))::((AExp.V(v), get(a, AExp.V(va)))::Nil)
-  case (a, GExp.Eq(AExp.V(va), AExp.Plus(v, vc))) =>
-    (AExp.V(va),
-      get(a, AExp.Plus(v, vc)))::((AExp.Plus(v, vc), get(a, AExp.V(va)))::Nil)
-  case (a, GExp.Eq(AExp.V(va), AExp.Minus(v, vc))) =>
-    (AExp.V(va),
-      get(a, AExp.Minus(v, vc)))::((AExp.Minus(v, vc), get(a, AExp.V(va)))::Nil)
-  case (a, GExp.Eq(AExp.Plus(va, vc), AExp.V(v))) =>
-    (AExp.Plus(va, vc),
-      get(a, AExp.V(v)))::((AExp.V(v), get(a, AExp.Plus(va, vc)))::Nil)
-  case (a, GExp.Eq(AExp.Plus(va, vc), AExp.Plus(v, vd))) =>
-    (AExp.Plus(va, vc),
-      get(a, AExp.Plus(v, vd)))::((AExp.Plus(v, vd),
-                                    get(a, AExp.Plus(va, vc)))::Nil)
-  case (a, GExp.Eq(AExp.Plus(va, vc), AExp.Minus(v, vd))) =>
-    (AExp.Plus(va, vc),
-      get(a, AExp.Minus(v, vd)))::((AExp.Minus(v, vd),
-                                     get(a, AExp.Plus(va, vc)))::Nil)
-  case (a, GExp.Eq(AExp.Minus(va, vc), AExp.V(v))) =>
-    (AExp.Minus(va, vc),
-      get(a, AExp.V(v)))::((AExp.V(v), get(a, AExp.Minus(va, vc)))::Nil)
-  case (a, GExp.Eq(AExp.Minus(va, vc), AExp.Plus(v, vd))) =>
-    (AExp.Minus(va, vc),
-      get(a, AExp.Plus(v, vd)))::((AExp.Plus(v, vd),
-                                    get(a, AExp.Minus(va, vc)))::Nil)
-  case (a, GExp.Eq(AExp.Minus(va, vc), AExp.Minus(v, vd))) =>
-    (AExp.Minus(va, vc),
-      get(a, AExp.Minus(v, vd)))::((AExp.Minus(v, vd),
-                                     get(a, AExp.Minus(va, vc)))::Nil)
-  case (a, GExp.Gt(AExp.V(va), AExp.L(n))) => (AExp.V(va), CExp.Gt(n))::Nil
-  case (a, GExp.Gt(AExp.Plus(va, vb), AExp.L(n))) =>
-    (AExp.Plus(va, vb), CExp.Gt(n))::Nil
-  case (a, GExp.Gt(AExp.Minus(va, vb), AExp.L(n))) =>
-    (AExp.Minus(va, vb), CExp.Gt(n))::Nil
-  case (a, GExp.Gt(AExp.L(n), AExp.V(va))) => (AExp.V(va), CExp.Lt(n))::Nil
-  case (a, GExp.Gt(AExp.L(n), AExp.Plus(va, vb))) =>
-    (AExp.Plus(va, vb), CExp.Lt(n))::Nil
-  case (a, GExp.Gt(AExp.L(n), AExp.Minus(va, vb))) =>
-    (AExp.Minus(va, vb), CExp.Lt(n))::Nil
-  case (a, GExp.Gt(AExp.V(va), AExp.V(v))) =>
-    {
-      val (cv, cvb): (CExp.cexp, CExp.cexp) =
-        CExp.apply_gt(get(a, AExp.V(va)), get(a, AExp.V(v)));
-      (AExp.V(va), cv)::((AExp.V(v), cvb)::Nil)
-    }
-  case (a, GExp.Gt(AExp.V(va), AExp.Plus(v, vc))) =>
-    {
-      val (cv, cvb): (CExp.cexp, CExp.cexp) =
-        CExp.apply_gt(get(a, AExp.V(va)), get(a, AExp.Plus(v, vc)));
-      (AExp.V(va), cv)::((AExp.Plus(v, vc), cvb)::Nil)
-    }
-  case (a, GExp.Gt(AExp.V(va), AExp.Minus(v, vc))) =>
-    {
-      val (cv, cvb): (CExp.cexp, CExp.cexp) =
-        CExp.apply_gt(get(a, AExp.V(va)), get(a, AExp.Minus(v, vc)));
-      (AExp.V(va), cv)::((AExp.Minus(v, vc), cvb)::Nil)
-    }
-  case (a, GExp.Gt(AExp.Plus(va, vc), AExp.V(v))) =>
-    {
-      val (cv, cvb): (CExp.cexp, CExp.cexp) =
-        CExp.apply_gt(get(a, AExp.Plus(va, vc)), get(a, AExp.V(v)));
-      (AExp.Plus(va, vc), cv)::((AExp.V(v), cvb)::Nil)
-    }
-  case (a, GExp.Gt(AExp.Plus(va, vc), AExp.Plus(v, vd))) =>
-    {
-      val (cv, cvb): (CExp.cexp, CExp.cexp) =
-        CExp.apply_gt(get(a, AExp.Plus(va, vc)), get(a, AExp.Plus(v, vd)));
-      (AExp.Plus(va, vc), cv)::((AExp.Plus(v, vd), cvb)::Nil)
-    }
-  case (a, GExp.Gt(AExp.Plus(va, vc), AExp.Minus(v, vd))) =>
-    {
-      val (cv, cvb): (CExp.cexp, CExp.cexp) =
-        CExp.apply_gt(get(a, AExp.Plus(va, vc)), get(a, AExp.Minus(v, vd)));
-      (AExp.Plus(va, vc), cv)::((AExp.Minus(v, vd), cvb)::Nil)
-    }
-  case (a, GExp.Gt(AExp.Minus(va, vc), AExp.V(v))) =>
-    {
-      val (cv, cvb): (CExp.cexp, CExp.cexp) =
-        CExp.apply_gt(get(a, AExp.Minus(va, vc)), get(a, AExp.V(v)));
-      (AExp.Minus(va, vc), cv)::((AExp.V(v), cvb)::Nil)
-    }
-  case (a, GExp.Gt(AExp.Minus(va, vc), AExp.Plus(v, vd))) =>
-    {
-      val (cv, cvb): (CExp.cexp, CExp.cexp) =
-        CExp.apply_gt(get(a, AExp.Minus(va, vc)), get(a, AExp.Plus(v, vd)));
-      (AExp.Minus(va, vc), cv)::((AExp.Plus(v, vd), cvb)::Nil)
-    }
-  case (a, GExp.Gt(AExp.Minus(va, vc), AExp.Minus(v, vd))) =>
-    {
-      val (cv, cvb): (CExp.cexp, CExp.cexp) =
-        CExp.apply_gt(get(a, AExp.Minus(va, vc)), get(a, AExp.Minus(v, vd)));
-      (AExp.Minus(va, vc), cv)::((AExp.Minus(v, vd), cvb)::Nil)
-    }
-  case (a, GExp.Nor(v, va)) =>
-    pair_and(Lista.map[(AExp.aexp, CExp.cexp),
-                        (AExp.aexp,
-                          CExp.cexp)](((x: (AExp.aexp, CExp.cexp)) =>
-(Product_Type.fst[AExp.aexp, CExp.cexp](x),
-  CExp.not(Product_Type.snd[AExp.aexp, CExp.cexp](x)))),
-                                       guard2pairs(a, v)),
-              Lista.map[(AExp.aexp, CExp.cexp),
-                         (AExp.aexp,
-                           CExp.cexp)](((x: (AExp.aexp, CExp.cexp)) =>
- (Product_Type.fst[AExp.aexp, CExp.cexp](x),
-   CExp.not(Product_Type.snd[AExp.aexp, CExp.cexp](x)))),
-guard2pairs(a, va)))
-}
-
-def apply_guard(a: AExp.aexp => CExp.cexp, g: GExp.gexp): AExp.aexp => CExp.cexp
-  =
-  conjoin(pairs2context(guard2pairs(a, g)), a)
-
-def medial(c: AExp.aexp => CExp.cexp, x1: List[GExp.gexp]):
-      AExp.aexp => CExp.cexp
-  =
-  (c, x1) match {
-  case (c, Nil) => c
-  case (c, h::t) => medial(apply_guard(c, h), t)
-}
-
-def update(c: AExp.aexp => CExp.cexp, x1: AExp.aexp, uu: CExp.cexp):
-      AExp.aexp => CExp.cexp
-  =
-  (c, x1, uu) match {
-  case (c, AExp.L(n), uu) => c
-  case (c, AExp.V(va), v) =>
-    ((r: AExp.aexp) => (if (AExp.equal_aexpa(r, AExp.V(va))) v else c(r)))
-  case (c, AExp.Plus(va, vb), v) =>
-    ((r: AExp.aexp) =>
-      (if (AExp.equal_aexpa(r, AExp.Plus(va, vb))) v else c(r)))
-  case (c, AExp.Minus(va, vb), v) =>
-    ((r: AExp.aexp) =>
-      (if (AExp.equal_aexpa(r, AExp.Minus(va, vb))) v else c(r)))
-}
-
-def constrains_an_input(x0: AExp.aexp): Boolean = x0 match {
-  case AExp.L(v) => false
-  case AExp.V(VName.R(x)) => false
-  case AExp.V(VName.I(x)) => true
-  case AExp.Plus(v, va) => (constrains_an_input(v)) && (constrains_an_input(va))
-  case AExp.Minus(v, va) =>
-    (constrains_an_input(v)) && (constrains_an_input(va))
-}
-
-def remove_input_constraints(c: AExp.aexp => CExp.cexp): AExp.aexp => CExp.cexp
-  =
-  ((x: AExp.aexp) =>
-    (if (constrains_an_input(x)) (x match {
-                                    case AExp.L(_) => CExp.Bc(true)
-                                    case AExp.V(VName.I(_)) => CExp.Bc(true)
-                                    case AExp.V(VName.R(_)) => CExp.Undef()
-                                    case AExp.Plus(_, _) => CExp.Bc(true)
-                                    case AExp.Minus(_, _) => CExp.Bc(true)
-                                  })
-      else c(x)))
-
-def apply_update(l: AExp.aexp => CExp.cexp, c: AExp.aexp => CExp.cexp,
-                  x2: (VName.vname, AExp.aexp)):
-      AExp.aexp => CExp.cexp
-  =
-  (l, c, x2) match {
-  case (l, c, (v, AExp.L(n))) => update(c, AExp.V(v), CExp.Eq(n))
-  case (l, c, (v, AExp.V(vb))) => update(c, AExp.V(v), l(AExp.V(vb)))
-  case (l, c, (v, AExp.Plus(vb, vc))) =>
-    update(c, AExp.V(v), CExp.compose_plus(get(l, vb), get(l, vc)))
-  case (l, c, (v, AExp.Minus(vb, vc))) =>
-    update(c, AExp.V(v), CExp.compose_minus(get(l, vb), get(l, vc)))
-}
-
-def apply_updates(uu: AExp.aexp => CExp.cexp, c: AExp.aexp => CExp.cexp,
-                   x2: List[(VName.vname, AExp.aexp)]):
-      AExp.aexp => CExp.cexp
-  =
-  (uu, c, x2) match {
-  case (uu, c, Nil) => c
-  case (l, c, h::t) => apply_updates(l, apply_update(l, c, h), t)
-}
-
-def posterior(c: AExp.aexp => CExp.cexp, t: Transition.transition_ext[Unit]):
-      AExp.aexp => CExp.cexp
-  =
-  {
-    val ca: AExp.aexp => CExp.cexp = medial(c, Transition.Guard[Unit](t));
-    (if (Dirties.consistent(ca))
-      remove_input_constraints(apply_updates(ca, c,
-      Transition.Updates[Unit](t)))
-      else ((_: AExp.aexp) => CExp.Bc(false)))
-  }
-
-} /* object Contexts */
 
 object Euclidean_Division {
 
@@ -3187,156 +1611,6 @@ def less_eq_transition_ext[A : HOL.equal : Orderings.linorder](t1:
 
 } /* object Transition_Ordering */
 
-object Predicate {
-
-abstract sealed class pred[A]
-final case class Seq[A](a: Unit => seq[A]) extends pred[A]
-
-abstract sealed class seq[A]
-final case class Empty[A]() extends seq[A]
-final case class Insert[A](a: A, b: pred[A]) extends seq[A]
-final case class Join[A](a: pred[A], b: seq[A]) extends seq[A]
-
-def applya[A, B](f: A => pred[B], x1: seq[A]): seq[B] = (f, x1) match {
-  case (f, Empty()) => Empty[B]()
-  case (f, Insert(x, p)) => Join[B](f(x), Join[B](bind[A, B](p, f), Empty[B]()))
-  case (f, Join(p, xq)) => Join[B](bind[A, B](p, f), applya[A, B](f, xq))
-}
-
-def bind[A, B](x0: pred[A], f: A => pred[B]): pred[B] = (x0, f) match {
-  case (Seq(g), f) => Seq[B](((_: Unit) => applya[A, B](f, g(()))))
-}
-
-def member[A : HOL.equal](xa0: seq[A], x: A): Boolean = (xa0, x) match {
-  case (Empty(), x) => false
-  case (Insert(y, p), x) => (HOL.eq[A](x, y)) || (eval[A](p)).apply(x)
-  case (Join(p, xq), x) => (eval[A](p)).apply(x) || (member[A](xq, x))
-}
-
-def eval[A : HOL.equal](x0: pred[A]): A => Boolean = x0 match {
-  case Seq(f) => ((a: A) => member[A](f(()), a))
-}
-
-def holds(p: pred[Unit]): Boolean = (eval[Unit](p)).apply(())
-
-def bot_pred[A]: pred[A] = Seq[A](((_: Unit) => Empty[A]()))
-
-def single[A](x: A): pred[A] = Seq[A](((_: Unit) => Insert[A](x, bot_pred[A])))
-
-def sup_pred[A](x0: pred[A], x1: pred[A]): pred[A] = (x0, x1) match {
-  case (Seq(f), Seq(g)) =>
-    Seq[A](((_: Unit) =>
-             (f(()) match {
-                case Empty() => g(())
-                case Insert(x, p) => Insert[A](x, sup_pred[A](p, Seq[A](g)))
-                case Join(p, xq) => adjunct[A](Seq[A](g), Join[A](p, xq))
-              })))
-}
-
-def adjunct[A](p: pred[A], x1: seq[A]): seq[A] = (p, x1) match {
-  case (p, Empty()) => Join[A](p, Empty[A]())
-  case (p, Insert(x, q)) => Insert[A](x, sup_pred[A](q, p))
-  case (p, Join(q, xq)) => Join[A](q, adjunct[A](p, xq))
-}
-
-} /* object Predicate */
-
-object Code_Generation {
-
-def eq_i_o[A](xa: A): Predicate.pred[A] =
-  Predicate.bind[A, A](Predicate.single[A](xa),
-                        ((a: A) => Predicate.single[A](a)))
-
-def guard_filter_code(inputX: Nat.nat, x1: GExp.gexp): Boolean = (inputX, x1)
-  match {
-  case (inputX, GExp.Eq(a, b)) =>
-    (! (AExp.equal_aexpa(a, AExp.V(VName.I(inputX))))) && (! (AExp.equal_aexpa(b,
-AExp.V(VName.I(inputX)))))
-  case (uu, GExp.Bc(v)) => true
-  case (uu, GExp.Gt(v, va)) => true
-  case (uu, GExp.Nor(v, va)) => true
-  case (uu, GExp.Null(v)) => true
-}
-
-def satisfies_trace_i_i_i_i(x: List[(String,
-                                      (List[Value.value], List[Value.value]))],
-                             xa: FSet.fset[((Nat.nat, Nat.nat),
-     Transition.transition_ext[Unit])],
-                             xb: Nat.nat,
-                             xc: VName.vname => Option[Value.value]):
-      Predicate.pred[Unit]
-  =
-  Predicate.sup_pred[Unit](Predicate.bind[(List[(String,
-          (List[Value.value], List[Value.value]))],
-    (FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
-      (Nat.nat, VName.vname => Option[Value.value]))),
-   Unit](Predicate.single[(List[(String,
-                                  (List[Value.value], List[Value.value]))],
-                            (FSet.fset[((Nat.nat, Nat.nat),
- Transition.transition_ext[Unit])],
-                              (Nat.nat,
-                                VName.vname =>
-                                  Option[Value.value])))]((x, (xa, (xb, xc)))),
-          ((a: (List[(String, (List[Value.value], List[Value.value]))],
-                 (FSet.fset[((Nat.nat, Nat.nat),
-                              Transition.transition_ext[Unit])],
-                   (Nat.nat, VName.vname => Option[Value.value]))))
-             =>
-            (a match {
-               case (Nil, (_, (_, _))) => Predicate.single[Unit](())
-               case (_::_, _) => Predicate.bot_pred[Unit]
-             }))),
-                            Predicate.bind[(List[(String,
-           (List[Value.value], List[Value.value]))],
-     (FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
-       (Nat.nat, VName.vname => Option[Value.value]))),
-    Unit](Predicate.single[(List[(String,
-                                   (List[Value.value], List[Value.value]))],
-                             (FSet.fset[((Nat.nat, Nat.nat),
-  Transition.transition_ext[Unit])],
-                               (Nat.nat,
-                                 VName.vname =>
-                                   Option[Value.value])))]((x, (xa, (xb, xc)))),
-           ((a: (List[(String, (List[Value.value], List[Value.value]))],
-                  (FSet.fset[((Nat.nat, Nat.nat),
-                               Transition.transition_ext[Unit])],
-                    (Nat.nat, VName.vname => Option[Value.value]))))
-              =>
-             (a match {
-                case (Nil, _) => Predicate.bot_pred[Unit]
-                case ((l, (i, p))::ex, (e, (s, d))) =>
-                  Predicate.bind[Option[(Transition.transition_ext[Unit],
-  (Nat.nat, (List[Option[Value.value]], VName.vname => Option[Value.value])))],
-                                  Unit](eq_i_o[Option[(Transition.transition_ext[Unit],
-                (Nat.nat,
-                  (List[Option[Value.value]],
-                    VName.vname =>
-                      Option[Value.value])))]](EFSM.step(e, s, d, l, i)),
- ((aa: Option[(Transition.transition_ext[Unit],
-                (Nat.nat,
-                  (List[Option[Value.value]],
-                    VName.vname => Option[Value.value])))])
-    =>
-   (aa match {
-      case None => Predicate.bot_pred[Unit]
-      case Some((_, (sa, (xd, da)))) =>
-        (if (Lista.equal_list[Option[Value.value]](xd,
-            Lista.map[Value.value,
-                       Option[Value.value]](((ab: Value.value) =>
-      Some[Value.value](ab)),
-     p)))
-          Predicate.bind[Unit,
-                          Unit](satisfies_trace_i_i_i_i(ex, e, sa, da),
-                                 ((ab: Unit) => {
-          val (): Unit = ab;
-          Predicate.single[Unit](())
-        }))
-          else Predicate.bot_pred[Unit])
-    })))
-              }))))
-
-} /* object Code_Generation */
-
 object FSet_Utils {
 
 def fprod[A, B](xb: FSet.fset[A], xc: FSet.fset[B]): FSet.fset[(A, B)] =
@@ -3537,10 +1811,10 @@ def choice(t1: Transition.transition_ext[Unit],
   =
   (Transition.Label[Unit](t1) ==
     Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
-             Transition.Arity[Unit](t2))) && (Dirties.context(GExp.Nor(GExp.Nor(GExp.conjoin(Transition.Guard[Unit](t1)),
- GExp.conjoin(Transition.Guard[Unit](t1))),
-                                GExp.Nor(GExp.conjoin(Transition.Guard[Unit](t2)),
-  GExp.conjoin(Transition.Guard[Unit](t2)))))satisfiable))
+             Transition.Arity[Unit](t2))) && (Dirties.satisfiable(GExp.Nor(GExp.Nor(GExp.conjoin(Transition.Guard[Unit](t1)),
+     GExp.conjoin(Transition.Guard[Unit](t1))),
+                                    GExp.Nor(GExp.conjoin(Transition.Guard[Unit](t2)),
+      GExp.conjoin(Transition.Guard[Unit](t2)))))))
 
 def nondeterministic_pairs(t: FSet.fset[(Nat.nat,
   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
@@ -3749,10 +2023,12 @@ Transition.transition_ext[Unit]))]) =>
      case None =>
        (((((modifier(u1))(u2))(newFrom))(newEFSM))(oldEFSM) match {
           case None => None
-          case Some(a) =>
-            Some[FSet.fset[(Nat.nat,
-                             ((Nat.nat, Nat.nat),
-                               Transition.transition_ext[Unit]))]](a)
+          case Some(t) =>
+            (if (Dirties.scalaNondeterministicSimulates(tm(t), tm(oldEFSM)))
+              Some[FSet.fset[(Nat.nat,
+                               ((Nat.nat, Nat.nat),
+                                 Transition.transition_ext[Unit]))]](t)
+              else None)
         })
      case Some(a) =>
        Some[FSet.fset[(Nat.nat,
@@ -3760,20 +2036,20 @@ Transition.transition_ext[Unit]))]) =>
                           Transition.transition_ext[Unit]))]](a)
    })
 
-def deterministic(t: FSet.fset[(Nat.nat,
-                                 ((Nat.nat, Nat.nat),
-                                   Transition.transition_ext[Unit]))]):
+def nondeterminism(t: FSet.fset[(Nat.nat,
+                                  ((Nat.nat, Nat.nat),
+                                    Transition.transition_ext[Unit]))]):
       Boolean
   =
-  FSet.equal_fset[(Nat.nat,
-                    ((Nat.nat, Nat.nat),
-                      ((Transition.transition_ext[Unit], Nat.nat),
-                        (Transition.transition_ext[Unit],
-                          Nat.nat))))](nondeterministic_pairs(t),
-FSet.bot_fset[(Nat.nat,
-                ((Nat.nat, Nat.nat),
-                  ((Transition.transition_ext[Unit], Nat.nat),
-                    (Transition.transition_ext[Unit], Nat.nat))))])
+  ! (FSet.equal_fset[(Nat.nat,
+                       ((Nat.nat, Nat.nat),
+                         ((Transition.transition_ext[Unit], Nat.nat),
+                           (Transition.transition_ext[Unit],
+                             Nat.nat))))](nondeterministic_pairs(t),
+   FSet.bot_fset[(Nat.nat,
+                   ((Nat.nat, Nat.nat),
+                     ((Transition.transition_ext[Unit], Nat.nat),
+                       (Transition.transition_ext[Unit], Nat.nat))))]))
 
 def merge_states_aux(x: Nat.nat, y: Nat.nat,
                       t: FSet.fset[(Nat.nat,
@@ -3867,40 +2143,35 @@ def resolve_nondeterminism(x0: List[(Nat.nat,
                                       ((Nat.nat, Nat.nat),
 ((Transition.transition_ext[Unit], Nat.nat),
   (Transition.transition_ext[Unit], Nat.nat))))],
-                            old: FSet.fset[(Nat.nat,
-     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-                            newa: FSet.fset[(Nat.nat,
-      ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-                            uu: (FSet.fset[(Nat.nat,
+                            uu: FSet.fset[(Nat.nat,
+    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+                            t: FSet.fset[(Nat.nat,
+   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+                            uv: (FSet.fset[(Nat.nat,
      ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
                                   Nat.nat =>
                                     (Transition.transition_ext[Unit]) =>
                                       Nat.nat =>
 (Transition.transition_ext[Unit]) => Option[Transition.transition_ext[Unit]],
-                            uv: Nat.nat =>
+                            uw: Nat.nat =>
                                   Nat.nat =>
                                     Nat.nat =>
                                       (FSet.fset[(Nat.nat,
            ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
 (FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
   Option[FSet.fset[(Nat.nat,
-                     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]],
-                            check:
-                              (FSet.fset[((Nat.nat, Nat.nat),
-   Transition.transition_ext[Unit])]) =>
-                                Boolean):
+                     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]]):
       Option[FSet.fset[(Nat.nat,
                          ((Nat.nat, Nat.nat),
                            Transition.transition_ext[Unit]))]]
   =
-  (x0, old, newa, uu, uv, check) match {
-  case (Nil, old, newa, uu, uv, check) =>
-    (if ((deterministic(newa)) && (check(tm(newa))))
-      Some[FSet.fset[(Nat.nat,
-                       ((Nat.nat, Nat.nat),
-                         Transition.transition_ext[Unit]))]](newa)
-      else None)
-  case (s::ss, oldEFSM, newEFSM, g, m, check) =>
+  (x0, uu, t, uv, uw) match {
+  case (Nil, uu, t, uv, uw) =>
+    (if (nondeterminism(t)) None
+      else Some[FSet.fset[(Nat.nat,
+                            ((Nat.nat, Nat.nat),
+                              Transition.transition_ext[Unit]))]](t))
+  case (s::ss, oldEFSM, newEFSM, g, m) =>
     {
       val a: (Nat.nat,
                ((Nat.nat, Nat.nat),
@@ -3945,8 +2216,7 @@ leaves(u2, oldEFSM), leaves(u1, destMerge), arrives(u1, destMerge),
 arrives(u2, destMerge), t1, u1, t2, u2, g, m)
                        match {
                        case None =>
-                         resolve_nondeterminism(ss, oldEFSM, newEFSM, g, m,
-         check)
+                         resolve_nondeterminism(ss, oldEFSM, newEFSM, g, m)
                        case Some(newa) =>
                          {
                            val newScores:
@@ -3960,11 +2230,11 @@ arrives(u2, destMerge), t1, u1, t2, u2, g, m)
                        (Transition.transition_ext[Unit],
                          Nat.nat))))](nondeterministic_pairs(newa))).reverse;
                            (resolve_nondeterminism(newScores, oldEFSM, newa, g,
-            m, check)
+            m)
                               match {
                               case None =>
                                 resolve_nondeterminism(ss, oldEFSM, newEFSM, g,
-                m, check)
+                m)
                               case Some(af) =>
                                 Some[FSet.fset[(Nat.nat,
          ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]](af)
@@ -4000,11 +2270,7 @@ def merge(e: FSet.fset[(Nat.nat,
                                    ((Nat.nat, Nat.nat),
                                      Transition.transition_ext[Unit]))]) =>
                         Option[FSet.fset[(Nat.nat,
-   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]],
-           check:
-             (FSet.fset[((Nat.nat, Nat.nat),
-                          Transition.transition_ext[Unit])]) =>
-               Boolean):
+   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]]):
       Option[FSet.fset[(Nat.nat,
                          ((Nat.nat, Nat.nat),
                            Transition.transition_ext[Unit]))]]
@@ -4015,12 +2281,16 @@ def merge(e: FSet.fset[(Nat.nat,
                               ((Nat.nat, Nat.nat),
                                 Transition.transition_ext[Unit]))]
              = merge_states(s1, s2, e);
-           resolve_nondeterminism((FSet.sorted_list_of_fset[(Nat.nat,
-                      ((Nat.nat, Nat.nat),
-                        ((Transition.transition_ext[Unit], Nat.nat),
-                          (Transition.transition_ext[Unit],
-                            Nat.nat))))](nondeterministic_pairs(t))).reverse,
-                                   e, t, g, m, check)
+           (if (! (nondeterminism(t)))
+             Some[FSet.fset[(Nat.nat,
+                              ((Nat.nat, Nat.nat),
+                                Transition.transition_ext[Unit]))]](t)
+             else resolve_nondeterminism((FSet.sorted_list_of_fset[(Nat.nat,
+                             ((Nat.nat, Nat.nat),
+                               ((Transition.transition_ext[Unit], Nat.nat),
+                                 (Transition.transition_ext[Unit],
+                                   Nat.nat))))](nondeterministic_pairs(t))).reverse,
+  e, t, g, m))
          })
 
 def inference_step(uu: FSet.fset[(Nat.nat,
@@ -4043,20 +2313,17 @@ def inference_step(uu: FSet.fset[(Nat.nat,
                                 (FSet.fset[(Nat.nat,
      ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
                                   Option[FSet.fset[(Nat.nat,
-             ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]],
-                    ux: (FSet.fset[((Nat.nat, Nat.nat),
-                                     Transition.transition_ext[Unit])]) =>
-                          Boolean):
+             ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]]):
       Option[FSet.fset[(Nat.nat,
                          ((Nat.nat, Nat.nat),
                            Transition.transition_ext[Unit]))]]
   =
-  (uu, x1, uv, uw, ux) match {
-  case (uu, Nil, uv, uw, ux) => None
-  case (ta, (s, (s1, s2))::t, g, m, check) =>
+  (uu, x1, uv, uw) match {
+  case (uu, Nil, uv, uw) => None
+  case (ta, (s, (s1, s2))::t, g, m) =>
     (if (Nat.less_nat(Nat.zero_nata, s))
-      (merge(ta, s1, s2, g, m, check) match {
-         case None => inference_step(ta, t, g, m, check)
+      (merge(ta, s1, s2, g, m) match {
+         case None => inference_step(ta, t, g, m)
          case Some(a) =>
            Some[FSet.fset[(Nat.nat,
                             ((Nat.nat, Nat.nat),
@@ -4144,42 +2411,17 @@ def infer(t: FSet.fset[(Nat.nat,
                                    ((Nat.nat, Nat.nat),
                                      Transition.transition_ext[Unit]))]) =>
                         Option[FSet.fset[(Nat.nat,
-   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]],
-           check:
-             (FSet.fset[((Nat.nat, Nat.nat),
-                          Transition.transition_ext[Unit])]) =>
-               Boolean):
+   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]]):
       FSet.fset[(Nat.nat,
                   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
   =
   (inference_step(t, (FSet.sorted_list_of_fset[(Nat.nat,
          (Nat.nat, Nat.nat))](score(t, r))).reverse,
-                   g, m, check)
+                   g, m)
      match {
      case None => t
-     case Some(newa) => infer(newa, r, g, m, check)
+     case Some(newa) => infer(newa, r, g, m)
    })
-
-def satisfies_trace(x1: List[(String, (List[Value.value], List[Value.value]))],
-                     x2: FSet.fset[((Nat.nat, Nat.nat),
-                                     Transition.transition_ext[Unit])],
-                     x3: Nat.nat, x4: VName.vname => Option[Value.value]):
-      Boolean
-  =
-  Predicate.holds(Code_Generation.satisfies_trace_i_i_i_i(x1, x2, x3, x4))
-
-def satisfies(t: Set.set[List[(String,
-                                (List[Value.value], List[Value.value]))]],
-               e: FSet.fset[((Nat.nat, Nat.nat),
-                              Transition.transition_ext[Unit])]):
-      Boolean
-  =
-  Set.Ball[List[(String,
-                  (List[Value.value],
-                    List[Value.value]))]](t,
-   ((ta: List[(String, (List[Value.value], List[Value.value]))]) =>
-     satisfies_trace(ta, e, Nat.zero_nata,
-                      AExp.null_state[VName.vname, Value.value])))
 
 def make_outputs(x0: List[Value.value]): List[AExp.aexp] = x0 match {
   case Nil => Nil
@@ -4277,13 +2519,7 @@ def learn(l: List[List[(String, (List[Value.value], List[Value.value]))]],
   =
   tm(infer(toiEFSM(make_pta(l, FSet.bot_fset[((Nat.nat, Nat.nat),
        Transition.transition_ext[Unit])])),
-            r, g, m,
-            ((a: FSet.fset[((Nat.nat, Nat.nat),
-                             Transition.transition_ext[Unit])])
-               =>
-              satisfies(Set.seta[List[(String,
-(List[Value.value], List[Value.value]))]](l),
-                         a))))
+            r, g, m))
 
 def null_modifier(a: Nat.nat, b: Nat.nat, c: Nat.nat,
                    d: FSet.fset[(Nat.nat,
@@ -4307,14 +2543,22 @@ def null_generator(a: FSet.fset[(Nat.nat,
   =
   None
 
-def nondeterministic(t: FSet.fset[(Nat.nat,
-                                    ((Nat.nat, Nat.nat),
-                                      Transition.transition_ext[Unit]))]):
-      Boolean
-  =
-  ! (deterministic(t))
-
 } /* object Inference */
+
+object Code_Generation {
+
+def guard_filter_code(inputX: Nat.nat, x1: GExp.gexp): Boolean = (inputX, x1)
+  match {
+  case (inputX, GExp.Eq(a, b)) =>
+    (! (AExp.equal_aexpa(a, AExp.V(VName.I(inputX))))) && (! (AExp.equal_aexpa(b,
+AExp.V(VName.I(inputX)))))
+  case (uu, GExp.Bc(v)) => true
+  case (uu, GExp.Gt(v, va)) => true
+  case (uu, GExp.Nor(v, va)) => true
+  case (uu, GExp.Null(v)) => true
+}
+
+} /* object Code_Generation */
 
 object Trace_Matches {
 
