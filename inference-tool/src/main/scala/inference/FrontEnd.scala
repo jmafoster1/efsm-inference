@@ -9,7 +9,8 @@ object FrontEnd {
   def main(args: Array[String]): Unit = {
     println("=================================================================")
 
-    val filename = "sample-traces/vend2.json"
+    // val filename = "sample-traces/vend1.json"
+    val filename = args(0)
     val rawJson = Source.fromFile(filename).getLines.mkString
     val parsed = (parse(rawJson))
 
@@ -23,7 +24,7 @@ object FrontEnd {
     println("Hello inference!")
     val inferred = (Inference.learn(log, (SelectionStrategies.naive_score _).curried, (Inference.null_generator _).curried, heuristic))
 
-    println("The inferred machine is "+(if (Inference.nondeterminism(Inference.toiEFSM(inferred))) "non" else "")+"deterministic")
+    println("The inferred machine is "+(if (Inference.nondeterministic(Inference.toiEFSM(inferred))) "non" else "")+"deterministic")
 
     val pw = new PrintWriter(new File("dotfiles/vend1.dot" ))
     pw.write(EFSM_Dot.efsm2dot(inferred))

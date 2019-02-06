@@ -4,6 +4,13 @@ import exceptions.SatisfiabilityUnknownException
 import java.io._
 object Dirties {
 
+  def R(i: BigInt): VName.vname = {
+    VName.R(Nat.Nata(i))
+  }
+  def I(i: BigInt): VName.vname = {
+    VName.I(Nat.Nata(i))
+  }
+
   def writeiDot(e: FSet.fset[(Nat.nat,
                                ((Nat.nat, Nat.nat),
                                  Transition.transition_ext[Unit]))], f: String): Unit = {
@@ -32,21 +39,21 @@ object Dirties {
     case VName.R(n) => ctx.mkConst("r"+valueOf(n), datatype)
   }
 
-  def toZ3(a: AExp.aexp, ctx: z3.Context, variables: VariableSet): z3.Expr =  a match {
+  def toZ3(a: AExp.aexp, ctx: z3.Context, types: FinFun.finfun[VName.vname, Type_Inference.typea]): z3.Expr =  a match {
     case AExp.L(v) => toZ3(v, ctx)
     case AExp.V(v) => {
-      var variable = variables.get(f => f.name == v)
-      variable.dataType match {
-        case DataType.NUM     => toZ3(v, ctx, ctx.mkIntSort())
-        case DataType.STR     => toZ3(v, ctx, ctx.mkStringSort())
-        case DataType.UNBOUND => toZ3(v, ctx, ctx.mkUninterpretedSort("UNBOUND"))
+      FinFun.finfun_apply(types, v) match {
+        case Type_Inference.NUM()     => toZ3(v, ctx, ctx.mkIntSort())
+        case Type_Inference.STRING()    => toZ3(v, ctx, ctx.mkStringSort())
+        case Type_Inference.UNBOUND() => toZ3(v, ctx, ctx.mkUninterpretedSort("UNBOUND"))
+        case Type_Inference.NULL() => toZ3(v, ctx, ctx.mkUninterpretedSort("NULL"))
       }
     }
-    case AExp.Plus(a1, a2) => ctx.mkAdd(toZ3(a1, ctx, variables).asInstanceOf[z3.ArithExpr], toZ3(a2, ctx, variables).asInstanceOf[z3.ArithExpr])
-    case AExp.Minus(a1, a2) => ctx.mkSub(toZ3(a1, ctx, variables).asInstanceOf[z3.ArithExpr],toZ3(a2, ctx, variables).asInstanceOf[z3.ArithExpr])
+    case AExp.Plus(a1, a2) => ctx.mkAdd(toZ3(a1, ctx, types).asInstanceOf[z3.ArithExpr], toZ3(a2, ctx, types).asInstanceOf[z3.ArithExpr])
+    case AExp.Minus(a1, a2) => ctx.mkSub(toZ3(a1, ctx, types).asInstanceOf[z3.ArithExpr],toZ3(a2, ctx, types).asInstanceOf[z3.ArithExpr])
   }
 
-  def toZ3(g: GExp.gexp, ctx: z3.Context, variables: VariableSet): z3.BoolExpr =  g match {
+  def toZ3(g: GExp.gexp, ctx: z3.Context, variables: FinFun.finfun[VName.vname, Type_Inference.typea]): z3.BoolExpr =  g match {
     case GExp.Bc(a) => ctx.mkBool(a)
     case GExp.Eq(a1, a2) => ctx.mkEq(toZ3(a1, ctx, variables), toZ3(a2, ctx, variables))
     case GExp.Gt(a1, a2) => ctx.mkGt(toZ3(a1, ctx, variables).asInstanceOf[z3.ArithExpr], toZ3(a2, ctx, variables).asInstanceOf[z3.ArithExpr])
@@ -55,17 +62,21 @@ object Dirties {
   }
 
   def satisfiable(g: GExp.gexp): Boolean = {
-    val tc = new TypeChecker()
-    tc.inferTypes(g)
-    // println(tc.variables)
-    val ctx = new z3.Context
-    val solver = ctx.mkSimpleSolver()
-    solver.add(toZ3(g, ctx, tc.variables))
-    // print(solver)
-    solver.check() match {
-      case z3.Status.SATISFIABLE => true
-      case z3.Status.UNSATISFIABLE => false
-      case z3.Status.UNKNOWN => throw new SatisfiabilityUnknownException(g.toString())
+    val maybe_types = Type_Inference.infer_types(g)
+    maybe_types match {
+      case None => false
+      case Some(types) => {
+        // println(FinFun.finfun_apply(types, I(1)))
+        val ctx = new z3.Context
+        val solver = ctx.mkSimpleSolver()
+        solver.add(toZ3(g, ctx, types))
+        // print(solver)
+        solver.check() match {
+          case z3.Status.SATISFIABLE => true
+          case z3.Status.UNSATISFIABLE => false
+          case z3.Status.UNKNOWN => throw new SatisfiabilityUnknownException(g.toString())
+        }
+      }
     }
   }
 
@@ -111,8 +122,4 @@ object Dirties {
                                 subsumes
                               }
                             }
-
-    def scalaNondeterministicSimulates(a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
-                                       b: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]): Boolean
-     = true
   }

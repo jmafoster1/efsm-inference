@@ -1,6 +1,7 @@
 theory Code_Generation
   imports 
    "HOL-Library.Code_Target_Numeral" Inference "../FSet_Utils" SelectionStrategies EFSM_Dot
+   Type_Inference
    Trace_Matches
 begin
 
@@ -14,12 +15,14 @@ definition scalaDirectlySubsumes :: "transition_matrix \<Rightarrow> transition_
   "scalaDirectlySubsumes a b c d e = False"
 
 declare GExp.satisfiable_def [code del]
-declare nondeterministic_simulates_def [code del]
 declare directly_subsumes_def [code del]
+
+declare consistent_def [code del]
+declare CExp.satisfiable_def [code del]
+declare CExp.valid_def [code del]
 
 code_printing
   constant "GExp.satisfiable" \<rightharpoonup> (Scala) "Dirties.satisfiable" |
-  constant "nondeterministic_simulates" \<rightharpoonup> (Scala) "Dirties.scalaNondeterministicSimulates" |
   constant "directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes"
 
 code_printing
@@ -101,10 +104,11 @@ lemma[code]: "leaves uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (fst
 lemma[code]: "arrives uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. (fst x = uid)) t))))"
   by (simp only: arrives_def exists_is_fst)
 
-code_printing
-  constant compare \<rightharpoonup> (Scala) "Dirties.lengthAndPrint(_, _)"
+code_pred satisfies_trace.
 
-export_code heuristic_1 iefsm2dot efsm2dot GExp.conjoin naive_score null_generator null_modifier learn in Scala
+declare ListMem_iff [code]
+
+export_code finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot GExp.conjoin naive_score null_generator null_modifier nondeterministic learn in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
