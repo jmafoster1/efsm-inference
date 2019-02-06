@@ -7,17 +7,16 @@ transitions with register update functions.
 
 theory Contexts
   imports
-    EFSM GExp "efsm-exp.CExp" FinFun.FinFunPred
+    EFSM GExp "efsm-exp.CExp"
 begin
-unbundle finfun_syntax
-type_synonym "context" = "aexp \<Rightarrow>f cexp"
+
+type_synonym "context" = "aexp \<Rightarrow> cexp"
 
 abbreviation empty ("\<lbrakk>\<rbrakk>") where
-(*  "empty \<equiv> Abs_finfun (\<lambda>x. case x of
+  "empty \<equiv> (\<lambda>x. case x of
     (V v) \<Rightarrow> (case v of R n \<Rightarrow> Undef | I n \<Rightarrow> Bc True) |
     _ \<Rightarrow> Bc True
-  )"*)
-  "empty \<equiv> (K$ Undef)"
+  )"
 syntax
   "_updbind" :: "'a \<Rightarrow> 'a \<Rightarrow> updbind" ("(2_ \<mapsto>/ _)")
   "_Context" :: "updbinds \<Rightarrow> 'a"      ("\<lbrakk>_\<rbrakk>")
@@ -26,26 +25,41 @@ translations
   "_Context ms" == "_Update \<lbrakk>\<rbrakk> ms"
   "_Context (_updbinds b bs)" \<rightleftharpoons> "_Update (_Context b) bs"
 
-lemma empty_not_false[simp]: "\<lbrakk>\<rbrakk> $ i \<noteq> cexp.Bc False"
-  by simp
+lemma empty_not_false[simp]: "cexp.Bc False \<noteq> \<lbrakk>\<rbrakk> i"
+proof (induct i)
+case (L x)
+then show ?case by simp
+next
+  case (V x)
+  then show ?case
+    apply (case_tac x)
+    by simp_all
+next
+  case (Plus i1 i2)
+  then show ?case
+    by simp
+next
+  case (Minus i1 i2)
+  then show ?case
+    by simp
+qed
+
 
 fun get :: "context \<Rightarrow> aexp \<Rightarrow> cexp" where
   "get c (L n) = Eq n" |
-  "get c (V v) = c $ (V v)" |
-  "get c (Plus v va) = (And (c $ (Plus v va)) (c $ (Plus va v)))" |
-  "get c (Minus v va) = (c $ (Minus v va))"
+  "get c (V v) = c (V v)" |
+  "get c (Plus v va) = (And (c (Plus v va)) (c (Plus va v)))" |
+  "get c (Minus v va) = (c (Minus v va))"
 
 fun update :: "context \<Rightarrow> aexp \<Rightarrow> cexp \<Rightarrow> context" where
-  "update c k v = c(k $:=v)"
+  "update c (L n) _ = c" |
+  "update c k v = (\<lambda>r. if r=k then v else c r)"
 
-(* definition finfun_Diag :: "'a \<Rightarrow>f 'b \<Rightarrow> 'a \<Rightarrow>f 'c \<Rightarrow> 'a \<Rightarrow>f ('b \<times> 'c)" ("(1'($_,/ _$'))" [0, 0] 1000) *)
-(* where [code del]: "($f, g$) = finfun_rec (\<lambda>b. Pair b \<circ>$ g) (\<lambda>a b c. c(a $:= (b, g $ a))) f" *)
+fun conjoin :: "context \<Rightarrow> context \<Rightarrow> context" where
+  "conjoin c c' = (\<lambda>r. (and (c r) (c' r)))"
 
-definition conjoin :: "context \<Rightarrow> context \<Rightarrow> context" where
-  "conjoin f g = (\<lambda>p. and (fst p) (snd p)) \<circ>$ (finfun_Diag f g)"
-
-definition negate :: "context \<Rightarrow> context" where [code del]:
-  "negate f = (\<lambda>p. not p) \<circ>$ f"
+fun negate :: "context \<Rightarrow> context" where
+  "negate c = (\<lambda>r. not (c r))"
 
 definition context_equiv :: "context \<Rightarrow> context \<Rightarrow> bool" where
   "context_equiv c c' \<equiv> (\<forall>r. cexp_equiv (get c r) (get c' r))"
@@ -75,9 +89,9 @@ fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow> gexp" where
   "cexp2gexp a (And v va) = gAnd (cexp2gexp a v) (cexp2gexp a va)"
 
 definition consistent :: "context \<Rightarrow> bool" where (* Is there a variable evaluation which can satisfy all of the context? *)
-  "consistent c \<equiv> \<exists>s. \<forall>r. (c $ r) = Undef \<or> (gval (cexp2gexp r (c $ r)) s = Some True)"
+  "consistent c \<equiv> \<exists>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
 
-lemma possible_false_not_consistent: "\<exists>r. c $ r = Bc False \<Longrightarrow> \<not> consistent c"
+lemma possible_false_not_consistent: "\<exists>r. c r = Bc False \<Longrightarrow> \<not> consistent c"
   unfolding consistent_def
   apply simp
   apply (rule allI)
@@ -85,24 +99,27 @@ lemma possible_false_not_consistent: "\<exists>r. c $ r = Bc False \<Longrightar
   apply (rule_tac x=r in exI)
   by simp
 
-lemma inconsistent_false: "\<not>consistent (K$ Bc False)"
+lemma inconsistent_false: "\<not>consistent (\<lambda>i. cexp.Bc False)"
   by (simp add: consistent_def)
 
 definition valid_context :: "context \<Rightarrow> bool" where (* Is the context satisfied in all variable evaluations? *)
-  "valid_context c \<equiv> \<forall>s. \<forall>r. (c $ r) = Undef \<or> (gval (cexp2gexp r (c $ r)) s = Some True)"
+  "valid_context c \<equiv> \<forall>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
 
-theorem consistent_empty_1: "empty $ r = Undef \<or> empty $ r = Bc True"
-  by simp
+theorem consistent_empty_1: "empty r = Undef \<or> empty r = Bc True"
+  apply (cases r)
+  prefer 2
+    apply (case_tac x2)
+  by simp_all
 
-theorem consistent_empty_2: "(\<forall>r. c $ r = Bc True \<or> c $ r = Undef) \<longrightarrow> consistent c"
+theorem consistent_empty_2: "(\<forall>r. c r = Bc True \<or> c r = Undef) \<longrightarrow> consistent c"
   apply (simp add: consistent_def)
   by force
 
-lemma consistent_empty_3: "(\<forall>r. empty $ r = Bc True \<or> empty $ r = Undef) \<longrightarrow> consistent empty"
+lemma consistent_empty_3: "(\<forall>r. empty r = Bc True \<or> empty r = Undef) \<longrightarrow> consistent empty"
   apply (insert consistent_empty_2)
   by simp
 
-lemma consistent_empty_4: "\<lbrakk>\<rbrakk> $ r = Undef \<or> gval (cexp2gexp r (\<lbrakk>\<rbrakk> $ r)) c = Some True"
+lemma consistent_empty_4: "\<lbrakk>\<rbrakk> r = Undef \<or> gval (cexp2gexp r (\<lbrakk>\<rbrakk> r)) c = Some True"
   using consistent_empty_1 by force
 
 lemma consistent_empty [simp]: "consistent empty"
@@ -147,9 +164,9 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
   "guard2pairs a (Nor v va) = (pair_and (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a v)) (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a va)))"
 
 fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context" where
-  "pairs2context [] = (K$ Bc True)" |
-  "pairs2context ((_, Bc False)#t) = (K$ Bc False)" |
-  "pairs2context (h#t) = conjoin (pairs2context t) (K$ Bc True)((fst h) $:= (snd h))"
+  "pairs2context [] = (\<lambda>i. Bc True)" |
+  "pairs2context ((_, Bc False)#t) = (\<lambda>r. Bc False)" |
+  "pairs2context (h#t) = conjoin (pairs2context t) (\<lambda>r. if r = (fst h) then (snd h) else Bc True)"
 
 fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
   "apply_guard a g = conjoin (pairs2context (guard2pairs a g)) a"
@@ -159,8 +176,8 @@ fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
    "medial c (h#t) = (medial (apply_guard c h) t)"
 
 fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function \<Rightarrow> context" where
-  "apply_update l c (v, L n) = update c (V v) (Eq n)" |
-  "apply_update l c (v, V vb) = update c (V v) (l $ (V vb))" |
+  "apply_update l c (v, (L n)) = update c (V v) (Eq n)" |
+  "apply_update l c (v, V vb) = update c (V v) (l (V vb))" |
   "apply_update l c (v, Plus vb vc) = update c (V v) (compose_plus (get l vb) (get l vc))" |
   "apply_update l c (v, Minus vb vc) = update c (V v) (compose_minus (get l vb) (get l vc))"
 
@@ -182,11 +199,10 @@ fun constrains_an_input :: "aexp \<Rightarrow> bool" where
   "constrains_an_input (Minus v va) = (constrains_an_input v \<and> constrains_an_input va)"
 
 definition remove_input_constraints :: "context \<Rightarrow> context" where
-  "remove_input_constraints c = Abs_finfun (\<lambda>x. if constrains_an_input x then \<lbrakk>\<rbrakk> $ x else c $ x)"
+  "remove_input_constraints c = (\<lambda>x. if constrains_an_input x then \<lbrakk>\<rbrakk> x else c x)"
 
 lemma remove_input_constraints_empty[simp]: "remove_input_constraints \<lbrakk>\<rbrakk> = \<lbrakk>\<rbrakk>"
-  apply (simp add: remove_input_constraints_def)
-  by (simp add: finfun_const.abs_eq)
+  by (simp add: remove_input_constraints_def)
 
 lemma consistent_remove_input_constraints[simp]: "consistent c \<Longrightarrow> consistent (remove_input_constraints c)"
 proof-
@@ -198,7 +214,6 @@ proof-
     apply (rule_tac x=s in exI)
     apply (rule allI)
     apply (case_tac "constrains_an_input r")
-    apply (simp add: finfun_apply_inverse)
      apply (simp add: consistent_empty_4)
     by simp
 qed
@@ -228,7 +243,7 @@ lemma satisfies_context_empty: "satisfies_context <> \<lbrakk>\<rbrakk> \<and> s
   apply (simp add: satisfies_context_def consistent_def datastate2context_def)
   apply (rule_tac x="<>" in exI)
   apply clarify
-  apply (case_tac $ r)
+  apply (case_tac r)
      apply simp
     apply (case_tac x2)
   by auto
@@ -271,16 +286,16 @@ lemma gexp_equiv_cexp_not_true:  "gexp_equiv (cexp2gexp a (Not (Bc True))) (gexp
 lemma gexp_equiv_cexp_not_false:  "gexp_equiv (cexp2gexp a (Not (Bc False))) (gexp.Bc True)"
   by (simp add: gexp_equiv_def)
 
-lemma geq_to_ge: "Geq x = c $ r \<Longrightarrow> (cexp2gexp r (c $ r)) = Ge r (L x)"
+lemma geq_to_ge: "Geq x = c r \<Longrightarrow> (cexp2gexp r (c r)) = Ge r (L x)"
   by (metis cexp2gexp.simps(3) cexp2gexp.simps(6))
 
-lemma leq_to_le: "Leq x = c $ r \<Longrightarrow> (cexp2gexp r (c $ r)) = Le r (L x)"
+lemma leq_to_le: "Leq x = c r \<Longrightarrow> (cexp2gexp r (c r)) = Le r (L x)"
   by (metis cexp2gexp.simps(4) cexp2gexp.simps(6))
 
-lemma lt_to_lt: "Lt x = c $ r \<Longrightarrow> (cexp2gexp r (c $ r)) = gexp.Gt (L x) r"
+lemma lt_to_lt: "Lt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Gt (L x) r"
   by (metis cexp2gexp.simps(3))
 
-lemma gt_to_gt: "Gt x = c $ r \<Longrightarrow> (cexp2gexp r (c $ r)) = gexp.Gt r (L x)"
+lemma gt_to_gt: "Gt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Gt r (L x)"
   by (metis cexp2gexp.simps(4))
 
 lemma not_satisfiable_def: "\<not> satisfiable c = (\<forall>i. cval c i = Some False \<or> cval c i = None)"
