@@ -62,7 +62,7 @@ fun negate :: "context \<Rightarrow> context" where
   "negate c = (\<lambda>r. not (c r))"
 
 definition context_equiv :: "context \<Rightarrow> context \<Rightarrow> bool" where
-  "context_equiv c c' \<equiv> (\<forall>r. cexp_equiv (get c r) (get c' r))"
+  "context_equiv c c' \<equiv> (\<forall>r. cexp_equiv (c r) (c' r))"
 
 lemma context_equiv_reflexive: "context_equiv x x"
   apply (simp add: context_equiv_def)
@@ -201,6 +201,16 @@ fun constrains_an_input :: "aexp \<Rightarrow> bool" where
 definition remove_input_constraints :: "context \<Rightarrow> context" where
   "remove_input_constraints c = (\<lambda>x. if constrains_an_input x then \<lbrakk>\<rbrakk> x else c x)"
 
+lemma empty_inputs_are_true: "constrains_an_input x \<Longrightarrow> \<lbrakk>\<rbrakk> x = Bc True"
+  apply (case_tac x)
+     apply simp
+    apply (case_tac x2)
+  by auto
+
+lemma remove_input_constraints_alt:  "remove_input_constraints c = (\<lambda>x. if constrains_an_input x then Bc True else c x)"
+  apply (rule ext)
+  by (simp add: remove_input_constraints_def empty_inputs_are_true)
+
 lemma remove_input_constraints_empty[simp]: "remove_input_constraints \<lbrakk>\<rbrakk> = \<lbrakk>\<rbrakk>"
   by (simp add: remove_input_constraints_def)
 
@@ -273,11 +283,11 @@ primrec pairs2guard :: "(aexp \<times> cexp) list \<Rightarrow> guard" where
   "pairs2guard [] = gexp.Bc True" |
   "pairs2guard (h#t) = gAnd (cexp2gexp (fst h) (snd h)) (pairs2guard t)"
 
-lemma context_equiv_same_undef: "get c i = Undef \<Longrightarrow> get c' i = cexp.Bc True \<Longrightarrow> \<not> context_equiv c c'"
+lemma context_equiv_same_undef: "c i = Undef \<Longrightarrow> c' i = cexp.Bc True \<Longrightarrow> \<not> context_equiv c c'"
   apply (simp add: context_equiv_def cexp_equiv_def)
   by force
 
-lemma context_equiv_undef: "context_equiv c c' \<Longrightarrow> ((get c i) = Undef) = ((get c' i) = Undef)"
+lemma context_equiv_undef: "context_equiv c c' \<Longrightarrow> ((c i) = Undef) = ((c' i) = Undef)"
   by (simp add: cexp_equiv_def context_equiv_def)
 
 lemma gexp_equiv_cexp_not_true:  "gexp_equiv (cexp2gexp a (Not (Bc True))) (gexp.Bc False)"
