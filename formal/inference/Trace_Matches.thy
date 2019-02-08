@@ -125,8 +125,12 @@ definition new_reg :: "iEFSM \<Rightarrow> nat" where
 definition "guard_filter inputX = (\<lambda>g. \<nexists>a. g = gexp.Eq (V (I inputX)) a \<or> g = gexp.Eq a (V (I inputX)))"
 declare guard_filter_def [simp]
 
-definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
-  "remove_guard_add_update t inputX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (filter (guard_filter inputX) (Guard t)), Outputs = (Outputs t), Updates = (R outputX, (V (I inputX)))#(Updates t)\<rparr>"
+definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition option" where
+  "remove_guard_add_update t inputX outputX = (if (filter (\<lambda>x. (\<not>guard_filter inputX x)) (Guard t)) = [] then
+                                                 None
+                                               else
+                                                 Some \<lparr>Label = (Label t), Arity = (Arity t), Guard = (filter (guard_filter inputX) (Guard t)), Outputs = (Outputs t), Updates = (R outputX, (V (I inputX)))#(Updates t)\<rparr>
+                                               )"
 
 definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
   "generalise_output t regX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (Guard t), Outputs = list_update (Outputs t) outputX (V (R regX)), Updates = (Updates t)\<rparr>"
@@ -160,8 +164,9 @@ definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarro
   "modify matches u1 u2 old = (let relevant = filter (\<lambda>(((_, u1'), io, _), (_, u2'), io', _). io = In \<and> io' = Out \<and> (u1 = u1' \<or> u2 = u1' \<or> u1 = u2' \<or> u2 = u2')) matches;
                                    newReg = new_reg old;
                                    replacements = map (\<lambda>(((t1, u1), io1, inx1), (t2, u2), io2, inx2). (((remove_guard_add_update t1 (inx1+1) newReg, u1), io1, inx1), (generalise_output t2 newReg inx2, u2), io2, inx2)) relevant;
-                                   comparisons = zip relevant replacements;
-                                   stripped_replacements = map strip_uids replacements;
+                                   successfull_replacements = map (\<lambda>(((transition_option, nat), s1), s2). case transition_option of Some t \<Rightarrow> (((t, nat), s1), s2)) (filter (\<lambda>(((transition_option, _), _), _). transition_option \<noteq> None) replacements);
+                                   comparisons = zip relevant successfull_replacements;
+                                   stripped_replacements = map strip_uids successfull_replacements;
                                    to_replace = filter (\<lambda>(_, s). count (strip_uids s) stripped_replacements > 1) comparisons in
                                 if to_replace = [] then None else Some (make_distinct (generalise_transitions to_replace old))
                               )"

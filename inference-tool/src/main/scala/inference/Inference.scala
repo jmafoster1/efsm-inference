@@ -2957,16 +2957,18 @@ def guard_filter: Nat.nat => GExp.gexp => Boolean =
 
 def remove_guard_add_update(t: Transition.transition_ext[Unit], inputX: Nat.nat,
                              outputX: Nat.nat):
-      Transition.transition_ext[Unit]
+      Option[Transition.transition_ext[Unit]]
   =
-  Transition.transition_exta[Unit](Transition.Label[Unit](t),
-                                    Transition.Arity[Unit](t),
-                                    Lista.filter[GExp.gexp](guard_filter.apply(inputX),
-                     Transition.Guard[Unit](t)),
-                                    Transition.Outputs[Unit](t),
-                                    (VName.R(outputX),
-                                      AExp.V(VName.I(inputX)))::(Transition.Updates[Unit](t)),
-                                    ())
+  (if (Lista.nulla[GExp.gexp](Lista.filter[GExp.gexp](((x: GExp.gexp) =>
+                ! guard_filter.apply(inputX).apply(x)),
+               Transition.Guard[Unit](t))))
+    None
+    else Some[Transition.transition_ext[Unit]](Transition.transition_exta[Unit](Transition.Label[Unit](t),
+ Transition.Arity[Unit](t),
+ Lista.filter[GExp.gexp](guard_filter.apply(inputX), Transition.Guard[Unit](t)),
+ Transition.Outputs[Unit](t),
+ (VName.R(outputX), AExp.V(VName.I(inputX)))::(Transition.Updates[Unit](t)),
+ ())))
 
 def replaceAll(e: FSet.fset[(Nat.nat,
                               ((Nat.nat, Nat.nat),
@@ -3330,14 +3332,15 @@ def modify(matches:
 matches)
     val newReg: Nat.nat = new_reg(old)
     val replacements:
-          List[(((Transition.transition_ext[Unit], Nat.nat), (ioTag, Nat.nat)),
+          List[(((Option[Transition.transition_ext[Unit]], Nat.nat),
+                  (ioTag, Nat.nat)),
                  ((Transition.transition_ext[Unit], Nat.nat),
                    (ioTag, Nat.nat)))]
       = Lista.map[(((Transition.transition_ext[Unit], Nat.nat),
                      (ioTag, Nat.nat)),
                     ((Transition.transition_ext[Unit], Nat.nat),
                       (ioTag, Nat.nat))),
-                   (((Transition.transition_ext[Unit], Nat.nat),
+                   (((Option[Transition.transition_ext[Unit]], Nat.nat),
                       (ioTag, Nat.nat)),
                      ((Transition.transition_ext[Unit], Nat.nat),
                        (ioTag,
@@ -3385,6 +3388,75 @@ matches)
   })(b)
                                        }),
                                       relevant)
+    val successfull_replacements:
+          List[(((Transition.transition_ext[Unit], Nat.nat), (ioTag, Nat.nat)),
+                 ((Transition.transition_ext[Unit], Nat.nat),
+                   (ioTag, Nat.nat)))]
+      = Lista.map_filter[(((Option[Transition.transition_ext[Unit]], Nat.nat),
+                            (ioTag, Nat.nat)),
+                           ((Transition.transition_ext[Unit], Nat.nat),
+                             (ioTag, Nat.nat))),
+                          (((Transition.transition_ext[Unit], Nat.nat),
+                             (ioTag, Nat.nat)),
+                            ((Transition.transition_ext[Unit], Nat.nat),
+                              (ioTag,
+                                Nat.nat)))](((x:
+        (((Option[Transition.transition_ext[Unit]], Nat.nat), (ioTag, Nat.nat)),
+          ((Transition.transition_ext[Unit], Nat.nat), (ioTag, Nat.nat))))
+       =>
+      (if ({
+             val (a, b):
+                   (((Option[Transition.transition_ext[Unit]], Nat.nat),
+                      (ioTag, Nat.nat)),
+                     ((Transition.transition_ext[Unit], Nat.nat),
+                       (ioTag, Nat.nat)))
+               = x;
+             ({
+                val (aa, ba):
+                      ((Option[Transition.transition_ext[Unit]], Nat.nat),
+                        (ioTag, Nat.nat))
+                  = a;
+                ({
+                   val (transition_option, _):
+                         (Option[Transition.transition_ext[Unit]], Nat.nat)
+                     = aa;
+                   ((_: (ioTag, Nat.nat)) =>
+                     (_: ((Transition.transition_ext[Unit], Nat.nat),
+                           (ioTag, Nat.nat)))
+                       =>
+                     ! (Optiona.is_none[Transition.transition_ext[Unit]](transition_option)))
+                 })(ba)
+              })(b)
+           })
+        Some[(((Transition.transition_ext[Unit], Nat.nat), (ioTag, Nat.nat)),
+               ((Transition.transition_ext[Unit], Nat.nat),
+                 (ioTag,
+                   Nat.nat)))]({
+                                 val (a, b):
+                                       (((Option[Transition.transition_ext[Unit]],
+   Nat.nat),
+  (ioTag, Nat.nat)),
+ ((Transition.transition_ext[Unit], Nat.nat), (ioTag, Nat.nat)))
+                                   = x;
+                                 ({
+                                    val (aa, ba):
+  ((Option[Transition.transition_ext[Unit]], Nat.nat), (ioTag, Nat.nat))
+                                      = a;
+                                    ({
+                                       val
+ (transition_option, nat): (Option[Transition.transition_ext[Unit]], Nat.nat) =
+ aa;
+                                       ((s1: (ioTag, Nat.nat)) =>
+ (s2: ((Transition.transition_ext[Unit], Nat.nat), (ioTag, Nat.nat))) =>
+ {
+   val (Some(t)): Option[Transition.transition_ext[Unit]] = transition_option;
+   (((t, nat), s1), s2)
+ })
+                                     })(ba)
+                                  })(b)
+                               })
+        else None)),
+     replacements)
     val comparisons:
           List[((((Transition.transition_ext[Unit], Nat.nat), (ioTag, Nat.nat)),
                   ((Transition.transition_ext[Unit], Nat.nat),
@@ -3400,7 +3472,7 @@ matches)
                    (((Transition.transition_ext[Unit], Nat.nat),
                       (ioTag, Nat.nat)),
                      ((Transition.transition_ext[Unit], Nat.nat),
-                       (ioTag, Nat.nat)))](relevant, replacements)
+                       (ioTag, Nat.nat)))](relevant, successfull_replacements)
     val stripped_replacements:
           List[((Transition.transition_ext[Unit], (ioTag, Nat.nat)),
                  (Transition.transition_ext[Unit], (ioTag, Nat.nat)))]
@@ -3416,7 +3488,7 @@ matches)
    ((Transition.transition_ext[Unit], Nat.nat), (ioTag, Nat.nat))))
 =>
                                        strip_uids(a)),
-                                      replacements)
+                                      successfull_replacements)
     val to_replace:
           List[((((Transition.transition_ext[Unit], Nat.nat), (ioTag, Nat.nat)),
                   ((Transition.transition_ext[Unit], Nat.nat),

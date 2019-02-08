@@ -88,7 +88,7 @@ fun guard_filter_code :: "nat \<Rightarrow> guard \<Rightarrow> bool" where
   "guard_filter_code inputX (gexp.Eq a b) = (a \<noteq> (V (I inputX)) \<and> b \<noteq> (V (I inputX)))" |
   "guard_filter_code _ _ = True"
 
-lemma[code]: "guard_filter = guard_filter_code"
+lemma guard_filter_code[code]: "guard_filter = guard_filter_code"
   unfolding guard_filter_def
   apply (rule ext)+
   apply (case_tac g)

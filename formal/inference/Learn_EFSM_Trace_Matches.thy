@@ -6,11 +6,11 @@ lemma new_reg_pta: "new_reg pta = 1"
   apply (simp add: new_reg_def)
   by (simp add: pta_def get_biggest_t_reg_def transitions)
 
-lemma generalise_selectCoke: "remove_guard_add_update selectCoke 1 1 = selectGeneral"
+lemma generalise_selectCoke: "remove_guard_add_update selectCoke 1 1 = Some selectGeneral"
   apply (simp add: selectCoke_def remove_guard_add_update_def)
   by (simp add: selectGeneral_def)
 
-lemma generalise_selectPepsi: "remove_guard_add_update selectPepsi 1 1 = selectGeneral"
+lemma generalise_selectPepsi: "remove_guard_add_update selectPepsi 1 1 = Some selectGeneral"
   apply (simp add: selectPepsi_def remove_guard_add_update_def)
   by (simp add: selectGeneral_def)
 
@@ -32,9 +32,9 @@ definition relevant :: "match list" where
    (vend_pepsi, 9), Out, 0)
 ]"
 
-definition replacements :: "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times>
+definition replacements :: "(((transition option \<times> nat) \<times> ioTag \<times> nat) \<times>
     (transition \<times> nat) \<times> ioTag \<times> nat) list" where
-  "replacements = [(((selectGeneral, 0), In, 0), (vend_general, 5), Out, 0), (((selectGeneral, 1), In, 0), (vend_general, 9), Out, 0)]"
+  "replacements = [(((Some selectGeneral, 0), In, 0), (vend_general, 5), Out, 0), (((Some selectGeneral, 1), In, 0), (vend_general, 9), Out, 0)]"
 
 
 lemma relevant:  "filter
@@ -49,34 +49,6 @@ lemma replacements: "map (\<lambda>(((t1, u1), io1, inx1), (t2, u2), io2, inx2).
   apply (simp add: relevant_def)
   by (simp add: generalise_selectCoke generalise_vend_coke generalise_selectPepsi generalise_vend_pepsi replacements_def)
 
-lemma zip_relevant_replacements: "zip relevant replacements = [
-((((selectCoke, 0), In, 0),
-    (vend_coke, 5), Out, 0),
-   ((selectGeneral, 0), In, 0),
-   (vend_general, 5), Out, 0),
-  ((((selectPepsi, 1), In, 0),
-    (vend_pepsi, 9), Out, 0),
-   ((selectGeneral, 1), In, 0),
-   (vend_general, 9), Out, 0)
-]"
-  by eval
-
-value "iefsm2dot_str (replace (replace pta 0 selectGeneral) 5 vend_general)"
-
-lemma to_replace: "filter
-            (\<lambda>(uu, s).
-                1 < count (strip_uids s)
-                     (map (strip_uids \<circ>
-                           (\<lambda>(((t1, u1), io1, inx1), (t2, u2), io2, inx2).
-                               (((remove_guard_add_update t1 (inx1 + 1) 1, u1), io1, inx1), (generalise_output t2 1 inx2, u2), io2, inx2)))
-                       relevant))
-            [((((selectCoke, 0), In, 0), (vend_coke, 5), Out, 0), ((selectGeneral, 0), In, 0), (vend_general, 5), Out, 0),
-             ((((selectPepsi, 1), In, 0), (vend_pepsi, 9), Out, 0), ((selectGeneral, 1), In, 0), (vend_general, 9), Out, 0)] = 
-[((((selectCoke, 0), In, 0), (vend_coke, 5), Out, 0), ((selectGeneral, 0), In, 0), (vend_general, 5), Out, 0),
- ((((selectPepsi, 1), In, 0), (vend_pepsi, 9), Out, 0), ((selectGeneral, 1), In, 0), (vend_general, 9), Out, 0)]"
-  apply (simp add: strip_uids_def relevant_def)
-  by (simp add: generalise_selectPepsi generalise_vend_pepsi generalise_selectCoke generalise_vend_coke)
-
 definition nondeterministic_merged_vends :: iEFSM where
 "nondeterministic_merged_vends = {|(0, (0, 1), selectGeneral),  (2, (1, 2), coin50_50), (4, (2, 3), coin50_100),  (5, (3, 4), vend_general),
                                                              (3, (1, 5), coin100_100), (6, (5, 6), vend_general),
@@ -88,14 +60,6 @@ lemma generalise_transitions: "(\<lambda>(uid, (from, to), t). if t = vend_pepsi
     (\<lambda>(uid, (from, to), t). if t = selectCoke then (uid, (from, to), selectGeneral) else (uid, (from, to), t)) ` fset pta = 
 fset nondeterministic_merged_vends"
   by eval
-
-lemma "modify (find_intratrace_matches traces pta) 5 9 pta = Some nondeterministic_merged_vends"
-  apply (simp add: modify_def new_reg_pta)
-  apply (simp add: relevant replacements)
-  apply (simp only: zip_relevant_replacements)
-  apply (simp only: to_replace Let_def)
-  apply (simp add: replaceAll_def fimage_def fset_both_sides Abs_fset_inverse)
-  by (simp add: generalise_transitions)
 
 lemma nondeterministic_simulates_trace_3_3: "nondeterministic_simulates_trace (tm nondeterministic_merged_vends) (tm pta) 3 3 (\<lambda>a. if a = R 1 then Some ((Str ''coke'')) else None)
      Map.empty t"

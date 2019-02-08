@@ -173,7 +173,7 @@ fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
 
  primrec medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
    "medial c [] = c" |
-   "medial c (h#t) = (medial (apply_guard c h) t)"
+   "medial c (h#t) = (apply_guard (medial c t) h)"
 
 fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function \<Rightarrow> context" where
   "apply_update l c (v, (L n)) = update c (V v) (Eq n)" |
@@ -285,10 +285,10 @@ primrec pairs2guard :: "(aexp \<times> cexp) list \<Rightarrow> guard" where
 
 lemma context_equiv_same_undef: "c i = Undef \<Longrightarrow> c' i = cexp.Bc True \<Longrightarrow> \<not> context_equiv c c'"
   apply (simp add: context_equiv_def cexp_equiv_def)
-  by force
+  by (metis CExp.satisfiable_def satisfiable_true unsatisfiable_undef)
 
-lemma context_equiv_undef: "context_equiv c c' \<Longrightarrow> ((c i) = Undef) = ((c' i) = Undef)"
-  by (simp add: cexp_equiv_def context_equiv_def)
+(* lemma context_equiv_undef: "context_equiv c c' \<Longrightarrow> ((c i) = Undef) = ((c' i) = Undef)" *)
+  (* apply (simp add: cexp_equiv_def context_equiv_def) *)
 
 lemma gexp_equiv_cexp_not_true:  "gexp_equiv (cexp2gexp a (Not (Bc True))) (gexp.Bc False)"
   by (simp add: gexp_equiv_def)

@@ -148,23 +148,23 @@ fun compose_plus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
 
 fun compose_minus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "compose_minus x y = (if satisfiable x \<and> satisfiable y then (if valid x \<or> valid y then Bc True else (case (x, y) of
-  ((Eq v), (Eq va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Eq c') |
-  ((Eq v), (Lt va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Lt c') |
-  ((Eq v), (Gt va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Gt c') |
-  ((Eq v), (Leq va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Leq c') |
-  ((Eq v), (Geq va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Geq c') |
-  ((Lt v), (Eq va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Lt c') |
-  ((Lt v), (Lt va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Lt c') |
-  ((Lt v), (Leq va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Lt c') |
-  ((Gt v), (Eq va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Gt c') |
-  ((Gt v), (Gt va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Gt c') |
-  ((Gt v), (Geq va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Gt c') |
-  ((Leq v), (Eq va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Leq c') |
-  ((Leq v), (Lt va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Lt c') |
-  ((Leq v), (Leq va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Leq c') |
-  ((Geq v), (Eq va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Geq c') |
-  ((Geq v), (Gt va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Gt c') |
-  ((Geq v), (Geq va)) \<Rightarrow> (case value_plus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Geq c') |
+  ((Eq v), (Eq va)) \<Rightarrow> (case value_minus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Eq c') |
+  ((Eq v), (Lt va)) \<Rightarrow> (case value_minus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Lt c') |
+  ((Eq v), (Gt va)) \<Rightarrow> (case value_minus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Gt c') |
+  ((Eq v), (Leq va)) \<Rightarrow> (case value_minus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Leq c') |
+  ((Eq v), (Geq va)) \<Rightarrow> (case value_minus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Geq c') |
+  ((Lt v), (Eq va)) \<Rightarrow> (case value_minus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Lt c') |
+  ((Lt v), (Lt va)) \<Rightarrow> (case value_minus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Lt c') |
+  ((Lt v), (Leq va)) \<Rightarrow> (case value_minus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Lt c') |
+  ((Gt v), (Eq va)) \<Rightarrow> (case value_minus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Gt c') |
+  ((Gt v), (Gt va)) \<Rightarrow> (case value_minus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Gt c') |
+  ((Gt v), (Geq va)) \<Rightarrow> (case value_minus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Gt c') |
+  ((Leq v), (Eq va)) \<Rightarrow> (case value_minus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Leq c') |
+  ((Leq v), (Lt va)) \<Rightarrow> (case value_minus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Lt c') |
+  ((Leq v), (Leq va)) \<Rightarrow> (case value_minus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Leq c') |
+  ((Geq v), (Eq va)) \<Rightarrow> (case value_minus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Geq c') |
+  ((Geq v), (Gt va)) \<Rightarrow> (case value_minus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Gt c') |
+  ((Geq v), (Geq va)) \<Rightarrow> (case value_minus (Some v) (Some va) of None \<Rightarrow> Bc False | Some c' \<Rightarrow> Geq c') |
   ((Neq _), _) \<Rightarrow> Bc True |
   (_, (Neq _)) \<Rightarrow> Bc True |
   ((Not (Not v)), va) \<Rightarrow> compose_minus v va |
@@ -384,7 +384,7 @@ lemma plus_num_str: "compose_plus (Eq (Str s)) (Eq (Num n)) = Bc False"
   by auto
 
 definition cexp_equiv :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
-  "cexp_equiv c c' \<equiv> (\<forall>i. (cval c i) = (cval c' i)) \<and> (c = Undef \<longleftrightarrow> c' = Undef)"
+  "cexp_equiv c c' \<equiv> (\<forall>i. (cval c i) = (cval c' i))"
 
 lemma cexp_equiv_reflexive: "cexp_equiv x x"
   by (simp add: cexp_equiv_def)
@@ -395,8 +395,8 @@ lemma cexp_equiv_symmetric: "cexp_equiv x y \<Longrightarrow> cexp_equiv y x"
 lemma cexp_equiv_transitive: "cexp_equiv x y \<Longrightarrow> cexp_equiv y z \<Longrightarrow> cexp_equiv x z"
   by (simp add: cexp_equiv_def)
 
-lemma cexp_equiv_undef: "cexp_equiv x Undef \<Longrightarrow> x = Undef"
-  by (simp add: cexp_equiv_def)
+(* lemma cexp_equiv_undef: "cexp_equiv x Undef \<Longrightarrow> x = Undef" *)
+  (* by (simp add: cexp_equiv_def) *)
 
 lemma cexp_equiv_subst: "cexp_equiv x y \<Longrightarrow> P (cval x i) \<Longrightarrow> P (cval y i)"
   by (simp add: cexp_equiv_def)
@@ -490,9 +490,7 @@ lemma and_symmetric: "cexp_equiv (and x y) (and y x)"
      apply simp
      apply (case_tac "cval y i")
      apply simp
-    apply auto[1]
-   apply (simp add: and_x_y_undef)
-  by (simp add: and_x_y_undef)
+  by auto[1]
 
 definition mutually_exclusive :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
   "mutually_exclusive x y = (\<forall>i. (cval x i = Some True \<longrightarrow> cval y i \<noteq> Some True) \<and>
@@ -522,7 +520,6 @@ lemma not_mutually_exclusive_true: "satisfiable x = (\<not> mutually_exclusive x
   by (simp add: mutually_exclusive_def satisfiable_def)
 
 lemma vexp_equiv_valid: "valid c \<longrightarrow> cexp_equiv c (Bc True)"
-  apply (simp add: valid_def cexp_equiv_def)
-  by auto
+  by (simp add: valid_def cexp_equiv_def)
 
 end
