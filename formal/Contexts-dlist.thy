@@ -7,15 +7,21 @@ transitions with register update functions.
 
 theory Contexts
   imports
-    EFSM GExp "efsm-exp.CExp"
+    EFSM GExp "efsm-exp.CExp" "~~/src/HOL/Library/Dlist"
 begin
 
-type_synonym "context" = "aexp \<Rightarrow> cexp"
+context includes dlist.lifting begin
+lift_definition dfold :: "('a \<Rightarrow> 'b \<Rightarrow> 'b) \<Rightarrow> 'a dlist \<Rightarrow> 'b \<Rightarrow> 'b" is fold.
+lift_definition dappend :: "'a dlist \<Rightarrow> 'a dlist \<Rightarrow> 'a dlist" (infix "|@|" 50) is "\<lambda>x y. remdups (x @ y)"
+  by simp
+end
+
+type_synonym "context" = "aexp \<Rightarrow> cexp dlist"
 
 abbreviation empty ("\<lbrakk>\<rbrakk>") where
   "empty \<equiv> (\<lambda>x. case x of
-    (V v) \<Rightarrow> (case v of R n \<Rightarrow> Undef | I n \<Rightarrow> Bc True) |
-    _ \<Rightarrow> Bc True
+    (V v) \<Rightarrow> (case v of R n \<Rightarrow> Dlist [Undef] | I n \<Rightarrow> Dlist [Bc True]) |
+    _ \<Rightarrow> Dlist [Bc True]
   )"
 syntax
   "_updbind" :: "'a \<Rightarrow> 'a \<Rightarrow> updbind" ("(2_ \<mapsto>/ _)")
@@ -25,7 +31,19 @@ translations
   "_Context ms" == "_Update \<lbrakk>\<rbrakk> ms"
   "_Context (_updbinds b bs)" \<rightleftharpoons> "_Update (_Context b) bs"
 
-lemma empty_not_false[simp]: "cexp.Bc False \<noteq> \<lbrakk>\<rbrakk> i"
+lemma list_of_dlist_singleton[simp]: "list_of_dlist (Abs_dlist [a]) = [a]"
+  by (simp add: Abs_dlist_inverse)
+
+definition collapse :: "cexp dlist \<Rightarrow> cexp" where
+  "collapse l = dfold (\<lambda>x y. and x y) l (Bc True)"
+
+fun get :: "context \<Rightarrow> aexp \<Rightarrow> cexp" where
+  "get c (L n) = Eq n" |
+  "get c (V v) = collapse (c (V v))" |
+  "get c (Plus v va) = collapse ((c (Plus v va)) |@|  (c (Plus va v)))" |
+  "get c (Minus v va) = collapse (c (Minus v va))"
+
+lemma empty_not_false[simp]: "cexp.Bc False \<noteq> get \<lbrakk>\<rbrakk> i"
 proof (induct i)
 case (L x)
 then show ?case by simp
@@ -33,36 +51,32 @@ next
   case (V x)
   then show ?case
     apply (case_tac x)
-    by simp_all
+    by (simp_all add: collapse_def dfold_def)
 next
   case (Plus i1 i2)
   then show ?case
-    by simp
+    by (simp add: collapse_def dfold_def dappend_def)
 next
   case (Minus i1 i2)
   then show ?case
-    by simp
+    by (simp add: collapse_def dfold_def)
 qed
 
-
-fun get :: "context \<Rightarrow> aexp \<Rightarrow> cexp" where
-  "get c (L n) = Eq n" |
-  "get c (V v) = c (V v)" |
-  "get c (Plus v va) = (And (c (Plus v va)) (c (Plus va v)))" |
-  "get c (Minus v va) = (c (Minus v va))"
-
-fun update :: "context \<Rightarrow> aexp \<Rightarrow> cexp \<Rightarrow> context" where
+fun update :: "context \<Rightarrow> aexp \<Rightarrow> cexp dlist \<Rightarrow> context" where
   "update c (L n) _ = c" |
   "update c k v = (\<lambda>r. if r=k then v else c r)"
 
+fun single_update :: "context \<Rightarrow> aexp \<Rightarrow> cexp \<Rightarrow> context" where
+  "single_update c k v = update c k (Dlist [v])"
+
 fun conjoin :: "context \<Rightarrow> context \<Rightarrow> context" where
-  "conjoin c c' = (\<lambda>r. (and (c r) (c' r)))"
+  "conjoin c c' = (\<lambda>r. ((c r) |@| (c' r)))"
 
 fun negate :: "context \<Rightarrow> context" where
-  "negate c = (\<lambda>r. not (c r))"
+  "negate c = (\<lambda>r. Dlist [not (get c r)])"
 
 definition context_equiv :: "context \<Rightarrow> context \<Rightarrow> bool" where
-  "context_equiv c c' \<equiv> (\<forall>r. cexp_equiv (c r) (c' r))"
+  "context_equiv c c' \<equiv> (\<forall>r. cexp_equiv (get c r) (get c' r))"
 
 lemma context_equiv_reflexive: "context_equiv x x"
   apply (simp add: context_equiv_def)
@@ -89,9 +103,9 @@ fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow> gexp" where
   "cexp2gexp a (And v va) = gAnd (cexp2gexp a v) (cexp2gexp a va)"
 
 definition consistent :: "context \<Rightarrow> bool" where (* Is there a variable evaluation which can satisfy all of the context? *)
-  "consistent c \<equiv> \<exists>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
+  "consistent c \<equiv> \<exists>s. \<forall>r. (get c r) = Undef \<or> (gval (cexp2gexp r (get c r)) s = Some True)"
 
-lemma possible_false_not_consistent: "\<exists>r. c r = Bc False \<Longrightarrow> \<not> consistent c"
+lemma possible_false_not_consistent: "\<exists>r. (get c r) = Bc False \<Longrightarrow> \<not> consistent c"
   unfolding consistent_def
   apply simp
   apply (rule allI)
@@ -99,32 +113,39 @@ lemma possible_false_not_consistent: "\<exists>r. c r = Bc False \<Longrightarro
   apply (rule_tac x=r in exI)
   by simp
 
-lemma inconsistent_false: "\<not>consistent (\<lambda>i. cexp.Bc False)"
-  by (simp add: consistent_def)
+lemma inconsistent_false: "\<not>consistent (\<lambda>i. Dlist [Bc False])"
+  apply (simp add: consistent_def collapse_def dfold_def)
+  apply clarify
+  apply (rule_tac x="V v" in exI)
+  by (simp add: collapse_def dfold_def)
 
 definition valid_context :: "context \<Rightarrow> bool" where (* Is the context satisfied in all variable evaluations? *)
-  "valid_context c \<equiv> \<forall>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
+  "valid_context c \<equiv> \<forall>s. \<forall>r. (get c r) = Undef \<or> (gval (cexp2gexp r (get c r)) s = Some True)"
 
-theorem consistent_empty_1: "empty r = Undef \<or> empty r = Bc True"
+theorem consistent_empty_1: "\<lbrakk>\<rbrakk> r = Dlist [Undef] \<or> \<lbrakk>\<rbrakk> r = Dlist [Bc True]"
   apply (cases r)
   prefer 2
     apply (case_tac x2)
   by simp_all
 
-theorem consistent_empty_2: "(\<forall>r. c r = Bc True \<or> c r = Undef) \<longrightarrow> consistent c"
+theorem consistent_empty_2: "(\<forall>r. get c r = Bc True \<or> get c r = Undef) \<longrightarrow> consistent c"
   apply (simp add: consistent_def)
   by force
 
-lemma consistent_empty_3: "(\<forall>r. empty r = Bc True \<or> empty r = Undef) \<longrightarrow> consistent empty"
+lemma consistent_empty_3: "(\<forall>r. get \<lbrakk>\<rbrakk> r = Bc True \<or> get \<lbrakk>\<rbrakk> r = Undef) \<longrightarrow> consistent empty"
   apply (insert consistent_empty_2)
   by simp
 
-lemma consistent_empty_4: "\<lbrakk>\<rbrakk> r = Undef \<or> gval (cexp2gexp r (\<lbrakk>\<rbrakk> r)) c = Some True"
-  using consistent_empty_1 by force
+lemma consistent_empty_4: "get \<lbrakk>\<rbrakk> r = Undef \<or> gval (cexp2gexp r (get \<lbrakk>\<rbrakk> r)) c = Some True"
+  apply (cases r)
+     apply simp+
+    apply (case_tac x2)
+     apply (simp add: collapse_def dfold_def)+
+   apply (simp add: dappend_def)
+  by (simp add: collapse_def dfold_def)
 
 lemma consistent_empty [simp]: "consistent empty"
-  apply (insert consistent_empty_1 consistent_empty_3)
-  by auto
+  by (simp add: consistent_def consistent_empty_4)
 
 lemma cexp2gexp_double_neg: "gexp_equiv (cexp2gexp r (Not (Not x))) (cexp2gexp r x)"
   apply (simp add: gexp_equiv_def)
@@ -163,9 +184,14 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
 
   "guard2pairs a (Nor v va) = (pair_and (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a v)) (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a va)))"
 
+(*fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context" where
+  "pairs2context [] = (\<lambda>i. Dlist [Bc True])" |
+  "pairs2context ((_, Bc False)#t) = (\<lambda>r. Dlist [Bc False])" |
+  "pairs2context ((a, c)#t) = conjoin (pairs2context t) (\<lambda>r. if r = a then Dlist [c] else Dlist [Bc True])"*)
+
 primrec pairs2context2 :: "(aexp \<times> cexp) list \<Rightarrow> context \<Rightarrow> context" where
   "pairs2context2 [] c = c" |
-  "pairs2context2 (h#t) c = pairs2context2 t (update c (fst h) (and (snd h) (c (fst h))))"
+  "pairs2context2 (h#t) c = pairs2context2 t (update c (fst h) (Dlist.insert (snd h) (c (fst h))))"
 
 fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
   "apply_guard a g = (pairs2context2 (guard2pairs a g) a)"
@@ -174,10 +200,10 @@ definition medial :: "context \<Rightarrow> guard list \<Rightarrow> context" wh
    "medial c G = (apply_guard c (fold gAnd G (gexp.Bc True)))"
 
 fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function \<Rightarrow> context" where
-  "apply_update l c (v, (L n)) = update c (V v) (Eq n)" |
+  "apply_update l c (v, (L n)) = single_update c (V v) (Eq n)" |
   "apply_update l c (v, V vb) = update c (V v) (l (V vb))" |
-  "apply_update l c (v, Plus vb vc) = update c (V v) (compose_plus (get l vb) (get l vc))" |
-  "apply_update l c (v, Minus vb vc) = update c (V v) (compose_minus (get l vb) (get l vc))"
+  "apply_update l c (v, Plus vb vc) = single_update c (V v) (compose_plus (get l vb) (get l vc))" |
+  "apply_update l c (v, Minus vb vc) = single_update c (V v) (compose_minus (get l vb) (get l vc))"
 
 primrec apply_updates :: "context \<Rightarrow> context \<Rightarrow> update_function list \<Rightarrow> context" where
   "apply_updates _ c [] = c" |
@@ -199,15 +225,19 @@ fun constrains_an_input :: "aexp \<Rightarrow> bool" where
 definition remove_input_constraints :: "context \<Rightarrow> context" where
   "remove_input_constraints c = (\<lambda>x. if constrains_an_input x then \<lbrakk>\<rbrakk> x else c x)"
 
-lemma empty_inputs_are_true: "constrains_an_input x \<Longrightarrow> \<lbrakk>\<rbrakk> x = Bc True"
+lemma empty_inputs_are_true: "constrains_an_input x \<Longrightarrow> get \<lbrakk>\<rbrakk> x = Bc True"
   apply (case_tac x)
      apply simp
     apply (case_tac x2)
-  by auto
+  by (simp_all add: collapse_def dfold_def dappend_def)
 
-lemma remove_input_constraints_alt:  "remove_input_constraints c = (\<lambda>x. if constrains_an_input x then Bc True else c x)"
+lemma remove_input_constraints_alt:  "remove_input_constraints c = (\<lambda>x. if constrains_an_input x then Dlist [Bc True] else c x)"
   apply (rule ext)
-  by (simp add: remove_input_constraints_def empty_inputs_are_true)
+  apply (simp add: remove_input_constraints_def empty_inputs_are_true)
+  apply (case_tac x)
+     apply simp_all
+  apply (case_tac x2)
+  by auto
 
 lemma remove_input_constraints_empty[simp]: "remove_input_constraints \<lbrakk>\<rbrakk> = \<lbrakk>\<rbrakk>"
   by (simp add: remove_input_constraints_def)
@@ -215,19 +245,36 @@ lemma remove_input_constraints_empty[simp]: "remove_input_constraints \<lbrakk>\
 lemma consistent_remove_input_constraints[simp]: "consistent c \<Longrightarrow> consistent (remove_input_constraints c)"
 proof-
   assume premise: "consistent c"
+  have consistent_aux: "\<And>r s. get c r = Undef \<or> gval (cexp2gexp r (get c r)) s = Some True \<Longrightarrow>
+           gval (cexp2gexp r (get (\<lambda>x. if constrains_an_input x then Dlist [cexp.Bc True] else c x) r)) s \<noteq> Some True \<Longrightarrow>
+           get (\<lambda>x. if constrains_an_input x then Dlist [cexp.Bc True] else c x) r = Undef "
+    apply (case_tac r)
+       apply simp
+      apply (case_tac x2)
+       apply (simp add: collapse_def dfold_def)
+      apply simp
+     apply (simp add: dappend_def collapse_def dfold_def)
+     apply auto[1]
+     apply (simp add: dappend_def collapse_def dfold_def)
+    by auto
   show ?thesis
     using premise
-    apply (simp add: remove_input_constraints_def consistent_def)
+    apply (simp add: remove_input_constraints_alt)
+    apply (simp add: consistent_def)
     apply clarify
     apply (rule_tac x=s in exI)
-    apply (rule allI)
-    apply (case_tac "constrains_an_input r")
-     apply (simp add: consistent_empty_4)
-    by simp
+    apply clarify
+    using consistent_aux
+    by auto
 qed
 
 definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
-  "posterior c t = (let c' = (medial c (Guard t)) in (if consistent c' then remove_input_constraints (apply_updates c' c (Updates t)) else (\<lambda>i. Bc False)))"
+  "posterior c t = (let c' = (medial c (Guard t)) in
+                    (if consistent c' then
+                       remove_input_constraints (apply_updates c' c (Updates t))
+                     else
+                       (\<lambda>i. Dlist [Bc False]))
+                   )"
 
 primrec posterior_n :: "nat \<Rightarrow> transition \<Rightarrow> context \<Rightarrow> context" where (* Apply a given transition to a given context n times - good for reflexive transitions*)
   "posterior_n 0 _ c = c " |
@@ -242,7 +289,7 @@ primrec posterior_sequence :: "context \<Rightarrow> transition_matrix \<Rightar
     )"
 
 definition datastate2context :: "datastate \<Rightarrow> context" where
-  "datastate2context d = (\<lambda>x. case x of V r \<Rightarrow> (case d r of None \<Rightarrow> Undef | Some v \<Rightarrow> Eq v) | _ \<Rightarrow> \<lbrakk>\<rbrakk> x)"
+  "datastate2context d = (\<lambda>x. case x of V r \<Rightarrow> (case d r of None \<Rightarrow> Dlist [Undef] | Some v \<Rightarrow> Dlist [Eq v]) | _ \<Rightarrow> \<lbrakk>\<rbrakk> x)"
 
 definition satisfies_context :: "datastate \<Rightarrow> context \<Rightarrow> bool" where
   "satisfies_context d c = consistent (conjoin (datastate2context d) c)"
@@ -254,15 +301,15 @@ lemma satisfies_context_empty: "satisfies_context <> \<lbrakk>\<rbrakk> \<and> s
   apply (case_tac r)
      apply simp
     apply (case_tac x2)
-  by auto
+  by (simp add: collapse_def dfold_def dappend_def Abs_dlist_inverse)+
 
 (* Does t2 subsume t1? *)
 definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where (* Corresponds to Algorithm 2 in Foster et. al. *)
   "subsumes c t2 t1 \<equiv> Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) \<and>
-                      (\<forall>r i. (cval (medial c (Guard t1) r) i = Some True) \<longrightarrow> (cval (medial c (Guard t2) r) i) = Some True) \<and>
+                      (\<forall>r i. (cval (get (medial c (Guard t1)) r) i = Some True) \<longrightarrow> (cval (get (medial c (Guard t2)) r) i) = Some True) \<and>
                       (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
-                      (\<forall>r i. cval (posterior (medial c (Guard t1)) t2 r) i = Some True \<longrightarrow> (cval (posterior c t1 r) i = Some True) \<or> (posterior c t1 r) = Undef) \<and>
+                      (\<forall>r i. cval (get (posterior (medial c (Guard t1)) t2) r) i = Some True \<longrightarrow> (cval (get (posterior c t1) r) i = Some True) \<or> (get (posterior c t1) r) = Undef) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
 
 definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> context" where
@@ -281,7 +328,7 @@ primrec pairs2guard :: "(aexp \<times> cexp) list \<Rightarrow> guard" where
   "pairs2guard [] = gexp.Bc True" |
   "pairs2guard (h#t) = gAnd (cexp2gexp (fst h) (snd h)) (pairs2guard t)"
 
-lemma context_equiv_same_undef: "c i = Undef \<Longrightarrow> c' i = cexp.Bc True \<Longrightarrow> \<not> context_equiv c c'"
+lemma context_equiv_same_undef: "get c i = Undef \<Longrightarrow> get c' i = cexp.Bc True \<Longrightarrow> \<not> context_equiv c c'"
   apply (simp add: context_equiv_def cexp_equiv_def)
   by (metis CExp.satisfiable_def satisfiable_true unsatisfiable_undef)
 
@@ -333,130 +380,81 @@ lemma satisfiable_double_neg: "satisfiable (cexp.Not (cexp.Not x)) = satisfiable
   apply (simp add: satisfiable_def)
   by (metis cval.simps(6) cval_double_negation)
 
-lemma cval_empty_r_neq_none[simp]: "cval (\<lbrakk>\<rbrakk> r) i \<noteq> None"
-proof (induct "\<lbrakk>\<rbrakk> r")
-case Undef
+lemma cval_empty_r_neq_none[simp]: "cval (get \<lbrakk>\<rbrakk> r) i \<noteq> None"
+  apply (case_tac r)
+     apply (simp)
+    apply (simp)
+    apply (case_tac x2)
+     apply (simp add: collapse_def dfold_def)
+     apply auto[1]
+     apply (simp add: collapse_def dfold_def)
+    apply auto[1]
+   apply (simp add: collapse_def dfold_def dappend_def)
+  by (simp add: collapse_def dfold_def)
+
+lemma abs_dlist_remdups_inverse: "Abs_dlist (remdups (list_of_dlist d)) = d"
+proof(induct d)
+  case empty
   then show ?case
-    by simp
+    by (metis Dlist.empty_def Dlist_def list_of_dlist_empty)
 next
+  case (insert x d)
+  then show ?case
+    apply simp
+    by (metis list_of_dlist_insert list_of_dlist_inverse remdups_list_of_dlist)
+qed
+
+lemma compound_insert: "Dlist.insert e (Dlist.insert e l) = Dlist.insert e l"
+    apply (simp add: Dlist.insert_def)
+  by (simp add: distinct_remdups_id)
+
+lemma "consistent (apply_guard (apply_guard c G) G) = consistent (apply_guard c G)"
+proof(induct G)
   case (Bc x)
   then show ?case
-    apply (case_tac x)
-    by (simp_all)
+    apply (cases x)
+    by auto
 next
-  case (Eq x)
-  have empty_neq_eq: "cexp.Eq x \<noteq> \<lbrakk>\<rbrakk> r"
-  proof (induct r)
-    case (L x)
-    then show ?case
-      by simp
-  next
-    case (V x)
-    then show ?case
-      apply (cases x)
-      by (simp_all)
-  next
-    case (Plus r1 r2)
-    then show ?case
-      by simp
-  next
-    case (Minus r1 r2)
-    then show ?case
-      by simp
-  qed
+  case (Eq a1 a2)
   then show ?case
-    using Eq.hyps by blast
+    apply (simp only: consistent_def)
+    apply standard
+     apply clarify
+     apply (rule_tac x=s in exI)
+     apply clarify
+     apply simp
+     apply (case_tac r)
+        apply simp
+       apply (simp add: collapse_def dfold_def)
+       apply clarify
+       apply simp
+    
 next
-  case (Lt x)
-  have empty_neq_lt: "cexp.Lt x \<noteq> \<lbrakk>\<rbrakk> r"
-  proof (induct r)
-    case (L x)
-    then show ?case
-      by simp
-  next
-    case (V x)
-    then show ?case
-      apply (cases x)
-      by (simp_all)
-  next
-    case (Plus r1 r2)
-    then show ?case
-      by simp
-  next
-    case (Minus r1 r2)
-    then show ?case
-      by simp
-  qed
-  then show ?case
-    by (simp add: Lt.hyps)
+  case (Gt x1a x2)
+  then show ?case sorry
 next
-  case (Gt x)
-  have empty_neq_lt: "cexp.Gt x \<noteq> \<lbrakk>\<rbrakk> r"
-  proof (induct r)
-    case (L x)
-    then show ?case
-      by simp
-  next
-    case (V x)
-    then show ?case
-      apply (cases x)
-      by (simp_all)
-  next
-    case (Plus r1 r2)
-    then show ?case
-      by simp
-  next
-    case (Minus r1 r2)
-    then show ?case
-      by simp
-  qed
-  then show ?case
-    by (simp add: Gt.hyps)
+  case (Nor G1 G2)
+  then show ?case sorry
 next
-  have empty_neq_not: "cexp.Not x \<noteq> \<lbrakk>\<rbrakk> r"
-  proof (induct r)
-    case (L x)
-    then show ?case
-      by simp
-  next
-    case (V x)
-    then show ?case
-      apply (cases x)
-      by (simp_all)
-  next
-    case (Plus r1 r2)
-    then show ?case
-      by simp
-  next
-    case (Minus r1 r2)
-    then show ?case
-      by simp
-  qed
-  case (Not x)
-  then show ?case
-    by (metis cexp.distinct(19) cexp.simps(16) consistent_empty_1)
-next
-have empty_neq_and: "cexp.And x y \<noteq> \<lbrakk>\<rbrakk> r"
-  proof (induct r)
-    case (L x)
-    then show ?case
-      by simp
-  next
-    case (V x)
-    then show ?case
-      apply (cases x)
-      by (simp_all)
-  next
-    case (Plus r1 r2)
-    then show ?case
-      by simp
-  next
-    case (Minus r1 r2)
-    then show ?case
-      by simp
-  qed
-  case (And x1 x2)
-  then show ?case
-    by (metis cexp.distinct(11) cexp.distinct(21) consistent_empty_1)
+  case (Null x)
+  then show ?case sorry
 qed
+
+
+lemma "consistent (medial (medial c g) g) = consistent (medial c g)"
+  unfolding medial_def
+
+
+lemma "subsumes c t t"
+  unfolding subsumes_def
+  apply standard
+   apply simp
+  apply standard
+   apply simp
+  apply standard
+   defer
+   apply simp
+  unfolding posterior_def Let_def
+  oops
+
 end
