@@ -163,15 +163,17 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
 
   "guard2pairs a (Nor v va) = (pair_and (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a v)) (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a va)))"
 
-primrec pairs2context2 :: "(aexp \<times> cexp) list \<Rightarrow> context \<Rightarrow> context" where
-  "pairs2context2 [] c = c" |
-  "pairs2context2 (h#t) c = pairs2context2 t (update c (fst h) (and (snd h) (c (fst h))))"
+fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context" where
+  "pairs2context [] = (\<lambda>i. Bc True)" |
+  "pairs2context ((_, Bc False)#t) = (\<lambda>r. Bc False)" |
+  "pairs2context (h#t) = conjoin (pairs2context t) (\<lambda>r. if r = (fst h) then (snd h) else Bc True)"
 
 fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
-  "apply_guard a g = (pairs2context2 (guard2pairs a g) a)"
+  "apply_guard a g = conjoin (pairs2context (guard2pairs a g)) a"
 
-definition medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
-   "medial c G = (apply_guard c (fold gAnd G (gexp.Bc True)))"
+ primrec medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
+   "medial c [] = c" |
+   "medial c (h#t) = (medial (apply_guard c h) t)"
 
 fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function \<Rightarrow> context" where
   "apply_update l c (v, (L n)) = update c (V v) (Eq n)" |

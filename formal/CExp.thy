@@ -20,10 +20,22 @@ begin
 
 datatype cexp = Undef | Bc bool | Eq "value" | Lt "value" | Gt "value" | Not cexp | And cexp cexp
 
+fun cval :: "cexp \<Rightarrow> (value \<Rightarrow> bool option)" where (* Does a given value of "i" satisfy the given cexp? *)
+  "cval Undef = (\<lambda>i. Some False)" |
+  "cval (Bc b) = (\<lambda>i. Some b)" |
+  "cval (Eq v) = (\<lambda>i. Some (i = v))" |
+  "cval (Lt v) = (\<lambda>i. ValueLt (Some i) (Some v))" |
+  "cval (Gt v) = (\<lambda>i. ValueGt (Some i) (Some v))" |
+  "cval (Not v) = (\<lambda>i. maybe_not (cval v i))" |
+  "cval (And v va) = (\<lambda>i. maybe_and (cval v i) (cval va i))"
+
+definition cexp_equiv :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
+  "cexp_equiv c c' \<equiv> (\<forall>i. (cval c i) = (cval c' i))"
+
 fun "and" :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "and (Bc True) x = x" |
   "and x (Bc True) = x" |
-  "and c c' = (if c = c' then c else And c c')"
+  "and c c' = (if cexp_equiv (And c c') c then c else And c c')"
 
 fun "not" :: "cexp \<Rightarrow> cexp" where
   "not c = (case c of
@@ -94,15 +106,6 @@ fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" whe
 
 fun apply_lt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where
   "apply_lt a b = (let (ca, cb) = (apply_gt b a) in (cb, ca))"
-
-fun cval :: "cexp \<Rightarrow> (value \<Rightarrow> bool option)" where (* Does a given value of "i" satisfy the given cexp? *)
-  "cval Undef = (\<lambda>i. Some False)" |
-  "cval (Bc b) = (\<lambda>i. Some b)" |
-  "cval (Eq v) = (\<lambda>i. Some (i = v))" |
-  "cval (Lt v) = (\<lambda>i. ValueLt (Some i) (Some v))" |
-  "cval (Gt v) = (\<lambda>i. ValueGt (Some i) (Some v))" |
-  "cval (Not v) = (\<lambda>i. maybe_not (cval v i))" |
-  "cval (And v va) = (\<lambda>i. maybe_and (cval v i) (cval va i))"
 
 definition valid :: "cexp \<Rightarrow> bool" where (* Is cexp "c" satisfied under all "i" values? *)
   "valid c \<equiv> (\<forall> i. cval c i = Some True)"
@@ -176,124 +179,37 @@ fun compose_minus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   _ \<Rightarrow> Bc True
   )) else Bc False)"
 
-lemma and_is_And [simp]:  "cval (and x y) = cval (And x y)"
-  proof (induction x)
-    case Undef
-    then show ?case
-      apply (cases y)
-            apply simp
-           apply (case_tac x2)
-      by simp_all
-  next
-    case (Bc x)
-    then show ?case
-      apply (cases x)
-       apply (cases y)
-             apply simp
-            apply simp
-           apply simp
-          apply (rule ext)
-          apply (simp add: option.case_eq_if)
-         apply (rule ext)
-         apply (simp add: option.case_eq_if)
-        apply simp
-        apply (rule ext)
-        apply (simp add: option.case_eq_if)
-        apply (rule ext)
-        apply (simp add: option.case_eq_if)
-       apply (cases y)
-            apply simp
-           apply (case_tac x2)
-      by simp_all
-  next
-    case (Eq x)
-    then show ?case
-        apply (cases y)
-              apply simp
-             apply (case_tac x2)
-        by simp_all
-  next
-    case (Lt x)
-    then show ?case
-      apply (cases y)
-            apply simp
-           apply (case_tac x2)
-            apply (rule ext)
-            apply (simp add: MaybeBoolInt.elims option.case_eq_if)
-           apply simp
-          apply simp
-         apply (rule ext)
-         apply (simp add: MaybeBoolInt.elims option.case_eq_if)
-      by simp_all
-  next
-    case (Gt x)
-    then show ?case
-      apply (cases y)
-            apply simp
-           apply (case_tac x2)
-            apply (rule ext)
-            apply (simp add: MaybeBoolInt.elims option.case_eq_if)
-           apply simp
-          apply simp
-         apply simp
-        apply (rule ext)
-        apply (simp add: MaybeBoolInt.elims option.case_eq_if)
-      by simp_all
-  next
-    case (Not x)
-    then show ?case
-      apply (cases y)
-            apply simp
-           apply (case_tac x2)
-            apply (rule ext)
-            apply (simp add: MaybeBoolInt.elims option.case_eq_if)
-           apply simp
-          apply simp
-         apply simp
-        apply simp
-       apply (rule ext)
-       apply (simp add: option.case_eq_if)
-      by simp
-  next
-    case (And x1 x2)
-    then show ?case
-      apply (cases y)
-            apply simp
-           apply (case_tac x2a)
-            apply (rule ext)
-            apply (simp add: MaybeBoolInt.elims option.case_eq_if)
-           apply simp
-          apply simp
-         apply simp
-        apply simp
-       apply simp
-      apply (rule ext)
-      by (simp add: MaybeBoolInt.elims option.case_eq_if)
-qed
+lemma And_reflexive: "cexp_equiv (And x x) x"
+  apply (simp add: cexp_equiv_def)
+  apply clarify
+  apply (case_tac "cval x i")
+   apply simp
+  by simp
 
-lemma and_true [simp]: "and x (Bc True) = x"
-  proof (cases x)
-  case Undef
-    then show ?thesis by simp
-  next
-    case (Bc x2)
-    then show ?thesis by (cases x2, simp_all)
-  next
-    case (Eq x3)
-    then show ?thesis by simp
-  next
-  case (Lt x4)
-  then show ?thesis by simp
-  next
-  case (Gt x5)
-  then show ?thesis by simp
-  next
-    case (Not x6)
-    then show ?thesis by simp
-  next
-    case (And x71 x72)
-    then show ?thesis by simp
-  qed
+lemma and_reflexive [simp]: "and x x = x"
+  by (simp add: and_def And_reflexive)
+
+lemma And_True_zero: "cexp_equiv (And x (Bc True)) x"
+  apply (simp add: cexp_equiv_def)
+  apply clarify
+  apply (case_tac "cval x i")
+   apply simp
+  by simp
+
+lemma and_true_zero [simp]: "and x (Bc True) = x"
+  by (simp add: and_def And_True_zero)
+
+lemma and_is_And [simp]:  "cval (and x y) = cval (And x y)"
+  apply (simp add: and_def)
+  apply clarify
+  apply (rule ext)
+  apply (case_tac "cval x i")
+   apply simp
+  apply (case_tac "cval y i")
+   apply (simp add: cexp_equiv_def)
+   apply (metis option.case_eq_if option.simps(3))
+  apply (simp add: cexp_equiv_def)
+  by (metis option.case_eq_if option.distinct(1) option.sel)
 
 theorem not_is_Not[simp]: "cval (not x) = cval (Not x)"
   proof (cases "x")
@@ -383,9 +299,6 @@ lemma plus_num_str: "compose_plus (Eq (Str s)) (Eq (Num n)) = Bc False"
   apply (simp add: valid_def satisfiable_def)
   by auto
 
-definition cexp_equiv :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
-  "cexp_equiv c c' \<equiv> (\<forall>i. (cval c i) = (cval c' i))"
-
 lemma cexp_equiv_reflexive: "cexp_equiv x x"
   by (simp add: cexp_equiv_def)
 
@@ -400,86 +313,6 @@ lemma cexp_equiv_transitive: "cexp_equiv x y \<Longrightarrow> cexp_equiv y z \<
 
 lemma cexp_equiv_subst: "cexp_equiv x y \<Longrightarrow> P (cval x i) \<Longrightarrow> P (cval y i)"
   by (simp add: cexp_equiv_def)
-
-lemma and_x_y_undef: "and x y = Undef \<Longrightarrow> and y x = Undef"
-proof (induction x)
-case Undef
-  then show ?case
-    apply (cases y)
-          prefer 2
-          apply (case_tac x2)
-    by simp_all
-next
-  case (Bc x)
-  then show ?case
-    apply (cases x)
-     apply (cases y)
-           apply (simp, simp, simp, simp, simp, simp, simp)
-    apply (cases y)
-          prefer 2
-          apply (case_tac x2)
-    by simp_all
-next
-  case (Eq x)
-  then show ?case
-    apply (cases y)
-          apply simp
-         apply (case_tac x2)
-          apply simp
-         apply simp
-    apply (metis and.simps(25) cexp.distinct(11))
-    by simp_all
-next
-  case (Lt x)
-  then show ?case
-    apply (cases y)
-          apply simp
-         apply (case_tac x2)
-          apply simp
-         apply simp
-        apply simp
-       apply (metis and.simps(33) cexp.distinct(11))
-    by simp_all
-next
-case (Gt x)
-  then show ?case
-    apply (cases y)
-          apply simp
-         apply (case_tac x2)
-          apply simp
-         apply simp
-        apply simp
-       apply simp
-      apply (metis and.simps(41) cexp.distinct(11))
-    by simp_all
-next
-  case (Not x)
-  then show ?case
-    apply (cases y)
-          apply simp
-         apply (case_tac x2)
-          apply simp
-         apply simp
-        apply simp
-       apply simp
-      apply simp
-     apply (metis and.simps(49) cexp.distinct(11))
-    by simp
-next
-  case (And x1 x2)
-  then show ?case
-    apply (cases y)
-          apply simp
-         apply simp
-         apply (case_tac x2a)
-          apply simp
-         apply simp
-        apply simp
-       apply simp
-      apply simp
-     apply simp
-    by (metis and.simps(57) cexp.distinct(11))
-qed
 
 lemma and_symmetric: "cexp_equiv (and x y) (and y x)"
     apply (simp add: cexp_equiv_def)
@@ -521,5 +354,12 @@ lemma not_mutually_exclusive_true: "satisfiable x = (\<not> mutually_exclusive x
 
 lemma vexp_equiv_valid: "valid c \<longrightarrow> cexp_equiv c (Bc True)"
   by (simp add: valid_def cexp_equiv_def)
+
+lemma cval_values: "(cval x i \<noteq> Some False) = (cval x i = Some True \<or> cval x i = None)"
+  by auto
+
+lemma x_nec_not_x: "x \<noteq> cexp.Not x"
+  apply (induct_tac x)
+  by auto
 
 end

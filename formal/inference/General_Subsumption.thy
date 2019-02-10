@@ -1,10 +1,33 @@
 theory General_Subsumption
-imports "../Contexts" Trace_Matches Code_Generation
+imports "../Contexts" Trace_Matches
 begin
 
-lemma ctx_simp: "(\<lambda>r. and (if r = V (I i) then snd (V (I i), cexp.Eq s) else cexp.Bc True) (\<lbrakk>\<rbrakk> r)) = \<lbrakk>V (I i) \<mapsto> Eq s\<rbrakk>"
-  apply (rule ext)
-  by simp
+lemma "and (cexp.Bc True) c = c"
+  apply (case_tac c)
+        apply simp
+        apply (simp only: and_def)
+
+
+lemma "medial (medial c g) g = medial c g"
+proof(induct g)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a g)
+  then show ?case
+    apply simp
+    apply (case_tac a)
+        apply (case_tac x1)
+         apply simp
+
+qed
+  
+
+lemma "subsumes c t t"
+  apply (simp add: subsumes_def)
+  apply clarify
+  apply (simp add: posterior_def)
 
 lemma incoming_transition_alt_def: "incoming_transition_to e n = (\<exists>t from. ((from, n), t) |\<in>| e)"
   apply (simp add: incoming_transition_to_def)
@@ -225,28 +248,6 @@ lemma not_cexp_equiv_gt_false: "\<not>cexp_equiv (cexp.Gt x5) (cexp.Bc False)"
    apply (metis MaybeBoolInt.simps(3) option.simps(3))
   by (simp add: cexp_equiv_def)
 
-lemma maybe_double_negation: "maybe_not (maybe_not x) = x"
-  by (simp add: option.case_eq_if)
-
-lemma maybe_negate: "(maybe_not c = Some False) = (c = Some True)"
-  by (metis (mono_tags, lifting) maybe_double_negation option.simps(5))
-
-lemma maybe_not_values: "(maybe_not c \<noteq> Some False) = (maybe_not c = Some True \<or> maybe_not c = None)"
-  by auto
-
-lemma maybe_not_c: "(maybe_not c \<noteq> Some False) = (c = None \<or> c = Some False)"
-  using maybe_not_values option.collapse by force
-
-lemma cval_values: "(cval x i \<noteq> Some False) = (cval x i = Some True \<or> cval x i = None)"
-  by auto
-
-lemma remove_maybe_not: "(maybe_not c \<noteq> Some False) = (c \<noteq> Some True)"
-  using cval_values maybe_not_c by auto
-
-lemma x_nec_not_x: "x \<noteq> cexp.Not x"
-  apply (induct_tac x)
-  by auto
-
 lemma filter_not_f_a: " \<not> f a \<Longrightarrow> filter f g = filter f (a#g)"
   by simp
 
@@ -282,16 +283,6 @@ lemma cexp_equiv_redundant_and: "cexp_equiv (and c (and c c')) (and c c')"
   apply (case_tac "cval c' i")
    apply simp
   by simp
-
-lemma maybe_negate_alt: "(Some False = maybe_not c) = (c = Some True)"
-  using maybe_negate
-  by metis
-
-lemma maybe_not_some: "(maybe_not c = Some b) = (c = Some (\<not> b))"
-  apply (case_tac c)
-   apply simp
-  apply (case_tac a)
-  by auto
 
 lemma cval_gval_correspondence: "cval x i \<noteq> None \<Longrightarrow> aval r s = Some i \<Longrightarrow> gval (cexp2gexp r x) s \<noteq> None"
 proof(induct x)
