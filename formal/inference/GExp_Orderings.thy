@@ -597,7 +597,7 @@ fun less_gexpr :: "gexp \<Rightarrow> gexp \<Rightarrow> bool"  where
           by moura
         have "z \<noteq> Eq (aa z) (aaa z)"
           by (metis (no_types) "19.prems"(2) less_gexpr.simps(17))
-        then obtain vv :: "gexp \<Rightarrow> vname" where
+        then obtain vv :: "gexp \<Rightarrow> aexp" where
           "z = Null (vv z) \<or> z = Nor (gg z) (gga z)"
           using f3 f2 f1 by (metis (no_types) "19.prems"(2) less_gexpr.simps(16) less_gexpr.simps(18))
         then show ?thesis

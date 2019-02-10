@@ -1,5 +1,5 @@
 theory General_Subsumption
-imports "../Contexts" Trace_Matches Code_Generation
+imports "../Contexts" Trace_Matches
 begin
 
 lemma ctx_simp: "(\<lambda>r. and (if r = V (I i) then snd (V (I i), cexp.Eq s) else cexp.Bc True) (\<lbrakk>\<rbrakk> r)) = \<lbrakk>V (I i) \<mapsto> Eq s\<rbrakk>"
@@ -293,7 +293,44 @@ lemma maybe_not_some: "(maybe_not c = Some b) = (c = Some (\<not> b))"
   apply (case_tac a)
   by auto
 
-lemma cval_gval_correspondence: "cval x i \<noteq> None \<Longrightarrow> aval r s = Some i \<Longrightarrow> gval (cexp2gexp r x) s \<noteq> None"
+lemma cval_gval_correspondence_None: "cval x i = None \<Longrightarrow> aval r s = Some i \<Longrightarrow> gval (cexp2gexp r x) s = None"
+proof(induct "x")
+case Undef
+  then show ?case
+    by simp
+next
+  case (Bc x)
+  then show ?case
+    by simp
+next
+  case (Eq x)
+  then show ?case
+    by simp
+next
+  case (Lt x)
+  then show ?case
+    using MaybeBoolInt.elims option.simps(3) value.distinct(1) by force
+next
+  case (Gt x)
+  then show ?case
+  by simp
+next
+  case (Not x)
+  then show ?case
+    by fastforce
+next
+  case (And x1 x2)
+  then show ?case
+    apply simp
+    apply (case_tac "cval x1 i")
+     apply simp
+    apply (case_tac "cval x2 i")
+     apply simp
+     apply (case_tac "gval (cexp2gexp r x1) s")
+    by auto
+qed
+
+lemma cval_gval_correspondence_not_None: "cval x i \<noteq> None \<Longrightarrow> aval r s = Some i \<Longrightarrow> gval (cexp2gexp r x) s \<noteq> None"
 proof(induct x)
 case Undef
   then show ?case
@@ -335,8 +372,8 @@ next
     by simp
 qed
 
-lemma "cval (c' r) i = Some x \<Longrightarrow> aval r s = Some i \<Longrightarrow> gval (cexp2gexp r (c' r)) s = Some x"
-proof(induct "c' r")
+lemma cval_gval_correspondence_Some: "\<And>x. cval c i = Some x \<Longrightarrow> aval r s = Some i \<Longrightarrow> gval (cexp2gexp r c) s = Some x"
+proof(induct c)
 case Undef
   then show ?case
     by simp
@@ -368,13 +405,7 @@ next
     by auto
   case (Not x)
   then show ?case
-    apply (simp add: flip maybe_not_some)
-    apply (case_tac "gval (cexp2gexp r x) s")
-     apply simp
-    using cval_gval_correspondence
-     apply blast
-    apply simp
-    sorry
+    by (simp add: flip maybe_not_some)
 next
   have flip: "\<And>x1 x2 c' r. (cexp.And x1 x2 = c' r) = (c' r = cexp.And x1 x2)"
     by auto
@@ -385,77 +416,42 @@ next
      apply simp
     apply (case_tac "cval x2 i")
      apply simp
-    apply simp
-    apply (case_tac "gval (cexp2gexp r x1) s")
-     apply simp
-    using cval_gval_correspondence apply fastforce
-    apply (case_tac "gval (cexp2gexp r x2) s")
-     apply simp
-    using cval_gval_correspondence apply blast
-    apply simp
-    apply clarify
-    apply safe
-         apply simp
-    sorry
+    by simp
 qed
 
-lemma "cval (c r) i = cval (c' r) i \<Longrightarrow>
+lemma cval_gval_correspondence_full: "cval (c r) i = cval (c' r) i \<Longrightarrow>
         aval r s = Some i \<Longrightarrow>
         gval (cexp2gexp r (c r)) s = gval (cexp2gexp r (c' r)) s"
-proof(induct "c r")
-  have flip: "(Some False = cval (c' r) i) = (cval (c' r) i = Some False)"
-    by auto
-  case Undef
-  then show ?case
-    apply simp
-    apply (simp add: flip)
+  by (metis cval_gval_correspondence_None cval_gval_correspondence_Some cval_values)
 
-    
-next
-  case (Bc x)
-  then show ?case sorry
-next
-  case (Eq x)
-  then show ?case sorry
-next
-  case (Lt x)
-  then show ?case sorry
-next
-  case (Gt x)
-  then show ?case sorry
-next
-  case (Not x)
-  then show ?case sorry
-next
-  case (And x1 x2)
-  then show ?case sorry
-qed
+definition cexp_equiv :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
+  "cexp_equiv c c' \<equiv> (\<forall>r. gexp_equiv (cexp2gexp r c) (cexp2gexp r c'))"
+
+definition context_equiv :: "context \<Rightarrow> context \<Rightarrow> bool" where
+  "context_equiv c c' \<equiv> (\<forall>r. cexp_equiv (c r) (c' r))"
 
 lemma "context_equiv c c' \<Longrightarrow> consistent c \<Longrightarrow> consistent c'"
-  apply (simp add: context_equiv_def consistent_def cexp_equiv_def)
-  apply clarify
-  apply (rule_tac x=s in exI)
-  apply clarify
-  
+  by (simp add: context_equiv_def consistent_def gexp_equiv_def cexp_equiv_def)
 
 lemma "context_equiv (medial (medial c g) g) (medial c g)"
-
-lemma "consistent (medial (medial c g) g) = consistent (medial c g)"
-proof (induct g)
+proof(induct g)
   case Nil
   then show ?case
-    by (simp add: medial_def)
+    by (simp add: context_equiv_def gexp_equiv_def cexp_equiv_def)
 next
-  case (Cons a x)
+  case (Cons a g)
   then show ?case
-    apply (simp add: consistent_def)
-    apply safe
-    apply (case_tac a)
+    apply (simp add: context_equiv_def cexp_equiv_def gexp_equiv_def del: medial.simps)
+    apply clarify
+    apply simp
+    apply (cases a)
         apply (case_tac x1)
-            apply auto[1]
-           apply simp
-    oops
+         apply simp
+        apply simp
+        apply (case_tac "gval (cexp2gexp ra (medial (\<lambda>r. and (cexp.Bc False) (c r)) g r)) s")
+    apply simp
 
+qed
 
 lemma "subsumes c t t"
   unfolding subsumes_def

@@ -19,7 +19,7 @@ begin
 (* abbreviation Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" where *)
   (* "Eq a b = (a, cexp.Eq b) *)
 
-datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null vname
+datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null aexp
 
 syntax (xsymbols)
   Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "=" 60*)
@@ -33,7 +33,7 @@ fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool option" where
     (Some x, Some y) \<Rightarrow> Some (\<not> (x \<or> y)) |
     _ \<Rightarrow> None
   )" |
-  "gval (Null v) s = Some (s v = None)"
+  "gval (Null v) s = Some (aval v s = None)"
 
 abbreviation gNot :: "gexp \<Rightarrow> gexp"  where
   "gNot g \<equiv> Nor g g"

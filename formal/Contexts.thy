@@ -81,7 +81,7 @@ lemma context_equiv_transitive: "context_equiv x y \<and> context_equiv y z \<Lo
 
 fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow> gexp" where
   "cexp2gexp _ (Bc b) = gexp.Bc b" |
-  "cexp2gexp a Undef = gexp.Bc False" |
+  "cexp2gexp a Undef = Null a" |
   "cexp2gexp a (Lt v) = gexp.Gt (L v) a" |
   "cexp2gexp a (Gt v) = gexp.Gt a (L v)" |
   "cexp2gexp a (Eq v) = gexp.Eq a (L v)" |
@@ -89,7 +89,7 @@ fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow> gexp" where
   "cexp2gexp a (And v va) = gAnd (cexp2gexp a v) (cexp2gexp a va)"
 
 definition consistent :: "context \<Rightarrow> bool" where (* Is there a variable evaluation which can satisfy all of the context? *)
-  "consistent c \<equiv> \<exists>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
+  "consistent c \<equiv> \<exists>s. \<forall>r. (gval (cexp2gexp r (c r)) s = Some True)"
 
 lemma possible_false_not_consistent: "\<exists>r. c r = Bc False \<Longrightarrow> \<not> consistent c"
   unfolding consistent_def
@@ -111,19 +111,17 @@ theorem consistent_empty_1: "empty r = Undef \<or> empty r = Bc True"
     apply (case_tac x2)
   by simp_all
 
-theorem consistent_empty_2: "(\<forall>r. c r = Bc True \<or> c r = Undef) \<longrightarrow> consistent c"
-  apply (simp add: consistent_def)
-  by force
-
-lemma consistent_empty_3: "(\<forall>r. empty r = Bc True \<or> empty r = Undef) \<longrightarrow> consistent empty"
-  apply (insert consistent_empty_2)
-  by simp
-
 lemma consistent_empty_4: "\<lbrakk>\<rbrakk> r = Undef \<or> gval (cexp2gexp r (\<lbrakk>\<rbrakk> r)) c = Some True"
   using consistent_empty_1 by force
 
 lemma consistent_empty [simp]: "consistent empty"
-  apply (insert consistent_empty_1 consistent_empty_3)
+  apply (simp add: consistent_def)
+  apply (rule_tac x="<>" in exI)
+  apply simp
+  apply clarify
+  apply (case_tac r)
+     apply simp
+    apply (case_tac x2)
   by auto
 
 lemma cexp2gexp_double_neg: "gexp_equiv (cexp2gexp r (Not (Not x))) (cexp2gexp r x)"
@@ -148,7 +146,7 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
   "guard2pairs a (gexp.Bc True) = []" |
   "guard2pairs a (gexp.Bc False) = [(L (Num 0), Bc False)]" |
 
-  "guard2pairs a (gexp.Null v) = [(V v, Undef)]" |
+  "guard2pairs a (gexp.Null v) = [(v, Undef)]" |
 
   "guard2pairs a (gexp.Eq (L n) (L n')) =  [(L n, Eq n')]" |
   "guard2pairs a (gexp.Gt (L n) (L n')) =  [(L n, Gt n')]" |
@@ -163,15 +161,17 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
 
   "guard2pairs a (Nor v va) = (pair_and (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a v)) (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a va)))"
 
-primrec pairs2context2 :: "(aexp \<times> cexp) list \<Rightarrow> context \<Rightarrow> context" where
-  "pairs2context2 [] c = c" |
-  "pairs2context2 (h#t) c = pairs2context2 t (update c (fst h) (and (snd h) (c (fst h))))"
+fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context" where
+  "pairs2context [] = (\<lambda>i. Bc True)" |
+  "pairs2context ((_, Bc False)#t) = (\<lambda>r. Bc False)" |
+  "pairs2context (h#t) = conjoin (pairs2context t) (\<lambda>r. if r = (fst h) then (snd h) else Bc True)"
 
 fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
-  "apply_guard a g = (pairs2context2 (guard2pairs a g) a)"
+  "apply_guard a g = conjoin (pairs2context (guard2pairs a g)) a"
 
-definition medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
-   "medial c G = (apply_guard c (fold gAnd G (gexp.Bc True)))"
+ primrec medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
+   "medial c [] = c" |
+   "medial c (h#t) = (medial (apply_guard c h) t)"
 
 fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function \<Rightarrow> context" where
   "apply_update l c (v, (L n)) = update c (V v) (Eq n)" |
@@ -220,10 +220,11 @@ proof-
     apply (simp add: remove_input_constraints_def consistent_def)
     apply clarify
     apply (rule_tac x=s in exI)
-    apply (rule allI)
-    apply (case_tac "constrains_an_input r")
-     apply (simp add: consistent_empty_4)
-    by simp
+    apply clarify
+    apply (case_tac r)
+       apply simp
+      apply (case_tac x2)
+    by auto
 qed
 
 definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
