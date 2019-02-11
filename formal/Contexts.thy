@@ -103,7 +103,7 @@ lemma inconsistent_false: "\<not>consistent (\<lambda>i. cexp.Bc False)"
   by (simp add: consistent_def)
 
 definition valid_context :: "context \<Rightarrow> bool" where (* Is the context satisfied in all variable evaluations? *)
-  "valid_context c \<equiv> \<forall>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
+  "valid_context c \<equiv> \<forall>s. \<forall>r. (gval (cexp2gexp r (c r)) s = Some True)"
 
 theorem consistent_empty_1: "empty r = Undef \<or> empty r = Bc True"
   apply (cases r)
@@ -159,19 +159,18 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
   "guard2pairs a (gexp.Gt (L n) v) = [(v, (Lt n))]" |
   "guard2pairs a (gexp.Gt v vb) = (let (cv, cvb) = apply_gt (get a v) (get a vb) in [(v, cv), (vb, cvb)])" |
 
-  "guard2pairs a (Nor v va) = (pair_and (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a v)) (map (\<lambda>x. ((fst x), not (snd x))) (guard2pairs a va)))"
+  "guard2pairs a (Nor v va) = (pair_and (map (\<lambda>(a, c). (a, not c)) (guard2pairs a v)) (map (\<lambda>(a, c). (a, not c)) (guard2pairs a va)))"
 
 fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context" where
   "pairs2context [] = (\<lambda>i. Bc True)" |
   "pairs2context ((_, Bc False)#t) = (\<lambda>r. Bc False)" |
   "pairs2context (h#t) = conjoin (pairs2context t) (\<lambda>r. if r = (fst h) then (snd h) else Bc True)"
 
-fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
-  "apply_guard a g = conjoin (pairs2context (guard2pairs a g)) a"
+definition guard2context :: "context \<Rightarrow> guard \<Rightarrow> context" where
+  "guard2context a g = (pairs2context (guard2pairs a g))"
 
- primrec medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
-   "medial c [] = c" |
-   "medial c (h#t) = (medial (apply_guard c h) t)"
+definition medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
+   "medial c g = conjoin c (guard2context c (fold gAnd g (gexp.Bc True)))" 
 
 fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function \<Rightarrow> context" where
   "apply_update l c (v, (L n)) = update c (V v) (Eq n)" |
@@ -187,7 +186,7 @@ definition can_take :: "transition \<Rightarrow> context \<Rightarrow> bool" whe
   "can_take t c \<equiv> consistent (medial c (Guard t))"
 
 lemma can_take_no_guards: "\<forall> c. (Contexts.consistent c \<and> (Guard t) = []) \<longrightarrow> Contexts.can_take t c"
-  by (simp add: consistent_def Contexts.can_take_def medial_def)
+  by (simp add: consistent_def Contexts.can_take_def medial_def guard2context_def)
 
 fun constrains_an_input :: "aexp \<Rightarrow> bool" where
   "constrains_an_input (L v) = False" |
@@ -263,7 +262,7 @@ definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transitio
                       (\<forall>r i. (cval (medial c (Guard t1) r) i = Some True) \<longrightarrow> (cval (medial c (Guard t2) r) i) = Some True) \<and>
                       (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
-                      (\<forall>r i. cval (posterior (medial c (Guard t1)) t2 r) i = Some True \<longrightarrow> (cval (posterior c t1 r) i = Some True) \<or> (posterior c t1 r) = Undef) \<and>
+                      (\<forall>r i. cval (posterior (medial c (Guard t1)) t2 r) i = Some True \<longrightarrow> (cval (posterior c t1 r) i = Some True)(* \<or> (posterior c t1 r) = Undef*)) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
 
 definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> context" where

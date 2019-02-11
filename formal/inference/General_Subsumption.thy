@@ -109,8 +109,7 @@ proof-
     apply (simp add: consistent_def)
     apply clarify
     using aux1
-    by blast
-qed
+    oops
 
 lemma not_undef_gval: "\<forall>r. c r = Undef \<or> gval (cexp2gexp r (c r)) s = Some True \<Longrightarrow>
          c (V (I i)) \<noteq> Undef \<Longrightarrow> gval (cexp2gexp (V (I i)) (c (V (I i)))) s = Some True"
@@ -260,7 +259,7 @@ lemma and_And_false: "x \<noteq> cexp.Bc True \<and> x \<noteq> Bc False \<Longr
   apply (case_tac x)
   by auto
 
-lemma inconsistant_conjoin_false: "\<not>consistent (Contexts.conjoin (\<lambda>r. cexp.Bc False) c)"
+lemma inconsistant_conjoin_false: "\<not>consistent (conjoin (\<lambda>r. cexp.Bc False) c)"
   apply (simp add: consistent_def and_false_not_undef)
   apply clarify
   apply (rule_tac x=x in exI)
@@ -420,50 +419,97 @@ next
 qed
 
 lemma cval_gval_correspondence_full: "cval (c r) i = cval (c' r) i \<Longrightarrow>
-        aval r s = Some i \<Longrightarrow>
-        gval (cexp2gexp r (c r)) s = gval (cexp2gexp r (c' r)) s"
+                                      aval r s = Some i \<Longrightarrow>
+                                      gval (cexp2gexp r (c r)) s = gval (cexp2gexp r (c' r)) s"
   by (metis cval_gval_correspondence_None cval_gval_correspondence_Some cval_values)
+
+(*definition valid_context :: "context \<Rightarrow> bool" where (* Is the context satisfied in all variable evaluations? *)
+  "valid_context c \<equiv> \<forall>s. \<forall>r. (gval (cexp2gexp r (c r)) s = Some True)"*)
 
 definition cexp_equiv :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
   "cexp_equiv c c' \<equiv> (\<forall>r. gexp_equiv (cexp2gexp r c) (cexp2gexp r c'))"
 
 definition context_equiv :: "context \<Rightarrow> context \<Rightarrow> bool" where
-  "context_equiv c c' \<equiv> (\<forall>r. cexp_equiv (c r) (c' r))"
+  "context_equiv c c' \<equiv> \<forall>s. \<forall>r. (gval (cexp2gexp r (c r)) s = gval (cexp2gexp r (c' r)) s)"
+
+lemma context_equiv_symmetry: "context_equiv c c"
+  by (simp add: context_equiv_def cexp_equiv_def gexp_equiv_def)
 
 lemma "context_equiv c c' \<Longrightarrow> consistent c \<Longrightarrow> consistent c'"
-  by (simp add: context_equiv_def consistent_def gexp_equiv_def cexp_equiv_def)
+  by (simp add: consistent_def context_equiv_def)
+
+declare not.simps [simp del]
 
 lemma "context_equiv (medial (medial c g) g) (medial c g)"
-proof(induct g)
-  case Nil
-  then show ?case
-    by (simp add: context_equiv_def gexp_equiv_def cexp_equiv_def)
-next
-  case (Cons a g)
-  then show ?case
-    apply (simp add: context_equiv_def cexp_equiv_def gexp_equiv_def del: medial.simps)
-    apply clarify
-    apply simp
-    apply (cases a)
-        apply (case_tac x1)
-         apply simp
-        apply simp
-        apply (case_tac "gval (cexp2gexp ra (medial (\<lambda>r. and (cexp.Bc False) (c r)) g r)) s")
-    apply simp
-
-qed
-
-lemma "subsumes c t t"
-  unfolding subsumes_def
-  apply standard
-   apply simp
-  apply standard
-   apply simp
-  apply standard
-   defer
-   apply simp
-  unfolding posterior_def Let_def
+  apply (simp add: medial_def del: conjoin.simps)
   oops
 
+lemma "posterior c t1 r = Undef \<Longrightarrow> cval (posterior c t1 r) i = Some False"
+  by simp
+
+lemma "guard2context (Contexts.conjoin c (guard2context c G)) G = guard2context c G"
+  apply (rule ext)
+  apply simp
+  apply (simp add: guard2context_def)
+
+lemma "conjoin c (guard2context c G) =
+    conjoin (conjoin c (guard2context c G))
+     (guard2context (conjoin c (guard2context c G)) G)"
+  oops
+
+lemma "(medial c G) = (medial (medial c G) G)"
+  apply (simp add: medial_def del: conjoin.simps)
+  oops
+
+lemma consistent_medial_medial_aux: "gval (cexp2gexp r (and (c r) (guard2context c G r))) s = Some True \<Longrightarrow>
+       gval
+              (cexp2gexp r
+                (and (and (c r) (guard2context c G r))
+                  (guard2context (\<lambda>r. and (c r) (guard2context c G r)) G r)))
+              s =
+             Some True"
+     apply (simp add: guard2context_def)
+  sorry
+
+lemma consistent_medial_medial:  "consistent (medial c G) \<Longrightarrow> consistent (medial (medial c G) G)"
+  apply (simp add: medial_def consistent_def del: conjoin.simps)
+  apply clarify
+  apply (rule_tac x=s in exI)
+  by (simp add: consistent_medial_medial_aux)
+
+lemma updates: "cval (apply_updates (medial (medial c G) G) (medial c G) U r) i = Some True \<Longrightarrow>
+       \<not> constrains_an_input r \<Longrightarrow>
+       cval (apply_updates (medial c G) c U r) i = Some True"
+  sorry
+
+lemma medial_empty: "medial c [] = c"
+  by (simp add: medial_def guard2context_def)
+
+lemma test: "gval (cexp2gexp r (and (c r) (guard2context c (fold gAnd G (gexp.Bc True)) r))) s \<noteq> Some True \<Longrightarrow>
+       gval
+             (cexp2gexp r
+               (and (and (c r) (guard2context c (fold gAnd G (gexp.Bc True)) r))
+                 (guard2context (\<lambda>r. and (c r) (guard2context c (fold gAnd G (gexp.Bc True)) r)) (fold gAnd G (gexp.Bc True)) r)))
+             s \<noteq>
+            Some True"
+  sorry
+
+lemma inconsistent_medial_medial: "\<not> consistent (medial c G) \<Longrightarrow> \<not>consistent (medial (medial c G) G)"
+    apply (simp add: medial_def consistent_def)
+  using test
+  by blast
+
+lemma "subsumes c t t"
+  apply (simp add: subsumes_def)
+  apply clarify
+  apply (simp add: posterior_def Let_def)
+  apply (case_tac "consistent (medial c (Guard t))")
+   apply (simp add: consistent_medial_medial)
+   apply (simp add: remove_input_constraints_def)
+   apply standard
+    apply auto[1]
+   apply clarify
+   apply (simp add: updates)
+  by (simp add: inconsistent_medial_medial)
 
 end
