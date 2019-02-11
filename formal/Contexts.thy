@@ -150,8 +150,8 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
 
   "guard2pairs a (gexp.Null v) = [(V v, Undef)]" |
 
-  "guard2pairs a (gexp.Eq (L n) (L n')) =  [(L n, Eq n')]" |
-  "guard2pairs a (gexp.Gt (L n) (L n')) =  [(L n, Gt n')]" |
+  "guard2pairs a (gexp.Eq (L n) (L n')) =  (if n = n' then [] else [(L (Num 0), Bc False)])" |
+  "guard2pairs a (gexp.Gt (L (Num n)) (L (Num n'))) = (if n > n' then [] else [(L (Num 0), Bc False)])" |
 
   "guard2pairs a (gexp.Eq v (L n)) = [(v, Eq n)]" |
   "guard2pairs a (gexp.Eq (L n) v) = [(v, Eq n)]" |
@@ -285,10 +285,7 @@ primrec pairs2guard :: "(aexp \<times> cexp) list \<Rightarrow> guard" where
 
 lemma context_equiv_same_undef: "c i = Undef \<Longrightarrow> c' i = cexp.Bc True \<Longrightarrow> \<not> context_equiv c c'"
   apply (simp add: context_equiv_def cexp_equiv_def)
-  by force
-
-lemma context_equiv_undef: "context_equiv c c' \<Longrightarrow> ((c i) = Undef) = ((c' i) = Undef)"
-  by (simp add: cexp_equiv_def context_equiv_def)
+  by (metis CExp.satisfiable_def satisfiable_true unsatisfiable_undef)
 
 lemma gexp_equiv_cexp_not_true:  "gexp_equiv (cexp2gexp a (Not (Bc True))) (gexp.Bc False)"
   by (simp add: gexp_equiv_def)

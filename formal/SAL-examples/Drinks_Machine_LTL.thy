@@ -9,9 +9,9 @@ lemma costsMoney: "alw(nxt(StateEq (Some 2)) impl (RegGt 2 100)) (watch drinks i
 (* neverReachS2: THEOREM drinks |- label=select AND I(1) = STR(String_coke) AND
                                 X(label=coin AND I(1) = NUM(100)) AND
                                 X(X(label=vend AND I=InputSequence !empty)) => X(X(X(cfstate=State_2)));;*)
-lemma neverReachS2:"(((((LabelEq ''select'') aand (InputInxEq 1 (Str ''coke'')))
+lemma neverReachS2:"(((((LabelEq ''select'') aand (checkInx ip 1 ValueEq (Some (Str ''coke''))))
                     aand
-                    (nxt ((LabelEq ''coin'') aand (InputInxEq 1 (Num 100)))))
+                    (nxt ((LabelEq ''coin'') aand (checkInx ip 1 ValueEq (Some (Num 100))))))
                     aand
                     (nxt(nxt((LabelEq ''vend'' aand (InputEq []))))))
                     impl

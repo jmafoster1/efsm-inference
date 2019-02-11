@@ -2,6 +2,8 @@ theory EFSM_LTL
 imports "../EFSM" "~~/src/HOL/Library/Linear_Temporal_Logic_on_Streams"
 begin
 
+datatype ior = ip | op | rg
+
 record state =
   statename :: "nat option"
   datastate :: datastate
@@ -33,35 +35,28 @@ abbreviation non_null :: "property" where
 abbreviation null :: "property" where
   "null s \<equiv> (statename (shd s) = None)"
 
-definition Out :: "nat \<Rightarrow> state stream \<Rightarrow> value option" where
-  "Out n s \<equiv> nth (output (shd s)) n"
+definition Outputs :: "nat \<Rightarrow> state stream \<Rightarrow> value option" where
+  "Outputs n s \<equiv> nth (output (shd s)) n"
 
-definition In :: "nat \<Rightarrow> state stream \<Rightarrow> value" where
-  "In n s \<equiv> nth (inputs (shd s)) n"
-
-definition EventLabel :: "state stream \<Rightarrow> String.literal" where
-  "EventLabel s = fst (event (shd s))"
+definition Inputs :: "nat \<Rightarrow> state stream \<Rightarrow> value" where
+  "Inputs n s \<equiv> nth (inputs (shd s)) n"
 
 definition StateEq :: "nat option \<Rightarrow> state stream \<Rightarrow> bool" where
   "StateEq v s \<equiv> statename (shd s) = v"
 
 definition LabelEq :: "string \<Rightarrow> state stream \<Rightarrow> bool" where
-  "LabelEq v s \<equiv> EventLabel s = (String.implode v)"
+  "LabelEq v s \<equiv> fst (event (shd s)) = (String.implode v)"
 
-definition InputInxEq :: "nat \<Rightarrow> value \<Rightarrow> state stream \<Rightarrow> bool" where
-  "InputInxEq n v s \<equiv> In n s = v"
+fun "checkInx" :: "ior \<Rightarrow> nat \<Rightarrow> (value option \<Rightarrow> value option \<Rightarrow> bool option) \<Rightarrow> value option \<Rightarrow> state stream \<Rightarrow> bool" where
+  "checkInx ior.ip n f v s = (f (Some (Inputs n s)) v = Some True)" |
+  "checkInx ior.op n f v s = (f (Outputs n s) v = Some True)" |
+  "checkInx ior.rg n f v s = (f (datastate (shd s) (vname.R n)) v = Some True)"
 
 definition InputEq :: "value list \<Rightarrow> state stream \<Rightarrow> bool" where
   "InputEq v s \<equiv> inputs (shd s) = v"
 
 definition OutputEq :: "nat \<Rightarrow> value option \<Rightarrow> state stream \<Rightarrow> bool" where
-  "OutputEq n v s \<equiv> Out n s = v"
-
-definition RegGt :: "nat \<Rightarrow> int \<Rightarrow> state stream \<Rightarrow> bool" where
-  "RegGt n v s \<equiv> ValueGt (datastate (shd s) (R n)) (Some (Num v)) = Some True"
-
-definition notDetailedPDFslicker :: "property" where
-  "notDetailedPDFslicker s \<equiv> (Out 1 s) \<noteq> Some (Str ''detailedPDF'')"
+  "OutputEq n v s \<equiv> Outputs n s = v"
 
 lemma null_forever [simp]: "s = make_full_observation e (Some 0) <> t \<Longrightarrow> null s \<Longrightarrow> nxt (alw null) s"
   by simp
