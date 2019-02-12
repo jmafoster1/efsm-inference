@@ -7,7 +7,7 @@ transitions with register update functions.
 
 theory Contexts
   imports
-    EFSM GExp "efsm-exp.CExp" CExp_Equiv
+    EFSM "efsm-exp.GExp" "efsm-exp.CExp" "efsm-exp.CExp_Equiv"
 begin
 
 type_synonym "context" = "aexp \<Rightarrow> cexp"
@@ -301,32 +301,18 @@ lemma lt_to_lt: "Lt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Gt (L x
 lemma gt_to_gt: "Gt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Gt r (L x)"
   by (metis cexp2gexp.simps(4))
 
-lemma not_satisfiable_def: "\<not> satisfiable c = (\<forall>i. cval c i = Some False \<or> cval c i = None)"
-  apply (simp add: satisfiable_def)
-  apply safe
-   apply (rule_tac x=i in exI)
-   apply auto[1]
-  apply simp
-   apply (rule_tac x=i in exI)
-  by simp
-
-lemma cexp_satisfiable_some_false: "CExp.satisfiable (cexp.Not c) \<Longrightarrow> \<exists>i. cval c i = Some False"
-  apply (simp add: satisfiable_def)
-  by (metis (full_types) cval.simps(6) cval_double_negation map_option_case option.simps(9))
-
-lemma true_or_none_not_false: "(\<forall>i. cval c i = Some True \<or> cval c i = None) \<Longrightarrow> \<nexists>i. cval c i = Some False"
-  by (metis CExp.satisfiable_def not_satisfiable_def option.distinct(1))
-
-lemma not_satisfiable_neg: "\<not> CExp.satisfiable (cexp.Not c) = (\<forall>i. cval c i = Some True \<or> cval c i = None)"
-  apply safe
-   apply (simp add: satisfiable_def)
-   apply (metis option.case_eq_if option.sel option.simps(3))
-   apply (simp add: satisfiable_def)
-  by (metis (full_types) map_option_case option.simps(9))
-
 lemma satisfiable_double_neg: "satisfiable (cexp.Not (cexp.Not x)) = satisfiable x"
   apply (simp add: satisfiable_def)
-  by (metis cval.simps(6) cval_double_negation)
+  apply standard
+   apply clarify
+   apply (case_tac "gval (cexp2gexp r x) s")
+    apply simp+
+   apply auto[1]
+  apply clarify
+  apply (rule_tac x=s in exI)
+  apply (rule_tac x=r in exI)
+  apply (case_tac "gval (cexp2gexp r x) s")
+  by auto
 
 lemma cval_empty_r_neq_none[simp]: "cval (\<lbrakk>\<rbrakk> r) i \<noteq> None"
 proof (induct "\<lbrakk>\<rbrakk> r")

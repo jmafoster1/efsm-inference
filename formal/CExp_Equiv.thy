@@ -1,8 +1,8 @@
 theory CExp_Equiv
-imports GExp CExp
+imports GExp  CExp
 begin
 
-fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow> gexp" where
+fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow>  gexp" where
   "cexp2gexp _ (Bc b) = gexp.Bc b" |
   "cexp2gexp a Undef = Null a" |
   "cexp2gexp a (Lt v) = gexp.Gt (L v) a" |
@@ -13,6 +13,12 @@ fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow> gexp" where
 
 definition cexp_equiv :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
   "cexp_equiv c c' \<equiv> (\<forall>r. gexp_equiv (cexp2gexp r c) (cexp2gexp r c'))"
+
+definition valid :: "cexp \<Rightarrow> bool" where (* Is cexp "c" satisfied under all "i" values? *)
+  "valid c \<equiv> (\<forall>s r. gval (cexp2gexp r c) s = Some True)"
+
+definition satisfiable :: "cexp \<Rightarrow> bool" where (* Is there some value of "i" which satisfies "c"? *)
+  "satisfiable c \<equiv> (\<exists>s r. gval (cexp2gexp r c) s = Some True)"
 
 lemma cexp_equiv_reflexive: "cexp_equiv x x"
   by (simp add: cexp_equiv_def gexp_equiv_reflexive)
@@ -53,52 +59,60 @@ assume a1: "(\<forall>i. cval v i = Some True) \<longrightarrow> (\<forall>r s. 
 qed
 
 lemma gNegate: "gexp_equiv (gNot g) (gexp.Bc True) = gexp_equiv g (gexp.Bc False)"
-  sorry
-
-lemma vexp_equiv_valid: "valid c \<longrightarrow> cexp_equiv c (Bc True)"
-proof(induct c)
-  have invalid_undef: "\<not>valid Undef"
-    apply (simp add: valid_def)
-    by auto
-case Undef
-  then show ?case
-    by (simp add: invalid_undef)
-next
-  case (Bc x)
-  then show ?case
-    apply (case_tac x)
-     apply (simp add: valid_def cexp_equiv_reflexive)
-    by (simp add: valid_def)
-next
-  have invalid_eq: "\<And>x. \<not>valid (cexp.Eq x)"
-    apply (simp add: valid_def)
-    by auto
-  case (Eq x)
-  then show ?case
-    by (simp add: invalid_eq)
-next
-  have invalid_lt: "\<And>x. \<not>valid (cexp.Lt x)"
-    apply (simp add: valid_def)
-    by (metis MaybeBoolInt.simps(2) option.simps(3))
-  case (Lt x)
-  then show ?case
-    by (simp add: invalid_lt)
-next
-  have invalid_gt: "\<And>x. \<not>valid (cexp.Gt x)"
-    apply (simp add: valid_def)
-    using MaybeBoolInt.simps(2) not_None_eq by blast
-  case (Gt x)
-  then show ?case
-    by (simp add: invalid_gt)
-next
-  case (Not c)
-  then show ?case
-    apply (simp add: cexp_equiv_def valid_def maybe_negate gNegate)
-    sorry
-next
-  case (And c1 c2)
-  then show ?case sorry
+proof
+  show "gexp_equiv (gNot g) (gexp.Bc True) \<Longrightarrow> gexp_equiv g (gexp.Bc False)"
+  proof(induct g)
+    case (Bc x)
+    then show ?case
+      by (simp add: gexp_equiv_def)
+  next
+    case (Eq x1a x2)
+    then show ?case
+      by (simp add: gexp_equiv_def)
+  next
+    have test: "\<And>x1a x2 s. maybe_not
+              (case MaybeBoolInt (\<lambda>x y. y < x) (aval x1a s) (aval x2 s) of None \<Rightarrow> None
+               | Some a \<Rightarrow> case MaybeBoolInt (\<lambda>x y. y < x) (aval x1a s) (aval x2 s) of None \<Rightarrow> None | Some b \<Rightarrow> Some (a \<or> b)) =
+             Some True \<Longrightarrow>
+         MaybeBoolInt (\<lambda>x y. y < x) (aval x1a s) (aval x2 s) = Some False"
+  apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (aval x1a s) (aval x2 s)")
+  by auto
+    case (Gt x1a x2)
+    then show ?case
+      apply (simp add: gexp_equiv_def)
+      apply clarify
+      using test
+      by simp
+  next
+    have test: "\<And>g1 s g2. maybe_not
+              (case maybe_not (case gval g1 s of None \<Rightarrow> None | Some a \<Rightarrow> case gval g2 s of None \<Rightarrow> None | Some b \<Rightarrow> Some (a \<or> b)) of
+               None \<Rightarrow> None
+               | Some a \<Rightarrow>
+                   case maybe_not (case gval g1 s of None \<Rightarrow> None | Some a \<Rightarrow> case gval g2 s of None \<Rightarrow> None | Some b \<Rightarrow> Some (a \<or> b)) of
+                   None \<Rightarrow> None | Some b \<Rightarrow> Some (a \<or> b)) =
+             Some True \<Longrightarrow>
+         maybe_not (case gval g1 s of None \<Rightarrow> None | Some a \<Rightarrow> case gval g2 s of None \<Rightarrow> None | Some b \<Rightarrow> Some (a \<or> b)) = Some False"
+  apply (case_tac "gval g1 s")
+   apply simp+
+  apply (case_tac "gval g2 s")
+  by auto
+    case (Nor g1 g2)
+    then show ?case
+      apply (simp add: gexp_equiv_def)
+      apply clarify
+      using test
+      by simp
+  next
+    case (Null x)
+    then show ?case
+      by (simp add: gexp_equiv_def)
+  qed
+  show "gexp_equiv g (gexp.Bc False) \<Longrightarrow> gexp_equiv (gNot g) (gexp.Bc True)"
+    by (simp add: gexp_equiv_def)
 qed
+
+lemma cexp_equiv_valid: "valid c \<longrightarrow> cexp_equiv c (Bc True)"
+  by (simp add: valid_def cexp_equiv_def gexp_equiv_def)
 
 lemma cexp_equiv_redundant_and: "cexp_equiv (and c (and c c')) (and c c')"
   apply (simp add: cexp_equiv_def gexp_equiv_def)

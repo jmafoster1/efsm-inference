@@ -3,7 +3,9 @@ session "efsm-exp" = "HOL" +
   theories
     Option_Logic
     AExp
+    GExp
     CExp
+    CExp_Equiv
 
 session "michael-efsm" = "efsm-exp" +
   options [document = pdf, document_output = "output"]
@@ -15,7 +17,7 @@ session "michael-efsm" = "efsm-exp" +
 
 
 chapter AFP
-session "EFSM" (AFP) = "efsm-exp" + 
+session "EFSM" (AFP) = "efsm-exp" +
   options [timeout = 120000, document = pdf, document_variants="document:outline=/proof,/ML",document_output=output]
   theories
     EFSM
@@ -25,5 +27,3 @@ session "EFSM" (AFP) = "efsm-exp" +
   document_files
     "root.tex"
     "root.bib"
-
-

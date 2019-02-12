@@ -1,5 +1,5 @@
 theory GExp_Orderings
-imports "../GExp"
+imports "efsm-exp.GExp"
 begin
 
 (* datatype vname = I nat | R nat *)

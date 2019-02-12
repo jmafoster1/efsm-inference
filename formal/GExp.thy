@@ -11,7 +11,7 @@ well as the expression of logical conjunction, disjunction, and negation in term
 \<close>
 
 theory GExp
-imports "efsm-exp.AExp" "efsm-exp.Option_Logic"
+imports AExp Option_Logic
 begin
 
 (* type_synonym gexp = "(aexp \<times> cexp)" *)
