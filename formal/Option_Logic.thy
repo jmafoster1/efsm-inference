@@ -42,4 +42,19 @@ abbreviation maybe_implies :: "bool option \<Rightarrow> bool option \<Rightarro
 abbreviation maybe_not :: "bool option \<Rightarrow> bool option" where
   "maybe_not x \<equiv> (case x of Some a \<Rightarrow> Some (\<not>a) | None \<Rightarrow> None)"
 
+lemma maybe_double_negation: "maybe_not (maybe_not x) = x"
+  by (simp add: option.case_eq_if)
+
+lemma maybe_negate: "(maybe_not c = Some b) = (c = Some (\<not>b))"
+  by (metis (mono_tags, lifting) maybe_double_negation option.simps(5))
+
+lemma maybe_not_values: "(maybe_not c \<noteq> Some False) = (maybe_not c = Some True \<or> maybe_not c = None)"
+  by auto
+
+lemma maybe_not_c: "(maybe_not c \<noteq> Some b) = (c = None \<or> c = Some b)"
+  using maybe_not_values option.collapse by force
+
+lemma maybe_negate_2: "(maybe_not c \<noteq> Some b) = (c \<noteq> Some (\<not>b))"
+  by (simp add: maybe_negate)
+
 end

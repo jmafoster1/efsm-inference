@@ -19,7 +19,7 @@ begin
 (* abbreviation Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" where *)
   (* "Eq a b = (a, cexp.Eq b) *)
 
-datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null vname
+datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null aexp
 
 syntax (xsymbols)
   Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "=" 60*)
@@ -29,11 +29,8 @@ fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool option" where
   "gval (Bc b) _ = Some b" |
   "gval (Gt a\<^sub>1 a\<^sub>2) s = ValueGt (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
   "gval (Eq a\<^sub>1 a\<^sub>2) s = Some (aval a\<^sub>1 s = aval a\<^sub>2 s)" |
-  "gval (Nor a\<^sub>1 a\<^sub>2) s = (case (gval a\<^sub>1 s, gval a\<^sub>2 s) of
-    (Some x, Some y) \<Rightarrow> Some (\<not> (x \<or> y)) |
-    _ \<Rightarrow> None
-  )" |
-  "gval (Null v) s = Some (s v = None)"
+  "gval (Nor a\<^sub>1 a\<^sub>2) s = maybe_not (maybe_or (gval a\<^sub>1 s) (gval a\<^sub>2 s))" |
+  "gval (Null v) s = Some (aval v s = None)"
 
 abbreviation gNot :: "gexp \<Rightarrow> gexp"  where
   "gNot g \<equiv> Nor g g"

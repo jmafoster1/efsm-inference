@@ -30,7 +30,6 @@ fun "not" :: "cexp \<Rightarrow> cexp" where
     Bc True \<Rightarrow> Bc False |
     Bc False \<Rightarrow> Bc True |
     Not x \<Rightarrow> x |
-    Undef \<Rightarrow> Bc True |
     c \<Rightarrow> Not c
   )"
 
@@ -95,12 +94,12 @@ fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" whe
 fun apply_lt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where
   "apply_lt a b = (let (ca, cb) = (apply_gt b a) in (cb, ca))"
 
-fun cval :: "cexp \<Rightarrow> (value \<Rightarrow> bool option)" where (* Does a given value of "i" satisfy the given cexp? *)
-  "cval Undef = (\<lambda>i. Some False)" |
+fun cval :: "cexp \<Rightarrow> (value option \<Rightarrow> bool option)" where (* Does a given value of "i" satisfy the given cexp? *)
+  "cval Undef = (\<lambda>i. Some (i = None))" |
   "cval (Bc b) = (\<lambda>i. Some b)" |
-  "cval (Eq v) = (\<lambda>i. Some (i = v))" |
-  "cval (Lt v) = (\<lambda>i. ValueLt (Some i) (Some v))" |
-  "cval (Gt v) = (\<lambda>i. ValueGt (Some i) (Some v))" |
+  "cval (Eq v) = (\<lambda>i. Some (i = Some v))" |
+  "cval (Lt v) = (\<lambda>i. ValueLt i (Some v))" |
+  "cval (Gt v) = (\<lambda>i. ValueGt i (Some v))" |
   "cval (Not v) = (\<lambda>i. maybe_not (cval v i))" |
   "cval (And v va) = (\<lambda>i. maybe_and (cval v i) (cval va i))"
 
@@ -109,9 +108,6 @@ definition valid :: "cexp \<Rightarrow> bool" where (* Is cexp "c" satisfied und
 
 definition satisfiable :: "cexp \<Rightarrow> bool" where (* Is there some value of "i" which satisfies "c"? *)
   "satisfiable v \<equiv> (\<exists>i. cval v i = Some True)"
-
-lemma unsatisfiable_undef[simp]: "\<not> satisfiable Undef"
-  by (simp add: satisfiable_def)
 
 lemma valid_implies_satisfiable: "valid c \<Longrightarrow> satisfiable c"
   by (simp add: valid_def satisfiable_def)
@@ -321,7 +317,8 @@ theorem not_is_Not[simp]: "cval (not x) = cval (Not x)"
     then show ?thesis by simp_all
   next
     case (Undef)
-    then show ?thesis by simp
+    then show ?thesis
+      by simp
   qed
 
 lemma true_not_false: "cval (Bc True) = cval (Not (Bc False))"
@@ -339,27 +336,23 @@ lemma satisfiable_neq: "satisfiable (Neq x3)"
   by auto
 
 lemma satisfiable_leq: "satisfiable (Leq (Num x))"
-  apply (simp add: satisfiable_def)
-  apply (rule_tac x="Num (x-1)" in exI)
-  by simp
+  apply (simp add: satisfiable_def maybe_negate)
+  by (metis (full_types) MaybeBoolInt.simps(1) less_irrefl option.inject)
 
 lemma satisfiable_geq: "satisfiable (Geq (Num x))"
-  apply (simp add: satisfiable_def)
-  apply (rule_tac x="Num (x+1)" in exI)
-  by simp
+  apply (simp add: satisfiable_def maybe_negate)
+  by (metis (full_types) MaybeBoolInt.simps(1) dual_order.irrefl)
 
-lemma satisfiable_lt: "satisfiable (Lt (Num x4))"
+lemma satisfiable_lt: "satisfiable (Lt (Num x))"
   apply (simp add: satisfiable_def)
-  apply (rule_tac x="Num (x4-1)" in exI)
-  by simp
+  by (metis (full_types) MaybeBoolInt.simps(1) lt_ex)
 
 lemma unsatisfiable_lt: "\<not> satisfiable (Lt (Str s))"
   by (simp add: satisfiable_def)
 
 lemma satisfiable_gt: "satisfiable (Gt (Num x4))"
   apply (simp add: satisfiable_def)
-  apply (rule_tac x="Num (x4+1)" in exI)
-  by simp
+  by (metis (full_types) MaybeBoolInt.simps(1) gt_ex)
 
 lemma unsatisfiable_gt: "\<not> satisfiable (Gt (Str s))"
   by (simp add: satisfiable_def)
@@ -374,7 +367,8 @@ lemma unsatisfiable_false[simp]: "\<not> satisfiable (Bc False)"
   by (simp add: satisfiable_def)
 
 lemma satisfiable_not_undef: "satisfiable (Not (Undef))"
-  by (simp add: satisfiable_def)
+  apply (simp add: satisfiable_def)
+  by auto
 
 lemma cval_double_negation: "cval (Not (Not v)) = cval v"
   by (metis cexp.simps(54) not.simps not_is_Not)
@@ -383,23 +377,7 @@ lemma plus_num_str: "compose_plus (Eq (Str s)) (Eq (Num n)) = Bc False"
   apply (simp add: valid_def satisfiable_def)
   by auto
 
-definition cexp_equiv :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
-  "cexp_equiv c c' \<equiv> (\<forall>i. (cval c i) = (cval c' i)) \<and> (c = Undef \<longleftrightarrow> c' = Undef)"
 
-lemma cexp_equiv_reflexive: "cexp_equiv x x"
-  by (simp add: cexp_equiv_def)
-
-lemma cexp_equiv_symmetric: "cexp_equiv x y \<Longrightarrow> cexp_equiv y x"
-  by (simp add: cexp_equiv_def)
-
-lemma cexp_equiv_transitive: "cexp_equiv x y \<Longrightarrow> cexp_equiv y z \<Longrightarrow> cexp_equiv x z"
-  by (simp add: cexp_equiv_def)
-
-lemma cexp_equiv_undef: "cexp_equiv x Undef \<Longrightarrow> x = Undef"
-  by (simp add: cexp_equiv_def)
-
-lemma cexp_equiv_subst: "cexp_equiv x y \<Longrightarrow> P (cval x i) \<Longrightarrow> P (cval y i)"
-  by (simp add: cexp_equiv_def)
 
 lemma and_x_y_undef: "and x y = Undef \<Longrightarrow> and y x = Undef"
 proof (induction x)
@@ -481,19 +459,6 @@ next
     by (metis and.simps(57) cexp.distinct(11))
 qed
 
-lemma and_symmetric: "cexp_equiv (and x y) (and y x)"
-    apply (simp add: cexp_equiv_def)
-    apply (safe)
-    apply (case_tac "cval x i")
-     apply (case_tac "cval y i")
-      apply simp
-     apply simp
-     apply (case_tac "cval y i")
-     apply simp
-    apply auto[1]
-   apply (simp add: and_x_y_undef)
-  by (simp add: and_x_y_undef)
-
 definition mutually_exclusive :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
   "mutually_exclusive x y = (\<forall>i. (cval x i = Some True \<longrightarrow> cval y i \<noteq> Some True) \<and>
                                  (cval y i = Some True \<longrightarrow> cval x i \<noteq> Some True))"
@@ -521,8 +486,13 @@ lemma mutually_exclusive_symmetric: "mutually_exclusive x y \<Longrightarrow> mu
 lemma not_mutually_exclusive_true: "satisfiable x = (\<not> mutually_exclusive x (Bc True))"
   by (simp add: mutually_exclusive_def satisfiable_def)
 
-lemma vexp_equiv_valid: "valid c \<longrightarrow> cexp_equiv c (Bc True)"
-  apply (simp add: valid_def cexp_equiv_def)
+lemma cval_values: "(cval x i \<noteq> Some False) = (cval x i = Some True \<or> cval x i = None)"
   by auto
+
+lemma x_neq_not_x: "x \<noteq> cexp.Not x"
+  apply (induct_tac x)
+  by auto
+
+
 
 end

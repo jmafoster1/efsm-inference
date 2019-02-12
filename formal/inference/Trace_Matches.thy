@@ -112,8 +112,7 @@ fun get_gexp_biggest_reg :: "gexp \<Rightarrow> nat" where
   "get_gexp_biggest_reg (gexp.Eq a1 a2) = max (get_aexp_biggest_reg a1) (get_aexp_biggest_reg a2)" |
   "get_gexp_biggest_reg (gexp.Gt a1 a2) = max (get_aexp_biggest_reg a1) (get_aexp_biggest_reg a2)" |
   "get_gexp_biggest_reg (gexp.Nor g1 g2) = max (get_gexp_biggest_reg g1) (get_gexp_biggest_reg g2)" |
-  "get_gexp_biggest_reg (gexp.Null (R n)) = n" |
-  "get_gexp_biggest_reg (gexp.Null (I n)) = 0"
+  "get_gexp_biggest_reg (gexp.Null a) = (get_aexp_biggest_reg a)"
 
 definition get_biggest_t_reg :: "transition \<Rightarrow> nat" where
   "get_biggest_t_reg t = (let s = (fset_of_list ((map get_gexp_biggest_reg (Guard t))@ (map (\<lambda>(_, a). get_aexp_biggest_reg a) (Updates t)))) in 

@@ -7,7 +7,7 @@ transitions with register update functions.
 
 theory Contexts
   imports
-    EFSM GExp "efsm-exp.CExp"
+    EFSM GExp "efsm-exp.CExp" CExp_Equiv
 begin
 
 type_synonym "context" = "aexp \<Rightarrow> cexp"
@@ -67,29 +67,20 @@ definition context_equiv :: "context \<Rightarrow> context \<Rightarrow> bool" w
 lemma context_equiv_reflexive: "context_equiv x x"
   apply (simp add: context_equiv_def)
   apply (rule allI)
-  by (simp add: cexp_equiv_def)
+  by (simp add: cexp_equiv_def gexp_equiv_def)
 
 lemma context_equiv_symmetric: "context_equiv x y \<Longrightarrow> context_equiv y x"
   apply (simp add: context_equiv_def)
   apply (rule allI)
-  by (simp add: cexp_equiv_def)
+  by (simp add: cexp_equiv_def gexp_equiv_def)
 
 lemma context_equiv_transitive: "context_equiv x y \<and> context_equiv y z \<Longrightarrow> context_equiv x z"
   apply (simp add: context_equiv_def)
   apply (rule allI)
-  by (simp add: cexp_equiv_def)
-
-fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow> gexp" where
-  "cexp2gexp _ (Bc b) = gexp.Bc b" |
-  "cexp2gexp a Undef = gexp.Bc False" |
-  "cexp2gexp a (Lt v) = gexp.Gt (L v) a" |
-  "cexp2gexp a (Gt v) = gexp.Gt a (L v)" |
-  "cexp2gexp a (Eq v) = gexp.Eq a (L v)" |
-  "cexp2gexp a (Not v) = gNot (cexp2gexp a v)" |
-  "cexp2gexp a (And v va) = gAnd (cexp2gexp a v) (cexp2gexp a va)"
+  by (simp add: cexp_equiv_def gexp_equiv_def)
 
 definition consistent :: "context \<Rightarrow> bool" where (* Is there a variable evaluation which can satisfy all of the context? *)
-  "consistent c \<equiv> \<exists>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
+  "consistent c \<equiv> \<exists>s. \<forall>r. (gval (cexp2gexp r (c r)) s = Some True)"
 
 lemma possible_false_not_consistent: "\<exists>r. c r = Bc False \<Longrightarrow> \<not> consistent c"
   unfolding consistent_def
@@ -111,19 +102,19 @@ theorem consistent_empty_1: "empty r = Undef \<or> empty r = Bc True"
     apply (case_tac x2)
   by simp_all
 
-theorem consistent_empty_2: "(\<forall>r. c r = Bc True \<or> c r = Undef) \<longrightarrow> consistent c"
-  apply (simp add: consistent_def)
-  by force
-
-lemma consistent_empty_3: "(\<forall>r. empty r = Bc True \<or> empty r = Undef) \<longrightarrow> consistent empty"
-  apply (insert consistent_empty_2)
-  by simp
+theorem consistent_empty_2: "(\<forall>r. c r = Bc True) \<longrightarrow> consistent c"
+  by (simp add: consistent_def)
 
 lemma consistent_empty_4: "\<lbrakk>\<rbrakk> r = Undef \<or> gval (cexp2gexp r (\<lbrakk>\<rbrakk> r)) c = Some True"
   using consistent_empty_1 by force
 
 lemma consistent_empty [simp]: "consistent empty"
-  apply (insert consistent_empty_1 consistent_empty_3)
+  apply (simp add: consistent_def)
+  apply (rule_tac x="<>" in exI)
+  apply clarify
+  apply (case_tac r)
+     apply simp
+    apply (case_tac x2)
   by auto
 
 lemma cexp2gexp_double_neg: "gexp_equiv (cexp2gexp r (Not (Not x))) (cexp2gexp r x)"
@@ -148,7 +139,7 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
   "guard2pairs a (gexp.Bc True) = []" |
   "guard2pairs a (gexp.Bc False) = [(L (Num 0), Bc False)]" |
 
-  "guard2pairs a (gexp.Null v) = [(V v, Undef)]" |
+  "guard2pairs a (gexp.Null v) = [(v, Undef)]" |
 
   "guard2pairs a (gexp.Eq (L n) (L n')) =  (if n = n' then [] else [(L (Num 0), Bc False)])" |
   "guard2pairs a (gexp.Gt (L (Num n)) (L (Num n'))) = (if n > n' then [] else [(L (Num 0), Bc False)])" |
@@ -224,8 +215,11 @@ proof-
     apply (rule_tac x=s in exI)
     apply (rule allI)
     apply (case_tac "constrains_an_input r")
-     apply (simp add: consistent_empty_4)
-    by simp
+     apply simp
+     apply (case_tac r)
+        apply simp
+       apply (case_tac x2)
+    by auto
 qed
 
 definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
@@ -284,8 +278,10 @@ primrec pairs2guard :: "(aexp \<times> cexp) list \<Rightarrow> guard" where
   "pairs2guard (h#t) = gAnd (cexp2gexp (fst h) (snd h)) (pairs2guard t)"
 
 lemma context_equiv_same_undef: "c i = Undef \<Longrightarrow> c' i = cexp.Bc True \<Longrightarrow> \<not> context_equiv c c'"
-  apply (simp add: context_equiv_def cexp_equiv_def)
-  by (metis CExp.satisfiable_def satisfiable_true unsatisfiable_undef)
+  apply (simp add: context_equiv_def cexp_equiv_def gexp_equiv_def)
+  apply (rule_tac x=i in exI)
+  apply simp
+  using aval.simps(1) by blast
 
 lemma gexp_equiv_cexp_not_true:  "gexp_equiv (cexp2gexp a (Not (Bc True))) (gexp.Bc False)"
   by (simp add: gexp_equiv_def)
@@ -458,6 +454,172 @@ have empty_neq_and: "cexp.And x y \<noteq> \<lbrakk>\<rbrakk> r"
   then show ?case
     by (metis cexp.distinct(11) cexp.distinct(21) consistent_empty_1)
 qed
+
+lemma gval_and_false: "gval (cexp2gexp r (and (cexp.Bc False) c)) s \<noteq> Some True"
+  apply (case_tac c)
+        apply simp
+       apply (case_tac x2)
+        apply simp+
+     apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some x4) (aval r s)")
+      apply simp+
+    apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (aval r s) (Some x5)")
+     apply simp+
+   apply (case_tac "gval (cexp2gexp r x6) s")
+    apply simp+
+  apply (case_tac "gval (cexp2gexp r x71) s")
+   apply simp+
+  apply (case_tac "gval (cexp2gexp r x72) s")
+  by auto
+
+lemma inconsistant_conjoin_false: "\<not>consistent (conjoin (\<lambda>r. cexp.Bc False) c)"
+  apply (simp add: consistent_def)
+  apply clarify
+  apply (rule_tac x=r in exI)
+  apply (case_tac "c r")
+        apply simp
+       apply (case_tac x2)
+        apply simp+
+     apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some x4) (aval r s)")
+      apply simp+
+    apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (aval r s) (Some x5)")
+     apply simp+
+   apply (case_tac "gval (cexp2gexp r x6) s")
+    apply simp+
+  apply (case_tac "gval (cexp2gexp r x71) s")
+   apply simp+
+  apply (case_tac "gval (cexp2gexp r x72) s")
+  by auto
+
+lemma cval_gval_correspondence_None: "cval x i = None \<Longrightarrow> aval r s = i \<Longrightarrow> gval (cexp2gexp r x) s = None"
+proof(induct "x")
+case Undef
+  then show ?case
+    by simp
+next
+  case (Bc x)
+  then show ?case
+    by simp
+next
+  case (Eq x)
+  then show ?case
+    by simp
+next
+  case (Lt x)
+  then show ?case
+    apply simp
+    by (metis MaybeBoolInt.elims MaybeBoolInt.simps(3) MaybeBoolInt.simps(5) option.simps(3))
+next
+  case (Gt x)
+  then show ?case
+  by simp
+next
+  case (Not x)
+  then show ?case
+    by fastforce
+next
+  case (And x1 x2)
+  then show ?case
+    apply simp
+    apply (case_tac "cval x1 i")
+     apply simp
+    apply (case_tac "cval x2 i")
+     apply simp
+     apply (case_tac "gval (cexp2gexp r x1) s")
+    by auto
+qed
+
+lemma cval_gval_correspondence_not_None: "cval x i \<noteq> None \<Longrightarrow> aval r s = i \<Longrightarrow> gval (cexp2gexp r x) s \<noteq> None"
+proof(induct x)
+case Undef
+  then show ?case
+    by simp
+next
+  case (Bc x)
+  then show ?case
+    apply (case_tac x)
+    by auto
+next
+  case (Eq x)
+  then show ?case
+    by simp
+next
+  case (Lt x)
+  then show ?case
+    apply simp
+    by (metis MaybeBoolInt.elims MaybeBoolInt.simps(1))
+next
+  case (Gt x)
+  then show ?case
+    by simp
+next
+  case (Not x)
+  then show ?case
+    apply (simp add: maybe_negate)
+    apply (case_tac "gval (cexp2gexp r x) s")
+    by auto
+next
+  case (And x1 x2)
+  then show ?case
+    apply simp
+    apply (case_tac "gval (cexp2gexp r x1) s")
+     apply (metis And.hyps(1) option.case_eq_if option.distinct(1))
+    apply (case_tac "gval (cexp2gexp r x2) s")
+     apply simp
+     apply (metis (no_types, lifting) And.hyps(2) option.case_eq_if option.distinct(1))
+    by simp
+qed
+
+lemma cval_gval_correspondence_Some: "\<And>x. cval c i = Some x \<Longrightarrow> aval r s = i \<Longrightarrow> gval (cexp2gexp r c) s = Some x"
+proof(induct c)
+case Undef
+  then show ?case
+    by simp
+next
+  case (Bc x)
+  then show ?case
+    by (metis cexp2gexp.simps(1) cval.simps(2) gval.simps(1))
+next
+  have flip: "\<And>x c' r. (Eq x = c' r) = (c' r = Eq x)"
+    by auto
+  case (Eq x)
+  then show ?case
+    by (simp add: flip)
+next
+  have flip: "\<And>x c' r. (Lt x = c' r) = (c' r = Lt x)"
+    by auto
+  case (Lt x)
+  then show ?case
+    apply (simp add: flip)
+    by (metis MaybeBoolInt.elims MaybeBoolInt.simps(1) cval.simps(5) option.distinct(1) option.distinct(1) option.exhaust option.inject option.inject)
+next
+  have flip: "\<And>x c' r. (Gt x = c' r) = (c' r = Gt x)"
+    by auto
+case (Gt x)
+  then show ?case
+    by (simp add: flip)
+next
+  have flip: "\<And>x c' r. (cexp.Not x = c' r) = (c' r = cexp.Not x)"
+    by auto
+  case (Not x)
+  then show ?case
+    by (simp add: flip maybe_negate)
+next
+  have flip: "\<And>x1 x2 c' r. (cexp.And x1 x2 = c' r) = (c' r = cexp.And x1 x2)"
+    by auto
+  case (And x1 x2)
+  then show ?case
+    apply (simp add: flip)
+    apply (case_tac "cval x1 i")
+     apply simp
+    apply (case_tac "cval x2 i")
+     apply simp
+    by simp
+qed
+
+lemma cval_gval_correspondence_full: "cval (c r) i = cval (c' r) i \<Longrightarrow>
+                                      aval r s = i \<Longrightarrow>
+                                      gval (cexp2gexp r (c r)) s = gval (cexp2gexp r (c' r)) s"
+  by (metis cval_gval_correspondence_None cval_gval_correspondence_Some cval_values)
 
 lemma "consistent (medial (medial c g) g) = consistent (medial c g)"
 proof (induct g)
