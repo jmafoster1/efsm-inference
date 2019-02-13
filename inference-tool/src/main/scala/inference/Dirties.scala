@@ -118,6 +118,9 @@ object Dirties {
                                 false
                               }
                               else {
+                                val efsm = new EFSM(a)
+                              }
+                              else {
                                 val subsumes = readLine(f"Does\n${PrettyPrinter.transitionToString(t1)}\ndirectly subsume\n${PrettyPrinter.transitionToString(t2)}? y/n\n") == "y"
                                 subsumes
                               }

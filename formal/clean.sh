@@ -1,1 +1,1 @@
-find . -name *thy~ -exec rm {} ;
+find . -name "*thy~" -exec rm {} ;

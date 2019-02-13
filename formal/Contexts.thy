@@ -162,9 +162,9 @@ fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context" where
 fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
   "apply_guard a g = conjoin (pairs2context (guard2pairs a g)) a"
 
- primrec medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
-   "medial c [] = c" |
-   "medial c (h#t) = (medial (apply_guard c h) t)"
+primrec medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
+ "medial c [] = c" |
+ "medial c (h#t) = conjoin (pairs2context (guard2pairs c h)) (medial c t)"
 
 fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function \<Rightarrow> context" where
   "apply_update l c (v, (L n)) = update c (V v) (Eq n)" |
@@ -255,10 +255,10 @@ lemma satisfies_context_empty: "satisfies_context <> \<lbrakk>\<rbrakk> \<and> s
 (* Does t2 subsume t1? *)
 definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where (* Corresponds to Algorithm 2 in Foster et. al. *)
   "subsumes c t2 t1 \<equiv> Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) \<and>
-                      (\<forall>r i. (cval (medial c (Guard t1) r) i = Some True) \<longrightarrow> (cval (medial c (Guard t2) r) i) = Some True) \<and>
+                      (consistent (medial c (Guard t1))) \<longrightarrow> (consistent (medial c (Guard t2))) \<and>
                       (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
-                      (\<forall>r i. cval (posterior (medial c (Guard t1)) t2 r) i = Some True \<longrightarrow> (cval (posterior c t1 r) i = Some True) \<or> (posterior c t1 r) = Undef) \<and>
+                      (\<forall>r i. gval (cexp2gexp r (posterior (medial c (Guard t1)) t2 r)) i = Some True \<longrightarrow> (gval (cexp2gexp r (posterior c t1 r)) i = Some True) (* \<or> (posterior c t1 r) = Undef*)) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
 
 definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> context" where
@@ -314,7 +314,7 @@ lemma satisfiable_double_neg: "satisfiable (cexp.Not (cexp.Not x)) = satisfiable
   apply (case_tac "gval (cexp2gexp r x) s")
   by auto
 
-lemma cval_empty_r_neq_none[simp]: "cval (\<lbrakk>\<rbrakk> r) i \<noteq> None"
+lemma gval_empty_r_neq_none[simp]: "gval (cexp2gexp r (\<lbrakk>\<rbrakk> r)) s \<noteq> None"
 proof (induct "\<lbrakk>\<rbrakk> r")
 case Undef
   then show ?case
@@ -476,137 +476,6 @@ lemma inconsistant_conjoin_false: "\<not>consistent (conjoin (\<lambda>r. cexp.B
   apply (case_tac "gval (cexp2gexp r x72) s")
   by auto
 
-lemma cval_gval_correspondence_None: "cval x i = None \<Longrightarrow> aval r s = i \<Longrightarrow> gval (cexp2gexp r x) s = None"
-proof(induct "x")
-case Undef
-  then show ?case
-    by simp
-next
-  case (Bc x)
-  then show ?case
-    by simp
-next
-  case (Eq x)
-  then show ?case
-    by simp
-next
-  case (Lt x)
-  then show ?case
-    apply simp
-    by (metis MaybeBoolInt.elims MaybeBoolInt.simps(3) MaybeBoolInt.simps(5) option.simps(3))
-next
-  case (Gt x)
-  then show ?case
-  by simp
-next
-  case (Not x)
-  then show ?case
-    by fastforce
-next
-  case (And x1 x2)
-  then show ?case
-    apply simp
-    apply (case_tac "cval x1 i")
-     apply simp
-    apply (case_tac "cval x2 i")
-     apply simp
-     apply (case_tac "gval (cexp2gexp r x1) s")
-    by auto
-qed
-
-lemma cval_gval_correspondence_not_None: "cval x i \<noteq> None \<Longrightarrow> aval r s = i \<Longrightarrow> gval (cexp2gexp r x) s \<noteq> None"
-proof(induct x)
-case Undef
-  then show ?case
-    by simp
-next
-  case (Bc x)
-  then show ?case
-    apply (case_tac x)
-    by auto
-next
-  case (Eq x)
-  then show ?case
-    by simp
-next
-  case (Lt x)
-  then show ?case
-    apply simp
-    by (metis MaybeBoolInt.elims MaybeBoolInt.simps(1))
-next
-  case (Gt x)
-  then show ?case
-    by simp
-next
-  case (Not x)
-  then show ?case
-    apply (simp add: maybe_negate)
-    apply (case_tac "gval (cexp2gexp r x) s")
-    by auto
-next
-  case (And x1 x2)
-  then show ?case
-    apply simp
-    apply (case_tac "gval (cexp2gexp r x1) s")
-     apply (metis And.hyps(1) option.case_eq_if option.distinct(1))
-    apply (case_tac "gval (cexp2gexp r x2) s")
-     apply simp
-     apply (metis (no_types, lifting) And.hyps(2) option.case_eq_if option.distinct(1))
-    by simp
-qed
-
-lemma cval_gval_correspondence_Some: "\<And>x. cval c i = Some x \<Longrightarrow> aval r s = i \<Longrightarrow> gval (cexp2gexp r c) s = Some x"
-proof(induct c)
-case Undef
-  then show ?case
-    by simp
-next
-  case (Bc x)
-  then show ?case
-    by (metis cexp2gexp.simps(1) cval.simps(2) gval.simps(1))
-next
-  have flip: "\<And>x c' r. (Eq x = c' r) = (c' r = Eq x)"
-    by auto
-  case (Eq x)
-  then show ?case
-    by (simp add: flip)
-next
-  have flip: "\<And>x c' r. (Lt x = c' r) = (c' r = Lt x)"
-    by auto
-  case (Lt x)
-  then show ?case
-    apply (simp add: flip)
-    by (metis MaybeBoolInt.elims MaybeBoolInt.simps(1) cval.simps(5) option.distinct(1) option.distinct(1) option.exhaust option.inject option.inject)
-next
-  have flip: "\<And>x c' r. (Gt x = c' r) = (c' r = Gt x)"
-    by auto
-case (Gt x)
-  then show ?case
-    by (simp add: flip)
-next
-  have flip: "\<And>x c' r. (cexp.Not x = c' r) = (c' r = cexp.Not x)"
-    by auto
-  case (Not x)
-  then show ?case
-    by (simp add: flip maybe_negate)
-next
-  have flip: "\<And>x1 x2 c' r. (cexp.And x1 x2 = c' r) = (c' r = cexp.And x1 x2)"
-    by auto
-  case (And x1 x2)
-  then show ?case
-    apply (simp add: flip)
-    apply (case_tac "cval x1 i")
-     apply simp
-    apply (case_tac "cval x2 i")
-     apply simp
-    by simp
-qed
-
-lemma cval_gval_correspondence_full: "cval (c r) i = cval (c' r) i \<Longrightarrow>
-                                      aval r s = i \<Longrightarrow>
-                                      gval (cexp2gexp r (c r)) s = gval (cexp2gexp r (c' r)) s"
-  by (metis cval_gval_correspondence_None cval_gval_correspondence_Some cval_values)
-
 lemma "consistent (medial (medial c g) g) = consistent (medial c g)"
 proof (induct g)
   case Nil
@@ -629,10 +498,8 @@ lemma "subsumes c t t"
   apply standard
    apply simp
   apply standard
-   apply simp
   apply standard
    defer
-   apply simp
   unfolding posterior_def Let_def
   oops
 
