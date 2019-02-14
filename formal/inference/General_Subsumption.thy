@@ -126,18 +126,6 @@ lemma test2: "consistent (\<lambda>r. and (if r = V (I i) then snd (V (I i), cex
   using inconsistent_c
   by auto
 
-lemma gval_gand[simp]: "(gval (gAnd g1 g2) s = Some True) = ((gval g1 s = Some True) \<and> gval g2 s = Some True)"
-  apply (case_tac "gval g1 s")
-   apply simp+
-  apply (case_tac "gval g2 s")
-  by auto
-
-lemma gval_gnot[simp]: "(gval (gNot g) s = Some True) = (gval g s = Some False)"
-  apply (case_tac "gval g s")
-  by auto
-
-declare gval.simps [simp del]
-
 lemma gval_conjoin: "gval (cexp2gexp r (c r)) s \<noteq> Some True \<Longrightarrow> gval (cexp2gexp r (if r = i then and (cexp.Eq v) (c r) else c r)) s \<noteq> Some True"
   apply (case_tac "c i")
         apply (simp_all)

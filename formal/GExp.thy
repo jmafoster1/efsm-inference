@@ -171,4 +171,28 @@ primrec conjoin :: "gexp list \<Rightarrow> gexp" where
   "conjoin [] = gexp.Bc True" |
   "conjoin (h#t) = gAnd h (conjoin t)"
 
+lemma gval_gAnd[simp]: "gval (gAnd g1 g2) s = maybe_and (gval g1 s) (gval g2 s)"
+  apply simp
+  apply (case_tac "gval g1 s")
+   apply simp+
+  apply (case_tac "gval g2 s")
+  by auto
+
+lemma gval_gAnd_True[simp]: "(gval (gAnd g1 g2) s = Some True) = ((gval g1 s = Some True) \<and> gval g2 s = Some True)"
+  apply (case_tac "gval g1 s")
+   apply simp+
+  apply (case_tac "gval g2 s")
+  by auto
+
+lemma gval_gNot[simp]: "gval (gNot g) s = maybe_not (gval g s)"
+  apply simp
+  apply (case_tac "gval g s")
+  by auto
+
+lemma gval_gNot_some[simp]: "(gval (gNot g) s = Some b) = (gval g s = Some (\<not>b))"
+  apply (case_tac "gval g s")
+  by auto
+
+declare gval.simps [simp del]
+
 end

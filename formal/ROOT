@@ -5,7 +5,6 @@ session "efsm-exp" = "HOL" +
     AExp
     GExp
     CExp
-    CExp_Equiv
 
 session "michael-efsm" = "efsm-exp" +
   options [document = pdf, document_output = "output"]

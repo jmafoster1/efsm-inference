@@ -7,7 +7,7 @@ transitions with register update functions.
 
 theory Contexts
   imports
-    EFSM "efsm-exp.GExp" "efsm-exp.CExp" "efsm-exp.CExp_Equiv"
+    EFSM "efsm-exp.GExp" "efsm-exp.CExp"
 begin
 
 type_synonym "context" = "aexp \<Rightarrow> cexp"
@@ -280,7 +280,7 @@ primrec pairs2guard :: "(aexp \<times> cexp) list \<Rightarrow> guard" where
 lemma context_equiv_same_undef: "c i = Undef \<Longrightarrow> c' i = cexp.Bc True \<Longrightarrow> \<not> context_equiv c c'"
   apply (simp add: context_equiv_def cexp_equiv_def gexp_equiv_def)
   apply (rule_tac x=i in exI)
-  apply simp
+  apply (simp add: cval_def)
   using aval.simps(1) by blast
 
 lemma gexp_equiv_cexp_not_true:  "gexp_equiv (cexp2gexp a (Not (Bc True))) (gexp.Bc False)"
@@ -301,18 +301,9 @@ lemma lt_to_lt: "Lt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Gt (L x
 lemma gt_to_gt: "Gt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Gt r (L x)"
   by (metis cexp2gexp.simps(4))
 
+
 lemma satisfiable_double_neg: "satisfiable (cexp.Not (cexp.Not x)) = satisfiable x"
-  apply (simp add: satisfiable_def)
-  apply standard
-   apply clarify
-   apply (case_tac "gval (cexp2gexp r x) s")
-    apply simp+
-   apply auto[1]
-  apply clarify
-  apply (rule_tac x=s in exI)
-  apply (rule_tac x=r in exI)
-  apply (case_tac "gval (cexp2gexp r x) s")
-  by auto
+  by (simp add: satisfiable_def cval_double_negation)
 
 lemma gval_empty_r_neq_none[simp]: "gval (cexp2gexp r (\<lbrakk>\<rbrakk> r)) s \<noteq> None"
 proof (induct "\<lbrakk>\<rbrakk> r")
