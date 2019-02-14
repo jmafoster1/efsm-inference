@@ -80,18 +80,18 @@ lemma context_equiv_transitive: "context_equiv x y \<and> context_equiv y z \<Lo
   by (simp add: cexp_equiv_def gexp_equiv_def)
 
 definition consistent :: "context \<Rightarrow> bool" where (* Is there a variable evaluation which can satisfy all of the context? *)
-  "consistent c \<equiv> \<exists>s. \<forall>r. (gval (cexp2gexp r (c r)) s = Some True)"
+  "consistent c \<equiv> \<exists>s. \<forall>r. (cval (c r) r s = Some True)"
 
 lemma possible_false_not_consistent: "\<exists>r. c r = Bc False \<Longrightarrow> \<not> consistent c"
   unfolding consistent_def
-  apply simp
+  apply (simp add: cval_def)
   apply (rule allI)
   apply clarify
   apply (rule_tac x=r in exI)
   by simp
 
 lemma inconsistent_false: "\<not>consistent (\<lambda>i. cexp.Bc False)"
-  by (simp add: consistent_def)
+  by (simp add: consistent_def cval_def)
 
 definition valid_context :: "context \<Rightarrow> bool" where (* Is the context satisfied in all variable evaluations? *)
   "valid_context c \<equiv> \<forall>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
@@ -103,13 +103,13 @@ theorem consistent_empty_1: "empty r = Undef \<or> empty r = Bc True"
   by simp_all
 
 theorem consistent_empty_2: "(\<forall>r. c r = Bc True) \<longrightarrow> consistent c"
-  by (simp add: consistent_def)
+  by (simp add: consistent_def cval_def)
 
 lemma consistent_empty_4: "\<lbrakk>\<rbrakk> r = Undef \<or> gval (cexp2gexp r (\<lbrakk>\<rbrakk> r)) c = Some True"
   using consistent_empty_1 by force
 
 lemma consistent_empty [simp]: "consistent empty"
-  apply (simp add: consistent_def)
+  apply (simp add: consistent_def cval_def)
   apply (rule_tac x="<>" in exI)
   apply clarify
   apply (case_tac r)
@@ -174,7 +174,7 @@ fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function
 
 primrec apply_updates :: "context \<Rightarrow> context \<Rightarrow> update_function list \<Rightarrow> context" where
   "apply_updates _ c [] = c" |
-  "apply_updates l c (h#t) = apply_updates l (apply_update l c h) t"
+  "apply_updates l c (h#t) = (apply_update l (apply_updates l c t) h)"
 
 definition can_take :: "transition \<Rightarrow> context \<Rightarrow> bool" where
   "can_take t c \<equiv> consistent (medial c (Guard t))"
@@ -213,7 +213,7 @@ proof-
   assume premise: "consistent c"
   show ?thesis
     using premise
-    apply (simp add: remove_input_constraints_def consistent_def)
+    apply (simp add: remove_input_constraints_def consistent_def cval_def)
     apply clarify
     apply (rule_tac x=s in exI)
     apply (rule allI)
@@ -247,7 +247,7 @@ definition satisfies_context :: "datastate \<Rightarrow> context \<Rightarrow> b
   "satisfies_context d c = consistent (conjoin (datastate2context d) c)"
 
 lemma satisfies_context_empty: "satisfies_context <> \<lbrakk>\<rbrakk> \<and> satisfies_context Map.empty \<lbrakk>\<rbrakk>"
-  apply (simp add: satisfies_context_def consistent_def datastate2context_def)
+  apply (simp add: satisfies_context_def consistent_def datastate2context_def cval_def)
   apply (rule_tac x="<>" in exI)
   apply clarify
   apply (case_tac r)
@@ -459,7 +459,7 @@ lemma gval_and_false: "gval (cexp2gexp r (and (cexp.Bc False) c)) s \<noteq> Som
   by auto
 
 lemma inconsistant_conjoin_false: "\<not>consistent (conjoin (\<lambda>r. cexp.Bc False) c)"
-  apply (simp add: consistent_def)
+  apply (simp add: consistent_def cval_def)
   apply clarify
   apply (rule_tac x=r in exI)
   apply (case_tac "c r")
@@ -477,36 +477,6 @@ lemma inconsistant_conjoin_false: "\<not>consistent (conjoin (\<lambda>r. cexp.B
   apply (case_tac "gval (cexp2gexp r x72) s")
   by auto
 
-lemma inconsistent_anterior_gives_inconsistent_medial: "\<not>consistent c \<Longrightarrow> \<not>consistent (medial c g)"
-proof(induct g)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons a g)
-  then show ?case
-    apply (simp add: consistent_def)
-    apply clarify
-    apply (simp only: gval_and gval_gAnd maybe_and_is_true)
-    by auto
-qed
-
-lemma consistent_medial_requires_consistent_antrior: "consistent (medial c g) \<Longrightarrow> consistent c"
-  using inconsistent_anterior_gives_inconsistent_medial
-  by auto
-
-lemma consistent_posterior_requires_consistent_antrior: "consistent (posterior c t) \<Longrightarrow> consistent c"
-  apply (simp add: posterior_def Let_def)
-  apply (case_tac "consistent (medial c (Guard t))")
-   apply simp
-   apply (simp add: consistent_medial_requires_consistent_antrior)
-  by (simp add: inconsistent_false)
-
-lemma consistent_posterior_gives_consistent_medial: "consistent (posterior c x) \<Longrightarrow> consistent (medial c (Guard x))"
-  apply (simp add: posterior_def Let_def)
-  apply (case_tac "consistent (medial c (Guard x))")
-   apply simp
-  by (simp add: inconsistent_false)
-
 lemma "consistent (medial (medial c g) g) = consistent (medial c g)"
 proof (induct g)
   case Nil
@@ -520,7 +490,6 @@ next
     apply (case_tac a)
         apply (case_tac x1)
             apply auto[1]
-           apply simp
     oops
 
 
