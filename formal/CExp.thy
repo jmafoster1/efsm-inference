@@ -193,38 +193,18 @@ proof
     then show ?case
       by (simp add: gexp_equiv_def gval.simps)
   next
-    have test: "\<And>x1a x2 s. maybe_not
-              (case MaybeBoolInt (\<lambda>x y. y < x) (aval x1a s) (aval x2 s) of None \<Rightarrow> None
-               | Some a \<Rightarrow> case MaybeBoolInt (\<lambda>x y. y < x) (aval x1a s) (aval x2 s) of None \<Rightarrow> None | Some b \<Rightarrow> Some (a \<or> b)) =
-             Some True \<Longrightarrow>
-         MaybeBoolInt (\<lambda>x y. y < x) (aval x1a s) (aval x2 s) = Some False"
-  apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (aval x1a s) (aval x2 s)")
-  by auto
     case (Gt x1a x2)
     then show ?case
       apply (simp add: gexp_equiv_def)
       apply clarify
-      using test
-      by (simp add: gval.simps)
+      by (simp add: gval.simps maybe_negate)
   next
-    have test: "\<And>g1 s g2. maybe_not
-              (case maybe_not (case gval g1 s of None \<Rightarrow> None | Some a \<Rightarrow> case gval g2 s of None \<Rightarrow> None | Some b \<Rightarrow> Some (a \<or> b)) of
-               None \<Rightarrow> None
-               | Some a \<Rightarrow>
-                   case maybe_not (case gval g1 s of None \<Rightarrow> None | Some a \<Rightarrow> case gval g2 s of None \<Rightarrow> None | Some b \<Rightarrow> Some (a \<or> b)) of
-                   None \<Rightarrow> None | Some b \<Rightarrow> Some (a \<or> b)) =
-             Some True \<Longrightarrow>
-         maybe_not (case gval g1 s of None \<Rightarrow> None | Some a \<Rightarrow> case gval g2 s of None \<Rightarrow> None | Some b \<Rightarrow> Some (a \<or> b)) = Some False"
-  apply (case_tac "gval g1 s")
-   apply simp+
-  apply (case_tac "gval g2 s")
-  by auto
     case (Nor g1 g2)
     then show ?case
       apply (simp add: gexp_equiv_def)
       apply clarify
-      using test
-      by (simp add: gval.simps)
+      apply (simp add: gval.simps)
+      using maybe_negate by auto
   next
     case (Null x)
     then show ?case
@@ -1073,15 +1053,11 @@ case (2 a)
 next
 case (3 a v)
   then show ?case
-    apply simp
-    apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some v) (aval x xa)")
-    by auto
+    by simp
 next
 case (4 a v)
   then show ?case
-    apply simp
-    apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (aval x xa) (Some v)")
-    by auto
+    by simp
 next
   case (5 a v)
   then show ?case
@@ -1095,11 +1071,7 @@ next
 next
 case (7 a v va)
   then show ?case
-    apply simp
-    apply (case_tac "gval (cexp2gexp x v) xa")
-     apply simp+
-    apply (case_tac "gval (cexp2gexp x va) xa")
-    by auto
+    by simp
 qed 
 
 lemma true_not_false: "cval (Bc True) = cval (Not (Bc False))"
@@ -1122,22 +1094,12 @@ lemma satisfiable_neq: "satisfiable (Neq x3)"
 
 lemma satisfiable_leq: "satisfiable (Leq (Num x))"
   apply (simp add: satisfiable_def cval_def)
-proof -
-  have "maybe_not (case MaybeBoolInt (\<lambda>i ia. ia < i) (aval (L (Num x)) elem_0) (Some (Num x)) of None \<Rightarrow> None | Some b \<Rightarrow> case MaybeBoolInt (\<lambda>i ia. ia < i) (aval (L (Num x)) elem_0) (Some (Num x)) of None \<Rightarrow> None | Some ba \<Rightarrow> Some (b \<or> ba)) = Some True"
-    by auto
-  then show "\<exists>a f. maybe_not (case MaybeBoolInt (\<lambda>i ia. ia < i) (aval a f) (Some (Num x)) of None \<Rightarrow> None | Some b \<Rightarrow> case MaybeBoolInt (\<lambda>i ia. ia < i) (aval a f) (Some (Num x)) of None \<Rightarrow> None | Some ba \<Rightarrow> Some (b \<or> ba)) = Some True"
-    by blast
-qed
+  by (metis (no_types, lifting) MaybeBoolInt.simps(1) aval.simps(1) maybe_not_c minf(4) option.discI option.sel)
 
 
 lemma satisfiable_geq: "satisfiable (Geq (Num x))"
   apply (simp add: satisfiable_def cval_def)
-proof -
-  have "maybe_not (case MaybeBoolInt (\<lambda>i ia. ia < i) (Some (Num x)) (aval (L (Num x)) elem_0) of None \<Rightarrow> None | Some b \<Rightarrow> case MaybeBoolInt (\<lambda>i ia. ia < i) (Some (Num x)) (aval (L (Num x)) elem_0)  of None \<Rightarrow> None | Some ba \<Rightarrow> Some (b \<or> ba)) = Some True"
-    by auto
-  then show "\<exists>a f. maybe_not (case MaybeBoolInt (\<lambda>i ia. ia < i) (Some (Num x)) (aval a f) of None \<Rightarrow> None | Some b \<Rightarrow> case MaybeBoolInt (\<lambda>i ia. ia < i)(Some (Num x))  (aval a f) of None \<Rightarrow> None | Some ba \<Rightarrow> Some (b \<or> ba)) = Some True"
-    by blast
-qed
+  by (metis (no_types, lifting) MaybeBoolInt.simps(1) aval.simps(1) maybe_not_c option.discI option.sel pinf(4))
 
 lemma satisfiable_lt: "satisfiable (Lt (Num x))"
   apply (simp add: satisfiable_def cval_def)
@@ -1172,8 +1134,7 @@ lemma cval_double_negation: "cval (Not (Not v)) = cval v"
 lemma plus_num_str: "compose_plus (Eq (Str s)) (Eq (Num n)) = Bc False"
   apply simp
   apply (simp add: valid_def satisfiable_def cval_def)
-  by (metis aval.simps(1) option.inject value.simps(4))
-
+  by (metis (full_types) aval.simps(1) option.inject value.simps(4))
 
 lemma and_x_y_undef: "and x y = Undef \<Longrightarrow> and y x = Undef"
 proof (induction x)
@@ -1270,11 +1231,11 @@ lemma mutually_exclusive_unsatisfiable_conj: "mutually_exclusive x y = (\<not> s
   apply clarify
 proof -
   fix a :: "vname \<Rightarrow> value option" and i :: aexp
-  assume a1: "\<forall>a s. maybe_not (case maybe_not (case gval (cexp2gexp a x) s of None \<Rightarrow> None | Some aa \<Rightarrow> case gval (cexp2gexp a x) s of None \<Rightarrow> None | Some b \<Rightarrow> Some (aa \<or> b)) of None \<Rightarrow> None | Some aa \<Rightarrow> case maybe_not (case gval (cexp2gexp a y) s of None \<Rightarrow> None | Some aa \<Rightarrow> case gval (cexp2gexp a y) s of None \<Rightarrow> None | Some b \<Rightarrow> Some (aa \<or> b)) of None \<Rightarrow> None | Some b \<Rightarrow> Some (aa \<or> b)) \<noteq> Some True"
-have "gval (cexp2gexp i y) a = Some True \<and> gval (cexp2gexp i x) a = Some True \<longrightarrow> maybe_not (case maybe_not (case gval (cexp2gexp i x) a of None \<Rightarrow> None | Some b \<Rightarrow> case gval (cexp2gexp i x) a of None \<Rightarrow> None | Some ba \<Rightarrow> Some (b \<or> ba)) of None \<Rightarrow> None | Some b \<Rightarrow> case maybe_not (case gval (cexp2gexp i y) a of None \<Rightarrow> None | Some b \<Rightarrow> case gval (cexp2gexp i y) a of None \<Rightarrow> None | Some ba \<Rightarrow> Some (b \<or> ba)) of None \<Rightarrow> None | Some ba \<Rightarrow> Some (b \<or> ba)) = Some True"
+  assume a1: "\<forall>a s. maybe_not (case maybe_not (gval (cexp2gexp a x) s) of None \<Rightarrow> None | Some aa \<Rightarrow> case maybe_not (gval (cexp2gexp a y) s) of None \<Rightarrow> None | Some b \<Rightarrow> Some (aa \<or> b)) \<noteq> Some True"
+have "gval (cexp2gexp i y) a = Some True \<and> gval (cexp2gexp i x) a = Some True \<longrightarrow> maybe_not (case maybe_not (gval (cexp2gexp i x) a) of None \<Rightarrow> None | Some b \<Rightarrow> case maybe_not (gval (cexp2gexp i y) a) of None \<Rightarrow> None | Some ba \<Rightarrow> Some (b \<or> ba)) = Some True"
   by simp
   then show "(gval (cexp2gexp i x) a = Some True \<longrightarrow> gval (cexp2gexp i y) a \<noteq> Some True) \<and> (gval (cexp2gexp i y) a = Some True \<longrightarrow> gval (cexp2gexp i x) a \<noteq> Some True)"
-using a1 by blast
+    using a1 by blast
 qed
 
 lemma unsatisfiable_conj_mutually_exclusive: "\<not> satisfiable (And x y) = mutually_exclusive x y"

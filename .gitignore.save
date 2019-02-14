@@ -1,5 +1,4 @@
-# Ignore emacs temp files
-*~
+# Ignore emacs temp 
 
 # Ignore Isabelle temp files
 *.thy#

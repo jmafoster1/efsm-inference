@@ -198,6 +198,9 @@ lemma empty_inputs_are_true: "constrains_an_input x \<Longrightarrow> \<lbrakk>\
     apply (case_tac x2)
   by auto
 
+lemma cval_empty_inputs: "constrains_an_input r \<longrightarrow> cval (\<lbrakk>\<rbrakk> r) r ia = Some True"
+  by (simp add: empty_inputs_are_true cval_def)
+
 lemma remove_input_constraints_alt:  "remove_input_constraints c = (\<lambda>x. if constrains_an_input x then Bc True else c x)"
   apply (rule ext)
   by (simp add: remove_input_constraints_def empty_inputs_are_true)
@@ -255,11 +258,18 @@ lemma satisfies_context_empty: "satisfies_context <> \<lbrakk>\<rbrakk> \<and> s
 (* Does t2 subsume t1? *)
 definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where (* Corresponds to Algorithm 2 in Foster et. al. *)
   "subsumes c t2 t1 \<equiv> Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) \<and>
-                      (consistent (medial c (Guard t1))) \<longrightarrow> (consistent (medial c (Guard t2))) \<and>
+                      (\<forall>r i. (cval (medial c (Guard t1) r) r i = Some True) \<longrightarrow> (cval (medial c (Guard t2) r) r i) = Some True) \<and>
                       (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
-                      (\<forall>r i. gval (cexp2gexp r (posterior (medial c (Guard t1)) t2 r)) i = Some True \<longrightarrow> (gval (cexp2gexp r (posterior c t1 r)) i = Some True) (* \<or> (posterior c t1 r) = Undef*)) \<and>
+                      (\<forall>r i. cval (posterior (medial c (Guard t1)) t2 r) r i = Some True \<longrightarrow> (cval (posterior c t1 r) r i = Some True) \<or> (posterior c t1 r) = Undef) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
+(* definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where (* Corresponds to Algorithm 2 in Foster et. al. *) *)
+  (* "subsumes c t2 t1 \<equiv> Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) \<and> *)
+                      (* (consistent (medial c (Guard t1))) \<longrightarrow> (consistent (medial c (Guard t2))) \<and> *)
+                      (* (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and> *)
+                      (* (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and> *)
+                      (* (\<forall>r i. gval (cexp2gexp r (posterior (medial c (Guard t1)) t2 r)) i = Some True \<longrightarrow> (gval (cexp2gexp r (posterior c t1 r)) i = Some True) (* \<or> (posterior c t1 r) = Undef*)) \<and> *)
+                      (* (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))" *)
 
 definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> context" where
  "anterior_context e t = posterior_sequence \<lbrakk>\<rbrakk> e 0 <> t"
@@ -466,6 +476,36 @@ lemma inconsistant_conjoin_false: "\<not>consistent (conjoin (\<lambda>r. cexp.B
    apply simp+
   apply (case_tac "gval (cexp2gexp r x72) s")
   by auto
+
+lemma inconsistent_anterior_gives_inconsistent_medial: "\<not>consistent c \<Longrightarrow> \<not>consistent (medial c g)"
+proof(induct g)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a g)
+  then show ?case
+    apply (simp add: consistent_def)
+    apply clarify
+    apply (simp only: gval_and gval_gAnd maybe_and_is_true)
+    by auto
+qed
+
+lemma consistent_medial_requires_consistent_antrior: "consistent (medial c g) \<Longrightarrow> consistent c"
+  using inconsistent_anterior_gives_inconsistent_medial
+  by auto
+
+lemma consistent_posterior_requires_consistent_antrior: "consistent (posterior c t) \<Longrightarrow> consistent c"
+  apply (simp add: posterior_def Let_def)
+  apply (case_tac "consistent (medial c (Guard t))")
+   apply simp
+   apply (simp add: consistent_medial_requires_consistent_antrior)
+  by (simp add: inconsistent_false)
+
+lemma consistent_posterior_gives_consistent_medial: "consistent (posterior c x) \<Longrightarrow> consistent (medial c (Guard x))"
+  apply (simp add: posterior_def Let_def)
+  apply (case_tac "consistent (medial c (Guard x))")
+   apply simp
+  by (simp add: inconsistent_false)
 
 lemma "consistent (medial (medial c g) g) = consistent (medial c g)"
 proof (induct g)
