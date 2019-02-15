@@ -383,8 +383,20 @@ lemma satisfiable_undef: "satisfiable Undef"
   apply (rule_tac x="<>" in exI)
   by (simp add: cval_def gval.simps)
 
+lemma invalid_undef: "\<not> valid Undef"
+  apply (simp add: valid_def cval_def)
+  apply (rule_tac x="V (R 1)" in exI)
+  apply (rule_tac x="<R 1 := Num 5>" in exI)
+  by (simp add: cval_def gval.simps)
+
 lemma invalid_false: "\<not>valid (cexp.Bc False)"
   by (simp add: valid_def cval_def gval.simps)
+
+lemma invalid_eq: "\<not> valid (cexp.Eq x3)"
+  apply (simp add: valid_def cval_def)
+  apply (rule_tac x="V (R 1)" in exI)
+  apply (rule_tac x="<>" in exI)
+  by (simp add: cval_def gval.simps)
 
 lemma get_false_aux_1: "c g (V x2) = cexp.Bc False \<Longrightarrow> x32 = V x2 \<Longrightarrow> \<forall>a s. cval (medial (c g) g (V x2)) a s \<noteq> Some True"
 proof(induct g)
@@ -434,6 +446,126 @@ lemma satisfiable_dont_get_false: "CExp.satisfiable (Contexts.get (medial (media
   using get_false
   by auto
 
+lemma cval_true: "cval (Bc True) a i = Some True"
+  by (simp add: cval_def gval.simps)
+
+lemma cval_false: "cval (cexp.Bc False) a i = Some False"
+  by (simp add: cval_def gval.simps)
+
+lemma invalid_lt: "\<not> valid (Lt (Num x1))"
+  apply (simp add: valid_def cval_def)
+  apply (rule_tac x="V (R 1)" in exI)
+  apply (rule_tac x="<>" in exI)
+  by (simp add: cval_def gval.simps)
+
+lemma unsatisfiable_cexp_gives_unsatisfiable_medial: "\<not>satisfiable (Contexts.get c x) \<Longrightarrow> \<not>satisfiable (Contexts.get (medial c g) x)"
+proof(induct g)
+  case Nil
+  then show ?case
+    by (simp add: unsatisfiable_lt)
+next
+  case (Cons a g)
+  then show ?case
+    apply (simp add: satisfiable_def)
+    apply (case_tac x)
+       apply simp
+      apply simp
+      apply (simp only: cval_def gval_And gval_gAnd maybe_and_is_true)
+      apply simp
+     apply simp
+     apply (simp only: cval_def gval_And gval_gAnd maybe_and_is_true gval_and)
+     apply simp
+     apply simp
+     apply (simp only: cval_def gval_And gval_gAnd maybe_and_is_true gval_and)
+    by simp
+qed
+
+lemma invalid_gt: "\<not> valid (cexp.Gt x5)"
+  apply (simp add: valid_def cval_def)
+  apply (rule_tac x="V (R 2)" in exI)
+  apply (rule_tac x="<>" in exI)
+  by (simp add: gval.simps)
+
+lemma cexp_satisfiable_medial_medial: "satisfiable (Contexts.get (medial c g) b1) \<Longrightarrow> satisfiable (Contexts.get c b1)"
+  using unsatisfiable_cexp_gives_unsatisfiable_medial by blast
+
+lemma test: "(cval (Contexts.apply_updates (medial (medial c g) g) (medial c g) u r) r i = Some True \<Longrightarrow>
+        cval (Contexts.apply_updates (medial c g) c u r) r i = Some True) \<Longrightarrow>
+       cval (apply_update (medial (medial c g) g) (Contexts.apply_updates (medial (medial c g) g) (medial c g) u) (aa, b) r) r i =
+       Some True \<Longrightarrow>
+       cval (apply_update (medial c g) (Contexts.apply_updates (medial c g) c u) (aa, b) r) r i = Some True"
+proof(induct b)
+case (L x)
+  then show ?case
+    apply simp
+    apply (case_tac "r = V aa")
+    by auto
+next
+  case (V x)
+  then show ?case
+    apply simp
+    apply (case_tac "r = V aa")
+     apply (simp add: cval_medial_var_update)
+    by simp
+next
+  case (Plus b1 b2)
+  then show ?case
+    apply simp
+    apply (case_tac "r = V aa")
+    defer
+     apply simp
+    apply simp
+    apply (case_tac "satisfiable (Contexts.get (medial (medial c g) g) b1) \<and> satisfiable (Contexts.get (medial (medial c g) g) b2)")
+     defer
+     apply (simp add: cval_false)
+    apply simp
+    apply (case_tac "valid (Contexts.get (medial (medial c g) g) b1) \<or> valid (Contexts.get (medial (medial c g) g) b2)")
+     apply (simp add: cval_false)
+     apply clarify
+      apply (simp add: cexp_satisfiable_medial_medial)
+
+  proof(induct "Contexts.get (medial c g) b1")
+    case Undef
+    then show ?case
+      apply (simp add: invalid_undef satisfiable_undef)
+      apply standard
+      apply (case_tac "Contexts.get (medial c g) b2")
+            apply simp+
+       apply (case_tac x6)
+             apply simp+
+       apply (case_tac x6a)
+              apply (simp add: satisfiable_undef)
+             apply (case_tac x2)
+              apply (simp add: invalid_undef satisfiable_undef cval_false)+
+             apply clarify
+             apply (simp add: satisfiable_double_neg unsatisfiable_cexp_gives_unsatisfiable_medial)
+            apply (simp add: invalid_undef satisfiable_undef cval_false satisfiable_eq)
+
+  next
+    case (Bc x)
+    then show ?case sorry
+next
+case (Eq x)
+  then show ?case sorry
+next
+  case (Lt x)
+  then show ?case sorry
+next
+  case (Gt x)
+  then show ?case sorry
+next
+  case (Not x)
+  then show ?case sorry
+next
+  case (And x1 x2)
+  then show ?case sorry
+qed
+next
+  case (Minus b1 b2)
+  then show ?case sorry
+qed
+
+
 lemma last: "cval (Contexts.apply_updates (medial (medial c g) g) (medial c g) u r) r i = Some True \<Longrightarrow>
        cval (Contexts.apply_updates (medial c g) c u r) r i = Some True"
 proof(induct u)
@@ -446,38 +578,48 @@ next
     apply simp
     apply (case_tac a)
     apply simp
-    apply (case_tac b)
-       apply simp
-       apply clarify
-       apply simp
-       apply (case_tac "r = V aa")
-        apply simp+
-       apply (case_tac "r = V aa")
-       apply simp
-       apply clarify
-       apply (simp add: cval_medial_var_update)
-      apply simp
-     apply (simp del: compose_plus.simps)
-     apply (case_tac "r = V aa")
-     apply (simp del: compose_plus.simps)
-      prefer 2
-      apply simp
-     apply clarify
-     apply simp
-     apply (case_tac "CExp.satisfiable (Contexts.get (medial (medial c g) g) x31) \<and> CExp.satisfiable (Contexts.get (medial (medial c g) g) x32)")
-      apply simp
-      apply (case_tac "valid (Contexts.get (medial (medial c g) g) x31) \<or> valid (Contexts.get (medial (medial c g) g) x32)")
-       apply simp
-       apply (case_tac "Contexts.get (medial c g) x31")
-                   apply (simp add: satisfiable_undef)
-             apply (case_tac "Contexts.get (medial c g) x32")
-                   apply (simp add: satisfiable_undef)
-                  apply (case_tac x2)
-                   apply simp
-                  apply (simp add: invalid_false)
-                  apply (simp add: cval_def gval.simps)
-    using satisfiable_dont_get_false apply auto[1]
-    sorry
+    using test
+    by simp
+    (* apply simp *)
+    (* apply (case_tac b) *)
+       (* apply simp *)
+       (* apply clarify *)
+       (* apply simp *)
+       (* apply (case_tac "r = V aa") *)
+        (* apply simp+ *)
+       (* apply (case_tac "r = V aa") *)
+       (* apply simp *)
+       (* apply clarify *)
+       (* apply (simp add: cval_medial_var_update) *)
+      (* apply simp *)
+     (* apply (simp del: compose_plus.simps) *)
+     (* apply (case_tac "r = V aa") *)
+     (* apply (simp del: compose_plus.simps) *)
+      (* prefer 2 *)
+      (* apply simp *)
+     (* apply clarify *)
+     (* apply simp *)
+     (* apply (case_tac "CExp.satisfiable (Contexts.get (medial (medial c g) g) x31) \<and> CExp.satisfiable (Contexts.get (medial (medial c g) g) x32)") *)
+      (* apply simp *)
+      (* apply (case_tac "valid (Contexts.get (medial (medial c g) g) x31) \<or> valid (Contexts.get (medial (medial c g) g) x32)") *)
+       (* apply (simp add: cval_true) *)
+       (* apply (case_tac "Contexts.get (medial c g) x31") *)
+                   (* apply (simp add: satisfiable_undef invalid_undef) *)
+             (* apply (case_tac "Contexts.get (medial c g) x32") *)
+                   (* apply simp_all *)
+                   (* apply (simp add: satisfiable_undef) *)
+                   (* apply (simp add: cval_def gval.simps) *)
+                  (* apply (case_tac x2) *)
+                   (* apply simp *)
+                  (* apply (simp add: get_false) *)
+                 (* apply (simp add: satisfiable_eq invalid_eq cval_true) *)
+                (* apply (case_tac x4) *)
+                 (* apply (simp add: satisfiable_lt invalid_lt cval_true) *)
+                (* apply (simp add: cval_false unsatisfiable_lt unsatisfiable_cexp_gives_unsatisfiable_medial) *)
+               (* apply (simp add: invalid_gt) *)
+               (* apply (case_tac x5) *)
+                (* apply (simp add: satisfiable_gt cval_true) *)
+               (* apply (simp add: unsatisfiable_gt cval_false unsatisfiable_cexp_gives_unsatisfiable_medial) *)
 qed
 
 lemma "subsumes c t t"

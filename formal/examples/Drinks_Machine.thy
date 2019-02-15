@@ -181,9 +181,14 @@ definition vend_fail_posterior :: "context" where
   "vend_fail_posterior \<equiv> \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> Lt (Num 100)\<rbrakk>"
 
 lemma consistent_select_posterior: "consistent select_posterior"
-  apply (simp add: consistent_def)
+  apply (simp add: consistent_def cval_def select_posterior_def)
   apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0>" in exI)
-  by (simp add: consistent_empty_4 select_posterior_def)
+  apply safe
+   apply simp
+  apply (case_tac r)
+     apply simp
+    apply (case_tac x2)
+  by auto
 
 lemma select_posterior: "(posterior empty select) = select_posterior"
   apply (simp add: posterior_def select_def remove_input_constraints_def)
@@ -196,12 +201,11 @@ lemma medial_select_posterior_vend: "medial select_posterior (Guard vend) = \<lb
 
 lemma r2_0_vend: "\<not>Contexts.can_take vend select_posterior" (* You can't take vend immediately after taking select *)
   apply (simp only: can_take_def medial_select_posterior_vend)
-  apply (simp add: consistent_def add: One_nat_def)
+  apply (simp add: consistent_def)
+  unfolding cval_def
+  apply (simp only: gval_And gval_gAnd maybe_and_is_true)
   apply (rule allI)
-  apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
-   apply fastforce
-  apply simp
-  by fastforce
+
 
 lemma coin_before_vend: "Contexts.can_take vend (posterior_n n coin (posterior \<lbrakk>\<rbrakk> select)) \<longrightarrow> n > 0" (* Corresponds to Example 2 in Foster et. al. *)
   apply (simp add: select_posterior)
