@@ -4,65 +4,6 @@ begin
 
 declare gval.simps [simp del]
 
-lemma gval_True: "gval (cexp2gexp a (cexp.Bc True)) x = Some True"
-  by (simp add: gval.simps)
-
-lemma maybe_and_None: "maybe_and None x = None"
-  by simp
-
-
-lemma maybe_and_is_true: "(maybe_and x y = Some True) = (x = Some True \<and> y = Some True)"
-  apply simp
-  apply (case_tac x)
-   apply simp+
-  apply (case_tac y)
-  by auto
-
-lemma maybe_and_commutative: "maybe_and x y = maybe_and y x"
-  apply simp
-  apply (case_tac x)
-   apply simp
-   apply (case_tac y)
-    apply simp+
-  apply (case_tac y)
-  by auto
-
-lemma maybe_and_true: "maybe_and (Some True) x = x"
-  apply (case_tac x)
-  by auto
-
-lemma maybe_and_one: "maybe_and x x = x"
-  apply (case_tac x)
-  by auto
-
-lemma gval_and: "gval (cexp2gexp a (and c1 c2)) = gval (gAnd (cexp2gexp a c1) (cexp2gexp a c2))"
-  apply (rule ext)
-  apply (case_tac "c1 = Bc True")
-   apply (simp only: and.simps gval_gAnd gval_True maybe_and_true)
-  apply (case_tac "c2 = Bc True")
-   apply (simp only: and.simps gval_gAnd gval_True maybe_and_true maybe_and_commutative)
-   apply simp
-  apply (case_tac "c1 = c2")
-   apply (simp only: and.simps gval_gAnd maybe_and_one)
-   apply (metis and_is_And and_true cexp_equiv_def cexp_equiv_redundant_and cval_def)
-  by (metis and_is_And cval_def gval_And)
-
-lemma maybe_and_not_true: "(maybe_and x y \<noteq> Some True) = (x \<noteq> Some True \<or> y \<noteq> Some True)"
-  apply simp
-  apply (case_tac x)
-   apply simp+
-  apply (case_tac y)
-  by auto
-
-lemma gval_and_cexp: "gval (cexp2gexp i c1) s \<noteq> Some True \<Longrightarrow>  gval (cexp2gexp i (and c2 c1)) s \<noteq> Some True"
-  apply (simp only: gval_and gval_gAnd maybe_and_not_true)
-  by simp
-
-lemma remove_guard_same_labels_arities: "t' = remove_guard_add_update t i ri \<Longrightarrow> Label t = Label t' \<and>
-       Arity t = Arity t' \<and>
-       length (Outputs t) = length (Outputs t')"
-  by (simp add: remove_guard_add_update_def)
-
 lemma ctx_simp: "(\<lambda>r. and (if r = V (I i) then snd (V (I i), cexp.Eq s) else cexp.Bc True) (\<lbrakk>\<rbrakk> r)) = \<lbrakk>V (I i) \<mapsto> Eq s\<rbrakk>"
   apply (rule ext)
   by simp
@@ -152,7 +93,7 @@ proof-
     using premise
     apply (simp add: consistent_def)
     unfolding cval_def
-    apply (simp only: gval_And gval_gAnd maybe_and_is_true)
+    apply (simp only: gval_And gval_gAnd maybe_and_true)
     by metis
 qed
 
@@ -181,34 +122,8 @@ lemma test5: "gval (cexp2gexp r (if r = VIi then and c1 (c r) else c r)) s = Som
   using maybe_and_not_true apply blast
   by simp
 
-lemma constrains_an_input_true: "constrains_an_input r \<Longrightarrow> gval (cexp2gexp r (\<lbrakk>\<rbrakk> r)) ia = Some True"
-proof(induct r)
-  case (L x)
-  then show ?case by simp
-next
-  case (V x)
-  then show ?case
-    apply (case_tac x)
-    using gval.simps
-    by auto
-next
-  case (Plus r1 r2)
-  then show ?case
-    using gval.simps
-    by simp
-next
-  case (Minus r1 r2)
-  then show ?case
-    using gval.simps
-    by simp
-qed
-
 lemma "gval (cexp2gexp uu (and a b)) s = maybe_and (gval (cexp2gexp uu a) s) (gval (cexp2gexp uu b) s)"
   by (simp add: gval_and)
-
-lemma gval_and_false: "gval (cexp2gexp uu (and x (cexp.Bc False))) s \<noteq> Some True"
-  apply (simp only: gval_and gval_gAnd)
-  by (metis and.simps(17) gval_and_false maybe_and_not_true)
 
 lemma consistent_i_and: "consistent (\<lambda>r. if r = i then and x (c r) else c r) \<Longrightarrow> consistent c"
 proof-
@@ -236,42 +151,11 @@ lemma gval_if_split: "(\<forall>r. gval (cexp2gexp r (if r = vIi then and c1 (c 
   using test5 apply blast
   by simp
 
-lemma inconsistent_anterior_gives_inconsistent_medial: "\<not>consistent c \<Longrightarrow> \<not>consistent (medial c g)"
-proof(induct g)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons a g)
-  then show ?case
-    apply (simp add: consistent_def)
-    apply clarify
-    unfolding cval_def
-    apply (simp only: gval_and gval_gAnd maybe_and_is_true gval_And)
-    by auto
-qed
-
-lemma consistent_medial_requires_consistent_anterior: "consistent (medial c g) \<Longrightarrow> consistent c"
-  using inconsistent_anterior_gives_inconsistent_medial
-  by auto
-
-lemma consistent_posterior_requires_consistent_antrior: "consistent (posterior c t) \<Longrightarrow> consistent c"
-  apply (simp add: posterior_def Let_def)
-  apply (case_tac "consistent (medial c (Guard t))")
-   apply simp
-   apply (simp add: consistent_medial_requires_consistent_anterior)
-  by (simp add: inconsistent_false)
-
-lemma consistent_posterior_gives_consistent_medial: "consistent (posterior c x) \<Longrightarrow> consistent (medial c (Guard x))"
-  apply (simp add: posterior_def Let_def)
-  apply (case_tac "consistent (medial c (Guard x))")
-   apply simp
-  by (simp add: inconsistent_false)
-
 lemma inconsistent_c_inconsistent_and: "\<not> consistent c \<Longrightarrow> \<not>consistent (\<lambda>r. if r = a then and c1 (c r) else c r)"
   apply (simp add: consistent_def cval_def)
   apply clarify
   apply (simp only: gval_and gval_gAnd)
-  using maybe_and_is_true by fastforce
+  using maybe_and_true by fastforce
     
 lemma generalise_subsumption: "c (V (R ri)) = Undef \<Longrightarrow> 
                                c (V (I i)) = Bc True \<Longrightarrow> 
@@ -307,9 +191,6 @@ lemma generalise_subsumption: "c (V (R ri)) = Undef \<Longrightarrow>
   using gval_conjoin apply blast
    apply (simp add: inconsistent_c_inconsistent_and)
   by (simp add: inconsistent_false)
-
-lemma empty_variable_constraints: "\<lbrakk>\<rbrakk> (V (R ri)) = Undef \<and> \<lbrakk>\<rbrakk> (V (I i)) = Bc True"
-  by simp
 
 lemma remove_guard_add_update:  "\<lparr>Label=l, Arity=a, Guard=[], Outputs=[], Updates=[(R r, (V (I i)))]\<rparr> = remove_guard_add_update \<lparr>Label=l, Arity=a, Guard=[GExp.Eq (V (I i)) (L s)], Outputs=[], Updates=[]\<rparr> i r"
   by (simp add: remove_guard_add_update_def)
@@ -360,7 +241,7 @@ next
   then show ?case
     apply simp
     unfolding cval_def
-    by (simp only: gval_And gval_gAnd maybe_and_is_true)
+    by (simp only: gval_And gval_gAnd maybe_and_true)
 qed
 
 lemma cval_medial_var_update: "cval (medial m g x) y i = Some True \<Longrightarrow>
@@ -374,29 +255,8 @@ next
   then show ?case
     apply simp
     unfolding cval_def
-    by (simp only: gval_And gval_gAnd maybe_and_is_true)
+    by (simp only: gval_And gval_gAnd maybe_and_true)
 qed
-
-lemma satisfiable_undef: "satisfiable Undef"
-  apply (simp add: satisfiable_def)
-  apply (rule_tac x="V (R 1)" in exI)
-  apply (rule_tac x="<>" in exI)
-  by (simp add: cval_def gval.simps)
-
-lemma invalid_undef: "\<not> valid Undef"
-  apply (simp add: valid_def cval_def)
-  apply (rule_tac x="V (R 1)" in exI)
-  apply (rule_tac x="<R 1 := Num 5>" in exI)
-  by (simp add: cval_def gval.simps)
-
-lemma invalid_false: "\<not>valid (cexp.Bc False)"
-  by (simp add: valid_def cval_def gval.simps)
-
-lemma invalid_eq: "\<not> valid (cexp.Eq x3)"
-  apply (simp add: valid_def cval_def)
-  apply (rule_tac x="V (R 1)" in exI)
-  apply (rule_tac x="<>" in exI)
-  by (simp add: cval_def gval.simps)
 
 lemma get_false_aux_1: "c g (V x2) = cexp.Bc False \<Longrightarrow> x32 = V x2 \<Longrightarrow> \<forall>a s. cval (medial (c g) g (V x2)) a s \<noteq> Some True"
 proof(induct g)
@@ -408,7 +268,7 @@ next
   then show ?case
     apply simp
     unfolding cval_def
-    apply (simp only: gval_And gval_gAnd maybe_and_is_true)
+    apply (simp only: gval_And gval_gAnd maybe_and_true)
     apply simp
     apply clarify
     by (metis CExp.satisfiable_def Cons.prems(1) cval_def cval_medial_var_update unsatisfiable_false)
@@ -425,7 +285,7 @@ next
   then show ?case
     apply simp
     unfolding cval_def
-    apply (simp only: gval_And gval_gAnd maybe_and_is_true)
+    apply (simp only: gval_And gval_gAnd maybe_and_true)
     apply simp
     apply clarify
     by (metis CExp.satisfiable_def Cons.prems(1) cval_def cval_medial_var_update unsatisfiable_false)
@@ -445,49 +305,6 @@ lemma satisfiable_dont_get_false: "CExp.satisfiable (Contexts.get (medial (media
        Contexts.get (medial c g) x32 \<noteq> cexp.Bc False"
   using get_false
   by auto
-
-lemma cval_true: "cval (Bc True) a i = Some True"
-  by (simp add: cval_def gval.simps)
-
-lemma cval_false: "cval (cexp.Bc False) a i = Some False"
-  by (simp add: cval_def gval.simps)
-
-lemma invalid_lt: "\<not> valid (Lt (Num x1))"
-  apply (simp add: valid_def cval_def)
-  apply (rule_tac x="V (R 1)" in exI)
-  apply (rule_tac x="<>" in exI)
-  by (simp add: cval_def gval.simps)
-
-lemma unsatisfiable_cexp_gives_unsatisfiable_medial: "\<not>satisfiable (Contexts.get c x) \<Longrightarrow> \<not>satisfiable (Contexts.get (medial c g) x)"
-proof(induct g)
-  case Nil
-  then show ?case
-    by (simp add: unsatisfiable_lt)
-next
-  case (Cons a g)
-  then show ?case
-    apply (simp add: satisfiable_def)
-    apply (case_tac x)
-       apply simp
-      apply simp
-      apply (simp only: cval_def gval_And gval_gAnd maybe_and_is_true)
-      apply simp
-     apply simp
-     apply (simp only: cval_def gval_And gval_gAnd maybe_and_is_true gval_and)
-     apply simp
-     apply simp
-     apply (simp only: cval_def gval_And gval_gAnd maybe_and_is_true gval_and)
-    by simp
-qed
-
-lemma invalid_gt: "\<not> valid (cexp.Gt x5)"
-  apply (simp add: valid_def cval_def)
-  apply (rule_tac x="V (R 2)" in exI)
-  apply (rule_tac x="<>" in exI)
-  by (simp add: gval.simps)
-
-lemma cexp_satisfiable_medial_medial: "satisfiable (Contexts.get (medial c g) b1) \<Longrightarrow> satisfiable (Contexts.get c b1)"
-  using unsatisfiable_cexp_gives_unsatisfiable_medial by blast
 
 lemma test: "(cval (Contexts.apply_updates (medial (medial c g) g) (medial c g) u r) r i = Some True \<Longrightarrow>
         cval (Contexts.apply_updates (medial c g) c u r) r i = Some True) \<Longrightarrow>
@@ -539,7 +356,70 @@ next
               apply (simp add: invalid_undef satisfiable_undef cval_false)+
              apply clarify
              apply (simp add: satisfiable_double_neg unsatisfiable_cexp_gives_unsatisfiable_medial)
-            apply (simp add: invalid_undef satisfiable_undef cval_false satisfiable_eq)
+            apply (simp add: invalid_undef satisfiable_undef cval_false satisfiable_true)
+             apply (simp add: invalid_undef cval_false unsatisfiable_false)
+             apply clarify
+             apply (simp add: valid_double_negation invalid_false cval_true)
+             apply (case_tac "valid (Contexts.get (medial (medial c g) g) b1)")
+              apply (simp add: valid_implies_satisfiable)
+      using cexp_satisfiable_medial_medial satisfiable_double_neg unsatisfiable_false apply fastforce
+                    apply (simp add: valid_implies_satisfiable)
+             apply (metis Undef.prems(8) cexp_satisfiable_medial_medial satisfiable_double_neg unsatisfiable_false)
+            apply (simp add: valid_double_negation invalid_eq satisfiable_undef satisfiable_eq)
+           apply (simp add: invalid_undef valid_double_negation satisfiable_undef cval_false invalid_lt)
+           apply clarify
+           apply simp
+           apply (case_tac x4)
+            apply (simp add: satisfiable_lt)
+           apply (simp add: unsatisfiable_lt)
+           apply (metis cexp_satisfiable_medial_medial satisfiable_double_neg unsatisfiable_lt)
+          apply (simp add: valid_double_negation cval_false invalid_gt satisfiable_undef)
+           apply (case_tac x5)
+          apply (simp add: satisfiable_gt)
+          apply (simp add: unsatisfiable_gt)
+          apply (metis cexp_satisfiable_medial_medial satisfiable_double_neg unsatisfiable_gt)
+         apply (simp add: valid_double_negation invalid_undef satisfiable_undef cval_false)
+         apply clarify
+         apply simp
+         apply (case_tac x6b)
+               apply (simp add: satisfiable_not_undef)
+              apply (case_tac x2)
+               apply clarify
+               apply simp
+               apply (metis cexp_satisfiable_medial_medial satisfiable_double_neg)
+              apply simp
+              apply (metis cexp_satisfiable_medial_medial satisfiable_double_neg)
+             apply (simp add: satisfiable_neq)
+            apply (case_tac x4)
+             apply (simp add: satisfiable_geq)
+            apply simp
+            apply (metis cexp_satisfiable_medial_medial satisfiable_double_neg)
+           apply simp
+            apply (case_tac x5)
+            apply (simp add: satisfiable_leq)
+      apply (metis cexp_satisfiable_medial_medial satisfiable_double_neg)
+      apply simp
+          apply (case_tac x6)
+      apply (simp add: satisfiable_undef invalid_undef)
+                apply (simp add: satisfiable_double_neg satisfiable_undef)
+      apply (simp add: satisfiable_undef invalid_undef)
+               apply (case_tac x2)
+                apply simp
+      using satisfiable_double_neg satisfiable_true apply blast
+               apply simp
+               apply (metis cexp_satisfiable_medial_medial satisfiable_double_neg)
+              apply (simp add: satisfiable_undef invalid_undef satisfiable_eq satisfiable_double_neg)
+              apply (simp add: satisfiable_undef invalid_undef satisfiable_eq satisfiable_double_neg)
+            apply (case_tac x4)
+              apply (simp add: satisfiable_lt)
+              apply (simp add: unsatisfiable_lt)
+             apply (metis cexp_satisfiable_medial_medial satisfiable_double_neg unsatisfiable_lt)
+            apply (simp add: satisfiable_undef invalid_undef satisfiable_double_neg)
+            apply (case_tac x5)
+            apply (simp add: satisfiable_gt)
+             apply (metis cexp_satisfiable_medial_medial satisfiable_double_neg)
+           apply (simp add: satisfiable_undef invalid_undef satisfiable_double_neg)
+           apply clarify
 
   next
     case (Bc x)

@@ -44,6 +44,8 @@ next
     by simp
 qed
 
+lemma empty_variable_constraints: "\<lbrakk>\<rbrakk> (V (R ri)) = Undef \<and> \<lbrakk>\<rbrakk> (V (I i)) = Bc True"
+  by simp
 
 fun get :: "context \<Rightarrow> aexp \<Rightarrow> cexp" where
   "get c (L n) = Eq n" |
@@ -88,10 +90,10 @@ lemma possible_false_not_consistent: "\<exists>r. c r = Bc False \<Longrightarro
   apply (rule allI)
   apply clarify
   apply (rule_tac x=r in exI)
-  by simp
+  by (simp add: gval.simps)
 
 lemma inconsistent_false: "\<not>consistent (\<lambda>i. cexp.Bc False)"
-  by (simp add: consistent_def cval_def)
+  by (simp add: consistent_def cval_def gval.simps)
 
 definition valid_context :: "context \<Rightarrow> bool" where (* Is the context satisfied in all variable evaluations? *)
   "valid_context c \<equiv> \<forall>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
@@ -103,19 +105,19 @@ theorem consistent_empty_1: "empty r = Undef \<or> empty r = Bc True"
   by simp_all
 
 theorem consistent_empty_2: "(\<forall>r. c r = Bc True) \<longrightarrow> consistent c"
-  by (simp add: consistent_def cval_def)
+  by (simp add: consistent_def cval_def gval.simps)
 
 lemma consistent_empty_4: "\<lbrakk>\<rbrakk> r = Undef \<or> gval (cexp2gexp r (\<lbrakk>\<rbrakk> r)) c = Some True"
-  using consistent_empty_1 by force
+  using consistent_empty_1 gval_True by fastforce
 
 lemma consistent_empty [simp]: "consistent empty"
   apply (simp add: consistent_def cval_def)
   apply (rule_tac x="<>" in exI)
   apply clarify
   apply (case_tac r)
-     apply simp
+     apply (simp add: gval.simps)
     apply (case_tac x2)
-  by auto
+  by (simp_all add: gval.simps)
 
 lemma cexp2gexp_double_neg: "gexp_equiv (cexp2gexp r (Not (Not x))) (cexp2gexp r x)"
   apply (simp add: gexp_equiv_def)
@@ -199,7 +201,7 @@ lemma empty_inputs_are_true: "constrains_an_input x \<Longrightarrow> \<lbrakk>\
   by auto
 
 lemma cval_empty_inputs: "constrains_an_input r \<longrightarrow> cval (\<lbrakk>\<rbrakk> r) r ia = Some True"
-  by (simp add: empty_inputs_are_true cval_def)
+  by (simp add: empty_inputs_are_true cval_def gval.simps)
 
 lemma remove_input_constraints_alt:  "remove_input_constraints c = (\<lambda>x. if constrains_an_input x then Bc True else c x)"
   apply (rule ext)
@@ -220,9 +222,9 @@ proof-
     apply (case_tac "constrains_an_input r")
      apply simp
      apply (case_tac r)
-        apply simp
+        apply (simp add: gval.simps)
        apply (case_tac x2)
-    by auto
+    by (simp_all add: gval.simps)
 qed
 
 definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
@@ -251,9 +253,9 @@ lemma satisfies_context_empty: "satisfies_context <> \<lbrakk>\<rbrakk> \<and> s
   apply (rule_tac x="<>" in exI)
   apply clarify
   apply (case_tac r)
-     apply simp
+        apply (simp add: gval.simps)
     apply (case_tac x2)
-  by auto
+  by (simp_all add: gval.simps)
 
 (* Does t2 subsume t1? *)
 definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where (* Corresponds to Algorithm 2 in Foster et. al. *)
@@ -263,13 +265,6 @@ definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transitio
                       (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<forall>r i. cval (posterior (medial c (Guard t1)) t2 r) r i = Some True \<longrightarrow> (cval (posterior c t1 r) r i = Some True) \<or> (posterior c t1 r) = Undef) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
-(* definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where (* Corresponds to Algorithm 2 in Foster et. al. *) *)
-  (* "subsumes c t2 t1 \<equiv> Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) \<and> *)
-                      (* (consistent (medial c (Guard t1))) \<longrightarrow> (consistent (medial c (Guard t2))) \<and> *)
-                      (* (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and> *)
-                      (* (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and> *)
-                      (* (\<forall>r i. gval (cexp2gexp r (posterior (medial c (Guard t1)) t2 r)) i = Some True \<longrightarrow> (gval (cexp2gexp r (posterior c t1 r)) i = Some True) (* \<or> (posterior c t1 r) = Undef*)) \<and> *)
-                      (* (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))" *)
 
 definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> context" where
  "anterior_context e t = posterior_sequence \<lbrakk>\<rbrakk> e 0 <> t"
@@ -290,14 +285,14 @@ primrec pairs2guard :: "(aexp \<times> cexp) list \<Rightarrow> guard" where
 lemma context_equiv_same_undef: "c i = Undef \<Longrightarrow> c' i = cexp.Bc True \<Longrightarrow> \<not> context_equiv c c'"
   apply (simp add: context_equiv_def cexp_equiv_def gexp_equiv_def)
   apply (rule_tac x=i in exI)
-  apply (simp add: cval_def)
+  apply (simp add: cval_def gval.simps)
   using aval.simps(1) by blast
 
 lemma gexp_equiv_cexp_not_true:  "gexp_equiv (cexp2gexp a (Not (Bc True))) (gexp.Bc False)"
-  by (simp add: gexp_equiv_def)
+  by (simp add: gexp_equiv_def gval.simps)
 
 lemma gexp_equiv_cexp_not_false:  "gexp_equiv (cexp2gexp a (Not (Bc False))) (gexp.Bc True)"
-  by (simp add: gexp_equiv_def)
+  by (simp add: gexp_equiv_def gval.simps)
 
 lemma geq_to_ge: "Geq x = c r \<Longrightarrow> (cexp2gexp r (c r)) = Ge r (L x)"
   by (metis cexp2gexp.simps(3) cexp2gexp.simps(6))
@@ -311,196 +306,109 @@ lemma lt_to_lt: "Lt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Gt (L x
 lemma gt_to_gt: "Gt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Gt r (L x)"
   by (metis cexp2gexp.simps(4))
 
-
 lemma satisfiable_double_neg: "satisfiable (cexp.Not (cexp.Not x)) = satisfiable x"
   by (simp add: satisfiable_def cval_double_negation)
 
 lemma gval_empty_r_neq_none[simp]: "gval (cexp2gexp r (\<lbrakk>\<rbrakk> r)) s \<noteq> None"
-proof (induct "\<lbrakk>\<rbrakk> r")
-case Undef
-  then show ?case
-    by simp
-next
-  case (Bc x)
-  then show ?case
-    apply (case_tac x)
-    by (simp_all)
-next
-  case (Eq x)
-  have empty_neq_eq: "cexp.Eq x \<noteq> \<lbrakk>\<rbrakk> r"
-  proof (induct r)
-    case (L x)
-    then show ?case
-      by simp
-  next
-    case (V x)
-    then show ?case
-      apply (cases x)
-      by (simp_all)
-  next
-    case (Plus r1 r2)
-    then show ?case
-      by simp
-  next
-    case (Minus r1 r2)
-    then show ?case
-      by simp
-  qed
-  then show ?case
-    using Eq.hyps by blast
-next
-  case (Lt x)
-  have empty_neq_lt: "cexp.Lt x \<noteq> \<lbrakk>\<rbrakk> r"
-  proof (induct r)
-    case (L x)
-    then show ?case
-      by simp
-  next
-    case (V x)
-    then show ?case
-      apply (cases x)
-      by (simp_all)
-  next
-    case (Plus r1 r2)
-    then show ?case
-      by simp
-  next
-    case (Minus r1 r2)
-    then show ?case
-      by simp
-  qed
-  then show ?case
-    by (simp add: Lt.hyps)
-next
-  case (Gt x)
-  have empty_neq_lt: "cexp.Gt x \<noteq> \<lbrakk>\<rbrakk> r"
-  proof (induct r)
-    case (L x)
-    then show ?case
-      by simp
-  next
-    case (V x)
-    then show ?case
-      apply (cases x)
-      by (simp_all)
-  next
-    case (Plus r1 r2)
-    then show ?case
-      by simp
-  next
-    case (Minus r1 r2)
-    then show ?case
-      by simp
-  qed
-  then show ?case
-    by (simp add: Gt.hyps)
-next
-  have empty_neq_not: "cexp.Not x \<noteq> \<lbrakk>\<rbrakk> r"
-  proof (induct r)
-    case (L x)
-    then show ?case
-      by simp
-  next
-    case (V x)
-    then show ?case
-      apply (cases x)
-      by (simp_all)
-  next
-    case (Plus r1 r2)
-    then show ?case
-      by simp
-  next
-    case (Minus r1 r2)
-    then show ?case
-      by simp
-  qed
-  case (Not x)
-  then show ?case
-    by (metis cexp.distinct(19) cexp.simps(16) consistent_empty_1)
-next
-have empty_neq_and: "cexp.And x y \<noteq> \<lbrakk>\<rbrakk> r"
-  proof (induct r)
-    case (L x)
-    then show ?case
-      by simp
-  next
-    case (V x)
-    then show ?case
-      apply (cases x)
-      by (simp_all)
-  next
-    case (Plus r1 r2)
-    then show ?case
-      by simp
-  next
-    case (Minus r1 r2)
-    then show ?case
-      by simp
-  qed
-  case (And x1 x2)
-  then show ?case
-    by (metis cexp.distinct(11) cexp.distinct(21) consistent_empty_1)
-qed
-
-lemma gval_and_false: "gval (cexp2gexp r (and (cexp.Bc False) c)) s \<noteq> Some True"
-  apply (case_tac c)
-        apply simp
-       apply (case_tac x2)
-        apply simp+
-     apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some x4) (aval r s)")
-      apply simp+
-    apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (aval r s) (Some x5)")
-     apply simp+
-   apply (case_tac "gval (cexp2gexp r x6) s")
-    apply simp+
-  apply (case_tac "gval (cexp2gexp r x71) s")
-   apply simp+
-  apply (case_tac "gval (cexp2gexp r x72) s")
-  by auto
+  apply (case_tac r)
+     apply (simp add: gval.simps)
+    apply (case_tac x2)
+  by (simp_all add: gval.simps)
 
 lemma inconsistant_conjoin_false: "\<not>consistent (conjoin (\<lambda>r. cexp.Bc False) c)"
   apply (simp add: consistent_def cval_def)
   apply clarify
   apply (rule_tac x=r in exI)
   apply (case_tac "c r")
-        apply simp
+        apply (simp add: gval.simps)
        apply (case_tac x2)
-        apply simp+
+        apply (simp add: gval.simps)+
      apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some x4) (aval r s)")
-      apply simp+
+      apply (simp add: gval.simps)+
     apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (aval r s) (Some x5)")
-     apply simp+
+     apply (simp add: gval.simps)+
    apply (case_tac "gval (cexp2gexp r x6) s")
-    apply simp+
+    apply (simp add: gval.simps)+
   apply (case_tac "gval (cexp2gexp r x71) s")
-   apply simp+
+   apply (simp add: gval.simps)+
   apply (case_tac "gval (cexp2gexp r x72) s")
   by auto
 
-lemma "consistent (medial (medial c g) g) = consistent (medial c g)"
-proof (induct g)
-  case Nil
+lemma constrains_an_input_true: "constrains_an_input r \<Longrightarrow> gval (cexp2gexp r (\<lbrakk>\<rbrakk> r)) ia = Some True"
+proof(induct r)
+  case (L x)
+  then show ?case by simp
+next
+  case (V x)
   then show ?case
+    apply (case_tac x)
+    using gval.simps
+    by auto
+next
+  case (Plus r1 r2)
+  then show ?case
+    using gval.simps
     by simp
 next
-  case (Cons a x)
+  case (Minus r1 r2)
+  then show ?case
+    using gval.simps
+    by simp
+qed
+
+lemma inconsistent_anterior_gives_inconsistent_medial: "\<not>consistent c \<Longrightarrow> \<not>consistent (medial c g)"
+proof(induct g)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a g)
   then show ?case
     apply (simp add: consistent_def)
-    apply safe
-    apply (case_tac a)
-        apply (case_tac x1)
-            apply auto[1]
-    oops
+    apply clarify
+    unfolding cval_def
+    apply (simp only: gval_and gval_gAnd maybe_and_true gval_And)
+    by auto
+qed
 
+lemma consistent_medial_requires_consistent_anterior: "consistent (medial c g) \<Longrightarrow> consistent c"
+  using inconsistent_anterior_gives_inconsistent_medial
+  by auto
 
-lemma "subsumes c t t"
-  unfolding subsumes_def
-  apply standard
+lemma consistent_posterior_requires_consistent_antrior: "consistent (posterior c t) \<Longrightarrow> consistent c"
+  apply (simp add: posterior_def Let_def)
+  apply (case_tac "consistent (medial c (Guard t))")
    apply simp
-  apply standard
-  apply standard
-   defer
-  unfolding posterior_def Let_def
-  oops
+   apply (simp add: consistent_medial_requires_consistent_anterior)
+  by (simp add: inconsistent_false)
 
+lemma consistent_posterior_gives_consistent_medial: "consistent (posterior c x) \<Longrightarrow> consistent (medial c (Guard x))"
+  apply (simp add: posterior_def Let_def)
+  apply (case_tac "consistent (medial c (Guard x))")
+   apply simp
+  by (simp add: inconsistent_false)
+
+lemma unsatisfiable_cexp_gives_unsatisfiable_medial: "\<not>satisfiable (Contexts.get c x) \<Longrightarrow> \<not>satisfiable (Contexts.get (medial c g) x)"
+proof(induct g)
+  case Nil
+  then show ?case
+    by (simp add: unsatisfiable_lt)
+next
+  case (Cons a g)
+  then show ?case
+    apply (simp add: satisfiable_def)
+    apply (case_tac x)
+       apply simp
+      apply simp
+      apply (simp only: cval_def gval_And gval_gAnd maybe_and_true)
+      apply simp
+     apply simp
+     apply (simp only: cval_def gval_And gval_gAnd maybe_and_true gval_and)
+     apply simp
+     apply simp
+     apply (simp only: cval_def gval_And gval_gAnd maybe_and_true gval_and)
+    by simp
+qed
+
+lemma cexp_satisfiable_medial_medial: "satisfiable (Contexts.get (medial c g) b1) \<Longrightarrow> satisfiable (Contexts.get c b1)"
+  using unsatisfiable_cexp_gives_unsatisfiable_medial by blast
 end

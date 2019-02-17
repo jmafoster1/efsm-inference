@@ -57,4 +57,38 @@ lemma maybe_not_c: "(maybe_not c \<noteq> Some b) = (c = None \<or> c = Some b)"
 lemma maybe_negate_2: "(maybe_not c \<noteq> Some b) = (c \<noteq> Some (\<not>b))"
   by (simp add: maybe_negate)
 
+lemma maybe_and_None: "maybe_and None x = None"
+  by simp
+
+lemma maybe_and_true: "(maybe_and x y = Some True) = (x = Some True \<and> y = Some True)"
+  apply simp
+  apply (case_tac x)
+   apply simp+
+  apply (case_tac y)
+  by auto
+
+lemma maybe_and_not_true: "(maybe_and x y \<noteq> Some True) = (x \<noteq> Some True \<or> y \<noteq> Some True)"
+  apply simp
+  apply (case_tac x)
+   apply simp+
+  apply (case_tac y)
+  by auto
+
+lemma maybe_and_commutative: "maybe_and x y = maybe_and y x"
+  apply simp
+  apply (case_tac x)
+   apply simp
+   apply (case_tac y)
+    apply simp+
+  apply (case_tac y)
+  by auto
+
+lemma maybe_and_zero: "maybe_and (Some True) x = x"
+  apply (case_tac x)
+  by auto
+
+lemma maybe_and_one: "maybe_and x x = x"
+  apply (case_tac x)
+  by auto
+
 end

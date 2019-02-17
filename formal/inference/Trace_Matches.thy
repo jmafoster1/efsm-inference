@@ -168,4 +168,9 @@ definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarro
 (* type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option" *)
 definition heuristic_1 :: "log \<Rightarrow> update_modifier" where
   "heuristic_1 l = (\<lambda>t1 t2 s new old. modify (find_intratrace_matches l old) t1 t2 old)"
+
+lemma remove_guard_same_labels_arities: "t' = remove_guard_add_update t i ri \<Longrightarrow> Label t = Label t' \<and>
+       Arity t = Arity t' \<and>
+       length (Outputs t) = length (Outputs t')"
+  by (simp add: remove_guard_add_update_def)
 end                                                   
