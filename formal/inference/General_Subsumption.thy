@@ -2,7 +2,7 @@ theory General_Subsumption
 imports "../Contexts" Trace_Matches
 begin
 
-declare gval.simps [simp del]
+declare One_nat_def [simp del]
 
 lemma ctx_simp: "(\<lambda>r. and (if r = V (I i) then snd (V (I i), cexp.Eq s) else cexp.Bc True) (\<lbrakk>\<rbrakk> r)) = \<lbrakk>V (I i) \<mapsto> Eq s\<rbrakk>"
   apply (rule ext)
@@ -211,6 +211,34 @@ lemma "\<not> incoming_transition_to t 0 \<Longrightarrow> directly_subsumes t t
   apply (simp add: generalise_subsumption_empty)
   using generalise_subsumption_empty
   by blast
+
+lemma generalise_output_preserves_label: "Label (generalise_output t r p) = Label t"
+  by (simp add: generalise_output_def)
+
+lemma generalise_output_preserves_arity: "Arity (generalise_output t r p) = Arity t"
+  by (simp add: generalise_output_def)
+
+lemma generalise_output_preserves_output_length: "length (Outputs (generalise_output t r p)) = length (Outputs t)"
+  by (simp add: generalise_output_def)
+
+lemma generalise_output_preserves_guard: "Guard (generalise_output t r p) = Guard t"
+  by (simp add: generalise_output_def)
+
+lemma generalise_output_preserves_updates: "Updates (generalise_output t r p) = Updates t"
+  by (simp add: generalise_output_def)
+
+lemmas generalise_output_preserves = generalise_output_preserves_label generalise_output_preserves_arity
+generalise_output_preserves_output_length generalise_output_preserves_guard
+
+lemma "nth (Outputs t) p = L v \<Longrightarrow> c (V (R r)) = Eq v  \<Longrightarrow> subsumes c (generalise_output t r p) t"
+  apply (simp add: subsumes_def generalise_output_preserves)
+  apply safe
+     prefer 2
+     apply (simp add: generalise_output_def)
+     apply (rule_tac x=i in exI)
+     apply (rule_tac x="<R r := v>" in exI)
+     apply simp
+  oops
 
 lemma posterior_input: "(posterior \<lbrakk>\<rbrakk> aaa) (V(I i)) = Bc False \<Longrightarrow> (posterior \<lbrakk>\<rbrakk> aaa) = (\<lambda>x. Bc False)"
   apply (simp add: posterior_def Let_def)

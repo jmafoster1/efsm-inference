@@ -12,6 +12,9 @@ begin
 
 type_synonym "context" = "aexp \<Rightarrow> cexp"
 
+(*Decided to keep this as Bc True in order to oversimplify relatiy - strictly this should be
+"Not Undef" for "has a value but we don't know what it is but this doesn't allow for
+oversimplification*)
 abbreviation empty ("\<lbrakk>\<rbrakk>") where
   "empty \<equiv> (\<lambda>x. case x of
     (V v) \<Rightarrow> (case v of R n \<Rightarrow> Undef | I n \<Rightarrow> Bc True) |
