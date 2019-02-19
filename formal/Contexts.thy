@@ -140,6 +140,26 @@ primrec pair_and :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp
   "pair_and [] c = c" |
   "pair_and (h#t) c = pair_and t (and_insert c h)"
 
+fun make_gt :: "cexp \<Rightarrow> cexp" where
+  "make_gt (Bc b) = Bc b" |
+  "make_gt Undef = Undef" |
+  "make_gt (Eq v) = Gt v" |
+  "make_gt (Lt v) = Bc True" |
+  "make_gt (Gt (Num v)) = Gt (Num (v+1))" |
+  "make_gt (Gt s) = Gt s" |
+  "make_gt (Not v) = not (make_gt v)" |
+  "make_gt (And v va) = and (make_gt v) (make_gt va)"
+
+fun make_lt :: "cexp \<Rightarrow> cexp" where
+  "make_lt (Bc b) = Bc b" |
+  "make_lt Undef = Undef" |
+  "make_lt (Eq v) = Lt v" |
+  "make_lt (Lt (Num v)) = Lt (Num (v-1))" |
+  "make_lt (Lt v) = Lt v" |
+  "make_lt (Gt v) = Bc True" |
+  "make_lt (Not v) = not (make_lt v)" |
+  "make_lt (And v va) = and (make_lt v) (make_lt va)"
+
 fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cexp) list" where
   "guard2pairs a (gexp.Bc True) = []" |
   "guard2pairs a (gexp.Bc False) = [(L (Num 0), Bc False)]" |
@@ -151,11 +171,18 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
 
   "guard2pairs a (gexp.Eq v (L n)) = [(v, Eq n)]" |
   "guard2pairs a (gexp.Eq (L n) v) = [(v, Eq n)]" |
-  "guard2pairs a (gexp.Eq v vb) = [(v, get a vb), (vb, get a v)]" |
+  "guard2pairs a (gexp.Eq (Plus a1 a2) (Plus a4 a3)) = [((Plus a1 a2), and (get a (Plus a2 a1)) (get a (Plus a3 a4))),
+                                                        ((Plus a2 a1), and (get a (Plus a1 a2)) (get a (Plus a3 a4))),
+                                                        ((Plus a3 a4), and (get a (Plus a4 a3)) (get a (Plus a1 a2))),
+                                                        ((Plus a4 a3), and (get a (Plus a3 a4)) (get a (Plus a1 a2)))]" |
+  "guard2pairs a (gexp.Eq (Plus a1 a2) v) = [((Plus a1 a2), and (get a v) (get a (Plus a1 a2))), ((Plus a2 a1), and (get a v) (get a (Plus a2 a1))), (v, get a (Plus a1 a2))]" |
+  "guard2pairs a (gexp.Eq v (Plus a1 a2)) = [((Plus a1 a2), and (get a v) (get a (Plus a1 a2))), ((Plus a2 a1), and (get a v) (get a (Plus a2 a1))), (v, get a (Plus a1 a2))]" |
+  "guard2pairs a (gexp.Eq v va) = [(v, get a va), (va, get a v)]" |
 
-  "guard2pairs a (gexp.Gt v (L n)) = [(v, (Gt n))]" |
-  "guard2pairs a (gexp.Gt (L n) v) = [(v, (Lt n))]" |
-  "guard2pairs a (gexp.Gt v vb) = (let (cv, cvb) = apply_gt (get a v) (get a vb) in [(v, cv), (vb, cvb)])" |
+  (* "guard2pairs a (gexp.Gt v (L n)) = [(v, (Gt n))]" | *)
+  (* "guard2pairs a (gexp.Gt (L n) v) = [(v, (Lt n))]" | *)
+  (* "guard2pairs a (gexp.Gt v vb) = (let (cv, cvb) = apply_gt (get a v) (get a vb) in [(v, cv), (vb, cvb)])" | *)
+  "guard2pairs a (gexp.Gt v vb) = [(v, make_gt (get a vb)), (vb, make_lt (get a v))]" |
 
   "guard2pairs a (Nor v va) = (pair_and (map (\<lambda>(x, y). (x, not y)) (guard2pairs a v)) (map (\<lambda>(x, y). (x, not y)) (guard2pairs a va)))"
 

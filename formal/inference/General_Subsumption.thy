@@ -325,25 +325,677 @@ lemma and_self: "and x x = x"
 lemma conjoin_true:  "Contexts.conjoin (\<lambda>i. cexp.Bc True) x = x"
   by simp
 
-lemma "cval (pairs2context (guard2pairs c (G)) c r) a s = Some True \<Longrightarrow>
+lemma maybe_and_false: "maybe_and c (Some False) \<noteq> Some True"
+  apply (case_tac c)
+  by auto
+
+lemma cval_And_false: "cval (And c (cexp.Bc False)) a s \<noteq> Some True"
+  apply (simp only: cval_And maybe_and_true cval_false)
+  by simp
+
+lemma cval_not: "cval (not x) r s = maybe_not (cval x r s)"
+proof(induct x)
+case Undef
+  then show ?case
+    by (simp add: cval_Not)
+next
+  case (Bc x)
+  then show ?case
+    apply (case_tac x)
+    by (simp add: cval_false cval_true)+
+next
+  case (Eq x)
+  then show ?case
+    by (simp add: cval_Not)
+next
+  case (Lt x)
+  then show ?case
+    by (simp add: cval_Not)
+next
+  case (Gt x)
+  then show ?case
+    by (simp add: cval_Not)
+next
+  case (Not x)
+  then show ?case
+    by (simp del: not.simps add: cval_Not)
+next
+  case (And x1 x2)
+  then show ?case
+    by (simp del: not.simps add: cval_Not)
+qed
+
+lemma cval_make_gt_1: "cval (make_gt (and cp cp)) a s = Some True \<Longrightarrow>
+                     cval (make_gt (and (and cp (cexp.Lt x)) (and cp (cexp.Lt x)))) a s = Some True"
+proof(induct cp)
+case Undef
+  then show ?case
+    by simp
+next
+  case (Bc x)
+  then show ?case
+    apply (case_tac x)
+     apply simp
+    by simp
+next
+  case (Eq x)
+  then show ?case
+    by simp
+next
+  case (Lt x)
+  then show ?case
+    by simp
+next
+  case (Gt x)
+  then show ?case
+    apply (case_tac x)
+    by auto
+next
+  case (Not cp)
+  then show ?case
+    apply (simp del: make_gt.simps)
+    apply (simp only: make_gt.simps cval_and cval_true)
+    by simp
+next
+  case (And cp1 cp2)
+  then show ?case
+    apply (simp del: make_gt.simps)
+    apply (simp only: make_gt.simps cval_and cval_true)
+    by simp
+qed
+
+lemma cval_make_gt_2: "cval (make_gt (c (V v))) a s = Some True \<Longrightarrow>
+       cval (make_gt (and (c (V v)) (cexp.Lt x))) a s = Some True"
+  using and_self cval_make_gt_1 by auto
+
+lemma and_gives_And: "c \<noteq> cexp.Bc True \<Longrightarrow> c' \<noteq> cexp.Bc True \<Longrightarrow> c' \<noteq> c \<Longrightarrow> (and c c') = And c c'"
+  apply (induct c c' rule: and.induct)
+  by auto
+
+lemma cval_make_gt_and: "cval (make_gt (and c c')) a s = maybe_and (cval (make_gt c) a s) (cval (make_gt c') a s)"
+  apply (induct c c' rule: and.induct)
+                      apply (simp_all only: and.simps make_gt.simps cval_true maybe_and_zero cval_false)
+                      apply (simp_all only: maybe_and_commutative maybe_and_zero)
+                      apply simp
+                      apply (simp_all only: cexp.distinct bool_simps cval_true if_True if_False cval_and cval_false maybe_and_one make_gt.simps)
+                      apply (simp_all only: maybe_and_commutative maybe_and_zero)
+       apply (case_tac "cexp.Eq v = cexp.Eq va")
+        apply (simp only: bool_simps if_True make_gt.simps)
+  using maybe_and_one apply auto[1]
+       apply (simp only: bool_simps if_False make_gt.simps)
+  using cval_and apply blast
+      apply simp
+     apply (case_tac "cexp.Lt v = cexp.Lt va")
+        apply (simp only: bool_simps if_True make_gt.simps cval_true)
+     apply (simp only: bool_simps if_False make_gt.simps cval_and cval_true)
+     apply simp
+    apply (case_tac "cexp.Gt v = cexp.Gt va")
+     apply (simp only: bool_simps if_True make_gt.simps maybe_and_one)
+    apply (simp only: bool_simps if_False make_gt.simps cval_and cval_true)
+   apply (case_tac "cexp.Not v = cexp.Not va")
+    apply (simp only: bool_simps if_True make_gt.simps maybe_and_one cval_not)
+  using maybe_and_one apply auto[1]
+   apply (simp only: bool_simps if_False make_gt.simps cval_and cval_true)
+  apply (case_tac "And v va = And vb vc")
+   apply (simp only: bool_simps if_True make_gt.simps maybe_and_one cval_not)
+  using cval_and maybe_and_one apply auto[1]
+  by (simp only: bool_simps if_False make_gt.simps cval_and cval_true)
+
+lemma cval_make_gt_not: "cval (make_gt (not x)) r s = maybe_not (cval (make_gt x) r s)"
+proof(induct x)
+case Undef
+  then show ?case
+    by (simp add: cval_Not)
+next
+  case (Bc x)
+  then show ?case
+    apply simp
+    by (metis cval_not not.simps(1))
+next
+  case (Eq x)
+  then show ?case
+    by (simp add: cval_Not)
+next
+  case (Lt x)
+  then show ?case
+    by (simp add: cval_Not cval_false cval_true)
+next
+  case (Gt x)
+  then show ?case
+    by (simp add: cval_Not)
+next
+  case (Not x)
+  then show ?case
+    by (simp add: cval_Not maybe_double_negation)
+next
+  case (And x1 x2)
+  then show ?case
+    apply simp
+    by (simp only: cval_And cval_Not cval_and)
+qed
+
+lemma get_simp: "V x \<noteq> a2 \<Longrightarrow>
+       (Contexts.get (\<lambda>a. if a = V x then and (c a) (make_gt (Contexts.get c a2)) else pairs2context [(a2, make_lt (c (V x)))] c a) a2) =
+       (Contexts.get (\<lambda>a. pairs2context [(a2, make_lt (c (V x)))] c a) a2)"
+  apply (case_tac a2)
+  by auto
+
+lemma context_equiv_medial_medial_aux1: "cval (pairs2context (guard2pairs c G) c r) a s = Some True \<Longrightarrow>
     aa \<Longrightarrow>
     cval
-     (pairs2context (guard2pairs (pairs2context (guard2pairs c (G)) c) (G))
-       (pairs2context (guard2pairs c (G)) c) r)
+     (pairs2context (guard2pairs (pairs2context (guard2pairs c G) c) G)
+       (pairs2context (guard2pairs c G) c) r)
      a s =
     Some True"
+proof(induct G)
+case (Bc x)
+  then show ?case
+    apply (case_tac x)
+     apply simp
+    apply simp
+    apply (simp only: cval_And cval_and cval_false maybe_and_false)
+    apply (case_tac "r = L (Num 0)")
+     apply simp
+     apply (simp only: cval_And cval_false maybe_and_false)
+    by simp
+next
+case (Eq a1 a2)
+  then show ?case
+  proof(induct a1)
+    case (L x)
+    then show ?case
+      apply (case_tac a2)
+         apply (case_tac "x=x1")
+          apply simp+
+         apply (case_tac "r = L (Num 0)")
+          apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply simp+
+        apply (case_tac "r = V x2")
+         apply simp
+        apply (simp only: cval_And cval_and cval_false maybe_and_true)
+        apply simp+
+       apply (case_tac "r = Plus x31 x32")
+        apply simp
+        apply (simp only: cval_And cval_and cval_false maybe_and_true)
+       apply simp+
+      apply (case_tac "r = Minus x41 x42")
+       apply simp
+       apply (simp only: cval_And cval_and cval_false maybe_and_true)
+      by simp
+  next
+    case (V x)
+    then show ?case
+      apply (case_tac a2)
+         apply (case_tac "r = V x")
+          apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply simp+
+        apply (case_tac "r = V x")
+         apply simp
+         apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply simp+
+        apply (case_tac "r = V x2")
+         apply simp
+        apply (simp only: cval_And cval_and cval_false maybe_and_true)
+        apply simp
 
-lemma "cval (medial c g r) a s = Some True \<Longrightarrow> aa \<Longrightarrow> cval (medial (medial c g) g r) a s = Some True"
-  apply (simp add: medial_def)
+       defer
+       apply simp
+       apply (case_tac "r = V x")
+        apply simp
+        apply (simp only: cval_And cval_and cval_false maybe_and_true)
+       apply (case_tac "r = Minus x41 x42")
+        apply simp
+        apply (simp only: cval_And cval_and cval_false maybe_and_true)
+       apply simp
+
+(* guard2pairs c (gexp.Eq (V x) (Plus x31 x32))*)
+       apply clarify
+       apply (simp only: guard2pairs.simps pairs2context.simps)
+      apply (simp only: get.simps)
+      apply (case_tac "x31 = x32")
+       apply clarify
+      apply simp
+       apply (case_tac "r = Plus x32 x32")
+        apply simp
+        apply (simp only: cval_And cval_and cval_false maybe_and_true)
+       apply simp
+       apply (case_tac "r = V x")
+        apply simp
+        apply (simp only: cval_And cval_and cval_false maybe_and_true)
+       apply simp+
+      apply (case_tac "r = Plus x31 x32")
+       apply simp
+       apply (simp only: cval_And cval_and cval_false maybe_and_true)
+      apply (case_tac "r = Plus x32 x31")
+       apply simp
+       apply (simp only: cval_And cval_and cval_false maybe_and_true)
+      apply simp
+      apply (case_tac "r = V x")
+       apply simp
+       apply (simp only: cval_And cval_and cval_false maybe_and_true)
+      by simp
+  next
+    case (Plus a3 a4)
+    then show ?case
+      apply simp
+    proof(induct a2)
+      case (L x)
+      then show ?case
+        apply simp
+        apply (case_tac "r = Plus a3 a4")
+         apply simp
+       apply (simp only: cval_And cval_and cval_false maybe_and_true)
+        by simp
+    next
+      case (V x)
+      then show ?case
+        apply (case_tac "a3 = a4")
+         apply clarify
+         apply simp
+         apply (case_tac "r = Plus a4 a4")
+          apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply simp
+         apply (case_tac "r = V x")
+          apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply simp+
+        apply (case_tac "r = Plus a3 a4")
+         apply simp
+       apply (simp only: cval_And cval_and cval_false maybe_and_true)
+        apply simp
+        apply (case_tac "r = Plus a4 a3")
+         apply simp
+         apply (simp only: cval_And cval_and cval_false maybe_and_true)
+        apply simp
+        apply (case_tac "r = V x")
+         apply simp
+         apply (simp only: cval_And cval_and cval_false maybe_and_true)
+        by simp
+    next
+      case (Plus a1 a2)
+      then show ?case
+        apply (simp only: guard2pairs.simps(12) pairs2context.simps get.simps)
+        apply (case_tac "a1 = a2")
+         apply (case_tac "a3 = a4")
+          apply clarify
+          apply simp
+          apply (case_tac "r = Plus a4 a4")
+           apply simp
+           apply (simp only: cval_And cval_and cval_false maybe_and_true)
+           apply simp+
+          apply (case_tac "r = Plus a2 a2")
+           apply simp
+           apply (simp only: cval_And cval_and cval_false maybe_and_true)
+          apply simp
+         apply clarify
+         apply simp
+         apply (case_tac "r = Plus a3 a4")
+          apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+          apply auto[1]
+         apply simp
+         apply (case_tac "r = Plus a4 a3")
+          apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+          apply auto[1]
+         apply simp
+         apply (case_tac "r = Plus a2 a2")
+          apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+          apply auto[1]
+         apply simp
+         apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply auto[1]
+        apply (case_tac "a3 = a4")
+         apply clarify
+         apply simp
+         apply (case_tac "r = Plus a4 a4")
+          apply simp
+         apply (simp only: cval_And cval_and cval_false maybe_and_true)
+          apply auto[1]
+         apply simp
+         apply (case_tac "r = Plus a2 a1")
+          apply simp
+         apply (simp only: cval_And cval_and cval_false maybe_and_true)
+          apply auto[1]
+         apply simp
+         apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply simp
+         apply (case_tac "r = Plus a1 a2")
+          apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+          apply auto[1]
+         apply simp
+        apply simp
+        apply (case_tac "r = Plus a3 a4")
+         apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+          apply auto[1]
+        apply simp
+        apply (case_tac "r = Plus a4 a3")
+         apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+          apply auto[1]
+        apply simp
+        apply (case_tac "r = Plus a2 a1")
+         apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+          apply auto[1]
+        apply simp
+        apply (case_tac "r = Plus a1 a2")
+         apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+          apply auto[1]
+        by simp
+    next
+      case (Minus a21 a22)
+      then show ?case
+        apply (case_tac "a3 = a4")
+         apply clarify
+         apply simp
+         apply (case_tac "r = Plus a4 a4")
+          apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply simp
+         apply (case_tac "r = Minus a21 a22")
+          apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply simp
+        apply simp
+        apply (case_tac "r = Plus a3 a4")
+         apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+        apply simp
+        apply (case_tac "r = Plus a4 a3")
+         apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+        apply simp
+        apply (case_tac "r = Minus a21 a22")
+         apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+        by simp
+    qed
+  next
+    case (Minus a3 a4)
+    then show ?case
+    proof(induct a2)
+      case (L x)
+      then show ?case
+        apply simp
+        apply (case_tac "r = Minus a3 a4")
+         apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+        by simp
+    next
+      case (V x)
+      then show ?case
+        apply simp
+        apply (case_tac "r = Minus a3 a4")
+         apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+        apply simp
+        apply (case_tac "r = V x")
+         apply simp
+         apply (simp only: cval_And cval_and cval_false maybe_and_true)
+        by simp
+    next
+      case (Plus a21 a22)
+      then show ?case
+        apply (case_tac "a21 = a22")
+         apply simp
+         apply (case_tac "r = Plus a22 a22")
+          apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply simp
+         apply (case_tac "r = Minus a3 a4")
+          apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply simp
+        apply simp
+        apply (case_tac "r = Plus a21 a22")
+         apply simp
+         apply (simp only: cval_And cval_and cval_false maybe_and_true)
+        apply simp
+        apply (case_tac "r = Plus a22 a21")
+         apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply simp
+         apply (case_tac "r = Minus a3 a4")
+         apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+        by simp
+    next
+      case (Minus a21 a22)
+      then show ?case
+        apply simp
+        apply (case_tac "r = Minus a3 a4")
+         apply simp
+         apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply simp+
+        apply (case_tac "r = Minus a21 a22")
+         apply simp
+         apply (simp only: cval_And cval_and cval_false maybe_and_true)
+        by auto
+    qed
+  qed
+next
+  case (Gt a1 a2)
+  then show ?case
+  proof(induct a1)
+    case (L x)
+    then show ?case
+    proof(induct a2)
+      case (L l)
+      then show ?case
+        apply (case_tac x)
+         apply (case_tac l)
+          apply simp
+          apply (case_tac "x1a < x1")
+           apply auto[1]
+          apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+          apply (case_tac "r = L (Num 0)")
+           apply simp
+           apply (simp only: cval_And cval_and cval_false maybe_and_true)
+           apply simp
+          apply simp
+         apply simp
+         apply (case_tac "r = L (Num x1)")
+          apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply simp
+         apply (case_tac "r = L (value.Str x2)")
+          apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply simp
+        apply simp
+        apply (case_tac "r = L (value.Str x2)")
+         apply simp
+         apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply auto[1]
+        apply simp
+        apply (case_tac "r = L l")
+         apply simp
+         apply (simp only: cval_And cval_and cval_false maybe_and_true)
+        by simp
+    next
+      case (V v)
+      then show ?case
+        apply simp
+        apply (case_tac "r = L x")
+         apply simp
+         apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply (simp add: cval_make_gt_2)
+        apply simp
+        apply (case_tac "r = V v")
+         apply simp
+         apply (simp only: cval_And cval_and cval_false maybe_and_true)
+        by simp
+    next
+      case (Plus a1 a2)
+      then show ?case
+        apply (case_tac "a1 = a2")
+         apply simp
+         apply (case_tac "r = L x")
+          apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+          apply simp
+        using cval_make_gt_1
+          apply auto[1]
+         apply simp
+         apply (case_tac "r = Plus a2 a2")
+          apply simp
+          apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply simp+
+        apply (case_tac "r = L x")
+         apply simp
+         apply (simp only: cval_And cval_and cval_false maybe_and_true)
+         apply simp
+         apply (simp only: cval_make_gt_and maybe_and_true)
+        using valid_def valid_true apply auto[1]
+        apply simp
+        apply (case_tac "r = Plus a1 a2")
+         apply simp
+         apply (simp only: cval_And cval_and maybe_and_zero maybe_and_true)
+        by simp
+    next
+      case (Minus a21 a22)
+      then show ?case
+        apply simp
+        apply (case_tac "r = L x")
+         apply simp
+         apply (simp only: cval_And maybe_and_true cval_and)
+         apply (simp add: cval_make_gt_and cval_true)
+        apply simp
+        apply (case_tac "r = Minus a21 a22")
+         apply simp
+         apply (simp only: cval_And maybe_and_true cval_and)
+        by simp
+    qed
+  next
+    case (V x)
+    then show ?case
+      apply simp
+      apply (case_tac "r = V x")
+       apply simp
+       apply (simp only: cval_And cval_and maybe_and_true)
+       apply simp
+       apply (case_tac "V x = a2")
+        apply simp
+        apply (simp only: cval_make_gt_and maybe_and_true)
+        apply (simp add: cval_make_gt_make_gt)
+        apply auto[1]
+       apply (simp add: get_simp)
+       apply (case_tac a2)
+          apply simp+
+         apply (simp only: cval_make_gt_and maybe_and_zero)
+         defer
+         apply (case_tac "x31=x32")
+      apply simp
+          apply (simp only: cval_make_gt_and maybe_and_true)
+          apply simp
 
 
-lemma "context_equiv (medial (medial c g) g) (medial c g)"
+  next
+    case (Plus a11 a12)
+    then show ?case sorry
+  next
+    case (Minus a11 a12)
+    then show ?case sorry
+  qed
+next
+  case (Nor G1 G2)
+  then show ?case sorry
+next
+case (Null x)
+  then show ?case
+    apply simp
+    apply (case_tac "r = x")
+     apply simp
+     apply (simp only: cval_And cval_and cval_false maybe_and_true)
+    by simp
+qed
+
+lemma maybe_not_true: "maybe_not c = Some True = (c = Some False)"
+  apply (case_tac c)
+  by auto
+
+lemma "cval c a s = Some True \<Longrightarrow> cval (make_gt (make_lt c)) a s = Some True"
+proof(induct c)
+case Undef
+  then show ?case
+    by simp
+next
+case (Bc x)
+  then show ?case by simp
+next
+  case (Eq x)
+  then show ?case
+    by (simp add: cval_true)
+next
+  case (Lt x)
+  then show ?case
+    by (simp add: cval_true)
+next
+case (Gt x)
+  then show ?case
+    by (simp add: cval_true)
+next
+  case (Not c)
+  then show ?case
+    apply (simp add: cval_make_gt_not maybe_not_true cval_Not)
+    try
+next
+  case (And c1 c2)
+  then show ?case sorry
+qed
+
+lemma context_equiv_medial_medial_aux2: "cval (medial c g r) a s = Some True \<Longrightarrow> aa \<Longrightarrow> cval (medial (medial c g) g r) a s = Some True"
+  by (simp add: medial_def context_equiv_medial_medial_aux1)
+
+lemma context_equiv_medial_medial: "context_equiv (medial (medial c g) g) (medial c g)"
   apply (simp add: context_equiv_def cexp_equiv_def)
   apply (rule allI)+
   apply (case_tac "cval (medial c g r) a s")
    apply (simp add: cval_medial_none)
   apply (case_tac aa)
    apply simp
+   apply (simp add: context_equiv_medial_medial_aux2)
+  sorry
+
+lemma test7: "context_equiv x y \<Longrightarrow> context_equiv (apply_updates x c u) (apply_updates y c u)"
+  sorry
+
+lemma undef_still_undef_aux: "Undef = Contexts.get C b1 \<Longrightarrow> Contexts.get (pairs2context (guard2pairs C G) C) b1 = Undef"
+proof(induct G)
+  case (Bc x)
+  then show ?case
+    apply (case_tac x)
+     apply simp
+    apply simp
+    apply (case_tac b1)
+    by auto
+next
+  case (Eq x1a x2)
+  then show ?case
+    sorry
+next
+  case (Gt x1a x2)
+  then show ?case sorry
+next
+  case (Nor G1 G2)
+  then show ?case sorry
+next
+  case (Null x)
+  then show ?case sorry
+qed
+
+lemma undef_still_undef: "Undef = Contexts.get C b1 \<Longrightarrow>
+      Contexts.get (medial C g) b1 = Undef "
+  by (simp add: medial_def undef_still_undef_aux)
 
 lemma test: "(cval (Contexts.apply_updates (medial (medial c g) g) (medial c g) u r) r i = Some True \<Longrightarrow>
         cval (Contexts.apply_updates (medial c g) c u r) r i = Some True) \<Longrightarrow>
@@ -362,9 +1014,10 @@ next
   case (Plus b1 b2)
   then show ?case
     apply (case_tac "r \<noteq> V aa")
-     apply simp+
+     apply simp
+    apply simp
 
-
+    sorry
 
 
 

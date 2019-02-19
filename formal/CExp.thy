@@ -26,12 +26,9 @@ fun "and" :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "and c c' = (if c = c' then c else And c c')"
 
 fun "not" :: "cexp \<Rightarrow> cexp" where
-  "not c = (case c of
-    Bc True \<Rightarrow> Bc False |
-    Bc False \<Rightarrow> Bc True |
-    Not x \<Rightarrow> x |
-    c \<Rightarrow> Not c
-  )"
+  "not (Bc x) = (Bc (\<not> x))" |
+  "not (Not x) = x" |
+  "not x = Not x"
 
 abbreviation Leq :: "value \<Rightarrow> cexp" where
   "Leq v \<equiv> Not (Gt v)"
@@ -45,7 +42,7 @@ abbreviation Neq :: "value \<Rightarrow> cexp" where
 abbreviation Or :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "Or v va \<equiv> not (and (not v) (not va))"
 
-text \<open>
+(*text \<open>
 This function takes two cexps and tries to apply restrictions such that the first argument is
 greater than the second. The return value is a pair of the first and second inputs with their
 respective increased restrictions.
@@ -92,7 +89,7 @@ fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" whe
   "apply_gt v va = (v, va)"
 
 fun apply_lt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where
-  "apply_lt a b = (let (ca, cb) = (apply_gt b a) in (cb, ca))"
+  "apply_lt a b = (let (ca, cb) = (apply_gt b a) in (cb, ca))"*)
 
 fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow>  gexp" where
   "cexp2gexp _ (Bc b) = gexp.Bc b" |
@@ -458,9 +455,7 @@ proof(induct x)
 next
   case (Bc x)
   then show ?case
-    apply (simp add: cval_def gval.simps)
-    apply (case_tac x)
-    by (simp add: gval.simps)+
+    by (simp add: cval_def gval.simps)
 next
   case (Eq x)
   then show ?case
