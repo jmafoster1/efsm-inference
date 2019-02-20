@@ -235,6 +235,13 @@ proof-
     sorry
 qed
 
+primrec iterative_learn_aux :: "log \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM" where
+  "iterative_learn_aux [] e _ _ _ _ = e" |
+  "iterative_learn_aux (h#t) e r g m s = iterative_learn_aux t (infer (toiEFSM (make_branch (tm e) 0 <> h)) r g m s) r g m s"
+
+definition iterative_learn :: "log \<Rightarrow> strategy \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix" where
+  "iterative_learn l r g m = tm (iterative_learn_aux l {||} r g m (satisfies (set l)))"
+
 definition learn :: "log \<Rightarrow> strategy \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix" where
   "learn l r g m = tm (infer (toiEFSM (make_pta l {||})) r g m (satisfies (set l)))"
 

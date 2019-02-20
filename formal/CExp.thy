@@ -124,213 +124,30 @@ lemma cval_And_one: "cval (And c c) = cval c"
   apply (rule ext)+
   by (simp only: cval_And maybe_and_one)
 
+lemma maybe_and_assoc: "maybe_and (maybe_and x y) z = maybe_and x (maybe_and y z)"
+  apply simp
+  apply (case_tac x)
+   apply simp+
+  apply (case_tac y)
+   apply simp+
+  apply (case_tac z)
+  by simp+
+
+lemma cval_And_fun: "cval (And x y) = (\<lambda>r s. maybe_and (cval x r s) (cval y r s))"
+  apply (rule ext)+
+  by (simp only: cval_And)
+
 lemma and_is_And [simp]:  "cval (and x y) = cval (And x y)"
-proof(induct x y rule: and.induct)
-case (1 x)
-  then show ?case
-    apply (rule ext)+
-    by (simp add: cval_def gval.simps option.case_eq_if)
-next
-case "2_1"
-  then show ?case
-    by (simp add: cval_def gval.simps)
-next
-case "2_2"
-  then show ?case
-    by (simp add: cval_def gval.simps)
-next
-  case ("2_3" v)
-  then show ?case
-    by (simp add: cval_def gval.simps)
-next
-  case ("2_4" v)
-  then show ?case
-    apply (rule ext)+
-    apply (simp add: cval_def gval.simps)
-    apply (case_tac "maybe_not (MaybeBoolInt (\<lambda>x y. y < x) (Some v) (aval x xa))")
-    using option.simps(4) apply fastforce
-    by (simp add: maybe_negate)
-next
-  case ("2_5" v)
-  then show ?case
-    apply (rule ext)+
-    apply (simp add: cval_def gval.simps)
-    apply (case_tac "maybe_not (MaybeBoolInt (\<lambda>x y. y < x) (aval x xa) (Some v))")
-    using option.simps(4) apply fastforce
-    by (simp add: maybe_negate)
-next
-  case ("2_6" v)
-  then show ?case
-    by (simp add: cval_And_zero)
-next
-  case ("2_7" v va)
-  then show ?case
-    by (simp add: cval_And_zero)
-next
-  case "3_1"
-  then show ?case
-    by (simp add: cval_And_one)
-next
-  case "3_2"
-  then show ?case by simp
-next
-  case ("3_3" v)
-  then show ?case by simp
-next
-  case ("3_4" v)
-  then show ?case by simp
-next
-case ("3_5" v)
-  then show ?case by simp
-next
-  case ("3_6" v)
-  then show ?case by simp
-next
-  case ("3_7" v va)
-  then show ?case by simp
-next
-  case "3_8"
-  then show ?case by simp
-next
-  case "3_9"
-  then show ?case
-    by (simp add: cval_def maybe_double_negation)
-next
-  case ("3_10" v)
-  then show ?case by simp
-next
-  case ("3_11" v)
-  then show ?case by simp
-next
-  case ("3_12" v)
-  then show ?case by simp
-next
-  case ("3_13" v)
-  then show ?case by simp
-next
-  case ("3_14" v va)
-  then show ?case by simp
-next
-case ("3_15" v)
-  then show ?case by simp
-next
-case ("3_16" v)
-  then show ?case by simp
-next
-case ("3_17" v va)
-  then show ?case
-    apply (rule ext)+
-    apply (simp only: cval_And)
-    by (simp add: cval_And option.case_eq_if)
-  next
-case ("3_18" v va)
-  then show ?case by simp
-next
-  case ("3_19" v va)
-  then show ?case by simp
-next
-  case ("3_20" v va)
-  then show ?case by simp
-next
-  case ("3_21" v va vb)
-  then show ?case by simp
-next
-  case ("3_22" v)
-  then show ?case by simp
-next
-  case ("3_23" v)
-  then show ?case by simp
-next
-  case ("3_24" v va)
-  then show ?case by simp
-next
-  case ("3_25" v va)
-  then show ?case
-    apply (rule ext)+
-    apply (simp only: cval_And)
-    by (metis and.simps(33) cval_And cval_And_one)
-next
-  case ("3_26" v va)
-  then show ?case by simp
-next
-  case ("3_27" v va)
-  then show ?case by simp
-next
-  case ("3_28" v va vb)
-  then show ?case by simp
-next
-  case ("3_29" v)
-  then show ?case by simp
-next
-  case ("3_30" v)
-  then show ?case by simp
-next
-  case ("3_31" v va)
-  then show ?case by simp
-next
-  case ("3_32" v va)
-  then show ?case by simp
-next
-  case ("3_33" v va)
-  then show ?case
-    apply (rule ext)+
-    apply (simp only: cval_And)
-    by (metis and.simps(41) cval_And cval_And_one)
-next
-  case ("3_34" v va)
-  then show ?case by simp
-next
-  case ("3_35" v va vb)
-  then show ?case by simp
-next
-  case ("3_36" v)
-  then show ?case by simp
-next
-  case ("3_37" v)
-  then show ?case by simp
-next
-  case ("3_38" v va)
-  then show ?case by simp
-next
-  case ("3_39" v va)
-  then show ?case by simp
-next
-  case ("3_40" v va)
-  then show ?case by simp
-next
-  case ("3_41" v va)
-  then show ?case
-    apply (rule ext)+
-    apply (simp only: cval_And)
-    using cval_And maybe_and_one by auto
-next
-  case ("3_42" v va vb)
-  then show ?case by simp
-next
-  case ("3_43" v va)
-  then show ?case by simp
-next
-  case ("3_44" v va)
-  then show ?case by simp
-next
-  case ("3_45" v va vb)
-  then show ?case by simp
-next
-  case ("3_46" v va vb)
-  then show ?case by simp
-next
-  case ("3_47" v va vb)
-  then show ?case by simp
-next
-  case ("3_48" v va vb)
-  then show ?case by simp
-next
-  case ("3_49" v va vb vc)
-  then show ?case
-    apply (rule ext)+
-    apply (simp only: cval_And)
-    by (metis and.simps(57) cval_And maybe_and_one)
-qed
+  apply(induct x y rule: and.induct)
+                      apply simp_all
+                      apply (simp_all only: cval_And cval_true cval_false maybe_and_zero)
+                      apply (simp_all only: maybe_and_commutative maybe_and_zero)
+                     apply simp
+                    apply safe
+                      apply (simp_all only: cval_And_fun)
+  using maybe_and_one maybe_and_commutative maybe_and_assoc
+  by auto
+
 
 definition valid :: "cexp \<Rightarrow> bool" where (* Is cexp "c" satisfied under all "i" values? *)
   "valid c \<equiv> (\<forall> a s. cval c a s = Some True)"
@@ -595,84 +412,18 @@ next
 qed
 
 lemma and_x_y_undef: "and x y = Undef \<Longrightarrow> and y x = Undef"
-proof (induction x)
-case Undef
-  then show ?case
-    apply (cases y)
-          prefer 2
-          apply (case_tac x2)
-    by simp_all
-next
-  case (Bc x)
-  then show ?case
-    apply (cases x)
-     apply (cases y)
-           apply simp+
-    apply (cases y)
-          prefer 2
-          apply (case_tac x2)
-    by simp_all
-next
-  case (Eq x)
-  then show ?case
-    apply (cases y)
-          apply simp
-         apply (case_tac x2)
-          apply simp
-         apply simp
-    apply (metis and.simps(25) cexp.distinct(11))
-    by simp_all
-next
-  case (Lt x)
-  then show ?case
-    apply (cases y)
-          apply simp
-         apply (case_tac x2)
-          apply simp
-         apply simp
-        apply simp
-       apply (metis and.simps(33) cexp.distinct(11))
-    by simp_all
-next
-case (Gt x)
-  then show ?case
-    apply (cases y)
-          apply simp
-         apply (case_tac x2)
-          apply simp
-         apply simp
-        apply simp
-       apply simp
-      apply (metis and.simps(41) cexp.distinct(11))
-    by simp_all
-next
-  case (Not x)
-  then show ?case
-    apply (cases y)
-          apply simp
-         apply (case_tac x2)
-          apply simp
-         apply simp
-        apply simp
-       apply simp
-      apply simp
-     apply (metis and.simps(49) cexp.distinct(11))
-    by simp
-next
-  case (And x1 x2)
-  then show ?case
-    apply (cases y)
-          apply simp
-         apply simp
-         apply (case_tac x2a)
-          apply simp
-         apply simp
-        apply simp
-       apply simp
-      apply simp
-     apply simp
-    by (metis and.simps(57) cexp.distinct(11))
-qed
+  apply (induct x y rule: and.induct)
+                      apply simp_all
+      apply (case_tac "v = va")
+       apply simp+
+      apply (case_tac "v = va")
+      apply simp+
+      apply (case_tac "v = va")
+     apply simp+
+      apply (case_tac "v = va")
+    apply simp+
+  apply (case_tac "v = vb \<and> va = vc")
+  by auto
 
 definition mutually_exclusive :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
   "mutually_exclusive x y = (\<forall>a i. (cval x i a= Some True \<longrightarrow> cval y i a \<noteq> Some True) \<and>
@@ -724,7 +475,7 @@ lemma gval_and_false: "gval (cexp2gexp r (and (cexp.Bc False) c)) s \<noteq> Som
   by (simp add: gval.simps)
 
 lemma gval_and_false_2: "gval (cexp2gexp uu (and x (cexp.Bc False))) s \<noteq> Some True"
-  apply (simp only: gval_and gval_gAnd)
-  by (metis and.simps(17) gval_and_false maybe_and_not_true)
+  apply (simp only: gval_and gval_gAnd cexp2gexp.simps gval_false maybe_and_not_true)
+  by simp
 
 end

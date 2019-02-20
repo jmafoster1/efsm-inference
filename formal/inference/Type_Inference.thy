@@ -17,7 +17,7 @@ definition assign_all :: "type \<Rightarrow> vname list \<Rightarrow> (vname \<t
 
 fun infer_types_aux :: "gexp \<Rightarrow> ((vname \<times> type) list \<times> (vname \<times> vname) list)" where
   "infer_types_aux (Bc _) = ([], [])" |
-  "infer_types_aux (Null v) = ([(v, NULL)], [])" |
+  "infer_types_aux (Null v) = (assign_all NULL (aexp_get_variables v), [])" |
   "infer_types_aux (Lt a1 a2) = (assign_all NUM ((aexp_get_variables a1) @ (aexp_get_variables a2)), [])" |
   "infer_types_aux (Nor g1 g2) = (let (t1, g1) = infer_types_aux g1; (t2, g2) = infer_types_aux g2 in ((remdups (t1 @ t2), remdups (g1@g2))))" |
   "infer_types_aux (Eq (L _) (L _)) = ([], [])" |

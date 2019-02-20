@@ -37,7 +37,7 @@ object PrettyPrinter {
     case GExp.Bc(v) => v.toString()
     case GExp.Eq(a, b) => (aexpToString(a) + "="+aexpToString(b))
     case GExp.Gt(a, b) => (aexpToString(a) + ">"+aexpToString(b))
-    case GExp.Null(v) => (vnameToString(v) + "= NULL")
+    case GExp.Null(v) => (aexpToString(v) + "= NULL")
     case GExp.Nor(g1, g2) => ("!("+gexpToString(g1)+"||"+gexpToString(g2)+")")
   }
 

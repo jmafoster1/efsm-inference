@@ -55,7 +55,7 @@ fun gexp2dot :: "gexp \<Rightarrow> String.literal" where
   "gexp2dot (GExp.Eq a1 a2) = (aexp2dot a1)+STR '' = ''+(aexp2dot a2)" |
   "gexp2dot (GExp.Lt a1 a2) = (aexp2dot a1)+STR '' &lt; ''+(aexp2dot a2)" |
   "gexp2dot (Nor g1 g2) = STR ''!(''+(gexp2dot g1)+STR ''&or;''+(gexp2dot g2)+STR '')''" |
-  "gexp2dot (Null v) = (vname2dot v)+STR '' = NULL''"
+  "gexp2dot (Null v) = (aexp2dot v)+STR '' = NULL''"
 
 fun join :: "String.literal list \<Rightarrow> String.literal \<Rightarrow> String.literal" where
   "join [] _ = (STR '''')" |

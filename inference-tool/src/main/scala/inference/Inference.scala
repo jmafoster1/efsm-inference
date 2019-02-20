@@ -874,7 +874,7 @@ final case class Bc(a: Boolean) extends gexp
 final case class Eq(a: AExp.aexp, b: AExp.aexp) extends gexp
 final case class Gt(a: AExp.aexp, b: AExp.aexp) extends gexp
 final case class Nor(a: gexp, b: gexp) extends gexp
-final case class Null(a: VName.vname) extends gexp
+final case class Null(a: AExp.aexp) extends gexp
 
 def equal_gexpa(x0: gexp, x1: gexp): Boolean = (x0, x1) match {
   case (Nor(x41, x42), Null(x5)) => false
@@ -897,7 +897,7 @@ def equal_gexpa(x0: gexp, x1: gexp): Boolean = (x0, x1) match {
   case (Gt(x31, x32), Bc(x1)) => false
   case (Bc(x1), Eq(x21, x22)) => false
   case (Eq(x21, x22), Bc(x1)) => false
-  case (Null(x5), Null(y5)) => VName.equal_vnamea(x5, y5)
+  case (Null(x5), Null(y5)) => AExp.equal_aexpa(x5, y5)
   case (Nor(x41, x42), Nor(y41, y42)) =>
     (equal_gexpa(x41, y41)) && (equal_gexpa(x42, y42))
   case (Gt(x31, x32), Gt(y31, y32)) =>
@@ -918,12 +918,17 @@ def gval(x0: gexp, uu: VName.vname => Option[Value.value]): Option[Boolean] =
     Some[Boolean](Optiona.equal_optiona[Value.value](AExp.aval(a_1, s),
               AExp.aval(a_2, s)))
   case (Nor(a_1, a_2), s) =>
-    ((gval(a_1, s), gval(a_2, s)) match {
-       case (None, _) => None
-       case (Some(_), None) => None
-       case (Some(x), Some(y)) => Some[Boolean](! (x || y))
+    (((gval(a_1, s), gval(a_2, s)) match {
+        case (None, _) => None
+        case (Some(_), None) => None
+        case (Some(a), Some(b)) => Some[Boolean](a || b)
+      })
+       match {
+       case None => None
+       case Some(a) => Some[Boolean](! a)
      })
-  case (Null(v), s) => Some[Boolean](Optiona.is_none[Value.value](s(v)))
+  case (Null(v), s) =>
+    Some[Boolean](Optiona.is_none[Value.value](AExp.aval(v, s)))
 }
 
 def conjoin(x0: List[gexp]): gexp = x0 match {
@@ -1345,7 +1350,7 @@ def gexp2dot(x0: GExp.gexp): String = x0 match {
   case GExp.Eq(a1, a2) => aexp2dot(a1) + " = " + aexp2dot(a2)
   case GExp.Gt(a2, a1) => aexp2dot(a1) + " &lt; " + aexp2dot(a2)
   case GExp.Nor(g1, g2) => "!(" + gexp2dot(g1) + "&or;" + gexp2dot(g2) + ")"
-  case GExp.Null(v) => vname2dot(v) + " = NULL"
+  case GExp.Null(v) => aexp2dot(v) + " = NULL"
 }
 
 def guards2dot_aux(x0: List[GExp.gexp]): List[String] = x0 match {
@@ -1600,7 +1605,7 @@ def less_gexpr(x0: GExp.gexp, x1: GExp.gexp): Boolean = (x0, x1) match {
   case (GExp.Null(v), GExp.Eq(e1, e2)) => false
   case (GExp.Null(v), GExp.Gt(e1, e2)) => false
   case (GExp.Null(v), GExp.Nor(g1, g2)) => false
-  case (GExp.Null(va), GExp.Null(v)) => less_vname(va, v)
+  case (GExp.Null(va), GExp.Null(v)) => less_aexp(va, v)
 }
 
 def less_eq_gexp(e1: GExp.gexp, e2: GExp.gexp): Boolean =
@@ -2787,6 +2792,78 @@ def null_generator(a: FSet.fset[(Nat.nat,
   =
   None
 
+def iterative_learn_aux(x0: List[List[(String,
+(List[Value.value], List[Value.value]))]],
+                         e: FSet.fset[(Nat.nat,
+((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+                         uu: (FSet.fset[Transition.transition_ext[Unit]]) =>
+                               (FSet.fset[Transition.transition_ext[Unit]]) =>
+                                 Nat.nat,
+                         uv: (FSet.fset[(Nat.nat,
+  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
+                               Nat.nat =>
+                                 (Transition.transition_ext[Unit]) =>
+                                   Nat.nat =>
+                                     (Transition.transition_ext[Unit]) =>
+                                       Option[Transition.transition_ext[Unit]],
+                         uw: Nat.nat =>
+                               Nat.nat =>
+                                 Nat.nat =>
+                                   (FSet.fset[(Nat.nat,
+        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
+                                     (FSet.fset[(Nat.nat,
+          ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
+                                       Option[FSet.fset[(Nat.nat,
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]],
+                         ux: (FSet.fset[((Nat.nat, Nat.nat),
+  Transition.transition_ext[Unit])]) =>
+                               Boolean):
+      FSet.fset[(Nat.nat,
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+  =
+  (x0, e, uu, uv, uw, ux) match {
+  case (Nil, e, uu, uv, uw, ux) => e
+  case (h::t, e, r, g, m, s) =>
+    iterative_learn_aux(t, infer(toiEFSM(make_branch(tm(e), Nat.zero_nata,
+              AExp.null_state[VName.vname, Value.value], h)),
+                                  r, g, m, s),
+                         r, g, m, s)
+}
+
+def iterative_learn(l: List[List[(String,
+                                   (List[Value.value], List[Value.value]))]],
+                     r: (FSet.fset[Transition.transition_ext[Unit]]) =>
+                          (FSet.fset[Transition.transition_ext[Unit]]) =>
+                            Nat.nat,
+                     g: (FSet.fset[(Nat.nat,
+                                     ((Nat.nat, Nat.nat),
+                                       Transition.transition_ext[Unit]))]) =>
+                          Nat.nat =>
+                            (Transition.transition_ext[Unit]) =>
+                              Nat.nat =>
+                                (Transition.transition_ext[Unit]) =>
+                                  Option[Transition.transition_ext[Unit]],
+                     m: Nat.nat =>
+                          Nat.nat =>
+                            Nat.nat =>
+                              (FSet.fset[(Nat.nat,
+   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
+                                (FSet.fset[(Nat.nat,
+     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
+                                  Option[FSet.fset[(Nat.nat,
+             ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]]):
+      FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]
+  =
+  tm(iterative_learn_aux(l, FSet.bot_fset[(Nat.nat,
+    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+                          r, g, m,
+                          ((a: FSet.fset[((Nat.nat, Nat.nat),
+   Transition.transition_ext[Unit])])
+                             =>
+                            satisfies(Set.seta[List[(String,
+              (List[Value.value], List[Value.value]))]](l),
+                                       a))))
+
 def nondeterministic(t: FSet.fset[(Nat.nat,
                                     ((Nat.nat, Nat.nat),
                                       Transition.transition_ext[Unit]))]):
@@ -3213,8 +3290,7 @@ def get_gexp_biggest_reg(x0: GExp.gexp): Nat.nat = x0 match {
     Orderings.max[Nat.nat](get_aexp_biggest_reg(a1), get_aexp_biggest_reg(a2))
   case GExp.Nor(g1, g2) =>
     Orderings.max[Nat.nat](get_gexp_biggest_reg(g1), get_gexp_biggest_reg(g2))
-  case GExp.Null(VName.R(n)) => n
-  case GExp.Null(VName.I(n)) => Nat.zero_nata
+  case GExp.Null(a) => get_aexp_biggest_reg(a)
 }
 
 def get_biggest_t_reg(t: Transition.transition_ext[Unit]): Nat.nat =
@@ -3800,7 +3876,7 @@ def infer_types_aux(x0: GExp.gexp):
   =
   x0 match {
   case GExp.Bc(uu) => (Nil, Nil)
-  case GExp.Null(v) => ((v, NULL())::Nil, Nil)
+  case GExp.Null(v) => (assign_all(NULL(), aexp_get_variables(v)), Nil)
   case GExp.Gt(a2, a1) =>
     (assign_all(NUM(), aexp_get_variables(a1) ++ aexp_get_variables(a2)), Nil)
   case GExp.Nor(g1, g2) =>

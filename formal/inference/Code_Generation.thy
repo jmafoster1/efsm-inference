@@ -59,7 +59,7 @@ lemma apply_guards_equals_conjoin: "apply_guards g s = (gval (GExp.conjoin g) s 
 proof(induct g)
   case Nil
   then show ?case
-    by simp
+    by (simp add: gval.simps)
 next
   case (Cons a g)
   then show ?case
@@ -108,7 +108,7 @@ code_pred satisfies_trace.
 
 declare ListMem_iff [code]
 
-export_code finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot GExp.conjoin naive_score null_generator null_modifier nondeterministic learn in Scala
+export_code iterative_learn finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot GExp.conjoin naive_score null_generator null_modifier nondeterministic learn in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

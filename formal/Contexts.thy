@@ -132,13 +132,13 @@ lemma cexp2gexp_double_neg: "gexp_equiv (cexp2gexp r (Not (Not x))) (cexp2gexp r
 lemma gval_cexp2gexp_double_neg: "gval (cexp2gexp r (Not (Not x))) s = gval (cexp2gexp r x) s"
   using cexp2gexp_double_neg gexp_equiv_def by blast
 
-primrec and_insert :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) \<Rightarrow> (aexp \<times> cexp) list" where
+(*primrec and_insert :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) \<Rightarrow> (aexp \<times> cexp) list" where
   "and_insert [] c = [c]" |
   "and_insert (h#t) c = (if fst h = fst c then ((fst h, and (snd h) (snd c))#t) else (h#(and_insert t c)))"
 
 primrec pair_and :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) list" where
   "pair_and [] c = c" |
-  "pair_and (h#t) c = pair_and t (and_insert c h)"
+  "pair_and (h#t) c = pair_and t (and_insert c h)"*)
 
 fun make_gt :: "cexp \<Rightarrow> cexp" where
   "make_gt (Bc b) = Bc b" |
@@ -167,8 +167,6 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
   "guard2pairs a (gexp.Null v) = [(v, Undef)]" |
 
   "guard2pairs a (gexp.Eq (L n) (L n')) =  (if n = n' then [] else [(L (Num 0), Bc False)])" |
-  "guard2pairs a (gexp.Gt (L (Num n)) (L (Num n'))) = (if n > n' then [] else [(L (Num 0), Bc False)])" |
-
   "guard2pairs a (gexp.Eq v (L n)) = [(v, Eq n)]" |
   "guard2pairs a (gexp.Eq (L n) v) = [(v, Eq n)]" |
   "guard2pairs a (gexp.Eq (Plus a1 a2) (Plus a4 a3)) = [((Plus a1 a2), and (get a (Plus a2 a1)) (get a (Plus a3 a4))),
@@ -182,16 +180,25 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
   (* "guard2pairs a (gexp.Gt v (L n)) = [(v, (Gt n))]" | *)
   (* "guard2pairs a (gexp.Gt (L n) v) = [(v, (Lt n))]" | *)
   (* "guard2pairs a (gexp.Gt v vb) = (let (cv, cvb) = apply_gt (get a v) (get a vb) in [(v, cv), (vb, cvb)])" | *)
+  "guard2pairs a (gexp.Gt (L (Num n)) (L (Num n'))) = (if n > n' then [] else [(L (Num 0), Bc False)])" |
   "guard2pairs a (gexp.Gt v vb) = [(v, make_gt (get a vb)), (vb, make_lt (get a v))]" |
 
-  "guard2pairs a (Nor v va) = (pair_and (map (\<lambda>(x, y). (x, not y)) (guard2pairs a v)) (map (\<lambda>(x, y). (x, not y)) (guard2pairs a va)))"
+  "guard2pairs a (Nor v va) = List.union (map (\<lambda>(x, y). (x, not y)) (guard2pairs a v)) (map (\<lambda>(x, y). (x, not y)) (guard2pairs a va))"
 
-fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context  \<Rightarrow> context" where
+fun and_insert :: "(aexp \<times> cexp) \<Rightarrow> (aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) list" where
+  "and_insert (a, c) [] = [(a, c)]" |
+  "and_insert (a, c) ((a', c')#t) = (if a = a' then ((a, and c c')#t) else and_insert (a, c) t)"
+
+fun flatten :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) list" where
+  "flatten [] c = c" |
+  "flatten (h#t) c = flatten t (and_insert h c)"
+
+fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context \<Rightarrow> context" where
   "pairs2context [] c = c" |
   "pairs2context ((a, b)#t) c = (\<lambda>r. if r = a then and (c r) b else (pairs2context t c) r)"
 
 fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
-  "apply_guard a g = (pairs2context (guard2pairs a g) a)"
+  "apply_guard a g = (pairs2context (flatten (guard2pairs a g) []) a)"
 
 definition medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
  "medial c G = (apply_guard c (fold gAnd G (gexp.Bc True)))"

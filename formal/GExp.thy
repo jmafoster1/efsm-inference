@@ -193,6 +193,9 @@ lemma gval_gNot_some[simp]: "(gval (gNot g) s = Some b) = (gval g s = Some (\<no
   apply (case_tac "gval g s")
   by auto
 
+lemma gval_false: "gval (gexp.Bc False) s = Some False"
+  by simp
+
 declare gval.simps [simp del]
 
 end
