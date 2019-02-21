@@ -198,12 +198,15 @@ fun flatten :: "(aexp \<times> cexp fset) list \<Rightarrow> (aexp \<times> cexp
   "flatten [] c = c" |
   "flatten (h#t) c = flatten t (and_insert h c)"
 
-fun pairs2context :: "(aexp \<times> cexp fset) list \<Rightarrow> context \<Rightarrow> context" where
+(*fun pairs2context :: "(aexp \<times> cexp fset) list \<Rightarrow> context \<Rightarrow> context" where
   "pairs2context [] c = c" |
-  "pairs2context ((a, b)#t) c = (\<lambda>r. if r = a then (c r) |\<union>| b else (pairs2context t c) r)"
+  "pairs2context ((a, b)#t) c = (\<lambda>r. if r = a then (c r) |\<union>| b else (pairs2context t c) r)"*)
+
+fun pairs2context :: "(aexp \<times> cexp fset) list \<Rightarrow> context \<Rightarrow> context" where
+  "pairs2context l c = (\<lambda>r. (c r) |\<union>| fold funion (map snd (filter (\<lambda>(a, _). a = r) l)) {||})"
 
 fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
-  "apply_guard a g = (pairs2context (flatten (guard2pairs a g) []) a)"
+  "apply_guard a g = (pairs2context (guard2pairs a g) a)"
 
 definition medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
  "medial c G = (apply_guard c (fold gAnd G (gexp.Bc True)))"
