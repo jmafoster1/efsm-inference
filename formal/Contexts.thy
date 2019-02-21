@@ -10,15 +10,15 @@ theory Contexts
     EFSM "efsm-exp.GExp" "efsm-exp.CExp"
 begin
 
-type_synonym "context" = "aexp \<Rightarrow> cexp"
+type_synonym "context" = "aexp \<Rightarrow> cexp fset"
 
 (*Decided to keep this as Bc True in order to oversimplify relatiy - strictly this should be
 "Not Undef" for "has a value but we don't know what it is but this doesn't allow for
 oversimplification*)
-abbreviation empty ("\<lbrakk>\<rbrakk>") where
+abbreviation empty :: "context" ("\<lbrakk>\<rbrakk>") where
   "empty \<equiv> (\<lambda>x. case x of
-    (V v) \<Rightarrow> (case v of R n \<Rightarrow> Undef | I n \<Rightarrow> Bc True) |
-    _ \<Rightarrow> Bc True
+    (V v) \<Rightarrow> (case v of R n \<Rightarrow> {|Undef|} | I n \<Rightarrow> {|Bc True|}) |
+    _ \<Rightarrow> {|Bc True|}
   )"
 syntax
   "_updbind" :: "'a \<Rightarrow> 'a \<Rightarrow> updbind" ("(2_ \<mapsto>/ _)")
@@ -28,7 +28,7 @@ translations
   "_Context ms" == "_Update \<lbrakk>\<rbrakk> ms"
   "_Context (_updbinds b bs)" \<rightleftharpoons> "_Update (_Context b) bs"
 
-lemma empty_not_false[simp]: "cexp.Bc False \<noteq> \<lbrakk>\<rbrakk> i"
+lemma empty_not_false[simp]: "{|Bc False|} \<noteq> \<lbrakk>\<rbrakk> i"
 proof (induct i)
 case (L x)
 then show ?case by simp
@@ -47,27 +47,24 @@ next
     by simp
 qed
 
-lemma empty_variable_constraints: "\<lbrakk>\<rbrakk> (V (R ri)) = Undef \<and> \<lbrakk>\<rbrakk> (V (I i)) = Bc True"
+lemma empty_variable_constraints: "\<lbrakk>\<rbrakk> (V (R ri)) = {|Undef|} \<and> \<lbrakk>\<rbrakk> (V (I i)) = {|Bc True|}"
   by simp
 
-fun get :: "context \<Rightarrow> aexp \<Rightarrow> cexp" where
-  "get c (L n) = Eq n" |
+fun get :: "context \<Rightarrow> aexp \<Rightarrow> cexp fset" where
+  "get c (L n) = {|Eq n|}" |
   "get c (V v) = c (V v)" |
-  "get c (Plus v va) = (and (c (Plus v va)) (c (Plus va v)))" |
+  "get c (Plus v va) = (c (Plus v va)) |\<union>| (c (Plus va v))" |
   "get c (Minus v va) = (c (Minus v va))"
 
-fun update :: "context \<Rightarrow> aexp \<Rightarrow> cexp \<Rightarrow> context" where
+fun update :: "context \<Rightarrow> aexp \<Rightarrow> cexp fset \<Rightarrow> context" where
   "update c (L n) _ = c" |
   "update c k v = (\<lambda>r. if r=k then v else c r)"
 
-fun conjoin :: "context \<Rightarrow> context \<Rightarrow> context" where
-  "conjoin c c' = (\<lambda>r. (and (c r) (c' r)))"
-
-fun negate :: "context \<Rightarrow> context" where
-  "negate c = (\<lambda>r. not (c r))"
+definition conjoin :: "cexp fset \<Rightarrow> cexp" where
+  "conjoin f = fold And (sorted_list_of_fset f) (Bc True)"
 
 definition context_equiv :: "context \<Rightarrow> context \<Rightarrow> bool" where
-  "context_equiv c c' \<equiv> (\<forall>r. cexp_equiv (c r) (c' r))"
+  "context_equiv c c' \<equiv> (\<forall>r. cexp_equiv (conjoin (c r)) (conjoin (c' r)))"
 
 lemma context_equiv_reflexive: "context_equiv x x"
   apply (simp add: context_equiv_def)
@@ -85,42 +82,61 @@ lemma context_equiv_transitive: "context_equiv x y \<and> context_equiv y z \<Lo
   by (simp add: cexp_equiv_def gexp_equiv_def)
 
 definition consistent :: "context \<Rightarrow> bool" where (* Is there a variable evaluation which can satisfy all of the context? *)
-  "consistent c \<equiv> \<exists>s. \<forall>r. (cval (c r) r s = Some True)"
+  "consistent c \<equiv> \<exists>s. \<forall>r. (cval (conjoin (c r)) r s = Some True)"
 
-lemma possible_false_not_consistent: "\<exists>r. c r = Bc False \<Longrightarrow> \<not> consistent c"
-  unfolding consistent_def
-  apply (simp add: cval_def)
-  apply (rule allI)
+lemma possible_false_not_consistent: "\<exists>r. c r = {|Bc False|} \<Longrightarrow> \<not> consistent c"
+  apply (simp add: consistent_def conjoin_def)
   apply clarify
   apply (rule_tac x=r in exI)
-  by (simp add: gval.simps)
+  apply (simp add: sorted_list_of_fset_def)
+  apply (simp only: cval_And maybe_and_true cval_false cval_true)
+  by simp
 
-lemma inconsistent_false: "\<not>consistent (\<lambda>i. cexp.Bc False)"
-  by (simp add: consistent_def cval_def gval.simps)
+lemma inconsistent_false: "\<not>consistent (\<lambda>i. {|Bc False|})"
+  using possible_false_not_consistent
+  by simp
 
-definition valid_context :: "context \<Rightarrow> bool" where (* Is the context satisfied in all variable evaluations? *)
-  "valid_context c \<equiv> \<forall>s. \<forall>r. (c r) = Undef \<or> (gval (cexp2gexp r (c r)) s = Some True)"
-
-theorem consistent_empty_1: "empty r = Undef \<or> empty r = Bc True"
+lemma consistent_empty_1: "empty r = {|Undef|} \<or> empty r = {|Bc True|}"
   apply (cases r)
   prefer 2
     apply (case_tac x2)
   by simp_all
 
-theorem consistent_empty_2: "(\<forall>r. c r = Bc True) \<longrightarrow> consistent c"
-  by (simp add: consistent_def cval_def gval.simps)
+theorem consistent_empty_2: "(\<forall>r. c r = {|Bc True|}) \<longrightarrow> consistent c"
+  apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def)
+  apply (simp only: cval_And maybe_and_true cval_true)
+  by simp
 
-lemma consistent_empty_4: "\<lbrakk>\<rbrakk> r = Undef \<or> gval (cexp2gexp r (\<lbrakk>\<rbrakk> r)) c = Some True"
-  using consistent_empty_1 gval_True by fastforce
+lemma consistent_empty_4: "\<lbrakk>\<rbrakk> r = {|Undef|} \<or> gval (cexp2gexp r (conjoin (\<lbrakk>\<rbrakk> r))) c = Some True"
+  apply (case_tac r)
+     apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
+     apply (simp add: gval.simps(1))
+    apply (case_tac x2)
+     apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
+     apply (simp add: gval.simps(1))
+    apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
+   apply (simp add: gval.simps(1))
+   apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
+   apply (simp add: gval.simps(1))
+  apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
+  by (simp add: gval.simps(1))
 
 lemma consistent_empty [simp]: "consistent empty"
   apply (simp add: consistent_def cval_def)
   apply (rule_tac x="<>" in exI)
   apply clarify
   apply (case_tac r)
-     apply (simp add: gval.simps)
+     apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
+     apply (simp add: gval.simps(1))
     apply (case_tac x2)
-  by (simp_all add: gval.simps)
+     apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
+     apply (simp add: gval.simps(1))
+    apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
+   apply (simp add: gval.simps)
+   apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
+   apply (simp add: gval.simps(1))
+  apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
+  by (simp add: gval.simps(1))
 
 lemma cexp2gexp_double_neg: "gexp_equiv (cexp2gexp r (Not (Not x))) (cexp2gexp r x)"
   apply (simp add: gexp_equiv_def)
@@ -132,20 +148,11 @@ lemma cexp2gexp_double_neg: "gexp_equiv (cexp2gexp r (Not (Not x))) (cexp2gexp r
 lemma gval_cexp2gexp_double_neg: "gval (cexp2gexp r (Not (Not x))) s = gval (cexp2gexp r x) s"
   using cexp2gexp_double_neg gexp_equiv_def by blast
 
-(*primrec and_insert :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) \<Rightarrow> (aexp \<times> cexp) list" where
-  "and_insert [] c = [c]" |
-  "and_insert (h#t) c = (if fst h = fst c then ((fst h, and (snd h) (snd c))#t) else (h#(and_insert t c)))"
-
-primrec pair_and :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) list" where
-  "pair_and [] c = c" |
-  "pair_and (h#t) c = pair_and t (and_insert c h)"*)
-
 fun make_gt :: "cexp \<Rightarrow> cexp" where
   "make_gt (Bc b) = Bc b" |
   "make_gt Undef = Undef" |
   "make_gt (Eq v) = Gt v" |
   "make_gt (Lt v) = Bc True" |
-  "make_gt (Gt (Num v)) = Gt (Num (v+1))" |
   "make_gt (Gt s) = Gt s" |
   "make_gt (Not v) = not (make_gt v)" |
   "make_gt (And v va) = and (make_gt v) (make_gt va)"
@@ -154,48 +161,48 @@ fun make_lt :: "cexp \<Rightarrow> cexp" where
   "make_lt (Bc b) = Bc b" |
   "make_lt Undef = Undef" |
   "make_lt (Eq v) = Lt v" |
-  "make_lt (Lt (Num v)) = Lt (Num (v-1))" |
   "make_lt (Lt v) = Lt v" |
   "make_lt (Gt v) = Bc True" |
-  "make_lt (Not v) = not (make_lt v)" |
-  "make_lt (And v va) = and (make_lt v) (make_lt va)"
+  "make_lt (Not v) = Not (make_lt v)" |
+  "make_lt (And v va) = And (make_lt v) (make_lt va)"
 
-fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cexp) list" where
+fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cexp fset) list" where
   "guard2pairs a (gexp.Bc True) = []" |
-  "guard2pairs a (gexp.Bc False) = [(L (Num 0), Bc False)]" |
+  "guard2pairs a (gexp.Bc False) = [(L (Num 0), {|Bc False|})]" |
 
-  "guard2pairs a (gexp.Null v) = [(v, Undef)]" |
+  "guard2pairs a (gexp.Null v) = [(v, {|Undef|})]" |
 
-  "guard2pairs a (gexp.Eq (L n) (L n')) =  (if n = n' then [] else [(L (Num 0), Bc False)])" |
-  "guard2pairs a (gexp.Eq v (L n)) = [(v, Eq n)]" |
-  "guard2pairs a (gexp.Eq (L n) v) = [(v, Eq n)]" |
-  "guard2pairs a (gexp.Eq (Plus a1 a2) (Plus a4 a3)) = [((Plus a1 a2), and (get a (Plus a2 a1)) (get a (Plus a3 a4))),
-                                                        ((Plus a2 a1), and (get a (Plus a1 a2)) (get a (Plus a3 a4))),
-                                                        ((Plus a3 a4), and (get a (Plus a4 a3)) (get a (Plus a1 a2))),
-                                                        ((Plus a4 a3), and (get a (Plus a3 a4)) (get a (Plus a1 a2)))]" |
-  "guard2pairs a (gexp.Eq (Plus a1 a2) v) = [((Plus a1 a2), and (get a v) (get a (Plus a1 a2))), ((Plus a2 a1), and (get a v) (get a (Plus a2 a1))), (v, get a (Plus a1 a2))]" |
-  "guard2pairs a (gexp.Eq v (Plus a1 a2)) = [((Plus a1 a2), and (get a v) (get a (Plus a1 a2))), ((Plus a2 a1), and (get a v) (get a (Plus a2 a1))), (v, get a (Plus a1 a2))]" |
+  "guard2pairs a (gexp.Eq (L n) (L n')) =  (if n = n' then [] else [(L (Num 0), {|Bc False|})])" |
+  "guard2pairs a (gexp.Eq v (L n)) = [(v, {|Eq n|})]" |
+  "guard2pairs a (gexp.Eq (L n) v) = [(v, {|Eq n|})]" |
+  "guard2pairs a (gexp.Eq (Plus a1 a2) (Plus a4 a3)) = [((Plus a1 a2), (get a (Plus a2 a1)) |\<union>| (get a (Plus a3 a4))),
+                                                        ((Plus a2 a1), (get a (Plus a1 a2)) |\<union>| (get a (Plus a3 a4))),
+                                                        ((Plus a3 a4), (get a (Plus a4 a3)) |\<union>| (get a (Plus a1 a2))),
+                                                        ((Plus a4 a3), (get a (Plus a3 a4)) |\<union>| (get a (Plus a1 a2)))]" |
+  "guard2pairs a (gexp.Eq (Plus a1 a2) v) = [((Plus a1 a2), (get a v) |\<union>| (get a (Plus a1 a2))),
+                                             ((Plus a2 a1), (get a v) |\<union>| (get a (Plus a2 a1))),
+                                             (v, get a (Plus a1 a2))]" |
+  "guard2pairs a (gexp.Eq v (Plus a1 a2)) = [((Plus a1 a2), (get a v) |\<union>| (get a (Plus a1 a2))),
+                                             ((Plus a2 a1), (get a v) |\<union>| (get a (Plus a2 a1))),
+                                             (v, get a (Plus a1 a2))]" |
   "guard2pairs a (gexp.Eq v va) = [(v, get a va), (va, get a v)]" |
 
-  (* "guard2pairs a (gexp.Gt v (L n)) = [(v, (Gt n))]" | *)
-  (* "guard2pairs a (gexp.Gt (L n) v) = [(v, (Lt n))]" | *)
-  (* "guard2pairs a (gexp.Gt v vb) = (let (cv, cvb) = apply_gt (get a v) (get a vb) in [(v, cv), (vb, cvb)])" | *)
-  "guard2pairs a (gexp.Gt (L (Num n)) (L (Num n'))) = (if n > n' then [] else [(L (Num 0), Bc False)])" |
-  "guard2pairs a (gexp.Gt v vb) = [(v, make_gt (get a vb)), (vb, make_lt (get a v))]" |
+  "guard2pairs a (gexp.Gt (L (Num n)) (L (Num n'))) = (if n > n' then [] else [(L (Num 0), {|Bc False|})])" |
+  "guard2pairs a (gexp.Gt v vb) = (if v = vb then [(L (Num 0), {|Bc False|})] else [(v, fimage make_gt (get a vb)), (vb, fimage make_lt (get a v))])" |
 
-  "guard2pairs a (Nor v va) = List.union (map (\<lambda>(x, y). (x, not y)) (guard2pairs a v)) (map (\<lambda>(x, y). (x, not y)) (guard2pairs a va))"
+  "guard2pairs a (Nor v va) = (map (\<lambda>(x, y). (x, fimage Not y)) ((guard2pairs a v) @ (guard2pairs a va)))"
 
-fun and_insert :: "(aexp \<times> cexp) \<Rightarrow> (aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) list" where
+fun and_insert :: "(aexp \<times> cexp fset) \<Rightarrow> (aexp \<times> cexp fset) list \<Rightarrow> (aexp \<times> cexp fset) list" where
   "and_insert (a, c) [] = [(a, c)]" |
-  "and_insert (a, c) ((a', c')#t) = (if a = a' then ((a, and c c')#t) else and_insert (a, c) t)"
+  "and_insert (a, c) ((a', c')#t) = (if a = a' then ((a, c |\<union>| c')#t) else and_insert (a, c) t)"
 
-fun flatten :: "(aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) list \<Rightarrow> (aexp \<times> cexp) list" where
+fun flatten :: "(aexp \<times> cexp fset) list \<Rightarrow> (aexp \<times> cexp fset) list \<Rightarrow> (aexp \<times> cexp fset) list" where
   "flatten [] c = c" |
   "flatten (h#t) c = flatten t (and_insert h c)"
 
-fun pairs2context :: "(aexp \<times> cexp) list \<Rightarrow> context \<Rightarrow> context" where
+fun pairs2context :: "(aexp \<times> cexp fset) list \<Rightarrow> context \<Rightarrow> context" where
   "pairs2context [] c = c" |
-  "pairs2context ((a, b)#t) c = (\<lambda>r. if r = a then and (c r) b else (pairs2context t c) r)"
+  "pairs2context ((a, b)#t) c = (\<lambda>r. if r = a then (c r) |\<union>| b else (pairs2context t c) r)"
 
 fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
   "apply_guard a g = (pairs2context (flatten (guard2pairs a g) []) a)"
@@ -204,10 +211,10 @@ definition medial :: "context \<Rightarrow> guard list \<Rightarrow> context" wh
  "medial c G = (apply_guard c (fold gAnd G (gexp.Bc True)))"
 
 fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function \<Rightarrow> context" where
-  "apply_update l c (v, (L n)) = update c (V v) (Eq n)" |
+  "apply_update l c (v, (L n)) = update c (V v) {|(Eq n)|}" |
   "apply_update l c (v, V vb) = update c (V v) (l (V vb))" |
-  "apply_update l c (v, Plus vb vc) = update c (V v) (compose_plus (get l vb) (get l vc))" |
-  "apply_update l c (v, Minus vb vc) = update c (V v) (compose_minus (get l vb) (get l vc))"
+  "apply_update l c (v, Plus vb vc) = update c (V v) {|(compose_plus (conjoin (get l vb)) (conjoin (get l vc)))|}" |
+  "apply_update l c (v, Minus vb vc) = update c (V v) {|(compose_minus (conjoin (get l vb)) (conjoin (get l vc)))|}"
 
 primrec apply_updates :: "context \<Rightarrow> context \<Rightarrow> update_function list \<Rightarrow> context" where
   "apply_updates _ c [] = c" |
@@ -229,16 +236,38 @@ fun constrains_an_input :: "aexp \<Rightarrow> bool" where
 definition remove_input_constraints :: "context \<Rightarrow> context" where
   "remove_input_constraints c = (\<lambda>x. if constrains_an_input x then \<lbrakk>\<rbrakk> x else c x)"
 
-lemma empty_inputs_are_true: "constrains_an_input x \<Longrightarrow> \<lbrakk>\<rbrakk> x = Bc True"
+lemma empty_inputs_are_true: "constrains_an_input x \<Longrightarrow> \<lbrakk>\<rbrakk> x = {|Bc True|}"
   apply (case_tac x)
      apply simp
     apply (case_tac x2)
   by auto
 
-lemma cval_empty_inputs: "constrains_an_input r \<longrightarrow> cval (\<lbrakk>\<rbrakk> r) r ia = Some True"
-  by (simp add: empty_inputs_are_true cval_def gval.simps)
+lemma cval_empty_inputs: "constrains_an_input r \<longrightarrow> cval (conjoin (\<lbrakk>\<rbrakk> r)) r ia = Some True"
+proof(induct r)
+case (L x)
+  then show ?case by simp
+next
+  case (V x)
+  then show ?case
+    apply (cases x)
+     apply (simp add: conjoin_def sorted_list_of_fset_def)
+     apply (simp only: cval_And maybe_and_true cval_true)
+    by simp
+next
+  case (Plus r1 r2)
+  then show ?case
+    apply (simp add: conjoin_def sorted_list_of_fset_def)
+    apply (simp only: cval_And maybe_and_true cval_true)
+    by simp
+next
+  case (Minus r1 r2)
+  then show ?case
+    apply (simp add: conjoin_def sorted_list_of_fset_def)
+    apply (simp only: cval_And maybe_and_true cval_true)
+    by simp
+qed
 
-lemma remove_input_constraints_alt:  "remove_input_constraints c = (\<lambda>x. if constrains_an_input x then Bc True else c x)"
+lemma remove_input_constraints_alt:  "remove_input_constraints c = (\<lambda>x. if constrains_an_input x then {|Bc True|} else c x)"
   apply (rule ext)
   by (simp add: remove_input_constraints_def empty_inputs_are_true)
 
@@ -250,20 +279,17 @@ proof-
   assume premise: "consistent c"
   show ?thesis
     using premise
-    apply (simp add: remove_input_constraints_def consistent_def cval_def)
+    apply (simp add: remove_input_constraints_def consistent_def)
     apply clarify
     apply (rule_tac x=s in exI)
-    apply (rule allI)
+    apply clarify
     apply (case_tac "constrains_an_input r")
-     apply simp
-     apply (case_tac r)
-        apply (simp add: gval.simps)
-       apply (case_tac x2)
-    by (simp_all add: gval.simps)
+    using cval_empty_inputs apply blast
+    by simp
 qed
 
 definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
-  "posterior c t = (let c' = (medial c (Guard t)) in (if consistent c' then remove_input_constraints (apply_updates c' c (Updates t)) else (\<lambda>i. Bc False)))"
+  "posterior c t = (let c' = (medial c (Guard t)) in (if consistent c' then remove_input_constraints (apply_updates c' c (Updates t)) else (\<lambda>i. {|Bc False|})))"
 
 primrec posterior_n :: "nat \<Rightarrow> transition \<Rightarrow> context \<Rightarrow> context" where (* Apply a given transition to a given context n times - good for reflexive transitions*)
   "posterior_n 0 _ c = c " |
@@ -278,27 +304,27 @@ primrec posterior_sequence :: "context \<Rightarrow> transition_matrix \<Rightar
     )"
 
 definition datastate2context :: "datastate \<Rightarrow> context" where
-  "datastate2context d = (\<lambda>x. case x of V r \<Rightarrow> (case d r of None \<Rightarrow> Undef | Some v \<Rightarrow> Eq v) | _ \<Rightarrow> \<lbrakk>\<rbrakk> x)"
+  "datastate2context d = (\<lambda>x. case x of V r \<Rightarrow> (case d r of None \<Rightarrow> {|Undef|} | Some v \<Rightarrow> {|Eq v|}) | _ \<Rightarrow> \<lbrakk>\<rbrakk> x)"
 
 definition satisfies_context :: "datastate \<Rightarrow> context \<Rightarrow> bool" where
-  "satisfies_context d c = consistent (conjoin (datastate2context d) c)"
+  "satisfies_context d c = consistent (\<lambda>x. (datastate2context d x) |\<union>| c x)"
 
 lemma satisfies_context_empty: "satisfies_context <> \<lbrakk>\<rbrakk> \<and> satisfies_context Map.empty \<lbrakk>\<rbrakk>"
-  apply (simp add: satisfies_context_def consistent_def datastate2context_def cval_def)
+  apply (simp add: satisfies_context_def consistent_def datastate2context_def cval_def conjoin_def)
   apply (rule_tac x="<>" in exI)
   apply clarify
   apply (case_tac r)
-        apply (simp add: gval.simps)
-    apply (case_tac x2)
-  by (simp_all add: gval.simps)
+     apply (simp add: sorted_list_of_fset_def maybe_double_negation gval.simps)
+  apply (case_tac x2)
+  by(simp_all add: sorted_list_of_fset_def maybe_double_negation gval.simps)
 
 (* Does t2 subsume t1? *)
 definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where (* Corresponds to Algorithm 2 in Foster et. al. *)
   "subsumes c t2 t1 \<equiv> Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) \<and>
-                      (\<forall>r i. (cval (medial c (Guard t1) r) r i = Some True) \<longrightarrow> (cval (medial c (Guard t2) r) r i) = Some True) \<and>
+                      (\<forall>r i. (cval (conjoin (medial c (Guard t1) r)) r i = Some True) \<longrightarrow> (cval (conjoin (medial c (Guard t2) r)) r i) = Some True) \<and>
                       (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
-                      (\<forall>r i. cval (posterior (medial c (Guard t1)) t2 r) r i = Some True \<longrightarrow> (cval (posterior c t1 r) r i = Some True) \<or> (posterior c t1 r) = Undef) \<and>
+                      (\<forall>r i. cval (conjoin (posterior (medial c (Guard t1)) t2 r)) r i = Some True \<longrightarrow> (cval (conjoin (posterior c t1 r)) r i = Some True) \<or> (posterior c t1 r) = {|Undef|}) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
 
 definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> context" where
@@ -317,11 +343,13 @@ primrec pairs2guard :: "(aexp \<times> cexp) list \<Rightarrow> guard" where
   "pairs2guard [] = gexp.Bc True" |
   "pairs2guard (h#t) = gAnd (cexp2gexp (fst h) (snd h)) (pairs2guard t)"
 
-lemma context_equiv_same_undef: "c i = Undef \<Longrightarrow> c' i = cexp.Bc True \<Longrightarrow> \<not> context_equiv c c'"
+lemma context_equiv_same_undef: "c i = {|Undef|} \<Longrightarrow> c' i = {|Bc True|} \<Longrightarrow> \<not> context_equiv c c'"
   apply (simp add: context_equiv_def cexp_equiv_def gexp_equiv_def)
   apply (rule_tac x=i in exI)
-  apply (simp add: cval_def gval.simps)
-  using aval.simps(1) by blast
+  apply (simp add: conjoin_def sorted_list_of_fset_def)
+  apply (simp only: cval_And cval_true maybe_and_zero)
+  apply (simp only: maybe_and_commutative maybe_and_zero)
+  using invalid_undef valid_def by auto
 
 lemma gexp_equiv_cexp_not_true:  "gexp_equiv (cexp2gexp a (Not (Bc True))) (gexp.Bc False)"
   by (simp add: gexp_equiv_def gval.simps)
@@ -344,32 +372,13 @@ lemma gt_to_gt: "Gt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Gt r (L
 lemma satisfiable_double_neg: "satisfiable (cexp.Not (cexp.Not x)) = satisfiable x"
   by (simp add: satisfiable_def cval_double_negation)
 
-lemma gval_empty_r_neq_none[simp]: "gval (cexp2gexp r (\<lbrakk>\<rbrakk> r)) s \<noteq> None"
+lemma gval_empty_r_neq_none[simp]: "gval (cexp2gexp r (conjoin (\<lbrakk>\<rbrakk> r))) s \<noteq> None"
   apply (case_tac r)
-     apply (simp add: gval.simps)
+     apply (simp add: conjoin_def sorted_list_of_fset_def maybe_double_negation gval.simps)
     apply (case_tac x2)
-  by (simp_all add: gval.simps)
+  by (simp_all add: conjoin_def sorted_list_of_fset_def maybe_double_negation gval.simps)
 
-lemma inconsistant_conjoin_false: "\<not>consistent (conjoin (\<lambda>r. cexp.Bc False) c)"
-  apply (simp add: consistent_def cval_def)
-  apply clarify
-  apply (rule_tac x=r in exI)
-  apply (case_tac "c r")
-        apply (simp add: gval.simps)
-       apply (case_tac x2)
-        apply (simp add: gval.simps)+
-     apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some x4) (aval r s)")
-      apply (simp add: gval.simps)+
-    apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (aval r s) (Some x5)")
-     apply (simp add: gval.simps)+
-   apply (case_tac "gval (cexp2gexp r x6) s")
-    apply (simp add: gval.simps)+
-  apply (case_tac "gval (cexp2gexp r x71) s")
-   apply (simp add: gval.simps)+
-  apply (case_tac "gval (cexp2gexp r x72) s")
-  by auto
-
-lemma constrains_an_input_true: "constrains_an_input r \<Longrightarrow> gval (cexp2gexp r (\<lbrakk>\<rbrakk> r)) ia = Some True"
+lemma constrains_an_input_true: "constrains_an_input r \<Longrightarrow> cval (conjoin (\<lbrakk>\<rbrakk> r)) r ia = Some True"
 proof(induct r)
   case (L x)
   then show ?case by simp
@@ -377,32 +386,26 @@ next
   case (V x)
   then show ?case
     apply (case_tac x)
-    using gval.simps
-    by auto
+    by (simp_all add: conjoin_def cval_And cval_true sorted_list_of_fset_def gval.simps)
 next
   case (Plus r1 r2)
   then show ?case
-    using gval.simps
-    by simp
+    by (simp add: conjoin_def sorted_list_of_fset_def cval_And cval_true)
 next
   case (Minus r1 r2)
   then show ?case
-    using gval.simps
-    by simp
+    by (simp add: conjoin_def sorted_list_of_fset_def cval_And cval_true)
 qed
 
-lemma cval_pairs2context_not_true: "cval (c r) r s \<noteq> Some True \<Longrightarrow>
-       cval (pairs2context G c r) r s \<noteq> Some True"
+lemma cval_pairs2context_not_true: "cval (conjoin (c r)) r s \<noteq> Some True \<Longrightarrow>
+       cval (conjoin (pairs2context G c r)) r s \<noteq> Some True"
 proof(induct G)
   case Nil
   then show ?case by simp
 next
   case (Cons a G)
   then show ?case
-    apply (case_tac a)
-    apply simp
-    apply (simp only: cval_And maybe_and_true)
-    by auto
+    apply (simp add: conjoin_def)
 qed
 
 lemma inconsistent_anterior_gives_inconsistent_medial: "\<not>consistent c \<Longrightarrow> \<not>consistent (medial c g)"

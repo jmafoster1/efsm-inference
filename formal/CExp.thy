@@ -478,4 +478,325 @@ lemma gval_and_false_2: "gval (cexp2gexp uu (and x (cexp.Bc False))) s \<noteq> 
   apply (simp only: gval_and gval_gAnd cexp2gexp.simps gval_false maybe_and_not_true)
   by simp
 
+instantiation cexp :: linorder begin
+fun less_cexp :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
+  "(Undef < Undef) = False" |
+  "(Undef < _) = True" |
+
+  "(Bc v < Undef) = False" |
+  "(Bc v < Bc va) = less v va" |
+  "(Bc v < _) = True" |
+
+  "(Eq v < Undef) = False" |
+  "(Eq v < Bc va) = False" |
+  "(Eq v < Eq va) = less v va" |
+  "(Eq v < _) = True" |
+
+  "(Lt v < Undef) = False" |
+  "(Lt v < Bc va) = False" |
+  "(Lt v < Eq va) = False" |
+  "(Lt v < Lt va) = less v va" |
+  "(Lt v < _) = True" |
+
+  "(Gt v < Gt va) = less v va" |
+  "(Gt v < Not va) = True" |
+  "(Gt v < And va vb) = True" |
+  "(Gt v < _) = False" |
+
+  "(Not v < Not va) = less v va" |
+  "(Not v < And va vb) = True" |
+  "(Not v < _) = False" |
+
+  "(And g1 g2) < (And g1' g2') = ((g1 < g1') \<or> ((g1 = g1') \<and> (g2 < g2')))" |
+  "(And vv v < _) = False"
+
+definition less_eq_cexp :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
+  "less_eq_cexp a b = (a < b \<or> a = b)"
+declare less_eq_cexp_def [simp]
+
+lemma undef_minimal: "Undef \<noteq> z \<Longrightarrow> Undef < z"
+  apply (cases z)
+  by auto
+
+lemma hard_less: "((x::cexp) < y) = (x \<le> y \<and> \<not> y \<le> x)"
+  apply (induct x y rule: less_cexp.induct)
+  by auto
+
+lemma x_leq_x: "(x::cexp) \<le> x"
+  apply (induct x)
+  by auto
+
+lemma x_leq_y_or_y_lex_x: "(x::cexp) \<le> y \<or> y \<le> x"
+  apply (induct x y rule: less_cexp.induct)
+  by auto
+
+lemma antisymmetry: "(x::cexp) \<le> y \<Longrightarrow> y \<le> x \<Longrightarrow> x = y"
+  apply (induct x y rule: less_cexp.induct)
+                      apply simp_all
+      apply auto[1]
+     apply auto[1]
+    apply auto[1]
+   apply auto[1]
+  by (meson hard_less)
+
+
+lemma transitivity: "(x::cexp) \<le> y \<Longrightarrow> y \<le> z \<Longrightarrow> x \<le> z"
+proof (induct x y arbitrary: z rule: less_cexp.induct)
+case 1
+  then show ?case
+    by simp
+next
+  case ("2_1" v)
+then show ?case
+  using less_eq_cexp_def undef_minimal by blast
+next
+case ("2_2" v)
+then show ?case
+  using less_eq_cexp_def undef_minimal by blast
+next
+case ("2_3" v)
+  then show ?case
+  using less_eq_cexp_def undef_minimal by blast
+next
+  case ("2_4" v)
+  then show ?case
+    using less_eq_cexp_def undef_minimal by blast
+next
+case ("2_5" v)
+  then show ?case
+    using less_eq_cexp_def undef_minimal by blast
+next
+  case ("2_6" v va)
+then show ?case 
+    using less_eq_cexp_def undef_minimal by blast
+next
+  case (3 v)
+  then show ?case
+    by simp
+next
+  case (4 v va)
+  then show ?case 
+    apply (cases z)
+    by auto
+next
+  case ("5_1" v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("5_2" v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("5_3" v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("5_4" v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("5_5" v va vb)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case (6 v)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case (7 v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case (8 v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("9_1" v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("9_2" v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("9_3" v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("9_4" v va vb)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case (10 v)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case (11 v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case (12 v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case (13 v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("14_1" v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("14_2" v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("14_3" v va vb)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case (15 v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case (16 v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case (17 v va vb)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("18_1" v)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("18_2" v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("18_3" v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("18_4" v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case (19 v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case (20 v va vb)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("21_1" v)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("21_2" v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("21_3" v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("21_4" v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("21_5" v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case (22 g1 g2 g1' g2')
+  then show ?case  
+    apply simp
+    apply (case_tac "And g1' g2' = z")
+     apply auto[1]
+    apply simp
+    apply (case_tac "g1 < g1'")
+     apply simp
+     apply (metis cexp.exhaust hard_less less_cexp.simps(14) less_cexp.simps(28) less_cexp.simps(31) less_cexp.simps(43) less_cexp.simps(46) less_cexp.simps(49) less_cexp.simps(7) less_eq_cexp_def)
+    apply simp
+    apply (case_tac "g1 = g1' \<and> g2 < g2'")
+     apply simp
+     apply (metis cexp.exhaust hard_less less_cexp.simps(14) less_cexp.simps(28) less_cexp.simps(31) less_cexp.simps(43) less_cexp.simps(46) less_cexp.simps(49) less_cexp.simps(7) less_eq_cexp_def)
+    by simp
+next
+  case ("23_1" vv v)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("23_2" vv v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("23_3" vv v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("23_4" vv v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("23_5" vv v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+next
+  case ("23_6" vv v va)
+  then show ?case  
+    apply (cases z)
+    by auto
+qed
+
+instance
+  apply standard
+  using hard_less apply blast
+  apply simp
+  using transitivity apply blast
+  using antisymmetry apply blast
+  using x_leq_y_or_y_lex_x by auto
+end
+
 end
