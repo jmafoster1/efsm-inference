@@ -261,23 +261,20 @@ next
         apply (case_tac x)
          apply (case_tac y)
           apply simp
-        apply clarify
+          apply (case_tac "x1 = x1a")
+           apply simp
+           apply (rule ext)
+           apply simp
+          apply simp
           apply (rule ext)
           apply simp
          apply simp
          apply (rule ext)
          apply simp
         apply simp
-        apply (case_tac y)
-         apply simp
+        apply safe
          apply (rule ext)
          apply simp
-        apply simp
-        apply (case_tac "x2a = x2")
-         apply simp
-         apply (rule ext)
-         apply auto[1]
-        apply simp
         apply (rule ext)
         by simp
     next
@@ -357,6 +354,7 @@ next
   then show ?case
     apply simp
     apply (rule ext)
+    
 next
   case (Null x)
   then show ?case

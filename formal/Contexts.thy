@@ -172,7 +172,6 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
 
   "guard2pairs a (gexp.Null v) = [(v, {|Undef|})]" |
 
-  "guard2pairs a (gexp.Eq (L n) (L n')) =  (if n = n' then [] else [(L (Num 0), {|Bc False|})])" |
   "guard2pairs a (gexp.Eq v (L n)) = [(v, {|Eq n|})]" |
   "guard2pairs a (gexp.Eq (L n) v) = [(v, {|Eq n|})]" |
   "guard2pairs a (gexp.Eq (Plus a1 a2) (Plus a4 a3)) = [((Plus a1 a2), (get a (Plus a2 a1)) |\<union>| (get a (Plus a3 a4))),
@@ -187,7 +186,6 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
                                              (v, get a (Plus a1 a2))]" |
   "guard2pairs a (gexp.Eq v va) = [(v, get a va), (va, get a v)]" |
 
-  "guard2pairs a (gexp.Gt (L (Num n)) (L (Num n'))) = (if n > n' then [] else [(L (Num 0), {|Bc False|})])" |
   "guard2pairs a (gexp.Gt v vb) = (if v = vb then [(L (Num 0), {|Bc False|})] else [(v, fimage make_gt (get a vb)), (vb, fimage make_lt (get a v))])" |
 
   "guard2pairs a (Nor v va) = (map (\<lambda>(x, y). (x, fimage Not y)) ((guard2pairs a v) @ (guard2pairs a va)))"
