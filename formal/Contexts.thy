@@ -154,8 +154,8 @@ fun make_gt :: "cexp \<Rightarrow> cexp" where
   "make_gt (Eq v) = Gt v" |
   "make_gt (Lt v) = Bc True" |
   "make_gt (Gt s) = Gt s" |
-  "make_gt (Not v) = not (make_gt v)" |
-  "make_gt (And v va) = and (make_gt v) (make_gt va)"
+  "make_gt (Not v) = Not (make_gt v)" |
+  "make_gt (And v va) = And (make_gt v) (make_gt va)"
 
 fun make_lt :: "cexp \<Rightarrow> cexp" where
   "make_lt (Bc b) = Bc b" |
@@ -186,21 +186,15 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
                                              (v, get a (Plus a1 a2))]" |
   "guard2pairs a (gexp.Eq v va) = [(v, get a va), (va, get a v)]" |
 
-  "guard2pairs a (gexp.Gt v vb) = (if v = vb then [(L (Num 0), {|Bc False|})] else [(v, fimage make_gt (get a vb)), (vb, fimage make_lt (get a v))])" |
+  "guard2pairs a (gexp.Gt (L v) va) = (if L v = va then [(L (Num 0), {|Bc False|})] else [(va, {|Gt v|})])" |
+  "guard2pairs a (gexp.Gt va (L v)) = (if L v = va then [(L (Num 0), {|Bc False|})] else [(va, {|Gt v|})])" |
+  "guard2pairs a (gexp.Gt v vb) = (if v = vb then
+                                     [(L (Num 0), {|Bc False|})]
+                                   else
+                                     [(v, fimage make_gt (get a vb))]
+                                  )" |
 
   "guard2pairs a (Nor v va) = (map (\<lambda>(x, y). (x, fimage Not y)) ((guard2pairs a v) @ (guard2pairs a va)))"
-
-fun and_insert :: "(aexp \<times> cexp fset) \<Rightarrow> (aexp \<times> cexp fset) list \<Rightarrow> (aexp \<times> cexp fset) list" where
-  "and_insert (a, c) [] = [(a, c)]" |
-  "and_insert (a, c) ((a', c')#t) = (if a = a' then ((a, c |\<union>| c')#t) else and_insert (a, c) t)"
-
-fun flatten :: "(aexp \<times> cexp fset) list \<Rightarrow> (aexp \<times> cexp fset) list \<Rightarrow> (aexp \<times> cexp fset) list" where
-  "flatten [] c = c" |
-  "flatten (h#t) c = flatten t (and_insert h c)"
-
-(*fun pairs2context :: "(aexp \<times> cexp fset) list \<Rightarrow> context \<Rightarrow> context" where
-  "pairs2context [] c = c" |
-  "pairs2context ((a, b)#t) c = (\<lambda>r. if r = a then (c r) |\<union>| b else (pairs2context t c) r)"*)
 
 fun pairs2context :: "(aexp \<times> cexp fset) list \<Rightarrow> context \<Rightarrow> context" where
   "pairs2context l c = (\<lambda>r. (c r) |\<union>| fold funion (map snd (filter (\<lambda>(a, _). a = r) l)) {||})"
@@ -339,10 +333,6 @@ definition directly_subsumes :: "transition_matrix \<Rightarrow> transition_matr
 
 lemma cant_directly_subsume: "\<forall>c. \<not> subsumes c t t' \<Longrightarrow> \<not> directly_subsumes m m' s t t'"
   by (simp add: directly_subsumes_def)
-
-primrec pairs2guard :: "(aexp \<times> cexp) list \<Rightarrow> guard" where
-  "pairs2guard [] = gexp.Bc True" |
-  "pairs2guard (h#t) = gAnd (cexp2gexp (fst h) (snd h)) (pairs2guard t)"
 
 lemma context_equiv_same_undef: "c i = {|Undef|} \<Longrightarrow> c' i = {|Bc True|} \<Longrightarrow> \<not> context_equiv c c'"
   apply (simp add: context_equiv_def cexp_equiv_def gexp_equiv_def)
