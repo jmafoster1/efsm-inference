@@ -393,10 +393,6 @@ lemma remove_guard_add_update_i_r: "t' = remove_guard_add_update t i r \<Longrig
   using remove_guard_add_update_r remove_guard_add_update_i
   by simp
 
-primrec ran :: "nat \<Rightarrow> nat set" where
-  "ran 0 = {0}" |
-  "ran (Suc n) = insert (Suc n) (ran n)"
-
 lemma "cval (conjoin c) r ia = None \<Longrightarrow> cval (conjoin (c |\<union>| c')) r ia = None"
   apply (simp add: conjoin_def)
   oops
