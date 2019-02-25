@@ -100,26 +100,52 @@ definition find_intratrace_matches :: "log \<Rightarrow> iEFSM \<Rightarrow> mat
 definition get :: "iEFSM \<Rightarrow> nat \<Rightarrow> transition" where
   "get e u = snd (snd (fthe_elem (ffilter (\<lambda>(uid, _). uid = u) e)))"
 
-fun get_aexp_biggest_reg :: "aexp \<Rightarrow> nat" where
-  "get_aexp_biggest_reg (L _) = 0" |
-  "get_aexp_biggest_reg (V (R n)) = n" |
-  "get_aexp_biggest_reg (V (I _)) = 0" |
-  "get_aexp_biggest_reg (Plus a1 a2) = max (get_aexp_biggest_reg a1) (get_aexp_biggest_reg a2)" |
-  "get_aexp_biggest_reg (Minus a1 a2) = max (get_aexp_biggest_reg a1) (get_aexp_biggest_reg a2)"
+fun enumerate_aexp_inputs :: "aexp \<Rightarrow> nat set" where
+  "enumerate_aexp_inputs (L _) = {}" |
+  "enumerate_aexp_inputs (V (I n)) = {n}" |
+  "enumerate_aexp_inputs (V (R n)) = {}" |
+  "enumerate_aexp_inputs (Plus v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va" |
+  "enumerate_aexp_inputs (Minus v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va"
 
-fun get_gexp_biggest_reg :: "gexp \<Rightarrow> nat" where
-  "get_gexp_biggest_reg (gexp.Bc _) = 0" |
-  "get_gexp_biggest_reg (gexp.Eq a1 a2) = max (get_aexp_biggest_reg a1) (get_aexp_biggest_reg a2)" |
-  "get_gexp_biggest_reg (gexp.Gt a1 a2) = max (get_aexp_biggest_reg a1) (get_aexp_biggest_reg a2)" |
-  "get_gexp_biggest_reg (gexp.Nor g1 g2) = max (get_gexp_biggest_reg g1) (get_gexp_biggest_reg g2)" |
-  "get_gexp_biggest_reg (gexp.Null a) = (get_aexp_biggest_reg a)"
+fun enumerate_gexp_inputs :: "gexp \<Rightarrow> nat set" where
+  "enumerate_gexp_inputs (GExp.Bc _) = {}" |
+  "enumerate_gexp_inputs (GExp.Null v) = enumerate_aexp_inputs v" |
+  "enumerate_gexp_inputs (GExp.Eq v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va" |
+  "enumerate_gexp_inputs (GExp.Lt v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va" |
+  "enumerate_gexp_inputs (GExp.Nor v va) = enumerate_gexp_inputs v \<union> enumerate_gexp_inputs va"
+
+definition get_biggest_t_input :: "transition \<Rightarrow> nat" where
+  "get_biggest_t_input t = Max ({0} \<union>
+                                (\<Union> set (map enumerate_gexp_inputs (Guard t))) \<union>
+                                (\<Union> set (map enumerate_aexp_inputs (Outputs t))) \<union>
+                                (\<Union> set (map (\<lambda>(_, u). enumerate_aexp_inputs u) (Updates t))))"
+
+definition max_input :: "iEFSM \<Rightarrow> nat" where
+  "max_input e = fMax (fimage (\<lambda>(_, _, t). get_biggest_t_input t) e)"
+
+fun enumerate_aexp_regs :: "aexp \<Rightarrow> nat set" where
+  "enumerate_aexp_regs (L _) = {}" |
+  "enumerate_aexp_regs (V (R n)) = {n}" |
+  "enumerate_aexp_regs (V (I _)) = {}" |
+  "enumerate_aexp_regs (Plus v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
+  "enumerate_aexp_regs (Minus v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va"
+
+fun enumerate_gexp_regs :: "gexp \<Rightarrow> nat set" where
+  "enumerate_gexp_regs (GExp.Bc _) = {}" |
+  "enumerate_gexp_regs (GExp.Null v) = enumerate_aexp_regs v" |
+  "enumerate_gexp_regs (GExp.Eq v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
+  "enumerate_gexp_regs (GExp.Lt v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
+  "enumerate_gexp_regs (GExp.Nor v va) = enumerate_gexp_regs v \<union> enumerate_gexp_regs va"
 
 definition get_biggest_t_reg :: "transition \<Rightarrow> nat" where
-  "get_biggest_t_reg t = (let s = (fset_of_list ((map get_gexp_biggest_reg (Guard t))@ (map (\<lambda>(_, a). get_aexp_biggest_reg a) (Updates t)))) in 
-                          if s = {||} then 0 else fMax s)"
+  "get_biggest_t_reg t = Max ({0} \<union>
+                                (\<Union> set (map enumerate_gexp_regs (Guard t))) \<union>
+                                (\<Union> set (map enumerate_aexp_regs (Outputs t))) \<union>
+                                (\<Union> set (map (\<lambda>(_, u). enumerate_aexp_regs u) (Updates t))) \<union>
+                                (\<Union> set (map (\<lambda>(r, _). enumerate_aexp_regs (V r)) (Updates t))))"
 
-definition new_reg :: "iEFSM \<Rightarrow> nat" where
-  "new_reg e = (fMax (fimage (\<lambda>(_, (_, _), t). get_biggest_t_reg t) e)) + 1"
+definition max_reg :: "iEFSM \<Rightarrow> nat" where
+  "max_reg e = fMax (fimage (\<lambda>(_, _, t). get_biggest_t_reg t) e)"
 
 definition "guard_filter inputX = (\<lambda>g. \<nexists>a. g = gexp.Eq (V (I inputX)) a \<or> g = gexp.Eq a (V (I inputX)))"
 declare guard_filter_def [simp]
@@ -157,7 +183,7 @@ definition make_distinct :: "iEFSM \<Rightarrow> iEFSM" where
 
 definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
   "modify matches u1 u2 old = (let relevant = filter (\<lambda>(((_, u1'), io, _), (_, u2'), io', _). io = In \<and> io' = Out \<and> (u1 = u1' \<or> u2 = u1' \<or> u1 = u2' \<or> u2 = u2')) matches;
-                                   newReg = new_reg old;
+                                   newReg = max_reg old + 1;
                                    replacements = map (\<lambda>(((t1, u1), io1, inx1), (t2, u2), io2, inx2). (((remove_guard_add_update t1 (inx1+1) newReg, u1), io1, inx1), (generalise_output t2 newReg inx2, u2), io2, inx2)) relevant;
                                    comparisons = zip relevant replacements;
                                    stripped_replacements = map strip_uids replacements;

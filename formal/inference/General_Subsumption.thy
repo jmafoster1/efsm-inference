@@ -4,10 +4,6 @@ begin
 
 declare One_nat_def [simp del]
 
-lemma ctx_simp: "(\<lambda>r. and (if r = V (I i) then snd (V (I i), cexp.Eq s) else cexp.Bc True) (\<lbrakk>\<rbrakk> r)) = \<lbrakk>V (I i) \<mapsto> Eq s\<rbrakk>"
-  apply (rule ext)
-  by simp
-
 lemma incoming_transition_alt_def: "incoming_transition_to e n = (\<exists>t from. ((from, n), t) |\<in>| e)"
   apply (simp add: incoming_transition_to_def)
   apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse)
@@ -86,27 +82,12 @@ proof-
     by (simp add: premise)
 qed
 
-lemma inconsistent_c: "\<not>consistent c \<Longrightarrow> \<not>consistent (\<lambda>r. and (if r = V (I i) then snd (V (I i), cexp.Eq s) else cexp.Bc True) (c r))"
-proof-
-  assume premise: "\<not> consistent c"
-  show ?thesis
-    using premise
-    apply (simp add: consistent_def)
-    unfolding cval_def
-    apply (simp only: gval_And gval_gAnd maybe_and_true)
-    by metis
-qed
-
 lemma not_undef_gval: "\<forall>r. c r = Undef \<or> gval (cexp2gexp r (c r)) s = Some True \<Longrightarrow>
          c (V (I i)) \<noteq> Undef \<Longrightarrow> gval (cexp2gexp (V (I i)) (c (V (I i)))) s = Some True"
   by auto
 
 lemma ctx_simp2: "and (if r = i then snd (i, g) else cexp.Bc True) (c r) = 
        (if r = i then and g (c r) else c r)"
-  by auto
-
-lemma test2: "consistent (\<lambda>r. and (if r = V (I i) then snd (V (I i), cexp.Eq s) else cexp.Bc True) (c r)) \<Longrightarrow> consistent c"
-  using inconsistent_c
   by auto
 
 lemma gval_and_eq: "gval (cexp2gexp r (c r)) s \<noteq> Some True \<Longrightarrow> gval (cexp2gexp r (if r = i then and (cexp.Eq v) (c r) else c r)) s \<noteq> Some True"
@@ -125,24 +106,6 @@ lemma test5: "gval (cexp2gexp r (if r = VIi then and c1 (c r) else c r)) s = Som
 lemma "gval (cexp2gexp uu (and a b)) s = maybe_and (gval (cexp2gexp uu a) s) (gval (cexp2gexp uu b) s)"
   by (simp add: gval_and)
 
-lemma consistent_i_and: "consistent (\<lambda>r. if r = i then and x (c r) else c r) \<Longrightarrow> consistent c"
-proof-
-  assume premise: "consistent (\<lambda>r. if r = i then and x (c r) else c r)"
-  have aux: "\<And>r i c s x. gval (cexp2gexp r (if r = i then and x (c r) else c r)) s = Some True \<Longrightarrow> gval (cexp2gexp r (c r)) s = Some True"
-    apply (case_tac "r \<noteq> i")
-     apply simp+
-    apply (simp only: gval_and gval_gAnd)
-    using maybe_and_not_true by blast
-  show ?thesis
-    using premise
-    apply (simp add: consistent_def cval_def)
-    apply clarify
-    apply (rule_tac x=s in exI)
-    apply clarify
-    using aux
-    by blast
-qed
-
 lemma gval_if_split: "(\<forall>r. gval (cexp2gexp r (if r = vIi then and c1 (c r) else c r)) s = Some True) =
 ((gval (cexp2gexp (vIi) (and c1 (c (vIi)))) s = Some True) \<and>
 (\<forall>r. gval (cexp2gexp r (c r)) s = Some True))"
@@ -151,51 +114,314 @@ lemma gval_if_split: "(\<forall>r. gval (cexp2gexp r (if r = vIi then and c1 (c 
   using test5 apply blast
   by simp
 
-lemma inconsistent_c_inconsistent_and: "\<not> consistent c \<Longrightarrow> \<not>consistent (\<lambda>r. if r = a then and c1 (c r) else c r)"
-  apply (simp add: consistent_def cval_def)
-  apply clarify
-  apply (simp only: gval_and gval_gAnd)
-  using maybe_and_true by fastforce
+lemma finite_enumerate_aexp_inputs: "finite (enumerate_aexp_inputs a)"
+proof(induct a)
+case (L x)
+  then show ?case
+    by simp
+next
+case (V x)
+  then show ?case
+    apply (cases x)
+    by auto
+next
+  case (Plus a1 a2)
+  then show ?case
+    by simp
+next
+  case (Minus a1 a2)
+  then show ?case
+    by simp
+qed
 
-lemma generalise_subsumption_aux_1: "\<not>consistent c \<Longrightarrow> \<not>consistent (\<lambda>r. if r = a then and (c r) ce else pairs2context [] c r)"
-  apply (simp add: consistent_def)
-  apply (simp only: cval_And maybe_and_true)
-  by metis
+lemma finite_enumerate_gexp_inputs: "finite (enumerate_gexp_inputs g)"
+proof(induct g)
+case (Bc x)
+  then show ?case
+    by simp
+next
+  case (Eq x1a x2)
+  then show ?case
+    by (simp add: finite_enumerate_aexp_inputs)
+next
+case (Gt x1a x2)
+  then show ?case
+    by (simp add: finite_enumerate_aexp_inputs)
+next
+  case (Nor g1 g2)
+  then show ?case
+    by simp
+next
+  case (Null x)
+  then show ?case
+    by (simp add: finite_enumerate_aexp_inputs)
+qed
 
-lemma generalise_subsumption: "c (V (R ri)) = Undef \<Longrightarrow> 
-                               c (V (I i)) = Bc True \<Longrightarrow> 
-                               subsumes c (remove_guard_add_update \<lparr>Label=l, Arity=a, Guard=[GExp.Eq (V (I i)) (L v)], Outputs=[], Updates=[]\<rparr> i ri)
-                                                                   \<lparr>Label=l, Arity=a, Guard=[GExp.Eq (V (I i)) (L v)], Outputs=[], Updates=[]\<rparr>"
-  apply (simp add: subsumes_def)
+lemma finite_enumerate_inputs_Guard: "finite (\<Union> set (map enumerate_gexp_inputs G))"
+  by (simp add: finite_enumerate_gexp_inputs)
+
+lemma finite_enumerate_inputs_Outputs: "finite (\<Union> set (map enumerate_aexp_inputs P))"
+  by (simp add: finite_enumerate_aexp_inputs)
+
+lemma finite_enumerate_inputs_Updates: "finite (\<Union> set (map (\<lambda>(_, u). enumerate_aexp_inputs u) U))"
+proof(induct U)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a U)
+  then show ?case
+    by (simp add: finite_enumerate_aexp_inputs split_def)
+qed
+
+lemma finite_get_biggest_t_input: "finite ((\<Union> set (map enumerate_gexp_inputs G)) \<union>
+                                           (\<Union> set (map enumerate_aexp_inputs (P))) \<union>
+                                           (\<Union> set (map (\<lambda>(_, u). enumerate_aexp_inputs u) U)))"
+  using finite_enumerate_inputs_Guard finite_enumerate_inputs_Outputs finite_enumerate_inputs_Updates by force
+
+lemma "a \<noteq> {} \<Longrightarrow> b \<noteq> {} \<Longrightarrow> finite a \<Longrightarrow> finite b \<Longrightarrow> Max (a \<union> b) = max (Max a) (Max b)"
+  by (simp add: Max.union)
+
+lemma remove_guard_add_update_keeps_elements: "\<Union>set (map enumerate_gexp_inputs (Guard t)) \<union> \<Union>set (map enumerate_aexp_inputs (Outputs t)) \<union>
+    \<Union>set (map (\<lambda>(uu, y). enumerate_aexp_inputs y) (Updates t)) \<noteq>
+    {} \<Longrightarrow> \<Union>set (map enumerate_gexp_inputs (Guard (remove_guard_add_update t i r))) \<union>
+           \<Union>set (map enumerate_aexp_inputs (Outputs (remove_guard_add_update t i r))) \<union>
+           \<Union>set (map (\<lambda>(uu, y). enumerate_aexp_inputs y) (Updates (remove_guard_add_update t i r))) \<noteq> {}"
+  by (simp add: remove_guard_add_update_def)
+
+lemma remove_guard_add_update_preserves_outputs: "Outputs (remove_guard_add_update t i r) = Outputs t"
+  by (simp add: remove_guard_add_update_def)
+
+lemma "get_biggest_t_input (remove_guard_add_update t i r) \<ge> get_biggest_t_input t"
+  unfolding get_biggest_t_input_def Let_def
+  apply (case_tac "\<Union>set (map enumerate_gexp_inputs (Guard t)) \<union> \<Union>set (map enumerate_aexp_inputs (Outputs t)) \<union>
+        \<Union>set (map (\<lambda>(uu, y). enumerate_aexp_inputs y) (Updates t)) =
+        {}")
+   apply simp
+  apply (simp add: remove_guard_add_update_keeps_elements)
+  apply simp
+  apply (simp add: remove_guard_add_update_preserves_outputs)
   apply safe
-         apply (simp add: remove_guard_add_update_def)+
-      apply (simp add: medial_def List.union_def)
-      apply (metis (full_types) pairs2context.simps(1) valid_def valid_true)
-     apply (simp add: remove_guard_add_update_def)+
-   apply (simp add: posterior_def Let_def)
-   apply (case_tac "consistent (medial (medial c [gexp.Eq (V (I i)) (L v)]) [])")
-    apply (simp add: consistent_medial_requires_consistent_anterior remove_input_constraints_alt)
-    apply (case_tac "constrains_an_input r")
-     apply simp+
-    apply (simp add: consistent_def medial_def List.union_def)
+             apply simp
+  oops
+
+lemma finite_enumerate_gexp_inputs_alt: "finite (\<Union>x\<in>set (Guard r). enumerate_gexp_inputs x)"
+  by (simp add: finite_enumerate_gexp_inputs)
+
+lemma finite_enumerate_aexp_inputs_alt: "finite (\<Union>x\<in>set (Outputs t). enumerate_aexp_inputs x)"
+  by (simp add: finite_enumerate_aexp_inputs)
+
+lemma finite_enumerate_inputs_Updates_alt: "finite (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_inputs x)"
+  using finite_enumerate_inputs_Updates by force
+
+lemma finite_enumerate_aexp_regs: "finite (enumerate_aexp_regs r)"
+proof(induct r)
+  case (L x)
+then show ?case by simp
+next
+case (V x)
+  then show ?case
+    apply (cases x)
+    by auto
+next
+case (Plus r1 r2)
+  then show ?case by simp
+next
+case (Minus r1 r2)
+  then show ?case by simp
+qed
+
+lemma finite_regs: "finite (\<Union>x\<in>set (Updates t). case x of (r, uu_) \<Rightarrow> enumerate_aexp_regs (V r))"
+  using finite_enumerate_aexp_regs
+  by auto
+
+lemma eliminate_zero_insert: "finite s \<Longrightarrow> Max (insert (0::nat) (insert i s)) = Max (insert i s)"
+  by simp
+
+lemma finite_insert_max:  "finite s \<Longrightarrow> i \<le> Max (insert i s)"
+  by simp
+
+lemma "(\<not> x) = (x \<longrightarrow> False)"
+  by simp
+
+lemma remove_guard_add_update_i: "t' = remove_guard_add_update t i r \<Longrightarrow>
+       (uid, (from, to), t') |\<in>| e \<Longrightarrow>
+       i \<le> max_input e"
+proof(induct e)
+  case empty
+  then show ?case
+    by simp
+next
+  have finite_choices: "\<And>t i. finite (((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_inputs x) \<union>
+                  (\<Union>x\<in>set (Outputs t). enumerate_aexp_inputs x) \<union>
+                  (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_inputs x)))"
+  using finite_enumerate_gexp_inputs_alt finite_enumerate_aexp_inputs_alt finite_enumerate_inputs_Updates_alt
+  by fastforce
+  have spurious_insert_zero: "\<And>i t. Max (insert (0::nat)
+               (insert i
+                 ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_inputs x) \<union>
+                  (\<Union>x\<in>set (Outputs t). enumerate_aexp_inputs x) \<union>
+                  (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_inputs x)))) =
+               Max (insert i
+                 ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_inputs x) \<union>
+                  (\<Union>x\<in>set (Outputs t). enumerate_aexp_inputs x) \<union>
+                  (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_inputs x)))"
+  using eliminate_zero_insert finite_choices
+  by blast
+  have aux2: "\<And>i t. i \<le> Max (insert i
+             ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_inputs x) \<union>
+              (\<Union>x\<in>set (Outputs t). enumerate_aexp_inputs x) \<union>
+              (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_inputs x)))"
+    using finite_choices finite_insert_max
+    by blast
+  case (insert x e)
+  then show ?case
+    apply (simp add: max_input_def)
+    apply (cases x)
+    apply simp
     apply clarify
-    apply (case_tac "r = V (R ri)")
-     apply simp+
-    apply (case_tac "r = V (I i)")
+    apply simp
+    apply (case_tac "(uid, (from, to), remove_guard_add_update t i r) |\<in>| e")
+     apply auto[1]
+    apply simp
+    apply (simp add: get_biggest_t_input_def)
+    apply safe
      apply simp
-    apply (simp add: medial_def List.union_def)
-   apply (simp add: cval_false)
-  apply (simp add: posterior_def Let_def inconsistent_false medial_def List.union_def remove_guard_add_update_def)
-  apply (case_tac "consistent (\<lambda>r. if r = V (I i) then and (c r) (cexp.Eq v) else pairs2context [] c r)")
-   apply (simp add: remove_input_constraints_alt)
-   apply standard
-    apply (simp add: consistent_def cval_true)
+     apply simp
+     apply (simp add: remove_guard_add_update_def)
+     apply simp
+     apply (simp add: spurious_insert_zero aux2)
+
+    apply (simp add: not_le)
     apply clarify
-    apply (rule_tac x=s in exI)
-    apply (metis (full_types))
-  using generalise_subsumption_aux_1
-   apply auto[1]
-  by (simp add: inconsistent_false)
+    apply (simp add: remove_guard_add_update_def)
+    apply (simp add: spurious_insert_zero)
+    using leD aux2
+    by blast
+qed
+
+lemma finite_enumerate_gexp_regs: "finite(enumerate_gexp_regs x)"
+proof(induct x)
+case (Bc x)
+then show ?case by simp
+next
+  case (Eq x1a x2)
+  then show ?case
+    by (simp add: finite_enumerate_aexp_regs)
+next
+  case (Gt x1a x2)
+  then show ?case 
+    by (simp add: finite_enumerate_aexp_regs)
+next
+  case (Nor x1 x2)
+  then show ?case 
+    by simp
+next
+  case (Null x)
+  then show ?case 
+    by (simp add: finite_enumerate_aexp_regs)
+qed
+
+lemma remove_guard_add_update_r: "t' = remove_guard_add_update t i r \<Longrightarrow>
+       (uid, (from, to), t') |\<in>| e \<Longrightarrow>
+       r \<le> max_reg e"
+proof(induct e)
+  case empty
+  then show ?case by simp
+next
+  have finite_choices: "\<And>t i. finite ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_regs x) \<union>
+               (\<Union>x\<in>set (Outputs t). enumerate_aexp_regs x) \<union>
+               (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_regs x) \<union>
+               (\<Union>x\<in>set (Updates t). case x of (r, uu_) \<Rightarrow> enumerate_aexp_regs (V r)))"
+  using finite_enumerate_gexp_regs finite_enumerate_aexp_regs
+  by auto
+  have spurious_insert_zero: "\<forall> i r t. Max (insert 0
+               (insert r
+                 ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_regs x) \<union>
+                  (\<Union>x\<in>set (Outputs t). enumerate_aexp_regs x) \<union>
+                  (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_regs x) \<union>
+                  (\<Union>x\<in>set (Updates t). case x of (r, uu_) \<Rightarrow> enumerate_aexp_regs (V r))))) = 
+        Max (insert r
+         ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_regs x) \<union>
+          (\<Union>x\<in>set (Outputs t). enumerate_aexp_regs x) \<union>
+          (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_regs x) \<union>
+          (\<Union>x\<in>set (Updates t). case x of (r, uu_) \<Rightarrow> enumerate_aexp_regs (V r))))"
+  proof-
+    show ?thesis
+      apply clarify
+      using finite_choices eliminate_zero_insert
+      by blast
+  qed
+  have aux: "\<And>r t. r \<le> Max (insert r
+             ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_regs x) \<union>
+              (\<Union>x\<in>set (Outputs t). enumerate_aexp_regs x) \<union>
+              (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_regs x) \<union>
+              (\<Union>x\<in>set (Updates t). case x of (r, uu_) \<Rightarrow> enumerate_aexp_regs (V r))))"
+    using finite_choices finite_insert_max
+    by blast
+  case (insert x e)
+  then show ?case
+    apply (simp add: max_reg_def)
+    apply (cases x)
+    apply simp
+    apply clarify
+    apply simp
+    apply (case_tac "(uid, (from, to), remove_guard_add_update t i r) |\<in>| e")
+     apply auto[1]
+    apply simp
+    apply (simp add: get_biggest_t_reg_def)
+    apply safe
+     apply simp
+     apply simp
+     apply (simp add: remove_guard_add_update_def)
+     apply simp
+     apply (simp add: spurious_insert_zero)
+    using finite_insert_max finite_choices
+     apply blast
+    apply simp
+
+    apply (simp add: not_le)
+    apply clarify
+    apply (simp add: remove_guard_add_update_def)
+    apply (simp add: spurious_insert_zero)
+    using aux leD
+    by blast
+qed
+
+lemma remove_guard_add_update_i_r: "t' = remove_guard_add_update t i r \<Longrightarrow>
+       (uid, (from, to), t') |\<in>| e \<Longrightarrow>
+       r \<le> max_reg e \<and> i \<le> max_input e"
+  using remove_guard_add_update_r remove_guard_add_update_i
+  by simp
+
+primrec ran :: "nat \<Rightarrow> nat set" where
+  "ran 0 = {0}" |
+  "ran (Suc n) = insert (Suc n) (ran n)"
+
+lemma "cval (conjoin c) r ia = None \<Longrightarrow> cval (conjoin (c |\<union>| c')) r ia = None"
+  apply (simp add: conjoin_def)
+  oops
+
+lemma "cval (conjoin (c |\<union>| c')) r ia = maybe_and (cval (conjoin c) r ia) (cval (conjoin c') r ia)"
+  apply simp
+  apply (case_tac "cval (Contexts.conjoin c) r ia")
+   apply simp
+
+
+lemma "(cval (conjoin (c |\<union>| c')) r ia = Some True \<longrightarrow> cval (conjoin (c |\<union>| c''))r ia = Some True) \<equiv>
+       (cval (conjoin c') r ia = Some True \<longrightarrow> cval (conjoin c'')r ia = Some True)"
+  apply (simp add: conjoin_def)
+
+lemma "cval (Contexts.conjoin (medial c G r)) r ia = Some True \<Longrightarrow>
+       cval (Contexts.conjoin (medial c (filter f G) r)) r ia = Some True"
+  apply (simp add: medial_def)
+
+lemma generalise_subsumption: "c (V (R ri)) = {|Undef|} \<Longrightarrow> 
+                               c (V (I i)) = {|Bc True|} \<Longrightarrow> 
+                               subsumes c (remove_guard_add_update t i ri) t"
+  apply (simp add: subsumes_def)
+  apply (simp add: remove_guard_add_update_def)
+  apply safe
+
 
 lemma remove_guard_add_update:  "\<lparr>Label=l, Arity=a, Guard=[], Outputs=[], Updates=[(R r, (V (I i)))]\<rparr> = remove_guard_add_update \<lparr>Label=l, Arity=a, Guard=[GExp.Eq (V (I i)) (L s)], Outputs=[], Updates=[]\<rparr> i r"
   by (simp add: remove_guard_add_update_def)
@@ -223,7 +449,7 @@ lemma generalise_output_preserves_label: "Label (generalise_output t r p) = Labe
 lemma generalise_output_preserves_arity: "Arity (generalise_output t r p) = Arity t"
   by (simp add: generalise_output_def)
 
-lemma generalise_output_preserves_output_length: "length (Outputs (generalise_output t r p)) = length (Outputs t)"
+lemma generalise_output_preserves_output_length: "length (Outputs (generalise_output t r p)) = length (P)"
   by (simp add: generalise_output_def)
 
 lemma generalise_output_preserves_guard: "Guard (generalise_output t r p) = Guard t"
@@ -235,7 +461,7 @@ lemma generalise_output_preserves_updates: "Updates (generalise_output t r p) = 
 lemmas generalise_output_preserves = generalise_output_preserves_label generalise_output_preserves_arity
 generalise_output_preserves_output_length generalise_output_preserves_guard
 
-lemma "nth (Outputs t) p = L v \<Longrightarrow> c (V (R r)) = Eq v  \<Longrightarrow> subsumes c (generalise_output t r p) t"
+lemma "nth (P) p = L v \<Longrightarrow> c (V (R r)) = Eq v  \<Longrightarrow> subsumes c (generalise_output t r p) t"
   apply (simp add: subsumes_def generalise_output_preserves)
   apply safe
      prefer 2
@@ -553,7 +779,7 @@ lemma "subsumes c t t"
   apply (simp add: subsumes_def)
   apply safe
   apply (simp add: posterior_def Let_def)
-  apply (case_tac "consistent (medial (medial c (Guard t)) (Guard t))")
+  apply (case_tac "consistent (medial (medial c G) G)")
    apply (simp add: consistent_medial_requires_consistent_anterior remove_input_constraints_alt)
   apply (case_tac "constrains_an_input r")
     apply simp

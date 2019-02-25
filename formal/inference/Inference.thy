@@ -245,4 +245,7 @@ definition iterative_learn :: "log \<Rightarrow> strategy \<Rightarrow> generato
 definition learn :: "log \<Rightarrow> strategy \<Rightarrow> generator_function \<Rightarrow> update_modifier \<Rightarrow> transition_matrix" where
   "learn l r g m = tm (infer (toiEFSM (make_pta l {||})) r g m (satisfies (set l)))"
 
+definition uids :: "iEFSM \<Rightarrow> nat fset" where
+  "uids e = fimage fst e"
+
 end
