@@ -25,12 +25,13 @@ syntax (xsymbols)
   Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "=" 60*)
   Gt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix ">" 60*)
 
-fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> bool option" where
-  "gval (Bc b) _ = Some b" |
+fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> trilean" where
+  "gval (Bc True) _ = true" |
+  "gval (Bc False) _ = false" |
   "gval (Gt a\<^sub>1 a\<^sub>2) s = ValueGt (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
-  "gval (Eq a\<^sub>1 a\<^sub>2) s = Some (aval a\<^sub>1 s = aval a\<^sub>2 s)" |
+  "gval (Eq a\<^sub>1 a\<^sub>2) s = ValueEq (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
   "gval (Nor a\<^sub>1 a\<^sub>2) s = maybe_not (maybe_or (gval a\<^sub>1 s) (gval a\<^sub>2 s))" |
-  "gval (Null v) s = Some (aval v s = None)"
+  "gval (Null v) s = ValueEq (aval v s) None"
 
 abbreviation gNot :: "gexp \<Rightarrow> gexp"  where
   "gNot g \<equiv> Nor g g"
@@ -68,32 +69,19 @@ abbreviation Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<noteq
   "Ne v va \<equiv> gNot (Eq v va)"
 
 lemma or_equiv: "gval (gOr x y) r = maybe_or (gval x r) (gval y r)"
-  apply (simp)
-  apply (cases "gval x r")
-   apply (cases "gval y r")
-    apply simp
-   apply simp
-  apply (cases "gval y r")
-   apply simp
-  by simp
+  by (simp add: maybe_double_negation maybe_or_idempotent)
 
 lemma not_equiv: "maybe_not (gval x s) = gval (gNot x) s"
-  apply simp
-  apply (cases "gval x s")
-   apply simp
-  by simp
+  by (simp add: maybe_or_idempotent)
 
 lemma nor_equiv: "gval (gNot (gOr a b)) s = gval (Nor a b) s"
-  by (simp add: option.case_eq_if)
+  by (metis maybe_double_negation not_equiv)
 
 definition satisfiable :: "gexp \<Rightarrow> bool" where
-  "satisfiable g \<equiv> (\<exists>s. gval g s = Some True)"
-
-lemma not_satisfiable_gt_string: "\<not> satisfiable (Gt v (L (Str s)))"
-  by (simp add: satisfiable_def)
+  "satisfiable g \<equiv> (\<exists>s. gval g s = true)"
 
 definition gexp_valid :: "gexp \<Rightarrow> bool" where
-  "gexp_valid g \<equiv> (\<forall>s. gval g s = Some True)"
+  "gexp_valid g \<equiv> (\<forall>s. gval g s = true)"
 
 definition gexp_equiv :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
   "gexp_equiv a b \<equiv> \<forall>s. gval a s = gval b s"
@@ -114,11 +102,7 @@ lemma gexp_equiv_satisfiable: "gexp_equiv x y \<Longrightarrow> satisfiable x = 
   by (simp add: gexp_equiv_def satisfiable_def)
 
 lemma gAnd_reflexivity: "gexp_equiv (gAnd x x) x"
-  apply (simp add: gexp_equiv_def)
-  apply (rule allI)
-  apply (case_tac "gval x s")
-   apply simp
-  by simp
+  by (simp add: gexp_equiv_def maybe_double_negation maybe_or_idempotent)
 
 lemma gAnd_zero: "gexp_equiv (gAnd (Bc True) x) x"
   apply (simp add: gexp_equiv_def)
@@ -127,33 +111,18 @@ lemma gAnd_zero: "gexp_equiv (gAnd (Bc True) x) x"
   by simp_all
 
 lemma gAnd_symmetry: "gexp_equiv (gAnd x y) (gAnd y x)"
-  apply (simp add: gexp_equiv_def)
-  apply (rule allI)
-  apply (case_tac "gval y s")
-   apply (case_tac "gval x s")
-    apply simp
-   apply simp
-  apply (case_tac "gval x s")
-   apply simp
-  by auto
+  by (simp add: gexp_equiv_def maybe_or_commutative)
 
 lemma satisfiable_gAnd_self: "satisfiable (gAnd x x) = satisfiable x"
   by (simp add: gAnd_reflexivity gexp_equiv_satisfiable)
 
 definition mutually_exclusive :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
-  "mutually_exclusive x y = (\<forall>i. (gval x i = Some True \<longrightarrow> gval y i \<noteq> Some True) \<and>
-                                 (gval y i = Some True \<longrightarrow> gval x i \<noteq> Some True))"
+  "mutually_exclusive x y = (\<forall>i. (gval x i = true \<longrightarrow> gval y i \<noteq> true) \<and>
+                                 (gval y i = true \<longrightarrow> gval x i \<noteq> true))"
 
 lemma mutually_exclusive_unsatisfiable_conj: "mutually_exclusive x y = (\<not> satisfiable (gAnd x y))"
   apply (simp add: mutually_exclusive_def satisfiable_def)
-  apply safe
-    apply (case_tac "gval x s")
-     apply simp
-    apply (case_tac "gval y s")
-     apply simp
-    apply simp
-   apply (metis (mono_tags, lifting) option.simps(5))
-  by (metis (mono_tags, lifting) option.simps(5))
+  by (metis maybe_double_negation maybe_not.simps(2) maybe_or_associative maybe_or_commutative maybe_or_idempotent maybe_or_zero)
 
 lemma unsatisfiable_conj_mutually_exclusive: "\<not> satisfiable (gAnd x y) = mutually_exclusive x y"
   by (simp add: mutually_exclusive_unsatisfiable_conj)
@@ -171,30 +140,60 @@ primrec conjoin :: "gexp list \<Rightarrow> gexp" where
   "conjoin [] = gexp.Bc True" |
   "conjoin (h#t) = gAnd h (conjoin t)"
 
-lemma gval_gAnd[simp]: "gval (gAnd g1 g2) s = maybe_and (gval g1 s) (gval g2 s)"
-  apply simp
-  apply (case_tac "gval g1 s")
-   apply simp+
-  apply (case_tac "gval g2 s")
-  by auto
+lemma gval_gAnd: "gval (gAnd g1 g2) s = maybe_and (gval g1 s) (gval g2 s)"
+proof(induct "gval g1 s" "gval g2 s" rule: maybe_and.induct)
+case 1
+  then show ?case by simp
+next
+  case 2
+  then show ?case
+    using maybe_or_commutative by auto
+next
+case "3_1"
+  then show ?case by simp
+next
+  case "3_2"
+  then show ?case by simp
+next
+  case "4_1"
+  then show ?case by simp
+next
+case "4_2"
+  then show ?case by simp
+next
+case 5
+  then show ?case by simp
+qed
 
-lemma gval_gAnd_True[simp]: "(gval (gAnd g1 g2) s = Some True) = ((gval g1 s = Some True) \<and> gval g2 s = Some True)"
-  apply (case_tac "gval g1 s")
-   apply simp+
-  apply (case_tac "gval g2 s")
-  by auto
+lemma gval_gAnd_True: "(gval (gAnd g1 g2) s = true) = ((gval g1 s = true) \<and> gval g2 s = true)"
+proof(induct "gval g1 s" "gval g2 s" rule: maybe_and.induct)
+case 1
+  then show ?case by simp
+next
+  case 2
+  then show ?case
+    using maybe_or_commutative by auto
+next
+case "3_1"
+  then show ?case by simp
+next
+  case "3_2"
+  then show ?case by simp
+next
+  case "4_1"
+  then show ?case by simp
+next
+case "4_2"
+  then show ?case by simp
+next
+case 5
+  then show ?case by simp
+qed
 
-lemma gval_gNot[simp]: "gval (gNot g) s = maybe_not (gval g s)"
+lemma gval_gNot: "gval (gNot g) s = maybe_not (gval g s)"
   apply simp
   apply (case_tac "gval g s")
   by auto
-
-lemma gval_gNot_some[simp]: "(gval (gNot g) s = Some b) = (gval g s = Some (\<not>b))"
-  apply (case_tac "gval g s")
-  by auto
-
-lemma gval_false: "gval (gexp.Bc False) s = Some False"
-  by simp
 
 declare gval.simps [simp del]
 

@@ -5,90 +5,244 @@ evaluate to true. Such expressions evaluate instead to None which, when negated,
 \<close>
 
 theory Option_Logic
-imports AExp
+imports Main
 begin
 
-fun MaybeBoolInt :: "(int \<Rightarrow> int \<Rightarrow> bool) \<Rightarrow> value option \<Rightarrow> value option \<Rightarrow> bool option" where
-  "MaybeBoolInt f (Some (Num a)) (Some (Num b)) = Some (f a b)" |
-  "MaybeBoolInt _ _ _ = None"
+datatype trilean = true | false | invalid
 
-abbreviation ValueGt :: "value option \<Rightarrow> value option \<Rightarrow> bool option"  where
-  "ValueGt a b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x>y)) a b"
+fun maybe_not :: "trilean \<Rightarrow> trilean" ("\<not>\<^sub>? _" [60] 60) where
+  "\<not>\<^sub>? true = false" |
+  "\<not>\<^sub>? false = true" |
+  "\<not>\<^sub>? invalid = invalid"
 
-abbreviation ValueLt :: "value option \<Rightarrow> value option \<Rightarrow> bool option"  where
-  "ValueLt a b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x<y)) a b"
+fun maybe_and :: "trilean \<Rightarrow> trilean \<Rightarrow> trilean" (infixl "\<and>\<^sub>?" 60) where
+  "true \<and>\<^sub>? true = true" |
+  "_ \<and>\<^sub>? false = false" |
+  "false \<and>\<^sub>? _ = false" |
+  "_ \<and>\<^sub>? invalid = invalid" |
+  "invalid \<and>\<^sub>? _ = invalid"
 
-abbreviation ValueEq :: "value option \<Rightarrow> value option \<Rightarrow> bool option"  where
-  "ValueEq a b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x=y)) a b"
+fun maybe_or :: "trilean \<Rightarrow> trilean \<Rightarrow> trilean" (infixl "\<or>\<^sub>?" 60) where
+  "true \<or>\<^sub>? _ = true" |
+  "_ \<or>\<^sub>? true = true" |
+  "false \<or>\<^sub>? false = false" |
+  "invalid \<or>\<^sub>? _ = invalid" |
+  "_ \<or>\<^sub>? invalid = invalid"
 
-abbreviation maybe_or :: "bool option \<Rightarrow> bool option \<Rightarrow> bool option" where
-  "maybe_or x y \<equiv> (case (x, y) of
-    (Some a, Some b) \<Rightarrow> Some (a \<or> b) |
-    _ \<Rightarrow> None
-  )"
+lemma maybe_and_associative: "a \<and>\<^sub>? b \<and>\<^sub>? c = a \<and>\<^sub>? (b \<and>\<^sub>? c)"
+proof(induct a b arbitrary: c rule: maybe_or.induct)
+case (1 uu)
+  then show ?case
+    by (metis (full_types) maybe_and.simps trilean.exhaust trilean.simps(2) trilean.simps(6))
+next
+  case "2_1"
+  then show ?case
+    by (metis maybe_and.simps(1) maybe_and.simps(2) maybe_and.simps(3) maybe_and.simps(5) maybe_not.elims)
+next
+  case "2_2"
+  then show ?case
+    by (metis maybe_and.simps(1) maybe_and.simps(2) maybe_and.simps(5) maybe_and.simps(7) maybe_not.elims)
+next
+  case 3
+  then show ?case
+    apply (cases c)
+    by auto
+next
+  case "4_1"
+  then show ?case
+    apply (cases c)
+    by auto
+next
+  case "4_2"
+  then show ?case
+    apply (cases c)
+    by auto
+next
+  case 5
+  then show ?case
+    apply (cases c)
+    by auto
+qed
 
-abbreviation maybe_and :: "bool option \<Rightarrow> bool option \<Rightarrow> bool option" where
-  "maybe_and x y \<equiv> (case (x, y) of
-    (Some a, Some b) \<Rightarrow> Some (a \<and> b) |
-    _ \<Rightarrow> None
-  )"
+lemma maybe_and_commutative: "a \<and>\<^sub>? b = b \<and>\<^sub>? a"
+proof(induct a b rule: maybe_and.induct)
+case 1
+  then show ?case
+    by simp
+next
+  case (2 uu)
+  then show ?case
+    apply (case_tac uu)
+    by auto
+next
+  case "3_1"
+  then show ?case
+    by simp
+next
+  case "3_2"
+  then show ?case
+    by simp
+next
+  case "4_1"
+  then show ?case
+    by simp
+next
+  case "4_2"
+  then show ?case
+    by simp
+next
+  case 5
+  then show ?case
+    by simp
+qed
 
-abbreviation maybe_implies :: "bool option \<Rightarrow> bool option \<Rightarrow> bool option" where
-  "maybe_implies x y \<equiv> (case (x, y) of
-    (Some a, Some b) \<Rightarrow> Some (a \<longrightarrow> b) |
-    _ \<Rightarrow> None
-  )"
+lemma maybe_or_associative: "a \<or>\<^sub>? b \<or>\<^sub>? c = a \<or>\<^sub>? (b \<or>\<^sub>? c)"
+proof(induct a b  arbitrary: c rule: maybe_or.induct)
+case (1 uu)
+  then show ?case by simp
+next
+  case "2_1"
+then show ?case by simp
+next
+  case "2_2"
+then show ?case by simp
+next
+  case 3
+  then show ?case
+    by (metis maybe_not.cases maybe_or.simps(4) maybe_or.simps(7))
+next
+  case "4_1"
+  then show ?case
+    by (metis maybe_not.cases maybe_or.simps(2) maybe_or.simps(4) maybe_or.simps(5) maybe_or.simps(7))
+next
+  case "4_2"
+  then show ?case
+    by (metis maybe_not.cases maybe_or.simps(3) maybe_or.simps(6))
+next
+  case 5
+  then show ?case
+    by (metis maybe_not.cases maybe_or.simps(2) maybe_or.simps(3) maybe_or.simps(5) maybe_or.simps(6) maybe_or.simps(7))
+qed
 
-abbreviation maybe_not :: "bool option \<Rightarrow> bool option" where
-  "maybe_not x \<equiv> (case x of Some a \<Rightarrow> Some (\<not>a) | None \<Rightarrow> None)"
+lemma maybe_or_commutative: "a \<or>\<^sub>? b = b \<or>\<^sub>? a"
+proof(induct a b rule: maybe_or.induct)
+case (1 uu)
+  then show ?case
+    by (metis maybe_or.simps(1) maybe_or.simps(2) maybe_or.simps(3) trilean.exhaust)
+next
+  case "2_1"
+then show ?case by simp
+next
+  case "2_2"
+then show ?case by simp
+next
+  case 3
+  then show ?case by simp
+next
+case "4_1"
+  then show ?case by simp
+next
+  case "4_2"
+  then show ?case by simp
+next
+  case 5
+  then show ?case by simp
+qed
 
-lemma maybe_double_negation: "maybe_not (maybe_not x) = x"
-  by (simp add: option.case_eq_if)
+lemma trilean_distributivity: "a \<or>\<^sub>? b \<and>\<^sub>? c = a \<and>\<^sub>? c \<or>\<^sub>? (b \<and>\<^sub>? c)"
+proof(induct a b  arbitrary: c rule: maybe_or.induct)
+  case (1 uu)
+  then show ?case
+    by (metis maybe_and.simps(1) maybe_and.simps(2) maybe_and.simps(6) maybe_and.simps(7) maybe_and_commutative maybe_or.simps(1) maybe_or.simps(4) maybe_or.simps(6) maybe_or.simps(7) maybe_or_commutative trilean.exhaust trilean.simps(2))
+next
+  case "2_1"
+  then show ?case
+    apply (case_tac c)
+    by auto
+next
+  case "2_2"
+  then show ?case
+    apply (case_tac c)
+    by auto
+next
+  case 3
+  then show ?case
+    apply (case_tac c)
+    by auto
+next
+  case "4_1"
+  then show ?case
+    apply (case_tac c)
+    by auto
+next
+case "4_2"
+  then show ?case
+    apply (case_tac c)
+    by auto
+next
+  case 5
+  then show ?case
+    apply (case_tac c)
+    by auto
+qed
 
-lemma maybe_negate: "(maybe_not c = Some b) = (c = Some (\<not>b))"
-  by (metis (mono_tags, lifting) maybe_double_negation option.simps(5))
+instantiation trilean :: semiring begin
+definition "times_trilean = maybe_and"
+declare times_trilean_def [simp]
 
-lemma maybe_not_values: "(maybe_not c \<noteq> Some False) = (maybe_not c = Some True \<or> maybe_not c = None)"
+definition "plus_trilean = maybe_or"
+declare plus_trilean_def [simp]
+
+instance
+  apply standard
+      apply (simp add: maybe_or_associative)
+     apply (simp add: maybe_or_commutative)
+    apply (simp add: maybe_and_associative)
+   apply (simp add: trilean_distributivity)
+  using maybe_and_commutative trilean_distributivity by auto
+end
+
+lemma maybe_or_idempotent: "a \<or>\<^sub>? a = a"
+  apply (cases a)
   by auto
 
-lemma maybe_not_c: "(maybe_not c \<noteq> Some b) = (c = None \<or> c = Some b)"
-  using maybe_not_values option.collapse by force
-
-lemma maybe_negate_2: "(maybe_not c \<noteq> Some b) = (c \<noteq> Some (\<not>b))"
-  by (simp add: maybe_negate)
-
-lemma maybe_and_None: "maybe_and None x = None"
-  by simp
-
-lemma maybe_and_true: "(maybe_and x y = Some True) = (x = Some True \<and> y = Some True)"
-  apply simp
-  apply (case_tac x)
-   apply simp+
-  apply (case_tac y)
+lemma maybe_and_idempotent: "a \<and>\<^sub>? a = a"
+  apply (cases a)
   by auto
 
-lemma maybe_and_not_true: "(maybe_and x y \<noteq> Some True) = (x \<noteq> Some True \<or> y \<noteq> Some True)"
-  apply simp
-  apply (case_tac x)
-   apply simp+
-  apply (case_tac y)
+instantiation trilean :: ord begin
+definition less_eq_trilean :: "trilean \<Rightarrow> trilean \<Rightarrow> bool" where
+  "less_eq_trilean a b = (a + b = b)"
+
+definition less_trilean :: "trilean \<Rightarrow> trilean \<Rightarrow> bool" where
+  "less_trilean a b = (a \<le> b \<and> a \<noteq> b)"
+
+declare less_trilean_def less_eq_trilean_def [simp]
+
+instance
+  by standard
+end
+
+lemma maybe_and_one: "true \<and>\<^sub>? x = x"
+  apply (cases x)
   by auto
 
-lemma maybe_and_commutative: "maybe_and x y = maybe_and y x"
-  apply simp
-  apply (case_tac x)
-   apply simp
-   apply (case_tac y)
-    apply simp+
-  apply (case_tac y)
+lemma maybe_or_zero: "false \<or>\<^sub>? x = x"
+  apply (cases x)
   by auto
 
-lemma maybe_and_zero: "maybe_and (Some True) x = x"
-  apply (case_tac x)
+lemma maybe_double_negation: "\<not>\<^sub>? \<not>\<^sub>? x = x"
+  apply (cases x)
   by auto
 
-lemma maybe_and_one: "maybe_and x x = x"
-  apply (case_tac x)
+lemma maybe_negate_true: "(\<not>\<^sub>? x = true) = (x = false)"
+  apply (cases x)
   by auto
+
+lemma maybe_and_true: "(x \<and>\<^sub>? y = true) = (x = true \<and> y = true)"
+  using maybe_and.elims by blast
+
+lemma maybe_and_not_true: "(x \<and>\<^sub>? y \<noteq> true) = (x \<noteq> true \<or> y \<noteq> true)"
+  by (simp add: maybe_and_true)
 
 end

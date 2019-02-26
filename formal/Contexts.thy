@@ -82,15 +82,13 @@ lemma context_equiv_transitive: "context_equiv x y \<and> context_equiv y z \<Lo
   by (simp add: cexp_equiv_def gexp_equiv_def)
 
 definition consistent :: "context \<Rightarrow> bool" where (* Is there a variable evaluation which can satisfy all of the context? *)
-  "consistent c \<equiv> \<exists>s. \<forall>r. (cval (conjoin (c r)) r s = Some True)"
+  "consistent c \<equiv> \<exists>s. \<forall>r. (cval (conjoin (c r)) r s = true)"
 
 lemma possible_false_not_consistent: "\<exists>r. c r = {|Bc False|} \<Longrightarrow> \<not> consistent c"
   apply (simp add: consistent_def conjoin_def)
   apply clarify
   apply (rule_tac x=r in exI)
-  apply (simp add: sorted_list_of_fset_def)
-  apply (simp only: cval_And maybe_and_true cval_false cval_true)
-  by simp
+  by (simp add: sorted_list_of_fset_def cval_And cval_false cval_true)
 
 lemma inconsistent_false: "\<not>consistent (\<lambda>i. {|Bc False|})"
   using possible_false_not_consistent
@@ -104,46 +102,30 @@ lemma consistent_empty_1: "empty r = {|Undef|} \<or> empty r = {|Bc True|}"
 
 theorem consistent_empty_2: "(\<forall>r. c r = {|Bc True|}) \<longrightarrow> consistent c"
   apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def)
-  apply (simp only: cval_And maybe_and_true cval_true)
-  by simp
+  by (simp add: cval_And cval_true)
 
-lemma consistent_empty_4: "\<lbrakk>\<rbrakk> r = {|Undef|} \<or> gval (cexp2gexp r (conjoin (\<lbrakk>\<rbrakk> r))) c = Some True"
+lemma consistent_empty_4: "\<lbrakk>\<rbrakk> r = {|Undef|} \<or> gval (cexp2gexp r (conjoin (\<lbrakk>\<rbrakk> r))) c = true"
   apply (case_tac r)
      apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
-     apply (simp add: gval.simps(1))
+     apply (simp add: gval_gAnd gval.simps(1))
     apply (case_tac x2)
-     apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
-     apply (simp add: gval.simps(1))
-    apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
-   apply (simp add: gval.simps(1))
-   apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
-   apply (simp add: gval.simps(1))
-  apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
-  by (simp add: gval.simps(1))
+     apply (simp add: conjoin_def sorted_list_of_fset_def gval_gAnd gval.simps(1))
+    apply (simp add: conjoin_def)
+   apply (simp add: conjoin_def sorted_list_of_fset_def gval_gAnd gval.simps(1))
+  by (simp add: conjoin_def sorted_list_of_fset_def gval_gAnd gval.simps(1))
 
 lemma consistent_empty [simp]: "consistent empty"
   apply (simp add: consistent_def cval_def)
   apply (rule_tac x="<>" in exI)
   apply clarify
   apply (case_tac r)
-     apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
-     apply (simp add: gval.simps(1))
+     apply (simp add: conjoin_def sorted_list_of_fset_def gval_gAnd gval.simps(1))
     apply (case_tac x2)
-     apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
-     apply (simp add: gval.simps(1))
-    apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
-   apply (simp add: gval.simps)
-   apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
-   apply (simp add: gval.simps(1))
-  apply (simp add: consistent_def conjoin_def sorted_list_of_fset_def maybe_double_negation)
-  by (simp add: gval.simps(1))
+  by (simp_all add: conjoin_def sorted_list_of_fset_def gval_gAnd gval.simps ValueEq_def)
 
 lemma cexp2gexp_double_neg: "gexp_equiv (cexp2gexp r (Not (Not x))) (cexp2gexp r x)"
-  apply (simp add: gexp_equiv_def)
-  apply (rule allI)
-  apply (case_tac "gval (cexp2gexp r x) s")
-   apply (simp)
-  by (simp)
+  apply (simp add: gexp_equiv_def gval_gAnd)
+  by (simp add: maybe_and_idempotent)
 
 lemma gval_cexp2gexp_double_neg: "gval (cexp2gexp r (Not (Not x))) s = gval (cexp2gexp r x) s"
   using cexp2gexp_double_neg gexp_equiv_def by blast
@@ -237,7 +219,7 @@ lemma empty_inputs_are_true: "constrains_an_input x \<Longrightarrow> \<lbrakk>\
     apply (case_tac x2)
   by auto
 
-lemma cval_empty_inputs: "constrains_an_input r \<longrightarrow> cval (conjoin (\<lbrakk>\<rbrakk> r)) r ia = Some True"
+lemma cval_empty_inputs: "constrains_an_input r \<longrightarrow> cval (conjoin (\<lbrakk>\<rbrakk> r)) r ia = true"
 proof(induct r)
 case (L x)
   then show ?case by simp
@@ -304,22 +286,31 @@ definition datastate2context :: "datastate \<Rightarrow> context" where
 definition satisfies_context :: "datastate \<Rightarrow> context \<Rightarrow> bool" where
   "satisfies_context d c = consistent (\<lambda>x. (datastate2context d x) |\<union>| c x)"
 
+lemma cval_undef_empty: "cval Undef (V x) <> = true"
+  by (simp add: cval_def gval.simps ValueEq_def)
+
 lemma satisfies_context_empty: "satisfies_context <> \<lbrakk>\<rbrakk> \<and> satisfies_context Map.empty \<lbrakk>\<rbrakk>"
-  apply (simp add: satisfies_context_def consistent_def datastate2context_def cval_def conjoin_def)
+  apply (simp add: satisfies_context_def datastate2context_def consistent_def conjoin_def)
   apply (rule_tac x="<>" in exI)
   apply clarify
   apply (case_tac r)
-     apply (simp add: sorted_list_of_fset_def maybe_double_negation gval.simps)
-  apply (case_tac x2)
-  by(simp_all add: sorted_list_of_fset_def maybe_double_negation gval.simps)
+     apply (simp add: sorted_list_of_fset_def cval_And gval_gAnd cval_true)
+    apply (case_tac x2)
+     apply (simp add: sorted_list_of_fset_def cval_And gval_gAnd cval_true)
+  using cval_undef_empty 
+     apply simp
+    apply (simp add: sorted_list_of_fset_def cval_And gval_gAnd cval_true)
+  using cval_undef_empty 
+    apply simp
+  by (simp_all add: sorted_list_of_fset_def cval_And cval_true)
 
 (* Does t2 subsume t1? *)
 definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where (* Corresponds to Algorithm 2 in Foster et. al. *)
   "subsumes c t2 t1 \<equiv> Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) \<and>
-                      (\<forall>r i. (cval (conjoin (medial c (Guard t1) r)) r i = Some True) \<longrightarrow> (cval (conjoin (medial c (Guard t2) r)) r i) = Some True) \<and>
+                      (\<forall>r i. (cval (conjoin (medial c (Guard t1) r)) r i = true) \<longrightarrow> (cval (conjoin (medial c (Guard t2) r)) r i) = true) \<and>
                       (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
-                      (\<forall>r i. cval (conjoin (posterior (medial c (Guard t1)) t2 r)) r i = Some True \<longrightarrow> (cval (conjoin (posterior c t1 r)) r i = Some True) \<or> (posterior c t1 r) = {|Undef|}) \<and>
+                      (\<forall>r i. cval (conjoin (posterior (medial c (Guard t1)) t2 r)) r i = true \<longrightarrow> (cval (conjoin (posterior c t1 r)) r i = true) \<or> (posterior c t1 r) = {|Undef|}) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
 
 definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> context" where
@@ -338,9 +329,8 @@ lemma context_equiv_same_undef: "c i = {|Undef|} \<Longrightarrow> c' i = {|Bc T
   apply (simp add: context_equiv_def cexp_equiv_def gexp_equiv_def)
   apply (rule_tac x=i in exI)
   apply (simp add: conjoin_def sorted_list_of_fset_def)
-  apply (simp only: cval_And cval_true maybe_and_zero)
-  apply (simp only: maybe_and_commutative maybe_and_zero)
-  using invalid_undef valid_def by auto
+  apply (simp add: cval_And cval_true)
+  using invalid_undef maybe_and_true valid_def by auto
 
 lemma gexp_equiv_cexp_not_true:  "gexp_equiv (cexp2gexp a (Not (Bc True))) (gexp.Bc False)"
   by (simp add: gexp_equiv_def gval.simps)
@@ -363,13 +353,13 @@ lemma gt_to_gt: "Gt x = c r \<Longrightarrow> (cexp2gexp r (c r)) = gexp.Gt r (L
 lemma satisfiable_double_neg: "satisfiable (cexp.Not (cexp.Not x)) = satisfiable x"
   by (simp add: satisfiable_def cval_double_negation)
 
-lemma gval_empty_r_neq_none[simp]: "gval (cexp2gexp r (conjoin (\<lbrakk>\<rbrakk> r))) s \<noteq> None"
+lemma gval_empty_r_neq_none[simp]: "gval (cexp2gexp r (conjoin (\<lbrakk>\<rbrakk> r))) s \<noteq> invalid"
   apply (case_tac r)
      apply (simp add: conjoin_def sorted_list_of_fset_def maybe_double_negation gval.simps)
     apply (case_tac x2)
-  by (simp_all add: conjoin_def sorted_list_of_fset_def maybe_double_negation gval.simps)
+  by (simp_all add: conjoin_def sorted_list_of_fset_def gval_gAnd gval.simps ValueEq_def)
 
-lemma constrains_an_input_true: "constrains_an_input r \<Longrightarrow> cval (conjoin (\<lbrakk>\<rbrakk> r)) r ia = Some True"
+lemma constrains_an_input_true: "constrains_an_input r \<Longrightarrow> cval (conjoin (\<lbrakk>\<rbrakk> r)) r ia = true"
 proof(induct r)
   case (L x)
   then show ?case by simp
@@ -388,15 +378,31 @@ next
     by (simp add: conjoin_def sorted_list_of_fset_def cval_And cval_true)
 qed
 
-lemma cval_pairs2context_not_true: "cval (conjoin (c r)) r s \<noteq> Some True \<Longrightarrow>
-       cval (conjoin (pairs2context G c r)) r s \<noteq> Some True"
+lemma "(cval (conjoin x) r s = true) = fBall x (\<lambda>c. cval c r s = true)"
+proof(induct x)
+  case empty
+  then show ?case
+    by (simp add: conjoin_def cval_true)
+next
+  case (insert x1 x2)
+  then show ?case
+    apply (simp add: conjoin_def)
+
+qed
+
+lemma cval_pairs2context_not_true: "cval (conjoin (c r)) r s \<noteq> true \<Longrightarrow>
+       cval (conjoin (pairs2context G c r)) r s \<noteq> true"
 proof(induct G)
   case Nil
   then show ?case by simp
 next
   case (Cons a G)
   then show ?case
-    apply (simp add: conjoin_def)
+    apply (case_tac a)
+    apply simp
+    apply clarify
+    apply simp
+
 qed
 
 lemma inconsistent_anterior_gives_inconsistent_medial: "\<not>consistent c \<Longrightarrow> \<not>consistent (medial c g)"
@@ -430,8 +436,8 @@ lemma consistent_posterior_gives_consistent_medial: "consistent (posterior c x) 
    apply simp
   by (simp add: inconsistent_false)
 
-lemma cval_plus_1: "cval (c (Plus x32 x31)) a s \<noteq> Some True \<Longrightarrow>
-       cval (pairs2context gs c (Plus x32 x31)) a s \<noteq> Some True"
+lemma cval_plus_1: "cval (c (Plus x32 x31)) a s \<noteq> true \<Longrightarrow>
+       cval (pairs2context gs c (Plus x32 x31)) a s \<noteq> true"
 proof(induct gs)
   case Nil
   then show ?case by simp
@@ -444,8 +450,8 @@ next
     by auto
 qed
 
-lemma cval_get_not_true_gives_cval_pairs2context_not_true: "cval (get c x) a s \<noteq> Some True \<Longrightarrow>
-       cval (get (pairs2context G c) x) a s \<noteq> Some True"
+lemma cval_get_not_true_gives_cval_pairs2context_not_true: "cval (get c x) a s \<noteq> true \<Longrightarrow>
+       cval (get (pairs2context G c) x) a s \<noteq> true"
 proof(induct G)
   case Nil
   then show ?case
@@ -470,9 +476,9 @@ next
         apply simp
         apply (simp only: cval_And cval_and maybe_and_true)
        apply simp
-       apply (case_tac "cval (c (Plus x31 x32)) a s = Some True")
+       apply (case_tac "cval (c (Plus x31 x32)) a s = true")
         apply simp
-        apply (case_tac "cval b a s = Some True")
+        apply (case_tac "cval b a s = true")
          apply (simp add: cval_plus_1)
         apply simp
        apply simp

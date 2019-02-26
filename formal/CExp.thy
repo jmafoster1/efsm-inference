@@ -100,21 +100,18 @@ fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow>  gexp" where
   "cexp2gexp a (Not v) = gNot (cexp2gexp a v)" |
   "cexp2gexp a (And v va) = gAnd (cexp2gexp a v) (cexp2gexp a va)"
 
-definition cval :: "cexp \<Rightarrow> aexp \<Rightarrow> (datastate \<Rightarrow> bool option)" where
+definition cval :: "cexp \<Rightarrow> aexp \<Rightarrow> (datastate \<Rightarrow> trilean)" where
   "cval c a = gval (cexp2gexp a c)"
 
-lemma cval_true: "cval (Bc True) a i = Some True"
+lemma cval_true: "cval (Bc True) a i = true"
   by (simp add: cval_def gval.simps)
 
-lemma cval_false: "cval (cexp.Bc False) a i = Some False"
+lemma cval_false: "cval (cexp.Bc False) a i = false"
   by (simp add: cval_def gval.simps)
 
 lemma cval_And_zero: "cval (And c (cexp.Bc True)) = cval c"
-  apply (rule ext)
-  apply (simp add: cval_def gval.simps)
-  apply (rule ext)
-  apply (simp only: gval_gAnd)
-  by (metis gval.simps(1) maybe_and_commutative maybe_and_zero)
+  apply (rule ext)+
+  using cval_def gAnd_symmetry gAnd_zero gexp_equiv_def by force
 
 lemma cval_And: "cval (And x y) a s = maybe_and (cval x a s) (cval y a s)"
   apply (simp only: cval_def)
@@ -122,38 +119,230 @@ lemma cval_And: "cval (And x y) a s = maybe_and (cval x a s) (cval y a s)"
 
 lemma cval_And_one: "cval (And c c) = cval c"
   apply (rule ext)+
-  by (simp only: cval_And maybe_and_one)
-
-lemma maybe_and_assoc: "maybe_and (maybe_and x y) z = maybe_and x (maybe_and y z)"
-  apply simp
-  apply (case_tac x)
-   apply simp+
-  apply (case_tac y)
-   apply simp+
-  apply (case_tac z)
-  by simp+
+  using cval_def cval_And maybe_and_idempotent by auto
 
 lemma cval_And_fun: "cval (And x y) = (\<lambda>r s. maybe_and (cval x r s) (cval y r s))"
   apply (rule ext)+
   by (simp only: cval_And)
 
-lemma and_is_And [simp]:  "cval (and x y) = cval (And x y)"
-  apply(induct x y rule: and.induct)
-                      apply simp_all
-                      apply (simp_all only: cval_And cval_true cval_false maybe_and_zero)
-                      apply (simp_all only: maybe_and_commutative maybe_and_zero)
-                     apply simp
-                    apply safe
-                      apply (simp_all only: cval_And_fun)
-  using maybe_and_one maybe_and_commutative maybe_and_assoc
-  by auto
-
+lemma and_is_And :  "cval (and x y) = cval (And x y)"
+proof (induct x y rule: and.induct)
+  case (1 x)
+  then show ?case
+    apply (rule ext)+
+    apply (simp add: cval_def gval_gAnd gval.simps)
+    by (simp add: maybe_double_negation maybe_or_idempotent maybe_or_zero)
+next
+  case "2_1"
+  then show ?case
+    apply (rule ext)+
+    apply (simp add: cval_def gval_gAnd gval.simps(1))
+    by (simp add: maybe_and_commutative maybe_and_one)
+next
+  case "2_2"
+  then show ?case 
+    apply (rule ext)+
+    by (simp add: cval_def gval_gAnd gval.simps(2) gval.simps(1))
+next
+  case ("2_3" v)
+  then show ?case 
+    apply (rule ext)+
+    apply (simp add: cval_def gval_gAnd gval.simps(1))
+    by (simp add: maybe_and_commutative maybe_and_one)
+next
+  case ("2_4" v)
+  then show ?case
+    apply (rule ext)+
+    apply (simp add: cval_def gval_gAnd gval.simps(1))
+    by (simp add: maybe_and_commutative maybe_and_one)
+next
+  case ("2_5" v)
+  then show ?case
+    apply (rule ext)+
+    apply (simp add: cval_def gval_gAnd gval.simps(1))
+    by (simp add: maybe_and_commutative maybe_and_one)
+next
+  case ("2_6" v)
+  then show ?case
+    apply (rule ext)+
+    apply (simp add: cval_def gval_gAnd gval_gNot gval.simps(1))
+    by (simp add: maybe_and_commutative maybe_and_one)
+next
+  case ("2_7" v va)
+  then show ?case 
+    apply (rule ext)+
+    apply (simp add: cval_def gval_gAnd gval.simps(1))
+    by (simp add: maybe_and_commutative maybe_and_one)
+next
+  case "3_1"
+  then show ?case 
+    apply (rule ext)+
+    apply (simp add: cval_def gval_gAnd)
+    by (simp add: maybe_and_idempotent)
+next
+  case "3_2"
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_3" v)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_4" v)
+then show ?case by (simp add: cval_def)
+next
+  case ("3_5" v)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_6" v)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_7" v va)
+  then show ?case by (simp add: cval_def)
+next
+  case "3_8"
+  then show ?case by (simp add: cval_def)
+next
+  case "3_9"
+  then show ?case 
+    apply (rule ext)+
+    by (simp add: cval_def gval_gAnd gval.simps(2))
+next
+  case ("3_10" v)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_11" v)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_12" v)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_13" v)
+then show ?case by (simp add: cval_def)
+next
+  case ("3_14" v va)
+then show ?case by (simp add: cval_def)
+next
+  case ("3_15" v)
+then show ?case by (simp add: cval_def)
+next
+  case ("3_16" v)
+then show ?case by (simp add: cval_def)
+next
+  case ("3_17" v va)
+  then show ?case 
+    apply (rule ext)+
+    apply (simp add: cval_def gval_gAnd)
+    by (simp add: maybe_and_idempotent)
+next
+  case ("3_18" v va)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_19" v va)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_20" v va)
+  then show ?case by (simp add: cval_def)
+next
+case ("3_21" v va vb)
+  then show ?case by (simp add: cval_def)
+next
+case ("3_22" v)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_23" v)
+then show ?case by (simp add: cval_def)
+next
+  case ("3_24" v va)
+  then show ?case by (simp add: cval_def)
+next
+case ("3_25" v va)
+  then show ?case 
+    apply (rule ext)+
+    apply (simp add: cval_def gval_gAnd)
+    by (simp add: maybe_and_idempotent)
+next
+  case ("3_26" v va)
+then show ?case by (simp add: cval_def)
+next
+  case ("3_27" v va)
+then show ?case by (simp add: cval_def)
+next
+  case ("3_28" v va vb)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_29" v)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_30" v)
+  then show ?case by (simp add: cval_def)
+next
+case ("3_31" v va)
+  then show ?case by (simp add: cval_def)
+next
+case ("3_32" v va)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_33" v va)
+  then show ?case
+    apply (rule ext)+
+    apply (simp add: cval_def)
+    by (simp add: maybe_or_idempotent or_equiv)
+next
+  case ("3_34" v va)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_35" v va vb)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_36" v)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_37" v)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_38" v va)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_39" v va)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_40" v va)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_41" v va)
+  then show ?case 
+    by (simp add: cval_And_one)
+next
+  case ("3_42" v va vb)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_43" v va)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_44" v va)
+  then show ?case by (simp add: cval_def)
+next
+case ("3_45" v va vb)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_46" v va vb)
+  then show ?case by (simp add: cval_def)
+next
+case ("3_47" v va vb)
+  then show ?case by (simp add: cval_def)
+next
+  case ("3_48" v va vb)
+  then show ?case by (simp add: cval_def)
+next
+case ("3_49" v va vb vc)
+  then show ?case 
+    by (simp add: cval_And_one)
+qed
 
 definition valid :: "cexp \<Rightarrow> bool" where (* Is cexp "c" satisfied under all "i" values? *)
-  "valid c \<equiv> (\<forall> a s. cval c a s = Some True)"
+  "valid c \<equiv> (\<forall> a s. cval c a s = true)"
 
 definition satisfiable :: "cexp \<Rightarrow> bool" where (* Is there some value of "i" which satisfies "c"? *)
-  "satisfiable c \<equiv> (\<exists> a s. cval c a s = Some True)"
+  "satisfiable c \<equiv> (\<exists> a s. cval c a s = true)"
 
 fun compose_plus :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "compose_plus Undef b = Undef" |
@@ -219,8 +408,8 @@ lemma cexp_equiv_reflexive: "cexp_equiv x x"
   by (simp add: cexp_equiv_def gexp_equiv_reflexive)
 
 lemma gNegate: "gexp_equiv (gNot g) (gexp.Bc True) = gexp_equiv g (gexp.Bc False)"
-  apply (simp add: gexp_equiv_def)
-  by (metis gval.simps(1) maybe_not_c option.inject)
+  apply (simp add: gexp_equiv_def gval.simps(1) gval.simps(2) gval_gNot)
+  by (metis maybe_double_negation maybe_not.simps(1) maybe_not.simps(2))
 
 lemma cexp_equiv_valid: "valid c \<longrightarrow> cexp_equiv c (Bc True)"
   by (simp add: valid_def cexp_equiv_def cval_def gval.simps)
@@ -229,8 +418,8 @@ lemma cval_and: "cval (and x y) a s = maybe_and (cval x a s) (cval y a s)"
   by (simp only: and_is_And cval_And)
 
 lemma cexp_equiv_redundant_and: "cexp_equiv (and c (and c c')) (and c c')"
-  apply (simp only: cexp_equiv_def cval_and)
-  by (simp add: option.case_eq_if)
+  apply (simp add: cexp_equiv_def cval_and)
+  by (metis maybe_and_associative maybe_and_idempotent)
 
 lemma cval_And_commutative: "cval (And x y) a s = cval (And y x) a s"
   by (simp only: cval_And maybe_and_commutative)
@@ -251,12 +440,36 @@ lemma cexp_equiv_symmetric: "cexp_equiv x y = cexp_equiv y x"
 lemma cexp_equiv_transitive: "cexp_equiv x y \<Longrightarrow> cexp_equiv y z \<Longrightarrow> cexp_equiv x z"
   by (simp add: cexp_equiv_def gexp_equiv_def)
 
-lemma gval_and_none: "gval (cexp2gexp a y) x = None \<Longrightarrow> gval (cexp2gexp a (and z y)) x = None"
-  apply (simp only: gval_and gval_gAnd)
-  using maybe_and_commutative by auto
-
 lemma cval_Not: "cval (Not x) a s = maybe_not (cval x a s)"
-  by (simp add: cval_def)
+  by (simp add: cval_def gval_gNot)
+
+lemma cval_not: "cval (not x) a s = maybe_not (cval x a s)"
+proof(induct x)
+  case Undef
+  then show ?case by (simp add: cval_Not)
+next
+case (Bc x)
+  then show ?case
+    apply (case_tac x)
+     apply (simp add: cval_false cval_true)
+    by (simp add: cval_false cval_true)
+next
+case (Eq x)
+  then show ?case by (simp add: cval_Not)
+next
+  case (Lt x)
+  then show ?case by (simp add: cval_Not)
+next
+  case (Gt x)
+  then show ?case by (simp add: cval_Not)
+next
+  case (Not x)
+  then show ?case
+    by (simp add: cval_Not maybe_double_negation)
+next
+  case (And x1 x2)
+  then show ?case by (simp add: cval_Not)
+qed
 
 lemma cval_double_negation: "cval (Not (Not x)) = cval x"
   apply (rule ext)+
@@ -265,36 +478,9 @@ lemma cval_double_negation: "cval (Not (Not x)) = cval x"
 lemma valid_double_negation: "valid (Not (Not x)) = valid x"
   by (simp add: valid_def cval_double_negation)
 
-lemma not_is_Not[simp]: "cval (not x) = cval (Not x)"
-proof(induct x)
-  case Undef
-  then show ?case by simp
-next
-  case (Bc x)
-  then show ?case
-    by (simp add: cval_def gval.simps)
-next
-  case (Eq x)
-  then show ?case
-    by simp
-next
-  case (Lt x)
-  then show ?case
-    by simp
-next
-  case (Gt x)
-  then show ?case
-    by simp
-next
-  case (Not x)
-  then show ?case
-    apply (simp only: cval_Not maybe_double_negation)
-    by simp
-  next
-  case (And x1 x2)
-  then show ?case
-    by simp
-qed
+lemma not_is_Not: "cval (not x) = cval (Not x)"
+  apply (rule ext)+
+  by (simp add: cval_not cval_Not)
 
 lemma true_not_false: "cval (Bc True) = cval (Not (Bc False))"
   apply (rule ext)+
@@ -308,13 +494,13 @@ lemma satisfiable_undef: "satisfiable Undef"
   apply (simp add: satisfiable_def)
   apply (rule_tac x="V (R 1)" in exI)
   apply (rule_tac x="<>" in exI)
-  by (simp add: cval_def gval.simps)
+  by (simp add: cval_def gval.simps ValueEq_def)
 
 lemma invalid_undef: "\<not> valid Undef"
   apply (simp add: valid_def cval_def)
   apply (rule_tac x="V (R 1)" in exI)
   apply (rule_tac x="<R 1 := Num 5>" in exI)
-  by (simp add: cval_def gval.simps)
+  by (simp add: cval_def gval.simps ValueEq_def)
 
 lemma satisfiable_true: "satisfiable (Bc True)"
   by (simp add: satisfiable_def cval_def gval.simps)
@@ -329,56 +515,58 @@ lemma invalid_false: "\<not>valid (cexp.Bc False)"
   by (simp add: valid_def cval_def gval.simps)
 
 lemma satisfiable_eq: "satisfiable (Eq x)"
-  apply (simp add: satisfiable_def cval_def gval.simps)
+  apply (simp add: satisfiable_def cval_def gval.simps ValueEq_def)
   using aval.simps(1) by blast
 
 lemma invalid_eq: "\<not> valid (cexp.Eq x)"
   apply (simp add: valid_def cval_def)
   apply (rule_tac x="V (R 1)" in exI)
   apply (rule_tac x="<>" in exI)
-  by (simp add: cval_def gval.simps)
+  by (simp add: cval_def gval.simps ValueEq_def)
 
 lemma satisfiable_lt: "satisfiable (Lt (Num x))"
-  apply (simp add: satisfiable_def cval_def gval.simps)
+  apply (simp add: satisfiable_def cval_def gval.simps ValueGt_def)
   by (metis (full_types) MaybeBoolInt.simps(1) aval.simps(1) lt_ex)
 
 lemma unsatisfiable_lt: "\<not> satisfiable (Lt (Str s))"
-  by (simp add: satisfiable_def cval_def gval.simps)
+  by (simp add: satisfiable_def cval_def gval.simps ValueGt_def)
 
 lemma invalid_lt: "\<not> valid (Lt x)"
   apply (simp add: valid_def cval_def)
   apply (rule_tac x="V (R 1)" in exI)
   apply (rule_tac x="<>" in exI)
-  by (simp add: cval_def gval.simps)
+  by (simp add: cval_def gval.simps ValueGt_def)
 
 lemma satisfiable_gt: "satisfiable (Gt (Num x4))"
-  apply (simp add: satisfiable_def cval_def gval.simps)
+  apply (simp add: satisfiable_def cval_def gval.simps ValueGt_def)
   by (metis (full_types) MaybeBoolInt.simps(1) aval.simps(1) zless_iff_Suc_zadd)
 
 lemma unsatisfiable_gt: "\<not> satisfiable (Gt (Str s))"
-  by (simp add: satisfiable_def cval_def gval.simps)
+  by (simp add: satisfiable_def cval_def gval.simps ValueGt_def)
 
 lemma invalid_gt: "\<not> valid (cexp.Gt x5)"
   apply (simp add: valid_def cval_def)
   apply (rule_tac x="V (R 2)" in exI)
   apply (rule_tac x="<>" in exI)
-  by (simp add: gval.simps)
+  by (simp add: gval.simps ValueGt_def)
 
 lemma satisfiable_not_undef: "satisfiable (Not (Undef))"
-  apply (simp add: satisfiable_def cval_def gval.simps)
+  apply (simp add: satisfiable_def cval_def gval.simps ValueEq_def)
   using aval.simps(1) by blast
 
 lemma satisfiable_neq: "satisfiable (Neq x3)"
-  apply (simp add: satisfiable_def cval_def gval.simps)
+  apply (simp add: satisfiable_def cval_def gval.simps ValueEq_def)
   by (metis aval.simps(1) option.inject value.simps(4))
 
 lemma satisfiable_leq: "satisfiable (Leq (Num x))"
-  apply (simp add: satisfiable_def cval_def gval.simps)
-  by (metis (no_types, lifting) MaybeBoolInt.simps(1) aval.simps(1) maybe_not_c minf(4) option.discI option.sel)
+  apply (simp add: satisfiable_def cval_Not maybe_negate_true)
+  apply (simp add: cval_def gval.simps ValueGt_def)
+  by (metis MaybeBoolInt.simps(1) aval.simps(1) minf(4))
 
 lemma satisfiable_geq: "satisfiable (Geq (Num x))"
-  apply (simp add: satisfiable_def cval_def gval.simps)
-  by (metis (no_types, lifting) MaybeBoolInt.simps(1) aval.simps(1) maybe_not_c option.discI option.sel pinf(4))
+  apply (simp add: satisfiable_def cval_Not maybe_negate_true)
+  apply (simp add: cval_def gval.simps ValueGt_def)
+  by (metis MaybeBoolInt.simps(1) aval.simps(1) pinf(4))
 
 lemma "satisfiable (Not x) \<Longrightarrow> \<not>valid x"
 proof(induct x)
@@ -426,13 +614,13 @@ lemma and_x_y_undef: "and x y = Undef \<Longrightarrow> and y x = Undef"
   by auto
 
 definition mutually_exclusive :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
-  "mutually_exclusive x y = (\<forall>a i. (cval x i a= Some True \<longrightarrow> cval y i a \<noteq> Some True) \<and>
-                                 (cval y i a = Some True \<longrightarrow> cval x i a \<noteq> Some True))"
+  "mutually_exclusive x y = (\<forall>a i. (cval x i a= true \<longrightarrow> cval y i a \<noteq> true) \<and>
+                                 (cval y i a = true \<longrightarrow> cval x i a \<noteq> true))"
 
 lemma mutually_exclusive_unsatisfiable_conj: "mutually_exclusive x y = (\<not> satisfiable (And x y))"
   apply (simp add: mutually_exclusive_def satisfiable_def)
-  apply (simp only: cval_And maybe_and_true)
-  by auto
+  apply (simp add: cval_And)
+  by (metis (no_types, lifting) maybe_and_associative maybe_and_commutative maybe_and_idempotent maybe_and_one)
 
 lemma unsatisfiable_conj_mutually_exclusive: "\<not> satisfiable (And x y) = mutually_exclusive x y"
   by (simp add: mutually_exclusive_unsatisfiable_conj)
@@ -448,8 +636,8 @@ lemma not_mutually_exclusive_true: "satisfiable x = (\<not> mutually_exclusive x
   apply (simp add: mutually_exclusive_def satisfiable_def)
   using valid_def valid_true by blast
 
-lemma cval_values: "(cval x i a \<noteq> Some False) = (cval x i a = Some True \<or> cval x i a = None)"
-  by auto
+lemma cval_values: "(cval x i a \<noteq> false) = (cval x i a = true \<or> cval x i a = invalid)"
+  by (metis maybe_not.cases trilean.distinct(1) trilean.distinct(5))
 
 lemma x_neq_not_x: "x \<noteq> cexp.Not x"
   apply (induct_tac x)
@@ -463,20 +651,52 @@ lemma gval_not: "gval (cexp2gexp a (Not c)) = gval (gNot (cexp2gexp a c))"
   apply (rule ext)
   by simp
 
-lemma gval_True: "gval (cexp2gexp a (cexp.Bc True)) x = Some True"
+lemma gval_True: "gval (cexp2gexp a (cexp.Bc True)) x = true"
   by (simp add: gval.simps)
 
-lemma gval_and_cexp: "gval (cexp2gexp i c1) s \<noteq> Some True \<Longrightarrow>  gval (cexp2gexp i (and c2 c1)) s \<noteq> Some True"
-  apply (simp only: gval_and gval_gAnd maybe_and_not_true)
-  by simp
+lemma gval_and_cexp: "gval (cexp2gexp i c1) s \<noteq> true \<Longrightarrow>  gval (cexp2gexp i (and c2 c1)) s \<noteq> true"
+  apply (simp add: gval_and gval_gAnd)
+  using maybe_and.elims by blast
 
-lemma gval_and_false: "gval (cexp2gexp r (and (cexp.Bc False) c)) s \<noteq> Some True"
-  apply (simp only: gval_and gval_gAnd maybe_and_true)
-  by (simp add: gval.simps)
+lemma gval_and_false: "gval (cexp2gexp r (and (cexp.Bc False) c)) s \<noteq> true"
+  apply (simp add: gval_and gval_gAnd gval.simps(2))
+  using maybe_and.elims by blast
 
-lemma gval_and_false_2: "gval (cexp2gexp uu (and x (cexp.Bc False))) s \<noteq> Some True"
-  apply (simp only: gval_and gval_gAnd cexp2gexp.simps gval_false maybe_and_not_true)
-  by simp
+lemma gval_and_false_2: "gval (cexp2gexp uu (and x (cexp.Bc False))) s \<noteq> true"
+  by (simp add: gval_and gval_gAnd gval.simps(2))
+
+lemma and_true: "and c (cexp.Bc True) = c"
+  apply (case_tac c)
+        apply simp
+       apply (case_tac x2)
+  by auto
+
+lemma and_self: "and x x = x"
+  apply (case_tac x)
+        apply simp
+       apply (case_tac x2)
+  by auto
+
+lemma and_false_not_undef: "and (Bc False) c \<noteq> Undef"
+  apply (induct_tac c)
+        apply simp
+       apply (case_tac x)
+  by auto
+
+lemma and_And_false: "x \<noteq> cexp.Bc True \<and> x \<noteq> Bc False \<Longrightarrow> and (Bc False) x = And (Bc False) x"
+  apply (case_tac x)
+  by auto
+
+lemma cval_And_false: "cval (And c (Bc False)) a s \<noteq> true"
+  by (simp add: cval_And cval_false)
+
+subsection \<open>A Linear Ordering for Constraint Expressions\<close>
+text\<open>
+Contexts represent constraints as a finite set of constraint expressions, the ffold operation on
+fsets is a pain to use as nothing proves. It's much easier to convert to a list and use the list
+fold method. In order to convert from an fset to a list, we need a linear order. We define that
+ordering here.
+\<close>
 
 instantiation cexp :: linorder begin
 fun less_cexp :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" where
@@ -538,7 +758,6 @@ lemma antisymmetry: "(x::cexp) \<le> y \<Longrightarrow> y \<le> x \<Longrightar
     apply auto[1]
    apply auto[1]
   by (meson hard_less)
-
 
 lemma transitivity: "(x::cexp) \<le> y \<Longrightarrow> y \<le> z \<Longrightarrow> x \<le> z"
 proof (induct x y arbitrary: z rule: less_cexp.induct)

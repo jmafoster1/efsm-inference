@@ -1,7 +1,20 @@
 theory Value
-imports Main
+imports Option_Logic
 begin
 datatype "value" = Num int | Str String.literal
+
+fun MaybeBoolInt :: "(int \<Rightarrow> int \<Rightarrow> bool) \<Rightarrow> value option \<Rightarrow> value option \<Rightarrow> trilean" where
+  "MaybeBoolInt f (Some (Num a)) (Some (Num b)) = (if f a b then true else false)" |
+  "MaybeBoolInt _ _ _ = invalid"
+
+definition ValueGt :: "value option \<Rightarrow> value option \<Rightarrow> trilean"  where
+  "ValueGt a b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x>y)) a b"
+
+definition ValueLt :: "value option \<Rightarrow> value option \<Rightarrow> trilean"  where
+  "ValueLt a b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x<y)) a b"
+
+definition ValueEq :: "value option \<Rightarrow> value option \<Rightarrow> trilean"  where
+  "ValueEq a b \<equiv> (if a = b then true else false)"
 
 instantiation "value" :: linorder begin
 fun less_eq_value :: "value \<Rightarrow> value \<Rightarrow> bool" where

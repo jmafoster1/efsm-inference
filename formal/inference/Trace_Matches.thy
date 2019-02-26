@@ -195,12 +195,13 @@ definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarro
 definition heuristic_1 :: "log \<Rightarrow> update_modifier" where
   "heuristic_1 l = (\<lambda>t1 t2 s new old. modify (find_intratrace_matches l old) t1 t2 old)"
 
-lemma remove_guard_same_labels_arities: "t' = remove_guard_add_update t i ri \<Longrightarrow> Label t = Label t' \<and>
-       Arity t = Arity t' \<and>
-       length (Outputs t) = length (Outputs t')"
+lemma remove_guard_add_update_preserves_outputs: "Outputs (remove_guard_add_update t i r) = Outputs t"
   by (simp add: remove_guard_add_update_def)
 
-lemma remove_guard_add_update_preserves_outputs: "Outputs (remove_guard_add_update t i r) = Outputs t"
+lemma remove_guard_add_update_preserves_label: "Label (remove_guard_add_update t i r) = Label t"
+  by (simp add: remove_guard_add_update_def)
+
+lemma remove_guard_add_update_preserves_arity: "Arity (remove_guard_add_update t i r) = Arity t"
   by (simp add: remove_guard_add_update_def)
 
 primrec ran :: "nat \<Rightarrow> nat set" where
@@ -266,10 +267,10 @@ qed
 lemma finite_enumerate_gexp_inputs_alt: "finite (\<Union>x\<in>set g. enumerate_gexp_inputs x)"
   by (simp add: finite_enumerate_gexp_inputs)
 
-lemma finite_enumerate_aexp_inputs_alt: "finite (\<Union>x\<in>set (Outputs t). enumerate_aexp_inputs x)"
+lemma finite_enumerate_aexp_inputs_alt: "finite (\<Union>x\<in>set p. enumerate_aexp_inputs x)"
   by (simp add: finite_enumerate_aexp_inputs)
 
-lemma finite_enumerate_inputs_Updates_alt: "finite (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_inputs x)"
+lemma finite_enumerate_inputs_Updates_alt: "finite (\<Union>x\<in>set U. case x of (uu_, x) \<Rightarrow> enumerate_aexp_inputs x)"
   using finite_enumerate_aexp_inputs
   by auto
 
@@ -445,4 +446,22 @@ lemma remove_guard_add_update_i_r: "t' = remove_guard_add_update t i r \<Longrig
        r \<le> max_reg e \<and> i \<le> max_input e"
   using remove_guard_add_update_r remove_guard_add_update_i
   by simp
+
+lemma generalise_output_preserves_label: "Label (generalise_output t r p) = Label t"
+  by (simp add: generalise_output_def)
+
+lemma generalise_output_preserves_arity: "Arity (generalise_output t r p) = Arity t"
+  by (simp add: generalise_output_def)
+
+lemma generalise_output_preserves_guard: "Guard (generalise_output t r p) = Guard t"
+  by (simp add: generalise_output_def)
+
+lemma generalise_output_preserves_output_length: "length (Outputs (generalise_output t r p)) = length (Outputs t)"
+  by (simp add: generalise_output_def)
+
+lemma generalise_output_preserves_updates: "Updates (generalise_output t r p) = Updates t"
+  by (simp add: generalise_output_def)
+
+lemmas generalise_output_preserves = generalise_output_preserves_label generalise_output_preserves_arity
+generalise_output_preserves_output_length generalise_output_preserves_guard
 end                                                   

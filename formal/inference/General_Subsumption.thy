@@ -70,11 +70,11 @@ next
     by auto
 qed
 
-lemma inconsistent_c_aux: "gval (cexp2gexp r (c r)) sa \<noteq> Some True \<Longrightarrow>
-       (r = V (I i) \<longrightarrow> gval (cexp2gexp (V (I i)) (and (cexp.Eq s) (c (V (I i))))) sa \<noteq> Some True) \<and>
-             (r \<noteq> V (I i) \<longrightarrow> gval (cexp2gexp r (c r)) sa \<noteq> Some True)"
+lemma inconsistent_c_aux: "gval (cexp2gexp r (c r)) sa \<noteq> true \<Longrightarrow>
+       (r = V (I i) \<longrightarrow> gval (cexp2gexp (V (I i)) (and (cexp.Eq s) (c (V (I i))))) sa \<noteq> true) \<and>
+             (r \<noteq> V (I i) \<longrightarrow> gval (cexp2gexp r (c r)) sa \<noteq> true)"
 proof-
-  assume premise: "gval (cexp2gexp r (c r)) sa \<noteq> Some True"
+  assume premise: "gval (cexp2gexp r (c r)) sa \<noteq> true"
   show ?thesis
     apply (simp only: gval_and)
     apply standard
@@ -82,21 +82,21 @@ proof-
     by (simp add: premise)
 qed
 
-lemma not_undef_gval: "\<forall>r. c r = Undef \<or> gval (cexp2gexp r (c r)) s = Some True \<Longrightarrow>
-         c (V (I i)) \<noteq> Undef \<Longrightarrow> gval (cexp2gexp (V (I i)) (c (V (I i)))) s = Some True"
+lemma not_undef_gval: "\<forall>r. c r = Undef \<or> gval (cexp2gexp r (c r)) s = true \<Longrightarrow>
+         c (V (I i)) \<noteq> Undef \<Longrightarrow> gval (cexp2gexp (V (I i)) (c (V (I i)))) s = true"
   by auto
 
 lemma ctx_simp2: "and (if r = i then snd (i, g) else cexp.Bc True) (c r) = 
        (if r = i then and g (c r) else c r)"
   by auto
 
-lemma gval_and_eq: "gval (cexp2gexp r (c r)) s \<noteq> Some True \<Longrightarrow> gval (cexp2gexp r (if r = i then and (cexp.Eq v) (c r) else c r)) s \<noteq> Some True"
+lemma gval_and_eq: "gval (cexp2gexp r (c r)) s \<noteq> true \<Longrightarrow> gval (cexp2gexp r (if r = i then and (cexp.Eq v) (c r) else c r)) s \<noteq> true"
   apply simp
   apply (simp only: gval_and gval_gAnd maybe_and_not_true)
   by auto
 
-lemma test5: "gval (cexp2gexp r (if r = VIi then and c1 (c r) else c r)) s = Some True \<Longrightarrow>
-           gval (cexp2gexp r (c r)) s = Some True"
+lemma test5: "gval (cexp2gexp r (if r = VIi then and c1 (c r) else c r)) s = true \<Longrightarrow>
+           gval (cexp2gexp r (c r)) s = true"
   apply (case_tac "r = VIi")
    apply simp
    apply (simp only: gval_and gval_gAnd)
@@ -104,11 +104,11 @@ lemma test5: "gval (cexp2gexp r (if r = VIi then and c1 (c r) else c r)) s = Som
   by simp
 
 lemma "gval (cexp2gexp uu (and a b)) s = maybe_and (gval (cexp2gexp uu a) s) (gval (cexp2gexp uu b) s)"
-  by (simp add: gval_and)
+  by (simp add: gval_and gval_gAnd)
 
-lemma gval_if_split: "(\<forall>r. gval (cexp2gexp r (if r = vIi then and c1 (c r) else c r)) s = Some True) =
-((gval (cexp2gexp (vIi) (and c1 (c (vIi)))) s = Some True) \<and>
-(\<forall>r. gval (cexp2gexp r (c r)) s = Some True))"
+lemma gval_if_split: "(\<forall>r. gval (cexp2gexp r (if r = vIi then and c1 (c r) else c r)) s = true) =
+((gval (cexp2gexp (vIi) (and c1 (c (vIi)))) s = true) \<and>
+(\<forall>r. gval (cexp2gexp r (c r)) s = true))"
   apply safe
     apply (metis (full_types))
   using test5 apply blast
@@ -149,173 +149,10 @@ lemma finite_regs: "finite (\<Union>x\<in>set (Updates t). case x of (r, uu_) \<
   using finite_enumerate_aexp_regs
   by auto
 
-lemma "cval (conjoin c) r ia = None \<Longrightarrow> cval (conjoin (c |\<union>| c')) r ia = None"
-  apply (simp add: conjoin_def)
-  oops
-
-lemma "cval (conjoin (c |\<union>| c')) r ia = maybe_and (cval (conjoin c) r ia) (cval (conjoin c') r ia)"
-  apply simp
-  apply (case_tac "cval (Contexts.conjoin c) r ia")
-   apply simp
-
-
-lemma "(cval (conjoin (c |\<union>| c')) r ia = Some True \<longrightarrow> cval (conjoin (c |\<union>| c''))r ia = Some True) \<equiv>
-       (cval (conjoin c') r ia = Some True \<longrightarrow> cval (conjoin c'')r ia = Some True)"
-  apply (simp add: conjoin_def)
-
-lemma "cval (Contexts.conjoin (medial c G r)) r ia = Some True \<Longrightarrow>
-       cval (Contexts.conjoin (medial c (filter f G) r)) r ia = Some True"
-  apply (simp add: medial_def)
-
-lemma generalise_subsumption: "c (V (R ri)) = {|Undef|} \<Longrightarrow> 
-                               c (V (I i)) = {|Bc True|} \<Longrightarrow> 
-                               subsumes c (remove_guard_add_update t i ri) t"
-  apply (simp add: subsumes_def)
-  apply (simp add: remove_guard_add_update_def)
-  apply safe
-
-
 lemma remove_guard_add_update:  "\<lparr>Label=l, Arity=a, Guard=[], Outputs=[], Updates=[(R r, (V (I i)))]\<rparr> = remove_guard_add_update \<lparr>Label=l, Arity=a, Guard=[GExp.Eq (V (I i)) (L s)], Outputs=[], Updates=[]\<rparr> i r"
   by (simp add: remove_guard_add_update_def)
 
-lemma generalise_subsumption_empty: "subsumes \<lbrakk>\<rbrakk> \<lparr>Label=l, Arity=a, Guard=[], Outputs=[], Updates=[(R r, (V (I i)))]\<rparr> 
-                  \<lparr>Label=l, Arity=a, Guard=[GExp.Eq (V (I i)) (L s)], Outputs=[], Updates=[]\<rparr>"
-  using remove_guard_add_update empty_variable_constraints generalise_subsumption
-  by simp
-
-lemma "subsumes \<lbrakk>\<rbrakk> (remove_guard_add_update \<lparr>Label=l, Arity=a, Guard=[GExp.Eq (V (I i)) (L s)], Outputs=[], Updates=[]\<rparr> i r)
-                  \<lparr>Label=l, Arity=a, Guard=[GExp.Eq (V (I i)) (L s)], Outputs=[], Updates=[]\<rparr>"
-  using remove_guard_add_update empty_variable_constraints generalise_subsumption
-  by simp
-
-lemma "\<not> incoming_transition_to t 0 \<Longrightarrow> directly_subsumes t t' 0 \<lparr>Label=l, Arity=a, Guard=[], Outputs=[], Updates=[(R r, (V (I i)))]\<rparr> 
-                                                                 \<lparr>Label=l, Arity=a, Guard=[GExp.Eq (V (I i)) (L s)], Outputs=[], Updates=[]\<rparr>"
-  apply (simp add: directly_subsumes_def anterior_context_no_return_to_zero)
-  apply (simp add: generalise_subsumption_empty)
-  using generalise_subsumption_empty
-  by blast
-
-lemma generalise_output_preserves_label: "Label (generalise_output t r p) = Label t"
-  by (simp add: generalise_output_def)
-
-lemma generalise_output_preserves_arity: "Arity (generalise_output t r p) = Arity t"
-  by (simp add: generalise_output_def)
-
-lemma generalise_output_preserves_output_length: "length (Outputs (generalise_output t r p)) = length (P)"
-  by (simp add: generalise_output_def)
-
-lemma generalise_output_preserves_guard: "Guard (generalise_output t r p) = Guard t"
-  by (simp add: generalise_output_def)
-
-lemma generalise_output_preserves_updates: "Updates (generalise_output t r p) = Updates t"
-  by (simp add: generalise_output_def)
-
-lemmas generalise_output_preserves = generalise_output_preserves_label generalise_output_preserves_arity
-generalise_output_preserves_output_length generalise_output_preserves_guard
-
-lemma "nth (P) p = L v \<Longrightarrow> c (V (R r)) = Eq v  \<Longrightarrow> subsumes c (generalise_output t r p) t"
-  apply (simp add: subsumes_def generalise_output_preserves)
-  apply safe
-     prefer 2
-     apply (simp add: generalise_output_def)
-     apply (rule_tac x=i in exI)
-     apply (rule_tac x="<R r := v>" in exI)
-     apply simp
-  oops
-
-lemma posterior_input: "(posterior \<lbrakk>\<rbrakk> aaa) (V(I i)) = Bc False \<Longrightarrow> (posterior \<lbrakk>\<rbrakk> aaa) = (\<lambda>x. Bc False)"
-  apply (simp add: posterior_def Let_def)
-  apply (case_tac "consistent (medial \<lbrakk>\<rbrakk> (Guard aaa))")
-   apply simp
-   apply (simp add: remove_input_constraints_def)
-  by simp
-
 lemma filter_not_f_a: " \<not> f a \<Longrightarrow> filter f g = filter f (a#g)"
-  by simp
-
-lemma and_false_not_undef: "and (cexp.Bc False) c \<noteq> Undef"
-  apply (induct_tac c)
-        apply simp
-       apply (case_tac x)
-  by auto
-
-lemma and_And_false: "x \<noteq> cexp.Bc True \<and> x \<noteq> Bc False \<Longrightarrow> and (Bc False) x = And (Bc False) x"
-  apply (case_tac x)
-  by auto
-
-lemma cval_medial_true_requires_cval_anterior_true: "cval (medial c g r) r i = Some True \<Longrightarrow> cval (c r) r i = Some True"
-proof(induct g)
-  case Nil
-  then show ?case by (simp add: medial_def)
-next
-  case (Cons a g)
-  then show ?case
-    apply (simp add: medial_def)
-    using cval_pairs2context_not_true by blast
-qed
-
-lemma cval_pairs2context_true_cval_true: "cval (pairs2context G m x) y i = Some True \<Longrightarrow> cval (m x) y i = Some True"
-proof(induct G)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons a G)
-  then show ?case
-    apply (case_tac a)
-    apply simp
-    apply (case_tac "x = aa")
-     apply simp
-     apply (simp only: cval_And maybe_and_true)
-    by simp
-qed
-
-lemma cval_medial_var_update: "cval (medial m g x) y i = Some True \<Longrightarrow>
-             cval (m x) y i = Some True"
-  by (simp add: medial_def cval_pairs2context_true_cval_true)
-
-lemma cval_conjoin: "cval (Contexts.conjoin c c' r) aa s = maybe_and (cval (c r) aa s) (cval (c' r) aa s)"
-  by (simp add: cval_def)
-
-lemma gval_conjoin:  "gval (cexp2gexp aa (Contexts.conjoin c c' r)) s = maybe_and (gval (cexp2gexp aa (c r)) s) (gval (cexp2gexp aa (c' r)) s)"
-  by (simp only: conjoin.simps gval_and gval_gAnd)
-
-lemma cval_none_cval_pairs2context_none: "cval (c r) a s = None \<Longrightarrow> cval (pairs2context G c r) a s = None"
-proof(induct G)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons a G)
-  then show ?case
-    apply (case_tac a)
-    apply simp
-    apply (simp only: cval_And)
-    by auto
-qed
-
-lemma cval_medial_none: "cval (c r) a s = None \<Longrightarrow> cval (medial c g r) a s = None"
-  by (simp add: medial_def cval_none_cval_pairs2context_none)
-
-lemma and_true: "and c (cexp.Bc True) = c"
-  apply (case_tac c)
-        apply simp
-       apply (case_tac x2)
-  by auto
-
-lemma and_self: "and x x = x"
-  apply (case_tac x)
-        apply simp
-       apply (case_tac x2)
-  by auto
-
-lemma conjoin_true:  "Contexts.conjoin (\<lambda>i. cexp.Bc True) x = x"
-  by simp
-
-lemma maybe_and_false: "maybe_and c (Some False) \<noteq> Some True"
-  apply (case_tac c)
-  by auto
-
-lemma cval_And_false: "cval (And c (cexp.Bc False)) a s \<noteq> Some True"
-  apply (simp only: cval_And maybe_and_true cval_false)
   by simp
 
 lemma cval_not: "cval (not x) r s = maybe_not (cval x r s)"
@@ -343,15 +180,51 @@ next
 next
   case (Not x)
   then show ?case
-    by (simp del: not.simps add: cval_Not)
+    apply (simp add: cval_not cval_Not)
+    by (simp add: maybe_double_negation)
 next
   case (And x1 x2)
   then show ?case
-    by (simp del: not.simps add: cval_Not)
+    by (simp add: cval_Not)
 qed
 
-lemma cval_make_gt_1: "cval (make_gt (and cp cp)) a s = Some True \<Longrightarrow>
-                     cval (make_gt (and (and cp (cexp.Lt x)) (and cp (cexp.Lt x)))) a s = Some True"
+lemma "medial c G ra |\<subseteq>| medial c (filter f G) ra"
+proof(induct G)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a G)
+  then show ?case
+    apply simp
+    apply (case_tac "f a")
+     apply simp
+     apply (simp add: medial_def)
+qed
+
+lemma "t' = remove_guard_add_update t i r \<Longrightarrow>
+       cval (Contexts.conjoin (medial c (Guard t) ra)) ra ia = true \<Longrightarrow>
+       cval (Contexts.conjoin (medial c (Guard (remove_guard_add_update t i r)) ra)) ra ia = true"
+  apply (simp add: remove_guard_add_update_def)
+
+lemma "is_generalisation_of t' t e \<Longrightarrow> subsumes c t' t"
+  apply (simp add: is_generalisation_of_def subsumes_def)
+  apply clarify
+  apply safe
+          apply (simp add: remove_guard_add_update_preserves_label)
+         apply (simp add: remove_guard_add_update_preserves_arity)
+        apply (simp add: remove_guard_add_update_preserves_outputs)
+       prefer 2
+       apply (simp add: remove_guard_add_update_preserves_outputs)
+      prefer 2
+      apply (simp add: remove_guard_add_update_preserves_outputs)
+
+
+
+
+
+
+lemma cval_make_gt_1: "cval (make_gt (and cp cp)) a s = true \<Longrightarrow>
+                     cval (make_gt (and (and cp (cexp.Lt x)) (and cp (cexp.Lt x)))) a s = true"
 proof(induct cp)
 case Undef
   then show ?case
@@ -389,8 +262,8 @@ next
     by simp
 qed
 
-lemma cval_make_gt_2: "cval (make_gt (c (V v))) a s = Some True \<Longrightarrow>
-       cval (make_gt (and (c (V v)) (cexp.Lt x))) a s = Some True"
+lemma cval_make_gt_2: "cval (make_gt (c (V v))) a s = true \<Longrightarrow>
+       cval (make_gt (and (c (V v)) (cexp.Lt x))) a s = true"
   using and_self cval_make_gt_1 by auto
 
 lemma and_gives_And: "c \<noteq> cexp.Bc True \<Longrightarrow> c' \<noteq> cexp.Bc True \<Longrightarrow> c' \<noteq> c \<Longrightarrow> (and c c') = And c c'"
@@ -468,26 +341,26 @@ lemma get_simp: "V x \<noteq> a2 \<Longrightarrow>
 lemma and_undef_false: "and Undef (cexp.Bc False) = And Undef (Bc False)"
   by simp
 
-lemma maybe_not_true: "maybe_not c = Some True = (c = Some False)"
+lemma maybe_not_true: "maybe_not c = true = (c = Some False)"
   apply (case_tac c)
   by auto
 
 lemma "(cval (apply_update (medial (medial c g) g) (Contexts.apply_updates (medial (medial c g) g) (medial c g) u) (aa, b1) (V aa)) (V aa) i =
-     Some True \<Longrightarrow>
-     Plus b1 b2 = b1 \<Longrightarrow> cval (apply_update (medial c g) (Contexts.apply_updates (medial c g) c u) (aa, b1) (V aa)) (V aa) i = Some True) \<Longrightarrow>
+     true \<Longrightarrow>
+     Plus b1 b2 = b1 \<Longrightarrow> cval (apply_update (medial c g) (Contexts.apply_updates (medial c g) c u) (aa, b1) (V aa)) (V aa) i = true) \<Longrightarrow>
     (cval (apply_update (medial (medial c g) g) (Contexts.apply_updates (medial (medial c g) g) (medial c g) u) (aa, b2) (V aa)) (V aa) i =
-     Some True \<Longrightarrow>
-     Plus b1 b2 = b2 \<Longrightarrow> cval (apply_update (medial c g) (Contexts.apply_updates (medial c g) c u) (aa, b2) (V aa)) (V aa) i = Some True) \<Longrightarrow>
-    (cval (Contexts.apply_updates (medial (medial c g) g) (medial c g) u (V aa)) (V aa) i = Some True \<Longrightarrow>
-     cval (Contexts.apply_updates (medial c g) c u (V aa)) (V aa) i = Some True) \<Longrightarrow>
-    cval (compose_plus (Contexts.get (medial (medial c g) g) b1) (Contexts.get (medial (medial c g) g) b2)) (V aa) i = Some True \<Longrightarrow>
-    cval (compose_plus (Contexts.get (medial c g) b1) (Contexts.get (medial c g) b2)) (V aa) i = Some True"
+     true \<Longrightarrow>
+     Plus b1 b2 = b2 \<Longrightarrow> cval (apply_update (medial c g) (Contexts.apply_updates (medial c g) c u) (aa, b2) (V aa)) (V aa) i = true) \<Longrightarrow>
+    (cval (Contexts.apply_updates (medial (medial c g) g) (medial c g) u (V aa)) (V aa) i = true \<Longrightarrow>
+     cval (Contexts.apply_updates (medial c g) c u (V aa)) (V aa) i = true) \<Longrightarrow>
+    cval (compose_plus (Contexts.get (medial (medial c g) g) b1) (Contexts.get (medial (medial c g) g) b2)) (V aa) i = true \<Longrightarrow>
+    cval (compose_plus (Contexts.get (medial c g) b1) (Contexts.get (medial c g) b2)) (V aa) i = true"
 
-lemma "(cval (Contexts.apply_updates (medial (medial c g) g) (medial c g) u r) r i = Some True \<Longrightarrow>
-        cval (Contexts.apply_updates (medial c g) c u r) r i = Some True) \<Longrightarrow>
+lemma "(cval (Contexts.apply_updates (medial (medial c g) g) (medial c g) u r) r i = true \<Longrightarrow>
+        cval (Contexts.apply_updates (medial c g) c u r) r i = true) \<Longrightarrow>
        cval (apply_update (medial (medial c g) g) (Contexts.apply_updates (medial (medial c g) g) (medial c g) u) (aa, b) r) r i =
-       Some True \<Longrightarrow>
-       a = (aa, b) \<Longrightarrow> cval (apply_update (medial c g) (Contexts.apply_updates (medial c g) c u) (aa, b) r) r i = Some True"
+       true \<Longrightarrow>
+       a = (aa, b) \<Longrightarrow> cval (apply_update (medial c g) (Contexts.apply_updates (medial c g) c u) (aa, b) r) r i = true"
 proof(induct b)
 case (L x)
   then show ?case
@@ -512,8 +385,8 @@ next
   then show ?case sorry
 qed
 
-lemma last: "cval (Contexts.apply_updates (medial (medial c g) g) (medial c g) u r) r i = Some True \<Longrightarrow>
-             cval (Contexts.apply_updates (medial c g) c u r) r i = Some True"
+lemma last: "cval (Contexts.apply_updates (medial (medial c g) g) (medial c g) u r) r i = true \<Longrightarrow>
+             cval (Contexts.apply_updates (medial c g) c u r) r i = true"
 proof(induct u)
   case Nil
   then show ?case
