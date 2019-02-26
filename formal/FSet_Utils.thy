@@ -63,4 +63,6 @@ lemma sorted_list_of_empty [simp]: "sorted_list_of_fset {||} = []"
 lemma fmember_implies_member: "e |\<in>| f \<Longrightarrow> e \<in> fset f"
   by (simp add: fmember_def)
 
+lemma ffilter_to_filter: "(ffilter f s = s') = (Set.filter f (fset s) = fset s')"
+  by (metis ffilter.rep_eq fset_inject)
 end

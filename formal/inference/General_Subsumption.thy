@@ -188,19 +188,6 @@ next
     by (simp add: cval_Not)
 qed
 
-lemma "medial c G ra |\<subseteq>| medial c (filter f G) ra"
-proof(induct G)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons a G)
-  then show ?case
-    apply simp
-    apply (case_tac "f a")
-     apply simp
-     apply (simp add: medial_def)
-qed
-
 lemma "t' = remove_guard_add_update t i r \<Longrightarrow>
        cval (Contexts.conjoin (medial c (Guard t) ra)) ra ia = true \<Longrightarrow>
        cval (Contexts.conjoin (medial c (Guard (remove_guard_add_update t i r)) ra)) ra ia = true"
