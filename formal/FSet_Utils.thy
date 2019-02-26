@@ -60,4 +60,7 @@ lemma singleton_equiv: "is_singleton s \<Longrightarrow> (the_elem s = i) = (s =
 lemma sorted_list_of_empty [simp]: "sorted_list_of_fset {||} = []"
   by (simp add: sorted_list_of_fset_def)
 
+lemma fmember_implies_member: "e |\<in>| f \<Longrightarrow> e \<in> fset f"
+  by (simp add: fmember_def)
+
 end

@@ -108,27 +108,21 @@ code_pred satisfies_trace.
 
 declare ListMem_iff [code]
 
-primrec ran :: "nat \<Rightarrow> nat set" where
-  "ran 0 = {0}" |
-  "ran (Suc n) = insert (Suc n) (ran n)"
-
-lemma "i \<in> ran n = (i \<le> n)"
-proof(induct n)
-  case 0
-  then show ?case by simp
-next
-  case (Suc n)
-  then show ?case
-    by auto
-qed
-
-definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> bool" where
-  "is_generalisation_of t' t e = (\<exists>i \<in> (ran (max_input e)).
-                                  \<exists>r \<in> (ran (max_reg e)).
-                                  \<exists>to \<in> fset (S e).
-                                  \<exists>from \<in> fset (S e).
-                                  \<exists>uid \<in> fset (uids e).  i < max_reg e \<and> from |\<in>| S e \<and>  t' = remove_guard_add_update t i r \<and> (uid, (from, to), t') |\<in>| e)"
-
+lemma finite__generalisation [code]: "is_generalisation_of t' t e =
+                                      (\<exists>i \<in> (ran (max_input e)).
+                                       \<exists>r \<in> (ran (max_reg e)).
+                                       \<exists>to \<in> fset (S e).
+                                       \<exists>from \<in> fset (S e).
+                                       \<exists>uid \<in> fset (uids e).  t' = remove_guard_add_update t i r \<and> (uid, (from, to), t') |\<in>| e)"
+  apply (simp add: is_generalisation_of_def)
+  apply standard
+   defer
+   apply auto[1]
+  apply safe
+  using remove_guard_add_update_i_r ran_leq_n
+   apply blast
+  using to_from_in_S_uid_in_uids fmember_implies_member
+  by metis
 
 export_code is_generalisation_of iterative_learn finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot GExp.conjoin naive_score null_generator null_modifier nondeterministic learn in Scala
   (* module_name "Inference" *)

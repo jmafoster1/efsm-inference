@@ -199,4 +199,250 @@ lemma remove_guard_same_labels_arities: "t' = remove_guard_add_update t i ri \<L
        Arity t = Arity t' \<and>
        length (Outputs t) = length (Outputs t')"
   by (simp add: remove_guard_add_update_def)
+
+lemma remove_guard_add_update_preserves_outputs: "Outputs (remove_guard_add_update t i r) = Outputs t"
+  by (simp add: remove_guard_add_update_def)
+
+primrec ran :: "nat \<Rightarrow> nat set" where
+  "ran 0 = {0}" |
+  "ran (Suc n) = insert (Suc n) (ran n)"
+
+lemma ran_leq_n: "i \<in> ran n = (i \<le> n)"
+proof(induct n)
+  case 0
+  then show ?case by simp
+next
+  case (Suc n)
+  then show ?case
+    by auto
+qed
+
+definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> bool" where
+  "is_generalisation_of t' t e = (\<exists>i r to from uid. t' = remove_guard_add_update t i r \<and> (uid, (from, to), t') |\<in>| e)"
+
+lemma finite_enumerate_aexp_inputs: "finite (enumerate_aexp_inputs a)"
+proof(induct a)
+case (L x)
+  then show ?case
+    by simp
+next
+case (V x)
+  then show ?case
+    apply (cases x)
+    by auto
+next
+  case (Plus a1 a2)
+  then show ?case
+    by simp
+next
+  case (Minus a1 a2)
+  then show ?case
+    by simp
+qed
+
+lemma finite_enumerate_gexp_inputs: "finite (enumerate_gexp_inputs g)"
+proof(induct g)
+case (Bc x)
+  then show ?case
+    by simp
+next
+  case (Eq x1a x2)
+  then show ?case
+    by (simp add: finite_enumerate_aexp_inputs)
+next
+case (Gt x1a x2)
+  then show ?case
+    by (simp add: finite_enumerate_aexp_inputs)
+next
+  case (Nor g1 g2)
+  then show ?case
+    by simp
+next
+  case (Null x)
+  then show ?case
+    by (simp add: finite_enumerate_aexp_inputs)
+qed
+
+lemma finite_enumerate_gexp_inputs_alt: "finite (\<Union>x\<in>set g. enumerate_gexp_inputs x)"
+  by (simp add: finite_enumerate_gexp_inputs)
+
+lemma finite_enumerate_aexp_inputs_alt: "finite (\<Union>x\<in>set (Outputs t). enumerate_aexp_inputs x)"
+  by (simp add: finite_enumerate_aexp_inputs)
+
+lemma finite_enumerate_inputs_Updates_alt: "finite (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_inputs x)"
+  using finite_enumerate_aexp_inputs
+  by auto
+
+lemma eliminate_zero_insert: "finite s \<Longrightarrow> Max (insert (0::nat) (insert i s)) = Max (insert i s)"
+  by simp
+
+lemma finite_insert_max:  "finite s \<Longrightarrow> i \<le> Max (insert i s)"
+  by simp
+
+lemma remove_guard_add_update_i: "t' = remove_guard_add_update t i r \<Longrightarrow>
+       (uid, (from, to), t') |\<in>| e \<Longrightarrow>
+       i \<le> max_input e"
+proof(induct e)
+  case empty
+  then show ?case
+    by simp
+next
+  have finite_choices: "\<And>t i. finite (((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_inputs x) \<union>
+                  (\<Union>x\<in>set (Outputs t). enumerate_aexp_inputs x) \<union>
+                  (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_inputs x)))"
+  using finite_enumerate_gexp_inputs_alt finite_enumerate_aexp_inputs_alt finite_enumerate_inputs_Updates_alt
+  by fastforce
+  have spurious_insert_zero: "\<And>i t. Max (insert (0::nat)
+               (insert i
+                 ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_inputs x) \<union>
+                  (\<Union>x\<in>set (Outputs t). enumerate_aexp_inputs x) \<union>
+                  (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_inputs x)))) =
+               Max (insert i
+                 ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_inputs x) \<union>
+                  (\<Union>x\<in>set (Outputs t). enumerate_aexp_inputs x) \<union>
+                  (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_inputs x)))"
+  using eliminate_zero_insert finite_choices
+  by blast
+  have aux2: "\<And>i t. i \<le> Max (insert i
+             ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_inputs x) \<union>
+              (\<Union>x\<in>set (Outputs t). enumerate_aexp_inputs x) \<union>
+              (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_inputs x)))"
+    using finite_choices finite_insert_max
+    by blast
+  case (insert x e)
+  then show ?case
+    apply (simp add: max_input_def)
+    apply (cases x)
+    apply simp
+    apply clarify
+    apply simp
+    apply (case_tac "(uid, (from, to), remove_guard_add_update t i r) |\<in>| e")
+     apply auto[1]
+    apply simp
+    apply (simp add: get_biggest_t_input_def)
+    apply safe
+     apply simp
+     apply simp
+     apply (simp add: remove_guard_add_update_def)
+     apply simp
+     apply (simp add: spurious_insert_zero aux2)
+
+    apply (simp add: not_le)
+    apply clarify
+    apply (simp add: remove_guard_add_update_def)
+    apply (simp add: spurious_insert_zero)
+    using leD aux2
+    by blast
+qed
+
+lemma finite_enumerate_aexp_regs: "finite (enumerate_aexp_regs r)"
+proof(induct r)
+  case (L x)
+then show ?case by simp
+next
+case (V x)
+  then show ?case
+    apply (cases x)
+    by auto
+next
+case (Plus r1 r2)
+  then show ?case by simp
+next
+case (Minus r1 r2)
+  then show ?case by simp
+qed
+
+lemma finite_enumerate_gexp_regs: "finite(enumerate_gexp_regs x)"
+proof(induct x)
+case (Bc x)
+then show ?case by simp
+next
+  case (Eq x1a x2)
+  then show ?case
+    by (simp add: finite_enumerate_aexp_regs)
+next
+  case (Gt x1a x2)
+  then show ?case 
+    by (simp add: finite_enumerate_aexp_regs)
+next
+  case (Nor x1 x2)
+  then show ?case 
+    by simp
+next
+  case (Null x)
+  then show ?case 
+    by (simp add: finite_enumerate_aexp_regs)
+qed
+
+lemma remove_guard_add_update_r: "t' = remove_guard_add_update t i r \<Longrightarrow>
+       (uid, (from, to), t') |\<in>| e \<Longrightarrow>
+       r \<le> max_reg e"
+proof(induct e)
+  case empty
+  then show ?case by simp
+next
+  have finite_choices: "\<And>t i. finite ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_regs x) \<union>
+               (\<Union>x\<in>set (Outputs t). enumerate_aexp_regs x) \<union>
+               (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_regs x) \<union>
+               (\<Union>x\<in>set (Updates t). case x of (r, uu_) \<Rightarrow> enumerate_aexp_regs (V r)))"
+  using finite_enumerate_gexp_regs finite_enumerate_aexp_regs
+  by auto
+  have spurious_insert_zero: "\<forall> i r t. Max (insert 0
+               (insert r
+                 ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_regs x) \<union>
+                  (\<Union>x\<in>set (Outputs t). enumerate_aexp_regs x) \<union>
+                  (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_regs x) \<union>
+                  (\<Union>x\<in>set (Updates t). case x of (r, uu_) \<Rightarrow> enumerate_aexp_regs (V r))))) = 
+        Max (insert r
+         ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_regs x) \<union>
+          (\<Union>x\<in>set (Outputs t). enumerate_aexp_regs x) \<union>
+          (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_regs x) \<union>
+          (\<Union>x\<in>set (Updates t). case x of (r, uu_) \<Rightarrow> enumerate_aexp_regs (V r))))"
+  proof-
+    show ?thesis
+      apply clarify
+      using finite_choices eliminate_zero_insert
+      by blast
+  qed
+  have aux: "\<And>r t. r \<le> Max (insert r
+             ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_regs x) \<union>
+              (\<Union>x\<in>set (Outputs t). enumerate_aexp_regs x) \<union>
+              (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_regs x) \<union>
+              (\<Union>x\<in>set (Updates t). case x of (r, uu_) \<Rightarrow> enumerate_aexp_regs (V r))))"
+    using finite_choices finite_insert_max
+    by blast
+  case (insert x e)
+  then show ?case
+    apply (simp add: max_reg_def)
+    apply (cases x)
+    apply simp
+    apply clarify
+    apply simp
+    apply (case_tac "(uid, (from, to), remove_guard_add_update t i r) |\<in>| e")
+     apply auto[1]
+    apply simp
+    apply (simp add: get_biggest_t_reg_def)
+    apply safe
+     apply simp
+     apply simp
+     apply (simp add: remove_guard_add_update_def)
+     apply simp
+     apply (simp add: spurious_insert_zero)
+    using finite_insert_max finite_choices
+     apply blast
+    apply simp
+
+    apply (simp add: not_le)
+    apply clarify
+    apply (simp add: remove_guard_add_update_def)
+    apply (simp add: spurious_insert_zero)
+    using aux leD
+    by blast
+qed
+
+lemma remove_guard_add_update_i_r: "t' = remove_guard_add_update t i r \<Longrightarrow>
+       (uid, (from, to), t') |\<in>| e \<Longrightarrow>
+       r \<le> max_reg e \<and> i \<le> max_input e"
+  using remove_guard_add_update_r remove_guard_add_update_i
+  by simp
 end                                                   

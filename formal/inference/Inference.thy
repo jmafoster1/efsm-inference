@@ -248,4 +248,8 @@ definition learn :: "log \<Rightarrow> strategy \<Rightarrow> generator_function
 definition uids :: "iEFSM \<Rightarrow> nat fset" where
   "uids e = fimage fst e"
 
+lemma to_from_in_S_uid_in_uids: "(uid, (from, to), t) |\<in>| e \<Longrightarrow> to |\<in>| S e \<and> from |\<in>| S e \<and> uid |\<in>| uids e"
+  apply (simp add: S_def uids_def)
+  by force
+
 end
