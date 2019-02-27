@@ -63,24 +63,6 @@ fun update :: "context \<Rightarrow> aexp \<Rightarrow> cexp fset \<Rightarrow> 
 definition conjoin :: "cexp fset \<Rightarrow> cexp" where
   "conjoin f = fold And (sorted_list_of_fset f) (Bc True)"
 
-definition context_equiv :: "context \<Rightarrow> context \<Rightarrow> bool" where
-  "context_equiv c c' \<equiv> (\<forall>r. cexp_equiv (conjoin (c r)) (conjoin (c' r)))"
-
-lemma context_equiv_reflexive: "context_equiv x x"
-  apply (simp add: context_equiv_def)
-  apply (rule allI)
-  by (simp add: cexp_equiv_def gexp_equiv_def)
-
-lemma context_equiv_symmetric: "context_equiv x y \<Longrightarrow> context_equiv y x"
-  apply (simp add: context_equiv_def)
-  apply (rule allI)
-  by (simp add: cexp_equiv_def gexp_equiv_def)
-
-lemma context_equiv_transitive: "context_equiv x y \<and> context_equiv y z \<Longrightarrow> context_equiv x z"
-  apply (simp add: context_equiv_def)
-  apply (rule allI)
-  by (simp add: cexp_equiv_def gexp_equiv_def)
-
 definition consistent :: "context \<Rightarrow> bool" where (* Is there a variable evaluation which can satisfy all of the context? *)
   "consistent c \<equiv> \<exists>s. \<forall>r. fBall (c r) (\<lambda>c. (cval c r s = true))"
 
@@ -306,7 +288,7 @@ definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transitio
                       (\<forall>r i. (cval (conjoin (medial c (Guard t1) r)) r i = true) \<longrightarrow> (cval (conjoin (medial c (Guard t2) r)) r i) = true) \<and>
                       (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
-                      (\<forall>r i. cval (conjoin (posterior (medial c (Guard t1)) t2 r)) r i = true \<longrightarrow> (cval (conjoin (posterior c t1 r)) r i = true) \<or> (posterior c t1 r) = {|Undef|}) \<and>
+                      (\<forall>r i. fBall (posterior (medial c (Guard t1)) t2 r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (posterior c t1 r) (\<lambda>c. cval c r i = true) \<or> (posterior c t1 r) = {|Undef|}) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
 
 definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> context" where
@@ -320,13 +302,6 @@ definition directly_subsumes :: "transition_matrix \<Rightarrow> transition_matr
 
 lemma cant_directly_subsume: "\<forall>c. \<not> subsumes c t t' \<Longrightarrow> \<not> directly_subsumes m m' s t t'"
   by (simp add: directly_subsumes_def)
-
-lemma context_equiv_same_undef: "c i = {|Undef|} \<Longrightarrow> c' i = {|Bc True|} \<Longrightarrow> \<not> context_equiv c c'"
-  apply (simp add: context_equiv_def cexp_equiv_def gexp_equiv_def)
-  apply (rule_tac x=i in exI)
-  apply (simp add: conjoin_def sorted_list_of_fset_def)
-  apply (simp add: cval_And cval_true)
-  using invalid_undef maybe_and_true valid_def by auto
 
 lemma gexp_equiv_cexp_not_true:  "gexp_equiv (cexp2gexp a (Not (Bc True))) (gexp.Bc False)"
   by (simp add: gexp_equiv_def gval.simps)
@@ -374,122 +349,10 @@ next
     by (simp add: conjoin_def sorted_list_of_fset_def cval_And cval_true)
 qed
 
-lemma cval_pairs2context_not_true: "cval (conjoin (c r)) r s \<noteq> true \<Longrightarrow>
-       cval (conjoin (pairs2context G c r)) r s \<noteq> true"
-proof(induct G)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons a G)
-  then show ?case
-    apply (case_tac a)
-    apply simp
-    apply clarify
-    apply simp
-
-qed
-
-lemma inconsistent_anterior_gives_inconsistent_medial: "\<not>consistent c \<Longrightarrow> \<not>consistent (medial c g)"
-proof(induct g)
-  case Nil
-  then show ?case
-    by (simp add: medial_def)
-next
-  case (Cons a g)
-  then show ?case
-    apply (simp add: consistent_def medial_def del: fold.simps)
-    apply clarify
-    using cval_pairs2context_not_true
-    by blast
-qed
-
-lemma consistent_medial_requires_consistent_anterior: "consistent (medial c g) \<Longrightarrow> consistent c"
-  using inconsistent_anterior_gives_inconsistent_medial
-  by auto
-
-lemma consistent_posterior_requires_consistent_antrior: "consistent (posterior c t) \<Longrightarrow> consistent c"
-  apply (simp add: posterior_def Let_def)
-  apply (case_tac "consistent (medial c (Guard t))")
-   apply simp
-   apply (simp add: consistent_medial_requires_consistent_anterior)
-  by (simp add: inconsistent_false)
-
 lemma consistent_posterior_gives_consistent_medial: "consistent (posterior c x) \<Longrightarrow> consistent (medial c (Guard x))"
   apply (simp add: posterior_def Let_def)
   apply (case_tac "consistent (medial c (Guard x))")
    apply simp
   by (simp add: inconsistent_false)
 
-lemma cval_plus_1: "cval (c (Plus x32 x31)) a s \<noteq> true \<Longrightarrow>
-       cval (pairs2context gs c (Plus x32 x31)) a s \<noteq> true"
-proof(induct gs)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons a gs)
-  then show ?case
-    apply (case_tac a)
-    apply simp
-    apply (simp only: cval_And maybe_and_true)
-    by auto
-qed
-
-lemma cval_get_not_true_gives_cval_pairs2context_not_true: "cval (get c x) a s \<noteq> true \<Longrightarrow>
-       cval (get (pairs2context G c) x) a s \<noteq> true"
-proof(induct G)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons g gs)
-  then show ?case
-    apply (case_tac g)
-    apply simp
-    apply (case_tac x)
-       apply simp
-      apply simp
-      apply (simp only: cval_And maybe_and_true)
-      apply auto[1]
-     defer
-     apply simp
-      apply (simp only: cval_And maybe_and_true)
-     apply auto[1]
-    apply simp
-    apply safe
-        apply (simp only: cval_And cval_and maybe_and_true)
-        apply simp
-        apply (simp only: cval_And cval_and maybe_and_true)
-       apply simp
-       apply (case_tac "cval (c (Plus x31 x32)) a s = true")
-        apply simp
-        apply (case_tac "cval b a s = true")
-         apply (simp add: cval_plus_1)
-        apply simp
-       apply simp
-      apply simp
-      apply (simp only: cval_And cval_and maybe_and_true)
-      apply (simp add: cval_plus_1)
-     apply (simp only: cval_And cval_and maybe_and_true)
-    apply simp
-    using cval_plus_1 apply blast
-    apply simp
-    apply (simp only: cval_And cval_and maybe_and_true)
-    apply simp
-    by (simp add: cval_plus_1)
-qed
-
-lemma unsatisfiable_cexp_gives_unsatisfiable_medial: "\<not>satisfiable (Contexts.get c x) \<Longrightarrow> \<not>satisfiable (Contexts.get (medial c g) x)"
-proof(induct g)
-  case Nil
-  then show ?case
-    by (simp add: unsatisfiable_lt medial_def)
-next
-  case (Cons a g)
-  then show ?case
-    apply (simp add: satisfiable_def medial_def)
-    by (simp add: cval_get_not_true_gives_cval_pairs2context_not_true)
-qed
-
-lemma cexp_satisfiable_medial_medial: "satisfiable (Contexts.get (medial c g) b1) \<Longrightarrow> satisfiable (Contexts.get c b1)"
-  using unsatisfiable_cexp_gives_unsatisfiable_medial by blast
 end

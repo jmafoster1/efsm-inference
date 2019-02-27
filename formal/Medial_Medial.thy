@@ -381,8 +381,60 @@ next
     by simp
 qed
 
-lemma "medial (medial c t) t = medial c t"
+lemma medial_medial: "medial (medial c t) t = medial c t"
   apply (simp add: medial_def)
   by (simp add: aux)
 
+lemma anterior_subset_medial: "c r |\<subseteq>| (medial c G r)"
+proof(induct G)
+  case Nil
+  then show ?case
+    by (simp add: medial_def)
+next
+  case (Cons a G)
+  then show ?case
+    by (simp add: medial_def)
+qed
+
+lemma apply_updates: "\<forall>r. fBall (medial c G r) (\<lambda>c. cval c r s = true) \<Longrightarrow>
+       \<not> constrains_an_input r \<Longrightarrow>
+       fBall (Contexts.apply_updates (medial c G) (medial c G) U r) (\<lambda>c. cval c r i = true) \<Longrightarrow>
+       Contexts.apply_updates (medial c G) c U r \<noteq> {|Undef|} \<Longrightarrow>
+       x |\<in>| Contexts.apply_updates (medial c G) c U r \<Longrightarrow> cval x r i = true"
+proof(induct U)
+  case Nil
+  then show ?case
+    apply simp
+    using anterior_subset_medial
+    by blast
+next
+  case (Cons a U)
+  then show ?case
+    apply simp
+    apply (case_tac a)
+    apply simp
+    apply (case_tac b)
+       apply simp
+       apply (case_tac "r = V aa")
+        apply simp+
+       apply (case_tac "r = V aa")
+       apply auto[1]
+      apply simp+
+     apply (case_tac "r = V aa")
+      apply simp+
+     apply (case_tac "r = V aa")
+    by auto
+qed
+
+(* If we can prove that medial (medial c t) t = medial t which it really should do *)
+lemma "subsumes c t t"
+  apply (simp add: subsumes_def medial_medial)
+  apply (simp add: posterior_def medial_medial)
+  apply (case_tac "consistent (medial c (Guard t))")
+   apply (simp add: Let_def)
+   defer
+   apply simp
+  apply (simp add: consistent_def remove_input_constraints_def)
+  apply clarify
+  using apply_updates by blast
 end

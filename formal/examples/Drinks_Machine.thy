@@ -225,6 +225,14 @@ lemma consistent_select_posterior: "consistent select_posterior"
     apply (simp add: cval_def gval.simps ValueEq_def)
   by (simp_all add: cval_true)
 
+lemma "medial (medial c (Guard coin)) (Guard coin) = medial c (Guard coin)"
+  by (simp add: coin_def medial_def)
+
+lemma "medial (medial c (Guard vend)) (Guard vend) = medial c (Guard vend)"
+  by (simp add: vend_def medial_def)
+
+lemma "medial (medial c (Guard vend_fail)) (Guard vend_fail) = medial c (Guard vend_fail)"
+  by (simp add: vend_fail_def medial_def)
 
 lemma select_posterior: "(posterior empty select) = select_posterior"
 proof-

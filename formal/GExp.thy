@@ -136,10 +136,6 @@ lemma mutually_exclusive_symmetric: "mutually_exclusive x y \<Longrightarrow> mu
 lemma not_mutually_exclusive_true: "satisfiable x = (\<not> mutually_exclusive x (Bc True))"
   by (simp add: mutually_exclusive_def satisfiable_def)
 
-primrec conjoin :: "gexp list \<Rightarrow> gexp" where
-  "conjoin [] = gexp.Bc True" |
-  "conjoin (h#t) = gAnd h (conjoin t)"
-
 lemma gval_gAnd: "gval (gAnd g1 g2) s = maybe_and (gval g1 s) (gval g2 s)"
 proof(induct "gval g1 s" "gval g2 s" rule: maybe_and.induct)
 case 1
