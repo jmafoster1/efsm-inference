@@ -82,7 +82,7 @@ lemma context_equiv_transitive: "context_equiv x y \<and> context_equiv y z \<Lo
   by (simp add: cexp_equiv_def gexp_equiv_def)
 
 definition consistent :: "context \<Rightarrow> bool" where (* Is there a variable evaluation which can satisfy all of the context? *)
-  "consistent c \<equiv> \<exists>s. \<forall>r. fBall (c r) (\<lambda>c. cval c r s = true)"
+  "consistent c \<equiv> \<exists>s. \<forall>r. fBall (c r) (\<lambda>c. (cval c r s = true))"
 
 lemma possible_false_not_consistent: "\<exists>r. c r = {|Bc False|} \<Longrightarrow> \<not> consistent c"
   apply (simp add: consistent_def conjoin_def)
@@ -148,44 +148,44 @@ fun make_lt :: "cexp \<Rightarrow> cexp" where
   "make_lt (Not v) = Not (make_lt v)" |
   "make_lt (And v va) = And (make_lt v) (make_lt va)"
 
-fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cexp fset) fset" where
-  "guard2pairs a (gexp.Bc True) = {||}" |
-  "guard2pairs a (gexp.Bc False) = {|(L (Num 0), {|Bc False|})|}" |
+fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cexp fset) list" where
+  "guard2pairs a (gexp.Bc True) = []" |
+  "guard2pairs a (gexp.Bc False) = [(L (Num 0), {|Bc False|})]" |
 
-  "guard2pairs a (gexp.Null v) = {|(v, {|Undef|})|}" |
+  "guard2pairs a (gexp.Null v) = [(v, {|Undef|})]" |
 
-  "guard2pairs a (gexp.Eq v (L n)) = {|(v, {|Eq n|})|}" |
-  "guard2pairs a (gexp.Eq (L n) v) = {|(v, {|Eq n|})|}" |
-  "guard2pairs a (gexp.Eq (Plus a1 a2) (Plus a4 a3)) = {|((Plus a1 a2), (get a (Plus a2 a1)) |\<union>| (get a (Plus a3 a4))),
+  "guard2pairs a (gexp.Eq v (L n)) = [(v, {|Eq n|})]" |
+  "guard2pairs a (gexp.Eq (L n) v) = [(v, {|Eq n|})]" |
+  "guard2pairs a (gexp.Eq (Plus a1 a2) (Plus a4 a3)) = [((Plus a1 a2), (get a (Plus a2 a1)) |\<union>| (get a (Plus a3 a4))),
                                                         ((Plus a2 a1), (get a (Plus a1 a2)) |\<union>| (get a (Plus a3 a4))),
                                                         ((Plus a3 a4), (get a (Plus a4 a3)) |\<union>| (get a (Plus a1 a2))),
-                                                        ((Plus a4 a3), (get a (Plus a3 a4)) |\<union>| (get a (Plus a1 a2)))|}" |
-  "guard2pairs a (gexp.Eq (Plus a1 a2) v) = {|((Plus a1 a2), (get a v) |\<union>| (get a (Plus a1 a2))),
+                                                        ((Plus a4 a3), (get a (Plus a3 a4)) |\<union>| (get a (Plus a1 a2)))]" |
+  "guard2pairs a (gexp.Eq (Plus a1 a2) v) = [((Plus a1 a2), (get a v) |\<union>| (get a (Plus a1 a2))),
                                              ((Plus a2 a1), (get a v) |\<union>| (get a (Plus a2 a1))),
-                                             (v, get a (Plus a1 a2))|}" |
-  "guard2pairs a (gexp.Eq v (Plus a1 a2)) = {|((Plus a1 a2), (get a v) |\<union>| (get a (Plus a1 a2))),
+                                             (v, get a (Plus a1 a2))]" |
+  "guard2pairs a (gexp.Eq v (Plus a1 a2)) = [((Plus a1 a2), (get a v) |\<union>| (get a (Plus a1 a2))),
                                              ((Plus a2 a1), (get a v) |\<union>| (get a (Plus a2 a1))),
-                                             (v, get a (Plus a1 a2))|}" |
-  "guard2pairs a (gexp.Eq v va) = {|(v, get a va), (va, get a v)|}" |
+                                             (v, get a (Plus a1 a2))]" |
+  "guard2pairs a (gexp.Eq v va) = [(v, get a va), (va, get a v)]" |
 
-  "guard2pairs a (gexp.Gt (L v) va) = (if L v = va then {|(L (Num 0), {|Bc False|})|} else {|(va, {|Lt v|})|})" |
-  "guard2pairs a (gexp.Gt va (L v)) = (if L v = va then {|(L (Num 0), {|Bc False|})|} else {|(va, {|Gt v|})|})" |
+  "guard2pairs a (gexp.Gt (L v) va) = (if L v = va then [(L (Num 0), {|Bc False|})] else [(va, {|Gt v|})])" |
+  "guard2pairs a (gexp.Gt va (L v)) = (if L v = va then [(L (Num 0), {|Bc False|})] else [(va, {|Gt v|})])" |
   "guard2pairs a (gexp.Gt v vb) = (if v = vb then
-                                     {|(L (Num 0), {|Bc False|})|}
+                                     [(L (Num 0), {|Bc False|})]
                                    else
-                                     {|(v, fimage make_gt (get a vb)), (vb, fimage make_lt (get a v))|}
+                                     [(v, fimage make_gt (get a vb))]
                                   )" |
 
-  "guard2pairs a (Nor v va) = (fimage (\<lambda>(x, y). (x, fimage Not y)) ((guard2pairs a v) |\<union>| (guard2pairs a va)))"
+  "guard2pairs a (Nor v va) = (map (\<lambda>(x, y). (x, fimage Not y)) ((guard2pairs a v) @ (guard2pairs a va)))"
 
-fun pairs2context :: "(aexp \<times> cexp fset) fset \<Rightarrow> context \<Rightarrow> context" where
-  "pairs2context l c = (\<lambda>r. (c r) |\<union>| ffUnion (fimage snd (ffilter (\<lambda>(a, _). a = r) l)))"
+fun pairs2context :: "(aexp \<times> cexp fset) list \<Rightarrow> context \<Rightarrow> context" where
+  "pairs2context l c = (\<lambda>r. (c r) |\<union>| fold funion (map snd (filter (\<lambda>(a, _). a = r) l)) {||})"
 
 fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
-  "apply_guard c g = (pairs2context (guard2pairs c g) c)"
+  "apply_guard a g = (pairs2context (guard2pairs a g) a)"
 
-definition medial :: "context \<Rightarrow> guard fset \<Rightarrow> context" where
- "medial c G = (pairs2context (ffUnion (fimage (\<lambda>g. guard2pairs c g) G)) c)"
+definition medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
+ "medial c G = (apply_guard c (fold gAnd G (gexp.Bc True)))"
 
 fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function \<Rightarrow> context" where
   "apply_update l c (v, (L n)) = update c (V v) {|(Eq n)|}" |
@@ -198,13 +198,10 @@ primrec apply_updates :: "context \<Rightarrow> context \<Rightarrow> update_fun
   "apply_updates l c (h#t) = (apply_update l (apply_updates l c t) h)"
 
 definition can_take :: "transition \<Rightarrow> context \<Rightarrow> bool" where
-  "can_take t c \<equiv> consistent (medial c (fset_of_list (Guard t)))"
-
-lemma medial_empty: "medial c {||} = c"
-  by (simp add: medial_def ffUnion_def)
+  "can_take t c \<equiv> consistent (medial c (Guard t))"
 
 lemma can_take_no_guards: "\<forall> c. (Contexts.consistent c \<and> (Guard t) = []) \<longrightarrow> Contexts.can_take t c"
-  by (simp add: consistent_def can_take_def fBall_def medial_empty)
+  by (simp add: consistent_def Contexts.can_take_def medial_def)
 
 fun constrains_an_input :: "aexp \<Rightarrow> bool" where
   "constrains_an_input (L v) = False" |
@@ -259,18 +256,18 @@ proof-
   assume premise: "consistent c"
   show ?thesis
     using premise
-    apply (simp add: remove_input_constraints_def consistent_def)
+    apply (simp add: consistent_def remove_input_constraints_def)
     apply clarify
     apply (rule_tac x=s in exI)
     apply clarify
-    apply (case_tac "r")
+    apply (case_tac r)
        apply simp
       apply (case_tac x2)
     by (simp_all add: cval_true)
 qed
 
 definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
-  "posterior c t = (let c' = (medial c (fset_of_list (Guard t))) in (if consistent c' then remove_input_constraints (apply_updates c' c (Updates t)) else (\<lambda>i. {|Bc False|})))"
+  "posterior c t = (let c' = (medial c (Guard t)) in (if consistent c' then remove_input_constraints (apply_updates c' c (Updates t)) else (\<lambda>i. {|Bc False|})))"
 
 primrec posterior_n :: "nat \<Rightarrow> transition \<Rightarrow> context \<Rightarrow> context" where (* Apply a given transition to a given context n times - good for reflexive transitions*)
   "posterior_n 0 _ c = c " |
@@ -293,28 +290,23 @@ definition satisfies_context :: "datastate \<Rightarrow> context \<Rightarrow> b
 lemma cval_undef_empty: "cval Undef (V x) <> = true"
   by (simp add: cval_def gval.simps ValueEq_def)
 
-lemma satisfies_context_empty: "satisfies_context <> \<lbrakk>\<rbrakk> \<and> satisfies_context <> \<lbrakk>\<rbrakk>"
-  apply (simp add: satisfies_context_def datastate2context_def consistent_def conjoin_def)
+lemma satisfies_context_empty: "satisfies_context <> \<lbrakk>\<rbrakk> \<and> satisfies_context Map.empty \<lbrakk>\<rbrakk>"
+  apply (simp add: satisfies_context_def datastate2context_def consistent_def)
   apply (rule_tac x="<>" in exI)
   apply clarify
   apply (case_tac r)
-     apply (simp_all add: cval_true)
-  apply (case_tac x2)
-   apply simp
-   apply (case_tac "x=Undef")
-  using cval_undef_empty
-    apply simp
-   apply (simp add: cval_true)
-  using cval_undef_empty
-  by simp
+     apply (simp add: cval_true)
+    apply (case_tac x2)
+     apply (case_tac "x=Bc True")
+  by (simp_all add: cval_true cval_def gval.simps ValueEq_def)
 
 (* Does t2 subsume t1? *)
 definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where (* Corresponds to Algorithm 2 in Foster et. al. *)
   "subsumes c t2 t1 \<equiv> Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) \<and>
-                      (\<forall>r i. (cval (conjoin (medial c (fset_of_list (Guard t1)) r)) r i = true) \<longrightarrow> (cval (conjoin (medial c (fset_of_list (Guard t2)) r)) r i) = true) \<and>
+                      (\<forall>r i. (cval (conjoin (medial c (Guard t1) r)) r i = true) \<longrightarrow> (cval (conjoin (medial c (Guard t2) r)) r i) = true) \<and>
                       (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
-                      (\<forall>r i. cval (conjoin (posterior (medial c (fset_of_list (Guard t1))) t2 r)) r i = true \<longrightarrow> (cval (conjoin (posterior c t1 r)) r i = true) \<or> (posterior c t1 r) = {|Undef|}) \<and>
+                      (\<forall>r i. cval (conjoin (posterior (medial c (Guard t1)) t2 r)) r i = true \<longrightarrow> (cval (conjoin (posterior c t1 r)) r i = true) \<or> (posterior c t1 r) = {|Undef|}) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
 
 definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> context" where
@@ -382,20 +374,6 @@ next
     by (simp add: conjoin_def sorted_list_of_fset_def cval_And cval_true)
 qed
 
-lemma "\<exists>x z. sorted_list_of_fset (finsert x1 x2) = x@x1#z"
-  oops
-
-lemma "(cval (conjoin x) r s = true) = fBall x (\<lambda>c. cval c r s = true)"
-proof(induct x)
-  case empty
-  then show ?case
-    by (simp add: conjoin_def cval_true)
-next
-  case (insert x1 x2)
-  then show ?case
-    apply (simp add: conjoin_def)
-    oops
-
 lemma cval_pairs2context_not_true: "cval (conjoin (c r)) r s \<noteq> true \<Longrightarrow>
        cval (conjoin (pairs2context G c r)) r s \<noteq> true"
 proof(induct G)
@@ -408,7 +386,8 @@ next
     apply simp
     apply clarify
     apply simp
-    oops
+
+qed
 
 lemma inconsistent_anterior_gives_inconsistent_medial: "\<not>consistent c \<Longrightarrow> \<not>consistent (medial c g)"
 proof(induct g)
@@ -418,9 +397,10 @@ proof(induct g)
 next
   case (Cons a g)
   then show ?case
-    apply (simp add: consistent_def)
+    apply (simp add: consistent_def medial_def del: fold.simps)
     apply clarify
-    apply
+    using cval_pairs2context_not_true
+    by blast
 qed
 
 lemma consistent_medial_requires_consistent_anterior: "consistent (medial c g) \<Longrightarrow> consistent c"

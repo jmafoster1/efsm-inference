@@ -155,39 +155,6 @@ lemma remove_guard_add_update:  "\<lparr>Label=l, Arity=a, Guard=[], Outputs=[],
 lemma filter_not_f_a: " \<not> f a \<Longrightarrow> filter f g = filter f (a#g)"
   by simp
 
-lemma cval_not: "cval (not x) r s = maybe_not (cval x r s)"
-proof(induct x)
-case Undef
-  then show ?case
-    by (simp add: cval_Not)
-next
-  case (Bc x)
-  then show ?case
-    apply (case_tac x)
-    by (simp add: cval_false cval_true)+
-next
-  case (Eq x)
-  then show ?case
-    by (simp add: cval_Not)
-next
-  case (Lt x)
-  then show ?case
-    by (simp add: cval_Not)
-next
-  case (Gt x)
-  then show ?case
-    by (simp add: cval_Not)
-next
-  case (Not x)
-  then show ?case
-    apply (simp add: cval_not cval_Not)
-    by (simp add: maybe_double_negation)
-next
-  case (And x1 x2)
-  then show ?case
-    by (simp add: cval_Not)
-qed
-
 lemma "t' = remove_guard_add_update t i r \<Longrightarrow>
        cval (Contexts.conjoin (medial c (Guard t) ra)) ra ia = true \<Longrightarrow>
        cval (Contexts.conjoin (medial c (Guard (remove_guard_add_update t i r)) ra)) ra ia = true"
