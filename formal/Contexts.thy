@@ -61,7 +61,7 @@ fun update :: "context \<Rightarrow> aexp \<Rightarrow> cexp fset \<Rightarrow> 
   "update c k v = (\<lambda>r. if r=k then v else c r)"
 
 definition conjoin :: "cexp fset \<Rightarrow> cexp" where
-  "conjoin f = fold And (sorted_list_of_fset f) (Bc True)"
+  "conjoin f = foldr And (sorted_list_of_fset f) (Bc True)"
 
 definition consistent :: "context \<Rightarrow> bool" where (* Is there a variable evaluation which can satisfy all of the context? *)
   "consistent c \<equiv> \<exists>s. \<forall>r. fBall (c r) (\<lambda>c. (cval c r s = true))"
@@ -150,7 +150,7 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
                                              (v, get a (Plus a1 a2))]" |
   "guard2pairs a (gexp.Eq v va) = [(v, get a va), (va, get a v)]" |
 
-  "guard2pairs a (gexp.Gt (L v) va) = (if L v = va then [(L (Num 0), {|Bc False|})] else [(va, {|Gt v|})])" |
+  "guard2pairs a (gexp.Gt (L v) va) = (if L v = va then [(L (Num 0), {|Bc False|})] else [(va, {|Lt v|})])" |
   "guard2pairs a (gexp.Gt va (L v)) = (if L v = va then [(L (Num 0), {|Bc False|})] else [(va, {|Gt v|})])" |
   "guard2pairs a (gexp.Gt v vb) = (if v = vb then
                                      [(L (Num 0), {|Bc False|})]
@@ -158,7 +158,7 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
                                      [(v, fimage make_gt (get a vb))]
                                   )" |
 
-  "guard2pairs a (Nor v va) = (map (\<lambda>(x, y). (x, fimage Not y)) ((guard2pairs a v) @ (guard2pairs a va)))"
+  "guard2pairs a (Nor v va) = (map (\<lambda>(x, y). (x, fimage not y)) ((guard2pairs a v) @ (guard2pairs a va)))"
 
 fun pairs2context :: "(aexp \<times> cexp fset) list \<Rightarrow> context \<Rightarrow> context" where
   "pairs2context l c = (\<lambda>r. (c r) |\<union>| fold funion (map snd (filter (\<lambda>(a, _). a = r) l)) {||})"
@@ -168,6 +168,17 @@ fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
 
 definition medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
  "medial c G = (apply_guard c (fold gAnd G (gexp.Bc True)))"
+
+lemma anterior_subset_medial: "c r |\<subseteq>| (medial c G r)"
+proof(induct G)
+  case Nil
+  then show ?case
+    by (simp add: medial_def)
+next
+  case (Cons a G)
+  then show ?case
+    by (simp add: medial_def)
+qed
 
 fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function \<Rightarrow> context" where
   "apply_update l c (v, (L n)) = update c (V v) {|(Eq n)|}" |

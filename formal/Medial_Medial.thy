@@ -370,47 +370,110 @@ case (Gt a1 a2)
     qed
   qed
 next
-case (Nor G1 G2)
-  then show ?case
-    apply simp
-    apply (rule ext)
-    sorry
-next
   case (Null x)
   then show ?case
     by simp
+next
+  have fold_split:  "\<forall>G1 G2 r. fold (|\<union>|) (map snd (filter (\<lambda>(a, uu). a = r) (map (\<lambda>(x, y). (x, not |`| y)) (G1 @ G2)))) {||}
+      = (fold (|\<union>|) (map snd (filter (\<lambda>(a, uu). a = r) (map (\<lambda>(x, y). (x, not |`| y)) G1))) {||})
+        |\<union>|
+        (fold (|\<union>|) (map snd (filter (\<lambda>(a, uu). a = r) (map (\<lambda>(x, y). (x, not |`| y)) G2))) {||})"
+  sorry
+case (Nor G1 G2)
+  then show ?case
+    apply (simp del: fold_append map_append fset_of_list_append)
+    apply (rule ext)
+    apply standard
+     defer
+     apply simp
+    apply(simp only: funion_fsubset_iff)
+    apply standard
+     apply simp
+    apply (simp only: fold_split) 
+
+    sorry
 qed
 
-lemma medial_medial: "medial (medial c t) t = medial c t"
+
+lemma "(\<lambda>r. c r |\<union>| ffUnion (fset_of_list (map snd (filter (\<lambda>(a, uu). a = r) (guard2pairs c (Nor G1 G2)))))) =
+(\<lambda>r. c r |\<union>| ffUnion (fset_of_list (map snd (filter (\<lambda>(a, uu). a = r) (guard2pairs c (Nor G1 G2))))))"
+  by simp
+
+lemma "medial (medial c t) t = medial c t"
   apply (simp add: medial_def)
   by (simp add: aux)
 
-lemma anterior_subset_medial: "c r |\<subseteq>| (medial c G r)"
+lemma "fold (|\<union>|)
+     (map snd
+       (filter (\<lambda>(a, uu). a = r)
+         (guard2pairs (\<lambda>r. c r |\<union>| fold (|\<union>|) (map snd (filter (\<lambda>(a, uu). a = r) (guard2pairs c G))) {||})
+           G)))
+     {||} |\<subseteq>|
+    c r |\<union>| fold (|\<union>|) (map snd (filter (\<lambda>(a, uu). a = r) (guard2pairs c G))) {||}"
 proof(induct G)
-  case Nil
+case (Bc x)
   then show ?case
-    by (simp add: medial_def)
+    apply (cases x)
+     apply simp
+    by simp
 next
-  case (Cons a G)
+case (Eq x1a x2)
   then show ?case
-    by (simp add: medial_def)
+    sorry
+next
+  case (Gt x1a x2)
+  then show ?case sorry
+next
+case (Null x)
+  then show ?case by simp
+next
+case (Nor G1 G2)
+  then show ?case
+    apply simp
 qed
 
-lemma apply_updates: "\<forall>r. fBall (medial c G r) (\<lambda>c. cval c r s = true) \<Longrightarrow>
-       \<not> constrains_an_input r \<Longrightarrow>
-       fBall (Contexts.apply_updates (medial c G) (medial c G) U r) (\<lambda>c. cval c r i = true) \<Longrightarrow>
+lemma "medial (medial c G) G r |\<subseteq>| medial c G r"
+  apply (simp add: medial_def)
+
+lemma subset_consistency: "\<forall>r. c' r |\<subseteq>| c r \<Longrightarrow> consistent c \<Longrightarrow> consistent c'"
+  apply (simp add: consistent_def)
+  apply clarify
+  apply (rule_tac x=s in exI)    
+  by auto
+
+lemma consistent_medial_medial: "consistent (medial (medial c t) t) \<Longrightarrow> consistent (medial c t)"
+  by (metis anterior_subset_medial subset_consistency)
+
+lemma medial_preserves_existing_elements: "x |\<in>| c r \<Longrightarrow> x |\<in>| medial c G r "
+  using anterior_subset_medial by blast
+
+lemma "(cval (conjoin (c r)) r s = true) = (fBall (c r) (\<lambda>c. cval c r s = true))"
+proof(induct "c r")
+  case empty
+  then show ?case
+    by (simp add: conjoin_def cval_true)
+next
+  have flip: "\<forall>x2 x1 c r. (finsert x1 x2 = c r) = (c r = finsert x1 x2)"
+    by auto
+  case (insert x1 x2)
+  then show ?case
+    apply (simp add: conjoin_def flip)
+
+qed
+
+
+lemma "consistent (medial (medial c G) G) \<Longrightarrow>
+       fBall (Contexts.apply_updates (medial (medial c G) G) (medial c G) U r) (\<lambda>c. cval c r i = true) \<Longrightarrow>
        Contexts.apply_updates (medial c G) c U r \<noteq> {|Undef|} \<Longrightarrow>
-       x |\<in>| Contexts.apply_updates (medial c G) c U r \<Longrightarrow> cval x r i = true"
+       x |\<in>| Contexts.apply_updates (medial c G) c U r \<Longrightarrow> \<not> constrains_an_input r \<Longrightarrow> cval x r i = true"
 proof(induct U)
   case Nil
   then show ?case
-    apply simp
-    using anterior_subset_medial
-    by blast
+    apply (simp add: consistent_def)
+    using medial_preserves_existing_elements by auto
 next
   case (Cons a U)
   then show ?case
-    apply simp
     apply (case_tac a)
     apply simp
     apply (case_tac b)
@@ -418,19 +481,37 @@ next
        apply (case_tac "r = V aa")
         apply simp+
        apply (case_tac "r = V aa")
-       apply auto[1]
+       apply simp
+       apply clarify
+       apply simp
+    using medial_preserves_existing_elements apply auto[1]
       apply simp+
      apply (case_tac "r = V aa")
-      apply simp+
-     apply (case_tac "r = V aa")
-    by auto
+      apply simp
+      apply clarify
+      apply simp
 qed
+
+
+lemma "subsumes c t t"
+  apply (simp add: subsumes_def)
+  apply (simp add: posterior_def Let_def)
+  apply (case_tac "consistent (medial (medial c (Guard t)) (Guard t))")
+   defer
+   apply (simp add: cval_false)
+  apply (simp add: consistent_medial_medial)
+  apply clarify
+  apply (simp add: remove_input_constraints_def)
+  apply (case_tac "constrains_an_input r")
+   apply auto[1]
+  apply simp
+
 
 (* If we can prove that medial (medial c t) t = medial t which it really should do *)
 lemma "subsumes c t t"
   apply (simp add: subsumes_def medial_medial)
   apply (simp add: posterior_def medial_medial)
-  apply (case_tac "consistent (medial c (Guard t))")
+  apply (case_tac "consistent (medial c G)")
    apply (simp add: Let_def)
    defer
    apply simp

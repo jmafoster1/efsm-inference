@@ -236,7 +236,7 @@ lemma "medial (medial c (Guard vend_fail)) (Guard vend_fail) = medial c (Guard v
 
 lemma select_posterior: "(posterior empty select) = select_posterior"
 proof-
-  have consistent_medial: "consistent (medial \<lbrakk>\<rbrakk> (fset_of_list (Guard select)))"
+  have consistent_medial: "consistent (medial \<lbrakk>\<rbrakk> (Guard select))"
     by (simp add: medial_def select_def ffUnion_def)
   show ?thesis
     apply (simp add: posterior_def Let_def consistent_medial)
@@ -250,21 +250,13 @@ proof-
     by auto
 qed
 
-lemma medial_select_posterior_vend: "medial select_posterior (fset_of_list (Guard vend)) = \<lbrakk>V (R 1) \<mapsto> {|Bc True|},
+lemma medial_select_posterior_vend: "medial select_posterior (Guard vend) = \<lbrakk>V (R 1) \<mapsto> {|Bc True|},
                                                                              V (R 2) \<mapsto> {|(Geq (Num 100)), (Eq (Num 0))|}\<rbrakk>"
-proof-
-  have r2_neq_100: "L (Num 100) \<noteq> V (R 2)"
-    by simp
-  show ?thesis
+  apply (simp add: select_posterior_def vend_def)
+  apply (simp add: medial_def)
   apply (rule ext)
-  apply (simp add: vend_def medial_def select_posterior_def del: guard2pairs.simps)
-  apply (case_tac "x=V(R 1)")
-   apply (simp add: ffUnion_def)
-    apply (case_tac "x=V(R 2)")
-     apply (simp add: ffUnion_def)
-     apply auto[1]
-    by (simp add: ffUnion_def)
-qed
+  by simp
+
 
 lemma r2_0_vend: "\<not>can_take vend select_posterior" (* You can't take vend immediately after taking select *)
   apply (simp add: can_take_def medial_select_posterior_vend consistent_def)

@@ -65,4 +65,14 @@ lemma fmember_implies_member: "e |\<in>| f \<Longrightarrow> e \<in> fset f"
 
 lemma ffilter_to_filter: "(ffilter f s = s') = (Set.filter f (fset s) = fset s')"
   by (metis ffilter.rep_eq fset_inject)
+
+lemma fold_union_ffUnion: "fold (|\<union>|) l {||} = ffUnion (fset_of_list l)"
+proof(induct l rule: rev_induct)
+case Nil
+  then show ?case by simp
+next
+  case (snoc a l)
+  then show ?case
+    by simp
+qed
 end
