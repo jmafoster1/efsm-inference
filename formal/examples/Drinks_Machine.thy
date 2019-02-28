@@ -226,37 +226,32 @@ lemma consistent_select_posterior: "consistent select_posterior"
   by (simp_all add: cval_true)
 
 lemma "medial (medial c (Guard coin)) (Guard coin) = medial c (Guard coin)"
-  by (simp add: coin_def medial_def)
+  by (simp add: coin_def medial_def pairs2context_def List.maps_def)
 
 lemma "medial (medial c (Guard vend)) (Guard vend) = medial c (Guard vend)"
-  by (simp add: vend_def medial_def)
+  by (simp add: vend_def medial_def pairs2context_def List.maps_def)
 
 lemma "medial (medial c (Guard vend_fail)) (Guard vend_fail) = medial c (Guard vend_fail)"
-  by (simp add: vend_fail_def medial_def)
+  by (simp add: vend_fail_def medial_def pairs2context_def List.maps_def)
 
 lemma select_posterior: "(posterior empty select) = select_posterior"
 proof-
   have consistent_medial: "consistent (medial \<lbrakk>\<rbrakk> (Guard select))"
-    by (simp add: medial_def select_def ffUnion_def)
+    by (simp add: medial_def pairs2context_def List.maps_def select_def ffUnion_def)
   show ?thesis
     apply (simp add: posterior_def Let_def consistent_medial)
-    apply (simp add: select_def medial_def remove_input_constraints_def select_posterior_def)
+    apply (simp add: select_def medial_empty)
+    apply (simp add: remove_input_constraints_alt select_posterior_def)
     apply (rule ext)
-    apply (case_tac x)
-       apply simp
-      apply (case_tac x2)
-       apply simp
-      apply (simp add: ffUnion_def)
-    by auto
+    by (simp add: empty_inputs_are_true)
 qed
 
 lemma medial_select_posterior_vend: "medial select_posterior (Guard vend) = \<lbrakk>V (R 1) \<mapsto> {|Bc True|},
                                                                              V (R 2) \<mapsto> {|(Geq (Num 100)), (Eq (Num 0))|}\<rbrakk>"
   apply (simp add: select_posterior_def vend_def)
-  apply (simp add: medial_def)
+  apply (simp add: medial_def pairs2context_def List.maps_def)
   apply (rule ext)
   by simp
-
 
 lemma r2_0_vend: "\<not>can_take vend select_posterior" (* You can't take vend immediately after taking select *)
   apply (simp add: can_take_def medial_select_posterior_vend consistent_def)

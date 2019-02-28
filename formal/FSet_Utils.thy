@@ -8,6 +8,14 @@ lift_definition fprod  :: "'a fset \<Rightarrow> 'b fset \<Rightarrow> ('a \<tim
 
 lift_definition fis_singleton :: "'a fset \<Rightarrow> bool" is "\<lambda>A. is_singleton (fset A)".
 end
+
+lemma fprod_subset: "x |\<subseteq>| x' \<and> y |\<subseteq>| y' \<Longrightarrow> x |\<times>| y |\<subseteq>| x' |\<times>| y'"
+  apply (simp add: fprod_def less_eq_fset_def Abs_fset_inverse)
+  by auto
+
+lemma fimage_fprod: "(a, b) |\<in>| A |\<times>| B \<Longrightarrow> f a b |\<in>| (\<lambda>(x, y). f x y) |`| (A |\<times>| B)"
+  by force
+
 lemma fset_both_sides: "(Abs_fset s = f) = (fset (Abs_fset s) = fset f)"
   by (simp add: fset_inject)
 

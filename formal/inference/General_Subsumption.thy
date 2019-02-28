@@ -155,103 +155,9 @@ lemma remove_guard_add_update:  "\<lparr>Label=l, Arity=a, Guard=[], Outputs=[],
 lemma filter_not_f_a: " \<not> f a \<Longrightarrow> filter f g = filter f (a#g)"
   by simp
 
-lemma "t' = remove_guard_add_update t i r \<Longrightarrow>
-       cval (Contexts.conjoin (medial c (Guard t) ra)) ra ia = true \<Longrightarrow>
-       cval (Contexts.conjoin (medial c (Guard (remove_guard_add_update t i r)) ra)) ra ia = true"
-  apply (simp add: remove_guard_add_update_def)
-
-lemma "is_generalisation_of t' t e \<Longrightarrow> subsumes c t' t"
-  apply (simp add: is_generalisation_of_def subsumes_def)
-  apply clarify
-  apply safe
-          apply (simp add: remove_guard_add_update_preserves_label)
-         apply (simp add: remove_guard_add_update_preserves_arity)
-        apply (simp add: remove_guard_add_update_preserves_outputs)
-       prefer 2
-       apply (simp add: remove_guard_add_update_preserves_outputs)
-      prefer 2
-      apply (simp add: remove_guard_add_update_preserves_outputs)
-
-
-
-
-
-
-lemma cval_make_gt_1: "cval (make_gt (and cp cp)) a s = true \<Longrightarrow>
-                     cval (make_gt (and (and cp (cexp.Lt x)) (and cp (cexp.Lt x)))) a s = true"
-proof(induct cp)
-case Undef
-  then show ?case
-    by simp
-next
-  case (Bc x)
-  then show ?case
-    apply (case_tac x)
-     apply simp
-    by simp
-next
-  case (Eq x)
-  then show ?case
-    by simp
-next
-  case (Lt x)
-  then show ?case
-    by simp
-next
-  case (Gt x)
-  then show ?case
-    apply (case_tac x)
-    by auto
-next
-  case (Not cp)
-  then show ?case
-    apply (simp del: make_gt.simps)
-    apply (simp only: make_gt.simps cval_and cval_true)
-    by simp
-next
-  case (And cp1 cp2)
-  then show ?case
-    apply (simp del: make_gt.simps)
-    apply (simp only: make_gt.simps cval_and cval_true)
-    by simp
-qed
-
-lemma cval_make_gt_2: "cval (make_gt (c (V v))) a s = true \<Longrightarrow>
-       cval (make_gt (and (c (V v)) (cexp.Lt x))) a s = true"
-  using and_self cval_make_gt_1 by auto
-
 lemma and_gives_And: "c \<noteq> cexp.Bc True \<Longrightarrow> c' \<noteq> cexp.Bc True \<Longrightarrow> c' \<noteq> c \<Longrightarrow> (and c c') = And c c'"
   apply (induct c c' rule: and.induct)
   by auto
-
-lemma cval_make_gt_and: "cval (make_gt (and c c')) a s = maybe_and (cval (make_gt c) a s) (cval (make_gt c') a s)"
-  apply (induct c c' rule: and.induct)
-                      apply (simp_all only: and.simps make_gt.simps cval_true maybe_and_zero cval_false)
-                      apply (simp_all only: maybe_and_commutative maybe_and_zero)
-                      apply simp
-                      apply (simp_all only: cexp.distinct bool_simps cval_true if_True if_False cval_and cval_false maybe_and_one make_gt.simps)
-                      apply (simp_all only: maybe_and_commutative maybe_and_zero)
-       apply (case_tac "cexp.Eq v = cexp.Eq va")
-        apply (simp only: bool_simps if_True make_gt.simps)
-  using maybe_and_one apply auto[1]
-       apply (simp only: bool_simps if_False make_gt.simps)
-  using cval_and apply blast
-      apply simp
-     apply (case_tac "cexp.Lt v = cexp.Lt va")
-        apply (simp only: bool_simps if_True make_gt.simps cval_true)
-     apply (simp only: bool_simps if_False make_gt.simps cval_and cval_true)
-     apply simp
-    apply (case_tac "cexp.Gt v = cexp.Gt va")
-     apply (simp only: bool_simps if_True make_gt.simps maybe_and_one)
-    apply (simp only: bool_simps if_False make_gt.simps cval_and cval_true)
-   apply (case_tac "cexp.Not v = cexp.Not va")
-    apply (simp only: bool_simps if_True make_gt.simps maybe_and_one cval_not)
-  using maybe_and_one apply auto[1]
-   apply (simp only: bool_simps if_False make_gt.simps cval_and cval_true)
-  apply (case_tac "And v va = And vb vc")
-   apply (simp only: bool_simps if_True make_gt.simps maybe_and_one cval_not)
-  using cval_and maybe_and_one apply auto[1]
-  by (simp only: bool_simps if_False make_gt.simps cval_and cval_true)
 
 lemma cval_make_gt_not: "cval (make_gt (not x)) r s = maybe_not (cval (make_gt x) r s)"
 proof(induct x)
@@ -286,84 +192,125 @@ next
     by (simp only: cval_And cval_Not cval_and)
 qed
 
-lemma get_simp: "V x \<noteq> a2 \<Longrightarrow>
-       (Contexts.get (\<lambda>a. if a = V x then and (c a) (make_gt (Contexts.get c a2)) else pairs2context [(a2, make_lt (c (V x)))] c a) a2) =
-       (Contexts.get (\<lambda>a. pairs2context [(a2, make_lt (c (V x)))] c a) a2)"
-  apply (case_tac a2)
-  by auto
-
-lemma and_undef_false: "and Undef (cexp.Bc False) = And Undef (Bc False)"
-  by simp
-
-lemma maybe_not_true: "maybe_not c = true = (c = Some False)"
-  apply (case_tac c)
-  by auto
-
-lemma "(cval (apply_update (medial (medial c g) g) (Contexts.apply_updates (medial (medial c g) g) (medial c g) u) (aa, b1) (V aa)) (V aa) i =
-     true \<Longrightarrow>
-     Plus b1 b2 = b1 \<Longrightarrow> cval (apply_update (medial c g) (Contexts.apply_updates (medial c g) c u) (aa, b1) (V aa)) (V aa) i = true) \<Longrightarrow>
-    (cval (apply_update (medial (medial c g) g) (Contexts.apply_updates (medial (medial c g) g) (medial c g) u) (aa, b2) (V aa)) (V aa) i =
-     true \<Longrightarrow>
-     Plus b1 b2 = b2 \<Longrightarrow> cval (apply_update (medial c g) (Contexts.apply_updates (medial c g) c u) (aa, b2) (V aa)) (V aa) i = true) \<Longrightarrow>
-    (cval (Contexts.apply_updates (medial (medial c g) g) (medial c g) u (V aa)) (V aa) i = true \<Longrightarrow>
-     cval (Contexts.apply_updates (medial c g) c u (V aa)) (V aa) i = true) \<Longrightarrow>
-    cval (compose_plus (Contexts.get (medial (medial c g) g) b1) (Contexts.get (medial (medial c g) g) b2)) (V aa) i = true \<Longrightarrow>
-    cval (compose_plus (Contexts.get (medial c g) b1) (Contexts.get (medial c g) b2)) (V aa) i = true"
-
-lemma "(cval (Contexts.apply_updates (medial (medial c g) g) (medial c g) u r) r i = true \<Longrightarrow>
-        cval (Contexts.apply_updates (medial c g) c u r) r i = true) \<Longrightarrow>
-       cval (apply_update (medial (medial c g) g) (Contexts.apply_updates (medial (medial c g) g) (medial c g) u) (aa, b) r) r i =
-       true \<Longrightarrow>
-       a = (aa, b) \<Longrightarrow> cval (apply_update (medial c g) (Contexts.apply_updates (medial c g) c u) (aa, b) r) r i = true"
-proof(induct b)
-case (L x)
-  then show ?case
-    by auto
+lemma medial_filter: "medial c (filter f G) ra |\<subseteq>| medial c G ra"
+proof(induct G)
+  case Nil
+  then show ?case by simp
 next
-  case (V x)
+  have aux1: "\<forall>a f G ra c. medial c (a # filter f G) ra = medial c [a] ra |\<union>| medial c (filter f G) ra"
+    using medial_cons by blast
+  case (Cons a G)
   then show ?case
     apply simp
-    using cval_medial_var_update by auto
-next
-  case (Plus b1 b2)
-  then show ?case
-    apply simp
-    apply (case_tac " r = V aa")
+    apply (case_tac "f a")
      apply simp
      defer
-     apply simp
-
-   
-next
-  case (Minus b1 b2)
-  then show ?case sorry
+    apply simp
+    using medial_cons_subset apply blast
+    apply (simp only: aux1)
+  proof -
+    assume "medial c (filter f G) ra |\<subseteq>| medial c G ra"
+    then have "medial c (a # G) ra = medial c [a] ra |\<union>| (medial c G ra |\<union>| medial c (filter f G) ra |\<union>| medial c (filter f G) ra)"
+      using medial_cons by blast
+    then show "medial c [a] ra |\<union>| medial c (filter f G) ra |\<subseteq>| medial c (a # G) ra"
+      by blast
+  qed
 qed
 
-lemma last: "cval (Contexts.apply_updates (medial (medial c g) g) (medial c g) u r) r i = true \<Longrightarrow>
-             cval (Contexts.apply_updates (medial c g) c u r) r i = true"
-proof(induct u)
+lemma medial_general_subset: "medial c (Guard (remove_guard_add_update t i r)) ra |\<subseteq>| medial c (Guard t) ra"
+  by (simp add: remove_guard_add_update_def medial_filter)
+
+lemma consistent_medial_generalisation: "consistent (medial c (Guard t)) \<Longrightarrow> consistent (medial c (Guard (remove_guard_add_update t i r)))"
+  apply (simp add: consistent_def)
+  using medial_general_subset
+  by blast
+
+lemma "fBall (medial (medial c G) (filter f G) r) (\<lambda>c. cval c r s = true) \<Longrightarrow> fBall (medial c G r) (\<lambda>c. cval c r s = true)"
+  using anterior_subset_medial by blast
+
+lemma get_medial_filter: "Contexts.get (medial c (filter f G)) x31 |\<subseteq>| Contexts.get (medial c G) x31"
+  apply (case_tac x31)
+     apply simp
+    apply (simp add: medial_filter)
+   apply (simp add: le_supI2 medial_filter sup.coboundedI1)
+  by (simp add: medial_filter)
+
+lemma fprod_get_medial_filter: "(a, b) |\<in>| Contexts.get (medial c (filter f G)) r |\<times>| Contexts.get (medial c (filter f G)) x32 \<Longrightarrow>
+                                (a, b) |\<in>| Contexts.get (medial c G) r |\<times>| Contexts.get (medial c G) x32"
+  using get_medial_filter
+  by (meson fin_mono fprod_subset)
+
+lemma apply_updates_filter: "Contexts.apply_updates (medial c (filter f G)) c U ra |\<subseteq>| Contexts.apply_updates (medial c G) c U ra"
+proof(induct U)
   case Nil
   then show ?case
-    by (simp add: cval_medial_true_requires_cval_anterior_true)
+    by simp
 next
-  case (Cons a u)
+  case (Cons a U)
   then show ?case
-    apply simp
-    apply (case_tac a)
-    apply simp
-    sorry
+    apply (cases a)
+    apply (case_tac b)
+       apply simp
+      apply (simp add: medial_filter)
+     apply simp
+     apply clarify
+     apply simp
+    using fprod_get_medial_filter fimage_fprod apply metis
+     apply simp
+     apply clarify
+     apply simp
+    using fprod_get_medial_filter fimage_fprod by metis
 qed
 
-lemma "subsumes c t t"
-  apply (simp add: subsumes_def)
-  apply safe
-  apply (simp add: posterior_def Let_def)
-  apply (case_tac "consistent (medial (medial c G) G)")
-   apply (simp add: consistent_medial_requires_consistent_anterior remove_input_constraints_alt)
-  apply (case_tac "constrains_an_input r")
-    apply simp
+lemma "fBall (if constrains_an_input ra then {|cexp.Bc True|} else Contexts.apply_updates (medial c (Guard t)) c (Updates t) ra)
+             (\<lambda>c. cval c ra s = true) \<Longrightarrow>
+    (ra = V (R r) \<longrightarrow>
+              fBall (medial c (filter (\<lambda>g. \<forall>a. g \<noteq> gexp.Eq (V (I i)) a \<and> g \<noteq> gexp.Eq a (V (I i))) (Guard t)) (V (I i)))
+               (\<lambda>c. cval c (V (R r)) s = true)) \<and>
+             (ra \<noteq> V (R r) \<longrightarrow>
+              (constrains_an_input ra \<longrightarrow> cval (cexp.Bc True) ra s = true) \<and>
+              (\<not> constrains_an_input ra \<longrightarrow>
+               fBall
+                (Contexts.apply_updates (medial c (filter (\<lambda>g. \<forall>a. g \<noteq> gexp.Eq (V (I i)) a \<and> g \<noteq> gexp.Eq a (V (I i))) (Guard t))) c
+                  (Updates t) ra)
+                (\<lambda>c. cval c ra s = true)))"
+  apply (case_tac "ra = V (R r)")
    apply simp
    defer
-  using CExp.satisfiable_def unsatisfiable_false apply auto[1]
-  by (simp add: last)
+   apply simp
+   apply (case_tac "constrains_an_input ra")
+    apply simp
+   apply simp
+  using apply_updates_filter apply blast
+  oops
+
+lemma "consistent (posterior c t) \<Longrightarrow> consistent (posterior c (remove_guard_add_update t i r))"
+  apply (simp add: posterior_def Let_def)
+  apply (case_tac "consistent (medial c (Guard t))")
+   defer
+   apply (simp add: inconsistent_false)
+  apply (simp add: consistent_medial_generalisation)
+  apply (simp add: remove_input_constraints_alt remove_guard_add_update_def)
+  apply (simp add: consistent_def)
+  oops
+(*Stick the consistent part in here and carry it on up to all of the oops-ed lemmas*)
+
+
+lemma "c (V (I i)) = {|Bc True|} \<Longrightarrow> c (V (R r)) = {|Undef|} \<Longrightarrow> subsumes c (remove_guard_add_update t i r) t"
+  unfolding subsumes_def
+  apply (simp add: remove_guard_add_update_preserves)
+  apply standard
+  using medial_general_subset apply blast
+  apply standard
+    apply (simp add: posterior_def Let_def)
+    apply (case_tac "consistent (medial (medial c (Guard t)) (Guard (remove_guard_add_update t i r)))")
+     apply (simp add: consistent_medial_gives_consistent_anterior remove_input_constraints_alt)
+     apply (case_tac "constrains_an_input ra")
+      apply simp
+     apply simp
+     apply (simp add: remove_guard_add_update_def)
+     apply (case_tac "ra = V (R r)")
+      apply simp
+      apply clarify
+      apply simp
 end

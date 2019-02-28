@@ -94,348 +94,10 @@ next
     by auto
 qed
 
-lemma aux: "(\<lambda>r. c r |\<union>| fold (|\<union>|) (map snd (filter (\<lambda>(a, uu). a = r) (guard2pairs c G))) {||} |\<union>|
-         fold (|\<union>|)
-          (map snd
-            (filter (\<lambda>(a, uu). a = r)
-              (guard2pairs (\<lambda>r. c r |\<union>| fold (|\<union>|) (map snd (filter (\<lambda>(a, uu). a = r) (guard2pairs c G))) {||})
-                G)))
-          {||}) =
-    (\<lambda>r. c r |\<union>| fold (|\<union>|) (map snd (filter (\<lambda>(a, uu). a = r) (guard2pairs c G))) {||})"
-proof(induct G)
-case (Bc x)
-  then show ?case
-    apply (case_tac x)
-    by auto
-next
-case (Eq a1 a2)
-  then show ?case
-  proof(induct a1)
-    case (L x)
-    then show ?case
-      apply (induct a2)
-      by auto
-  next
-    case (V x)
-    then show ?case
-    proof(induct a2)
-      case (L x)
-      then show ?case by simp
-    next
-      case (V v)
-      then show ?case
-        apply simp
-        apply (case_tac "v = x")
-         apply simp
-         apply (rule ext)
-         apply auto[1]
-        apply simp
-        apply (rule ext)
-        by auto
-    next
-      case (Plus a21 a22)
-      then show ?case
-        apply (case_tac "a21 = a22")
-         apply simp
-         apply (rule ext)
-         apply auto[1]
-        apply simp
-        apply (rule ext)
-        by auto
-    next
-      case (Minus a21 a22)
-      then show ?case
-        apply simp
-        apply (rule ext)
-        by auto
-    qed
-  next
-    case (Plus a11 a12)
-    then show ?case
-    proof(induct a2)
-      case (L x)
-      then show ?case
-        apply (case_tac "a11 = a12")
-         apply simp
-        apply (rule ext)
-        by auto
-    next
-      case (V x)
-      then show ?case
-        apply (case_tac "a11 = a12")
-         apply simp
-         apply (rule ext)
-         apply auto[1]
-        apply simp
-        apply (rule ext)
-        by auto
-    next
-      case (Plus a21 a22)
-      then show ?case
-        apply (case_tac "a11 = a12")
-         apply (case_tac "a21 = a22")
-          apply simp
-          apply (case_tac "a22 = a12")
-           apply simp
-           apply (rule ext)
-           apply auto[1]
-          apply simp
-        apply (rule ext)
-          apply auto[1]
-         apply simp
-        apply (case_tac "a12 = a22")
-        apply simp
-        apply (rule ext)
-        apply auto[1]
-        apply simp
-        apply (rule ext)
-         apply auto[1]
-         apply (case_tac "a21 = a22")
-         apply simp
-         apply (case_tac "a22 = a12")
-          apply simp
-          apply (rule ext)
-          apply auto[1]
-        apply simp
-        apply (rule ext)
-         apply auto[1]
-        apply simp
-        apply (case_tac "a22 = a12")
-        apply simp
-        apply (case_tac "a21 = a11")
-        apply simp
-          apply (rule ext)
-          apply auto[1]
-        apply simp
-        apply (rule ext)
-        apply auto[1]
-        apply simp
-        apply (case_tac "a22 = a11")
-        apply simp
-        apply (case_tac "a21 = a12")
-        apply simp
-        apply (rule ext)
-        apply auto[1]
-        apply simp
-         apply (rule ext)
-         apply auto[1]
-        apply simp
-        apply (rule ext)
-        by auto
-    next
-      case (Minus a21 a22)
-      then show ?case
-        apply (case_tac "a11 = a12")
-         apply simp
-         apply (rule ext)
-         apply auto[1]
-        apply simp
-        apply (rule ext)
-        by auto
-    qed
-  next
-    case (Minus a11 a12)
-    then show ?case
-    proof(induct a2)
-      case (L x)
-      then show ?case
-        by simp
-    next
-      case (V x)
-      then show ?case
-        apply simp
-        apply (rule ext)
-        by auto
-    next
-      case (Plus a21 a22)
-      then show ?case
-        apply (case_tac "a21 = a22")
-         apply simp
-         apply (rule ext)
-         apply auto[1]
-        apply simp
-        apply (rule ext)
-        by auto
-    next
-      case (Minus a21 a22)
-      then show ?case
-        apply simp
-        apply (case_tac "a21 = a11")
-         apply simp
-         apply (case_tac "a22 = a12")
-          apply simp
-          apply (rule ext)
-          apply simp
-         apply simp
-        apply (rule ext)
-         apply auto[1]
-        apply simp
-        apply (rule ext)
-        by auto
-    qed
-  qed
-next
-case (Gt a1 a2)
-  then show ?case
-  proof(induct a1)
-    case (L x)
-    then show ?case
-    proof(induct a2)
-      case (L v)
-      then show ?case
-        by simp
-    next
-      case (V v)
-      then show ?case
-        by simp
-    next
-      case (Plus a21 a22)
-      then show ?case
-        by simp
-    next
-      case (Minus a21 a22)
-      then show ?case
-        by simp
-    qed
-  next
-    case (V x)
-    then show ?case
-    proof(induct a2)
-      case (L x)
-      then show ?case
-        by simp
-    next
-      case (V v)
-      then show ?case
-        by simp
-    next
-      case (Plus a21 a22)
-      then show ?case
-        by simp
-    next
-      case (Minus a21 a22)
-      then show ?case
-        by simp
-    qed
-  next
-    case (Plus a11 a12)
-    then show ?case
-    proof(induct a2)
-      case (L x)
-      then show ?case
-        by simp
-    next
-      case (V x)
-      then show ?case
-        by simp
-    next
-      case (Plus a21 a22)
-      then show ?case
-        apply (case_tac "a11 = a12")
-         apply (case_tac "a21 = a22")
-          apply simp
-         apply simp
-        apply (case_tac "a12 = a21")
-          apply simp
-          apply (rule ext)
-          apply simp
-         apply simp
-         apply (rule ext)
-         apply simp
-        apply (case_tac "a21 = a22")
-         apply simp
-         apply (case_tac "a11 = a22")
-          apply simp
-          apply (rule ext)
-          apply simp
-         apply simp
-         apply (rule ext)
-         apply simp
-        apply simp
-        apply (case_tac "a11 = a21")
-         apply simp
-         apply clarify
-         apply (rule ext)
-         apply simp
-        apply simp
-        apply (case_tac "a11 = a22")
-         apply simp
-         apply (case_tac "a12 = a21")
-          apply simp
-        apply (rule ext)
-        apply simp
-        apply clarify
-          apply (simp add: fimage_funion)
-          apply (simp add: comp_def make_gt_twice)
-          apply auto[1]
-         apply simp
-         apply (rule ext)
-         apply simp
-        apply simp
-        apply (rule ext)
-        by simp
-    next
-      case (Minus a21 a22)
-      then show ?case
-        by simp
-    qed
-  next
-    case (Minus a11 a12)
-    then show ?case
-    proof(induct a2)
-      case (L x)
-      then show ?case by simp
-    next
-      case (V x)
-      then show ?case by simp
-    next
-      case (Plus a21 a22)
-      then show ?case by simp
-    next
-      case (Minus a21 a22)
-      then show ?case
-        apply simp
-        apply (case_tac "a11 = a21")
-        apply simp
-         apply clarify
-         apply (rule ext)
-         apply simp
-        apply simp
-        apply (rule ext)
-        by simp
-    qed
-  qed
-next
-  case (Null x)
-  then show ?case
-    by simp
-next
-case (Nor G1 G2)
-  then show ?case
-    apply (simp del: fold_append map_append fset_of_list_append)
-    apply (rule ext)
-    apply standard
-     defer
-     apply simp
-
-    apply(simp only: funion_fsubset_iff)
-    apply standard
-     apply simp
-
-    apply (simp only: fold_split)
-    apply (simp only: double_map)
-
-    sorry
-qed
-
-lemma "medial (medial c t) t = medial c t"
-  apply (simp add: medial_def)
-  by (simp add: aux)
-
 lemma subset_consistency: "\<forall>r. c' r |\<subseteq>| c r \<Longrightarrow> consistent c \<Longrightarrow> consistent c'"
   apply (simp add: consistent_def)
   apply clarify
-  apply (rule_tac x=s in exI)    
+  apply (rule_tac x=s in exI)
   by auto
 
 lemma consistent_medial_idempotence: "consistent (medial (medial c t) t) \<Longrightarrow> consistent (medial c t)"
@@ -481,4 +143,38 @@ proof-
     apply clarify
     by (simp add: apply_updates)
 qed
+
+lemma fold_union_append: "fold (|\<union>|) (x@y) {||} = (fold (|\<union>|) x {||}) |\<union>| (fold (|\<union>|) y {||})"
+  by (metis ffUnion_funion_distrib fold_union_ffUnion fset_of_list_append)
+
+lemma "medial (medial c G) G x |\<subseteq>| medial c G x"
+proof(induct G)
+  case Nil
+  then show ?case
+    by (simp add: medial_def List.maps_def pairs2context_def)
+next
+  case (Cons a G)
+  then show ?case
+    apply (simp only: medial_def)
+    apply (simp only: pairs2context_def)
+    apply (simp only: funion_fsubset_iff)
+    apply standard
+     apply simp
+    apply (simp only: maps_simps(1))
+    apply (simp only: filter_append)
+    apply (simp only: map_append)
+    apply (simp only: fold_union_append)
+    apply (simp only: funion_fsubset_iff)
+    apply simp
+    apply standard
+qed
+
+lemma "medial (medial c G) G = medial c G"
+  apply (rule ext)
+  apply standard
+   prefer 2
+   apply (simp add: anterior_subset_medial)
+
+
+
 end

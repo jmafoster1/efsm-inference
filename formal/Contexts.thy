@@ -160,31 +160,37 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
 
   "guard2pairs a (Nor v va) = (map (\<lambda>(x, y). (x, fimage not y)) ((guard2pairs a v) @ (guard2pairs a va)))"
 
-fun pairs2context :: "(aexp \<times> cexp fset) list \<Rightarrow> context \<Rightarrow> context" where
-  "pairs2context l c = (\<lambda>r. (c r) |\<union>| fold funion (map snd (filter (\<lambda>(a, _). a = r) l)) {||})"
+definition pairs2context :: "(aexp \<times> cexp fset) list \<Rightarrow> context \<Rightarrow> context" where
+  "pairs2context l c = (\<lambda>r. fold funion (map snd (filter (\<lambda>(a, _). a = r) l)) {||})"
 
-fun apply_guard :: "context \<Rightarrow> guard \<Rightarrow> context" where
-  "apply_guard a g = (pairs2context (guard2pairs a g) a)"
+lemma pairs2context_append: "pairs2context (x @ y) c ra = pairs2context x c ra |\<union>| pairs2context y c ra"
+  apply (simp only: pairs2context_def)
+  by (metis ffUnion_funion_distrib filter_append fold_union_ffUnion fset_of_list_append map_append map_eq_map_tailrec)
 
 definition medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
- "medial c G = (apply_guard c (fold gAnd G (gexp.Bc True)))"
+ "medial c G = (\<lambda>r. (c r) |\<union>| pairs2context (List.maps (guard2pairs c) G) c r)"
+
+lemma medial_cons: "medial c (a # G) ra = medial c [a] ra |\<union>| medial c G ra"
+  apply (simp only: medial_def)
+  by (simp add: inf_sup_aci(5) inf_sup_aci(7) maps_simps(1) maps_simps(2) pairs2context_append)
+
+lemma medial_cons_subset: "medial c G ra |\<subseteq>| medial c (a # G) ra"
+  apply (simp add: medial_def)
+  apply (simp only: maps_simps(1))
+  apply (simp only: pairs2context_append)
+  by auto
+
+lemma medial_empty: "medial c [] = c"
+  by (simp add: medial_def pairs2context_def List.maps_def)
 
 lemma anterior_subset_medial: "c r |\<subseteq>| (medial c G r)"
-proof(induct G)
-  case Nil
-  then show ?case
-    by (simp add: medial_def)
-next
-  case (Cons a G)
-  then show ?case
-    by (simp add: medial_def)
-qed
+    by (simp add: medial_def pairs2context_def)
 
 fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function \<Rightarrow> context" where
   "apply_update l c (v, (L n)) = update c (V v) {|(Eq n)|}" |
   "apply_update l c (v, V vb) = update c (V v) (l (V vb))" |
-  "apply_update l c (v, Plus vb vc) = update c (V v) {|(compose_plus (conjoin (get l vb)) (conjoin (get l vc)))|}" |
-  "apply_update l c (v, Minus vb vc) = update c (V v) {|(compose_minus (conjoin (get l vb)) (conjoin (get l vc)))|}"
+  "apply_update l c (v, Plus vb vc) = update c (V v) (fimage (\<lambda>(a, b). compose_plus a b) ((get l vb) |\<times>| (get l vc)))" |
+  "apply_update l c (v, Minus vb vc) = update c (V v) (fimage (\<lambda>(a, b). compose_minus a b) ((get l vb) |\<times>| (get l vc)))"
 
 primrec apply_updates :: "context \<Rightarrow> context \<Rightarrow> update_function list \<Rightarrow> context" where
   "apply_updates _ c [] = c" |
@@ -194,7 +200,7 @@ definition can_take :: "transition \<Rightarrow> context \<Rightarrow> bool" whe
   "can_take t c \<equiv> consistent (medial c (Guard t))"
 
 lemma can_take_no_guards: "\<forall> c. (Contexts.consistent c \<and> (Guard t) = []) \<longrightarrow> Contexts.can_take t c"
-  by (simp add: consistent_def Contexts.can_take_def medial_def)
+  by (simp add: consistent_def Contexts.can_take_def medial_def pairs2context_def List.maps_def)
 
 fun constrains_an_input :: "aexp \<Rightarrow> bool" where
   "constrains_an_input (L v) = False" |
@@ -296,7 +302,7 @@ lemma satisfies_context_empty: "satisfies_context <> \<lbrakk>\<rbrakk> \<and> s
 (* Does t2 subsume t1? *)
 definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where (* Corresponds to Algorithm 2 in Foster et. al. *)
   "subsumes c t2 t1 \<equiv> Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) \<and>
-                      (\<forall>r i. (cval (conjoin (medial c (Guard t1) r)) r i = true) \<longrightarrow> (cval (conjoin (medial c (Guard t2) r)) r i) = true) \<and>
+                      (\<forall>r i. fBall (medial c (Guard t1) r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (medial c (Guard t2) r) (\<lambda>c. cval c r i = true)) \<and>
                       (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<forall>r i. fBall (posterior (medial c (Guard t1)) t2 r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (posterior c t1 r) (\<lambda>c. cval c r i = true) \<or> (posterior c t1 r) = {|Undef|}) \<and>
@@ -365,5 +371,9 @@ lemma consistent_posterior_gives_consistent_medial: "consistent (posterior c x) 
   apply (case_tac "consistent (medial c (Guard x))")
    apply simp
   by (simp add: inconsistent_false)
+
+lemma consistent_medial_gives_consistent_anterior: "consistent (medial c G) \<Longrightarrow> consistent c"
+  apply (simp add: consistent_def)
+  by (metis (full_types) fBall_funion medial_def)
 
 end

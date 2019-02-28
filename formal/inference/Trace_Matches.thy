@@ -204,6 +204,10 @@ lemma remove_guard_add_update_preserves_label: "Label (remove_guard_add_update t
 lemma remove_guard_add_update_preserves_arity: "Arity (remove_guard_add_update t i r) = Arity t"
   by (simp add: remove_guard_add_update_def)
 
+lemmas remove_guard_add_update_preserves = remove_guard_add_update_preserves_label
+                                           remove_guard_add_update_preserves_arity
+                                           remove_guard_add_update_preserves_outputs
+
 primrec ran :: "nat \<Rightarrow> nat set" where
   "ran 0 = {0}" |
   "ran (Suc n) = insert (Suc n) (ran n)"
