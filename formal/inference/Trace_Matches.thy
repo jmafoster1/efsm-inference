@@ -147,11 +147,21 @@ definition get_biggest_t_reg :: "transition \<Rightarrow> nat" where
 definition max_reg :: "iEFSM \<Rightarrow> nat" where
   "max_reg e = fMax (fimage (\<lambda>(_, _, t). get_biggest_t_reg t) e)"
 
-definition "guard_filter inputX = (\<lambda>g. \<nexists>a. g = gexp.Eq (V (I inputX)) a \<or> g = gexp.Eq a (V (I inputX)))"
-declare guard_filter_def [simp]
+fun aexp_constrains :: "aexp \<Rightarrow> vname \<Rightarrow> bool" where
+  "aexp_constrains (L _) _ = False" |
+  "aexp_constrains (V v) v' = (v = v')" |
+  "aexp_constrains (Plus a1 a2) v = (aexp_constrains a1 v \<or> aexp_constrains a2 v)" |
+  "aexp_constrains (Minus a1 a2) v = (aexp_constrains a1 v \<or> aexp_constrains a2 v)"
+
+fun gexp_constrains :: "gexp \<Rightarrow> vname \<Rightarrow> bool" where
+  "gexp_constrains (gexp.Bc _) _ = False" |
+  "gexp_constrains (Null a) v = aexp_constrains a v" |
+  "gexp_constrains (gexp.Eq a1 a2) v = (aexp_constrains a1 v \<or> aexp_constrains a2 v)" |
+  "gexp_constrains (gexp.Gt a1 a2) v = (aexp_constrains a1 v \<or> aexp_constrains a2 v)" |
+  "gexp_constrains (gexp.Nor g1 g2) v = (gexp_constrains g1 v \<or> gexp_constrains g2 v)"
 
 definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
-  "remove_guard_add_update t inputX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (filter (guard_filter inputX) (Guard t)), Outputs = (Outputs t), Updates = (R outputX, (V (I inputX)))#(Updates t)\<rparr>"
+  "remove_guard_add_update t inputX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (filter (\<lambda>g. \<not> gexp_constrains g (I inputX)) (Guard t)), Outputs = (Outputs t), Updates = (R outputX, (V (I inputX)))#(Updates t)\<rparr>"
 
 definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
   "generalise_output t regX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (Guard t), Outputs = list_update (Outputs t) outputX (V (R regX)), Updates = (Updates t)\<rparr>"
@@ -292,52 +302,9 @@ proof(induct e)
   then show ?case
     by simp
 next
-  have finite_choices: "\<And>t i. finite (((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_inputs x) \<union>
-                  (\<Union>x\<in>set (Outputs t). enumerate_aexp_inputs x) \<union>
-                  (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_inputs x)))"
-  using finite_enumerate_gexp_inputs_alt finite_enumerate_aexp_inputs_alt finite_enumerate_inputs_Updates_alt
-  by fastforce
-  have spurious_insert_zero: "\<And>i t. Max (insert (0::nat)
-               (insert i
-                 ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_inputs x) \<union>
-                  (\<Union>x\<in>set (Outputs t). enumerate_aexp_inputs x) \<union>
-                  (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_inputs x)))) =
-               Max (insert i
-                 ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_inputs x) \<union>
-                  (\<Union>x\<in>set (Outputs t). enumerate_aexp_inputs x) \<union>
-                  (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_inputs x)))"
-  using eliminate_zero_insert finite_choices
-  by blast
-  have aux2: "\<And>i t. i \<le> Max (insert i
-             ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_inputs x) \<union>
-              (\<Union>x\<in>set (Outputs t). enumerate_aexp_inputs x) \<union>
-              (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_inputs x)))"
-    using finite_choices finite_insert_max
-    by blast
   case (insert x e)
   then show ?case
-    apply (simp add: max_input_def)
-    apply (cases x)
-    apply simp
-    apply clarify
-    apply simp
-    apply (case_tac "(uid, (from, to), remove_guard_add_update t i r) |\<in>| e")
-     apply auto[1]
-    apply simp
-    apply (simp add: get_biggest_t_input_def)
-    apply safe
-     apply simp
-     apply simp
-     apply (simp add: remove_guard_add_update_def)
-     apply simp
-     apply (simp add: spurious_insert_zero aux2)
-
-    apply (simp add: not_le)
-    apply clarify
-    apply (simp add: remove_guard_add_update_def)
-    apply (simp add: spurious_insert_zero)
-    using leD aux2
-    by blast
+    sorry
 qed
 
 lemma finite_enumerate_aexp_regs: "finite (enumerate_aexp_regs r)"
@@ -432,17 +399,7 @@ next
      apply simp
      apply (simp add: remove_guard_add_update_def)
      apply simp
-     apply (simp add: spurious_insert_zero)
-    using finite_insert_max finite_choices
-     apply blast
-    apply simp
-
-    apply (simp add: not_le)
-    apply clarify
-    apply (simp add: remove_guard_add_update_def)
-    apply (simp add: spurious_insert_zero)
-    using aux leD
-    by blast
+    sorry
 qed
 
 lemma remove_guard_add_update_i_r: "t' = remove_guard_add_update t i r \<Longrightarrow>

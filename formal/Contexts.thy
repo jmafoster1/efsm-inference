@@ -160,15 +160,18 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
 
   "guard2pairs a (Nor v va) = (map (\<lambda>(x, y). (x, fimage not y)) ((guard2pairs a v) @ (guard2pairs a va)))"
 
-definition pairs2context :: "(aexp \<times> cexp fset) list \<Rightarrow> context \<Rightarrow> context" where
-  "pairs2context l c = (\<lambda>r. fold funion (map snd (filter (\<lambda>(a, _). a = r) l)) {||})"
+definition pairs2context :: "(aexp \<times> cexp fset) list \<Rightarrow> context" where
+  "pairs2context l = (\<lambda>r. fold funion (map snd (filter (\<lambda>(a, _). a = r) l)) {||})"
 
-lemma pairs2context_append: "pairs2context (x @ y) c ra = pairs2context x c ra |\<union>| pairs2context y c ra"
+lemma pairs2context_append: "pairs2context (x @ y) ra = pairs2context x ra |\<union>| pairs2context y ra"
   apply (simp only: pairs2context_def)
   by (metis ffUnion_funion_distrib filter_append fold_union_ffUnion fset_of_list_append map_append map_eq_map_tailrec)
 
+lemma pairs2context_cons: "pairs2context (x # y) ra = pairs2context [x] ra |\<union>| pairs2context y ra"
+  by (metis append_Cons append_self_conv2 pairs2context_append)
+
 definition medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
- "medial c G = (\<lambda>r. (c r) |\<union>| pairs2context (List.maps (guard2pairs c) G) c r)"
+ "medial c G = (\<lambda>r. (c r) |\<union>| pairs2context (List.maps (guard2pairs c) G) r)"
 
 lemma medial_cons: "medial c (a # G) ra = medial c [a] ra |\<union>| medial c G ra"
   apply (simp only: medial_def)

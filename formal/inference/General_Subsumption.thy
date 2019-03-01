@@ -262,7 +262,12 @@ next
     using fprod_get_medial_filter fimage_fprod by metis
 qed
 
-lemma "fBall (if constrains_an_input ra then {|cexp.Bc True|} else Contexts.apply_updates (medial c (Guard t)) c (Updates t) ra)
+lemma fBall_medial_filter: "fBall (medial c G r) (\<lambda>c. cval c r sa = true) \<Longrightarrow>
+       fBall (medial c (filter f G) r) (\<lambda>c. cval c r sa = true)"
+  using medial_filter by fastforce
+
+lemma "consistent (medial c (Guard t)) \<Longrightarrow>
+       fBall (if constrains_an_input ra then {|cexp.Bc True|} else Contexts.apply_updates (medial c (Guard t)) c (Updates t) ra)
              (\<lambda>c. cval c ra s = true) \<Longrightarrow>
     (ra = V (R r) \<longrightarrow>
               fBall (medial c (filter (\<lambda>g. \<forall>a. g \<noteq> gexp.Eq (V (I i)) a \<and> g \<noteq> gexp.Eq a (V (I i))) (Guard t)) (V (I i)))
@@ -284,17 +289,265 @@ lemma "fBall (if constrains_an_input ra then {|cexp.Bc True|} else Contexts.appl
   using apply_updates_filter apply blast
   oops
 
-lemma "consistent (posterior c t) \<Longrightarrow> consistent (posterior c (remove_guard_add_update t i r))"
+lemma map_snd_filter: "map snd (filter (\<lambda>(a, uu). a = v) (map (\<lambda>(x, y). (x, not |`| y)) l)) =
+       map (\<lambda>(x, y). (not |`| y)) (filter (\<lambda>(a, uu). a = v) l)"
+proof(induct l)
+case Nil
+  then show ?case by simp
+next
+  case (Cons a l)
+  then show ?case
+    by auto
+qed
+
+lemma guard2pairs_no_constraints_on_v: "\<not> gexp_constrains g1 v \<Longrightarrow> list_all (\<lambda>(a, c). a \<noteq> V v) (guard2pairs c g1)"
+proof(induct g1)
+case (Bc x)
+  then show ?case
+    apply (case_tac x)
+    by auto
+next
+  case (Eq a1 a2)
+  then show ?case
+  proof(induct a1)
+    case (L x)
+    then show ?case
+      apply (induct a2)
+      by auto
+  next
+    case (V x)
+    then show ?case
+      apply (induct a2)
+      by auto
+  next
+    case (Plus a11 a12)
+    then show ?case
+      apply (induct a2)
+      by auto
+  next
+    case (Minus a11 a12)
+    then show ?case
+      apply (induct a2)
+      by auto
+  qed
+next
+  case (Gt a1 a2)
+  then show ?case
+  proof(induct a1)
+    case (L x)
+    then show ?case
+      by auto
+  next
+    case (V x)
+    then show ?case
+      apply (induct a2)
+      by auto
+  next
+    case (Plus a11 a12)
+    then show ?case
+      apply (induct a2)
+      by auto
+  next
+    case (Minus a11 a12)
+    then show ?case
+      apply (induct a2)
+      by auto
+  qed
+next
+  case (Null x)
+  then show ?case
+    by auto
+next
+case (Nor g11 g12)
+  then show ?case
+    apply simp
+    by (metis (mono_tags, lifting) Ball_set list.pred_map o_apply prod.sel(1) split_def)
+qed
+
+lemma pairs2context_no_constraints_on_v: "list_all (\<lambda>(a, c). a \<noteq> V v) l \<Longrightarrow> pairs2context l (V v) = {||}"
+proof-
+  assume premise: "list_all (\<lambda>(a, c). a \<noteq> V v) l"
+  have list_all_empty: "filter (\<lambda>(a, uu). a = V v) l = []"
+    using premise
+    by (simp add: Ball_set split_def)
+  show ?thesis
+    by (simp add: pairs2context_def list_all_empty)
+qed
+
+lemma pairs2context_no_constraints_on_v_2: "\<not> gexp_constrains g1 v \<Longrightarrow> pairs2context (map (\<lambda>(x, y). (x, not |`| y)) (guard2pairs c g1)) (V v) = {||}"
+  using guard2pairs_no_constraints_on_v pairs2context_no_constraints_on_v
+  by (metis funion_absorb gexp_constrains.simps(5) guard2pairs.simps(30) map_append pairs2context_append)
+
+lemma medial_filter_gexp_constrains: "medial c (filter (\<lambda>g. \<not> gexp_constrains g v) G) (V v) = c (V v)"
+proof(induct G)
+  case Nil
+  then show ?case
+    by (simp add: medial_empty)
+next
+  case (Cons a G)
+  then show ?case
+  proof(induct a)
+    case (Bc x)
+    then show ?case
+      apply (case_tac x)
+       apply (simp add: medial_def List.maps_simps(1))
+      apply simp
+      apply (simp only: medial_def List.maps_simps(1) guard2pairs.simps)
+      apply (simp only: pairs2context_append)
+      by (simp add: pairs2context_def)
+  next
+    case (Eq a1 a2)
+    then show ?case
+    proof(induct a1)
+      case (L x)
+      then show ?case
+      proof(induct a2)
+        case (L v)
+        then show ?case
+          by (simp add: medial_def List.maps_simps pairs2context_def)
+      next
+        case (V x)
+        then show ?case
+          by (simp add: medial_def List.maps_simps pairs2context_def)
+      next
+        case (Plus a21 a22)
+        then show ?case
+          by (simp add: medial_def List.maps_simps pairs2context_def)
+      next
+        case (Minus a21 a22)
+        then show ?case
+          by (simp add: medial_def List.maps_simps pairs2context_def)
+      qed
+    next
+      case (V x)
+      then show ?case
+      proof(induct a2)
+        case (L x)
+        then show ?case
+          by (simp add: medial_def List.maps_simps pairs2context_def)
+      next
+        case (V x)
+        then show ?case
+          by (simp add: medial_def List.maps_simps pairs2context_def)
+      next
+        case (Plus a21 a22)
+        then show ?case
+          by (simp add: medial_def List.maps_simps pairs2context_def)
+      next
+        case (Minus a21 a22)
+        then show ?case
+          by (simp add: medial_def List.maps_simps pairs2context_def)
+      qed
+    next
+      case (Plus a11 a12)
+      then show ?case
+      proof(induct a2)
+        case (L x)
+        then show ?case
+          by (simp add: medial_def List.maps_simps pairs2context_def)
+      next
+        case (V x)
+        then show ?case
+          by (simp add: medial_def List.maps_simps pairs2context_def)
+      next
+        case (Plus a21 a22)
+        then show ?case
+          by (simp add: medial_def List.maps_simps pairs2context_def)
+      next
+        case (Minus a21 a22)
+        then show ?case
+          by (simp add: medial_def List.maps_simps pairs2context_def)
+      qed
+    next
+      case (Minus a11 a12)
+      then show ?case
+      proof(induct a2)
+        case (L x)
+        then show ?case
+          by (simp add: medial_def List.maps_simps pairs2context_def)
+      next
+        case (V x)
+        then show ?case
+          by (simp add: medial_def List.maps_simps pairs2context_def)
+      next
+        case (Plus a21 a22)
+        then show ?case
+          by (simp add: medial_def List.maps_simps pairs2context_def)
+      next
+        case (Minus a21 a22)
+        then show ?case
+          by (simp add: medial_def List.maps_simps pairs2context_def)
+      qed
+    qed
+  next
+    case (Gt a1 a2)
+    then show ?case
+    proof(induct a1)
+      case (L x)
+      then show ?case
+        apply (induct a2)
+        by (simp_all add: medial_def List.maps_simps pairs2context_def)
+    next
+      case (V x)
+      then show ?case
+        apply (induct a2)
+        by (simp_all add: medial_def List.maps_simps pairs2context_def)
+    next
+      case (Plus a11 a12)
+      then show ?case
+        apply (induct a2)
+        by (simp_all add: medial_def List.maps_simps pairs2context_def)
+    next
+      case (Minus a11 a12)
+      then show ?case
+        apply (induct a2)
+        by (simp_all add: medial_def List.maps_simps pairs2context_def)
+    qed
+  next
+    case (Null x)
+    then show ?case
+      by (simp add: medial_def List.maps_simps pairs2context_def)
+  next
+    case (Nor g1 g2)
+    then show ?case
+      apply (case_tac "\<not> gexp_constrains g1 v")
+      defer
+       apply simp
+      apply (case_tac "\<not> gexp_constrains g2 v")
+       defer
+       apply simp
+      apply simp
+      apply (simp only: medial_def List.maps_simps pairs2context_append guard2pairs.simps)
+      apply (simp only: map_append pairs2context_append)
+      by (simp add: pairs2context_no_constraints_on_v_2)
+  qed
+qed
+
+lemma medial_remove_guard_add_update: "medial c (Guard (remove_guard_add_update t i r)) (V (I i)) = c (V (I i))"
+  by (simp add: remove_guard_add_update_def medial_filter_gexp_constrains)
+
+lemma updates_remove_guard_add_update: "Updates (remove_guard_add_update t i r) = (R r, V (I i)) # Updates t"
+  by (simp add: remove_guard_add_update_def)
+
+lemma consistent_posterior_remove_guard_add_update: "c (V (I i)) = {|Bc True|} \<Longrightarrow>
+       c (V (R r)) = {|Undef|} \<Longrightarrow>
+       consistent (posterior c t) \<Longrightarrow>
+       consistent (posterior c (remove_guard_add_update t i r))"
   apply (simp add: posterior_def Let_def)
   apply (case_tac "consistent (medial c (Guard t))")
    defer
    apply (simp add: inconsistent_false)
-  apply (simp add: consistent_medial_generalisation)
-  apply (simp add: remove_input_constraints_alt remove_guard_add_update_def)
-  apply (simp add: consistent_def)
-  oops
-(*Stick the consistent part in here and carry it on up to all of the oops-ed lemmas*)
 
+  apply (simp add: consistent_medial_generalisation updates_remove_guard_add_update)
+  apply (simp add: consistent_def remove_input_constraints_alt)
+  apply clarify
+  apply (rule_tac x=s in exI)
+  apply clarify
+  apply (case_tac "ra = V (R r)")
+  using medial_remove_guard_add_update valid_def valid_true apply auto[1]
+  apply (simp add: cval_true remove_guard_add_update_def)
+  apply clarify
+  using apply_updates_filter by fastforce
 
 lemma "c (V (I i)) = {|Bc True|} \<Longrightarrow> c (V (R r)) = {|Undef|} \<Longrightarrow> subsumes c (remove_guard_add_update t i r) t"
   unfolding subsumes_def
@@ -304,7 +557,8 @@ lemma "c (V (I i)) = {|Bc True|} \<Longrightarrow> c (V (R r)) = {|Undef|} \<Lon
   apply standard
     apply (simp add: posterior_def Let_def)
     apply (case_tac "consistent (medial (medial c (Guard t)) (Guard (remove_guard_add_update t i r)))")
-     apply (simp add: consistent_medial_gives_consistent_anterior remove_input_constraints_alt)
+    apply (simp add: consistent_medial_gives_consistent_anterior remove_input_constraints_alt)
+    apply clarify
      apply (case_tac "constrains_an_input ra")
       apply simp
      apply simp
@@ -312,5 +566,8 @@ lemma "c (V (I i)) = {|Bc True|} \<Longrightarrow> c (V (R r)) = {|Undef|} \<Lon
      apply (case_tac "ra = V (R r)")
       apply simp
       apply clarify
-      apply simp
+     apply simp
+     prefer 4
+     apply (simp add: consistent_posterior_remove_guard_add_update)
+    apply (simp add: consistent_def)
 end
