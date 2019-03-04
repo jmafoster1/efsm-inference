@@ -176,11 +176,18 @@ next
     sorry
 qed
 
-lemma "medial (medial c G) G = medial c G"
+lemma medial_equivalent: "medial c (Guard t @ Guard t) = medial c (Guard t)"
   apply (rule ext)
-  apply standard
-   prefer 2
-   apply (simp add: anterior_subset_medial)
+  by (simp add: medial_append)
+
+lemma "subsumes c t t"
+  apply (simp add: subsumes_def)
+  apply (simp only: posterior_separate_def Let_def posterior_def medial_equivalent)
+  apply (case_tac "consistent (medial c (Guard t))")
+   apply simp
+  by simp
+
+
 
 
 

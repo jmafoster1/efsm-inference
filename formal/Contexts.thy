@@ -278,8 +278,11 @@ proof-
     by (simp_all add: cval_true)
 qed
 
-definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
-  "posterior c t = (let c' = (medial c (Guard t)) in (if consistent c' then remove_input_constraints (apply_updates c' c (Updates t)) else (\<lambda>i. {|Bc False|})))"
+definition posterior_separate :: "context \<Rightarrow> guard list \<Rightarrow> update_function list \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
+  "posterior_separate c g u = (let c' = (medial c g) in (if consistent c' then remove_input_constraints (apply_updates c' c u) else (\<lambda>i. {|Bc False|})))"
+
+definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where
+  "posterior c t = posterior_separate c (Guard t) (Updates t)"
 
 primrec posterior_n :: "nat \<Rightarrow> transition \<Rightarrow> context \<Rightarrow> context" where (* Apply a given transition to a given context n times - good for reflexive transitions*)
   "posterior_n 0 _ c = c " |
@@ -318,7 +321,7 @@ definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transitio
                       (\<forall>r i. fBall (medial c (Guard t1) r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (medial c (Guard t2) r) (\<lambda>c. cval c r i = true)) \<and>
                       (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
-                      (\<forall>r i. fBall (posterior (medial c (Guard t1)) t2 r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (posterior c t1 r) (\<lambda>c. cval c r i = true) \<or> (posterior c t1 r) = {|Undef|}) \<and>
+                      (\<forall>r i. fBall (posterior_separate c (Guard t1@Guard t2) (Updates t2) r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (posterior c t1 r) (\<lambda>c. cval c r i = true) \<or> (posterior c t1 r) = {|Undef|}) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
 
 definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> context" where
@@ -380,7 +383,7 @@ next
 qed
 
 lemma consistent_posterior_gives_consistent_medial: "consistent (posterior c x) \<Longrightarrow> consistent (medial c (Guard x))"
-  apply (simp add: posterior_def Let_def)
+  apply (simp add: posterior_def Let_def posterior_separate_def)
   apply (case_tac "consistent (medial c (Guard x))")
    apply simp
   by (simp add: inconsistent_false)
