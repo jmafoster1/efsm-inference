@@ -163,6 +163,9 @@ fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cex
 definition pairs2context :: "(aexp \<times> cexp fset) list \<Rightarrow> context" where
   "pairs2context l = (\<lambda>r. fold funion (map snd (filter (\<lambda>(a, _). a = r) l)) {||})"
 
+lemma pairs2context_empty: "pairs2context [] x = {||}"
+  by (simp add: pairs2context_def)
+
 lemma pairs2context_append: "pairs2context (x @ y) ra = pairs2context x ra |\<union>| pairs2context y ra"
   apply (simp only: pairs2context_def)
   by (metis ffUnion_funion_distrib filter_append fold_union_ffUnion fset_of_list_append map_append map_eq_map_tailrec)
@@ -176,6 +179,13 @@ definition medial :: "context \<Rightarrow> guard list \<Rightarrow> context" wh
 lemma medial_cons: "medial c (a # G) ra = medial c [a] ra |\<union>| medial c G ra"
   apply (simp only: medial_def)
   by (simp add: inf_sup_aci(5) inf_sup_aci(7) maps_simps(1) maps_simps(2) pairs2context_append)
+
+lemma List_maps_append:  "List.maps f (a@g) = (List.maps f a)@(List.maps f g)"
+  by (simp add: List.maps_def)
+
+lemma medial_append: "medial c (a @ G) ra = medial c a ra |\<union>| medial c G ra"
+  apply (simp only: medial_def List_maps_append pairs2context_append)
+  by auto
 
 lemma medial_cons_subset: "medial c G ra |\<subseteq>| medial c (a # G) ra"
   apply (simp add: medial_def)

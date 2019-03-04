@@ -530,7 +530,6 @@ lemma updates_remove_guard_add_update: "Updates (remove_guard_add_update t i r) 
   by (simp add: remove_guard_add_update_def)
 
 lemma consistent_posterior_remove_guard_add_update: "c (V (I i)) = {|Bc True|} \<Longrightarrow>
-       c (V (R r)) = {|Undef|} \<Longrightarrow>
        consistent (posterior c t) \<Longrightarrow>
        consistent (posterior c (remove_guard_add_update t i r))"
   apply (simp add: posterior_def Let_def)
@@ -550,24 +549,33 @@ lemma consistent_posterior_remove_guard_add_update: "c (V (I i)) = {|Bc True|} \
   using apply_updates_filter by fastforce
 
 lemma "c (V (I i)) = {|Bc True|} \<Longrightarrow> c (V (R r)) = {|Undef|} \<Longrightarrow> subsumes c (remove_guard_add_update t i r) t"
-  unfolding subsumes_def
-  apply (simp add: remove_guard_add_update_preserves)
-  apply standard
-  using medial_general_subset apply blast
-  apply standard
-    apply (simp add: posterior_def Let_def)
-    apply (case_tac "consistent (medial (medial c (Guard t)) (Guard (remove_guard_add_update t i r)))")
-    apply (simp add: consistent_medial_gives_consistent_anterior remove_input_constraints_alt)
-    apply clarify
-     apply (case_tac "constrains_an_input ra")
-      apply simp
-     apply simp
-     apply (simp add: remove_guard_add_update_def)
-     apply (case_tac "ra = V (R r)")
-      apply simp
-      apply clarify
-     apply simp
-     prefer 4
-     apply (simp add: consistent_posterior_remove_guard_add_update)
-    apply (simp add: consistent_def)
+proof-
+  assume premise1: "c (V (I i)) = {|cexp.Bc True|}"
+  assume premise2: "c (V (R r)) = {|Undef|}"
+  have easy_stuff: "Label t = Label (remove_guard_add_update t i r) \<and>
+    Arity t = Arity (remove_guard_add_update t i r) \<and>
+    length (Outputs t) = length (Outputs (remove_guard_add_update t i r))"
+    by (simp add: remove_guard_add_update_preserves)
+  have guard_implication: "(\<forall>ra ia.
+        fBall (medial c (Guard t) ra) (\<lambda>c. cval c ra ia = true) \<longrightarrow>
+        fBall (medial c (Guard (remove_guard_add_update t i r)) ra) (\<lambda>c. cval c ra ia = true))"
+    using medial_general_subset by fastforce
+  have equal_outputs: "(\<forall>ia ra.
+        satisfies_context ra c \<longrightarrow>
+        apply_guards (Guard t) (join_ir ia ra) \<longrightarrow>
+        apply_outputs (Outputs t) (join_ir ia ra) = apply_outputs (Outputs (remove_guard_add_update t i r)) (join_ir ia ra))"
+    by (simp add: remove_guard_add_update_preserves_outputs)
+  have equal_outputs_2: "(\<exists>ia ra. apply_outputs (Outputs t) (join_ir ia ra) = apply_outputs (Outputs (remove_guard_add_update t i r)) (join_ir ia ra))"
+    by (simp add: remove_guard_add_update_preserves_outputs)
+  have posterior_more_general: "(\<forall>ra ia.
+        fBall (posterior (medial c (Guard t)) (remove_guard_add_update t i r) ra) (\<lambda>c. cval c ra ia = true) \<longrightarrow>
+        fBall (posterior c t ra) (\<lambda>c. cval c ra ia = true) \<or> posterior c t ra = {|Undef|})"
+
+    sorry
+  have consistent_posterior: "(consistent (posterior c t) \<longrightarrow> consistent (posterior c (remove_guard_add_update t i r)))"
+    by (simp add: consistent_posterior_remove_guard_add_update premise1)
+  show ?thesis
+    using subsumes_def consistent_posterior easy_stuff equal_outputs equal_outputs_2 guard_implication posterior_more_general by blast
+qed
+
 end

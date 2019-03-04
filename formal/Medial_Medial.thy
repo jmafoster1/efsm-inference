@@ -128,9 +128,13 @@ next
        apply auto[1]
       apply simp+
      apply (case_tac "r = V aa")
-      apply simp+
+      apply simp
+      apply blast
+     apply simp+
     apply (case_tac "r = V aa")
-    by auto
+     apply simp
+     apply blast
+    by simp
 qed
 
 (* If we can prove that medial (medial c t) t = medial t which it really should do *)
@@ -147,6 +151,18 @@ qed
 lemma fold_union_append: "fold (|\<union>|) (x@y) {||} = (fold (|\<union>|) x {||}) |\<union>| (fold (|\<union>|) y {||})"
   by (metis ffUnion_funion_distrib fold_union_ffUnion fset_of_list_append)
 
+lemma map_Not_Not: "map (\<lambda>(x, y). (x, Not |`| y)) (map (\<lambda>(x, y). (x, Not |`| y)) l) = map (\<lambda>(x, y). (x, (\<lambda>c. Not (Not c)) |`| y)) l"
+proof(induct l)
+case Nil
+  then show ?case by simp
+next
+  case (Cons a l)
+  then show ?case
+    apply simp
+    apply (cases a)
+    by auto
+qed
+
 lemma "medial (medial c G) G x |\<subseteq>| medial c G x"
 proof(induct G)
   case Nil
@@ -155,18 +171,9 @@ proof(induct G)
 next
   case (Cons a G)
   then show ?case
-    apply (simp only: medial_def)
-    apply (simp only: pairs2context_def)
-    apply (simp only: funion_fsubset_iff)
+    apply (simp add: medial_def List.maps_simps pairs2context_append)
     apply standard
-     apply simp
-    apply (simp only: maps_simps(1))
-    apply (simp only: filter_append)
-    apply (simp only: map_append)
-    apply (simp only: fold_union_append)
-    apply (simp only: funion_fsubset_iff)
-    apply simp
-    apply standard
+    sorry
 qed
 
 lemma "medial (medial c G) G = medial c G"
