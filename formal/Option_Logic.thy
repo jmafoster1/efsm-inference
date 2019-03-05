@@ -16,11 +16,11 @@ fun maybe_not :: "trilean \<Rightarrow> trilean" ("\<not>\<^sub>? _" [60] 60) wh
   "\<not>\<^sub>? invalid = invalid"
 
 fun maybe_and :: "trilean \<Rightarrow> trilean \<Rightarrow> trilean" (infixl "\<and>\<^sub>?" 60) where
+  "_ \<and>\<^sub>? invalid = invalid" |
+  "invalid \<and>\<^sub>? _ = invalid" |
   "true \<and>\<^sub>? true = true" |
   "_ \<and>\<^sub>? false = false" |
-  "false \<and>\<^sub>? _ = false" |
-  "_ \<and>\<^sub>? invalid = invalid" |
-  "invalid \<and>\<^sub>? _ = invalid"
+  "false \<and>\<^sub>? _ = false" 
 
 fun maybe_or :: "trilean \<Rightarrow> trilean \<Rightarrow> trilean" (infixl "\<or>\<^sub>?" 60) where
   "invalid \<or>\<^sub>? _ = invalid" |
@@ -34,67 +34,40 @@ lemma maybe_and_associative: "a \<and>\<^sub>? b \<and>\<^sub>? c = a \<and>\<^s
 proof(induct a b arbitrary: c rule: maybe_or.induct)
 case (1 uu)
   then show ?case
-    apply (cases uu)
-      apply (metis maybe_and.simps(1) maybe_and.simps(2) maybe_and.simps(5) maybe_and.simps(7) maybe_not.cases)
-     apply (metis maybe_and.simps(2) maybe_and.simps(3) maybe_and.simps(4) trilean.exhaust)
-    by (metis maybe_and.simps(2) maybe_and.simps(6) maybe_not.cases)
+  proof -
+    have "invalid \<and>\<^sub>? (uu \<and>\<^sub>? c) \<noteq> invalid \<longrightarrow> invalid \<and>\<^sub>? (uu \<and>\<^sub>? c) = invalid"
+      by (metis (no_types) maybe_and.simps(1) maybe_and.simps(2) maybe_and.simps(3) trilean.exhaust)
+    then show ?thesis
+      by (metis (full_types) maybe_and.simps(1) maybe_and.simps(2) maybe_and.simps(3) trilean.exhaust)
+  qed
 next
   case "2_1"
   then show ?case
-    by (metis maybe_and.simps(1) maybe_and.simps(2) maybe_and.simps(5) trilean.exhaust)
+    by (metis (full_types) maybe_and.simps(1) maybe_and.simps(4) maybe_and.simps(5) maybe_not.cases)
 next
   case "2_2"
   then show ?case
-    by (metis maybe_and.simps(2) maybe_and.simps(3) maybe_and.simps(4) maybe_and.simps(6) maybe_and.simps(7) trilean.exhaust)
+    by (metis maybe_and.simps(1) maybe_and.simps(2) maybe_and.simps(3) maybe_not.cases)
 next
   case "3_1"
   then show ?case
-    by (metis maybe_and.simps(1) maybe_and.simps(2) maybe_and.simps(5) maybe_not.elims)
+    by (metis maybe_and.simps(4) maybe_and.simps(5) trilean.exhaust)
 next
   case "3_2"
   then show ?case
-    by (metis maybe_and.simps(2) maybe_and.simps(3) maybe_and.simps(4) maybe_not.cases)
+    by (metis maybe_and.simps(1) maybe_and.simps(4) maybe_and.simps(5) maybe_not.cases)
 next
   case 4
   then show ?case
-    by (metis maybe_and.simps(1) maybe_and.simps(2) maybe_and.simps(3) maybe_and.simps(5) maybe_not.elims)
+    by (metis maybe_and.simps(1) maybe_and.simps(4) maybe_and.simps(5) maybe_and.simps(7) maybe_not.cases)
 next
   case 5
   then show ?case
-    by (metis maybe_and.simps(2) maybe_and.simps(3) maybe_and.simps(4) trilean.exhaust)
+    by (metis maybe_and.simps(1) maybe_and.simps(6) trilean.exhaust)
 qed
 
 lemma maybe_and_commutative: "a \<and>\<^sub>? b = b \<and>\<^sub>? a"
-proof(induct a b rule: maybe_and.induct)
-case 1
-  then show ?case
-    by simp
-next
-  case (2 uu)
-  then show ?case
-    apply (case_tac uu)
-    by auto
-next
-  case "3_1"
-  then show ?case
-    by simp
-next
-  case "3_2"
-  then show ?case
-    by simp
-next
-  case "4_1"
-  then show ?case
-    by simp
-next
-  case "4_2"
-  then show ?case
-    by simp
-next
-  case 5
-  then show ?case
-    by simp
-qed
+  by (metis (full_types) maybe_and.simps(1) maybe_and.simps(2) maybe_and.simps(3) maybe_and.simps(5) maybe_and.simps(7) trilean.distinct(5) trilean.exhaust)
 
 lemma maybe_or_associative: "a \<or>\<^sub>? b \<or>\<^sub>? c = a \<or>\<^sub>? (b \<or>\<^sub>? c)"
 proof(induct a b  arbitrary: c rule: maybe_or.induct)
@@ -160,33 +133,33 @@ qed
 
 lemma trilean_distributivity: "a \<or>\<^sub>? b \<and>\<^sub>? c = a \<and>\<^sub>? c \<or>\<^sub>? (b \<and>\<^sub>? c)"
 proof(induct a b  arbitrary: c rule: maybe_or.induct)
-  case (1 uu)
+case (1 uu)
   then show ?case
-    by (metis maybe_and.simps(2) maybe_and.simps(6) maybe_and.simps(7) maybe_not.cases maybe_or.simps(1) maybe_or.simps(7))
+    by (metis maybe_and.simps(1) maybe_and_commutative maybe_or.simps(1))
 next
-  case "2_1"
+case "2_1"
   then show ?case
-    by (metis maybe_and.simps(3) maybe_and.simps(4) maybe_and.simps(6) maybe_and.simps(7) maybe_and_commutative maybe_or.simps(1) maybe_or.simps(7) maybe_or_commutative trilean.exhaust)
+    by (metis maybe_and.simps(1) maybe_and_commutative maybe_or.simps(1) maybe_or_commutative)
 next
   case "2_2"
   then show ?case
-    by (metis maybe_and.simps(2) maybe_and.simps(6) maybe_and.simps(7) maybe_and_commutative maybe_not.cases maybe_or.simps(3) maybe_or.simps(7))
+    by (metis maybe_and.simps(1) maybe_and_commutative maybe_or.simps(1) maybe_or_commutative)
 next
   case "3_1"
   then show ?case
-    by (metis maybe_and.simps(1) maybe_and.simps(2) maybe_and.simps(5) maybe_and_commutative maybe_or.simps(1) maybe_or.simps(4) maybe_or.simps(7) trilean.exhaust)
+    by (metis maybe_and.simps(1) maybe_and.simps(4) maybe_and.simps(7) maybe_and_commutative maybe_not.simps(1) maybe_not.simps(3) maybe_or.simps(1) maybe_or.simps(4) maybe_or.simps(7) trilean.exhaust trilean.simps(2) trilean.simps(6))
 next
   case "3_2"
   then show ?case
-    by (metis maybe_and.simps(1) maybe_and.simps(2) maybe_and.simps(5) maybe_and_commutative maybe_or.simps(1) maybe_or.simps(5) maybe_or.simps(7) trilean.distinct(1) trilean.exhaust trilean.simps(6))
+    by (metis maybe_and.simps(1) maybe_and.simps(4) maybe_and.simps(6) maybe_and.simps(7) maybe_and_commutative maybe_or.simps(1) maybe_or.simps(5) maybe_or.simps(7) trilean.exhaust trilean.simps(6))
 next
   case 4
   then show ?case
-    by (metis maybe_and.simps(1) maybe_and.simps(2) maybe_and.simps(5) maybe_and_commutative maybe_or.simps(3) maybe_or.simps(6) maybe_or.simps(7) trilean.exhaust)
+    by (metis maybe_and.simps(1) maybe_and.simps(4) maybe_and.simps(6) maybe_and.simps(7) maybe_and_commutative maybe_or.simps(1) maybe_or.simps(6) maybe_or.simps(7) trilean.exhaust)
 next
 case 5
   then show ?case
-    by (metis maybe_and.simps(2) maybe_and_commutative maybe_or.simps(7))
+    by (metis maybe_and.simps(1) maybe_and.simps(6) maybe_and.simps(7) maybe_and_commutative maybe_or.simps(1) maybe_or.simps(7) trilean.exhaust trilean.simps(6))
 qed
 
 instantiation trilean :: semiring begin
@@ -246,4 +219,9 @@ lemma maybe_and_true: "(x \<and>\<^sub>? y = true) = (x = true \<and> y = true)"
 lemma maybe_and_not_true: "(x \<and>\<^sub>? y \<noteq> true) = (x \<noteq> true \<or> y \<noteq> true)"
   by (simp add: maybe_and_true)
 
+lemma maybe_and_valid: "x \<and>\<^sub>? y \<noteq> invalid \<Longrightarrow> x \<noteq> invalid \<and> y \<noteq> invalid"
+  using maybe_and.elims by blast
+
+lemma maybe_or_valid: "x \<or>\<^sub>? y \<noteq> invalid \<Longrightarrow> x \<noteq> invalid \<and> y \<noteq> invalid"
+  using maybe_or.elims by blast
 end

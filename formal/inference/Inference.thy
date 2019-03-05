@@ -1,5 +1,5 @@
 theory Inference
-  imports "../Nondeterministic_EFSM" "../EFSM" "../Contexts" Transition_Ordering
+  imports "../EFSM" "../Contexts" Transition_Ordering
           "~~/src/HOL/Library/Product_Lexorder"
 begin
 

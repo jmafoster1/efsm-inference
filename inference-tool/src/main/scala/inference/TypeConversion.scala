@@ -1,3 +1,5 @@
+import isabellesal._
+
 object TypeConversion {
 
   def toValue(n:BigInt): Value.value = Value.Numa(Int.int_of_integer(n))
@@ -26,55 +28,59 @@ object TypeConversion {
   }
 
   // This is hypothetical and will break until we get Siobhan's source code
-  def toSALTranslator(v: VName.vname): Expression = v match {
-    case VName.I(n) => Variable.newOneFrom("I", n)
-    case VName.I(n) => Variable.newOneFrom("I", n)
+  def toSALTranslator(v: VName.vname): Variable = v match {
+    case VName.I(Nat.Nata(n)) => Variable.newOneFrom('I', n.toInt)
+    case VName.R(Nat.Nata(n)) => Variable.newOneFrom('R', n.toInt)
   }
 
   def toSALTranslator(a: AExp.aexp): Expression = a match {
-    case AExp.L(Num(n)) => Expression.newOneFrom(Constant.newOneFrom(n.intValue()))
-    case AExp.L(Str(s)) => Expression.newOneFrom(Constant.newOneFrom(s))
+    case AExp.L(Value.Numa(Int.int_of_integer(n))) => Expression.newOneFrom(Constant.newOneFrom(n.toInt))
+    case AExp.L(Value.Str(s)) => Expression.newOneFrom(Constant.newOneFrom(s))
     case AExp.V(v) => Expression.newOneFrom(toSALTranslator(v))
-    case AExp.Plus(a1, a2) => InfixExpression.newOneFrom(
+    case AExp.Plus(a1, a2) => Expression.newInfixFrom(
             Token.PLUS,
             toSALTranslator(a1),
             toSALTranslator(a2)
     )
-    case AExp.Plus(a1, a2) => InfixExpression.newOneFrom(
+    case AExp.Plus(a1, a2) => Expression.newInfixFrom(
             Token.MINUS,
             toSALTranslator(a1),
             toSALTranslator(a2)
     )
   }
 
-  def toSALTranslator(g: GExp.gexp): Expression = a match {
+  def toSALTranslator(g: GExp.gexp): Expression = g match {
     case GExp.Bc(v) => throw new java.lang.IllegalArgumentException("Can't translate boolean values")
     case GExp.Null(a) => InfixExpression.isNull(toSALTranslator(a))
-    case GExp.Eq(a1, a2) => InfixExpression.newOneFrom(
+    case GExp.Eq(a1, a2) => Expression.newInfixFrom(
             Token.EQUALS,
             toSALTranslator(a1),
             toSALTranslator(a2)
           )
-    case GExp.Gt(a1, a2) => InfixExpression.newOneFrom(
+    case GExp.Gt(a1, a2) => Expression.newInfixFrom(
             Token.GT,
-            Expression.newOneFrom(toSALTranslator(a1)),
-            Expression.newOneFrom(toSALTranslator(a2))
+            toSALTranslator(a1),
+            toSALTranslator(a2)
           )
-    case GExp.Nor(g1, g2) => InfixExpression.newOneFrom(
+    case GExp.Nor(g1, g2) => Expression.newInfixFrom(
               Token.OR,
               toSALTranslator(g1),
               toSALTranslator(g2)
    ).negated(),
   }
 
-  def toSALTranslator(t: Transition.transition_ext[Unit]) = {
-    Transition.newOneFrom(
+  def natToInt(n: Nat.nat): Int = n match {
+    case Nat.Nata(b) => b.toInt
+  }
+
+  def toSALTranslator(t: Transition.transition_ext[Unit]):isabellesal.Transition = {
+    isabellesal.Transition.newOneFrom(
       java.util.UUID.randomUUID().toString,
       Transition.Label(t),
-      Transition.Arity(t),
-      InfixExpression.newPredicateFrom(Transition.Guard(t).map(g => toSALTranslator(g))),
-      InsertExpression.newOutputs(Transition.Outputs(t).map(a => toSALTranslator(Transition.Guard(a)))),
-      Transition.Outputs(t).map{case (r, a) => InfixExpression.newOneFrom(
+      natToInt(Transition.Arity(t)),
+      Expression.newPredicateFrom(Transition.Guard(t).map(g => toSALTranslator(g))),
+      InfixExpression.newOutputs(Transition.Outputs(t).map(a => toSALTranslator(a))),
+      Transition.Updates(t).map{case (r, a) => Expression.newInfixFrom(
               Token.EQUALS,
               Expression.newOneFrom(toSALTranslator(r)),
               toSALTranslator(a)
@@ -83,8 +89,17 @@ object TypeConversion {
     )
   }
 
-  def toSALTranslator(e: TransitionMatrix): FSet.fset = {
-    EFSM.newOneFrom(FSet.fimage({case ((from, to), tran) => new MichaelsMove(from, to, toSALTranslator(tran))}, e))
+  def toMichaelsMove(move: ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])): MichaelsMove = {
+    new MichaelsMove(move._1._1, move._1._2, toSALTranslator(move._2))
+  }
+
+  def fset_to_list[A](f: FSet.fset[A]): List[A] = FSet.fset(f) match {
+    case Set.seta(s) => s
+  }
+
+  def toSALTranslator(e: TransitionMatrix): EFSM = {
+    val ep = fset_to_list(FSet.fimage(toMichaelsMove, e))
+    isabellesal.EFSM.newOneFrom(ep)
   }
 
 }

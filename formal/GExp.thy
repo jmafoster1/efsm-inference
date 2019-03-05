@@ -30,7 +30,7 @@ fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> trilean" where
   "gval (Bc False) _ = false" |
   "gval (Gt a\<^sub>1 a\<^sub>2) s = ValueGt (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
   "gval (Eq a\<^sub>1 a\<^sub>2) s = ValueEq (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
-  "gval (Nor a\<^sub>1 a\<^sub>2) s = maybe_not (maybe_or (gval a\<^sub>1 s) (gval a\<^sub>2 s))" |
+  "gval (Nor a\<^sub>1 a\<^sub>2) s = \<not>\<^sub>? ((gval a\<^sub>1 s) \<or>\<^sub>? (gval a\<^sub>2 s))" |
   "gval (Null v) s = ValueEq (aval v s) None"
 
 abbreviation gNot :: "gexp \<Rightarrow> gexp"  where
@@ -68,10 +68,10 @@ abbreviation Ge :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<ge>" 
 abbreviation Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<noteq>" 60*) where
   "Ne v va \<equiv> gNot (Eq v va)"
 
-lemma or_equiv: "gval (gOr x y) r = maybe_or (gval x r) (gval y r)"
+lemma or_equiv: "gval (gOr x y) r = (gval x r) \<or>\<^sub>? (gval y r)"
   by (simp add: maybe_double_negation maybe_or_idempotent)
 
-lemma not_equiv: "maybe_not (gval x s) = gval (gNot x) s"
+lemma not_equiv: "gval (gNot x) s = \<not>\<^sub>? (gval x s)"
   by (simp add: maybe_or_idempotent)
 
 lemma nor_equiv: "gval (gNot (gOr a b)) s = gval (Nor a b) s"
@@ -136,61 +136,47 @@ lemma mutually_exclusive_symmetric: "mutually_exclusive x y \<Longrightarrow> mu
 lemma not_mutually_exclusive_true: "satisfiable x = (\<not> mutually_exclusive x (Bc True))"
   by (simp add: mutually_exclusive_def satisfiable_def)
 
-lemma gval_gAnd: "gval (gAnd g1 g2) s = maybe_and (gval g1 s) (gval g2 s)"
+lemma gval_gAnd: "gval (gAnd g1 g2) s = (gval g1 s) \<and>\<^sub>? (gval g2 s)"
 proof(induct "gval g1 s" "gval g2 s" rule: maybe_and.induct)
 case 1
-  then show ?case by simp
-next
-  case 2
   then show ?case
-    using maybe_or_commutative by auto
+    by (metis gval.simps(5) maybe_and_valid maybe_not.simps(3) maybe_or_valid)
 next
-case "3_1"
-  then show ?case by simp
+  case "2_1"
+  then show ?case
+    by simp
 next
-  case "3_2"
-  then show ?case by simp
+  case "2_2"
+  then show ?case
+    by simp
+next
+  case 3
+  then show ?case
+    by simp
 next
   case "4_1"
-  then show ?case by simp
+  then show ?case
+    by simp
 next
-case "4_2"
-  then show ?case by simp
+  case "4_2"
+  then show ?case
+    by simp
 next
-case 5
-  then show ?case by simp
+  case 5
+  then show ?case
+    by simp
 qed
 
 lemma gval_gAnd_True: "(gval (gAnd g1 g2) s = true) = ((gval g1 s = true) \<and> gval g2 s = true)"
-proof(induct "gval g1 s" "gval g2 s" rule: maybe_and.induct)
-case 1
-  then show ?case by simp
-next
-  case 2
-  then show ?case
-    using maybe_or_commutative by auto
-next
-case "3_1"
-  then show ?case by simp
-next
-  case "3_2"
-  then show ?case by simp
-next
-  case "4_1"
-  then show ?case by simp
-next
-case "4_2"
-  then show ?case by simp
-next
-case 5
-  then show ?case by simp
-qed
-
-lemma gval_gNot: "gval (gNot g) s = maybe_not (gval g s)"
-  apply simp
-  apply (case_tac "gval g s")
-  by auto
+  using gval_gAnd maybe_and_not_true by fastforce
 
 declare gval.simps [simp del]
+
+fun gexp_constrains :: "gexp \<Rightarrow> aexp \<Rightarrow> bool" where
+  "gexp_constrains (gexp.Bc _) _ = False" |
+  "gexp_constrains (Null a) v = aexp_constrains a v" |
+  "gexp_constrains (gexp.Eq a1 a2) v = (aexp_constrains a1 v \<or> aexp_constrains a2 v)" |
+  "gexp_constrains (gexp.Gt a1 a2) v = (aexp_constrains a1 v \<or> aexp_constrains a2 v)" |
+  "gexp_constrains (gexp.Nor g1 g2) v = (gexp_constrains g1 v \<or> gexp_constrains g2 v)"
 
 end

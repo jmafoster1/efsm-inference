@@ -66,6 +66,12 @@ definition conjoin :: "cexp fset \<Rightarrow> cexp" where
 definition consistent :: "context \<Rightarrow> bool" where (* Is there a variable evaluation which can satisfy all of the context? *)
   "consistent c \<equiv> \<exists>s. \<forall>r. fBall (c r) (\<lambda>c. (cval c r s = true))"
 
+lemma subset_consistency: "\<forall>r. c' r |\<subseteq>| c r \<Longrightarrow> consistent c \<Longrightarrow> consistent c'"
+  apply (simp add: consistent_def)
+  apply clarify
+  apply (rule_tac x=s in exI)
+  by auto
+
 lemma possible_false_not_consistent: "\<exists>r. c r = {|Bc False|} \<Longrightarrow> \<not> consistent c"
   apply (simp add: consistent_def conjoin_def)
   apply clarify
@@ -121,6 +127,10 @@ fun make_gt :: "cexp \<Rightarrow> cexp" where
   "make_gt (Not v) = Not (make_gt v)" |
   "make_gt (And v va) = And (make_gt v) (make_gt va)"
 
+lemma make_gt_twice: "make_gt (make_gt x) = make_gt x"
+  apply (induct x)
+  by auto
+
 fun make_lt :: "cexp \<Rightarrow> cexp" where
   "make_lt (Bc b) = Bc b" |
   "make_lt Undef = Undef" |
@@ -129,6 +139,10 @@ fun make_lt :: "cexp \<Rightarrow> cexp" where
   "make_lt (Gt v) = Bc True" |
   "make_lt (Not v) = Not (make_lt v)" |
   "make_lt (And v va) = And (make_lt v) (make_lt va)"
+
+lemma make_lt_twice: "make_lt (make_lt x) = make_lt x"
+  apply(induct x)
+  by auto
 
 fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cexp fset) list" where
   "guard2pairs a (gexp.Bc True) = []" |
@@ -219,11 +233,11 @@ fun constrains_an_input :: "aexp \<Rightarrow> bool" where
   "constrains_an_input (L v) = False" |
   "constrains_an_input (V (R x)) = False" |
   "constrains_an_input (V (I x)) = True" |
-  "constrains_an_input (Plus v va) = (constrains_an_input v \<and> constrains_an_input va)" |
-  "constrains_an_input (Minus v va) = (constrains_an_input v \<and> constrains_an_input va)"
+  "constrains_an_input (Plus v va) = (constrains_an_input v \<or> constrains_an_input va)" |
+  "constrains_an_input (Minus v va) = (constrains_an_input v \<or> constrains_an_input va)"
 
-definition remove_input_constraints :: "context \<Rightarrow> context" where
-  "remove_input_constraints c = (\<lambda>x. if constrains_an_input x then \<lbrakk>\<rbrakk> x else c x)"
+definition remove_obsolete_constraints :: "context \<Rightarrow> vname fset \<Rightarrow> context" where
+  "remove_obsolete_constraints c vs = (\<lambda>a. if \<exists>n. aexp_constrains a (V (I n)) \<or> fBex vs (\<lambda>x. aexp_constrains (V x) a) then \<lbrakk>\<rbrakk> a else c a)"
 
 lemma empty_inputs_are_true: "constrains_an_input x \<Longrightarrow> \<lbrakk>\<rbrakk> x = {|Bc True|}"
   apply (case_tac x)
@@ -256,30 +270,11 @@ next
     by simp
 qed
 
-lemma remove_input_constraints_alt:  "remove_input_constraints c = (\<lambda>x. if constrains_an_input x then {|Bc True|} else c x)"
-  apply (rule ext)
-  by (simp add: remove_input_constraints_def empty_inputs_are_true)
-
-lemma remove_input_constraints_empty[simp]: "remove_input_constraints \<lbrakk>\<rbrakk> = \<lbrakk>\<rbrakk>"
-  by (simp add: remove_input_constraints_def)
-
-lemma consistent_remove_input_constraints[simp]: "consistent c \<Longrightarrow> consistent (remove_input_constraints c)"
-proof-
-  assume premise: "consistent c"
-  show ?thesis
-    using premise
-    apply (simp add: consistent_def remove_input_constraints_def)
-    apply clarify
-    apply (rule_tac x=s in exI)
-    apply clarify
-    apply (case_tac r)
-       apply simp
-      apply (case_tac x2)
-    by (simp_all add: cval_true)
-qed
+lemma remove_input_constraints_empty[simp]: "remove_obsolete_constraints \<lbrakk>\<rbrakk> s = \<lbrakk>\<rbrakk>"
+  by (simp add: remove_obsolete_constraints_def)
 
 definition posterior_separate :: "context \<Rightarrow> guard list \<Rightarrow> update_function list \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
-  "posterior_separate c g u = (let c' = (medial c g) in (if consistent c' then remove_input_constraints (apply_updates c' c u) else (\<lambda>i. {|Bc False|})))"
+  "posterior_separate c g u = (let c' = (medial c g) in (if consistent c' then (apply_updates c' (remove_obsolete_constraints c (fset_of_list (map fst u))) u) else (\<lambda>i. {|Bc False|})))"
 
 definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where
   "posterior c t = posterior_separate c (Guard t) (Updates t)"
@@ -316,8 +311,8 @@ lemma satisfies_context_empty: "satisfies_context <> \<lbrakk>\<rbrakk> \<and> s
   by (simp_all add: cval_true cval_def gval.simps ValueEq_def)
 
 (* Does t2 subsume t1? *)
-definition subsumes :: "context \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where (* Corresponds to Algorithm 2 in Foster et. al. *)
-  "subsumes c t2 t1 \<equiv> Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) \<and>
+definition subsumes :: "transition \<Rightarrow> context \<Rightarrow> transition \<Rightarrow> bool" ("_\<^sub>_\<sqsupseteq>_" 60) where (* Corresponds to Algorithm 2 in Foster et. al. *)
+  "subsumes t2 c t1 \<equiv> Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) \<and>
                       (\<forall>r i. fBall (medial c (Guard t1) r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (medial c (Guard t2) r) (\<lambda>c. cval c r i = true)) \<and>
                       (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
@@ -330,10 +325,10 @@ definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarr
 (* Does t1 subsume t2 in all possible anterior contexts? *)
 (* For every path which gets us to the problem state, does t1 subsume t2 in the resulting context *)
 definition directly_subsumes :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "directly_subsumes e1 e2 s t1 t2 \<equiv> (\<forall>p. accepts_trace e1 p \<and> gets_us_to s e1 0 <>  p \<longrightarrow> subsumes (anterior_context e2 p) t1 t2) \<and>
-                                     (\<exists>c. subsumes c t1 t2)"
+  "directly_subsumes e1 e2 s t1 t2 \<equiv> (\<forall>p. accepts_trace e1 p \<and> gets_us_to s e1 0 <>  p \<longrightarrow> subsumes t1 (anterior_context e2 p) t2) \<and>
+                                     (\<exists>c. subsumes t1 c t2)"
 
-lemma cant_directly_subsume: "\<forall>c. \<not> subsumes c t t' \<Longrightarrow> \<not> directly_subsumes m m' s t t'"
+lemma cant_directly_subsume: "\<forall>c. \<not> subsumes t c t' \<Longrightarrow> \<not> directly_subsumes m m' s t t'"
   by (simp add: directly_subsumes_def)
 
 lemma gexp_equiv_cexp_not_true:  "gexp_equiv (cexp2gexp a (Not (Bc True))) (gexp.Bc False)"
@@ -391,5 +386,50 @@ lemma consistent_posterior_gives_consistent_medial: "consistent (posterior c x) 
 lemma consistent_medial_gives_consistent_anterior: "consistent (medial c G) \<Longrightarrow> consistent c"
   apply (simp add: consistent_def)
   by (metis (full_types) fBall_funion medial_def)
+
+lemma medial_equivalent: "medial c (Guard t @ Guard t) = medial c (Guard t)"
+  apply (rule ext)
+  by (simp add: medial_append)
+
+lemma transition_subsumes_self: "t \<^sub>c\<sqsupseteq> t"
+  apply (simp add: subsumes_def)
+  apply (simp only: posterior_separate_def Let_def posterior_def medial_equivalent)
+  apply (case_tac "consistent (medial c (Guard t))")
+   apply simp
+  by simp
+
+lemma medial_preserves_existing_elements: "x |\<in>| c r \<Longrightarrow> x |\<in>| medial c G r "
+  using anterior_subset_medial by blast
+
+lemma remove_obsolete_constraints_input: "remove_obsolete_constraints c s (V (I i)) = {|Bc True|}"
+  by (simp add: remove_obsolete_constraints_def)
+
+lemma filter_simp: "I i |\<notin>| fst |`| fset_of_list as \<Longrightarrow> 
+(\<exists>n. aexp_constrains a (V (I n))) \<or> V aa = a \<or> fBex (fset_of_list as) (\<lambda>x. V (fst x) = a) =
+(\<exists>n. aexp_constrains a (V (I n))) \<or> fBex (fset_of_list as) (\<lambda>x. V (fst x) = a)"
+  by auto
+
+lemma "consistent (medial c (Guard t)) \<Longrightarrow>
+    I i |\<notin>| fst |`| fset_of_list U \<Longrightarrow>
+    Contexts.apply_updates (medial c (Guard t)) (remove_obsolete_constraints c (fst |`| fset_of_list U)) U (V (I i)) =
+    {|cexp.Bc True|}"
+proof(induct U)
+case Nil
+  then show ?case 
+    by (simp add: remove_obsolete_constraints_def)
+next
+  case (Cons a U)
+  then show ?case
+    apply (cases a)
+    apply simp
+    apply (case_tac b)
+       apply simp
+qed
+
+
+lemma "consistent (medial c (Guard t)) \<Longrightarrow> I i |\<notin>| fset_of_list (map fst (Updates t)) \<Longrightarrow> posterior c t (V (I i)) = \<lbrakk>\<rbrakk> (V (I i))"
+  apply (simp add: posterior_def posterior_separate_def)
+
+
 
 end

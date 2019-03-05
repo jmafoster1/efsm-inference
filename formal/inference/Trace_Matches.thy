@@ -147,21 +147,8 @@ definition get_biggest_t_reg :: "transition \<Rightarrow> nat" where
 definition max_reg :: "iEFSM \<Rightarrow> nat" where
   "max_reg e = fMax (fimage (\<lambda>(_, _, t). get_biggest_t_reg t) e)"
 
-fun aexp_constrains :: "aexp \<Rightarrow> vname \<Rightarrow> bool" where
-  "aexp_constrains (L _) _ = False" |
-  "aexp_constrains (V v) v' = (v = v')" |
-  "aexp_constrains (Plus a1 a2) v = (aexp_constrains a1 v \<or> aexp_constrains a2 v)" |
-  "aexp_constrains (Minus a1 a2) v = (aexp_constrains a1 v \<or> aexp_constrains a2 v)"
-
-fun gexp_constrains :: "gexp \<Rightarrow> vname \<Rightarrow> bool" where
-  "gexp_constrains (gexp.Bc _) _ = False" |
-  "gexp_constrains (Null a) v = aexp_constrains a v" |
-  "gexp_constrains (gexp.Eq a1 a2) v = (aexp_constrains a1 v \<or> aexp_constrains a2 v)" |
-  "gexp_constrains (gexp.Gt a1 a2) v = (aexp_constrains a1 v \<or> aexp_constrains a2 v)" |
-  "gexp_constrains (gexp.Nor g1 g2) v = (gexp_constrains g1 v \<or> gexp_constrains g2 v)"
-
 definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
-  "remove_guard_add_update t inputX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (filter (\<lambda>g. \<not> gexp_constrains g (I inputX)) (Guard t)), Outputs = (Outputs t), Updates = (R outputX, (V (I inputX)))#(Updates t)\<rparr>"
+  "remove_guard_add_update t inputX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (filter (\<lambda>g. \<not> gexp_constrains g (V (I inputX))) (Guard t)), Outputs = (Outputs t), Updates = (R outputX, (V (I inputX)))#(Updates t)\<rparr>"
 
 definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
   "generalise_output t regX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (Guard t), Outputs = list_update (Outputs t) outputX (V (R regX)), Updates = (Updates t)\<rparr>"

@@ -42,55 +42,6 @@ abbreviation Neq :: "value \<Rightarrow> cexp" where
 abbreviation Or :: "cexp \<Rightarrow> cexp \<Rightarrow> cexp" where
   "Or v va \<equiv> not (and (not v) (not va))"
 
-(*text \<open>
-This function takes two cexps and tries to apply restrictions such that the first argument is
-greater than the second. The return value is a pair of the first and second inputs with their
-respective increased restrictions.
-\<close>
-fun apply_gt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where (* This takes a LONG time to prove *)
-  "apply_gt Undef v = (Bc False, v)" |
-  "apply_gt v Undef = (v, Bc False)" |
-  "apply_gt (Bc False) v = (Bc False, v)" |
-  "apply_gt v (Bc False) = (v, Bc False)" |
-  "apply_gt v (Not (Bc True)) = (v, Bc False)" |
-  "apply_gt (Not (Bc True)) v = (Bc False, v)" |
-  "apply_gt v (Not (Bc False)) = apply_gt v (Bc True)" |
-  "apply_gt (Not (Bc False)) v = apply_gt (Bc True) v" |
-  "apply_gt v (Not (Not vb)) = apply_gt v vb" |
-  "apply_gt (Not (Not vb)) v = apply_gt vb v" |
-
-  "apply_gt v (And va vb) = (and (fst (apply_gt v va)) (fst (apply_gt v vb)), and (snd (apply_gt v va)) (snd (apply_gt v vb)))" |
-  "apply_gt (And va vb) v = (and (fst (apply_gt va v)) (fst (apply_gt vb v)), and (snd (apply_gt va v)) (snd (apply_gt vb v)))" |
-  "apply_gt v (Not (And va vb)) = (not (and (fst (apply_gt v va)) (fst (apply_gt v vb))), not (and (snd (apply_gt v va)) (snd (apply_gt v vb))))" |
-  "apply_gt (Not (And va vb)) v = (not (and (fst (apply_gt va v)) (fst (apply_gt vb v))), not (and (snd (apply_gt va v)) (snd (apply_gt vb v))))" |
-
-  "apply_gt (Bc True) (Bc True) = (Bc True, Bc True)" |
-  "apply_gt (Eq v) (Bc True)   = (Eq v, Lt v)" |
-  "apply_gt (Lt v) (Bc True)   = (Lt v, Lt v)" |
-  "apply_gt (Leq va) (Bc True) = (Leq va, Lt va)" |
-
-  "apply_gt (Bc True) (Eq v) = (Gt v, Eq v)" |
-  "apply_gt (Bc True) (Geq v) = (Gt v, Geq v)" |
-  "apply_gt (Bc True) (Gt v) = (Gt v, Gt v)" |
-  "apply_gt (Bc True) v = (Bc True, v)" |
-
-  "apply_gt (Lt v) (Gt va) = (and (Lt v)  (Gt va), and (Gt va) (Lt v))" |
-  "apply_gt v (Leq vb) = (and v (Gt vb), Leq vb)" |
-  "apply_gt v (Gt va) =  (and v (Gt va), Gt va)" |
-  "apply_gt v (Lt va) = (and v (Geq va), Lt va)" |
-  "apply_gt (Lt v)  (Neq vb) = (Lt v,  and (Neq vb) (Lt v))" |
-  "apply_gt (Leq v) (Neq vb) = (Leq v, and (Neq vb) (Lt v))" |
-
-  "apply_gt (Eq v) va = (Eq v, and va (Lt v))" |
-  "apply_gt v (Eq va) = (and v (Gt va), Eq va)" |
-
-  "apply_gt (Lt v) (Geq va) = (and (Lt v) (Gt va), and (Geq va) (Lt v))" |
-  "apply_gt v      (Geq vb) = (and v (Gt vb), Geq vb)" |
-  "apply_gt v va = (v, va)"
-
-fun apply_lt :: "cexp \<Rightarrow> cexp \<Rightarrow> (cexp \<times> cexp)" where
-  "apply_lt a b = (let (ca, cb) = (apply_gt b a) in (cb, ca))"*)
-
 fun cexp2gexp :: "aexp \<Rightarrow> cexp \<Rightarrow>  gexp" where
   "cexp2gexp _ (Bc b) = gexp.Bc b" |
   "cexp2gexp a Undef = Null a" |
@@ -165,8 +116,7 @@ next
   case ("2_6" v)
   then show ?case
     apply (rule ext)+
-    apply (simp add: cval_def gval_gAnd gval_gNot gval.simps(1))
-    by (simp add: maybe_and_commutative maybe_and_one)
+    by (simp add: cval_And_zero)
 next
   case ("2_7" v va)
   then show ?case 
@@ -408,8 +358,7 @@ lemma cexp_equiv_reflexive: "cexp_equiv x x"
   by (simp add: cexp_equiv_def gexp_equiv_reflexive)
 
 lemma gNegate: "gexp_equiv (gNot g) (gexp.Bc True) = gexp_equiv g (gexp.Bc False)"
-  apply (simp add: gexp_equiv_def gval.simps(1) gval.simps(2) gval_gNot)
-  by (metis maybe_double_negation maybe_not.simps(1) maybe_not.simps(2))
+  by (simp add: gexp_equiv_def gval.simps(1) gval.simps(2) maybe_negate_true not_equiv)
 
 lemma cexp_equiv_valid: "valid c \<longrightarrow> cexp_equiv c (Bc True)"
   by (simp add: valid_def cexp_equiv_def cval_def gval.simps)
@@ -441,7 +390,7 @@ lemma cexp_equiv_transitive: "cexp_equiv x y \<Longrightarrow> cexp_equiv y z \<
   by (simp add: cexp_equiv_def gexp_equiv_def)
 
 lemma cval_Not: "cval (Not x) a s = maybe_not (cval x a s)"
-  by (simp add: cval_def gval_gNot)
+  by (simp add: cval_def gval.simps maybe_or_idempotent)
 
 lemma cval_not: "cval (not x) a s = maybe_not (cval x a s)"
 proof(induct x)
@@ -663,7 +612,7 @@ lemma gval_and_false: "gval (cexp2gexp r (and (cexp.Bc False) c)) s \<noteq> tru
   using maybe_and.elims by blast
 
 lemma gval_and_false_2: "gval (cexp2gexp uu (and x (cexp.Bc False))) s \<noteq> true"
-  by (simp add: gval_and gval_gAnd gval.simps(2))
+  by (metis and.simps(17) gval_and_cexp gval_and_false)
 
 lemma and_true: "and c (cexp.Bc True) = c"
   apply (case_tac c)
@@ -688,7 +637,7 @@ lemma and_And_false: "x \<noteq> cexp.Bc True \<and> x \<noteq> Bc False \<Longr
   by auto
 
 lemma cval_And_false: "cval (And c (Bc False)) a s \<noteq> true"
-  by (simp add: cval_And cval_false)
+  using CExp.satisfiable_def cval_And maybe_and_not_true unsatisfiable_false by auto
 
 subsection \<open>A Linear Ordering for Constraint Expressions\<close>
 text\<open>

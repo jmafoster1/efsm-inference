@@ -239,11 +239,10 @@ proof-
   have consistent_medial: "consistent (medial \<lbrakk>\<rbrakk> (Guard select))"
     by (simp add: medial_def pairs2context_def List.maps_def select_def ffUnion_def)
   show ?thesis
-    apply (simp add: posterior_def Let_def consistent_medial)
-    apply (simp add: select_def medial_empty)
-    apply (simp add: remove_input_constraints_alt select_posterior_def)
+    apply (simp add: posterior_def posterior_separate_def Let_def consistent_medial)
+    apply (simp add: remove_obsolete_constraints_def select_def)
     apply (rule ext)
-    by (simp add: empty_inputs_are_true)
+    by (simp add: empty_inputs_are_true medial_empty select_posterior_def)
 qed
 
 lemma medial_select_posterior_vend: "medial select_posterior (Guard vend) = \<lbrakk>V (R 1) \<mapsto> {|Bc True|},

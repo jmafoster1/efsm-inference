@@ -108,4 +108,10 @@ lemma aval_minus_aexp: "aval (a-b) s = aval (Minus a b) s"
          apply (case_tac x1b)
   by auto
 
+fun aexp_constrains :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
+  "aexp_constrains (L l) a = (L l = a)" |
+  "aexp_constrains (V v) v' = (V v = v')" |
+  "aexp_constrains (Plus a1 a2) v = ((Plus a1 a2) = v \<or> (aexp_constrains a1 v \<or> aexp_constrains a2 v))" |
+  "aexp_constrains (Minus a1 a2) v = ((Plus a1 a2) = v \<or> (aexp_constrains a1 v \<or> aexp_constrains a2 v))"
+
 end
