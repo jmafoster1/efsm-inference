@@ -30,6 +30,8 @@ object FrontEnd {
     pw.write(EFSM_Dot.efsm2dot(inferred))
     pw.close
 
+    TypeConversion.outputSAL(inferred)
+
     println("Goodbye inference!")
 
     // val ctx = new z3.Context

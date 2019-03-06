@@ -1,4 +1,5 @@
 import isabellesal._
+import java.nio.file.{Files, Paths}
 
 object TypeConversion {
 
@@ -99,6 +100,13 @@ object TypeConversion {
 
   def efsmToSALTranslator(e: TransitionMatrix): EFSM = {
     isabellesal.EFSM.newOneFrom(fset_to_list(FSet.fimage(toMichaelsMove, e)):_*)
+  }
+
+  def outputSAL(e: TransitionMatrix) = {
+    isabellesal.EFSM.newOneFrom(fset_to_list(FSet.fimage(toMichaelsMove, e)):_*)
+    new Translator().writeSALandDOT(
+                Paths.get("C:", "siobhan", "Research", "NewSAL"),
+                "Michaels")
   }
 
 }
