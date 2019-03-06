@@ -28,44 +28,44 @@ object TypeConversion {
   }
 
   // This is hypothetical and will break until we get Siobhan's source code
-  def toSALTranslator(v: VName.vname): Variable = v match {
+  def vnameToSALTranslator(v: VName.vname): Variable = v match {
     case VName.I(Nat.Nata(n)) => Variable.newOneFrom('I', n.toInt)
     case VName.R(Nat.Nata(n)) => Variable.newOneFrom('R', n.toInt)
   }
 
-  def toSALTranslator(a: AExp.aexp): Expression = a match {
+  def aexpToSALTranslator(a: AExp.aexp): Expression = a match {
     case AExp.L(Value.Numa(Int.int_of_integer(n))) => Expression.newOneFrom(Constant.newOneFrom(n.toInt))
     case AExp.L(Value.Str(s)) => Expression.newOneFrom(Constant.newOneFrom(s))
-    case AExp.V(v) => Expression.newOneFrom(toSALTranslator(v))
+    case AExp.V(v) => Expression.newOneFrom(vnameToSALTranslator(v))
     case AExp.Plus(a1, a2) => Expression.newInfixFrom(
             Token.PLUS,
-            toSALTranslator(a1),
-            toSALTranslator(a2)
+            aexpToSALTranslator(a1),
+            aexpToSALTranslator(a2)
     )
     case AExp.Plus(a1, a2) => Expression.newInfixFrom(
             Token.MINUS,
-            toSALTranslator(a1),
-            toSALTranslator(a2)
+            aexpToSALTranslator(a1),
+            aexpToSALTranslator(a2)
     )
   }
 
-  def toSALTranslator(g: GExp.gexp): Expression = g match {
+  def gexpToSALTranslator(g: GExp.gexp): Expression = g match {
     case GExp.Bc(v) => throw new java.lang.IllegalArgumentException("Can't translate boolean values")
-    case GExp.Null(a) => InfixExpression.isNull(toSALTranslator(a))
+    case GExp.Null(AExp.V(a)) => Expression.isNull(vnameToSALTranslator(a))
     case GExp.Eq(a1, a2) => Expression.newInfixFrom(
             Token.EQUALS,
-            toSALTranslator(a1),
-            toSALTranslator(a2)
+            aexpToSALTranslator(a1),
+            aexpToSALTranslator(a2)
           )
     case GExp.Gt(a1, a2) => Expression.newInfixFrom(
             Token.GT,
-            toSALTranslator(a1),
-            toSALTranslator(a2)
+            aexpToSALTranslator(a1),
+            aexpToSALTranslator(a2)
           )
     case GExp.Nor(g1, g2) => Expression.newInfixFrom(
               Token.OR,
-              toSALTranslator(g1),
-              toSALTranslator(g2)
+              gexpToSALTranslator(g1),
+              gexpToSALTranslator(g2)
    ).negated(),
   }
 
@@ -73,33 +73,32 @@ object TypeConversion {
     case Nat.Nata(b) => b.toInt
   }
 
-  def toSALTranslator(t: Transition.transition_ext[Unit]):isabellesal.Transition = {
+  def transitionToSALTranslator(t: Transition.transition_ext[Unit]):isabellesal.Transition = {
     isabellesal.Transition.newOneFrom(
       java.util.UUID.randomUUID().toString,
       Transition.Label(t),
       natToInt(Transition.Arity(t)),
-      Expression.newPredicateFrom(Transition.Guard(t).map(g => toSALTranslator(g))),
-      InfixExpression.newOutputs(Transition.Outputs(t).map(a => toSALTranslator(a))),
+      Expression.newPredicateFrom(Transition.Guard(t).map(g => gexpToSALTranslator(g)):_*),
+      Expression.newOutputs(Transition.Outputs(t).map(a => aexpToSALTranslator(a)):_*),
       Transition.Updates(t).map{case (r, a) => Expression.newInfixFrom(
               Token.EQUALS,
-              Expression.newOneFrom(toSALTranslator(r)),
-              toSALTranslator(a)
-      )}
+              Expression.newOneFrom(vnameToSALTranslator(r)),
+              aexpToSALTranslator(a)
+      )}:_*
 
     )
   }
 
   def toMichaelsMove(move: ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])): MichaelsMove = {
-    new MichaelsMove(move._1._1, move._1._2, toSALTranslator(move._2))
+    new MichaelsMove(natToInt(move._1._1), natToInt(move._1._2), transitionToSALTranslator(move._2))
   }
 
   def fset_to_list[A](f: FSet.fset[A]): List[A] = FSet.fset(f) match {
     case Set.seta(s) => s
   }
 
-  def toSALTranslator(e: TransitionMatrix): EFSM = {
-    val ep = fset_to_list(FSet.fimage(toMichaelsMove, e))
-    isabellesal.EFSM.newOneFrom(ep)
+  def efsmToSALTranslator(e: TransitionMatrix): EFSM = {
+    isabellesal.EFSM.newOneFrom(fset_to_list(FSet.fimage(toMichaelsMove, e)):_*)
   }
 
 }

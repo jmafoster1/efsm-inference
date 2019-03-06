@@ -237,7 +237,7 @@ fun constrains_an_input :: "aexp \<Rightarrow> bool" where
   "constrains_an_input (Minus v va) = (constrains_an_input v \<or> constrains_an_input va)"
 
 definition remove_obsolete_constraints :: "context \<Rightarrow> vname fset \<Rightarrow> context" where
-  "remove_obsolete_constraints c vs = (\<lambda>a. if \<exists>n. aexp_constrains a (V (I n)) \<or> fBex vs (\<lambda>x. aexp_constrains (V x) a) then \<lbrakk>\<rbrakk> a else c a)"
+  "remove_obsolete_constraints c vs = (\<lambda>a. if \<exists>n. aexp_constrains a (V (I n)) \<or> fBex vs (\<lambda>x. aexp_constrains (V x) a \<and> a \<noteq> (V x)) then \<lbrakk>\<rbrakk> a else c a)"
 
 lemma empty_inputs_are_true: "constrains_an_input x \<Longrightarrow> \<lbrakk>\<rbrakk> x = {|Bc True|}"
   apply (case_tac x)
@@ -274,7 +274,7 @@ lemma remove_input_constraints_empty[simp]: "remove_obsolete_constraints \<lbrak
   by (simp add: remove_obsolete_constraints_def)
 
 definition posterior_separate :: "context \<Rightarrow> guard list \<Rightarrow> update_function list \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
-  "posterior_separate c g u = (let c' = (medial c g) in (if consistent c' then (apply_updates c' (remove_obsolete_constraints c (fset_of_list (map fst u))) u) else (\<lambda>i. {|Bc False|})))"
+  "posterior_separate c g u = (let c' = (medial c g) in (if consistent c' then remove_obsolete_constraints (apply_updates c' c u) (fset_of_list (map fst u)) else (\<lambda>i. {|Bc False|})))"
 
 definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where
   "posterior c t = posterior_separate c (Guard t) (Updates t)"
@@ -408,28 +408,5 @@ lemma filter_simp: "I i |\<notin>| fst |`| fset_of_list as \<Longrightarrow>
 (\<exists>n. aexp_constrains a (V (I n))) \<or> V aa = a \<or> fBex (fset_of_list as) (\<lambda>x. V (fst x) = a) =
 (\<exists>n. aexp_constrains a (V (I n))) \<or> fBex (fset_of_list as) (\<lambda>x. V (fst x) = a)"
   by auto
-
-lemma "consistent (medial c (Guard t)) \<Longrightarrow>
-    I i |\<notin>| fst |`| fset_of_list U \<Longrightarrow>
-    Contexts.apply_updates (medial c (Guard t)) (remove_obsolete_constraints c (fst |`| fset_of_list U)) U (V (I i)) =
-    {|cexp.Bc True|}"
-proof(induct U)
-case Nil
-  then show ?case 
-    by (simp add: remove_obsolete_constraints_def)
-next
-  case (Cons a U)
-  then show ?case
-    apply (cases a)
-    apply simp
-    apply (case_tac b)
-       apply simp
-qed
-
-
-lemma "consistent (medial c (Guard t)) \<Longrightarrow> I i |\<notin>| fset_of_list (map fst (Updates t)) \<Longrightarrow> posterior c t (V (I i)) = \<lbrakk>\<rbrakk> (V (I i))"
-  apply (simp add: posterior_def posterior_separate_def)
-
-
 
 end

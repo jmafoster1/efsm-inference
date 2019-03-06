@@ -219,8 +219,8 @@ next
     by auto
 qed
 
-definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> bool" where
-  "is_generalisation_of t' t e = (\<exists>i r to from uid. t' = remove_guard_add_update t i r \<and> (uid, (from, to), t') |\<in>| e)"
+definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
+  "is_generalisation_of t' t e i r = (\<exists>to from uid. t' = remove_guard_add_update t i r \<and> (uid, (from, to), t') |\<in>| e)"
 
 lemma finite_enumerate_aexp_inputs: "finite (enumerate_aexp_inputs a)"
 proof(induct a)

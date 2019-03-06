@@ -179,4 +179,9 @@ fun gexp_constrains :: "gexp \<Rightarrow> aexp \<Rightarrow> bool" where
   "gexp_constrains (gexp.Gt a1 a2) v = (aexp_constrains a1 v \<or> aexp_constrains a2 v)" |
   "gexp_constrains (gexp.Nor g1 g2) v = (gexp_constrains g1 v \<or> gexp_constrains g2 v)"
 
+fun contains_bool :: "gexp \<Rightarrow> bool" where
+  "contains_bool (Bc _) = True" |
+  "contains_bool (Nor g1 g2) = (contains_bool g1 \<or> contains_bool g2)" |
+  "contains_bool _ = False"
+
 end

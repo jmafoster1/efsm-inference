@@ -111,7 +111,10 @@ lemma aval_minus_aexp: "aval (a-b) s = aval (Minus a b) s"
 fun aexp_constrains :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
   "aexp_constrains (L l) a = (L l = a)" |
   "aexp_constrains (V v) v' = (V v = v')" |
-  "aexp_constrains (Plus a1 a2) v = ((Plus a1 a2) = v \<or> (aexp_constrains a1 v \<or> aexp_constrains a2 v))" |
-  "aexp_constrains (Minus a1 a2) v = ((Plus a1 a2) = v \<or> (aexp_constrains a1 v \<or> aexp_constrains a2 v))"
+  "aexp_constrains (Plus a1 a2) v = ((Plus a1 a2) = v \<or> (Plus a1 a2) = v \<or> (aexp_constrains a1 v \<or> aexp_constrains a2 v))" |
+  "aexp_constrains (Minus a1 a2) v = ((Minus a1 a2) = v \<or> (aexp_constrains a1 v \<or> aexp_constrains a2 v))"
+
+lemma constrains_implies_not_equal: "\<not> aexp_constrains x a \<Longrightarrow> x \<noteq> a"
+  using aexp_constrains.elims(3) by blast
 
 end

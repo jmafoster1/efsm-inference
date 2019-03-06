@@ -381,4 +381,101 @@ lemma pairs2context_no_constraints_on_v_2: "\<not> gexp_constrains g1 (V v) \<Lo
 lemma updates_remove_guard_add_update: "Updates (remove_guard_add_update t i r) = (R r, V (I i)) # Updates t"
   by (simp add: remove_guard_add_update_def)
 
+lemma generalisation_of_preserves: "is_generalisation_of t' t e i r \<Longrightarrow>
+    Label t = Label t' \<and>
+    Arity t = Arity t' \<and>
+    (Outputs t) = (Outputs t')"
+  apply (simp add: is_generalisation_of_def)
+  using remove_guard_add_update_preserves by auto
+
+lemma generalisation_medial_subset: "is_generalisation_of t' t e i r \<Longrightarrow> medial c (Guard t') a |\<subseteq>| medial c (Guard t) a"
+  apply (simp add: is_generalisation_of_def)
+  using medial_general_subset by blast
+
+lemma generalisation_medial_equiv: "is_generalisation_of t' t e i r \<Longrightarrow> medial c (Guard t @ Guard t') = medial c (Guard t)"
+  apply (rule ext)
+  apply (simp add: is_generalisation_of_def medial_append)
+  using medial_general_subset by blast
+
+lemma apply_updates_same: "\<forall>i. c (V (I i)) = {|cexp.Bc True|} \<Longrightarrow>
+       \<forall>i. \<forall>u\<in>set U. fst u \<noteq> v \<and> fst u \<noteq> I i \<Longrightarrow>
+       consistent (medial c (Guard t)) \<Longrightarrow>
+       remove_obsolete_constraints (Contexts.apply_updates (medial c (Guard t)) c U) (fst |`| fset_of_list U) (V v) = c (V v)"
+proof(induct U)
+  case Nil
+  then show ?case
+    apply (simp add: remove_obsolete_constraints_def)
+    by auto
+next
+  case (Cons u us)
+  then show ?case
+    apply (cases u)
+    apply (simp add: remove_obsolete_constraints_def)
+    apply (case_tac v)
+     apply simp
+    apply simp
+    apply clarify
+    apply standard
+     apply (metis (no_types, lifting) empty_variable_constraints)
+    apply (case_tac b)
+       apply simp
+       apply (smt fBexE)
+      apply simp
+      apply (smt fBexE)
+     apply simp
+     apply (smt fBexE)
+    apply simp
+    by (smt fBexE)
+qed
+
+lemma posterior_same: "\<forall>i. c (V (I i)) = {|cexp.Bc True|} \<Longrightarrow>
+       \<forall>i. \<forall>u\<in>set (Updates t). fst u \<noteq> v \<and> fst u \<noteq> I i \<Longrightarrow>
+       consistent (medial c (Guard t)) \<Longrightarrow>
+       posterior c t (V v) = c (V v)"
+  by (simp add: posterior_def posterior_separate_def apply_updates_same)
+
+lemma is_generalisation_of_consistent_medial: "is_generalisation_of t' t e i r \<Longrightarrow>
+    consistent (medial c (Guard t)) \<Longrightarrow> 
+    consistent (medial c (Guard t'))"
+  by (simp add: is_generalisation_of_def consistent_medial_generalisation)
+
+lemma is_generalisation_of_posterior_subset: "is_generalisation_of t' t e i r \<Longrightarrow> a \<noteq> V (R r) \<Longrightarrow>
+       consistent (medial c (Guard t)) \<Longrightarrow>
+       posterior c t' a |\<subseteq>| posterior c t a"
+  apply (simp add: posterior_def posterior_separate_def)
+  apply (simp add: Let_def generalisation_medial_equiv)
+   apply (simp add: is_generalisation_of_consistent_medial)
+   apply (simp add: is_generalisation_of_def remove_guard_add_update_def)
+   apply (simp add: remove_obsolete_constraints_def)
+   apply standard
+    apply auto[1]
+  by (simp add: apply_updates_filter)
+
+lemma aux1: "\<forall>i. \<forall>u\<in>set U. fst u \<noteq> R r \<Longrightarrow> \<not>fBex (fset_of_list U) (\<lambda>x. fst x = R r \<and> R r \<noteq> fst x)"
+  by simp
+
+lemma is_generalisation_of_updates_r: "is_generalisation_of t' t e i r \<Longrightarrow> \<not>fBex (fset_of_list (Updates t')) (\<lambda>x. fst x = R r \<and> R r \<noteq> fst x)"
+  by (simp add: is_generalisation_of_def)
+
+lemma "is_generalisation_of t' t e i r \<Longrightarrow>
+       c (V (R r)) = {|Undef|} \<Longrightarrow>
+       \<forall>i. c (V (I i)) = {|Bc True|} \<Longrightarrow>
+       \<forall>u \<in> set (Updates t). fst u \<noteq> (R r) \<Longrightarrow>
+       \<forall>i. \<forall>u \<in> set (Updates t). fst u \<noteq> (R r) \<and> fst u \<noteq> (I i) \<Longrightarrow>
+       t' \<^sub>c\<sqsupseteq> t"
+  apply (simp add: subsumes_def generalisation_of_preserves)
+  apply standard
+  using generalisation_medial_subset apply blast
+  apply standard
+   apply clarify
+   apply (case_tac "consistent (medial c (Guard t))")
+    prefer 2
+    apply (simp add: posterior_def posterior_separate_def Let_def generalisation_medial_equiv)
+
+   apply (case_tac "ra = V (R r)")
+    apply (simp add: posterior_def posterior_separate_def Let_def generalisation_medial_equiv)
+    apply (simp add: remove_obsolete_constraints_def aux1 is_generalisation_of_updates_r)
+    apply (simp add: is_generalisation_of_def remove_guard_add_update_def)
+  
+
 end
