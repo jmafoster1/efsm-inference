@@ -454,8 +454,163 @@ lemma is_generalisation_of_posterior_subset: "is_generalisation_of t' t e i r \<
 lemma aux1: "\<forall>i. \<forall>u\<in>set U. fst u \<noteq> R r \<Longrightarrow> \<not>fBex (fset_of_list U) (\<lambda>x. fst x = R r \<and> R r \<noteq> fst x)"
   by simp
 
-lemma is_generalisation_of_updates_r: "is_generalisation_of t' t e i r \<Longrightarrow> \<not>fBex (fset_of_list (Updates t')) (\<lambda>x. fst x = R r \<and> R r \<noteq> fst x)"
+lemma is_generalisation_of_updates_r: "is_generalisation_of t' t e i r \<Longrightarrow>
+                     \<not>fBex (fset_of_list (Updates t')) (\<lambda>x. fst x = R r \<and> R r \<noteq> fst x)"
   by (simp add: is_generalisation_of_def)
+
+lemma posterior_Rr_undef: "\<forall>i. c (V (I i)) = {|Bc True|} \<Longrightarrow>
+       c (V (R r)) = {|Undef|} \<Longrightarrow>
+       \<forall>i. \<forall>u\<in>set (Updates t). fst u \<noteq> R r \<and> fst u \<noteq> I i \<Longrightarrow>
+       consistent (medial c (Guard t)) \<Longrightarrow>
+       posterior c t (V (R r)) = {|Undef|}"
+  by (simp add: posterior_same)
+
+lemma aux2: "is_generalisation_of t' t e i r \<Longrightarrow>
+       c (V (R r)) = {|Undef|} \<Longrightarrow>
+       \<forall>i. c (V (I i)) = {|cexp.Bc True|} \<Longrightarrow>
+       \<forall>i. \<forall>u\<in>set (Updates t). fst u \<noteq> R r \<and> fst u \<noteq> I i \<Longrightarrow>
+       fBall (Contexts.apply_updates (medial c (Guard t)) c (Updates t') ra) (\<lambda>c. cval c ra ia = true) \<Longrightarrow>
+       Contexts.apply_updates (medial c (Guard t)) c (Updates t) ra \<noteq> {|Undef|} \<Longrightarrow>
+       x |\<in>| Contexts.apply_updates (medial c (Guard t)) c (Updates t) ra \<Longrightarrow>
+       consistent (medial c (Guard t)) \<Longrightarrow> ra \<noteq> V (R r) \<Longrightarrow> \<forall>n. \<not> aexp_constrains ra (V (I n)) \<Longrightarrow> cval x ra ia = true"
+proof(induct "Updates t")
+case Nil
+  then show ?case
+    apply (simp add: is_generalisation_of_def remove_guard_add_update_def)
+    by auto
+next
+  case (Cons u us)
+  then show ?case
+    apply (simp add: is_generalisation_of_def remove_guard_add_update_def)
+    by auto
+qed
+
+lemma generalised_updates:  "is_generalisation_of t' t e i r \<Longrightarrow> Updates t' = (R r, (V (I i)))#(Updates t)"
+  by (simp add: is_generalisation_of_def remove_guard_add_update_def)
+
+lemma aux3: "\<not> gexp_constrains a (V v) \<Longrightarrow> pairs2context (guard2pairs c a) (V v) |\<subseteq>| c (V v)"
+proof(induct a)
+case (Bc x)
+  then show ?case
+    apply (case_tac x)
+     apply (simp add: pairs2context_def)
+    by(simp add: pairs2context_def)
+next
+  case (Eq a1 a2)
+  then show ?case
+  proof(induct a1)
+    case (L x)
+    then show ?case
+      apply (induct a2)
+      using pairs2context_def
+      by auto
+  next
+    case (V x)
+    then show ?case
+      apply (induct a2)
+      using pairs2context_def
+      by auto
+  next
+    case (Plus a11 a12)
+    then show ?case
+      apply (induct a2)
+      using pairs2context_def
+      by auto
+  next
+    case (Minus a11 a12)
+    then show ?case
+      apply (induct a2)
+      using pairs2context_def
+      by auto
+  qed
+next
+  case (Gt a1 a2)
+  then show ?case
+  proof(induct a1)
+    case (L x)
+    then show ?case
+      apply (induct a2)
+      using pairs2context_def
+      by auto
+  next
+    case (V x)
+    then show ?case
+      apply (induct a2)
+      using pairs2context_def
+      by auto
+  next
+    case (Plus a11 a12)
+    then show ?case 
+      apply (induct a2)
+      using pairs2context_def
+      by auto
+  next
+    case (Minus a11 a12)
+    then show ?case 
+      apply (induct a2)
+      using pairs2context_def
+      by auto
+  qed
+next
+  case (Nor a1 a2)
+  then show ?case
+    apply (simp add: pairs2context_append)
+    apply standard
+     apply (simp add: pairs2context_no_constraints_on_v_2)
+    by (simp add: pairs2context_no_constraints_on_v_2)
+next
+  case (Null x)
+  then show ?case
+    apply (simp add: pairs2context_def)
+    by auto
+qed
+
+lemma medial_filter_constraints: "medial c (filter (\<lambda>g. \<not> gexp_constrains g (V (I i))) G) (V (I i)) = c (V (I i))"
+proof(induct G)
+  case Nil
+  then show ?case
+    by (simp add: medial_def pairs2context_def List.maps_def)
+next
+  case (Cons a G)
+  then show ?case
+    apply (simp add: medial_def List.maps_simps pairs2context_append)
+    apply standard
+    apply standard
+     prefer 2
+     apply blast
+    apply simp
+    apply standard
+    defer
+     apply auto[1]
+    by (simp add: aux3)
+qed
+
+
+lemma generealisation_medial: "is_generalisation_of t' t e i r \<Longrightarrow>
+       medial c (Guard t') (V (I i)) = c (V (I i))"
+  apply (simp add: is_generalisation_of_def remove_guard_add_update_def)
+  apply clarify
+  by (simp add: medial_filter_constraints)
+
+lemma generalisation_posterior_consistent: "is_generalisation_of t' t e i r \<Longrightarrow>
+       c (V (R r)) = {|Undef|} \<Longrightarrow>
+       \<forall>i. c (V (I i)) = {|cexp.Bc True|} \<Longrightarrow>
+       \<forall>i. \<forall>u\<in>set (Updates t). fst u \<noteq> R r \<and> fst u \<noteq> I i \<Longrightarrow>
+       consistent (medial c (Guard t)) \<Longrightarrow>
+       fBall (posterior c t a) (\<lambda>c. cval c a s = true) \<Longrightarrow>
+       fBall (posterior c t' a) (\<lambda>c. cval c a s = true)"
+  apply (case_tac "a \<noteq> V (R r)")
+  using is_generalisation_of_posterior_subset apply blast
+  apply (simp add: posterior_def posterior_separate_def Let_def is_generalisation_of_consistent_medial)
+  apply (simp add: generalised_updates remove_obsolete_constraints_def)
+  apply (case_tac "fBex (fset_of_list (Updates t)) (\<lambda>x. fst x = R r \<and> R r \<noteq> fst x)")
+   apply auto[1]
+  apply simp
+  apply standard
+   apply auto[1]
+  apply clarify
+  by (simp add: generealisation_medial cval_true)
+
 
 lemma "is_generalisation_of t' t e i r \<Longrightarrow>
        c (V (R r)) = {|Undef|} \<Longrightarrow>
@@ -473,9 +628,31 @@ lemma "is_generalisation_of t' t e i r \<Longrightarrow>
     apply (simp add: posterior_def posterior_separate_def Let_def generalisation_medial_equiv)
 
    apply (case_tac "ra = V (R r)")
-    apply (simp add: posterior_def posterior_separate_def Let_def generalisation_medial_equiv)
-    apply (simp add: remove_obsolete_constraints_def aux1 is_generalisation_of_updates_r)
-    apply (simp add: is_generalisation_of_def remove_guard_add_update_def)
-  
+    apply clarify
+    apply (simp add: posterior_Rr_undef)
+   apply (simp add: posterior_separate_def posterior_def Let_def generalisation_medial_equiv)
+   apply (simp add: remove_obsolete_constraints_def)
+   apply (case_tac "(\<exists>n. aexp_constrains ra (V (I n)))")
+    apply auto[1]
+   apply (case_tac "fBex (fset_of_list (Updates t')) (\<lambda>x. V (fst x) = ra \<and> ra \<noteq> V (fst x))")
+    apply auto[1]
+   apply (case_tac "fBex (fset_of_list (Updates t)) (\<lambda>x. V (fst x) = ra \<and> ra \<noteq> V (fst x))")
+    apply auto[1]
+   apply simp
+  using aux2
+
+   apply simp
+  apply (simp only: consistent_def)
+  apply clarify
+  apply (rule_tac x=s in exI)
+
+  apply (case_tac "consistent (medial c (Guard t))")
+  apply (simp add: generalisation_posterior_consistent)
+
+  apply (simp add: posterior_def posterior_separate_def Let_def)
+  apply clarify
+  by (simp add: cval_false)
+
+
 
 end

@@ -32,6 +32,8 @@ object FrontEnd {
 
     println("Goodbye inference!")
 
+    TypeConversion.efsmToSALTranslator(inferred)
+
     // val ctx = new z3.Context
     // val sort = ctx.mkUninterpretedSort("U")
     // val id = ""

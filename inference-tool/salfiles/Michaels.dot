@@ -1,0 +1,17 @@
+digraph Michaels{
+   graph [rankdir="LR", fontname="Latin Modern Math"];
+   node [color="black", fillcolor="white", shape="circle", style="filled", fontname="Latin Modern Math"];
+   edge [fontname="Latin Modern Math"];
+
+   State_0[fillcolor="gray", label=<state_<sub>0</sub>>];
+   State_1[label=<state_<sub>1</sub>>];
+   State_2[label=<state_<sub>2</sub>>];
+   State_3[label=<state_<sub>3</sub>>];
+   State_4[label=<state_<sub>4</sub>>];
+
+   State_1->State_2[label=<<i>coin:1&#91;i<sub>1</sub> = Some(NUM(50))&#93;/o<sub>null</sub> := ****Siobhan doesn't know what and Insert expression is in Dot****&#91;r<sub>1</sub> := r<sub>1</sub>&#93;</i>>];
+   State_1->State_3[label=<<i>coin:1&#91;i<sub>1</sub> = Some(NUM(100))&#93;/o<sub>null</sub> := ****Siobhan doesn't know what and Insert expression is in Dot****&#91;r<sub>1</sub> := r<sub>1</sub>&#93;</i>>];
+   State_0->State_1[label=<<i>select:1/o<sub>null</sub> := ****Siobhan doesn't know what and Insert expression is in Dot****&#91;r<sub>1</sub> := i<sub>1</sub>&#93;</i>>];
+   State_2->State_3[label=<<i>coin:1&#91;i<sub>1</sub> = Some(NUM(50))&#93;/o<sub>null</sub> := ****Siobhan doesn't know what and Insert expression is in Dot****&#91;r<sub>1</sub> := r<sub>1</sub>&#93;</i>>];
+   State_3->State_4[label=<<i>vend:0/o<sub>null</sub> := ****Siobhan doesn't know what and Insert expression is in Dot****&#91;r<sub>1</sub> := r<sub>1</sub>&#93;</i>>];
+}

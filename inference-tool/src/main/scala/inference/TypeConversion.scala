@@ -1,4 +1,5 @@
 import isabellesal._
+import java.nio.file.{Files, Paths}
 
 object TypeConversion {
 
@@ -42,7 +43,7 @@ object TypeConversion {
             aexpToSALTranslator(a1),
             aexpToSALTranslator(a2)
     )
-    case AExp.Plus(a1, a2) => Expression.newInfixFrom(
+    case AExp.Minus(a1, a2) => Expression.newInfixFrom(
             Token.MINUS,
             aexpToSALTranslator(a1),
             aexpToSALTranslator(a2)
@@ -52,6 +53,7 @@ object TypeConversion {
   def gexpToSALTranslator(g: GExp.gexp): Expression = g match {
     case GExp.Bc(v) => throw new java.lang.IllegalArgumentException("Can't translate boolean values")
     case GExp.Null(AExp.V(a)) => Expression.isNull(vnameToSALTranslator(a))
+    case GExp.Null(a) => throw new java.lang.IllegalArgumentException("Can only translate null guards of variables")
     case GExp.Eq(a1, a2) => Expression.newInfixFrom(
             Token.EQUALS,
             aexpToSALTranslator(a1),
@@ -73,32 +75,50 @@ object TypeConversion {
     case Nat.Nata(b) => b.toInt
   }
 
-  def transitionToSALTranslator(t: Transition.transition_ext[Unit]):isabellesal.Transition = {
+  def foldGuard(gt: Seq[Expression]): Expression = {
+    if (gt.toList.length == 0) {
+      null
+    }
+    else if (gt.toList.length == 1) {
+      gt.toList(0)
+    }
+    else {
+      Expression.newPredicateFrom(gt:_*)
+    }
+  }
+
+  def updateToExp(u: (VName.vname, AExp.aexp)): Expression = u match {
+    case (r, a) => Expression.newInfixFrom(
+            Token.EQUALS,
+            Expression.newOneFrom(vnameToSALTranslator(r)),
+            aexpToSALTranslator(a)
+    )
+  }
+
+  def transitionToSALTranslator(id: String, t: Transition.transition_ext[Unit]):isabellesal.Transition = {
     isabellesal.Transition.newOneFrom(
-      java.util.UUID.randomUUID().toString,
+      id,
       Transition.Label(t),
       natToInt(Transition.Arity(t)),
-      Expression.newPredicateFrom(Transition.Guard(t).map(g => gexpToSALTranslator(g)):_*),
+      // We want to just do it with one guard
+      foldGuard(Transition.Guard(t).map(g => gexpToSALTranslator(g))),
       Expression.newOutputs(Transition.Outputs(t).map(a => aexpToSALTranslator(a)):_*),
-      Transition.Updates(t).map{case (r, a) => Expression.newInfixFrom(
-              Token.EQUALS,
-              Expression.newOneFrom(vnameToSALTranslator(r)),
-              aexpToSALTranslator(a)
-      )}:_*
+      Transition.Updates(t).map(updateToExp):_*
 
     )
   }
 
   def toMichaelsMove(move: ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])): MichaelsMove = {
-    new MichaelsMove(natToInt(move._1._1), natToInt(move._1._2), transitionToSALTranslator(move._2))
+    new MichaelsMove(natToInt(move._1._1), natToInt(move._1._2), transitionToSALTranslator(Transition.Label(move._2)+"_"+System.currentTimeMillis, move._2))
   }
 
   def fset_to_list[A](f: FSet.fset[A]): List[A] = FSet.fset(f) match {
     case Set.seta(s) => s
   }
 
-  def efsmToSALTranslator(e: TransitionMatrix): EFSM = {
+  def efsmToSALTranslator(e: TransitionMatrix) = {
     isabellesal.EFSM.newOneFrom(fset_to_list(FSet.fimage(toMichaelsMove, e)):_*)
+    new Translator().writeSALandDOT(Paths.get("salfiles"), "Michaels");
   }
 
 }
