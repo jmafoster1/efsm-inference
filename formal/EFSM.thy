@@ -39,6 +39,19 @@ primrec apply_outputs :: "output_function list \<Rightarrow> datastate \<Rightar
   "apply_outputs [] _ = []" |
   "apply_outputs (h#t) s = (aval h s)#(apply_outputs t s)"
 
+lemma apply_outputs_alt: "apply_outputs p s = map (\<lambda>p. aval p s) p"
+proof(induct p)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a p)
+  then show ?case
+    by simp
+qed
+
+lemma apply_outputs_preserves_length: "length (apply_outputs p s) = length p"
+  by (simp add: apply_outputs_alt)
+
 primrec apply_guards :: "guard list \<Rightarrow> datastate \<Rightarrow> bool" where
   "apply_guards [] _ = True" |
   "apply_guards (h#t) s =  ((gval h s) = true \<and> (apply_guards t s))"

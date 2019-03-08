@@ -336,5 +336,5 @@ lemma generalise_output_preserves_updates: "Updates (generalise_output t r p) = 
   by (simp add: generalise_output_def)
 
 lemmas generalise_output_preserves = generalise_output_preserves_label generalise_output_preserves_arity
-generalise_output_preserves_output_length generalise_output_preserves_guard
+generalise_output_preserves_output_length generalise_output_preserves_guard generalise_output_preserves_updates
 end                                                   

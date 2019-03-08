@@ -201,6 +201,10 @@ lemma medial_append: "medial c (a @ G) ra = medial c a ra |\<union>| medial c G 
   apply (simp only: medial_def List_maps_append pairs2context_append)
   by auto
 
+lemma medial_self_append: "medial c (g @ g) = medial c g"
+  apply (rule ext)
+  by (simp add: medial_append)
+
 lemma medial_cons_subset: "medial c G ra |\<subseteq>| medial c (a # G) ra"
   apply (simp add: medial_def)
   apply (simp only: maps_simps(1))
@@ -275,6 +279,10 @@ lemma remove_input_constraints_empty[simp]: "remove_obsolete_constraints \<lbrak
 
 definition posterior_separate :: "context \<Rightarrow> guard list \<Rightarrow> update_function list \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
   "posterior_separate c g u = (let c' = (medial c g) in (if consistent c' then remove_obsolete_constraints (apply_updates c' c u) (fset_of_list (map fst u)) else (\<lambda>i. {|Bc False|})))"
+
+lemma posterior_separate_append_self: "posterior_separate c (g @ g) = posterior_separate c g"
+  apply (rule ext)
+  by (simp add: posterior_separate_def Let_def medial_self_append)
 
 definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where
   "posterior c t = posterior_separate c (Guard t) (Updates t)"

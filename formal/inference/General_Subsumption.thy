@@ -580,7 +580,7 @@ lemma generalisation_posterior_consistent: "is_generalisation_of t' t e i r \<Lo
   by (simp add: generealisation_medial cval_true)
 
 
-lemma "is_generalisation_of t' t e i r \<Longrightarrow>
+lemma is_generalisation_of_subsumes_original: "is_generalisation_of t' t e i r \<Longrightarrow>
        c (V (R r)) = {|Undef|} \<Longrightarrow>
        \<forall>i. c (V (I i)) = {||} \<Longrightarrow>
        \<forall>u \<in> set (Updates t). fst u \<noteq> (R r) \<Longrightarrow>
@@ -620,5 +620,65 @@ lemma "is_generalisation_of t' t e i r \<Longrightarrow>
   apply (simp add: posterior_def posterior_separate_def Let_def)
   apply clarify
   by (simp add: cval_false)
+
+lemma restrict_value_of_register: "c (V (R r)) = {|cexp.Eq v|} \<Longrightarrow>
+       consistent (\<lambda>x. datastate2context ra x |\<union>| c x) \<Longrightarrow>
+       ra (R r) = Some v"
+proof-
+  assume premise1: "c (V (R r)) = {|cexp.Eq v|}"
+  assume premise2: "consistent (\<lambda>x. datastate2context ra x |\<union>| c x)"
+  have contra: "\<And>c r v ra. c (V (R r)) = {|cexp.Eq v|} \<Longrightarrow>
+       ra (R r) \<noteq> Some v \<Longrightarrow>
+       \<not> consistent (\<lambda>x. datastate2context ra x |\<union>| c x)"
+  apply (simp add: datastate2context_def consistent_def)
+  apply clarify
+  apply (rule_tac x="V (R r)" in exI)
+  apply simp
+  apply (simp add: cval_def gval.simps ValueEq_def)
+  apply (case_tac "ra (R r)")
+   apply (simp add: gval.simps ValueEq_def)
+    by (simp add: gval.simps ValueEq_def)
+  show ?thesis
+    using contra premise1 premise2
+    by auto
+qed
+
+lemma length_apply_generalised_outputs: "length (apply_outputs (Outputs t)                         (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. ra (R n)))) =
+                                         length (apply_outputs (Outputs (generalise_output t p r)) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. ra (R n))))"
+  by (simp add: apply_outputs_alt generalise_output_preserves_output_length)
+
+lemma apply_outputs_equiv: "i < length (Outputs t) \<Longrightarrow>
+       i \<noteq> r \<Longrightarrow>
+       (apply_outputs (Outputs t) s) ! i = (apply_outputs (Outputs (generalise_output t p r)) s) ! i"
+  apply (simp add: generalise_output_def)
+  by (simp add: apply_outputs_alt)
+
+lemma generalise_output_subsumes_original: "nth (Outputs t) r = L v \<Longrightarrow>
+       c (V (R p)) = {|Eq v|} \<Longrightarrow>
+       (generalise_output t p r) \<^sub>c\<sqsupseteq> t"
+  apply (simp add: subsumes_def generalise_output_preserves)
+  apply standard
+   apply (simp add: satisfies_context_def)
+   apply clarify
+   apply (simp add: list_eq_iff_nth_eq length_apply_generalised_outputs )
+   apply clarify
+   apply (simp only: apply_outputs_preserves_length)
+   apply (case_tac "ia = r")
+    prefer 2
+    apply (simp add: apply_outputs_equiv)
+   apply (simp add: apply_outputs_alt generalise_output_def)
+   apply (simp add: restrict_value_of_register)
+  apply standard
+   apply (simp add: list_eq_iff_nth_eq length_apply_generalised_outputs apply_outputs_alt generalise_output_def)
+   apply (rule_tac x=i in exI)
+   apply (rule_tac x="<R p := v>" in exI)
+   apply (rule allI)
+   apply (case_tac "ia = r")
+    apply simp
+   apply simp
+  apply standard
+  apply (rule allI)+
+   apply (simp add: posterior_separate_append_self posterior_def generalise_output_preserves)
+  by (simp add: posterior_def posterior_separate_def  generalise_output_preserves)
 
 end
