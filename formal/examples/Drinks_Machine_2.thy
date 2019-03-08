@@ -85,23 +85,23 @@ lemma "consistent (medial empty (Guard select))"
   by (simp add: select_def medial_empty)
 
 definition r1_r2_true :: "context" where
-"r1_r2_true \<equiv> \<lbrakk>(V (R 1)) \<mapsto> {||}, (V (R 2)) \<mapsto> {||}\<rbrakk>"
+"r1_r2_true \<equiv> \<lbrakk>(V (R 1)) \<mapsto> {|Bc True|}, (V (R 2)) \<mapsto> {|Bc True|}\<rbrakk>"
 
 lemma posterior_coin_first: "posterior select_posterior coin = r1_r2_true"
   apply (simp add: posterior_def posterior_separate_def coin_def medial_empty consistent_select_posterior)
   apply (simp add: remove_obsolete_constraints_def r1_r2_true_def)
   apply (rule ext)
-  by (simp add: select_posterior_def)
+  by (simp add: select_posterior_def fprod_singletons)
 
 lemma consistent_r1_r2_true: "consistent r1_r2_true"
-  apply (simp add: consistent_def r1_r2_true_def)
+  apply (simp add: consistent_def r1_r2_true_def cval_true)
   using consistent_def consistent_empty by blast
 
 lemma posterior_coin_subsequent: "posterior r1_r2_true coin = r1_r2_true"
   apply (simp add: posterior_def coin_def posterior_separate_def medial_empty consistent_r1_r2_true)
   apply (simp add: remove_obsolete_constraints_def r1_r2_true_def)
   apply (rule ext)
-  by (simp add: r1_r2_true_def)
+  by (simp add: fprod_singletons r1_r2_true_def)
 
 lemma can_take_coin: "consistent c \<longrightarrow> Contexts.can_take coin c"
   by (simp add: can_take_def coin_def medial_empty)
@@ -126,11 +126,11 @@ lemma consistent_posterior_n_coin: "consistent (posterior_n n coin select_poster
       apply (simp add: cval_def gval.simps ValueEq_def)
       apply (rule allI)
       apply (case_tac r)
-         apply simp
+         apply (simp add: gval.simps)
         apply (case_tac x2)
-         apply simp
+         apply (simp add: gval.simps)
         apply (simp add: gval.simps ValueEq_def)
-      by auto
+      by (simp_all add: gval.simps)
   next
     case (Suc n)
     then show ?case
@@ -158,15 +158,15 @@ lemma can_take_vend: "0 < Suc n \<longrightarrow> Contexts.can_take vend r1_r2_t
   apply (simp add: cval_def gval.simps ValueGt_def)
   apply (rule allI)
   apply (case_tac r)
-     apply simp
+     apply (simp add: gval.simps)
     apply (case_tac x2)
-     apply simp
+     apply (simp add: gval.simps)
     apply (simp add: gval.simps ValueEq_def)
-  by auto
+  by (simp_all add: gval.simps)
 
-lemma medial_vend: "medial r1_r2_true (Guard vend) = \<lbrakk>(V (R 1)) \<mapsto> {||}, (V (R 2)) \<mapsto> {|Geq (Num 100)|}\<rbrakk>"
+lemma medial_vend: "medial r1_r2_true (Guard vend) = \<lbrakk>(V (R 1)) \<mapsto> {|Bc True|}, (V (R 2)) \<mapsto> {|Geq (Num 100), Bc True|}\<rbrakk>"
   apply (rule ext)
-  by (simp add: medial_def r1_r2_true_def List.maps_def vend_def pairs2context_def)
+  by (simp add: vend_def r1_r2_true_def medial_def List.maps_def pairs2context_def)
 
 lemma consistent_medial_vend: "consistent (medial r1_r2_true (Guard vend))"
   apply (simp add: consistent_def medial_vend)
@@ -174,11 +174,9 @@ lemma consistent_medial_vend: "consistent (medial r1_r2_true (Guard vend))"
   apply (simp add: cval_def gval.simps ValueGt_def)
   apply (rule allI)
   apply (case_tac r)
-     apply simp
+     apply (simp add: gval.simps)
     apply (case_tac x2)
-     apply simp
-    apply (simp add: gval.simps ValueEq_def)
-  by auto
+  by (simp_all add: gval.simps ValueEq_def)
 
 lemma drinks2_0_invalid: "\<not> (aa = (STR ''select'') \<and> length (b) = 1) \<Longrightarrow>
     (possible_steps drinks2 0 Map.empty aa b) = {||}"

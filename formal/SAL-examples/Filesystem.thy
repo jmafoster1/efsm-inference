@@ -54,7 +54,7 @@ definition read_success :: "transition" where
 "read_success \<equiv> \<lparr>
         Label = (STR ''read''),
         Arity = 0,
-        Guard = [gexp.Eq (V (R 1)) (V (R 3)), (gNot (Null (R 2)))], \<comment> \<open> No guards \<close>
+        Guard = [gexp.Eq (V (R 1)) (V (R 3)), (gNot (Null (V (R 2))))], \<comment> \<open> No guards \<close>
         Outputs = [(V (R 2))],
         Updates = [ \<comment> \<open> Two updates: \<close>
                     (R 1, (V (R 1))), \<comment> \<open> Value of r1 remains unchanged \<close>
@@ -67,7 +67,7 @@ definition read_fail :: "transition" where
 "read_fail \<equiv> \<lparr>
         Label = (STR ''read''),
         Arity = 0,
-        Guard = [(gOr (Ne (V (R 1)) (V (R 3))) (Null (R 2)))],
+        Guard = [(gOr (Ne (V (R 1)) (V (R 3))) (Null (V (R 2))))],
         Outputs = [(L (Str ''accessDenied''))],
         Updates = [
                     (R 1, (V (R 1))), \<comment> \<open> Value of r1 remains unchanged \<close>
@@ -86,15 +86,7 @@ definition filesystem :: "transition_matrix" where
               ((1,1), write_fail)
          |}"
 
-code_printing
-  type_constructor bool \<rightharpoonup> (Scala) "Bool"
-  | constant True \<rightharpoonup> (Scala) "true"
-  | constant False \<rightharpoonup> (Scala) "false"
-  | constant HOL.conj \<rightharpoonup> (Scala) "_ && _"
-
-\<comment> \<open> export_code GExp.satisfiable in "Scala" \<close>
-
-lemmas fs_simp = filesystem_def login_def logout_def write_def read_success_def read_fail_def write_fail_def
+lemmas transitions = login_def logout_def write_def read_success_def read_fail_def write_fail_def
 
 primrec all :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" where
   "all [] _ = True" |
@@ -111,28 +103,41 @@ lemma r_equals_r [simp]: "<R 1:=user, R 2:=content, R 3:=owner> = (\<lambda>a. i
 
 declare One_nat_def [simp del]
 
-(* This takes a while to go through but it does *)
 lemma possible_steps_1_read: "r (R 1) = user \<and> r (R 3) = owner \<Longrightarrow> owner \<noteq> user \<Longrightarrow> possible_steps filesystem 1 r (STR ''read'') [] = {|(1, read_fail)|}"
-  apply (simp add: fs_simp possible_steps_def)
-  by force
+proof-
+  assume premise1: "r (R 1) = user \<and> r (R 3) = owner"
+  assume premise2: "owner \<noteq> user"
+  have filter: "ffilter
+     (\<lambda>((origin, dest), t).
+         origin = 1 \<and>
+         Label t = STR ''read'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state [] 1 (I n) | R n \<Rightarrow> r (R n)))
+     filesystem =
+    {|((1, 1), read_fail)|}"
+    using premise1 premise2
+    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def filesystem_def)
+    apply safe
+    by (simp_all add: transitions gval.simps ValueEq_def)
+  show ?thesis
+    by (simp add: possible_steps_def filter)
+qed
 
 lemma read_2:  "r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
     step filesystem 1 r (STR ''read'') [] = Some (read_fail, 1, [Some (Str ''accessDenied'')], r)"
   apply (simp add: step_def possible_steps_1_read)
-  apply (simp add: fs_simp)
+  apply (simp add: transitions filesystem_def)
   apply (rule ext)
   by simp
 
 lemma possible_steps_1_logout: "possible_steps filesystem 1 r (STR ''logout'') [] = {|(0, logout)|}"
-  apply (simp add: possible_steps_def fs_simp)
+  apply (simp add: possible_steps_def transitions filesystem_def)
   by force
 
 lemma logout_2:  "r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
     step filesystem 1 r (STR ''logout'') [] = Some (logout, 0, [], r)"
   apply (simp add: step_def possible_steps_1_logout)
-  apply (simp add: fs_simp)
+  apply (simp add: filesystem_def transitions)
   apply (rule ext)
   by simp
 end

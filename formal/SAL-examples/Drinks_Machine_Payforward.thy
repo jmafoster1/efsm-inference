@@ -58,8 +58,22 @@ lemma possible_steps_2_coin: "possible_steps drinks 2 d (STR ''coin'') [Num n] =
   by force
 
 lemma possible_steps_2_vend: "r (R 2) = Some (Num n) \<Longrightarrow> n \<ge> 100 \<Longrightarrow> possible_steps drinks 2 r (STR ''vend'') [] = {|(1, vend)|}"
-  apply (simp add: possible_steps_def drinks_def transitions)
-  by force
+proof-
+  assume premise1: "r (R 2) = Some (Num n)"
+  assume premise2: "n \<ge> 100"
+  have filter: "ffilter
+     (\<lambda>((origin, dest), t).
+         origin = 2 \<and>
+         Label t = STR ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state [] 1 (I n) | R n \<Rightarrow> r (R n)))
+     Drinks_Machine_Payforward.drinks =
+    {|((2, 1), Drinks_Machine_Payforward.vend)|}"
+    using premise1 premise2
+    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def drinks_def)
+    apply safe
+    by (simp_all add: transitions gval.simps ValueGt_def)
+  show ?thesis
+    by (simp add: possible_steps_def filter)
+qed
 
 lemma "observe_trace drinks 0 <> [((STR ''setup''), []), ((STR ''select''), [Str ''coke'']), ((STR ''coin''),[Num 110]), ((STR ''vend''), []), ((STR ''select''), [Str ''pepsi'']), ((STR ''coin''),[Num 90]), ((STR ''vend''), [])] = [[],[],[Some (Num 110)],[Some (Str ''coke'')],[],[Some (Num 100)],[Some (Str ''pepsi'')]]"
   unfolding observe_trace_def observe_all_def step_def

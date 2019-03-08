@@ -47,10 +47,10 @@ definition StateEq :: "nat option \<Rightarrow> state stream \<Rightarrow> bool"
 definition LabelEq :: "string \<Rightarrow> state stream \<Rightarrow> bool" where
   "LabelEq v s \<equiv> fst (event (shd s)) = (String.implode v)"
 
-fun "checkInx" :: "ior \<Rightarrow> nat \<Rightarrow> (value option \<Rightarrow> value option \<Rightarrow> bool option) \<Rightarrow> value option \<Rightarrow> state stream \<Rightarrow> bool" where
-  "checkInx ior.ip n f v s = (f (Some (Inputs n s)) v = Some True)" |
-  "checkInx ior.op n f v s = (f (Outputs n s) v = Some True)" |
-  "checkInx ior.rg n f v s = (f (datastate (shd s) (vname.R n)) v = Some True)"
+fun "checkInx" :: "ior \<Rightarrow> nat \<Rightarrow> (value option \<Rightarrow> value option \<Rightarrow> trilean) \<Rightarrow> value option \<Rightarrow> state stream \<Rightarrow> bool" where
+  "checkInx ior.ip n f v s = (f (Some (Inputs n s)) v = trilean.true)" |
+  "checkInx ior.op n f v s = (f (Outputs n s) v = trilean.true)" |
+  "checkInx ior.rg n f v s = (f (datastate (shd s) (vname.R n)) v = trilean.true)"
 
 definition InputEq :: "value list \<Rightarrow> state stream \<Rightarrow> bool" where
   "InputEq v s \<equiv> inputs (shd s) = v"

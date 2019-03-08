@@ -16,6 +16,10 @@ lemma fprod_subset: "x |\<subseteq>| x' \<and> y |\<subseteq>| y' \<Longrightarr
 lemma fimage_fprod: "(a, b) |\<in>| A |\<times>| B \<Longrightarrow> f a b |\<in>| (\<lambda>(x, y). f x y) |`| (A |\<times>| B)"
   by force
 
+lemma fprod_singletons: "{|a|} |\<times>| {|b|} = {|(a, b)|}"
+  apply (simp add: fprod_def)
+  by (metis fset_inverse fset_simps(1) fset_simps(2))
+
 lemma fset_both_sides: "(Abs_fset s = f) = (fset (Abs_fset s) = fset f)"
   by (simp add: fset_inject)
 

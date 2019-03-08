@@ -22,7 +22,7 @@ definition create :: "transition" where
 "create \<equiv> \<lparr>
         Label = (STR ''create''),
         Arity = 0,
-        Guard = [(Null (R 3))],
+        Guard = [(Null (V (R 3)))],
         Outputs = [],
         Updates = [
                     (R 1, (V (R 1))),
@@ -70,16 +70,57 @@ lemma possible_steps_0: "possible_steps Filesystem_Fixed.filesystem 0 r (STR ''l
   by force
 
 lemma possible_steps_1_create: "possible_steps filesystem 1 <R 1 := Str ''user''> (STR ''create'') [] = {|(1, create)|}"
-  apply (simp add: possible_steps_def fs_simp)
-  by force
+proof-
+  have filter: "ffilter
+     (\<lambda>((origin, dest), t).
+         origin = 1 \<and>
+         Label t = STR ''create'' \<and>
+         Arity t = 0 \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state [] 1 (I n) | R n \<Rightarrow> <R 1 := EFSM.Str ''user''> (R n)))
+     Filesystem_Fixed.filesystem =
+    {|((1, 1), create)|}"
+    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def)
+    apply safe
+    by (simp_all add: fs_simp gval.simps ValueEq_def)
+  show ?thesis
+    by (simp add: possible_steps_def filter)
+qed
 
 lemma possible_steps_1_write:  "possible_steps Filesystem_Fixed.filesystem 1 <R 1 := Str ''user'', R 3 := Str ''user''> (STR ''write'') [Num 50] = {|(1, write)|}"
-  apply (simp add: possible_steps_def fs_simp)
-  by force
+proof-
+  have filter: " ffilter
+     (\<lambda>((origin, dest), t).
+         origin = 1 \<and>
+         Label t = STR ''write'' \<and>
+         Suc 0 = Arity t \<and>
+         apply_guards (Guard t)
+          (\<lambda>x. case x of I n \<Rightarrow> input2state [Num 50] 1 (I n) | R n \<Rightarrow> <R 1 := EFSM.Str ''user'', R 3 := EFSM.Str ''user''> (R n)))
+     Filesystem_Fixed.filesystem =
+    {|((1, 1), Filesystem_Fixed.write)|}"
+    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def filesystem_def)
+    apply safe
+    by (simp_all add: fs_simp gval.simps ValueEq_def)
+  show ?thesis
+    by (simp add: possible_steps_def filter)
+qed
 
 lemma possible_steps_1_read: "possible_steps Filesystem_Fixed.filesystem 1 <R 1 := u, R 2 := c, R 3 := u> (STR ''read'') [] = {|(1, read_success)|}"
-  apply (simp add: possible_steps_def fs_simp)
-  by force
+proof-
+  have filter:  "ffilter
+     (\<lambda>((origin, dest), t).
+         origin = 1 \<and>
+         Label t = STR ''read'' \<and>
+         Arity t = 0 \<and>
+         apply_guards (Guard t)
+          (\<lambda>x. case x of I n \<Rightarrow> input2state [] 1 (I n)
+               | R n \<Rightarrow> if R n = R 3 then Some u else if R n = R 2 then Some c else if R n = R 1 then Some u else None))
+     Filesystem_Fixed.filesystem =
+    {|((1, 1), read_success)|}"
+    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def filesystem_def)
+    apply safe
+    by (simp_all add: fs_simp gval.simps ValueEq_def)
+  show ?thesis
+    by (simp add: possible_steps_def filter)
+qed
 
 lemma "observe_trace filesystem 0 <> [((STR ''login''), [Str ''user'']), ((STR ''create''), []), ((STR ''write''), [Num 50]), ((STR ''read''), [])] = [[], [], [], [Some (Num 50)]]"
 proof-
@@ -116,8 +157,21 @@ lemma r_equals_r [simp]: "<R 1:=user, R 2:=content, R 3:=owner> = (\<lambda>a. i
   by simp
 
 lemma possible_steps_1_read_fail: "r (R 3) = Some owner \<and> r (R 1) = Some user \<and> owner \<noteq> user \<Longrightarrow> possible_steps Filesystem_Fixed.filesystem 1 r (STR ''read'') [] = {|(1, read_fail)|}"
-  apply (simp add: possible_steps_def fs_simp)
-  by force
+proof-
+  assume premise: "r (R 3) = Some owner \<and> r (R 1) = Some user \<and> owner \<noteq> user"
+  have filter: "ffilter
+     (\<lambda>((origin, dest), t).
+         origin = 1 \<and>
+         Label t = STR ''read'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state [] 1 (I n) | R n \<Rightarrow> r (R n)))
+     Filesystem_Fixed.filesystem =
+    {|((1, 1), read_fail)|}"
+    using premise
+    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def filesystem_def)
+    apply safe
+    by (simp_all add: fs_simp gval.simps ValueEq_def)
+  show ?thesis
+    by (simp add: possible_steps_def filter)
+qed
 
 lemma read_2:  " r = <R 1:= user, R 2:= content, R 3:= owner> \<Longrightarrow>
     owner \<noteq> user \<Longrightarrow>
