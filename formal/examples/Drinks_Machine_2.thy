@@ -55,8 +55,22 @@ lemma possible_steps_2_coin: "length i = 1 \<Longrightarrow> possible_steps drin
   by force
 
 lemma possible_steps_2_vend: "r (R 2) = Some (Num n) \<Longrightarrow> n \<ge> 100 \<Longrightarrow> possible_steps drinks2 2 r ((STR ''vend'')) [] = {|(3, vend)|}"
-  apply (simp add: possible_steps_def drinks2_def transitions)
-  by force
+proof-
+  assume prem1: "r (R 2) = Some (Num n)"
+  assume prem2: "n \<ge> 100"
+  have filter: "ffilter
+     (\<lambda>((origin, dest), t).
+         origin = 2 \<and>
+         Label t = STR ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state [] 1 (I n) | R n \<Rightarrow> r (R n)))
+     drinks2 =
+    {|((2, 3), vend)|}"
+    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse drinks2_def Set.filter_def)
+    apply safe
+    using prem1 prem2
+    by (simp_all add: transitions gval.simps ValueGt_def)
+  show ?thesis
+    by (simp add: possible_steps_def filter)
+qed
 
 lemma purchase_coke: "observe_trace drinks2 0 <> [((STR ''select''), [Str ''coke'']), ((STR ''coin''), [Num 50]), ((STR ''coin''), [Num 50]), ((STR ''vend''), [])] =
                        [[], [Some (Num 50)], [Some (Num 100)], [Some (Str ''coke'')]]"
@@ -68,128 +82,29 @@ lemma purchase_coke: "observe_trace drinks2 0 <> [((STR ''select''), [Str ''coke
   by (simp add: transitions )
 
 lemma "consistent (medial empty (Guard select))"
-  by (simp add: select_def)
-
-lemma empty_not_undef: "empty r \<noteq> Undef \<longrightarrow> empty r = Bc True"
-  apply (insert consistent_empty_1)
-  by auto
-
-lemma empty_never_false: "cexp.Bc False \<noteq> Contexts.empty x"
-  apply (cases x)
-     prefer 2
-    apply (case_tac x2)
-  by simp_all
+  by (simp add: select_def medial_empty)
 
 definition r1_r2_true :: "context" where
-"r1_r2_true \<equiv> \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> Bc True\<rbrakk>"
+"r1_r2_true \<equiv> \<lbrakk>(V (R 1)) \<mapsto> {||}, (V (R 2)) \<mapsto> {||}\<rbrakk>"
 
 lemma posterior_coin_first: "posterior select_posterior coin = r1_r2_true"
-  unfolding posterior_def Let_def
-  apply (simp add: guard_coin consistent_select_posterior)
-  apply (simp add: transitions valid_def satisfiable_def remove_input_constraints_def select_posterior_def)
+  apply (simp add: posterior_def posterior_separate_def coin_def medial_empty consistent_select_posterior)
+  apply (simp add: remove_obsolete_constraints_def r1_r2_true_def)
+  apply (rule ext)
+  by (simp add: select_posterior_def)
+
+lemma consistent_r1_r2_true: "consistent r1_r2_true"
+  apply (simp add: consistent_def r1_r2_true_def)
+  using consistent_def consistent_empty by blast
+
+lemma posterior_coin_subsequent: "posterior r1_r2_true coin = r1_r2_true"
+  apply (simp add: posterior_def coin_def posterior_separate_def medial_empty consistent_r1_r2_true)
+  apply (simp add: remove_obsolete_constraints_def r1_r2_true_def)
   apply (rule ext)
   by (simp add: r1_r2_true_def)
 
-lemma consistent_r1_r2_true: "consistent r1_r2_true"
-  apply (simp add: consistent_def)
-  apply (rule_tac x="<>" in exI)
-  apply (simp add: r1_r2_true_def)
-  using consistent_empty_1
-  by fastforce
-
-lemma posterior_coin_subsequent: "posterior r1_r2_true coin = r1_r2_true"
-  unfolding posterior_def Let_def
-  apply (simp add: guard_coin consistent_r1_r2_true)
-  apply (rule ext)
-  by (simp add: transitions satisfiable_def r1_r2_true_def remove_input_constraints_def)
-
-lemma value_lt_aval: "aval x r = Some a \<Longrightarrow> aval y r = Some aa \<Longrightarrow> ValueLt (Some a) (Some aa) = Some ab \<Longrightarrow> \<exists>n n'. a = Num n \<and> aa = Num n'"
-  by (metis MaybeBoolInt.elims option.sel option.simps(3))
-
-lemma ge_equiv: "gval (Ge x y) r = gval (gOr (gexp.Gt x y) (gexp.Eq x y)) r"
-  apply simp
-  apply (cases "aval x r")
-   apply (cases "aval y r")
-    apply simp
-   apply simp
-   apply (cases "aval y r")
-   apply simp
-  apply simp
-  apply (case_tac aa)
-  apply (case_tac a)
-  by auto
-
-lemma apply_guard_ge_100: "(apply_guard \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk> (Ge (V (R 1)) (L (Num 100)))) = \<lbrakk>V (R 1) \<mapsto> Geq (Num 100)\<rbrakk>"
-  apply (rule ext)
-  by simp
-
-lemma apply_gt_100_eq_100: "(apply_guard \<lbrakk>V (R 1) \<mapsto> cexp.Bc True\<rbrakk> (gOr (GExp.Lt (L (Num 100)) (V (R 1))) (gexp.Eq (V (R 1)) (L (Num 100))))) = \<lbrakk>V (R 1) \<mapsto> cexp.Not (And (Neq (Num 100)) (Leq (Num 100)))\<rbrakk>"
-  apply (rule ext)
-  by simp
-
-lemma "cexp_equiv (cexp.Not (And (Neq (Num 100)) (Leq (Num 100)))) (Geq (Num 100))"
-  apply (simp add: cexp_equiv_def)
-  apply (rule allI)
-  apply (case_tac i)
-   apply auto[1]
-  by simp
-
-lemma "context_equiv (apply_guard \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> (Ge (V (R 1)) (L (Num 100))))
-                      (apply_guard \<lbrakk>(V (R 1)) \<mapsto> Bc True\<rbrakk> (gOr (gexp.Gt (V (R 1)) (L (Num 100))) (gexp.Eq (V (R 1)) (L (Num 100)))))"
-  apply (simp only: apply_guard_ge_100 apply_gt_100_eq_100)
-  apply (simp only: context_equiv_def cexp_equiv_def)
-  apply safe
-    apply (case_tac r)
-       apply simp
-      apply simp
-      apply (case_tac i)
-       apply auto[1]
-      apply auto[1]
-     apply (case_tac r)
-        apply simp
-       apply simp
-      apply simp
-     apply simp
-    apply simp
-   apply (case_tac r)
-      apply simp
-     apply (case_tac "x2=R 1")
-      apply simp
-     apply simp
-    apply simp
-   apply simp
-  apply (case_tac r)
-     apply simp
-    apply (case_tac "x2=R 1")
-     apply simp
-    apply simp
-   apply simp
-  by simp
-
-lemma not_eq_0_and_ge_100:"\<not> GExp.satisfiable (gAnd (gexp.Eq (V (R 2)) (L (Num 0))) (Ge (V (R 2)) (L (Num 100))))"
-  apply (simp add: GExp.satisfiable_def)
-  apply (rule allI)
-  apply (case_tac "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num 100)) (s (R 2))")
-   apply simp
-  apply simp
-  apply (case_tac "s (R 2) = Some (Num 0)")
-   apply simp
-  by simp
-
 lemma can_take_coin: "consistent c \<longrightarrow> Contexts.can_take coin c"
-  by (simp add: coin_def consistent_def Contexts.can_take_def)
-
-lemma accepts_posterior_coin_subsequent: "valid_context (posterior r1_r2_true coin)"
-  apply (simp add: posterior_coin_subsequent)
-  apply (simp add: valid_context_def)
-  apply (simp add: posterior_coin_subsequent One_nat_def r1_r2_true_def)
-  by (simp add: consistent_empty_4)
-
-lemma consistent_medial_coin_3: "consistent (\<lambda>a. if a = V (R 2) then cexp.Eq (Num 0) else if a = V (R 1) then cexp.Bc True else \<lbrakk>\<rbrakk> a)"
-  apply (simp add: consistent_def)
-  apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0>" in exI)
-  apply (simp )
-  by (simp add: consistent_empty_4)
+  by (simp add: can_take_def coin_def medial_empty)
 
 lemma posterior_n_coin_true_true: "(posterior_n n coin r1_r2_true) = r1_r2_true"
   proof (induct n)
@@ -206,21 +121,22 @@ lemma consistent_posterior_n_coin: "consistent (posterior_n n coin select_poster
     case 0
     then show ?case
       apply (simp add: consistent_def)
-      apply (rule_tac x="<R 1 := Num 0, R 2 := Num 0>" in exI)
       apply (simp add: select_posterior_def)
-      using consistent_empty_4 by blast
+      apply (rule_tac x="<R 2 := Num 0>" in exI)
+      apply (simp add: cval_def gval.simps ValueEq_def)
+      apply (rule allI)
+      apply (case_tac r)
+         apply simp
+        apply (case_tac x2)
+         apply simp
+        apply (simp add: gval.simps ValueEq_def)
+      by auto
   next
     case (Suc n)
     then show ?case
       apply (simp add: posterior_coin_first posterior_n_coin_true_true)
       using consistent_r1_r2_true r1_r2_true_def posterior_n_coin_true_true by auto
   qed
-
-lemma coin_before_vend: "Contexts.can_take vend (posterior_n n coin (posterior \<lbrakk>\<rbrakk> select)) \<longrightarrow> n > 0" (* We have to do a "coin" before we can do a "vend"*)
-  apply (simp add: select_posterior )
-  apply (cases n)
-   apply (simp add: r2_0_vend )
-  by simp
 
 lemma posterior_n_coin_true_2: "(posterior_n (Suc n) coin select_posterior) = r1_r2_true"
   proof (induction n)
@@ -237,32 +153,32 @@ lemma posterior_n_coin_true_2: "(posterior_n (Suc n) coin select_posterior) = r1
   qed
 
 lemma can_take_vend: "0 < Suc n \<longrightarrow> Contexts.can_take vend r1_r2_true"
-  apply (simp add: can_take_def consistent_def vend_def)
-  apply (rule_tac x="<R 1 := Num 0, R 2 := Num 100>" in exI)
-  by (simp add: consistent_empty_4 r1_r2_true_def)
+  apply (simp add: can_take_def vend_def medial_def r1_r2_true_def List.maps_def pairs2context_def consistent_def)
+  apply (rule_tac x="<R 2 := Num 100>" in exI)
+  apply (simp add: cval_def gval.simps ValueGt_def)
+  apply (rule allI)
+  apply (case_tac r)
+     apply simp
+    apply (case_tac x2)
+     apply simp
+    apply (simp add: gval.simps ValueEq_def)
+  by auto
 
-lemma medial_vend: "medial r1_r2_true (Guard vend) = \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> (Geq (Num 100))\<rbrakk>"
-  apply (simp add: vend_def r1_r2_true_def)
+lemma medial_vend: "medial r1_r2_true (Guard vend) = \<lbrakk>(V (R 1)) \<mapsto> {||}, (V (R 2)) \<mapsto> {|Geq (Num 100)|}\<rbrakk>"
   apply (rule ext)
-  by simp
+  by (simp add: medial_def r1_r2_true_def List.maps_def vend_def pairs2context_def)
 
-lemma consistent_medial_vend: "consistent \<lbrakk>(V (R 1)) \<mapsto> Bc True, (V (R 2)) \<mapsto> (Geq (Num 100))\<rbrakk>"
-  apply (simp add: consistent_def)
-  apply (rule_tac x="<R 1 := Num 0, R 2 := Num 100>" in exI)
-  apply (simp )
-  using consistent_empty_4 by auto
-
-lemma "n > 0 \<longrightarrow> Contexts.can_take vend (posterior_n n coin (posterior empty select))" (* We can do any number of "coin"s before doing a "vend" *)
-  proof (induction n)
-  case 0
-    then show ?case by simp
-  next
-    case (Suc n)
-    then show ?case
-      apply (simp )
-      apply (simp only: select_posterior posterior_coin_first posterior_n_coin_true_true Contexts.can_take_def)
-      by (simp only: medial_vend consistent_medial_vend)
-  qed
+lemma consistent_medial_vend: "consistent (medial r1_r2_true (Guard vend))"
+  apply (simp add: consistent_def medial_vend)
+  apply (rule_tac x="<R 2 := Num 100>" in exI)
+  apply (simp add: cval_def gval.simps ValueGt_def)
+  apply (rule allI)
+  apply (case_tac r)
+     apply simp
+    apply (case_tac x2)
+     apply simp
+    apply (simp add: gval.simps ValueEq_def)
+  by auto
 
 lemma drinks2_0_invalid: "\<not> (aa = (STR ''select'') \<and> length (b) = 1) \<Longrightarrow>
     (possible_steps drinks2 0 Map.empty aa b) = {||}"
@@ -313,15 +229,33 @@ lemma updates_coin_2: "(EFSM.apply_updates (Updates coin) (case_vname (\<lambda>
   by (simp add: coin_def)
 
 lemma drinks2_vend_r2_none: "r (R 2) = None \<Longrightarrow> possible_steps drinks2 2 r ((STR ''vend'')) [] = {||}"
-  apply (simp add: possible_steps_def drinks2_def transitions)
-  by force
+  apply (simp add: possible_steps_def ffilter_def fset_both_sides Abs_fset_inverse drinks2_def Set.filter_def)
+  apply (rule allI)+
+  apply (case_tac "ba = coin")
+   apply (simp add: coin_def)
+  apply (case_tac "ba = vend_fail")
+   apply (simp add: transitions gval.simps ValueGt_def)
+  by (simp add: transitions gval.simps ValueGt_def)
 
 lemma label_vend_not_coin: "Label b = ((STR ''vend'')) \<Longrightarrow> b \<noteq> coin"
   using label_coin by auto
 
 lemma drinks2_vend_insufficient2: "r (R 2) = Some (Num x1) \<and> x1 < 100 \<Longrightarrow> possible_steps drinks2 2 r ((STR ''vend'')) [] = {|(2, vend_fail)|}"
-  apply (simp add: possible_steps_def drinks2_def transitions)
-  by force
+proof-
+  assume premise: "r (R 2) = Some (Num x1) \<and> x1 < 100"
+  have filter: "ffilter
+     (\<lambda>((origin, dest), t).
+         origin = 2 \<and>
+         Label t = STR ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state [] 1 (I n) | R n \<Rightarrow> r (R n)))
+     drinks2 =
+    {|((2, 2), vend_fail)|}"
+    using premise
+    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def drinks2_def)
+    apply safe
+    by (simp_all add: transitions gval.simps ValueGt_def)
+  show ?thesis
+    by (simp add: possible_steps_def filter)
+qed
 
 lemma updates_vend_fail: "(EFSM.apply_updates (Updates vend_fail) (case_vname Map.empty (\<lambda>n. if n = 1 then Some s else if R n = R 2 then r2 else None))
                    (\<lambda>u. if u = R 1 then Some s else if u = R 2 then r2 else None)) = (\<lambda>u. if u = R 1 then Some s else if u = R 2 then r2 else None)"
@@ -331,8 +265,22 @@ lemma updates_vend_fail: "(EFSM.apply_updates (Updates vend_fail) (case_vname Ma
 lemma drinks2_vend_sufficient: "r (R 2) = Some (Num x1) \<Longrightarrow>
                 \<not> x1 < 100 \<Longrightarrow>
                 possible_steps drinks2 2 r ((STR ''vend'')) [] = {|(3, vend)|}"
-  apply (simp add: possible_steps_def drinks2_def transitions)
-  by force
+proof-
+  assume premise1: "r (R 2) = Some (Num x1)"
+  assume premise2 : "\<not> x1 < 100"
+  have filter: "ffilter
+     (\<lambda>((origin, dest), t).
+         origin = 2 \<and>
+         Label t = STR ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state [] 1 (I n) | R n \<Rightarrow> r (R n)))
+     drinks2 =
+    {|((2, 3), vend)|}"
+    using premise1 premise2
+    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def drinks2_def)
+    apply safe
+    by (simp_all add: transitions gval.simps ValueGt_def)
+  show ?thesis
+    by (simp add: possible_steps_def filter)
+qed
 
 lemma vend_updates: "(EFSM.apply_updates (Updates vend) (case_vname Map.empty (\<lambda>n. if n = 1 then Some s else if R n = R 2 then r2 else None))
                    (\<lambda>u. if u = R 1 then Some s else if u = R 2 then r2 else None)) = (\<lambda>u. if u = R 1 then Some s else if u = R 2 then r2 else None)"
@@ -355,8 +303,13 @@ qed
 
 lemma drinks2_vend_r2_String: "r (R 2) = Some (value.Str x2) \<Longrightarrow>
                 possible_steps drinks2 2 r ((STR ''vend'')) [] = {||}"
-  apply (simp add: possible_steps_def drinks2_def transitions)
-  by force
+  apply (simp add: possible_steps_def ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def drinks2_def)
+  apply (rule allI)+
+  apply (case_tac "ba = coin")
+   apply (simp add: coin_def)
+  apply (case_tac "ba = vend_fail")
+   apply (simp add: vend_fail_def gval.simps ValueGt_def)
+  by (simp add: vend_def gval.simps ValueGt_def)
 
 lemma drinks2_2_invalid: "fst a = (STR ''coin'') \<longrightarrow> length (snd a) \<noteq> 1 \<Longrightarrow>
           a \<noteq> ((STR ''vend''), []) \<Longrightarrow>

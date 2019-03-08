@@ -281,19 +281,6 @@ lemma eliminate_zero_insert: "finite s \<Longrightarrow> Max (insert (0::nat) (i
 lemma finite_insert_max:  "finite s \<Longrightarrow> i \<le> Max (insert i s)"
   by simp
 
-lemma remove_guard_add_update_i: "t' = remove_guard_add_update t i r \<Longrightarrow>
-       (uid, (from, to), t') |\<in>| e \<Longrightarrow>
-       i \<le> max_input e"
-proof(induct e)
-  case empty
-  then show ?case
-    by simp
-next
-  case (insert x e)
-  then show ?case
-    sorry
-qed
-
 lemma finite_enumerate_aexp_regs: "finite (enumerate_aexp_regs r)"
 proof(induct r)
   case (L x)
@@ -332,68 +319,6 @@ next
   then show ?case 
     by (simp add: finite_enumerate_aexp_regs)
 qed
-
-lemma remove_guard_add_update_r: "t' = remove_guard_add_update t i r \<Longrightarrow>
-       (uid, (from, to), t') |\<in>| e \<Longrightarrow>
-       r \<le> max_reg e"
-proof(induct e)
-  case empty
-  then show ?case by simp
-next
-  have finite_choices: "\<And>t i. finite ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_regs x) \<union>
-               (\<Union>x\<in>set (Outputs t). enumerate_aexp_regs x) \<union>
-               (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_regs x) \<union>
-               (\<Union>x\<in>set (Updates t). case x of (r, uu_) \<Rightarrow> enumerate_aexp_regs (V r)))"
-  using finite_enumerate_gexp_regs finite_enumerate_aexp_regs
-  by auto
-  have spurious_insert_zero: "\<forall> i r t. Max (insert 0
-               (insert r
-                 ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_regs x) \<union>
-                  (\<Union>x\<in>set (Outputs t). enumerate_aexp_regs x) \<union>
-                  (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_regs x) \<union>
-                  (\<Union>x\<in>set (Updates t). case x of (r, uu_) \<Rightarrow> enumerate_aexp_regs (V r))))) = 
-        Max (insert r
-         ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_regs x) \<union>
-          (\<Union>x\<in>set (Outputs t). enumerate_aexp_regs x) \<union>
-          (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_regs x) \<union>
-          (\<Union>x\<in>set (Updates t). case x of (r, uu_) \<Rightarrow> enumerate_aexp_regs (V r))))"
-  proof-
-    show ?thesis
-      apply clarify
-      using finite_choices eliminate_zero_insert
-      by blast
-  qed
-  have aux: "\<And>r t. r \<le> Max (insert r
-             ((\<Union>x\<in>{x \<in> set (Guard t). \<forall>a. x \<noteq> gexp.Eq (V (I i)) a \<and> x \<noteq> gexp.Eq a (V (I i))}. enumerate_gexp_regs x) \<union>
-              (\<Union>x\<in>set (Outputs t). enumerate_aexp_regs x) \<union>
-              (\<Union>x\<in>set (Updates t). case x of (uu_, x) \<Rightarrow> enumerate_aexp_regs x) \<union>
-              (\<Union>x\<in>set (Updates t). case x of (r, uu_) \<Rightarrow> enumerate_aexp_regs (V r))))"
-    using finite_choices finite_insert_max
-    by blast
-  case (insert x e)
-  then show ?case
-    apply (simp add: max_reg_def)
-    apply (cases x)
-    apply simp
-    apply clarify
-    apply simp
-    apply (case_tac "(uid, (from, to), remove_guard_add_update t i r) |\<in>| e")
-     apply auto[1]
-    apply simp
-    apply (simp add: get_biggest_t_reg_def)
-    apply safe
-     apply simp
-     apply simp
-     apply (simp add: remove_guard_add_update_def)
-     apply simp
-    sorry
-qed
-
-lemma remove_guard_add_update_i_r: "t' = remove_guard_add_update t i r \<Longrightarrow>
-       (uid, (from, to), t') |\<in>| e \<Longrightarrow>
-       r \<le> max_reg e \<and> i \<le> max_input e"
-  using remove_guard_add_update_r remove_guard_add_update_i
-  by simp
 
 lemma generalise_output_preserves_label: "Label (generalise_output t r p) = Label t"
   by (simp add: generalise_output_def)

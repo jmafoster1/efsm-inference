@@ -205,7 +205,7 @@ lemma inaccepts_termination: "observe_trace drinks 0 <> [(STR ''select'', [Str '
   by (simp add: inaccepts_impossible fis_singleton_def is_singleton_def transitions)
 
 definition select_posterior :: "context" where
-  "select_posterior \<equiv> \<lbrakk>(V (R 1)) \<mapsto> {|Bc True|}, (V (R 2)) \<mapsto> {|Eq (Num 0)|}\<rbrakk>"
+  "select_posterior \<equiv> \<lbrakk>(V (R 1)) \<mapsto> {||}, (V (R 2)) \<mapsto> {|Eq (Num 0)|}\<rbrakk>"
 
 definition vend_fail_posterior :: "context" where
   "vend_fail_posterior \<equiv> \<lbrakk>(V (R 1)) \<mapsto> {|Bc True|}, (V (R 2)) \<mapsto> {|Lt (Num 100)|}\<rbrakk>"
@@ -245,7 +245,7 @@ proof-
     by (simp add: empty_inputs_are_true medial_empty select_posterior_def)
 qed
 
-lemma medial_select_posterior_vend: "medial select_posterior (Guard vend) = \<lbrakk>V (R 1) \<mapsto> {|Bc True|},
+lemma medial_select_posterior_vend: "medial select_posterior (Guard vend) = \<lbrakk>V (R 1) \<mapsto> {||},
                                                                              V (R 2) \<mapsto> {|(Geq (Num 100)), (Eq (Num 0))|}\<rbrakk>"
   apply (simp add: select_posterior_def vend_def)
   apply (simp add: medial_def pairs2context_def List.maps_def)

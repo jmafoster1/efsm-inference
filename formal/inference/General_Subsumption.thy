@@ -86,10 +86,6 @@ lemma not_undef_gval: "\<forall>r. c r = Undef \<or> gval (cexp2gexp r (c r)) s 
          c (V (I i)) \<noteq> Undef \<Longrightarrow> gval (cexp2gexp (V (I i)) (c (V (I i)))) s = true"
   by auto
 
-lemma ctx_simp2: "and (if r = i then snd (i, g) else cexp.Bc True) (c r) = 
-       (if r = i then and g (c r) else c r)"
-  by auto
-
 lemma gval_and_eq: "gval (cexp2gexp r (c r)) s \<noteq> true \<Longrightarrow> gval (cexp2gexp r (if r = i then and (cexp.Eq v) (c r) else c r)) s \<noteq> true"
   apply simp
   apply (simp only: gval_and gval_gAnd maybe_and_not_true)
@@ -154,10 +150,6 @@ lemma remove_guard_add_update:  "\<lparr>Label=l, Arity=a, Guard=[], Outputs=[],
 
 lemma filter_not_f_a: " \<not> f a \<Longrightarrow> filter f g = filter f (a#g)"
   by simp
-
-lemma and_gives_And: "c \<noteq> cexp.Bc True \<Longrightarrow> c' \<noteq> cexp.Bc True \<Longrightarrow> c' \<noteq> c \<Longrightarrow> (and c c') = And c c'"
-  apply (induct c c' rule: and.induct)
-  by auto
 
 lemma cval_make_gt_not: "cval (make_gt (not x)) r s = maybe_not (cval (make_gt x) r s)"
 proof(induct x)
@@ -265,29 +257,6 @@ qed
 lemma fBall_medial_filter: "fBall (medial c G r) (\<lambda>c. cval c r sa = true) \<Longrightarrow>
        fBall (medial c (filter f G) r) (\<lambda>c. cval c r sa = true)"
   using medial_filter by fastforce
-
-lemma "consistent (medial c (Guard t)) \<Longrightarrow>
-       fBall (if constrains_an_input ra then {|cexp.Bc True|} else Contexts.apply_updates (medial c (Guard t)) c (Updates t) ra)
-             (\<lambda>c. cval c ra s = true) \<Longrightarrow>
-    (ra = V (R r) \<longrightarrow>
-              fBall (medial c (filter (\<lambda>g. \<forall>a. g \<noteq> gexp.Eq (V (I i)) a \<and> g \<noteq> gexp.Eq a (V (I i))) (Guard t)) (V (I i)))
-               (\<lambda>c. cval c (V (R r)) s = true)) \<and>
-             (ra \<noteq> V (R r) \<longrightarrow>
-              (constrains_an_input ra \<longrightarrow> cval (cexp.Bc True) ra s = true) \<and>
-              (\<not> constrains_an_input ra \<longrightarrow>
-               fBall
-                (Contexts.apply_updates (medial c (filter (\<lambda>g. \<forall>a. g \<noteq> gexp.Eq (V (I i)) a \<and> g \<noteq> gexp.Eq a (V (I i))) (Guard t))) c
-                  (Updates t) ra)
-                (\<lambda>c. cval c ra s = true)))"
-  apply (case_tac "ra = V (R r)")
-   apply simp
-   defer
-   apply simp
-   apply (case_tac "constrains_an_input ra")
-    apply simp
-   apply simp
-  using apply_updates_filter apply blast
-  oops
 
 lemma map_snd_filter: "map snd (filter (\<lambda>(a, uu). a = v) (map (\<lambda>(x, y). (x, not |`| y)) l)) =
        map (\<lambda>(x, y). (not |`| y)) (filter (\<lambda>(a, uu). a = v) l)"
@@ -397,7 +366,7 @@ lemma generalisation_medial_equiv: "is_generalisation_of t' t e i r \<Longrighta
   apply (simp add: is_generalisation_of_def medial_append)
   using medial_general_subset by blast
 
-lemma apply_updates_same: "\<forall>i. c (V (I i)) = {|cexp.Bc True|} \<Longrightarrow>
+lemma apply_updates_same: "\<forall>i. c (V (I i)) = {||} \<Longrightarrow>
        \<forall>i. \<forall>u\<in>set U. fst u \<noteq> v \<and> fst u \<noteq> I i \<Longrightarrow>
        consistent (medial c (Guard t)) \<Longrightarrow>
        remove_obsolete_constraints (Contexts.apply_updates (medial c (Guard t)) c U) (fst |`| fset_of_list U) (V v) = c (V v)"
@@ -428,7 +397,7 @@ next
     by (smt fBexE)
 qed
 
-lemma posterior_same: "\<forall>i. c (V (I i)) = {|cexp.Bc True|} \<Longrightarrow>
+lemma posterior_same: "\<forall>i. c (V (I i)) = {||} \<Longrightarrow>
        \<forall>i. \<forall>u\<in>set (Updates t). fst u \<noteq> v \<and> fst u \<noteq> I i \<Longrightarrow>
        consistent (medial c (Guard t)) \<Longrightarrow>
        posterior c t (V v) = c (V v)"
@@ -458,7 +427,7 @@ lemma is_generalisation_of_updates_r: "is_generalisation_of t' t e i r \<Longrig
                      \<not>fBex (fset_of_list (Updates t')) (\<lambda>x. fst x = R r \<and> R r \<noteq> fst x)"
   by (simp add: is_generalisation_of_def)
 
-lemma posterior_Rr_undef: "\<forall>i. c (V (I i)) = {|Bc True|} \<Longrightarrow>
+lemma posterior_Rr_undef: "\<forall>i. c (V (I i)) = {||} \<Longrightarrow>
        c (V (R r)) = {|Undef|} \<Longrightarrow>
        \<forall>i. \<forall>u\<in>set (Updates t). fst u \<noteq> R r \<and> fst u \<noteq> I i \<Longrightarrow>
        consistent (medial c (Guard t)) \<Longrightarrow>
@@ -467,7 +436,7 @@ lemma posterior_Rr_undef: "\<forall>i. c (V (I i)) = {|Bc True|} \<Longrightarro
 
 lemma aux2: "is_generalisation_of t' t e i r \<Longrightarrow>
        c (V (R r)) = {|Undef|} \<Longrightarrow>
-       \<forall>i. c (V (I i)) = {|cexp.Bc True|} \<Longrightarrow>
+       \<forall>i. c (V (I i)) = {||} \<Longrightarrow>
        \<forall>i. \<forall>u\<in>set (Updates t). fst u \<noteq> R r \<and> fst u \<noteq> I i \<Longrightarrow>
        fBall (Contexts.apply_updates (medial c (Guard t)) c (Updates t') ra) (\<lambda>c. cval c ra ia = true) \<Longrightarrow>
        Contexts.apply_updates (medial c (Guard t)) c (Updates t) ra \<noteq> {|Undef|} \<Longrightarrow>
@@ -585,7 +554,6 @@ next
     by (simp add: aux3)
 qed
 
-
 lemma generealisation_medial: "is_generalisation_of t' t e i r \<Longrightarrow>
        medial c (Guard t') (V (I i)) = c (V (I i))"
   apply (simp add: is_generalisation_of_def remove_guard_add_update_def)
@@ -594,7 +562,7 @@ lemma generealisation_medial: "is_generalisation_of t' t e i r \<Longrightarrow>
 
 lemma generalisation_posterior_consistent: "is_generalisation_of t' t e i r \<Longrightarrow>
        c (V (R r)) = {|Undef|} \<Longrightarrow>
-       \<forall>i. c (V (I i)) = {|cexp.Bc True|} \<Longrightarrow>
+       \<forall>i. c (V (I i)) = {||} \<Longrightarrow>
        \<forall>i. \<forall>u\<in>set (Updates t). fst u \<noteq> R r \<and> fst u \<noteq> I i \<Longrightarrow>
        consistent (medial c (Guard t)) \<Longrightarrow>
        fBall (posterior c t a) (\<lambda>c. cval c a s = true) \<Longrightarrow>
@@ -614,7 +582,7 @@ lemma generalisation_posterior_consistent: "is_generalisation_of t' t e i r \<Lo
 
 lemma "is_generalisation_of t' t e i r \<Longrightarrow>
        c (V (R r)) = {|Undef|} \<Longrightarrow>
-       \<forall>i. c (V (I i)) = {|Bc True|} \<Longrightarrow>
+       \<forall>i. c (V (I i)) = {||} \<Longrightarrow>
        \<forall>u \<in> set (Updates t). fst u \<noteq> (R r) \<Longrightarrow>
        \<forall>i. \<forall>u \<in> set (Updates t). fst u \<noteq> (R r) \<and> fst u \<noteq> (I i) \<Longrightarrow>
        t' \<^sub>c\<sqsupseteq> t"
@@ -652,7 +620,5 @@ lemma "is_generalisation_of t' t e i r \<Longrightarrow>
   apply (simp add: posterior_def posterior_separate_def Let_def)
   apply clarify
   by (simp add: cval_false)
-
-
 
 end

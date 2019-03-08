@@ -17,8 +17,8 @@ type_synonym "context" = "aexp \<Rightarrow> cexp fset"
 oversimplification*)
 abbreviation empty :: "context" ("\<lbrakk>\<rbrakk>") where
   "empty \<equiv> (\<lambda>x. case x of
-    (V v) \<Rightarrow> (case v of R n \<Rightarrow> {|Undef|} | I n \<Rightarrow> {|Bc True|}) |
-    _ \<Rightarrow> {|Bc True|}
+    (V v) \<Rightarrow> (case v of R n \<Rightarrow> {|Undef|} | I n \<Rightarrow> {||}) |
+    _ \<Rightarrow> {||}
   )"
 syntax
   "_updbind" :: "'a \<Rightarrow> 'a \<Rightarrow> updbind" ("(2_ \<mapsto>/ _)")
@@ -47,7 +47,7 @@ next
     by simp
 qed
 
-lemma empty_variable_constraints: "\<lbrakk>\<rbrakk> (V (R ri)) = {|Undef|} \<and> \<lbrakk>\<rbrakk> (V (I i)) = {|Bc True|}"
+lemma empty_variable_constraints: "\<lbrakk>\<rbrakk> (V (R ri)) = {|Undef|} \<and> \<lbrakk>\<rbrakk> (V (I i)) = {||}"
   by simp
 
 fun get :: "context \<Rightarrow> aexp \<Rightarrow> cexp fset" where
@@ -82,7 +82,7 @@ lemma inconsistent_false: "\<not>consistent (\<lambda>i. {|Bc False|})"
   using possible_false_not_consistent
   by simp
 
-lemma consistent_empty_1: "empty r = {|Undef|} \<or> empty r = {|Bc True|}"
+lemma consistent_empty_1: "empty r = {|Undef|} \<or> empty r = {||}"
   apply (cases r)
   prefer 2
     apply (case_tac x2)
@@ -239,7 +239,7 @@ fun constrains_an_input :: "aexp \<Rightarrow> bool" where
 definition remove_obsolete_constraints :: "context \<Rightarrow> vname fset \<Rightarrow> context" where
   "remove_obsolete_constraints c vs = (\<lambda>a. if \<exists>n. aexp_constrains a (V (I n)) \<or> fBex vs (\<lambda>x. aexp_constrains (V x) a \<and> a \<noteq> (V x)) then \<lbrakk>\<rbrakk> a else c a)"
 
-lemma empty_inputs_are_true: "constrains_an_input x \<Longrightarrow> \<lbrakk>\<rbrakk> x = {|Bc True|}"
+lemma empty_inputs_are_true: "constrains_an_input x \<Longrightarrow> \<lbrakk>\<rbrakk> x = {||}"
   apply (case_tac x)
      apply simp
     apply (case_tac x2)
@@ -401,7 +401,7 @@ lemma transition_subsumes_self: "t \<^sub>c\<sqsupseteq> t"
 lemma medial_preserves_existing_elements: "x |\<in>| c r \<Longrightarrow> x |\<in>| medial c G r "
   using anterior_subset_medial by blast
 
-lemma remove_obsolete_constraints_input: "remove_obsolete_constraints c s (V (I i)) = {|Bc True|}"
+lemma remove_obsolete_constraints_input: "remove_obsolete_constraints c s (V (I i)) = {||}"
   by (simp add: remove_obsolete_constraints_def)
 
 lemma filter_simp: "I i |\<notin>| fst |`| fset_of_list as \<Longrightarrow> 
