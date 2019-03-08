@@ -14,3 +14,6 @@
 # Ignore active.json
 inference-tool/project/target/
 inference-tool/target/
+
+# Ignore Isabelle output
+formal/output/
