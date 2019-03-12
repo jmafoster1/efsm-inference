@@ -366,7 +366,7 @@ lemma generalisation_medial_equiv: "is_generalisation_of t' t e i r \<Longrighta
   apply (simp add: is_generalisation_of_def medial_append)
   using medial_general_subset by blast
 
-lemma apply_updates_same: "\<forall>i. c (V (I i)) = {||} \<Longrightarrow>
+lemma apply_updates_same: "\<forall>i. c (V (I i)) = {|Bc True|} \<Longrightarrow>
        \<forall>i. \<forall>u\<in>set U. fst u \<noteq> v \<and> fst u \<noteq> I i \<Longrightarrow>
        consistent (medial c (Guard t)) \<Longrightarrow>
        remove_obsolete_constraints (Contexts.apply_updates (medial c (Guard t)) c U) (fst |`| fset_of_list U) (V v) = c (V v)"
@@ -397,7 +397,7 @@ next
     by (smt fBexE)
 qed
 
-lemma posterior_same: "\<forall>i. c (V (I i)) = {||} \<Longrightarrow>
+lemma posterior_same: "\<forall>i. c (V (I i)) = {|Bc True|} \<Longrightarrow>
        \<forall>i. \<forall>u\<in>set (Updates t). fst u \<noteq> v \<and> fst u \<noteq> I i \<Longrightarrow>
        consistent (medial c (Guard t)) \<Longrightarrow>
        posterior c t (V v) = c (V v)"
@@ -427,7 +427,7 @@ lemma is_generalisation_of_updates_r: "is_generalisation_of t' t e i r \<Longrig
                      \<not>fBex (fset_of_list (Updates t')) (\<lambda>x. fst x = R r \<and> R r \<noteq> fst x)"
   by (simp add: is_generalisation_of_def)
 
-lemma posterior_Rr_undef: "\<forall>i. c (V (I i)) = {||} \<Longrightarrow>
+lemma posterior_Rr_undef: "\<forall>i. c (V (I i)) = {|Bc True|} \<Longrightarrow>
        c (V (R r)) = {|Undef|} \<Longrightarrow>
        \<forall>i. \<forall>u\<in>set (Updates t). fst u \<noteq> R r \<and> fst u \<noteq> I i \<Longrightarrow>
        consistent (medial c (Guard t)) \<Longrightarrow>
@@ -436,7 +436,7 @@ lemma posterior_Rr_undef: "\<forall>i. c (V (I i)) = {||} \<Longrightarrow>
 
 lemma aux2: "is_generalisation_of t' t e i r \<Longrightarrow>
        c (V (R r)) = {|Undef|} \<Longrightarrow>
-       \<forall>i. c (V (I i)) = {||} \<Longrightarrow>
+       \<forall>i. c (V (I i)) = {|Bc True|} \<Longrightarrow>
        \<forall>i. \<forall>u\<in>set (Updates t). fst u \<noteq> R r \<and> fst u \<noteq> I i \<Longrightarrow>
        fBall (Contexts.apply_updates (medial c (Guard t)) c (Updates t') ra) (\<lambda>c. cval c ra ia = true) \<Longrightarrow>
        Contexts.apply_updates (medial c (Guard t)) c (Updates t) ra \<noteq> {|Undef|} \<Longrightarrow>
@@ -562,7 +562,7 @@ lemma generealisation_medial: "is_generalisation_of t' t e i r \<Longrightarrow>
 
 lemma generalisation_posterior_consistent: "is_generalisation_of t' t e i r \<Longrightarrow>
        c (V (R r)) = {|Undef|} \<Longrightarrow>
-       \<forall>i. c (V (I i)) = {||} \<Longrightarrow>
+       \<forall>i. c (V (I i)) = {|Bc True|} \<Longrightarrow>
        \<forall>i. \<forall>u\<in>set (Updates t). fst u \<noteq> R r \<and> fst u \<noteq> I i \<Longrightarrow>
        consistent (medial c (Guard t)) \<Longrightarrow>
        fBall (posterior c t a) (\<lambda>c. cval c a s = true) \<Longrightarrow>
@@ -582,7 +582,7 @@ lemma generalisation_posterior_consistent: "is_generalisation_of t' t e i r \<Lo
 
 lemma is_generalisation_of_subsumes_original: "is_generalisation_of t' t e i r \<Longrightarrow>
        c (V (R r)) = {|Undef|} \<Longrightarrow>
-       \<forall>i. c (V (I i)) = {||} \<Longrightarrow>
+       \<forall>i. c (V (I i)) = {|Bc True|} \<Longrightarrow>
        \<forall>u \<in> set (Updates t). fst u \<noteq> (R r) \<Longrightarrow>
        \<forall>i. \<forall>u \<in> set (Updates t). fst u \<noteq> (R r) \<and> fst u \<noteq> (I i) \<Longrightarrow>
        t' \<^sub>c\<sqsupseteq> t"
