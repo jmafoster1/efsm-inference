@@ -1,5 +1,5 @@
 theory LinkedIn
-imports "../EFSM" EFSM_LTL
+imports "../EFSM"
 begin
 
 definition login :: "transition" where

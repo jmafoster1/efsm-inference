@@ -46,5 +46,5 @@ definition vend :: transition_matrix where
          |}"
 
 lemma "\<forall> i r. \<not> (apply_guards (Guard t3) (join_ir i r) \<and> apply_guards (Guard t4) (join_ir i r))"
-  by (simp add: t3_def t4_def) 
+  by (simp add: t3_def t4_def gval.simps)
 end

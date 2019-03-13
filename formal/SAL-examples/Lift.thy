@@ -102,11 +102,35 @@ definition lift :: transition_matrix where
 lemma "observe_trace lift 0 <> [((STR ''goUp''), [Num 1]), ((STR ''goUp''), [Num 0]), ((STR ''open''), [])] = [[Some (Num 1)], [Some (Num 0)], [Some (Num 1)]]"
 proof-
   have possible_steps_0_goup: "possible_steps lift 0 Map.empty (STR ''goUp'') [Num 1] = {|(1, t1up)|}"
-    apply (simp add: possible_steps_def lift_def transitions)
-    by force
+  proof-
+    have filter: " ffilter
+     (\<lambda>((origin, dest), t).
+         origin = 0 \<and>
+         Label t = STR ''goUp'' \<and>
+         Suc 0 = Arity t \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state [Num 1] 1 (I n) | R x \<Rightarrow> Map.empty x))
+     lift =
+    {|((0, 1), t1up)|}"
+      apply (simp add: Abs_ffilter Set.filter_def lift_def)
+      apply safe
+      by (simp_all add: transitions gval.simps ValueGt_def)
+    show ?thesis
+      by (simp add: possible_steps_def filter)
+  qed
   have possible_steps_1_goup: "possible_steps lift 1 Map.empty (STR ''goUp'') [Num 0] = {|(0, t3up)|}"
-    apply (simp add: possible_steps_def lift_def transitions)
-    by force
+  proof-
+    have filter: "ffilter
+     (\<lambda>((origin, dest), t).
+         origin = 1 \<and>
+         Label t = STR ''goUp'' \<and>
+         Suc 0 = Arity t \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state [Num 0] 1 (I n) | R x \<Rightarrow> Map.empty x))
+     lift =
+    {|((1, 0), t3up)|}"
+      apply (simp add: Abs_ffilter Set.filter_def lift_def)
+      apply safe
+      by (simp_all add: transitions gval.simps ValueEq_def ValueGt_def)
+    show ?thesis
+      by (simp add: possible_steps_def filter)
+  qed
   have possible_steps_open_0: "possible_steps lift 0 Map.empty (STR ''open'') [] = {|(3, openDoors)|}"
     apply (simp add: possible_steps_def lift_def transitions)
     by force

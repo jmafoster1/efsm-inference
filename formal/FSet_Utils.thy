@@ -23,6 +23,21 @@ lemma fprod_singletons: "{|a|} |\<times>| {|b|} = {|(a, b)|}"
 lemma fset_both_sides: "(Abs_fset s = f) = (fset (Abs_fset s) = fset f)"
   by (simp add: fset_inject)
 
+lemma Abs_ffilter: "(ffilter f s = s') = (Set.filter f (fset s) = (fset s'))"
+  by (simp add: ffilter_def fset_both_sides Abs_fset_inverse)
+
+lemma ffilter_empty: "ffilter f {||} = {||}"
+  apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse)
+  by auto
+
+lemma ffilter_finsert: "ffilter f (finsert a s) = (if f a then finsert a (ffilter f s) else (ffilter f s))"
+  apply simp
+  apply standard
+   apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse)
+   apply auto[1]
+  apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse)
+  by auto
+
 lemma singleton_singleton [simp]: "fis_singleton {|a|}"
   by (simp add: fis_singleton_def)
 
