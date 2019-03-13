@@ -26,6 +26,9 @@ fun ltl_step :: "transition_matrix \<Rightarrow> nat option \<Rightarrow> datast
 primcorec make_full_observation :: "transition_matrix \<Rightarrow> nat option \<Rightarrow> datastate \<Rightarrow> event stream \<Rightarrow> full_observation" where
   "make_full_observation e s d i = (let (s', o', d') = ltl_step e s d (shd i) in \<lparr>statename = s, datastate = d, event=(shd i), output = o'\<rparr>##(make_full_observation e s' d' (stl i)))"
 
+lemma make_full_observation_unfold: "make_full_observation e s d i = (let (s', o', d') = ltl_step e s d (shd i) in \<lparr>statename = s, datastate = d, event=(shd i), output = o'\<rparr>##(make_full_observation e s' d' (stl i)))"
+  using make_full_observation.code by blast
+
 abbreviation watch :: "transition_matrix \<Rightarrow> event stream \<Rightarrow> full_observation" where
   "watch e i \<equiv> (make_full_observation e (Some 0) <> i)"
 
@@ -57,9 +60,6 @@ definition InputEq :: "value list \<Rightarrow> state stream \<Rightarrow> bool"
 
 definition OutputEq :: "nat \<Rightarrow> value option \<Rightarrow> state stream \<Rightarrow> bool" where
   "OutputEq n v s \<equiv> Outputs n s = v"
-
-lemma null_forever [simp]: "s = make_full_observation e (Some 0) <> t \<Longrightarrow> null s \<Longrightarrow> nxt (alw null) s"
-  by simp
 
 abbreviation some_state :: "full_observation \<Rightarrow> bool" where
   "some_state s \<equiv> (\<exists>state. statename (shd s) = Some state)"
