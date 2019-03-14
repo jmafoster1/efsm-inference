@@ -3,19 +3,12 @@ theory Code_Generation
    "HOL-Library.Code_Target_Numeral" Inference "../FSet_Utils" SelectionStrategies EFSM_Dot
    Type_Inference
    Trace_Matches
+   Increment_Reset
 begin
-
-definition scalaChoiceAux :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "scalaChoiceAux t t' = False"
-
-definition scalaNondeterministicSimulates :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> bool" where
-  "scalaNondeterministicSimulates a b c = False"
-
-definition scalaDirectlySubsumes :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "scalaDirectlySubsumes a b c d e = False"
 
 declare GExp.satisfiable_def [code del]
 declare directly_subsumes_def [code del]
+declare choice_def [code del]
 
 declare consistent_def [code del]
 declare CExp.satisfiable_def [code del]
@@ -47,56 +40,9 @@ lemma [code]: "step e s r l i = (if size (possible_steps e s r l i) = 1 then (
   apply (simp add: is_singleton_altdef)
   by (metis One_nat_def fis_singleton.transfer is_singleton_altdef)
 
-lemma [code]: "nondeterministic_step e s r l i = (
-  if possible_steps e s r l i \<noteq> {||} then (
-    let (s', t) =  (Eps (\<lambda>x. x |\<in>| (possible_steps e s r l i))) in
-    Some (t, s', (EFSM.apply_outputs (Outputs t) (join_ir i r)), (EFSM.apply_updates (Updates t) (join_ir i r) r)))
-  else None)"
-  apply (simp add: nondeterministic_step_def)
-  by auto
-
-lemma apply_guards_equals_conjoin: "apply_guards g s = (gval (GExp.conjoin g) s = Some True)"
-proof(induct g)
-  case Nil
-  then show ?case
-    by (simp add: gval.simps)
-next
-  case (Cons a g)
-  then show ?case
-    apply simp
-    apply (case_tac "gval a s")
-     apply simp
-    apply simp
-    apply (case_tac "gval (GExp.conjoin g) s")
-     apply simp
-    by simp
-qed
-
-lemma [code]: "(choice t1 t2) = (Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> GExp.satisfiable (gAnd (GExp.conjoin (Guard t1)) (GExp.conjoin (Guard t2))))"
-  apply (simp add: choice_def GExp.satisfiable_def)
-  apply safe
-   apply (rule_tac x=s in exI)
-   apply (simp add: apply_guards_equals_conjoin)
-  apply (rule_tac x=s in exI)
-  apply (case_tac "gval (GExp.conjoin (Guard t1)) s")
-   apply (simp add: apply_guards_equals_conjoin)
-  apply (case_tac "gval (GExp.conjoin (Guard t2)) s")
-  apply (simp add: apply_guards_equals_conjoin)
-  by (simp add: apply_guards_equals_conjoin)
-
 fun guard_filter_code :: "nat \<Rightarrow> guard \<Rightarrow> bool" where
   "guard_filter_code inputX (gexp.Eq a b) = (a \<noteq> (V (I inputX)) \<and> b \<noteq> (V (I inputX)))" |
   "guard_filter_code _ _ = True"
-
-lemma[code]: "guard_filter = guard_filter_code"
-  unfolding guard_filter_def
-  apply (rule ext)+
-  apply (case_tac g)
-  prefer 2
-    apply (case_tac "x21 = (V (I inputX))")
-     apply auto[1]
-    apply (case_tac "x22 = (V (I inputX))")
-  by auto
 
 lemma[code]: "leaves uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (fst x = uid)) t))))"
   by (simp only: leaves_def exists_is_fst)
@@ -104,27 +50,52 @@ lemma[code]: "leaves uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (fst
 lemma[code]: "arrives uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. (fst x = uid)) t))))"
   by (simp only: arrives_def exists_is_fst)
 
+lemma gval_fold: "(gval (fold gAnd G (gexp.Bc True)) s = true) = (\<forall>g\<in>set (map (\<lambda>g. gval g s) G). g = true)"
+proof(induct G rule: rev_induct)
+  case Nil
+  then show ?case
+    by (simp add: gval.simps)
+next
+  case (snoc x xs)
+  then show ?case
+    by (simp add: gval_gAnd_True)
+qed
+
+lemma choice_aux: "(\<exists>s. apply_guards G s \<and> apply_guards G' s) = GExp.satisfiable ((fold gAnd (G@G') (gexp.Bc True)))"
+  apply (simp only: GExp.satisfiable_def gval_fold apply_guards_alt)
+  by auto
+
+lemma [code]: "choice t t' = ((Label t) = (Label t') \<and>
+                      (Arity t) = (Arity t') \<and>
+                      GExp.satisfiable ((fold gAnd (Guard t@Guard t') (gexp.Bc True))))"
+  unfolding choice_def
+  using choice_aux
+  by blast
+
+
 code_pred satisfies_trace.
 
 declare ListMem_iff [code]
 
-lemma finite__generalisation [code]: "is_generalisation_of t' t e =
-                                      (\<exists>i \<in> (ran (max_input e)).
-                                       \<exists>r \<in> (ran (max_reg e)).
-                                       \<exists>to \<in> fset (S e).
-                                       \<exists>from \<in> fset (S e).
-                                       \<exists>uid \<in> fset (uids e).  t' = remove_guard_add_update t i r \<and> (uid, (from, to), t') |\<in>| e)"
-  apply (simp add: is_generalisation_of_def)
-  apply standard
-   defer
-   apply auto[1]
-  apply safe
-  using remove_guard_add_update_i_r ran_leq_n
-   apply blast
-  using to_from_in_S_uid_in_uids fmember_implies_member
-  by metis
+fun guardMatch_alt :: "gexp list \<Rightarrow> gexp list \<Rightarrow> bool" where
+  "guardMatch_alt [(gexp.Eq (V (I i)) (L (Num n)))] [(gexp.Eq (V (I i')) (L (Num n')))] = (i = 1 \<and> i' = 1)" |
+  "guardMatch_alt _ _ = False"
 
-export_code is_generalisation_of iterative_learn finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot GExp.conjoin naive_score null_generator null_modifier nondeterministic learn in Scala
+lemma [code]: "guardMatch t1 t2 = guardMatch_alt (Guard t1) (Guard t2)"
+  apply (simp add: guardMatch_def)
+  using One_nat_def guardMatch_alt.elims(2) by fastforce
+
+fun outputMatch_alt :: "output_function list \<Rightarrow> output_function list \<Rightarrow> bool" where
+  "outputMatch_alt [L (Num n)] [L (Num n')] = True" |
+  "outputMatch_alt _ _ = False"
+
+lemma [code]: "outputMatch t1 t2 = outputMatch_alt (Outputs t1) (Outputs t2)"
+  by (metis outputMatch_alt.elims(2) outputMatch_alt.simps(1) outputMatch_def)
+
+termination infer sorry
+termination resolve_nondeterminism sorry
+
+export_code insert_increment try_heuristics nondeterministic finfun_apply iterative_learn infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier learn in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

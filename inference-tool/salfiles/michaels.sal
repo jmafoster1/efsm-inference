@@ -10,7 +10,7 @@ STRING : TYPE = {String_dummy_};
                                                                  %%10
 STATES : TYPE =
     {State_0, State_1, State_2, State_3, State_4, NULL_STATE};
-
+  
 Value:CONTEXT = value {N_, STRING};
 Arithmetic:CONTEXT = arithmetic{N_, STRING};
 
@@ -32,7 +32,7 @@ value_plus : [[VALUE_OPTION, VALUE_OPTION] -> VALUE_OPTION] =
     Arithmetic ! value_plus;
 value_minus : [[VALUE_OPTION, VALUE_OPTION] -> VALUE_OPTION] =
     Arithmetic ! value_minus;
-
+  
 value_le : [[VALUE_OPTION, VALUE_OPTION] -> BOOL_OPTION] =
     Arithmetic ! value_le;
 value_ge : [[VALUE_OPTION, VALUE_OPTION] -> BOOL_OPTION] =
@@ -43,12 +43,12 @@ value_gt : [[VALUE_OPTION, VALUE_OPTION] -> BOOL_OPTION] =
     Arithmetic ! value_gt;
 value_eq : [[VALUE_OPTION, VALUE_OPTION] -> BOOL_OPTION] =
     Arithmetic ! value_eq;
-
+  
 OutputSequence : CONTEXT =
     sequence {B_VALUE_OPTION; ValueOption ! OPTION_BB, 1};
 InputSequence : CONTEXT =
     sequence {B_VALUE; value {N_, STRING} ! VALUE_BB, 1};          %%50
-
+  
 gval : [BOOL_OPTION -> bool] =
 LAMBDA(g:BOOL_OPTION): g = option {bool} !Some(TRUE);
 
@@ -67,7 +67,7 @@ MichaelsEFSM : MODULE =
     ]
     TRANSITION [
       %% coin
-      COIN_1551953387694 :                                       %%70
+      COIN_1552576565863 :                                       %%70
           cfstate = State_1 AND label = coin AND
               InputSequence ! size?(I) = 1 AND
               gval(value_eq(Some(I(1)), Some(NUM(50))))
@@ -78,7 +78,7 @@ MichaelsEFSM : MODULE =
           r_1' = r_1
       []
       %% coin                                                    %%80
-      COIN_1551953387698 :
+      COIN_1552576565869 :
           cfstate = State_1 AND label = coin AND
               InputSequence ! size?(I) = 1 AND
               gval(value_eq(Some(I(1)), Some(NUM(100))))
@@ -89,16 +89,16 @@ MichaelsEFSM : MODULE =
           r_1' = r_1
       []                                                         %%90
       %% select
-      SELECT_1551953387698 :
+      SELECT_1552576565869 :
           cfstate = State_0 AND label = select AND
               InputSequence ! size?(I) = 1
         -->
           cfstate' = State_1;
-          r_1' = Some(I(1));
+          r_1' = I(1);
           O' = OutputSequence ! empty
       []
       %% coin                                                    %%100
-      COIN_1551953387698 :
+      COIN_1552576565869 :
           cfstate = State_2 AND label = coin AND
               InputSequence ! size?(I) = 1 AND
               gval(value_eq(Some(I(1)), Some(NUM(50))))
@@ -109,7 +109,7 @@ MichaelsEFSM : MODULE =
           r_1' = r_1
       []                                                         %%110
       %% vend
-      VEND_1551953387698 :
+      VEND_1552576565869 :
           cfstate = State_3 AND label = vend AND
               InputSequence ! size?(I) = 0
         -->
@@ -125,5 +125,4 @@ MichaelsEFSM : MODULE =
           r_1' = r_1
     ]
   END;
-  nullInState0: THEOREM MichaelsEFSM |- G(cfstate = State_0 => r_1 = ValueOption ! None);
 END

@@ -17,6 +17,12 @@ pass them around in the inference functions.
 \<close>
 type_synonym iEFSM = "(nat \<times> (nat \<times> nat) \<times> transition) fset"
 
+definition get_by_id :: "iEFSM \<Rightarrow> nat \<Rightarrow> transition" where
+  "get_by_id e u = snd (snd (fthe_elem (ffilter (\<lambda>(uid, _). uid = u) e)))"
+
+definition max_uid :: "iEFSM \<Rightarrow> nat" where
+  "max_uid e = fMax (fimage fst e)"
+
 primrec toiEFSM_aux :: "nat \<Rightarrow> ((nat \<times> nat) \<times> transition) list \<Rightarrow> (nat \<times> (nat \<times> nat) \<times> transition) list" where
   "toiEFSM_aux _ [] = []" |
   "toiEFSM_aux n (h#t) = (n, h)#(toiEFSM_aux (n+1) t)"
@@ -134,6 +140,10 @@ definition score :: "iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" wher
 definition leaves :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
   "leaves uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (\<exists>s. x = (uid, s))) t))))"
 
+lemma leaves_code: "leaves uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. fst x = uid) t))))"
+  apply (simp add: leaves_def)
+  by (metis fst_eqD surj_pair)
+
 definition arrives :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
   "arrives uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. (\<exists>s. x = (uid, s))) t))))"
 
@@ -141,6 +151,10 @@ lemma exists_is_fst: "(\<lambda>x. (\<exists>s. x = (uid, s))) = (\<lambda>x. fs
   apply (rule ext)
   apply clarify
   by simp
+
+lemma arrives_code: "arrives uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. fst x = uid) t))))"
+  apply (simp add: arrives_def)
+  by (metis fst_eqD surj_pair)
 
 inductive satisfies_trace :: "execution \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> bool" where
   base: "satisfies_trace [] e s d" |
@@ -279,4 +293,35 @@ definition uids :: "iEFSM \<Rightarrow> nat fset" where
 lemma to_from_in_S_uid_in_uids: "(uid, (from, to), t) |\<in>| e \<Longrightarrow> to |\<in>| S e \<and> from |\<in>| S e \<and> uid |\<in>| uids e"
   apply (simp add: S_def uids_def)
   by force
+
+fun enumerate_aexp_regs :: "aexp \<Rightarrow> nat set" where
+  "enumerate_aexp_regs (L _) = {}" |
+  "enumerate_aexp_regs (V (R n)) = {n}" |
+  "enumerate_aexp_regs (V (I _)) = {}" |
+  "enumerate_aexp_regs (Plus v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
+  "enumerate_aexp_regs (Minus v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va"
+
+fun enumerate_gexp_regs :: "gexp \<Rightarrow> nat set" where
+  "enumerate_gexp_regs (GExp.Bc _) = {}" |
+  "enumerate_gexp_regs (GExp.Null v) = enumerate_aexp_regs v" |
+  "enumerate_gexp_regs (GExp.Eq v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
+  "enumerate_gexp_regs (GExp.Lt v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
+  "enumerate_gexp_regs (GExp.Nor v va) = enumerate_gexp_regs v \<union> enumerate_gexp_regs va"
+
+definition get_by_id_biggest_t_reg :: "transition \<Rightarrow> nat" where
+  "get_by_id_biggest_t_reg t = Max ({0} \<union>
+                                (\<Union> set (map enumerate_gexp_regs (Guard t))) \<union>
+                                (\<Union> set (map enumerate_aexp_regs (Outputs t))) \<union>
+                                (\<Union> set (map (\<lambda>(_, u). enumerate_aexp_regs u) (Updates t))) \<union>
+                                (\<Union> set (map (\<lambda>(r, _). enumerate_aexp_regs (V r)) (Updates t))))"
+
+definition max_reg :: "iEFSM \<Rightarrow> nat" where
+  "max_reg e = fMax (fimage (\<lambda>(_, _, t). get_by_id_biggest_t_reg t) e)"
+
+primrec try_heuristics :: "update_modifier list \<Rightarrow> update_modifier" where
+  "try_heuristics [] = null_modifier" |
+  "try_heuristics (h#t) = (\<lambda>a b c d e. case h a b c d e of None \<Rightarrow> try_heuristics t a b c d e | Some e' \<Rightarrow> Some e')"
+
+definition replaceAll :: "iEFSM \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
+  "replaceAll e old new = fimage (\<lambda>(uid, (from, to), t). if t = old then (uid, (from, to), new) else (uid, (from, to), t)) e"
 end

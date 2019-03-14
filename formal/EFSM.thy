@@ -56,6 +56,17 @@ primrec apply_guards :: "guard list \<Rightarrow> datastate \<Rightarrow> bool" 
   "apply_guards [] _ = True" |
   "apply_guards (h#t) s =  ((gval h s) = true \<and> (apply_guards t s))"
 
+lemma apply_guards_alt: "apply_guards G s = (\<forall>g \<in> set (map (\<lambda>g. gval g s) G). g = true)"
+proof(induct G)
+case Nil
+  then show ?case 
+    by simp
+next
+  case (Cons a G)
+  then show ?case
+    by simp
+qed
+
 primrec apply_updates :: "(vname \<times> aexp) list \<Rightarrow> datastate \<Rightarrow> datastate \<Rightarrow> datastate" where
   "apply_updates [] _ new = new" |
   "apply_updates (h#t) old new = (\<lambda>x. if x = (fst h) then (aval (snd h) old) else (apply_updates t old new) x)"
@@ -106,6 +117,13 @@ lemma possible_steps_alt: "(possible_steps e s r l i = {|(d, t)|}) = (ffilter
    apply (simp add: possible_steps_def possible_steps_alt_aux)
   by (simp add: possible_steps_def)
 
+lemma possible_steps_singleton: "(ffilter
+     (\<lambda>((origin, dest), t).
+         origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state i 1 (I n) | R n \<Rightarrow> r (R n)))
+     e =
+    {|((s, d), t)|}) \<Longrightarrow> (possible_steps e s r l i = {|(d, t)|})"
+  by (simp add: possible_steps_alt)
+
 lemma singleton_dest: "fis_singleton (possible_steps e s r aa b) \<Longrightarrow>
        fthe_elem (possible_steps e s r aa b) = (baa, aba) \<Longrightarrow>
        ((s, baa), aba) |\<in>| e"
@@ -119,6 +137,18 @@ definition step :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate 
                      Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))
                    )
                    else None)"
+
+lemma no_possible_steps: "possible_steps e s r l i = {||} \<Longrightarrow> step e s r l i = None"
+  by (simp add: step_def)
+
+lemma one_possible_step: "possible_steps e s r l i = {|(s', t)|} \<Longrightarrow>
+       apply_outputs (Outputs t) (join_ir i r) = p \<Longrightarrow>
+       apply_updates (Updates t) (join_ir i r) r = u \<Longrightarrow>
+       step e s r l i = Some (t, s', p, u)"
+  apply (simp add: step_def)
+  apply standard
+  using One_nat_def apply presburger
+  using One_nat_def by presburger
 
 lemma step_empty[simp]:"step {||} s r l i = None"
 proof-

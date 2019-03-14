@@ -37,8 +37,8 @@ abbreviation ioTag :: "index \<Rightarrow> ioTag" where
 abbreviation inx :: "index \<Rightarrow> nat" where
   "inx i \<equiv> snd (snd i)"
 
-definition get_intratrace_matches :: "execution \<Rightarrow> (index \<times> index) fset" where
-  "get_intratrace_matches e = Abs_fset {(a, b). lookup a e = lookup b e \<and> eventNum a \<le> eventNum b}"
+definition get_by_id_intratrace_matches :: "execution \<Rightarrow> (index \<times> index) fset" where
+  "get_by_id_intratrace_matches e = Abs_fset {(a, b). lookup a e = lookup b e \<and> eventNum a \<le> eventNum b}"
 
 primrec index :: "value list \<Rightarrow> nat \<Rightarrow> ioTag \<Rightarrow> nat \<Rightarrow> index fset" where
   "index [] _ _ _ = {||}" |
@@ -50,22 +50,22 @@ definition io_index :: "nat \<Rightarrow> value list \<Rightarrow> value list \<
 definition indices :: "execution \<Rightarrow> index fset" where
   "indices e = foldl (|\<union>|) {||} (map (\<lambda>(eventNo, (label, inputs, outputs)). io_index eventNo inputs outputs) (enumerate 0 e))"
 
-definition get_intratrace_matches_alt :: "execution \<Rightarrow> (index \<times> index) fset" where
-  "get_intratrace_matches_alt e = ffilter (\<lambda>(a, b). lookup a e = lookup b e \<and> eventNum a \<le> eventNum b \<and> a \<noteq> b) (indices e |\<times>| indices e)"
+definition get_by_id_intratrace_matches_alt :: "execution \<Rightarrow> (index \<times> index) fset" where
+  "get_by_id_intratrace_matches_alt e = ffilter (\<lambda>(a, b). lookup a e = lookup b e \<and> eventNum a \<le> eventNum b \<and> a \<noteq> b) (indices e |\<times>| indices e)"
 
-lemma get_intratrace_matches_preproces:  "get_intratrace_matches_alt e = ffilter (\<lambda>(a, b). lookup a e = lookup b e) (ffilter (\<lambda>(a, b). eventNum a \<le> eventNum b \<and> a \<noteq> b) (indices e |\<times>| indices e))"
-  apply (simp add: get_intratrace_matches_alt_def)
+lemma get_by_id_intratrace_matches_preproces:  "get_by_id_intratrace_matches_alt e = ffilter (\<lambda>(a, b). lookup a e = lookup b e) (ffilter (\<lambda>(a, b). eventNum a \<le> eventNum b \<and> a \<noteq> b) (indices e |\<times>| indices e))"
+  apply (simp add: get_by_id_intratrace_matches_alt_def)
   apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse fprod_def)
   apply (simp add: Set.filter_def)
   by auto
 
-primrec get_all_intratrace_matches :: "log \<Rightarrow> (index \<times> index) fset list" where
-  "get_all_intratrace_matches [] = []" |
-  "get_all_intratrace_matches (h#t) = (get_intratrace_matches h)#(get_all_intratrace_matches t)"
+primrec get_by_id_all_intratrace_matches :: "log \<Rightarrow> (index \<times> index) fset list" where
+  "get_by_id_all_intratrace_matches [] = []" |
+  "get_by_id_all_intratrace_matches (h#t) = (get_by_id_intratrace_matches h)#(get_by_id_all_intratrace_matches t)"
 
-primrec get_all_intratrace_matches_alt :: "log \<Rightarrow> (index \<times> index) fset list" where
-  "get_all_intratrace_matches_alt [] = []" |
-  "get_all_intratrace_matches_alt (h#t) = (get_intratrace_matches_alt h)#(get_all_intratrace_matches_alt t)"
+primrec get_by_id_all_intratrace_matches_alt :: "log \<Rightarrow> (index \<times> index) fset list" where
+  "get_by_id_all_intratrace_matches_alt [] = []" |
+  "get_by_id_all_intratrace_matches_alt (h#t) = (get_by_id_intratrace_matches_alt h)#(get_by_id_all_intratrace_matches_alt t)"
 
 (* 
   To detect all intertrace matches, walk the trace in the current machine and replace eventNo with
@@ -95,10 +95,7 @@ definition find_intertrace_matches_aux :: "(index \<times> index) fset \<Rightar
   "find_intertrace_matches_aux intras e t = fimage (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). (((walk_up_to e1 e 0 <> t), io1, inx1), ((walk_up_to e2 e 0 <> t), io2, inx2))) intras" 
 
 definition find_intratrace_matches :: "log \<Rightarrow> iEFSM \<Rightarrow> match list" where
-  "find_intratrace_matches l e = filter (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). e1 \<noteq> e2) (concat (map (\<lambda>(t, m). sorted_list_of_fset (find_intertrace_matches_aux m e t)) (zip l (get_all_intratrace_matches_alt l))))"
-
-definition get :: "iEFSM \<Rightarrow> nat \<Rightarrow> transition" where
-  "get e u = snd (snd (fthe_elem (ffilter (\<lambda>(uid, _). uid = u) e)))"
+  "find_intratrace_matches l e = filter (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). e1 \<noteq> e2) (concat (map (\<lambda>(t, m). sorted_list_of_fset (find_intertrace_matches_aux m e t)) (zip l (get_by_id_all_intratrace_matches_alt l))))"
 
 fun enumerate_aexp_inputs :: "aexp \<Rightarrow> nat set" where
   "enumerate_aexp_inputs (L _) = {}" |
@@ -114,38 +111,14 @@ fun enumerate_gexp_inputs :: "gexp \<Rightarrow> nat set" where
   "enumerate_gexp_inputs (GExp.Lt v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va" |
   "enumerate_gexp_inputs (GExp.Nor v va) = enumerate_gexp_inputs v \<union> enumerate_gexp_inputs va"
 
-definition get_biggest_t_input :: "transition \<Rightarrow> nat" where
-  "get_biggest_t_input t = Max ({0} \<union>
+definition get_by_id_biggest_t_input :: "transition \<Rightarrow> nat" where
+  "get_by_id_biggest_t_input t = Max ({0} \<union>
                                 (\<Union> set (map enumerate_gexp_inputs (Guard t))) \<union>
                                 (\<Union> set (map enumerate_aexp_inputs (Outputs t))) \<union>
                                 (\<Union> set (map (\<lambda>(_, u). enumerate_aexp_inputs u) (Updates t))))"
 
 definition max_input :: "iEFSM \<Rightarrow> nat" where
-  "max_input e = fMax (fimage (\<lambda>(_, _, t). get_biggest_t_input t) e)"
-
-fun enumerate_aexp_regs :: "aexp \<Rightarrow> nat set" where
-  "enumerate_aexp_regs (L _) = {}" |
-  "enumerate_aexp_regs (V (R n)) = {n}" |
-  "enumerate_aexp_regs (V (I _)) = {}" |
-  "enumerate_aexp_regs (Plus v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
-  "enumerate_aexp_regs (Minus v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va"
-
-fun enumerate_gexp_regs :: "gexp \<Rightarrow> nat set" where
-  "enumerate_gexp_regs (GExp.Bc _) = {}" |
-  "enumerate_gexp_regs (GExp.Null v) = enumerate_aexp_regs v" |
-  "enumerate_gexp_regs (GExp.Eq v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
-  "enumerate_gexp_regs (GExp.Lt v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
-  "enumerate_gexp_regs (GExp.Nor v va) = enumerate_gexp_regs v \<union> enumerate_gexp_regs va"
-
-definition get_biggest_t_reg :: "transition \<Rightarrow> nat" where
-  "get_biggest_t_reg t = Max ({0} \<union>
-                                (\<Union> set (map enumerate_gexp_regs (Guard t))) \<union>
-                                (\<Union> set (map enumerate_aexp_regs (Outputs t))) \<union>
-                                (\<Union> set (map (\<lambda>(_, u). enumerate_aexp_regs u) (Updates t))) \<union>
-                                (\<Union> set (map (\<lambda>(r, _). enumerate_aexp_regs (V r)) (Updates t))))"
-
-definition max_reg :: "iEFSM \<Rightarrow> nat" where
-  "max_reg e = fMax (fimage (\<lambda>(_, _, t). get_biggest_t_reg t) e)"
+  "max_input e = fMax (fimage (\<lambda>(_, _, t). get_by_id_biggest_t_input t) e)"
 
 definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
   "remove_guard_add_update t inputX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (filter (\<lambda>g. \<not> gexp_constrains g (V (I inputX))) (Guard t)), Outputs = (Outputs t), Updates = (R outputX, (V (I inputX)))#(Updates t)\<rparr>"
@@ -156,9 +129,6 @@ definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat 
 primrec count :: "'a \<Rightarrow> 'a list \<Rightarrow> nat" where
   "count _ [] = 0" |
   "count a (h#t) = (if a = h then 1+(count a t) else count a t)"
-
-definition replaceAll :: "iEFSM \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
-  "replaceAll e old new = fimage (\<lambda>(uid, (from, to), t). if t = old then (uid, (from, to), new) else (uid, (from, to), t)) e"
 
 primrec generalise_transitions :: "((((transition \<times> nat) \<times> ioTag \<times> nat) \<times>
      (transition \<times> nat) \<times> ioTag \<times> nat) \<times>
