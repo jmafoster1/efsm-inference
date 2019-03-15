@@ -301,6 +301,9 @@ lemma posterior_separate_append_self: "posterior_separate c (g @ g) = posterior_
 definition posterior :: "context \<Rightarrow> transition \<Rightarrow> context" where
   "posterior c t = posterior_separate c (Guard t) (Updates t)"
 
+lemma posterior_consistent_medial: "medial c (Guard t) = c' \<Longrightarrow> consistent c' \<Longrightarrow> remove_obsolete_constraints (apply_updates c' c (Updates t)) (fst |`| fset_of_list (Updates t)) = p \<Longrightarrow> posterior c t = p"
+  by (simp add: posterior_def posterior_separate_def)
+
 primrec posterior_n :: "nat \<Rightarrow> transition \<Rightarrow> context \<Rightarrow> context" where (* Apply a given transition to a given context n times - good for reflexive transitions*)
   "posterior_n 0 _ c = c " |
   "posterior_n (Suc m) t c = posterior_n m t (posterior c t)"
@@ -341,6 +344,21 @@ definition subsumes :: "transition \<Rightarrow> context \<Rightarrow> transitio
                       (\<forall>r i. fBall (posterior_separate c (Guard t1@Guard t2) (Updates t2) r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (posterior c t1 r) (\<lambda>c. cval c r i = true) \<or> (posterior c t1 r) = {|Undef|}) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
 
+lemma output_subsumption_violation: "\<not> (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<Longrightarrow>
+      \<not> subsumes t2 c t1"
+  by (simp add: subsumes_def)
+
+lemma subsumption: "Label t1 = Label t2 \<and>
+                    Arity t1 = Arity t2 \<and>
+                    length (Outputs t1) = length (Outputs t2) \<Longrightarrow>
+                    (\<forall>r i. fBall (medial c (Guard t1) r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (medial c (Guard t2) r) (\<lambda>c. cval c r i = true)) \<Longrightarrow>
+                    (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<Longrightarrow>
+                    (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<Longrightarrow>
+                    (\<forall>r i. fBall (posterior_separate c (Guard t1@Guard t2) (Updates t2) r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (posterior c t1 r) (\<lambda>c. cval c r i = true) \<or> (posterior c t1 r) = {|Undef|}) \<Longrightarrow>
+                    (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2)) \<Longrightarrow>
+                    subsumes t2 c t1"
+  by (simp add: subsumes_def)
+
 definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> context" where
  "anterior_context e t = posterior_sequence \<lbrakk>\<rbrakk> e 0 <> t"
 
@@ -349,6 +367,9 @@ definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarr
 definition directly_subsumes :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes e1 e2 s t1 t2 \<equiv> (\<forall>p. accepts_trace e1 p \<and> gets_us_to s e1 0 <>  p \<longrightarrow> subsumes t1 (anterior_context e2 p) t2) \<and>
                                      (\<exists>c. subsumes t1 c t2)"
+
+lemma gets_us_to_and_not_subsumes: "\<exists>p. accepts_trace e1 p \<and> gets_us_to s e1 0 Map.empty p \<and> \<not> subsumes t1 (anterior_context e2 p) t2 \<Longrightarrow> \<not> directly_subsumes e1 e2 s t1 t2"
+  by (simp add: directly_subsumes_def)
 
 lemma cant_directly_subsume: "\<forall>c. \<not> subsumes t c t' \<Longrightarrow> \<not> directly_subsumes m m' s t t'"
   by (simp add: directly_subsumes_def)

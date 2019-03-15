@@ -11,6 +11,14 @@ object Dirties {
     VName.I(Nat.Nata(i))
   }
 
+  def writeDot(e: FSet.fset[(
+                               ((Nat.nat, Nat.nat),
+                                 Transition.transition_ext[Unit]))], f: String): Unit = {
+                                   val pw = new PrintWriter(new File(f))
+                                   pw.write(EFSM_Dot.efsm2dot(e))
+                                   pw.close
+                                 }
+
   def writeiDot(e: FSet.fset[(Nat.nat,
                                ((Nat.nat, Nat.nat),
                                  Transition.transition_ext[Unit]))], f: String): Unit = {

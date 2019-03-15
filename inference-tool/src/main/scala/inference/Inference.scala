@@ -3966,6 +3966,24 @@ def initialiseReg(t: Transition.transition_ext[Unit], newReg: VName.vname):
                                       AExp.L(Value.Numa(Int.zero_int)))::(Transition.Updates[Unit](t)),
                                     ())
 
+def drop_transition(e: FSet.fset[(Nat.nat,
+                                   ((Nat.nat, Nat.nat),
+                                     Transition.transition_ext[Unit]))],
+                     uid: Nat.nat):
+      FSet.fset[(Nat.nat,
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+  =
+  FSet.ffilter[(Nat.nat,
+                 ((Nat.nat, Nat.nat),
+                   Transition.transition_ext[Unit]))](((x:
+                  (Nat.nat,
+                    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
+                 =>
+                ! (Nat.equal_nata(Product_Type.fst[Nat.nat,
+            ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])](x),
+                                   uid))),
+               e)
+
 def insert_increment(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
                       newa: FSet.fset[(Nat.nat,
 ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
@@ -3990,15 +4008,14 @@ def insert_increment(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
     (newReg,
       AExp.Plus(AExp.V(newReg),
                  AExp.V(VName.I(Nat.one_nat))))::(Transition.Updates[Unit](t1)),
-    ())
-        val newT2: Transition.transition_ext[Unit] =
-          Transition.transition_exta[Unit](Transition.Label[Unit](t2),
-    Transition.Arity[Unit](t2), Nil,
-    (AExp.Plus(AExp.V(newReg), AExp.V(VName.I(Nat.one_nat))))::Nil,
-    (newReg,
-      AExp.Plus(AExp.V(newReg),
-                 AExp.V(VName.I(Nat.one_nat))))::(Transition.Updates[Unit](t2)),
-    ())
+    ());
+        Transition.transition_exta[Unit](Transition.Label[Unit](t2),
+  Transition.Arity[Unit](t2), Nil,
+  (AExp.Plus(AExp.V(newReg), AExp.V(VName.I(Nat.one_nat))))::Nil,
+  (newReg,
+    AExp.Plus(AExp.V(newReg),
+               AExp.V(VName.I(Nat.one_nat))))::(Transition.Updates[Unit](t2)),
+  ())
         val initialised:
               FSet.fset[(Nat.nat,
                           ((Nat.nat, Nat.nat),
@@ -4035,8 +4052,8 @@ def insert_increment(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
                          newa);
         Some[FSet.fset[(Nat.nat,
                          ((Nat.nat, Nat.nat),
-                           Transition.transition_ext[Unit]))]](Inference.replaceAll(Inference.replaceAll(initialised,
-                          t2, newT2),
+                           Transition.transition_ext[Unit]))]](Inference.replaceAll(drop_transition(initialised,
+                     t2ID),
      t1, newT1))
       }
       else None)

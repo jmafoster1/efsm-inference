@@ -25,7 +25,7 @@ object FrontEnd {
     ))
 
     println("Hello inference!")
-    val inferred = (Inference.learn(log, (SelectionStrategies.naive_score _).curried, heuristic))
+    val inferred = (Inference.iterative_learn(log, (SelectionStrategies.naive_score _).curried, heuristic))
 
     println("The inferred machine is "+(if (Inference.nondeterministic(Inference.toiEFSM(inferred))) "non" else "")+"deterministic")
 

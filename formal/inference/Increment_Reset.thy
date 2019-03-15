@@ -8,6 +8,9 @@ definition initialiseReg :: "transition \<Rightarrow> vname \<Rightarrow> transi
 definition "guardMatch t1 t2  = (\<exists>n n'. Guard t1 = [gexp.Eq (V (I 1)) (L (Num n))] \<and> Guard t2 = [gexp.Eq (V (I 1)) (L (Num n'))])"
 definition "outputMatch t1 t2 = (\<exists>m m'. Outputs t1 = [L (Num m)] \<and> Outputs t2 = [L (Num m')])"
 
+definition drop_transition :: "iEFSM \<Rightarrow> nat \<Rightarrow> iEFSM" where
+  "drop_transition e uid = ffilter (\<lambda>x. fst x \<noteq> uid) e"
+
 fun insert_increment :: update_modifier where
   "insert_increment t1ID t2ID s new old = (let
      t1 = get_by_id new t1ID;
@@ -19,7 +22,7 @@ fun insert_increment :: update_modifier where
           newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guard = [], Outputs = [Plus (V newReg) (V (I 1))], Updates=((newReg, Plus (V newReg) (V (I 1)))#Updates t2)\<rparr>;
           initialised = fimage (\<lambda>(uid, (to, from), t). (uid, (to, from), (if to = arrives t1ID new \<or> to = arrives t2ID new then initialiseReg t newReg else t))) new 
           in 
-          Some (replaceAll (replaceAll initialised t2 newT2) t1 newT1)
+          Some (replaceAll (drop_transition initialised t2ID) t1 newT1)
      else
        None
      )"
