@@ -17,3 +17,7 @@ inference-tool/target/
 
 # Ignore Isabelle output
 formal/output/
+
+# Ignore dotfiles
+*.dot
+*.png

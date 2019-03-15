@@ -277,12 +277,12 @@ function infer :: "iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<
     (* sorry *)
 (* qed *)
 
-primrec iterative_learn_aux :: "log \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM" where
-  "iterative_learn_aux [] e _ _ _ = e" |
-  "iterative_learn_aux (h#t) e r m s = iterative_learn_aux t (infer (toiEFSM (make_branch (tm e) 0 <> h)) r m s) r m s"
+primrec iterative_learn_aux :: "log \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> (log \<Rightarrow> update_modifier) \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM" where
+  "iterative_learn_aux [] _ e _ _ _ = e" |
+  "iterative_learn_aux (h#t) l e r m s = iterative_learn_aux t (h#l) (infer (toiEFSM (make_branch (tm e) 0 <> h)) r (m (h#l)) s) r m s"
 
-definition iterative_learn :: "log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> transition_matrix" where
-  "iterative_learn l r m = tm (iterative_learn_aux l {||} r m (satisfies (set l)))"
+definition iterative_learn :: "log \<Rightarrow> strategy \<Rightarrow> (log \<Rightarrow> update_modifier) \<Rightarrow> transition_matrix" where
+  "iterative_learn l r m = tm (iterative_learn_aux l [] {||} r m (satisfies (set l)))"
 
 definition learn :: "log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> transition_matrix" where
   "learn l r m = tm (infer (toiEFSM (make_pta l {||})) r m (satisfies (set l)))"
@@ -321,6 +321,10 @@ definition max_reg :: "iEFSM \<Rightarrow> nat" where
 primrec try_heuristics :: "update_modifier list \<Rightarrow> update_modifier" where
   "try_heuristics [] = null_modifier" |
   "try_heuristics (h#t) = (\<lambda>a b c d e. case h a b c d e of None \<Rightarrow> try_heuristics t a b c d e | Some e' \<Rightarrow> Some e')"
+
+primrec iterative_try_heuristics :: "(log \<Rightarrow> update_modifier) list \<Rightarrow> log \<Rightarrow> update_modifier" where
+  "iterative_try_heuristics [] l = null_modifier" |
+  "iterative_try_heuristics (h#t) l = (\<lambda>a b c d e. case (h l) a b c d e of None \<Rightarrow> iterative_try_heuristics t l a b c d e | Some e' \<Rightarrow> Some e')"
 
 definition replaceAll :: "iEFSM \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
   "replaceAll e old new = fimage (\<lambda>(uid, (from, to), t). if t = old then (uid, (from, to), new) else (uid, (from, to), t)) e"

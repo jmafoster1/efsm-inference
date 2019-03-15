@@ -9,6 +9,10 @@ object FrontEnd {
   def main(args: Array[String]): Unit = {
     println("=================================================================")
 
+    type Execution = List[(String, (List[Value.value], List[Value.value]))]
+    type Log = List[Execution]
+
+
     // val filename = "sample-traces/vend1.json"
     val filename = args(0)
     val rawJson = Source.fromFile(filename).getLines.mkString
@@ -19,12 +23,13 @@ object FrontEnd {
     val coin = list(0)(0)("inputs").asInstanceOf[List[Any]].map(x => TypeConversion.toValue(x))
     val log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)))
 
-    val heuristic = Inference.try_heuristics(List(
-      Trace_Matches.heuristic_1(log),
-      (Increment_Reset.insert_increment _).curried
-    ))
+    val heuristic = (l:Log) => Inference.iterative_try_heuristics(List(
+      (x:Log) => Trace_Matches.heuristic_1(x),
+      (x:Log) => (Increment_Reset.insert_increment _).curried
+    ), l)
 
     println("Hello inference!")
+    // iterative_learn [] naive_score (iterative_try_heuristics [(λx. insert_increment), (λx. heuristic_1 x)])
     val inferred = (Inference.iterative_learn(log, (SelectionStrategies.naive_score _).curried, heuristic))
 
     println("The inferred machine is "+(if (Inference.nondeterministic(Inference.toiEFSM(inferred))) "non" else "")+"deterministic")

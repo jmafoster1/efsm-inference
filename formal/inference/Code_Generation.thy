@@ -95,8 +95,11 @@ lemma [code]: "outputMatch t1 t2 = outputMatch_alt (Outputs t1) (Outputs t2)"
 termination infer sorry
 termination resolve_nondeterminism sorry
 
-export_code insert_increment try_heuristics nondeterministic finfun_apply iterative_learn infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier learn in Scala
+export_code insert_increment iterative_try_heuristics try_heuristics nondeterministic finfun_apply iterative_learn infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier learn in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
+
+lemma "iterative_learn [] naive_score (iterative_try_heuristics [(\<lambda>x. insert_increment), (\<lambda>x. heuristic_1 x)]) = {||}"
+  by (simp add: iterative_learn_def tm_def)
 
 end

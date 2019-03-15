@@ -67,7 +67,7 @@ MichaelsEFSM : MODULE =
     ]
     TRANSITION [
       %% coin
-      COIN_1552576565863 :                                       %%70
+      COIN_1552673951639 :                                       %%70
           cfstate = State_1 AND label = coin AND
               InputSequence ! size?(I) = 1 AND
               gval(value_eq(Some(I(1)), Some(NUM(50))))
@@ -78,7 +78,7 @@ MichaelsEFSM : MODULE =
           r_1' = r_1
       []
       %% coin                                                    %%80
-      COIN_1552576565869 :
+      COIN_1552673951646 :
           cfstate = State_1 AND label = coin AND
               InputSequence ! size?(I) = 1 AND
               gval(value_eq(Some(I(1)), Some(NUM(100))))
@@ -89,7 +89,7 @@ MichaelsEFSM : MODULE =
           r_1' = r_1
       []                                                         %%90
       %% select
-      SELECT_1552576565869 :
+      SELECT_1552673951646 :
           cfstate = State_0 AND label = select AND
               InputSequence ! size?(I) = 1
         -->
@@ -98,7 +98,7 @@ MichaelsEFSM : MODULE =
           O' = OutputSequence ! empty
       []
       %% coin                                                    %%100
-      COIN_1552576565869 :
+      COIN_1552673951646 :
           cfstate = State_2 AND label = coin AND
               InputSequence ! size?(I) = 1 AND
               gval(value_eq(Some(I(1)), Some(NUM(50))))
@@ -109,7 +109,7 @@ MichaelsEFSM : MODULE =
           r_1' = r_1
       []                                                         %%110
       %% vend
-      VEND_1552576565869 :
+      VEND_1552673951646 :
           cfstate = State_3 AND label = vend AND
               InputSequence ! size?(I) = 0
         -->
