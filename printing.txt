@@ -1,0 +1,31 @@
+def make_pta(x0: List[List[(String, (List[Value.value], List[Value.value]))]],
+              e: FSet.fset[((Nat.nat, Nat.nat),
+                             Transition.transition_ext[Unit])]):
+      FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]
+  =
+{  val pta = (x0, e) match {
+  case (Nil, e) => e
+  case (h::t, e) =>
+    make_pta(t, make_branch(e, Nat.zero_nata,
+                             AExp.null_state[VName.vname, Value.value], h))
+                           }
+   Dirties.writeDot(pta, "dotfiles/log/"+System.currentTimeMillis+".dot")
+   return pta
+                         }
+
+def merge_states(x: Nat.nat, y: Nat.nat,
+                  t: FSet.fset[(Nat.nat,
+                                 ((Nat.nat, Nat.nat),
+                                   Transition.transition_ext[Unit]))]):
+      FSet.fset[(Nat.nat,
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+  =
+  {
+    val merged = (if (Nat.less_nat(y, x)) merge_states_aux(x, y, t)
+    else merge_states_aux(y, x, t))
+    Dirties.writeiDot(merged, "dotfiles/log/"+System.currentTimeMillis+".dot")
+    return merged
+  }
+
+
+
