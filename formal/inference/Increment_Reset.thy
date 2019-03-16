@@ -22,7 +22,7 @@ fun insert_increment :: update_modifier where
           newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guard = [], Outputs = [Plus (V newReg) (V (I 1))], Updates=((newReg, Plus (V newReg) (V (I 1)))#Updates t2)\<rparr>;
           initialised = fimage (\<lambda>(uid, (from, to), t). (uid, (from, to), (if (to = arrives t1ID new \<or> to = arrives t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2 then initialiseReg t newReg else t))) new 
           in 
-          Some (replaceAll (drop_transition initialised t2ID) t1 newT1)
+          Some (replaceAll (replaceAll initialised t2 newT2) t1 newT1)
      else
        None
      )"
