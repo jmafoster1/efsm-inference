@@ -348,6 +348,10 @@ lemma output_subsumption_violation: "\<not> (\<forall> i r. satisfies_context r 
       \<not> subsumes t2 c t1"
   by (simp add: subsumes_def)
 
+lemma medial_subsumption_violation: "\<not> (\<forall>r i. fBall (medial c (Guard t1) r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (medial c (Guard t2) r) (\<lambda>c. cval c r i = true)) \<Longrightarrow>
+\<not> subsumes t2 c t1"
+  by (simp add: subsumes_def)
+
 lemma subsumption: "Label t1 = Label t2 \<and>
                     Arity t1 = Arity t2 \<and>
                     length (Outputs t1) = length (Outputs t2) \<Longrightarrow>

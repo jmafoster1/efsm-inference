@@ -2286,20 +2286,15 @@ def merge_states_aux(x: Nat.nat, y: Nat.nat,
                 }),
                t)
 
-               def merge_states(x: Nat.nat, y: Nat.nat,
-                                 t: FSet.fset[(Nat.nat,
-                                                ((Nat.nat, Nat.nat),
-                                                  Transition.transition_ext[Unit]))]):
-                     FSet.fset[(Nat.nat,
-                                 ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
-                 =
-                 {
-                   val merged = (if (Nat.less_nat(y, x)) merge_states_aux(x, y, t)
-                   else merge_states_aux(y, x, t))
-                   Dirties.writeiDot(merged, "dotfiles/log/"+System.currentTimeMillis+".dot")
-                   return merged
-                 }
-
+def merge_states(x: Nat.nat, y: Nat.nat,
+                  t: FSet.fset[(Nat.nat,
+                                 ((Nat.nat, Nat.nat),
+                                   Transition.transition_ext[Unit]))]):
+      FSet.fset[(Nat.nat,
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+  =
+  (if (Nat.less_nat(y, x)) merge_states_aux(x, y, t)
+    else merge_states_aux(y, x, t))
 
 def arrives(uid: Nat.nat,
              t: FSet.fset[(Nat.nat,
@@ -2619,7 +2614,7 @@ def make_branch(e: FSet.fset[((Nat.nat, Nat.nat),
                  x3: List[(String, (List[Value.value], List[Value.value]))]):
       FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]
   =
-{val branch = (e, uu, uv, x3) match {
+  (e, uu, uv, x3) match {
   case (e, uu, uv, Nil) => e
   case (e, s, r, (label, (inputs, outputs))::t) =>
     (EFSM.step(e, s, r, label, inputs) match {
@@ -2635,9 +2630,6 @@ def make_branch(e: FSet.fset[((Nat.nat, Nat.nat),
                       Nat.plus_nata(maxS(e), Nat.one_nat), r, t)
        case Some((_, (sa, (_, updated)))) => make_branch(e, sa, updated, t)
      })
-}
-    Dirties.writeDot(branch, "dotfiles/log/"+System.currentTimeMillis+".dot")
-    return branch
 }
 
 def make_pta(x0: List[List[(String, (List[Value.value], List[Value.value]))]],
@@ -2908,9 +2900,11 @@ def iterative_learn_aux(x0: List[List[(String,
             ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
  Option[FSet.fset[(Nat.nat,
                     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]],
-                         ux: (FSet.fset[((Nat.nat, Nat.nat),
-  Transition.transition_ext[Unit])]) =>
-                               Boolean):
+                         ux: (List[List[(String,
+  (List[Value.value], List[Value.value]))]]) =>
+                               (FSet.fset[((Nat.nat, Nat.nat),
+    Transition.transition_ext[Unit])]) =>
+                                 Boolean):
       FSet.fset[(Nat.nat,
                   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
   =
@@ -2920,7 +2914,7 @@ def iterative_learn_aux(x0: List[List[(String,
     iterative_learn_aux(t, h::l,
                          infer(toiEFSM(make_branch(tm(e), Nat.zero_nata,
             AExp.null_state[VName.vname, Value.value], h)),
-                                r, m(h::l), s),
+                                r, m(h::l), s(h::l)),
                          r, m, s)
 }
 
@@ -2947,12 +2941,15 @@ def iterative_learn(l: List[List[(String,
                           FSet.bot_fset[(Nat.nat,
   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
                           r, m,
-                          ((a: FSet.fset[((Nat.nat, Nat.nat),
-   Transition.transition_ext[Unit])])
+                          ((la: List[List[(String,
+    (List[Value.value], List[Value.value]))]])
                              =>
-                            satisfies(Set.seta[List[(String,
-              (List[Value.value], List[Value.value]))]](l),
-                                       a))))
+                            ((a: FSet.fset[((Nat.nat, Nat.nat),
+     Transition.transition_ext[Unit])])
+                               =>
+                              satisfies(Set.seta[List[(String,
+                (List[Value.value], List[Value.value]))]](la),
+ a)))))
 
 def nondeterministic(t: FSet.fset[(Nat.nat,
                                     ((Nat.nat, Nat.nat),
@@ -4113,11 +4110,14 @@ def insert_increment(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
                                     Transition.transition_ext[Unit])
                               = aa;
                             ({
-                               val (to, from): (Nat.nat, Nat.nat) = ab;
+                               val (from, to): (Nat.nat, Nat.nat) = ab;
                                ((t: Transition.transition_ext[Unit]) =>
-                                 (uid, ((to, from),
- (if ((Nat.equal_nata(to, Inference.arrives(t1ID,
-     newa))) || (Nat.equal_nata(to, Inference.arrives(t2ID, newa))))
+                                 (uid, ((from, to),
+ (if (((Nat.equal_nata(to, Inference.arrives(t1ID,
+      newa))) || (Nat.equal_nata(to, Inference.arrives(t2ID,
+                newa)))) && ((! (Transition.equal_transition_exta[Unit](t,
+                                 t1))) && (! (Transition.equal_transition_exta[Unit](t,
+      t2)))))
    initialiseReg(t, newReg) else t))))
                              })(b)
                           }),

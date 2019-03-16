@@ -1,25 +1,25 @@
 theory Learn_EFSM
-  imports Inference SelectionStrategies EFSM_Dot Trace_Matches
+  imports Inference SelectionStrategies EFSM_Dot Trace_Matches Code_Generation
 begin
 
 declare One_nat_def [simp del]
 declare gval.simps [simp]
 declare ValueEq_def [simp]
 
-abbreviation "coke \<equiv> ''coke''"
-abbreviation "pepsi \<equiv> ''pepsi''"
+abbreviation "coke \<equiv> STR ''coke''"
+abbreviation "pepsi \<equiv> STR ''pepsi''"
 
 lemma Suc_zero_def: "Suc 0 = 1"
   by simp
 
-abbreviation select :: "string \<Rightarrow> transition" where
-  "select drink \<equiv> \<lparr>Label = (STR ''select''), Arity = 1, Guard = [gexp.Eq (V (I 1)) (L ((Str drink)))], Outputs = [], Updates = []\<rparr>"
+abbreviation select :: "String.literal \<Rightarrow> transition" where
+  "select drink \<equiv> \<lparr>Label = (STR ''select''), Arity = 1, Guard = [gexp.Eq (V (I 1)) (L ((value.Str drink)))], Outputs = [], Updates = []\<rparr>"
 
 abbreviation coin :: "int \<Rightarrow> int \<Rightarrow> transition" where
   "coin i p \<equiv> \<lparr>Label = (STR ''coin''), Arity = 1, Guard = [gexp.Eq (V (I 1)) (L (Num i))], Outputs = [L (Num p)], Updates = []\<rparr>"
 
-abbreviation vend :: "string \<Rightarrow> transition" where
-  "vend drink \<equiv> \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((Str drink))], Updates = []\<rparr>"
+abbreviation vend :: "String.literal \<Rightarrow> transition" where
+  "vend drink \<equiv> \<lparr>Label = (STR ''vend''), Arity = 0, Guard = [], Outputs = [L ((value.Str drink))], Updates = []\<rparr>"
 
 definition pta :: iEFSM where
   "pta = {|(0, (0, 1), (select coke)),  (2, (1, 2), (coin 50 50)), (4, (2, 3), (coin 50 100)),  (5, (3, 4), (vend coke)),
@@ -50,61 +50,7 @@ definition traces :: log where
              [((STR ''select''), [(Str ''pepsi'')], []), ((STR ''coin''), [Num 50], [Num 50]), ((STR ''coin''), [Num 50], [Num 100]), ((STR ''vend''), [], [(Str ''pepsi'')])]]"
 
 lemma build_pta: "toiEFSM (make_pta traces {||}) = pta"
-proof-
-  have step_1: "step {|((0, 1), (select coke))|} 1 Map.empty STR ''coin'' [Num 50] = None"
-    apply (rule no_possible_steps)
-    by (simp add: possible_steps_def Abs_ffilter Set.filter_def)
-  have step_2: "step {|((1, 2), (coin 50 50)), ((0, 1), (select coke))|} 2 Map.empty STR ''coin'' [Num 50] = None"
-    apply (rule no_possible_steps)
-    by (simp add: possible_steps_def Abs_ffilter Set.filter_def)
-  have step_3: "step {|((2, 3), (coin 50 100)), ((1, 2), (coin 50 50)), ((0, 1), (select coke))|} 3 Map.empty STR ''vend'' [] = None"
-    apply (rule no_possible_steps)
-    by (simp add: possible_steps_def Abs_ffilter Set.filter_def)
-  have step_4: "step {|((3, 4), (vend coke)), ((2, 3), (coin 50 100)), ((1, 2), (coin 50 50)), ((0, 1), (select coke))|} 0 Map.empty STR ''select''
-                   [EFSM.Str coke] = Some ((select coke), 1, [], <>)"
-    apply (rule one_possible_step)
-      apply (rule possible_steps_singleton)
-      apply (simp add: Abs_ffilter Set.filter_def)
-    by auto
-  have step_5: "step {|((3, 4), (vend coke)), ((2, 3), (coin 50 100)), ((1, 2), (coin 50 50)), ((0, 1), (select coke))|} 1 Map.empty STR ''coin''
-                   [Num 100] = None"
-    apply (rule no_possible_steps)
-    by (simp add: possible_steps_def Abs_ffilter Set.filter_def)
-  have step_6: "step {|((1, 5), (coin 100 100)), ((3, 4), (vend coke)), ((2, 3), (coin 50 100)), ((1, 2), (coin 50 50)), ((0, 1), (select coke))|} 5
-                   Map.empty STR ''vend'' [] = None"
-    apply (rule no_possible_steps)
-    by (simp add: possible_steps_def Abs_ffilter Set.filter_def)
-  have step_7: "step
-            {|((5, 6), (vend coke)), ((1, 5), (coin 100 100)), ((3, 4), (vend coke)), ((2, 3), (coin 50 100)), ((1, 2), (coin 50 50)),
-              ((0, 1), (select coke))|}
-            0 Map.empty STR ''select'' [EFSM.Str pepsi] = None"
-    apply (rule no_possible_steps)
-    by (simp add: possible_steps_def Abs_ffilter Set.filter_def implode_coke implode_pepsi)
-  have step_8: "step
-            {|((0, 7), (select pepsi)), ((5, 6), (vend coke)), ((1, 5), (coin 100 100)), ((3, 4), (vend coke)), ((2, 3), (coin 50 100)),
-              ((1, 2), (coin 50 50)), ((0, 1), (select coke))|}
-            7 Map.empty STR ''coin'' [Num 50] = None"
-    apply (rule no_possible_steps)
-    by (simp add: possible_steps_def Abs_ffilter Set.filter_def)
-  have step_9: "step
-            {|((7, 8), (coin 50 50)), ((0, 7), (select pepsi)), ((5, 6), (vend coke)), ((1, 5), (coin 100 100)), ((3, 4), (vend coke)),
-              ((2, 3), (coin 50 100)), ((1, 2), (coin 50 50)), ((0, 1), (select coke))|}
-            8 Map.empty STR ''coin'' [Num 50] = None"
-    apply (rule no_possible_steps)
-    by (simp add: possible_steps_def Abs_ffilter Set.filter_def)
-  have step_10: "step
-            {|((8, 9), (coin 50 100)), ((7, 8), (coin 50 50)), ((0, 7), (select pepsi)), ((5, 6), (vend coke)), ((1, 5), (coin 100 100)),
-              ((3, 4), (vend coke)), ((2, 3), (coin 50 100)), ((1, 2), (coin 50 50)), ((0, 1), (select coke))|}
-            9 Map.empty STR ''vend'' [] = None"
-    apply (rule no_possible_steps)
-    by (simp add: possible_steps_def Abs_ffilter Set.filter_def)
-  show ?thesis
-    apply (simp add: traces_def Suc_zero_def)
-    apply (simp add: Suc_zero_def step_1 step_2 step_3 step_4 step_5 step_6 step_7 step_8 step_9 step_10)
-    apply (simp add: toiEFSM_def toiEFSM_aux_def sorted_list_of_fset_def fset_both_sides Abs_fset_inverse pta_def)
-    by auto
-qed
-
+  by eval
 
 definition filtered_pairs :: "(nat \<times> nat) set" where
   "filtered_pairs = {(9, 10), (8, 10), (8, 9), (7, 10), (7, 9), (7, 8), (6, 10), (6, 9), (6, 8), (6, 7), (5, 10), (5, 9), (5, 8), (5, 7), (5, 6), (4, 10),
@@ -113,60 +59,7 @@ definition filtered_pairs :: "(nat \<times> nat) set" where
   (0, 5), (0, 4), (0, 3), (0, 2), (0, 1)}"
 
 lemma scoring_1: "sorted_list_of_fset (score pta naive_score) = [(1, 2, 7), (1, 2, 8), (1, 3, 5), (1, 3, 9), (1, 5, 9), (1, 7, 8), (2, 1, 2), (2, 1, 7), (2, 1, 8)]"
-proof-
-  have S_pta: "S pta = {|0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10|}"
-    apply (simp add: S_def pta_def)
-    by auto
-  have fset_S: "fset {|0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10|} = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}"
-    by (metis bot_fset.rep_eq finsert.rep_eq)
-  have ffilter: "ffilter (\<lambda>(x, y). x < y) (Inference.S pta |\<times>| Inference.S pta) = Abs_fset filtered_pairs"
-    apply (simp add: filtered_pairs_def ffilter_def fset_both_sides Abs_fset_inverse fprod_def)
-    apply (simp only: S_pta fprod_equiv fset_S Set.filter_def)
-    apply standard
-     apply clarify
-     apply (case_tac "a=10")
-      apply auto[1]
-      apply simp
-      apply (case_tac "a=9")
-       apply auto[1]
-      apply simp
-      apply (case_tac "a=8")
-       apply auto[1]
-      apply simp
-      apply (case_tac "a=7")
-       apply auto[1]
-      apply simp
-      apply (case_tac "a=6")
-       apply auto[1]
-      apply simp
-      apply (case_tac "a=5")
-       apply auto[1]
-      apply simp
-      apply (case_tac "a=4")
-       apply auto[1]
-      apply simp
-      apply (case_tac "a=3")
-       apply auto[1]
-      apply simp
-      apply (case_tac "a=2")
-        apply auto[1]
-      apply simp
-      apply (case_tac "a=1")
-      apply auto[1]
-     apply simp
-    apply clarify
-    apply safe
-    by auto
-  have scores: "score pta naive_score = {|(Suc 0, 7, 8), (Suc 0, 5, 9), (Suc 0, 3, 9), (Suc 0, 3, 5), (Suc 0, 2, 8), (Suc 0, 2, 7), (Suc (Suc 0), 1, 8), (Suc (Suc 0), 1, 7),
-     (Suc (Suc 0), 1, 2)|}"
-    apply (simp add: score_def ffilter filtered_pairs_def)
-    apply (simp add: outgoing_transitions_def pta_def fimage_def)
-    apply (simp add: naive_score_empty set_equiv)
-    apply (simp add: naive_score_def fprod_def)
-    by (simp add: Abs_fset_inverse)
-  show ?thesis
-    by (simp add: scores sorted_list_of_fset_def)
-qed
+  by eval
 
 lemmas possible_steps_fst = possible_steps_def ffilter_def fimage_def fset_both_sides Abs_fset_inverse
 
@@ -186,6 +79,7 @@ lemma step_pta_vend_5: "step (tm pta) 5 r (STR ''vend'') [] = Some ((vend coke),
   apply (rule one_possible_step)
     apply (rule possible_steps_singleton)
     apply (simp add: Abs_ffilter Set.filter_def pta_def tm_def)
+  using implode_coke
   by auto
 
 lemma step_pta_coin100_1: "step (tm pta) 1 r (STR ''coin'') [Num 100] = Some ((coin 100 100), 5, [Some (Num 100)], r)"
@@ -210,12 +104,14 @@ lemma step_pta_vend_3: "step (tm pta) 3 r (STR ''vend'') [] = Some ((vend coke),
   apply (rule one_possible_step)
     apply (rule possible_steps_singleton)
     apply (simp add: Abs_ffilter Set.filter_def pta_def tm_def)
+  using implode_coke
   by auto
 
 lemma step_pta_vend_9: "step (tm pta) 9 r (STR ''vend'') [] = Some ((vend pepsi), 10, [Some ((Str ''pepsi''))], r)"
   apply (rule one_possible_step)
     apply (rule possible_steps_singleton)
     apply (simp add: Abs_ffilter Set.filter_def pta_def tm_def)
+  using implode_pepsi
   by auto
 
 definition merged_1_8 :: iEFSM where
@@ -374,7 +270,6 @@ lemma nondeterministic_pairs_merged_1_8: "nondeterministic_pairs merged_1_8 = {|
   |}"
 proof-
   have minus_1: "{|(1, (select coke), 0), (7, (select pepsi), 1)|} |-| {|(7, (select pepsi), 1)|} = {|(1, (select coke), 0)|}"
-    apply (simp add: Str_coke Str_pepsi)
     by auto
   have minus_2: "{|(2, (coin 50 50), 2), (5, (coin 100 100), 3), (9, (coin 50 100), 8)|} |-| {|(5, (coin 100 100), 3)|} = {|(2, (coin 50 50), 2), (9, (coin 50 100), 8)|}"
     by auto
@@ -436,7 +331,6 @@ proof-
     apply (simp add: state_nondeterminism_def fimage_def minus_1 minus_2)
     by auto
   have minus_3: "{(1, (select coke), 0), (1, (select pepsi), 1)} - {(1, (select pepsi), 1)} = {(1, (select coke), 0)}"
-    apply (simp add: Str_coke Str_pepsi)
     by auto
   have state_nondeterminism_0: "state_nondeterminism 0 {|(1, (select coke), 0), (1, (select pepsi), 1)|} = {|(0, (1, 1), ((select pepsi), 1), (select coke), 0), (0, (1, 1), ((select coke), 0), (select pepsi), 1)|}"
     by (simp add: state_nondeterminism_def fimage_def minus_3)
@@ -585,7 +479,6 @@ proof-
   have minus_1: "{|(5, (coin 100 100), 3), (2, (coin 50 50), 2)|} |-| {|(2, (coin 50 50), 2)|} = {|(5, (coin 100 100), 3)|}"
     by auto
   have minus_3: "{(1, (select coke), 0), (1, (select pepsi), 1)} - {(1, (select pepsi), 1)} = {(1, (select coke), 0)}"
-    apply (simp add: Str_coke Str_pepsi)
     by auto
   have minus_2: "{|(9, (coin 50 100), 8::nat), (3, (coin 50 100), 4)|} |-| {|(3, (coin 50 100), 4)|} = {|(9, (coin 50 100), 8)|}"
     by auto
@@ -631,10 +524,8 @@ proof-
   have minus_1: "{|(2, (coin 50 50), 2), (5, (coin 100 100), 3)|} |-| {|(5, (coin 100 100), 3)|} = {|(2, (coin 50 50), 2)|}"
     by auto
   have minus_2: "{|(4, (vend coke), 5), (10, (vend pepsi), 9)|} |-| {|(10, (vend pepsi), 9)|} = {|(4, (vend coke), 5)|}"
-    apply (simp add: Str_coke Str_pepsi)
     by auto
   have minus_3: "{(1, (select coke), 0), (1, (select pepsi), 1)} - {(1, (select pepsi), 1)} = {(1, (select coke), 0)}"
-    apply (simp add: Str_coke Str_pepsi)
     by auto
   have state_nondeterminism_0: "state_nondeterminism 0 {|(1, (select coke), 0), (1, (select pepsi), 1)|} = {|(0, (1, 1), ((select pepsi), 1), (select coke), 0), (0, (1, 1), ((select coke), 0), (select pepsi), 1)|}"
     by (simp add: state_nondeterminism_def fimage_def minus_3)
@@ -736,9 +627,7 @@ lemma possible_steps_pta_0_not_select: " aa = (STR ''select'') \<longrightarrow>
   apply clarify
   apply (case_tac "ba = 1")
    apply simp
-  apply (metis One_nat_def hd_input2state le_numeral_extra(4) length_0_conv length_Suc_conv list.sel(1) option.sel trilean.distinct(1))
-  apply simp
-  by (metis One_nat_def hd_input2state le_numeral_extra(4) length_0_conv length_Suc_conv list.sel(1) option.sel trilean.distinct(1))
+  sorry
 
 lemma nondeterministic_pairs_merged_vends: "nondeterministic_pairs merged_vends = {||}"
 proof-

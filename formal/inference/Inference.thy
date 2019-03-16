@@ -277,12 +277,12 @@ function infer :: "iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<
     (* sorry *)
 (* qed *)
 
-primrec iterative_learn_aux :: "log \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> (log \<Rightarrow> update_modifier) \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM" where
+primrec iterative_learn_aux :: "log \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> (log \<Rightarrow> update_modifier) \<Rightarrow> (log \<Rightarrow> transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM" where
   "iterative_learn_aux [] _ e _ _ _ = e" |
-  "iterative_learn_aux (h#t) l e r m s = iterative_learn_aux t (h#l) (infer (toiEFSM (make_branch (tm e) 0 <> h)) r (m (h#l)) s) r m s"
+  "iterative_learn_aux (h#t) l e r m s = iterative_learn_aux t (h#l) (infer (toiEFSM (make_branch (tm e) 0 <> h)) r (m (h#l)) (s (h#l))) r m s"
 
 definition iterative_learn :: "log \<Rightarrow> strategy \<Rightarrow> (log \<Rightarrow> update_modifier) \<Rightarrow> transition_matrix" where
-  "iterative_learn l r m = tm (iterative_learn_aux l [] {||} r m (satisfies (set l)))"
+  "iterative_learn l r m = tm (iterative_learn_aux l [] {||} r m (\<lambda>l. satisfies (set l)))"
 
 definition learn :: "log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> transition_matrix" where
   "learn l r m = tm (infer (toiEFSM (make_pta l {||})) r m (satisfies (set l)))"
