@@ -217,7 +217,8 @@ function resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEF
      t2NewTo = arrives u2 destMerge in 
      case merge_transitions oldEFSM destMerge t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 u1 t2 u2 m of
        None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check |
-       Some new \<Rightarrow> (let newScores = (rev (sorted_list_of_fset (nondeterministic_pairs new))) in (
+      \<^cancel>\<open>we get rid of the rev here so we resolve nondeterminism forwards in the machine\<close>
+       Some new \<Rightarrow> (let newScores = (\<^cancel>\<open>rev\<close> (sorted_list_of_fset (nondeterministic_pairs new))) in (
          case resolve_nondeterminism newScores oldEFSM new m check of
            Some new' \<Rightarrow> Some new' |
            None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check

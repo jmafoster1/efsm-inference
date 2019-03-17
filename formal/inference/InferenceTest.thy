@@ -417,7 +417,9 @@ proof-
     by eval
   have merge_8_4: "merge_states 8 4 merge_1_5 = merge_8_4"
     by eval
-  have sorted_list_2: "sorted_list_of_fset (nondeterministic_pairs h_merge_8_4) = [(0, (1, 1), (select_general_initialise, 0), select_initialise pepsi 2, 1), (0, (1, 1), (select_initialise pepsi 2, 1), select_general_initialise, 0),
+  have sorted_list_2: "sorted_list_of_fset (nondeterministic_pairs h_merge_8_4) = 
+[(0, (1, 1), (select_general_initialise, 0), select_initialise pepsi 2, 1),
+ (0, (1, 1), (select_initialise pepsi 2, 1), select_general_initialise, 0),
   (1, (1, 1), (coin_general 1, 2), coin_general 2, 3), (1, (1, 1), (coin_general 2, 3), coin_general 1, 2),
   (1, (4, 4), (vend pepsi, 4), general_vend 3, 5), (1, (4, 4), (general_vend 3, 5), vend pepsi, 4)]"
     apply (simp add: nondeterministic_pairs_h_merge_8_4)
@@ -427,8 +429,10 @@ proof-
   show ?thesis
     apply (simp add: merge_def)
     apply (simp add: merge_1_5 sorted_list)
-    apply (simp add: arrives_6_merge_1_5 arrives_3_merge_1_5 merge_8_4)
-    apply (simp add: merge_transitions_select_vend_merge_8_4 sorted_list_2 arrives_5_eq_arrives_4 merge_states_reflexive)
+    apply (simp add: arrives_6_merge_1_5 arrives_3_merge_1_5)
+    apply (simp add: merge_8_4)
+    apply (simp add: merge_transitions_select_vend_merge_8_4)
+    apply (simp add: sorted_list_2 arrives_5_eq_arrives_4 merge_states_reflexive)
 
 
 

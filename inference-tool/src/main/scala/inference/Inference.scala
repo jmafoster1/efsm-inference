@@ -2451,11 +2451,11 @@ def resolve_nondeterminism(x0: List[(Nat.nat,
                              ((Nat.nat, Nat.nat),
                                ((Transition.transition_ext[Unit], Nat.nat),
                                  (Transition.transition_ext[Unit], Nat.nat))))]
-                  = (FSet.sorted_list_of_fset[(Nat.nat,
-        ((Nat.nat, Nat.nat),
-          ((Transition.transition_ext[Unit], Nat.nat),
-            (Transition.transition_ext[Unit],
-              Nat.nat))))](nondeterministic_pairs(newa))).reverse;
+                  = FSet.sorted_list_of_fset[(Nat.nat,
+       ((Nat.nat, Nat.nat),
+         ((Transition.transition_ext[Unit], Nat.nat),
+           (Transition.transition_ext[Unit],
+             Nat.nat))))](nondeterministic_pairs(newa));
                 (resolve_nondeterminism(newScores, oldEFSM, newa, m, check)
                    match {
                    case None =>
