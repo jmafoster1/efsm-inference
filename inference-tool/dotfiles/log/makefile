@@ -9,7 +9,5 @@ dot:
 	done
 
 clean:
-	@ for b in $(basename $(DOT_FILES)) ; do \
-	  rm pngs/$$b.png ;\
-		rm $$b.dot ;\
-	done
+	  @ rm pngs/*.png ;\
+		@ rm *.dot ;\

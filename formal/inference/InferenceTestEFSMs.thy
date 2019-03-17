@@ -13,6 +13,9 @@ definition "merge_3_1 =    {|(0, (0, 1), select coke), (1, (1, 1), coin 50 50), 
 definition "first_branch_initialise = {|(0, (0, 1), select_initialise coke 1), (1, (1, 1), coin_general 1), (2, (1, 1), coin_general 1), (3, (1, 4), vend coke)|}"
 definition "completed_first_branch = {|(3, (1, 4), vend coke), (0, (0, 1), select_initialise coke 1), (2, (1, 1), coin_general 1)|}"
 
-definition "third_branch = {|(0, (0, 1), select_initialise coke 1), (1, (0, 5), select pepsi), (2, (1, 1), coin_general 1), (3, (1, 4), vend coke), (4, (5, 6), coin 50 50), (5, (6, 7), coin 50 100), (6, (7, 8), vend pepsi)|}"
-definition    "merge_5_6 = {|(0, (0, 1), select_initialise coke 1), (1, (0, 5), select pepsi), (2, (1, 1), coin_general 1), (3, (1, 4), vend coke), (4, (5, 5), coin 50 50), (5, (5, 7), coin 50 100), (6, (7, 8), vend pepsi)|}"
+definition "third_branch = {|(0, (0, 1), select_initialise coke 1), (1, (0, 5), select pepsi),              (2, (1, 1), coin_general 1), (3, (1, 4), vend coke), (4, (5, 6), coin 50 50),     (5, (6, 7), coin 50 100),    (6, (7, 8), vend pepsi)|}"
+definition    "merge_5_6 = {|(0, (0, 1), select_initialise coke 1), (1, (0, 5), select pepsi),              (2, (1, 1), coin_general 1), (3, (1, 4), vend coke), (4, (5, 5), coin 50 50),     (5, (5, 7), coin 50 100),    (6, (7, 8), vend pepsi)|}"
+definition    "merge_7_5 = {|(0, (0, 1), select_initialise coke 1), (1, (0, 5), select pepsi),              (2, (1, 1), coin_general 1), (3, (1, 4), vend coke), (4, (5, 5), coin 50 50),     (5, (5, 5), coin 50 100),    (6, (5, 8), vend pepsi)|}"
+definition  "h_merge_7_5 = {|(0, (0, 1), select_initialise coke 1), (1, (0, 5), select_initialise pepsi 2), (2, (1, 1), coin_general 1), (3, (1, 4), vend coke), (4, (5, 5), coin_general 2), (5, (5, 5), coin_general 2), (6, (5, 8), vend pepsi)|}"
+definition     "one_coin = {|(0, (0, 1), select_initialise coke 1), (1, (0, 5), select_initialise pepsi 2), (2, (1, 1), coin_general 1), (3, (1, 4), vend coke), (5, (5, 5), coin_general 2), (6, (5, 8), vend pepsi)|}"
 end

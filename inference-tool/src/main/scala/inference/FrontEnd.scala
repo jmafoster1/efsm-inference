@@ -23,7 +23,7 @@ object FrontEnd {
     val coin = list(0)(0)("inputs").asInstanceOf[List[Any]].map(x => TypeConversion.toValue(x))
     val log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)))
 
-    val heuristic = (l:Log) => Inference.iterative_try_heuristics(List(
+    val heuristic = (l:Log) => Code_Generation.iterative_try_heuristics_print(List(
       (x:Log) => Trace_Matches.heuristic_1(x),
       (x:Log) => (Increment_Reset.insert_increment _).curried
     ), l)

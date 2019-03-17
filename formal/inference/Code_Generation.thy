@@ -92,10 +92,43 @@ fun outputMatch_alt :: "output_function list \<Rightarrow> output_function list 
 lemma [code]: "outputMatch t1 t2 = outputMatch_alt (Outputs t1) (Outputs t2)"
   by (metis outputMatch_alt.elims(2) outputMatch_alt.simps(1) outputMatch_def)
 
+definition writeiDot :: "iEFSM \<Rightarrow> String.literal \<Rightarrow> unit" where
+  "writeiDot i s = ()"
+
+definition "timestamp = STR ''''"
+
+definition merge_and_print :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "merge_and_print x y t = (let merged = (if x > y then merge_states_aux x y t else merge_states_aux y x t);
+                                print = (writeiDot merged (STR ''dotfiles/log/''+timestamp+STR ''.dot'')) in merged)"
+
+lemma merge_and_print [code]: "merge_states = merge_and_print"
+  apply (rule ext)+
+  by (simp add: merge_states_def merge_and_print_def)
+
+primrec iterative_try_heuristics_print :: "(log \<Rightarrow> update_modifier) list \<Rightarrow> log \<Rightarrow> update_modifier" where
+  "iterative_try_heuristics_print [] l = null_modifier" |
+  "iterative_try_heuristics_print (h#t) l = (\<lambda>a b c d e. case (h l) a b c d e of None \<Rightarrow> iterative_try_heuristics_print t l a b c d e |
+                                            Some e' \<Rightarrow> let print = (writeiDot e' (STR ''dotfiles/log/''+timestamp+STR ''.dot'')) in Some e')"
+
+lemma "iterative_try_heuristics h l = iterative_try_heuristics_print h l"
+proof(induct h)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a h)
+  then show ?case
+    apply simp
+    by metis
+qed
+
+code_printing
+  constant "writeiDot" \<rightharpoonup> (Scala) "Dirties.writeiDot" |
+  constant "timestamp" \<rightharpoonup> (Scala) "System.currentTimeMillis"
+
 termination infer sorry
 termination resolve_nondeterminism sorry
 
-export_code insert_increment iterative_try_heuristics try_heuristics nondeterministic finfun_apply iterative_learn infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier learn in Scala
+export_code iterative_try_heuristics_print insert_increment nondeterministic finfun_apply iterative_learn infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
