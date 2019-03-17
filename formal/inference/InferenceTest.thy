@@ -283,6 +283,155 @@ qed
 lemma score_4: "sorted_list_of_fset (score one_coin naive_score) = [(2, 1, 5)]"
   by eval
 
+lemma merge_1_5: "merge_states 1 5 one_coin = merge_1_5"
+  by eval
+
+lemma nondeterministic_pairs_merge_1_5: "nondeterministic_pairs merge_1_5 = {|
+(1, (1, 1), (coin_general 1, 2), coin_general 2, 5),
+(1, (4, 8), (vend coke, 3), vend pepsi, 6),
+(1, (1, 1), (coin_general 2, 5), coin_general 1, 2),
+(1, (8, 4), (vend pepsi, 6), vend coke, 3)
+|}"
+proof-
+  have union: "ffUnion ((\<lambda>s. state_nondeterminism s (outgoing_transitions s merge_1_5)) |`| Inference.S merge_1_5) = {|
+(1, (1, 4), (coin_general 1, 2), vend coke, 3), (1, (1, 1), (coin_general 1, 2), coin_general 2, 5), (1, (1, 8), (coin_general 1, 2), vend pepsi, 6),
+   (1, (4, 1), (vend coke, 3), coin_general 1, 2), (1, (4, 1), (vend coke, 3), coin_general 2, 5), (1, (4, 8), (vend coke, 3), vend pepsi, 6),
+   (1, (1, 1), (coin_general 2, 5), coin_general 1, 2), (1, (1, 4), (coin_general 2, 5), vend coke, 3), (1, (1, 8), (coin_general 2, 5), vend pepsi, 6),
+   (1, (8, 1), (vend pepsi, 6), coin_general 1, 2), (1, (8, 4), (vend pepsi, 6), vend coke, 3), (1, (8, 1), (vend pepsi, 6), coin_general 2, 5),
+   (0, (1, 1), (select_initialise coke 1, 0), select_initialise pepsi 2, 1), (0, (1, 1), (select_initialise pepsi 2, 1), select_initialise coke 1, 0)
+|}"
+by eval
+  show ?thesis
+    apply (rule nondeterministic_pairs)
+     apply (simp add: union)
+    apply (simp add: Abs_ffilter Set.filter_def)
+    apply standard
+     apply clarify
+     apply simp
+     apply (case_tac "ab = coin_general 1")
+    using choice_def apply auto[1]
+     apply (case_tac "ab = coin_general 2")
+    using choice_def apply auto[1]
+    apply (case_tac "ab = select_initialise coke 1")
+      apply (simp add: no_drink_choice)
+     apply (case_tac "ab = select_initialise pepsi 2")
+      apply (simp add: no_drink_choice)
+     apply (case_tac "ac = coin_general 1")
+    using choice_def apply auto[1]
+     apply (case_tac "ac = coin_general 2")
+    using choice_def by auto
+qed
+
+lemma merge_transitions_select_vend_merge_8_4: "merge_transitions one_coin merge_8_4 (leaves 6 one_coin) (leaves 3 one_coin) (leaves 6 merge_8_4) (arrives 6 merge_8_4) (arrives 3 merge_8_4)
+           (vend pepsi) 6 (vend coke) 3 (heuristics [third_trace, second_trace, first_trace]) = Some h_merge_8_4"
+  apply (rule merge_transitions_heuristic)
+    apply (simp add: cant_directly_subsume no_subsumption_vend_coke_vend_pepsi)
+  apply (simp add: cant_directly_subsume vend_pepsi_not_subsumes_vend_coke)
+  by eval
+
+lemma nondeterministic_pairs_h_merge_8_4: "(nondeterministic_pairs h_merge_8_4) = {|
+  (1, (1, 1), (coin_general 1, 2), coin_general 2, 3),
+  (1, (1, 1), (coin_general 2, 3), coin_general 1, 2),
+  (1, (4, 4), (vend pepsi, 4), general_vend 3, 5),
+  (1, (4, 4), (general_vend 3, 5), vend pepsi, 4),
+  (0, (1, 1), (select_general_initialise, 0), select_initialise pepsi 2, 1),
+  (0, (1, 1), (select_initialise pepsi 2, 1), select_general_initialise, 0)|}"
+proof-
+  have union: "ffUnion ((\<lambda>s. state_nondeterminism s (outgoing_transitions s h_merge_8_4)) |`| Inference.S h_merge_8_4) = {|
+(1, (1, 1), (coin_general 1, 2), coin_general 2, 3), (1, (1, 4), (coin_general 1, 2), vend pepsi, 4),
+(1, (1, 4), (coin_general 1, 2), general_vend 3, 5), (1, (1, 1), (coin_general 2, 3), coin_general 1, 2),
+(1, (1, 4), (coin_general 2, 3), vend pepsi, 4), (1, (1, 4), (coin_general 2, 3), general_vend 3, 5), (1, (4, 1), (vend pepsi, 4), coin_general 1, 2),
+(1, (4, 1), (vend pepsi, 4), coin_general 2, 3), (1, (4, 4), (vend pepsi, 4), general_vend 3, 5), (1, (4, 1), (general_vend 3, 5), coin_general 1, 2),
+(1, (4, 1), (general_vend 3, 5), coin_general 2, 3), (1, (4, 4), (general_vend 3, 5), vend pepsi, 4),
+(0, (1, 1), (select_general_initialise, 0), select_initialise pepsi 2, 1), (0, (1, 1), (select_initialise pepsi 2, 1), select_general_initialise, 0)
+|}"
+    by eval
+  show ?thesis
+     apply (rule nondeterministic_pairs)
+      apply (simp add: union)
+    apply (simp add: Abs_ffilter Set.filter_def)
+    apply standard
+     apply clarify
+     apply simp
+     apply (case_tac "ab = coin_general 1")
+    using choice_def apply auto[1]
+     apply (case_tac "ab = coin_general 2")
+    using choice_def apply auto[1]
+     apply (case_tac "ab = vend pepsi")
+    using choice_def apply auto[1]
+     apply (case_tac "ab = vend pepsi")
+      apply simp
+     apply (case_tac "ab = general_vend 3")
+    using choice_def by auto
+qed
+
+lemma "\<not> directly_subsumes (tm one_coin) (tm h_merge_8_4) 5 (vend pepsi) (general_vend 3)"
+proof-
+  have step: "step (tm one_coin) 0 Map.empty STR ''select'' [EFSM.Str ''pepsi''] = Some (select_initialise pepsi 2, 5, [], <R 2 := Num 0>)"
+    apply (rule one_possible_step)
+      apply (simp add: possible_steps_alt Abs_ffilter Set.filter_def tm_def one_coin_def)
+      apply standard
+       apply clarify
+       apply (simp add: implode_pepsi)
+       apply fastforce
+      apply (simp add: implode_pepsi)
+     apply simp
+    apply (rule ext)
+    by simp
+  have other_step: "step (tm h_merge_8_4) 0 Map.empty STR ''select'' [EFSM.Str ''pepsi''] = None"
+    by eval
+  show ?thesis
+  apply (rule gets_us_to_and_not_subsumes)
+  apply (rule_tac x="[(STR ''select'', [Str ''pepsi''])]" in exI)
+  apply standard
+   apply (simp add: accepts_trace_def)
+     apply (rule accepts.step)
+      apply (simp add: step)
+     apply (simp add: accepts.base)
+    apply standard
+     apply (rule gets_us_to.step_some)
+      apply (simp add: step)
+     apply (simp add: gets_us_to.base)
+    apply (simp add: anterior_context_def)
+
+lemma "merge_transitions one_coin h_merge_8_4 (leaves 5 one_coin) (leaves 4 one_coin) (leaves 5 h_merge_8_4) (arrives 4 h_merge_8_4)
+                (arrives 4 h_merge_8_4) (general_vend 3) 5 (vend pepsi) 4 (heuristics [third_trace, second_trace, first_trace]) = Some e"
+proof-
+  have leaves_5: "leaves 5 one_coin = 5"
+    by eval
+  show ?thesis
+    apply (simp only: leaves_5)
+    apply (rule merge_transitions_heuristic)
+
+
+
+lemma "merge one_coin 1 5 (heuristics [third_trace, second_trace, first_trace]) (satisfies {third_trace, second_trace, first_trace}) = Some e"
+proof-
+  have sorted_list: "sorted_list_of_fset (nondeterministic_pairs merge_1_5) = [(1, (1, 1), (coin_general 1, 2), coin_general 2, 5), (1, (1, 1), (coin_general 2, 5), coin_general 1, 2), (1, (4, 8), (vend coke, 3), vend pepsi, 6),
+  (1, (8, 4), (vend pepsi, 6), vend coke, 3)]"
+    apply (simp add: nondeterministic_pairs_merge_1_5)
+    by eval
+  have arrives_6_merge_1_5: "arrives 6 merge_1_5 = 8"
+    by eval
+  have arrives_3_merge_1_5: "arrives 3 merge_1_5 = 4"
+    by eval
+  have merge_8_4: "merge_states 8 4 merge_1_5 = merge_8_4"
+    by eval
+  have sorted_list_2: "sorted_list_of_fset (nondeterministic_pairs h_merge_8_4) = [(0, (1, 1), (select_general_initialise, 0), select_initialise pepsi 2, 1), (0, (1, 1), (select_initialise pepsi 2, 1), select_general_initialise, 0),
+  (1, (1, 1), (coin_general 1, 2), coin_general 2, 3), (1, (1, 1), (coin_general 2, 3), coin_general 1, 2),
+  (1, (4, 4), (vend pepsi, 4), general_vend 3, 5), (1, (4, 4), (general_vend 3, 5), vend pepsi, 4)]"
+    apply (simp add: nondeterministic_pairs_h_merge_8_4)
+    by eval
+  have arrives_5_eq_arrives_4: "arrives 5 h_merge_8_4 = arrives 4 h_merge_8_4"
+    by eval
+  show ?thesis
+    apply (simp add: merge_def)
+    apply (simp add: merge_1_5 sorted_list)
+    apply (simp add: arrives_6_merge_1_5 arrives_3_merge_1_5 merge_8_4)
+    apply (simp add: merge_transitions_select_vend_merge_8_4 sorted_list_2 arrives_5_eq_arrives_4 merge_states_reflexive)
+
+
+
 lemma "iterative_learn traces naive_score heuristics = (tm final)"
   apply (simp add: iterative_learn_def)
   apply (rule tm_same)
