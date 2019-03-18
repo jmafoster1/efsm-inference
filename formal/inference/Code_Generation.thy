@@ -4,6 +4,7 @@ theory Code_Generation
    Type_Inference
    Trace_Matches
    Increment_Reset
+   Same_Register
 begin
 
 declare GExp.satisfiable_def [code del]
@@ -128,7 +129,7 @@ code_printing
 termination infer sorry
 termination resolve_nondeterminism sorry
 
-export_code iterative_try_heuristics_print insert_increment nondeterministic finfun_apply iterative_learn infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
+export_code same_register iterative_try_heuristics_print insert_increment nondeterministic finfun_apply iterative_learn infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

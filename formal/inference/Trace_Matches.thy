@@ -1,5 +1,5 @@
 theory Trace_Matches
-imports Inference
+imports Same_Structure
 begin
 datatype ioTag = In | Out
 
@@ -135,8 +135,11 @@ primrec generalise_transitions :: "((((transition \<times> nat) \<times> ioTag \
     ((transition \<times> nat) \<times> ioTag \<times> nat) \<times>
     (transition \<times> nat) \<times> ioTag \<times> nat) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "generalise_transitions [] e = e" |
+  (* "generalise_transitions (h#t) e = (let ((((orig1, u1), _), (orig2, u2), _), (((gen1, u1'), _), (gen2, u2), _)) = h in *)
+                                         (* generalise_transitions t (replaceAll (replaceAll e orig1 gen1) orig2 gen2))" *)
   "generalise_transitions (h#t) e = (let ((((orig1, u1), _), (orig2, u2), _), (((gen1, u1'), _), (gen2, u2), _)) = h in
-                                         generalise_transitions t (replaceAll (replaceAll e orig1 gen1) orig2 gen2))"
+                                         generalise_transitions t (fimage (\<lambda>(u, tf, t). if same_structure t orig1 then (u, tf, gen1) else
+                                                                                        if same_structure t orig2 then (u, tf, gen2) else (u, tf, t)) e))"
 
 definition strip_uids :: "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> (transition \<times> nat) \<times> ioTag \<times> nat) \<Rightarrow> ((transition \<times> ioTag \<times> nat) \<times> (transition \<times> ioTag \<times> nat))" where
   "strip_uids x = (let (((t1, u1), io1, in1), (t2, u2), io2, in2) = x in ((t1, io1, in1), (t2, io2, in2)))"

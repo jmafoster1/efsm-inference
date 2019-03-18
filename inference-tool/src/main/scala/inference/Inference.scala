@@ -2969,6 +2969,204 @@ def card[A : HOL.equal](x0: Set.set[A]): Nat.nat = x0 match {
 
 } /* object Finite_Set */
 
+object Same_Structure {
+
+def aexp_same_structure(x0: AExp.aexp, x1: AExp.aexp): Boolean = (x0, x1) match
+  {
+  case (AExp.L(va), AExp.L(v)) => true
+  case (AExp.V(va), AExp.V(v)) => true
+  case (AExp.Plus(a1a, a2a), AExp.Plus(a1, a2)) =>
+    (aexp_same_structure(a1a, a1)) && (aexp_same_structure(a2a, a2))
+  case (AExp.Minus(a1a, a2a), AExp.Minus(a1, a2)) =>
+    (aexp_same_structure(a1a, a1)) && (aexp_same_structure(a2a, a2))
+  case (AExp.V(v), AExp.L(va)) => false
+  case (AExp.V(v), AExp.Plus(va, vb)) => false
+  case (AExp.V(v), AExp.Minus(va, vb)) => false
+  case (AExp.Plus(v, va), AExp.L(vb)) => false
+  case (AExp.Plus(v, va), AExp.V(vb)) => false
+  case (AExp.Plus(v, va), AExp.Minus(vb, vc)) => false
+  case (AExp.Minus(v, va), AExp.L(vb)) => false
+  case (AExp.Minus(v, va), AExp.V(vb)) => false
+  case (AExp.Minus(v, va), AExp.Plus(vb, vc)) => false
+  case (AExp.L(va), AExp.V(v)) => false
+  case (AExp.L(vb), AExp.Plus(v, va)) => false
+  case (AExp.L(vb), AExp.Minus(v, va)) => false
+}
+
+def gexp_same_structure(x0: GExp.gexp, x1: GExp.gexp): Boolean = (x0, x1) match
+  {
+  case (GExp.Bc(ba), GExp.Bc(b)) => Product_Type.equal_bool(ba, b)
+  case (GExp.Eq(a1a, a2a), GExp.Eq(a1, a2)) =>
+    (aexp_same_structure(a1a, a1)) && (aexp_same_structure(a2a, a2))
+  case (GExp.Gt(a1a, a2a), GExp.Gt(a1, a2)) =>
+    (aexp_same_structure(a1a, a1)) && (aexp_same_structure(a2a, a2))
+  case (GExp.Nor(g1a, g2a), GExp.Nor(g1, g2)) =>
+    (gexp_same_structure(g1a, g1)) && (gexp_same_structure(g2a, g2))
+  case (GExp.Null(a1), GExp.Null(a2)) => aexp_same_structure(a1, a2)
+  case (GExp.Eq(v, va), GExp.Bc(vb)) => false
+  case (GExp.Eq(v, va), GExp.Gt(vb, vc)) => false
+  case (GExp.Eq(v, va), GExp.Nor(vb, vc)) => false
+  case (GExp.Eq(v, va), GExp.Null(vb)) => false
+  case (GExp.Gt(v, va), GExp.Bc(vb)) => false
+  case (GExp.Gt(v, va), GExp.Eq(vb, vc)) => false
+  case (GExp.Gt(v, va), GExp.Nor(vb, vc)) => false
+  case (GExp.Gt(v, va), GExp.Null(vb)) => false
+  case (GExp.Nor(v, va), GExp.Bc(vb)) => false
+  case (GExp.Nor(v, va), GExp.Eq(vb, vc)) => false
+  case (GExp.Nor(v, va), GExp.Gt(vb, vc)) => false
+  case (GExp.Nor(v, va), GExp.Null(vb)) => false
+  case (GExp.Null(v), GExp.Bc(va)) => false
+  case (GExp.Null(v), GExp.Eq(va, vb)) => false
+  case (GExp.Null(v), GExp.Gt(va, vb)) => false
+  case (GExp.Null(v), GExp.Nor(va, vb)) => false
+  case (GExp.Bc(vb), GExp.Eq(v, va)) => false
+  case (GExp.Bc(vb), GExp.Gt(v, va)) => false
+  case (GExp.Bc(vb), GExp.Nor(v, va)) => false
+  case (GExp.Bc(va), GExp.Null(v)) => false
+}
+
+def same_structure(t1: Transition.transition_ext[Unit],
+                    t2: Transition.transition_ext[Unit]):
+      Boolean
+  =
+  (Transition.Label[Unit](t1) ==
+    Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
+             Transition.Arity[Unit](t2))) && (Lista.list_all[(GExp.gexp,
+                       GExp.gexp)](((a: (GExp.gexp, GExp.gexp)) =>
+                                     {
+                                       val (aa, b): (GExp.gexp, GExp.gexp) = a;
+                                       gexp_same_structure(aa, b)
+                                     }),
+                                    Lista.zip[GExp.gexp,
+       GExp.gexp](Transition.Guard[Unit](t1), Transition.Guard[Unit](t2)))))
+
+} /* object Same_Structure */
+
+object Same_Register {
+
+def r_print(t: Transition.transition_ext[Unit]): Transition.transition_ext[Unit]
+  =
+  {
+    println(t);
+    t
+  }
+
+def updates(x0: List[(VName.vname, AExp.aexp)]): Option[VName.vname] = x0 match
+  {
+  case (VName.R(n), a)::Nil => Some[VName.vname](VName.R(n))
+  case Nil => None
+  case (VName.I(vd), vc)::va => None
+  case v::(vb::vc) => None
+}
+
+def a_replace_with(x0: AExp.aexp, uu: VName.vname, uv: VName.vname): AExp.aexp =
+  (x0, uu, uv) match {
+  case (AExp.L(v), uu, uv) => AExp.L(v)
+  case (AExp.V(v), r1, r2) =>
+    (if (VName.equal_vnamea(v, r1)) AExp.V(r2) else AExp.V(v))
+  case (AExp.Plus(a1, a2), r1, r2) =>
+    AExp.Plus(a_replace_with(a1, r1, r2), a_replace_with(a2, r1, r2))
+  case (AExp.Minus(a1, a2), r1, r2) =>
+    AExp.Plus(a_replace_with(a1, r1, r2), a_replace_with(a2, r1, r2))
+}
+
+def u_replace_with(x0: (VName.vname, AExp.aexp), r1: VName.vname,
+                    r2: VName.vname):
+      (VName.vname, AExp.aexp)
+  =
+  (x0, r1, r2) match {
+  case ((r, a), r1, r2) =>
+    ((if (VName.equal_vnamea(r, r1)) r2 else r), a_replace_with(a, r1, r2))
+}
+
+def g_replace_with(x0: GExp.gexp, uu: VName.vname, uv: VName.vname): GExp.gexp =
+  (x0, uu, uv) match {
+  case (GExp.Bc(x), uu, uv) => GExp.Bc(x)
+  case (GExp.Eq(a1, a2), r1, r2) =>
+    GExp.Eq(a_replace_with(a1, r1, r2), a_replace_with(a2, r1, r2))
+  case (GExp.Gt(a1, a2), r1, r2) =>
+    GExp.Eq(a_replace_with(a1, r1, r2), a_replace_with(a2, r1, r2))
+  case (GExp.Nor(g1, g2), r1, r2) =>
+    GExp.Nor(g_replace_with(g1, r1, r2), g_replace_with(g2, r1, r2))
+  case (GExp.Null(a1), r1, r2) => GExp.Null(a_replace_with(a1, r1, r2))
+}
+
+def t_replace_with(t: Transition.transition_ext[Unit], r1: VName.vname,
+                    r2: VName.vname):
+      Transition.transition_ext[Unit]
+  =
+  Transition.transition_exta[Unit](Transition.Label[Unit](t),
+                                    Transition.Arity[Unit](t),
+                                    Lista.map[GExp.gexp,
+       GExp.gexp](((g: GExp.gexp) => g_replace_with(g, r1, r2)),
+                   Transition.Guard[Unit](t)),
+                                    Lista.map[AExp.aexp,
+       AExp.aexp](((p: AExp.aexp) => a_replace_with(p, r1, r2)),
+                   Transition.Outputs[Unit](t)),
+                                    Lista.map[(VName.vname, AExp.aexp),
+       (VName.vname,
+         AExp.aexp)](((u: (VName.vname, AExp.aexp)) =>
+                       u_replace_with(u, r1, r2)),
+                      Transition.Updates[Unit](t)),
+                                    ())
+
+def replace_with(e: FSet.fset[(Nat.nat,
+                                ((Nat.nat, Nat.nat),
+                                  Transition.transition_ext[Unit]))],
+                  r1: VName.vname, r2: VName.vname):
+      FSet.fset[(Nat.nat,
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+  =
+  FSet.fimage[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])),
+               (Nat.nat,
+                 ((Nat.nat, Nat.nat),
+                   Transition.transition_ext[Unit]))](((a:
+                  (Nat.nat,
+                    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
+                 =>
+                {
+                  val (u, (tf, t)):
+                        (Nat.nat,
+                          ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))
+                    = a;
+                  (u, (tf, t_replace_with(t, r1, r2)))
+                }),
+               e)
+
+def same_register(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
+                   newa: FSet.fset[(Nat.nat,
+                                     ((Nat.nat, Nat.nat),
+                                       Transition.transition_ext[Unit]))],
+                   old: FSet.fset[(Nat.nat,
+                                    ((Nat.nat, Nat.nat),
+                                      Transition.transition_ext[Unit]))]):
+      Option[FSet.fset[(Nat.nat,
+                         ((Nat.nat, Nat.nat),
+                           Transition.transition_ext[Unit]))]]
+  =
+  {
+    println("same register?")
+    val t1: Transition.transition_ext[Unit] =
+      r_print(Inference.get_by_id(newa, t1ID))
+    val t2: Transition.transition_ext[Unit] =
+      r_print(Inference.get_by_id(newa, t2ID))
+    val ut1: Option[VName.vname] = updates(Transition.Updates[Unit](t1))
+    val ut2: Option[VName.vname] = updates(Transition.Updates[Unit](t2));
+    (if (Same_Structure.same_structure(t1, t2))
+      ((ut1, ut2) match {
+         case (None, _) => None
+         case (Some(_), None) => None
+         case (Some(r1), Some(r2)) =>
+           Some[FSet.fset[(Nat.nat,
+                            ((Nat.nat, Nat.nat),
+                              Transition.transition_ext[Unit]))]](replace_with(newa,
+r1, r2))
+       })
+      else None)
+  }
+
+} /* object Same_Register */
+
 object Trace_Matches {
 
 abstract sealed class ioTag
@@ -3217,9 +3415,22 @@ def generalise_transitions(x0: List[((((Transition.transition_ext[Unit],
                                        val
  (gen2, _): (Transition.transition_ext[Unit], Nat.nat) = aj;
                                        ((_: (ioTag, Nat.nat)) =>
- generalise_transitions(t, Inference.replaceAll(Inference.replaceAll(e, orig1,
-                              gen1),
-         orig2, gen2)))
+ generalise_transitions(t, FSet.fimage[(Nat.nat,
+ ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])),
+(Nat.nat,
+  ((Nat.nat, Nat.nat),
+    Transition.transition_ext[Unit]))](((ak:
+   (Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
+  =>
+ {
+   val (u, (tf, ta)):
+         (Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))
+     = ak;
+   (if (Same_Structure.same_structure(ta, orig1)) (u, (tf, gen1))
+     else (if (Same_Structure.same_structure(ta, orig2)) (u, (tf, gen2))
+            else (u, (tf, ta))))
+ }),
+e)))
                                      })(bf)
                                   })
                               })(be)

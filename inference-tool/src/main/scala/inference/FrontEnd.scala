@@ -24,8 +24,9 @@ object FrontEnd {
     val log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)))
 
     val heuristic = (l:Log) => Code_Generation.iterative_try_heuristics_print(List(
-      (x:Log) => Trace_Matches.heuristic_1(x),
-      (x:Log) => (Increment_Reset.insert_increment _).curried
+      (x:Log) => (Same_Register.same_register _).curried,
+      (x:Log) => (Increment_Reset.insert_increment _).curried,
+      (x:Log) => Trace_Matches.heuristic_1(x)
     ), l)
 
     println("Hello inference!")

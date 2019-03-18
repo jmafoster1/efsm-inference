@@ -57,72 +57,63 @@ MichaelsEFSM : MODULE =
     INPUT label : LABEL
     LOCAL cfstate : STATES
     LOCAL r_1 : VALUE_OPTION
-    INPUT I : InputSequence ! Sequence                           %%60
+    LOCAL r_2 : VALUE_OPTION                                     %%60
+    LOCAL r_3 : VALUE_OPTION
+    INPUT I : InputSequence ! Sequence
     OUTPUT O : OutputSequence ! Sequence
     INITIALIZATION [
         cfstate = State_0 AND
         O = OutputSequence ! empty AND
-        r_1 = ValueOption ! None
-      -->
+        r_1 = ValueOption ! None AND
+        r_2 = ValueOption ! None AND
+        r_3 = ValueOption ! None
+      -->                                                        %%70
     ]
     TRANSITION [
-      %% coin
-      COIN_1552733659080 :                                       %%70
-          cfstate = State_2 AND label = coin AND
-              InputSequence ! size?(I) = 1 AND
-              gval(value_eq(Some(I(1)), Some(NUM(50))))
-        -->
-          cfstate' = State_3;
-          O' = OutputSequence !
-              insert(Some(NUM(100)), OutputSequence ! empty);
-          r_1' = r_1
-      []
-      %% select                                                  %%80
-      SELECT_1552733659089 :
-          cfstate = State_0 AND label = select AND
-              InputSequence ! size?(I) = 1
-        -->
-          cfstate' = State_1;
-          r_1' = I(1);
-          O' = OutputSequence ! empty
-      []
-      %% coin
-      COIN_1552733659089 :                                       %%90
-          cfstate = State_1 AND label = coin AND
-              InputSequence ! size?(I) = 1 AND
-              gval(value_eq(Some(I(1)), Some(NUM(100))))
-        -->
-          cfstate' = State_3;
-          O' = OutputSequence !
-              insert(Some(NUM(100)), OutputSequence ! empty);
-          r_1' = r_1
-      []
-      %% coin                                                    %%100
-      COIN_1552733659089 :
-          cfstate = State_1 AND label = coin AND
-              InputSequence ! size?(I) = 1 AND
-              gval(value_eq(Some(I(1)), Some(NUM(50))))
-        -->
-          cfstate' = State_2;
-          O' = OutputSequence !
-              insert(Some(NUM(50)), OutputSequence ! empty);
-          r_1' = r_1
-      []                                                         %%110
       %% vend
-      VEND_1552733659089 :
-          cfstate = State_3 AND label = vend AND
+      VEND_1552929293088 :
+          cfstate = State_1 AND label = vend AND
               InputSequence ! size?(I) = 0
         -->
           cfstate' = State_4;
-          O' = OutputSequence ! insert(r_1, OutputSequence !
-              empty);
+          O' = OutputSequence ! insert(r_3, OutputSequence !
+              empty);                                              %%80
+          r_1' = r_1;
+          r_2' = r_2;
+          r_3' = r_3
+      []
+      %% select
+      SELECT_1552929293092 :
+          cfstate = State_0 AND label = select AND
+              InputSequence ! size?(I) = 1
+        -->
+          cfstate' = State_1;                                    %%90
+          r_3' = I(1);
+          r_2' = Some(NUM(0));
+          O' = OutputSequence ! empty;
           r_1' = r_1
-      []                                                         %%120
-      SINK_HOLE :
+      []
+      %% coin
+      COIN_1552929293093 :
+          cfstate = State_1 AND label = coin AND
+              InputSequence ! size?(I) = 1 AND
+              gval(value_le(value_plus(r_2, I(1)), Some(NUM(N_)))) %%100
+        -->
+          cfstate' = State_1;
+          r_2' = value_plus(r_2, I(1));
+          O' = OutputSequence !
+              insert(value_plus(r_2, I(1)), OutputSequence !
+              empty);
+          r_1' = r_1;
+          r_3' = r_3
+      []
+      SINK_HOLE :                                                %%110
           ELSE
         -->
           cfstate' = NULL_STATE;
-          r_1' = r_1
+          r_1' = r_1;
+          r_2' = r_2;
+          r_3' = r_3
     ]
   END;
 END
