@@ -6,18 +6,19 @@ LABEL : TYPE = DATATYPE
   vend
 END;
 
-STRING : TYPE = {String_dummy_};
+STRING : TYPE = {String_pepsi};
                                                                  %%10
 STATES : TYPE =
-    {State_0, State_1, State_2, State_3, State_4, NULL_STATE};
+    {State_0, State_1, State_2, State_3, State_4, State_5,
+    State_6, State_7, State_8, NULL_STATE};
   
 Value:CONTEXT = value {N_, STRING};
 Arithmetic:CONTEXT = arithmetic{N_, STRING};
 
 B_VALUE : TYPE =  Value ! B_VALUE;
 VALUE : TYPE =  {g : B_VALUE | g /= value {N_, STRING} !
-    VALUE_BB};
-ValueOption:CONTEXT = option {VALUE};                            %%20
+    VALUE_BB};                                                     %%20
+ValueOption:CONTEXT = option {VALUE};
 
 B_VALUE_OPTION : TYPE = ValueOption ! B_OPTION;
 VALUE_OPTION : TYPE =  {g : B_VALUE_OPTION | g /= ValueOption !
@@ -26,8 +27,8 @@ BOOL_OPTION : TYPE = option {bool} ! OPTION;
 
 Some : [VALUE -> VALUE_OPTION] = ValueOption ! Some;
 NUM: [Value!NAT -> VALUE] = Value ! NUM;
-STR: [STRING -> VALUE] = Value ! STR;
-                                                                 %%30
+STR: [STRING -> VALUE] = Value ! STR;                            %%30
+
 value_plus : [[VALUE_OPTION, VALUE_OPTION] -> VALUE_OPTION] =
     Arithmetic ! value_plus;
 value_minus : [[VALUE_OPTION, VALUE_OPTION] -> VALUE_OPTION] =
@@ -36,8 +37,8 @@ value_minus : [[VALUE_OPTION, VALUE_OPTION] -> VALUE_OPTION] =
 value_le : [[VALUE_OPTION, VALUE_OPTION] -> BOOL_OPTION] =
     Arithmetic ! value_le;
 value_ge : [[VALUE_OPTION, VALUE_OPTION] -> BOOL_OPTION] =
-    Arithmetic ! value_ge;
-value_lt : [[VALUE_OPTION, VALUE_OPTION] -> BOOL_OPTION] =       %%40
+    Arithmetic ! value_ge;                                         %%40
+value_lt : [[VALUE_OPTION, VALUE_OPTION] -> BOOL_OPTION] =
     Arithmetic ! value_lt;
 value_gt : [[VALUE_OPTION, VALUE_OPTION] -> BOOL_OPTION] =
     Arithmetic ! value_gt;
@@ -46,8 +47,8 @@ value_eq : [[VALUE_OPTION, VALUE_OPTION] -> BOOL_OPTION] =
   
 OutputSequence : CONTEXT =
     sequence {B_VALUE_OPTION; ValueOption ! OPTION_BB, 1};
-InputSequence : CONTEXT =
-    sequence {B_VALUE; value {N_, STRING} ! VALUE_BB, 1};          %%50
+InputSequence : CONTEXT =                                        %%50
+    sequence {B_VALUE; value {N_, STRING} ! VALUE_BB, 1};
   
 gval : [BOOL_OPTION -> bool] =
 LAMBDA(g:BOOL_OPTION): g = option {bool} !Some(TRUE);
@@ -56,8 +57,8 @@ MichaelsEFSM : MODULE =
   BEGIN
     INPUT label : LABEL
     LOCAL cfstate : STATES
-    LOCAL r_1 : VALUE_OPTION
-    LOCAL r_2 : VALUE_OPTION                                     %%60
+    LOCAL r_1 : VALUE_OPTION                                     %%60
+    LOCAL r_2 : VALUE_OPTION
     LOCAL r_3 : VALUE_OPTION
     INPUT I : InputSequence ! Sequence
     OUTPUT O : OutputSequence ! Sequence
@@ -66,39 +67,27 @@ MichaelsEFSM : MODULE =
         O = OutputSequence ! empty AND
         r_1 = ValueOption ! None AND
         r_2 = ValueOption ! None AND
-        r_3 = ValueOption ! None
-      -->                                                        %%70
+        r_3 = ValueOption ! None                                 %%70
+      -->
     ]
     TRANSITION [
-      %% vend
-      VEND_1552929293088 :
-          cfstate = State_1 AND label = vend AND
-              InputSequence ! size?(I) = 0
-        -->
-          cfstate' = State_4;
-          O' = OutputSequence ! insert(r_3, OutputSequence !
-              empty);                                              %%80
-          r_1' = r_1;
-          r_2' = r_2;
-          r_3' = r_3
-      []
       %% select
-      SELECT_1552929293092 :
+      SELECT_1552930647561 :
           cfstate = State_0 AND label = select AND
               InputSequence ! size?(I) = 1
         -->
-          cfstate' = State_1;                                    %%90
-          r_3' = I(1);
+          cfstate' = State_1;
+          r_3' = I(1);                                           %%80
           r_2' = Some(NUM(0));
           O' = OutputSequence ! empty;
           r_1' = r_1
       []
       %% coin
-      COIN_1552929293093 :
+      COIN_1552930647566 :
           cfstate = State_1 AND label = coin AND
               InputSequence ! size?(I) = 1 AND
-              gval(value_le(value_plus(r_2, I(1)), Some(NUM(N_)))) %%100
-        -->
+              gval(value_le(value_plus(r_2, I(1)), Some(NUM(N_))))
+        -->                                                      %%90
           cfstate' = State_1;
           r_2' = value_plus(r_2, I(1));
           O' = OutputSequence !
@@ -107,7 +96,69 @@ MichaelsEFSM : MODULE =
           r_1' = r_1;
           r_3' = r_3
       []
-      SINK_HOLE :                                                %%110
+      %% vend
+      VEND_1552930647566 :                                       %%100
+          cfstate = State_1 AND label = vend AND
+              InputSequence ! size?(I) = 0
+        -->
+          cfstate' = State_4;
+          O' = OutputSequence ! insert(r_3, OutputSequence !
+              empty);
+          r_1' = r_1;
+          r_2' = r_2;
+          r_3' = r_3
+      []                                                         %%110
+      %% coin
+      COIN_1552930647566 :
+          cfstate = State_4 AND label = coin AND
+              InputSequence ! size?(I) = 1 AND
+              gval(value_eq(Some(I(1)), Some(NUM(50))))
+        -->
+          cfstate' = State_5;
+          O' = OutputSequence !
+              insert(Some(NUM(50)), OutputSequence ! empty);
+          r_1' = r_1;                                            %%120
+          r_2' = r_2;
+          r_3' = r_3
+      []
+      %% vend
+      VEND_1552930647566 :
+          cfstate = State_5 AND label = vend AND
+              InputSequence ! size?(I) = 0
+        -->
+          cfstate' = State_6;
+          O' = OutputSequence ! empty;                           %%130
+          r_1' = r_1;
+          r_2' = r_2;
+          r_3' = r_3
+      []
+      %% coin
+      COIN_1552930647566 :
+          cfstate = State_6 AND label = coin AND
+              InputSequence ! size?(I) = 1 AND
+              gval(value_eq(Some(I(1)), Some(NUM(50))))
+        -->                                                      %%140
+          cfstate' = State_7;
+          O' = OutputSequence !
+              insert(Some(NUM(100)), OutputSequence ! empty);
+          r_1' = r_1;
+          r_2' = r_2;
+          r_3' = r_3
+      []
+      %% vend
+      VEND_1552930647567 :
+          cfstate = State_7 AND label = vend AND                 %%150
+              InputSequence ! size?(I) = 0
+        -->
+          cfstate' = State_8;
+          O' = OutputSequence !
+              insert(Some(STR(String_pepsi)), OutputSequence !
+              empty);
+          r_1' = r_1;
+          r_2' = r_2;
+          r_3' = r_3
+      []                                                         %%160
+      SINK_HOLE :
           ELSE
         -->
           cfstate' = NULL_STATE;
@@ -116,4 +167,4 @@ MichaelsEFSM : MODULE =
           r_3' = r_3
     ]
   END;
-END
+END                                                              %%170

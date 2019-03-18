@@ -122,6 +122,9 @@ object Dirties {
                               if (HOL.equal(t1, t2)) {
                                 true
                               }
+                              else if (Transition.Outputs(t1).length != Transition.Outputs(t2).length) {
+                                false
+                              }
                               else if (!compareLiteralOutputs(Transition.Outputs(t1) zip Transition.Outputs(t2))) {
                                 false
                               }
