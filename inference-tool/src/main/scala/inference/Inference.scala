@@ -2679,7 +2679,12 @@ def infer(e: FSet.fset[(Nat.nat,
                    m, check)
      match {
      case None => e
-     case Some(newa) => infer(newa, r, m, check)
+     case Some(newa) =>
+       (if (Nat.less_nat(FSet.size_fseta[(Nat.nat,
+   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))].apply(newa),
+                          FSet.size_fseta[(Nat.nat,
+    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))].apply(e)))
+         infer(newa, r, m, check) else e)
    })
 
 def enumerate_aexp_regs(x0: AExp.aexp): Set.set[Nat.nat] = x0 match {

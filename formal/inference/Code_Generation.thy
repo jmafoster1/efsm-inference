@@ -126,9 +126,6 @@ code_printing
   constant "writeiDot" \<rightharpoonup> (Scala) "Dirties.writeiDot" |
   constant "timestamp" \<rightharpoonup> (Scala) "System.currentTimeMillis"
 
-termination infer sorry
-termination resolve_nondeterminism sorry
-
 export_code same_register iterative_try_heuristics_print insert_increment nondeterministic finfun_apply iterative_learn infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"

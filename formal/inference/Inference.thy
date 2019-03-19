@@ -216,7 +216,7 @@ definition make_distinct :: "iEFSM option \<Rightarrow> iEFSM option" where
 (* @param m       - an update modifier function which tries to generalise transitions             *)
 (* @param check - a function which takes an EFSM and returns a bool to ensure that certain
                   properties hold in the new iEFSM                                                *)
-function resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM option" where
+fun resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM option" where
   "resolve_nondeterminism [] _ new _ check = (if deterministic new \<and> check (tm new) then Some new else None)" |
   "resolve_nondeterminism ((from, (to1, to2), ((t1, u1), (t2, u2)))#ss) oldEFSM newEFSM m check = (let
      destMerge = (merge_states (arrives u1 newEFSM) (arrives u2 newEFSM) newEFSM);
@@ -237,13 +237,6 @@ function resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEF
          else None
        )
    )"
-     apply clarify
-     apply simp
-     apply (metis neq_Nil_conv prod_cases3 surj_pair)
-  by auto
-
-(* termination *)
-(* sorry *)
 
 (* Merge - tries to merge two states in a given iEFSM and resolve the resulting nondeterminism    *)
 (* @param e     - an iEFSM                                                                        *)
@@ -277,19 +270,11 @@ fun inference_step :: "iEFSM \<Rightarrow> (nat \<times> nat \<times> nat) list 
 (* @param m     - an update modifier function which tries to generalise transitions               *)
 (* @param check - a function which takes an EFSM and returns a bool to ensure that certain
                   properties hold in the new iEFSM                                                *)
-function infer :: "iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM" where
+fun infer :: "iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM" where
   "infer e r m check = (case inference_step e (rev (sorted_list_of_fset (score e r))) m check of
                       None \<Rightarrow> e |
-                      Some new \<Rightarrow> infer new r m check
+                      Some new \<Rightarrow> if size new < size e then infer new r m check else e
                     )"
-  by auto
-(* termination *)
-(* proof- *)
-  (* show ?thesis *)
-    (* apply standard *)
-     (* apply auto[1] *)
-    (* sorry *)
-(* qed *)
 
 primrec iterative_learn_aux :: "log \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> (log \<Rightarrow> update_modifier) \<Rightarrow> (log \<Rightarrow> transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM" where
   "iterative_learn_aux [] _ e _ _ _ = e" |
