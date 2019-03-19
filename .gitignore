@@ -21,3 +21,6 @@ formal/output/
 # Ignore dotfiles
 *.dot
 *.png
+
+# ignore sal files
+inference-tool/salfiles/

@@ -5,9 +5,9 @@ DATE=`date +'%d/%m/%y'`
 dot:
 	@ for b in $(basename $(DOT_FILES)) ; do \
 	  dot -T png -o $$b.png $$b.dot ; \
-		mv $$b.png pngs/$$b.png ;\
 	done
+	@ mv *.png pngs ;\
 
 clean:
-	  rm pngs/*.png ;\
-		rm *.dot ;\
+	  @ rm pngs/*.png ;\
+		@ rm *.dot ;\
