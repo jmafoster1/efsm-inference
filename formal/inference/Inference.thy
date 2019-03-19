@@ -191,6 +191,16 @@ definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<R
         modifier u1 u2 newFrom newEFSM oldEFSM
    )"
 
+fun make_distinct_aux :: "(nat \<times> (nat \<times> nat) \<times> transition) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "make_distinct_aux [] e = e" |
+  "make_distinct_aux (h#t) e = (if snd h |\<in>| fimage snd e then make_distinct_aux t e else make_distinct_aux t (finsert h e))"
+
+
+(* This removes duplicate transitions (i.e. identical transitions with the same origin and        *)
+(* destination states but with different uids                                                     *)
+definition make_distinct :: "iEFSM option \<Rightarrow> iEFSM option" where
+  "make_distinct e = (case e of None \<Rightarrow> None | Some e \<Rightarrow> Some (make_distinct_aux (sorted_list_of_fset e) {||}))"
+
 (* resolve_nondeterminism - tries to resolve nondeterminism in a given iEFSM                      *)
 (* @param ((from, (to\<^sub>1, to\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) - a list of nondeterministic pairs where
           from - nat - the state from which t\<^sub>1 and t\<^sub>2 eminate
@@ -215,14 +225,16 @@ function resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEF
      newFrom = leaves u1 destMerge;
      t1NewTo = arrives u1 destMerge;
      t2NewTo = arrives u2 destMerge in 
-     case merge_transitions oldEFSM destMerge t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 u1 t2 u2 m of
+     case make_distinct (merge_transitions oldEFSM destMerge t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 u1 t2 u2 m) of
        None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check |
       \<^cancel>\<open>we get rid of the rev here so we resolve nondeterminism forwards in the machine\<close>
        Some new \<Rightarrow> 
          let newScores = (\<^cancel>\<open>rev\<close> (sorted_list_of_fset (nondeterministic_pairs new))) in (
-         case resolve_nondeterminism newScores oldEFSM new m check of
-           Some new' \<Rightarrow> Some new' |
-           None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check
+         if length (newScores) < (length ss) + 1 then
+           case resolve_nondeterminism newScores oldEFSM new m check of
+             Some new' \<Rightarrow> Some new' |
+             None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check
+         else None
        )
    )"
      apply clarify

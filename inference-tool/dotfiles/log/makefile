@@ -9,5 +9,5 @@ dot:
 	@ mv *.png pngs ;\
 
 clean:
-	  @ rm pngs/*.png ;\
-		@ rm *.dot ;\
+	@ rm pngs/*.png ;\
+	rm *.dot ;\
