@@ -73,7 +73,6 @@ lemma [code]: "choice t t' = ((Label t) = (Label t') \<and>
   using choice_aux
   by blast
 
-
 code_pred satisfies_trace.
 
 declare ListMem_iff [code]
@@ -102,7 +101,7 @@ definition merge_and_print :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Right
   "merge_and_print x y t = (let merged = (if x > y then merge_states_aux x y t else merge_states_aux y x t);
                                 print = (writeiDot merged (STR ''dotfiles/log/''+timestamp+STR ''.dot'')) in merged)"
 
-lemma merge_and_print [code]: "merge_states = merge_and_print"
+lemma merge_and_print: "merge_states = merge_and_print"
   apply (rule ext)+
   by (simp add: merge_states_def merge_and_print_def)
 
@@ -111,7 +110,7 @@ primrec iterative_try_heuristics_print :: "(log \<Rightarrow> update_modifier) l
   "iterative_try_heuristics_print (h#t) l = (\<lambda>a b c d e. case (h l) a b c d e of None \<Rightarrow> iterative_try_heuristics_print t l a b c d e |
                                             Some e' \<Rightarrow> let print = (writeiDot e' (STR ''dotfiles/log/''+timestamp+STR ''.dot'')) in Some e')"
 
-lemma "iterative_try_heuristics h l = iterative_try_heuristics_print h l"
+lemma try_and_print: "iterative_try_heuristics h l = iterative_try_heuristics_print h l"
 proof(induct h)
   case Nil
   then show ?case by simp
@@ -124,9 +123,43 @@ qed
 
 code_printing
   constant "writeiDot" \<rightharpoonup> (Scala) "Dirties.writeiDot" |
-  constant "timestamp" \<rightharpoonup> (Scala) "System.currentTimeMillis"
+  constant "timestamp" \<rightharpoonup> (Scala) "System.currentTimeMillis.toString"
 
-export_code same_register iterative_try_heuristics_print insert_increment nondeterministic finfun_apply iterative_learn infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
+fun resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM option" where
+  "resolve_nondeterminism [] _ new _ check = (if deterministic new \<and> check (tm new) then Some new else None)" |
+  "resolve_nondeterminism ((from, (to1, to2), ((t1, u1), (t2, u2)))#ss) oldEFSM newEFSM m check = (let
+     destMerge = (merge_states (arrives u1 newEFSM) (arrives u2 newEFSM) newEFSM);
+     t1FromOld = leaves u1 oldEFSM;
+     t2FromOld = leaves u2 oldEFSM;
+     newFrom = leaves u1 destMerge;
+     t1NewTo = arrives u1 destMerge;
+     t2NewTo = arrives u2 destMerge in 
+     case Inference.make_distinct (merge_transitions oldEFSM destMerge t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 u1 t2 u2 m) of
+       None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check |
+      \<^cancel>\<open>we get rid of the rev here so we resolve nondeterminism forwards in the machine\<close>
+       Some new \<Rightarrow> 
+         let newScores = (\<^cancel>\<open>rev\<close> (sorted_list_of_fset (nondeterministic_pairs new)))
+              in (
+         if length newScores < (length ss) + 1 then
+           case resolve_nondeterminism newScores oldEFSM new m check of
+             Some new' \<Rightarrow> Some new' |
+             None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check
+         else 
+           let t = timestamp;
+               p = writeiDot new (STR ''dotfiles/log/''+t+STR ''-new.dot'') ;
+               p' = print (STR ''Failed to reduce nondeterminism '' + (show_nat (length newScores)) + STR '' > '' + (show_nat ((length ss) + 1))) ;
+               p'' = writeiDot newEFSM (STR ''dotfiles/log/''+t+STR ''.dot'') in
+           None
+       )
+   )"
+
+lemma resolve_and_print: "Inference.resolve_nondeterminism = Code_Generation.resolve_nondeterminism"
+  sorry
+
+declare resolve_and_print [code]
+declare Inference.resolve_nondeterminism.simps [code del]
+
+export_code try_heuristics learn same_register insert_increment nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

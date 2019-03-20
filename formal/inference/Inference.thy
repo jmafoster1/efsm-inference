@@ -247,7 +247,7 @@ fun resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEFSM \<
                   properties hold in the new iEFSM                                                *)
 definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM option" where
 "merge e s\<^sub>1 s\<^sub>2 m check = (if s\<^sub>1 = s\<^sub>2 then None else (let t' = (merge_states s\<^sub>1 s\<^sub>2 e) in
-                         resolve_nondeterminism (rev (sorted_list_of_fset (nondeterministic_pairs t'))) e t' m check))"
+                         resolve_nondeterminism ((sorted_list_of_fset (nondeterministic_pairs t'))) e t' m check))"
 
 (* inference_step - attempt to carry out a single step of the inference process by merging the    *)
 (* @param e - an iEFSM to be generalised                                                          *)

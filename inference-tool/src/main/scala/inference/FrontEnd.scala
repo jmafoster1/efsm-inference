@@ -23,15 +23,15 @@ object FrontEnd {
     val coin = list(0)(0)("inputs").asInstanceOf[List[Any]].map(x => TypeConversion.toValue(x))
     val log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)))
 
-    val heuristic = (l:Log) => Code_Generation.iterative_try_heuristics_print(List(
-      (x:Log) => (Same_Register.same_register _).curried,
-      (x:Log) => (Increment_Reset.insert_increment _).curried,
-      (x:Log) => Trace_Matches.heuristic_1(x)
-    ), l)
+    val heuristic = Inference.try_heuristics(List(
+      (Same_Register.same_register _).curried,
+      (Increment_Reset.insert_increment _).curried,
+      Trace_Matches.heuristic_1(log)
+    ))
 
     println("Hello inference!")
     // iterative_learn [] naive_score (iterative_try_heuristics [(λx. insert_increment), (λx. heuristic_1 x)])
-    val inferred = (Inference.iterative_learn(log, (SelectionStrategies.naive_score _).curried, heuristic))
+    val inferred = Inference.learn(log, (SelectionStrategies.naive_score _).curried, heuristic)
 
     println("The inferred machine is "+(if (Inference.nondeterministic(Inference.toiEFSM(inferred))) "non" else "")+"deterministic")
 
