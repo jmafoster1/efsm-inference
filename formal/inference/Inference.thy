@@ -216,7 +216,7 @@ definition make_distinct :: "iEFSM option \<Rightarrow> iEFSM option" where
 (* @param m       - an update modifier function which tries to generalise transitions             *)
 (* @param check - a function which takes an EFSM and returns a bool to ensure that certain
                   properties hold in the new iEFSM                                                *)
-fun resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM option" where
+function resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM option" where
   "resolve_nondeterminism [] _ new _ check = (if deterministic new \<and> check (tm new) then Some new else None)" |
   "resolve_nondeterminism ((from, (to1, to2), ((t1, u1), (t2, u2)))#ss) oldEFSM newEFSM m check = (let
      destMerge = (merge_states (arrives u1 newEFSM) (arrives u2 newEFSM) newEFSM);
@@ -230,13 +230,20 @@ fun resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEFSM \<
       \<^cancel>\<open>we get rid of the rev here so we resolve nondeterminism forwards in the machine\<close>
        Some new \<Rightarrow> 
          let newScores = (\<^cancel>\<open>rev\<close> (sorted_list_of_fset (nondeterministic_pairs new))) in (
-         if length (newScores) < (length ss) + 1 then
+         if length (newScores) + size new < length (ss) + 1 + size newEFSM then
            case resolve_nondeterminism newScores oldEFSM new m check of
              Some new' \<Rightarrow> Some new' |
              None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check
-         else None
+         else
+          None
        )
    )"
+     apply clarify
+     apply simp
+     apply (metis neq_Nil_conv prod_cases3 surj_pair)
+  by auto
+termination 
+  by (relation "measures [\<lambda>(ss, oldEFSM, newEFSM, m, check). length ss + size newEFSM]") auto
 
 (* Merge - tries to merge two states in a given iEFSM and resolve the resulting nondeterminism    *)
 (* @param e     - an iEFSM                                                                        *)

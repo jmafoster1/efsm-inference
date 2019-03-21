@@ -125,40 +125,6 @@ code_printing
   constant "writeiDot" \<rightharpoonup> (Scala) "Dirties.writeiDot" |
   constant "timestamp" \<rightharpoonup> (Scala) "System.currentTimeMillis.toString"
 
-fun resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM option" where
-  "resolve_nondeterminism [] _ new _ check = (if deterministic new \<and> check (tm new) then Some new else None)" |
-  "resolve_nondeterminism ((from, (to1, to2), ((t1, u1), (t2, u2)))#ss) oldEFSM newEFSM m check = (let
-     destMerge = (merge_states (arrives u1 newEFSM) (arrives u2 newEFSM) newEFSM);
-     t1FromOld = leaves u1 oldEFSM;
-     t2FromOld = leaves u2 oldEFSM;
-     newFrom = leaves u1 destMerge;
-     t1NewTo = arrives u1 destMerge;
-     t2NewTo = arrives u2 destMerge in 
-     case Inference.make_distinct (merge_transitions oldEFSM destMerge t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 u1 t2 u2 m) of
-       None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check |
-      \<^cancel>\<open>we get rid of the rev here so we resolve nondeterminism forwards in the machine\<close>
-       Some new \<Rightarrow> 
-         let newScores = (\<^cancel>\<open>rev\<close> (sorted_list_of_fset (nondeterministic_pairs new)))
-              in (
-         if length newScores < (length ss) + 1 then
-           case resolve_nondeterminism newScores oldEFSM new m check of
-             Some new' \<Rightarrow> Some new' |
-             None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check
-         else 
-           let t = timestamp;
-               p = writeiDot new (STR ''dotfiles/log/''+t+STR ''-new.dot'') ;
-               p' = print (STR ''Failed to reduce nondeterminism '' + (show_nat (length newScores)) + STR '' > '' + (show_nat ((length ss) + 1))) ;
-               p'' = writeiDot newEFSM (STR ''dotfiles/log/''+t+STR ''.dot'') in
-           None
-       )
-   )"
-
-lemma resolve_and_print: "Inference.resolve_nondeterminism = Code_Generation.resolve_nondeterminism"
-  sorry
-
-declare resolve_and_print [code]
-declare Inference.resolve_nondeterminism.simps [code del]
-
 export_code try_heuristics learn same_register insert_increment nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
