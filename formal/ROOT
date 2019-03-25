@@ -6,14 +6,22 @@ session "efsm-exp" = "HOL" +
     GExp
     CExp
 
-session "michael-efsm" = "efsm-exp" +
+session "efsm" = "efsm-exp" +
+theories
+  Transition
+  EFSM
+
+session "efsm-inference" = "efsm" +
   options [document = pdf, document_output = "output"]
   theories
-    EFSM
     Contexts
-    "examples/Drinks_Machine"
-    "examples/Drinks_Machine_2"
-
+    "inference/Inference"
+    "inference/Trace_Matches"
+    "inference/Increment_Reset"
+    "inference/Same_Register"
+  document_files
+    "root.tex"
+    "root.bib"
 
 chapter AFP
 session "EFSM" (AFP) = "efsm-exp" +
