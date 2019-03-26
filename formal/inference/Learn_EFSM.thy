@@ -400,14 +400,14 @@ lemma cant_merge_coins: "merge_transitions pta merged_2_9 8 1 1 2 2 (coin 50 100
   apply (simp add: merge_transitions_def coin_50_100_cant_directly_subsume_coin_50_50 coin_50_50_cant_directly_subsume_coin_50_100)
   by (simp add: modifier_def)
 
-lemma cant_merge_coins_2: "merge_transitions pta (merge_states (arrives 2 merged_1_8) (arrives 8 merged_1_8) merged_1_8) (leaves 2 pta) (leaves 8 pta)
-           (leaves 2 (merge_states (arrives 2 merged_1_8) (arrives 8 merged_1_8) merged_1_8))
-           (arrives 2 (merge_states (arrives 2 merged_1_8) (arrives 8 merged_1_8) merged_1_8))
-           (arrives 8 (merge_states (arrives 2 merged_1_8) (arrives 8 merged_1_8) merged_1_8)) (coin 50 50) 2 (coin 50 100) 8 modifier
+lemma cant_merge_coins_2: "merge_transitions pta (merge_states (dest 2 merged_1_8) (dest 8 merged_1_8) merged_1_8) (origin 2 pta) (origin 8 pta)
+           (origin 2 (merge_states (dest 2 merged_1_8) (dest 8 merged_1_8) merged_1_8))
+           (dest 2 (merge_states (dest 2 merged_1_8) (dest 8 merged_1_8) merged_1_8))
+           (dest 8 (merge_states (dest 2 merged_1_8) (dest 8 merged_1_8) merged_1_8)) (coin 50 50) 2 (coin 50 100) 8 modifier
             = None"
 proof-
-  have modify_none: "modifier 2 8 (leaves 2 (merge_states (arrives 2 merged_1_8) (arrives 8 merged_1_8) merged_1_8))
-             (merge_states (arrives 2 merged_1_8) (arrives 8 merged_1_8) merged_1_8) pta = None"
+  have modify_none: "modifier 2 8 (origin 2 (merge_states (dest 2 merged_1_8) (dest 8 merged_1_8) merged_1_8))
+             (merge_states (dest 2 merged_1_8) (dest 8 merged_1_8) merged_1_8) pta = None"
     by (simp add: modifier_def)
   show ?thesis
     apply (simp add: merge_transitions_def modify_none)

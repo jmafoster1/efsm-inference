@@ -84,14 +84,14 @@ proof-
     using choice_def by auto
 qed
 
-lemma merge_transitions_first_branch: "merge_transitions first_branch merge_3_1 (leaves 2 first_branch) (leaves 1 first_branch) (leaves 2 merge_3_1) (arrives 2 merge_3_1)
-           (arrives 1 merge_3_1) (coin 50 100) 2 (coin 50 50) 1 (heuristics [first_trace]) = Some first_branch_initialise"
+lemma merge_transitions_first_branch: "merge_transitions first_branch merge_3_1 (origin 2 first_branch) (origin 1 first_branch) (origin 2 merge_3_1) (dest 2 merge_3_1)
+           (dest 1 merge_3_1) (coin 50 100) 2 (coin 50 50) 1 (heuristics [first_trace]) = Some first_branch_initialise"
   apply (rule merge_transitions_heuristic)
    apply (simp add: coin_50_50_cant_directly_subsume_coin_50_100)
    apply (simp add: coin_50_100_cant_directly_subsume_coin_50_50)
   by eval
 
-lemma merge_transitions_coin_general_coin_general: "merge_transitions first_branch first_branch_initialise (leaves 2 first_branch) (leaves 1 first_branch) (leaves 2 first_branch_initialise) 1
+lemma merge_transitions_coin_general_coin_general: "merge_transitions first_branch first_branch_initialise (origin 2 first_branch) (origin 1 first_branch) (origin 2 first_branch_initialise) 1
                 1 (coin_general 1) 2 (coin_general 1) 1 (heuristics [first_trace]) = Some completed_first_branch"
   apply (simp add: merge_transitions_def directly_subsumes_self)
   by eval
@@ -113,19 +113,19 @@ lemma completed_first_branch_satisfactory: "satisfies {first_trace} (tm complete
 
 lemma first_pass: "merge first_branch 1 2 (heuristics [first_trace]) (satisfies {first_trace}) = Some completed_first_branch"
 proof-
-  have arrives_2_merge_1_2: "arrives 2 merge_1_2 = 3"
+  have dest_2_merge_1_2: "dest 2 merge_1_2 = 3"
     by eval
-  have arrives_1_merge_1_2: "arrives 1 merge_1_2 = 1"
+  have dest_1_merge_1_2: "dest 1 merge_1_2 = 1"
     by eval
-  have arrives_2_first_branch_initialise: "arrives 2 first_branch_initialise = 1"
+  have dest_2_first_branch_initialise: "dest 2 first_branch_initialise = 1"
     by eval
-  have arrives_1_first_branch_initialise: "arrives 1 first_branch_initialise = 1"
+  have dest_1_first_branch_initialise: "dest 1 first_branch_initialise = 1"
     by eval
   show ?thesis
     apply (simp add: merge_def merge_1_2 nondeterministic_pairs_merge_1_2 sorted_list_of_fset_def)
-    apply (simp add: arrives_2_merge_1_2 arrives_1_merge_1_2 merge_3_1)
+    apply (simp add: dest_2_merge_1_2 dest_1_merge_1_2 merge_3_1)
     apply (simp add: merge_transitions_first_branch nondeterministic_pairs_first_branch_initialise sorted_list_of_fset_def)
-    apply (simp add: arrives_2_first_branch_initialise arrives_1_first_branch_initialise merge_states_reflexive)
+    apply (simp add: dest_2_first_branch_initialise dest_1_first_branch_initialise merge_states_reflexive)
     apply (simp add: merge_transitions_coin_general_coin_general nondeterministic_pairs_completed_first_branch deterministic_def)
     by (simp add: completed_first_branch_satisfactory)
 qed
@@ -182,8 +182,8 @@ qed
 lemma merge_7_5: "merge_states 7 5 merge_5_6 = merge_7_5"
   by eval
 
-lemma merge_transitions_merge_7_5: "merge_transitions third_branch merge_7_5 (leaves 5 third_branch) (leaves 4 third_branch) (leaves 5 merge_7_5) (arrives 5 merge_7_5)
-           (arrives 4 merge_7_5) (coin 50 100) 5 (coin 50 50) 4 (heuristics [third_trace, second_trace, first_trace]) = Some h_merge_7_5"
+lemma merge_transitions_merge_7_5: "merge_transitions third_branch merge_7_5 (origin 5 third_branch) (origin 4 third_branch) (origin 5 merge_7_5) (dest 5 merge_7_5)
+           (dest 4 merge_7_5) (coin 50 100) 5 (coin 50 50) 4 (heuristics [third_trace, second_trace, first_trace]) = Some h_merge_7_5"
   apply (rule merge_transitions_heuristic)
     apply (simp add: coin_50_50_cant_directly_subsume_coin_50_100)
    apply (simp add: coin_50_100_cant_directly_subsume_coin_50_50)
@@ -230,8 +230,8 @@ lemma direct_subsumption_merge_1: "directly_subsumes (tm oldEFSM) (tm newEFSM) t
                                     merge_transitions oldEFSM newEFSM t1FromOld t2FromOld newFrom t1NewTo t2NewTo t1 u1 t2 u2 modifier = Some e"
   by (simp add: merge_transitions_def)
 
-lemma merge_transitions_coins: "merge_transitions third_branch h_merge_7_5 (leaves 5 third_branch) (leaves 4 third_branch) (leaves 5 h_merge_7_5) (arrives 4 h_merge_7_5)
-                (arrives 4 h_merge_7_5) (coin_general 2) 5 (coin_general 2) 4 (heuristics [third_trace, second_trace, first_trace]) = Some one_coin"
+lemma merge_transitions_coins: "merge_transitions third_branch h_merge_7_5 (origin 5 third_branch) (origin 4 third_branch) (origin 5 h_merge_7_5) (dest 4 h_merge_7_5)
+                (dest 4 h_merge_7_5) (coin_general 2) 5 (coin_general 2) 4 (heuristics [third_trace, second_trace, first_trace]) = Some one_coin"
   apply (simp add: merge_transitions_def directly_subsumes_self)
   by eval
 
@@ -264,19 +264,19 @@ qed
 
 lemma third_pass: "merge third_branch 5 6 (heuristics [third_trace, second_trace, first_trace]) (satisfies {third_trace, second_trace, first_trace}) = Some one_coin"
 proof-
-  have arrives_5_merge_5_6: "arrives 5 merge_5_6 = 7"
+  have dest_5_merge_5_6: "dest 5 merge_5_6 = 7"
     by eval
-  have arrives_4_merge_5_6: "arrives 4 merge_5_6 = 5"
+  have dest_4_merge_5_6: "dest 4 merge_5_6 = 5"
     by eval
-  have arrives_5_h_merge_7_5: "arrives 5 h_merge_7_5 = arrives 4 h_merge_7_5"
+  have dest_5_h_merge_7_5: "dest 5 h_merge_7_5 = dest 4 h_merge_7_5"
     by eval
   have satisfactory: "satisfies {third_trace, second_trace, first_trace} (tm one_coin)"
     by eval
   show ?thesis
     apply (simp add: merge_def merge_5_6 nondeterministic_pairs_merge_5_6 sorted_list_of_fset_def)
-    apply (simp add: arrives_5_merge_5_6 arrives_4_merge_5_6 merge_7_5 merge_transitions_merge_7_5)
+    apply (simp add: dest_5_merge_5_6 dest_4_merge_5_6 merge_7_5 merge_transitions_merge_7_5)
     apply (simp add: nondeterministic_pairs_h_merge_7_5 sorted_list_of_fset_def)
-    apply (simp add: arrives_5_h_merge_7_5 merge_states_reflexive merge_transitions_coins nondeterministic_pairs_one_coin deterministic_def)
+    apply (simp add: dest_5_h_merge_7_5 merge_states_reflexive merge_transitions_coins nondeterministic_pairs_one_coin deterministic_def)
     by (simp add: satisfactory)
 qed
 
@@ -322,7 +322,7 @@ by eval
     using choice_def by auto
 qed
 
-lemma merge_transitions_select_vend_merge_8_4: "merge_transitions one_coin merge_8_4 (leaves 6 one_coin) (leaves 3 one_coin) (leaves 6 merge_8_4) (arrives 6 merge_8_4) (arrives 3 merge_8_4)
+lemma merge_transitions_select_vend_merge_8_4: "merge_transitions one_coin merge_8_4 (origin 6 one_coin) (origin 3 one_coin) (origin 6 merge_8_4) (dest 6 merge_8_4) (dest 3 merge_8_4)
            (vend pepsi) 6 (vend coke) 3 (heuristics [third_trace, second_trace, first_trace]) = Some h_merge_8_4"
   apply (rule merge_transitions_heuristic)
     apply (simp add: cant_directly_subsume no_subsumption_vend_coke_vend_pepsi)
@@ -394,13 +394,13 @@ proof-
      apply (simp add: gets_us_to.base)
     apply (simp add: anterior_context_def)
 
-lemma "merge_transitions one_coin h_merge_8_4 (leaves 5 one_coin) (leaves 4 one_coin) (leaves 5 h_merge_8_4) (arrives 4 h_merge_8_4)
-                (arrives 4 h_merge_8_4) (general_vend 3) 5 (vend pepsi) 4 (heuristics [third_trace, second_trace, first_trace]) = Some e"
+lemma "merge_transitions one_coin h_merge_8_4 (origin 5 one_coin) (origin 4 one_coin) (origin 5 h_merge_8_4) (dest 4 h_merge_8_4)
+                (dest 4 h_merge_8_4) (general_vend 3) 5 (vend pepsi) 4 (heuristics [third_trace, second_trace, first_trace]) = Some e"
 proof-
-  have leaves_5: "leaves 5 one_coin = 5"
+  have origin_5: "origin 5 one_coin = 5"
     by eval
   show ?thesis
-    apply (simp only: leaves_5)
+    apply (simp only: origin_5)
     apply (rule merge_transitions_heuristic)
 
 
@@ -411,9 +411,9 @@ proof-
   (1, (8, 4), (vend pepsi, 6), vend coke, 3)]"
     apply (simp add: nondeterministic_pairs_merge_1_5)
     by eval
-  have arrives_6_merge_1_5: "arrives 6 merge_1_5 = 8"
+  have dest_6_merge_1_5: "dest 6 merge_1_5 = 8"
     by eval
-  have arrives_3_merge_1_5: "arrives 3 merge_1_5 = 4"
+  have dest_3_merge_1_5: "dest 3 merge_1_5 = 4"
     by eval
   have merge_8_4: "merge_states 8 4 merge_1_5 = merge_8_4"
     by eval
@@ -424,15 +424,15 @@ proof-
   (1, (4, 4), (vend pepsi, 4), general_vend 3, 5), (1, (4, 4), (general_vend 3, 5), vend pepsi, 4)]"
     apply (simp add: nondeterministic_pairs_h_merge_8_4)
     by eval
-  have arrives_5_eq_arrives_4: "arrives 5 h_merge_8_4 = arrives 4 h_merge_8_4"
+  have dest_5_eq_dest_4: "dest 5 h_merge_8_4 = dest 4 h_merge_8_4"
     by eval
   show ?thesis
     apply (simp add: merge_def)
     apply (simp add: merge_1_5 sorted_list)
-    apply (simp add: arrives_6_merge_1_5 arrives_3_merge_1_5)
+    apply (simp add: dest_6_merge_1_5 dest_3_merge_1_5)
     apply (simp add: merge_8_4)
     apply (simp add: merge_transitions_select_vend_merge_8_4)
-    apply (simp add: sorted_list_2 arrives_5_eq_arrives_4 merge_states_reflexive)
+    apply (simp add: sorted_list_2 dest_5_eq_dest_4 merge_states_reflexive)
 
 
 

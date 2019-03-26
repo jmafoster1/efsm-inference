@@ -45,11 +45,11 @@ fun guard_filter_code :: "nat \<Rightarrow> guard \<Rightarrow> bool" where
   "guard_filter_code inputX (gexp.Eq a b) = (a \<noteq> (V (I inputX)) \<and> b \<noteq> (V (I inputX)))" |
   "guard_filter_code _ _ = True"
 
-lemma[code]: "leaves uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (fst x = uid)) t))))"
-  by (simp only: leaves_def exists_is_fst)
+lemma[code]: "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (fst x = uid)) t))))"
+  by (simp only: origin_def exists_is_fst)
 
-lemma[code]: "arrives uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. (fst x = uid)) t))))"
-  by (simp only: arrives_def exists_is_fst)
+lemma[code]: "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. (fst x = uid)) t))))"
+  by (simp only: dest_def exists_is_fst)
 
 lemma gval_fold: "(gval (fold gAnd G (gexp.Bc True)) s = true) = (\<forall>g\<in>set (map (\<lambda>g. gval g s) G). g = true)"
 proof(induct G rule: rev_induct)

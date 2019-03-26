@@ -1965,6 +1965,29 @@ def tm(t: FSet.fset[(Nat.nat,
                                  Transition.transition_ext[Unit])](a)),
             t)
 
+def dest(uid: Nat.nat,
+          t: FSet.fset[(Nat.nat,
+                         ((Nat.nat, Nat.nat),
+                           Transition.transition_ext[Unit]))]):
+      Nat.nat
+  =
+  Product_Type.snd[Nat.nat,
+                    Nat.nat](Product_Type.fst[(Nat.nat, Nat.nat),
+       Transition.transition_ext[Unit]](Product_Type.snd[Nat.nat,
+                  ((Nat.nat, Nat.nat),
+                    Transition.transition_ext[Unit])](FSet.fthe_elem[(Nat.nat,
+                               ((Nat.nat, Nat.nat),
+                                 Transition.transition_ext[Unit]))](FSet.ffilter[(Nat.nat,
+   ((Nat.nat, Nat.nat),
+     Transition.transition_ext[Unit]))](((x:
+    (Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
+   =>
+  Nat.equal_nata(Product_Type.fst[Nat.nat,
+                                   ((Nat.nat, Nat.nat),
+                                     Transition.transition_ext[Unit])](x),
+                  uid)),
+ t)))))
+
 def maxS(t: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]):
       Nat.nat
   =
@@ -2166,7 +2189,7 @@ val (ab, b):
 def replace_transition(t: FSet.fset[(Nat.nat,
                                       ((Nat.nat, Nat.nat),
 Transition.transition_ext[Unit]))],
-                        uid: Nat.nat, from: Nat.nat, to: Nat.nat,
+                        uid: Nat.nat, from: Nat.nat, dest: Nat.nat,
                         orig: Transition.transition_ext[Unit],
                         newa: Transition.transition_ext[Unit]):
       FSet.fset[(Nat.nat,
@@ -2185,32 +2208,53 @@ Transition.transition_ext[Unit]))],
                    Transition.transition_ext[Unit]](Product_Type.snd[Nat.nat,
                               ((Nat.nat, Nat.nat),
                                 Transition.transition_ext[Unit])](x),
-             ((from, to),
+             ((from, dest),
                orig)))) && (! (Product_Type.equal_proda[(Nat.nat, Nat.nat),
                  Transition.transition_ext[Unit]](Product_Type.snd[Nat.nat,
                             ((Nat.nat, Nat.nat),
                               Transition.transition_ext[Unit])](x),
-           ((from, to), newa))))),
+           ((from, dest), newa))))),
                             t),
                 FSet.finsert[(Nat.nat,
                                ((Nat.nat, Nat.nat),
                                  Transition.transition_ext[Unit]))]((uid,
-                              ((from, to), newa)),
+                              ((from, dest), newa)),
                              FSet.bot_fset[(Nat.nat,
      ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]))
+
+def origin(uid: Nat.nat,
+            t: FSet.fset[(Nat.nat,
+                           ((Nat.nat, Nat.nat),
+                             Transition.transition_ext[Unit]))]):
+      Nat.nat
+  =
+  Product_Type.fst[Nat.nat,
+                    Nat.nat](Product_Type.fst[(Nat.nat, Nat.nat),
+       Transition.transition_ext[Unit]](Product_Type.snd[Nat.nat,
+                  ((Nat.nat, Nat.nat),
+                    Transition.transition_ext[Unit])](FSet.fthe_elem[(Nat.nat,
+                               ((Nat.nat, Nat.nat),
+                                 Transition.transition_ext[Unit]))](FSet.ffilter[(Nat.nat,
+   ((Nat.nat, Nat.nat),
+     Transition.transition_ext[Unit]))](((x:
+    (Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
+   =>
+  Nat.equal_nata(Product_Type.fst[Nat.nat,
+                                   ((Nat.nat, Nat.nat),
+                                     Transition.transition_ext[Unit])](x),
+                  uid)),
+ t)))))
 
 def merge_transitions(oldEFSM:
                         FSet.fset[(Nat.nat,
                                     ((Nat.nat, Nat.nat),
                                       Transition.transition_ext[Unit]))],
-                       newEFSM:
+                       destMerge:
                          FSet.fset[(Nat.nat,
                                      ((Nat.nat, Nat.nat),
                                        Transition.transition_ext[Unit]))],
-                       t1FromOld: Nat.nat, t2FromOld: Nat.nat, newFrom: Nat.nat,
-                       t1NewTo: Nat.nat, t2NewTo: Nat.nat,
-                       t1: Transition.transition_ext[Unit], u1: Nat.nat,
-                       t2: Transition.transition_ext[Unit], u2: Nat.nat,
+                       t_1: Transition.transition_ext[Unit], u_1: Nat.nat,
+                       t_2: Transition.transition_ext[Unit], u_2: Nat.nat,
                        modifier:
                          Nat.nat =>
                            Nat.nat =>
@@ -2225,19 +2269,21 @@ def merge_transitions(oldEFSM:
                          ((Nat.nat, Nat.nat),
                            Transition.transition_ext[Unit]))]]
   =
-  (if (Dirties.scalaDirectlySubsumes(tm(oldEFSM), tm(newEFSM), t1FromOld, t2,
-                                      t1))
+  (if (Dirties.scalaDirectlySubsumes(tm(oldEFSM), tm(destMerge),
+                                      origin(u_1, oldEFSM), t_2, t_1))
     Some[FSet.fset[(Nat.nat,
                      ((Nat.nat, Nat.nat),
-                       Transition.transition_ext[Unit]))]](replace_transition(newEFSM,
-                                       u1, newFrom, t2NewTo, t1, t2))
-    else (if (Dirties.scalaDirectlySubsumes(tm(oldEFSM), tm(newEFSM), t2FromOld,
-     t1, t2))
+                       Transition.transition_ext[Unit]))]](replace_transition(destMerge,
+                                       u_1, origin(u_1, destMerge),
+                                       dest(u_2, destMerge), t_1, t_2))
+    else (if (Dirties.scalaDirectlySubsumes(tm(oldEFSM), tm(destMerge),
+     origin(u_2, oldEFSM), t_1, t_2))
            Some[FSet.fset[(Nat.nat,
                             ((Nat.nat, Nat.nat),
-                              Transition.transition_ext[Unit]))]](replace_transition(newEFSM,
-      u1, newFrom, t1NewTo, t2, t1))
-           else ((((modifier(u1))(u2))(newFrom))(newEFSM))(oldEFSM)))
+                              Transition.transition_ext[Unit]))]](replace_transition(destMerge,
+      u_1, origin(u_1, destMerge), dest(u_1, destMerge), t_2, t_1))
+           else ((((modifier(u_1))(u_2))(origin(u_1,
+         destMerge)))(destMerge))(oldEFSM)))
 
 def make_distinct_aux(x0: List[(Nat.nat,
                                  ((Nat.nat, Nat.nat),
@@ -2347,52 +2393,6 @@ def merge_states(x: Nat.nat, y: Nat.nat,
   (if (Nat.less_nat(y, x)) merge_states_aux(x, y, t)
     else merge_states_aux(y, x, t))
 
-def arrives(uid: Nat.nat,
-             t: FSet.fset[(Nat.nat,
-                            ((Nat.nat, Nat.nat),
-                              Transition.transition_ext[Unit]))]):
-      Nat.nat
-  =
-  Product_Type.snd[Nat.nat,
-                    Nat.nat](Product_Type.fst[(Nat.nat, Nat.nat),
-       Transition.transition_ext[Unit]](Product_Type.snd[Nat.nat,
-                  ((Nat.nat, Nat.nat),
-                    Transition.transition_ext[Unit])](FSet.fthe_elem[(Nat.nat,
-                               ((Nat.nat, Nat.nat),
-                                 Transition.transition_ext[Unit]))](FSet.ffilter[(Nat.nat,
-   ((Nat.nat, Nat.nat),
-     Transition.transition_ext[Unit]))](((x:
-    (Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
-   =>
-  Nat.equal_nata(Product_Type.fst[Nat.nat,
-                                   ((Nat.nat, Nat.nat),
-                                     Transition.transition_ext[Unit])](x),
-                  uid)),
- t)))))
-
-def leaves(uid: Nat.nat,
-            t: FSet.fset[(Nat.nat,
-                           ((Nat.nat, Nat.nat),
-                             Transition.transition_ext[Unit]))]):
-      Nat.nat
-  =
-  Product_Type.fst[Nat.nat,
-                    Nat.nat](Product_Type.fst[(Nat.nat, Nat.nat),
-       Transition.transition_ext[Unit]](Product_Type.snd[Nat.nat,
-                  ((Nat.nat, Nat.nat),
-                    Transition.transition_ext[Unit])](FSet.fthe_elem[(Nat.nat,
-                               ((Nat.nat, Nat.nat),
-                                 Transition.transition_ext[Unit]))](FSet.ffilter[(Nat.nat,
-   ((Nat.nat, Nat.nat),
-     Transition.transition_ext[Unit]))](((x:
-    (Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
-   =>
-  Nat.equal_nata(Product_Type.fst[Nat.nat,
-                                   ((Nat.nat, Nat.nat),
-                                     Transition.transition_ext[Unit])](x),
-                  uid)),
- t)))))
-
 def resolve_nondeterminism(x0: List[(Nat.nat,
                                       ((Nat.nat, Nat.nat),
 ((Transition.transition_ext[Unit], Nat.nat),
@@ -2424,21 +2424,16 @@ def resolve_nondeterminism(x0: List[(Nat.nat,
                        ((Nat.nat, Nat.nat),
                          Transition.transition_ext[Unit]))]](newa)
       else None)
-  case ((from, ((to1, to2), ((t1, u1), (t2, u2))))::ss, oldEFSM, newEFSM, m,
-         check)
+  case ((from, ((dest_1, dest_2), ((t_1, u_1), (t_2, u_2))))::ss, oldEFSM,
+         newEFSM, m, check)
     => {
          val destMerge:
                FSet.fset[(Nat.nat,
                            ((Nat.nat, Nat.nat),
                              Transition.transition_ext[Unit]))]
-           = merge_states(arrives(u1, newEFSM), arrives(u2, newEFSM), newEFSM)
-         val t1FromOld: Nat.nat = leaves(u1, oldEFSM)
-         val t2FromOld: Nat.nat = leaves(u2, oldEFSM)
-         val newFrom: Nat.nat = leaves(u1, destMerge)
-         val t1NewTo: Nat.nat = arrives(u1, destMerge)
-         val t2NewTo: Nat.nat = arrives(u2, destMerge);
-         (make_distinct(merge_transitions(oldEFSM, destMerge, t1FromOld,
-   t2FromOld, newFrom, t1NewTo, t2NewTo, t1, u1, t2, u2, m))
+           = merge_states(dest(u_1, newEFSM), dest(u_2, newEFSM), newEFSM);
+         (make_distinct(merge_transitions(oldEFSM, destMerge, t_1, u_1, t_2,
+   u_2, m))
             match {
             case None => resolve_nondeterminism(ss, oldEFSM, newEFSM, m, check)
             case Some(newa) =>
@@ -2501,16 +2496,16 @@ def merge(e: FSet.fset[(Nat.nat,
   =
   (if (Nat.equal_nata(s_1, s_2)) None
     else {
-           val t: FSet.fset[(Nat.nat,
-                              ((Nat.nat, Nat.nat),
-                                Transition.transition_ext[Unit]))]
+           val ea: FSet.fset[(Nat.nat,
+                               ((Nat.nat, Nat.nat),
+                                 Transition.transition_ext[Unit]))]
              = merge_states(s_1, s_2, e);
            resolve_nondeterminism(FSet.sorted_list_of_fset[(Nat.nat,
                      ((Nat.nat, Nat.nat),
                        ((Transition.transition_ext[Unit], Nat.nat),
                          (Transition.transition_ext[Unit],
-                           Nat.nat))))](nondeterministic_pairs(t)),
-                                   e, t, m, check)
+                           Nat.nat))))](nondeterministic_pairs(ea)),
+                                   e, ea, m, check)
          })
 
 def inference_step(uu: FSet.fset[(Nat.nat,
@@ -2874,10 +2869,11 @@ def replaceAll(e: FSet.fset[(Nat.nat,
                         ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])
                     = aa;
                   ({
-                     val (from, to): (Nat.nat, Nat.nat) = ab;
+                     val (from, dest): (Nat.nat, Nat.nat) = ab;
                      ((t: Transition.transition_ext[Unit]) =>
                        (if (Transition.equal_transition_exta[Unit](t, old))
-                         (uid, ((from, to), newa)) else (uid, ((from, to), t))))
+                         (uid, ((from, dest), newa))
+                         else (uid, ((from, dest), t))))
                    })(b)
                 }),
                e)
@@ -4233,11 +4229,11 @@ def insert_increment(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
                                val (from, to): (Nat.nat, Nat.nat) = ab;
                                ((t: Transition.transition_ext[Unit]) =>
                                  (uid, ((from, to),
- (if (((Nat.equal_nata(to, Inference.arrives(t1ID,
-      newa))) || (Nat.equal_nata(to, Inference.arrives(t2ID,
-                newa)))) && ((! (Transition.equal_transition_exta[Unit](t,
-                                 t1))) && (! (Transition.equal_transition_exta[Unit](t,
-      t2)))))
+ (if (((Nat.equal_nata(to, Inference.dest(t1ID,
+   newa))) || (Nat.equal_nata(to, Inference.dest(t2ID,
+          newa)))) && ((! (Transition.equal_transition_exta[Unit](t,
+                           t1))) && (! (Transition.equal_transition_exta[Unit](t,
+t2)))))
    initialiseReg(t, newReg) else t))))
                              })(b)
                           }),
