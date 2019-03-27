@@ -443,4 +443,58 @@ lemma no_further_steps: "s \<noteq> s' \<Longrightarrow> \<not> gets_us_to s e s
 
 definition incoming_transition_to :: "transition_matrix \<Rightarrow> nat \<Rightarrow> bool" where
   "incoming_transition_to t s = ((ffilter (\<lambda>((from, to), t). to = s) t) \<noteq> {||})"
+
+lemma incoming_transition_alt_def: "incoming_transition_to e n = (\<exists>t from. ((from, n), t) |\<in>| e)"
+  apply (simp add: incoming_transition_to_def)
+  apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse)
+  apply (simp add: fmember_def)
+  apply (simp add: Set.filter_def)
+  by auto
+
+lemma no_step_to: "\<not> incoming_transition_to t m \<Longrightarrow>
+       step t n r aa b \<noteq> Some (uw, m, ux, r')"
+  apply (simp add: incoming_transition_alt_def step_def)
+  apply safe
+  apply (case_tac "fthe_elem (possible_steps t n r aa b)")
+  apply simp
+  using singleton_dest by blast
+
+lemma no_route_to_no_access: "\<not> incoming_transition_to t 0 \<Longrightarrow> \<forall>r s. s \<noteq> 0 \<longrightarrow> \<not>gets_us_to 0 t s r p"
+proof(induct p)
+  case Nil
+  then show ?case
+    by (simp add: no_further_steps)
+next
+  case (Cons a p)
+  then show ?case
+    apply clarify
+    apply (rule gets_us_to.cases)
+       apply simp
+      apply simp
+     apply clarify
+     apply simp
+     apply (metis no_step_to Cons.hyps)
+    by simp
+qed
+
+lemma no_return_to_initial: "\<not> incoming_transition_to t 0 \<Longrightarrow> accepts_trace t p \<and> gets_us_to 0 t 0 Map.empty p \<Longrightarrow> p = []"
+proof(induct p)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a p)
+  then show ?case
+    apply (simp add: accepts_trace_def)
+    apply (rule gets_us_to.cases)
+       apply auto[1]
+      apply simp
+     apply clarify
+     apply simp
+     apply (case_tac "s' = 0")
+      apply (simp add: no_step_to)
+     apply (simp add: no_route_to_no_access)
+    apply clarify
+    by (simp add: no_step_none)
+qed
 end

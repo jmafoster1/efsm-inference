@@ -1,5 +1,5 @@
 theory Increment_Reset
-  imports Inference
+  imports "../Inference"
 begin
 
 definition initialiseReg :: "transition \<Rightarrow> vname \<Rightarrow> transition" where

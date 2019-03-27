@@ -1,5 +1,5 @@
 theory Same_Register
-  imports Same_Structure
+  imports "../Inference"
 begin
 
 fun updates :: "update_function list \<Rightarrow> vname option" where

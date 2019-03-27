@@ -2,9 +2,9 @@ theory Code_Generation
   imports 
    "HOL-Library.Code_Target_Numeral" Inference "../FSet_Utils" SelectionStrategies EFSM_Dot
    Type_Inference
-   Trace_Matches
-   Increment_Reset
-   Same_Register
+   "heuristics/Store_Reuse"
+   "heuristics/Increment_Reset"
+   "heuristics/Same_Register"
 begin
 
 declare GExp.satisfiable_def [code del]

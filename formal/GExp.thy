@@ -184,4 +184,12 @@ fun contains_bool :: "gexp \<Rightarrow> bool" where
   "contains_bool (Nor g1 g2) = (contains_bool g1 \<or> contains_bool g2)" |
   "contains_bool _ = False"
 
+fun gexp_same_structure :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
+  "gexp_same_structure (gexp.Bc b) (gexp.Bc b') = (b = b')" |
+  "gexp_same_structure (gexp.Eq a1 a2) (gexp.Eq a1' a2') = (aexp_same_structure a1 a1' \<and> aexp_same_structure a2 a2')" |
+  "gexp_same_structure (gexp.Gt a1 a2) (gexp.Gt a1' a2') = (aexp_same_structure a1 a1' \<and> aexp_same_structure a2 a2')" |
+  "gexp_same_structure (gexp.Nor g1 g2) (gexp.Nor g1' g2') = (gexp_same_structure g1 g1' \<and> gexp_same_structure g2 g2')" |
+  "gexp_same_structure (gexp.Null a1) (gexp.Null a2) = aexp_same_structure a1 a2" |
+  "gexp_same_structure _ _ = False"
+
 end

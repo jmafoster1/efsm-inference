@@ -1,5 +1,5 @@
-theory Trace_Matches
-imports Same_Structure
+theory Store_Reuse
+imports "../Inference"
 begin
 datatype ioTag = In | Out
 
@@ -75,13 +75,14 @@ primrec get_by_id_all_intratrace_matches_alt :: "log \<Rightarrow> (index \<time
 definition i_possible_steps :: "iEFSM \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> nat \<times> transition) fset" where
   "i_possible_steps e s r l i = fimage (\<lambda>(uid, (origin, dest), t). (uid, dest, t)) (ffilter (\<lambda>(uid, (origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"
 
-
 definition i_step :: "iEFSM \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> nat \<times> datastate) option" where
-"i_step e s r l i = (if size (i_possible_steps e s r l i) = 1 then (
-                     let (u, s', t) = (fthe_elem (i_possible_steps e s r l i)) in
-                     Some (t, s', u, (EFSM.apply_updates (Updates t) (join_ir i r) r))
-                   )
-                   else None)"
+  "i_step e s r l i = (
+    if size (i_possible_steps e s r l i) = 1 then (
+      let (u, s', t) = (fthe_elem (i_possible_steps e s r l i)) in
+      Some (t, s', u, (EFSM.apply_updates (Updates t) (join_ir i r) r))
+    )
+    else None
+  )"
 
 type_synonym match = "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> ((transition \<times> nat) \<times> ioTag \<times> nat))"
 
@@ -192,104 +193,6 @@ qed
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalisation_of t' t e i r = (\<exists>to from uid. t' = remove_guard_add_update t i r \<and> (uid, (from, to), t') |\<in>| e)"
 
-lemma finite_enumerate_aexp_inputs: "finite (enumerate_aexp_inputs a)"
-proof(induct a)
-case (L x)
-  then show ?case
-    by simp
-next
-case (V x)
-  then show ?case
-    apply (cases x)
-    by auto
-next
-  case (Plus a1 a2)
-  then show ?case
-    by simp
-next
-  case (Minus a1 a2)
-  then show ?case
-    by simp
-qed
-
-lemma finite_enumerate_gexp_inputs: "finite (enumerate_gexp_inputs g)"
-proof(induct g)
-case (Bc x)
-  then show ?case
-    by simp
-next
-  case (Eq x1a x2)
-  then show ?case
-    by (simp add: finite_enumerate_aexp_inputs)
-next
-case (Gt x1a x2)
-  then show ?case
-    by (simp add: finite_enumerate_aexp_inputs)
-next
-  case (Nor g1 g2)
-  then show ?case
-    by simp
-next
-  case (Null x)
-  then show ?case
-    by (simp add: finite_enumerate_aexp_inputs)
-qed
-
-lemma finite_enumerate_gexp_inputs_alt: "finite (\<Union>x\<in>set g. enumerate_gexp_inputs x)"
-  by (simp add: finite_enumerate_gexp_inputs)
-
-lemma finite_enumerate_aexp_inputs_alt: "finite (\<Union>x\<in>set p. enumerate_aexp_inputs x)"
-  by (simp add: finite_enumerate_aexp_inputs)
-
-lemma finite_enumerate_inputs_Updates_alt: "finite (\<Union>x\<in>set U. case x of (uu_, x) \<Rightarrow> enumerate_aexp_inputs x)"
-  using finite_enumerate_aexp_inputs
-  by auto
-
-lemma eliminate_zero_insert: "finite s \<Longrightarrow> Max (insert (0::nat) (insert i s)) = Max (insert i s)"
-  by simp
-
-lemma finite_insert_max:  "finite s \<Longrightarrow> i \<le> Max (insert i s)"
-  by simp
-
-lemma finite_enumerate_aexp_regs: "finite (enumerate_aexp_regs r)"
-proof(induct r)
-  case (L x)
-then show ?case by simp
-next
-case (V x)
-  then show ?case
-    apply (cases x)
-    by auto
-next
-case (Plus r1 r2)
-  then show ?case by simp
-next
-case (Minus r1 r2)
-  then show ?case by simp
-qed
-
-lemma finite_enumerate_gexp_regs: "finite(enumerate_gexp_regs x)"
-proof(induct x)
-case (Bc x)
-then show ?case by simp
-next
-  case (Eq x1a x2)
-  then show ?case
-    by (simp add: finite_enumerate_aexp_regs)
-next
-  case (Gt x1a x2)
-  then show ?case 
-    by (simp add: finite_enumerate_aexp_regs)
-next
-  case (Nor x1 x2)
-  then show ?case 
-    by simp
-next
-  case (Null x)
-  then show ?case 
-    by (simp add: finite_enumerate_aexp_regs)
-qed
-
 lemma generalise_output_preserves_label: "Label (generalise_output t r p) = Label t"
   by (simp add: generalise_output_def)
 
@@ -305,6 +208,9 @@ lemma generalise_output_preserves_output_length: "length (Outputs (generalise_ou
 lemma generalise_output_preserves_updates: "Updates (generalise_output t r p) = Updates t"
   by (simp add: generalise_output_def)
 
-lemmas generalise_output_preserves = generalise_output_preserves_label generalise_output_preserves_arity
-generalise_output_preserves_output_length generalise_output_preserves_guard generalise_output_preserves_updates
+lemmas generalise_output_preserves = generalise_output_preserves_label
+                                     generalise_output_preserves_arity
+                                     generalise_output_preserves_output_length
+                                     generalise_output_preserves_guard
+                                     generalise_output_preserves_updates
 end                                                   

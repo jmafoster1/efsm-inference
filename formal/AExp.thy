@@ -117,4 +117,11 @@ fun aexp_constrains :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
 lemma constrains_implies_not_equal: "\<not> aexp_constrains x a \<Longrightarrow> x \<noteq> a"
   using aexp_constrains.elims(3) by blast
 
+fun aexp_same_structure :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
+  "aexp_same_structure (L v) (L v') = True" |
+  "aexp_same_structure (V v) (V v') = True" |
+  "aexp_same_structure (Plus a1 a2) (Plus a1' a2') = (aexp_same_structure a1 a1' \<and> aexp_same_structure a2 a2')" |
+  "aexp_same_structure (Minus a1 a2) (Minus a1' a2') = (aexp_same_structure a1 a1' \<and> aexp_same_structure a2 a2')" |
+  "aexp_same_structure _ _ = False"
+
 end

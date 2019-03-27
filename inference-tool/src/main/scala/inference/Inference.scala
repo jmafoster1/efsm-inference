@@ -26,10 +26,10 @@ object equal {
     val `HOL.equal` = (a: Type_Inference.typea, b: Type_Inference.typea) =>
       Type_Inference.equal_typea(a, b)
   }
-  implicit def `Trace_Matches.equal_ioTag`: equal[Trace_Matches.ioTag] = new
-    equal[Trace_Matches.ioTag] {
-    val `HOL.equal` = (a: Trace_Matches.ioTag, b: Trace_Matches.ioTag) =>
-      Trace_Matches.equal_ioTaga(a, b)
+  implicit def `Store_Reuse.equal_ioTag`: equal[Store_Reuse.ioTag] = new
+    equal[Store_Reuse.ioTag] {
+    val `HOL.equal` = (a: Store_Reuse.ioTag, b: Store_Reuse.ioTag) =>
+      Store_Reuse.equal_ioTaga(a, b)
   }
   implicit def `Product_Type.equal_unit`: equal[Unit] = new equal[Unit] {
     val `HOL.equal` = (a: Unit, b: Unit) => Product_Type.equal_unita(a, b)
@@ -97,12 +97,12 @@ object ord {
     val `Orderings.less_eq` = (a: BigInt, b: BigInt) => a <= b
     val `Orderings.less` = (a: BigInt, b: BigInt) => a < b
   }
-  implicit def `Trace_Matches.ord_ioTag`: ord[Trace_Matches.ioTag] = new
-    ord[Trace_Matches.ioTag] {
-    val `Orderings.less_eq` = (a: Trace_Matches.ioTag, b: Trace_Matches.ioTag)
-      => Trace_Matches.less_eq_ioTag(a, b)
-    val `Orderings.less` = (a: Trace_Matches.ioTag, b: Trace_Matches.ioTag) =>
-      Trace_Matches.less_ioTag(a, b)
+  implicit def `Store_Reuse.ord_ioTag`: ord[Store_Reuse.ioTag] = new
+    ord[Store_Reuse.ioTag] {
+    val `Orderings.less_eq` = (a: Store_Reuse.ioTag, b: Store_Reuse.ioTag) =>
+      Store_Reuse.less_eq_ioTag(a, b)
+    val `Orderings.less` = (a: Store_Reuse.ioTag, b: Store_Reuse.ioTag) =>
+      Store_Reuse.less_ioTag(a, b)
   }
   implicit def `Product_Type.ord_unit`: ord[Unit] = new ord[Unit] {
     val `Orderings.less_eq` = (a: Unit, b: Unit) =>
@@ -158,12 +158,12 @@ object preorder {
       (a: Transition.transition_ext[A], b: Transition.transition_ext[A]) =>
       Transition_Ordering.less_transition_ext[A](a, b)
   }
-  implicit def `Trace_Matches.preorder_ioTag`: preorder[Trace_Matches.ioTag] =
-    new preorder[Trace_Matches.ioTag] {
-    val `Orderings.less_eq` = (a: Trace_Matches.ioTag, b: Trace_Matches.ioTag)
-      => Trace_Matches.less_eq_ioTag(a, b)
-    val `Orderings.less` = (a: Trace_Matches.ioTag, b: Trace_Matches.ioTag) =>
-      Trace_Matches.less_ioTag(a, b)
+  implicit def `Store_Reuse.preorder_ioTag`: preorder[Store_Reuse.ioTag] = new
+    preorder[Store_Reuse.ioTag] {
+    val `Orderings.less_eq` = (a: Store_Reuse.ioTag, b: Store_Reuse.ioTag) =>
+      Store_Reuse.less_eq_ioTag(a, b)
+    val `Orderings.less` = (a: Store_Reuse.ioTag, b: Store_Reuse.ioTag) =>
+      Store_Reuse.less_ioTag(a, b)
   }
   implicit def `Product_Type.preorder_unit`: preorder[Unit] = new preorder[Unit]
     {
@@ -226,12 +226,12 @@ object order {
       (a: Transition.transition_ext[A], b: Transition.transition_ext[A]) =>
       Transition_Ordering.less_transition_ext[A](a, b)
   }
-  implicit def `Trace_Matches.order_ioTag`: order[Trace_Matches.ioTag] = new
-    order[Trace_Matches.ioTag] {
-    val `Orderings.less_eq` = (a: Trace_Matches.ioTag, b: Trace_Matches.ioTag)
-      => Trace_Matches.less_eq_ioTag(a, b)
-    val `Orderings.less` = (a: Trace_Matches.ioTag, b: Trace_Matches.ioTag) =>
-      Trace_Matches.less_ioTag(a, b)
+  implicit def `Store_Reuse.order_ioTag`: order[Store_Reuse.ioTag] = new
+    order[Store_Reuse.ioTag] {
+    val `Orderings.less_eq` = (a: Store_Reuse.ioTag, b: Store_Reuse.ioTag) =>
+      Store_Reuse.less_eq_ioTag(a, b)
+    val `Orderings.less` = (a: Store_Reuse.ioTag, b: Store_Reuse.ioTag) =>
+      Store_Reuse.less_ioTag(a, b)
   }
   implicit def `Product_Type.order_unit`: order[Unit] = new order[Unit] {
     val `Orderings.less_eq` = (a: Unit, b: Unit) =>
@@ -291,12 +291,12 @@ object linorder {
       (a: Transition.transition_ext[A], b: Transition.transition_ext[A]) =>
       Transition_Ordering.less_transition_ext[A](a, b)
   }
-  implicit def `Trace_Matches.linorder_ioTag`: linorder[Trace_Matches.ioTag] =
-    new linorder[Trace_Matches.ioTag] {
-    val `Orderings.less_eq` = (a: Trace_Matches.ioTag, b: Trace_Matches.ioTag)
-      => Trace_Matches.less_eq_ioTag(a, b)
-    val `Orderings.less` = (a: Trace_Matches.ioTag, b: Trace_Matches.ioTag) =>
-      Trace_Matches.less_ioTag(a, b)
+  implicit def `Store_Reuse.linorder_ioTag`: linorder[Store_Reuse.ioTag] = new
+    linorder[Store_Reuse.ioTag] {
+    val `Orderings.less_eq` = (a: Store_Reuse.ioTag, b: Store_Reuse.ioTag) =>
+      Store_Reuse.less_eq_ioTag(a, b)
+    val `Orderings.less` = (a: Store_Reuse.ioTag, b: Store_Reuse.ioTag) =>
+      Store_Reuse.less_ioTag(a, b)
   }
   implicit def `Product_Type.linorder_unit`: linorder[Unit] = new linorder[Unit]
     {
@@ -930,6 +930,27 @@ v)) || ((aexp_constrains(a1, v)) || (aexp_constrains(a2, v))))
                   v)) || ((aexp_constrains(a1, v)) || (aexp_constrains(a2, v)))
 }
 
+def aexp_same_structure(x0: aexp, x1: aexp): Boolean = (x0, x1) match {
+  case (L(va), L(v)) => true
+  case (V(va), V(v)) => true
+  case (Plus(a1a, a2a), Plus(a1, a2)) =>
+    (aexp_same_structure(a1a, a1)) && (aexp_same_structure(a2a, a2))
+  case (Minus(a1a, a2a), Minus(a1, a2)) =>
+    (aexp_same_structure(a1a, a1)) && (aexp_same_structure(a2a, a2))
+  case (V(v), L(va)) => false
+  case (V(v), Plus(va, vb)) => false
+  case (V(v), Minus(va, vb)) => false
+  case (Plus(v, va), L(vb)) => false
+  case (Plus(v, va), V(vb)) => false
+  case (Plus(v, va), Minus(vb, vc)) => false
+  case (Minus(v, va), L(vb)) => false
+  case (Minus(v, va), V(vb)) => false
+  case (Minus(v, va), Plus(vb, vc)) => false
+  case (L(va), V(v)) => false
+  case (L(vb), Plus(v, va)) => false
+  case (L(vb), Minus(v, va)) => false
+}
+
 } /* object AExp */
 
 object GExp {
@@ -994,6 +1015,37 @@ def gexp_constrains(x0: gexp, uv: AExp.aexp): Boolean = (x0, uv) match {
   case (Nor(g1, g2), v) => (gexp_constrains(g1, v)) || (gexp_constrains(g2, v))
 }
 
+def gexp_same_structure(x0: gexp, x1: gexp): Boolean = (x0, x1) match {
+  case (Bc(ba), Bc(b)) => Product_Type.equal_bool(ba, b)
+  case (Eq(a1a, a2a), Eq(a1, a2)) =>
+    (AExp.aexp_same_structure(a1a, a1)) && (AExp.aexp_same_structure(a2a, a2))
+  case (Gt(a1a, a2a), Gt(a1, a2)) =>
+    (AExp.aexp_same_structure(a1a, a1)) && (AExp.aexp_same_structure(a2a, a2))
+  case (Nor(g1a, g2a), Nor(g1, g2)) =>
+    (gexp_same_structure(g1a, g1)) && (gexp_same_structure(g2a, g2))
+  case (Null(a1), Null(a2)) => AExp.aexp_same_structure(a1, a2)
+  case (Eq(v, va), Bc(vb)) => false
+  case (Eq(v, va), Gt(vb, vc)) => false
+  case (Eq(v, va), Nor(vb, vc)) => false
+  case (Eq(v, va), Null(vb)) => false
+  case (Gt(v, va), Bc(vb)) => false
+  case (Gt(v, va), Eq(vb, vc)) => false
+  case (Gt(v, va), Nor(vb, vc)) => false
+  case (Gt(v, va), Null(vb)) => false
+  case (Nor(v, va), Bc(vb)) => false
+  case (Nor(v, va), Eq(vb, vc)) => false
+  case (Nor(v, va), Gt(vb, vc)) => false
+  case (Nor(v, va), Null(vb)) => false
+  case (Null(v), Bc(va)) => false
+  case (Null(v), Eq(va, vb)) => false
+  case (Null(v), Gt(va, vb)) => false
+  case (Null(v), Nor(va, vb)) => false
+  case (Bc(vb), Eq(v, va)) => false
+  case (Bc(vb), Gt(v, va)) => false
+  case (Bc(vb), Nor(v, va)) => false
+  case (Bc(va), Null(v)) => false
+}
+
 } /* object GExp */
 
 object Transition {
@@ -1021,20 +1073,33 @@ def equal_transition_exta[A : HOL.equal](x0: transition_ext[A],
         updates)) && (HOL.eq[A](morea, more))))))
 }
 
-def more[A](x0: transition_ext[A]): A = x0 match {
-  case transition_exta(label, arity, guard, outputs, updates, more) => more
-}
-
-def Arity[A](x0: transition_ext[A]): Nat.nat = x0 match {
-  case transition_exta(label, arity, guard, outputs, updates, more) => arity
+def Label[A](x0: transition_ext[A]): String = x0 match {
+  case transition_exta(label, arity, guard, outputs, updates, more) => label
 }
 
 def Guard[A](x0: transition_ext[A]): List[GExp.gexp] = x0 match {
   case transition_exta(label, arity, guard, outputs, updates, more) => guard
 }
 
-def Label[A](x0: transition_ext[A]): String = x0 match {
-  case transition_exta(label, arity, guard, outputs, updates, more) => label
+def Arity[A](x0: transition_ext[A]): Nat.nat = x0 match {
+  case transition_exta(label, arity, guard, outputs, updates, more) => arity
+}
+
+def same_structure(t1: transition_ext[Unit], t2: transition_ext[Unit]): Boolean
+  =
+  (Label[Unit](t1) ==
+    Label[Unit](t2)) && ((Nat.equal_nata(Arity[Unit](t1),
+  Arity[Unit](t2))) && (Lista.list_all[(GExp.gexp,
+ GExp.gexp)](((a: (GExp.gexp, GExp.gexp)) =>
+               {
+                 val (aa, b): (GExp.gexp, GExp.gexp) = a;
+                 GExp.gexp_same_structure(aa, b)
+               }),
+              Lista.zip[GExp.gexp,
+                         GExp.gexp](Guard[Unit](t1), Guard[Unit](t2)))))
+
+def more[A](x0: transition_ext[A]): A = x0 match {
+  case transition_exta(label, arity, guard, outputs, updates, more) => more
 }
 
 def Outputs[A](x0: transition_ext[A]): List[AExp.aexp] = x0 match {
@@ -2961,205 +3026,7 @@ def card[A : HOL.equal](x0: Set.set[A]): Nat.nat = x0 match {
 
 } /* object Finite_Set */
 
-object Same_Structure {
-
-def aexp_same_structure(x0: AExp.aexp, x1: AExp.aexp): Boolean = (x0, x1) match
-  {
-  case (AExp.L(va), AExp.L(v)) => true
-  case (AExp.V(va), AExp.V(v)) => true
-  case (AExp.Plus(a1a, a2a), AExp.Plus(a1, a2)) =>
-    (aexp_same_structure(a1a, a1)) && (aexp_same_structure(a2a, a2))
-  case (AExp.Minus(a1a, a2a), AExp.Minus(a1, a2)) =>
-    (aexp_same_structure(a1a, a1)) && (aexp_same_structure(a2a, a2))
-  case (AExp.V(v), AExp.L(va)) => false
-  case (AExp.V(v), AExp.Plus(va, vb)) => false
-  case (AExp.V(v), AExp.Minus(va, vb)) => false
-  case (AExp.Plus(v, va), AExp.L(vb)) => false
-  case (AExp.Plus(v, va), AExp.V(vb)) => false
-  case (AExp.Plus(v, va), AExp.Minus(vb, vc)) => false
-  case (AExp.Minus(v, va), AExp.L(vb)) => false
-  case (AExp.Minus(v, va), AExp.V(vb)) => false
-  case (AExp.Minus(v, va), AExp.Plus(vb, vc)) => false
-  case (AExp.L(va), AExp.V(v)) => false
-  case (AExp.L(vb), AExp.Plus(v, va)) => false
-  case (AExp.L(vb), AExp.Minus(v, va)) => false
-}
-
-def gexp_same_structure(x0: GExp.gexp, x1: GExp.gexp): Boolean = (x0, x1) match
-  {
-  case (GExp.Bc(ba), GExp.Bc(b)) => Product_Type.equal_bool(ba, b)
-  case (GExp.Eq(a1a, a2a), GExp.Eq(a1, a2)) =>
-    (aexp_same_structure(a1a, a1)) && (aexp_same_structure(a2a, a2))
-  case (GExp.Gt(a1a, a2a), GExp.Gt(a1, a2)) =>
-    (aexp_same_structure(a1a, a1)) && (aexp_same_structure(a2a, a2))
-  case (GExp.Nor(g1a, g2a), GExp.Nor(g1, g2)) =>
-    (gexp_same_structure(g1a, g1)) && (gexp_same_structure(g2a, g2))
-  case (GExp.Null(a1), GExp.Null(a2)) => aexp_same_structure(a1, a2)
-  case (GExp.Eq(v, va), GExp.Bc(vb)) => false
-  case (GExp.Eq(v, va), GExp.Gt(vb, vc)) => false
-  case (GExp.Eq(v, va), GExp.Nor(vb, vc)) => false
-  case (GExp.Eq(v, va), GExp.Null(vb)) => false
-  case (GExp.Gt(v, va), GExp.Bc(vb)) => false
-  case (GExp.Gt(v, va), GExp.Eq(vb, vc)) => false
-  case (GExp.Gt(v, va), GExp.Nor(vb, vc)) => false
-  case (GExp.Gt(v, va), GExp.Null(vb)) => false
-  case (GExp.Nor(v, va), GExp.Bc(vb)) => false
-  case (GExp.Nor(v, va), GExp.Eq(vb, vc)) => false
-  case (GExp.Nor(v, va), GExp.Gt(vb, vc)) => false
-  case (GExp.Nor(v, va), GExp.Null(vb)) => false
-  case (GExp.Null(v), GExp.Bc(va)) => false
-  case (GExp.Null(v), GExp.Eq(va, vb)) => false
-  case (GExp.Null(v), GExp.Gt(va, vb)) => false
-  case (GExp.Null(v), GExp.Nor(va, vb)) => false
-  case (GExp.Bc(vb), GExp.Eq(v, va)) => false
-  case (GExp.Bc(vb), GExp.Gt(v, va)) => false
-  case (GExp.Bc(vb), GExp.Nor(v, va)) => false
-  case (GExp.Bc(va), GExp.Null(v)) => false
-}
-
-def same_structure(t1: Transition.transition_ext[Unit],
-                    t2: Transition.transition_ext[Unit]):
-      Boolean
-  =
-  (Transition.Label[Unit](t1) ==
-    Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
-             Transition.Arity[Unit](t2))) && (Lista.list_all[(GExp.gexp,
-                       GExp.gexp)](((a: (GExp.gexp, GExp.gexp)) =>
-                                     {
-                                       val (aa, b): (GExp.gexp, GExp.gexp) = a;
-                                       gexp_same_structure(aa, b)
-                                     }),
-                                    Lista.zip[GExp.gexp,
-       GExp.gexp](Transition.Guard[Unit](t1), Transition.Guard[Unit](t2)))))
-
-} /* object Same_Structure */
-
-object Same_Register {
-
-def r_print(t: Transition.transition_ext[Unit]): Transition.transition_ext[Unit]
-  =
-  {
-    println(t);
-    t
-  }
-
-def updates(x0: List[(VName.vname, AExp.aexp)]): Option[VName.vname] = x0 match
-  {
-  case (VName.R(n), a)::Nil => Some[VName.vname](VName.R(n))
-  case Nil => None
-  case (VName.I(vd), vc)::va => None
-  case v::(vb::vc) => None
-}
-
-def a_replace_with(x0: AExp.aexp, uu: VName.vname, uv: VName.vname): AExp.aexp =
-  (x0, uu, uv) match {
-  case (AExp.L(v), uu, uv) => AExp.L(v)
-  case (AExp.V(v), r1, r2) =>
-    (if (VName.equal_vnamea(v, r1)) AExp.V(r2) else AExp.V(v))
-  case (AExp.Plus(a1, a2), r1, r2) =>
-    AExp.Plus(a_replace_with(a1, r1, r2), a_replace_with(a2, r1, r2))
-  case (AExp.Minus(a1, a2), r1, r2) =>
-    AExp.Plus(a_replace_with(a1, r1, r2), a_replace_with(a2, r1, r2))
-}
-
-def u_replace_with(x0: (VName.vname, AExp.aexp), r1: VName.vname,
-                    r2: VName.vname):
-      (VName.vname, AExp.aexp)
-  =
-  (x0, r1, r2) match {
-  case ((r, a), r1, r2) =>
-    ((if (VName.equal_vnamea(r, r1)) r2 else r), a_replace_with(a, r1, r2))
-}
-
-def g_replace_with(x0: GExp.gexp, uu: VName.vname, uv: VName.vname): GExp.gexp =
-  (x0, uu, uv) match {
-  case (GExp.Bc(x), uu, uv) => GExp.Bc(x)
-  case (GExp.Eq(a1, a2), r1, r2) =>
-    GExp.Eq(a_replace_with(a1, r1, r2), a_replace_with(a2, r1, r2))
-  case (GExp.Gt(a1, a2), r1, r2) =>
-    GExp.Eq(a_replace_with(a1, r1, r2), a_replace_with(a2, r1, r2))
-  case (GExp.Nor(g1, g2), r1, r2) =>
-    GExp.Nor(g_replace_with(g1, r1, r2), g_replace_with(g2, r1, r2))
-  case (GExp.Null(a1), r1, r2) => GExp.Null(a_replace_with(a1, r1, r2))
-}
-
-def t_replace_with(t: Transition.transition_ext[Unit], r1: VName.vname,
-                    r2: VName.vname):
-      Transition.transition_ext[Unit]
-  =
-  Transition.transition_exta[Unit](Transition.Label[Unit](t),
-                                    Transition.Arity[Unit](t),
-                                    Lista.map[GExp.gexp,
-       GExp.gexp](((g: GExp.gexp) => g_replace_with(g, r1, r2)),
-                   Transition.Guard[Unit](t)),
-                                    Lista.map[AExp.aexp,
-       AExp.aexp](((p: AExp.aexp) => a_replace_with(p, r1, r2)),
-                   Transition.Outputs[Unit](t)),
-                                    Lista.map[(VName.vname, AExp.aexp),
-       (VName.vname,
-         AExp.aexp)](((u: (VName.vname, AExp.aexp)) =>
-                       u_replace_with(u, r1, r2)),
-                      Transition.Updates[Unit](t)),
-                                    ())
-
-def replace_with(e: FSet.fset[(Nat.nat,
-                                ((Nat.nat, Nat.nat),
-                                  Transition.transition_ext[Unit]))],
-                  r1: VName.vname, r2: VName.vname):
-      FSet.fset[(Nat.nat,
-                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
-  =
-  FSet.fimage[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])),
-               (Nat.nat,
-                 ((Nat.nat, Nat.nat),
-                   Transition.transition_ext[Unit]))](((a:
-                  (Nat.nat,
-                    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
-                 =>
-                {
-                  val (u, (tf, t)):
-                        (Nat.nat,
-                          ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))
-                    = a;
-                  (u, (tf, t_replace_with(t, r1, r2)))
-                }),
-               e)
-
-def same_register(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
-                   newa: FSet.fset[(Nat.nat,
-                                     ((Nat.nat, Nat.nat),
-                                       Transition.transition_ext[Unit]))],
-                   old: FSet.fset[(Nat.nat,
-                                    ((Nat.nat, Nat.nat),
-                                      Transition.transition_ext[Unit]))]):
-      Option[FSet.fset[(Nat.nat,
-                         ((Nat.nat, Nat.nat),
-                           Transition.transition_ext[Unit]))]]
-  =
-  {
-    println("same register?")
-    val t1: Transition.transition_ext[Unit] =
-      r_print(Inference.get_by_id(newa, t1ID))
-    val t2: Transition.transition_ext[Unit] =
-      r_print(Inference.get_by_id(newa, t2ID))
-    val ut1: Option[VName.vname] = updates(Transition.Updates[Unit](t1))
-    val ut2: Option[VName.vname] = updates(Transition.Updates[Unit](t2));
-    (if (Same_Structure.same_structure(t1, t2))
-      ((ut1, ut2) match {
-         case (None, _) => None
-         case (Some(_), None) => None
-         case (Some(r1), Some(r2)) =>
-           Some[FSet.fset[(Nat.nat,
-                            ((Nat.nat, Nat.nat),
-                              Transition.transition_ext[Unit]))]](replace_with(newa,
-r1, r2))
-       })
-      else None)
-  }
-
-} /* object Same_Register */
-
-object Trace_Matches {
+object Store_Reuse {
 
 abstract sealed class ioTag
 final case class In() extends ioTag
@@ -3944,7 +3811,132 @@ def heuristic_1(l: List[List[(String,
       =>
     modify(find_intratrace_matches(l, old), t1, t2, newa))
 
-} /* object Trace_Matches */
+} /* object Store_Reuse */
+
+object Same_Register {
+
+def r_print(t: Transition.transition_ext[Unit]): Transition.transition_ext[Unit]
+  =
+  {
+    println(t);
+    t
+  }
+
+def updates(x0: List[(VName.vname, AExp.aexp)]): Option[VName.vname] = x0 match
+  {
+  case (VName.R(n), a)::Nil => Some[VName.vname](VName.R(n))
+  case Nil => None
+  case (VName.I(vd), vc)::va => None
+  case v::(vb::vc) => None
+}
+
+def a_replace_with(x0: AExp.aexp, uu: VName.vname, uv: VName.vname): AExp.aexp =
+  (x0, uu, uv) match {
+  case (AExp.L(v), uu, uv) => AExp.L(v)
+  case (AExp.V(v), r1, r2) =>
+    (if (VName.equal_vnamea(v, r1)) AExp.V(r2) else AExp.V(v))
+  case (AExp.Plus(a1, a2), r1, r2) =>
+    AExp.Plus(a_replace_with(a1, r1, r2), a_replace_with(a2, r1, r2))
+  case (AExp.Minus(a1, a2), r1, r2) =>
+    AExp.Plus(a_replace_with(a1, r1, r2), a_replace_with(a2, r1, r2))
+}
+
+def u_replace_with(x0: (VName.vname, AExp.aexp), r1: VName.vname,
+                    r2: VName.vname):
+      (VName.vname, AExp.aexp)
+  =
+  (x0, r1, r2) match {
+  case ((r, a), r1, r2) =>
+    ((if (VName.equal_vnamea(r, r1)) r2 else r), a_replace_with(a, r1, r2))
+}
+
+def g_replace_with(x0: GExp.gexp, uu: VName.vname, uv: VName.vname): GExp.gexp =
+  (x0, uu, uv) match {
+  case (GExp.Bc(x), uu, uv) => GExp.Bc(x)
+  case (GExp.Eq(a1, a2), r1, r2) =>
+    GExp.Eq(a_replace_with(a1, r1, r2), a_replace_with(a2, r1, r2))
+  case (GExp.Gt(a1, a2), r1, r2) =>
+    GExp.Eq(a_replace_with(a1, r1, r2), a_replace_with(a2, r1, r2))
+  case (GExp.Nor(g1, g2), r1, r2) =>
+    GExp.Nor(g_replace_with(g1, r1, r2), g_replace_with(g2, r1, r2))
+  case (GExp.Null(a1), r1, r2) => GExp.Null(a_replace_with(a1, r1, r2))
+}
+
+def t_replace_with(t: Transition.transition_ext[Unit], r1: VName.vname,
+                    r2: VName.vname):
+      Transition.transition_ext[Unit]
+  =
+  Transition.transition_exta[Unit](Transition.Label[Unit](t),
+                                    Transition.Arity[Unit](t),
+                                    Lista.map[GExp.gexp,
+       GExp.gexp](((g: GExp.gexp) => g_replace_with(g, r1, r2)),
+                   Transition.Guard[Unit](t)),
+                                    Lista.map[AExp.aexp,
+       AExp.aexp](((p: AExp.aexp) => a_replace_with(p, r1, r2)),
+                   Transition.Outputs[Unit](t)),
+                                    Lista.map[(VName.vname, AExp.aexp),
+       (VName.vname,
+         AExp.aexp)](((u: (VName.vname, AExp.aexp)) =>
+                       u_replace_with(u, r1, r2)),
+                      Transition.Updates[Unit](t)),
+                                    ())
+
+def replace_with(e: FSet.fset[(Nat.nat,
+                                ((Nat.nat, Nat.nat),
+                                  Transition.transition_ext[Unit]))],
+                  r1: VName.vname, r2: VName.vname):
+      FSet.fset[(Nat.nat,
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+  =
+  FSet.fimage[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])),
+               (Nat.nat,
+                 ((Nat.nat, Nat.nat),
+                   Transition.transition_ext[Unit]))](((a:
+                  (Nat.nat,
+                    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
+                 =>
+                {
+                  val (u, (tf, t)):
+                        (Nat.nat,
+                          ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))
+                    = a;
+                  (u, (tf, t_replace_with(t, r1, r2)))
+                }),
+               e)
+
+def same_register(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
+                   newa: FSet.fset[(Nat.nat,
+                                     ((Nat.nat, Nat.nat),
+                                       Transition.transition_ext[Unit]))],
+                   old: FSet.fset[(Nat.nat,
+                                    ((Nat.nat, Nat.nat),
+                                      Transition.transition_ext[Unit]))]):
+      Option[FSet.fset[(Nat.nat,
+                         ((Nat.nat, Nat.nat),
+                           Transition.transition_ext[Unit]))]]
+  =
+  {
+    println("same register?")
+    val t1: Transition.transition_ext[Unit] =
+      r_print(Inference.get_by_id(newa, t1ID))
+    val t2: Transition.transition_ext[Unit] =
+      r_print(Inference.get_by_id(newa, t2ID))
+    val ut1: Option[VName.vname] = updates(Transition.Updates[Unit](t1))
+    val ut2: Option[VName.vname] = updates(Transition.Updates[Unit](t2));
+    (if (Transition.same_structure(t1, t2))
+      ((ut1, ut2) match {
+         case (None, _) => None
+         case (Some(_), None) => None
+         case (Some(r1), Some(r2)) =>
+           Some[FSet.fset[(Nat.nat,
+                            ((Nat.nat, Nat.nat),
+                              Transition.transition_ext[Unit]))]](replace_with(newa,
+r1, r2))
+       })
+      else None)
+  }
+
+} /* object Same_Register */
 
 object Type_Inference {
 

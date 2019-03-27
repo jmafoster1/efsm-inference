@@ -145,6 +145,39 @@ lemma make_gt_twice: "make_gt (make_gt x) = make_gt x"
   apply (induct x)
   by auto
 
+lemma cval_make_gt_not: "cval (make_gt (not x)) r s = maybe_not (cval (make_gt x) r s)"
+proof(induct x)
+case Undef
+  then show ?case
+    by (simp add: cval_Not)
+next
+  case (Bc x)
+  then show ?case
+    apply simp
+    by (metis cval_not not.simps(1))
+next
+  case (Eq x)
+  then show ?case
+    by (simp add: cval_Not)
+next
+  case (Lt x)
+  then show ?case
+    by (simp add: cval_Not cval_false cval_true)
+next
+  case (Gt x)
+  then show ?case
+    by (simp add: cval_Not)
+next
+  case (Not x)
+  then show ?case
+    by (simp add: cval_Not maybe_double_negation)
+next
+  case (And x1 x2)
+  then show ?case
+    apply simp
+    by (simp only: cval_And cval_Not cval_and)
+qed
+
 fun make_lt :: "cexp \<Rightarrow> cexp" where
   "make_lt (Bc b) = Bc b" |
   "make_lt Undef = Undef" |
@@ -224,6 +257,31 @@ lemma medial_cons_subset: "medial c G ra |\<subseteq>| medial c (a # G) ra"
   apply (simp only: maps_simps(1))
   apply (simp only: pairs2context_append)
   by auto
+
+lemma medial_filter: "medial c (filter f G) ra |\<subseteq>| medial c G ra"
+proof(induct G)
+  case Nil
+  then show ?case by simp
+next
+  have aux1: "\<forall>a f G ra c. medial c (a # filter f G) ra = medial c [a] ra |\<union>| medial c (filter f G) ra"
+    using medial_cons by blast
+  case (Cons a G)
+  then show ?case
+    apply simp
+    apply (case_tac "f a")
+     apply simp
+     defer
+    apply simp
+    using medial_cons_subset apply blast
+    apply (simp only: aux1)
+  proof -
+    assume "medial c (filter f G) ra |\<subseteq>| medial c G ra"
+    then have "medial c (a # G) ra = medial c [a] ra |\<union>| (medial c G ra |\<union>| medial c (filter f G) ra |\<union>| medial c (filter f G) ra)"
+      using medial_cons by blast
+    then show "medial c [a] ra |\<union>| medial c (filter f G) ra |\<subseteq>| medial c (a # G) ra"
+      by blast
+  qed
+qed
 
 lemma medial_empty: "medial c [] = c"
   by (simp add: medial_def pairs2context_def List.maps_def)

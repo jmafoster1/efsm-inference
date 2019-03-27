@@ -41,4 +41,9 @@ lemma unequal_labels[simp]: "Label t1 \<noteq> Label t2 \<Longrightarrow> t1 \<n
 lemma unequal_arities[simp]: "Arity t1 \<noteq> Arity t2 \<Longrightarrow> t1 \<noteq> t2"
   by auto
 
+definition same_structure :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "same_structure t1 t2 = (Label t1 = Label t2 \<and>
+                           Arity t1 = Arity t2 \<and>
+                           list_all (\<lambda>(g1, g2). gexp_same_structure g1 g2) (zip (Guard t1) (Guard t2)))"
+
 end

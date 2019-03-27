@@ -16,9 +16,9 @@ session "efsm-inference" = "efsm" +
   theories
     Contexts
     "inference/Inference"
-    "inference/Trace_Matches"
-    "inference/Increment_Reset"
-    "inference/Same_Register"
+    "inference/heuristics/Store_Reuse"
+    "inference/heuristics/Increment_Reset"
+    "inference/heuristics/Same_Register"
   document_files
     "root.tex"
     "root.bib"
