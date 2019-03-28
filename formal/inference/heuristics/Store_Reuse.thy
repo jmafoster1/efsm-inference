@@ -37,9 +37,6 @@ abbreviation ioTag :: "index \<Rightarrow> ioTag" where
 abbreviation inx :: "index \<Rightarrow> nat" where
   "inx i \<equiv> snd (snd i)"
 
-definition get_by_id_intratrace_matches :: "execution \<Rightarrow> (index \<times> index) fset" where
-  "get_by_id_intratrace_matches e = Abs_fset {(a, b). lookup a e = lookup b e \<and> eventNum a \<le> eventNum b}"
-
 primrec index :: "value list \<Rightarrow> nat \<Rightarrow> ioTag \<Rightarrow> nat \<Rightarrow> index fset" where
   "index [] _ _ _ = {||}" |
   "index (h#t) eventNo io ind = finsert (eventNo, io, ind) (index t eventNo io (ind + 1))"
@@ -50,22 +47,12 @@ definition io_index :: "nat \<Rightarrow> value list \<Rightarrow> value list \<
 definition indices :: "execution \<Rightarrow> index fset" where
   "indices e = foldl (|\<union>|) {||} (map (\<lambda>(eventNo, (label, inputs, outputs)). io_index eventNo inputs outputs) (enumerate 0 e))"
 
-definition get_by_id_intratrace_matches_alt :: "execution \<Rightarrow> (index \<times> index) fset" where
-  "get_by_id_intratrace_matches_alt e = ffilter (\<lambda>(a, b). lookup a e = lookup b e \<and> eventNum a \<le> eventNum b \<and> a \<noteq> b) (indices e |\<times>| indices e)"
+definition get_by_id_intratrace_matches :: "execution \<Rightarrow> (index \<times> index) fset" where
+  "get_by_id_intratrace_matches e = ffilter (\<lambda>(a, b). lookup a e = lookup b e \<and> eventNum a \<le> eventNum b \<and> a \<noteq> b) (indices e |\<times>| indices e)"
 
-lemma get_by_id_intratrace_matches_preproces:  "get_by_id_intratrace_matches_alt e = ffilter (\<lambda>(a, b). lookup a e = lookup b e) (ffilter (\<lambda>(a, b). eventNum a \<le> eventNum b \<and> a \<noteq> b) (indices e |\<times>| indices e))"
-  apply (simp add: get_by_id_intratrace_matches_alt_def)
-  apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse fprod_def)
-  apply (simp add: Set.filter_def)
+lemma get_by_id_intratrace_matches_preproces:  "get_by_id_intratrace_matches e = ffilter (\<lambda>(a, b). lookup a e = lookup b e) (ffilter (\<lambda>(a, b). eventNum a \<le> eventNum b \<and> a \<noteq> b) (indices e |\<times>| indices e))"
+  apply (simp add: get_by_id_intratrace_matches_def)
   by auto
-
-primrec get_by_id_all_intratrace_matches :: "log \<Rightarrow> (index \<times> index) fset list" where
-  "get_by_id_all_intratrace_matches [] = []" |
-  "get_by_id_all_intratrace_matches (h#t) = (get_by_id_intratrace_matches h)#(get_by_id_all_intratrace_matches t)"
-
-primrec get_by_id_all_intratrace_matches_alt :: "log \<Rightarrow> (index \<times> index) fset list" where
-  "get_by_id_all_intratrace_matches_alt [] = []" |
-  "get_by_id_all_intratrace_matches_alt (h#t) = (get_by_id_intratrace_matches_alt h)#(get_by_id_all_intratrace_matches_alt t)"
 
 (* 
   To detect all intertrace matches, walk the trace in the current machine and replace eventNo with
@@ -95,8 +82,8 @@ primrec (nonexhaustive) walk_up_to :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat
 definition find_intertrace_matches_aux :: "(index \<times> index) fset \<Rightarrow> iEFSM \<Rightarrow> execution \<Rightarrow> match fset" where
   "find_intertrace_matches_aux intras e t = fimage (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). (((walk_up_to e1 e 0 <> t), io1, inx1), ((walk_up_to e2 e 0 <> t), io2, inx2))) intras" 
 
-definition find_intratrace_matches :: "log \<Rightarrow> iEFSM \<Rightarrow> match list" where
-  "find_intratrace_matches l e = filter (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). e1 \<noteq> e2) (concat (map (\<lambda>(t, m). sorted_list_of_fset (find_intertrace_matches_aux m e t)) (zip l (get_by_id_all_intratrace_matches_alt l))))"
+definition find_intertrace_matches :: "log \<Rightarrow> iEFSM \<Rightarrow> match list" where
+  "find_intertrace_matches l e = filter (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). e1 \<noteq> e2) (concat (map (\<lambda>(t, m). sorted_list_of_fset (find_intertrace_matches_aux m e t)) (zip l (map get_by_id_intratrace_matches l))))"
 
 fun enumerate_aexp_inputs :: "aexp \<Rightarrow> nat set" where
   "enumerate_aexp_inputs (L _) = {}" |
@@ -161,7 +148,7 @@ definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarro
 
 (* type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option" *)
 definition heuristic_1 :: "log \<Rightarrow> update_modifier" where
-  "heuristic_1 l = (\<lambda>t1 t2 s new old. modify (find_intratrace_matches l old) t1 t2 new)"
+  "heuristic_1 l = (\<lambda>t1 t2 s new old. modify (find_intertrace_matches l old) t1 t2 new)"
 
 lemma remove_guard_add_update_preserves_outputs: "Outputs (remove_guard_add_update t i r) = Outputs t"
   by (simp add: remove_guard_add_update_def)
@@ -175,20 +162,6 @@ lemma remove_guard_add_update_preserves_arity: "Arity (remove_guard_add_update t
 lemmas remove_guard_add_update_preserves = remove_guard_add_update_preserves_label
                                            remove_guard_add_update_preserves_arity
                                            remove_guard_add_update_preserves_outputs
-
-primrec ran :: "nat \<Rightarrow> nat set" where
-  "ran 0 = {0}" |
-  "ran (Suc n) = insert (Suc n) (ran n)"
-
-lemma ran_leq_n: "i \<in> ran n = (i \<le> n)"
-proof(induct n)
-  case 0
-  then show ?case by simp
-next
-  case (Suc n)
-  then show ?case
-    by auto
-qed
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalisation_of t' t e i r = (\<exists>to from uid. t' = remove_guard_add_update t i r \<and> (uid, (from, to), t') |\<in>| e)"

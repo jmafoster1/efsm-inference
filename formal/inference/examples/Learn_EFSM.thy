@@ -1,5 +1,5 @@
 theory Learn_EFSM
-  imports Inference SelectionStrategies EFSM_Dot Trace_Matches Code_Generation
+  imports "../Code_Generation"
 begin
 
 declare One_nat_def [simp del]
@@ -48,6 +48,14 @@ definition traces :: log where
   "traces = [[((STR ''select''), [(Str ''coke'')], []), ((STR ''coin''), [Num 50], [Num 50]), ((STR ''coin''), [Num 50], [Num 100]), ((STR ''vend''), [], [(Str ''coke'')])],
              [((STR ''select''), [(Str ''coke'')], []), ((STR ''coin''), [Num 100], [Num 100]), ((STR ''vend''), [], [(Str ''coke'')])],
              [((STR ''select''), [(Str ''pepsi'')], []), ((STR ''coin''), [Num 50], [Num 50]), ((STR ''coin''), [Num 50], [Num 100]), ((STR ''vend''), [], [(Str ''pepsi'')])]]"
+
+value "let relevant = filter (\<lambda>(((_, u1'), io, _), (_, u2'), io', _). io = In \<and> io' = Out \<and> (5 = u1' \<or> 9 = u1' \<or> 5 = u2' \<or> 9 = u2')) (find_intertrace_matches traces pta);
+           newReg = max_reg pta + 1;
+           replacements = map (\<lambda>(((t1, u1), io1, inx1), (t2, u2), io2, inx2). (((remove_guard_add_update t1 (inx1+1) newReg, u1), io1, inx1), (generalise_output t2 newReg inx2, u2), io2, inx2)) relevant;
+           comparisons = zip relevant replacements;
+           stripped_replacements = map strip_uids replacements;
+           to_replace = filter (\<lambda>(_, s). count (strip_uids s) stripped_replacements > 1) comparisons
+       in stripped_replacements"
 
 lemma build_pta: "toiEFSM (make_pta traces {||}) = pta"
   by eval

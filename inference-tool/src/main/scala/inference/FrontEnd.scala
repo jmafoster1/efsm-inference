@@ -26,7 +26,7 @@ object FrontEnd {
     val heuristic = Inference.try_heuristics(List(
       (Same_Register.same_register _).curried,
       (Increment_Reset.insert_increment _).curried,
-      Trace_Matches.heuristic_1(log)
+      Store_Reuse.heuristic_1(log)
     ))
 
     println("Hello inference!")

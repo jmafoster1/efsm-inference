@@ -102,4 +102,7 @@ next
   then show ?case
     by simp
 qed
+
+lemma filter_filter: "ffilter P (ffilter Q xs) = ffilter (\<lambda>x. Q x \<and> P x) xs"
+  by auto
 end

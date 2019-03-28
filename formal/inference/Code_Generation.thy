@@ -125,6 +125,37 @@ code_printing
   constant "writeiDot" \<rightharpoonup> (Scala) "Dirties.writeiDot" |
   constant "timestamp" \<rightharpoonup> (Scala) "System.currentTimeMillis.toString"
 
+function resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM option" where
+  "resolve_nondeterminism [] _ new _ check = (if deterministic new \<and> check (tm new) then Some new else None)" |
+  "resolve_nondeterminism ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) oldEFSM newEFSM m check = (let
+     destMerge = merge_states (dest u\<^sub>1 newEFSM) (dest u\<^sub>2 newEFSM) newEFSM;
+     t = timestamp;
+     p = writeiDot destMerge (STR ''dotfiles/log/''+t+STR ''-merged.dot'');
+     p' = writeiDot oldEFSM (STR ''dotfiles/log/''+t+STR ''-old.dot'')
+     in
+     case Inference.make_distinct (merge_transitions oldEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m) of
+       None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check |
+       Some new \<Rightarrow>
+         let newScores = (sorted_list_of_fset (nondeterministic_pairs new)) in 
+         if length (newScores) + size new < length (ss) + 1 + size newEFSM then
+           case resolve_nondeterminism newScores oldEFSM new m check of
+             Some new' \<Rightarrow> Some new' |
+             None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check
+         else
+          None
+   )"
+     apply clarify
+     apply simp
+     apply (metis neq_Nil_conv prod_cases3 surj_pair)
+  by auto
+termination
+  by (relation "measures [\<lambda>(ss, oldEFSM, newEFSM, m, check). length ss + size newEFSM]") auto
+
+lemma [code]: "Inference.resolve_nondeterminism = resolve_nondeterminism"
+  sorry
+
+declare Inference.resolve_nondeterminism.simps [code del]
+
 export_code try_heuristics learn same_register insert_increment nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"

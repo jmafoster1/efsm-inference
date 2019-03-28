@@ -1,5 +1,5 @@
 theory Paper_Example
-imports Inference SelectionStrategies EFSM_Dot
+imports "../Inference" "../SelectionStrategies" "../EFSM_Dot"
 begin
 
 definition select :: transition where
