@@ -104,18 +104,8 @@ object Dirties {
     x.length < y.length
   }
 
-  def compareLiteralOutputs(x: List[(AExp.aexp, AExp.aexp)]) : Boolean = x match {
-    case Nil => true
-    case (s :: ss) => {
-      s match {
-        case (AExp.L(a), AExp.L(b)) => if (a != b) false else compareLiteralOutputs(ss)
-        case _ => compareLiteralOutputs(ss)
-      }
-    }
-  }
-
-  def scalaDirectlySubsumes(a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
-                            b: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
+  def scalaDirectlySubsumes(a: FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+                            b: FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
                             c: Nat.nat,
                             t1: Transition.transition_ext[Unit],
                             t2: Transition.transition_ext[Unit]): Boolean = {
@@ -125,12 +115,21 @@ object Dirties {
                               else if (Transition.Outputs(t1).length != Transition.Outputs(t2).length) {
                                 false
                               }
-                              else if (!compareLiteralOutputs(Transition.Outputs(t1) zip Transition.Outputs(t2))) {
+                              else if (Code_Generation.all_literal_outputs(t1) && Code_Generation.all_literal_outputs(t1) && Transition.Outputs(t1) != Transition.Outputs(t2)) {
                                 false
                               }
-                              // else {
-                              //   val efsm = new EFSM(a)
-                              // }
+                              else if (Store_Reuse.is_proper_generalisation_of(t1, t2, b)) {
+                                // This needs modifying to model check but it should be OK for now
+                                println(f"Does\n${PrettyPrinter.transitionToString(t1)}\ndirectly subsume\n${PrettyPrinter.transitionToString(t2)}? y/n\n")
+                                println("y")
+                                true
+                              }
+                              else if (Store_Reuse.is_proper_generalisation_of(t2, t1, b)) {
+                                // This needs modifying to model check but it should be OK for now
+                                println(f"Does\n${PrettyPrinter.transitionToString(t1)}\ndirectly subsume\n${PrettyPrinter.transitionToString(t2)}? y/n\n")
+                                println("n")
+                                false
+                              }
                               else {
                                 val subsumes = readLine(f"Does\n${PrettyPrinter.transitionToString(t1)}\ndirectly subsume\n${PrettyPrinter.transitionToString(t2)}? y/n\n") == "y"
                                 subsumes

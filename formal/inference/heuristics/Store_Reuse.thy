@@ -186,4 +186,11 @@ lemmas generalise_output_preserves = generalise_output_preserves_label
                                      generalise_output_preserves_output_length
                                      generalise_output_preserves_guard
                                      generalise_output_preserves_updates
+
+definition is_proper_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> bool" where
+ "is_proper_generalisation_of t' t e = (\<exists>i \<le> max_input e. \<exists> r \<le> max_reg e.
+                                              is_generalisation_of t' t e i r \<and>
+                                              (\<forall>u \<in> set (Updates t). fst u \<noteq> (R r)) \<and>
+                                              (\<forall>i \<le> max_input e. \<forall>u \<in> set (Updates t). fst u \<noteq> (R r) \<and> fst u \<noteq> (I i))
+                                       )"
 end                                                   

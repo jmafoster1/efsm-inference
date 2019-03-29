@@ -44,9 +44,8 @@ definition r_print :: "transition \<Rightarrow> transition" where
 
 fun same_register :: update_modifier where
   "same_register t1ID t2ID s new old = (let
-     p = print (STR ''same register?'');
-     t1 = r_print (get_by_id new t1ID);
-     t2 = r_print (get_by_id new t2ID);
+     t1 = (get_by_id new t1ID);
+     t2 = (get_by_id new t2ID);
      ut1 = updates (Updates t1);
      ut2 = updates (Updates t2) in
      if same_structure t1 t2 then

@@ -5,6 +5,7 @@ theory Code_Generation
    "heuristics/Store_Reuse"
    "heuristics/Increment_Reset"
    "heuristics/Same_Register"
+   "heuristics/Instance_Of"
 begin
 
 declare GExp.satisfiable_def [code del]
@@ -156,7 +157,16 @@ lemma [code]: "Inference.resolve_nondeterminism = resolve_nondeterminism"
 
 declare Inference.resolve_nondeterminism.simps [code del]
 
-export_code try_heuristics learn same_register insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
+definition all_literal_outputs :: "transition \<Rightarrow> bool" where
+  "all_literal_outputs t = fold (\<lambda>p P. case p of L v \<Rightarrow> P | _ \<Rightarrow> False) (Outputs t) True"
+
+definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
+  "is_generalisation_of t' t e i r = (\<exists>to \<in> fset (S e). \<exists> from \<in> fset (S e). \<exists> uid \<in> fset (uids e). t' = remove_guard_add_update t i r \<and> (uid, (from, to), t') |\<in>| e)"
+
+lemma [code]:  "Store_Reuse.is_generalisation_of = is_generalisation_of"
+  sorry
+
+export_code is_proper_generalisation_of all_literal_outputs try_heuristics learn same_register insert_increment just_do_it nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
