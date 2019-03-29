@@ -410,6 +410,10 @@ lemma medial_subsumption_violation: "\<not> (\<forall>r i. fBall (medial c (Guar
 \<not> subsumes t2 c t1"
   by (simp add: subsumes_def)
 
+lemma update_subsumption_violation: "\<not> (\<forall>r i. fBall (posterior_separate c (Guard t1@Guard t2) (Updates t2) r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (posterior c t1 r) (\<lambda>c. cval c r i = true) \<or> (posterior c t1 r) = {|Undef|}) \<Longrightarrow>
+      \<not> subsumes t2 c t1"
+  by (simp add: subsumes_def)
+
 lemma subsumption: "Label t1 = Label t2 \<and>
                     Arity t1 = Arity t2 \<and>
                     length (Outputs t1) = length (Outputs t2) \<Longrightarrow>

@@ -4219,12 +4219,44 @@ def initialiseReg(t: Transition.transition_ext[Unit], newReg: VName.vname):
                                       AExp.L(Value.Numa(Int.zero_int)))::(Transition.Updates[Unit](t)),
                                     ())
 
-def insert_increment(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
-                      newa: FSet.fset[(Nat.nat,
-((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-                      old: FSet.fset[(Nat.nat,
-                                       ((Nat.nat, Nat.nat),
- Transition.transition_ext[Unit]))]):
+def struct_replace_all(e: FSet.fset[(Nat.nat,
+                                      ((Nat.nat, Nat.nat),
+Transition.transition_ext[Unit]))],
+                        old: Transition.transition_ext[Unit],
+                        newa: Transition.transition_ext[Unit]):
+      FSet.fset[(Nat.nat,
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+  =
+  FSet.fimage[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])),
+               (Nat.nat,
+                 ((Nat.nat, Nat.nat),
+                   Transition.transition_ext[Unit]))](((a:
+                  (Nat.nat,
+                    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
+                 =>
+                {
+                  val (uid, aa):
+                        (Nat.nat,
+                          ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))
+                    = a
+                  val (ab, b):
+                        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])
+                    = aa;
+                  ({
+                     val (from, dest): (Nat.nat, Nat.nat) = ab;
+                     ((t: Transition.transition_ext[Unit]) =>
+                       (if (Transition.same_structure(t, old))
+                         (uid, ((from, dest), newa))
+                         else (uid, ((from, dest), t))))
+                   })(b)
+                }),
+               e)
+
+def insert_increment_2(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
+                        newa: FSet.fset[(Nat.nat,
+  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+                        old: FSet.fset[(Nat.nat,
+ ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
       Option[FSet.fset[(Nat.nat,
                          ((Nat.nat, Nat.nat),
                            Transition.transition_ext[Unit]))]]
@@ -4291,9 +4323,9 @@ t2)))))
                          newa);
         Some[FSet.fset[(Nat.nat,
                          ((Nat.nat, Nat.nat),
-                           Transition.transition_ext[Unit]))]](Inference.replaceAll(Inference.replaceAll(initialised,
-                          t2, newT2),
-     t1, newT1))
+                           Transition.transition_ext[Unit]))]](struct_replace_all(struct_replace_all(initialised,
+                      t2, newT2),
+   t1, newT1))
       }
       else None)
   }

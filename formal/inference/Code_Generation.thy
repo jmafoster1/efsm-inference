@@ -156,7 +156,7 @@ lemma [code]: "Inference.resolve_nondeterminism = resolve_nondeterminism"
 
 declare Inference.resolve_nondeterminism.simps [code del]
 
-export_code try_heuristics learn same_register insert_increment nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
+export_code try_heuristics learn same_register insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

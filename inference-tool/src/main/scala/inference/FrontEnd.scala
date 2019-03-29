@@ -25,7 +25,7 @@ object FrontEnd {
 
     val heuristic = Inference.try_heuristics(List(
       (Same_Register.same_register _).curried,
-      (Increment_Reset.insert_increment _).curried,
+      (Increment_Reset.insert_increment_2 _).curried,
       Store_Reuse.heuristic_1(log)
     ))
 

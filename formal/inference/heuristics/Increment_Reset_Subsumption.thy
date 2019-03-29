@@ -81,33 +81,6 @@ lemma "consistent (medial c [gexp.Eq (V (I 1)) (L (Num n))]) \<Longrightarrow>
   apply (simp add: fprod_def)
   oops
 
-lemma "Guard t1 = [gexp.Eq (V (I 1)) (L (Num n))] \<Longrightarrow>
-    Outputs t1 = [L (Num m)] \<Longrightarrow>
-    c (V (R r)) = {|cexp.Eq (Num (m - n))|} \<Longrightarrow>
-    \<forall>i. c (V (I i)) = {|Bc True|} \<Longrightarrow>
-    \<not> updates (R r) (Updates t1) \<Longrightarrow>
-    \<lparr>Label = Label t1, Arity = Arity t1, Guard = [], Outputs = [Plus (V (R r)) (V (I 1))],
-       Updates = (R r, Plus (V (R r)) (V (I 1))) # Updates t1\<rparr>\<^sub>c\<sqsupseteq>t1"
-  apply (rule subsumption)
-       apply simp
-  using anterior_subset_medial medial_empty apply fastforce
-     apply simp
-     apply clarify
-  using satisfies_context_eq [of c "R r" "Num (m - n)"]
-     apply fastforce
-    apply (rule_tac x="[Num n]" in exI)
-    apply (rule_tac x="<R r := Num (m-n)>" in exI)
-    apply simp
-   apply simp
-   apply clarify
-    apply (case_tac "ra = V (R r)")
-    prefer 2
-  using same_posterior apply blast
-
-   apply clarify
-   apply (simp add: posterior_def)
-   apply (case_tac "consistent (medial c [gexp.Eq (V (I 1)) (L (Num n))])")
-    apply (simp add: aux1 cval_def)
 
 
 

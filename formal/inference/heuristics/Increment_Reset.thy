@@ -24,4 +24,23 @@ fun insert_increment :: update_modifier where
        None
      )"
 
+definition struct_replace_all :: "iEFSM \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
+  "struct_replace_all e old new = fimage (\<lambda>(uid, (from, dest), t). if same_structure t old then (uid, (from, dest), new) else (uid, (from, dest), t)) e"
+
+fun insert_increment_2 :: update_modifier where
+  "insert_increment_2 t1ID t2ID s new old = (let
+     t1 = get_by_id new t1ID;
+     t2 = get_by_id new t2ID in
+     if guardMatch t1 t2 \<and> outputMatch t1 t2 then let 
+          r = max_reg new + 1;
+          newReg = R r;
+          newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guard = [], Outputs = [Plus (V newReg) (V (I 1))], Updates=((newReg, Plus (V newReg) (V (I 1)))#Updates t1)\<rparr>;
+          newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guard = [], Outputs = [Plus (V newReg) (V (I 1))], Updates=((newReg, Plus (V newReg) (V (I 1)))#Updates t2)\<rparr>;
+          initialised = fimage (\<lambda>(uid, (from, to), t). (uid, (from, to), (if (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2 then initialiseReg t newReg else t))) new 
+          in 
+          Some (struct_replace_all (struct_replace_all initialised t2 newT2) t1 newT1)
+     else
+       None
+     )"
+
 end
