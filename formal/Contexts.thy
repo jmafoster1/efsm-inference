@@ -402,6 +402,19 @@ definition subsumes :: "transition \<Rightarrow> context \<Rightarrow> transitio
                       (\<forall>r i. fBall (posterior_separate c (Guard t1@Guard t2) (Updates t2) r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (posterior c t1 r) (\<lambda>c. cval c r i = true) \<or> (posterior c t1 r) = {|Undef|}) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
 
+(* 
+   Sometimes a transition can account for the behaviour of another transition but they don't subsume
+   because one updates a variable that the other doesn't know about. We therefore need a notion of
+   accountability in which we can ignore the effect of certain variables.
+ *)
+definition weakly_subsumes :: "transition \<Rightarrow> context \<Rightarrow> transition \<Rightarrow> aexp set \<Rightarrow> bool" ("_\<^sub>_\<sqsupseteq>_" 60) where
+  "weakly_subsumes t2 c t1 ignored \<equiv> Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) \<and>
+                      (\<forall>r i. fBall (medial c (Guard t1) r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (medial c (Guard t2) r) (\<lambda>c. cval c r i = true)) \<and>
+                      (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
+                      (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
+                      (\<forall>r i. fBall (posterior_separate c (Guard t1@Guard t2) (Updates t2) r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (posterior c t1 r) (\<lambda>c. cval c r i = true) \<or> r \<in> ignored) \<and>
+                      (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
+
 lemma output_subsumption_violation: "\<not> (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<Longrightarrow>
       \<not> subsumes t2 c t1"
   by (simp add: subsumes_def)
