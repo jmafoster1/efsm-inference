@@ -115,7 +115,9 @@ object Dirties {
                               else if (Transition.Outputs(t1).length != Transition.Outputs(t2).length) {
                                 false
                               }
-                              else if (Code_Generation.all_literal_outputs(t1) && Code_Generation.all_literal_outputs(t1) && Transition.Outputs(t1) != Transition.Outputs(t2)) {
+                              else if (Code_Generation.all_literal_outputs(t1) &&
+                                       Code_Generation.all_literal_outputs(t2) && 
+                                       Transition.Outputs(t1) != Transition.Outputs(t2)) {
                                 false
                               }
                               else if (Store_Reuse.is_proper_generalisation_of(t1, t2, b)) {
