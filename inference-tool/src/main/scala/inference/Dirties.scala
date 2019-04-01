@@ -106,7 +106,8 @@ object Dirties {
 
   def scalaDirectlySubsumes(a: FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
                             b: FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-                            c: Nat.nat,
+                            s: Nat.nat,
+                            s_prime: Nat.nat,
                             t1: Transition.transition_ext[Unit],
                             t2: Transition.transition_ext[Unit]): Boolean = {
                               if (HOL.equal(t1, t2)) {
@@ -116,7 +117,7 @@ object Dirties {
                                 false
                               }
                               else if (Code_Generation.all_literal_outputs(t1) &&
-                                       Code_Generation.all_literal_outputs(t2) && 
+                                       Code_Generation.all_literal_outputs(t2) &&
                                        Transition.Outputs(t1) != Transition.Outputs(t2)) {
                                 false
                               }

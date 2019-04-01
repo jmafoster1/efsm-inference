@@ -441,21 +441,6 @@ lemma subsumption: "Label t1 = Label t2 \<and>
 definition anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> context" where
  "anterior_context e t = posterior_sequence \<lbrakk>\<rbrakk> e 0 <> t"
 
-(* Does t1 subsume t2 in all possible anterior contexts? *)
-(* For every path which gets us to the problem state, does t1 subsume t2 in the resulting context *)
-definition directly_subsumes :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "directly_subsumes e1 e2 s t1 t2 \<equiv> (\<forall>p. accepts_trace e1 p \<and> gets_us_to s e1 0 <>  p \<longrightarrow> subsumes t1 (anterior_context e2 p) t2) \<and>
-                                     (\<exists>c. subsumes t1 c t2)"
-
-lemma directly_subsumes_self: "directly_subsumes e1 e2 s t t"
-  by (simp add: directly_subsumes_def posterior_def posterior_separate_append_self subsumes_def)
-
-lemma gets_us_to_and_not_subsumes: "\<exists>p. accepts_trace e1 p \<and> gets_us_to s e1 0 Map.empty p \<and> \<not> subsumes t1 (anterior_context e2 p) t2 \<Longrightarrow> \<not> directly_subsumes e1 e2 s t1 t2"
-  by (simp add: directly_subsumes_def)
-
-lemma cant_directly_subsume: "\<forall>c. \<not> subsumes t c t' \<Longrightarrow> \<not> directly_subsumes m m' s t t'"
-  by (simp add: directly_subsumes_def)
-
 lemma gexp_equiv_cexp_not_true:  "gexp_equiv (cexp2gexp a (Not (Bc True))) (gexp.Bc False)"
   by (simp add: gexp_equiv_def gval.simps)
 

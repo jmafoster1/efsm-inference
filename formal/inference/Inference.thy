@@ -171,6 +171,15 @@ definition directly_subsumes :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<R
                                           subsumes t1 (anterior_context (tm e2) p) t2) \<and>
                                      (\<exists>c. subsumes t1 c t2)"
 
+lemma directly_subsumes_self: "directly_subsumes e1 e2 s s' t t"
+  by (simp add: directly_subsumes_def posterior_def posterior_separate_append_self subsumes_def)
+
+lemma gets_us_to_and_not_subsumes: "\<exists>p. accepts_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 Map.empty p \<and> accepts_trace (tm e2) p \<and> gets_us_to s' (tm e2) 0 Map.empty p \<and> \<not> subsumes t1 (anterior_context (tm e2) p) t2 \<Longrightarrow> \<not> directly_subsumes e1 e2 s s' t1 t2"
+  by (simp add: directly_subsumes_def)
+
+lemma cant_directly_subsume: "\<forall>c. \<not> subsumes t c t' \<Longrightarrow> \<not> directly_subsumes m m' s s' t t'"
+  by (simp add: directly_subsumes_def)
+
 (* merge_transitions - Try dest merge transitions t\<^sub>1 and t\<^sub>2 dest help resolve nondeterminism in
                        newEFSM. If either subsumes the other directly then the subsumed transition
                        can simply be replaced with the subsuming one, else we try dest apply the

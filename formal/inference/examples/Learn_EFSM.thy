@@ -398,20 +398,13 @@ lemma set_nequiv_def: "(s \<noteq> s') = (\<exists>e. (e \<in> s \<and> e \<noti
    apply simp
   by simp
 
-lemma coin_50_50_cant_directly_subsume_coin_50_100: "\<not> directly_subsumes e t s (coin 50 50) (coin 50 100)"
+lemma coin_50_50_cant_directly_subsume_coin_50_100: "\<not> directly_subsumes e t s s' (coin 50 50) (coin 50 100)"
   by (simp add: directly_subsumes_def no_subsumption_coin_50_50_coin_50_100)
 
-lemma coin_50_100_cant_directly_subsume_coin_50_50: "\<not> directly_subsumes e t s (coin 50 100) (coin 50 50)"
+lemma coin_50_100_cant_directly_subsume_coin_50_50: "\<not> directly_subsumes e t s s' (coin 50 100) (coin 50 50)"
   by (simp add: cant_directly_subsume no_subsumption_coin_50_100_coin_50_50)
 
-lemma cant_merge_coins: "merge_transitions pta merged_2_9 8 1 1 2 2 (coin 50 100) 8 (coin 50 50) 2 modifier = None"
-  apply (simp add: merge_transitions_def coin_50_100_cant_directly_subsume_coin_50_50 coin_50_50_cant_directly_subsume_coin_50_100)
-  by (simp add: modifier_def)
-
-lemma cant_merge_coins_2: "merge_transitions pta (merge_states (dest 2 merged_1_8) (dest 8 merged_1_8) merged_1_8) (origin 2 pta) (origin 8 pta)
-           (origin 2 (merge_states (dest 2 merged_1_8) (dest 8 merged_1_8) merged_1_8))
-           (dest 2 (merge_states (dest 2 merged_1_8) (dest 8 merged_1_8) merged_1_8))
-           (dest 8 (merge_states (dest 2 merged_1_8) (dest 8 merged_1_8) merged_1_8)) (coin 50 50) 2 (coin 50 100) 8 modifier
+lemma cant_merge_coins: "merge_transitions pta (merge_states (dest 2 merged_1_8) (dest 8 merged_1_8) merged_1_8) (coin 50 50) 2 (coin 50 100) 8 modifier
             = None"
 proof-
   have modify_none: "modifier 2 8 (origin 2 (merge_states (dest 2 merged_1_8) (dest 8 merged_1_8) merged_1_8))
@@ -421,6 +414,12 @@ proof-
     apply (simp add: merge_transitions_def modify_none)
     by (simp add: coin_50_100_cant_directly_subsume_coin_50_50 coin_50_50_cant_directly_subsume_coin_50_100)
 qed
+
+lemma cant_merge_coins_2: "merge_transitions pta (merge_states (dest 8 merged_1_8) (dest 2 merged_1_8) merged_1_8) (coin 50 100) 8
+                             (coin 50 50) 2 modifier = None"
+    apply (simp add: merge_transitions_def)
+    apply (simp add: coin_50_100_cant_directly_subsume_coin_50_50 coin_50_50_cant_directly_subsume_coin_50_100)
+    by (simp add: modifier_def)
 
 definition merged_3_9 :: iEFSM where
   "merged_3_9 = {|(0, (0, 1), (select coke)),  (7, (1, 2), (coin 50 50)),   (8, (2, 3), (coin 50 100)), (5, (3, 4), (vend coke)),
@@ -650,7 +649,29 @@ proof-
     using choices by auto
 qed
 
+lemma too_big: "\<not>(card (fset merged_1_8) < card (fset pta))"
+  by eval
+
+definition "merged_coins = {|(9, (9, 10), vend pepsi), (8, (2, 9), coin 50 100), (1, (0, 1), Learn_EFSM.select pepsi), (6, (5, 6), vend coke),
+   (3, (1, 5), coin 100 100), (5, (3, 4), vend coke), (4, (2, 3), coin 50 100), (0, (0, 1), Learn_EFSM.select coke), (2, (1, 2), coin 50 50)|}"
+
+lemma merged_coins: "merge_transitions pta (merge_states (dest 2 merged_1_7) (dest 7 merged_1_7) merged_1_7) (coin 50 50) 2 (coin 50 50) 7
+                          modifier = Some merged_coins"
+  apply (simp add: merge_transitions_def directly_subsumes_self)
+  by eval
+
+lemma make_distinct_merged_coins: "Inference.make_distinct (Some merged_coins) = Some merged_coins"
+  by eval
+
 lemma "learn traces naive_score modifier = (tm final)"
+  apply (simp add: learn_def build_pta scoring_1)
+  apply (simp add: merge_def merge_states_1_8 nondeterministic_pairs_merged_1_8 sorted_list_of_fset_def)
+  apply (simp add: cant_merge_coins Inference.make_distinct_def)
+  apply (simp add: cant_merge_coins_2 too_big)
+  apply (simp add: deterministic_def nondeterministic_pairs_merged_1_8)
+  apply (simp add: merge_def merge_states_1_7 nondeterministic_pairs_merged_1_7 sorted_list_of_fset_def)
+  apply (simp add: merged_coins make_distinct_merged_coins)
+
   oops
 
 (* value "iefsm2dot pta" *)

@@ -2122,40 +2122,6 @@ def generalise_output(t: Transition.transition_ext[Unit], regX: Nat.nat,
                           outputX, AExp.V(VName.R(regX))),
                                     Transition.Updates[Unit](t), ())
 
-def distinct_aux(x0: List[(Nat.nat,
-                            ((Nat.nat, Nat.nat),
-                              Transition.transition_ext[Unit]))],
-                  d: FSet.fset[((Nat.nat, Nat.nat),
-                                 Transition.transition_ext[Unit])]):
-      FSet.fset[(Nat.nat,
-                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
-  =
-  (x0, d) match {
-  case (Nil, d) => Inference.toiEFSM(d)
-  case (h::t, d) =>
-    (if (FSet.fmember[((Nat.nat, Nat.nat),
-                        Transition.transition_ext[Unit])](Product_Type.snd[Nat.nat,
-                                    ((Nat.nat, Nat.nat),
-                                      Transition.transition_ext[Unit])](h),
-                   d))
-      distinct_aux(t, d)
-      else distinct_aux(t, FSet.finsert[((Nat.nat, Nat.nat),
-  Transition.transition_ext[Unit])](Product_Type.snd[Nat.nat,
-              ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])](h),
-                                     d)))
-}
-
-def make_distinct(e: FSet.fset[(Nat.nat,
-                                 ((Nat.nat, Nat.nat),
-                                   Transition.transition_ext[Unit]))]):
-      FSet.fset[(Nat.nat,
-                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
-  =
-  distinct_aux(FSet.sorted_list_of_fset[(Nat.nat,
-  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))](e),
-                FSet.bot_fset[((Nat.nat, Nat.nat),
-                                Transition.transition_ext[Unit])])
-
 def strip_uids(x: (((Transition.transition_ext[Unit], Nat.nat),
                      (ioTag, Nat.nat)),
                     ((Transition.transition_ext[Unit], Nat.nat),
@@ -2406,8 +2372,8 @@ matches)
       None
       else Some[FSet.fset[(Nat.nat,
                             ((Nat.nat, Nat.nat),
-                              Transition.transition_ext[Unit]))]](make_distinct(generalise_transitions(to_replace,
-                        old))))
+                              Transition.transition_ext[Unit]))]](generalise_transitions(to_replace,
+          old)))
   }
 
 def io_index(eventNo: Nat.nat, inputs: List[Value.value],
@@ -4031,14 +3997,14 @@ def merge_transitions(oldEFSM:
                            Transition.transition_ext[Unit]))]]
   =
   (if (Dirties.scalaDirectlySubsumes(oldEFSM, destMerge, origin(u_1, oldEFSM),
-                                      t_2, t_1))
+                                      origin(u_1, destMerge), t_2, t_1))
     Some[FSet.fset[(Nat.nat,
                      ((Nat.nat, Nat.nat),
                        Transition.transition_ext[Unit]))]](replace_transition(destMerge,
                                        u_1, origin(u_1, destMerge),
                                        dest(u_2, destMerge), t_1, t_2))
     else (if (Dirties.scalaDirectlySubsumes(oldEFSM, destMerge,
-     origin(u_2, oldEFSM), t_1, t_2))
+     origin(u_2, oldEFSM), origin(u_2, destMerge), t_1, t_2))
            Some[FSet.fset[(Nat.nat,
                             ((Nat.nat, Nat.nat),
                               Transition.transition_ext[Unit]))]](replace_transition(destMerge,
