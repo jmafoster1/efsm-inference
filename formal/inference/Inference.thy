@@ -165,8 +165,10 @@ inductive satisfies_trace :: "execution \<Rightarrow> transition_matrix \<Righta
 definition satisfies :: "execution set \<Rightarrow> transition_matrix \<Rightarrow> bool" where
   "satisfies T e = (\<forall>t \<in> T. satisfies_trace t e 0 <>)"
 
-definition directly_subsumes :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "directly_subsumes e1 e2 s t1 t2 \<equiv> (\<forall>p. accepts_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow> subsumes t1 (anterior_context (tm e2) p) t2) \<and>
+definition directly_subsumes :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "directly_subsumes e1 e2 s s' t1 t2 \<equiv> (\<forall>p. accepts_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
+                                          accepts_trace (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
+                                          subsumes t1 (anterior_context (tm e2) p) t2) \<and>
                                      (\<exists>c. subsumes t1 c t2)"
 
 (* merge_transitions - Try dest merge transitions t\<^sub>1 and t\<^sub>2 dest help resolve nondeterminism in
@@ -182,9 +184,9 @@ definition directly_subsumes :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<R
 (* @param modifier  - an update modifier function which tries dest generalise transitions           *)
 definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" where
   "merge_transitions oldEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 modifier = (
-     if directly_subsumes oldEFSM destMerge (origin u\<^sub>1 oldEFSM) t\<^sub>2 t\<^sub>1 then
+     if directly_subsumes oldEFSM destMerge (origin u\<^sub>1 oldEFSM) (origin u\<^sub>1 destMerge) t\<^sub>2 t\<^sub>1 then
        Some (replace_transition destMerge u\<^sub>1 (origin u\<^sub>1 destMerge) (dest u\<^sub>2 destMerge) t\<^sub>1 t\<^sub>2)
-     else if directly_subsumes oldEFSM destMerge (origin u\<^sub>2 oldEFSM) t\<^sub>1 t\<^sub>2 then
+     else if directly_subsumes oldEFSM destMerge (origin u\<^sub>2 oldEFSM) (origin u\<^sub>2 destMerge) t\<^sub>1 t\<^sub>2 then
        Some (replace_transition destMerge u\<^sub>1 (origin u\<^sub>1 destMerge) (dest u\<^sub>1 destMerge) t\<^sub>2 t\<^sub>1)
      else
         modifier u\<^sub>1 u\<^sub>2 (origin u\<^sub>1 destMerge) destMerge oldEFSM
@@ -193,7 +195,6 @@ definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> transit
 fun make_distinct_aux :: "(nat \<times> (nat \<times> nat) \<times> transition) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "make_distinct_aux [] e = e" |
   "make_distinct_aux (h#t) e = (if snd h |\<in>| fimage snd e then make_distinct_aux t e else make_distinct_aux t (finsert h e))"
-
 
 (* This removes duplicate transitions (i.e. identical transitions with the same origin and        *)
 (* destination states but with different uids                                                     *)
@@ -251,7 +252,7 @@ definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> upd
       None 
     else 
       let e' = (merge_states s\<^sub>1 s\<^sub>2 e) in
-      resolve_nondeterminism ((sorted_list_of_fset (nondeterministic_pairs e'))) e e' m check
+      resolve_nondeterminism (sorted_list_of_fset (nondeterministic_pairs e')) e e' m check
   )"
 
 (* inference_step - attempt dest carry out a single step of the inference process by merging the    *)
