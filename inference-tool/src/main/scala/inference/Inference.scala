@@ -2689,7 +2689,32 @@ def heuristic_1(l: List[List[(String,
     (old: FSet.fset[(Nat.nat,
                       ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))])
       =>
-    modify(find_intertrace_matches(l, old), t1, t2, newa))
+    (modify(find_intertrace_matches(l, old), t1, t2, newa) match {
+       case None => None
+       case Some(newEFSM) =>
+         Inference.resolve_nondeterminism.apply(FSet.sorted_list_of_fset[(Nat.nat,
+                                   ((Nat.nat, Nat.nat),
+                                     ((Transition.transition_ext[Unit],
+Nat.nat),
+                                       (Transition.transition_ext[Unit],
+ Nat.nat))))](Inference.nondeterministic_pairs(newEFSM))).apply(old).apply(newEFSM).apply(((a:
+              Nat.nat)
+             =>
+            (b: Nat.nat) => (c: Nat.nat) =>
+            (d: FSet.fset[(Nat.nat,
+                            ((Nat.nat, Nat.nat),
+                              Transition.transition_ext[Unit]))])
+              =>
+            (e: FSet.fset[(Nat.nat,
+                            ((Nat.nat, Nat.nat),
+                              Transition.transition_ext[Unit]))])
+              =>
+            Inference.null_modifier(a, b, c, d,
+                                     e))).apply(((_:
+            FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])])
+           =>
+          true))
+     }))
 
 def is_generalisation_of:
       (Transition.transition_ext[Unit]) =>
