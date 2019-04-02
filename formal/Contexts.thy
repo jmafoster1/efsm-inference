@@ -315,6 +315,16 @@ fun constrains_an_input :: "aexp \<Rightarrow> bool" where
 definition remove_obsolete_constraints :: "context \<Rightarrow> vname fset \<Rightarrow> context" where
   "remove_obsolete_constraints c vs = (\<lambda>a. if \<exists>n. aexp_constrains a (V (I n)) \<or> fBex vs (\<lambda>x. aexp_constrains (V x) a \<and> a \<noteq> (V x)) then \<lbrakk>\<rbrakk> a else c a)"
 
+lemma consistent_c_consistent_remove_obsolete_constraints: "consistent c \<Longrightarrow> consistent (remove_obsolete_constraints c Any)"
+  apply (simp add: remove_obsolete_constraints_def consistent_def)
+  apply clarify
+  apply (rule_tac x=s in exI)
+  apply clarify
+  apply (case_tac r)
+     apply simp
+  apply (case_tac x2)
+  using cval_true by auto
+
 lemma empty_inputs_are_true: "constrains_an_input x \<Longrightarrow> \<lbrakk>\<rbrakk> x = {|Bc True|}"
   apply (case_tac x)
      apply simp
@@ -380,6 +390,26 @@ definition datastate2context :: "datastate \<Rightarrow> context" where
 definition satisfies_context :: "datastate \<Rightarrow> context \<Rightarrow> bool" where
   "satisfies_context d c = consistent (\<lambda>x. (datastate2context d x) |\<union>| c x)"
 
+lemma satisfactory_registers: "c (V (R r)) = {|cexp.Eq v|} \<Longrightarrow>
+       satisfies_context ra c \<Longrightarrow>
+       ra (R r) = Some v"
+proof-
+  assume premise1: "c (V (R r)) = {|cexp.Eq v|}"
+  assume premise2: "satisfies_context ra c"
+  have contra: "c (V (R r)) = {|cexp.Eq v|} \<Longrightarrow>
+                ra (R r) \<noteq> Some v \<Longrightarrow>
+                \<not>satisfies_context ra c"
+    apply (simp add: satisfies_context_def datastate2context_def consistent_def)
+    apply clarify
+    apply (rule_tac x="V (R r)" in exI)
+    apply (simp add: cval_def)
+    apply (case_tac "ra (R r)")
+    using gval.simps ValueEq_def
+    by auto
+  show ?thesis
+    using premise1 premise2 contra by auto
+qed
+
 lemma cval_undef_empty: "cval Undef (V x) <> = true"
   by (simp add: cval_def gval.simps ValueEq_def)
 
@@ -407,13 +437,23 @@ definition subsumes :: "transition \<Rightarrow> context \<Rightarrow> transitio
    because one updates a variable that the other doesn't know about. We therefore need a notion of
    accountability in which we can ignore the effect of certain variables.
  *)
-definition weakly_subsumes :: "transition \<Rightarrow> context \<Rightarrow> transition \<Rightarrow> aexp set \<Rightarrow> bool" ("_\<^sub>_\<sqsupseteq>_" 60) where
+definition weakly_subsumes :: "transition \<Rightarrow> context \<Rightarrow> transition \<Rightarrow> aexp set \<Rightarrow> bool" where
   "weakly_subsumes t2 c t1 ignored \<equiv> Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) \<and>
                       (\<forall>r i. fBall (medial c (Guard t1) r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (medial c (Guard t2) r) (\<lambda>c. cval c r i = true)) \<and>
                       (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                       (\<forall>r i. fBall (posterior_separate c (Guard t1@Guard t2) (Updates t2) r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (posterior c t1 r) (\<lambda>c. cval c r i = true) \<or> r \<in> ignored) \<and>
                       (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2))"
+
+lemma weak_subsumption: 
+  "Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) \<Longrightarrow>
+                      (\<forall>r i. fBall (medial c (Guard t1) r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (medial c (Guard t2) r) (\<lambda>c. cval c r i = true)) \<Longrightarrow>
+                      (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<Longrightarrow>
+                      (\<exists> i r. apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<Longrightarrow>
+                      (\<forall>r i. fBall (posterior_separate c (Guard t1@Guard t2) (Updates t2) r) (\<lambda>c. cval c r i = true) \<longrightarrow> fBall (posterior c t1 r) (\<lambda>c. cval c r i = true) \<or> r \<in> ignored) \<Longrightarrow>
+                      (consistent (posterior c t1) \<longrightarrow> consistent (posterior c t2)) \<Longrightarrow>
+                       weakly_subsumes t2 c t1 ignored"
+  by (simp add: weakly_subsumes_def)
 
 lemma output_subsumption_violation: "\<not> (\<forall> i r. satisfies_context r c \<longrightarrow> apply_guards (Guard t1) (join_ir i r) \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<Longrightarrow>
       \<not> subsumes t2 c t1"

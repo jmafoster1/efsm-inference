@@ -324,24 +324,34 @@ fun enumerate_gexp_regs :: "gexp \<Rightarrow> nat set" where
   "enumerate_gexp_regs (GExp.Lt v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
   "enumerate_gexp_regs (GExp.Nor v va) = enumerate_gexp_regs v \<union> enumerate_gexp_regs va"
 
-definition get_by_id_biggest_t_reg :: "transition \<Rightarrow> nat" where
-  "get_by_id_biggest_t_reg t = Max ({0} \<union>
-                                (\<Union> set (map enumerate_gexp_regs (Guard t))) \<union>
+definition enumerate_t_regs :: "transition \<Rightarrow> nat set" where
+  "enumerate_t_regs t = (\<Union> set (map enumerate_gexp_regs (Guard t))) \<union>
                                 (\<Union> set (map enumerate_aexp_regs (Outputs t))) \<union>
                                 (\<Union> set (map (\<lambda>(_, u). enumerate_aexp_regs u) (Updates t))) \<union>
-                                (\<Union> set (map (\<lambda>(r, _). enumerate_aexp_regs (V r)) (Updates t))))"
+                                (\<Union> set (map (\<lambda>(r, _). enumerate_aexp_regs (V r)) (Updates t)))"
+
+definition get_by_id_biggest_t_reg :: "transition \<Rightarrow> nat" where
+  "get_by_id_biggest_t_reg t = Max ({0} \<union> enumerate_t_regs t)"
 
 definition max_reg :: "iEFSM \<Rightarrow> nat" where
   "max_reg e = fMax (fimage (\<lambda>(_, _, t). get_by_id_biggest_t_reg t) e)"
 
 primrec try_heuristics :: "update_modifier list \<Rightarrow> update_modifier" where
   "try_heuristics [] = null_modifier" |
-  "try_heuristics (h#t) = (\<lambda>a b c d e. case h a b c d e of None \<Rightarrow> try_heuristics t a b c d e | Some e' \<Rightarrow> Some e')"
+  "try_heuristics (h#t) = (\<lambda>a b c d e. case h a b c d e of Some e' \<Rightarrow> Some e' | None \<Rightarrow> (case h b a c d e of Some e' \<Rightarrow> Some e' | None \<Rightarrow> try_heuristics t a b c d e))"
 
 primrec iterative_try_heuristics :: "(log \<Rightarrow> update_modifier) list \<Rightarrow> log \<Rightarrow> update_modifier" where
   "iterative_try_heuristics [] l = null_modifier" |
-  "iterative_try_heuristics (h#t) l = (\<lambda>a b c d e. case (h l) a b c d e of None \<Rightarrow> iterative_try_heuristics t l a b c d e | Some e' \<Rightarrow> Some e')"
+  "iterative_try_heuristics (h#t) l = (\<lambda>a b c d e. case (h l) a b c d e of
+                                        Some e' \<Rightarrow> Some e' |
+                                        None \<Rightarrow> (case (h l) b a c d e of
+                                          Some e' \<Rightarrow> Some e' |
+                                          None \<Rightarrow> iterative_try_heuristics t l a b c d e)
+                                      )"
 
 definition replaceAll :: "iEFSM \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
   "replaceAll e old new = fimage (\<lambda>(uid, (from, dest), t). if t = old then (uid, (from, dest), new) else (uid, (from, dest), t)) e"
+
+definition all_regs :: "iEFSM \<Rightarrow> nat set" where
+  "all_regs e = \<Union> image (\<lambda>(_, _, t). enumerate_t_regs t) (fset e)"
 end

@@ -1,15 +1,16 @@
 theory Code_Generation
   imports 
    "HOL-Library.Code_Target_Numeral" Inference "../FSet_Utils" SelectionStrategies EFSM_Dot
-   Type_Inference
+   Type_Inference Enable_Logging
    "heuristics/Store_Reuse"
    "heuristics/Increment_Reset"
    "heuristics/Same_Register"
-   "heuristics/Instance_Of"
+   "heuristics/Different_Times"
 begin
 
 declare GExp.satisfiable_def [code del]
 declare directly_subsumes_def [code del]
+declare weakly_directly_subsumes_def [code del]
 declare choice_def [code del]
 
 declare consistent_def [code del]
@@ -18,7 +19,8 @@ declare CExp.valid_def [code del]
 
 code_printing
   constant "GExp.satisfiable" \<rightharpoonup> (Scala) "Dirties.satisfiable" |
-  constant "directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes"
+  constant "directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes"|
+  constant "weakly_directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaWeaklyDirectlySubsumes"
 
 code_printing
   constant HOL.conj \<rightharpoonup> (Scala) "_ && _" |
@@ -78,13 +80,24 @@ code_pred satisfies_trace.
 
 declare ListMem_iff [code]
 
-fun guardMatch_alt :: "gexp list \<Rightarrow> gexp list \<Rightarrow> bool" where
-  "guardMatch_alt [(gexp.Eq (V (I i)) (L (Num n)))] [(gexp.Eq (V (I i')) (L (Num n')))] = (i = 1 \<and> i' = 1)" |
-  "guardMatch_alt _ _ = False"
+definition guardMatch_alt :: "gexp list \<Rightarrow> gexp list \<Rightarrow> bool" where
+  "guardMatch_alt a b = (case (a, b) of ([(gexp.Eq (V (I i)) (L (Num n)))], [(gexp.Eq (V (I i')) (L (Num n')))]) \<Rightarrow> True | _ \<Rightarrow> False)"
 
 lemma [code]: "guardMatch t1 t2 = guardMatch_alt (Guard t1) (Guard t2)"
-  apply (simp add: guardMatch_def)
-  using One_nat_def guardMatch_alt.elims(2) by fastforce
+  apply (simp add: guardMatch_def guardMatch_alt_def)
+  apply (cases "Guard t1")
+   apply simp
+  apply simp
+  apply (case_tac a)
+      apply simp+
+     apply (case_tac x21)
+        apply simp+
+       apply (case_tac x2)
+        apply simp+
+        apply (case_tac x22)
+           apply simp
+           apply (case_tac x1a)
+            apply simp
 
 fun outputMatch_alt :: "output_function list \<Rightarrow> output_function list \<Rightarrow> bool" where
   "outputMatch_alt [L (Num n)] [L (Num n')] = True" |
@@ -92,11 +105,6 @@ fun outputMatch_alt :: "output_function list \<Rightarrow> output_function list 
 
 lemma [code]: "outputMatch t1 t2 = outputMatch_alt (Outputs t1) (Outputs t2)"
   by (metis outputMatch_alt.elims(2) outputMatch_alt.simps(1) outputMatch_def)
-
-definition writeiDot :: "iEFSM \<Rightarrow> String.literal \<Rightarrow> unit" where
-  "writeiDot i s = ()"
-
-definition "timestamp = STR ''''"
 
 definition merge_and_print :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "merge_and_print x y t = (let merged = (if x > y then merge_states_aux x y t else merge_states_aux y x t);
@@ -111,52 +119,6 @@ primrec iterative_try_heuristics_print :: "(log \<Rightarrow> update_modifier) l
   "iterative_try_heuristics_print (h#t) l = (\<lambda>a b c d e. case (h l) a b c d e of None \<Rightarrow> iterative_try_heuristics_print t l a b c d e |
                                             Some e' \<Rightarrow> let print = (writeiDot e' (STR ''dotfiles/log/''+timestamp+STR ''.dot'')) in Some e')"
 
-lemma try_and_print: "iterative_try_heuristics h l = iterative_try_heuristics_print h l"
-proof(induct h)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons a h)
-  then show ?case
-    apply simp
-    by metis
-qed
-
-code_printing
-  constant "writeiDot" \<rightharpoonup> (Scala) "Dirties.writeiDot" |
-  constant "timestamp" \<rightharpoonup> (Scala) "System.currentTimeMillis.toString"
-
-function resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM option" where
-  "resolve_nondeterminism [] _ new _ check = (if deterministic new \<and> check (tm new) then Some new else None)" |
-  "resolve_nondeterminism ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) oldEFSM newEFSM m check = (let
-     destMerge = merge_states (dest u\<^sub>1 newEFSM) (dest u\<^sub>2 newEFSM) newEFSM;
-     t = timestamp;
-     p = writeiDot destMerge (STR ''dotfiles/log/''+t+STR ''-merged.dot'');
-     p' = writeiDot oldEFSM (STR ''dotfiles/log/''+t+STR ''-old.dot'')
-     in
-     case Inference.make_distinct (merge_transitions oldEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m) of
-       None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check |
-       Some new \<Rightarrow>
-         let newScores = (sorted_list_of_fset (nondeterministic_pairs new)) in 
-         if length (newScores) + size new < length (ss) + 1 + size newEFSM then
-           case resolve_nondeterminism newScores oldEFSM new m check of
-             Some new' \<Rightarrow> Some new' |
-             None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check
-         else
-          None
-   )"
-     apply clarify
-     apply simp
-     apply (metis neq_Nil_conv prod_cases3 surj_pair)
-  by auto
-termination
-  by (relation "measures [\<lambda>(ss, oldEFSM, newEFSM, m, check). length ss + size newEFSM]") auto
-
-lemma [code]: "Inference.resolve_nondeterminism = resolve_nondeterminism"
-  sorry
-
-declare Inference.resolve_nondeterminism.simps [code del]
-
 definition all_literal_outputs :: "transition \<Rightarrow> bool" where
   "all_literal_outputs t = fold (\<lambda>p P. case p of L v \<Rightarrow> P | _ \<Rightarrow> False) (Outputs t) True"
 
@@ -166,11 +128,14 @@ definition is_generalisation_of :: "transition \<Rightarrow> transition \<Righta
 lemma [code]:  "Store_Reuse.is_generalisation_of = is_generalisation_of"
   sorry
 
-export_code is_proper_generalisation_of all_literal_outputs try_heuristics learn same_register insert_increment just_do_it nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
+export_code ignore_new_register increment_inserted is_proper_generalisation_of all_literal_outputs try_heuristics learn same_register insert_increment insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
-lemma "iterative_learn [] naive_score (iterative_try_heuristics [(\<lambda>x. insert_increment), (\<lambda>x. heuristic_1 x)]) = {||}"
-  by (simp add: iterative_learn_def tm_def)
+lemma "guardMatch \<lparr>Label=STR ''coin'', Arity=1, Guard=[gexp.Eq (V (I 1)) (L (Num 50))], Outputs=[L (Num 50)], Updates = []\<rparr> \<lparr>Label=STR ''coin'', Arity=1, Guard=[gexp.Eq (V (I 1)) (L (Num 100))], Outputs=[L (Num 100)], Updates = []\<rparr>"
+  by (simp add: guardMatch_def)
+
+lemma "outputMatch \<lparr>Label=STR ''coin'', Arity=1, Guard=[gexp.Eq (V (I 1)) (L (Num 50))], Outputs=[L (Num 50)], Updates = []\<rparr> \<lparr>Label=STR ''coin'', Arity=1, Guard=[gexp.Eq (V (I 1)) (L (Num 100))], Outputs=[L (Num 100)], Updates = []\<rparr>"
+  by (simp add: outputMatch_def)
 
 end

@@ -24,10 +24,10 @@ object FrontEnd {
     val log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)))
 
     val heuristic = Inference.try_heuristics(List(
+      (Different_Times.ignore_new_register _).curried,
       (Same_Register.same_register _).curried,
-      (Increment_Reset.insert_increment _).curried,
-      Store_Reuse.heuristic_1(log),
-      (Instance_Of.just_do_it _).curried
+      (Increment_Reset.insert_increment_2 _).curried,
+      Store_Reuse.heuristic_1(log)
     ))
 
     println("Hello inference!")
