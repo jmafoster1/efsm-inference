@@ -69,10 +69,4 @@ fun outputMatch_alt_2 :: "aexp list \<Rightarrow> bool" where
   "outputMatch_alt_2 [(L (Num n))] = True" |
   "outputMatch_alt_2 _ = False"
 
-definition increment_inserted :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> bool" where
-  "increment_inserted t1 t2 e1 e2 \<equiv> guardMatch_alt_2 (Guard t1) \<and>
-                                    outputMatch_alt_2 (Outputs t1) \<and>
-                                    Updates t1 =[] \<and>
-                                    (\<exists>r \<in> (all_regs e2 - all_regs e1). t2 = \<lparr>Label = Label t1, Arity = Arity t1, Guard = [], Outputs = [Plus (V (R r)) (V (I 1))], Updates=(((R r), Plus (V (R r)) (V (I 1)))#Updates t1)\<rparr>)"
-
 end

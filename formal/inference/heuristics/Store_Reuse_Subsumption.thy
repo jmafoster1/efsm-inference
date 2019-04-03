@@ -457,4 +457,12 @@ lemma generalise_output_subsumes_original: "nth (Outputs t) r = L v \<Longrighta
    apply (simp add: posterior_separate_append_self posterior_def generalise_output_preserves)
   by (simp add: posterior_def posterior_separate_def  generalise_output_preserves)
 
+primrec which_register_output :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat option" where
+  "which_register_output t' t e 0 = (if \<exists>p \<le> max_output e. is_generalised_output_of t' t e 0 p then Some 0 else None)" |
+  "which_register_output t' t e (Suc m) = (if \<exists>p \<le> max_output e. is_generalised_output_of t' t e m p then Some m else (which_register_output t' t e m))"
+
+primrec which_output_stored :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat option" where
+  "which_output_stored t' t e 0 = (if \<exists>r \<le> max_reg e. is_generalised_output_of t' t e r 0 then Some 0 else None)" |
+  "which_output_stored t' t e (Suc m) = (if \<exists>r \<le> max_reg e. is_generalised_output_of t' t e r m then Some m else (which_register_output t' t e m))"
+
 end

@@ -336,6 +336,9 @@ definition get_by_id_biggest_t_reg :: "transition \<Rightarrow> nat" where
 definition max_reg :: "iEFSM \<Rightarrow> nat" where
   "max_reg e = fMax (fimage (\<lambda>(_, _, t). get_by_id_biggest_t_reg t) e)"
 
+definition max_output :: "iEFSM \<Rightarrow> nat" where
+  "max_output e = fMax (fimage (\<lambda>(_, _, t). length (Outputs t)) e)"
+
 primrec try_heuristics :: "update_modifier list \<Rightarrow> update_modifier" where
   "try_heuristics [] = null_modifier" |
   "try_heuristics (h#t) = (\<lambda>a b c d e. case h a b c d e of Some e' \<Rightarrow> Some e' | None \<Rightarrow> try_heuristics t a b c d e)"

@@ -106,13 +106,19 @@ definition get_by_id_biggest_t_input :: "transition \<Rightarrow> nat" where
                                 (\<Union> set (map (\<lambda>(_, u). enumerate_aexp_inputs u) (Updates t))))"
 
 definition max_input :: "iEFSM \<Rightarrow> nat" where
-  "max_input e = fMax (fimage (\<lambda>(_, _, t). get_by_id_biggest_t_input t) e)"
+  "max_input e = fMax (fimage (\<lambda>(_, _, t). Arity t) e)"
 
 definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
   "remove_guard_add_update t inputX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (filter (\<lambda>g. \<not> gexp_constrains g (V (I inputX))) (Guard t)), Outputs = (Outputs t), Updates = (R outputX, (V (I inputX)))#(Updates t)\<rparr>"
 
 definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
   "generalise_output t regX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (Guard t), Outputs = list_update (Outputs t) outputX (V (R regX)), Updates = (Updates t)\<rparr>"
+
+definition is_generalised_output_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
+  "is_generalised_output_of t' t e r p = (\<exists>to from uid. t' = generalise_output t r p \<and> (uid, (from, to), t') |\<in>| e)"
+
+definition is_proper_generalised_output_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> bool" where
+  "is_proper_generalised_output_of t' t e = (\<exists>p \<le> max_output e. \<exists>r \<le> max_reg e. is_generalised_output_of t' t e r p)"
 
 primrec count :: "'a \<Rightarrow> 'a list \<Rightarrow> nat" where
   "count _ [] = 0" |

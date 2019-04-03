@@ -113,13 +113,8 @@ object Dirties {
                               if (HOL.equal(t1, t2)) {
                                 return true
                               }
-                              else if (Transition.Outputs(t1).length != Transition.Outputs(t2).length) {
-                                return false
-                              }
                               println(f"\nDoes ${PrettyPrinter.transitionToString(t1)} directly subsume ${PrettyPrinter.transitionToString(t2)}? y/n")
-                              if (Code_Generation.all_literal_outputs(t1) &&
-                                       Code_Generation.all_literal_outputs(t2) &&
-                                       Transition.Outputs(t1) != Transition.Outputs(t2)) {
+                              if (Code_Generation.always_different_outputs(Transition.Outputs(t1), Transition.Outputs(t2))) {
                                 println("n")
                                 return false
                               }
@@ -133,26 +128,19 @@ object Dirties {
                                 println("n")
                                 return false
                               }
+                              else if (Store_Reuse.is_proper_generalised_output_of(t1, t2, b)) {
+                                // This needs modifying to model check but it should be OK for now
+                                println("y")
+                                return true
+                              }
+                              else if (Store_Reuse.is_proper_generalised_output_of(t2, t1, b)) {
+                                // This needs modifying to model check but it should be OK for now
+                                println("y")
+                                return true
+                              }
                               else {
                                 val subsumes = readLine("") == "y"
                                 subsumes
                               }
                             }
-
-    def scalaWeaklyDirectlySubsumes(e1: FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-                                    e2: FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-                                    s: Nat.nat,
-                                    s_prime: Nat.nat,
-                                    t1: Transition.transition_ext[Unit],
-                                    t2: Transition.transition_ext[Unit]): Boolean = {
-                                println(f"\nDoes ${PrettyPrinter.transitionToString(t1)} weakly directly subsume ${PrettyPrinter.transitionToString(t2)}? y/n");
-                                if (Increment_Reset.increment_inserted(t1, t2, e1, e2)) {
-                                  println("y")
-                                  true
-                                }
-                                else {
-                                  println("n")
-                                  false
-                                }
-                              }
   }

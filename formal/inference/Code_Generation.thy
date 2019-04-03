@@ -5,12 +5,12 @@ theory Code_Generation
    "heuristics/Store_Reuse"
    "heuristics/Increment_Reset"
    "heuristics/Same_Register"
-   "heuristics/Different_Times"
 begin
+
+declare One_nat_def [simp del]
 
 declare GExp.satisfiable_def [code del]
 declare directly_subsumes_def [code del]
-declare weakly_directly_subsumes_def [code del]
 declare choice_def [code del]
 
 declare consistent_def [code del]
@@ -19,8 +19,7 @@ declare CExp.valid_def [code del]
 
 code_printing
   constant "GExp.satisfiable" \<rightharpoonup> (Scala) "Dirties.satisfiable" |
-  constant "directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes"|
-  constant "weakly_directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaWeaklyDirectlySubsumes"
+  constant "directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes"
 
 code_printing
   constant HOL.conj \<rightharpoonup> (Scala) "_ && _" |
@@ -41,7 +40,7 @@ lemma [code]: "step e s r l i = (if size (possible_steps e s r l i) = 1 then (
                    )
                    else None)"
   apply (simp add: step_def)
-  apply (simp add: is_singleton_altdef)
+  apply (simp add: is_singleton_altdef One_nat_def)
   by (metis One_nat_def fis_singleton.transfer is_singleton_altdef)
 
 fun guard_filter_code :: "nat \<Rightarrow> guard \<Rightarrow> bool" where
@@ -95,29 +94,63 @@ fun outputMatch_alt :: "output_function list \<Rightarrow> output_function list 
 lemma [code]: "outputMatch t1 t2 = outputMatch_alt (Outputs t1) (Outputs t2)"
   by (metis outputMatch_alt.elims(2) outputMatch_alt.simps(1) outputMatch_def)
 
-definition merge_and_print :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "merge_and_print x y t = (let merged = (if x > y then merge_states_aux x y t else merge_states_aux y x t);
-                                print = (writeiDot merged (STR ''dotfiles/log/''+timestamp+STR ''.dot'')) in merged)"
+fun always_different_outputs :: "aexp list \<Rightarrow> aexp list \<Rightarrow> bool" where
+  "always_different_outputs [] [] = False" |
+  "always_different_outputs [] (a#_) = True" |
+  "always_different_outputs (a#_) [] = True" |
+  "always_different_outputs ((L v)#t) ((L v')#t') = (if v = v' then always_different_outputs t t' else True)" |
+  "always_different_outputs (h#t) (h'#t') = always_different_outputs t t'"
 
-lemma merge_and_print: "merge_states = merge_and_print"
-  apply (rule ext)+
-  by (simp add: merge_states_def merge_and_print_def)
+lemma aux1: "h # t = Outputs t1 \<Longrightarrow>
+      Minus v va # t' = Outputs t2 \<Longrightarrow>
+      always_different_outputs (Outputs t1) (Outputs t2) =  always_different_outputs t t'"
+  by (metis always_different_outputs.simps(10))
 
-primrec iterative_try_heuristics_print :: "(log \<Rightarrow> update_modifier) list \<Rightarrow> log \<Rightarrow> update_modifier" where
-  "iterative_try_heuristics_print [] l = null_modifier" |
-  "iterative_try_heuristics_print (h#t) l = (\<lambda>a b c d e. case (h l) a b c d e of None \<Rightarrow> iterative_try_heuristics_print t l a b c d e |
-                                            Some e' \<Rightarrow> let print = (writeiDot e' (STR ''dotfiles/log/''+timestamp+STR ''.dot'')) in Some e')"
-
-definition all_literal_outputs :: "transition \<Rightarrow> bool" where
-  "all_literal_outputs t = fold (\<lambda>p P. case p of L v \<Rightarrow> P | _ \<Rightarrow> False) (Outputs t) True"
+lemma always_different_outputs: "always_different_outputs o1 o2 \<Longrightarrow>
+    \<forall>i r. apply_outputs o1 (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<noteq>
+          apply_outputs o2 (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n)))"
+  by (induct o1 o2 rule: always_different_outputs.induct, auto)
+                                                                  
+lemma outputs_never_equal_no_subsumption: "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow> \<not>subsumes t1 c t2"
+  by (metis outputs_never_equal join_ir_def always_different_outputs)
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalisation_of t' t e i r = (\<exists>to \<in> fset (S e). \<exists> from \<in> fset (S e). \<exists> uid \<in> fset (uids e). t' = remove_guard_add_update t i r \<and> (uid, (from, to), t') |\<in>| e)"
 
-lemma [code]:  "Store_Reuse.is_generalisation_of = is_generalisation_of"
-  sorry
+definition is_generalised_output_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
+  "is_generalised_output_of t' t e i r = (\<exists>to \<in> fset (S e). \<exists> from \<in> fset (S e). \<exists> uid \<in> fset (uids e). t' = generalise_output t i r \<and> (uid, (from, to), t') |\<in>| e)"
 
-export_code ignore_new_register increment_inserted is_proper_generalisation_of all_literal_outputs try_heuristics learn same_register insert_increment insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
+lemma to_in_S: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrightarrow> to |\<in>| S xb)"
+  apply (simp add: S_def)
+  by blast
+
+lemma from_in_S: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrightarrow> from |\<in>| S xb)"
+  apply (simp add: S_def)
+  by blast
+
+lemma uid_in_uids: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrightarrow> uid |\<in>| uids xb)"
+  apply (simp add: uids_def)
+  by blast
+
+lemma [code]:  "Store_Reuse.is_generalisation_of x xa xb xc xd = is_generalisation_of x xa xb xc xd"
+  apply (simp add: is_generalisation_of_def Store_Reuse.is_generalisation_of_def)
+  apply (case_tac "x = remove_guard_add_update xa xc xd")
+   defer
+   apply simp
+  apply simp
+  using to_in_S from_in_S uid_in_uids
+  by (meson dest_from_in_S_uid_in_uids notin_fset)
+
+lemma [code]: "Store_Reuse.is_generalised_output_of x xa xb xc xd = is_generalised_output_of x xa xb xc xd"
+  apply (simp add: is_generalised_output_of_def Store_Reuse.is_generalised_output_of_def)
+  apply (case_tac "x = generalise_output xa xc xd")
+   defer
+   apply simp
+  apply simp
+  using to_in_S from_in_S uid_in_uids
+  by (meson dest_from_in_S_uid_in_uids notin_fset)
+
+export_code is_proper_generalised_output_of is_proper_generalisation_of always_different_outputs try_heuristics learn same_register insert_increment insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
