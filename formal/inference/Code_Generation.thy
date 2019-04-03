@@ -80,24 +80,13 @@ code_pred satisfies_trace.
 
 declare ListMem_iff [code]
 
-definition guardMatch_alt :: "gexp list \<Rightarrow> gexp list \<Rightarrow> bool" where
-  "guardMatch_alt a b = (case (a, b) of ([(gexp.Eq (V (I i)) (L (Num n)))], [(gexp.Eq (V (I i')) (L (Num n')))]) \<Rightarrow> True | _ \<Rightarrow> False)"
+fun guardMatch_alt :: "gexp list \<Rightarrow> gexp list \<Rightarrow> bool" where
+  "guardMatch_alt [(gexp.Eq (V (I i)) (L (Num n)))] [(gexp.Eq (V (I i')) (L (Num n')))] = (i = 1 \<and> i' = 1)" |
+  "guardMatch_alt _ _ = False"
 
 lemma [code]: "guardMatch t1 t2 = guardMatch_alt (Guard t1) (Guard t2)"
-  apply (simp add: guardMatch_def guardMatch_alt_def)
-  apply (cases "Guard t1")
-   apply simp
-  apply simp
-  apply (case_tac a)
-      apply simp+
-     apply (case_tac x21)
-        apply simp+
-       apply (case_tac x2)
-        apply simp+
-        apply (case_tac x22)
-           apply simp
-           apply (case_tac x1a)
-            apply simp
+  apply (simp add: guardMatch_def)
+  using guardMatch_alt.elims(2) by fastforce
 
 fun outputMatch_alt :: "output_function list \<Rightarrow> output_function list \<Rightarrow> bool" where
   "outputMatch_alt [L (Num n)] [L (Num n')] = True" |
@@ -131,11 +120,5 @@ lemma [code]:  "Store_Reuse.is_generalisation_of = is_generalisation_of"
 export_code ignore_new_register increment_inserted is_proper_generalisation_of all_literal_outputs try_heuristics learn same_register insert_increment insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
-
-lemma "guardMatch \<lparr>Label=STR ''coin'', Arity=1, Guard=[gexp.Eq (V (I 1)) (L (Num 50))], Outputs=[L (Num 50)], Updates = []\<rparr> \<lparr>Label=STR ''coin'', Arity=1, Guard=[gexp.Eq (V (I 1)) (L (Num 100))], Outputs=[L (Num 100)], Updates = []\<rparr>"
-  by (simp add: guardMatch_def)
-
-lemma "outputMatch \<lparr>Label=STR ''coin'', Arity=1, Guard=[gexp.Eq (V (I 1)) (L (Num 50))], Outputs=[L (Num 50)], Updates = []\<rparr> \<lparr>Label=STR ''coin'', Arity=1, Guard=[gexp.Eq (V (I 1)) (L (Num 100))], Outputs=[L (Num 100)], Updates = []\<rparr>"
-  by (simp add: outputMatch_def)
 
 end

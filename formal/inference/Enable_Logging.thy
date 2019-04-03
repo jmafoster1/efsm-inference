@@ -12,7 +12,7 @@ definition println :: "String.literal \<Rightarrow> unit" where
 
 fun value2string :: "value \<Rightarrow> String.literal" where
   "value2string (Num n) = show_int n" |
-  "value2string (value.Str s) = s"
+  "value2string (value.Str s) = STR ''\"''+s+STR ''\"''"
 
 fun vname2string :: "vname \<Rightarrow> String.literal" where
   "vname2string (I n) = STR ''i''+show_nat n" |

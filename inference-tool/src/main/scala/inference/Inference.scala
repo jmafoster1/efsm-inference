@@ -4127,7 +4127,7 @@ def vname2string(x0: VName.vname): String = x0 match {
 
 def value2string(x0: Value.value): String = x0 match {
   case Value.Numa(n) => (EFSM_Dot.showsp_int("", n)).apply("")
-  case Value.Str(s) => s
+  case Value.Str(s) => "\"" + s + "\""
 }
 
 def aexp2string(x0: AExp.aexp): String = x0 match {

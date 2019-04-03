@@ -8,6 +8,14 @@ definition initialiseReg :: "transition \<Rightarrow> vname \<Rightarrow> transi
 definition "guardMatch t1 t2  = (\<exists>n n'. Guard t1 = [gexp.Eq (V (I 1)) (L (Num n))] \<and> Guard t2 = [gexp.Eq (V (I 1)) (L (Num n'))])"
 definition "outputMatch t1 t2 = (\<exists>m m'. Outputs t1 = [L (Num m)] \<and> Outputs t2 = [L (Num m')])"
 
+lemma guard_match_commute: "guardMatch t1 t2 = guardMatch t2 t1"
+  apply (simp add: guardMatch_def)
+  by auto
+
+lemma guard_match_length: "length (Guard t1) \<noteq> 1 \<or> length (Guard t2) \<noteq> 1 \<Longrightarrow> \<not> guardMatch t1 t2"
+  apply (simp add: guardMatch_def)
+  by auto
+
 fun insert_increment :: update_modifier where
   "insert_increment t1ID t2ID s new old = (let
      t1 = get_by_id new t1ID;
