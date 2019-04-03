@@ -338,15 +338,13 @@ definition max_reg :: "iEFSM \<Rightarrow> nat" where
 
 primrec try_heuristics :: "update_modifier list \<Rightarrow> update_modifier" where
   "try_heuristics [] = null_modifier" |
-  "try_heuristics (h#t) = (\<lambda>a b c d e. case h a b c d e of Some e' \<Rightarrow> Some e' | None \<Rightarrow> (case h b a c d e of Some e' \<Rightarrow> Some e' | None \<Rightarrow> try_heuristics t a b c d e))"
+  "try_heuristics (h#t) = (\<lambda>a b c d e. case h a b c d e of Some e' \<Rightarrow> Some e' | None \<Rightarrow> try_heuristics t a b c d e)"
 
 primrec iterative_try_heuristics :: "(log \<Rightarrow> update_modifier) list \<Rightarrow> log \<Rightarrow> update_modifier" where
   "iterative_try_heuristics [] l = null_modifier" |
   "iterative_try_heuristics (h#t) l = (\<lambda>a b c d e. case (h l) a b c d e of
                                         Some e' \<Rightarrow> Some e' |
-                                        None \<Rightarrow> (case (h l) b a c d e of
-                                          Some e' \<Rightarrow> Some e' |
-                                          None \<Rightarrow> iterative_try_heuristics t l a b c d e)
+                                        None \<Rightarrow>  iterative_try_heuristics t l a b c d e
                                       )"
 
 definition replaceAll :: "iEFSM \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where

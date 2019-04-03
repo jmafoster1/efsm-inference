@@ -47,24 +47,17 @@ lemma guard_match_symmetry: "(guardMatch t1 t2) = (guardMatch t2 t1)"
 fun insert_increment_2 :: update_modifier where
   "insert_increment_2 t1ID t2ID s new old = (let
      t1 = get_by_id new t1ID;
-     t2 = get_by_id new t2ID;
-     p = println (STR ''calling insert increment with '' + transition2string t1 + STR '' and ''+ transition2string t2);
-     p = println (STR ''guardMatch?''+ bool2string (guardMatch t1 t2));
-     p = println (STR ''outputMatch?''+ bool2string (outputMatch t1 t2)) in
-
+     t2 = get_by_id new t2ID in
      if guardMatch t1 t2 \<and> outputMatch t1 t2 then let 
-          p = println STR ''success'';
           r = max_reg new + 1;
           newReg = R r;
           newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guard = [], Outputs = [Plus (V newReg) (V (I 1))], Updates=((newReg, Plus (V newReg) (V (I 1)))#Updates t1)\<rparr>;
           newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guard = [], Outputs = [Plus (V newReg) (V (I 1))], Updates=((newReg, Plus (V newReg) (V (I 1)))#Updates t2)\<rparr>;
           initialised = fimage (\<lambda>(uid, (from, to), t). (uid, (from, to), (if (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2 then initialiseReg t newReg else t))) new ;
-          newEFSM = (struct_replace_all (struct_replace_all initialised t2 newT2) t1 newT1);
-          p = writeiDot newEFSM (STR ''dotfiles/log/''+timestamp+STR ''.dot'')
+          newEFSM = (struct_replace_all (struct_replace_all initialised t2 newT2) t1 newT1)
           in 
           resolve_nondeterminism (sorted_list_of_fset (nondeterministic_pairs newEFSM)) old newEFSM null_modifier (\<lambda>a. True)
      else
-       let p = println STR ''failure'' in
        None
      )"
 

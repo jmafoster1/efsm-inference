@@ -116,7 +116,7 @@ object Dirties {
                               else if (Transition.Outputs(t1).length != Transition.Outputs(t2).length) {
                                 return false
                               }
-                              println(f"Does\n${PrettyPrinter.transitionToString(t1)}\ndirectly subsume\n${PrettyPrinter.transitionToString(t2)}? y/n\n")
+                              println(f"\nDoes ${PrettyPrinter.transitionToString(t1)} directly subsume ${PrettyPrinter.transitionToString(t2)}? y/n")
                               if (Code_Generation.all_literal_outputs(t1) &&
                                        Code_Generation.all_literal_outputs(t2) &&
                                        Transition.Outputs(t1) != Transition.Outputs(t2)) {
@@ -145,7 +145,7 @@ object Dirties {
                                     s_prime: Nat.nat,
                                     t1: Transition.transition_ext[Unit],
                                     t2: Transition.transition_ext[Unit]): Boolean = {
-                                println(f"Does\n${PrettyPrinter.transitionToString(t1)}\nWEAKLY directly subsume\n${PrettyPrinter.transitionToString(t2)}? y/n\n")
+                                println(f"\nDoes ${PrettyPrinter.transitionToString(t1)} weakly directly subsume ${PrettyPrinter.transitionToString(t2)}? y/n");
                                 if (Increment_Reset.increment_inserted(t1, t2, e1, e2)) {
                                   println("y")
                                   true

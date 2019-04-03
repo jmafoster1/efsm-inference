@@ -3962,14 +3962,7 @@ def try_heuristics(x0: List[Nat.nat =>
         =>
       (((((h(a))(b))(c))(d))(e) match {
          case None =>
-           (((((h(b))(a))(c))(d))(e) match {
-              case None =>
-                (try_heuristics(t)).apply(a).apply(b).apply(c).apply(d).apply(e)
-              case Some(aa) =>
-                Some[FSet.fset[(Nat.nat,
-                                 ((Nat.nat, Nat.nat),
-                                   Transition.transition_ext[Unit]))]](aa)
-            })
+           (try_heuristics(t)).apply(a).apply(b).apply(c).apply(d).apply(e)
          case Some(aa) =>
            Some[FSet.fset[(Nat.nat,
                             ((Nat.nat, Nat.nat),
@@ -4111,76 +4104,6 @@ r1, r2))
   }
 
 } /* object Same_Register */
-
-object Enable_Logging {
-
-def join(x0: List[String], uu: String): String = (x0, uu) match {
-  case (Nil, uu) => ""
-  case (h::Nil, uv) => h
-  case (a::(b::t), j) => a + j + b + join(t, j)
-}
-
-def vname2string(x0: VName.vname): String = x0 match {
-  case VName.I(n) => "i" + (EFSM_Dot.showsp_nat("", n)).apply("")
-  case VName.R(s) => "r" + (EFSM_Dot.showsp_nat("", s)).apply("")
-}
-
-def value2string(x0: Value.value): String = x0 match {
-  case Value.Numa(n) => (EFSM_Dot.showsp_int("", n)).apply("")
-  case Value.Str(s) => "\"" + s + "\""
-}
-
-def aexp2string(x0: AExp.aexp): String = x0 match {
-  case AExp.L(v) => value2string(v)
-  case AExp.V(v) => vname2string(v)
-  case AExp.Plus(a, b) => aexp2string(a) + "+" + aexp2string(b)
-  case AExp.Minus(a, b) => aexp2string(a) + "-" + aexp2string(b)
-}
-
-def bool2string(x0: Boolean): String = x0 match {
-  case true => "TRUE"
-  case false => "FALSE"
-}
-
-def gexp2string(x0: GExp.gexp): String = x0 match {
-  case GExp.Bc(true) => "TRUE"
-  case GExp.Bc(false) => "FALSE"
-  case GExp.Eq(a, b) => aexp2string(a) + "=" + aexp2string(b)
-  case GExp.Gt(a, b) => aexp2string(a) + ">" + aexp2string(b)
-  case GExp.Nor(a, b) => "!(" + gexp2string(a) + "||" + gexp2string(b) + ")"
-  case GExp.Null(v) => "NULL " + aexp2string(v)
-}
-
-def outputs2string(x0: List[AExp.aexp], uu: Nat.nat): List[String] = (x0, uu)
-  match {
-  case (Nil, uu) => Nil
-  case (h::t, n) =>
-    ("o" + (EFSM_Dot.showsp_nat("", n)).apply("") + ":=" +
-      aexp2string(h))::(outputs2string(t, Nat.plus_nata(n, Nat.one_nat)))
-}
-
-def transition2string(t: Transition.transition_ext[Unit]): String =
-  Transition.Label[Unit](t) + ":" +
-    (EFSM_Dot.showsp_nat("", Transition.Arity[Unit](t))).apply("") +
-    "[" +
-    join(Lista.map[GExp.gexp,
-                    String](((a: GExp.gexp) => gexp2string(a)),
-                             Transition.Guard[Unit](t)),
-          ", ") +
-    "]/" +
-    join(outputs2string(Transition.Outputs[Unit](t), Nat.one_nat), ", ") +
-    "[" +
-    join(Lista.map[(VName.vname, AExp.aexp),
-                    String](((a: (VName.vname, AExp.aexp)) =>
-                              {
-                                val (r, u): (VName.vname, AExp.aexp) = a;
-                                vname2string(r) + ":=" + aexp2string(u)
-                              }),
-                             Transition.Updates[Unit](t)),
-          ", ") +
-    "]"
-
-} /* object Enable_Logging */
 
 object Type_Inference {
 
@@ -4637,17 +4560,8 @@ def insert_increment_2(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
   {
     val t1: Transition.transition_ext[Unit] = Inference.get_by_id(newa, t1ID)
     val t2: Transition.transition_ext[Unit] = Inference.get_by_id(newa, t2ID);
-    println("calling insert increment with " +
-              Enable_Logging.transition2string(t1) +
-              " and " +
-              Enable_Logging.transition2string(t2));
-    println("guardMatch?" +
-              Enable_Logging.bool2string(guardMatch[Unit, Unit](t1, t2)));
-    println("outputMatch?" +
-              Enable_Logging.bool2string(outputMatch[Unit, Unit](t1, t2)));
     (if ((guardMatch[Unit, Unit](t1, t2)) && (outputMatch[Unit, Unit](t1, t2)))
       {
-        println("success")
         val r: Nat.nat = Nat.plus_nata(Inference.max_reg(newa), Nat.one_nat)
         val newReg: VName.vname = VName.R(r)
         val newT1: Transition.transition_ext[Unit] =
@@ -4709,9 +4623,6 @@ t2)))))
                             Transition.transition_ext[Unit]))]
           = struct_replace_all(struct_replace_all(initialised, t2, newT2), t1,
                                 newT1);
-        Dirties.writeiDot(newEFSM,
-                           "dotfiles/log/" + System.currentTimeMillis.toString +
-                             ".dot");
         Inference.resolve_nondeterminism(FSet.sorted_list_of_fset[(Nat.nat,
                             ((Nat.nat, Nat.nat),
                               ((Transition.transition_ext[Unit], Nat.nat),
@@ -4729,10 +4640,7 @@ t2)))))
   ((_: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]) =>
     true))
       }
-      else {
-             println("failure");
-             None
-           })
+      else None)
   }
 
 } /* object Increment_Reset */
