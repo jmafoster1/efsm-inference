@@ -101,8 +101,11 @@ definition linkedIn :: transition_matrix where
 );*)
 
 (*      G(login_free      =>  X(   G(    pdf_other  =>  X(notDetailedPDF))))*)
-lemma neverDetailed: "(alw (LabelEq ''login'' aand checkInx ip 1 ValueEq (Some (Str ''free''))) impl (nxt (alw ((LabelEq ''pdf'' aand checkInx ip 1 ValueEq (Some (Str ''otherID''))) impl (nxt (not (checkInx op 1 ValueEq (Some (Str ''pdfDetailed'')))))))))
+lemma neverDetailed: "(alw ((LabelEq ''login'' aand checkInx ip 1 ValueEq (Some (Str ''free''))) impl (nxt (alw ((LabelEq ''pdf'' aand checkInx ip 1 ValueEq (Some (Str ''otherID''))) impl (nxt (not (checkInx op 1 ValueEq (Some (Str ''pdfDetailed''))))))))))
      (watch linkedIn i)"
+  oops
+
+lemma "not (alw (LabelEq ''login'')) s"
   oops
 
 end

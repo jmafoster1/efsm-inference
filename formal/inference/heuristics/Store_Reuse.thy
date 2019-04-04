@@ -114,11 +114,11 @@ definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow
 definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
   "generalise_output t regX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (Guard t), Outputs = list_update (Outputs t) outputX (V (R regX)), Updates = (Updates t)\<rparr>"
 
-definition is_generalised_output_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "is_generalised_output_of t' t e r p = (\<exists>to from uid. t' = generalise_output t r p \<and> (uid, (from, to), t') |\<in>| e)"
+definition is_generalised_output_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
+  "is_generalised_output_of t' t r p = (t' = generalise_output t r p)"
 
-definition is_proper_generalised_output_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> bool" where
-  "is_proper_generalised_output_of t' t e = (\<exists>p \<le> max_output e. \<exists>r \<le> max_reg e. is_generalised_output_of t' t e r p)"
+definition is_proper_generalised_output_of :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "is_proper_generalised_output_of t' t = (\<exists>p. \<exists>r. is_generalised_output_of t' t r p)"
 
 primrec count :: "'a \<Rightarrow> 'a list \<Rightarrow> nat" where
   "count _ [] = 0" |
@@ -164,8 +164,8 @@ lemmas remove_guard_add_update_preserves = remove_guard_add_update_preserves_lab
                                            remove_guard_add_update_preserves_arity
                                            remove_guard_add_update_preserves_outputs
 
-definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "is_generalisation_of t' t e i r = (\<exists>to from uid. t' = remove_guard_add_update t i r \<and> (uid, (from, to), t') |\<in>| e)"
+definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
+  "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r)"
 
 lemma generalise_output_preserves_label: "Label (generalise_output t r p) = Label t"
   by (simp add: generalise_output_def)
@@ -190,7 +190,7 @@ lemmas generalise_output_preserves = generalise_output_preserves_label
 
 definition is_proper_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> bool" where
  "is_proper_generalisation_of t' t e = (\<exists>i \<le> max_input e. \<exists> r \<le> max_reg e.
-                                              is_generalisation_of t' t e i r \<and>
+                                              is_generalisation_of t' t i r \<and>
                                               (\<forall>u \<in> set (Updates t). fst u \<noteq> (R r)) \<and>
                                               (\<forall>i \<le> max_input e. \<forall>u \<in> set (Updates t). fst u \<noteq> (R r) \<and> fst u \<noteq> (I i))
                                        )"

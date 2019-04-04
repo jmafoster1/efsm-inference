@@ -58,8 +58,14 @@ fun "checkInx" :: "ior \<Rightarrow> nat \<Rightarrow> (value option \<Rightarro
 definition InputEq :: "value list \<Rightarrow> state stream \<Rightarrow> bool" where
   "InputEq v s \<equiv> inputs (shd s) = v"
 
-definition OutputEq :: "nat \<Rightarrow> value option \<Rightarrow> state stream \<Rightarrow> bool" where
-  "OutputEq n v s \<equiv> Outputs n s = v"
+definition OutputEq :: "value option list \<Rightarrow> state stream \<Rightarrow> bool" where
+  "OutputEq v s \<equiv> output (shd s) = v"
+
+definition InputLength :: "nat \<Rightarrow> state stream \<Rightarrow> bool" where
+  "InputLength v s \<equiv> length (inputs (shd s)) = v"
+
+definition OutputLength :: "nat \<Rightarrow> state stream \<Rightarrow> bool" where
+  "OutputLength v s \<equiv> length (output (shd s)) = v"
 
 abbreviation some_state :: "full_observation \<Rightarrow> bool" where
   "some_state s \<equiv> (\<exists>state. statename (shd s) = Some state)"
@@ -68,9 +74,6 @@ lemma non_null_equiv: "non_null = some_state"
   by simp
 
 lemma start_some_state:  "s = make_full_observation e (Some 0) <> t \<Longrightarrow> some_state s"
-  by simp
-
-lemma self_eq:  "make_full_observation e (Some 0) <> t = make_full_observation e (Some 0) <> t"
   by simp
 
 lemma some_until_none: "s = make_full_observation e (Some 0) <> t \<Longrightarrow> (some_state until null) s "
