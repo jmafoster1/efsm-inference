@@ -485,21 +485,19 @@ lemma generalise_output_directly_subsumes_original:
 definition generalise_output_context_check :: "iEFSM \<Rightarrow> nat \<Rightarrow> value \<Rightarrow> nat \<Rightarrow> bool" where
   "generalise_output_context_check e p v s = (\<forall>t. accepts_trace (tm e) t \<and> gets_us_to s (tm e) 0 <>  t \<longrightarrow> (anterior_context (tm e) t) (V (R p)) = {|Eq v|})"
 
-fun generalise_output_direct_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> (nat \<times> value) option" where
-  "generalise_output_direct_subsumption t' t e = (case stored_reused t' t e of
-    None \<Rightarrow> None |
+fun generalise_output_direct_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> bool" where
+  "generalise_output_direct_subsumption t' t e s' = (case stored_reused t' t e of
+    None \<Rightarrow> False |
     Some (p, r) \<Rightarrow> (if is_generalised_output_of t' t p r then
       case nth (Outputs t) r of
-        L v \<Rightarrow> Some (p, v) |
-        _ \<Rightarrow> None
-      else None)
+        L v \<Rightarrow> generalise_output_context_check e p v s' |
+        _ \<Rightarrow> False
+      else False)
   )"
 
 (* This allows us to just run the two functions for quick subsumption *)
 lemma generalise_output_directly_subsumes_original_executable: 
-      "generalise_output_direct_subsumption t' t e = Some (p, v) \<Longrightarrow>
-       generalise_output_context_check e p v s' \<Longrightarrow>
-       directly_subsumes e1 e s s' t' t"
+      "generalise_output_direct_subsumption t' t e s' \<Longrightarrow> directly_subsumes e1 e s s' t' t"
   apply simp
   apply (case_tac "stored_reused t' t e")
    apply simp
@@ -532,16 +530,62 @@ definition input_stored_in_reg :: "transition \<Rightarrow> transition \<Rightar
 definition initially_undefined_context_check :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "initially_undefined_context_check e r s = (\<forall>t. accepts_trace (tm e) t \<and> gets_us_to s (tm e) 0 <>  t \<longrightarrow> (anterior_context (tm e) t) (V (R r)) = {|Undef|} \<and> (\<forall>i. (anterior_context (tm e) t) (V (I i)) = {|Bc True|}))"
 
-definition "no_illegal_updates t r i = (\<forall>i. \<forall>u \<in> set (Updates t). fst u \<noteq> (R r) \<and> fst u \<noteq> (I i))"
+definition "no_illegal_updates t r = (\<forall>i. \<forall>u \<in> set (Updates t). fst u \<noteq> (R r) \<and> fst u \<noteq> (I i))"
+
+lemma input_stored_in_reg_aux_is_generalisation_aux: "input_stored_in_reg_aux t' t mr mi = Some (i, r) \<Longrightarrow> is_generalisation_of t' t i r"
+proof(induct mi)
+  case 0
+  then show ?case
+  proof(induct mr)
+    case 0
+    then show ?case
+      apply (case_tac "is_generalisation_of t' t 0 0")
+      by auto
+  next
+    case (Suc mr)
+    then show ?case
+      apply simp
+      apply (case_tac "is_generalisation_of t' t (Suc mr) 0")
+       apply simp
+      apply simp
+      apply (case_tac "is_generalisation_of t' t mr 0")
+      by auto
+  qed
+next
+  case (Suc mi)
+  then show ?case
+  proof(induct mr)
+    case 0
+    then show ?case
+      apply (case_tac "is_generalisation_of t' t 0 (Suc mi)")
+      by auto
+  next
+    case (Suc mr)
+    then show ?case
+      apply simp
+      apply (case_tac "is_generalisation_of t' t (Suc mr) (Suc mi)")
+       apply simp
+      apply simp
+      apply (case_tac "input_i_stored_in_reg t' t (Suc mr) mi")
+       apply simp
+       apply (case_tac "is_generalisation_of t' t mr (Suc mi)")
+      by auto
+  qed
+qed
+
+
+lemma input_stored_in_reg_aux_is_generalisation: "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow> is_generalisation_of t' t i r"
+  by (simp add: input_stored_in_reg_def input_stored_in_reg_aux_is_generalisation_aux)
 
 (*
   This allows us to call these three functions for direct subsumption of generalised
 *)
-lemma generalised_directly_subsumes_original:  "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
-       initially_undefined_context_check e r s' \<Longrightarrow>
-       is_generalisation_of t' t i r \<Longrightarrow>
-       no_illegal_updates t r i \<Longrightarrow>
-       directly_subsumes e1 e s s' t' t"
+lemma generalised_directly_subsumes_original: 
+  "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
+   initially_undefined_context_check e r s' \<Longrightarrow>
+   no_illegal_updates t r \<Longrightarrow>
+   directly_subsumes e1 e s s' t' t"
+  using input_stored_in_reg_aux_is_generalisation[of t' t e i r]
   apply (simp add: initially_undefined_context_check_def directly_subsumes_def no_illegal_updates_def)
   apply (case_tac "\<forall>t. accepts_trace (tm e) t \<and> gets_us_to s' (tm e) 0 Map.empty t \<longrightarrow> anterior_context (tm e) t (V (R r)) = {|Undef|}")
    defer
@@ -554,5 +598,19 @@ lemma generalised_directly_subsumes_original:  "input_stored_in_reg t' t e = Som
    apply simp
   apply (rule_tac x="\<lbrakk>\<rbrakk>" in exI)
   by (simp add: is_generalisation_of_subsumes_original)
+
+definition drop_guard_add_update_direct_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> bool" where
+  "drop_guard_add_update_direct_subsumption t' t e s' = (case input_stored_in_reg t' t e of None \<Rightarrow> False |
+   Some (i, r) \<Rightarrow> if no_illegal_updates t r then initially_undefined_context_check e r s' else False)"
+
+lemma "drop_guard_add_update_direct_subsumption t' t e s' \<Longrightarrow> directly_subsumes e1 e s s' t' t"
+  apply (simp add: drop_guard_add_update_direct_subsumption_def)
+  apply (case_tac "input_stored_in_reg t' t e")
+   apply simp+
+  apply (case_tac a)
+  apply simp
+  apply (case_tac "no_illegal_updates t b")
+   apply (simp add: generalised_directly_subsumes_original)
+  by simp
 
 end

@@ -2,7 +2,7 @@ theory Code_Generation
   imports 
    "HOL-Library.Code_Target_Numeral" Inference "../FSet_Utils" SelectionStrategies EFSM_Dot
    Type_Inference Enable_Logging
-   "heuristics/Store_Reuse"
+   "heuristics/Store_Reuse_Subsumption"
    "heuristics/Increment_Reset"
    "heuristics/Same_Register"
 begin
@@ -16,10 +16,14 @@ declare choice_def [code del]
 declare consistent_def [code del]
 declare CExp.satisfiable_def [code del]
 declare CExp.valid_def [code del]
+declare initially_undefined_context_check_def [code del]
+declare generalise_output_context_check_def [code del]
 
 code_printing
   constant "GExp.satisfiable" \<rightharpoonup> (Scala) "Dirties.satisfiable" |
-  constant "directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes"
+  constant "directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes" |
+  constant "initially_undefined_context_check" \<rightharpoonup> (Scala) "Dirties.initiallyUndefinedContextCheck" |
+  constant "generalise_output_context_check" \<rightharpoonup> (Scala) "Dirties.generaliseOutputContextCheck"
 
 code_printing
   constant HOL.conj \<rightharpoonup> (Scala) "_ && _" |
@@ -132,25 +136,29 @@ lemma uid_in_uids: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<lon
   apply (simp add: uids_def)
   by blast
 
-lemma [code]:  "Store_Reuse.is_generalisation_of x xa xb xc xd = is_generalisation_of x xa xb xc xd"
-  apply (simp add: is_generalisation_of_def Store_Reuse.is_generalisation_of_def)
-  apply (case_tac "x = remove_guard_add_update xa xc xd")
-   defer
-   apply simp
-  apply simp
-  using to_in_S from_in_S uid_in_uids
-  by (meson dest_from_in_S_uid_in_uids notin_fset)
+(* definition "no_illegal_updates t r i = (\<forall>i. \<forall>u \<in> set (Updates t). fst u \<noteq> (R r) \<and> fst u \<noteq> (I i))" *)
+fun no_illegal_updates_code :: "update_function list \<Rightarrow> nat \<Rightarrow> bool" where
+  "no_illegal_updates_code [] _ = True" |
+  "no_illegal_updates_code ((I _, u)#t) r = False" |
+  "no_illegal_updates_code ((R r', u)#t) r = (r \<noteq> r' \<and> no_illegal_updates_code t r)"
 
-lemma [code]: "Store_Reuse.is_generalised_output_of x xa xb xc xd = is_generalised_output_of x xa xb xc xd"
-  apply (simp add: is_generalised_output_of_def Store_Reuse.is_generalised_output_of_def)
-  apply (case_tac "x = generalise_output xa xc xd")
-   defer
-   apply simp
-  apply simp
-  using to_in_S from_in_S uid_in_uids
-  by (meson dest_from_in_S_uid_in_uids notin_fset)
+lemma no_illegal_updates_code_aux: "(\<forall>i. \<forall>u\<in>set u. fst u \<noteq> R r \<and> fst u \<noteq> I i) = no_illegal_updates_code u r"
+proof(induct u)
+case Nil
+  then show ?case
+    by simp
+next
+case (Cons a u)
+  then show ?case
+    apply (cases a)
+    apply (case_tac aa)
+    by auto
+qed
 
-export_code is_proper_generalised_output_of is_proper_generalisation_of always_different_outputs try_heuristics learn same_register insert_increment insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
+lemma no_illegal_updates_code [code]: "no_illegal_updates t r = no_illegal_updates_code (Updates t) r"
+  by (simp add: no_illegal_updates_def no_illegal_updates_code_aux)
+
+export_code drop_guard_add_update_direct_subsumption generalise_output_direct_subsumption input_stored_in_reg no_illegal_updates always_different_outputs try_heuristics learn same_register insert_increment insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

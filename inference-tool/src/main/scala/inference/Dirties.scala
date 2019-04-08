@@ -104,6 +104,23 @@ object Dirties {
     x.length < y.length
   }
 
+  def initiallyUndefinedContextCheck(e:
+       FSet.fset[(Nat.nat,
+                   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+      r: Nat.nat, s: Nat.nat):
+        Boolean
+    =
+      // TODO: implement this with the model checker
+    true
+
+  def generaliseOutputContextCheck(e: FSet.fset[(Nat.nat,
+             ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+                                       p: Nat.nat, v: Value.value, s: Nat.nat):
+        Boolean
+    =
+    // TODO: implement this with the model checker
+    true
+
   def scalaDirectlySubsumes(a: FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
                             b: FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
                             s: Nat.nat,
@@ -118,22 +135,22 @@ object Dirties {
                                 println("n")
                                 return false
                               }
-                              else if (Store_Reuse.is_proper_generalisation_of(t1, t2, b)) {
+                              else if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1, t2, b, s_prime)) {
                                 // This needs modifying to model check but it should be OK for now
                                 println("y")
                                 return true
                               }
-                              else if (Store_Reuse.is_proper_generalisation_of(t2, t1, b)) {
+                              else if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t2, t1, b, s_prime)) {
                                 // This needs modifying to model check but it should be OK for now
                                 println("n")
                                 return false
                               }
-                              else if (Store_Reuse.is_proper_generalised_output_of(t1, t2, b)) {
+                              else if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1, t2, b, s_prime)) {
                                 // This needs modifying to model check but it should be OK for now
                                 println("y")
                                 return true
                               }
-                              else if (Store_Reuse.is_proper_generalised_output_of(t2, t1, b)) {
+                              else if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t2, t1, b, s_prime)) {
                                 // This needs modifying to model check but it should be OK for now
                                 println("y")
                                 return true
