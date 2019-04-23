@@ -1,7 +1,8 @@
 import com.microsoft.z3
 import exceptions.SatisfiabilityUnknownException
-// PrintWriter
 import java.io._
+import scala.util.Random
+
 object Dirties {
 
   def R(i: BigInt): VName.vname = {
@@ -102,6 +103,19 @@ object Dirties {
    println("\n")
 
     x.length < y.length
+  }
+
+  def randomMember[A](f: FSet.fset[A]): Option[A] = f match {
+    case FSet.Abs_fset(s) => s match {
+      case Set.seta(l) => {
+        if (l == List()) {
+          None
+        }
+        else {
+          Some(Random.shuffle(l).head)
+        }
+      }
+    }
   }
 
   def initiallyUndefinedContextCheck(e:

@@ -38,14 +38,14 @@ code_printing
   type_constructor prod \<rightharpoonup> (Scala) infix 2 "," |
   constant Pair \<rightharpoonup> (Scala) "!((_),/ (_))"*)
 
-lemma [code]: "step e s r l i = (if size (possible_steps e s r l i) = 1 then (
-                     let (s', t) = (fthe_elem (possible_steps e s r l i)) in
-                     Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (EFSM.apply_updates (Updates t) (join_ir i r) r))
-                   )
-                   else None)"
-  apply (simp add: step_def)
-  apply (simp add: is_singleton_altdef One_nat_def)
-  by (metis One_nat_def fis_singleton.transfer is_singleton_altdef)
+(* lemma [code]: "step e s r l i = (if size (possible_steps e s r l i) = 1 then ( *)
+                     (* let (s', t) = (fthe_elem (possible_steps e s r l i)) in *)
+                     (* Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (EFSM.apply_updates (Updates t) (join_ir i r) r)) *)
+                   (* ) *)
+                   (* else None)" *)
+  (* apply (simp add: step_def) *)
+  (* apply (simp add: is_singleton_altdef One_nat_def) *)
+  (* by (metis One_nat_def fis_singleton.transfer is_singleton_altdef) *)
 
 fun guard_filter_code :: "nat \<Rightarrow> guard \<Rightarrow> bool" where
   "guard_filter_code inputX (gexp.Eq a b) = (a \<noteq> (V (I inputX)) \<and> b \<noteq> (V (I inputX)))" |
@@ -157,6 +157,26 @@ qed
 
 lemma no_illegal_updates_code [code]: "no_illegal_updates t r = no_illegal_updates_code (Updates t) r"
   by (simp add: no_illegal_updates_def no_illegal_updates_code_aux)
+
+definition random_member :: "'a fset \<Rightarrow> 'a option" where
+  "random_member f = (if f = {||} then None else Some (Eps (\<lambda>x. x |\<in>| f)))"
+
+definition step :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> outputs \<times> datastate) option" where
+"step e s r l i = (let possibilities = possible_steps e s r l i in
+                   if possibilities = {||} then None
+                   else
+                     case random_member possibilities of
+                     None \<Rightarrow> None |
+                     Some (s', t) \<Rightarrow>
+                     Some (t, s', (EFSM.apply_outputs (Outputs t) (join_ir i r)), (EFSM.apply_updates (Updates t) (join_ir i r) r))
+                  )"
+
+lemma [code]: "EFSM.step x xa xb xc xd = step x xa xb xc xd"
+  by (simp add: EFSM.step_def step_def Let_def random_member_def)
+
+declare random_member_def [code del]
+
+code_printing constant "random_member" \<rightharpoonup> (Scala) "Dirties.randomMember"
 
 export_code drop_guard_add_update_direct_subsumption generalise_output_direct_subsumption input_stored_in_reg no_illegal_updates always_different_outputs try_heuristics learn same_register insert_increment insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
   (* module_name "Inference" *)

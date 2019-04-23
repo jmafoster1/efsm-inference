@@ -96,10 +96,10 @@ abbreviation quote :: String.literal where
 
 definition efsm2dot :: "transition_matrix \<Rightarrow> String.literal" where
   "efsm2dot e = STR ''digraph EFSM{''+newline+
-                STR ''graph [rankdir=''+quote+(STR ''LR'')+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
-                STR ''node [color=''+quote+(STR ''black'')+quote+STR '', fillcolor=''+quote+(STR ''white'')+quote+STR '', shape=''+quote+(STR ''circle'')+quote+STR '', style=''+quote+(STR ''filled'')+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
-                STR ''edge [fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
-                  (join (sorted_list_of_fset (fimage (\<lambda>((from, to), t). (show_nat from)+STR ''->''+(show_nat to)+STR ''[label=<''+(transition2dot t)+STR ''>]'') e)) newline)+newline+
+                STR ''  graph [rankdir=''+quote+(STR ''LR'')+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
+                STR ''  node [color=''+quote+(STR ''black'')+quote+STR '', fillcolor=''+quote+(STR ''white'')+quote+STR '', shape=''+quote+(STR ''circle'')+quote+STR '', style=''+quote+(STR ''filled'')+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
+                STR ''  edge [fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
+                  (join (sorted_list_of_fset (fimage (\<lambda>((from, to), t). STR ''  ''+(show_nat from)+STR ''->''+(show_nat to)+STR ''[label=<''+(transition2dot t)+STR ''>]'') e)) newline)+newline+
                 STR ''}''"
 
 definition iefsm2dot :: "iEFSM \<Rightarrow> String.literal" where

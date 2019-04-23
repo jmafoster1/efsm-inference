@@ -132,11 +132,12 @@ lemma singleton_dest: "fis_singleton (possible_steps e s r aa b) \<Longrightarro
   by auto
 
 definition step :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> outputs \<times> datastate) option" where
-"step e s r l i = (if fis_singleton (possible_steps e s r l i) then (
-                     let (s', t) = (fthe_elem (possible_steps e s r l i)) in
+"step e s r l i = (let possibilities = possible_steps e s r l i in
+                   if possibilities = {||} then None
+                   else
+                     let (s', t) = Eps (\<lambda>x. x |\<in>| possibilities) in
                      Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))
-                   )
-                   else None)"
+                  )"
 
 lemma no_possible_steps: "possible_steps e s r l i = {||} \<Longrightarrow> step e s r l i = None"
   by (simp add: step_def)
@@ -233,12 +234,6 @@ lemma no_step_none: "step e s r aa ba = None \<Longrightarrow> \<not>accepts e s
    apply simp
   by auto
 
-lemma accepts_steps: "fthe_elem (possible_steps e s d (fst h) (snd h)) = (a, b) \<Longrightarrow>
-       fis_singleton (possible_steps e s d (fst h) (snd h)) \<Longrightarrow>
-       accepts e a (apply_updates (Updates b) (case_vname (\<lambda>n. input2state (snd h) (Suc 0) (I n)) (\<lambda>n. d (R n))) d) t \<Longrightarrow>
-       accepts e s d (h#t)"
-  by (simp add: observations accepts.step)
-
 lemma inaccepts_conditions: "\<not>accepts e s d (h # t) \<Longrightarrow> step e s d (fst h) (snd h) = None \<or> (\<exists>tr s' p' d'. step e s d (fst h) (snd h) =  Some (tr, s', p', d') \<and> \<not>accepts e s' d' t)"
   apply (rule accepts.cases)
   using accepts.base
@@ -321,32 +316,8 @@ lemma inaccepts_prefix: "\<not>accepts e s d t \<Longrightarrow> \<not>accepts e
 lemma length_observe_empty_trace: "length (observe_all e aa b []) = 0"
   by simp
 
-lemma not_single_step_none:  "\<not> fis_singleton (possible_steps e 0 Map.empty (fst a) (snd a)) \<Longrightarrow> (step e 0 <> (fst a) (snd a) = None)"
-  by (simp add: observations)
-
-lemma accepts_singleton_first_step: "accepts e 0 Map.empty (a # t) \<Longrightarrow> fis_singleton (possible_steps e 0 Map.empty (fst a) (snd a))"
-  by (meson step_none_inaccepts observations)
-
 lemma step_length_suc: "step e 0 <> (fst a) (snd a) = Some (tr, aa, ab, b) \<Longrightarrow> length (observe_all e 0 <> (a # t)) = Suc (length (observe_all e aa b t))"
   by simp
-
-lemma aux2: "\<forall>s d. accepts e s d t \<longrightarrow> (length t = length (observe_all e s d t))"
-  proof (induction t)
-    case Nil
-    then show ?case by simp
-  next
-    case (Cons a t)
-    then show ?case
-      apply safe
-      apply (simp add: step_def)
-      apply (case_tac "fthe_elem (possible_steps e s d (fst a) (snd a))")
-      apply simp
-      apply safe
-      using step_some observations
-       apply (simp add: step_some)
-      using step_none_inaccepts observations
-      by metis
-  qed
 
 lemma accepts_trace_obs_equal_length: "accepts e 0 <> t \<Longrightarrow> (length t = length (observe_all e 0 <> t))"
   proof (induction t rule: accepts.induct)
@@ -376,61 +347,6 @@ lemma aux3: "\<forall>s d. (length t = length (observe_all e s d t)) \<longright
       by (simp only: step_length_suc step_some)
   qed
 
-lemma obs_equal_length_accepts: "(length t = length (observe_all e 0 <> t)) \<Longrightarrow> accepts e 0 <> t"
-  proof (induction t)
-    case Nil
-    then show ?case by (simp add: accepts.base)
-  next
-    case (Cons a t)
-    then show ?case
-      apply (case_tac "step e 0 <> (fst a) (snd a) = None")
-       apply simp
-      apply (simp add: step_def)
-      apply (case_tac "fis_singleton (possible_steps e 0 Map.empty (fst a) (snd a))")
-      apply (case_tac "fthe_elem (possible_steps e 0 Map.empty (fst a) (snd a))")
-       apply simp
-      using observations aux3 apply fastforce
-      by simp
-  qed
-
-lemma length_equal_accepts: "(length t = length (observe_all e 0 <> t)) = accepts e 0 <> t"
-  apply safe
-  using obs_equal_length_accepts apply auto[1]
-  by (simp add: accepts_trace_obs_equal_length)
-
-type_synonym simulation_relation = "nat \<Rightarrow> nat"
-
-inductive simulates_trace :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
-  base: "simulates_trace e2 e1 s2 s1 d2 d1 []" |
-  step_some: "step e1 s1 d1 l i = Some (tr1, s1', p', d1') \<Longrightarrow>
-              step e2 s2 d2 l i = Some (tr2, s2', p', d2') \<Longrightarrow>
-              simulates_trace e2 e1 s2' s1' d2' d1' t \<Longrightarrow>
-              simulates_trace e2 e1 s2 s1 d2 d1 ((l, i)#t)" |
-  step_none: "step e1 s1 d1 l i = None \<Longrightarrow> simulates_trace e2 e1 s2 s1 d2 d1 ((l, i)#t)"
-
-definition simulates :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> bool" where
-  "simulates m2 m1 = (\<forall>t. simulates_trace m2 m1 0 0 <> <> t)"
-
-lemma simulates_trace_self: "\<forall>s r. simulates_trace x x s s r r t"
-proof(induct t)
-  case Nil
-  then show ?case
-    by (simp add: simulates_trace.base)
-next
-  case (Cons a t)
-  then show ?case
-    apply (case_tac a)
-    apply simp
-    apply (rule simulates_trace.cases)
-       apply auto[1]
-      apply (metis (mono_tags, lifting) observations(2) prod.case_eq_if simulates_trace.step_some step_none)
-     apply (metis (mono_tags, lifting) observations(2) prod.case_eq_if simulates_trace.step_some step_none)
-    by (metis (mono_tags, lifting) observations(2) prod.case_eq_if simulates_trace.step_some step_none)
-qed
-
-lemma simulates_self: "simulates x x"
-  by (simp add: simulates_def simulates_trace_self)
-
 inductive gets_us_to :: "nat \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
   base: "s = target \<Longrightarrow> gets_us_to target _ s _ []" |
   step_some: "step e s r (fst h) (snd h) =  Some (_, s', _, r') \<Longrightarrow> gets_us_to target e s' r' t \<Longrightarrow> gets_us_to target e s r (h#t)" |
@@ -451,50 +367,4 @@ lemma incoming_transition_alt_def: "incoming_transition_to e n = (\<exists>t fro
   apply (simp add: Set.filter_def)
   by auto
 
-lemma no_step_to: "\<not> incoming_transition_to t m \<Longrightarrow>
-       step t n r aa b \<noteq> Some (uw, m, ux, r')"
-  apply (simp add: incoming_transition_alt_def step_def)
-  apply safe
-  apply (case_tac "fthe_elem (possible_steps t n r aa b)")
-  apply simp
-  using singleton_dest by blast
-
-lemma no_route_to_no_access: "\<not> incoming_transition_to t 0 \<Longrightarrow> \<forall>r s. s \<noteq> 0 \<longrightarrow> \<not>gets_us_to 0 t s r p"
-proof(induct p)
-  case Nil
-  then show ?case
-    by (simp add: no_further_steps)
-next
-  case (Cons a p)
-  then show ?case
-    apply clarify
-    apply (rule gets_us_to.cases)
-       apply simp
-      apply simp
-     apply clarify
-     apply simp
-     apply (metis no_step_to Cons.hyps)
-    by simp
-qed
-
-lemma no_return_to_initial: "\<not> incoming_transition_to t 0 \<Longrightarrow> accepts_trace t p \<and> gets_us_to 0 t 0 Map.empty p \<Longrightarrow> p = []"
-proof(induct p)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a p)
-  then show ?case
-    apply (simp add: accepts_trace_def)
-    apply (rule gets_us_to.cases)
-       apply auto[1]
-      apply simp
-     apply clarify
-     apply simp
-     apply (case_tac "s' = 0")
-      apply (simp add: no_step_to)
-     apply (simp add: no_route_to_no_access)
-    apply clarify
-    by (simp add: no_step_none)
-qed
 end
