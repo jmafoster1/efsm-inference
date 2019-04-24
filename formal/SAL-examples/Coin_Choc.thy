@@ -24,7 +24,7 @@ definition coin :: transition where
 
 definition vend :: transition where
 "vend \<equiv> \<lparr>
-        Label = (STR ''coin''),
+        Label = (STR ''vend''),
         Arity = 0,
         Guard = [Gt (V (R 1)) (L (Num 0))],
         Outputs = [],
@@ -94,15 +94,13 @@ lemma state_none_2: "(StateEq None) (make_full_observation e s r t) \<Longrighta
 lemma alw_ev: "alw f = not (ev (\<lambda>s. \<not>f s))"
   by simp
 
-lemma unfold_observe_none: "make_full_observation e None d t = (\<lparr>statename = None, datastate = d, event=(shd t), output = []\<rparr>##(make_full_observation e None d (stl t)))"
-  by (simp add: stream.expand)
+lemma StateEq_alt: "alw (StateEq s) s' = alw (\<lambda>x. shd x = s) (smap (\<lambda>x. statename x) s')"
+  apply standard
+  apply (simp add: StateEq_def alw_iff_sdrop)
+  by (simp add: StateEq_def alw_mono alw_smap)
 
-
-lemma "alw (StateEq None) (make_full_observation e None r t)"
-  using alw_coinduct[of "StateEq None" "make_full_observation e None r t" "StateEq None"]
-  apply simp
-  oops
-
+lemma test: "statename (shd (make_full_observation e None r t)) = None"
+  by simp
 
 lemma "alw (nxt (StateEq (Some 2)) impl (LabelEq ''vend'')) (watch drinks t)"
 proof(coinduction)
@@ -111,33 +109,162 @@ proof(coinduction)
     apply (case_tac "shd t")
     apply (case_tac "a = STR ''init'' \<and> b = []")
      defer
-    apply (simp add: possible_steps_not_init)
-    apply (simp add: possible_steps_init)
-qed
+     apply (simp add: possible_steps_not_init)
+    oops
 
 
 lemma "alw (\<lambda>s. StateEq None (stl s)) (make_full_observation drinks None Map.empty t)"
+  by (metis alw_iff_sdrop once_none_always_none sdrop_simps(2))
+
+lemma no_possible_steps: "possible_steps e s r (fst t) (snd t) = {||} \<Longrightarrow> ltl_step e (Some s) r t = (None, [], r)"
+proof -
+  assume "possible_steps e s r (fst t) (snd t) = {||}"
+  then have "ltl_step e (Some s) r (fst t, snd t) = (None, [], r)"
+    using ltl_step.simps(2) by presburger
+  then show ?thesis
+    by simp
+qed
+
+lemma no_possible_steps_not_init:"t \<noteq> (STR ''init'', []) \<Longrightarrow> possible_steps drinks 0 r (fst t) (snd t) = {||}"
+  apply (simp add: possible_steps_def ffilter_def Set.filter_def drinks_def fset_both_sides Abs_fset_inverse)
+  by (metis init_def length_0_conv less_numeral_extra(1) prod.collapse transition.ext_inject transition.surjective)
+
+lemma step_not_init: "t \<noteq> (STR ''init'', []) \<Longrightarrow> ltl_step drinks (Some 0) r t = (None, [], r)"
+  using no_possible_steps_not_init no_possible_steps
+  by simp
+
+lemma updates_init: "apply_updates (Updates init) (case_vname Map.empty Map.empty) Map.empty = <R 1 := Num 0>"
+  apply (rule ext)
+  by (simp add: init_def)
+
+lemma ltl_step_alt [simp]:  "ltl_step e (Some s) r t = (let possibilities = possible_steps e s r (fst t) (snd t) in
+                   if possibilities = {||} then (None, [], r)
+                   else
+                     let (s', t') = Eps (\<lambda>x. x |\<in>| possibilities) in
+                     (Some s', (apply_outputs (Transition.Outputs t') (join_ir (snd t) r)), (apply_updates (Updates t') (join_ir (snd t) r) r))
+                  )"
+  apply (case_tac t)
+  by (simp add: Let_def)
+
+lemma possible_steps_coin: "possible_steps drinks 1 r STR ''coin'' [] = {|(1, coin)|}"
+  apply (simp add: possible_steps_alt ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def drinks_def)
+  apply safe
+  by (simp_all add: vend_def coin_def)
+
+lemma possible_steps_vend_insufficient: "n \<le> 0 \<Longrightarrow> possible_steps drinks 1 <R 1 := Num n> STR ''vend'' [] = {||}"
+  apply (simp add: possible_steps_def ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def drinks_def)
+  apply safe
+  by (simp_all add: vend_def coin_def gval.simps ValueGt_def)
+
+lemma possible_steps_vend_sufficient: "n > 0 \<Longrightarrow> possible_steps drinks 1 <R 1 := Num n> STR ''vend'' [] = {|(2, vend)|}"
+  apply (simp add: possible_steps_alt ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def drinks_def)
+  apply safe
+  by (simp_all add: vend_def coin_def gval.simps ValueGt_def)
+
+lemma invalid_possible_steps_1: "shd t \<noteq> (STR ''coin'', []) \<Longrightarrow>
+    shd t \<noteq> (STR ''vend'', []) \<Longrightarrow> possible_steps drinks 1 r (fst (shd t)) (snd (shd t)) = {||}"
+  apply (simp add: possible_steps_def ffilter_def fset_both_sides Abs_fset_inverse drinks_def Set.filter_def)
+  by (metis coin_def length_0_conv prod.collapse transition.ext_inject transition.surjective vend_def)
+
+lemma updates_coin: "(apply_updates (Updates coin) (case_vname Map.empty (\<lambda>na. if na = 1 then Some (Num n) else None)) <R 1 := Num n>) = <R 1 := Num (n + 1)>"
+  apply (rule ext)
+  by (simp add: coin_def)
+
+lemma updates_vend: "(apply_updates (Updates vend) (case_vname Map.empty (\<lambda>na. if na = 1 then Some (Num n) else None)) <R 1 := Num n>) = <R 1 := Num (n - 1)>"
+  apply (rule ext)
+  by (simp add: vend_def)
+
+lemma less_than_zero_not_nxt_2: "n \<le> 0 \<Longrightarrow> \<not>statename (shd (stl (make_full_observation drinks (Some 1) <R 1 := Num n> t))) = Some 2"
+  apply (case_tac "shd t = (STR ''coin'', [])")
+      apply (simp add: possible_steps_coin)
+  apply (case_tac "shd t = (STR ''vend'', [])")
+      apply (simp add: possible_steps_vend_insufficient ValueGt_def)
+  by (simp add: invalid_possible_steps_1 StateEq_def)
+
+lemma possible_steps_2: "possible_steps drinks 2 <R 1 := Num (n - 1)> (fst (shd t)) (snd (shd t)) = {||}"
+  by (simp add: possible_steps_def ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def drinks_def)
+
+lemma stop_at_2: "alw (\<lambda>xs. statename (shd (stl xs)) = Some 2 \<longrightarrow> MaybeBoolInt (\<lambda>x y. y < x) (datastate (shd xs) (R 1)) (Some (Num 0)) = trilean.true)
+     (make_full_observation drinks (Some 2) <R 1 := Num (n - 1)> t)"
 proof(coinduction)
   case alw
   then show ?case
-    apply (simp add: StateEq_def)
-    oops
+    apply (simp add: possible_steps_2)
+    using once_none_always_none
+    by (simp add: StateEq_def alw_iff_sdrop)
+qed
+
+lemma "alw (\<lambda>xs. statename (shd (stl xs)) = Some 2 \<longrightarrow> ValueGt (datastate (shd xs) (R 1)) (Some (Num 0)) = trilean.true)
+     (make_full_observation drinks (Some 1) <R 1 := Num n> t)"
+proof(coinduction)
+  case alw
+  then show ?case
+    apply simp
+    apply (case_tac "shd t = (STR ''coin'', [])")
+     apply (simp add: possible_steps_coin updates_coin)
+    defer
+     apply (case_tac "shd t = (STR ''vend'', [])")
+      prefer 2
+      apply (simp add: invalid_possible_steps_1)
+    using once_none_always_none
+    apply (simp add: StateEq_def alw_iff_sdrop)
+      apply (case_tac "n \<le> 0")
+      apply (simp add: possible_steps_vend_insufficient)
+    using once_none_always_none
+      apply (simp add: StateEq_def alw_iff_sdrop)
+     apply (simp add: possible_steps_vend_sufficient ValueGt_def updates_vend)
+     apply (simp add: stop_at_2)
+
+
+
+
+
+lemma "alw (\<lambda>xs. StateEq (Some 2) (stl xs) \<longrightarrow> ValueGt (datastate (shd xs) (R 1)) (Some (Num 0)) = trilean.true)
+     (make_full_observation drinks (Some 1) <R 1 := Num 0> t)"
+proof(coinduction)
+  case alw
+  then show ?case
+    apply simp
+    apply standard
+     apply (case_tac "shd t = (STR ''coin'', [])")
+      apply (simp add: possible_steps_coin StateEq_def)
+     apply (case_tac "shd t = (STR ''vend'', [])")
+      apply (simp add: possible_steps_vend_insufficient StateEq_def)
+     apply (simp add: invalid_possible_steps_1 StateEq_def)
+
+     apply (case_tac "shd t = (STR ''vend'', [])")
+      apply (simp add: possible_steps_vend_insufficient StateEq_def)
+    using once_none_always_none
+     apply (simp add: StateEq_def alw_iff_sdrop)
+    apply (case_tac "shd t = (STR ''coin'', [])")
+     defer
+     apply (simp add: invalid_possible_steps_1 StateEq_def)
+    using once_none_always_none
+     apply (simp add: StateEq_def alw_iff_sdrop)
+    apply (simp add: possible_steps_coin StateEq_def updates_coin)
+    apply (rule disjI2)
+
+
+
+qed
 
 lemma "alw (nxt (StateEq (Some 2)) impl checkInx rg 2 ValueGt (Some (Num 100))) (watch drinks t)"
-  apply (simp only: alw_ev)
-  apply simp
-  apply safe
-  apply (rule ev.cases)
+proof(coinduction)
+  case alw
+  then show ?case
     apply simp
-  using Coin_Choc.aux1 apply auto[1]
-  apply simp
-  apply clarify
-  apply simp
-  apply (case_tac "shd t")
-    apply (case_tac "a = STR ''init'' \<and> b = []")
-   apply (simp add: possible_steps_init)
-   defer
-  apply (simp add: possible_steps_not_init)
+    apply standard         
+     apply (simp add: Coin_Choc.aux1)
+    apply (case_tac "shd t = (STR ''init'', [])")
+     apply (simp add: possible_steps_init)
+     defer
+     apply (simp add: step_not_init)
+    using once_none_always_none
+     apply (simp add: once_none_always_none StateEq_def alw_iff_sdrop)
+    apply (simp add: updates_init)
+    apply (rule disjI2)
+
+qed
 
 lemma "alw (nxt (StateEq (Some 2)) impl checkInx rg 2 ValueGt (Some (Num 100))) (watch drinks t)"
 proof(coinduction)
@@ -154,7 +281,8 @@ proof(coinduction)
      defer
      apply (simp add: possible_steps_not_init)
 
-qed
+
+    oops
 
 
 end

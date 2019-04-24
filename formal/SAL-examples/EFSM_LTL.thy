@@ -21,7 +21,12 @@ abbreviation inputs :: "state \<Rightarrow> value list" where
 
 fun ltl_step :: "transition_matrix \<Rightarrow> nat option \<Rightarrow> datastate \<Rightarrow> event \<Rightarrow> (nat option \<times> outputs \<times> datastate)" where
   "ltl_step _ None r _ = (None, [], r)" |
-  "ltl_step e (Some s) r (l, i) = (if fis_singleton (possible_steps e s r l i) then (let (s', t) =  (fthe_elem (possible_steps e s r l i)) in (Some s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))) else (None, [], r))"
+  "ltl_step e (Some s) r (l, i) = (let possibilities = possible_steps e s r l i in
+                   if possibilities = {||} then (None, [], r)
+                   else
+                     let (s', t) = Eps (\<lambda>x. x |\<in>| possibilities) in
+                     (Some s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))
+                  )"
 
 primcorec make_full_observation :: "transition_matrix \<Rightarrow> nat option \<Rightarrow> datastate \<Rightarrow> event stream \<Rightarrow> full_observation" where
   "make_full_observation e s d i = (let (s', o', d') = ltl_step e s d (shd i) in \<lparr>statename = s, datastate = d, event=(shd i), output = o'\<rparr>##(make_full_observation e s' d' (stl i)))"
@@ -81,5 +86,39 @@ proof (coinduction)
   case UNTIL
   then show ?case
     by (smt UNTIL.coinduct non_null_equiv)
+qed
+
+lemma shd_state_is_none: "(StateEq None) (make_full_observation e None r t)"
+  by (simp add: StateEq_def)
+
+lemma unfold_observe_none: "make_full_observation e None d t = (\<lparr>statename = None, datastate = d, event=(shd t), output = []\<rparr>##(make_full_observation e None d (stl t)))"
+  by (simp add: stream.expand)
+
+lemma once_none_always_none: "alw (StateEq None) (make_full_observation e None r t)"
+proof -
+have f1: "(\<not> StateEq None (make_full_observation e None r t) \<or> StateEq None (make_full_observation e None r (v3_0 (\<lambda>s. StateEq None (make_full_observation e None r s)) (\<lambda>s. StateEq None (make_full_observation e None r s)))) \<and> \<not> StateEq None (make_full_observation e None r (v3_0 (\<lambda>s. StateEq None (make_full_observation e None r s)) (\<lambda>s. StateEq None (make_full_observation e None r s)))) \<or> StateEq None (make_full_observation e None r (v3_1 (\<lambda>s. StateEq None (make_full_observation e None r s)) (\<lambda>s. StateEq None (make_full_observation e None r s)))) \<and> \<not> alw (\<lambda>s. StateEq None (make_full_observation e None r s)) (stl (v3_1 (\<lambda>s. StateEq None (make_full_observation e None r s)) (\<lambda>s. StateEq None (make_full_observation e None r s)))) \<and> \<not> StateEq None (make_full_observation e None r (stl (v3_1 (\<lambda>s. StateEq None (make_full_observation e None r s)) (\<lambda>s. StateEq None (make_full_observation e None r s))))) \<or> alw (\<lambda>s. StateEq None (make_full_observation e None r s)) t) = (\<not> StateEq None (make_full_observation e None r t) \<or> StateEq None (make_full_observation e None r (v3_1 (\<lambda>s. StateEq None (make_full_observation e None r s)) (\<lambda>s. StateEq None (make_full_observation e None r s)))) \<and> \<not> alw (\<lambda>s. StateEq None (make_full_observation e None r s)) (stl (v3_1 (\<lambda>s. StateEq None (make_full_observation e None r s)) (\<lambda>s. StateEq None (make_full_observation e None r s)))) \<and> \<not> StateEq None (make_full_observation e None r (stl (v3_1 (\<lambda>s. StateEq None (make_full_observation e None r s)) (\<lambda>s. StateEq None (make_full_observation e None r s))))) \<or> alw (\<lambda>s. StateEq None (make_full_observation e None r s)) t)"
+  by (metis (full_types))
+  have f2: "\<forall>p s pa. (pa (s::(String.literal \<times> value list) stream) \<and> (\<forall>s. pa s \<longrightarrow> p s) \<and> (\<forall>s. pa s \<and> \<not> alw p (stl s) \<longrightarrow> pa (stl s)) \<longrightarrow> alw p s) = ((\<not> pa s \<or> (\<exists>s. pa s \<and> \<not> p s) \<or> (\<exists>s. (pa s \<and> \<not> alw p (stl s)) \<and> \<not> pa (stl s))) \<or> alw p s)"
+    by blast
+  obtain ss :: "((String.literal \<times> value list) stream \<Rightarrow> bool) \<Rightarrow> ((String.literal \<times> value list) stream \<Rightarrow> bool) \<Rightarrow> (String.literal \<times> value list) stream" where
+    f3: "\<forall>x0 x2. (\<exists>v3. (x2 v3 \<and> \<not> alw x0 (stl v3)) \<and> \<not> x2 (stl v3)) = ((x2 (ss x0 x2) \<and> \<not> alw x0 (stl (ss x0 x2))) \<and> \<not> x2 (stl (ss x0 x2)))"
+    by moura
+  obtain ssa :: "((String.literal \<times> value list) stream \<Rightarrow> bool) \<Rightarrow> ((String.literal \<times> value list) stream \<Rightarrow> bool) \<Rightarrow> (String.literal \<times> value list) stream" where
+    "\<forall>x0 x2. (\<exists>v3. x2 v3 \<and> \<not> x0 v3) = (x2 (ssa x0 x2) \<and> \<not> x0 (ssa x0 x2))"
+    by moura
+  then have f4: "\<forall>p s pa. \<not> p s \<or> p (ssa pa p) \<and> \<not> pa (ssa pa p) \<or> p (ss pa p) \<and> \<not> alw pa (stl (ss pa p)) \<and> \<not> p (stl (ss pa p)) \<or> alw pa s"
+using f3 f2 by (simp add: alw_coinduct)
+obtain ssb :: "((String.literal \<times> value list) stream \<Rightarrow> state stream) \<Rightarrow> (String.literal \<times> value list) stream" where
+  f5: "\<forall>f p s. f (stl (ssb f)) \<noteq> stl (f (ssb f)) \<or> alw p (f s) = alw (\<lambda>s. p (f s)) s"
+  by (metis alw_inv)
+  have f6: "StateEq None (make_full_observation e None r t)"
+    using shd_state_is_none by auto
+  have "\<not> StateEq None (make_full_observation e None r (ss (\<lambda>s. StateEq None (make_full_observation e None r s)) (\<lambda>s. StateEq None (make_full_observation e None r s)))) \<or> alw (\<lambda>s. StateEq None (make_full_observation e None r s)) (stl (ss (\<lambda>s. StateEq None (make_full_observation e None r s)) (\<lambda>s. StateEq None (make_full_observation e None r s)))) \<or> StateEq None (make_full_observation e None r (stl (ss (\<lambda>s. StateEq None (make_full_observation e None r s)) (\<lambda>s. StateEq None (make_full_observation e None r s)))))"
+    by (simp add: shd_state_is_none)
+then have "alw (\<lambda>s. StateEq None (make_full_observation e None r s)) t"
+  using f6 f4 f1
+  by (simp add: all_imp_alw shd_state_is_none)
+  then show ?thesis
+    using f5 by (metis (no_types) stream.sel(2) unfold_observe_none)
 qed
 end

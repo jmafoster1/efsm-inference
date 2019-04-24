@@ -1,5 +1,5 @@
 theory Transition
-imports "efsm-exp.GExp"
+imports GExp
 begin
 
 type_synonym label = String.literal
