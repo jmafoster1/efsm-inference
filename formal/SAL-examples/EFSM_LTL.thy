@@ -49,6 +49,9 @@ definition Outputs :: "nat \<Rightarrow> state stream \<Rightarrow> value option
 definition Inputs :: "nat \<Rightarrow> state stream \<Rightarrow> value" where
   "Inputs n s \<equiv> nth (inputs (shd s)) n"
 
+definition Registers :: "nat \<Rightarrow> state stream \<Rightarrow> value option" where
+  "Registers n s \<equiv> datastate (shd s) (R n)"
+
 definition StateEq :: "nat option \<Rightarrow> state stream \<Rightarrow> bool" where
   "StateEq v s \<equiv> statename (shd s) = v"
 
@@ -113,8 +116,6 @@ obtain ssb :: "((String.literal \<times> value list) stream \<Rightarrow> state 
   by (metis alw_inv)
   have f6: "StateEq None (make_full_observation e None r t)"
     using shd_state_is_none by auto
-  have "\<not> StateEq None (make_full_observation e None r (ss (\<lambda>s. StateEq None (make_full_observation e None r s)) (\<lambda>s. StateEq None (make_full_observation e None r s)))) \<or> alw (\<lambda>s. StateEq None (make_full_observation e None r s)) (stl (ss (\<lambda>s. StateEq None (make_full_observation e None r s)) (\<lambda>s. StateEq None (make_full_observation e None r s)))) \<or> StateEq None (make_full_observation e None r (stl (ss (\<lambda>s. StateEq None (make_full_observation e None r s)) (\<lambda>s. StateEq None (make_full_observation e None r s)))))"
-    by (simp add: shd_state_is_none)
 then have "alw (\<lambda>s. StateEq None (make_full_observation e None r s)) t"
   using f6 f4 f1
   by (simp add: all_imp_alw shd_state_is_none)

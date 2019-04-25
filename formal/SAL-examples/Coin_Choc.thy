@@ -3,6 +3,7 @@ imports EFSM_LTL
 begin
 
 declare One_nat_def [simp del]
+declare ValueLt_def [simp]
 
 definition init :: transition where
 "init \<equiv> \<lparr>
@@ -181,10 +182,10 @@ lemma less_than_zero_not_nxt_2: "n \<le> 0 \<Longrightarrow> \<not>statename (sh
       apply (simp add: possible_steps_vend_insufficient ValueGt_def)
   by (simp add: invalid_possible_steps_1 StateEq_def)
 
-lemma possible_steps_2: "possible_steps drinks 2 <R 1 := Num (n - 1)> (fst (shd t)) (snd (shd t)) = {||}"
+lemma possible_steps_2: "possible_steps drinks 2 r (fst (shd t)) (snd (shd t)) = {||}"
   by (simp add: possible_steps_def ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def drinks_def)
 
-lemma stop_at_2: "alw (\<lambda>xs. statename (shd (stl xs)) = Some 2 \<longrightarrow> MaybeBoolInt (\<lambda>x y. y < x) (datastate (shd xs) (R 1)) (Some (Num 0)) = trilean.true)
+lemma stop_at_2_old: "alw (\<lambda>xs. statename (shd (stl xs)) = Some 2 \<longrightarrow> MaybeBoolInt (\<lambda>x y. y < x) (datastate (shd xs) (R 1)) (Some (Num 0)) = trilean.true)
      (make_full_observation drinks (Some 2) <R 1 := Num (n - 1)> t)"
 proof(coinduction)
   case alw
@@ -194,95 +195,74 @@ proof(coinduction)
     by (simp add: StateEq_def alw_iff_sdrop)
 qed
 
-lemma "alw (\<lambda>xs. statename (shd (stl xs)) = Some 2 \<longrightarrow> ValueGt (datastate (shd xs) (R 1)) (Some (Num 0)) = trilean.true)
-     (make_full_observation drinks (Some 1) <R 1 := Num n> t)"
+lemma reg_simp: "(\<lambda>a. if a = R 1 then Some (Num n) else None) = <R 1 := Num n>"
+  by (rule ext, simp)
+
+lemma once_none_no_change_data: "alw (\<lambda>xs. (datastate (shd xs)) = r) (make_full_observation e None r t)"
 proof(coinduction)
   case alw
   then show ?case
     apply simp
-    apply (case_tac "shd t = (STR ''coin'', [])")
-     apply (simp add: possible_steps_coin updates_coin)
-    defer
-     apply (case_tac "shd t = (STR ''vend'', [])")
-      prefer 2
-      apply (simp add: invalid_possible_steps_1)
-    using once_none_always_none
-    apply (simp add: StateEq_def alw_iff_sdrop)
-      apply (case_tac "n \<le> 0")
+    by (simp add: all_imp_alw alw_inv)
+qed
+
+lemma shd_not_lt_zero: "0 \<le> n \<Longrightarrow> (\<lambda>xs. MaybeBoolInt (<) (datastate (shd xs) (R 1)) (Some (Num 0)) \<noteq> trilean.true) (make_full_observation drinks None <R 1 := Num n> t)"
+  by simp
+
+lemma nxt_not_lt_zero: "0 \<le> n \<Longrightarrow> nxt (\<lambda>xs. MaybeBoolInt (<) (datastate (shd xs) (R 1)) (Some (Num 0)) \<noteq> trilean.true) (make_full_observation drinks None <R 1 := Num n> t)"
+  by simp
+
+lemma once_none_remains_not_lt_zero: "0 \<le> n \<Longrightarrow> alw (\<lambda>xs. MaybeBoolInt (<) (datastate (shd xs) (R 1)) (Some (Num 0)) \<noteq> trilean.true) (make_full_observation drinks None <R 1 := Num n> t)"
+  using once_none_no_change_data
+  by (simp add: alw_iff_sdrop)
+
+lemma once_none_null_remains_not_lt_zero: "alw (\<lambda>xs. MaybeBoolInt (<) (datastate (shd xs) (R 1)) (Some (Num 0)) \<noteq> trilean.true) (make_full_observation drinks None Map.empty t)"
+  using once_none_no_change_data
+  by (simp add: alw_iff_sdrop)
+
+lemma stop_at_2: "0 \<le> n \<Longrightarrow>
+      alw (\<lambda>xs. MaybeBoolInt (<) (datastate (shd xs) (R 1)) (Some (Num 0)) \<noteq> trilean.true) (make_full_observation drinks (Some 2) <R 1 := Num n> t)"
+proof(coinduction)
+  case alw
+  then show ?case
+    by (simp add: possible_steps_2 once_none_remains_not_lt_zero)
+qed
+
+lemma next_not_lt_zero: "n \<ge> 0 \<Longrightarrow> nxt (\<lambda>xs. MaybeBoolInt (<) (datastate (shd xs) (R 1)) (Some (Num 0)) \<noteq> trilean.true) (make_full_observation drinks (Some 1) <R 1 := Num n> t)"
+    apply simp
+    apply (case_tac "shd t = (STR ''vend'', [])")
+    apply (case_tac "n = 0")
       apply (simp add: possible_steps_vend_insufficient)
-    using once_none_always_none
-      apply (simp add: StateEq_def alw_iff_sdrop)
-     apply (simp add: possible_steps_vend_sufficient ValueGt_def updates_vend)
-     apply (simp add: stop_at_2)
-
-
-
-
-
-lemma "alw (\<lambda>xs. StateEq (Some 2) (stl xs) \<longrightarrow> ValueGt (datastate (shd xs) (R 1)) (Some (Num 0)) = trilean.true)
-     (make_full_observation drinks (Some 1) <R 1 := Num 0> t)"
-proof(coinduction)
-  case alw
-  then show ?case
-    apply simp
-    apply standard
-     apply (case_tac "shd t = (STR ''coin'', [])")
-      apply (simp add: possible_steps_coin StateEq_def)
-     apply (case_tac "shd t = (STR ''vend'', [])")
-      apply (simp add: possible_steps_vend_insufficient StateEq_def)
-     apply (simp add: invalid_possible_steps_1 StateEq_def)
-
-     apply (case_tac "shd t = (STR ''vend'', [])")
-      apply (simp add: possible_steps_vend_insufficient StateEq_def)
-    using once_none_always_none
-     apply (simp add: StateEq_def alw_iff_sdrop)
+     apply (simp add: possible_steps_vend_sufficient updates_vend)
     apply (case_tac "shd t = (STR ''coin'', [])")
-     defer
-     apply (simp add: invalid_possible_steps_1 StateEq_def)
-    using once_none_always_none
-     apply (simp add: StateEq_def alw_iff_sdrop)
-    apply (simp add: possible_steps_coin StateEq_def updates_coin)
-    apply (rule disjI2)
+    defer
+     apply (simp add: invalid_possible_steps_1)
+  by (simp add: possible_steps_coin updates_coin)
 
+lemma StateEq_None_not_Some: "StateEq None s \<Longrightarrow> \<not> StateEq (Some n) s"
+  by (simp add: StateEq_def)
 
+lemma not_initialised: "alw (\<lambda>xs. StateEq (Some 1) xs \<and>
+              MaybeBoolInt (<) (datastate (shd xs) (R 1)) (Some (Num 0)) = trilean.true \<and> LabelEq ''vend'' xs \<and> InputEq [] xs \<longrightarrow>
+              StateEq (Some 2) (stl xs))
+     (make_full_observation drinks None Map.empty t)"
+  using once_none_always_none StateEq_None_not_Some
+  by (simp add: alw_iff_sdrop)
 
-qed
+lemma implode_init: "String.implode ''init'' = STR ''init''"
+  by (metis Literal.rep_eq String.implode_explode_eq zero_literal.rep_eq)
 
-lemma "alw (nxt (StateEq (Some 2)) impl checkInx rg 2 ValueGt (Some (Num 100))) (watch drinks t)"
-proof(coinduction)
-  case alw
-  then show ?case
-    apply simp
-    apply standard         
-     apply (simp add: Coin_Choc.aux1)
-    apply (case_tac "shd t = (STR ''init'', [])")
-     apply (simp add: possible_steps_init)
-     defer
-     apply (simp add: step_not_init)
-    using once_none_always_none
-     apply (simp add: once_none_always_none StateEq_def alw_iff_sdrop)
-    apply (simp add: updates_init)
-    apply (rule disjI2)
+lemma not_init: "shd t \<noteq> (STR ''init'', []) \<Longrightarrow>
+    LabelEq ''init'' (watch drinks t) \<Longrightarrow> \<not> InputEq [] (watch drinks t)"
+  apply (simp add: LabelEq_def InputEq_def implode_init)
+  by (metis prod.collapse)
 
-qed
-
-lemma "alw (nxt (StateEq (Some 2)) impl checkInx rg 2 ValueGt (Some (Num 100))) (watch drinks t)"
-proof(coinduction)
-  case alw
-  then show ?case
-    apply simp
-    apply standard
-     apply (simp add: ValueGt_def aux1)
-    apply (simp add: make_full_obs_neq)
-    apply (case_tac "shd t")
-    apply simp
-    apply (case_tac "a = STR ''init'' \<and> b = []")
-     apply (simp add: possible_steps_init)
-     defer
-     apply (simp add: possible_steps_not_init)
-
-
-    oops
+lemma "((LabelEq ''init'' aand InputEq []) impl nxt (checkInx rg 1 ValueEq (Some (Num 0)))) (watch drinks t)"
+  apply (case_tac "shd t = (STR ''init'', [])")
+   apply (simp add: possible_steps_init updates_init ValueEq_def)
+  apply clarify
+  using not_init
+  by simp
 
 
 end
