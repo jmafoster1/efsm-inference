@@ -119,16 +119,16 @@ object Dirties {
   }
 
   def initiallyUndefinedContextCheck(e: iEFSM, r: Nat.nat, s: Nat.nat): Boolean = {
-    val f = "intermediate_"+System.currentTimeMillis()
-    TypeConversion.efsmToSALTranslator(Inference.tm(e), f)
-
-    addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = State_${valueOf(s)} => r_${valueOf(r)} = ValueOption ! None);")
-
-    val output = Seq("bash", "-c", "cd salfiles; sal-smc --assertion='" + f + "{100}!initiallyUndefined'").!!
-    if (output.toString != "proved.\n") {
-      print(output)
-    }
-    return (output.toString == "proved.\n")
+    // val f = "intermediate_"+System.currentTimeMillis()
+    // TypeConversion.efsmToSALTranslator(Inference.tm(e), f)
+    //
+    // addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = State_${valueOf(s)} => r_${valueOf(r)} = ValueOption ! None);")
+    //
+    // val output = Seq("bash", "-c", "cd salfiles; sal-smc --assertion='" + f + "{100}!initiallyUndefined'").!!
+    // if (output.toString != "proved.\n") {
+    //   print(output)
+    // }
+    // return (output.toString == "proved.\n")
     return true
   }
 
@@ -144,6 +144,7 @@ object Dirties {
     addLTL("salfiles/" + f + ".sal", s"  generaliseOutput: THEOREM MichaelsEFSM |- G(cfstate = State_${valueOf(s)} => r_${valueOf(r)} = Some(${salValue(v)}));")
 
     val output = Seq("bash", "-c", "cd salfiles; sal-smc --assertion='" + f + "{100}!generaliseOutput'").!!
+    println("sal-smc --assertion='" + f + "{100}!generaliseOutput'")
     if (output.toString != "proved.\n") {
       print(output)
     }
@@ -181,8 +182,8 @@ object Dirties {
                               }
                               else if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t2, t1, b, s_prime)) {
                                 // This needs modifying to model check but it should be OK for now
-                                println("y")
-                                return true
+                                println("n")
+                                return false
                               }
                               else {
                                 val subsumes = readLine("") == "y"

@@ -128,6 +128,7 @@ object TypeConversion {
   }
 
   def efsmToSALTranslator(e: TransitionMatrix, f: String) = {
+    Translator.clearEverything()
     val pw = new PrintWriter(new File("dotfiles/" + f + ".dot" ))
     pw.write(EFSM_Dot.efsm2dot(e))
     pw.close
