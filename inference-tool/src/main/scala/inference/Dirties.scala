@@ -2,8 +2,14 @@ import com.microsoft.z3
 import exceptions.SatisfiabilityUnknownException
 import java.io._
 import scala.util.Random
+import sys.process._
+
+//for last line of file deletion
+import scala.io.Source
+
 
 object Dirties {
+  type iEFSM = FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
 
   def R(i: BigInt): VName.vname = {
     VName.R(Nat.Nata(i))
@@ -53,9 +59,9 @@ object Dirties {
     case AExp.V(v) => {
       FinFun.finfun_apply(types, v) match {
         case Type_Inference.NUM()     => toZ3(v, ctx, ctx.mkIntSort())
-        case Type_Inference.STRING()    => toZ3(v, ctx, ctx.mkStringSort())
+        case Type_Inference.STRING()  => toZ3(v, ctx, ctx.mkStringSort())
         case Type_Inference.UNBOUND() => toZ3(v, ctx, ctx.mkUninterpretedSort("UNBOUND"))
-        case Type_Inference.NULL() => toZ3(v, ctx, ctx.mkUninterpretedSort("NULL"))
+        case Type_Inference.NULL()    => toZ3(v, ctx, ctx.mkUninterpretedSort("NULL"))
       }
     }
     case AExp.Plus(a1, a2) => ctx.mkAdd(toZ3(a1, ctx, types).asInstanceOf[z3.ArithExpr], toZ3(a2, ctx, types).asInstanceOf[z3.ArithExpr])
@@ -89,22 +95,6 @@ object Dirties {
     }
   }
 
-  def lengthAndPrint(x:List[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))],
-                     y:List[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))]): Boolean = {
-   print("newScores: ")
-   for (x1 <- x) {
-     print(PrettyPrinter.pp(x1)+", ")
-   }
-   println()
-   print("oldScores: ")
-   for (y1 <- y) {
-     print(PrettyPrinter.pp(y1)+", ")
-   }
-   println("\n")
-
-    x.length < y.length
-  }
-
   def randomMember[A](f: FSet.fset[A]): Option[A] = f match {
     case FSet.Abs_fset(s) => s match {
       case Set.seta(l) => {
@@ -118,25 +108,50 @@ object Dirties {
     }
   }
 
-  def initiallyUndefinedContextCheck(e:
-       FSet.fset[(Nat.nat,
-                   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-      r: Nat.nat, s: Nat.nat):
-        Boolean
-    =
-      // TODO: implement this with the model checker
-    true
+  def addLTL(f: String, e: String) = {
+    val lines = Source.fromFile(f).getLines().toList.dropRight(1)
 
-  def generaliseOutputContextCheck(e: FSet.fset[(Nat.nat,
-             ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-                                       p: Nat.nat, v: Value.value, s: Nat.nat):
-        Boolean
-    =
-    // TODO: implement this with the model checker
-    true
+    val pw = new PrintWriter(new File(f))
 
-  def scalaDirectlySubsumes(a: FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-                            b: FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+    (lines :+ (e + "\nEND")).foreach(pw.println)
+
+    pw.close()
+  }
+
+  def initiallyUndefinedContextCheck(e: iEFSM, r: Nat.nat, s: Nat.nat): Boolean = {
+    val f = "intermediate_"+System.currentTimeMillis()
+    TypeConversion.efsmToSALTranslator(Inference.tm(e), f)
+
+    addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = State_${valueOf(s)} => r_${valueOf(r)} = ValueOption ! None);")
+
+    val output = Seq("bash", "-c", "cd salfiles; sal-smc --assertion='" + f + "{100}!initiallyUndefined'").!!
+    if (output.toString != "proved.\n") {
+      print(output)
+    }
+    return (output.toString == "proved.\n")
+    return true
+  }
+
+  def salValue(v: Value.value): String = v match {
+    case Value.Str(s) => s"STR(String_$s)"
+    case Value.Numa(n) => s"NUM(${valueOf(n)})"
+  }
+
+  def generaliseOutputContextCheck(e: iEFSM, r: Nat.nat, v: Value.value, s: Nat.nat): Boolean = {
+    val f = "intermediate_"+System.currentTimeMillis()
+    TypeConversion.efsmToSALTranslator(Inference.tm(e), f)
+
+    addLTL("salfiles/" + f + ".sal", s"  generaliseOutput: THEOREM MichaelsEFSM |- G(cfstate = State_${valueOf(s)} => r_${valueOf(r)} = Some(${salValue(v)}));")
+
+    val output = Seq("bash", "-c", "cd salfiles; sal-smc --assertion='" + f + "{100}!generaliseOutput'").!!
+    if (output.toString != "proved.\n") {
+      print(output)
+    }
+    return (output.toString == "proved.\n")
+  }
+
+  def scalaDirectlySubsumes(a: iEFSM,
+                            b: iEFSM,
                             s: Nat.nat,
                             s_prime: Nat.nat,
                             t1: Transition.transition_ext[Unit],

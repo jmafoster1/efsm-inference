@@ -34,7 +34,8 @@ object FrontEnd {
     // iterative_learn [] naive_score (iterative_try_heuristics [(λx. insert_increment), (λx. heuristic_1 x)])
     val inferred = Inference.learn(log, (SelectionStrategies.naive_score _).curried, heuristic)
 
-    println("The inferred machine is "+(if (Inference.nondeterministic(Inference.toiEFSM(inferred))) "non" else "")+"deterministic")
+    println("The inferred machine is " +
+      (if (Inference.nondeterministic(Inference.toiEFSM(inferred))) "non" else "") + "deterministic")
 
     val pw = new PrintWriter(new File("dotfiles/vend1.dot" ))
     pw.write(EFSM_Dot.efsm2dot(inferred))
@@ -42,7 +43,7 @@ object FrontEnd {
 
     println("Goodbye inference!")
 
-    TypeConversion.efsmToSALTranslator(inferred)
+    TypeConversion.efsmToSALTranslator(inferred, "Vend1")
 
     // val ctx = new z3.Context
     // val sort = ctx.mkUninterpretedSort("U")

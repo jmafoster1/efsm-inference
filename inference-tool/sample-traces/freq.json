@@ -6,7 +6,7 @@
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
@@ -14,11 +14,11 @@
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
@@ -28,102 +28,102 @@
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
 ]
 ,[
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-]
-,[
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 ]
@@ -134,8 +134,8 @@
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
@@ -143,149 +143,93 @@
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-]
-,[
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-]
-,[
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-]
-,[
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-]
-,[
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-]
-,[
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
@@ -297,61 +241,117 @@
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+]
+,[
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
@@ -367,146 +367,70 @@
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-]
-,[
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-]
-,[
-{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-]
-,[
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
 ]
 ,[
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-]
-,[
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
@@ -514,7 +438,83 @@
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
@@ -531,7 +531,7 @@
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 ]
@@ -547,12 +547,12 @@
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
@@ -560,14 +560,14 @@
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
@@ -577,88 +577,88 @@
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-]
-,[
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-]
-,[
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-]
-,[
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-]
-,[
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
-{"label":"stop", "inputs":[], "outputs":["ok"]}
-{"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
+{"label":"stop", "inputs":[], "outputs":["ok"]}
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+]
+,[
+{"label":"start", "inputs":[], "outputs":["true"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
+{"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
+{"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
@@ -669,10 +669,10 @@
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
@@ -684,21 +684,21 @@
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
 ]
 ,[
 {"label":"start", "inputs":[], "outputs":["true"]}
@@ -709,7 +709,7 @@
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
@@ -718,41 +718,41 @@
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
@@ -760,15 +760,15 @@
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["ok"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[11], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
@@ -776,26 +776,26 @@
 {"label":"start", "inputs":[], "outputs":["true"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[10], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
-{"label":"deallocate", "inputs":["14"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[14], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}
 {"label":"start", "inputs":[], "outputs":["true"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["13"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[13], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["10"], "outputs":["ok"]}
+{"label":"deallocate", "inputs":[10], "outputs":["ok"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,10}"]}
-{"label":"deallocate", "inputs":["11"], "outputs":["{error,not_allocated}"]}
-{"label":"deallocate", "inputs":["12"], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[11], "outputs":["{error,not_allocated}"]}
+{"label":"deallocate", "inputs":[12], "outputs":["{error,not_allocated}"]}
 {"label":"allocate", "inputs":[], "outputs":["{ok,11}"]}
 {"label":"allocate", "inputs":[], "outputs":["{error,no_frequencies}"]}
 {"label":"stop", "inputs":[], "outputs":["ok"]}

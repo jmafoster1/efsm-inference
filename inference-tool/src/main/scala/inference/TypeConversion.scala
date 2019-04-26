@@ -1,5 +1,6 @@
 import isabellesal._
 import java.nio.file.{Files, Paths}
+import java.io._
 
 object TypeConversion {
 
@@ -36,7 +37,13 @@ object TypeConversion {
 
   def aexpToSALTranslator(a: AExp.aexp): Expression = a match {
     case AExp.L(Value.Numa(Int.int_of_integer(n))) => Expression.newOneFrom(Constant.newOneFrom(n.toInt))
-    case AExp.L(Value.Str(s)) => Expression.newOneFrom(Constant.newOneFrom(s))
+    case AExp.L(Value.Str(s)) =>
+    try {
+      Expression.newOneFrom(Constant.newOneFrom(s))
+    }
+    catch {
+      case ioe: java.lang.ClassCastException => Expression.newOneFrom(Constant.currentVersionOf(s))
+    }
     case AExp.V(v) => Expression.newOneFrom(vnameToSALTranslator(v))
     case AExp.Plus(a1, a2) => Expression.newInfixFrom(
             Token.PLUS,
@@ -104,21 +111,29 @@ object TypeConversion {
       foldGuard(Transition.Guard(t).map(g => gexpToSALTranslator(g))),
       Expression.newOutputs(Transition.Outputs(t).map(a => aexpToSALTranslator(a)):_*),
       Transition.Updates(t).map(updateToExp):_*
-
     )
   }
 
   def toMichaelsMove(move: ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])): MichaelsMove = {
-    new MichaelsMove(natToInt(move._1._1), natToInt(move._1._2), transitionToSALTranslator(Transition.Label(move._2)+"_"+System.currentTimeMillis, move._2))
+    new MichaelsMove(
+      natToInt(move._1._1),
+      natToInt(move._1._2),
+      transitionToSALTranslator(Transition.Label(move._2) +
+        "_" + System.currentTimeMillis, move._2)
+      )
   }
 
   def fset_to_list[A](f: FSet.fset[A]): List[A] = FSet.fset(f) match {
     case Set.seta(s) => s
   }
 
-  def efsmToSALTranslator(e: TransitionMatrix) = {
+  def efsmToSALTranslator(e: TransitionMatrix, f: String) = {
+    val pw = new PrintWriter(new File("dotfiles/" + f + ".dot" ))
+    pw.write(EFSM_Dot.efsm2dot(e))
+    pw.close
+    println("converting "+f)
     isabellesal.EFSM.newOneFrom(fset_to_list(FSet.fimage(toMichaelsMove, e)):_*)
-    new Translator().writeSALandDOT(Paths.get("salfiles"), "Michaels");
+    new Translator().writeSALandDOT(Paths.get("salfiles"), f);
   }
 
 }
