@@ -257,7 +257,7 @@ lemma not_init: "shd t \<noteq> (STR ''init'', []) \<Longrightarrow>
   apply (simp add: LabelEq_def InputEq_def implode_init)
   by (metis prod.collapse)
 
-lemma "((LabelEq ''init'' aand InputEq []) impl nxt (checkInx rg 1 ValueEq (Some (Num 0)))) (watch drinks t)"
+lemma init_makes_r_1_zero: "((LabelEq ''init'' aand InputEq []) impl nxt (checkInx rg 1 ValueEq (Some (Num 0)))) (watch drinks t)"
   apply (case_tac "shd t = (STR ''init'', [])")
    apply (simp add: possible_steps_init updates_init ValueEq_def)
   apply clarify
