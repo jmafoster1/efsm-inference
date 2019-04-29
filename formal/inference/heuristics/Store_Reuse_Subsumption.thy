@@ -482,22 +482,22 @@ lemma generalise_output_directly_subsumes_original:
   using generalise_output_subsumes_original[of t r v _ p]
   by metis
 
-definition generalise_output_context_check :: "iEFSM \<Rightarrow> nat \<Rightarrow> value \<Rightarrow> nat \<Rightarrow> bool" where
-  "generalise_output_context_check e p v s = (\<forall>t. accepts_trace (tm e) t \<and> gets_us_to s (tm e) 0 <>  t \<longrightarrow> (anterior_context (tm e) t) (V (R p)) = {|Eq v|})"
+definition generalise_output_context_check :: "String.literal \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> value \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
+  "generalise_output_context_check l e e' p v s_old s_new = (\<forall>t. accepts_trace (tm e) t \<and> gets_us_to s_new (tm e) 0 <>  t \<longrightarrow> (anterior_context (tm e) t) (V (R p)) = {|Eq v|})"
 
-fun generalise_output_direct_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> bool" where
-  "generalise_output_direct_subsumption t' t e s' = (case stored_reused t' t e of
+fun generalise_output_direct_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
+  "generalise_output_direct_subsumption t' t e e' s s' = (case stored_reused t' t e of
     None \<Rightarrow> False |
     Some (p, r) \<Rightarrow> (if is_generalised_output_of t' t p r then
       case nth (Outputs t) r of
-        L v \<Rightarrow> generalise_output_context_check e p v s' |
+        L v \<Rightarrow> generalise_output_context_check (Label t) e e' p v s s' |
         _ \<Rightarrow> False
       else False)
   )"
 
 (* This allows us to just run the two functions for quick subsumption *)
 lemma generalise_output_directly_subsumes_original_executable: 
-      "generalise_output_direct_subsumption t' t e s' \<Longrightarrow> directly_subsumes e1 e s s' t' t"
+      "generalise_output_direct_subsumption t' t e e' s s' \<Longrightarrow> directly_subsumes e1 e s s' t' t"
   apply simp
   apply (case_tac "stored_reused t' t e")
    apply simp

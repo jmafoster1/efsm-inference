@@ -178,7 +178,15 @@ declare random_member_def [code del]
 
 code_printing constant "random_member" \<rightharpoonup> (Scala) "Dirties.randomMember"
 
-export_code drop_guard_add_update_direct_subsumption generalise_output_direct_subsumption input_stored_in_reg no_illegal_updates always_different_outputs try_heuristics learn same_register insert_increment insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
+fun input_updates_register_aux :: "update_function list \<Rightarrow> nat option" where
+  "input_updates_register_aux ((R n, V (I n'))#_) = Some n'" |
+  "input_updates_register_aux (h#t) = input_updates_register_aux t" |
+  "input_updates_register_aux [] = None"
+
+definition input_updates_register :: "iEFSM \<Rightarrow> (nat \<times> String.literal)" where
+  "input_updates_register e = (case fthe_elem (ffilter (\<lambda>(_, _, t). input_updates_register_aux (Updates t) \<noteq> None) e) of (_, _, t) \<Rightarrow> case input_updates_register_aux (Updates t) of Some n \<Rightarrow> (n, Label t))"
+
+export_code input_updates_register drop_guard_add_update_direct_subsumption generalise_output_direct_subsumption input_stored_in_reg no_illegal_updates always_different_outputs try_heuristics learn same_register insert_increment insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

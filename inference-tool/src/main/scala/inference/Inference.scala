@@ -343,6 +343,11 @@ def equal_optiona[A : HOL.equal](x0: Option[A], x1: Option[A]): Boolean =
   case (None, None) => true
 }
 
+def is_none[A](x0: Option[A]): Boolean = x0 match {
+  case Some(x) => false
+  case None => true
+}
+
 } /* object Optiona */
 
 object Groups {
@@ -1358,6 +1363,46 @@ def outputMatch_alt(uu: List[AExp.aexp], uv: List[AExp.aexp]): Boolean =
   case (uu, (AExp.Minus(vb, vc))::va) => false
   case (uu, v::(vb::vc)) => false
 }
+
+def input_updates_register_aux(x0: List[(VName.vname, AExp.aexp)]):
+      Option[Nat.nat]
+  =
+  x0 match {
+  case (VName.R(na), AExp.V(VName.I(n)))::uu => Some[Nat.nat](n)
+  case (VName.I(vb), va)::t => input_updates_register_aux(t)
+  case (v, AExp.L(vb))::t => input_updates_register_aux(t)
+  case (v, AExp.V(VName.R(vc)))::t => input_updates_register_aux(t)
+  case (v, AExp.Plus(vb, vc))::t => input_updates_register_aux(t)
+  case (v, AExp.Minus(vb, vc))::t => input_updates_register_aux(t)
+  case Nil => None
+}
+
+def input_updates_register(e: FSet.fset[(Nat.nat,
+  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
+      (Nat.nat, String)
+  =
+  {
+    val (_, (_, t)):
+          (Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))
+      = FSet.fthe_elem[(Nat.nat,
+                         ((Nat.nat, Nat.nat),
+                           Transition.transition_ext[Unit]))](FSet.ffilter[(Nat.nat,
+                                     ((Nat.nat, Nat.nat),
+                                       Transition.transition_ext[Unit]))](((a:
+                                      (Nat.nat,
+((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
+                                     =>
+                                    {
+                                      val
+(_, (_, t)): (Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])) =
+a;
+                                      ! (Optiona.is_none[Nat.nat](input_updates_register_aux(Transition.Updates[Unit](t))))
+                                    }),
+                                   e))
+    val (Some(n)): Option[Nat.nat] =
+      input_updates_register_aux(Transition.Updates[Unit](t));
+    (n, Transition.Label[Unit](t))
+  }
 
 def no_illegal_updates_code(x0: List[(VName.vname, AExp.aexp)], uu: Nat.nat):
       Boolean
@@ -4568,17 +4613,21 @@ def input_stored_in_reg(ta: Transition.transition_ext[Unit],
 
 def generalise_output_direct_subsumption(ta: Transition.transition_ext[Unit],
   t: Transition.transition_ext[Unit],
+  ea: FSet.fset[(Nat.nat,
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
   e: FSet.fset[(Nat.nat,
                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-  s: Nat.nat):
+  sa: Nat.nat, s: Nat.nat):
       Boolean
   =
-  (stored_reused(ta, t, e) match {
+  (stored_reused(ta, t, ea) match {
      case None => false
      case Some((p, r)) =>
        (if (Store_Reuse.is_generalised_output_of(ta, t, p, r))
          (Lista.nth[AExp.aexp](Transition.Outputs[Unit](t), r) match {
-            case AExp.L(v) => Dirties.generaliseOutputContextCheck(e, p, v, s)
+            case AExp.L(v) =>
+              Dirties.generaliseOutputContextCheck(Transition.Label[Unit](t),
+            ea, e, p, v, sa, s)
             case AExp.V(_) => false
             case AExp.Plus(_, _) => false
             case AExp.Minus(_, _) => false
