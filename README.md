@@ -1,4 +1,4 @@
-# Athena 2.0
+# EFSM Inference
 
 EFSM inference tool which takes in system execution traces and returns an EFSM model of the observed behaviour. The inference process is formalised in [Isabelle/HOL](https://isabelle.in.tum.de/) and then exported to an executable tool using the code generator.
 
