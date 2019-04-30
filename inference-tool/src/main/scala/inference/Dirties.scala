@@ -150,15 +150,15 @@ object Dirties {
     TypeConversion.efsmToSALTranslator(Inference.tm(e), f_old)
     val inxLabel = Code_Generation.input_updates_register(ePrime)
     addLTL("salfiles/" + f_old + s".sal", s"  inputValue: THEOREM MichaelsEFSM |-\n" +
-      s"U(cfstate /= NULL_STATE, cfstate=State_${valueOf(s_old)}) =>\n"+
-      s"U(label = ${inxLabel._2} => I(1) = ${salValue(v)}, X(cfstate = NULL_STATE));")
+      s"    U(cfstate /= NULL_STATE, cfstate=State_${valueOf(s_old)}) =>\n"+
+      s"    U(label = ${inxLabel._2} => I(1) = ${salValue(v)}, X(cfstate = NULL_STATE));")
 
     val f_new = "intermediate_"+System.currentTimeMillis()
     TypeConversion.efsmToSALTranslator(Inference.tm(ePrime), f_new)
     addLTL("salfiles/" + f_new + ".sal", s"  generaliseOutput: THEOREM MichaelsEFSM |-\n"+
-      s"U(cfstate /= NULL_STATE, cfstate = State_${valueOf(s_new)}) =>\n"+
-      s"U(label = select => I(${valueOf(inxLabel._1)}) = ${salValue(v)}, cfstate = NULL_STATE) =>\n"+
-      s"U(cfstate = State_${valueOf(s_new)} => r_1 = Some(${salValue(v)}), cfstate=NULL_STATE);")
+      s"    U(cfstate /= NULL_STATE, cfstate = State_${valueOf(s_new)}) =>\n"+
+      s"    U(label = select => I(${valueOf(inxLabel._1)}) = ${salValue(v)}, cfstate = NULL_STATE) =>\n"+
+      s"    U(cfstate = State_${valueOf(s_new)} => r_1 = Some(${salValue(v)}), cfstate=NULL_STATE);")
 
 
     println(s"sal-smc --assertion='${f_old}{100}!inputValue'")
