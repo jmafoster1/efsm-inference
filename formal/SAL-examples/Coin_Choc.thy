@@ -1,5 +1,5 @@
 theory Coin_Choc
-imports EFSM_LTL
+  imports EFSM_LTL
 begin
 
 declare One_nat_def [simp del]
@@ -27,7 +27,7 @@ definition vend :: transition where
 "vend \<equiv> \<lparr>
         Label = (STR ''vend''),
         Arity = 0,
-        Guard = [Gt (V (R 1)) (L (Num 0))],
+        Guard = [gexp.Gt (V (R 1)) (L (Num 0))],
         Outputs = [],
         Updates = [(R 1, (Minus (V (R 1)) (L (Num 1))))]
       \<rparr>"
@@ -263,6 +263,9 @@ lemma init_makes_r_1_zero: "((LabelEq ''init'' aand InputEq []) impl nxt (checkI
   apply clarify
   using not_init
   by simp
+
+lemma must_pay: "((not (LabelEq ''vend'' suntil LabelEq ''coin'')) suntil StateEq None) (watch drinks t)"
+  oops
 
 
 end
