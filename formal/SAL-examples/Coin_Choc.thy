@@ -254,18 +254,41 @@ lemma implode_init: "String.implode ''init'' = STR ''init''"
 
 lemma not_init: "shd t \<noteq> (STR ''init'', []) \<Longrightarrow>
     LabelEq ''init'' (watch drinks t) \<Longrightarrow> \<not> InputEq [] (watch drinks t)"
-  apply (simp add: LabelEq_def InputEq_def implode_init)
+  apply (simp add: LabelEq_def InputEq_def implode_init watch_def)
   by (metis prod.collapse)
+
+lemma implode_vend: "String.implode ''vend'' = STR ''vend''"
+  by (metis Literal.rep_eq String.implode_explode_eq zero_literal.rep_eq)
+
+lemma implode_coin: "String.implode ''coin'' = STR ''coin''"
+  by (metis Literal.rep_eq String.implode_explode_eq zero_literal.rep_eq)
+
+lemma label_vend_not_2: "LabelEq ''vend'' (watch drinks t) \<Longrightarrow> not (ev (StateEq (Some 2))) (watch drinks t)"
+  apply (simp only: watch_label implode_vend not_ev_iff)
+  apply (simp add: watch_def make_full_observation_unfold possible_steps_not_init)
+proof(coinduction)
+  case alw
+  then show ?case
+    apply (simp add: StateEq_def)
+    apply (rule disjI2)
+    using once_none_always_none
+    unfolding StateEq_def
+    by (simp add: alw_iff_sdrop)
+qed
 
 lemma init_makes_r_1_zero: "((LabelEq ''init'' aand InputEq []) impl nxt (checkInx rg 1 ValueEq (Some (Num 0)))) (watch drinks t)"
   apply (case_tac "shd t = (STR ''init'', [])")
-   apply (simp add: possible_steps_init updates_init ValueEq_def)
+   apply (simp add: possible_steps_init updates_init ValueEq_def watch_def)
   apply clarify
   using not_init
   by simp
 
-lemma must_pay: "((not (LabelEq ''vend'' suntil LabelEq ''coin'')) suntil StateEq None) (watch drinks t)"
+lemma must_pay_wrong: "((not (LabelEq ''vend'' suntil LabelEq ''coin'')) suntil StateEq None) (watch drinks t)"
   oops
 
-
+lemma must_pay_correct: "((ev (StateEq (Some 2))) impl (not(LabelEq ''vend'') suntil LabelEq ''coin'')) (watch drinks t)"
+  apply clarify
+  apply (rule suntil.step)
+  using label_vend_not_2 apply blast
+  sorry
 end

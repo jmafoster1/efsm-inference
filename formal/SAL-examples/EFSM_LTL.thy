@@ -34,7 +34,7 @@ primcorec make_full_observation :: "transition_matrix \<Rightarrow> nat option \
 lemma make_full_observation_unfold: "make_full_observation e s d i = (let (s', o', d') = ltl_step e s d (shd i) in \<lparr>statename = s, datastate = d, event=(shd i), output = o'\<rparr>##(make_full_observation e s' d' (stl i)))"
   using make_full_observation.code by blast
 
-abbreviation watch :: "transition_matrix \<Rightarrow> event stream \<Rightarrow> full_observation" where
+definition watch :: "transition_matrix \<Rightarrow> event stream \<Rightarrow> full_observation" where
   "watch e i \<equiv> (make_full_observation e (Some 0) <> i)"
 
 abbreviation non_null :: "property" where
@@ -57,6 +57,9 @@ definition StateEq :: "nat option \<Rightarrow> state stream \<Rightarrow> bool"
 
 definition LabelEq :: "string \<Rightarrow> state stream \<Rightarrow> bool" where
   "LabelEq v s \<equiv> fst (event (shd s)) = (String.implode v)"
+
+lemma watch_label: "LabelEq l (watch drinks t) = (fst (shd t) = String.implode l)"
+  by (simp add: LabelEq_def watch_def)
 
 fun "checkInx" :: "ior \<Rightarrow> nat \<Rightarrow> (value option \<Rightarrow> value option \<Rightarrow> trilean) \<Rightarrow> value option \<Rightarrow> state stream \<Rightarrow> bool" where
   "checkInx ior.ip n f v s = (f (Some (Inputs n s)) v = trilean.true)" |
