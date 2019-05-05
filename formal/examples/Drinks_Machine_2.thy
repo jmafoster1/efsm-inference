@@ -349,7 +349,6 @@ next
     using equal_2_3 observe_trace_def apply auto[1]
      apply (simp add: step_def)
      apply (simp add: drinks_vend_r2_String drinks2_vend_r2_String )
-     apply (simp add: step_def)
     by (simp add: drinks_1_inaccepts drinks2_2_invalid )
 qed
 

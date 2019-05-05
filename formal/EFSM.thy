@@ -177,6 +177,20 @@ definition state :: "(transition \<times> nat \<times> outputs \<times> datastat
 definition observe_trace :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> observation" where
   "observe_trace e s r t \<equiv> map (\<lambda>(t,x,y,z). y) (observe_all e s r t)"
 
+lemma observe_trace_step: "lst \<noteq> [] \<Longrightarrow>
+       step e s r (fst (hd lst)) (snd (hd lst)) = Some (t, s', p, r') \<Longrightarrow>
+       observe_trace e s' r' (tl lst) = obs \<Longrightarrow>
+       observe_trace e s r lst = p#obs"
+proof(induct lst)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a lst)
+  then show ?case
+    by (simp add: observe_trace_def)
+qed
+
+
 lemma observe_empty: "t = [] \<Longrightarrow> observe_trace e 0 <> t = []"
   by (simp add: observe_trace_def)
 

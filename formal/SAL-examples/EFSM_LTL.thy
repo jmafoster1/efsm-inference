@@ -125,4 +125,9 @@ then have "alw (\<lambda>s. StateEq None (make_full_observation e None r s)) t"
   then show ?thesis
     using f5 by (metis (no_types) stream.sel(2) unfold_observe_none)
 qed
+
+lemma event_components: "(LabelEq l aand InputEq i) s = (event (shd s) = (String.implode l, i))"
+  apply (simp add: LabelEq_def InputEq_def)
+  by (metis fst_conv prod.collapse snd_conv)
+
 end

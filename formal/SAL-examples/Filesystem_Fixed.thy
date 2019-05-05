@@ -122,35 +122,50 @@ proof-
     by (simp add: possible_steps_def filter)
 qed
 
+lemma regsimp: "(\<lambda>x. if x = R 1 then aval (snd (R 1, V (I 1))) (case_vname (\<lambda>n. input2state [EFSM.Str ''user''] 1 (I n)) Map.empty)
+          else EFSM.apply_updates [] (case_vname (\<lambda>n. input2state [EFSM.Str ''user''] 1 (I n)) Map.empty) Map.empty x) = <R 1 := Str ''user''>"
+  by (rule ext, simp)
+
+lemma regsimp2: " (\<lambda>x. if x = R 1 then aval (snd (R 1, V (R 1))) (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. <R 1 := EFSM.Str ''user''> (R n)))
+          else EFSM.apply_updates [(R 2, V (R 2)), (R 3, V (R 1))] (case_vname (\<lambda>n. input2state [] 1 (I n)) (\<lambda>n. <R 1 := EFSM.Str ''user''> (R n)))
+                <R 1 := EFSM.Str ''user''> x) = <R 1 := Str ''user'', R 3 := Str ''user''>"
+  by (rule ext, simp)
+
+lemma apply_updates_write: "EFSM.apply_updates (Updates Filesystem_Fixed.write)
+     (join_ir (snd (hd [(STR ''write'', [Num 50]), (STR ''read'', [])])) <R 1 := EFSM.Str ''user'', R 3 := EFSM.Str ''user''>)
+     <R 1 := EFSM.Str ''user'', R 3 := EFSM.Str ''user''> = <R 1 := EFSM.Str ''user'', R 2 := Num 50, R 3 := EFSM.Str ''user''>"
+  apply (rule ext)
+  by (simp add: write_def)
+
 lemma "observe_trace filesystem 0 <> [((STR ''login''), [Str ''user'']), ((STR ''create''), []), ((STR ''write''), [Num 50]), ((STR ''read''), [])] = [[], [], [], [Some (Num 50)]]"
-proof-
-  have updates_login: "(EFSM.apply_updates (Updates login)
-          (case_vname (\<lambda>n. if n = 1 then Some (Str ''user'') else input2state [] (1 + 1) (I n)) Map.empty) Map.empty) = <R 1 := Str ''user''>"
-    apply (rule ext)
-    by (simp add: login_def)
-  have updates_create: "(EFSM.apply_updates (Updates create) (case_vname Map.empty (\<lambda>n. if n = 1 then Some (Str ''user'') else None))
-          <R 1 := Str ''user''>) = <R 1 := Str ''user'', R 3 := Str ''user''>"
-    apply (rule ext)
-    by (simp add: create_def)
-  have updates_write: " (EFSM.apply_updates (Updates Filesystem_Fixed.write)
-          (case_vname (\<lambda>n. if n = 1 then Some (Num 50) else input2state [] (1 + 1) (I n))
-            (\<lambda>n. if n = 3 then Some (Str ''user'') else <R 1 := Str ''user''> (R n)))
-          <R 1 := Str ''user'', R 3 := Str ''user''>) = <R 1 := Str ''user'', R 2 := Num 50, R 3 := Str ''user''>"
-    apply (rule ext)
-    by (simp add: write_def)
-  show ?thesis
-    unfolding observe_trace_def observe_all_def step_def
-    apply (simp add: possible_steps_0 updates_login)
-    apply (simp add: possible_steps_1_create updates_create)
-    apply (simp add: possible_steps_1_write)
-    apply (simp only: updates_write possible_steps_1_read)
-    by (simp add: fs_simp)
-qed
-
-\<comment>\<open> step :: efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (statename \<times> outputs \<times> registers) option \<close>
-\<comment>\<open> observe_trace :: "efsm \<Rightarrow> statename \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> observation" where \<close>
-
-\<comment>\<open> noChangeOwner: THEOREM filesystem |- G(cfstate /= NULL_STATE) => FORALL (owner : UID): G((label=write AND r_1=owner) => F(G((label=read AND r_1/=owner) => X(op_1_read_0 = accessDenied)))); \<close>
+  apply (rule observe_trace_step)
+    apply simp
+   apply (rule one_possible_step)
+     apply (simp add: possible_steps_0)
+    apply (simp add: login_def)
+   apply (simp add: login_def regsimp)
+  apply (rule observe_trace_step)
+    apply simp
+   apply (rule one_possible_step)
+     apply (simp add: possible_steps_1_create)
+    apply (simp add: create_def)
+   apply (simp add: create_def)
+  apply (simp add: regsimp2)
+  apply (rule observe_trace_step)
+    apply simp
+   apply (rule one_possible_step)
+     apply simp
+     apply (simp add: possible_steps_1_write)
+    apply (simp add: write_def)
+   apply (simp only: apply_updates_write)
+  apply (rule observe_trace_step)
+    apply simp
+   apply (rule one_possible_step)
+  using possible_steps_1_read
+     apply simp
+    apply (simp add: read_success_def)
+   apply (simp add: read_success_def)
+  by (simp add: observe_trace_def)
 
 lemma r_equals_r [simp]: "<R 1:=user, R 2:=content, R 3:=owner> = (\<lambda>a. if a = R 3 then Some owner else if a = R 2 then Some content else if a = R 1 then Some user else <> a)"
   apply (rule ext)
@@ -230,7 +245,7 @@ abbreviation login_user :: "property" where
   "login_user s \<equiv> (event (shd s) = ((STR ''login''),  [Str ''user'']))"
 
 lemma "login_user (watch filesystem i) \<Longrightarrow> shd i = ((STR ''login''), [Str ''user''])"
-  by simp
+  by (simp add: watch_def)
 
 lemma logout_label:  "t = logout \<Longrightarrow> Label t = (STR ''logout'')"
   by (simp add: logout_def)
@@ -251,36 +266,20 @@ lemma every_event_step: "\<forall>s r.  s |\<in>| S filesystem \<longrightarrow>
   apply (rule_tac x="[]" in exI)
   by (simp add: possible_steps_1_logout)
 
-lemma alw_equiv: "alw p s = ((p s) \<and> alw p (stl s))"
-  using alw.intros by auto
-
 text_raw{*\snip{userdetails}{1}{2}{%*}
 lemma user_details_stored_in_r1: "((\<lambda>s. (event (shd s) = ((STR ''login''),  [u]))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (u)))) (watch filesystem i)"
   proof (cases u)
     case (Num x1)
     then show ?thesis
-      by (simp add: possible_steps_0 login_def)
+      by (simp add: possible_steps_0 login_def watch_def)
   next
     case (Str x2)
     then show ?thesis
-      by (simp add: possible_steps_0 login_def)
+      by (simp add: possible_steps_0 login_def watch_def)
   qed
 text_raw{*}%endsnip*}
 
-\<comment>\<open>lemma "((\<lambda>s. (event (shd s) = ((STR ''login''),  [u]))) impl ((\<lambda>s. datastate (shd s) (R 1) = Some (u)) suntil (\<lambda>s. label (shd s) = (STR ''logout'')))) (watch filesystem i)"\<close>
-
-\<comment>\<open>lemma globally_user_details_stored_in_r1: "alw (non_null impl ((\<lambda>s. (event (shd s) = ((STR ''login''),  [Str ''user'']))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (Str ''user''))))) (watch filesystem i)"
-proof (coinduction)
-  case alw
-  then show ?case
-    
-qed\<close>
-
 lemma login_user_first: "alw non_null (watch filesystem i) \<Longrightarrow> (login_user (watch filesystem i) = (shd i = ((STR ''login''), [Str ''user''])))"
-  by simp
-
-      \<comment>\<open> G(cfstate /= NULL_STATE)  => ((label=login AND ip_1_login_1=(user)) AND U(label/=logout, label=create)) => F(G(((label=login AND ip_1_login_1=(attacker)) AND F(label=logout))  =>   U(label=read=>X(op_1_read_0=0), label=logout))) \<close>
-\<comment>\<open>lemma "(((alw non_null) impl (login_user aand (label_not_logout until label_create))) impl (ev (alw ((login_attacker aand ev label_logout) impl (read_0 suntil label_logout))))) (watch filesystem i)"
-  apply simp \<close>
+  by (simp add: watch_def)
 
 end

@@ -3,7 +3,7 @@ imports "../examples/Drinks_Machine" EFSM_LTL
 begin
 
   (* costsMoney: THEOREM drinks |- G(X(cfstate=State_2) => gval(value_ge(r_2, Some(NUM(100))))); *)
-lemma costsMoney: "alw(nxt(StateEq (Some 2)) impl (RegGt 2 100)) (watch drinks i)"
+lemma costsMoney: "alw(nxt(StateEq (Some 2)) impl (checkInx rg 2 ValueGt (Some (Num 100)))) (watch drinks i)"
   oops
 
 (* neverReachS2: THEOREM drinks |- label=select AND I(1) = STR(String_coke) AND
