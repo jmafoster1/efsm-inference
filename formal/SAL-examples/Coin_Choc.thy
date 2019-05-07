@@ -276,6 +276,41 @@ proof(coinduction)
     by (simp add: alw_iff_sdrop)
 qed
 
+lemma possible_steps_0: "possible_steps drinks 0 Map.empty l i = finsert x S' \<Longrightarrow> finsert x S' = {|(1, init)|}"
+  apply (case_tac "l = STR ''init''")
+   apply (case_tac "i = []")
+    apply (simp add: possible_steps_init)
+  using possible_steps_not_init
+  by auto
+
+lemma vend_insufficient: "possible_steps drinks 1 <R 1 := Num 0> STR ''vend'' i = {||}"
+  apply (simp add: possible_steps_def ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def drinks_def)
+  apply safe
+   apply (simp add: coin_def)
+  by (simp add: vend_def gval.simps ValueGt_def)
+
+lemma aux2: "LabelEq ''vend'' (stl (watch drinks t)) \<Longrightarrow> \<not> ev (StateEq (Some 2)) (watch drinks t)"
+  apply (simp add: watch_def LabelEq_def implode_vend not_ev_iff)
+proof(coinduction)
+  case alw
+  then show ?case
+    apply (simp add: StateEq_def)
+    apply (case_tac "shd t = (STR ''init'', [])")
+     defer
+    using possible_steps_not_init alw_not_some
+     apply (simp add: no_possible_steps_not_init)
+    apply (simp add: possible_steps_init updates_init)
+    apply (rule disjI2)
+  proof(coinduction)
+    case alw
+    then show ?case
+      apply (simp add: vend_insufficient)
+      apply (rule disjI2)
+      using alw_not_some
+      by simp
+  qed
+qed
+
 lemma init_makes_r_1_zero: "((LabelEq ''init'' aand InputEq []) impl nxt (checkInx rg 1 ValueEq (Some (Num 0)))) (watch drinks t)"
   apply (case_tac "shd t = (STR ''init'', [])")
    apply (simp add: possible_steps_init updates_init ValueEq_def watch_def)
@@ -286,9 +321,61 @@ lemma init_makes_r_1_zero: "((LabelEq ''init'' aand InputEq []) impl nxt (checkI
 lemma must_pay_wrong: "((not (LabelEq ''vend'' suntil LabelEq ''coin'')) suntil StateEq None) (watch drinks t)"
   oops
 
+lemma shd_not_init: "shd t \<noteq> (STR ''init'', []) \<Longrightarrow> \<not> ev (\<lambda>s. statename (shd s) = Some 2) (make_full_observation drinks (Some 0) Map.empty t)"
+  apply (simp add: not_ev_iff)
+proof(coinduction)
+  case alw
+  then show ?case
+    apply simp
+    apply (case_tac "shd t")
+    apply simp
+    by (simp add: possible_steps_not_init alw_not_some)
+qed
+
+lemma vend_gets_stuck: "stl t = (STR ''vend'', []) ## x2 \<Longrightarrow> \<not>ev (\<lambda>s. statename (shd s) = Some 2) (make_full_observation drinks (Some 1) <R 1 := Num 0> ((STR ''vend'', []) ## x2))"
+  apply (simp add: not_ev_iff)
+proof(coinduction)
+  case alw
+  then show ?case
+    by (simp add: vend_insufficient alw_not_some)
+qed
+
+lemma possible_steps_1_invalid: "x1 \<noteq> (STR ''coin'', []) \<Longrightarrow>
+       x1 \<noteq> (STR ''vend'', []) \<Longrightarrow>
+       possible_steps drinks 1 <R 1 := Num 0> (fst x1) (snd x1) = {||}"
+  apply (simp add: possible_steps_def ffilter_def fset_both_sides Abs_fset_inverse drinks_def Set.filter_def)
+  apply safe
+   apply (simp add: coin_def)
+   apply (metis prod.collapse)
+  by (simp add: vend_def gval.simps ValueGt_def)
+
+
+lemma invalid_gets_stuck: "x1 \<noteq> (STR ''coin'', []) \<Longrightarrow>
+                           x1 \<noteq> (STR ''vend'', []) \<Longrightarrow>
+                           \<not>ev (\<lambda>s. statename (shd s) = Some 2) (make_full_observation drinks (Some 1) <R 1 := Num 0> (x1 ## x2))"
+  apply (simp add: not_ev_iff)
+proof(coinduction)
+  case alw
+  then show ?case
+    by (simp add: possible_steps_1_invalid alw_not_some)
+qed
+
 lemma must_pay_correct: "((ev (StateEq (Some 2))) impl (not(LabelEq ''vend'') suntil LabelEq ''coin'')) (watch drinks t)"
   apply clarify
+  unfolding LabelEq_def StateEq_def
+  apply (simp add: watch_def implode_vend implode_coin)
+  apply (case_tac "shd t = (STR ''init'', [])")
+   defer
+   apply (simp add: shd_not_init)
+  apply (simp add: make_full_observation_unfold possible_steps_init updates_init)
   apply (rule suntil.step)
-  using label_vend_not_2 apply blast
-  sorry
+   apply simp
+  apply simp
+  apply (case_tac "stl t")
+  apply simp
+  apply (case_tac "x1 = (STR ''coin'', [])")
+   apply (simp add: suntil.base)
+  apply (case_tac "x1 = (STR ''vend'', [])")
+   apply (simp add: ev_Stream vend_gets_stuck)
+  by (simp add: ev_Stream invalid_gets_stuck)
 end

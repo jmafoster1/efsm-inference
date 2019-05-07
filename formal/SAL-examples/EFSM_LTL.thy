@@ -58,7 +58,7 @@ definition StateEq :: "nat option \<Rightarrow> state stream \<Rightarrow> bool"
 definition LabelEq :: "string \<Rightarrow> state stream \<Rightarrow> bool" where
   "LabelEq v s \<equiv> fst (event (shd s)) = (String.implode v)"
 
-lemma watch_label: "LabelEq l (watch drinks t) = (fst (shd t) = String.implode l)"
+lemma watch_label: "LabelEq l (watch e t) = (fst (shd t) = String.implode l)"
   by (simp add: LabelEq_def watch_def)
 
 fun "checkInx" :: "ior \<Rightarrow> nat \<Rightarrow> (value option \<Rightarrow> value option \<Rightarrow> trilean) \<Rightarrow> value option \<Rightarrow> state stream \<Rightarrow> bool" where
@@ -129,5 +129,10 @@ qed
 lemma event_components: "(LabelEq l aand InputEq i) s = (event (shd s) = (String.implode l, i))"
   apply (simp add: LabelEq_def InputEq_def)
   by (metis fst_conv prod.collapse snd_conv)
+
+lemma alw_not_some: "alw (\<lambda>xs. statename (shd xs) \<noteq> Some s) (make_full_observation e None r t)"
+  using once_none_always_none[of e r t]
+  unfolding StateEq_def
+  by (simp add: alw_mono)
 
 end
