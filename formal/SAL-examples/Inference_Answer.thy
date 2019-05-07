@@ -8,7 +8,7 @@ definition coin :: transition where
   "coin = \<lparr>Label = STR ''coin'', Arity = 1, Guard = [], Outputs = [Plus (V (R 2)) (V (I 1))], Updates = [(R 2, Plus (V (R 2)) (V (I 1)))]\<rparr>"
 
 definition vend :: transition where
-  "vend = \<lparr>Label = STR ''vend'', Arity = 0, Guard = [], Outputs = [V (R (1))], Updates = []\<rparr>"
+  "vend = \<lparr>Label = STR ''vend'', Arity = 0, Guard = [], Outputs = [V (R 1)], Updates = []\<rparr>"
 
 definition drinks :: transition_matrix where
   "drinks = {|((0, 1), select), ((1, 1), coin), ((1, 4), vend)|}"

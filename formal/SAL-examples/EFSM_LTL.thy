@@ -135,4 +135,7 @@ lemma alw_not_some: "alw (\<lambda>xs. statename (shd xs) \<noteq> Some s) (make
   unfolding StateEq_def
   by (simp add: alw_mono)
 
+lemma decompose_pair: "e \<noteq> (l, i) = (\<not> (fst e =l \<and> snd e = i))"
+  by (metis fst_conv prod.collapse sndI)
+
 end

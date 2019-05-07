@@ -1,5 +1,5 @@
 theory Filesystem
-imports "../Contexts" "../EFSM" "HOL-Library.Code_Target_Int"
+imports "../Contexts" "../EFSM"
 begin
 
 \<comment> \<open> Takes a user ID and stores it in r1 \<close>

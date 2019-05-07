@@ -266,20 +266,13 @@ lemma every_event_step: "\<forall>s r.  s |\<in>| S filesystem \<longrightarrow>
   apply (rule_tac x="[]" in exI)
   by (simp add: possible_steps_1_logout)
 
-text_raw{*\snip{userdetails}{1}{2}{%*}
-lemma user_details_stored_in_r1: "((\<lambda>s. (event (shd s) = ((STR ''login''),  [u]))) impl (nxt (\<lambda>s. datastate (shd s) (R 1) = Some (u)))) (watch filesystem i)"
-  proof (cases u)
-    case (Num x1)
-    then show ?thesis
-      by (simp add: possible_steps_0 login_def watch_def)
-  next
-    case (Str x2)
-    then show ?thesis
-      by (simp add: possible_steps_0 login_def watch_def)
-  qed
-text_raw{*}%endsnip*}
+lemma implode_login: "String.implode ''login'' = STR ''login''"
+  by (metis Literal.rep_eq String.implode_explode_eq zero_literal.rep_eq)
 
-lemma login_user_first: "alw non_null (watch filesystem i) \<Longrightarrow> (login_user (watch filesystem i) = (shd i = ((STR ''login''), [Str ''user''])))"
-  by (simp add: watch_def)
+text_raw{*\snip{userdetails}{1}{2}{%*}
+lemma LTL_user_details_stored_in_r1: "((LabelEq ''login'' aand InputEq [u]) impl
+                                      (nxt (checkInx rg 1 ValueEq (Some u)))) (watch filesystem i)"
+  by (simp add: event_components implode_login possible_steps_0 login_def watch_def ValueEq_def)  
+text_raw{*}%endsnip*}
 
 end

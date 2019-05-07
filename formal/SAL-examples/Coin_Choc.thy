@@ -64,16 +64,9 @@ proof-
     by (simp add: StateEq_def possible_steps_not_init)
 qed
 
-(* make_full_observation drinks (Some 0) Map.empty t *)
-lemma make_full_observation_unfold: "make_full_observation drinks (Some 0) Map.empty t = (let (s', o', d') =
-                                     ltl_step drinks (Some 0) Map.empty (shd t) in
-                                      \<lparr>statename = (Some 0), datastate = Map.empty, event=(shd t), output = o'\<rparr>##(make_full_observation drinks s' d' (stl t)))"
-  using make_full_observation.code by blast
-
 lemma make_full_obs_neq: "make_full_observation drinks (fst (ltl_step drinks (Some 0) Map.empty (shd t))) (snd (snd (ltl_step drinks (Some 0) Map.empty (shd t))))
      (stl t) \<noteq>
     make_full_observation drinks (Some 0) Map.empty t"
-  apply (simp add: make_full_observation_unfold)
   apply (case_tac "ltl_step drinks (Some 0) Map.empty (shd t)")
   apply (case_tac "shd t")
     apply simp
@@ -263,13 +256,14 @@ lemma implode_vend: "String.implode ''vend'' = STR ''vend''"
 lemma implode_coin: "String.implode ''coin'' = STR ''coin''"
   by (metis Literal.rep_eq String.implode_explode_eq zero_literal.rep_eq)
 
-lemma label_vend_not_2: "LabelEq ''vend'' (watch drinks t) \<Longrightarrow> not (ev (StateEq (Some 2))) (watch drinks t)"
+lemma LTL_label_vend_not_2: "((LabelEq ''vend'') impl (not (ev (StateEq (Some 2))))) (watch drinks t)"
   apply (simp only: watch_label implode_vend not_ev_iff)
-  apply (simp add: watch_def make_full_observation_unfold possible_steps_not_init)
+  apply (simp add: watch_def)
+  apply clarify
 proof(coinduction)
   case alw
   then show ?case
-    apply (simp add: StateEq_def)
+    apply (simp add: StateEq_def possible_steps_not_init)
     apply (rule disjI2)
     using once_none_always_none
     unfolding StateEq_def
@@ -289,8 +283,9 @@ lemma vend_insufficient: "possible_steps drinks 1 <R 1 := Num 0> STR ''vend'' i 
    apply (simp add: coin_def)
   by (simp add: vend_def gval.simps ValueGt_def)
 
-lemma aux2: "LabelEq ''vend'' (stl (watch drinks t)) \<Longrightarrow> \<not> ev (StateEq (Some 2)) (watch drinks t)"
+lemma LTL_aux2: "((nxt (LabelEq ''vend'')) impl not (ev (StateEq (Some 2)))) (watch drinks t)"
   apply (simp add: watch_def LabelEq_def implode_vend not_ev_iff)
+  apply clarify
 proof(coinduction)
   case alw
   then show ?case
@@ -311,14 +306,14 @@ proof(coinduction)
   qed
 qed
 
-lemma init_makes_r_1_zero: "((LabelEq ''init'' aand InputEq []) impl nxt (checkInx rg 1 ValueEq (Some (Num 0)))) (watch drinks t)"
+lemma LTL_init_makes_r_1_zero: "((LabelEq ''init'' aand InputEq []) impl nxt (checkInx rg 1 ValueEq (Some (Num 0)))) (watch drinks t)"
   apply (case_tac "shd t = (STR ''init'', [])")
    apply (simp add: possible_steps_init updates_init ValueEq_def watch_def)
   apply clarify
   using not_init
   by simp
 
-lemma must_pay_wrong: "((not (LabelEq ''vend'' suntil LabelEq ''coin'')) suntil StateEq None) (watch drinks t)"
+lemma LTL_must_pay_wrong: "((not (LabelEq ''vend'' suntil LabelEq ''coin'')) suntil StateEq None) (watch drinks t)"
   oops
 
 lemma shd_not_init: "shd t \<noteq> (STR ''init'', []) \<Longrightarrow> \<not> ev (\<lambda>s. statename (shd s) = Some 2) (make_full_observation drinks (Some 0) Map.empty t)"
@@ -360,22 +355,73 @@ proof(coinduction)
     by (simp add: possible_steps_1_invalid alw_not_some)
 qed
 
-lemma must_pay_correct: "((ev (StateEq (Some 2))) impl (not(LabelEq ''vend'') suntil LabelEq ''coin'')) (watch drinks t)"
+lemma LTL_vend_no_coin: "((nxt (LabelEq ''vend'' aand InputEq [])) impl not (ev (StateEq (Some 2)))) (watch drinks t)"
+  apply (simp add: not_ev_iff event_components implode_vend watch_def StateEq_def)
+  apply clarify
+proof(coinduction)
+  case alw
+  then show ?case
+    apply simp
+    apply (case_tac "shd t = (STR ''init'', [])")
+     defer
+    apply (simp add: decompose_pair)
+     apply (simp add: possible_steps_not_init alw_not_some)
+    apply (simp add: possible_steps_init updates_init)
+    apply (rule disjI2)
+  proof(coinduction)
+    case alw
+    then show ?case
+      apply (simp add: vend_insufficient)
+     by (simp add: possible_steps_not_init alw_not_some)
+  qed
+qed
+
+lemma LTL_invalid_gets_stuck_2:
+  "(((nxt (not (LabelEq ''coin'' aand InputEq []))) aand
+   (nxt (not (LabelEq ''vend'' aand InputEq [])))) impl
+   (not (ev (StateEq (Some 2))))) (watch drinks t)"
+  apply (simp add: not_ev_iff event_components)
+  unfolding watch_def StateEq_def LabelEq_def InputEq_def
+  apply clarify
+proof(coinduction)
+  case alw
+  then show ?case
+    apply (simp add: implode_coin implode_vend)
+    apply (case_tac "shd t = (STR ''init'', [])")
+     defer
+     apply (simp only: decompose_pair)
+    using possible_steps_not_init alw_not_some
+     apply simp
+    apply (simp add: possible_steps_init updates_init)
+    apply (rule disjI2)
+    using invalid_gets_stuck[of "shd (stl t)" "stl (stl t)"]
+    by (simp add: alw_ev)
+qed
+
+
+lemma LTL_must_pay_correct: "((ev (StateEq (Some 2))) impl (not(LabelEq ''vend'') suntil LabelEq ''coin'')) (watch drinks t)"
   apply clarify
   unfolding LabelEq_def StateEq_def
   apply (simp add: watch_def implode_vend implode_coin)
   apply (case_tac "shd t = (STR ''init'', [])")
    defer
    apply (simp add: shd_not_init)
-  apply (simp add: make_full_observation_unfold possible_steps_init updates_init)
   apply (rule suntil.step)
    apply simp
   apply simp
-  apply (case_tac "stl t")
-  apply simp
-  apply (case_tac "x1 = (STR ''coin'', [])")
+  apply (simp add: possible_steps_init updates_init)
+  apply (case_tac "shd (stl t) = (STR ''coin'', [])")
    apply (simp add: suntil.base)
-  apply (case_tac "x1 = (STR ''vend'', [])")
-   apply (simp add: ev_Stream vend_gets_stuck)
-  by (simp add: ev_Stream invalid_gets_stuck)
+  apply (case_tac "shd (stl t) = (STR ''vend'', [])")
+   apply (rule suntil.step)
+  using LTL_vend_no_coin[of t]
+  unfolding watch_def event_components implode_vend
+  apply simp
+  using LTL_vend_no_coin[of t]
+  unfolding watch_def event_components implode_vend
+  apply simp
+  using LTL_invalid_gets_stuck_2[of t]
+  unfolding event_components implode_coin implode_vend StateEq_def watch_def
+  by simp
+ 
 end
