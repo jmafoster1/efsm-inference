@@ -1,4 +1,4 @@
-theory Coin_Choc
+theory Coin_Choc_Broken
   imports EFSM_LTL
 begin
 
@@ -27,7 +27,7 @@ definition vend :: transition where
 "vend \<equiv> \<lparr>
         Label = (STR ''vend''),
         Arity = 0,
-        Guard = [GExp.Gt (V (R 1)) (L (Num 0))],
+        Guard = [GExp.Ge (V (R 1)) (L (Num 0))],
         Outputs = [],
         Updates = [(R 1, (Minus (V (R 1)) (L (Num 1))))]
       \<rparr>"
