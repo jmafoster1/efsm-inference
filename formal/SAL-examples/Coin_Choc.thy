@@ -398,7 +398,6 @@ proof(coinduction)
     by (simp add: alw_ev)
 qed
 
-
 lemma LTL_must_pay_correct: "((ev (StateEq (Some 2))) impl (not(LabelEq ''vend'') suntil LabelEq ''coin'')) (watch drinks t)"
   apply clarify
   unfolding LabelEq_def StateEq_def
@@ -422,6 +421,11 @@ lemma LTL_must_pay_correct: "((ev (StateEq (Some 2))) impl (not(LabelEq ''vend''
   apply simp
   using LTL_invalid_gets_stuck_2[of t]
   unfolding event_components implode_coin implode_vend StateEq_def watch_def
+    apply simp
+  using LTL_vend_no_coin[of t]
+  unfolding event_components implode_coin implode_vend StateEq_def watch_def
+   apply simp 
+  using LTL_invalid_gets_stuck_2[of t]
+  unfolding event_components implode_coin implode_vend StateEq_def watch_def
   by simp
- 
 end
