@@ -400,32 +400,23 @@ qed
 
 lemma LTL_must_pay_correct: "((ev (StateEq (Some 2))) impl (not(LabelEq ''vend'') suntil LabelEq ''coin'')) (watch drinks t)"
   apply clarify
-  unfolding LabelEq_def StateEq_def
-  apply (simp add: watch_def implode_vend implode_coin)
+  unfolding LabelEq_def StateEq_def implode_vend implode_coin
+  apply (simp add: watch_def)
   apply (case_tac "shd t = (STR ''init'', [])")
    defer
    apply (simp add: shd_not_init)
   apply (rule suntil.step)
    apply simp
-  apply simp
   apply (simp add: possible_steps_init updates_init)
   apply (case_tac "shd (stl t) = (STR ''coin'', [])")
    apply (simp add: suntil.base)
   apply (case_tac "shd (stl t) = (STR ''vend'', [])")
    apply (rule suntil.step)
   using LTL_vend_no_coin[of t]
-  unfolding watch_def event_components implode_vend
-  apply simp
+  apply (simp add: event_components implode_vend StateEq_def watch_def ev_mono)
   using LTL_vend_no_coin[of t]
-  unfolding watch_def event_components implode_vend
-  apply simp
+  apply (simp add: event_components implode_vend StateEq_def watch_def ev_mono)
   using LTL_invalid_gets_stuck_2[of t]
-  unfolding event_components implode_coin implode_vend StateEq_def watch_def
-    apply simp
-  using LTL_vend_no_coin[of t]
-  unfolding event_components implode_coin implode_vend StateEq_def watch_def
-   apply simp 
-  using LTL_invalid_gets_stuck_2[of t]
-  unfolding event_components implode_coin implode_vend StateEq_def watch_def
-  by simp
+  by (simp add: event_components implode_vend implode_coin StateEq_def watch_def ev_mono)
+
 end
