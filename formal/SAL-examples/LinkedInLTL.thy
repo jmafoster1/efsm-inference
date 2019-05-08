@@ -100,26 +100,26 @@ definition linkedIn :: transition_matrix where
 )
 );*)
 
-lemma neverDetailed: 
+lemma LTL_neverDetailed:
     "(alw ((LabelEq ''login'' aand
      checkInx ip 1 ValueEq (Some (Str ''free''))) impl (nxt (alw ((LabelEq ''pdf'' aand
      checkInx ip 1 ValueEq (Some (Str ''otherID''))) impl (nxt (not (checkInx op 1 ValueEq (Some (Str ''pdfDetailed''))))))))))
      (watch linkedIn i)"
   oops
 
-lemma labelNotAlwaysLogin: "not (alw (LabelEq ''login'')) (watch linkedIn i)"
+lemma LTL_labelNotAlwaysLogin: "not (alw (LabelEq ''login'')) (watch linkedIn i)"
   oops
 
-lemma testStateEqSome: "((StateEq (Some 0)) until (StateEq (Some 1))) (watch linkedIn i)"
+lemma LTL_testStateEqSome: "((StateEq (Some 0)) until (StateEq (Some 1))) (watch linkedIn i)"
   oops
 
-lemma testStateEqNone: "(ev (StateEq None)) (watch linkedIn i)"
+lemma LTL_testStateEqNone: "(ev (StateEq None)) (watch linkedIn i)"
   oops
 
-lemma testInputEq: "((((StateEq (Some 0)) aand (LabelEq ''login'')) aand (InputEq [Str ''free''])) impl (nxt (StateEq (Some 1)))) (watch linkedIn i)" 
+lemma LTL_testInputEq: "((((StateEq (Some 0)) aand (LabelEq ''login'')) aand (InputEq [Str ''free''])) impl (nxt (StateEq (Some 1)))) (watch linkedIn i)"
   oops
 
-lemma testOutputEq: "(alw (StateEq (Some 3) aand InputEq [Str ''otherID'', Str ''OUT_OF_NETWORK'', Str ''MNn5'']) impl OutputEq [Some (Str ''summaryPDF'')]) (watch linkedIn i)"
+lemma LTL_testOutputEq: "(alw (StateEq (Some 3) aand InputEq [Str ''otherID'', Str ''OUT_OF_NETWORK'', Str ''MNn5'']) impl OutputEq [Some (Str ''summaryPDF'')]) (watch linkedIn i)"
   oops
 
 end
