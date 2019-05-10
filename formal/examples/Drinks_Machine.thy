@@ -95,7 +95,7 @@ definition drinks :: "transition_matrix" where
 "drinks \<equiv> {|
           ((0,1), select),    \<comment> \<open> If we want to go from state 1 to state 2 then select will do that \<close>
           ((1,1), coin),
-          ((1, 1), vend_fail), \<comment> \<open> If we want to go from state 2 to state 2 then coin will do that \<close>
+          ((1,1), vend_fail), \<comment> \<open> If we want to go from state 2 to state 2 then coin will do that \<close>
           ((1,2), vend) \<comment> \<open> If we want to go from state 2 to state 3 then vend will do that \<close>
          |}"
 

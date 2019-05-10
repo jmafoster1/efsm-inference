@@ -146,9 +146,7 @@ lemma possible_steps_coin: "possible_steps drinks 1 r STR ''coin'' [] = {|(1, co
   by (simp_all add: vend_def coin_def)
 
 lemma possible_steps_vend_insufficient: "n \<le> 0 \<Longrightarrow> possible_steps drinks 1 <R 1 := Num n> STR ''vend'' [] = {||}"
-  apply (simp add: possible_steps_def ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def drinks_def)
-  apply safe
-  by (simp_all add: vend_def coin_def gval.simps ValueGt_def)
+  oops
 
 lemma possible_steps_vend_sufficient: "n > 0 \<Longrightarrow> possible_steps drinks 1 <R 1 := Num n> STR ''vend'' [] = {|(2, vend)|}"
   apply (simp add: possible_steps_alt ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def drinks_def)
@@ -172,8 +170,7 @@ lemma less_than_zero_not_nxt_2: "n \<le> 0 \<Longrightarrow> \<not>statename (sh
   apply (case_tac "shd t = (STR ''coin'', [])")
       apply (simp add: possible_steps_coin)
   apply (case_tac "shd t = (STR ''vend'', [])")
-      apply (simp add: possible_steps_vend_insufficient ValueGt_def)
-  by (simp add: invalid_possible_steps_1 StateEq_def)
+  oops
 
 lemma possible_steps_2: "possible_steps drinks 2 r (fst (shd t)) (snd (shd t)) = {||}"
   by (simp add: possible_steps_def ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def drinks_def)
@@ -225,12 +222,7 @@ lemma next_not_lt_zero: "n \<ge> 0 \<Longrightarrow> nxt (\<lambda>xs. MaybeBool
     apply simp
     apply (case_tac "shd t = (STR ''vend'', [])")
     apply (case_tac "n = 0")
-      apply (simp add: possible_steps_vend_insufficient)
-     apply (simp add: possible_steps_vend_sufficient updates_vend)
-    apply (case_tac "shd t = (STR ''coin'', [])")
-    defer
-     apply (simp add: invalid_possible_steps_1)
-  by (simp add: possible_steps_coin updates_coin)
+  oops
 
 lemma StateEq_None_not_Some: "StateEq None s \<Longrightarrow> \<not> StateEq (Some n) s"
   by (simp add: StateEq_def)
@@ -278,10 +270,7 @@ lemma possible_steps_0: "possible_steps drinks 0 Map.empty l i = finsert x S' \<
   by auto
 
 lemma vend_insufficient: "possible_steps drinks 1 <R 1 := Num 0> STR ''vend'' i = {||}"
-  apply (simp add: possible_steps_def ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def drinks_def)
-  apply safe
-   apply (simp add: coin_def)
-  by (simp add: vend_def gval.simps ValueGt_def)
+  oops
 
 lemma LTL_aux2: "((nxt (LabelEq ''vend'')) impl not (ev (StateEq (Some 2)))) (watch drinks t)"
   apply (simp add: watch_def LabelEq_def implode_vend not_ev_iff)
@@ -299,12 +288,7 @@ proof(coinduction)
   proof(coinduction)
     case alw
     then show ?case
-      apply (simp add: vend_insufficient)
-      apply (rule disjI2)
-      using alw_not_some
-      by simp
-  qed
-qed
+      oops
 
 lemma LTL_init_makes_r_1_zero: "((LabelEq ''init'' aand InputEq []) impl nxt (checkInx rg 1 ValueEq (Some (Num 0)))) (watch drinks t)"
   apply (case_tac "shd t = (STR ''init'', [])")
@@ -332,8 +316,7 @@ lemma vend_gets_stuck: "stl t = (STR ''vend'', []) ## x2 \<Longrightarrow> \<not
 proof(coinduction)
   case alw
   then show ?case
-    by (simp add: vend_insufficient alw_not_some)
-qed
+    oops
 
 lemma possible_steps_1_invalid: "x1 \<noteq> (STR ''coin'', []) \<Longrightarrow>
        x1 \<noteq> (STR ''vend'', []) \<Longrightarrow>
@@ -342,8 +325,7 @@ lemma possible_steps_1_invalid: "x1 \<noteq> (STR ''coin'', []) \<Longrightarrow
   apply safe
    apply (simp add: coin_def)
    apply (metis prod.collapse)
-  by (simp add: vend_def gval.simps ValueGt_def)
-
+  oops
 
 lemma invalid_gets_stuck: "x1 \<noteq> (STR ''coin'', []) \<Longrightarrow>
                            x1 \<noteq> (STR ''vend'', []) \<Longrightarrow>
@@ -352,8 +334,7 @@ lemma invalid_gets_stuck: "x1 \<noteq> (STR ''coin'', []) \<Longrightarrow>
 proof(coinduction)
   case alw
   then show ?case
-    by (simp add: possible_steps_1_invalid alw_not_some)
-qed
+    oops
 
 lemma LTL_vend_no_coin: "((nxt (LabelEq ''vend'' aand InputEq [])) impl not (ev (StateEq (Some 2)))) (watch drinks t)"
   apply (simp add: not_ev_iff event_components implode_vend watch_def StateEq_def)
@@ -371,10 +352,7 @@ proof(coinduction)
   proof(coinduction)
     case alw
     then show ?case
-      apply (simp add: vend_insufficient)
-     by (simp add: possible_steps_not_init alw_not_some)
-  qed
-qed
+      oops
 
 lemma LTL_invalid_gets_stuck_2:
   "(((nxt (not (LabelEq ''coin'' aand InputEq []))) aand
@@ -394,9 +372,7 @@ proof(coinduction)
      apply simp
     apply (simp add: possible_steps_init updates_init)
     apply (rule disjI2)
-    using invalid_gets_stuck[of "shd (stl t)" "stl (stl t)"]
-    by (simp add: alw_ev)
-qed
+    oops
 
 
 (* Ramsay, this is the proof you want!
