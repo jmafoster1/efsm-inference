@@ -2,12 +2,8 @@ theory LinkedInLTL
 imports EFSM_LTL
 
 begin
-abbreviation "outside \<equiv> (0::nat)"
-abbreviation "loggedIn \<equiv> (1::nat)"
-abbreviation "viewDetailed \<equiv> (2::nat)"
-abbreviation "viewSummary \<equiv> (3::nat)"
-abbreviation "pdfDetailed \<equiv> (4::nat)"
-abbreviation "pdfSummary \<equiv> (5::nat)"
+
+declare One_nat_def [simp del]
 
 definition login :: transition where
 "login \<equiv> \<lparr>
@@ -76,23 +72,56 @@ definition pdfOtherOON :: "transition" where
 "pdfOtherOON \<equiv> \<lparr>
         Label = (STR ''pdf''),
         Arity = 3,
-        Guard = [gexp.Eq (V (I 1)) (L (Str ''otherID'')), gexp.Eq (V (I 2)) (L (Str ''OUT_OF_NETWORK'')), gexp.Eq (V (I 3)) (L (Str ''MNn5''))],
+        Guard = [gexp.Eq (V (I 1)) (L (Str ''otherID'')),
+                 gexp.Eq (V (I 2)) (L (Str ''OUT_OF_NETWORK'')),
+                 gexp.Eq (V (I 3)) (L (Str ''MNn5''))],
         Outputs = [L (Str ''summaryPDF'')],
         Updates = []
       \<rparr>"
 
 definition linkedIn :: transition_matrix where
 "linkedIn \<equiv> {|
-              ((outside,loggedIn), login),
-              ((loggedIn,viewDetailed), viewFriend),
-              ((loggedIn,viewDetailed), viewOther),
-              ((loggedIn,viewSummary), viewOtherOON),
-              ((loggedIn,viewSummary), viewOtherFuzz),
-              ((viewSummary, pdfSummary), pdfOtherOON),
-              ((viewSummary, pdfDetailed), pdfOther),
-              ((viewDetailed, pdfDetailed), pdfFriend),
-              ((viewDetailed, pdfDetailed), pdfOther)
+              ((0,1), login),
+              ((1,2), viewFriend),
+              ((1,2), viewOther),
+              ((1,3), viewOtherOON),
+              ((1,3), viewOtherFuzz),
+              ((3, 5), pdfOtherOON),
+              ((3, 4), pdfOther),
+              ((2, 4), pdfFriend),
+              ((2, 4), pdfOther)
          |}"
+
+lemma implode_login: "String.implode ''login'' = STR ''login''"
+  by (metis Literal.rep_eq String.implode_explode_eq zero_literal.rep_eq)
+
+lemma implode_pdf: "String.implode ''pdf'' = STR ''pdf''"
+  by (metis Literal.rep_eq String.implode_explode_eq zero_literal.rep_eq)
+
+lemma possible_steps_login: "possible_steps linkedIn 0 Map.empty STR ''login'' [EFSM.Str ''free''] = {|(1, login)|}"
+  by eval
+
+lemma apply_updates_login: "apply_updates (Updates login) (case_vname (\<lambda>n. if n = 1 then Some (EFSM.Str ''free'') else input2state [] (1 + 1) (I n)) Map.empty)
+         Map.empty = <>"
+  apply (rule ext)
+  by (simp add: login_def)
+
+lemma possible_steps_1_pdf: "possible_steps linkedIn 1 Map.empty STR ''pdf'' [EFSM.Str ''otherID'', type, token] = {||}"
+  apply (simp add: possible_steps_def ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def linkedIn_def)
+  apply safe
+  by (simp_all add: viewFriend_def viewOther_def viewOtherOON_def viewOtherFuzz_def)
+
+lemma "alw (\<lambda>xs. event (shd xs) = (String.implode ''pdf'', [EFSM.Str ''otherID'', type, token]) \<longrightarrow>
+              ValueEq (EFSM_LTL.Outputs 1 (stl xs)) (Some (EFSM.Str ''detailedPDF'')) \<noteq> trilean.true)
+     (make_full_observation linkedIn (Some 1) Map.empty (stl i))"
+proof(coinduction)
+  case alw
+  then show ?case
+    apply (simp add: event_components implode_pdf possible_steps_1_pdf)
+    apply standard
+    apply (simp add: ValueEq_def)
+     
+qed
 
 (*neverDetailed: THEOREM linkedIn |- G(
 (label=login AND ip_1_login_1=String_free) => X(G(
@@ -101,17 +130,21 @@ definition linkedIn :: transition_matrix where
 );*)
 
 lemma LTL_neverDetailed:
-    "(alw ((LabelEq ''login'' aand
-     checkInx ip 1 ValueEq (Some (Str ''free''))) impl (nxt (alw ((LabelEq ''pdf'' aand
-     checkInx ip 1 ValueEq (Some (Str ''otherID''))) impl (nxt (not (checkInx op 1 ValueEq (Some (Str ''pdfDetailed''))))))))))
+    "(alw ((LabelEq ''login'' aand InputEq [Str ''free'']) impl
+          (nxt (alw ((LabelEq ''pdf'' aand InputEq [(Str ''otherID''), type, token]) impl
+          (nxt (not (checkInx op 1 ValueEq (Some (Str ''detailedPDF''))))))))))
      (watch linkedIn i)"
-  oops
+proof(coinduction)
+  case alw
+  then show ?case
+    apply simp
+    apply standard
+     apply (simp add: event_components implode_login)
+     apply clarify
+     apply (simp add: watch_def possible_steps_login apply_updates_login)
 
-lemma LTL_labelNotAlwaysLogin: "not (alw (LabelEq ''login'')) (watch linkedIn i)"
-  oops
 
-lemma LTL_testStateEqSome: "((StateEq (Some 0)) until (StateEq (Some 1))) (watch linkedIn i)"
-  oops
+qed
 
 lemma LTL_testStateEqNone: "(ev (StateEq None)) (watch linkedIn i)"
   oops
