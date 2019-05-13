@@ -119,17 +119,16 @@ object Dirties {
   }
 
   def initiallyUndefinedContextCheck(e: iEFSM, r: Nat.nat, s: Nat.nat): Boolean = {
-    // val f = "intermediate_"+System.currentTimeMillis()
-    // TypeConversion.efsmToSALTranslator(Inference.tm(e), f)
-    //
-    // addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = State_${valueOf(s)} => r_${valueOf(r)} = ValueOption ! None);")
-    //
-    // val output = Seq("bash", "-c", "cd salfiles; sal-smc --assertion='" + f + "{100}!initiallyUndefined'").!!
-    // if (output.toString != "proved.\n") {
-    //   print(output)
-    // }
-    // return (output.toString == "proved.\n")
-    return true
+    val f = "intermediate_"+System.currentTimeMillis()
+    TypeConversion.efsmToSALTranslator(Inference.tm(e), f)
+
+    addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = State_${valueOf(s)} => r_${valueOf(r)} = ValueOption ! None);")
+
+    val output = Seq("bash", "-c", "cd salfiles; sal-smc --assertion='" + f + "{100}!initiallyUndefined'").!!
+    if (output.toString != "proved.\n") {
+      print(output)
+    }
+    return (output.toString == "proved.\n")
   }
 
   def salValue(v: Value.value): String = v match {
@@ -138,13 +137,6 @@ object Dirties {
   }
 
 
-  // TODO: Convert the old EFSM to SAL and check
-  //         U(cfstate /= NULL_STATE, cfstate=State_2) =>
-  //         U(label = coin => I(1) = NUM(50), X(cfstate = NULL_STATE));
-  //       Then convert the new EFSM and check
-  //         U(cfstate /= NULL_STATE, cfstate = State_1) =>
-  //         U(label = select => I(1) = STR(String_coke), cfstate = NULL_STATE) =>
-  //         U(cfstate = State_1 => r_1 = Some(STR(String_coke)), cfstate=NULL_STATE);
   def generaliseOutputContextCheck(l: String, ePrime: iEFSM, e: iEFSM, r: Nat.nat, v: Value.value, s_old: Nat.nat, s_new: Nat.nat): Boolean = {
     val f_old = "orig_"+System.currentTimeMillis()
     TypeConversion.efsmToSALTranslator(Inference.tm(e), f_old)
@@ -187,22 +179,18 @@ object Dirties {
                                 return false
                               }
                               else if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1, t2, b, s_prime)) {
-                                // This needs modifying to model check but it should be OK for now
                                 println("y")
                                 return true
                               }
                               else if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t2, t1, b, s_prime)) {
-                                // This needs modifying to model check but it should be OK for now
                                 println("n")
                                 return false
                               }
                               else if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1, t2, b, a, s, s_prime)) {
-                                // This needs modifying to model check but it should be OK for now
                                 println("y")
                                 return true
                               }
                               else if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t2, t1, b, a, s, s_prime)) {
-                                // This needs modifying to model check but it should be OK for now
                                 println("n")
                                 return false
                               }
