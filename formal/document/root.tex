@@ -48,6 +48,10 @@
 
 \newcommand{\orcidID}[1]{} % temp. hack
 
+\newcommand{\repeatisanl}[1]
+{\ifnum#1=0\else\isanewline\repeatisanl{\numexpr#1-1}\fi}
+\newcommand{\snip}[4]{\repeatisanl#2#4\repeatisanl#3}
+
 \title{A Formal Model of Extended Finite State Machine}%
 \author{Michael~Foster\orcidID{0000-0001-8233-9873} \and
  Ramsay~G.~Taylor\orcidID{0000-0002-4036-7590} \and
@@ -69,11 +73,11 @@
   \maketitle
   \thispagestyle{empty}
   \begin{abstract}
-    In this article, we formalize 
+    In this article, we formalize
 
 
     \bigskip
-    \noindent{\textbf{Keywords:}} 
+    \noindent{\textbf{Keywords:}}
   \end{abstract}
 \end{titlepage}
 \cleardoublepage

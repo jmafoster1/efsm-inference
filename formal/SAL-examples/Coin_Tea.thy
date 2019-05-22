@@ -1,43 +1,45 @@
-theory Coin_Choc
+theory Coin_Tea
   imports EFSM_LTL
 begin
 
 declare One_nat_def [simp del]
 declare ValueLt_def [simp]
 
+text_raw{*\snip{cointea}{1}{2}{%*}
 definition init :: transition where
 "init \<equiv> \<lparr>
-        Label = (STR ''init''),
-        Arity = 0,
-        Guard = [],
-        Outputs = [],
-        Updates = [(R 1, (L (Num 0)))]
-      \<rparr>"
+          Label = (STR ''init''),
+          Arity = 0,
+          Guard = [],
+          Outputs = [],
+          Updates = [(R 1, (L (Num 0)))]
+        \<rparr>"
 
 definition coin :: transition where
 "coin \<equiv> \<lparr>
-        Label = (STR ''coin''),
-        Arity = 0,
-        Guard = [],
-        Outputs = [],
-        Updates = [(R 1, (Plus (V (R 1)) (L (Num 1))))]
-      \<rparr>"
+          Label = (STR ''coin''),
+          Arity = 0,
+          Guard = [],
+          Outputs = [],
+          Updates = [(R 1, (Plus (V (R 1)) (L (Num 1))))]
+        \<rparr>"
 
 definition vend :: transition where
 "vend \<equiv> \<lparr>
-        Label = (STR ''vend''),
-        Arity = 0,
-        Guard = [GExp.Gt (V (R 1)) (L (Num 0))],
-        Outputs = [],
-        Updates = [(R 1, (Minus (V (R 1)) (L (Num 1))))]
-      \<rparr>"
+          Label = (STR ''vend''),
+          Arity = 0,
+          Guard = [GExp.Gt (V (R 1)) (L (Num 0))],
+          Outputs = [L (Str ''tea'')],
+          Updates = []
+        \<rparr>"
 
 definition drinks :: "transition_matrix" where
 "drinks \<equiv> {|
-          ((0,1), init),
-          ((1,1), coin),
-          ((1,2), vend)
+            ((0,1), init),
+            ((1,1), coin),
+            ((1,2), vend)
           |}"
+text_raw{*}%endsnip*}
 
 lemma "(not (LabelEq ''vend'') until (LabelEq ''coin'')) (watch drinks t)"
   oops
@@ -72,9 +74,9 @@ lemma make_full_obs_neq: "make_full_observation drinks (fst (ltl_step drinks (So
     apply simp
     apply (case_tac "aa = STR ''init'' \<and> ba = []")
    apply (simp add: possible_steps_init init_def)
-  apply (metis (no_types, lifting) make_full_observation.simps(1) option.inject state.ext_inject stream.sel(1) zero_neq_one)
+  apply (metis (no_types, lifting) make_full_observation.simps(1) option.inject state.ext_inject zero_neq_one)
   apply (simp add: possible_steps_not_init)
-  by (metis make_full_observation.simps(1) option.simps(3) state.ext_inject stream.sel(1))
+  by (metis make_full_observation.simps(1) option.simps(3) state.ext_inject)
 
 lemma state_none: "((StateEq None) impl nxt (StateEq None)) (make_full_observation e s r t)"
   by (simp add: StateEq_def)
@@ -164,7 +166,7 @@ lemma updates_coin: "(apply_updates (Updates coin) (case_vname Map.empty (\<lamb
   apply (rule ext)
   by (simp add: coin_def)
 
-lemma updates_vend: "(apply_updates (Updates vend) (case_vname Map.empty (\<lambda>na. if na = 1 then Some (Num n) else None)) <R 1 := Num n>) = <R 1 := Num (n - 1)>"
+lemma updates_vend: "apply_updates (Updates vend) i r = r"
   apply (rule ext)
   by (simp add: vend_def)
 
@@ -306,13 +308,19 @@ proof(coinduction)
   qed
 qed
 
-lemma LTL_init_makes_r_1_zero: "((LabelEq ''init'' aand InputEq []) impl nxt (checkInx rg 1 ValueEq (Some (Num 0)))) (watch drinks t)"
+text_raw{*\snip{checkinit}{1}{2}{%*}
+lemma LTL_init_makes_r_1_zero:
+  "((LabelEq ''init'' aand InputEq []) impl
+    (nxt (checkInx rg 1 ValueEq (Some (Num 0)))))
+   (watch drinks t)"
+text_raw{*}%endsnip*}
   apply (case_tac "shd t = (STR ''init'', [])")
-   apply (simp add: possible_steps_init updates_init ValueEq_def watch_def)
+  using watch_def
+   apply (simp add: possible_steps_init updates_init ValueEq_def)
   apply clarify
-  using not_init
-  by simp
+  by (simp add: not_init)
 
+(* This is not a true property but is good for testing the translation process *)
 lemma LTL_must_pay_wrong: "((not (LabelEq ''vend'' suntil LabelEq ''coin'')) suntil StateEq None) (watch drinks t)"
   oops
 
@@ -343,7 +351,6 @@ lemma possible_steps_1_invalid: "x1 \<noteq> (STR ''coin'', []) \<Longrightarrow
    apply (simp add: coin_def)
    apply (metis prod.collapse)
   by (simp add: vend_def gval.simps ValueGt_def)
-
 
 lemma invalid_gets_stuck: "x1 \<noteq> (STR ''coin'', []) \<Longrightarrow>
                            x1 \<noteq> (STR ''vend'', []) \<Longrightarrow>
@@ -398,29 +405,39 @@ proof(coinduction)
     by (simp add: alw_ev)
 qed
 
+(* This should translate the same as LTL_must_pay_correct *)
+lemma LTL_must_pay_correct_bracketed:
+  "((ev (StateEq (Some 2))) impl
+    ((not (LabelEq ''vend'')) suntil LabelEq ''coin''))
+   (watch drinks t)"
+  oops
 
 (* Ramsay, this is the proof you want!
    I'll convert it to an Isabelle code snippet for the actual paper to make it really pretty but for
    now, just use a screenshot image or something... *)
-lemma LTL_must_pay_correct: "((ev (StateEq (Some 2))) impl (not(LabelEq ''vend'') suntil LabelEq ''coin'')) (watch drinks t)"
+text_raw{*\snip{mustpaycorrect}{1}{2}{%*}
+lemma LTL_must_pay_correct:
+  "((ev (StateEq (Some 2))) impl
+    (not (LabelEq ''vend'') suntil LabelEq ''coin''))
+   (watch drinks t)"
   apply clarify
   unfolding LabelEq_def StateEq_def implode_vend implode_coin
   apply (simp add: watch_def)
   apply (case_tac "shd t = (STR ''init'', [])")
-   defer
-   apply (simp add: shd_not_init)
-  apply (rule suntil.step)
-   apply simp
-  apply (simp add: possible_steps_init updates_init)
-  apply (case_tac "shd (stl t) = (STR ''coin'', [])")
-   apply (simp add: suntil.base)
-  apply (case_tac "shd (stl t) = (STR ''vend'', [])")
    apply (rule suntil.step)
-  using LTL_vend_no_coin[of t]
-  apply (simp add: event_components implode_vend StateEq_def watch_def ev_mono)
-  using LTL_vend_no_coin[of t]
-  apply (simp add: event_components implode_vend StateEq_def watch_def ev_mono)
-  using LTL_invalid_gets_stuck_2[of t]
-  by (simp add: event_components implode_vend implode_coin StateEq_def watch_def ev_mono)
+    apply simp
+   apply (simp add: possible_steps_init updates_init)
+   apply (case_tac "shd (stl t) = (STR ''coin'', [])")
+    apply (simp add: suntil.base)
+   apply (case_tac "shd (stl t) = (STR ''vend'', [])")
+    apply (rule suntil.step)
+  using watch_def LTL_vend_no_coin[of t]
+     apply (simp add: event_components implode_vend StateEq_def ev_mono)
+  using watch_def LTL_vend_no_coin[of t]
+    apply (simp add: event_components implode_vend StateEq_def ev_mono)
+  using StateEq_def watch_def LTL_invalid_gets_stuck_2[of t]
+   apply (simp add: event_components implode_vend implode_coin ev_mono)
+  by (simp add: shd_not_init)
+text_raw{*}%endsnip*}
 
 end

@@ -91,12 +91,12 @@ next
     by (simp add: maybe_and_commutative maybe_and_one)
 next
   case "2_2"
-  then show ?case 
+  then show ?case
     apply (rule ext)+
     by (simp add: cval_def gval_gAnd gval.simps(2) gval.simps(1))
 next
   case ("2_3" v)
-  then show ?case 
+  then show ?case
     apply (rule ext)+
     apply (simp add: cval_def gval_gAnd gval.simps(1))
     by (simp add: maybe_and_commutative maybe_and_one)
@@ -119,13 +119,13 @@ next
     by (simp add: cval_And_zero)
 next
   case ("2_7" v va)
-  then show ?case 
+  then show ?case
     apply (rule ext)+
     apply (simp add: cval_def gval_gAnd gval.simps(1))
     by (simp add: maybe_and_commutative maybe_and_one)
 next
   case "3_1"
-  then show ?case 
+  then show ?case
     apply (rule ext)+
     apply (simp add: cval_def gval_gAnd)
     by (simp add: maybe_and_idempotent)
@@ -152,7 +152,7 @@ next
   then show ?case by (simp add: cval_def)
 next
   case "3_9"
-  then show ?case 
+  then show ?case
     apply (rule ext)+
     by (simp add: cval_def gval_gAnd gval.simps(2))
 next
@@ -178,7 +178,7 @@ next
 then show ?case by (simp add: cval_def)
 next
   case ("3_17" v va)
-  then show ?case 
+  then show ?case
     apply (rule ext)+
     apply (simp add: cval_def gval_gAnd)
     by (simp add: maybe_and_idempotent)
@@ -205,7 +205,7 @@ next
   then show ?case by (simp add: cval_def)
 next
 case ("3_25" v va)
-  then show ?case 
+  then show ?case
     apply (rule ext)+
     apply (simp add: cval_def gval_gAnd)
     by (simp add: maybe_and_idempotent)
@@ -259,7 +259,7 @@ next
   then show ?case by (simp add: cval_def)
 next
   case ("3_41" v va)
-  then show ?case 
+  then show ?case
     by (simp add: cval_And_one)
 next
   case ("3_42" v va vb)
@@ -284,7 +284,7 @@ next
   then show ?case by (simp add: cval_def)
 next
 case ("3_49" v va vb vc)
-  then show ?case 
+  then show ?case
     by (simp add: cval_And_one)
 qed
 
@@ -735,7 +735,7 @@ case ("2_5" v)
     using less_eq_cexp_def undef_minimal by blast
 next
   case ("2_6" v va)
-then show ?case 
+then show ?case
     using less_eq_cexp_def undef_minimal by blast
 next
   case (3 v)
@@ -743,177 +743,177 @@ next
     by simp
 next
   case (4 v va)
-  then show ?case 
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("5_1" v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("5_2" v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("5_3" v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("5_4" v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("5_5" v va vb)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case (6 v)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case (7 v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case (8 v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("9_1" v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("9_2" v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("9_3" v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("9_4" v va vb)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case (10 v)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case (11 v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case (12 v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case (13 v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("14_1" v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("14_2" v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("14_3" v va vb)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case (15 v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case (16 v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case (17 v va vb)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("18_1" v)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("18_2" v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("18_3" v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("18_4" v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case (19 v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case (20 v va vb)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("21_1" v)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("21_2" v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("21_3" v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("21_4" v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("21_5" v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case (22 g1 g2 g1' g2')
-  then show ?case  
+  then show ?case
     apply simp
     apply (case_tac "And g1' g2' = z")
      apply auto[1]
@@ -928,32 +928,32 @@ next
     by simp
 next
   case ("23_1" vv v)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("23_2" vv v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("23_3" vv v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("23_4" vv v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("23_5" vv v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 next
   case ("23_6" vv v va)
-  then show ?case  
+  then show ?case
     apply (cases z)
     by auto
 qed

@@ -7,7 +7,7 @@ transitions with register update functions.
 
 theory Contexts
   imports
-    EFSM "efsm-exp.GExp" "efsm-exp.CExp"
+    EFSM GExp CExp
 begin
 
 type_synonym "context" = "aexp \<Rightarrow> cexp fset"
@@ -535,7 +535,7 @@ lemma medial_preserves_existing_elements: "x |\<in>| c r \<Longrightarrow> x |\<
 lemma remove_obsolete_constraints_input: "remove_obsolete_constraints c s (V (I i)) = {|Bc True|}"
   by (simp add: remove_obsolete_constraints_def)
 
-lemma filter_simp: "I i |\<notin>| fst |`| fset_of_list as \<Longrightarrow> 
+lemma filter_simp: "I i |\<notin>| fst |`| fset_of_list as \<Longrightarrow>
 (\<exists>n. aexp_constrains a (V (I n))) \<or> V aa = a \<or> fBex (fset_of_list as) (\<lambda>x. V (fst x) = a) =
 (\<exists>n. aexp_constrains a (V (I n))) \<or> fBex (fset_of_list as) (\<lambda>x. V (fst x) = a)"
   by auto

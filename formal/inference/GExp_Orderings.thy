@@ -1,5 +1,5 @@
 theory GExp_Orderings
-imports "efsm-exp.GExp"
+imports "efsm.GExp"
 begin
 
 (* datatype vname = I nat | R nat *)
@@ -44,63 +44,63 @@ fun less_aexpr :: "aexp \<Rightarrow> aexp \<Rightarrow> bool"  where
       by (cases z) auto
   next
     case (2 l1 v2)
-    then show ?case 
+    then show ?case
       by (cases z) auto
   next
     case (3 l1 e1 e2)
-    then show ?case 
+    then show ?case
       by (cases z) auto
   next
     case (4 l1 e1 e2)
-    then show ?case 
+    then show ?case
       by (cases z) auto
   next
     case (5 v1 l1)
-    then show ?case 
+    then show ?case
       by (cases z) auto
   next
     case (6 v1 v2)
-    then show ?case 
+    then show ?case
       by (cases z) auto
   next
     case (7 v1 e1 e2)
-    then show ?case 
+    then show ?case
       by (cases z) auto
   next
     case (8 v1 e1 e2)
-    then show ?case 
+    then show ?case
       by (cases z) auto
   next
   case (9 e1 e2 l2)
-    then show ?case 
+    then show ?case
       by (cases z) auto
   next
   case (10 e1 e2 v2)
-  then show ?case 
+  then show ?case
       by (cases z) auto
   next
     case (11 e1 e2 e1' e2')
-    then show ?case 
+    then show ?case
       by (cases z) auto
   next
     case (12 e1 e2 e1' e2')
-    then show ?case 
+    then show ?case
       by (cases z) auto
   next
     case (13 e1 e2 l2)
-    then show ?case 
+    then show ?case
       by (cases z) auto
   next
     case (14 e1 e2 v2)
-    then show ?case 
+    then show ?case
       by (cases z) auto
   next
     case (15 e1 e2 e1' e2')
-    then show ?case 
+    then show ?case
       by (cases z) auto
   next
     case (16 e1 e2 e1' e2')
-    then show ?case 
+    then show ?case
       by (cases z) auto
   qed
 
@@ -276,27 +276,27 @@ fun less_gexpr :: "gexp \<Rightarrow> gexp \<Rightarrow> bool"  where
       by (cases z) auto
     next
       case (2 b1 e1 e2)
-      then show ?case 
+      then show ?case
       by (cases z) auto
     next
       case (3 b1 e1 e2)
-      then show ?case 
+      then show ?case
       by (cases z) auto
     next
       case (4 b1 g1 g2)
-      then show ?case 
+      then show ?case
       by (cases z) auto
     next
       case (5 b1 v)
-      then show ?case 
+      then show ?case
       by (cases z) auto
     next
       case (6 e1 e2 b2)
-      then show ?case 
+      then show ?case
       by (cases z) auto
     next
       case (7 e1 e2 e1' e2')
-      then show ?case 
+      then show ?case
       proof -
         have f1: "\<forall>g. (\<exists>b. g = Bc b) \<or> (\<exists>a aa. g = Eq a aa) \<or> (\<exists>a aa. g = Gt a aa) \<or> (\<exists>ga gb. g = Nor ga gb) \<or> (\<exists>v. g = Null v)"
           by (meson gexp.exhaust)
