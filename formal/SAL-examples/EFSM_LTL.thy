@@ -138,4 +138,13 @@ lemma alw_not_some: "alw (\<lambda>xs. statename (shd xs) \<noteq> Some s) (make
 lemma decompose_pair: "e \<noteq> (l, i) = (\<not> (fst e =l \<and> snd e = i))"
   by (metis fst_conv prod.collapse sndI)
 
+lemma check_binding_aand: "(alw x aand y) = (alw x) aand y"
+  by simp
+
+lemma check_binding_or: "(alw x or y) = (alw x) or y"
+  by simp
+
+lemma check_binding_impl: "(alw x impl y) = (alw x) impl y"
+  by simp
+
 end
