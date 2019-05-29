@@ -2546,6 +2546,8 @@ def merge_states(x: Nat.nat, y: Nat.nat,
   (if (Nat.less_nat(y, x)) merge_states_aux(x, y, t)
     else merge_states_aux(y, x, t))
 
+var resolve_nondeterminism_count = 0;
+
 def resolve_nondeterminism(x0: List[(Nat.nat,
                                       ((Nat.nat, Nat.nat),
 ((Transition.transition_ext[Unit], Nat.nat),
@@ -2570,7 +2572,10 @@ def resolve_nondeterminism(x0: List[(Nat.nat,
                          ((Nat.nat, Nat.nat),
                            Transition.transition_ext[Unit]))]]
   =
-  (x0, uu, newa, uv, check) match {
+  { resolve_nondeterminism_count += 1;
+    println(s"resolve_nondeterminism has been called ${resolve_nondeterminism_count} times")
+    // println(s"memory use: ${runtime.totalMemory - runtime.freeMemory}")
+    return (x0, uu, newa, uv, check) match {
   case (Nil, uu, newa, uv, check) =>
     (if ((deterministic(newa)) && (check(tm(newa))))
       Some[FSet.fset[(Nat.nat,
@@ -2601,6 +2606,7 @@ def resolve_nondeterminism(x0: List[(Nat.nat,
          ((Transition.transition_ext[Unit], Nat.nat),
            (Transition.transition_ext[Unit],
              Nat.nat))))](nondeterministic_pairs(newa));
+             println(s"length(newScores) = ${newScores.length}");
                 (if (Nat.less_nat(Nat.plus_nata(Nat.Nata(newScores.length),
          FSet.size_fseta[(Nat.nat,
                            ((Nat.nat, Nat.nat),
@@ -2622,7 +2628,7 @@ def resolve_nondeterminism(x0: List[(Nat.nat,
               }
           })
        }
-}
+}}
 
 def merge(e: FSet.fset[(Nat.nat,
                          ((Nat.nat, Nat.nat),
