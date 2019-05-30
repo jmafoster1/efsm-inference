@@ -10,7 +10,6 @@ begin
 declare One_nat_def [simp del]
 
 declare GExp.satisfiable_def [code del]
-declare directly_subsumes_def [code del]
 declare choice_def [code del]
 
 declare consistent_def [code del]
@@ -21,7 +20,6 @@ declare generalise_output_context_check_def [code del]
 
 code_printing
   constant "GExp.satisfiable" \<rightharpoonup> (Scala) "Dirties.satisfiable" |
-  constant "directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes" |
   constant "initially_undefined_context_check" \<rightharpoonup> (Scala) "Dirties.initiallyUndefinedContextCheck" |
   constant "generalise_output_context_check" \<rightharpoonup> (Scala) "Dirties.generaliseOutputContextCheck"
 
@@ -186,7 +184,36 @@ fun input_updates_register_aux :: "update_function list \<Rightarrow> nat option
 definition input_updates_register :: "iEFSM \<Rightarrow> (nat \<times> String.literal)" where
   "input_updates_register e = (case fthe_elem (ffilter (\<lambda>(_, _, t). input_updates_register_aux (Updates t) \<noteq> None) e) of (_, _, t) \<Rightarrow> case input_updates_register_aux (Updates t) of Some n \<Rightarrow> (n, Label t))"
 
-export_code input_updates_register drop_guard_add_update_direct_subsumption generalise_output_direct_subsumption input_stored_in_reg no_illegal_updates always_different_outputs try_heuristics learn same_register insert_increment insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
+definition "dirty_directly_subsumes = directly_subsumes"
+declare dirty_directly_subsumes_def [code del]
+code_printing constant "dirty_directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes"
+
+definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "directly_subsumes_cases a b s s' t1 t2 = (
+    if t1 = t2
+      then True
+    else if always_different_outputs (Outputs t1) (Outputs t2)
+      then False
+    else if drop_guard_add_update_direct_subsumption t1 t2 b s'
+      then True
+    else if generalise_output_direct_subsumption t1 t2 b a s s'
+      then True
+    else dirty_directly_subsumes a b s s' t1 t2
+  )"
+
+lemma [code]: "directly_subsumes a b s s' t1 t2 = directly_subsumes_cases a b s s' t1 t2"
+  unfolding directly_subsumes_cases_def
+  apply (case_tac "t1 = t2")
+   apply (simp add: directly_subsumes_self)
+  apply (case_tac "always_different_outputs (Outputs t1) (Outputs t2)")
+   apply (simp add: cant_directly_subsume outputs_never_equal_no_subsumption)
+  apply (case_tac "drop_guard_add_update_direct_subsumption t1 t2 b s'")
+   apply (simp add: drop_guard_add_update_direct_subsumption_implies_direct_subsumption)
+  apply (case_tac "generalise_output_direct_subsumption t1 t2 b a s s'")
+   apply (simp add: generalise_output_directly_subsumes_original_executable)
+  by (simp add: dirty_directly_subsumes_def)
+
+export_code input_updates_register input_stored_in_reg no_illegal_updates always_different_outputs try_heuristics learn same_register insert_increment insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
   (* module_name "Inference" *)
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

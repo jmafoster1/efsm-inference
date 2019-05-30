@@ -1,15 +1,60 @@
 import Dependencies._
+import sys.process._
+import java.io.File;
+
+val cleanSalfiles = taskKey[Int]("Deletes everything from the ./salfiles folder")
+val cleanDotfiles = taskKey[Int]("Deletes everything from the ./dotfiles folder")
+val mkdirs = taskKey[Unit]("Creates the ./salfiles and ./dotfiles directories for the program to put stuff in as it runs")
+val setEnv = taskKey[Int]("Adds the necessary SAL header files to the environment variable SALCONTEXTPATH")
 
 ThisBuild / scalaVersion     := "2.12.8"
 ThisBuild / version          := "0.1.0-SNAPSHOT"
 ThisBuild / organization     := "com.example"
 ThisBuild / organizationName := "example"
 
+def cleanDirectory(dirName: String):Int = {
+  val file = new File(dirName)
+  if (file.isDirectory) {
+    for (f <- file.listFiles) {
+      if (!f.delete) {
+        return 1
+      }
+    }
+  }
+  return 0
+}
+
+def mkdir(name: String) = {
+  val dir = new File(name)
+  if (!dir.isDirectory || !dir.exists) {
+    dir.mkdir();
+  }
+}
+
 lazy val root = (project in file("."))
   .settings(
     name := "inference-tool",
     libraryDependencies += scalaTest % Test,
-    libraryDependencies += "net.liftweb" %% "lift-json" % "3.3.0"
+    libraryDependencies += "net.liftweb" %% "lift-json" % "3.3.0",
+    cleanSalfiles := {
+      cleanDirectory("salfiles")
+    },
+    cleanDotfiles := {
+      cleanDirectory("dotfiles")
+    },
+    clean := clean.dependsOn(cleanSalfiles, cleanDotfiles).value,
+    mkdirs := {
+      mkdir("salfiles")
+      mkdir("dotfiles")
+    },
+    (run in Compile) := (run in Compile).dependsOn(mkdirs).evaluated,
+    setEnv := {
+      println(System.getProperty("user.dir"));
+      System.setProperty("SALCONTEXTPATH", s"${System.getProperty("user.dir")}/lib/:.")
+      // s"export SALCONTEXTPATH=${System.getProperty("user.dir")}/lib/:.".!;
+      0
+    }
+
   )
 
 // Uncomment the following for publishing to Sonatype.

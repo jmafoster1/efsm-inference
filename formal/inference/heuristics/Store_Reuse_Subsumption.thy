@@ -603,7 +603,7 @@ definition drop_guard_add_update_direct_subsumption :: "transition \<Rightarrow>
   "drop_guard_add_update_direct_subsumption t' t e s' = (case input_stored_in_reg t' t e of None \<Rightarrow> False |
    Some (i, r) \<Rightarrow> if no_illegal_updates t r then initially_undefined_context_check e r s' else False)"
 
-lemma "drop_guard_add_update_direct_subsumption t' t e s' \<Longrightarrow> directly_subsumes e1 e s s' t' t"
+lemma drop_guard_add_update_direct_subsumption_implies_direct_subsumption: "drop_guard_add_update_direct_subsumption t' t e s' \<Longrightarrow> directly_subsumes e1 e s s' t' t"
   apply (simp add: drop_guard_add_update_direct_subsumption_def)
   apply (case_tac "input_stored_in_reg t' t e")
    apply simp+
