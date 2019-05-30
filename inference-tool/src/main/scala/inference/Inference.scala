@@ -543,9 +543,8 @@ def zip[A, B](xs: List[A], ys: List[B]): List[(A, B)] = (xs, ys) match {
   case (Nil, ys) => Nil
 }
 
-def fold[A, B](f: A => B => B, x1: List[A], s: B): B = (f, x1, s) match {
-  case (f, x::xs, s) => fold[A, B](f, xs, (f(x))(s))
-  case (f, Nil, s) => s
+def fold[A, B](f: A => B => B, x1: List[A], s: B): B = {
+  x1.foldRight(s)(Function.uncurried(f))
 }
 
 def maps[A, B](f: A => List[B], x1: List[A]): List[B] = (f, x1) match {
@@ -558,9 +557,8 @@ def nulla[A](x0: List[A]): Boolean = x0 match {
   case x::xs => false
 }
 
-def foldl[A, B](f: A => B => A, a: A, x2: List[B]): A = (f, a, x2) match {
-  case (f, a, Nil) => a
-  case (f, a, x::xs) => foldl[A, B](f, (f(a))(x), xs)
+def foldl[A, B](f: A => B => A, a: A, x2: List[B]): A = {
+  x2.foldLeft(a)(Function.uncurried(f))
 }
 
 def foldr[A, B](f: A => B => B, x1: List[A]): B => B = (f, x1) match {
@@ -568,9 +566,8 @@ def foldr[A, B](f: A => B => B, x1: List[A]): B => B = (f, x1) match {
   case (f, x::xs) => Fun.comp[B, B, B](f(x), foldr[A, B](f, xs))
 }
 
-def filter[A](p: A => Boolean, x1: List[A]): List[A] = (p, x1) match {
-  case (p, Nil) => Nil
-  case (p, x::xs) => (if (p(x)) x::(filter[A](p, xs)) else filter[A](p, xs))
+def filter[A](p: A => Boolean, x1: List[A]): List[A] = {
+  x1.filter(p)
 }
 
 def insert[A : HOL.equal](x: A, xs: List[A]): List[A] =
@@ -578,9 +575,8 @@ def insert[A : HOL.equal](x: A, xs: List[A]): List[A] =
 
 def ListMem[A : HOL.equal](x: A, xs: List[A]): Boolean = xs contains x
 
-def map[A, B](f: A => B, x1: List[A]): List[B] = (f, x1) match {
-  case (f, Nil) => Nil
-  case (f, x21::x22) => (f(x21))::(map[A, B](f, x22))
+def map[A, B](f: A => B, x1: List[A]): List[B] = {
+  x1.map(f)
 }
 
 def enumerate[A](n: Nat.nat, x1: List[A]): List[(Nat.nat, A)] = (n, x1) match {

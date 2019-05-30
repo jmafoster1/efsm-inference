@@ -76,20 +76,35 @@ object Dirties {
     case GExp.Null(v) => null
   }
 
+  var sat_memo = Map[GExp.gexp, Boolean]()
+
   def satisfiable(g: GExp.gexp): Boolean = {
-    val maybe_types = Type_Inference.infer_types(g)
-    maybe_types match {
-      case None => false
-      case Some(types) => {
-        // println(FinFun.finfun_apply(types, I(1)))
-        val ctx = new z3.Context
-        val solver = ctx.mkSimpleSolver()
-        solver.add(toZ3(g, ctx, types))
-        // print(solver)
-        solver.check() match {
-          case z3.Status.SATISFIABLE => true
-          case z3.Status.UNSATISFIABLE => false
-          case z3.Status.UNKNOWN => throw new SatisfiabilityUnknownException(g.toString())
+    if (sat_memo isDefinedAt g) {
+      return sat_memo(g)
+    }
+    else {
+      val maybe_types = Type_Inference.infer_types(g)
+      maybe_types match {
+        case None => false
+        case Some(types) => {
+          // println(FinFun.finfun_apply(types, I(1)))
+          val ctx = new z3.Context
+          val solver = ctx.mkSimpleSolver()
+          solver.add(toZ3(g, ctx, types))
+          // print(solver)
+          val satisfiable = solver.check()
+          ctx.close()
+          satisfiable match {
+            case z3.Status.SATISFIABLE => {
+              sat_memo += (g -> true)
+              true
+            }
+            case z3.Status.UNSATISFIABLE => {
+              sat_memo += (g -> false)
+              false
+            }
+            case z3.Status.UNKNOWN => throw new SatisfiabilityUnknownException(g.toString())
+          }
         }
       }
     }

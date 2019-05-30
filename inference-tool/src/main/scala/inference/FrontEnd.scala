@@ -31,6 +31,8 @@ object FrontEnd {
     ))
 
     println("Hello inference!")
+    readLine("Are you ready?") == "y"
+
     // iterative_learn [] naive_score (iterative_try_heuristics [(λx. insert_increment), (λx. heuristic_1 x)])
     val inferred = Inference.learn(log, (SelectionStrategies.naive_score _).curried, heuristic)
 
