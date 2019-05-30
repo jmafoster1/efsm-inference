@@ -11,8 +11,7 @@ env:
 	@ echo "$$SALCONTEXTPATH"
 
 dot:
-	DOT_FILES = $(shell find ./ -type f -name '*.dot')
-	@ for b in $(basename $(DOT_FILES)) ; do \
+	@ for b in $(basename $(shell find ./ -type f -name '*.dot')) ; do \
 	  dot -T png -o $$b.png $$b.dot ; \
 	done
 
