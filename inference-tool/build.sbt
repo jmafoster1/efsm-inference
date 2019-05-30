@@ -6,6 +6,7 @@ val cleanSalfiles = taskKey[Int]("Deletes everything from the ./salfiles folder"
 val cleanDotfiles = taskKey[Int]("Deletes everything from the ./dotfiles folder")
 val mkdirs = taskKey[Unit]("Creates the ./salfiles and ./dotfiles directories for the program to put stuff in as it runs")
 val setEnv = taskKey[Int]("Adds the necessary SAL header files to the environment variable SALCONTEXTPATH")
+val buildDOT = taskKey[Unit]("Builds the dotfiles")
 
 ThisBuild / scalaVersion     := "2.12.8"
 ThisBuild / version          := "0.1.0-SNAPSHOT"
@@ -31,6 +32,12 @@ def mkdir(name: String) = {
   }
 }
 
+def getListOfFiles(dir: File, extensions: List[String]): List[File] = {
+    dir.listFiles.filter(_.isFile).toList.filter { file =>
+        extensions.exists(file.getName.endsWith(_))
+    }
+}
+
 lazy val root = (project in file("."))
   .settings(
     name := "inference-tool",
@@ -53,6 +60,12 @@ lazy val root = (project in file("."))
       System.setProperty("SALCONTEXTPATH", s"${System.getProperty("user.dir")}/lib/:.")
       // s"export SALCONTEXTPATH=${System.getProperty("user.dir")}/lib/:.".!;
       0
+    },
+    buildDOT := {
+      for (f <- getListOfFiles(new File("dotfiles"), List("dot"))) {
+        val b = f.getName().replaceFirst("[.][^.]+$", "");
+        s"dot -T png -o dotfiles/${b}.png dotfiles/${b}.dot".!
+      }
     }
 
   )

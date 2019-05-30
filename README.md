@@ -9,6 +9,7 @@ In order to run the tool, certain requirements must be met:
 2. Install a JDK (I used `openjdk-11-jdk-headless`)
 3. Install [z3](https://github.com/Z3Prover/z3) with support for java and move `libz3java.so` and `libz3.so` into a directory in your java.library.path
 4. Install [SAL](http://sal.csl.sri.com/) and make sure it's in your `$PATH`
+5. Navigate to the `inference-tool` directory and run `export SALCONTEXTPATH=$PWD/lib/:.:$SALCONTEXTPATH` to ensure that SAL can find the necessary context variables
 
 The tool should now be runnable by navigating to the `inference-tool` directory, opening SBT, and executing the command `run sample-traces/vend1.json`.
 
