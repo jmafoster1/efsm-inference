@@ -15,7 +15,7 @@ type_synonym trace = "event list"
 type_synonym observation = "outputs list"
 type_synonym transition_matrix = "((nat \<times> nat) \<times> transition) fset"
 
-abbreviation Str :: "string \<Rightarrow> value" where
+definition Str :: "string \<Rightarrow> value" where
   "Str s \<equiv> value.Str (String.implode s)"
 
 primrec input2state :: "value list \<Rightarrow> nat \<Rightarrow> datastate" where

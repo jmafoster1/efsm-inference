@@ -19,16 +19,6 @@ session "efsm-inference" = "efsm" +
     "root.tex"
     "root.bib"
 
-session "sal-snips" = "efsm" +
-  options [document = pdf, document_output = "output"]
-  theories
-    Contexts
-    "SAL-examples/Coin_Tea"
-    "SAL-examples/Coin_Tea_Broken"
-  document_files
-    "root.tex"
-    "root.bib"
-
 chapter AFP
 session "EFSM" (AFP) = "efsm" +
   options [timeout = 120000, document = pdf, document_variants="document:outline=/proof,/ML",document_output=output]
