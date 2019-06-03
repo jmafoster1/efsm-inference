@@ -62,7 +62,7 @@ lemma watch_label: "LabelEq l (watch e t) = (fst (shd t) = String.implode l)"
   by (simp add: LabelEq_def watch_def)
 
 fun "checkInx" :: "ior \<Rightarrow> nat \<Rightarrow> (value option \<Rightarrow> value option \<Rightarrow> trilean) \<Rightarrow> value option \<Rightarrow> state stream \<Rightarrow> bool" where
-  "checkInx ior.ip n f v s = (f (Some (Inputs n s)) v = trilean.true)" |
+  "checkInx ior.ip n f v s = (f (Some (Inputs (n-1) s)) v = trilean.true)" |
   "checkInx ior.op n f v s = (f (Outputs n s) v = trilean.true)" |
   "checkInx ior.rg n f v s = (f (datastate (shd s) (vname.R n)) v = trilean.true)"
 
