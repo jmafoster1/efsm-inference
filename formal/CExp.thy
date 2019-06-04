@@ -88,7 +88,7 @@ next
   then show ?case
     apply (rule ext)+
     apply (simp add: cval_def gval_gAnd gval.simps(1))
-    by (simp add: maybe_and_commutative maybe_and_one)
+    by (simp add: maybe_and_one times_trilean_commutative)
 next
   case "2_2"
   then show ?case
@@ -99,19 +99,19 @@ next
   then show ?case
     apply (rule ext)+
     apply (simp add: cval_def gval_gAnd gval.simps(1))
-    by (simp add: maybe_and_commutative maybe_and_one)
+    by (simp add: times_trilean_commutative maybe_and_one)
 next
   case ("2_4" v)
   then show ?case
     apply (rule ext)+
     apply (simp add: cval_def gval_gAnd gval.simps(1))
-    by (simp add: maybe_and_commutative maybe_and_one)
+    by (simp add: times_trilean_commutative maybe_and_one)
 next
   case ("2_5" v)
   then show ?case
     apply (rule ext)+
     apply (simp add: cval_def gval_gAnd gval.simps(1))
-    by (simp add: maybe_and_commutative maybe_and_one)
+    by (simp add: times_trilean_commutative maybe_and_one)
 next
   case ("2_6" v)
   then show ?case
@@ -122,7 +122,7 @@ next
   then show ?case
     apply (rule ext)+
     apply (simp add: cval_def gval_gAnd gval.simps(1))
-    by (simp add: maybe_and_commutative maybe_and_one)
+    by (simp add: times_trilean_commutative maybe_and_one)
 next
   case "3_1"
   then show ?case
@@ -368,10 +368,10 @@ lemma cval_and: "cval (and x y) a s = maybe_and (cval x a s) (cval y a s)"
 
 lemma cexp_equiv_redundant_and: "cexp_equiv (and c (and c c')) (and c c')"
   apply (simp add: cexp_equiv_def cval_and)
-  by (metis maybe_and_associative maybe_and_idempotent)
+  by (metis maybe_and_idempotent mult.semigroup_axioms semigroup.assoc)
 
 lemma cval_And_commutative: "cval (And x y) a s = cval (And y x) a s"
-  by (simp only: cval_And maybe_and_commutative)
+  by (simp add: cval_And_fun times_trilean_commutative)
 
 lemma and_symmetric: "cexp_equiv (and x y) (and y x)"
   apply (simp only: cexp_equiv_def and_is_And)
@@ -569,7 +569,7 @@ definition mutually_exclusive :: "cexp \<Rightarrow> cexp \<Rightarrow> bool" wh
 lemma mutually_exclusive_unsatisfiable_conj: "mutually_exclusive x y = (\<not> satisfiable (And x y))"
   apply (simp add: mutually_exclusive_def satisfiable_def)
   apply (simp add: cval_And)
-  by (metis (no_types, lifting) maybe_and_associative maybe_and_commutative maybe_and_idempotent maybe_and_one)
+  using maybe_and_true by blast
 
 lemma unsatisfiable_conj_mutually_exclusive: "\<not> satisfiable (And x y) = mutually_exclusive x y"
   by (simp add: mutually_exclusive_unsatisfiable_conj)
@@ -605,11 +605,11 @@ lemma gval_True: "gval (cexp2gexp a (cexp.Bc True)) x = true"
 
 lemma gval_and_cexp: "gval (cexp2gexp i c1) s \<noteq> true \<Longrightarrow>  gval (cexp2gexp i (and c2 c1)) s \<noteq> true"
   apply (simp add: gval_and gval_gAnd)
-  using maybe_and.elims by blast
+  by (simp add: maybe_and_true)
 
 lemma gval_and_false: "gval (cexp2gexp r (and (cexp.Bc False) c)) s \<noteq> true"
   apply (simp add: gval_and gval_gAnd gval.simps(2))
-  using maybe_and.elims by blast
+  by (simp add: maybe_and_true)
 
 lemma gval_and_false_2: "gval (cexp2gexp uu (and x (cexp.Bc False))) s \<noteq> true"
   by (metis and.simps(17) gval_and_cexp gval_and_false)
