@@ -213,8 +213,7 @@ lemma [code]: "directly_subsumes a b s s' t1 t2 = directly_subsumes_cases a b s 
    apply (simp add: generalise_output_directly_subsumes_original_executable)
   by (simp add: dirty_directly_subsumes_def)
 
-export_code input_updates_register input_stored_in_reg no_illegal_updates always_different_outputs try_heuristics learn same_register insert_increment insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score null_modifier in Scala
-  (* module_name "Inference" *)
+export_code try_heuristics learn same_register input_updates_register insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score in Scala
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
 end
