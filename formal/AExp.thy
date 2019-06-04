@@ -23,7 +23,9 @@ begin
 
 type_synonym datastate = "vname \<Rightarrow> value option"
 
+text_raw{*\snip{aexptype}{1}{2}{%*}
 datatype aexp = L "value" | V vname | Plus aexp aexp | Minus aexp aexp
+text_raw{*}%endsnip*}
 
 syntax (xsymbols)
   Plus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" (*infix "+" 60*)

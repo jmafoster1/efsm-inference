@@ -1,7 +1,10 @@
 theory Value
-imports Option_Logic
+imports Trilean
 begin
+
+text_raw{*\snip{valuetype}{1}{2}{%*}
 datatype "value" = Num int | Str String.literal
+text_raw{*}%endsnip*}
 
 fun MaybeBoolInt :: "(int \<Rightarrow> int \<Rightarrow> bool) \<Rightarrow> value option \<Rightarrow> value option \<Rightarrow> trilean" where
   "MaybeBoolInt f (Some (Num a)) (Some (Num b)) = (if f a b then true else false)" |

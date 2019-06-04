@@ -15,7 +15,7 @@ not equal to as well as the expression of logical ``or'' in terms of negation an
 \<close>
 
 theory CExp
-  imports AExp Option_Logic GExp
+  imports AExp Trilean GExp
 begin
 
 datatype cexp = Undef | Bc bool | Eq "value" | Lt "value" | Gt "value" | Not cexp | And cexp cexp

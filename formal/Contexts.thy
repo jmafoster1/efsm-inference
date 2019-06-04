@@ -191,7 +191,7 @@ lemma make_lt_twice: "make_lt (make_lt x) = make_lt x"
   apply(induct x)
   by auto
 
-fun guard2pairs :: "context \<Rightarrow> guard \<Rightarrow> (aexp \<times> cexp fset) list" where
+fun guard2pairs :: "context \<Rightarrow> gexp \<Rightarrow> (aexp \<times> cexp fset) list" where
   "guard2pairs a (gexp.Bc True) = []" |
   "guard2pairs a (gexp.Bc False) = [(L (Num 0), {|Bc False|})]" |
 
@@ -234,7 +234,7 @@ lemma pairs2context_append: "pairs2context (x @ y) ra = pairs2context x ra |\<un
 lemma pairs2context_cons: "pairs2context (x # y) ra = pairs2context [x] ra |\<union>| pairs2context y ra"
   by (metis append_Cons append_self_conv2 pairs2context_append)
 
-definition medial :: "context \<Rightarrow> guard list \<Rightarrow> context" where
+definition medial :: "context \<Rightarrow> gexp list \<Rightarrow> context" where
  "medial c G = (\<lambda>r. (c r) |\<union>| pairs2context (List.maps (guard2pairs c) G) r)"
 
 lemma medial_cons: "medial c (a # G) ra = medial c [a] ra |\<union>| medial c G ra"
@@ -359,7 +359,7 @@ qed
 lemma remove_input_constraints_empty[simp]: "remove_obsolete_constraints \<lbrakk>\<rbrakk> s = \<lbrakk>\<rbrakk>"
   by (simp add: remove_obsolete_constraints_def)
 
-definition posterior_separate :: "context \<Rightarrow> guard list \<Rightarrow> update_function list \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
+definition posterior_separate :: "context \<Rightarrow> gexp list \<Rightarrow> update_function list \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
   "posterior_separate c g u = (let c' = (medial c g) in (if consistent c' then remove_obsolete_constraints (apply_updates c' c u) (fset_of_list (map fst u)) else (\<lambda>i. {|Bc False|})))"
 
 lemma posterior_separate_append_self: "posterior_separate c (g @ g) = posterior_separate c g"

@@ -10,6 +10,8 @@ theory EFSM
   imports "~~/src/HOL/Library/FSet" Transition FSet_Utils
 begin
 
+type_synonym inputs = "value list"
+type_synonym outputs = "value option list"
 type_synonym event = "(label \<times> inputs)"
 type_synonym trace = "event list"
 type_synonym observation = "outputs list"
@@ -52,7 +54,7 @@ qed
 lemma apply_outputs_preserves_length: "length (apply_outputs p s) = length p"
   by (simp add: apply_outputs_alt)
 
-primrec apply_guards :: "guard list \<Rightarrow> datastate \<Rightarrow> bool" where
+primrec apply_guards :: "gexp list \<Rightarrow> datastate \<Rightarrow> bool" where
   "apply_guards [] _ = True" |
   "apply_guards (h#t) s =  ((gval h s) = true \<and> (apply_guards t s))"
 

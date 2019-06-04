@@ -12,7 +12,7 @@ fun a_replace_with :: "aexp \<Rightarrow> vname \<Rightarrow> vname \<Rightarrow
   "a_replace_with (Plus a1 a2) r1 r2 = Plus (a_replace_with a1 r1 r2) (a_replace_with a2 r1 r2)" |
   "a_replace_with (Minus a1 a2) r1 r2 = Plus (a_replace_with a1 r1 r2) (a_replace_with a2 r1 r2)"
 
-fun g_replace_with :: "guard \<Rightarrow> vname \<Rightarrow> vname \<Rightarrow> guard" where
+fun g_replace_with :: "gexp \<Rightarrow> vname \<Rightarrow> vname \<Rightarrow> gexp" where
   "g_replace_with (gexp.Bc x) _ _ = gexp.Bc x" |
   "g_replace_with (gexp.Eq a1 a2) r1 r2 = gexp.Eq (a_replace_with a1 r1 r2) (a_replace_with a2 r1 r2)" |
   "g_replace_with (gexp.Gt a1 a2) r1 r2 = gexp.Eq (a_replace_with a1 r1 r2) (a_replace_with a2 r1 r2)" |

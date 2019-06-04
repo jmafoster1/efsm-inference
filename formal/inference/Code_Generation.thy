@@ -45,7 +45,7 @@ code_printing
   (* apply (simp add: is_singleton_altdef One_nat_def) *)
   (* by (metis One_nat_def fis_singleton.transfer is_singleton_altdef) *)
 
-fun guard_filter_code :: "nat \<Rightarrow> guard \<Rightarrow> bool" where
+fun guard_filter_code :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
   "guard_filter_code inputX (gexp.Eq a b) = (a \<noteq> (V (I inputX)) \<and> b \<noteq> (V (I inputX)))" |
   "guard_filter_code _ _ = True"
 

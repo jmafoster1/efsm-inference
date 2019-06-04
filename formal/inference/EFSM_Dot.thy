@@ -78,7 +78,7 @@ fun updates2dot :: "update_function list \<Rightarrow> String.literal" where
   "updates2dot [] = (STR '''')" |
   "updates2dot a = STR ''&#91;''+(join (updates2dot_aux a) STR '','')+STR ''&#93;''"
 
-fun guards2dot :: "guard list \<Rightarrow> String.literal" where
+fun guards2dot :: "gexp list \<Rightarrow> String.literal" where
   "guards2dot [] = (STR '''')" |
   "guards2dot a = STR ''&#91;''+(join (guards2dot_aux a) STR '','')+STR ''&#93;''"
 

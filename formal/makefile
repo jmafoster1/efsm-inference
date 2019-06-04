@@ -2,9 +2,9 @@ build:
 	isabelle build -d . michael-efsm
 
 snippets:
-	isabelle build -d . sal-snips
+	isabelle build -d . efsm
 	sed -n '/\\snip{/,/endsnip/p' output/document/*.tex > snippets.tex
-	mv snippets.tex ~/Documents/verifying-trace-properties/figures
+	mv snippets.tex ~/Documents/verifying-trace-properties/figures/efsm-snippets.tex
 
 clean:
 	@find . -name "*thy~" -exec rm {} \;

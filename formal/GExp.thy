@@ -11,7 +11,7 @@ well as the expression of logical conjunction, disjunction, and negation in term
 \<close>
 
 theory GExp
-imports AExp Option_Logic
+imports AExp Trilean
 begin
 
 (* type_synonym gexp = "(aexp \<times> cexp)" *)
@@ -19,7 +19,9 @@ begin
 (* abbreviation Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" where *)
   (* "Eq a b = (a, cexp.Eq b) *)
 
+text_raw{*\snip{gexptype}{1}{2}{%*}
 datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null aexp
+text_raw{*}%endsnip*}
 
 syntax (xsymbols)
   Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "=" 60*)
@@ -111,7 +113,7 @@ lemma gAnd_zero: "gexp_equiv (gAnd (Bc True) x) x"
   by simp_all
 
 lemma gAnd_symmetry: "gexp_equiv (gAnd x y) (gAnd y x)"
-  by (simp add: gexp_equiv_def maybe_or_commutative)
+  by (simp add: add.commute gexp_equiv_def)
 
 lemma satisfiable_gAnd_self: "satisfiable (gAnd x x) = satisfiable x"
   by (simp add: gAnd_reflexivity gexp_equiv_satisfiable)
@@ -122,7 +124,7 @@ definition mutually_exclusive :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" wh
 
 lemma mutually_exclusive_unsatisfiable_conj: "mutually_exclusive x y = (\<not> satisfiable (gAnd x y))"
   apply (simp add: mutually_exclusive_def satisfiable_def)
-  by (metis maybe_double_negation maybe_not.simps(2) maybe_or_associative maybe_or_commutative maybe_or_idempotent maybe_or_zero)
+  by (metis (no_types, lifting) add.assoc add.commute maybe_double_negation maybe_negate_true maybe_or_idempotent maybe_or_zero)
 
 lemma unsatisfiable_conj_mutually_exclusive: "\<not> satisfiable (gAnd x y) = mutually_exclusive x y"
   by (simp add: mutually_exclusive_unsatisfiable_conj)
@@ -137,7 +139,7 @@ lemma not_mutually_exclusive_true: "satisfiable x = (\<not> mutually_exclusive x
   by (simp add: mutually_exclusive_def satisfiable_def)
 
 lemma gval_gAnd: "gval (gAnd g1 g2) s = (gval g1 s) \<and>\<^sub>? (gval g2 s)"
-proof(induct "gval g1 s" "gval g2 s" rule: maybe_and.induct)
+proof(induct "gval g1 s" "gval g2 s" rule: times_trilean.induct)
 case 1
   then show ?case
     by (metis gval.simps(5) maybe_and_valid maybe_not.simps(3) maybe_or_valid)

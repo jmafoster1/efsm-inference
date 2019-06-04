@@ -1,11 +1,14 @@
 session "efsm" = "HOL" +
 options [document = pdf, document_output = "output"]
 theories
-  Option_Logic
+  Trilean
   AExp
   GExp
   Transition
   EFSM
+document_files
+  "root.tex"
+  "root.bib"
 
 session "efsm-inference" = "efsm" +
   options [document = pdf, document_output = "output"]

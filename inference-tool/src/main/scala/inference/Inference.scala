@@ -752,14 +752,20 @@ def uminus_int(k: int): int =
 
 } /* object Int */
 
-object Option_Logic {
+object Trilean {
 
 abstract sealed class trilean
 final case class truea() extends trilean
 final case class falsea() extends trilean
 final case class invalid() extends trilean
 
-def maybe_or(x0: trilean, uu: trilean): trilean = (x0, uu) match {
+def maybe_not(x0: trilean): trilean = x0 match {
+  case truea() => falsea()
+  case falsea() => truea()
+  case invalid() => invalid()
+}
+
+def plus_trilean(x0: trilean, uu: trilean): trilean = (x0, uu) match {
   case (invalid(), uu) => invalid()
   case (truea(), invalid()) => invalid()
   case (falsea(), invalid()) => invalid()
@@ -767,12 +773,6 @@ def maybe_or(x0: trilean, uu: trilean): trilean = (x0, uu) match {
   case (truea(), falsea()) => truea()
   case (falsea(), truea()) => truea()
   case (falsea(), falsea()) => falsea()
-}
-
-def maybe_not(x0: trilean): trilean = x0 match {
-  case truea() => falsea()
-  case falsea() => truea()
-  case invalid() => invalid()
 }
 
 def equal_trilean(x0: trilean, x1: trilean): Boolean = (x0, x1) match {
@@ -787,7 +787,7 @@ def equal_trilean(x0: trilean, x1: trilean): Boolean = (x0, x1) match {
   case (truea(), truea()) => true
 }
 
-} /* object Option_Logic */
+} /* object Trilean */
 
 object Value {
 
@@ -802,24 +802,24 @@ def equal_valuea(x0: value, x1: value): Boolean = (x0, x1) match {
   case (Numa(x1), Numa(y1)) => Int.equal_int(x1, y1)
 }
 
-def ValueEq(a: Option[value], b: Option[value]): Option_Logic.trilean =
-  (if (Optiona.equal_optiona[value](a, b)) Option_Logic.truea()
-    else Option_Logic.falsea())
+def ValueEq(a: Option[value], b: Option[value]): Trilean.trilean =
+  (if (Optiona.equal_optiona[value](a, b)) Trilean.truea()
+    else Trilean.falsea())
 
 def MaybeBoolInt(f: Int.int => Int.int => Boolean, uv: Option[value],
                   uw: Option[value]):
-      Option_Logic.trilean
+      Trilean.trilean
   =
   (f, uv, uw) match {
   case (f, Some(Numa(a)), Some(Numa(b))) =>
-    (if ((f(a))(b)) Option_Logic.truea() else Option_Logic.falsea())
-  case (uu, None, uw) => Option_Logic.invalid()
-  case (uu, Some(Str(va)), uw) => Option_Logic.invalid()
-  case (uu, uv, None) => Option_Logic.invalid()
-  case (uu, uv, Some(Str(va))) => Option_Logic.invalid()
+    (if ((f(a))(b)) Trilean.truea() else Trilean.falsea())
+  case (uu, None, uw) => Trilean.invalid()
+  case (uu, Some(Str(va)), uw) => Trilean.invalid()
+  case (uu, uv, None) => Trilean.invalid()
+  case (uu, uv, Some(Str(va))) => Trilean.invalid()
 }
 
-def ValueGt(a: Option[value], b: Option[value]): Option_Logic.trilean =
+def ValueGt(a: Option[value], b: Option[value]): Trilean.trilean =
   MaybeBoolInt(((x: Int.int) => (y: Int.int) => Int.less_int(y, x)), a, b)
 
 def less_value(x0: value, x1: value): Boolean = (x0, x1) match {
@@ -1020,15 +1020,14 @@ def equal_gexpa(x0: gexp, x1: gexp): Boolean = (x0, x1) match {
   case (Bc(x1), Bc(y1)) => Product_Type.equal_bool(x1, y1)
 }
 
-def gval(x0: gexp, uu: VName.vname => Option[Value.value]): Option_Logic.trilean
-  =
+def gval(x0: gexp, uu: VName.vname => Option[Value.value]): Trilean.trilean =
   (x0, uu) match {
-  case (Bc(true), uu) => Option_Logic.truea()
-  case (Bc(false), uv) => Option_Logic.falsea()
+  case (Bc(true), uu) => Trilean.truea()
+  case (Bc(false), uv) => Trilean.falsea()
   case (Gt(a_1, a_2), s) => Value.ValueGt(AExp.aval(a_1, s), AExp.aval(a_2, s))
   case (Eq(a_1, a_2), s) => Value.ValueEq(AExp.aval(a_1, s), AExp.aval(a_2, s))
   case (Nor(a_1, a_2), s) =>
-    Option_Logic.maybe_not(Option_Logic.maybe_or(gval(a_1, s), gval(a_2, s)))
+    Trilean.maybe_not(Trilean.plus_trilean(gval(a_1, s), gval(a_2, s)))
   case (Null(v), s) => Value.ValueEq(AExp.aval(v, s), None)
 }
 
@@ -3725,8 +3724,8 @@ def apply_guards(x0: List[GExp.gexp], uu: VName.vname => Option[Value.value]):
   (x0, uu) match {
   case (Nil, uu) => true
   case (h::t, s) =>
-    (Option_Logic.equal_trilean(GExp.gval(h, s),
-                                 Option_Logic.truea())) && (apply_guards(t, s))
+    (Trilean.equal_trilean(GExp.gval(h, s),
+                            Trilean.truea())) && (apply_guards(t, s))
 }
 
 def apply_outputs(x0: List[AExp.aexp], uu: VName.vname => Option[Value.value]):

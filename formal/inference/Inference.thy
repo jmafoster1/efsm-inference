@@ -99,7 +99,7 @@ definition replace_transition :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Ri
 definition exits_state :: "iEFSM \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> bool" where
   "exits_state e t from = (\<exists>dest uid. (uid, (from, dest), t) |\<in>| e)"
 
-primrec make_guard :: "value list \<Rightarrow> nat \<Rightarrow> guard list" where
+primrec make_guard :: "value list \<Rightarrow> nat \<Rightarrow> gexp list" where
 "make_guard [] _ = []" |
 "make_guard (h#t) n = (gexp.Eq (V (I n)) (L h))#(make_guard t (n+1))"
 
