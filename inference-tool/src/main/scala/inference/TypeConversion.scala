@@ -1,6 +1,7 @@
 import isabellesal._
 import java.nio.file.{Files, Paths}
 import java.io._
+import sys.process._
 
 object TypeConversion {
 
@@ -130,11 +131,12 @@ object TypeConversion {
   def efsmToSALTranslator(e: TransitionMatrix, f: String) = {
     Translator.clearEverything()
     val pw = new PrintWriter(new File("dotfiles/" + f + ".dot" ))
-    pw.write(EFSM_Dot.efsm2dot(e))
-    pw.close
-    println("converting "+f)
+    // pw.write(EFSM_Dot.efsm2dot(e))
+    // pw.close
+    // println("converting "+f)
     isabellesal.EFSM.newOneFrom(fset_to_list(FSet.fimage(toMichaelsMove, e)):_*)
     new Translator().writeSALandDOT(Paths.get("salfiles"), f);
+    s"mv salfiles/${f}.dot dotfiles/".!
   }
 
 }
