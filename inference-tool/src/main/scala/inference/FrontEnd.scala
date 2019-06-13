@@ -45,10 +45,9 @@ object FrontEnd {
 
     TypeConversion.efsmToSALTranslator(inferred, basename)
 
-    // val ctx = new z3.Context
-    // val sort = ctx.mkUninterpretedSort("U")
-    // val id = ""
-    // println(R(5).toZ3(ctx, sort, id))
+    val pw = new PrintWriter(s"dotfiles/${basename}.dot");
+    pw.write(EFSM_Dot.efsm2dot(inferred))
+    pw.close()
 
     println("=================================================================")
   }

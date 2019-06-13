@@ -1,7 +1,8 @@
-import isabellesal._
 import java.nio.file.{Files, Paths}
 import java.io._
 import sys.process._
+
+import isabellesal._
 
 object TypeConversion {
 
@@ -30,7 +31,6 @@ object TypeConversion {
     )
   }
 
-  // This is hypothetical and will break until we get Siobhan's source code
   def vnameToSALTranslator(v: VName.vname): Variable = v match {
     case VName.I(Nat.Nata(n)) => Variable.newOneFrom('I', n.toInt)
     case VName.R(Nat.Nata(n)) => Variable.newOneFrom('R', n.toInt)
@@ -58,47 +58,38 @@ object TypeConversion {
     )
   }
 
-  def gexpToSALTranslator(g: GExp.gexp): Expression = g match {
+  def gexpToSALTranslator(g: GExp.gexp): isabellesal.Predicate = g match {
     case GExp.Bc(v) => throw new java.lang.IllegalArgumentException("Can't translate boolean values")
-    case GExp.Null(AExp.V(a)) => Expression.isNull(vnameToSALTranslator(a))
+    case GExp.Null(AExp.V(a)) => isabellesal.Predicate.newNullTest(vnameToSALTranslator(a))
     case GExp.Null(a) => throw new java.lang.IllegalArgumentException("Can only translate null guards of variables")
-    case GExp.Eq(a1, a2) => Expression.newInfixFrom(
+    case GExp.Eq(a1, a2) => isabellesal.Predicate.newInfixFrom(
             Token.EQUALS,
             aexpToSALTranslator(a1),
             aexpToSALTranslator(a2)
           )
-    case GExp.Gt(a1, a2) => Expression.newInfixFrom(
+    case GExp.Gt(a1, a2) => isabellesal.Predicate.newInfixFrom(
             Token.GT,
             aexpToSALTranslator(a1),
             aexpToSALTranslator(a2)
           )
-    case GExp.Nor(g1, g2) => Expression.newInfixFrom(
-              Token.OR,
+    case GExp.Nor(g1, g2) => isabellesal.Predicate.newInfixFrom(
+              Token.NOR,
               gexpToSALTranslator(g1),
               gexpToSALTranslator(g2)
-   ).negated(),
+   )
   }
 
   def natToInt(n: Nat.nat): Int = n match {
     case Nat.Nata(b) => b.toInt
   }
 
-  def foldGuard(gt: Seq[Expression]): Expression = {
-    if (gt.toList.length == 0) {
-      null
-    }
-    else if (gt.toList.length == 1) {
-      gt.toList(0)
-    }
-    else {
-      Expression.newPredicateFrom(gt:_*)
-    }
+  def intToInt(i: Int.int): Int =  i match {
+    case Int.int_of_integer(i1) => i1.intValue()
   }
 
-  def updateToExp(u: (VName.vname, AExp.aexp)): Expression = u match {
-    case (r, a) => Expression.newInfixFrom(
-            Token.EQUALS,
-            Expression.newOneFrom(vnameToSALTranslator(r)),
+  def updateToExp(u: (VName.vname, AExp.aexp)): Assignment = u match {
+    case (r, a) => Assignment.newOne(
+            vnameToSALTranslator(r),
             aexpToSALTranslator(a)
     )
   }
@@ -108,9 +99,8 @@ object TypeConversion {
       id,
       Transition.Label(t),
       natToInt(Transition.Arity(t)),
-      // We want to just do it with one guard
-      foldGuard(Transition.Guard(t).map(g => gexpToSALTranslator(g))),
-      Expression.newOutputs(Transition.Outputs(t).map(a => aexpToSALTranslator(a)):_*),
+      isabellesal.Predicate.listOfPredicatesFrom(Transition.Guard(t).map(gexpToSALTranslator):_*),
+      Expression.newOutputs(Transition.Outputs(t).map(aexpToSALTranslator):_*),
       Transition.Updates(t).map(updateToExp):_*
     )
   }
@@ -130,13 +120,14 @@ object TypeConversion {
 
   def efsmToSALTranslator(e: TransitionMatrix, f: String) = {
     Translator.clearEverything()
-    val pw = new PrintWriter(new File("dotfiles/" + f + ".dot" ))
-    // pw.write(EFSM_Dot.efsm2dot(e))
-    // pw.close
-    // println("converting "+f)
     isabellesal.EFSM.newOneFrom(fset_to_list(FSet.fimage(toMichaelsMove, e)):_*)
-    new Translator().writeSALandDOT(Paths.get("salfiles"), f);
-    s"mv salfiles/${f}.dot dotfiles/".!
+    try {
+      new Translator().writeSALandDOT(Paths.get("salfiles"), f);
+      s"mv salfiles/${f}.dot dotfiles/".!
+    } catch {
+      case ioe: java.lang.StringIndexOutOfBoundsException => {}
+    }
+
   }
 
 }

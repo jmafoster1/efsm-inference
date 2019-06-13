@@ -116,8 +116,9 @@ lemma always_different_outputs: "always_different_outputs o1 o2 \<Longrightarrow
 lemma outputs_never_equal_no_subsumption: "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow> \<not>subsumes t1 c t2"
   by (metis outputs_never_equal join_ir_def always_different_outputs)
 
-definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "is_generalisation_of t' t e i r = (\<exists>to \<in> fset (S e). \<exists> from \<in> fset (S e). \<exists> uid \<in> fset (uids e). t' = remove_guard_add_update t i r \<and> (uid, (from, to), t') |\<in>| e)"
+fun tests_input_equality :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
+  "tests_input_equality i (gexp.Eq (V (I i')) (L _)) = (i = i')" |
+  "tests_input_equality _ _ = False"
 
 definition is_generalised_output_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalised_output_of t' t e i r = (\<exists>to \<in> fset (S e). \<exists> from \<in> fset (S e). \<exists> uid \<in> fset (uids e). t' = generalise_output t i r \<and> (uid, (from, to), t') |\<in>| e)"
@@ -212,6 +213,38 @@ lemma [code]: "directly_subsumes a b s s' t1 t2 = directly_subsumes_cases a b s 
   apply (case_tac "generalise_output_direct_subsumption t1 t2 b a s s'")
    apply (simp add: generalise_output_directly_subsumes_original_executable)
   by (simp add: dirty_directly_subsumes_def)
+
+definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
+  "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and> (length (filter (tests_input_equality i) (Guard t)) \<ge> 1))"
+
+lemma tests_input_equality: "(\<exists>v. gexp.Eq (V (I xb)) (L v) \<in> set G) = (1 \<le> length (filter (tests_input_equality xb) G))"
+proof(induct G)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a G)
+  then show ?case
+    apply (cases a)
+        apply simp
+       apply simp
+       apply (case_tac x21)
+          apply simp
+         apply simp
+         apply (case_tac "x2 = I xb")
+          apply simp
+          defer
+          defer
+          apply simp+
+     apply (case_tac x22)
+        apply auto[1]
+       apply simp+
+    apply (case_tac x22)
+    using tests_input_equality.elims(2) by auto
+qed
+
+lemma[code]: "Store_Reuse.is_generalisation_of x xa xb xc = is_generalisation_of x xa xb xc"
+  apply (simp add: Store_Reuse.is_generalisation_of_def is_generalisation_of_def)
+  by (simp add: tests_input_equality)
 
 export_code try_heuristics learn same_register input_updates_register insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score in Scala
   file "../../inference-tool/src/main/scala/inference/Inference.scala"

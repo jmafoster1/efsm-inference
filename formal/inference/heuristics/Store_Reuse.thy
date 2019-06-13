@@ -109,7 +109,12 @@ definition max_input :: "iEFSM \<Rightarrow> nat" where
   "max_input e = fMax (fimage (\<lambda>(_, _, t). Arity t) e)"
 
 definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
-  "remove_guard_add_update t inputX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (filter (\<lambda>g. \<not> gexp_constrains g (V (I inputX))) (Guard t)), Outputs = (Outputs t), Updates = (R outputX, (V (I inputX)))#(Updates t)\<rparr>"
+  "remove_guard_add_update t inputX outputX = \<lparr>
+    Label = (Label t), Arity = (Arity t),
+    Guard = (filter (\<lambda>g. \<not> gexp_constrains g (V (I inputX))) (Guard t)),
+    Outputs = (Outputs t),
+    Updates = (R outputX, (V (I inputX)))#(Updates t)
+  \<rparr>"
 
 definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
   "generalise_output t regX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (Guard t), Outputs = list_update (Outputs t) outputX (V (R regX)), Updates = (Updates t)\<rparr>"
@@ -165,7 +170,7 @@ lemmas remove_guard_add_update_preserves = remove_guard_add_update_preserves_lab
                                            remove_guard_add_update_preserves_outputs
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r)"
+  "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and> (\<exists>v. gexp.Eq (V (I i)) (L v) \<in> set (Guard t)))"
 
 lemma generalise_output_preserves_label: "Label (generalise_output t r p) = Label t"
   by (simp add: generalise_output_def)

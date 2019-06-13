@@ -1,57 +1,26 @@
 import com.microsoft.z3
 import exceptions.SatisfiabilityUnknownException
 import java.io._
+import scala.io.Source
 import scala.util.Random
 import sys.process._
 
-//for last line of file deletion
-import scala.io.Source
-
+import TypeConversion.natToInt;
+import TypeConversion.intToInt;
 
 object Dirties {
   type iEFSM = FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
 
-  def R(i: BigInt): VName.vname = {
-    VName.R(Nat.Nata(i))
-  }
-  def I(i: BigInt): VName.vname = {
-    VName.I(Nat.Nata(i))
-  }
-
-  def writeDot(e: FSet.fset[(
-                               ((Nat.nat, Nat.nat),
-                                 Transition.transition_ext[Unit]))], f: String): Unit = {
-                                   val pw = new PrintWriter(new File(f))
-                                   pw.write(EFSM_Dot.efsm2dot(e))
-                                   pw.close
-                                 }
-
-  def writeiDot(e: FSet.fset[(Nat.nat,
-                               ((Nat.nat, Nat.nat),
-                                 Transition.transition_ext[Unit]))], f: String): Unit = {
-                                   val pw = new PrintWriter(new File(f))
-                                   pw.write(EFSM_Dot.iefsm2dot(e))
-                                   pw.close
-                                 }
-
   type Set[A] = scala.collection.immutable.Set[A]
 
-  def valueOf(i: Int.int): Int =  i match {
-    case Int.int_of_integer(i1) => i1.intValue()
-  }
-
-  def valueOf(i: Nat.nat): Int =  i match {
-    case Nat.Nata(i1) => i1.intValue()
-  }
-
   def toZ3(v: Value.value, ctx: z3.Context): z3.Expr = v match {
-    case Value.Numa(n) => ctx.mkInt(valueOf(n))
+    case Value.Numa(n) => ctx.mkInt(intToInt(n))
     case Value.Str(s) => ctx.mkString(s)
   }
 
   def toZ3(v: VName.vname, ctx: z3.Context, datatype: z3.Sort): z3.Expr = v match {
-    case VName.I(n) => ctx.mkConst("i"+valueOf(n), datatype)
-    case VName.R(n) => ctx.mkConst("r"+valueOf(n), datatype)
+    case VName.I(n) => ctx.mkConst("i"+natToInt(n), datatype)
+    case VName.R(n) => ctx.mkConst("r"+natToInt(n), datatype)
   }
 
   def toZ3(a: AExp.aexp, ctx: z3.Context, types: FinFun.finfun[VName.vname, Type_Inference.typea]): z3.Expr =  a match {
@@ -137,7 +106,7 @@ object Dirties {
     val f = "intermediate_"+System.currentTimeMillis()
     TypeConversion.efsmToSALTranslator(Inference.tm(e), f)
 
-    addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = State_${valueOf(s)} => r_${valueOf(r)} = value_option ! None);")
+    addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = State_${natToInt(s)} => r_${natToInt(r)} = value_option ! None);")
 
     val output = Seq("bash", "-c", "cd salfiles; sal-smc --assertion='" + f + "{100}!initiallyUndefined'").!!
     if (output.toString != "proved.\n") {
@@ -148,7 +117,7 @@ object Dirties {
 
   def salValue(v: Value.value): String = v match {
     case Value.Str(s) => s"STR(String_$s)"
-    case Value.Numa(n) => s"NUM(${valueOf(n)})"
+    case Value.Numa(n) => s"NUM(${intToInt(n)})"
   }
 
   def generaliseOutputContextCheck(l: String, ePrime: iEFSM, e: iEFSM, r: Nat.nat, v: Value.value, s_old: Nat.nat, s_new: Nat.nat): Boolean = {
@@ -156,15 +125,15 @@ object Dirties {
     TypeConversion.efsmToSALTranslator(Inference.tm(e), f_old)
     val inxLabel = Code_Generation.input_updates_register(ePrime)
     addLTL("salfiles/" + f_old + s".sal", s"  inputValue: THEOREM MichaelsEFSM |-\n" +
-      s"    U(cfstate /= NULL_STATE, cfstate=State_${valueOf(s_old)}) =>\n"+
+      s"    U(cfstate /= NULL_STATE, cfstate=State_${natToInt(s_old)}) =>\n"+
       s"    U(label = ${inxLabel._2} => I(1) = ${salValue(v)}, X(cfstate = NULL_STATE));")
 
     val f_new = "intermediate_"+System.currentTimeMillis()
     TypeConversion.efsmToSALTranslator(Inference.tm(ePrime), f_new)
     addLTL("salfiles/" + f_new + ".sal", s"  generaliseOutput: THEOREM MichaelsEFSM |-\n"+
-      s"    U(cfstate /= NULL_STATE, cfstate = State_${valueOf(s_new)}) =>\n"+
-      s"    U(label = select => I(${valueOf(inxLabel._1)}) = ${salValue(v)}, cfstate = NULL_STATE) =>\n"+
-      s"    U(cfstate = State_${valueOf(s_new)} => r_1 = Some(${salValue(v)}), cfstate=NULL_STATE);")
+      s"    U(cfstate /= NULL_STATE, cfstate = State_${natToInt(s_new)}) =>\n"+
+      s"    U(label = select => I(${natToInt(inxLabel._1)}) = ${salValue(v)}, cfstate = NULL_STATE) =>\n"+
+      s"    U(cfstate = State_${natToInt(s_new)} => r_1 = Some(${salValue(v)}), cfstate=NULL_STATE);")
 
 
     println(s"sal-smc --assertion='${f_old}{100}!inputValue'")
@@ -188,11 +157,12 @@ object Dirties {
                                 // println("n")
                                 return false
                               }
-                              else if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t2, t1, b, a, s, s_prime)) {
+                              if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t2, t1, b, a, s, s_prime)) {
                                 // println("n")
                                 return false
                               }
                               else {
+                                println(s"Does ${PrettyPrinter.transitionToString(t1)} directly subsume ${PrettyPrinter.transitionToString(t2)}? (y/N)")
                                 val subsumes = readLine("") == "y"
                                 subsumes
                               }

@@ -248,6 +248,10 @@ lemma medial_append: "medial c (a @ G) ra = medial c a ra |\<union>| medial c G 
   apply (simp only: medial_def List_maps_append pairs2context_append)
   by auto
 
+lemma medial_append_commutative: "medial c (g1 @ g2) = medial c (g2 @ g1)"
+  unfolding medial_append
+  by auto
+
 lemma medial_self_append: "medial c (g @ g) = medial c g"
   apply (rule ext)
   by (simp add: medial_append)
@@ -257,6 +261,28 @@ lemma medial_cons_subset: "medial c G ra |\<subseteq>| medial c (a # G) ra"
   apply (simp only: maps_simps(1))
   apply (simp only: pairs2context_append)
   by auto
+
+lemma equality_guard_gives_equality_constraint: 
+  "(\<exists> v. gexp.Eq (V (I i)) (L v) \<in> set G) \<Longrightarrow>
+    \<exists>v. (Eq v) |\<in>| medial c G (V (I i))"
+proof(induct G)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a G)
+  then show ?case
+    apply (simp add: medial_def)
+    apply clarify
+    apply (case_tac "\<exists>v. cexp.Eq v |\<in>| c (V (I i))")
+     apply auto[1]
+    apply simp
+    apply (case_tac "a = gexp.Eq (V (I i)) (L v)")
+     apply (simp add: pairs2context_def List.maps_def)
+     apply (rule_tac x=v in exI)
+     apply (simp add: fold_invariant)
+    apply simp
+    using medial_cons medial_def by fastforce
+qed
 
 lemma medial_filter: "medial c (filter f G) ra |\<subseteq>| medial c G ra"
 proof(induct G)
@@ -295,9 +321,64 @@ fun apply_update :: "context \<Rightarrow> context \<Rightarrow> update_function
   "apply_update l c (v, Plus vb vc) = update c (V v) (fimage (\<lambda>(a, b). compose_plus a b) ((get l vb) |\<times>| (get l vc)))" |
   "apply_update l c (v, Minus vb vc) = update c (V v) (fimage (\<lambda>(a, b). compose_minus a b) ((get l vb) |\<times>| (get l vc)))"
 
+lemma not_updated_stays_the_same: "aa \<noteq> r \<Longrightarrow> apply_update m a (aa, b) (V r) = a (V r)"
+proof(induct b)
+  case (L x)
+  then show ?case by simp
+next
+  case (V x)
+  then show ?case
+    by simp
+next
+  case (Plus b1 b2)
+  then show ?case
+    by simp
+next
+  case (Minus b1 b2)
+  then show ?case
+    by simp
+qed
+
 primrec apply_updates :: "context \<Rightarrow> context \<Rightarrow> update_function list \<Rightarrow> context" where
   "apply_updates _ c [] = c" |
   "apply_updates l c (h#t) = (apply_update l (apply_updates l c t) h)"
+
+lemma not_updated_stays_the_same_2: "filter (\<lambda>(r', u). r' = r) u = [] \<Longrightarrow> 
+       apply_updates m c u (V r) = c (V r)"
+proof(induct u)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a u)
+  then show ?case
+    apply (case_tac a)
+    apply simp
+    apply (case_tac "aa = r")
+     apply simp
+    by (simp add: not_updated_stays_the_same)
+qed
+
+lemma updated_variable_value: "(r, (V v)) \<in> set u \<Longrightarrow>
+       length (filter (\<lambda>(r', u). r' = r) u) = 1 \<Longrightarrow>
+       apply_updates m c u (V r) = m (V v)"
+proof(induct u)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a u)
+  then show ?case
+    apply simp
+    apply (case_tac "a = (r, V v)")
+     apply simp
+    apply simp
+    apply (cases a)
+    apply clarify
+    apply (case_tac "aa = r")
+     apply simp
+     apply (metis (mono_tags, lifting) case_prodI filter_empty_conv)
+    by (simp add: not_updated_stays_the_same)
+qed
 
 definition can_take :: "transition \<Rightarrow> context \<Rightarrow> bool" where
   "can_take t c \<equiv> consistent (medial c (Guard t))"
@@ -518,13 +599,9 @@ lemma consistent_medial_gives_consistent_anterior: "consistent (medial c G) \<Lo
   apply (simp add: consistent_def)
   by (metis (full_types) fBall_funion medial_def)
 
-lemma medial_equivalent: "medial c (Guard t @ Guard t) = medial c (Guard t)"
-  apply (rule ext)
-  by (simp add: medial_append)
-
 lemma transition_subsumes_self: "t \<^sub>c\<sqsupseteq> t"
   apply (simp add: subsumes_def)
-  apply (simp only: posterior_separate_def Let_def posterior_def medial_equivalent)
+  apply (simp only: posterior_separate_def Let_def posterior_def medial_self_append)
   apply (case_tac "consistent (medial c (Guard t))")
    apply simp
   by simp

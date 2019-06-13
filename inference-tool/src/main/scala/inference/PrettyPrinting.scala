@@ -19,8 +19,8 @@ object PrettyPrinter {
 
   def vnameToString(v: VName.vname): String = {
     v match {
-      case VName.I(Nat.Nata(n)) => "i"+n
-      case VName.R(Nat.Nata(n)) => "r"+n
+      case VName.I(Nat.Nata(n)) => "i" + n
+      case VName.R(Nat.Nata(n)) => "r" + n
     }
   }
 
@@ -35,36 +35,36 @@ object PrettyPrinter {
 
   def gexpToString(g: GExp.gexp): String = g match {
     case GExp.Bc(v) => v.toString()
-    case GExp.Eq(a, b) => (aexpToString(a) + "="+aexpToString(b))
-    case GExp.Gt(a, b) => (aexpToString(a) + ">"+aexpToString(b))
+    case GExp.Eq(a, b) => (aexpToString(a) + "=" + aexpToString(b))
+    case GExp.Gt(a, b) => (aexpToString(a) + ">" + aexpToString(b))
     case GExp.Null(v) => (aexpToString(v) + "= NULL")
-    case GExp.Nor(g1, g2) => ("!("+gexpToString(g1)+"||"+gexpToString(g2)+")")
+    case GExp.Nor(g1, g2) => ("!(" + gexpToString(g1) + "||" + gexpToString(g2) + ")")
   }
 
   def guardsToString(g: List[GExp.gexp]): String = {
-    "["+g.map(x => gexpToString(x)).mkString(", ")+"]"
+    "[" + g.map(x => gexpToString(x)).mkString(", ") + "]"
   }
 
   def outputsToString(g: List[AExp.aexp]): String = {
-    g.zipWithIndex.map(x => "o"+(x._2+1)+":="+aexpToString(x._1)).mkString(", ")
+    g.zipWithIndex.map(x => "o" + (x._2 + 1) + ":=" + aexpToString(x._1)).mkString(", ")
   }
 
   def updatesToString(g: List[(VName.vname, AExp.aexp)]): String = {
-    "["+g.map(a => (vnameToString(a._1)+":="+aexpToString(a._2))).mkString(", ")+"]"
+    "[" + g.map(a => (vnameToString(a._1) + ":=" + aexpToString(a._2))).mkString(", ") + "]"
   }
 
   def transitionToString(t: Transition.transition_ext[Unit]): String = {
-    (Transition.Label(t)) +
-    ":" + natToString(Transition.Arity(t)) +
-    guardsToString(Transition.Guard(t)) +
-    "/" +
-    outputsToString(Transition.Outputs(t)) +
+    (Transition.Label(t))  +
+    ":" + natToString(Transition.Arity(t))  +
+    guardsToString(Transition.Guard(t))  +
+    "/"  +
+    outputsToString(Transition.Outputs(t))  +
     updatesToString(Transition.Updates(t))
   }
 
   def efsmToStringAux(t: ((Nat.nat, Nat.nat),
   Transition.transition_ext[Unit])): String = {
-    nataPairToString(Product_Type.fst(t)) +
+    nataPairToString(Product_Type.fst(t))  +
     transitionToString(Product_Type.snd(t))
   }
 

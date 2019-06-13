@@ -1501,7 +1501,21 @@ def input_stored_in_reg(ta: Transition.transition_ext[Unit],
 ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
       Option[(Nat.nat, Nat.nat)]
   =
-  input_stored_in_reg_aux(ta, t, Inference.max_reg(e), Store_Reuse.max_input(e))
+  (input_stored_in_reg_aux(ta, t, Inference.max_reg(e),
+                            Store_Reuse.max_input(e))
+     match {
+     case None => None
+     case Some((i, r)) =>
+       (if (Nat.equal_nata(Nat.Nata((Lista.filter[(VName.vname,
+            AExp.aexp)](((a: (VName.vname, AExp.aexp)) =>
+                          {
+                            val (ra, _): (VName.vname, AExp.aexp) = a;
+                            VName.equal_vnamea(ra, VName.R(r))
+                          }),
+                         Transition.Updates[Unit](ta))).length),
+                            Nat.one_nat))
+         Some[(Nat.nat, Nat.nat)]((i, r)) else None)
+   })
 
 def generalise_output_direct_subsumption(ta: Transition.transition_ext[Unit],
   t: Transition.transition_ext[Unit],
@@ -2333,12 +2347,12 @@ def heuristic_1(l: List[List[(String,
      true))
      }))
 
-def is_generalisation_of(ta: Transition.transition_ext[Unit],
-                          t: Transition.transition_ext[Unit], i: Nat.nat,
-                          r: Nat.nat):
+def is_generalisation_of(x: Transition.transition_ext[Unit],
+                          xa: Transition.transition_ext[Unit], xb: Nat.nat,
+                          xc: Nat.nat):
       Boolean
   =
-  Transition.equal_transition_exta[Unit](ta, remove_guard_add_update(t, i, r))
+  Code_Generation.is_generalisation_of(x, xa, xb, xc)
 
 def is_generalised_output_of(ta: Transition.transition_ext[Unit],
                               t: Transition.transition_ext[Unit], r: Nat.nat,
@@ -3518,6 +3532,33 @@ def outputMatch_alt(uu: List[AExp.aexp], uv: List[AExp.aexp]): Boolean =
   case (uu, (AExp.Minus(vb, vc))::va) => false
   case (uu, v::(vb::vc)) => false
 }
+
+def tests_input_equality(ia: Nat.nat, x1: GExp.gexp): Boolean = (ia, x1) match {
+  case (ia, GExp.Eq(AExp.V(VName.I(i)), AExp.L(uu))) => Nat.equal_nata(ia, i)
+  case (uv, GExp.Bc(v)) => false
+  case (uv, GExp.Eq(AExp.L(vb), va)) => false
+  case (uv, GExp.Eq(AExp.V(VName.R(vc)), va)) => false
+  case (uv, GExp.Eq(AExp.Plus(vb, vc), va)) => false
+  case (uv, GExp.Eq(AExp.Minus(vb, vc), va)) => false
+  case (uv, GExp.Eq(v, AExp.V(vb))) => false
+  case (uv, GExp.Eq(v, AExp.Plus(vb, vc))) => false
+  case (uv, GExp.Eq(v, AExp.Minus(vb, vc))) => false
+  case (uv, GExp.Gt(v, va)) => false
+  case (uv, GExp.Nor(v, va)) => false
+  case (uv, GExp.Null(v)) => false
+}
+
+def is_generalisation_of(ta: Transition.transition_ext[Unit],
+                          t: Transition.transition_ext[Unit], i: Nat.nat,
+                          r: Nat.nat):
+      Boolean
+  =
+  (Transition.equal_transition_exta[Unit](ta,
+   Store_Reuse.remove_guard_add_update(t, i,
+r))) && (Nat.less_eq_nat(Nat.one_nat,
+                          Nat.Nata((Lista.filter[GExp.gexp](((a: GExp.gexp) =>
+                      tests_input_equality(i, a)),
+                     Transition.Guard[Unit](t))).length)))
 
 def input_updates_register_aux(x0: List[(VName.vname, AExp.aexp)]):
       Option[Nat.nat]
