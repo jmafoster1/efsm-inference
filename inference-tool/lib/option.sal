@@ -1,0 +1,10 @@
+option {XB : TYPE} : CONTEXT = BEGIN
+  B_OPTION : TYPE = DATATYPE
+    OPTION_BB,
+    Some(valueOf: XB),
+    None
+  END;
+
+  OPTION : TYPE = {g : B_OPTION | g /= OPTION_BB};
+
+END

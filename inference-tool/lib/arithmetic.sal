@@ -1,0 +1,95 @@
+arithmetic {N_ : INTEGER; string: TYPE} : CONTEXT = BEGIN
+  Value: CONTEXT = value {N_, string};
+  VALUE : TYPE =  Value ! VALUE;
+
+  value_option: CONTEXT = option {VALUE};
+  VALUE_OPTION : TYPE =  value_option ! OPTION;
+
+  valueOf : [value_option ! B_OPTION -> VALUE] = value_option ! valueOf;
+  None : VALUE_OPTION = value_option ! None;
+
+  Some? : [value_option ! B_OPTION -> bool] = value_option ! Some?;
+  NUM?: [Value ! B_VALUE -> bool] = Value ! NUM?;
+  natOf: [Value ! B_VALUE -> INTEGER] = Value ! natOf;
+  NUM: [Value ! int -> VALUE] = Value ! NUM;
+
+  TRILEAN: TYPE = {True, False, Invalid};
+
+  maybe_bool_int : [[[[INTEGER, INTEGER] -> bool], VALUE_OPTION, VALUE_OPTION] -> TRILEAN] =
+  LAMBDA(f: [[INTEGER, INTEGER] -> bool], x1 : VALUE_OPTION, x2: VALUE_OPTION):
+    IF Some?(x1) AND Some?(x2) THEN
+      IF NUM?(valueOf(x1)) AND NUM?(valueOf(x2))
+      THEN
+        IF f(natOf(valueOf(x1)), natOf(valueOf(x2))) THEN True ELSE False ENDIF
+      ELSE
+        Invalid
+      ENDIF
+    ELSE
+      Invalid
+    ENDIF;
+
+  value_gt : [[VALUE_OPTION, VALUE_OPTION] -> TRILEAN] =
+  LAMBDA(x: VALUE_OPTION, y: VALUE_OPTION): maybe_bool_int(LAMBDA(x: INTEGER, y: INTEGER): x > y, x, y);
+
+  value_lt : [[VALUE_OPTION, VALUE_OPTION] -> TRILEAN] =
+  LAMBDA(x: VALUE_OPTION, y: VALUE_OPTION): maybe_bool_int(LAMBDA(x: INTEGER, y: INTEGER): x < y, x, y);
+
+  value_ge : [[VALUE_OPTION, VALUE_OPTION] -> TRILEAN] =
+  LAMBDA(x: VALUE_OPTION, y: VALUE_OPTION): maybe_bool_int(LAMBDA(x: INTEGER, y: INTEGER): x >= y, x, y);
+
+  value_le : [[VALUE_OPTION, VALUE_OPTION] -> TRILEAN] =
+  LAMBDA(x: VALUE_OPTION, y: VALUE_OPTION): maybe_bool_int(LAMBDA(x: INTEGER, y: INTEGER): x <= y, x, y);
+
+  value_eq : [[VALUE_OPTION, VALUE_OPTION] -> TRILEAN] =
+  LAMBDA(x: VALUE_OPTION, y: VALUE_OPTION): IF x = y THEN True ELSE False ENDIF;
+
+  maybe_and : [[TRILEAN, TRILEAN] -> TRILEAN] =
+  LAMBDA(x1 : TRILEAN, x2: TRILEAN):
+    IF x1 = Invalid OR x2 = Invalid THEN
+      Invalid
+    ELSIF x1 = True AND x2 = True THEN
+      True
+    ELSE
+      False
+    ENDIF;
+
+  maybe_or : [[TRILEAN, TRILEAN] -> TRILEAN] =
+  LAMBDA(x1 : TRILEAN, x2: TRILEAN):
+    IF x1 = Invalid OR x2 = Invalid THEN
+      Invalid
+    ELSIF x1 = True OR x2 = True THEN
+      True
+    ELSE
+      False
+    ENDIF;
+
+  maybe_not: [TRILEAN -> TRILEAN] =
+  LAMBDA(x : TRILEAN):
+    IF x = True THEN
+      False
+    ELSIF x = False THEN
+      True
+    ELSE
+      Invalid
+    ENDIF;
+
+  maybe_arith_int : [[[[INTEGER, INTEGER] -> INTEGER], VALUE_OPTION, VALUE_OPTION] -> VALUE_OPTION] =
+  LAMBDA(f: [[INTEGER, INTEGER] -> INTEGER], x1 : VALUE_OPTION, x2: VALUE_OPTION):
+    IF Some?(x1) AND Some?(x2) THEN
+      IF NUM?(valueOf(x1)) AND NUM?(valueOf(x2))
+      THEN
+        value_option ! Some(NUM(f(natOf(valueOf(x1)), natOf(valueOf(x2)))))
+      ELSE
+        None
+      ENDIF
+    ELSE
+      None
+    ENDIF;
+
+  value_plus : [[VALUE_OPTION, VALUE_OPTION] -> VALUE_OPTION] =
+  LAMBDA(x: VALUE_OPTION, y: VALUE_OPTION): maybe_arith_int(LAMBDA(x: INTEGER, y: INTEGER): x + y, x, y);
+
+  value_minus : [[VALUE_OPTION, VALUE_OPTION] -> VALUE_OPTION] =
+  LAMBDA(x: VALUE_OPTION, y: VALUE_OPTION): maybe_arith_int(LAMBDA(x: INTEGER, y: INTEGER): x - y, x, y);
+
+END
