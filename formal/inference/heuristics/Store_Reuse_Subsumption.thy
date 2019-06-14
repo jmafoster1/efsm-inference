@@ -674,12 +674,6 @@ lemma register_updated_once:
   \<forall>u. (R ba, u) \<in> set (Updates t) \<longrightarrow> u = V (I aa)"
   using only_one_update input_stored_in_reg_reg_updated_once input_stored_in_reg_in_updates by blast
 
-lemma remove_obsolete_constraints_leaves_registers: 
-       "remove_obsolete_constraints (Contexts.apply_updates (medial c (Guard t)) c (Updates t)) (fst |`| fset_of_list (Updates t)) (V (R r)) =
-       (Contexts.apply_updates (medial c (Guard t)) c (Updates t)) (V (R r))"
-  apply (simp add: remove_obsolete_constraints_def no_illegal_updates_def)
-  by auto
-
 lemma input_stored_in_reg_aux_not_none: "input_stored_in_reg t t' e = Some (aa, ba) \<Longrightarrow>
 input_stored_in_reg_aux t t' (max_reg e) (max_input e) \<noteq> None"
   apply (simp add: input_stored_in_reg_def)
@@ -694,7 +688,9 @@ lemma input_stored_in_reg_updatess_reg_to_input:
   apply (simp add: remove_obsolete_constraints_leaves_registers)
   using generalised_updates input_stored_in_reg_aux_is_generalisation by fastforce
 
-lemma input_stored_in_reg_guards_input: "input_stored_in_reg t t' e = Some (aa, ba) \<Longrightarrow> (\<exists> v. gexp.Eq (V (I aa)) (L v) \<in> set (Guard t'))"
+lemma input_stored_in_reg_guards_input: 
+  "input_stored_in_reg t t' e = Some (aa, ba) \<Longrightarrow> 
+   (\<exists> v. gexp.Eq (V (I aa)) (L v) \<in> set (Guard t'))"
   apply (simp add: input_stored_in_reg_def)
   apply (case_tac "input_stored_in_reg_aux t t' (max_reg e) (max_input e)")
    apply simp
@@ -737,12 +733,147 @@ lemma input_stored_in_reg_medial_not_undef:
   using equality_guard_gives_equality_constraint[of aa "Guard t'" c]
   by auto
 
-lemma input_stored_in_reg_medial_equiv: "input_stored_in_reg t t' e = Some (aa, ba) \<Longrightarrow>
-       medial c (Guard t @ Guard t') = medial c (Guard t')"
+lemma input_stored_in_reg_gives_equality_constraint: "input_stored_in_reg t t' e = Some (aa, ba) \<Longrightarrow>
+       \<exists>v. Eq v |\<in>| medial c (Guard t') (V (I aa))"
+  using input_stored_in_reg_guards_input[of t t' e aa ba]
+  using equality_guard_gives_equality_constraint[of aa "Guard t'" c]
+  by auto
+
+lemma input_stored_in_reg_medial_equiv:
+  "input_stored_in_reg t t' e = Some (aa, ba) \<Longrightarrow>
+   medial c (Guard t @ Guard t') = medial c (Guard t')"
   using input_stored_in_reg_aux_is_generalisation[of t t' e aa ba]
   apply simp
   using generalisation_medial_equiv[of t t' aa ba c]
   apply simp
   using medial_append_commutative
   by simp
+
+lemma input_stored_in_reg_guard: "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow> Guard t' = (filter (\<lambda>g. \<not> gexp_constrains g (V (I i))) (Guard t))"
+  using input_stored_in_reg_aux_is_generalisation[of t' t e i r]
+  by (simp add: is_generalisation_of_def remove_guard_add_update_def)
+
+lemma input_stored_in_reg_derestricts_input: 
+  "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow> 
+   \<forall>g\<in>set (Guard t'). \<not> gexp_constrains g (V (I i))"
+  by (simp add: input_stored_in_reg_guard)
+
+lemma input_stored_in_reg_leaves_i_unchanged: 
+  "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
+   medial c (Guard t') (V (I i)) = c (V (I i))"
+  using input_stored_in_reg_derestricts_input[of t' t e i r]
+  using no_spurious_constraints[of "Guard t'" "I i" c]
+  by simp
+
+lemma input_stored_in_reg_preserves: "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
+    length (Outputs t) = length (Outputs t') \<and>
+    Arity t = Arity t' \<and>
+    Label t = Label t'"
+  using generalisation_of_preserves input_stored_in_reg_aux_is_generalisation by fastforce
+
+lemma fBall_true: "fBall {|cexp.Bc True|} (\<lambda>c. cval c v Map.empty = true)"
+  by (simp add: cval_true)
+
+lemma cval_eq_empty: "cval (Eq v) (V (I i)) Map.empty = false"
+  by (simp add: cval_def gval.simps ValueEq_def)
+
+lemma input_stored_in_reg_doesnt_subsume:
+      "c (V (I i)) = {|Bc True|} \<Longrightarrow>
+      input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
+      \<not> subsumes t c t'"
+  apply (simp add: subsumes_def input_stored_in_reg_preserves)
+  apply (rule disjI1)
+  apply (rule_tac x="V (I i)" in exI)
+  apply (rule_tac x="<>" in exI)
+  apply (simp add: input_stored_in_reg_leaves_i_unchanged fBall_true cval_true)
+  using input_stored_in_reg_gives_equality_constraint[of t' t e i r c]
+  apply simp
+  apply clarify
+  apply (rule_tac x="Eq v" in fBexI)
+   apply (simp add: cval_def gval.simps ValueEq_def)
+  by simp
+
+definition "Ii_true e1 e i s s' = (\<exists>p. accepts_trace (tm e1) p \<and>
+       gets_us_to s (tm e1) 0 Map.empty p \<and>
+       accepts_trace (tm e) p \<and>
+       gets_us_to s' (tm e) 0 Map.empty p \<and>
+       anterior_context (tm e) p (V (I i)) = {|Bc True|})"
+
+definition "original_doesnt_directly_subsume_generalised_prems e1 e s s' t t'= 
+   (case input_stored_in_reg t' t e of None \<Rightarrow> False | Some (i, r) \<Rightarrow>
+   Ii_true e1 e i s s' \<and>
+   no_illegal_updates t r)"
+
+lemma original_doesnt_directly_subsume_generalised_aux: 
+  "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
+   Ii_true e1 e i s s' \<Longrightarrow>
+   no_illegal_updates t r \<Longrightarrow>
+   \<not> directly_subsumes e1 e s s' t t'"
+  apply (simp add: directly_subsumes_def Ii_true_def)
+  apply (rule disjI1)
+  apply clarify
+  apply (rule_tac x=p in exI)
+  by (simp add: input_stored_in_reg_doesnt_subsume)
+
+lemma original_doesnt_directly_subsume_generalised: 
+  "original_doesnt_directly_subsume_generalised_prems e1 e s s' t t'\<Longrightarrow>
+   \<not> directly_subsumes e1 e s s' t t'"
+  apply (simp add: original_doesnt_directly_subsume_generalised_prems_def)
+  apply (case_tac "input_stored_in_reg t' t e")
+   apply simp
+  apply (case_tac a)
+  by (simp add: original_doesnt_directly_subsume_generalised_aux)
+
+lemma is_generalised_output_of_preserves: "is_generalised_output_of t' t aa b \<Longrightarrow>
+       length (Outputs t') = length (Outputs t) \<and>
+       Arity t' = Arity t \<and>
+       Label t' = Label t"
+  by (simp add: generalise_output_preserves_arity generalise_output_preserves_label generalise_output_preserves_output_length is_generalised_output_of_def)
+
+lemma generalise_output_literal: "is_generalised_output_of t' t r p \<Longrightarrow> \<exists>v. Outputs t ! p = L v"
+  by (simp add: is_generalised_output_of_def)
+
+lemma apply_outputs_specific_is_literal:
+  "is_generalised_output_of t' t r p \<Longrightarrow>
+   \<exists>v. apply_outputs (Outputs t) d ! p = Some v"
+  using generalise_output_literal[of t' t r p]
+  apply (simp add: is_generalised_output_of_def)
+  apply clarify
+  apply (rule_tac x=v in exI)
+  by (simp add: apply_outputs_nth_literal)
+
+lemma list_neq_nth: "\<exists>e. l1 ! e \<noteq> l2 ! e \<Longrightarrow> l1 \<noteq> l2"
+  by auto
+
+lemma test: "is_generalised_output_of t' t p r \<Longrightarrow> apply_outputs (Outputs t') d ! r = d (R p)"
+  sorry
+
+
+lemma "is_generalised_output_of t' t p r \<Longrightarrow>
+       \<exists>tr. accepts_trace (tm e1) tr \<and>
+           gets_us_to s (tm e1) 0 <> tr \<and>
+           accepts_trace (tm e) tr \<and>
+           gets_us_to s' (tm e) 0 <> tr \<and>
+           (\<exists>d. satisfies_context d (anterior_context (tm e) tr) \<and>
+                d (R r) \<noteq> (apply_outputs (Outputs t) d) ! p \<and>
+                apply_guards (Guard t') (case_vname <> (\<lambda>n. d (R n)))) \<Longrightarrow>
+       \<not>directly_subsumes e1 e s s' t t'"
+  apply (simp add: directly_subsumes_def subsumes_def is_generalised_output_of_preserves)
+  apply (rule disjI1)
+  apply clarify
+  apply (rule_tac x=tr in exI)
+  apply simp
+  apply (rule disjI2)
+  apply (rule disjI1)
+  apply (rule_tac x="[]" in exI)
+  apply (simp add: input2state_empty)
+  apply (rule_tac x=d in exI)
+  apply simp
+  apply (rule list_neq_nth)
+  apply (rule_tac x=r in exI)
+  apply (simp only: apply_outputs_alt)
+  using generalise_output_literal[of t' t p r]
+  apply simp
+  apply clarify
+  using test
 end
