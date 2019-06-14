@@ -24,6 +24,10 @@ primrec input2state :: "value list \<Rightarrow> nat \<Rightarrow> datastate" wh
   "input2state [] _ = <>" |
   "input2state (h#t) i = (\<lambda>x. if x = I i then Some h else (input2state t (i+1)) x)"
 
+lemma input2state_empty: "(\<lambda>n. input2state [] 1 (I n)) = <>"
+  apply (rule ext)
+  by simp
+
 lemma hd_input2state: "length i \<ge> 1 \<Longrightarrow> input2state i 1 (I 1) = Some (hd i)"
   by (metis hd_Cons_tl input2state.simps(2) le_numeral_extra(2) length_0_conv)
 
@@ -49,6 +53,36 @@ next
   case (Cons a p)
   then show ?case
     by simp
+qed
+
+lemma apply_outputs_nth: "apply_outputs (a # P) d ! Suc p = apply_outputs P d ! p"
+  by simp
+
+lemma apply_outputs_nth_append:
+ "p < length P \<Longrightarrow>
+  apply_outputs (P @ [a]) d ! p = apply_outputs P d ! p"
+  apply (simp only: apply_outputs_alt)
+  by (simp add: nth_append)
+
+lemma apply_outputs_append: "apply_outputs (P @ a) d = apply_outputs P d @ apply_outputs a d"
+  apply (simp only: apply_outputs_alt)
+  by simp
+
+lemma apply_outputs_nth_literal:
+  "p < length P \<Longrightarrow>
+   P ! p = L v \<Longrightarrow>
+   apply_outputs P d ! p = Some v"
+proof(induct P rule: rev_induct)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (snoc a P)
+  then show ?case
+    apply (simp del: apply_outputs.simps)
+    apply (simp only: apply_outputs_append)
+    apply (simp only: apply_outputs_alt)
+    by (metis aval.simps(1) length_map less_Suc_eq list.simps(9) nth_append nth_append_length)
 qed
 
 lemma apply_outputs_preserves_length: "length (apply_outputs p s) = length p"

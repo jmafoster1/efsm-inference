@@ -13,6 +13,11 @@ object Dirties {
 
   type Set[A] = scala.collection.immutable.Set[A]
 
+  // Converting models to SAL and checking them is quite slow
+  // Supplying the -s option sets this to true and allows us to bypass the
+  // actual model checking and just return true in order to speed things up.
+  var spoof = false
+
   def toZ3(v: Value.value, ctx: z3.Context): z3.Expr = v match {
     case Value.Numa(n) => ctx.mkInt(intToInt(n))
     case Value.Str(s) => ctx.mkString(s)
@@ -103,6 +108,10 @@ object Dirties {
   }
 
   def initiallyUndefinedContextCheck(e: iEFSM, r: Nat.nat, s: Nat.nat): Boolean = {
+    // Spoof the value and bypass the check
+    if (spoof) {
+      return true
+    }
     val f = "intermediate_"+System.currentTimeMillis()
     TypeConversion.efsmToSALTranslator(Inference.tm(e), f)
 
@@ -121,14 +130,19 @@ object Dirties {
   }
 
   def generaliseOutputContextCheck(l: String, ePrime: iEFSM, e: iEFSM, r: Nat.nat, v: Value.value, s_old: Nat.nat, s_new: Nat.nat): Boolean = {
-    val f_old = "orig_"+System.currentTimeMillis()
+    // Spoof the value and bypass the check
+    if (spoof) {
+      return true
+    }
+    val timeNow = System.currentTimeMillis()
+    val f_old = s"orig_${timeNow}"
     TypeConversion.efsmToSALTranslator(Inference.tm(e), f_old)
     val inxLabel = Code_Generation.input_updates_register(ePrime)
     addLTL("salfiles/" + f_old + s".sal", s"  inputValue: THEOREM MichaelsEFSM |-\n" +
       s"    U(cfstate /= NULL_STATE, cfstate=State_${natToInt(s_old)}) =>\n"+
       s"    U(label = ${inxLabel._2} => I(1) = ${salValue(v)}, X(cfstate = NULL_STATE));")
 
-    val f_new = "intermediate_"+System.currentTimeMillis()
+    val f_old = s"intermediate_${timeNow}"
     TypeConversion.efsmToSALTranslator(Inference.tm(ePrime), f_new)
     addLTL("salfiles/" + f_new + ".sal", s"  generaliseOutput: THEOREM MichaelsEFSM |-\n"+
       s"    U(cfstate /= NULL_STATE, cfstate = State_${natToInt(s_new)}) =>\n"+
@@ -147,16 +161,26 @@ object Dirties {
     return (output1.toString == "proved.\n" && output2.toString == "proved.\n")
   }
 
+  def IiTrue(e1: iEFSM, e: iEFSM, i: Nat.nat, s: Nat.nat, s_prime: Nat.nat): Boolean = {
+    // Implementing the check:
+    // "gets_us_to s (tm e1) 0 Map.empty p ∧
+    //   accepts_trace (tm e) p ∧
+    //   gets_us_to s' (tm e) 0 Map.empty p ∧
+    //   anterior_context (tm e) p (V (I i)) = {|Bc True|})"
+
+    // This is safe because any path that gets us to state s in e1 will now get
+    // us to s' in e because that's now state merging works. Isabelle requires
+    // the anterior_context bit but we know that input variables are
+    // unrestricted in anterior contexts
+    return true
+  }
+
   def scalaDirectlySubsumes(a: iEFSM,
                             b: iEFSM,
                             s: Nat.nat,
                             s_prime: Nat.nat,
                             t1: Transition.transition_ext[Unit],
                             t2: Transition.transition_ext[Unit]): Boolean = {
-                              if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t2, t1, b, s_prime)) {
-                                // println("n")
-                                return false
-                              }
                               if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t2, t1, b, a, s, s_prime)) {
                                 // println("n")
                                 return false

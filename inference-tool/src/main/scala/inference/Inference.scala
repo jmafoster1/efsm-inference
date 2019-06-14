@@ -1556,6 +1556,23 @@ def drop_guard_add_update_direct_subsumption(ta:
          Dirties.initiallyUndefinedContextCheck(e, r, s) else false)
    })
 
+def original_doesnt_directly_subsume_generalised_prems(e1:
+                 FSet.fset[(Nat.nat,
+                             ((Nat.nat, Nat.nat),
+                               Transition.transition_ext[Unit]))],
+                e: FSet.fset[(Nat.nat,
+                               ((Nat.nat, Nat.nat),
+                                 Transition.transition_ext[Unit]))],
+                sa: Nat.nat, s: Nat.nat, ta: Transition.transition_ext[Unit],
+                t: Transition.transition_ext[Unit]):
+      Boolean
+  =
+  (input_stored_in_reg(t, ta, e) match {
+     case None => false
+     case Some((i, r)) =>
+       (Dirties.IiTrue(e1, e, i, sa, s)) && (no_illegal_updates[Unit](ta, r))
+   })
+
 } /* object Store_Reuse_Subsumption */
 
 object Store_Reuse {
@@ -3635,8 +3652,11 @@ Transition.Outputs[Unit](t2)))
                   else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
           t2, b, a, sa, s))
                          true
-                         else Dirties.scalaDirectlySubsumes(a, b, sa, s, t1,
-                     t2)))))
+                         else (if (Store_Reuse_Subsumption.original_doesnt_directly_subsume_generalised_prems(a,
+                               b, sa, s, t1, t2))
+                                false
+                                else Dirties.scalaDirectlySubsumes(a, b, sa, s,
+                            t1, t2))))))
 
 def no_illegal_updates_code(x0: List[(VName.vname, AExp.aexp)], uu: Nat.nat):
       Boolean

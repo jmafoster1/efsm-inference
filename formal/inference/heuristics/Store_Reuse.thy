@@ -117,10 +117,16 @@ definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow
   \<rparr>"
 
 definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
-  "generalise_output t regX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (Guard t), Outputs = list_update (Outputs t) outputX (V (R regX)), Updates = (Updates t)\<rparr>"
+  "generalise_output t regX outputX = \<lparr>
+     Label = (Label t),
+     Arity = (Arity t),
+     Guard = (Guard t),
+     Outputs = list_update (Outputs t) outputX (V (R regX)),
+     Updates = (Updates t)
+   \<rparr>"
 
 definition is_generalised_output_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "is_generalised_output_of t' t r p = (t' = generalise_output t r p)"
+  "is_generalised_output_of t' t r p = (length (Outputs t) \<ge> 1 \<and> p < length (Outputs t) \<and> t' = generalise_output t r p \<and> (\<exists>v. Outputs t ! p = L v))"
 
 definition is_proper_generalised_output_of :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "is_proper_generalised_output_of t' t = (\<exists>p. \<exists>r. is_generalised_output_of t' t r p)"

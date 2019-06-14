@@ -16,6 +16,11 @@ object FrontEnd {
 
     // val filename = "sample-traces/vend1.json"
     val filename = args(0)
+    if (args.length > 1) {
+      if (args(1) == "-s") {
+        Dirties.spoof = true
+      }
+    }
     val rawJson = Source.fromFile(filename).getLines.mkString
     val parsed = (parse(rawJson))
 

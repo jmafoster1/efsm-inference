@@ -221,8 +221,86 @@ fun guard2pairs :: "context \<Rightarrow> gexp \<Rightarrow> (aexp \<times> cexp
 
   "guard2pairs a (Nor v va) = (map (\<lambda>(x, y). (x, fimage not y)) ((guard2pairs a v) @ (guard2pairs a va)))"
 
+lemma unconstrained_no_constraints: "\<not> gexp_constrains g (V v) \<Longrightarrow> \<nexists>c. (V v, c) \<in> set (guard2pairs C g)"
+proof(induct g)
+case (Bc x)
+  then show ?case
+    apply (cases x)
+    by auto
+next
+  case (Eq x1a x2)
+  then show ?case
+proof(induct x1a)
+      case (L x)
+      then show ?case
+        apply (cases x2)
+        by auto
+    next
+      case (V x)
+      then show ?case
+        apply (cases x2)
+        by auto
+    next
+      case (Plus x1a1 x1a2)
+      then show ?case
+        apply (cases x2)
+        by auto
+    next
+      case (Minus x1a1 x1a2)
+      then show ?case
+        apply (cases x2)
+        by auto
+    qed
+next
+  case (Gt x1a x2)
+  then show ?case
+proof(induct x1a)
+      case (L x)
+      then show ?case
+        apply (cases x2)
+        by auto
+    next
+      case (V x)
+      then show ?case
+        apply (cases x2)
+        by auto
+    next
+      case (Plus x1a1 x1a2)
+      then show ?case
+        apply (cases x2)
+        by auto
+    next
+      case (Minus x1a1 x1a2)
+      then show ?case
+        apply (cases x2)
+        by auto
+    qed
+next
+  case (Nor g1 g2)
+  then show ?case
+    by auto
+next
+  case (Null x)
+  then show ?case
+    apply (cases x)
+    by auto
+qed
+
 definition pairs2context :: "(aexp \<times> cexp fset) list \<Rightarrow> context" where
   "pairs2context l = (\<lambda>r. fold funion (map snd (filter (\<lambda>(a, _). a = r) l)) {||})"
+
+lemma no_new_constraints: "\<forall>ca. (V v, ca) \<notin> set P \<Longrightarrow>
+       pairs2context P (V v) = {||}"
+proof(induct P)
+  case Nil
+  then show ?case 
+    by (simp add: pairs2context_def)
+next
+  case (Cons a P)
+  then show ?case
+    using pairs2context_def
+    by auto
+qed
 
 lemma pairs2context_empty: "pairs2context [] x = {||}"
   by (simp add: pairs2context_def)
@@ -261,6 +339,23 @@ lemma medial_cons_subset: "medial c G ra |\<subseteq>| medial c (a # G) ra"
   apply (simp only: maps_simps(1))
   apply (simp only: pairs2context_append)
   by auto
+
+lemma no_spurious_constraints:
+  "\<forall>g\<in>set g. \<not> gexp_constrains g (V v) \<Longrightarrow>
+   medial c g (V v) = c (V v)"
+proof(induct g rule: rev_induct)
+  case Nil
+  then show ?case
+    by (simp add: medial_def List.maps_def pairs2context_def)
+next
+  case (snoc a g)
+  then show ?case
+    apply (simp add: medial_append)
+    apply (simp add: medial_def List.maps_def)
+    using no_new_constraints[of v "guard2pairs c a"]
+    using unconstrained_no_constraints[of a v c]
+    by simp
+qed
 
 lemma equality_guard_gives_equality_constraint: 
   "(\<exists> v. gexp.Eq (V (I i)) (L v) \<in> set G) \<Longrightarrow>
@@ -439,6 +534,12 @@ qed
 
 lemma remove_input_constraints_empty[simp]: "remove_obsolete_constraints \<lbrakk>\<rbrakk> s = \<lbrakk>\<rbrakk>"
   by (simp add: remove_obsolete_constraints_def)
+
+lemma remove_obsolete_constraints_leaves_registers: 
+       "remove_obsolete_constraints (Contexts.apply_updates (medial c (Guard t)) c (Updates t)) (fst |`| fset_of_list (Updates t)) (V (R r)) =
+       (Contexts.apply_updates (medial c (Guard t)) c (Updates t)) (V (R r))"
+  apply (simp add: remove_obsolete_constraints_def)
+  by auto
 
 definition posterior_separate :: "context \<Rightarrow> gexp list \<Rightarrow> update_function list \<Rightarrow> context" where (* Corresponds to Algorithm 1 in Foster et. al. *)
   "posterior_separate c g u = (let c' = (medial c g) in (if consistent c' then remove_obsolete_constraints (apply_updates c' c u) (fset_of_list (map fst u)) else (\<lambda>i. {|Bc False|})))"

@@ -17,11 +17,13 @@ declare CExp.satisfiable_def [code del]
 declare CExp.valid_def [code del]
 declare initially_undefined_context_check_def [code del]
 declare generalise_output_context_check_def [code del]
+declare Ii_true_def [code del]
 
 code_printing
   constant "GExp.satisfiable" \<rightharpoonup> (Scala) "Dirties.satisfiable" |
   constant "initially_undefined_context_check" \<rightharpoonup> (Scala) "Dirties.initiallyUndefinedContextCheck" |
-  constant "generalise_output_context_check" \<rightharpoonup> (Scala) "Dirties.generaliseOutputContextCheck"
+  constant "generalise_output_context_check" \<rightharpoonup> (Scala) "Dirties.generaliseOutputContextCheck" |
+  constant "Ii_true" \<rightharpoonup> (Scala) "Dirties.IiTrue"
 
 code_printing
   constant HOL.conj \<rightharpoonup> (Scala) "_ && _" |
@@ -199,6 +201,8 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
       then True
     else if generalise_output_direct_subsumption t1 t2 b a s s'
       then True
+    else if original_doesnt_directly_subsume_generalised_prems a b s s' t1 t2
+      then False
     else dirty_directly_subsumes a b s s' t1 t2
   )"
 
@@ -212,6 +216,12 @@ lemma [code]: "directly_subsumes a b s s' t1 t2 = directly_subsumes_cases a b s 
    apply (simp add: drop_guard_add_update_direct_subsumption_implies_direct_subsumption)
   apply (case_tac "generalise_output_direct_subsumption t1 t2 b a s s'")
    apply (simp add: generalise_output_directly_subsumes_original_executable)
+  apply (case_tac "original_doesnt_directly_subsume_generalised_prems a b s s' t1 t2")
+   apply simp
+   apply (case_tac "stored_reused t1 t2 b")
+    apply (simp add: original_doesnt_directly_subsume_generalised)
+   apply (case_tac aa)
+   apply (simp add: original_doesnt_directly_subsume_generalised)
   by (simp add: dirty_directly_subsumes_def)
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where

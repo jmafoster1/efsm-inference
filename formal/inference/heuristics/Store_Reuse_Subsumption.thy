@@ -179,7 +179,7 @@ lemma posterior_same: "\<forall>i. c (V (I i)) = {|Bc True|} \<Longrightarrow>
   by (simp add: posterior_def posterior_separate_def apply_updates_same)
 
 lemma is_generalisation_of_consistent_medial: "is_generalisation_of t' t i r \<Longrightarrow>
-    consistent (medial c (Guard t)) \<Longrightarrow> 
+    consistent (medial c (Guard t)) \<Longrightarrow>
     consistent (medial c (Guard t'))"
   by (simp add: is_generalisation_of_def consistent_medial_generalisation)
 
@@ -277,13 +277,13 @@ next
       by auto
   next
     case (Plus a11 a12)
-    then show ?case 
+    then show ?case
       apply (induct a2)
       using pairs2context_def
       by auto
   next
     case (Minus a11 a12)
-    then show ?case 
+    then show ?case
       apply (induct a2)
       using pairs2context_def
       by auto
@@ -421,7 +421,7 @@ lemma apply_outputs_equiv: "i < length (Outputs t) \<Longrightarrow>
   apply (simp add: generalise_output_def)
   by (simp add: apply_outputs_alt)
 
-(* 
+(*
   This shows that if we can guarantee that the value of a particular register is the literal output
   then the generalised output subsumes the specific output
 *)
@@ -470,11 +470,11 @@ definition stored_reused :: "transition \<Rightarrow> transition \<Rightarrow> i
 
 (*
     This shows that we can use the model checker to test whether the relevant register is the correct
-    value for direct subsumption 
+    value for direct subsumption
 *)
-lemma generalise_output_directly_subsumes_original: 
+lemma generalise_output_directly_subsumes_original:
       "stored_reused t' t e = Some (p, r) \<Longrightarrow>
-       is_generalised_output_of t' t p r \<Longrightarrow> 
+       is_generalised_output_of t' t p r \<Longrightarrow>
        nth (Outputs t) r = L v \<Longrightarrow>
        \<forall>t. accepts_trace (tm e) t \<and> gets_us_to s' (tm e) 0 <>  t \<longrightarrow> (anterior_context (tm e) t) (V (R p)) = {|Eq v|} \<Longrightarrow>
        directly_subsumes e1 e s s' t' t "
@@ -496,7 +496,7 @@ fun generalise_output_direct_subsumption :: "transition \<Rightarrow> transition
   )"
 
 (* This allows us to just run the two functions for quick subsumption *)
-lemma generalise_output_directly_subsumes_original_executable: 
+lemma generalise_output_directly_subsumes_original_executable:
       "generalise_output_direct_subsumption t' t e e' s s' \<Longrightarrow> directly_subsumes e1 e s s' t' t"
   apply simp
   apply (case_tac "stored_reused t' t e")
@@ -593,7 +593,7 @@ lemma input_stored_in_reg_aux_is_generalisation: "input_stored_in_reg t' t e = S
 (*
   This allows us to call these three functions for direct subsumption of generalised
 *)
-lemma generalised_directly_subsumes_original: 
+lemma generalised_directly_subsumes_original:
   "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
    initially_undefined_context_check e r s' \<Longrightarrow>
    no_illegal_updates t r \<Longrightarrow>
@@ -680,7 +680,7 @@ input_stored_in_reg_aux t t' (max_reg e) (max_input e) \<noteq> None"
   apply (cases "input_stored_in_reg_aux t t' (max_reg e) (max_input e)")
   by auto
 
-lemma input_stored_in_reg_updatess_reg_to_input: 
+lemma input_stored_in_reg_updatess_reg_to_input:
       "input_stored_in_reg t t' e = Some (aa, ba) \<Longrightarrow>
        consistent (medial c (Guard t)) \<Longrightarrow>
        posterior c t (V (R ba)) = (medial c (Guard t)) (V (I aa))"
@@ -688,8 +688,8 @@ lemma input_stored_in_reg_updatess_reg_to_input:
   apply (simp add: remove_obsolete_constraints_leaves_registers)
   using generalised_updates input_stored_in_reg_aux_is_generalisation by fastforce
 
-lemma input_stored_in_reg_guards_input: 
-  "input_stored_in_reg t t' e = Some (aa, ba) \<Longrightarrow> 
+lemma input_stored_in_reg_guards_input:
+  "input_stored_in_reg t t' e = Some (aa, ba) \<Longrightarrow>
    (\<exists> v. gexp.Eq (V (I aa)) (L v) \<in> set (Guard t'))"
   apply (simp add: input_stored_in_reg_def)
   apply (case_tac "input_stored_in_reg_aux t t' (max_reg e) (max_input e)")
@@ -753,12 +753,12 @@ lemma input_stored_in_reg_guard: "input_stored_in_reg t' t e = Some (i, r) \<Lon
   using input_stored_in_reg_aux_is_generalisation[of t' t e i r]
   by (simp add: is_generalisation_of_def remove_guard_add_update_def)
 
-lemma input_stored_in_reg_derestricts_input: 
-  "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow> 
+lemma input_stored_in_reg_derestricts_input:
+  "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
    \<forall>g\<in>set (Guard t'). \<not> gexp_constrains g (V (I i))"
   by (simp add: input_stored_in_reg_guard)
 
-lemma input_stored_in_reg_leaves_i_unchanged: 
+lemma input_stored_in_reg_leaves_i_unchanged:
   "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
    medial c (Guard t') (V (I i)) = c (V (I i))"
   using input_stored_in_reg_derestricts_input[of t' t e i r]
@@ -799,12 +799,12 @@ definition "Ii_true e1 e i s s' = (\<exists>p. accepts_trace (tm e1) p \<and>
        gets_us_to s' (tm e) 0 Map.empty p \<and>
        anterior_context (tm e) p (V (I i)) = {|Bc True|})"
 
-definition "original_doesnt_directly_subsume_generalised_prems e1 e s s' t t'= 
+definition "original_doesnt_directly_subsume_generalised_prems e1 e s s' t t'=
    (case input_stored_in_reg t' t e of None \<Rightarrow> False | Some (i, r) \<Rightarrow>
    Ii_true e1 e i s s' \<and>
    no_illegal_updates t r)"
 
-lemma original_doesnt_directly_subsume_generalised_aux: 
+lemma original_doesnt_directly_subsume_generalised_aux:
   "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
    Ii_true e1 e i s s' \<Longrightarrow>
    no_illegal_updates t r \<Longrightarrow>
@@ -815,7 +815,7 @@ lemma original_doesnt_directly_subsume_generalised_aux:
   apply (rule_tac x=p in exI)
   by (simp add: input_stored_in_reg_doesnt_subsume)
 
-lemma original_doesnt_directly_subsume_generalised: 
+lemma original_doesnt_directly_subsume_generalised:
   "original_doesnt_directly_subsume_generalised_prems e1 e s s' t t'\<Longrightarrow>
    \<not> directly_subsumes e1 e s s' t t'"
   apply (simp add: original_doesnt_directly_subsume_generalised_prems_def)
@@ -875,5 +875,4 @@ lemma "is_generalised_output_of t' t p r \<Longrightarrow>
   using generalise_output_literal[of t' t p r]
   apply simp
   apply clarify
-  using test
 end
