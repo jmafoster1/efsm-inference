@@ -7,7 +7,7 @@ type_synonym arity = nat
 type_synonym inputs = "value list"
 type_synonym outputs = "value option list"
 type_synonym output_function = "aexp"
-type_synonym update_function = "(vname \<times> aexp)"
+type_synonym update_function = "(nat \<times> aexp)"
 type_synonym updates = "update_function list"
 
 text_raw{*\snip{transitiontype}{1}{2}{%*}
@@ -16,7 +16,7 @@ record transition =
   Arity :: nat
   Guard :: "gexp list"
   Outputs :: "aexp list"
-  Updates :: "(vname \<times> aexp) list"
+  Updates :: updates
 text_raw{*}%endsnip*}
 
 lemma transition_equality: "((x::transition) = y) = ((Label x) = (Label y) \<and>

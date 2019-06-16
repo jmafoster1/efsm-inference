@@ -10,8 +10,13 @@ theory EFSM
   imports "~~/src/HOL/Library/FSet" Transition FSet_Utils
 begin
 
+declare One_nat_def [simp del]
+
+type_synonym cfstate = nat
 type_synonym inputs = "value list"
 type_synonym outputs = "value option list"
+type_synonym registers = "nat \<Rightarrow> value option"
+
 type_synonym event = "(label \<times> inputs)"
 type_synonym trace = "event list"
 type_synonym observation = "outputs list"
@@ -20,111 +25,33 @@ type_synonym transition_matrix = "((nat \<times> nat) \<times> transition) fset"
 definition Str :: "string \<Rightarrow> value" where
   "Str s \<equiv> value.Str (String.implode s)"
 
-primrec input2state :: "value list \<Rightarrow> nat \<Rightarrow> datastate" where
-  "input2state [] _ = <>" |
-  "input2state (h#t) i = (\<lambda>x. if x = I i then Some h else (input2state t (i+1)) x)"
+definition input2state :: "value list \<Rightarrow> nat \<Rightarrow> datastate" where
+  "input2state n i = map_of (map (\<lambda>(i, v). (I i, v)) (enumerate 1 n))"
 
-lemma hd_input2state: "length i \<ge> 1 \<Longrightarrow> input2state i 1 (I 1) = Some (hd i)"
-  by (metis hd_Cons_tl input2state.simps(2) le_numeral_extra(2) length_0_conv)
-
-definition join_ir :: "value list \<Rightarrow> datastate \<Rightarrow> datastate" where
+definition join_ir :: "value list \<Rightarrow> registers \<Rightarrow> datastate" where
   "join_ir i r \<equiv> (\<lambda>x. case x of
-    R n \<Rightarrow> r (R n) |
+    R n \<Rightarrow> r n |
     I n \<Rightarrow> (input2state i 1) (I n)
   )"
-declare join_ir_def [simp]
 
 definition S :: "transition_matrix \<Rightarrow> nat fset" where
   "S m = (fimage (\<lambda>((s, s'), t). s) m) |\<union>| fimage (\<lambda>((s, s'), t). s') m"
 
-primrec apply_outputs :: "output_function list \<Rightarrow> datastate \<Rightarrow> outputs" where
-  "apply_outputs [] _ = []" |
-  "apply_outputs (h#t) s = (aval h s)#(apply_outputs t s)"
-
-lemma apply_outputs_alt: "apply_outputs p s = map (\<lambda>p. aval p s) p"
-proof(induct p)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons a p)
-  then show ?case
-    by simp
-qed
+definition apply_outputs :: "aexp list \<Rightarrow> datastate \<Rightarrow> value option list" where
+  "apply_outputs p s = map (\<lambda>p. aval p s) p"
 
 lemma apply_outputs_preserves_length: "length (apply_outputs p s) = length p"
-  by (simp add: apply_outputs_alt)
+  by (simp add: apply_outputs_def)
 
-primrec apply_guards :: "gexp list \<Rightarrow> datastate \<Rightarrow> bool" where
-  "apply_guards [] _ = True" |
-  "apply_guards (h#t) s =  ((gval h s) = true \<and> (apply_guards t s))"
+definition apply_guards :: "gexp list \<Rightarrow> datastate \<Rightarrow> bool" where
+  "apply_guards G s = (\<forall>g \<in> set (map (\<lambda>g. gval g s) G). g = true)"
 
-lemma apply_guards_alt: "apply_guards G s = (\<forall>g \<in> set (map (\<lambda>g. gval g s) G). g = true)"
-proof(induct G)
-case Nil
-  then show ?case 
-    by simp
-next
-  case (Cons a G)
-  then show ?case
-    by simp
-qed
-
-primrec apply_updates :: "(vname \<times> aexp) list \<Rightarrow> datastate \<Rightarrow> datastate \<Rightarrow> datastate" where
+primrec apply_updates :: "updates \<Rightarrow> datastate \<Rightarrow> registers \<Rightarrow> registers" where
   "apply_updates [] _ new = new" |
   "apply_updates (h#t) old new = (\<lambda>x. if x = (fst h) then (aval (snd h) old) else (apply_updates t old new) x)"
 
-definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> transition) fset" where
+definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> transition) fset" where
   "possible_steps e s r l i = fimage (\<lambda>((origin, dest), t). (dest, t)) (ffilter (\<lambda>((origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"
-
-lemma possible_steps_alt_aux: "(\<lambda>((origin, dest), t). (dest, t)) |`|
-    ffilter
-     (\<lambda>((origin, dest), t).
-         origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state i 1 (I n) | R n \<Rightarrow> r (R n)))
-     e =
-    {|(d, t)|} \<Longrightarrow>
-    ffilter
-     (\<lambda>((origin, dest), t).
-         origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state i 1 (I n) | R n \<Rightarrow> r (R n)))
-     e =
-    {|((s, d), t)|}"
-proof(induct e)
-  case empty
-  then show ?case
-    apply (simp add: ffilter_empty)
-    by auto
-next
-  case (insert x e)
-  then show ?case
-    apply (cases x)
-    apply (case_tac a)
-    apply clarify
-    apply simp
-    apply (simp add: ffilter_finsert)
-    apply (case_tac "aa = s")
-     apply simp
-     apply (case_tac "Label ba = l")
-      apply simp
-      apply (case_tac "length i = Arity ba")
-       apply simp
-       apply (case_tac "apply_guards (Guard ba) (case_vname (\<lambda>n. input2state i (Suc 0) (I n)) (\<lambda>n. r (R n)))")
-    by auto
-qed
-
-lemma possible_steps_alt: "(possible_steps e s r l i = {|(d, t)|}) = (ffilter
-     (\<lambda>((origin, dest), t).
-         origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state i 1 (I n) | R n \<Rightarrow> r (R n)))
-     e =
-    {|((s, d), t)|})"
-  apply standard
-   apply (simp add: possible_steps_def possible_steps_alt_aux)
-  by (simp add: possible_steps_def)
-
-lemma possible_steps_singleton: "(ffilter
-     (\<lambda>((origin, dest), t).
-         origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state i 1 (I n) | R n \<Rightarrow> r (R n)))
-     e =
-    {|((s, d), t)|}) \<Longrightarrow> (possible_steps e s r l i = {|(d, t)|})"
-  by (simp add: possible_steps_alt)
 
 lemma singleton_dest: "fis_singleton (possible_steps e s r aa b) \<Longrightarrow>
        fthe_elem (possible_steps e s r aa b) = (baa, aba) \<Longrightarrow>
@@ -133,7 +60,7 @@ lemma singleton_dest: "fis_singleton (possible_steps e s r aa b) \<Longrightarro
   apply (simp add: possible_steps_def fmember_def)
   by auto
 
-definition step :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> outputs \<times> datastate) option" where
+definition step :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> outputs \<times> registers) option" where
 "step e s r l i = (let possibilities = possible_steps e s r l i in
                    if possibilities = {||} then None
                    else
@@ -148,24 +75,12 @@ lemma one_possible_step: "possible_steps e s r l i = {|(s', t)|} \<Longrightarro
        apply_outputs (Outputs t) (join_ir i r) = p \<Longrightarrow>
        apply_updates (Updates t) (join_ir i r) r = u \<Longrightarrow>
        step e s r l i = Some (t, s', p, u)"
-  apply (simp add: step_def)
-  apply standard
-  using One_nat_def apply presburger
-  using One_nat_def by presburger
+  by (simp add: step_def)
 
 lemma step_empty[simp]:"step {||} s r l i = None"
-proof-
-  have ffilter_empty: "ffilter
-       (\<lambda>((origin, dest), t).
-           origin = s \<and>
-           Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))))
-       {||} = {||}"
-    by auto
-  show ?thesis
-    by (simp add: step_def possible_steps_def ffilter_empty)
-qed
+  by (simp add: step_def possible_steps_def ffilter_empty)
 
-primrec observe_all :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> (transition \<times> nat \<times> outputs \<times> datastate) list" where
+primrec observe_all :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (transition \<times> nat \<times> outputs \<times> registers) list" where
   "observe_all _ _ _ [] = []" |
   "observe_all e s r (h#t) =
     (case (step e s r (fst h) (snd h)) of
@@ -176,7 +91,7 @@ primrec observe_all :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datast
 definition state :: "(transition \<times> nat \<times> outputs \<times> datastate) \<Rightarrow> nat" where
   "state x \<equiv> fst (snd x)"
 
-definition observe_trace :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> observation" where
+definition observe_trace :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> observation" where
   "observe_trace e s r t \<equiv> map (\<lambda>(t,x,y,z). y) (observe_all e s r t)"
 
 lemma observe_trace_step: "lst \<noteq> [] \<Longrightarrow>
@@ -192,15 +107,8 @@ next
     by (simp add: observe_trace_def)
 qed
 
-
 lemma observe_empty: "t = [] \<Longrightarrow> observe_trace e 0 <> t = []"
   by (simp add: observe_trace_def)
-
-definition state_trace :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> nat list" where
-  "state_trace e s r t \<equiv> map (\<lambda>(t,x,y,z). x) (observe_all e s r t)"
-
-definition transition_trace :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> transition list" where
-  "transition_trace e s r t \<equiv> map (\<lambda>(t,x,y,z). t) (observe_all e s r t)"
 
 definition efsm_equiv :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> trace \<Rightarrow> bool" where
   "efsm_equiv e1 e2 t \<equiv> ((observe_trace e1 0 <> t) = (observe_trace e2 0 <> t))"
@@ -236,12 +144,12 @@ next
   qed
 qed
 
-inductive accepts :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
+inductive accepts :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> bool" where
   base: "accepts e s d []" |
   step: "step e s d (fst h) (snd h) = Some (tr, s', p', d') \<Longrightarrow> accepts e s' d' t \<Longrightarrow> accepts e s d (h#t)"
 
-definition accepts_trace :: "transition_matrix \<Rightarrow> trace \<Rightarrow> bool" where
-  "accepts_trace e t = accepts e 0 <> t"
+abbreviation accepts_trace :: "transition_matrix \<Rightarrow> trace \<Rightarrow> bool" where
+  "accepts_trace e t \<equiv> accepts e 0 <> t"
 
 lemma no_step_none: "step e s r aa ba = None \<Longrightarrow> \<not>accepts e s r ((aa, ba) # p)"
   apply safe
@@ -363,10 +271,10 @@ lemma aux3: "\<forall>s d. (length t = length (observe_all e s d t)) \<longright
       by (simp only: step_length_suc step_some)
   qed
 
-inductive gets_us_to :: "nat \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> trace \<Rightarrow> bool" where
+inductive gets_us_to :: "nat \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> bool" where
   base: "s = target \<Longrightarrow> gets_us_to target _ s _ []" |
   step_some: "step e s r (fst h) (snd h) =  Some (_, s', _, r') \<Longrightarrow> gets_us_to target e s' r' t \<Longrightarrow> gets_us_to target e s r (h#t)" |
-  step_none: "step e s r (fst h) (snd h) = None \<Longrightarrow> s=target \<Longrightarrow> gets_us_to target e s r (h#t)"
+  step_none: "step e s r (fst h) (snd h) = None \<Longrightarrow> s = target \<Longrightarrow> gets_us_to target e s r (h#t)"
 
 lemma no_further_steps: "s \<noteq> s' \<Longrightarrow> \<not> gets_us_to s e s' r []"
   apply safe

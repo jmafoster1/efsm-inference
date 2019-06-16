@@ -110,7 +110,7 @@ primrec make_outputs :: "value list \<Rightarrow> output_function list" where
 fun maxS :: "transition_matrix \<Rightarrow> nat" where
   "maxS t = (if t = {||} then 0 else fMax ((fimage (\<lambda>((origin, dest), t). origin) t) |\<union>| (fimage (\<lambda>((origin, dest), t). dest) t)))"
 
-fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> (label \<times> value list \<times> value list) list \<Rightarrow> transition_matrix" where
+fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> (label \<times> value list \<times> value list) list \<Rightarrow> transition_matrix" where
   "make_branch e _ _ [] = e" |
   "make_branch e s r ((label, inputs, outputs)#t) =
     (case (step e s r label inputs) of
@@ -156,7 +156,7 @@ lemma dest_code: "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. fs
   apply (simp add: dest_def)
   by (metis fst_eqD surj_pair)
 
-inductive satisfies_trace :: "execution \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> bool" where
+inductive satisfies_trace :: "execution \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> bool" where
   base: "satisfies_trace [] e s d" |
   step: "step e s d l i = Some (t, s', (map (\<lambda>x. Some x) p), d') \<Longrightarrow>
          satisfies_trace ex e s' d' \<Longrightarrow>
@@ -165,14 +165,19 @@ inductive satisfies_trace :: "execution \<Rightarrow> transition_matrix \<Righta
 definition satisfies :: "execution set \<Rightarrow> transition_matrix \<Rightarrow> bool" where
   "satisfies T e = (\<forall>t \<in> T. satisfies_trace t e 0 <>)"
 
+definition r2d :: "registers \<Rightarrow> datastate" where
+  "r2d regs = (\<lambda>i. case i of R r \<Rightarrow> regs r | _ \<Rightarrow> None)"
+
 definition directly_subsumes :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes e1 e2 s s' t1 t2 \<equiv> (\<forall>p. accepts_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
-                                          accepts_trace (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
-                                          subsumes t1 (anterior_context (tm e2) p) t2) \<and>
-                                     (\<exists>c. subsumes t1 c t2)"
+                                             accepts_trace (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
+                                             (\<exists>c. anterior_context (tm e2) p = Some c \<and> subsumes t1 (r2d c) t2)) \<and>
+                                         (\<exists>c. subsumes t1 c t2)"
 
 lemma directly_subsumes_self: "directly_subsumes e1 e2 s s' t t"
-  by (simp add: directly_subsumes_def posterior_def posterior_separate_append_self subsumes_def)
+  apply (simp add: directly_subsumes_def)
+  apply (simp add: transition_subsumes_self)
+  by (simp add: accepts_gives_context)
 
 lemma gets_us_to_and_not_subsumes: "\<exists>p. accepts_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 Map.empty p \<and> accepts_trace (tm e2) p \<and> gets_us_to s' (tm e2) 0 Map.empty p \<and> \<not> subsumes t1 (anterior_context (tm e2) p) t2 \<Longrightarrow> \<not> directly_subsumes e1 e2 s s' t1 t2"
   by (simp add: directly_subsumes_def)
