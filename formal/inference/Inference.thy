@@ -165,13 +165,10 @@ inductive satisfies_trace :: "execution \<Rightarrow> transition_matrix \<Righta
 definition satisfies :: "execution set \<Rightarrow> transition_matrix \<Rightarrow> bool" where
   "satisfies T e = (\<forall>t \<in> T. satisfies_trace t e 0 <>)"
 
-definition r2d :: "registers \<Rightarrow> datastate" where
-  "r2d regs = (\<lambda>i. case i of R r \<Rightarrow> regs r | _ \<Rightarrow> None)"
-
 definition directly_subsumes :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes e1 e2 s s' t1 t2 \<equiv> (\<forall>p. accepts_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
                                              accepts_trace (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
-                                             (\<exists>c. anterior_context (tm e2) p = Some c \<and> subsumes t1 (r2d c) t2)) \<and>
+                                             (\<exists>c. anterior_context (tm e2) p = Some c \<and> subsumes t1 c t2)) \<and>
                                          (\<exists>c. subsumes t1 c t2)"
 
 lemma directly_subsumes_self: "directly_subsumes e1 e2 s s' t t"
@@ -179,8 +176,14 @@ lemma directly_subsumes_self: "directly_subsumes e1 e2 s s' t t"
   apply (simp add: transition_subsumes_self)
   by (simp add: accepts_gives_context)
 
-lemma gets_us_to_and_not_subsumes: "\<exists>p. accepts_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 Map.empty p \<and> accepts_trace (tm e2) p \<and> gets_us_to s' (tm e2) 0 Map.empty p \<and> \<not> subsumes t1 (anterior_context (tm e2) p) t2 \<Longrightarrow> \<not> directly_subsumes e1 e2 s s' t1 t2"
-  by (simp add: directly_subsumes_def)
+lemma gets_us_to_and_not_subsumes: 
+  "\<exists>p. accepts_trace (tm e1) p \<and>
+       gets_us_to s (tm e1) 0 Map.empty p \<and>
+       accepts_trace (tm e2) p \<and>
+       gets_us_to s' (tm e2) 0 Map.empty p \<and>
+       (anterior_context (tm e2) p) = Some a \<and>
+       \<not> subsumes t1 a t2 \<Longrightarrow> \<not> directly_subsumes e1 e2 s s' t1 t2"
+  unfolding directly_subsumes_def by auto
 
 lemma cant_directly_subsume: "\<forall>c. \<not> subsumes t c t' \<Longrightarrow> \<not> directly_subsumes m m' s s' t t'"
   by (simp add: directly_subsumes_def)
@@ -331,9 +334,9 @@ fun enumerate_gexp_regs :: "gexp \<Rightarrow> nat set" where
 
 definition enumerate_t_regs :: "transition \<Rightarrow> nat set" where
   "enumerate_t_regs t = (\<Union> set (map enumerate_gexp_regs (Guard t))) \<union>
-                                (\<Union> set (map enumerate_aexp_regs (Outputs t))) \<union>
-                                (\<Union> set (map (\<lambda>(_, u). enumerate_aexp_regs u) (Updates t))) \<union>
-                                (\<Union> set (map (\<lambda>(r, _). enumerate_aexp_regs (V r)) (Updates t)))"
+                        (\<Union> set (map enumerate_aexp_regs (Outputs t))) \<union>
+                        (\<Union> set (map (\<lambda>(_, u). enumerate_aexp_regs u) (Updates t))) \<union>
+                        (\<Union> set (map (\<lambda>(r, _). enumerate_aexp_regs (V (R r))) (Updates t)))"
 
 definition get_by_id_biggest_t_reg :: "transition \<Rightarrow> nat" where
   "get_by_id_biggest_t_reg t = Max ({0} \<union> enumerate_t_regs t)"

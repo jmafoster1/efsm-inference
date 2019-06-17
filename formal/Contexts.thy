@@ -13,20 +13,47 @@ begin
 definition can_take :: "transition \<Rightarrow> inputs \<Rightarrow> registers \<Rightarrow> bool" where
   "can_take t i r = apply_guards (Guard t) (join_ir i r)"
 
-definition medial :: "datastate \<Rightarrow> transition \<Rightarrow> bool" where
-  "medial c t = apply_guards (Guard t) c"
+lemma medial_subset: "set (Guard t') \<subseteq> set (Guard t) \<Longrightarrow> can_take t i r \<longrightarrow> can_take t' i r"
+  by (simp add: can_take_def apply_guards_subset)
 
-definition strip_inputs :: "datastate \<Rightarrow> registers" where
-  "strip_inputs d = (\<lambda>r. d (R r))"
+definition d2r :: "datastate \<Rightarrow> registers" where
+  "d2r d = (\<lambda>r. d (R r))"
+
+lemma d2r_keeps_regs_same [simp]: "d2r c r = c (R r)"
+  by (simp add: d2r_def)
 
 definition posterior :: "transition \<Rightarrow> datastate \<Rightarrow> registers option" where
-  "posterior t d = (if medial d t then Some (apply_updates (Updates t) d (strip_inputs d)) else None)"
+  "posterior t d = (if apply_guards (Guard t) d then Some (apply_updates (Updates t) d (d2r d)) else None)"
 
-definition subsumes :: "transition \<Rightarrow> datastate \<Rightarrow> transition \<Rightarrow> bool" where
-  "subsumes t2 c t1 = (medial c t1 \<longrightarrow> medial c t2 \<and>
-                       medial c t1 \<longrightarrow> apply_outputs (Outputs t1) c = apply_outputs (Outputs t2) c \<and>
-                       (\<exists>p1 p2. posterior t2 c = Some p1 \<and> posterior t2 c = Some p2 \<longrightarrow> (\<forall>P. P p1 \<longrightarrow> P p2)) \<and> 
-                       (\<exists>p1 p2. posterior t2 c = Some p1 \<longrightarrow> posterior t2 c = Some p2))"
+definition r2d :: "registers \<Rightarrow> datastate" where
+  "r2d regs = (\<lambda>i. case i of R r \<Rightarrow> regs r | _ \<Rightarrow> None)"
+
+definition subsumes :: "transition \<Rightarrow> registers \<Rightarrow> transition \<Rightarrow> bool" where
+  "subsumes t2 r t1 = (Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and>
+                       (\<forall>i. can_take t1 i r \<longrightarrow> can_take t2 i r) \<and>
+                       (\<forall>i. can_take t1 i r \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
+                       (\<forall>p1 p2 i. posterior t2 (join_ir i r) = Some p2 \<and> posterior t1 (join_ir i r) = Some p1 \<longrightarrow> (\<forall>P r'. (p1 r' = None) \<or> (P (p2 r') \<longrightarrow> P (p1 r')))) \<and>
+                       (\<forall>p1 p2 i. posterior t2 (join_ir i r) = Some p2 \<and> posterior t1 (join_ir i r) = Some p1 \<longrightarrow> (\<forall>r. p1 r \<noteq> None \<longrightarrow>  p2 r \<noteq> None))
+                      )"
+
+lemma subsumption: 
+  "(Label t1 = Label t2 \<and> Arity t1 = Arity t2) \<Longrightarrow>
+   (\<forall>i. can_take t1 i r \<longrightarrow> can_take t2 i r) \<Longrightarrow>
+   (\<forall>i. can_take t1 i r \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<Longrightarrow>
+   (\<forall>p1 p2 i. posterior t2 (join_ir i r) = Some p2 \<and> posterior t1 (join_ir i r) = Some p1 \<longrightarrow> (\<forall>P r. (p1 r = None) \<or> (P (p2 r) \<longrightarrow> P (p1 r)))) \<Longrightarrow>
+   (\<forall>p1 p2 i. posterior t2 (join_ir i r) = Some p2 \<and> posterior t1 (join_ir i r) = Some p1 \<longrightarrow> (\<forall>r. p1 r \<noteq> None \<longrightarrow>  p2 r \<noteq> None)) \<Longrightarrow>
+   subsumes t2 r t1"
+  by (simp add: subsumes_def)
+
+lemma inconsistent_updates: "\<exists>p1 p2. (\<exists>i. posterior t2 (join_ir i r) = Some p2 \<and> posterior t1 (join_ir i r) = Some p1) \<and> (\<exists>r. (\<exists>y. p1 r = Some y) \<and> p2 r = None) \<Longrightarrow>
+ \<not> subsumes t2 r t1"
+  by (simp add: subsumes_def)
+
+lemma inconsistent_updates2: "\<exists>p1 p2.
+       (\<exists>i. posterior t2 (join_ir i r) = Some p2 \<and> posterior t1 (join_ir i r) = Some p1) \<and>
+       (\<exists>P r. P (p2 r) \<and> (\<exists>y. p1 r = Some y) \<and> \<not> P (p1 r)) \<Longrightarrow>
+ \<not> subsumes t2 r t1"
+  by (simp add: subsumes_def)
 
 lemma transition_subsumes_self: "subsumes t c t"
   apply (simp add: subsumes_def)

@@ -47,7 +47,7 @@ fun bool2string :: "bool \<Rightarrow> String.literal" where
 
 definition transition2string :: "transition \<Rightarrow> String.literal" where
   "transition2string t = (Label t)+STR '':''+show_nat (Arity t) + STR ''[''+join (map gexp2string (Guard t)) STR '', ''+STR '']/'' +
-                         join (outputs2string (Outputs t) 1) STR '', ''+STR ''[''+join (map (\<lambda>(r, u). vname2string r + STR '':='' + aexp2string u) (Updates t)) STR '', ''+STR '']''"
+                         join (outputs2string (Outputs t) 1) STR '', ''+STR ''[''+join (map (\<lambda>(r, u). vname2string (R r) + STR '':='' + aexp2string u) (Updates t)) STR '', ''+STR '']''"
 
 code_printing
   constant "writeiDot" \<rightharpoonup> (Scala) "Dirties.writeiDot" |

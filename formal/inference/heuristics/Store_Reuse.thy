@@ -59,21 +59,21 @@ lemma get_by_id_intratrace_matches_preproces:  "get_by_id_intratrace_matches e =
   the corresponding transition's uid. If the uids match then there's an intertrace match.
 *)
 
-definition i_possible_steps :: "iEFSM \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> nat \<times> transition) fset" where
+definition i_possible_steps :: "iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> nat \<times> transition) fset" where
   "i_possible_steps e s r l i = fimage (\<lambda>(uid, (origin, dest), t). (uid, dest, t)) (ffilter (\<lambda>(uid, (origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"
 
-definition i_step :: "iEFSM \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> nat \<times> datastate) option" where
-  "i_step e s r l i = (
-    if size (i_possible_steps e s r l i) = 1 then (
-      let (u, s', t) = (fthe_elem (i_possible_steps e s r l i)) in
-      Some (t, s', u, (EFSM.apply_updates (Updates t) (join_ir i r) r))
+definition i_step :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> nat \<times> registers) option" where
+  "i_step e s r l i = (let possibilities = (i_possible_steps e s r l i) in
+    if fis_singleton possibilities then (
+      let (u, s', t) = (fthe_elem possibilities) in
+      Some (t, s', u, (apply_updates (Updates t) (join_ir i r) r))
     )
     else None
   )"
 
 type_synonym match = "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> ((transition \<times> nat) \<times> ioTag \<times> nat))"
 
-primrec (nonexhaustive) walk_up_to :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> execution \<Rightarrow> (transition \<times> nat)" where
+primrec (nonexhaustive) walk_up_to :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (transition \<times> nat)" where
   "walk_up_to n e s r (h#t) =
     (case (i_step e s r (fst h) (fst (snd h))) of
       (Some (transition, s', uid, updated)) \<Rightarrow> (case n of 0 \<Rightarrow> (transition, uid) | Suc m \<Rightarrow> walk_up_to m e s' updated t)
@@ -113,7 +113,7 @@ definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow
     Label = (Label t), Arity = (Arity t),
     Guard = (filter (\<lambda>g. \<not> gexp_constrains g (V (I inputX))) (Guard t)),
     Outputs = (Outputs t),
-    Updates = (R outputX, (V (I inputX)))#(Updates t)
+    Updates = (outputX, (V (I inputX)))#(Updates t)
   \<rparr>"
 
 definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
@@ -170,7 +170,7 @@ lemmas remove_guard_add_update_preserves = remove_guard_add_update_preserves_lab
                                            remove_guard_add_update_preserves_outputs
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and> (\<exists>v. gexp.Eq (V (I i)) (L v) \<in> set (Guard t)))"
+  "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and> (\<exists>v. gexp.Eq (V (I i)) (L v) \<in> set (Guard t)) \<and> r \<notin> set (map fst (Updates t)))"
 
 lemma generalise_output_preserves_label: "Label (generalise_output t r p) = Label t"
   by (simp add: generalise_output_def)
@@ -196,7 +196,7 @@ lemmas generalise_output_preserves = generalise_output_preserves_label
 definition is_proper_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> bool" where
  "is_proper_generalisation_of t' t e = (\<exists>i \<le> max_input e. \<exists> r \<le> max_reg e.
                                               is_generalisation_of t' t i r \<and>
-                                              (\<forall>u \<in> set (Updates t). fst u \<noteq> (R r)) \<and>
-                                              (\<forall>i \<le> max_input e. \<forall>u \<in> set (Updates t). fst u \<noteq> (R r) \<and> fst u \<noteq> (I i))
+                                              (\<forall>u \<in> set (Updates t). fst u \<noteq> r) \<and>
+                                              (\<forall>i \<le> max_input e. \<forall>u \<in> set (Updates t). fst u \<noteq> r)
                                        )"
 end                                                   

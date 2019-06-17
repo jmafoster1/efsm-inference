@@ -46,9 +46,33 @@ lemma apply_outputs_preserves_length: "length (apply_outputs p s) = length p"
 definition apply_guards :: "gexp list \<Rightarrow> datastate \<Rightarrow> bool" where
   "apply_guards G s = (\<forall>g \<in> set (map (\<lambda>g. gval g s) G). g = true)"
 
+lemma apply_guards_subset: "set g' \<subseteq> set g \<Longrightarrow> apply_guards g c \<longrightarrow> apply_guards g' c"
+proof(induct g)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a g)
+  then show ?case
+    apply (simp add: apply_guards_def)
+    by auto
+qed
+
 primrec apply_updates :: "updates \<Rightarrow> datastate \<Rightarrow> registers \<Rightarrow> registers" where
   "apply_updates [] _ new = new" |
   "apply_updates (h#t) old new = (\<lambda>x. if x = (fst h) then (aval (snd h) old) else (apply_updates t old new) x)"
+
+lemma r_not_updated_stays_the_same: "r \<notin> fst ` set U \<Longrightarrow>
+    apply_updates U c d r = d r"
+proof(induct U)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a U)
+  then show ?case
+    by simp
+qed
 
 definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> transition) fset" where
   "possible_steps e s r l i = fimage (\<lambda>((origin, dest), t). (dest, t)) (ffilter (\<lambda>((origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"

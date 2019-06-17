@@ -68,7 +68,7 @@ primrec guards2dot_aux :: "gexp list \<Rightarrow> String.literal list" where
 
 primrec updates2dot_aux :: "update_function list \<Rightarrow> String.literal list" where
   "updates2dot_aux [] = []" |
-  "updates2dot_aux (h#t) = ((vname2dot (fst h))+STR '' := ''+(aexp2dot (snd h)))#(updates2dot_aux t)"
+  "updates2dot_aux (h#t) = ((vname2dot (R (fst h)))+STR '' := ''+(aexp2dot (snd h)))#(updates2dot_aux t)"
 
 primrec outputs2dot :: "output_function list \<Rightarrow> nat \<Rightarrow> String.literal list" where
   "outputs2dot [] _ = []" |
