@@ -25,13 +25,26 @@ type_synonym transition_matrix = "((nat \<times> nat) \<times> transition) fset"
 definition Str :: "string \<Rightarrow> value" where
   "Str s \<equiv> value.Str (String.implode s)"
 
-definition input2state :: "value list \<Rightarrow> nat \<Rightarrow> datastate" where
-  "input2state n i = map_of (map (\<lambda>(i, v). (I i, v)) (enumerate 1 n))"
+definition input2state :: "value list \<Rightarrow> registers" where
+  "input2state n = map_of (enumerate 1 n)"
+
+lemma input2state_nth: "i < length ia \<Longrightarrow> input2state ia (i+1) = Some (ia ! i)"
+proof(induct ia)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a ia)
+  then show ?case
+    apply (simp add: input2state_def)
+    apply clarify
+    by (simp add: add.commute in_set_enumerate_eq plus_1_eq_Suc)
+qed
 
 definition join_ir :: "value list \<Rightarrow> registers \<Rightarrow> datastate" where
   "join_ir i r \<equiv> (\<lambda>x. case x of
     R n \<Rightarrow> r n |
-    I n \<Rightarrow> (input2state i 1) (I n)
+    I n \<Rightarrow> (input2state i) n
   )"
 
 definition S :: "transition_matrix \<Rightarrow> nat fset" where

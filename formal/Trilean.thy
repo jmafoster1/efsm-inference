@@ -224,4 +224,6 @@ lemma maybe_and_valid: "x \<and>\<^sub>? y \<noteq> invalid \<Longrightarrow> x 
 lemma maybe_or_valid: "x \<or>\<^sub>? y \<noteq> invalid \<Longrightarrow> x \<noteq> invalid \<and> y \<noteq> invalid"
   using plus_trilean.elims by blast
 
+lemma maybe_or_false: "(x \<or>\<^sub>? y = false) = (x = false \<and> y = false)"
+  using plus_trilean.elims by blast
 end
