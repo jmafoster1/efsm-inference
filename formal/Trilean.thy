@@ -226,4 +226,13 @@ lemma maybe_or_valid: "x \<or>\<^sub>? y \<noteq> invalid \<Longrightarrow> x \<
 
 lemma maybe_or_false: "(x \<or>\<^sub>? y = false) = (x = false \<and> y = false)"
   using plus_trilean.elims by blast
+
+lemma maybe_not_invalid: "(\<not>\<^sub>? x = invalid) = (x = invalid)"
+  by (metis maybe_double_negation maybe_not.simps(3))
+
+lemma maybe_or_invalid: "(x \<or>\<^sub>? y = invalid) = (x = invalid \<or> y = invalid)"
+  using plus_trilean.elims by blast
+
+lemma maybe_and_invalid: "(x \<and>\<^sub>? y = invalid) = (x = invalid \<or> y = invalid)"
+  using times_trilean.elims by blast
 end

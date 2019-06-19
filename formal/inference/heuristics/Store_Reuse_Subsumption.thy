@@ -423,13 +423,53 @@ lemma inputs_v_neq_value: "i < length ia \<Longrightarrow> ia ! i = (v::value) \
 lemma is_generalisation_of_def_sub_i_lt_arity: "is_generalisation_of t' t i r \<Longrightarrow> i-1 < Arity t"
   using is_generalisation_of_def by auto
 
-lemma "i -1 < length ia \<Longrightarrow>
-    v = ia ! (i - 1) \<Longrightarrow>
-    v' \<noteq> v \<Longrightarrow>
-    i > 0 \<Longrightarrow>
-    \<not> gexp_constrains a (V (I i)) \<Longrightarrow>
-    gval a (join_ir ia c) = true \<Longrightarrow>
-    gval a (join_ir (ia[(i-1) := v']) c) = true"
+lemma x_minus_2: "(x::nat)-2 = (x-1)-1"
+  by simp
+
+lemma input2state_cons: "x1 > 1 \<Longrightarrow> x1 < length ia \<Longrightarrow> input2state (a # ia) x1 = input2state ia (x1-1)"
+  by (simp add: input2state_nth_pred)
+
+lemma aval_unconstrained: " \<not> aexp_constrains a (V (I i)) \<Longrightarrow>
+  i-1 < length ia \<Longrightarrow>
+  v = ia ! (i - 1) \<Longrightarrow>
+  v' \<noteq> v \<Longrightarrow>
+  i > 0 \<Longrightarrow>
+  aval a (join_ir ia c) = aval a (join_ir (ia[(i-1) := v']) c)"
+proof(induct a)
+  case (L x)
+  then show ?case
+    by simp
+next
+  case (V x)
+  then show ?case
+    apply (simp add: join_ir_def)
+    apply (cases x)
+     defer
+     apply simp
+    apply simp
+    apply (case_tac "x1=0")
+     apply (simp add: input2state_0)
+    apply simp
+    apply (case_tac "x1 \<le> length ia")
+     apply (simp add: input2state_nth_pred)
+    by (simp add: input2state_out_of_bounds)
+next
+  case (Plus a1 a2)
+  then show ?case
+    by simp
+next
+  case (Minus a1 a2)
+  then show ?case
+    by simp
+qed
+
+lemma gval_unconstrained: 
+ " \<not> gexp_constrains a (V (I i)) \<Longrightarrow>
+  i-1 < length ia \<Longrightarrow>
+  v = ia ! (i-1) \<Longrightarrow>
+  v' \<noteq> v \<Longrightarrow>
+  i > 0 \<Longrightarrow>
+  gval a (join_ir ia c) = gval a (join_ir (ia[(i-1) := v']) c)"
 proof(induct a)
 case (Bc x)
   then show ?case
@@ -437,49 +477,40 @@ case (Bc x)
     by auto
 next
   case (Eq x1a x2)
-  then show ?case sorry
+  then show ?case
+    apply simp
+    using aval_unconstrained
+    by force
 next
   case (Gt x1a x2)
-  then show ?case sorry
+  then show ?case
+    apply simp
+    using aval_unconstrained
+    by force
 next
   case (Nor a1 a2)
   then show ?case
-    apply simp
-    apply (simp add: maybe_negate_true maybe_or_false)
+    by simp
 next
   case (Null x)
-  then show ?case sorry
+  then show ?case
+    apply simp
+    using aval_unconstrained
+    by force
 qed
 
 lemma 
   "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
    is_generalisation_of t' t i r \<Longrightarrow>
    Eq (V (I i)) (L (ia ! (i - 1))) \<in> set (Guard t) \<Longrightarrow>
-   length ia = Arity t' \<Longrightarrow>
-   \<forall>g\<in>set (Guard t'). gval g (join_ir ia c) = true \<Longrightarrow>
-   i - 1 < Arity t \<Longrightarrow>
+   i - 1 < length ia \<Longrightarrow>
    v = ia ! (i - 1) \<Longrightarrow>
-   v' \<noteq> ia ! (i - 1) \<Longrightarrow>
-   \<forall>g\<in>set (Guard t'). gval g (join_ir (ia[i := v']) c) = true"
-proof(induct "Guard t'")
-case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a x)
-  then show ?case
-    using is_generalisation_of_derestricts_input[of t' t i r]
-    apply simp
-    apply (cases "Guard t'")
-     apply simp
-    apply simp
-    apply clarify
-    apply simp
-    apply standard
-
-qed
-
-
+   v' \<noteq> v \<Longrightarrow>
+   \<forall>g\<in>set (Guard t').  gval g (join_ir ia c) = gval g (join_ir (ia[i-1 := v']) c)"
+  using gval_unconstrained[of _ i ia v v' c]
+  apply simp
+  using is_generalisation_of_derestricts_input[of t' t i r]
+  using is_generalisation_of_def by blast
 
 lemma aux2:
 "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>

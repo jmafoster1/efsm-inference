@@ -28,6 +28,14 @@ definition Str :: "string \<Rightarrow> value" where
 definition input2state :: "value list \<Rightarrow> registers" where
   "input2state n = map_of (enumerate 1 n)"
 
+lemma input2state_0: "input2state i 0 = None"
+  apply (simp add: input2state_def)
+  by (metis in_set_enumerate_eq le_numeral_extra(2) map_of_SomeD not_Some_eq prod.sel(1))
+
+lemma input2state_out_of_bounds: "i > length ia \<Longrightarrow> input2state ia i = None"
+  apply (simp add: input2state_def)
+  by (metis (no_types, lifting) One_nat_def Suc_leI add.right_neutral add_Suc_right imageE in_set_enumerate_eq map_of_eq_None_iff not_less)
+
 lemma input2state_nth: "i < length ia \<Longrightarrow> input2state ia (i+1) = Some (ia ! i)"
 proof(induct ia)
   case Nil
@@ -38,6 +46,18 @@ next
   then show ?case
     apply (simp add: input2state_def)
     apply clarify
+    by (simp add: add.commute in_set_enumerate_eq plus_1_eq_Suc)
+qed
+
+lemma input2state_nth_pred: "0 < i \<Longrightarrow> i \<le> length ia \<Longrightarrow> input2state ia i = Some (ia ! (i-1))"
+proof(induct ia)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a ia)
+  then show ?case
+    apply (simp add: input2state_def)
     by (simp add: add.commute in_set_enumerate_eq plus_1_eq_Suc)
 qed
 
