@@ -127,7 +127,10 @@ next
     by (simp add: add.commute in_set_enumerate_eq plus_1_eq_Suc One_nat_def)
 qed
 
-lemma input2state_cons: "x1 > 0 \<Longrightarrow> x1 < length ia \<Longrightarrow> input2state (a # ia) x1 = input2state ia (x1-1)"
+lemma input2state_cons:
+  "x1 > 0 \<Longrightarrow>
+   x1 < length ia \<Longrightarrow>
+   input2state (a # ia) x1 = input2state ia (x1-1)"
   by (simp add: input2state_nth)
 
 definition join_ir :: "value list \<Rightarrow> registers \<Rightarrow> datastate" where
@@ -173,12 +176,67 @@ fun enumerate_aexp_inputs :: "aexp \<Rightarrow> nat set" where
   "enumerate_aexp_inputs (Plus v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va" |
   "enumerate_aexp_inputs (Minus v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va"
 
+fun enumerate_aexp_inputs_list :: "aexp \<Rightarrow> nat list" where
+  "enumerate_aexp_inputs_list (L _) = []" |
+  "enumerate_aexp_inputs_list (V (I n)) = [n]" |
+  "enumerate_aexp_inputs_list (V (R n)) = []" |
+  "enumerate_aexp_inputs_list (Plus v va) = enumerate_aexp_inputs_list v @ enumerate_aexp_inputs_list va" |
+  "enumerate_aexp_inputs_list (Minus v va) = enumerate_aexp_inputs_list v @ enumerate_aexp_inputs_list va"
+
 fun enumerate_aexp_regs :: "aexp \<Rightarrow> nat set" where
   "enumerate_aexp_regs (L _) = {}" |
   "enumerate_aexp_regs (V (R n)) = {n}" |
   "enumerate_aexp_regs (V (I _)) = {}" |
   "enumerate_aexp_regs (Plus v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
   "enumerate_aexp_regs (Minus v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va"
+
+fun enumerate_aexp_regs_list :: "aexp \<Rightarrow> nat list" where
+  "enumerate_aexp_regs_list (L _) = []" |
+  "enumerate_aexp_regs_list (V (R n)) = [n]" |
+  "enumerate_aexp_regs_list (V (I _)) = []" |
+  "enumerate_aexp_regs_list (Plus v va) = enumerate_aexp_regs_list v @ enumerate_aexp_regs_list va" |
+  "enumerate_aexp_regs_list (Minus v va) = enumerate_aexp_regs_list v @ enumerate_aexp_regs_list va"
+
+lemma enumerate_aexp_inputs_list: "set (enumerate_aexp_inputs_list l) = enumerate_aexp_inputs l"
+proof(induct l)
+case (L x)
+  then show ?case
+  by simp
+next
+  case (V x)
+  then show ?case
+    apply (cases x)
+    by auto
+next
+  case (Plus l1 l2)
+  then show ?case
+    by simp
+next
+  case (Minus l1 l2)
+  then show ?case
+    by simp
+qed
+
+lemma enumerate_aexp_regs_list: "set (enumerate_aexp_regs_list l) = enumerate_aexp_regs l"
+proof(induct l)
+case (L x)
+then show ?case
+  by simp
+next
+  case (V x)
+  then show ?case
+    apply (cases x)
+    by auto
+next
+  case (Plus l1 l2)
+  then show ?case
+    by simp
+next
+  case (Minus l1 l2)
+  then show ?case 
+    by simp
+qed
+
 
 lemma enumerate_aexp_regs_empty_reg_unconstrained:
   "enumerate_aexp_regs a = {} \<Longrightarrow> \<forall>r. \<not> aexp_constrains a (V (R r))"
@@ -200,6 +258,18 @@ next
   case (Minus a1 a2)
   then show ?case
     by simp
+qed
+
+lemma set_enumerate_aexp_inputs_list: "set (fold (@) (map enumerate_aexp_inputs_list l) []) = (\<Union> set (map enumerate_aexp_inputs l))"
+proof(induct l)
+case Nil
+  then show ?case
+    by simp
+next
+case (Cons a l)
+  then show ?case
+    using enumerate_aexp_inputs_list
+    by (simp add: fold_append_concat_rev inf_sup_aci(5))
 qed
 
 lemma enumerate_aexp_inputs_empty_input_unconstrained:
@@ -258,6 +328,29 @@ next
     apply (cases x)
      apply (simp add: join_ir_def)
     by simp
+next
+  case (Plus a1 a2)
+  then show ?case
+    by simp
+next
+  case (Minus a1 a2)
+  then show ?case
+    by simp
+qed
+
+lemma unconstrained_variable_swap_aval: 
+  "\<forall>i. \<not> aexp_constrains a (V (I i)) \<Longrightarrow>
+   \<forall>r. \<not> aexp_constrains a (V (R r)) \<Longrightarrow>
+   aval a s = aval a s'"
+proof(induct a)
+case (L x)
+  then show ?case
+    by simp
+next
+  case (V x)
+  then show ?case
+    apply (cases x)
+    by auto
 next
   case (Plus a1 a2)
   then show ?case

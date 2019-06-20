@@ -41,10 +41,11 @@ next
     by (metis input_unconstrained_gval_input_swap register_unconstrained_gval_register_swap)
 qed
 
-(*lemma "\<exists>s. gval (foldr gAnd G (Bc True)) s = true \<Longrightarrow>
-       \<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (I r)) \<Longrightarrow>
-       \<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (R r)) \<Longrightarrow>
-       apply_guards G (join_ir [] r)"
+lemma unconstrained_variable_swap_apply_guards:
+  "\<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (I r)) \<Longrightarrow>
+   \<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (R r)) \<Longrightarrow>
+   gval (foldr gAnd G (Bc True)) s = true \<Longrightarrow>
+   apply_guards G s'"
 proof(induct G)
   case Nil
   then show ?case
@@ -52,9 +53,9 @@ proof(induct G)
 next
   case (Cons a G)
   then show ?case
-    apply clarify
     apply (simp only: foldr.simps comp_def gval_gAnd maybe_and_true apply_guards_cons)
     apply simp
+    by (metis unconstrained_variable_swap_gval)
 qed
 
 lemma "max_reg t = None \<Longrightarrow> valid_transition t \<Longrightarrow> satisfiable (foldr gAnd (Guard t) (Bc True)) \<Longrightarrow> \<exists>i. can_take t i r"
@@ -67,7 +68,12 @@ lemma "max_reg t = None \<Longrightarrow> valid_transition t \<Longrightarrow> s
    apply (simp add: can_take_def satisfiable_def)
   using enumerate_gexp_inputs_set_input_unconstrained[of "Guard t"]
         enumerate_gexp_regs_set_reg_unconstrained[of "Guard t"]
-   apply (simp add: enumerate_registers_def enumerate_inputs_def)*)
+   apply (simp add: enumerate_registers_def enumerate_inputs_def)
+   apply clarify
+   apply (simp add: unconstrained_variable_swap_apply_guards)
+  apply (simp add: can_take_def satisfiable_def)
+
+
 
 lemma medial_subset: "length i = Arity t \<Longrightarrow>
                       Arity t = Arity t' \<Longrightarrow>
