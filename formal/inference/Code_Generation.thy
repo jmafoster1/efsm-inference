@@ -224,7 +224,7 @@ lemma [code]: "directly_subsumes m1 m2 s s' t1 t2 = directly_subsumes_cases m1 m
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and>
-                                    i \<le> Arity t \<and> i > 0 \<and>
+                                    i < Arity t \<and>
                                     r \<notin> set (map fst (Updates t)) \<and>
                                     (length (filter (tests_input_equality i) (Guard t)) \<ge> 1))"
 

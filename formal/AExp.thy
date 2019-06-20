@@ -21,6 +21,8 @@ theory AExp
   imports Value VName
 begin
 
+declare One_nat_def [simp del]
+
 type_synonym registers = "nat \<Rightarrow> value option"
 type_synonym datastate = "vname \<Rightarrow> value option"
 
@@ -98,17 +100,21 @@ instance by standard
 end
 
 definition input2state :: "value list \<Rightarrow> registers" where
-  "input2state n = map_of (enumerate 1 n)"
+  "input2state n = map_of (enumerate 0 n)"
 
-lemma input2state_0: "input2state i 0 = None"
-  apply (simp add: input2state_def)
-  by (metis in_set_enumerate_eq le_zero_eq map_of_SomeD numerals(2) option.exhaust prod.sel(1) rel_simps(76))
+lemma input2state_out_of_bounds: "i \<ge> length ia \<Longrightarrow> input2state ia i = None"
+proof(induct "ia")
+  case Nil
+  then show ?case
+    by (simp add: input2state_def)
+next
+  case (Cons a ia)
+  then show ?case
+    apply (simp add: input2state_def)
+    by (metis (mono_tags, lifting) imageE in_set_enumerate_eq length_Cons linorder_not_le list.size(4) map_of_eq_None_iff)
+qed
 
-lemma input2state_out_of_bounds: "i > length ia \<Longrightarrow> input2state ia i = None"
-  apply (simp add: input2state_def)
-  by (metis (no_types, lifting) One_nat_def Suc_leI add.right_neutral add_Suc_right imageE in_set_enumerate_eq map_of_eq_None_iff not_less)
-
-lemma input2state_nth: "i < length ia \<Longrightarrow> input2state ia (i+1) = Some (ia ! i)"
+lemma input2state_nth: "i < length ia \<Longrightarrow> input2state ia i = Some (ia ! i)"
 proof(induct ia)
   case Nil
   then show ?case
@@ -118,20 +124,11 @@ next
   then show ?case
     apply (simp add: input2state_def)
     apply clarify
-    by (simp add: add.commute in_set_enumerate_eq plus_1_eq_Suc)
+    by (simp add: add.commute in_set_enumerate_eq plus_1_eq_Suc One_nat_def)
 qed
 
-lemma input2state_nth_pred: "0 < i \<Longrightarrow> i \<le> length ia \<Longrightarrow> input2state ia i = Some (ia ! (i-1))"
-proof(induct ia)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a ia)
-  then show ?case
-    apply (simp add: input2state_def)
-    by (simp add: add.commute in_set_enumerate_eq plus_1_eq_Suc)
-qed
+lemma input2state_cons: "x1 > 0 \<Longrightarrow> x1 < length ia \<Longrightarrow> input2state (a # ia) x1 = input2state ia (x1-1)"
+  by (simp add: input2state_nth)
 
 definition join_ir :: "value list \<Rightarrow> registers \<Rightarrow> datastate" where
   "join_ir i r \<equiv> (\<lambda>x. case x of

@@ -944,7 +944,7 @@ def aval(x0: aexp, s: VName.vname => Option[Value.value]): Option[Value.value] =
 def input2state(n: List[Value.value]): Nat.nat => Option[Value.value] =
   ((a: Nat.nat) =>
     Map.map_of[Nat.nat,
-                Value.value](Lista.enumerate[Value.value](Nat.one_nat, n), a))
+                Value.value](Lista.enumerate[Value.value](Nat.zero_nata, n), a))
 
 def join_ir(i: List[Value.value], r: Nat.nat => Option[Value.value]):
       VName.vname => Option[Value.value]
@@ -3795,14 +3795,14 @@ def is_generalisation_of(ta: Transition.transition_ext[Unit],
   =
   (Transition.equal_transition_exta[Unit](ta,
    Store_Reuse.remove_guard_add_update(t, i,
-r))) && ((Nat.less_eq_nat(i, Transition.Arity[Unit](t))) && ((Nat.less_nat(Nat.zero_nata,
-                                    i)) && ((! ((Lista.map[(Nat.nat, AExp.aexp),
-                    Nat.nat](((a: (Nat.nat, AExp.aexp)) =>
-                               Product_Type.fst[Nat.nat, AExp.aexp](a)),
-                              Transition.Updates[Unit](t))) contains r)) && (Nat.less_eq_nat(Nat.one_nat,
-              Nat.Nata((Lista.filter[GExp.gexp](((a: GExp.gexp) =>
-          tests_input_equality(i, a)),
-         Transition.Guard[Unit](t))).length))))))
+r))) && ((Nat.less_nat(i, Transition.Arity[Unit](t))) && ((! ((Lista.map[(Nat.nat,
+                                   AExp.aexp),
+                                  Nat.nat](((a: (Nat.nat, AExp.aexp)) =>
+     Product_Type.fst[Nat.nat, AExp.aexp](a)),
+    Transition.Updates[Unit](t))) contains r)) && (Nat.less_eq_nat(Nat.one_nat,
+                            Nat.Nata((Lista.filter[GExp.gexp](((a: GExp.gexp) =>
+                        tests_input_equality(i, a)),
+                       Transition.Guard[Unit](t))).length)))))
 
 def input_updates_register_aux(x0: List[(Nat.nat, AExp.aexp)]): Option[Nat.nat]
   =
