@@ -212,6 +212,10 @@ lemma maybe_negate_true: "(\<not>\<^sub>? x = true) = (x = false)"
   apply (cases x)
   by auto
 
+lemma maybe_negate_false: "(\<not>\<^sub>? x = false) = (x = true)"
+  apply (cases x)
+  by auto
+
 lemma maybe_and_true: "(x \<and>\<^sub>? y = true) = (x = true \<and> y = true)"
   using times_trilean.elims by blast
 

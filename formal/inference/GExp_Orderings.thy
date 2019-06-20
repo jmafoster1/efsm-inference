@@ -443,4 +443,30 @@ fun less_gexpr :: "gexp \<Rightarrow> gexp \<Rightarrow> bool"  where
   qed
 end
 
+instantiation option :: (linorder) linorder begin
+fun less_option :: "'a option \<Rightarrow> 'a option \<Rightarrow> bool" where
+  "None < None = False" |
+  "None < _ = True" |
+  "Some _ < None = False" |
+  "Some a < Some b = (a < b)"
+
+fun less_eq_option :: "'a option \<Rightarrow> 'a option \<Rightarrow> bool" where
+  "less_eq_option a b = (a < b \<or> a = b)"
+
+instance
+  apply standard
+  apply (metis less_eq_option.simps less_option.elims(2) dual_order.asym less_option.simps(3) option.inject)
+     apply simp
+    apply (case_tac x)
+     apply (metis less_eq_option.simps less_option.elims(2) less_option.simps(2))
+    apply simp
+    apply (case_tac y)
+     apply simp
+    apply (case_tac z)
+     apply simp
+    apply auto[1]
+   apply (metis less_eq_option.elims(2) less_option.elims(2) dual_order.asym option.discI option.inject option.simps(3))
+  by (metis less_option.elims(3) less_eq_option.elims(3) less_option.simps(2) neqE option.inject)
+end
+
 end

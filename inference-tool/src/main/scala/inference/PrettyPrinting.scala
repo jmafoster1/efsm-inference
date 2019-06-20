@@ -49,8 +49,8 @@ object PrettyPrinter {
     g.zipWithIndex.map(x => "o" + (x._2 + 1) + ":=" + aexpToString(x._1)).mkString(", ")
   }
 
-  def updatesToString(g: List[(VName.vname, AExp.aexp)]): String = {
-    "[" + g.map(a => (vnameToString(a._1) + ":=" + aexpToString(a._2))).mkString(", ") + "]"
+  def updatesToString(g: List[(Nat.nat, AExp.aexp)]): String = {
+    "[" + g.map(a => (vnameToString(VName.R(a._1)) + ":=" + aexpToString(a._2))).mkString(", ") + "]"
   }
 
   def transitionToString(t: Transition.transition_ext[Unit]): String = {

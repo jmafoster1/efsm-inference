@@ -21,6 +21,7 @@ theory AExp
   imports Value VName
 begin
 
+type_synonym registers = "nat \<Rightarrow> value option"
 type_synonym datastate = "vname \<Rightarrow> value option"
 
 text_raw{*\snip{aexptype}{1}{2}{%*}
@@ -96,6 +97,48 @@ fun minus_aexp :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" where
 instance by standard
 end
 
+definition input2state :: "value list \<Rightarrow> registers" where
+  "input2state n = map_of (enumerate 1 n)"
+
+lemma input2state_0: "input2state i 0 = None"
+  apply (simp add: input2state_def)
+  by (metis in_set_enumerate_eq le_zero_eq map_of_SomeD numerals(2) option.exhaust prod.sel(1) rel_simps(76))
+
+lemma input2state_out_of_bounds: "i > length ia \<Longrightarrow> input2state ia i = None"
+  apply (simp add: input2state_def)
+  by (metis (no_types, lifting) One_nat_def Suc_leI add.right_neutral add_Suc_right imageE in_set_enumerate_eq map_of_eq_None_iff not_less)
+
+lemma input2state_nth: "i < length ia \<Longrightarrow> input2state ia (i+1) = Some (ia ! i)"
+proof(induct ia)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a ia)
+  then show ?case
+    apply (simp add: input2state_def)
+    apply clarify
+    by (simp add: add.commute in_set_enumerate_eq plus_1_eq_Suc)
+qed
+
+lemma input2state_nth_pred: "0 < i \<Longrightarrow> i \<le> length ia \<Longrightarrow> input2state ia i = Some (ia ! (i-1))"
+proof(induct ia)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a ia)
+  then show ?case
+    apply (simp add: input2state_def)
+    by (simp add: add.commute in_set_enumerate_eq plus_1_eq_Suc)
+qed
+
+definition join_ir :: "value list \<Rightarrow> registers \<Rightarrow> datastate" where
+  "join_ir i r \<equiv> (\<lambda>x. case x of
+    R n \<Rightarrow> r n |
+    I n \<Rightarrow> (input2state i) n
+  )"
+
 lemma aval_plus_aexp: "aval (a+b) s = aval (Plus a b) s"
   apply (case_tac a)
      apply (case_tac x1)
@@ -125,5 +168,107 @@ fun aexp_same_structure :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
   "aexp_same_structure (Plus a1 a2) (Plus a1' a2') = (aexp_same_structure a1 a1' \<and> aexp_same_structure a2 a2')" |
   "aexp_same_structure (Minus a1 a2) (Minus a1' a2') = (aexp_same_structure a1 a1' \<and> aexp_same_structure a2 a2')" |
   "aexp_same_structure _ _ = False"
+
+fun enumerate_aexp_inputs :: "aexp \<Rightarrow> nat set" where
+  "enumerate_aexp_inputs (L _) = {}" |
+  "enumerate_aexp_inputs (V (I n)) = {n}" |
+  "enumerate_aexp_inputs (V (R n)) = {}" |
+  "enumerate_aexp_inputs (Plus v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va" |
+  "enumerate_aexp_inputs (Minus v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va"
+
+fun enumerate_aexp_regs :: "aexp \<Rightarrow> nat set" where
+  "enumerate_aexp_regs (L _) = {}" |
+  "enumerate_aexp_regs (V (R n)) = {n}" |
+  "enumerate_aexp_regs (V (I _)) = {}" |
+  "enumerate_aexp_regs (Plus v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
+  "enumerate_aexp_regs (Minus v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va"
+
+lemma enumerate_aexp_regs_empty_reg_unconstrained:
+  "enumerate_aexp_regs a = {} \<Longrightarrow> \<forall>r. \<not> aexp_constrains a (V (R r))"
+proof(induct a)
+case (L x)
+  then show ?case
+    by simp
+next
+  case (V x)
+  then show ?case
+    apply (cases x)
+     apply simp
+    by simp
+next
+  case (Plus a1 a2)
+  then show ?case
+    by simp
+next
+  case (Minus a1 a2)
+  then show ?case
+    by simp
+qed
+
+lemma enumerate_aexp_inputs_empty_input_unconstrained:
+  "enumerate_aexp_inputs a = {} \<Longrightarrow> \<forall>r. \<not> aexp_constrains a (V (I r))"
+proof(induct a)
+case (L x)
+  then show ?case
+    by simp
+next
+  case (V x)
+  then show ?case
+    apply (cases x)
+     apply simp
+    by simp
+next
+  case (Plus a1 a2)
+  then show ?case
+    by simp
+next
+  case (Minus a1 a2)
+  then show ?case
+    by simp
+qed
+
+lemma input_unconstrained_aval_input_swap:
+  "\<forall>i. \<not> aexp_constrains a (V (I i)) \<Longrightarrow> aval a (join_ir i r) = aval a (join_ir i' r)"
+proof(induct a)
+case (L x)
+  then show ?case
+    by simp
+next
+  case (V x)
+  then show ?case
+    apply (cases x)
+     apply simp
+    by (simp add: join_ir_def)
+next
+  case (Plus a1 a2)
+  then show ?case
+    by simp
+next
+  case (Minus a1 a2)
+  then show ?case
+    by simp
+qed
+
+lemma input_unconstrained_aval_register_swap:
+  "\<forall>i. \<not> aexp_constrains a (V (R i)) \<Longrightarrow> aval a (join_ir i r) = aval a (join_ir i r')"
+proof(induct a)
+case (L x)
+  then show ?case
+    by simp
+next
+  case (V x)
+  then show ?case
+    apply (cases x)
+     apply (simp add: join_ir_def)
+    by simp
+next
+  case (Plus a1 a2)
+  then show ?case
+    by simp
+next
+  case (Minus a1 a2)
+  then show ?case
+    by simp
+qed
 
 end

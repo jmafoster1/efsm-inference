@@ -140,7 +140,7 @@ definition score :: "iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" wher
 definition origin :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
   "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (\<exists>s. x = (uid, s))) t))))"
 
-lemma origin_code: "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. fst x = uid) t))))"
+lemma origin_code[code]: "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. fst x = uid) t))))"
   apply (simp add: origin_def)
   by (metis fst_eqD surj_pair)
 
@@ -152,7 +152,7 @@ lemma exists_is_fst: "(\<lambda>x. (\<exists>s. x = (uid, s))) = (\<lambda>x. fs
   apply clarify
   by simp
 
-lemma dest_code: "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. fst x = uid) t))))"
+lemma dest_code[code]: "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. fst x = uid) t))))"
   apply (simp add: dest_def)
   by (metis fst_eqD surj_pair)
 
@@ -168,13 +168,12 @@ definition satisfies :: "execution set \<Rightarrow> transition_matrix \<Rightar
 definition directly_subsumes :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes e1 e2 s s' t1 t2 \<equiv> (\<forall>p. accepts_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
                                              accepts_trace (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
-                                             (\<exists>c. anterior_context (tm e2) p = Some c \<and> subsumes t1 c t2)) \<and>
+                                             (\<forall>c. anterior_context (tm e2) p = Some c \<longrightarrow> subsumes t1 c t2)) \<and>
                                          (\<exists>c. subsumes t1 c t2)"
 
 lemma directly_subsumes_self: "directly_subsumes e1 e2 s s' t t"
   apply (simp add: directly_subsumes_def)
-  apply (simp add: transition_subsumes_self)
-  by (simp add: accepts_gives_context)
+  by (simp add: transition_subsumes_self)
 
 lemma gets_us_to_and_not_subsumes: 
   "\<exists>p. accepts_trace (tm e1) p \<and>
@@ -318,31 +317,11 @@ lemma dest_from_in_S_uid_in_uids: "(uid, (from, to), t) |\<in>| e \<Longrightarr
   apply (simp add: S_def uids_def)
   by force
 
-fun enumerate_aexp_regs :: "aexp \<Rightarrow> nat set" where
-  "enumerate_aexp_regs (L _) = {}" |
-  "enumerate_aexp_regs (V (R n)) = {n}" |
-  "enumerate_aexp_regs (V (I _)) = {}" |
-  "enumerate_aexp_regs (Plus v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
-  "enumerate_aexp_regs (Minus v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va"
+definition max_reg :: "iEFSM \<Rightarrow> nat option" where
+  "max_reg e = fMax (fimage (\<lambda>(_, _, t). Transition.max_reg t) e)"
 
-fun enumerate_gexp_regs :: "gexp \<Rightarrow> nat set" where
-  "enumerate_gexp_regs (GExp.Bc _) = {}" |
-  "enumerate_gexp_regs (GExp.Null v) = enumerate_aexp_regs v" |
-  "enumerate_gexp_regs (GExp.Eq v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
-  "enumerate_gexp_regs (GExp.Lt v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
-  "enumerate_gexp_regs (GExp.Nor v va) = enumerate_gexp_regs v \<union> enumerate_gexp_regs va"
-
-definition enumerate_t_regs :: "transition \<Rightarrow> nat set" where
-  "enumerate_t_regs t = (\<Union> set (map enumerate_gexp_regs (Guard t))) \<union>
-                        (\<Union> set (map enumerate_aexp_regs (Outputs t))) \<union>
-                        (\<Union> set (map (\<lambda>(_, u). enumerate_aexp_regs u) (Updates t))) \<union>
-                        (\<Union> set (map (\<lambda>(r, _). enumerate_aexp_regs (V (R r))) (Updates t)))"
-
-definition get_by_id_biggest_t_reg :: "transition \<Rightarrow> nat" where
-  "get_by_id_biggest_t_reg t = Max ({0} \<union> enumerate_t_regs t)"
-
-definition max_reg :: "iEFSM \<Rightarrow> nat" where
-  "max_reg e = fMax (fimage (\<lambda>(_, _, t). get_by_id_biggest_t_reg t) e)"
+definition total_max_reg :: "iEFSM \<Rightarrow> nat" where
+  "total_max_reg e = (case fMax (fimage (\<lambda>(_, _, t). Transition.max_reg t) e) of None \<Rightarrow> 0 | Some r \<Rightarrow> r)"
 
 definition max_output :: "iEFSM \<Rightarrow> nat" where
   "max_output e = fMax (fimage (\<lambda>(_, _, t). length (Outputs t)) e)"
@@ -362,5 +341,5 @@ definition replaceAll :: "iEFSM \<Rightarrow> transition \<Rightarrow> transitio
   "replaceAll e old new = fimage (\<lambda>(uid, (from, dest), t). if t = old then (uid, (from, dest), new) else (uid, (from, dest), t)) e"
 
 definition all_regs :: "iEFSM \<Rightarrow> nat set" where
-  "all_regs e = \<Union> image (\<lambda>(_, _, t). enumerate_t_regs t) (fset e)"
+  "all_regs e = \<Union> image (\<lambda>(_, _, t). enumerate_registers t) (fset e)"
 end

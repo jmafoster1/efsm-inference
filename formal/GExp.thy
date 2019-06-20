@@ -82,6 +82,9 @@ lemma nor_equiv: "gval (gNot (gOr a b)) s = gval (Nor a b) s"
 definition satisfiable :: "gexp \<Rightarrow> bool" where
   "satisfiable g \<equiv> (\<exists>s. gval g s = true)"
 
+lemma satisfiable_true: "satisfiable (Bc True)"
+  by (simp add: satisfiable_def)
+
 definition gexp_valid :: "gexp \<Rightarrow> bool" where
   "gexp_valid g \<equiv> (\<forall>s. gval g s = true)"
 
@@ -194,4 +197,144 @@ fun gexp_same_structure :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
   "gexp_same_structure (gexp.Null a1) (gexp.Null a2) = aexp_same_structure a1 a2" |
   "gexp_same_structure _ _ = False"
 
+lemma gval_foldr_true: "(gval (foldr gAnd G (Bc True)) s = true) = (\<forall>g \<in> set G. gval g s = true)"
+proof(induct G)
+  case Nil
+  then show ?case
+    by (simp add: gval.simps)
+next
+  case (Cons a G)
+  then show ?case
+    apply (simp only: foldr.simps comp_def gval_gAnd maybe_and_true)
+    by simp
+qed
+
+fun enumerate_gexp_inputs :: "gexp \<Rightarrow> nat set" where
+  "enumerate_gexp_inputs (GExp.Bc _) = {}" |
+  "enumerate_gexp_inputs (GExp.Null v) = enumerate_aexp_inputs v" |
+  "enumerate_gexp_inputs (GExp.Eq v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va" |
+  "enumerate_gexp_inputs (GExp.Lt v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va" |
+  "enumerate_gexp_inputs (GExp.Nor v va) = enumerate_gexp_inputs v \<union> enumerate_gexp_inputs va"
+
+fun enumerate_gexp_regs :: "gexp \<Rightarrow> nat set" where
+  "enumerate_gexp_regs (GExp.Bc _) = {}" |
+  "enumerate_gexp_regs (GExp.Null v) = enumerate_aexp_regs v" |
+  "enumerate_gexp_regs (GExp.Eq v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
+  "enumerate_gexp_regs (GExp.Lt v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
+  "enumerate_gexp_regs (GExp.Nor v va) = enumerate_gexp_regs v \<union> enumerate_gexp_regs va"
+
+lemma enumerate_gexp_regs_empty_reg_unconstrained: "enumerate_gexp_regs g = {} \<Longrightarrow> \<forall>r. \<not> gexp_constrains g (V (R r))"
+proof(induct g)
+case (Bc x)
+  then show ?case
+    by simp
+next
+  case (Eq x1a x2)
+  then show ?case
+    by (simp add: enumerate_aexp_regs_empty_reg_unconstrained)
+next
+  case (Gt x1a x2)
+  then show ?case
+    by (simp add: enumerate_aexp_regs_empty_reg_unconstrained)
+next
+  case (Nor g1 g2)
+  then show ?case
+    by simp
+next
+  case (Null x)
+  then show ?case
+    by (simp add: enumerate_aexp_regs_empty_reg_unconstrained)
+qed
+
+lemma enumerate_gexp_inputs_empty_input_unconstrained: "enumerate_gexp_inputs g = {} \<Longrightarrow> \<forall>r. \<not> gexp_constrains g (V (I r))"
+proof(induct g)
+case (Bc x)
+  then show ?case
+    by simp
+next
+  case (Eq x1a x2)
+  then show ?case
+    by (simp add: enumerate_aexp_inputs_empty_input_unconstrained)
+next
+  case (Gt x1a x2)
+  then show ?case
+    by (simp add: enumerate_aexp_inputs_empty_input_unconstrained)
+next
+  case (Nor g1 g2)
+  then show ?case
+    by simp
+next
+  case (Null x)
+  then show ?case
+    by (simp add: enumerate_aexp_inputs_empty_input_unconstrained)
+qed
+
+lemma input_unconstrained_gval_input_swap: "\<forall>r. \<not> gexp_constrains a (V (I r)) \<Longrightarrow> (gval a (join_ir i r) = gval a (join_ir i' r))"
+proof(induct a)
+  case (Bc x)
+  then show ?case
+    apply (cases x)
+     apply (simp add: gval.simps(1))
+    by (simp add: gval.simps(2))
+next
+  case (Eq x1a x2)
+  then show ?case
+    apply (simp add: gval.simps ValueEq_def)
+    by (metis input_unconstrained_aval_input_swap)
+next
+  case (Gt x1a x2)
+  then show ?case
+    apply (simp add: gval.simps ValueGt_def)
+    by (metis input_unconstrained_aval_input_swap)
+next
+  case (Nor a1 a2)
+  then show ?case
+    by (simp add: gval.simps(5))
+next
+  case (Null x)
+  then show ?case
+    by (metis gexp_constrains.simps(2) gval.simps(6) input_unconstrained_aval_input_swap)
+qed
+
+lemma register_unconstrained_gval_register_swap: "\<forall>r. \<not> gexp_constrains a (V (R r)) \<Longrightarrow> (gval a (join_ir i r) = gval a (join_ir i r'))"
+proof(induct a)
+  case (Bc x)
+  then show ?case
+    apply (cases x)
+     apply (simp add: gval.simps(1))
+    by (simp add: gval.simps(2))
+next
+  case (Eq x1a x2)
+  then show ?case
+    apply (simp add: gval.simps ValueEq_def)
+    by (metis input_unconstrained_aval_register_swap)
+next
+  case (Gt x1a x2)
+  then show ?case
+    apply (simp add: gval.simps ValueGt_def)
+    by (metis input_unconstrained_aval_register_swap)
+next
+  case (Nor a1 a2)
+  then show ?case
+    by (simp add: gval.simps(5))
+next
+  case (Null x)
+  then show ?case
+    by (metis gexp.distinct(13) gexp.distinct(17) gexp.distinct(19) gexp.distinct(7) gexp.inject(5) gexp_constrains.simps(2) gval.elims input_unconstrained_aval_register_swap)
+qed
+
+lemma unconstrained_variable_swap: "\<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (I r)) \<Longrightarrow>
+       \<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (R r)) \<Longrightarrow>
+       apply_guards G (join_ir i r) = apply_guards G (join_ir i' r')"
+proof(induct G)
+  case Nil
+  then show ?case
+    by (simp add: apply_guards_def)
+next
+  case (Cons a G)
+  then show ?case
+    unfolding apply_guards_def
+    apply simp
+    by (metis input_unconstrained_gval_input_swap register_unconstrained_gval_register_swap)
+qed
 end

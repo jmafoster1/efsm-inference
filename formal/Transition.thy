@@ -37,4 +37,24 @@ definition same_structure :: "transition \<Rightarrow> transition \<Rightarrow> 
                            Arity t1 = Arity t2 \<and>
                            list_all (\<lambda>(g1, g2). gexp_same_structure g1 g2) (zip (Guard t1) (Guard t2)))"
 
+definition enumerate_inputs :: "transition \<Rightarrow> nat set" where
+  "enumerate_inputs t = (\<Union> set (map enumerate_gexp_inputs (Guard t))) \<union>
+                        (\<Union> set (map enumerate_aexp_inputs (Outputs t))) \<union>
+                        (\<Union> set (map (\<lambda>(_, u). enumerate_aexp_inputs u) (Updates t)))"
+
+definition max_input :: "transition \<Rightarrow> nat option" where
+  "max_input t = (if enumerate_inputs t = {} then None else Some (Max (enumerate_inputs t)))"
+
+definition enumerate_registers :: "transition \<Rightarrow> nat set" where
+  "enumerate_registers t = (\<Union> set (map enumerate_gexp_regs (Guard t))) \<union>
+                           (\<Union> set (map enumerate_aexp_regs (Outputs t))) \<union>
+                           (\<Union> set (map (\<lambda>(_, u). enumerate_aexp_regs u) (Updates t))) \<union>
+                           (\<Union> set (map (\<lambda>(r, _). enumerate_aexp_regs (V (R r))) (Updates t)))"
+
+definition max_reg :: "transition \<Rightarrow> nat option" where
+  "max_reg t = (if enumerate_registers t = {} then None else Some (Max (enumerate_registers t)))"
+
+definition valid_transition :: "transition \<Rightarrow> bool" where
+  "valid_transition t = (case max_input t of None \<Rightarrow> Arity t = 0 | Some x \<Rightarrow> x \<le> Arity t)"
+
 end

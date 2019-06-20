@@ -9,20 +9,6 @@ begin
 
 declare One_nat_def [simp del]
 
-declare GExp.satisfiable_def [code del]
-declare choice_def [code del]
-
-declare consistent_def [code del]
-declare CExp.satisfiable_def [code del]
-declare CExp.valid_def [code del]
-declare initially_undefined_context_check_def [code del]
-declare generalise_output_context_check_def [code del]
-
-code_printing
-  constant "GExp.satisfiable" \<rightharpoonup> (Scala) "Dirties.satisfiable" |
-  constant "initially_undefined_context_check" \<rightharpoonup> (Scala) "Dirties.initiallyUndefinedContextCheck" |
-  constant "generalise_output_context_check" \<rightharpoonup> (Scala) "Dirties.generaliseOutputContextCheck"
-
 code_printing
   constant HOL.conj \<rightharpoonup> (Scala) "_ && _" |
   constant HOL.disj \<rightharpoonup> (Scala) "_ || _" |
@@ -32,50 +18,16 @@ code_printing
   constant "List.remdups" \<rightharpoonup> (Scala) "_.distinct" |
   constant "List.length" \<rightharpoonup> (Scala) "Nat.Nata(_.length)"
 
-(*code_printing
-  type_constructor prod \<rightharpoonup> (Scala) infix 2 "," |
-  constant Pair \<rightharpoonup> (Scala) "!((_),/ (_))"*)
-
-(* lemma [code]: "step e s r l i = (if size (possible_steps e s r l i) = 1 then ( *)
-                     (* let (s', t) = (fthe_elem (possible_steps e s r l i)) in *)
-                     (* Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (EFSM.apply_updates (Updates t) (join_ir i r) r)) *)
-                   (* ) *)
-                   (* else None)" *)
-  (* apply (simp add: step_def) *)
-  (* apply (simp add: is_singleton_altdef One_nat_def) *)
-  (* by (metis One_nat_def fis_singleton.transfer is_singleton_altdef) *)
-
 fun guard_filter_code :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
   "guard_filter_code inputX (gexp.Eq a b) = (a \<noteq> (V (I inputX)) \<and> b \<noteq> (V (I inputX)))" |
   "guard_filter_code _ _ = True"
 
-lemma[code]: "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (fst x = uid)) t))))"
-  by (simp only: origin_def exists_is_fst)
-
-lemma[code]: "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. (fst x = uid)) t))))"
-  by (simp only: dest_def exists_is_fst)
-
-lemma gval_fold: "(gval (fold gAnd G (gexp.Bc True)) s = true) = (\<forall>g\<in>set (map (\<lambda>g. gval g s) G). g = true)"
-proof(induct G rule: rev_induct)
-  case Nil
-  then show ?case
-    by (simp add: gval.simps)
-next
-  case (snoc x xs)
-  then show ?case
-    by (simp add: gval_gAnd_True)
-qed
-
-lemma choice_aux: "(\<exists>s. apply_guards G s \<and> apply_guards G' s) = GExp.satisfiable ((fold gAnd (G@G') (gexp.Bc True)))"
-  apply (simp only: GExp.satisfiable_def gval_fold apply_guards_alt)
-  by auto
-
 lemma [code]: "choice t t' = ((Label t) = (Label t') \<and>
                       (Arity t) = (Arity t') \<and>
-                      GExp.satisfiable ((fold gAnd (Guard t@Guard t') (gexp.Bc True))))"
-  unfolding choice_def
-  using choice_aux
-  by blast
+                      satisfiable ((foldr gAnd (Guard t@Guard t') (gexp.Bc True))))"
+  unfolding satisfiable_def choice_def apply_guards_def
+  apply (simp only: gval_foldr_true)
+  by auto
 
 code_pred satisfies_trace.
 
@@ -103,18 +55,48 @@ fun always_different_outputs :: "aexp list \<Rightarrow> aexp list \<Rightarrow>
   "always_different_outputs ((L v)#t) ((L v')#t') = (if v = v' then always_different_outputs t t' else True)" |
   "always_different_outputs (h#t) (h'#t') = always_different_outputs t t'"
 
-lemma aux1: "h # t = Outputs t1 \<Longrightarrow>
-      Minus v va # t' = Outputs t2 \<Longrightarrow>
-      always_different_outputs (Outputs t1) (Outputs t2) =  always_different_outputs t t'"
-  by (metis always_different_outputs.simps(10))
-
-lemma always_different_outputs: "always_different_outputs o1 o2 \<Longrightarrow>
-    \<forall>i r. apply_outputs o1 (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))) \<noteq>
-          apply_outputs o2 (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n)))"
-  by (induct o1 o2 rule: always_different_outputs.induct, auto)
-                                                                  
-lemma outputs_never_equal_no_subsumption: "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow> \<not>subsumes t1 c t2"
-  by (metis outputs_never_equal join_ir_def always_different_outputs)
+lemma always_different_outputs_outputs_never_equal: "always_different_outputs O1 O2 \<Longrightarrow> apply_outputs O1 s \<noteq> apply_outputs O2 s"
+proof(induct O1 O2 rule: always_different_outputs.induct)
+  case 1
+  then show ?case
+    by simp
+next
+  case (2 a uu)
+  then show ?case
+    by (simp add: apply_outputs_def)
+next
+  case (3 a uv)
+  then show ?case
+    by (simp add: apply_outputs_def)
+next
+  case (4 v t v' t')
+  then show ?case
+    by (simp add: apply_outputs_def)
+next
+  case ("5_1" v t h' t')
+  then show ?case
+    by (simp add: apply_outputs_def)
+next
+  case ("5_2" v va t h' t')
+  then show ?case
+    by (simp add: apply_outputs_def)
+next
+case ("5_3" v va t h' t')
+  then show ?case
+    by (simp add: apply_outputs_def)
+next
+  case ("5_4" h t v t')
+  then show ?case
+    by (simp add: apply_outputs_def)
+next
+  case ("5_5" h t v va t')
+  then show ?case
+    by (simp add: apply_outputs_def)
+next
+  case ("5_6" h t v va t')
+  then show ?case
+    by (simp add: apply_outputs_def)
+qed
 
 fun tests_input_equality :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
   "tests_input_equality i (gexp.Eq (V (I i')) (L _)) = (i = i')" |
@@ -138,10 +120,9 @@ lemma uid_in_uids: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<lon
 (* definition "no_illegal_updates t r i = (\<forall>i. \<forall>u \<in> set (Updates t). fst u \<noteq> (R r) \<and> fst u \<noteq> (I i))" *)
 fun no_illegal_updates_code :: "update_function list \<Rightarrow> nat \<Rightarrow> bool" where
   "no_illegal_updates_code [] _ = True" |
-  "no_illegal_updates_code ((I _, u)#t) r = False" |
-  "no_illegal_updates_code ((R r', u)#t) r = (r \<noteq> r' \<and> no_illegal_updates_code t r)"
+  "no_illegal_updates_code ((r', u)#t) r = (r \<noteq> r' \<and> no_illegal_updates_code t r)"
 
-lemma no_illegal_updates_code_aux: "(\<forall>i. \<forall>u\<in>set u. fst u \<noteq> R r \<and> fst u \<noteq> I i) = no_illegal_updates_code u r"
+lemma no_illegal_updates_code_aux: "(\<forall>u\<in>set u. fst u \<noteq> r) = no_illegal_updates_code u r"
 proof(induct u)
 case Nil
   then show ?case
@@ -160,7 +141,7 @@ lemma no_illegal_updates_code [code]: "no_illegal_updates t r = no_illegal_updat
 definition random_member :: "'a fset \<Rightarrow> 'a option" where
   "random_member f = (if f = {||} then None else Some (Eps (\<lambda>x. x |\<in>| f)))"
 
-definition step :: "transition_matrix \<Rightarrow> nat \<Rightarrow> datastate \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> outputs \<times> datastate) option" where
+definition step :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> outputs \<times> registers) option" where
 "step e s r l i = (let possibilities = possible_steps e s r l i in
                    if possibilities = {||} then None
                    else
@@ -178,7 +159,7 @@ declare random_member_def [code del]
 code_printing constant "random_member" \<rightharpoonup> (Scala) "Dirties.randomMember"
 
 fun input_updates_register_aux :: "update_function list \<Rightarrow> nat option" where
-  "input_updates_register_aux ((R n, V (I n'))#_) = Some n'" |
+  "input_updates_register_aux ((n, V (I n'))#_) = Some n'" |
   "input_updates_register_aux (h#t) = input_updates_register_aux t" |
   "input_updates_register_aux [] = None"
 
@@ -189,11 +170,38 @@ definition "dirty_directly_subsumes = directly_subsumes"
 declare dirty_directly_subsumes_def [code del]
 code_printing constant "dirty_directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes"
 
+definition "always_different_outputs_direct_subsumption m1 m2 s s' t1 t2 = (always_different_outputs (Outputs t1) (Outputs t2) \<and>
+   (\<exists>p. accepts (tm m1) 0 Map.empty p \<and>
+    gets_us_to s (tm m1) 0 Map.empty p \<and>
+    accepts (tm m2) 0 Map.empty p \<and>
+    gets_us_to s' (tm m2) 0 Map.empty p \<and>
+    (\<forall>c. anterior_context (tm m2) p = Some c \<longrightarrow> (\<exists>i. can_take t2 i c))))"
+
+lemma always_different_outputs_can_take_not_subsumed: "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
+       \<forall>c. posterior_sequence (tm m2) 0 Map.empty p = Some c \<longrightarrow> (\<exists>i. can_take t2 i c) \<longrightarrow> \<not> subsumes t1 c t2"
+  apply standard
+  apply standard
+  apply standard
+  apply (rule bad_outputs)
+  using always_different_outputs_outputs_never_equal
+  by metis
+
+lemma always_different_outputs_direct_subsumption: 
+  "always_different_outputs_direct_subsumption m1 m2 s s' t1 t2 \<Longrightarrow>
+   \<not> directly_subsumes m1 m2 s s' t1 t2"
+  apply (simp add: directly_subsumes_def always_different_outputs_direct_subsumption_def)
+  apply standard
+  apply clarify
+  apply (rule_tac x=p in exI)
+  apply simp
+  using always_different_outputs_can_take_not_subsumed accepts_trace_gives_context
+  by (meson accepts_gives_context)
+
 definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes_cases a b s s' t1 t2 = (
     if t1 = t2
       then True
-    else if always_different_outputs (Outputs t1) (Outputs t2)
+    else if always_different_outputs_direct_subsumption a b s s' t1 t2
       then False
     else if drop_guard_add_update_direct_subsumption t1 t2 b s'
       then True
@@ -202,20 +210,23 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
     else dirty_directly_subsumes a b s s' t1 t2
   )"
 
-lemma [code]: "directly_subsumes a b s s' t1 t2 = directly_subsumes_cases a b s s' t1 t2"
+lemma [code]: "directly_subsumes m1 m2 s s' t1 t2 = directly_subsumes_cases m1 m2 s s' t1 t2"
   unfolding directly_subsumes_cases_def
   apply (case_tac "t1 = t2")
    apply (simp add: directly_subsumes_self)
-  apply (case_tac "always_different_outputs (Outputs t1) (Outputs t2)")
-   apply (simp add: cant_directly_subsume outputs_never_equal_no_subsumption)
-  apply (case_tac "drop_guard_add_update_direct_subsumption t1 t2 b s'")
-   apply (simp add: drop_guard_add_update_direct_subsumption_implies_direct_subsumption)
-  apply (case_tac "generalise_output_direct_subsumption t1 t2 b a s s'")
-   apply (simp add: generalise_output_directly_subsumes_original_executable)
-  by (simp add: dirty_directly_subsumes_def)
+  apply (case_tac "always_different_outputs_direct_subsumption a b s s' t1 t2")
+  apply (simp add: always_different_outputs_direct_subsumption dirty_directly_subsumes_def drop_guard_add_update_direct_subsumption_implies_direct_subsumption generalise_output_directly_subsumes_original_executable)
+  apply (case_tac "drop_guard_add_update_direct_subsumption t1 t2 m2 s'")
+  apply (meson always_different_outputs_direct_subsumption drop_guard_add_update_direct_subsumption_implies_direct_subsumption)
+  apply (case_tac "generalise_output_direct_subsumption t1 t2 m2 m1 s s'")
+   apply (meson always_different_outputs_direct_subsumption generalise_output_directly_subsumes_original_executable)
+  by (simp add: always_different_outputs_direct_subsumption dirty_directly_subsumes_def)
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and> (length (filter (tests_input_equality i) (Guard t)) \<ge> 1))"
+  "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and>
+                                    i \<le> Arity t \<and> i > 0 \<and>
+                                    r \<notin> set (map fst (Updates t)) \<and>
+                                    (length (filter (tests_input_equality i) (Guard t)) \<ge> 1))"
 
 lemma tests_input_equality: "(\<exists>v. gexp.Eq (V (I xb)) (L v) \<in> set G) = (1 \<le> length (filter (tests_input_equality xb) G))"
 proof(induct G)
@@ -241,10 +252,21 @@ next
     apply (case_tac x22)
     using tests_input_equality.elims(2) by auto
 qed
-
+                                                                  
 lemma[code]: "Store_Reuse.is_generalisation_of x xa xb xc = is_generalisation_of x xa xb xc"
   apply (simp add: Store_Reuse.is_generalisation_of_def is_generalisation_of_def)
-  by (simp add: tests_input_equality)
+  using tests_input_equality by blast
+
+declare GExp.satisfiable_def [code del]
+declare initially_undefined_context_check_def [code del]
+declare generalise_output_context_check_def [code del]
+declare always_different_outputs_direct_subsumption_def [code del]
+
+code_printing
+  constant "GExp.satisfiable" \<rightharpoonup> (Scala) "Dirties.satisfiable" |
+  constant "initially_undefined_context_check" \<rightharpoonup> (Scala) "Dirties.initiallyUndefinedContextCheck" |
+  constant "generalise_output_context_check" \<rightharpoonup> (Scala) "Dirties.generaliseOutputContextCheck" |
+  constant "always_different_outputs_direct_subsumption" \<rightharpoonup> (Scala) "Dirties.alwaysDifferentOutputsDirectSubsumption"
 
 export_code try_heuristics learn same_register input_updates_register insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score in Scala
   file "../../inference-tool/src/main/scala/inference/Inference.scala"

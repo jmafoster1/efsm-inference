@@ -45,7 +45,7 @@ object Dirties {
     case GExp.Null(v) => null
   }
 
-  var sat_memo = Map[GExp.gexp, Boolean]()
+  var sat_memo = scala.collection.immutable.Map[GExp.gexp, Boolean]()
 
   def satisfiable(g: GExp.gexp): Boolean = {
     if (sat_memo isDefinedAt g) {
@@ -100,6 +100,16 @@ object Dirties {
     (lines :+ (e + "\nEND")).foreach(pw.println)
 
     pw.close()
+  }
+
+  def alwaysDifferentOutputsDirectSubsumption[A](m1: iEFSM,
+                                              m2: iEFSM,
+                                              s:Nat.nat,
+                                              s_prime: Nat.nat,
+                                              t1: Transition.transition_ext[A],
+                                              t2: Transition.transition_ext[A]):Boolean = {
+      // This is a stub but should be safe enough
+      true
   }
 
   def initiallyUndefinedContextCheck(e: iEFSM, r: Nat.nat, s: Nat.nat): Boolean = {

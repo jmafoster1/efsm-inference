@@ -15,7 +15,6 @@ declare One_nat_def [simp del]
 type_synonym cfstate = nat
 type_synonym inputs = "value list"
 type_synonym outputs = "value option list"
-type_synonym registers = "nat \<Rightarrow> value option"
 
 type_synonym event = "(label \<times> inputs)"
 type_synonym trace = "event list"
@@ -25,47 +24,8 @@ type_synonym transition_matrix = "((nat \<times> nat) \<times> transition) fset"
 definition Str :: "string \<Rightarrow> value" where
   "Str s \<equiv> value.Str (String.implode s)"
 
-definition input2state :: "value list \<Rightarrow> registers" where
-  "input2state n = map_of (enumerate 1 n)"
-
-lemma input2state_0: "input2state i 0 = None"
-  apply (simp add: input2state_def)
-  by (metis in_set_enumerate_eq le_numeral_extra(2) map_of_SomeD not_Some_eq prod.sel(1))
-
-lemma input2state_out_of_bounds: "i > length ia \<Longrightarrow> input2state ia i = None"
-  apply (simp add: input2state_def)
-  by (metis (no_types, lifting) One_nat_def Suc_leI add.right_neutral add_Suc_right imageE in_set_enumerate_eq map_of_eq_None_iff not_less)
-
-lemma input2state_nth: "i < length ia \<Longrightarrow> input2state ia (i+1) = Some (ia ! i)"
-proof(induct ia)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a ia)
-  then show ?case
-    apply (simp add: input2state_def)
-    apply clarify
-    by (simp add: add.commute in_set_enumerate_eq plus_1_eq_Suc)
-qed
-
-lemma input2state_nth_pred: "0 < i \<Longrightarrow> i \<le> length ia \<Longrightarrow> input2state ia i = Some (ia ! (i-1))"
-proof(induct ia)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a ia)
-  then show ?case
-    apply (simp add: input2state_def)
-    by (simp add: add.commute in_set_enumerate_eq plus_1_eq_Suc)
-qed
-
-definition join_ir :: "value list \<Rightarrow> registers \<Rightarrow> datastate" where
-  "join_ir i r \<equiv> (\<lambda>x. case x of
-    R n \<Rightarrow> r n |
-    I n \<Rightarrow> (input2state i) n
-  )"
+lemma str_not_num: "Str s \<noteq> Num x1"
+  by (simp add: Str_def)
 
 definition S :: "transition_matrix \<Rightarrow> nat fset" where
   "S m = (fimage (\<lambda>((s, s'), t). s) m) |\<union>| fimage (\<lambda>((s, s'), t). s') m"
@@ -78,6 +38,9 @@ lemma apply_outputs_preserves_length: "length (apply_outputs p s) = length p"
 
 definition apply_guards :: "gexp list \<Rightarrow> datastate \<Rightarrow> bool" where
   "apply_guards G s = (\<forall>g \<in> set (map (\<lambda>g. gval g s) G). g = true)"
+
+lemma apply_guards_cons: "apply_guards (a # G) c = (gval a c = true \<and> apply_guards G c)"
+  by (simp add: apply_guards_def)
 
 lemma apply_guards_subset: "set g' \<subseteq> set g \<Longrightarrow> apply_guards g c \<longrightarrow> apply_guards g' c"
 proof(induct g)

@@ -85,28 +85,11 @@ definition find_intertrace_matches_aux :: "(index \<times> index) fset \<Rightar
 definition find_intertrace_matches :: "log \<Rightarrow> iEFSM \<Rightarrow> match list" where
   "find_intertrace_matches l e = filter (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). e1 \<noteq> e2) (concat (map (\<lambda>(t, m). sorted_list_of_fset (find_intertrace_matches_aux m e t)) (zip l (map get_by_id_intratrace_matches l))))"
 
-fun enumerate_aexp_inputs :: "aexp \<Rightarrow> nat set" where
-  "enumerate_aexp_inputs (L _) = {}" |
-  "enumerate_aexp_inputs (V (I n)) = {n}" |
-  "enumerate_aexp_inputs (V (R n)) = {}" |
-  "enumerate_aexp_inputs (Plus v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va" |
-  "enumerate_aexp_inputs (Minus v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va"
+definition max_input :: "iEFSM \<Rightarrow> nat option" where
+  "max_input e = fMax (fimage (\<lambda>(_, _, t). Transition.max_input t) e)"
 
-fun enumerate_gexp_inputs :: "gexp \<Rightarrow> nat set" where
-  "enumerate_gexp_inputs (GExp.Bc _) = {}" |
-  "enumerate_gexp_inputs (GExp.Null v) = enumerate_aexp_inputs v" |
-  "enumerate_gexp_inputs (GExp.Eq v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va" |
-  "enumerate_gexp_inputs (GExp.Lt v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va" |
-  "enumerate_gexp_inputs (GExp.Nor v va) = enumerate_gexp_inputs v \<union> enumerate_gexp_inputs va"
-
-definition get_by_id_biggest_t_input :: "transition \<Rightarrow> nat" where
-  "get_by_id_biggest_t_input t = Max ({0} \<union>
-                                (\<Union> set (map enumerate_gexp_inputs (Guard t))) \<union>
-                                (\<Union> set (map enumerate_aexp_inputs (Outputs t))) \<union>
-                                (\<Union> set (map (\<lambda>(_, u). enumerate_aexp_inputs u) (Updates t))))"
-
-definition max_input :: "iEFSM \<Rightarrow> nat" where
-  "max_input e = fMax (fimage (\<lambda>(_, _, t). Arity t) e)"
+definition total_max_input :: "iEFSM \<Rightarrow> nat" where
+  "total_max_input e = (case fMax (fimage (\<lambda>(_, _, t). Transition.max_input t) e) of None \<Rightarrow> 0 | Some i \<Rightarrow> i)"
 
 definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
   "remove_guard_add_update t inputX outputX = \<lparr>
@@ -142,7 +125,7 @@ definition strip_uids :: "(((transition \<times> nat) \<times> ioTag \<times> na
 
 definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
   "modify matches u1 u2 old = (let relevant = filter (\<lambda>(((_, u1'), io, _), (_, u2'), io', _). io = In \<and> io' = Out \<and> (u1 = u1' \<or> u2 = u1' \<or> u1 = u2' \<or> u2 = u2')) matches;
-                                   newReg = max_reg old + 1;
+                                   newReg = case max_reg old of None \<Rightarrow> 1 | Some r \<Rightarrow> r + 1;
                                    replacements = map (\<lambda>(((t1, u1), io1, inx1), (t2, u2), io2, inx2). (((remove_guard_add_update t1 (inx1+1) newReg, u1), io1, inx1), (generalise_output t2 newReg inx2, u2), io2, inx2)) relevant;
                                    comparisons = zip relevant replacements;
                                    stripped_replacements = map strip_uids replacements;
@@ -170,7 +153,10 @@ lemmas remove_guard_add_update_preserves = remove_guard_add_update_preserves_lab
                                            remove_guard_add_update_preserves_outputs
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and> i \<le> Arity t \<and> i > 0 \<and> (\<exists>v. gexp.Eq (V (I i)) (L v) \<in> set (Guard t)) \<and> r \<notin> set (map fst (Updates t)))"
+  "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and> 
+                                    i \<le> Arity t \<and> i > 0 \<and>
+                                    (\<exists>v. gexp.Eq (V (I i)) (L v) \<in> set (Guard t)) \<and>
+                                    r \<notin> set (map fst (Updates t)))"
 
 lemma generalise_output_preserves_label: "Label (generalise_output t r p) = Label t"
   by (simp add: generalise_output_def)
@@ -194,9 +180,9 @@ lemmas generalise_output_preserves = generalise_output_preserves_label
                                      generalise_output_preserves_updates
 
 definition is_proper_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> bool" where
- "is_proper_generalisation_of t' t e = (\<exists>i \<le> max_input e. \<exists> r \<le> max_reg e.
-                                              is_generalisation_of t' t i r \<and>
-                                              (\<forall>u \<in> set (Updates t). fst u \<noteq> r) \<and>
-                                              (\<forall>i \<le> max_input e. \<forall>u \<in> set (Updates t). fst u \<noteq> r)
+ "is_proper_generalisation_of t' t e = (\<exists>i \<le> total_max_input e. \<exists> r \<le> total_max_reg e.
+                                        is_generalisation_of t' t i r \<and>
+                                        (\<forall>u \<in> set (Updates t). fst u \<noteq> r) \<and>
+                                        (\<forall>i \<le> max_input e. \<forall>u \<in> set (Updates t). fst u \<noteq> r)
                                        )"
 end                                                   

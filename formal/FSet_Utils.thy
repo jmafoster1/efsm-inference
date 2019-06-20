@@ -9,6 +9,10 @@ lift_definition fprod  :: "'a fset \<Rightarrow> 'b fset \<Rightarrow> ('a \<tim
 lift_definition fis_singleton :: "'a fset \<Rightarrow> bool" is "\<lambda>A. is_singleton (fset A)".
 end
 
+lemma fis_singleton_code[code]: "fis_singleton s = (size s = 1)"
+  apply (simp add: fis_singleton_def is_singleton_def)
+  by (simp add: card_Suc_eq)
+
 lemma fprod_subset: "x |\<subseteq>| x' \<and> y |\<subseteq>| y' \<Longrightarrow> x |\<times>| y |\<subseteq>| x' |\<times>| y'"
   apply (simp add: fprod_def less_eq_fset_def Abs_fset_inverse)
   by auto

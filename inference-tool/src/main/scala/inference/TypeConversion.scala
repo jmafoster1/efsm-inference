@@ -87,9 +87,9 @@ object TypeConversion {
     case Int.int_of_integer(i1) => i1.intValue()
   }
 
-  def updateToExp(u: (VName.vname, AExp.aexp)): Assignment = u match {
+  def updateToExp(u: (Nat.nat, AExp.aexp)): Assignment = u match {
     case (r, a) => Assignment.newOne(
-            vnameToSALTranslator(r),
+            vnameToSALTranslator(VName.R(r)),
             aexpToSALTranslator(a)
     )
   }

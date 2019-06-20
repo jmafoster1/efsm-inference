@@ -155,7 +155,7 @@ primrec stored_reused_aux :: "transition \<Rightarrow> transition \<Rightarrow> 
                                         )"
 
 definition stored_reused :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> (nat \<times> nat) option" where
-  "stored_reused t' t e = stored_reused_aux t' t (max_reg e) (max_output e)"
+  "stored_reused t' t e = stored_reused_aux t' t (total_max_reg e) (max_output e)"
 
 lemma stored_reused_aux_is_generalised_output_of: 
 "stored_reused_aux t' t mr mp = Some (p, r) \<Longrightarrow> is_generalised_output_of t' t p r"
@@ -271,7 +271,7 @@ primrec input_stored_in_reg_aux :: "transition \<Rightarrow> transition \<Righta
 
 (* t' is the generalised transition *)
 definition input_stored_in_reg :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> (nat \<times> nat) option" where
-  "input_stored_in_reg t' t e = (case input_stored_in_reg_aux t' t (max_reg e) (max_input e) of
+  "input_stored_in_reg t' t e = (case input_stored_in_reg_aux t' t (total_max_reg e) (total_max_input e) of
                                  None \<Rightarrow> None |
                                  Some (i, r) \<Rightarrow> if length (filter (\<lambda>(r', u). r' = r) (Updates t')) = 1 then Some (i, r) else None
 )"
@@ -325,7 +325,7 @@ qed
 
 lemma input_stored_in_reg_is_generalisation: "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow> is_generalisation_of t' t i r"
   apply (simp add: input_stored_in_reg_def)
-  apply (cases "input_stored_in_reg_aux t' t (max_reg e) (max_input e)")
+  apply (cases "input_stored_in_reg_aux t' t (total_max_reg e) (total_max_input e)")
    apply simp
   apply (case_tac a)
   apply simp
@@ -334,6 +334,8 @@ lemma input_stored_in_reg_is_generalisation: "input_stored_in_reg t' t e = Some 
 lemma input_stored_in_reg_is_gt_0: "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow> i > 0"
   using input_stored_in_reg_is_generalisation is_generalisation_of_def by blast
 
+lemma is_generalisation_of_is_gt_0: "is_generalisation_of t' t i r \<Longrightarrow> i > 0"
+  using is_generalisation_of_def by blast
 (*
   This allows us to call these three functions for direct subsumption of generalised
 *)
@@ -398,16 +400,16 @@ lemma can_take_must_be_eq:
   using input2state_nth[of i ia]
   by simp
 
-lemma aux1: "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
-       is_generalisation_of t' t i r \<Longrightarrow>
-       c r = Some y \<Longrightarrow>
+lemma restrict_i_cant_swap: 
+      "is_generalisation_of t' t i r \<Longrightarrow>
        Eq (V (I i)) (L v) \<in> set (Guard t) \<Longrightarrow>
-       length ia = Arity t' \<Longrightarrow>
-       apply_guards (Guard t') (join_ir ia c) \<Longrightarrow> ia ! (i - 1) \<noteq> v \<Longrightarrow> Arity t' = Arity t \<longrightarrow> \<not> apply_guards (Guard t) (join_ir ia c)"
+       length ia = Arity t \<Longrightarrow>
+       ia ! (i - 1) \<noteq> v \<Longrightarrow> Arity t' = Arity t \<Longrightarrow> \<not> apply_guards (Guard t) (join_ir ia c)"
   using is_generalisation_of_i_leq_arity[of t' t i r]
   using can_take_must_be_eq[of "i-1" v t ia c]
   unfolding can_take_def
-  using input_stored_in_reg_is_gt_0 by fastforce
+  using is_generalisation_of_is_gt_0
+  by fastforce
 
 lemma ex_v_neq_value: "ia ! i = (v::value) \<Longrightarrow> \<exists>v'. v' \<noteq> v"
   apply (cases v)
@@ -499,10 +501,8 @@ next
     by force
 qed
 
-lemma 
-  "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
-   is_generalisation_of t' t i r \<Longrightarrow>
-   Eq (V (I i)) (L (ia ! (i - 1))) \<in> set (Guard t) \<Longrightarrow>
+lemma is_generalisation_of_can_swap_out_i:
+   "is_generalisation_of t' t i r \<Longrightarrow>
    i - 1 < length ia \<Longrightarrow>
    v = ia ! (i - 1) \<Longrightarrow>
    v' \<noteq> v \<Longrightarrow>
@@ -512,48 +512,48 @@ lemma
   using is_generalisation_of_derestricts_input[of t' t i r]
   using is_generalisation_of_def by blast
 
-lemma aux2:
-"input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
-       is_generalisation_of t' t i r \<Longrightarrow>
-       c r = Some y \<Longrightarrow>
-       Eq (V (I i)) (L v) \<in> set (Guard t) \<Longrightarrow>
-       length ia = Arity t' \<Longrightarrow>
-       apply_guards (Guard t') (join_ir ia c) \<Longrightarrow>
-       ia ! (i - 1) = v \<Longrightarrow>
-       \<exists>i. length i = Arity t' \<and> apply_guards (Guard t') (join_ir i c) \<and> (length i = Arity t \<longrightarrow> \<not> apply_guards (Guard t) (join_ir i c))"
-  using ex_v_neq_value[of ia "i-1" v]
-  using is_generalisation_of_def_sub_i_lt_arity[of t' t i r]
-  apply simp
-  apply clarify
-  apply (rule_tac x="ia[i:=v']" in exI)
-  apply simp
-  apply (simp add: apply_guards_def)
-  apply standard
-  
 
-lemma "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
-       c r \<noteq> None \<Longrightarrow>
+
+lemma input_stored_in_reg_not_subsumed: "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
        \<exists>i. can_take t' i c \<Longrightarrow>
        \<not> subsumes t c t'"
   using input_stored_in_reg_is_generalisation[of t' t e i r]
-  (* using input_stored_in_reg_is_gt_0[of t' t e i r] *)
+  using input_stored_in_reg_is_gt_0[of t' t e i r]
   using is_generalisation_of_constrains_input[of t' t i r]
-  (* using is_generalisation_of_derestricts_input[of t' t i r] *)
-  (* using is_generalisation_of_i_leq_arity[of t' t i r] *)
+  using is_generalisation_of_derestricts_input[of t' t i r]
+  using is_generalisation_of_i_leq_arity[of t' t i r]
   apply simp
   apply (rule bad_guards)
   apply clarify
-  apply (simp only: can_take_def)
+  apply (simp add: can_take_def)
   apply clarify
-  apply (case_tac "ia ! (i-1) \<noteq> v")
-   apply (rule_tac x=ia in exI)
+  apply (case_tac "v")
+   apply (rule_tac x="ia[i-1:=Str s]" in exI)
    apply simp
-   apply (metis aux1)
-  apply simp
+   apply standard
+    apply (simp add: apply_guards_def)
+    apply (metis gval_unconstrained is_generalisation_of_def_sub_i_lt_arity is_generalisation_of_same_arity list_update_id)
+   apply (simp add: apply_guards_def Bex_def)
+   apply standard
+   apply (rule_tac x="Eq (V (I i)) (L (Num x1))" in exI)
+   apply (simp add: join_ir_def input2state_nth_pred Str_def)
 
+   apply (rule_tac x="ia[i-1:=Num n]" in exI)
+   apply simp
+   apply standard
+    apply (simp add: apply_guards_def)
+    apply (metis gval_unconstrained is_generalisation_of_def_sub_i_lt_arity is_generalisation_of_same_arity list_update_id)
+   apply (simp add: apply_guards_def Bex_def)
+   apply standard
+   apply (rule_tac x="Eq (V (I i)) (L (value.Str x2))" in exI)
+  by (simp add: join_ir_def input2state_nth_pred Str_def)
 
 lemma drop_guard_add_update_direct_subsumption_not_implies_direct_subsumption:
   "drop_guard_add_update_direct_subsumption t t' e s' \<Longrightarrow>
+  \<exists>p. accepts (tm e1) 0 Map.empty p \<and>
+      gets_us_to s (tm e1) 0 Map.empty p \<and>
+      accepts (tm e) 0 Map.empty p \<and>
+      gets_us_to s' (tm e) 0 Map.empty p \<Longrightarrow>
    \<not>directly_subsumes e1 e s s' t' t"
   apply (simp add: drop_guard_add_update_direct_subsumption_def)
   apply (case_tac "input_stored_in_reg t t' e")
@@ -563,7 +563,7 @@ lemma drop_guard_add_update_direct_subsumption_not_implies_direct_subsumption:
   apply simp
   apply (case_tac "no_illegal_updates t' b")
    apply (simp add: no_illegal_updates_def initially_undefined_context_check_def directly_subsumes_def)
-   apply (rule disjI1)
-   apply clarify
+   apply auto[1]
+  by simp
 
 end

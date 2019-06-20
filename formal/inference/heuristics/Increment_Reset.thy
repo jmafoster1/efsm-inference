@@ -21,7 +21,7 @@ fun insert_increment :: update_modifier where
      t1 = get_by_id new t1ID;
      t2 = get_by_id new t2ID in
      if guardMatch t1 t2 \<and> outputMatch t1 t2 then let 
-          r = max_reg new + 1;
+          r = case max_reg new of None \<Rightarrow> 1 | Some r \<Rightarrow> r+ 1;
           newReg = R r;
           newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guard = [], Outputs = [Plus (V newReg) (V (I 1))], Updates=((r, Plus (V newReg) (V (I 1)))#Updates t1)\<rparr>;
           newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guard = [], Outputs = [Plus (V newReg) (V (I 1))], Updates=((r, Plus (V newReg) (V (I 1)))#Updates t2)\<rparr>;
@@ -49,7 +49,7 @@ fun insert_increment_2 :: update_modifier where
      t1 = get_by_id new t1ID;
      t2 = get_by_id new t2ID in
      if guardMatch t1 t2 \<and> outputMatch t1 t2 then let 
-          r = max_reg new + 1;
+          r = case max_reg new of None \<Rightarrow> 1 | Some r \<Rightarrow> r + 1;
           newReg = R r;
           newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guard = [], Outputs = [Plus (V newReg) (V (I 1))], Updates=((r, Plus (V newReg) (V (I 1)))#Updates t1)\<rparr>;
           newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guard = [], Outputs = [Plus (V newReg) (V (I 1))], Updates=((r, Plus (V newReg) (V (I 1)))#Updates t2)\<rparr>;

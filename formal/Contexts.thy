@@ -10,8 +10,64 @@ theory Contexts
     EFSM GExp
 begin
 
+declare gval.simps [simp]
+declare ValueEq_def [simp]
+
 definition can_take :: "transition \<Rightarrow> inputs \<Rightarrow> registers \<Rightarrow> bool" where
   "can_take t i r = (length i = Arity t \<and> apply_guards (Guard t) (join_ir i r))"
+
+lemma enumerate_gexp_regs_set_reg_unconstrained:
+  "\<forall>x\<in>set G. enumerate_gexp_regs x = {} \<Longrightarrow>
+   \<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (R r))"
+  by (simp add: enumerate_gexp_regs_empty_reg_unconstrained)
+
+lemma enumerate_gexp_inputs_set_input_unconstrained:
+  "\<forall>x\<in>set G. enumerate_gexp_inputs x = {} \<Longrightarrow>
+   \<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (I r))"
+  by (simp add: enumerate_gexp_inputs_empty_input_unconstrained)
+
+lemma unconstrained_variable_swap: "\<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (I r)) \<Longrightarrow>
+       \<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (R r)) \<Longrightarrow>
+       apply_guards G (join_ir i r) = apply_guards G (join_ir i' r')"
+proof(induct G)
+  case Nil
+  then show ?case
+    by (simp add: apply_guards_def)
+next
+  case (Cons a G)
+  then show ?case
+    unfolding apply_guards_def
+    apply simp
+    by (metis input_unconstrained_gval_input_swap register_unconstrained_gval_register_swap)
+qed
+
+(*lemma "\<exists>s. gval (foldr gAnd G (Bc True)) s = true \<Longrightarrow>
+       \<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (I r)) \<Longrightarrow>
+       \<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (R r)) \<Longrightarrow>
+       apply_guards G (join_ir [] r)"
+proof(induct G)
+  case Nil
+  then show ?case
+    by (simp add: apply_guards_def)
+next
+  case (Cons a G)
+  then show ?case
+    apply clarify
+    apply (simp only: foldr.simps comp_def gval_gAnd maybe_and_true apply_guards_cons)
+    apply simp
+qed
+
+lemma "max_reg t = None \<Longrightarrow> valid_transition t \<Longrightarrow> satisfiable (foldr gAnd (Guard t) (Bc True)) \<Longrightarrow> \<exists>i. can_take t i r"
+  apply (simp add: max_reg_def valid_transition_def max_input_def)
+  apply (case_tac "enumerate_registers t = {}")
+  defer
+   apply simp
+  apply simp
+  apply (case_tac "enumerate_inputs t = {}")
+   apply (simp add: can_take_def satisfiable_def)
+  using enumerate_gexp_inputs_set_input_unconstrained[of "Guard t"]
+        enumerate_gexp_regs_set_reg_unconstrained[of "Guard t"]
+   apply (simp add: enumerate_registers_def enumerate_inputs_def)*)
 
 lemma medial_subset: "length i = Arity t \<Longrightarrow>
                       Arity t = Arity t' \<Longrightarrow>
@@ -55,6 +111,10 @@ lemma inconsistent_updates: "\<exists>p1 p2. (\<exists>i. posterior t2 i r = Som
   by (simp add: subsumes_def)
 
 lemma inconsistent_updates2: "\<exists>p1 p2. (\<exists>i. posterior t2 i r = Some p2 \<and> posterior t1 i r = Some p1) \<and> (\<exists>P r'. P (p2 r') \<and> (\<exists>y. p1 r' = Some y) \<and> \<not> P (p1 r')) \<Longrightarrow>
+ \<not> subsumes t2 r t1"
+  by (simp add: subsumes_def)
+
+lemma bad_outputs: "\<exists>i. can_take t1 i r \<and> apply_outputs (Outputs t1) (join_ir i r) \<noteq> apply_outputs (Outputs t2) (join_ir i r) \<Longrightarrow>
  \<not> subsumes t2 r t1"
   by (simp add: subsumes_def)
 
