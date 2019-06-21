@@ -94,9 +94,9 @@ definition total_max_input :: "iEFSM \<Rightarrow> nat" where
 definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
   "remove_guard_add_update t inputX outputX = \<lparr>
     Label = (Label t), Arity = (Arity t),
-    Guard = (filter (\<lambda>g. \<not> gexp_constrains g (V (I inputX))) (Guard t)),
+    Guard = (filter (\<lambda>g. \<not> gexp_constrains g (V (vname.I inputX))) (Guard t)),
     Outputs = (Outputs t),
-    Updates = (outputX, (V (I inputX)))#(Updates t)
+    Updates = (outputX, (V (vname.I inputX)))#(Updates t)
   \<rparr>"
 
 definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
@@ -155,7 +155,7 @@ lemmas remove_guard_add_update_preserves = remove_guard_add_update_preserves_lab
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and> 
                                     i < Arity t \<and>
-                                    (\<exists>v. gexp.Eq (V (I i)) (L v) \<in> set (Guard t)) \<and>
+                                    (\<exists>v. gexp.Eq (V (vname.I i)) (L v) \<in> set (Guard t)) \<and>
                                     r \<notin> set (map fst (Updates t)))"
 
 lemma generalise_output_preserves_label: "Label (generalise_output t r p) = Label t"

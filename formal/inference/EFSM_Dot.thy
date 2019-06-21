@@ -40,7 +40,7 @@ fun value2dot :: "value \<Rightarrow> String.literal" where
   "value2dot (Num n) = show_int n"
 
 fun vname2dot :: "vname \<Rightarrow> String.literal" where
-  "vname2dot (I n) = STR ''i<sub>''+(show_nat n)+STR ''</sub>''" |
+  "vname2dot (vname.I n) = STR ''i<sub>''+(show_nat n)+STR ''</sub>''" |
   "vname2dot (R n) = STR ''r<sub>''+(show_nat n)+STR ''</sub>''"
 
 fun aexp2dot :: "aexp \<Rightarrow> String.literal" where

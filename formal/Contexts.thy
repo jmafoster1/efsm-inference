@@ -23,10 +23,10 @@ lemma enumerate_gexp_regs_set_reg_unconstrained:
 
 lemma enumerate_gexp_inputs_set_input_unconstrained:
   "\<forall>x\<in>set G. enumerate_gexp_inputs x = {} \<Longrightarrow>
-   \<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (I r))"
+   \<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (vname.I r))"
   by (simp add: enumerate_gexp_inputs_empty_input_unconstrained)
 
-lemma unconstrained_variable_swap: "\<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (I r)) \<Longrightarrow>
+lemma unconstrained_variable_swap: "\<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (vname.I r)) \<Longrightarrow>
        \<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (R r)) \<Longrightarrow>
        apply_guards G (join_ir i r) = apply_guards G (join_ir i' r')"
 proof(induct G)
@@ -42,7 +42,7 @@ next
 qed
 
 lemma unconstrained_variable_swap_apply_guards:
-  "\<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (I r)) \<Longrightarrow>
+  "\<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (vname.I r)) \<Longrightarrow>
    \<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (R r)) \<Longrightarrow>
    gval (foldr gAnd G (Bc True)) s = true \<Longrightarrow>
    apply_guards G s'"

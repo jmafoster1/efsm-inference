@@ -5,7 +5,7 @@ begin
 definition initialiseReg :: "transition \<Rightarrow> nat \<Rightarrow> transition" where
   "initialiseReg t newReg = \<lparr>Label = Label t, Arity = Arity t, Guard = Guard t, Outputs = Outputs t, Updates = ((newReg, L (Num 0))#Updates t)\<rparr>"
 
-definition "guardMatch t1 t2  = (\<exists>n n'. Guard t1 = [gexp.Eq (V (I 1)) (L (Num n))] \<and> Guard t2 = [gexp.Eq (V (I 1)) (L (Num n'))])"
+definition "guardMatch t1 t2  = (\<exists>n n'. Guard t1 = [gexp.Eq (V (vname.I 1)) (L (Num n))] \<and> Guard t2 = [gexp.Eq (V (vname.I 1)) (L (Num n'))])"
 definition "outputMatch t1 t2 = (\<exists>m m'. Outputs t1 = [L (Num m)] \<and> Outputs t2 = [L (Num m')])"
 
 lemma guard_match_commute: "guardMatch t1 t2 = guardMatch t2 t1"
@@ -62,7 +62,7 @@ fun insert_increment_2 :: update_modifier where
      )"
 
 fun guardMatch_alt_2 :: "gexp list \<Rightarrow> bool" where
-  "guardMatch_alt_2 [(gexp.Eq (V (I i)) (L (Num n)))] = (i = 1)" |
+  "guardMatch_alt_2 [(gexp.Eq (V (vname.I i)) (L (Num n)))] = (i = 1)" |
   "guardMatch_alt_2 _ = False"
 
 fun outputMatch_alt_2 :: "aexp list \<Rightarrow> bool" where

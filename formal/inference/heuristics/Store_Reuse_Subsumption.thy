@@ -358,10 +358,10 @@ lemma drop_guard_add_update_direct_subsumption_implies_direct_subsumption:
    apply (simp add: generalised_directly_subsumes_original)
   by simp
 
-lemma is_generalisation_of_constrains_input: "is_generalisation_of t' t i r \<Longrightarrow> \<exists>v. gexp.Eq (V (I i)) (L v) \<in> set (Guard t)"
+lemma is_generalisation_of_constrains_input: "is_generalisation_of t' t i r \<Longrightarrow> \<exists>v. gexp.Eq (V (vname.I i)) (L v) \<in> set (Guard t)"
   by (simp add: is_generalisation_of_def)
 
-lemma is_generalisation_of_derestricts_input: "is_generalisation_of t' t i r \<Longrightarrow> \<forall>g \<in> set (Guard t'). \<not> gexp_constrains g (V (I i))"
+lemma is_generalisation_of_derestricts_input: "is_generalisation_of t' t i r \<Longrightarrow> \<forall>g \<in> set (Guard t'). \<not> gexp_constrains g (V (vname.I i))"
   by (simp add: is_generalisation_of_def remove_guard_add_update_def)
 
 lemma is_generalisation_of_same_arity: "is_generalisation_of t' t i r \<Longrightarrow> Arity t = Arity t'"
@@ -380,21 +380,21 @@ lemma "\<forall>i. \<not> can_take t i r \<and> \<not> can_take t' i r \<Longrig
   by (simp add: posterior_def)
 
 lemma can_take_must_be_eq: 
-  "Eq (V (I (i))) (L v) \<in> set (Guard t) \<Longrightarrow>
+  "Eq (V (vname.I i)) (L v) \<in> set (Guard t) \<Longrightarrow>
        ia ! i \<noteq> v \<Longrightarrow>
        i < Arity t \<Longrightarrow>
        length ia = Arity t \<Longrightarrow>
        \<not> can_take t ia r"
   apply (simp add: can_take_def apply_guards_def)
   apply (simp add: Bex_def)
-  apply (rule_tac x= "Eq (V (I (i))) (L v)" in exI)
+  apply (rule_tac x= "Eq (V (vname.I (i))) (L v)" in exI)
   apply (simp add: join_ir_def)
   using input2state_nth[of i ia]
   by simp
 
 lemma restrict_i_cant_swap: 
       "is_generalisation_of t' t i r \<Longrightarrow>
-       Eq (V (I i)) (L v) \<in> set (Guard t) \<Longrightarrow>
+       Eq (V (vname.I i)) (L v) \<in> set (Guard t) \<Longrightarrow>
        length ia = Arity t \<Longrightarrow>
        ia ! i \<noteq> v \<Longrightarrow>
        Arity t' = Arity t \<Longrightarrow>
@@ -416,7 +416,7 @@ lemma inputs_v_neq_value: "i < length ia \<Longrightarrow> ia ! i = (v::value) \
   by simp
 
 lemma aval_unconstrained:
-  " \<not> aexp_constrains a (V (I i)) \<Longrightarrow>
+  " \<not> aexp_constrains a (V (vname.I i)) \<Longrightarrow>
   i < length ia \<Longrightarrow>
   v = ia ! i \<Longrightarrow>
   v' \<noteq> v \<Longrightarrow>
@@ -447,7 +447,7 @@ next
 qed
 
 lemma gval_unconstrained: 
- " \<not> gexp_constrains a (V (I i)) \<Longrightarrow>
+ " \<not> gexp_constrains a (V (vname.I i)) \<Longrightarrow>
   i < length ia \<Longrightarrow>
   v = ia ! i \<Longrightarrow>
   gval a (join_ir ia c) = gval a (join_ir (ia[i := v']) c)"
@@ -504,7 +504,7 @@ lemma input_stored_in_reg_not_subsumed:
     apply (metis gval_unconstrained is_generalisation_of_i_lt_arity is_generalisation_of_same_arity)
    apply (simp add: apply_guards_def Bex_def)
    apply standard
-   apply (rule_tac x="Eq (V (I i)) (L (Num x1))" in exI)
+   apply (rule_tac x="Eq (V (vname.I i)) (L (Num x1))" in exI)
    apply (simp add: join_ir_def input2state_nth is_generalisation_of_i_lt_arity str_not_num)
 
    apply (rule_tac x="ia[i:=Num s]" in exI)
@@ -514,7 +514,7 @@ lemma input_stored_in_reg_not_subsumed:
     apply (metis gval_unconstrained is_generalisation_of_i_lt_arity is_generalisation_of_same_arity)
    apply (simp add: apply_guards_def Bex_def)
    apply standard
-   apply (rule_tac x="Eq (V (I i)) (L (value.Str x2))" in exI)
+   apply (rule_tac x="Eq (V (vname.I i)) (L (value.Str x2))" in exI)
   by (simp add: join_ir_def input2state_nth is_generalisation_of_i_lt_arity str_not_num)
 
 lemma drop_guard_add_update_direct_subsumption_not_implies_direct_subsumption:

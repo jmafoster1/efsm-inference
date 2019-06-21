@@ -14,6 +14,10 @@ theory GExp
 imports AExp Trilean
 begin
 
+definition I :: "nat \<Rightarrow> vname" where
+  "I n = vname.I (n-1)"
+declare I_def [simp]
+
 (* type_synonym gexp = "(aexp \<times> cexp)" *)
 
 (* abbreviation Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" where *)
@@ -299,7 +303,7 @@ next
     by (simp add: enumerate_aexp_regs_empty_reg_unconstrained)
 qed
 
-lemma enumerate_gexp_inputs_empty_input_unconstrained: "enumerate_gexp_inputs g = {} \<Longrightarrow> \<forall>r. \<not> gexp_constrains g (V (I r))"
+lemma enumerate_gexp_inputs_empty_input_unconstrained: "enumerate_gexp_inputs g = {} \<Longrightarrow> \<forall>r. \<not> gexp_constrains g (V (vname.I r))"
 proof(induct g)
 case (Bc x)
   then show ?case
@@ -322,7 +326,7 @@ next
     by (simp add: enumerate_aexp_inputs_empty_input_unconstrained)
 qed
 
-lemma input_unconstrained_gval_input_swap: "\<forall>r. \<not> gexp_constrains a (V (I r)) \<Longrightarrow> (gval a (join_ir i r) = gval a (join_ir i' r))"
+lemma input_unconstrained_gval_input_swap: "\<forall>r. \<not> gexp_constrains a (V (vname.I r)) \<Longrightarrow> (gval a (join_ir i r) = gval a (join_ir i' r))"
 proof(induct a)
   case (Bc x)
   then show ?case
@@ -377,7 +381,7 @@ next
 qed
 
 lemma unconstrained_variable_swap_gval:
-   "\<forall>r. \<not> gexp_constrains g (V (I r)) \<Longrightarrow>
+   "\<forall>r. \<not> gexp_constrains g (V (vname.I r)) \<Longrightarrow>
     \<forall>r. \<not> gexp_constrains g (V (R r)) \<Longrightarrow>
     gval g s = gval g s'"
 proof(induct g)

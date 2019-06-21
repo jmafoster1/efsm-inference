@@ -88,6 +88,46 @@ qed
 definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> transition) fset" where
   "possible_steps e s r l i = fimage (\<lambda>((origin, dest), t). (dest, t)) (ffilter (\<lambda>((origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"
 
+lemma possible_steps_alt_aux: "(\<lambda>((origin, dest), t). (dest, t)) |`|
+    ffilter (\<lambda>((origin, dest), t). origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (join_ir i r)) e =
+    {|(d, t)|} \<Longrightarrow>
+    ffilter
+     (\<lambda>((origin, dest), t).
+         origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (\<lambda>x. case x of vname.I n \<Rightarrow> input2state i n | R n \<Rightarrow> r n))
+     e =
+    {|((s, d), t)|}"
+proof(induct e)
+  case empty
+  then show ?case
+    apply (simp add: ffilter_empty)
+    by auto
+next
+  case (insert x e)
+  then show ?case
+    apply (cases x)
+    apply (case_tac a)
+    apply clarify
+    apply simp
+    apply (simp add: ffilter_finsert join_ir_def)
+    apply (case_tac "aa = s")
+     apply simp
+     apply (case_tac "Label ba = l")
+      apply simp
+      apply (case_tac "length i = Arity ba")
+       apply simp
+       apply (case_tac "apply_guards (Guard ba) (case_vname (\<lambda>n. input2state i n) (\<lambda>n. r n))")
+    by auto
+qed
+
+lemma possible_steps_alt: "(possible_steps e s r l i = {|(d, t)|}) = (ffilter
+     (\<lambda>((origin, dest), t).
+         origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (\<lambda>x. case x of vname.I n \<Rightarrow> input2state i n | R n \<Rightarrow> r n))
+     e =
+    {|((s, d), t)|})"
+  apply standard
+   apply (simp add: possible_steps_def possible_steps_alt_aux)
+  by (simp add: possible_steps_def join_ir_def)
+
 lemma singleton_dest: "fis_singleton (possible_steps e s r aa b) \<Longrightarrow>
        fthe_elem (possible_steps e s r aa b) = (baa, aba) \<Longrightarrow>
        ((s, baa), aba) |\<in>| e"

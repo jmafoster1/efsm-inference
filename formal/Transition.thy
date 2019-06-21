@@ -47,12 +47,6 @@ definition enumerate_inputs_list :: "transition \<Rightarrow> nat list" where
                              (fold (@) (map enumerate_aexp_inputs_list (Outputs t)) []) @
                              (fold (@) (map (\<lambda>(_, u). enumerate_aexp_inputs_list u) (Updates t)) [])"
 
-lemma "foldr max (x@y) 0 < a \<Longrightarrow> foldr max x 0 < a"
-
-lemma "foldr max (enumerate_inputs_list t) 0 < Arity t \<Longrightarrow> foldr max (fold (@) (map enumerate_gexp_inputs_list (Guard t)) []) 0 < Arity t"
-  apply (simp only: enumerate_inputs_list_def)
-
-
 lemma fold_enumerate_aexp_inputs_list_pairs: "set (fold (@) (map (\<lambda>(uu, y). enumerate_aexp_inputs_list y) U) []) = (\<Union>(uu, y)\<in>set U. enumerate_aexp_inputs y)"
   by (simp add: enumerate_aexp_inputs_list fold_append_concat_rev inf_sup_aci(5) split_def)
 

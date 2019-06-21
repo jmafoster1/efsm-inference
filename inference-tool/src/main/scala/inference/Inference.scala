@@ -1073,6 +1073,8 @@ def equal_gexpa(x0: gexp, x1: gexp): Boolean = (x0, x1) match {
   case (Bc(x1), Bc(y1)) => Product_Type.equal_bool(x1, y1)
 }
 
+def I(n: Nat.nat): VName.vname = VName.I(Nat.minus_nat(n, Nat.one_nat))
+
 def gval(x0: gexp, uu: VName.vname => Option[Value.value]): Trilean.trilean =
   (x0, uu) match {
   case (Bc(true), uu) => Trilean.truea()
@@ -3392,7 +3394,7 @@ def make_guard(x0: List[Value.value], uu: Nat.nat): List[GExp.gexp] = (x0, uu)
   match {
   case (Nil, uu) => Nil
   case (h::t, n) =>
-    (GExp.Eq(AExp.V(VName.I(n)),
+    (GExp.Eq(AExp.V(GExp.I(n)),
               AExp.L(h)))::(make_guard(t, Nat.plus_nata(n, Nat.one_nat)))
 }
 
@@ -4725,16 +4727,16 @@ def insert_increment_2(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
         val newT1: Transition.transition_ext[Unit] =
           Transition.transition_exta[Unit](Transition.Label[Unit](t1),
     Transition.Arity[Unit](t1), Nil,
-    (AExp.Plus(AExp.V(newReg), AExp.V(VName.I(Nat.one_nat))))::Nil,
+    (AExp.Plus(AExp.V(newReg), AExp.V(GExp.I(Nat.one_nat))))::Nil,
     (r, AExp.Plus(AExp.V(newReg),
-                   AExp.V(VName.I(Nat.one_nat))))::(Transition.Updates[Unit](t1)),
+                   AExp.V(GExp.I(Nat.one_nat))))::(Transition.Updates[Unit](t1)),
     ())
         val newT2: Transition.transition_ext[Unit] =
           Transition.transition_exta[Unit](Transition.Label[Unit](t2),
     Transition.Arity[Unit](t2), Nil,
-    (AExp.Plus(AExp.V(newReg), AExp.V(VName.I(Nat.one_nat))))::Nil,
+    (AExp.Plus(AExp.V(newReg), AExp.V(GExp.I(Nat.one_nat))))::Nil,
     (r, AExp.Plus(AExp.V(newReg),
-                   AExp.V(VName.I(Nat.one_nat))))::(Transition.Updates[Unit](t2)),
+                   AExp.V(GExp.I(Nat.one_nat))))::(Transition.Updates[Unit](t2)),
     ())
         val initialised:
               FSet.fset[(Nat.nat,

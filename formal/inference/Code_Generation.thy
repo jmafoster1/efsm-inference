@@ -34,7 +34,7 @@ code_pred satisfies_trace.
 declare ListMem_iff [code]
 
 fun guardMatch_alt :: "gexp list \<Rightarrow> gexp list \<Rightarrow> bool" where
-  "guardMatch_alt [(gexp.Eq (V (I i)) (L (Num n)))] [(gexp.Eq (V (I i')) (L (Num n')))] = (i = 1 \<and> i' = 1)" |
+  "guardMatch_alt [(gexp.Eq (V (vname.I i)) (L (Num n)))] [(gexp.Eq (V (vname.I i')) (L (Num n')))] = (i = 1 \<and> i' = 1)" |
   "guardMatch_alt _ _ = False"
 
 lemma [code]: "guardMatch t1 t2 = guardMatch_alt (Guard t1) (Guard t2)"
@@ -99,7 +99,7 @@ next
 qed
 
 fun tests_input_equality :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
-  "tests_input_equality i (gexp.Eq (V (I i')) (L _)) = (i = i')" |
+  "tests_input_equality i (gexp.Eq (V (vname.I i')) (L _)) = (i = i')" |
   "tests_input_equality _ _ = False"
 
 definition is_generalised_output_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
@@ -159,7 +159,7 @@ declare random_member_def [code del]
 code_printing constant "random_member" \<rightharpoonup> (Scala) "Dirties.randomMember"
 
 fun input_updates_register_aux :: "update_function list \<Rightarrow> nat option" where
-  "input_updates_register_aux ((n, V (I n'))#_) = Some n'" |
+  "input_updates_register_aux ((n, V (vname.I n'))#_) = Some n'" |
   "input_updates_register_aux (h#t) = input_updates_register_aux t" |
   "input_updates_register_aux [] = None"
 
@@ -228,7 +228,7 @@ definition is_generalisation_of :: "transition \<Rightarrow> transition \<Righta
                                     r \<notin> set (map fst (Updates t)) \<and>
                                     (length (filter (tests_input_equality i) (Guard t)) \<ge> 1))"
 
-lemma tests_input_equality: "(\<exists>v. gexp.Eq (V (I xb)) (L v) \<in> set G) = (1 \<le> length (filter (tests_input_equality xb) G))"
+lemma tests_input_equality: "(\<exists>v. gexp.Eq (V (vname.I xb)) (L v) \<in> set G) = (1 \<le> length (filter (tests_input_equality xb) G))"
 proof(induct G)
   case Nil
   then show ?case by simp
@@ -241,7 +241,7 @@ next
        apply (case_tac x21)
           apply simp
          apply simp
-         apply (case_tac "x2 = I xb")
+         apply (case_tac "x2 = vname.I xb")
           apply simp
           defer
           defer
