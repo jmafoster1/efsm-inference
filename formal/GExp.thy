@@ -80,7 +80,7 @@ lemma nor_equiv: "gval (gNot (gOr a b)) s = gval (Nor a b) s"
   by (metis maybe_double_negation not_equiv)
 
 definition satisfiable :: "gexp \<Rightarrow> bool" where
-  "satisfiable g \<equiv> (\<exists>s. gval g s = true)"
+  "satisfiable g \<equiv> (\<exists>i r. gval g (join_ir i r) = true)"
 
 lemma satisfiable_true: "satisfiable (Bc True)"
   by (simp add: satisfiable_def)
@@ -120,26 +120,6 @@ lemma gAnd_symmetry: "gexp_equiv (gAnd x y) (gAnd y x)"
 
 lemma satisfiable_gAnd_self: "satisfiable (gAnd x x) = satisfiable x"
   by (simp add: gAnd_reflexivity gexp_equiv_satisfiable)
-
-definition mutually_exclusive :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
-  "mutually_exclusive x y = (\<forall>i. (gval x i = true \<longrightarrow> gval y i \<noteq> true) \<and>
-                                 (gval y i = true \<longrightarrow> gval x i \<noteq> true))"
-
-lemma mutually_exclusive_unsatisfiable_conj: "mutually_exclusive x y = (\<not> satisfiable (gAnd x y))"
-  apply (simp add: mutually_exclusive_def satisfiable_def)
-  by (metis (no_types, lifting) add.assoc add.commute maybe_double_negation maybe_negate_true maybe_or_idempotent maybe_or_zero)
-
-lemma unsatisfiable_conj_mutually_exclusive: "\<not> satisfiable (gAnd x y) = mutually_exclusive x y"
-  by (simp add: mutually_exclusive_unsatisfiable_conj)
-
-lemma mutually_exclusive_reflexive: "satisfiable x \<Longrightarrow> \<not> mutually_exclusive x x"
-  by (simp add: mutually_exclusive_def satisfiable_def)
-
-lemma mutually_exclusive_symmetric: "mutually_exclusive x y \<Longrightarrow> mutually_exclusive y x"
-  by (simp add: mutually_exclusive_def)
-
-lemma not_mutually_exclusive_true: "satisfiable x = (\<not> mutually_exclusive x (Bc True))"
-  by (simp add: mutually_exclusive_def satisfiable_def)
 
 lemma gval_gAnd: "gval (gAnd g1 g2) s = (gval g1 s) \<and>\<^sub>? (gval g2 s)"
 proof(induct "gval g1 s" "gval g2 s" rule: times_trilean.induct)
@@ -422,6 +402,18 @@ next
   case (Null x)
   then show ?case
     by (metis gexp_constrains.simps(2) gval.simps(6) unconstrained_variable_swap_aval)
+qed
+
+lemma "gval (foldr gAnd G (Bc True)) s = foldr (\<and>\<^sub>?) (map (\<lambda>g. gval g s) G) true"
+proof(induct G)
+  case Nil
+  then show ?case
+    by (simp add: gval.simps)
+next
+  case (Cons a G)
+  then show ?case
+    apply (simp only: foldr.simps comp_def gval_gAnd)
+    by simp
 qed
 
 end

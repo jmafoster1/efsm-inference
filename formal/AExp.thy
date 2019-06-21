@@ -114,6 +114,9 @@ next
     by (metis (mono_tags, lifting) imageE in_set_enumerate_eq length_Cons linorder_not_le list.size(4) map_of_eq_None_iff)
 qed
 
+lemma input2state_empty: "input2state [] x1 = None"
+  by (simp add: input2state_out_of_bounds)
+
 lemma input2state_nth: "i < length ia \<Longrightarrow> input2state ia i = Some (ia ! i)"
 proof(induct ia)
   case Nil
@@ -128,8 +131,7 @@ next
 qed
 
 lemma input2state_cons:
-  "x1 > 0 \<Longrightarrow>
-   x1 < length ia \<Longrightarrow>
+  "x1 < length ia \<Longrightarrow>
    input2state (a # ia) x1 = input2state ia (x1-1)"
   by (simp add: input2state_nth)
 

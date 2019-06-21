@@ -54,7 +54,7 @@ lemma merge_states_symmetry: "merge_states x y t = merge_states y x t"
 (* declare[[show_types,show_sorts]] *)
 
 definition choice :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "choice t t' = ((Label t) = (Label t') \<and> (Arity t) = (Arity t') \<and> (\<exists> s. apply_guards (Guard t) s \<and> apply_guards (Guard t') s))"
+  "choice t t' = ((Label t) = (Label t') \<and> (Arity t) = (Arity t') \<and> (\<exists> i r. apply_guards (Guard t) (join_ir i r) \<and> apply_guards (Guard t') (join_ir i r)))"
 
 lemma choice_symmetry: "choice x y = choice y x"
   using choice_def by auto

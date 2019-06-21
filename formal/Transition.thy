@@ -47,6 +47,12 @@ definition enumerate_inputs_list :: "transition \<Rightarrow> nat list" where
                              (fold (@) (map enumerate_aexp_inputs_list (Outputs t)) []) @
                              (fold (@) (map (\<lambda>(_, u). enumerate_aexp_inputs_list u) (Updates t)) [])"
 
+lemma "foldr max (x@y) 0 < a \<Longrightarrow> foldr max x 0 < a"
+
+lemma "foldr max (enumerate_inputs_list t) 0 < Arity t \<Longrightarrow> foldr max (fold (@) (map enumerate_gexp_inputs_list (Guard t)) []) 0 < Arity t"
+  apply (simp only: enumerate_inputs_list_def)
+
+
 lemma fold_enumerate_aexp_inputs_list_pairs: "set (fold (@) (map (\<lambda>(uu, y). enumerate_aexp_inputs_list y) U) []) = (\<Union>(uu, y)\<in>set U. enumerate_aexp_inputs y)"
   by (simp add: enumerate_aexp_inputs_list fold_append_concat_rev inf_sup_aci(5) split_def)
 
@@ -61,6 +67,21 @@ lemma set_enumerate_inputs_list: "enumerate_inputs t = set (enumerate_inputs_lis
   apply (simp add: fold_enumerate_aexp_inputs_list fold_enumerate_aexp_inputs_list_pairs)
   apply (simp add: fold_enumerate_gexp_inputs_list)
   by auto
+
+lemma set_list_not_empty: "(set l \<noteq> {}) = (l \<noteq> [])"
+  by simp
+
+lemma max_set_nat_list: "(l:: nat list) \<noteq> [] \<Longrightarrow> Max (set l) = foldr max l 0"
+proof(induct l)
+case Nil
+  then show ?case
+    by simp
+next
+case (Cons a l)
+  then show ?case
+    apply simp
+    by (metis List.finite_set Max_insert Max_singleton fold.simps(1) fold_simps(1) foldr.simps(1) max_0R set_empty)
+qed
 
 definition max_input :: "transition \<Rightarrow> nat option" where
   "max_input t = (if enumerate_inputs t = {} then None else Some (Max (enumerate_inputs t)))"
@@ -128,12 +149,5 @@ next
     apply (simp add: fold_append_Union)
     by (metis (no_types, lifting) List.finite_set Max.set_eq_fold Max_insert fold_append_concat_rev inf_sup_aci(5) list.simps(15) max_0L set_append set_empty sup.left_idem sup_bot.right_neutral)
 qed
-
-lemma "valid_transition t \<Longrightarrow> Max (\<Union> set (map enumerate_gexp_inputs (Guard t))) < Arity t \<or> (\<Union> set (map enumerate_gexp_inputs (Guard t))) = {}"
-  apply simp
-  apply simp
-  apply (simp add: enumerate_gexp_inputs_list)
-  apply (simp add: map_enumerate_gexp_inputs)
-  
 
 end

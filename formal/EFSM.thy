@@ -42,6 +42,21 @@ definition apply_guards :: "gexp list \<Rightarrow> datastate \<Rightarrow> bool
 lemma apply_guards_cons: "apply_guards (a # G) c = (gval a c = true \<and> apply_guards G c)"
   by (simp add: apply_guards_def)
 
+lemma apply_guards_fold: "apply_guards G s = (gval (foldr gAnd G (Bc True)) s = true)"
+proof(induct G)
+  case Nil
+  then show ?case
+    by (simp add: apply_guards_def gval.simps)
+next
+  case (Cons a G)
+  then show ?case
+    apply (simp only: foldr.simps comp_def)
+    by (simp add: apply_guards_cons gval_gAnd maybe_and_true)
+qed
+
+lemma fold_apply_guards: "(gval (foldr gAnd G (Bc True)) s = true) = apply_guards G s"
+  by (simp add: apply_guards_fold)
+
 lemma apply_guards_subset: "set g' \<subseteq> set g \<Longrightarrow> apply_guards g c \<longrightarrow> apply_guards g' c"
 proof(induct g)
   case Nil
