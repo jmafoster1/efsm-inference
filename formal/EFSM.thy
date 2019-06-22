@@ -356,16 +356,23 @@ lemma length_observe_empty_trace: "length (observe_all e aa b []) = 0"
 lemma step_length_suc: "step e 0 <> (fst a) (snd a) = Some (tr, aa, ab, b) \<Longrightarrow> length (observe_all e 0 <> (a # t)) = Suc (length (observe_all e aa b t))"
   by simp
 
-lemma accepts_trace_obs_equal_length: "accepts e 0 <> t \<Longrightarrow> (length t = length (observe_all e 0 <> t))"
-  proof (induction t rule: accepts.induct)
-    case (base e s d)
-    then show ?case
-      by simp
-  next
-    case (step e s d h tr s' p' d' t)
-    then show ?case
-      by simp
-  qed
+lemma accepts_trace_obs_equal_length: "\<forall>r s. accepts e s r t \<longrightarrow> (length t = length (observe_all e s r t))"
+proof(induct t)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a t)
+  then show ?case
+    apply simp
+    apply clarify
+    apply (case_tac "step e s r (fst a) (snd a)")
+     apply (simp add: step_none_inaccepts)
+    apply (case_tac aa)
+    apply simp
+    using step_some by blast
+qed
+
 
 lemma aux3: "\<forall>s d. (length t = length (observe_all e s d t)) \<longrightarrow> accepts e s d t"
   proof (induction t)
