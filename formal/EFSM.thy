@@ -33,11 +33,19 @@ definition S :: "transition_matrix \<Rightarrow> nat fset" where
 definition apply_outputs :: "aexp list \<Rightarrow> datastate \<Rightarrow> value option list" where
   "apply_outputs p s = map (\<lambda>p. aval p s) p"
 
+lemmas apply_outputs = join_ir_def apply_outputs_def input2state_def
+
+lemma apply_outputs_empty [simp]: "apply_outputs [] s = []"
+  by (simp add: apply_outputs_def)
+
 lemma apply_outputs_preserves_length: "length (apply_outputs p s) = length p"
   by (simp add: apply_outputs_def)
 
 definition apply_guards :: "gexp list \<Rightarrow> datastate \<Rightarrow> bool" where
   "apply_guards G s = (\<forall>g \<in> set (map (\<lambda>g. gval g s) G). g = true)"
+
+lemma apply_guards_empty [simp]: "apply_guards [] s"
+  by (simp add: apply_guards_def)
 
 lemma apply_guards_cons: "apply_guards (a # G) c = (gval a c = true \<and> apply_guards G c)"
   by (simp add: apply_guards_def)
@@ -135,6 +143,9 @@ lemma singleton_dest: "fis_singleton (possible_steps e s r aa b) \<Longrightarro
   apply (simp add: possible_steps_def fmember_def)
   by auto
 
+lemmas possible_steps_singleton = possible_steps_alt ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def
+lemmas possible_steps_empty = possible_steps_def ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def
+
 definition step :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> outputs \<times> registers) option" where
 "step e s r l i = (let possibilities = possible_steps e s r l i in
                    if possibilities = {||} then None
@@ -169,24 +180,48 @@ definition state :: "(transition \<times> nat \<times> outputs \<times> datastat
 definition observe_trace :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> observation" where
   "observe_trace e s r t \<equiv> map (\<lambda>(t,x,y,z). y) (observe_all e s r t)"
 
-lemma observe_trace_step: "lst \<noteq> [] \<Longrightarrow>
-       step e s r (fst (hd lst)) (snd (hd lst)) = Some (t, s', p, r') \<Longrightarrow>
-       observe_trace e s' r' (tl lst) = obs \<Longrightarrow>
-       observe_trace e s r lst = p#obs"
-proof(induct lst)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons a lst)
-  then show ?case
-    by (simp add: observe_trace_def)
-qed
+lemma observe_trace_empty [simp]: "observe_trace e s r [] = []"
+  by (simp add: observe_trace_def)
+
+lemma observe_trace_step: "
+       step e s r (fst h) (snd h) = Some (t, s', p, r') \<Longrightarrow>
+       observe_trace e s' r' es = obs \<Longrightarrow>
+       observe_trace e s r (h#es) = p#obs"
+  by (simp add: observe_trace_def)
+
+lemma observe_trace_possible_step: "possible_steps e s r (fst h) (snd h) = {|(s', t)|} \<Longrightarrow>
+       apply_outputs (Outputs t) (join_ir (snd h) r) = p \<Longrightarrow>
+       apply_updates (Updates t) (join_ir (snd h) r) r = r' \<Longrightarrow>
+       observe_trace e s' r' es = obs \<Longrightarrow>
+       observe_trace e s r (h#es) = p#obs"
+  using observe_trace_step one_possible_step
+  by simp
+
+lemma observe_trace_no_possible_step: "possible_steps e s r (fst h) (snd h) = {||} \<Longrightarrow>
+       observe_trace e s r (h#es) = []"
+  by (simp add: observe_trace_def step_def)
 
 lemma observe_empty: "t = [] \<Longrightarrow> observe_trace e 0 <> t = []"
   by (simp add: observe_trace_def)
 
 definition efsm_equiv :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> trace \<Rightarrow> bool" where
   "efsm_equiv e1 e2 t \<equiv> ((observe_trace e1 0 <> t) = (observe_trace e2 0 <> t))"
+
+lemma efsm_equiv_possible_step: 
+  "possible_steps e1 s1 r1 (fst h) (snd h) = {|(s1', t1)|} \<Longrightarrow>
+   possible_steps e2 s2 r2 (fst h) (snd h) = {|(s2', t2)|} \<Longrightarrow>
+   apply_outputs (Outputs t1) (join_ir (snd h) r1) = apply_outputs (Outputs t2) (join_ir (snd h) r2) \<Longrightarrow>
+   apply_updates (Updates t1) (join_ir (snd h) r1) r1 = r1' \<Longrightarrow>
+   apply_updates (Updates t2) (join_ir (snd h) r2) r2 = r2' \<Longrightarrow>
+   observe_trace e1 s1' r1' t = observe_trace e2 s2' r2' t \<Longrightarrow>
+   observe_trace e1 s1 r1 (h#t) = observe_trace e2 s2 r2 (h#t)"
+  by (simp add: observe_trace_possible_step)
+
+lemma efsm_equiv_no_possible_step: 
+  "possible_steps e1 s1 r1 (fst h) (snd h) = {||} \<Longrightarrow>
+   possible_steps e2 s2 r2 (fst h) (snd h) = {||} \<Longrightarrow>
+   observe_trace e1 s1 r1 (h#t) = observe_trace e2 s2 r2 (h#t)"
+  by (simp add: observe_trace_no_possible_step)
 
 lemma efsm_equiv_reflexive: "efsm_equiv e1 e1 t"
   by (simp add: efsm_equiv_def)

@@ -10,6 +10,23 @@ fun MaybeBoolInt :: "(int \<Rightarrow> int \<Rightarrow> bool) \<Rightarrow> va
   "MaybeBoolInt f (Some (Num a)) (Some (Num b)) = (if f a b then true else false)" |
   "MaybeBoolInt _ _ _ = invalid"
 
+lemma MaybeBoolInt_lt: "MaybeBoolInt (\<lambda>x y. y < x) (Some (Num n')) r = false \<Longrightarrow> \<exists>n. r = Some (Num n) \<and> n' \<le> n"
+proof(induct n')
+  case (nonneg n)
+  then show ?case
+    using MaybeBoolInt.elims by force
+next
+  case (neg n)
+  then show ?case
+    using MaybeBoolInt.elims by force
+qed
+
+lemma MaybeBoolInt_not_num_1: "\<forall>n. r \<noteq> Some (Num n) \<Longrightarrow> MaybeBoolInt f n r = invalid"
+  apply (cases r)
+   apply simp
+  apply (case_tac a)
+  by auto
+
 definition ValueGt :: "value option \<Rightarrow> value option \<Rightarrow> trilean"  where
   "ValueGt a b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x>y)) a b"
 

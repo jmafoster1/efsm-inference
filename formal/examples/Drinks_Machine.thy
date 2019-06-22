@@ -15,8 +15,6 @@ theory Drinks_Machine
   imports "../Contexts"
 begin
 
-declare One_nat_def [simp del]
-
 definition select :: "transition" where
 "select \<equiv> \<lparr>
         Label = STR ''select'',
@@ -24,8 +22,8 @@ definition select :: "transition" where
         Guard = [], \<comment> \<open> No guards \<close>
         Outputs = [],
         Updates = [ \<comment> \<open> Two updates: \<close>
-                    (R 1, (V (I 1))), \<comment> \<open>  Firstly set value of r1 to value of i1 \<close>
-                    (R 2, (L (Num 0))) \<comment> \<open> Secondly set the value of r2 to literal zero \<close>
+                    (1, V (I 1)), \<comment> \<open>  Firstly set value of r1 to value of i1 \<close>
+                    (2, L (Num 0)) \<comment> \<open> Secondly set the value of r2 to literal zero \<close>
                   ]
       \<rparr>"
 
@@ -44,8 +42,8 @@ definition coin :: "transition" where
         Guard = [],
         Outputs = [Plus (V (R 2)) (V (I 1))],
         Updates = [
-                    (R 1, V (R 1)),
-                    (R 2, Plus (V (R 2)) (V (I 1)))
+                    (1, V (R 1)),
+                    (2, Plus (V (R 2)) (V (I 1)))
                   ]
       \<rparr>"
 
@@ -61,7 +59,7 @@ definition vend :: "transition" where
         Arity = 0,
         Guard = [(Ge (V (R 2)) (L (Num 100)))],
         Outputs =  [(V (R 1))],
-        Updates = [(R 1, V (R 1)), (R 2, V (R 2))]
+        Updates = [(1, V (R 1)), (2, V (R 2))]
       \<rparr>"
 
 lemma label_vend: "Label vend = STR ''vend''"
@@ -73,7 +71,7 @@ definition vend_fail :: "transition" where
         Arity = 0,
         Guard = [(GExp.Lt (V (R 2)) (L (Num 100)))],
         Outputs =  [],
-        Updates = [(R 1, V (R 1)), (R 2, V (R 2))]
+        Updates = [(1, V (R 1)), (2, V (R 2))]
       \<rparr>"
 
 lemma guard_vend_fail: "Guard vend_fail = [(GExp.Lt(V (R 2)) (L (Num 100)))]"
@@ -106,78 +104,54 @@ lemma "S drinks = {|0, 1, 2|}"
 lemmas transitions = select_def coin_def vend_def vend_fail_def
 
 lemma possible_steps_0:  "length i = 1 \<Longrightarrow> possible_steps drinks 0 r (STR ''select'') i = {|(1, select)|}"
-  apply (simp add: possible_steps_def drinks_def transitions)
-  by force
-
-lemma updates_select: "(EFSM.apply_updates (Updates select)
-              (case_vname (\<lambda>n. if n = 1 then Some (Str ''coke'') else input2state [] (1 + 1) (I n)) Map.empty) Map.empty) = <R 1:=Str ''coke'', R 2 := Num 0>"
-  apply (simp add: select_def)
-  apply (rule ext)
-  by simp
+  apply (simp add: possible_steps_singleton drinks_def)
+  apply safe
+  by (simp_all add: transitions apply_guards_def)
 
 lemma arity_vend: "Arity vend = 0"
   by (simp add: vend_def)
 
-lemma drinks_vend_insufficient: "r (R 2) = Some (Num x1) \<Longrightarrow> x1 < 100 \<Longrightarrow> possible_steps drinks 1 r (STR ''vend'') [] = {|(1, vend_fail)|}"
-proof-
-  assume premise1: "r (R 2) = Some (Num x1)"
-  assume premise2: "x1 < 100"
-  have aux: "ffilter
-     (\<lambda>((origin, dest), t).
-         origin = 1 \<and>
-         Label t = STR ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state [] 1 (I n) | R n \<Rightarrow> r (R n)))
-     drinks =
-    {|((1, 1), vend_fail)|}"
-    apply (simp add: ffilter_def fset_both_sides fimage_def Abs_fset_inverse)
-    apply (simp add: drinks_def Set.filter_def)
-    apply safe
-    by (simp_all add: transitions gval.simps ValueGt_def premise1 premise2)
-  show ?thesis
-    apply (simp add: possible_steps_def)
-    by (simp add: aux)
-qed
+lemma drinks_vend_insufficient: "r 2 = Some (Num x1) \<Longrightarrow> x1 < 100 \<Longrightarrow> possible_steps drinks 1 r (STR ''vend'') [] = {|(1, vend_fail)|}"
+  apply (simp add: possible_steps_singleton drinks_def)
+  apply safe
+  by (simp_all add: transitions apply_guards_def ValueGt_def)
+
+lemma drinks_vend_invalid: "\<nexists>n. r 2 = Some (Num n) \<Longrightarrow> possible_steps drinks 1 r (STR ''vend'') [] = {||}"
+  apply (simp add: possible_steps_empty drinks_def)
+  apply safe
+  by (simp_all add: transitions apply_guards_def join_ir_def ValueGt_def MaybeBoolInt_not_num_1)
 
 lemma possible_steps_1_coin: "length i = 1 \<Longrightarrow> possible_steps drinks 1 r (STR ''coin'') i = {|(1, coin)|}"
-  apply (simp add: possible_steps_def drinks_def transitions)
-  by force
+  apply (simp add: possible_steps_singleton drinks_def)
+  apply safe
+  by (simp_all add: transitions)
 
-lemma possible_steps_2_vend: "\<exists>n. r (R 2) = Some (Num n) \<and> n \<ge> 100 \<Longrightarrow> possible_steps drinks 1 r (STR ''vend'') [] = {|(2, vend)|}"
-proof-
-  assume premise: "\<exists>n. r (R 2) = Some (Num n) \<and> n \<ge> 100"
-  have aux: "ffilter
-     (\<lambda>((origin, dest), t).
-         origin = 1 \<and>
-         Label t = STR ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state [] 1 (I n) | R n \<Rightarrow> r (R n)))
-     drinks =
-    {|((1, 2), vend)|}"
-    apply (simp add: ffilter_def fset_both_sides fimage_def Abs_fset_inverse)
-    apply (simp add: drinks_def Set.filter_def)
-    apply safe
-            apply (simp_all add: transitions gval.simps ValueGt_def)
-    using premise transitions gval.simps ValueGt_def
-    by auto
-  show ?thesis
-    by (simp add: possible_steps_def aux)
-qed
-
-lemma drinks_1_coin: "length (snd a) = 1 \<Longrightarrow> possible_steps drinks 1 r (STR ''coin'') (snd a) = {|(1, coin)|}"
-  apply (simp add: possible_steps_def drinks_def transitions)
-  by force
-
-lemma updates_coin: " (EFSM.apply_updates (Updates coin)
-            (case_vname (\<lambda>n. if n = 1 then Some (Num i) else input2state [] (1 + 1) (I n))
-              (\<lambda>n. if n = 2 then Some (Num r) else <R 1 := s> (R n)))
-            <R 1 := s, R 2 := Num r>) = <R 1 := s, R 2 := Num (r+i)>"
-  apply (rule ext)
-  by (simp add: coin_def)
+lemma possible_steps_2_vend: "\<exists>n. r 2 = Some (Num n) \<and> n \<ge> 100 \<Longrightarrow> possible_steps drinks 1 r (STR ''vend'') [] = {|(2, vend)|}"
+  apply (simp add: possible_steps_singleton drinks_def)
+  apply safe
+  by (simp_all add: transitions apply_guards_def ValueGt_def)
 
 lemma purchase_coke: "observe_trace drinks 0 <> [(STR ''select'', [Str ''coke'']), (STR ''coin'', [Num 50]), (STR ''coin'', [Num 50]), (STR ''vend'', [])] =
                        [[], [Some (Num 50)], [Some (Num 100)], [Some (Str ''coke'')]]"
-  apply (simp add: observe_trace_def)
-  apply (simp add: step_def possible_steps_0 fis_singleton_def outputs_select updates_select)
-  apply (simp add: step_def possible_steps_1_coin updates_coin fis_singleton_def)
-  apply (simp add: step_def possible_steps_2_vend)
-  by (simp add: transitions)
+  apply (rule observe_trace_possible_step)
+     apply (simp add: possible_steps_0)
+    apply (simp add: select_def)
+   apply simp
+  apply (rule observe_trace_possible_step)
+     apply (simp add: possible_steps_1_coin)
+    apply (simp add: coin_def select_def apply_outputs)
+   apply simp
+  apply (rule observe_trace_possible_step)
+     apply (simp add: possible_steps_1_coin)
+    apply (simp add: coin_def select_def apply_outputs)
+   apply simp
+  apply (rule observe_trace_possible_step)
+     apply simp
+     apply (rule possible_steps_2_vend)
+     apply (simp add: coin_def select_def join_ir_def input2state_def)
+    apply (simp add: apply_outputs  coin_def vend_def select_def)
+   apply simp
+  by simp
 
 lemma inaccepts_impossible: "l \<noteq> STR ''coin'' \<Longrightarrow> l \<noteq> STR ''vend'' \<Longrightarrow> possible_steps drinks 1 d l i = {||}"
   apply (simp add: possible_steps_def drinks_def transitions)
@@ -194,120 +168,46 @@ lemma inaccepts_input: "l \<noteq> STR ''coin'' \<Longrightarrow> l \<noteq> STR
 lemma inaccepts_accepts_prefix: "l \<noteq> STR ''coin'' \<Longrightarrow> l \<noteq> STR ''vend'' \<Longrightarrow> \<not> (accepts_trace drinks [(STR ''select'', [Str ''coke'']), (l, i)])"
   apply clarify
   apply (cases rule: accepts.cases)
-    apply (simp add: accepts_trace_def)
-  apply (simp add: accepts_trace_def)
+    apply (simp)
+  apply (simp)
   apply clarify
   apply (simp add: step_def possible_steps_0 inaccepts_input fis_singleton_def)
   using inaccepts_input by force
 
 lemma inaccepts_termination: "observe_trace drinks 0 <> [(STR ''select'', [Str ''coke'']), (STR ''inaccepts'', [Num 50]), (STR ''coin'', [Num 50])] = [[]]"
-  apply (simp add: observe_trace_def step_def possible_steps_0 updates_select)
-  by (simp add: inaccepts_impossible fis_singleton_def is_singleton_def transitions)
+  apply (rule observe_trace_possible_step)
+     apply (simp add: possible_steps_0)
+    apply (simp add: select_def)
+   apply simp
+  apply (rule observe_trace_no_possible_step)
+  by (simp add: inaccepts_impossible)
 
-definition select_posterior :: "context" where
-  "select_posterior \<equiv> \<lbrakk>(V (R 1)) \<mapsto> {|Bc True|}, (V (R 2)) \<mapsto> {|Eq (Num 0)|}\<rbrakk>"
+(* Part of Example 2 in Foster et. al. *)
+lemma r2_0_vend: "can_take vend i r \<Longrightarrow> \<exists>n. r 2 = Some (Num n) \<and> n \<ge> 100" (* You can't take vend immediately after taking select *)
+  apply (simp add: can_take_def vend_def apply_guards_def maybe_negate_true maybe_or_false)
+  by (simp add: ValueGt_def join_ir_def MaybeBoolInt_lt)
 
-definition vend_fail_posterior :: "context" where
-  "vend_fail_posterior \<equiv> \<lbrakk>(V (R 1)) \<mapsto> {|Bc True|}, (V (R 2)) \<mapsto> {|Lt (Num 100)|}\<rbrakk>"
-
-lemma consistent_select_posterior: "consistent select_posterior"
-  apply (simp add: consistent_def fBall_def select_posterior_def cval_true)
-  apply (rule_tac x="<R 2 := Num 0>" in exI)
-  apply clarify
-  apply (case_tac "r = V (R 2)")
-   apply (simp add: cval_def gval.simps ValueEq_def)
-  apply simp
-  apply clarify
-  apply (case_tac r)
-     apply (simp add: cval_true)
-    apply (case_tac x2)
-     apply (simp add: cval_true)
-    apply (simp add: cval_def gval.simps ValueEq_def)
-  by (simp_all add: cval_true)
-
-lemma "medial (medial c (Guard coin)) (Guard coin) = medial c (Guard coin)"
-  by (simp add: coin_def medial_def pairs2context_def List.maps_def)
-
-lemma "medial (medial c (Guard vend)) (Guard vend) = medial c (Guard vend)"
-  by (simp add: vend_def medial_def pairs2context_def List.maps_def)
-
-lemma "medial (medial c (Guard vend_fail)) (Guard vend_fail) = medial c (Guard vend_fail)"
-  by (simp add: vend_fail_def medial_def pairs2context_def List.maps_def)
-
-lemma select_posterior: "(posterior empty select) = select_posterior"
-proof-
-  have consistent_medial: "consistent (medial \<lbrakk>\<rbrakk> (Guard select))"
-    by (simp add: medial_def pairs2context_def List.maps_def select_def ffUnion_def)
-  show ?thesis
-    apply (simp add: posterior_def posterior_separate_def Let_def consistent_medial)
-    apply (simp add: remove_obsolete_constraints_def select_def)
-    apply (rule ext)
-    by (simp add: empty_inputs_are_true medial_empty select_posterior_def)
-qed
-
-lemma medial_select_posterior_vend: "medial select_posterior (Guard vend) = \<lbrakk>V (R 1) \<mapsto> {|Bc True|},
-                                                                             V (R 2) \<mapsto> {|(Geq (Num 100)), (Eq (Num 0))|}\<rbrakk>"
-  apply (simp add: select_posterior_def vend_def)
-  apply (simp add: medial_def pairs2context_def List.maps_def)
-  apply (rule ext)
-  by simp
-
-lemma r2_0_vend: "\<not>can_take vend select_posterior" (* You can't take vend immediately after taking select *)
-  apply (simp add: can_take_def medial_select_posterior_vend consistent_def)
-  apply (rule allI)
-  apply (rule_tac x="V (R 2)" in exI)
-  by (simp add: cval_def gval.simps ValueGt_def ValueEq_def)
-
-lemma coin_before_vend: "Contexts.can_take vend (posterior_n n coin (posterior \<lbrakk>\<rbrakk> select)) \<longrightarrow> n > 0" (* Corresponds to Example 2 in Foster et. al. *)
-  apply (simp add: select_posterior)
-  apply (cases n)
-   apply (simp add: r2_0_vend)
-  by simp
-
-lemma drinks_vend_r2_none: "r (R 2) = None \<Longrightarrow> possible_steps drinks 1 r (STR ''vend'') [] = {||}"
-  apply (simp add: possible_steps_def ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def drinks_def)
-  apply safe
-  by (simp_all add: transitions gval.simps ValueGt_def)
-
-lemma drinks_vend_sufficient: "r (R 2) = Some (Num x1) \<Longrightarrow>
+lemma drinks_vend_sufficient: "r 2 = Some (Num x1) \<Longrightarrow>
                 x1 \<ge> 100 \<Longrightarrow>
                 possible_steps drinks 1 r (STR ''vend'') [] = {|(2, vend)|}"
-proof-
-  assume premise1: "r (R 2) = Some (Num x1)"
-  assume premise2: "x1 \<ge> 100"
-  have aux: "ffilter
-     (\<lambda>((origin, dest), t).
-         origin = 1 \<and>
-         Label t = STR ''vend'' \<and> Arity t = 0 \<and> apply_guards (Guard t) (\<lambda>x. case x of I n \<Rightarrow> input2state [] 1 (I n) | R n \<Rightarrow> r (R n)))
-     drinks =
-    {|((1, 2), vend)|}"
-    apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse drinks_def)
-    apply (simp add: Set.filter_def)
-    apply safe
-            apply (simp_all add: transitions gval.simps ValueGt_def premise1)
-    using premise2 by auto
-  show ?thesis
-    by (simp add: possible_steps_def aux)
-qed
+  using possible_steps_2_vend by blast
 
 lemma drinks_end: "possible_steps drinks 2 r a b = {||}"
   apply (simp add: possible_steps_def drinks_def transitions)
   by force
 
-lemma drinks_vend_r2_String: "r (R 2) = Some (value.Str x2) \<Longrightarrow> possible_steps drinks 1 r (STR ''vend'') [] = {||}"
-  apply (simp add: possible_steps_def ffilter_def fset_both_sides Abs_fset_inverse)
-  apply (simp add: Set.filter_def drinks_def)
+lemma drinks_vend_r2_String: "r 2 = Some (value.Str x2) \<Longrightarrow> possible_steps drinks 1 r (STR ''vend'') [] = {||}"
+  apply (simp add: possible_steps_empty drinks_def)
   apply safe
-  by (simp_all add: transitions gval.simps ValueGt_def)
+  by (simp_all add: transitions apply_guards_def ValueGt_def join_ir_def)
 
-lemma drinks_vend_r2_inaccepts: "\<nexists>n. r (R 2) = Some (Num n) \<Longrightarrow> step drinks 1 r (STR ''vend'') [] = None"
-  apply (simp add: step_def)
-  apply (case_tac "r (R 2)")
-   apply (simp add: drinks_vend_r2_none)
-  apply simp
-  apply (case_tac a)
-   apply simp
-  by (simp add: drinks_vend_r2_String)
+lemma drinks_vend_r2_inaccepts: "\<nexists>n. r 2 = Some (Num n) \<Longrightarrow> step drinks 1 r (STR ''vend'') [] = None"
+  apply (rule no_possible_steps)
+  apply (simp add: possible_steps_empty drinks_def)
+  apply safe
+    apply (simp add: coin_def)
+   apply (simp add: vend_fail_def apply_guards_def join_ir_def ValueGt_def MaybeBoolInt_not_num_1)
+  by (simp add: vend_def apply_guards_def maybe_negate_true maybe_or_false ValueGt_def join_ir_def MaybeBoolInt_not_num_1)
 
 lemma drinks_0_inaccepts: "\<not> (fst a = STR ''select'' \<and> length (snd a) = 1) \<Longrightarrow>
     (possible_steps drinks 0 r (fst a) (snd a)) = {||}"
@@ -357,22 +257,8 @@ lemma drinks_1_inaccepts_trace: "\<not> (aa = STR ''vend'' \<and> b = []) \<Long
   using drinks_1_inaccepts by auto
 
 lemma inaccepts_state_step: "s > 1 \<Longrightarrow> step drinks s r l i = None"
-proof-
-  assume premise: "s > 1"
-  have set_filter: "(Set.filter
-       (\<lambda>((origin, dest), t).
-           origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (case_vname (\<lambda>n. input2state i 1 (I n)) (\<lambda>n. r (R n))))
-       (fset drinks)) = {}"
-    using premise
-    by (simp add: Set.filter_def drinks_def)
-  have ffilter: "ffilter (\<lambda>((origin, dest), t). origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (join_ir i r)) drinks = {||}"
-    using premise
-    by (simp add: ffilter_def set_filter)
-  show ?thesis
-    apply (simp add: step_def possible_steps_def)
-    using ffilter
-    by simp
-qed
+  apply (rule no_possible_steps)
+  by (simp add: possible_steps_empty drinks_def)
 
 lemma invalid_other_states: "s > 1 \<Longrightarrow> \<not>accepts drinks s r ((aa, b) # t)"
   apply clarify
