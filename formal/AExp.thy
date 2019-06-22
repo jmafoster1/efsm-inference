@@ -74,9 +74,8 @@ fun aval :: "aexp \<Rightarrow> datastate \<Rightarrow> value option" where
 lemma aval_plus_symmetry: "aval (Plus x y) s = aval (Plus y x) s"
   by (simp add: value_plus_symmetry)
 
-definition null_state ("<>") where
+abbreviation null_state ("<>") where
   "null_state \<equiv> \<lambda>x. None"
-declare null_state_def [simp]
 
 syntax
   "_maplet"  :: "['a, 'a] \<Rightarrow> maplet"             ("_ /:=/ _")
@@ -141,6 +140,15 @@ definition join_ir :: "value list \<Rightarrow> registers \<Rightarrow> datastat
     R n \<Rightarrow> r n |
     I n \<Rightarrow> (input2state i) n
   )"
+
+lemmas datastate = join_ir_def input2state_def
+
+lemma join_ir_empty[simp]: "join_ir [] <> = <>"
+  apply (rule ext)
+  apply (simp add: join_ir_def)
+  apply (case_tac x)
+   apply (simp add: input2state_def)
+  by simp
 
 lemma aval_plus_aexp: "aval (a+b) s = aval (Plus a b) s"
   apply (case_tac a)

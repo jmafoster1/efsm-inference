@@ -33,7 +33,7 @@ definition S :: "transition_matrix \<Rightarrow> nat fset" where
 definition apply_outputs :: "aexp list \<Rightarrow> datastate \<Rightarrow> value option list" where
   "apply_outputs p s = map (\<lambda>p. aval p s) p"
 
-lemmas apply_outputs = join_ir_def apply_outputs_def input2state_def
+lemmas apply_outputs = datastate apply_outputs_def
 
 lemma apply_outputs_empty [simp]: "apply_outputs [] s = []"
   by (simp add: apply_outputs_def)
@@ -43,6 +43,8 @@ lemma apply_outputs_preserves_length: "length (apply_outputs p s) = length p"
 
 definition apply_guards :: "gexp list \<Rightarrow> datastate \<Rightarrow> bool" where
   "apply_guards G s = (\<forall>g \<in> set (map (\<lambda>g. gval g s) G). g = true)"
+
+lemmas apply_guards = datastate apply_guards_def gval.simps ValueEq_def ValueGt_def
 
 lemma apply_guards_empty [simp]: "apply_guards [] s"
   by (simp add: apply_guards_def)
@@ -143,8 +145,9 @@ lemma singleton_dest: "fis_singleton (possible_steps e s r aa b) \<Longrightarro
   apply (simp add: possible_steps_def fmember_def)
   by auto
 
-lemmas possible_steps_singleton = possible_steps_alt ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def
-lemmas possible_steps_empty = possible_steps_def ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def
+lemmas ffilter = ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def
+lemmas possible_steps_singleton = ffilter possible_steps_alt
+lemmas possible_steps_empty = ffilter possible_steps_def
 
 definition step :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> outputs \<times> registers) option" where
 "step e s r l i = (let possibilities = possible_steps e s r l i in
