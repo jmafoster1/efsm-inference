@@ -39,9 +39,6 @@ object equal {
     val `HOL.equal` = (a: (A, B), b: (A, B)) =>
       Product_Type.equal_proda[A, B](a, b)
   }
-  implicit def `String.equal_literal`: equal[String] = new equal[String] {
-    val `HOL.equal` = (a: String, b: String) => a == b
-  }
   implicit def `Optiona.equal_option`[A : equal]: equal[Option[A]] = new
     equal[Option[A]] {
     val `HOL.equal` = (a: Option[A], b: Option[A]) =>
@@ -116,10 +113,6 @@ object ord {
     val `Orderings.less` = (a: (A, B), b: (A, B)) =>
       Product_Lexorder.less_prod[A, B](a, b)
   }
-  implicit def `String.ord_literal`: ord[String] = new ord[String] {
-    val `Orderings.less_eq` = (a: String, b: String) => a <= b
-    val `Orderings.less` = (a: String, b: String) => a < b
-  }
   implicit def
     `GExp_Orderings.ord_option`[A : HOL.equal : linorder]: ord[Option[A]] = new
     ord[Option[A]] {
@@ -181,11 +174,6 @@ object preorder {
       Product_Lexorder.less_eq_prod[A, B](a, b)
     val `Orderings.less` = (a: (A, B), b: (A, B)) =>
       Product_Lexorder.less_prod[A, B](a, b)
-  }
-  implicit def `String.preorder_literal`: preorder[String] = new
-    preorder[String] {
-    val `Orderings.less_eq` = (a: String, b: String) => a <= b
-    val `Orderings.less` = (a: String, b: String) => a < b
   }
   implicit def
     `GExp_Orderings.preorder_option`[A : HOL.equal : linorder]:
@@ -249,10 +237,6 @@ object order {
       Product_Lexorder.less_eq_prod[A, B](a, b)
     val `Orderings.less` = (a: (A, B), b: (A, B)) =>
       Product_Lexorder.less_prod[A, B](a, b)
-  }
-  implicit def `String.order_literal`: order[String] = new order[String] {
-    val `Orderings.less_eq` = (a: String, b: String) => a <= b
-    val `Orderings.less` = (a: String, b: String) => a < b
   }
   implicit def
     `GExp_Orderings.order_option`[A : HOL.equal : linorder]: order[Option[A]] =
@@ -318,11 +302,6 @@ object linorder {
     val `Orderings.less` = (a: (A, B), b: (A, B)) =>
       Product_Lexorder.less_prod[A, B](a, b)
   }
-  implicit def `String.linorder_literal`: linorder[String] = new
-    linorder[String] {
-    val `Orderings.less_eq` = (a: String, b: String) => a <= b
-    val `Orderings.less` = (a: String, b: String) => a < b
-  }
   implicit def
     `GExp_Orderings.linorder_option`[A : HOL.equal : linorder]:
       linorder[Option[A]]
@@ -346,23 +325,6 @@ def less_bool(x0: Boolean, b: Boolean): Boolean = (x0, b) match {
 }
 
 } /* object Orderings */
-
-object Optiona {
-
-def equal_optiona[A : HOL.equal](x0: Option[A], x1: Option[A]): Boolean =
-  (x0, x1) match {
-  case (None, Some(x2)) => false
-  case (Some(x2), None) => false
-  case (Some(x2), Some(y2)) => HOL.eq[A](x2, y2)
-  case (None, None) => true
-}
-
-def is_none[A](x0: Option[A]): Boolean = x0 match {
-  case Some(x) => false
-  case None => true
-}
-
-} /* object Optiona */
 
 object Groups {
 
@@ -435,115 +397,101 @@ final case class Bit1(a: num) extends num
 
 } /* object Num */
 
-object Product_Type {
+object Nat {
 
-def equal_proda[A : HOL.equal, B : HOL.equal](x0: (A, B), x1: (A, B)): Boolean =
+abstract sealed class nat
+final case class Nata(a: BigInt) extends nat
+
+def equal_nata(m: nat, n: nat): Boolean =
+  Code_Numeral.integer_of_nat(m) == Code_Numeral.integer_of_nat(n)
+
+def plus_nata(m: nat, n: nat): nat =
+  Nata(Code_Numeral.integer_of_nat(m) + Code_Numeral.integer_of_nat(n))
+
+def zero_nata: nat = Nata(BigInt(0))
+
+def less_eq_nat(m: nat, n: nat): Boolean =
+  Code_Numeral.integer_of_nat(m) <= Code_Numeral.integer_of_nat(n)
+
+def less_nat(m: nat, n: nat): Boolean =
+  Code_Numeral.integer_of_nat(m) < Code_Numeral.integer_of_nat(n)
+
+def one_nat: nat = Nata(BigInt(1))
+
+def Suc(n: nat): nat = plus_nata(n, one_nat)
+
+def minus_nat(m: nat, n: nat): nat =
+  Nata(Orderings.max[BigInt](BigInt(0),
+                              Code_Numeral.integer_of_nat(m) -
+                                Code_Numeral.integer_of_nat(n)))
+
+} /* object Nat */
+
+object Code_Numeral {
+
+def integer_of_nat(x0: Nat.nat): BigInt = x0 match {
+  case Nat.Nata(x) => x
+}
+
+def nat_of_integer(k: BigInt): Nat.nat =
+  Nat.Nata(Orderings.max[BigInt](BigInt(0), k))
+
+def integer_of_int(x0: Int.int): BigInt = x0 match {
+  case Int.int_of_integer(k) => k
+}
+
+} /* object Code_Numeral */
+
+object Int {
+
+abstract sealed class int
+final case class int_of_integer(a: BigInt) extends int
+
+def less_int(k: int, l: int): Boolean =
+  Code_Numeral.integer_of_int(k) < Code_Numeral.integer_of_int(l)
+
+def plus_int(k: int, l: int): int =
+  int_of_integer(Code_Numeral.integer_of_int(k) +
+                   Code_Numeral.integer_of_int(l))
+
+def zero_int: int = int_of_integer(BigInt(0))
+
+def equal_int(k: int, l: int): Boolean =
+  Code_Numeral.integer_of_int(k) == Code_Numeral.integer_of_int(l)
+
+def minus_int(k: int, l: int): int =
+  int_of_integer(Code_Numeral.integer_of_int(k) -
+                   Code_Numeral.integer_of_int(l))
+
+} /* object Int */
+
+object Map {
+
+def map_of[A : HOL.equal, B](x0: List[(A, B)], k: A): Option[B] = (x0, k) match
+  {
+  case ((l, v)::ps, k) =>
+    (if (HOL.eq[A](l, k)) Some[B](v) else map_of[A, B](ps, k))
+  case (Nil, k) => None
+}
+
+} /* object Map */
+
+object Optiona {
+
+def equal_optiona[A : HOL.equal](x0: Option[A], x1: Option[A]): Boolean =
   (x0, x1) match {
-  case ((x1, x2), (y1, y2)) => (HOL.eq[A](x1, y1)) && (HOL.eq[B](x2, y2))
+  case (None, Some(x2)) => false
+  case (Some(x2), None) => false
+  case (Some(x2), Some(y2)) => HOL.eq[A](x2, y2)
+  case (None, None) => true
 }
 
-def equal_unita(u: Unit, v: Unit): Boolean = true
-
-def less_eq_unit(uu: Unit, uv: Unit): Boolean = true
-
-def less_unit(uu: Unit, uv: Unit): Boolean = false
-
-def apsnd[A, B, C](f: A => B, x1: (C, A)): (C, B) = (f, x1) match {
-  case (f, (x, y)) => (x, f(y))
+def is_none[A](x0: Option[A]): Boolean = x0 match {
+  case Some(x) => false
+  case None => true
 }
 
-def product[A, B](x0: Set.set[A], x1: Set.set[B]): Set.set[(A, B)] = (x0, x1)
-  match {
-  case (Set.seta(xs), Set.seta(ys)) =>
-    Set.seta[(A, B)](Lista.maps[A, (A, B)](((x: A) =>
-     Lista.map[B, (A, B)](((a: B) => (x, a)), ys)),
-    xs))
-}
-
-def fst[A, B](x0: (A, B)): A = x0 match {
-  case (x1, x2) => x1
-}
-
-def snd[A, B](x0: (A, B)): B = x0 match {
-  case (x1, x2) => x2
-}
-
-def equal_bool(p: Boolean, pa: Boolean): Boolean = (p, pa) match {
-  case (p, true) => p
-  case (p, false) => ! p
-  case (true, p) => p
-  case (false, p) => ! p
-}
-
-} /* object Product_Type */
-
-object Set {
-
-abstract sealed class set[A]
-final case class seta[A](a: List[A]) extends set[A]
-final case class coset[A](a: List[A]) extends set[A]
-
-def Ball[A](x0: set[A], p: A => Boolean): Boolean = (x0, p) match {
-  case (seta(xs), p) => Lista.list_all[A](p, xs)
-}
-
-def image[A, B](f: A => B, x1: set[A]): set[B] = (f, x1) match {
-  case (f, seta(xs)) => seta[B](Lista.map[A, B](f, xs))
-}
-
-def filter[A](p: A => Boolean, x1: set[A]): set[A] = (p, x1) match {
-  case (p, seta(xs)) => seta[A](Lista.filter[A](p, xs))
-}
-
-def insert[A : HOL.equal](x: A, xa1: set[A]): set[A] = (x, xa1) match {
-  case (x, coset(xs)) => coset[A](Lista.removeAll[A](x, xs))
-  case (x, seta(xs)) => seta[A](Lista.insert[A](x, xs))
-}
-
-def member[A : HOL.equal](x: A, xa1: set[A]): Boolean = (x, xa1) match {
-  case (x, coset(xs)) => ! (xs contains x)
-  case (x, seta(xs)) => xs contains x
-}
-
-def remove[A : HOL.equal](x: A, xa1: set[A]): set[A] = (x, xa1) match {
-  case (x, coset(xs)) => coset[A](Lista.insert[A](x, xs))
-  case (x, seta(xs)) => seta[A](Lista.removeAll[A](x, xs))
-}
-
-def the_elem[A](x0: set[A]): A = x0 match {
-  case seta(x::Nil) => x
-}
-
-def bot_set[A]: set[A] = seta[A](Nil)
-
-def sup_set[A : HOL.equal](x0: set[A], a: set[A]): set[A] = (x0, a) match {
-  case (coset(xs), a) =>
-    coset[A](Lista.filter[A](((x: A) => ! (member[A](x, a))), xs))
-  case (seta(xs), a) =>
-    Lista.fold[A, set[A]](((aa: A) => (b: set[A]) => insert[A](aa, b)), xs, a)
-}
-
-def top_set[A]: set[A] = coset[A](Nil)
-
-def minus_set[A : HOL.equal](a: set[A], x1: set[A]): set[A] = (a, x1) match {
-  case (a, coset(xs)) =>
-    seta[A](Lista.filter[A](((x: A) => member[A](x, a)), xs))
-  case (a, seta(xs)) =>
-    Lista.fold[A, set[A]](((aa: A) => (b: set[A]) => remove[A](aa, b)), xs, a)
-}
-
-def less_eq_set[A : HOL.equal](a: set[A], b: set[A]): Boolean = (a, b) match {
-  case (coset(xs), seta(ys)) =>
-    (if ((Lista.nulla[A](xs)) && (Lista.nulla[A](ys))) false
-      else { sys.error("subset_eq (List.coset _) (List.set _) requires type class instance card_UNIV");
-             (((_: Unit) =>
-                less_eq_set[A](coset[A](xs), seta[A](ys)))).apply(())
-             })
-  case (a, coset(ys)) => Lista.list_all[A](((y: A) => ! (member[A](y, a))), ys)
-  case (seta(xs), b) => Lista.list_all[A](((x: A) => member[A](x, b)), xs)
-}
-
-} /* object Set */
+} /* object Optiona */
 
 object Lista {
 
@@ -662,122 +610,73 @@ def sorted_list_of_set[A : HOL.equal : Orderings.linorder](x0: Set.set[A]):
 
 } /* object Lista */
 
-object Nat {
+object Set {
 
-abstract sealed class nat
-final case class Nata(a: BigInt) extends nat
+abstract sealed class set[A]
+final case class seta[A](a: List[A]) extends set[A]
+final case class coset[A](a: List[A]) extends set[A]
 
-def equal_nata(m: nat, n: nat): Boolean =
-  Code_Numeral.integer_of_nat(m) == Code_Numeral.integer_of_nat(n)
-
-def plus_nata(m: nat, n: nat): nat =
-  Nata(Code_Numeral.integer_of_nat(m) + Code_Numeral.integer_of_nat(n))
-
-def zero_nata: nat = Nata(BigInt(0))
-
-def less_eq_nat(m: nat, n: nat): Boolean =
-  Code_Numeral.integer_of_nat(m) <= Code_Numeral.integer_of_nat(n)
-
-def less_nat(m: nat, n: nat): Boolean =
-  Code_Numeral.integer_of_nat(m) < Code_Numeral.integer_of_nat(n)
-
-def one_nat: nat = Nata(BigInt(1))
-
-def Suc(n: nat): nat = plus_nata(n, one_nat)
-
-def minus_nat(m: nat, n: nat): nat =
-  Nata(Orderings.max[BigInt](BigInt(0),
-                              Code_Numeral.integer_of_nat(m) -
-                                Code_Numeral.integer_of_nat(n)))
-
-} /* object Nat */
-
-object Code_Numeral {
-
-def sgn_integer(k: BigInt): BigInt =
-  (if (k == BigInt(0)) BigInt(0)
-    else (if (k < BigInt(0)) BigInt(-1) else BigInt(1)))
-
-def divmod_integer(k: BigInt, l: BigInt): (BigInt, BigInt) =
-  (if (k == BigInt(0)) (BigInt(0), BigInt(0))
-    else (if (l == BigInt(0)) (BigInt(0), k)
-           else (Fun.comp[BigInt, ((BigInt, BigInt)) => (BigInt, BigInt),
-                           BigInt](Fun.comp[BigInt => BigInt,
-     ((BigInt, BigInt)) => (BigInt, BigInt),
-     BigInt](((a: BigInt => BigInt) => (b: (BigInt, BigInt)) =>
-               Product_Type.apsnd[BigInt, BigInt, BigInt](a, b)),
-              ((a: BigInt) => (b: BigInt) => a * b)),
-                                    ((a: BigInt) =>
-                                      sgn_integer(a)))).apply(l).apply((if (sgn_integer(k) ==
-                                      sgn_integer(l))
-                                 ((k: BigInt) => (l: BigInt) => if (l == 0)
-                                   (BigInt(0), k) else
-                                   (k.abs /% l.abs)).apply(k).apply(l)
-                                 else {
-val (r, s): (BigInt, BigInt) =
-  ((k: BigInt) => (l: BigInt) => if (l == 0) (BigInt(0), k) else
-    (k.abs /% l.abs)).apply(k).apply(l);
-(if (s == BigInt(0)) ((- r), BigInt(0)) else ((- r) - BigInt(1), l.abs - s))
-                                      }))))
-
-def integer_of_nat(x0: Nat.nat): BigInt = x0 match {
-  case Nat.Nata(x) => x
+def Ball[A](x0: set[A], p: A => Boolean): Boolean = (x0, p) match {
+  case (seta(xs), p) => Lista.list_all[A](p, xs)
 }
 
-def nat_of_integer(k: BigInt): Nat.nat =
-  Nat.Nata(Orderings.max[BigInt](BigInt(0), k))
-
-def integer_of_int(x0: Int.int): BigInt = x0 match {
-  case Int.int_of_integer(k) => k
+def image[A, B](f: A => B, x1: set[A]): set[B] = (f, x1) match {
+  case (f, seta(xs)) => seta[B](Lista.map[A, B](f, xs))
 }
 
-def divide_integer(k: BigInt, l: BigInt): BigInt =
-  Product_Type.fst[BigInt, BigInt](divmod_integer(k, l))
-
-def modulo_integer(k: BigInt, l: BigInt): BigInt =
-  Product_Type.snd[BigInt, BigInt](divmod_integer(k, l))
-
-} /* object Code_Numeral */
-
-object Int {
-
-abstract sealed class int
-final case class int_of_integer(a: BigInt) extends int
-
-def nat(k: int): Nat.nat =
-  Nat.Nata(Orderings.max[BigInt](BigInt(0), Code_Numeral.integer_of_int(k)))
-
-def less_int(k: int, l: int): Boolean =
-  Code_Numeral.integer_of_int(k) < Code_Numeral.integer_of_int(l)
-
-def plus_int(k: int, l: int): int =
-  int_of_integer(Code_Numeral.integer_of_int(k) +
-                   Code_Numeral.integer_of_int(l))
-
-def zero_int: int = int_of_integer(BigInt(0))
-
-def equal_int(k: int, l: int): Boolean =
-  Code_Numeral.integer_of_int(k) == Code_Numeral.integer_of_int(l)
-
-def minus_int(k: int, l: int): int =
-  int_of_integer(Code_Numeral.integer_of_int(k) -
-                   Code_Numeral.integer_of_int(l))
-
-def uminus_int(k: int): int =
-  int_of_integer((- (Code_Numeral.integer_of_int(k))))
-
-} /* object Int */
-
-object Map {
-
-def map_of[A : HOL.equal, B](x0: List[(A, B)], k: A): Option[B] = (x0, k) match
-  {
-  case ((l, v)::ps, k) =>
-    (if (HOL.eq[A](l, k)) Some[B](v) else map_of[A, B](ps, k))
-  case (Nil, k) => None
+def filter[A](p: A => Boolean, x1: set[A]): set[A] = (p, x1) match {
+  case (p, seta(xs)) => seta[A](Lista.filter[A](p, xs))
 }
 
-} /* object Map */
+def insert[A : HOL.equal](x: A, xa1: set[A]): set[A] = (x, xa1) match {
+  case (x, coset(xs)) => coset[A](Lista.removeAll[A](x, xs))
+  case (x, seta(xs)) => seta[A](Lista.insert[A](x, xs))
+}
+
+def member[A : HOL.equal](x: A, xa1: set[A]): Boolean = (x, xa1) match {
+  case (x, coset(xs)) => ! (xs contains x)
+  case (x, seta(xs)) => xs contains x
+}
+
+def remove[A : HOL.equal](x: A, xa1: set[A]): set[A] = (x, xa1) match {
+  case (x, coset(xs)) => coset[A](Lista.insert[A](x, xs))
+  case (x, seta(xs)) => seta[A](Lista.removeAll[A](x, xs))
+}
+
+def the_elem[A](x0: set[A]): A = x0 match {
+  case seta(x::Nil) => x
+}
+
+def bot_set[A]: set[A] = seta[A](Nil)
+
+def sup_set[A : HOL.equal](x0: set[A], a: set[A]): set[A] = (x0, a) match {
+  case (coset(xs), a) =>
+    coset[A](Lista.filter[A](((x: A) => ! (member[A](x, a))), xs))
+  case (seta(xs), a) =>
+    Lista.fold[A, set[A]](((aa: A) => (b: set[A]) => insert[A](aa, b)), xs, a)
+}
+
+def top_set[A]: set[A] = coset[A](Nil)
+
+def minus_set[A : HOL.equal](a: set[A], x1: set[A]): set[A] = (a, x1) match {
+  case (a, coset(xs)) =>
+    seta[A](Lista.filter[A](((x: A) => member[A](x, a)), xs))
+  case (a, seta(xs)) =>
+    Lista.fold[A, set[A]](((aa: A) => (b: set[A]) => remove[A](aa, b)), xs, a)
+}
+
+def less_eq_set[A : HOL.equal](a: set[A], b: set[A]): Boolean = (a, b) match {
+  case (coset(xs), seta(ys)) =>
+    (if ((Lista.nulla[A](xs)) && (Lista.nulla[A](ys))) false
+      else { sys.error("subset_eq (List.coset _) (List.set _) requires type class instance card_UNIV");
+             (((_: Unit) =>
+                less_eq_set[A](coset[A](xs), seta[A](ys)))).apply(())
+             })
+  case (a, coset(ys)) => Lista.list_all[A](((y: A) => ! (member[A](y, a))), ys)
+  case (seta(xs), b) => Lista.list_all[A](((x: A) => member[A](x, b)), xs)
+}
+
+} /* object Set */
 
 object Trilean {
 
@@ -954,8 +853,6 @@ def join_ir(i: List[Value.value], r: Nat.nat => Option[Value.value]):
                           case VName.R(aa) => r(aa)
                         }))
 
-def null_state[A, B]: A => Option[B] = ((_: A) => None)
-
 def aexp_constrains(x0: aexp, a: aexp): Boolean = (x0, a) match {
   case (L(l), a) => equal_aexpa(L(l), a)
   case (V(va), v) => equal_aexpa(V(va), v)
@@ -1010,6 +907,44 @@ def enumerate_aexp_inputs(x0: aexp): Set.set[Nat.nat] = x0 match {
 }
 
 } /* object AExp */
+
+object Product_Type {
+
+def equal_proda[A : HOL.equal, B : HOL.equal](x0: (A, B), x1: (A, B)): Boolean =
+  (x0, x1) match {
+  case ((x1, x2), (y1, y2)) => (HOL.eq[A](x1, y1)) && (HOL.eq[B](x2, y2))
+}
+
+def equal_unita(u: Unit, v: Unit): Boolean = true
+
+def less_eq_unit(uu: Unit, uv: Unit): Boolean = true
+
+def less_unit(uu: Unit, uv: Unit): Boolean = false
+
+def product[A, B](x0: Set.set[A], x1: Set.set[B]): Set.set[(A, B)] = (x0, x1)
+  match {
+  case (Set.seta(xs), Set.seta(ys)) =>
+    Set.seta[(A, B)](Lista.maps[A, (A, B)](((x: A) =>
+     Lista.map[B, (A, B)](((a: B) => (x, a)), ys)),
+    xs))
+}
+
+def fst[A, B](x0: (A, B)): A = x0 match {
+  case (x1, x2) => x1
+}
+
+def snd[A, B](x0: (A, B)): B = x0 match {
+  case (x1, x2) => x2
+}
+
+def equal_bool(p: Boolean, pa: Boolean): Boolean = (p, pa) match {
+  case (p, true) => p
+  case (p, false) => ! p
+  case (true, p) => p
+  case (false, p) => ! p
+}
+
+} /* object Product_Type */
 
 object Product_Lexorder {
 
@@ -1072,8 +1007,6 @@ def equal_gexpa(x0: gexp, x1: gexp): Boolean = (x0, x1) match {
     (AExp.equal_aexpa(x21, y21)) && (AExp.equal_aexpa(x22, y22))
   case (Bc(x1), Bc(y1)) => Product_Type.equal_bool(x1, y1)
 }
-
-def I(n: Nat.nat): VName.vname = VName.I(Nat.minus_nat(n, Nat.one_nat))
 
 def gval(x0: gexp, uu: VName.vname => Option[Value.value]): Trilean.trilean =
   (x0, uu) match {
@@ -2241,9 +2174,7 @@ matches)
                   ((af: (ioTag, Nat.nat)) =>
                     {
                       val (io2, inx2): (ioTag, Nat.nat) = af;
-                      (((remove_guard_add_update(t1,
-          Nat.plus_nata(inx1, Nat.one_nat), newReg),
-                          u1a),
+                      (((remove_guard_add_update(t1, inx1, newReg), u1a),
                          (io1, inx1)),
                         ((generalise_output(t2, newReg, inx2), u2a),
                           (io2, inx2)))
@@ -2452,11 +2383,8 @@ val (e1, (io1, inx1)): (Nat.nat, (ioTag, Nat.nat)) = aa;
 ((ab: (Nat.nat, (ioTag, Nat.nat))) =>
   {
     val (e2, (io2, inx2)): (Nat.nat, (ioTag, Nat.nat)) = ab;
-    ((walk_up_to(e1, e, Nat.zero_nata, AExp.null_state[Nat.nat, Value.value],
-                  t),
-       (io1, inx1)),
-      (walk_up_to(e2, e, Nat.zero_nata, AExp.null_state[Nat.nat, Value.value],
-                   t),
+    ((walk_up_to(e1, e, Nat.zero_nata, ((_: Nat.nat) => None), t), (io1, inx1)),
+      (walk_up_to(e2, e, Nat.zero_nata, ((_: Nat.nat) => None), t),
         (io2, inx2)))
   })
                                       })(b)
@@ -3382,8 +3310,7 @@ def satisfies(t: Set.set[List[(String,
                   (List[Value.value],
                     List[Value.value]))]](t,
    ((ta: List[(String, (List[Value.value], List[Value.value]))]) =>
-     satisfies_trace(ta, e, Nat.zero_nata,
-                      AExp.null_state[Nat.nat, Value.value])))
+     satisfies_trace(ta, e, Nat.zero_nata, ((_: Nat.nat) => None))))
 
 def make_outputs(x0: List[Value.value]): List[AExp.aexp] = x0 match {
   case Nil => Nil
@@ -3394,7 +3321,7 @@ def make_guard(x0: List[Value.value], uu: Nat.nat): List[GExp.gexp] = (x0, uu)
   match {
   case (Nil, uu) => Nil
   case (h::t, n) =>
-    (GExp.Eq(AExp.V(GExp.I(n)),
+    (GExp.Eq(AExp.V(VName.I(n)),
               AExp.L(h)))::(make_guard(t, Nat.plus_nata(n, Nat.one_nat)))
 }
 
@@ -3414,7 +3341,7 @@ def make_branch(e: FSet.fset[((Nat.nat, Nat.nat),
                                  Nat.plus_nata(maxS(e), Nat.one_nat)),
                                 Transition.transition_exta[Unit](label,
                           Nat.Nata(inputs.length),
-                          make_guard(inputs, Nat.one_nat),
+                          make_guard(inputs, Nat.zero_nata),
                           make_outputs(outputs), Nil, ())),
                                e),
                       Nat.plus_nata(maxS(e), Nat.one_nat), r, t)
@@ -3430,8 +3357,7 @@ def make_pta(x0: List[List[(String, (List[Value.value], List[Value.value]))]],
   (x0, e) match {
   case (Nil, e) => e
   case (h::t, e) =>
-    make_pta(t, make_branch(e, Nat.zero_nata,
-                             AExp.null_state[Nat.nat, Value.value], h))
+    make_pta(t, make_branch(e, Nat.zero_nata, ((_: Nat.nat) => None), h))
 }
 
 def toiEFSM_aux(uu: Nat.nat,
@@ -3727,7 +3653,7 @@ def guardMatch_alt(uu: List[GExp.gexp], uv: List[GExp.gexp]): Boolean = (uu, uv)
   match {
   case ((GExp.Eq(AExp.V(VName.I(ia)), AExp.L(Value.Numa(na))))::Nil,
          (GExp.Eq(AExp.V(VName.I(i)), AExp.L(Value.Numa(n))))::Nil)
-    => (Nat.equal_nata(ia, Nat.one_nat)) && (Nat.equal_nata(i, Nat.one_nat))
+    => (Nat.equal_nata(ia, Nat.zero_nata)) && (Nat.equal_nata(i, Nat.zero_nata))
   case (Nil, uv) => false
   case ((GExp.Bc(vb))::va, uv) => false
   case ((GExp.Eq(AExp.L(vd), vc))::va, uv) => false
@@ -3844,6 +3770,22 @@ a;
     (n, Transition.Label[Unit](t))
   }
 
+def always_different_outputs(x0: List[AExp.aexp], x1: List[AExp.aexp]): Boolean
+  =
+  (x0, x1) match {
+  case (Nil, Nil) => false
+  case (Nil, a::uu) => true
+  case (a::uv, Nil) => true
+  case ((AExp.L(va))::ta, (AExp.L(v))::t) =>
+    (if (Value.equal_valuea(va, v)) always_different_outputs(ta, t) else true)
+  case ((AExp.V(v))::ta, h::t) => always_different_outputs(ta, t)
+  case ((AExp.Plus(v, va))::ta, h::t) => always_different_outputs(ta, t)
+  case ((AExp.Minus(v, va))::ta, h::t) => always_different_outputs(ta, t)
+  case (h::ta, (AExp.V(v))::t) => always_different_outputs(ta, t)
+  case (h::ta, (AExp.Plus(v, va))::t) => always_different_outputs(ta, t)
+  case (h::ta, (AExp.Minus(v, va))::t) => always_different_outputs(ta, t)
+}
+
 def directly_subsumes_cases(a: FSet.fset[(Nat.nat,
    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
                              b: FSet.fset[(Nat.nat,
@@ -3854,8 +3796,9 @@ def directly_subsumes_cases(a: FSet.fset[(Nat.nat,
       Boolean
   =
   (if (Transition.equal_transition_exta[Unit](t1, t2)) true
-    else (if (Dirties.alwaysDifferentOutputsDirectSubsumption[Unit](a, b, sa, s,
-                             t1, t2))
+    else (if ((always_different_outputs(Transition.Outputs[Unit](t1),
+ Transition.Outputs[Unit](t2))) && (Dirties.alwaysDifferentOutputsDirectSubsumption(a,
+     b, sa, s, t1, t2)))
            false
            else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
        t2, b, s))
@@ -4061,270 +4004,6 @@ def finfun_apply[A : HOL.equal, B](x0: finfun[A, B], a: A): B = (x0, a) match {
 }
 
 } /* object FinFun */
-
-object Euclidean_Division {
-
-def divide_nat(m: Nat.nat, n: Nat.nat): Nat.nat =
-  Nat.Nata(Code_Numeral.divide_integer(Code_Numeral.integer_of_nat(m),
-Code_Numeral.integer_of_nat(n)))
-
-def modulo_nat(m: Nat.nat, n: Nat.nat): Nat.nat =
-  Nat.Nata(Code_Numeral.modulo_integer(Code_Numeral.integer_of_nat(m),
-Code_Numeral.integer_of_nat(n)))
-
-} /* object Euclidean_Division */
-
-object EFSM_Dot {
-
-def join(x0: List[String], uu: String): String = (x0, uu) match {
-  case (Nil, uu) => ""
-  case (a::Nil, uv) => a
-  case (h::(v::va), s) => h + s + join(v::va, s)
-}
-
-def string_of_digit(n: Nat.nat): String =
-  (if (Nat.equal_nata(n, Nat.zero_nata)) "0"
-    else (if (Nat.equal_nata(n, Nat.one_nat)) "1"
-           else (if (Nat.equal_nata(n, Code_Numeral.nat_of_integer(BigInt(2))))
-                  "2" else (if (Nat.equal_nata(n,
-        Code_Numeral.nat_of_integer(BigInt(3))))
-                             "3" else (if (Nat.equal_nata(n,
-                   Code_Numeral.nat_of_integer(BigInt(4))))
-"4" else (if (Nat.equal_nata(n, Code_Numeral.nat_of_integer(BigInt(5)))) "5"
-           else (if (Nat.equal_nata(n, Code_Numeral.nat_of_integer(BigInt(6))))
-                  "6" else (if (Nat.equal_nata(n,
-        Code_Numeral.nat_of_integer(BigInt(7))))
-                             "7" else (if (Nat.equal_nata(n,
-                   Code_Numeral.nat_of_integer(BigInt(8))))
-"8" else "9")))))))))
-
-def shows_string: String => String => String =
-  ((a: String) => (b: String) => a + b)
-
-def showsp_nat(p: String, n: Nat.nat): String => String =
-  (if (Nat.less_nat(n, Code_Numeral.nat_of_integer(BigInt(10))))
-    shows_string.apply(string_of_digit(n))
-    else Fun.comp[String, String,
-                   String](showsp_nat(p, Euclidean_Division.divide_nat(n,
-                                Code_Numeral.nat_of_integer(BigInt(10)))),
-                            shows_string.apply(string_of_digit(Euclidean_Division.modulo_nat(n,
-              Code_Numeral.nat_of_integer(BigInt(10)))))))
-
-def vname2dot(x0: VName.vname): String = x0 match {
-  case VName.I(n) => "i<sub>" + (showsp_nat("", n)).apply("") + "</sub>"
-  case VName.R(n) => "r<sub>" + (showsp_nat("", n)).apply("") + "</sub>"
-}
-
-def showsp_int(p: String, i: Int.int): String => String =
-  (if (Int.less_int(i, Int.zero_int))
-    Fun.comp[String, String,
-              String](shows_string.apply("-"),
-                       showsp_nat(p, Int.nat(Int.uminus_int(i))))
-    else showsp_nat(p, Int.nat(i)))
-
-def value2dot(x0: Value.value): String = x0 match {
-  case Value.Str(s) => s
-  case Value.Numa(n) => (showsp_int("", n)).apply("")
-}
-
-def aexp2dot(x0: AExp.aexp): String = x0 match {
-  case AExp.L(v) => value2dot(v)
-  case AExp.V(v) => vname2dot(v)
-  case AExp.Plus(a1, a2) => aexp2dot(a1) + " + " + aexp2dot(a2)
-  case AExp.Minus(a1, a2) => aexp2dot(a1) + " - " + aexp2dot(a2)
-}
-
-def updates2dot_aux(x0: List[(Nat.nat, AExp.aexp)]): List[String] = x0 match {
-  case Nil => Nil
-  case h::t =>
-    (vname2dot(VName.R(Product_Type.fst[Nat.nat, AExp.aexp](h))) + " := " +
-      aexp2dot(Product_Type.snd[Nat.nat, AExp.aexp](h)))::(updates2dot_aux(t))
-}
-
-def updates2dot(x0: List[(Nat.nat, AExp.aexp)]): String = x0 match {
-  case Nil => ""
-  case v::va => "&#91;" + join(updates2dot_aux(v::va), ",") + "&#93;"
-}
-
-def outputs2dot(x0: List[AExp.aexp], uu: Nat.nat): List[String] = (x0, uu) match
-  {
-  case (Nil, uu) => Nil
-  case (h::t, n) =>
-    ("o<sub>" + (showsp_nat("", n)).apply("") + "</sub> := " +
-      aexp2dot(h))::(outputs2dot(t, Nat.plus_nata(n, Nat.one_nat)))
-}
-
-def latter2dot(t: Transition.transition_ext[Unit]): String =
-  {
-    val l: String =
-      join(outputs2dot(Transition.Outputs[Unit](t), Nat.one_nat), ",") +
-        updates2dot(Transition.Updates[Unit](t));
-    (if (l == "") "" else "/" + l)
-  }
-
-def gexp2dot(x0: GExp.gexp): String = x0 match {
-  case GExp.Bc(true) => "True"
-  case GExp.Bc(false) => "False"
-  case GExp.Eq(a1, a2) => aexp2dot(a1) + " = " + aexp2dot(a2)
-  case GExp.Gt(a2, a1) => aexp2dot(a1) + " &lt; " + aexp2dot(a2)
-  case GExp.Nor(g1, g2) => "!(" + gexp2dot(g1) + "&or;" + gexp2dot(g2) + ")"
-  case GExp.Null(v) => aexp2dot(v) + " = NULL"
-}
-
-def guards2dot_aux(x0: List[GExp.gexp]): List[String] = x0 match {
-  case Nil => Nil
-  case h::t => (gexp2dot(h))::(guards2dot_aux(t))
-}
-
-def guards2dot(x0: List[GExp.gexp]): String = x0 match {
-  case Nil => ""
-  case v::va => "&#91;" + join(guards2dot_aux(v::va), ",") + "&#93;"
-}
-
-def transition2dot(t: Transition.transition_ext[Unit]): String =
-  Transition.Label[Unit](t) + ":" +
-    (showsp_nat("", Transition.Arity[Unit](t))).apply("") +
-    guards2dot(Transition.Guard[Unit](t)) +
-    latter2dot(t)
-
-def efsm2dot(e: FSet.fset[((Nat.nat, Nat.nat),
-                            Transition.transition_ext[Unit])]):
-      String
-  =
-  "digraph EFSM{" + "\u000A" + "  graph [rankdir=" + "\"" + "LR" + "\"" +
-    ", fontname=" +
-    "\"" +
-    "Latin Modern Math" +
-    "\"" +
-    "];" +
-    "\u000A" +
-    "  node [color=" +
-    "\"" +
-    "black" +
-    "\"" +
-    ", fillcolor=" +
-    "\"" +
-    "white" +
-    "\"" +
-    ", shape=" +
-    "\"" +
-    "circle" +
-    "\"" +
-    ", style=" +
-    "\"" +
-    "filled" +
-    "\"" +
-    ", fontname=" +
-    "\"" +
-    "Latin Modern Math" +
-    "\"" +
-    "];" +
-    "\u000A" +
-    "  edge [fontname=" +
-    "\"" +
-    "Latin Modern Math" +
-    "\"" +
-    "];" +
-    "\u000A" +
-    join(FSet.sorted_list_of_fset[String](FSet.fimage[((Nat.nat, Nat.nat),
-                Transition.transition_ext[Unit]),
-               String](((a: ((Nat.nat, Nat.nat),
-                              Transition.transition_ext[Unit]))
-                          =>
-                         {
-                           val (aa, b):
-                                 ((Nat.nat, Nat.nat),
-                                   Transition.transition_ext[Unit])
-                             = a;
-                           ({
-                              val (from, to): (Nat.nat, Nat.nat) = aa;
-                              ((t: Transition.transition_ext[Unit]) =>
-                                "  " + (showsp_nat("", from)).apply("") + "->" +
-                                  (showsp_nat("", to)).apply("") +
-                                  "[label=<" +
-                                  transition2dot(t) +
-                                  ">]")
-                            })(b)
-                         }),
-                        e)),
-          "\u000A") +
-    "\u000A" +
-    "}"
-
-def iefsm2dot(e: FSet.fset[(Nat.nat,
-                             ((Nat.nat, Nat.nat),
-                               Transition.transition_ext[Unit]))]):
-      String
-  =
-  "digraph EFSM{" + "\u000A" + "  graph [rankdir=" + "\"" + "LR" + "\"" +
-    ", fontname=" +
-    "\"" +
-    "Latin Modern Math" +
-    "\"" +
-    "];" +
-    "\u000A" +
-    "  node [color=" +
-    "\"" +
-    "black" +
-    "\"" +
-    ", fillcolor=" +
-    "\"" +
-    "white" +
-    "\"" +
-    ", shape=" +
-    "\"" +
-    "circle" +
-    "\"" +
-    ", style=" +
-    "\"" +
-    "filled" +
-    "\"" +
-    ", fontname=" +
-    "\"" +
-    "Latin Modern Math" +
-    "\"" +
-    "];" +
-    "\u000A" +
-    "  edge [fontname=" +
-    "\"" +
-    "Latin Modern Math" +
-    "\"" +
-    "];" +
-    "\u000A" +
-    join(FSet.sorted_list_of_fset[String](FSet.fimage[(Nat.nat,
-                ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])),
-               String](((a: (Nat.nat,
-                              ((Nat.nat, Nat.nat),
-                                Transition.transition_ext[Unit])))
-                          =>
-                         {
-                           val (uid, aa):
-                                 (Nat.nat,
-                                   ((Nat.nat, Nat.nat),
-                                     Transition.transition_ext[Unit]))
-                             = a
-                           val (ab, b):
-                                 ((Nat.nat, Nat.nat),
-                                   Transition.transition_ext[Unit])
-                             = aa;
-                           ({
-                              val (from, to): (Nat.nat, Nat.nat) = ab;
-                              ((t: Transition.transition_ext[Unit]) =>
-                                "  " + (showsp_nat("", from)).apply("") + "->" +
-                                  (showsp_nat("", to)).apply("") +
-                                  "[label=<(" +
-                                  (showsp_nat("", uid)).apply("") +
-                                  ") " +
-                                  transition2dot(t) +
-                                  ">]")
-                            })(b)
-                         }),
-                        e)),
-          "\u000A") +
-    "\u000A" +
-    "}"
-
-} /* object EFSM_Dot */
 
 object Finite_Set {
 
@@ -4727,16 +4406,16 @@ def insert_increment_2(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
         val newT1: Transition.transition_ext[Unit] =
           Transition.transition_exta[Unit](Transition.Label[Unit](t1),
     Transition.Arity[Unit](t1), Nil,
-    (AExp.Plus(AExp.V(newReg), AExp.V(GExp.I(Nat.one_nat))))::Nil,
+    (AExp.Plus(AExp.V(newReg), AExp.V(VName.I(Nat.zero_nata))))::Nil,
     (r, AExp.Plus(AExp.V(newReg),
-                   AExp.V(GExp.I(Nat.one_nat))))::(Transition.Updates[Unit](t1)),
+                   AExp.V(VName.I(Nat.zero_nata))))::(Transition.Updates[Unit](t1)),
     ())
         val newT2: Transition.transition_ext[Unit] =
           Transition.transition_exta[Unit](Transition.Label[Unit](t2),
     Transition.Arity[Unit](t2), Nil,
-    (AExp.Plus(AExp.V(newReg), AExp.V(GExp.I(Nat.one_nat))))::Nil,
+    (AExp.Plus(AExp.V(newReg), AExp.V(VName.I(Nat.zero_nata))))::Nil,
     (r, AExp.Plus(AExp.V(newReg),
-                   AExp.V(GExp.I(Nat.one_nat))))::(Transition.Updates[Unit](t2)),
+                   AExp.V(VName.I(Nat.zero_nata))))::(Transition.Updates[Unit](t2)),
     ())
         val initialised:
               FSet.fset[(Nat.nat,

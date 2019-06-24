@@ -25,7 +25,6 @@ object FrontEnd {
     val log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)))
 
     val heuristic = Inference.try_heuristics(List(
-      // (Different_Times.ignore_new_register _).curried,
       (Same_Register.same_register _).curried,
       (Increment_Reset.insert_increment_2 _).curried,
       Store_Reuse.heuristic_1(log)
@@ -45,9 +44,10 @@ object FrontEnd {
 
     TypeConversion.efsmToSALTranslator(inferred, basename)
 
-    val pw = new PrintWriter(s"dotfiles/${basename}.dot");
-    pw.write(EFSM_Dot.efsm2dot(inferred))
-    pw.close()
+    for (move <- TypeConversion.fset_to_list(inferred)) {
+      println(PrettyPrinter.transitionToString(move._2))
+
+    }
 
     println("=================================================================")
   }

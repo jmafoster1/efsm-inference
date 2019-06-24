@@ -19,7 +19,7 @@ object PrettyPrinter {
 
   def vnameToString(v: VName.vname): String = {
     v match {
-      case VName.I(Nat.Nata(n)) => "i" + n
+      case VName.I(Nat.Nata(n)) => "i" + (n+1)
       case VName.R(Nat.Nata(n)) => "r" + n
     }
   }
@@ -54,11 +54,11 @@ object PrettyPrinter {
   }
 
   def transitionToString(t: Transition.transition_ext[Unit]): String = {
-    (Transition.Label(t))  +
-    ":" + natToString(Transition.Arity(t))  +
-    guardsToString(Transition.Guard(t))  +
-    "/"  +
-    outputsToString(Transition.Outputs(t))  +
+    Transition.Label(t) +
+    ":" + natToString(Transition.Arity(t)) +
+    guardsToString(Transition.Guard(t)) +
+    "/" +
+    outputsToString(Transition.Outputs(t)) +
     updatesToString(Transition.Updates(t))
   }
 

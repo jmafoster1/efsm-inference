@@ -18,11 +18,6 @@ definition I :: "nat \<Rightarrow> vname" where
   "I n = vname.I (n-1)"
 declare I_def [simp]
 
-(* type_synonym gexp = "(aexp \<times> cexp)" *)
-
-(* abbreviation Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" where *)
-  (* "Eq a b = (a, cexp.Eq b) *)
-
 text_raw{*\snip{gexptype}{1}{2}{%*}
 datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null aexp
 text_raw{*}%endsnip*}

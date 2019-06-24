@@ -1,7 +1,8 @@
 theory Code_Generation
   imports 
-   "HOL-Library.Code_Target_Numeral" Inference "../FSet_Utils" SelectionStrategies EFSM_Dot
-   Type_Inference Enable_Logging
+   "HOL-Library.Code_Target_Numeral"
+   Inference SelectionStrategies
+   Type_Inference
    "heuristics/Store_Reuse_Subsumption"
    "heuristics/Increment_Reset"
    "heuristics/Same_Register"
@@ -19,7 +20,7 @@ code_printing
   constant "List.length" \<rightharpoonup> (Scala) "Nat.Nata(_.length)"
 
 fun guard_filter_code :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
-  "guard_filter_code inputX (gexp.Eq a b) = (a \<noteq> (V (I inputX)) \<and> b \<noteq> (V (I inputX)))" |
+  "guard_filter_code inputX (gexp.Eq a b) = (a \<noteq> (V (vname.I inputX)) \<and> b \<noteq> (V (vname.I inputX)))" |
   "guard_filter_code _ _ = True"
 
 lemma [code]: "choice t t' = ((Label t) = (Label t') \<and>
@@ -34,7 +35,7 @@ code_pred satisfies_trace.
 declare ListMem_iff [code]
 
 fun guardMatch_alt :: "gexp list \<Rightarrow> gexp list \<Rightarrow> bool" where
-  "guardMatch_alt [(gexp.Eq (V (vname.I i)) (L (Num n)))] [(gexp.Eq (V (vname.I i')) (L (Num n')))] = (i = 1 \<and> i' = 1)" |
+  "guardMatch_alt [(gexp.Eq (V (vname.I i)) (L (Num n)))] [(gexp.Eq (V (vname.I i')) (L (Num n')))] = (i = 0 \<and> i' = 0)" |
   "guardMatch_alt _ _ = False"
 
 lemma [code]: "guardMatch t1 t2 = guardMatch_alt (Guard t1) (Guard t2)"
@@ -170,7 +171,8 @@ definition "dirty_directly_subsumes = directly_subsumes"
 declare dirty_directly_subsumes_def [code del]
 code_printing constant "dirty_directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes"
 
-definition "always_different_outputs_direct_subsumption m1 m2 s s' t1 t2 = (always_different_outputs (Outputs t1) (Outputs t2) \<and>
+definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
+"always_different_outputs_direct_subsumption m1 m2 s s' t1 t2 = (
    (\<exists>p. accepts (tm m1) 0 Map.empty p \<and>
     gets_us_to s (tm m1) 0 Map.empty p \<and>
     accepts (tm m2) 0 Map.empty p \<and>
@@ -187,8 +189,7 @@ lemma always_different_outputs_can_take_not_subsumed: "always_different_outputs 
   by metis
 
 lemma always_different_outputs_direct_subsumption: 
-  "always_different_outputs_direct_subsumption m1 m2 s s' t1 t2 \<Longrightarrow>
-   \<not> directly_subsumes m1 m2 s s' t1 t2"
+  "always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption m1 m2 s s' t1 t2 \<Longrightarrow> \<not> directly_subsumes m1 m2 s s' t1 t2"
   apply (simp add: directly_subsumes_def always_different_outputs_direct_subsumption_def)
   apply standard
   apply clarify
@@ -201,7 +202,7 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
   "directly_subsumes_cases a b s s' t1 t2 = (
     if t1 = t2
       then True
-    else if always_different_outputs_direct_subsumption a b s s' t1 t2
+    else if always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption a b s s' t1 t2
       then False
     else if drop_guard_add_update_direct_subsumption t1 t2 b s'
       then True
@@ -268,7 +269,7 @@ code_printing
   constant "generalise_output_context_check" \<rightharpoonup> (Scala) "Dirties.generaliseOutputContextCheck" |
   constant "always_different_outputs_direct_subsumption" \<rightharpoonup> (Scala) "Dirties.alwaysDifferentOutputsDirectSubsumption"
 
-export_code try_heuristics learn same_register input_updates_register insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 iefsm2dot efsm2dot naive_score in Scala
+export_code try_heuristics learn same_register input_updates_register insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 naive_score in Scala
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
 end

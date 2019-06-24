@@ -31,9 +31,11 @@ object TypeConversion {
     )
   }
 
-  def vnameToSALTranslator(v: VName.vname): Variable = v match {
-    case VName.I(Nat.Nata(n)) => Variable.newOneFrom('I', n.toInt)
+  def vnameToSALTranslator(v: VName.vname): Variable = {
+    v match {
+    case VName.I(Nat.Nata(n)) => Variable.newOneFrom('I', n.toInt+1)
     case VName.R(Nat.Nata(n)) => Variable.newOneFrom('R', n.toInt)
+    }
   }
 
   def aexpToSALTranslator(a: AExp.aexp): Expression = a match {

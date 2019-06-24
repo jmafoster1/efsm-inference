@@ -417,7 +417,7 @@ next
     by simp
 qed
 
-lemma test_aux_aux_2: "x1 < A \<Longrightarrow> A \<le> length i \<Longrightarrow> x = I x1 \<Longrightarrow> input2state i x1 = input2state (take A i) x1"
+lemma test_aux_aux_2: "x1 < A \<Longrightarrow> A \<le> length i \<Longrightarrow> x = vname.I x1 \<Longrightarrow> input2state i x1 = input2state (take A i) x1"
 proof(induct i)
   case Nil
   then show ?case
@@ -568,7 +568,11 @@ next
     by simp
 qed
 
-lemma input2state_eq_or_none: "x1 < A \<Longrightarrow> length i < A \<Longrightarrow> x = I x1 \<Longrightarrow> input2state i x1 = input2state (i @ i') x1 \<or> input2state i x1 = None"
+lemma input2state_eq_or_none:
+  "x1 < A \<Longrightarrow>
+  length i < A \<Longrightarrow>
+  x = vname.I x1 \<Longrightarrow>
+  input2state i x1 = input2state (i @ i') x1 \<or> input2state i x1 = None"
   apply (case_tac "x1 < length i")
    apply (simp add: input2state_nth nth_append)
   by (simp add: input2state_out_of_bounds)

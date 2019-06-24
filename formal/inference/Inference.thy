@@ -101,7 +101,7 @@ definition exits_state :: "iEFSM \<Rightarrow> transition \<Rightarrow> nat \<Ri
 
 primrec make_guard :: "value list \<Rightarrow> nat \<Rightarrow> gexp list" where
 "make_guard [] _ = []" |
-"make_guard (h#t) n = (gexp.Eq (V (I n)) (L h))#(make_guard t (n+1))"
+"make_guard (h#t) n = (gexp.Eq (V (vname.I n)) (L h))#(make_guard t (n+1))"
 
 primrec make_outputs :: "value list \<Rightarrow> output_function list" where
   "make_outputs [] = []" |
@@ -115,7 +115,7 @@ fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers 
   "make_branch e s r ((label, inputs, outputs)#t) =
     (case (step e s r label inputs) of
       (Some (transition, s', outputs, updated)) \<Rightarrow> (make_branch e s' updated t) |
-      None \<Rightarrow> make_branch (finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=(make_guard inputs 1), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e) ((maxS e)+1) r t
+      None \<Rightarrow> make_branch (finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e) ((maxS e)+1) r t
     )"
 
 (* An execution represents a run of the software and has the form [(label, inputs, outputs)]*)
