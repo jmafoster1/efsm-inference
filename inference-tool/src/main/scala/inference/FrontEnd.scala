@@ -4,6 +4,7 @@ import com.microsoft.z3
 // PrintWriter
 import java.io._
 import org.apache.commons.io.FilenameUtils;
+import scala.collection.mutable.ListBuffer
 
 object FrontEnd {
 
@@ -23,12 +24,22 @@ object FrontEnd {
 
     val log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)))
 
-    val heuristic = Inference.try_heuristics(List(
-      (Same_Register.same_register _).curried,
-      (Increment_Reset.insert_increment_2 _).curried,
-      Store_Reuse.heuristic_1(log)
-      // (Ignore_Inputs.drop_inputs _).curried
-    ))
+    var heuristicsToTry = new ListBuffer[Nat.nat => (Nat.nat => (Nat.nat => (FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => Option[FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]]))))]();
+
+    if (args contains "-s") {
+      heuristicsToTry += (Same_Register.same_register _).curried
+    }
+    if (args contains "-i") {
+      heuristicsToTry += (Increment_Reset.insert_increment_2 _).curried
+    }
+    if (args contains "-r") {
+      heuristicsToTry += Store_Reuse.heuristic_1(log)
+    }
+    if (args contains "-I") {
+      heuristicsToTry += (Ignore_Inputs.drop_inputs _).curried
+    }
+
+    val heuristic = Inference.try_heuristics(heuristicsToTry.toList)
 
     println("Hello inference!")
 
