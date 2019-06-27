@@ -68,4 +68,29 @@ definition infer_types :: "gexp \<Rightarrow> (vname \<Rightarrow>f type) option
                       Some (fun_of type_lst UNBOUND)
                     else None
                    )"
+
+fun type_of :: "aexp \<Rightarrow> (vname \<Rightarrow>f type) \<Rightarrow> type" where
+  "type_of (L (Num _)) _ = NUM" |
+  "type_of (L (Str _)) _ = STRING" |
+  "type_of (V v) types = finfun_apply types v" |
+  "type_of (Plus _ _) _ = NUM" |
+  "type_of (Minus _ _) _ = NUM"
+
+fun type_check_aux :: "type \<Rightarrow> type \<Rightarrow> bool" where
+  "type_check_aux NUM NUM = True" |
+  "type_check_aux STRING STRING = True" |
+  "type_check_aux UNBOUND _ = True" |
+  "type_check_aux _ UNBOUND = True" |
+  "type_check_aux NULL NULL = True" |
+  "type_check_aux NUM _ = False" |
+  "type_check_aux _ NUM = False" |
+  "type_check_aux STRING _ = False" |
+  "type_check_aux _ STRING = False"
+
+definition aexp_type_check :: "aexp \<Rightarrow> aexp \<Rightarrow> (vname \<Rightarrow>f type) \<Rightarrow> bool" where
+  "aexp_type_check a1 a2 t = type_check_aux (type_of a1 t) (type_of a2 t)"
+
+
+  
+
 end

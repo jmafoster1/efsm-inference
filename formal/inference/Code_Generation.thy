@@ -6,6 +6,7 @@ theory Code_Generation
    "heuristics/Store_Reuse_Subsumption"
    "heuristics/Increment_Reset"
    "heuristics/Same_Register"
+   "heuristics/Ignore_Inputs"
 begin
 
 declare One_nat_def [simp del]
@@ -23,9 +24,13 @@ fun guard_filter_code :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
   "guard_filter_code inputX (gexp.Eq a b) = (a \<noteq> (V (vname.I inputX)) \<and> b \<noteq> (V (vname.I inputX)))" |
   "guard_filter_code _ _ = True"
 
+lemma fold_conv_foldr: "fold f xs = foldr f (rev xs)"
+  by (simp add: foldr_conv_fold)
+
 lemma [code]: "choice t t' = ((Label t) = (Label t') \<and>
                       (Arity t) = (Arity t') \<and>
-                      satisfiable ((foldr gAnd (Guard t@Guard t') (gexp.Bc True))))"
+                      satisfiable ((fold gAnd (rev (Guard t@Guard t')) (gexp.Bc True))))"
+  apply (simp only: fold_conv_foldr rev_rev_ident)
   unfolding satisfiable_def choice_def apply_guards_def
   apply (simp only: gval_foldr_true)
   by auto
@@ -269,7 +274,47 @@ code_printing
   constant "generalise_output_context_check" \<rightharpoonup> (Scala) "Dirties.generaliseOutputContextCheck" |
   constant "always_different_outputs_direct_subsumption" \<rightharpoonup> (Scala) "Dirties.alwaysDifferentOutputsDirectSubsumption"
 
-export_code try_heuristics learn same_register input_updates_register insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 naive_score in Scala
+(* Use the native implementations of list functions *)
+definition "flatmap l f = List.maps f l"
+
+lemma [code]:"List.maps f l = flatmap l f"
+  by (simp add: flatmap_def)
+
+definition map :: "'a list \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'b list" where
+  "map l f = List.map f l"
+
+lemma [code]:"List.map f l = map l f"
+  by (simp add: map_def)
+
+declare foldl_conv_fold [code]
+declare foldr_conv_foldl [code]
+declare map_filter_map_filter [code_unfold del]
+
+lemma [code]: "removeAll a l = filter (\<lambda>x. x \<noteq> a) l"
+  by (induct l arbitrary: a) simp_all
+
+definition filter :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> 'a list" where
+  "filter l f = List.filter f l"
+
+declare filter.simps [code del]
+lemma [code]: "List.filter l f = filter f l"
+  by (simp add: filter_def)
+
+definition all :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" where
+  "all l f = list_all f l"
+
+lemma [code]: "list_all f l = all l f"
+  by (simp add: all_def)
+
+code_printing
+  constant "zip" \<rightharpoonup> (Scala) "(_ zip _)" |
+  constant "flatmap" \<rightharpoonup> (Scala) "_.flatMap((_))" |
+  constant "List.null" \<rightharpoonup> (Scala) "_.isEmpty" |
+  constant "map" \<rightharpoonup> (Scala) "_.map((_))" |
+  constant "filter" \<rightharpoonup> (Scala) "_.filter((_))" |
+  constant "all" \<rightharpoonup> (Scala) "_.forall((_))"
+
+export_code try_heuristics aexp_type_check learn drop_inputs same_register input_updates_register insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 naive_score in Scala
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
 end

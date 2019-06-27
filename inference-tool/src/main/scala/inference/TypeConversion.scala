@@ -3,6 +3,7 @@ import java.io._
 import sys.process._
 
 import isabellesal._
+import Type_Inference._
 
 object TypeConversion {
 
@@ -22,6 +23,7 @@ object TypeConversion {
 
   type Event = (String, (List[Value.value], List[Value.value]))
   type TransitionMatrix = FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]
+  type IEFSM = FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
 
   def toEventTuple(e: Map[String, Any]): Event = {
     (
@@ -129,7 +131,5 @@ object TypeConversion {
     } catch {
       case ioe: java.lang.StringIndexOutOfBoundsException => {}
     }
-
   }
-
 }

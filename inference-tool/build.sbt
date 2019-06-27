@@ -65,7 +65,7 @@ lazy val root = (project in file("."))
     buildDOT := {
       for (f <- getListOfFiles(new File("dotfiles"), List("dot"))) {
         val b = f.getName().replaceFirst("[.][^.]+$", "");
-        s"dot -T png -o dotfiles/${b}.png dotfiles/${b}.dot".!
+        s"dot -T pdf -o dotfiles/${b}.pdf dotfiles/${b}.dot".!
       }
     }
 

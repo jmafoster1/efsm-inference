@@ -1,5 +1,5 @@
 import com.microsoft.z3
-import exceptions.SatisfiabilityUnknownException
+import exceptions._
 import java.io._
 import scala.io.Source
 import scala.util.Random
@@ -37,11 +37,18 @@ object Dirties {
     case AExp.Minus(a1, a2) => ctx.mkSub(toZ3(a1, ctx, types).asInstanceOf[z3.ArithExpr],toZ3(a2, ctx, types).asInstanceOf[z3.ArithExpr])
   }
 
-  def toZ3(g: GExp.gexp, ctx: z3.Context, variables: FinFun.finfun[VName.vname, Type_Inference.typea]): z3.BoolExpr =  g match {
+  def toZ3(g: GExp.gexp, ctx: z3.Context, types: FinFun.finfun[VName.vname, Type_Inference.typea]): z3.BoolExpr =  g match {
     case GExp.Bc(a) => ctx.mkBool(a)
-    case GExp.Eq(a1, a2) => ctx.mkEq(toZ3(a1, ctx, variables), toZ3(a2, ctx, variables))
-    case GExp.Gt(a1, a2) => ctx.mkGt(toZ3(a1, ctx, variables).asInstanceOf[z3.ArithExpr], toZ3(a2, ctx, variables).asInstanceOf[z3.ArithExpr])
-    case GExp.Nor(g1, g2) => ctx.mkNot(ctx.mkOr(toZ3(g1, ctx, variables), toZ3(g2, ctx, variables)))
+    case GExp.Eq(a1, a2) => {
+      if (Type_Inference.aexp_type_check(a1, a2, types)) {
+        ctx.mkEq(toZ3(a1, ctx, types), toZ3(a2, ctx, types));
+      }
+      else {
+        throw new TypeException(s"Types ${Type_Inference.type_of(a1, types)} and ${Type_Inference.type_of(a2, types)} are not compatible")
+      }
+    }
+    case GExp.Gt(a1, a2) => ctx.mkGt(toZ3(a1, ctx, types).asInstanceOf[z3.ArithExpr], toZ3(a2, ctx, types).asInstanceOf[z3.ArithExpr])
+    case GExp.Nor(g1, g2) => ctx.mkNot(ctx.mkOr(toZ3(g1, ctx, types), toZ3(g2, ctx, types)))
     case GExp.Null(v) => null
   }
 
@@ -59,7 +66,12 @@ object Dirties {
           // println(FinFun.finfun_apply(types, I(1)))
           val ctx = new z3.Context
           val solver = ctx.mkSimpleSolver()
-          solver.add(toZ3(g, ctx, types))
+          try {
+            solver.add(toZ3(g, ctx, types))
+          }
+          catch {
+            case foo: TypeException => return false;
+          }
           // print(solver)
           val satisfiable = solver.check()
           ctx.close()

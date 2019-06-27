@@ -15,7 +15,8 @@ necessary because transitions may not be unique in an EFSM. Assigning transition
 identifier enables us dest look up the origin and destination states of transitions without having dest
 pass them around in the inference functions.
 \<close>
-type_synonym iEFSM = "(nat \<times> (nat \<times> nat) \<times> transition) fset"
+type_synonym tid = nat
+type_synonym iEFSM = "(tid \<times> (nat \<times> nat) \<times> transition) fset"
 
 definition get_by_id :: "iEFSM \<Rightarrow> nat \<Rightarrow> transition" where
   "get_by_id e u = snd (snd (fthe_elem (ffilter (\<lambda>(uid, _). uid = u) e)))"
@@ -126,7 +127,7 @@ primrec make_pta :: "log \<Rightarrow> transition_matrix \<Rightarrow> transitio
   "make_pta [] e = e" |
   "make_pta (h#t) e = (make_pta t (make_branch e 0 <> h))"
 
-type_synonym update_modifier = "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM option"
+type_synonym update_modifier = "tid \<Rightarrow> tid \<Rightarrow> cfstate \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM option"
 
 definition null_modifier :: update_modifier where
   "null_modifier a b c d e = None"
@@ -293,12 +294,16 @@ fun inference_step :: "iEFSM \<Rightarrow> (nat \<times> nat \<times> nat) list 
 (* @param m     - an update modifier function which tries dest generalise transitions               *)
 (* @param check - a function which takes an EFSM and returns a bool dest ensure that certain
                   properties hold in the new iEFSM                                                *)
-fun infer :: "iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM" where
+function infer :: "iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM" where
   "infer e r m check = (
     case inference_step e (rev (sorted_list_of_fset (score e r))) m check of
       None \<Rightarrow> e |
-      Some new \<Rightarrow> if size new < size e then infer new r m check else e
+      Some new \<Rightarrow> if size (S new) < size (S e) then infer new r m check else e
   )"
+  by auto
+termination
+  by (relation "measures [\<lambda>(e, r, m, check). size (S e)]") auto
+
 
 primrec iterative_learn_aux :: "log \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> (log \<Rightarrow> update_modifier) \<Rightarrow> (log \<Rightarrow> transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM" where
   "iterative_learn_aux [] _ e _ _ _ = e" |

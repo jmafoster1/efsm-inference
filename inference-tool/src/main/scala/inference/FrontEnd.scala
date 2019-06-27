@@ -21,13 +21,13 @@ object FrontEnd {
 
     val list = parsed.values.asInstanceOf[List[List[Map[String, Any]]]]
 
-    val coin = list(0)(0)("inputs").asInstanceOf[List[Any]].map(x => TypeConversion.toValue(x))
     val log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)))
 
     val heuristic = Inference.try_heuristics(List(
       (Same_Register.same_register _).curried,
       (Increment_Reset.insert_increment_2 _).curried,
       Store_Reuse.heuristic_1(log)
+      // (Ignore_Inputs.drop_inputs _).curried
     ))
 
     println("Hello inference!")
@@ -38,7 +38,7 @@ object FrontEnd {
     println("The inferred machine is " +
       (if (Inference.nondeterministic(Inference.toiEFSM(inferred))) "non" else "") + "deterministic")
 
-    val basename = FilenameUtils.getBaseName(filename)
+    val basename = FilenameUtils.getBaseName(filename).replace("-", "_")
 
     println("Goodbye inference!")
 
