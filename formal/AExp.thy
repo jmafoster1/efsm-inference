@@ -26,9 +26,9 @@ declare One_nat_def [simp del]
 type_synonym registers = "nat \<Rightarrow> value option"
 type_synonym datastate = "vname \<Rightarrow> value option"
 
-text_raw{*\snip{aexptype}{1}{2}{%*}
+text_raw\<open>\snip{aexptype}{1}{2}{%\<close>
 datatype aexp = L "value" | V vname | Plus aexp aexp | Minus aexp aexp
-text_raw{*}%endsnip*}
+text_raw\<open>}%endsnip\<close>
 
 syntax (xsymbols)
   Plus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" (*infix "+" 60*)
@@ -271,7 +271,8 @@ next
     by simp
 qed
 
-lemma set_enumerate_aexp_inputs_list: "set (fold (@) (map enumerate_aexp_inputs_list l) []) = (\<Union> set (map enumerate_aexp_inputs l))"
+lemma set_enumerate_aexp_inputs_list: 
+"set (fold (@) (map enumerate_aexp_inputs_list l) []) = (\<Union> (set (map enumerate_aexp_inputs l)))"
 proof(induct l)
 case Nil
   then show ?case

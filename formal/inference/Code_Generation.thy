@@ -315,6 +315,6 @@ code_printing
   constant "all" \<rightharpoonup> (Scala) "_.forall((_))"
 
 export_code try_heuristics aexp_type_check learn drop_inputs same_register input_updates_register insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 naive_score in Scala
-  file "../../inference-tool/src/main/scala/inference/Inference.scala"
+  (* file "../../inference-tool/src/main/scala/inference/Inference.scala" *)
 
 end

@@ -18,9 +18,9 @@ definition I :: "nat \<Rightarrow> vname" where
   "I n = vname.I (n-1)"
 declare I_def [simp]
 
-text_raw{*\snip{gexptype}{1}{2}{%*}
+text_raw\<open>\snip{gexptype}{1}{2}{%\<close>
 datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null aexp
-text_raw{*}%endsnip*}
+text_raw\<open>}%endsnip\<close>
 
 syntax (xsymbols)
   Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "=" 60*)
@@ -225,7 +225,8 @@ next
     by (simp add: enumerate_aexp_inputs_list)
 qed
 
-lemma set_enumerate_gexp_inputs_list: "set (fold (@) (map enumerate_gexp_inputs_list l) []) = (\<Union> set (map enumerate_gexp_inputs l))"
+lemma set_enumerate_gexp_inputs_list: 
+"set (fold (@) (map enumerate_gexp_inputs_list l) []) = (\<Union> (set (map enumerate_gexp_inputs l)))"
 proof(induct l)
 case Nil
   then show ?case

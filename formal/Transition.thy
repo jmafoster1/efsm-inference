@@ -10,14 +10,14 @@ type_synonym output_function = "aexp"
 type_synonym update_function = "(nat \<times> aexp)"
 type_synonym updates = "update_function list"
 
-text_raw{*\snip{transitiontype}{1}{2}{%*}
+text_raw\<open>\snip{transitiontype}{1}{2}{%\<close>
 record transition =
   Label :: label
   Arity :: nat
   Guard :: "gexp list"
   Outputs :: "aexp list"
   Updates :: updates
-text_raw{*}%endsnip*}
+text_raw\<open>}%endsnip\<close>
 
 lemma transition_equality: "((x::transition) = y) = ((Label x) = (Label y) \<and>
                                 (Arity x) = (Arity y) \<and>
@@ -38,9 +38,9 @@ definition same_structure :: "transition \<Rightarrow> transition \<Rightarrow> 
                            list_all (\<lambda>(g1, g2). gexp_same_structure g1 g2) (zip (Guard t1) (Guard t2)))"
 
 definition enumerate_inputs :: "transition \<Rightarrow> nat set" where
-  "enumerate_inputs t = (\<Union> set (map enumerate_gexp_inputs (Guard t))) \<union>
-                        (\<Union> set (map enumerate_aexp_inputs (Outputs t))) \<union>
-                        (\<Union> set (map (\<lambda>(_, u). enumerate_aexp_inputs u) (Updates t)))"
+  "enumerate_inputs t = (\<Union> (set (map enumerate_gexp_inputs (Guard t)))) \<union>
+                        (\<Union> (set (map enumerate_aexp_inputs (Outputs t)))) \<union>
+                        (\<Union> (set (map (\<lambda>(_, u). enumerate_aexp_inputs u) (Updates t))))"
 
 definition enumerate_inputs_list :: "transition \<Rightarrow> nat list" where
   "enumerate_inputs_list t = (fold (@) (map enumerate_gexp_inputs_list (Guard t)) []) @
@@ -81,10 +81,10 @@ definition max_input :: "transition \<Rightarrow> nat option" where
   "max_input t = (if enumerate_inputs t = {} then None else Some (Max (enumerate_inputs t)))"
 
 definition enumerate_registers :: "transition \<Rightarrow> nat set" where
-  "enumerate_registers t = (\<Union> set (map enumerate_gexp_regs (Guard t))) \<union>
-                           (\<Union> set (map enumerate_aexp_regs (Outputs t))) \<union>
-                           (\<Union> set (map (\<lambda>(_, u). enumerate_aexp_regs u) (Updates t))) \<union>
-                           (\<Union> set (map (\<lambda>(r, _). enumerate_aexp_regs (V (R r))) (Updates t)))"
+  "enumerate_registers t = (\<Union> (set (map enumerate_gexp_regs (Guard t)))) \<union>
+                           (\<Union> (set (map enumerate_aexp_regs (Outputs t)))) \<union>
+                           (\<Union> (set (map (\<lambda>(_, u). enumerate_aexp_regs u) (Updates t)))) \<union>
+                           (\<Union> (set (map (\<lambda>(r, _). enumerate_aexp_regs (V (R r))) (Updates t))))"
 
 definition enumerate_registers_list :: "transition \<Rightarrow> nat list" where
   "enumerate_registers_list t = (fold (@) (map enumerate_gexp_regs_list (Guard t)) []) @
@@ -130,7 +130,9 @@ next
     by (simp add: fold_append_concat_rev inf_sup_aci(5))
 qed
 
-lemma map_enumerate_gexp_inputs: "(Max (\<Union> set (map enumerate_gexp_inputs G)) = (fold (max) (fold (@) (map enumerate_gexp_inputs_list G) []) 0)) \<or> ((\<Union> set (map enumerate_gexp_inputs G)) = {})"
+lemma map_enumerate_gexp_inputs: 
+  "(Max (\<Union> (set (map enumerate_gexp_inputs G))) =
+   (fold (max) (fold (@) (map enumerate_gexp_inputs_list G) []) 0)) \<or> ((\<Union> (set (map enumerate_gexp_inputs G)) = {}))"
 proof(induct G)
   case Nil
   then show ?case

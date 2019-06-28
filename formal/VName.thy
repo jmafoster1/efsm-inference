@@ -2,9 +2,9 @@ theory VName
 imports Main
 begin
 
-text_raw{*\snip{vnametype}{1}{2}{%*}
+text_raw\<open>\snip{vnametype}{1}{2}{%\<close>
 datatype vname = I nat | R nat
-text_raw{*}%endsnip*}
+text_raw\<open>}%endsnip\<close>
 
 instantiation vname :: linorder begin
 fun less_eq_vname :: "vname \<Rightarrow> vname \<Rightarrow> bool" where

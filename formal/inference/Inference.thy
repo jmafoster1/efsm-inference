@@ -346,5 +346,5 @@ definition replaceAll :: "iEFSM \<Rightarrow> transition \<Rightarrow> transitio
   "replaceAll e old new = fimage (\<lambda>(uid, (from, dest), t). if t = old then (uid, (from, dest), new) else (uid, (from, dest), t)) e"
 
 definition all_regs :: "iEFSM \<Rightarrow> nat set" where
-  "all_regs e = \<Union> image (\<lambda>(_, _, t). enumerate_registers t) (fset e)"
+  "all_regs e = \<Union> (image (\<lambda>(_, _, t). enumerate_registers t) (fset e))"
 end
