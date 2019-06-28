@@ -5,59 +5,79 @@ import com.microsoft.z3
 import java.io._
 import org.apache.commons.io.FilenameUtils;
 import scala.collection.mutable.ListBuffer
+import scopt.OParser
+
+object Heuristics extends Enumeration {
+  type Heuristic = Value
+  val store, inc, same, ignore = Value
+}
 
 object FrontEnd {
+  type UpdateModifier = Nat.nat => (Nat.nat => (Nat.nat => (FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => Option[FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]]))))
+
+  implicit val heuristicsRead: scopt.Read[Heuristics.Value] =
+  scopt.Read.reads(Heuristics withName _)
 
   def main(args: Array[String]): Unit = {
+    case class Config(
+      heuristics: Seq[Heuristics.Heuristic] = Seq(),
+      file: File = null,
+      outputname: String = null
+    )
+
+    val builder = OParser.builder[Config]
+    val parser1 = {
+      import builder._
+      OParser.sequence(
+        programName("inference-tool"),
+        head("inference-tool", "0.x"),
+        help("help").text("prints this usage text"),
+        opt[Seq[Heuristics.Heuristic]]('h', "heuristics")
+          .valueName("<heuristic1>,<heuristic2>...")
+          .action((x, c) => c.copy(heuristics = x))
+          .text("heuristics to give the inference process (store,inc,same,ignore)"),
+        opt[String]('o', "output")
+          .valueName("filename")
+          .action((x, c) => c.copy(outputname = x))
+          .text("The preferred name of the file to output the SAL and DOT representations of the inferred model to - defaults to the input file name"),
+        arg[File]("filename")
+          .required()
+          .action((x, c) => c.copy(file = x))
+          .text("The json file listing the traces"))
+    }
+
     println("=================================================================")
+    OParser.parse(parser1, args, Config()) match {
+      case Some(config) =>
+        val rawJson = Source.fromFile(config.file).getLines.mkString
+        val parsed = (parse(rawJson))
+        val list = parsed.values.asInstanceOf[List[List[Map[String, Any]]]]
+        val log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)))
 
-    type Execution = List[(String, (List[Value.value], List[Value.value]))]
-    type Log = List[Execution]
+        val heuristics = scala.collection.immutable.Map[Heuristics.Heuristic, UpdateModifier](
+          Heuristics.store -> Store_Reuse.heuristic_1(log),
+          Heuristics.inc -> (Increment_Reset.insert_increment_2 _).curried,
+          Heuristics.same -> (Same_Register.same_register _).curried,
+          Heuristics.ignore -> (Ignore_Inputs.drop_inputs _).curried
+        )
 
+        val inferred = Inference.learn(log, (SelectionStrategies.naive_score _).curried, Inference.try_heuristics(config.heuristics.map(x => heuristics(x)).toList))
 
-    // val filename = "sample-traces/vend1.json"
-    val filename = args(0)
-    val rawJson = Source.fromFile(filename).getLines.mkString
-    val parsed = (parse(rawJson))
+        println("{")
+        for (move <- TypeConversion.indexWithInts(TypeConversion.fset_to_list(inferred)).sortBy(_._1)) {
+          println(s"  ((${move._1._1}, ${move._1._2}), ${PrettyPrinter.transitionToString(move._2)})")
+        }
+        println("{")
 
-    val list = parsed.values.asInstanceOf[List[List[Map[String, Any]]]]
+        println("The inferred machine is " +
+          (if (Inference.nondeterministic(Inference.toiEFSM(inferred))) "non" else "") + "deterministic")
 
-    val log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)))
+        val basename = (if (config.outputname == null) (FilenameUtils.getBaseName(config.file.getName()).replace("-", "_")) else config.outputname.replace("-", "_"))
 
-    var heuristicsToTry = new ListBuffer[Nat.nat => (Nat.nat => (Nat.nat => (FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => Option[FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]]))))]();
+        TypeConversion.efsmToSALTranslator(inferred, basename)
 
-    if (args contains "-s") {
-      heuristicsToTry += (Same_Register.same_register _).curried
-    }
-    if (args contains "-i") {
-      heuristicsToTry += (Increment_Reset.insert_increment_2 _).curried
-    }
-    if (args contains "-r") {
-      heuristicsToTry += Store_Reuse.heuristic_1(log)
-    }
-    if (args contains "-I") {
-      heuristicsToTry += (Ignore_Inputs.drop_inputs _).curried
-    }
-
-    val heuristic = Inference.try_heuristics(heuristicsToTry.toList)
-
-    println("Hello inference!")
-
-    // iterative_learn [] naive_score (iterative_try_heuristics [(λx. insert_increment), (λx. heuristic_1 x)])
-    val inferred = Inference.learn(log, (SelectionStrategies.naive_score _).curried, heuristic)
-
-    println("The inferred machine is " +
-      (if (Inference.nondeterministic(Inference.toiEFSM(inferred))) "non" else "") + "deterministic")
-
-    val basename = FilenameUtils.getBaseName(filename).replace("-", "_")
-
-    println("Goodbye inference!")
-
-    TypeConversion.efsmToSALTranslator(inferred, basename)
-
-    for (move <- TypeConversion.fset_to_list(inferred)) {
-      println(PrettyPrinter.transitionToString(move._2))
-
+      case _ =>
+        System.exit(1)
     }
 
     println("=================================================================")

@@ -44,6 +44,7 @@ lazy val root = (project in file("."))
     libraryDependencies += scalaTest % Test,
     libraryDependencies += "net.liftweb" %% "lift-json" % "3.3.0",
     libraryDependencies += "org.apache.commons" % "commons-io" % "1.3.2",
+    libraryDependencies += "com.github.scopt" % "scopt_2.12" % "4.0.0-RC2",
     cleanSalfiles := {
       cleanDirectory("salfiles")
     },

@@ -132,4 +132,8 @@ object TypeConversion {
       case ioe: java.lang.StringIndexOutOfBoundsException => {}
     }
   }
+
+  def indexWithInts(e: List[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]): List[((Int, Int), Transition.transition_ext[Unit])] = {
+    return e.map(move => ((natToInt(move._1._1), natToInt(move._1._2)), move._2))
+  }
 }
