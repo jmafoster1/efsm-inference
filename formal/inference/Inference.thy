@@ -9,6 +9,8 @@ theory Inference
           "~~/src/HOL/Library/Product_Lexorder"
 begin
 
+declare One_nat_def [simp del]
+
 text\<open>
 We first need dest define the iEFSM data type which assigns each transition a unique identity. This is
 necessary because transitions may not be unique in an EFSM. Assigning transitions a unique
@@ -111,11 +113,15 @@ primrec make_outputs :: "value list \<Rightarrow> output_function list" where
 fun maxS :: "transition_matrix \<Rightarrow> nat" where
   "maxS t = (if t = {||} then 0 else fMax ((fimage (\<lambda>((origin, dest), t). origin) t) |\<union>| (fimage (\<lambda>((origin, dest), t). dest) t)))"
 
-fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> (label \<times> value list \<times> value list) list \<Rightarrow> transition_matrix" where
-  "make_branch e _ _ [] = e" |
+fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> (label \<times> value list \<times> value list) list \<Rightarrow> transition_matrix option" where
+  "make_branch e _ _ [] = Some e" |
   "make_branch e s r ((label, inputs, outputs)#t) =
     (case (step e s r label inputs) of
-      (Some (transition, s', outputs, updated)) \<Rightarrow> (make_branch e s' updated t) |
+      Some (transition, s', outputs', updated) \<Rightarrow> 
+        if outputs' = (map Some outputs) then
+          make_branch e s' updated t
+        else 
+          None  |
       None \<Rightarrow> make_branch (finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e) ((maxS e)+1) r t
     )"
 
@@ -123,9 +129,9 @@ fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers 
 type_synonym execution = "(label \<times> value list \<times> value list) list"
 type_synonym log = "execution list"
 
-primrec make_pta :: "log \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
-  "make_pta [] e = e" |
-  "make_pta (h#t) e = (make_pta t (make_branch e 0 <> h))"
+primrec make_pta :: "log \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix option" where
+  "make_pta [] e = Some e" |
+  "make_pta (h#t) e = (case make_branch e 0 <> h of None \<Rightarrow> None | Some e' \<Rightarrow> make_pta t e')"
 
 type_synonym update_modifier = "tid \<Rightarrow> tid \<Rightarrow> cfstate \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM option"
 
@@ -158,8 +164,9 @@ lemma dest_code[code]: "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda
   by (metis fst_eqD surj_pair)
 
 inductive satisfies_trace :: "execution \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> bool" where
-  base: "satisfies_trace [] e s d" |
-  step: "step e s d l i = Some (t, s', (map (\<lambda>x. Some x) p), d') \<Longrightarrow>
+  base: "satisfies_trace [] _ _ _" |
+  step: "step e s d l i = Some (_, s', p', d') \<Longrightarrow>
+         p' = (map Some p) \<Longrightarrow>
          satisfies_trace ex e s' d' \<Longrightarrow>
          satisfies_trace ((l, i, p)#ex) e s d"
 
@@ -298,22 +305,14 @@ function infer :: "iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<
   "infer e r m check = (
     case inference_step e (rev (sorted_list_of_fset (score e r))) m check of
       None \<Rightarrow> e |
-      Some new \<Rightarrow> if size (S new) < size (S e) then infer new r m check else e
+      Some new \<Rightarrow> if size (S new) + size new < size (S e) + size e then infer new r m check else e
   )"
   by auto
 termination
-  by (relation "measures [\<lambda>(e, r, m, check). size (S e)]") auto
+  by (relation "measures [\<lambda>(e, r, m, check). size (S e) + size e]") auto
 
-
-primrec iterative_learn_aux :: "log \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> (log \<Rightarrow> update_modifier) \<Rightarrow> (log \<Rightarrow> transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM" where
-  "iterative_learn_aux [] _ e _ _ _ = e" |
-  "iterative_learn_aux (h#t) l e r m s = iterative_learn_aux t (h#l) (infer (toiEFSM (make_branch (tm e) 0 <> h)) r (m (h#l)) (s (h#l))) r m s"
-
-definition iterative_learn :: "log \<Rightarrow> strategy \<Rightarrow> (log \<Rightarrow> update_modifier) \<Rightarrow> transition_matrix" where
-  "iterative_learn l r m = tm (iterative_learn_aux l [] {||} r m (\<lambda>l. satisfies (set l)))"
-
-definition learn :: "log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> transition_matrix" where
-  "learn l r m = tm (infer (toiEFSM (make_pta l {||})) r m (satisfies (set l)))"
+definition learn :: "log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> transition_matrix option" where
+  "learn l r m = (case make_pta l {||} of None \<Rightarrow> None | Some pta \<Rightarrow> Some (tm (infer (toiEFSM pta) r m (satisfies (set l)))))"
 
 definition uids :: "iEFSM \<Rightarrow> nat fset" where
   "uids e = fimage fst e"

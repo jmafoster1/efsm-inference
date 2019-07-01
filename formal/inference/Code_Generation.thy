@@ -154,7 +154,8 @@ definition step :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers 
                      case random_member possibilities of
                      None \<Rightarrow> None |
                      Some (s', t) \<Rightarrow>
-                     Some (t, s', (EFSM.apply_outputs (Outputs t) (join_ir i r)), (EFSM.apply_updates (Updates t) (join_ir i r) r))
+                     let outputs = EFSM.apply_outputs (Outputs t) (join_ir i r) in
+                     Some (t, s', outputs, (EFSM.apply_updates (Updates t) (join_ir i r) r))
                   )"
 
 lemma [code]: "EFSM.step x xa xb xc xd = step x xa xb xc xd"
@@ -314,7 +315,17 @@ code_printing
   constant "filter" \<rightharpoonup> (Scala) "_.filter((_))" |
   constant "all" \<rightharpoonup> (Scala) "_.forall((_))"
 
+definition score_code :: "iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
+  "score_code t rank = (let scores = ffilter (\<lambda>(score, _). score > 0) (fimage (\<lambda>(s1, s2). (rank (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s1 t)) (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s2 t)), (s1, s2))) (ffilter (\<lambda>(x, y). x < y) ((S t) |\<times>| (S t))));
+                            numPossible = size scores
+                         in scores)"
+
+lemma [code]: "score = score_code"
+  apply (rule ext)+
+  by (simp add: score_def score_code_def)
+declare score_def [code del]
+
 export_code try_heuristics aexp_type_check learn drop_inputs same_register input_updates_register insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 naive_score in Scala
-  (* file "../../inference-tool/src/main/scala/inference/Inference.scala" *)
+  file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
 end

@@ -83,19 +83,27 @@ object PrettyPrinter {
   }
 
   def efsmToString(e: TypeConversion.TransitionMatrix): String = {
-    TypeConversion.fset_to_list(FSet.fimage(efsmToStringAux, e)).toString()
-  }
-
-  def efsmToString(e: Option[TypeConversion.IEFSM]): String = e match {
-    case None => "None"
-    case Some(a) => efsmToString(Inference.tm(a))
-  }
-
-  def pp(x: (Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))): String = x match {
-    case (Nat.Nata(from), ((Nat.Nata(to1), Nat.Nata(to2)), ((t1, Nat.Nata(u1)), (t2, Nat.Nata(u2))))) => {
-      ((from, (to1, to2), (transitionToString(t1), u1), (transitionToString(t2), u2))).toString()
+    var string = "{"
+    for (move <- TypeConversion.indexWithInts(TypeConversion.fset_to_list(e)).sortBy(_._1)) {
+      string += (s"  ((${move._1._1}, ${move._1._2}), ${PrettyPrinter.transitionToString(move._2)})\n")
     }
+    return string + ("{")
   }
+
+  def traceToString(x1: List[(String, (List[Value.value], List[Value.value]))]): String = x1 match {
+    case Nil => ""
+    case (label, (inputs, outputs))::t => s"        ${label}(${inputs.map(valueToString)})/${outputs.map(valueToString)}\n" + traceToString(t)
+  }
+
+  def inputsToString(i: List[Value.value]) = i.map(PrettyPrinter.valueToString).mkString(", ")
+
+  def outputToString(o: Option[Value.value]) = o match {
+    case Some(p) => valueToString(p)
+  }
+
+  def optOutputsToString(o: List[Option[Value.value]]) = o.map(PrettyPrinter.outputToString).mkString(", ")
+  def litOutputsToString(o: List[Value.value]) = inputsToString(o)
+
 
   // def efsm2dot(e: TypeConversion.TransitionMatrix): String = {
   //   (EFSM_Dot.efsm2dot(e))

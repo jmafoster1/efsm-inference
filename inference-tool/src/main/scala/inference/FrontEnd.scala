@@ -52,7 +52,7 @@ object FrontEnd {
         val rawJson = Source.fromFile(config.file).getLines.mkString
         val parsed = (parse(rawJson))
         val list = parsed.values.asInstanceOf[List[List[Map[String, Any]]]]
-        val log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)))
+        val log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)).slice(0, 14))
 
         val heuristics = scala.collection.immutable.Map[Heuristics.Heuristic, UpdateModifier](
           Heuristics.store -> Store_Reuse.heuristic_1(log),
@@ -63,18 +63,17 @@ object FrontEnd {
 
         val inferred = Inference.learn(log, (SelectionStrategies.naive_score _).curried, Inference.try_heuristics(config.heuristics.map(x => heuristics(x)).toList))
 
-        println("{")
-        for (move <- TypeConversion.indexWithInts(TypeConversion.fset_to_list(inferred)).sortBy(_._1)) {
-          println(s"  ((${move._1._1}, ${move._1._2}), ${PrettyPrinter.transitionToString(move._2)})")
+        inferred match {
+          case None => println("No EFSM could be inferred")
+          case Some(inferred) => {
+            println("The inferred machine is " +
+              (if (Inference.nondeterministic(Inference.toiEFSM(inferred))) "non" else "") + "deterministic")
+
+            val basename = (if (config.outputname == null) (FilenameUtils.getBaseName(config.file.getName()).replace("-", "_")) else config.outputname.replace("-", "_"))
+
+            TypeConversion.efsmToSALTranslator(inferred, basename)
+          }
         }
-        println("{")
-
-        println("The inferred machine is " +
-          (if (Inference.nondeterministic(Inference.toiEFSM(inferred))) "non" else "") + "deterministic")
-
-        val basename = (if (config.outputname == null) (FilenameUtils.getBaseName(config.file.getName()).replace("-", "_")) else config.outputname.replace("-", "_"))
-
-        TypeConversion.efsmToSALTranslator(inferred, basename)
 
       case _ =>
         System.exit(1)

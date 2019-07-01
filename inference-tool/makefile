@@ -12,7 +12,7 @@ env:
 
 dot:
 	@ for b in $(basename $(shell find ./ -type f -name '*.dot')) ; do \
-	  dot -T png -o $$b.png $$b.dot ; \
+	  dot -T pdf -o $$b.pdf $$b.dot ; \
 	done
 
 clean:
