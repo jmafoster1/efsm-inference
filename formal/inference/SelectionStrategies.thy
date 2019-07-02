@@ -17,6 +17,8 @@ lemma naive_score_empty: "\<forall>a. naive_score a {||} = 0"
 
 lemma naive_score_empty_2: "\<forall>a. naive_score {||} a = 0"
   by (simp add: naive_score_def)
-  
+
+definition naive_score_one_final_state :: strategy where
+  "naive_score_one_final_state t1 t2 = (if t1 = {||} \<and> t2 = {||} then 1 else size (ffilter (\<lambda>(x, y). Label x = Label y \<and> Arity x = Arity y) (fprod t1 t2)))"
 
 end

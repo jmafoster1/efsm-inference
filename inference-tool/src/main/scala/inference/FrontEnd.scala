@@ -52,7 +52,7 @@ object FrontEnd {
         val rawJson = Source.fromFile(config.file).getLines.mkString
         val parsed = (parse(rawJson))
         val list = parsed.values.asInstanceOf[List[List[Map[String, Any]]]]
-        val log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)).slice(0, 14))
+        val log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)))
 
         val heuristics = scala.collection.immutable.Map[Heuristics.Heuristic, UpdateModifier](
           Heuristics.store -> Store_Reuse.heuristic_1(log),
@@ -61,7 +61,7 @@ object FrontEnd {
           Heuristics.ignore -> (Ignore_Inputs.drop_inputs _).curried
         )
 
-        val inferred = Inference.learn(log, (SelectionStrategies.naive_score _).curried, Inference.try_heuristics(config.heuristics.map(x => heuristics(x)).toList))
+        val inferred = Inference.learn(log, (SelectionStrategies.naive_score_one_final_state _).curried, Inference.try_heuristics(config.heuristics.map(x => heuristics(x)).toList))
 
         inferred match {
           case None => println("No EFSM could be inferred")

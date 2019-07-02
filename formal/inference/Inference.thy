@@ -113,15 +113,15 @@ primrec make_outputs :: "value list \<Rightarrow> output_function list" where
 fun maxS :: "transition_matrix \<Rightarrow> nat" where
   "maxS t = (if t = {||} then 0 else fMax ((fimage (\<lambda>((origin, dest), t). origin) t) |\<union>| (fimage (\<lambda>((origin, dest), t). dest) t)))"
 
-fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> (label \<times> value list \<times> value list) list \<Rightarrow> transition_matrix option" where
-  "make_branch e _ _ [] = Some e" |
+fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> (label \<times> value list \<times> value list) list \<Rightarrow> transition_matrix" where
+  "make_branch e _ _ [] = e" |
   "make_branch e s r ((label, inputs, outputs)#t) =
     (case (step e s r label inputs) of
       Some (transition, s', outputs', updated) \<Rightarrow> 
         if outputs' = (map Some outputs) then
           make_branch e s' updated t
         else 
-          None  |
+          make_branch (finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e) ((maxS e)+1) r t  |
       None \<Rightarrow> make_branch (finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e) ((maxS e)+1) r t
     )"
 
@@ -129,9 +129,23 @@ fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers 
 type_synonym execution = "(label \<times> value list \<times> value list) list"
 type_synonym log = "execution list"
 
-primrec make_pta :: "log \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix option" where
-  "make_pta [] e = Some e" |
-  "make_pta (h#t) e = (case make_branch e 0 <> h of None \<Rightarrow> None | Some e' \<Rightarrow> make_pta t e')"
+primrec make_pta :: "log \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
+  "make_pta [] e = e" |
+  "make_pta (h#t) e = make_pta t (make_branch e 0 <> h)"
+
+lemma make_pta_fold_all_e: "\<forall>e. make_pta l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
+proof(induct l)
+case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a l)
+  then show ?case
+    by simp
+qed
+
+lemma make_pta_fold: "make_pta l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
+  by (simp add: make_pta_fold_all_e)
 
 type_synonym update_modifier = "tid \<Rightarrow> tid \<Rightarrow> cfstate \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM option"
 
@@ -142,7 +156,11 @@ type_synonym scoreboard = "(nat \<times> (nat \<times> nat)) fset"
 type_synonym strategy = "transition fset \<Rightarrow> transition fset \<Rightarrow> nat"
 
 definition score :: "iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
-  "score t rank = ffilter (\<lambda>(score, _). score > 0) (fimage (\<lambda>(s1, s2). (rank (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s1 t)) (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s2 t)), (s1, s2))) (ffilter (\<lambda>(x, y). x < y) ((S t) |\<times>| (S t))))"
+  "score t rank = (let 
+     states = (S t) |\<times>| (S t);
+     pairs_to_score = (ffilter (\<lambda>(x, y). x < y) states);
+     scores = fimage (\<lambda>(s1, s2). (rank (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s1 t)) (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s2 t)), (s1, s2))) pairs_to_score in
+     ffilter (\<lambda>(score, _). score > 0) scores)"
 
 definition origin :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
   "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (\<exists>s. x = (uid, s))) t))))"
@@ -312,7 +330,14 @@ termination
   by (relation "measures [\<lambda>(e, r, m, check). size (S e) + size e]") auto
 
 definition learn :: "log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> transition_matrix option" where
-  "learn l r m = (case make_pta l {||} of None \<Rightarrow> None | Some pta \<Rightarrow> Some (tm (infer (toiEFSM pta) r m (satisfies (set l)))))"
+  "learn l r m = (
+     let pta = make_pta l {||};
+         iPTA = toiEFSM pta;
+         check = satisfies (set l) in
+         case resolve_nondeterminism (sorted_list_of_fset (nondeterministic_pairs iPTA)) iPTA iPTA m check of
+           None \<Rightarrow> None |
+           Some pta' \<Rightarrow> Some (tm (infer pta' r m check))
+   )"
 
 definition uids :: "iEFSM \<Rightarrow> nat fset" where
   "uids e = fimage fst e"
