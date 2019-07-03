@@ -183,6 +183,9 @@ object Dirties {
                                 // println("n")
                                 return false
                               }
+                              if (Transition.Guard(t1).length > 0 && Transition.Guard(t1).length > 0) {
+                                return true
+                              }
                               else {
                                 println(s"Does ${PrettyPrinter.transitionToString(t1)} directly subsume ${PrettyPrinter.transitionToString(t2)}? (y/N)")
                                 val subsumes = readLine("") == "y"

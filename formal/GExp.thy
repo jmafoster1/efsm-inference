@@ -69,7 +69,12 @@ abbreviation Ge :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<ge>" 
 abbreviation Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<noteq>" 60*) where
   "Ne v va \<equiv> gNot (Eq v va)"
 
-lemma or_equiv: "gval (gOr x y) r = (gval x r) \<or>\<^sub>? (gval y r)"
+fun In :: "vname \<Rightarrow> value list \<Rightarrow> gexp" where
+  "In a [] = Bc False" |
+  "In a [v] = Eq (V a) (L v)" |
+  "In a (v1#t) = gOr (Eq (V a) (L v1)) (In a t)"
+
+lemma gval_gOr: "gval (gOr x y) r = (gval x r) \<or>\<^sub>? (gval y r)"
   by (simp add: maybe_double_negation maybe_or_idempotent)
 
 lemma not_equiv: "gval (gNot x) s = \<not>\<^sub>? (gval x s)"
@@ -414,6 +419,24 @@ next
   then show ?case
     apply (simp only: foldr.simps comp_def gval_gAnd)
     by simp
+qed
+
+lemma possible_to_be_in: "s \<noteq> [] \<Longrightarrow> satisfiable (In v s)"
+proof(induct s)
+case Nil
+  then show ?case by simp
+next
+  case (Cons a s)
+  then show ?case
+    apply (case_tac s)
+     apply (simp add: satisfiable_def gval.simps ValueEq_def)
+     apply (case_tac v)
+      apply (simp add: join_ir_def input2state_exists)
+     apply (simp add: join_ir_def)
+     apply auto[1]
+    apply simp
+    apply (simp add: satisfiable_def gval_gOr)
+    by (metis ValueEq_def gval.simps(4) maybe_or_idempotent plus_trilean.simps(6))
 qed
 
 end

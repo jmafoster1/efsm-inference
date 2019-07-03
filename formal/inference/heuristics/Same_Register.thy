@@ -43,7 +43,7 @@ definition r_print :: "transition \<Rightarrow> transition" where
   "r_print t = (let f = tprint t in t)"
 
 fun same_register :: update_modifier where
-  "same_register t1ID t2ID s new old = (let
+  "same_register t1ID t2ID s new old _ = (let
      t1 = (get_by_id new t1ID);
      t2 = (get_by_id new t2ID);
      ut1 = updates (Updates t1);

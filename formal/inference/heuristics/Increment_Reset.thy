@@ -17,7 +17,7 @@ lemma guard_match_length: "length (Guard t1) \<noteq> 1 \<or> length (Guard t2) 
   by auto
 
 fun insert_increment :: update_modifier where
-  "insert_increment t1ID t2ID s new old = (let
+  "insert_increment t1ID t2ID s new old np = (let
      t1 = get_by_id new t1ID;
      t2 = get_by_id new t2ID in
      if guardMatch t1 t2 \<and> outputMatch t1 t2 then let 
@@ -28,7 +28,7 @@ fun insert_increment :: update_modifier where
           initialised = fimage (\<lambda>(uid, (from, to), t). (uid, (from, to), (if (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2 then initialiseReg t r else t))) new;
           newEFSM = (replaceAll (replaceAll initialised t2 newT2) t1 newT1)
           in 
-          resolve_nondeterminism (sorted_list_of_fset (nondeterministic_pairs newEFSM)) old newEFSM null_modifier (\<lambda>a. True)
+          resolve_nondeterminism (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
      else
        None
      )"
@@ -45,7 +45,7 @@ lemma guard_match_symmetry: "(guardMatch t1 t2) = (guardMatch t2 t1)"
   by auto
 
 fun insert_increment_2 :: update_modifier where
-  "insert_increment_2 t1ID t2ID s new old = (let
+  "insert_increment_2 t1ID t2ID s new old np = (let
      t1 = get_by_id new t1ID;
      t2 = get_by_id new t2ID in
      if guardMatch t1 t2 \<and> outputMatch t1 t2 then let 
@@ -56,7 +56,7 @@ fun insert_increment_2 :: update_modifier where
           initialised = fimage (\<lambda>(uid, (from, to), t). (uid, (from, to), (if (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2 then initialiseReg t r else t))) new ;
           newEFSM = (struct_replace_all (struct_replace_all initialised t2 newT2) t1 newT1)
           in 
-          resolve_nondeterminism (sorted_list_of_fset (nondeterministic_pairs newEFSM)) old newEFSM null_modifier (\<lambda>a. True)
+          resolve_nondeterminism (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
      else
        None
      )"

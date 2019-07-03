@@ -87,14 +87,14 @@ lemma S_alt: "S t = EFSM.S (fimage snd t)"
 definition nondeterministic_pairs :: "iEFSM \<Rightarrow> nondeterministic_pair fset" where
   "nondeterministic_pairs t = ffilter (\<lambda>(_, (d1, d2), t, t'). choice (fst t) (fst t')) (ffUnion (fimage (\<lambda>s. state_nondeterminism s (outgoing_transitions s t)) (S t)))"
 
-definition nondeterministic_transitions :: "iEFSM \<Rightarrow> nondeterministic_pair option" where
-  "nondeterministic_transitions t = (if nondeterministic_pairs t = {||} then None else Some (fMax (nondeterministic_pairs t)))"
+definition nondeterministic_pairs_labar :: "iEFSM \<Rightarrow> nondeterministic_pair fset" where
+  "nondeterministic_pairs_labar t = ffilter (\<lambda>(_, (d1, d2), t, t'). (Label (fst t)) = (Label (fst t')) \<and> (Arity (fst t)) = (Arity (fst t'))) (ffUnion (fimage (\<lambda>s. state_nondeterminism s (outgoing_transitions s t)) (S t)))"
 
-definition deterministic :: "iEFSM \<Rightarrow> bool" where
-  "deterministic t = (nondeterministic_pairs t = {||})"
+definition deterministic :: "iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> bool" where
+  "deterministic t np = (np t = {||})"
 
-definition nondeterministic :: "iEFSM \<Rightarrow> bool" where
-  "nondeterministic t = (\<not> deterministic t)"
+definition nondeterministic :: "iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> bool" where
+  "nondeterministic t np = (\<not> deterministic t np)"
 
 definition replace_transition :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
   "replace_transition t uid from dest orig new = (ffilter (\<lambda>x. snd x \<noteq> ((from, dest), orig) \<and> snd x \<noteq> ((from, dest), new)) t) |\<union>| {|(uid, (from, dest), new)|}"
@@ -147,10 +147,10 @@ qed
 lemma make_pta_fold: "make_pta l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
   by (simp add: make_pta_fold_all_e)
 
-type_synonym update_modifier = "tid \<Rightarrow> tid \<Rightarrow> cfstate \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM option"
+type_synonym update_modifier = "tid \<Rightarrow> tid \<Rightarrow> cfstate \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option"
 
 definition null_modifier :: update_modifier where
-  "null_modifier a b c d e = None"
+  "null_modifier _ _ _ _ _ _ = None"
 
 type_synonym scoreboard = "(nat \<times> (nat \<times> nat)) fset"
 type_synonym strategy = "transition fset \<Rightarrow> transition fset \<Rightarrow> nat"
@@ -201,6 +201,9 @@ lemma directly_subsumes_self: "directly_subsumes e1 e2 s s' t t"
   apply (simp add: directly_subsumes_def)
   by (simp add: transition_subsumes_self)
 
+lemma "\<forall>c. subsumes t2 c t1 \<Longrightarrow> directly_subsumes e1 e2 s s' t2 t1"
+  by (simp add: directly_subsumes_def)
+
 lemma gets_us_to_and_not_subsumes: 
   "\<exists>p. accepts_trace (tm e1) p \<and>
        gets_us_to s (tm e1) 0 Map.empty p \<and>
@@ -224,14 +227,14 @@ lemma cant_directly_subsume: "\<forall>c. \<not> subsumes t c t' \<Longrightarro
 (* @param t\<^sub>2        - a transition dest be merged with t\<^sub>1                                           *)
 (* @param u\<^sub>2        - the unique identifier of t\<^sub>2                                                 *)
 (* @param modifier  - an update modifier function which tries dest generalise transitions           *)
-definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> update_modifier \<Rightarrow> iEFSM option" where
-  "merge_transitions oldEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 modifier = (
+definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
+  "merge_transitions oldEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 modifier np = (
      if directly_subsumes oldEFSM destMerge (origin u\<^sub>1 oldEFSM) (origin u\<^sub>1 destMerge) t\<^sub>2 t\<^sub>1 then
        Some (replace_transition destMerge u\<^sub>1 (origin u\<^sub>1 destMerge) (dest u\<^sub>2 destMerge) t\<^sub>1 t\<^sub>2)
      else if directly_subsumes oldEFSM destMerge (origin u\<^sub>2 oldEFSM) (origin u\<^sub>2 destMerge) t\<^sub>1 t\<^sub>2 then
        Some (replace_transition destMerge u\<^sub>1 (origin u\<^sub>1 destMerge) (dest u\<^sub>1 destMerge) t\<^sub>2 t\<^sub>1)
      else
-        modifier u\<^sub>1 u\<^sub>2 (origin u\<^sub>1 destMerge) destMerge oldEFSM
+        modifier u\<^sub>1 u\<^sub>2 (origin u\<^sub>1 destMerge) destMerge oldEFSM np
    )"
 
 fun make_distinct_aux :: "(nat \<times> (nat \<times> nat) \<times> transition) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
@@ -258,19 +261,19 @@ definition make_distinct :: "iEFSM option \<Rightarrow> iEFSM option" where
 (* @param m       - an update modifier function which tries dest generalise transitions             *)
 (* @param check - a function which takes an EFSM and returns a bool dest ensure that certain
                   properties hold in the new iEFSM                                                *)
-function resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM option" where
-  "resolve_nondeterminism [] _ new _ check = (if deterministic new \<and> check (tm new) then Some new else None)" |
-  "resolve_nondeterminism ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) oldEFSM newEFSM m check = (let
+function resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
+  "resolve_nondeterminism [] _ new _ check np = (if deterministic new np \<and> check (tm new) then Some new else None)" |
+  "resolve_nondeterminism ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) oldEFSM newEFSM m check np = (let
      destMerge = merge_states dest\<^sub>1 dest\<^sub>2 newEFSM
      in
-     case make_distinct (merge_transitions oldEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m) of
-       None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check |
+     case make_distinct (merge_transitions oldEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m np) of
+       None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check np |
        Some new \<Rightarrow>
-         let newScores = (sorted_list_of_fset (nondeterministic_pairs new)) in 
+         let newScores = (sorted_list_of_fset (np new)) in 
          if length (newScores) + size new < length (ss) + 1 + size newEFSM then
-           case resolve_nondeterminism newScores oldEFSM new m check of
+           case resolve_nondeterminism newScores oldEFSM new m check np of
              Some new' \<Rightarrow> Some new' |
-             None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check
+             None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check np
          else
           None
    )"
@@ -279,7 +282,7 @@ function resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEF
      apply (metis neq_Nil_conv prod_cases3 surj_pair)
   by auto
 termination
-  by (relation "measures [\<lambda>(ss, oldEFSM, newEFSM, m, check). length ss + size newEFSM]") auto
+  by (relation "measures [\<lambda>(ss, _, newEFSM, _). length ss + size newEFSM]") auto
 
 (* Merge - tries dest merge two states in a given iEFSM and resolve the resulting nondeterminism    *)
 (* @param e     - an iEFSM                                                                        *)
@@ -288,13 +291,19 @@ termination
 (* @param m     - an update modifier function which tries dest generalise transitions               *)
 (* @param check - a function which takes an EFSM and returns a bool dest ensure that certain
                   properties hold in the new iEFSM                                                *)
-definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM option" where
-  "merge e s\<^sub>1 s\<^sub>2 m check = (
+definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
+  "merge e s\<^sub>1 s\<^sub>2 m check np = (
     if s\<^sub>1 = s\<^sub>2 then
       None 
     else 
       let e' = (merge_states s\<^sub>1 s\<^sub>2 e) in
-      resolve_nondeterminism (sorted_list_of_fset (nondeterministic_pairs e')) e e' m check
+      case resolve_nondeterminism (sorted_list_of_fset (nondeterministic_pairs e')) e e' m check nondeterministic_pairs of
+      None \<Rightarrow> None |
+      Some merged \<Rightarrow>
+        \<comment> \<open>We need a separate generalisation step because generalisation is different from nondeterminism resolution\<close>
+        (case resolve_nondeterminism (sorted_list_of_fset (np e')) e e' m check np of
+          None \<Rightarrow> Some merged |
+          Some generalised \<Rightarrow> Some generalised)
   )"
 
 (* inference_step - attempt dest carry out a single step of the inference process by merging the    *)
@@ -303,13 +312,13 @@ definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> upd
 (* @param m     - an update modifier function which tries dest generalise transitions               *)
 (* @param check - a function which takes an EFSM and returns a bool dest ensure that certain
                   properties hold in the new iEFSM                                                *)
-fun inference_step :: "iEFSM \<Rightarrow> (nat \<times> nat \<times> nat) list \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM option" where
-  "inference_step _ [] _ _ = None" |
-  "inference_step e ((s, s\<^sub>1, s\<^sub>2)#t) m check = (
+fun inference_step :: "iEFSM \<Rightarrow> (nat \<times> nat \<times> nat) list \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
+  "inference_step _ [] _ _ _ = None" |
+  "inference_step e ((s, s\<^sub>1, s\<^sub>2)#t) m check np = (
     if s > 0 then
-       case merge e s\<^sub>1 s\<^sub>2 m check of
+       case merge e s\<^sub>1 s\<^sub>2 m check np of
          Some new \<Rightarrow> Some new |
-         None \<Rightarrow> inference_step e t m check
+         None \<Rightarrow> inference_step e t m check np
      else None
   )"
 
@@ -319,24 +328,24 @@ fun inference_step :: "iEFSM \<Rightarrow> (nat \<times> nat \<times> nat) list 
 (* @param m     - an update modifier function which tries dest generalise transitions               *)
 (* @param check - a function which takes an EFSM and returns a bool dest ensure that certain
                   properties hold in the new iEFSM                                                *)
-function infer :: "iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM" where
-  "infer e r m check = (
-    case inference_step e (rev (sorted_list_of_fset (score e r))) m check of
+function infer :: "iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
+  "infer e r m check np = (
+    case inference_step e (rev (sorted_list_of_fset (score e r))) m check np of
       None \<Rightarrow> e |
-      Some new \<Rightarrow> if size (S new) + size new < size (S e) + size e then infer new r m check else e
+      Some new \<Rightarrow> if size (S new) + size new < size (S e) + size e then infer new r m check np else e
   )"
   by auto
 termination
-  by (relation "measures [\<lambda>(e, r, m, check). size (S e) + size e]") auto
+  by (relation "measures [\<lambda>(e, r, m, check, np). size (S e) + size e]") auto
 
-definition learn :: "log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> transition_matrix option" where
-  "learn l r m = (
+definition learn :: "log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> transition_matrix option" where
+  "learn l r m np = (
      let pta = make_pta l {||};
          iPTA = toiEFSM pta;
          check = satisfies (set l) in
-         case resolve_nondeterminism (sorted_list_of_fset (nondeterministic_pairs iPTA)) iPTA iPTA m check of
+         case resolve_nondeterminism (sorted_list_of_fset (nondeterministic_pairs iPTA)) iPTA iPTA m check nondeterministic_pairs of
            None \<Rightarrow> None |
-           Some pta' \<Rightarrow> Some (tm (infer pta' r m check))
+           Some pta' \<Rightarrow> Some (tm (infer pta' r m check np))
    )"
 
 definition uids :: "iEFSM \<Rightarrow> nat fset" where
@@ -355,20 +364,22 @@ definition total_max_reg :: "iEFSM \<Rightarrow> nat" where
 definition max_output :: "iEFSM \<Rightarrow> nat" where
   "max_output e = fMax (fimage (\<lambda>(_, _, t). length (Outputs t)) e)"
 
-primrec try_heuristics :: "update_modifier list \<Rightarrow> update_modifier" where
-  "try_heuristics [] = null_modifier" |
-  "try_heuristics (h#t) = (\<lambda>a b c d e. case h a b c d e of Some e' \<Rightarrow> Some e' | None \<Rightarrow> try_heuristics t a b c d e)"
+primrec try_heuristics :: "update_modifier list \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> update_modifier" where
+  "try_heuristics [] _ = null_modifier" |
+  "try_heuristics (h#t) np = (\<lambda>a b c d e np. case h a b c d e np of Some e' \<Rightarrow> Some e' | None \<Rightarrow> (try_heuristics t np) a b c d e np)"
 
-primrec iterative_try_heuristics :: "(log \<Rightarrow> update_modifier) list \<Rightarrow> log \<Rightarrow> update_modifier" where
-  "iterative_try_heuristics [] l = null_modifier" |
-  "iterative_try_heuristics (h#t) l = (\<lambda>a b c d e. case (h l) a b c d e of
-                                        Some e' \<Rightarrow> Some e' |
-                                        None \<Rightarrow>  iterative_try_heuristics t l a b c d e
-                                      )"
+definition drop_transition :: "iEFSM \<Rightarrow> nat \<Rightarrow> iEFSM" where
+  "drop_transition e t = ffilter (\<lambda>(uid, _). uid \<noteq> t) e"
 
 definition replaceAll :: "iEFSM \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
   "replaceAll e old new = fimage (\<lambda>(uid, (from, dest), t). if t = old then (uid, (from, dest), new) else (uid, (from, dest), t)) e"
 
+definition replace :: "iEFSM \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> iEFSM" where
+  "replace e tID t' = fimage (\<lambda>(uid, (from, dest), t). if uid = tID then (uid, (from, dest), t') else (uid, (from, dest), t)) e"
+
 definition all_regs :: "iEFSM \<Rightarrow> nat set" where
   "all_regs e = \<Union> (image (\<lambda>(_, _, t). enumerate_registers t) (fset e))"
+
+lemma every_context_subsumes: "\<forall>c. subsumes t2 c t1 \<Longrightarrow> directly_subsumes e1 e2 s s' t2 t1"
+  by (simp add: directly_subsumes_def)
 end

@@ -135,6 +135,21 @@ lemma input2state_cons:
    input2state (a # ia) x1 = input2state ia (x1-1)"
   by (simp add: input2state_nth)
 
+lemma input2state_exists: "\<exists>i. input2state i x1 = Some a"
+proof(induct x1)
+  case 0
+  then show ?case
+    apply (rule_tac x="[a]" in exI)
+    by (simp add: input2state_def)
+next
+  case (Suc x1)
+  then show ?case
+    apply clarify
+    apply (rule_tac x="a#i" in exI)
+    apply (simp add: input2state_def)
+    by (simp add: in_set_enumerate_eq)
+qed
+
 definition join_ir :: "value list \<Rightarrow> registers \<Rightarrow> datastate" where
   "join_ir i r \<equiv> (\<lambda>x. case x of
     R n \<Rightarrow> r n |

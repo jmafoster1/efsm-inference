@@ -183,10 +183,10 @@ definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iE
     gets_us_to s (tm m1) 0 Map.empty p \<and>
     accepts (tm m2) 0 Map.empty p \<and>
     gets_us_to s' (tm m2) 0 Map.empty p \<and>
-    (\<forall>c. anterior_context (tm m2) p = Some c \<longrightarrow> (\<exists>i. can_take t2 i c))))"
+    (\<forall>c. anterior_context (tm m2) p = Some c \<longrightarrow> (\<exists>i. can_take_transition t2 i c))))"
 
-lemma always_different_outputs_can_take_not_subsumed: "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
-       \<forall>c. posterior_sequence (tm m2) 0 Map.empty p = Some c \<longrightarrow> (\<exists>i. can_take t2 i c) \<longrightarrow> \<not> subsumes t1 c t2"
+lemma always_different_outputs_can_take_transition_not_subsumed: "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
+       \<forall>c. posterior_sequence (tm m2) 0 Map.empty p = Some c \<longrightarrow> (\<exists>i. can_take_transition t2 i c) \<longrightarrow> \<not> subsumes t1 c t2"
   apply standard
   apply standard
   apply standard
@@ -201,7 +201,7 @@ lemma always_different_outputs_direct_subsumption:
   apply clarify
   apply (rule_tac x=p in exI)
   apply simp
-  using always_different_outputs_can_take_not_subsumed accepts_trace_gives_context
+  using always_different_outputs_can_take_transition_not_subsumed accepts_trace_gives_context
   by (meson accepts_gives_context)
 
 definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
@@ -213,6 +213,8 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
     else if drop_guard_add_update_direct_subsumption t1 t2 b s'
       then True
     else if generalise_output_direct_subsumption t1 t2 b a s s'
+      then True
+    else if t1 = (drop_guards t2)
       then True
     else dirty_directly_subsumes a b s s' t1 t2
   )"
@@ -226,8 +228,9 @@ lemma [code]: "directly_subsumes m1 m2 s s' t1 t2 = directly_subsumes_cases m1 m
   apply (case_tac "drop_guard_add_update_direct_subsumption t1 t2 m2 s'")
   apply (meson always_different_outputs_direct_subsumption drop_guard_add_update_direct_subsumption_implies_direct_subsumption)
   apply (case_tac "generalise_output_direct_subsumption t1 t2 m2 m1 s s'")
-   apply (meson always_different_outputs_direct_subsumption generalise_output_directly_subsumes_original_executable)
-  by (simp add: always_different_outputs_direct_subsumption dirty_directly_subsumes_def)
+    apply (meson always_different_outputs_direct_subsumption generalise_output_directly_subsumes_original_executable)
+  using drop_inputs_subsumption every_context_subsumes apply blast
+  by (simp add: always_different_outputs_direct_subsumption dirty_directly_subsumes_def drop_guard_add_update_direct_subsumption_implies_direct_subsumption drop_inputs_subsumption every_context_subsumes generalise_output_directly_subsumes_original_executable)
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and>
@@ -309,13 +312,22 @@ lemma [code]: "list_all f l = all l f"
 
 code_printing
   constant "zip" \<rightharpoonup> (Scala) "(_ zip _)" |
-  constant "flatmap" \<rightharpoonup> (Scala) "_.flatMap((_))" |
+  constant "flatmap" \<rightharpoonup> (Scala) "_.par.flatMap((_)).toList" |
   constant "List.null" \<rightharpoonup> (Scala) "_.isEmpty" |
-  constant "map" \<rightharpoonup> (Scala) "_.map((_))" |
-  constant "filter" \<rightharpoonup> (Scala) "_.filter((_))" |
-  constant "all" \<rightharpoonup> (Scala) "_.forall((_))"
+  constant "map" \<rightharpoonup> (Scala) "_.par.map((_)).toList" |
+  constant "filter" \<rightharpoonup> (Scala) "_.par.filter((_)).toList" |
+  constant "all" \<rightharpoonup> (Scala) "_.par.forall((_))"
 
-export_code naive_score_one_final_state try_heuristics aexp_type_check learn drop_inputs same_register input_updates_register insert_increment_2 nondeterministic finfun_apply infer_types heuristic_1 naive_score in Scala
+export_code
+  (* Essentials *)
+  try_heuristics aexp_type_check learn finfun_apply infer_types nondeterministic input_updates_register
+  (* Scoring functions *)
+  naive_score_one_final_state naive_score
+  (* Heuristics *)
+  drop_inputs same_register insert_increment_2 heuristic_1 transitionwise_drop_inputs
+  (* Nondeterminism metrics *)
+  nondeterministic_pairs nondeterministic_pairs_labar
+in Scala
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
 end

@@ -56,7 +56,7 @@ lemma apply_guards_empty [simp]: "apply_guards [] s"
 lemma apply_guards_cons: "apply_guards (a # G) c = (gval a c = true \<and> apply_guards G c)"
   by (simp add: apply_guards_def)
 
-lemma apply_guards_fold: "apply_guards G s = (gval (foldr gAnd G (Bc True)) s = true)"
+lemma apply_guards_foldr: "apply_guards G s = (gval (foldr gAnd G (Bc True)) s = true)"
 proof(induct G)
   case Nil
   then show ?case
@@ -68,8 +68,18 @@ next
     by (simp add: apply_guards_cons gval_gAnd maybe_and_true)
 qed
 
-lemma fold_apply_guards: "(gval (foldr gAnd G (Bc True)) s = true) = apply_guards G s"
+lemma apply_guards_rev: "apply_guards G s = apply_guards (rev G) s"
+  by (simp add: apply_guards_def)
+
+lemma apply_guards_fold: "apply_guards G s = (gval (fold gAnd G (Bc True)) s = true)"
+  using apply_guards_rev
+  by (simp add: foldr_conv_fold apply_guards_foldr)
+
+lemma fold_apply_guards: "(gval (fold gAnd G (Bc True)) s = true) = apply_guards G s"
   by (simp add: apply_guards_fold)
+
+lemma foldr_apply_guards: "(gval (foldr gAnd G (Bc True)) s = true) = apply_guards G s"
+  by (simp add: apply_guards_foldr)
 
 lemma apply_guards_subset: "set g' \<subseteq> set g \<Longrightarrow> apply_guards g c \<longrightarrow> apply_guards g' c"
 proof(induct g)

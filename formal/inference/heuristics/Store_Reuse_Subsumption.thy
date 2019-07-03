@@ -2,8 +2,6 @@ theory Store_Reuse_Subsumption
 imports Store_Reuse
 begin
 
-declare One_nat_def [simp del]
-
 lemma generalisation_of_preserves: "is_generalisation_of t' t i r \<Longrightarrow>
     Label t = Label t' \<and>
     Arity t = Arity t' \<and>
@@ -14,9 +12,9 @@ lemma generalisation_of_preserves: "is_generalisation_of t' t i r \<Longrightarr
 lemma is_generalisation_of_guard_subset: "is_generalisation_of t' t i r \<Longrightarrow> set (Guard t') \<subseteq> set (Guard t)"
   by (simp add: is_generalisation_of_def remove_guard_add_update_def)
 
-lemma is_generalisation_of_medial: "is_generalisation_of t' t i r \<Longrightarrow> can_take t ip rg \<longrightarrow> can_take t' ip rg"
+lemma is_generalisation_of_medial: "is_generalisation_of t' t i r \<Longrightarrow> can_take_transition t ip rg \<longrightarrow> can_take_transition t' ip rg"
   using is_generalisation_of_guard_subset medial_subset generalisation_of_preserves
-  by (meson can_take_def)
+  by (metis (no_types, lifting) can_take_def can_take_transition_def)
 
 lemma is_generalisation_of_preserves_reg: 
   "is_generalisation_of t' t i r \<Longrightarrow>
@@ -49,10 +47,9 @@ lemma is_generalisation_of_subsumes_original:
    apply (simp add: posterior_def can_take_def is_generalisation_of_apply_guards generalisation_of_preserves)
    apply clarify
    apply (case_tac "r' = r")
-  using is_generalisation_of_def r_not_updated_stays_the_same apply auto[1]
-  using is_generalisation_of_preserves_reg_2 apply auto[1]
-  apply (simp add: posterior_def)
-  by (metis is_generalisation_of_preserves_reg is_generalisation_of_preserves_reg_2 option.exhaust option.simps(3))
+    apply (metis is_generalisation_of_preserves_reg option.distinct(1) option.sel posterior_separate_def)
+   apply (metis is_generalisation_of_preserves_reg_2 option.inject option.simps(3) posterior_separate_def)
+  by (metis is_generalisation_of_preserves_reg is_generalisation_of_preserves_reg_2 option.distinct(1) option.sel posterior_def posterior_separate_def)
 
 lemma apply_outputs_literal: "P ! r = L v \<Longrightarrow>
        r < length (apply_outputs P (join_ir i c)) \<Longrightarrow>
@@ -131,13 +128,10 @@ lemma generalise_output_subsumes_original:
    subsumes (generalise_output t p r) c t"
   apply (rule subsumption)
       apply (simp add: generalise_output_def)
-     apply (simp add: generalise_output_def can_take_def)
-    apply (simp add: generalise_output_def)
-  using generalise_output_eq apply blast
-   apply (simp add: generalise_output_posterior)
-   apply auto[1]
-  apply (simp add: generalise_output_posterior)
-  by auto
+     apply (simp add: generalise_output_def can_take_def can_take_transition_def)
+    apply (simp add: generalise_output_def generalise_output_eq)
+  using generalise_output_preserves_updates posterior_separate_def apply auto[1]
+  using generalise_output_posterior by auto
 
 primrec stored_reused_aux_per_reg :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (nat \<times> nat) option" where
   "stored_reused_aux_per_reg t' t 0 p = (if is_generalised_output_of t' t 0 p then Some (0, p) else None)" |
@@ -366,22 +360,21 @@ lemma is_generalisation_of_same_arity: "is_generalisation_of t' t i r \<Longrigh
 lemma is_generalisation_of_i_lt_arity: "is_generalisation_of t' t i r \<Longrightarrow> i < Arity t"
   by (simp add: is_generalisation_of_def)
 
-lemma "\<forall>i. \<not> can_take t i r \<and> \<not> can_take t' i r \<Longrightarrow>
+lemma "\<forall>i. \<not> can_take_transition t i r \<and> \<not> can_take_transition t' i r \<Longrightarrow>
        Label t = Label t' \<Longrightarrow>
        Arity t = Arity t' \<Longrightarrow>
        subsumes t' r t"
   apply (simp add: subsumes_def)
-  apply safe
-   apply (simp add: posterior_def)
-  by (simp add: posterior_def)
+   apply (simp add: posterior_separate_def can_take_transition_def)
+  by (simp add: can_take_transition_def posterior_def posterior_separate_def)
 
 lemma can_take_must_be_eq: 
   "Eq (V (vname.I i)) (L v) \<in> set (Guard t) \<Longrightarrow>
        ia ! i \<noteq> v \<Longrightarrow>
        i < Arity t \<Longrightarrow>
        length ia = Arity t \<Longrightarrow>
-       \<not> can_take t ia r"
-  apply (simp add: can_take_def apply_guards_def)
+       \<not> can_take_transition t ia r"
+  apply (simp add: can_take_transition_def can_take_def apply_guards_def)
   apply (simp add: Bex_def)
   apply (rule_tac x= "Eq (V (vname.I (i))) (L v)" in exI)
   apply (simp add: join_ir_def)
@@ -397,7 +390,7 @@ lemma restrict_i_cant_swap:
        \<not> apply_guards (Guard t) (join_ir ia c)"
   using is_generalisation_of_i_lt_arity[of t' t i r]
   using can_take_must_be_eq[of i v t ia c]
-  unfolding can_take_def
+  unfolding can_take_transition_def can_take_def
   by simp
 
 lemma ex_v_neq_value: "ia ! i = (v::value) \<Longrightarrow> \<exists>v'. v' \<noteq> v"
@@ -482,7 +475,7 @@ lemma is_generalisation_of_can_swap_out_i:
 
 lemma input_stored_in_reg_not_subsumed: 
   "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
-   \<exists>i. can_take t' i c \<Longrightarrow>
+   \<exists>i. can_take_transition t' i c \<Longrightarrow>
    \<not> subsumes t c t'"
   using input_stored_in_reg_is_generalisation[of t' t e i r]
   using is_generalisation_of_constrains_input[of t' t i r]
@@ -490,7 +483,7 @@ lemma input_stored_in_reg_not_subsumed:
   apply simp
   apply (rule bad_guards)
   apply clarify
-  apply (simp add: can_take_def)
+  apply (simp add: can_take_transition_def can_take_def)
   apply clarify
   apply (case_tac "v")
    apply (rule_tac x="ia[i:=Str s]" in exI)
