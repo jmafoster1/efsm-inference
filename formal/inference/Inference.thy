@@ -85,10 +85,12 @@ lemma S_alt: "S t = EFSM.S (fimage snd t)"
 
 (* For each state, get its outgoing transitions and see if there's any nondeterminism there *)
 definition nondeterministic_pairs :: "iEFSM \<Rightarrow> nondeterministic_pair fset" where
-  "nondeterministic_pairs t = ffilter (\<lambda>(_, (d1, d2), t, t'). choice (fst t) (fst t')) (ffUnion (fimage (\<lambda>s. state_nondeterminism s (outgoing_transitions s t)) (S t)))"
+  "nondeterministic_pairs t = ffilter (\<lambda>(_, _, t, t'). choice (fst t) (fst t')) (ffUnion (fimage (\<lambda>s. state_nondeterminism s (outgoing_transitions s t)) (S t)))"
 
 definition nondeterministic_pairs_labar :: "iEFSM \<Rightarrow> nondeterministic_pair fset" where
-  "nondeterministic_pairs_labar t = ffilter (\<lambda>(_, (d1, d2), t, t'). (Label (fst t)) = (Label (fst t')) \<and> (Arity (fst t)) = (Arity (fst t'))) (ffUnion (fimage (\<lambda>s. state_nondeterminism s (outgoing_transitions s t)) (S t)))"
+  "nondeterministic_pairs_labar t = ffilter
+     (\<lambda>(_, (d1, d2), (t, _), (t', _)). (Label t) = (Label t') \<and> (Arity t) = (Arity t') \<and> (choice t t' \<or> ((Outputs t) = (Outputs t') \<and> d1 = d2)))
+     (ffUnion (fimage (\<lambda>s. state_nondeterminism s (outgoing_transitions s t)) (S t)))"
 
 definition deterministic :: "iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> bool" where
   "deterministic t np = (np t = {||})"
@@ -297,13 +299,15 @@ definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> upd
       None 
     else 
       let e' = (merge_states s\<^sub>1 s\<^sub>2 e) in
-      case resolve_nondeterminism (sorted_list_of_fset (nondeterministic_pairs e')) e e' m check nondeterministic_pairs of
+      resolve_nondeterminism (sorted_list_of_fset (np e')) e e' m check np 
+
+\<comment> \<open>case resolve_nondeterminism (sorted_list_of_fset (nondeterministic_pairs e')) e e' m check nondeterministic_pairs of
       None \<Rightarrow> None |
       Some merged \<Rightarrow>
         \<comment> \<open>We need a separate generalisation step because generalisation is different from nondeterminism resolution\<close>
         (case resolve_nondeterminism (sorted_list_of_fset (np e')) e e' m check np of
           None \<Rightarrow> Some merged |
-          Some generalised \<Rightarrow> Some generalised)
+          Some generalised \<Rightarrow> Some generalised)\<close>
   )"
 
 (* inference_step - attempt dest carry out a single step of the inference process by merging the    *)

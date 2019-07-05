@@ -322,7 +322,7 @@ export_code
   (* Essentials *)
   try_heuristics aexp_type_check learn finfun_apply infer_types nondeterministic input_updates_register
   (* Scoring functions *)
-  naive_score_one_final_state naive_score
+  naive_score_one_final_state naive_score naive_score_rank_one_final_state
   (* Heuristics *)
   drop_inputs same_register insert_increment_2 heuristic_1 transitionwise_drop_inputs
   (* Nondeterminism metrics *)

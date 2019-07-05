@@ -104,6 +104,16 @@ object PrettyPrinter {
   def optOutputsToString(o: List[Option[Value.value]]) = o.map(PrettyPrinter.outputToString).mkString(", ")
   def litOutputsToString(o: List[Value.value]) = inputsToString(o)
 
+  def pairToString(x:(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))) = x match {
+    case (Nat.Nata(a),((Nat.Nata(b),Nat.Nata(c)), ((t,Nat.Nata(d)),(t_prime,Nat.Nata(e))))) =>
+    (a,((b, c), ((transitionToString(t), d),(transitionToString(t_prime), e))))
+  }
+
+  def nondeterministicPairsToString(p: FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))]): String = {
+    val better = FSet.fimage(pairToString, p)
+    return TypeConversion.fset_to_list(better).mkString(", \n")
+  }
+
 
   // def efsm2dot(e: TypeConversion.TransitionMatrix): String = {
   //   (EFSM_Dot.efsm2dot(e))

@@ -78,9 +78,15 @@ object FrontEnd {
           Nondeterminisms.labar -> (Inference.nondeterministic_pairs_labar _)
         )
 
+        println("Building PTA")
+        val pta = Inference.make_pta(log, FSet.bot_fset)
+        TypeConversion.efsmToSALTranslator(pta, "pta-old")
+        val np_labar = Inference.nondeterministic_pairs_labar(Inference.toiEFSM(pta))
+        // println(PrettyPrinter.nondeterministicPairsToString(np_labar))
+
         val inferred = Inference.learn(
           log,
-          (SelectionStrategies.naive_score_one_final_state _).curried,
+          (SelectionStrategies.naive_score_rank_one_final_state _).curried,
           Inference.try_heuristics(config.heuristics.map(x => heuristics(x)).toList, nondeterminisms(config.nondeterminism)),
           nondeterminisms(config.nondeterminism))
 
@@ -89,6 +95,7 @@ object FrontEnd {
           case Some(inferred) => {
             println("The inferred machine is " +
               (if (Inference.nondeterministic(Inference.toiEFSM(inferred), Inference.nondeterministic_pairs)) "non" else "") + "deterministic")
+            println(Inference.nondeterministic_pairs(Inference.toiEFSM(inferred)))
 
             val basename = (if (config.outputname == null) (FilenameUtils.getBaseName(config.file.getName()).replace("-", "_")) else config.outputname.replace("-", "_"))
 
@@ -102,7 +109,7 @@ object FrontEnd {
     val seconds = (System.nanoTime - t1) / 1e9d
     val minutes = (seconds/60)%60
     val hours = seconds/3600
-    println(s"Completed in ${if (hours > 0) s"${hours}h " else ""}${if (minutes > 0) s"${minutes}m " else ""}${seconds%60}s")
+    println(s"Completed in ${if (hours > 0) s"${hours.toInt}h " else ""}${if (minutes > 0) s"${minutes.toInt}m " else ""}${seconds%60}s")
     println("=================================================================")
   }
 }
