@@ -18,7 +18,7 @@ identifier enables us dest look up the origin and destination states of transiti
 pass them around in the inference functions.
 \<close>
 type_synonym tid = nat
-type_synonym iEFSM = "(tid \<times> (nat \<times> nat) \<times> transition) fset"
+type_synonym iEFSM = "(tid \<times> (cfstate \<times> cfstate) \<times> transition) fset"
 
 definition get_by_id :: "iEFSM \<Rightarrow> nat \<Rightarrow> transition" where
   "get_by_id e u = snd (snd (fthe_elem (ffilter (\<lambda>(uid, _). uid = u) e)))"
@@ -45,7 +45,7 @@ definition merge_states_aux :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Righ
 definition merge_states :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "merge_states x y t = (if x > y then merge_states_aux x y t else merge_states_aux y x t)"
 
-lemma merge_states_reflexive: "merge_states x x t = t"
+lemma merge_states_same: "merge_states x x t = t"
   apply (simp add: merge_states_def merge_states_aux_def)
   apply (simp add: fimage_def)
   apply (simp add: fset_both_sides Abs_fset_inverse)
@@ -57,12 +57,12 @@ lemma merge_states_symmetry: "merge_states x y t = merge_states y x t"
 (* declare[[show_types,show_sorts]] *)
 
 definition choice :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "choice t t' = ((Label t) = (Label t') \<and> (Arity t) = (Arity t') \<and> (\<exists> i r. apply_guards (Guard t) (join_ir i r) \<and> apply_guards (Guard t') (join_ir i r)))"
+  "choice t t' = (\<exists> i r. apply_guards (Guard t) (join_ir i r) \<and> apply_guards (Guard t') (join_ir i r))"
 
 lemma choice_symmetry: "choice x y = choice y x"
   using choice_def by auto
-
-definition outgoing_transitions :: "nat \<Rightarrow> iEFSM \<Rightarrow> (nat \<times> transition \<times> nat) fset" where
+                                                        
+definition outgoing_transitions :: "nat \<Rightarrow> iEFSM \<Rightarrow> (cfstate \<times> transition \<times> tid) fset" where
   "outgoing_transitions n t = fimage (\<lambda>(uid, x, t'). (snd x, t', uid)) (ffilter (\<lambda>(uid, (origin, dest), t). origin = n) t)"
 
 type_synonym nondeterministic_pair = "(nat \<times> (nat \<times> nat) \<times> ((transition \<times> nat) \<times> (transition \<times> nat)))"
@@ -85,11 +85,12 @@ lemma S_alt: "S t = EFSM.S (fimage snd t)"
 
 (* For each state, get its outgoing transitions and see if there's any nondeterminism there *)
 definition nondeterministic_pairs :: "iEFSM \<Rightarrow> nondeterministic_pair fset" where
-  "nondeterministic_pairs t = ffilter (\<lambda>(_, _, t, t'). choice (fst t) (fst t')) (ffUnion (fimage (\<lambda>s. state_nondeterminism s (outgoing_transitions s t)) (S t)))"
+  "nondeterministic_pairs t = ffilter (\<lambda>(_, _, (t, _), (t', _)). Label t = Label t' \<and> Arity t = Arity t' \<and> choice t t') (ffUnion (fimage (\<lambda>s. state_nondeterminism s (outgoing_transitions s t)) (S t)))"
 
 definition nondeterministic_pairs_labar :: "iEFSM \<Rightarrow> nondeterministic_pair fset" where
   "nondeterministic_pairs_labar t = ffilter
-     (\<lambda>(_, (d1, d2), (t, _), (t', _)). (Label t) = (Label t') \<and> (Arity t) = (Arity t') \<and> (choice t t' \<or> ((Outputs t) = (Outputs t') \<and> d1 = d2)))
+     (\<lambda>(_, (d, d'), (t, _), (t', _)).
+      Label t = Label t' \<and> Arity t = Arity t' \<and> (choice t t' \<or> (Outputs t = Outputs t' \<and> d = d')))
      (ffUnion (fimage (\<lambda>s. state_nondeterminism s (outgoing_transitions s t)) (S t)))"
 
 definition deterministic :: "iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> bool" where
@@ -98,7 +99,7 @@ definition deterministic :: "iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondetermi
 definition nondeterministic :: "iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> bool" where
   "nondeterministic t np = (\<not> deterministic t np)"
 
-definition replace_transition :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
+definition replace_transition :: "iEFSM \<Rightarrow> tid \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
   "replace_transition t uid from dest orig new = (ffilter (\<lambda>x. snd x \<noteq> ((from, dest), orig) \<and> snd x \<noteq> ((from, dest), new)) t) |\<union>| {|(uid, (from, dest), new)|}"
 
 definition exits_state :: "iEFSM \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> bool" where
@@ -154,15 +155,20 @@ type_synonym update_modifier = "tid \<Rightarrow> tid \<Rightarrow> cfstate \<Ri
 definition null_modifier :: update_modifier where
   "null_modifier _ _ _ _ _ _ = None"
 
-type_synonym scoreboard = "(nat \<times> (nat \<times> nat)) fset"
+type_synonym scoreboard = "(nat \<times> (cfstate \<times> cfstate)) fset"
 type_synonym strategy = "transition fset \<Rightarrow> transition fset \<Rightarrow> nat"
 
 definition score :: "iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
   "score t rank = (let 
      states = (S t) |\<times>| (S t);
      pairs_to_score = (ffilter (\<lambda>(x, y). x < y) states);
-     scores = fimage (\<lambda>(s1, s2). (rank (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s1 t)) (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s2 t)), (s1, s2))) pairs_to_score in
+     scores = fimage (\<lambda>(s1, s2).
+       (rank (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s1 t)) (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s2 t)), (s1, s2))
+      ) pairs_to_score in
      ffilter (\<lambda>(score, _). score > 0) scores)"
+
+lemma score_empty: "score {||} r = {||}"
+  by (simp add: score_def S_def ffilter_empty)
 
 definition origin :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
   "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (\<exists>s. x = (uid, s))) t))))"
@@ -266,7 +272,7 @@ definition make_distinct :: "iEFSM option \<Rightarrow> iEFSM option" where
 function resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
   "resolve_nondeterminism [] _ new _ check np = (if deterministic new np \<and> check (tm new) then Some new else None)" |
   "resolve_nondeterminism ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) oldEFSM newEFSM m check np = (let
-     destMerge = merge_states dest\<^sub>1 dest\<^sub>2 newEFSM
+     destMerge = if dest\<^sub>1 = dest\<^sub>2 then newEFSM else merge_states dest\<^sub>1 dest\<^sub>2 newEFSM
      in
      case make_distinct (merge_transitions oldEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m np) of
        None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check np |
@@ -310,6 +316,13 @@ definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> upd
           Some generalised \<Rightarrow> Some generalised)\<close>
   )"
 
+lemma equal_states_not_scored: "(stateScore, cf, cf) |\<notin>| (score efsm metric)"
+  apply (simp add: score_def)
+  by auto
+
+lemma score_gt_zero: "(stateScore, cf, cf) |\<in>| (score efsm metric) \<Longrightarrow> stateScore > 0"
+  by (simp add: score_def)
+
 (* inference_step - attempt dest carry out a single step of the inference process by merging the    *)
 (* @param e - an iEFSM dest be generalised                                                          *)
 (* @param ((s, s1, s2)#t) - a list of triples of the form (score, state, state) dest be merged      *)
@@ -318,13 +331,22 @@ definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> upd
                   properties hold in the new iEFSM                                                *)
 fun inference_step :: "iEFSM \<Rightarrow> (nat \<times> nat \<times> nat) list \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
   "inference_step _ [] _ _ _ = None" |
-  "inference_step e ((s, s\<^sub>1, s\<^sub>2)#t) m check np = (
-    if s > 0 then
-       case merge e s\<^sub>1 s\<^sub>2 m check np of
-         Some new \<Rightarrow> Some new |
-         None \<Rightarrow> inference_step e t m check np
-     else None
+  "inference_step e ((_, s\<^sub>1, s\<^sub>2)#t) m check np = (
+     case merge e s\<^sub>1 s\<^sub>2 m check np of
+       Some new \<Rightarrow> Some new |
+       None \<Rightarrow> inference_step e t m check np
   )"
+
+lemma "(s, cf, cf) \<notin> set (rev (sorted_list_of_fset (score e r)))"
+  using equal_states_not_scored fset_of_list_elem sorted_list_of_fset_simps(2) by fastforce
+
+lemma measures_fsubset: "S x2 |\<subset>| S e \<Longrightarrow>
+       ((x2, r, m, check, np), e, r, m, check, np) \<in> measures [\<lambda>(e, r, m, check, np). size (Inference.S e)]"
+  using size_fsubset[of "S x2" "S e"]
+  by simp
+
+lemma eq_size_not_subset: "size x = size y \<Longrightarrow> \<not> x |\<subset>| y"
+  by (metis exists_least_iff size_fsubset)
 
 (* Takes an iEFSM and iterates inference_step until no further states can be successfully merged  *)
 (* @param e - an iEFSM dest be generalised                                                          *)
@@ -336,20 +358,19 @@ function infer :: "iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<
   "infer e r m check np = (
     case inference_step e (rev (sorted_list_of_fset (score e r))) m check np of
       None \<Rightarrow> e |
-      Some new \<Rightarrow> if size (S new) + size new < size (S e) + size e then infer new r m check np else e
+      Some new \<Rightarrow> if (S new) |\<subset>| (S e) then infer new r m check np else e
   )"
   by auto
 termination
-  by (relation "measures [\<lambda>(e, r, m, check, np). size (S e) + size e]") auto
+  apply (relation "measures [\<lambda>(e, r, m, check, np). size (S e)]")
+   apply simp
+  using measures_fsubset by auto
 
-definition learn :: "log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> transition_matrix option" where
+definition learn :: "log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> transition_matrix" where
   "learn l r m np = (
      let pta = make_pta l {||};
-         iPTA = toiEFSM pta;
          check = satisfies (set l) in
-         case resolve_nondeterminism (sorted_list_of_fset (nondeterministic_pairs iPTA)) iPTA iPTA m check nondeterministic_pairs of
-           None \<Rightarrow> None |
-           Some pta' \<Rightarrow> Some (tm (infer pta' r m check np))
+         (tm (infer (toiEFSM pta) r m check np))
    )"
 
 definition uids :: "iEFSM \<Rightarrow> nat fset" where
@@ -374,6 +395,9 @@ primrec try_heuristics :: "update_modifier list \<Rightarrow> (iEFSM \<Rightarro
 
 definition drop_transition :: "iEFSM \<Rightarrow> nat \<Rightarrow> iEFSM" where
   "drop_transition e t = ffilter (\<lambda>(uid, _). uid \<noteq> t) e"
+
+definition drop_transitions :: "iEFSM \<Rightarrow> nat fset \<Rightarrow> iEFSM" where
+  "drop_transitions e t = ffilter (\<lambda>(uid, _). uid |\<notin>| t) e"
 
 definition replaceAll :: "iEFSM \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
   "replaceAll e old new = fimage (\<lambda>(uid, (from, dest), t). if t = old then (uid, (from, dest), new) else (uid, (from, dest), t)) e"

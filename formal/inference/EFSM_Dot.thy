@@ -16,6 +16,12 @@ where
     else if n = 8 then (STR ''8'')
     else (STR ''9''))"
 
+abbreviation newline :: String.literal where
+  "newline \<equiv> STR ''\010''"
+
+abbreviation quote :: String.literal where
+  "quote \<equiv> STR ''\"''"
+
 definition shows_string :: "String.literal \<Rightarrow> String.literal \<Rightarrow> String.literal"
 where
   "shows_string = (+)"
@@ -35,8 +41,14 @@ where
 abbreviation "show_int n  \<equiv> showsp_int ((STR '''')) n ((STR ''''))"
 abbreviation "show_nat n  \<equiv> showsp_nat ((STR '''')) n ((STR ''''))"
 
+definition replace_backslash :: "String.literal \<Rightarrow> String.literal" where
+  "replace_backslash s = String.implode (fold (@) (map (\<lambda>x. if x = CHR 0x5c then [CHR 0x5c,CHR 0x5c] else [x]) (String.explode s)) '''')"
+
+code_printing
+  constant replace_backslash \<rightharpoonup> (Scala) "_.replace(\"\\\\\", \"\\\\\\\\\")"
+
 fun value2dot :: "value \<Rightarrow> String.literal" where
-  "value2dot (value.Str s) = s" |
+  "value2dot (value.Str s) = quote + replace_backslash s + quote" |
   "value2dot (Num n) = show_int n"
 
 fun vname2dot :: "vname \<Rightarrow> String.literal" where
@@ -87,12 +99,6 @@ definition latter2dot :: "transition \<Rightarrow> String.literal" where
 
 definition transition2dot :: "transition \<Rightarrow> String.literal" where
   "transition2dot t = (Label t)+STR '':''+(show_nat (Arity t))+(guards2dot (Guard t))+(latter2dot t)"
-
-abbreviation newline :: String.literal where
-  "newline \<equiv> STR ''\010''"
-
-abbreviation quote :: String.literal where
-  "quote \<equiv> STR ''\"''"
 
 definition efsm2dot :: "transition_matrix \<Rightarrow> String.literal" where
   "efsm2dot e = STR ''digraph EFSM{''+newline+

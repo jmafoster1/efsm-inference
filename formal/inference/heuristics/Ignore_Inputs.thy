@@ -30,6 +30,15 @@ definition transitionwise_drop_inputs :: update_modifier where
      else
        None)"
 
+definition statewise_drop_inputs :: "update_modifier" where
+  "statewise_drop_inputs t1ID t2ID s new old np = (let
+     t1 = (get_by_id new t1ID);
+     t2 = (get_by_id new t2ID) in
+     if \<forall>(_, t, _) |\<in>| outgoing_transitions s new. Label t = Label t1 \<longrightarrow> Arity t = Arity t1 \<longrightarrow>Outputs t = Outputs t1 then
+       Some (replace (drop_transitions new ((fimage (comp snd snd) (outgoing_transitions s new)) - {|t1ID|})) t1ID (drop_guards t1))
+     else
+       None)"
+
 lemma drop_inputs_subsumption: "subsumes (drop_guards t1) c t1"
   apply (rule subsumption)
       apply (simp add: drop_guards_def)

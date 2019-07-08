@@ -114,6 +114,11 @@ object PrettyPrinter {
     return TypeConversion.fset_to_list(better).mkString(", \n")
   }
 
+  def nondeterministicPairsToString(p: List[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))]): String = {
+    val better = p.map(pairToString)
+    return better.mkString(", \n")
+  }
+
 
   // def efsm2dot(e: TypeConversion.TransitionMatrix): String = {
   //   (EFSM_Dot.efsm2dot(e))

@@ -7,6 +7,7 @@ theory Code_Generation
    "heuristics/Increment_Reset"
    "heuristics/Same_Register"
    "heuristics/Ignore_Inputs"
+   EFSM_Dot
 begin
 
 declare One_nat_def [simp del]
@@ -27,9 +28,7 @@ fun guard_filter_code :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
 lemma fold_conv_foldr: "fold f xs = foldr f (rev xs)"
   by (simp add: foldr_conv_fold)
 
-lemma [code]: "choice t t' = ((Label t) = (Label t') \<and>
-                      (Arity t) = (Arity t') \<and>
-                      satisfiable ((fold gAnd (rev (Guard t@Guard t')) (gexp.Bc True))))"
+lemma [code]: "choice t t' = satisfiable ((fold gAnd (rev (Guard t@Guard t')) (gexp.Bc True)))"
   apply (simp only: fold_conv_foldr rev_rev_ident)
   unfolding satisfiable_def choice_def apply_guards_def
   apply (simp only: gval_foldr_true)
@@ -316,7 +315,21 @@ code_printing
   constant "List.null" \<rightharpoonup> (Scala) "_.isEmpty" |
   constant "map" \<rightharpoonup> (Scala) "_.par.map((_)).toList" |
   constant "filter" \<rightharpoonup> (Scala) "_.par.filter((_)).toList" |
-  constant "all" \<rightharpoonup> (Scala) "_.par.forall((_))"
+  constant "all" \<rightharpoonup> (Scala) "_.par.forall((_))" |
+  constant "HOL.equal :: 'a list \<Rightarrow> 'a list \<Rightarrow> bool" \<rightharpoonup> (Scala) infix 4 "==" |
+  constant "nth" \<rightharpoonup> (Scala) "_(Code'_Numeral.integer'_of'_nat((_)).toInt)"
+
+lemma [code]: "insert x (set s) = (if x \<in> set s then set s else set (x#s))"
+  apply (simp)
+  by auto
+
+lemma [code]: "s |\<subset>| s' = (s |\<subseteq>| s' \<and> size s < size s')"
+  apply standard
+   apply (simp only: size_fsubset)
+  by auto
+
+lemma [code]: "size f = card (fset f)"
+  by simp
 
 export_code
   (* Essentials *)
@@ -324,9 +337,10 @@ export_code
   (* Scoring functions *)
   naive_score_one_final_state naive_score naive_score_rank_one_final_state
   (* Heuristics *)
-  drop_inputs same_register insert_increment_2 heuristic_1 transitionwise_drop_inputs
+  statewise_drop_inputs drop_inputs same_register insert_increment_2 heuristic_1 transitionwise_drop_inputs
   (* Nondeterminism metrics *)
   nondeterministic_pairs nondeterministic_pairs_labar
+  iefsm2dot
 in Scala
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

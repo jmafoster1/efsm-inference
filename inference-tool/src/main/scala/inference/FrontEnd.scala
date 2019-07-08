@@ -9,7 +9,7 @@ import scopt.OParser
 
 object Heuristics extends Enumeration {
   type Heuristic = Value
-  val store, inc, same, ignore, ignoret = Value
+  val store, inc, same, ignore, ignoret, ignores = Value
 }
 
 object Nondeterminisms extends Enumeration {
@@ -70,7 +70,9 @@ object FrontEnd {
           Heuristics.inc -> (Increment_Reset.insert_increment_2 _).curried,
           Heuristics.same -> (Same_Register.same_register _).curried,
           Heuristics.ignore -> (Ignore_Inputs.drop_inputs _).curried,
-          Heuristics.ignoret -> (Ignore_Inputs.transitionwise_drop_inputs _).curried
+          Heuristics.ignoret -> (Ignore_Inputs.transitionwise_drop_inputs _).curried,
+          Heuristics.ignores -> (Ignore_Inputs.statewise_drop_inputs _).curried
+
         )
 
         val nondeterminisms = scala.collection.immutable.Map(
@@ -80,7 +82,7 @@ object FrontEnd {
 
         println("Building PTA")
         val pta = Inference.make_pta(log, FSet.bot_fset)
-        TypeConversion.efsmToSALTranslator(pta, "pta-old")
+        TypeConversion.efsmToSALTranslator(pta, "pta")
         val np_labar = Inference.nondeterministic_pairs_labar(Inference.toiEFSM(pta))
         // println(PrettyPrinter.nondeterministicPairsToString(np_labar))
 
@@ -90,9 +92,6 @@ object FrontEnd {
           Inference.try_heuristics(config.heuristics.map(x => heuristics(x)).toList, nondeterminisms(config.nondeterminism)),
           nondeterminisms(config.nondeterminism))
 
-        inferred match {
-          case None => println("No EFSM could be inferred")
-          case Some(inferred) => {
             println("The inferred machine is " +
               (if (Inference.nondeterministic(Inference.toiEFSM(inferred), Inference.nondeterministic_pairs)) "non" else "") + "deterministic")
             println(Inference.nondeterministic_pairs(Inference.toiEFSM(inferred)))
@@ -100,9 +99,6 @@ object FrontEnd {
             val basename = (if (config.outputname == null) (FilenameUtils.getBaseName(config.file.getName()).replace("-", "_")) else config.outputname.replace("-", "_"))
 
             TypeConversion.efsmToSALTranslator(inferred, basename)
-          }
-        }
-
       case _ =>
         System.exit(1)
     }
