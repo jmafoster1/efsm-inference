@@ -1,3 +1,5 @@
+import java.io._
+
 object Fun {
 
   def comp[A, B, C](f: A => B, g: C => A): C => B = ((x: C) => f(g(x)))
