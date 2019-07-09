@@ -224,6 +224,9 @@ lemma gets_us_to_and_not_subsumes:
 lemma cant_directly_subsume: "\<forall>c. \<not> subsumes t c t' \<Longrightarrow> \<not> directly_subsumes m m' s s' t t'"
   by (simp add: directly_subsumes_def)
 
+definition drop_transition :: "iEFSM \<Rightarrow> nat \<Rightarrow> iEFSM" where
+  "drop_transition e t = ffilter (\<lambda>(uid, _). uid \<noteq> t) e"
+
 (* merge_transitions - Try dest merge transitions t\<^sub>1 and t\<^sub>2 dest help resolve nondeterminism in
                        newEFSM. If either subsumes the other directly then the subsumed transition
                        can simply be replaced with the subsuming one, else we try dest apply the
@@ -238,9 +241,9 @@ lemma cant_directly_subsume: "\<forall>c. \<not> subsumes t c t' \<Longrightarro
 definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
   "merge_transitions oldEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 modifier np = (
      if directly_subsumes oldEFSM destMerge (origin u\<^sub>1 oldEFSM) (origin u\<^sub>1 destMerge) t\<^sub>2 t\<^sub>1 then
-       Some (replace_transition destMerge u\<^sub>1 (origin u\<^sub>1 destMerge) (dest u\<^sub>2 destMerge) t\<^sub>1 t\<^sub>2)
+       Some (drop_transition destMerge u\<^sub>1)
      else if directly_subsumes oldEFSM destMerge (origin u\<^sub>2 oldEFSM) (origin u\<^sub>2 destMerge) t\<^sub>1 t\<^sub>2 then
-       Some (replace_transition destMerge u\<^sub>1 (origin u\<^sub>1 destMerge) (dest u\<^sub>1 destMerge) t\<^sub>2 t\<^sub>1)
+       Some (drop_transition destMerge u\<^sub>2)
      else
         modifier u\<^sub>1 u\<^sub>2 (origin u\<^sub>1 destMerge) destMerge oldEFSM np
    )"
@@ -392,9 +395,6 @@ definition max_output :: "iEFSM \<Rightarrow> nat" where
 primrec try_heuristics :: "update_modifier list \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> update_modifier" where
   "try_heuristics [] _ = null_modifier" |
   "try_heuristics (h#t) np = (\<lambda>a b c d e np. case h a b c d e np of Some e' \<Rightarrow> Some e' | None \<Rightarrow> (try_heuristics t np) a b c d e np)"
-
-definition drop_transition :: "iEFSM \<Rightarrow> nat \<Rightarrow> iEFSM" where
-  "drop_transition e t = ffilter (\<lambda>(uid, _). uid \<noteq> t) e"
 
 definition drop_transitions :: "iEFSM \<Rightarrow> nat fset \<Rightarrow> iEFSM" where
   "drop_transitions e t = ffilter (\<lambda>(uid, _). uid |\<notin>| t) e"

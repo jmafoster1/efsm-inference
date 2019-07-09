@@ -146,4 +146,8 @@ lemma size_fsubset_elem:
 lemma size_fsubset: "x2 |\<subset>| x1 \<Longrightarrow> size x2 < size x1"
   using fsubset fsubset_strict size_fsubset_elem
   by metis
+
+definition fremove :: "'a \<Rightarrow> 'a fset \<Rightarrow> 'a fset"
+  where [code_abbrev]: "fremove x A = A - {|x|}"
+
 end

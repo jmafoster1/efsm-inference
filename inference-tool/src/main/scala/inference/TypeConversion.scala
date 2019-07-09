@@ -118,8 +118,12 @@ object TypeConversion {
       )
   }
 
-  def fset_to_list[A](f: FSet.fset[A]): List[A] = FSet.fset(f) match {
-    case Set.seta(s) => s
+  // def fset_to_list[A](f: FSet.fset[A]): List[A] = FSet.fset(f) match {
+  //   case Set.seta(s) => s
+  // }
+
+  def fset_to_list[A](f: FSet.fset[A]): List[A] = f match {
+    case FSet.fset_of_list(l) => l
   }
 
   def efsmToSALTranslator(e: TransitionMatrix, f: String) = {
@@ -127,7 +131,7 @@ object TypeConversion {
     isabellesal.EFSM.newOneFrom(fset_to_list(FSet.fimage(toMichaelsMove, e)):_*)
     try {
       new Translator().writeSALandDOT(Paths.get("salfiles"), f);
-      s"mv salfiles/${f}.dot dotfiles/".!
+      s"mv salfiles/${f}.dot ${FrontEnd.config.dotfiles}/".!
     } catch {
       case ioe: java.lang.StringIndexOutOfBoundsException => {}
     }

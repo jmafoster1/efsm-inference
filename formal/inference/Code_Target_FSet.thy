@@ -9,22 +9,8 @@ lemma fprod_code [code]:
   apply (simp add: fprod_def fset_of_list_def fset_both_sides Abs_fset_inverse)
   by auto
 
-lemma fminus_fset_foldr: "A - fset_of_list xs = foldr fremove xs A"
-proof(induct xs)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a xs)
-  then show ?case
-    apply (simp add: fremove_def)
-    apply (simp add: minus_fset_def)
-    apply (simp add: fset_both_sides Abs_fset_inverse)
-    by auto
-qed
-
-lemma fminus_fset_fold[code]: "A - fset_of_list xs = fold fremove xs A"
-  by (metis fminus_fset_foldr foldr_conv_fold fset_of_list_rev rev_swap)
+lemma fminus_fset_filter[code]: "fset_of_list A -  xs = fset_of_list (filter (\<lambda>x. x |\<notin>| xs) A)"
+  by auto
 
 lemma sup_fset_foldr: "f1 |\<union>| (fset_of_list f2) = foldr finsert f2 f1"
 proof(induct f2)
@@ -123,5 +109,8 @@ lemma fMax_fold[code]: "fMax (fset_of_list (a#as)) = fold max as a"
 lemma sorted_list_of_fset_sort[code]: "sorted_list_of_fset (fset_of_list as) = sort (remdups as)"
   by (metis fset_of_list.rep_eq sorted_list_of_fset.rep_eq sorted_list_of_set_sort_remdups)
 
+lemma fremove_code[code]: "fremove a (fset_of_list A) = fset_of_list (filter (\<lambda>x. x \<noteq> a) A)"
+  apply (simp add: fremove_def minus_fset_def ffilter_def fset_both_sides Abs_fset_inverse fset_of_list.rep_eq)
+  by auto
 
 end

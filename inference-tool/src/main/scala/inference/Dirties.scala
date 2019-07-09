@@ -91,17 +91,27 @@ object Dirties {
     }
   }
 
+  // def randomMember[A](f: FSet.fset[A]): Option[A] = f match {
+  //   case FSet.Abs_fset(s) => s match {
+  //     case Set.seta(l) => {
+  //       if (l == List()) {
+  //         None
+  //       }
+  //       else {
+  //         Some(Random.shuffle(l).head)
+  //       }
+  //     }
+  //   }
+  // }
+
   def randomMember[A](f: FSet.fset[A]): Option[A] = f match {
-    case FSet.Abs_fset(s) => s match {
-      case Set.seta(l) => {
+    case FSet.fset_of_list(l) =>
         if (l == List()) {
           None
         }
         else {
           Some(Random.shuffle(l).head)
         }
-      }
-    }
   }
 
   def addLTL(f: String, e: String) = {

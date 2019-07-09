@@ -1,3 +1,7 @@
+import java.io._
+import java.util.Date
+import java.text.SimpleDateFormat
+
 object PrettyPrinter {
 
   def natToString(n: Nat.nat): String = {
@@ -7,7 +11,7 @@ object PrettyPrinter {
   }
 
   def nataPairToString(nn: (Nat.nat, Nat.nat)): String = {
-    (natToString(Product_Type.fst(nn)), natToString(Product_Type.snd(nn))).toString()
+    (natToString(nn._1), natToString(nn._2)).toString()
   }
 
   def valueToString(v: Value.value): String = {
@@ -63,8 +67,7 @@ object PrettyPrinter {
   }
 
   def efsmToStringAux(t: ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])): String = {
-    nataPairToString(Product_Type.fst(t)) +
-      transitionToString(Product_Type.snd(t)) + "\n"
+    nataPairToString(t._1) + transitionToString(t._2) + "\n"
   }
 
   def aexpToString(a: AExp.aexp, types: FinFun.finfun[VName.vname, Type_Inference.typea]): String = a match {
@@ -119,8 +122,13 @@ object PrettyPrinter {
     return better.mkString(", \n")
   }
 
+  def iEFSM2dot(e: TypeConversion.IEFSM, f: Nat.nat) = {
+    val pw = new PrintWriter(new File(s"${FrontEnd.config.dotfiles}/sstep_${Code_Numeral.integer_of_nat(f)}.dot"))
+    pw.write(EFSM_Dot.iefsm2dot(e))
+    pw.close
+  }
 
-  // def efsm2dot(e: TypeConversion.TransitionMatrix): String = {
-  //   (EFSM_Dot.efsm2dot(e))
-  // }
+  def logStates(s_1: Nat.nat, s_2: Nat.nat) = {
+    println(s"${new SimpleDateFormat("yyyy.MM.dd HH:mm:ss").format(new Date());} ${Code_Numeral.integer_of_nat(s_2)} -> ${Code_Numeral.integer_of_nat(s_1)}")
+  }
 }

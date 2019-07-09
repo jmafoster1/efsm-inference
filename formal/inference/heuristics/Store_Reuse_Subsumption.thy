@@ -10,7 +10,8 @@ lemma generalisation_of_preserves: "is_generalisation_of t' t i r \<Longrightarr
   using remove_guard_add_update_preserves by auto
 
 lemma is_generalisation_of_guard_subset: "is_generalisation_of t' t i r \<Longrightarrow> set (Guard t') \<subseteq> set (Guard t)"
-  by (simp add: is_generalisation_of_def remove_guard_add_update_def)
+  apply (simp add: is_generalisation_of_def remove_guard_add_update_def)
+  by auto
 
 lemma is_generalisation_of_medial: "is_generalisation_of t' t i r \<Longrightarrow> can_take_transition t ip rg \<longrightarrow> can_take_transition t' ip rg"
   using is_generalisation_of_guard_subset medial_subset generalisation_of_preserves
@@ -110,13 +111,11 @@ lemma generalise_output_eq:
   "(Outputs t) ! r = L v \<Longrightarrow>
    c p = Some v \<Longrightarrow>
    apply_outputs (Outputs t) (join_ir i c) = apply_outputs (list_update (Outputs t) r (V (R p))) (join_ir i c)"
- apply (rule nth_equalityI)
-     apply (simp add: apply_outputs_preserves_length)
-    apply (case_tac "ia = r")
-     apply clarify
-     apply simp
-     apply (simp add: apply_outputs_literal apply_outputs_register)
-  by (simp add: apply_outputs_unupdated)
+  apply (rule nth_equalityI)
+   apply (simp add: apply_outputs_preserves_length)
+  apply (case_tac "ia = r")
+   apply (metis apply_outputs_literal apply_outputs_register apply_outputs_unupdated)
+  by (metis apply_outputs_literal apply_outputs_register apply_outputs_unupdated)
 
 (* 
   This shows that if we can guarantee that the value of a particular register is the literal output

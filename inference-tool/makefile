@@ -19,7 +19,10 @@ stepwise-dot:
 	@ for b in $(basename $(shell find ./ -type f -name '*.dot')) ; do \
 	  dot -T pdf -o $$b.pdf $$b.dot ; \
 	done
-	pdftk dotfiles/*.pdf cat output dotfiles/steps.pdf
+	@ pdftk dotfiles/*.pdf cat output dotfiles/steps.pdf
+	@ for b in $(basename $(shell find ./ -type f -name '*.dot')) ; do \
+	  rm $$b.pdf ; \
+	done
 
 clean:
 	@ rm dotfiles/*

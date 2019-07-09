@@ -8,6 +8,7 @@ theory Code_Generation
    "heuristics/Same_Register"
    "heuristics/Ignore_Inputs"
    EFSM_Dot
+   Code_Target_FSet
 begin
 
 declare One_nat_def [simp del]
@@ -266,6 +267,33 @@ lemma[code]: "Store_Reuse.is_generalisation_of x xa xb xc = is_generalisation_of
   apply (simp add: Store_Reuse.is_generalisation_of_def is_generalisation_of_def)
   using tests_input_equality by blast
 
+definition iEFSM2dot :: "iEFSM \<Rightarrow> nat \<Rightarrow> unit" where
+  "iEFSM2dot _ _ = ()"
+code_printing constant iEFSM2dot \<rightharpoonup> (Scala) "PrettyPrinter.iEFSM2dot(_, _)"
+
+definition logStates :: "nat \<Rightarrow> nat \<Rightarrow> unit" where
+  "logStates _ _ = ()"
+code_printing constant logStates \<rightharpoonup> (Scala) "PrettyPrinter.logStates(_, _)"
+
+(* This is the infer function but with logging *)
+function infer_with_log :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
+  "infer_with_log stepNo e r m check np = (
+    case inference_step e (rev (sorted_list_of_fset (score e r))) m check np of
+      None \<Rightarrow> e |
+      Some new \<Rightarrow> let 
+        temp = iEFSM2dot e stepNo;
+        temp2 = logStates (size (S new)) (size (S e)) in
+        if (S new) |\<subset>| (S e) then
+          infer_with_log (stepNo + 1) new r m check np
+        else e
+  )"
+  by auto
+termination
+  apply (relation "measures [\<lambda>(_, e, _). size (S e)]")
+   apply simp
+  using measures_fsubset by auto
+
+
 declare GExp.satisfiable_def [code del]
 declare initially_undefined_context_check_def [code del]
 declare generalise_output_context_check_def [code del]
@@ -313,11 +341,15 @@ code_printing
   constant "zip" \<rightharpoonup> (Scala) "(_ zip _)" |
   constant "flatmap" \<rightharpoonup> (Scala) "_.par.flatMap((_)).toList" |
   constant "List.null" \<rightharpoonup> (Scala) "_.isEmpty" |
-  constant "map" \<rightharpoonup> (Scala) "_.par.map((_)).toList" |
-  constant "filter" \<rightharpoonup> (Scala) "_.par.filter((_)).toList" |
+  constant "map" \<rightharpoonup> (Scala) "_.map((_))" |
+  constant "filter" \<rightharpoonup> (Scala) "_.filter((_))" |
   constant "all" \<rightharpoonup> (Scala) "_.par.forall((_))" |
+  constant "nth" \<rightharpoonup> (Scala) "_(Code'_Numeral.integer'_of'_nat((_)).toInt)" |
   constant "HOL.equal :: 'a list \<Rightarrow> 'a list \<Rightarrow> bool" \<rightharpoonup> (Scala) infix 4 "==" |
-  constant "nth" \<rightharpoonup> (Scala) "_(Code'_Numeral.integer'_of'_nat((_)).toInt)"
+  constant "HOL.equal :: bool \<Rightarrow> bool \<Rightarrow> bool" \<rightharpoonup> (Scala) infix 4 "==" |
+  constant "fst" \<rightharpoonup> (Scala) "_.'_1" |
+  constant "snd" \<rightharpoonup> (Scala) "_.'_2"
+
 
 lemma [code]: "insert x (set s) = (if x \<in> set s then set s else set (x#s))"
   apply (simp)
@@ -331,15 +363,23 @@ lemma [code]: "s |\<subset>| s' = (s |\<subseteq>| s' \<and> size s < size s')"
 lemma [code]: "size f = card (fset f)"
   by simp
 
+(* I'd ideally like to fix this at some point *)
+lemma [code]: "infer = infer_with_log 0"
+  apply (simp add: fun_eq_iff)
+  apply clarify
+  unfolding Let_def
+  sorry
+
 export_code
   (* Essentials *)
   try_heuristics aexp_type_check learn finfun_apply infer_types nondeterministic input_updates_register
   (* Scoring functions *)
-  naive_score_one_final_state naive_score naive_score_rank_one_final_state
+  score_one_final_state naive_score naive_score_rank naive_score_comprehensive naive_score_comprehensive_eq_high
   (* Heuristics *)
   statewise_drop_inputs drop_inputs same_register insert_increment_2 heuristic_1 transitionwise_drop_inputs
   (* Nondeterminism metrics *)
   nondeterministic_pairs nondeterministic_pairs_labar
+  (* Utilities *)
   iefsm2dot
 in Scala
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
