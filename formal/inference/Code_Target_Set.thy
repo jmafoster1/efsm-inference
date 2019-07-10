@@ -1,5 +1,5 @@
 theory Code_Target_Set
-imports Main
+  imports "HOL-Library.Cardinality"
 begin
 
 code_datatype set
