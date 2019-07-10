@@ -90,7 +90,7 @@ object PrettyPrinter {
     for (move <- TypeConversion.indexWithInts(TypeConversion.fset_to_list(e)).sortBy(_._1)) {
       string += (s"  ((${move._1._1}, ${move._1._2}), ${PrettyPrinter.transitionToString(move._2)})\n")
     }
-    return string + ("{")
+    return string + ("}")
   }
 
   def traceToString(x1: List[(String, (List[Value.value], List[Value.value]))]): String = x1 match {

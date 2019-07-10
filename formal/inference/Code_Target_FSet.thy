@@ -113,4 +113,15 @@ lemma fremove_code[code]: "fremove a (fset_of_list A) = fset_of_list (filter (\<
   apply (simp add: fremove_def minus_fset_def ffilter_def fset_both_sides Abs_fset_inverse fset_of_list.rep_eq)
   by auto
 
+lemma fsubseteq[code]: "(fset_of_list l) |\<subseteq>| A = List.list_all (\<lambda>x. x |\<in>| A) l"
+proof(induct l)
+case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a l)
+  then show ?case
+    by simp
+qed
+
 end

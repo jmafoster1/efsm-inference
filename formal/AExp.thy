@@ -113,6 +113,9 @@ next
     by (metis (mono_tags, lifting) imageE in_set_enumerate_eq length_Cons linorder_not_le list.size(4) map_of_eq_None_iff)
 qed
 
+lemma input2state_within_bounds: "input2state i x = Some a \<Longrightarrow> x < length i"
+  by (metis input2state_out_of_bounds not_le_imp_less option.distinct(1))
+
 lemma input2state_empty: "input2state [] x1 = None"
   by (simp add: input2state_out_of_bounds)
 
@@ -150,6 +153,49 @@ next
     by (simp add: in_set_enumerate_eq)
 qed
 
+primrec repeat :: "nat \<Rightarrow> 'a \<Rightarrow> 'a list" where
+  "repeat 0 _ = []" |
+  "repeat (Suc m) a = a#(repeat m a)"
+
+lemma length_repeat: "length (repeat n a) = n"
+proof(induct n)
+  case 0
+  then show ?case
+    by simp
+next
+  case (Suc a)
+  then show ?case
+    by simp
+qed
+
+lemma length_append_repeat: "length (i@(repeat a y)) \<ge> length i"
+  by simp
+
+lemma length_input2state_repeat: "input2state i x = Some a \<Longrightarrow> y < length (i @ repeat y a)"
+  by (metis append.simps(1) append_eq_append_conv input2state_within_bounds length_append length_repeat list.size(3) neqE not_add_less2 zero_order(3))
+
+lemma input2state_double_exists: "\<exists>i. input2state i x = Some a \<and> input2state i y = Some a"
+  apply (insert input2state_exists[of x a])
+  apply clarify
+  apply (case_tac "x \<ge> y")
+  apply (rule_tac x="list_update i y a" in exI)
+  apply (metis (no_types, lifting) input2state_within_bounds input2state_nth input2state_out_of_bounds le_trans length_list_update not_le_imp_less nth_list_update_eq nth_list_update_neq)
+  apply (rule_tac x="list_update (i@(repeat y a)) y a" in exI)
+  apply (simp add: not_le)
+  by (metis length_input2state_repeat input2state_nth input2state_out_of_bounds le_trans length_append_repeat length_list_update not_le_imp_less nth_append nth_list_update_eq nth_list_update_neq option.distinct(1))
+
+lemma input2state_double_exists_2: "x \<noteq> y \<Longrightarrow> \<exists>i. input2state i x = Some a \<and> input2state i y = Some a'"
+  apply (insert input2state_exists[of x a])
+  apply clarify
+  apply (case_tac "x \<ge> y")
+  apply (rule_tac x="list_update i y a'" in exI)
+  apply (metis (no_types, lifting) input2state_within_bounds input2state_nth input2state_out_of_bounds le_trans length_list_update not_le_imp_less nth_list_update_eq nth_list_update_neq)
+  apply (rule_tac x="list_update (i@(repeat y a')) y a'" in exI)
+  apply (simp add: not_le)
+  apply standard
+  apply (metis input2state_nth input2state_within_bounds le_trans length_append_repeat length_list_update linorder_not_le nth_append nth_list_update_neq order_refl)
+  by (metis input2state_nth length_append length_input2state_repeat length_list_update length_repeat nth_list_update_eq)
+
 definition join_ir :: "value list \<Rightarrow> registers \<Rightarrow> datastate" where
   "join_ir i r \<equiv> (\<lambda>x. case x of
     R n \<Rightarrow> r n |
@@ -164,6 +210,44 @@ lemma join_ir_empty[simp]: "join_ir [] <> = <>"
   apply (case_tac x)
    apply (simp add: input2state_def)
   by simp
+
+lemma join_ir_double_exists: "\<exists>i r. join_ir i r v = Some a \<and> join_ir i r v' = Some a"
+proof(cases v)
+  case (I x1)
+  then show ?thesis
+    apply (simp add: join_ir_def)
+    apply (cases v')
+     apply (simp add: input2state_double_exists input2state_exists)
+    using input2state_exists by auto
+next
+  case (R x2)
+  then show ?thesis
+    apply (simp add: join_ir_def)
+    apply (cases v')
+    using input2state_exists by auto
+qed
+
+lemma join_ir_double_exists_2: "v \<noteq> v' \<Longrightarrow> \<exists>i r. join_ir i r v = Some a \<and> join_ir i r v' = Some a'"
+proof(cases v)
+  case (I x1)
+  assume "v \<noteq> v'"
+  then show ?thesis
+    apply (simp add: join_ir_def)
+    apply (cases v')
+     apply (simp add: I input2state_double_exists_2)
+    using I input2state_exists by auto
+next
+  case (R x2)
+  assume "v \<noteq> v'"
+  then show ?thesis
+    apply (simp add: join_ir_def)
+    apply (cases v')
+     apply simp
+    using R input2state_exists apply auto[1]
+    apply (simp add: R)
+    apply (rule_tac x="(\<lambda>r. if r = x2 then Some a else if r = x2a then Some a' else None)" in exI)
+    by simp
+qed
 
 lemma aval_plus_aexp: "aval (a+b) s = aval (Plus a b) s"
   apply (case_tac a)

@@ -112,7 +112,7 @@ object FrontEnd {
 
         println("Building PTA")
         val pta = Inference.make_pta(log, FSet.bot_fset)
-        TypeConversion.efsmToSALTranslator(pta, "pta")
+        // TypeConversion.efsmToSALTranslator(pta, "pta")
         val np_labar = Inference.nondeterministic_pairs_labar(Inference.toiEFSM(pta))
 
         val inferred = Inference.learn(

@@ -56,6 +56,10 @@ lemma apply_guards_empty [simp]: "apply_guards [] s"
 lemma apply_guards_cons: "apply_guards (a # G) c = (gval a c = true \<and> apply_guards G c)"
   by (simp add: apply_guards_def)
 
+lemma apply_guards_append: "apply_guards (a@a') s = (apply_guards a s \<and> apply_guards a' s)"
+  apply (simp add: apply_guards_def)
+  by auto
+
 lemma apply_guards_foldr: "apply_guards G s = (gval (foldr gAnd G (Bc True)) s = true)"
 proof(induct G)
   case Nil

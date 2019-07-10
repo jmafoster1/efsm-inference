@@ -13,6 +13,9 @@ object Dirties {
 
   type Set[A] = scala.collection.immutable.Set[A]
 
+  def foldl[A, B](f: A => B => A, b: A, l: List[B]): A =
+    l.par.foldLeft(b)(((x, y) => (f(x))(y)))
+
   def toZ3(v: Value.value, ctx: z3.Context): z3.Expr = v match {
     case Value.Numa(n) => ctx.mkInt(intToInt(n))
     case Value.Str(s) => ctx.mkString(s)

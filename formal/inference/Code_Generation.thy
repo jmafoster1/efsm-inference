@@ -16,11 +16,9 @@ declare One_nat_def [simp del]
 code_printing
   constant HOL.conj \<rightharpoonup> (Scala) "_ && _" |
   constant HOL.disj \<rightharpoonup> (Scala) "_ || _" |
-  constant Cons \<rightharpoonup> (Scala) "_::_" |
-  constant rev \<rightharpoonup> (Scala) "_.reverse" |
-  constant List.member \<rightharpoonup> (Scala) "_ contains _" |
-  constant "List.remdups" \<rightharpoonup> (Scala) "_.distinct" |
-  constant "List.length" \<rightharpoonup> (Scala) "Nat.Nata(_.length)"
+  constant "HOL.equal :: bool \<Rightarrow> bool \<Rightarrow> bool" \<rightharpoonup> (Scala) infix 4 "==" |
+  constant "fst" \<rightharpoonup> (Scala) "_.'_1" |
+  constant "snd" \<rightharpoonup> (Scala) "_.'_2"
 
 fun guard_filter_code :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
   "guard_filter_code inputX (gexp.Eq a b) = (a \<noteq> (V (vname.I inputX)) \<and> b \<noteq> (V (vname.I inputX)))" |
@@ -29,11 +27,48 @@ fun guard_filter_code :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
 lemma fold_conv_foldr: "fold f xs = foldr f (rev xs)"
   by (simp add: foldr_conv_fold)
 
-lemma [code]: "choice t t' = satisfiable ((fold gAnd (rev (Guard t@Guard t')) (gexp.Bc True)))"
-  apply (simp only: fold_conv_foldr rev_rev_ident)
-  unfolding satisfiable_def choice_def apply_guards_def
-  apply (simp only: gval_foldr_true)
+fun mutex :: "gexp \<Rightarrow>  gexp \<Rightarrow> bool" where
+  "mutex (Eq (V v) (L l)) (Eq (V v') (L l')) = (if v = v' then l \<noteq> l' else False)" |
+  "mutex _ _ = False"
+
+definition choice_cases :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "choice_cases t1 t2 = (if Guard t1 = Guard t2 then satisfiable (fold gAnd (rev (Guard t1)) (gexp.Bc True)) else if \<exists>x \<in> set (map (\<lambda>(x, y). mutex x y) (List.product (Guard t1) (Guard t2))). x then False else satisfiable ((fold gAnd (rev (Guard t1@Guard t2)) (gexp.Bc True))))"
+
+lemma apply_guards_rearrange: "x \<in> set G \<Longrightarrow> apply_guards G s = apply_guards (x#G) s"
+  apply (simp add: apply_guards_def)
   by auto
+
+lemma apply_guards_double_cons: "apply_guards (y # x # G) s = (gval (gAnd y x) s = true \<and> apply_guards G s)"
+  apply (simp add: apply_guards_def)
+  by (simp add: maybe_negate_false maybe_negate_true maybe_or_false maybe_or_idempotent)
+
+lemma mutex_not_gval: "mutex x y \<Longrightarrow> gval (gAnd y x) s \<noteq> true"
+  apply (induct x y rule: mutex.induct)
+                      apply simp_all
+  by (metis option.inject)
+
+lemma existing_mutex_not_true: "\<exists>x\<in>set G. \<exists>y\<in>set G. mutex x y \<Longrightarrow> \<not> apply_guards G s"
+  apply clarify
+  apply (simp add: apply_guards_rearrange)
+  apply (case_tac "y \<in> set (x#G)")
+   defer
+   apply simp
+  apply (simp only: apply_guards_rearrange)
+  apply simp
+  apply (simp only: apply_guards_double_cons)
+  using mutex_not_gval
+  by simp
+
+lemma [code]: "choice t t' = choice_cases t t'"
+  apply (simp only: choice_alt choice_cases_def)
+  apply (case_tac "Guard t = Guard t'")
+   apply (simp add: choice_alt_def apply_guards_append)
+   apply (simp add: apply_guards_foldr fold_conv_foldr satisfiable_def)
+  apply (case_tac "\<exists>x\<in>set (map (\<lambda>(x, y). mutex x y) (List.product (Guard t) (Guard t'))). x")
+   apply (simp add: choice_alt_def)
+  using existing_mutex_not_true
+   apply (metis Un_iff set_append)
+  by (simp add: apply_guards_foldr choice_alt_def fold_conv_foldr satisfiable_def)
 
 code_pred satisfies_trace.
 
@@ -293,7 +328,6 @@ termination
    apply simp
   using measures_fsubset by auto
 
-
 declare GExp.satisfiable_def [code del]
 declare initially_undefined_context_check_def [code del]
 declare generalise_output_context_check_def [code del]
@@ -317,8 +351,6 @@ definition map :: "'a list \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'b 
 lemma [code]:"List.map f l = map l f"
   by (simp add: map_def)
 
-declare foldl_conv_fold [code]
-declare foldr_conv_foldl [code]
 declare map_filter_map_filter [code_unfold del]
 
 lemma [code]: "removeAll a l = filter (\<lambda>x. x \<noteq> a) l"
@@ -337,19 +369,32 @@ definition all :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> b
 lemma [code]: "list_all f l = all l f"
   by (simp add: all_def)
 
+definition ex :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" where
+  "ex l f = list_ex f l"
+
+lemma [code]: "list_ex f l = ex l f"
+  by (simp add: ex_def)
+
+lemma fold_conv_foldl [code]: "fold f xs s = foldl (\<lambda>x s. f s x) s xs"
+  by (simp add: foldl_conv_fold)
+
+declare foldr_conv_foldl [code]
+
 code_printing
+  constant Cons \<rightharpoonup> (Scala) "_::_" |
+  constant rev \<rightharpoonup> (Scala) "_.reverse" |
+  constant List.member \<rightharpoonup> (Scala) "_ contains _" |
+  constant "List.remdups" \<rightharpoonup> (Scala) "_.distinct" |
+  constant "List.length" \<rightharpoonup> (Scala) "Nat.Nata(_.length)" |
   constant "zip" \<rightharpoonup> (Scala) "(_ zip _)" |
   constant "flatmap" \<rightharpoonup> (Scala) "_.par.flatMap((_)).toList" |
   constant "List.null" \<rightharpoonup> (Scala) "_.isEmpty" |
-  constant "map" \<rightharpoonup> (Scala) "_.map((_))" |
-  constant "filter" \<rightharpoonup> (Scala) "_.filter((_))" |
+  constant "map" \<rightharpoonup> (Scala) "_.par.map((_)).toList" |
+  constant "filter" \<rightharpoonup> (Scala) "_.par.filter((_)).toList" |
   constant "all" \<rightharpoonup> (Scala) "_.par.forall((_))" |
+  constant "ex" \<rightharpoonup> (Scala) "_.par.exists((_))" |
   constant "nth" \<rightharpoonup> (Scala) "_(Code'_Numeral.integer'_of'_nat((_)).toInt)" |
-  constant "HOL.equal :: 'a list \<Rightarrow> 'a list \<Rightarrow> bool" \<rightharpoonup> (Scala) infix 4 "==" |
-  constant "HOL.equal :: bool \<Rightarrow> bool \<Rightarrow> bool" \<rightharpoonup> (Scala) infix 4 "==" |
-  constant "fst" \<rightharpoonup> (Scala) "_.'_1" |
-  constant "snd" \<rightharpoonup> (Scala) "_.'_2"
-
+  constant "foldl" \<rightharpoonup> (Scala) "Dirties.foldl"
 
 lemma [code]: "insert x (set s) = (if x \<in> set s then set s else set (x#s))"
   apply (simp)
@@ -363,12 +408,45 @@ lemma [code]: "s |\<subset>| s' = (s |\<subseteq>| s' \<and> size s < size s')"
 lemma [code]: "size f = card (fset f)"
   by simp
 
+lemma map_of_fold [code]: "map_of l = foldr (\<lambda>(k, v) ps. ps(k \<mapsto> v)) l <>"
+proof(induct l)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a l)
+  then show ?case
+    by (simp add: case_prod_unfold)
+qed
+
 (* I'd ideally like to fix this at some point *)
 lemma [code]: "infer = infer_with_log 0"
   apply (simp add: fun_eq_iff)
   apply clarify
   unfolding Let_def
   sorry
+
+code_datatype set
+declare List.union_coset_filter [code del]
+declare insert_code [code del]
+declare remove_code [code del]
+declare card_coset_error [code del]
+declare coset_subseteq_set_code [code del]
+declare eq_set_code(1) [code del]
+declare eq_set_code(2) [code del]
+declare eq_set_code(4) [code del]
+declare List.subset_code [code del]
+declare inter_coset_fold [code del]
+declare subset_eq [code]
+
+(* Get rid of that one unnamed lemma *)
+lemma [code del]: "x \<in> List.coset xs \<longleftrightarrow> \<not> List.member xs x"
+  by (simp add: member_def)
+
+lemma sup_set_append [code]: "(set x) \<union> (set y) = set (x @ y)"
+  by simp
+
+declare product_concat_map [code]
 
 export_code
   (* Essentials *)

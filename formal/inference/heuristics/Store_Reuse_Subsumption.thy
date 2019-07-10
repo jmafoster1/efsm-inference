@@ -10,8 +10,7 @@ lemma generalisation_of_preserves: "is_generalisation_of t' t i r \<Longrightarr
   using remove_guard_add_update_preserves by auto
 
 lemma is_generalisation_of_guard_subset: "is_generalisation_of t' t i r \<Longrightarrow> set (Guard t') \<subseteq> set (Guard t)"
-  apply (simp add: is_generalisation_of_def remove_guard_add_update_def)
-  by auto
+  by (simp add: is_generalisation_of_def remove_guard_add_update_def)
 
 lemma is_generalisation_of_medial: "is_generalisation_of t' t i r \<Longrightarrow> can_take_transition t ip rg \<longrightarrow> can_take_transition t' ip rg"
   using is_generalisation_of_guard_subset medial_subset generalisation_of_preserves

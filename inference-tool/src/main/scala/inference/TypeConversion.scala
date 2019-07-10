@@ -42,13 +42,7 @@ object TypeConversion {
 
   def aexpToSALTranslator(a: AExp.aexp): Expression = a match {
     case AExp.L(Value.Numa(Int.int_of_integer(n))) => Expression.newOneFrom(Constant.newOneFrom(n.toInt))
-    case AExp.L(Value.Str(s)) =>
-    try {
-      Expression.newOneFrom(Constant.newOneFrom(s))
-    }
-    catch {
-      case ioe: java.lang.ClassCastException => Expression.newOneFrom(Constant.currentVersionOf(s))
-    }
+    case AExp.L(Value.Str(s)) => Expression.newOneFrom(Constant.newOneFrom(s))
     case AExp.V(v) => Expression.newOneFrom(vnameToSALTranslator(v))
     case AExp.Plus(a1, a2) => Expression.newInfixFrom(
             Token.PLUS,

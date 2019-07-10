@@ -135,21 +135,6 @@ lemma fold_guards_max: "foldr max (fold (@) (map enumerate_gexp_inputs_list (Gua
          foldr max (fold (@) (map enumerate_gexp_inputs_list (Guard t)) []) 0 < a"
   by (metis List.finite_set Max.set_eq_fold Max_insert foldr_conv_fold list.set(2) max_less_iff_conj max_set_nat_list set_empty set_rev)
 
-lemma exists_input_input2state: "\<exists>i. input2state i x1 = Some a"
-proof(induct x1)
-case 0
-  then show ?case
-    apply (rule_tac x="[a]" in exI)
-    by (simp add: input2state_def)
-next
-  case (Suc x1)
-  then show ?case
-    apply clarify
-    apply (rule_tac x="a#i" in exI)
-    apply (simp add: input2state_def)
-    by (simp add: in_set_enumerate_eq)
-qed
-
 lemma exists_join_ir_ext: "\<exists>i r. join_ir i r v = s v"
   apply (simp add: join_ir_def)
   apply (case_tac "s v")
@@ -166,7 +151,7 @@ lemma exists_join_ir_ext: "\<exists>i r. join_ir i r v = s v"
    apply simp
    apply (rule_tac x="<x2 := a>" in exI)
    apply simp
-  by (simp add: exists_input_input2state)
+  by (simp add: input2state_exists)
 
 primrec padding :: "nat \<Rightarrow> 'a list" where
   "padding 0 = []" |

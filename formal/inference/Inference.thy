@@ -59,6 +59,12 @@ lemma merge_states_symmetry: "merge_states x y t = merge_states y x t"
 definition choice :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "choice t t' = (\<exists> i r. apply_guards (Guard t) (join_ir i r) \<and> apply_guards (Guard t') (join_ir i r))"
 
+definition choice_alt :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "choice_alt t t' = (\<exists> i r. apply_guards (Guard t@Guard t') (join_ir i r))"
+
+lemma choice_alt: "choice t t' = choice_alt t t'"
+  by (simp add: choice_def choice_alt_def apply_guards_append)
+
 lemma choice_symmetry: "choice x y = choice y x"
   using choice_def by auto
                                                         
