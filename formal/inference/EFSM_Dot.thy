@@ -52,7 +52,7 @@ fun value2dot :: "value \<Rightarrow> String.literal" where
   "value2dot (Num n) = show_int n"
 
 fun vname2dot :: "vname \<Rightarrow> String.literal" where
-  "vname2dot (vname.I n) = STR ''i<sub>''+(show_nat n)+STR ''</sub>''" |
+  "vname2dot (vname.I n) = STR ''i<sub>''+(show_nat (n+1))+STR ''</sub>''" |
   "vname2dot (R n) = STR ''r<sub>''+(show_nat n)+STR ''</sub>''"
 
 fun aexp2dot :: "aexp \<Rightarrow> String.literal" where
@@ -88,14 +88,14 @@ primrec outputs2dot :: "output_function list \<Rightarrow> nat \<Rightarrow> Str
 
 fun updates2dot :: "update_function list \<Rightarrow> String.literal" where
   "updates2dot [] = (STR '''')" |
-  "updates2dot a = STR ''&#91;''+(join (updates2dot_aux a) STR '','')+STR ''&#93;''"
+  "updates2dot a = STR ''&#91;''+(join (updates2dot_aux a) STR '', '')+STR ''&#93;''"
 
 fun guards2dot :: "gexp list \<Rightarrow> String.literal" where
   "guards2dot [] = (STR '''')" |
-  "guards2dot a = STR ''&#91;''+(join (guards2dot_aux a) STR '','')+STR ''&#93;''"
+  "guards2dot a = STR ''&#91;''+(join (guards2dot_aux a) STR '', '')+STR ''&#93;''"
 
 definition latter2dot :: "transition \<Rightarrow> String.literal" where
-  "latter2dot t = (let l = (join (outputs2dot (Outputs t) 1) STR '','')+(updates2dot (Updates t)) in (if l = (STR '''') then (STR '''') else STR ''/''+l))"
+  "latter2dot t = (let l = (join (outputs2dot (Outputs t) 1) STR '', '')+(updates2dot (Updates t)) in (if l = (STR '''') then (STR '''') else STR ''/''+l))"
 
 definition transition2dot :: "transition \<Rightarrow> String.literal" where
   "transition2dot t = (Label t)+STR '':''+(show_nat (Arity t))+(guards2dot (Guard t))+(latter2dot t)"
@@ -104,8 +104,10 @@ definition efsm2dot :: "transition_matrix \<Rightarrow> String.literal" where
   "efsm2dot e = STR ''digraph EFSM{''+newline+
                 STR ''  graph [rankdir=''+quote+(STR ''LR'')+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
                 STR ''  node [color=''+quote+(STR ''black'')+quote+STR '', fillcolor=''+quote+(STR ''white'')+quote+STR '', shape=''+quote+(STR ''circle'')+quote+STR '', style=''+quote+(STR ''filled'')+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
-                STR ''  edge [fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
-                  (join (sorted_list_of_fset (fimage (\<lambda>((from, to), t). STR ''  ''+(show_nat from)+STR ''->''+(show_nat to)+STR ''[label=<''+(transition2dot t)+STR ''>]'') e)) newline)+newline+
+                STR ''  edge [fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+newline+
+                  STR ''  s0[fillcolor=''+quote+STR ''gray''+quote+STR '', label=<s<sub>0</sub>>];''+newline+
+                  (join (map (\<lambda>s. STR ''  s''+show_nat s+STR ''[label=<s<sub>'' +show_nat s+ STR ''</sub>>];'') (sorted_list_of_fset (EFSM.S e - {|0|}))) (newline))+newline+newline+
+                  (join ((map (\<lambda>((from, to), t). STR ''  s''+(show_nat from)+STR ''->s''+(show_nat to)+STR ''[label=<<i>''+(transition2dot t)+STR ''</i>>];'') (sorted_list_of_fset e))) newline)+newline+
                 STR ''}''"
 
 definition iefsm2dot :: "iEFSM \<Rightarrow> String.literal" where

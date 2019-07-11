@@ -162,19 +162,27 @@ definition null_modifier :: update_modifier where
   "null_modifier _ _ _ _ _ _ = None"
 
 type_synonym scoreboard = "(nat \<times> (cfstate \<times> cfstate)) fset"
-type_synonym strategy = "transition fset \<Rightarrow> transition fset \<Rightarrow> nat"
+type_synonym strategy = "transition \<Rightarrow> transition \<Rightarrow> nat"
 
-definition score :: "iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
-  "score t rank = (let 
+primrec k_outgoing :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> (cfstate \<times> transition \<times> tid) fset" where
+  "k_outgoing 0 i s = outgoing_transitions s i" |
+  "k_outgoing (Suc m) i s = (let
+     outgoing = outgoing_transitions s i;
+     others = fimage fst outgoing in
+     outgoing |\<union>|ffUnion (fimage (\<lambda>s. k_outgoing m i s) others)
+  )"
+
+definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
+  "k_score n t rank = (let 
      states = (S t) |\<times>| (S t);
      pairs_to_score = (ffilter (\<lambda>(x, y). x < y) states);
-     scores = fimage (\<lambda>(s1, s2).
-       (rank (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s1 t)) (fimage (\<lambda>(_, t, _). t) (outgoing_transitions s2 t)), (s1, s2))
-      ) pairs_to_score in
+     scores = fimage (\<lambda>(s1, s2). let
+        outgoing_s1 = fimage (\<lambda>(_, t, _). t) (k_outgoing n t s1);
+        outgoing_s2 = fimage (\<lambda>(_, t, _). t) (k_outgoing n t s2);
+        scores = fimage (\<lambda>(x, y). rank x y) (outgoing_s1 |\<times>| outgoing_s2) in
+       (Sum (fset scores), s1, s2 )
+     ) pairs_to_score in
      ffilter (\<lambda>(score, _). score > 0) scores)"
-
-lemma score_empty: "score {||} r = {||}"
-  by (simp add: score_def S_def ffilter_empty)
 
 definition origin :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
   "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (\<exists>s. x = (uid, s))) t))))"
@@ -195,6 +203,7 @@ lemma dest_code[code]: "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda
   apply (simp add: dest_def)
   by (metis fst_eqD surj_pair)
 
+(* TODO: Make this so the nondeterminism is kind *)
 inductive satisfies_trace :: "execution \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> bool" where
   base: "satisfies_trace [] _ _ _" |
   step: "step e s d l i = Some (_, s', p', d') \<Longrightarrow>
@@ -325,12 +334,12 @@ definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> upd
           Some generalised \<Rightarrow> Some generalised)\<close>
   )"
 
-lemma equal_states_not_scored: "(stateScore, cf, cf) |\<notin>| (score efsm metric)"
-  apply (simp add: score_def)
+lemma equal_states_not_scored: "(stateScore, cf, cf) |\<notin>| (k_score n efsm metric)"
+  apply (simp add: k_score_def)
   by auto
 
-lemma score_gt_zero: "(stateScore, cf, cf) |\<in>| (score efsm metric) \<Longrightarrow> stateScore > 0"
-  by (simp add: score_def)
+lemma score_gt_zero: "(stateScore, cf, cf) |\<in>| (k_score n efsm metric) \<Longrightarrow> stateScore > 0"
+  by (simp add: k_score_def)
 
 (* inference_step - attempt dest carry out a single step of the inference process by merging the    *)
 (* @param e - an iEFSM dest be generalised                                                          *)
@@ -346,9 +355,6 @@ fun inference_step :: "iEFSM \<Rightarrow> (nat \<times> nat \<times> nat) list 
        None \<Rightarrow> inference_step e t m check np
   )"
 
-lemma "(s, cf, cf) \<notin> set (rev (sorted_list_of_fset (score e r)))"
-  using equal_states_not_scored fset_of_list_elem sorted_list_of_fset_simps(2) by fastforce
-
 lemma measures_fsubset: "S x2 |\<subset>| S e \<Longrightarrow>
        ((x2, r, m, check, np), e, r, m, check, np) \<in> measures [\<lambda>(e, r, m, check, np). size (Inference.S e)]"
   using size_fsubset[of "S x2" "S e"]
@@ -363,23 +369,23 @@ lemma eq_size_not_subset: "size x = size y \<Longrightarrow> \<not> x |\<subset>
 (* @param m     - an update modifier function which tries dest generalise transitions               *)
 (* @param check - a function which takes an EFSM and returns a bool dest ensure that certain
                   properties hold in the new iEFSM                                                *)
-function infer :: "iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
-  "infer e r m check np = (
-    case inference_step e (rev (sorted_list_of_fset (score e r))) m check np of
+function infer :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
+  "infer n e r m check np = (
+    case inference_step e (rev (sorted_list_of_fset (k_score n e r))) m check np of
       None \<Rightarrow> e |
-      Some new \<Rightarrow> if (S new) |\<subset>| (S e) then infer new r m check np else e
+      Some new \<Rightarrow> if (S new) |\<subset>| (S e) then infer n new r m check np else e
   )"
   by auto
 termination
-  apply (relation "measures [\<lambda>(e, r, m, check, np). size (S e)]")
+  apply (relation "measures [\<lambda>(n, e, _). size (S e)]")
    apply simp
   using measures_fsubset by auto
 
-definition learn :: "log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> transition_matrix" where
-  "learn l r m np = (
+definition learn :: "nat \<Rightarrow> log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> transition_matrix" where
+  "learn n l r m np = (
      let pta = make_pta l {||};
          check = satisfies (set l) in
-         (tm (infer (toiEFSM pta) r m check np))
+         (tm (infer n (toiEFSM pta) r m check np))
    )"
 
 definition uids :: "iEFSM \<Rightarrow> nat fset" where

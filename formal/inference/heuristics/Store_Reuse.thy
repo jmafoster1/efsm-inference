@@ -105,9 +105,6 @@ definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat 
 definition is_generalised_output_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalised_output_of t' t r p = (t' = generalise_output t r p)"
 
-definition is_proper_generalised_output_of :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "is_proper_generalised_output_of t' t = (\<exists>p. \<exists>r. is_generalised_output_of t' t r p)"
-
 primrec count :: "'a \<Rightarrow> 'a list \<Rightarrow> nat" where
   "count _ [] = 0" |
   "count a (h#t) = (if a = h then 1+(count a t) else count a t)"

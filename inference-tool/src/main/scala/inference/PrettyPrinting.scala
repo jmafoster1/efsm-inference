@@ -1,6 +1,4 @@
 import java.io._
-import java.util.Date
-import java.text.SimpleDateFormat
 
 object PrettyPrinter {
 
@@ -87,7 +85,7 @@ object PrettyPrinter {
 
   def efsmToString(e: TypeConversion.TransitionMatrix): String = {
     var string = "{"
-    for (move <- TypeConversion.indexWithInts(TypeConversion.fset_to_list(e)).sortBy(_._1)) {
+    for (move <- TypeConversion.indexWithInts(FSet.sorted_list_of_fset(e)).sortBy(_._1)) {
       string += (s"  ((${move._1._1}, ${move._1._2}), ${PrettyPrinter.transitionToString(move._2)})\n")
     }
     return string + ("}")
@@ -113,8 +111,7 @@ object PrettyPrinter {
   }
 
   def nondeterministicPairsToString(p: FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))]): String = {
-    val better = FSet.fimage(pairToString, p)
-    return TypeConversion.fset_to_list(better).mkString(", \n")
+    return FSet.sorted_list_of_fset(p).map(pairToString).mkString(" \n")
   }
 
   def nondeterministicPairsToString(p: List[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))]): String = {
@@ -123,12 +120,14 @@ object PrettyPrinter {
   }
 
   def iEFSM2dot(e: TypeConversion.IEFSM, f: Nat.nat) = {
-    val pw = new PrintWriter(new File(s"${FrontEnd.config.dotfiles}/sstep_${Code_Numeral.integer_of_nat(f)}.dot"))
+    val pw = new PrintWriter(new File(s"${Config.config.dotfiles}/step_${Code_Numeral.integer_of_nat(f)}.dot"))
     pw.write(EFSM_Dot.iefsm2dot(e))
     pw.close
   }
 
-  def logStates(s_1: Nat.nat, s_2: Nat.nat) = {
-    println(s"${new SimpleDateFormat("yyyy.MM.dd HH:mm:ss").format(new Date());} ${Code_Numeral.integer_of_nat(s_2)} -> ${Code_Numeral.integer_of_nat(s_1)}")
+  def EFSM2dot(e: TypeConversion.TransitionMatrix, f: String) = {
+    val pw = new PrintWriter(new File(s"${Config.config.dotfiles}/${f}.dot"))
+    pw.write(EFSM_Dot.efsm2dot(e))
+    pw.close
   }
 }

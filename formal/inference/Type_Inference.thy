@@ -33,7 +33,7 @@ fun infer_types_aux :: "gexp \<Rightarrow> ((vname \<times> type) list \<times> 
 
 fun collapse_group :: "(vname \<times> vname) \<Rightarrow> vname list list \<Rightarrow> vname list list" where
   "collapse_group (v1, v2) [] = [[v1, v2]]" |
-  "collapse_group (v1, v2) (h#t) = (if ListMem v1 h \<or> ListMem v2 h then ((remdups (v1#v2#h))#t) else collapse_group (v1, v2) t)"
+  "collapse_group (v1, v2) (h#t) = (if List.member h v1 \<or> List.member h v2 then ((remdups (v1#v2#h))#t) else collapse_group (v1, v2) t)"
 
 primrec collapse_groups :: "(vname \<times> vname) list \<Rightarrow> vname list list \<Rightarrow> vname list list" where
   "collapse_groups [] g = g" |

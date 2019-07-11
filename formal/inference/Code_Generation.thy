@@ -33,7 +33,17 @@ fun mutex :: "gexp \<Rightarrow>  gexp \<Rightarrow> bool" where
   "mutex _ _ = False"
 
 definition choice_cases :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "choice_cases t1 t2 = (if Guard t1 = Guard t2 then satisfiable (fold gAnd (rev (Guard t1)) (gexp.Bc True)) else if \<exists>x \<in> set (map (\<lambda>(x, y). mutex x y) (List.product (Guard t1) (Guard t2))). x then False else satisfiable ((fold gAnd (rev (Guard t1@Guard t2)) (gexp.Bc True))))"
+  "choice_cases t1 t2 = (
+     if Guard t1 = Guard t2 then
+       satisfiable (fold gAnd (rev (Guard t1)) (gexp.Bc True))
+     else if \<exists>(x, y) \<in> set (List.product (Guard t1) (Guard t2)). mutex x y then
+       False
+     else
+       satisfiable ((fold gAnd (rev (Guard t1@Guard t2)) (gexp.Bc True)))
+   )"
+
+lemma [code]: "(\<exists>x \<in> set (map f l). P x) = (\<exists>x \<in> set l. P (f x))"
+  by simp
 
 lemma apply_guards_rearrange: "x \<in> set G \<Longrightarrow> apply_guards G s = apply_guards (x#G) s"
   apply (simp add: apply_guards_def)
@@ -309,23 +319,23 @@ code_printing constant iEFSM2dot \<rightharpoonup> (Scala) "PrettyPrinter.iEFSM2
 
 definition logStates :: "nat \<Rightarrow> nat \<Rightarrow> unit" where
   "logStates _ _ = ()"
-code_printing constant logStates \<rightharpoonup> (Scala) "PrettyPrinter.logStates(_, _)"
+code_printing constant logStates \<rightharpoonup> (Scala) "Log.logStates(_, _)"
 
 (* This is the infer function but with logging *)
-function infer_with_log :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
-  "infer_with_log stepNo e r m check np = (
-    case inference_step e (rev (sorted_list_of_fset (score e r))) m check np of
+function infer_with_log :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
+  "infer_with_log stepNo k e r m check np = (
+    case inference_step e (rev (sorted_list_of_fset (k_score k e r))) m check np of
       None \<Rightarrow> e |
       Some new \<Rightarrow> let 
         temp = iEFSM2dot e stepNo;
         temp2 = logStates (size (S new)) (size (S e)) in
         if (S new) |\<subset>| (S e) then
-          infer_with_log (stepNo + 1) new r m check np
+          infer_with_log (stepNo + 1) k new r m check np
         else e
   )"
   by auto
 termination
-  apply (relation "measures [\<lambda>(_, e, _). size (S e)]")
+  apply (relation "measures [\<lambda>(_, _, e, _). size (S e)]")
    apply simp
   using measures_fsubset by auto
 
@@ -346,23 +356,18 @@ definition "flatmap l f = List.maps f l"
 lemma [code]:"List.maps f l = flatmap l f"
   by (simp add: flatmap_def)
 
-definition map :: "'a list \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'b list" where
-  "map l f = List.map f l"
-
-lemma [code]:"List.map f l = map l f"
-  by (simp add: map_def)
+definition "map_code l f = List.map f l"
+lemma [code]:"List.map f l = map_code l f"
+  by (simp add: map_code_def)
 
 declare map_filter_map_filter [code_unfold del]
 
 lemma [code]: "removeAll a l = filter (\<lambda>x. x \<noteq> a) l"
   by (induct l arbitrary: a) simp_all
 
-definition filter :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> 'a list" where
-  "filter l f = List.filter f l"
-
-declare filter.simps [code del]
-lemma [code]: "List.filter l f = filter f l"
-  by (simp add: filter_def)
+definition "filter_code l f = List.filter f l"
+lemma [code]: "List.filter l f = filter_code f l"
+  by (simp add: filter_code_def)
 
 definition all :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" where
   "all l f = list_all f l"
@@ -390,8 +395,8 @@ code_printing
   constant "zip" \<rightharpoonup> (Scala) "(_ zip _)" |
   constant "flatmap" \<rightharpoonup> (Scala) "_.par.flatMap((_)).toList" |
   constant "List.null" \<rightharpoonup> (Scala) "_.isEmpty" |
-  constant "map" \<rightharpoonup> (Scala) "_.par.map((_)).toList" |
-  constant "filter" \<rightharpoonup> (Scala) "_.par.filter((_)).toList" |
+  constant "map_code" \<rightharpoonup> (Scala) "_.par.map((_)).toList" |
+  constant "filter_code" \<rightharpoonup> (Scala) "_.par.filter((_)).toList" |
   constant "all" \<rightharpoonup> (Scala) "_.par.forall((_))" |
   constant "ex" \<rightharpoonup> (Scala) "_.par.exists((_))" |
   constant "nth" \<rightharpoonup> (Scala) "_(Code'_Numeral.integer'_of'_nat((_)).toInt)" |
@@ -409,7 +414,7 @@ lemma [code]: "s |\<subset>| s' = (s |\<subseteq>| s' \<and> size s < size s')"
 lemma [code]: "size f = card (fset f)"
   by simp
 
-lemma map_of_fold [code]: "map_of l = foldr (\<lambda>(k, v) ps. ps(k \<mapsto> v)) l <>"
+lemma map_of_foldr [code]: "map_of l = foldr (\<lambda>(k, v) ps. ps(k \<mapsto> v)) l <>"
 proof(induct l)
   case Nil
   then show ?case
@@ -431,13 +436,14 @@ export_code
   (* Essentials *)
   try_heuristics aexp_type_check learn finfun_apply infer_types nondeterministic input_updates_register
   (* Scoring functions *)
-  score_one_final_state naive_score naive_score_rank naive_score_comprehensive naive_score_comprehensive_eq_high
+  naive_score naive_score_eq naive_score_outputs naive_score_comprehensive naive_score_comprehensive_eq_high
   (* Heuristics *)
   statewise_drop_inputs drop_inputs same_register insert_increment_2 heuristic_1 transitionwise_drop_inputs
   (* Nondeterminism metrics *)
   nondeterministic_pairs nondeterministic_pairs_labar
   (* Utilities *)
-  iefsm2dot
+  iefsm2dot efsm2dot
+
 in Scala
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

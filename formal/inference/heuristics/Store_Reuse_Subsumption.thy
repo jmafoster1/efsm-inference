@@ -143,7 +143,7 @@ primrec stored_reused_aux :: "transition \<Rightarrow> transition \<Rightarrow> 
                                         )"
 
 definition stored_reused :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> (nat \<times> nat) option" where
-  "stored_reused t' t e = stored_reused_aux t' t (total_max_reg e) (max_output e)"
+  "stored_reused t' t e = stored_reused_aux t' t (total_max_reg e) (max (length (Outputs t)) (length (Outputs t')))"
 
 lemma stored_reused_aux_is_generalised_output_of: 
 "stored_reused_aux t' t mr mp = Some (p, r) \<Longrightarrow> is_generalised_output_of t' t p r"
