@@ -13,7 +13,7 @@ object FrontEnd {
 
     Log.root.info("Building PTA")
     val pta = Inference.make_pta(Config.log, FSet.bot_fset)
-    TypeConversion.efsmToSALTranslator(pta, "pta")
+    // TypeConversion.efsmToSALTranslator(pta, "pta")
     PrettyPrinter.EFSM2dot(pta, s"pta_gen")
 
     val np_labar = Inference.nondeterministic_pairs_labar(Inference.toiEFSM(pta))

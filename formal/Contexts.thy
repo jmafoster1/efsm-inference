@@ -661,13 +661,38 @@ lemma transition_subsumes_self: "subsumes t c t"
 
 primrec posterior_sequence :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> registers option" where
   "posterior_sequence _ _ r [] = Some r" |
-  "posterior_sequence e s r (a#t) = (case step e s r (fst a) (snd a) of
-                                            None \<Rightarrow> None |
-                                            Some (_, s', _, r') \<Rightarrow> posterior_sequence e s' r' t
-                                         )"
+  "posterior_sequence e s r (a#t) = (
+     let possibles = possible_steps e s r (fst a) (snd a) in
+     if possibles = {||} then
+       None
+     else
+      let possibleContexts = fimage (\<lambda>(s', T). posterior_sequence e s' (apply_updates (Updates T) (join_ir (snd a) r) r) t) possibles;
+          nonNone = ffilter (\<lambda>x. x \<noteq> None) possibleContexts in
+      if nonNone = {||} then None else
+      Eps (\<lambda>x. x |\<in>| nonNone)
+   )"
 
 abbreviation anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> registers option" where
   "anterior_context e t \<equiv> posterior_sequence e 0 <> t"
+
+lemma posterior_sequence_accepts: "\<forall>s d. \<not>accepts e s d t \<longrightarrow> posterior_sequence e s d t = None"
+proof(induct t)
+  case Nil
+  then show ?case
+    by (simp add: accepts.base)
+next
+  case (Cons a t)
+  then show ?case
+    apply safe
+    apply (rule accepts.cases)
+    using accepts.base apply blast
+     apply clarify
+     apply (simp add: Let_def)
+     apply clarify
+    
+
+qed
+
 
 lemma posterior_sequence_accepts: "\<forall>s d. posterior_sequence e s d t = Some ca \<longrightarrow> accepts e s d t"
 proof(induct t)
@@ -677,15 +702,14 @@ proof(induct t)
 next
   case (Cons a t)
   then show ?case
-    apply clarify
-    apply simp
-     apply (case_tac "step e s d (fst a) (snd a)")
+    apply safe
+    apply (rule accepts.cases)
+    using accepts.base apply blast
+     apply (simp add: Let_def)
+     apply (case_tac "possible_steps e s d (fst a) (snd a) = {||}")
+      apply simp
      apply simp
-    apply (case_tac aa)
-    apply simp
-    apply (rule accepts.step)
-     apply simp
-    by simp
+
 qed
 
 lemma anterior_context_accepts: "\<exists>c. anterior_context e p = Some c \<Longrightarrow> accepts_trace e p"
@@ -702,13 +726,17 @@ next
   then show ?case
     apply clarify
     apply simp
-     apply (case_tac "step e s d (fst a) (snd a)")
+    apply (rule accepts.cases)
+      apply simp
      apply simp
-     apply (simp add: conditions_inaccepts)
+    apply (case_tac "step e s d (fst a) (snd a)")
+     apply (simp add: step_none_inaccepts)
     apply simp
     apply (case_tac aa)
     apply simp
-    using inaccepts_future_inaccepts by blast
+    apply clarify
+    apply simp
+
 qed
 
 lemma accepts_trace_gives_context: "accepts_trace e p \<Longrightarrow> (\<exists>c. anterior_context e p = Some c)"
