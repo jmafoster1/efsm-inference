@@ -3,6 +3,7 @@ import java.io._
 import scala.io.Source
 import net.liftweb.json._
 import ch.qos.logback.classic.Level
+import Types._
 
 object Heuristics extends Enumeration {
   type Heuristic = Value
@@ -10,7 +11,7 @@ object Heuristics extends Enumeration {
 }
 
 object Nondeterminisms extends Enumeration {
-  type Nondeterminism = Value
+  type Nondetermnism = Value
   val basic, labar = Value
 }
 
@@ -24,37 +25,52 @@ case class Config(
   file: File = null,
   outputname: String = null,
   dotfiles: String = "dotfiles",
-  nondeterminism: Nondeterminisms.Nondeterminism = Nondeterminisms.basic,
-  strategy: Strategies.Strategy = Strategies.naive,
+  nondeterminismMetric: IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, Nat.nat), (Types.Transition, Nat.nat))))] = (Inference.nondeterministic_pairs _),
+  strategy: Nat.nat => Nat.nat => IEFSM => Nat.nat = (SelectionStrategies.naive_score _).curried,
   oneFinal: Boolean = false,
   logLevel: Level = Level.DEBUG,
-  k: Int = 0
-)
+  k: Int = 0)
 
 object Config {
   val builder = OParser.builder[Config]
 
   implicit val heuristicsRead: scopt.Read[Heuristics.Value] =
     scopt.Read.reads(Heuristics withName _)
-  implicit val nondeterminismsRead: scopt.Read[Nondeterminisms.Value] =
-    scopt.Read.reads(Nondeterminisms withName _)
-  implicit val strategiesRead: scopt.Read[Strategies.Value] =
-    scopt.Read.reads(Strategies withName _)
-  implicit val booleanRead: scopt.Read[Level]     =
-  scopt.Read.reads { _.toLowerCase match {
-    case "debug"  => Level.DEBUG
-    case "warn"  => Level.WARN
-    case "info"  => Level.INFO
-    case "error"  => Level.ERROR
-    case s       =>
-      throw new IllegalArgumentException("'" + s + "' is not a boolean.")
-  }}
+  implicit val strategiesRead: scopt.Read[Nat.nat => Nat.nat => IEFSM => Nat.nat] =
+    scopt.Read.reads {
+      _.toLowerCase match {
+        case "naive"           => (SelectionStrategies.naive_score _).curried
+        case "rank"            => (SelectionStrategies.naive_score_outputs _).curried
+        case "comprehensive"   => (SelectionStrategies.naive_score_comprehensive _).curried
+        case "comprehensiveEQ" => (SelectionStrategies.naive_score_comprehensive_eq_high _).curried
+        case s =>
+          throw new IllegalArgumentException(s"'${s}' is not a valid strategy ${Nondeterminisms.values}")
+      }
+    }
+  implicit val levelRead: scopt.Read[Level] =
+    scopt.Read.reads {
+      _.toLowerCase match {
+        case "debug" => Level.DEBUG
+        case "warn"  => Level.WARN
+        case "info"  => Level.INFO
+        case "error" => Level.ERROR
+        case s =>
+          throw new IllegalArgumentException(s"'${s}' is not a debug level.")
+      }
+    }
+  implicit val nondeterminismRead: scopt.Read[Types.IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, Nat.nat), (Types.Transition, Nat.nat))))]] =
+    scopt.Read.reads {
+      _.toLowerCase match {
+        case "basic" => (Inference.nondeterministic_pairs _)
+        case "labar" => (Inference.nondeterministic_pairs_labar _)
+        case s =>
+          throw new IllegalArgumentException(s"'${s}' is not a valid strategy ${Nondeterminisms.values}")
+      }
+    }
 
   var config: Config = null
-  var log: List[List[TypeConversion.Event]] = List()
-  var strategy = (SelectionStrategies.naive_score _).curried
+  var log: List[List[Types.Event]] = List()
   var heuristics = Inference.try_heuristics(List(), (Inference.nondeterministic_pairs _))
-  var nondeterminismMetric = (Inference.nondeterministic_pairs _)
 
   val parser1 = {
     import builder._
@@ -74,13 +90,13 @@ object Config {
         .valueName("k")
         .action((x, c) => c.copy(k = x))
         .text("The depth of the k-tails (defaults to zero)"),
-      opt[Strategies.Strategy]('s', "strategy")
+      opt[Nat.nat => Nat.nat => IEFSM => Nat.nat]('s', "strategy")
         .valueName("strategy")
         .action((x, c) => c.copy(strategy = x))
-        .text(s"The preferred strategy to rank state merges ${Nondeterminisms.values}"),
-      opt[Nondeterminisms.Nondeterminism]('n', "nondeterminism")
+        .text(s"The preferred strategy to rank state merges ${Strategies.values}"),
+      opt[Types.IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, Nat.nat), (Types.Transition, Nat.nat))))]]('n', "nondeterminism")
         .valueName("nondeterminism checker")
-        .action((x, c) => c.copy(nondeterminism = x))
+        .action((x, c) => c.copy(nondeterminismMetric = x))
         .text(s"The preferred definition of nondeterminism - defaults to label, arity, and guard check ${Nondeterminisms.values}"),
       opt[String]('d', "dotfiles")
         .valueName("dir")
@@ -115,26 +131,14 @@ object Config {
           Heuristics.ignoret -> (Ignore_Inputs.transitionwise_drop_inputs _).curried,
           Heuristics.ignores -> (Ignore_Inputs.statewise_drop_inputs _).curried)
 
-        val nondeterminisms = scala.collection.immutable.Map(
-          Nondeterminisms.basic -> (Inference.nondeterministic_pairs _),
-          Nondeterminisms.labar -> (Inference.nondeterministic_pairs_labar _))
-
-        val strategies = scala.collection.immutable.Map(
-          Strategies.naive -> (SelectionStrategies.naive_score _).curried,
-          Strategies.rank -> (SelectionStrategies.naive_score_outputs _).curried,
-          Strategies.comprehensive -> (SelectionStrategies.naive_score_comprehensive _).curried,
-          Strategies.comprehensiveEQ -> (SelectionStrategies.naive_score_comprehensive_eq_high _).curried)
-
-          this.strategy = strategies(config.strategy)
         // this.strategy = if (Config.config.oneFinal)
         //     (SelectionStrategies.score_one_final_state _).curried(strategies(config.strategy))
         //   else (strategies(config.strategy))
-        this.heuristics = Inference.try_heuristics(config.heuristics.map(x => heuristics(x)).toList, nondeterminisms(config.nondeterminism))
-        this.nondeterminismMetric = nondeterminisms(config.nondeterminism)
-        }
+        this.heuristics = Inference.try_heuristics(config.heuristics.map(x => heuristics(x)).toList, config.nondeterminismMetric)
+      }
       case _ =>
         System.exit(1)
-      }
+    }
   }
 
 }

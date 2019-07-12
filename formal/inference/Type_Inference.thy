@@ -32,8 +32,13 @@ fun infer_types_aux :: "gexp \<Rightarrow> ((vname \<times> type) list \<times> 
   "infer_types_aux (Eq (Minus a1 a2) a) = (assign_all NUM ((aexp_get_variables (Minus a1 a2)) @ (aexp_get_variables a)), [])"
 
 fun collapse_group :: "(vname \<times> vname) \<Rightarrow> vname list list \<Rightarrow> vname list list" where
-  "collapse_group (v1, v2) [] = [[v1, v2]]" |
-  "collapse_group (v1, v2) (h#t) = (if List.member h v1 \<or> List.member h v2 then ((remdups (v1#v2#h))#t) else collapse_group (v1, v2) t)"
+  "collapse_group (v1, v2) [] = [remdups [v1, v2]]" |
+  "collapse_group (v1, v2) (h#t) = (
+     if List.member h v1 \<or> List.member h v2 then
+       (remdups (v1#v2#h))#t
+     else
+       collapse_group (v1, v2) t
+   )"
 
 primrec collapse_groups :: "(vname \<times> vname) list \<Rightarrow> vname list list \<Rightarrow> vname list list" where
   "collapse_groups [] g = g" |
@@ -89,8 +94,5 @@ fun type_check_aux :: "type \<Rightarrow> type \<Rightarrow> bool" where
 
 definition aexp_type_check :: "aexp \<Rightarrow> aexp \<Rightarrow> (vname \<Rightarrow>f type) \<Rightarrow> bool" where
   "aexp_type_check a1 a2 t = type_check_aux (type_of a1 t) (type_of a2 t)"
-
-
-  
 
 end

@@ -14,29 +14,37 @@ subsection\<open>One of the simplest strategies is to look only at the labels an
 transitions of each state. Pairs of states are ranked by how many transitions with the same label
 and arity they have in common.\<close>
 definition naive_score :: strategy where
-  "naive_score t1 t2 = bool2nat (Label t1 = Label t2 \<and> Arity t1 = Arity t2)"
+  "naive_score t1ID t2ID e = (let t1 = e|t1ID|; t2 = e|t2ID| in bool2nat (Label t1 = Label t2 \<and> Arity t1 = Arity t2))"
 
 (* One point if they're equal *)
 definition naive_score_eq :: strategy where
-  "naive_score_eq t1 t2 = bool2nat (t1 = t2)"
+  "naive_score_eq t1ID t2ID e = bool2nat ((get_by_id e t1ID) = (get_by_id e t2ID))"
+
+(* One point if one subsumes the other *)
+definition naive_score_subsumption :: "strategy" where
+  "naive_score_subsumption t1ID t2ID e = (let t1 = e|t1ID|; t2 = e|t2ID|; s = origin t1ID e in bool2nat (directly_subsumes e e s s t1 t2) + bool2nat (directly_subsumes e e s s t2 t1))"
 
 (* One point each for equal label, arity, and outputs *)
 definition naive_score_outputs :: strategy where
-  "naive_score_outputs x y = bool2nat (Label x = Label y) + bool2nat (Arity x = Arity y) + bool2nat (Outputs x = Outputs y)"
+  "naive_score_outputs t1ID t2ID e = (let x = e|t1ID|; y = e|t2ID| in bool2nat (Label x = Label y) + bool2nat (Arity x = Arity y) + bool2nat (Outputs x = Outputs y))"
 
 (* Functions with same label, and input and output arities contribute one point for each guard    *)
 (* and output they share. *)
 definition naive_score_comprehensive :: strategy where
-  "naive_score_comprehensive x y = (if Label x = Label y \<and> Arity x = Arity y then
+  "naive_score_comprehensive t1ID t2ID e = (let x = e|t1ID|; y = e|t2ID| in 
+                                    if Label x = Label y \<and> Arity x = Arity y then
                                       if length (Outputs x) = length (Outputs y) then
-                                       card (set (Guard x) \<inter> set (Guard y)) + length (filter (\<lambda>(p1, p2). p1 = p2) (zip (Outputs x) (Outputs y)))
-                                     else 0
-                                   else 0)"
+                                        card (set (Guard x) \<inter> set (Guard y)) + length (filter (\<lambda>(p1, p2). p1 = p2) (zip (Outputs x) (Outputs y)))
+                                      else 0
+                                    else 0)"
 
 (* Functions with same label, and input and output arities contribute one point for each guard    *)
 (* and output they share. Transitions which are exactly equal get a very high score. *)
 definition naive_score_comprehensive_eq_high :: strategy where
-  "naive_score_comprehensive_eq_high x y = (if x = y then 100 else
+  "naive_score_comprehensive_eq_high t1ID t2ID e = (let x = e|t1ID|; y = e|t2ID| in 
+                                           if x = y then
+                                             100
+                                           else
                                              if Label x = Label y \<and> Arity x = Arity y then
                                                if length (Outputs x) = length (Outputs y) then
                                                  card (set (Guard x) \<inter> set (Guard y)) + length (filter (\<lambda>(p1, p2). p1 = p2) (zip (Outputs x) (Outputs y)))

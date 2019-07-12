@@ -1,4 +1,5 @@
 import java.io._
+import Types._
 
 object PrettyPrinter {
 
@@ -83,7 +84,7 @@ object PrettyPrinter {
     case GExp.Null(v) => null
   }
 
-  def efsmToString(e: TypeConversion.TransitionMatrix): String = {
+  def efsmToString(e: TransitionMatrix): String = {
     var string = "{"
     for (move <- TypeConversion.indexWithInts(FSet.sorted_list_of_fset(e)).sortBy(_._1)) {
       string += (s"  ((${move._1._1}, ${move._1._2}), ${PrettyPrinter.transitionToString(move._2)})\n")
@@ -119,13 +120,13 @@ object PrettyPrinter {
     return better.mkString(", \n")
   }
 
-  def iEFSM2dot(e: TypeConversion.IEFSM, f: Nat.nat) = {
+  def iEFSM2dot(e: IEFSM, f: Nat.nat) = {
     val pw = new PrintWriter(new File(s"${Config.config.dotfiles}/step_${Code_Numeral.integer_of_nat(f)}.dot"))
     pw.write(EFSM_Dot.iefsm2dot(e))
     pw.close
   }
 
-  def EFSM2dot(e: TypeConversion.TransitionMatrix, f: String) = {
+  def EFSM2dot(e: TransitionMatrix, f: String) = {
     val pw = new PrintWriter(new File(s"${Config.config.dotfiles}/${f}.dot"))
     pw.write(EFSM_Dot.efsm2dot(e))
     pw.close

@@ -5,7 +5,31 @@ import sys.process._
 import isabellesal._
 import Type_Inference._
 
+object Types {
+  type Event = (String, (List[Value.value], List[Value.value]))
+  type Transition = Transition.transition_ext[Unit]
+  type TransitionMatrix = FSet.fset[((Nat.nat, Nat.nat), Transition)]
+  type IEFSM = FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition))]
+}
+
 object TypeConversion {
+  def toInt(b: BigInt): Int = {
+    if (b.isValidInt) {
+      return b.toInt
+    }
+    else {
+      throw new IllegalArgumentException(s"${b} is not a valid int")
+    }
+  }
+
+  def toLong(b: BigInt): Long = {
+    if (b.isValidLong) {
+      return b.toLong
+    }
+    else {
+      throw new IllegalArgumentException(s"${b} is not a valid long")
+    }
+  }
 
   def toValue(n:BigInt): Value.value = Value.Numa(Int.int_of_integer(n))
   def toValue(s:String): Value.value = Value.Str(s)
@@ -21,11 +45,7 @@ object TypeConversion {
     }
   }
 
-  type Event = (String, (List[Value.value], List[Value.value]))
-  type TransitionMatrix = FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]
-  type IEFSM = FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
-
-  def toEventTuple(e: Map[String, Any]): Event = {
+  def toEventTuple(e: Map[String, Any]): Types.Event = {
     (
       (e("label").asInstanceOf[String]),
       (e("inputs").asInstanceOf[List[Any]].map(x => toValue(x)),
@@ -35,13 +55,14 @@ object TypeConversion {
 
   def vnameToSALTranslator(v: VName.vname): Variable = {
     v match {
-    case VName.I(Nat.Nata(n)) => Variable.newOneFrom('I', n.toInt+1)
-    case VName.R(Nat.Nata(n)) => Variable.newOneFrom('R', n.toInt)
+    case VName.I(Nat.Nata(n)) => Variable.newOneFrom('I', n.toLong+1)
+    case VName.R(Nat.Nata(n)) => Variable.newOneFrom('R', n.toLong)
     }
   }
 
+// TODO: This should be toLong
   def aexpToSALTranslator(a: AExp.aexp): Expression = a match {
-    case AExp.L(Value.Numa(Int.int_of_integer(n))) => Expression.newOneFrom(Constant.newOneFrom(n.toInt))
+    case AExp.L(Value.Numa(Int.int_of_integer(n))) => Expression.newOneFrom(Constant.newOneFrom(toInt(n)))
     case AExp.L(Value.Str(s)) => Expression.newOneFrom(Constant.newOneFrom(s))
     case AExp.V(v) => Expression.newOneFrom(vnameToSALTranslator(v))
     case AExp.Plus(a1, a2) => Expression.newInfixFrom(
@@ -77,14 +98,6 @@ object TypeConversion {
    )
   }
 
-  def natToInt(n: Nat.nat): Int = n match {
-    case Nat.Nata(b) => b.toInt
-  }
-
-  def intToInt(i: Int.int): Int =  i match {
-    case Int.int_of_integer(i1) => i1.intValue()
-  }
-
   def updateToExp(u: (Nat.nat, AExp.aexp)): Assignment = u match {
     case (r, a) => Assignment.newOne(
             vnameToSALTranslator(VName.R(r)),
@@ -96,7 +109,7 @@ object TypeConversion {
     isabellesal.Transition.newOneFrom(
       id,
       Transition.Label(t),
-      natToInt(Transition.Arity(t)),
+      toInt(Code_Numeral.integer_of_nat(Transition.Arity(t))),
       isabellesal.Predicate.listOfPredicatesFrom(Transition.Guard(t).map(gexpToSALTranslator):_*),
       Expression.newOutputs(Transition.Outputs(t).map(aexpToSALTranslator):_*),
       Transition.Updates(t).map(updateToExp):_*
@@ -105,14 +118,14 @@ object TypeConversion {
 
   def toMichaelsMove(move: ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])): MichaelsMove = {
     new MichaelsMove(
-      natToInt(move._1._1),
-      natToInt(move._1._2),
+      Code_Numeral.integer_of_nat(move._1._1).toInt,
+      Code_Numeral.integer_of_nat(move._1._2).toInt,
       transitionToSALTranslator(Transition.Label(move._2) +
         "_" + System.currentTimeMillis, move._2)
       )
   }
 
-  def efsmToSALTranslator(e: TransitionMatrix, f: String) = {
+  def efsmToSALTranslator(e: Types.TransitionMatrix, f: String) = {
     Translator.clearEverything()
     isabellesal.EFSM.newOneFrom(FSet.sorted_list_of_fset(e).map(toMichaelsMove):_*)
     try {
@@ -123,7 +136,6 @@ object TypeConversion {
     }
   }
 
-  def indexWithInts(e: List[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]): List[((Int, Int), Transition.transition_ext[Unit])] = {
-    return e.map(move => ((natToInt(move._1._1), natToInt(move._1._2)), move._2))
-  }
+  def indexWithInts(e: List[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]): List[((Int, Int), Transition.transition_ext[Unit])] =
+      e.map(move => ((toInt(Code_Numeral.integer_of_nat(move._1._1)), toInt(Code_Numeral.integer_of_nat(move._1._2))), move._2))
 }

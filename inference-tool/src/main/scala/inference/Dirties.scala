@@ -4,26 +4,21 @@ import java.io._
 import scala.io.Source
 import scala.util.Random
 import sys.process._
-
-import TypeConversion.natToInt;
-import TypeConversion.intToInt;
+import Types._
 
 object Dirties {
-  type iEFSM = FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
-
-  type Set[A] = scala.collection.immutable.Set[A]
 
   def foldl[A, B](f: A => B => A, b: A, l: List[B]): A =
     l.par.foldLeft(b)(((x, y) => (f(x))(y)))
 
   def toZ3(v: Value.value, ctx: z3.Context): z3.Expr = v match {
-    case Value.Numa(n) => ctx.mkInt(intToInt(n))
+    case Value.Numa(n) => ctx.mkInt(Code_Numeral.integer_of_int(n).toLong)
     case Value.Str(s) => ctx.mkString(s)
   }
 
   def toZ3(v: VName.vname, ctx: z3.Context, datatype: z3.Sort): z3.Expr = v match {
-    case VName.I(n) => ctx.mkConst("i"+natToInt(n), datatype)
-    case VName.R(n) => ctx.mkConst("r"+natToInt(n), datatype)
+    case VName.I(n) => ctx.mkConst("i"+Code_Numeral.integer_of_nat(n), datatype)
+    case VName.R(n) => ctx.mkConst("r"+Code_Numeral.integer_of_nat(n), datatype)
   }
 
   def toZ3(a: AExp.aexp, ctx: z3.Context, types: FinFun.finfun[VName.vname, Type_Inference.typea]): z3.Expr =  a match {
@@ -127,8 +122,8 @@ object Dirties {
     pw.close()
   }
 
-  def alwaysDifferentOutputsDirectSubsumption[A](m1: iEFSM,
-                                              m2: iEFSM,
+  def alwaysDifferentOutputsDirectSubsumption[A](m1: IEFSM,
+                                              m2: IEFSM,
                                               s:Nat.nat,
                                               s_prime: Nat.nat,
                                               t1: Transition.transition_ext[A],
@@ -137,11 +132,11 @@ object Dirties {
       true
   }
 
-  def initiallyUndefinedContextCheck(e: iEFSM, r: Nat.nat, s: Nat.nat): Boolean = {
+  def initiallyUndefinedContextCheck(e: IEFSM, r: Nat.nat, s: Nat.nat): Boolean = {
     val f = "intermediate_"+System.currentTimeMillis()
     TypeConversion.efsmToSALTranslator(Inference.tm(e), f)
 
-    addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = State_${natToInt(s)} => r_${natToInt(r)} = value_option ! None);")
+    addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = State_${Code_Numeral.integer_of_nat(s)} => r_${Code_Numeral.integer_of_nat(r)} = value_option ! None);")
 
     val output = Seq("bash", "-c", "cd salfiles; sal-smc --assertion='" + f + "{100}!initiallyUndefined'").!!
     if (output.toString != "proved.\n") {
@@ -152,23 +147,23 @@ object Dirties {
 
   def salValue(v: Value.value): String = v match {
     case Value.Str(s) => s"STR(String_$s)"
-    case Value.Numa(n) => s"NUM(${intToInt(n)})"
+    case Value.Numa(n) => s"NUM(${Code_Numeral.integer_of_int(n)})"
   }
 
-  def generaliseOutputContextCheck(l: String, ePrime: iEFSM, e: iEFSM, r: Nat.nat, v: Value.value, s_old: Nat.nat, s_new: Nat.nat): Boolean = {
+  def generaliseOutputContextCheck(l: String, ePrime: IEFSM, e: IEFSM, r: Nat.nat, v: Value.value, s_old: Nat.nat, s_new: Nat.nat): Boolean = {
     val f_old = "orig_"+System.currentTimeMillis()
     TypeConversion.efsmToSALTranslator(Inference.tm(e), f_old)
     val inxLabel = Code_Generation.input_updates_register(ePrime)
     addLTL("salfiles/" + f_old + s".sal", s"  inputValue: THEOREM MichaelsEFSM |-\n" +
-      s"    U(cfstate /= NULL_STATE, cfstate=State_${natToInt(s_old)}) =>\n"+
+      s"    U(cfstate /= NULL_STATE, cfstate=State_${Code_Numeral.integer_of_nat(s_old)}) =>\n"+
       s"    U(label = ${inxLabel._2} => I(1) = ${salValue(v)}, X(cfstate = NULL_STATE));")
 
     val f_new = "intermediate_"+System.currentTimeMillis()
     TypeConversion.efsmToSALTranslator(Inference.tm(ePrime), f_new)
     addLTL("salfiles/" + f_new + ".sal", s"  generaliseOutput: THEOREM MichaelsEFSM |-\n"+
-      s"    U(cfstate /= NULL_STATE, cfstate = State_${natToInt(s_new)}) =>\n"+
-      s"    U(label = select => I(${natToInt(inxLabel._1)}) = ${salValue(v)}, cfstate = NULL_STATE) =>\n"+
-      s"    U(cfstate = State_${natToInt(s_new)} => r_1 = Some(${salValue(v)}), cfstate=NULL_STATE);")
+      s"    U(cfstate /= NULL_STATE, cfstate = State_${Code_Numeral.integer_of_nat(s_new)}) =>\n"+
+      s"    U(label = select => I(${Code_Numeral.integer_of_nat(inxLabel._1)}) = ${salValue(v)}, cfstate = NULL_STATE) =>\n"+
+      s"    U(cfstate = State_${Code_Numeral.integer_of_nat(s_new)} => r_1 = Some(${salValue(v)}), cfstate=NULL_STATE);")
 
 
     println(s"sal-smc --assertion='${f_old}{100}!inputValue'")
@@ -182,8 +177,8 @@ object Dirties {
     return (output1.toString == "proved.\n" && output2.toString == "proved.\n")
   }
 
-  def scalaDirectlySubsumes(a: iEFSM,
-                            b: iEFSM,
+  def scalaDirectlySubsumes(a: IEFSM,
+                            b: IEFSM,
                             s: Nat.nat,
                             s_prime: Nat.nat,
                             t1: Transition.transition_ext[Unit],

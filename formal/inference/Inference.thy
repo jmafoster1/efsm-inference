@@ -20,7 +20,7 @@ pass them around in the inference functions.
 type_synonym tid = nat
 type_synonym iEFSM = "(tid \<times> (cfstate \<times> cfstate) \<times> transition) fset"
 
-definition get_by_id :: "iEFSM \<Rightarrow> nat \<Rightarrow> transition" where
+definition get_by_id :: "iEFSM \<Rightarrow> nat \<Rightarrow> transition" ("(_|_|)" [20, 20] 40) where
   "get_by_id e u = snd (snd (fthe_elem (ffilter (\<lambda>(uid, _). uid = u) e)))"
 
 definition max_uid :: "iEFSM \<Rightarrow> nat" where
@@ -69,7 +69,7 @@ lemma choice_symmetry: "choice x y = choice y x"
   using choice_def by auto
                                                         
 definition outgoing_transitions :: "nat \<Rightarrow> iEFSM \<Rightarrow> (cfstate \<times> transition \<times> tid) fset" where
-  "outgoing_transitions n t = fimage (\<lambda>(uid, x, t'). (snd x, t', uid)) (ffilter (\<lambda>(uid, (origin, dest), t). origin = n) t)"
+  "outgoing_transitions n t = fimage (\<lambda>(uid, (from, to), t'). (to, t', uid)) (ffilter (\<lambda>(uid, (origin, dest), t). origin = n) t)"
 
 type_synonym nondeterministic_pair = "(nat \<times> (nat \<times> nat) \<times> ((transition \<times> nat) \<times> (transition \<times> nat)))"
 
@@ -162,27 +162,34 @@ definition null_modifier :: update_modifier where
   "null_modifier _ _ _ _ _ _ = None"
 
 type_synonym scoreboard = "(nat \<times> (cfstate \<times> cfstate)) fset"
-type_synonym strategy = "transition \<Rightarrow> transition \<Rightarrow> nat"
+type_synonym strategy = "tid \<Rightarrow> tid \<Rightarrow> iEFSM \<Rightarrow> nat"
 
 primrec k_outgoing :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> (cfstate \<times> transition \<times> tid) fset" where
   "k_outgoing 0 i s = outgoing_transitions s i" |
   "k_outgoing (Suc m) i s = (let
      outgoing = outgoing_transitions s i;
      others = fimage fst outgoing in
-     outgoing |\<union>|ffUnion (fimage (\<lambda>s. k_outgoing m i s) others)
+     outgoing |\<union>| ffUnion (fimage (\<lambda>s. k_outgoing m i s) others)
   )"
 
 definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
-  "k_score n t rank = (let 
-     states = (S t) |\<times>| (S t);
-     pairs_to_score = (ffilter (\<lambda>(x, y). x < y) states);
+  "k_score n e rank = (let 
+     states = (S e);
+     pairs_to_score = (ffilter (\<lambda>(x, y). x < y) (states |\<times>| states));
      scores = fimage (\<lambda>(s1, s2). let
-        outgoing_s1 = fimage (\<lambda>(_, t, _). t) (k_outgoing n t s1);
-        outgoing_s2 = fimage (\<lambda>(_, t, _). t) (k_outgoing n t s2);
-        scores = fimage (\<lambda>(x, y). rank x y) (outgoing_s1 |\<times>| outgoing_s2) in
-       (Sum (fset scores), s1, s2 )
+        outgoing_s1 = fimage (snd \<circ> snd) (k_outgoing n e s1);
+        outgoing_s2 = fimage (snd \<circ> snd) (k_outgoing n e s2);
+        scores = fimage (\<lambda>(x, y). rank x y e) (outgoing_s1 |\<times>| outgoing_s2) in
+       (fSum scores, s1, s2 )
      ) pairs_to_score in
      ffilter (\<lambda>(score, _). score > 0) scores)"
+
+lemma equal_states_not_scored: "(stateScore, s, s) |\<notin>| (k_score n efsm metric)"
+  apply (simp add: k_score_def Let_def)
+  by auto
+
+lemma score_gt_zero: "(stateScore, p) |\<in>| (k_score n efsm metric) \<Longrightarrow> stateScore > 0"
+  by (simp add: k_score_def Let_def)
 
 definition origin :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
   "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (\<exists>s. x = (uid, s))) t))))"
@@ -214,7 +221,7 @@ inductive satisfies_trace :: "execution \<Rightarrow> transition_matrix \<Righta
 definition satisfies :: "execution set \<Rightarrow> transition_matrix \<Rightarrow> bool" where
   "satisfies T e = (\<forall>t \<in> T. satisfies_trace t e 0 <>)"
 
-definition directly_subsumes :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
+definition directly_subsumes :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes e1 e2 s s' t1 t2 \<equiv> (\<forall>p. accepts_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
                                              accepts_trace (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
                                              (\<forall>c. anterior_context (tm e2) p = Some c \<longrightarrow> subsumes t1 c t2)) \<and>
@@ -333,13 +340,6 @@ definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> upd
           None \<Rightarrow> Some merged |
           Some generalised \<Rightarrow> Some generalised)\<close>
   )"
-
-lemma equal_states_not_scored: "(stateScore, cf, cf) |\<notin>| (k_score n efsm metric)"
-  apply (simp add: k_score_def)
-  by auto
-
-lemma score_gt_zero: "(stateScore, cf, cf) |\<in>| (k_score n efsm metric) \<Longrightarrow> stateScore > 0"
-  by (simp add: k_score_def)
 
 (* inference_step - attempt dest carry out a single step of the inference process by merging the    *)
 (* @param e - an iEFSM dest be generalised                                                          *)

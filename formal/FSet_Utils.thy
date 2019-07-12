@@ -9,6 +9,8 @@ lift_definition fprod  :: "'a fset \<Rightarrow> 'b fset \<Rightarrow> ('a \<tim
 lift_definition fis_singleton :: "'a fset \<Rightarrow> bool" is "\<lambda>A. is_singleton (fset A)".
 end
 
+definition "fSum \<equiv> fsum (\<lambda>x. x)"
+
 syntax (ASCII)
   "_fBall"       :: "pttrn \<Rightarrow> 'a fset \<Rightarrow> bool \<Rightarrow> bool"      ("(3ALL (_/:_)./ _)" [0, 0, 10] 10)
   "_fBex"        :: "pttrn \<Rightarrow> 'a fset \<Rightarrow> bool \<Rightarrow> bool"      ("(3EX (_/:_)./ _)" [0, 0, 10] 10)

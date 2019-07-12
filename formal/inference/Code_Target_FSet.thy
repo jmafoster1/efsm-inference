@@ -4,6 +4,8 @@ begin
 
 code_datatype fset_of_list
 
+declare FSet.fset_of_list.rep_eq [code]
+
 lemma fprod_code [code]:
   "fprod (fset_of_list xs) (fset_of_list ys) = fset_of_list [(x, y). x \<leftarrow> xs, y \<leftarrow> ys]"
   apply (simp add: fprod_def fset_of_list_def fset_both_sides Abs_fset_inverse)
@@ -31,20 +33,6 @@ lemma sup_fset_fold_double[code]: "(fset_of_list f1) |\<union>| (fset_of_list f2
 
 lemma bot_fset[code]: "{||} = fset_of_list []"
   by simp
-
-lemma fset_foldr: "fset (fset_of_list f) = foldr insert f {}"
-proof(induct f)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a f)
-  then show ?case
-    by simp
-qed
-
-lemma fset_fold[code]: "fset (fset_of_list f) = fold insert f {}"
-  using fset_of_list.rep_eq union_set_fold by fastforce
 
 lemma finsert_cons[code]: "finsert a (fset_of_list as) = fset_of_list (a#as)"
   by simp
@@ -123,5 +111,27 @@ next
   then show ?case
     by simp
 qed
+
+lemma fsum_fold [code]: "fSum (fset_of_list l) = fold (+) (remdups l) 0"
+proof(induct l)
+case Nil
+then show ?case 
+  by (simp add: fsum.F.rep_eq fSum_def)
+next
+  case (Cons a l)
+  then show ?case
+    apply simp
+    apply standard
+     apply (simp add: finsert_absorb fset_of_list_elem)
+    by (simp add: add.commute fold_plus_sum_list_rev fset_of_list.rep_eq fsum.F.rep_eq fSum_def)
+qed
+
+lemma fset_eq: "(x = y) = (x |\<subseteq>| y \<and> size x = size y)"
+  by (metis exists_least_iff le_less size_fsubset)
+
+lemma code_fset_eq [code]: "HOL.equal X (fset_of_list Y) \<longleftrightarrow> size X = length (remdups Y) \<and> (\<forall>x |\<in>| X. List.member Y x)"
+  apply (simp only: HOL.equal_class.equal_eq fset_eq)
+  apply (simp only: size)
+  using fmember by fastforce
 
 end

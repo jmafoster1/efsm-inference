@@ -387,20 +387,24 @@ lemma fold_conv_foldl [code]: "fold f xs s = foldl (\<lambda>x s. f s x) s xs"
 declare foldr_conv_foldl [code]
 
 code_printing
-  constant Cons \<rightharpoonup> (Scala) "_::_" |
-  constant rev \<rightharpoonup> (Scala) "_.reverse" |
-  constant List.member \<rightharpoonup> (Scala) "_ contains _" |
-  constant "List.remdups" \<rightharpoonup> (Scala) "_.distinct" |
-  constant "List.length" \<rightharpoonup> (Scala) "Nat.Nata(_.length)" |
-  constant "zip" \<rightharpoonup> (Scala) "(_ zip _)" |
-  constant "flatmap" \<rightharpoonup> (Scala) "_.par.flatMap((_)).toList" |
-  constant "List.null" \<rightharpoonup> (Scala) "_.isEmpty" |
-  constant "map_code" \<rightharpoonup> (Scala) "_.par.map((_)).toList" |
-  constant "filter_code" \<rightharpoonup> (Scala) "_.par.filter((_)).toList" |
-  constant "all" \<rightharpoonup> (Scala) "_.par.forall((_))" |
-  constant "ex" \<rightharpoonup> (Scala) "_.par.exists((_))" |
-  constant "nth" \<rightharpoonup> (Scala) "_(Code'_Numeral.integer'_of'_nat((_)).toInt)" |
-  constant "foldl" \<rightharpoonup> (Scala) "Dirties.foldl"
+  constant Cons \<rightharpoonup> (Scala) "_::_"
+  | constant rev \<rightharpoonup> (Scala) "_.reverse"
+  | constant List.member \<rightharpoonup> (Scala) "_ contains _"
+  | constant "List.remdups" \<rightharpoonup> (Scala) "_.distinct"
+  | constant "List.length" \<rightharpoonup> (Scala) "Nat.Nata(_.length)"
+  | constant "zip" \<rightharpoonup> (Scala) "(_ zip _)"
+  | constant "flatmap" \<rightharpoonup> (Scala) "_.par.flatMap((_)).toList"
+  | constant "List.null" \<rightharpoonup> (Scala) "_.isEmpty"
+  | constant "map_code" \<rightharpoonup> (Scala) "_.par.map((_)).toList"
+  | constant "filter_code" \<rightharpoonup> (Scala) "_.par.filter((_)).toList"
+  | constant "all" \<rightharpoonup> (Scala) "_.par.forall((_))"
+  | constant "ex" \<rightharpoonup> (Scala) "_.par.exists((_))"
+  | constant "nth" \<rightharpoonup> (Scala) "_(Code'_Numeral.integer'_of'_nat((_)).toInt)"
+  | constant "foldl" \<rightharpoonup> (Scala) "Dirties.foldl"
+  | constant "show_nat" \<rightharpoonup> (Scala) "Code'_Numeral.integer'_of'_nat((_)).toString()"
+  | constant "show_int" \<rightharpoonup> (Scala) "Code'_Numeral.integer'_of'_int((_)).toString()"
+  | constant "join" \<rightharpoonup> (Scala) "_.mkString((_))"
+  | constant "(1::nat)" \<rightharpoonup> (Scala) "Nat.Nata((1))"
 
 lemma [code]: "insert x (set s) = (if x \<in> set s then set s else set (x#s))"
   apply (simp)
@@ -424,6 +428,12 @@ next
   then show ?case
     by (simp add: case_prod_unfold)
 qed
+
+lemma code_list_eq [code]: "HOL.equal xs ys \<longleftrightarrow> length xs = length ys \<and> (\<forall>(x,y) \<in> set (zip xs ys). x = y)"
+  apply (simp add: HOL.equal_class.equal_eq)
+  by (simp add: Ball_set list_eq_iff_zip_eq)
+
+declare enumerate_eq_zip [code]
 
 (* I'd ideally like to fix this at some point *)
 lemma [code]: "infer = infer_with_log 0"

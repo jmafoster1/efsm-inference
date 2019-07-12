@@ -21,9 +21,9 @@ object FrontEnd {
     val inferred = Inference.learn(
       Nat.Nata(Config.config.k),
       Config.log,
-      Config.strategy,
+      Config.config.strategy,
       Config.heuristics,
-      Config.nondeterminismMetric)
+      Config.config.nondeterminismMetric)
 
     Log.root.info("The inferred machine is " +
       (if (Inference.nondeterministic(Inference.toiEFSM(inferred), Inference.nondeterministic_pairs)) "non" else "") + "deterministic")

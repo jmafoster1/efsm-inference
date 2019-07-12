@@ -38,8 +38,8 @@ where
   "showsp_int p i =
     (if i < 0 then shows_string STR ''-'' o showsp_nat p (nat (- i)) else showsp_nat p (nat i))"
 
-abbreviation "show_int n  \<equiv> showsp_int ((STR '''')) n ((STR ''''))"
-abbreviation "show_nat n  \<equiv> showsp_nat ((STR '''')) n ((STR ''''))"
+definition "show_int n  \<equiv> showsp_int ((STR '''')) n ((STR ''''))"
+definition "show_nat n  \<equiv> showsp_nat ((STR '''')) n ((STR ''''))"
 
 definition replace_backslash :: "String.literal \<Rightarrow> String.literal" where
   "replace_backslash s = String.implode (fold (@) (map (\<lambda>x. if x = CHR 0x5c then [CHR 0x5c,CHR 0x5c] else [x]) (String.explode s)) '''')"
@@ -78,9 +78,15 @@ primrec guards2dot_aux :: "gexp list \<Rightarrow> String.literal list" where
   "guards2dot_aux [] = []" |
   "guards2dot_aux (h#t) = (gexp2dot h)#(guards2dot_aux t)"
 
+lemma gexp2dot_aux_code [code]: "guards2dot_aux l = map gexp2dot l"
+  by (induct l, simp_all)
+
 primrec updates2dot_aux :: "update_function list \<Rightarrow> String.literal list" where
   "updates2dot_aux [] = []" |
   "updates2dot_aux (h#t) = ((vname2dot (R (fst h)))+STR '' := ''+(aexp2dot (snd h)))#(updates2dot_aux t)"
+
+lemma updates2dot_aux_code [code]: "updates2dot_aux l = map (\<lambda>(r, u). (vname2dot (R r))+STR '' := ''+(aexp2dot u)) l"
+  by (induct l, auto)
 
 primrec outputs2dot :: "output_function list \<Rightarrow> nat \<Rightarrow> String.literal list" where
   "outputs2dot [] _ = []" |
@@ -114,8 +120,9 @@ definition iefsm2dot :: "iEFSM \<Rightarrow> String.literal" where
   "iefsm2dot e = STR ''digraph EFSM{''+newline+
                  STR ''  graph [rankdir=''+quote+(STR ''LR'')+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
                  STR ''  node [color=''+quote+(STR ''black'')+quote+STR '', fillcolor=''+quote+(STR ''white'')+quote+STR '', shape=''+quote+(STR ''circle'')+quote+STR '', style=''+quote+(STR ''filled'')+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
-                 STR ''  edge [fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
-                  (join (sorted_list_of_fset (fimage (\<lambda>(uid, (from, to), t).STR ''  ''+(show_nat from)+STR ''->''+(show_nat to)+STR ''[label=<(''+(show_nat uid)+STR '') ''+(transition2dot t)+STR ''>]'') e)) newline)+newline+
+                 STR ''  edge [fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+newline+
+                  (join (map (\<lambda>s. STR ''  s''+show_nat s+STR ''[label=<s<sub>'' +show_nat s+ STR ''</sub>>];'') (sorted_list_of_fset (S e - {|0|}))) (newline))+newline+newline+
+                  (join ((map (\<lambda>(uid, (from, to), t). STR ''  s''+(show_nat from)+STR ''->s''+(show_nat to)+STR ''[label=<<i> (''+show_nat uid+STR '')''+(transition2dot t)+STR ''</i>>];'') (sorted_list_of_fset e))) newline)+newline+
                 STR ''}''"
 
 abbreviation newline_str :: string where
