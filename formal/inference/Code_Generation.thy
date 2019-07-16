@@ -42,9 +42,6 @@ definition choice_cases :: "transition \<Rightarrow> transition \<Rightarrow> bo
        satisfiable ((fold gAnd (rev (Guard t1@Guard t2)) (gexp.Bc True)))
    )"
 
-lemma [code]: "(\<exists>x \<in> set (map f l). P x) = (\<exists>x \<in> set l. P (f x))"
-  by simp
-
 lemma apply_guards_rearrange: "x \<in> set G \<Longrightarrow> apply_guards G s = apply_guards (x#G) s"
   apply (simp add: apply_guards_def)
   by auto

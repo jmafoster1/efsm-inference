@@ -382,7 +382,7 @@ lemma trace_reject: "(possible_steps e s d a b = {||} \<or> (\<forall>(s', T) |\
    apply auto[1]
   using accepts.intros(2) by fastforce
 
-lemma trace_reject_2: "\<not> accepts e s d ((a, b)#t) = (possible_steps e s d a b = {||} \<or> (\<forall>(s', T) |\<in>| possible_steps e s d a b. \<not>accepts e s' (apply_updates (Updates T) (join_ir b d) d) t))"
+lemma trace_reject_2: "(\<not> accepts e s d ((a, b)#t)) = (possible_steps e s d a b = {||} \<or> (\<forall>(s', T) |\<in>| possible_steps e s d a b. \<not>accepts e s' (apply_updates (Updates T) (join_ir b d) d) t))"
   using trace_reject 
   by simp
 

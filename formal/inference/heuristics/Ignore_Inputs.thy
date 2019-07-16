@@ -34,7 +34,7 @@ definition statewise_drop_inputs :: "update_modifier" where
   "statewise_drop_inputs t1ID t2ID s new old np = (let
      t1 = (get_by_id new t1ID);
      t2 = (get_by_id new t2ID) in
-     if \<forall>(_, t, _) |\<in>| outgoing_transitions s new. Label t = Label t1 \<longrightarrow> Arity t = Arity t1 \<longrightarrow> Outputs t = Outputs t1 then
+     if \<forall>(_, t, _) |\<in>| outgoing_transitions s new. (Label t = Label t1 \<and> Arity t = Arity t1) \<longrightarrow> Outputs t = Outputs t1 then
        Some (replace (drop_transitions new ((fimage (comp snd snd) (outgoing_transitions s new)) - {|t1ID|})) t1ID (drop_guards t1))
      else
        None)"

@@ -422,4 +422,17 @@ definition all_regs :: "iEFSM \<Rightarrow> nat set" where
 
 lemma every_context_subsumes: "\<forall>c. subsumes t2 c t1 \<Longrightarrow> directly_subsumes e1 e2 s s' t2 t1"
   by (simp add: directly_subsumes_def)
+
+lemma "Label t = Label t' \<Longrightarrow>
+       Arity t = Arity t' \<Longrightarrow>
+       \<not>choice t t' \<Longrightarrow>
+       \<exists>i. length i = Arity t' \<and>
+        (apply_guards (Guard t') (join_ir i c)) \<Longrightarrow>
+       \<not> subsumes t c t'"
+  apply (rule bad_guards)
+  apply (simp add: can_take_transition_def can_take_def)
+  apply clarify
+  apply (rule_tac x=i in exI)
+  using choice_def by blast
+
 end

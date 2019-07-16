@@ -16,7 +16,9 @@ dot:
 	done
 
 stepwise-dot:
-	@ rm dotfiles/steps.pdf
+	@ if test -f "dotfiles/steps.pdf"; then \
+		rm dotfiles/steps.pdf ; \
+	fi
 	@ for b in $(basename $(shell find ./ -type f -name '*.dot')) ; do \
 	  dot -T pdf -o $$b.pdf $$b.dot ; \
 	done

@@ -838,4 +838,5 @@ lemma accepts_trace_gives_context: "accepts_trace e p \<Longrightarrow> (\<exist
 
 lemma accepts_trace_anterior_not_none: "accepts_trace e p \<Longrightarrow> anterior_context e p \<noteq> None"
   using accepts_trace_gives_context by blast
+
 end

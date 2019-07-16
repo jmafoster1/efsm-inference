@@ -56,7 +56,7 @@ definition origin_states :: strategy where
   "origin_states t1ID t2ID e = (let
     t1Orig = origin t1ID e;
     t2Orig = origin t2ID e in
-    if t1Orig = t2Orig \<and> naive_score t1ID t2ID e > 0 then 1000 else
-    naive_score_comprehensive_eq_high t1ID t2ID e)"
+    if t1Orig = 9 \<and> t2Orig = 58 then 1000 else
+    0)"
 
 end
