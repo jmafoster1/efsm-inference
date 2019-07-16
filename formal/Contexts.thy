@@ -659,109 +659,183 @@ lemma transition_subsumes_self: "subsumes t c t"
   apply (simp add: subsumes_def)
   using posterior_separate_def by auto
 
-primrec posterior_sequence :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> registers option" where
-  "posterior_sequence _ _ r [] = Some r" |
-  "posterior_sequence e s r (a#t) = (
-     let possibles = possible_steps e s r (fst a) (snd a) in
-     if possibles = {||} then
-       None
-     else
-      let possibleContexts = fimage (\<lambda>(s', T). posterior_sequence e s' (apply_updates (Updates T) (join_ir (snd a) r) r) t) possibles;
-          nonNone = ffilter (\<lambda>x. x \<noteq> None) possibleContexts in
-      if nonNone = {||} then None else
-      Eps (\<lambda>x. x |\<in>| nonNone)
-   )"
+definition posterior_sequence :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> registers option" where
+  "posterior_sequence e s r t = (case accepting_sequence e s r t [] of
+    None \<Rightarrow> None
+    | Some seq \<Rightarrow>
+      if seq = [] then
+        Some r
+      else let
+        (_, _, _, r') = last seq in Some r'
+  )"
 
 abbreviation anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> registers option" where
   "anterior_context e t \<equiv> posterior_sequence e 0 <> t"
 
-lemma posterior_sequence_accepts: "\<forall>s d. \<not>accepts e s d t \<longrightarrow> posterior_sequence e s d t = None"
+lemma accepting_sequence_length_aux: "\<forall>s d seq. accepting_sequence e s d t seq = Some seq' \<longrightarrow> length seq' \<ge> length seq"
 proof(induct t)
   case Nil
   then show ?case
-    by (simp add: accepts.base)
+    by auto
 next
   case (Cons a t)
   then show ?case
-    apply safe
-    apply (rule accepts.cases)
-    using accepts.base apply blast
-     apply clarify
-     apply (simp add: Let_def)
-     apply clarify
-    
-
-qed
-
-
-lemma posterior_sequence_accepts: "\<forall>s d. posterior_sequence e s d t = Some ca \<longrightarrow> accepts e s d t"
-proof(induct t)
-  case Nil
-  then show ?case
-    by (simp add: accepts.base)
-next
-  case (Cons a t)
-  then show ?case
-    apply safe
-    apply (rule accepts.cases)
-    using accepts.base apply blast
-     apply (simp add: Let_def)
-     apply (case_tac "possible_steps e s d (fst a) (snd a) = {||}")
-      apply simp
+    apply clarify
+    apply (simp add: Let_def)
+    apply (case_tac "ffilter (\<lambda>(s', T). accepts e s' (apply_updates (Updates T) (join_ir (snd a) d) d) t)
+         (possible_steps e s d (fst a) (snd a)) =
+        {||}")
      apply simp
-
+    apply simp
+    apply (case_tac "SOME x.
+             x |\<in>| possible_steps e s d (fst a) (snd a) \<and>
+             (case x of (s', T) \<Rightarrow> accepts e s' (apply_updates (Updates T) (join_ir (snd a) d) d) t)")
+    apply (simp add: Let_def)
+    by fastforce
 qed
 
-lemma anterior_context_accepts: "\<exists>c. anterior_context e p = Some c \<Longrightarrow> accepts_trace e p"
-  using posterior_sequence_accepts
-  by auto
+lemma accepting_sequence_length: "accepting_sequence e s d t seq = Some seq' \<Longrightarrow> length seq' \<ge> length seq"
+  using accepting_sequence_length_aux
+  by simp
 
-lemma accepts_gives_context: "\<forall>s d. accepts e s d t \<longrightarrow> (\<exists>c. posterior_sequence e s d t = Some c)"
+lemma accepting_sequence_not_empty: "accepting_sequence e s r t (a#as) \<noteq> Some []"
+  using accepting_sequence_length
+  by fastforce
+
+lemma accepting_sequence_empty: "accepting_sequence e s d t [] = Some [] \<Longrightarrow> t = []"
 proof(induct t)
-case Nil
+  case Nil
   then show ?case
     by simp
 next
   case (Cons a t)
   then show ?case
-    apply clarify
+    apply (simp add: Let_def)
+    apply (case_tac "ffilter (\<lambda>(s', T). accepts e s' (apply_updates (Updates T) (join_ir (snd a) d) d) t)
+         (possible_steps e s d (fst a) (snd a)) =
+        {||}")
+     apply simp
     apply simp
+    apply (case_tac "SOME x.
+             x |\<in>| possible_steps e s d (fst a) (snd a) \<and>
+             (case x of (s', T) \<Rightarrow> accepts e s' (apply_updates (Updates T) (join_ir (snd a) d) d) t)")
+    by (simp add: Let_def accepting_sequence_not_empty)
+qed
+
+lemma posterior_sequence_implies_accepting_sequence: "(posterior_sequence e s d t = Some ca) \<Longrightarrow> (accepting_sequence e s d t [] \<noteq> None)"
+  apply (simp add: posterior_sequence_def)
+  apply (case_tac "accepting_sequence e s d t []")
+   apply simp
+  by simp
+
+lemma accepting_sequence_accepts: "\<forall>d. accepting_sequence e s d t [] = Some y \<longrightarrow> accepts e s d t"
+proof(induct t)
+  case Nil
+  then show ?case
+    by (simp add: accepts.base)
+next
+  case (Cons a t)
+  then show ?case
+    apply clarify
+    apply (simp add: Let_def)
+    apply (case_tac "ffilter (\<lambda>(s', T). accepts e s' (apply_updates (Updates T) (join_ir (snd a) d) d) t)
+         (possible_steps e s d (fst a) (snd a)) =
+        {||}")
+     apply simp
+    apply simp
+    apply (case_tac "SOME x.
+             x |\<in>| possible_steps e s d (fst a) (snd a) \<and>
+             (case x of (s', T) \<Rightarrow> accepts e s' (apply_updates (Updates T) (join_ir (snd a) d) d) t)")
+    apply (simp add: Let_def)
+    apply (rule accepts.step)
+    by fastforce
+qed
+
+lemma posterior_sequence_accepts: "posterior_sequence e s d t = Some ca \<longrightarrow> accepts e s d t"
+  using posterior_sequence_implies_accepting_sequence[of e s d t ca]
+  apply simp
+  apply clarify
+  apply simp
+  using accepting_sequence_accepts
+  by auto
+
+lemma anterior_context_accepts: "\<exists>c. anterior_context e p = Some c \<Longrightarrow> accepts_trace e p"
+  using posterior_sequence_accepts
+  by auto
+
+lemma accepting_sequence_posterior_sequence_not_none: "accepting_sequence e s d t [] \<noteq> None \<Longrightarrow> posterior_sequence e s d t \<noteq> None"
+  apply (simp add: posterior_sequence_def)
+  apply (case_tac "accepting_sequence e s d t []")
+   apply simp
+  apply simp
+  apply (case_tac "last a")
+  by simp
+
+lemma posterior_sequence_none_accepting_sequence_none: "(posterior_sequence e s d t = None) = (accepting_sequence e s d t [] = None)"
+  apply standard
+  using accepting_sequence_posterior_sequence_not_none apply blast
+  by (simp add: posterior_sequence_def)
+
+lemma rejects_gives_no_accepting_sequence: "\<forall>s d. \<not>accepts e s d t \<longrightarrow> accepting_sequence e s d t [] = None"
+proof(induct t)
+  case Nil
+  then show ?case
+    by (simp add: accepts.base)
+next
+  case (Cons a t)
+  then show ?case
+    apply clarify
+    apply (cases a)
+    apply (simp only: trace_reject_2)
+    apply (simp add: Let_def)
+    apply (case_tac "SOME x.
+                x |\<in>| possible_steps e s d aa b \<and>
+                (case x of (s', T) \<Rightarrow> accepts e s' (apply_updates (Updates T) (join_ir b d) d) t)")
+    apply simp
+    by fastforce
+qed
+
+lemma rejects_gives_no_posterior_sequence: "\<not>accepts e s d t \<Longrightarrow> posterior_sequence e s d t = None"
+  by (simp add: posterior_sequence_def rejects_gives_no_accepting_sequence)
+
+lemma posterior_sequence_gives_accept: "posterior_sequence e s d t \<noteq> None \<Longrightarrow> accepts e s d t"
+  by (meson rejects_gives_no_posterior_sequence)
+
+lemma no_accepting_sequence_rejected: "\<forall>d s seq. accepting_sequence e s d t seq = None \<longrightarrow> \<not> accepts e s d t"
+proof(induct t)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a t)
+  then show ?case
+    apply safe
     apply (rule accepts.cases)
       apply simp
      apply simp
-    apply (case_tac "step e s d (fst a) (snd a)")
-     apply (simp add: step_none_inaccepts)
-    apply simp
-    apply (case_tac aa)
-    apply simp
     apply clarify
+    apply (simp add: Let_def)
+    apply (case_tac "ffilter (\<lambda>(s', T). accepts e s' (apply_updates (Updates T) (join_ir b da) da) t) (possible_steps e sa da aa b) = {||}")
+     apply auto[1]
     apply simp
-
+    apply (case_tac "SOME x.
+                x |\<in>| possible_steps e sa da aa b \<and>
+                (case x of (s', T) \<Rightarrow> accepts e s' (apply_updates (Updates T) (join_ir b da) da) t)")
+    apply (simp add: Let_def)
+    by (metis (mono_tags, lifting) Cons.hyps case_prod_conv someI)
 qed
+
+lemma no_posterior_sequence_reject: "posterior_sequence e s d t = None \<Longrightarrow> \<not>accepts e s d t"
+  apply (simp add: posterior_sequence_none_accepting_sequence_none)
+  using no_accepting_sequence_rejected
+  by blast
+
+lemma accepts_gives_context: "\<forall>s d. accepts e s d t \<longrightarrow> (\<exists>c. posterior_sequence e s d t = Some c)"
+  using no_posterior_sequence_reject by blast
 
 lemma accepts_trace_gives_context: "accepts_trace e p \<Longrightarrow> (\<exists>c. anterior_context e p = Some c)"
   using accepts_gives_context by auto
 
 lemma accepts_trace_anterior_not_none: "accepts_trace e p \<Longrightarrow> anterior_context e p \<noteq> None"
   using accepts_trace_gives_context by blast
-
-lemma mutually_exclusive_not_apply_guards:
-  "\<not> satisfiable (fold gAnd (G1 @ G2) (Bc True)) \<Longrightarrow>
-   apply_guards G1 (join_ir i c) \<Longrightarrow>
-   \<not> apply_guards G2 (join_ir i c)"
-  apply (simp only: fold_apply_guards satisfiable_def)
-  apply (simp add: apply_guards_def)
-  by blast
-
-lemma "\<exists>i. can_take_transition t1 i c \<Longrightarrow>
-       \<not>satisfiable (fold gAnd ((Guard t1)@(Guard t2)) (Bc True)) \<Longrightarrow>
-       \<not> subsumes t2 c t1"
-  apply (simp add: subsumes_def del: fold_append)
-  apply standard
-  apply standard
-  apply (rule disjI1)
-  apply clarify
-  apply (rule_tac x=i in exI)
-  by (simp add: can_take_transition_def can_take_def mutually_exclusive_not_apply_guards)
-
 end

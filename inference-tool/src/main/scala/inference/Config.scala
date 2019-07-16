@@ -43,6 +43,7 @@ object Config {
         case "rank"            => (SelectionStrategies.naive_score_outputs _).curried
         case "comprehensive"   => (SelectionStrategies.naive_score_comprehensive _).curried
         case "comprehensiveeq" => (SelectionStrategies.naive_score_comprehensive_eq_high _).curried
+        case "origins" => (SelectionStrategies.origin_states _).curried
         case s =>
           throw new IllegalArgumentException(s"'${s}' is not a valid strategy ${Nondeterminisms.values}")
       }

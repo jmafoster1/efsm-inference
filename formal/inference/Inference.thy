@@ -68,7 +68,7 @@ lemma choice_alt: "choice t t' = choice_alt t t'"
 lemma choice_symmetry: "choice x y = choice y x"
   using choice_def by auto
                                                         
-definition outgoing_transitions :: "nat \<Rightarrow> iEFSM \<Rightarrow> (cfstate \<times> transition \<times> tid) fset" where
+definition outgoing_transitions :: "cfstate \<Rightarrow> iEFSM \<Rightarrow> (cfstate \<times> transition \<times> tid) fset" where
   "outgoing_transitions n t = fimage (\<lambda>(uid, (from, to), t'). (to, t', uid)) (ffilter (\<lambda>(uid, (origin, dest), t). origin = n) t)"
 
 type_synonym nondeterministic_pair = "(nat \<times> (nat \<times> nat) \<times> ((transition \<times> nat) \<times> (transition \<times> nat)))"

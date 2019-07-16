@@ -5331,6 +5331,50 @@ def naive_score(t1ID: Nat.nat, t2ID: Nat.nat,
                        Transition.Arity[Unit](t2))))
   }
 
+def naive_score_comprehensive_eq_high(t1ID: Nat.nat, t2ID: Nat.nat,
+                                       e:
+ FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
+      Nat.nat
+  =
+  {
+    val x: Transition.transition_ext[Unit] = Inference.get_by_id(e, t1ID)
+    val y: Transition.transition_ext[Unit] = Inference.get_by_id(e, t2ID);
+    (if (Transition.equal_transition_exta[Unit](x, y))
+      Code_Numeral.nat_of_integer(BigInt(100))
+      else (if ((Transition.Label[Unit](x) ==
+                  Transition.Label[Unit](y)) && (Nat.equal_nata(Transition.Arity[Unit](x),
+                         Transition.Arity[Unit](y))))
+             (if (Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](x)).length),
+                                  Nat.Nata((Transition.Outputs[Unit](y)).length)))
+               Nat.plus_nata(Finite_Set.card[GExp.gexp](Set.inf_set[GExp.gexp](Set.seta[GExp.gexp](Transition.Guard[Unit](x)),
+Set.seta[GExp.gexp](Transition.Guard[Unit](y)))),
+                              Nat.Nata((Lista.filter[(AExp.aexp,
+               AExp.aexp)](((a: (AExp.aexp, AExp.aexp)) =>
+                             {
+                               val (aa, b): (AExp.aexp, AExp.aexp) = a;
+                               AExp.equal_aexpa(aa, b)
+                             }),
+                            ((Transition.Outputs[Unit](x)) zip (Transition.Outputs[Unit](y))))).length))
+               else Nat.zero_nata)
+             else Nat.zero_nata))
+  }
+
+def origin_states(t1ID: Nat.nat, t2ID: Nat.nat,
+                   e: FSet.fset[(Nat.nat,
+                                  ((Nat.nat, Nat.nat),
+                                    Transition.transition_ext[Unit]))]):
+      Nat.nat
+  =
+  {
+    val t1Orig: Nat.nat = Inference.origin(t1ID, e)
+    val t2Orig: Nat.nat = Inference.origin(t2ID, e);
+    (if ((Nat.equal_nata(t1Orig,
+                          t2Orig)) && (Nat.less_nat(Nat.zero_nata,
+             naive_score(t1ID, t2ID, e))))
+      Code_Numeral.nat_of_integer(BigInt(1000))
+      else naive_score_comprehensive_eq_high(t1ID, t2ID, e))
+  }
+
 def naive_score_eq(t1ID: Nat.nat, t2ID: Nat.nat,
                     e: FSet.fset[(Nat.nat,
                                    ((Nat.nat, Nat.nat),
@@ -5380,34 +5424,6 @@ def naive_score_comprehensive(t1ID: Nat.nat, t2ID: Nat.nat,
                      ((Transition.Outputs[Unit](x)) zip (Transition.Outputs[Unit](y))))).length))
         else Nat.zero_nata)
       else Nat.zero_nata)
-  }
-
-def naive_score_comprehensive_eq_high(t1ID: Nat.nat, t2ID: Nat.nat,
-                                       e:
- FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
-      Nat.nat
-  =
-  {
-    val x: Transition.transition_ext[Unit] = Inference.get_by_id(e, t1ID)
-    val y: Transition.transition_ext[Unit] = Inference.get_by_id(e, t2ID);
-    (if (Transition.equal_transition_exta[Unit](x, y))
-      Code_Numeral.nat_of_integer(BigInt(100))
-      else (if ((Transition.Label[Unit](x) ==
-                  Transition.Label[Unit](y)) && (Nat.equal_nata(Transition.Arity[Unit](x),
-                         Transition.Arity[Unit](y))))
-             (if (Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](x)).length),
-                                  Nat.Nata((Transition.Outputs[Unit](y)).length)))
-               Nat.plus_nata(Finite_Set.card[GExp.gexp](Set.inf_set[GExp.gexp](Set.seta[GExp.gexp](Transition.Guard[Unit](x)),
-Set.seta[GExp.gexp](Transition.Guard[Unit](y)))),
-                              Nat.Nata((Lista.filter[(AExp.aexp,
-               AExp.aexp)](((a: (AExp.aexp, AExp.aexp)) =>
-                             {
-                               val (aa, b): (AExp.aexp, AExp.aexp) = a;
-                               AExp.equal_aexpa(aa, b)
-                             }),
-                            ((Transition.Outputs[Unit](x)) zip (Transition.Outputs[Unit](y))))).length))
-               else Nat.zero_nata)
-             else Nat.zero_nata))
   }
 
 } /* object SelectionStrategies */

@@ -290,8 +290,45 @@ qed
 
 inductive accepts :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> bool" where
   base: "accepts e s d []" |                                         
-  step: "\<exists>(s', T) |\<in>| possible_steps e s d (fst h) (snd h). accepts e s' (apply_updates (Updates T) (join_ir i r) r) t \<Longrightarrow>
+  step: "\<exists>(s', T) |\<in>| possible_steps e s d (fst h) (snd h). accepts e s' (apply_updates (Updates T) (join_ir (snd h) d) d) t \<Longrightarrow>
          accepts e s d (h#t)"
+
+lemma accepts_cons: "accepts e s d (h#t) = (\<exists>(s', T) |\<in>| possible_steps e s d (fst h) (snd h). accepts e s' (apply_updates (Updates T) (join_ir (snd h) d) d) t)"
+  apply standard
+  apply (metis (mono_tags) accepts.simps list.distinct(1) list.inject)
+  by (simp add: accepts.step)
+
+lemma accepts_cons_step: "accepts e s r (a # t) \<Longrightarrow> step e s r (fst a) (snd a) \<noteq>  None"
+  using accepts_cons no_possible_steps_4 by auto
+
+lemma step_some_updated: "step e s r l i = Some (transition, s', outputs, updated) \<Longrightarrow>
+       updated = (apply_updates (Updates transition) (join_ir i r) r)"
+  apply (simp add: step_def Let_def)
+  apply (case_tac "possible_steps e s r l i = {||}")
+   apply simp
+  apply simp
+  apply (case_tac "SOME x. x |\<in>| possible_steps e s r l i")
+  by auto
+
+lemma step_in_possible_steps:
+  "step e s r l i = Some (transition, s', outputs, updated) \<Longrightarrow>
+   (s', transition) |\<in>| possible_steps e s r l i"
+  apply (simp add: step_def Let_def)
+  apply (case_tac "possible_steps e s r l i = {||}")
+   apply simp
+  apply simp
+  apply (case_tac "SOME x. x |\<in>| possible_steps e s r l i")
+  apply simp
+  apply clarify
+  by (metis equalsffemptyI verit_sko_ex')
+
+lemma accepts_step: "step e s r l i = Some (transition, s', outputs, updated) \<Longrightarrow>
+                     accepts e s' updated t \<Longrightarrow>
+                     accepts e s r ((l, i)#t)"
+  apply (rule accepts.step)
+  apply (rule_tac x="(s', transition)" in FSet.fBexI)
+  using step_some_updated apply simp
+  by (simp add: step_in_possible_steps)
 
 abbreviation accepts_trace :: "transition_matrix \<Rightarrow> trace \<Rightarrow> bool" where
   "accepts_trace e t \<equiv> accepts e 0 <> t"
@@ -330,6 +367,24 @@ lemma accepts_single_event: "step e s d a b \<noteq> None \<Longrightarrow> acce
 
 lemma inaccepts_single_event: "\<not> accepts e s d [(a, b)] \<Longrightarrow> step e s d a b = None"
   using accepts_single_event by blast
+
+lemma single_event_reject: "\<not> accepts e s d [(a, b)] = (step e s d a b = None)"
+  using accepts_single_event no_step_none by blast
+
+lemma trace_reject: "(possible_steps e s d a b = {||} \<or> (\<forall>(s', T) |\<in>| possible_steps e s d a b. \<not>accepts e s' (apply_updates (Updates T) (join_ir b d) d) t)) = (\<not> accepts e s d ((a, b)#t))"
+  apply safe
+    apply (simp add: no_possible_steps_4 no_step_none)
+   apply (rule accepts.cases)
+     apply simp
+    apply simp
+   apply clarify
+   apply simp
+   apply auto[1]
+  using accepts.intros(2) by fastforce
+
+lemma trace_reject_2: "\<not> accepts e s d ((a, b)#t) = (possible_steps e s d a b = {||} \<or> (\<forall>(s', T) |\<in>| possible_steps e s d a b. \<not>accepts e s' (apply_updates (Updates T) (join_ir b d) d) t))"
+  using trace_reject 
+  by simp
 
 lemma step_none_inaccepts_append: "step e s d (fst a) (snd a) = None \<Longrightarrow> \<not>accepts e s d (a # t) \<and> \<not>accepts e s d (a # t @ t')"
   by (simp add: step_none_inaccepts)
@@ -391,5 +446,18 @@ lemma incoming_transition_alt_def: "incoming_transition_to e n = (\<exists>t fro
   apply (simp add: fmember_def)
   apply (simp add: Set.filter_def)
   by auto
+
+primrec accepting_sequence :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (transition \<times> cfstate \<times> outputs \<times> registers) list \<Rightarrow> (transition \<times> cfstate \<times> outputs \<times> registers) list option" where
+  "accepting_sequence _ _ r [] obs = Some (rev obs)" |
+  "accepting_sequence e s r (a#t) obs = (let
+    poss = possible_steps e s r (fst a) (snd a);
+    accepting = ffilter (\<lambda>(s', T). accepts e s' (apply_updates (Updates T) (join_ir (snd a) r) r) t) poss  in
+    if accepting = {||} then
+      None
+    else let
+      (s', T) = Eps (\<lambda>x. x |\<in>| accepting);
+      r' = (apply_updates (Updates T) (join_ir (snd a) r) r) in
+      accepting_sequence e s' r' t ((T, s', (apply_outputs (Outputs T) (join_ir (snd a) r)), r')#obs)
+  )"
 
 end
