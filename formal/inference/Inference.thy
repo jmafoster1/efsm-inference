@@ -56,18 +56,6 @@ lemma merge_states_symmetry: "merge_states x y t = merge_states y x t"
 
 (* declare[[show_types,show_sorts]] *)
 
-definition choice :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "choice t t' = (\<exists> i r. apply_guards (Guard t) (join_ir i r) \<and> apply_guards (Guard t') (join_ir i r))"
-
-definition choice_alt :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "choice_alt t t' = (\<exists> i r. apply_guards (Guard t@Guard t') (join_ir i r))"
-
-lemma choice_alt: "choice t t' = choice_alt t t'"
-  by (simp add: choice_def choice_alt_def apply_guards_append)
-
-lemma choice_symmetry: "choice x y = choice y x"
-  using choice_def by auto
-                                                        
 definition outgoing_transitions :: "cfstate \<Rightarrow> iEFSM \<Rightarrow> (cfstate \<times> transition \<times> tid) fset" where
   "outgoing_transitions n t = fimage (\<lambda>(uid, (from, to), t'). (to, t', uid)) (ffilter (\<lambda>(uid, (origin, dest), t). origin = n) t)"
 
@@ -236,9 +224,9 @@ lemma "\<forall>c. subsumes t2 c t1 \<Longrightarrow> directly_subsumes e1 e2 s 
 
 lemma gets_us_to_and_not_subsumes: 
   "\<exists>p. accepts_trace (tm e1) p \<and>
-       gets_us_to s (tm e1) 0 Map.empty p \<and>
+       gets_us_to s (tm e1) 0 (K$ None) p \<and>
        accepts_trace (tm e2) p \<and>
-       gets_us_to s' (tm e2) 0 Map.empty p \<and>
+       gets_us_to s' (tm e2) 0 (K$ None) p \<and>
        (anterior_context (tm e2) p) = Some a \<and>
        \<not> subsumes t1 a t2 \<Longrightarrow> \<not> directly_subsumes e1 e2 s s' t1 t2"
   unfolding directly_subsumes_def by auto
@@ -425,14 +413,15 @@ lemma every_context_subsumes: "\<forall>c. subsumes t2 c t1 \<Longrightarrow> di
 
 lemma "Label t = Label t' \<Longrightarrow>
        Arity t = Arity t' \<Longrightarrow>
-       \<not>choice t t' \<Longrightarrow>
-       \<exists>i. length i = Arity t' \<and>
-        (apply_guards (Guard t') (join_ir i c)) \<Longrightarrow>
+       \<not> choice t t' \<Longrightarrow>
+       \<exists>i. can_take_transition t' i c \<Longrightarrow>
        \<not> subsumes t c t'"
   apply (rule bad_guards)
   apply (simp add: can_take_transition_def can_take_def)
   apply clarify
   apply (rule_tac x=i in exI)
   using choice_def by blast
+
+
 
 end

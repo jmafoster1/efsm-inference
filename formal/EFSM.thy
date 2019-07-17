@@ -97,12 +97,36 @@ next
     by auto
 qed
 
+definition choice :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "choice t t' = (\<exists> i r. apply_guards (Guard t) (join_ir i r) \<and> apply_guards (Guard t') (join_ir i r))"
+
+definition choice_alt :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "choice_alt t t' = (\<exists> i r. apply_guards (Guard t@Guard t') (join_ir i r))"
+
+lemma choice_alt: "choice t t' = choice_alt t t'"
+  by (simp add: choice_def choice_alt_def apply_guards_append)
+
+lemma choice_symmetry: "choice x y = choice y x"
+  using choice_def by auto
+
 primrec apply_updates :: "updates \<Rightarrow> datastate \<Rightarrow> registers \<Rightarrow> registers" where
   "apply_updates [] _ new = new" |
-  "apply_updates (h#t) old new = (\<lambda>x. if x = (fst h) then (aval (snd h) old) else (apply_updates t old new) x)"
+  "apply_updates (h#t) old new = (apply_updates t old new)(fst h $:= aval (snd h) old)"
+
+lemma apply_updates_foldr: "apply_updates u old new = foldr (\<lambda>h r. r(fst h $:= aval (snd h) old)) u new"
+proof(induct u)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a u)
+  then show ?case
+    apply (simp add: eq_finfun_All_ext finfun_All_def finfun_All_except_def)
+    by (simp add: Cons.hyps)
+qed
 
 lemma r_not_updated_stays_the_same: "r \<notin> fst ` set U \<Longrightarrow>
-    apply_updates U c d r = d r"
+    apply_updates U c d $ r = d $ r"
 proof(induct U)
   case Nil
   then show ?case
@@ -113,7 +137,7 @@ next
     by simp
 qed
 
-definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (cfstate \<times> transition) fset" where
+definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> transition) fset" where
   "possible_steps e s r l i = fimage (\<lambda>((origin, dest), t). (dest, t)) (ffilter (\<lambda>((origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"
 
 lemma possible_steps_alt_aux: "(\<lambda>((origin, dest), t). (dest, t)) |`|
@@ -121,7 +145,7 @@ lemma possible_steps_alt_aux: "(\<lambda>((origin, dest), t). (dest, t)) |`|
     {|(d, t)|} \<Longrightarrow>
     ffilter
      (\<lambda>((origin, dest), t).
-         origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (\<lambda>x. case x of vname.I n \<Rightarrow> input2state i n | R n \<Rightarrow> r n))
+         origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (\<lambda>x. case x of vname.I n \<Rightarrow> input2state i $ n | R n \<Rightarrow> r $ n))
      e =
     {|((s, d), t)|}"
 proof(induct e)
@@ -143,17 +167,17 @@ next
       apply simp
       apply (case_tac "length i = Arity ba")
        apply simp
-       apply (case_tac "apply_guards (Guard ba) (case_vname (\<lambda>n. input2state i n) (\<lambda>n. r n))")
+       apply (case_tac "apply_guards (Guard ba) (case_vname (\<lambda>n. input2state i $ n) (\<lambda>n. r $  n))")
     by auto
 qed
 
 lemma possible_steps_alt: "(possible_steps e s r l i = {|(d, t)|}) = (ffilter
      (\<lambda>((origin, dest), t).
-         origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (\<lambda>x. case x of vname.I n \<Rightarrow> input2state i n | R n \<Rightarrow> r n))
+         origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (join_ir i r))
      e =
     {|((s, d), t)|})"
   apply standard
-   apply (simp add: possible_steps_def possible_steps_alt_aux)
+   apply (simp add: possible_steps_def possible_steps_alt_aux join_ir_def)
   by (simp add: possible_steps_def join_ir_def)
 
 lemma singleton_dest: "fis_singleton (possible_steps e s r aa b) \<Longrightarrow>

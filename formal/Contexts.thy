@@ -149,7 +149,7 @@ lemma exists_join_ir_ext: "\<exists>i r. join_ir i r v = s v"
    apply simp
    defer
    apply simp
-   apply (rule_tac x="<x2 := a>" in exI)
+   apply (rule_tac x="(K$ None)(x2 := a)" in exI)
    apply simp
   by (simp add: input2state_exists)
 
@@ -404,7 +404,7 @@ next
     by simp
 qed
 
-lemma test_aux_aux_2: "x1 < A \<Longrightarrow> A \<le> length i \<Longrightarrow> x = vname.I x1 \<Longrightarrow> input2state i x1 = input2state (take A i) x1"
+lemma test_aux_aux_2: "x1 < A \<Longrightarrow> A \<le> length i \<Longrightarrow> x = vname.I x1 \<Longrightarrow> input2state i $ x1 = input2state (take A i) $ x1"
 proof(induct i)
   case Nil
   then show ?case
@@ -559,7 +559,7 @@ lemma input2state_eq_or_none:
   "x1 < A \<Longrightarrow>
   length i < A \<Longrightarrow>
   x = vname.I x1 \<Longrightarrow>
-  input2state i x1 = input2state (i @ i') x1 \<or> input2state i x1 = None"
+  input2state i $ x1 = input2state (i @ i') $ x1 \<or> input2state i $ x1 = None"
   apply (case_tac "x1 < length i")
    apply (simp add: input2state_nth nth_append)
   by (simp add: input2state_out_of_bounds)
@@ -601,12 +601,6 @@ lemma medial_subset:
   can_take_transition t' i r"
   by (simp add: can_take_transition_def can_take_def apply_guards_subset)
 
-definition d2r :: "datastate \<Rightarrow> registers" where
-  "d2r d = (\<lambda>r. d (R r))"
-
-lemma d2r_keeps_regs_same [simp]: "d2r c r = c (R r)"
-  by (simp add: d2r_def)
-
 definition posterior_separate :: "nat \<Rightarrow> gexp list \<Rightarrow> update_function list \<Rightarrow> inputs \<Rightarrow> registers \<Rightarrow> registers option" where
   "posterior_separate a g u i r = (if can_take a g i r then Some (apply_updates u (join_ir i r) r) else None)"
 
@@ -614,7 +608,7 @@ definition posterior :: "transition \<Rightarrow> inputs \<Rightarrow> registers
   "posterior t i r = posterior_separate (Arity t) (Guard t) (Updates t) i r"
 
 definition r2d :: "registers \<Rightarrow> datastate" where
-  "r2d regs = (\<lambda>i. case i of R r \<Rightarrow> regs r | _ \<Rightarrow> None)"
+  "r2d regs = (\<lambda>i. case i of R r \<Rightarrow> regs $ r | _ \<Rightarrow> None)"
 
 definition subsumes :: "transition \<Rightarrow> registers \<Rightarrow> transition \<Rightarrow> bool" where
   "subsumes t2 r t1 = (Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and>
@@ -622,8 +616,8 @@ definition subsumes :: "transition \<Rightarrow> registers \<Rightarrow> transit
                        (\<forall>i. can_take_transition t1 i r \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
                        (\<forall>p1 p2 i. posterior_separate (Arity t2) ((Guard t2)@(Guard t1)) (Updates t2) i r = Some p2 \<and>
                                   posterior_separate (Arity t1) (Guard t1) (Updates t1) i r = Some p1 \<longrightarrow>
-                                  (\<forall>P r'. (p1 r' = None) \<or> (P (p2 r') \<longrightarrow> P (p1 r')))) \<and>
-                       (\<forall>p1 p2 i. posterior t2 i r = Some p2 \<and> posterior t1 i r = Some p1 \<longrightarrow> (\<forall>r. p1 r \<noteq> None \<longrightarrow>  p2 r \<noteq> None))
+                                  (\<forall>P r'. (p1 $ r' = None) \<or> (P (p2 $ r') \<longrightarrow> P (p1 $ r')))) \<and>
+                       (\<forall>p1 p2 i. posterior t2 i r = Some p2 \<and> posterior t1 i r = Some p1 \<longrightarrow> (\<forall>r. p1 $ r \<noteq> None \<longrightarrow>  p2 $ r \<noteq> None))
                       )"
 
 lemma subsumption: 
@@ -632,22 +626,22 @@ lemma subsumption:
    (\<forall>i. can_take_transition t1 i r \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<Longrightarrow>
    (\<forall>p1 p2 i. posterior_separate (Arity t2) ((Guard t2)@(Guard t1)) (Updates t2) i r = Some p2 \<and>
                                   posterior_separate (Arity t1) (Guard t1) (Updates t1) i r = Some p1 \<longrightarrow>
-                                  (\<forall>P r'. (p1 r' = None) \<or> (P (p2 r') \<longrightarrow> P (p1 r')))) \<Longrightarrow>
-   (\<forall>p1 p2 i. posterior t2 i r = Some p2 \<and> posterior t1 i r = Some p1 \<longrightarrow> (\<forall>r. p1 r \<noteq> None \<longrightarrow>  p2 r \<noteq> None)) \<Longrightarrow>
+                                  (\<forall>P r'. (p1 $ r' = None) \<or> (P (p2 $ r') \<longrightarrow> P (p1 $ r')))) \<Longrightarrow>
+   (\<forall>p1 p2 i. posterior t2 i r = Some p2 \<and> posterior t1 i r = Some p1 \<longrightarrow> (\<forall>r. p1 $ r \<noteq> None \<longrightarrow>  p2 $ r \<noteq> None)) \<Longrightarrow>
    subsumes t2 r t1"
   by (simp add: subsumes_def)
 
 lemma bad_guards: "\<exists>i. can_take_transition t1 i r \<and> \<not> can_take_transition t2 i r \<Longrightarrow> \<not> subsumes t2 r t1"
   by (simp add: subsumes_def)
 
-lemma inconsistent_updates: "\<exists>p1 p2. (\<exists>i. posterior t2 i r = Some p2 \<and> posterior t1 i r = Some p1) \<and> (\<exists>r. (\<exists>y. p1 r = Some y) \<and> p2 r = None) \<Longrightarrow>
+lemma inconsistent_updates: "\<exists>p1 p2. (\<exists>i. posterior t2 i r = Some p2 \<and> posterior t1 i r = Some p1) \<and> (\<exists>r. (\<exists>y. p1 $ r = Some y) \<and> p2 $ r = None) \<Longrightarrow>
  \<not> subsumes t2 r t1"
   by (simp add: subsumes_def)
 
 lemma inconsistent_updates2: "\<exists>p1 p2.
        (\<exists>i. posterior_separate (Arity t2) (Guard t2 @ Guard t1) (Updates t2) i r = Some p2 \<and>
             posterior_separate (Arity t1) (Guard t1) (Updates t1) i r = Some p1) \<and>
-       (\<exists>P r'. P (p2 r') \<and> (\<exists>y. p1 r' = Some y) \<and> \<not> P (p1 r')) \<Longrightarrow>
+       (\<exists>P r'. P (p2 $ r') \<and> (\<exists>y. p1 $ r' = Some y) \<and> \<not> P (p1 $ r')) \<Longrightarrow>
     \<not> subsumes t2 r t1"
   by (simp add: subsumes_def)
 

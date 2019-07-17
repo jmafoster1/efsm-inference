@@ -69,14 +69,14 @@ object PrettyPrinter {
     nataPairToString(t._1) + transitionToString(t._2) + "\n"
   }
 
-  def aexpToString(a: AExp.aexp, types: FinFun.finfun[VName.vname, Type_Inference.typea]): String = a match {
+  def aexpToString(a: AExp.aexp, types: Map[VName.vname, Type_Inference.typea]): String = a match {
     case AExp.L(v) => valueToString(v)
-    case AExp.V(v) => vnameToString(v) + "::" + FinFun.finfun_apply(types, v)
+    case AExp.V(v) => vnameToString(v) + "::" + types(v)
     case AExp.Plus(a1, a2) => aexpToString(a1, types) + " + " + aexpToString(a2, types)
     case AExp.Minus(a1, a2) => aexpToString(a1, types) + " + " + aexpToString(a2, types)
   }
 
-  def gexpToString(g: GExp.gexp, types: FinFun.finfun[VName.vname, Type_Inference.typea]): String =  g match {
+  def gexpToString(g: GExp.gexp, types: Map[VName.vname, Type_Inference.typea]): String =  g match {
     case GExp.Bc(a) => a.toString()
     case GExp.Eq(a1, a2) => aexpToString(a1, types) + " = " + aexpToString(a2, types)
     case GExp.Gt(a1, a2) => aexpToString(a1, types) + " > " + aexpToString(a2, types)

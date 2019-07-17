@@ -21,10 +21,10 @@ object Dirties {
     case VName.R(n) => ctx.mkConst("r"+Code_Numeral.integer_of_nat(n), datatype)
   }
 
-  def toZ3(a: AExp.aexp, ctx: z3.Context, types: FinFun.finfun[VName.vname, Type_Inference.typea]): z3.Expr =  a match {
+  def toZ3(a: AExp.aexp, ctx: z3.Context, types: Map[VName.vname, Type_Inference.typea]): z3.Expr =  a match {
     case AExp.L(v) => toZ3(v, ctx)
     case AExp.V(v) => {
-      FinFun.finfun_apply(types, v) match {
+      types(v) match {
         case Type_Inference.NUM()     => toZ3(v, ctx, ctx.mkIntSort())
         case Type_Inference.STRING()  => toZ3(v, ctx, ctx.mkStringSort())
         case Type_Inference.UNBOUND() => toZ3(v, ctx, ctx.mkUninterpretedSort("UNBOUND"))
@@ -35,7 +35,7 @@ object Dirties {
     case AExp.Minus(a1, a2) => ctx.mkSub(toZ3(a1, ctx, types).asInstanceOf[z3.ArithExpr],toZ3(a2, ctx, types).asInstanceOf[z3.ArithExpr])
   }
 
-  def toZ3(g: GExp.gexp, ctx: z3.Context, types: FinFun.finfun[VName.vname, Type_Inference.typea]): z3.BoolExpr =  g match {
+  def toZ3(g: GExp.gexp, ctx: z3.Context, types: Map[VName.vname, Type_Inference.typea]): z3.BoolExpr =  g match {
     case GExp.Bc(a) => ctx.mkBool(a)
     case GExp.Eq(a1, a2) => {
       if (Type_Inference.aexp_type_check(a1, a2, types)) {
@@ -61,7 +61,7 @@ object Dirties {
       maybe_types match {
         case None => false
         case Some(types) => {
-          // println(FinFun.finfun_apply(types, I(1)))
+          // println(Map_apply(types, I(1)))
           val ctx = new z3.Context
           val solver = ctx.mkSimpleSolver()
           try {
@@ -162,7 +162,7 @@ object Dirties {
     TypeConversion.efsmToSALTranslator(Inference.tm(ePrime), f_new)
     addLTL("salfiles/" + f_new + ".sal", s"  generaliseOutput: THEOREM MichaelsEFSM |-\n"+
       s"    U(cfstate /= NULL_STATE, cfstate = State_${Code_Numeral.integer_of_nat(s_new)}) =>\n"+
-      s"    U(label = select => I(${Code_Numeral.integer_of_nat(inxLabel._1)}) = ${salValue(v)}, cfstate = NULL_STATE) =>\n"+
+      s"    U(label = select => I(${Code_Numeral.integer_of_nat(inxLabel._1)+1}) = ${salValue(v)}, cfstate = NULL_STATE) =>\n"+
       s"    U(cfstate = State_${Code_Numeral.integer_of_nat(s_new)} => r_1 = Some(${salValue(v)}), cfstate=NULL_STATE);")
 
 
@@ -183,14 +183,14 @@ object Dirties {
                             s_prime: Nat.nat,
                             t1: Transition.transition_ext[Unit],
                             t2: Transition.transition_ext[Unit]): Boolean = {
-                              // if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t2, t1, b, s_prime)) {
-                              //   // println("n")
-                              //   return false
-                              // }
-                              // if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t2, t1, b, a, s, s_prime)) {
-                              //   // println("n")
-                              //   return false
-                              // }
+                              if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t2, t1, b, s_prime)) {
+                                // println("n")
+                                return false
+                              }
+                              if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t2, t1, b, a, s, s_prime)) {
+                                // println("n")
+                                return false
+                              }
                               // if (Transition.Guard(t1).length > 0 && Transition.Guard(t1).length > 0) {
                               //   return true
                               // }

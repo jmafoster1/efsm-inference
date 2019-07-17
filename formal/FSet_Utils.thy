@@ -52,6 +52,9 @@ lemma fset_both_sides: "(Abs_fset s = f) = (fset (Abs_fset s) = fset f)"
 lemma Abs_ffilter: "(ffilter f s = s') = (Set.filter f (fset s) = (fset s'))"
   by (simp add: ffilter_def fset_both_sides Abs_fset_inverse)
 
+lemma Abs_fimage: "(fimage f s = s') = (Set.image f (fset s) = (fset s'))"
+  by (simp add: fimage_def fset_both_sides Abs_fset_inverse)
+
 lemma ffilter_empty: "ffilter f {||} = {||}"
   apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse)
   by auto

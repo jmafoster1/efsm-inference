@@ -25,9 +25,6 @@ fun guard_filter_code :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
   "guard_filter_code inputX (gexp.Eq a b) = (a \<noteq> (V (vname.I inputX)) \<and> b \<noteq> (V (vname.I inputX)))" |
   "guard_filter_code _ _ = True"
 
-lemma fold_conv_foldr: "fold f xs = foldr f (rev xs)"
-  by (simp add: foldr_conv_fold)
-
 fun mutex :: "gexp \<Rightarrow>  gexp \<Rightarrow> bool" where
   "mutex (Eq (V v) (L l)) (Eq (V v') (L l')) = (if v = v' then l \<noteq> l' else False)" |
   "mutex _ _ = False"
@@ -222,14 +219,14 @@ code_printing constant "dirty_directly_subsumes" \<rightharpoonup> (Scala) "Dirt
 
 definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
 "always_different_outputs_direct_subsumption m1 m2 s s' t1 t2 = (
-   (\<exists>p. accepts (tm m1) 0 Map.empty p \<and>
-    gets_us_to s (tm m1) 0 Map.empty p \<and>
-    accepts (tm m2) 0 Map.empty p \<and>
-    gets_us_to s' (tm m2) 0 Map.empty p \<and>
+   (\<exists>p. accepts (tm m1) 0 (K$ None) p \<and>
+    gets_us_to s (tm m1) 0 (K$ None) p \<and>
+    accepts (tm m2) 0 (K$ None) p \<and>
+    gets_us_to s' (tm m2) 0 (K$ None) p \<and>
     (\<forall>c. anterior_context (tm m2) p = Some c \<longrightarrow> (\<exists>i. can_take_transition t2 i c))))"
 
 lemma always_different_outputs_can_take_transition_not_subsumed: "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
-       \<forall>c. posterior_sequence (tm m2) 0 Map.empty p = Some c \<longrightarrow> (\<exists>i. can_take_transition t2 i c) \<longrightarrow> \<not> subsumes t1 c t2"
+       \<forall>c. posterior_sequence (tm m2) 0 (K$ None) p = Some c \<longrightarrow> (\<exists>i. can_take_transition t2 i c) \<longrightarrow> \<not> subsumes t1 c t2"
   apply standard
   apply standard
   apply standard
@@ -412,20 +409,6 @@ lemma [code]: "s |\<subset>| s' = (s |\<subseteq>| s' \<and> size s < size s')"
    apply (simp only: size_fsubset)
   by auto
 
-lemma [code]: "size f = card (fset f)"
-  by simp
-
-lemma map_of_foldr [code]: "map_of l = foldr (\<lambda>(k, v) ps. ps(k \<mapsto> v)) l <>"
-proof(induct l)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a l)
-  then show ?case
-    by (simp add: case_prod_unfold)
-qed
-
 lemma code_list_eq [code]: "HOL.equal xs ys \<longleftrightarrow> length xs = length ys \<and> (\<forall>(x,y) \<in> set (zip xs ys). x = y)"
   apply (simp add: HOL.equal_class.equal_eq)
   by (simp add: Ball_set list_eq_iff_zip_eq)
@@ -439,9 +422,15 @@ lemma [code]: "infer = infer_with_log 0"
   unfolding Let_def
   sorry
 
+code_printing
+  type_constructor finfun \<rightharpoonup> (Scala) "Map[_, _]"
+  | constant "finfun_const" \<rightharpoonup> (Scala) "Map().withDefaultValue((_))"
+  | constant "finfun_update" \<rightharpoonup> (Scala) "_ + (_ -> _)"
+  | constant "finfun_apply" \<rightharpoonup> (Scala) "_((_))"
+
 export_code
   (* Essentials *)
-  try_heuristics aexp_type_check learn finfun_apply infer_types nondeterministic input_updates_register
+  try_heuristics aexp_type_check learn infer_types nondeterministic input_updates_register
   (* Scoring functions *)
   naive_score naive_score_eq naive_score_outputs naive_score_comprehensive naive_score_comprehensive_eq_high
   origin_states
@@ -451,7 +440,6 @@ export_code
   nondeterministic_pairs nondeterministic_pairs_labar
   (* Utilities *)
   iefsm2dot efsm2dot
-
 in Scala
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

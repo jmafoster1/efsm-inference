@@ -18,12 +18,13 @@ limit ourselves to a simple arithmetic of plus and minus as a proof of concept.
 \<close>
 
 theory AExp
-  imports Value VName
+  imports Value VName FinFun.FinFun
 begin
 
 declare One_nat_def [simp del]
+unbundle finfun_syntax
 
-type_synonym registers = "nat \<Rightarrow> value option"
+type_synonym registers = "nat \<Rightarrow>f value option"
 type_synonym datastate = "vname \<Rightarrow> value option"
 
 text_raw\<open>\snip{aexptype}{1}{2}{%\<close>
@@ -75,12 +76,30 @@ lemma aval_plus_symmetry: "aval (Plus x y) s = aval (Plus y x) s"
   by (simp add: value_plus_symmetry)
 
 abbreviation null_state ("<>") where
-  "null_state \<equiv> \<lambda>x. None"
+  "null_state \<equiv> (K$ None)"
+
+nonterminal maplets and maplet
 
 syntax
   "_maplet"  :: "['a, 'a] \<Rightarrow> maplet"             ("_ /:=/ _")
   "_maplets" :: "['a, 'a] \<Rightarrow> maplet"             ("_ /[:=]/ _")
+  ""         :: "maplet \<Rightarrow> maplets"             ("_")
+  "_Maplets" :: "[maplet, maplets] \<Rightarrow> maplets" ("_,/ _")
+  "_MapUpd"  :: "['a \<rightharpoonup> 'b, maplets] \<Rightarrow> 'a \<rightharpoonup> 'b" ("_/'(_')" [900, 0] 900)
+  "_Map"     :: "maplets \<Rightarrow> 'a \<rightharpoonup> 'b"            ("(1[_])")
   "_Map"     :: "maplets \<Rightarrow> 'a \<rightharpoonup> 'b"            ("(1<_>)")
+
+translations
+  "_MapUpd m (_Maplets xy ms)"  \<rightleftharpoons> "_MapUpd (_MapUpd m xy) ms"
+  "_MapUpd m (_maplet  x y)"    \<rightleftharpoons> "m(x $:= CONST Some y)"
+  "_Map ms"                     \<rightleftharpoons> "_MapUpd (CONST empty) ms"
+  "_Map (_Maplets ms1 ms2)"     \<leftharpoondown> "_MapUpd (_Map ms1) ms2"
+  "_Maplets ms1 (_Maplets ms2 ms3)" \<leftharpoondown> "_Maplets (_Maplets ms1 ms2) ms3"
+
+(*syntax
+  "_maplet"  :: "['a, 'a] \<Rightarrow> maplet"             ("_ /:=/ _")
+  "_maplets" :: "['a, 'a] \<Rightarrow> maplet"             ("_ /[:=]/ _")
+  "_Map"     :: "maplets \<Rightarrow> 'a \<rightharpoonup> 'b"            ("(1<_>)")*)
 
 instantiation aexp :: plus begin
 fun plus_aexp :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" where
@@ -99,46 +118,75 @@ instance by standard
 end
 
 definition input2state :: "value list \<Rightarrow> registers" where
-  "input2state n = map_of (enumerate 0 n)"
+  "input2state n = fold (\<lambda>(k, v) f. f(k $:= Some v)) (enumerate 0 n) (K$ None)"
 
-lemma input2state_out_of_bounds: "i \<ge> length ia \<Longrightarrow> input2state ia i = None"
-proof(induct "ia")
+primrec input2state_prim :: "value list \<Rightarrow> nat \<Rightarrow> registers" where
+  "input2state_prim [] _ = (K$ None)" |
+  "input2state_prim (v#t) k = (input2state_prim t (k+1))(k $:= Some v)"
+
+lemma input2state_append: "input2state (i @ [a]) = (input2state i)(length i $:= Some a)"
+  apply (simp add: eq_finfun_All_ext finfun_All_def finfun_All_except_def)
+  apply clarify
+  by (simp add: input2state_def enumerate_eq_zip)
+
+lemma fold_conv_foldr: "fold f xs = foldr f (rev xs)"
+  by (simp add: foldr_conv_fold)
+
+lemma length_map: "length i > 0 \<Longrightarrow> [Suc 0..<length i] @ [length i] = map Suc [0..<length i]"
+  by (simp add: Suc_leI map_Suc_upt)
+
+lemma input2state_out_of_bounds: "i \<ge> length ia \<Longrightarrow> input2state ia $ i = None"
+proof(induct ia rule: rev_induct)
   case Nil
   then show ?case
     by (simp add: input2state_def)
 next
-  case (Cons a ia)
+  case (snoc a as)
   then show ?case
-    apply (simp add: input2state_def)
-    by (metis (mono_tags, lifting) imageE in_set_enumerate_eq length_Cons linorder_not_le list.size(4) map_of_eq_None_iff)
+    by (simp add: input2state_def enumerate_eq_zip)
 qed
 
-lemma input2state_within_bounds: "input2state i x = Some a \<Longrightarrow> x < length i"
+lemma input2state_within_bounds: "input2state i $ x = Some a \<Longrightarrow> x < length i"
   by (metis input2state_out_of_bounds not_le_imp_less option.distinct(1))
 
-lemma input2state_empty: "input2state [] x1 = None"
+lemma input2state_empty: "input2state [] $ x1 = None"
   by (simp add: input2state_out_of_bounds)
 
-lemma input2state_nth: "i < length ia \<Longrightarrow> input2state ia i = Some (ia ! i)"
-proof(induct ia)
+lemma input2state_nth: "i < length ia \<Longrightarrow> input2state ia $ i = Some (ia ! i)"
+proof(induct ia rule: rev_induct)
   case Nil
   then show ?case
     by simp
 next
-  case (Cons a ia)
+  case (snoc a ia)
   then show ?case
-    apply (simp add: input2state_def)
-    apply clarify
-    by (simp add: add.commute in_set_enumerate_eq plus_1_eq_Suc One_nat_def)
+    apply (simp add: input2state_def enumerate_eq_zip)
+    by (simp add: finfun_upd_apply nth_append)
 qed
 
 lemma input2state_cons:
   "x1 > 0 \<Longrightarrow>
    x1 < length ia \<Longrightarrow>
-   input2state (a # ia) x1 = input2state ia (x1-1)"
+   input2state (a # ia) $ x1 = input2state ia $ (x1-1)"
   by (simp add: input2state_nth)
 
-lemma input2state_exists: "\<exists>i. input2state i x1 = Some a"
+lemma input2state_cons_shift: "input2state i $ x1 = Some a \<Longrightarrow> input2state (b # i) $ (Suc x1) = Some a"
+proof(induct i rule: rev_induct)
+  case Nil
+  then show ?case
+    by (simp add: input2state_def)
+next
+  case (snoc x xs)
+  then show ?case
+    using input2state_within_bounds[of xs x1 a]
+    using input2state_cons[of "Suc x1" "xs @ [x]" b]
+    apply simp
+    apply (case_tac "x1 < length xs")
+     apply simp
+    by (metis finfun_upd_apply input2state_append input2state_nth length_Cons length_append_singleton lessI list.sel(3) nth_tl)
+qed
+
+lemma input2state_exists: "\<exists>i. input2state i $ x1 = Some a"
 proof(induct x1)
   case 0
   then show ?case
@@ -149,8 +197,7 @@ next
   then show ?case
     apply clarify
     apply (rule_tac x="a#i" in exI)
-    apply (simp add: input2state_def)
-    by (simp add: in_set_enumerate_eq)
+    by (simp add: input2state_cons_shift)
 qed
 
 primrec repeat :: "nat \<Rightarrow> 'a \<Rightarrow> 'a list" where
@@ -171,10 +218,10 @@ qed
 lemma length_append_repeat: "length (i@(repeat a y)) \<ge> length i"
   by simp
 
-lemma length_input2state_repeat: "input2state i x = Some a \<Longrightarrow> y < length (i @ repeat y a)"
+lemma length_input2state_repeat: "input2state i $ x = Some a \<Longrightarrow> y < length (i @ repeat y a)"
   by (metis append.simps(1) append_eq_append_conv input2state_within_bounds length_append length_repeat list.size(3) neqE not_add_less2 zero_order(3))
 
-lemma input2state_double_exists: "\<exists>i. input2state i x = Some a \<and> input2state i y = Some a"
+lemma input2state_double_exists: "\<exists>i. input2state i $ x = Some a \<and> input2state i $ y = Some a"
   apply (insert input2state_exists[of x a])
   apply clarify
   apply (case_tac "x \<ge> y")
@@ -184,7 +231,7 @@ lemma input2state_double_exists: "\<exists>i. input2state i x = Some a \<and> in
   apply (simp add: not_le)
   by (metis length_input2state_repeat input2state_nth input2state_out_of_bounds le_trans length_append_repeat length_list_update not_le_imp_less nth_append nth_list_update_eq nth_list_update_neq option.distinct(1))
 
-lemma input2state_double_exists_2: "x \<noteq> y \<Longrightarrow> \<exists>i. input2state i x = Some a \<and> input2state i y = Some a'"
+lemma input2state_double_exists_2: "x \<noteq> y \<Longrightarrow> \<exists>i. input2state i $ x = Some a \<and> input2state i $ y = Some a'"
   apply (insert input2state_exists[of x a])
   apply clarify
   apply (case_tac "x \<ge> y")
@@ -198,13 +245,13 @@ lemma input2state_double_exists_2: "x \<noteq> y \<Longrightarrow> \<exists>i. i
 
 definition join_ir :: "value list \<Rightarrow> registers \<Rightarrow> datastate" where
   "join_ir i r \<equiv> (\<lambda>x. case x of
-    R n \<Rightarrow> r n |
-    I n \<Rightarrow> (input2state i) n
+    R n \<Rightarrow> r $ n |
+    I n \<Rightarrow> (input2state i) $ n
   )"
 
 lemmas datastate = join_ir_def input2state_def
 
-lemma join_ir_empty[simp]: "join_ir [] <> = <>"
+lemma join_ir_empty[simp]: "join_ir [] <> = (\<lambda>x. None)"
   apply (rule ext)
   apply (simp add: join_ir_def)
   apply (case_tac x)
@@ -224,7 +271,8 @@ next
   then show ?thesis
     apply (simp add: join_ir_def)
     apply (cases v')
-    using input2state_exists by auto
+    using input2state_exists apply force
+    using input2state_double_exists by fastforce
 qed
 
 lemma join_ir_double_exists_2: "v \<noteq> v' \<Longrightarrow> \<exists>i r. join_ir i r v = Some a \<and> join_ir i r v' = Some a'"
@@ -245,7 +293,7 @@ next
      apply simp
     using R input2state_exists apply auto[1]
     apply (simp add: R)
-    apply (rule_tac x="(\<lambda>r. if r = x2 then Some a else if r = x2a then Some a' else None)" in exI)
+    apply (rule_tac x="(K$ None)(x2 $:= Some a)(x2a $:= Some a')" in exI)
     by simp
 qed
 
@@ -307,7 +355,7 @@ fun enumerate_aexp_regs_list :: "aexp \<Rightarrow> nat list" where
   "enumerate_aexp_regs_list (Plus v va) = enumerate_aexp_regs_list v @ enumerate_aexp_regs_list va" |
   "enumerate_aexp_regs_list (Minus v va) = enumerate_aexp_regs_list v @ enumerate_aexp_regs_list va"
 
-lemma enumerate_aexp_inputs_list: "set (enumerate_aexp_inputs_list l) = enumerate_aexp_inputs l"
+lemma enumerate_aexp_inputs_list: "enumerate_aexp_inputs l = set (enumerate_aexp_inputs_list l)"
 proof(induct l)
 case (L x)
   then show ?case
@@ -326,6 +374,9 @@ next
   then show ?case
     by simp
 qed
+
+definition max_input :: "aexp \<Rightarrow> nat option" where
+  "max_input g = (let inputs = (enumerate_aexp_inputs g) in if inputs = {} then None else Some (Max inputs))"
 
 lemma enumerate_aexp_regs_list: "set (enumerate_aexp_regs_list l) = enumerate_aexp_regs l"
 proof(induct l)

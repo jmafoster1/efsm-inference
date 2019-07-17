@@ -100,7 +100,13 @@ definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow
   \<rparr>"
 
 definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
-  "generalise_output t regX outputX = \<lparr>Label = (Label t), Arity = (Arity t), Guard = (Guard t), Outputs = list_update (Outputs t) outputX (V (R regX)), Updates = (Updates t)\<rparr>"
+  "generalise_output t regX outputX = \<lparr>
+      Label = (Label t),
+      Arity = (Arity t),
+      Guard = (Guard t),
+      Outputs = list_update (Outputs t) outputX (V (R regX)),
+      Updates = (Updates t)
+    \<rparr>"
 
 definition is_generalised_output_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalised_output_of t' t r p = (t' = generalise_output t r p)"
@@ -152,7 +158,7 @@ lemmas remove_guard_add_update_preserves = remove_guard_add_update_preserves_lab
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and> 
                                     i < Arity t \<and>
-                                    (\<exists>v. gexp.Eq (V (vname.I i)) (L v) \<in> set (Guard t)) \<and>
+                                    (\<exists>v. Eq (V (vname.I i)) (L v) \<in> set (Guard t)) \<and>
                                     r \<notin> set (map fst (Updates t)))"
 
 lemma generalise_output_preserves_label: "Label (generalise_output t r p) = Label t"

@@ -18,13 +18,13 @@ lemma is_generalisation_of_medial: "is_generalisation_of t' t i r \<Longrightarr
 
 lemma is_generalisation_of_preserves_reg: 
   "is_generalisation_of t' t i r \<Longrightarrow>
-   apply_updates (Updates t) (join_ir ia c) c r = c r"
+   apply_updates (Updates t) (join_ir ia c) c $ r = c $ r"
   by (simp add: is_generalisation_of_def r_not_updated_stays_the_same)
 
 lemma is_generalisation_of_preserves_reg_2:
   "is_generalisation_of t' t i r \<Longrightarrow>
    ra \<noteq> r \<Longrightarrow>
-   apply_updates (Updates t) (join_ir ia c) c ra = apply_updates (Updates t') (join_ir ia c) c ra"
+   apply_updates (Updates t) (join_ir ia c) c $ ra = apply_updates (Updates t') (join_ir ia c) c $ ra"
   by (simp add: is_generalisation_of_def remove_guard_add_update_def)
 
 lemma is_generalisation_of_apply_guards: "is_generalisation_of t' t i r \<Longrightarrow>
@@ -38,7 +38,7 @@ lemma is_generalisation_of_apply_guards: "is_generalisation_of t' t i r \<Longri
 *)
 lemma is_generalisation_of_subsumes_original:
   "is_generalisation_of t' t i r \<Longrightarrow>
-   c r = None \<Longrightarrow>
+   c $ r = None \<Longrightarrow>
    subsumes t' c t"
   apply (rule subsumption)
       apply (simp add: is_generalisation_of_def remove_guard_add_update_def)
@@ -67,7 +67,7 @@ next
 qed
 
 lemma apply_outputs_register:
-  "c p = Some v \<Longrightarrow>
+  "c $ p = Some v \<Longrightarrow>
    r < length (apply_outputs P (join_ir i c)) \<Longrightarrow>
    apply_outputs (P[r := V (R p)]) (join_ir i c) ! r = Some v"
 proof(induct P)
@@ -108,7 +108,7 @@ lemma generalise_output_posterior:
 
 lemma generalise_output_eq:
   "(Outputs t) ! r = L v \<Longrightarrow>
-   c p = Some v \<Longrightarrow>
+   c $ p = Some v \<Longrightarrow>
    apply_outputs (Outputs t) (join_ir i c) = apply_outputs (list_update (Outputs t) r (V (R p))) (join_ir i c)"
   apply (rule nth_equalityI)
    apply (simp add: apply_outputs_preserves_length)
@@ -122,7 +122,7 @@ lemma generalise_output_eq:
 *)
 lemma generalise_output_subsumes_original: 
   "Outputs t ! r = L v \<Longrightarrow>
-   c p = Some v \<Longrightarrow>
+   c $ p = Some v \<Longrightarrow>
    subsumes (generalise_output t p r) c t"
   apply (rule subsumption)
       apply (simp add: generalise_output_def)
@@ -132,8 +132,18 @@ lemma generalise_output_subsumes_original:
   using generalise_output_posterior by auto
 
 primrec stored_reused_aux_per_reg :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (nat \<times> nat) option" where
-  "stored_reused_aux_per_reg t' t 0 p = (if is_generalised_output_of t' t 0 p then Some (0, p) else None)" |
-  "stored_reused_aux_per_reg t' t (Suc r) p = (if is_generalised_output_of t' t (Suc r) p then Some (Suc r, p) else stored_reused_aux_per_reg t' t r p)"
+  "stored_reused_aux_per_reg t' t 0 p = (
+    if is_generalised_output_of t' t 0 p then
+      Some (0, p)
+    else
+       None
+  )" |
+  "stored_reused_aux_per_reg t' t (Suc r) p = (
+    if is_generalised_output_of t' t (Suc r) p then
+      Some (Suc r, p)
+    else
+      stored_reused_aux_per_reg t' t r p
+  )"
 
 primrec stored_reused_aux :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (nat \<times> nat) option" where
   "stored_reused_aux t' t r 0 = stored_reused_aux_per_reg t' t r 0" |
@@ -143,7 +153,7 @@ primrec stored_reused_aux :: "transition \<Rightarrow> transition \<Rightarrow> 
                                         )"
 
 definition stored_reused :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> (nat \<times> nat) option" where
-  "stored_reused t' t e = stored_reused_aux t' t (total_max_reg e) (max (length (Outputs t)) (length (Outputs t')))"
+  "stored_reused t' t e = stored_reused_aux t' t (max (Transition.total_max_reg t) (Transition.total_max_reg t')) (max (length (Outputs t)) (length (Outputs t')))"
 
 lemma stored_reused_aux_is_generalised_output_of: 
 "stored_reused_aux t' t mr mp = Some (p, r) \<Longrightarrow> is_generalised_output_of t' t p r"
@@ -199,22 +209,22 @@ lemma stored_reused_is_generalised_output_of:
 lemma generalise_output_directly_subsumes_original: 
       "stored_reused t' t e = Some (p, r) \<Longrightarrow>
        nth (Outputs t) r = L v \<Longrightarrow>
-       \<forall>t a. accepts_trace (tm e) t \<and> gets_us_to s' (tm e) 0 <>  t \<longrightarrow> (anterior_context (tm e) t) = Some a \<longrightarrow> a p = Some v \<Longrightarrow>
+       \<forall>t a. accepts_trace (tm e) t \<and> gets_us_to s' (tm e) 0 <>  t \<longrightarrow> (anterior_context (tm e) t) = Some a \<longrightarrow> a $ p = Some v \<Longrightarrow>
        directly_subsumes e1 e s s' t' t "
   using stored_reused_is_generalised_output_of[of t' t e p r]
   apply (simp add: directly_subsumes_def)
   apply standard
    apply clarify
-   apply (case_tac "posterior_sequence (tm e) 0 Map.empty pa")
+   apply (case_tac "posterior_sequence (tm e) 0 (K$ None) pa")
   using accepts_gives_context apply fastforce
    apply simp
     apply (simp add: is_generalised_output_of_def)
   using generalise_output_subsumes_original apply blast
     apply (simp add: is_generalised_output_of_def)
-  using generalise_output_subsumes_original by fastforce
+  by (meson generalise_output_subsumes_original finfun_const_apply)
 
 definition generalise_output_context_check :: "String.literal \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> value \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "generalise_output_context_check l e e' p v s_old s_new = (\<forall>t a. accepts_trace (tm e) t \<and> gets_us_to s_new (tm e) 0 <>  t \<longrightarrow> (anterior_context (tm e) t) = Some a \<longrightarrow> a p = Some v)"
+  "generalise_output_context_check l e e' p v s_old s_new = (\<forall>t a. accepts_trace (tm e) t \<and> gets_us_to s_new (tm e) 0 <>  t \<longrightarrow> (anterior_context (tm e) t) = Some a \<longrightarrow> a $ p = Some v)"
 
 fun generalise_output_direct_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "generalise_output_direct_subsumption t' t e e' s s' = (case stored_reused t' t e of
@@ -259,13 +269,17 @@ primrec input_stored_in_reg_aux :: "transition \<Rightarrow> transition \<Righta
 
 (* t' is the generalised transition *)
 definition input_stored_in_reg :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> (nat \<times> nat) option" where
-  "input_stored_in_reg t' t e = (case input_stored_in_reg_aux t' t (total_max_reg e) (total_max_input e) of
-                                 None \<Rightarrow> None |
-                                 Some (i, r) \<Rightarrow> if length (filter (\<lambda>(r', u). r' = r) (Updates t')) = 1 then Some (i, r) else None
-)"
+  "input_stored_in_reg t' t e = (
+    case input_stored_in_reg_aux t' t (total_max_reg e) (max (Arity t) (Arity t')) of
+      None \<Rightarrow> None |
+      Some (i, r) \<Rightarrow>
+        if length (filter (\<lambda>(r', u). r' = r) (Updates t')) = 1 then
+          Some (i, r)
+        else None
+  )"
 
 definition initially_undefined_context_check :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "initially_undefined_context_check e r s = (\<forall>t a. accepts_trace (tm e) t \<and> gets_us_to s (tm e) 0 <> t \<longrightarrow> (anterior_context (tm e) t) = Some a \<and> a r = None)"
+  "initially_undefined_context_check e r s = (\<forall>t a. accepts_trace (tm e) t \<and> gets_us_to s (tm e) 0 (K$ None) t \<longrightarrow> (anterior_context (tm e) t) = Some a \<and> a $ r = None)"
 
 definition "no_illegal_updates t r = (\<forall>u \<in> set (Updates t). fst u \<noteq> r)"
 
@@ -310,14 +324,15 @@ next
   qed
 qed
 
-
 lemma input_stored_in_reg_is_generalisation: "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow> is_generalisation_of t' t i r"
   apply (simp add: input_stored_in_reg_def)
-  apply (cases "input_stored_in_reg_aux t' t (total_max_reg e) (total_max_input e)")
+  apply (cases "input_stored_in_reg_aux t' t (Inference.total_max_reg e) (max (Arity t) (Arity t'))")
    apply simp
   apply (case_tac a)
   apply simp
-  by (metis input_stored_in_reg_aux_is_generalisation_aux option.distinct(1))
+  apply (case_tac "length (filter (\<lambda>(r', u). r' = b) (Updates t')) = 1")
+   apply (simp add: input_stored_in_reg_aux_is_generalisation_aux)
+  by simp
 
 (*
   This allows us to call these three functions for direct subsumption of generalised
@@ -329,11 +344,17 @@ lemma generalised_directly_subsumes_original:
    directly_subsumes e1 e s s' t' t"
   using input_stored_in_reg_is_generalisation[of t' t e i r]
   apply (simp add: initially_undefined_context_check_def directly_subsumes_def no_illegal_updates_def)
-  using is_generalisation_of_subsumes_original by fastforce
+  by (meson is_generalisation_of_subsumes_original finfun_const_apply)
 
 definition drop_guard_add_update_direct_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> bool" where
-  "drop_guard_add_update_direct_subsumption t' t e s' = (case input_stored_in_reg t' t e of None \<Rightarrow> False |
-   Some (i, r) \<Rightarrow> if no_illegal_updates t r then initially_undefined_context_check e r s' else False)"
+  "drop_guard_add_update_direct_subsumption t' t e s' = (
+    case input_stored_in_reg t' t e of
+      None \<Rightarrow> False |
+      Some (i, r) \<Rightarrow>
+        if no_illegal_updates t r then
+          initially_undefined_context_check e r s'
+        else False
+    )"
 
 lemma drop_guard_add_update_direct_subsumption_implies_direct_subsumption:
   "drop_guard_add_update_direct_subsumption t' t e s' \<Longrightarrow> directly_subsumes e1 e s s' t' t"
@@ -506,10 +527,10 @@ lemma input_stored_in_reg_not_subsumed:
 
 lemma drop_guard_add_update_direct_subsumption_not_implies_direct_subsumption:
   "drop_guard_add_update_direct_subsumption t t' e s' \<Longrightarrow>
-  \<exists>p. accepts (tm e1) 0 Map.empty p \<and>
-      gets_us_to s (tm e1) 0 Map.empty p \<and>
-      accepts (tm e) 0 Map.empty p \<and>
-      gets_us_to s' (tm e) 0 Map.empty p \<Longrightarrow>
+  \<exists>p. accepts (tm e1) 0 (K$ None) p \<and>
+      gets_us_to s (tm e1) 0 (K$ None) p \<and>
+      accepts (tm e) 0 (K$ None) p \<and>
+      gets_us_to s' (tm e) 0 (K$ None) p \<Longrightarrow>
    \<not>directly_subsumes e1 e s s' t' t"
   apply (simp add: drop_guard_add_update_direct_subsumption_def)
   apply (case_tac "input_stored_in_reg t t' e")
@@ -519,7 +540,7 @@ lemma drop_guard_add_update_direct_subsumption_not_implies_direct_subsumption:
   apply simp
   apply (case_tac "no_illegal_updates t' b")
    apply (simp add: no_illegal_updates_def initially_undefined_context_check_def directly_subsumes_def)
-   apply auto[1]
+   apply (metis (full_types) finfun_const_apply option.discI)
   by simp
 
 end

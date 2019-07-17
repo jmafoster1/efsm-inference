@@ -80,6 +80,9 @@ qed
 definition max_input :: "transition \<Rightarrow> nat option" where
   "max_input t = (if enumerate_inputs t = {} then None else Some (Max (enumerate_inputs t)))"
 
+definition total_max_input :: "transition \<Rightarrow> nat" where
+  "total_max_input t = (case max_input t of None \<Rightarrow> 0 | Some a \<Rightarrow> a)"
+
 definition enumerate_registers :: "transition \<Rightarrow> nat set" where
   "enumerate_registers t = (\<Union> (set (map enumerate_gexp_regs (Guard t)))) \<union>
                            (\<Union> (set (map enumerate_aexp_regs (Outputs t)))) \<union>
@@ -112,6 +115,9 @@ lemma set_enumerate_registers_list: "enumerate_registers t = set (enumerate_regi
 
 definition max_reg :: "transition \<Rightarrow> nat option" where
   "max_reg t = (if enumerate_registers t = {} then None else Some (Max (enumerate_registers t)))"
+
+definition total_max_reg :: "transition \<Rightarrow> nat" where
+  "total_max_reg t = (case max_reg t of None \<Rightarrow> 0 | Some a \<Rightarrow> a)"
 
 definition valid_transition :: "transition \<Rightarrow> bool" where
   "valid_transition t = (case max_input t of None \<Rightarrow> Arity t = 0 | Some x \<Rightarrow> x < Arity t)"

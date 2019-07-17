@@ -86,6 +86,9 @@ lemma nor_equiv: "gval (gNot (gOr a b)) s = gval (Nor a b) s"
 definition satisfiable :: "gexp \<Rightarrow> bool" where
   "satisfiable g \<equiv> (\<exists>i r. gval g (join_ir i r) = true)"
 
+definition "satisfiable_list l = satisfiable (fold gAnd l (Bc True))"
+  
+
 lemma satisfiable_true: "satisfiable (Bc True)"
   by (simp add: satisfiable_def)
 
@@ -243,6 +246,9 @@ case (Cons a l)
     by (simp add: fold_append_concat_rev inf_sup_aci(5))
 qed
 
+definition max_input :: "gexp \<Rightarrow> nat option" where
+  "max_input g = (let inputs = (enumerate_gexp_inputs g) in if inputs = {} then None else Some (Max inputs))"
+
 fun enumerate_gexp_regs :: "gexp \<Rightarrow> nat set" where
   "enumerate_gexp_regs (GExp.Bc _) = {}" |
   "enumerate_gexp_regs (GExp.Null v) = enumerate_aexp_regs v" |
@@ -279,7 +285,6 @@ next
   then show ?case
     by (simp add: enumerate_aexp_regs_list)
 qed
-
 
 lemma enumerate_gexp_regs_empty_reg_unconstrained: "enumerate_gexp_regs g = {} \<Longrightarrow> \<forall>r. \<not> gexp_constrains g (V (R r))"
 proof(induct g)
@@ -433,10 +438,9 @@ next
      apply (case_tac v)
       apply (simp add: join_ir_def input2state_exists)
      apply (simp add: join_ir_def)
-     apply auto[1]
-    apply simp
+    using input2state_exists apply blast
     apply (simp add: satisfiable_def gval_gOr)
-    by (metis ValueEq_def gval.simps(4) maybe_or_idempotent plus_trilean.simps(6))
+    by (metis ValueEq_def gval.simps(4) plus_trilean.simps(4) plus_trilean.simps(5) plus_trilean_commutative)
 qed
 
 end
