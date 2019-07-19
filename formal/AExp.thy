@@ -402,6 +402,8 @@ next
     by simp
 qed
 
+definition max_reg :: "aexp \<Rightarrow> nat option" where
+  "max_reg g = (let regs = (enumerate_aexp_regs g) in if regs = {} then None else Some (Max regs))"
 
 lemma enumerate_aexp_regs_empty_reg_unconstrained:
   "enumerate_aexp_regs a = {} \<Longrightarrow> \<forall>r. \<not> aexp_constrains a (V (R r))"

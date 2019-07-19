@@ -286,6 +286,9 @@ next
     by (simp add: enumerate_aexp_regs_list)
 qed
 
+definition max_reg :: "gexp \<Rightarrow> nat option" where
+  "max_reg g = (let regs = (enumerate_gexp_regs g) in if regs = {} then None else Some (Max regs))"
+
 lemma enumerate_gexp_regs_empty_reg_unconstrained: "enumerate_gexp_regs g = {} \<Longrightarrow> \<forall>r. \<not> gexp_constrains g (V (R r))"
 proof(induct g)
 case (Bc x)

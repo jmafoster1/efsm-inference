@@ -422,6 +422,4 @@ lemma "Label t = Label t' \<Longrightarrow>
   apply (rule_tac x=i in exI)
   using choice_def by blast
 
-
-
 end

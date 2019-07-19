@@ -15,7 +15,7 @@ fun null_guard :: "gexp \<Rightarrow> bool" where
 definition max_input :: "gexp list \<Rightarrow> nat option" where
   "max_input g = (fold max (map (\<lambda>g. GExp.max_input g) g) None)"
 
-lemma max_input_cons: "Can_Take.max_input (a # G) = max (GExp.max_input a) (max_input G)"
+lemma max_input_cons: "max_input (a # G) = max (GExp.max_input a) (max_input G)"
   apply (simp add: max_input_def)
 proof -
   have "foldr max (GExp.max_input a # rev (map_tailrec GExp.max_input G)) None = foldr max (rev (None # map_tailrec GExp.max_input G)) (GExp.max_input a)"
@@ -23,6 +23,13 @@ proof -
   then show "fold max (map GExp.max_input G) (max (GExp.max_input a) None) = max (GExp.max_input a) (fold max (map GExp.max_input G) None)"
     by (simp add: fold_conv_foldr map_eq_map_tailrec max.commute)
 qed
+
+definition max_reg :: "gexp list \<Rightarrow> nat option" where
+  "max_reg g = (fold max (map (\<lambda>g. GExp.max_reg g) g) None)"
+
+lemma max_reg_cons: "max_reg (a # G) = max (GExp.max_reg a) (max_reg G)"
+  apply (simp add: max_reg_def)
+  by (metis (no_types, lifting) List.finite_set Max.insert Max.set_eq_fold fold.simps(1) id_apply list.simps(15) max.assoc set_empty)
 
 lemma max_none: "max None x = x"
   by (meson less_option.elims(2) linorder_not_le max.absorb2 option.distinct(1))
@@ -62,44 +69,70 @@ lemma gexp_max_input_nor: "GExp.max_input (Nor g1 g2) = max (GExp.max_input g1) 
   apply safe
     apply (simp add: max_none)
    apply (simp add: max.commute max_none)
-  apply (simp add: enumerate_gexp_inputs_list)
-  using gexp_max_input_nor_aux by blast
+  using enumerate_gexp_inputs_list gexp_max_input_nor_aux by fastforce
+
+lemma gexp_max_reg_nor: "GExp.max_reg (Nor g1 g2) = max (GExp.max_reg g1) (GExp.max_reg g2)"
+  apply (simp add: GExp.max_reg_def Let_def)
+  apply safe
+    apply (simp add: max_none)
+   apply (simp add: max.commute max_none)
+  by (metis enumerate_gexp_regs_list gexp_max_input_nor_aux)
 
 lemma max_input_Eq: "GExp.max_input (Eq a1 a2) = max (AExp.max_input a1) (AExp.max_input a2)"
   apply (simp add: AExp.max_input_def GExp.max_input_def Let_def)
   apply safe
     apply (simp add: max_none)
    apply (simp add: max.commute max_none)
-  apply simp
-  apply (simp add: enumerate_aexp_inputs_list enumerate_gexp_inputs_list)
-  using gexp_max_input_nor_aux by blast
+  using enumerate_aexp_inputs_list gexp_max_input_nor_aux by fastforce
+
+lemma max_reg_Eq: "GExp.max_reg (Eq a1 a2) = max (AExp.max_reg a1) (AExp.max_reg a2)"
+  apply (simp add: AExp.max_reg_def GExp.max_reg_def Let_def)
+  apply safe
+    apply (simp add: max_none)
+   apply (simp add: max.commute max_none)
+  by (metis enumerate_aexp_regs_list gexp_max_input_nor_aux)
 
 lemma max_input_Gt: "GExp.max_input (Gt a1 a2) = max (AExp.max_input a1) (AExp.max_input a2)"
   apply (simp add: AExp.max_input_def GExp.max_input_def Let_def)
   apply safe
     apply (simp add: max_none)
    apply (simp add: max.commute max_none)
-  apply simp
-  apply (simp add: enumerate_aexp_inputs_list enumerate_gexp_inputs_list)
-  by (metis gexp_max_input_nor_aux max.commute)
+  by (metis Un_commute enumerate_aexp_inputs_list gexp_max_input_nor_aux)
+
+lemma max_reg_Gt: "GExp.max_reg (Gt a1 a2) = max (AExp.max_reg a1) (AExp.max_reg a2)"
+  apply (simp add: AExp.max_reg_def GExp.max_reg_def Let_def)
+  apply safe
+    apply (simp add: max_none)
+   apply (simp add: max.commute max_none)
+  by (metis enumerate_aexp_regs_list gexp_max_input_nor_aux inf_sup_aci(5))
 
 lemma max_input_Plus: "AExp.max_input (Plus a1 a2) = max (AExp.max_input a1) (AExp.max_input a2)"
   apply (simp add: AExp.max_input_def Let_def)
   apply safe
     apply (simp add: max_none)
    apply (simp add: max.commute max_none)
-  apply simp
-  apply (simp add: enumerate_aexp_inputs_list enumerate_gexp_inputs_list)
-  using gexp_max_input_nor_aux by blast
+  using enumerate_aexp_inputs_list gexp_max_input_nor_aux by fastforce
 
 lemma max_input_Minus: "AExp.max_input (Minus a1 a2) = max (AExp.max_input a1) (AExp.max_input a2)"
   apply (simp add: AExp.max_input_def Let_def)
   apply safe
     apply (simp add: max_none)
    apply (simp add: max.commute max_none)
-  apply simp
-  apply (simp add: enumerate_aexp_inputs_list enumerate_gexp_inputs_list)
-  using gexp_max_input_nor_aux by blast
+  using enumerate_aexp_inputs_list gexp_max_input_nor_aux by fastforce
+
+lemma max_reg_Minus: "AExp.max_reg (Minus a1 a2) = max (AExp.max_reg a1) (AExp.max_reg a2)"
+  apply (simp add: AExp.max_reg_def Let_def)
+  apply safe
+    apply (simp add: max_none)
+   apply (simp add: max.commute max_none)
+  by (metis enumerate_aexp_regs_list gexp_max_input_nor_aux)
+
+lemma max_reg_Plus: "AExp.max_reg (Plus a1 a2) = max (AExp.max_reg a1) (AExp.max_reg a2)"
+  apply (simp add: AExp.max_reg_def Let_def)
+  apply safe
+    apply (simp add: max_none)
+   apply (simp add: max.commute max_none)
+  by (metis enumerate_aexp_regs_list gexp_max_input_nor_aux)
 
 lemma max_input_I: "AExp.max_input (V (vname.I i)) = Some i"
   by (simp add: AExp.max_input_def)
@@ -124,6 +157,9 @@ qed
 
 lemma gexp_max_input_null: "GExp.max_input (Null x) = AExp.max_input x"
   by (simp add: AExp.max_input_def GExp.max_input_def)
+
+lemma gexp_max_reg_null: "GExp.max_reg (Null x) = AExp.max_reg x"
+  by (simp add: AExp.max_reg_def GExp.max_reg_def)
 
 lemma aval_take: "AExp.max_input x < Some a \<Longrightarrow> aval x (join_ir i r) = aval x (join_ir (take a i) r)"
 proof(induct x)
@@ -201,5 +237,87 @@ lemma satisfiable_can_take:
    apply (simp add: length_take_or_pad)
   apply (rule_tac x=r in exI)
   by (simp add: apply_guards_take_or_pad)
+
+lemma max_is_none: "(max x y = None) = (x = None \<and> y = None)"
+  by (metis max.commute max_def max_none)
+
+lemma aval_no_reg_swap_regs:
+  "AExp.max_input x < Some a \<Longrightarrow>
+   AExp.max_reg x = None \<Longrightarrow>
+   aval x (join_ir i ra) = aval x (join_ir (take a i) r)"
+proof(induct x)
+case (L x)
+  then show ?case
+    by simp
+next
+  case (V x)
+  then show ?case
+    apply (cases x)
+     apply (metis aval_take enumerate_aexp_regs.simps(3) enumerate_aexp_regs_empty_reg_unconstrained input_unconstrained_aval_register_swap)
+    by (simp add: AExp.max_reg_def)
+next
+  case (Plus x1 x2)
+  then show ?case
+    by (simp add: max_input_Plus max_is_none max_reg_Plus)
+next
+  case (Minus x1 x2)
+  then show ?case
+    by (simp add: max_input_Minus max_is_none max_reg_Minus)
+qed
+
+lemma gval_no_reg_swap_regs:
+  "GExp.max_input g < Some a \<Longrightarrow>
+   GExp.max_reg g = None \<Longrightarrow>
+   gval g (join_ir i ra) = gval g (join_ir (take a i) r)"
+proof(induct g)
+case (Bc x)
+  then show ?case
+    by (metis (full_types) gval.simps(1) gval.simps(2))
+next
+  case (Eq x1a x2)
+  then show ?case
+    by (metis apply_guards(7) aval_no_reg_swap_regs max.strict_boundedE max_input_Eq max_is_none max_reg_Eq)
+next
+  case (Gt x1a x2)
+  then show ?case
+    by (metis apply_guards(6) aval_no_reg_swap_regs max.strict_boundedE max_input_Gt max_is_none max_reg_Gt)
+next
+  case (Nor g1 g2)
+  then show ?case
+    by (simp add: gexp_max_input_nor gexp_max_reg_nor max_is_none)
+next
+  case (Null x)
+  then show ?case
+    by (metis apply_guards(9) aval_no_reg_swap_regs gexp_max_input_null gexp_max_reg_null)
+qed
+
+lemma apply_guards_no_reg_swap_regs:
+  "max_reg G = None \<Longrightarrow>
+   max_input G < Some a \<Longrightarrow>
+   apply_guards G (join_ir i ra) \<Longrightarrow>
+   apply_guards (ensure_not_null a) (join_ir i ra) \<Longrightarrow>
+   apply_guards G (join_ir (take_or_pad i a) r)"
+proof(induct G)
+  case Nil
+  then show ?case
+    by (simp add: max_input_def)
+next
+  case (Cons g gs)
+  then show ?case
+    by (metis apply_guards_cons gval_no_reg_swap_regs max.strict_boundedE max_input_cons max_is_none max_reg_cons not_null_length take_or_pad_def)
+qed
+
+lemma 
+  "max_reg (Guard t) = None \<Longrightarrow>
+   max_input (Guard t) < Some (Arity t) \<Longrightarrow>
+   satisfiable_list ((Guard t) @ ensure_not_null (Arity t)) \<Longrightarrow>
+   \<exists>i. can_take_transition t i r"
+  apply (simp add: can_take_transition_def satisfiable_list_def satisfiable_def fold_apply_guards
+                   apply_guards_append can_take_def del: fold_append)
+  apply clarify
+  apply (rule_tac x="take_or_pad i (Arity t)" in exI)
+  apply standard
+   apply (simp add: length_take_or_pad)
+  by (simp add: apply_guards_no_reg_swap_regs)
 
 end
