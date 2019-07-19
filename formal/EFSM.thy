@@ -50,6 +50,9 @@ definition apply_guards :: "gexp list \<Rightarrow> datastate \<Rightarrow> bool
 
 lemmas apply_guards = datastate apply_guards_def gval.simps ValueEq_def ValueGt_def
 
+lemma apply_guards_singleton: "(apply_guards [g] s) = (gval g s = true)"
+  by (simp add: apply_guards_def)
+
 lemma apply_guards_empty [simp]: "apply_guards [] s"
   by (simp add: apply_guards_def)
 

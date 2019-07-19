@@ -149,6 +149,10 @@ qed
 lemma input2state_within_bounds: "input2state i $ x = Some a \<Longrightarrow> x < length i"
   by (metis input2state_out_of_bounds not_le_imp_less option.distinct(1))
 
+lemma input2state_not_None: "input2state i $ x \<noteq> None \<Longrightarrow> x < length i"
+  by (meson input2state_out_of_bounds leI)
+
+
 lemma input2state_empty: "input2state [] $ x1 = None"
   by (simp add: input2state_out_of_bounds)
 

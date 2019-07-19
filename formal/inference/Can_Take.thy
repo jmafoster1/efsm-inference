@@ -104,79 +104,102 @@ lemma max_input_Minus: "AExp.max_input (Minus a1 a2) = max (AExp.max_input a1) (
 lemma max_input_I: "AExp.max_input (V (vname.I i)) = Some i"
   by (simp add: AExp.max_input_def)
 
-lemma "i < a \<Longrightarrow>
-    AExp.max_input x1a < Some i \<and> AExp.max_input x2 < Some i \<or> max (AExp.max_input x1a) (AExp.max_input x2) = Some i \<Longrightarrow>
-    aval x1a (join_ir ia r) = aval x2 (join_ir ia r) \<longrightarrow>
-    aval x1a (join_ir (take_or_pad ia a) r) = aval x2 (join_ir (take_or_pad ia a) r)"
-  apply (simp add: take_or_pad_def)
-  apply standard
+definition ensure_not_null :: "nat \<Rightarrow> gexp list" where
+  "ensure_not_null n = map (\<lambda>i. gNot (Null (V (vname.I i)))) [0..<n]"
 
-lemma "i < a \<Longrightarrow>
-    \<not> null_guard g \<Longrightarrow>
-    GExp.max_input g \<le> Some i \<Longrightarrow>
-    gval g (join_ir ia r) = gval g (join_ir (take_or_pad ia a) r)"
+lemma not_null_length: "apply_guards (ensure_not_null a) (join_ir ia r) \<Longrightarrow> length ia \<ge> a"
+proof(induct a)
+  case 0
+  then show ?case
+    by simp
+next
+  case (Suc a)
+  then show ?case
+    apply (simp add: ensure_not_null_def apply_guards_append)
+    apply (simp add: apply_guards_singleton maybe_negate_true maybe_or_false)
+    apply (case_tac "join_ir ia r (vname.I a) = None")
+     apply simp
+    by (simp add: Suc_leI datastate(1) input2state_not_None)
+qed
+
+lemma gexp_max_input_null: "GExp.max_input (Null x) = AExp.max_input x"
+  by (simp add: AExp.max_input_def GExp.max_input_def)
+
+lemma aval_take: "AExp.max_input x < Some a \<Longrightarrow> aval x (join_ir i r) = aval x (join_ir (take a i) r)"
+proof(induct x)
+  case (L x)
+  then show ?case
+    by simp
+next
+  case (V x)
+  then show ?case
+    apply (cases x)
+    apply (simp add: join_ir_def max_input_I)
+    apply (metis leI nat_less_le take_all test_aux_aux_2)
+    using enumerate_aexp_inputs.simps(3) enumerate_aexp_inputs_empty_input_unconstrained input_unconstrained_aval_input_swap by blast
+next
+  case (Plus x1 x2)
+  then show ?case
+    by (simp add: max_input_Plus)
+next
+  case (Minus x1 x2)
+  then show ?case
+    by (simp add: max_input_Minus)
+qed
+
+lemma gval_take: "GExp.max_input g < Some a \<Longrightarrow>
+    gval g (join_ir i r) = gval g (join_ir (take a i) r)"
 proof(induct g)
 case (Bc x)
   then show ?case
-    by (cases x, auto)
+    by (metis (full_types) gval.simps(1) gval.simps(2))
 next
   case (Eq x1a x2)
   then show ?case
-    apply simp
-    apply standard
-    apply (simp add: max_input_Eq)
+    by (metis apply_guards(7) aval_take max.strict_boundedE max_input_Eq)
 next
   case (Gt x1a x2)
-  then show ?case sorry
+  then show ?case
+    by (metis apply_guards(6) aval_take max.strict_boundedE max_input_Gt)
 next
   case (Nor g1 g2)
-  then show ?case 
-    apply (simp add: maybe_not_eq gexp_max_input_nor)
-    by (metis Nor.hyps(1) Nor.hyps(2) max.cobounded1 max.cobounded2)
+  then show ?case
+    by (simp add: maybe_not_eq gexp_max_input_nor)
 next
   case (Null x)
   then show ?case
-    by simp
+    by (metis apply_guards(9) aval_take gexp_max_input_null)
 qed
 
-lemma 
-  "Can_Take.max_input G = Some i \<Longrightarrow>
-  i < a \<Longrightarrow>
-  \<forall>g\<in>set G. \<not> null_guard g \<Longrightarrow>
-  apply_guards G (join_ir ia r) \<Longrightarrow>
-  apply_guards G (join_ir (take_or_pad ia a) r)"
+lemma apply_guards_take_or_pad: "Can_Take.max_input G < Some a \<Longrightarrow>
+       apply_guards G (join_ir i r) \<Longrightarrow>
+       apply_guards (ensure_not_null a) (join_ir i r) \<Longrightarrow>
+       apply_guards G (join_ir (take_or_pad i a) r)"
 proof(induct G)
   case Nil
   then show ?case
-    by simp
+    by (simp add: max_input_def)
 next
-  case (Cons g G)
+  case (Cons g gs)
   then show ?case
     apply (simp add: apply_guards_cons max_input_cons)
-    using max_lt_val[of g G i]
+    using not_null_length[of a i r]
     apply simp
+    apply (simp add: take_or_pad_def)
+    by (metis gval_take)
 qed
 
-lemma 
-  "max_input G = Some i \<Longrightarrow>
-  i < a \<Longrightarrow>
-  \<forall>g\<in>set G. \<not> null_guard g \<Longrightarrow>
-  \<exists>i r. gval (fold gAnd G (Bc True)) (join_ir i r) = true \<Longrightarrow>
-  \<exists>i. length i = a \<and> (\<exists>r. gval (fold gAnd G (Bc True)) (join_ir i r) = true)"
-    apply (simp only: fold_apply_guards apply_guards_cons)
-    apply clarify
-    apply (rule_tac x="take_or_pad ia a" in exI)
-    apply (simp add: length_take_or_pad)
-    apply (rule_tac x=r in exI)
-
-qed
-
-lemma 
-  "max_input (Guard t) = Some i \<Longrightarrow>
-   i < Arity t \<Longrightarrow>
-   \<forall>g \<in> set (Guard t). \<not> null_guard g \<Longrightarrow>
-   satisfiable_list (Guard t) \<Longrightarrow> \<exists>i r. can_take_transition t i r"
-  apply (simp add: can_take_transition_def satisfiable_list_def can_take_def satisfiable_def apply_guards_fold)
-
+lemma satisfiable_can_take:
+  "max_input (Guard t) < Some (Arity t) \<Longrightarrow>
+   satisfiable_list ((Guard t) @ ensure_not_null (Arity t)) \<Longrightarrow>
+   \<exists>i r. can_take_transition t i r"
+  apply (simp add: can_take_transition_def satisfiable_list_def satisfiable_def fold_apply_guards
+                   apply_guards_append can_take_def del: fold_append)
+  apply clarify
+  apply (rule_tac x="take_or_pad i (Arity t)" in exI)
+  apply standard
+   apply (simp add: length_take_or_pad)
+  apply (rule_tac x=r in exI)
+  by (simp add: apply_guards_take_or_pad)
 
 end
