@@ -219,7 +219,8 @@ lemma directly_subsumes_self: "directly_subsumes e1 e2 s s' t t"
   apply (simp add: directly_subsumes_def)
   by (simp add: transition_subsumes_self)
 
-lemma "\<forall>c. subsumes t2 c t1 \<Longrightarrow> directly_subsumes e1 e2 s s' t2 t1"
+lemma subsumes_in_all_contexts_directly_subsumes:
+  "\<forall>c. subsumes t2 c t1 \<Longrightarrow> directly_subsumes e1 e2 s s' t2 t1"
   by (simp add: directly_subsumes_def)
 
 lemma gets_us_to_and_not_subsumes: 
@@ -408,14 +409,12 @@ definition replace :: "iEFSM \<Rightarrow> nat \<Rightarrow> transition \<Righta
 definition all_regs :: "iEFSM \<Rightarrow> nat set" where
   "all_regs e = \<Union> (image (\<lambda>(_, _, t). enumerate_registers t) (fset e))"
 
-lemma every_context_subsumes: "\<forall>c. subsumes t2 c t1 \<Longrightarrow> directly_subsumes e1 e2 s s' t2 t1"
-  by (simp add: directly_subsumes_def)
-
-lemma "Label t = Label t' \<Longrightarrow>
-       Arity t = Arity t' \<Longrightarrow>
-       \<not> choice t t' \<Longrightarrow>
-       \<exists>i. can_take_transition t' i c \<Longrightarrow>
-       \<not> subsumes t c t'"
+lemma no_choice_no_subsumption:
+  "Label t = Label t' \<Longrightarrow>
+   Arity t = Arity t' \<Longrightarrow>
+   \<not> choice t t' \<Longrightarrow>
+   \<exists>i. can_take_transition t' i c \<Longrightarrow>
+  \<not> subsumes t c t'"
   apply (rule bad_guards)
   apply (simp add: can_take_transition_def can_take_def)
   apply clarify

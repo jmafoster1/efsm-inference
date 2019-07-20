@@ -307,7 +307,7 @@ next
     by (metis apply_guards_cons gval_no_reg_swap_regs max.strict_boundedE max_input_cons max_is_none max_reg_cons not_null_length take_or_pad_def)
 qed
 
-lemma 
+lemma can_take_satisfiable:
   "max_reg (Guard t) = None \<Longrightarrow>
    max_input (Guard t) < Some (Arity t) \<Longrightarrow>
    satisfiable_list ((Guard t) @ ensure_not_null (Arity t)) \<Longrightarrow>
@@ -319,5 +319,21 @@ lemma
   apply standard
    apply (simp add: length_take_or_pad)
   by (simp add: apply_guards_no_reg_swap_regs)
+
+definition simple_mutex :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "simple_mutex t t' = (max_reg (Guard t) = None \<and>
+     max_input (Guard t) < Some (Arity t) \<and>
+     satisfiable_list ((Guard t) @ ensure_not_null (Arity t)) \<and>
+     Label t = Label t' \<and>
+     Arity t = Arity t' \<and>
+     \<not> choice t' t)"
+
+lemma simple_mutex_direct_subsumption:
+  "simple_mutex t t' \<Longrightarrow>
+   \<not> directly_subsumes e e' s s' t' t"
+  apply (rule cant_directly_subsume)
+  apply (rule allI)
+  apply (simp add: simple_mutex_def)
+  by (metis can_take_satisfiable no_choice_no_subsumption)
 
 end

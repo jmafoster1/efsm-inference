@@ -87,7 +87,6 @@ definition satisfiable :: "gexp \<Rightarrow> bool" where
   "satisfiable g \<equiv> (\<exists>i r. gval g (join_ir i r) = true)"
 
 definition "satisfiable_list l = satisfiable (fold gAnd l (Bc True))"
-  
 
 lemma satisfiable_true: "satisfiable (Bc True)"
   by (simp add: satisfiable_def)

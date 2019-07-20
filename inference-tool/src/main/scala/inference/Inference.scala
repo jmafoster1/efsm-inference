@@ -812,6 +812,16 @@ def enumerate_aexp_regs(x0: aexp): Set.set[Nat.nat] = x0 match {
     Set.sup_set[Nat.nat](enumerate_aexp_regs(v), enumerate_aexp_regs(va))
 }
 
+def enumerate_aexp_inputs(x0: aexp): Set.set[Nat.nat] = x0 match {
+  case L(uu) => Set.bot_set[Nat.nat]
+  case V(VName.I(n)) => Set.insert[Nat.nat](n, Set.bot_set[Nat.nat])
+  case V(VName.R(n)) => Set.bot_set[Nat.nat]
+  case Plus(v, va) =>
+    Set.sup_set[Nat.nat](enumerate_aexp_inputs(v), enumerate_aexp_inputs(va))
+  case Minus(v, va) =>
+    Set.sup_set[Nat.nat](enumerate_aexp_inputs(v), enumerate_aexp_inputs(va))
+}
+
 } /* object AExp */
 
 object Product_Lexorder {
@@ -835,6 +845,65 @@ def less_prod[A : Orderings.ord, B : Orderings.ord](x0: (A, B), x1: (A, B)):
 }
 
 } /* object Product_Lexorder */
+
+object Lattices_Big {
+
+def Max[A : Orderings.linorder](x0: Set.set[A]): A = x0 match {
+  case Set.seta(x::xs) =>
+    Lista.fold[A, A](((a: A) => (b: A) => Orderings.max[A](a, b)), xs, x)
+}
+
+} /* object Lattices_Big */
+
+object Phantom_Type {
+
+abstract sealed class phantom[A, B]
+final case class phantoma[B, A](a: B) extends phantom[A, B]
+
+} /* object Phantom_Type */
+
+object Cardinality {
+
+def finite_UNIV_nata: Phantom_Type.phantom[Nat.nat, Boolean] =
+  Phantom_Type.phantoma[Boolean, Nat.nat](false)
+
+def card_UNIV_nata: Phantom_Type.phantom[Nat.nat, Nat.nat] =
+  Phantom_Type.phantoma[Nat.nat, Nat.nat](Nat.zero_nata)
+
+trait finite_UNIV[A] {
+  val `Cardinality.finite_UNIV`: Phantom_Type.phantom[A, Boolean]
+}
+def finite_UNIV[A](implicit A: finite_UNIV[A]): Phantom_Type.phantom[A, Boolean]
+  = A.`Cardinality.finite_UNIV`
+object finite_UNIV {
+  implicit def `Cardinality.finite_UNIV_nat`: finite_UNIV[Nat.nat] = new
+    finite_UNIV[Nat.nat] {
+    val `Cardinality.finite_UNIV` = finite_UNIV_nata
+  }
+}
+
+trait card_UNIV[A] extends finite_UNIV[A] {
+  val `Cardinality.card_UNIV`: Phantom_Type.phantom[A, Nat.nat]
+}
+def card_UNIV[A](implicit A: card_UNIV[A]): Phantom_Type.phantom[A, Nat.nat] =
+  A.`Cardinality.card_UNIV`
+object card_UNIV {
+  implicit def `Cardinality.card_UNIV_nat`: card_UNIV[Nat.nat] = new
+    card_UNIV[Nat.nat] {
+    val `Cardinality.card_UNIV` = card_UNIV_nata
+    val `Cardinality.finite_UNIV` = finite_UNIV_nata
+  }
+}
+
+def eq_set[A : card_UNIV : HOL.equal](x0: Set.set[A], x1: Set.set[A]): Boolean =
+  (x0, x1) match {
+  case (Set.seta(xs), Set.seta(ys)) =>
+    (Lista.list_all[A](((a: A) => ys contains a),
+                        xs)) && (Lista.list_all[A](((a: A) => xs contains a),
+            ys))
+}
+
+} /* object Cardinality */
 
 object GExp {
 
@@ -887,16 +956,6 @@ def gval(x0: gexp, uu: VName.vname => Option[Value.value]): Trilean.trilean =
   case (Null(v), s) => Value.ValueEq(AExp.aval(v, s), None)
 }
 
-def gexp_constrains(x0: gexp, uv: AExp.aexp): Boolean = (x0, uv) match {
-  case (Bc(uu), uv) => false
-  case (Null(a), v) => AExp.aexp_constrains(a, v)
-  case (Eq(a1, a2), v) =>
-    (AExp.aexp_constrains(a1, v)) || (AExp.aexp_constrains(a2, v))
-  case (Gt(a1, a2), v) =>
-    (AExp.aexp_constrains(a1, v)) || (AExp.aexp_constrains(a2, v))
-  case (Nor(g1, g2), v) => (gexp_constrains(g1, v)) || (gexp_constrains(g2, v))
-}
-
 def enumerate_gexp_regs(x0: gexp): Set.set[Nat.nat] = x0 match {
   case Bc(uu) => Set.bot_set[Nat.nat]
   case Null(v) => AExp.enumerate_aexp_regs(v)
@@ -909,6 +968,49 @@ def enumerate_gexp_regs(x0: gexp): Set.set[Nat.nat] = x0 match {
   case Nor(v, va) =>
     Set.sup_set[Nat.nat](enumerate_gexp_regs(v), enumerate_gexp_regs(va))
 }
+
+def max_reg(g: gexp): Option[Nat.nat] =
+  {
+    val regs: Set.set[Nat.nat] = enumerate_gexp_regs(g);
+    (if (Cardinality.eq_set[Nat.nat](regs, Set.bot_set[Nat.nat])) None
+      else Some[Nat.nat](Lattices_Big.Max[Nat.nat](regs)))
+  }
+
+def enumerate_gexp_inputs(x0: gexp): Set.set[Nat.nat] = x0 match {
+  case Bc(uu) => Set.bot_set[Nat.nat]
+  case Null(v) => AExp.enumerate_aexp_inputs(v)
+  case Eq(v, va) =>
+    Set.sup_set[Nat.nat](AExp.enumerate_aexp_inputs(v),
+                          AExp.enumerate_aexp_inputs(va))
+  case Gt(va, v) =>
+    Set.sup_set[Nat.nat](AExp.enumerate_aexp_inputs(v),
+                          AExp.enumerate_aexp_inputs(va))
+  case Nor(v, va) =>
+    Set.sup_set[Nat.nat](enumerate_gexp_inputs(v), enumerate_gexp_inputs(va))
+}
+
+def max_input(g: gexp): Option[Nat.nat] =
+  {
+    val inputs: Set.set[Nat.nat] = enumerate_gexp_inputs(g);
+    (if (Cardinality.eq_set[Nat.nat](inputs, Set.bot_set[Nat.nat])) None
+      else Some[Nat.nat](Lattices_Big.Max[Nat.nat](inputs)))
+  }
+
+def gexp_constrains(x0: gexp, uv: AExp.aexp): Boolean = (x0, uv) match {
+  case (Bc(uu), uv) => false
+  case (Null(a), v) => AExp.aexp_constrains(a, v)
+  case (Eq(a1, a2), v) =>
+    (AExp.aexp_constrains(a1, v)) || (AExp.aexp_constrains(a2, v))
+  case (Gt(a1, a2), v) =>
+    (AExp.aexp_constrains(a1, v)) || (AExp.aexp_constrains(a2, v))
+  case (Nor(g1, g2), v) => (gexp_constrains(g1, v)) || (gexp_constrains(g2, v))
+}
+
+def satisfiable_list(l: List[gexp]): Boolean =
+  Dirties.satisfiable(Lista.fold[gexp,
+                                  gexp](((v: gexp) => (va: gexp) =>
+  Nor(Nor(v, v), Nor(va, va))),
+ l, Bc(true)))
 
 def gexp_same_structure(x0: gexp, x1: gexp): Boolean = (x0, x1) match {
   case (Bc(ba), Bc(b)) => ba == b
@@ -1053,65 +1155,6 @@ def Sup_set[A : HOL.equal](x0: Set.set[Set.set[A]]): Set.set[A] = x0 match {
 }
 
 } /* object Complete_Lattices */
-
-object Lattices_Big {
-
-def Max[A : Orderings.linorder](x0: Set.set[A]): A = x0 match {
-  case Set.seta(x::xs) =>
-    Lista.fold[A, A](((a: A) => (b: A) => Orderings.max[A](a, b)), xs, x)
-}
-
-} /* object Lattices_Big */
-
-object Phantom_Type {
-
-abstract sealed class phantom[A, B]
-final case class phantoma[B, A](a: B) extends phantom[A, B]
-
-} /* object Phantom_Type */
-
-object Cardinality {
-
-def finite_UNIV_nata: Phantom_Type.phantom[Nat.nat, Boolean] =
-  Phantom_Type.phantoma[Boolean, Nat.nat](false)
-
-def card_UNIV_nata: Phantom_Type.phantom[Nat.nat, Nat.nat] =
-  Phantom_Type.phantoma[Nat.nat, Nat.nat](Nat.zero_nata)
-
-trait finite_UNIV[A] {
-  val `Cardinality.finite_UNIV`: Phantom_Type.phantom[A, Boolean]
-}
-def finite_UNIV[A](implicit A: finite_UNIV[A]): Phantom_Type.phantom[A, Boolean]
-  = A.`Cardinality.finite_UNIV`
-object finite_UNIV {
-  implicit def `Cardinality.finite_UNIV_nat`: finite_UNIV[Nat.nat] = new
-    finite_UNIV[Nat.nat] {
-    val `Cardinality.finite_UNIV` = finite_UNIV_nata
-  }
-}
-
-trait card_UNIV[A] extends finite_UNIV[A] {
-  val `Cardinality.card_UNIV`: Phantom_Type.phantom[A, Nat.nat]
-}
-def card_UNIV[A](implicit A: card_UNIV[A]): Phantom_Type.phantom[A, Nat.nat] =
-  A.`Cardinality.card_UNIV`
-object card_UNIV {
-  implicit def `Cardinality.card_UNIV_nat`: card_UNIV[Nat.nat] = new
-    card_UNIV[Nat.nat] {
-    val `Cardinality.card_UNIV` = card_UNIV_nata
-    val `Cardinality.finite_UNIV` = finite_UNIV_nata
-  }
-}
-
-def eq_set[A : card_UNIV : HOL.equal](x0: Set.set[A], x1: Set.set[A]): Boolean =
-  (x0, x1) match {
-  case (Set.seta(xs), Set.seta(ys)) =>
-    (Lista.list_all[A](((a: A) => ys contains a),
-                        xs)) && (Lista.list_all[A](((a: A) => xs contains a),
-            ys))
-}
-
-} /* object Cardinality */
 
 object Transition {
 
@@ -4226,8 +4269,9 @@ def directly_subsumes_cases(a: FSet.fset[(Nat.nat,
                          else (if (Transition.equal_transition_exta[Unit](t1,
                                    Ignore_Inputs.drop_guards(t2)))
                                 true
-                                else Dirties.scalaDirectlySubsumes(a, b, sa, s,
-                            t1, t2))))))
+                                else (if (Can_Take.simple_mutex(t2, t1)) false
+                                       else Dirties.scalaDirectlySubsumes(a, b,
+                                   sa, s, t1, t2)))))))
 
 def no_illegal_updates_code(x0: List[(Nat.nat, AExp.aexp)], uu: Nat.nat):
       Boolean
@@ -4320,6 +4364,45 @@ def satisfies_trace_i_i_i_i(x: List[(String,
               }))))
 
 } /* object Code_Generation */
+
+object Can_Take {
+
+def max_reg(g: List[GExp.gexp]): Option[Nat.nat] =
+  Lista.fold[GExp.gexp,
+              Option[Nat.nat]](Fun.comp[Option[Nat.nat],
+ Option[Nat.nat] => Option[Nat.nat],
+ GExp.gexp](((a: Option[Nat.nat]) => (b: Option[Nat.nat]) =>
+              Orderings.max[Option[Nat.nat]](a, b)),
+             ((a: GExp.gexp) => GExp.max_reg(a))),
+                                g, None)
+
+def max_input(g: List[GExp.gexp]): Option[Nat.nat] =
+  Lista.fold[GExp.gexp,
+              Option[Nat.nat]](Fun.comp[Option[Nat.nat],
+ Option[Nat.nat] => Option[Nat.nat],
+ GExp.gexp](((a: Option[Nat.nat]) => (b: Option[Nat.nat]) =>
+              Orderings.max[Option[Nat.nat]](a, b)),
+             ((a: GExp.gexp) => GExp.max_input(a))),
+                                g, None)
+
+def ensure_not_null(n: Nat.nat): List[GExp.gexp] =
+  Lista.map[Nat.nat,
+             GExp.gexp](((i: Nat.nat) =>
+                          GExp.Nor(GExp.Null(AExp.V(VName.I(i))),
+                                    GExp.Null(AExp.V(VName.I(i))))),
+                         Lista.upt(Nat.zero_nata, n))
+
+def simple_mutex(ta: Transition.transition_ext[Unit],
+                  t: Transition.transition_ext[Unit]):
+      Boolean
+  =
+  (Optiona.is_none[Nat.nat](max_reg(Transition.Guard[Unit](ta)))) && ((GExp_Orderings.less_option[Nat.nat](max_input(Transition.Guard[Unit](ta)),
+                            Some[Nat.nat](Transition.Arity[Unit](ta)))) && ((GExp.satisfiable_list(Transition.Guard[Unit](ta) ++
+                     ensure_not_null(Transition.Arity[Unit](ta)))) && ((Transition.Label[Unit](ta) ==
+                                 Transition.Label[Unit](t)) && ((Nat.equal_nata(Transition.Arity[Unit](ta),
+ Transition.Arity[Unit](t))) && (! (EFSM.choice(t, ta)))))))
+
+} /* object Can_Take */
 
 object EFSM {
 

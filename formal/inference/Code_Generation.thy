@@ -10,6 +10,7 @@ theory Code_Generation
    EFSM_Dot
    Code_Target_FSet
    Code_Target_Set
+   Can_Take
  efsm2sal
 begin
 
@@ -255,23 +256,33 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
       then True
     else if generalise_output_direct_subsumption t1 t2 b a s s'
       then True
-    else if t1 = (drop_guards t2)
+    else if t1 = drop_guards t2
       then True
+    else if simple_mutex t2 t1
+      then False
     else dirty_directly_subsumes a b s s' t1 t2
   )"
 
+lemma "always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption m1 m2 s s' t1 t2 \<longrightarrow>
+     \<not> directly_subsumes m1 m2 s s' t1 t2"
+  by (simp add: always_different_outputs_direct_subsumption)
+
 lemma [code]: "directly_subsumes m1 m2 s s' t1 t2 = directly_subsumes_cases m1 m2 s s' t1 t2"
-  unfolding directly_subsumes_cases_def
+  apply (simp only: directly_subsumes_cases_def)
   apply (case_tac "t1 = t2")
-   apply (simp add: directly_subsumes_self)
-  apply (case_tac "always_different_outputs_direct_subsumption a b s s' t1 t2")
-  apply (simp add: always_different_outputs_direct_subsumption dirty_directly_subsumes_def drop_guard_add_update_direct_subsumption_implies_direct_subsumption generalise_output_directly_subsumes_original_executable)
+  apply (simp add: directly_subsumes_self)
+  apply (case_tac "always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption m1 m2 s s' t1 t2")
+   apply (simp add: always_different_outputs_direct_subsumption)
   apply (case_tac "drop_guard_add_update_direct_subsumption t1 t2 m2 s'")
-  apply (meson always_different_outputs_direct_subsumption drop_guard_add_update_direct_subsumption_implies_direct_subsumption)
+   apply (simp add: drop_guard_add_update_direct_subsumption_implies_direct_subsumption)
   apply (case_tac "generalise_output_direct_subsumption t1 t2 m2 m1 s s'")
-    apply (meson always_different_outputs_direct_subsumption generalise_output_directly_subsumes_original_executable)
-  using drop_inputs_subsumption every_context_subsumes apply blast
-  by (simp add: always_different_outputs_direct_subsumption dirty_directly_subsumes_def drop_guard_add_update_direct_subsumption_implies_direct_subsumption drop_inputs_subsumption every_context_subsumes generalise_output_directly_subsumes_original_executable)
+   apply (simp add: generalise_output_directly_subsumes_original_executable)
+  apply (case_tac "t1 = drop_guards t2")
+   apply (simp add: drop_inputs_subsumption subsumes_in_all_contexts_directly_subsumes)
+  apply (simp add: always_different_outputs_direct_subsumption del: always_different_outputs.simps generalise_output_direct_subsumption.simps)
+  apply (case_tac "simple_mutex t2 t1")
+  apply (simp add: simple_mutex_direct_subsumption always_different_outputs_direct_subsumption del: always_different_outputs.simps generalise_output_direct_subsumption.simps)
+  by (simp add: dirty_directly_subsumes_def)
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and>
