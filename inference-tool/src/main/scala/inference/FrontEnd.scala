@@ -13,7 +13,7 @@ object FrontEnd {
 
     Log.root.info("Building PTA")
     val pta = Inference.make_pta(Config.log, FSet.bot_fset)
-    // TypeConversion.efsmToSALTranslator(pta, "pta")
+    TypeConversion.efsmToSALTranslator(pta, "pta")
     PrettyPrinter.EFSM2dot(pta, s"pta_gen")
 
     val np_labar = Inference.nondeterministic_pairs_labar(Inference.toiEFSM(pta))
@@ -24,6 +24,10 @@ object FrontEnd {
       Config.config.strategy,
       Config.heuristics,
       Config.config.nondeterminismMetric)
+
+    val lst = FSet.sorted_list_of_fset(inferred)
+    val t = lst(0)._2
+    println(Dirties.canTake(Inference.toiEFSM(inferred), Nat.Nata(0), t))
 
     Log.root.info("The inferred machine is " +
       (if (Inference.nondeterministic(Inference.toiEFSM(inferred), Inference.nondeterministic_pairs)) "non" else "") + "deterministic")

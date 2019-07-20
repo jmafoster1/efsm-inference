@@ -10,6 +10,7 @@ theory Code_Generation
    EFSM_Dot
    Code_Target_FSet
    Code_Target_Set
+ efsm2sal
 begin
 
 declare One_nat_def [simp del]
@@ -439,7 +440,7 @@ export_code
   (* Nondeterminism metrics *)
   nondeterministic_pairs nondeterministic_pairs_labar
   (* Utilities *)
-  iefsm2dot efsm2dot
+  iefsm2dot efsm2dot guards2sal
 in Scala
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

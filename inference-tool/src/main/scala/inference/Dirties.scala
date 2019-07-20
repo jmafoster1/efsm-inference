@@ -177,6 +177,19 @@ object Dirties {
     return (output1.toString == "proved.\n" && output2.toString == "proved.\n")
   }
 
+  def canTake(e: Types.IEFSM, s: Nat.nat, t: Types.Transition): Boolean = {
+    val f = "intermediate_"+System.currentTimeMillis()
+    TypeConversion.efsmToSALTranslator(Inference.tm(e), f)
+
+    addLTL("salfiles/" + f + ".sal", s"  canTake: THEOREM MichaelsEFSM |- G(cfstate = State_${Code_Numeral.integer_of_nat(s)} => EXISTS (I : input_sequence ! Sequence): (${efsm2sal.guards2sal(Transition.Guard(t))}));")
+
+    val output = Seq("bash", "-c", "cd salfiles; sal-smc --assertion='" + f + "{100}!canTake'").!!
+    if (output.toString != "proved.\n") {
+      print(output)
+    }
+    return (output.toString == "proved.\n")
+  }
+
   def scalaDirectlySubsumes(a: IEFSM,
                             b: IEFSM,
                             s: Nat.nat,

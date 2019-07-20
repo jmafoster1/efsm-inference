@@ -4685,6 +4685,42 @@ def iefsm2dot(e: FSet.fset[(Nat.nat,
 
 } /* object EFSM_Dot */
 
+object efsm2sal {
+
+def aexp2sal(x0: AExp.aexp): String = x0 match {
+  case AExp.L(Value.Numa(n)) =>
+    "Some(NUM(" + Code_Numeral.integer_of_int(n).toString() + "))"
+  case AExp.L(Value.Str(n)) => "Some(STR(String_" + n + "))"
+  case AExp.V(VName.I(i)) =>
+    "Some(I(" +
+      Code_Numeral.integer_of_nat(Nat.plus_nata(i, Nat.Nata((1)))).toString() +
+      "))"
+  case AExp.V(VName.R(i)) =>
+    "R(" + Code_Numeral.integer_of_nat(i).toString() + ")"
+  case AExp.Plus(a1, a2) =>
+    "value_plus(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
+  case AExp.Minus(a1, a2) =>
+    "value_minus(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
+}
+
+def gexp2sal(x0: GExp.gexp): String = x0 match {
+  case GExp.Bc(true) => "True"
+  case GExp.Bc(false) => "True"
+  case GExp.Eq(a1, a2) =>
+    "gval(value_eq(" + aexp2sal(a1) + ", " + aexp2sal(a2) + "))"
+  case GExp.Gt(a2, a1) =>
+    "gval(value_lt(" + aexp2sal(a1) + ", " + aexp2sal(a2) + "))"
+  case GExp.Nor(g1, g2) =>
+    "NOT (gval(" + gexp2sal(g1) + ") OR gval( " + gexp2sal(g2) + "))"
+  case GExp.Null(a1) => "a1 = None"
+}
+
+def guards2sal(g: List[GExp.gexp]): String =
+  (Lista.map[GExp.gexp,
+              String](((a: GExp.gexp) => gexp2sal(a)), g)).mkString(" AND")
+
+} /* object efsm2sal */
+
 object Finite_Set {
 
 def card[A : HOL.equal](x0: Set.set[A]): Nat.nat = x0 match {
