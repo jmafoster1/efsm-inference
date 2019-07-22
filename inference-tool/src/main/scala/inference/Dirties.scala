@@ -47,7 +47,7 @@ object Dirties {
     }
     case GExp.Gt(a1, a2) => ctx.mkGt(toZ3(a1, ctx, types).asInstanceOf[z3.ArithExpr], toZ3(a2, ctx, types).asInstanceOf[z3.ArithExpr])
     case GExp.Nor(g1, g2) => ctx.mkNot(ctx.mkOr(toZ3(g1, ctx, types), toZ3(g2, ctx, types)))
-    case GExp.Null(v) => null
+    case GExp.Null(v) => throw new java.lang.IllegalArgumentException("Z3 does not handle null")
   }
 
   var sat_memo = scala.collection.immutable.Map[GExp.gexp, Boolean]()

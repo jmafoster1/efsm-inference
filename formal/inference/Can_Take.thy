@@ -140,6 +140,9 @@ lemma max_input_I: "AExp.max_input (V (vname.I i)) = Some i"
 definition ensure_not_null :: "nat \<Rightarrow> gexp list" where
   "ensure_not_null n = map (\<lambda>i. gNot (Null (V (vname.I i)))) [0..<n]"
 
+lemma ensure_not_null_cons: "ensure_not_null (Suc a) = (ensure_not_null a)@[gNot (Null (V (I (Suc a))))]"
+  by (simp add: ensure_not_null_def)
+
 lemma not_null_length: "apply_guards (ensure_not_null a) (join_ir ia r) \<Longrightarrow> length ia \<ge> a"
 proof(induct a)
   case 0
@@ -335,5 +338,88 @@ lemma simple_mutex_direct_subsumption:
   apply (rule allI)
   apply (simp add: simple_mutex_def)
   by (metis can_take_satisfiable no_choice_no_subsumption)
+
+fun not_null :: "gexp \<Rightarrow> bool" where
+  "not_null (Null x) = False" |
+  "not_null (Nor x y) = (not_null x \<and> not_null y)" |
+  "not_null _ = True"
+
+lemma apply_guards_ensure_not_null: "length i \<ge> a \<Longrightarrow> apply_guards (ensure_not_null a) (join_ir i r)"
+proof(induct a)
+  case 0
+  then show ?case
+    by (simp add: ensure_not_null_def)
+next
+  case (Suc a)
+  then show ?case
+    apply (simp add: ensure_not_null_cons apply_guards_append apply_guards_singleton)
+    by (simp add: join_ir_def input2state_nth)
+qed
+
+lemma apply_guards_pad: "apply_guards (ensure_not_null a) (join_ir (padding a) <>)"
+proof(induct a)
+  case 0
+  then show ?case
+    by (simp add: ensure_not_null_def)
+next
+  case (Suc a)
+  then show ?case
+    apply (simp add: ensure_not_null_cons apply_guards_append)
+    apply standard
+     apply (rule apply_guards_ensure_not_null)
+     apply (simp add: length_padding)
+    apply (simp add: apply_guards_singleton join_ir_def)
+    by (metis input2state_nth le_imp_less_Suc length_padding linorder_not_le nat_less_le padding.simps(2))
+qed
+
+lemma max_input_Bc: "GExp.max_input (Bc x) = None"
+  by (simp add: GExp.max_input_def)
+
+lemma "GExp.max_input g \<ge> Some a \<Longrightarrow>
+not_null g \<Longrightarrow>
+gval g (join_ir i r) \<noteq> invalid \<Longrightarrow>
+apply_guards (ensure_not_null a) (join_ir i r)"
+proof(induct g)
+  case (Bc x)
+  then show ?case
+    apply (simp add: max_input_Bc)
+    using less_option.simps(2) not_le by blast
+next
+  case (Eq x1a x2)
+  then show ?case sorry
+next
+  case (Gt x1a x2)
+  then show ?case
+    apply (simp add: max_input_Gt ValueGt_def)
+    apply (simp add: MaybeBoolInt_not_invalid)
+next
+  case (Nor g1 g2)
+  then show ?case
+    apply (simp add: gexp_max_input_nor maybe_not_invalid maybe_or_invalid)
+    by linarith
+next
+  case (Null x)
+  then show ?case
+    by simp
+qed
+
+lemma "max_input G \<ge> Some a \<Longrightarrow> \<forall>g \<in> set G. not_null g \<Longrightarrow> satisfiable_list G \<Longrightarrow> satisfiable_list (G @ ensure_not_null a)"
+proof(induct G)
+case Nil
+  then show ?case
+    apply (simp add: satisfiable_list_def satisfiable_def fold_apply_guards)
+    apply (rule_tac x="padding a" in exI)
+    apply (rule_tac x="<>" in exI)
+    by (simp add: apply_guards_pad)
+next
+  case (Cons g gs)
+  then show ?case
+    apply (simp add: satisfiable_list_def satisfiable_def fold_apply_guards apply_guards_cons apply_guards_append 
+                del: fold.simps fold_append )
+    apply clarify
+    apply (rule_tac x=i in exI)
+    apply (rule_tac x=r in exI)
+    apply (simp add: apply_guards_append max_input_cons)
+qed
 
 end

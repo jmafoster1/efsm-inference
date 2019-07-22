@@ -468,5 +468,6 @@ instance
    apply (metis less_eq_option.elims(2) less_option.elims(2) dual_order.asym option.discI option.inject option.simps(3))
   by (metis less_option.elims(3) less_eq_option.elims(3) less_option.simps(2) neqE option.inject)
 end
+declare less_eq_option.simps [simp del]
 
 end
