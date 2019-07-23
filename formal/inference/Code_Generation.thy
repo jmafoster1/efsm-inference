@@ -258,6 +258,8 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
       then True
     else if t1 = drop_guards t2
       then True
+    \<comment> \<open>else if t2 = drop_guards t1 \<and> length (Guard t1) > 0
+      then False\<close>
     else if simple_mutex t2 t1
       then False
     else dirty_directly_subsumes a b s s' t1 t2

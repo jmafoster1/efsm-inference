@@ -16,8 +16,6 @@ object FrontEnd {
     TypeConversion.efsmToSALTranslator(pta, "pta")
     PrettyPrinter.EFSM2dot(pta, s"pta_gen")
 
-    val np_labar = Inference.nondeterministic_pairs_labar(Inference.toiEFSM(pta))
-
     val inferred = Inference.learn(
       Nat.Nata(Config.config.k),
       Config.log,
@@ -25,9 +23,9 @@ object FrontEnd {
       Config.heuristics,
       Config.config.nondeterminismMetric)
 
-    val lst = FSet.sorted_list_of_fset(inferred)
-    val t = lst(0)._2
-    println(Dirties.canTake(Inference.toiEFSM(inferred), Nat.Nata(0), t))
+    // val lst = FSet.sorted_list_of_fset(inferred)
+    // val t = lst(0)._2
+    // println(Dirties.canTake(Inference.toiEFSM(inferred), Nat.Nata(0), t))
 
     Log.root.info("The inferred machine is " +
       (if (Inference.nondeterministic(Inference.toiEFSM(inferred), Inference.nondeterministic_pairs)) "non" else "") + "deterministic")

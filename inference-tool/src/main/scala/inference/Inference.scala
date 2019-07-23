@@ -4792,7 +4792,7 @@ def aexp2sal(x0: AExp.aexp): String = x0 match {
 
 def gexp2sal(x0: GExp.gexp): String = x0 match {
   case GExp.Bc(true) => "True"
-  case GExp.Bc(false) => "True"
+  case GExp.Bc(false) => "False"
   case GExp.Eq(a1, a2) =>
     "gval(value_eq(" + aexp2sal(a1) + ", " + aexp2sal(a2) + "))"
   case GExp.Gt(a2, a1) =>
@@ -4802,9 +4802,13 @@ def gexp2sal(x0: GExp.gexp): String = x0 match {
   case GExp.Null(a1) => "a1 = None"
 }
 
-def guards2sal(g: List[GExp.gexp]): String =
-  (Lista.map[GExp.gexp,
-              String](((a: GExp.gexp) => gexp2sal(a)), g)).mkString(" AND")
+def guards2sal(x0: List[GExp.gexp]): String = x0 match {
+  case Nil => "TRUE"
+  case v::va =>
+    (Lista.map[GExp.gexp,
+                String](((a: GExp.gexp) => gexp2sal(a)),
+                         v::va)).mkString(" AND")
+}
 
 } /* object efsm2sal */
 
@@ -4940,7 +4944,6 @@ r1, r2))
 object Type_Inference {
 
 abstract sealed class typea
-final case class NULL() extends typea
 final case class NUM() extends typea
 final case class STRING() extends typea
 final case class UNBOUND() extends typea
@@ -4952,16 +4955,9 @@ def equal_typea(x0: typea, x1: typea): Boolean = (x0, x1) match {
   case (UNBOUND(), NUM()) => false
   case (NUM(), STRING()) => false
   case (STRING(), NUM()) => false
-  case (NULL(), UNBOUND()) => false
-  case (UNBOUND(), NULL()) => false
-  case (NULL(), STRING()) => false
-  case (STRING(), NULL()) => false
-  case (NULL(), NUM()) => false
-  case (NUM(), NULL()) => false
   case (UNBOUND(), UNBOUND()) => true
   case (STRING(), STRING()) => true
   case (NUM(), NUM()) => true
-  case (NULL(), NULL()) => true
 }
 
 def fun_of[A : HOL.equal, B : HOL.equal](x0: List[(A, B)], b: B): Map[A, B] =
@@ -4977,6 +4973,25 @@ def type_of(x0: AExp.aexp, uv: Map[VName.vname, typea]): typea = (x0, uv) match
   case (AExp.V(v), types) => types(v)
   case (AExp.Plus(uy, uz), va) => NUM()
   case (AExp.Minus(vb, vc), vd) => NUM()
+}
+
+def add_pair(p: (VName.vname, typea), x1: List[(VName.vname, typea)]):
+      List[(VName.vname, typea)]
+  =
+  (p, x1) match {
+  case (p, Nil) => p::Nil
+  case ((va, ta), (v, t)::tail) =>
+    (if (VName.equal_vnamea(va, v))
+      (if (equal_typea(ta, UNBOUND())) (va, t)::tail else (va, ta)::tail)
+      else (v, t)::(add_pair((va, ta), tail)))
+}
+
+def add_pairs(x0: List[(VName.vname, typea)], l: List[(VName.vname, typea)]):
+      List[(VName.vname, typea)]
+  =
+  (x0, l) match {
+  case (Nil, l) => l
+  case (h::t, l) => add_pair(h, add_pairs(t, l))
 }
 
 def assign_all(t: typea, l: List[VName.vname]): List[(VName.vname, typea)] =
@@ -5048,7 +5063,7 @@ def infer_types_aux(x0: GExp.gexp):
   =
   x0 match {
   case GExp.Bc(uu) => (Nil, Nil)
-  case GExp.Null(v) => (assign_all(NULL(), aexp_get_variables(v)), Nil)
+  case GExp.Null(v) => (assign_all(UNBOUND(), aexp_get_variables(v)), Nil)
   case GExp.Gt(a2, a1) =>
     (assign_all(NUM(), aexp_get_variables(a1) ++ aexp_get_variables(a2)), Nil)
   case GExp.Nor(g1, g2) =>
@@ -5059,7 +5074,7 @@ def infer_types_aux(x0: GExp.gexp):
       val (t2, g2a):
             (List[(VName.vname, typea)], List[(VName.vname, VName.vname)])
         = infer_types_aux(g2);
-      ((t1 ++ t2).distinct, (g1a ++ g2a).distinct)
+      (add_pairs(t1, t2), (g1a ++ g2a).distinct)
     }
   case GExp.Eq(AExp.L(uv), AExp.L(uw)) => (Nil, Nil)
   case GExp.Eq(AExp.V(v1), AExp.V(v2)) => (Nil, (v1, v2)::Nil)
@@ -5135,16 +5150,10 @@ def type_check_aux(x0: typea, uu: typea): Boolean = (x0, uu) match {
   case (NUM(), NUM()) => true
   case (STRING(), STRING()) => true
   case (UNBOUND(), uu) => true
-  case (NULL(), UNBOUND()) => true
   case (NUM(), UNBOUND()) => true
   case (STRING(), UNBOUND()) => true
-  case (NULL(), NULL()) => true
-  case (NUM(), NULL()) => false
   case (NUM(), STRING()) => false
-  case (NULL(), NUM()) => false
   case (STRING(), NUM()) => false
-  case (STRING(), NULL()) => false
-  case (NULL(), STRING()) => false
 }
 
 def aexp_type_check(a1: AExp.aexp, a2: AExp.aexp, t: Map[VName.vname, typea]):

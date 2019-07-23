@@ -11,43 +11,33 @@ object Dirties {
   def foldl[A, B](f: A => B => A, b: A, l: List[B]): A =
     l.par.foldLeft(b)(((x, y) => (f(x))(y)))
 
-  def toZ3(v: Value.value, ctx: z3.Context): z3.Expr = v match {
-    case Value.Numa(n) => ctx.mkInt(Code_Numeral.integer_of_int(n).toLong)
-    case Value.Str(s) => ctx.mkString(s)
+  def toZ3(a: VName.vname): String = a match {
+    case VName.I(n) => s"i${Code_Numeral.integer_of_nat(n)}"
+    case VName.R(n) => s"r${Code_Numeral.integer_of_nat(n)}"
   }
 
-  def toZ3(v: VName.vname, ctx: z3.Context, datatype: z3.Sort): z3.Expr = v match {
-    case VName.I(n) => ctx.mkConst("i"+Code_Numeral.integer_of_nat(n), datatype)
-    case VName.R(n) => ctx.mkConst("r"+Code_Numeral.integer_of_nat(n), datatype)
+  def toZ3(a: AExp.aexp): String =  a match {
+    case AExp.L(Value.Numa(n)) => Code_Numeral.integer_of_int(n).toString
+    case AExp.L(Value.Str(s)) => "\"" + s + "\""
+    case AExp.V(v) => s"${toZ3(v)}Value"
+    case AExp.Plus(a1, a2) => s"(+ (${toZ3(a1)}) (${toZ3(a2)}))"
+    case AExp.Minus(a1, a2) => s"(- (${toZ3(a1)}) (${toZ3(a2)}))"
   }
 
-  def toZ3(a: AExp.aexp, ctx: z3.Context, types: Map[VName.vname, Type_Inference.typea]): z3.Expr =  a match {
-    case AExp.L(v) => toZ3(v, ctx)
-    case AExp.V(v) => {
-      types(v) match {
-        case Type_Inference.NUM()     => toZ3(v, ctx, ctx.mkIntSort())
-        case Type_Inference.STRING()  => toZ3(v, ctx, ctx.mkStringSort())
-        case Type_Inference.UNBOUND() => toZ3(v, ctx, ctx.mkUninterpretedSort("UNBOUND"))
-        case Type_Inference.NULL()    => toZ3(v, ctx, ctx.mkUninterpretedSort("NULL"))
-      }
-    }
-    case AExp.Plus(a1, a2) => ctx.mkAdd(toZ3(a1, ctx, types).asInstanceOf[z3.ArithExpr], toZ3(a2, ctx, types).asInstanceOf[z3.ArithExpr])
-    case AExp.Minus(a1, a2) => ctx.mkSub(toZ3(a1, ctx, types).asInstanceOf[z3.ArithExpr],toZ3(a2, ctx, types).asInstanceOf[z3.ArithExpr])
+  def toZ3(a: Type_Inference.typea): String = a match  {
+    case Type_Inference.NUM() => "Int"
+    case Type_Inference.STRING() => "String"
+    case Type_Inference.UNBOUND() => "String"
   }
 
-  def toZ3(g: GExp.gexp, ctx: z3.Context, types: Map[VName.vname, Type_Inference.typea]): z3.BoolExpr =  g match {
-    case GExp.Bc(a) => ctx.mkBool(a)
-    case GExp.Eq(a1, a2) => {
-      if (Type_Inference.aexp_type_check(a1, a2, types)) {
-        ctx.mkEq(toZ3(a1, ctx, types), toZ3(a2, ctx, types));
-      }
-      else {
-        throw new TypeException(s"Types ${Type_Inference.type_of(a1, types)} and ${Type_Inference.type_of(a2, types)} are not compatible")
-      }
-    }
-    case GExp.Gt(a1, a2) => ctx.mkGt(toZ3(a1, ctx, types).asInstanceOf[z3.ArithExpr], toZ3(a2, ctx, types).asInstanceOf[z3.ArithExpr])
-    case GExp.Nor(g1, g2) => ctx.mkNot(ctx.mkOr(toZ3(g1, ctx, types), toZ3(g2, ctx, types)))
-    case GExp.Null(v) => throw new java.lang.IllegalArgumentException("Z3 does not handle null")
+  def toZ3(g: GExp.gexp, types: Map[VName.vname, Type_Inference.typea]): String =  g match {
+    case GExp.Bc(a) => a.toString()
+    case GExp.Eq(a1, a2) => s"(= ${toZ3(a1)} ${toZ3(a2)})"
+    case GExp.Gt(a1, a2) => s"(> ${toZ3(a1)} ${toZ3(a2)})"
+    case GExp.Nor(g1, g2) => if (g1 == g2) s"(not ${toZ3(g1, types)})" else s"(not (or ${toZ3(g1, types)} ${toZ3(g2, types)}))"
+    case GExp.Null(AExp.V(VName.I(n))) => s"(= i${Code_Numeral.integer_of_nat(n)} (as none (Option ${toZ3(types(VName.I(n)))})))"
+    case GExp.Null(AExp.V(VName.R(n))) => s"(= r${Code_Numeral.integer_of_nat(n)} (as none (Option ${toZ3(types(VName.I(n)))})))"
+    case GExp.Null(v) => throw new java.lang.IllegalArgumentException("Z3 does not handle null of more complex arithmetic expressions")
   }
 
   var sat_memo = scala.collection.immutable.Map[GExp.gexp, Boolean]()
@@ -61,29 +51,20 @@ object Dirties {
       maybe_types match {
         case None => false
         case Some(types) => {
-          // println(Map_apply(types, I(1)))
-          val ctx = new z3.Context
+          var z3String = s"(declare-datatype Option (par (X) ((none) (some (val X)))))\n" +
+          types.map(t => t match {
+              case (k, v) => s"(declare-const ${toZ3(k)} (Option ${toZ3(v)}))\n(declare-const ${toZ3(k)}Value (${toZ3(v)}))"
+            }
+          ).foldLeft("")(((x, y) => x + y + "\n"))+
+          s"(assert ${toZ3(g, types)})\n(check-sat)"
+
+          Log.root.debug(g.toString)
+          Log.root.debug(z3String)
+
+          val ctx = new z3.Context()
           val solver = ctx.mkSimpleSolver()
-          try {
-            solver.add(toZ3(g, ctx, types))
-          }
-          catch {
-            case foo: TypeException => return false;
-          }
-          // print(solver)
-          val satisfiable = solver.check()
-          ctx.close()
-          satisfiable match {
-            case z3.Status.SATISFIABLE => {
-              sat_memo += (g -> true)
-              true
-            }
-            case z3.Status.UNSATISFIABLE => {
-              sat_memo += (g -> false)
-              false
-            }
-            case z3.Status.UNKNOWN => throw new SatisfiabilityUnknownException(g.toString())
-          }
+          solver.fromString(z3String)
+          return solver.check() == z3.Status.SATISFIABLE
         }
       }
     }

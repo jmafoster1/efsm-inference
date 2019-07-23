@@ -17,7 +17,7 @@ begin
 definition I :: "nat \<Rightarrow> vname" where
   "I n = vname.I (n-1)"
 declare I_def [simp]
-hide_constant I
+hide_const I
 
 text_raw\<open>\snip{gexptype}{1}{2}{%\<close>
 datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null aexp
