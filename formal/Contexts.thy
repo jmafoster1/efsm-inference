@@ -584,13 +584,13 @@ next
 next
   case (Plus g1 g2)
   then show ?case
-    apply simp
-    by (metis (no_types, hide_lams) aval.simps(3) take_eq_Nil test_aux_aux value_plus.simps(2) value_plus.simps(4) zero_le)
+    apply (simp add: value_plus_def)
+    by (metis MaybeArithInt.elims enumerate_aexp_regs_list no_variables_list_aval option.distinct(1) set_empty)
 next
   case (Minus g1 g2)
   then show ?case
-    apply simp
-    by (metis (no_types, hide_lams) take_eq_Nil test_aux_aux value_minus.simps(2) value_minus.simps(4) zero_le)
+    apply (simp add: value_minus_def)
+    by (metis MaybeArithInt.elims enumerate_aexp_regs_list no_variables_list_aval option.distinct(1) set_empty)
 qed
 
 lemma medial_subset:

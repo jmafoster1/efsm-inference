@@ -140,7 +140,7 @@ lemma max_input_I: "AExp.max_input (V (vname.I i)) = Some i"
 definition ensure_not_null :: "nat \<Rightarrow> gexp list" where
   "ensure_not_null n = map (\<lambda>i. gNot (Null (V (vname.I i)))) [0..<n]"
 
-lemma ensure_not_null_cons: "ensure_not_null (Suc a) = (ensure_not_null a)@[gNot (Null (V (I (Suc a))))]"
+lemma ensure_not_null_cons: "ensure_not_null (Suc a) = (ensure_not_null a)@[gNot (Null (V (I a)))]"
   by (simp add: ensure_not_null_def)
 
 lemma not_null_length: "apply_guards (ensure_not_null a) (join_ir ia r) \<Longrightarrow> length ia \<ge> a"
@@ -375,51 +375,61 @@ qed
 lemma max_input_Bc: "GExp.max_input (Bc x) = None"
   by (simp add: GExp.max_input_def)
 
-lemma "GExp.max_input g \<ge> Some a \<Longrightarrow>
-not_null g \<Longrightarrow>
-gval g (join_ir i r) \<noteq> invalid \<Longrightarrow>
-apply_guards (ensure_not_null a) (join_ir i r)"
-proof(induct g)
-  case (Bc x)
+lemma Some_lt_max: "Some a \<le> max (AExp.max_input A1) (AExp.max_input A2) \<Longrightarrow>
+       Some a \<le> (AExp.max_input A1) \<or> Some a \<le> (AExp.max_input A2)"
+  by linarith
+
+lemma apply_guards_ensure_not_null_length: "apply_guards (ensure_not_null a) (join_ir i r) = (length i \<ge> a)"
+  using apply_guards_ensure_not_null not_null_length by blast
+
+lemma max_input_must_be_some: "(Some a \<le> AExp.max_input A ) \<Longrightarrow> (\<exists>a'. AExp.max_input A = Some a')"
+  using not_le by fastforce
+
+lemma need_aval_I_contra:
+  "\<nexists>n'. aval (V (I a)) (join_ir i r) = Some (Num n') \<Longrightarrow>
+   AExp.max_input A = Some a \<Longrightarrow>
+   \<nexists>n. aval A (join_ir i r) = Some (Num n)"
+proof(induct A)
+  case (L x)
   then show ?case
-    apply (simp add: max_input_Bc)
-    using less_option.simps(2) not_le by blast
+    by (simp add: AExp.max_input_def)
 next
-  case (Eq x1a x2)
-  then show ?case sorry
-next
-  case (Gt x1a x2)
+  case (V x)
   then show ?case
-    apply (simp add: max_input_Gt ValueGt_def)
-    apply (simp add: MaybeBoolInt_not_invalid)
+    apply (cases x)
+     defer
+     apply (simp add: AExp.max_input_def)
+    by (simp add: join_ir_def max_input_I)
 next
-  case (Nor g1 g2)
+case (Plus A1 A2)
   then show ?case
-    apply (simp add: gexp_max_input_nor maybe_not_invalid maybe_or_invalid)
-    by linarith
+    apply (simp add: max_input_Plus value_plus_def MaybeArithInt_Not_Num MaybeArithInt_None)
+    by (metis max_def_raw)
 next
-  case (Null x)
+  case (Minus A1 A2)
   then show ?case
-    by simp
+    apply (simp add: max_input_Minus value_minus_def MaybeArithInt_Not_Num MaybeArithInt_None)
+    by (metis max_def_raw)
 qed
 
-lemma "max_input G \<ge> Some a \<Longrightarrow> \<forall>g \<in> set G. not_null g \<Longrightarrow> satisfiable_list G \<Longrightarrow> satisfiable_list (G @ ensure_not_null a)"
-proof(induct G)
-case Nil
-  then show ?case
-    apply (simp add: satisfiable_list_def satisfiable_def fold_apply_guards)
-    apply (rule_tac x="padding a" in exI)
-    apply (rule_tac x="<>" in exI)
-    by (simp add: apply_guards_pad)
-next
-  case (Cons g gs)
-  then show ?case
-    apply (simp add: satisfiable_list_def satisfiable_def fold_apply_guards apply_guards_cons apply_guards_append 
-                del: fold.simps fold_append )
-    apply clarify
-    apply (rule_tac x=i in exI)
-    apply (rule_tac x=r in exI)
-    apply (simp add: apply_guards_append max_input_cons)
-qed
+lemma need_aval_I:
+  "AExp.max_input A = Some a \<Longrightarrow>
+   aval A (join_ir i r) = Some (Num n) \<Longrightarrow>
+   \<exists>n'. aval (V (I a)) (join_ir i r) = Some (Num n')"
+  using need_aval_I_contra by blast
+
+lemma aval_input2state_within_bounds: "\<exists>n'. aval (V (I a)) (join_ir i r) = Some (Num n') \<Longrightarrow> a \<le> length i"
+  apply (simp add: join_ir_def)
+  using input2state_within_bounds less_imp_le_nat by blast
+
+lemma aval_Num_apply_guards_not_null:
+"Some a \<le> AExp.max_input A \<Longrightarrow>
+ aval A (join_ir i r) = Some (Num n) \<Longrightarrow>
+ apply_guards (ensure_not_null a) (join_ir i r)"
+  using max_input_must_be_some[of a A]
+  apply (simp add: apply_guards_ensure_not_null_length)
+  apply clarify
+  using need_aval_I aval_input2state_within_bounds
+  using leD by fastforce
 
 end

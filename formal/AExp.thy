@@ -31,40 +31,51 @@ text_raw\<open>\snip{aexptype}{1}{2}{%\<close>
 datatype aexp = L "value" | V vname | Plus aexp aexp | Minus aexp aexp
 text_raw\<open>}%endsnip\<close>
 
-syntax (xsymbols)
-  Plus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" (*infix "+" 60*)
-  Minus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" (*infix "-" 60*)
+fun MaybeArithInt :: "(int \<Rightarrow> int \<Rightarrow> int) \<Rightarrow> value option \<Rightarrow> value option \<Rightarrow> value option" where
+  "MaybeArithInt f (Some (Num x)) (Some (Num y)) = Some (Num (f x y))" |
+  "MaybeArithInt _ _ _ = None"
 
-fun value_plus :: "value option \<Rightarrow> value option \<Rightarrow> value option" (*infix "+" 40*) where
-  "value_plus (Some (Num x)) (Some (Num y)) = Some (Num (x+y))" |
-  "value_plus _ _ = None"
+lemma MaybeArithInt_not_None: "MaybeArithInt f a b \<noteq> None = (\<exists>n n'. a = Some (Num n) \<and> b = Some (Num n'))"
+  apply (cases a)
+  apply simp
+  apply (cases b)
+   apply simp
+  apply (case_tac aa)
+   apply (metis MaybeArithInt.elims MaybeArithInt.simps(1) option.distinct(1))
+  apply (case_tac aaa)
+   apply simp
+  by simp
 
-lemma plus_no_string [simp]:"value_plus a b \<noteq> Some (Str x)"
-  using value_plus.elims by blast
+lemma MaybeArithInt_Some: "MaybeArithInt f a b = Some (Num x) = (\<exists>n n'. a = Some (Num n) \<and> b = Some (Num n') \<and> f n n' = x)"
+  apply (cases a)
+  apply simp
+  apply (cases b)
+   apply simp
+  apply (case_tac aa)
+   apply simp
+   apply (metis MaybeArithInt.simps(1) MaybeArithInt_not_None option.inject option.simps(3) value.inject(1))
+  apply (case_tac aaa)
+  by auto
+
+lemma MaybeArithInt_None: "(MaybeArithInt f a1 a2 = None) = (\<nexists>n n'. a1 = Some (Num n) \<and> a2 = Some (Num n'))"
+  using MaybeArithInt_not_None by blast
+
+lemma MaybeArithInt_Not_Num: "(\<forall>n. MaybeArithInt f a1 a2 \<noteq> Some (Num n)) = (MaybeArithInt f a1 a2 = None)"
+  by (metis MaybeArithInt.elims option.distinct(1))
+
+definition "value_plus = MaybeArithInt (+)"
+
+lemma plus_no_string [simp]:"MaybeArithInt f a b \<noteq> Some (Str x)"
+  using MaybeArithInt.elims by blast
 
 lemma value_plus_symmetry: "value_plus x y = value_plus y x"
-  proof (cases x)
-    case None
-    then show ?thesis by simp
-  next
-    case (Some a)
-    then show ?thesis
-      apply (cases y)
-       apply simp
-      apply (case_tac a)
-       apply (case_tac aa)
-        apply simp
-       apply simp
-      apply (case_tac aa)
-      by simp_all
-  qed
+  apply (induct x y rule: MaybeArithInt.induct)
+  by (simp_all add: value_plus_def)
 
-fun value_minus :: "value option \<Rightarrow> value option \<Rightarrow> value option" (*infix "-" 40*) where
-  "value_minus (Some (Num x)) (Some (Num y)) = Some (Num (x-y))" |
-  "value_minus _ _ = None"
+definition "value_minus = MaybeArithInt (-)"
 
 lemma minus_no_string [simp]:"value_minus a b \<noteq> Some (Str x)"
-  using value_minus.elims by blast
+  by (simp add: value_minus_def)
 
 fun aval :: "aexp \<Rightarrow> datastate \<Rightarrow> value option" where
   "aval (L x) s = Some x" |
@@ -149,10 +160,6 @@ qed
 lemma input2state_within_bounds: "input2state i $ x = Some a \<Longrightarrow> x < length i"
   by (metis input2state_out_of_bounds not_le_imp_less option.distinct(1))
 
-lemma input2state_not_None: "input2state i $ x \<noteq> None \<Longrightarrow> x < length i"
-  by (meson input2state_out_of_bounds leI)
-
-
 lemma input2state_empty: "input2state [] $ x1 = None"
   by (simp add: input2state_out_of_bounds)
 
@@ -167,6 +174,19 @@ next
     apply (simp add: input2state_def enumerate_eq_zip)
     by (simp add: finfun_upd_apply nth_append)
 qed
+
+lemma input2state_not_None: "(input2state i $ x \<noteq> None) \<Longrightarrow> (x < length i)"
+  using input2state_within_bounds by blast
+
+lemma input2state_not_None_equiv: "(input2state i $ x \<noteq> None) = (x < length i)"
+  apply standard
+  using input2state_within_bounds apply blast
+  by (simp add: input2state_nth)
+
+lemma input2state_Some: "(\<exists>v. input2state i $ x = Some v) = (x < length i)"
+  apply standard
+  using input2state_within_bounds apply blast
+  by (simp add: input2state_nth)
 
 lemma input2state_cons:
   "x1 > 0 \<Longrightarrow>
@@ -302,18 +322,12 @@ next
 qed
 
 lemma aval_plus_aexp: "aval (a+b) s = aval (Plus a b) s"
-  apply (case_tac a)
-     apply (case_tac x1)
-      apply (case_tac b)
-         apply (case_tac x1b)
-  by auto
+  apply(induct a b rule: plus_aexp.induct)
+  by (simp_all add: value_plus_def)
 
 lemma aval_minus_aexp: "aval (a-b) s = aval (Minus a b) s"
-  apply (case_tac a)
-     apply (case_tac x1)
-      apply (case_tac b)
-         apply (case_tac x1b)
-  by auto
+  apply(induct a b rule: minus_aexp.induct)
+  by (simp_all add: value_minus_def)
 
 fun aexp_constrains :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
   "aexp_constrains (L l) a = (L l = a)" |

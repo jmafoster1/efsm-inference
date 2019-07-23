@@ -718,36 +718,40 @@ def equal_aexpa(x0: aexp, x1: aexp): Boolean = (x0, x1) match {
   case (L(x1), L(y1)) => Value.equal_valuea(x1, y1)
 }
 
-def value_minus(uu: Option[Value.value], uv: Option[Value.value]):
+def MaybeArithInt(f: Int.int => Int.int => Int.int, uv: Option[Value.value],
+                   uw: Option[Value.value]):
       Option[Value.value]
   =
-  (uu, uv) match {
-  case (Some(Value.Numa(x)), Some(Value.Numa(y))) =>
-    Some[Value.value](Value.Numa(Int.minus_int(x, y)))
-  case (None, uv) => None
-  case (Some(Value.Str(va)), uv) => None
-  case (uu, None) => None
-  case (uu, Some(Value.Str(va))) => None
+  (f, uv, uw) match {
+  case (f, Some(Value.Numa(x)), Some(Value.Numa(y))) =>
+    Some[Value.value](Value.Numa((f(x))(y)))
+  case (uu, None, uw) => None
+  case (uu, Some(Value.Str(va)), uw) => None
+  case (uu, uv, None) => None
+  case (uu, uv, Some(Value.Str(va))) => None
 }
 
-def value_plus(uu: Option[Value.value], uv: Option[Value.value]):
-      Option[Value.value]
+def value_minus:
+      Option[Value.value] => Option[Value.value] => Option[Value.value]
   =
-  (uu, uv) match {
-  case (Some(Value.Numa(x)), Some(Value.Numa(y))) =>
-    Some[Value.value](Value.Numa(Int.plus_int(x, y)))
-  case (None, uv) => None
-  case (Some(Value.Str(va)), uv) => None
-  case (uu, None) => None
-  case (uu, Some(Value.Str(va))) => None
-}
+  ((a: Option[Value.value]) => (b: Option[Value.value]) =>
+    MaybeArithInt(((aa: Int.int) => (ba: Int.int) => Int.minus_int(aa, ba)), a,
+                   b))
+
+def value_plus:
+      Option[Value.value] => Option[Value.value] => Option[Value.value]
+  =
+  ((a: Option[Value.value]) => (b: Option[Value.value]) =>
+    MaybeArithInt(((aa: Int.int) => (ba: Int.int) => Int.plus_int(aa, ba)), a,
+                   b))
 
 def aval(x0: aexp, s: VName.vname => Option[Value.value]): Option[Value.value] =
   (x0, s) match {
   case (L(x), s) => Some[Value.value](x)
   case (V(x), s) => s(x)
-  case (Plus(a_1, a_2), s) => value_plus(aval(a_1, s), aval(a_2, s))
-  case (Minus(a_1, a_2), s) => value_minus(aval(a_1, s), aval(a_2, s))
+  case (Plus(a_1, a_2), s) => value_plus.apply(aval(a_1, s)).apply(aval(a_2, s))
+  case (Minus(a_1, a_2), s) =>
+    value_minus.apply(aval(a_1, s)).apply(aval(a_2, s))
 }
 
 def input2state(n: List[Value.value]): Map[Nat.nat, Option[Value.value]] =
