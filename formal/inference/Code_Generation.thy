@@ -246,6 +246,18 @@ lemma always_different_outputs_direct_subsumption:
   using always_different_outputs_can_take_transition_not_subsumed accepts_trace_gives_context
   by (meson accepts_gives_context)
 
+lemma ponens: "(length i = Arity t \<and> (length i = Arity t \<longrightarrow> \<not> apply_guards (Guard t) (join_ir i c))) =
+(length i = Arity t \<and> \<not> apply_guards (Guard t) (join_ir i c))"
+  by auto
+
+(* TODO: Add this into subsumes_cases *)
+lemma satisfiable_negation_cant_subsume:
+  "satisfiable_negation t \<Longrightarrow>
+   \<not> subsumes t c (drop_guards t)"
+  apply (rule bad_guards)
+  apply (simp add: can_take_transition_def can_take_def drop_guards_def ponens)
+  by (simp add: satisfiable_negation_def quick_negation)
+
 definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes_cases a b s s' t1 t2 = (
     if t1 = t2

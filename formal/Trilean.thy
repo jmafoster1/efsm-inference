@@ -245,4 +245,11 @@ lemma invalid_maybe_and: "invalid \<and>\<^sub>? x = invalid"
 
 lemma maybe_not_eq: "(\<not>\<^sub>? x = \<not>\<^sub>? y) = (x = y)"
   by (metis maybe_double_negation)
+
+lemma de_morgans_1: "\<not>\<^sub>? (a \<or>\<^sub>? b) = (\<not>\<^sub>?a) \<and>\<^sub>? (\<not>\<^sub>?b)"
+  by (metis (no_types, hide_lams) add.commute invalid_maybe_and maybe_and_idempotent maybe_and_one maybe_not.elims maybe_not.simps(1) maybe_not.simps(3) maybe_not_invalid maybe_or_zero plus_trilean.simps(1) plus_trilean.simps(4) times_trilean.simps(1) times_trilean_commutative trilean.exhaust trilean.simps(6))
+
+lemma de_morgans_2: "\<not>\<^sub>? (a \<and>\<^sub>? b) = (\<not>\<^sub>?a) \<or>\<^sub>? (\<not>\<^sub>?b)"
+  by (metis de_morgans_1 maybe_double_negation)
+
 end

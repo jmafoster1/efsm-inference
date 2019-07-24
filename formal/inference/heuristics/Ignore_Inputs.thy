@@ -8,6 +8,9 @@ definition enumerate_outputs :: "iEFSM \<Rightarrow> label \<Rightarrow> arity \
 definition drop_guards :: "transition \<Rightarrow> transition" where
   "drop_guards t = \<lparr>Label = Label t, Arity = Arity t, Guard = [], Outputs = Outputs t, Updates = Updates t\<rparr>"
 
+lemma can_take_transition_right_length: "length i = Arity t \<Longrightarrow> can_take_transition (drop_guards t) i c"
+  by (simp add: drop_guards_def can_take_transition_def can_take_def)
+
 definition drop_inputs :: "update_modifier" where
   "drop_inputs t1ID t2ID s new old np = (let
      t1 = (get_by_id new t1ID);

@@ -18,7 +18,7 @@ limit ourselves to a simple arithmetic of plus and minus as a proof of concept.
 \<close>
 
 theory AExp
-  imports Value VName FinFun.FinFun
+  imports Value VName FinFun.FinFun Option_Lexorder
 begin
 
 declare One_nat_def [simp del]
@@ -418,6 +418,45 @@ qed
 
 definition max_reg :: "aexp \<Rightarrow> nat option" where
   "max_reg g = (let regs = (enumerate_aexp_regs g) in if regs = {} then None else Some (Max regs))"
+
+lemma max_reg_V_I: "max_reg (V (I n)) = None"
+  by (simp add: max_reg_def)
+
+lemma max_reg_V_R: "max_reg (V (R n)) = Some n"
+  by (simp add: max_reg_def)
+
+lemmas max_reg_V = max_reg_V_I max_reg_V_R
+
+lemma max_reg_Plus: "max_reg (Plus a1 a2) = max (max_reg a1) (max_reg a2)"
+  apply (simp add: max_reg_def Let_def max_None max_Some_Some)
+  by (metis List.finite_set Max.union enumerate_aexp_regs_list)
+
+lemma max_reg_Minus: "max_reg (Minus a1 a2) = max (max_reg a1) (max_reg a2)"
+  apply (simp add: max_reg_def Let_def max_None max_Some_Some)
+  by (metis List.finite_set Max.union enumerate_aexp_regs_list)
+
+lemma no_reg_aval_swap_regs: "AExp.max_reg a = None \<Longrightarrow> aval a (join_ir i r) = aval a (join_ir i r')"
+proof(induct a)
+case (L x)
+then show ?case
+  by simp
+next
+  case (V x)
+  then show ?case
+    apply (cases x)
+     apply (simp add: join_ir_def)
+    apply (simp add: join_ir_def)
+    by (simp add: max_reg_def)
+next
+  case (Plus a1 a2)
+  then show ?case
+    by (simp add: max_reg_Plus max_is_None)
+next
+  case (Minus a1 a2)
+  then show ?case
+    by (simp add: max_reg_Minus max_is_None)
+qed
+
 
 lemma enumerate_aexp_regs_empty_reg_unconstrained:
   "enumerate_aexp_regs a = {} \<Longrightarrow> \<forall>r. \<not> aexp_constrains a (V (R r))"

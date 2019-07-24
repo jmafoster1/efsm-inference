@@ -11,7 +11,7 @@ well as the expression of logical conjunction, disjunction, and negation in term
 \<close>
 
 theory GExp
-imports AExp Trilean
+imports AExp Trilean Option_Lexorder
 begin
 
 definition I :: "nat \<Rightarrow> vname" where
@@ -78,11 +78,11 @@ fun In :: "vname \<Rightarrow> value list \<Rightarrow> gexp" where
 lemma gval_gOr: "gval (gOr x y) r = (gval x r) \<or>\<^sub>? (gval y r)"
   by (simp add: maybe_double_negation maybe_or_idempotent)
 
-lemma not_equiv: "gval (gNot x) s = \<not>\<^sub>? (gval x s)"
+lemma gval_gNot: "gval (gNot x) s = \<not>\<^sub>? (gval x s)"
   by (simp add: maybe_or_idempotent)
 
 lemma nor_equiv: "gval (gNot (gOr a b)) s = gval (Nor a b) s"
-  by (metis maybe_double_negation not_equiv)
+  by (metis maybe_double_negation gval_gNot)
 
 definition satisfiable :: "gexp \<Rightarrow> bool" where
   "satisfiable g \<equiv> (\<exists>i r. gval g (join_ir i r) = true)"
@@ -92,8 +92,10 @@ definition "satisfiable_list l = satisfiable (fold gAnd l (Bc True))"
 lemma satisfiable_true: "satisfiable (Bc True)"
   by (simp add: satisfiable_def)
 
-definition gexp_valid :: "gexp \<Rightarrow> bool" where
-  "gexp_valid g \<equiv> (\<forall>s. gval g s = true)"
+definition valid :: "gexp \<Rightarrow> bool" where
+  "valid g \<equiv> (\<forall>i r. gval g (join_ir i r) = true)"
+
+definition "valid_list l = valid (fold gAnd l (Bc True))"
 
 definition gexp_equiv :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
   "gexp_equiv a b \<equiv> \<forall>s. gval a s = gval b s"
@@ -289,6 +291,47 @@ qed
 definition max_reg :: "gexp \<Rightarrow> nat option" where
   "max_reg g = (let regs = (enumerate_gexp_regs g) in if regs = {} then None else Some (Max regs))"
 
+lemma max_reg_gNot: "max_reg (gNot x) = max_reg x"
+  by (simp add: max_reg_def)
+
+lemma max_reg_Eq: "max_reg (Eq a b) = max (AExp.max_reg a) (AExp.max_reg b)"
+  apply (simp add: max_reg_def AExp.max_reg_def Let_def max_None max_Some_Some)
+  by (metis List.finite_set Max.union enumerate_aexp_regs_list)
+
+lemma max_reg_Gt: "max_reg (Gt a b) = max (AExp.max_reg a) (AExp.max_reg b)"
+  apply (simp add: max_reg_def AExp.max_reg_def Let_def max_None max_Some_Some)
+  by (metis List.finite_set Max.union enumerate_aexp_regs_list max.commute)
+
+lemma max_reg_Nor: "max_reg (Nor a b) = max (max_reg a) (max_reg b)"
+  apply (simp add: max_reg_def Let_def max_None max_Some_Some)
+  by (metis List.finite_set Max.union enumerate_gexp_regs_list)
+
+lemma max_reg_Null: "max_reg (Null a) = AExp.max_reg a"
+  by (simp add: AExp.max_reg_def GExp.max_reg_def)
+
+lemma no_reg_gval_swap_regs: "GExp.max_reg g = None \<Longrightarrow> gval g (join_ir i r) = gval g (join_ir i r')"
+proof(induct g)
+case (Bc x)
+  then show ?case
+    by (metis gval.simps(1) gval.simps(2))
+next
+  case (Eq x1a x2)
+  then show ?case
+    by (metis gval.simps(4) max_is_None max_reg_Eq no_reg_aval_swap_regs)
+next
+  case (Gt x1a x2)
+  then show ?case
+    by (metis gval.simps(3) max_is_None max_reg_Gt no_reg_aval_swap_regs)
+next
+  case (Nor g1 g2)
+  then show ?case
+    by (simp add: gval.simps(5) max_is_None max_reg_Nor)
+next
+  case (Null x)
+  then show ?case
+    by (metis gval.simps(6) max_reg_Null no_reg_aval_swap_regs)
+qed
+
 lemma enumerate_gexp_regs_empty_reg_unconstrained: "enumerate_gexp_regs g = {} \<Longrightarrow> \<forall>r. \<not> gexp_constrains g (V (R r))"
 proof(induct g)
 case (Bc x)
@@ -445,5 +488,8 @@ next
     apply (simp add: satisfiable_def gval_gOr)
     by (metis ValueEq_def gval.simps(4) plus_trilean.simps(4) plus_trilean.simps(5) plus_trilean_commutative)
 qed
+
+lemma gAnd_commute: "gval (gAnd a b) s = gval (gAnd b a) s"
+  using gval_gAnd times_trilean_commutative by auto
 
 end

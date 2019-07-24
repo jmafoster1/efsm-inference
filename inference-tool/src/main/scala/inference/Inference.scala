@@ -116,12 +116,12 @@ object ord {
       Product_Lexorder.less_prod[A, B](a, b)
   }
   implicit def
-    `GExp_Orderings.ord_option`[A : HOL.equal : linorder]: ord[Option[A]] = new
+    `Option_Lexorder.ord_option`[A : HOL.equal : linorder]: ord[Option[A]] = new
     ord[Option[A]] {
     val `Orderings.less_eq` = (a: Option[A], b: Option[A]) =>
-      GExp_Orderings.less_eq_option[A](a, b)
+      Option_Lexorder.less_eq_option[A](a, b)
     val `Orderings.less` = (a: Option[A], b: Option[A]) =>
-      GExp_Orderings.less_option[A](a, b)
+      Option_Lexorder.less_option[A](a, b)
   }
   implicit def `GExp_Orderings.ord_gexp`: ord[GExp.gexp] = new ord[GExp.gexp] {
     val `Orderings.less_eq` = (a: GExp.gexp, b: GExp.gexp) =>
@@ -178,13 +178,13 @@ object preorder {
       Product_Lexorder.less_prod[A, B](a, b)
   }
   implicit def
-    `GExp_Orderings.preorder_option`[A : HOL.equal : linorder]:
+    `Option_Lexorder.preorder_option`[A : HOL.equal : linorder]:
       preorder[Option[A]]
     = new preorder[Option[A]] {
     val `Orderings.less_eq` = (a: Option[A], b: Option[A]) =>
-      GExp_Orderings.less_eq_option[A](a, b)
+      Option_Lexorder.less_eq_option[A](a, b)
     val `Orderings.less` = (a: Option[A], b: Option[A]) =>
-      GExp_Orderings.less_option[A](a, b)
+      Option_Lexorder.less_option[A](a, b)
   }
   implicit def `GExp_Orderings.preorder_gexp`: preorder[GExp.gexp] = new
     preorder[GExp.gexp] {
@@ -241,12 +241,12 @@ object order {
       Product_Lexorder.less_prod[A, B](a, b)
   }
   implicit def
-    `GExp_Orderings.order_option`[A : HOL.equal : linorder]: order[Option[A]] =
+    `Option_Lexorder.order_option`[A : HOL.equal : linorder]: order[Option[A]] =
     new order[Option[A]] {
     val `Orderings.less_eq` = (a: Option[A], b: Option[A]) =>
-      GExp_Orderings.less_eq_option[A](a, b)
+      Option_Lexorder.less_eq_option[A](a, b)
     val `Orderings.less` = (a: Option[A], b: Option[A]) =>
-      GExp_Orderings.less_option[A](a, b)
+      Option_Lexorder.less_option[A](a, b)
   }
   implicit def `GExp_Orderings.order_gexp`: order[GExp.gexp] = new
     order[GExp.gexp] {
@@ -305,13 +305,13 @@ object linorder {
       Product_Lexorder.less_prod[A, B](a, b)
   }
   implicit def
-    `GExp_Orderings.linorder_option`[A : HOL.equal : linorder]:
+    `Option_Lexorder.linorder_option`[A : HOL.equal : linorder]:
       linorder[Option[A]]
     = new linorder[Option[A]] {
     val `Orderings.less_eq` = (a: Option[A], b: Option[A]) =>
-      GExp_Orderings.less_eq_option[A](a, b)
+      Option_Lexorder.less_eq_option[A](a, b)
     val `Orderings.less` = (a: Option[A], b: Option[A]) =>
-      GExp_Orderings.less_option[A](a, b)
+      Option_Lexorder.less_option[A](a, b)
   }
   implicit def `Nat.linorder_nat`: linorder[Nat.nat] = new linorder[Nat.nat] {
     val `Orderings.less_eq` = (a: Nat.nat, b: Nat.nat) => Nat.less_eq_nat(a, b)
@@ -1118,20 +1118,6 @@ def less_eq_gexp(e1: GExp.gexp, e2: GExp.gexp): Boolean =
 
 def less_gexp(e1: GExp.gexp, e2: GExp.gexp): Boolean = less_gexpr(e1, e2)
 
-def less_option[A : Orderings.linorder](x0: Option[A], x1: Option[A]): Boolean =
-  (x0, x1) match {
-  case (None, None) => false
-  case (None, Some(v)) => true
-  case (Some(uv), None) => false
-  case (Some(a), Some(b)) => Orderings.less[A](a, b)
-}
-
-def less_eq_option[A : HOL.equal : Orderings.linorder](a: Option[A],
-                b: Option[A]):
-      Boolean
-  =
-  (less_option[A](a, b)) || (Optiona.equal_optiona[A](a, b))
-
 } /* object GExp_Orderings */
 
 object List_Lexorder {
@@ -1405,6 +1391,24 @@ def fis_singleton[A : HOL.equal](s: FSet.fset[A]): Boolean =
   Nat.equal_nata(FSet.size_fset[A](s), Nat.Nata((1)))
 
 } /* object FSet_Utils */
+
+object Option_Lexorder {
+
+def less_option[A : Orderings.linorder](x0: Option[A], x1: Option[A]): Boolean =
+  (x0, x1) match {
+  case (None, None) => false
+  case (None, Some(v)) => true
+  case (Some(uv), None) => false
+  case (Some(a), Some(b)) => Orderings.less[A](a, b)
+}
+
+def less_eq_option[A : HOL.equal : Orderings.linorder](a: Option[A],
+                b: Option[A]):
+      Boolean
+  =
+  (less_option[A](a, b)) || (Optiona.equal_optiona[A](a, b))
+
+} /* object Option_Lexorder */
 
 object Predicate {
 
@@ -4400,11 +4404,11 @@ def simple_mutex(ta: Transition.transition_ext[Unit],
                   t: Transition.transition_ext[Unit]):
       Boolean
   =
-  (Optiona.is_none[Nat.nat](max_reg(Transition.Guard[Unit](ta)))) && ((GExp_Orderings.less_option[Nat.nat](max_input(Transition.Guard[Unit](ta)),
-                            Some[Nat.nat](Transition.Arity[Unit](ta)))) && ((GExp.satisfiable_list(Transition.Guard[Unit](ta) ++
-                     ensure_not_null(Transition.Arity[Unit](ta)))) && ((Transition.Label[Unit](ta) ==
-                                 Transition.Label[Unit](t)) && ((Nat.equal_nata(Transition.Arity[Unit](ta),
- Transition.Arity[Unit](t))) && (! (EFSM.choice(t, ta)))))))
+  (Optiona.is_none[Nat.nat](max_reg(Transition.Guard[Unit](ta)))) && ((Option_Lexorder.less_option[Nat.nat](max_input(Transition.Guard[Unit](ta)),
+                             Some[Nat.nat](Transition.Arity[Unit](ta)))) && ((GExp.satisfiable_list(Transition.Guard[Unit](ta) ++
+                      ensure_not_null(Transition.Arity[Unit](ta)))) && ((Transition.Label[Unit](ta) ==
+                                  Transition.Label[Unit](t)) && ((Nat.equal_nata(Transition.Arity[Unit](ta),
+  Transition.Arity[Unit](t))) && (! (EFSM.choice(t, ta)))))))
 
 } /* object Can_Take */
 
