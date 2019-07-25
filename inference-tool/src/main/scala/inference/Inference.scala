@@ -4277,9 +4277,11 @@ def directly_subsumes_cases(a: FSet.fset[(Nat.nat,
                          else (if (Transition.equal_transition_exta[Unit](t1,
                                    Ignore_Inputs.drop_guards(t2)))
                                 true
-                                else (if (Can_Take.simple_mutex(t2, t1)) false
-                                       else Dirties.scalaDirectlySubsumes(a, b,
-                                   sa, s, t1, t2)))))))
+                                else (if ((Transition.equal_transition_exta[Unit](t2,
+   Ignore_Inputs.drop_guards(t1))) && (Can_Take.satisfiable_negation[Unit](t1)))
+                                       false
+                                       else (if (Can_Take.simple_mutex(t2, t1))
+      false else Dirties.scalaDirectlySubsumes(a, b, sa, s, t1, t2))))))))
 
 def no_illegal_updates_code(x0: List[(Nat.nat, AExp.aexp)], uu: Nat.nat):
       Boolean
@@ -4375,6 +4377,17 @@ def satisfies_trace_i_i_i_i(x: List[(String,
 
 object Can_Take {
 
+def negate(g: List[GExp.gexp]): GExp.gexp =
+  GExp.Nor(Lista.fold[GExp.gexp,
+                       GExp.gexp](((v: GExp.gexp) => (va: GExp.gexp) =>
+                                    GExp.Nor(GExp.Nor(v, v), GExp.Nor(va, va))),
+                                   g, GExp.Bc(true)),
+            Lista.fold[GExp.gexp,
+                        GExp.gexp](((v: GExp.gexp) => (va: GExp.gexp) =>
+                                     GExp.Nor(GExp.Nor(v, v),
+       GExp.Nor(va, va))),
+                                    g, GExp.Bc(true)))
+
 def max_reg(g: List[GExp.gexp]): Option[Nat.nat] =
   Lista.fold[GExp.gexp,
               Option[Nat.nat]](Fun.comp[Option[Nat.nat],
@@ -4409,6 +4422,10 @@ def simple_mutex(ta: Transition.transition_ext[Unit],
                       ensure_not_null(Transition.Arity[Unit](ta)))) && ((Transition.Label[Unit](ta) ==
                                   Transition.Label[Unit](t)) && ((Nat.equal_nata(Transition.Arity[Unit](ta),
   Transition.Arity[Unit](t))) && (! (EFSM.choice(t, ta)))))))
+
+def satisfiable_negation[A](t: Transition.transition_ext[A]): Boolean =
+  (Optiona.is_none[Nat.nat](max_reg(Transition.Guard[A](t)))) && ((Option_Lexorder.less_option[Nat.nat](max_input(Transition.Guard[A](t)),
+                         Some[Nat.nat](Transition.Arity[A](t)))) && (GExp.satisfiable_list((negate(Transition.Guard[A](t)))::(ensure_not_null(Transition.Arity[A](t))))))
 
 } /* object Can_Take */
 

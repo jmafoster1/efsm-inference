@@ -58,13 +58,15 @@ object Dirties {
           ).foldLeft("")(((x, y) => x + y + "\n"))+
           s"(assert ${toZ3(g, types)})\n(check-sat)"
 
-          Log.root.debug(g.toString)
-          Log.root.debug(z3String)
+          // Log.root.debug(g.toString)
+          // Log.root.debug(z3String)
 
           val ctx = new z3.Context()
           val solver = ctx.mkSimpleSolver()
           solver.fromString(z3String)
-          return solver.check() == z3.Status.SATISFIABLE
+          val sat = solver.check()
+          ctx.close()
+          return sat == z3.Status.SATISFIABLE
         }
       }
     }

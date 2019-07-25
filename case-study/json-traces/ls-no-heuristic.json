@@ -1,0 +1,406 @@
+[
+  [{
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/etc/ld.so", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/proc/file", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/usr/lib/l", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", ".", "O_", "RDONLY", "O_NONBLOCK", "O_CLOEXEC", "O_DIRECTOR"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "close",
+    "inputs": [1],
+    "outputs": [0]
+  }, {
+    "label": "close",
+    "inputs": [2],
+    "outputs": [0]
+  }],
+  [{
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/etc/ld.so", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/proc/file", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/usr/lib/l", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", ".", "O_", "RDONLY", "O_NONBLOCK", "O_CLOEXEC", "O_DIRECTOR"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "close",
+    "inputs": [1],
+    "outputs": [0]
+  }, {
+    "label": "close",
+    "inputs": [2],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/etc/ld.so", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/proc/file", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/usr/lib/l", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", ".", "O_", "RDONLY", "O_NONBLOCK", "O_CLOEXEC", "O_DIRECTOR"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "close",
+    "inputs": [1],
+    "outputs": [0]
+  }, {
+    "label": "close",
+    "inputs": [2],
+    "outputs": [0]
+  }],
+  [{
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/etc/ld.so", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/proc/file", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/usr/lib/l", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", ".", "O_", "RDONLY", "O_NONBLOCK", "O_CLOEXEC", "O_DIRECTOR"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "close",
+    "inputs": [1],
+    "outputs": [0]
+  }, {
+    "label": "close",
+    "inputs": [2],
+    "outputs": [0]
+  }],
+  [{
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/etc/ld.so", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/lib/x86_6", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/proc/file", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", "/usr/lib/l", "O_", "RDONLY", "O_CLOEXEC"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "openat",
+    "inputs": ["AT_FDCWD", ".", "O_", "RDONLY", "O_NONBLOCK", "O_CLOEXEC", "O_DIRECTOR"],
+    "outputs": [3]
+  }, {
+    "label": "close",
+    "inputs": [3],
+    "outputs": [0]
+  }, {
+    "label": "close",
+    "inputs": [1],
+    "outputs": [0]
+  }, {
+    "label": "close",
+    "inputs": [2],
+    "outputs": [0]
+  }]
+]

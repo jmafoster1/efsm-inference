@@ -23,10 +23,6 @@ code_printing
   constant "fst" \<rightharpoonup> (Scala) "_.'_1" |
   constant "snd" \<rightharpoonup> (Scala) "_.'_2"
 
-fun guard_filter_code :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
-  "guard_filter_code inputX (gexp.Eq a b) = (a \<noteq> (V (vname.I inputX)) \<and> b \<noteq> (V (vname.I inputX)))" |
-  "guard_filter_code _ _ = True"
-
 fun mutex :: "gexp \<Rightarrow>  gexp \<Rightarrow> bool" where
   "mutex (Eq (V v) (L l)) (Eq (V v') (L l')) = (if v = v' then l \<noteq> l' else False)" |
   "mutex _ _ = False"
@@ -270,12 +266,15 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
       then True
     else if t1 = drop_guards t2
       then True
-    \<comment> \<open>else if t2 = drop_guards t1 \<and> length (Guard t1) > 0
-      then False\<close>
+    else if t2 = drop_guards t1 \<and> satisfiable_negation t1
+      then False
     else if simple_mutex t2 t1
       then False
     else dirty_directly_subsumes a b s s' t1 t2
   )"
+
+definition "mprotect = \<lparr>Label = STR ''mprotect'', Arity = 3, Guard = [Eq (V (I 0)) (L (Num 140116919701504)), Eq (V (I 1)) (L (Num 2093056)), Eq (V (I 1)) (L (Str ''PROT_NONE''))], Outputs = [L (Num 0)], Updates = []\<rparr>"
+definition "mprotect_dropped = \<lparr>Label = STR ''mprotect'', Arity = 3, Guard = [], Outputs = [L (Num 0)], Updates = []\<rparr>"
 
 lemma "always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption m1 m2 s s' t1 t2 \<longrightarrow>
      \<not> directly_subsumes m1 m2 s s' t1 t2"
@@ -294,9 +293,12 @@ lemma [code]: "directly_subsumes m1 m2 s s' t1 t2 = directly_subsumes_cases m1 m
   apply (case_tac "t1 = drop_guards t2")
    apply (simp add: drop_inputs_subsumption subsumes_in_all_contexts_directly_subsumes)
   apply (simp add: always_different_outputs_direct_subsumption del: always_different_outputs.simps generalise_output_direct_subsumption.simps)
+  apply (case_tac "t2 = drop_guards t1 \<and> satisfiable_negation t1")
+   apply (simp del: always_different_outputs.simps generalise_output_direct_subsumption.simps)
+  apply (simp add: cant_directly_subsume satisfiable_negation_cant_subsume)
   apply (case_tac "simple_mutex t2 t1")
-  apply (simp add: simple_mutex_direct_subsumption always_different_outputs_direct_subsumption del: always_different_outputs.simps generalise_output_direct_subsumption.simps)
-  by (simp add: dirty_directly_subsumes_def)
+  using simple_mutex_direct_subsumption apply blast
+  using dirty_directly_subsumes_def by auto
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and>
