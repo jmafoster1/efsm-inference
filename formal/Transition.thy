@@ -116,6 +116,13 @@ lemma set_enumerate_registers_list: "enumerate_registers t = set (enumerate_regi
 definition max_reg :: "transition \<Rightarrow> nat option" where
   "max_reg t = (if enumerate_registers t = {} then None else Some (Max (enumerate_registers t)))"
 
+lemma max_reg_none_no_updates: "Transition.max_reg t = None \<Longrightarrow> Updates t = []"
+  apply (simp add: Transition.max_reg_def)
+  apply (case_tac "enumerate_registers t = {}")
+   apply (simp add: enumerate_registers_def)
+   apply (case_tac "Updates t")
+  by auto
+
 definition total_max_reg :: "transition \<Rightarrow> nat" where
   "total_max_reg t = (case max_reg t of None \<Rightarrow> 0 | Some a \<Rightarrow> a)"
 

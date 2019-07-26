@@ -3457,25 +3457,24 @@ def max_reg(e: FSet.fset[(Nat.nat,
                              Transition.transition_ext[Unit]))]):
       Option[Nat.nat]
   =
-  FSet.fMax[Option[Nat.nat]](FSet.fimage[(Nat.nat,
-   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])),
-  Option[Nat.nat]](((a: (Nat.nat,
-                          ((Nat.nat, Nat.nat),
-                            Transition.transition_ext[Unit])))
-                      =>
-                     {
-                       val (_, aa):
-                             (Nat.nat,
-                               ((Nat.nat, Nat.nat),
-                                 Transition.transition_ext[Unit]))
-                         = a
-                       val (_, ab):
-                             ((Nat.nat, Nat.nat),
-                               Transition.transition_ext[Unit])
-                         = aa;
-                       Transition.max_reg(ab)
-                     }),
-                    e))
+  {
+    val maxes: FSet.fset[Option[Nat.nat]] =
+      FSet.fimage[(Nat.nat,
+                    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])),
+                   Option[Nat.nat]](((a:
+(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
+                                       =>
+                                      {
+val (_, aa): (Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])) =
+  a
+val (_, ab): ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]) = aa;
+Transition.max_reg(ab)
+                                      }),
+                                     e);
+    (if (FSet.equal_fset[Option[Nat.nat]](maxes,
+   FSet.bot_fset[Option[Nat.nat]]))
+      None else FSet.fMax[Option[Nat.nat]](maxes))
+  }
 
 def replace(e: FSet.fset[(Nat.nat,
                            ((Nat.nat, Nat.nat),

@@ -1,4 +1,4 @@
-session "efsm" = "HOL" +
+session "efsm" = "FinFun" +
 options [document = pdf, document_output = "output"]
 theories
   Trilean

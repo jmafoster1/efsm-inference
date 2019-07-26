@@ -23,9 +23,16 @@ code_printing
   constant "fst" \<rightharpoonup> (Scala) "_.'_1" |
   constant "snd" \<rightharpoonup> (Scala) "_.'_2"
 
+(* This gives us a speedup because we can check this before we have to call out to z3 *)
 fun mutex :: "gexp \<Rightarrow>  gexp \<Rightarrow> bool" where
   "mutex (Eq (V v) (L l)) (Eq (V v') (L l')) = (if v = v' then l \<noteq> l' else False)" |
   "mutex _ _ = False"
+
+lemma mutex_not_gval: "mutex x y \<Longrightarrow> gval (gAnd y x) s \<noteq> true"
+  apply (induct x y rule: mutex.induct)
+  apply simp
+                      apply (metis option.inject)
+  by auto
 
 definition choice_cases :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "choice_cases t1 t2 = (
@@ -36,19 +43,6 @@ definition choice_cases :: "transition \<Rightarrow> transition \<Rightarrow> bo
      else
        satisfiable ((fold gAnd (rev (Guard t1@Guard t2)) (gexp.Bc True)))
    )"
-
-lemma apply_guards_rearrange: "x \<in> set G \<Longrightarrow> apply_guards G s = apply_guards (x#G) s"
-  apply (simp add: apply_guards_def)
-  by auto
-
-lemma apply_guards_double_cons: "apply_guards (y # x # G) s = (gval (gAnd y x) s = true \<and> apply_guards G s)"
-  apply (simp add: apply_guards_def)
-  by (simp add: maybe_negate_false maybe_negate_true maybe_or_false maybe_or_idempotent)
-
-lemma mutex_not_gval: "mutex x y \<Longrightarrow> gval (gAnd y x) s \<noteq> true"
-  apply (induct x y rule: mutex.induct)
-                      apply simp_all
-  by (metis option.inject)
 
 lemma existing_mutex_not_true: "\<exists>x\<in>set G. \<exists>y\<in>set G. mutex x y \<Longrightarrow> \<not> apply_guards G s"
   apply clarify
@@ -72,8 +66,6 @@ lemma [code]: "choice t t' = choice_cases t t'"
   using existing_mutex_not_true
    apply (metis Un_iff set_append)
   by (simp add: apply_guards_foldr choice_alt_def fold_conv_foldr satisfiable_def)
-
-code_pred satisfies_trace.
 
 declare ListMem_iff [code]
 
@@ -148,18 +140,6 @@ fun tests_input_equality :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
 
 definition is_generalised_output_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalised_output_of t' t e i r = (\<exists>to \<in> fset (S e). \<exists> from \<in> fset (S e). \<exists> uid \<in> fset (uids e). t' = generalise_output t i r \<and> (uid, (from, to), t') |\<in>| e)"
-
-lemma to_in_S: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrightarrow> to |\<in>| S xb)"
-  apply (simp add: S_def)
-  by blast
-
-lemma from_in_S: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrightarrow> from |\<in>| S xb)"
-  apply (simp add: S_def)
-  by blast
-
-lemma uid_in_uids: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrightarrow> uid |\<in>| uids xb)"
-  apply (simp add: uids_def)
-  by blast
 
 (* definition "no_illegal_updates t r i = (\<forall>i. \<forall>u \<in> set (Updates t). fst u \<noteq> (R r) \<and> fst u \<noteq> (I i))" *)
 fun no_illegal_updates_code :: "update_function list \<Rightarrow> nat \<Rightarrow> bool" where
@@ -246,13 +226,80 @@ lemma ponens: "(length i = Arity t \<and> (length i = Arity t \<longrightarrow> 
 (length i = Arity t \<and> \<not> apply_guards (Guard t) (join_ir i c))"
   by auto
 
-(* TODO: Add this into subsumes_cases *)
 lemma satisfiable_negation_cant_subsume:
   "satisfiable_negation t \<Longrightarrow>
    \<not> subsumes t c (drop_guards t)"
   apply (rule bad_guards)
   apply (simp add: can_take_transition_def can_take_def drop_guards_def ponens)
   by (simp add: satisfiable_negation_def quick_negation)
+
+definition updates_subset :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> bool" where
+  "updates_subset t t' e = (
+     case input_stored_in_reg t' t e of None \<Rightarrow> False | Some (i, r) \<Rightarrow>
+     Arity t' = Arity t \<and>
+     set (Guard t') \<subset> set (Guard t) \<and>
+     r \<notin> set (map fst (removeAll (r, V (I i)) (Updates t'))) \<and>
+     r \<notin> set (map fst (Updates t)) \<and>
+     max_input (Guard t) < Some (Arity t) \<and>
+     satisfiable_list ((Guard t) @ ensure_not_null (Arity t)) \<and>
+     max_reg (Guard t) = None \<and>
+     i < Arity t
+  )"
+
+lemma updates_subset_conditions: "updates_subset t1 t2 e \<Longrightarrow> input_stored_in_reg t2 t1 e = Some (i, r) \<Longrightarrow> c $ r = None \<Longrightarrow> \<not> subsumes t1 c t2"
+  apply (simp add: updates_subset_def)
+  using can_take_satisfiable[of t1 c]
+  apply simp
+  apply (rule general_not_subsume_orig)
+  using input_stored_in_reg_updates_reg
+  by auto
+
+definition "accepts_and_gets_us_to_both a b s s' = (
+  \<exists>p. accepts_trace (tm a) p \<and>
+      gets_us_to s (tm a) 0 <> p \<and>
+      accepts_trace (tm b) p \<and>
+      gets_us_to s' (tm b) 0 <> p)"
+
+lemma fMax_Some: "f \<noteq> {||} \<Longrightarrow> (\<exists>y. fMax f = Some y) = (\<exists>y. Some y |\<in>| f)"
+  apply standard
+   apply (metis fMax_in)
+  using fMax_ge not_le by fastforce
+
+lemma arg_cong_ffilter: "\<forall>e |\<in>| f. p e = p' e \<Longrightarrow> ffilter p f = ffilter p' f"
+  by auto
+
+lemma acceptance_empty_regs_args_aux: "Inference.max_reg b = None \<Longrightarrow>
+       (a, bb) |\<in>| possible_steps (tm b) 0 <> ab ba \<Longrightarrow>
+       accepts (tm b) a (apply_updates (Updates bb) (join_ir ba <>) <>) t = accepts (tm b) a <> t"
+  using in_possible_steps[of a bb "tm b" ab ba]
+        max_reg_none_no_updates[of b]
+       in_tm[of a bb b]
+  apply simp
+  apply clarify
+  by force
+
+lemma acceptance_empty_regs_args: "Inference.max_reg b = None \<Longrightarrow>
+       ffilter (\<lambda>(s', T). accepts (tm b) s' (apply_updates (Updates T) (join_ir ba <>) <>) t) (possible_steps (tm b) 0 <> ab ba) =
+       ffilter (\<lambda>(s', T). accepts (tm b) s' <> t) (possible_steps (tm b) 0 <> ab ba)"
+  apply (rule arg_cong_ffilter)
+  apply clarify
+  using in_possible_steps max_reg_none_no_updates
+  by (simp add: acceptance_empty_regs_args_aux)
+
+lemma 
+  "Inference.max_reg b = None \<Longrightarrow>
+   accepts_and_gets_us_to_both a b s s' \<Longrightarrow>
+   initially_undefined_context_check b r s' \<Longrightarrow>
+   input_stored_in_reg t2 t1 a = Some (i, r) \<Longrightarrow>
+   updates_subset t1 t2 a \<Longrightarrow>
+   \<not>directly_subsumes a b s s' t1 t2"
+  apply (simp add: directly_subsumes_def)
+  apply (rule disjI1)
+  apply (simp add: accepts_and_gets_us_to_both_def)
+  apply (erule exE)
+  apply (rule_tac x=p in exI)
+  apply (simp add: initially_undefined_context_check_def)
+  using updates_subset_conditions by blast
 
 definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes_cases a b s s' t1 t2 = (
@@ -455,6 +502,8 @@ code_printing
   | constant "finfun_const" \<rightharpoonup> (Scala) "Map().withDefaultValue((_))"
   | constant "finfun_update" \<rightharpoonup> (Scala) "_ + (_ -> _)"
   | constant "finfun_apply" \<rightharpoonup> (Scala) "_((_))"
+
+code_pred satisfies_trace.
 
 export_code
   (* Essentials *)

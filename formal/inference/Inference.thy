@@ -36,6 +36,10 @@ definition toiEFSM :: "transition_matrix \<Rightarrow> iEFSM" where
 definition tm :: "iEFSM \<Rightarrow> transition_matrix" where
   "tm t = fimage (\<lambda>x. snd x) t"
 
+lemma in_tm: "\<exists>s. ((s, a), bb) |\<in>| tm b \<Longrightarrow> \<exists>s id. (id, (s, a), bb) |\<in>| b"
+  apply (simp add: tm_def fimage_def fmember_def Abs_fset_inverse)
+  by fastforce
+
 definition maxUID :: "iEFSM \<Rightarrow> nat" where
   "maxUID e = fMax (fimage (\<lambda>x. fst x) e)"
 
@@ -72,6 +76,14 @@ lemma state_nondeterminism_singledestn[simp]: "state_nondeterminism a {|x|} = {|
 
 definition S :: "iEFSM \<Rightarrow> nat fset" where
   "S m = (fimage (\<lambda>(uid, (s, s'), t). s) m) |\<union>| fimage (\<lambda>(uid, (s, s'), t). s') m"
+
+lemma to_in_S: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrightarrow> to |\<in>| S xb)"
+  apply (simp add: S_def)
+  by blast
+
+lemma from_in_S: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrightarrow> from |\<in>| S xb)"
+  apply (simp add: S_def)
+  by blast
 
 lemma S_alt: "S t = EFSM.S (fimage snd t)"
   apply (simp add: S_def EFSM.S_def)
@@ -380,12 +392,31 @@ definition learn :: "nat \<Rightarrow> log \<Rightarrow> strategy \<Rightarrow> 
 definition uids :: "iEFSM \<Rightarrow> nat fset" where
   "uids e = fimage fst e"
 
+lemma uid_in_uids: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrightarrow> uid |\<in>| uids xb)"
+  apply (simp add: uids_def)
+  by blast
+
 lemma dest_from_in_S_uid_in_uids: "(uid, (from, to), t) |\<in>| e \<Longrightarrow> to |\<in>| S e \<and> from |\<in>| S e \<and> uid |\<in>| uids e"
   apply (simp add: S_def uids_def)
   by force
 
 definition max_reg :: "iEFSM \<Rightarrow> nat option" where
-  "max_reg e = fMax (fimage (\<lambda>(_, _, t). Transition.max_reg t) e)"
+  "max_reg e = (let maxes = (fimage (\<lambda>(_, _, t). Transition.max_reg t) e) in if maxes = {||} then None else fMax maxes)"
+
+lemma fMax_None: "f \<noteq> {||} \<Longrightarrow> fMax f = None = (\<forall>x |\<in>| f. x = None)"
+  apply standard
+  using fMax_ge x_leq_None apply fastforce
+  by (meson fBallE fMax_in)
+
+lemma max_reg_none_no_updates: "Inference.max_reg b = None \<Longrightarrow>
+       \<forall>(id, (s, s'), t) |\<in>| b.  (Updates t) = []"
+  apply (simp add: Inference.max_reg_def)
+  apply (case_tac "b = {||}")
+   apply simp
+  apply (simp add: fMax_None)
+  apply clarify
+  using max_reg_none_no_updates
+  by force
 
 definition total_max_reg :: "iEFSM \<Rightarrow> nat" where
   "total_max_reg e = (case fMax (fimage (\<lambda>(_, _, t). Transition.max_reg t) e) of None \<Rightarrow> 0 | Some r \<Rightarrow> r)"

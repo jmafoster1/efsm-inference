@@ -543,4 +543,80 @@ lemma drop_guard_add_update_direct_subsumption_not_implies_direct_subsumption:
    apply (metis (full_types) finfun_const_apply option.discI)
   by simp
 
+lemma subset_elem: "x \<subset> y \<Longrightarrow> \<exists>e. e \<in> y \<and> e \<notin> x"
+  by auto
+
+lemma apply_guards_subset_append: "set (Guard t) \<subseteq> set (Guard t') \<Longrightarrow> apply_guards (Guard t @ Guard t') s = apply_guards (Guard t') s"
+  using apply_guards_append apply_guards_subset by blast
+
+lemma can_take_subset_append: "set (Guard t) \<subseteq> set (Guard t') \<Longrightarrow> can_take a (Guard t @ Guard t') i c = can_take a (Guard t') i c"
+  by (simp add: apply_guards_subset_append can_take_def)
+
+lemma fold_can_take_transition: "can_take (Arity t') (Guard t') i c = can_take_transition t' i c"
+  by (simp add: can_take_transition_def)
+
+lemma fst_insert: "aa \<noteq> r \<Longrightarrow> fst ` (insert (aa, b) (set U) - {(r, u)}) = insert aa (fst ` (set U - {(r, u)}))"
+  by (simp add: insert_Diff_if)
+
+lemma aval_updated: "(r, u) \<in> set U \<Longrightarrow> r \<notin> set (map fst (removeAll (r, u) U)) \<Longrightarrow> apply_updates U s c $ r = aval u s"
+proof(induct U)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a U)
+  then show ?case
+    apply simp
+    apply (case_tac "(r, u) = a")
+    by auto
+qed
+
+lemma input2state_nth_updated:
+  "(r, V (I i)) \<in> set U \<Longrightarrow>
+   r \<notin> set (map fst (removeAll (r, V (I i)) U)) \<Longrightarrow>
+   i < length ia  \<Longrightarrow>
+   apply_updates U (join_ir ia c) c $ r \<noteq> None"
+  apply simp
+  apply (rule_tac x="ia ! i" in exI)
+  by (simp add: aval_updated join_ir_def input2state_nth)
+
+lemma can_take_append_subset: "set (Guard t') \<subset> set (Guard t) \<Longrightarrow>
+can_take a (Guard t @ Guard t') ia c = can_take a (Guard t) ia c"
+  by (metis apply_guards_append apply_guards_subset_append can_take_def dual_order.strict_implies_order)
+
+(*
+  Does t = select:1[i1=coke] subsume t' = select:1/r1:=i1?
+  Clearly it does not
+*)
+lemma general_not_subsume_orig:
+  "Arity t' = Arity t \<Longrightarrow>
+   set (Guard t') \<subset> set (Guard t) \<Longrightarrow>
+   (r, (V (I i))) \<in> set (Updates t') \<Longrightarrow>
+   r \<notin> set (map fst (removeAll (r, V (I i)) (Updates t'))) \<Longrightarrow>
+   r \<notin> set (map fst (Updates t)) \<Longrightarrow>
+   \<exists>i. can_take_transition t i c \<Longrightarrow>
+   c $ r = None \<Longrightarrow>
+   i < Arity t \<Longrightarrow>
+   \<not> subsumes t c t'"
+  apply (rule inconsistent_updates2)
+  apply (erule_tac exE)
+  apply (rule_tac x="apply_updates (Updates t') (join_ir ia c) c" in exI)
+  apply (rule_tac x="apply_updates (Updates t) (join_ir ia c) c" in exI)
+  apply standard
+   apply (rule_tac x=ia in exI)
+   apply (simp add: posterior_separate_def can_take_append_subset can_take_transition_def)
+  using apply_guards_subset can_take_def apply auto[1]
+  apply (rule_tac x="\<lambda>x. x = None" in exI)
+  apply (rule_tac x=r in exI)
+  apply standard
+   apply (simp add: r_not_updated_stays_the_same)
+  apply (simp add: aval_updated can_take_transition_def can_take_def)
+  apply (rule_tac x="ia ! i" in exI)
+  by (simp add: aval_updated join_ir_def input2state_nth)
+
+lemma input_stored_in_reg_updates_reg: "input_stored_in_reg t2 t1 a = Some (i, r) \<Longrightarrow> (r, V (I i)) \<in> set (Updates t2)"
+  using input_stored_in_reg_is_generalisation[of t2 t1 a i r]
+  apply simp
+  by (simp add: is_generalisation_of_def remove_guard_add_update_def)
+
 end

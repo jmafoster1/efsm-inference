@@ -48,6 +48,13 @@ lemma apply_outputs_preserves_length: "length (apply_outputs p s) = length p"
 definition apply_guards :: "gexp list \<Rightarrow> datastate \<Rightarrow> bool" where
   "apply_guards G s = (\<forall>g \<in> set (map (\<lambda>g. gval g s) G). g = true)"
 
+lemma apply_guards_rearrange: "x \<in> set G \<Longrightarrow> apply_guards G s = apply_guards (x#G) s"
+  apply (simp add: apply_guards_def)
+  by auto
+
+lemma apply_guards_double_cons: "apply_guards (y # x # G) s = (gval (gAnd y x) s = true \<and> apply_guards G s)"
+  by (simp add: apply_guards_def gval_gAnd_True)
+
 lemmas apply_guards = datastate apply_guards_def gval.simps ValueEq_def ValueGt_def
 
 lemma apply_guards_singleton: "(apply_guards [g] s) = (gval g s = true)"
@@ -142,6 +149,10 @@ qed
 
 definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> transition) fset" where
   "possible_steps e s r l i = fimage (\<lambda>((origin, dest), t). (dest, t)) (ffilter (\<lambda>((origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"
+
+lemma in_possible_steps: "(a, bb) |\<in>| possible_steps b 0 <> ab ba \<Longrightarrow> \<exists>s. ((s, a), bb) |\<in>| b"
+  apply (simp add: possible_steps_def fimage_def ffilter_def fmember_def Abs_fset_inverse)
+  by auto
 
 lemma possible_steps_alt_aux: "(\<lambda>((origin, dest), t). (dest, t)) |`|
     ffilter (\<lambda>((origin, dest), t). origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (join_ir i r)) e =
