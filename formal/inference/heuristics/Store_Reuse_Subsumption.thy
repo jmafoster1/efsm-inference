@@ -362,11 +362,6 @@ lemma no_incoming_to_initial_gives_empty_reg: "\<forall>(id, (from, to), t) |\<i
   apply (simp add: anterior_context_empty)
   by auto
 
-lemma [code]: "initially_undefined_context_check e r s = (if s = 0 \<and> (\<forall>(id, (from, to), t) |\<in>| e. to \<noteq> 0) then True else initially_undefined_context_check e r s)"
-  apply (case_tac "s = 0 \<and> (\<forall>(id, (from, to), t)|\<in>|e. to \<noteq> 0)")
-   apply (simp add: no_incoming_to_initial_gives_empty_reg)
-  by metis
-
 definition "no_illegal_updates t r = (\<forall>u \<in> set (Updates t). fst u \<noteq> r)"
 
 lemma input_stored_in_reg_aux_is_generalisation_aux: "input_stored_in_reg_aux t' t mr mi = Some (i, r) \<Longrightarrow> is_generalisation_of t' t i r"
