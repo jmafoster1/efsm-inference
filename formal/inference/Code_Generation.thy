@@ -16,6 +16,15 @@ begin
 
 declare One_nat_def [simp del]
 
+definition "initially_undefined_context_check_full = initially_undefined_context_check"
+
+declare initially_undefined_context_check_def [code del]
+
+lemma [code]: "initially_undefined_context_check e r s = (if s = 0 \<and> (\<forall>(id, (from, to), t) |\<in>| e. to \<noteq> 0) then True else initially_undefined_context_check_full e r s)"
+  apply (case_tac "s = 0 \<and> (\<forall>(id, (from, to), t)|\<in>|e. to \<noteq> 0)")
+   apply (simp add: no_incoming_to_initial_gives_empty_reg)
+  using initially_undefined_context_check_full_def by presburger
+
 code_printing
   constant HOL.conj \<rightharpoonup> (Scala) "_ && _" |
   constant HOL.disj \<rightharpoonup> (Scala) "_ || _" |
@@ -195,16 +204,16 @@ definition "dirty_directly_subsumes = directly_subsumes"
 declare dirty_directly_subsumes_def [code del]
 code_printing constant "dirty_directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes"
 
-definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-"always_different_outputs_direct_subsumption m1 m2 s s' t1 t2 = (
-   (\<exists>p. accepts (tm m1) 0 (K$ None) p \<and>
-    gets_us_to s (tm m1) 0 (K$ None) p \<and>
-    accepts (tm m2) 0 (K$ None) p \<and>
-    gets_us_to s' (tm m2) 0 (K$ None) p \<and>
-    (\<forall>c. anterior_context (tm m2) p = Some c \<longrightarrow> (\<exists>i. can_take_transition t2 i c))))"
+definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> bool" where
+"always_different_outputs_direct_subsumption m1 m2 s s' t2 = (
+   (\<exists>p. accepts (tm m1) 0 <> p \<and>
+    gets_us_to s (tm m1) 0 <> p \<and>
+    accepts (tm m2) 0 <> p \<and>
+    gets_us_to s' (tm m2) 0 <> p \<and>
+    (case anterior_context (tm m2) p of Some c \<Rightarrow> (\<exists>i. can_take_transition t2 i c))))"
 
 lemma always_different_outputs_can_take_transition_not_subsumed: "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
-       \<forall>c. posterior_sequence (tm m2) 0 (K$ None) p = Some c \<longrightarrow> (\<exists>i. can_take_transition t2 i c) \<longrightarrow> \<not> subsumes t1 c t2"
+       \<forall>c. posterior_sequence (tm m2) 0 <> p = Some c \<longrightarrow> (\<exists>i. can_take_transition t2 i c) \<longrightarrow> \<not> subsumes t1 c t2"
   apply standard
   apply standard
   apply standard
@@ -213,14 +222,14 @@ lemma always_different_outputs_can_take_transition_not_subsumed: "always_differe
   by metis
 
 lemma always_different_outputs_direct_subsumption: 
-  "always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption m1 m2 s s' t1 t2 \<Longrightarrow> \<not> directly_subsumes m1 m2 s s' t1 t2"
+  "always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption m1 m2 s s' t2 \<Longrightarrow> \<not> directly_subsumes m1 m2 s s' t1 t2"
   apply (simp add: directly_subsumes_def always_different_outputs_direct_subsumption_def)
   apply standard
   apply clarify
   apply (rule_tac x=p in exI)
   apply simp
-  using always_different_outputs_can_take_transition_not_subsumed accepts_trace_gives_context
-  by (meson accepts_gives_context)
+  using always_different_outputs_can_take_transition_not_subsumed accepts_trace_gives_context accepts_gives_context
+  by fastforce
 
 lemma ponens: "(length i = Arity t \<and> (length i = Arity t \<longrightarrow> \<not> apply_guards (Guard t) (join_ir i c))) =
 (length i = Arity t \<and> \<not> apply_guards (Guard t) (join_ir i c))"
@@ -321,13 +330,13 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
   "directly_subsumes_cases a b s s' t1 t2 = (
     if t1 = t2
       then True
-    else if always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption a b s s' t1 t2
+    else if always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption a b s s' t2
       then False
     else if drop_guard_add_update_direct_subsumption t1 t2 b s'
       then True
     else if drop_update_add_guard_direct_subsumption a b s s' t1 t2
       then False
-    else if generalise_output_direct_subsumption t1 t2 b a s s'
+    else if generalise_output_direct_subsumption t1 t2 a b s s'
       then True
     else if t1 = drop_guards t2
       then True
@@ -345,19 +354,20 @@ lemma [code]: "directly_subsumes m1 m2 s s' t1 t2 = directly_subsumes_cases m1 m
   apply (simp only: directly_subsumes_cases_def)
   apply (case_tac "t1 = t2")
   apply (simp add: directly_subsumes_self)
-  apply (case_tac "always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption m1 m2 s s' t1 t2")
+  apply (case_tac "always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption m1 m2 s s' t2")
    apply (simp add: always_different_outputs_direct_subsumption)
   apply (case_tac "drop_guard_add_update_direct_subsumption t1 t2 m2 s'")
    apply (simp add: drop_guard_add_update_direct_subsumption_implies_direct_subsumption)
   apply (case_tac "drop_update_add_guard_direct_subsumption m1 m2 s s' t1 t2")
    apply (simp add: drop_update_add_guard_direct_subsumption)
-  apply (case_tac "generalise_output_direct_subsumption t1 t2 m2 m1 s s'")
+  apply (case_tac "generalise_output_direct_subsumption t1 t2 m1 m2 s s'")
+   apply simp
+  using generalise_output_directly_subsumes_original_executable apply blast
    apply (simp add: generalise_output_directly_subsumes_original_executable)
   apply (case_tac "t1 = drop_guards t2")
    apply (simp add: drop_inputs_subsumption subsumes_in_all_contexts_directly_subsumes)
-  apply (simp add: always_different_outputs_direct_subsumption del: always_different_outputs.simps generalise_output_direct_subsumption.simps)
+  apply (simp add: always_different_outputs_direct_subsumption)
   apply (case_tac "t2 = drop_guards t1 \<and> satisfiable_negation t1")
-   apply (simp del: always_different_outputs.simps generalise_output_direct_subsumption.simps)
   apply (simp add: cant_directly_subsume satisfiable_negation_cant_subsume)
   apply (case_tac "simple_mutex t2 t1")
   using simple_mutex_direct_subsumption apply blast
@@ -425,13 +435,13 @@ termination
   using measures_fsubset by auto
 
 declare GExp.satisfiable_def [code del]
-declare initially_undefined_context_check_def [code del]
+declare initially_undefined_context_check_full_def [code del]
 declare generalise_output_context_check_def [code del]
 declare always_different_outputs_direct_subsumption_def [code del]
 
 code_printing
   constant "GExp.satisfiable" \<rightharpoonup> (Scala) "Dirties.satisfiable" |
-  constant "initially_undefined_context_check" \<rightharpoonup> (Scala) "Dirties.initiallyUndefinedContextCheck" |
+  constant "initially_undefined_context_check_full" \<rightharpoonup> (Scala) "Dirties.initiallyUndefinedContextCheck" |
   constant "generalise_output_context_check" \<rightharpoonup> (Scala) "Dirties.generaliseOutputContextCheck" |
   constant "always_different_outputs_direct_subsumption" \<rightharpoonup> (Scala) "Dirties.alwaysDifferentOutputsDirectSubsumption"
 

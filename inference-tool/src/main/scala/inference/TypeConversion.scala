@@ -1,6 +1,7 @@
 import java.nio.file.{Files, Paths}
 import java.io._
 import sys.process._
+import scala.io.Source
 
 import isabellesal._
 import Type_Inference._
@@ -135,6 +136,15 @@ object TypeConversion {
     }
   }
 
+  def salValue(v: Value.value): String = v match {
+    case Value.Str(s) => s"STR(String_$s)"
+    case Value.Numa(n) => s"NUM(${Code_Numeral.integer_of_int(n)})"
+  }
+
+  def salState(s: Nat.nat): String = s match {
+    case Nat.Nata(n) => s"State_${n}"
+  }
+
   def doubleEFSMToSALTranslator(e1: Types.TransitionMatrix, e1Name: String, e2: Types.TransitionMatrix, e2Name: String, f: String) = {
     if (e1Name == e2Name) {
       throw new IllegalArgumentException("Models must have unique names");
@@ -145,6 +155,14 @@ object TypeConversion {
     try {
       new Translator().writeSALandDOT(Paths.get("salfiles"), f);
       s"mv salfiles/${f}.dot ${Config.config.dotfiles}/".!
+
+      var fileContents = Source.fromFile(s"salfiles/${f.toLowerCase()}.sal").getLines.mkString("\n")
+      fileContents = fileContents.replaceFirst("MichaelsEFSM", e1Name)
+      fileContents = fileContents.replaceFirst("MichaelsEFSM", e2Name)
+
+      val pw = new PrintWriter(new File(s"salfiles/${f.toLowerCase()}.sal"))
+      pw.write(fileContents)
+      pw.close
     } catch {
       case ioe: java.lang.StringIndexOutOfBoundsException => {}
     }

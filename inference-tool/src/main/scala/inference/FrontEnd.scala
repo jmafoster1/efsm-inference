@@ -23,11 +23,8 @@ object FrontEnd {
       Config.heuristics,
       Config.config.nondeterminismMetric)
 
-    // val lst = FSet.sorted_list_of_fset(inferred)
-    // val t = lst(0)._2
-    // println(Dirties.canTake(Inference.toiEFSM(inferred), Nat.Nata(0), t))
-
     TypeConversion.doubleEFSMToSALTranslator(pta, "pta", inferred, "vend1", "compositionTest")
+    Dirties.generaliseOutputContextCheck(Value.Str("coke"), Nat.Nata(1), Nat.Nata(1), Nat.Nata(1), Inference.toiEFSM(pta), Inference.toiEFSM(inferred))
 
     Log.root.info("The inferred machine is " +
       (if (Inference.nondeterministic(Inference.toiEFSM(inferred), Inference.nondeterministic_pairs)) "non" else "") + "deterministic")

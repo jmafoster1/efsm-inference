@@ -1506,10 +1506,7 @@ def stored_reused_aux(ta: Transition.transition_ext[Unit],
           }))
 
 def stored_reused(ta: Transition.transition_ext[Unit],
-                   t: Transition.transition_ext[Unit],
-                   e: FSet.fset[(Nat.nat,
-                                  ((Nat.nat, Nat.nat),
-                                    Transition.transition_ext[Unit]))]):
+                   t: Transition.transition_ext[Unit]):
       Option[(Nat.nat, Nat.nat)]
   =
   stored_reused_aux(ta, t,
@@ -1575,6 +1572,36 @@ def input_stored_in_reg(ta: Transition.transition_ext[Unit],
          Some[(Nat.nat, Nat.nat)]((i, r)) else None)
    })
 
+def initially_undefined_context_check(e:
+FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+                                       r: Nat.nat, s: Nat.nat):
+      Boolean
+  =
+  (if ((Nat.equal_nata(s, Nat.zero_nata)) && (FSet.fBall[(Nat.nat,
+                   ((Nat.nat, Nat.nat),
+                     Transition.transition_ext[Unit]))](e)).apply(((a:
+                              (Nat.nat,
+                                ((Nat.nat, Nat.nat),
+                                  Transition.transition_ext[Unit])))
+                             =>
+                            {
+                              val (_, aa):
+                                    (Nat.nat,
+                                      ((Nat.nat, Nat.nat),
+Transition.transition_ext[Unit]))
+                                = a
+                              val (ab, b):
+                                    ((Nat.nat, Nat.nat),
+                                      Transition.transition_ext[Unit])
+                                = aa;
+                              ({
+                                 val (_, to): (Nat.nat, Nat.nat) = ab;
+                                 ((_: Transition.transition_ext[Unit]) =>
+                                   ! (Nat.equal_nata(to, Nat.zero_nata)))
+                               })(b)
+                            })))
+    true else Dirties.initiallyUndefinedContextCheck(e, r, s))
+
 def generalise_output_direct_subsumption(ta: Transition.transition_ext[Unit],
   t: Transition.transition_ext[Unit],
   ea: FSet.fset[(Nat.nat,
@@ -1584,20 +1611,17 @@ def generalise_output_direct_subsumption(ta: Transition.transition_ext[Unit],
   sa: Nat.nat, s: Nat.nat):
       Boolean
   =
-  (stored_reused(ta, t, ea) match {
+  (stored_reused(ta, t) match {
      case None => false
-     case Some((p, r)) =>
-       (if (Store_Reuse.is_generalised_output_of(ta, t, p, r))
-         ((Transition.Outputs[Unit](t))(Code_Numeral.integer_of_nat(r).toInt)
-            match {
-            case AExp.L(v) =>
-              Dirties.generaliseOutputContextCheck(Transition.Label[Unit](t),
-            ea, e, p, v, sa, s)
-            case AExp.V(_) => false
-            case AExp.Plus(_, _) => false
-            case AExp.Minus(_, _) => false
-          })
-         else false)
+     case Some((r, p)) =>
+       ((Transition.Outputs[Unit](t))(Code_Numeral.integer_of_nat(p).toInt)
+          match {
+          case AExp.L(v) =>
+            Dirties.generaliseOutputContextCheck(v, r, sa, s, ea, e)
+          case AExp.V(_) => false
+          case AExp.Plus(_, _) => false
+          case AExp.Minus(_, _) => false
+        })
    })
 
 def drop_guard_add_update_direct_subsumption(ta:
@@ -1612,7 +1636,7 @@ def drop_guard_add_update_direct_subsumption(ta:
      case None => false
      case Some((_, r)) =>
        (if (no_illegal_updates[Unit](t, r))
-         Dirties.initiallyUndefinedContextCheck(e, r, s) else false)
+         initially_undefined_context_check(e, r, s) else false)
    })
 
 } /* object Store_Reuse_Subsumption */
@@ -4285,8 +4309,8 @@ def drop_update_add_guard_direct_subsumption(a:
      case None => false
      case Some((_, r)) =>
        (Dirties.acceptsAndGetsUsToBoth(a, b, sa,
-s)) && ((Dirties.initiallyUndefinedContextCheck(b, r,
-         s)) && (updates_subset(t1, t2, a)))
+s)) && ((Store_Reuse_Subsumption.initially_undefined_context_check(b, r,
+                            s)) && (updates_subset(t1, t2, a)))
    })
 
 def always_different_outputs(x0: List[AExp.aexp], x1: List[AExp.aexp]): Boolean
@@ -4317,7 +4341,7 @@ def directly_subsumes_cases(a: FSet.fset[(Nat.nat,
   (if (Transition.equal_transition_exta[Unit](t1, t2)) true
     else (if ((always_different_outputs(Transition.Outputs[Unit](t1),
  Transition.Outputs[Unit](t2))) && (Dirties.alwaysDifferentOutputsDirectSubsumption(a,
-     b, sa, s, t1, t2)))
+     b, sa, s, t2)))
            false
            else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
        t2, b, s))
@@ -4326,7 +4350,7 @@ def directly_subsumes_cases(a: FSet.fset[(Nat.nat,
                               s, t1, t2))
                          false
                          else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
-                 t2, b, a, sa, s))
+                 t2, a, b, sa, s))
                                 true
                                 else (if (Transition.equal_transition_exta[Unit](t1,
   Ignore_Inputs.drop_guards(t2)))

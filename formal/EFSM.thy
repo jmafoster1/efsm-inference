@@ -37,6 +37,9 @@ lemma "S e = (fst \<circ> fst) |`| e |\<union>| (snd \<circ> fst) |`| e"
 definition apply_outputs :: "aexp list \<Rightarrow> datastate \<Rightarrow> value option list" where
   "apply_outputs p s = map (\<lambda>p. aval p s) p"
 
+lemma apply_outputs_nth: "i < length p \<Longrightarrow> apply_outputs p s ! i = aval (p ! i) s"
+  by (simp add: apply_outputs_def)
+
 lemmas apply_outputs = datastate apply_outputs_def
 
 lemma apply_outputs_empty [simp]: "apply_outputs [] s = []"
@@ -44,6 +47,57 @@ lemma apply_outputs_empty [simp]: "apply_outputs [] s = []"
 
 lemma apply_outputs_preserves_length: "length (apply_outputs p s) = length p"
   by (simp add: apply_outputs_def)
+
+lemma apply_outputs_literal: "P ! r = L v \<Longrightarrow>
+       r < length (apply_outputs P (join_ir i c)) \<Longrightarrow>
+       apply_outputs P (join_ir i c) ! r = Some v"
+proof(induct P)
+  case Nil
+  then show ?case
+    by (simp add: apply_outputs_preserves_length)
+next
+  case (Cons a P)
+  then show ?case
+    apply (simp add: apply_outputs_preserves_length)
+    apply (simp add: apply_outputs_def)
+    using less_Suc_eq_0_disj nth_map by auto
+qed
+
+lemma apply_outputs_register:
+  "c $ p = Some v \<Longrightarrow>
+   r < length (apply_outputs P (join_ir i c)) \<Longrightarrow>
+   apply_outputs (P[r := V (R p)]) (join_ir i c) ! r = Some v"
+proof(induct P)
+  case Nil
+  then show ?case
+    by (simp add: apply_outputs_preserves_length)
+next
+  case (Cons a P)
+  then show ?case
+    apply (simp add: apply_outputs_preserves_length)
+    apply (simp add: apply_outputs_def)
+    apply (cases r)
+     apply (simp add: join_ir_def)
+    by (simp add: join_ir_def)
+qed
+
+lemma apply_outputs_unupdated:
+  "ia \<noteq> r \<Longrightarrow> 
+   ia < length (apply_outputs P j) \<Longrightarrow>
+   apply_outputs P j ! ia = apply_outputs (P[r := v])j ! ia"
+proof(induct P)
+case Nil
+  then show ?case
+    by (simp add: apply_outputs_preserves_length)
+next
+  case (Cons a P)
+  then show ?case
+    apply (simp add: apply_outputs_preserves_length)
+    apply (simp add: apply_outputs_def)
+    apply (cases r)
+     apply simp
+    by (simp add: map_update nth_Cons')
+qed
 
 definition apply_guards :: "gexp list \<Rightarrow> datastate \<Rightarrow> bool" where
   "apply_guards G s = (\<forall>g \<in> set (map (\<lambda>g. gval g s) G). g = true)"
