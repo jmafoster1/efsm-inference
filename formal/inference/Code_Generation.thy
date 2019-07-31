@@ -246,7 +246,11 @@ definition updates_subset :: "transition \<Rightarrow> transition \<Rightarrow> 
      i < Arity t
   )"
 
-lemma updates_subset_conditions: "updates_subset t1 t2 e \<Longrightarrow> input_stored_in_reg t2 t1 e = Some (i, r) \<Longrightarrow> c $ r = None \<Longrightarrow> \<not> subsumes t1 c t2"
+lemma updates_subset_conditions: 
+  "updates_subset t1 t2 e \<Longrightarrow>
+   input_stored_in_reg t2 t1 e = Some (i, r) \<Longrightarrow>
+   c $ r = None \<Longrightarrow>
+   \<not> subsumes t1 c t2"
   apply (simp add: updates_subset_def)
   using can_take_satisfiable[of t1 c]
   apply simp
@@ -260,6 +264,9 @@ definition "accepts_and_gets_us_to_both a b s s' = (
       accepts_trace (tm b) p \<and>
       gets_us_to s' (tm b) 0 <> p)"
 
+declare accepts_and_gets_us_to_both_def [code del]
+code_printing constant accepts_and_gets_us_to_both \<rightharpoonup> (Scala) "Dirties.acceptsAndGetsUsToBoth"
+
 lemma fMax_Some: "f \<noteq> {||} \<Longrightarrow> (\<exists>y. fMax f = Some y) = (\<exists>y. Some y |\<in>| f)"
   apply standard
    apply (metis fMax_in)
@@ -271,9 +278,9 @@ lemma arg_cong_ffilter: "\<forall>e |\<in>| f. p e = p' e \<Longrightarrow> ffil
 lemma acceptance_empty_regs_args_aux: "Inference.max_reg b = None \<Longrightarrow>
        (a, bb) |\<in>| possible_steps (tm b) 0 <> ab ba \<Longrightarrow>
        accepts (tm b) a (apply_updates (Updates bb) (join_ir ba <>) <>) t = accepts (tm b) a <> t"
-  using in_possible_steps[of a bb "tm b" ab ba]
+  using in_possible_steps[of a bb "tm b" 0 "<>" ab ba]
         max_reg_none_no_updates[of b]
-       in_tm[of a bb b]
+       in_tm
   apply simp
   apply clarify
   by force
@@ -286,17 +293,26 @@ lemma acceptance_empty_regs_args: "Inference.max_reg b = None \<Longrightarrow>
   using in_possible_steps max_reg_none_no_updates
   by (simp add: acceptance_empty_regs_args_aux)
 
-lemma 
-  "Inference.max_reg b = None \<Longrightarrow>
-   accepts_and_gets_us_to_both a b s s' \<Longrightarrow>
-   initially_undefined_context_check b r s' \<Longrightarrow>
-   input_stored_in_reg t2 t1 a = Some (i, r) \<Longrightarrow>
-   updates_subset t1 t2 a \<Longrightarrow>
-   \<not>directly_subsumes a b s s' t1 t2"
+definition "drop_update_add_guard_direct_subsumption a b s s' t1 t2 = 
+  (case input_stored_in_reg t2 t1 a of
+   None \<Rightarrow> False |
+   Some (i, r) \<Rightarrow>
+     accepts_and_gets_us_to_both a b s s' \<and>
+     initially_undefined_context_check b r s' \<and>
+     updates_subset t1 t2 a
+  )"
+
+lemma drop_update_add_guard_direct_subsumption:
+  "drop_update_add_guard_direct_subsumption a b s s' t1 t2 \<Longrightarrow>
+  \<not>directly_subsumes a b s s' t1 t2"
+  apply (simp add: drop_update_add_guard_direct_subsumption_def)
+  apply (case_tac "input_stored_in_reg t2 t1 a")
+   apply simp
   apply (simp add: directly_subsumes_def)
+  apply (case_tac aa)
   apply (rule disjI1)
   apply (simp add: accepts_and_gets_us_to_both_def)
-  apply (erule exE)
+  apply clarify
   apply (rule_tac x=p in exI)
   apply (simp add: initially_undefined_context_check_def)
   using updates_subset_conditions by blast
@@ -309,6 +325,8 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
       then False
     else if drop_guard_add_update_direct_subsumption t1 t2 b s'
       then True
+    else if drop_update_add_guard_direct_subsumption a b s s' t1 t2
+      then False
     else if generalise_output_direct_subsumption t1 t2 b a s s'
       then True
     else if t1 = drop_guards t2
@@ -323,10 +341,6 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
 definition "mprotect = \<lparr>Label = STR ''mprotect'', Arity = 3, Guard = [Eq (V (I 0)) (L (Num 140116919701504)), Eq (V (I 1)) (L (Num 2093056)), Eq (V (I 1)) (L (Str ''PROT_NONE''))], Outputs = [L (Num 0)], Updates = []\<rparr>"
 definition "mprotect_dropped = \<lparr>Label = STR ''mprotect'', Arity = 3, Guard = [], Outputs = [L (Num 0)], Updates = []\<rparr>"
 
-lemma "always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption m1 m2 s s' t1 t2 \<longrightarrow>
-     \<not> directly_subsumes m1 m2 s s' t1 t2"
-  by (simp add: always_different_outputs_direct_subsumption)
-
 lemma [code]: "directly_subsumes m1 m2 s s' t1 t2 = directly_subsumes_cases m1 m2 s s' t1 t2"
   apply (simp only: directly_subsumes_cases_def)
   apply (case_tac "t1 = t2")
@@ -335,6 +349,8 @@ lemma [code]: "directly_subsumes m1 m2 s s' t1 t2 = directly_subsumes_cases m1 m
    apply (simp add: always_different_outputs_direct_subsumption)
   apply (case_tac "drop_guard_add_update_direct_subsumption t1 t2 m2 s'")
    apply (simp add: drop_guard_add_update_direct_subsumption_implies_direct_subsumption)
+  apply (case_tac "drop_update_add_guard_direct_subsumption m1 m2 s s' t1 t2")
+   apply (simp add: drop_update_add_guard_direct_subsumption)
   apply (case_tac "generalise_output_direct_subsumption t1 t2 m2 m1 s s'")
    apply (simp add: generalise_output_directly_subsumes_original_executable)
   apply (case_tac "t1 = drop_guards t2")

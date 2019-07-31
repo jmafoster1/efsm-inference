@@ -516,6 +516,9 @@ def product[A, B](xs: List[A], ys: List[B]): List[(A, B)] =
 def enumerate[A](n: Nat.nat, xs: List[A]): List[(Nat.nat, A)] =
   ((upt(n, Nat.plus_nata(n, Nat.Nata(xs.length)))) zip xs)
 
+def removeAll[A : HOL.equal](a: A, l: List[A]): List[A] =
+  filter[A](((x: A) => ! (HOL.eq[A](x, a))), l)
+
 def list_update[A](x0: List[A], i: Nat.nat, y: A): List[A] = (x0, i, y) match {
   case (Nil, i, y) => Nil
   case (x::xs, i, y) =>
@@ -568,6 +571,12 @@ def sup_set[A : HOL.equal](x0: set[A], a: set[A]): set[A] = (x0, a) match {
   case (seta(xs), a) =>
     Lista.fold[A, set[A]](((aa: A) => (b: set[A]) => insert[A](aa, b)), xs, a)
 }
+
+def less_eq_set[A : HOL.equal](a: set[A], b: set[A]): Boolean =
+  Ball[A](a, ((x: A) => member[A](x, b)))
+
+def less_set[A : HOL.equal](a: set[A], b: set[A]): Boolean =
+  (less_eq_set[A](a, b)) && (! (less_eq_set[A](b, a)))
 
 } /* object Set */
 
@@ -4152,6 +4161,32 @@ def infer_with_log(stepNo: Nat.nat, k: Nat.nat,
        }
    })
 
+def updates_subset(ta: Transition.transition_ext[Unit],
+                    t: Transition.transition_ext[Unit],
+                    e: FSet.fset[(Nat.nat,
+                                   ((Nat.nat, Nat.nat),
+                                     Transition.transition_ext[Unit]))]):
+      Boolean
+  =
+  (Store_Reuse_Subsumption.input_stored_in_reg(t, ta, e) match {
+     case None => false
+     case Some((i, r)) =>
+       (Nat.equal_nata(Transition.Arity[Unit](t),
+                        Transition.Arity[Unit](ta))) && ((Set.less_set[GExp.gexp](Set.seta[GExp.gexp](Transition.Guard[Unit](t)),
+   Set.seta[GExp.gexp](Transition.Guard[Unit](ta)))) && ((! ((Lista.map[(Nat.nat,
+                                  AExp.aexp),
+                                 Nat.nat](((a: (Nat.nat, AExp.aexp)) => a._1),
+   Lista.removeAll[(Nat.nat,
+                     AExp.aexp)]((r, AExp.V(VName.I(i))),
+                                  Transition.Updates[Unit](t)))) contains r)) && ((! ((Lista.map[(Nat.nat,
+                   AExp.aexp),
+                  Nat.nat](((a: (Nat.nat, AExp.aexp)) => a._1),
+                            Transition.Updates[Unit](ta))) contains r)) && ((Option_Lexorder.less_option[Nat.nat](Can_Take.max_input(Transition.Guard[Unit](ta)),
+                                   Some[Nat.nat](Transition.Arity[Unit](ta)))) && ((GExp.satisfiable_list(Transition.Guard[Unit](ta) ++
+                            Can_Take.ensure_not_null(Transition.Arity[Unit](ta)))) && ((Optiona.is_none[Nat.nat](Can_Take.max_reg(Transition.Guard[Unit](ta)))) && (Nat.less_nat(i,
+                  Transition.Arity[Unit](ta)))))))))
+   })
+
 def outputMatch_alt(uu: List[AExp.aexp], uv: List[AExp.aexp]): Boolean =
   (uu, uv) match {
   case ((AExp.L(Value.Numa(na)))::Nil, (AExp.L(Value.Numa(n)))::Nil) => true
@@ -4237,6 +4272,23 @@ a;
     (n, Transition.Label[Unit](t))
   }
 
+def drop_update_add_guard_direct_subsumption(a:
+       FSet.fset[(Nat.nat,
+                   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+      b: FSet.fset[(Nat.nat,
+                     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+      sa: Nat.nat, s: Nat.nat, t1: Transition.transition_ext[Unit],
+      t2: Transition.transition_ext[Unit]):
+      Boolean
+  =
+  (Store_Reuse_Subsumption.input_stored_in_reg(t2, t1, a) match {
+     case None => false
+     case Some((_, r)) =>
+       (Dirties.acceptsAndGetsUsToBoth(a, b, sa,
+s)) && ((Dirties.initiallyUndefinedContextCheck(b, r,
+         s)) && (updates_subset(t1, t2, a)))
+   })
+
 def always_different_outputs(x0: List[AExp.aexp], x1: List[AExp.aexp]): Boolean
   =
   (x0, x1) match {
@@ -4270,17 +4322,20 @@ def directly_subsumes_cases(a: FSet.fset[(Nat.nat,
            else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
        t2, b, s))
                   true
-                  else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
-          t2, b, a, sa, s))
-                         true
-                         else (if (Transition.equal_transition_exta[Unit](t1,
-                                   Ignore_Inputs.drop_guards(t2)))
+                  else (if (drop_update_add_guard_direct_subsumption(a, b, sa,
+                              s, t1, t2))
+                         false
+                         else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
+                 t2, b, a, sa, s))
                                 true
-                                else (if ((Transition.equal_transition_exta[Unit](t2,
-   Ignore_Inputs.drop_guards(t1))) && (Can_Take.satisfiable_negation[Unit](t1)))
-                                       false
-                                       else (if (Can_Take.simple_mutex(t2, t1))
-      false else Dirties.scalaDirectlySubsumes(a, b, sa, s, t1, t2))))))))
+                                else (if (Transition.equal_transition_exta[Unit](t1,
+  Ignore_Inputs.drop_guards(t2)))
+                                       true
+                                       else (if ((Transition.equal_transition_exta[Unit](t2,
+          Ignore_Inputs.drop_guards(t1))) && (Can_Take.satisfiable_negation[Unit](t1)))
+      false
+      else (if (Can_Take.simple_mutex(t2, t1)) false
+             else Dirties.scalaDirectlySubsumes(a, b, sa, s, t1, t2)))))))))
 
 def no_illegal_updates_code(x0: List[(Nat.nat, AExp.aexp)], uu: Nat.nat):
       Boolean

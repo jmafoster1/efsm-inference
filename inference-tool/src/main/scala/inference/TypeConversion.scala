@@ -135,6 +135,21 @@ object TypeConversion {
     }
   }
 
+  def doubleEFSMToSALTranslator(e1: Types.TransitionMatrix, e1Name: String, e2: Types.TransitionMatrix, e2Name: String, f: String) = {
+    if (e1Name == e2Name) {
+      throw new IllegalArgumentException("Models must have unique names");
+    }
+    Translator.clearEverything()
+    isabellesal.EFSM.newOneFrom(FSet.sorted_list_of_fset(e1).map(toMichaelsMove):_*)
+    isabellesal.EFSM.newOneFrom(FSet.sorted_list_of_fset(e2).map(toMichaelsMove):_*)
+    try {
+      new Translator().writeSALandDOT(Paths.get("salfiles"), f);
+      s"mv salfiles/${f}.dot ${Config.config.dotfiles}/".!
+    } catch {
+      case ioe: java.lang.StringIndexOutOfBoundsException => {}
+    }
+  }
+
   def indexWithInts(e: List[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]): List[((Int, Int), Transition.transition_ext[Unit])] =
       e.map(move => ((toInt(Code_Numeral.integer_of_nat(move._1._1)), toInt(Code_Numeral.integer_of_nat(move._1._2))), move._2))
 }

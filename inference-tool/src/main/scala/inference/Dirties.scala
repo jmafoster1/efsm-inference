@@ -173,23 +173,23 @@ object Dirties {
     return (output.toString == "proved.\n")
   }
 
+  def acceptsAndGetsUsToBoth(a: IEFSM,
+                            b: IEFSM,
+                            s: Nat.nat,
+                            s_prime: Nat.nat): Boolean = {
+                              true
+                            }
+
   def scalaDirectlySubsumes(a: IEFSM,
                             b: IEFSM,
                             s: Nat.nat,
                             s_prime: Nat.nat,
                             t1: Transition.transition_ext[Unit],
                             t2: Transition.transition_ext[Unit]): Boolean = {
-                              if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t2, t1, b, s_prime)) {
-                                // println("n")
-                                return false
-                              }
                               if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t2, t1, b, a, s, s_prime)) {
                                 // println("n")
                                 return false
                               }
-                              // if (Transition.Guard(t1).length > 0 && Transition.Guard(t1).length > 0) {
-                              //   return true
-                              // }
                               // else {
                                 println(s"Does ${PrettyPrinter.transitionToString(t1)} directly subsume ${PrettyPrinter.transitionToString(t2)}? (y/N)")
                                 val subsumes = readLine("") == "y"

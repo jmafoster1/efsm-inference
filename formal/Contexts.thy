@@ -666,6 +666,9 @@ definition posterior_sequence :: "transition_matrix \<Rightarrow> cfstate \<Righ
 abbreviation anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> registers option" where
   "anterior_context e t \<equiv> posterior_sequence e 0 <> t"
 
+lemma anterior_context_empty: "anterior_context e [] = Some <>"
+  by (simp add: posterior_sequence_def)
+
 lemma accepting_sequence_length_aux: "\<forall>s d seq. accepting_sequence e s d t seq = Some seq' \<longrightarrow> length seq' \<ge> length seq"
 proof(induct t)
   case Nil

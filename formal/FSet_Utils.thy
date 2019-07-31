@@ -9,6 +9,39 @@ lift_definition fprod  :: "'a fset \<Rightarrow> 'b fset \<Rightarrow> ('a \<tim
 lift_definition fis_singleton :: "'a fset \<Rightarrow> bool" is "\<lambda>A. is_singleton (fset A)".
 end
 
+lemma fprod_member: "x |\<in>| xs \<Longrightarrow> y |\<in>| ys \<Longrightarrow> (x, y) |\<in>| xs |\<times>| ys"
+  by (simp add: fmember_def fprod_def Abs_fset_inverse)
+
+lemma fprod_empty_l: "{||} |\<times>| a = {||}"
+  using bot_fset_def fprod.abs_eq by force
+
+lemma fprod_empty_r: "a |\<times>| {||} = {||}"
+  by (simp add: fprod_def bot_fset_def Abs_fset_inverse)
+
+lemmas fprod_empty = fprod_empty_l fprod_empty_r
+
+lemma fprod_finsert: "(finsert a as) |\<times>| (finsert b bs) = finsert (a, b) (fimage (\<lambda>b. (a, b)) bs |\<union>| fimage (\<lambda>a. (a, b)) as |\<union>| (as |\<times>| bs))"
+  apply (simp add: finsert_def fprod_def Abs_fset_inverse)
+  apply (rule arg_cong[of "(insert (a, b) (fset as \<times> insert b (fset bs) \<union> insert a (fset as) \<times> fset bs))"
+                    "(insert (a, b) (Pair a ` fset bs \<union> (\<lambda>a. (a, b)) ` fset as \<union> fset as \<times> fset bs))"
+                    Abs_fset])
+  by auto
+
+lemma fprod_induct: "P ({||} |\<times>| {||}) \<Longrightarrow> (\<And>as bs a b. P (as |\<times>| bs) \<longrightarrow> P ((finsert a as) |\<times>| (finsert b bs))) \<Longrightarrow> P (A |\<times>| B)"
+proof(induct A)
+  case empty
+  then show ?case
+    apply (induct B)
+     apply simp
+    by (simp add: fprod.abs_eq)
+next
+  case (insert x A)
+  then show ?case
+    apply (induct B)
+     apply (simp add: fprod_empty_r)
+    by (metis finsert_absorb2)
+qed
+
 definition "fSum \<equiv> fsum (\<lambda>x. x)"
 
 syntax (ASCII)
@@ -91,12 +124,6 @@ lemma abs_fset_singleton[simp]: "Abs_fset {a} = {|a|}"
 
 lemma abs_fset_empty[simp]: "Abs_fset {} = {||}"
   by (simp add: bot_fset_def)
-
-lemma fprod_empty[simp]: "\<forall>a. fprod {||} a = {||}"
-  by (simp add: fprod_def)
-
-lemma fprod_empty_2[simp]: "\<forall>a. fprod a {||} = {||}"
-  by (simp add: fprod_def ffUnion_def)
 
 lemma set_equiv: "(f1 = f2) = (fset f1 = fset f2)"
   by (simp add: fset_inject)

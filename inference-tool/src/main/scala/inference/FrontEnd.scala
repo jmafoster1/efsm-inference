@@ -27,6 +27,8 @@ object FrontEnd {
     // val t = lst(0)._2
     // println(Dirties.canTake(Inference.toiEFSM(inferred), Nat.Nata(0), t))
 
+    TypeConversion.doubleEFSMToSALTranslator(pta, "pta", inferred, "vend1", "compositionTest")
+
     Log.root.info("The inferred machine is " +
       (if (Inference.nondeterministic(Inference.toiEFSM(inferred), Inference.nondeterministic_pairs)) "non" else "") + "deterministic")
 

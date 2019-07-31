@@ -215,7 +215,7 @@ lemma generalise_output_directly_subsumes_original:
   apply (simp add: directly_subsumes_def)
   apply standard
    apply clarify
-   apply (case_tac "posterior_sequence (tm e) 0 (K$ None) pa")
+   apply (case_tac "posterior_sequence (tm e) 0 <> pa")
   using accepts_gives_context apply fastforce
    apply simp
     apply (simp add: is_generalised_output_of_def)
@@ -279,7 +279,83 @@ definition input_stored_in_reg :: "transition \<Rightarrow> transition \<Rightar
   )"
 
 definition initially_undefined_context_check :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "initially_undefined_context_check e r s = (\<forall>t a. accepts_trace (tm e) t \<and> gets_us_to s (tm e) 0 (K$ None) t \<longrightarrow> (anterior_context (tm e) t) = Some a \<and> a $ r = None)"
+  "initially_undefined_context_check e r s = (\<forall>t. accepts_trace (tm e) t \<and> gets_us_to s (tm e) 0 <> t \<longrightarrow> (\<exists>a. (anterior_context (tm e) t) = Some a \<and> a $ r = None))"
+
+lemma no_incoming_to_zero: "\<forall>(id, (from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
+       (aaa, ba) |\<in>| possible_steps (tm e) s d l i \<Longrightarrow>
+       aaa \<noteq> 0"
+  using in_possible_steps in_tm
+  by fast
+
+lemma no_return_to_zero:
+  "\<forall>(id, (from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
+   \<forall>r n. \<not> gets_us_to 0 (tm e) (Suc n) r t"
+proof(induct t)
+  case Nil
+  then show ?case
+    by (simp add: no_further_steps)
+next
+  case (Cons a t)
+  then show ?case
+    apply clarify
+    apply (rule gets_us_to.cases)
+       apply simp
+      apply simp
+     defer
+    apply simp
+    apply clarify
+    apply simp
+    apply (case_tac aaa)
+    using no_incoming_to_zero
+     apply blast
+    by simp
+qed
+
+lemma no_accepting_return_to_zero:
+  "\<forall>(id, (from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
+   accepts_trace (tm e) (a#t) \<Longrightarrow>
+   \<not>gets_us_to 0 (tm e) 0 <> (a#t)"
+  apply clarify
+  apply (rule gets_us_to.cases)
+     apply simp
+    apply simp
+   apply clarify
+  apply simp
+  apply (case_tac aaa)
+  using no_incoming_to_zero apply blast
+  apply (simp add: no_return_to_zero)
+  by (simp add: step_none_inaccepts)
+
+lemma no_return_to_zero_must_be_empty:
+  "\<forall>(id, (from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
+   accepts_trace (tm e) t \<and> gets_us_to 0 (tm e) 0 <> t \<Longrightarrow>
+   t = []"
+proof(induct t)
+case Nil
+  then show ?case
+    by simp
+next
+case (Cons a t)
+  then show ?case
+    apply simp
+    apply (rule accepts.cases)
+      apply auto[1]
+     apply simp
+    using no_accepting_return_to_zero by auto
+qed
+
+lemma anterior_context_empty: "\<forall>(id, (from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
+           accepts_trace (tm e) t \<Longrightarrow> gets_us_to 0 (tm e) 0 <> t \<Longrightarrow> anterior_context (tm e) t = Some <>"
+  using no_return_to_zero_must_be_empty[of e]
+        anterior_context_empty
+  by auto
+
+lemma "\<forall>(id, (from, to), t) |\<in>| e. to \<noteq> 0 \<Longrightarrow> initially_undefined_context_check e r 0"
+  apply (simp only: initially_undefined_context_check_def)
+  apply clarify
+  apply standard
+  apply (simp add: anterior_context_empty)
+  by auto
 
 definition "no_illegal_updates t r = (\<forall>u \<in> set (Updates t). fst u \<noteq> r)"
 
@@ -344,7 +420,8 @@ lemma generalised_directly_subsumes_original:
    directly_subsumes e1 e s s' t' t"
   using input_stored_in_reg_is_generalisation[of t' t e i r]
   apply (simp add: initially_undefined_context_check_def directly_subsumes_def no_illegal_updates_def)
-  by (meson is_generalisation_of_subsumes_original finfun_const_apply)
+  using is_generalisation_of_subsumes_original finfun_const_apply
+  by (metis option.inject)
 
 definition drop_guard_add_update_direct_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> bool" where
   "drop_guard_add_update_direct_subsumption t' t e s' = (
@@ -524,24 +601,6 @@ lemma input_stored_in_reg_not_subsumed:
    apply standard
    apply (rule_tac x="Eq (V (vname.I i)) (L (value.Str x2))" in exI)
   by (simp add: join_ir_def input2state_nth is_generalisation_of_i_lt_arity str_not_num)
-
-lemma drop_guard_add_update_direct_subsumption_not_implies_direct_subsumption:
-  "drop_guard_add_update_direct_subsumption t t' e s' \<Longrightarrow>
-  \<exists>p. accepts (tm e1) 0 (K$ None) p \<and>
-      gets_us_to s (tm e1) 0 (K$ None) p \<and>
-      accepts (tm e) 0 (K$ None) p \<and>
-      gets_us_to s' (tm e) 0 (K$ None) p \<Longrightarrow>
-   \<not>directly_subsumes e1 e s s' t' t"
-  apply (simp add: drop_guard_add_update_direct_subsumption_def)
-  apply (case_tac "input_stored_in_reg t t' e")
-   apply simp
-  apply simp
-  apply (case_tac a)
-  apply simp
-  apply (case_tac "no_illegal_updates t' b")
-   apply (simp add: no_illegal_updates_def initially_undefined_context_check_def directly_subsumes_def)
-   apply (metis (full_types) finfun_const_apply option.discI)
-  by simp
 
 lemma subset_elem: "x \<subset> y \<Longrightarrow> \<exists>e. e \<in> y \<and> e \<notin> x"
   by auto

@@ -19,7 +19,7 @@ type_synonym outputs = "value option list"
 type_synonym event = "(label \<times> inputs)"
 type_synonym trace = "event list"
 type_synonym observation = "outputs list"
-type_synonym transition_matrix = "((nat \<times> nat) \<times> transition) fset"
+type_synonym transition_matrix = "((cfstate \<times> cfstate) \<times> transition) fset"
 
 definition Str :: "string \<Rightarrow> value" where
   "Str s \<equiv> value.Str (String.implode s)"
@@ -150,7 +150,7 @@ qed
 definition possible_steps :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> transition) fset" where
   "possible_steps e s r l i = fimage (\<lambda>((origin, dest), t). (dest, t)) (ffilter (\<lambda>((origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"
 
-lemma in_possible_steps: "(a, bb) |\<in>| possible_steps b 0 <> ab ba \<Longrightarrow> \<exists>s. ((s, a), bb) |\<in>| b"
+lemma in_possible_steps: "(a, bb) |\<in>| possible_steps b s r ab ba \<Longrightarrow> \<exists>s. ((s, a), bb) |\<in>| b"
   apply (simp add: possible_steps_def fimage_def ffilter_def fmember_def Abs_fset_inverse)
   by auto
 
@@ -331,6 +331,15 @@ inductive accepts :: "transition_matrix \<Rightarrow> nat \<Rightarrow> register
   step: "\<exists>(s', T) |\<in>| possible_steps e s d (fst h) (snd h). accepts e s' (apply_updates (Updates T) (join_ir (snd h) d) d) t \<Longrightarrow>
          accepts e s d (h#t)"
 
+lemma accepts_must_be_possible_step: "accepts e s d (h#t) \<Longrightarrow> possible_steps e s d (fst h) (snd h) \<noteq> {||}"
+  by (metis accepts.simps fBex_fempty list.inject list.simps(3))
+
+lemma accepts_must_be_step: "accepts e s d (h#t) \<Longrightarrow> \<exists>t s' p d'. step e s d (fst h) (snd h) = Some (t, s', p, d')"
+  using accepts_must_be_possible_step[of e s d h t]
+  apply (simp add: step_def)
+  apply (case_tac "SOME x. x |\<in>| possible_steps e s d (fst h) (snd h)")
+  by simp
+
 lemma accepts_cons: "accepts e s d (h#t) = (\<exists>(s', T) |\<in>| possible_steps e s d (fst h) (snd h). accepts e s' (apply_updates (Updates T) (join_ir (snd h) d) d) t)"
   apply standard
   apply (metis (mono_tags) accepts.simps list.distinct(1) list.inject)
@@ -474,6 +483,9 @@ lemma no_further_steps: "s \<noteq> s' \<Longrightarrow> \<not> gets_us_to s e s
   apply safe
   apply (rule gets_us_to.cases)
   by auto
+
+lemma empty_gets_us_to_state: "gets_us_to s e s' r [] \<Longrightarrow> s = s'"
+  using no_further_steps by blast
 
 definition incoming_transition_to :: "transition_matrix \<Rightarrow> nat \<Rightarrow> bool" where
   "incoming_transition_to t s = ((ffilter (\<lambda>((from, to), t). to = s) t) \<noteq> {||})"
