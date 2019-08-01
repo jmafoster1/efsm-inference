@@ -169,6 +169,8 @@ object Dirties {
     return (output.toString.startsWith("Counterexample"))
   }
 
+  // Confirm the existance of a trace which gets us to the correct respective
+  // states but produces a context in which register r holds the wrong value
   def possiblyNotValueCtx[A](
     v: Value.value,
     r: Nat.nat,
