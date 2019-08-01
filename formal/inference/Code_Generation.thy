@@ -351,6 +351,8 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
       then False
     else if generalise_output_direct_subsumption t1 t2 a b s s'
       then True
+    else if possibly_not_value a b s s' t1 t2
+      then False
     else if t1 = drop_guards t2
       then True
     else if t2 = drop_guards t1 \<and> satisfiable_negation t1
@@ -374,9 +376,9 @@ lemma [code]: "directly_subsumes m1 m2 s s' t1 t2 = directly_subsumes_cases m1 m
   apply (case_tac "drop_update_add_guard_direct_subsumption m1 m2 s s' t1 t2")
    apply (simp add: drop_update_add_guard_direct_subsumption)
   apply (case_tac "generalise_output_direct_subsumption t1 t2 m1 m2 s s'")
-   apply simp
-  using generalise_output_directly_subsumes_original_executable apply blast
    apply (simp add: generalise_output_directly_subsumes_original_executable)
+  apply (case_tac "possibly_not_value m1 m2 s s' t1 t2")
+   apply (simp add: possibly_not_value_not_directly_subsumes)
   apply (case_tac "t1 = drop_guards t2")
    apply (simp add: drop_inputs_subsumption subsumes_in_all_contexts_directly_subsumes)
   apply (simp add: always_different_outputs_direct_subsumption)
@@ -451,12 +453,14 @@ declare GExp.satisfiable_def [code del]
 declare initially_undefined_context_check_full_def [code del]
 declare generalise_output_context_check_def [code del]
 declare dirty_always_different_outputs_direct_subsumption_def [code del]
+declare possibly_not_value_ctx_def [code del]
 
 code_printing
   constant "GExp.satisfiable" \<rightharpoonup> (Scala) "Dirties.satisfiable" |
   constant "initially_undefined_context_check_full" \<rightharpoonup> (Scala) "Dirties.initiallyUndefinedContextCheck" |
   constant "generalise_output_context_check" \<rightharpoonup> (Scala) "Dirties.generaliseOutputContextCheck" |
-  constant "dirty_always_different_outputs_direct_subsumption" \<rightharpoonup> (Scala) "Dirties.alwaysDifferentOutputsDirectSubsumption"
+  constant "dirty_always_different_outputs_direct_subsumption" \<rightharpoonup> (Scala) "Dirties.alwaysDifferentOutputsDirectSubsumption" |
+  constant "possibly_not_value_ctx" \<rightharpoonup> (Scala) "Dirties.possiblyNotValueCtx"
 
 (* Use the native implementations of list functions *)
 definition "flatmap l f = List.maps f l"

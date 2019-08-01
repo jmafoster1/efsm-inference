@@ -1519,6 +1519,29 @@ def no_illegal_updates[A](t: Transition.transition_ext[A], r: Nat.nat): Boolean
   =
   Code_Generation.no_illegal_updates_code(Transition.Updates[A](t), r)
 
+def possibly_not_value(e_1: FSet.fset[(Nat.nat,
+((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+                        e_2: FSet.fset[(Nat.nat,
+ ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+                        s_1: Nat.nat, s_2: Nat.nat,
+                        t_2: Transition.transition_ext[Unit],
+                        t_1: Transition.transition_ext[Unit]):
+      Boolean
+  =
+  (stored_reused(t_2, t_1) match {
+     case None => false
+     case Some((r, p)) =>
+       ((Transition.Outputs[Unit](t_1))(Code_Numeral.integer_of_nat(p).toInt)
+          match {
+          case AExp.L(v) =>
+            (Nat.less_nat(p, Nat.Nata((Transition.Outputs[Unit](t_1)).length))) && (Dirties.possiblyNotValueCtx[Unit](v,
+                                       r, t_1, s_2, e_2, s_1, e_1))
+          case AExp.V(_) => false
+          case AExp.Plus(_, _) => false
+          case AExp.Minus(_, _) => false
+        })
+   })
+
 def input_i_stored_in_reg(ta: Transition.transition_ext[Unit],
                            t: Transition.transition_ext[Unit], i: Nat.nat,
                            r: Nat.nat):
@@ -4365,14 +4388,18 @@ def directly_subsumes_cases(a: FSet.fset[(Nat.nat,
                          else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
                  t2, a, b, sa, s))
                                 true
-                                else (if (Transition.equal_transition_exta[Unit](t1,
-  Ignore_Inputs.drop_guards(t2)))
-                                       true
-                                       else (if ((Transition.equal_transition_exta[Unit](t2,
-          Ignore_Inputs.drop_guards(t1))) && (Can_Take.satisfiable_negation[Unit](t1)))
-      false
-      else (if (Can_Take.simple_mutex(t2, t1)) false
-             else Dirties.scalaDirectlySubsumes(a, b, sa, s, t1, t2)))))))))
+                                else (if (Store_Reuse_Subsumption.possibly_not_value(a,
+      b, sa, s, t1, t2))
+                                       false
+                                       else (if (Transition.equal_transition_exta[Unit](t1,
+         Ignore_Inputs.drop_guards(t2)))
+      true
+      else (if ((Transition.equal_transition_exta[Unit](t2,
+                 Ignore_Inputs.drop_guards(t1))) && (Can_Take.satisfiable_negation[Unit](t1)))
+             false
+             else (if (Can_Take.simple_mutex(t2, t1)) false
+                    else Dirties.scalaDirectlySubsumes(a, b, sa, s, t1,
+                t2))))))))))
 
 def no_illegal_updates_code(x0: List[(Nat.nat, AExp.aexp)], uu: Nat.nat):
       Boolean

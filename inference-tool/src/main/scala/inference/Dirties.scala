@@ -155,10 +155,12 @@ object Dirties {
   // Here we check to see if globally we can never be in both states
   // If there's a counterexample then there exists a trace which gets us to
   // both states
-  def acceptsAndGetsUsToBoth(a: IEFSM,
+  def acceptsAndGetsUsToBoth(
+    a: IEFSM,
     b: IEFSM,
     s1: Nat.nat,
-    s2: Nat.nat): Boolean = {
+    s2: Nat.nat,
+    ): Boolean = {
     val f = "intermediate_" + System.currentTimeMillis()
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(a), "e1", Inference.tm(b), "e2", f)
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME O TO O_e1 IN e1) || (RENAME O TO O_e2 IN e2);\n" +
@@ -167,20 +169,30 @@ object Dirties {
     return (output.toString.startsWith("Counterexample"))
   }
 
+  def possiblyNotValueCtx[A](
+    v: Value.value,
+    r: Nat.nat,
+    t1: Transition,
+    s2: Nat.nat,
+    e2: IEFSM,
+    s1: Nat.nat,
+    e1: IEFSM): Boolean = {
+      val f = "intermediate_" + System.currentTimeMillis()
+      TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
+      addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME O TO O_e1 IN e1) || (RENAME O TO O_e2 IN e2);\n" +
+        s"possiblyNotValue: THEOREM composition |- G(NOT(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} AND r_${Code_Numeral.integer_of_nat(r)} = Some(${TypeConversion.salValue(v)}) AND input_sequence ! size?(I) = ${Code_Numeral.integer_of_nat(Transition.Arity(t1))} AND ${efsm2sal.guards2sal(Transition.Guard(t1))}));")
+      val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{100}!possiblyNotValue'").!!
+      return (output.toString.startsWith("Counterexample"))
+    }
+
   def scalaDirectlySubsumes(a: IEFSM,
     b: IEFSM,
     s: Nat.nat,
     s_prime: Nat.nat,
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
-    if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t2, t1, b, a, s, s_prime)) {
-      // println("n")
-      return false
-    }
-    // else {
     println(s"Does ${PrettyPrinter.transitionToString(t1)} directly subsume ${PrettyPrinter.transitionToString(t2)}? (y/N)")
     val subsumes = readLine("") == "y"
     subsumes
-    // }
   }
 }
