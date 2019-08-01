@@ -18,6 +18,9 @@ definition can_take :: "nat \<Rightarrow> gexp list \<Rightarrow> inputs \<Right
 
 definition "can_take_transition t i r = can_take (Arity t) (Guard t) i r"
 
+lemma can_take_transition_empty_guard: "Guard t = [] \<Longrightarrow> \<exists>i. can_take_transition t i c"
+  by (simp add: can_take_transition_def can_take_def Ex_list_of_length)
+
 lemma enumerate_gexp_regs_set_reg_unconstrained:
   "\<forall>x\<in>set G. enumerate_gexp_regs x = {} \<Longrightarrow>
    \<forall>r. \<forall>g\<in>set G. \<not> gexp_constrains g (V (R r))"

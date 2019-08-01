@@ -123,6 +123,7 @@ object Dirties {
     return (output.toString.startsWith("Counterexample"))
   }
 
+  // Check that whenever we're in state s, register r is always undefined
   def initiallyUndefinedContextCheck(e: IEFSM, r: Nat.nat, s: Nat.nat): Boolean = {
     println("initiallyUndefinedContextCheck")
     val f = "intermediate_" + System.currentTimeMillis()
@@ -137,6 +138,8 @@ object Dirties {
     return (output.toString == "proved.\n")
   }
 
+  // We're looking to confirm that traces which get us to s1 in e1 and s2 in e2
+  // always leave register r (in e2) holding value v
   def generaliseOutputContextCheck(v: Value.value, r: Nat.nat, s1: Nat.nat, s2: Nat.nat, e1: IEFSM, e2: IEFSM): Boolean = {
     val f = "intermediate_" + System.currentTimeMillis()
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)

@@ -273,6 +273,19 @@ definition "accepts_and_gets_us_to_both a b s s' = (
       accepts_trace (tm b) p \<and>
       gets_us_to s' (tm b) 0 <> p)"
 
+definition "dirty_always_different_outputs_direct_subsumption = always_different_outputs_direct_subsumption"
+
+lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (if Guard t = [] then accepts_and_gets_us_to_both m1 m2 s s' else dirty_always_different_outputs_direct_subsumption m1 m2 s s' t)"
+  apply (simp add: always_different_outputs_direct_subsumption_def)
+  apply (simp add: accepts_and_gets_us_to_both_def)
+  apply safe
+     apply auto[1]
+    apply (rule_tac x=p in exI)
+  using can_take_transition_empty_guard accepts_gives_context apply fastforce
+   apply (simp add: dirty_always_different_outputs_direct_subsumption_def)
+  using always_different_outputs_direct_subsumption_def apply blast
+  by (simp add: always_different_outputs_direct_subsumption_def dirty_always_different_outputs_direct_subsumption_def)
+
 declare accepts_and_gets_us_to_both_def [code del]
 code_printing constant accepts_and_gets_us_to_both \<rightharpoonup> (Scala) "Dirties.acceptsAndGetsUsToBoth"
 
@@ -437,13 +450,13 @@ termination
 declare GExp.satisfiable_def [code del]
 declare initially_undefined_context_check_full_def [code del]
 declare generalise_output_context_check_def [code del]
-declare always_different_outputs_direct_subsumption_def [code del]
+declare dirty_always_different_outputs_direct_subsumption_def [code del]
 
 code_printing
   constant "GExp.satisfiable" \<rightharpoonup> (Scala) "Dirties.satisfiable" |
   constant "initially_undefined_context_check_full" \<rightharpoonup> (Scala) "Dirties.initiallyUndefinedContextCheck" |
   constant "generalise_output_context_check" \<rightharpoonup> (Scala) "Dirties.generaliseOutputContextCheck" |
-  constant "always_different_outputs_direct_subsumption" \<rightharpoonup> (Scala) "Dirties.alwaysDifferentOutputsDirectSubsumption"
+  constant "dirty_always_different_outputs_direct_subsumption" \<rightharpoonup> (Scala) "Dirties.alwaysDifferentOutputsDirectSubsumption"
 
 (* Use the native implementations of list functions *)
 definition "flatmap l f = List.maps f l"

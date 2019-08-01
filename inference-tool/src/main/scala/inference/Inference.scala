@@ -4296,6 +4296,19 @@ a;
     (n, Transition.Label[Unit](t))
   }
 
+def always_different_outputs_direct_subsumption(m1:
+          FSet.fset[(Nat.nat,
+                      ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+         m2: FSet.fset[(Nat.nat,
+                         ((Nat.nat, Nat.nat),
+                           Transition.transition_ext[Unit]))],
+         sa: Nat.nat, s: Nat.nat, t: Transition.transition_ext[Unit]):
+      Boolean
+  =
+  (if ((Transition.Guard[Unit](t)).isEmpty)
+    Dirties.acceptsAndGetsUsToBoth(m1, m2, sa, s)
+    else Dirties.alwaysDifferentOutputsDirectSubsumption(m1, m2, sa, s, t))
+
 def drop_update_add_guard_direct_subsumption(a:
        FSet.fset[(Nat.nat,
                    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
@@ -4340,8 +4353,8 @@ def directly_subsumes_cases(a: FSet.fset[(Nat.nat,
   =
   (if (Transition.equal_transition_exta[Unit](t1, t2)) true
     else (if ((always_different_outputs(Transition.Outputs[Unit](t1),
- Transition.Outputs[Unit](t2))) && (Dirties.alwaysDifferentOutputsDirectSubsumption(a,
-     b, sa, s, t2)))
+ Transition.Outputs[Unit](t2))) && (always_different_outputs_direct_subsumption(a,
+ b, sa, s, t2)))
            false
            else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
        t2, b, s))
