@@ -1,5 +1,5 @@
 theory Store_Reuse_Subsumption
-imports Store_Reuse
+imports Store_Reuse "../Can_Take"
 begin
 
 lemma generalisation_of_preserves: "is_generalisation_of t' t i r \<Longrightarrow>
@@ -502,7 +502,7 @@ lemma inputs_v_neq_value: "i < length ia \<Longrightarrow> ia ! i = (v::value) \
   using ex_v_neq_value[of ia i v]
   apply simp
   apply clarify
-  apply (rule_tac x="ia[i := v']" in exI)
+  apply (rule_tac x="list_update ia i v'" in exI)
   by simp
 
 lemma aval_unconstrained:
@@ -510,7 +510,7 @@ lemma aval_unconstrained:
   i < length ia \<Longrightarrow>
   v = ia ! i \<Longrightarrow>
   v' \<noteq> v \<Longrightarrow>
-  aval a (join_ir ia c) = aval a (join_ir (ia[i := v']) c)"
+  aval a (join_ir ia c) = aval a (join_ir (list_update ia i v') c)"
 proof(induct a)
   case (L x)
   then show ?case
@@ -540,7 +540,7 @@ lemma gval_unconstrained:
  " \<not> gexp_constrains a (V (vname.I i)) \<Longrightarrow>
   i < length ia \<Longrightarrow>
   v = ia ! i \<Longrightarrow>
-  gval a (join_ir ia c) = gval a (join_ir (ia[i := v']) c)"
+  gval a (join_ir ia c) = gval a (join_ir (list_update ia i v') c)"
 proof(induct a)
 case (Bc x)
   then show ?case
@@ -571,7 +571,7 @@ lemma is_generalisation_of_can_swap_out_i:
    "is_generalisation_of t' t i r \<Longrightarrow>
    i < length ia \<Longrightarrow>
    v = ia ! i \<Longrightarrow>
-   \<forall>g\<in>set (Guard t').  gval g (join_ir ia c) = gval g (join_ir (ia[i := v']) c)"
+   \<forall>g\<in>set (Guard t').  gval g (join_ir ia c) = gval g (join_ir (list_update ia i v') c)"
   using is_generalisation_of_derestricts_input gval_unconstrained by blast
 
 lemma input_stored_in_reg_not_subsumed: 
@@ -587,7 +587,7 @@ lemma input_stored_in_reg_not_subsumed:
   apply (simp add: can_take_transition_def can_take_def)
   apply clarify
   apply (case_tac "v")
-   apply (rule_tac x="ia[i:=Str s]" in exI)
+   apply (rule_tac x="list_update ia i (Str s)" in exI)
    apply simp
    apply standard
     apply (simp add: apply_guards_def)
@@ -597,7 +597,7 @@ lemma input_stored_in_reg_not_subsumed:
    apply (rule_tac x="Eq (V (vname.I i)) (L (Num x1))" in exI)
    apply (simp add: join_ir_def input2state_nth is_generalisation_of_i_lt_arity str_not_num)
 
-   apply (rule_tac x="ia[i:=Num s]" in exI)
+   apply (rule_tac x="list_update ia i (Num s)" in exI)
    apply simp
    apply standard
     apply (simp add: apply_guards_def)
@@ -727,5 +727,71 @@ lemma possibly_not_value_not_directly_subsumes:
   apply (case_tac "Outputs t\<^sub>1 ! b")
      apply (simp add: possibly_not_value)
   by auto
+
+lemma acceptance_empty_regs_args: "Inference.max_reg b = None \<Longrightarrow>
+       ffilter (\<lambda>(s', T). accepts (tm b) s' (apply_updates (Updates T) (join_ir ba <>) <>) t) (possible_steps (tm b) 0 <> ab ba) =
+       ffilter (\<lambda>(s', T). accepts (tm b) s' <> t) (possible_steps (tm b) 0 <> ab ba)"
+  apply (rule arg_cong_ffilter)
+  apply clarify
+  apply (case_tac "\<exists>s. ((s, a), bb) |\<in>| tm b")
+  using max_reg_none_no_updates[of b] in_tm
+  apply force
+  by (simp add: in_possible_steps)
+
+definition "accepts_and_gets_us_to_both a b s s' = (
+  \<exists>p. accepts_trace (tm a) p \<and>
+      gets_us_to s (tm a) 0 <> p \<and>
+      accepts_trace (tm b) p \<and>
+      gets_us_to s' (tm b) 0 <> p)"
+
+definition updates_subset :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> bool" where
+  "updates_subset t t' e = (
+     case input_stored_in_reg t' t e of None \<Rightarrow> False | Some (i, r) \<Rightarrow>
+     Arity t' = Arity t \<and>
+     set (Guard t') \<subset> set (Guard t) \<and>
+     r \<notin> set (map fst (removeAll (r, V (I i)) (Updates t'))) \<and>
+     r \<notin> set (map fst (Updates t)) \<and>
+     max_input_list (Guard t) < Some (Arity t) \<and>
+     satisfiable_list ((Guard t) @ ensure_not_null (Arity t)) \<and>
+     max_reg_list (Guard t) = None \<and>
+     i < Arity t
+  )"
+
+definition "drop_update_add_guard_direct_subsumption a b s s' t1 t2 = 
+  (case input_stored_in_reg t2 t1 a of
+   None \<Rightarrow> False |
+   Some (i, r) \<Rightarrow>
+     accepts_and_gets_us_to_both a b s s' \<and>
+     initially_undefined_context_check b r s' \<and>
+     updates_subset t1 t2 a
+  )"
+
+
+lemma updates_subset_conditions: 
+  "updates_subset t1 t2 e \<Longrightarrow>
+   input_stored_in_reg t2 t1 e = Some (i, r) \<Longrightarrow>
+   c $ r = None \<Longrightarrow>
+   \<not> subsumes t1 c t2"
+  apply (simp add: updates_subset_def)
+  using can_take_satisfiable[of t1 c]
+  apply simp
+  apply (rule general_not_subsume_orig)
+  using input_stored_in_reg_updates_reg
+  by auto
+
+lemma drop_update_add_guard_direct_subsumption:
+  "drop_update_add_guard_direct_subsumption a b s s' t1 t2 \<Longrightarrow>
+  \<not>directly_subsumes a b s s' t1 t2"
+  apply (simp add: drop_update_add_guard_direct_subsumption_def)
+  apply (case_tac "input_stored_in_reg t2 t1 a")
+   apply simp
+  apply (simp add: directly_subsumes_def)
+  apply (case_tac aa)
+  apply (rule disjI1)
+  apply (simp add: accepts_and_gets_us_to_both_def)
+  apply clarify
+  apply (rule_tac x=p in exI)
+  apply (simp add: initially_undefined_context_check_def)
+  using updates_subset_conditions by blast
 
 end

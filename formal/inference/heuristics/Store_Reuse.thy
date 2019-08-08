@@ -58,24 +58,31 @@ lemma get_by_id_intratrace_matches_preproces:  "get_by_id_intratrace_matches e =
   To detect all intertrace matches, walk the trace in the current machine and replace eventNo with
   the corresponding transition's uid. If the uids match then there's an intertrace match.
 *)
-
 definition i_possible_steps :: "iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> nat \<times> transition) fset" where
-  "i_possible_steps e s r l i = fimage (\<lambda>(uid, (origin, dest), t). (uid, dest, t)) (ffilter (\<lambda>(uid, (origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"
+  "i_possible_steps e s r l i = fimage (\<lambda>(uid, (origin, dest), t). (uid, dest, t))
+  (ffilter (\<lambda>(uid, (origin, dest::nat), t::transition).
+      origin = s
+      \<and> (Label t) = l
+      \<and> (length i) = (Arity t)
+      \<and> apply_guards (Guard t) (join_ir i r)
+     ) 
+  e)"
 
-definition i_step :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> nat \<times> registers) option" where
-  "i_step e s r l i = (let possibilities = (i_possible_steps e s r l i) in
-    if fis_singleton possibilities then (
-      let (u, s', t) = (fthe_elem possibilities) in
+definition i_step :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> nat \<times> registers) option" where
+  "i_step tr e s r l i = (let 
+    poss_steps = (i_possible_steps e s r l i);
+    possibilities = ffilter (\<lambda>(u, s', t). accepts (tm e) s' (apply_updates (Updates t) (join_ir i r) r) tr) poss_steps in
+    case random_member possibilities of
+      None \<Rightarrow> None |
+      Some (u, s', t) \<Rightarrow>
       Some (t, s', u, (apply_updates (Updates t) (join_ir i r) r))
-    )
-    else None
   )"
 
 type_synonym match = "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> ((transition \<times> nat) \<times> ioTag \<times> nat))"
 
 primrec (nonexhaustive) walk_up_to :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (transition \<times> nat)" where
   "walk_up_to n e s r (h#t) =
-    (case (i_step e s r (fst h) (fst (snd h))) of
+    (case (i_step (exec2trace t) e s r (fst h) (fst (snd h))) of
       (Some (transition, s', uid, updated)) \<Rightarrow> (case n of 0 \<Rightarrow> (transition, uid) | Suc m \<Rightarrow> walk_up_to m e s' updated t)
     )"
 

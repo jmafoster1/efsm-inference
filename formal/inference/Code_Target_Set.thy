@@ -24,4 +24,8 @@ lemma sup_set_append [code]: "(set x) \<union> (set y) = set (x @ y)"
 
 declare product_concat_map [code]
 
+lemma [code]: "insert x (set s) = (if x \<in> set s then set s else set (x#s))"
+  apply (simp)
+  by auto
+
 end

@@ -5,7 +5,7 @@ import scala.io.Source
 import scala.util.Random
 import sys.process._
 import Types._
-
+import org.apache.commons.io.FileUtils
 object Dirties {
 
   def foldl[A, B](f: A => B => A, b: A, l: List[B]): A =
@@ -120,6 +120,7 @@ object Dirties {
       println(s"G(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} => NOT(input_sequence ! size?(I) = ${Code_Numeral.integer_of_nat(Transition.Arity(t2))} AND ${efsm2sal.guards2sal(Transition.Guard(t2))}));")
       println(s"sal-smc --assertion='${f}{100}!canTake'")
     }
+     FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
     return (output.toString.startsWith("Counterexample"))
   }
 
@@ -135,6 +136,7 @@ object Dirties {
     if (output.toString != "proved.\n") {
       print(output)
     }
+    FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
     return (output.toString == "proved.\n")
   }
 
@@ -149,6 +151,7 @@ object Dirties {
     if (output.toString != "proved.\n") {
       print(output)
     }
+    FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
     return (output.toString == "proved.\n")
   }
 
@@ -166,6 +169,7 @@ object Dirties {
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME O TO O_e1 IN e1) || (RENAME O TO O_e2 IN e2);\n" +
       s"getsUsToBoth: THEOREM composition |- G(NOT(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)}));")
     val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{100}!getsUsToBoth'").!!
+    FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
     return (output.toString.startsWith("Counterexample"))
   }
 
@@ -184,6 +188,7 @@ object Dirties {
       addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME O TO O_e1 IN e1) || (RENAME O TO O_e2 IN e2);\n" +
         s"possiblyNotValue: THEOREM composition |- G(NOT(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} AND r_${Code_Numeral.integer_of_nat(r)} = Some(${TypeConversion.salValue(v)}) AND input_sequence ! size?(I) = ${Code_Numeral.integer_of_nat(Transition.Arity(t1))} AND ${efsm2sal.guards2sal(Transition.Guard(t1))}));")
       val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{100}!possiblyNotValue'").!!
+      FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
       return (output.toString.startsWith("Counterexample"))
     }
 

@@ -134,4 +134,9 @@ lemma code_fset_eq [code]: "HOL.equal X (fset_of_list Y) \<longleftrightarrow> s
   apply (simp only: size)
   using fmember by fastforce
 
+lemma [code]: "s |\<subset>| s' = (s |\<subseteq>| s' \<and> size s < size s')"
+  apply standard
+   apply (simp only: size_fsubset)
+  by auto
+
 end

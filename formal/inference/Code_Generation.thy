@@ -10,27 +10,39 @@ theory Code_Generation
    EFSM_Dot
    Code_Target_FSet
    Code_Target_Set
-   Can_Take
- efsm2sal
+   Code_Target_List
+efsm2sal
 begin
 
 declare One_nat_def [simp del]
 
-definition "initially_undefined_context_check_full = initially_undefined_context_check"
-
-declare initially_undefined_context_check_def [code del]
-
-lemma [code]: "initially_undefined_context_check e r s = (if s = 0 \<and> (\<forall>(id, (from, to), t) |\<in>| e. to \<noteq> 0) then True else initially_undefined_context_check_full e r s)"
-  apply (case_tac "s = 0 \<and> (\<forall>(id, (from, to), t)|\<in>|e. to \<noteq> 0)")
-   apply (simp add: no_incoming_to_initial_gives_empty_reg)
-  using initially_undefined_context_check_full_def by presburger
-
+(*
+  Let's use the native operators for booleans and pairs
+*)
 code_printing
   constant HOL.conj \<rightharpoonup> (Scala) "_ && _" |
   constant HOL.disj \<rightharpoonup> (Scala) "_ || _" |
   constant "HOL.equal :: bool \<Rightarrow> bool \<Rightarrow> bool" \<rightharpoonup> (Scala) infix 4 "==" |
   constant "fst" \<rightharpoonup> (Scala) "_.'_1" |
-  constant "snd" \<rightharpoonup> (Scala) "_.'_2"
+  constant "snd" \<rightharpoonup> (Scala) "_.'_2"|
+  constant "(1::nat)" \<rightharpoonup> (Scala) "Nat.Nata((1))"
+
+(*
+  This gives us a speedup as we don't need to check that a register is undefined in the initial
+  state if there is no way to get back there. This is true by definition.
+*)
+definition "initially_undefined_context_check_full = initially_undefined_context_check"
+
+lemma [code]:
+"initially_undefined_context_check e r s = (
+  if s = 0 \<and> (\<forall>(id, (from, to), t) |\<in>| e. to \<noteq> 0) then
+    True
+  else
+    initially_undefined_context_check_full e r s
+  )"
+  apply (case_tac "s = 0 \<and> (\<forall>(id, (from, to), t)|\<in>|e. to \<noteq> 0)")
+   apply (simp add: no_incoming_to_initial_gives_empty_reg)
+  using initially_undefined_context_check_full_def by presburger
 
 (* This gives us a speedup because we can check this before we have to call out to z3 *)
 fun mutex :: "gexp \<Rightarrow>  gexp \<Rightarrow> bool" where
@@ -39,8 +51,7 @@ fun mutex :: "gexp \<Rightarrow>  gexp \<Rightarrow> bool" where
 
 lemma mutex_not_gval: "mutex x y \<Longrightarrow> gval (gAnd y x) s \<noteq> true"
   apply (induct x y rule: mutex.induct)
-  apply simp
-                      apply (metis option.inject)
+  apply (simp, metis option.inject)
   by auto
 
 definition choice_cases :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
@@ -72,26 +83,23 @@ lemma [code]: "choice t t' = choice_cases t t'"
    apply (simp add: apply_guards_foldr fold_conv_foldr satisfiable_def)
   apply (case_tac "\<exists>x\<in>set (map (\<lambda>(x, y). mutex x y) (List.product (Guard t) (Guard t'))). x")
    apply (simp add: choice_alt_def)
-  using existing_mutex_not_true
-   apply (metis Un_iff set_append)
+   apply (metis existing_mutex_not_true Un_iff set_append)
   by (simp add: apply_guards_foldr choice_alt_def fold_conv_foldr satisfiable_def)
 
-declare ListMem_iff [code]
+fun guardMatch_code :: "gexp list \<Rightarrow> gexp list \<Rightarrow> bool" where
+  "guardMatch_code [(gexp.Eq (V (vname.I i)) (L (Num n)))] [(gexp.Eq (V (vname.I i')) (L (Num n')))] = (i = 0 \<and> i' = 0)" |
+  "guardMatch_code _ _ = False"
 
-fun guardMatch_alt :: "gexp list \<Rightarrow> gexp list \<Rightarrow> bool" where
-  "guardMatch_alt [(gexp.Eq (V (vname.I i)) (L (Num n)))] [(gexp.Eq (V (vname.I i')) (L (Num n')))] = (i = 0 \<and> i' = 0)" |
-  "guardMatch_alt _ _ = False"
-
-lemma [code]: "guardMatch t1 t2 = guardMatch_alt (Guard t1) (Guard t2)"
+lemma [code]: "guardMatch t1 t2 = guardMatch_code (Guard t1) (Guard t2)"
   apply (simp add: guardMatch_def)
-  using guardMatch_alt.elims(2) by fastforce
+  using guardMatch_code.elims(2) by fastforce
 
-fun outputMatch_alt :: "output_function list \<Rightarrow> output_function list \<Rightarrow> bool" where
-  "outputMatch_alt [L (Num n)] [L (Num n')] = True" |
-  "outputMatch_alt _ _ = False"
+fun outputMatch_code :: "output_function list \<Rightarrow> output_function list \<Rightarrow> bool" where
+  "outputMatch_code [L (Num n)] [L (Num n')] = True" |
+  "outputMatch_code _ _ = False"
 
-lemma [code]: "outputMatch t1 t2 = outputMatch_alt (Outputs t1) (Outputs t2)"
-  by (metis outputMatch_alt.elims(2) outputMatch_alt.simps(1) outputMatch_def)
+lemma [code]: "outputMatch t1 t2 = outputMatch_code (Outputs t1) (Outputs t2)"
+  by (metis outputMatch_code.elims(2) outputMatch_code.simps(1) outputMatch_def)
 
 fun always_different_outputs :: "aexp list \<Rightarrow> aexp list \<Rightarrow> bool" where
   "always_different_outputs [] [] = False" |
@@ -100,57 +108,16 @@ fun always_different_outputs :: "aexp list \<Rightarrow> aexp list \<Rightarrow>
   "always_different_outputs ((L v)#t) ((L v')#t') = (if v = v' then always_different_outputs t t' else True)" |
   "always_different_outputs (h#t) (h'#t') = always_different_outputs t t'"
 
-lemma always_different_outputs_outputs_never_equal: "always_different_outputs O1 O2 \<Longrightarrow> apply_outputs O1 s \<noteq> apply_outputs O2 s"
-proof(induct O1 O2 rule: always_different_outputs.induct)
-  case 1
-  then show ?case
-    by simp
-next
-  case (2 a uu)
-  then show ?case
-    by (simp add: apply_outputs_def)
-next
-  case (3 a uv)
-  then show ?case
-    by (simp add: apply_outputs_def)
-next
-  case (4 v t v' t')
-  then show ?case
-    by (simp add: apply_outputs_def)
-next
-  case ("5_1" v t h' t')
-  then show ?case
-    by (simp add: apply_outputs_def)
-next
-  case ("5_2" v va t h' t')
-  then show ?case
-    by (simp add: apply_outputs_def)
-next
-case ("5_3" v va t h' t')
-  then show ?case
-    by (simp add: apply_outputs_def)
-next
-  case ("5_4" h t v t')
-  then show ?case
-    by (simp add: apply_outputs_def)
-next
-  case ("5_5" h t v va t')
-  then show ?case
-    by (simp add: apply_outputs_def)
-next
-  case ("5_6" h t v va t')
-  then show ?case
-    by (simp add: apply_outputs_def)
-qed
+lemma always_different_outputs_outputs_never_equal:
+  "always_different_outputs O1 O2 \<Longrightarrow>
+   apply_outputs O1 s \<noteq> apply_outputs O2 s"
+  apply(induct O1 O2 rule: always_different_outputs.induct)
+  by (simp_all add: apply_outputs_def)
 
 fun tests_input_equality :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
   "tests_input_equality i (gexp.Eq (V (vname.I i')) (L _)) = (i = i')" |
   "tests_input_equality _ _ = False"
 
-definition is_generalised_output_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "is_generalised_output_of t' t e i r = (\<exists>to \<in> fset (S e). \<exists> from \<in> fset (S e). \<exists> uid \<in> fset (uids e). t' = generalise_output t i r \<and> (uid, (from, to), t') |\<in>| e)"
-
-(* definition "no_illegal_updates t r i = (\<forall>i. \<forall>u \<in> set (Updates t). fst u \<noteq> (R r) \<and> fst u \<noteq> (I i))" *)
 fun no_illegal_updates_code :: "update_function list \<Rightarrow> nat \<Rightarrow> bool" where
   "no_illegal_updates_code [] _ = True" |
   "no_illegal_updates_code ((r', u)#t) r = (r \<noteq> r' \<and> no_illegal_updates_code t r)"
@@ -171,38 +138,21 @@ qed
 lemma no_illegal_updates_code [code]: "no_illegal_updates t r = no_illegal_updates_code (Updates t) r"
   by (simp add: no_illegal_updates_def no_illegal_updates_code_aux)
 
-definition random_member :: "'a fset \<Rightarrow> 'a option" where
-  "random_member f = (if f = {||} then None else Some (Eps (\<lambda>x. x |\<in>| f)))"
-
-definition step :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> nat \<times> outputs \<times> registers) option" where
-"step e s r l i = (let possibilities = possible_steps e s r l i in
-                   if possibilities = {||} then None
-                   else
-                     case random_member possibilities of
-                     None \<Rightarrow> None |
-                     Some (s', t) \<Rightarrow>
-                     let outputs = EFSM.apply_outputs (Outputs t) (join_ir i r) in
-                     Some (t, s', outputs, (EFSM.apply_updates (Updates t) (join_ir i r) r))
-                  )"
-
-lemma [code]: "EFSM.step x xa xb xc xd = step x xa xb xc xd"
-  by (simp add: EFSM.step_def step_def Let_def random_member_def)
-
-declare random_member_def [code del]
-
-code_printing constant "random_member" \<rightharpoonup> (Scala) "Dirties.randomMember"
-
 fun input_updates_register_aux :: "update_function list \<Rightarrow> nat option" where
   "input_updates_register_aux ((n, V (vname.I n'))#_) = Some n'" |
   "input_updates_register_aux (h#t) = input_updates_register_aux t" |
   "input_updates_register_aux [] = None"
 
 definition input_updates_register :: "iEFSM \<Rightarrow> (nat \<times> String.literal)" where
-  "input_updates_register e = (case fthe_elem (ffilter (\<lambda>(_, _, t). input_updates_register_aux (Updates t) \<noteq> None) e) of (_, _, t) \<Rightarrow> case input_updates_register_aux (Updates t) of Some n \<Rightarrow> (n, Label t))"
+  "input_updates_register e = (
+    case fthe_elem (ffilter (\<lambda>(_, _, t). input_updates_register_aux (Updates t) \<noteq> None) e) of
+      (_, _, t) \<Rightarrow> (case
+        input_updates_register_aux (Updates t) of
+          Some n \<Rightarrow> (n, Label t)
+      )
+  )"
 
 definition "dirty_directly_subsumes = directly_subsumes"
-declare dirty_directly_subsumes_def [code del]
-code_printing constant "dirty_directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes"
 
 definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> bool" where
 "always_different_outputs_direct_subsumption m1 m2 s s' t2 = (
@@ -212,17 +162,19 @@ definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iE
     gets_us_to s' (tm m2) 0 <> p \<and>
     (case anterior_context (tm m2) p of Some c \<Rightarrow> (\<exists>i. can_take_transition t2 i c))))"
 
-lemma always_different_outputs_can_take_transition_not_subsumed: "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
-       \<forall>c. posterior_sequence (tm m2) 0 <> p = Some c \<longrightarrow> (\<exists>i. can_take_transition t2 i c) \<longrightarrow> \<not> subsumes t1 c t2"
+lemma always_different_outputs_can_take_transition_not_subsumed:
+  "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
+   \<forall>c. posterior_sequence (tm m2) 0 <> p = Some c \<longrightarrow> (\<exists>i. can_take_transition t2 i c) \<longrightarrow> \<not> subsumes t1 c t2"
   apply standard
   apply standard
   apply standard
   apply (rule bad_outputs)
-  using always_different_outputs_outputs_never_equal
-  by metis
+  by (metis always_different_outputs_outputs_never_equal)
 
 lemma always_different_outputs_direct_subsumption: 
-  "always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption m1 m2 s s' t2 \<Longrightarrow> \<not> directly_subsumes m1 m2 s s' t1 t2"
+  "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
+   always_different_outputs_direct_subsumption m1 m2 s s' t2 \<Longrightarrow>
+   \<not> directly_subsumes m1 m2 s s' t1 t2"
   apply (simp add: directly_subsumes_def always_different_outputs_direct_subsumption_def)
   apply standard
   apply clarify
@@ -231,51 +183,28 @@ lemma always_different_outputs_direct_subsumption:
   using always_different_outputs_can_take_transition_not_subsumed accepts_trace_gives_context accepts_gives_context
   by fastforce
 
-lemma ponens: "(length i = Arity t \<and> (length i = Arity t \<longrightarrow> \<not> apply_guards (Guard t) (join_ir i c))) =
-(length i = Arity t \<and> \<not> apply_guards (Guard t) (join_ir i c))"
-  by auto
-
 lemma satisfiable_negation_cant_subsume:
-  "satisfiable_negation t \<Longrightarrow>
-   \<not> subsumes t c (drop_guards t)"
-  apply (rule bad_guards)
-  apply (simp add: can_take_transition_def can_take_def drop_guards_def ponens)
-  by (simp add: satisfiable_negation_def quick_negation)
-
-definition updates_subset :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> bool" where
-  "updates_subset t t' e = (
-     case input_stored_in_reg t' t e of None \<Rightarrow> False | Some (i, r) \<Rightarrow>
-     Arity t' = Arity t \<and>
-     set (Guard t') \<subset> set (Guard t) \<and>
-     r \<notin> set (map fst (removeAll (r, V (I i)) (Updates t'))) \<and>
-     r \<notin> set (map fst (Updates t)) \<and>
-     max_input (Guard t) < Some (Arity t) \<and>
-     satisfiable_list ((Guard t) @ ensure_not_null (Arity t)) \<and>
-     max_reg (Guard t) = None \<and>
-     i < Arity t
-  )"
-
-lemma updates_subset_conditions: 
-  "updates_subset t1 t2 e \<Longrightarrow>
-   input_stored_in_reg t2 t1 e = Some (i, r) \<Longrightarrow>
-   c $ r = None \<Longrightarrow>
-   \<not> subsumes t1 c t2"
-  apply (simp add: updates_subset_def)
-  using can_take_satisfiable[of t1 c]
-  apply simp
-  apply (rule general_not_subsume_orig)
-  using input_stored_in_reg_updates_reg
-  by auto
-
-definition "accepts_and_gets_us_to_both a b s s' = (
-  \<exists>p. accepts_trace (tm a) p \<and>
-      gets_us_to s (tm a) 0 <> p \<and>
-      accepts_trace (tm b) p \<and>
-      gets_us_to s' (tm b) 0 <> p)"
+  assumes prem: "satisfiable_negation t"
+  shows "\<not> subsumes t c (drop_guards t)"
+proof-
+  have ponens: "\<forall>i. (length i = Arity t \<and> (length i = Arity t \<longrightarrow> \<not> apply_guards (Guard t) (join_ir i c))) =
+                (length i = Arity t \<and> \<not> apply_guards (Guard t) (join_ir i c))"
+    by auto
+  show ?thesis
+    apply (rule bad_guards)
+    apply (simp add: can_take_transition_def can_take_def drop_guards_def ponens)
+    using satisfiable_negation_def quick_negation prem
+    by auto
+qed
 
 definition "dirty_always_different_outputs_direct_subsumption = always_different_outputs_direct_subsumption"
 
-lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (if Guard t = [] then accepts_and_gets_us_to_both m1 m2 s s' else dirty_always_different_outputs_direct_subsumption m1 m2 s s' t)"
+lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (
+  if Guard t = [] then
+    accepts_and_gets_us_to_both m1 m2 s s'
+  else
+    dirty_always_different_outputs_direct_subsumption m1 m2 s s' t
+  )"
   apply (simp add: always_different_outputs_direct_subsumption_def)
   apply (simp add: accepts_and_gets_us_to_both_def)
   apply safe
@@ -285,59 +214,6 @@ lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (if Gu
    apply (simp add: dirty_always_different_outputs_direct_subsumption_def)
   using always_different_outputs_direct_subsumption_def apply blast
   by (simp add: always_different_outputs_direct_subsumption_def dirty_always_different_outputs_direct_subsumption_def)
-
-declare accepts_and_gets_us_to_both_def [code del]
-code_printing constant accepts_and_gets_us_to_both \<rightharpoonup> (Scala) "Dirties.acceptsAndGetsUsToBoth"
-
-lemma fMax_Some: "f \<noteq> {||} \<Longrightarrow> (\<exists>y. fMax f = Some y) = (\<exists>y. Some y |\<in>| f)"
-  apply standard
-   apply (metis fMax_in)
-  using fMax_ge not_le by fastforce
-
-lemma arg_cong_ffilter: "\<forall>e |\<in>| f. p e = p' e \<Longrightarrow> ffilter p f = ffilter p' f"
-  by auto
-
-lemma acceptance_empty_regs_args_aux: "Inference.max_reg b = None \<Longrightarrow>
-       (a, bb) |\<in>| possible_steps (tm b) 0 <> ab ba \<Longrightarrow>
-       accepts (tm b) a (apply_updates (Updates bb) (join_ir ba <>) <>) t = accepts (tm b) a <> t"
-  using in_possible_steps[of a bb "tm b" 0 "<>" ab ba]
-        max_reg_none_no_updates[of b]
-       in_tm
-  apply simp
-  apply clarify
-  by force
-
-lemma acceptance_empty_regs_args: "Inference.max_reg b = None \<Longrightarrow>
-       ffilter (\<lambda>(s', T). accepts (tm b) s' (apply_updates (Updates T) (join_ir ba <>) <>) t) (possible_steps (tm b) 0 <> ab ba) =
-       ffilter (\<lambda>(s', T). accepts (tm b) s' <> t) (possible_steps (tm b) 0 <> ab ba)"
-  apply (rule arg_cong_ffilter)
-  apply clarify
-  using in_possible_steps max_reg_none_no_updates
-  by (simp add: acceptance_empty_regs_args_aux)
-
-definition "drop_update_add_guard_direct_subsumption a b s s' t1 t2 = 
-  (case input_stored_in_reg t2 t1 a of
-   None \<Rightarrow> False |
-   Some (i, r) \<Rightarrow>
-     accepts_and_gets_us_to_both a b s s' \<and>
-     initially_undefined_context_check b r s' \<and>
-     updates_subset t1 t2 a
-  )"
-
-lemma drop_update_add_guard_direct_subsumption:
-  "drop_update_add_guard_direct_subsumption a b s s' t1 t2 \<Longrightarrow>
-  \<not>directly_subsumes a b s s' t1 t2"
-  apply (simp add: drop_update_add_guard_direct_subsumption_def)
-  apply (case_tac "input_stored_in_reg t2 t1 a")
-   apply simp
-  apply (simp add: directly_subsumes_def)
-  apply (case_tac aa)
-  apply (rule disjI1)
-  apply (simp add: accepts_and_gets_us_to_both_def)
-  apply clarify
-  apply (rule_tac x=p in exI)
-  apply (simp add: initially_undefined_context_check_def)
-  using updates_subset_conditions by blast
 
 definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes_cases a b s s' t1 t2 = (
@@ -389,12 +265,15 @@ lemma [code]: "directly_subsumes m1 m2 s s' t1 t2 = directly_subsumes_cases m1 m
   using dirty_directly_subsumes_def by auto
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and>
-                                    i < Arity t \<and>
-                                    r \<notin> set (map fst (Updates t)) \<and>
-                                    (length (filter (tests_input_equality i) (Guard t)) \<ge> 1))"
+  "is_generalisation_of t' t i r = (
+    t' = remove_guard_add_update t i r \<and>
+    i < Arity t \<and>
+    r \<notin> set (map fst (Updates t)) \<and>
+    (length (filter (tests_input_equality i) (Guard t)) \<ge> 1)
+  )"
 
-lemma tests_input_equality: "(\<exists>v. gexp.Eq (V (vname.I xb)) (L v) \<in> set G) = (1 \<le> length (filter (tests_input_equality xb) G))"
+lemma tests_input_equality:
+  "(\<exists>v. gexp.Eq (V (vname.I xb)) (L v) \<in> set G) = (1 \<le> length (filter (tests_input_equality xb) G))"
 proof(induct G)
   case Nil
   then show ?case by simp
@@ -419,17 +298,15 @@ next
     using tests_input_equality.elims(2) by auto
 qed
                                                                   
-lemma[code]: "Store_Reuse.is_generalisation_of x xa xb xc = is_generalisation_of x xa xb xc"
+lemma [code]: "Store_Reuse.is_generalisation_of x xa xb xc = is_generalisation_of x xa xb xc"
   apply (simp add: Store_Reuse.is_generalisation_of_def is_generalisation_of_def)
   using tests_input_equality by blast
 
 definition iEFSM2dot :: "iEFSM \<Rightarrow> nat \<Rightarrow> unit" where
   "iEFSM2dot _ _ = ()"
-code_printing constant iEFSM2dot \<rightharpoonup> (Scala) "PrettyPrinter.iEFSM2dot(_, _)"
 
 definition logStates :: "nat \<Rightarrow> nat \<Rightarrow> unit" where
   "logStates _ _ = ()"
-code_printing constant logStates \<rightharpoonup> (Scala) "Log.logStates(_, _)"
 
 (* This is the infer function but with logging *)
 function infer_with_log :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
@@ -454,92 +331,38 @@ declare initially_undefined_context_check_full_def [code del]
 declare generalise_output_context_check_def [code del]
 declare dirty_always_different_outputs_direct_subsumption_def [code del]
 declare possibly_not_value_ctx_def [code del]
+declare random_member_def [code del]
+declare dirty_directly_subsumes_def [code del]
+declare accepts_and_gets_us_to_both_def [code del]
+declare initially_undefined_context_check_def [code del]
 
 code_printing
+  constant accepts_and_gets_us_to_both \<rightharpoonup> (Scala) "Dirties.acceptsAndGetsUsToBoth" |
+  constant iEFSM2dot \<rightharpoonup> (Scala) "PrettyPrinter.iEFSM2dot(_, _)" |
+  constant logStates \<rightharpoonup> (Scala) "Log.logStates(_, _)" |
+  constant "dirty_directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes" |
   constant "GExp.satisfiable" \<rightharpoonup> (Scala) "Dirties.satisfiable" |
   constant "initially_undefined_context_check_full" \<rightharpoonup> (Scala) "Dirties.initiallyUndefinedContextCheck" |
   constant "generalise_output_context_check" \<rightharpoonup> (Scala) "Dirties.generaliseOutputContextCheck" |
   constant "dirty_always_different_outputs_direct_subsumption" \<rightharpoonup> (Scala) "Dirties.alwaysDifferentOutputsDirectSubsumption" |
-  constant "possibly_not_value_ctx" \<rightharpoonup> (Scala) "Dirties.possiblyNotValueCtx"
-
-(* Use the native implementations of list functions *)
-definition "flatmap l f = List.maps f l"
-
-lemma [code]:"List.maps f l = flatmap l f"
-  by (simp add: flatmap_def)
-
-definition "map_code l f = List.map f l"
-lemma [code]:"List.map f l = map_code l f"
-  by (simp add: map_code_def)
-
-declare map_filter_map_filter [code_unfold del]
-
-lemma [code]: "removeAll a l = filter (\<lambda>x. x \<noteq> a) l"
-  by (induct l arbitrary: a) simp_all
-
-definition "filter_code l f = List.filter f l"
-lemma [code]: "List.filter l f = filter_code f l"
-  by (simp add: filter_code_def)
-
-definition all :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" where
-  "all l f = list_all f l"
-
-lemma [code]: "list_all f l = all l f"
-  by (simp add: all_def)
-
-definition ex :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" where
-  "ex l f = list_ex f l"
-
-lemma [code]: "list_ex f l = ex l f"
-  by (simp add: ex_def)
-
-lemma fold_conv_foldl [code]: "fold f xs s = foldl (\<lambda>x s. f s x) s xs"
-  by (simp add: foldl_conv_fold)
-
-declare foldr_conv_foldl [code]
+  constant "possibly_not_value_ctx" \<rightharpoonup> (Scala) "Dirties.possiblyNotValueCtx" |
+  constant "random_member" \<rightharpoonup> (Scala) "Dirties.randomMember"
 
 code_printing
-  constant Cons \<rightharpoonup> (Scala) "_::_"
-  | constant rev \<rightharpoonup> (Scala) "_.reverse"
-  | constant List.member \<rightharpoonup> (Scala) "_ contains _"
-  | constant "List.remdups" \<rightharpoonup> (Scala) "_.distinct"
-  | constant "List.length" \<rightharpoonup> (Scala) "Nat.Nata(_.length)"
-  | constant "zip" \<rightharpoonup> (Scala) "(_ zip _)"
-  | constant "flatmap" \<rightharpoonup> (Scala) "_.par.flatMap((_)).toList"
-  | constant "List.null" \<rightharpoonup> (Scala) "_.isEmpty"
-  | constant "map_code" \<rightharpoonup> (Scala) "_.par.map((_)).toList"
-  | constant "filter_code" \<rightharpoonup> (Scala) "_.par.filter((_)).toList"
-  | constant "all" \<rightharpoonup> (Scala) "_.par.forall((_))"
-  | constant "ex" \<rightharpoonup> (Scala) "_.par.exists((_))"
-  | constant "nth" \<rightharpoonup> (Scala) "_(Code'_Numeral.integer'_of'_nat((_)).toInt)"
-  | constant "foldl" \<rightharpoonup> (Scala) "Dirties.foldl"
-  | constant "show_nat" \<rightharpoonup> (Scala) "Code'_Numeral.integer'_of'_nat((_)).toString()"
+  constant "show_nat" \<rightharpoonup> (Scala) "Code'_Numeral.integer'_of'_nat((_)).toString()"
   | constant "show_int" \<rightharpoonup> (Scala) "Code'_Numeral.integer'_of'_int((_)).toString()"
   | constant "join" \<rightharpoonup> (Scala) "_.mkString((_))"
-  | constant "(1::nat)" \<rightharpoonup> (Scala) "Nat.Nata((1))"
-
-lemma [code]: "insert x (set s) = (if x \<in> set s then set s else set (x#s))"
-  apply (simp)
-  by auto
-
-lemma [code]: "s |\<subset>| s' = (s |\<subseteq>| s' \<and> size s < size s')"
-  apply standard
-   apply (simp only: size_fsubset)
-  by auto
-
-lemma code_list_eq [code]: "HOL.equal xs ys \<longleftrightarrow> length xs = length ys \<and> (\<forall>(x,y) \<in> set (zip xs ys). x = y)"
-  apply (simp add: HOL.equal_class.equal_eq)
-  by (simp add: Ball_set list_eq_iff_zip_eq)
-
-declare enumerate_eq_zip [code]
 
 (* I'd ideally like to fix this at some point *)
 lemma [code]: "infer = infer_with_log 0"
   apply (simp add: fun_eq_iff)
   apply clarify
-  unfolding Let_def
+  unfolding Let_def add_0
   sorry
 
+(*
+  Mapping finfuns to Scala native Maps
+*)
 code_printing
   type_constructor finfun \<rightharpoonup> (Scala) "Map[_, _]"
   | constant "finfun_const" \<rightharpoonup> (Scala) "Map().withDefaultValue((_))"
@@ -547,6 +370,7 @@ code_printing
   | constant "finfun_apply" \<rightharpoonup> (Scala) "_((_))"
 
 code_pred satisfies_trace.
+code_pred accepts.
 
 export_code
   (* Essentials *)

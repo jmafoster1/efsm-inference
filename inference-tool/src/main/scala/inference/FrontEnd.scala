@@ -13,7 +13,6 @@ object FrontEnd {
 
     Log.root.info("Building PTA")
     val pta = Inference.make_pta(Config.log, FSet.bot_fset)
-    TypeConversion.efsmToSALTranslator(pta, "pta")
     PrettyPrinter.EFSM2dot(pta, s"pta_gen")
 
     val inferred = Inference.learn(
@@ -24,7 +23,6 @@ object FrontEnd {
       Config.config.nondeterminismMetric)
 
     TypeConversion.doubleEFSMToSALTranslator(pta, "pta", inferred, "vend1", "compositionTest")
-    Dirties.generaliseOutputContextCheck(Value.Str("coke"), Nat.Nata(1), Nat.Nata(1), Nat.Nata(1), Inference.toiEFSM(pta), Inference.toiEFSM(inferred))
 
     Log.root.info("The inferred machine is " +
       (if (Inference.nondeterministic(Inference.toiEFSM(inferred), Inference.nondeterministic_pairs)) "non" else "") + "deterministic")

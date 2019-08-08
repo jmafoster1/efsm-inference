@@ -182,4 +182,7 @@ lemma size_fsubset: "x2 |\<subset>| x1 \<Longrightarrow> size x2 < size x1"
 definition fremove :: "'a \<Rightarrow> 'a fset \<Rightarrow> 'a fset"
   where [code_abbrev]: "fremove x A = A - {|x|}"
 
+lemma arg_cong_ffilter: "\<forall>e |\<in>| f. p e = p' e \<Longrightarrow> ffilter p f = ffilter p' f"
+  by auto
+
 end

@@ -175,6 +175,21 @@ next
     by (simp add: finfun_upd_apply nth_append)
 qed
 
+lemma input2state_take:
+  "x1 < A \<Longrightarrow>
+   A \<le> length i \<Longrightarrow>
+   x = vname.I x1 \<Longrightarrow>
+   input2state i $ x1 = input2state (take A i) $ x1"
+proof(induct i)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a i)
+  then show ?case
+    by (simp add: input2state_nth)
+qed
+
 lemma input2state_not_None: "(input2state i $ x \<noteq> None) \<Longrightarrow> (x < length i)"
   using input2state_within_bounds by blast
 
@@ -275,6 +290,10 @@ definition join_ir :: "value list \<Rightarrow> registers \<Rightarrow> datastat
 
 lemmas datastate = join_ir_def input2state_def
 
+lemma aval_input2state_within_bounds: "\<exists>n'. aval (V (I a)) (join_ir i r) = Some (Num n') \<Longrightarrow> a \<le> length i"
+  apply (simp add: join_ir_def)
+  using input2state_within_bounds less_imp_le_nat by blast
+
 lemma join_ir_empty[simp]: "join_ir [] <> = (\<lambda>x. None)"
   apply (rule ext)
   apply (simp add: join_ir_def)
@@ -320,6 +339,24 @@ next
     apply (rule_tac x="(K$ None)(x2 $:= Some a)(x2a $:= Some a')" in exI)
     by simp
 qed
+
+lemma exists_join_ir_ext: "\<exists>i r. join_ir i r v = s v"
+  apply (simp add: join_ir_def)
+  apply (case_tac "s v")
+   apply (cases v)
+    apply (rule_tac x="[]" in exI)
+    apply (simp add: input2state_out_of_bounds)
+   apply simp
+   apply (rule_tac x="<>" in exI)
+   apply simp
+  apply simp
+  apply (cases v)
+   apply simp
+   defer
+   apply simp
+   apply (rule_tac x="<>(x2 := a)" in exI)
+   apply simp
+  by (simp add: input2state_exists)
 
 lemma aval_plus_aexp: "aval (a+b) s = aval (Plus a b) s"
   apply(induct a b rule: plus_aexp.induct)
@@ -391,6 +428,57 @@ next
   case (Minus l1 l2)
   then show ?case
     by simp
+qed
+
+lemma no_variables_list_aval:
+  "enumerate_aexp_inputs_list a = [] \<Longrightarrow>
+   enumerate_aexp_regs_list a = [] \<Longrightarrow>
+   aval a s = aval a s'"
+proof(induct a)
+case (L x)
+  then show ?case by simp
+next
+  case (V x)
+  then show ?case
+    apply (cases x)
+    by auto
+next
+  case (Plus a1 a2)
+  then show ?case
+    by simp
+next
+  case (Minus a1 a2)
+  then show ?case
+    by simp
+qed
+
+lemma aval_ir_take: "A \<le> length i \<Longrightarrow>
+      enumerate_aexp_regs_list a = [] \<Longrightarrow>
+      enumerate_aexp_inputs_list a \<noteq> [] \<Longrightarrow>
+      foldr max (enumerate_aexp_inputs_list a) 0 < A \<Longrightarrow>
+      aval a (join_ir (take A i) r) = aval a (join_ir i ra)"
+proof(induct a)
+case (L x)
+  then show ?case
+    by simp
+next
+  case (V x)
+  then show ?case
+    apply (cases x)
+     apply (simp add: join_ir_def input2state_nth)
+    by simp
+next
+  case (Plus a1 a2)
+  then show ?case
+    apply simp
+    apply clarify
+    by (metis (no_types, lifting) List.finite_set Max.set_eq_fold Max_insert fold_simps(1) foldr_conv_fold list.set(2) max_less_iff_conj no_variables_list_aval set_empty)
+next
+  case (Minus a1 a2)
+  then show ?case
+apply simp
+    apply clarify
+    by (metis (no_types, lifting) List.finite_set Max.set_eq_fold Max_insert fold_simps(1) foldr_conv_fold list.set(2) max_less_iff_conj no_variables_list_aval set_empty)
 qed
 
 definition max_input :: "aexp \<Rightarrow> nat option" where
@@ -580,6 +668,84 @@ next
   case (Minus a1 a2)
   then show ?case
     by simp
+qed
+
+lemma max_input_I: "AExp.max_input (V (vname.I i)) = Some i"
+  by (simp add: AExp.max_input_def)
+
+lemma max_input_Plus: "AExp.max_input (Plus a1 a2) = max (AExp.max_input a1) (AExp.max_input a2)"
+  apply (simp add: AExp.max_input_def Let_def)
+  apply safe
+    apply (simp add: max_None_l)
+   apply (simp add: max.commute max_None_l)
+  by (metis List.finite_set Max.union enumerate_aexp_inputs_list max_Some_Some)
+
+lemma max_input_Minus: "AExp.max_input (Minus a1 a2) = max (AExp.max_input a1) (AExp.max_input a2)"
+  apply (simp add: AExp.max_input_def Let_def)
+  apply safe
+    apply (simp add: max_None_l)
+   apply (simp add: max.commute max_None_l)
+  by (metis List.finite_set Max.union enumerate_aexp_inputs_list max_Some_Some)
+
+lemma max_reg_list_Minus: "AExp.max_reg (Minus a1 a2) = max (AExp.max_reg a1) (AExp.max_reg a2)"
+  apply (simp add: AExp.max_reg_def Let_def)
+  apply safe
+    apply (simp add: max_None_l)
+   apply (simp add: max.commute max_None_l)
+  by (metis List.finite_set Max.union enumerate_aexp_regs_list max_Some_Some)
+
+lemma max_reg_list_Plus: "AExp.max_reg (Plus a1 a2) = max (AExp.max_reg a1) (AExp.max_reg a2)"
+  apply (simp add: AExp.max_reg_def Let_def)
+  apply safe
+    apply (simp add: max_None_l)
+   apply (simp add: max.commute max_None_l)
+  by (metis List.finite_set Max.union enumerate_aexp_regs_list max_Some_Some)
+
+lemma aval_take: "AExp.max_input x < Some a \<Longrightarrow> aval x (join_ir i r) = aval x (join_ir (take a i) r)"
+proof(induct x)
+  case (L x)
+  then show ?case
+    by simp
+next
+  case (V x)
+  then show ?case
+    apply (cases x)
+    apply (simp add: join_ir_def max_input_I)
+    apply (metis leI nat_less_le take_all input2state_take)
+    using enumerate_aexp_inputs.simps(3) enumerate_aexp_inputs_empty_input_unconstrained input_unconstrained_aval_input_swap
+    by blast
+next
+  case (Plus x1 x2)
+  then show ?case
+    by (simp add: max_input_Plus)
+next
+  case (Minus x1 x2)
+  then show ?case
+    by (simp add: max_input_Minus)
+qed
+
+lemma aval_no_reg_swap_regs:
+  "AExp.max_input x < Some a \<Longrightarrow>
+   AExp.max_reg x = None \<Longrightarrow>
+   aval x (join_ir i ra) = aval x (join_ir (take a i) r)"
+proof(induct x)
+case (L x)
+  then show ?case
+    by simp
+next
+  case (V x)
+  then show ?case
+    apply (cases x)
+     apply (metis aval_take enumerate_aexp_regs.simps(3) enumerate_aexp_regs_empty_reg_unconstrained input_unconstrained_aval_register_swap)
+    by (simp add: AExp.max_reg_def)
+next
+  case (Plus x1 x2)
+  then show ?case
+    by (simp add: max_input_Plus max_is_None max_reg_list_Plus)
+next
+  case (Minus x1 x2)
+  then show ?case
+    by (simp add: max_input_Minus max_is_None max_reg_list_Minus)
 qed
 
 end

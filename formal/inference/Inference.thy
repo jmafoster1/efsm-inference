@@ -138,6 +138,8 @@ fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers 
 type_synonym execution = "(label \<times> value list \<times> value list) list"
 type_synonym log = "execution list"
 
+definition "exec2trace t = map (\<lambda>(label, inputs, _). (label, inputs)) t"
+
 primrec make_pta :: "log \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
   "make_pta [] e = e" |
   "make_pta (h#t) e = make_pta t (make_branch e 0 <> h)"
@@ -210,16 +212,15 @@ lemma dest_code[code]: "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda
   apply (simp add: dest_def)
   by (metis fst_eqD surj_pair)
 
-(* TODO: Make this so the nondeterminism is kind *)
-inductive satisfies_trace :: "execution \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> bool" where
-  base: "satisfies_trace [] _ _ _" |
-  step: "step e s d l i = Some (_, s', p', d') \<Longrightarrow>
-         p' = (map Some p) \<Longrightarrow>
-         satisfies_trace ex e s' d' \<Longrightarrow>
-         satisfies_trace ((l, i, p)#ex) e s d"
+inductive satisfies_trace :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
+  base: "satisfies_trace e s d []" |                                         
+  step: "\<exists>(s', T) |\<in>| possible_steps e s d l i.
+         apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
+         satisfies_trace e s' (apply_updates (Updates T) (join_ir i d) d) t \<Longrightarrow>
+         satisfies_trace e s d ((l, i, p)#t)"
 
 definition satisfies :: "execution set \<Rightarrow> transition_matrix \<Rightarrow> bool" where
-  "satisfies T e = (\<forall>t \<in> T. satisfies_trace t e 0 <>)"
+  "satisfies T e = (\<forall>t \<in> T. satisfies_trace e 0 <> t)"
 
 definition directly_subsumes :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes e1 e2 s s' t1 t2 \<equiv> (\<forall>p. accepts_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
@@ -241,7 +242,8 @@ lemma gets_us_to_and_not_subsumes:
        accepts_trace (tm e2) p \<and>
        gets_us_to s' (tm e2) 0 (K$ None) p \<and>
        (anterior_context (tm e2) p) = Some a \<and>
-       \<not> subsumes t1 a t2 \<Longrightarrow> \<not> directly_subsumes e1 e2 s s' t1 t2"
+       \<not> subsumes t1 a t2 \<Longrightarrow>
+   \<not> directly_subsumes e1 e2 s s' t1 t2"
   unfolding directly_subsumes_def by auto
 
 lemma cant_directly_subsume: "\<forall>c. \<not> subsumes t c t' \<Longrightarrow> \<not> directly_subsumes m m' s s' t t'"
@@ -451,5 +453,22 @@ lemma no_choice_no_subsumption:
   apply clarify
   apply (rule_tac x=i in exI)
   using choice_def by blast
+
+definition simple_mutex :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "simple_mutex t t' = (
+     max_reg_list (Guard t) = None \<and>
+     max_input_list (Guard t) < Some (Arity t) \<and>
+     satisfiable_list ((Guard t) @ ensure_not_null (Arity t)) \<and>
+     Label t = Label t' \<and>
+     Arity t = Arity t' \<and>
+     \<not> choice t' t)"
+
+lemma simple_mutex_direct_subsumption:
+  "simple_mutex t t' \<Longrightarrow>
+   \<not> directly_subsumes e e' s s' t' t"
+  apply (rule cant_directly_subsume)
+  apply (rule allI)
+  apply (simp add: simple_mutex_def)
+  by (metis can_take_satisfiable no_choice_no_subsumption)
 
 end

@@ -66,7 +66,7 @@ qed
 lemma apply_outputs_register:
   "c $ p = Some v \<Longrightarrow>
    r < length (apply_outputs P (join_ir i c)) \<Longrightarrow>
-   apply_outputs (P[r := V (R p)]) (join_ir i c) ! r = Some v"
+   apply_outputs (list_update P r (V (R p))) (join_ir i c) ! r = Some v"
 proof(induct P)
   case Nil
   then show ?case
@@ -84,7 +84,7 @@ qed
 lemma apply_outputs_unupdated:
   "ia \<noteq> r \<Longrightarrow> 
    ia < length (apply_outputs P j) \<Longrightarrow>
-   apply_outputs P j ! ia = apply_outputs (P[r := v])j ! ia"
+   apply_outputs P j ! ia = apply_outputs (list_update P r v)j ! ia"
 proof(induct P)
 case Nil
   then show ?case
@@ -97,68 +97,6 @@ next
     apply (cases r)
      apply simp
     by (simp add: map_update nth_Cons')
-qed
-
-definition apply_guards :: "gexp list \<Rightarrow> datastate \<Rightarrow> bool" where
-  "apply_guards G s = (\<forall>g \<in> set (map (\<lambda>g. gval g s) G). g = true)"
-
-lemma apply_guards_rearrange: "x \<in> set G \<Longrightarrow> apply_guards G s = apply_guards (x#G) s"
-  apply (simp add: apply_guards_def)
-  by auto
-
-lemma apply_guards_double_cons: "apply_guards (y # x # G) s = (gval (gAnd y x) s = true \<and> apply_guards G s)"
-  by (simp add: apply_guards_def gval_gAnd_True)
-
-lemmas apply_guards = datastate apply_guards_def gval.simps ValueEq_def ValueGt_def
-
-lemma apply_guards_singleton: "(apply_guards [g] s) = (gval g s = true)"
-  by (simp add: apply_guards_def)
-
-lemma apply_guards_empty [simp]: "apply_guards [] s"
-  by (simp add: apply_guards_def)
-
-lemma apply_guards_cons: "apply_guards (a # G) c = (gval a c = true \<and> apply_guards G c)"
-  by (simp add: apply_guards_def)
-
-lemma apply_guards_append: "apply_guards (a@a') s = (apply_guards a s \<and> apply_guards a' s)"
-  apply (simp add: apply_guards_def)
-  by auto
-
-lemma apply_guards_foldr: "apply_guards G s = (gval (foldr gAnd G (Bc True)) s = true)"
-proof(induct G)
-  case Nil
-  then show ?case
-    by (simp add: apply_guards_def gval.simps)
-next
-  case (Cons a G)
-  then show ?case
-    apply (simp only: foldr.simps comp_def)
-    by (simp add: apply_guards_cons gval_gAnd maybe_and_true)
-qed
-
-lemma apply_guards_rev: "apply_guards G s = apply_guards (rev G) s"
-  by (simp add: apply_guards_def)
-
-lemma apply_guards_fold: "apply_guards G s = (gval (fold gAnd G (Bc True)) s = true)"
-  using apply_guards_rev
-  by (simp add: foldr_conv_fold apply_guards_foldr)
-
-lemma fold_apply_guards: "(gval (fold gAnd G (Bc True)) s = true) = apply_guards G s"
-  by (simp add: apply_guards_fold)
-
-lemma foldr_apply_guards: "(gval (foldr gAnd G (Bc True)) s = true) = apply_guards G s"
-  by (simp add: apply_guards_foldr)
-
-lemma apply_guards_subset: "set g' \<subseteq> set g \<Longrightarrow> apply_guards g c \<longrightarrow> apply_guards g' c"
-proof(induct g)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a g)
-  then show ?case
-    apply (simp add: apply_guards_def)
-    by auto
 qed
 
 definition choice :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
@@ -259,19 +197,21 @@ lemmas ffilter = ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def
 lemmas possible_steps_singleton = ffilter possible_steps_alt
 lemmas possible_steps_empty = ffilter possible_steps_def
 
+definition random_member :: "'a fset \<Rightarrow> 'a option" where
+  "random_member f = (if f = {||} then None else Some (Eps (\<lambda>x. x |\<in>| f)))"
+
 definition step :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> outputs \<times> registers) option" where
-"step e s r l i = (let possibilities = possible_steps e s r l i in
-                   if possibilities = {||} then None
-                   else
-                     let (s', t) = Eps (\<lambda>x. x |\<in>| possibilities) in
+"step e s r l i = (case random_member (possible_steps e s r l i) of
+                    None \<Rightarrow> None |
+                     Some (s', t) \<Rightarrow>
                      Some (t, s', (apply_outputs (Outputs t) (join_ir i r)), (apply_updates (Updates t) (join_ir i r) r))
                   )"
 
 lemma no_possible_steps_1: "possible_steps e s r l i = {||} \<Longrightarrow> step e s r l i = None"
-  by (simp add: step_def)
+  by (simp add: step_def random_member_def)
 
 lemma no_possible_steps_2: "step e s r l i = None \<Longrightarrow> possible_steps e s r l i = {||}"
-  apply (simp add: step_def Let_def)
+  apply (simp add: step_def random_member_def)
   apply (case_tac "possible_steps e s r l i = {||}")
    apply simp
   apply (case_tac "SOME x. x |\<in>| possible_steps e s r l i")
@@ -287,10 +227,10 @@ lemma one_possible_step: "possible_steps e s r l i = {|(s', t)|} \<Longrightarro
        apply_outputs (Outputs t) (join_ir i r) = p \<Longrightarrow>
        apply_updates (Updates t) (join_ir i r) r = u \<Longrightarrow>
        step e s r l i = Some (t, s', p, u)"
-  by (simp add: step_def)
+  by (simp add: step_def random_member_def)
 
 lemma step_empty[simp]:"step {||} s r l i = None"
-  by (simp add: step_def possible_steps_def ffilter_empty)
+  by (simp add: step_def possible_steps_def ffilter_empty random_member_def)
 
 primrec observe_all :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (transition \<times> nat \<times> outputs \<times> registers) list" where
   "observe_all _ _ _ [] = []" |
@@ -325,7 +265,7 @@ lemma observe_trace_possible_step: "possible_steps e s r (fst h) (snd h) = {|(s'
 
 lemma observe_trace_no_possible_step: "possible_steps e s r (fst h) (snd h) = {||} \<Longrightarrow>
        observe_trace e s r (h#es) = []"
-  by (simp add: observe_trace_def step_def)
+  by (simp add: observe_trace_def step_def random_member_def)
 
 lemma observe_empty: "t = [] \<Longrightarrow> observe_trace e 0 <> t = []"
   by (simp add: observe_trace_def)
@@ -382,21 +322,25 @@ qed
 
 inductive accepts :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> bool" where
   base: "accepts e s d []" |                                         
-  step: "\<exists>(s', T) |\<in>| possible_steps e s d (fst h) (snd h). accepts e s' (apply_updates (Updates T) (join_ir (snd h) d) d) t \<Longrightarrow>
-         accepts e s d (h#t)"
+  step: "\<exists>(s', T) |\<in>| possible_steps e s d l i.
+         accepts e s' (apply_updates (Updates T) (join_ir i d) d) t \<Longrightarrow>
+         accepts e s d ((l, i)#t)"
 
 lemma accepts_must_be_possible_step: "accepts e s d (h#t) \<Longrightarrow> possible_steps e s d (fst h) (snd h) \<noteq> {||}"
-  by (metis accepts.simps fBex_fempty list.inject list.simps(3))
+  apply (rule accepts.cases)
+  by auto
 
 lemma accepts_must_be_step: "accepts e s d (h#t) \<Longrightarrow> \<exists>t s' p d'. step e s d (fst h) (snd h) = Some (t, s', p, d')"
   using accepts_must_be_possible_step[of e s d h t]
-  apply (simp add: step_def)
+  apply (simp add: step_def random_member_def)
   apply (case_tac "SOME x. x |\<in>| possible_steps e s d (fst h) (snd h)")
   by simp
 
 lemma accepts_cons: "accepts e s d (h#t) = (\<exists>(s', T) |\<in>| possible_steps e s d (fst h) (snd h). accepts e s' (apply_updates (Updates T) (join_ir (snd h) d) d) t)"
+  apply (cases h)
+  apply simp
   apply standard
-  apply (metis (mono_tags) accepts.simps list.distinct(1) list.inject)
+   apply (metis accepts.simps fst_conv list.distinct(1) list.inject snd_conv)
   by (simp add: accepts.step)
 
 lemma accepts_cons_step: "accepts e s r (a # t) \<Longrightarrow> step e s r (fst a) (snd a) \<noteq>  None"
@@ -404,7 +348,7 @@ lemma accepts_cons_step: "accepts e s r (a # t) \<Longrightarrow> step e s r (fs
 
 lemma step_some_updated: "step e s r l i = Some (transition, s', outputs, updated) \<Longrightarrow>
        updated = (apply_updates (Updates transition) (join_ir i r) r)"
-  apply (simp add: step_def Let_def)
+  apply (simp add: step_def Let_def random_member_def)
   apply (case_tac "possible_steps e s r l i = {||}")
    apply simp
   apply simp
@@ -414,7 +358,7 @@ lemma step_some_updated: "step e s r l i = Some (transition, s', outputs, update
 lemma step_in_possible_steps:
   "step e s r l i = Some (transition, s', outputs, updated) \<Longrightarrow>
    (s', transition) |\<in>| possible_steps e s r l i"
-  apply (simp add: step_def Let_def)
+  apply (simp add: step_def Let_def random_member_def)
   apply (case_tac "possible_steps e s r l i = {||}")
    apply simp
   apply simp
@@ -440,7 +384,7 @@ lemma no_step_none: "step e s r aa ba = None \<Longrightarrow> \<not>accepts e s
     apply simp
    apply simp
   apply clarify
-  apply (simp add: step_def Let_def)
+  apply (simp add: step_def random_member_def)
   apply (case_tac "possible_steps e s r aa ba")
    apply simp
   apply (case_tac "SOME xa. xa = x \<or> xa |\<in>| S'")
@@ -450,16 +394,15 @@ lemma step_none_inaccepts: "((step e s d (fst h) (snd h)) = None) \<Longrightarr
   using no_step_none surjective_pairing by fastforce
 
 lemma accepts_head: "accepts e s d (h#t) \<Longrightarrow> accepts e s d [h]"
-  apply (rule accepts.cases)
-    apply simp
-   apply simp
+  apply (case_tac h)
+  apply simp
   apply (rule accepts.step)
   apply (simp add: accepts.base)
-  by auto
+  using accepts_cons by auto
 
 lemma accepts_single_event: "step e s d a b \<noteq> None \<Longrightarrow> accepts e s d [(a, b)]"
   apply (rule accepts.step)
-  apply (simp add: step_def Let_def)
+  apply (simp add: step_def Let_def random_member_def)
   apply (case_tac "possible_steps e s d a b = {||}")
    apply simp
   apply (case_tac "SOME x. x |\<in>| possible_steps e s d a b")
@@ -490,10 +433,11 @@ lemma trace_reject_2: "(\<not> accepts e s d ((a, b)#t)) = (possible_steps e s d
 lemma step_none_inaccepts_append: "step e s d (fst a) (snd a) = None \<Longrightarrow> \<not>accepts e s d (a # t) \<and> \<not>accepts e s d (a # t @ t')"
   by (simp add: step_none_inaccepts)
 
-lemma aux1: "\<forall> s d. accepts e s d (t@t') \<longrightarrow> accepts e s d t"
+lemma prefix_closure_all_states_data: "\<forall> s d. accepts e s d (t@t') \<longrightarrow> accepts e s d t"
 proof (induction t)
   case Nil
-  then show ?case by (simp add: base)
+  then show ?case
+    by (simp add: accepts.base)
 next
   case (Cons a t)
   then show ?case
@@ -507,7 +451,8 @@ qed
 lemma prefix_closure: "accepts e s d (t@t') \<Longrightarrow> accepts e s d t"
 proof (induction "t")
   case Nil
-  then show ?case by (simp add: base)
+  then show ?case
+    by (simp add: accepts.base)
 next
   case (Cons x xs)
   then show ?case
@@ -515,7 +460,7 @@ next
     apply (case_tac "step e s d (fst x) (snd x) = None")
      apply (simp add: step_none_inaccepts)
     apply safe
-    using aux1 by force
+    using prefix_closure_all_states_data by force
 qed
 
 lemma inaccepts_prefix: "\<not>accepts e s d t \<Longrightarrow> \<not>accepts e s d (t@t')"

@@ -54,7 +54,12 @@ lemma fold_enumerate_aexp_inputs_list: "set (fold (@) (map enumerate_aexp_inputs
   by (simp add: enumerate_aexp_inputs_list fold_append_concat_rev inf_sup_aci(5) split_def)
 
 lemma fold_enumerate_gexp_inputs_list: "set (fold (@) (map enumerate_gexp_inputs_list G) []) = (\<Union>x\<in>set G. enumerate_gexp_inputs x)"
-    by (simp add: enumerate_gexp_inputs_list fold_append_concat_rev inf_sup_aci(5) split_def)
+  by (simp add: enumerate_gexp_inputs_list fold_append_concat_rev inf_sup_aci(5) split_def)
+
+lemma enumerate_gexp_inputs_empty: "(\<forall>x\<in>set G. enumerate_gexp_inputs x = {}) = (fold (@) (map enumerate_gexp_inputs_list G) [] = [])"
+  apply (standard)
+   apply (metis Sup_bot_conv(2) fold_enumerate_gexp_inputs_list imageE set_empty)
+  using fold_enumerate_gexp_inputs_list by force
 
 lemma set_enumerate_inputs_list: "enumerate_inputs t = set (enumerate_inputs_list t)"
   apply (simp add: enumerate_inputs_list_def enumerate_inputs_def)
@@ -94,6 +99,11 @@ definition enumerate_registers_list :: "transition \<Rightarrow> nat list" where
                                 (fold (@) (map enumerate_aexp_regs_list (Outputs t)) []) @
                                 (fold (@) (map (\<lambda>(_, u). enumerate_aexp_regs_list u) (Updates t)) []) @
                                 (fold (@) (map (\<lambda>(r, _). enumerate_aexp_regs_list (V (R r))) (Updates t)) [])"
+
+lemma enumerate_registers_list_empty:
+  "enumerate_registers_list t = [] \<Longrightarrow>
+   fold (@) (map enumerate_gexp_regs_list (Guard t)) [] = []"
+  by (simp add: enumerate_registers_list_def)
 
 lemma fold_enumerate_aexp_regs_list_pairs: "set (fold (@) (map (\<lambda>(uu, y). enumerate_aexp_regs_list y) U) []) = (\<Union>(uu, y)\<in>set U. enumerate_aexp_regs y)"
   by (simp add: enumerate_aexp_regs_list fold_append_concat_rev inf_sup_aci(5) split_def)
