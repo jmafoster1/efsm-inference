@@ -218,6 +218,9 @@ lemma accepts_step_equiv: "accepts e s d ((l, i)#t) = (\<exists>(s', T) |\<in>| 
    apply (metis accepts.simps list.simps(1) list.simps(3) prod.sel(1) prod.sel(2))
   by (simp add: accepts.step)
 
+lemma accepts_must_be_possible_step: "accepts e s r (h # t) \<Longrightarrow> \<exists>aa ba. (aa, ba) |\<in>| possible_steps e s r (fst h) (snd h)"
+  using accepts_step_equiv by fastforce
+
 definition step :: "trace \<Rightarrow> transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> outputs \<times> registers) option" where
   "step tr e s r l i = (let 
     poss_steps = (possible_steps e s r l i);
@@ -261,6 +264,10 @@ definition state :: "(transition \<times> nat \<times> outputs \<times> datastat
 
 definition observe_trace :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> observation" where
   "observe_trace e s r t \<equiv> map (\<lambda>(t,x,y,z). y) (observe_all e s r t)"
+
+lemma observe_all_trace: "observe_all e s r t = observe_all e' s' r' t' \<Longrightarrow>
+       observe_trace e s r t = observe_trace e' s' r' t'"
+  by (simp add: observe_trace_def)
 
 lemma observe_trace_empty [simp]: "observe_trace e s r [] = []"
   by (simp add: observe_trace_def)
@@ -344,7 +351,7 @@ next
   qed
 qed
 
-lemma accepts_must_be_possible_step: "accepts e s d (h#t) \<Longrightarrow> possible_steps e s d (fst h) (snd h) \<noteq> {||}"
+lemma accepts_possible_steps_not_empty: "accepts e s d (h#t) \<Longrightarrow> possible_steps e s d (fst h) (snd h) \<noteq> {||}"
   apply (rule accepts.cases)
   by auto
 
@@ -454,9 +461,15 @@ lemma single_event_reject: "\<not> accepts e s d [(a, b)] = (step [] e s d a b =
 
 lemma trace_reject: "(possible_steps e s d a b = {||} \<or> (\<forall>(s', T) |\<in>| possible_steps e s d a b. \<not>accepts e s' (apply_updates (Updates T) (join_ir b d) d) t)) = (\<not> accepts e s d ((a, b)#t))"
   apply safe
-  using accepts_must_be_possible_step apply auto[1]
+  using accepts_possible_steps_not_empty apply auto[1]
   using accepts_cons apply auto[1]
   using accepts.step by blast
+
+lemma trace_reject_no_possible_steps: "possible_steps e s d a b = {||} \<Longrightarrow> (\<not> accepts e s d ((a, b)#t))"
+  using trace_reject by blast
+
+lemma trace_reject_later: "(\<forall>(s', T) |\<in>| possible_steps e s d a b. \<not>accepts e s' (apply_updates (Updates T) (join_ir b d) d) t) \<Longrightarrow> (\<not> accepts e s d ((a, b)#t))"
+  using accepts_cons by auto
 
 lemma trace_reject_2: "(\<not> accepts e s d ((a, b)#t)) = (possible_steps e s d a b = {||} \<or> (\<forall>(s', T) |\<in>| possible_steps e s d a b. \<not>accepts e s' (apply_updates (Updates T) (join_ir b d) d) t))"
   using trace_reject 
@@ -529,5 +542,39 @@ primrec accepting_sequence :: "transition_matrix \<Rightarrow> cfstate \<Rightar
       r' = (apply_updates (Updates T) (join_ir (snd a) r) r) in
       accepting_sequence e s' r' t ((T, s', (apply_outputs (Outputs T) (join_ir (snd a) r)), r')#obs)
   )"
+
+lemma rejects_no_obs_quantified: "\<forall>s r. \<not> accepts e s r t \<longrightarrow> observe_all e s r t = []"
+proof(induct t)
+  case Nil
+  then show ?case
+    using accepts.base by auto
+next
+  case (Cons a as)
+  then show ?case
+    apply (cases a)
+    apply (simp add: observe_trace_def)
+    apply clarify
+    apply (case_tac "step as e s r aa b")
+     apply simp
+    apply simp
+    apply (case_tac aaa)
+    apply (simp add: step_def trace_reject_2)
+    apply (case_tac "(ffilter (\<lambda>(s', t). accepts e s' (apply_updates (Updates t) (join_ir b r) r) as) (possible_steps e s r aa b)) = {||}")
+     apply (simp add: random_member_def)
+    apply (simp add: random_member_def)
+    apply (case_tac "SOME x.
+                x |\<in>| possible_steps e s r aa b \<and>
+                (case x of (s', t) \<Rightarrow> accepts e s' (apply_updates (Updates t) (join_ir b r) r) as)")
+    apply simp
+    apply clarify
+    apply simp
+    by fastforce
+qed
+
+lemma rejects_no_obs: "\<not> accepts e s r t \<Longrightarrow> observe_all e s r t = []"
+  using rejects_no_obs_quantified by blast
+
+lemma observe_trace_empty_iff: "(observe_trace e s r t = []) = (observe_all e s r t = [])"
+  by (simp add: observe_trace_def)
 
 end

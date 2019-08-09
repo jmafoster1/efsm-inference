@@ -137,56 +137,64 @@ lemma possible_steps_2_vend: "\<exists>n. r $ 2 = Some (Num n) \<and> n \<ge> 10
   apply safe
   by (simp_all add: transitions apply_guards_def ValueGt_def join_ir_def)
 
+lemma accepts_from_2: "accepts drinks 1 (<>(2 := Num 100, 1 := d)) [(STR ''vend'', [])]"
+  apply (rule accepts.step)
+  by (simp add: possible_steps_2_vend coin_def join_ir_def input2state_def value_plus_def accepts.base)
+
+lemma regsimp: "<>(2 := n, 1 := d, 2 := n', 1 := d) = <>(2 := n', 1 := d)"
+  by (metis finfun_update_twice finfun_update_twist)
+
+lemma accepts_from_1a: "accepts drinks 1 (<>(2 := Num 50, 1 := d)) [(STR ''coin'', [Num 50]), (STR ''vend'', [])]"
+  apply (rule accepts.step)
+  apply (simp add: possible_steps_1_coin coin_def join_ir_def input2state_def value_plus_def regsimp)
+  by (simp add: accepts_from_2)
+
+lemma accepts_from_1: "accepts drinks 1 (<>(2 := Num 0, 1 := d))
+     [(STR ''coin'', [Num 50]), (STR ''coin'', [Num 50]), (STR ''vend'', [])]"
+  apply (rule accepts.step)
+  apply (simp add: possible_steps_1_coin coin_def join_ir_def input2state_def value_plus_def regsimp)
+  by (simp add: accepts_from_1a)
+
 lemma purchase_coke: "observe_trace drinks 0 <> [(STR ''select'', [Str ''coke'']), (STR ''coin'', [Num 50]), (STR ''coin'', [Num 50]), (STR ''vend'', [])] =
                        [[], [Some (Num 50)], [Some (Num 100)], [Some (Str ''coke'')]]"
   apply (rule observe_trace_possible_step)
      apply (simp add: possible_steps_0)
+     apply (simp add: select_def join_ir_def input2state_def accepts_from_1)
     apply (simp add: select_def)
-   apply simp
+   apply (simp add: select_def join_ir_def input2state_def)
   apply (rule observe_trace_possible_step)
-     apply (simp add: possible_steps_1_coin)
-    apply (simp add: coin_def select_def apply_outputs value_plus_def)
-   apply simp
+      apply (simp add: possible_steps_1_coin)
+     apply (simp add: coin_def value_plus_def join_ir_def input2state_def regsimp accepts_from_1a)
+    apply (simp add: coin_def value_plus_def join_ir_def input2state_def regsimp apply_outputs_def)
+   apply (simp add: coin_def value_plus_def join_ir_def input2state_def regsimp)
   apply (rule observe_trace_possible_step)
-     apply (simp add: possible_steps_1_coin)
-    apply (simp add: coin_def select_def apply_outputs value_plus_def)
-   apply simp
+      apply (simp add: possible_steps_1_coin)
+     apply (simp add: coin_def value_plus_def join_ir_def input2state_def regsimp accepts_from_2)
+    apply (simp add: coin_def value_plus_def join_ir_def input2state_def regsimp apply_outputs_def)
+   apply (simp add: coin_def value_plus_def join_ir_def input2state_def regsimp)
   apply (rule observe_trace_possible_step)
-     apply simp
-     apply (rule possible_steps_2_vend)
-     apply (simp add: coin_def select_def join_ir_def input2state_def value_plus_def)
-    apply (simp add: apply_outputs  coin_def vend_def select_def)
+      apply (simp add: possible_steps_2_vend)
+     apply (simp add: accepts.base)
+    apply (simp add: vend_def join_ir_def apply_outputs_def)
    apply simp
   by simp
 
-lemma inaccepts_impossible: "l \<noteq> STR ''coin'' \<Longrightarrow> l \<noteq> STR ''vend'' \<Longrightarrow> possible_steps drinks 1 d l i = {||}"
-  apply (simp add: possible_steps_def drinks_def transitions)
-  by force
-
-lemma inaccepts_input: "l \<noteq> STR ''coin'' \<Longrightarrow> l \<noteq> STR ''vend'' \<Longrightarrow> accepts drinks 1 d' [(l, i)] \<Longrightarrow> False"
-  apply (cases rule: accepts.cases)
-    apply (simp)
-   apply simp
-  apply clarify
-  apply (simp add: step_def)
-  by (simp add: inaccepts_impossible fis_singleton_def is_singleton_def)
+lemma inaccepts_input: "l \<noteq> STR ''coin'' \<Longrightarrow> l \<noteq> STR ''vend'' \<Longrightarrow> \<not> accepts drinks 1 d' [(l, i)]"
+  apply (rule trace_reject_no_possible_steps)
+  apply (simp add: possible_steps_empty drinks_def)
+  by (simp add: label_coin label_vend label_vend_fail)
 
 lemma inaccepts_accepts_prefix: "l \<noteq> STR ''coin'' \<Longrightarrow> l \<noteq> STR ''vend'' \<Longrightarrow> \<not> (accepts_trace drinks [(STR ''select'', [Str ''coke'']), (l, i)])"
-  apply clarify
-  apply (cases rule: accepts.cases)
-    apply (simp)
-  apply (simp)
-  apply clarify
-  apply (simp add: step_def possible_steps_0 inaccepts_input fis_singleton_def)
-  using inaccepts_input by force
+  apply (rule trace_reject_later)
+  apply (simp add: possible_steps_0 select_def join_ir_def input2state_def)
+  using inaccepts_input by blast
 
-lemma inaccepts_termination: "observe_trace drinks 0 <> [(STR ''select'', [Str ''coke'']), (STR ''inaccepts'', [Num 50]), (STR ''coin'', [Num 50])] = [[]]"
-  apply (rule observe_trace_possible_step)
-     apply (simp add: possible_steps_0)
-    apply (simp add: select_def)
-   apply simp
-  apply (rule observe_trace_no_possible_step)
-  by (simp add: inaccepts_impossible)
+lemma inaccepts_termination: "observe_trace drinks 0 <> [(STR ''select'', [Str ''coke'']), (STR ''inaccepts'', [Num 50]), (STR ''coin'', [Num 50])] = []"
+  apply (simp only: observe_trace_empty_iff)
+  apply (rule rejects_no_obs)
+  apply (rule trace_reject_later)
+  apply (simp add: possible_steps_0 select_def join_ir_def input2state_def)
+  using accepts_head inaccepts_input by fastforce
 
 (* Part of Example 2 in Foster et. al. *)
 lemma r2_0_vend: "can_take_transition vend i r \<Longrightarrow> \<exists>n. r $ 2 = Some (Num n) \<and> n \<ge> 100" (* You can't take vend immediately after taking select *)
@@ -207,7 +215,7 @@ lemma drinks_vend_r2_String: "r $ 2 = Some (value.Str x2) \<Longrightarrow> poss
   apply safe
   by (simp_all add: transitions apply_guards_def ValueGt_def join_ir_def)
 
-lemma drinks_vend_r2_inaccepts: "\<nexists>n. r $ 2 = Some (Num n) \<Longrightarrow> step drinks 1 r (STR ''vend'') [] = None"
+lemma drinks_vend_r2_inaccepts: "\<nexists>n. r $ 2 = Some (Num n) \<Longrightarrow> step t drinks 1 r (STR ''vend'') [] = None"
   apply (rule no_possible_steps_1)
   apply (simp add: possible_steps_empty drinks_def)
   apply safe
@@ -242,10 +250,6 @@ proof
     by simp
 qed
 
-lemma step_drinks_end: "step drinks 2 da (fst h) (snd h) = None"
-  apply (simp add: step_def)
-  by (simp add: drinks_end)
-
 lemma drinks_inaccepts_future: "t \<noteq> [] \<Longrightarrow> \<not>accepts drinks 2 d t"
   apply safe
   apply (rule accepts.cases)
@@ -262,9 +266,12 @@ lemma drinks_1_inaccepts_trace: "\<not> (aa = STR ''vend'' \<and> b = []) \<Long
   unfolding step_def
   using drinks_1_inaccepts by auto
 
-lemma inaccepts_state_step: "s > 1 \<Longrightarrow> step drinks s r l i = None"
+lemma inaccepts_state_step: "s > 1 \<Longrightarrow> step t drinks s r l i = None"
   apply (rule no_possible_steps_1)
   by (simp add: possible_steps_empty drinks_def)
+
+lemma step_drinks_end: "step t drinks 2 da (fst h) (snd h) = None"
+  by (simp add: drinks_end no_possible_steps_1)
 
 lemma invalid_other_states: "s > 1 \<Longrightarrow> \<not>accepts drinks s r ((aa, b) # t)"
   apply clarify

@@ -193,4 +193,12 @@ lemma ffilter_true: "ffilter (\<lambda>x. True) f = f"
   apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse)
   by auto
 
+lemma ffilter_true_pair: "ffilter (\<lambda>(x, y). True) f = f"
+  apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse)
+  by auto
+
+lemma ffilter_out_all: "\<forall>e |\<in>| f. \<not>P e \<Longrightarrow> ffilter P f = {||}"
+  apply (simp add: ffilter_def fBall_def fset_both_sides Abs_fset_inverse)
+  by auto
+
 end
