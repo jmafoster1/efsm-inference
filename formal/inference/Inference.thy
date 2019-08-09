@@ -122,10 +122,16 @@ primrec make_outputs :: "value list \<Rightarrow> output_function list" where
 fun maxS :: "transition_matrix \<Rightarrow> nat" where
   "maxS t = (if t = {||} then 0 else fMax ((fimage (\<lambda>((origin, dest), t). origin) t) |\<union>| (fimage (\<lambda>((origin, dest), t). dest) t)))"
 
-fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> (label \<times> value list \<times> value list) list \<Rightarrow> transition_matrix" where
+(* An execution represents a run of the software and has the form [(label, inputs, outputs)]*)
+type_synonym execution = "(label \<times> value list \<times> value list) list"
+type_synonym log = "execution list"
+
+definition "exec2trace t = map (\<lambda>(label, inputs, _). (label, inputs)) t"
+
+fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> transition_matrix" where
   "make_branch e _ _ [] = e" |
   "make_branch e s r ((label, inputs, outputs)#t) =
-    (case (step e s r label inputs) of
+    (case (step (exec2trace t) e s r label inputs) of
       Some (transition, s', outputs', updated) \<Rightarrow> 
         if outputs' = (map Some outputs) then
           make_branch e s' updated t
@@ -133,12 +139,6 @@ fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers 
           make_branch (finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e) ((maxS e)+1) r t  |
       None \<Rightarrow> make_branch (finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e) ((maxS e)+1) r t
     )"
-
-(* An execution represents a run of the software and has the form [(label, inputs, outputs)]*)
-type_synonym execution = "(label \<times> value list \<times> value list) list"
-type_synonym log = "execution list"
-
-definition "exec2trace t = map (\<lambda>(label, inputs, _). (label, inputs)) t"
 
 primrec make_pta :: "log \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
   "make_pta [] e = e" |

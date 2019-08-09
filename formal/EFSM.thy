@@ -499,16 +499,6 @@ inductive gets_us_to :: "nat \<Rightarrow> transition_matrix \<Rightarrow> nat \
   step_some: "\<exists>(s', T) |\<in>| possible_steps e s d (fst h) (snd h). gets_us_to target e s' (apply_updates (Updates T) (join_ir i r) r) t \<Longrightarrow> gets_us_to target e s r (h#t)" |
   step_none: "step t e s r (fst h) (snd h) = None \<Longrightarrow> s = target \<Longrightarrow> gets_us_to target e s r (h#t)"
 
-lemma "gets_us_to target e s r t \<Longrightarrow> accepts e s r t"
-proof(induct t)
-  case Nil
-  then show ?case
-    by (simp add: accepts.base)
-next
-  case (Cons a t)
-  then show ?case sorry
-qed
-
 lemma no_further_steps: "s \<noteq> s' \<Longrightarrow> \<not> gets_us_to s e s' r []"
   apply safe
   apply (rule gets_us_to.cases)
