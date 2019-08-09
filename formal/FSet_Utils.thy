@@ -185,4 +185,12 @@ definition fremove :: "'a \<Rightarrow> 'a fset \<Rightarrow> 'a fset"
 lemma arg_cong_ffilter: "\<forall>e |\<in>| f. p e = p' e \<Longrightarrow> ffilter p f = ffilter p' f"
   by auto
 
+lemma ffilter_singleton: "f e \<Longrightarrow> ffilter f {|e|} = {|e|}"
+  apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse)
+  by auto
+
+lemma ffilter_true: "ffilter (\<lambda>x. True) f = f"
+  apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse)
+  by auto
+
 end

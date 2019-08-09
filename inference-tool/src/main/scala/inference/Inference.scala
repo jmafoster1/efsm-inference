@@ -2980,6 +2980,15 @@ def make_guard(x0: List[Value.value], uu: Nat.nat): List[GExp.gexp] = (x0, uu)
       make_guard(t, Nat.plus_nata(n, Nat.Nata((1))))
 }
 
+def exec2trace[A, B, C](t: List[(A, (B, C))]): List[(A, B)] =
+  Lista.map[(A, (B, C)),
+             (A, B)](((a: (A, (B, C))) =>
+                       {
+                         val (label, (inputs, _)): (A, (B, C)) = a;
+                         (label, inputs)
+                       }),
+                      t)
+
 def make_branch(e: FSet.fset[((Nat.nat, Nat.nat),
                                Transition.transition_ext[Unit])],
                  uu: Nat.nat, uv: Map[Nat.nat, Option[Value.value]],
@@ -2989,7 +2998,9 @@ def make_branch(e: FSet.fset[((Nat.nat, Nat.nat),
   (e, uu, uv, x3) match {
   case (e, uu, uv, Nil) => e
   case (e, s, r, (label, (inputs, outputs)) :: t) =>
-    (EFSM.step(e, s, r, label, inputs) match {
+    (EFSM.step(exec2trace[String, List[Value.value], List[Value.value]](t), e,
+                s, r, label, inputs)
+       match {
        case None =>
          make_branch(FSet.finsert[((Nat.nat, Nat.nat),
                                     Transition.transition_ext[Unit])](((s,
@@ -3696,15 +3707,6 @@ def get_by_id(e: FSet.fset[(Nat.nat,
                                   Nat.equal_nata(uid, u)
                                 }),
                                e)))._2)._2
-
-def exec2trace[A, B, C](t: List[(A, (B, C))]): List[(A, B)] =
-  Lista.map[(A, (B, C)),
-             (A, B)](((a: (A, (B, C))) =>
-                       {
-                         val (label, (inputs, _)): (A, (B, C)) = a;
-                         (label, inputs)
-                       }),
-                      t)
 
 def replaceAll(e: FSet.fset[(Nat.nat,
                               ((Nat.nat, Nat.nat),
@@ -4695,36 +4697,6 @@ def apply_outputs(p: List[AExp.aexp], s: VName.vname => Option[Value.value]):
   Lista.map[AExp.aexp,
              Option[Value.value]](((pa: AExp.aexp) => AExp.aval(pa, s)), p)
 
-def step(e: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
-          s: Nat.nat, r: Map[Nat.nat, Option[Value.value]], l: String,
-          i: List[Value.value]):
-      Option[(Transition.transition_ext[Unit],
-               (Nat.nat,
-                 (List[Option[Value.value]],
-                   Map[Nat.nat, Option[Value.value]])))]
-  =
-  (Dirties.randomMember[(Nat.nat,
-                          Transition.transition_ext[Unit])](possible_steps(e, s,
-                                    r, l, i))
-     match {
-     case None => None
-     case Some((sa, t)) =>
-       Some[(Transition.transition_ext[Unit],
-              (Nat.nat,
-                (List[Option[Value.value]],
-                  Map[Nat.nat, Option[Value.value]])))]((t,
-                  (sa, (apply_outputs(Transition.Outputs[Unit](t),
-                                       AExp.join_ir(i, r)),
-                         apply_updates(Transition.Updates[Unit](t),
-AExp.join_ir(i, r), r)))))
-   })
-
-def choice(ta: Transition.transition_ext[Unit],
-            t: Transition.transition_ext[Unit]):
-      Boolean
-  =
-  Code_Generation.choice_cases(ta, t)
-
 def accepts(x1: FSet.fset[((Nat.nat, Nat.nat),
                             Transition.transition_ext[Unit])],
              x2: Nat.nat, x3: Map[Nat.nat, Option[Value.value]],
@@ -4732,6 +4704,53 @@ def accepts(x1: FSet.fset[((Nat.nat, Nat.nat),
       Boolean
   =
   Predicate.holds(Code_Generation.accepts_i_i_i_i(x1, x2, x3, x4))
+
+def step(tr: List[(String, List[Value.value])],
+          e: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
+          s: Nat.nat, r: Map[Nat.nat, Option[Value.value]], l: String,
+          i: List[Value.value]):
+      Option[(Transition.transition_ext[Unit],
+               (Nat.nat,
+                 (List[Option[Value.value]],
+                   Map[Nat.nat, Option[Value.value]])))]
+  =
+  {
+    val poss_steps: FSet.fset[(Nat.nat, Transition.transition_ext[Unit])] =
+      possible_steps(e, s, r, l, i)
+    val possibilities: FSet.fset[(Nat.nat, Transition.transition_ext[Unit])] =
+      FSet.ffilter[(Nat.nat,
+                     Transition.transition_ext[Unit])](((a:
+                   (Nat.nat, Transition.transition_ext[Unit]))
+                  =>
+                 {
+                   val (sa, t): (Nat.nat, Transition.transition_ext[Unit]) = a;
+                   accepts(e, sa,
+                            apply_updates(Transition.Updates[Unit](t),
+   AExp.join_ir(i, r), r),
+                            tr)
+                 }),
+                poss_steps);
+    (Dirties.randomMember[(Nat.nat,
+                            Transition.transition_ext[Unit])](possibilities)
+       match {
+       case None => None
+       case Some((sa, t)) =>
+         Some[(Transition.transition_ext[Unit],
+                (Nat.nat,
+                  (List[Option[Value.value]],
+                    Map[Nat.nat, Option[Value.value]])))]((t,
+                    (sa, (apply_outputs(Transition.Outputs[Unit](t),
+ AExp.join_ir(i, r)),
+                           apply_updates(Transition.Updates[Unit](t),
+  AExp.join_ir(i, r), r)))))
+     })
+  }
+
+def choice(ta: Transition.transition_ext[Unit],
+            t: Transition.transition_ext[Unit]):
+      Boolean
+  =
+  Code_Generation.choice_cases(ta, t)
 
 } /* object EFSM */
 
