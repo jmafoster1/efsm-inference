@@ -49,4 +49,7 @@ lemma x_leq_None: "(x \<le> None) = (x = None)"
 lemma None_leq_everything: "None \<le> x"
   by (metis linear x_leq_None)
 
+lemma less_eq_Some_trans: "x < Some a \<Longrightarrow> a \<le> i \<Longrightarrow> x \<le> Some i"
+  by (meson le_less_trans less_le less_option.simps(4) linear)
+
 end

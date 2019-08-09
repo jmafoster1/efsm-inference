@@ -919,8 +919,8 @@ lemma must_have_one_false_contra:
   using all_gval_not_false[of G s]
   apply simp
   apply (case_tac "(\<forall>g\<in>set G. gval g s = true)")
-  apply simp
-  try
+   apply (metis (no_types, lifting) fold_apply_guards foldr_apply_guards gval_foldr_true trilean.distinct(1))
+  by (simp add: gval_fold_not_invalid_all_valid_contra)
 
 lemma must_have_one_false:
   "gval (fold gAnd G (Bc True)) s = false \<Longrightarrow>
@@ -1005,5 +1005,159 @@ qed
 
 lemma gval_foldr_equiv_gval_fold: "gval (foldr gAnd G (Bc True)) s = gval (fold gAnd G (Bc True)) s"
   by (simp add: gval_fold_equiv_gval_foldr)
+
+lemma gval_fold_cons: "gval (fold gAnd (g # gs) (Bc True)) s = gval g s \<and>\<^sub>? gval (fold gAnd gs (Bc True)) s"
+  apply (simp only: apply_guards_fold gval_fold_equiv_gval_foldr)
+  by (simp only: foldr.simps comp_def gval_gAnd)
+
+lemma gval_fold_take:
+  "max_input_list G < Some a \<Longrightarrow>
+   a \<le> length i \<Longrightarrow>
+   max_input_list G \<le> Some (length i) \<Longrightarrow>
+   gval (fold gAnd G (Bc True)) (join_ir i r) = gval (fold gAnd G (Bc True)) (join_ir (take a i) r)"
+proof(induct G)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons g gs)
+  then show ?case
+    apply (simp only: gval_fold_cons)
+    apply (simp add: max_input_list_cons)
+    using gval_take[of g a i r]
+    by simp
+qed
+
+lemma gval_fold_swap_regs:
+  "max_reg_list G = None \<Longrightarrow>
+   gval (fold gAnd G (Bc True)) (join_ir i r) = gval (fold gAnd G (Bc True)) (join_ir i r')"
+proof(induct G)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a G)
+  then show ?case
+    apply (simp only: gval_fold_equiv_gval_foldr foldr.simps comp_def gval_gAnd)
+    by (metis (no_types, lifting) max_is_None max_reg_list_cons no_reg_gval_swap_regs)
+qed
+
+unbundle finfun_syntax
+
+primrec padding :: "nat \<Rightarrow> 'a list" where
+  "padding 0 = []" |
+  "padding (Suc m) = (Eps (\<lambda>x. True))#(padding m)"
+
+definition take_or_pad :: "'a list \<Rightarrow> nat \<Rightarrow> 'a list" where
+  "take_or_pad a n = (if length a \<ge> n then take n a else a@(padding (n-length a)))"
+
+lemma length_padding: "length (padding n) = n"
+proof(induct n)
+  case 0
+  then show ?case
+    by simp
+next
+  case (Suc n)
+  then show ?case
+    by simp
+qed
+
+lemma length_take_or_pad: "length (take_or_pad a n) = n"
+proof(induct n)
+  case 0
+  then show ?case
+    by (simp add: take_or_pad_def)
+next
+  case (Suc n)
+  then show ?case
+    apply (simp add: take_or_pad_def)
+    apply standard
+     apply auto[1]
+    by (simp add: length_padding)
+qed
+
+definition ensure_not_null :: "nat \<Rightarrow> gexp list" where
+  "ensure_not_null n = map (\<lambda>i. gNot (Null (V (vname.I i)))) [0..<n]"
+
+lemma ensure_not_null_cons: "ensure_not_null (Suc a) = (ensure_not_null a)@[gNot (Null (V (I a)))]"
+  by (simp add: ensure_not_null_def)
+
+lemma not_null_length: "apply_guards (ensure_not_null a) (join_ir ia r) \<Longrightarrow> length ia \<ge> a"
+proof(induct a)
+  case 0
+  then show ?case
+    by simp
+next
+  case (Suc a)
+  then show ?case
+    apply (simp add: ensure_not_null_def apply_guards_append)
+    apply (simp add: apply_guards_singleton maybe_negate_true maybe_or_false)
+    apply (case_tac "join_ir ia r (vname.I a) = None")
+     apply (simp add: ValueEq_def)
+    by (simp add: Suc_leI datastate(1) input2state_not_None)
+qed
+
+lemma apply_guards_take_or_pad: 
+  "max_input_list G < Some a \<Longrightarrow>
+   apply_guards G (join_ir i r) \<Longrightarrow>
+   apply_guards (ensure_not_null a) (join_ir i r) \<Longrightarrow>
+   apply_guards G (join_ir (take_or_pad i a) r)"
+proof(induct G)
+  case Nil
+  then show ?case
+    by (simp add: max_input_def)
+next
+  case (Cons g gs)
+  then show ?case
+    apply (simp add: apply_guards_cons max_input_list_cons)
+    using not_null_length[of a i r]
+    apply simp
+    apply (simp add: take_or_pad_def)
+    by (metis gval_take)
+qed
+
+lemma apply_guards_no_reg_swap_regs:
+  "max_reg_list G = None \<Longrightarrow>
+   max_input_list G < Some a \<Longrightarrow>
+   apply_guards G (join_ir i ra) \<Longrightarrow>
+   apply_guards (ensure_not_null a) (join_ir i ra) \<Longrightarrow>
+   apply_guards G (join_ir (take_or_pad i a) r)"
+proof(induct G)
+  case Nil
+  then show ?case
+    by (simp add: max_input_def)
+next
+  case (Cons g gs)
+  then show ?case
+    by (metis apply_guards_cons gval_no_reg_swap_regs max.strict_boundedE max_input_list_cons max_is_None max_reg_list_cons not_null_length take_or_pad_def)
+qed
+
+lemma max_reg_list_ensure_not_null: "max_reg_list (ensure_not_null a) = None"
+proof(induct a)
+  case 0
+  then show ?case
+    by (simp add: ensure_not_null_def max_reg_list_def)
+next
+  case (Suc a)
+  then show ?case
+    by (simp add: ensure_not_null_cons max_reg_list_append max_reg_list_def max_reg_gNot max_reg_Null max_reg_V)
+qed
+
+lemma apply_guards_ensure_not_null:
+  "length i \<ge> a \<Longrightarrow>
+   apply_guards (ensure_not_null a) (join_ir i r)"
+proof(induct a)
+  case 0
+  then show ?case
+    by (simp add: ensure_not_null_def)
+next
+  case (Suc a)
+  then show ?case
+    apply (simp add: ensure_not_null_cons apply_guards_append apply_guards_singleton ValueEq_def)
+    by (simp add: join_ir_def input2state_nth)
+qed
+
+lemma apply_guards_ensure_not_null_length: "apply_guards (ensure_not_null a) (join_ir i r) = (length i \<ge> a)"
+  using apply_guards_ensure_not_null not_null_length by blast
 
 end

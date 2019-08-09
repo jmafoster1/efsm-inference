@@ -463,6 +463,32 @@ definition simple_mutex :: "transition \<Rightarrow> transition \<Rightarrow> bo
      Arity t = Arity t' \<and>
      \<not> choice t' t)"
 
+lemma satisfiable_can_take:
+  "max_input_list (Guard t) < Some (Arity t) \<Longrightarrow>
+   satisfiable_list ((Guard t) @ ensure_not_null (Arity t)) \<Longrightarrow>
+   \<exists>i r. can_take_transition t i r"
+  apply (simp add: can_take_transition_def satisfiable_list_def satisfiable_def fold_apply_guards
+                   apply_guards_append can_take_def del: fold_append)
+  apply clarify
+  apply (rule_tac x="take_or_pad i (Arity t)" in exI)
+  apply standard
+   apply (simp add: length_take_or_pad)
+  apply (rule_tac x=r in exI)
+  by (simp add: apply_guards_take_or_pad)
+
+lemma can_take_satisfiable:
+  "max_reg_list (Guard t) = None \<Longrightarrow>
+   max_input_list (Guard t) < Some (Arity t) \<Longrightarrow>
+   satisfiable_list ((Guard t) @ ensure_not_null (Arity t)) \<Longrightarrow>
+   \<exists>i. can_take_transition t i r"
+  apply (simp add: can_take_transition_def satisfiable_list_def satisfiable_def fold_apply_guards
+                   apply_guards_append can_take_def del: fold_append)
+  apply clarify
+  apply (rule_tac x="take_or_pad i (Arity t)" in exI)
+  apply standard
+   apply (simp add: length_take_or_pad)
+  by (simp add: apply_guards_no_reg_swap_regs)
+
 lemma simple_mutex_direct_subsumption:
   "simple_mutex t t' \<Longrightarrow>
    \<not> directly_subsumes e e' s s' t' t"

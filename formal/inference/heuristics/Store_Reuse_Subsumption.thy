@@ -1,5 +1,5 @@
 theory Store_Reuse_Subsumption
-imports Store_Reuse "../Can_Take"
+imports Store_Reuse
 begin
 
 lemma generalisation_of_preserves: "is_generalisation_of t' t i r \<Longrightarrow>
@@ -683,6 +683,9 @@ lemma input_stored_in_reg_updates_reg: "input_stored_in_reg t2 t1 a = Some (i, r
   apply simp
   by (simp add: is_generalisation_of_def remove_guard_add_update_def)
 
+lemma is_generalisation_of_updates_regi: "is_generalisation_of t2 t1 i r \<Longrightarrow> (r, V (I i)) \<in> set (Updates t2)"
+  by (simp add: is_generalisation_of_def remove_guard_add_update_def)
+
 definition "possibly_not_value_ctx v r t\<^sub>1 s\<^sub>2 e\<^sub>2 s\<^sub>1 e\<^sub>1 =
   (\<exists>p. accepts_trace (tm e\<^sub>1) p \<and> gets_us_to s\<^sub>1 (tm e\<^sub>1) 0 <>  p \<and>
        accepts_trace (tm e\<^sub>2) p \<and> gets_us_to s\<^sub>2 (tm e\<^sub>2) 0 <> p \<and>
@@ -765,7 +768,6 @@ definition "drop_update_add_guard_direct_subsumption a b s s' t1 t2 =
      initially_undefined_context_check b r s' \<and>
      updates_subset t1 t2 a
   )"
-
 
 lemma updates_subset_conditions: 
   "updates_subset t1 t2 e \<Longrightarrow>

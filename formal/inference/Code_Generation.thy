@@ -183,6 +183,36 @@ lemma always_different_outputs_direct_subsumption:
   using always_different_outputs_can_take_transition_not_subsumed accepts_trace_gives_context accepts_gives_context
   by fastforce
 
+definition negate :: "gexp list \<Rightarrow> gexp" where
+  "negate g = gNot (fold gAnd g (Bc True))"
+
+lemma gval_negate_cons: "gval (negate (a # G)) s = gval (gNot a) s \<or>\<^sub>? gval (negate G) s"
+  apply (simp only: negate_def gval_gNot gval_fold_equiv_gval_foldr)
+  by (simp only: foldr.simps comp_def gval_gAnd de_morgans_2)
+
+lemma negate_true_guard: "(gval (negate G) s = true) = (gval (fold gAnd G (Bc True)) s = false)"
+  by (metis (no_types, lifting) gval_gNot maybe_double_negation maybe_not.simps(1) negate_def)
+
+lemma gval_negate_not_invalid: "(gval (negate gs) (join_ir i ra) \<noteq> invalid) = (gval (fold gAnd gs (Bc True)) (join_ir i ra) \<noteq> invalid)"
+  using gval_gNot maybe_not_invalid negate_def by auto
+
+lemma quick_negation:
+  "max_reg_list (Guard t) = None \<Longrightarrow>
+   max_input_list (Guard t) < Some (Arity t) \<Longrightarrow>
+   satisfiable_list (negate (Guard t) # ensure_not_null (Arity t)) \<Longrightarrow>
+   \<exists>i. length i = Arity t \<and> \<not> apply_guards (Guard t) (join_ir i r)"
+  apply (simp add: satisfiable_list_def satisfiable_def fold_apply_guards apply_guards_cons del: fold.simps)
+  apply clarify
+  apply (rule_tac x="take_or_pad i (Arity t)" in exI)
+  apply (simp add: length_take_or_pad)
+  apply (simp add: apply_guards_ensure_not_null_length take_or_pad_def negate_true_guard)
+  apply (simp add: apply_guards_fold)
+  by (metis (no_types, lifting) less_eq_Some_trans gval_fold_swap_regs gval_fold_take trilean.simps(2))
+
+definition "satisfiable_negation t = (max_reg_list (Guard t) = None \<and>
+   max_input_list (Guard t) < Some (Arity t) \<and>
+   satisfiable_list (negate (Guard t) # ensure_not_null (Arity t)))"
+
 lemma satisfiable_negation_cant_subsume:
   assumes prem: "satisfiable_negation t"
   shows "\<not> subsumes t c (drop_guards t)"

@@ -7,8 +7,21 @@ transitions with register update functions.
 
 theory Contexts
   imports
-    EFSM GExp "inference/Can_Take"
+    EFSM GExp
 begin
+
+(* Begin can take *)
+
+definition can_take :: "nat \<Rightarrow> gexp list \<Rightarrow> inputs \<Rightarrow> registers \<Rightarrow> bool" where
+  "can_take a g i r = (length i = a \<and> apply_guards g (join_ir i r))"
+
+definition "can_take_transition t i r = can_take (Arity t) (Guard t) i r"
+
+lemma can_take_transition_empty_guard: "Guard t = [] \<Longrightarrow> \<exists>i. can_take_transition t i c"
+  by (simp add: can_take_transition_def can_take_def Ex_list_of_length)
+
+lemma valid_list_can_take: "valid_list (Guard t) \<Longrightarrow> \<exists>i. can_take_transition t i c"
+  by (simp add: can_take_transition_def can_take_def valid_list_apply_guards Ex_list_of_length)
 
 declare ValueEq_def [simp]
 

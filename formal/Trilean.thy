@@ -252,4 +252,22 @@ lemma de_morgans_1: "\<not>\<^sub>? (a \<or>\<^sub>? b) = (\<not>\<^sub>?a) \<an
 lemma de_morgans_2: "\<not>\<^sub>? (a \<and>\<^sub>? b) = (\<not>\<^sub>?a) \<or>\<^sub>? (\<not>\<^sub>?b)"
   by (metis de_morgans_1 maybe_double_negation)
 
+lemma maybe_or_true: "(x \<or>\<^sub>? y = true) = ((x = true \<or> y = true) \<and> x \<noteq> invalid \<and> y \<noteq> invalid)"
+  using plus_trilean.elims by blast
+
+lemma not_true: "(x \<noteq> true) = (x = false \<or> x = invalid)"
+  by (metis (no_types, lifting) maybe_not.cases trilean.distinct(1) trilean.distinct(3))
+
+lemma maybe_or_true_not_invalid: "(true \<or>\<^sub>? x = true) = (x \<noteq> invalid)"
+  by (simp add: maybe_or_true)
+
+lemma negate_valid: "(\<not>\<^sub>? x \<noteq> invalid) = (x \<noteq> invalid)"
+  by (simp add: maybe_not_invalid)
+
+lemma maybe_and_false: "(x \<and>\<^sub>? y = false) = ((x = false \<or> y = false) \<and> x \<noteq> invalid \<and> y \<noteq> invalid)"
+  using times_trilean.elims by blast
+
+lemma maybe_and_not_invalid: "(x \<and>\<^sub>? y \<noteq> invalid) = (x \<noteq> invalid \<and> y \<noteq> invalid)"
+  by (simp add: maybe_and_invalid)
+
 end
