@@ -47,12 +47,12 @@ abbreviation gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<and
 lemma inj_gAnd: "inj gAnd"
   apply (simp add: inj_def)
   apply clarify
-  by (metis  gexp.inject(4))
+  by (metis gexp.inject(4))
 
 lemma gAnd_determinism: "(gAnd x y = gAnd x' y') = (x = x' \<and> y = y')"
 proof
   show "gAnd x y = gAnd x' y' \<Longrightarrow> x = x' \<and> y = y'"
-    by (simp)
+    by simp
 next
   show "x = x' \<and> y = y' \<Longrightarrow> gAnd x y = gAnd x' y' "
     by simp
@@ -236,7 +236,7 @@ case (Bc x)
     by simp
 next
   case (Eq x1a x2)
-  then show ?case 
+  then show ?case
     by (simp add: enumerate_aexp_inputs_list)
 next
   case (Gt x1a x2)
@@ -252,7 +252,7 @@ next
     by (simp add: enumerate_aexp_inputs_list)
 qed
 
-lemma set_enumerate_gexp_inputs_list: 
+lemma set_enumerate_gexp_inputs_list:
 "set (fold (@) (map enumerate_gexp_inputs_list l) []) = (\<Union> (set (map enumerate_gexp_inputs l)))"
 proof(induct l)
 case Nil
@@ -370,7 +370,7 @@ next
     by (metis no_variables_list_gval)
 next
   case (Null x)
-  then show ?case 
+  then show ?case
     apply (simp add: valid_def satisfiable_def)
     by (metis no_variables_list_aval)
 qed
@@ -721,7 +721,7 @@ next
     by auto
 qed
 
-lemma apply_guards_swap: 
+lemma apply_guards_swap:
   "apply_guards G (join_ir i r) \<Longrightarrow>
    \<forall>x\<in>set G. enumerate_gexp_regs x = {} \<Longrightarrow>
    \<forall>x\<in>set G. enumerate_gexp_inputs x = {} \<Longrightarrow>
@@ -1097,7 +1097,7 @@ next
     by (simp add: Suc_leI datastate(1) input2state_not_None)
 qed
 
-lemma apply_guards_take_or_pad: 
+lemma apply_guards_take_or_pad:
   "max_input_list G < Some a \<Longrightarrow>
    apply_guards G (join_ir i r) \<Longrightarrow>
    apply_guards (ensure_not_null a) (join_ir i r) \<Longrightarrow>
