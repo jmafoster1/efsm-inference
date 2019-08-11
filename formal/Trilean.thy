@@ -222,6 +222,9 @@ lemma maybe_and_true: "(x \<and>\<^sub>? y = true) = (x = true \<and> y = true)"
 lemma maybe_and_not_true: "(x \<and>\<^sub>? y \<noteq> true) = (x \<noteq> true \<or> y \<noteq> true)"
   by (simp add: maybe_and_true)
 
+lemma negate_valid: "(\<not>\<^sub>? x \<noteq> invalid) = (x \<noteq> invalid)"
+  by (metis maybe_double_negation maybe_not.simps(3))
+
 lemma maybe_and_valid: "x \<and>\<^sub>? y \<noteq> invalid \<Longrightarrow> x \<noteq> invalid \<and> y \<noteq> invalid"
   using times_trilean.elims by blast
 
@@ -231,6 +234,9 @@ lemma maybe_or_valid: "x \<or>\<^sub>? y \<noteq> invalid \<Longrightarrow> x \<
 lemma maybe_or_false: "(x \<or>\<^sub>? y = false) = (x = false \<and> y = false)"
   using plus_trilean.elims by blast
 
+lemma maybe_or_true: "(x \<or>\<^sub>? y = true) = ((x = true \<or> y = true) \<and> x \<noteq> invalid \<and> y \<noteq> invalid)"
+  using plus_trilean.elims by blast
+
 lemma maybe_not_invalid: "(\<not>\<^sub>? x = invalid) = (x = invalid)"
   by (metis maybe_double_negation maybe_not.simps(3))
 
@@ -238,6 +244,9 @@ lemma maybe_or_invalid: "(x \<or>\<^sub>? y = invalid) = (x = invalid \<or> y = 
   using plus_trilean.elims by blast
 
 lemma maybe_and_invalid: "(x \<and>\<^sub>? y = invalid) = (x = invalid \<or> y = invalid)"
+  using times_trilean.elims by blast
+
+lemma maybe_and_false: "(x \<and>\<^sub>? y = false) = ((x = false \<or> y = false) \<and> x \<noteq> invalid \<and> y \<noteq> invalid)"
   using times_trilean.elims by blast
 
 lemma invalid_maybe_and: "invalid \<and>\<^sub>? x = invalid"
@@ -252,22 +261,7 @@ lemma de_morgans_1: "\<not>\<^sub>? (a \<or>\<^sub>? b) = (\<not>\<^sub>?a) \<an
 lemma de_morgans_2: "\<not>\<^sub>? (a \<and>\<^sub>? b) = (\<not>\<^sub>?a) \<or>\<^sub>? (\<not>\<^sub>?b)"
   by (metis de_morgans_1 maybe_double_negation)
 
-lemma maybe_or_true: "(x \<or>\<^sub>? y = true) = ((x = true \<or> y = true) \<and> x \<noteq> invalid \<and> y \<noteq> invalid)"
-  using plus_trilean.elims by blast
-
 lemma not_true: "(x \<noteq> true) = (x = false \<or> x = invalid)"
   by (metis (no_types, lifting) maybe_not.cases trilean.distinct(1) trilean.distinct(3))
-
-lemma maybe_or_true_not_invalid: "(true \<or>\<^sub>? x = true) = (x \<noteq> invalid)"
-  by (simp add: maybe_or_true)
-
-lemma negate_valid: "(\<not>\<^sub>? x \<noteq> invalid) = (x \<noteq> invalid)"
-  by (simp add: maybe_not_invalid)
-
-lemma maybe_and_false: "(x \<and>\<^sub>? y = false) = ((x = false \<or> y = false) \<and> x \<noteq> invalid \<and> y \<noteq> invalid)"
-  using times_trilean.elims by blast
-
-lemma maybe_and_not_invalid: "(x \<and>\<^sub>? y \<noteq> invalid) = (x \<noteq> invalid \<and> y \<noteq> invalid)"
-  by (simp add: maybe_and_invalid)
 
 end

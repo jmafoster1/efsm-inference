@@ -27,15 +27,6 @@ lemma MaybeBoolInt_not_num_1: "\<forall>n. r \<noteq> Some (Num n) \<Longrightar
   apply (case_tac a)
   by auto
 
-lemma MaybeBoolInt_not_invalid: "MaybeBoolInt f a b \<noteq> invalid = (\<exists>n n'. a = Some (Num n) \<and> b = Some (Num n'))"
-  apply (cases a)
-   apply simp
-  apply (cases b)
-   apply simp
-  apply (case_tac aa)
-   apply (case_tac aaa)
-  by auto
-
 definition ValueGt :: "value option \<Rightarrow> value option \<Rightarrow> trilean"  where
   "ValueGt a b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x>y)) a b"
 

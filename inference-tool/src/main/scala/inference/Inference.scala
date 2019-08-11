@@ -1080,12 +1080,6 @@ def gexp_constrains(x0: gexp, uv: AExp.aexp): Boolean = (x0, uv) match {
   case (Nor(g1, g2), v) => (gexp_constrains(g1, v)) || (gexp_constrains(g2, v))
 }
 
-def satisfiable_list(l: List[gexp]): Boolean =
-  Dirties.satisfiable(Lista.fold[gexp,
-                                  gexp](((v: gexp) => (va: gexp) =>
-  Nor(Nor(v, v), Nor(va, va))),
- l, Bc(true)))
-
 def gexp_same_structure(x0: gexp, x1: gexp): Boolean = (x0, x1) match {
   case (Bc(ba), Bc(b)) => ba == b
   case (Eq(a1a, a2a), Eq(a1, a2)) =>
@@ -1372,8 +1366,14 @@ def fimage[A, B](f: A => B, x1: fset[A]): fset[B] = (f, x1) match {
   case (f, fset_of_list(as)) => fset_of_list[B](Lista.map[A, B](f, as))
 }
 
-def sup_fset[A](x0: fset[A], x1: fset[A]): fset[A] = (x0, x1) match {
+def finsert[A](a: A, x1: fset[A]): fset[A] = (a, x1) match {
+  case (a, fset_of_list(as)) => fset_of_list[A](a :: as)
+}
+
+def sup_fset[A](f1: fset[A], x1: fset[A]): fset[A] = (f1, x1) match {
   case (fset_of_list(f1), fset_of_list(f2)) => fset_of_list[A](f1 ++ f2)
+  case (f1, fset_of_list(f2)) =>
+    Lista.fold[A, fset[A]](((a: A) => (b: fset[A]) => finsert[A](a, b)), f2, f1)
 }
 
 def bot_fset[A]: fset[A] = fset_of_list[A](Nil)
@@ -1387,10 +1387,6 @@ def ffUnion[A](x0: fset[fset[A]]): fset[A] = x0 match {
 
 def ffilter[A](f: A => Boolean, x1: fset[A]): fset[A] = (f, x1) match {
   case (f, fset_of_list(as)) => fset_of_list[A](Lista.filter[A](f, as))
-}
-
-def finsert[A](a: A, x1: fset[A]): fset[A] = (a, x1) match {
-  case (a, fset_of_list(as)) => fset_of_list[A](a :: as)
 }
 
 def fmember[A : HOL.equal](a: A, x1: fset[A]): Boolean = (a, x1) match {
@@ -1638,9 +1634,9 @@ def updates_subset(ta: Transition.transition_ext[Unit],
                    AExp.aexp),
                   Nat.nat](((a: (Nat.nat, AExp.aexp)) => a._1),
                             Transition.Updates[Unit](ta))) contains r)) && ((Option_Lexorder.less_option[Nat.nat](GExp.max_input_list(Transition.Guard[Unit](ta)),
-                                   Some[Nat.nat](Transition.Arity[Unit](ta)))) && ((GExp.satisfiable_list(Transition.Guard[Unit](ta) ++
-                            GExp.ensure_not_null(Transition.Arity[Unit](ta)))) && ((Optiona.is_none[Nat.nat](GExp.max_reg_list(Transition.Guard[Unit](ta)))) && (Nat.less_nat(i,
-               Transition.Arity[Unit](ta)))))))))
+                                   Some[Nat.nat](Transition.Arity[Unit](ta)))) && ((Inference.satisfiable_list(Transition.Guard[Unit](ta) ++
+                                 GExp.ensure_not_null(Transition.Arity[Unit](ta)))) && ((Optiona.is_none[Nat.nat](GExp.max_reg_list(Transition.Guard[Unit](ta)))) && (Nat.less_nat(i,
+                    Transition.Arity[Unit](ta)))))))))
    })
 
 def no_illegal_updates[A](t: Transition.transition_ext[A], r: Nat.nat): Boolean
@@ -3741,15 +3737,21 @@ def replaceAll(e: FSet.fset[(Nat.nat,
                 }),
                e)
 
+def satisfiable_list(l: List[GExp.gexp]): Boolean =
+  Dirties.satisfiable(Lista.fold[GExp.gexp,
+                                  GExp.gexp](((v: GExp.gexp) =>
+       (va: GExp.gexp) => GExp.Nor(GExp.Nor(v, v), GExp.Nor(va, va))),
+      l, GExp.Bc(true)))
+
 def simple_mutex(ta: Transition.transition_ext[Unit],
                   t: Transition.transition_ext[Unit]):
       Boolean
   =
   (Optiona.is_none[Nat.nat](GExp.max_reg_list(Transition.Guard[Unit](ta)))) && ((Option_Lexorder.less_option[Nat.nat](GExp.max_input_list(Transition.Guard[Unit](ta)),
-                                       Some[Nat.nat](Transition.Arity[Unit](ta)))) && ((GExp.satisfiable_list(Transition.Guard[Unit](ta) ++
-                                GExp.ensure_not_null(Transition.Arity[Unit](ta)))) && ((Transition.Label[Unit](ta) ==
-         Transition.Label[Unit](t)) && ((Nat.equal_nata(Transition.Arity[Unit](ta),
-                 Transition.Arity[Unit](t))) && (! (EFSM.choice(t, ta)))))))
+                                       Some[Nat.nat](Transition.Arity[Unit](ta)))) && ((satisfiable_list(Transition.Guard[Unit](ta) ++
+                           GExp.ensure_not_null(Transition.Arity[Unit](ta)))) && ((Transition.Label[Unit](ta) ==
+    Transition.Label[Unit](t)) && ((Nat.equal_nata(Transition.Arity[Unit](ta),
+            Transition.Arity[Unit](t))) && (! (EFSM.choice(t, ta)))))))
 
 def null_modifier(uu: Nat.nat, uv: Nat.nat, uw: Nat.nat,
                    ux: FSet.fset[(Nat.nat,
@@ -4415,8 +4417,8 @@ r))) && ((Nat.less_nat(i, Transition.Arity[Unit](t))) && ((! ((Lista.map[(Nat.na
 
 def satisfiable_negation[A](t: Transition.transition_ext[A]): Boolean =
   (Optiona.is_none[Nat.nat](GExp.max_reg_list(Transition.Guard[A](t)))) && ((Option_Lexorder.less_option[Nat.nat](GExp.max_input_list(Transition.Guard[A](t)),
-                                   Some[Nat.nat](Transition.Arity[A](t)))) && (GExp.satisfiable_list(negate(Transition.Guard[A](t)) ::
-                       GExp.ensure_not_null(Transition.Arity[A](t)))))
+                                   Some[Nat.nat](Transition.Arity[A](t)))) && (Inference.satisfiable_list(negate(Transition.Guard[A](t)) ::
+                            GExp.ensure_not_null(Transition.Arity[A](t)))))
 
 def input_updates_register_aux(x0: List[(Nat.nat, AExp.aexp)]): Option[Nat.nat]
   =

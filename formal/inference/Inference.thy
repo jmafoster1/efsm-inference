@@ -196,7 +196,7 @@ lemma score_gt_zero: "(stateScore, p) |\<in>| (k_score n efsm metric) \<Longrigh
 definition origin :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
   "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (\<exists>s. x = (uid, s))) t))))"
 
-lemma origin_code[code]: "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. fst x = uid) t))))"
+lemma origin_code [code]: "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. fst x = uid) t))))"
   apply (simp add: origin_def)
   by (metis fst_eqD surj_pair)
 
@@ -208,7 +208,7 @@ lemma exists_is_fst: "(\<lambda>x. (\<exists>s. x = (uid, s))) = (\<lambda>x. fs
   apply clarify
   by simp
 
-lemma dest_code[code]: "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. fst x = uid) t))))"
+lemma dest_code [code]: "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. fst x = uid) t))))"
   apply (simp add: dest_def)
   by (metis fst_eqD surj_pair)
 
@@ -453,6 +453,8 @@ lemma no_choice_no_subsumption:
   apply clarify
   apply (rule_tac x=i in exI)
   using choice_def by blast
+
+definition "satisfiable_list l = satisfiable (fold gAnd l (Bc True))"
 
 definition simple_mutex :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "simple_mutex t t' = (

@@ -36,26 +36,10 @@ fun MaybeArithInt :: "(int \<Rightarrow> int \<Rightarrow> int) \<Rightarrow> va
   "MaybeArithInt _ _ _ = None"
 
 lemma MaybeArithInt_not_None: "MaybeArithInt f a b \<noteq> None = (\<exists>n n'. a = Some (Num n) \<and> b = Some (Num n'))"
-  apply (cases a)
-  apply simp
-  apply (cases b)
-   apply simp
-  apply (case_tac aa)
-   apply (metis MaybeArithInt.elims MaybeArithInt.simps(1) option.distinct(1))
-  apply (case_tac aaa)
-   apply simp
-  by simp
+  using MaybeArithInt.elims MaybeArithInt.simps(1) by blast
 
 lemma MaybeArithInt_Some: "MaybeArithInt f a b = Some (Num x) = (\<exists>n n'. a = Some (Num n) \<and> b = Some (Num n') \<and> f n n' = x)"
-  apply (cases a)
-  apply simp
-  apply (cases b)
-   apply simp
-  apply (case_tac aa)
-   apply simp
-   apply (metis MaybeArithInt.simps(1) MaybeArithInt_not_None option.inject option.simps(3) value.inject(1))
-  apply (case_tac aaa)
-  by auto
+  using MaybeArithInt.elims MaybeArithInt.simps(1) by blast
 
 lemma MaybeArithInt_None: "(MaybeArithInt f a1 a2 = None) = (\<nexists>n n'. a1 = Some (Num n) \<and> a2 = Some (Num n'))"
   using MaybeArithInt_not_None by blast
@@ -65,7 +49,7 @@ lemma MaybeArithInt_Not_Num: "(\<forall>n. MaybeArithInt f a1 a2 \<noteq> Some (
 
 definition "value_plus = MaybeArithInt (+)"
 
-lemma plus_no_string [simp]:"MaybeArithInt f a b \<noteq> Some (Str x)"
+lemma plus_never_string: "MaybeArithInt f a b \<noteq> Some (Str x)"
   using MaybeArithInt.elims by blast
 
 lemma value_plus_symmetry: "value_plus x y = value_plus y x"
@@ -74,8 +58,8 @@ lemma value_plus_symmetry: "value_plus x y = value_plus y x"
 
 definition "value_minus = MaybeArithInt (-)"
 
-lemma minus_no_string [simp]:"value_minus a b \<noteq> Some (Str x)"
-  by (simp add: value_minus_def)
+lemma minus_never_string: "value_minus a b \<noteq> Some (Str x)"
+  by (simp add: plus_never_string value_minus_def)
 
 fun aval :: "aexp \<Rightarrow> datastate \<Rightarrow> value option" where
   "aval (L x) s = Some x" |
@@ -91,6 +75,7 @@ abbreviation null_state ("<>") where
 
 nonterminal maplets and maplet
 
+(* TODO: get the <1 := L (Num x)> kind of syntax back *)
 syntax
   "_maplet"  :: "['a, 'a] \<Rightarrow> maplet"             ("_ /:=/ _")
   "_maplets" :: "['a, 'a] \<Rightarrow> maplet"             ("_ /[:=]/ _")
@@ -143,9 +128,6 @@ lemma input2state_append: "input2state (i @ [a]) = (input2state i)(length i $:= 
 lemma fold_conv_foldr: "fold f xs = foldr f (rev xs)"
   by (simp add: foldr_conv_fold)
 
-lemma length_map: "length i > 0 \<Longrightarrow> [Suc 0..<length i] @ [length i] = map Suc [0..<length i]"
-  by (simp add: Suc_leI map_Suc_upt)
-
 lemma input2state_out_of_bounds: "i \<ge> length ia \<Longrightarrow> input2state ia $ i = None"
 proof(induct ia rule: rev_induct)
   case Nil
@@ -192,11 +174,6 @@ qed
 
 lemma input2state_not_None: "(input2state i $ x \<noteq> None) \<Longrightarrow> (x < length i)"
   using input2state_within_bounds by blast
-
-lemma input2state_not_None_equiv: "(input2state i $ x \<noteq> None) = (x < length i)"
-  apply standard
-  using input2state_within_bounds apply blast
-  by (simp add: input2state_nth)
 
 lemma input2state_Some: "(\<exists>v. input2state i $ x = Some v) = (x < length i)"
   apply standard
@@ -290,11 +267,7 @@ definition join_ir :: "value list \<Rightarrow> registers \<Rightarrow> datastat
 
 lemmas datastate = join_ir_def input2state_def
 
-lemma aval_input2state_within_bounds: "\<exists>n'. aval (V (I a)) (join_ir i r) = Some (Num n') \<Longrightarrow> a \<le> length i"
-  apply (simp add: join_ir_def)
-  using input2state_within_bounds less_imp_le_nat by blast
-
-lemma join_ir_empty[simp]: "join_ir [] <> = (\<lambda>x. None)"
+lemma join_ir_empty [simp]: "join_ir [] <> = (\<lambda>x. None)"
   apply (rule ext)
   apply (simp add: join_ir_def)
   apply (case_tac x)
@@ -372,9 +345,6 @@ fun aexp_constrains :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
   "aexp_constrains (Plus a1 a2) v = ((Plus a1 a2) = v \<or> (Plus a1 a2) = v \<or> (aexp_constrains a1 v \<or> aexp_constrains a2 v))" |
   "aexp_constrains (Minus a1 a2) v = ((Minus a1 a2) = v \<or> (aexp_constrains a1 v \<or> aexp_constrains a2 v))"
 
-lemma constrains_implies_not_equal: "\<not> aexp_constrains x a \<Longrightarrow> x \<noteq> a"
-  using aexp_constrains.elims(3) by blast
-
 fun aexp_same_structure :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
   "aexp_same_structure (L v) (L v') = True" |
   "aexp_same_structure (V v) (V v') = True" |
@@ -389,12 +359,24 @@ fun enumerate_aexp_inputs :: "aexp \<Rightarrow> nat set" where
   "enumerate_aexp_inputs (Plus v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va" |
   "enumerate_aexp_inputs (Minus v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va"
 
-fun enumerate_aexp_inputs_list :: "aexp \<Rightarrow> nat list" where
-  "enumerate_aexp_inputs_list (L _) = []" |
-  "enumerate_aexp_inputs_list (V (I n)) = [n]" |
-  "enumerate_aexp_inputs_list (V (R n)) = []" |
-  "enumerate_aexp_inputs_list (Plus v va) = enumerate_aexp_inputs_list v @ enumerate_aexp_inputs_list va" |
-  "enumerate_aexp_inputs_list (Minus v va) = enumerate_aexp_inputs_list v @ enumerate_aexp_inputs_list va"
+lemma enumerate_aexp_inputs_list: "\<exists>l. enumerate_aexp_inputs a = set l"
+proof(induct a)
+  case (L x)
+  then show ?case
+    by simp
+next
+  case (V x)
+  then show ?case
+    by (metis List.set_insert aexp.distinct(7) aexp.distinct(9) empty_set enumerate_aexp_inputs.elims)
+next
+  case (Plus a1 a2)
+  then show ?case
+    by (metis enumerate_aexp_inputs.simps(4) set_union)
+next
+  case (Minus a1 a2)
+  then show ?case
+    by (metis enumerate_aexp_inputs.simps(5) set_union)
+qed
 
 fun enumerate_aexp_regs :: "aexp \<Rightarrow> nat set" where
   "enumerate_aexp_regs (L _) = {}" |
@@ -403,36 +385,28 @@ fun enumerate_aexp_regs :: "aexp \<Rightarrow> nat set" where
   "enumerate_aexp_regs (Plus v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
   "enumerate_aexp_regs (Minus v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va"
 
-fun enumerate_aexp_regs_list :: "aexp \<Rightarrow> nat list" where
-  "enumerate_aexp_regs_list (L _) = []" |
-  "enumerate_aexp_regs_list (V (R n)) = [n]" |
-  "enumerate_aexp_regs_list (V (I _)) = []" |
-  "enumerate_aexp_regs_list (Plus v va) = enumerate_aexp_regs_list v @ enumerate_aexp_regs_list va" |
-  "enumerate_aexp_regs_list (Minus v va) = enumerate_aexp_regs_list v @ enumerate_aexp_regs_list va"
-
-lemma enumerate_aexp_inputs_list: "enumerate_aexp_inputs l = set (enumerate_aexp_inputs_list l)"
-proof(induct l)
+lemma enumerate_aexp_regs_list: "\<exists>l. enumerate_aexp_regs a = set l"
+proof(induct a)
 case (L x)
   then show ?case
-  by simp
+    by simp
 next
   case (V x)
   then show ?case
-    apply (cases x)
-    by auto
+    by (metis List.set_insert aexp.distinct(7) aexp.distinct(9) empty_set enumerate_aexp_regs.elims)
 next
-  case (Plus l1 l2)
-  then show ?case
-    by simp
+  case (Plus a1 a2)
+then show ?case
+  by (metis enumerate_aexp_regs.simps(4) set_union)
 next
-  case (Minus l1 l2)
+  case (Minus a1 a2)
   then show ?case
-    by simp
+    by (metis enumerate_aexp_regs.simps(5) set_union)
 qed
 
-lemma no_variables_list_aval:
-  "enumerate_aexp_inputs_list a = [] \<Longrightarrow>
-   enumerate_aexp_regs_list a = [] \<Longrightarrow>
+lemma no_variables_aval:
+  "enumerate_aexp_inputs a = {} \<Longrightarrow>
+   enumerate_aexp_regs a = {} \<Longrightarrow>
    aval a s = aval a s'"
 proof(induct a)
 case (L x)
@@ -452,13 +426,19 @@ next
     by simp
 qed
 
+lemma enumerate_aexp_inputs_not_empty: "(enumerate_aexp_inputs a \<noteq> {}) = (\<exists>b c. enumerate_aexp_inputs a = set (b#c))"
+  using enumerate_aexp_inputs_list by fastforce
+
+lemma set_union_append: "set l \<union> set la = set (l@la)"
+  by simp
+
 lemma aval_ir_take: "A \<le> length i \<Longrightarrow>
-      enumerate_aexp_regs_list a = [] \<Longrightarrow>
-      enumerate_aexp_inputs_list a \<noteq> [] \<Longrightarrow>
-      foldr max (enumerate_aexp_inputs_list a) 0 < A \<Longrightarrow>
+      enumerate_aexp_regs a = {} \<Longrightarrow>
+      enumerate_aexp_inputs a \<noteq> {} \<Longrightarrow>
+      Max (enumerate_aexp_inputs a) < A \<Longrightarrow>
       aval a (join_ir (take A i) r) = aval a (join_ir i ra)"
 proof(induct a)
-case (L x)
+  case (L x)
   then show ?case
     by simp
 next
@@ -470,39 +450,29 @@ next
 next
   case (Plus a1 a2)
   then show ?case
-    apply simp
-    apply clarify
-    by (metis (no_types, lifting) List.finite_set Max.set_eq_fold Max_insert fold_simps(1) foldr_conv_fold list.set(2) max_less_iff_conj no_variables_list_aval set_empty)
+    apply (simp only: enumerate_aexp_inputs_not_empty[of "Plus a1 a2"])
+    apply (erule exE)
+    apply (erule exE)
+    apply (simp only: neq_Nil_conv List.linorder_class.Max.set_eq_fold)
+    apply (case_tac "fold max c b \<le> length i")
+     apply simp
+     apply (metis List.finite_set Max.union Plus.prems(4) enumerate_aexp_inputs.simps(4) enumerate_aexp_inputs_not_empty max_less_iff_conj no_variables_aval sup_bot.left_neutral sup_bot.right_neutral)
+    by simp
 next
   case (Minus a1 a2)
   then show ?case
-apply simp
-    apply clarify
-    by (metis (no_types, lifting) List.finite_set Max.set_eq_fold Max_insert fold_simps(1) foldr_conv_fold list.set(2) max_less_iff_conj no_variables_list_aval set_empty)
+    apply (simp only: enumerate_aexp_inputs_not_empty[of "Minus a1 a2"])
+    apply (erule exE)
+    apply (erule exE)
+    apply (simp only: neq_Nil_conv List.linorder_class.Max.set_eq_fold)
+    apply (case_tac "fold max c b \<le> length i")
+     apply simp
+    apply (metis List.finite_set Max.union Minus.prems(4) enumerate_aexp_inputs.simps(5) enumerate_aexp_inputs_not_empty max_less_iff_conj no_variables_aval sup_bot.left_neutral sup_bot.right_neutral)
+    by simp
 qed
 
 definition max_input :: "aexp \<Rightarrow> nat option" where
   "max_input g = (let inputs = (enumerate_aexp_inputs g) in if inputs = {} then None else Some (Max inputs))"
-
-lemma enumerate_aexp_regs_list: "set (enumerate_aexp_regs_list l) = enumerate_aexp_regs l"
-proof(induct l)
-case (L x)
-then show ?case
-  by simp
-next
-  case (V x)
-  then show ?case
-    apply (cases x)
-    by auto
-next
-  case (Plus l1 l2)
-  then show ?case
-    by simp
-next
-  case (Minus l1 l2)
-  then show ?case 
-    by simp
-qed
 
 definition max_reg :: "aexp \<Rightarrow> nat option" where
   "max_reg g = (let regs = (enumerate_aexp_regs g) in if regs = {} then None else Some (Max regs))"
@@ -566,19 +536,6 @@ next
   case (Minus a1 a2)
   then show ?case
     by simp
-qed
-
-lemma set_enumerate_aexp_inputs_list: 
-"set (fold (@) (map enumerate_aexp_inputs_list l) []) = (\<Union> (set (map enumerate_aexp_inputs l)))"
-proof(induct l)
-case Nil
-  then show ?case
-    by simp
-next
-case (Cons a l)
-  then show ?case
-    using enumerate_aexp_inputs_list
-    by (simp add: fold_append_concat_rev inf_sup_aci(5))
 qed
 
 lemma enumerate_aexp_inputs_empty_input_unconstrained:

@@ -42,31 +42,6 @@ definition enumerate_inputs :: "transition \<Rightarrow> nat set" where
                         (\<Union> (set (map enumerate_aexp_inputs (Outputs t)))) \<union>
                         (\<Union> (set (map (\<lambda>(_, u). enumerate_aexp_inputs u) (Updates t))))"
 
-definition enumerate_inputs_list :: "transition \<Rightarrow> nat list" where
-  "enumerate_inputs_list t = (fold (@) (map enumerate_gexp_inputs_list (Guard t)) []) @
-                             (fold (@) (map enumerate_aexp_inputs_list (Outputs t)) []) @
-                             (fold (@) (map (\<lambda>(_, u). enumerate_aexp_inputs_list u) (Updates t)) [])"
-
-lemma fold_enumerate_aexp_inputs_list_pairs: "set (fold (@) (map (\<lambda>(uu, y). enumerate_aexp_inputs_list y) U) []) = (\<Union>(uu, y)\<in>set U. enumerate_aexp_inputs y)"
-  by (simp add: enumerate_aexp_inputs_list fold_append_concat_rev inf_sup_aci(5) split_def)
-
-lemma fold_enumerate_aexp_inputs_list: "set (fold (@) (map enumerate_aexp_inputs_list P) []) = (\<Union>x\<in>set P. enumerate_aexp_inputs x)"
-  by (simp add: enumerate_aexp_inputs_list fold_append_concat_rev inf_sup_aci(5) split_def)
-
-lemma fold_enumerate_gexp_inputs_list: "set (fold (@) (map enumerate_gexp_inputs_list G) []) = (\<Union>x\<in>set G. enumerate_gexp_inputs x)"
-  by (simp add: enumerate_gexp_inputs_list fold_append_concat_rev inf_sup_aci(5) split_def)
-
-lemma enumerate_gexp_inputs_empty: "(\<forall>x\<in>set G. enumerate_gexp_inputs x = {}) = (fold (@) (map enumerate_gexp_inputs_list G) [] = [])"
-  apply (standard)
-   apply (metis Sup_bot_conv(2) fold_enumerate_gexp_inputs_list imageE set_empty)
-  using fold_enumerate_gexp_inputs_list by force
-
-lemma set_enumerate_inputs_list: "enumerate_inputs t = set (enumerate_inputs_list t)"
-  apply (simp add: enumerate_inputs_list_def enumerate_inputs_def)
-  apply (simp add: fold_enumerate_aexp_inputs_list fold_enumerate_aexp_inputs_list_pairs)
-  apply (simp add: fold_enumerate_gexp_inputs_list)
-  by auto
-
 lemma set_list_not_empty: "(set l \<noteq> {}) = (l \<noteq> [])"
   by simp
 
@@ -94,34 +69,65 @@ definition enumerate_registers :: "transition \<Rightarrow> nat set" where
                            (\<Union> (set (map (\<lambda>(_, u). enumerate_aexp_regs u) (Updates t)))) \<union>
                            (\<Union> (set (map (\<lambda>(r, _). enumerate_aexp_regs (V (R r))) (Updates t))))"
 
-definition enumerate_registers_list :: "transition \<Rightarrow> nat list" where
-  "enumerate_registers_list t = (fold (@) (map enumerate_gexp_regs_list (Guard t)) []) @
-                                (fold (@) (map enumerate_aexp_regs_list (Outputs t)) []) @
-                                (fold (@) (map (\<lambda>(_, u). enumerate_aexp_regs_list u) (Updates t)) []) @
-                                (fold (@) (map (\<lambda>(r, _). enumerate_aexp_regs_list (V (R r))) (Updates t)) [])"
+lemma gexp_regs_list: "\<exists>l. \<Union> (set (map enumerate_gexp_regs G)) = set l"
+proof(induct G)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a G)
+  then show ?case
+    by (metis enumerate_gexp_regs_list Sup_insert list.simps(15) list.simps(9) set_append)
+qed
 
-lemma enumerate_registers_list_empty:
-  "enumerate_registers_list t = [] \<Longrightarrow>
-   fold (@) (map enumerate_gexp_regs_list (Guard t)) [] = []"
-  by (simp add: enumerate_registers_list_def)
+lemma outputs_regs_list: "\<exists>l. \<Union> (set (map enumerate_aexp_regs P)) = set l"
+proof(induct P)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a P)
+  then show ?case
+    by (metis enumerate_aexp_regs_list Sup_insert list.simps(15) list.simps(9) set_append)
+qed
 
-lemma fold_enumerate_aexp_regs_list_pairs: "set (fold (@) (map (\<lambda>(uu, y). enumerate_aexp_regs_list y) U) []) = (\<Union>(uu, y)\<in>set U. enumerate_aexp_regs y)"
-  by (simp add: enumerate_aexp_regs_list fold_append_concat_rev inf_sup_aci(5) split_def)
+lemma updates_regs_list_1: "\<exists>l. \<Union> (set (map (\<lambda>(uu, y). enumerate_aexp_regs y) U)) = set l"
+proof(induct U)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a U)
+  then show ?case
+    apply clarify
+    apply simp
+    apply (cases a)
+    apply simp
+    by (metis enumerate_aexp_regs_list set_append)
+qed
 
-lemma fold_enumerate_aexp_regs_list_pairs_2: "set (fold (@) (map (\<lambda>(r, uu). [r]) (Updates t)) []) = (\<Union>x\<in>set (Updates t). case x of (r, uu) \<Rightarrow> {r})"
-    by (simp add: enumerate_aexp_regs_list fold_append_concat_rev inf_sup_aci(5) split_def)
+lemma updates_regs_list_2: "\<exists>l. \<Union> (set (map (\<lambda>(r, uu). enumerate_aexp_regs (V (R r))) U)) = set l"
+proof(induct U)
+case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a U)
+  then show ?case
+    apply clarify
+    apply simp
+    apply (cases a)
+    apply simp
+    by (metis List.set_insert)
+qed
 
-lemma fold_enumerate_aexp_regs_list: "set (fold (@) (map enumerate_aexp_regs_list P) []) = (\<Union>x\<in>set P. enumerate_aexp_regs x)"
-    by (simp add: enumerate_aexp_regs_list fold_append_concat_rev inf_sup_aci(5) split_def)
-
-lemma fold_enumerate_gexp_regs_list: "set (fold (@) (map enumerate_gexp_regs_list G) []) = (\<Union>x\<in>set G. enumerate_gexp_regs x)"
-    by (simp add: enumerate_gexp_regs_list fold_append_concat_rev inf_sup_aci(5) split_def)
-
-lemma set_enumerate_registers_list: "enumerate_registers t = set (enumerate_registers_list t)"
-  apply (simp add: enumerate_registers_list_def enumerate_registers_def)
-  apply (simp add: fold_enumerate_aexp_regs_list fold_enumerate_aexp_regs_list_pairs fold_enumerate_aexp_regs_list_pairs_2)
-  apply (simp add: fold_enumerate_gexp_regs_list)
-  by auto
+lemma set_enumerate_registers_list: "\<exists>l. enumerate_registers t = set l"
+  unfolding enumerate_registers_def
+  using gexp_regs_list[of "Guard t"]
+        outputs_regs_list[of "Outputs t"]
+        updates_regs_list_1[of "Updates t"]
+        updates_regs_list_2[of "Updates t"]
+  by (metis set_union)
 
 definition max_reg :: "transition \<Rightarrow> nat option" where
   "max_reg t = (if enumerate_registers t = {} then None else Some (Max (enumerate_registers t)))"
@@ -141,32 +147,5 @@ definition valid_transition :: "transition \<Rightarrow> bool" where
 
 lemma not_leq_gt_set: "(\<forall>x\<in>(s::('a::linorder) set). \<not> a \<le> x) = (\<forall>x\<in>s. a > x)"
   by auto
-
-lemma fold_append_Union: "(\<Union>x\<in>set G. set (enumerate_gexp_inputs_list x)) = set (fold (@) (map enumerate_gexp_inputs_list G) [])"
-proof(induct G)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a G)
-  then show ?case
-    by (simp add: fold_append_concat_rev inf_sup_aci(5))
-qed
-
-lemma map_enumerate_gexp_inputs: 
-  "(Max (\<Union> (set (map enumerate_gexp_inputs G))) =
-   (fold (max) (fold (@) (map enumerate_gexp_inputs_list G) []) 0)) \<or> ((\<Union> (set (map enumerate_gexp_inputs G)) = {}))"
-proof(induct G)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a G)
-  then show ?case
-    apply simp
-    apply (simp add: enumerate_gexp_inputs_list)
-    apply (simp add: fold_append_Union)
-    by (metis (no_types, lifting) List.finite_set Max.set_eq_fold Max_insert fold_append_concat_rev inf_sup_aci(5) list.simps(15) max_0L set_append set_empty sup.left_idem sup_bot.right_neutral)
-qed
 
 end

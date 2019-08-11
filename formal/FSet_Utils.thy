@@ -2,48 +2,6 @@ theory FSet_Utils
   imports "~~/src/HOL/Library/FSet"
 begin
 
-context includes fset.lifting begin
-lift_definition fprod  :: "'a fset \<Rightarrow> 'b fset \<Rightarrow> ('a \<times> 'b) fset " (infixr "|\<times>|" 80) is "\<lambda>a b. fset a \<times> fset b"
-  by simp
-
-lift_definition fis_singleton :: "'a fset \<Rightarrow> bool" is "\<lambda>A. is_singleton (fset A)".
-end
-
-lemma fprod_member: "x |\<in>| xs \<Longrightarrow> y |\<in>| ys \<Longrightarrow> (x, y) |\<in>| xs |\<times>| ys"
-  by (simp add: fmember_def fprod_def Abs_fset_inverse)
-
-lemma fprod_empty_l: "{||} |\<times>| a = {||}"
-  using bot_fset_def fprod.abs_eq by force
-
-lemma fprod_empty_r: "a |\<times>| {||} = {||}"
-  by (simp add: fprod_def bot_fset_def Abs_fset_inverse)
-
-lemmas fprod_empty = fprod_empty_l fprod_empty_r
-
-lemma fprod_finsert: "(finsert a as) |\<times>| (finsert b bs) = finsert (a, b) (fimage (\<lambda>b. (a, b)) bs |\<union>| fimage (\<lambda>a. (a, b)) as |\<union>| (as |\<times>| bs))"
-  apply (simp add: finsert_def fprod_def Abs_fset_inverse)
-  apply (rule arg_cong[of "(insert (a, b) (fset as \<times> insert b (fset bs) \<union> insert a (fset as) \<times> fset bs))"
-                    "(insert (a, b) (Pair a ` fset bs \<union> (\<lambda>a. (a, b)) ` fset as \<union> fset as \<times> fset bs))"
-                    Abs_fset])
-  by auto
-
-lemma fprod_induct: "P ({||} |\<times>| {||}) \<Longrightarrow> (\<And>as bs a b. P (as |\<times>| bs) \<longrightarrow> P ((finsert a as) |\<times>| (finsert b bs))) \<Longrightarrow> P (A |\<times>| B)"
-proof(induct A)
-  case empty
-  then show ?case
-    apply (induct B)
-     apply simp
-    by (simp add: fprod.abs_eq)
-next
-  case (insert x A)
-  then show ?case
-    apply (induct B)
-     apply (simp add: fprod_empty_r)
-    by (metis finsert_absorb2)
-qed
-
-definition "fSum \<equiv> fsum (\<lambda>x. x)"
-
 syntax (ASCII)
   "_fBall"       :: "pttrn \<Rightarrow> 'a fset \<Rightarrow> bool \<Rightarrow> bool"      ("(3ALL (_/:_)./ _)" [0, 0, 10] 10)
   "_fBex"        :: "pttrn \<Rightarrow> 'a fset \<Rightarrow> bool \<Rightarrow> bool"      ("(3EX (_/:_)./ _)" [0, 0, 10] 10)
@@ -64,11 +22,38 @@ translations
   "\<exists>x|\<in>|A. P" \<rightleftharpoons> "CONST fBex A (\<lambda>x. P)"
   "\<exists>!x|\<in>|A. P" \<rightharpoonup> "\<exists>!x. x |\<in>| A \<and> P"
 
-lemma fis_singleton_code[code]: "fis_singleton s = (size s = 1)"
+context includes fset.lifting begin
+  lift_definition fprod  :: "'a fset \<Rightarrow> 'b fset \<Rightarrow> ('a \<times> 'b) fset " (infixr "|\<times>|" 80) is "\<lambda>a b. fset a \<times> fset b"
+    by simp
+  
+  lift_definition fis_singleton :: "'a fset \<Rightarrow> bool" is "\<lambda>A. is_singleton (fset A)".
+end
+
+definition "fSum \<equiv> fsum (\<lambda>x. x)"
+
+lemma fprod_member: "x |\<in>| xs \<Longrightarrow> y |\<in>| ys \<Longrightarrow> (x, y) |\<in>| xs |\<times>| ys"
+  by (simp add: fmember_def fprod_def Abs_fset_inverse)
+
+lemma fprod_empty_l: "{||} |\<times>| a = {||}"
+  using bot_fset_def fprod.abs_eq by force
+
+lemma fprod_empty_r: "a |\<times>| {||} = {||}"
+  by (simp add: fprod_def bot_fset_def Abs_fset_inverse)
+
+lemmas fprod_empty = fprod_empty_l fprod_empty_r
+
+lemma fprod_finsert: "(finsert a as) |\<times>| (finsert b bs) = finsert (a, b) (fimage (\<lambda>b. (a, b)) bs |\<union>| fimage (\<lambda>a. (a, b)) as |\<union>| (as |\<times>| bs))"
+  apply (simp add: finsert_def fprod_def Abs_fset_inverse)
+  apply (rule arg_cong[of "(insert (a, b) (fset as \<times> insert b (fset bs) \<union> insert a (fset as) \<times> fset bs))"
+                    "(insert (a, b) (Pair a ` fset bs \<union> (\<lambda>a. (a, b)) ` fset as \<union> fset as \<times> fset bs))"
+                    Abs_fset])
+  by auto
+
+lemma fis_singleton_code [code]: "fis_singleton s = (size s = 1)"
   apply (simp add: fis_singleton_def is_singleton_def)
   by (simp add: card_Suc_eq)
 
-lemma fprod_subset: "x |\<subseteq>| x' \<and> y |\<subseteq>| y' \<Longrightarrow> x |\<times>| y |\<subseteq>| x' |\<times>| y'"
+lemma fprod_subseteq: "x |\<subseteq>| x' \<and> y |\<subseteq>| y' \<Longrightarrow> x |\<times>| y |\<subseteq>| x' |\<times>| y'"
   apply (simp add: fprod_def less_eq_fset_def Abs_fset_inverse)
   by auto
 
@@ -79,6 +64,9 @@ lemma fprod_singletons: "{|a|} |\<times>| {|b|} = {|(a, b)|}"
   apply (simp add: fprod_def)
   by (metis fset_inverse fset_simps(1) fset_simps(2))
 
+lemma fprod_equiv: "(fset (f |\<times>| f') = s) = (((fset f) \<times> (fset f')) = s)"
+  by (simp add: fprod_def Abs_fset_inverse)
+
 lemma fset_both_sides: "(Abs_fset s = f) = (fset (Abs_fset s) = fset f)"
   by (simp add: fset_inject)
 
@@ -88,7 +76,7 @@ lemma Abs_ffilter: "(ffilter f s = s') = (Set.filter f (fset s) = (fset s'))"
 lemma Abs_fimage: "(fimage f s = s') = (Set.image f (fset s) = (fset s'))"
   by (simp add: fimage_def fset_both_sides Abs_fset_inverse)
 
-lemma ffilter_empty: "ffilter f {||} = {||}"
+lemma ffilter_empty [simp]: "ffilter f {||} = {||}"
   apply (simp add: ffilter_def fset_both_sides Abs_fset_inverse)
   by auto
 
@@ -103,33 +91,12 @@ lemma ffilter_finsert: "ffilter f (finsert a s) = (if f a then finsert a (ffilte
 lemma singleton_singleton [simp]: "fis_singleton {|a|}"
   by (simp add: fis_singleton_def)
 
-lemma not_singleton_emty [simp]: "\<not>fis_singleton {||}"
+lemma not_singleton_empty [simp]: "\<not> fis_singleton {||}"
   apply (simp add: fis_singleton_def)
   by (simp add: is_singleton_altdef)
 
-lemma abs_fset_fiveton[simp]: "Abs_fset {a, b, c, d, e} = {|a, b, c, d, e|}"
-  by (metis bot_fset.rep_eq finsert.rep_eq fset_inverse)
-
-lemma abs_fset_fourton[simp]: "Abs_fset {a, b, c, d} = {|a, b, c, d|}"
-  by (metis bot_fset.rep_eq finsert.rep_eq fset_inverse)
-
-lemma abs_fset_tripleton[simp]: "Abs_fset {a, b, c} = {|a, b, c|}"
-  by (metis bot_fset.rep_eq finsert.rep_eq fset_inverse)
-
-lemma abs_fset_doubleton[simp]: "Abs_fset {a, b} = {|a, b|}"
-  by (metis bot_fset.rep_eq finsert.rep_eq fset_inverse)
-
-lemma abs_fset_singleton[simp]: "Abs_fset {a} = {|a|}"
-  by (metis bot_fset.rep_eq finsert.rep_eq fset_inverse)
-
-lemma abs_fset_empty[simp]: "Abs_fset {} = {||}"
-  by (simp add: bot_fset_def)
-
-lemma set_equiv: "(f1 = f2) = (fset f1 = fset f2)"
+lemma fset_equiv: "(f1 = f2) = (fset f1 = fset f2)"
   by (simp add: fset_inject)
-
-lemma fprod_equiv: "(fset (f |\<times>| f') = s) = (((fset f) \<times> (fset f')) = s)"
-  by (simp add: fprod_def Abs_fset_inverse)
 
 lemma finsert_equiv: "(finsert e f = f') = (insert e (fset f) = (fset f'))"
   by (simp add: finsert_def fset_both_sides Abs_fset_inverse)
@@ -145,9 +112,6 @@ lemma sorted_list_of_empty [simp]: "sorted_list_of_fset {||} = []"
 
 lemma fmember_implies_member: "e |\<in>| f \<Longrightarrow> e \<in> fset f"
   by (simp add: fmember_def)
-
-lemma ffilter_to_filter: "(ffilter f s = s') = (Set.filter f (fset s) = fset s')"
-  by (metis ffilter.rep_eq fset_inject)
 
 lemma fold_union_ffUnion: "fold (|\<union>|) l {||} = ffUnion (fset_of_list l)"
 proof(induct l rule: rev_induct)
@@ -200,5 +164,8 @@ lemma ffilter_true_pair: "ffilter (\<lambda>(x, y). True) f = f"
 lemma ffilter_out_all: "\<forall>e |\<in>| f. \<not>P e \<Longrightarrow> ffilter P f = {||}"
   apply (simp add: ffilter_def fBall_def fset_both_sides Abs_fset_inverse)
   by auto
+
+lemma fset_eq_alt: "(x = y) = (x |\<subseteq>| y \<and> size x = size y)"
+  by (metis exists_least_iff le_less size_fsubset)
 
 end
