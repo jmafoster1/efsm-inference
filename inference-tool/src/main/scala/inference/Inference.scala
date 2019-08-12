@@ -3026,16 +3026,22 @@ Nat.plus_nata(maxS(e), Nat.Nata((1)))),
      })
 }
 
-def make_pta(x0: List[List[(String, (List[Value.value], List[Value.value]))]],
+def make_pta(l: List[List[(String, (List[Value.value], List[Value.value]))]],
               e: FSet.fset[((Nat.nat, Nat.nat),
                              Transition.transition_ext[Unit])]):
       FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]
   =
-  (x0, e) match {
-  case (Nil, e) => e
-  case (h :: t, e) =>
-    make_pta(t, make_branch(e, Nat.zero_nata, Map().withDefaultValue(None), h))
-}
+  Lista.fold[List[(String, (List[Value.value], List[Value.value]))],
+              FSet.fset[((Nat.nat, Nat.nat),
+                          Transition.transition_ext[Unit])]](((h:
+                         List[(String, (List[Value.value], List[Value.value]))])
+                        =>
+                       (ea: FSet.fset[((Nat.nat, Nat.nat),
+Transition.transition_ext[Unit])])
+                         =>
+                       make_branch(ea, Nat.zero_nata,
+                                    Map().withDefaultValue(None), h)),
+                      l, e)
 
 def toiEFSM_aux(uu: Nat.nat,
                  x1: List[((Nat.nat, Nat.nat),

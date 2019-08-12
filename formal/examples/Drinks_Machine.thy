@@ -1,6 +1,6 @@
-section{*Examples*}
-subsection{*Drinks Machine*}
-text{*This theory formalises a simple drinks machine. The \emph{select} operation takes one
+section\<open>Examples\<close>
+subsection\<open>Drinks Machine\<close>
+text\<open>This theory formalises a simple drinks machine. The \emph{select} operation takes one
 argument - the desired beverage. The \emph{coin} operation also takes one parameter representing
 the value of the coin. The \emph{vend} operation has two flavours - one which dispenses the drink if
 the customer has inserted enough money, and one which dispenses nothing if the user has not inserted
@@ -10,7 +10,7 @@ We first define a datatype \emph{statemane} which corresponds to $S$ in the form
 Note that, while statename has four elements, the drinks machine presented here only requires three
 states. The fourth element is included here so that the \emph{statename} datatype may be used in
 the next example.
-*}
+\<close>
 theory Drinks_Machine
   imports "../Contexts"
 begin
@@ -31,14 +31,6 @@ definition select :: "transition" where
                   ]
       \<rparr>"
 
-(*select:1[]/[][(R 1, (V (I 1))), (R 2, (L (Num 0)))]*)
-
-lemma guard_select: "Guard select = []"
-  by (simp add: select_def)
-
-lemma outputs_select: "Outputs select = []"
-  by (simp add: select_def)
-
 text_raw\<open>\snip{coin}{1}{2}{%\<close>
 definition coin :: "transition" where
 "coin \<equiv> \<lparr>
@@ -54,9 +46,6 @@ definition coin :: "transition" where
 text_raw\<open>}%endsnip\<close>
 
 lemma label_coin: "Label coin = STR ''coin''"
-  by (simp add: coin_def)
-
-lemma guard_coin: "Guard coin = []"
   by (simp add: coin_def)
 
 definition vend :: "transition" where
@@ -80,20 +69,11 @@ definition vend_fail :: "transition" where
         Updates = [(1, V (R 1)), (2, V (R 2))]
       \<rparr>"
 
-lemma guard_vend_fail: "Guard vend_fail = [(GExp.Lt(V (R 2)) (L (Num 100)))]"
-  by (simp add: vend_fail_def)
-
-lemma outputs_vend_fail: "Outputs vend_fail = []"
-  by (simp add: vend_fail_def)
-
 lemma label_vend_fail: "Label vend_fail = STR ''vend''"
   by (simp add: vend_fail_def)
 
 lemma arity_vend_fail: "Arity vend_fail = 0"
   by (simp add: vend_fail_def)
-
-lemma guard_vend: "Guard vend = [(Ge (V (R 2)) (L (Num 100)))]"
-  by (simp add: vend_def)
 
 definition drinks :: "transition_matrix" where
 "drinks \<equiv> {|
@@ -179,22 +159,24 @@ lemma purchase_coke: "observe_trace drinks 0 <> [(STR ''select'', [Str ''coke'']
    apply simp
   by simp
 
-lemma inaccepts_input: "l \<noteq> STR ''coin'' \<Longrightarrow> l \<noteq> STR ''vend'' \<Longrightarrow> \<not> accepts drinks 1 d' [(l, i)]"
+lemma rejects_input: "l \<noteq> STR ''coin'' \<Longrightarrow> l \<noteq> STR ''vend'' \<Longrightarrow> \<not> accepts drinks 1 d' [(l, i)]"
   apply (rule trace_reject_no_possible_steps)
   apply (simp add: possible_steps_empty drinks_def)
-  by (simp add: label_coin label_vend label_vend_fail)
+  using label_coin label_vend label_vend_fail by blast
 
-lemma inaccepts_accepts_prefix: "l \<noteq> STR ''coin'' \<Longrightarrow> l \<noteq> STR ''vend'' \<Longrightarrow> \<not> (accepts_trace drinks [(STR ''select'', [Str ''coke'']), (l, i)])"
+lemma rejects_accepts_prefix:
+  "l \<noteq> STR ''coin'' \<Longrightarrow>
+   l \<noteq> STR ''vend'' \<Longrightarrow>
+   \<not> (accepts_trace drinks [(STR ''select'', [Str ''coke'']), (l, i)])"
   apply (rule trace_reject_later)
   apply (simp add: possible_steps_0 select_def join_ir_def input2state_def)
-  using inaccepts_input by blast
+  using rejects_input by blast
 
-lemma inaccepts_termination: "observe_trace drinks 0 <> [(STR ''select'', [Str ''coke'']), (STR ''inaccepts'', [Num 50]), (STR ''coin'', [Num 50])] = []"
-  apply (simp only: observe_trace_empty_iff)
-  apply (rule rejects_no_obs)
-  apply (rule trace_reject_later)
-  apply (simp add: possible_steps_0 select_def join_ir_def input2state_def)
-  using accepts_head inaccepts_input by fastforce
+lemma rejects_termination: "observe_trace drinks 0 <> [(STR ''select'', [Str ''coke'']), (STR ''rejects'', [Num 50]), (STR ''coin'', [Num 50])] = []"
+  apply (rule rejects_observe_empty)
+  using rejects_accepts_prefix[of "STR ''rejects''" "[Num 50]"]
+        rejects_prefix
+  by fastforce
 
 (* Part of Example 2 in Foster et. al. *)
 lemma r2_0_vend: "can_take_transition vend i r \<Longrightarrow> \<exists>n. r $ 2 = Some (Num n) \<and> n \<ge> 100" (* You can't take vend immediately after taking select *)
@@ -215,7 +197,7 @@ lemma drinks_vend_r2_String: "r $ 2 = Some (value.Str x2) \<Longrightarrow> poss
   apply safe
   by (simp_all add: transitions apply_guards_def ValueGt_def join_ir_def)
 
-lemma drinks_vend_r2_inaccepts: "\<nexists>n. r $ 2 = Some (Num n) \<Longrightarrow> step t drinks 1 r (STR ''vend'') [] = None"
+lemma drinks_vend_r2_rejects: "\<nexists>n. r $ 2 = Some (Num n) \<Longrightarrow> step t drinks 1 r (STR ''vend'') [] = None"
   apply (rule no_possible_steps_1)
   apply (simp add: possible_steps_empty drinks_def)
   apply safe
@@ -223,16 +205,16 @@ lemma drinks_vend_r2_inaccepts: "\<nexists>n. r $ 2 = Some (Num n) \<Longrightar
    apply (simp add: vend_fail_def apply_guards_def join_ir_def ValueGt_def MaybeBoolInt_not_num_1)
   by (simp add: vend_def apply_guards_def maybe_negate_true maybe_or_false ValueGt_def join_ir_def MaybeBoolInt_not_num_1)
 
-lemma drinks_0_inaccepts: "\<not> (fst a = STR ''select'' \<and> length (snd a) = 1) \<Longrightarrow>
+lemma drinks_0_rejects: "\<not> (fst a = STR ''select'' \<and> length (snd a) = 1) \<Longrightarrow>
     (possible_steps drinks 0 r (fst a) (snd a)) = {||}"
   apply (simp add: drinks_def possible_steps_def transitions)
   by force
 
 lemma drinks_vend_empty: "(possible_steps drinks 0 <> (STR ''vend'') []) = {||}"
-  using drinks_0_inaccepts
+  using drinks_0_rejects
   by auto
 
-lemma drinks_1_inaccepts: "fst a = STR ''coin'' \<longrightarrow> length (snd a) \<noteq> 1 \<Longrightarrow>
+lemma drinks_1_rejects: "fst a = STR ''coin'' \<longrightarrow> length (snd a) \<noteq> 1 \<Longrightarrow>
           a \<noteq> (STR ''vend'', []) \<Longrightarrow>
           possible_steps drinks 1 r (fst a) (snd a) = {||}"
 proof
@@ -250,34 +232,31 @@ proof
     by simp
 qed
 
-lemma drinks_inaccepts_future: "t \<noteq> [] \<Longrightarrow> \<not>accepts drinks 2 d t"
+lemma drinks_rejects_future: "t \<noteq> [] \<Longrightarrow> \<not>accepts drinks 2 d t"
   apply safe
   apply (rule accepts.cases)
     apply simp
    apply simp
   by (simp add: drinks_end)
 
-lemma drinks_1_inaccepts_trace: "\<not> (aa = STR ''vend'' \<and> b = []) \<Longrightarrow> \<not> (aa = STR ''coin'' \<and> length b = 1) \<Longrightarrow> \<not>accepts drinks 1 r ((aa, b) # t)"
+lemma drinks_1_rejects_trace: "\<not> (aa = STR ''vend'' \<and> b = []) \<Longrightarrow> \<not> (aa = STR ''coin'' \<and> length b = 1) \<Longrightarrow> \<not>accepts drinks 1 r ((aa, b) # t)"
   apply clarify
   apply (rule accepts.cases)
     apply simp
    apply simp
   apply clarify
   unfolding step_def
-  using drinks_1_inaccepts by auto
+  using drinks_1_rejects by auto
 
-lemma inaccepts_state_step: "s > 1 \<Longrightarrow> step t drinks s r l i = None"
+lemma rejects_state_step: "s > 1 \<Longrightarrow> step t drinks s r l i = None"
   apply (rule no_possible_steps_1)
   by (simp add: possible_steps_empty drinks_def)
 
-lemma step_drinks_end: "step t drinks 2 da (fst h) (snd h) = None"
-  by (simp add: drinks_end no_possible_steps_1)
-
-lemma invalid_other_states: "s > 1 \<Longrightarrow> \<not>accepts drinks s r ((aa, b) # t)"
+lemma invalid_other_states: "s > 1 \<Longrightarrow> \<not> accepts drinks s r ((aa, b) # t)"
   apply clarify
   apply (rule accepts.cases)
     apply simp
    apply simp
   apply clarify
-  using inaccepts_state_step accepts_cons_step by blast
+  using rejects_state_step accepts_cons_step by blast
 end

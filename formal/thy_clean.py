@@ -10,13 +10,17 @@ def line_of_char(text, c):
 
 
 filename = sys.argv[1]
+to_ignore = set(sys.argv[2:])
+print("ignoring", to_ignore)
+
 if filename.endswith(".thy"):
 
     with open(filename) as file:
         text = file.read()
 
     named_lemmas = {(line_of_char(text, m.start()), m.group(2))
-                    for m in re.finditer("lemma(s?) (\w*)(:| |=)", text)}
+                    for m in re.finditer("lemma(s?) (\w*)(:| |=)", text)
+                    if m.group(2) not in to_ignore}
     names = {m[1] for m in named_lemmas}
 
     used = set()

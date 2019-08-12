@@ -50,10 +50,6 @@ definition indices :: "execution \<Rightarrow> index fset" where
 definition get_by_id_intratrace_matches :: "execution \<Rightarrow> (index \<times> index) fset" where
   "get_by_id_intratrace_matches e = ffilter (\<lambda>(a, b). lookup a e = lookup b e \<and> eventNum a \<le> eventNum b \<and> a \<noteq> b) (indices e |\<times>| indices e)"
 
-lemma get_by_id_intratrace_matches_preproces:  "get_by_id_intratrace_matches e = ffilter (\<lambda>(a, b). lookup a e = lookup b e) (ffilter (\<lambda>(a, b). eventNum a \<le> eventNum b \<and> a \<noteq> b) (indices e |\<times>| indices e))"
-  apply (simp add: get_by_id_intratrace_matches_def)
-  by auto
-
 (* 
   To detect all intertrace matches, walk the trace in the current machine and replace eventNo with
   the corresponding transition's uid. If the uids match then there's an intertrace match.

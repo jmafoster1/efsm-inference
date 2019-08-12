@@ -10,20 +10,19 @@ theory Contexts
     EFSM GExp
 begin
 
-(* Begin can take *)
-
 definition can_take :: "nat \<Rightarrow> gexp list \<Rightarrow> inputs \<Rightarrow> registers \<Rightarrow> bool" where
   "can_take a g i r = (length i = a \<and> apply_guards g (join_ir i r))"
+
+lemma can_take_subset_append: "set (Guard t) \<subseteq> set (Guard t') \<Longrightarrow> can_take a (Guard t @ Guard t') i c = can_take a (Guard t') i c"
+  by (simp add: apply_guards_subset_append can_take_def)
 
 definition "can_take_transition t i r = can_take (Arity t) (Guard t) i r"
 
 lemma can_take_transition_empty_guard: "Guard t = [] \<Longrightarrow> \<exists>i. can_take_transition t i c"
   by (simp add: can_take_transition_def can_take_def Ex_list_of_length)
 
-lemma valid_list_can_take: "valid_list (Guard t) \<Longrightarrow> \<exists>i. can_take_transition t i c"
-  by (simp add: can_take_transition_def can_take_def valid_list_apply_guards Ex_list_of_length)
-
-declare ValueEq_def [simp]
+lemma valid_list_can_take: "\<forall>g \<in> set (Guard t). valid g \<Longrightarrow> \<exists>i. can_take_transition t i c"
+  by (simp add: can_take_transition_def can_take_def apply_guards_def valid_def Ex_list_of_length)
 
 lemma medial_subset:
   "length i = Arity t \<Longrightarrow>
@@ -63,17 +62,21 @@ lemma subsumption:
    subsumes t2 r t1"
   by (simp add: subsumes_def)
 
-lemma bad_guards: "\<exists>i. can_take_transition t1 i r \<and> \<not> can_take_transition t2 i r \<Longrightarrow> \<not> subsumes t2 r t1"
+lemma bad_guards:
+  "\<exists>i. can_take_transition t1 i r \<and> \<not> can_take_transition t2 i r \<Longrightarrow>
+   \<not> subsumes t2 r t1"
   by (simp add: subsumes_def)
 
-lemma inconsistent_updates: "\<exists>p1 p2. (\<exists>i. posterior t2 i r = Some p2 \<and> posterior t1 i r = Some p1) \<and> (\<exists>r. (\<exists>y. p1 $ r = Some y) \<and> p2 $ r = None) \<Longrightarrow>
- \<not> subsumes t2 r t1"
+lemma inconsistent_updates:
+  "\<exists>p1 p2. (\<exists>i. posterior t2 i r = Some p2 \<and> posterior t1 i r = Some p1) \<and>
+           (\<exists>r. (\<exists>y. p1 $ r = Some y) \<and> p2 $ r = None) \<Longrightarrow>
+   \<not> subsumes t2 r t1"
   by (simp add: subsumes_def)
 
-lemma inconsistent_updates2: "\<exists>p1 p2.
-       (\<exists>i. posterior_separate (Arity t2) (Guard t2 @ Guard t1) (Updates t2) i r = Some p2 \<and>
-            posterior_separate (Arity t1) (Guard t1) (Updates t1) i r = Some p1) \<and>
-       (\<exists>P r'. P (p2 $ r') \<and> (\<exists>y. p1 $ r' = Some y) \<and> \<not> P (p1 $ r')) \<Longrightarrow>
+lemma inconsistent_updates2:
+  "\<exists>p1 p2. (\<exists>i. posterior_separate (Arity t2) (Guard t2 @ Guard t1) (Updates t2) i r = Some p2 \<and>
+                posterior_separate (Arity t1) (Guard t1) (Updates t1) i r = Some p1) \<and>
+           (\<exists>P r'. P (p2 $ r') \<and> (\<exists>y. p1 $ r' = Some y) \<and> \<not> P (p1 $ r')) \<Longrightarrow>
     \<not> subsumes t2 r t1"
   by (simp add: subsumes_def)
 
@@ -124,32 +127,7 @@ next
 qed
 
 lemma accepting_sequence_length: "accepting_sequence e s d t seq = Some seq' \<Longrightarrow> length seq' \<ge> length seq"
-  using accepting_sequence_length_aux
-  by simp
-
-lemma accepting_sequence_not_empty: "accepting_sequence e s r t (a#as) \<noteq> Some []"
-  using accepting_sequence_length
-  by fastforce
-
-lemma accepting_sequence_empty: "accepting_sequence e s d t [] = Some [] \<Longrightarrow> t = []"
-proof(induct t)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a t)
-  then show ?case
-    apply (simp add: Let_def)
-    apply (case_tac "ffilter (\<lambda>(s', T). accepts e s' (apply_updates (Updates T) (join_ir (snd a) d) d) t)
-         (possible_steps e s d (fst a) (snd a)) =
-        {||}")
-     apply simp
-    apply simp
-    apply (case_tac "SOME x.
-             x |\<in>| possible_steps e s d (fst a) (snd a) \<and>
-             (case x of (s', T) \<Rightarrow> accepts e s' (apply_updates (Updates T) (join_ir (snd a) d) d) t)")
-    by (simp add: Let_def accepting_sequence_not_empty)
-qed
+  by (simp add: accepting_sequence_length_aux)
 
 lemma posterior_sequence_implies_accepting_sequence: "(posterior_sequence e s d t = Some ca) \<Longrightarrow> (accepting_sequence e s d t [] \<noteq> None)"
   apply (simp add: posterior_sequence_def)
@@ -191,10 +169,14 @@ lemma posterior_sequence_accepts: "posterior_sequence e s d t = Some ca \<longri
   by auto
 
 lemma anterior_context_accepts: "\<exists>c. anterior_context e p = Some c \<Longrightarrow> accepts_trace e p"
-  using posterior_sequence_accepts
-  by auto
+  using posterior_sequence_accepts by blast
 
-lemma accepting_sequence_posterior_sequence_not_none: "accepting_sequence e s d t [] \<noteq> None \<Longrightarrow> posterior_sequence e s d t \<noteq> None"
+lemma posterior_sequence_gives_accept: "posterior_sequence e s d t \<noteq> None \<Longrightarrow> accepts e s d t"
+  using option.discI posterior_sequence_accepts by auto
+
+lemma accepting_sequence_posterior_sequence_not_none:
+  "accepting_sequence e s d t [] \<noteq> None \<Longrightarrow>
+   posterior_sequence e s d t \<noteq> None"
   apply (simp add: posterior_sequence_def)
   apply (case_tac "accepting_sequence e s d t []")
    apply simp
@@ -228,9 +210,6 @@ qed
 
 lemma rejects_gives_no_posterior_sequence: "\<not>accepts e s d t \<Longrightarrow> posterior_sequence e s d t = None"
   by (simp add: posterior_sequence_def rejects_gives_no_accepting_sequence)
-
-lemma posterior_sequence_gives_accept: "posterior_sequence e s d t \<noteq> None \<Longrightarrow> accepts e s d t"
-  by (meson rejects_gives_no_posterior_sequence)
 
 lemma no_accepting_sequence_rejected: "\<forall>d s seq. accepting_sequence e s d t seq = None \<longrightarrow> \<not> accepts e s d t"
 proof(induct t)

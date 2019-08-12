@@ -329,7 +329,7 @@ lemma no_accepting_return_to_zero:
   apply (case_tac aaa)
   using no_incoming_to_zero apply blast
   apply (simp add: no_return_to_zero)
-  by (simp add: step_none_inaccepts)
+  by (simp add: step_none_rejects)
 
 lemma no_return_to_zero_must_be_empty:
   "\<forall>(id, (from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
@@ -469,42 +469,6 @@ lemma "\<forall>i. \<not> can_take_transition t i r \<and> \<not> can_take_trans
    apply (simp add: posterior_separate_def can_take_transition_def)
   by (simp add: can_take_transition_def posterior_def posterior_separate_def)
 
-lemma can_take_must_be_eq: 
-  "Eq (V (vname.I i)) (L v) \<in> set (Guard t) \<Longrightarrow>
-       ia ! i \<noteq> v \<Longrightarrow>
-       i < Arity t \<Longrightarrow>
-       length ia = Arity t \<Longrightarrow>
-       \<not> can_take_transition t ia r"
-  apply (simp add: can_take_transition_def can_take_def apply_guards_def)
-  apply (simp add: Bex_def)
-  apply (rule_tac x= "Eq (V (vname.I (i))) (L v)" in exI)
-  apply (simp add: join_ir_def)
-  using input2state_nth[of i ia]
-  by simp
-
-lemma restrict_i_cant_swap: 
-      "is_generalisation_of t' t i r \<Longrightarrow>
-       Eq (V (vname.I i)) (L v) \<in> set (Guard t) \<Longrightarrow>
-       length ia = Arity t \<Longrightarrow>
-       ia ! i \<noteq> v \<Longrightarrow>
-       Arity t' = Arity t \<Longrightarrow>
-       \<not> apply_guards (Guard t) (join_ir ia c)"
-  using is_generalisation_of_i_lt_arity[of t' t i r]
-  using can_take_must_be_eq[of i v t ia c]
-  unfolding can_take_transition_def can_take_def
-  by simp
-
-lemma ex_v_neq_value: "ia ! i = (v::value) \<Longrightarrow> \<exists>v'. v' \<noteq> v"
-  apply (cases v)
-  by auto
-
-lemma inputs_v_neq_value: "i < length ia \<Longrightarrow> ia ! i = (v::value) \<Longrightarrow> \<exists>ia'. length ia' = length ia \<and> ia'!i \<noteq> v"
-  using ex_v_neq_value[of ia i v]
-  apply simp
-  apply clarify
-  apply (rule_tac x="list_update ia i v'" in exI)
-  by simp
-
 lemma aval_unconstrained:
   " \<not> aexp_constrains a (V (vname.I i)) \<Longrightarrow>
   i < length ia \<Longrightarrow>
@@ -567,13 +531,10 @@ next
     by (metis aval_unconstrained list_update_same_conv)
 qed
 
-lemma is_generalisation_of_can_swap_out_i:
-   "is_generalisation_of t' t i r \<Longrightarrow>
-   i < length ia \<Longrightarrow>
-   v = ia ! i \<Longrightarrow>
-   \<forall>g\<in>set (Guard t').  gval g (join_ir ia c) = gval g (join_ir (list_update ia i v') c)"
-  using is_generalisation_of_derestricts_input gval_unconstrained by blast
-
+(*
+  If input i is stored in register r by transition t then if we can take transition t' then for some
+  input I then transition t does not subsume t' 
+*)
 lemma input_stored_in_reg_not_subsumed: 
   "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
    \<exists>i. can_take_transition t' i c \<Longrightarrow>
@@ -596,7 +557,6 @@ lemma input_stored_in_reg_not_subsumed:
    apply standard
    apply (rule_tac x="Eq (V (vname.I i)) (L (Num x1))" in exI)
    apply (simp add: join_ir_def input2state_nth is_generalisation_of_i_lt_arity str_not_num)
-
    apply (rule_tac x="list_update ia i (Num s)" in exI)
    apply simp
    apply standard
@@ -606,21 +566,6 @@ lemma input_stored_in_reg_not_subsumed:
    apply standard
    apply (rule_tac x="Eq (V (vname.I i)) (L (value.Str x2))" in exI)
   by (simp add: join_ir_def input2state_nth is_generalisation_of_i_lt_arity str_not_num)
-
-lemma subset_elem: "x \<subset> y \<Longrightarrow> \<exists>e. e \<in> y \<and> e \<notin> x"
-  by auto
-
-lemma apply_guards_subset_append: "set (Guard t) \<subseteq> set (Guard t') \<Longrightarrow> apply_guards (Guard t @ Guard t') s = apply_guards (Guard t') s"
-  using apply_guards_append apply_guards_subset by blast
-
-lemma can_take_subset_append: "set (Guard t) \<subseteq> set (Guard t') \<Longrightarrow> can_take a (Guard t @ Guard t') i c = can_take a (Guard t') i c"
-  by (simp add: apply_guards_subset_append can_take_def)
-
-lemma fold_can_take_transition: "can_take (Arity t') (Guard t') i c = can_take_transition t' i c"
-  by (simp add: can_take_transition_def)
-
-lemma fst_insert: "aa \<noteq> r \<Longrightarrow> fst ` (insert (aa, b) (set U) - {(r, u)}) = insert aa (fst ` (set U - {(r, u)}))"
-  by (simp add: insert_Diff_if)
 
 lemma aval_updated: "(r, u) \<in> set U \<Longrightarrow> r \<notin> set (map fst (removeAll (r, u) U)) \<Longrightarrow> apply_updates U s c $ r = aval u s"
 proof(induct U)
@@ -634,15 +579,6 @@ next
     apply (case_tac "(r, u) = a")
     by auto
 qed
-
-lemma input2state_nth_updated:
-  "(r, V (I i)) \<in> set U \<Longrightarrow>
-   r \<notin> set (map fst (removeAll (r, V (I i)) U)) \<Longrightarrow>
-   i < length ia  \<Longrightarrow>
-   apply_updates U (join_ir ia c) c $ r \<noteq> None"
-  apply simp
-  apply (rule_tac x="ia ! i" in exI)
-  by (simp add: aval_updated join_ir_def input2state_nth)
 
 lemma can_take_append_subset: "set (Guard t') \<subset> set (Guard t) \<Longrightarrow>
 can_take a (Guard t @ Guard t') ia c = can_take a (Guard t) ia c"
@@ -681,9 +617,6 @@ lemma general_not_subsume_orig:
 lemma input_stored_in_reg_updates_reg: "input_stored_in_reg t2 t1 a = Some (i, r) \<Longrightarrow> (r, V (I i)) \<in> set (Updates t2)"
   using input_stored_in_reg_is_generalisation[of t2 t1 a i r]
   apply simp
-  by (simp add: is_generalisation_of_def remove_guard_add_update_def)
-
-lemma is_generalisation_of_updates_regi: "is_generalisation_of t2 t1 i r \<Longrightarrow> (r, V (I i)) \<in> set (Updates t2)"
   by (simp add: is_generalisation_of_def remove_guard_add_update_def)
 
 definition "possibly_not_value_ctx v r t\<^sub>1 s\<^sub>2 e\<^sub>2 s\<^sub>1 e\<^sub>1 =
@@ -730,16 +663,6 @@ lemma possibly_not_value_not_directly_subsumes:
   apply (case_tac "Outputs t\<^sub>1 ! b")
      apply (simp add: possibly_not_value)
   by auto
-
-lemma acceptance_empty_regs_args: "Inference.max_reg b = None \<Longrightarrow>
-       ffilter (\<lambda>(s', T). accepts (tm b) s' (apply_updates (Updates T) (join_ir ba <>) <>) t) (possible_steps (tm b) 0 <> ab ba) =
-       ffilter (\<lambda>(s', T). accepts (tm b) s' <> t) (possible_steps (tm b) 0 <> ab ba)"
-  apply (rule arg_cong_ffilter)
-  apply clarify
-  apply (case_tac "\<exists>s. ((s, a), bb) |\<in>| tm b")
-  using max_reg_none_no_updates[of b] in_tm
-  apply force
-  by (simp add: in_possible_steps)
 
 definition "accepts_and_gets_us_to_both a b s s' = (
   \<exists>p. accepts_trace (tm a) p \<and>

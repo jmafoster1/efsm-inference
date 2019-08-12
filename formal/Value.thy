@@ -35,6 +35,7 @@ definition ValueLt :: "value option \<Rightarrow> value option \<Rightarrow> tri
 
 definition ValueEq :: "value option \<Rightarrow> value option \<Rightarrow> trilean"  where
   "ValueEq a b \<equiv> (if a = b then true else false)"
+declare ValueEq_def [simp]
 
 instantiation "value" :: linorder begin
 fun less_eq_value :: "value \<Rightarrow> value \<Rightarrow> bool" where

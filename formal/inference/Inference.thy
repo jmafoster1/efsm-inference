@@ -77,6 +77,10 @@ lemma state_nondeterminism_singledestn[simp]: "state_nondeterminism a {|x|} = {|
 definition S :: "iEFSM \<Rightarrow> nat fset" where
   "S m = (fimage (\<lambda>(uid, (s, s'), t). s) m) |\<union>| fimage (\<lambda>(uid, (s, s'), t). s') m"
 
+lemma S_alt: "S t = EFSM.S (tm t)"
+  apply (simp add: S_def EFSM.S_def tm_def)
+  by force
+
 lemma to_in_S: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrightarrow> to |\<in>| S xb)"
   apply (simp add: S_def)
   by blast
@@ -84,10 +88,6 @@ lemma to_in_S: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrig
 lemma from_in_S: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrightarrow> from |\<in>| S xb)"
   apply (simp add: S_def)
   by blast
-
-lemma S_alt: "S t = EFSM.S (fimage snd t)"
-  apply (simp add: S_def EFSM.S_def)
-  by force
 
 (* For each state, get its outgoing transitions and see if there's any nondeterminism there *)
 definition nondeterministic_pairs :: "iEFSM \<Rightarrow> nondeterministic_pair fset" where
@@ -186,13 +186,6 @@ definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarr
      ) pairs_to_score in
      ffilter (\<lambda>(score, _). score > 0) scores)"
 
-lemma equal_states_not_scored: "(stateScore, s, s) |\<notin>| (k_score n efsm metric)"
-  apply (simp add: k_score_def Let_def)
-  by auto
-
-lemma score_gt_zero: "(stateScore, p) |\<in>| (k_score n efsm metric) \<Longrightarrow> stateScore > 0"
-  by (simp add: k_score_def Let_def)
-
 definition origin :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
   "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. (\<exists>s. x = (uid, s))) t))))"
 
@@ -202,11 +195,6 @@ lemma origin_code [code]: "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<l
 
 definition dest :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
   "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. (\<exists>s. x = (uid, s))) t))))"
-
-lemma exists_is_fst: "(\<lambda>x. (\<exists>s. x = (uid, s))) = (\<lambda>x. fst x = uid)"
-  apply (rule ext)
-  apply clarify
-  by simp
 
 lemma dest_code [code]: "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. fst x = uid) t))))"
   apply (simp add: dest_def)
@@ -334,14 +322,6 @@ definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> upd
     else 
       let e' = (merge_states s\<^sub>1 s\<^sub>2 e) in
       resolve_nondeterminism (sorted_list_of_fset (np e')) e e' m check np 
-
-\<comment> \<open>case resolve_nondeterminism (sorted_list_of_fset (nondeterministic_pairs e')) e e' m check nondeterministic_pairs of
-      None \<Rightarrow> None |
-      Some merged \<Rightarrow>
-        \<comment> \<open>We need a separate generalisation step because generalisation is different from nondeterminism resolution\<close>
-        (case resolve_nondeterminism (sorted_list_of_fset (np e')) e e' m check np of
-          None \<Rightarrow> Some merged |
-          Some generalised \<Rightarrow> Some generalised)\<close>
   )"
 
 (* inference_step - attempt dest carry out a single step of the inference process by merging the    *)
@@ -362,9 +342,6 @@ lemma measures_fsubset: "S x2 |\<subset>| S e \<Longrightarrow>
        ((x2, r, m, check, np), e, r, m, check, np) \<in> measures [\<lambda>(e, r, m, check, np). size (Inference.S e)]"
   using size_fsubset[of "S x2" "S e"]
   by simp
-
-lemma eq_size_not_subset: "size x = size y \<Longrightarrow> \<not> x |\<subset>| y"
-  by (metis exists_least_iff size_fsubset)
 
 (* Takes an iEFSM and iterates inference_step until no further states can be successfully merged  *)
 (* @param e - an iEFSM dest be generalised                                                          *)
@@ -398,7 +375,7 @@ lemma uid_in_uids: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<lon
   apply (simp add: uids_def)
   by blast
 
-lemma dest_from_in_S_uid_in_uids: "(uid, (from, to), t) |\<in>| e \<Longrightarrow> to |\<in>| S e \<and> from |\<in>| S e \<and> uid |\<in>| uids e"
+lemma to_from_in_S_uid_in_uids: "(uid, (from, to), t) |\<in>| e \<Longrightarrow> to |\<in>| S e \<and> from |\<in>| S e \<and> uid |\<in>| uids e"
   apply (simp add: S_def uids_def)
   by force
 

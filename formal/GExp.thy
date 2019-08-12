@@ -97,21 +97,6 @@ definition valid :: "gexp \<Rightarrow> bool" where
 lemma valid_true: "valid (Bc True)"
   by (simp add: valid_def)
 
-definition "valid_list l = valid (fold gAnd l (Bc True))"
-
-lemma valid_list_all_valid: "valid_list G = (\<forall>g \<in> set G. valid g)"
-proof(induct G rule: rev_induct)
-case Nil
-  then show ?case
-    by (simp add: valid_list_def valid_def)
-next
-case (snoc a G)
-  then show ?case
-    apply (simp add: valid_list_def fold_conv_foldr valid_def del: foldr.simps)
-    apply (simp only: foldr.simps comp_def gval_gAnd maybe_and_true)
-    by auto
-qed
-
 fun gexp_constrains :: "gexp \<Rightarrow> aexp \<Rightarrow> bool" where
   "gexp_constrains (gexp.Bc _) _ = False" |
   "gexp_constrains (Null a) v = aexp_constrains a v" |
@@ -366,9 +351,8 @@ qed
 
 lemma gval_In_cons: "gval (In v (a # as)) s = (gval (Eq (V v) (L a)) s \<or>\<^sub>? gval (In v as) s)"
   apply (cases as)
-   apply (simp add: ValueEq_def)
-  apply (simp add: ValueEq_def)
-  by (metis maybe_double_negation maybe_or_idempotent)
+   apply simp
+  using In.simps(3) gval_gOr by presburger
 
 lemma possible_to_be_in: "s \<noteq> [] \<Longrightarrow> satisfiable (In v s)"
 proof(induct s)
@@ -378,7 +362,7 @@ next
   case (Cons a s)
   then show ?case
     apply (simp add: satisfiable_def gval_In_cons)
-    by (metis In.simps(1) ValueEq_def add.commute gval.simps(2) join_ir_double_exists maybe_or_idempotent plus_trilean.simps(6))
+    by (metis In.simps(1) add.commute gval.simps(2) join_ir_double_exists maybe_or_idempotent plus_trilean.simps(6))
 qed
 
 definition max_reg_list :: "gexp list \<Rightarrow> nat option" where
@@ -470,8 +454,8 @@ next
     by auto
 qed
 
-lemma valid_list_apply_guards: "valid_list G \<Longrightarrow> apply_guards G s"
-  by (simp add: apply_guards_def valid_list_all_valid valid_def)
+lemma apply_guards_subset_append: "set G \<subseteq> set G' \<Longrightarrow> apply_guards (G @ G') s = apply_guards (G') s"
+  using apply_guards_append apply_guards_subset by blast
 
 lemma apply_guards_rearrange: "x \<in> set G \<Longrightarrow> apply_guards G s = apply_guards (x#G) s"
   apply (simp add: apply_guards_def)

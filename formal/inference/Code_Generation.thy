@@ -356,6 +356,8 @@ termination
    apply simp
   using measures_fsubset by auto
 
+declare make_pta.simps [code]
+declare make_pta_fold [code]
 declare GExp.satisfiable_def [code del]
 declare initially_undefined_context_check_full_def [code del]
 declare generalise_output_context_check_def [code del]

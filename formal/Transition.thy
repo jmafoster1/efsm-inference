@@ -19,19 +19,6 @@ record transition =
   Updates :: updates
 text_raw\<open>}%endsnip\<close>
 
-lemma transition_equality: "((x::transition) = y) = ((Label x) = (Label y) \<and>
-                                (Arity x) = (Arity y) \<and>
-                                (Guard x) = (Guard y) \<and>
-                                (Outputs x) = (Outputs y) \<and>
-                                (Updates x) = (Updates y))"
-  by auto
-
-lemma unequal_labels[simp]: "Label t1 \<noteq> Label t2 \<Longrightarrow> t1 \<noteq> t2"
-  by auto
-
-lemma unequal_arities[simp]: "Arity t1 \<noteq> Arity t2 \<Longrightarrow> t1 \<noteq> t2"
-  by auto
-
 definition same_structure :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "same_structure t1 t2 = (Label t1 = Label t2 \<and>
                            Arity t1 = Arity t2 \<and>
@@ -41,21 +28,6 @@ definition enumerate_inputs :: "transition \<Rightarrow> nat set" where
   "enumerate_inputs t = (\<Union> (set (map enumerate_gexp_inputs (Guard t)))) \<union>
                         (\<Union> (set (map enumerate_aexp_inputs (Outputs t)))) \<union>
                         (\<Union> (set (map (\<lambda>(_, u). enumerate_aexp_inputs u) (Updates t))))"
-
-lemma set_list_not_empty: "(set l \<noteq> {}) = (l \<noteq> [])"
-  by simp
-
-lemma max_set_nat_list: "(l:: nat list) \<noteq> [] \<Longrightarrow> Max (set l) = foldr max l 0"
-proof(induct l)
-case Nil
-  then show ?case
-    by simp
-next
-case (Cons a l)
-  then show ?case
-    apply simp
-    by (metis List.finite_set Max_insert Max_singleton fold.simps(1) fold_simps(1) foldr.simps(1) max_0R set_empty)
-qed
 
 definition max_input :: "transition \<Rightarrow> nat option" where
   "max_input t = (if enumerate_inputs t = {} then None else Some (Max (enumerate_inputs t)))"
@@ -121,7 +93,7 @@ next
     by (metis List.set_insert)
 qed
 
-lemma set_enumerate_registers_list: "\<exists>l. enumerate_registers t = set l"
+lemma enumerate_registers_list: "\<exists>l. enumerate_registers t = set l"
   unfolding enumerate_registers_def
   using gexp_regs_list[of "Guard t"]
         outputs_regs_list[of "Outputs t"]
@@ -144,8 +116,5 @@ definition total_max_reg :: "transition \<Rightarrow> nat" where
 
 definition valid_transition :: "transition \<Rightarrow> bool" where
   "valid_transition t = (case max_input t of None \<Rightarrow> Arity t = 0 | Some x \<Rightarrow> x < Arity t)"
-
-lemma not_leq_gt_set: "(\<forall>x\<in>(s::('a::linorder) set). \<not> a \<le> x) = (\<forall>x\<in>s. a > x)"
-  by auto
 
 end
