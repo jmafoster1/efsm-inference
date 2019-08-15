@@ -135,7 +135,7 @@ lemma accepts_from_1: "accepts drinks 1 (<>(2 := Num 0, 1 := d))
   apply (simp add: possible_steps_1_coin coin_def join_ir_def input2state_def value_plus_def regsimp)
   by (simp add: accepts_from_1a)
 
-lemma purchase_coke: "observe_trace drinks 0 <> [(STR ''select'', [Str ''coke'']), (STR ''coin'', [Num 50]), (STR ''coin'', [Num 50]), (STR ''vend'', [])] =
+lemma purchase_coke: "observe_trace drinks 0 <> step [(STR ''select'', [Str ''coke'']), (STR ''coin'', [Num 50]), (STR ''coin'', [Num 50]), (STR ''vend'', [])] =
                        [[], [Some (Num 50)], [Some (Num 100)], [Some (Str ''coke'')]]"
   apply (rule observe_trace_possible_step)
      apply (simp add: possible_steps_0)
@@ -172,7 +172,7 @@ lemma rejects_accepts_prefix:
   apply (simp add: possible_steps_0 select_def join_ir_def input2state_def)
   using rejects_input by blast
 
-lemma rejects_termination: "observe_trace drinks 0 <> [(STR ''select'', [Str ''coke'']), (STR ''rejects'', [Num 50]), (STR ''coin'', [Num 50])] = []"
+lemma rejects_termination: "observe_trace drinks 0 <> step [(STR ''select'', [Str ''coke'']), (STR ''rejects'', [Num 50]), (STR ''coin'', [Num 50])] = []"
   apply (rule rejects_observe_empty)
   using rejects_accepts_prefix[of "STR ''rejects''" "[Num 50]"]
         rejects_prefix

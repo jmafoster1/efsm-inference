@@ -146,7 +146,7 @@ qed
 lemma acceptance: "accepts drinks s r t \<Longrightarrow> accepts drinks2 s r t"
   using accepts_quantified by blast
 
-lemma purchase_coke: "observe_trace drinks2 0 <> [((STR ''select''), [Str ''coke'']), ((STR ''coin''), [Num 50]), ((STR ''coin''), [Num 50]), ((STR ''vend''), [])] =
+lemma purchase_coke: "observe_trace drinks2 0 <> step [((STR ''select''), [Str ''coke'']), ((STR ''coin''), [Num 50]), ((STR ''coin''), [Num 50]), ((STR ''vend''), [])] =
                        [[], [Some (Num 50)], [Some (Num 100)], [Some (Str ''coke'')]]"
   apply (rule observe_trace_possible_step)
      apply (simp add: possible_steps_0)
@@ -244,7 +244,7 @@ next
     by (simp add: trace_reject_2 drinks_vend_insufficient drinks2_vend_insufficient2)
 qed
 
-lemma equal_1_2: "\<forall>r. observe_trace drinks 1 r t = observe_trace drinks2 2 r t"
+lemma equal_1_2: "\<forall>r. observe_trace drinks 1 r step t = observe_trace drinks2 2 r step t"
 proof(induct t)
   case Nil
   then show ?case
@@ -298,7 +298,7 @@ next
 qed
 
 
-lemma eq_1_1: "observe_trace drinks 1 (<>(1 := d, 2 := Num 0)) t = observe_trace drinks2 1 (<>(1 := d, 2 := Num 0)) t"
+lemma eq_1_1: "observe_trace drinks 1 (<>(1 := d, 2 := Num 0)) step t = observe_trace drinks2 1 (<>(1 := d, 2 := Num 0)) step t"
 proof(induct t)
     case Nil
     then show ?case

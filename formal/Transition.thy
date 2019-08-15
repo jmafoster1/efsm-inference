@@ -7,10 +7,11 @@ type_synonym arity = nat
 type_synonym inputs = "value list"
 type_synonym outputs = "value option list"
 type_synonym output_function = "aexp"
+
+text_raw\<open>\snip{transitiontype}{1}{2}{%\<close>
 type_synonym update_function = "(nat \<times> aexp)"
 type_synonym updates = "update_function list"
 
-text_raw\<open>\snip{transitiontype}{1}{2}{%\<close>
 record transition =
   Label :: label
   Arity :: nat
