@@ -4,7 +4,7 @@ begin
 
 declare One_nat_def [simp del]
 declare gval.simps [simp]
-declare ValueEq_def [simp]
+declare value_eq_def [simp]
 
 lemma satisfies_context_eq_contra: "c (V v) = {|cexp.Eq x|} \<Longrightarrow>
        r v \<noteq> Some x \<Longrightarrow>

@@ -30,10 +30,10 @@ syntax (xsymbols)
 fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> trilean" where
   "gval (Bc True) _ = true" |
   "gval (Bc False) _ = false" |
-  "gval (Gt a\<^sub>1 a\<^sub>2) s = ValueGt (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
-  "gval (Eq a\<^sub>1 a\<^sub>2) s = ValueEq (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
+  "gval (Gt a\<^sub>1 a\<^sub>2) s = value_gt (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
+  "gval (Eq a\<^sub>1 a\<^sub>2) s = value_eq (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
   "gval (Nor a\<^sub>1 a\<^sub>2) s = \<not>\<^sub>? ((gval a\<^sub>1 s) \<or>\<^sub>? (gval a\<^sub>2 s))" |
-  "gval (Null v) s = ValueEq (aval v s) None"
+  "gval (Null v) s = value_eq (aval v s) None"
 
 abbreviation gNot :: "gexp \<Rightarrow> gexp"  where
   "gNot g \<equiv> Nor g g"
@@ -390,7 +390,7 @@ qed
 definition apply_guards :: "gexp list \<Rightarrow> datastate \<Rightarrow> bool" where
   "apply_guards G s = (\<forall>g \<in> set (map (\<lambda>g. gval g s) G). g = true)"
 
-lemmas apply_guards = datastate apply_guards_def gval.simps ValueEq_def ValueGt_def
+lemmas apply_guards = datastate apply_guards_def gval.simps value_eq_def value_gt_def
 
 lemma no_reg_apply_guards_swap_regs:
   "max_reg_list G = None \<Longrightarrow>
@@ -741,7 +741,7 @@ next
     apply (simp add: ensure_not_null_def apply_guards_append)
     apply (simp add: apply_guards_singleton maybe_negate_true maybe_or_false)
     apply (case_tac "join_ir ia r (vname.I a) = None")
-     apply (simp add: ValueEq_def)
+     apply (simp add: value_eq_def)
     by (simp add: Suc_leI datastate(1) input2state_not_None)
 qed
 
@@ -790,7 +790,7 @@ proof(induct a)
 next
   case (Suc a)
   then show ?case
-    apply (simp add: ensure_not_null_cons apply_guards_append apply_guards_singleton ValueEq_def)
+    apply (simp add: ensure_not_null_cons apply_guards_append apply_guards_singleton value_eq_def)
     by (simp add: join_ir_def input2state_nth)
 qed
 
