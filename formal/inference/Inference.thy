@@ -126,12 +126,10 @@ fun maxS :: "transition_matrix \<Rightarrow> nat" where
 type_synonym execution = "(label \<times> value list \<times> value list) list"
 type_synonym log = "execution list"
 
-definition "exec2trace t = map (\<lambda>(label, inputs, _). (label, inputs)) t"
-
 fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> transition_matrix" where
   "make_branch e _ _ [] = e" |
   "make_branch e s r ((label, inputs, outputs)#t) =
-    (case (step (exec2trace t) e s r label inputs) of
+    (case (step e s r label inputs) of
       Some (transition, s', outputs', updated) \<Rightarrow> 
         if outputs' = (map Some outputs) then
           make_branch e s' updated t

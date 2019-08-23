@@ -135,7 +135,7 @@ lemma accepts_from_1: "accepts drinks 1 (<>(2 := Num 0, 1 := d))
   apply (simp add: possible_steps_1_coin coin_def join_ir_def input2state_def value_plus_def regsimp)
   by (simp add: accepts_from_1a)
 
-lemma purchase_coke: "observe_trace drinks 0 <> step [(STR ''select'', [Str ''coke'']), (STR ''coin'', [Num 50]), (STR ''coin'', [Num 50]), (STR ''vend'', [])] =
+lemma purchase_coke: "observe_trace drinks 0 <> [(STR ''select'', [Str ''coke'']), (STR ''coin'', [Num 50]), (STR ''coin'', [Num 50]), (STR ''vend'', [])] =
                        [[], [Some (Num 50)], [Some (Num 100)], [Some (Str ''coke'')]]"
   apply (rule observe_trace_possible_step)
      apply (simp add: possible_steps_0)
@@ -172,11 +172,12 @@ lemma rejects_accepts_prefix:
   apply (simp add: possible_steps_0 select_def join_ir_def input2state_def)
   using rejects_input by blast
 
-lemma rejects_termination: "observe_trace drinks 0 <> step [(STR ''select'', [Str ''coke'']), (STR ''rejects'', [Num 50]), (STR ''coin'', [Num 50])] = []"
-  apply (rule rejects_observe_empty)
-  using rejects_accepts_prefix[of "STR ''rejects''" "[Num 50]"]
-        rejects_prefix
-  by fastforce
+lemma rejects_termination: "observe_trace drinks 0 <> [(STR ''select'', [Str ''coke'']), (STR ''rejects'', [Num 50]), (STR ''coin'', [Num 50])] = [[]]"
+  apply (rule observe_trace_step)
+   apply (simp add: step_def possible_steps_0 select_def)
+  apply (rule observe_trace_no_possible_step)
+  apply (simp add: possible_steps_def Abs_ffilter Set.filter_def drinks_def)
+  using arity_vend arity_vend_fail label_coin by auto
 
 (* Part of Example 2 in Foster et. al. *)
 lemma r2_0_vend: "can_take_transition vend i r \<Longrightarrow> \<exists>n. r $ 2 = Some (Num n) \<and> n \<ge> 100" (* You can't take vend immediately after taking select *)
@@ -197,7 +198,7 @@ lemma drinks_vend_r2_String: "r $ 2 = Some (value.Str x2) \<Longrightarrow> poss
   apply safe
   by (simp_all add: transitions apply_guards_def value_gt_def join_ir_def)
 
-lemma drinks_vend_r2_rejects: "\<nexists>n. r $ 2 = Some (Num n) \<Longrightarrow> step t drinks 1 r (STR ''vend'') [] = None"
+lemma drinks_vend_r2_rejects: "\<nexists>n. r $ 2 = Some (Num n) \<Longrightarrow> step drinks 1 r (STR ''vend'') [] = None"
   apply (rule no_possible_steps_1)
   apply (simp add: possible_steps_empty drinks_def)
   apply safe
@@ -248,7 +249,7 @@ lemma drinks_1_rejects_trace: "\<not> (aa = STR ''vend'' \<and> b = []) \<Longri
   unfolding step_def
   using drinks_1_rejects by auto
 
-lemma rejects_state_step: "s > 1 \<Longrightarrow> step t drinks s r l i = None"
+lemma rejects_state_step: "s > 1 \<Longrightarrow> step drinks s r l i = None"
   apply (rule no_possible_steps_1)
   by (simp add: possible_steps_empty drinks_def)
 

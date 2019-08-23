@@ -64,6 +64,11 @@ definition i_possible_steps :: "iEFSM \<Rightarrow> nat \<Rightarrow> registers 
      ) 
   e)"
 
+
+(*
+  If the EFSM is nondeterministic, we need to make sure it chooses the right path so that it accepts
+  the input trace.
+*)
 definition i_step :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> nat \<times> registers) option" where
   "i_step tr e s r l i = (let 
     poss_steps = (i_possible_steps e s r l i);
@@ -76,6 +81,7 @@ definition i_step :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarr
 
 type_synonym match = "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> ((transition \<times> nat) \<times> ioTag \<times> nat))"
 
+definition "exec2trace t = map (\<lambda>(label, inputs, _). (label, inputs)) t"
 primrec (nonexhaustive) walk_up_to :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (transition \<times> nat)" where
   "walk_up_to n e s r (h#t) =
     (case (i_step (exec2trace t) e s r (fst h) (fst (snd h))) of
