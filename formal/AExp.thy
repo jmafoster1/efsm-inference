@@ -705,4 +705,12 @@ next
     by (simp add: max_input_Minus max_is_None max_reg_list_Minus)
 qed
 
+fun enumerate_aexp_strings :: "aexp \<Rightarrow> String.literal set" where
+  "enumerate_aexp_strings (L (Str s)) = {s}" |
+  "enumerate_aexp_strings (L (Num s)) = {}" |
+  "enumerate_aexp_strings (V _) = {}" |
+  "enumerate_aexp_strings (Plus a1 a2) = enumerate_aexp_strings a1 \<union> enumerate_aexp_strings a2" |
+  "enumerate_aexp_strings (Minus a1 a2) = enumerate_aexp_strings a1 \<union> enumerate_aexp_strings a2"
+
+
 end

@@ -113,8 +113,8 @@ object Dirties {
     t2: Transition.transition_ext[A]): Boolean = {
     val f = "intermediate_" + System.currentTimeMillis()
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
-    addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME O TO O_e1 IN e1) || (RENAME O TO O_e2 IN e2);\n" +
-      s"canTake: THEOREM composition |- G(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} => NOT(input_sequence ! size?(I) = ${Code_Numeral.integer_of_nat(Transition.Arity(t2))} AND ${efsm2sal.guards2sal(Transition.Guard(t2))}));")
+    addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
+      s"canTake: THEOREM composition |- G(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} => NOT(input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t2))} AND ${efsm2sal.guards2sal(Transition.Guard(t2))}));")
     val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{100}!canTake'").!!
     if (!output.toString.startsWith("Counterexample")) {
       println(s"G(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} => NOT(input_sequence ! size?(I) = ${Code_Numeral.integer_of_nat(Transition.Arity(t2))} AND ${efsm2sal.guards2sal(Transition.Guard(t2))}));")
@@ -130,7 +130,7 @@ object Dirties {
     val f = "intermediate_" + System.currentTimeMillis()
     TypeConversion.efsmToSALTranslator(Inference.tm(e), f)
 
-    addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = State_${Code_Numeral.integer_of_nat(s)} => r_${Code_Numeral.integer_of_nat(r)} = value_option ! None);")
+    addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = ${TypeConversion.salState(s)} => r_${Code_Numeral.integer_of_nat(r)} = value_option ! None);")
 
     val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{100}!initiallyUndefined'").!!
     if (output.toString != "proved.\n") {
@@ -145,7 +145,7 @@ object Dirties {
   def generaliseOutputContextCheck(v: Value.value, r: Nat.nat, s1: Nat.nat, s2: Nat.nat, e1: IEFSM, e2: IEFSM): Boolean = {
     val f = "intermediate_" + System.currentTimeMillis()
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
-    addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME O TO O_e1 IN e1) || (RENAME O TO O_e2 IN e2);\n" +
+    addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
       s"checkRegValue: THEOREM composition |- G(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} => r_${Code_Numeral.integer_of_nat(r)}.2 = Some(${TypeConversion.salValue(v)}));")
     val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{100}!checkRegValue'").!!
     if (output.toString != "proved.\n") {
@@ -166,7 +166,7 @@ object Dirties {
     ): Boolean = {
     val f = "intermediate_" + System.currentTimeMillis()
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(a), "e1", Inference.tm(b), "e2", f)
-    addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME O TO O_e1 IN e1) || (RENAME O TO O_e2 IN e2);\n" +
+    addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
       s"getsUsToBoth: THEOREM composition |- G(NOT(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)}));")
     val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{100}!getsUsToBoth'").!!
     FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
@@ -185,7 +185,7 @@ object Dirties {
     e1: IEFSM): Boolean = {
       val f = "intermediate_" + System.currentTimeMillis()
       TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
-      addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME O TO O_e1 IN e1) || (RENAME O TO O_e2 IN e2);\n" +
+      addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
         s"possiblyNotValue: THEOREM composition |- G(NOT(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} AND r_${Code_Numeral.integer_of_nat(r)} = Some(${TypeConversion.salValue(v)}) AND input_sequence ! size?(I) = ${Code_Numeral.integer_of_nat(Transition.Arity(t1))} AND ${efsm2sal.guards2sal(Transition.Guard(t1))}));")
       val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{100}!possiblyNotValue'").!!
       FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))

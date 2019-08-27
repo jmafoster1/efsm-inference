@@ -264,4 +264,7 @@ lemma de_morgans_2: "\<not>\<^sub>? (a \<and>\<^sub>? b) = (\<not>\<^sub>?a) \<o
 lemma not_true: "(x \<noteq> true) = (x = false \<or> x = invalid)"
   by (metis (no_types, lifting) maybe_not.cases trilean.distinct(1) trilean.distinct(3))
 
+lemma pull_negation: "(x = \<not>\<^sub>? y) = (\<not>\<^sub>? x = y)"
+  using maybe_double_negation by auto
+
 end

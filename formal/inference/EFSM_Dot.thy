@@ -61,18 +61,19 @@ fun aexp2dot :: "aexp \<Rightarrow> String.literal" where
   "aexp2dot (Plus a1 a2) = (aexp2dot a1)+STR '' + ''+(aexp2dot a2)" |
   "aexp2dot (Minus a1 a2) = (aexp2dot a1)+STR '' - ''+(aexp2dot a2)"
 
+fun join :: "String.literal list \<Rightarrow> String.literal \<Rightarrow> String.literal" where
+  "join [] _ = (STR '''')" |
+  "join [a] _ = a" |
+  "join (h#t) s = h+s+(join t s)"
+
 fun gexp2dot :: "gexp \<Rightarrow> String.literal" where
   "gexp2dot (GExp.Bc True) = (STR ''True'')" |
   "gexp2dot (GExp.Bc False) = (STR ''False'')" |
   "gexp2dot (GExp.Eq a1 a2) = (aexp2dot a1)+STR '' = ''+(aexp2dot a2)" |
   "gexp2dot (GExp.Lt a1 a2) = (aexp2dot a1)+STR '' &lt; ''+(aexp2dot a2)" |
+  "gexp2dot (GExp.In v l) = (vname2dot v)+STR ''&in;{''+(join (map value2dot l) STR '', '')+STR ''}''" |
   "gexp2dot (Nor g1 g2) = STR ''!(''+(gexp2dot g1)+STR ''&or;''+(gexp2dot g2)+STR '')''" |
   "gexp2dot (Null v) = (aexp2dot v)+STR '' = NULL''"
-
-fun join :: "String.literal list \<Rightarrow> String.literal \<Rightarrow> String.literal" where
-  "join [] _ = (STR '''')" |
-  "join [a] _ = a" |
-  "join (h#t) s = h+s+(join t s)"
 
 primrec guards2dot_aux :: "gexp list \<Rightarrow> String.literal list" where
   "guards2dot_aux [] = []" |

@@ -114,20 +114,9 @@ object TypeConversion {
 
   def efsmToSALTranslator(e: Types.TransitionMatrix, f: String) = {
     Translator.clearEverything()
-    isabellesal.EFSM.newOneFrom(FSet.sorted_list_of_fset(e).map(toMichaelsMove): _*)
-    try {
-      new Translator().writeSALandDOT(Paths.get("salfiles"), f);
-      s"mv salfiles/${f}.dot ${Config.config.dotfiles}/".!
-      var fileContents = Source.fromFile(s"salfiles/${f.toLowerCase()}.sal").getLines.mkString("\n")
-      fileContents = fileContents.replaceFirst("gval\\(value_ge", "arithmetic!SomeNum?(v) => gval(value_ge")
-      fileContents = fileContents.replaceFirst("gval\\(value_le", "arithmetic!SomeNum?(v) => gval(value_le")
-
-      val pw = new PrintWriter(new File(s"salfiles/${f.toLowerCase()}.sal"))
-      pw.write(fileContents)
-      pw.close
-    } catch {
-      case ioe: java.lang.StringIndexOutOfBoundsException => {}
-    }
+    isabellesal.EFSM.newOneFrom("MichaelsEFSM", FSet.sorted_list_of_fset(e).map(toMichaelsMove): _*)
+    new Translator().writeSALandDOT(Paths.get("salfiles"), f);
+    s"mv salfiles/${f}.dot ${Config.config.dotfiles}/".!
   }
 
   def salValue(v: Value.value): String = v match {
@@ -136,7 +125,7 @@ object TypeConversion {
   }
 
   def salState(s: Nat.nat): String = s match {
-    case Nat.Nata(n) => s"State_${n}"
+    case Nat.Nata(n) => s"State__${n}"
   }
 
   def doubleEFSMToSALTranslator(e1: Types.TransitionMatrix, e1Name: String, e2: Types.TransitionMatrix, e2Name: String, f: String) = {
@@ -144,24 +133,19 @@ object TypeConversion {
       throw new IllegalArgumentException("Models must have unique names");
     }
     Translator.clearEverything()
-    isabellesal.EFSM.newOneFrom(FSet.sorted_list_of_fset(e1).map(toMichaelsMove): _*)
-    isabellesal.EFSM.newOneFrom(FSet.sorted_list_of_fset(e2).map(toMichaelsMove): _*)
+    isabellesal.EFSM.newOneFrom(e1Name, FSet.sorted_list_of_fset(e1).map(toMichaelsMove): _*)
+    isabellesal.EFSM.newOneFrom(e2Name, FSet.sorted_list_of_fset(e2).map(toMichaelsMove): _*)
     try {
       new Translator().writeSALandDOT(Paths.get("salfiles"), f);
       s"mv salfiles/${f}.dot ${Config.config.dotfiles}/".!
-
-      var fileContents = Source.fromFile(s"salfiles/${f.toLowerCase()}.sal").getLines.mkString("\n")
-      fileContents = fileContents.replaceFirst("MichaelsEFSM", e1Name)
-      fileContents = fileContents.replaceFirst("MichaelsEFSM", e2Name)
-      fileContents = fileContents.replaceFirst("gval\\(value_ge", "arithmetic!SomeNum?(v) => gval(value_ge")
-      fileContents = fileContents.replaceFirst("gval\\(value_le", "arithmetic!SomeNum?(v) => gval(value_le")
-
-      val pw = new PrintWriter(new File(s"salfiles/${f.toLowerCase()}.sal"))
-      pw.write(fileContents)
-      pw.close
-
     } catch {
-      case ioe: java.lang.StringIndexOutOfBoundsException => {}
+    case ioe: java.lang.ArrayIndexOutOfBoundsException => Set.sup_set(EFSM.enumerate_strings(e1), EFSM.enumerate_strings(e2)) match {
+      case Set.seta(lst) => {
+        for (x <- lst.distinct) {
+          println("\"" + x + "\"")
+        }
+      }
+      }
     }
   }
 

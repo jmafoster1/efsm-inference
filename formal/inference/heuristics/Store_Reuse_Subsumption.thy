@@ -506,30 +506,31 @@ lemma gval_unconstrained:
   v = ia ! i \<Longrightarrow>
   gval a (join_ir ia c) = gval a (join_ir (list_update ia i v') c)"
 proof(induct a)
-case (Bc x)
-  then show ?case
-    apply (cases x)
-    by auto
+  case (Bc x)
+  then show ?case 
+    by (simp add: unconstrained_variable_swap_gval)
 next
   case (Eq x1a x2)
-  then show ?case
-    apply simp
-    by (metis aval_unconstrained list_update_same_conv)
-next                   
+  then show ?case 
+    by (metis apply_guards(7) aval_unconstrained gexp_constrains.simps(3) list_update_id)
+next
   case (Gt x1a x2)
-  then show ?case
-    apply simp
-    by (metis aval_unconstrained list_update_same_conv)
+  then show ?case 
+    by (metis apply_guards(6) aval_unconstrained gexp_constrains.simps(4) list_update_id)
+next
+  case (Null x)
+  then show ?case 
+    by (metis aval_unconstrained gexp_constrains.simps(2) gval.simps(5) list_update_id)
+next
+  case (In x1a x2)
+  then show ?case 
+    by (metis aval.simps(2) aval_unconstrained gexp_constrains.simps(6) gval.simps(6) list_update_id)
 next
   case (Nor a1 a2)
   then show ?case
     by simp
-next
-  case (Null x)
-  then show ?case
-    apply simp
-    by (metis aval_unconstrained list_update_same_conv)
 qed
+
 
 (*
   If input i is stored in register r by transition t then if we can take transition t' then for some

@@ -249,4 +249,18 @@ lemma accepts_trace_gives_context: "accepts_trace e p \<Longrightarrow> (\<exist
 lemma accepts_trace_anterior_not_none: "accepts_trace e p \<Longrightarrow> anterior_context e p \<noteq> None"
   using accepts_trace_gives_context by blast
 
+lemma "\<forall>s. apply_guards (Guard t2) s \<longrightarrow> apply_guards (Guard t1) s \<Longrightarrow>
+       Label t1 = Label t2 \<Longrightarrow>
+       Arity t1 = Arity t2 \<Longrightarrow>
+       Outputs t1 = Outputs t2 \<Longrightarrow>
+       Updates t1 = Updates t2 \<Longrightarrow>
+       subsumes t1 c t2"
+  apply (rule subsumption)
+      apply simp
+     apply (simp add: can_take_transition_def can_take_def)
+    apply simp
+   apply (simp add: posterior_separate_def can_take_def)
+   apply auto[1]
+  apply (simp add: posterior_def posterior_separate_def can_take_def)
+  by auto
 end

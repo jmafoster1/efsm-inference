@@ -1,5 +1,5 @@
 theory Transition_Ordering
-  imports "../Transition" GExp_Orderings "~~/src/HOL/Library/List_Lexorder"
+  imports "../Transition" GExp_Orderings
           "~~/src/HOL/Library/Product_Lexorder"
 begin
 

@@ -118,4 +118,10 @@ definition total_max_reg :: "transition \<Rightarrow> nat" where
 definition valid_transition :: "transition \<Rightarrow> bool" where
   "valid_transition t = (case max_input t of None \<Rightarrow> Arity t = 0 | Some x \<Rightarrow> x < Arity t)"
 
+definition enumerate_strings :: "transition \<Rightarrow> String.literal set" where
+  "enumerate_strings t = (\<Union> (set (map enumerate_gexp_strings (Guard t)))) \<union>
+                         (\<Union> (set (map enumerate_aexp_strings (Outputs t)))) \<union>
+                         (\<Union> (set (map (\<lambda>(_, u). enumerate_aexp_strings u) (Updates t)))) \<union>
+                         (\<Union> (set (map (\<lambda>(r, _). enumerate_aexp_strings (V (R r))) (Updates t))))"
+
 end

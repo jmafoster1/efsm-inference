@@ -426,4 +426,7 @@ primrec accepting_sequence :: "transition_matrix \<Rightarrow> cfstate \<Rightar
 lemma observe_trace_empty_iff: "(observe_trace e s r t = []) = (observe_all e s r t = [])"
   by (simp add: observe_trace_def)
 
+definition enumerate_strings :: "transition_matrix \<Rightarrow> String.literal set" where
+  "enumerate_strings e = \<Union> (image (\<lambda>(_, t). Transition.enumerate_strings t) (fset e))"
+
 end

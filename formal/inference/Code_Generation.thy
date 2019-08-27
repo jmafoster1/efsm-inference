@@ -7,6 +7,7 @@ theory Code_Generation
    "heuristics/Increment_Reset"
    "heuristics/Same_Register"
    "heuristics/Ignore_Inputs"
+   "heuristics/Least_Upper_Bound"
    EFSM_Dot
    Code_Target_FSet
    Code_Target_Set
@@ -245,12 +246,31 @@ lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (
   using always_different_outputs_direct_subsumption_def apply blast
   by (simp add: always_different_outputs_direct_subsumption_def dirty_always_different_outputs_direct_subsumption_def)
 
+definition guard_subset_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "guard_subset_subsumption t1 t2 = (Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> set (Guard t1) \<subseteq> set (Guard t2) \<and> Outputs t1 = Outputs t2 \<and> Updates t1 = Updates t2)"
+
+lemma guard_subset_subsumption: "guard_subset_subsumption t1 t2 \<Longrightarrow> directly_subsumes a b s s' t1 t2"
+  apply (rule subsumes_in_all_contexts_directly_subsumes)
+  apply (simp add: guard_subset_subsumption_def)
+  apply clarify
+  apply (rule subsumption)
+      apply simp
+     apply (simp add: can_take_transition_def can_take_def apply_guards_def)
+     apply auto[1]
+    apply simp+
+   apply (simp add: posterior_separate_def can_take_def apply_guards_def)
+   apply auto[1]
+  apply (simp add: posterior_def posterior_separate_def can_take_def apply_guards_def)
+  by auto
+
 definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes_cases a b s s' t1 t2 = (
     if t1 = t2
       then True
     else if always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption a b s s' t2
       then False
+    else if guard_subset_subsumption t1 t2
+      then True
     else if drop_guard_add_update_direct_subsumption t1 t2 b s'
       then True
     else if drop_update_add_guard_direct_subsumption a b s s' t1 t2
@@ -277,6 +297,8 @@ lemma [code]: "directly_subsumes m1 m2 s s' t1 t2 = directly_subsumes_cases m1 m
   apply (simp add: directly_subsumes_self)
   apply (case_tac "always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption m1 m2 s s' t2")
    apply (simp add: always_different_outputs_direct_subsumption)
+  apply (case_tac "guard_subset_subsumption t1 t2")
+   apply (simp add: guard_subset_subsumption)
   apply (case_tac "drop_guard_add_update_direct_subsumption t1 t2 m2 s'")
    apply (simp add: drop_guard_add_update_direct_subsumption_implies_direct_subsumption)
   apply (case_tac "drop_update_add_guard_direct_subsumption m1 m2 s s' t1 t2")
@@ -411,11 +433,12 @@ export_code
   naive_score naive_score_eq naive_score_outputs naive_score_comprehensive naive_score_comprehensive_eq_high
   origin_states
   (* Heuristics *)
-  statewise_drop_inputs drop_inputs same_register insert_increment_2 heuristic_1 transitionwise_drop_inputs
+  statewise_drop_inputs drop_inputs same_register insert_increment_2 heuristic_1
+  transitionwise_drop_inputs lob
   (* Nondeterminism metrics *)
   nondeterministic_pairs nondeterministic_pairs_labar
   (* Utilities *)
-  iefsm2dot efsm2dot guards2sal
+  iefsm2dot efsm2dot guards2sal EFSM.enumerate_strings
 in Scala
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
