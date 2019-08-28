@@ -74,6 +74,22 @@ object TypeConversion {
     case GExp.Bc(v) => throw new java.lang.IllegalArgumentException("Can't translate boolean values")
     case GExp.Null(AExp.V(a)) => isabellesal.Predicate.newNullTest(vnameToSALTranslator(a))
     case GExp.Null(a) => throw new java.lang.IllegalArgumentException("Can only translate null guards of variables")
+    // case GExp.In(v, l) => gexpToSALTranslator(GExp.fold_In(v, l))
+    case GExp.In(v, Nil) => throw new java.lang.IllegalArgumentException("Can't translate empty membership")
+    case GExp.In(v, l :: Nil) => isabellesal.Predicate.newInfixFrom(
+      Token.EQUALS,
+      Expression.newOneFrom(vnameToSALTranslator(v)),
+      aexpToSALTranslator(AExp.L(l))
+    )
+    case GExp.In(v, l :: t) => isabellesal.Predicate.newInfixFrom(
+      Token.OR,
+      isabellesal.Predicate.newInfixFrom(
+        Token.EQUALS,
+        Expression.newOneFrom(vnameToSALTranslator(v)),
+        aexpToSALTranslator(AExp.L(l))
+      ),
+      gexpToSALTranslator(GExp.In(v, t))
+    )
     case GExp.Eq(a1, a2) => isabellesal.Predicate.newInfixFrom(
       Token.EQUALS,
       aexpToSALTranslator(a1),

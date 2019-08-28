@@ -27,13 +27,14 @@ object Dirties {
   def toZ3(a: Type_Inference.typea): String = a match {
     case Type_Inference.NUM() => "Int"
     case Type_Inference.STRING() => "String"
-    case Type_Inference.UNBOUND() => "String"
+    case Type_Inference.UNBOUND() => "String" // Arbitrary decision to give it a concrete type
   }
 
   def toZ3(g: GExp.gexp, types: Map[VName.vname, Type_Inference.typea]): String = g match {
     case GExp.Bc(a) => a.toString()
     case GExp.Eq(a1, a2) => s"(= ${toZ3(a1)} ${toZ3(a2)})"
     case GExp.Gt(a1, a2) => s"(> ${toZ3(a1)} ${toZ3(a2)})"
+    case GExp.In(v, l) => toZ3(GExp.fold_In(v, l), types)
     case GExp.Nor(g1, g2) => if (g1 == g2) s"(not ${toZ3(g1, types)})" else s"(not (or ${toZ3(g1, types)} ${toZ3(g2, types)}))"
     case GExp.Null(AExp.V(VName.I(n))) => s"(= i${Code_Numeral.integer_of_nat(n)} (as none (Option ${toZ3(types(VName.I(n)))})))"
     case GExp.Null(AExp.V(VName.R(n))) => s"(= r${Code_Numeral.integer_of_nat(n)} (as none (Option ${toZ3(types(VName.I(n)))})))"

@@ -41,6 +41,7 @@ object PrettyPrinter {
     case GExp.Eq(a, b) => (aexpToString(a) + "=" + aexpToString(b))
     case GExp.Gt(a, b) => (aexpToString(a) + ">" + aexpToString(b))
     case GExp.Null(v) => (aexpToString(v) + "= NULL")
+    case GExp.In(v, l) => s"${vnameToString(v)} E {${l.map(valueToString).mkString(", ")}}"
     case GExp.Nor(g1, g2) => ("!(" + gexpToString(g1) + "||" + gexpToString(g2) + ")")
   }
 
@@ -80,6 +81,7 @@ object PrettyPrinter {
     case GExp.Bc(a) => a.toString()
     case GExp.Eq(a1, a2) => aexpToString(a1, types) + " = " + aexpToString(a2, types)
     case GExp.Gt(a1, a2) => aexpToString(a1, types) + " > " + aexpToString(a2, types)
+    case GExp.In(v, l) => s"${vnameToString(v)} E {${l.map(valueToString).mkString(", ")}}"
     case GExp.Nor(g1, g2) => "¬(" + gexpToString(g1, types) + " = " + gexpToString(g2, types) + ")"
     case GExp.Null(v) => null
   }

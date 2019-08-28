@@ -33,7 +33,7 @@ fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> trilean" where
   "gval (Gt a\<^sub>1 a\<^sub>2) s = value_gt (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
   "gval (Eq a\<^sub>1 a\<^sub>2) s = value_eq (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
   "gval (Null v) s = value_eq (aval v s) None" |
-  "gval (In v l) s = (case s v of None \<Rightarrow> false | Some v \<Rightarrow> if v \<in> set l then true else false)" |
+  "gval (In v l) s = (if s v \<in> set (map Some l) then true else false)" |
   "gval (Nor a\<^sub>1 a\<^sub>2) s = \<not>\<^sub>? ((gval a\<^sub>1 s) \<or>\<^sub>? (gval a\<^sub>2 s))"
 
 abbreviation gNot :: "gexp \<Rightarrow> gexp"  where
@@ -396,8 +396,7 @@ proof-
     apply (simp add: satisfiable_def gval_In_cons)
     apply (cases s)
      apply (simp add: \<open>s \<noteq> []\<close>)
-    apply (rule aux)
-    by (meson join_ir_double_exists list.set_intros(1))
+    using join_ir_double_exists by fastforce
 qed
 
 definition max_reg_list :: "gexp list \<Rightarrow> nat option" where
@@ -607,6 +606,150 @@ next
   case (Cons a l)
   then show ?case
     by (simp only: gval_In_cons list.map gval_fold_gOr)
+qed
+
+fun fold_In :: "vname \<Rightarrow> value list \<Rightarrow> gexp" where
+  "fold_In _ [] = Bc False" |
+  "fold_In v [l] = Eq (V v) (L l)" |
+  "fold_In v (l#t) = fold gOr (map (\<lambda>x. Eq (V v) (L x)) t) (Eq (V v) (L l))"
+
+lemma fold_maybe_or_invalid_base: "fold (\<or>\<^sub>?) l invalid = invalid"
+proof(induct l)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a l)
+  then show ?case
+    by (metis fold_simps(2) maybe_or_valid)
+qed
+
+lemma fold_maybe_or_true_base_never_false: "fold (\<or>\<^sub>?) l true \<noteq> false"
+proof(induct l)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a l)
+  then show ?case
+    by (metis fold_maybe_or_invalid_base fold_simps(2) maybe_not.cases maybe_or_valid plus_trilean.simps(4) plus_trilean.simps(6))
+qed
+
+lemma fold_true_fold_false_not_invalid: "fold (\<or>\<^sub>?) l true = true \<Longrightarrow> fold (\<or>\<^sub>?) (rev l) false \<noteq> invalid"
+proof(induct l)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a l)
+  then show ?case
+    apply simp
+    by (metis fold_maybe_or_invalid_base maybe_or_invalid maybe_or_true)
+qed
+
+lemma fold_true_invalid_fold_rev_false_invalid:  "fold (\<or>\<^sub>?) l true = invalid \<Longrightarrow> fold (\<or>\<^sub>?) (rev l) false = invalid"
+proof(induct l)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a l)
+  then show ?case
+    apply simp
+    by (metis maybe_or_true maybe_or_valid)
+qed
+
+
+lemma fold_maybe_or_rev: "fold (\<or>\<^sub>?) l b = fold (\<or>\<^sub>?) (rev l) b"
+proof(induct l)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a l)
+  then show ?case
+  proof(induction a b rule: plus_trilean.induct)
+    case (1 uu)
+    then show ?case
+      by (simp add: fold_maybe_or_invalid_base)
+  next
+    case "2_1"
+    then show ?case
+      by (simp add: fold_maybe_or_invalid_base)
+  next
+    case "2_2"
+    then show ?case
+      by (simp add: fold_maybe_or_invalid_base)
+  next
+    case "3_1"
+    then show ?case
+      apply simp
+      by (metis add.assoc fold_maybe_or_true_base_never_false maybe_not.cases maybe_or_idempotent maybe_or_true)
+  next
+    case "3_2"
+    then show ?case
+      apply simp
+      apply (case_tac "fold (\<or>\<^sub>?) l true")
+        apply (simp add: eq_commute[of true])
+        apply (case_tac "fold (\<or>\<^sub>?) (rev l) false")
+          apply simp
+         apply simp
+        apply (simp add: fold_true_fold_false_not_invalid)
+       apply (simp add: fold_maybe_or_true_base_never_false)
+      by (simp add: fold_true_invalid_fold_rev_false_invalid)
+  next
+    case 4
+    then show ?case
+      by (simp add: maybe_or_zero)
+  next
+    case 5
+    then show ?case
+      by (simp add: maybe_or_zero)
+  qed
+qed
+
+lemma fold_maybe_or_cons: "fold (\<or>\<^sub>?) (a#l) b = a \<or>\<^sub>? (fold (\<or>\<^sub>?) l b)"
+  apply (simp only: fold_maybe_or_rev[of "(a # l)"])
+  apply (simp only: fold_conv_foldr rev_rev_ident foldr.simps comp_def)
+  by (simp only: foldr_conv_fold rev_rev_ident fold_maybe_or_rev[symmetric])
+
+lemma gval_fold_gOr_map: "gval (fold gOr l (Bc False)) s = fold (\<or>\<^sub>?) (map (\<lambda>g. gval g s) l) (false)"
+proof(induct l)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a l)
+  then show ?case
+    using fold_maybe_or_cons gval_fold_gOr by auto
+qed
+
+lemma gval_unfold_first: "gval (fold gOr (map (\<lambda>x. Eq (V v) (L x)) ls) (Eq (V v) (L l))) s =
+       gval (fold gOr (map (\<lambda>x. Eq (V v) (L x)) (l#ls)) (Bc False)) s"
+proof(induct ls)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a ls)
+  then show ?case
+    using gval_fold_gOr by auto
+qed
+
+lemma gval_fold_in: "gval (In v l) s = gval (fold_In v l) s"
+proof(induct l rule: fold_In.induct)
+  case (1 uu)
+  then show ?case
+    by simp
+next
+  case (2 v l)
+  then show ?case
+    by simp
+next
+  case (3 v l va vb)
+  then show ?case
+    apply (simp only: gval_In_cons fold_In.simps gval_unfold_first)
+    by (metis (no_types, lifting) gval_In_fold gval_fold_gOr list.simps(9))
 qed
 
 lemma gval_take:
@@ -935,5 +1078,7 @@ fun enumerate_gexp_strings :: "gexp \<Rightarrow> String.literal set" where
   "enumerate_gexp_strings (In v l) = enumerate_aexp_strings (V v) \<union> (fold (\<union>) (map (\<lambda>x. enumerate_aexp_strings (L x)) l) {})" |
   "enumerate_gexp_strings (Nor g1 g2) = enumerate_gexp_strings g1 \<union> enumerate_gexp_strings g2" |
   "enumerate_gexp_strings (Null a) = enumerate_aexp_strings a"
+
+
 
 end

@@ -29,6 +29,14 @@ primrec add_pairs :: "(vname \<times> type) list \<Rightarrow> (vname \<times> t
   "add_pairs [] l = l" |
   "add_pairs (h#t) l = (add_pair h (add_pairs t l))"
 
+fun is_num :: "value \<Rightarrow> bool" where
+  "is_num (Num _) = True" |
+  "is_num (Str _) = False"
+
+fun is_str :: "value \<Rightarrow> bool" where
+  "is_str (Num _) = False" |
+  "is_str (Str _) = True"
+
 fun infer_types_aux :: "gexp \<Rightarrow> ((vname \<times> type) list \<times> (vname \<times> vname) list)" where
   "infer_types_aux (Bc _) = ([], [])" |
   "infer_types_aux (Null v) = (assign_all UNBOUND ((aexp_get_variables v)), [])" |
@@ -40,6 +48,8 @@ fun infer_types_aux :: "gexp \<Rightarrow> ((vname \<times> type) list \<times> 
   "infer_types_aux (Eq (V v) (L (Num s))) = ([(v, NUM)], [])" |
   "infer_types_aux (Eq (L (Str s)) (V v)) = ([(v, STRING)], [])" |
   "infer_types_aux (Eq (L (Num s)) (V v)) = ([(v, NUM)], [])" |
+  "infer_types_aux (In v va) = (if \<forall>v' \<in> set va. is_num v' then ([(v, NUM)], []) else
+                                if \<forall>v' \<in> set va. is_str v' then ([(v, STRING)], []) else ([], []))" |
   "infer_types_aux (Eq a (Plus a1 a2)) = (assign_all NUM ((aexp_get_variables (Plus a1 a2)) @ (aexp_get_variables a)), [])" |
   "infer_types_aux (Eq a (Minus a1 a2)) = (assign_all NUM ((aexp_get_variables (Minus a1 a2)) @ (aexp_get_variables a)), [])" |
   "infer_types_aux (Eq (Plus a1 a2) a) = (assign_all NUM ((aexp_get_variables (Plus a1 a2)) @ (aexp_get_variables a)), [])" |
