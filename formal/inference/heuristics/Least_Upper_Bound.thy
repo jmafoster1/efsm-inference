@@ -489,7 +489,4 @@ definition "lob_distinguished t1 t2 = (
 Arity t1 = Arity t2 \<and>
 (\<forall>(v, l') \<in> insert (0, []) (set (get_Ins (Guard t1))). \<forall>g \<in> set (removeAll (In (I v) l') (Guard t1)). \<not> gexp_constrains g (V (I v))))"
 
-lemma "lob_distinguished t1 t2 \<Longrightarrow> \<not> directly_subsumes e1 e2 s s' t1 t2"
-  apply (simp add: directly_subsumes_def)
-
 end
