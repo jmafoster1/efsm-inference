@@ -46,8 +46,10 @@ lemma [code]:
   using initially_undefined_context_check_full_def by presburger
 
 (* This gives us a speedup because we can check this before we have to call out to z3 *)
-fun mutex :: "gexp \<Rightarrow>  gexp \<Rightarrow> bool" where
+fun mutex :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
   "mutex (Eq (V v) (L l)) (Eq (V v') (L l')) = (if v = v' then l \<noteq> l' else False)" |
+  "mutex (gexp.In v l) (Eq (V v') (L l')) = (v = v' \<and> l' \<notin> set l)" |
+  "mutex (Eq (V v') (L l')) (gexp.In v l) = (v = v' \<and> l' \<notin> set l)" |
   "mutex _ _ = False"
 
 lemma mutex_not_gval: "mutex x y \<Longrightarrow> gval (gAnd y x) s \<noteq> true"
@@ -263,6 +265,25 @@ lemma guard_subset_subsumption: "guard_subset_subsumption t1 t2 \<Longrightarrow
   apply (simp add: posterior_def posterior_separate_def can_take_def apply_guards_def)
   by auto
 
+lemma "always_different_outputs_direct_subsumption e1 e2 s s' t1 \<Longrightarrow>
+       lob_distinguished t1 t2 \<Longrightarrow>
+       \<not> directly_subsumes e1 e2 s s' t2 t1"
+  apply (simp add: directly_subsumes_def always_different_outputs_direct_subsumption_def)
+  apply (rule disjI1)
+  apply (erule exE)
+  apply (rule_tac x=p in exI)
+  apply simp
+  apply (case_tac "\<exists>c. anterior_context (tm e2) p = Some c")
+   defer
+   apply (simp add: accepts_trace_gives_context)
+  apply (simp add: lob_distinguished_def)
+  apply (erule exE)
+  apply (rule_tac x=c in exI)
+  apply simp
+  apply (erule conjE)+
+  using distinguishing_subsumption[of t2 t1]
+  by simp
+
 definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes_cases a b s s' t1 t2 = (
     if t1 = t2
@@ -438,7 +459,7 @@ export_code
   (* Nondeterminism metrics *)
   nondeterministic_pairs nondeterministic_pairs_labar
   (* Utilities *)
-  iefsm2dot efsm2dot guards2sal EFSM.enumerate_strings GExp.fold_In
+  iefsm2dot efsm2dot guards2sal
 in Scala
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
