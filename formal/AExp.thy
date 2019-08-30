@@ -712,5 +712,11 @@ fun enumerate_aexp_strings :: "aexp \<Rightarrow> String.literal set" where
   "enumerate_aexp_strings (Plus a1 a2) = enumerate_aexp_strings a1 \<union> enumerate_aexp_strings a2" |
   "enumerate_aexp_strings (Minus a1 a2) = enumerate_aexp_strings a1 \<union> enumerate_aexp_strings a2"
 
+fun enumerate_aexp_ints :: "aexp \<Rightarrow> int set" where
+  "enumerate_aexp_ints (L (Str s)) = {}" |
+  "enumerate_aexp_ints (L (Num s)) = {s}" |
+  "enumerate_aexp_ints (V _) = {}" |
+  "enumerate_aexp_ints (Plus a1 a2) = enumerate_aexp_ints a1 \<union> enumerate_aexp_ints a2" |
+  "enumerate_aexp_ints (Minus a1 a2) = enumerate_aexp_ints a1 \<union> enumerate_aexp_ints a2"
 
 end

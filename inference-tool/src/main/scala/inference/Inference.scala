@@ -65,6 +65,9 @@ object equal {
   implicit def `Nat.equal_nat`: equal[Nat.nat] = new equal[Nat.nat] {
     val `HOL.equal` = (a: Nat.nat, b: Nat.nat) => Nat.equal_nata(a, b)
   }
+  implicit def `Int.equal_int`: equal[Int.int] = new equal[Int.int] {
+    val `HOL.equal` = (a: Int.int, b: Int.int) => Int.equal_inta(a, b)
+  }
 }
 
 def eq[A : equal](a: A, b: A): Boolean = equal[A](a, b)
@@ -145,6 +148,10 @@ object ord {
     val `Orderings.less_eq` = (a: Nat.nat, b: Nat.nat) => Nat.less_eq_nat(a, b)
     val `Orderings.less` = (a: Nat.nat, b: Nat.nat) => Nat.less_nat(a, b)
   }
+  implicit def `Int.ord_int`: ord[Int.int] = new ord[Int.int] {
+    val `Orderings.less_eq` = (a: Int.int, b: Int.int) => Int.less_eq_int(a, b)
+    val `Orderings.less` = (a: Int.int, b: Int.int) => Int.less_int(a, b)
+  }
 }
 
 trait preorder[A] extends ord[A] {
@@ -217,6 +224,10 @@ object preorder {
     val `Orderings.less_eq` = (a: Nat.nat, b: Nat.nat) => Nat.less_eq_nat(a, b)
     val `Orderings.less` = (a: Nat.nat, b: Nat.nat) => Nat.less_nat(a, b)
   }
+  implicit def `Int.preorder_int`: preorder[Int.int] = new preorder[Int.int] {
+    val `Orderings.less_eq` = (a: Int.int, b: Int.int) => Int.less_eq_int(a, b)
+    val `Orderings.less` = (a: Int.int, b: Int.int) => Int.less_int(a, b)
+  }
 }
 
 trait order[A] extends preorder[A] {
@@ -286,6 +297,10 @@ object order {
     val `Orderings.less_eq` = (a: Nat.nat, b: Nat.nat) => Nat.less_eq_nat(a, b)
     val `Orderings.less` = (a: Nat.nat, b: Nat.nat) => Nat.less_nat(a, b)
   }
+  implicit def `Int.order_int`: order[Int.int] = new order[Int.int] {
+    val `Orderings.less_eq` = (a: Int.int, b: Int.int) => Int.less_eq_int(a, b)
+    val `Orderings.less` = (a: Int.int, b: Int.int) => Int.less_int(a, b)
+  }
 }
 
 trait linorder[A] extends order[A] {
@@ -336,6 +351,10 @@ object linorder {
   implicit def `Nat.linorder_nat`: linorder[Nat.nat] = new linorder[Nat.nat] {
     val `Orderings.less_eq` = (a: Nat.nat, b: Nat.nat) => Nat.less_eq_nat(a, b)
     val `Orderings.less` = (a: Nat.nat, b: Nat.nat) => Nat.less_nat(a, b)
+  }
+  implicit def `Int.linorder_int`: linorder[Int.int] = new linorder[Int.int] {
+    val `Orderings.less_eq` = (a: Int.int, b: Int.int) => Int.less_eq_int(a, b)
+    val `Orderings.less` = (a: Int.int, b: Int.int) => Int.less_int(a, b)
   }
 }
 
@@ -458,6 +477,12 @@ object Int {
 abstract sealed class int
 final case class int_of_integer(a: BigInt) extends int
 
+def equal_inta(k: int, l: int): Boolean =
+  Code_Numeral.integer_of_int(k) == Code_Numeral.integer_of_int(l)
+
+def less_eq_int(k: int, l: int): Boolean =
+  Code_Numeral.integer_of_int(k) <= Code_Numeral.integer_of_int(l)
+
 def less_int(k: int, l: int): Boolean =
   Code_Numeral.integer_of_int(k) < Code_Numeral.integer_of_int(l)
 
@@ -467,15 +492,9 @@ def plus_int(k: int, l: int): int =
 
 def zero_int: int = int_of_integer(BigInt(0))
 
-def equal_int(k: int, l: int): Boolean =
-  Code_Numeral.integer_of_int(k) == Code_Numeral.integer_of_int(l)
-
 def minus_int(k: int, l: int): int =
   int_of_integer(Code_Numeral.integer_of_int(k) -
                    Code_Numeral.integer_of_int(l))
-
-def less_eq_int(k: int, l: int): Boolean =
-  Code_Numeral.integer_of_int(k) <= Code_Numeral.integer_of_int(l)
 
 } /* object Int */
 
@@ -603,6 +622,10 @@ def Ball[A](x0: set[A], p: A => Boolean): Boolean = (x0, p) match {
   case (seta(xs), p) => Lista.list_all[A](p, xs)
 }
 
+def image[A, B](f: A => B, x1: set[A]): set[B] = (f, x1) match {
+  case (f, seta(xs)) => seta[B](Lista.map[A, B](f, xs))
+}
+
 def insert[A : HOL.equal](x: A, xa1: set[A]): set[A] = (x, xa1) match {
   case (x, seta(s)) => (if (s contains x) seta[A](s) else seta[A](x :: s))
 }
@@ -679,7 +702,7 @@ def equal_valuea(x0: value, x1: value): Boolean = (x0, x1) match {
   case (Numa(x1), Str(x2)) => false
   case (Str(x2), Numa(x1)) => false
   case (Str(x2), Str(y2)) => x2 == y2
-  case (Numa(x1), Numa(y1)) => Int.equal_int(x1, y1)
+  case (Numa(x1), Numa(y1)) => Int.equal_inta(x1, y1)
 }
 
 def less_eq_value(x0: value, x1: value): Boolean = (x0, x1) match {
@@ -857,6 +880,16 @@ def aexp_same_structure(x0: aexp, x1: aexp): Boolean = (x0, x1) match {
   case (L(vb), Minus(v, va)) => false
 }
 
+def enumerate_aexp_ints(x0: aexp): Set.set[Int.int] = x0 match {
+  case L(Value.Str(s)) => Set.bot_set[Int.int]
+  case L(Value.Numa(s)) => Set.insert[Int.int](s, Set.bot_set[Int.int])
+  case V(uu) => Set.bot_set[Int.int]
+  case Plus(a1, a2) =>
+    Set.sup_set[Int.int](enumerate_aexp_ints(a1), enumerate_aexp_ints(a2))
+  case Minus(a1, a2) =>
+    Set.sup_set[Int.int](enumerate_aexp_ints(a1), enumerate_aexp_ints(a2))
+}
+
 def enumerate_aexp_regs(x0: aexp): Set.set[Nat.nat] = x0 match {
   case L(uu) => Set.bot_set[Nat.nat]
   case V(VName.R(n)) => Set.insert[Nat.nat](n, Set.bot_set[Nat.nat])
@@ -878,6 +911,18 @@ def enumerate_aexp_inputs(x0: aexp): Set.set[Nat.nat] = x0 match {
 }
 
 } /* object AExp */
+
+object Complete_Lattices {
+
+def Sup_set[A : HOL.equal](x0: Set.set[Set.set[A]]): Set.set[A] = x0 match {
+  case Set.seta(xs) =>
+    Lista.fold[Set.set[A],
+                Set.set[A]](((a: Set.set[A]) => (b: Set.set[A]) =>
+                              Set.sup_set[A](a, b)),
+                             xs, Set.bot_set[A])
+}
+
+} /* object Complete_Lattices */
 
 object Option_Lexorder {
 
@@ -1158,6 +1203,28 @@ def gexp_constrains(x0: gexp, uv: AExp.aexp): Boolean = (x0, uv) match {
   case (In(v, l), a) => AExp.aexp_constrains(AExp.V(v), a)
 }
 
+def enumerate_gexp_ints(x0: gexp): Set.set[Int.int] = x0 match {
+  case Bc(uu) => Set.bot_set[Int.int]
+  case Eq(a1, a2) =>
+    Set.sup_set[Int.int](AExp.enumerate_aexp_ints(a1),
+                          AExp.enumerate_aexp_ints(a2))
+  case Gt(a1, a2) =>
+    Set.sup_set[Int.int](AExp.enumerate_aexp_ints(a1),
+                          AExp.enumerate_aexp_ints(a2))
+  case In(v, l) =>
+    Set.sup_set[Int.int](AExp.enumerate_aexp_ints(AExp.V(v)),
+                          Lista.fold[Value.value,
+                                      Set.set[Int.int]](Fun.comp[Set.set[Int.int],
+                          (Set.set[Int.int]) => Set.set[Int.int],
+                          Value.value](((a: Set.set[Int.int]) =>
+ (b: Set.set[Int.int]) => Set.sup_set[Int.int](a, b)),
+((x: Value.value) => AExp.enumerate_aexp_ints(AExp.L(x)))),
+                 l, Set.bot_set[Int.int]))
+  case Nor(g1, g2) =>
+    Set.sup_set[Int.int](enumerate_gexp_ints(g1), enumerate_gexp_ints(g2))
+  case Null(a) => AExp.enumerate_aexp_ints(a)
+}
+
 def gexp_same_structure(x0: gexp, x1: gexp): Boolean = (x0, x1) match {
   case (Bc(ba), Bc(b)) => ba == b
   case (Eq(a1a, a2a), Eq(a1, a2)) =>
@@ -1287,18 +1354,6 @@ def less_gexp(e1: GExp.gexp, e2: GExp.gexp): Boolean = less_gexpr(e1, e2)
 
 } /* object GExp_Orderings */
 
-object Complete_Lattices {
-
-def Sup_set[A : HOL.equal](x0: Set.set[Set.set[A]]): Set.set[A] = x0 match {
-  case Set.seta(xs) =>
-    Lista.fold[Set.set[A],
-                Set.set[A]](((a: Set.set[A]) => (b: Set.set[A]) =>
-                              Set.sup_set[A](a, b)),
-                             xs, Set.bot_set[A])
-}
-
-} /* object Complete_Lattices */
-
 object Transition {
 
 abstract sealed class transition_ext[A]
@@ -1373,6 +1428,34 @@ def total_max_reg(t: transition_ext[Unit]): Nat.nat =
      case None => Nat.zero_nata
      case Some(a) => a
    })
+
+def enumerate_ints(t: transition_ext[Unit]): Set.set[Int.int] =
+  Set.sup_set[Int.int](Set.sup_set[Int.int](Set.sup_set[Int.int](Complete_Lattices.Sup_set[Int.int](Set.seta[Set.set[Int.int]](Lista.map[GExp.gexp,
+                  Set.set[Int.int]](((a: GExp.gexp) =>
+                                      GExp.enumerate_gexp_ints(a)),
+                                     Guard[Unit](t)))),
+                          Complete_Lattices.Sup_set[Int.int](Set.seta[Set.set[Int.int]](Lista.map[AExp.aexp,
+                   Set.set[Int.int]](((a: AExp.aexp) =>
+                                       AExp.enumerate_aexp_ints(a)),
+                                      Outputs[Unit](t))))),
+     Complete_Lattices.Sup_set[Int.int](Set.seta[Set.set[Int.int]](Lista.map[(Nat.nat,
+                                       AExp.aexp),
+                                      Set.set[Int.int]](((a:
+                    (Nat.nat, AExp.aexp))
+                   =>
+                  {
+                    val (_, aa): (Nat.nat, AExp.aexp) = a;
+                    AExp.enumerate_aexp_ints(aa)
+                  }),
+                 Updates[Unit](t))))),
+                        Complete_Lattices.Sup_set[Int.int](Set.seta[Set.set[Int.int]](Lista.map[(Nat.nat,
+                  AExp.aexp),
+                 Set.set[Int.int]](((a: (Nat.nat, AExp.aexp)) =>
+                                     {
+                                       val (r, _): (Nat.nat, AExp.aexp) = a;
+                                       AExp.enumerate_aexp_ints(AExp.V(VName.R(r)))
+                                     }),
+                                    Updates[Unit](t)))))
 
 def Label[A](x0: transition_ext[A]): String = x0 match {
   case transition_exta(label, arity, guard, outputs, updates, more) => label
@@ -3951,6 +4034,14 @@ FSet.fimage[(Nat.nat, Nat.nat),
                                  a)
   }
 
+def max_int(e: FSet.fset[(Nat.nat,
+                           ((Nat.nat, Nat.nat),
+                             Transition.transition_ext[Unit]))]):
+      Int.int
+  =
+  Lattices_Big.Max[Int.int](Set.insert[Int.int](Int.zero_int,
+         EFSM.enumerate_ints(tm(e))))
+
 def max_reg(e: FSet.fset[(Nat.nat,
                            ((Nat.nat, Nat.nat),
                              Transition.transition_ext[Unit]))]):
@@ -5086,6 +5177,25 @@ def accepts(x1: FSet.fset[((Nat.nat, Nat.nat),
       Boolean
   =
   Predicate.holds(Code_Generation.accepts_i_i_i_i(x1, x2, x3, x4))
+
+def enumerate_ints(e: FSet.fset[((Nat.nat, Nat.nat),
+                                  Transition.transition_ext[Unit])]):
+      Set.set[Int.int]
+  =
+  Complete_Lattices.Sup_set[Int.int](Set.image[((Nat.nat, Nat.nat),
+         Transition.transition_ext[Unit]),
+        Set.set[Int.int]](((a: ((Nat.nat, Nat.nat),
+                                 Transition.transition_ext[Unit]))
+                             =>
+                            {
+                              val (_, aa):
+                                    ((Nat.nat, Nat.nat),
+                                      Transition.transition_ext[Unit])
+                                = a;
+                              Transition.enumerate_ints(aa)
+                            }),
+                           FSet.fset[((Nat.nat, Nat.nat),
+                                       Transition.transition_ext[Unit])](e)))
 
 } /* object EFSM */
 

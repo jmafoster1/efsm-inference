@@ -1079,6 +1079,12 @@ fun enumerate_gexp_strings :: "gexp \<Rightarrow> String.literal set" where
   "enumerate_gexp_strings (Nor g1 g2) = enumerate_gexp_strings g1 \<union> enumerate_gexp_strings g2" |
   "enumerate_gexp_strings (Null a) = enumerate_aexp_strings a"
 
-
+fun enumerate_gexp_ints :: "gexp \<Rightarrow> int set" where
+  "enumerate_gexp_ints (Bc _) = {}" |
+  "enumerate_gexp_ints (Eq a1 a2) = enumerate_aexp_ints a1 \<union> enumerate_aexp_ints a2" |
+  "enumerate_gexp_ints (Gt a1 a2) = enumerate_aexp_ints a1 \<union> enumerate_aexp_ints a2" |
+  "enumerate_gexp_ints (In v l) = enumerate_aexp_ints (V v) \<union> (fold (\<union>) (map (\<lambda>x. enumerate_aexp_ints (L x)) l) {})" |
+  "enumerate_gexp_ints (Nor g1 g2) = enumerate_gexp_ints g1 \<union> enumerate_gexp_ints g2" |
+  "enumerate_gexp_ints (Null a) = enumerate_aexp_ints a"
 
 end

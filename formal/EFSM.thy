@@ -429,4 +429,7 @@ lemma observe_trace_empty_iff: "(observe_trace e s r t = []) = (observe_all e s 
 definition enumerate_strings :: "transition_matrix \<Rightarrow> String.literal set" where
   "enumerate_strings e = \<Union> (image (\<lambda>(_, t). Transition.enumerate_strings t) (fset e))"
 
+definition enumerate_ints :: "transition_matrix \<Rightarrow> int set" where
+  "enumerate_ints e = \<Union> (image (\<lambda>(_, t). Transition.enumerate_ints t) (fset e))"
+
 end

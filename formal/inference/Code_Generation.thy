@@ -505,7 +505,7 @@ export_code
   (* Nondeterminism metrics *)
   nondeterministic_pairs nondeterministic_pairs_labar
   (* Utilities *)
-  iefsm2dot efsm2dot guards2sal fold_In
+  iefsm2dot efsm2dot guards2sal fold_In max_int
 in Scala
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

@@ -124,4 +124,10 @@ definition enumerate_strings :: "transition \<Rightarrow> String.literal set" wh
                          (\<Union> (set (map (\<lambda>(_, u). enumerate_aexp_strings u) (Updates t)))) \<union>
                          (\<Union> (set (map (\<lambda>(r, _). enumerate_aexp_strings (V (R r))) (Updates t))))"
 
+definition enumerate_ints :: "transition \<Rightarrow> int set" where
+  "enumerate_ints t = (\<Union> (set (map enumerate_gexp_ints (Guard t)))) \<union>
+                         (\<Union> (set (map enumerate_aexp_ints (Outputs t)))) \<union>
+                         (\<Union> (set (map (\<lambda>(_, u). enumerate_aexp_ints u) (Updates t)))) \<union>
+                         (\<Union> (set (map (\<lambda>(r, _). enumerate_aexp_ints (V (R r))) (Updates t))))"
+
 end

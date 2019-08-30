@@ -491,4 +491,7 @@ lemma simple_mutex_direct_subsumption:
   apply (simp add: simple_mutex_def)
   by (metis can_take_satisfiable no_choice_no_subsumption)
 
+definition max_int :: "iEFSM \<Rightarrow> int" where
+  "max_int e = Max (insert 0 (EFSM.enumerate_ints (tm e)))"
+
 end
