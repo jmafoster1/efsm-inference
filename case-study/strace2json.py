@@ -9,9 +9,17 @@ import json
 import os
 
 
+def make_smaller(i):
+    return i
+    if i < 100:
+        return i
+    else:
+        return int(make_smaller(i/100))
+
+
 def num_or_str(a):
     if str(a).isnumeric():
-        return a
+        return make_smaller(a)
     else:
         return str(a)[:10]
 
@@ -38,7 +46,7 @@ def is_int(string):
 
 def outputs(string):
     if type(string) == int:
-        return [string]
+        return [make_smaller(string)]
     string = string.split(" ")
     if len(string) == 0:
         return []

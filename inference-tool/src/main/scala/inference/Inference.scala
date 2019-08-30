@@ -1062,6 +1062,18 @@ def gval(x0: gexp, uu: VName.vname => Option[Value.value]): Trilean.trilean =
     Trilean.maybe_not(Trilean.plus_trilean(gval(a_1, s), gval(a_2, s)))
 }
 
+def fold_In(uu: VName.vname, x1: List[Value.value]): gexp = (uu, x1) match {
+  case (uu, Nil) => Bc(false)
+  case (v, List(l)) => Eq(AExp.V(v), AExp.L(l))
+  case (v, l :: va :: vb) =>
+    Lista.fold[Value.value,
+                gexp](Fun.comp[gexp, gexp => gexp,
+                                Value.value](((vc: gexp) => (vaa: gexp) =>
+       Nor(Nor(vc, vaa), Nor(vc, vaa))),
+      ((x: Value.value) => Eq(AExp.V(v), AExp.L(x)))),
+                       va :: vb, Eq(AExp.V(v), AExp.L(l)))
+}
+
 def enumerate_gexp_regs(x0: gexp): Set.set[Nat.nat] = x0 match {
   case Bc(uu) => Set.bot_set[Nat.nat]
   case Null(v) => AExp.enumerate_aexp_regs(v)
@@ -2635,6 +2647,239 @@ def is_generalised_output_of(ta: Transition.transition_ext[Unit],
   Transition.equal_transition_exta[Unit](ta, generalise_output(t, r, p))
 
 } /* object Store_Reuse */
+
+object Least_Upper_Bound {
+
+def literal_args(x0: GExp.gexp): Boolean = x0 match {
+  case GExp.Bc(v) => false
+  case GExp.Eq(AExp.V(uu), AExp.L(uv)) => true
+  case GExp.In(uw, ux) => true
+  case GExp.Eq(AExp.L(v), uz) => false
+  case GExp.Eq(AExp.Plus(v, va), uz) => false
+  case GExp.Eq(AExp.Minus(v, va), uz) => false
+  case GExp.Eq(uy, AExp.V(v)) => false
+  case GExp.Eq(uy, AExp.Plus(v, va)) => false
+  case GExp.Eq(uy, AExp.Minus(v, va)) => false
+  case GExp.Gt(v, va) => false
+  case GExp.Null(v) => false
+  case GExp.Nor(v, va) => (literal_args(v)) && (literal_args(va))
+}
+
+def all_literal_args[A](t: Transition.transition_ext[A]): Boolean =
+  Lista.list_all[GExp.gexp](((a: GExp.gexp) => literal_args(a)),
+                             Transition.Guard[A](t))
+
+def merge_in(v: VName.vname, l: Value.value, x2: List[GExp.gexp]):
+      List[GExp.gexp]
+  =
+  (v, l, x2) match {
+  case (v, l, Nil) => List(GExp.Eq(AExp.V(v), AExp.L(l)))
+  case (va, la, GExp.Eq(AExp.V(v), AExp.L(l)) :: t) =>
+    (if (VName.equal_vnamea(va, v)) GExp.In(va, List(la, l).distinct) :: t
+      else GExp.Eq(AExp.V(v), AExp.L(l)) :: merge_in(va, la, t))
+  case (va, la, GExp.In(v, l) :: t) =>
+    (if (VName.equal_vnamea(va, v)) GExp.In(va, (la :: l).distinct) :: t
+      else GExp.In(v, l) :: merge_in(va, la, t))
+  case (v, l, GExp.Bc(va) :: t) => GExp.Bc(va) :: merge_in(v, l, t)
+  case (v, l, GExp.Eq(AExp.L(vc), vb) :: t) =>
+    GExp.Eq(AExp.L(vc), vb) :: merge_in(v, l, t)
+  case (v, l, GExp.Eq(AExp.Plus(vc, vd), vb) :: t) =>
+    GExp.Eq(AExp.Plus(vc, vd), vb) :: merge_in(v, l, t)
+  case (v, l, GExp.Eq(AExp.Minus(vc, vd), vb) :: t) =>
+    GExp.Eq(AExp.Minus(vc, vd), vb) :: merge_in(v, l, t)
+  case (v, l, GExp.Eq(va, AExp.V(vc)) :: t) =>
+    GExp.Eq(va, AExp.V(vc)) :: merge_in(v, l, t)
+  case (v, l, GExp.Eq(va, AExp.Plus(vc, vd)) :: t) =>
+    GExp.Eq(va, AExp.Plus(vc, vd)) :: merge_in(v, l, t)
+  case (v, l, GExp.Eq(va, AExp.Minus(vc, vd)) :: t) =>
+    GExp.Eq(va, AExp.Minus(vc, vd)) :: merge_in(v, l, t)
+  case (v, l, GExp.Gt(va, vb) :: t) => GExp.Gt(va, vb) :: merge_in(v, l, t)
+  case (v, l, GExp.Null(va) :: t) => GExp.Null(va) :: merge_in(v, l, t)
+  case (v, l, GExp.Nor(va, vb) :: t) => GExp.Nor(va, vb) :: merge_in(v, l, t)
+}
+
+def merge_guards(x0: List[GExp.gexp], g2: List[GExp.gexp]): List[GExp.gexp] =
+  (x0, g2) match {
+  case (Nil, g2) => g2
+  case (h :: t, g2) => {
+                         val (GExp.Eq(AExp.V(v), AExp.L(l))): GExp.gexp = h;
+                         merge_guards(t, merge_in(v, l, g2))
+                       }
+}
+
+def lob_aux(t1: Transition.transition_ext[Unit],
+             t2: Transition.transition_ext[Unit]):
+      Option[Transition.transition_ext[Unit]]
+  =
+  (if ((Lista.equal_lista[AExp.aexp](Transition.Outputs[Unit](t1),
+                                      Transition.Outputs[Unit](t2))) && ((Lista.equal_lista[(Nat.nat,
+              AExp.aexp)](Transition.Updates[Unit](t1),
+                           Transition.Updates[Unit](t2))) && ((all_literal_args[Unit](t1)) && (all_literal_args[Unit](t2)))))
+    Some[Transition.transition_ext[Unit]](Transition.transition_exta[Unit](Transition.Label[Unit](t1),
+                                    Transition.Arity[Unit](t1),
+                                    merge_guards(Transition.Guard[Unit](t1),
+          Transition.Guard[Unit](t2)),
+                                    Transition.Outputs[Unit](t1),
+                                    Transition.Updates[Unit](t1), ()))
+    else None)
+
+def lob(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
+         newa: FSet.fset[(Nat.nat,
+                           ((Nat.nat, Nat.nat),
+                             Transition.transition_ext[Unit]))],
+         old: FSet.fset[(Nat.nat,
+                          ((Nat.nat, Nat.nat),
+                            Transition.transition_ext[Unit]))],
+         uu: (FSet.fset[(Nat.nat,
+                          ((Nat.nat, Nat.nat),
+                            Transition.transition_ext[Unit]))]) =>
+               FSet.fset[(Nat.nat,
+                           ((Nat.nat, Nat.nat),
+                             ((Transition.transition_ext[Unit], Nat.nat),
+                               (Transition.transition_ext[Unit], Nat.nat))))]):
+      Option[FSet.fset[(Nat.nat,
+                         ((Nat.nat, Nat.nat),
+                           Transition.transition_ext[Unit]))]]
+  =
+  {
+    val t1: Transition.transition_ext[Unit] = Inference.get_by_id(newa, t1ID)
+    val t2: Transition.transition_ext[Unit] = Inference.get_by_id(newa, t2ID);
+    (lob_aux(t1, t2) match {
+       case None => None
+       case Some(lob_t) =>
+         Some[FSet.fset[(Nat.nat,
+                          ((Nat.nat, Nat.nat),
+                            Transition.transition_ext[Unit]))]](Inference.replace(Inference.drop_transitions(newa,
+                              FSet.finsert[Nat.nat](t2ID,
+             FSet.bot_fset[Nat.nat])),
+   t1ID, lob_t))
+     })
+  }
+
+def has_corresponding(g: GExp.gexp, x1: List[GExp.gexp]): Boolean = (g, x1)
+  match {
+  case (g, Nil) => false
+  case (GExp.Eq(AExp.V(va), AExp.L(la)), GExp.Eq(AExp.V(v), AExp.L(l)) :: t) =>
+    (if ((VName.equal_vnamea(va, v)) && (Value.equal_valuea(la, l))) true
+      else has_corresponding(GExp.Eq(AExp.V(va), AExp.L(la)), t))
+  case (GExp.In(va, la), GExp.Eq(AExp.V(v), AExp.L(l)) :: t) =>
+    (if ((VName.equal_vnamea(v, va)) && (la contains l)) true
+      else has_corresponding(GExp.In(va, la), t))
+  case (GExp.In(va, la), GExp.In(v, l) :: t) =>
+    (if ((VName.equal_vnamea(va, v)) && (Lista.list_all[Value.value](((a:
+                                 Value.value)
+                                =>
+                               la contains a),
+                              l)))
+      true else has_corresponding(GExp.In(va, la), t))
+  case (GExp.Bc(v), h :: t) => has_corresponding(GExp.Bc(v), t)
+  case (GExp.Eq(AExp.L(vb), va), h :: t) =>
+    has_corresponding(GExp.Eq(AExp.L(vb), va), t)
+  case (GExp.Eq(AExp.Plus(vb, vc), va), h :: t) =>
+    has_corresponding(GExp.Eq(AExp.Plus(vb, vc), va), t)
+  case (GExp.Eq(AExp.Minus(vb, vc), va), h :: t) =>
+    has_corresponding(GExp.Eq(AExp.Minus(vb, vc), va), t)
+  case (GExp.Eq(v, AExp.V(vb)), h :: t) =>
+    has_corresponding(GExp.Eq(v, AExp.V(vb)), t)
+  case (GExp.Eq(v, AExp.Plus(vb, vc)), h :: t) =>
+    has_corresponding(GExp.Eq(v, AExp.Plus(vb, vc)), t)
+  case (GExp.Eq(v, AExp.Minus(vb, vc)), h :: t) =>
+    has_corresponding(GExp.Eq(v, AExp.Minus(vb, vc)), t)
+  case (GExp.Gt(v, va), h :: t) => has_corresponding(GExp.Gt(v, va), t)
+  case (GExp.Null(v), h :: t) => has_corresponding(GExp.Null(v), t)
+  case (GExp.In(v, va), GExp.Bc(vb) :: t) =>
+    has_corresponding(GExp.In(v, va), t)
+  case (GExp.In(v, va), GExp.Eq(AExp.L(vd), vc) :: t) =>
+    has_corresponding(GExp.In(v, va), t)
+  case (GExp.In(v, va), GExp.Eq(AExp.Plus(vd, ve), vc) :: t) =>
+    has_corresponding(GExp.In(v, va), t)
+  case (GExp.In(v, va), GExp.Eq(AExp.Minus(vd, ve), vc) :: t) =>
+    has_corresponding(GExp.In(v, va), t)
+  case (GExp.In(v, va), GExp.Eq(vb, AExp.V(vd)) :: t) =>
+    has_corresponding(GExp.In(v, va), t)
+  case (GExp.In(v, va), GExp.Eq(vb, AExp.Plus(vd, ve)) :: t) =>
+    has_corresponding(GExp.In(v, va), t)
+  case (GExp.In(v, va), GExp.Eq(vb, AExp.Minus(vd, ve)) :: t) =>
+    has_corresponding(GExp.In(v, va), t)
+  case (GExp.In(v, va), GExp.Gt(vb, vc) :: t) =>
+    has_corresponding(GExp.In(v, va), t)
+  case (GExp.In(v, va), GExp.Null(vb) :: t) =>
+    has_corresponding(GExp.In(v, va), t)
+  case (GExp.In(v, va), GExp.Nor(vb, vc) :: t) =>
+    has_corresponding(GExp.In(v, va), t)
+  case (GExp.Nor(v, va), h :: t) => has_corresponding(GExp.Nor(v, va), t)
+  case (g, GExp.Bc(v) :: t) => has_corresponding(g, t)
+  case (g, GExp.Eq(AExp.L(vb), va) :: t) => has_corresponding(g, t)
+  case (g, GExp.Eq(AExp.Plus(vb, vc), va) :: t) => has_corresponding(g, t)
+  case (g, GExp.Eq(AExp.Minus(vb, vc), va) :: t) => has_corresponding(g, t)
+  case (g, GExp.Eq(v, AExp.V(vb)) :: t) => has_corresponding(g, t)
+  case (g, GExp.Eq(v, AExp.Plus(vb, vc)) :: t) => has_corresponding(g, t)
+  case (g, GExp.Eq(v, AExp.Minus(vb, vc)) :: t) => has_corresponding(g, t)
+  case (g, GExp.Gt(v, va) :: t) => has_corresponding(g, t)
+  case (g, GExp.Null(v) :: t) => has_corresponding(g, t)
+  case (GExp.Eq(vb, vc), GExp.In(v, va) :: t) =>
+    has_corresponding(GExp.Eq(vb, vc), t)
+  case (g, GExp.Nor(v, va) :: t) => has_corresponding(g, t)
+}
+
+def is_lob[A, B](t1: Transition.transition_ext[A],
+                  t2: Transition.transition_ext[B]):
+      Boolean
+  =
+  (Transition.Label[A](t1) ==
+    Transition.Label[B](t2)) && ((Nat.equal_nata(Transition.Arity[A](t1),
+          Transition.Arity[B](t2))) && ((Lista.equal_lista[AExp.aexp](Transition.Outputs[A](t1),
+                               Transition.Outputs[B](t2))) && ((Lista.equal_lista[(Nat.nat,
+    AExp.aexp)](Transition.Updates[A](t1),
+                 Transition.Updates[B](t2))) && (Lista.list_all[GExp.gexp](((g:
+                                       GExp.gexp)
+                                      =>
+                                     has_corresponding(g,
+                Transition.Guard[A](t1))),
+                                    Transition.Guard[B](t2))))))
+
+def get_Ins(g: List[GExp.gexp]): List[(Nat.nat, List[Value.value])] =
+  Lista.map_filter[GExp.gexp,
+                    (Nat.nat,
+                      List[Value.value])](((x: GExp.gexp) =>
+    (if ((x match {
+            case GExp.Bc(_) => false
+            case GExp.Eq(_, _) => false
+            case GExp.Gt(_, _) => false
+            case GExp.Null(_) => false
+            case GExp.In(VName.I(_), _) => true
+            case GExp.In(VName.R(_), _) => false
+            case GExp.Nor(_, _) => false
+          }))
+      Some[(Nat.nat,
+             List[Value.value])]({
+                                   val (GExp.In(VName.I(v), l)): GExp.gexp = x;
+                                   (v, l)
+                                 })
+      else None)),
+   g)
+
+def lob_distinguished_2[A, B](t1: Transition.transition_ext[A],
+                               t2: Transition.transition_ext[B]):
+      Boolean
+  =
+  Lista.list_ex[(Nat.nat,
+                  List[Value.value])](((a: (Nat.nat, List[Value.value])) =>
+{
+  val (i, l): (Nat.nat, List[Value.value]) = a;
+  (Lista.equal_lista[GExp.gexp](Lista.filter[GExp.gexp](((g: GExp.gexp) =>
+                  GExp.gexp_constrains(g, AExp.V(VName.I(i)))),
+                 Transition.Guard[B](t2)),
+                                 List(GExp.In(VName.I(i),
+       l)))) && ((Lista.list_ex[Value.value](((la: Value.value) =>
+       (Nat.less_nat(i, Transition.Arity[A](t1))) && (((Transition.Guard[A](t1)) contains (GExp.Eq(AExp.V(VName.I(i)),
+                    AExp.L(la)))) && (Nat.less_nat(Nat.Nata((1)),
+            FSet.size_fset[Value.value](FSet.fset_of_list[Value.value](l)))))),
+      l)) && (Nat.equal_nata(Transition.Arity[A](t1), Transition.Arity[B](t2))))
+}),
+                                       get_Ins(Transition.Guard[B](t2)))
+
+} /* object Least_Upper_Bound */
 
 object Ignore_Inputs {
 
@@ -4569,21 +4814,6 @@ def always_different_outputs_direct_subsumption(m1:
     Dirties.acceptsAndGetsUsToBoth(m1, m2, sa, s)
     else Dirties.alwaysDifferentOutputsDirectSubsumption(m1, m2, sa, s, t))
 
-def guard_subset_subsumption(t1: Transition.transition_ext[Unit],
-                              t2: Transition.transition_ext[Unit]):
-      Boolean
-  =
-  (Transition.Label[Unit](t1) ==
-    Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
-             Transition.Arity[Unit](t2))) && ((Lista.list_all[GExp.gexp](((a:
-                                     GExp.gexp)
-                                    =>
-                                   (Transition.Guard[Unit](t2)) contains a),
-                                  Transition.Guard[Unit](t1))) && ((Lista.equal_lista[AExp.aexp](Transition.Outputs[Unit](t1),
-                  Transition.Outputs[Unit](t2))) && (Lista.equal_lista[(Nat.nat,
-                                 AExp.aexp)](Transition.Updates[Unit](t1),
-      Transition.Updates[Unit](t2))))))
-
 def always_different_outputs(x0: List[AExp.aexp], x1: List[AExp.aexp]): Boolean
   =
   (x0, x1) match {
@@ -4600,42 +4830,48 @@ def always_different_outputs(x0: List[AExp.aexp], x1: List[AExp.aexp]): Boolean
   case (h :: ta, AExp.Minus(v, va) :: t) => always_different_outputs(ta, t)
 }
 
-def directly_subsumes_cases(a: FSet.fset[(Nat.nat,
-   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-                             b: FSet.fset[(Nat.nat,
+def directly_subsumes_cases(m1: FSet.fset[(Nat.nat,
     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+                             m2: FSet.fset[(Nat.nat,
+     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
                              sa: Nat.nat, s: Nat.nat,
                              t1: Transition.transition_ext[Unit],
                              t2: Transition.transition_ext[Unit]):
       Boolean
   =
   (if (Transition.equal_transition_exta[Unit](t1, t2)) true
-    else (if ((always_different_outputs(Transition.Outputs[Unit](t1),
- Transition.Outputs[Unit](t2))) && (always_different_outputs_direct_subsumption(a,
- b, sa, s, t2)))
-           false
-           else (if (guard_subset_subsumption(t1, t2)) true
-                  else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
-              t2, b, s))
-                         true
-                         else (if (Store_Reuse_Subsumption.drop_update_add_guard_direct_subsumption(a,
-                     b, sa, s, t1, t2))
-                                false
-                                else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
-                        t2, a, b, sa, s))
+    else (if (Inference.simple_mutex(t2, t1)) false
+           else (if ((always_different_outputs(Transition.Outputs[Unit](t1),
+        Transition.Outputs[Unit](t2))) && (always_different_outputs_direct_subsumption(m1,
+        m2, sa, s, t2)))
+                  false
+                  else (if ((always_different_outputs_direct_subsumption(m1, m2,
+                                  sa, s,
+                                  t2)) && (Least_Upper_Bound.lob_distinguished_2[Unit,
+  Unit](t1, t2)))
+                         false
+                         else (if (Least_Upper_Bound.is_lob[Unit, Unit](t2, t1))
+                                true
+                                else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
+                            t2, m2, s))
                                        true
-                                       else (if (Store_Reuse_Subsumption.possibly_not_value(a,
-             b, sa, s, t1, t2))
+                                       else (if (Store_Reuse_Subsumption.drop_update_add_guard_direct_subsumption(m1,
+                                   m2, sa, s, t1, t2))
       false
-      else (if (Transition.equal_transition_exta[Unit](t1,
-                Ignore_Inputs.drop_guards(t2)))
+      else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
+                                      t2, m1, m2, sa, s))
              true
-             else (if ((Transition.equal_transition_exta[Unit](t2,
-                        Ignore_Inputs.drop_guards(t1))) && (satisfiable_negation[Unit](t1)))
+             else (if (Store_Reuse_Subsumption.possibly_not_value(m1, m2, sa, s,
+                           t1, t2))
                     false
-                    else (if (Inference.simple_mutex(t2, t1)) false
-                           else Dirties.scalaDirectlySubsumes(a, b, sa, s, t1,
-                       t2)))))))))))
+                    else (if (Transition.equal_transition_exta[Unit](t1,
+                              Ignore_Inputs.drop_guards(t2)))
+                           true
+                           else (if ((Transition.equal_transition_exta[Unit](t2,
+                                      Ignore_Inputs.drop_guards(t1))) && (satisfiable_negation[Unit](t1)))
+                                  false
+                                  else Dirties.scalaDirectlySubsumes(m1, m2, sa,
+                              s, t1, t2))))))))))))
 
 def no_illegal_updates_code(x0: List[(Nat.nat, AExp.aexp)], uu: Nat.nat):
       Boolean
@@ -5707,116 +5943,6 @@ t2)))))
   }
 
 } /* object Increment_Reset */
-
-object Least_Upper_Bound {
-
-def literal_args(x0: GExp.gexp): Boolean = x0 match {
-  case GExp.Bc(v) => false
-  case GExp.Eq(AExp.V(uu), AExp.L(uv)) => true
-  case GExp.In(uw, ux) => true
-  case GExp.Eq(AExp.L(v), uz) => false
-  case GExp.Eq(AExp.Plus(v, va), uz) => false
-  case GExp.Eq(AExp.Minus(v, va), uz) => false
-  case GExp.Eq(uy, AExp.V(v)) => false
-  case GExp.Eq(uy, AExp.Plus(v, va)) => false
-  case GExp.Eq(uy, AExp.Minus(v, va)) => false
-  case GExp.Gt(v, va) => false
-  case GExp.Null(v) => false
-  case GExp.Nor(v, va) => (literal_args(v)) && (literal_args(va))
-}
-
-def all_literal_args[A](t: Transition.transition_ext[A]): Boolean =
-  Lista.list_all[GExp.gexp](((a: GExp.gexp) => literal_args(a)),
-                             Transition.Guard[A](t))
-
-def merge_in(v: VName.vname, l: Value.value, x2: List[GExp.gexp]):
-      List[GExp.gexp]
-  =
-  (v, l, x2) match {
-  case (v, l, Nil) => List(GExp.Eq(AExp.V(v), AExp.L(l)))
-  case (va, la, GExp.Eq(AExp.V(v), AExp.L(l)) :: t) =>
-    (if (VName.equal_vnamea(va, v)) GExp.In(va, List(la, l).distinct) :: t
-      else GExp.Eq(AExp.V(v), AExp.L(l)) :: merge_in(va, la, t))
-  case (va, la, GExp.In(v, l) :: t) =>
-    (if (VName.equal_vnamea(va, v)) GExp.In(va, (la :: l).distinct) :: t
-      else GExp.In(v, l) :: merge_in(va, la, t))
-  case (v, l, GExp.Bc(va) :: t) => GExp.Bc(va) :: merge_in(v, l, t)
-  case (v, l, GExp.Eq(AExp.L(vc), vb) :: t) =>
-    GExp.Eq(AExp.L(vc), vb) :: merge_in(v, l, t)
-  case (v, l, GExp.Eq(AExp.Plus(vc, vd), vb) :: t) =>
-    GExp.Eq(AExp.Plus(vc, vd), vb) :: merge_in(v, l, t)
-  case (v, l, GExp.Eq(AExp.Minus(vc, vd), vb) :: t) =>
-    GExp.Eq(AExp.Minus(vc, vd), vb) :: merge_in(v, l, t)
-  case (v, l, GExp.Eq(va, AExp.V(vc)) :: t) =>
-    GExp.Eq(va, AExp.V(vc)) :: merge_in(v, l, t)
-  case (v, l, GExp.Eq(va, AExp.Plus(vc, vd)) :: t) =>
-    GExp.Eq(va, AExp.Plus(vc, vd)) :: merge_in(v, l, t)
-  case (v, l, GExp.Eq(va, AExp.Minus(vc, vd)) :: t) =>
-    GExp.Eq(va, AExp.Minus(vc, vd)) :: merge_in(v, l, t)
-  case (v, l, GExp.Gt(va, vb) :: t) => GExp.Gt(va, vb) :: merge_in(v, l, t)
-  case (v, l, GExp.Null(va) :: t) => GExp.Null(va) :: merge_in(v, l, t)
-  case (v, l, GExp.Nor(va, vb) :: t) => GExp.Nor(va, vb) :: merge_in(v, l, t)
-}
-
-def merge_guards(x0: List[GExp.gexp], g2: List[GExp.gexp]): List[GExp.gexp] =
-  (x0, g2) match {
-  case (Nil, g2) => g2
-  case (h :: t, g2) => {
-                         val (GExp.Eq(AExp.V(v), AExp.L(l))): GExp.gexp = h;
-                         merge_guards(t, merge_in(v, l, g2))
-                       }
-}
-
-def lob_aux(t1: Transition.transition_ext[Unit],
-             t2: Transition.transition_ext[Unit]):
-      Option[Transition.transition_ext[Unit]]
-  =
-  (if ((Lista.equal_lista[AExp.aexp](Transition.Outputs[Unit](t1),
-                                      Transition.Outputs[Unit](t2))) && ((Lista.equal_lista[(Nat.nat,
-              AExp.aexp)](Transition.Updates[Unit](t1),
-                           Transition.Updates[Unit](t2))) && ((all_literal_args[Unit](t1)) && (all_literal_args[Unit](t2)))))
-    Some[Transition.transition_ext[Unit]](Transition.transition_exta[Unit](Transition.Label[Unit](t1),
-                                    Transition.Arity[Unit](t1),
-                                    merge_guards(Transition.Guard[Unit](t1),
-          Transition.Guard[Unit](t2)),
-                                    Transition.Outputs[Unit](t1),
-                                    Transition.Updates[Unit](t1), ()))
-    else None)
-
-def lob(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
-         newa: FSet.fset[(Nat.nat,
-                           ((Nat.nat, Nat.nat),
-                             Transition.transition_ext[Unit]))],
-         old: FSet.fset[(Nat.nat,
-                          ((Nat.nat, Nat.nat),
-                            Transition.transition_ext[Unit]))],
-         uu: (FSet.fset[(Nat.nat,
-                          ((Nat.nat, Nat.nat),
-                            Transition.transition_ext[Unit]))]) =>
-               FSet.fset[(Nat.nat,
-                           ((Nat.nat, Nat.nat),
-                             ((Transition.transition_ext[Unit], Nat.nat),
-                               (Transition.transition_ext[Unit], Nat.nat))))]):
-      Option[FSet.fset[(Nat.nat,
-                         ((Nat.nat, Nat.nat),
-                           Transition.transition_ext[Unit]))]]
-  =
-  {
-    val t1: Transition.transition_ext[Unit] = Inference.get_by_id(newa, t1ID)
-    val t2: Transition.transition_ext[Unit] = Inference.get_by_id(newa, t2ID);
-    (lob_aux(t1, t2) match {
-       case None => None
-       case Some(lob_t) =>
-         Some[FSet.fset[(Nat.nat,
-                          ((Nat.nat, Nat.nat),
-                            Transition.transition_ext[Unit]))]](Inference.replace(Inference.drop_transitions(newa,
-                              FSet.finsert[Nat.nat](t2ID,
-             FSet.bot_fset[Nat.nat])),
-   t1ID, lob_t))
-     })
-  }
-
-} /* object Least_Upper_Bound */
 
 object SelectionStrategies {
 

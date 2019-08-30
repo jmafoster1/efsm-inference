@@ -6,6 +6,10 @@ text_raw\<open>\snip{valuetype}{1}{2}{%\<close>
 datatype "value" = Num int | Str String.literal
 text_raw\<open>}%endsnip\<close>
 
+fun is_Num :: "value \<Rightarrow> bool" where
+  "is_Num (Num _) = True" |
+  "is_Num (Str _) = False"
+
 fun MaybeBoolInt :: "(int \<Rightarrow> int \<Rightarrow> bool) \<Rightarrow> value option \<Rightarrow> value option \<Rightarrow> trilean" where
   "MaybeBoolInt f (Some (Num a)) (Some (Num b)) = (if f a b then true else false)" |
   "MaybeBoolInt _ _ _ = invalid"

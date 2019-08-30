@@ -151,18 +151,8 @@ object TypeConversion {
     Translator.clearEverything()
     isabellesal.EFSM.newOneFrom(e1Name, FSet.sorted_list_of_fset(e1).map(toMichaelsMove): _*)
     isabellesal.EFSM.newOneFrom(e2Name, FSet.sorted_list_of_fset(e2).map(toMichaelsMove): _*)
-    try {
-      new Translator().writeSALandDOT(Paths.get("salfiles"), f);
-      s"mv salfiles/${f}.dot ${Config.config.dotfiles}/".!
-    } catch {
-    case ioe: java.lang.ArrayIndexOutOfBoundsException => Set.sup_set(EFSM.enumerate_strings(e1), EFSM.enumerate_strings(e2)) match {
-      case Set.seta(lst) => {
-        for (x <- lst.distinct) {
-          println("\"" + x + "\"")
-        }
-      }
-      }
-    }
+    new Translator().writeSALandDOT(Paths.get("salfiles"), f);
+    s"rm salfiles/${f}.dot".!
   }
 
   def indexWithInts(e: List[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]): List[((Int, Int), Transition.transition_ext[Unit])] =

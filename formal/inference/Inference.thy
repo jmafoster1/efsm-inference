@@ -359,6 +359,23 @@ termination
    apply simp
   using measures_fsubset by auto
 
+fun get_ints :: "execution \<Rightarrow> int list" where
+  "get_ints [] = []" |
+  "get_ints ((_, inputs, outputs)#t) = (map (\<lambda>x. case x of Num n \<Rightarrow> n) (filter is_Num (inputs@outputs)))"
+
+fun get_smallest :: "nat \<Rightarrow> nat list \<Rightarrow> nat" where
+  "get_smallest n s = (if n \<notin> set s then n else get_smallest (n + 1) (removeAll n s))"
+
+definition make_smaller_aux :: "nat \<Rightarrow> nat list \<Rightarrow> nat" where
+  "make_smaller_aux i s = (if i < 100 then i else get_smallest i s)"
+
+fun make_smaller :: "int \<Rightarrow> nat list \<Rightarrow> int" where
+  "make_smaller n s = (if n < 0 then - (int (make_smaller_aux (nat n) s)) else int (make_smaller_aux (nat n) s))"
+
+fun make_smaller_val :: "nat list \<Rightarrow> value \<Rightarrow> value" where
+  "make_smaller_val _ (value.Str s) = value.Str s" |
+  "make_smaller_val s (Num n) = Num (make_smaller n s)"
+
 definition learn :: "nat \<Rightarrow> log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> transition_matrix" where
   "learn n l r m np = (
      let pta = make_pta l {||};

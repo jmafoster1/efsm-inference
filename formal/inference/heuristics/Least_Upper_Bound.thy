@@ -489,4 +489,72 @@ definition "lob_distinguished t1 t2 = (
 Arity t1 = Arity t2 \<and>
 (\<forall>(v, l') \<in> insert (0, []) (set (get_Ins (Guard t1))). \<forall>g \<in> set (removeAll (In (I v) l') (Guard t1)). \<not> gexp_constrains g (V (I v))))"
 
+lemma must_be_another:
+  "1 < size (fset_of_list b) \<Longrightarrow>
+   x \<in> set b \<Longrightarrow>
+   \<exists>x' \<in> set b. x \<noteq> x'"
+proof(induct b)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a b)
+  then show ?case
+    apply (simp add: Bex_def)
+    by (metis List.finite_set One_nat_def card.insert card_gt_0_iff card_mono fset_of_list.rep_eq insert_absorb le_0_eq less_nat_zero_code less_numeral_extra(4) not_less_iff_gr_or_eq set_empty2 subsetI)
+qed
+
+lemma another_swap_inputs:
+  "apply_guards G (join_ir i c) \<Longrightarrow>
+  filter (\<lambda>g. gexp_constrains g (V (I a))) G = [In (I a) b] \<Longrightarrow>
+  xa \<in> set b \<Longrightarrow>
+  apply_guards G (join_ir (i[a := xa]) c)"
+proof(induct G)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons g G)
+  then show ?case
+    apply (simp add: apply_guards_cons)
+    apply (case_tac "gexp_constrains g (V (I a))")
+     defer
+    using input_not_constrained_gval_swap_inputs apply auto[1]
+     apply simp
+    apply (case_tac "join_ir i c (I a) \<in> Some ` set b")
+     defer
+     apply simp
+    apply simp
+    apply clarify
+    apply standard
+    using apply_guards_def input_not_constrained_gval_swap_inputs
+     apply (simp add: filter_empty_conv)
+    by (simp add: input2state_not_None input2state_nth join_ir_def)
+qed
+
+lemma lob_distinguished_2_not_subsumes: "\<exists>(i, l) \<in> set (get_Ins (Guard t2)). filter (\<lambda>g. gexp_constrains g (V (I i))) (Guard t2) = [(In (I i) l)] \<and>
+       (\<exists>l' \<in> set l. i < Arity t1 \<and> Eq (V (I i)) (L l') \<in> set (Guard t1) \<and> size (fset_of_list l) > 1) \<Longrightarrow>
+      Arity t1 = Arity t2 \<Longrightarrow>
+      \<exists>i. can_take_transition t2 i c \<Longrightarrow>
+       \<not> subsumes t1 c t2"
+  apply (rule bad_guards)
+  apply simp
+  apply (simp add: can_take_def can_take_transition_def Bex_def)
+  apply clarify
+  apply (case_tac "\<exists>x' \<in> set b. x \<noteq> x'")
+   defer
+   apply (simp add: must_be_another)
+  apply (simp add: Bex_def)
+  apply (erule exE)
+  apply (rule_tac x="list_update i a xa" in exI)
+  apply simp
+  apply standard
+   apply (simp add: another_swap_inputs)
+  by (metis Eq_apply_guards input2state_nth join_ir_def length_list_update nth_list_update_eq option.inject vname.simps(5))
+
+definition "lob_distinguished_2 t1 t2 =
+  (\<exists>(i, l) \<in> set (get_Ins (Guard t2)). filter (\<lambda>g. gexp_constrains g (V (I i))) (Guard t2) = [(In (I i) l)] \<and>
+    (\<exists>l' \<in> set l. i < Arity t1 \<and> Eq (V (I i)) (L l') \<in> set (Guard t1) \<and> size (fset_of_list l) > 1) \<and>
+  Arity t1 = Arity t2)"
+
 end

@@ -265,9 +265,10 @@ lemma guard_subset_subsumption: "guard_subset_subsumption t1 t2 \<Longrightarrow
   apply (simp add: posterior_def posterior_separate_def can_take_def apply_guards_def)
   by auto
 
-lemma "always_different_outputs_direct_subsumption e1 e2 s s' t1 \<Longrightarrow>
-       lob_distinguished t1 t2 \<Longrightarrow>
-       \<not> directly_subsumes e1 e2 s s' t2 t1"
+lemma lob_distinguished_direct_subsumption:
+  "always_different_outputs_direct_subsumption e1 e2 s s' t1 \<Longrightarrow>
+   lob_distinguished t1 t2 \<Longrightarrow>
+   \<not> directly_subsumes e1 e2 s s' t2 t1"
   apply (simp add: directly_subsumes_def always_different_outputs_direct_subsumption_def)
   apply (rule disjI1)
   apply (erule exE)
@@ -284,58 +285,98 @@ lemma "always_different_outputs_direct_subsumption e1 e2 s s' t1 \<Longrightarro
   using distinguishing_subsumption[of t2 t1]
   by simp
 
+lemma lob_distinguished_2_direct_subsumption:
+  "always_different_outputs_direct_subsumption e1 e2 s s' t2 \<Longrightarrow>
+   lob_distinguished_2 t1 t2 \<Longrightarrow>
+   \<not> directly_subsumes e1 e2 s s' t1 t2"
+  apply (simp add: directly_subsumes_def always_different_outputs_direct_subsumption_def)
+  apply (rule disjI1)
+  apply (erule exE)
+  apply (rule_tac x=p in exI)
+  apply simp
+  apply (case_tac "\<exists>c. anterior_context (tm e2) p = Some c")
+   defer
+   apply (simp add: accepts_trace_gives_context)
+  apply (erule exE)
+  apply (rule_tac x=c in exI)
+  apply standard
+   apply simp
+  apply (rule bad_guards)
+  apply clarify
+  apply (case_tac "anterior_context (tm e2) p")
+   apply simp
+  apply (simp add: lob_distinguished_2_def Bex_def)
+  apply clarify
+  apply simp
+  apply (case_tac "\<exists>x' \<in> set b. x \<noteq> x'")
+   defer
+   apply (simp add: must_be_another)
+  apply (simp add: Bex_def)
+  apply (erule exE)
+  apply (rule_tac x="list_update i aa xa" in exI)
+  apply standard
+   apply (simp add: can_take_transition_def can_take_def another_swap_inputs)
+  apply (simp add: can_take_transition_def can_take_def)
+  by (metis Eq_apply_guards input2state_nth join_ir_def length_list_update nth_list_update_eq option.inject vname.simps(5))
+
 definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "directly_subsumes_cases a b s s' t1 t2 = (
+  "directly_subsumes_cases m1 m2 s s' t1 t2 = (
     if t1 = t2
       then True
-    else if always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption a b s s' t2
+    else if simple_mutex t2 t1
       then False
-    else if guard_subset_subsumption t1 t2
-      then True
-    else if drop_guard_add_update_direct_subsumption t1 t2 b s'
-      then True
-    else if drop_update_add_guard_direct_subsumption a b s s' t1 t2
+    else if always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption m1 m2 s s' t2
       then False
-    else if generalise_output_direct_subsumption t1 t2 a b s s'
+    else if always_different_outputs_direct_subsumption m1 m2 s s' t2 \<and> lob_distinguished_2 t1 t2
+      then False
+    else if is_lob t2 t1
       then True
-    else if possibly_not_value a b s s' t1 t2
+    else if drop_guard_add_update_direct_subsumption t1 t2 m2 s'
+      then True
+    else if drop_update_add_guard_direct_subsumption m1 m2 s s' t1 t2
+      then False
+    else if generalise_output_direct_subsumption t1 t2 m1 m2 s s'
+      then True
+    else if possibly_not_value m1 m2 s s' t1 t2
       then False
     else if t1 = drop_guards t2
       then True
     else if t2 = drop_guards t1 \<and> satisfiable_negation t1
       then False
-    else if simple_mutex t2 t1
-      then False
-    else dirty_directly_subsumes a b s s' t1 t2
+    else dirty_directly_subsumes m1 m2 s s' t1 t2
   )"
 
 definition "mprotect = \<lparr>Label = STR ''mprotect'', Arity = 3, Guard = [Eq (V (I 0)) (L (Num 140116919701504)), Eq (V (I 1)) (L (Num 2093056)), Eq (V (I 1)) (L (Str ''PROT_NONE''))], Outputs = [L (Num 0)], Updates = []\<rparr>"
 definition "mprotect_dropped = \<lparr>Label = STR ''mprotect'', Arity = 3, Guard = [], Outputs = [L (Num 0)], Updates = []\<rparr>"
 
-lemma [code]: "directly_subsumes m1 m2 s s' t1 t2 = directly_subsumes_cases m1 m2 s s' t1 t2"
-  apply (simp only: directly_subsumes_cases_def)
-  apply (case_tac "t1 = t2")
-  apply (simp add: directly_subsumes_self)
-  apply (case_tac "always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption m1 m2 s s' t2")
+lemma if_elim: "c \<longrightarrow> a = d \<Longrightarrow> \<not> c \<longrightarrow> d = b \<Longrightarrow> d = (if c then a else b)"
+  by simp
+
+lemma directly_subsumes_cases:  "directly_subsumes m1 m2 s s' t1 t2 = directly_subsumes_cases m1 m2 s s' t1 t2"
+  unfolding directly_subsumes_cases_def
+  apply (rule if_elim)
+   apply (simp add: directly_subsumes_self)
+  apply (clarify, rule if_elim)
+   apply (simp add: simple_mutex_direct_subsumption)
+  apply (clarify, rule if_elim)
    apply (simp add: always_different_outputs_direct_subsumption)
-  apply (case_tac "guard_subset_subsumption t1 t2")
-   apply (simp add: guard_subset_subsumption)
-  apply (case_tac "drop_guard_add_update_direct_subsumption t1 t2 m2 s'")
+  apply (clarify, rule if_elim)
+   apply (simp add: lob_distinguished_2_direct_subsumption)
+  apply (clarify, rule if_elim)
+   apply (simp add: is_lob_direct_subsumption)
+  apply (clarify, rule if_elim)
    apply (simp add: drop_guard_add_update_direct_subsumption_implies_direct_subsumption)
-  apply (case_tac "drop_update_add_guard_direct_subsumption m1 m2 s s' t1 t2")
+  apply (clarify, rule if_elim)
    apply (simp add: drop_update_add_guard_direct_subsumption)
-  apply (case_tac "generalise_output_direct_subsumption t1 t2 m1 m2 s s'")
+  apply (clarify, rule if_elim)
    apply (simp add: generalise_output_directly_subsumes_original_executable)
-  apply (case_tac "possibly_not_value m1 m2 s s' t1 t2")
+  apply (clarify, rule if_elim)
    apply (simp add: possibly_not_value_not_directly_subsumes)
-  apply (case_tac "t1 = drop_guards t2")
+  apply (clarify, rule if_elim)
    apply (simp add: drop_inputs_subsumption subsumes_in_all_contexts_directly_subsumes)
-  apply (simp add: always_different_outputs_direct_subsumption)
-  apply (case_tac "t2 = drop_guards t1 \<and> satisfiable_negation t1")
-  apply (simp add: cant_directly_subsume satisfiable_negation_cant_subsume)
-  apply (case_tac "simple_mutex t2 t1")
-  using simple_mutex_direct_subsumption apply blast
-  using dirty_directly_subsumes_def by auto
+  apply (clarify, rule if_elim)
+   apply (simp add: cant_directly_subsume satisfiable_negation_cant_subsume)
+  by (simp add: dirty_directly_subsumes_def)
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalisation_of t' t i r = (
@@ -447,6 +488,11 @@ code_printing
 code_pred satisfies_trace.
 code_pred accepts.
 
+declare directly_subsumes_cases [code]
+
+(* declare directly_subsumes_def [code del] *)
+(* code_printing constant "directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes" *)
+
 export_code
   (* Essentials *)
   try_heuristics aexp_type_check learn infer_types nondeterministic input_updates_register
@@ -459,7 +505,7 @@ export_code
   (* Nondeterminism metrics *)
   nondeterministic_pairs nondeterministic_pairs_labar
   (* Utilities *)
-  iefsm2dot efsm2dot guards2sal
+  iefsm2dot efsm2dot guards2sal fold_In
 in Scala
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
