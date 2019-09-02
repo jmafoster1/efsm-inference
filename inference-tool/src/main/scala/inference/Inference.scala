@@ -1,9 +1,3 @@
-object Fun {
-
-def comp[A, B, C](f: A => B, g: C => A): C => B = ((x: C) => f(g(x)))
-
-} /* object Fun */
-
 object HOL {
 
 trait equal[A] {
@@ -73,6 +67,15 @@ object equal {
 def eq[A : equal](a: A, b: A): Boolean = equal[A](a, b)
 
 } /* object HOL */
+
+object Fun {
+
+def comp[A, B, C](f: A => B, g: C => A): C => B = ((x: C) => f(g(x)))
+
+def fun_upd[A : HOL.equal, B](f: A => B, a: A, b: B): A => B =
+  ((x: A) => (if (HOL.eq[A](x, a)) b else f(x)))
+
+} /* object Fun */
 
 object Orderings {
 
@@ -429,6 +432,15 @@ object comm_monoid_add {
 
 } /* object Groups */
 
+object Num {
+
+abstract sealed class num
+final case class One() extends num
+final case class Bit0(a: num) extends num
+final case class Bit1(a: num) extends num
+
+} /* object Num */
+
 object Nat {
 
 abstract sealed class nat
@@ -486,6 +498,8 @@ def less_eq_int(k: int, l: int): Boolean =
 def less_int(k: int, l: int): Boolean =
   Code_Numeral.integer_of_int(k) < Code_Numeral.integer_of_int(l)
 
+def one_int: int = int_of_integer(BigInt(1))
+
 def plus_int(k: int, l: int): int =
   int_of_integer(Code_Numeral.integer_of_int(k) +
                    Code_Numeral.integer_of_int(l))
@@ -497,15 +511,6 @@ def minus_int(k: int, l: int): int =
                    Code_Numeral.integer_of_int(l))
 
 } /* object Int */
-
-object Num {
-
-abstract sealed class num
-final case class One() extends num
-final case class Bit0(a: num) extends num
-final case class Bit1(a: num) extends num
-
-} /* object Num */
 
 object Product_Type {
 
@@ -560,8 +565,21 @@ def fold[A, B](f: A => B => B, xs: List[A], s: B): B =
 
 def maps[A, B](f: A => List[B], l: List[A]): List[B] = l.par.flatMap(f).toList
 
+def upto_aux(i: Int.int, j: Int.int, js: List[Int.int]): List[Int.int] =
+  (if (Int.less_int(j, i)) js
+    else upto_aux(i, Int.minus_int(j, Int.one_int), j :: js))
+
+def upto(i: Int.int, j: Int.int): List[Int.int] = upto_aux(i, j, Nil)
+
 def foldr[A, B](f: A => B => B, xs: List[A], a: B): B =
   Dirties.foldl[B, A](((x: B) => (y: A) => (f(y))(x)), a, xs.reverse)
+
+def insert[A : HOL.equal](x: A, xs: List[A]): List[A] =
+  (if (xs contains x) xs else x :: xs)
+
+def union[A : HOL.equal]: (List[A]) => (List[A]) => List[A] =
+  ((a: List[A]) => (b: List[A]) =>
+    fold[A, List[A]](((aa: A) => (ba: List[A]) => insert[A](aa, ba)), a, b))
 
 def filter[A](l: A => Boolean, f: List[A]): List[A] = f.par.filter(l).toList
 
@@ -2752,42 +2770,73 @@ def all_literal_args[A](t: Transition.transition_ext[A]): Boolean =
   Lista.list_all[GExp.gexp](((a: GExp.gexp) => literal_args(a)),
                              Transition.Guard[A](t))
 
-def merge_in(v: VName.vname, l: Value.value, x2: List[GExp.gexp]):
+def merge_in_in(v: VName.vname, l: List[Value.value], x2: List[GExp.gexp]):
+      List[GExp.gexp]
+  =
+  (v, l, x2) match {
+  case (v, l, Nil) => List(GExp.In(v, l))
+  case (va, la, GExp.Eq(AExp.V(v), AExp.L(l)) :: t) =>
+    (if (VName.equal_vnamea(va, v)) GExp.In(va, (l :: la).distinct) :: t
+      else GExp.Eq(AExp.V(v), AExp.L(l)) :: merge_in_in(va, la, t))
+  case (va, la, GExp.In(v, l) :: t) =>
+    (if (VName.equal_vnamea(va, v)) GExp.In(va, (la ++ l).distinct) :: t
+      else GExp.In(v, l) :: merge_in_in(va, la, t))
+  case (v, l, GExp.Bc(va) :: t) => GExp.Bc(va) :: merge_in_in(v, l, t)
+  case (v, l, GExp.Eq(AExp.L(vc), vb) :: t) =>
+    GExp.Eq(AExp.L(vc), vb) :: merge_in_in(v, l, t)
+  case (v, l, GExp.Eq(AExp.Plus(vc, vd), vb) :: t) =>
+    GExp.Eq(AExp.Plus(vc, vd), vb) :: merge_in_in(v, l, t)
+  case (v, l, GExp.Eq(AExp.Minus(vc, vd), vb) :: t) =>
+    GExp.Eq(AExp.Minus(vc, vd), vb) :: merge_in_in(v, l, t)
+  case (v, l, GExp.Eq(va, AExp.V(vc)) :: t) =>
+    GExp.Eq(va, AExp.V(vc)) :: merge_in_in(v, l, t)
+  case (v, l, GExp.Eq(va, AExp.Plus(vc, vd)) :: t) =>
+    GExp.Eq(va, AExp.Plus(vc, vd)) :: merge_in_in(v, l, t)
+  case (v, l, GExp.Eq(va, AExp.Minus(vc, vd)) :: t) =>
+    GExp.Eq(va, AExp.Minus(vc, vd)) :: merge_in_in(v, l, t)
+  case (v, l, GExp.Gt(va, vb) :: t) => GExp.Gt(va, vb) :: merge_in_in(v, l, t)
+  case (v, l, GExp.Null(va) :: t) => GExp.Null(va) :: merge_in_in(v, l, t)
+  case (v, l, GExp.Nor(va, vb) :: t) => GExp.Nor(va, vb) :: merge_in_in(v, l, t)
+}
+
+def merge_in_eq(v: VName.vname, l: Value.value, x2: List[GExp.gexp]):
       List[GExp.gexp]
   =
   (v, l, x2) match {
   case (v, l, Nil) => List(GExp.Eq(AExp.V(v), AExp.L(l)))
   case (va, la, GExp.Eq(AExp.V(v), AExp.L(l)) :: t) =>
     (if (VName.equal_vnamea(va, v)) GExp.In(va, List(la, l).distinct) :: t
-      else GExp.Eq(AExp.V(v), AExp.L(l)) :: merge_in(va, la, t))
+      else GExp.Eq(AExp.V(v), AExp.L(l)) :: merge_in_eq(va, la, t))
   case (va, la, GExp.In(v, l) :: t) =>
     (if (VName.equal_vnamea(va, v)) GExp.In(va, (la :: l).distinct) :: t
-      else GExp.In(v, l) :: merge_in(va, la, t))
-  case (v, l, GExp.Bc(va) :: t) => GExp.Bc(va) :: merge_in(v, l, t)
+      else GExp.In(v, l) :: merge_in_eq(va, la, t))
+  case (v, l, GExp.Bc(va) :: t) => GExp.Bc(va) :: merge_in_eq(v, l, t)
   case (v, l, GExp.Eq(AExp.L(vc), vb) :: t) =>
-    GExp.Eq(AExp.L(vc), vb) :: merge_in(v, l, t)
+    GExp.Eq(AExp.L(vc), vb) :: merge_in_eq(v, l, t)
   case (v, l, GExp.Eq(AExp.Plus(vc, vd), vb) :: t) =>
-    GExp.Eq(AExp.Plus(vc, vd), vb) :: merge_in(v, l, t)
+    GExp.Eq(AExp.Plus(vc, vd), vb) :: merge_in_eq(v, l, t)
   case (v, l, GExp.Eq(AExp.Minus(vc, vd), vb) :: t) =>
-    GExp.Eq(AExp.Minus(vc, vd), vb) :: merge_in(v, l, t)
+    GExp.Eq(AExp.Minus(vc, vd), vb) :: merge_in_eq(v, l, t)
   case (v, l, GExp.Eq(va, AExp.V(vc)) :: t) =>
-    GExp.Eq(va, AExp.V(vc)) :: merge_in(v, l, t)
+    GExp.Eq(va, AExp.V(vc)) :: merge_in_eq(v, l, t)
   case (v, l, GExp.Eq(va, AExp.Plus(vc, vd)) :: t) =>
-    GExp.Eq(va, AExp.Plus(vc, vd)) :: merge_in(v, l, t)
+    GExp.Eq(va, AExp.Plus(vc, vd)) :: merge_in_eq(v, l, t)
   case (v, l, GExp.Eq(va, AExp.Minus(vc, vd)) :: t) =>
-    GExp.Eq(va, AExp.Minus(vc, vd)) :: merge_in(v, l, t)
-  case (v, l, GExp.Gt(va, vb) :: t) => GExp.Gt(va, vb) :: merge_in(v, l, t)
-  case (v, l, GExp.Null(va) :: t) => GExp.Null(va) :: merge_in(v, l, t)
-  case (v, l, GExp.Nor(va, vb) :: t) => GExp.Nor(va, vb) :: merge_in(v, l, t)
+    GExp.Eq(va, AExp.Minus(vc, vd)) :: merge_in_eq(v, l, t)
+  case (v, l, GExp.Gt(va, vb) :: t) => GExp.Gt(va, vb) :: merge_in_eq(v, l, t)
+  case (v, l, GExp.Null(va) :: t) => GExp.Null(va) :: merge_in_eq(v, l, t)
+  case (v, l, GExp.Nor(va, vb) :: t) => GExp.Nor(va, vb) :: merge_in_eq(v, l, t)
 }
 
 def merge_guards(x0: List[GExp.gexp], g2: List[GExp.gexp]): List[GExp.gexp] =
   (x0, g2) match {
   case (Nil, g2) => g2
-  case (h :: t, g2) => {
-                         val (GExp.Eq(AExp.V(v), AExp.L(l))): GExp.gexp = h;
-                         merge_guards(t, merge_in(v, l, g2))
-                       }
+  case (h :: t, g2) =>
+    (h match {
+       case GExp.Eq(AExp.V(v), AExp.L(l)) =>
+         merge_guards(t, merge_in_eq(v, l, g2))
+       case GExp.In(v, l) => merge_guards(t, merge_in_in(v, l, g2))
+     })
 }
 
 def lob_aux(t1: Transition.transition_ext[Unit],
@@ -2959,6 +3008,32 @@ def lob_distinguished_2[A, B](t1: Transition.transition_ext[A],
                     AExp.L(la)))) && (Nat.less_nat(Nat.Nata((1)),
             FSet.size_fset[Value.value](FSet.fset_of_list[Value.value](l)))))),
       l)) && (Nat.equal_nata(Transition.Arity[A](t1), Transition.Arity[B](t2))))
+}),
+                                       get_Ins(Transition.Guard[B](t2)))
+
+def lob_distinguished_3[A, B](t1: Transition.transition_ext[A],
+                               t2: Transition.transition_ext[B]):
+      Boolean
+  =
+  Lista.list_ex[(Nat.nat,
+                  List[Value.value])](((a: (Nat.nat, List[Value.value])) =>
+{
+  val (i, l): (Nat.nat, List[Value.value]) = a;
+  (Lista.equal_lista[GExp.gexp](Lista.filter[GExp.gexp](((g: GExp.gexp) =>
+                  GExp.gexp_constrains(g, AExp.V(VName.I(i)))),
+                 Transition.Guard[B](t2)),
+                                 List(GExp.In(VName.I(i),
+       l)))) && ((Lista.list_ex[(Nat.nat,
+                                  List[Value.value])](((aa:
+                  (Nat.nat, List[Value.value]))
+                 =>
+                {
+                  val (ia, la): (Nat.nat, List[Value.value]) = aa;
+                  (Nat.equal_nata(i, ia)) && (Set.less_set[Value.value](Set.seta[Value.value](la),
+                                 Set.seta[Value.value](l)))
+                }),
+               get_Ins(Transition.Guard[A](t1)))) && (Nat.equal_nata(Transition.Arity[A](t1),
+                              Transition.Arity[B](t2))))
 }),
                                        get_Ins(Transition.Guard[B](t2)))
 
@@ -4941,28 +5016,30 @@ def directly_subsumes_cases(m1: FSet.fset[(Nat.nat,
                                   t2)) && (Least_Upper_Bound.lob_distinguished_2[Unit,
   Unit](t1, t2)))
                          false
-                         else (if (Least_Upper_Bound.is_lob[Unit, Unit](t2, t1))
-                                true
-                                else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
-                            t2, m2, s))
+                         else (if ((always_different_outputs_direct_subsumption(m1,
+ m2, sa, s, t2)) && (Least_Upper_Bound.lob_distinguished_3[Unit, Unit](t1, t2)))
+                                false
+                                else (if (Least_Upper_Bound.is_lob[Unit,
+                            Unit](t2, t1))
                                        true
-                                       else (if (Store_Reuse_Subsumption.drop_update_add_guard_direct_subsumption(m1,
-                                   m2, sa, s, t1, t2))
-      false
-      else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
-                                      t2, m1, m2, sa, s))
-             true
-             else (if (Store_Reuse_Subsumption.possibly_not_value(m1, m2, sa, s,
-                           t1, t2))
-                    false
-                    else (if (Transition.equal_transition_exta[Unit](t1,
-                              Ignore_Inputs.drop_guards(t2)))
-                           true
-                           else (if ((Transition.equal_transition_exta[Unit](t2,
-                                      Ignore_Inputs.drop_guards(t1))) && (satisfiable_negation[Unit](t1)))
-                                  false
-                                  else Dirties.scalaDirectlySubsumes(m1, m2, sa,
-                              s, t1, t2))))))))))))
+                                       else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
+                                   t2, m2, s))
+      true
+      else (if (Store_Reuse_Subsumption.drop_update_add_guard_direct_subsumption(m1,
+  m2, sa, s, t1, t2))
+             false
+             else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
+     t2, m1, m2, sa, s))
+                    true
+                    else (if (Store_Reuse_Subsumption.possibly_not_value(m1, m2,
+                                  sa, s, t1, t2))
+                           false
+                           else (if (Transition.equal_transition_exta[Unit](t1,
+                                     Ignore_Inputs.drop_guards(t2)))
+                                  true
+                                  else (if ((Transition.equal_transition_exta[Unit](t2,
+     Ignore_Inputs.drop_guards(t1))) && (satisfiable_negation[Unit](t1)))
+ false else Dirties.scalaDirectlySubsumes(m1, m2, sa, s, t1, t2)))))))))))))
 
 def no_illegal_updates_code(x0: List[(Nat.nat, AExp.aexp)], uu: Nat.nat):
       Boolean
@@ -5881,6 +5958,13 @@ def aexp_type_check(a1: AExp.aexp, a2: AExp.aexp, t: Map[VName.vname, typea]):
 
 } /* object Type_Inference */
 
+object Code_Target_Nat {
+
+def int_of_nat(n: Nat.nat): Int.int =
+  Int.int_of_integer(Code_Numeral.integer_of_nat(n))
+
+} /* object Code_Target_Nat */
+
 object Increment_Reset {
 
 def guardMatch[A, B](t1: Transition.transition_ext[A],
@@ -6053,6 +6137,119 @@ t2)))))
   }
 
 } /* object Increment_Reset */
+
+object Use_Small_Numbers {
+
+def is_Num(x0: Value.value): Boolean = x0 match {
+  case Value.Numa(uu) => true
+  case Value.Str(v) => false
+}
+
+def map_of[A : HOL.equal, B](l: List[(A, B)]): A => Option[B] =
+  Lista.foldr[(A, B),
+               A => Option[B]](((a: (A, B)) =>
+                                 {
+                                   val (aa, b): (A, B) = a;
+                                   ((m: A => Option[B]) =>
+                                     Fun.fun_upd[A,
+          Option[B]](m, aa, Some[B](b)))
+                                 }),
+                                l, ((_: A) => None))
+
+def enumerate[A](l: List[A]): List[(A, Int.int)] =
+  (l zip (Lista.upto(Int.zero_int,
+                      Code_Target_Nat.int_of_nat(Nat.Nata(l.length)))))
+
+def make_small(f: Int.int => Option[Int.int], l: List[Value.value]):
+      List[Value.value]
+  =
+  Lista.map[Value.value,
+             Value.value](((x: Value.value) =>
+                            (x match {
+                               case Value.Numa(n) =>
+                                 {
+                                   val (Some(a)): Option[Int.int] = f(n);
+                                   Value.Numa(a)
+                                 }
+                               case Value.Str(_) => x
+                             })),
+                           l)
+
+def trace_enumerate_ints(t: List[(String,
+                                   (List[Value.value], List[Value.value]))]):
+      List[Int.int]
+  =
+  Lista.map[Value.value,
+             Int.int](((a: Value.value) =>
+                        {
+                          val (Value.Numa(n)): Value.value = a;
+                          n
+                        }),
+                       Lista.fold[(String,
+                                    (List[Value.value], List[Value.value])),
+                                   List[Value.value]](Fun.comp[List[Value.value],
+                        (List[Value.value]) => List[Value.value],
+                        (String,
+                          (List[Value.value],
+                            List[Value.value]))](Lista.union[Value.value],
+          ((a: (String, (List[Value.value], List[Value.value]))) =>
+            {
+              val (_, (inputs, outputs)):
+                    (String, (List[Value.value], List[Value.value]))
+                = a;
+              Lista.filter[Value.value](((aa: Value.value) => is_Num(aa)),
+ inputs ++ outputs)
+            })),
+               t, Nil))
+
+def log_enumerate_ints(l: List[List[(String,
+                                      (List[Value.value],
+List[Value.value]))]]):
+      List[Int.int]
+  =
+  Lista.fold[List[(String, (List[Value.value], List[Value.value]))],
+              List[Int.int]](Fun.comp[List[Int.int],
+                                       (List[Int.int]) => List[Int.int],
+                                       List[(String,
+      (List[Value.value],
+        List[Value.value]))]](Lista.union[Int.int],
+                               ((a: List[(String,
+   (List[Value.value], List[Value.value]))])
+                                  =>
+                                 trace_enumerate_ints(a))),
+                              l, Nil)
+
+def use_smallest_ints(l: List[List[(String,
+                                     (List[Value.value], List[Value.value]))]]):
+      List[List[(String, (List[Value.value], List[Value.value]))]]
+  =
+  {
+    val ints: List[Int.int] = log_enumerate_ints(l)
+    val f: Int.int => Option[Int.int] =
+      map_of[Int.int, Int.int](enumerate[Int.int](ints));
+    Lista.map[List[(String, (List[Value.value], List[Value.value]))],
+               List[(String,
+                      (List[Value.value],
+                        List[Value.value]))]](((a:
+          List[(String, (List[Value.value], List[Value.value]))])
+         =>
+        Lista.map[(String, (List[Value.value], List[Value.value])),
+                   (String,
+                     (List[Value.value],
+                       List[Value.value]))](((aa:
+        (String, (List[Value.value], List[Value.value])))
+       =>
+      {
+        val (la, (inputs, outputs)):
+              (String, (List[Value.value], List[Value.value]))
+          = aa;
+        (la, (make_small(f, inputs), make_small(f, outputs)))
+      }),
+     a)),
+       l)
+  }
+
+} /* object Use_Small_Numbers */
 
 object SelectionStrategies {
 

@@ -27,7 +27,7 @@ case class Config(
   dotfiles: String = "dotfiles",
   nondeterminismMetric: IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, Nat.nat), (Types.Transition, Nat.nat))))] = (Inference.nondeterministic_pairs _),
   strategy: Nat.nat => Nat.nat => IEFSM => Nat.nat = (SelectionStrategies.naive_score _).curried,
-  oneFinal: Boolean = false,
+  skip: Boolean = false,
   logLevel: Level = Level.DEBUG,
   k: Int = 0)
 
@@ -103,9 +103,9 @@ object Config {
         .valueName("dir")
         .action((x, c) => c.copy(dotfiles = x))
         .text("The directory in which to save dotfiles produced during the inference process - defaults to 'dotfiles'"),
-      opt[Unit]("f1")
-        .action((_, c) => c.copy(oneFinal = true))
-        .text("Set this flag to merge states with no outgoing transitions"),
+      opt[Unit]("skip")
+        .action((_, c) => c.copy(skip = true))
+        .text("Set this flag to skip some model checking tests which should be trivially true"),
       opt[Level]('l', "level")
         .valueName("level")
         .action((x, c) => c.copy(logLevel = x))

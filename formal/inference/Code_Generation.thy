@@ -12,6 +12,7 @@ theory Code_Generation
    Code_Target_FSet
    Code_Target_Set
    Code_Target_List
+   Use_Small_Numbers
 efsm2sal
 begin
 
@@ -319,6 +320,22 @@ lemma lob_distinguished_2_direct_subsumption:
   apply (simp add: can_take_transition_def can_take_def)
   by (metis Eq_apply_guards input2state_nth join_ir_def length_list_update nth_list_update_eq option.inject vname.simps(5))
 
+lemma lob_distinguished_3_direct_subsumption:
+  "always_different_outputs_direct_subsumption e1 e2 s s' t2 \<Longrightarrow>
+   lob_distinguished_3 t1 t2 \<Longrightarrow>
+   \<not> directly_subsumes e1 e2 s s' t1 t2"
+  apply (simp add: directly_subsumes_def always_different_outputs_direct_subsumption_def)
+  apply (rule disjI1)
+  apply (erule exE)
+  apply (erule conjE)+
+  apply (case_tac "anterior_context (tm e2) p")
+   apply (simp add: accepts_trace_anterior_not_none)
+  apply (rule_tac x=p in exI)
+  apply simp
+  apply (erule exE)
+  apply (simp add: lob_distinguished_3_def)
+  using lob_distinguished_3_not_subsumes by blast
+
 definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes_cases m1 m2 s s' t1 t2 = (
     if t1 = t2
@@ -328,6 +345,8 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
     else if always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption m1 m2 s s' t2
       then False
     else if always_different_outputs_direct_subsumption m1 m2 s s' t2 \<and> lob_distinguished_2 t1 t2
+      then False
+    else if always_different_outputs_direct_subsumption m1 m2 s s' t2 \<and> lob_distinguished_3 t1 t2
       then False
     else if is_lob t2 t1
       then True
@@ -362,6 +381,8 @@ lemma directly_subsumes_cases:  "directly_subsumes m1 m2 s s' t1 t2 = directly_s
    apply (simp add: always_different_outputs_direct_subsumption)
   apply (clarify, rule if_elim)
    apply (simp add: lob_distinguished_2_direct_subsumption)
+  apply (clarify, rule if_elim)
+   apply (simp add: lob_distinguished_3_direct_subsumption)
   apply (clarify, rule if_elim)
    apply (simp add: is_lob_direct_subsumption)
   apply (clarify, rule if_elim)
@@ -505,7 +526,7 @@ export_code
   (* Nondeterminism metrics *)
   nondeterministic_pairs nondeterministic_pairs_labar
   (* Utilities *)
-  iefsm2dot efsm2dot guards2sal fold_In max_int
+  iefsm2dot efsm2dot guards2sal fold_In max_int use_smallest_ints
 in Scala
   file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

@@ -13,15 +13,24 @@ fun literal_args :: "gexp \<Rightarrow> bool" where
 
 definition "all_literal_args t = (\<forall>g \<in> set (Guard t). literal_args g)"
 
-fun merge_in :: "vname \<Rightarrow> value \<Rightarrow> gexp list \<Rightarrow> gexp list" where
-  "merge_in v l [] = [Eq (V v) (L l)]" |
-  "merge_in v l ((Eq (V v') (L l'))#t) = (if v = v' then (In v (remdups [l, l']))#t else (Eq (V v') (L l'))#(merge_in v l t))" |
-  "merge_in v l ((In v' l')#t) = (if v = v' then (In v (remdups (l#l')))#t else (In v' l')#(merge_in v l t))" |
-  "merge_in v l (h#t) = h#(merge_in v l t)"
+fun merge_in_eq :: "vname \<Rightarrow> value \<Rightarrow> gexp list \<Rightarrow> gexp list" where
+  "merge_in_eq v l [] = [Eq (V v) (L l)]" |
+  "merge_in_eq v l ((Eq (V v') (L l'))#t) = (if v = v' then (In v (remdups [l, l']))#t else (Eq (V v') (L l'))#(merge_in_eq v l t))" |
+  "merge_in_eq v l ((In v' l')#t) = (if v = v' then (In v (remdups (l#l')))#t else (In v' l')#(merge_in_eq v l t))" |
+  "merge_in_eq v l (h#t) = h#(merge_in_eq v l t)"
+
+fun merge_in_in :: "vname \<Rightarrow> value list \<Rightarrow> gexp list \<Rightarrow> gexp list" where
+  "merge_in_in v l [] = [In v l]" |
+  "merge_in_in v l ((Eq (V v') (L l'))#t) = (if v = v' then (In v (remdups (l'#l)))#t else (Eq (V v') (L l'))#(merge_in_in v l t))" |
+  "merge_in_in v l ((In v' l')#t) = (if v = v' then (In v (remdups (l@l')))#t else (In v' l')#(merge_in_in v l t))" |
+  "merge_in_in v l (h#t) = h#(merge_in_in v l t)"
 
 primrec merge_guards :: "gexp list \<Rightarrow> gexp list \<Rightarrow> gexp list" where
   "merge_guards [] g2 = g2" |
-  "merge_guards (h#t) g2 = (case h of (Eq (V v) (L l)) \<Rightarrow> merge_guards t (merge_in v l g2))"
+  "merge_guards (h#t) g2 = (case h of 
+      Eq (V v) (L l) \<Rightarrow> merge_guards t (merge_in_eq v l g2) |
+      In v l \<Rightarrow> merge_guards t (merge_in_in v l g2)
+  )"
 
 definition lob_aux :: "transition \<Rightarrow> transition \<Rightarrow> transition option" where
   "lob_aux t1 t2 = (if Outputs t1 = Outputs t2 \<and> Updates t1 = Updates t2 \<and> all_literal_args t1 \<and> all_literal_args t2 then
@@ -532,11 +541,12 @@ next
     by (simp add: input2state_not_None input2state_nth join_ir_def)
 qed
 
-lemma lob_distinguished_2_not_subsumes: "\<exists>(i, l) \<in> set (get_Ins (Guard t2)). filter (\<lambda>g. gexp_constrains g (V (I i))) (Guard t2) = [(In (I i) l)] \<and>
-       (\<exists>l' \<in> set l. i < Arity t1 \<and> Eq (V (I i)) (L l') \<in> set (Guard t1) \<and> size (fset_of_list l) > 1) \<Longrightarrow>
-      Arity t1 = Arity t2 \<Longrightarrow>
-      \<exists>i. can_take_transition t2 i c \<Longrightarrow>
-       \<not> subsumes t1 c t2"
+lemma lob_distinguished_2_not_subsumes:
+  "\<exists>(i, l) \<in> set (get_Ins (Guard t2)). filter (\<lambda>g. gexp_constrains g (V (I i))) (Guard t2) = [(In (I i) l)] \<and>
+    (\<exists>l' \<in> set l. i < Arity t1 \<and> Eq (V (I i)) (L l') \<in> set (Guard t1) \<and> size (fset_of_list l) > 1) \<Longrightarrow>
+   Arity t1 = Arity t2 \<Longrightarrow>
+   \<exists>i. can_take_transition t2 i c \<Longrightarrow>
+   \<not> subsumes t1 c t2"
   apply (rule bad_guards)
   apply simp
   apply (simp add: can_take_def can_take_transition_def Bex_def)
@@ -556,5 +566,74 @@ definition "lob_distinguished_2 t1 t2 =
   (\<exists>(i, l) \<in> set (get_Ins (Guard t2)). filter (\<lambda>g. gexp_constrains g (V (I i))) (Guard t2) = [(In (I i) l)] \<and>
     (\<exists>l' \<in> set l. i < Arity t1 \<and> Eq (V (I i)) (L l') \<in> set (Guard t1) \<and> size (fset_of_list l) > 1) \<and>
   Arity t1 = Arity t2)"
+
+lemma lob_distinguished_3_not_subsumes:
+  "\<exists>(i, l) \<in> set (get_Ins (Guard t2)). filter (\<lambda>g. gexp_constrains g (V (I i))) (Guard t2) = [(In (I i) l)] \<and>
+    (\<exists>(i', l') \<in> set (get_Ins (Guard t1)). i = i' \<and> set l' \<subset> set l) \<Longrightarrow>
+   Arity t1 = Arity t2 \<Longrightarrow>
+   \<exists>i. can_take_transition t2 i c \<Longrightarrow>
+   \<not> subsumes t1 c t2"
+  apply (rule bad_guards)
+  apply simp
+  apply (simp add: can_take_def can_take_transition_def Bex_def)
+  apply (erule exE)+
+  apply (erule conjE)+
+  apply (erule exE)+
+  apply (erule conjE)+
+  apply (case_tac "\<exists>x. x \<in> set b \<and> x \<notin> set ba")
+   defer
+  apply auto[1]
+  apply (erule exE)+
+  apply (erule conjE)+
+  apply (rule_tac x="list_update i a x" in exI)
+  apply simp
+  apply standard
+  using another_swap_inputs apply blast
+  by (metis In_apply_guards In_in_get_Ins input2state_not_None input2state_nth join_ir_def nth_list_update_eq option.distinct(1) option.inject vname.simps(5))
+
+
+definition "lob_distinguished_3 t1 t2 = (\<exists>(i, l) \<in> set (get_Ins (Guard t2)). filter (\<lambda>g. gexp_constrains g (V (I i))) (Guard t2) = [(In (I i) l)] \<and>
+    (\<exists>(i', l') \<in> set (get_Ins (Guard t1)). i = i' \<and> set l' \<subset> set l) \<and>
+   Arity t1 = Arity t2)"
+
+(*definition "t1 = \<lparr>
+  Label = STR ''openat'',
+  Arity = 5,
+  Guard = [
+            In (I 0) [Str ''AT_FDCWD''],
+            In (I 1) [Str ''/lib/x86_6'', Str ''/proc/file''],
+            In (I 2) [Str ''O_''],
+            In (I 3) [Str ''RDONLY''],
+            In (I 4) [Str ''O_CLOEXEC'']
+          ], Outputs = [L (Num 3)],
+  Updates = []\<rparr>"
+
+definition "t2 = \<lparr>
+  Label = STR ''openat'',
+  Arity = 5,
+  Guard = [
+            In (I 0) [Str ''AT_FDCWD''],
+            In (I 1) [Str ''/lib/x86_6'', Str ''/proc/file'', Str ''/usr/share''],
+            In (I 2) [Str ''O_''],
+            In (I 3) [Str ''RDONLY''],
+            In (I 4) [Str ''O_CLOEXEC'']
+          ], Outputs = [L (Num 3)],
+  Updates = []\<rparr>"
+
+lemma "\<not> subsumes t1 c t2"
+  apply (rule lob_distinguished_3_not_subsumes)
+  apply (simp add: Bex_def)
+    apply (rule_tac x=1 in exI)
+    apply (rule_tac x="[Str ''/lib/x86_6'', Str ''/proc/file'', Str ''/usr/share'']" in exI)
+    apply standard
+     apply (simp add: t2_def get_Ins_def)
+    apply standard
+     apply (simp add: t2_def)
+    apply (rule_tac x="[Str ''/lib/x86_6'', Str ''/proc/file'']" in exI)
+    apply standard
+     apply (simp add: t1_def get_Ins_def)
+    apply (simp add: Str_def)
+  oops*)
+
 
 end

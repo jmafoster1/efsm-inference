@@ -12,6 +12,9 @@ object FrontEnd {
     Config.parseArgs(args)
 
     Log.root.info("Building PTA")
+
+    Config.log = Use_Small_Numbers.use_smallest_ints(Config.log)
+
     val pta = Inference.make_pta(Config.log, FSet.bot_fset)
     PrettyPrinter.EFSM2dot(pta, s"pta_gen")
 
