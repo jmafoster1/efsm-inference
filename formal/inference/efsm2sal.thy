@@ -15,8 +15,9 @@ definition "replacements = [
   (STR 0x5C+STR 0x5C, STR ''_BSOL__''),
   (STR '' '', STR ''_SPACE__''),
   (STR 0x5C+STR ''('', STR ''_LPAR__''),
-  (STR 0x5C+STR '')'', STR ''_RPAR__'')
-
+  (STR 0x5C+STR '')'', STR ''_RPAR__''),
+  (STR 0x5C+STR ''.'', STR ''_PERIOD__''),
+  (STR ''@'', STR ''_COMMAT__'')
 ]"
 
 fun aexp2sal :: "aexp \<Rightarrow> String.literal" where

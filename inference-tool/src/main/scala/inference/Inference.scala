@@ -5542,7 +5542,8 @@ def escape(s: String, replacements: List[(String, String)]): String =
 
 def replacements: List[(String, String)] =
   List(("/", "_SOL__"), ("\\" + "\\", "_BSOL__"), (" ", "_SPACE__"),
-        ("\\" + "(", "_LPAR__"), ("\\" + ")", "_RPAR__"))
+        ("\\" + "(", "_LPAR__"), ("\\" + ")", "_RPAR__"),
+        ("\\" + ".", "_PERIOD__"), ("@", "_COMMAT__"))
 
 def aexp2sal(x0: AExp.aexp): String = x0 match {
   case AExp.L(Value.Numa(n)) =>
