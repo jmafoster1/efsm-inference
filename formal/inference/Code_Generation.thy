@@ -8,6 +8,7 @@ theory Code_Generation
    "heuristics/Same_Register"
    "heuristics/Ignore_Inputs"
    "heuristics/Least_Upper_Bound"
+   "heuristics/Equals"
    EFSM_Dot
    Code_Target_FSet
    Code_Target_Set
@@ -516,13 +517,13 @@ declare directly_subsumes_cases [code]
 
 export_code
   (* Essentials *)
-  try_heuristics aexp_type_check learn infer_types nondeterministic input_updates_register
+  try_heuristics try_heuristics_check aexp_type_check learn infer_types nondeterministic input_updates_register
   (* Scoring functions *)
   naive_score naive_score_eq naive_score_outputs naive_score_comprehensive naive_score_comprehensive_eq_high
   origin_states
   (* Heuristics *)
   statewise_drop_inputs drop_inputs same_register insert_increment_2 heuristic_1
-  transitionwise_drop_inputs lob
+  transitionwise_drop_inputs lob equals not_equals
   (* Nondeterminism metrics *)
   nondeterministic_pairs nondeterministic_pairs_labar
   (* Utilities *)

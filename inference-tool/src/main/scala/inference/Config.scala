@@ -7,7 +7,7 @@ import Types._
 
 object Heuristics extends Enumeration {
   type Heuristic = Value
-  val store, inc, same, ignore, ignoret, ignores, lob = Value
+  val store, inc, same, ignore, ignoret, ignores, lob, eq, neq = Value
 }
 
 object Nondeterminisms extends Enumeration {
@@ -131,12 +131,15 @@ object Config {
           Heuristics.ignore -> (Ignore_Inputs.drop_inputs _).curried,
           Heuristics.ignoret -> (Ignore_Inputs.transitionwise_drop_inputs _).curried,
           Heuristics.ignores -> (Ignore_Inputs.statewise_drop_inputs _).curried,
-          Heuristics.lob -> (Least_Upper_Bound.lob _).curried)
+          Heuristics.lob -> (Least_Upper_Bound.lob _).curried,
+          Heuristics.eq -> (Equals.equals _).curried,
+          Heuristics.neq -> (Equals.not_equals _).curried
+          )
 
         // this.strategy = if (Config.config.oneFinal)
         //     (SelectionStrategies.score_one_final_state _).curried(strategies(config.strategy))
         //   else (strategies(config.strategy))
-        this.heuristics = Inference.try_heuristics(config.heuristics.map(x => heuristics(x)).toList, config.nondeterminismMetric)
+        this.heuristics = Inference.try_heuristics_check((Inference.satisfies _).curried(Set.seta(this.log)), config.heuristics.map(x => heuristics(x)).toList, config.nondeterminismMetric)
       }
       case _ =>
         System.exit(1)

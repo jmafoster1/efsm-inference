@@ -32,7 +32,14 @@ aspect Trace{
 		}
 	}
 
-	after() returning(Object r) : execution(* org.jfree.chart.renderer.category.AbstractCategoryItemRenderer.*(..)) && !cflow(within(Trace)) {
+	after() returning(Object r) : execution(void org.jfree.chart.renderer.category.AbstractCategoryItemRenderer.*(..)) && !cflow(within(Trace)) {
+		setupLogger();
+		Event event = new Event(thisJoinPoint.getStaticPart().getSignature().getName(), thisJoinPoint.getArgs());
+		event.setThis(thisJoinPoint.getThis());
+		logger.log(Level.FINE, event.toString());
+	}
+
+	after() returning(Object r) : execution(!void org.jfree.chart.renderer.category.AbstractCategoryItemRenderer.*(..)) && !cflow(within(Trace)) {
 		setupLogger();
 		Event event = new Event(thisJoinPoint.getStaticPart().getSignature().getName(), thisJoinPoint.getArgs());
 		event.setThis(thisJoinPoint.getThis());
@@ -48,7 +55,7 @@ aspect Trace{
 	before() : execution(org.jfree.chart.renderer.category.AbstractCategoryItemRenderer.new(..)) && !within(Trace) {
 		setupLogger();
 		Object[] inputs = {thisJoinPoint.getThis()};
-		Event event = new Event(thisJoinPoint.getStaticPart().getSignature().getName(), inputs, inputs);
+		Event event = new Event("new", inputs, inputs);
 		logger.log(Level.FINE, event.toString());
 	}
 

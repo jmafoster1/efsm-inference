@@ -2,15 +2,6 @@ theory Least_Upper_Bound
   imports "../Inference"
 begin
 
-fun literal_args :: "gexp \<Rightarrow> bool" where
-  "literal_args (Bc v) = False" |
-  "literal_args (Eq (V _) (L _)) = True" |
-  "literal_args (In _ _) = True" |
-  "literal_args (Eq _ _) = False" |
-  "literal_args (Lt va v) = False" |
-  "literal_args (Null v) = False" |
-  "literal_args (Nor v va) = (literal_args v \<and> literal_args va)"
-
 definition "all_literal_args t = (\<forall>g \<in> set (Guard t). literal_args g)"
 
 fun merge_in_eq :: "vname \<Rightarrow> value \<Rightarrow> gexp list \<Rightarrow> gexp list" where

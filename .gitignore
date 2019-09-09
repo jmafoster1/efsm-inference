@@ -19,6 +19,6 @@ inference-tool/target/
 formal/output/
 
 # ignore output files
-inference-tool/salfiles/
-inference-tool/dotfiles/
+inference-tool/salfiles*
+inference-tool/dotfiles*
 *.dot

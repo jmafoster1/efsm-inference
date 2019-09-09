@@ -1,0 +1,1252 @@
+[
+  [
+    {
+      "label": "new",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "new",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "setSeriesToolTipGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        1,
+        "org.jfree.chart.labels.StandardCategoryToolTipGenerator@8774fe15",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setSeriesToolTipGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        1,
+        "org.jfree.chart.labels.StandardCategoryToolTipGenerator@8774fe15"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "setSeriesToolTipGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        1,
+        "org.jfree.chart.labels.StandardCategoryToolTipGenerator@8774fe15",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setSeriesToolTipGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        1,
+        "org.jfree.chart.labels.StandardCategoryToolTipGenerator@8774fe15"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "setBaseToolTipGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategoryToolTipGenerator@5d6dd612",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setBaseToolTipGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategoryToolTipGenerator@5d6dd612"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "setBaseToolTipGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategoryToolTipGenerator@5d6dd612",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setBaseToolTipGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategoryToolTipGenerator@5d6dd612"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "setSeriesItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        1,
+        "org.jfree.chart.labels.StandardCategoryItemLabelGenerator@5d6dd612",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setSeriesItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        1,
+        "org.jfree.chart.labels.StandardCategoryItemLabelGenerator@5d6dd612"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "setSeriesItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        1,
+        "org.jfree.chart.labels.StandardCategoryItemLabelGenerator@5d6dd612",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setSeriesItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        1,
+        "org.jfree.chart.labels.StandardCategoryItemLabelGenerator@5d6dd612"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "setBaseItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategoryItemLabelGenerator@5d6dd612",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setBaseItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategoryItemLabelGenerator@5d6dd612"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "setBaseItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategoryItemLabelGenerator@5d6dd612",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setBaseItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategoryItemLabelGenerator@5d6dd612"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "setSeriesURLGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        1,
+        "org.jfree.chart.urls.StandardCategoryURLGenerator@44285cb8",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setSeriesURLGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        1,
+        "org.jfree.chart.urls.StandardCategoryURLGenerator@44285cb8"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "setSeriesURLGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        1,
+        "org.jfree.chart.urls.StandardCategoryURLGenerator@44285cb8",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setSeriesURLGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        1,
+        "org.jfree.chart.urls.StandardCategoryURLGenerator@44285cb8"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "setBaseURLGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.urls.StandardCategoryURLGenerator@ced686a8",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setBaseURLGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.urls.StandardCategoryURLGenerator@ced686a8"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "setBaseURLGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.urls.StandardCategoryURLGenerator@ced686a8",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setBaseURLGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.urls.StandardCategoryURLGenerator@ced686a8"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "setLegendItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategorySeriesLabelGenerator@167d4"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "setLegendItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategorySeriesLabelGenerator@167d4"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "setLegendItemToolTipGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategorySeriesLabelGenerator@1f44021e"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "setLegendItemToolTipGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategorySeriesLabelGenerator@1f44021e"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "setLegendItemURLGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategorySeriesLabelGenerator@15baa"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "setLegendItemURLGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategorySeriesLabelGenerator@15baa"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "addAnnotation",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.annotations.CategoryTextAnnotation@7d03a413",
+        "Layer.BACKGROUND"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "addAnnotation",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.annotations.CategoryTextAnnotation@7d03a413",
+        "Layer.BACKGROUND"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "addAnnotation",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.annotations.CategoryTextAnnotation@c9db65df",
+        "Layer.FOREGROUND"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "false"
+      ]
+    },
+    {
+      "label": "addAnnotation",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.annotations.CategoryTextAnnotation@c9db65df",
+        "Layer.FOREGROUND"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    }
+  ],
+  [
+    {
+      "label": "new",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "setBaseItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategoryItemLabelGenerator@5d6dd612",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setBaseItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategoryItemLabelGenerator@5d6dd612"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "clone",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "new",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "setSeriesItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        0,
+        "org.jfree.chart.labels.StandardCategoryItemLabelGenerator@5d6dd612",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setSeriesItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        0,
+        "org.jfree.chart.labels.StandardCategoryItemLabelGenerator@5d6dd612"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "clone",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "new",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "setBaseItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategoryItemLabelGenerator@5d6dd612",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setBaseItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategoryItemLabelGenerator@5d6dd612"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "clone",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    }
+  ],
+  [
+    {
+      "label": "new",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "setBaseItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.IntervalCategoryItemLabelGenerator@ccac1125",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setBaseItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.IntervalCategoryItemLabelGenerator@ccac1125"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "clone",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "new",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "setSeriesItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        0,
+        "org.jfree.chart.labels.IntervalCategoryItemLabelGenerator@ccac1125",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setSeriesItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        0,
+        "org.jfree.chart.labels.IntervalCategoryItemLabelGenerator@ccac1125"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "clone",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "new",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "setBaseItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.IntervalCategoryItemLabelGenerator@ccac1125",
+        "true"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "setBaseItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.IntervalCategoryItemLabelGenerator@ccac1125"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "clone",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    }
+  ],
+  [
+    {
+      "label": "new",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "setLegendItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategorySeriesLabelGenerator@5a42395a"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "clone",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "getLegendItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.labels.StandardCategorySeriesLabelGenerator@5a42395a"
+      ]
+    },
+    {
+      "label": "getLegendItemLabelGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.labels.StandardCategorySeriesLabelGenerator@5a42395a"
+      ]
+    }
+  ],
+  [
+    {
+      "label": "new",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "setLegendItemToolTipGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.labels.StandardCategorySeriesLabelGenerator@5a42395a"
+      ],
+      "outputs": []
+    },
+    {
+      "label": "clone",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "equals",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c",
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "true"
+      ]
+    },
+    {
+      "label": "getLegendItemToolTipGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.labels.StandardCategorySeriesLabelGenerator@5a42395a"
+      ]
+    },
+    {
+      "label": "getLegendItemToolTipGenerator",
+      "inputs": [
+        "org.jfree.chart.renderer.category.BarRenderer@354dd86c"
+      ],
+      "outputs": [
+        "org.jfree.chart.labels.StandardCategorySeriesLabelGenerator@5a42395a"
+      ]
+    }
+  ]
+]

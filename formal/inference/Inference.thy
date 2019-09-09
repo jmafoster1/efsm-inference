@@ -422,6 +422,15 @@ primrec try_heuristics :: "update_modifier list \<Rightarrow> (iEFSM \<Rightarro
   "try_heuristics [] _ = null_modifier" |
   "try_heuristics (h#t) np = (\<lambda>a b c d e np. case h a b c d e np of Some e' \<Rightarrow> Some e' | None \<Rightarrow> (try_heuristics t np) a b c d e np)"
 
+primrec try_heuristics_check :: "(transition_matrix \<Rightarrow> bool) \<Rightarrow> update_modifier list \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> update_modifier" where
+  "try_heuristics_check _ [] _ = null_modifier" |
+  "try_heuristics_check check (h#t) np = (\<lambda>a b c d e np. 
+    case h a b c d e np of
+      Some e' \<Rightarrow>
+        if check (tm e') then Some e' else (try_heuristics_check check t np) a b c d e np |
+      None \<Rightarrow> (try_heuristics_check check t np) a b c d e np
+    )"
+
 definition drop_transitions :: "iEFSM \<Rightarrow> nat fset \<Rightarrow> iEFSM" where
   "drop_transitions e t = ffilter (\<lambda>(uid, _). uid |\<notin>| t) e"
 
@@ -493,5 +502,14 @@ lemma simple_mutex_direct_subsumption:
 
 definition max_int :: "iEFSM \<Rightarrow> int" where
   "max_int e = Max (insert 0 (EFSM.enumerate_ints (tm e)))"
+
+fun literal_args :: "gexp \<Rightarrow> bool" where
+  "literal_args (Bc v) = False" |
+  "literal_args (Eq (V _) (L _)) = True" |
+  "literal_args (In _ _) = True" |
+  "literal_args (Eq _ _) = False" |
+  "literal_args (Lt va v) = False" |
+  "literal_args (Null v) = False" |
+  "literal_args (Nor v va) = (literal_args v \<and> literal_args va)"
 
 end
