@@ -2856,7 +2856,8 @@ def merge_in_eq(v: VName.vname, l: Value.value, x2: List[GExp.gexp]):
   (v, l, x2) match {
   case (v, l, Nil) => List(GExp.Eq(AExp.V(v), AExp.L(l)))
   case (va, la, GExp.Eq(AExp.V(v), AExp.L(l)) :: t) =>
-    (if (VName.equal_vnamea(va, v)) GExp.In(va, List(la, l).distinct) :: t
+    (if ((VName.equal_vnamea(va, v)) && (! (Value.equal_valuea(la, l))))
+      GExp.In(va, List(la, l)) :: t
       else GExp.Eq(AExp.V(v), AExp.L(l)) :: merge_in_eq(va, la, t))
   case (va, la, GExp.In(v, l) :: t) =>
     (if (VName.equal_vnamea(va, v)) GExp.In(va, (la :: l).distinct) :: t
@@ -2905,6 +2906,39 @@ def lob_aux(t1: Transition.transition_ext[Unit],
                                     Transition.Outputs[Unit](t1),
                                     Transition.Updates[Unit](t1), ()))
     else None)
+
+def gob(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
+         newa: FSet.fset[(Nat.nat,
+                           ((Nat.nat, Nat.nat),
+                             Transition.transition_ext[Unit]))],
+         old: FSet.fset[(Nat.nat,
+                          ((Nat.nat, Nat.nat),
+                            Transition.transition_ext[Unit]))],
+         uu: (FSet.fset[(Nat.nat,
+                          ((Nat.nat, Nat.nat),
+                            Transition.transition_ext[Unit]))]) =>
+               FSet.fset[(Nat.nat,
+                           ((Nat.nat, Nat.nat),
+                             ((Transition.transition_ext[Unit], Nat.nat),
+                               (Transition.transition_ext[Unit], Nat.nat))))]):
+      Option[FSet.fset[(Nat.nat,
+                         ((Nat.nat, Nat.nat),
+                           Transition.transition_ext[Unit]))]]
+  =
+  {
+    val t1: Transition.transition_ext[Unit] = Inference.get_by_id(newa, t1ID)
+    val t2: Transition.transition_ext[Unit] = Inference.get_by_id(newa, t2ID);
+    (lob_aux(t1, t2) match {
+       case None => None
+       case Some(lob_t) =>
+         Some[FSet.fset[(Nat.nat,
+                          ((Nat.nat, Nat.nat),
+                            Transition.transition_ext[Unit]))]](Inference.replace(Inference.drop_transitions(newa,
+                              FSet.finsert[Nat.nat](t2ID,
+             FSet.bot_fset[Nat.nat])),
+   t1ID, lob_t))
+     })
+  }
 
 def lob(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
          newa: FSet.fset[(Nat.nat,

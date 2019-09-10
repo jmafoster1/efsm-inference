@@ -6,7 +6,7 @@ definition "all_literal_args t = (\<forall>g \<in> set (Guard t). literal_args g
 
 fun merge_in_eq :: "vname \<Rightarrow> value \<Rightarrow> gexp list \<Rightarrow> gexp list" where
   "merge_in_eq v l [] = [Eq (V v) (L l)]" |
-  "merge_in_eq v l ((Eq (V v') (L l'))#t) = (if v = v' then (In v (remdups [l, l']))#t else (Eq (V v') (L l'))#(merge_in_eq v l t))" |
+  "merge_in_eq v l ((Eq (V v') (L l'))#t) = (if v = v' \<and> l \<noteq> l' then (In v [l, l'])#t else (Eq (V v') (L l'))#(merge_in_eq v l t))" |
   "merge_in_eq v l ((In v' l')#t) = (if v = v' then (In v (remdups (l#l')))#t else (In v' l')#(merge_in_eq v l t))" |
   "merge_in_eq v l (h#t) = h#(merge_in_eq v l t)"
 
@@ -587,44 +587,24 @@ definition "lob_distinguished_3 t1 t2 = (\<exists>(i, l) \<in> set (get_Ins (Gua
     (\<exists>(i', l') \<in> set (get_Ins (Guard t1)). i = i' \<and> set l' \<subset> set l) \<and>
    Arity t1 = Arity t2)"
 
-(*definition "t1 = \<lparr>
-  Label = STR ''openat'',
-  Arity = 5,
-  Guard = [
-            In (I 0) [Str ''AT_FDCWD''],
-            In (I 1) [Str ''/lib/x86_6'', Str ''/proc/file''],
-            In (I 2) [Str ''O_''],
-            In (I 3) [Str ''RDONLY''],
-            In (I 4) [Str ''O_CLOEXEC'']
-          ], Outputs = [L (Num 3)],
-  Updates = []\<rparr>"
+fun is_In :: "gexp \<Rightarrow> bool" where
+  "is_In (In _ _) = True" |
+  "is_In _ = False"
 
-definition "t2 = \<lparr>
-  Label = STR ''openat'',
-  Arity = 5,
-  Guard = [
-            In (I 0) [Str ''AT_FDCWD''],
-            In (I 1) [Str ''/lib/x86_6'', Str ''/proc/file'', Str ''/usr/share''],
-            In (I 2) [Str ''O_''],
-            In (I 3) [Str ''RDONLY''],
-            In (I 4) [Str ''O_CLOEXEC'']
-          ], Outputs = [L (Num 3)],
-  Updates = []\<rparr>"
+definition gob_aux :: "transition \<Rightarrow> transition \<Rightarrow> transition option" where
+  "gob_aux t1 t2 = (if Outputs t1 = Outputs t2 \<and> Updates t1 = Updates t2 \<and> all_literal_args t1 \<and> all_literal_args t2 then
+      Some \<lparr>Label = Label t1, Arity = Arity t1, Guard = filter (Not \<circ> is_In) (merge_guards (Guard t1) (Guard t2)), Outputs = Outputs t1, Updates = Updates t1\<rparr>
+     else None)"
 
-lemma "\<not> subsumes t1 c t2"
-  apply (rule lob_distinguished_3_not_subsumes)
-  apply (simp add: Bex_def)
-    apply (rule_tac x=1 in exI)
-    apply (rule_tac x="[Str ''/lib/x86_6'', Str ''/proc/file'', Str ''/usr/share'']" in exI)
-    apply standard
-     apply (simp add: t2_def get_Ins_def)
-    apply standard
-     apply (simp add: t2_def)
-    apply (rule_tac x="[Str ''/lib/x86_6'', Str ''/proc/file'']" in exI)
-    apply standard
-     apply (simp add: t1_def get_Ins_def)
-    apply (simp add: Str_def)
-  oops*)
+fun gob :: update_modifier where
+  "gob t1ID t2ID s new old _ = (let
+     t1 = (get_by_id new t1ID);
+     t2 = (get_by_id new t2ID) in
+     case lob_aux t1 t2 of
+       None \<Rightarrow> None |
+       Some lob_t \<Rightarrow> 
+      Some (replace (drop_transitions new {|t2ID|}) t1ID lob_t)
+   )"
 
 
 end
