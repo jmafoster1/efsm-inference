@@ -24,6 +24,9 @@ lemma can_take_transition_empty_guard: "Guard t = [] \<Longrightarrow> \<exists>
 lemma valid_list_can_take: "\<forall>g \<in> set (Guard t). valid g \<Longrightarrow> \<exists>i. can_take_transition t i c"
   by (simp add: can_take_transition_def can_take_def apply_guards_def valid_def Ex_list_of_length)
 
+lemma cant_take_if: "\<exists>g \<in> set (Guard t). gval g (join_ir i r) \<noteq> true \<Longrightarrow> \<not> can_take_transition t i r"
+  using apply_guards_cons apply_guards_rearrange can_take_def can_take_transition_def by blast
+
 lemma medial_subset:
   "length i = Arity t \<Longrightarrow>
    Arity t = Arity t' \<Longrightarrow>

@@ -337,6 +337,18 @@ lemma lob_distinguished_3_direct_subsumption:
   apply (simp add: lob_distinguished_3_def)
   using lob_distinguished_3_not_subsumes by blast
 
+definition "guard_subset_eq_outputs_updates t1 t2 = (Label t1 = Label t2 \<and>
+   Arity t1 = Arity t2 \<and>
+   Outputs t1 = Outputs t2 \<and>
+   Updates t1 = Updates t2 \<and>
+   set (Guard t2) \<subseteq> set (Guard t1))"
+
+definition "guard_superset_eq_outputs_updates t1 t2 = (Label t1 = Label t2 \<and>
+   Arity t1 = Arity t2 \<and>
+   Outputs t1 = Outputs t2 \<and>
+   Updates t1 = Updates t2 \<and>
+   set (Guard t2) \<supset> set (Guard t1))"
+
 definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes_cases m1 m2 s s' t1 t2 = (
     if t1 = t2
@@ -344,6 +356,10 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
     else if simple_mutex t2 t1
       then False
     else if always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption m1 m2 s s' t2
+      then False
+    else if guard_subset_eq_outputs_updates t2 t1
+      then True
+    else if opposite_gob t1 t2
       then False
     else if always_different_outputs_direct_subsumption m1 m2 s s' t2 \<and> lob_distinguished_2 t1 t2
       then False
@@ -380,6 +396,10 @@ lemma directly_subsumes_cases:  "directly_subsumes m1 m2 s s' t1 t2 = directly_s
    apply (simp add: simple_mutex_direct_subsumption)
   apply (clarify, rule if_elim)
    apply (simp add: always_different_outputs_direct_subsumption)
+  apply (clarify, rule if_elim)
+   apply (simp add: guard_subset_eq_outputs_updates_def guard_subset_eq_outputs_updates_direct_subsumption)
+  apply (clarify, rule if_elim)
+   apply (simp add: opposite_gob_directly_subsumption)
   apply (clarify, rule if_elim)
    apply (simp add: lob_distinguished_2_direct_subsumption)
   apply (clarify, rule if_elim)
@@ -523,7 +543,7 @@ export_code
   origin_states
   (* Heuristics *)
   statewise_drop_inputs drop_inputs same_register insert_increment_2 heuristic_1
-  transitionwise_drop_inputs lob equals not_equals
+  transitionwise_drop_inputs lob gob equals not_equals
   (* Nondeterminism metrics *)
   nondeterministic_pairs nondeterministic_pairs_labar
   (* Utilities *)

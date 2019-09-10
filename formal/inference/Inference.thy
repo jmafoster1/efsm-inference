@@ -512,4 +512,9 @@ fun literal_args :: "gexp \<Rightarrow> bool" where
   "literal_args (Null v) = False" |
   "literal_args (Nor v va) = (literal_args v \<and> literal_args va)"
 
+lemma literal_args_eq: "literal_args (Eq a b) \<Longrightarrow> \<exists>v l. a = (V v) \<and> b = (L l)"
+  apply (cases a)
+     apply simp
+    apply (cases b)
+  by auto
 end

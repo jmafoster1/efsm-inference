@@ -1533,6 +1533,24 @@ def more[A](x0: transition_ext[A]): A = x0 match {
   case transition_exta(label, arity, guard, outputs, updates, more) => more
 }
 
+def enumerate_inputs(t: transition_ext[Unit]): Set.set[Nat.nat] =
+  Set.sup_set[Nat.nat](Set.sup_set[Nat.nat](Complete_Lattices.Sup_set[Nat.nat](Set.seta[Set.set[Nat.nat]](Lista.map[GExp.gexp,
+                                     Set.set[Nat.nat]](((a: GExp.gexp) =>
+                 GExp.enumerate_gexp_inputs(a)),
+                Guard[Unit](t)))),
+     Complete_Lattices.Sup_set[Nat.nat](Set.seta[Set.set[Nat.nat]](Lista.map[AExp.aexp,
+                                      Set.set[Nat.nat]](((a: AExp.aexp) =>
+                  AExp.enumerate_aexp_inputs(a)),
+                 Outputs[Unit](t))))),
+                        Complete_Lattices.Sup_set[Nat.nat](Set.seta[Set.set[Nat.nat]](Lista.map[(Nat.nat,
+                  AExp.aexp),
+                 Set.set[Nat.nat]](((a: (Nat.nat, AExp.aexp)) =>
+                                     {
+                                       val (_, aa): (Nat.nat, AExp.aexp) = a;
+                                       AExp.enumerate_aexp_inputs(aa)
+                                     }),
+                                    Updates[Unit](t)))))
+
 } /* object Transition */
 
 object Transition_Ordering {
@@ -2891,7 +2909,16 @@ def merge_guards(x0: List[GExp.gexp], g2: List[GExp.gexp]): List[GExp.gexp] =
      })
 }
 
-def lob_aux(t1: Transition.transition_ext[Unit],
+def is_In(x0: GExp.gexp): Boolean = x0 match {
+  case GExp.In(uu, uv) => true
+  case GExp.Bc(v) => false
+  case GExp.Eq(v, va) => false
+  case GExp.Gt(v, va) => false
+  case GExp.Null(v) => false
+  case GExp.Nor(v, va) => false
+}
+
+def gob_aux(t1: Transition.transition_ext[Unit],
              t2: Transition.transition_ext[Unit]):
       Option[Transition.transition_ext[Unit]]
   =
@@ -2901,8 +2928,12 @@ def lob_aux(t1: Transition.transition_ext[Unit],
                            Transition.Updates[Unit](t2))) && ((all_literal_args[Unit](t1)) && (all_literal_args[Unit](t2)))))
     Some[Transition.transition_ext[Unit]](Transition.transition_exta[Unit](Transition.Label[Unit](t1),
                                     Transition.Arity[Unit](t1),
-                                    merge_guards(Transition.Guard[Unit](t1),
-          Transition.Guard[Unit](t2)),
+                                    (Lista.filter[GExp.gexp](Fun.comp[Boolean,
+                               Boolean,
+                               GExp.gexp](((a: Boolean) => ! a),
+   ((a: GExp.gexp) => is_In(a))),
+                      merge_guards(Transition.Guard[Unit](t1),
+                                    Transition.Guard[Unit](t2)))).distinct,
                                     Transition.Outputs[Unit](t1),
                                     Transition.Updates[Unit](t1), ()))
     else None)
@@ -2928,17 +2959,33 @@ def gob(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
   {
     val t1: Transition.transition_ext[Unit] = Inference.get_by_id(newa, t1ID)
     val t2: Transition.transition_ext[Unit] = Inference.get_by_id(newa, t2ID);
-    (lob_aux(t1, t2) match {
+    (gob_aux(t1, t2) match {
        case None => None
-       case Some(lob_t) =>
+       case Some(gob_t) =>
          Some[FSet.fset[(Nat.nat,
                           ((Nat.nat, Nat.nat),
                             Transition.transition_ext[Unit]))]](Inference.replace(Inference.drop_transitions(newa,
                               FSet.finsert[Nat.nat](t2ID,
              FSet.bot_fset[Nat.nat])),
-   t1ID, lob_t))
+   t1ID, gob_t))
      })
   }
+
+def lob_aux(t1: Transition.transition_ext[Unit],
+             t2: Transition.transition_ext[Unit]):
+      Option[Transition.transition_ext[Unit]]
+  =
+  (if ((Lista.equal_lista[AExp.aexp](Transition.Outputs[Unit](t1),
+                                      Transition.Outputs[Unit](t2))) && ((Lista.equal_lista[(Nat.nat,
+              AExp.aexp)](Transition.Updates[Unit](t1),
+                           Transition.Updates[Unit](t2))) && ((all_literal_args[Unit](t1)) && (all_literal_args[Unit](t2)))))
+    Some[Transition.transition_ext[Unit]](Transition.transition_exta[Unit](Transition.Label[Unit](t1),
+                                    Transition.Arity[Unit](t1),
+                                    (merge_guards(Transition.Guard[Unit](t1),
+           Transition.Guard[Unit](t2))).distinct,
+                                    Transition.Outputs[Unit](t1),
+                                    Transition.Updates[Unit](t1), ()))
+    else None)
 
 def lob(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
          newa: FSet.fset[(Nat.nat,
@@ -3075,6 +3122,78 @@ def get_Ins(g: List[GExp.gexp]): List[(Nat.nat, List[Value.value])] =
                                  })
       else None)),
    g)
+
+def is_lit_eq(x0: GExp.gexp, i: Nat.nat): Boolean = (x0, i) match {
+  case (GExp.Eq(AExp.V(VName.I(ia)), AExp.L(v)), i) => Nat.equal_nata(ia, i)
+  case (GExp.Bc(v), uv) => false
+  case (GExp.Eq(AExp.L(vb), va), uv) => false
+  case (GExp.Eq(AExp.V(VName.R(vc)), va), uv) => false
+  case (GExp.Eq(AExp.Plus(vb, vc), va), uv) => false
+  case (GExp.Eq(AExp.Minus(vb, vc), va), uv) => false
+  case (GExp.Eq(v, AExp.V(vb)), uv) => false
+  case (GExp.Eq(v, AExp.Plus(vb, vc)), uv) => false
+  case (GExp.Eq(v, AExp.Minus(vb, vc)), uv) => false
+  case (GExp.Gt(v, va), uv) => false
+  case (GExp.Null(v), uv) => false
+  case (GExp.In(v, va), uv) => false
+  case (GExp.Nor(v, va), uv) => false
+}
+
+def is_input_in(x0: GExp.gexp): Boolean = x0 match {
+  case GExp.In(VName.I(i), s) => ! (s.isEmpty)
+  case GExp.Bc(v) => false
+  case GExp.Eq(v, va) => false
+  case GExp.Gt(v, va) => false
+  case GExp.Null(v) => false
+  case GExp.In(VName.R(vb), va) => false
+  case GExp.Nor(v, va) => false
+}
+
+def is_lit_eq_general(x0: GExp.gexp): Boolean = x0 match {
+  case GExp.Eq(AExp.V(VName.I(uu)), AExp.L(uv)) => true
+  case GExp.Bc(v) => false
+  case GExp.Eq(AExp.L(vb), va) => false
+  case GExp.Eq(AExp.V(VName.R(vc)), va) => false
+  case GExp.Eq(AExp.Plus(vb, vc), va) => false
+  case GExp.Eq(AExp.Minus(vb, vc), va) => false
+  case GExp.Eq(v, AExp.V(vb)) => false
+  case GExp.Eq(v, AExp.Plus(vb, vc)) => false
+  case GExp.Eq(v, AExp.Minus(vb, vc)) => false
+  case GExp.Gt(v, va) => false
+  case GExp.Null(v) => false
+  case GExp.In(v, va) => false
+  case GExp.Nor(v, va) => false
+}
+
+def opposite_gob(t1: Transition.transition_ext[Unit],
+                  t2: Transition.transition_ext[Unit]):
+      Boolean
+  =
+  (Lista.list_all[GExp.gexp](((g: GExp.gexp) =>
+                               (is_lit_eq_general(g)) || (is_input_in(g))),
+                              Transition.Guard[Unit](t1))) && ((Lista.list_all[GExp.gexp](((g:
+              GExp.gexp)
+             =>
+            (is_lit_eq_general(g)) || (is_input_in(g))),
+           Transition.Guard[Unit](t2))) && ((Set.Bex[Nat.nat](Set.sup_set[Nat.nat](Transition.enumerate_inputs(t1),
+    Transition.enumerate_inputs(t2)),
+                       ((i: Nat.nat) =>
+                         (Lista.list_ex[GExp.gexp](((g: GExp.gexp) =>
+             is_lit_eq(g, i)),
+            Transition.Guard[Unit](t1))) && (Lista.list_all[GExp.gexp](((g:
+                                   GExp.gexp)
+                                  =>
+                                 ! (GExp.gexp_constrains(g,
+                  AExp.V(VName.I(i))))),
+                                Transition.Guard[Unit](t2)))))) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
+     Transition.Arity[Unit](t2))) && ((Set.Ball[Nat.nat](Transition.enumerate_inputs(t2),
+                  ((i: Nat.nat) =>
+                    Nat.less_nat(i, Transition.Arity[Unit](t2))))) && (Set.Ball[Nat.nat](Transition.enumerate_inputs(t2),
+          ((i: Nat.nat) =>
+            Nat.less_eq_nat(Nat.Nata((Lista.filter[GExp.gexp](((g: GExp.gexp) =>
+                        GExp.gexp_constrains(g, AExp.V(VName.I(i)))),
+                       Transition.Guard[Unit](t2))).length),
+                             Nat.Nata((1))))))))))
 
 def lob_distinguished_2[A, B](t1: Transition.transition_ext[A],
                                t2: Transition.transition_ext[B]):
@@ -5174,6 +5293,21 @@ def always_different_outputs_direct_subsumption(m1:
     Dirties.acceptsAndGetsUsToBoth(m1, m2, sa, s)
     else Dirties.alwaysDifferentOutputsDirectSubsumption(m1, m2, sa, s, t))
 
+def guard_subset_eq_outputs_updates[A, B](t1: Transition.transition_ext[A],
+   t2: Transition.transition_ext[B]):
+      Boolean
+  =
+  (Transition.Label[A](t1) ==
+    Transition.Label[B](t2)) && ((Nat.equal_nata(Transition.Arity[A](t1),
+          Transition.Arity[B](t2))) && ((Lista.equal_lista[AExp.aexp](Transition.Outputs[A](t1),
+                               Transition.Outputs[B](t2))) && ((Lista.equal_lista[(Nat.nat,
+    AExp.aexp)](Transition.Updates[A](t1),
+                 Transition.Updates[B](t2))) && (Lista.list_all[GExp.gexp](((a:
+                                       GExp.gexp)
+                                      =>
+                                     (Transition.Guard[A](t1)) contains a),
+                                    Transition.Guard[B](t2))))))
+
 def always_different_outputs(x0: List[AExp.aexp], x1: List[AExp.aexp]): Boolean
   =
   (x0, x1) match {
@@ -5205,35 +5339,39 @@ def directly_subsumes_cases(m1: FSet.fset[(Nat.nat,
         Transition.Outputs[Unit](t2))) && (always_different_outputs_direct_subsumption(m1,
         m2, sa, s, t2)))
                   false
-                  else (if ((always_different_outputs_direct_subsumption(m1, m2,
-                                  sa, s,
-                                  t2)) && (Least_Upper_Bound.lob_distinguished_2[Unit,
-  Unit](t1, t2)))
-                         false
-                         else (if ((always_different_outputs_direct_subsumption(m1,
- m2, sa, s, t2)) && (Least_Upper_Bound.lob_distinguished_3[Unit, Unit](t1, t2)))
-                                false
-                                else (if (Least_Upper_Bound.is_lob[Unit,
-                            Unit](t2, t1))
-                                       true
-                                       else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
-                                   t2, m2, s))
-      true
-      else (if (Store_Reuse_Subsumption.drop_update_add_guard_direct_subsumption(m1,
-  m2, sa, s, t1, t2))
-             false
-             else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
-     t2, m1, m2, sa, s))
+                  else (if (guard_subset_eq_outputs_updates[Unit, Unit](t2, t1))
+                         true
+                         else (if (Least_Upper_Bound.opposite_gob(t1, t2)) false
+                                else (if ((always_different_outputs_direct_subsumption(m1,
+        m2, sa, s,
+        t2)) && (Least_Upper_Bound.lob_distinguished_2[Unit, Unit](t1, t2)))
+                                       false
+                                       else (if ((always_different_outputs_direct_subsumption(m1,
+               m2, sa, s,
+               t2)) && (Least_Upper_Bound.lob_distinguished_3[Unit,
+                       Unit](t1, t2)))
+      false
+      else (if (Least_Upper_Bound.is_lob[Unit, Unit](t2, t1)) true
+             else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
+         t2, m2, s))
                     true
-                    else (if (Store_Reuse_Subsumption.possibly_not_value(m1, m2,
-                                  sa, s, t1, t2))
+                    else (if (Store_Reuse_Subsumption.drop_update_add_guard_direct_subsumption(m1,
+                m2, sa, s, t1, t2))
                            false
-                           else (if (Transition.equal_transition_exta[Unit](t1,
-                                     Ignore_Inputs.drop_guards(t2)))
+                           else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
+                   t2, m1, m2, sa, s))
                                   true
-                                  else (if ((Transition.equal_transition_exta[Unit](t2,
-     Ignore_Inputs.drop_guards(t1))) && (satisfiable_negation[Unit](t1)))
- false else Dirties.scalaDirectlySubsumes(m1, m2, sa, s, t1, t2)))))))))))))
+                                  else (if (Store_Reuse_Subsumption.possibly_not_value(m1,
+        m2, sa, s, t1, t2))
+ false
+ else (if (Transition.equal_transition_exta[Unit](t1,
+           Ignore_Inputs.drop_guards(t2)))
+        true
+        else (if ((Transition.equal_transition_exta[Unit](t2,
+                   Ignore_Inputs.drop_guards(t1))) && (satisfiable_negation[Unit](t1)))
+               false
+               else Dirties.scalaDirectlySubsumes(m1, m2, sa, s, t1,
+           t2)))))))))))))))
 
 def no_illegal_updates_code(x0: List[(Nat.nat, AExp.aexp)], uu: Nat.nat):
       Boolean

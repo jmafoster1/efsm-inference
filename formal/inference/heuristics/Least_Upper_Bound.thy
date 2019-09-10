@@ -25,7 +25,7 @@ primrec merge_guards :: "gexp list \<Rightarrow> gexp list \<Rightarrow> gexp li
 
 definition lob_aux :: "transition \<Rightarrow> transition \<Rightarrow> transition option" where
   "lob_aux t1 t2 = (if Outputs t1 = Outputs t2 \<and> Updates t1 = Updates t2 \<and> all_literal_args t1 \<and> all_literal_args t2 then
-      Some \<lparr>Label = Label t1, Arity = Arity t1, Guard = merge_guards (Guard t1) (Guard t2), Outputs = Outputs t1, Updates = Updates t1\<rparr>
+      Some \<lparr>Label = Label t1, Arity = Arity t1, Guard = remdups (merge_guards (Guard t1) (Guard t2)), Outputs = Outputs t1, Updates = Updates t1\<rparr>
      else None)"
 
 fun lob :: update_modifier where
@@ -593,18 +593,221 @@ fun is_In :: "gexp \<Rightarrow> bool" where
 
 definition gob_aux :: "transition \<Rightarrow> transition \<Rightarrow> transition option" where
   "gob_aux t1 t2 = (if Outputs t1 = Outputs t2 \<and> Updates t1 = Updates t2 \<and> all_literal_args t1 \<and> all_literal_args t2 then
-      Some \<lparr>Label = Label t1, Arity = Arity t1, Guard = filter (Not \<circ> is_In) (merge_guards (Guard t1) (Guard t2)), Outputs = Outputs t1, Updates = Updates t1\<rparr>
+      Some \<lparr>Label = Label t1, Arity = Arity t1, Guard = remdups (filter (Not \<circ> is_In) (merge_guards (Guard t1) (Guard t2))), Outputs = Outputs t1, Updates = Updates t1\<rparr>
      else None)"
 
 fun gob :: update_modifier where
   "gob t1ID t2ID s new old _ = (let
      t1 = (get_by_id new t1ID);
      t2 = (get_by_id new t2ID) in
-     case lob_aux t1 t2 of
+     case gob_aux t1 t2 of
        None \<Rightarrow> None |
-       Some lob_t \<Rightarrow> 
-      Some (replace (drop_transitions new {|t2ID|}) t1ID lob_t)
+       Some gob_t \<Rightarrow> 
+      Some (replace (drop_transitions new {|t2ID|}) t1ID gob_t)
    )"
 
+lemma guard_subset_eq_outputs_updates_subsumption:
+  "Label t1 = Label t2 \<Longrightarrow>
+   Arity t1 = Arity t2 \<Longrightarrow>
+   Outputs t1 = Outputs t2 \<Longrightarrow>
+   Updates t1 = Updates t2 \<Longrightarrow>
+   set (Guard t2) \<subseteq> set (Guard t1) \<Longrightarrow>
+   subsumes t2 c t1"
+  apply (rule subsumption)
+      apply simp
+     apply (simp add: can_take_transition_def can_take_def apply_guards_def)
+     apply auto[1]
+    apply simp
+   apply (simp add: posterior_separate_def can_take_def)
+   apply auto[1]
+  apply (simp add: posterior_def posterior_separate_def can_take_def)
+  by auto
+
+lemma guard_subset_eq_outputs_updates_direct_subsumption:
+  "Label t1 = Label t2 \<Longrightarrow>
+   Arity t1 = Arity t2 \<Longrightarrow>
+   Outputs t1 = Outputs t2 \<Longrightarrow>
+   Updates t1 = Updates t2 \<Longrightarrow>
+   set (Guard t2) \<subseteq> set (Guard t1) \<Longrightarrow>
+   directly_subsumes m1 m2 s1 s2 t2 t1"
+  apply (rule subsumes_in_all_contexts_directly_subsumes)
+  by (simp add: guard_subset_eq_outputs_updates_subsumption)
+
+lemma "\<forall>g\<in>set G. \<not> gexp_constrains g (V (I i)) \<Longrightarrow>
+       apply_guards G (join_ir ia c) \<Longrightarrow>
+       apply_guards G (join_ir (ia[i := x']) c)"
+proof(induct G)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a G)
+  then show ?case
+    apply (simp add: apply_guards_cons)
+    using input_not_constrained_gval_swap_inputs[of a i ia c x']
+    by simp
+qed
+
+lemma each_input_guarded_once_cons: 
+   "\<forall>i\<in>\<Union> (enumerate_gexp_inputs ` set (a # G)). length (filter (\<lambda>g. gexp_constrains g (V (I i))) (a # G)) \<le> 1 \<Longrightarrow>
+    \<forall>i\<in>\<Union> (enumerate_gexp_inputs ` set G). length (filter (\<lambda>g. gexp_constrains g (V (I i))) G) \<le> 1"
+  apply (simp add: Ball_def)
+  apply clarify
+proof -
+  fix x :: nat and xa :: gexp
+  assume a1: "\<forall>x. (x \<in> enumerate_gexp_inputs a \<longrightarrow> length (if gexp_constrains a (V (I x)) then a # filter (\<lambda>g. gexp_constrains g (V (I x))) G else filter (\<lambda>g. gexp_constrains g (V (I x))) G) \<le> 1) \<and> ((\<exists>xa\<in>set G. x \<in> enumerate_gexp_inputs xa) \<longrightarrow> length (if gexp_constrains a (V (I x)) then a # filter (\<lambda>g. gexp_constrains g (V (I x))) G else filter (\<lambda>g. gexp_constrains g (V (I x))) G) \<le> 1)"
+  assume a2: "xa \<in> set G"
+  assume "x \<in> enumerate_gexp_inputs xa"
+  then have "if gexp_constrains a (V (I x)) then length (a # filter (\<lambda>g. gexp_constrains g (V (I x))) G) \<le> 1 else length (filter (\<lambda>g. gexp_constrains g (V (I x))) G) \<le> 1"
+    using a2 a1 by fastforce
+  then show "length (filter (\<lambda>g. gexp_constrains g (V (I x))) G) \<le> 1"
+    by (metis (no_types) impossible_Cons le_cases order.trans)
+qed
+
+
+lemma literal_args_can_take:
+  "\<forall>g\<in>set G. \<exists>i v s. g = Eq (V (I i)) (L v) \<or> g = In (I i) s \<and> s \<noteq> [] \<Longrightarrow>
+   \<forall>i\<in>\<Union> (enumerate_gexp_inputs ` set G). i < a \<Longrightarrow>
+   \<forall>i\<in>\<Union> (enumerate_gexp_inputs ` set G). length (filter (\<lambda>g. gexp_constrains g (V (I i))) G) \<le> 1 \<Longrightarrow>
+   \<exists>i. length i = a \<and> apply_guards G (join_ir i c)"
+proof(induct G)
+  case Nil
+  then show ?case
+    using Ex_list_of_length
+    by auto
+next
+  case (Cons a G)
+  then show ?case
+    using each_input_guarded_once_cons[of a G]
+    apply (simp add: apply_guards_cons)
+    apply (erule conjE)
+    apply (erule exE)+
+    apply (case_tac "\<exists>v. a = Eq (V (I ia)) (L v)")
+     apply (erule exE)
+     apply (rule_tac x="list_update i ia v" in exI)
+     apply simp
+     apply standard
+      apply (metis Diff_iff filter_empty_conv set_removeAll set_update_memI test_aux)
+     apply (simp add: input2state_nth join_ir_def)
+    apply simp
+    apply (erule exE)
+    apply (case_tac s)
+     apply simp
+    apply (rule_tac x="list_update i ia ab" in exI)
+    apply standard
+     apply simp
+    apply standard
+     apply (simp add: input2state_nth join_ir_def)
+    apply simp
+    by (metis Diff_iff filter_empty_conv list.set_intros(1) set_removeAll test_aux)
+qed
+
+lemma "(SOME x'. x' \<noteq> (v::value)) \<noteq> v"
+proof(induct v)
+  case (Num x)
+  then show ?case
+    by (metis (full_types) someI_ex value.simps(4))
+next
+  case (Str x)
+  then show ?case
+    by (metis (full_types) someI_ex value.simps(4))
+qed
+
+lemma opposite_gob_subsumption: "\<forall>g \<in> set (Guard t1). \<exists>i v s. g = Eq (V (I i)) (L v) \<or> (g = In (I i) s \<and> s \<noteq> []) \<Longrightarrow>
+       \<forall>g \<in> set (Guard t2). \<exists>i v s. g = Eq (V (I i)) (L v) \<or> (g = In (I i) s \<and> s \<noteq> []) \<Longrightarrow>
+       \<exists> i. \<exists>v. Eq (V (I i)) (L v) \<in> set (Guard t1) \<and>
+         (\<forall>g \<in> set (Guard t2). \<not> gexp_constrains g (V (I i))) \<Longrightarrow>
+       Arity t1 = Arity t2 \<Longrightarrow>
+       \<forall>i \<in> enumerate_inputs t2. i < Arity t2 \<Longrightarrow>
+       \<forall>i \<in> enumerate_inputs t2. length (filter (\<lambda>g. gexp_constrains g (V (I i))) (Guard t2)) \<le> 1 \<Longrightarrow>
+       \<not> subsumes t1 c t2"
+  apply (rule bad_guards)
+  apply (simp add: enumerate_inputs_def can_take_transition_def can_take_def Bex_def)
+  using literal_args_can_take[of "Guard t2" "Arity t2" c]
+  apply simp
+  apply clarify
+  apply (rule_tac x="list_update ia i (Eps (\<lambda>x'. x' \<noteq> v))" in exI)
+  apply simp
+  apply standard
+   apply (simp add: apply_guards_def)
+  using input_not_constrained_gval_swap_inputs apply simp
+  apply (simp add: apply_guards_def Bex_def)
+  apply (rule_tac x="Eq (V (I i)) (L v)" in exI)
+  apply (simp add: join_ir_def)
+  apply (case_tac "input2state (ia[i := SOME x'. x' \<noteq> v]) $ i")
+   apply simp
+  apply simp
+  apply (case_tac "i < length ia")
+   apply (simp add: input2state_nth)
+   apply (case_tac v)
+    apply (metis (mono_tags) someI_ex value.simps(4))
+   apply (metis (mono_tags) someI_ex value.simps(4))
+  by (metis input2state_within_bounds length_list_update)
+
+fun is_lit_eq :: "gexp \<Rightarrow> nat \<Rightarrow> bool" where
+  "is_lit_eq (Eq (V (I i)) (L v)) i' = (i = i')" |
+  "is_lit_eq _ _ = False"
+
+lemma "(\<exists>v. Eq (V (I i)) (L v) \<in> set G) = (\<exists>g \<in> set G. is_lit_eq g i)"
+  by (metis is_lit_eq.elims(2) is_lit_eq.simps(1))
+
+fun is_lit_eq_general :: "gexp \<Rightarrow> bool" where
+  "is_lit_eq_general (Eq (V (I _)) (L _)) = True" |
+  "is_lit_eq_general _ = False"
+
+fun is_input_in :: "gexp \<Rightarrow> bool" where
+  "is_input_in (In (I i) s) = (s \<noteq> [])" |
+  "is_input_in _ = False"
+
+definition "opposite_gob t1 t2 = (
+       (\<forall>g \<in> set (Guard t1). is_lit_eq_general g \<or> is_input_in g) \<and>
+       (\<forall>g \<in> set (Guard t2). is_lit_eq_general g \<or> is_input_in g) \<and>
+       (\<exists> i \<in> (enumerate_inputs t1 \<union> enumerate_inputs t2). (\<exists>g \<in> set (Guard t1). is_lit_eq g i) \<and>
+         (\<forall>g \<in> set (Guard t2). \<not> gexp_constrains g (V (I i)))) \<and>
+       Arity t1 = Arity t2 \<and>
+       (\<forall>i \<in> enumerate_inputs t2. i < Arity t2) \<and>
+       (\<forall>i \<in> enumerate_inputs t2. length (filter (\<lambda>g. gexp_constrains g (V (I i))) (Guard t2)) \<le> 1))"
+
+lemma "is_lit_eq_general g \<or> is_input_in g \<Longrightarrow>
+       \<exists>i v s. g = Eq (V (I i)) (L v) \<or> g = In (I i) s \<and> s \<noteq> []"
+  by (meson is_input_in.elims(2) is_lit_eq_general.elims(2))
+
+lemma opposite_gob_directly_subsumption:
+  "opposite_gob t1 t2 \<Longrightarrow> \<not> directly_subsumes m1 m2 s1 s2 t1 t2"
+  apply (rule cant_directly_subsume)
+  apply (rule allI)
+  apply (rule opposite_gob_subsumption)
+  unfolding opposite_gob_def
+       apply (meson is_input_in.elims(2) is_lit_eq_general.elims(2))+
+     apply (metis is_lit_eq.elims(2))
+  by auto
+
+(*
+definition "i1 = V (I 0)"
+definition "i2 = V (I 1)"
+
+definition "t1 = \<lparr>
+  Label = STR ''setBaseItemLabelGenerator'',
+  Arity = 2,
+  Guard = [Eq i1 (L (Str ''org.jfree.chart.renderer.category.BarRenderer@354dd86c'')),
+           Eq i2 (L (Str ''org.jfree.chart.labels.StandardCategoryItemLabelGenerator@5d6dd612''))],
+  Outputs = [], Updates = []\<rparr>"
+
+definition "t2 = \<lparr>
+  Label = STR ''setBaseItemLabelGenerator'',
+  Arity = 2,
+  Guard = [Eq i1 (L (Str ''org.jfree.chart.renderer.category.BarRenderer@354dd86c''))],
+  Outputs = [], Updates = []\<rparr>"
+
+lemma "opposite_gob t1 t2"
+  apply (simp add: opposite_gob_def)
+  apply safe
+       apply (simp add: t1_def i1_def i2_def)
+       apply auto[1]
+      apply (simp add: t2_def t1_def i1_def)
+     apply (simp add: t2_def t1_def enumerate_inputs_def i1_def i2_def)
+    apply (simp add: t1_def t2_def)
+   apply (simp add: t2_def enumerate_inputs_def i1_def)
+  by (simp add: t2_def enumerate_inputs_def i1_def)*)
 
 end

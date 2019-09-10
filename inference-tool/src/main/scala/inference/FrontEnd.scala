@@ -2,7 +2,7 @@ import scala.io.Source
 import com.microsoft.z3
 // PrintWriter
 import java.io._
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 import scala.collection.mutable.ListBuffer
 
 object FrontEnd {
@@ -11,6 +11,7 @@ object FrontEnd {
     val t1 = System.nanoTime
     Config.parseArgs(args)
 
+    Log.root.info(args.mkString(" "))
     Log.root.info("Building PTA")
 
     // Config.log = Use_Small_Numbers.use_smallest_ints(Config.log)
@@ -38,5 +39,7 @@ object FrontEnd {
     val minutes = (seconds / 60) % 60
     val hours = seconds / 3600
     Log.root.info(s"Completed in ${if (hours > 0) s"${hours.toInt}h " else ""}${if (minutes > 0) s"${minutes.toInt}m " else ""}${seconds % 60}s")
+    Log.root.info(s"states: ${FSet.size_fset(EFSM.S(inferred))}")
+    Log.root.info(s"transitions: ${FSet.size_fset(inferred)}")
   }
 }
