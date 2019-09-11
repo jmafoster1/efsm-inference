@@ -123,7 +123,7 @@ object PrettyPrinter {
   }
 
   def iEFSM2dot(e: IEFSM, f: Nat.nat) = {
-    val pw = new PrintWriter(new File(s"${Config.config.dotfiles}/step_${Code_Numeral.integer_of_nat(f)}.dot"))
+    val pw = new PrintWriter(new File(f"${Config.config.dotfiles}/step_${Code_Numeral.integer_of_nat(f)}%2d.dot"))
     pw.write(EFSM_Dot.iefsm2dot(e))
     pw.close
   }
@@ -132,5 +132,10 @@ object PrettyPrinter {
     val pw = new PrintWriter(new File(s"${Config.config.dotfiles}/${f}.dot"))
     pw.write(EFSM_Dot.efsm2dot(e))
     pw.close
+  }
+
+  def event2String(e: (String, (List[Value.value], List[Value.value]))): String = e match {
+    case (label, (inputs, outputs)) =>
+      return label + s"(${inputs.map(i => valueToString(i)).mkString(", ")})" + s"/[${outputs.map(i => valueToString(i)).mkString(", ")}]"
   }
 }

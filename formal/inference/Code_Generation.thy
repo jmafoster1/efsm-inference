@@ -483,7 +483,7 @@ termination
   using measures_fsubset by auto
 
 declare make_pta.simps [code]
-declare make_pta_fold [code]
+(* declare make_pta_fold [code] *)
 declare GExp.satisfiable_def [code del]
 declare initially_undefined_context_check_full_def [code del]
 declare generalise_output_context_check_def [code del]
@@ -527,23 +527,30 @@ code_printing
   | constant "finfun_update" \<rightharpoonup> (Scala) "_ + (_ -> _)"
   | constant "finfun_apply" \<rightharpoonup> (Scala) "_((_))"
 
-code_pred satisfies_trace.
-code_pred accepts.
-
 declare directly_subsumes_cases [code]
 
 (* declare directly_subsumes_def [code del] *)
 (* code_printing constant "directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes" *)
 
+lemma [code]: "satisfies_trace e s d l = satisfies_trace_prim e s d l"
+  by (simp add: satisfies_trace_prim)
+
+lemma [code]: "accepts e s d t = accepts_prim e s d t"
+  by (simp add: accepts_prim)
+
+declare make_branch.simps [code del]
+code_printing constant "make_branch" \<rightharpoonup> (Scala) "Dirties.makeBranch"
+
 export_code
   (* Essentials *)
   try_heuristics try_heuristics_check aexp_type_check learn infer_types nondeterministic input_updates_register
+  step maxS add_transition
   (* Scoring functions *)
   naive_score naive_score_eq naive_score_outputs naive_score_comprehensive naive_score_comprehensive_eq_high
   origin_states
   (* Heuristics *)
   statewise_drop_inputs drop_inputs same_register insert_increment_2 heuristic_1
-  transitionwise_drop_inputs lob gob equals not_equals
+  transitionwise_drop_inputs lob gob gung_ho
   (* Nondeterminism metrics *)
   nondeterministic_pairs nondeterministic_pairs_labar
   (* Utilities *)

@@ -10,6 +10,42 @@ import java.util.UUID.randomUUID
 
 object Dirties {
 
+  def makeBranch(
+    e: TransitionMatrix,
+    s: Nat.nat,
+    r: Map[Nat.nat, Option[Value.value]],
+    trace: List[(String, (List[Value.value], List[Value.value]))]): FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])] = {
+      var currentState = s
+      var currentRegs = r
+      var currentEFSM = e
+
+      for (event <- trace) {
+        event match {
+        case (label, (inputs, outputs)) =>
+          EFSM.step(currentEFSM, currentState, currentRegs, label, inputs) match {
+            case None => {
+              currentEFSM = Inference.add_transition(currentEFSM, currentState, label, inputs, outputs)
+              currentState = Inference.maxS(currentEFSM)
+            }
+            case Some((_, (sa, (outputsa, updated)))) => {
+              if (Lista.equal_lista[Option[Value.value]](outputsa,
+                Lista.map[Value.value, Option[Value.value]](((a: Value.value) => Some[Value.value](a)), outputs)
+              )) {
+                currentState = sa
+                currentRegs = updated
+              }
+              else {
+                // Make a transition and add it to the EFSM
+                currentEFSM = Inference.add_transition(currentEFSM, currentState, label, inputs, outputs)
+                currentState = Inference.maxS(currentEFSM)
+              }
+            }
+          }
+        }
+      }
+      return currentEFSM
+    }
+
   def foldl[A, B](f: A => B => A, b: A, l: List[B]): A =
     l.par.foldLeft(b)(((x, y) => (f(x))(y)))
 
@@ -170,6 +206,9 @@ object Dirties {
     s1: Nat.nat,
     s2: Nat.nat,
     ): Boolean = {
+      if (Config.config.skip) {
+        return true
+      }
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(a), "e1", Inference.tm(b), "e2", f)
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +

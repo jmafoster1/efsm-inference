@@ -126,7 +126,10 @@ fun maxS :: "transition_matrix \<Rightarrow> nat" where
 type_synonym execution = "(label \<times> value list \<times> value list) list"
 type_synonym log = "execution list"
 
-fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> transition_matrix" where
+definition add_transition :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> String.literal \<Rightarrow> value list \<Rightarrow> value list \<Rightarrow> transition_matrix" where
+  "add_transition e s label inputs outputs = finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e"
+
+fun make_branch :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> transition_matrix" where
   "make_branch e _ _ [] = e" |
   "make_branch e s r ((label, inputs, outputs)#t) =
     (case (step e s r label inputs) of
@@ -134,8 +137,9 @@ fun make_branch :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers 
         if outputs' = (map Some outputs) then
           make_branch e s' updated t
         else 
-          make_branch (finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e) ((maxS e)+1) r t  |
-      None \<Rightarrow> make_branch (finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e) ((maxS e)+1) r t
+          make_branch (add_transition e s label inputs outputs) ((maxS e)+1) r t  |
+      None \<Rightarrow>
+          make_branch (add_transition e s label inputs outputs) ((maxS e)+1) r t
     )"
 
 primrec make_pta :: "log \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
@@ -198,12 +202,39 @@ lemma dest_code [code]: "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambd
   apply (simp add: dest_def)
   by (metis fst_eqD surj_pair)
 
-inductive satisfies_trace :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
+inductive satisfies_trace :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
   base: "satisfies_trace e s d []" |                                         
   step: "\<exists>(s', T) |\<in>| possible_steps e s d l i.
          apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
          satisfies_trace e s' (apply_updates (Updates T) (join_ir i d) d) t \<Longrightarrow>
          satisfies_trace e s d ((l, i, p)#t)"
+
+lemma satisfies_trace_step: "satisfies_trace e s d ((l, i, p)#t) = (\<exists>(s', T) |\<in>| possible_steps e s d l i.
+         apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
+         satisfies_trace e s' (apply_updates (Updates T) (join_ir i d) d) t)"
+  apply standard
+   defer
+   apply (simp add: satisfies_trace.step)
+  apply (rule satisfies_trace.cases)
+  by auto
+
+fun satisfies_trace_prim :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
+  "satisfies_trace_prim _ _ _ [] = True" |
+  "satisfies_trace_prim e s d ((l, i, p)#t) = (\<exists>(s', T) |\<in>| possible_steps e s d l i.
+         apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
+         satisfies_trace_prim e s' (apply_updates (Updates T) (join_ir i d) d) t)"
+
+lemma satisfies_trace_prim: "\<forall>s d. satisfies_trace e s d l = satisfies_trace_prim e s d l"
+proof(induct l)
+case Nil
+  then show ?case
+    by (simp add: satisfies_trace.base)
+next
+case (Cons a l)
+  then show ?case
+    apply (cases a)
+    by (simp add: satisfies_trace_step)
+qed
 
 definition satisfies :: "execution set \<Rightarrow> transition_matrix \<Rightarrow> bool" where
   "satisfies T e = (\<forall>t \<in> T. satisfies_trace e 0 <> t)"

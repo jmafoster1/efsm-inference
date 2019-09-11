@@ -7,7 +7,7 @@ import Types._
 
 object Heuristics extends Enumeration {
   type Heuristic = Value
-  val store, inc, same, ignore, ignoret, ignores, lob, gob, eq, neq = Value
+  val store, inc, same, ignore, ignoret, ignores, lob, gob, gungho = Value
 }
 
 object Nondeterminisms extends Enumeration {
@@ -29,6 +29,7 @@ case class Config(
   strategy: Nat.nat => Nat.nat => IEFSM => Nat.nat = (SelectionStrategies.naive_score _).curried,
   skip: Boolean = false,
   logLevel: Level = Level.DEBUG,
+  logFile: String = "log",
   k: Int = 0)
 
 object Config {
@@ -110,6 +111,10 @@ object Config {
         .valueName("level")
         .action((x, c) => c.copy(logLevel = x))
         .text(s"The log level {info, debug, warn, error}"),
+      opt[String]('f', "logFile")
+        .valueName("logFile")
+        .action((x, c) => c.copy(logFile = x))
+        .text(s"The name/location of the logfile"),
       arg[File]("filename")
         .required()
         .action((x, c) => c.copy(file = x))
@@ -133,8 +138,7 @@ object Config {
           Heuristics.ignores -> (Ignore_Inputs.statewise_drop_inputs _).curried,
           Heuristics.lob -> (Least_Upper_Bound.lob _).curried,
           Heuristics.gob -> (Least_Upper_Bound.gob _).curried,
-          Heuristics.eq -> (Equals.equals _).curried,
-          Heuristics.neq -> (Equals.not_equals _).curried
+          Heuristics.gungho -> (Least_Upper_Bound.gung_ho _).curried
           )
 
         // this.strategy = if (Config.config.oneFinal)

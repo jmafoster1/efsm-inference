@@ -3,6 +3,8 @@ import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
 
 object Log {
+	System.setProperty("log.name", Config.config.logFile);
+
   val root =  LoggerFactory.getLogger("root").asInstanceOf[Logger]
   root.setLevel(Config.config.logLevel)
 

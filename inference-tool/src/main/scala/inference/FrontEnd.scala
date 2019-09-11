@@ -12,9 +12,9 @@ object FrontEnd {
     Config.parseArgs(args)
 
     Log.root.info(args.mkString(" "))
-    Log.root.info("Building PTA")
+    Log.root.info(s"Building PTA - ${Config.log.length} ${if (Config.log.length == 1) "trace" else "traces"}")
 
-    // Config.log = Use_Small_Numbers.use_smallest_ints(Config.log)
+    Config.log = Use_Small_Numbers.use_smallest_ints(Config.log)
 
     val pta = Inference.make_pta(Config.log, FSet.bot_fset)
     PrettyPrinter.EFSM2dot(pta, s"pta_gen")

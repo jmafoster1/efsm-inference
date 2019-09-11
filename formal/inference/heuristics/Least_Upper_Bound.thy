@@ -606,6 +606,21 @@ fun gob :: update_modifier where
       Some (replace (drop_transitions new {|t2ID|}) t1ID gob_t)
    )"
 
+definition gung_ho_aux :: "transition \<Rightarrow> transition \<Rightarrow> transition option" where
+  "gung_ho_aux t1 t2 = (if Outputs t1 = Outputs t2 \<and> Updates t1 = Updates t2 \<and> all_literal_args t1 \<and> all_literal_args t2 then
+      Some \<lparr>Label = Label t1, Arity = Arity t1, Guard = [], Outputs = Outputs t1, Updates = Updates t1\<rparr>
+     else None)"
+
+fun gung_ho :: update_modifier where
+  "gung_ho t1ID t2ID s new old _ = (let
+     t1 = (get_by_id new t1ID);
+     t2 = (get_by_id new t2ID) in
+     case gung_ho_aux t1 t2 of
+       None \<Rightarrow> None |
+       Some gob_t \<Rightarrow> 
+      Some (replace (drop_transitions new {|t2ID|}) t1ID gob_t)
+   )"
+
 lemma guard_subset_eq_outputs_updates_subsumption:
   "Label t1 = Label t2 \<Longrightarrow>
    Arity t1 = Arity t2 \<Longrightarrow>
