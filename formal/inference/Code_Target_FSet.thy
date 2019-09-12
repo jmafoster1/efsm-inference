@@ -1,5 +1,7 @@
 theory Code_Target_FSet
-imports "../FSet_Utils"
+  imports "../FSet_Utils"
+    "HOL-ex.Quicksort"
+"Tail_Recursive_Functions.CaseStudy1"
 begin
 
 code_datatype fset_of_list
@@ -135,5 +137,62 @@ lemma [code]: "s |\<subset>| s' = (s |\<subseteq>| s' \<and> size s < size s')"
   apply standard
    apply (simp only: size_fsubset)
   by auto
+
+lemma l_sorted_sorted: "l_sorted x = sorted x"
+proof(induct x)
+  case Nil
+  then show ?case
+  by simp
+next
+  case (Cons a x)
+  then show ?case
+    apply (cases x)
+     apply simp
+    by fastforce
+qed
+
+lemma sorted_lsort: "sorted (l_sort xs)"
+proof -
+  let ?X = "(xs, [], [])"
+  have "l_sort_aux ?X \<in> l_sort_set ?X" by (rule l_sort_aux_set)
+  moreover have "l_sort_inv_1 ?X" by (rule l_sort_input_1)
+  ultimately have "l_sort_inv_1 (l_sort_aux ?X)" by (rule l_sort_invariance_1)
+  hence "l_sorted (l_sort_out (l_sort_aux ?X))" by (rule l_sort_intro_1)
+  moreover have "?X = l_sort_in xs" by (simp add: l_sort_in_def)
+  ultimately show ?thesis by (simp add: l_sort_def l_sorted_sorted)
+qed
+
+lemma lcount_count: "l_count i l = count (mset l) i"
+proof(induct l)
+  case Nil
+  then show ?case
+    by (simp add: l_count_def)
+next
+  case (Cons a l)
+  then show ?case
+    by (simp add: l_count_def)
+qed
+
+lemma lcount_lsort: "l_count x (l_sort xs) = l_count x xs"
+proof -
+  let ?X = "(xs, [], [])"
+  have "l_sort_aux ?X \<in> l_sort_set ?X" by (rule l_sort_aux_set)
+  moreover have "l_sort_inv_2 x xs ?X" by (rule l_sort_input_2)
+  ultimately have "l_sort_inv_2 x xs (l_sort_aux ?X)" by (rule l_sort_invariance_2)
+  moreover have "l_sort_form (l_sort_aux ?X)" by (rule l_sort_form_aux)
+  ultimately have "l_count x (l_sort_out (l_sort_aux ?X)) = l_count x xs"
+   by (rule l_sort_intro_2)
+  moreover have "?X = l_sort_in xs" by (simp add: l_sort_in_def)
+  ultimately show ?thesis by (simp add: l_sort_def)
+qed
+
+lemma lsort_is_sort: "sort xs = l_sort xs"
+  apply (rule properties_for_sort)
+   apply (simp add: multiset_eq_iff lcount_count[symmetric] lcount_lsort)
+  by (simp add: sorted_lsort)
+
+lemma [code]: "sorted_list_of_fset (fset_of_list L) = l_sort (remdups L)"
+  apply (simp add: sorted_list_of_fset_def sorted_list_of_set_def)
+  by (metis fset_of_list.rep_eq lsort_is_sort sorted_list_of_set_def sorted_list_of_set_sort_remdups)
 
 end

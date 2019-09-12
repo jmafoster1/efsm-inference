@@ -1,5 +1,5 @@
 theory FSet_Utils
-  imports "~~/src/HOL/Library/FSet"
+  imports "HOL-Library.FSet"
 begin
 
 syntax (ASCII)

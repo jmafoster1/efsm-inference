@@ -44,6 +44,56 @@ lemma code_list_eq [code]: "HOL.equal xs ys \<longleftrightarrow> length xs = le
   apply (simp add: HOL.equal_class.equal_eq)
   by (simp add: Ball_set list_eq_iff_zip_eq)
 
+definition take_map :: "nat \<Rightarrow> 'a list \<Rightarrow> 'a list" where
+  "take_map n l = (if length l \<le> n then l else map (\<lambda>i. l ! i) [0..<n])"
+
+lemma nth_take_map: "i < n \<Longrightarrow> take_map n xs ! i = xs ! i"
+  by (simp add: take_map_def)
+
+lemma [code]: "take n l = take_map n l"
+  by (simp add: list_eq_iff_nth_eq min_def take_map_def)
+
+fun upt_tailrec :: "nat \<Rightarrow> nat \<Rightarrow> nat list \<Rightarrow> nat list" where
+  "upt_tailrec i 0 l = l" |
+  "upt_tailrec i (Suc j) l = (if i \<le> j then upt_tailrec i j ([j]@l) else l)"
+
+
+lemma upt_arbitrary_l: "(upt i j)@l = upt_tailrec i j l"
+proof(induct i j l rule: upt_tailrec.induct)
+  case (1 i l)
+  then show ?case
+    by simp
+next
+  case (2 i j l)
+  then show ?case
+    by simp
+qed
+
+lemma [code]: "upt i j = upt_tailrec i j []"
+  by (metis upt_arbitrary_l append_Nil2)
+
+(*
+primrec insort_key :: "('b \<Rightarrow> 'a) \<Rightarrow> 'b \<Rightarrow> 'b list \<Rightarrow> 'b list" where
+"insort_key f x [] = [x]" |
+"insort_key f x (y#ys) = (if f x \<le> f y then (x#y#ys) else y#(insort_key f x ys))"
+*)
+
+lemma "Max (set (h#t)) \<in> set (h#t)"
+  using Max_eq_iff by blast
+
+function max_sort :: "('a::linorder) list \<Rightarrow> 'a list \<Rightarrow> 'a list" where
+  "max_sort [] l = l" |
+  "max_sort (h#t) l = (let u = (h#t); m = Max (set u) in max_sort (removeAll m u) (m#l))"
+  using splice.cases apply blast
+  by auto
+termination
+  apply (relation "measures [\<lambda>(l1, l2). length l1]")
+   apply simp
+  by (metis Max_eq_iff List.finite_set case_prod_conv length_removeAll_less list.distinct(1) measures_less set_empty)
+
+
+
+
 code_printing
   constant Cons \<rightharpoonup> (Scala) "_::_"
   | constant rev \<rightharpoonup> (Scala) "_.reverse"
@@ -59,6 +109,5 @@ code_printing
   | constant "ex" \<rightharpoonup> (Scala) "_.par.exists((_))"
   | constant "nth" \<rightharpoonup> (Scala) "_(Code'_Numeral.integer'_of'_nat((_)).toInt)"
   | constant "foldl" \<rightharpoonup> (Scala) "Dirties.foldl"
-
 
 end

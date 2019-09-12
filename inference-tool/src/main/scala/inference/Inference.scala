@@ -396,6 +396,9 @@ trait zero[A] {
 }
 def zero[A](implicit A: zero[A]): A = A.`Groups.zero`
 object zero {
+  implicit def `Code_Numeral.zero_integer`: zero[BigInt] = new zero[BigInt] {
+    val `Groups.zero` = BigInt(0)
+  }
   implicit def `Nat.zero_nat`: zero[Nat.nat] = new zero[Nat.nat] {
     val `Groups.zero` = Nat.zero_nata
   }
@@ -430,7 +433,36 @@ object comm_monoid_add {
   }
 }
 
+trait one[A] {
+  val `Groups.one`: A
+}
+def one[A](implicit A: one[A]): A = A.`Groups.one`
+object one {
+  implicit def `Code_Numeral.one_integer`: one[BigInt] = new one[BigInt] {
+    val `Groups.one` = Code_Numeral.one_integera
+  }
+}
+
 } /* object Groups */
+
+object Rings {
+
+trait zero_neq_one[A] extends Groups.one[A] with Groups.zero[A] {
+}
+object zero_neq_one {
+  implicit def `Code_Numeral.zero_neq_one_integer`: zero_neq_one[BigInt] = new
+    zero_neq_one[BigInt] {
+    val `Groups.zero` = BigInt(0)
+    val `Groups.one` = Code_Numeral.one_integera
+  }
+}
+
+def of_bool[A : zero_neq_one](x0: Boolean): A = x0 match {
+  case true => Groups.one[A]
+  case false => Groups.zero[A]
+}
+
+} /* object Rings */
 
 object Num {
 
@@ -470,6 +502,8 @@ def minus_nat(m: nat, n: nat): nat =
 } /* object Nat */
 
 object Code_Numeral {
+
+def one_integera: BigInt = BigInt(1)
 
 def integer_of_nat(x0: Nat.nat): BigInt = x0 match {
   case Nat.Nata(x) => x
@@ -511,6 +545,17 @@ def minus_int(k: int, l: int): int =
                    Code_Numeral.integer_of_int(l))
 
 } /* object Int */
+
+object Code_Target_List {
+
+def upt_tailrec(i: Nat.nat, j: Nat.nat, l: List[Nat.nat]): List[Nat.nat] =
+  (if (Nat.equal_nata(j, Nat.zero_nata)) l
+    else (if (Nat.less_eq_nat(i, Nat.minus_nat(j, Nat.Nata((1)))))
+           upt_tailrec(i, Nat.minus_nat(j, Nat.Nata((1))),
+                        List(Nat.minus_nat(j, Nat.Nata((1)))) ++ l)
+           else l))
+
+} /* object Code_Target_List */
 
 object Product_Type {
 
@@ -558,7 +603,7 @@ def equal_lista[A : HOL.equal](xs: List[A], ys: List[A]): Boolean =
                      (xs zip ys)))
 
 def upt(i: Nat.nat, j: Nat.nat): List[Nat.nat] =
-  (if (Nat.less_nat(i, j)) i :: upt(Nat.Suc(i), j) else Nil)
+  Code_Target_List.upt_tailrec(i, j, Nil)
 
 def fold[A, B](f: A => B => B, xs: List[A], s: B): B =
   Dirties.foldl[B, A](((x: B) => (sa: A) => (f(sa))(x)), s, xs)
@@ -610,20 +655,6 @@ def list_update[A](x0: List[A], i: Nat.nat, y: A): List[A] = (x0, i, y) match {
     (if (Nat.equal_nata(i, Nat.zero_nata)) y :: xs
       else x :: list_update[A](xs, Nat.minus_nat(i, Nat.Nata((1))), y))
 }
-
-def insort_key[A, B : Orderings.linorder](f: A => B, x: A, xa2: List[A]):
-      List[A]
-  =
-  (f, x, xa2) match {
-  case (f, x, Nil) => List(x)
-  case (f, x, y :: ys) =>
-    (if (Orderings.less_eq[B](f(x), f(y))) x :: y :: ys
-      else y :: insort_key[A, B](f, x, ys))
-}
-
-def sort_key[A, B : Orderings.linorder](f: A => B, xs: List[A]): List[A] =
-  foldr[A, List[A]](((a: A) => (b: List[A]) => insort_key[A, B](f, a, b)), xs,
-                     Nil)
 
 } /* object Lista */
 
@@ -1555,6 +1586,29 @@ def less_eq_transition_ext[A : HOL.equal : Orderings.linorder](t1:
 
 } /* object Transition_Ordering */
 
+object CaseStudy1 {
+
+def l_sort_out[A](x: (List[A], (List[A], List[A]))): List[A] = (x._2)._2
+
+def l_sort_aux[A : Orderings.linorder](x0: (List[A], (List[A], List[A]))):
+      (List[A], (List[A], List[A]))
+  =
+  x0 match {
+  case (x :: xs, (ys, Nil)) => l_sort_aux[A]((xs, (Nil, ys ++ List(x))))
+  case (x :: xs, (ys, z :: zs)) =>
+    (if (Orderings.less_eq[A](x, z))
+      l_sort_aux[A]((xs, (Nil, ys ++ (x :: z :: zs))))
+      else l_sort_aux[A]((x :: xs, (ys ++ List(z), zs))))
+  case (Nil, (ys, zs)) => (Nil, (ys, zs))
+}
+
+def l_sort_in[A](xs: List[A]): (List[A], (List[A], List[A])) = (xs, (Nil, Nil))
+
+def l_sort[A : Orderings.linorder](xs: List[A]): List[A] =
+  l_sort_out[A](l_sort_aux[A](l_sort_in[A](xs)))
+
+} /* object CaseStudy1 */
+
 object FSet {
 
 abstract sealed class fset[A]
@@ -1614,7 +1668,7 @@ def sorted_list_of_fset[A : HOL.equal : Orderings.linorder](x0: fset[A]):
       List[A]
   =
   x0 match {
-  case fset_of_list(as) => Lista.sort_key[A, A](((x: A) => x), as.distinct)
+  case fset_of_list(l) => CaseStudy1.l_sort[A](l.distinct)
 }
 
 def less_eq_fset[A : HOL.equal](x0: fset[A], a: fset[A]): Boolean = (x0, a)
@@ -1668,6 +1722,38 @@ def fis_singleton[A : HOL.equal](s: FSet.fset[A]): Boolean =
   Nat.equal_nata(FSet.size_fset[A](s), Nat.Nata((1)))
 
 } /* object FSet_Utils */
+
+object String {
+
+abstract sealed class char
+final case class
+  Char(a: Boolean, b: Boolean, c: Boolean, d: Boolean, e: Boolean, f: Boolean,
+        g: Boolean, h: Boolean)
+  extends char
+
+def integer_of_char(x0: char): BigInt = x0 match {
+  case Char(b0, b1, b2, b3, b4, b5, b6, b7) =>
+    ((((((Rings.of_bool[BigInt](b7) * BigInt(2) + Rings.of_bool[BigInt](b6)) *
+           BigInt(2) +
+          Rings.of_bool[BigInt](b5)) *
+          BigInt(2) +
+         Rings.of_bool[BigInt](b4)) *
+         BigInt(2) +
+        Rings.of_bool[BigInt](b3)) *
+        BigInt(2) +
+       Rings.of_bool[BigInt](b2)) *
+       BigInt(2) +
+      Rings.of_bool[BigInt](b1)) *
+      BigInt(2) +
+      Rings.of_bool[BigInt](b0)
+}
+
+def implode(cs: List[char]): String =
+  "" ++ (Lista.map[char,
+                    BigInt](((a: char) => integer_of_char(a)),
+                             cs)).map((k: BigInt) => if (BigInt(0) <= k && k < BigInt(128)) k.charValue else sys.error("Non-ASCII character in literal"))
+
+} /* object String */
 
 object Least_Upper_Bound {
 
@@ -5296,6 +5382,8 @@ Transition.transition_ext[Unit]),
           }),
          m))
 
+def Str(s: List[String.char]): Value.value = Value.Str(String.implode(s))
+
 def possible_steps(e: FSet.fset[((Nat.nat, Nat.nat),
                                   Transition.transition_ext[Unit])],
                     s: Nat.nat, r: Map[Nat.nat, Option[Value.value]], l: String,
@@ -5448,6 +5536,140 @@ def enumerate_ints(e: FSet.fset[((Nat.nat, Nat.nat),
                                        Transition.transition_ext[Unit])](e)))
 
 } /* object EFSM */
+
+object Equals {
+
+def equality_pairs(x0: List[GExp.gexp]): List[(Nat.nat, Value.value)] = x0 match
+  {
+  case Nil => Nil
+  case GExp.Eq(AExp.V(VName.I(n)), AExp.L(l)) :: t =>
+    (n, l) :: equality_pairs(t)
+  case GExp.Bc(v) :: t => equality_pairs(t)
+  case GExp.Eq(AExp.L(vb), va) :: t => equality_pairs(t)
+  case GExp.Eq(AExp.V(VName.R(vc)), va) :: t => equality_pairs(t)
+  case GExp.Eq(AExp.Plus(vb, vc), va) :: t => equality_pairs(t)
+  case GExp.Eq(AExp.Minus(vb, vc), va) :: t => equality_pairs(t)
+  case GExp.Eq(v, AExp.V(vb)) :: t => equality_pairs(t)
+  case GExp.Eq(v, AExp.Plus(vb, vc)) :: t => equality_pairs(t)
+  case GExp.Eq(v, AExp.Minus(vb, vc)) :: t => equality_pairs(t)
+  case GExp.Gt(v, va) :: t => equality_pairs(t)
+  case GExp.Null(v) :: t => equality_pairs(t)
+  case GExp.In(v, va) :: t => equality_pairs(t)
+  case GExp.Nor(v, va) :: t => equality_pairs(t)
+}
+
+def is_equals(t: Transition.transition_ext[Unit]): Boolean =
+  {
+    val ep: List[(Nat.nat, Value.value)] =
+      equality_pairs(Transition.Guard[Unit](t));
+    (Transition.Label[Unit](t) ==
+      "equals") && ((Nat.equal_nata(Transition.Arity[Unit](t),
+                                     Code_Numeral.nat_of_integer(BigInt(2)))) && ((Value.equal_valuea((ep(Code_Numeral.integer_of_nat(Nat.zero_nata).toInt))._2,
+                       (ep(Code_Numeral.integer_of_nat(Nat.Nata((1))).toInt))._2)) && ((Lista.equal_lista[Nat.nat](Lista.map[(Nat.nat,
+       Value.value),
+      Nat.nat](((a: (Nat.nat, Value.value)) => a._1), ep),
+                                    List(Nat.zero_nata,
+  Nat.Nata((1))))) && (Lista.equal_lista[AExp.aexp](Transition.Outputs[Unit](t),
+             List(AExp.L(EFSM.Str(List(String.Char(false, false, true, false,
+            true, true, true, false),
+String.Char(false, true, false, false, true, true, true, false),
+String.Char(true, false, true, false, true, true, true, false),
+String.Char(true, false, true, false, false, true, true, false))))))))))
+  }
+
+def gen_eq: Transition.transition_ext[Unit] =
+  Transition.transition_exta[Unit]("equals",
+                                    Code_Numeral.nat_of_integer(BigInt(2)),
+                                    List(GExp.Eq(AExp.V(VName.I(Nat.zero_nata)),
+          AExp.V(VName.I(Nat.Nata((1)))))),
+                                    List(AExp.L(EFSM.Str(List(String.Char(false,
+                                   false, true, false, true, true, true, false),
+                       String.Char(false, true, false, false, true, true, true,
+                                    false),
+                       String.Char(true, false, true, false, true, true, true,
+                                    false),
+                       String.Char(true, false, true, false, false, true, true,
+                                    false))))),
+                                    Nil, ())
+
+def equals(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
+            newa: FSet.fset[(Nat.nat,
+                              ((Nat.nat, Nat.nat),
+                                Transition.transition_ext[Unit]))],
+            old: FSet.fset[(Nat.nat,
+                             ((Nat.nat, Nat.nat),
+                               Transition.transition_ext[Unit]))],
+            uu: (FSet.fset[(Nat.nat,
+                             ((Nat.nat, Nat.nat),
+                               Transition.transition_ext[Unit]))]) =>
+                  FSet.fset[(Nat.nat,
+                              ((Nat.nat, Nat.nat),
+                                ((Transition.transition_ext[Unit], Nat.nat),
+                                  (Transition.transition_ext[Unit],
+                                    Nat.nat))))]):
+      Option[FSet.fset[(Nat.nat,
+                         ((Nat.nat, Nat.nat),
+                           Transition.transition_ext[Unit]))]]
+  =
+  {
+    val t1: Transition.transition_ext[Unit] = Inference.get_by_id(newa, t1ID)
+    val t2: Transition.transition_ext[Unit] = Inference.get_by_id(newa, t2ID);
+    (if ((is_equals(t1)) && (is_equals(t2)))
+      Some[FSet.fset[(Nat.nat,
+                       ((Nat.nat, Nat.nat),
+                         Transition.transition_ext[Unit]))]](Inference.replace(Inference.drop_transitions(newa,
+                           FSet.finsert[Nat.nat](t2ID, FSet.bot_fset[Nat.nat])),
+t1ID, gen_eq))
+      else None)
+  }
+
+def gen_neq: Transition.transition_ext[Unit] =
+  Transition.transition_exta[Unit]("equals",
+                                    Code_Numeral.nat_of_integer(BigInt(2)),
+                                    List(GExp.Eq(AExp.V(VName.I(Nat.zero_nata)),
+          AExp.V(VName.I(Nat.Nata((1)))))),
+                                    List(AExp.L(EFSM.Str(List(String.Char(false,
+                                   false, true, false, true, true, true, false),
+                       String.Char(false, true, false, false, true, true, true,
+                                    false),
+                       String.Char(true, false, true, false, true, true, true,
+                                    false),
+                       String.Char(true, false, true, false, false, true, true,
+                                    false))))),
+                                    Nil, ())
+
+def not_equals(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
+                newa: FSet.fset[(Nat.nat,
+                                  ((Nat.nat, Nat.nat),
+                                    Transition.transition_ext[Unit]))],
+                old: FSet.fset[(Nat.nat,
+                                 ((Nat.nat, Nat.nat),
+                                   Transition.transition_ext[Unit]))],
+                uu: (FSet.fset[(Nat.nat,
+                                 ((Nat.nat, Nat.nat),
+                                   Transition.transition_ext[Unit]))]) =>
+                      FSet.fset[(Nat.nat,
+                                  ((Nat.nat, Nat.nat),
+                                    ((Transition.transition_ext[Unit], Nat.nat),
+                                      (Transition.transition_ext[Unit],
+Nat.nat))))]):
+      Option[FSet.fset[(Nat.nat,
+                         ((Nat.nat, Nat.nat),
+                           Transition.transition_ext[Unit]))]]
+  =
+  {
+    val t1: Transition.transition_ext[Unit] = Inference.get_by_id(newa, t1ID)
+    val t2: Transition.transition_ext[Unit] = Inference.get_by_id(newa, t2ID);
+    (if ((is_equals(t1)) && (is_equals(t2)))
+      Some[FSet.fset[(Nat.nat,
+                       ((Nat.nat, Nat.nat),
+                         Transition.transition_ext[Unit]))]](Inference.replace(Inference.drop_transitions(newa,
+                           FSet.finsert[Nat.nat](t2ID, FSet.bot_fset[Nat.nat])),
+t1ID, gen_neq))
+      else None)
+  }
+
+} /* object Equals */
 
 object EFSM_Dot {
 

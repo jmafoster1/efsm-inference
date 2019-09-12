@@ -547,7 +547,7 @@ export_code
   step maxS add_transition
   (* Scoring functions *)
   naive_score naive_score_eq naive_score_outputs naive_score_comprehensive naive_score_comprehensive_eq_high
-  origin_states
+  origin_states equals not_equals
   (* Heuristics *)
   statewise_drop_inputs drop_inputs same_register insert_increment_2 heuristic_1
   transitionwise_drop_inputs lob gob gung_ho
