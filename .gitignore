@@ -22,3 +22,5 @@ formal/output/
 inference-tool/salfiles*
 inference-tool/dotfiles*
 *.dot
+
+pdfs/*.pdf

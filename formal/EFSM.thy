@@ -217,8 +217,14 @@ lemma accepts_step: "accepts e s d ((l, i)#t) = (\<exists>(s', T) |\<in>| possib
 
 fun accepts_prim :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> bool" where
   "accepts_prim e s d [] = True" |
-  "accepts_prim e s d ((l, i)#t) = (\<exists>(s', T) |\<in>| possible_steps e s d l i.
-         accepts_prim e s' (apply_updates (Updates T) (join_ir i d) d) t)"
+  "accepts_prim e s d ((l, i)#t) = (
+    let poss_steps = possible_steps e s d l i in
+    if fis_singleton poss_steps then
+      let (s', T) = fthe_elem poss_steps in
+      accepts_prim e s' (apply_updates (Updates T) (join_ir i d) d) t
+    else
+      (\<exists>(s', T) |\<in>| poss_steps. accepts_prim e s' (apply_updates (Updates T) (join_ir i d) d) t)
+  )"
 
 lemma accepts_prim: "\<forall>d s. accepts e s d t = accepts_prim e s d t"
 proof(induct t)
@@ -228,9 +234,9 @@ case Nil
 next
   case (Cons a t)
   then show ?case
-    using accepts_step
     apply (cases a)
-    by (simp add: accepts_step)
+    apply (simp add: accepts_step Let_def fis_singleton_alt)
+    by auto
 qed
 
 abbreviation "rejects e s d t \<equiv> \<not> accepts e s d t"

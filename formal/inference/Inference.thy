@@ -220,9 +220,17 @@ lemma satisfies_trace_step: "satisfies_trace e s d ((l, i, p)#t) = (\<exists>(s'
 
 fun satisfies_trace_prim :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
   "satisfies_trace_prim _ _ _ [] = True" |
-  "satisfies_trace_prim e s d ((l, i, p)#t) = (\<exists>(s', T) |\<in>| possible_steps e s d l i.
+  "satisfies_trace_prim e s d ((l, i, p)#t) = (
+    let poss_steps = possible_steps e s d l i in
+    if fis_singleton poss_steps then
+      let (s', T) = fthe_elem poss_steps in
+      if apply_outputs (Outputs T) (join_ir i d) = (map Some p) then
+        satisfies_trace_prim e s' (apply_updates (Updates T) (join_ir i d) d) t
+      else False
+    else
+      (\<exists>(s', T) |\<in>| poss_steps.
          apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
-         satisfies_trace_prim e s' (apply_updates (Updates T) (join_ir i d) d) t)"
+         satisfies_trace_prim e s' (apply_updates (Updates T) (join_ir i d) d) t))"
 
 lemma satisfies_trace_prim: "\<forall>s d. satisfies_trace e s d l = satisfies_trace_prim e s d l"
 proof(induct l)
@@ -233,7 +241,8 @@ next
 case (Cons a l)
   then show ?case
     apply (cases a)
-    by (simp add: satisfies_trace_step)
+    apply (simp add: satisfies_trace_step Let_def fis_singleton_alt)
+    by auto
 qed
 
 definition satisfies :: "execution set \<Rightarrow> transition_matrix \<Rightarrow> bool" where

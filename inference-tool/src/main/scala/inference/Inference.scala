@@ -2528,23 +2528,44 @@ def satisfies_trace_prim(uu: FSet.fset[((Nat.nat, Nat.nat),
   (uu, uv, uw, x3) match {
   case (uu, uv, uw, Nil) => true
   case (e, s, d, (l, (i, p)) :: t) =>
-    (FSet.fBex[(Nat.nat,
-                 Transition.transition_ext[Unit])](EFSM.possible_steps(e, s, d,
-                                l, i))).apply(((a:
-          (Nat.nat, Transition.transition_ext[Unit]))
-         =>
+    {
+      val poss_steps: FSet.fset[(Nat.nat, Transition.transition_ext[Unit])] =
+        EFSM.possible_steps(e, s, d, l, i);
+      (if (FSet_Utils.fis_singleton[(Nat.nat,
+                                      Transition.transition_ext[Unit])](poss_steps))
         {
-          val (sa, ta): (Nat.nat, Transition.transition_ext[Unit]) = a;
-          (Lista.equal_lista[Option[Value.value]](EFSM.apply_outputs(Transition.Outputs[Unit](ta),
-                              AExp.join_ir(i, d)),
-           Lista.map[Value.value,
-                      Option[Value.value]](((aa: Value.value) =>
-     Some[Value.value](aa)),
-    p))) && (satisfies_trace_prim(e, sa,
-                                   EFSM.apply_updates(Transition.Updates[Unit](ta),
-               AExp.join_ir(i, d), d),
-                                   t))
-        }))
+          val (sa, ta): (Nat.nat, Transition.transition_ext[Unit]) =
+            FSet.fthe_elem[(Nat.nat,
+                             Transition.transition_ext[Unit])](poss_steps);
+          (if (Lista.equal_lista[Option[Value.value]](EFSM.apply_outputs(Transition.Outputs[Unit](ta),
+                                  AExp.join_ir(i, d)),
+               Lista.map[Value.value,
+                          Option[Value.value]](((a: Value.value) =>
+         Some[Value.value](a)),
+        p)))
+            satisfies_trace_prim(e, sa,
+                                  EFSM.apply_updates(Transition.Updates[Unit](ta),
+              AExp.join_ir(i, d), d),
+                                  t)
+            else false)
+        }
+        else (FSet.fBex[(Nat.nat,
+                          Transition.transition_ext[Unit])](poss_steps)).apply(((a:
+   (Nat.nat, Transition.transition_ext[Unit]))
+  =>
+ {
+   val (sa, ta): (Nat.nat, Transition.transition_ext[Unit]) = a;
+   (Lista.equal_lista[Option[Value.value]](EFSM.apply_outputs(Transition.Outputs[Unit](ta),
+                       AExp.join_ir(i, d)),
+    Lista.map[Value.value,
+               Option[Value.value]](((aa: Value.value) =>
+                                      Some[Value.value](aa)),
+                                     p))) && (satisfies_trace_prim(e, sa,
+                            EFSM.apply_updates(Transition.Updates[Unit](ta),
+        AExp.join_ir(i, d), d),
+                            t))
+ })))
+    }
 }
 
 def satisfies_trace(e: FSet.fset[((Nat.nat, Nat.nat),
@@ -5372,18 +5393,32 @@ def accepts_prim(e: FSet.fset[((Nat.nat, Nat.nat),
   (e, s, d, x3) match {
   case (e, s, d, Nil) => true
   case (e, s, d, (l, i) :: t) =>
-    (FSet.fBex[(Nat.nat,
-                 Transition.transition_ext[Unit])](possible_steps(e, s, d, l,
-                           i))).apply(((a:
-  (Nat.nat, Transition.transition_ext[Unit]))
- =>
-{
-  val (sa, ta): (Nat.nat, Transition.transition_ext[Unit]) = a;
-  accepts_prim(e, sa,
-                apply_updates(Transition.Updates[Unit](ta), AExp.join_ir(i, d),
-                               d),
-                t)
-}))
+    {
+      val poss_steps: FSet.fset[(Nat.nat, Transition.transition_ext[Unit])] =
+        possible_steps(e, s, d, l, i);
+      (if (FSet_Utils.fis_singleton[(Nat.nat,
+                                      Transition.transition_ext[Unit])](poss_steps))
+        {
+          val (sa, ta): (Nat.nat, Transition.transition_ext[Unit]) =
+            FSet.fthe_elem[(Nat.nat,
+                             Transition.transition_ext[Unit])](poss_steps);
+          accepts_prim(e, sa,
+                        apply_updates(Transition.Updates[Unit](ta),
+                                       AExp.join_ir(i, d), d),
+                        t)
+        }
+        else (FSet.fBex[(Nat.nat,
+                          Transition.transition_ext[Unit])](poss_steps)).apply(((a:
+   (Nat.nat, Transition.transition_ext[Unit]))
+  =>
+ {
+   val (sa, ta): (Nat.nat, Transition.transition_ext[Unit]) = a;
+   accepts_prim(e, sa,
+                 apply_updates(Transition.Updates[Unit](ta), AExp.join_ir(i, d),
+                                d),
+                 t)
+ })))
+    }
 }
 
 def accepts(e: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
