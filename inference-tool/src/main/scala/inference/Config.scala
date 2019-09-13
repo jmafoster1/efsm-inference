@@ -30,6 +30,7 @@ case class Config(
   skip: Boolean = false,
   logLevel: Level = Level.DEBUG,
   logFile: String = "log",
+  smallInts: Boolean = false,
   k: Int = 0)
 
 object Config {
@@ -107,6 +108,9 @@ object Config {
       opt[Unit]("skip")
         .action((_, c) => c.copy(skip = true))
         .text("Set this flag to skip some model checking tests which should be trivially true"),
+      opt[Unit]("small")
+        .action((_, c) => c.copy(skip = true))
+        .text("Set this flag to map integers down to smaller values"),
       opt[Level]('l', "level")
         .valueName("level")
         .action((x, c) => c.copy(logLevel = x))

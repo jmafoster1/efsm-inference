@@ -7,6 +7,17 @@ import scala.collection.mutable.ListBuffer
 
 object FrontEnd {
   def main(args: Array[String]): Unit = {
+    // implicit def `Int.equal`: HOL.equal[Int] = new HOL.equal[Int] {
+    //   val `HOL.equal` = (a: Int, b: Int) => a == b
+    // }
+    // implicit def `Int.ord_nat`: Orderings.linorder[Int] = new Orderings.linorder[Int] {
+    //   val `Orderings.less_eq` = (a: Int, b: Int) => a < b
+    //   val `Orderings.less` = (a: Int, b: Int) => a <= b
+    // }
+    //
+    // println(FSet.sorted_list_of_fset(FSet.fset_of_list((1 to 476349).reverse.toList)))
+    // println(List(1, 2, 3, 2, 5, 4, 5, 5, 10).sortWith((Orderings.less)))
+
 
     val t1 = System.nanoTime
     Config.parseArgs(args)
@@ -14,10 +25,12 @@ object FrontEnd {
     Log.root.info(args.mkString(" "))
     Log.root.info(s"Building PTA - ${Config.log.length} ${if (Config.log.length == 1) "trace" else "traces"}")
 
-    Config.log = Use_Small_Numbers.use_smallest_ints(Config.log)
+    if (Config.config.smallInts) {
+      Config.log = Use_Small_Numbers.use_smallest_ints(Config.log)
+    }
 
-    val pta = Inference.make_pta(Config.log, FSet.bot_fset)
-    PrettyPrinter.EFSM2dot(pta, s"pta_gen")
+    // val pta = Inference.make_pta(Config.log, FSet.bot_fset)
+    // PrettyPrinter.EFSM2dot(pta, s"pta_gen")
 
     val inferred = Inference.learn(
       Nat.Nata(Config.config.k),
@@ -26,7 +39,7 @@ object FrontEnd {
       Config.heuristics,
       Config.config.nondeterminismMetric)
 
-    TypeConversion.doubleEFSMToSALTranslator(pta, "pta", inferred, "vend1", "compositionTest")
+    // TypeConversion.doubleEFSMToSALTranslator(pta, "pta", inferred, "vend1", "compositionTest")
 
     Log.root.info("The inferred machine is " +
       (if (Inference.nondeterministic(Inference.toiEFSM(inferred), Inference.nondeterministic_pairs)) "non" else "") + "deterministic")

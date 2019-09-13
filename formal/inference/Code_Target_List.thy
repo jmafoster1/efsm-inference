@@ -91,8 +91,19 @@ termination
    apply simp
   by (metis Max_eq_iff List.finite_set case_prod_conv length_removeAll_less list.distinct(1) measures_less set_empty)
 
-
-
+lemma remdups_fold: "remdups l = foldr (\<lambda>i l. if i \<in> set l then l else i#l) l []"
+proof(induct l)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a l)
+  then show ?case
+    apply (simp)
+    apply standard
+     apply (metis set_remdups)
+    using set_remdups by fastforce
+qed
 
 code_printing
   constant Cons \<rightharpoonup> (Scala) "_::_"

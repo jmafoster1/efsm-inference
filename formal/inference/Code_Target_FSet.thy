@@ -1,7 +1,5 @@
 theory Code_Target_FSet
   imports "../FSet_Utils"
-    "HOL-ex.Quicksort"
-"Tail_Recursive_Functions.CaseStudy1"
 begin
 
 code_datatype fset_of_list
@@ -96,9 +94,6 @@ qed
 lemma fMax_fold [code]: "fMax (fset_of_list (a#as)) = fold max as a"
   by (metis Max.set_eq_fold fMax.F.rep_eq fset_of_list.rep_eq)
 
-lemma sorted_list_of_fset_sort [code]: "sorted_list_of_fset (fset_of_list as) = sort (remdups as)"
-  by (metis fset_of_list.rep_eq sorted_list_of_fset.rep_eq sorted_list_of_set_sort_remdups)
-
 lemma fremove_code [code]: "fremove a (fset_of_list A) = fset_of_list (filter (\<lambda>x. x \<noteq> a) A)"
   apply (simp add: fremove_def minus_fset_def ffilter_def fset_both_sides Abs_fset_inverse fset_of_list.rep_eq)
   by auto
@@ -133,66 +128,27 @@ lemma code_fset_eq [code]: "HOL.equal X (fset_of_list Y) \<longleftrightarrow> s
   apply (simp only: size)
   using fmember by fastforce
 
-lemma [code]: "s |\<subset>| s' = (s |\<subseteq>| s' \<and> size s < size s')"
+lemma code_fsubset [code]: "s |\<subset>| s' = (s |\<subseteq>| s' \<and> size s < size s')"
   apply standard
    apply (simp only: size_fsubset)
   by auto
 
-lemma l_sorted_sorted: "l_sorted x = sorted x"
-proof(induct x)
-  case Nil
-  then show ?case
-  by simp
-next
-  case (Cons a x)
-  then show ?case
-    apply (cases x)
-     apply simp
-    by fastforce
-qed
+lemma code_fset [code]: "fset (fset_of_list l) = fold insert l {}"
+  using fset_of_list.rep_eq union_set_fold by fastforce
 
-lemma sorted_lsort: "sorted (l_sort xs)"
-proof -
-  let ?X = "(xs, [], [])"
-  have "l_sort_aux ?X \<in> l_sort_set ?X" by (rule l_sort_aux_set)
-  moreover have "l_sort_inv_1 ?X" by (rule l_sort_input_1)
-  ultimately have "l_sort_inv_1 (l_sort_aux ?X)" by (rule l_sort_invariance_1)
-  hence "l_sorted (l_sort_out (l_sort_aux ?X))" by (rule l_sort_intro_1)
-  moreover have "?X = l_sort_in xs" by (simp add: l_sort_in_def)
-  ultimately show ?thesis by (simp add: l_sort_def l_sorted_sorted)
-qed
+lemma code_fBall [code]: "fBall (fset_of_list l) f = list_all f l"
+  by (simp add: Ball_set fBall.rep_eq fset_of_list.rep_eq)
 
-lemma lcount_count: "l_count i l = count (mset l) i"
-proof(induct l)
-  case Nil
-  then show ?case
-    by (simp add: l_count_def)
-next
-  case (Cons a l)
-  then show ?case
-    by (simp add: l_count_def)
-qed
+lemma code_fBex [code]: "fBex (fset_of_list l) f = list_ex f l"
+  by (meson Bex_set fBexE fset_of_list_elem rev_fBexI)
 
-lemma lcount_lsort: "l_count x (l_sort xs) = l_count x xs"
-proof -
-  let ?X = "(xs, [], [])"
-  have "l_sort_aux ?X \<in> l_sort_set ?X" by (rule l_sort_aux_set)
-  moreover have "l_sort_inv_2 x xs ?X" by (rule l_sort_input_2)
-  ultimately have "l_sort_inv_2 x xs (l_sort_aux ?X)" by (rule l_sort_invariance_2)
-  moreover have "l_sort_form (l_sort_aux ?X)" by (rule l_sort_form_aux)
-  ultimately have "l_count x (l_sort_out (l_sort_aux ?X)) = l_count x xs"
-   by (rule l_sort_intro_2)
-  moreover have "?X = l_sort_in xs" by (simp add: l_sort_in_def)
-  ultimately show ?thesis by (simp add: l_sort_def)
-qed
+definition "nativeSort = sort"
+code_printing constant nativeSort \<rightharpoonup> (Scala) "_.sortWith((Orderings.less))"
 
-lemma lsort_is_sort: "sort xs = l_sort xs"
-  apply (rule properties_for_sort)
-   apply (simp add: multiset_eq_iff lcount_count[symmetric] lcount_lsort)
-  by (simp add: sorted_lsort)
+lemma sorted_list_of_fset_sort: "sorted_list_of_fset (fset_of_list as) = sort (remdups as)"
+  by (metis fset_of_list.rep_eq sorted_list_of_fset.rep_eq sorted_list_of_set_sort_remdups)
 
-lemma [code]: "sorted_list_of_fset (fset_of_list L) = l_sort (remdups L)"
-  apply (simp add: sorted_list_of_fset_def sorted_list_of_set_def)
-  by (metis fset_of_list.rep_eq lsort_is_sort sorted_list_of_set_def sorted_list_of_set_sort_remdups)
+lemma [code]: "sorted_list_of_fset (fset_of_list l) = nativeSort (remdups l)"
+  by (simp add: nativeSort_def sorted_list_of_fset_sort)
 
 end

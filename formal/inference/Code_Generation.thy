@@ -382,9 +382,6 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
     else dirty_directly_subsumes m1 m2 s s' t1 t2
   )"
 
-definition "mprotect = \<lparr>Label = STR ''mprotect'', Arity = 3, Guard = [Eq (V (I 0)) (L (Num 140116919701504)), Eq (V (I 1)) (L (Num 2093056)), Eq (V (I 1)) (L (Str ''PROT_NONE''))], Outputs = [L (Num 0)], Updates = []\<rparr>"
-definition "mprotect_dropped = \<lparr>Label = STR ''mprotect'', Arity = 3, Guard = [], Outputs = [L (Num 0)], Updates = []\<rparr>"
-
 lemma if_elim: "c \<longrightarrow> a = d \<Longrightarrow> \<not> c \<longrightarrow> d = b \<Longrightarrow> d = (if c then a else b)"
   by simp
 
