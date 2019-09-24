@@ -7,7 +7,7 @@ import Types._
 
 object Heuristics extends Enumeration {
   type Heuristic = Value
-  val store, inc, same, ignore, ignoret, ignores, lob, gob, gungho, eq, neq = Value
+  val store, inputgen, inc, same, ignore, ignoret, ignores, lob, gob, gungho, eq, neq = Value
 }
 
 object Nondeterminisms extends Enumeration {
@@ -135,6 +135,7 @@ object Config {
         this.log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)))
         val heuristics = scala.collection.immutable.Map(
           Heuristics.store -> Store_Reuse.heuristic_1(log),
+          Heuristics.inputgen -> Store_Reuse.heuristic_2(log),
           Heuristics.inc -> (Increment_Reset.insert_increment_2 _).curried,
           Heuristics.same -> (Same_Register.same_register _).curried,
           Heuristics.ignore -> (Ignore_Inputs.drop_inputs _).curried,

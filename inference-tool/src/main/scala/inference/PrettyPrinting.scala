@@ -123,7 +123,7 @@ object PrettyPrinter {
   }
 
   def iEFSM2dot(e: IEFSM, f: Nat.nat) = {
-    val pw = new PrintWriter(new File(f"${Config.config.dotfiles}/step_${Code_Numeral.integer_of_nat(f)}%2d.dot"))
+    val pw = new PrintWriter(new File(f"${Config.config.dotfiles}/step_${Code_Numeral.integer_of_nat(f)}%02d.dot"))
     pw.write(EFSM_Dot.iefsm2dot(e))
     pw.close
   }

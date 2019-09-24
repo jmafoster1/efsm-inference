@@ -1,0 +1,10 @@
+[
+[
+    {"label":"request","inputs":["user_id", "date_range"],"outputs":[]},
+    {"label":"approve","inputs":["user_id"],"outputs":[]}
+],
+[
+  {"label":"request","inputs":["user_id_2", "date_range_2"],"outputs":[]},
+  {"label":"approve","inputs":["user_id_2"],"outputs":[]}
+]
+]

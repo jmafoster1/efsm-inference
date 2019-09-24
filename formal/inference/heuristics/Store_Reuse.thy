@@ -197,4 +197,54 @@ definition is_proper_generalisation_of :: "transition \<Rightarrow> transition \
                                         (\<forall>u \<in> set (Updates t). fst u \<noteq> r) \<and>
                                         (\<forall>i \<le> max_input e. \<forall>u \<in> set (Updates t). fst u \<noteq> r)
                                        )"
+
+(* Recognising the same input used in multiple guards *)
+definition generalise_input :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
+  "generalise_input t r i = \<lparr>
+      Label = Label t,
+      Arity = Arity t,
+      Guard = map (\<lambda>g. case g of Eq (V (I i')) (L _) \<Rightarrow> if i = i' then Eq (V (I i)) (V (R r)) else g | _ \<Rightarrow> g) (Guard t),
+      Outputs = Outputs t,
+      Updates = Updates t
+    \<rparr>"
+
+fun structural_count :: "((transition \<times> ioTag \<times> nat) \<times> (transition \<times> ioTag \<times> nat)) \<Rightarrow> ((transition \<times> ioTag \<times> nat) \<times> (transition \<times> ioTag \<times> nat)) list \<Rightarrow> nat" where
+  "structural_count _ [] = 0" |
+  "structural_count a (((t1', io1', i1'), (t2', io2', i2'))#t) = (
+    let ((t1, io1, i1), (t2, io2, i2)) = a in
+    if same_structure t1 t1' \<and> same_structure t2 t2' \<and>
+       io1 = io1' \<and> io2 = io2' \<and>
+       i1 = i1' \<and> i2 = i2'
+    then
+      1+(structural_count a t)
+    else
+      structural_count a t
+    )"
+
+definition remove_guards_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
+  "remove_guards_add_update t inputX outputX = \<lparr>
+    Label = (Label t), Arity = (Arity t),
+    Guard = [],
+    Outputs = (Outputs t),
+    Updates = (outputX, (V (vname.I inputX)))#(Updates t)
+  \<rparr>"
+
+definition modify_2 :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+  "modify_2 matches u1 u2 old = (let relevant = filter (\<lambda>(((_, u1'), io, _), (_, u2'), io', _). io = In \<and> io' = In \<and> (u1 = u1' \<or> u2 = u1' \<or> u1 = u2' \<or> u2 = u2')) matches;
+                                   newReg = case max_reg old of None \<Rightarrow> 1 | Some r \<Rightarrow> r + 1;
+                                   replacements = map (\<lambda>(((t1, u1), io1, inx1), (t2, u2), io2, inx2).
+                                                  (((remove_guards_add_update t1 inx1 newReg, u1), io1, inx1),
+                                                    (generalise_input t2 newReg inx2, u2), io2, inx2)) relevant;
+                                   comparisons = zip relevant replacements;
+                                   stripped_replacements = map strip_uids replacements;
+                                   to_replace = filter (\<lambda>(_, s). structural_count (strip_uids s) stripped_replacements > 1) comparisons in
+                                if to_replace = [] then None else Some ((generalise_transitions to_replace old))
+                              )"
+
+(* type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option" *)
+definition heuristic_2 :: "log \<Rightarrow> update_modifier" where
+  "heuristic_2 l = (\<lambda>t1 t2 s new old np. let newEFSMopt = (modify_2 (find_intertrace_matches l old) t1 t2 new) in
+                                      case newEFSMopt of None \<Rightarrow> None |
+                                                      Some newEFSM \<Rightarrow> resolve_nondeterminism (sorted_list_of_fset (nondeterministic_pairs newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np)"
+
 end                                                   
