@@ -126,8 +126,90 @@ fun maxS :: "transition_matrix \<Rightarrow> nat" where
 type_synonym execution = "(label \<times> value list \<times> value list) list"
 type_synonym log = "execution list"
 
-definition add_transition :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> String.literal \<Rightarrow> value list \<Rightarrow> value list \<Rightarrow> transition_matrix" where
+definition add_transition :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> label \<Rightarrow> value list \<Rightarrow> value list \<Rightarrow> transition_matrix" where
   "add_transition e s label inputs outputs = finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e"
+
+definition startsWith :: "String.literal \<Rightarrow> String.literal \<Rightarrow> bool" where
+  "startsWith string start = (\<exists>s'. string = start + s')"
+
+fun nat_of_char :: "char \<Rightarrow> nat" where
+  "nat_of_char CHR ''0'' = 0" |
+  "nat_of_char CHR ''1'' = 1" |
+  "nat_of_char CHR ''2'' = 2" |
+  "nat_of_char CHR ''3'' = 3" |
+  "nat_of_char CHR ''4'' = 4" |
+  "nat_of_char CHR ''5'' = 5" |
+  "nat_of_char CHR ''6'' = 6" |
+  "nat_of_char CHR ''7'' = 7" |
+  "nat_of_char CHR ''8'' = 8" |
+  "nat_of_char CHR ''9'' = 9"
+
+definition parseNat :: "string \<Rightarrow> nat" where
+  "parseNat s = (let
+    nats = map nat_of_char s;
+    zipped = enumerate 0 (rev nats) in
+    fold (\<lambda>(index, value) total. total + (value * (10 ^ index))) zipped 0
+  )"
+
+definition parseInt :: "String.literal \<Rightarrow> int" where
+  "parseInt s = (if startsWith s STR ''-'' then -(int (parseNat (String.explode s))) else int (parseNat (String.explode s)))"
+
+declare parseInt_def [code del]
+code_printing constant parseInt \<rightharpoonup> (Scala) "Int.Int((BigInt(_.toInt)))"
+
+definition substring :: "String.literal \<Rightarrow> nat \<Rightarrow> String.literal" where
+  "substring s n = String.implode (drop n (String.explode s))"
+
+declare substring_def [code del]
+code_printing constant "substring" \<rightharpoonup> (Scala) "_.substring((Code'_Numeral.integer'_of'_nat(_)))"
+
+primrec make_guard_abstract :: "value list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (String.literal \<Rightarrow>f nat option) \<Rightarrow> gexp list \<Rightarrow> update_function list \<Rightarrow> (gexp list \<times> update_function list \<times> (String.literal \<Rightarrow>f nat option))" where
+  "make_guard_abstract [] _ _ r G U = (G, U, r)" |
+  "make_guard_abstract (h#t) i maxR r G U = (
+    case h of
+      value.Num _ \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Eq (V (vname.I i)) (L h))#G) U |
+      value.Str s \<Rightarrow>
+        if s = STR ''_'' then
+          make_guard_abstract t (i+1) maxR r G U
+        else if startsWith s STR ''$'' then
+          case r $ s of
+            None \<Rightarrow> make_guard_abstract t (i+1) (maxR + 1) (r(s := maxR)) G ((maxR, V (I i))#U) |
+            Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Eq (V (vname.I i)) (V (R reg)))#G) U
+        else if startsWith s STR ''<'' then
+          if startsWith (substring s 1) STR ''$'' then
+            case r $ (substring s 1) of
+              Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (V (R reg)))#G) U
+          else
+            make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (L (Num (parseInt (substring s 2)))))#G) U
+        else if startsWith s STR ''/='' then
+          if startsWith (substring s 1) STR ''$'' then
+            case r $ (substring s 2) of
+              Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (V (R reg)))#G) U
+          else
+            make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (L (Num (parseInt (substring s 3)))))#G) U
+        else
+          make_guard_abstract t (i+1) maxR r ((Eq (V (vname.I i)) (L h))#G) U
+  )"
+
+primrec make_outputs_abstract :: "value list \<Rightarrow> nat \<Rightarrow> (String.literal \<Rightarrow>f nat option) \<Rightarrow> output_function list \<Rightarrow> output_function list" where
+  "make_outputs_abstract []_ _ P = rev P" |
+  "make_outputs_abstract (h#t) maxR r P = (case h of
+    value.Num _ \<Rightarrow> make_outputs_abstract t maxR r ((L h)#P) |
+    value.Str s \<Rightarrow>
+      if startsWith s STR ''$'' then 
+        case r $ s of
+          Some reg \<Rightarrow> make_outputs_abstract t maxR r ((V (R reg))#P)
+      else
+        make_outputs_abstract t maxR r ((L h)#P)
+    )"
+
+definition add_transition_abstract :: "transition_matrix \<Rightarrow> (String.literal \<Rightarrow>f nat option) \<Rightarrow> cfstate \<Rightarrow> label \<Rightarrow> value list \<Rightarrow> value list \<Rightarrow> (transition_matrix \<times> (String.literal \<Rightarrow>f nat option))" where
+  "add_transition_abstract e r s label inputs outputs = (let
+    regs = fimage (comp total_max_reg snd) e;
+    maxR = (if regs = {||} then 1 else fMax regs);
+    (G, U1, r') = make_guard_abstract inputs 0 maxR r [] [];
+    P = make_outputs_abstract outputs maxR r' [] in
+    (finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=G, Outputs=P, Updates=U1\<rparr>) e, r'))"
 
 fun make_branch :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> transition_matrix" where
   "make_branch e _ _ [] = e" |
@@ -142,9 +224,25 @@ fun make_branch :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> regist
           make_branch (add_transition e s label inputs outputs) ((maxS e)+1) r t
     )"
 
+fun make_branch_abstract :: "(transition_matrix \<times> (String.literal \<Rightarrow>f nat option)) \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> transition_matrix" where
+  "make_branch_abstract (e, r) _ _ [] = e" |
+  "make_branch_abstract (e, r1) s r ((label, inputs, outputs)#t) =
+    (case (step e s r label inputs) of
+      Some (transition, s', outputs', updated) \<Rightarrow> 
+        if outputs' = (map Some outputs) then
+          make_branch_abstract (e, r1) s' updated t
+        else 
+          make_branch_abstract (add_transition_abstract e r1 s label inputs outputs) ((maxS e)+1) r t  |
+      None \<Rightarrow>
+          make_branch_abstract (add_transition_abstract e r1 s label inputs outputs) ((maxS e)+1) r t
+    )"
+
 primrec make_pta :: "log \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
   "make_pta [] e = e" |
   "make_pta (h#t) e = make_pta t (make_branch e 0 <> h)"
+
+definition make_pta_abstract :: "log \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
+  "make_pta_abstract l e = fold (\<lambda>h e. make_branch_abstract (e, <>) 0 <> h) l e"
 
 lemma make_pta_fold_all_e: "\<forall>e. make_pta l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
 proof(induct l)
@@ -416,10 +514,9 @@ fun make_smaller_val :: "nat list \<Rightarrow> value \<Rightarrow> value" where
   "make_smaller_val _ (value.Str s) = value.Str s" |
   "make_smaller_val s (Num n) = Num (make_smaller n s)"
 
-definition learn :: "nat \<Rightarrow> log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> transition_matrix" where
-  "learn n l r m np = (
-     let pta = make_pta l {||};
-         check = satisfies (set l) in
+definition learn :: "nat \<Rightarrow> transition_matrix \<Rightarrow> log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> transition_matrix" where
+  "learn n pta l r m np = (
+     let check = satisfies (set l) in
          (tm (infer n (toiEFSM pta) r m check np))
    )"
 

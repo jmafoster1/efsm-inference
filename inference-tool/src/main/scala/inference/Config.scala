@@ -22,6 +22,7 @@ object Strategies extends Enumeration {
 
 case class Config(
   heuristics: Seq[Heuristics.Heuristic] = Seq(),
+  abs: Boolean = false,
   file: File = null,
   outputname: String = null,
   dotfiles: String = "dotfiles",
@@ -111,6 +112,9 @@ object Config {
       opt[Unit]("small")
         .action((_, c) => c.copy(skip = true))
         .text("Set this flag to map integers down to smaller values"),
+      opt[Unit]("abstract")
+        .action((_, c) => c.copy(abs = true))
+        .text("Set this flag to use abstract traces"),
       opt[Level]('l', "level")
         .valueName("level")
         .action((x, c) => c.copy(logLevel = x))

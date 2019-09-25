@@ -23,7 +23,7 @@ stepwise-dot:
 	  dot -T pdf -o $$b.pdf $$b.dot ; \
 	done
 	@ pdftk dotfiles/*.pdf cat output dotfiles/steps.pdf
-	@ for b in $(basename $(shell find ./ -type f -name '*.dot')) ; do \
+	@ for b in $(basename $(shell find . -path ./pdfs -prune -o -name '*.dot' -print)) ; do \
 	  rm $$b.pdf ; \
 	done
 

@@ -4,6 +4,7 @@ import com.microsoft.z3
 import java.io._
 import org.apache.commons.io.FilenameUtils
 import scala.collection.mutable.ListBuffer
+import Types._
 
 object FrontEnd {
   def main(args: Array[String]): Unit = {
@@ -29,17 +30,25 @@ object FrontEnd {
       Config.log = Use_Small_Numbers.use_smallest_ints(Config.log)
     }
 
-    // val pta = Inference.make_pta(Config.log, FSet.bot_fset)
-    // PrettyPrinter.EFSM2dot(pta, s"pta_gen")
+    var pta: TransitionMatrix = null;
+
+    if (Config.config.abs) {
+      pta = Inference.make_pta_abstract(Config.log, FSet.bot_fset)
+    }
+    else {
+      pta = Inference.make_pta(Config.log, FSet.bot_fset)
+    }
+    PrettyPrinter.EFSM2dot(pta, s"pta_gen")
 
     try {
       val inferred = Inference.learn(
         Nat.Nata(Config.config.k),
+        pta,
         Config.log,
         Config.config.strategy,
         Config.heuristics,
         Config.config.nondeterminismMetric)
-        
+
         // TypeConversion.doubleEFSMToSALTranslator(pta, "pta", inferred, "vend1", "compositionTest")
 
         Log.root.info("The inferred machine is " +

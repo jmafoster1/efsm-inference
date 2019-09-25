@@ -59,7 +59,7 @@ aspect Trace{
 		logger.log(Level.FINE, event.toString());
 	}
 
-	before() : execution(* org.jfree.chart.renderer.category.junit.AbstractCategoryItemRendererTests.*(..)) && !cflow(within(Trace)) {
+	before() : execution(* *.junit.*.*(..)) && !cflow(within(Trace)) {
 		setupLogger();
 		logger.log(Level.FINE, "[TRACE]");
 	}

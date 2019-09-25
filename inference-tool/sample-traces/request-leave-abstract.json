@@ -1,0 +1,6 @@
+[
+  [
+      {"label":"request","inputs":["$user_id", "test"],"outputs":[]},
+      {"label":"approve","inputs":["$user_id"],"outputs":[]}
+  ]
+]

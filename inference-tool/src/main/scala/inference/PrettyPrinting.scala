@@ -122,7 +122,13 @@ object PrettyPrinter {
     return better.mkString(", \n")
   }
 
+  var padTo = 2
+
   def iEFSM2dot(e: IEFSM, f: Nat.nat) = {
+    val newPad = Code_Numeral.integer_of_nat(FSet.size_fset(EFSM.S(Inference.tm(e)))).toString.length
+    if (newPad > padTo) {
+      padTo = newPad
+    }
     val pw = new PrintWriter(new File(f"${Config.config.dotfiles}/step_${Code_Numeral.integer_of_nat(f)}%02d.dot"))
     pw.write(EFSM_Dot.iefsm2dot(e))
     pw.close

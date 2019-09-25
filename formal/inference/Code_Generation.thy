@@ -535,13 +535,16 @@ lemma [code]: "satisfies_trace e s d l = satisfies_trace_prim e s d l"
 lemma [code]: "accepts e s d t = accepts_prim e s d t"
   by (simp add: accepts_prim)
 
-declare make_branch.simps [code del]
-code_printing constant "make_branch" \<rightharpoonup> (Scala) "Dirties.makeBranch"
+(* declare make_branch.simps [code del] *)
+(* code_printing constant "make_branch" \<rightharpoonup> (Scala) "Dirties.makeBranch" *)
+
+declare startsWith_def [code del]
+code_printing constant startsWith \<rightharpoonup> (Scala) "_.startsWith((_))"
 
 export_code
   (* Essentials *)
   try_heuristics try_heuristics_check aexp_type_check learn infer_types nondeterministic input_updates_register
-  step maxS add_transition
+  step maxS add_transition make_pta make_pta_abstract
   (* Scoring functions *)
   naive_score naive_score_eq naive_score_outputs naive_score_comprehensive naive_score_comprehensive_eq_high
   origin_states equals not_equals
