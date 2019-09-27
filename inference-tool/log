@@ -1,6 +1,0 @@
-15:59:10.125 [main] INFO  ROOT - --abstract sample-traces/request-leave-abstract.json
-15:59:10.127 [main] INFO  ROOT - Building PTA - 1 trace
-15:59:10.269 [main] INFO  ROOT - The inferred machine is deterministic
-15:59:10.310 [main] INFO  ROOT - Completed in 0h 0m 0.697975403s
-15:59:10.314 [main] INFO  ROOT - states: Nata(3)
-15:59:10.314 [main] INFO  ROOT - transitions: Nata(2)

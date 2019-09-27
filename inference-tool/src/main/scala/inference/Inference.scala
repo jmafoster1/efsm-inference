@@ -3733,10 +3733,10 @@ def make_guard_abstract(x0: List[Value.value], uu: Nat.nat, uv: Nat.nat,
     maxR, r, GExp.Eq(AExp.V(VName.I(i)), AExp.V(VName.R(reg))) :: g, u)
                    })
                   else (if (s.startsWith("<"))
-                         (if ((s.substring((Code_Numeral.integer_of_natNat.Nata((1))))).startsWith("$"))
+                         (if ((s.substring(Code_Numeral.integer_of_nat(Nat.Nata((1))).toInt)).startsWith("$"))
                            {
                              val (Some(reg)): Option[Nat.nat] =
-                               r(s.substring((Code_Numeral.integer_of_natNat.Nata((1)))));
+                               r(s.substring(Code_Numeral.integer_of_nat(Nat.Nata((1))).toInt));
                              make_guard_abstract(t,
           Nat.plus_nata(i, Nat.Nata((1))), maxR, r,
           GExp.Gt(AExp.V(VName.I(i)), AExp.V(VName.R(reg))) :: g, u)
@@ -3744,14 +3744,14 @@ def make_guard_abstract(x0: List[Value.value], uu: Nat.nat, uv: Nat.nat,
                            else make_guard_abstract(t,
              Nat.plus_nata(i, Nat.Nata((1))), maxR, r,
              GExp.Gt(AExp.V(VName.I(i)),
-                      AExp.L(Value.Numa(Int.Int((BigInt((s.substring((Code_Numeral.integer_of_natCode_Numeral.nat_of_integer(BigInt(2))))).toInt)))))) ::
+                      AExp.L(Value.Numa(Int.int_of_integer(BigInt((s.substring(Code_Numeral.integer_of_nat(Code_Numeral.nat_of_integer(BigInt(2))).toInt)).toInt))))) ::
                g,
              u))
                          else (if (s.startsWith("/="))
-                                (if ((s.substring((Code_Numeral.integer_of_natNat.Nata((1))))).startsWith("$"))
+                                (if ((s.substring(Code_Numeral.integer_of_nat(Nat.Nata((1))).toInt)).startsWith("$"))
                                   {
                                     val (Some(reg)): Option[Nat.nat] =
-                                      r(s.substring((Code_Numeral.integer_of_natCode_Numeral.nat_of_integer(BigInt(2)))));
+                                      r(s.substring(Code_Numeral.integer_of_nat(Code_Numeral.nat_of_integer(BigInt(2))).toInt));
                                     make_guard_abstract(t,
                  Nat.plus_nata(i, Nat.Nata((1))), maxR, r,
                  GExp.Gt(AExp.V(VName.I(i)), AExp.V(VName.R(reg))) :: g, u)
@@ -3759,7 +3759,7 @@ def make_guard_abstract(x0: List[Value.value], uu: Nat.nat, uv: Nat.nat,
                                   else make_guard_abstract(t,
                     Nat.plus_nata(i, Nat.Nata((1))), maxR, r,
                     GExp.Gt(AExp.V(VName.I(i)),
-                             AExp.L(Value.Numa(Int.Int((BigInt((s.substring((Code_Numeral.integer_of_natCode_Numeral.nat_of_integer(BigInt(3))))).toInt)))))) ::
+                             AExp.L(Value.Numa(Int.int_of_integer(BigInt((s.substring(Code_Numeral.integer_of_nat(Code_Numeral.nat_of_integer(BigInt(3))).toInt)).toInt))))) ::
                       g,
                     u))
                                 else make_guard_abstract(t,

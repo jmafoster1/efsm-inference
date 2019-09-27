@@ -541,6 +541,12 @@ lemma [code]: "accepts e s d t = accepts_prim e s d t"
 declare startsWith_def [code del]
 code_printing constant startsWith \<rightharpoonup> (Scala) "_.startsWith((_))"
 
+declare substring_def [code del]
+code_printing constant "substring" \<rightharpoonup> (Scala) "_.substring(Code'_Numeral.integer'_of'_nat((_)).toInt)"
+
+declare parseInt_def [code del]
+code_printing constant parseInt \<rightharpoonup> (Scala) "Int.int'_of'_integer(BigInt(_.toInt))"
+
 export_code
   (* Essentials *)
   try_heuristics try_heuristics_check aexp_type_check learn infer_types nondeterministic input_updates_register

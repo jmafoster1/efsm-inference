@@ -154,14 +154,8 @@ definition parseNat :: "string \<Rightarrow> nat" where
 definition parseInt :: "String.literal \<Rightarrow> int" where
   "parseInt s = (if startsWith s STR ''-'' then -(int (parseNat (String.explode s))) else int (parseNat (String.explode s)))"
 
-declare parseInt_def [code del]
-code_printing constant parseInt \<rightharpoonup> (Scala) "Int.Int((BigInt(_.toInt)))"
-
 definition substring :: "String.literal \<Rightarrow> nat \<Rightarrow> String.literal" where
   "substring s n = String.implode (drop n (String.explode s))"
-
-declare substring_def [code del]
-code_printing constant "substring" \<rightharpoonup> (Scala) "_.substring((Code'_Numeral.integer'_of'_nat(_)))"
 
 primrec make_guard_abstract :: "value list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (String.literal \<Rightarrow>f nat option) \<Rightarrow> gexp list \<Rightarrow> update_function list \<Rightarrow> (gexp list \<times> update_function list \<times> (String.literal \<Rightarrow>f nat option))" where
   "make_guard_abstract [] _ _ r G U = (G, U, r)" |
