@@ -22,7 +22,7 @@ definition "replacements = [
 
 fun aexp2sal :: "aexp \<Rightarrow> String.literal" where
   "aexp2sal (L (Num n)) = STR ''Some(Num(''+ show_int n + STR ''))''"|
-  "aexp2sal (L (value.Str n)) = STR ''Some(Str(String__''+ (if n = STR '''' then STR ''EMPTY__'' else escape n replacements) + STR ''))''" |
+  "aexp2sal (L (value.Str n)) = STR ''Some(Str(String__''+ (if n = STR '''' then STR ''_EMPTY__'' else escape n replacements) + STR ''))''" |
   "aexp2sal (V (vname.I i)) = STR ''Some(i('' + show_nat (i+1) + STR ''))''" |
   "aexp2sal (V (vname.R i)) = STR ''r('' + show_nat i + STR '')''" |
   "aexp2sal (Plus a1 a2) = STR ''value_plus(''+aexp2sal a1 + STR '', '' + aexp2sal a2 + STR '')''" |

@@ -1,0 +1,68 @@
+16:11:45.614 [main] INFO  ROOT - -h gungho -n labar /home/michael/Documents/tracing/log-longer.json
+16:11:45.615 [main] INFO  ROOT - Building PTA - 50 traces
+16:11:48.052 [main] DEBUG ROOT - 188 -> 187
+16:11:49.250 [main] DEBUG ROOT - 187 -> 186
+16:11:50.991 [main] DEBUG ROOT - 186 -> 185
+16:11:53.212 [main] DEBUG ROOT - 185 -> 184
+16:11:56.160 [main] DEBUG ROOT - 184 -> 183
+16:12:00.976 [main] DEBUG ROOT - 183 -> 182
+16:12:08.137 [main] DEBUG ROOT - 182 -> 181
+16:12:18.997 [main] DEBUG ROOT - 181 -> 180
+16:12:30.342 [main] DEBUG ROOT - 180 -> 179
+16:12:46.136 [main] DEBUG ROOT - 179 -> 178
+16:13:02.132 [main] DEBUG ROOT - 178 -> 177
+16:13:21.143 [main] DEBUG ROOT - 177 -> 176
+16:13:40.775 [main] DEBUG ROOT - 176 -> 175
+16:14:03.543 [main] DEBUG ROOT - 175 -> 174
+16:14:26.098 [main] DEBUG ROOT - 174 -> 173
+16:14:54.231 [main] DEBUG ROOT - 173 -> 172
+16:15:22.649 [main] DEBUG ROOT - 172 -> 171
+16:15:56.463 [main] DEBUG ROOT - 171 -> 170
+16:16:30.543 [main] DEBUG ROOT - 170 -> 169
+16:17:10.375 [main] DEBUG ROOT - 169 -> 168
+16:17:50.023 [main] DEBUG ROOT - 168 -> 167
+16:18:37.616 [main] DEBUG ROOT - 167 -> 166
+16:19:33.244 [main] DEBUG ROOT - 166 -> 165
+16:20:31.681 [main] DEBUG ROOT - 165 -> 164
+16:21:38.491 [main] DEBUG ROOT - 164 -> 163
+16:22:43.162 [main] DEBUG ROOT - 163 -> 162
+16:23:57.071 [main] DEBUG ROOT - 162 -> 161
+16:25:19.074 [main] DEBUG ROOT - 161 -> 160
+16:26:43.697 [main] DEBUG ROOT - 160 -> 159
+16:28:09.236 [main] DEBUG ROOT - 159 -> 154
+16:29:44.458 [main] DEBUG ROOT - 154 -> 153
+16:31:18.174 [main] DEBUG ROOT - 153 -> 151
+16:33:05.037 [main] DEBUG ROOT - 151 -> 150
+16:35:03.916 [main] DEBUG ROOT - 150 -> 148
+16:37:02.685 [main] DEBUG ROOT - 148 -> 147
+16:39:13.447 [main] DEBUG ROOT - 147 -> 146
+16:41:19.785 [main] DEBUG ROOT - 146 -> 145
+16:43:40.884 [main] DEBUG ROOT - 145 -> 144
+16:46:18.134 [main] DEBUG ROOT - 144 -> 143
+16:49:21.194 [main] DEBUG ROOT - 143 -> 142
+16:51:59.664 [main] DEBUG ROOT - 142 -> 141
+16:54:31.199 [main] DEBUG ROOT - 141 -> 140
+16:58:00.024 [main] DEBUG ROOT - 140 -> 139
+17:01:45.638 [main] DEBUG ROOT - 139 -> 138
+17:06:04.390 [main] DEBUG ROOT - 138 -> 137
+17:10:14.023 [main] DEBUG ROOT - 137 -> 136
+17:14:36.370 [main] ERROR ROOT - java.lang.RuntimeException: Nonzero exit value: 255
+	at scala.sys.package$.error(package.scala:30)
+	at scala.sys.process.ProcessBuilderImpl$AbstractBuilder.slurp(ProcessBuilderImpl.scala:138)
+	at scala.sys.process.ProcessBuilderImpl$AbstractBuilder.$bang$bang(ProcessBuilderImpl.scala:108)
+	at Dirties$.alwaysDifferentOutputsDirectSubsumption(Dirties.scala:160)
+	at Code_Generation$.always_different_outputs_direct_subsumption(Inference.scala:4401)
+	at Code_Generation$.directly_subsumes_cases(Inference.scala:4447)
+	at Inference$.directly_subsumes(Inference.scala:2753)
+	at Inference$.merge_transitions(Inference.scala:2838)
+	at Inference$.resolve_nondeterminism(Inference.scala:3012)
+	at Inference$.resolve_nondeterminism(Inference.scala:3037)
+	at Inference$.resolve_nondeterminism(Inference.scala:3037)
+	at Inference$.merge(Inference.scala:3100)
+	at Inference$.inference_step(Inference.scala:3556)
+	at Code_Generation$.infer_with_log(Inference.scala:4248)
+	at Inference$.$anonfun$infer$6(Inference.scala:2598)
+	at Inference$.learn(Inference.scala:2739)
+	at FrontEnd$.main(FrontEnd.scala:50)
+	at FrontEnd.main(FrontEnd.scala)
+

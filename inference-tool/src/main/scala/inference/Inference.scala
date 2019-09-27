@@ -6466,7 +6466,7 @@ def aexp2sal(x0: AExp.aexp): String = x0 match {
     "Some(Num(" + Code_Numeral.integer_of_int(n).toString() + "))"
   case AExp.L(Value.Str(n)) =>
     "Some(Str(String__" +
-      (if (n == "") "EMPTY__" else escape(n, replacements)) +
+      (if (n == "") "_EMPTY__" else escape(n, replacements)) +
       "))"
   case AExp.V(VName.I(i)) =>
     "Some(i(" +

@@ -1,0 +1,38 @@
+<html>
+<head>
+<title>
+Broker@Cloud VTTS 1.0
+</title>
+</head>
+<body>
+
+<p>This package contains example Java POJO clients for testing with generated 
+JUnit test drivers that test Java POJO services.
+It is part of the <strong>Broker@Cloud Verification and Testing Tool Suite, 
+v1.0</strong>, &copy; Anthony J H Simons and Raluca Lefticaru, 2015. 
+Main web site:
+<a href="http://staffwww.dcs.shef.ac.uk/people/A.Simons/broker/">
+http://staffwww.dcs.shef.ac.uk/people/A.Simons/broker/</a>.
+</p>
+
+<h3>
+Sub-package uk.ac.sheffield.vtts.client.pojo
+</h3>
+<p>This package is a repository where you may place service clients that are
+"Plain Old Java Objects" (POJOs).  Target POJO-testers onto clients in this 
+package.  We have provided a number of complete POJO client examples that 
+were developed to satisfy their specifications.
+</p>
+<p>
+Some key aspects of these illustrative examples are: the use of the State
+Pattern (in the sense of Gamma et al. Design Patterns) to model the different
+responsive modes of a service, in which it either responds to, or ignores, 
+different requests; and the ability to observe fully the request and response
+behaviour, which is recorded as meta-data. 
+</p>
+<p>Apart from the service clients, further kinds of domain object (such as 
+the class <code>DVD</code> used in the <code>ShoppingCart</code> example) are
+provided here, so that they are available to the generated test-drivers along
+with the tested service client.
+</p>
+</body>
