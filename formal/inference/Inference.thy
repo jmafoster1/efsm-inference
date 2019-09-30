@@ -132,6 +132,12 @@ definition add_transition :: "transition_matrix \<Rightarrow> cfstate \<Rightarr
 definition startsWith :: "String.literal \<Rightarrow> String.literal \<Rightarrow> bool" where
   "startsWith string start = (\<exists>s'. string = start + s')"
 
+definition endsWith :: "String.literal \<Rightarrow> String.literal \<Rightarrow> bool" where
+  "endsWith string end = (\<exists>s'. string = s' + end)"
+
+definition dropRight :: "String.literal \<Rightarrow> nat \<Rightarrow> String.literal" where
+  "dropRight l n = String.implode (rev (drop n (rev (String.explode l))))"
+
 fun nat_of_char :: "char \<Rightarrow> nat" where
   "nat_of_char CHR ''0'' = 0" |
   "nat_of_char CHR ''1'' = 1" |
@@ -203,7 +209,11 @@ definition add_transition_abstract :: "transition_matrix \<Rightarrow> (String.l
     maxR = (if regs = {||} then 1 else fMax regs);
     (G, U1, r') = make_guard_abstract inputs 0 maxR r [] [];
     P = make_outputs_abstract outputs maxR r' [] in
-    (finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=G, Outputs=P, Updates=U1\<rparr>) e, r'))"
+    if endsWith label STR ''*'' then
+      (finsert ((s, s), \<lparr>Label=dropRight label 1, Arity=length inputs, Guard=G, Outputs=P, Updates=U1\<rparr>) e, r')
+    else
+      (finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=G, Outputs=P, Updates=U1\<rparr>) e, r')
+    )"
 
 fun make_branch :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> transition_matrix" where
   "make_branch e _ _ [] = e" |
@@ -276,7 +286,7 @@ definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarr
         outgoing_s1 = fimage (snd \<circ> snd) (k_outgoing n e s1);
         outgoing_s2 = fimage (snd \<circ> snd) (k_outgoing n e s2);
         scores = fimage (\<lambda>(x, y). rank x y e) (outgoing_s1 |\<times>| outgoing_s2) in
-       (fSum scores, s1, s2 )
+       if outgoing_s1 = {||} \<and> outgoing_s2 = {||} then (s1, s2, 1) else (fSum scores, s1, s2 )
      ) pairs_to_score in
      ffilter (\<lambda>(score, _). score > 0) scores)"
 

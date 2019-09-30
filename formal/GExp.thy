@@ -1087,4 +1087,10 @@ fun enumerate_gexp_ints :: "gexp \<Rightarrow> int set" where
   "enumerate_gexp_ints (Nor g1 g2) = enumerate_gexp_ints g1 \<union> enumerate_gexp_ints g2" |
   "enumerate_gexp_ints (Null a) = enumerate_aexp_ints a"
 
+definition restricted_once :: "vname \<Rightarrow> gexp list \<Rightarrow> bool" where
+  "restricted_once v G = (length (filter (\<lambda>g. gexp_constrains g (V v)) G) = 1)"
+
+definition not_restricted :: "vname \<Rightarrow> gexp list \<Rightarrow> bool" where
+  "not_restricted v G = (length (filter (\<lambda>g. gexp_constrains g (V v)) G) = 0)"
+
 end

@@ -1,0 +1,7 @@
+[
+  [
+      {"label":"select","inputs":["$drink"],"outputs":[]},
+      {"label":"coin*","inputs":["_"],"outputs":["_"]},
+      {"label":"vend","inputs":[],"outputs":["/=$drink"]}
+  ]
+]

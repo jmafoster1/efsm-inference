@@ -4,6 +4,7 @@ import scala.io.Source
 import net.liftweb.json._
 import ch.qos.logback.classic.Level
 import Types._
+import java.nio.file.{Paths, Files}
 
 object Heuristics extends Enumeration {
   type Heuristic = Value
@@ -30,21 +31,24 @@ case class Config(
   strategy: Nat.nat => Nat.nat => IEFSM => Nat.nat = (SelectionStrategies.naive_score _).curried,
   skip: Boolean = false,
   logLevel: Level = Level.DEBUG,
-  logFile: String = "log",
+  logFile: String = null,
   smallInts: Boolean = false,
+  log: List[List[Types.Event]] = List(),
   k: Int = 0)
 
 object Config {
   val builder = OParser.builder[Config]
+  var config: Config = null
+  var heuristics = Inference.try_heuristics(List(), (Inference.nondeterministic_pairs _))
 
   implicit val heuristicsRead: scopt.Read[Heuristics.Value] =
     scopt.Read.reads(Heuristics withName _)
   implicit val strategiesRead: scopt.Read[Nat.nat => Nat.nat => IEFSM => Nat.nat] =
     scopt.Read.reads {
       _.toLowerCase match {
-        case "naive"           => (SelectionStrategies.naive_score _).curried
-        case "rank"            => (SelectionStrategies.naive_score_outputs _).curried
-        case "comprehensive"   => (SelectionStrategies.naive_score_comprehensive _).curried
+        case "naive" => (SelectionStrategies.naive_score _).curried
+        case "rank" => (SelectionStrategies.naive_score_outputs _).curried
+        case "comprehensive" => (SelectionStrategies.naive_score_comprehensive _).curried
         case "comprehensiveeq" => (SelectionStrategies.naive_score_comprehensive_eq_high _).curried
         case "origins" => (SelectionStrategies.origin_states _).curried
         case s =>
@@ -55,8 +59,8 @@ object Config {
     scopt.Read.reads {
       _.toLowerCase match {
         case "debug" => Level.DEBUG
-        case "warn"  => Level.WARN
-        case "info"  => Level.INFO
+        case "warn" => Level.WARN
+        case "info" => Level.INFO
         case "error" => Level.ERROR
         case s =>
           throw new IllegalArgumentException(s"'${s}' is not a debug level.")
@@ -71,10 +75,6 @@ object Config {
           throw new IllegalArgumentException(s"'${s}' is not a valid strategy ${Nondeterminisms.values}")
       }
     }
-
-  var config: Config = null
-  var log: List[List[Types.Event]] = List()
-  var heuristics = Inference.try_heuristics(List(), (Inference.nondeterministic_pairs _))
 
   val parser1 = {
     import builder._
@@ -131,15 +131,34 @@ object Config {
 
   def parseArgs(args: Array[String]) = {
     OParser.parse(parser1, args, Config()) match {
-      case Some(config) => {
-        this.config = config
+      case Some(configuration) => {
+        var config = configuration
+        if (config.logFile == null) {
+          config = config.copy(logFile = config.dotfiles + "/log")
+        }
+        if (!Files.exists(Paths.get(config.dotfiles))) {
+          new java.io.File(config.dotfiles).mkdirs
+        }
+        if (Files.list(Paths.get(config.dotfiles)).findAny().isPresent()) {
+          throw new IllegalArgumentException(s"Dotfiles directory '${config.dotfiles}' is not empty")
+        }
+        if (Files.exists(Paths.get(config.logFile))) {
+          throw new IllegalArgumentException(s"Log file '${config.logFile}' already exists")
+        }
+
+        // Set up the log
         val rawJson = Source.fromFile(config.file).getLines.mkString
         val parsed = (parse(rawJson))
         val list = parsed.values.asInstanceOf[List[List[Map[String, Any]]]]
-        this.log = list.map(run => run.map(x => TypeConversion.toEventTuple(x)))
+        config = config.copy(log = list.map(run => run.map(x => TypeConversion.toEventTuple(x))))
+        if (config.smallInts) {
+          config = config.copy(log = Use_Small_Numbers.use_smallest_ints(Config.config.log))
+        }
+
+        // Set up the heuristics
         val heuristics = scala.collection.immutable.Map(
-          Heuristics.store -> Store_Reuse.heuristic_1(log),
-          Heuristics.inputgen -> Store_Reuse.heuristic_2(log),
+          Heuristics.store -> Store_Reuse.heuristic_1(config.log),
+          Heuristics.inputgen -> Store_Reuse.heuristic_2(config.log),
           Heuristics.inc -> (Increment_Reset.insert_increment_2 _).curried,
           Heuristics.same -> (Same_Register.same_register _).curried,
           Heuristics.ignore -> (Ignore_Inputs.drop_inputs _).curried,
@@ -149,13 +168,14 @@ object Config {
           Heuristics.gob -> (Least_Upper_Bound.gob _).curried,
           Heuristics.gungho -> (Least_Upper_Bound.gung_ho _).curried,
           Heuristics.eq -> (Equals.equals _).curried,
-          Heuristics.neq -> (Equals.not_equals _).curried
-          )
+          Heuristics.neq -> (Equals.not_equals _).curried)
 
         // this.strategy = if (Config.config.oneFinal)
         //     (SelectionStrategies.score_one_final_state _).curried(strategies(config.strategy))
         //   else (strategies(config.strategy))
-        this.heuristics = Inference.try_heuristics_check((Inference.satisfies _).curried(Set.seta(this.log)), config.heuristics.map(x => heuristics(x)).toList, config.nondeterminismMetric)
+        this.heuristics = Inference.try_heuristics_check((Inference.satisfies _).curried(Set.seta(config.log)), config.heuristics.map(x => heuristics(x)).toList, config.nondeterminismMetric)
+        this.config = config
+
       }
       case _ =>
         System.exit(1)

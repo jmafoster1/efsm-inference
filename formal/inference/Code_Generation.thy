@@ -359,6 +359,8 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
       then False
     else if guard_subset_eq_outputs_updates t2 t1
       then True
+    else if in_not_subset t1 t2
+      then False
     else if opposite_gob t1 t2
       then False
     else if always_different_outputs_direct_subsumption m1 m2 s s' t2 \<and> lob_distinguished_2 t1 t2
@@ -395,6 +397,8 @@ lemma directly_subsumes_cases:  "directly_subsumes m1 m2 s s' t1 t2 = directly_s
    apply (simp add: always_different_outputs_direct_subsumption)
   apply (clarify, rule if_elim)
    apply (simp add: guard_subset_eq_outputs_updates_def guard_subset_eq_outputs_updates_direct_subsumption)
+  apply (clarify, rule if_elim)
+   apply (simp add: in_not_subset_direct_subsumption)
   apply (clarify, rule if_elim)
    apply (simp add: opposite_gob_directly_subsumption)
   apply (clarify, rule if_elim)
@@ -541,6 +545,12 @@ lemma [code]: "accepts e s d t = accepts_prim e s d t"
 declare startsWith_def [code del]
 code_printing constant startsWith \<rightharpoonup> (Scala) "_.startsWith((_))"
 
+declare endsWith_def [code del]
+code_printing constant endsWith \<rightharpoonup> (Scala) "_.endsWith((_))"
+
+declare dropRight_def [code del]
+code_printing constant dropRight \<rightharpoonup> (Scala) "_.dropRight(Code'_Numeral.integer'_of'_nat((_)).toInt)"
+
 declare substring_def [code del]
 code_printing constant "substring" \<rightharpoonup> (Scala) "_.substring(Code'_Numeral.integer'_of'_nat((_)).toInt)"
 
@@ -553,15 +563,15 @@ export_code
   step maxS add_transition make_pta make_pta_abstract
   (* Scoring functions *)
   naive_score naive_score_eq naive_score_outputs naive_score_comprehensive naive_score_comprehensive_eq_high
-  origin_states equals not_equals
+  origin_states
   (* Heuristics *)
   statewise_drop_inputs drop_inputs same_register insert_increment_2 heuristic_1 heuristic_2
-  transitionwise_drop_inputs lob gob gung_ho
+  transitionwise_drop_inputs lob gob gung_ho equals not_equals
   (* Nondeterminism metrics *)
   nondeterministic_pairs nondeterministic_pairs_labar
   (* Utilities *)
   iefsm2dot efsm2dot guards2sal fold_In max_int use_smallest_ints
 in Scala
-  file "../../inference-tool/src/main/scala/inference/Inference.scala"
+file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
 end

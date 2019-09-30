@@ -28,6 +28,18 @@ definition lob_aux :: "transition \<Rightarrow> transition \<Rightarrow> transit
       Some \<lparr>Label = Label t1, Arity = Arity t1, Guard = remdups (merge_guards (Guard t1) (Guard t2)), Outputs = Outputs t1, Updates = Updates t1\<rparr>
      else None)"
 
+lemma lob_aux_some: "Outputs t1 = Outputs t2 \<Longrightarrow>
+       Updates t1 = Updates t2 \<Longrightarrow>
+       all_literal_args t1 \<Longrightarrow>
+       all_literal_args t2 \<Longrightarrow>
+       Label t = Label t1 \<Longrightarrow>
+       Arity t = Arity t1 \<Longrightarrow>
+       Guard t = remdups (merge_guards (Guard t1) (Guard t2)) \<Longrightarrow>
+       Outputs t = Outputs t1 \<Longrightarrow>
+       Updates t = Updates t1 \<Longrightarrow>
+       lob_aux t1 t2 = Some t"
+  by (simp add: lob_aux_def)
+
 fun lob :: update_modifier where
   "lob t1ID t2ID s new old _ = (let
      t1 = (get_by_id new t1ID);
@@ -825,4 +837,216 @@ lemma "opposite_gob t1 t2"
    apply (simp add: t2_def enumerate_inputs_def i1_def)
   by (simp add: t2_def enumerate_inputs_def i1_def)*)
 
+fun get_in :: "gexp \<Rightarrow> (vname \<times> value list) option" where
+  "get_in (In v s) = Some (v, s)" |
+  "get_in _ = None"
+
+lemma not_subset_not_in: "(\<not> s1 \<subseteq> s2) = (\<exists>i. i \<in> s1 \<and> i \<notin> s2)"
+  by auto
+
+lemma get_in_is: "(get_in x = Some (v, s1)) = (x = In v s1)"
+  by (induct x, auto)
+
+lemma gval_rearrange:
+  "g \<in> set G \<Longrightarrow>
+   gval g s = true \<Longrightarrow>
+   apply_guards (removeAll g G) s \<Longrightarrow>
+   apply_guards G s" 
+proof(induct G)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a G)
+  then show ?case
+    apply (simp only: apply_guards_cons)
+    apply standard
+     apply (metis apply_guards_cons removeAll.simps(2))
+    by (metis apply_guards_cons removeAll.simps(2) removeAll_id)
+qed
+
+lemma singleton_list: "(length l = 1) = (\<exists>e. l = [e])"
+  by (induct l, auto)
+
+lemma remove_restricted:
+  "g \<in> set G \<Longrightarrow>
+   gexp_constrains g (V v) \<Longrightarrow>
+   restricted_once v G \<Longrightarrow>
+   not_restricted v (removeAll g G)"
+  apply (simp add: restricted_once_def not_restricted_def singleton_list)
+  apply clarify
+  apply (case_tac "e = g")
+   defer
+   apply (metis DiffE Diff_insert_absorb empty_set filter.simps(2) filter_append in_set_conv_decomp insert_iff list.set(2))
+  apply (simp add: filter_empty_conv)
+  proof -
+    fix e :: gexp
+    assume "filter (\<lambda>g. gexp_constrains g (V v)) G = [g]"
+    then have "{g \<in> set G. gexp_constrains g (V v)} = {g}"
+      by (metis (no_types) empty_set list.simps(15) set_filter)
+    then show "\<forall>g\<in>set G - {g}. \<not> gexp_constrains g (V v)"
+      by blast
+  qed
+
+lemma unrestricted_input_swap:
+  "not_restricted (I i) G \<Longrightarrow>
+   apply_guards G (join_ir iaa c) \<Longrightarrow>
+   apply_guards (removeAll g G) (join_ir (iaa[i := ia]) c)"
+proof(induct G)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a G)
+  then show ?case
+    apply (simp add: apply_guards_cons not_restricted_def)
+    apply safe
+      apply (meson neq_Nil_conv)
+     apply (metis input_not_constrained_gval_swap_inputs list.distinct(1))
+    by (metis list.distinct(1))
+qed
+
+lemma apply_guards_remove_restricted:
+  "g \<in> set G \<Longrightarrow>
+   gexp_constrains g (V (I i)) \<Longrightarrow>
+   restricted_once (I i) G \<Longrightarrow>
+   apply_guards G (join_ir iaa c) \<Longrightarrow>
+   apply_guards (removeAll g G) (join_ir (iaa[i := ia]) c)"
+proof(induct G)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a G)
+  then show ?case
+    apply simp
+    apply safe
+      apply (rule unrestricted_input_swap)
+       apply (simp add: not_restricted_def restricted_once_def)
+      apply (meson apply_guards_subset set_subset_Cons)
+     apply (simp add: apply_guards_rearrange not_restricted_def restricted_once_def unrestricted_input_swap)
+    by (metis apply_guards_cons filter.simps(2) filter_empty_conv input_not_constrained_gval_swap_inputs list.inject restricted_once_def singleton_list)
+qed
+
+lemma In_swap_inputs:
+  "In (I i) s2 \<in> set G \<Longrightarrow>
+   restricted_once (I i) G \<Longrightarrow>
+   ia \<in> set s2 \<Longrightarrow>
+   apply_guards G (join_ir iaa c) \<Longrightarrow>
+   apply_guards G (join_ir (iaa[i := ia]) c)"
+  using apply_guards_remove_restricted[of "In (I i) s2" G i iaa c ia]
+  apply simp
+  apply (rule gval_rearrange[of "In (I i) s2"])
+    apply simp
+   apply (metis filter_empty_conv gval_each_one input_not_constrained_gval_swap_inputs length_0_conv not_restricted_def remove_restricted test_aux)
+  by blast
+
+lemma guard_not_subset_subsumption:
+  "\<exists>g \<in> set (Guard t1). get_in g = Some (I i, s1) \<Longrightarrow>
+   \<exists>g \<in> set (Guard t2). get_in g = Some (I i, s2) \<Longrightarrow>
+   \<not> (set s2) \<subseteq> (set s1) \<Longrightarrow>
+   restricted_once (I i) (Guard t2) \<Longrightarrow>
+   Label t1 = Label t2 \<Longrightarrow>
+   Arity t1 = Arity t2 \<Longrightarrow>
+   max_reg_list (Guard t2) = None \<Longrightarrow>
+   max_input_list (Guard t2) < Some (Arity t2) \<Longrightarrow>
+   satisfiable_list (Guard t2 @ ensure_not_null (Arity t2)) \<Longrightarrow>
+   \<not> subsumes t1 c t2"
+  apply (rule bad_guards)
+  using can_take_satisfiable[of t2 c]
+  apply (simp add: Bex_def get_in_is not_subset_not_in can_take_def can_take_transition_def)
+  apply clarify
+  apply (rule_tac x="list_update iaa i ia" in exI)
+  apply simp
+  apply standard
+  apply (simp add: In_swap_inputs)
+  by (metis In_apply_guards input2state_nth input2state_within_bounds join_ir_def nth_list_update_eq option.sel vname.simps(5))
+
+definition these :: "'a option list \<Rightarrow> 'a list" where
+  "these as = map (\<lambda>x. case x of Some y \<Rightarrow> y) (filter (\<lambda>x. x \<noteq> None) as)"
+
+lemma these_cons: "these (a#as) = (case a of None \<Rightarrow> these as | Some x \<Rightarrow> x#(these as))"
+  apply (cases a)
+   apply (simp add: these_def)
+  by (simp add: these_def)
+
+definition get_ins :: "gexp list \<Rightarrow> (nat \<times> value list) list" where
+  "get_ins g = map (\<lambda>(v, s). case v of I i \<Rightarrow> (i, s)) (filter (\<lambda>(v, _). case v of I _ \<Rightarrow> True | R _ \<Rightarrow> False) (these (map get_in g)))"
+
+definition "in_not_subset t1 t2 = (Label t1 = Label t2 \<and>
+   Arity t1 = Arity t2 \<and>
+   max_reg_list (Guard t2) = None \<and>
+   max_input_list (Guard t2) < Some (Arity t2) \<and>
+   satisfiable_list (Guard t2 @ ensure_not_null (Arity t2)) \<and>
+   (\<exists>(i, s1) \<in> set (get_ins (Guard t1)).
+   \<exists>(i', s2) \<in> set (get_ins (Guard t2)).
+   i = i' \<and>
+   \<not> (set s2) \<subseteq> (set s1) \<and>
+   restricted_once (I i) (Guard t2)))"
+
+lemma in_get_ins:
+  "(I x1a, b) \<in> set (these (map get_in G)) \<Longrightarrow>
+   In (I x1a) b \<in> set G"
+proof(induct G)
+  case Nil
+  then show ?case
+    by (simp add: these_def)
+next
+  case (Cons a G)
+  then show ?case
+    apply simp
+    apply (simp add: these_cons)
+    apply (cases a)
+    by auto
+qed
+
+lemma in_in_t1_and_t2:
+  "in_not_subset t1 t2 \<Longrightarrow>
+   \<exists>i s s'.
+    (\<exists>g\<in>set (Guard t1). get_in g = Some (I i, s)) \<and>
+    (\<exists>g\<in>set (Guard t2). get_in g = Some (I i, s')) \<and>
+    (\<not> set s' \<subseteq> set s) \<and>
+    restricted_once (I i) (Guard t2)"
+  apply (simp add: in_not_subset_def get_ins_def get_in_is)
+  apply (erule conjE)+
+  apply (erule exE)+
+  apply (case_tac a)
+   defer
+   apply simp
+  apply simp
+  apply (erule conjE)+
+  apply (erule exE)+
+  apply (case_tac aa)
+   defer
+   apply simp
+  apply simp
+  apply (rule_tac x=x1a in exI)
+  apply (rule_tac x=b in exI)
+  apply standard
+   apply (simp add: in_get_ins)
+  apply (rule_tac x=ba in exI)
+  apply standard
+   apply (simp add: in_get_ins)
+  by auto
+
+lemma in_not_subset_subsumption:
+  "in_not_subset t1 t2 \<Longrightarrow>
+       x \<in> set (Guard t1) \<Longrightarrow>
+       get_in x = Some (I i, s) \<Longrightarrow>
+       restricted_once (I i) (Guard t2) \<Longrightarrow>
+       xb \<in> set s' \<Longrightarrow> xa \<in> set (Guard t2) \<Longrightarrow> get_in xa = Some (I i, s') \<Longrightarrow> xb \<notin> set s \<Longrightarrow>
+   \<not>subsumes t1 c t2"
+  apply (rule guard_not_subset_subsumption[of t1 i s t2 s'])
+          apply auto[1]
+         apply auto[1]
+        apply auto[1]
+       apply simp
+  by (simp_all add: in_not_subset_def)
+
+lemma in_not_subset_direct_subsumption: "in_not_subset t1 t2 \<Longrightarrow> \<not> directly_subsumes e1 e2 s1 s2 t1 t2"
+  apply (rule cant_directly_subsume)
+  apply (rule allI)
+  apply (insert in_in_t1_and_t2[of t1 t2])
+  apply (simp add: Bex_def)
+  using in_not_subset_subsumption
+  by auto
 end

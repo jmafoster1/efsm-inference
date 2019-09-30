@@ -1260,6 +1260,12 @@ def gexp_constrains(x0: gexp, uv: AExp.aexp): Boolean = (x0, uv) match {
   case (In(v, l), a) => AExp.aexp_constrains(AExp.V(v), a)
 }
 
+def restricted_once(v: VName.vname, g: List[gexp]): Boolean =
+  Nat.equal_nata(Nat.Nata((Lista.filter[gexp](((ga: gexp) =>
+        gexp_constrains(ga, AExp.V(v))),
+       g)).length),
+                  Nat.Nata((1)))
+
 def enumerate_gexp_ints(x0: gexp): Set.set[Int.int] = x0 match {
   case Bc(uu) => Set.bot_set[Int.int]
   case Eq(a1, a2) =>
@@ -1936,6 +1942,26 @@ def lob(t1ID: Nat.nat, t2ID: Nat.nat, s: Nat.nat,
      })
   }
 
+def these[A](as: List[Option[A]]): List[A] =
+  Lista.map_filter[Option[A],
+                    A](((x: Option[A]) =>
+                         (if (! (Optiona.is_none[A](x)))
+                           Some[A]({
+                                     val (Some(y)): Option[A] = x;
+                                     y
+                                   })
+                           else None)),
+                        as)
+
+def get_in(x0: GExp.gexp): Option[(VName.vname, List[Value.value])] = x0 match {
+  case GExp.In(v, s) => Some[(VName.vname, List[Value.value])]((v, s))
+  case GExp.Bc(v) => None
+  case GExp.Eq(v, va) => None
+  case GExp.Gt(v, va) => None
+  case GExp.Null(v) => None
+  case GExp.Nor(v, va) => None
+}
+
 def has_corresponding(g: GExp.gexp, x1: List[GExp.gexp]): Boolean = (g, x1)
   match {
   case (g, Nil) => false
@@ -2038,6 +2064,27 @@ def get_Ins(g: List[GExp.gexp]): List[(Nat.nat, List[Value.value])] =
                                  })
       else None)),
    g)
+
+def get_ins(g: List[GExp.gexp]): List[(Nat.nat, List[Value.value])] =
+  Lista.map_filter[(VName.vname, List[Value.value]),
+                    (Nat.nat,
+                      List[Value.value])](((x: (VName.vname, List[Value.value]))
+     =>
+    (if ((x match {
+            case (VName.I(_), _) => true
+            case (VName.R(_), _) => false
+          }))
+      Some[(Nat.nat,
+             List[Value.value])]({
+                                   val (VName.I(i), s):
+ (VName.vname, List[Value.value])
+                                     = x;
+                                   (i, s)
+                                 })
+      else None)),
+   these[(VName.vname,
+           List[Value.value])](Lista.map[GExp.gexp,
+  Option[(VName.vname, List[Value.value])]](((a: GExp.gexp) => get_in(a)), g)))
 
 def gung_ho_aux(t1: Transition.transition_ext[Unit],
                  t2: Transition.transition_ext[Unit]):
@@ -2158,6 +2205,32 @@ def opposite_gob(t1: Transition.transition_ext[Unit],
                         GExp.gexp_constrains(g, AExp.V(VName.I(i)))),
                        Transition.Guard[Unit](t2))).length),
                              Nat.Nata((1))))))))))
+
+def in_not_subset[A, B](t1: Transition.transition_ext[A],
+                         t2: Transition.transition_ext[B]):
+      Boolean
+  =
+  (Transition.Label[A](t1) ==
+    Transition.Label[B](t2)) && ((Nat.equal_nata(Transition.Arity[A](t1),
+          Transition.Arity[B](t2))) && ((Optiona.is_none[Nat.nat](GExp.max_reg_list(Transition.Guard[B](t2)))) && ((Option_Lexorder.less_option[Nat.nat](GExp.max_input_list(Transition.Guard[B](t2)),
+                                  Some[Nat.nat](Transition.Arity[B](t2)))) && ((Inference.satisfiable_list(Transition.Guard[B](t2) ++
+                             GExp.ensure_not_null(Transition.Arity[B](t2)))) && (Lista.list_ex[(Nat.nat,
+                 List[Value.value])](((a: (Nat.nat, List[Value.value])) =>
+                                       {
+ val (i, s1): (Nat.nat, List[Value.value]) = a;
+ Lista.list_ex[(Nat.nat,
+                 List[Value.value])](((aa: (Nat.nat, List[Value.value])) =>
+                                       {
+ val (ia, s2): (Nat.nat, List[Value.value]) = aa;
+ (Nat.equal_nata(i, ia)) && ((! (Lista.list_all[Value.value](((ab: Value.value)
+                        =>
+                       s1 contains ab),
+                      s2))) && (GExp.restricted_once(VName.I(i),
+              Transition.Guard[B](t2))))
+                                       }),
+                                      get_ins(Transition.Guard[B](t2)))
+                                       }),
+                                      get_ins(Transition.Guard[A](t1))))))))
 
 def lob_distinguished_2[A, B](t1: Transition.transition_ext[A],
                                t2: Transition.transition_ext[B]):
@@ -3239,8 +3312,10 @@ FSet.fimage[(Nat.nat, Nat.nat),
                         }),
                        FSet_Utils.fprod[Nat.nat,
  Nat.nat](outgoing_s1, outgoing_s2));
-                                      (FSet_Utils.fSum[Nat.nat](scores),
-(s1, s2))
+                                      (if ((FSet.equal_fseta[Nat.nat](outgoing_s1,
+                               FSet.bot_fset[Nat.nat])) && (FSet.equal_fseta[Nat.nat](outgoing_s2,
+       FSet.bot_fset[Nat.nat])))
+(s1, (s2, Nat.Nata((1)))) else (FSet_Utils.fSum[Nat.nat](scores), (s1, s2)))
                                     }),
                                    pairs_to_score);
     FSet.ffilter[(Nat.nat,
@@ -3796,13 +3871,20 @@ Transition.transition_ext[Unit])](((a: Transition.transition_ext[Unit]) =>
             (List[(Nat.nat, AExp.aexp)], Map[String, Option[Nat.nat]]))
       = make_guard_abstract(inputs, Nat.zero_nata, maxR, r, Nil, Nil)
     val p: List[AExp.aexp] = make_outputs_abstract(outputs, maxR, ra, Nil);
-    (FSet.finsert[((Nat.nat, Nat.nat),
-                    Transition.transition_ext[Unit])](((s,
-                 Nat.plus_nata(maxS(e), Nat.Nata((1)))),
-                Transition.transition_exta[Unit](label, Nat.Nata(inputs.length),
-          g, p, u1, ())),
-               e),
-      ra)
+    (if (label.endsWith("*"))
+      (FSet.finsert[((Nat.nat, Nat.nat),
+                      Transition.transition_ext[Unit])](((s, s),
+                  Transition.transition_exta[Unit](label.dropRight(Code_Numeral.integer_of_nat(Nat.Nata((1))).toInt),
+            Nat.Nata(inputs.length), g, p, u1, ())),
+                 e),
+        ra)
+      else (FSet.finsert[((Nat.nat, Nat.nat),
+                           Transition.transition_ext[Unit])](((s,
+                        Nat.plus_nata(maxS(e), Nat.Nata((1)))),
+                       Transition.transition_exta[Unit](label,
+                 Nat.Nata(inputs.length), g, p, u1, ())),
+                      e),
+             ra))
   }
 
 def make_branch_abstract(x0: (FSet.fset[((Nat.nat, Nat.nat),
@@ -4448,37 +4530,41 @@ def directly_subsumes_cases(m1: FSet.fset[(Nat.nat,
                   false
                   else (if (guard_subset_eq_outputs_updates[Unit, Unit](t2, t1))
                          true
-                         else (if (Least_Upper_Bound.opposite_gob(t1, t2)) false
-                                else (if ((always_different_outputs_direct_subsumption(m1,
-        m2, sa, s,
-        t2)) && (Least_Upper_Bound.lob_distinguished_2[Unit, Unit](t1, t2)))
+                         else (if (Least_Upper_Bound.in_not_subset[Unit,
+                            Unit](t1, t2))
+                                false
+                                else (if (Least_Upper_Bound.opposite_gob(t1,
+                                  t2))
                                        false
                                        else (if ((always_different_outputs_direct_subsumption(m1,
                m2, sa, s,
-               t2)) && (Least_Upper_Bound.lob_distinguished_3[Unit,
+               t2)) && (Least_Upper_Bound.lob_distinguished_2[Unit,
                        Unit](t1, t2)))
       false
-      else (if (Least_Upper_Bound.is_lob[Unit, Unit](t2, t1)) true
-             else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
-         t2, m2, s))
-                    true
-                    else (if (Store_Reuse_Subsumption.drop_update_add_guard_direct_subsumption(m1,
-                m2, sa, s, t1, t2))
-                           false
-                           else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
-                   t2, m1, m2, sa, s))
-                                  true
-                                  else (if (Store_Reuse_Subsumption.possibly_not_value(m1,
-        m2, sa, s, t1, t2))
- false
- else (if (Transition.equal_transition_exta[Unit](t1,
-           Ignore_Inputs.drop_guards(t2)))
-        true
-        else (if ((Transition.equal_transition_exta[Unit](t2,
-                   Ignore_Inputs.drop_guards(t1))) && (satisfiable_negation[Unit](t1)))
-               false
-               else Dirties.scalaDirectlySubsumes(m1, m2, sa, s, t1,
-           t2)))))))))))))))
+      else (if ((always_different_outputs_direct_subsumption(m1, m2, sa, s,
+                      t2)) && (Least_Upper_Bound.lob_distinguished_3[Unit,
+                              Unit](t1, t2)))
+             false
+             else (if (Least_Upper_Bound.is_lob[Unit, Unit](t2, t1)) true
+                    else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
+                t2, m2, s))
+                           true
+                           else (if (Store_Reuse_Subsumption.drop_update_add_guard_direct_subsumption(m1,
+                       m2, sa, s, t1, t2))
+                                  false
+                                  else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
+                          t2, m1, m2, sa, s))
+ true
+ else (if (Store_Reuse_Subsumption.possibly_not_value(m1, m2, sa, s, t1, t2))
+        false
+        else (if (Transition.equal_transition_exta[Unit](t1,
+                  Ignore_Inputs.drop_guards(t2)))
+               true
+               else (if ((Transition.equal_transition_exta[Unit](t2,
+                          Ignore_Inputs.drop_guards(t1))) && (satisfiable_negation[Unit](t1)))
+                      false
+                      else Dirties.scalaDirectlySubsumes(m1, m2, sa, s, t1,
+                  t2))))))))))))))))
 
 def no_illegal_updates_code(x0: List[(Nat.nat, AExp.aexp)], uu: Nat.nat):
       Boolean
