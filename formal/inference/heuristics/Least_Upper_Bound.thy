@@ -12,16 +12,15 @@ fun merge_in_eq :: "vname \<Rightarrow> value \<Rightarrow> gexp list \<Rightarr
 
 fun merge_in_in :: "vname \<Rightarrow> value list \<Rightarrow> gexp list \<Rightarrow> gexp list" where
   "merge_in_in v l [] = [In v l]" |
-  "merge_in_in v l ((Eq (V v') (L l'))#t) = (if v = v' then (In v (remdups (l'#l)))#t else (Eq (V v') (L l'))#(merge_in_in v l t))" |
-  "merge_in_in v l ((In v' l')#t) = (if v = v' then (In v (remdups (l@l')))#t else (In v' l')#(merge_in_in v l t))" |
+  "merge_in_in v l ((Eq (V v') (L l'))#t) = (if v = v' then (In v (List.insert l' l))#t else (Eq (V v') (L l'))#(merge_in_in v l t))" |
+  "merge_in_in v l ((In v' l')#t) = (if v = v' then (In v (List.union l l'))#t else (In v' l')#(merge_in_in v l t))" |
   "merge_in_in v l (h#t) = h#(merge_in_in v l t)"
 
-primrec merge_guards :: "gexp list \<Rightarrow> gexp list \<Rightarrow> gexp list" where
+fun merge_guards :: "gexp list \<Rightarrow> gexp list \<Rightarrow> gexp list" where
   "merge_guards [] g2 = g2" |
-  "merge_guards (h#t) g2 = (case h of 
-      Eq (V v) (L l) \<Rightarrow> merge_guards t (merge_in_eq v l g2) |
-      In v l \<Rightarrow> merge_guards t (merge_in_in v l g2)
-  )"
+  "merge_guards ((Eq (V v) (L l))#t) g2 =  merge_guards t (merge_in_eq v l g2)" |
+  "merge_guards ((In v l)#t) g2 = merge_guards t (merge_in_in v l g2)" |
+  "merge_guards (h#t) g2 = h#(merge_guards t g2)"
 
 definition lob_aux :: "transition \<Rightarrow> transition \<Rightarrow> transition option" where
   "lob_aux t1 t2 = (if Outputs t1 = Outputs t2 \<and> Updates t1 = Updates t2 \<and> all_literal_args t1 \<and> all_literal_args t2 then
@@ -1049,4 +1048,5 @@ lemma in_not_subset_direct_subsumption: "in_not_subset t1 t2 \<Longrightarrow> \
   apply (simp add: Bex_def)
   using in_not_subset_subsumption
   by auto
+
 end

@@ -52,6 +52,7 @@ fun mutex :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
   "mutex (Eq (V v) (L l)) (Eq (V v') (L l')) = (if v = v' then l \<noteq> l' else False)" |
   "mutex (gexp.In v l) (Eq (V v') (L l')) = (v = v' \<and> l' \<notin> set l)" |
   "mutex (Eq (V v') (L l')) (gexp.In v l) = (v = v' \<and> l' \<notin> set l)" |
+  "mutex (gexp.In v l) (gexp.In v' l') = (v = v' \<and> set l \<inter> set l' = {})" |
   "mutex _ _ = False"
 
 lemma mutex_not_gval: "mutex x y \<Longrightarrow> gval (gAnd y x) s \<noteq> true"
@@ -61,10 +62,10 @@ lemma mutex_not_gval: "mutex x y \<Longrightarrow> gval (gAnd y x) s \<noteq> tr
 
 definition choice_cases :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "choice_cases t1 t2 = (
-     if Guard t1 = Guard t2 then
-       satisfiable (fold gAnd (rev (Guard t1)) (gexp.Bc True))
-     else if \<exists>(x, y) \<in> set (List.product (Guard t1) (Guard t2)). mutex x y then
+     if \<exists>(x, y) \<in> set (List.product (Guard t1) (Guard t2)). mutex x y then
        False
+     else if Guard t1 = Guard t2 then
+       satisfiable (fold gAnd (rev (Guard t1)) (gexp.Bc True))
      else
        satisfiable ((fold gAnd (rev (Guard t1@Guard t2)) (gexp.Bc True)))
    )"
@@ -83,12 +84,12 @@ lemma existing_mutex_not_true: "\<exists>x\<in>set G. \<exists>y\<in>set G. mute
 
 lemma [code]: "choice t t' = choice_cases t t'"
   apply (simp only: choice_alt choice_cases_def)
-  apply (case_tac "Guard t = Guard t'")
-   apply (simp add: choice_alt_def apply_guards_append)
-   apply (simp add: apply_guards_foldr fold_conv_foldr satisfiable_def)
   apply (case_tac "\<exists>x\<in>set (map (\<lambda>(x, y). mutex x y) (List.product (Guard t) (Guard t'))). x")
    apply (simp add: choice_alt_def)
    apply (metis existing_mutex_not_true Un_iff set_append)
+  apply (case_tac "Guard t = Guard t'")
+   apply (simp add: choice_alt_def apply_guards_append)
+   apply (simp add: apply_guards_foldr fold_conv_foldr satisfiable_def)
   by (simp add: apply_guards_foldr choice_alt_def fold_conv_foldr satisfiable_def)
 
 fun guardMatch_code :: "gexp list \<Rightarrow> gexp list \<Rightarrow> bool" where

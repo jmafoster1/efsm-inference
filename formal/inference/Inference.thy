@@ -598,11 +598,105 @@ lemma no_choice_no_subsumption:
 
 definition "satisfiable_list l = satisfiable (fold gAnd l (Bc True))"
 
+fun fold_into :: "nat \<Rightarrow> gexp list \<Rightarrow> gexp list" where
+  "fold_into n [] = [gNot (Null (V (I n)))]" |
+  "fold_into n ((Eq (V (I i)) (L l))#t) = (if i = n then (Eq (V (I i)) (L l))#t else (Eq (V (I i)) (L l))#(fold_into n t))" |
+  "fold_into n ((In (I i) l)#t) = (if i = n then (In (I i) l)#t else (In (I i) l)#(fold_into n t))" |
+  "fold_into n (h#t) = h#(fold_into n t)"
+
+primrec smart_not_null :: "nat list \<Rightarrow> gexp list \<Rightarrow> gexp list" where
+  "smart_not_null [] g = g" |
+  "smart_not_null (h#t) g = fold_into h (smart_not_null t g)"
+
+lemma fold_into_supset: "set (fold_into a g) \<supseteq> set g"
+  by(induct g rule: fold_into.induct, auto)
+
+lemma fold_into_gNot_or_not: "fold_into a g = g \<or> fold_into a g = g@[(gNot (Null (V (I a))))]"
+proof(induct g)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a g)
+  then show ?case
+    apply (cases a)
+         apply simp+
+        apply (case_tac x21)
+           apply simp
+          apply (case_tac x22)
+             apply simp
+             apply (metis Cons.hyps fold_into.simps(1) fold_into.simps(2) fold_into.simps(6) vname.exhaust)
+            apply simp+
+     apply (case_tac x51)
+    by auto
+qed
+
+lemma smart_not_null_superset: "set (smart_not_null l g) \<supseteq> set g"
+proof(induct l)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a l)
+  then show ?case
+    apply simp
+    using fold_into_supset by blast
+qed
+
+lemma fold_into_not_null: "apply_guards (fold_into a g) s \<Longrightarrow> gval (gNot (Null (V (I a)))) s = true"
+  apply (insert fold_into_gNot_or_not[of a g])
+  apply (case_tac "fold_into a g = g @ [gNot (Null (V (I a)))]")
+   apply (simp add: apply_guards_singleton apply_guards_append)
+  apply simp
+  apply (induct g)
+   apply simp
+   apply (simp add: apply_guards_cons)
+  apply (case_tac aa)
+       apply simp
+      apply (case_tac x21)
+         apply simp
+        apply (case_tac x22)
+           apply simp
+           apply (case_tac "x2")
+            apply simp
+            apply (case_tac "x1a = a")
+             apply simp
+             apply (metis trilean.distinct(1))
+            apply simp+
+   apply (case_tac x51)
+    apply simp
+    apply (metis imageE list.inject trilean.distinct(1))
+  by auto
+
+lemma apply_guards_snn_map_gNot:
+  "apply_guards (smart_not_null l g) s \<Longrightarrow> apply_guards (g @ map (\<lambda>i. gNot (Null (V (I i)))) l) s"
+proof(induct l)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a l)
+  then show ?case
+    apply (simp add: apply_guards_append apply_guards_cons del: gval.simps)
+    apply standard
+     apply (metis smart_not_null_superset apply_guards_subset smart_not_null.simps(2))
+    apply standard
+    using fold_into_not_null apply blast
+    using apply_guards_subset fold_into_supset by blast
+qed
+
+lemma apply_guards_snn: "apply_guards (smart_not_null [0..<a] g) s \<Longrightarrow> apply_guards (g @ ensure_not_null a) s"
+  by (simp only: ensure_not_null_def apply_guards_snn_map_gNot)
+
+lemma satisfiable_list_snn: "satisfiable_list (smart_not_null [0..<a] g) \<Longrightarrow> satisfiable_list (g @ ensure_not_null a)"
+  apply (simp add: satisfiable_list_def satisfiable_def apply_guards_fold[symmetric] del: fold_append)
+  using apply_guards_snn by blast
+
 definition simple_mutex :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "simple_mutex t t' = (
      max_reg_list (Guard t) = None \<and>
      max_input_list (Guard t) < Some (Arity t) \<and>
-     satisfiable_list ((Guard t) @ ensure_not_null (Arity t)) \<and>
+     satisfiable_list (smart_not_null [0..<(Arity t)] (Guard t)) \<and>
      Label t = Label t' \<and>
      Arity t = Arity t' \<and>
      \<not> choice t' t)"
@@ -639,7 +733,7 @@ lemma simple_mutex_direct_subsumption:
   apply (rule cant_directly_subsume)
   apply (rule allI)
   apply (simp add: simple_mutex_def)
-  by (metis can_take_satisfiable no_choice_no_subsumption)
+  by (metis satisfiable_list_snn can_take_satisfiable no_choice_no_subsumption)
 
 definition max_int :: "iEFSM \<Rightarrow> int" where
   "max_int e = Max (insert 0 (EFSM.enumerate_ints (tm e)))"
