@@ -380,8 +380,8 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
       then False
     else if t1 = drop_guards t2
       then True
-    else if t2 = drop_guards t1 \<and> satisfiable_negation t1
-      then False
+    \<comment> \<open>else if t2 = drop_guards t1 \<and> satisfiable_negation t1
+      then False\<close>
     else dirty_directly_subsumes m1 m2 s s' t1 t2
   )"
 
@@ -418,8 +418,6 @@ lemma directly_subsumes_cases:  "directly_subsumes m1 m2 s s' t1 t2 = directly_s
    apply (simp add: possibly_not_value_not_directly_subsumes)
   apply (clarify, rule if_elim)
    apply (simp add: drop_inputs_subsumption subsumes_in_all_contexts_directly_subsumes)
-  apply (clarify, rule if_elim)
-   apply (simp add: cant_directly_subsume satisfiable_negation_cant_subsume)
   by (simp add: dirty_directly_subsumes_def)
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where

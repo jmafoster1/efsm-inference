@@ -40,6 +40,8 @@ object Config {
   val builder = OParser.builder[Config]
   var config: Config = null
   var heuristics = Inference.try_heuristics(List(), (Inference.nondeterministic_pairs _))
+  var numStates: BigInt = 0
+  var ptaNumStates: BigInt = 0
 
   implicit val heuristicsRead: scopt.Read[Heuristics.Value] =
     scopt.Read.reads(Heuristics withName _)

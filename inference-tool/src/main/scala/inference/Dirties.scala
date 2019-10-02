@@ -98,15 +98,18 @@ object Dirties {
           // Log.root.debug(g.toString)
           // Log.root.debug(z3String)
 
-          // Log.root.debug("Calling out to Z3")
-          // println(g)
-          println(PrettyPrinter.gexpToString(g))
+          if (Config.numStates == 5) {
+            Log.root.debug("Calling out to Z3")
+            println(PrettyPrinter.gexpToString(g))
+          }
           val ctx = new z3.Context()
           val solver = ctx.mkSimpleSolver()
           solver.fromString(z3String)
           val sat = solver.check()
           ctx.close()
-          // Log.root.debug(s"Z3 returned ${sat}")
+          if (Config.numStates == 5) {
+            Log.root.debug(s"Z3 returned ${sat}")
+          }
           return sat == z3.Status.SATISFIABLE
         }
       }

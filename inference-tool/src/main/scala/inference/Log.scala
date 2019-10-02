@@ -9,6 +9,8 @@ object Log {
   root.setLevel(Config.config.logLevel)
 
   def logStates(s_1: Nat.nat, s_2: Nat.nat) = {
+		Config.numStates = Code_Numeral.integer_of_nat(s_1)
+		println(Config.numStates)
     root.debug(s"${Code_Numeral.integer_of_nat(s_2)} -> ${Code_Numeral.integer_of_nat(s_1)}")
   }
 

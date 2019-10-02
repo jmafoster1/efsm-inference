@@ -1246,12 +1246,6 @@ def max_input_list(g: List[gexp]): Option[Nat.nat] =
         ((a: gexp) => max_input(a))),
                                 g, None)
 
-def ensure_not_null(n: Nat.nat): List[gexp] =
-  Lista.map[Nat.nat,
-             gexp](((i: Nat.nat) =>
-                     Nor(Null(AExp.V(VName.I(i))), Null(AExp.V(VName.I(i))))),
-                    Lista.upt(Nat.zero_nata, n))
-
 def gexp_constrains(x0: gexp, uv: AExp.aexp): Boolean = (x0, uv) match {
   case (Bc(uu), uv) => false
   case (Null(aa), a) => AExp.aexp_constrains(aa, a)
@@ -2231,24 +2225,26 @@ def in_not_subset[A, B](t1: Transition.transition_ext[A],
   (Transition.Label[A](t1) ==
     Transition.Label[B](t2)) && ((Nat.equal_nata(Transition.Arity[A](t1),
           Transition.Arity[B](t2))) && ((Optiona.is_none[Nat.nat](GExp.max_reg_list(Transition.Guard[B](t2)))) && ((Option_Lexorder.less_option[Nat.nat](GExp.max_input_list(Transition.Guard[B](t2)),
-                                  Some[Nat.nat](Transition.Arity[B](t2)))) && ((Inference.satisfiable_list(Transition.Guard[B](t2) ++
-                             GExp.ensure_not_null(Transition.Arity[B](t2)))) && (Lista.list_ex[(Nat.nat,
-                 List[Value.value])](((a: (Nat.nat, List[Value.value])) =>
-                                       {
- val (i, s1): (Nat.nat, List[Value.value]) = a;
- Lista.list_ex[(Nat.nat,
-                 List[Value.value])](((aa: (Nat.nat, List[Value.value])) =>
-                                       {
- val (ia, s2): (Nat.nat, List[Value.value]) = aa;
- (Nat.equal_nata(i, ia)) && ((! (Lista.list_all[Value.value](((ab: Value.value)
-                        =>
-                       s1 contains ab),
-                      s2))) && (GExp.restricted_once(VName.I(i),
-              Transition.Guard[B](t2))))
-                                       }),
-                                      get_ins(Transition.Guard[B](t2)))
-                                       }),
-                                      get_ins(Transition.Guard[A](t1))))))))
+                                  Some[Nat.nat](Transition.Arity[B](t2)))) && ((Inference.satisfiable_list(Inference.smart_not_null(Lista.upt(Nat.zero_nata,
+                       Transition.Arity[B](t2)),
+             Transition.Guard[B](t2)))) && (Lista.list_ex[(Nat.nat,
+                    List[Value.value])](((a: (Nat.nat, List[Value.value])) =>
+  {
+    val (i, s1): (Nat.nat, List[Value.value]) = a;
+    Lista.list_ex[(Nat.nat,
+                    List[Value.value])](((aa: (Nat.nat, List[Value.value])) =>
+  {
+    val (ia, s2): (Nat.nat, List[Value.value]) = aa;
+    (Nat.equal_nata(i, ia)) && ((! (Lista.list_all[Value.value](((ab:
+                            Value.value)
+                           =>
+                          s1 contains ab),
+                         s2))) && (GExp.restricted_once(VName.I(i),
+                 Transition.Guard[B](t2))))
+  }),
+ get_ins(Transition.Guard[B](t2)))
+  }),
+ get_ins(Transition.Guard[A](t1))))))))
 
 def lob_distinguished_2[A, B](t1: Transition.transition_ext[A],
                                t2: Transition.transition_ext[B]):
@@ -4378,17 +4374,6 @@ def mutex(uu: GExp.gexp, uv: GExp.gexp): Boolean = (uu, uv) match {
   case (uu, GExp.Nor(v, va)) => false
 }
 
-def negate(g: List[GExp.gexp]): GExp.gexp =
-  GExp.Nor(Lista.fold[GExp.gexp,
-                       GExp.gexp](((v: GExp.gexp) => (va: GExp.gexp) =>
-                                    GExp.Nor(GExp.Nor(v, v), GExp.Nor(va, va))),
-                                   g, GExp.Bc(true)),
-            Lista.fold[GExp.gexp,
-                        GExp.gexp](((v: GExp.gexp) => (va: GExp.gexp) =>
-                                     GExp.Nor(GExp.Nor(v, v),
-       GExp.Nor(va, va))),
-                                    g, GExp.Bc(true)))
-
 def choice_cases(t1: Transition.transition_ext[Unit],
                   t2: Transition.transition_ext[Unit]):
       Boolean
@@ -4553,11 +4538,6 @@ r))) && ((Nat.less_nat(i, Transition.Arity[Unit](t))) && ((! ((Lista.map[(Nat.na
                         tests_input_equality(i, a)),
                        Transition.Guard[Unit](t))).length)))))
 
-def satisfiable_negation[A](t: Transition.transition_ext[A]): Boolean =
-  (Optiona.is_none[Nat.nat](GExp.max_reg_list(Transition.Guard[A](t)))) && ((Option_Lexorder.less_option[Nat.nat](GExp.max_input_list(Transition.Guard[A](t)),
-                                   Some[Nat.nat](Transition.Arity[A](t)))) && (Inference.satisfiable_list(negate(Transition.Guard[A](t)) ::
-                            GExp.ensure_not_null(Transition.Arity[A](t)))))
-
 def input_updates_register_aux(x0: List[(Nat.nat, AExp.aexp)]): Option[Nat.nat]
   =
   x0 match {
@@ -4687,11 +4667,8 @@ def directly_subsumes_cases(m1: FSet.fset[(Nat.nat,
         else (if (Transition.equal_transition_exta[Unit](t1,
                   Ignore_Inputs.drop_guards(t2)))
                true
-               else (if ((Transition.equal_transition_exta[Unit](t2,
-                          Ignore_Inputs.drop_guards(t1))) && (satisfiable_negation[Unit](t1)))
-                      false
-                      else Dirties.scalaDirectlySubsumes(m1, m2, sa, s, t1,
-                  t2))))))))))))))))
+               else Dirties.scalaDirectlySubsumes(m1, m2, sa, s, t1,
+           t2)))))))))))))))
 
 def no_illegal_updates_code(x0: List[(Nat.nat, AExp.aexp)], uu: Nat.nat):
       Boolean
@@ -4820,9 +4797,10 @@ def updates_subset(ta: Transition.transition_ext[Unit],
                    AExp.aexp),
                   Nat.nat](((a: (Nat.nat, AExp.aexp)) => a._1),
                             Transition.Updates[Unit](ta))) contains r)) && ((Option_Lexorder.less_option[Nat.nat](GExp.max_input_list(Transition.Guard[Unit](ta)),
-                                   Some[Nat.nat](Transition.Arity[Unit](ta)))) && ((Inference.satisfiable_list(Transition.Guard[Unit](ta) ++
-                                 GExp.ensure_not_null(Transition.Arity[Unit](ta)))) && ((Optiona.is_none[Nat.nat](GExp.max_reg_list(Transition.Guard[Unit](ta)))) && (Nat.less_nat(i,
-                    Transition.Arity[Unit](ta)))))))))
+                                   Some[Nat.nat](Transition.Arity[Unit](ta)))) && ((Inference.satisfiable_list(Inference.smart_not_null(Lista.upt(Nat.zero_nata,
+                           Transition.Arity[Unit](ta)),
+                 Transition.Guard[Unit](ta)))) && ((Optiona.is_none[Nat.nat](GExp.max_reg_list(Transition.Guard[Unit](ta)))) && (Nat.less_nat(i,
+                       Transition.Arity[Unit](ta)))))))))
    })
 
 def no_illegal_updates[A](t: Transition.transition_ext[A], r: Nat.nat): Boolean

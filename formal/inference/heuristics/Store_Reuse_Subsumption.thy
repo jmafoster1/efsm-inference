@@ -1,5 +1,5 @@
 theory Store_Reuse_Subsumption
-imports Store_Reuse
+imports Store_Reuse Least_Upper_Bound
 begin
 
 lemma generalisation_of_preserves: "is_generalisation_of t' t i r \<Longrightarrow>
@@ -679,7 +679,7 @@ definition updates_subset :: "transition \<Rightarrow> transition \<Rightarrow> 
      r \<notin> set (map fst (removeAll (r, V (I i)) (Updates t'))) \<and>
      r \<notin> set (map fst (Updates t)) \<and>
      max_input_list (Guard t) < Some (Arity t) \<and>
-     satisfiable_list ((Guard t) @ ensure_not_null (Arity t)) \<and>
+     satisfiable_list (smart_not_null [0..<(Arity t)] (Guard t)) \<and>
      max_reg_list (Guard t) = None \<and>
      i < Arity t
   )"
@@ -702,7 +702,7 @@ lemma updates_subset_conditions:
   using can_take_satisfiable[of t1 c]
   apply simp
   apply (rule general_not_subsume_orig)
-  using input_stored_in_reg_updates_reg
+  using input_stored_in_reg_updates_reg satisfiable_list_snn
   by auto
 
 lemma drop_update_add_guard_direct_subsumption:

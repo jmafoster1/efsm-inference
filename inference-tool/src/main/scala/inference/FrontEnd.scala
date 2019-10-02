@@ -33,6 +33,11 @@ object FrontEnd {
     else {
       pta = Inference.make_pta(Config.config.log, FSet.bot_fset)
     }
+    Config.numStates = Code_Numeral.integer_of_nat(FSet.size_fset(EFSM.S(pta)))
+    Config.ptaNumStates = Config.numStates
+
+    Log.root.info(s"PTA has ${Config.numStates} states")
+
     PrettyPrinter.EFSM2dot(pta, s"pta_gen")
 
     try {

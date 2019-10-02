@@ -1093,4 +1093,10 @@ definition restricted_once :: "vname \<Rightarrow> gexp list \<Rightarrow> bool"
 definition not_restricted :: "vname \<Rightarrow> gexp list \<Rightarrow> bool" where
   "not_restricted v G = (length (filter (\<lambda>g. gexp_constrains g (V v)) G) = 0)"
 
+lemma restricted_once_cons: "restricted_once v (g#gs) = ((gexp_constrains g (V v) \<and> not_restricted v gs) \<or> ((\<not> gexp_constrains g (V v)) \<and> restricted_once v gs))"
+  by (simp add: restricted_once_def not_restricted_def)
+
+lemma not_restricted_cons: "not_restricted v (g#gs) = ((\<not> gexp_constrains g (V v)) \<and> not_restricted v gs)"
+  by (simp add: not_restricted_def)
+
 end

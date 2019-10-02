@@ -975,7 +975,7 @@ definition "in_not_subset t1 t2 = (Label t1 = Label t2 \<and>
    Arity t1 = Arity t2 \<and>
    max_reg_list (Guard t2) = None \<and>
    max_input_list (Guard t2) < Some (Arity t2) \<and>
-   satisfiable_list (Guard t2 @ ensure_not_null (Arity t2)) \<and>
+   satisfiable_list (smart_not_null [0..<(Arity t2)] (Guard t2)) \<and>
    (\<exists>(i, s1) \<in> set (get_ins (Guard t1)).
    \<exists>(i', s2) \<in> set (get_ins (Guard t2)).
    i = i' \<and>
@@ -1039,7 +1039,7 @@ lemma in_not_subset_subsumption:
          apply auto[1]
         apply auto[1]
        apply simp
-  by (simp_all add: in_not_subset_def)
+  by (simp_all add: in_not_subset_def satisfiable_list_snn)
 
 lemma in_not_subset_direct_subsumption: "in_not_subset t1 t2 \<Longrightarrow> \<not> directly_subsumes e1 e2 s1 s2 t1 t2"
   apply (rule cant_directly_subsume)
@@ -1049,28 +1049,35 @@ lemma in_not_subset_direct_subsumption: "in_not_subset t1 t2 \<Longrightarrow> \
   using in_not_subset_subsumption
   by auto
 
-lemma "(\<forall>g \<in> set G. literal_args g) \<Longrightarrow>
-       \<forall>v. restricted_once v G \<or> not_restricted v G \<Longrightarrow>
-       satisfiable_list G"
+lemma restricted_head: "\<forall>v. restricted_once v (Eq (V x2) (L x1) # G) \<or> not_restricted v (Eq (V x2) (L x1) # G) \<Longrightarrow>
+      not_restricted x2 G"
+  apply (erule_tac x=x2 in allE)
+  by (simp add: restricted_once_def not_restricted_def)
+
+fun atomic :: "gexp \<Rightarrow> bool" where
+  "atomic (Eq (V _) (L _)) = True" |
+  "atomic (In _ _) = True" |
+  "atomic (Null (V (R r))) = True" |
+  "atomic _ = False"
+
+lemma restricted_max_once_cons: "\<forall>v. restricted_once v (g#gs) \<or> not_restricted v (g#gs) \<Longrightarrow>
+       \<forall>v. restricted_once v gs \<or> not_restricted v gs"
+  apply (simp add: restricted_once_def not_restricted_def)
+  apply safe
+  apply (erule_tac x=v in allE)
+  by (metis (mono_tags, lifting) list.distinct(1) list.inject singleton_list)
+
+lemma not_restricted_swap_inputs:
+  "not_restricted (I x1a) G \<Longrightarrow>
+   apply_guards G (join_ir i r) \<Longrightarrow>
+   apply_guards G (join_ir (i[x1a := x1]) r)"
 proof(induct G)
-case Nil
-  then show ?case
-    by (simp add: satisfiable_list_def satisfiable_def)
+  case Nil
+  then show ?case by simp
 next
   case (Cons a G)
   then show ?case
-    apply (simp add: satisfiable_list_def apply_guards_fold[symmetric] satisfiable_def apply_guards_cons del: fold.simps)
-    apply (cases a)
-         apply simp
-        apply (case_tac x21)
-           apply simp
-          apply (case_tac x22)
-             apply clarify
-             apply simp
-             apply (case_tac x2)
-              apply (simp add: join_ir_def)
-
-
+    apply (simp add: apply_guards_cons not_restricted_cons)
+    using input_not_constrained_gval_swap_inputs by auto
 qed
-
 end

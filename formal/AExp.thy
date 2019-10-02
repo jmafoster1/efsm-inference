@@ -157,6 +157,9 @@ next
     by (simp add: finfun_upd_apply nth_append)
 qed
 
+lemma input2state_some: "i < length ia \<Longrightarrow> ia ! i = x \<Longrightarrow> input2state ia $ i = Some x"
+  by (simp add: input2state_nth)
+
 lemma input2state_take:
   "x1 < A \<Longrightarrow>
    A \<le> length i \<Longrightarrow>
