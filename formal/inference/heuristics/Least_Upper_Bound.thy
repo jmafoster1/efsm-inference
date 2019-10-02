@@ -1049,4 +1049,28 @@ lemma in_not_subset_direct_subsumption: "in_not_subset t1 t2 \<Longrightarrow> \
   using in_not_subset_subsumption
   by auto
 
+lemma "(\<forall>g \<in> set G. literal_args g) \<Longrightarrow>
+       \<forall>v. restricted_once v G \<or> not_restricted v G \<Longrightarrow>
+       satisfiable_list G"
+proof(induct G)
+case Nil
+  then show ?case
+    by (simp add: satisfiable_list_def satisfiable_def)
+next
+  case (Cons a G)
+  then show ?case
+    apply (simp add: satisfiable_list_def apply_guards_fold[symmetric] satisfiable_def apply_guards_cons del: fold.simps)
+    apply (cases a)
+         apply simp
+        apply (case_tac x21)
+           apply simp
+          apply (case_tac x22)
+             apply clarify
+             apply simp
+             apply (case_tac x2)
+              apply (simp add: join_ir_def)
+
+
+qed
+
 end

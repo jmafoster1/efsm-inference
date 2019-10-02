@@ -4224,6 +4224,74 @@ val (ab, b):
           (Transition.transition_ext[Unit], Nat.nat)))
   = aa;
 ({
+   val (_, _): (Nat.nat, Nat.nat) = ab;
+   ((ac: ((Transition.transition_ext[Unit], Nat.nat),
+           (Transition.transition_ext[Unit], Nat.nat)))
+      =>
+     {
+       val (ad, ba):
+             ((Transition.transition_ext[Unit], Nat.nat),
+               (Transition.transition_ext[Unit], Nat.nat))
+         = ac;
+       ({
+          val (ta, _): (Transition.transition_ext[Unit], Nat.nat) = ad;
+          ((ae: (Transition.transition_ext[Unit], Nat.nat)) =>
+            {
+              val (taa, _): (Transition.transition_ext[Unit], Nat.nat) = ae;
+              (Transition.Label[Unit](ta) ==
+                Transition.Label[Unit](taa)) && ((Nat.equal_nata(Transition.Arity[Unit](ta),
+                          Transition.Arity[Unit](taa))) && ((EFSM.choice(ta,
+                                  taa)) || (Lista.equal_lista[AExp.aexp](Transition.Outputs[Unit](ta),
+                                  Transition.Outputs[Unit](taa)))))
+            })
+        })(ba)
+     })
+ })(b)
+                                      }),
+                                     FSet.ffUnion[(Nat.nat,
+            ((Nat.nat, Nat.nat),
+              ((Transition.transition_ext[Unit], Nat.nat),
+                (Transition.transition_ext[Unit],
+                  Nat.nat))))](FSet.fimage[Nat.nat,
+    FSet.fset[(Nat.nat,
+                ((Nat.nat, Nat.nat),
+                  ((Transition.transition_ext[Unit], Nat.nat),
+                    (Transition.transition_ext[Unit],
+                      Nat.nat))))]](((s: Nat.nat) =>
+                                      state_nondeterminism(s,
+                    outgoing_transitions(s, t))),
+                                     S(t))))
+
+def nondeterministic_pairs_labar_dest(t:
+FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
+      FSet.fset[(Nat.nat,
+                  ((Nat.nat, Nat.nat),
+                    ((Transition.transition_ext[Unit], Nat.nat),
+                      (Transition.transition_ext[Unit], Nat.nat))))]
+  =
+  FSet.ffilter[(Nat.nat,
+                 ((Nat.nat, Nat.nat),
+                   ((Transition.transition_ext[Unit], Nat.nat),
+                     (Transition.transition_ext[Unit],
+                       Nat.nat))))](((a:
+(Nat.nat,
+  ((Nat.nat, Nat.nat),
+    ((Transition.transition_ext[Unit], Nat.nat),
+      (Transition.transition_ext[Unit], Nat.nat)))))
+                                       =>
+                                      {
+val (_, aa):
+      (Nat.nat,
+        ((Nat.nat, Nat.nat),
+          ((Transition.transition_ext[Unit], Nat.nat),
+            (Transition.transition_ext[Unit], Nat.nat))))
+  = a
+val (ab, b):
+      ((Nat.nat, Nat.nat),
+        ((Transition.transition_ext[Unit], Nat.nat),
+          (Transition.transition_ext[Unit], Nat.nat)))
+  = aa;
+({
    val (d, da): (Nat.nat, Nat.nat) = ab;
    ((ac: ((Transition.transition_ext[Unit], Nat.nat),
            (Transition.transition_ext[Unit], Nat.nat)))

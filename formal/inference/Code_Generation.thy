@@ -569,7 +569,7 @@ export_code
   statewise_drop_inputs drop_inputs same_register insert_increment_2 heuristic_1 heuristic_2
   transitionwise_drop_inputs lob gob gung_ho equals not_equals
   (* Nondeterminism metrics *)
-  nondeterministic_pairs nondeterministic_pairs_labar
+  nondeterministic_pairs nondeterministic_pairs_labar nondeterministic_pairs_labar_dest
   (* Utilities *)
   iefsm2dot efsm2dot guards2sal fold_In max_int use_smallest_ints
 in Scala

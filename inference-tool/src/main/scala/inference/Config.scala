@@ -13,7 +13,7 @@ object Heuristics extends Enumeration {
 
 object Nondeterminisms extends Enumeration {
   type Nondetermnism = Value
-  val basic, labar = Value
+  val basic, labar, labar_d = Value
 }
 
 object Strategies extends Enumeration {
@@ -71,6 +71,7 @@ object Config {
       _.toLowerCase match {
         case "basic" => (Inference.nondeterministic_pairs _)
         case "labar" => (Inference.nondeterministic_pairs_labar _)
+        case "labar_d" => (Inference.nondeterministic_pairs_labar_dest _)
         case s =>
           throw new IllegalArgumentException(s"'${s}' is not a valid strategy ${Nondeterminisms.values}")
       }

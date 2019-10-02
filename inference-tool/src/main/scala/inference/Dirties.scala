@@ -100,6 +100,7 @@ object Dirties {
 
           // Log.root.debug("Calling out to Z3")
           // println(g)
+          println(PrettyPrinter.gexpToString(g))
           val ctx = new z3.Context()
           val solver = ctx.mkSimpleSolver()
           solver.fromString(z3String)
