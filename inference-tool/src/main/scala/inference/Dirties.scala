@@ -47,7 +47,8 @@ object Dirties {
     }
 
   def foldl[A, B](f: A => B => A, b: A, l: List[B]): A =
-    l.par.foldLeft(b)(((x, y) => (f(x))(y)))
+    // l.par.foldLeft(b)(((x, y) => (f(x))(y)))
+    l.foldLeft(b)(((x, y) => (f(x))(y)))
 
   def toZ3(a: VName.vname): String = a match {
     case VName.I(n) => s"i${Code_Numeral.integer_of_nat(n)}"
@@ -98,17 +99,14 @@ object Dirties {
           // Log.root.debug(g.toString)
           // Log.root.debug(z3String)
 
-          if (Config.numStates == 5) {
-            Log.root.debug("Calling out to Z3")
-            println(PrettyPrinter.gexpToString(g))
-          }
           val ctx = new z3.Context()
           val solver = ctx.mkSimpleSolver()
           solver.fromString(z3String)
           val sat = solver.check()
           ctx.close()
           if (Config.numStates == 5) {
-            Log.root.debug(s"Z3 returned ${sat}")
+
+            Log.root.debug(s"${PrettyPrinter.gexpToString(g)}\nZ3 returned ${sat}")
           }
           return sat == z3.Status.SATISFIABLE
         }

@@ -1,6 +1,4 @@
 import scala.io.Source
-import com.microsoft.z3
-// PrintWriter
 import java.io._
 import org.apache.commons.io.FilenameUtils
 import scala.collection.mutable.ListBuffer

@@ -599,7 +599,7 @@ def is_none[A](x0: Option[A]): Boolean = x0 match {
 
 object Lista {
 
-def list_all[A](f: A => Boolean, l: List[A]): Boolean = l.par.forall(f)
+def list_all[A](f: A => Boolean, l: List[A]): Boolean = l.forall(f)
 
 def equal_lista[A : HOL.equal](xs: List[A], ys: List[A]): Boolean =
   (Nat.equal_nata(Nat.Nata(xs.length),
@@ -616,7 +616,7 @@ def upt(i: Nat.nat, j: Nat.nat): List[Nat.nat] =
 def fold[A, B](f: A => B => B, xs: List[A], s: B): B =
   Dirties.foldl[B, A](((x: B) => (sa: A) => (f(sa))(x)), s, xs)
 
-def maps[A, B](f: A => List[B], l: List[A]): List[B] = l.par.flatMap(f).toList
+def maps[A, B](f: A => List[B], l: List[A]): List[B] = l.flatMap(f)
 
 def upto_aux(i: Int.int, j: Int.int, js: List[Int.int]): List[Int.int] =
   (if (Int.less_int(j, i)) js
@@ -634,11 +634,11 @@ def union[A : HOL.equal]: (List[A]) => (List[A]) => List[A] =
   ((a: List[A]) => (b: List[A]) =>
     fold[A, List[A]](((aa: A) => (ba: List[A]) => insert[A](aa, ba)), a, b))
 
-def filter[A](l: A => Boolean, f: List[A]): List[A] = f.par.filter(l).toList
+def filter[A](l: A => Boolean, f: List[A]): List[A] = f.filter(l)
 
-def list_ex[A](f: A => Boolean, l: List[A]): Boolean = l.par.exists(f)
+def list_ex[A](f: A => Boolean, l: List[A]): Boolean = l.exists(f)
 
-def map[A, B](f: A => B, l: List[A]): List[B] = l.par.map(f).toList
+def map[A, B](f: A => B, l: List[A]): List[B] = l.map(f)
 
 def product[A, B](xs: List[A], ys: List[B]): List[(A, B)] =
   maps[A, (A, B)](((x: A) => map[B, (A, B)](((a: B) => (x, a)), ys)), xs)
