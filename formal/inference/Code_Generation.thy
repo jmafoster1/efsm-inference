@@ -60,6 +60,12 @@ lemma mutex_not_gval: "mutex x y \<Longrightarrow> gval (gAnd y x) s \<noteq> tr
   apply (simp, metis option.inject)
   by auto
 
+(* (\<exists>(i, s1) \<in> set (get_ins (Guard t1)).
+   \<exists>(i', s2) \<in> set (get_ins (Guard t2)).
+   i = i' \<and>
+   \<not> (set s2) \<subseteq> (set s1) \<and>
+   restricted_once (I i) (Guard t2)) *)
+
 definition choice_cases :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "choice_cases t1 t2 = (
      if \<exists>(x, y) \<in> set (List.product (Guard t1) (Guard t2)). mutex x y then

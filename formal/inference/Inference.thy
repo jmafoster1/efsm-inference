@@ -431,19 +431,20 @@ definition make_distinct :: "iEFSM option \<Rightarrow> iEFSM option" where
 (* @param m       - an update modifier function which tries dest generalise transitions             *)
 (* @param check - a function which takes an EFSM and returns a bool dest ensure that certain
                   properties hold in the new iEFSM                                                *)
-function resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
-  "resolve_nondeterminism [] _ new _ check np = (if deterministic new np \<and> check (tm new) then Some new else None)" |
-  "resolve_nondeterminism ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) oldEFSM newEFSM m check np = (let
+function resolve_nondeterminism :: "(cfstate \<times> cfstate) list \<Rightarrow> nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
+  "resolve_nondeterminism _ [] _ new _ check np = (if deterministic new np \<and> check (tm new) then Some new else None)" |
+  "resolve_nondeterminism closed ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) oldEFSM newEFSM m check np = (
+     if (dest\<^sub>1, dest\<^sub>2) \<in> set closed then None else let
      destMerge = if dest\<^sub>1 = dest\<^sub>2 then newEFSM else merge_states dest\<^sub>1 dest\<^sub>2 newEFSM
      in
      case make_distinct (merge_transitions oldEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m np) of
-       None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check np |
+       None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np |
        Some new \<Rightarrow>
          let newScores = (sorted_list_of_fset (np new)) in 
          if length (newScores) + size new < length (ss) + 1 + size newEFSM then
-           case resolve_nondeterminism newScores oldEFSM new m check np of
+           case resolve_nondeterminism closed newScores oldEFSM new m check np of
              Some new' \<Rightarrow> Some new' |
-             None \<Rightarrow> resolve_nondeterminism ss oldEFSM newEFSM m check np
+             None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np
          else
           None
    )"
@@ -452,7 +453,7 @@ function resolve_nondeterminism :: "nondeterministic_pair list \<Rightarrow> iEF
      apply (metis neq_Nil_conv prod_cases3 surj_pair)
   by auto
 termination
-  by (relation "measures [\<lambda>(ss, _, newEFSM, _). length ss + size newEFSM]") auto
+  by (relation "measures [\<lambda>(_, ss, _, newEFSM, _). length ss + size newEFSM]") auto
 
 (* Merge - tries dest merge two states in a given iEFSM and resolve the resulting nondeterminism    *)
 (* @param e     - an iEFSM                                                                        *)
@@ -467,7 +468,7 @@ definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> upd
       None 
     else 
       let e' = (merge_states s\<^sub>1 s\<^sub>2 e) in
-      resolve_nondeterminism (sorted_list_of_fset (np e')) e e' m check np 
+      resolve_nondeterminism [] (sorted_list_of_fset (np e')) e e' m check np 
   )"
 
 (* inference_step - attempt dest carry out a single step of the inference process by merging the    *)
@@ -700,11 +701,11 @@ lemma satisfiable_list_snn: "satisfiable_list (smart_not_null [0..<a] g) \<Longr
 
 definition simple_mutex :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "simple_mutex t t' = (
+     Label t = Label t' \<and>
+     Arity t = Arity t' \<and>
      max_reg_list (Guard t) = None \<and>
      max_input_list (Guard t) < Some (Arity t) \<and>
      satisfiable_list (smart_not_null [0..<(Arity t)] (Guard t)) \<and>
-     Label t = Label t' \<and>
-     Arity t = Arity t' \<and>
      \<not> choice t' t)"
 
 lemma satisfiable_can_take:

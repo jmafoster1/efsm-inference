@@ -149,7 +149,7 @@ definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarro
 definition heuristic_1 :: "log \<Rightarrow> update_modifier" where
   "heuristic_1 l = (\<lambda>t1 t2 s new old np. let newEFSMopt = (modify (find_intertrace_matches l old) t1 t2 new) in
                                       case newEFSMopt of None \<Rightarrow> None |
-                                                      Some newEFSM \<Rightarrow> resolve_nondeterminism (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np)"
+                                                      Some newEFSM \<Rightarrow> resolve_nondeterminism [] (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np)"
 
 lemma remove_guard_add_update_preserves_outputs: "Outputs (remove_guard_add_update t i r) = Outputs t"
   by (simp add: remove_guard_add_update_def)
@@ -245,6 +245,7 @@ definition modify_2 :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightar
 definition heuristic_2 :: "log \<Rightarrow> update_modifier" where
   "heuristic_2 l = (\<lambda>t1 t2 s new old np. let newEFSMopt = (modify_2 (find_intertrace_matches l old) t1 t2 new) in
                                       case newEFSMopt of None \<Rightarrow> None |
-                                                      Some newEFSM \<Rightarrow> resolve_nondeterminism (sorted_list_of_fset (nondeterministic_pairs newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np)"
+                                                      Some newEFSM \<Rightarrow> resolve_nondeterminism [] (sorted_list_of_fset (nondeterministic_pairs newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np)"
+hide_const ioTag.In
 
 end                                                   

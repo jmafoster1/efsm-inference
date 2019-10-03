@@ -3,7 +3,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@6792f2c6",
+        "Account@6792f2c6",
         ""
       ],
       "outputs": [
@@ -13,7 +13,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@6792f2c6",
+        "Account@6792f2c6",
         "John Good"
       ],
       "outputs": [
@@ -23,7 +23,7 @@
     {
       "label": "getBalance",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@6792f2c6"
+        "Account@6792f2c6"
       ],
       "outputs": [
         0
@@ -34,7 +34,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@24d73c51",
+        "Account@24d73c51",
         ""
       ],
       "outputs": [
@@ -44,7 +44,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@24d73c51",
+        "Account@24d73c51",
         ""
       ],
       "outputs": [
@@ -54,7 +54,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@24d73c51",
+        "Account@24d73c51",
         "John Good"
       ],
       "outputs": [
@@ -66,7 +66,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@3b95fce9",
+        "Account@3b95fce9",
         ""
       ],
       "outputs": [
@@ -76,7 +76,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@3b95fce9",
+        "Account@3b95fce9",
         ""
       ],
       "outputs": [
@@ -86,7 +86,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@3b95fce9",
+        "Account@3b95fce9",
         ""
       ],
       "outputs": [
@@ -98,7 +98,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@f26cd76",
+        "Account@f26cd76",
         ""
       ],
       "outputs": [
@@ -108,7 +108,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@f26cd76",
+        "Account@f26cd76",
         ""
       ],
       "outputs": [
@@ -118,7 +118,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@f26cd76"
+        "Account@f26cd76"
       ],
       "outputs": [
         "NONE"
@@ -129,7 +129,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@78805df3",
+        "Account@78805df3",
         ""
       ],
       "outputs": [
@@ -139,7 +139,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@78805df3",
+        "Account@78805df3",
         ""
       ],
       "outputs": [
@@ -149,7 +149,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@78805df3",
+        "Account@78805df3",
         1
       ],
       "outputs": [
@@ -161,7 +161,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@322f84fd",
+        "Account@322f84fd",
         ""
       ],
       "outputs": [
@@ -171,7 +171,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@322f84fd",
+        "Account@322f84fd",
         ""
       ],
       "outputs": [
@@ -181,7 +181,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@322f84fd",
+        "Account@322f84fd",
         0
       ],
       "outputs": [
@@ -193,7 +193,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@113cc14d",
+        "Account@113cc14d",
         ""
       ],
       "outputs": [
@@ -203,7 +203,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@113cc14d",
+        "Account@113cc14d",
         ""
       ],
       "outputs": [
@@ -213,7 +213,7 @@
     {
       "label": "withdraw",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@113cc14d",
+        "Account@113cc14d",
         0
       ],
       "outputs": [
@@ -225,7 +225,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@10bcbbed",
+        "Account@10bcbbed",
         ""
       ],
       "outputs": [
@@ -235,7 +235,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@10bcbbed",
+        "Account@10bcbbed",
         ""
       ],
       "outputs": [
@@ -245,7 +245,7 @@
     {
       "label": "withdraw",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@10bcbbed",
+        "Account@10bcbbed",
         1
       ],
       "outputs": [
@@ -257,7 +257,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@9a16af1",
+        "Account@9a16af1",
         ""
       ],
       "outputs": [
@@ -267,7 +267,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@9a16af1",
+        "Account@9a16af1",
         ""
       ],
       "outputs": [
@@ -277,7 +277,7 @@
     {
       "label": "getBalance",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@9a16af1"
+        "Account@9a16af1"
       ],
       "outputs": [
         "NONE"
@@ -288,7 +288,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@30a6984c",
+        "Account@30a6984c",
         "John Good"
       ],
       "outputs": [
@@ -298,7 +298,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@30a6984c"
+        "Account@30a6984c"
       ],
       "outputs": [
         "true"
@@ -307,7 +307,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@30a6984c",
+        "Account@30a6984c",
         "John Good"
       ],
       "outputs": [
@@ -317,7 +317,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@30a6984c",
+        "Account@30a6984c",
         "John Good"
       ],
       "outputs": [
@@ -329,7 +329,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@45302e66",
+        "Account@45302e66",
         "John Good"
       ],
       "outputs": [
@@ -339,7 +339,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@45302e66"
+        "Account@45302e66"
       ],
       "outputs": [
         "true"
@@ -348,7 +348,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@45302e66",
+        "Account@45302e66",
         "John Good"
       ],
       "outputs": [
@@ -358,7 +358,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@45302e66",
+        "Account@45302e66",
         ""
       ],
       "outputs": [
@@ -370,7 +370,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@47c422d3",
+        "Account@47c422d3",
         "John Good"
       ],
       "outputs": [
@@ -380,7 +380,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@47c422d3"
+        "Account@47c422d3"
       ],
       "outputs": [
         "true"
@@ -389,7 +389,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@47c422d3",
+        "Account@47c422d3",
         "John Good"
       ],
       "outputs": [
@@ -399,7 +399,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@47c422d3"
+        "Account@47c422d3"
       ],
       "outputs": [
         "true"
@@ -410,7 +410,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@382608d0",
+        "Account@382608d0",
         "John Good"
       ],
       "outputs": [
@@ -420,7 +420,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@382608d0"
+        "Account@382608d0"
       ],
       "outputs": [
         "true"
@@ -429,7 +429,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@382608d0",
+        "Account@382608d0",
         "John Good"
       ],
       "outputs": [
@@ -439,7 +439,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@382608d0",
+        "Account@382608d0",
         1
       ],
       "outputs": [
@@ -451,7 +451,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@1e489957",
+        "Account@1e489957",
         "John Good"
       ],
       "outputs": [
@@ -461,7 +461,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@1e489957"
+        "Account@1e489957"
       ],
       "outputs": [
         "true"
@@ -470,7 +470,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@1e489957",
+        "Account@1e489957",
         "John Good"
       ],
       "outputs": [
@@ -480,7 +480,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@1e489957",
+        "Account@1e489957",
         0
       ],
       "outputs": [
@@ -492,7 +492,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@68b3de47",
+        "Account@68b3de47",
         "John Good"
       ],
       "outputs": [
@@ -502,7 +502,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@68b3de47"
+        "Account@68b3de47"
       ],
       "outputs": [
         "true"
@@ -511,7 +511,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@68b3de47",
+        "Account@68b3de47",
         "John Good"
       ],
       "outputs": [
@@ -521,7 +521,7 @@
     {
       "label": "withdraw",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@68b3de47",
+        "Account@68b3de47",
         0
       ],
       "outputs": [
@@ -533,7 +533,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@5b827796",
+        "Account@5b827796",
         "John Good"
       ],
       "outputs": [
@@ -543,7 +543,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@5b827796"
+        "Account@5b827796"
       ],
       "outputs": [
         "true"
@@ -552,7 +552,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@5b827796",
+        "Account@5b827796",
         "John Good"
       ],
       "outputs": [
@@ -562,7 +562,7 @@
     {
       "label": "withdraw",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@5b827796",
+        "Account@5b827796",
         1
       ],
       "outputs": [
@@ -574,7 +574,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@27c827ec",
+        "Account@27c827ec",
         "John Good"
       ],
       "outputs": [
@@ -584,7 +584,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@27c827ec"
+        "Account@27c827ec"
       ],
       "outputs": [
         "true"
@@ -593,7 +593,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@27c827ec",
+        "Account@27c827ec",
         "John Good"
       ],
       "outputs": [
@@ -603,7 +603,7 @@
     {
       "label": "getBalance",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@27c827ec"
+        "Account@27c827ec"
       ],
       "outputs": [
         0
@@ -614,7 +614,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@7d108063",
+        "Account@7d108063",
         "John Good"
       ],
       "outputs": [
@@ -624,7 +624,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@7d108063"
+        "Account@7d108063"
       ],
       "outputs": [
         "true"
@@ -633,7 +633,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@7d108063",
+        "Account@7d108063",
         "John Good"
       ],
       "outputs": [
@@ -645,7 +645,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@b272860",
+        "Account@b272860",
         "John Good"
       ],
       "outputs": [
@@ -655,7 +655,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@b272860"
+        "Account@b272860"
       ],
       "outputs": [
         "true"
@@ -664,7 +664,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@b272860",
+        "Account@b272860",
         ""
       ],
       "outputs": [
@@ -674,7 +674,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@b272860",
+        "Account@b272860",
         "John Good"
       ],
       "outputs": [
@@ -686,7 +686,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@4351d055",
+        "Account@4351d055",
         "John Good"
       ],
       "outputs": [
@@ -696,7 +696,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@4351d055"
+        "Account@4351d055"
       ],
       "outputs": [
         "true"
@@ -705,7 +705,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@4351d055",
+        "Account@4351d055",
         ""
       ],
       "outputs": [
@@ -715,7 +715,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@4351d055",
+        "Account@4351d055",
         ""
       ],
       "outputs": [
@@ -727,7 +727,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@25c06894",
+        "Account@25c06894",
         "John Good"
       ],
       "outputs": [
@@ -737,7 +737,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@25c06894"
+        "Account@25c06894"
       ],
       "outputs": [
         "true"
@@ -746,7 +746,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@25c06894",
+        "Account@25c06894",
         ""
       ],
       "outputs": [
@@ -756,7 +756,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@25c06894"
+        "Account@25c06894"
       ],
       "outputs": [
         "NONE"
@@ -767,7 +767,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@5c2ae7d7",
+        "Account@5c2ae7d7",
         "John Good"
       ],
       "outputs": [
@@ -777,7 +777,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@5c2ae7d7"
+        "Account@5c2ae7d7"
       ],
       "outputs": [
         "true"
@@ -786,7 +786,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@5c2ae7d7",
+        "Account@5c2ae7d7",
         ""
       ],
       "outputs": [
@@ -796,7 +796,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@5c2ae7d7",
+        "Account@5c2ae7d7",
         1
       ],
       "outputs": [
@@ -808,7 +808,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@6e7cb01a",
+        "Account@6e7cb01a",
         "John Good"
       ],
       "outputs": [
@@ -818,7 +818,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@6e7cb01a"
+        "Account@6e7cb01a"
       ],
       "outputs": [
         "true"
@@ -827,7 +827,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@6e7cb01a",
+        "Account@6e7cb01a",
         ""
       ],
       "outputs": [
@@ -837,7 +837,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@6e7cb01a",
+        "Account@6e7cb01a",
         0
       ],
       "outputs": [
@@ -849,7 +849,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@236206f8",
+        "Account@236206f8",
         "John Good"
       ],
       "outputs": [
@@ -859,7 +859,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@236206f8"
+        "Account@236206f8"
       ],
       "outputs": [
         "true"
@@ -868,7 +868,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@236206f8",
+        "Account@236206f8",
         ""
       ],
       "outputs": [
@@ -878,7 +878,7 @@
     {
       "label": "withdraw",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@236206f8",
+        "Account@236206f8",
         0
       ],
       "outputs": [
@@ -890,7 +890,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@5c04ec8",
+        "Account@5c04ec8",
         "John Good"
       ],
       "outputs": [
@@ -900,7 +900,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@5c04ec8"
+        "Account@5c04ec8"
       ],
       "outputs": [
         "true"
@@ -909,7 +909,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@5c04ec8",
+        "Account@5c04ec8",
         ""
       ],
       "outputs": [
@@ -919,7 +919,7 @@
     {
       "label": "withdraw",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@5c04ec8",
+        "Account@5c04ec8",
         1
       ],
       "outputs": [
@@ -931,7 +931,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@e5f05f8",
+        "Account@e5f05f8",
         "John Good"
       ],
       "outputs": [
@@ -941,7 +941,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@e5f05f8"
+        "Account@e5f05f8"
       ],
       "outputs": [
         "true"
@@ -950,7 +950,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@e5f05f8",
+        "Account@e5f05f8",
         ""
       ],
       "outputs": [
@@ -960,7 +960,7 @@
     {
       "label": "getBalance",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@e5f05f8"
+        "Account@e5f05f8"
       ],
       "outputs": [
         "NONE"
@@ -971,7 +971,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@5a88849",
+        "Account@5a88849",
         "John Good"
       ],
       "outputs": [
@@ -981,7 +981,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@5a88849"
+        "Account@5a88849"
       ],
       "outputs": [
         "true"
@@ -990,7 +990,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@5a88849",
+        "Account@5a88849",
         ""
       ],
       "outputs": [
@@ -1002,7 +1002,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@36ce0bc2",
+        "Account@36ce0bc2",
         "John Good"
       ],
       "outputs": [
@@ -1012,7 +1012,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@36ce0bc2",
+        "Account@36ce0bc2",
         1
       ],
       "outputs": [
@@ -1022,7 +1022,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@36ce0bc2"
+        "Account@36ce0bc2"
       ],
       "outputs": [
         "false"
@@ -1031,7 +1031,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@36ce0bc2",
+        "Account@36ce0bc2",
         "John Good"
       ],
       "outputs": [
@@ -1043,7 +1043,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@317fa5dd",
+        "Account@317fa5dd",
         "John Good"
       ],
       "outputs": [
@@ -1053,7 +1053,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@317fa5dd",
+        "Account@317fa5dd",
         1
       ],
       "outputs": [
@@ -1063,7 +1063,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@317fa5dd"
+        "Account@317fa5dd"
       ],
       "outputs": [
         "false"
@@ -1072,7 +1072,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@317fa5dd",
+        "Account@317fa5dd",
         ""
       ],
       "outputs": [
@@ -1084,7 +1084,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@477906cf",
+        "Account@477906cf",
         "John Good"
       ],
       "outputs": [
@@ -1094,7 +1094,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@477906cf",
+        "Account@477906cf",
         1
       ],
       "outputs": [
@@ -1104,7 +1104,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@477906cf"
+        "Account@477906cf"
       ],
       "outputs": [
         "false"
@@ -1113,7 +1113,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@477906cf"
+        "Account@477906cf"
       ],
       "outputs": [
         "false"
@@ -1124,7 +1124,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@65234a9",
+        "Account@65234a9",
         "John Good"
       ],
       "outputs": [
@@ -1134,7 +1134,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@65234a9",
+        "Account@65234a9",
         1
       ],
       "outputs": [
@@ -1144,7 +1144,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@65234a9"
+        "Account@65234a9"
       ],
       "outputs": [
         "false"
@@ -1153,7 +1153,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@65234a9",
+        "Account@65234a9",
         1
       ],
       "outputs": [
@@ -1165,7 +1165,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@4004bfba",
+        "Account@4004bfba",
         "John Good"
       ],
       "outputs": [
@@ -1175,7 +1175,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@4004bfba",
+        "Account@4004bfba",
         1
       ],
       "outputs": [
@@ -1185,7 +1185,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@4004bfba"
+        "Account@4004bfba"
       ],
       "outputs": [
         "false"
@@ -1194,7 +1194,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@4004bfba",
+        "Account@4004bfba",
         0
       ],
       "outputs": [
@@ -1206,7 +1206,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@c19bb2a",
+        "Account@c19bb2a",
         "John Good"
       ],
       "outputs": [
@@ -1216,7 +1216,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@c19bb2a",
+        "Account@c19bb2a",
         1
       ],
       "outputs": [
@@ -1226,7 +1226,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@c19bb2a"
+        "Account@c19bb2a"
       ],
       "outputs": [
         "false"
@@ -1235,7 +1235,7 @@
     {
       "label": "withdraw",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@c19bb2a",
+        "Account@c19bb2a",
         1
       ],
       "outputs": [
@@ -1247,7 +1247,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@3599b18",
+        "Account@3599b18",
         "John Good"
       ],
       "outputs": [
@@ -1257,7 +1257,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@3599b18",
+        "Account@3599b18",
         1
       ],
       "outputs": [
@@ -1267,7 +1267,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@3599b18"
+        "Account@3599b18"
       ],
       "outputs": [
         "false"
@@ -1276,7 +1276,7 @@
     {
       "label": "withdraw",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@3599b18",
+        "Account@3599b18",
         0
       ],
       "outputs": [
@@ -1288,7 +1288,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@143900a6",
+        "Account@143900a6",
         "John Good"
       ],
       "outputs": [
@@ -1298,7 +1298,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@143900a6",
+        "Account@143900a6",
         1
       ],
       "outputs": [
@@ -1308,7 +1308,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@143900a6"
+        "Account@143900a6"
       ],
       "outputs": [
         "false"
@@ -1317,7 +1317,7 @@
     {
       "label": "withdraw",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@143900a6",
+        "Account@143900a6",
         2
       ],
       "outputs": [
@@ -1329,7 +1329,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@712594f4",
+        "Account@712594f4",
         "John Good"
       ],
       "outputs": [
@@ -1339,7 +1339,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@712594f4",
+        "Account@712594f4",
         1
       ],
       "outputs": [
@@ -1349,7 +1349,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@712594f4"
+        "Account@712594f4"
       ],
       "outputs": [
         "false"
@@ -1358,7 +1358,7 @@
     {
       "label": "getBalance",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@712594f4"
+        "Account@712594f4"
       ],
       "outputs": [
         1
@@ -1369,7 +1369,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@30a4a111",
+        "Account@30a4a111",
         "John Good"
       ],
       "outputs": [
@@ -1379,7 +1379,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@30a4a111",
+        "Account@30a4a111",
         1
       ],
       "outputs": [
@@ -1389,7 +1389,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@30a4a111"
+        "Account@30a4a111"
       ],
       "outputs": [
         "false"
@@ -1400,7 +1400,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@7f6a6d46",
+        "Account@7f6a6d46",
         "John Good"
       ],
       "outputs": [
@@ -1410,7 +1410,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@7f6a6d46",
+        "Account@7f6a6d46",
         1
       ],
       "outputs": [
@@ -1420,7 +1420,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@7f6a6d46",
+        "Account@7f6a6d46",
         1
       ],
       "outputs": [
@@ -1430,7 +1430,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@7f6a6d46",
+        "Account@7f6a6d46",
         "John Good"
       ],
       "outputs": [
@@ -1442,7 +1442,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@238a7e3d",
+        "Account@238a7e3d",
         "John Good"
       ],
       "outputs": [
@@ -1452,7 +1452,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@238a7e3d",
+        "Account@238a7e3d",
         1
       ],
       "outputs": [
@@ -1462,7 +1462,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@238a7e3d",
+        "Account@238a7e3d",
         1
       ],
       "outputs": [
@@ -1472,7 +1472,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@238a7e3d",
+        "Account@238a7e3d",
         ""
       ],
       "outputs": [
@@ -1484,7 +1484,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@7ed5cc8c",
+        "Account@7ed5cc8c",
         "John Good"
       ],
       "outputs": [
@@ -1494,7 +1494,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@7ed5cc8c",
+        "Account@7ed5cc8c",
         1
       ],
       "outputs": [
@@ -1504,7 +1504,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@7ed5cc8c",
+        "Account@7ed5cc8c",
         1
       ],
       "outputs": [
@@ -1514,7 +1514,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@7ed5cc8c"
+        "Account@7ed5cc8c"
       ],
       "outputs": [
         "false"
@@ -1525,7 +1525,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@6bec566e",
+        "Account@6bec566e",
         "John Good"
       ],
       "outputs": [
@@ -1535,7 +1535,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@6bec566e",
+        "Account@6bec566e",
         1
       ],
       "outputs": [
@@ -1545,7 +1545,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@6bec566e",
+        "Account@6bec566e",
         1
       ],
       "outputs": [
@@ -1555,7 +1555,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@6bec566e",
+        "Account@6bec566e",
         1
       ],
       "outputs": [
@@ -1567,7 +1567,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@47400608",
+        "Account@47400608",
         "John Good"
       ],
       "outputs": [
@@ -1577,7 +1577,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@47400608",
+        "Account@47400608",
         1
       ],
       "outputs": [
@@ -1587,7 +1587,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@47400608",
+        "Account@47400608",
         1
       ],
       "outputs": [
@@ -1597,7 +1597,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@47400608",
+        "Account@47400608",
         0
       ],
       "outputs": [
@@ -1609,7 +1609,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@374bf34b",
+        "Account@374bf34b",
         "John Good"
       ],
       "outputs": [
@@ -1619,7 +1619,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@374bf34b",
+        "Account@374bf34b",
         1
       ],
       "outputs": [
@@ -1629,7 +1629,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@374bf34b",
+        "Account@374bf34b",
         1
       ],
       "outputs": [
@@ -1639,7 +1639,7 @@
     {
       "label": "withdraw",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@374bf34b",
+        "Account@374bf34b",
         2
       ],
       "outputs": [
@@ -1651,7 +1651,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@67aaf882",
+        "Account@67aaf882",
         "John Good"
       ],
       "outputs": [
@@ -1661,7 +1661,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@67aaf882",
+        "Account@67aaf882",
         1
       ],
       "outputs": [
@@ -1671,7 +1671,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@67aaf882",
+        "Account@67aaf882",
         1
       ],
       "outputs": [
@@ -1681,7 +1681,7 @@
     {
       "label": "withdraw",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@67aaf882",
+        "Account@67aaf882",
         0
       ],
       "outputs": [
@@ -1693,7 +1693,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@6efc9d3f",
+        "Account@6efc9d3f",
         "John Good"
       ],
       "outputs": [
@@ -1703,7 +1703,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@6efc9d3f",
+        "Account@6efc9d3f",
         1
       ],
       "outputs": [
@@ -1713,7 +1713,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@6efc9d3f",
+        "Account@6efc9d3f",
         1
       ],
       "outputs": [
@@ -1723,7 +1723,7 @@
     {
       "label": "withdraw",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@6efc9d3f",
+        "Account@6efc9d3f",
         3
       ],
       "outputs": [
@@ -1735,7 +1735,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@294bb6ae",
+        "Account@294bb6ae",
         "John Good"
       ],
       "outputs": [
@@ -1745,7 +1745,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@294bb6ae",
+        "Account@294bb6ae",
         1
       ],
       "outputs": [
@@ -1755,7 +1755,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@294bb6ae",
+        "Account@294bb6ae",
         1
       ],
       "outputs": [
@@ -1765,7 +1765,7 @@
     {
       "label": "getBalance",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@294bb6ae"
+        "Account@294bb6ae"
       ],
       "outputs": [
         2
@@ -1776,7 +1776,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@4172c967",
+        "Account@4172c967",
         "John Good"
       ],
       "outputs": [
@@ -1786,7 +1786,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@4172c967",
+        "Account@4172c967",
         1
       ],
       "outputs": [
@@ -1796,7 +1796,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@4172c967",
+        "Account@4172c967",
         1
       ],
       "outputs": [
@@ -1808,7 +1808,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@71ac5723",
+        "Account@71ac5723",
         "John Good"
       ],
       "outputs": [
@@ -1818,7 +1818,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@71ac5723",
+        "Account@71ac5723",
         1
       ],
       "outputs": [
@@ -1828,7 +1828,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@71ac5723",
+        "Account@71ac5723",
         0
       ],
       "outputs": [
@@ -1838,7 +1838,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@71ac5723",
+        "Account@71ac5723",
         "John Good"
       ],
       "outputs": [
@@ -1850,7 +1850,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@7bb3294c",
+        "Account@7bb3294c",
         "John Good"
       ],
       "outputs": [
@@ -1860,7 +1860,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@7bb3294c",
+        "Account@7bb3294c",
         1
       ],
       "outputs": [
@@ -1870,7 +1870,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@7bb3294c",
+        "Account@7bb3294c",
         0
       ],
       "outputs": [
@@ -1880,7 +1880,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@7bb3294c",
+        "Account@7bb3294c",
         ""
       ],
       "outputs": [
@@ -1892,7 +1892,7 @@
     {
       "label": "open",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@f391e52",
+        "Account@f391e52",
         "John Good"
       ],
       "outputs": [
@@ -1902,7 +1902,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@f391e52",
+        "Account@f391e52",
         1
       ],
       "outputs": [
@@ -1912,7 +1912,7 @@
     {
       "label": "deposit",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@f391e52",
+        "Account@f391e52",
         0
       ],
       "outputs": [
@@ -1922,7 +1922,7 @@
     {
       "label": "close",
       "inputs": [
-        "uk.ac.sheffield.vtts.client.pojo.Account@f391e52"
+        "Account@f391e52"
       ],
       "outputs": [
         "false"

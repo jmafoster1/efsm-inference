@@ -30,3 +30,7 @@ stepwise-dot:
 clean:
 	@ rm dotfiles/*
 	@	rm salfiles/*
+
+eod:
+	cd ..; \
+	make eod

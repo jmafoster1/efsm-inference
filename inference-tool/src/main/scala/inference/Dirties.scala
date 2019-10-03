@@ -104,10 +104,9 @@ object Dirties {
           solver.fromString(z3String)
           val sat = solver.check()
           ctx.close()
-          if (Config.numStates == 5) {
-
-            Log.root.debug(s"${PrettyPrinter.gexpToString(g)}\nZ3 returned ${sat}")
-          }
+          // if (Config.numStates == 5) {
+            // Log.root.debug(s"${PrettyPrinter.gexpToString(g)}\nZ3 returned ${sat}")
+          // }
           return sat == z3.Status.SATISFIABLE
         }
       }
