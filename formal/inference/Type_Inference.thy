@@ -40,7 +40,7 @@ fun is_str :: "value \<Rightarrow> bool" where
 fun infer_types_aux :: "gexp \<Rightarrow> ((vname \<times> type) list \<times> (vname \<times> vname) list)" where
   "infer_types_aux (Bc _) = ([], [])" |
   "infer_types_aux (Null v) = (assign_all UNBOUND ((aexp_get_variables v)), [])" |
-  "infer_types_aux (Lt a1 a2) = (assign_all NUM ((aexp_get_variables a1) @ (aexp_get_variables a2)), [])" |
+  "infer_types_aux (Gt a1 a2) = (assign_all NUM ((aexp_get_variables a1) @ (aexp_get_variables a2)), [])" |
   "infer_types_aux (Nor g1 g2) = (let (t1, g1) = infer_types_aux g1; (t2, g2) = infer_types_aux g2 in ((add_pairs t1  t2, remdups (g1@g2))))" |
   "infer_types_aux (Eq (L _) (L _)) = ([], [])" |
   "infer_types_aux (Eq (V v1) (V v2)) = ([], [(v1, v2)])" |

@@ -7,4 +7,4 @@ snippets:
 	mv snippets.tex ~/Documents/verifying-trace-properties/figures/efsm-snippets.tex
 
 clean:
-	@find . -name "*thy~" -exec rm {} \;
+	@find . -name "*thy~*" -exec rm {} \;

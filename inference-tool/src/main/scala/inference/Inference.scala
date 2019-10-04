@@ -3115,14 +3115,14 @@ def resolve_nondeterminism(uu: List[(Nat.nat, Nat.nat)],
               ((Nat.nat, Nat.nat),
                 ((Transition.transition_ext[Unit], Nat.nat),
                   (Transition.transition_ext[Unit], Nat.nat))))](np(newa));
-                       (if (Nat.less_nat(Nat.plus_nata(Nat.Nata(newScores.length),
-                FSet.size_fset[(Nat.nat,
-                                 ((Nat.nat, Nat.nat),
-                                   Transition.transition_ext[Unit]))](newa)),
-  Nat.plus_nata(Nat.plus_nata(Nat.Nata(ss.length), Nat.Nata((1))),
-                 FSet.size_fset[(Nat.nat,
-                                  ((Nat.nat, Nat.nat),
-                                    Transition.transition_ext[Unit]))](newEFSM))))
+                       (if (Nat.less_nat(Nat.plus_nata(Nat.plus_nata(Nat.Nata(newScores.length),
+                              FSet.size_fset[(Nat.nat,
+       ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))](newa)),
+                FSet.size_fset[Nat.nat](S(newa))),
+  Nat.plus_nata(Nat.plus_nata(Nat.plus_nata(Nat.Nata(ss.length), Nat.Nata((1))),
+                               FSet.size_fset[(Nat.nat,
+        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))](newEFSM)),
+                 FSet.size_fset[Nat.nat](S(newEFSM)))))
                          (resolve_nondeterminism(closed, newScores, oldEFSM,
           newa, m, check, np)
                             match {
@@ -6967,7 +6967,7 @@ def infer_types_aux(x0: GExp.gexp):
   x0 match {
   case GExp.Bc(uu) => (Nil, Nil)
   case GExp.Null(v) => (assign_all(UNBOUND(), aexp_get_variables(v)), Nil)
-  case GExp.Gt(a2, a1) =>
+  case GExp.Gt(a1, a2) =>
     (assign_all(NUM(), aexp_get_variables(a1) ++ aexp_get_variables(a2)), Nil)
   case GExp.Nor(g1, g2) =>
     {
