@@ -56,17 +56,17 @@ object Dirties {
   }
 
   def toZ3(a: AExp.aexp): String = a match {
-    case AExp.L(Value.Numa(n)) => Code_Numeral.integer_of_int(n).toString
+    case AExp.L(Value.Numa(n)) => s"${Code_Numeral.integer_of_int(n).toString}"
     case AExp.L(Value.Str(s)) => "\"" + s + "\""
-    case AExp.V(v) => s"${toZ3(v)}Value"
-    case AExp.Plus(a1, a2) => s"(+ (${toZ3(a1)}) (${toZ3(a2)}))"
-    case AExp.Minus(a1, a2) => s"(- (${toZ3(a1)}) (${toZ3(a2)}))"
+    case AExp.V(v) => s"(val ${toZ3(v)})"
+    case AExp.Plus(a1, a2) => s"(+ ${toZ3(a1)} ${toZ3(a2)})"
+    case AExp.Minus(a1, a2) => s"(- ${toZ3(a1)} ${toZ3(a2)})"
   }
 
   def toZ3(a: Type_Inference.typea): String = a match {
     case Type_Inference.NUM() => "Int"
     case Type_Inference.STRING() => "String"
-    case Type_Inference.UNBOUND() => "String" // Arbitrary decision to give it a concrete type
+    case Type_Inference.UNBOUND() => "Int" // Arbitrary decision to give it a concrete type
   }
 
   def toZ3(g: GExp.gexp, types: Map[VName.vname, Type_Inference.typea]): String = g match {
@@ -80,7 +80,7 @@ object Dirties {
     case GExp.Null(v) => throw new java.lang.IllegalArgumentException("Z3 does not handle null of more complex arithmetic expressions")
   }
 
-  var sat_memo = scala.collection.immutable.Map[GExp.gexp, Boolean]()
+  var sat_memo = scala.collection.immutable.Map[GExp.gexp, Boolean](GExp.Bc(true) -> true, GExp.Bc(false) -> false)
 
   def satisfiable(g: GExp.gexp): Boolean = {
     if (sat_memo isDefinedAt g) {
@@ -90,11 +90,13 @@ object Dirties {
       maybe_types match {
         case None => false
         case Some(types) => {
-          var z3String = s"(declare-datatype Option (par (X) ((none) (some (val X)))))\n" +
-            types.map(t => t match {
-              case (k, v) => s"(declare-const ${toZ3(k)} (Option ${toZ3(v)}))\n(declare-const ${toZ3(k)}Value (${toZ3(v)}))"
-            }).foldLeft("")(((x, y) => x + y + "\n")) +
-            s"(assert ${toZ3(g, types)})\n(check-sat)"
+          var z3String = s"(declare-datatype Option (par (X) ((none) (some (val X)))))\n"
+          z3String += types.map(t => t match {
+              case (k, v) => s"(declare-const ${toZ3(k)} (Option ${toZ3(v)}))"
+            }).foldLeft("")(((x, y) => x + y + "\n"))
+          z3String += s"(assert ${toZ3(g, types)})\n(check-sat)"
+
+            println(z3String)
 
           // Log.root.debug(g.toString)
           // Log.root.debug(z3String)
@@ -107,6 +109,7 @@ object Dirties {
           // if (Config.numStates == 5) {
             // Log.root.debug(s"${PrettyPrinter.gexpToString(g)}\nZ3 returned ${sat}")
           // }
+          sat_memo = sat_memo + (g -> (sat == z3.Status.SATISFIABLE))
           return sat == z3.Status.SATISFIABLE
         }
       }

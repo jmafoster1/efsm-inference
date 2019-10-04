@@ -43,17 +43,14 @@ fun infer_types_aux :: "gexp \<Rightarrow> ((vname \<times> type) list \<times> 
   "infer_types_aux (Gt a1 a2) = (assign_all NUM ((aexp_get_variables a1) @ (aexp_get_variables a2)), [])" |
   "infer_types_aux (Nor g1 g2) = (let (t1, g1) = infer_types_aux g1; (t2, g2) = infer_types_aux g2 in ((add_pairs t1  t2, remdups (g1@g2))))" |
   "infer_types_aux (Eq (L _) (L _)) = ([], [])" |
+ "infer_types_aux (In v va) = (if \<forall>v' \<in> set va. is_num v' then ([(v, NUM)], []) else
+                                if \<forall>v' \<in> set va. is_str v' then ([(v, STRING)], []) else ([], []))" |
   "infer_types_aux (Eq (V v1) (V v2)) = ([], [(v1, v2)])" |
   "infer_types_aux (Eq (V v) (L (Str s))) = ([(v, STRING)], [])" |
   "infer_types_aux (Eq (V v) (L (Num s))) = ([(v, NUM)], [])" |
   "infer_types_aux (Eq (L (Str s)) (V v)) = ([(v, STRING)], [])" |
   "infer_types_aux (Eq (L (Num s)) (V v)) = ([(v, NUM)], [])" |
-  "infer_types_aux (In v va) = (if \<forall>v' \<in> set va. is_num v' then ([(v, NUM)], []) else
-                                if \<forall>v' \<in> set va. is_str v' then ([(v, STRING)], []) else ([], []))" |
-  "infer_types_aux (Eq a (Plus a1 a2)) = (assign_all NUM ((aexp_get_variables (Plus a1 a2)) @ (aexp_get_variables a)), [])" |
-  "infer_types_aux (Eq a (Minus a1 a2)) = (assign_all NUM ((aexp_get_variables (Minus a1 a2)) @ (aexp_get_variables a)), [])" |
-  "infer_types_aux (Eq (Plus a1 a2) a) = (assign_all NUM ((aexp_get_variables (Plus a1 a2)) @ (aexp_get_variables a)), [])" |
-  "infer_types_aux (Eq (Minus a1 a2) a) = (assign_all NUM ((aexp_get_variables (Minus a1 a2)) @ (aexp_get_variables a)), [])"
+  "infer_types_aux (Eq _ _) = ([], [])"
 
 fun collapse_group :: "(vname \<times> vname) \<Rightarrow> vname list list \<Rightarrow> vname list list" where
   "collapse_group (v1, v2) [] = [remdups [v1, v2]]" |

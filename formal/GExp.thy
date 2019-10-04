@@ -1099,4 +1099,7 @@ lemma restricted_once_cons: "restricted_once v (g#gs) = ((gexp_constrains g (V v
 lemma not_restricted_cons: "not_restricted v (g#gs) = ((\<not> gexp_constrains g (V v)) \<and> not_restricted v gs)"
   by (simp add: not_restricted_def)
 
+definition enumerate_vars :: "gexp \<Rightarrow> vname list" where
+  "enumerate_vars g = sorted_list_of_set ((image R (enumerate_gexp_regs g)) \<union> (image I (enumerate_gexp_inputs g)))"
+
 end

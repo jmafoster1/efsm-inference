@@ -292,7 +292,7 @@ definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarr
         outgoing_s1 = fimage (snd \<circ> snd) (k_outgoing n e s1);
         outgoing_s2 = fimage (snd \<circ> snd) (k_outgoing n e s2);
         scores = fimage (\<lambda>(x, y). rank x y e) (outgoing_s1 |\<times>| outgoing_s2) in
-       if outgoing_s1 = {||} \<and> outgoing_s2 = {||} then (s1, s2, 1) else (fSum scores, s1, s2 )
+       \<comment> \<open>if outgoing_s1 = {||} \<and> outgoing_s2 = {||} then (s1, s2, 1) else\<close> (fSum scores, s1, s2 )
      ) pairs_to_score in
      ffilter (\<lambda>(score, _). score > 0) scores)"
 

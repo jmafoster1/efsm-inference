@@ -562,6 +562,8 @@ code_printing constant "substring" \<rightharpoonup> (Scala) "_.substring(Code'_
 declare parseInt_def [code del]
 code_printing constant parseInt \<rightharpoonup> (Scala) "Int.int'_of'_integer(BigInt(_.toInt))"
 
+definition "And = GExp.gAnd"
+
 export_code
   (* Essentials *)
   try_heuristics try_heuristics_check aexp_type_check learn infer_types nondeterministic input_updates_register
@@ -575,7 +577,7 @@ export_code
   (* Nondeterminism metrics *)
   nondeterministic_pairs nondeterministic_pairs_labar nondeterministic_pairs_labar_dest
   (* Utilities *)
-  iefsm2dot efsm2dot guards2sal fold_In max_int use_smallest_ints
+  iefsm2dot efsm2dot guards2sal fold_In max_int use_smallest_ints And enumerate_vars
 in Scala
 file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

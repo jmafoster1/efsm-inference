@@ -143,6 +143,12 @@ object ord {
     val `Orderings.less` = (a: Value.value, b: Value.value) =>
       Value.less_value(a, b)
   }
+  implicit def `VName.ord_vname`: ord[VName.vname] = new ord[VName.vname] {
+    val `Orderings.less_eq` = (a: VName.vname, b: VName.vname) =>
+      VName.less_eq_vname(a, b)
+    val `Orderings.less` = (a: VName.vname, b: VName.vname) =>
+      VName.less_vname(a, b)
+  }
   implicit def `GExp_Orderings.ord_gexp`: ord[GExp.gexp] = new ord[GExp.gexp] {
     val `Orderings.less_eq` = (a: GExp.gexp, b: GExp.gexp) =>
       GExp_Orderings.less_eq_gexp(a, b)
@@ -217,6 +223,13 @@ object preorder {
     val `Orderings.less` = (a: Value.value, b: Value.value) =>
       Value.less_value(a, b)
   }
+  implicit def `VName.preorder_vname`: preorder[VName.vname] = new
+    preorder[VName.vname] {
+    val `Orderings.less_eq` = (a: VName.vname, b: VName.vname) =>
+      VName.less_eq_vname(a, b)
+    val `Orderings.less` = (a: VName.vname, b: VName.vname) =>
+      VName.less_vname(a, b)
+  }
   implicit def `GExp_Orderings.preorder_gexp`: preorder[GExp.gexp] = new
     preorder[GExp.gexp] {
     val `Orderings.less_eq` = (a: GExp.gexp, b: GExp.gexp) =>
@@ -290,6 +303,13 @@ object order {
     val `Orderings.less` = (a: Value.value, b: Value.value) =>
       Value.less_value(a, b)
   }
+  implicit def `VName.order_vname`: order[VName.vname] = new order[VName.vname]
+    {
+    val `Orderings.less_eq` = (a: VName.vname, b: VName.vname) =>
+      VName.less_eq_vname(a, b)
+    val `Orderings.less` = (a: VName.vname, b: VName.vname) =>
+      VName.less_vname(a, b)
+  }
   implicit def `GExp_Orderings.order_gexp`: order[GExp.gexp] = new
     order[GExp.gexp] {
     val `Orderings.less_eq` = (a: GExp.gexp, b: GExp.gexp) =>
@@ -358,6 +378,13 @@ object linorder {
       Option_Lexorder.less_eq_option[A](a, b)
     val `Orderings.less` = (a: Option[A], b: Option[A]) =>
       Option_Lexorder.less_option[A](a, b)
+  }
+  implicit def `VName.linorder_vname`: linorder[VName.vname] = new
+    linorder[VName.vname] {
+    val `Orderings.less_eq` = (a: VName.vname, b: VName.vname) =>
+      VName.less_eq_vname(a, b)
+    val `Orderings.less` = (a: VName.vname, b: VName.vname) =>
+      VName.less_vname(a, b)
   }
   implicit def `Nat.linorder_nat`: linorder[Nat.nat] = new linorder[Nat.nat] {
     val `Orderings.less_eq` = (a: Nat.nat, b: Nat.nat) => Nat.less_eq_nat(a, b)
@@ -664,6 +691,27 @@ def list_update[A](x0: List[A], i: Nat.nat, y: A): List[A] = (x0, i, y) match {
       else x :: list_update[A](xs, Nat.minus_nat(i, Nat.Nata((1))), y))
 }
 
+def insort_key[A, B : Orderings.linorder](f: A => B, x: A, xa2: List[A]):
+      List[A]
+  =
+  (f, x, xa2) match {
+  case (f, x, Nil) => List(x)
+  case (f, x, y :: ys) =>
+    (if (Orderings.less_eq[B](f(x), f(y))) x :: y :: ys
+      else y :: insort_key[A, B](f, x, ys))
+}
+
+def sort_key[A, B : Orderings.linorder](f: A => B, xs: List[A]): List[A] =
+  foldr[A, List[A]](((a: A) => (b: List[A]) => insort_key[A, B](f, a, b)), xs,
+                     Nil)
+
+def sorted_list_of_set[A : HOL.equal : Orderings.linorder](x0: Set.set[A]):
+      List[A]
+  =
+  x0 match {
+  case Set.seta(xs) => sort_key[A, A](((x: A) => x), xs.distinct)
+}
+
 } /* object Lista */
 
 object Set {
@@ -812,6 +860,13 @@ def equal_vnamea(x0: vname, x1: vname): Boolean = (x0, x1) match {
   case (R(x2), I(x1)) => false
   case (R(x2), R(y2)) => Nat.equal_nata(x2, y2)
   case (I(x1), I(y1)) => Nat.equal_nata(x1, y1)
+}
+
+def less_eq_vname(x0: vname, x1: vname): Boolean = (x0, x1) match {
+  case (I(n1), R(n2)) => true
+  case (R(n1), I(n2)) => false
+  case (I(n1), I(n2)) => Nat.less_eq_nat(n1, n2)
+  case (R(n1), R(n2)) => Nat.less_eq_nat(n1, n2)
 }
 
 def less_vname(x0: vname, x1: vname): Boolean = (x0, x1) match {
@@ -1236,6 +1291,14 @@ def max_reg_list(g: List[gexp]): Option[Nat.nat] =
          Orderings.max[Option[Nat.nat]](a, b)),
         ((a: gexp) => max_reg(a))),
                                 g, None)
+
+def enumerate_vars(g: gexp): List[VName.vname] =
+  Lista.sorted_list_of_set[VName.vname](Set.sup_set[VName.vname](Set.image[Nat.nat,
+                                    VName.vname](((a: Nat.nat) => VName.R(a)),
+          enumerate_gexp_regs(g)),
+                          Set.image[Nat.nat,
+                                     VName.vname](((a: Nat.nat) => VName.I(a)),
+           enumerate_gexp_inputs(g))))
 
 def max_input_list(g: List[gexp]): Option[Nat.nat] =
   Lista.fold[gexp,
@@ -3330,10 +3393,8 @@ FSet.fimage[(Nat.nat, Nat.nat),
                         }),
                        FSet_Utils.fprod[Nat.nat,
  Nat.nat](outgoing_s1, outgoing_s2));
-                                      (if ((FSet.equal_fseta[Nat.nat](outgoing_s1,
-                               FSet.bot_fset[Nat.nat])) && (FSet.equal_fseta[Nat.nat](outgoing_s2,
-       FSet.bot_fset[Nat.nat])))
-(s1, (s2, Nat.Nata((1)))) else (FSet_Utils.fSum[Nat.nat](scores), (s1, s2)))
+                                      (FSet_Utils.fSum[Nat.nat](scores),
+(s1, s2))
                                     }),
                                    pairs_to_score);
     FSet.ffilter[(Nat.nat,
@@ -4334,6 +4395,10 @@ val (ab, b):
 } /* object Inference */
 
 object Code_Generation {
+
+def And: GExp.gexp => GExp.gexp => GExp.gexp =
+  ((v: GExp.gexp) => (va: GExp.gexp) =>
+    GExp.Nor(GExp.Nor(v, v), GExp.Nor(va, va)))
 
 def mutex(uu: GExp.gexp, uv: GExp.gexp): Boolean = (uu, uv) match {
   case (GExp.Eq(AExp.V(va), AExp.L(la)), GExp.Eq(AExp.V(v), AExp.L(l))) =>
@@ -6980,47 +7045,23 @@ def infer_types_aux(x0: GExp.gexp):
       (add_pairs(t1, t2), (g1a ++ g2a).distinct)
     }
   case GExp.Eq(AExp.L(uv), AExp.L(uw)) => (Nil, Nil)
-  case GExp.Eq(AExp.V(v1), AExp.V(v2)) => (Nil, List((v1, v2)))
-  case GExp.Eq(AExp.V(v), AExp.L(Value.Str(s))) => (List((v, STRING())), Nil)
-  case GExp.Eq(AExp.V(v), AExp.L(Value.Numa(s))) => (List((v, NUM())), Nil)
-  case GExp.Eq(AExp.L(Value.Str(s)), AExp.V(v)) => (List((v, STRING())), Nil)
-  case GExp.Eq(AExp.L(Value.Numa(s)), AExp.V(v)) => (List((v, NUM())), Nil)
   case GExp.In(v, va) =>
     (if (Lista.list_all[Value.value](((a: Value.value) => is_num(a)), va))
       (List((v, NUM())), Nil)
       else (if (Lista.list_all[Value.value](((a: Value.value) => is_str(a)),
      va))
              (List((v, STRING())), Nil) else (Nil, Nil)))
-  case GExp.Eq(a, AExp.Plus(a1, a2)) =>
-    (assign_all(NUM(),
-                 aexp_get_variables(AExp.Plus(a1, a2)) ++
-                   aexp_get_variables(a)),
-      Nil)
-  case GExp.Eq(a, AExp.Minus(a1, a2)) =>
-    (assign_all(NUM(),
-                 aexp_get_variables(AExp.Minus(a1, a2)) ++
-                   aexp_get_variables(a)),
-      Nil)
-  case GExp.Eq(AExp.Plus(a1, a2), AExp.L(v)) =>
-    (assign_all(NUM(),
-                 aexp_get_variables(AExp.Plus(a1, a2)) ++
-                   aexp_get_variables(AExp.L(v))),
-      Nil)
-  case GExp.Eq(AExp.Plus(a1, a2), AExp.V(v)) =>
-    (assign_all(NUM(),
-                 aexp_get_variables(AExp.Plus(a1, a2)) ++
-                   aexp_get_variables(AExp.V(v))),
-      Nil)
-  case GExp.Eq(AExp.Minus(a1, a2), AExp.L(v)) =>
-    (assign_all(NUM(),
-                 aexp_get_variables(AExp.Minus(a1, a2)) ++
-                   aexp_get_variables(AExp.L(v))),
-      Nil)
-  case GExp.Eq(AExp.Minus(a1, a2), AExp.V(v)) =>
-    (assign_all(NUM(),
-                 aexp_get_variables(AExp.Minus(a1, a2)) ++
-                   aexp_get_variables(AExp.V(v))),
-      Nil)
+  case GExp.Eq(AExp.V(v1), AExp.V(v2)) => (Nil, List((v1, v2)))
+  case GExp.Eq(AExp.V(v), AExp.L(Value.Str(s))) => (List((v, STRING())), Nil)
+  case GExp.Eq(AExp.V(v), AExp.L(Value.Numa(s))) => (List((v, NUM())), Nil)
+  case GExp.Eq(AExp.L(Value.Str(s)), AExp.V(v)) => (List((v, STRING())), Nil)
+  case GExp.Eq(AExp.L(Value.Numa(s)), AExp.V(v)) => (List((v, NUM())), Nil)
+  case GExp.Eq(AExp.V(v), AExp.Plus(va, vb)) => (Nil, Nil)
+  case GExp.Eq(AExp.V(v), AExp.Minus(va, vb)) => (Nil, Nil)
+  case GExp.Eq(AExp.Plus(v, va), uy) => (Nil, Nil)
+  case GExp.Eq(AExp.Minus(v, va), uy) => (Nil, Nil)
+  case GExp.Eq(ux, AExp.Plus(v, va)) => (Nil, Nil)
+  case GExp.Eq(ux, AExp.Minus(v, va)) => (Nil, Nil)
 }
 
 def collapse_group(x0: (VName.vname, VName.vname), x1: List[List[VName.vname]]):

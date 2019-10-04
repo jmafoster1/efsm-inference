@@ -17,6 +17,14 @@ object FrontEnd {
     // println(FSet.sorted_list_of_fset(FSet.fset_of_list((1 to 476349).reverse.toList)))
     // println(List(1, 2, 3, 2, 5, 4, 5, 5, 10).sortWith((Orderings.less)))
 
+    println(
+      Dirties.satisfiable(Code_Generation.And(
+        GExp.Null(AExp.V(VName.I(Nat.Nata(1)))))(
+        GExp.Eq(AExp.V(VName.I(Nat.Nata(1))), AExp.L(Value.Numa(Int.int_of_integer(1))))
+        )
+      )
+    )
+
     val t1 = System.nanoTime
     Config.parseArgs(args)
 
