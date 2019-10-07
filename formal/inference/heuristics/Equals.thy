@@ -4,10 +4,10 @@ begin
 
 fun equality_pairs :: "gexp list \<Rightarrow> (nat \<times> value) list" where
   "equality_pairs [] = []" |
-  "equality_pairs ((Eq (V (I n)) (L l))#t) = ((n, l)#(equality_pairs t))" |
+  "equality_pairs ((gexp.Eq (V (I n)) (L l))#t) = ((n, l)#(equality_pairs t))" |
   "equality_pairs (h#t) = equality_pairs t"
 
-definition "gen_eq = \<lparr>Label = STR ''equals'', Arity = 2, Guard = [Eq (V (I 0)) (V (I 1))], Outputs = [L (Str ''true'')], Updates = []\<rparr>"
+definition "gen_eq = \<lparr>Label = STR ''equals'', Arity = 2, Guard = [gexp.Eq (V (I 0)) (V (I 1))], Outputs = [Eq (L (Str ''true''))], Updates = []\<rparr>"
 
 definition is_equals :: "transition \<Rightarrow> bool" where
   "is_equals t = (let ep = (equality_pairs (Guard t)) in 
@@ -15,7 +15,7 @@ definition is_equals :: "transition \<Rightarrow> bool" where
         Arity t = 2 \<and>
         snd (ep ! 0) = snd (ep ! 1) \<and>
         map fst ep = [0, 1] \<and>
-        Outputs t = [L (Str ''true'')])"
+        Outputs t = [Eq (L (Str ''true''))])"
 
 fun equals :: update_modifier where
   "equals t1ID t2ID s new old _ = (let
@@ -27,7 +27,7 @@ fun equals :: update_modifier where
      else None
    )"
 
-definition "gen_neq = \<lparr>Label = STR ''equals'', Arity = 2, Guard = [Eq (V (I 0)) (V (I 1))], Outputs = [L (Str ''true'')], Updates = []\<rparr>"
+definition "gen_neq = \<lparr>Label = STR ''equals'', Arity = 2, Guard = [gexp.Eq (V (I 0)) (V (I 1))], Outputs = [Eq (L (Str ''true''))], Updates = []\<rparr>"
 
 definition is_not_equals :: "transition \<Rightarrow> bool" where
   "is_not_equals t = (let ep = (equality_pairs (Guard t)) in 
@@ -35,7 +35,7 @@ definition is_not_equals :: "transition \<Rightarrow> bool" where
         Arity t = 2 \<and>
         snd (ep ! 0) \<noteq> snd (ep ! 1) \<and>
         map fst ep = [0, 1] \<and>
-        Outputs t = [L (Str ''true'')])"
+        Outputs t = [Eq (L (Str ''true''))])"
 
 fun not_equals :: update_modifier where
   "not_equals t1ID t2ID s new old _ = (let

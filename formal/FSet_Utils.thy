@@ -29,6 +29,9 @@ context includes fset.lifting begin
   lift_definition fis_singleton :: "'a fset \<Rightarrow> bool" is "\<lambda>A. is_singleton (fset A)".
 end
 
+lemma fmember_not_empty: "a |\<in>| f \<Longrightarrow> f \<noteq> {||}"
+  by auto
+
 lemma fis_singleton_alt: "fis_singleton f = (\<exists>e. f = {|e|})"
   by (metis fis_singleton.rep_eq fset_inverse fset_simps(1) fset_simps(2) is_singleton_def)
 

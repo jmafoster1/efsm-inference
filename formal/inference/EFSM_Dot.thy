@@ -67,13 +67,13 @@ fun join :: "String.literal list \<Rightarrow> String.literal \<Rightarrow> Stri
   "join (h#t) s = h+s+(join t s)"
 
 fun gexp2dot :: "gexp \<Rightarrow> String.literal" where
-  "gexp2dot (GExp.Bc True) = (STR ''True'')" |
-  "gexp2dot (GExp.Bc False) = (STR ''False'')" |
-  "gexp2dot (GExp.Eq a1 a2) = (aexp2dot a1)+STR '' = ''+(aexp2dot a2)" |
-  "gexp2dot (GExp.Lt a1 a2) = (aexp2dot a1)+STR '' &lt; ''+(aexp2dot a2)" |
-  "gexp2dot (GExp.In v l) = (vname2dot v)+STR ''&isin;{''+(join (map value2dot l) STR '', '')+STR ''}''" |
-  "gexp2dot (Nor g1 g2) = STR ''!(''+(gexp2dot g1)+STR ''&or;''+(gexp2dot g2)+STR '')''" |
-  "gexp2dot (Null v) = (aexp2dot v)+STR '' = NULL''"
+  "gexp2dot (gexp.Bc True) = (STR ''True'')" |
+  "gexp2dot (gexp.Bc False) = (STR ''False'')" |
+  "gexp2dot (gexp.Eq a1 a2) = (aexp2dot a1)+STR '' = ''+(aexp2dot a2)" |
+  "gexp2dot (gexp.Gt a1 a2) = (aexp2dot a1)+STR '' &gt; ''+(aexp2dot a2)" |
+  "gexp2dot (gexp.In v l) = (vname2dot v)+STR ''&isin;{''+(join (map value2dot l) STR '', '')+STR ''}''" |
+  "gexp2dot (gexp.Nor g1 g2) = STR ''!(''+(gexp2dot g1)+STR ''&or;''+(gexp2dot g2)+STR '')''" |
+  "gexp2dot (gexp.Null v) = (aexp2dot v)+STR '' = NULL''"
 
 primrec guards2dot_aux :: "gexp list \<Rightarrow> String.literal list" where
   "guards2dot_aux [] = []" |
@@ -89,9 +89,18 @@ primrec updates2dot_aux :: "update_function list \<Rightarrow> String.literal li
 lemma updates2dot_aux_code [code]: "updates2dot_aux l = map (\<lambda>(r, u). (vname2dot (R r))+STR '' := ''+(aexp2dot u)) l"
   by (induct l, auto)
 
+fun opred2dot :: "opred \<Rightarrow> String.literal" where
+  "opred2dot (Bc True) = STR ''true''" |
+  "opred2dot (Bc False) = STR ''false''" |
+  "opred2dot (opred.Eq v) = STR ''='' + (aexp2dot v)" |
+  "opred2dot (opred.Gt v) = STR ''='' + (aexp2dot v)" |
+  "opred2dot (opred.Null) = STR ''NONE''" |
+  "opred2dot (opred.In l) = STR ''&isin;{''+(join (map value2dot l) STR '', '')+STR ''}''" |
+  "opred2dot (opred.Nor p1 p2) = STR ''!('' + opred2dot p1 + STR ''||'' + opred2dot p2 + STR '')''"
+
 primrec outputs2dot :: "output_function list \<Rightarrow> nat \<Rightarrow> String.literal list" where
   "outputs2dot [] _ = []" |
-  "outputs2dot (h#t) n = ((STR ''o<sub>''+(show_nat n))+STR ''</sub> := ''+(aexp2dot h))#(outputs2dot t (n+1))"
+  "outputs2dot (h#t) n = ((STR ''o<sub>''+(show_nat n))+STR ''</sub> := ''+(opred2dot h))#(outputs2dot t (n+1))"
 
 fun updates2dot :: "update_function list \<Rightarrow> String.literal" where
   "updates2dot [] = (STR '''')" |

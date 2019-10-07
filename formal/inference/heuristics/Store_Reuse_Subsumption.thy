@@ -56,21 +56,23 @@ lemma generalise_output_posterior:
   by (simp add: can_take_def generalise_output_preserves posterior_def)
 
 lemma generalise_output_eq:
-  "(Outputs t) ! r = L v \<Longrightarrow>
+  "Pt ! r = Eq (L v) \<Longrightarrow>
    c $ p = Some v \<Longrightarrow>
-   apply_outputs (Outputs t) (join_ir i c) = apply_outputs (list_update (Outputs t) r (V (R p))) (join_ir i c)"
+   check_outs Pt (join_ir i c) P = check_outs (list_update Pt r (Eq (V (R p)))) (join_ir i c) P"
+  apply (rule check_outs_equiv)
+   apply simp
   apply (rule nth_equalityI)
-   apply (simp add: apply_outputs_preserves_length)
+   apply simp
   apply (case_tac "ia = r")
-   apply (metis apply_outputs_literal apply_outputs_register)
-  by (metis apply_outputs_unupdated)
+   apply (simp add: datastate(1))
+  by simp
 
 (* 
   This shows that if we can guarantee that the value of a particular register is the literal output
   then the generalised output subsumes the specific output
 *)
 lemma generalise_output_subsumes_original: 
-  "Outputs t ! r = L v \<Longrightarrow>
+  "Outputs t ! r = Eq (L v) \<Longrightarrow>
    c $ p = Some v \<Longrightarrow>
    subsumes (generalise_output t p r) c t"
   apply (rule subsumption)
@@ -153,7 +155,7 @@ lemma stored_reused_is_generalised_output_of:
 
 lemma is_generalised_output_of_subsumes: 
   "is_generalised_output_of t' t r p \<Longrightarrow>
-   nth (Outputs t) p = L v \<Longrightarrow>
+   nth (Outputs t) p = Eq (L v) \<Longrightarrow>
    c $ r = Some v \<Longrightarrow>
    subsumes t' c t"
   apply (rule subsumption)
@@ -168,28 +170,9 @@ lemma is_generalised_output_of_subsumes:
 lemma lists_neq_if: "\<exists>i. l ! i \<noteq> l' ! i \<Longrightarrow> l \<noteq> l'"
   by auto
 
-lemma is_generalised_output_of_does_not_subsume: 
-  "is_generalised_output_of t' t r p \<Longrightarrow>
-   p < length (Outputs t) \<Longrightarrow>
-   nth (Outputs t) p = L v \<Longrightarrow>
-   c $ r \<noteq> Some v \<Longrightarrow>
-   \<exists>i. can_take_transition t i c \<Longrightarrow>
-   \<not>subsumes t' c t"
-  apply (rule bad_outputs)
-  apply clarify
-  apply (rule_tac x=i in exI)
-  apply simp
-  apply (rule lists_neq_if)
-  apply (rule_tac x=p in exI)
-  by (simp add: is_generalised_output_of_def generalise_output_def apply_outputs_nth join_ir_def)
-
-(*
-    This shows that we can use the model checker to test whether the relevant register is the correct
-    value for direct subsumption 
-*)
 lemma generalise_output_directly_subsumes_original: 
       "stored_reused t' t = Some (r, p) \<Longrightarrow>
-       nth (Outputs t) p = L v \<Longrightarrow>
+       nth (Outputs t) p = Eq (L v) \<Longrightarrow>
        (\<forall>p. accepts_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
             accepts_trace (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
        (\<exists>c. anterior_context (tm e2) p = Some c \<and> c $ r = Some v)) \<Longrightarrow>
@@ -200,7 +183,7 @@ lemma generalise_output_directly_subsumes_original:
   using stored_reused_is_generalised_output_of[of t' t r p]
         is_generalised_output_of_subsumes[of t' t r p v]
    apply auto[1]
-  by (meson \<open>\<And>c. \<lbrakk>is_generalised_output_of t' t r p; Outputs t ! p = L v; c $ r = Some v\<rbrakk> \<Longrightarrow> subsumes t' c t\<close> \<open>stored_reused t' t = Some (r, p) \<Longrightarrow> is_generalised_output_of t' t r p\<close> finfun_const.rep_eq)
+  by (meson \<open>\<And>c. \<lbrakk>is_generalised_output_of t' t r p; Outputs t ! p = opred.Eq (L v); c $ r = Some v\<rbrakk> \<Longrightarrow> subsumes t' c t\<close> \<open>stored_reused t' t = Some (r, p) \<Longrightarrow> is_generalised_output_of t' t r p\<close> finfun_const_apply)
 
 definition "generalise_output_context_check v r s\<^sub>1 s\<^sub>2 e\<^sub>1 e\<^sub>2 = 
 (\<forall>t. accepts_trace (tm e\<^sub>1) t \<and> gets_us_to s\<^sub>1 (tm e\<^sub>1) 0 <> t \<longrightarrow>
@@ -209,7 +192,7 @@ definition "generalise_output_context_check v r s\<^sub>1 s\<^sub>2 e\<^sub>1 e\
 
 lemma generalise_output_context_check_directly_subsumes_original: 
       "stored_reused t' t = Some (r, p) \<Longrightarrow>
-       nth (Outputs t) p = L v \<Longrightarrow>
+       nth (Outputs t) p = Eq (L v) \<Longrightarrow>
        generalise_output_context_check v r s s' e1 e2 \<Longrightarrow>
        directly_subsumes e1 e2 s s' t' t "
   by (simp add: generalise_output_context_check_def generalise_output_directly_subsumes_original)
@@ -219,7 +202,7 @@ definition generalise_output_direct_subsumption :: "transition \<Rightarrow> tra
     None \<Rightarrow> False |
     Some (r, p) \<Rightarrow> 
       (case nth (Outputs t) p of
-        L v \<Rightarrow> generalise_output_context_check v r s s' e e' |
+        Eq (L v) \<Rightarrow> generalise_output_context_check v r s s' e e' |
         _ \<Rightarrow> False)
   )"
 
@@ -233,30 +216,10 @@ lemma generalise_output_directly_subsumes_original_executable:
   apply (case_tac a)
   apply simp
   apply (case_tac "Outputs t ! b")
-     apply (simp add: generalise_output_context_check_directly_subsumes_original)
-  by auto
-
-lemma original_does_not_subsume_generalised_output: 
-      "stored_reused t' t = Some (p, r) \<Longrightarrow>
-       r < length (Outputs t) \<Longrightarrow>
-       nth (Outputs t) r = L v \<Longrightarrow>
-       \<exists>tr a. accepts_trace (tm e1) tr \<and>
-        gets_us_to s (tm e1) 0 <> tr \<and>
-        accepts_trace (tm e) tr \<and>
-        gets_us_to s' (tm e) 0 <> tr \<and>
-        anterior_context (tm e) tr = Some a \<and>
-        a $ p \<noteq> Some v \<and>
-        (\<exists>i. can_take_transition t i a) \<Longrightarrow>
-       \<not>directly_subsumes e1 e s s' t' t"
-  apply (simp add: directly_subsumes_def)
-  apply (rule disjI1)
-  apply (erule exE)+
-  apply (rule_tac x=tr in exI)
-  apply simp
-  apply clarify
-  apply (rule_tac x=a in exI)
-  using stored_reused_is_generalised_output_of[of t' t p r]
-        is_generalised_output_of_does_not_subsume[of t' t p r v]
+       apply simp
+      apply simp
+      apply (case_tac x2)
+         apply (simp add: generalise_output_context_check_directly_subsumes_original)
   by auto
 
 (* t' is the generalised transition *)
@@ -287,7 +250,7 @@ definition initially_undefined_context_check :: "iEFSM \<Rightarrow> nat \<Right
   "initially_undefined_context_check e r s = (\<forall>t. accepts_trace (tm e) t \<and> gets_us_to s (tm e) 0 <> t \<longrightarrow> (\<exists>a. (anterior_context (tm e) t) = Some a \<and> a $ r = None))"
 
 lemma no_incoming_to_zero: "\<forall>(id, (from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
-       (aaa, ba) |\<in>| possible_steps (tm e) s d l i \<Longrightarrow>
+       (aaa, ba) |\<in>| possible_steps (tm e) s d l i p \<Longrightarrow>
        aaa \<noteq> 0"
   using in_possible_steps in_tm
   by fast
@@ -311,9 +274,9 @@ next
     apply clarify
     apply simp
     apply (case_tac aaa)
-    using no_incoming_to_zero
-     apply blast
-    by simp
+     apply (metis no_incoming_to_zero Cons.prems not0_implies_Suc)
+    apply simp
+    by (metis Cons.prems no_incoming_to_zero not0_implies_Suc)
 qed
 
 lemma no_accepting_return_to_zero:
@@ -322,14 +285,14 @@ lemma no_accepting_return_to_zero:
    \<not>gets_us_to 0 (tm e) 0 <> (a#t)"
   apply clarify
   apply (rule gets_us_to.cases)
-     apply simp
-    apply simp
+     apply simp+
    apply clarify
+  apply (case_tac ab)
+    apply (metis fst_eqD no_incoming_to_zero snd_eqD)
+   apply (simp add: no_return_to_zero)
   apply simp
-  apply (case_tac aaa)
-  using no_incoming_to_zero apply blast
-  apply (simp add: no_return_to_zero)
-  by (simp add: step_none_rejects)
+  apply clarify
+  using accepts_cons_step by blast
 
 lemma no_return_to_zero_must_be_empty:
   "\<forall>(id, (from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
@@ -556,7 +519,7 @@ lemma input_stored_in_reg_not_subsumed:
     apply (metis gval_unconstrained is_generalisation_of_i_lt_arity is_generalisation_of_same_arity)
    apply (simp add: apply_guards_def Bex_def)
    apply standard
-   apply (rule_tac x="Eq (V (vname.I i)) (L (Num x1))" in exI)
+   apply (rule_tac x="gexp.Eq (V (vname.I i)) (L (Num x1))" in exI)
    apply (simp add: join_ir_def input2state_nth is_generalisation_of_i_lt_arity str_not_num)
    apply (rule_tac x="list_update ia i (Num s)" in exI)
    apply simp
@@ -565,7 +528,7 @@ lemma input_stored_in_reg_not_subsumed:
     apply (metis gval_unconstrained is_generalisation_of_i_lt_arity is_generalisation_of_same_arity)
    apply (simp add: apply_guards_def Bex_def)
    apply standard
-   apply (rule_tac x="Eq (V (vname.I i)) (L (value.Str x2))" in exI)
+   apply (rule_tac x="gexp.Eq (V (vname.I i)) (L (value.Str x2))" in exI)
   by (simp add: join_ir_def input2state_nth is_generalisation_of_i_lt_arity str_not_num)
 
 lemma aval_updated: "(r, u) \<in> set U \<Longrightarrow> r \<notin> set (map fst (removeAll (r, u) U)) \<Longrightarrow> apply_updates U s c $ r = aval u s"
@@ -627,43 +590,6 @@ definition "possibly_not_value_ctx v r t\<^sub>1 s\<^sub>2 e\<^sub>2 s\<^sub>1 e
        (\<exists>i. can_take_transition t\<^sub>1 i c) \<and>
        c $ r \<noteq> Some v)
   )"
-
-lemma possibly_not_value: 
-  "stored_reused t\<^sub>2 t\<^sub>1 = Some (r, p) \<Longrightarrow>
-   nth (Outputs t\<^sub>1) p = L v \<Longrightarrow>
-   p < length (Outputs t\<^sub>1) \<Longrightarrow>
-   possibly_not_value_ctx v r t\<^sub>1 s\<^sub>2 e\<^sub>2 s\<^sub>1 e\<^sub>1 \<Longrightarrow>
-   \<not> directly_subsumes e\<^sub>1 e\<^sub>2 s\<^sub>1 s\<^sub>2 t\<^sub>2 t\<^sub>1"
-  apply (simp add: directly_subsumes_def possibly_not_value_ctx_def)
-  apply (rule disjI1)
-  apply clarify
-  apply (rule_tac x=pa in exI)
-  apply clarify
-  apply (case_tac "anterior_context (tm e\<^sub>2) pa")
-  apply simp
-  apply simp
-  using stored_reused_is_generalised_output_of[of t\<^sub>2 t\<^sub>1 r p]
-  using is_generalised_output_of_does_not_subsume[of t\<^sub>2 t\<^sub>1 r p v]
-  by auto
-
-definition "possibly_not_value e\<^sub>1 e\<^sub>2 s\<^sub>1 s\<^sub>2 t\<^sub>2 t\<^sub>1 =
-  (case stored_reused t\<^sub>2 t\<^sub>1 of None \<Rightarrow> False | Some (r, p) \<Rightarrow>
-    (case nth (Outputs t\<^sub>1) p of L v \<Rightarrow>
-      p < length (Outputs t\<^sub>1) \<and>
-      possibly_not_value_ctx v r t\<^sub>1 s\<^sub>2 e\<^sub>2 s\<^sub>1 e\<^sub>1 |
-    _ \<Rightarrow> False)
-  )"
-
-lemma possibly_not_value_not_directly_subsumes: 
-  "possibly_not_value e\<^sub>1 e\<^sub>2 s\<^sub>1 s\<^sub>2 t\<^sub>2 t\<^sub>1 \<Longrightarrow> \<not> directly_subsumes e\<^sub>1 e\<^sub>2 s\<^sub>1 s\<^sub>2 t\<^sub>2 t\<^sub>1"
-  apply (simp add: possibly_not_value_def)
-  apply (case_tac "stored_reused t\<^sub>2 t\<^sub>1")
-   apply simp
-  apply (case_tac a)
-  apply simp
-  apply (case_tac "Outputs t\<^sub>1 ! b")
-     apply (simp add: possibly_not_value)
-  by auto
 
 definition "accepts_and_gets_us_to_both a b s s' = (
   \<exists>p. accepts_trace (tm a) p \<and>

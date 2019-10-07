@@ -49,9 +49,9 @@ lemma [code]:
 
 (* This gives us a speedup because we can check this before we have to call out to z3 *)
 fun mutex :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
-  "mutex (Eq (V v) (L l)) (Eq (V v') (L l')) = (if v = v' then l \<noteq> l' else False)" |
-  "mutex (gexp.In v l) (Eq (V v') (L l')) = (v = v' \<and> l' \<notin> set l)" |
-  "mutex (Eq (V v') (L l')) (gexp.In v l) = (v = v' \<and> l' \<notin> set l)" |
+  "mutex (gexp.Eq (V v) (L l)) (gexp.Eq (V v') (L l')) = (if v = v' then l \<noteq> l' else False)" |
+  "mutex (gexp.In v l) (gexp.Eq (V v') (L l')) = (v = v' \<and> l' \<notin> set l)" |
+  "mutex (gexp.Eq (V v') (L l')) (gexp.In v l) = (v = v' \<and> l' \<notin> set l)" |
   "mutex (gexp.In v l) (gexp.In v' l') = (v = v' \<and> set l \<inter> set l' = {})" |
   "mutex _ _ = False"
 
@@ -107,24 +107,18 @@ lemma [code]: "guardMatch t1 t2 = guardMatch_code (Guard t1) (Guard t2)"
   using guardMatch_code.elims(2) by fastforce
 
 fun outputMatch_code :: "output_function list \<Rightarrow> output_function list \<Rightarrow> bool" where
-  "outputMatch_code [L (Num n)] [L (Num n')] = True" |
+  "outputMatch_code [Eq (L (Num n))] [Eq (L (Num n'))] = True" |
   "outputMatch_code _ _ = False"
 
 lemma [code]: "outputMatch t1 t2 = outputMatch_code (Outputs t1) (Outputs t2)"
   by (metis outputMatch_code.elims(2) outputMatch_code.simps(1) outputMatch_def)
 
-fun always_different_outputs :: "aexp list \<Rightarrow> aexp list \<Rightarrow> bool" where
+fun always_different_outputs :: "output_function list \<Rightarrow> output_function list \<Rightarrow> bool" where
   "always_different_outputs [] [] = False" |
   "always_different_outputs [] (a#_) = True" |
   "always_different_outputs (a#_) [] = True" |
-  "always_different_outputs ((L v)#t) ((L v')#t') = (if v = v' then always_different_outputs t t' else True)" |
+  "always_different_outputs (Eq (L v)#t) (Eq (L v')#t') = (if v = v' then always_different_outputs t t' else True)" |
   "always_different_outputs (h#t) (h'#t') = always_different_outputs t t'"
-
-lemma always_different_outputs_outputs_never_equal:
-  "always_different_outputs O1 O2 \<Longrightarrow>
-   apply_outputs O1 s \<noteq> apply_outputs O2 s"
-  apply(induct O1 O2 rule: always_different_outputs.induct)
-  by (simp_all add: apply_outputs_def)
 
 fun tests_input_equality :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
   "tests_input_equality i (gexp.Eq (V (vname.I i')) (L _)) = (i = i')" |
@@ -174,38 +168,17 @@ definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iE
     gets_us_to s' (tm m2) 0 <> p \<and>
     (case anterior_context (tm m2) p of Some c \<Rightarrow> (\<exists>i. can_take_transition t2 i c))))"
 
-lemma always_different_outputs_can_take_transition_not_subsumed:
-  "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
-   \<forall>c. posterior_sequence (tm m2) 0 <> p = Some c \<longrightarrow> (\<exists>i. can_take_transition t2 i c) \<longrightarrow> \<not> subsumes t1 c t2"
-  apply standard
-  apply standard
-  apply standard
-  apply (rule bad_outputs)
-  by (metis always_different_outputs_outputs_never_equal)
-
-lemma always_different_outputs_direct_subsumption: 
-  "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
-   always_different_outputs_direct_subsumption m1 m2 s s' t2 \<Longrightarrow>
-   \<not> directly_subsumes m1 m2 s s' t1 t2"
-  apply (simp add: directly_subsumes_def always_different_outputs_direct_subsumption_def)
-  apply standard
-  apply clarify
-  apply (rule_tac x=p in exI)
-  apply simp
-  using always_different_outputs_can_take_transition_not_subsumed accepts_trace_gives_context accepts_gives_context
-  by fastforce
-
 definition negate :: "gexp list \<Rightarrow> gexp" where
-  "negate g = gNot (fold gAnd g (Bc True))"
+  "negate g = gNot (fold gAnd g (gexp.Bc True))"
 
 lemma gval_negate_cons: "gval (negate (a # G)) s = gval (gNot a) s \<or>\<^sub>? gval (negate G) s"
   apply (simp only: negate_def gval_gNot gval_fold_equiv_gval_foldr)
   by (simp only: foldr.simps comp_def gval_gAnd de_morgans_2)
 
-lemma negate_true_guard: "(gval (negate G) s = true) = (gval (fold gAnd G (Bc True)) s = false)"
+lemma negate_true_guard: "(gval (negate G) s = true) = (gval (fold gAnd G (gexp.Bc True)) s = false)"
   by (metis (no_types, lifting) gval_gNot maybe_double_negation maybe_not.simps(1) negate_def)
 
-lemma gval_negate_not_invalid: "(gval (negate gs) (join_ir i ra) \<noteq> invalid) = (gval (fold gAnd gs (Bc True)) (join_ir i ra) \<noteq> invalid)"
+lemma gval_negate_not_invalid: "(gval (negate gs) (join_ir i ra) \<noteq> invalid) = (gval (fold gAnd gs (gexp.Bc True)) (join_ir i ra) \<noteq> invalid)"
   using gval_gNot maybe_not_invalid negate_def by auto
 
 lemma quick_negation:
@@ -362,8 +335,6 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
       then True
     else if simple_mutex t2 t1
       then False
-    else if always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption m1 m2 s s' t2
-      then False
     else if guard_subset_eq_outputs_updates t2 t1
       then True
     else if in_not_subset t1 t2
@@ -382,8 +353,6 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
       then False
     else if generalise_output_direct_subsumption t1 t2 m1 m2 s s'
       then True
-    else if possibly_not_value m1 m2 s s' t1 t2
-      then False
     else if t1 = drop_guards t2
       then True
     \<comment> \<open>else if t2 = drop_guards t1 \<and> satisfiable_negation t1
@@ -400,8 +369,6 @@ lemma directly_subsumes_cases:  "directly_subsumes m1 m2 s s' t1 t2 = directly_s
    apply (simp add: directly_subsumes_self)
   apply (clarify, rule if_elim)
    apply (simp add: simple_mutex_direct_subsumption)
-  apply (clarify, rule if_elim)
-   apply (simp add: always_different_outputs_direct_subsumption)
   apply (clarify, rule if_elim)
    apply (simp add: guard_subset_eq_outputs_updates_def guard_subset_eq_outputs_updates_direct_subsumption)
   apply (clarify, rule if_elim)
@@ -420,8 +387,6 @@ lemma directly_subsumes_cases:  "directly_subsumes m1 m2 s s' t1 t2 = directly_s
    apply (simp add: drop_update_add_guard_direct_subsumption)
   apply (clarify, rule if_elim)
    apply (simp add: generalise_output_directly_subsumes_original_executable)
-  apply (clarify, rule if_elim)
-   apply (simp add: possibly_not_value_not_directly_subsumes)
   apply (clarify, rule if_elim)
    apply (simp add: drop_inputs_subsumption subsumes_in_all_contexts_directly_subsumes)
   by (simp add: dirty_directly_subsumes_def)

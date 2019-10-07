@@ -1,12 +1,12 @@
 theory Transition
-imports GExp
+imports GExp OPred
 begin
 
 type_synonym label = String.literal
 type_synonym arity = nat
 type_synonym inputs = "value list"
 type_synonym outputs = "value option list"
-type_synonym output_function = "aexp"
+type_synonym output_function = "opred"
 
 type_synonym update_function = "(nat \<times> aexp)"
 type_synonym updates = "update_function list"
@@ -16,7 +16,7 @@ record transition =
   Label :: String.literal
   Arity :: nat
   Guard :: "gexp list"
-  Outputs :: "aexp list"
+  Outputs :: "output_function list"
   Updates :: "(nat \<times> aexp) list"
 text_raw\<open>}%endsnip\<close>
 
@@ -27,7 +27,7 @@ definition same_structure :: "transition \<Rightarrow> transition \<Rightarrow> 
 
 definition enumerate_inputs :: "transition \<Rightarrow> nat set" where
   "enumerate_inputs t = (\<Union> (set (map enumerate_gexp_inputs (Guard t)))) \<union>
-                        (\<Union> (set (map enumerate_aexp_inputs (Outputs t)))) \<union>
+                        (\<Union> (set (map OPred.enumerate_inputs (Outputs t)))) \<union>
                         (\<Union> (set (map (\<lambda>(_, u). enumerate_aexp_inputs u) (Updates t))))"
 
 definition max_input :: "transition \<Rightarrow> nat option" where
@@ -38,7 +38,7 @@ definition total_max_input :: "transition \<Rightarrow> nat" where
 
 definition enumerate_registers :: "transition \<Rightarrow> nat set" where
   "enumerate_registers t = (\<Union> (set (map enumerate_gexp_regs (Guard t)))) \<union>
-                           (\<Union> (set (map enumerate_aexp_regs (Outputs t)))) \<union>
+                           (\<Union> (set (map OPred.enumerate_regs (Outputs t)))) \<union>
                            (\<Union> (set (map (\<lambda>(_, u). enumerate_aexp_regs u) (Updates t)))) \<union>
                            (\<Union> (set (map (\<lambda>(r, _). enumerate_aexp_regs (V (R r))) (Updates t))))"
 
@@ -53,7 +53,7 @@ next
     by (metis enumerate_gexp_regs_list Sup_insert list.simps(15) list.simps(9) set_append)
 qed
 
-lemma outputs_regs_list: "\<exists>l. \<Union> (set (map enumerate_aexp_regs P)) = set l"
+lemma outputs_regs_list: "\<exists>l. \<Union> (set (map OPred.enumerate_regs P)) = set l"
 proof(induct P)
   case Nil
   then show ?case
@@ -61,7 +61,7 @@ proof(induct P)
 next
   case (Cons a P)
   then show ?case
-    by (metis enumerate_aexp_regs_list Sup_insert list.simps(15) list.simps(9) set_append)
+    by (metis (no_types, hide_lams) finite_enumerate_regs finite_list List.finite_set ex_map_conv finite_Union)
 qed
 
 lemma updates_regs_list_1: "\<exists>l. \<Union> (set (map (\<lambda>(uu, y). enumerate_aexp_regs y) U)) = set l"
@@ -120,13 +120,13 @@ definition valid_transition :: "transition \<Rightarrow> bool" where
 
 definition enumerate_strings :: "transition \<Rightarrow> String.literal set" where
   "enumerate_strings t = (\<Union> (set (map enumerate_gexp_strings (Guard t)))) \<union>
-                         (\<Union> (set (map enumerate_aexp_strings (Outputs t)))) \<union>
+                         (\<Union> (set (map OPred.enumerate_strings (Outputs t)))) \<union>
                          (\<Union> (set (map (\<lambda>(_, u). enumerate_aexp_strings u) (Updates t)))) \<union>
                          (\<Union> (set (map (\<lambda>(r, _). enumerate_aexp_strings (V (R r))) (Updates t))))"
 
 definition enumerate_ints :: "transition \<Rightarrow> int set" where
   "enumerate_ints t = (\<Union> (set (map enumerate_gexp_ints (Guard t)))) \<union>
-                         (\<Union> (set (map enumerate_aexp_ints (Outputs t)))) \<union>
+                         (\<Union> (set (map OPred.enumerate_ints (Outputs t)))) \<union>
                          (\<Union> (set (map (\<lambda>(_, u). enumerate_aexp_ints u) (Updates t)))) \<union>
                          (\<Union> (set (map (\<lambda>(r, _). enumerate_aexp_ints (V (R r))) (Updates t))))"
 

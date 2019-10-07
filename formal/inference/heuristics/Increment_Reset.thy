@@ -6,7 +6,7 @@ definition initialiseReg :: "transition \<Rightarrow> nat \<Rightarrow> transiti
   "initialiseReg t newReg = \<lparr>Label = Label t, Arity = Arity t, Guard = Guard t, Outputs = Outputs t, Updates = ((newReg, L (Num 0))#Updates t)\<rparr>"
 
 definition "guardMatch t1 t2  = (\<exists>n n'. Guard t1 = [gexp.Eq (V (vname.I 0)) (L (Num n))] \<and> Guard t2 = [gexp.Eq (V (vname.I 0)) (L (Num n'))])"
-definition "outputMatch t1 t2 = (\<exists>m m'. Outputs t1 = [L (Num m)] \<and> Outputs t2 = [L (Num m')])"
+definition "outputMatch t1 t2 = (\<exists>m m'. Outputs t1 = [Eq (L (Num m))] \<and> Outputs t2 = [Eq (L (Num m'))])"
 
 lemma guard_match_commute: "guardMatch t1 t2 = guardMatch t2 t1"
   apply (simp add: guardMatch_def)
@@ -23,8 +23,8 @@ fun insert_increment :: update_modifier where
      if guardMatch t1 t2 \<and> outputMatch t1 t2 then let 
           r = case max_reg new of None \<Rightarrow> 1 | Some r \<Rightarrow> r+ 1;
           newReg = R r;
-          newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guard = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t1)\<rparr>;
-          newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guard = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t2)\<rparr>;
+          newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guard = [], Outputs = [Eq (Plus (V newReg) (V (vname.I 0)))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t1)\<rparr>;
+          newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guard = [], Outputs = [Eq (Plus (V newReg) (V (vname.I 0)))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t2)\<rparr>;
           initialised = fimage (\<lambda>(uid, (from, to), t). (uid, (from, to), (if (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2 then initialiseReg t r else t))) new;
           newEFSM = (replaceAll (replaceAll initialised t2 newT2) t1 newT1)
           in 
@@ -51,8 +51,8 @@ fun insert_increment_2 :: update_modifier where
      if guardMatch t1 t2 \<and> outputMatch t1 t2 then let 
           r = case max_reg new of None \<Rightarrow> 1 | Some r \<Rightarrow> r + 1;
           newReg = R r;
-          newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guard = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t1)\<rparr>;
-          newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guard = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t2)\<rparr>;
+          newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guard = [], Outputs = [Eq (Plus (V newReg) (V (vname.I 0)))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t1)\<rparr>;
+          newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guard = [], Outputs = [Eq (Plus (V newReg) (V (vname.I 0)))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t2)\<rparr>;
           initialised = fimage (\<lambda>(uid, (from, to), t). (uid, (from, to), (if (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2 then initialiseReg t r else t))) new ;
           newEFSM = (struct_replace_all (struct_replace_all initialised t2 newT2) t1 newT1)
           in 

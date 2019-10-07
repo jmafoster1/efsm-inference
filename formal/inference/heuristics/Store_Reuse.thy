@@ -24,8 +24,8 @@ end
 
 type_synonym index = "nat \<times> ioTag \<times> nat"
 
-fun lookup :: "index \<Rightarrow> execution \<Rightarrow> value" where
-  "lookup (eventNo, In, inx) t = (let (_, inputs, _) = nth t eventNo in nth inputs inx)" |
+fun lookup :: "index \<Rightarrow> execution \<Rightarrow> value option" where
+  "lookup (eventNo, In, inx) t = (let (_, inputs, _) = nth t eventNo in Some (nth inputs inx))" |
   "lookup (eventNo, Out, inx) t = (let (_, _, outputs) = nth t eventNo in nth outputs inx)"
 
 abbreviation eventNum :: "index \<Rightarrow> nat" where
@@ -37,12 +37,12 @@ abbreviation ioTag :: "index \<Rightarrow> ioTag" where
 abbreviation inx :: "index \<Rightarrow> nat" where
   "inx i \<equiv> snd (snd i)"
 
-primrec index :: "value list \<Rightarrow> nat \<Rightarrow> ioTag \<Rightarrow> nat \<Rightarrow> index fset" where
+primrec index :: "(value option) list \<Rightarrow> nat \<Rightarrow> ioTag \<Rightarrow> nat \<Rightarrow> index fset" where
   "index [] _ _ _ = {||}" |
   "index (h#t) eventNo io ind = finsert (eventNo, io, ind) (index t eventNo io (ind + 1))"
 
-definition io_index :: "nat \<Rightarrow> value list \<Rightarrow> value list \<Rightarrow> index fset" where
-  "io_index eventNo inputs outputs = (index inputs eventNo In 0) |\<union>| (index outputs eventNo Out 0)"
+definition io_index :: "nat \<Rightarrow> value list \<Rightarrow> value option list \<Rightarrow> index fset" where
+  "io_index eventNo inputs outputs = (index (map Some inputs) eventNo In 0) |\<union>| (index outputs eventNo Out 0)"
 
 definition indices :: "execution \<Rightarrow> index fset" where
   "indices e = foldl (|\<union>|) {||} (map (\<lambda>(eventNo, (label, inputs, outputs)). io_index eventNo inputs outputs) (enumerate 0 e))"
@@ -69,7 +69,7 @@ definition i_possible_steps :: "iEFSM \<Rightarrow> nat \<Rightarrow> registers 
   If the EFSM is nondeterministic, we need to make sure it chooses the right path so that it accepts
   the input trace.
 *)
-definition i_step :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> nat \<times> registers) option" where
+definition i_step :: "execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> nat \<times> registers) option" where
   "i_step tr e s r l i = (let 
     poss_steps = (i_possible_steps e s r l i);
     possibilities = ffilter (\<lambda>(u, s', t). accepts (tm e) s' (apply_updates (Updates t) (join_ir i r) r) tr) poss_steps in
@@ -81,10 +81,9 @@ definition i_step :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarr
 
 type_synonym match = "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> ((transition \<times> nat) \<times> ioTag \<times> nat))"
 
-definition "exec2trace t = map (\<lambda>(label, inputs, _). (label, inputs)) t"
 primrec (nonexhaustive) walk_up_to :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (transition \<times> nat)" where
   "walk_up_to n e s r (h#t) =
-    (case (i_step (exec2trace t) e s r (fst h) (fst (snd h))) of
+    (case (i_step t e s r (fst h) (fst (snd h))) of
       (Some (transition, s', uid, updated)) \<Rightarrow> (case n of 0 \<Rightarrow> (transition, uid) | Suc m \<Rightarrow> walk_up_to m e s' updated t)
     )"
 
@@ -113,7 +112,7 @@ definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat 
       Label = (Label t),
       Arity = (Arity t),
       Guard = (Guard t),
-      Outputs = list_update (Outputs t) outputX (V (R regX)),
+      Outputs = list_update (Outputs t) outputX (Eq (V (R regX))),
       Updates = (Updates t)
     \<rparr>"
 
@@ -167,7 +166,7 @@ lemmas remove_guard_add_update_preserves = remove_guard_add_update_preserves_lab
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and> 
                                     i < Arity t \<and>
-                                    (\<exists>v. Eq (V (vname.I i)) (L v) \<in> set (Guard t)) \<and>
+                                    (\<exists>v. gexp.Eq (V (vname.I i)) (L v) \<in> set (Guard t)) \<and>
                                     r \<notin> set (map fst (Updates t)))"
 
 lemma generalise_output_preserves_label: "Label (generalise_output t r p) = Label t"
@@ -203,7 +202,7 @@ definition generalise_input :: "transition \<Rightarrow> nat \<Rightarrow> nat \
   "generalise_input t r i = \<lparr>
       Label = Label t,
       Arity = Arity t,
-      Guard = map (\<lambda>g. case g of Eq (V (I i')) (L _) \<Rightarrow> if i = i' then Eq (V (I i)) (V (R r)) else g | _ \<Rightarrow> g) (Guard t),
+      Guard = map (\<lambda>g. case g of gexp.Eq (V (I i')) (L _) \<Rightarrow> if i = i' then gexp.Eq (V (I i)) (V (R r)) else g | _ \<Rightarrow> g) (Guard t),
       Outputs = Outputs t,
       Updates = Updates t
     \<rparr>"

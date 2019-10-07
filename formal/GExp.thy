@@ -23,10 +23,6 @@ text_raw\<open>\snip{gexptype}{1}{2}{%\<close>
 datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Null aexp | In vname "value list" |  Nor gexp gexp
 text_raw\<open>}%endsnip\<close>
 
-syntax (xsymbols)
-  Eq :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "=" 60*)
-  Gt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix ">" 60*)
-
 fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> trilean" where
   "gval (Bc True) _ = true" |
   "gval (Bc False) _ = false" |

@@ -12,12 +12,19 @@ fun a_replace_with :: "aexp \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> ae
   "a_replace_with (Plus a1 a2) r1 r2 = Plus (a_replace_with a1 r1 r2) (a_replace_with a2 r1 r2)" |
   "a_replace_with (Minus a1 a2) r1 r2 = Plus (a_replace_with a1 r1 r2) (a_replace_with a2 r1 r2)"
 
+fun o_replace_with :: "opred \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> opred" where
+  "o_replace_with (Eq v) b c = Eq (a_replace_with v b c)" |
+  "o_replace_with (Gt v) b c = Gt (a_replace_with v b c)" |
+  "o_replace_with (Nor v va) b c = Nor (o_replace_with v b c) (o_replace_with va b c)" |
+  "o_replace_with p _ _ = p"
+
+
 fun g_replace_with :: "gexp \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> gexp" where
-  "g_replace_with (gexp.Bc x) _ _ = gexp.Bc x" |
   "g_replace_with (gexp.Eq a1 a2) r1 r2 = gexp.Eq (a_replace_with a1 r1 r2) (a_replace_with a2 r1 r2)" |
   "g_replace_with (gexp.Gt a1 a2) r1 r2 = gexp.Eq (a_replace_with a1 r1 r2) (a_replace_with a2 r1 r2)" |
   "g_replace_with (gexp.Nor g1 g2) r1 r2 = gexp.Nor (g_replace_with g1 r1 r2) (g_replace_with g2 r1 r2)" |
-  "g_replace_with (gexp.Null a1) r1 r2 = gexp.Null (a_replace_with a1 r1 r2)"
+  "g_replace_with (gexp.Null a1) r1 r2 = gexp.Null (a_replace_with a1 r1 r2)" |
+  "g_replace_with g _ _ = g"
 
 (* replace r1 with r2 *)
 fun u_replace_with :: "update_function \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> update_function" where
@@ -27,7 +34,7 @@ definition t_replace_with :: "transition \<Rightarrow> nat \<Rightarrow> nat \<R
   "t_replace_with t r1 r2 = \<lparr>Label = Label t,
                              Arity = Arity t,
                              Guard = map (\<lambda>g. g_replace_with g r1 r2) (Guard t),
-                             Outputs = map (\<lambda>p. a_replace_with p r1 r2) (Outputs t),
+                             Outputs = map (\<lambda>p. o_replace_with p r1 r2) (Outputs t),
                              Updates = map (\<lambda>u. u_replace_with u r1 r2) (Updates t)\<rparr>"
 
 definition replace_with :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM" where

@@ -121,18 +121,18 @@ primrec make_guard :: "value list \<Rightarrow> nat \<Rightarrow> gexp list" whe
 "make_guard [] _ = []" |
 "make_guard (h#t) n = (gexp.Eq (V (vname.I n)) (L h))#(make_guard t (n+1))"
 
-primrec make_outputs :: "value list \<Rightarrow> output_function list" where
+fun make_outputs :: "value option list \<Rightarrow> output_function list" where
   "make_outputs [] = []" |
-  "make_outputs (h#t) = (L h)#(make_outputs t)"
+  "make_outputs (None # t) = Null#(make_outputs t)" |
+  "make_outputs (Some h#t) = (Eq (L h))#(make_outputs t)"
 
 fun maxS :: "transition_matrix \<Rightarrow> nat" where
   "maxS t = (if t = {||} then 0 else fMax ((fimage (\<lambda>((origin, dest), t). origin) t) |\<union>| (fimage (\<lambda>((origin, dest), t). dest) t)))"
 
 (* An execution represents a run of the software and has the form [(label, inputs, outputs)]*)
-type_synonym execution = "(label \<times> value list \<times> value list) list"
 type_synonym log = "execution list"
 
-definition add_transition :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> label \<Rightarrow> value list \<Rightarrow> value list \<Rightarrow> transition_matrix" where
+definition add_transition :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> label \<Rightarrow> value list \<Rightarrow> outputs \<Rightarrow> transition_matrix" where
   "add_transition e s label inputs outputs = finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e"
 
 definition startsWith :: "String.literal \<Rightarrow> String.literal \<Rightarrow> bool" where
@@ -173,43 +173,44 @@ primrec make_guard_abstract :: "value list \<Rightarrow> nat \<Rightarrow> nat \
   "make_guard_abstract [] _ _ r G U = (G, U, r)" |
   "make_guard_abstract (h#t) i maxR r G U = (
     case h of
-      value.Num _ \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Eq (V (vname.I i)) (L h))#G) U |
+      value.Num _ \<Rightarrow> make_guard_abstract t (i+1) maxR r ((gexp.Eq (V (vname.I i)) (L h))#G) U |
       value.Str s \<Rightarrow>
         if s = STR ''_'' then
           make_guard_abstract t (i+1) maxR r G U
         else if startsWith s STR ''$'' then
           case r $ s of
             None \<Rightarrow> make_guard_abstract t (i+1) (maxR + 1) (r(s := maxR)) G ((maxR, V (I i))#U) |
-            Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Eq (V (vname.I i)) (V (R reg)))#G) U
+            Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((gexp.Eq (V (vname.I i)) (V (R reg)))#G) U
         else if startsWith s STR ''<'' then
           if startsWith (substring s 1) STR ''$'' then
             case r $ (substring s 1) of
-              Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (V (R reg)))#G) U
+              Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((gexp.Gt (V (vname.I i)) (V (R reg)))#G) U
           else
-            make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (L (Num (parseInt (substring s 2)))))#G) U
+            make_guard_abstract t (i+1) maxR r ((gexp.Gt (V (vname.I i)) (L (Num (parseInt (substring s 2)))))#G) U
         else if startsWith s STR ''/='' then
           if startsWith (substring s 1) STR ''$'' then
             case r $ (substring s 2) of
-              Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (V (R reg)))#G) U
+              Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((gexp.Gt (V (vname.I i)) (V (R reg)))#G) U
           else
-            make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (L (Num (parseInt (substring s 3)))))#G) U
+            make_guard_abstract t (i+1) maxR r ((gexp.Gt (V (vname.I i)) (L (Num (parseInt (substring s 3)))))#G) U
         else
-          make_guard_abstract t (i+1) maxR r ((Eq (V (vname.I i)) (L h))#G) U
+          make_guard_abstract t (i+1) maxR r ((gexp.Eq (V (vname.I i)) (L h))#G) U
   )"
 
-primrec make_outputs_abstract :: "value list \<Rightarrow> nat \<Rightarrow> (String.literal \<Rightarrow>f nat option) \<Rightarrow> output_function list \<Rightarrow> output_function list" where
+fun make_outputs_abstract :: "outputs \<Rightarrow> nat \<Rightarrow> (String.literal \<Rightarrow>f nat option) \<Rightarrow> output_function list \<Rightarrow> output_function list" where
   "make_outputs_abstract []_ _ P = rev P" |
-  "make_outputs_abstract (h#t) maxR r P = (case h of
-    value.Num _ \<Rightarrow> make_outputs_abstract t maxR r ((L h)#P) |
+  "make_outputs_abstract (None # t) maxR r P = make_outputs_abstract t maxR r (Null#P)" |
+  "make_outputs_abstract (Some h#t) maxR r P = (case h of
+    value.Num _ \<Rightarrow> make_outputs_abstract t maxR r ((Eq (L h))#P) |
     value.Str s \<Rightarrow>
       if startsWith s STR ''$'' then 
         case r $ s of
-          Some reg \<Rightarrow> make_outputs_abstract t maxR r ((V (R reg))#P)
+          Some reg \<Rightarrow> make_outputs_abstract t maxR r (Eq (V (R reg))#P)
       else
-        make_outputs_abstract t maxR r ((L h)#P)
+        make_outputs_abstract t maxR r ((Eq (L h))#P)
     )"
 
-definition add_transition_abstract :: "transition_matrix \<Rightarrow> (String.literal \<Rightarrow>f nat option) \<Rightarrow> cfstate \<Rightarrow> label \<Rightarrow> value list \<Rightarrow> value list \<Rightarrow> (transition_matrix \<times> (String.literal \<Rightarrow>f nat option))" where
+definition add_transition_abstract :: "transition_matrix \<Rightarrow> (String.literal \<Rightarrow>f nat option) \<Rightarrow> cfstate \<Rightarrow> label \<Rightarrow> value list \<Rightarrow> outputs \<Rightarrow> (transition_matrix \<times> (String.literal \<Rightarrow>f nat option))" where
   "add_transition_abstract e r s label inputs outputs = (let
     regs = fimage (comp total_max_reg snd) e;
     maxR = (if regs = {||} then 1 else fMax regs);
@@ -224,12 +225,8 @@ definition add_transition_abstract :: "transition_matrix \<Rightarrow> (String.l
 fun make_branch :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> transition_matrix" where
   "make_branch e _ _ [] = e" |
   "make_branch e s r ((label, inputs, outputs)#t) =
-    (case (step e s r label inputs) of
-      Some (transition, s', outputs', updated) \<Rightarrow> 
-        if outputs' = (map Some outputs) then
-          make_branch e s' updated t
-        else 
-          make_branch (add_transition e s label inputs outputs) ((maxS e)+1) r t  |
+    (case (step e s r label inputs outputs) of
+      Some (transition, s', updated) \<Rightarrow> make_branch e s' updated t |
       None \<Rightarrow>
           make_branch (add_transition e s label inputs outputs) ((maxS e)+1) r t
     )"
@@ -237,12 +234,9 @@ fun make_branch :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> regist
 fun make_branch_abstract :: "(transition_matrix \<times> (String.literal \<Rightarrow>f nat option)) \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> transition_matrix" where
   "make_branch_abstract (e, r) _ _ [] = e" |
   "make_branch_abstract (e, r1) s r ((label, inputs, outputs)#t) =
-    (case (step e s r label inputs) of
-      Some (transition, s', outputs', updated) \<Rightarrow> 
-        if outputs' = (map Some outputs) then
-          make_branch_abstract (e, r1) s' updated t
-        else 
-          make_branch_abstract (add_transition_abstract e r1 s label inputs outputs) ((maxS e)+1) r t  |
+    (case (step e s r label inputs outputs) of
+      Some (transition, s', updated) \<Rightarrow>
+        make_branch_abstract (e, r1) s' updated t |
       None \<Rightarrow>
           make_branch_abstract (add_transition_abstract e r1 s label inputs outputs) ((maxS e)+1) r t
     )"
@@ -312,13 +306,11 @@ lemma dest_code [code]: "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambd
 
 inductive satisfies_trace :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
   base: "satisfies_trace e s d []" |                                         
-  step: "\<exists>(s', T) |\<in>| possible_steps e s d l i.
-         apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
+  step: "\<exists>(s', T) |\<in>| possible_steps e s d l i p.
          satisfies_trace e s' (apply_updates (Updates T) (join_ir i d) d) t \<Longrightarrow>
          satisfies_trace e s d ((l, i, p)#t)"
 
-lemma satisfies_trace_step: "satisfies_trace e s d ((l, i, p)#t) = (\<exists>(s', T) |\<in>| possible_steps e s d l i.
-         apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
+lemma satisfies_trace_step: "satisfies_trace e s d ((l, i, p)#t) = (\<exists>(s', T) |\<in>| possible_steps e s d l i p.
          satisfies_trace e s' (apply_updates (Updates T) (join_ir i d) d) t)"
   apply standard
    defer
@@ -329,15 +321,12 @@ lemma satisfies_trace_step: "satisfies_trace e s d ((l, i, p)#t) = (\<exists>(s'
 fun satisfies_trace_prim :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
   "satisfies_trace_prim _ _ _ [] = True" |
   "satisfies_trace_prim e s d ((l, i, p)#t) = (
-    let poss_steps = possible_steps e s d l i in
+    let poss_steps = possible_steps e s d l i p in
     if fis_singleton poss_steps then
       let (s', T) = fthe_elem poss_steps in
-      if apply_outputs (Outputs T) (join_ir i d) = (map Some p) then
         satisfies_trace_prim e s' (apply_updates (Updates T) (join_ir i d) d) t
-      else False
     else
       (\<exists>(s', T) |\<in>| poss_steps.
-         apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
          satisfies_trace_prim e s' (apply_updates (Updates T) (join_ir i d) d) t))"
 
 lemma satisfies_trace_prim: "\<forall>s d. satisfies_trace e s d l = satisfies_trace_prim e s d l"
@@ -508,10 +497,6 @@ termination
    apply simp
   using measures_fsubset by auto
 
-fun get_ints :: "execution \<Rightarrow> int list" where
-  "get_ints [] = []" |
-  "get_ints ((_, inputs, outputs)#t) = (map (\<lambda>x. case x of Num n \<Rightarrow> n) (filter is_Num (inputs@outputs)))"
-
 fun get_smallest :: "nat \<Rightarrow> nat list \<Rightarrow> nat" where
   "get_smallest n s = (if n \<notin> set s then n else get_smallest (n + 1) (removeAll n s))"
 
@@ -603,12 +588,12 @@ lemma no_choice_no_subsumption:
   apply (rule_tac x=i in exI)
   using choice_def by blast
 
-definition "satisfiable_list l = satisfiable (fold gAnd l (Bc True))"
+definition "satisfiable_list l = satisfiable (fold gAnd l (gexp.Bc True))"
 
 fun fold_into :: "nat \<Rightarrow> gexp list \<Rightarrow> gexp list" where
-  "fold_into n [] = [gNot (Null (V (I n)))]" |
-  "fold_into n ((Eq (V (I i)) (L l))#t) = (if i = n then (Eq (V (I i)) (L l))#t else (Eq (V (I i)) (L l))#(fold_into n t))" |
-  "fold_into n ((In (I i) l)#t) = (if i = n then (In (I i) l)#t else (In (I i) l)#(fold_into n t))" |
+  "fold_into n [] = [gNot (gexp.Null (V (I n)))]" |
+  "fold_into n ((gexp.Eq (V (I i)) (L l))#t) = (if i = n then (gexp.Eq (V (I i)) (L l))#t else (gexp.Eq (V (I i)) (L l))#(fold_into n t))" |
+  "fold_into n ((gexp.In (I i) l)#t) = (if i = n then (gexp.In (I i) l)#t else (gexp.In (I i) l)#(fold_into n t))" |
   "fold_into n (h#t) = h#(fold_into n t)"
 
 primrec smart_not_null :: "nat list \<Rightarrow> gexp list \<Rightarrow> gexp list" where
@@ -618,7 +603,7 @@ primrec smart_not_null :: "nat list \<Rightarrow> gexp list \<Rightarrow> gexp l
 lemma fold_into_supset: "set (fold_into a g) \<supseteq> set g"
   by(induct g rule: fold_into.induct, auto)
 
-lemma fold_into_gNot_or_not: "fold_into a g = g \<or> fold_into a g = g@[(gNot (Null (V (I a))))]"
+lemma fold_into_gNot_or_not: "fold_into a g = g \<or> fold_into a g = g@[(gNot (gexp.Null (V (I a))))]"
 proof(induct g)
   case Nil
   then show ?case
@@ -650,9 +635,9 @@ next
     using fold_into_supset by blast
 qed
 
-lemma fold_into_not_null: "apply_guards (fold_into a g) s \<Longrightarrow> gval (gNot (Null (V (I a)))) s = true"
+lemma fold_into_not_null: "apply_guards (fold_into a g) s \<Longrightarrow> gval (gNot (gexp.Null (V (I a)))) s = true"
   apply (insert fold_into_gNot_or_not[of a g])
-  apply (case_tac "fold_into a g = g @ [gNot (Null (V (I a)))]")
+  apply (case_tac "fold_into a g = g @ [gNot (gexp.Null (V (I a)))]")
    apply (simp add: apply_guards_singleton apply_guards_append)
   apply simp
   apply (induct g)
@@ -676,7 +661,7 @@ lemma fold_into_not_null: "apply_guards (fold_into a g) s \<Longrightarrow> gval
   by auto
 
 lemma apply_guards_snn_map_gNot:
-  "apply_guards (smart_not_null l g) s \<Longrightarrow> apply_guards (g @ map (\<lambda>i. gNot (Null (V (I i)))) l) s"
+  "apply_guards (smart_not_null l g) s \<Longrightarrow> apply_guards (g @ map (\<lambda>i. gNot (gexp.Null (V (I i)))) l) s"
 proof(induct l)
   case Nil
   then show ?case
@@ -746,15 +731,15 @@ definition max_int :: "iEFSM \<Rightarrow> int" where
   "max_int e = Max (insert 0 (EFSM.enumerate_ints (tm e)))"
 
 fun literal_args :: "gexp \<Rightarrow> bool" where
-  "literal_args (Bc v) = False" |
-  "literal_args (Eq (V _) (L _)) = True" |
-  "literal_args (In _ _) = True" |
-  "literal_args (Eq _ _) = False" |
-  "literal_args (Lt va v) = False" |
-  "literal_args (Null v) = False" |
-  "literal_args (Nor v va) = (literal_args v \<and> literal_args va)"
+  "literal_args (gexp.Bc v) = False" |
+  "literal_args (gexp.Eq (V _) (L _)) = True" |
+  "literal_args (gexp.In _ _) = True" |
+  "literal_args (gexp.Eq _ _) = False" |
+  "literal_args (gexp.Gt va v) = False" |
+  "literal_args (gexp.Null v) = False" |
+  "literal_args (gexp.Nor v va) = (literal_args v \<and> literal_args va)"
 
-lemma literal_args_eq: "literal_args (Eq a b) \<Longrightarrow> \<exists>v l. a = (V v) \<and> b = (L l)"
+lemma literal_args_eq: "literal_args (gexp.Eq a b) \<Longrightarrow> \<exists>v l. a = (V v) \<and> b = (L l)"
   apply (cases a)
      apply simp
     apply (cases b)

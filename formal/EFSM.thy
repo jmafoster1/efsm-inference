@@ -18,6 +18,7 @@ type_synonym outputs = "value option list"
 
 type_synonym event = "(label \<times> inputs)"
 type_synonym trace = "event list"
+type_synonym execution = "(label \<times> value list \<times> outputs) list"
 type_synonym observation = "outputs list"
 type_synonym transition_matrix = "((cfstate \<times> cfstate) \<times> transition) fset"
 
@@ -33,71 +34,6 @@ definition S :: "transition_matrix \<Rightarrow> nat fset" where
 lemma "S e = (fst \<circ> fst) |`| e |\<union>| (snd \<circ> fst) |`| e"
   apply (simp add: comp_def S_def)
   by force
-
-definition apply_outputs :: "aexp list \<Rightarrow> datastate \<Rightarrow> value option list" where
-  "apply_outputs p s = map (\<lambda>p. aval p s) p"
-
-lemma apply_outputs_nth: "i < length p \<Longrightarrow> apply_outputs p s ! i = aval (p ! i) s"
-  by (simp add: apply_outputs_def)
-
-lemmas apply_outputs = datastate apply_outputs_def
-
-lemma apply_outputs_empty [simp]: "apply_outputs [] s = []"
-  by (simp add: apply_outputs_def)
-
-lemma apply_outputs_preserves_length: "length (apply_outputs p s) = length p"
-  by (simp add: apply_outputs_def)
-
-lemma apply_outputs_literal: "P ! r = L v \<Longrightarrow>
-       r < length (apply_outputs P (join_ir i c)) \<Longrightarrow>
-       apply_outputs P (join_ir i c) ! r = Some v"
-proof(induct P)
-  case Nil
-  then show ?case
-    by (simp add: apply_outputs_preserves_length)
-next
-  case (Cons a P)
-  then show ?case
-    apply (simp add: apply_outputs_preserves_length)
-    apply (simp add: apply_outputs_def)
-    using less_Suc_eq_0_disj nth_map by auto
-qed
-
-lemma apply_outputs_register:
-  "c $ p = Some v \<Longrightarrow>
-   r < length (apply_outputs P (join_ir i c)) \<Longrightarrow>
-   apply_outputs (list_update P r (V (R p))) (join_ir i c) ! r = Some v"
-proof(induct P)
-  case Nil
-  then show ?case
-    by (simp add: apply_outputs_preserves_length)
-next
-  case (Cons a P)
-  then show ?case
-    apply (simp add: apply_outputs_preserves_length)
-    apply (simp add: apply_outputs_def)
-    apply (cases r)
-     apply (simp add: join_ir_def)
-    by (simp add: join_ir_def)
-qed
-
-lemma apply_outputs_unupdated:
-  "ia \<noteq> r \<Longrightarrow> 
-   ia < length (apply_outputs P j) \<Longrightarrow>
-   apply_outputs P j ! ia = apply_outputs (list_update P r v)j ! ia"
-proof(induct P)
-case Nil
-  then show ?case
-    by (simp add: apply_outputs_preserves_length)
-next
-  case (Cons a P)
-  then show ?case
-    apply (simp add: apply_outputs_preserves_length)
-    apply (simp add: apply_outputs_def)
-    apply (cases r)
-     apply simp
-    by (simp add: map_update nth_Cons')
-qed
 
 definition choice :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "choice t t' = (\<exists> i r. apply_guards (Guard t) (join_ir i r) \<and> apply_guards (Guard t') (join_ir i r))"
@@ -139,57 +75,56 @@ next
     by simp
 qed
 
-definition possible_steps :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (cfstate \<times> transition) fset" where
-  "possible_steps e s r l i = fimage (\<lambda>((origin, dest), t). (dest, t)) (ffilter (\<lambda>((origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r)) e)"
+definition "ps_filter p r i l s = (\<lambda>((origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r) \<and> check_outs (Outputs t) (join_ir i r) p)"
 
-lemma in_possible_steps: "(a, bb) |\<in>| possible_steps b s r ab ba \<Longrightarrow> \<exists>s. ((s, a), bb) |\<in>| b"
+definition possible_steps :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> outputs \<Rightarrow> (cfstate \<times> transition) fset" where
+  "possible_steps e s r l i p = fimage (\<lambda>((origin, dest), t). (dest, t)) (ffilter (\<lambda>((origin, dest::nat), t::transition). origin = s \<and> (Label t) = l \<and> (length i) = (Arity t) \<and> apply_guards (Guard t) (join_ir i r) \<and> check_outs (Outputs t) (join_ir i r) p) e)"
+
+lemma in_possible_steps: "(a, bb) |\<in>| possible_steps b s r ab ba p \<Longrightarrow> \<exists>s. ((s, a), bb) |\<in>| b"
   apply (simp add: possible_steps_def fimage_def ffilter_def fmember_def Abs_fset_inverse)
   by auto
 
-lemma possible_steps_alt_aux: "(\<lambda>((origin, dest), t). (dest, t)) |`|
-    ffilter (\<lambda>((origin, dest), t). origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (join_ir i r)) e =
-    {|(d, t)|} \<Longrightarrow>
-    ffilter
+lemma possible_steps_finsert: "possible_steps (finsert x e) s r l i p = possible_steps e s r l i p |\<union>| possible_steps {|x|} s r l i p"
+  by (simp add: possible_steps_def ffilter_finsert)
+
+lemma rearrange_ffilter: "\<exists>s. ffilter f l = {|((s, d), t)|} \<Longrightarrow>
+       fimage (\<lambda>((origin, dest), t). (dest, t)) (ffilter f l) = {|(d, t)|}"
+  apply (simp add: fimage_def ffilter_def fset_both_sides Abs_fset_inverse Set.filter_def)
+  by force
+
+lemma ps_filter_origin: "ps_filter p r i l s ((aa, ba), b) \<Longrightarrow> aa = s"
+  by (simp add: ps_filter_def)
+
+lemma possible_steps_alt: "(possible_steps e s r l i p = {|(d, t)|}) = (ffilter
      (\<lambda>((origin, dest), t).
-         origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (\<lambda>x. case x of vname.I n \<Rightarrow> input2state i $ n | R n \<Rightarrow> r $ n))
-     e =
-    {|((s, d), t)|}"
+         origin = s \<and>
+         Label t = l \<and>
+         length i = Arity t \<and>
+         apply_guards (Guard t) (join_ir i r) \<and>
+         check_outs (Outputs t) (join_ir i r) p
+     ) e = {|((s, d), t)|})"
 proof(induct e)
   case empty
   then show ?case
+    apply (simp add: possible_steps_def)
     by auto
 next
   case (insert x e)
   then show ?case
+    apply (simp only: possible_steps_def)
+    apply (simp add: ps_filter_def[symmetric] ffilter_finsert)
     apply (cases x)
     apply (case_tac a)
     apply clarify
-    apply simp
-    apply (simp add: ffilter_finsert join_ir_def)
-    apply (case_tac "aa = s")
-     apply simp
-     apply (case_tac "Label ba = l")
-      apply simp
-      apply (case_tac "length i = Arity ba")
-       apply simp
-       apply (case_tac "apply_guards (Guard ba) (case_vname (\<lambda>n. input2state i $ n) (\<lambda>n. r $  n))")
-    by auto
+    apply (simp add: ps_filter_origin)
+    by (metis fimage_is_fempty fsubset_finsertI fsubset_fsingletonD order_refl)
 qed
-
-lemma possible_steps_alt: "(possible_steps e s r l i = {|(d, t)|}) = (ffilter
-     (\<lambda>((origin, dest), t).
-         origin = s \<and> Label t = l \<and> length i = Arity t \<and> apply_guards (Guard t) (join_ir i r))
-     e =
-    {|((s, d), t)|})"
-  apply standard
-   apply (simp add: possible_steps_def possible_steps_alt_aux join_ir_def)
-  by (simp add: possible_steps_def join_ir_def)
 
 lemmas possible_steps_singleton = possible_steps_alt Abs_ffilter Set.filter_def
 lemmas possible_steps_empty = possible_steps_def Abs_ffilter Set.filter_def
 
-lemma singleton_dest: "fis_singleton (possible_steps e s r aa b) \<Longrightarrow>
-       fthe_elem (possible_steps e s r aa b) = (baa, aba) \<Longrightarrow>
+lemma singleton_dest: "fis_singleton (possible_steps e s r aa b p) \<Longrightarrow>
+       fthe_elem (possible_steps e s r aa b p) = (baa, aba) \<Longrightarrow>
        ((s, baa), aba) |\<in>| e"
   apply (simp add: fis_singleton_def fthe_elem_def singleton_equiv)
   apply (simp add: possible_steps_def fmember_def)
@@ -201,13 +136,13 @@ definition random_member :: "'a fset \<Rightarrow> 'a option" where
 lemma random_member_singleton [simp]: "random_member {|a|} = Some a"
   by (simp add: random_member_def)
 
-inductive accepts :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> bool" where
+inductive accepts :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
   base: "accepts e s d []" |                                         
-  step: "\<exists>(s', T) |\<in>| possible_steps e s d l i.
+  step: "\<exists>(s', T) |\<in>| possible_steps e s d l i p.
          accepts e s' (apply_updates (Updates T) (join_ir i d) d) t \<Longrightarrow>
-         accepts e s d ((l, i)#t)"
+         accepts e s d ((l, i, p)#t)"
 
-lemma accepts_step: "accepts e s d ((l, i)#t) = (\<exists>(s', T) |\<in>| possible_steps e s d l i.
+lemma accepts_step: "accepts e s d ((l, i, p)#t) = (\<exists>(s', T) |\<in>| possible_steps e s d l i p.
          accepts e s' (apply_updates (Updates T) (join_ir i d) d) t)"
   apply standard
    defer
@@ -215,10 +150,10 @@ lemma accepts_step: "accepts e s d ((l, i)#t) = (\<exists>(s', T) |\<in>| possib
   apply (rule accepts.cases)
   by auto
 
-fun accepts_prim :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> bool" where
+fun accepts_prim :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
   "accepts_prim e s d [] = True" |
-  "accepts_prim e s d ((l, i)#t) = (
-    let poss_steps = possible_steps e s d l i in
+  "accepts_prim e s d ((l, i, p)#t) = (
+    let poss_steps = possible_steps e s d l i p in
     if fis_singleton poss_steps then
       let (s', T) = fthe_elem poss_steps in
       accepts_prim e s' (apply_updates (Updates T) (join_ir i d) d) t
@@ -241,176 +176,83 @@ qed
 
 abbreviation "rejects e s d t \<equiv> \<not> accepts e s d t"
 
-lemma accepts_step_equiv: "accepts e s d ((l, i)#t) = (\<exists>(s', T) |\<in>| possible_steps e s d l i.
-         accepts e s' (apply_updates (Updates T) (join_ir i d) d) t)"
-  apply standard
-   apply (metis accepts.simps list.simps(1) list.simps(3) prod.sel(1) prod.sel(2))
-  by (simp add: accepts.step)
+lemma accepts_must_be_possible_step: "accepts e s r (h # t) \<Longrightarrow> \<exists>aa ba. (aa, ba) |\<in>| possible_steps e s r (fst h) (fst (snd h)) (snd (snd h))"
+  using accepts_step by fastforce
 
-lemma accepts_must_be_possible_step: "accepts e s r (h # t) \<Longrightarrow> \<exists>aa ba. (aa, ba) |\<in>| possible_steps e s r (fst h) (snd h)"
-  using accepts_step_equiv by fastforce
-
-definition step :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> outputs \<times> registers) option" where
-  "step e s r l i = (case random_member (possible_steps e s r l i) of
+definition step :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> outputs \<Rightarrow> (transition \<times> cfstate \<times> registers) option" where
+  "step e s r l i p = (case random_member (possible_steps e s r l i p) of
       None \<Rightarrow> None |
-      Some (s', t) \<Rightarrow>  Some (t, s', apply_outputs (Outputs t) (join_ir i r), apply_updates (Updates t) (join_ir i r) r)
+      Some (s', t) \<Rightarrow>  Some (t, s', apply_updates (Updates t) (join_ir i r) r)
   )"
 
 lemma step_some:
-  "possibilities = (possible_steps e s r l i) \<Longrightarrow>
+  "possibilities = (possible_steps e s r l i p) \<Longrightarrow>
    random_member possibilities = Some (s', t) \<Longrightarrow>
-   apply_outputs (Outputs t) (join_ir i r) = p \<Longrightarrow>
    apply_updates (Updates t) (join_ir i r) r = r' \<Longrightarrow>
-   step e s r l i = Some (t, s', p, r')"
+   step e s r l i p = Some (t, s', r')"
   by (simp add: step_def)
 
-lemma no_possible_steps_1: "possible_steps e s r l i = {||} \<Longrightarrow> step e s r l i = None"
+lemma no_possible_steps_1: "possible_steps e s r l i p = {||} \<Longrightarrow> step e s r l i p = None"
   by (simp add: step_def random_member_def)
 
-primrec observe_all :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (transition \<times> nat \<times> outputs \<times> registers) list" where
+primrec observe_all :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (transition \<times> nat \<times> registers) list" where
   "observe_all _ _ _ [] = []" |
   "observe_all e s r (h#t)  =
-    (case (step e s r (fst h) (snd h)) of
-      (Some (transition, s', outputs, updated)) \<Rightarrow> (((transition, s', outputs, updated)#(observe_all e s' updated t))) |
+    (case (step e s r (fst h) (fst (snd h)) (snd (snd h))) of
+      (Some (transition, s', updated)) \<Rightarrow> (((transition, s', updated)#(observe_all e s' updated t))) |
       _ \<Rightarrow> []
     )"
 
 definition state :: "(transition \<times> nat \<times> outputs \<times> datastate) \<Rightarrow> nat" where
   "state x \<equiv> fst (snd x)"
 
-definition observe_trace :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> observation" where
-  "observe_trace e s r t \<equiv> map (\<lambda>(t,x,y,z). y) (observe_all e s r t)"
-
-lemma observe_trace_empty [simp]: "observe_trace e s r [] = []"
-  by (simp add: observe_trace_def)
-
-lemma observe_trace_step: 
-  "step e s r (fst h) (snd h) = Some (t, s', p, r') \<Longrightarrow>
-   observe_trace e s' r' es = obs \<Longrightarrow>
-   observe_trace e s r (h#es) = p#obs"
-  by (simp add: observe_trace_def)
-
-lemma observe_trace_possible_step:
-  "possible_steps e s r (fst h) (snd h) = {|(s', t)|} \<Longrightarrow>
-   apply_outputs (Outputs t) (join_ir (snd h) r) = p \<Longrightarrow>
-   apply_updates (Updates t) (join_ir (snd h) r) r = r' \<Longrightarrow>
-   observe_trace e s' r' es = obs \<Longrightarrow>
-   observe_trace e s r (h#es) = p#obs"
-  apply (rule observe_trace_step)
-   apply (simp add: step_def random_member_def)
-  by simp
-
-lemma observe_trace_no_possible_step:
-  "possible_steps e s r (fst h) (snd h) = {||} \<Longrightarrow>
-   observe_trace e s r (h#es) = []"
-  by (simp add: observe_trace_def step_def random_member_def)
-
-definition observably_equivalent :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> trace \<Rightarrow> bool" where
-  "observably_equivalent e1 e2 t = ((observe_trace e1 0 <> t) = (observe_trace e2 0 <> t))"
-
-lemma observe_trace_no_possible_steps:
-  "possible_steps e1 s1 r1 (fst h) (snd h) = {||} \<Longrightarrow>
-   possible_steps e2 s2 r2 (fst h) (snd h) = {||} \<Longrightarrow>
-   (observe_trace e1 s1 r1 (h#t)) = (observe_trace e2 s2 r2 (h#t))"
-  by (simp add: observe_trace_def step_def random_member_def)
-
-lemma observe_trace_one_possible_step:
-  "possible_steps e1 s1 r (fst h) (snd h) = {|(s1', t1)|} \<Longrightarrow>
-   possible_steps e2 s2 r (fst h) (snd h) = {|(s2', t2)|} \<Longrightarrow>
-   apply_outputs (Outputs t1) (join_ir (snd h) r) = apply_outputs (Outputs t2) (join_ir (snd h) r) \<Longrightarrow>
-   apply_updates (Updates t1) (join_ir (snd h) r) r = r' \<Longrightarrow>
-   apply_updates (Updates t2) (join_ir (snd h) r) r = r' \<Longrightarrow>
-   (observe_trace e1 s1' r' t) = (observe_trace e2 s2' r' t) \<Longrightarrow>
-   (observe_trace e1 s1 r (h#t)) = (observe_trace e2 s2 r (h#t))"
-  by (simp add: observe_trace_def step_def)
-
-lemma observably_equivalent_no_possible_step: 
-  "possible_steps e1 s1 r1 (fst h) (snd h) = {||} \<Longrightarrow>
-   possible_steps e2 s2 r2 (fst h) (snd h) = {||} \<Longrightarrow>
-   observe_trace e1 s1 r1 (h#t) = observe_trace e2 s2 r2 (h#t)"
-  by (simp add: observe_trace_no_possible_step)
-
-lemma observably_equivalent_reflexive: "observably_equivalent e1 e1 t"
-  by (simp add: observably_equivalent_def)
-
-lemma observably_equivalent_symmetric: "observably_equivalent e1 e2 t = observably_equivalent e2 e1 t"
-  using observably_equivalent_def by auto
-
-lemma observably_equivalent_transitive:
-  "observably_equivalent e1 e2 t \<Longrightarrow>
-   observably_equivalent e2 e3 t \<Longrightarrow>
-   observably_equivalent e1 e3 t"
-  by (simp add: observably_equivalent_def)
-
-lemma observe_trace_preserves_length: "length (observe_all e s r t) = length (observe_trace e s r t)"
-  by (simp add: observe_trace_def)
-
-lemma length_observation_leq_length_trace: "\<And>s r. length (observe_all e s r t) \<le> length t"
-proof (induction t)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons a t)
-  then show ?case
-    apply (case_tac "step e s r (fst a) (snd a)")
-    by auto
-qed
-
-lemma accepts_possible_steps_not_empty: "accepts e s d (h#t) \<Longrightarrow> possible_steps e s d (fst h) (snd h) \<noteq> {||}"
-  apply (rule accepts.cases)
-  by auto
-
-lemma accepts_must_be_step: "accepts e s d (h#ts) \<Longrightarrow> \<exists>t s' p d'. step e s d (fst h) (snd h) = Some (t, s', p, d')"
-  apply (cases h)
-  apply (simp add: accepts_step_equiv step_def)
-  apply clarify
-  apply (case_tac "(possible_steps e s d a b)")
-   apply (simp add: random_member_def)
-  apply (simp add: random_member_def)
-  apply (case_tac "SOME xa. xa = x \<or> xa |\<in>| S'")
-  by simp
-
-lemma accepts_cons: "accepts e s d (h#t) = (\<exists>(s', T) |\<in>| possible_steps e s d (fst h) (snd h). accepts e s' (apply_updates (Updates T) (join_ir (snd h) d) d) t)"
-  apply (cases h)
+lemma accepts_must_be_step: "accepts e s d (h#ts) \<Longrightarrow> \<exists>t s' d'. step e s d (fst h) (fst (snd h)) (snd (snd h)) = Some (t, s', d')"
+  using accepts_must_be_possible_step[of e s d h ts]
   apply simp
-  apply standard
-   apply (metis accepts.simps fst_conv list.distinct(1) list.inject snd_conv)
-  by (simp add: accepts.step)
+  apply clarify
+  apply (simp add: step_def random_member_def fmember_not_empty)
+  apply (case_tac "SOME x. x |\<in>| possible_steps e s d (fst h) (fst (snd h)) (snd (snd h))")
+  by simp
 
-lemma accepts_cons_step: "accepts e s r (h # t) \<Longrightarrow> step e s r (fst h) (snd h) \<noteq>  None"
+lemma accepts_cons: "accepts e s d (h#t) = (\<exists>(s', T) |\<in>| possible_steps e s d (fst h) (fst (snd h)) (snd (snd h)). accepts e s' (apply_updates (Updates T) (join_ir (fst (snd h)) d) d) t)"
+  apply (cases h)
+  using accepts_step by auto
+
+lemma accepts_cons_step: "accepts e s r (h # t) \<Longrightarrow> step e s r (fst h) (fst (snd h)) (snd (snd h)) \<noteq>  None"
   by (simp add: accepts_must_be_step)
 
-abbreviation accepts_trace :: "transition_matrix \<Rightarrow> trace \<Rightarrow> bool" where
+abbreviation accepts_trace :: "transition_matrix \<Rightarrow> execution \<Rightarrow> bool" where
   "accepts_trace e t \<equiv> accepts e 0 <> t"
 
-lemma no_step_none: "step e s r aa ba = None \<Longrightarrow> rejects e s r ((aa, ba) # p)"
-  using accepts_cons_step by fastforce
+lemma no_step_none: "step e s r aa ba op = None \<Longrightarrow> rejects e s r ((aa, ba, op) # p)"
+  using accepts_cons_step
+  by fastforce
 
-lemma step_none_rejects: "step e s d (fst h) (snd h) = None \<Longrightarrow> rejects e s d (h#t)"
+lemma step_none_rejects: "step e s d (fst h) (fst (snd h)) (snd (snd h)) = None \<Longrightarrow> rejects e s d (h#t)"
   using no_step_none surjective_pairing by fastforce
 
 lemma possible_steps_not_empty_iff: 
-  "step e s d a b \<noteq> None \<Longrightarrow>
-   \<exists>aa ba. (aa, ba) |\<in>| possible_steps e s d a b"
+  "step e s d a b p \<noteq> None \<Longrightarrow>
+   \<exists>aa ba. (aa, ba) |\<in>| possible_steps e s d a b p"
   apply (simp add: step_def)
-  apply (case_tac "possible_steps e s d a b")
+  apply (case_tac "possible_steps e s d a b p")
    apply (simp add: random_member_def)
   by auto
 
-lemma trace_reject: "(possible_steps e s d a b = {||} \<or> (\<forall>(s', T) |\<in>| possible_steps e s d a b. rejects e s' (apply_updates (Updates T) (join_ir b d) d) t)) = (rejects e s d ((a, b)#t))"
+lemma trace_reject: "(possible_steps e s d a b p = {||} \<or> (\<forall>(s', T) |\<in>| possible_steps e s d a b p. rejects e s' (apply_updates (Updates T) (join_ir b d) d) t)) = (rejects e s d ((a, b, p)#t))"
   apply safe
-  using accepts_possible_steps_not_empty apply auto[1]
+    apply (simp add: accepts_step)
   using accepts_cons apply auto[1]
   using accepts.step by blast
 
-lemma trace_reject_no_possible_steps: "possible_steps e s d a b = {||} \<Longrightarrow> rejects e s d ((a, b)#t)"
-  using accepts_possible_steps_not_empty by auto
+lemma trace_reject_no_possible_steps: "possible_steps e s d a b p = {||} \<Longrightarrow> rejects e s d ((a, b, p)#t)"
+  using trace_reject by blast
 
-lemma trace_reject_later: "\<forall>(s', T) |\<in>| possible_steps e s d a b. rejects e s' (apply_updates (Updates T) (join_ir b d) d) t \<Longrightarrow> rejects e s d ((a, b)#t)"
-  using accepts_cons by auto
+lemma trace_reject_later: "\<forall>(s', T) |\<in>| possible_steps e s d a b p. rejects e s' (apply_updates (Updates T) (join_ir b d) d) t \<Longrightarrow> rejects e s d ((a, b, p)#t)"
+  by (simp add: accepts_step case_prod_unfold)
 
-lemma trace_reject_2: "(rejects e s d ((a, b)#t)) = (possible_steps e s d a b = {||} \<or> (\<forall>(s', T) |\<in>| possible_steps e s d a b. rejects e s' (apply_updates (Updates T) (join_ir b d) d) t))"
-  by (metis (mono_tags, lifting) accepts_cons case_prod_unfold fBallI fBexI fst_conv snd_conv trace_reject_later trace_reject_no_possible_steps)
+lemma trace_reject_2: "(rejects e s d ((a, b, p)#t)) = (possible_steps e s d a b p = {||} \<or> (\<forall>(s', T) |\<in>| possible_steps e s d a b p. rejects e s' (apply_updates (Updates T) (join_ir b d) d) t))"
+  using trace_reject by auto
 
 lemma rejects_prefix_all_s_d: "\<forall>s d. rejects e s d t \<longrightarrow> rejects e s d (t @ t')"
 proof(induct t)
@@ -432,36 +274,41 @@ lemma prefix_closure: "accepts e s d (t@t') \<Longrightarrow> accepts e s d t"
 lemma accepts_head: "accepts e s d (h#t) \<Longrightarrow> accepts e s d [h]"
   using accepts_cons accepts.base by auto
 
-inductive gets_us_to :: "nat \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> bool" where
+inductive gets_us_to :: "nat \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
   base: "s = target \<Longrightarrow> gets_us_to target _ s _ []" |
-  step_some: "\<exists>(s', T) |\<in>| possible_steps e s d (fst h) (snd h). gets_us_to target e s' (apply_updates (Updates T) (join_ir i r) r) t \<Longrightarrow> gets_us_to target e s r (h#t)" |
-  step_none: "step e s r (fst h) (snd h) = None \<Longrightarrow> s = target \<Longrightarrow> gets_us_to target e s r (h#t)"
+  step_some: "\<exists>(s', T) |\<in>| possible_steps e s d (fst h) (fst (snd h)) (snd (snd h)). gets_us_to target e s' (apply_updates (Updates T) (join_ir i r) r) t \<Longrightarrow> gets_us_to target e s r (h#t)" |
+  step_none: "step e s r (fst h) (fst (snd h)) (snd (snd h)) = None \<Longrightarrow> s = target \<Longrightarrow> gets_us_to target e s r (h#t)"
 
 lemma no_further_steps: "s \<noteq> s' \<Longrightarrow> \<not> gets_us_to s e s' r []"
   apply safe
   apply (rule gets_us_to.cases)
   by auto
 
-primrec accepting_sequence :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (transition \<times> cfstate \<times> outputs \<times> registers) list \<Rightarrow> (transition \<times> cfstate \<times> outputs \<times> registers) list option" where
+primrec accepting_sequence :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (transition \<times> cfstate \<times> registers) list \<Rightarrow> (transition \<times> cfstate \<times> registers) list option" where
   "accepting_sequence _ _ r [] obs = Some (rev obs)" |
   "accepting_sequence e s r (a#t) obs = (let
-    poss = possible_steps e s r (fst a) (snd a);
-    accepting = ffilter (\<lambda>(s', T). accepts e s' (apply_updates (Updates T) (join_ir (snd a) r) r) t) poss  in
+    poss = possible_steps e s r (fst a) (fst (snd a)) (snd (snd a));
+    accepting = ffilter (\<lambda>(s', T). accepts e s' (apply_updates (Updates T) (join_ir (fst (snd a)) r) r) t) poss  in
     if accepting = {||} then
       None
     else let
       (s', T) = Eps (\<lambda>x. x |\<in>| accepting);
-      r' = (apply_updates (Updates T) (join_ir (snd a) r) r) in
-      accepting_sequence e s' r' t ((T, s', (apply_outputs (Outputs T) (join_ir (snd a) r)), r')#obs)
+      r' = (apply_updates (Updates T) (join_ir (fst (snd a)) r) r) in
+      accepting_sequence e s' r' t ((T, s', r')#obs)
   )"
-
-lemma observe_trace_empty_iff: "(observe_trace e s r t = []) = (observe_all e s r t = [])"
-  by (simp add: observe_trace_def)
 
 definition enumerate_strings :: "transition_matrix \<Rightarrow> String.literal set" where
   "enumerate_strings e = \<Union> (image (\<lambda>(_, t). Transition.enumerate_strings t) (fset e))"
 
 definition enumerate_ints :: "transition_matrix \<Rightarrow> int set" where
   "enumerate_ints e = \<Union> (image (\<lambda>(_, t). Transition.enumerate_ints t) (fset e))"
+
+definition these :: "'a option list \<Rightarrow> 'a list" where
+  "these as = map (\<lambda>x. case x of Some y \<Rightarrow> y) (filter (\<lambda>x. x \<noteq> None) as)"
+
+lemma these_cons: "these (a#as) = (case a of None \<Rightarrow> these as | Some x \<Rightarrow> x#(these as))"
+  apply (cases a)
+   apply (simp add: these_def)
+  by (simp add: these_def)
 
 end

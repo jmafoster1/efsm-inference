@@ -2,7 +2,7 @@ theory Ignore_Inputs
 imports "../Inference"
 begin
 
-definition enumerate_outputs :: "iEFSM \<Rightarrow> label \<Rightarrow> arity \<Rightarrow>  aexp list fset" where
+definition enumerate_outputs :: "iEFSM \<Rightarrow> label \<Rightarrow> arity \<Rightarrow>  opred list fset" where
   "enumerate_outputs e l a = (fimage (\<lambda>(_, _, t). Outputs t) (ffilter (\<lambda>(_, _, t). Label t = l \<and> Arity t = a) e))"
 
 definition drop_guards :: "transition \<Rightarrow> transition" where

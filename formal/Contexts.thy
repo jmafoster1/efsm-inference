@@ -47,7 +47,7 @@ definition r2d :: "registers \<Rightarrow> datastate" where
 definition subsumes :: "transition \<Rightarrow> registers \<Rightarrow> transition \<Rightarrow> bool" where
   "subsumes t2 r t1 = (Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and>
                        (\<forall>i. can_take_transition t1 i r \<longrightarrow> can_take_transition t2 i r) \<and>
-                       (\<forall>i. can_take_transition t1 i r \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<and>
+                       (\<forall>i P. can_take_transition t1 i r \<longrightarrow> check_outs (Outputs t2) (join_ir i r) P \<longrightarrow> check_outs (Outputs t1) (join_ir i r) P) \<and>
                        (\<forall>p1 p2 i. posterior_separate (Arity t2) ((Guard t2)@(Guard t1)) (Updates t2) i r = Some p2 \<and>
                                   posterior_separate (Arity t1) (Guard t1) (Updates t1) i r = Some p1 \<longrightarrow>
                                   (\<forall>P r'. (p1 $ r' = None) \<or> (P (p2 $ r') \<longrightarrow> P (p1 $ r')))) \<and>
@@ -57,7 +57,7 @@ definition subsumes :: "transition \<Rightarrow> registers \<Rightarrow> transit
 lemma subsumption: 
   "(Label t1 = Label t2 \<and> Arity t1 = Arity t2) \<Longrightarrow>
    (\<forall>i. can_take_transition t1 i r \<longrightarrow> can_take_transition t2 i r) \<Longrightarrow>
-   (\<forall>i. can_take_transition t1 i r \<longrightarrow> apply_outputs (Outputs t1) (join_ir i r) = apply_outputs (Outputs t2) (join_ir i r)) \<Longrightarrow>
+   (\<forall>i P. can_take_transition t1 i r \<longrightarrow> check_outs (Outputs t2) (join_ir i r) P \<longrightarrow> check_outs (Outputs t1) (join_ir i r) P) \<Longrightarrow>
    (\<forall>p1 p2 i. posterior_separate (Arity t2) ((Guard t2)@(Guard t1)) (Updates t2) i r = Some p2 \<and>
                                   posterior_separate (Arity t1) (Guard t1) (Updates t1) i r = Some p1 \<longrightarrow>
                                   (\<forall>P r'. (p1 $ r' = None) \<or> (P (p2 $ r') \<longrightarrow> P (p1 $ r')))) \<Longrightarrow>
@@ -83,7 +83,7 @@ lemma inconsistent_updates2:
     \<not> subsumes t2 r t1"
   by (simp add: subsumes_def)
 
-lemma bad_outputs: "\<exists>i. can_take_transition t1 i r \<and> apply_outputs (Outputs t1) (join_ir i r) \<noteq> apply_outputs (Outputs t2) (join_ir i r) \<Longrightarrow>
+lemma bad_outputs: "\<exists>i. can_take_transition t1 i r \<and> (\<exists>P. check_outs (Outputs t2) (join_ir i r) P \<and> \<not> check_outs (Outputs t1) (join_ir i r) P) \<Longrightarrow>
  \<not> subsumes t2 r t1"
   by (simp add: subsumes_def)
 
@@ -91,17 +91,17 @@ lemma transition_subsumes_self: "subsumes t c t"
   apply (simp add: subsumes_def)
   using posterior_separate_def by auto
 
-definition posterior_sequence :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> registers option" where
+definition posterior_sequence :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> registers option" where
   "posterior_sequence e s r t = (case accepting_sequence e s r t [] of
     None \<Rightarrow> None
     | Some seq \<Rightarrow>
       if seq = [] then
         Some r
       else let
-        (_, _, _, r') = last seq in Some r'
+        (_, _, r') = last seq in Some r'
   )"
 
-abbreviation anterior_context :: "transition_matrix \<Rightarrow> trace \<Rightarrow> registers option" where
+abbreviation anterior_context :: "transition_matrix \<Rightarrow> execution \<Rightarrow> registers option" where
   "anterior_context e t \<equiv> posterior_sequence e 0 <> t"
 
 lemma anterior_context_empty: "anterior_context e [] = Some <>"
@@ -117,14 +117,14 @@ next
   then show ?case
     apply clarify
     apply (simp add: Let_def)
-    apply (case_tac "ffilter (\<lambda>(s', T). accepts e s' (apply_updates (Updates T) (join_ir (snd a) d) d) t)
-         (possible_steps e s d (fst a) (snd a)) =
+    apply (case_tac "ffilter (\<lambda>(s', T). accepts e s' (apply_updates (Updates T) (join_ir (fst (snd a)) d) d) t)
+            (possible_steps e s d (fst a) (fst (snd a)) (snd (snd a))) =
         {||}")
      apply simp
     apply simp
     apply (case_tac "SOME x.
-             x |\<in>| possible_steps e s d (fst a) (snd a) \<and>
-             (case x of (s', T) \<Rightarrow> accepts e s' (apply_updates (Updates T) (join_ir (snd a) d) d) t)")
+                x |\<in>| possible_steps e s d (fst a) (fst (snd a)) (snd (snd a)) \<and>
+                (case x of (s', T) \<Rightarrow> accepts e s' (apply_updates (Updates T) (join_ir (fst (snd a)) d) d) t)")
     apply (simp add: Let_def)
     by fastforce
 qed
@@ -148,14 +148,14 @@ next
   then show ?case
     apply clarify
     apply (simp add: Let_def)
-    apply (case_tac "ffilter (\<lambda>(s', T). accepts e s' (apply_updates (Updates T) (join_ir (snd a) d) d) t)
-         (possible_steps e s d (fst a) (snd a)) =
+    apply (case_tac "ffilter (\<lambda>(s', T). accepts e s' (apply_updates (Updates T) (join_ir (fst (snd a)) d) d) t)
+              (possible_steps e s d (fst a) (fst (snd a)) (snd (snd a))) =
         {||}")
      apply simp
     apply simp
     apply (case_tac "SOME x.
-             x |\<in>| possible_steps e s d (fst a) (snd a) \<and>
-             (case x of (s', T) \<Rightarrow> accepts e s' (apply_updates (Updates T) (join_ir (snd a) d) d) t)")
+                  x |\<in>| possible_steps e s d (fst a) (fst (snd a)) (snd (snd a)) \<and>
+                  (case x of (s', T) \<Rightarrow> accepts e s' (apply_updates (Updates T) (join_ir (fst (snd a)) d) d) t)")
     apply (simp add: Let_def)
     apply (case_tac a)
     apply simp
@@ -204,9 +204,7 @@ next
     apply (cases a)
     apply (simp only: trace_reject_2)
     apply (simp add: Let_def)
-    apply (case_tac "SOME x.
-                x |\<in>| possible_steps e s d aa b \<and>
-                (case x of (s', T) \<Rightarrow> accepts e s' (apply_updates (Updates T) (join_ir b d) d) t)")
+    apply (case_tac "SOME x. x |\<in>| possible_steps e s d aa b c \<and> (case x of (s', T) \<Rightarrow> accepts e s' (apply_updates (Updates T) (join_ir b d) d) t)")
     apply simp
     by fastforce
 qed
@@ -228,12 +226,11 @@ next
      apply simp
     apply clarify
     apply (simp add: Let_def)
-    apply (case_tac "ffilter (\<lambda>(s', T). accepts e s' (apply_updates (Updates T) (join_ir i da) da) t) (possible_steps e sa da l i) = {||}")
+    apply (case_tac "ffilter (\<lambda>(s', T). accepts e s' (apply_updates (Updates T) (join_ir i da) da) t) (possible_steps e sa da l i p) = {||}")
      apply auto[1]
     apply simp
     apply (case_tac "SOME x.
-                x |\<in>| possible_steps e sa da l i \<and>
-                (case x of (s', T) \<Rightarrow> accepts e s' (apply_updates (Updates T) (join_ir i da) da) t)")
+                x |\<in>| possible_steps e sa da l i p \<and> (case x of (s', T) \<Rightarrow> accepts e s' (apply_updates (Updates T) (join_ir i da) da) t)")
     apply (simp add: Let_def)
     by (metis (no_types, lifting) case_prodD case_prodI someI_ex)
 qed
