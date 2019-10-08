@@ -1464,6 +1464,12 @@ def max_input_list(g: List[gexp]): Option[Nat.nat] =
         ((a: gexp) => max_input(a))),
                                 g, None)
 
+def ensure_not_null(n: Nat.nat): List[gexp] =
+  Lista.map[Nat.nat,
+             gexp](((i: Nat.nat) =>
+                     Nor(Null(AExp.V(VName.I(i))), Null(AExp.V(VName.I(i))))),
+                    Lista.upt(Nat.zero_nata, n))
+
 def gexp_constrains(x0: gexp, uv: AExp.aexp): Boolean = (x0, uv) match {
   case (Bc(uu), uv) => false
   case (Null(aa), a) => AExp.aexp_constrains(aa, a)
@@ -5457,6 +5463,18 @@ def mutex(uu: GExp.gexp, uv: GExp.gexp): Boolean = (uu, uv) match {
   case (uu, GExp.Nor(v, va)) => false
 }
 
+def get_Eq(x0: OPred.opred): Option[Value.value] = x0 match {
+  case OPred.Eq(AExp.L(v)) => Some[Value.value](v)
+  case OPred.Bc(v) => None
+  case OPred.Eq(AExp.V(va)) => None
+  case OPred.Eq(AExp.Plus(va, vb)) => None
+  case OPred.Eq(AExp.Minus(va, vb)) => None
+  case OPred.Gt(v) => None
+  case OPred.Null() => None
+  case OPred.In(v) => None
+  case OPred.Nor(v, va) => None
+}
+
 def choice_cases(t1: Transition.transition_ext[Unit],
                   t2: Transition.transition_ext[Unit]):
       Boolean
@@ -5684,6 +5702,36 @@ def always_different_outputs_direct_subsumption(m1:
     Dirties.acceptsAndGetsUsToBoth(m1, m2, sa, s)
     else Dirties.alwaysDifferentOutputsDirectSubsumption(m1, m2, sa, s, t))
 
+def different_literal_filter(l: List[(OPred.opred, OPred.opred)]):
+      List[(OPred.opred, OPred.opred)]
+  =
+  Lista.filter[(OPred.opred,
+                 OPred.opred)](((a: (OPred.opred, OPred.opred)) =>
+                                 {
+                                   val (p1, p2): (OPred.opred, OPred.opred) = a;
+                                   (get_Eq(p1) match {
+                                      case None => false
+                                      case Some(v) =>
+(get_Eq(p2) match {
+   case None => false
+   case Some(va) => ! (Value.equal_valuea(v, va))
+ })
+                                    })
+                                 }),
+                                l)
+
+def always_different_literal_outputs[A, B](t1: Transition.transition_ext[A],
+    t2: Transition.transition_ext[B]):
+      Boolean
+  =
+  (! ((different_literal_filter(((Transition.Outputs[A](t1)) zip (Transition.Outputs[B](t2))))).isEmpty)) && ((Optiona.is_none[Nat.nat](GExp.max_reg_list(Transition.Guard[B](t2)))) && ((Option_Lexorder.less_option[Nat.nat](GExp.max_input_list(Transition.Guard[B](t2)),
+                        Some[Nat.nat](Transition.Arity[B](t2)))) && ((Inference.satisfiable_list(Transition.Guard[B](t2) ++
+                   GExp.ensure_not_null(Transition.Arity[B](t2)))) && (Lista.list_all[OPred.opred](((p:
+                       OPred.opred)
+                      =>
+                     ! (Optiona.is_none[Value.value](get_Eq(p)))),
+                    Transition.Outputs[A](t1))))))
+
 def guard_subset_eq_outputs_updates[A, B](t1: Transition.transition_ext[A],
    t2: Transition.transition_ext[B]):
       Boolean
@@ -5714,28 +5762,32 @@ def directly_subsumes_cases(m1: FSet.fset[(Nat.nat,
                   else (if (Least_Upper_Bound.in_not_subset[Unit, Unit](t1, t2))
                          false
                          else (if (Least_Upper_Bound.opposite_gob(t1, t2)) false
-                                else (if ((always_different_outputs_direct_subsumption(m1,
-        m2, sa, s,
-        t2)) && (Least_Upper_Bound.lob_distinguished_2[Unit, Unit](t1, t2)))
+                                else (if (always_different_literal_outputs[Unit,
+                                    Unit](t1, t2))
                                        false
                                        else (if ((always_different_outputs_direct_subsumption(m1,
                m2, sa, s,
-               t2)) && (Least_Upper_Bound.lob_distinguished_3[Unit,
+               t2)) && (Least_Upper_Bound.lob_distinguished_2[Unit,
                        Unit](t1, t2)))
       false
-      else (if (Least_Upper_Bound.is_lob[Unit, Unit](t2, t1)) true
-             else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
-         t2, m2, s))
-                    true
-                    else (if (Store_Reuse_Subsumption.drop_update_add_guard_direct_subsumption(m1,
-                m2, sa, s, t1, t2))
-                           false
-                           else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
-                   t2, m1, m2, sa, s))
-                                  true
-                                  else (if (Transition.equal_transition_exta[Unit](t1,
-    Ignore_Inputs.drop_guards(t2)))
- true else Dirties.scalaDirectlySubsumes(m1, m2, sa, s, t1, t2)))))))))))))
+      else (if ((always_different_outputs_direct_subsumption(m1, m2, sa, s,
+                      t2)) && (Least_Upper_Bound.lob_distinguished_3[Unit,
+                              Unit](t1, t2)))
+             false
+             else (if (Least_Upper_Bound.is_lob[Unit, Unit](t2, t1)) true
+                    else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
+                t2, m2, s))
+                           true
+                           else (if (Store_Reuse_Subsumption.drop_update_add_guard_direct_subsumption(m1,
+                       m2, sa, s, t1, t2))
+                                  false
+                                  else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
+                          t2, m1, m2, sa, s))
+ true
+ else (if (Transition.equal_transition_exta[Unit](t1,
+           Ignore_Inputs.drop_guards(t2)))
+        true
+        else Dirties.scalaDirectlySubsumes(m1, m2, sa, s, t1, t2))))))))))))))
 
 def no_illegal_updates_code(x0: List[(Nat.nat, AExp.aexp)], uu: Nat.nat):
       Boolean
@@ -6662,7 +6714,7 @@ def outputs2dot(x0: List[OPred.opred], uu: Nat.nat): List[String] = (x0, uu)
   match {
   case (Nil, uu) => Nil
   case (h :: t, n) =>
-    "o<sub>" + Code_Numeral.integer_of_nat(n).toString() + "</sub> := " +
+    "o<sub>" + Code_Numeral.integer_of_nat(n).toString() + "</sub> " +
       opred2dot(h) ::
       outputs2dot(t, Nat.plus_nata(n, Nat.Nata((1))))
 }

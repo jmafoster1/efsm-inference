@@ -329,6 +329,118 @@ definition "guard_superset_eq_outputs_updates t1 t2 = (Label t1 = Label t2 \<and
    Updates t1 = Updates t2 \<and>
    set (Guard t2) \<supset> set (Guard t1))"
 
+fun get_Eq :: "opred \<Rightarrow> value option" where
+  "get_Eq (Eq (L v)) = Some v" |
+  "get_Eq _ = None"
+
+lemma get_eq_some: "(get_Eq p = Some v) = (p = Eq (L v))"
+  apply (cases p)
+       apply simp+
+  using get_Eq.elims apply force
+  by auto
+
+lemma all_get_eq_checks_out: 
+  "\<forall>p\<in>set P. \<exists>y. get_Eq p = Some y \<Longrightarrow>
+   \<exists>P'. check_outs P s P'"
+proof(induct P)
+  case Nil
+  then show ?case
+    using check_outs.simps(1) by blast
+next
+  case (Cons a P)
+  then show ?case
+    apply (cases a)
+         apply simp
+        defer
+        apply simp+
+    apply clarify
+    apply (case_tac x2)
+       apply (rule_tac x="(Some x1)#x" in exI)
+    by auto
+qed
+
+lemma in_set_if: "\<exists>i < length l. l ! i = e \<Longrightarrow> e \<in> set l"
+  by auto
+
+lemma always_different_literal_outputs_direct_subsumption_full:
+  "\<exists>(p1, p2) \<in> set (zip (Outputs t1) (Outputs t2)). get_Eq p1 = Some v \<and> get_Eq p2 = Some v' \<and> v \<noteq> v' \<Longrightarrow>
+   max_reg_list (Guard t2) = None \<Longrightarrow>
+   max_input_list (Guard t2) < Some (Arity t2) \<Longrightarrow>
+   satisfiable_list (Guard t2 @ ensure_not_null (Arity t2)) \<Longrightarrow>
+   \<forall>p \<in> set (Outputs t1). get_Eq p \<noteq> None \<Longrightarrow>
+   \<not>directly_subsumes m1 m2 s s' t1 t2"
+  apply (rule cant_directly_subsume)
+  apply (rule allI)
+  apply (rule bad_outputs)
+  apply (case_tac "\<exists>i. can_take_transition t2 i c")
+   defer
+  using can_take_satisfiable apply blast
+   apply (erule exE)
+   apply (rule_tac x=i in exI)
+   apply simp
+  apply (case_tac "\<exists>P. check_outs (Outputs t1) (join_ir i c) P")
+   defer
+  using all_get_eq_checks_out apply blast
+  apply (erule exE)
+  apply (rule_tac x=P in exI)
+  apply (simp add: Bex_def)
+  apply (simp add: in_set_conv_nth)
+  apply (simp add: check_outs_alt_2[of "Outputs t2"])
+  apply clarify
+  apply (case_tac "length (Outputs t1) = length (Outputs t2)")
+   defer
+  using check_outs_alt check_outs_alt_def apply auto[1]
+  apply (simp add: check_outs_alt_2[of "Outputs t2"])
+  apply (case_tac "length (Outputs t2) = length P")
+   defer
+   apply simp
+  apply (simp add: in_set_conv_nth get_eq_some)
+  apply clarify
+  apply simp
+  apply (rule_tac x=ia in exI)
+  apply (simp add: check_outs_alt_2)
+  apply (erule_tac x=ia in allE)
+  by auto
+
+definition "different_literal_filter l = (filter (\<lambda>(p1, p2).
+  case get_Eq p1 of
+    None \<Rightarrow> False |
+    Some v \<Rightarrow> (case get_Eq p2 of
+      None \<Rightarrow> False |
+      Some v' \<Rightarrow> v \<noteq> v')) l)"
+
+definition "always_different_literal_outputs t1 t2 = (
+   different_literal_filter (zip (Outputs t1) (Outputs t2)) \<noteq> [] \<and>
+   max_reg_list (Guard t2) = None \<and>
+   max_input_list (Guard t2) < Some (Arity t2) \<and>
+   satisfiable_list (Guard t2 @ ensure_not_null (Arity t2)) \<and>
+   (\<forall>p \<in> set (Outputs t1). get_Eq p \<noteq> None))"
+
+lemma different_literal_filter: "different_literal_filter (zip (Outputs t1) (Outputs t2)) \<noteq> [] \<Longrightarrow>
+    \<exists>v v'. \<exists>x\<in>set (zip (Outputs t1) (Outputs t2)). case x of (p1, p2) \<Rightarrow> get_Eq p1 = Some v \<and> get_Eq p2 = Some v' \<and> v \<noteq> v'"
+  apply (simp add: different_literal_filter_def filter_empty_conv Bex_def)
+  apply clarify
+  apply (case_tac "get_Eq a")
+   apply simp
+  apply (case_tac "get_Eq b")
+   apply simp
+  apply simp
+  apply (rule_tac x=aa in exI)
+  apply (rule_tac x=ab in exI)
+  apply (rule_tac x=a in exI)
+  apply (rule_tac x=b in exI)
+  by simp
+
+lemma always_different_literal_outputs_direct_subsumption: 
+  "always_different_literal_outputs t1 t2 \<Longrightarrow> \<not>directly_subsumes m1 m2 s s' t1 t2"
+  apply (simp add: always_different_literal_outputs_def)
+  apply (insert different_literal_filter[of t1 t2])
+  apply (simp add: Bex_def)
+  apply (erule exE)+
+  apply (rule always_different_literal_outputs_direct_subsumption_full)
+  by auto
+
+
 definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes_cases m1 m2 s s' t1 t2 = (
     if t1 = t2
@@ -340,6 +452,8 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
     else if in_not_subset t1 t2
       then False
     else if opposite_gob t1 t2
+      then False
+    else if always_different_literal_outputs t1 t2
       then False
     else if always_different_outputs_direct_subsumption m1 m2 s s' t2 \<and> lob_distinguished_2 t1 t2
       then False
@@ -375,6 +489,8 @@ lemma directly_subsumes_cases:  "directly_subsumes m1 m2 s s' t1 t2 = directly_s
    apply (simp add: in_not_subset_direct_subsumption)
   apply (clarify, rule if_elim)
    apply (simp add: opposite_gob_directly_subsumption)
+  apply (clarify, rule if_elim)
+   apply (simp add: always_different_literal_outputs_direct_subsumption)
   apply (clarify, rule if_elim)
    apply (simp add: lob_distinguished_2_direct_subsumption)
   apply (clarify, rule if_elim)

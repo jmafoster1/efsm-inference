@@ -77,9 +77,27 @@ lemma check_outs_alt: "check_outs ops d vs = check_outs_alt ops d vs"
   apply (induction rule: check_outs.induct)
   using check_outs_alt_def by auto
 
+lemma check_outs_alt_2: "check_outs ops d vs = (
+    if length ops \<noteq> length vs then
+      False
+    else let
+      zipped = (zip ops vs) in
+      \<forall>i < length ops. oval (fst (zipped ! i)) (snd (zipped ! i)) d = true
+  )"
+  apply (induction rule: check_outs.induct)
+     apply simp
+    apply simp
+   apply simp
+  apply simp
+  apply clarify
+  by (simp add: Let_def All_less_Suc2)
+
 lemma check_outs_equiv: "length ops = length ops' \<Longrightarrow>
 map (\<lambda>(op, v). oval op v d) (zip ops' vs) = map (\<lambda>(op, v). oval op v d) (zip ops vs) \<Longrightarrow>
 check_outs ops' d vs = check_outs ops d vs"
+  by (simp add: check_outs_alt check_outs_alt_def)
+
+lemma not_check_outs: "\<exists>t \<in> set (map (\<lambda>(op, v). oval op v d) (zip ops vs)). t \<noteq> true \<Longrightarrow> \<not> check_outs ops d vs"
   by (simp add: check_outs_alt check_outs_alt_def)
 
 end

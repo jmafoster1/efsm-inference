@@ -7,7 +7,7 @@ import isabellesal._
 import Type_Inference._
 
 object Types {
-  type Event = (String, (List[Value.value], List[Value.value]))
+  type Event = (String, (List[Value.value], List[Option[Value.value]]))
   type Transition = Transition.transition_ext[Unit]
   type TransitionMatrix = FSet.fset[((Nat.nat, Nat.nat), Transition)]
   type IEFSM = FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition))]
@@ -46,7 +46,7 @@ object TypeConversion {
     (
       (e("label").asInstanceOf[String]),
       (e("inputs").asInstanceOf[List[Any]].map(x => toValue(x)),
-        e("outputs").asInstanceOf[List[Any]].map(x => toValue(x))))
+      e("outputs").asInstanceOf[List[Any]].map(x => Some(toValue(x)))))
   }
 
   def vnameToSALTranslator(v: VName.vname): Variable = {
@@ -110,13 +110,18 @@ object TypeConversion {
       aexpToSALTranslator(a))
   }
 
+  def opredToSALTranslator(o: OPred.opred): isabellesal.Expression = o match {
+    case OPred.Eq(thing) => aexpToSALTranslator(thing)
+    case _ => throw new IllegalArgumentException("Can only handle equivalence outputs")
+  }
+
   def transitionToSALTranslator(id: String, t: Transition.transition_ext[Unit]): isabellesal.Transition = {
     isabellesal.Transition.newOneFrom(
       id,
       Transition.Label(t),
       toInt(Code_Numeral.integer_of_nat(Transition.Arity(t))),
       isabellesal.Predicate.listOfPredicatesFrom(Transition.Guard(t).map(gexpToSALTranslator): _*),
-      Expression.newOutputs(Transition.Outputs(t).map(aexpToSALTranslator): _*),
+      Expression.newOutputs(Transition.Outputs(t).map(opredToSALTranslator): _*),
       Transition.Updates(t).map(updateToExp): _*)
   }
 

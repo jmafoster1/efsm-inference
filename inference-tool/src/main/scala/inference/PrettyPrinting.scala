@@ -49,8 +49,14 @@ object PrettyPrinter {
     "[" + g.map(x => gexpToString(x)).mkString(", ") + "]"
   }
 
-  def outputsToString(g: List[AExp.aexp]): String = {
-    g.zipWithIndex.map(x => "o" + (x._2 + 1) + ":=" + aexpToString(x._1)).mkString(", ")
+  def opredToString(o: OPred.opred): String = o match {
+      case OPred.Eq(thing) => s"=${aexpToString(thing)}"
+      case OPred.Gt(thing) => s">${aexpToString(thing)}"
+      case OPred.Nor(p1, p2) => s"!(${opredToString(p1)} || ${opredToString(p2)})"
+    }
+
+  def outputsToString(g: List[OPred.opred]): String = {
+    g.map(opredToString).mkString(", ")
   }
 
   def updatesToString(g: List[(Nat.nat, AExp.aexp)]): String = {

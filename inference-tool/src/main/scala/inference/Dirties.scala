@@ -10,42 +10,6 @@ import java.util.UUID.randomUUID
 
 object Dirties {
 
-  def makeBranch(
-    e: TransitionMatrix,
-    s: Nat.nat,
-    r: Map[Nat.nat, Option[Value.value]],
-    trace: List[(String, (List[Value.value], List[Value.value]))]): FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])] = {
-      var currentState = s
-      var currentRegs = r
-      var currentEFSM = e
-
-      for (event <- trace) {
-        event match {
-        case (label, (inputs, outputs)) =>
-          EFSM.step(currentEFSM, currentState, currentRegs, label, inputs) match {
-            case None => {
-              currentEFSM = Inference.add_transition(currentEFSM, currentState, label, inputs, outputs)
-              currentState = Inference.maxS(currentEFSM)
-            }
-            case Some((_, (sa, (outputsa, updated)))) => {
-              if (Lista.equal_lista[Option[Value.value]](outputsa,
-                Lista.map[Value.value, Option[Value.value]](((a: Value.value) => Some[Value.value](a)), outputs)
-              )) {
-                currentState = sa
-                currentRegs = updated
-              }
-              else {
-                // Make a transition and add it to the EFSM
-                currentEFSM = Inference.add_transition(currentEFSM, currentState, label, inputs, outputs)
-                currentState = Inference.maxS(currentEFSM)
-              }
-            }
-          }
-        }
-      }
-      return currentEFSM
-    }
-
   def foldl[A, B](f: A => B => A, b: A, l: List[B]): A =
     // l.par.foldLeft(b)(((x, y) => (f(x))(y)))
     l.foldLeft(b)(((x, y) => (f(x))(y)))
@@ -56,9 +20,9 @@ object Dirties {
   }
 
   def toZ3(a: AExp.aexp): String = a match {
-    case AExp.L(Value.Numa(n)) => s"${Code_Numeral.integer_of_int(n).toString}"
-    case AExp.L(Value.Str(s)) => "\"" + s + "\""
-    case AExp.V(v) => s"(val ${toZ3(v)})"
+    case AExp.L(Value.Numa(n)) => s"(some ${Code_Numeral.integer_of_int(n).toString})"
+    case AExp.L(Value.Str(s)) => s"""(some "${s}")"""
+    case AExp.V(v) => s"${toZ3(v)}"
     case AExp.Plus(a1, a2) => s"(+ ${toZ3(a1)} ${toZ3(a2)})"
     case AExp.Minus(a1, a2) => s"(- ${toZ3(a1)} ${toZ3(a2)})"
   }
@@ -74,7 +38,8 @@ object Dirties {
     case GExp.Eq(a1, a2) => s"(= ${toZ3(a1)} ${toZ3(a2)})"
     case GExp.Gt(a1, a2) => s"(> ${toZ3(a1)} ${toZ3(a2)})"
     case GExp.In(v, l) => toZ3(GExp.fold_In(v, l), types)
-    case GExp.Nor(g1, g2) => if (g1 == g2) s"(not ${toZ3(g1, types)})" else s"(not (or ${toZ3(g1, types)} ${toZ3(g2, types)}))"
+    case GExp.Nor(g1, g2) if g1 == g2 => s"(not ${toZ3(g1, types)})"
+    case GExp.Nor(g1, g2) => s"(not (or ${toZ3(g1, types)} ${toZ3(g2, types)}))"
     case GExp.Null(AExp.V(VName.I(n))) => s"(= i${Code_Numeral.integer_of_nat(n)} (as none (Option ${toZ3(types(VName.I(n)))})))"
     case GExp.Null(AExp.V(VName.R(n))) => s"(= r${Code_Numeral.integer_of_nat(n)} (as none (Option ${toZ3(types(VName.I(n)))})))"
     case GExp.Null(v) => throw new java.lang.IllegalArgumentException("Z3 does not handle null of more complex arithmetic expressions")
@@ -96,8 +61,6 @@ object Dirties {
             }).foldLeft("")(((x, y) => x + y + "\n"))
           z3String += s"(assert ${toZ3(g, types)})\n(check-sat)"
 
-            println(z3String)
-
           // Log.root.debug(g.toString)
           // Log.root.debug(z3String)
 
@@ -105,6 +68,7 @@ object Dirties {
           val solver = ctx.mkSimpleSolver()
           solver.fromString(z3String)
           val sat = solver.check()
+
           ctx.close()
           // if (Config.numStates == 5) {
             // Log.root.debug(s"${PrettyPrinter.gexpToString(g)}\nZ3 returned ${sat}")

@@ -100,7 +100,7 @@ fun opred2dot :: "opred \<Rightarrow> String.literal" where
 
 primrec outputs2dot :: "output_function list \<Rightarrow> nat \<Rightarrow> String.literal list" where
   "outputs2dot [] _ = []" |
-  "outputs2dot (h#t) n = ((STR ''o<sub>''+(show_nat n))+STR ''</sub> := ''+(opred2dot h))#(outputs2dot t (n+1))"
+  "outputs2dot (h#t) n = ((STR ''o<sub>''+(show_nat n))+STR ''</sub> ''+(opred2dot h))#(outputs2dot t (n+1))"
 
 fun updates2dot :: "update_function list \<Rightarrow> String.literal" where
   "updates2dot [] = (STR '''')" |
