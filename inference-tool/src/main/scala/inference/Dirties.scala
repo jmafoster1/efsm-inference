@@ -20,28 +20,21 @@ object Dirties {
   }
 
   def toZ3(a: AExp.aexp): String = a match {
-    case AExp.L(Value.Numa(n)) => s"(some ${Code_Numeral.integer_of_int(n).toString})"
-    case AExp.L(Value.Str(s)) => s"""(some "${s}")"""
+    case AExp.L(Value.Numa(n)) => s"(Some (Num ${Code_Numeral.integer_of_int(n).toString}))"
+    case AExp.L(Value.Str(s)) => s"""(Some (Str "${s}"))"""
     case AExp.V(v) => s"${toZ3(v)}"
     case AExp.Plus(a1, a2) => s"(+ ${toZ3(a1)} ${toZ3(a2)})"
     case AExp.Minus(a1, a2) => s"(- ${toZ3(a1)} ${toZ3(a2)})"
   }
 
-  def toZ3(a: Type_Inference.typea): String = a match {
-    case Type_Inference.NUM() => "Int"
-    case Type_Inference.STRING() => "String"
-    case Type_Inference.UNBOUND() => "Int" // Arbitrary decision to give it a concrete type
-  }
-
-  def toZ3(g: GExp.gexp, types: Map[VName.vname, Type_Inference.typea]): String = g match {
+  def toZ3(g: GExp.gexp): String = g match {
     case GExp.Bc(a) => a.toString()
     case GExp.Eq(a1, a2) => s"(= ${toZ3(a1)} ${toZ3(a2)})"
-    case GExp.Gt(a1, a2) => s"(> ${toZ3(a1)} ${toZ3(a2)})"
-    case GExp.In(v, l) => toZ3(GExp.fold_In(v, l), types)
-    case GExp.Nor(g1, g2) if g1 == g2 => s"(not ${toZ3(g1, types)})"
-    case GExp.Nor(g1, g2) => s"(not (or ${toZ3(g1, types)} ${toZ3(g2, types)}))"
-    case GExp.Null(AExp.V(VName.I(n))) => s"(= i${Code_Numeral.integer_of_nat(n)} (as none (Option ${toZ3(types(VName.I(n)))})))"
-    case GExp.Null(AExp.V(VName.R(n))) => s"(= r${Code_Numeral.integer_of_nat(n)} (as none (Option ${toZ3(types(VName.I(n)))})))"
+    case GExp.Gt(a1, a2) => s"(gt ${toZ3(a1)} ${toZ3(a2)})"
+    case GExp.In(v, l) => toZ3(GExp.fold_In(v, l))
+    case GExp.Nor(g1, g2) if g1 == g2 => s"(not ${toZ3(g1)})"
+    case GExp.Nor(g1, g2) => s"(not (or ${toZ3(g1)} ${toZ3(g2)}))"
+    case GExp.Null(AExp.V(v)) => s"(= ${toZ3(v)} None)"
     case GExp.Null(v) => throw new java.lang.IllegalArgumentException("Z3 does not handle null of more complex arithmetic expressions")
   }
 
@@ -51,18 +44,45 @@ object Dirties {
     if (sat_memo isDefinedAt g) {
       return sat_memo(g)
     } else {
-      val maybe_types = Type_Inference.infer_types(g)
-      maybe_types match {
-        case None => false
-        case Some(types) => {
-          var z3String = s"(declare-datatype Option (par (X) ((none) (some (val X)))))\n"
-          z3String += types.map(t => t match {
-              case (k, v) => s"(declare-const ${toZ3(k)} (Option ${toZ3(v)}))"
-            }).foldLeft("")(((x, y) => x + y + "\n"))
-          z3String += s"(assert ${toZ3(g, types)})\n(check-sat)"
+          var z3String = """
+          (declare-datatype Option (par (X) ((None) (Some (val X)))))
+          (declare-datatype Value ((Num (num Int)) (Str (str String))))
 
-          // Log.root.debug(g.toString)
-          // Log.root.debug(z3String)
+          (declare-fun gt ((Option Value) (Option Value)) Bool)
+          (assert
+            (forall ((x (Option Value)))
+              (and
+                (not (gt None x))
+                (not (gt x None))
+              )
+            )
+          )
+
+          (assert
+            (forall ((s String))
+              (forall ((x (Option Value)))
+                (and
+                  (not (gt x (Some (Str s))))
+                  (not (gt (Some (Str s)) x))
+                )
+              )
+            )
+          )
+
+          (assert
+            (forall ((n1 Int))
+              (forall ((n2 Int))
+                (=>
+                  (gt (Some (Num n1)) (Some (Num n2)))
+                  (> n1 n2)
+                )
+              )
+            )
+          )
+          """
+          val vars = GExp.enumerate_vars(g)
+          z3String += vars.map(v => s"(declare-const ${toZ3(v)} (Option Value))").foldLeft("")(((x, y) => x + y + "\n"))
+          z3String += s"(assert ${toZ3(g)})\n(check-sat)"
 
           val ctx = new z3.Context()
           val solver = ctx.mkSimpleSolver()
@@ -70,13 +90,8 @@ object Dirties {
           val sat = solver.check()
 
           ctx.close()
-          // if (Config.numStates == 5) {
-            // Log.root.debug(s"${PrettyPrinter.gexpToString(g)}\nZ3 returned ${sat}")
-          // }
           sat_memo = sat_memo + (g -> (sat == z3.Status.SATISFIABLE))
           return sat == z3.Status.SATISFIABLE
-        }
-      }
     }
   }
 
