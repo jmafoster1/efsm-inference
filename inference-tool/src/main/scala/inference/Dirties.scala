@@ -29,12 +29,11 @@ object Dirties {
 
   def toZ3(g: GExp.gexp): String = g match {
     case GExp.Bc(a) => a.toString()
-    case GExp.Eq(a1, a2) => s"(= ${toZ3(a1)} ${toZ3(a2)})"
+    case GExp.Eq(a1, a2) => s"(eq ${toZ3(a1)} ${toZ3(a2)})"
     case GExp.Gt(a1, a2) => s"(gt ${toZ3(a1)} ${toZ3(a2)})"
     case GExp.In(v, l) => toZ3(GExp.fold_In(v, l))
-    case GExp.Nor(g1, g2) if g1 == g2 => s"(not ${toZ3(g1)})"
-    case GExp.Nor(g1, g2) => s"(not (or ${toZ3(g1)} ${toZ3(g2)}))"
-    case GExp.Null(AExp.V(v)) => s"(= ${toZ3(v)} None)"
+    case GExp.Nor(g1, g2) => s"(nor ${toZ3(g1)} ${toZ3(g2)})"
+    case GExp.Null(AExp.V(v)) => s"(eq ${toZ3(v)} None)"
     case GExp.Null(v) => throw new java.lang.IllegalArgumentException("Z3 does not handle null of more complex arithmetic expressions")
   }
 
@@ -45,44 +44,32 @@ object Dirties {
       return sat_memo(g)
     } else {
           var z3String = """
-          (declare-datatype Option (par (X) ((None) (Some (val X)))))
-          (declare-datatype Value ((Num (num Int)) (Str (str String))))
+(declare-datatype Option (par (X) ((None) (Some (val X)))))
+(declare-datatype Value ((Num (num Int)) (Str (str String))))
+(declare-datatype Trilean ((true) (false) (invalid)))
 
-          (declare-fun gt ((Option Value) (Option Value)) Bool)
-          (assert
-            (forall ((x (Option Value)))
-              (and
-                (not (gt None x))
-                (not (gt x None))
-              )
-            )
-          )
+(define-fun nor ((x Trilean) (y Trilean)) Trilean
+  (ite (and (= x true) (= y true)) false
+  (ite (and (= x true) (= y false)) false
+  (ite (and (= x false) (= y true)) false
+  (ite (and (= x false) (= y false)) true
+  invalid))))
+)
 
-          (assert
-            (forall ((s String))
-              (forall ((x (Option Value)))
-                (and
-                  (not (gt x (Some (Str s))))
-                  (not (gt (Some (Str s)) x))
-                )
-              )
-            )
-          )
+(define-fun gt ((x (Option Value)) (y (Option Value))) Trilean
+  (ite (exists ((x1 Int)) (exists ((y1 Int)) (and (= x (Some (Num x1))) (and (= y (Some (Num y1))) (> x1 y1))))) true
+  (ite (exists ((x1 Int)) (exists ((y1 Int)) (and (= x (Some (Num x1))) (and (= y (Some (Num y1))) (not (> x1 y1)))))) false
+  invalid))
+)
 
-          (assert
-            (forall ((n1 Int))
-              (forall ((n2 Int))
-                (=>
-                  (gt (Some (Num n1)) (Some (Num n2)))
-                  (> n1 n2)
-                )
-              )
-            )
-          )
-          """
+(define-fun eq ((x (Option Value)) (y (Option Value))) Trilean
+  (ite (= x y) true
+  false)
+)
+"""
           val vars = GExp.enumerate_vars(g)
           z3String += vars.map(v => s"(declare-const ${toZ3(v)} (Option Value))").foldLeft("")(((x, y) => x + y + "\n"))
-          z3String += s"(assert ${toZ3(g)})\n(check-sat)"
+          z3String += s"(assert (= true ${toZ3(g)}))"
 
           val ctx = new z3.Context()
           val solver = ctx.mkSimpleSolver()
@@ -95,19 +82,6 @@ object Dirties {
     }
   }
 
-  // def randomMember[A](f: FSet.fset[A]): Option[A] = f match {
-  //   case FSet.Abs_fset(s) => s match {
-  //     case Set.seta(l) => {
-  //       if (l == List()) {
-  //         None
-  //       }
-  //       else {
-  //         Some(Random.shuffle(l).head)
-  //       }
-  //     }
-  //   }
-  // }
-
   def randomMember[A](f: FSet.fset[A]): Option[A] = f match {
     case FSet.fset_of_list(l) =>
       if (l == List()) {
@@ -119,11 +93,8 @@ object Dirties {
 
   def addLTL(f: String, e: String) = {
     val lines = Source.fromFile(f).getLines().toList.dropRight(1)
-
     val pw = new PrintWriter(new File(f))
-
     (lines :+ (e + "\nEND")).foreach(pw.println)
-
     pw.close()
   }
 

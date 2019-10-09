@@ -92,10 +92,10 @@ lemma updates2dot_aux_code [code]: "updates2dot_aux l = map (\<lambda>(r, u). (v
 fun opred2dot :: "opred \<Rightarrow> String.literal" where
   "opred2dot (Bc True) = STR ''true''" |
   "opred2dot (Bc False) = STR ''false''" |
-  "opred2dot (opred.Eq v) = STR ''='' + (aexp2dot v)" |
-  "opred2dot (opred.Gt v) = STR ''='' + (aexp2dot v)" |
+  "opred2dot (opred.Eq v) = STR ''= '' + (aexp2dot v)" |
+  "opred2dot (opred.Gt v) = STR ''> '' + (aexp2dot v)" |
   "opred2dot (opred.Null) = STR ''NONE''" |
-  "opred2dot (opred.In l) = STR ''&isin;{''+(join (map value2dot l) STR '', '')+STR ''}''" |
+  "opred2dot (opred.In l) = STR ''&isin; {''+(join (map value2dot l) STR '', '')+STR ''}''" |
   "opred2dot (opred.Nor p1 p2) = STR ''!('' + opred2dot p1 + STR ''||'' + opred2dot p2 + STR '')''"
 
 primrec outputs2dot :: "output_function list \<Rightarrow> nat \<Rightarrow> String.literal list" where

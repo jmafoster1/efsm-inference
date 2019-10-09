@@ -6698,11 +6698,11 @@ def updates2dot(x0: List[(Nat.nat, AExp.aexp)]): String = x0 match {
 def opred2dot(x0: OPred.opred): String = x0 match {
   case OPred.Bc(true) => "true"
   case OPred.Bc(false) => "false"
-  case OPred.Eq(v) => "=" + aexp2dot(v)
-  case OPred.Gt(v) => "=" + aexp2dot(v)
+  case OPred.Eq(v) => "= " + aexp2dot(v)
+  case OPred.Gt(v) => "> " + aexp2dot(v)
   case OPred.Null() => "NONE"
   case OPred.In(l) =>
-    "&isin;{" +
+    "&isin; {" +
       (Lista.map[Value.value,
                   String](((a: Value.value) => value2dot(a)),
                            l)).mkString(", ") +
