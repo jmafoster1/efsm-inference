@@ -22,19 +22,21 @@ object Strategies extends Enumeration {
 }
 
 case class Config(
-  heuristics: Seq[Heuristics.Heuristic] = Seq(),
   abs: Boolean = false,
   file: File = null,
-  outputname: String = null,
+  heuristics: Seq[Heuristics.Heuristic] = Seq(),
   dotfiles: String = "dotfiles",
-  nondeterminismMetric: Inference.i_efsm_ext[Unit] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, Nat.nat), (Types.Transition, Nat.nat))))] = (Inference.nondeterministic_pairs _),
-  strategy: Nat.nat => Nat.nat => Inference.i_efsm_ext[Unit] => Nat.nat = (SelectionStrategies.naive_score _).curried,
-  skip: Boolean = false,
-  logLevel: Level = Level.DEBUG,
-  logFile: String = null,
-  smallInts: Boolean = false,
+  k: Nat.nat = Nat.Nata(0),
   log: List[List[Types.Event]] = List(),
-  k: Int = 0)
+  logFile: String = null,
+  logLevel: Level = Level.DEBUG,
+  mergeFinals: Boolean = false,
+  nondeterminismMetric: Inference.i_efsm_ext[Unit] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, Nat.nat), (Types.Transition, Nat.nat))))] = (Inference.nondeterministic_pairs _),
+  outputname: String = null,
+  smallInts: Boolean = false,
+  skip: Boolean = false,
+  strategy: Nat.nat => Nat.nat => Inference.i_efsm_ext[Unit] => Nat.nat = (SelectionStrategies.naive_score _).curried
+)
 
 object Config {
   val builder = OParser.builder[Config]
@@ -95,7 +97,7 @@ object Config {
         .text("The preferred name of the file to output the SAL and DOT representations of the inferred model to - defaults to the input file name"),
       opt[Int]('k', "k")
         .valueName("k")
-        .action((x, c) => c.copy(k = x))
+        .action((x, c) => c.copy(k = Nat.Nata(x)))
         .text("The depth of the k-tails (defaults to zero)"),
       opt[Nat.nat => Nat.nat => Inference.i_efsm_ext[Unit] => Nat.nat]('s', "strategy")
         .valueName("strategy")
@@ -117,6 +119,9 @@ object Config {
         .text("Set this flag to map integers down to smaller values"),
       opt[Unit]("abstract")
         .action((_, c) => c.copy(abs = true))
+        .text("Set this flag to use abstract traces"),
+      opt[Unit]("mergeFinals")
+        .action((_, c) => c.copy(mergeFinals = true))
         .text("Set this flag to use abstract traces"),
       opt[Level]('l', "level")
         .valueName("level")

@@ -551,22 +551,25 @@ definition logStates :: "nat \<Rightarrow> nat \<Rightarrow> unit" where
   "logStates _ _ = ()"
 
 (* This is the infer function but with logging *)
-function infer_with_log :: "nat \<Rightarrow> nat \<Rightarrow> i_efsm \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (efsm \<Rightarrow> bool) \<Rightarrow> (i_efsm \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> i_efsm" where
-  "infer_with_log stepNo k e r m check np = (
-    case inference_step e (rev (sorted_list_of_fset (k_score k e r))) m check np of
+function infer_with_log :: "nat \<Rightarrow> bool \<Rightarrow> nat \<Rightarrow> i_efsm \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (efsm \<Rightarrow> bool) \<Rightarrow> (i_efsm \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> i_efsm" where
+  "infer_with_log stepNo mergeFinals k e r m check np = (
+    case inference_step e (rev (sorted_list_of_fset (k_score mergeFinals k e r))) m check np of
       None \<Rightarrow> e |
       Some new \<Rightarrow> let 
         temp = i_efsm2dot e stepNo;
         temp2 = logStates (size (S new)) (size (S e)) in
-        if (S new) |\<subset>| (S e) then
-          infer_with_log (stepNo + 1) k new r m check np
+        if size (S new) + size (T new) < size (S e) + size (T e) then
+          infer_with_log (stepNo + 1) mergeFinals k new r m check np
         else e
   )"
   by auto
 termination
-  apply (relation "measures [\<lambda>(_, _, e, _). size (S e)]")
-   apply simp
-  using measures_fsubset by auto
+  by (relation "measures [\<lambda>(_, _, n, e, _). size (S e) + size (T e)]", auto)
+
+(* I'd ideally like to fix this at some point *)
+lemma [code]: "infer mergeFinals k e r m check np = infer_with_log 0 mergeFinals k e r m check np"
+  sorry
+
 
 declare make_pta.simps [code]
 (* declare make_pta_fold [code] *)
@@ -596,13 +599,6 @@ code_printing
   constant "show_nat" \<rightharpoonup> (Scala) "Code'_Numeral.integer'_of'_nat((_)).toString()"
   | constant "show_int" \<rightharpoonup> (Scala) "Code'_Numeral.integer'_of'_int((_)).toString()"
   | constant "join" \<rightharpoonup> (Scala) "_.mkString((_))"
-
-(* I'd ideally like to fix this at some point *)
-lemma [code]: "infer = infer_with_log 0"
-  apply (simp add: fun_eq_iff)
-  apply clarify
-  unfolding Let_def add_0
-  sorry
 
 (*
   Mapping finfuns to Scala native Maps

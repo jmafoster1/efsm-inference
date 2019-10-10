@@ -29,7 +29,8 @@ object FrontEnd {
 
     try {
       val inferred = Inference.learn(
-        Nat.Nata(Config.config.k),
+        Config.config.mergeFinals,
+        Config.config.k,
         pta,
         Config.config.log,
         Config.config.strategy,

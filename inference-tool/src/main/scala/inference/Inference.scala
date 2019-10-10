@@ -1950,15 +1950,6 @@ def inf_fset[A : HOL.equal](x0: fset[A], x1: fset[A]): fset[A] = (x0, x1) match
                                        f1)).distinct)
 }
 
-def less_eq_fset[A : HOL.equal](x0: fset[A], a: fset[A]): Boolean = (x0, a)
-  match {
-  case (fset_of_list(l), a) =>
-    Lista.list_all[A](((x: A) => fmember[A](x, a)), l)
-}
-
-def less_fset[A : HOL.equal](sa: fset[A], s: fset[A]): Boolean =
-  (less_eq_fset[A](sa, s)) && (Nat.less_nat(size_fset[A](sa), size_fset[A](s)))
-
 } /* object FSet */
 
 object FSet_Utils {
@@ -3549,54 +3540,30 @@ def dest(uid: Nat.nat, t: i_efsm_ext[Unit]): Nat.nat =
                                  Nat.equal_nata(x._1, uid)),
                                 T[Unit](t))))._2)._1)._2
 
-def infer:
-      Nat.nat =>
-        (i_efsm_ext[Unit]) =>
-          (Nat.nat => Nat.nat => (i_efsm_ext[Unit]) => Nat.nat) =>
-            (Nat.nat =>
-              Nat.nat =>
+def infer(mergeFinals: Boolean, k: Nat.nat, e: i_efsm_ext[Unit],
+           r: Nat.nat => Nat.nat => (i_efsm_ext[Unit]) => Nat.nat,
+           m: Nat.nat =>
                 Nat.nat =>
-                  (i_efsm_ext[Unit]) =>
+                  Nat.nat =>
                     (i_efsm_ext[Unit]) =>
-                      ((i_efsm_ext[Unit]) =>
-                        FSet.fset[(Nat.nat,
-                                    ((Nat.nat, Nat.nat),
-                                      ((Transition.transition_ext[Unit],
- Nat.nat),
-(Transition.transition_ext[Unit], Nat.nat))))]) =>
-                        Option[i_efsm_ext[Unit]]) =>
-              ((EFSM.efsm_ext[Unit]) => Boolean) =>
-                ((i_efsm_ext[Unit]) =>
-                  FSet.fset[(Nat.nat,
-                              ((Nat.nat, Nat.nat),
-                                ((Transition.transition_ext[Unit], Nat.nat),
-                                  (Transition.transition_ext[Unit],
-                                    Nat.nat))))]) =>
-                  i_efsm_ext[Unit]
+                      (i_efsm_ext[Unit]) =>
+                        ((i_efsm_ext[Unit]) =>
+                          FSet.fset[(Nat.nat,
+                                      ((Nat.nat, Nat.nat),
+((Transition.transition_ext[Unit], Nat.nat),
+  (Transition.transition_ext[Unit], Nat.nat))))]) =>
+                          Option[i_efsm_ext[Unit]],
+           check: (EFSM.efsm_ext[Unit]) => Boolean,
+           np: (i_efsm_ext[Unit]) =>
+                 FSet.fset[(Nat.nat,
+                             ((Nat.nat, Nat.nat),
+                               ((Transition.transition_ext[Unit], Nat.nat),
+                                 (Transition.transition_ext[Unit],
+                                   Nat.nat))))]):
+      i_efsm_ext[Unit]
   =
-  ((a: Nat.nat) => (b: i_efsm_ext[Unit]) =>
-    (c: Nat.nat => Nat.nat => (i_efsm_ext[Unit]) => Nat.nat) =>
-    (d: Nat.nat =>
-          Nat.nat =>
-            Nat.nat =>
-              (i_efsm_ext[Unit]) =>
-                (i_efsm_ext[Unit]) =>
-                  ((i_efsm_ext[Unit]) =>
-                    FSet.fset[(Nat.nat,
-                                ((Nat.nat, Nat.nat),
-                                  ((Transition.transition_ext[Unit], Nat.nat),
-                                    (Transition.transition_ext[Unit],
-                                      Nat.nat))))]) =>
-                    Option[i_efsm_ext[Unit]])
-      =>
-    (e: (EFSM.efsm_ext[Unit]) => Boolean) =>
-    (f: (i_efsm_ext[Unit]) =>
-          FSet.fset[(Nat.nat,
-                      ((Nat.nat, Nat.nat),
-                        ((Transition.transition_ext[Unit], Nat.nat),
-                          (Transition.transition_ext[Unit], Nat.nat))))])
-      =>
-    Code_Generation.infer_with_log(Nat.zero_nata, a, b, c, d, e, f))
+  Code_Generation.infer_with_log(Nat.zero_nata, mergeFinals, k, e, r, m, check,
+                                  np)
 
 def satisfies_trace_prim(uu: EFSM.efsm_ext[Unit], uv: Nat.nat,
                           uw: Map[Nat.nat, Option[Value.value]],
@@ -3676,7 +3643,7 @@ def toi_efsm(e: EFSM.efsm_ext[Unit]): i_efsm_ext[Unit] =
                                       Transition.transition_ext[Unit])](EFSM.T[Unit](e)))),
                      EFSM.F[Unit](e), ())
 
-def learn(n: Nat.nat, pta: EFSM.efsm_ext[Unit],
+def learn(mergeFinals: Boolean, n: Nat.nat, pta: EFSM.efsm_ext[Unit],
            l: List[List[(String,
                           (List[Value.value], List[Option[Value.value]]))]],
            r: Nat.nat => Nat.nat => (i_efsm_ext[Unit]) => Nat.nat,
@@ -3706,7 +3673,7 @@ def learn(n: Nat.nat, pta: EFSM.efsm_ext[Unit],
                                   (List[Value.value],
                                     List[Option[Value.value]]))]](l),
                    a));
-    tm(infer.apply(n).apply(toi_efsm(pta)).apply(r).apply(m).apply(check).apply(np))
+    tm(infer(mergeFinals, n, toi_efsm(pta), r, m, check, np))
   }
 
 def directly_subsumes(m1: i_efsm_ext[Unit], m2: i_efsm_ext[Unit], sa: Nat.nat,
@@ -4071,7 +4038,7 @@ def k_outgoing(m: Nat.nat, i: i_efsm_ext[Unit], s: Nat.nat):
                              others)))
          })
 
-def k_score(n: Nat.nat, e: i_efsm_ext[Unit],
+def k_score(mergeFinals: Boolean, n: Nat.nat, e: i_efsm_ext[Unit],
              rank: Nat.nat => Nat.nat => (i_efsm_ext[Unit]) => Nat.nat):
       FSet.fset[(Nat.nat, (Nat.nat, Nat.nat))]
   =
@@ -4126,8 +4093,10 @@ FSet.fimage[(Nat.nat, Nat.nat),
                         }),
                        FSet_Utils.fprod[Nat.nat,
  Nat.nat](outgoing_s1, outgoing_s2));
-                                      (FSet_Utils.fSum[Nat.nat](scores),
-(s1, s2))
+                                      (if (mergeFinals && ((FSet.equal_fseta[Nat.nat](outgoing_s1,
+       FSet.bot_fset[Nat.nat])) && (FSet.equal_fseta[Nat.nat](outgoing_s2,
+                       FSet.bot_fset[Nat.nat]))))
+(s1, (s2, Nat.Nata((1)))) else (FSet_Utils.fSum[Nat.nat](scores), (s1, s2)))
                                     }),
                                    pairs_to_score);
     FSet.ffilter[(Nat.nat,
@@ -5112,7 +5081,8 @@ def choice_cases(t1: Transition.transition_ext[Unit],
                      Transition.Guard[Unit](t1) ++ Transition.Guard[Unit](t2),
                      GExp.Bc(true)))))
 
-def infer_with_log(stepNo: Nat.nat, k: Nat.nat, e: Inference.i_efsm_ext[Unit],
+def infer_with_log(stepNo: Nat.nat, mergeFinals: Boolean, k: Nat.nat,
+                    e: Inference.i_efsm_ext[Unit],
                     r: Nat.nat =>
                          Nat.nat => (Inference.i_efsm_ext[Unit]) => Nat.nat,
                     m: Nat.nat =>
@@ -5135,7 +5105,9 @@ def infer_with_log(stepNo: Nat.nat, k: Nat.nat, e: Inference.i_efsm_ext[Unit],
       Inference.i_efsm_ext[Unit]
   =
   (Inference.inference_step(e, (FSet.sorted_list_of_fset[(Nat.nat,
-                   (Nat.nat, Nat.nat))](Inference.k_score(k, e, r))).reverse,
+                   (Nat.nat,
+                     Nat.nat))](Inference.k_score(mergeFinals, k, e,
+           r))).reverse,
                              m, check, np)
      match {
      case None => e
@@ -5143,9 +5115,16 @@ def infer_with_log(stepNo: Nat.nat, k: Nat.nat, e: Inference.i_efsm_ext[Unit],
        {
          PrettyPrinter.i_efsm2dot(e, stepNo);
          Log.logStates((FSet.size_fset[Nat.nat](Inference.S(newa))), (FSet.size_fset[Nat.nat](Inference.S(e))));
-         (if (FSet.less_fset[Nat.nat](Inference.S(newa), Inference.S(e)))
-           infer_with_log(Nat.plus_nata(stepNo, Nat.Nata((1))), k, newa, r, m,
-                           check, np)
+         (if (Nat.less_nat(Nat.plus_nata(FSet.size_fset[Nat.nat](Inference.S(newa)),
+  FSet.size_fset[(Nat.nat,
+                   ((Nat.nat, Nat.nat),
+                     Transition.transition_ext[Unit]))](Inference.T[Unit](newa))),
+                            Nat.plus_nata(FSet.size_fset[Nat.nat](Inference.S(e)),
+   FSet.size_fset[(Nat.nat,
+                    ((Nat.nat, Nat.nat),
+                      Transition.transition_ext[Unit]))](Inference.T[Unit](e)))))
+           infer_with_log(Nat.plus_nata(stepNo, Nat.Nata((1))), mergeFinals, k,
+                           newa, r, m, check, np)
            else e)
        }
    })

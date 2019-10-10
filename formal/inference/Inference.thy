@@ -278,15 +278,15 @@ primrec k_outgoing :: "nat \<Rightarrow> i_efsm \<Rightarrow> cfstate \<Rightarr
      outgoing |\<union>| ffUnion (fimage (\<lambda>s. k_outgoing m i s) others)
   )"
 
-definition k_score :: "nat \<Rightarrow> i_efsm \<Rightarrow> strategy \<Rightarrow> scoreboard" where
-  "k_score n e rank = (let 
+definition k_score :: "bool \<Rightarrow> nat \<Rightarrow> i_efsm \<Rightarrow> strategy \<Rightarrow> scoreboard" where
+  "k_score mergeFinals n e rank = (let 
      states = (S e);
      pairs_to_score = (ffilter (\<lambda>(x, y). x < y) (states |\<times>| states));
      scores = fimage (\<lambda>(s1, s2). let
         outgoing_s1 = fimage (snd \<circ> snd) (k_outgoing n e s1);
         outgoing_s2 = fimage (snd \<circ> snd) (k_outgoing n e s2);
         scores = fimage (\<lambda>(x, y). rank x y e) (outgoing_s1 |\<times>| outgoing_s2) in
-       \<comment> \<open>if outgoing_s1 = {||} \<and> outgoing_s2 = {||} then (s1, s2, 1) else\<close> (fSum scores, s1, s2 )
+       if mergeFinals \<and> outgoing_s1 = {||} \<and> outgoing_s2 = {||} then (s1, s2, 1) else (fSum scores, s1, s2 )
      ) pairs_to_score in
      ffilter (\<lambda>(score, _). score > 0) scores)"
 
@@ -483,28 +483,21 @@ fun inference_step :: "i_efsm \<Rightarrow> (nat \<times> nat \<times> nat) list
        None \<Rightarrow> inference_step e t m check np
   )"
 
-lemma measures_fsubset: "S x2 |\<subset>| S e \<Longrightarrow>
-       ((x2, r, m, check, np), e, r, m, check, np) \<in> measures [\<lambda>(e, r, m, check, np). size (Inference.S e)]"
-  using size_fsubset[of "S x2" "S e"]
-  by simp
-
 (* Takes an i_efsm and iterates inference_step until no further states can be successfully merged  *)
 (* @param e - an i_efsm dest be generalised                                                          *)
 (* @param r - a strategy dest identify and prioritise pairs of states dest merge                      *)
 (* @param m     - an update modifier function which tries dest generalise transitions               *)
 (* @param check - a function which takes an EFSM and returns a bool dest ensure that certain
                   properties hold in the new i_efsm                                                *)
-function infer :: "nat \<Rightarrow> i_efsm \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (efsm \<Rightarrow> bool) \<Rightarrow> (i_efsm \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> i_efsm" where
-  "infer n e r m check np = (
-    case inference_step e (rev (sorted_list_of_fset (k_score n e r))) m check np of
+function infer :: "bool \<Rightarrow> nat \<Rightarrow> i_efsm \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (efsm \<Rightarrow> bool) \<Rightarrow> (i_efsm \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> i_efsm" where
+  "infer mergeFinals n e r m check np = (
+    case inference_step e (rev (sorted_list_of_fset (k_score mergeFinals n e r))) m check np of
       None \<Rightarrow> e |
-      Some new \<Rightarrow> if (S new) |\<subset>| (S e) then infer n new r m check np else e
+      Some new \<Rightarrow> if size (S new) + size (T new) < size (S e) + size (T e) then infer mergeFinals n new r m check np else e
   )"
   by auto
 termination
-  apply (relation "measures [\<lambda>(n, e, _). size (S e)]")
-   apply simp
-  using measures_fsubset by auto
+  by (relation "measures [\<lambda>(_, n, e, _). size (S e) + size (T e)]", auto)
 
 fun get_smallest :: "nat \<Rightarrow> nat list \<Rightarrow> nat" where
   "get_smallest n s = (if n \<notin> set s then n else get_smallest (n + 1) (removeAll n s))"
@@ -519,10 +512,10 @@ fun make_smaller_val :: "nat list \<Rightarrow> value \<Rightarrow> value" where
   "make_smaller_val _ (value.Str s) = value.Str s" |
   "make_smaller_val s (Num n) = Num (make_smaller n s)"
 
-definition learn :: "nat \<Rightarrow> efsm \<Rightarrow> log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (i_efsm \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> efsm" where
-  "learn n pta l r m np = (
+definition learn :: "bool \<Rightarrow> nat \<Rightarrow> efsm \<Rightarrow> log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (i_efsm \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> efsm" where
+  "learn mergeFinals n pta l r m np = (
      let check = satisfies (set l) in
-         (tm (infer n (toi_efsm pta) r m check np))
+         (tm (infer mergeFinals n (toi_efsm pta) r m check np))
    )"
 
 definition uids :: "i_efsm \<Rightarrow> nat fset" where

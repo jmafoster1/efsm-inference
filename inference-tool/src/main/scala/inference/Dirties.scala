@@ -14,14 +14,18 @@ object Dirties {
     // l.par.foldLeft(b)(((x, y) => (f(x))(y)))
     l.foldLeft(b)(((x, y) => (f(x))(y)))
 
+  def toZ3(v: Value.value): String = v match {
+    case Value.Numa(n) => s"(Num ${Code_Numeral.integer_of_int(n).toString})"
+    case Value.Str(s) => s"""(Str "${s}")"""
+  }
+
   def toZ3(a: VName.vname): String = a match {
     case VName.I(n) => s"i${Code_Numeral.integer_of_nat(n)}"
     case VName.R(n) => s"r${Code_Numeral.integer_of_nat(n)}"
   }
 
   def toZ3(a: AExp.aexp): String = a match {
-    case AExp.L(Value.Numa(n)) => s"(Some (Num ${Code_Numeral.integer_of_int(n).toString}))"
-    case AExp.L(Value.Str(s)) => s"""(Some (Str "${s}"))"""
+    case AExp.L(v) => s"(Some ${toZ3(v)})"
     case AExp.V(v) => s"${toZ3(v)}"
     case AExp.Plus(a1, a2) => s"(+ ${toZ3(a1)} ${toZ3(a2)})"
     case AExp.Minus(a1, a2) => s"(- ${toZ3(a1)} ${toZ3(a2)})"
@@ -29,11 +33,11 @@ object Dirties {
 
   def toZ3(g: GExp.gexp): String = g match {
     case GExp.Bc(a) => a.toString()
-    case GExp.Eq(a1, a2) => s"(eq ${toZ3(a1)} ${toZ3(a2)})"
-    case GExp.Gt(a1, a2) => s"(gt ${toZ3(a1)} ${toZ3(a2)})"
-    case GExp.In(v, l) => toZ3(GExp.fold_In(v, l))
-    case GExp.Nor(g1, g2) => s"(nor ${toZ3(g1)} ${toZ3(g2)})"
-    case GExp.Null(AExp.V(v)) => s"(eq ${toZ3(v)} None)"
+    case GExp.Eq(a1, a2) => s"(Eq ${toZ3(a1)} ${toZ3(a2)})"
+    case GExp.Gt(a1, a2) => s"(Gt ${toZ3(a1)} ${toZ3(a2)})"
+    case GExp.In(v, l) => l.slice(0, 2).map(x => s"(Eq ${toZ3(v)} (Some ${toZ3(x)}))").fold("false")((x, y) => s"(Or ${x} ${y})")
+    case GExp.Nor(g1, g2) => s"(Nor ${toZ3(g1)} ${toZ3(g2)})"
+    case GExp.Null(AExp.V(v)) => s"(Eq ${toZ3(v)} None)"
     case GExp.Null(v) => throw new java.lang.IllegalArgumentException("Z3 does not handle null of more complex arithmetic expressions")
   }
 
@@ -48,7 +52,7 @@ object Dirties {
 (declare-datatype Value ((Num (num Int)) (Str (str String))))
 (declare-datatype Trilean ((true) (false) (invalid)))
 
-(define-fun nor ((x Trilean) (y Trilean)) Trilean
+(define-fun Nor ((x Trilean) (y Trilean)) Trilean
   (ite (and (= x true) (= y true)) false
   (ite (and (= x true) (= y false)) false
   (ite (and (= x false) (= y true)) false
@@ -56,27 +60,36 @@ object Dirties {
   invalid))))
 )
 
-(define-fun gt ((x (Option Value)) (y (Option Value))) Trilean
+(define-fun Or ((x Trilean) (y Trilean)) Trilean
+  (ite (and (= x true) (= y true)) true
+  (ite (and (= x true) (= y false)) true
+  (ite (and (= x false) (= y true)) true
+  (ite (and (= x false) (= y false)) false
+  invalid))))
+)
+
+(define-fun Gt ((x (Option Value)) (y (Option Value))) Trilean
   (ite (exists ((x1 Int)) (exists ((y1 Int)) (and (= x (Some (Num x1))) (and (= y (Some (Num y1))) (> x1 y1))))) true
   (ite (exists ((x1 Int)) (exists ((y1 Int)) (and (= x (Some (Num x1))) (and (= y (Some (Num y1))) (not (> x1 y1)))))) false
   invalid))
 )
 
-(define-fun eq ((x (Option Value)) (y (Option Value))) Trilean
+(define-fun Eq ((x (Option Value)) (y (Option Value))) Trilean
   (ite (= x y) true
   false)
 )
+
 """
           val vars = GExp.enumerate_vars(g)
           z3String += vars.map(v => s"(declare-const ${toZ3(v)} (Option Value))").foldLeft("")(((x, y) => x + y + "\n"))
-          z3String += s"(assert (= true ${toZ3(g)}))"
+          z3String += s"\n(assert (= true ${toZ3(g)}))"
 
           val ctx = new z3.Context()
           val solver = ctx.mkSimpleSolver()
           solver.fromString(z3String)
           val sat = solver.check()
-
           ctx.close()
+
           sat_memo = sat_memo + (g -> (sat == z3.Status.SATISFIABLE))
           return sat == z3.Status.SATISFIABLE
     }
