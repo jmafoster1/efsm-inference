@@ -23,7 +23,7 @@ record i_efsm =
   T :: i_transition_matrix
   F :: "nat fset"
 
-lemma i_efsm_equiv_if: "F e = F e' \<Longrightarrow> T e = T e' \<Longrightarrow> (e::i_efsm) = e'"
+lemma i_efsm_equiv_if: "T e = T e' \<Longrightarrow> F e = F e' \<Longrightarrow> (e::i_efsm) = e'"
   by simp
 
 definition get_by_id :: "i_efsm \<Rightarrow> nat \<Rightarrow> transition" ("(_|_|)" [20, 20] 40) where
@@ -49,17 +49,61 @@ lemma in_tm: "((s, a), bb) |\<in>| efsm.T (tm b) \<Longrightarrow> \<exists>id. 
 definition maxUID :: "i_efsm \<Rightarrow> nat" where
   "maxUID e = fMax (fimage (\<lambda>x. fst x) (T e))"
 
+definition S :: "i_efsm \<Rightarrow> nat fset" where
+  "S m = fimage (\<lambda>(uid, (s, s'), t). s) (T m) |\<union>| fimage (\<lambda>(uid, (s, s'), t). s') (T m)"
+
+lemma S_alt: "S t = EFSM.S (tm t)"
+  apply (simp add: S_def EFSM.S_def tm_def)
+  by force
+
+lemma to_in_S: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| (T xb) \<longrightarrow> to |\<in>| S xb)"
+  apply (simp add: S_def)
+  by blast
+
+lemma from_in_S: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| (T xb) \<longrightarrow> from |\<in>| S xb)"
+  apply (simp add: S_def)
+  by blast
+
+definition tS :: "i_transition_matrix \<Rightarrow> nat fset" where
+  "tS m = fimage (\<lambda>(uid, (s, s'), t). s) m |\<union>| fimage (\<lambda>(uid, (s, s'), t). s') m"
+
+lemma S_tS: "S t = tS (T t)"
+  by (simp add: S_def tS_def)
+
 definition merge_states_aux :: "nat \<Rightarrow> nat \<Rightarrow> i_transition_matrix \<Rightarrow> i_transition_matrix" where
   "merge_states_aux x y t = (fimage (\<lambda>(uid, (origin, dest), t). (uid, (if origin = x then y else origin , if dest = x then y else dest), t)) t)"
 
-definition merge_states :: "nat \<Rightarrow> nat \<Rightarrow> i_efsm \<Rightarrow> i_efsm" where
-  "merge_states x y t = \<lparr>T = (if x > y then merge_states_aux x y (T t) else merge_states_aux y x (T t)), F = F t\<rparr>"
+lemma merge_states_aux_finsert: "merge_states_aux x y (finsert t ts) =
+finsert ((\<lambda>(uid, (origin, dest), t). (uid, (if origin = x then y else origin , if dest = x then y else dest), t)) t) (merge_states_aux x y ts)"
+  by (simp add: merge_states_aux_def)
 
-lemma merge_states_same: "merge_states x x t = t"
+definition merge_states :: "nat \<Rightarrow> nat \<Rightarrow> i_efsm \<Rightarrow> i_efsm option" where
+  "merge_states x y t = (
+    if (x |\<in>| F t \<and> y |\<in>| F t) \<or>
+       (x |\<notin>| F t \<and> y |\<notin>| F t) then
+      let newT = (if x > y then merge_states_aux x y (T t) else merge_states_aux y x (T t)) in
+      Some \<lparr>T = newT, F = (tS newT |\<union>| F t) |\<inter>| (F t)\<rparr>
+    else
+      None
+  )"
+
+lemma merge_states_aux_self: "merge_states_aux x x e = e"
+proof(induct e)
+  case empty
+  then show ?case
+    by (simp add: merge_states_aux_def)
+next
+  case (insert x e)
+  then show ?case
+    apply (cases x)
+    by (simp add: merge_states_aux_def)
+qed
+
+lemma merge_states_same: "merge_states x x t = Some t"
+  apply (simp add: merge_states_def Let_def)
   apply (rule i_efsm_equiv_if)
-   apply (simp add: merge_states_def)
-  apply (simp add: merge_states_def merge_states_aux_def fimage_def fset_both_sides Abs_fset_inverse)
-  by force
+   apply (simp add: merge_states_aux_self)
+  by auto
 
 lemma merge_states_symmetry: "merge_states x y t = merge_states y x t"
   by (simp add: merge_states_def merge_states_aux_def)
@@ -79,21 +123,6 @@ lemma state_nondeterminism_empty[simp]: "state_nondeterminism a {||} = {||}"
 
 lemma state_nondeterminism_singledestn[simp]: "state_nondeterminism a {|x|} = {||}"
   by (simp add: state_nondeterminism_def ffilter_def Set.filter_def)
-
-definition S :: "i_efsm \<Rightarrow> nat fset" where
-  "S m = fimage (\<lambda>(uid, (s, s'), t). s) (T m) |\<union>| fimage (\<lambda>(uid, (s, s'), t). s') (T m)"
-
-lemma S_alt: "S t = EFSM.S (tm t)"
-  apply (simp add: S_def EFSM.S_def tm_def)
-  by force
-
-lemma to_in_S: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| (T xb) \<longrightarrow> to |\<in>| S xb)"
-  apply (simp add: S_def)
-  by blast
-
-lemma from_in_S: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| (T xb) \<longrightarrow> from |\<in>| S xb)"
-  apply (simp add: S_def)
-  by blast
 
 (* For each state, get its outgoing transitions and see if there's any nondeterminism there *)
 definition nondeterministic_pairs :: "i_efsm \<Rightarrow> nondeterministic_pair fset" where
@@ -286,7 +315,7 @@ definition k_score :: "bool \<Rightarrow> nat \<Rightarrow> i_efsm \<Rightarrow>
         outgoing_s1 = fimage (snd \<circ> snd) (k_outgoing n e s1);
         outgoing_s2 = fimage (snd \<circ> snd) (k_outgoing n e s2);
         scores = fimage (\<lambda>(x, y). rank x y e) (outgoing_s1 |\<times>| outgoing_s2) in
-       if mergeFinals \<and> outgoing_s1 = {||} \<and> outgoing_s2 = {||} then (s1, s2, 1) else (fSum scores, s1, s2 )
+       if mergeFinals \<and> outgoing_s1 = {||} \<and> outgoing_s2 = {||} then (1, s1, s2) else (fSum scores, s1, s2 )
      ) pairs_to_score in
      ffilter (\<lambda>(score, _). score > 0) scores)"
 
@@ -425,23 +454,20 @@ function resolve_nondeterminism :: "(cfstate \<times> cfstate) list \<Rightarrow
   "resolve_nondeterminism closed ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) oldEFSM newEFSM m check np = (
      \<comment> \<open>Fail if we've already tried (and failed) to merge the destination states\<close>
      if (dest\<^sub>1, dest\<^sub>2) \<in> set closed then None else
-     \<comment> \<open>Fail if we need to merge an accept state with a non-accepting state\<close>
-     if dest\<^sub>1 |\<in>| F newEFSM \<and> dest\<^sub>1 |\<notin>| F newEFSM then None else
-     if dest\<^sub>1 |\<notin>| F newEFSM \<and> dest\<^sub>1 |\<in>| F newEFSM then None else
      \<comment> \<open>Otherwise merge the destination states and then the transitions\<close>
-     let
-      destMerge = if dest\<^sub>1 = dest\<^sub>2 then newEFSM else merge_states dest\<^sub>1 dest\<^sub>2 newEFSM
-     in
-     case make_distinct (merge_transitions oldEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m np) of
-       None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np |
-       Some new \<Rightarrow>
-         let newScores = (sorted_list_of_fset (np new)) in 
-         if length (newScores) + size (T new) + size (S new) < length (ss) + 1 + size (T newEFSM) + size (S newEFSM) then
-           case resolve_nondeterminism closed newScores oldEFSM new m check np of
-             Some new' \<Rightarrow> Some new' |
-             None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np
-         else
-          None
+     case (if dest\<^sub>1 = dest\<^sub>2 then Some newEFSM else merge_states dest\<^sub>1 dest\<^sub>2 newEFSM) of
+      None \<Rightarrow> None |
+      Some destMerge \<Rightarrow> (
+        case make_distinct (merge_transitions oldEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m np) of
+          None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np |
+          Some new \<Rightarrow>
+            let newScores = (sorted_list_of_fset (np new)) in 
+            if length (newScores) + size (T new) + size (S new) < length (ss) + 1 + size (T newEFSM) + size (S newEFSM) then
+              case resolve_nondeterminism closed newScores oldEFSM new m check np of
+                Some new' \<Rightarrow> Some new' |
+                None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np
+            else
+              None)
    )"
      apply clarify
      apply simp
@@ -462,11 +488,11 @@ definition merge :: "i_efsm \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> up
     if s\<^sub>1 = s\<^sub>2 then
       None
     else
-      let e' = (merge_states s\<^sub>1 s\<^sub>2 e) in
+      case (merge_states s\<^sub>1 s\<^sub>2 e) of None \<Rightarrow> None | Some e' \<Rightarrow> (
       case resolve_nondeterminism [] (sorted_list_of_fset (np e')) e e' m check np of
       None \<Rightarrow> None |
       \<comment> \<open>Strip out any merged accept states\<close>
-      Some merged \<Rightarrow> Some \<lparr>T = T merged, F = S merged |\<inter>| F merged\<rparr>
+      Some merged \<Rightarrow> Some \<lparr>T = T merged, F = S merged |\<inter>| F merged\<rparr>)
   )"
 
 (* inference_step - attempt dest carry out a single step of the inference process by merging the    *)
