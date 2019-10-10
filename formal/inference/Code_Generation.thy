@@ -2,7 +2,6 @@ theory Code_Generation
   imports 
    "HOL-Library.Code_Target_Numeral"
    Inference SelectionStrategies
-   Type_Inference
    "heuristics/Store_Reuse_Subsumption"
    "heuristics/Increment_Reset"
    "heuristics/Same_Register"
@@ -38,12 +37,12 @@ definition "initially_undefined_context_check_full = initially_undefined_context
 
 lemma [code]:
 "initially_undefined_context_check e r s = (
-  if s = 0 \<and> (\<forall>(id, (from, to), t) |\<in>| e. to \<noteq> 0) then
+  if s = 0 \<and> (\<forall>(id, (from, to), t) |\<in>| T e. to \<noteq> 0) then
     True
   else
     initially_undefined_context_check_full e r s
   )"
-  apply (case_tac "s = 0 \<and> (\<forall>(id, (from, to), t)|\<in>|e. to \<noteq> 0)")
+  apply (case_tac "s = 0 \<and> (\<forall>(id, (from, to), t) |\<in>| T e. to \<noteq> 0)")
    apply (simp add: no_incoming_to_initial_gives_empty_reg)
   using initially_undefined_context_check_full_def by presburger
 
@@ -149,9 +148,9 @@ fun input_updates_register_aux :: "update_function list \<Rightarrow> nat option
   "input_updates_register_aux (h#t) = input_updates_register_aux t" |
   "input_updates_register_aux [] = None"
 
-definition input_updates_register :: "iEFSM \<Rightarrow> (nat \<times> String.literal)" where
+definition input_updates_register :: "i_efsm \<Rightarrow> (nat \<times> String.literal)" where
   "input_updates_register e = (
-    case fthe_elem (ffilter (\<lambda>(_, _, t). input_updates_register_aux (Updates t) \<noteq> None) e) of
+    case fthe_elem (ffilter (\<lambda>(_, _, t). input_updates_register_aux (Updates t) \<noteq> None) (T e)) of
       (_, _, t) \<Rightarrow> (case
         input_updates_register_aux (Updates t) of
           Some n \<Rightarrow> (n, Label t)
@@ -160,11 +159,11 @@ definition input_updates_register :: "iEFSM \<Rightarrow> (nat \<times> String.l
 
 definition "dirty_directly_subsumes = directly_subsumes"
 
-definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> bool" where
+definition always_different_outputs_direct_subsumption ::"i_efsm \<Rightarrow> i_efsm \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> bool" where
 "always_different_outputs_direct_subsumption m1 m2 s s' t2 = (
-   (\<exists>p. accepts (tm m1) 0 <> p \<and>
+   (\<exists>p. recognises (tm m1) 0 <> p \<and>
     gets_us_to s (tm m1) 0 <> p \<and>
-    accepts (tm m2) 0 <> p \<and>
+    recognises (tm m2) 0 <> p \<and>
     gets_us_to s' (tm m2) 0 <> p \<and>
     (case anterior_context (tm m2) p of Some c \<Rightarrow> (\<exists>i. can_take_transition t2 i c))))"
 
@@ -216,16 +215,16 @@ definition "dirty_always_different_outputs_direct_subsumption = always_different
 
 lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (
   if Guard t = [] then
-    accepts_and_gets_us_to_both m1 m2 s s'
+    recognises_and_gets_us_to_both m1 m2 s s'
   else
     dirty_always_different_outputs_direct_subsumption m1 m2 s s' t
   )"
   apply (simp add: always_different_outputs_direct_subsumption_def)
-  apply (simp add: accepts_and_gets_us_to_both_def)
+  apply (simp add: recognises_and_gets_us_to_both_def)
   apply safe
      apply auto[1]
     apply (rule_tac x=p in exI)
-  using can_take_transition_empty_guard accepts_gives_context apply fastforce
+  using can_take_transition_empty_guard recognises_gives_context apply fastforce
    apply (simp add: dirty_always_different_outputs_direct_subsumption_def)
   using always_different_outputs_direct_subsumption_def apply blast
   by (simp add: always_different_outputs_direct_subsumption_def dirty_always_different_outputs_direct_subsumption_def)
@@ -258,7 +257,7 @@ lemma lob_distinguished_direct_subsumption:
   apply simp
   apply (case_tac "\<exists>c. anterior_context (tm e2) p = Some c")
    defer
-   apply (simp add: accepts_trace_gives_context)
+   apply (simp add: recognises_trace_gives_context)
   apply (simp add: lob_distinguished_def)
   apply (erule exE)
   apply (rule_tac x=c in exI)
@@ -278,7 +277,7 @@ lemma lob_distinguished_2_direct_subsumption:
   apply simp
   apply (case_tac "\<exists>c. anterior_context (tm e2) p = Some c")
    defer
-   apply (simp add: accepts_trace_gives_context)
+   apply (simp add: recognises_trace_gives_context)
   apply (erule exE)
   apply (rule_tac x=c in exI)
   apply standard
@@ -310,7 +309,7 @@ lemma lob_distinguished_3_direct_subsumption:
   apply (erule exE)
   apply (erule conjE)+
   apply (case_tac "anterior_context (tm e2) p")
-   apply (simp add: accepts_trace_anterior_not_none)
+   apply (simp add: recognises_trace_anterior_not_none)
   apply (rule_tac x=p in exI)
   apply simp
   apply (erule exE)
@@ -441,7 +440,7 @@ lemma always_different_literal_outputs_direct_subsumption:
   by auto
 
 
-definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
+definition directly_subsumes_cases :: "i_efsm \<Rightarrow> i_efsm \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes_cases m1 m2 s s' t1 t2 = (
     if t1 = t2
       then True
@@ -545,19 +544,19 @@ lemma [code]: "Store_Reuse.is_generalisation_of x xa xb xc = is_generalisation_o
   apply (simp add: Store_Reuse.is_generalisation_of_def is_generalisation_of_def)
   using tests_input_equality by blast
 
-definition iEFSM2dot :: "iEFSM \<Rightarrow> nat \<Rightarrow> unit" where
-  "iEFSM2dot _ _ = ()"
+definition i_efsm2dot :: "i_efsm \<Rightarrow> nat \<Rightarrow> unit" where
+  "i_efsm2dot _ _ = ()"
 
 definition logStates :: "nat \<Rightarrow> nat \<Rightarrow> unit" where
   "logStates _ _ = ()"
 
 (* This is the infer function but with logging *)
-function infer_with_log :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
+function infer_with_log :: "nat \<Rightarrow> nat \<Rightarrow> i_efsm \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (efsm \<Rightarrow> bool) \<Rightarrow> (i_efsm \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> i_efsm" where
   "infer_with_log stepNo k e r m check np = (
     case inference_step e (rev (sorted_list_of_fset (k_score k e r))) m check np of
       None \<Rightarrow> e |
       Some new \<Rightarrow> let 
-        temp = iEFSM2dot e stepNo;
+        temp = i_efsm2dot e stepNo;
         temp2 = logStates (size (S new)) (size (S e)) in
         if (S new) |\<subset>| (S e) then
           infer_with_log (stepNo + 1) k new r m check np
@@ -578,12 +577,12 @@ declare dirty_always_different_outputs_direct_subsumption_def [code del]
 declare possibly_not_value_ctx_def [code del]
 declare random_member_def [code del]
 declare dirty_directly_subsumes_def [code del]
-declare accepts_and_gets_us_to_both_def [code del]
+declare recognises_and_gets_us_to_both_def [code del]
 declare initially_undefined_context_check_def [code del]
 
 code_printing
-  constant accepts_and_gets_us_to_both \<rightharpoonup> (Scala) "Dirties.acceptsAndGetsUsToBoth" |
-  constant iEFSM2dot \<rightharpoonup> (Scala) "PrettyPrinter.iEFSM2dot(_, _)" |
+  constant recognises_and_gets_us_to_both \<rightharpoonup> (Scala) "Dirties.recognisesAndGetsUsToBoth" |
+  constant i_efsm2dot \<rightharpoonup> (Scala) "PrettyPrinter.i'_efsm2dot(_, _)" |
   constant logStates \<rightharpoonup> (Scala) "Log.logStates(_, _)" |
   constant "dirty_directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes" |
   constant "GExp.satisfiable" \<rightharpoonup> (Scala) "Dirties.satisfiable" |
@@ -622,8 +621,8 @@ declare directly_subsumes_cases [code]
 lemma [code]: "satisfies_trace e s d l = satisfies_trace_prim e s d l"
   by (simp add: satisfies_trace_prim)
 
-lemma [code]: "accepts e s d t = accepts_prim e s d t"
-  by (simp add: accepts_prim)
+lemma [code]: "recognises e s d t = recognises_prim e s d t"
+  by (simp add: recognises_prim)
 
 (* declare make_branch.simps [code del] *)
 (* code_printing constant "make_branch" \<rightharpoonup> (Scala) "Dirties.makeBranch" *)
@@ -643,11 +642,9 @@ code_printing constant "substring" \<rightharpoonup> (Scala) "_.substring(Code'_
 declare parseInt_def [code del]
 code_printing constant parseInt \<rightharpoonup> (Scala) "Int.int'_of'_integer(BigInt(_.toInt))"
 
-definition "And = GExp.gAnd"
-
 export_code
   (* Essentials *)
-  try_heuristics try_heuristics_check aexp_type_check learn infer_types nondeterministic input_updates_register
+  try_heuristics try_heuristics_check learn nondeterministic input_updates_register
   step maxS add_transition make_pta make_pta_abstract
   (* Scoring functions *)
   naive_score naive_score_eq naive_score_outputs naive_score_comprehensive naive_score_comprehensive_eq_high
@@ -658,7 +655,7 @@ export_code
   (* Nondeterminism metrics *)
   nondeterministic_pairs nondeterministic_pairs_labar nondeterministic_pairs_labar_dest
   (* Utilities *)
-  iefsm2dot efsm2dot guards2sal fold_In max_int use_smallest_ints And enumerate_vars
+  iefsm2dot efsm2dot guards2sal fold_In max_int use_smallest_ints enumerate_vars max_int_2
 in Scala
 file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

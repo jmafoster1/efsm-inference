@@ -25,15 +25,15 @@ fun insert_increment :: update_modifier where
           newReg = R r;
           newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guard = [], Outputs = [Eq (Plus (V newReg) (V (vname.I 0)))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t1)\<rparr>;
           newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guard = [], Outputs = [Eq (Plus (V newReg) (V (vname.I 0)))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t2)\<rparr>;
-          initialised = fimage (\<lambda>(uid, (from, to), t). (uid, (from, to), (if (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2 then initialiseReg t r else t))) new;
-          newEFSM = (replaceAll (replaceAll initialised t2 newT2) t1 newT1)
+          initialised = fimage (\<lambda>(uid, (from, to), t). (uid, (from, to), (if (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2 then initialiseReg t r else t))) (T new);
+          newEFSM = replaceAll (replaceAll \<lparr>T = initialised, F = F new\<rparr> t2 newT2) t1 newT1
           in 
           resolve_nondeterminism [] (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
      else
        None
      )"
 
-definition struct_replace_all :: "iEFSM \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
+definition struct_replace_all :: "i_transition_matrix \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> i_transition_matrix" where
   "struct_replace_all e old new = fimage (\<lambda>(uid, (from, dest), t). if same_structure t old then (uid, (from, dest), new) else (uid, (from, dest), t)) e"
 
 lemma output_match_symmetry: "(outputMatch t1 t2) = (outputMatch t2 t1)"
@@ -53,8 +53,8 @@ fun insert_increment_2 :: update_modifier where
           newReg = R r;
           newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guard = [], Outputs = [Eq (Plus (V newReg) (V (vname.I 0)))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t1)\<rparr>;
           newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guard = [], Outputs = [Eq (Plus (V newReg) (V (vname.I 0)))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t2)\<rparr>;
-          initialised = fimage (\<lambda>(uid, (from, to), t). (uid, (from, to), (if (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2 then initialiseReg t r else t))) new ;
-          newEFSM = (struct_replace_all (struct_replace_all initialised t2 newT2) t1 newT1)
+          initialised = fimage (\<lambda>(uid, (from, to), t). (uid, (from, to), (if (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2 then initialiseReg t r else t))) (T new) ;
+          newEFSM = \<lparr>T = struct_replace_all (struct_replace_all initialised t2 newT2) t1 newT1, F = F new\<rparr>
           in 
           resolve_nondeterminism [] (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
      else

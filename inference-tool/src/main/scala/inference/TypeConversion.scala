@@ -4,13 +4,11 @@ import sys.process._
 import scala.io.Source
 
 import isabellesal._
-import Type_Inference._
 
 object Types {
   type Event = (String, (List[Value.value], List[Option[Value.value]]))
   type Transition = Transition.transition_ext[Unit]
   type TransitionMatrix = FSet.fset[((Nat.nat, Nat.nat), Transition)]
-  type IEFSM = FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition))]
 }
 
 object TypeConversion {
@@ -133,9 +131,9 @@ object TypeConversion {
         "_" + System.currentTimeMillis, move._2))
   }
 
-  def efsmToSALTranslator(e: Types.TransitionMatrix, f: String) = {
+  def efsmToSALTranslator(e: EFSM.efsm_ext[Unit], f: String) = {
     Translator.clearEverything()
-    isabellesal.EFSM.newOneFrom("MichaelsEFSM", FSet.sorted_list_of_fset(e).map(toMichaelsMove): _*)
+    isabellesal.EFSM.newOneFrom("MichaelsEFSM", FSet.sorted_list_of_fset(EFSM.T(e)).map(toMichaelsMove): _*)
     new Translator().writeSALandDOT(Paths.get("salfiles"), f);
     s"mv salfiles/${f}.dot ${Config.config.dotfiles}/".!
   }
@@ -149,13 +147,13 @@ object TypeConversion {
     case Nat.Nata(n) => s"State__${n}"
   }
 
-  def doubleEFSMToSALTranslator(e1: Types.TransitionMatrix, e1Name: String, e2: Types.TransitionMatrix, e2Name: String, f: String) = {
+  def doubleEFSMToSALTranslator(e1: EFSM.efsm_ext[Unit], e1Name: String, e2: EFSM.efsm_ext[Unit], e2Name: String, f: String) = {
     if (e1Name == e2Name) {
       throw new IllegalArgumentException("Models must have unique names");
     }
     Translator.clearEverything()
-    isabellesal.EFSM.newOneFrom(e1Name, FSet.sorted_list_of_fset(e1).map(toMichaelsMove): _*)
-    isabellesal.EFSM.newOneFrom(e2Name, FSet.sorted_list_of_fset(e2).map(toMichaelsMove): _*)
+    isabellesal.EFSM.newOneFrom(e1Name, FSet.sorted_list_of_fset(EFSM.T(e1)).map(toMichaelsMove): _*)
+    isabellesal.EFSM.newOneFrom(e2Name, FSet.sorted_list_of_fset(EFSM.T(e2)).map(toMichaelsMove): _*)
     new Translator().writeSALandDOT(Paths.get("salfiles"), f);
     s"rm salfiles/${f}.dot".!
   }

@@ -4,7 +4,7 @@ theory Step_176
 
 begin
 
-definition step_176 :: transition_matrix where
+definition step_176 :: efsm where
   "step_176 = {|
   ((0, 1), \<lparr>Label = STR ''open'', Arity = 2, Guard = [Eq (V (I 1)) (L (value.Str STR ''Account@6792f2c6'')), Eq (V (I 2)) (L (value.Str STR ''''))], Outputs = [L (value.Str STR ''false'')], Updates = []\<rparr>),
   ((0, 2), \<lparr>Label = STR ''open'', Arity = 2, Guard = [In (I 1) [value.Str STR ''Account@24d73c51'', value.Str STR ''Account@3b95fce9'', value.Str STR ''Account@322f84fd'', value.Str STR ''Account@f26cd76''], Eq (V (I 2)) (L (value.Str STR ''''))], Outputs = [L (value.Str STR ''false'')], Updates = []\<rparr>),

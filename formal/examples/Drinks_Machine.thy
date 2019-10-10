@@ -75,7 +75,7 @@ lemma label_vend_fail: "Label vend_fail = STR ''vend''"
 lemma arity_vend_fail: "Arity vend_fail = 0"
   by (simp add: vend_fail_def)
 
-definition drinks :: "transition_matrix" where
+definition drinks :: "efsm" where
 "drinks \<equiv> {|
           ((0,1), select),    \<comment> \<open> If we want to go from state 1 to state 2 then select will do that \<close>
           ((1,1), coin),
@@ -117,57 +117,57 @@ lemma possible_steps_2_vend: "\<exists>n. r $ 2 = Some (Num n) \<and> n \<ge> 10
   apply safe
   by (simp_all add: transitions apply_guards_def value_gt_def join_ir_def)
 
-lemma accepts_from_2: "accepts drinks 1 (<>(2 := Num 100, 1 := d)) [(STR ''vend'', [])]"
-  apply (rule accepts.step)
-  by (simp add: possible_steps_2_vend coin_def join_ir_def input2state_def value_plus_def accepts.base)
+lemma recognises_from_2: "recognises drinks 1 (<>(2 := Num 100, 1 := d)) [(STR ''vend'', [])]"
+  apply (rule recognises.step)
+  by (simp add: possible_steps_2_vend coin_def join_ir_def input2state_def value_plus_def recognises.base)
 
 lemma regsimp: "<>(2 := n, 1 := d, 2 := n', 1 := d) = <>(2 := n', 1 := d)"
   by (metis finfun_update_twice finfun_update_twist)
 
-lemma accepts_from_1a: "accepts drinks 1 (<>(2 := Num 50, 1 := d)) [(STR ''coin'', [Num 50]), (STR ''vend'', [])]"
-  apply (rule accepts.step)
+lemma recognises_from_1a: "recognises drinks 1 (<>(2 := Num 50, 1 := d)) [(STR ''coin'', [Num 50]), (STR ''vend'', [])]"
+  apply (rule recognises.step)
   apply (simp add: possible_steps_1_coin coin_def join_ir_def input2state_def value_plus_def regsimp)
-  by (simp add: accepts_from_2)
+  by (simp add: recognises_from_2)
 
-lemma accepts_from_1: "accepts drinks 1 (<>(2 := Num 0, 1 := d))
+lemma recognises_from_1: "recognises drinks 1 (<>(2 := Num 0, 1 := d))
      [(STR ''coin'', [Num 50]), (STR ''coin'', [Num 50]), (STR ''vend'', [])]"
-  apply (rule accepts.step)
+  apply (rule recognises.step)
   apply (simp add: possible_steps_1_coin coin_def join_ir_def input2state_def value_plus_def regsimp)
-  by (simp add: accepts_from_1a)
+  by (simp add: recognises_from_1a)
 
 lemma purchase_coke: "observe_trace drinks 0 <> [(STR ''select'', [Str ''coke'']), (STR ''coin'', [Num 50]), (STR ''coin'', [Num 50]), (STR ''vend'', [])] =
                        [[], [Some (Num 50)], [Some (Num 100)], [Some (Str ''coke'')]]"
   apply (rule observe_trace_possible_step)
      apply (simp add: possible_steps_0)
-     apply (simp add: select_def join_ir_def input2state_def accepts_from_1)
+     apply (simp add: select_def join_ir_def input2state_def recognises_from_1)
     apply (simp add: select_def)
    apply (simp add: select_def join_ir_def input2state_def)
   apply (rule observe_trace_possible_step)
       apply (simp add: possible_steps_1_coin)
-     apply (simp add: coin_def value_plus_def join_ir_def input2state_def regsimp accepts_from_1a)
+     apply (simp add: coin_def value_plus_def join_ir_def input2state_def regsimp recognises_from_1a)
     apply (simp add: coin_def value_plus_def join_ir_def input2state_def regsimp apply_outputs_def)
    apply (simp add: coin_def value_plus_def join_ir_def input2state_def regsimp)
   apply (rule observe_trace_possible_step)
       apply (simp add: possible_steps_1_coin)
-     apply (simp add: coin_def value_plus_def join_ir_def input2state_def regsimp accepts_from_2)
+     apply (simp add: coin_def value_plus_def join_ir_def input2state_def regsimp recognises_from_2)
     apply (simp add: coin_def value_plus_def join_ir_def input2state_def regsimp apply_outputs_def)
    apply (simp add: coin_def value_plus_def join_ir_def input2state_def regsimp)
   apply (rule observe_trace_possible_step)
       apply (simp add: possible_steps_2_vend)
-     apply (simp add: accepts.base)
+     apply (simp add: recognises.base)
     apply (simp add: vend_def join_ir_def apply_outputs_def)
    apply simp
   by simp
 
-lemma rejects_input: "l \<noteq> STR ''coin'' \<Longrightarrow> l \<noteq> STR ''vend'' \<Longrightarrow> \<not> accepts drinks 1 d' [(l, i)]"
+lemma rejects_input: "l \<noteq> STR ''coin'' \<Longrightarrow> l \<noteq> STR ''vend'' \<Longrightarrow> \<not> recognises drinks 1 d' [(l, i)]"
   apply (rule trace_reject_no_possible_steps)
   apply (simp add: possible_steps_empty drinks_def)
   using label_coin label_vend label_vend_fail by blast
 
-lemma rejects_accepts_prefix:
+lemma rejects_recognises_prefix:
   "l \<noteq> STR ''coin'' \<Longrightarrow>
    l \<noteq> STR ''vend'' \<Longrightarrow>
-   \<not> (accepts_trace drinks [(STR ''select'', [Str ''coke'']), (l, i)])"
+   \<not> (recognises_trace drinks [(STR ''select'', [Str ''coke'']), (l, i)])"
   apply (rule trace_reject_later)
   apply (simp add: possible_steps_0 select_def join_ir_def input2state_def)
   using rejects_input by blast
@@ -233,16 +233,16 @@ proof
     by simp
 qed
 
-lemma drinks_rejects_future: "t \<noteq> [] \<Longrightarrow> \<not>accepts drinks 2 d t"
+lemma drinks_rejects_future: "t \<noteq> [] \<Longrightarrow> \<not>recognises drinks 2 d t"
   apply safe
-  apply (rule accepts.cases)
+  apply (rule recognises.cases)
     apply simp
    apply simp
   by (simp add: drinks_end)
 
-lemma drinks_1_rejects_trace: "\<not> (aa = STR ''vend'' \<and> b = []) \<Longrightarrow> \<not> (aa = STR ''coin'' \<and> length b = 1) \<Longrightarrow> \<not>accepts drinks 1 r ((aa, b) # t)"
+lemma drinks_1_rejects_trace: "\<not> (aa = STR ''vend'' \<and> b = []) \<Longrightarrow> \<not> (aa = STR ''coin'' \<and> length b = 1) \<Longrightarrow> \<not>recognises drinks 1 r ((aa, b) # t)"
   apply clarify
-  apply (rule accepts.cases)
+  apply (rule recognises.cases)
     apply simp
    apply simp
   apply clarify
@@ -253,11 +253,11 @@ lemma rejects_state_step: "s > 1 \<Longrightarrow> step drinks s r l i = None"
   apply (rule no_possible_steps_1)
   by (simp add: possible_steps_empty drinks_def)
 
-lemma invalid_other_states: "s > 1 \<Longrightarrow> \<not> accepts drinks s r ((aa, b) # t)"
+lemma invalid_other_states: "s > 1 \<Longrightarrow> \<not> recognises drinks s r ((aa, b) # t)"
   apply clarify
-  apply (rule accepts.cases)
+  apply (rule recognises.cases)
     apply simp
    apply simp
   apply clarify
-  using rejects_state_step accepts_cons_step by blast
+  using rejects_state_step recognises_cons_step by blast
 end

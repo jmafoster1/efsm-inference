@@ -116,23 +116,23 @@ definition latter2dot :: "transition \<Rightarrow> String.literal" where
 definition transition2dot :: "transition \<Rightarrow> String.literal" where
   "transition2dot t = (Label t)+STR '':''+(show_nat (Arity t))+(guards2dot (Guard t))+(latter2dot t)"
 
-definition efsm2dot :: "transition_matrix \<Rightarrow> String.literal" where
+definition efsm2dot :: "efsm \<Rightarrow> String.literal" where
   "efsm2dot e = STR ''digraph EFSM{''+newline+
                 STR ''  graph [rankdir=''+quote+(STR ''LR'')+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
                 STR ''  node [color=''+quote+(STR ''black'')+quote+STR '', fillcolor=''+quote+(STR ''white'')+quote+STR '', shape=''+quote+(STR ''circle'')+quote+STR '', style=''+quote+(STR ''filled'')+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
                 STR ''  edge [fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+newline+
                   STR ''  s0[fillcolor=''+quote+STR ''gray''+quote+STR '', label=<s<sub>0</sub>>];''+newline+
-                  (join (map (\<lambda>s. STR ''  s''+show_nat s+STR ''[label=<s<sub>'' +show_nat s+ STR ''</sub>>];'') (sorted_list_of_fset (EFSM.S e - {|0|}))) (newline))+newline+newline+
-                  (join ((map (\<lambda>((from, to), t). STR ''  s''+(show_nat from)+STR ''->s''+(show_nat to)+STR ''[label=<<i>''+(transition2dot t)+STR ''</i>>];'') (sorted_list_of_fset e))) newline)+newline+
+                  (join (map (\<lambda>s. STR ''  s''+show_nat s+STR ''[label=<s<sub>'' +show_nat s+ STR ''</sub>>'' + (if s |\<in>| efsm.F e then STR '', shape=doublecircle'' else STR '''') + STR ''];'') (sorted_list_of_fset (EFSM.S e - {|0|}))) (newline))+newline+newline+
+                  (join ((map (\<lambda>((from, to), t). STR ''  s''+(show_nat from)+STR ''->s''+(show_nat to)+STR ''[label=<<i>''+(transition2dot t)+STR ''</i>>];'') (sorted_list_of_fset (efsm.T e)))) newline)+newline+
                 STR ''}''"
 
-definition iefsm2dot :: "iEFSM \<Rightarrow> String.literal" where
+definition iefsm2dot :: "i_efsm \<Rightarrow> String.literal" where
   "iefsm2dot e = STR ''digraph EFSM{''+newline+
                  STR ''  graph [rankdir=''+quote+(STR ''LR'')+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
                  STR ''  node [color=''+quote+(STR ''black'')+quote+STR '', fillcolor=''+quote+(STR ''white'')+quote+STR '', shape=''+quote+(STR ''circle'')+quote+STR '', style=''+quote+(STR ''filled'')+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
                  STR ''  edge [fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+newline+
-                  (join (map (\<lambda>s. STR ''  s''+show_nat s+STR ''[label=<s<sub>'' +show_nat s+ STR ''</sub>>];'') (sorted_list_of_fset (S e - {|0|}))) (newline))+newline+newline+
-                  (join ((map (\<lambda>(uid, (from, to), t). STR ''  s''+(show_nat from)+STR ''->s''+(show_nat to)+STR ''[label=<<i> (''+show_nat uid+STR '')''+(transition2dot t)+STR ''</i>>];'') (sorted_list_of_fset e))) newline)+newline+
+                  (join (map (\<lambda>s. STR ''  s''+show_nat s+STR ''[label=<s<sub>'' +show_nat s+ STR ''</sub>>'' + (if s |\<in>| F e then STR '', shape=doublecircle'' else STR '''') + STR ''];'') (sorted_list_of_fset (S e - {|0|}))) (newline))+newline+newline+
+                  (join ((map (\<lambda>(uid, (from, to), t). STR ''  s''+(show_nat from)+STR ''->s''+(show_nat to)+STR ''[label=<<i> (''+show_nat uid+STR '')''+(transition2dot t)+STR ''</i>>];'') (sorted_list_of_fset (T e)))) newline)+newline+
                 STR ''}''"
 
 abbreviation newline_str :: string where
@@ -140,12 +140,4 @@ abbreviation newline_str :: string where
 
 abbreviation quote_str :: string where
   "quote_str \<equiv> ''0x22''"
-
-definition iefsm2dot_str :: "iEFSM \<Rightarrow> string" where
-  "iefsm2dot_str e = ''digraph EFSM{''@newline_str@
-                 ''  graph [rankdir=''@quote_str@''LR''@quote_str@'', fontname=''@quote_str@''Latin Modern Math''@quote_str@''];''@newline_str@
-                 ''  node [color=''@quote_str@''black''@quote_str@'', fillcolor=''@quote_str@''white''@quote_str@'', shape=''@quote_str@''circle''@quote_str@'', style=''@quote_str@''filled''@quote_str@'', fontname=''@quote_str@''Latin Modern Math''@quote_str@''];''@newline_str@
-                 ''  edge [fontname=''@quote_str@''Latin Modern Math''@quote_str@''];''@newline_str@
-                  (String.explode (join (sorted_list_of_fset (fimage (\<lambda>(uid, (from, to), t).STR ''  ''+(show_nat from)+STR ''->''+(show_nat to)+STR ''[label=<(''+(show_nat uid)+STR '') ''+(transition2dot t)+STR ''>]'') e)) newline)@newline_str)@
-                ''}''"
 end

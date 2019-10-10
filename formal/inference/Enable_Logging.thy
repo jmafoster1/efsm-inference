@@ -2,7 +2,7 @@ theory Enable_Logging
 imports Inference EFSM_Dot
 begin
 
-definition writeiDot :: "iEFSM \<Rightarrow> String.literal \<Rightarrow> unit" where
+definition writeiDot :: "i_efsm \<Rightarrow> String.literal \<Rightarrow> unit" where
   "writeiDot i s = ()"
 
 definition "timestamp = STR ''''"

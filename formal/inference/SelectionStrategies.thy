@@ -20,10 +20,6 @@ definition naive_score :: strategy where
 definition naive_score_eq :: strategy where
   "naive_score_eq t1ID t2ID e = bool2nat ((get_by_id e t1ID) = (get_by_id e t2ID))"
 
-(* One point if one subsumes the other *)
-definition naive_score_subsumption :: "strategy" where
-  "naive_score_subsumption t1ID t2ID e = (let t1 = e|t1ID|; t2 = e|t2ID|; s = origin t1ID e in bool2nat (directly_subsumes e e s s t1 t2) + bool2nat (directly_subsumes e e s s t2 t1))"
-
 (* One point each for equal label, arity, and outputs *)
 definition naive_score_outputs :: strategy where
   "naive_score_outputs t1ID t2ID e = (let x = e|t1ID|; y = e|t2ID| in bool2nat (Label x = Label y) + bool2nat (Arity x = Arity y) + bool2nat (Outputs x = Outputs y))"

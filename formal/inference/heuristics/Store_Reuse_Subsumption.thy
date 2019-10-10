@@ -173,8 +173,8 @@ lemma lists_neq_if: "\<exists>i. l ! i \<noteq> l' ! i \<Longrightarrow> l \<not
 lemma generalise_output_directly_subsumes_original: 
       "stored_reused t' t = Some (r, p) \<Longrightarrow>
        nth (Outputs t) p = Eq (L v) \<Longrightarrow>
-       (\<forall>p. accepts_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
-            accepts_trace (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
+       (\<forall>p. recognises_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
+            recognises_trace (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
        (\<exists>c. anterior_context (tm e2) p = Some c \<and> c $ r = Some v)) \<Longrightarrow>
        directly_subsumes e1 e2 s s' t' t "
   apply (simp add: directly_subsumes_def)
@@ -186,8 +186,8 @@ lemma generalise_output_directly_subsumes_original:
   by (meson \<open>\<And>c. \<lbrakk>is_generalised_output_of t' t r p; Outputs t ! p = opred.Eq (L v); c $ r = Some v\<rbrakk> \<Longrightarrow> subsumes t' c t\<close> \<open>stored_reused t' t = Some (r, p) \<Longrightarrow> is_generalised_output_of t' t r p\<close> finfun_const_apply)
 
 definition "generalise_output_context_check v r s\<^sub>1 s\<^sub>2 e\<^sub>1 e\<^sub>2 = 
-(\<forall>t. accepts_trace (tm e\<^sub>1) t \<and> gets_us_to s\<^sub>1 (tm e\<^sub>1) 0 <> t \<longrightarrow>
-     accepts_trace (tm e\<^sub>2) t \<and> gets_us_to s\<^sub>2 (tm e\<^sub>2) 0 <>  t \<longrightarrow>
+(\<forall>t. recognises_trace (tm e\<^sub>1) t \<and> gets_us_to s\<^sub>1 (tm e\<^sub>1) 0 <> t \<longrightarrow>
+     recognises_trace (tm e\<^sub>2) t \<and> gets_us_to s\<^sub>2 (tm e\<^sub>2) 0 <>  t \<longrightarrow>
  (\<exists>c. anterior_context (tm e\<^sub>2) t = Some c \<and> c $ r = Some v))"
 
 lemma generalise_output_context_check_directly_subsumes_original: 
@@ -197,7 +197,7 @@ lemma generalise_output_context_check_directly_subsumes_original:
        directly_subsumes e1 e2 s s' t' t "
   by (simp add: generalise_output_context_check_def generalise_output_directly_subsumes_original)
 
-definition generalise_output_direct_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
+definition generalise_output_direct_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> i_efsm \<Rightarrow> i_efsm \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "generalise_output_direct_subsumption t' t e e' s s' = (case stored_reused t' t of
     None \<Rightarrow> False |
     Some (r, p) \<Rightarrow> 
@@ -236,7 +236,7 @@ primrec input_stored_in_reg_aux :: "transition \<Rightarrow> transition \<Righta
                                             ) "
 
 (* t' is the generalised transition *)
-definition input_stored_in_reg :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> (nat \<times> nat) option" where
+definition input_stored_in_reg :: "transition \<Rightarrow> transition \<Rightarrow> i_efsm \<Rightarrow> (nat \<times> nat) option" where
   "input_stored_in_reg t' t e = (
     case input_stored_in_reg_aux t' t (total_max_reg e) (max (Arity t) (Arity t')) of
       None \<Rightarrow> None |
@@ -246,17 +246,18 @@ definition input_stored_in_reg :: "transition \<Rightarrow> transition \<Rightar
         else None
   )"
 
-definition initially_undefined_context_check :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "initially_undefined_context_check e r s = (\<forall>t. accepts_trace (tm e) t \<and> gets_us_to s (tm e) 0 <> t \<longrightarrow> (\<exists>a. (anterior_context (tm e) t) = Some a \<and> a $ r = None))"
+definition initially_undefined_context_check :: "i_efsm \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
+  "initially_undefined_context_check e r s = (\<forall>t. recognises_trace (tm e) t \<and> gets_us_to s (tm e) 0 <> t \<longrightarrow> (\<exists>a. (anterior_context (tm e) t) = Some a \<and> a $ r = None))"
 
-lemma no_incoming_to_zero: "\<forall>(id, (from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
-       (aaa, ba) |\<in>| possible_steps (tm e) s d l i p \<Longrightarrow>
+lemma no_incoming_to_zero: "\<forall>(id, (from, to), t) |\<in>| (T e). 0 < to \<Longrightarrow>
+       (aaa, ba) |\<in>| possible_steps (efsm.T (tm e)) s d l i p \<Longrightarrow>
        aaa \<noteq> 0"
-  using in_possible_steps in_tm
-  by fast
+  using in_possible_steps[of aaa ba "efsm.T (tm e)" s d l i p]
+        in_tm
+  by blast
 
 lemma no_return_to_zero:
-  "\<forall>(id, (from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
+  "\<forall>(id, (from, to), t) |\<in>| T e. 0 < to \<Longrightarrow>
    \<forall>r n. \<not> gets_us_to 0 (tm e) (Suc n) r t"
 proof(induct t)
   case Nil
@@ -280,8 +281,8 @@ next
 qed
 
 lemma no_accepting_return_to_zero:
-  "\<forall>(id, (from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
-   accepts_trace (tm e) (a#t) \<Longrightarrow>
+  "\<forall>(id, (from, to), t) |\<in>| T e. to \<noteq> 0 \<Longrightarrow>
+   recognises_trace (tm e) (a#t) \<Longrightarrow>
    \<not>gets_us_to 0 (tm e) 0 <> (a#t)"
   apply clarify
   apply (rule gets_us_to.cases)
@@ -292,11 +293,11 @@ lemma no_accepting_return_to_zero:
    apply (simp add: no_return_to_zero)
   apply simp
   apply clarify
-  using accepts_cons_step by blast
+  using recognises_cons_step by blast
 
 lemma no_return_to_zero_must_be_empty:
-  "\<forall>(id, (from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
-   accepts_trace (tm e) t \<and> gets_us_to 0 (tm e) 0 <> t \<Longrightarrow>
+  "\<forall>(id, (from, to), t) |\<in>| T e. to \<noteq> 0 \<Longrightarrow>
+   recognises_trace (tm e) t \<and> gets_us_to 0 (tm e) 0 <> t \<Longrightarrow>
    t = []"
 proof(induct t)
 case Nil
@@ -306,19 +307,22 @@ next
 case (Cons a t)
   then show ?case
     apply simp
-    apply (rule accepts.cases)
+    apply (rule recognises.cases)
       apply auto[1]
      apply simp
     using no_accepting_return_to_zero by auto
 qed
 
-lemma anterior_context_empty: "\<forall>(id, (from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
-           accepts_trace (tm e) t \<Longrightarrow> gets_us_to 0 (tm e) 0 <> t \<Longrightarrow> anterior_context (tm e) t = Some <>"
+lemma anterior_context_empty:
+  "\<forall>(id, (from, to), t) |\<in>| T e. to \<noteq> 0 \<Longrightarrow>
+   recognises_trace (tm e) t \<Longrightarrow> gets_us_to 0 (tm e) 0 <> t \<Longrightarrow> anterior_context (tm e) t = Some <>"
   using no_return_to_zero_must_be_empty[of e]
         anterior_context_empty
   by auto
 
-lemma no_incoming_to_initial_gives_empty_reg: "\<forall>(id, (from, to), t) |\<in>| e. to \<noteq> 0 \<Longrightarrow> initially_undefined_context_check e r 0"
+lemma no_incoming_to_initial_gives_empty_reg:
+  "\<forall>(id, (from, to), t) |\<in>| T e. to \<noteq> 0 \<Longrightarrow>
+   initially_undefined_context_check e r 0"
   apply (simp only: initially_undefined_context_check_def)
   apply clarify
   apply standard
@@ -391,7 +395,7 @@ lemma generalised_directly_subsumes_original:
   using is_generalisation_of_subsumes_original finfun_const_apply
   by (metis option.inject)
 
-definition drop_guard_add_update_direct_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> bool" where
+definition drop_guard_add_update_direct_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> i_efsm \<Rightarrow> nat \<Rightarrow> bool" where
   "drop_guard_add_update_direct_subsumption t' t e s' = (
     case input_stored_in_reg t' t e of
       None \<Rightarrow> False |
@@ -584,20 +588,20 @@ lemma input_stored_in_reg_updates_reg: "input_stored_in_reg t2 t1 a = Some (i, r
   by (simp add: is_generalisation_of_def remove_guard_add_update_def)
 
 definition "possibly_not_value_ctx v r t\<^sub>1 s\<^sub>2 e\<^sub>2 s\<^sub>1 e\<^sub>1 =
-  (\<exists>p. accepts_trace (tm e\<^sub>1) p \<and> gets_us_to s\<^sub>1 (tm e\<^sub>1) 0 <>  p \<and>
-       accepts_trace (tm e\<^sub>2) p \<and> gets_us_to s\<^sub>2 (tm e\<^sub>2) 0 <> p \<and>
+  (\<exists>p. recognises_trace (tm e\<^sub>1) p \<and> gets_us_to s\<^sub>1 (tm e\<^sub>1) 0 <>  p \<and>
+       recognises_trace (tm e\<^sub>2) p \<and> gets_us_to s\<^sub>2 (tm e\<^sub>2) 0 <> p \<and>
        (case anterior_context (tm e\<^sub>2) p of None \<Rightarrow> False | Some c \<Rightarrow>
        (\<exists>i. can_take_transition t\<^sub>1 i c) \<and>
        c $ r \<noteq> Some v)
   )"
 
-definition "accepts_and_gets_us_to_both a b s s' = (
-  \<exists>p. accepts_trace (tm a) p \<and>
+definition "recognises_and_gets_us_to_both a b s s' = (
+  \<exists>p. recognises_trace (tm a) p \<and>
       gets_us_to s (tm a) 0 <> p \<and>
-      accepts_trace (tm b) p \<and>
+      recognises_trace (tm b) p \<and>
       gets_us_to s' (tm b) 0 <> p)"
 
-definition updates_subset :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> bool" where
+definition updates_subset :: "transition \<Rightarrow> transition \<Rightarrow> i_efsm \<Rightarrow> bool" where
   "updates_subset t t' e = (
      case input_stored_in_reg t' t e of None \<Rightarrow> False | Some (i, r) \<Rightarrow>
      Arity t' = Arity t \<and>
@@ -614,7 +618,7 @@ definition "drop_update_add_guard_direct_subsumption a b s s' t1 t2 =
   (case input_stored_in_reg t2 t1 a of
    None \<Rightarrow> False |
    Some (i, r) \<Rightarrow>
-     accepts_and_gets_us_to_both a b s s' \<and>
+     recognises_and_gets_us_to_both a b s s' \<and>
      initially_undefined_context_check b r s' \<and>
      updates_subset t1 t2 a
   )"
@@ -640,7 +644,7 @@ lemma drop_update_add_guard_direct_subsumption:
   apply (simp add: directly_subsumes_def)
   apply (case_tac aa)
   apply (rule disjI1)
-  apply (simp add: accepts_and_gets_us_to_both_def)
+  apply (simp add: recognises_and_gets_us_to_both_def)
   apply clarify
   apply (rule_tac x=p in exI)
   apply (simp add: initially_undefined_context_check_def)

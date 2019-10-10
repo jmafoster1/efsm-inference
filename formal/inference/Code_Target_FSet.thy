@@ -22,6 +22,17 @@ lemma fminus_fset_filter [code]: "fset_of_list A -  xs = fset_of_list (remdups (
 lemma sup_fset_fold [code]: "(fset_of_list f1) |\<union>| (fset_of_list f2) = fset_of_list (remdups (f1@f2))"
   by simp
 
+lemma inf_fset_fold [code]: "(fset_of_list f1) |\<inter>| (fset_of_list f2) = fset_of_list (remdups [a. a \<leftarrow> f1, a \<in> set f2])"
+proof(induct f1 arbitrary: f2)
+  case Nil
+then show ?case
+  by simp
+next
+  case (Cons a f1)
+  then show ?case
+    by (simp add: fset_of_list_elem)
+qed
+
 lemma bot_fset [code]: "{||} = fset_of_list []"
   by simp
 

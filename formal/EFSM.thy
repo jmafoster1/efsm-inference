@@ -19,8 +19,12 @@ type_synonym outputs = "value option list"
 type_synonym event = "(label \<times> inputs)"
 type_synonym trace = "event list"
 type_synonym execution = "(label \<times> value list \<times> outputs) list"
+type_synonym log = "execution list" (* An execution represents a run of the software and has the form [(label, inputs, outputs)]*)
 type_synonym observation = "outputs list"
 type_synonym transition_matrix = "((cfstate \<times> cfstate) \<times> transition) fset"
+record efsm =
+  T :: transition_matrix
+  F :: "nat fset"
 
 definition Str :: "string \<Rightarrow> value" where
   "Str s \<equiv> value.Str (String.implode s)"
@@ -28,12 +32,16 @@ definition Str :: "string \<Rightarrow> value" where
 lemma str_not_num: "Str s \<noteq> Num x1"
   by (simp add: Str_def)
 
-definition S :: "transition_matrix \<Rightarrow> nat fset" where
-  "S m = (fimage (\<lambda>((s, s'), t). s) m) |\<union>| fimage (\<lambda>((s, s'), t). s') m"
+definition S :: "efsm \<Rightarrow> nat fset" where
+  "S m = (fimage (\<lambda>((s, s'), t). s) (T m)) |\<union>| fimage (\<lambda>((s, s'), t). s') (T m)"
 
-lemma "S e = (fst \<circ> fst) |`| e |\<union>| (snd \<circ> fst) |`| e"
-  apply (simp add: comp_def S_def)
-  by force
+fun maxS :: "efsm \<Rightarrow> nat" where
+  "maxS t = (
+    if (T t) = {||} then
+      0
+    else
+      fMax (S t)
+  )"
 
 definition choice :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "choice t t' = (\<exists> i r. apply_guards (Guard t) (join_ir i r) \<and> apply_guards (Guard t') (join_ir i r))"
@@ -136,48 +144,48 @@ definition random_member :: "'a fset \<Rightarrow> 'a option" where
 lemma random_member_singleton [simp]: "random_member {|a|} = Some a"
   by (simp add: random_member_def)
 
-inductive accepts :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
-  base: "accepts e s d []" |                                         
-  step: "\<exists>(s', T) |\<in>| possible_steps e s d l i p.
-         accepts e s' (apply_updates (Updates T) (join_ir i d) d) t \<Longrightarrow>
-         accepts e s d ((l, i, p)#t)"
+inductive recognises :: "efsm \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
+  base: "recognises e s d []" |                                         
+  step: "\<exists>(s', T) |\<in>| possible_steps (T e) s d l i p.
+         recognises e s' (apply_updates (Updates T) (join_ir i d) d) t \<Longrightarrow>
+         recognises e s d ((l, i, p)#t)"
 
-lemma accepts_step: "accepts e s d ((l, i, p)#t) = (\<exists>(s', T) |\<in>| possible_steps e s d l i p.
-         accepts e s' (apply_updates (Updates T) (join_ir i d) d) t)"
+lemma recognises_step: "recognises e s d ((l, i, p)#t) = (\<exists>(s', T) |\<in>| possible_steps (T e) s d l i p.
+         recognises e s' (apply_updates (Updates T) (join_ir i d) d) t)"
   apply standard
    defer
-   apply (simp add: accepts.step)
-  apply (rule accepts.cases)
+   apply (simp add: recognises.step)
+  apply (rule recognises.cases)
   by auto
 
-fun accepts_prim :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
-  "accepts_prim e s d [] = True" |
-  "accepts_prim e s d ((l, i, p)#t) = (
-    let poss_steps = possible_steps e s d l i p in
+fun recognises_prim :: "efsm \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
+  "recognises_prim e s d [] = True" |
+  "recognises_prim e s d ((l, i, p)#t) = (
+    let poss_steps = possible_steps (T e) s d l i p in
     if fis_singleton poss_steps then
       let (s', T) = fthe_elem poss_steps in
-      accepts_prim e s' (apply_updates (Updates T) (join_ir i d) d) t
+      recognises_prim e s' (apply_updates (Updates T) (join_ir i d) d) t
     else
-      (\<exists>(s', T) |\<in>| poss_steps. accepts_prim e s' (apply_updates (Updates T) (join_ir i d) d) t)
+      (\<exists>(s', T) |\<in>| poss_steps. recognises_prim e s' (apply_updates (Updates T) (join_ir i d) d) t)
   )"
 
-lemma accepts_prim: "\<forall>d s. accepts e s d t = accepts_prim e s d t"
+lemma recognises_prim: "\<forall>d s. recognises e s d t = recognises_prim e s d t"
 proof(induct t)
 case Nil
   then show ?case
-    by (simp add: accepts.base)
+    by (simp add: recognises.base)
 next
   case (Cons a t)
   then show ?case
     apply (cases a)
-    apply (simp add: accepts_step Let_def fis_singleton_alt)
+    apply (simp add: recognises_step Let_def fis_singleton_alt)
     by auto
 qed
 
-abbreviation "rejects e s d t \<equiv> \<not> accepts e s d t"
+abbreviation "rejects e s d t \<equiv> \<not> recognises e s d t"
 
-lemma accepts_must_be_possible_step: "accepts e s r (h # t) \<Longrightarrow> \<exists>aa ba. (aa, ba) |\<in>| possible_steps e s r (fst h) (fst (snd h)) (snd (snd h))"
-  using accepts_step by fastforce
+lemma recognises_must_be_possible_step: "recognises e s r (h # t) \<Longrightarrow> \<exists>aa ba. (aa, ba) |\<in>| possible_steps (T e) s r (fst h) (fst (snd h)) (snd (snd h))"
+  using recognises_step by fastforce
 
 definition step :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> outputs \<Rightarrow> (transition \<times> cfstate \<times> registers) option" where
   "step e s r l i p = (case random_member (possible_steps e s r l i p) of
@@ -206,29 +214,29 @@ primrec observe_all :: "transition_matrix \<Rightarrow> nat \<Rightarrow> regist
 definition state :: "(transition \<times> nat \<times> outputs \<times> datastate) \<Rightarrow> nat" where
   "state x \<equiv> fst (snd x)"
 
-lemma accepts_must_be_step: "accepts e s d (h#ts) \<Longrightarrow> \<exists>t s' d'. step e s d (fst h) (fst (snd h)) (snd (snd h)) = Some (t, s', d')"
-  using accepts_must_be_possible_step[of e s d h ts]
+lemma recognises_must_be_step: "recognises e s d (h#ts) \<Longrightarrow> \<exists>t s' d'. step (T e) s d (fst h) (fst (snd h)) (snd (snd h)) = Some (t, s', d')"
+  using recognises_must_be_possible_step[of e s d h ts]
   apply simp
   apply clarify
   apply (simp add: step_def random_member_def fmember_not_empty)
-  apply (case_tac "SOME x. x |\<in>| possible_steps e s d (fst h) (fst (snd h)) (snd (snd h))")
+  apply (case_tac "SOME x. x |\<in>| possible_steps (T e) s d (fst h) (fst (snd h)) (snd (snd h))")
   by simp
 
-lemma accepts_cons: "accepts e s d (h#t) = (\<exists>(s', T) |\<in>| possible_steps e s d (fst h) (fst (snd h)) (snd (snd h)). accepts e s' (apply_updates (Updates T) (join_ir (fst (snd h)) d) d) t)"
+lemma recognises_cons: "recognises e s d (h#t) = (\<exists>(s', T) |\<in>| possible_steps (T e) s d (fst h) (fst (snd h)) (snd (snd h)). recognises e s' (apply_updates (Updates T) (join_ir (fst (snd h)) d) d) t)"
   apply (cases h)
-  using accepts_step by auto
+  using recognises_step by auto
 
-lemma accepts_cons_step: "accepts e s r (h # t) \<Longrightarrow> step e s r (fst h) (fst (snd h)) (snd (snd h)) \<noteq>  None"
-  by (simp add: accepts_must_be_step)
+lemma recognises_cons_step: "recognises e s r (h # t) \<Longrightarrow> step (T e) s r (fst h) (fst (snd h)) (snd (snd h)) \<noteq>  None"
+  by (simp add: recognises_must_be_step)
 
-abbreviation accepts_trace :: "transition_matrix \<Rightarrow> execution \<Rightarrow> bool" where
-  "accepts_trace e t \<equiv> accepts e 0 <> t"
+abbreviation recognises_trace :: "efsm \<Rightarrow> execution \<Rightarrow> bool" where
+  "recognises_trace e t \<equiv> recognises e 0 <> t"
 
-lemma no_step_none: "step e s r aa ba op = None \<Longrightarrow> rejects e s r ((aa, ba, op) # p)"
-  using accepts_cons_step
+lemma no_step_none: "step (T e) s r aa ba op = None \<Longrightarrow> rejects e s r ((aa, ba, op) # p)"
+  using recognises_cons_step
   by fastforce
 
-lemma step_none_rejects: "step e s d (fst h) (fst (snd h)) (snd (snd h)) = None \<Longrightarrow> rejects e s d (h#t)"
+lemma step_none_rejects: "step (T e) s d (fst h) (fst (snd h)) (snd (snd h)) = None \<Longrightarrow> rejects e s d (h#t)"
   using no_step_none surjective_pairing by fastforce
 
 lemma possible_steps_not_empty_iff: 
@@ -239,19 +247,19 @@ lemma possible_steps_not_empty_iff:
    apply (simp add: random_member_def)
   by auto
 
-lemma trace_reject: "(possible_steps e s d a b p = {||} \<or> (\<forall>(s', T) |\<in>| possible_steps e s d a b p. rejects e s' (apply_updates (Updates T) (join_ir b d) d) t)) = (rejects e s d ((a, b, p)#t))"
+lemma trace_reject: "(possible_steps (T e) s d a b p = {||} \<or> (\<forall>(s', T) |\<in>| possible_steps (T e) s d a b p. rejects e s' (apply_updates (Updates T) (join_ir b d) d) t)) = (rejects e s d ((a, b, p)#t))"
   apply safe
-    apply (simp add: accepts_step)
-  using accepts_cons apply auto[1]
-  using accepts.step by blast
+    apply (simp add: recognises_step)
+  using recognises_cons apply auto[1]
+  using recognises.step by blast
 
-lemma trace_reject_no_possible_steps: "possible_steps e s d a b p = {||} \<Longrightarrow> rejects e s d ((a, b, p)#t)"
+lemma trace_reject_no_possible_steps: "possible_steps (T e) s d a b p = {||} \<Longrightarrow> rejects e s d ((a, b, p)#t)"
   using trace_reject by blast
 
-lemma trace_reject_later: "\<forall>(s', T) |\<in>| possible_steps e s d a b p. rejects e s' (apply_updates (Updates T) (join_ir b d) d) t \<Longrightarrow> rejects e s d ((a, b, p)#t)"
-  by (simp add: accepts_step case_prod_unfold)
+lemma trace_reject_later: "\<forall>(s', T) |\<in>| possible_steps (T e) s d a b p. rejects e s' (apply_updates (Updates T) (join_ir b d) d) t \<Longrightarrow> rejects e s d ((a, b, p)#t)"
+  by (simp add: recognises_step case_prod_unfold)
 
-lemma trace_reject_2: "(rejects e s d ((a, b, p)#t)) = (possible_steps e s d a b p = {||} \<or> (\<forall>(s', T) |\<in>| possible_steps e s d a b p. rejects e s' (apply_updates (Updates T) (join_ir b d) d) t))"
+lemma trace_reject_2: "(rejects e s d ((a, b, p)#t)) = (possible_steps (T e) s d a b p = {||} \<or> (\<forall>(s', T) |\<in>| possible_steps (T e) s d a b p. rejects e s' (apply_updates (Updates T) (join_ir b d) d) t))"
   using trace_reject by auto
 
 lemma rejects_prefix_all_s_d: "\<forall>s d. rejects e s d t \<longrightarrow> rejects e s d (t @ t')"
@@ -262,33 +270,33 @@ proof(induct t)
 next
   case (Cons a t)
   then show ?case
-    by (metis (mono_tags, lifting) accepts_cons append_Cons case_prod_unfold fBexE fBexI)
+    by (metis (mono_tags, lifting) recognises_cons append_Cons case_prod_unfold fBexE fBexI)
 qed
 
 lemma rejects_prefix: "rejects e s d t \<Longrightarrow> rejects e s d (t @ t')"
   by (simp add: rejects_prefix_all_s_d)
 
-lemma prefix_closure: "accepts e s d (t@t') \<Longrightarrow> accepts e s d t"
+lemma prefix_closure: "recognises e s d (t@t') \<Longrightarrow> recognises e s d t"
   using rejects_prefix_all_s_d by blast
 
-lemma accepts_head: "accepts e s d (h#t) \<Longrightarrow> accepts e s d [h]"
-  using accepts_cons accepts.base by auto
+lemma recognises_head: "recognises e s d (h#t) \<Longrightarrow> recognises e s d [h]"
+  using recognises_cons recognises.base by auto
 
-inductive gets_us_to :: "nat \<Rightarrow> transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
+inductive gets_us_to :: "nat \<Rightarrow> efsm \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
   base: "s = target \<Longrightarrow> gets_us_to target _ s _ []" |
-  step_some: "\<exists>(s', T) |\<in>| possible_steps e s d (fst h) (fst (snd h)) (snd (snd h)). gets_us_to target e s' (apply_updates (Updates T) (join_ir i r) r) t \<Longrightarrow> gets_us_to target e s r (h#t)" |
-  step_none: "step e s r (fst h) (fst (snd h)) (snd (snd h)) = None \<Longrightarrow> s = target \<Longrightarrow> gets_us_to target e s r (h#t)"
+  step_some: "\<exists>(s', T) |\<in>| possible_steps (T e) s d (fst h) (fst (snd h)) (snd (snd h)). gets_us_to target e s' (apply_updates (Updates T) (join_ir i r) r) t \<Longrightarrow> gets_us_to target e s r (h#t)" |
+  step_none: "step (T e) s r (fst h) (fst (snd h)) (snd (snd h)) = None \<Longrightarrow> s = target \<Longrightarrow> gets_us_to target e s r (h#t)"
 
 lemma no_further_steps: "s \<noteq> s' \<Longrightarrow> \<not> gets_us_to s e s' r []"
   apply safe
   apply (rule gets_us_to.cases)
   by auto
 
-primrec accepting_sequence :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (transition \<times> cfstate \<times> registers) list \<Rightarrow> (transition \<times> cfstate \<times> registers) list option" where
+primrec accepting_sequence :: "efsm \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (transition \<times> cfstate \<times> registers) list \<Rightarrow> (transition \<times> cfstate \<times> registers) list option" where
   "accepting_sequence _ _ r [] obs = Some (rev obs)" |
   "accepting_sequence e s r (a#t) obs = (let
-    poss = possible_steps e s r (fst a) (fst (snd a)) (snd (snd a));
-    accepting = ffilter (\<lambda>(s', T). accepts e s' (apply_updates (Updates T) (join_ir (fst (snd a)) r) r) t) poss  in
+    poss = possible_steps (T e) s r (fst a) (fst (snd a)) (snd (snd a));
+    accepting = ffilter (\<lambda>(s', tr). recognises e s' (apply_updates (Updates tr) (join_ir (fst (snd a)) r) r) t) poss  in
     if accepting = {||} then
       None
     else let

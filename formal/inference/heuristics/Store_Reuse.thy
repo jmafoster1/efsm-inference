@@ -54,7 +54,7 @@ definition get_by_id_intratrace_matches :: "execution \<Rightarrow> (index \<tim
   To detect all intertrace matches, walk the trace in the current machine and replace eventNo with
   the corresponding transition's uid. If the uids match then there's an intertrace match.
 *)
-definition i_possible_steps :: "iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> nat \<times> transition) fset" where
+definition i_possible_steps :: "i_efsm \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> nat \<times> transition) fset" where
   "i_possible_steps e s r l i = fimage (\<lambda>(uid, (origin, dest), t). (uid, dest, t))
   (ffilter (\<lambda>(uid, (origin, dest::nat), t::transition).
       origin = s
@@ -62,17 +62,17 @@ definition i_possible_steps :: "iEFSM \<Rightarrow> nat \<Rightarrow> registers 
       \<and> (length i) = (Arity t)
       \<and> apply_guards (Guard t) (join_ir i r)
      ) 
-  e)"
+  (T e))"
 
 
 (*
-  If the EFSM is nondeterministic, we need to make sure it chooses the right path so that it accepts
+  If the EFSM is nondeterministic, we need to make sure it chooses the right path so that it recognises
   the input trace.
 *)
-definition i_step :: "execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> nat \<times> registers) option" where
+definition i_step :: "execution \<Rightarrow> i_efsm \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> nat \<times> registers) option" where
   "i_step tr e s r l i = (let 
     poss_steps = (i_possible_steps e s r l i);
-    possibilities = ffilter (\<lambda>(u, s', t). accepts (tm e) s' (apply_updates (Updates t) (join_ir i r) r) tr) poss_steps in
+    possibilities = ffilter (\<lambda>(u, s', t). recognises (tm e) s' (apply_updates (Updates t) (join_ir i r) r) tr) poss_steps in
     case random_member possibilities of
       None \<Rightarrow> None |
       Some (u, s', t) \<Rightarrow>
@@ -81,23 +81,23 @@ definition i_step :: "execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Righ
 
 type_synonym match = "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> ((transition \<times> nat) \<times> ioTag \<times> nat))"
 
-primrec (nonexhaustive) walk_up_to :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (transition \<times> nat)" where
+primrec (nonexhaustive) walk_up_to :: "nat \<Rightarrow> i_efsm \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (transition \<times> nat)" where
   "walk_up_to n e s r (h#t) =
     (case (i_step t e s r (fst h) (fst (snd h))) of
       (Some (transition, s', uid, updated)) \<Rightarrow> (case n of 0 \<Rightarrow> (transition, uid) | Suc m \<Rightarrow> walk_up_to m e s' updated t)
     )"
 
-definition find_intertrace_matches_aux :: "(index \<times> index) fset \<Rightarrow> iEFSM \<Rightarrow> execution \<Rightarrow> match fset" where
+definition find_intertrace_matches_aux :: "(index \<times> index) fset \<Rightarrow> i_efsm \<Rightarrow> execution \<Rightarrow> match fset" where
   "find_intertrace_matches_aux intras e t = fimage (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). (((walk_up_to e1 e 0 <> t), io1, inx1), ((walk_up_to e2 e 0 <> t), io2, inx2))) intras" 
 
-definition find_intertrace_matches :: "log \<Rightarrow> iEFSM \<Rightarrow> match list" where
+definition find_intertrace_matches :: "log \<Rightarrow> i_efsm \<Rightarrow> match list" where
   "find_intertrace_matches l e = filter (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). e1 \<noteq> e2) (concat (map (\<lambda>(t, m). sorted_list_of_fset (find_intertrace_matches_aux m e t)) (zip l (map get_by_id_intratrace_matches l))))"
 
-definition max_input :: "iEFSM \<Rightarrow> nat option" where
-  "max_input e = fMax (fimage (\<lambda>(_, _, t). Transition.max_input t) e)"
+definition max_input :: "i_efsm \<Rightarrow> nat option" where
+  "max_input e = fMax (fimage (\<lambda>(_, _, t). Transition.max_input t) (T e))"
 
-definition total_max_input :: "iEFSM \<Rightarrow> nat" where
-  "total_max_input e = (case fMax (fimage (\<lambda>(_, _, t). Transition.max_input t) e) of None \<Rightarrow> 0 | Some i \<Rightarrow> i)"
+definition total_max_input :: "i_efsm \<Rightarrow> nat" where
+  "total_max_input e = (case fMax (fimage (\<lambda>(_, _, t). Transition.max_input t) (T e)) of None \<Rightarrow> 0 | Some i \<Rightarrow> i)"
 
 definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
   "remove_guard_add_update t inputX outputX = \<lparr>
@@ -126,7 +126,7 @@ primrec count :: "'a \<Rightarrow> 'a list \<Rightarrow> nat" where
 primrec generalise_transitions :: "((((transition \<times> nat) \<times> ioTag \<times> nat) \<times>
      (transition \<times> nat) \<times> ioTag \<times> nat) \<times>
     ((transition \<times> nat) \<times> ioTag \<times> nat) \<times>
-    (transition \<times> nat) \<times> ioTag \<times> nat) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+    (transition \<times> nat) \<times> ioTag \<times> nat) list \<Rightarrow> i_efsm \<Rightarrow> i_efsm" where
   "generalise_transitions [] e = e" |
   "generalise_transitions (h#t) e = (let ((((orig1, u1), _), (orig2, u2), _), (((gen1, u1'), _), (gen2, u2), _)) = h in
                                          generalise_transitions t (replaceAll (replaceAll e orig1 gen1) orig2 gen2))"
@@ -134,7 +134,7 @@ primrec generalise_transitions :: "((((transition \<times> nat) \<times> ioTag \
 definition strip_uids :: "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> (transition \<times> nat) \<times> ioTag \<times> nat) \<Rightarrow> ((transition \<times> ioTag \<times> nat) \<times> (transition \<times> ioTag \<times> nat))" where
   "strip_uids x = (let (((t1, u1), io1, in1), (t2, u2), io2, in2) = x in ((t1, io1, in1), (t2, io2, in2)))"
 
-definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> i_efsm \<Rightarrow> i_efsm option" where
   "modify matches u1 u2 old = (let relevant = filter (\<lambda>(((_, u1'), io, _), (_, u2'), io', _). io = In \<and> io' = Out \<and> (u1 = u1' \<or> u2 = u1' \<or> u1 = u2' \<or> u2 = u2')) matches;
                                    newReg = case max_reg old of None \<Rightarrow> 1 | Some r \<Rightarrow> r + 1;
                                    replacements = map (\<lambda>(((t1, u1), io1, inx1), (t2, u2), io2, inx2). (((remove_guard_add_update t1 inx1 newReg, u1), io1, inx1), (generalise_output t2 newReg inx2, u2), io2, inx2)) relevant;
@@ -144,7 +144,7 @@ definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarro
                                 if to_replace = [] then None else Some ((generalise_transitions to_replace old))
                               )"
 
-(* type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option" *)
+(* type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> i_efsm \<Rightarrow> i_efsm \<Rightarrow> (i_efsm \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option" *)
 definition heuristic_1 :: "log \<Rightarrow> update_modifier" where
   "heuristic_1 l = (\<lambda>t1 t2 s new old np. let newEFSMopt = (modify (find_intertrace_matches l old) t1 t2 new) in
                                       case newEFSMopt of None \<Rightarrow> None |
@@ -190,7 +190,7 @@ lemmas generalise_output_preserves = generalise_output_preserves_label
                                      generalise_output_preserves_guard
                                      generalise_output_preserves_updates
 
-definition is_proper_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> bool" where
+definition is_proper_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> i_efsm \<Rightarrow> bool" where
  "is_proper_generalisation_of t' t e = (\<exists>i \<le> total_max_input e. \<exists> r \<le> total_max_reg e.
                                         is_generalisation_of t' t i r \<and>
                                         (\<forall>u \<in> set (Updates t). fst u \<noteq> r) \<and>
@@ -228,7 +228,7 @@ definition remove_guards_add_update :: "transition \<Rightarrow> nat \<Rightarro
     Updates = (outputX, (V (vname.I inputX)))#(Updates t)
   \<rparr>"
 
-definition modify_2 :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+definition modify_2 :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> i_efsm \<Rightarrow> i_efsm option" where
   "modify_2 matches u1 u2 old = (let relevant = filter (\<lambda>(((_, u1'), io, _), (_, u2'), io', _). io = In \<and> io' = In \<and> (u1 = u1' \<or> u2 = u1' \<or> u1 = u2' \<or> u2 = u2')) matches;
                                    newReg = case max_reg old of None \<Rightarrow> 1 | Some r \<Rightarrow> r + 1;
                                    replacements = map (\<lambda>(((t1, u1), io1, inx1), (t2, u2), io2, inx2).
@@ -240,7 +240,7 @@ definition modify_2 :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightar
                                 if to_replace = [] then None else Some ((generalise_transitions to_replace old))
                               )"
 
-(* type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option" *)
+(* type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> i_efsm \<Rightarrow> i_efsm \<Rightarrow> (i_efsm \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option" *)
 definition heuristic_2 :: "log \<Rightarrow> update_modifier" where
   "heuristic_2 l = (\<lambda>t1 t2 s new old np. let newEFSMopt = (modify_2 (find_intertrace_matches l old) t1 t2 new) in
                                       case newEFSMopt of None \<Rightarrow> None |

@@ -102,8 +102,8 @@ object Dirties {
   // states in the respective machines such that we can take t2 so we check
   // the global negation of this to see if there's a counterexample
   def alwaysDifferentOutputsDirectSubsumption[A](
-    e1: IEFSM,
-    e2: IEFSM,
+    e1: Inference.i_efsm_ext[Unit],
+    e2: Inference.i_efsm_ext[Unit],
     s1: Nat.nat,
     s2: Nat.nat,
     t2: Transition.transition_ext[A]): Boolean = {
@@ -114,25 +114,29 @@ object Dirties {
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
       s"canTake: THEOREM composition |- G(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} => NOT(input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t2))} AND ${efsm2sal.guards2sal(Transition.Guard(t2))}));")
-    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2)))+1}}!canTake'").!!
+    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int_2(e1, e2))+1}}!canTake'").!!
     if (!output.toString.startsWith("Counterexample")) {
       Log.root.warn(s"""Path failure:\n
         G(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} => NOT(input_sequence ! size?(I) = ${Code_Numeral.integer_of_nat(Transition.Arity(t2))} AND ${efsm2sal.guards2sal(Transition.Guard(t2))}));\n
-        sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2)))+1}}!canTake'""")
+        sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int_2(e1, e2))+1}}!canTake'""")
     }
      FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
     return (output.toString.startsWith("Counterexample"))
   }
 
   // Check that whenever we're in state s, register r is always undefined
-  def initiallyUndefinedContextCheck(e: IEFSM, r: Nat.nat, s: Nat.nat): Boolean = {
+  def initiallyUndefinedContextCheck(
+    e: Inference.i_efsm_ext[Unit],
+    r: Nat.nat,
+    s: Nat.nat
+  ): Boolean = {
     println("initiallyUndefinedContextCheck")
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.efsmToSALTranslator(Inference.tm(e), f)
 
     addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = ${TypeConversion.salState(s)} => r_${Code_Numeral.integer_of_nat(r)} = value_option ! None);")
 
-    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(e))+1}}!initiallyUndefined'").!!
+    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(Inference.T(e)))+1}}!initiallyUndefined'").!!
     if (output.toString != "proved.\n") {
       print(output)
     }
@@ -142,12 +146,19 @@ object Dirties {
 
   // We're looking to confirm that traces which get us to s1 in e1 and s2 in e2
   // always leave register r (in e2) holding value v
-  def generaliseOutputContextCheck(v: Value.value, r: Nat.nat, s1: Nat.nat, s2: Nat.nat, e1: IEFSM, e2: IEFSM): Boolean = {
+  def generaliseOutputContextCheck(
+    v: Value.value,
+    r: Nat.nat,
+    s1: Nat.nat,
+    s2: Nat.nat,
+    e1: Inference.i_efsm_ext[Unit],
+    e2: Inference.i_efsm_ext[Unit]
+  ): Boolean = {
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
       s"checkRegValue: THEOREM composition |- G(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} => r_${Code_Numeral.integer_of_nat(r)}.2 = Some(${TypeConversion.salValue(v)}));")
-    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2)))+1}}!checkRegValue'").!!
+    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int_2(e1, e2))+1}}!checkRegValue'").!!
     if (output.toString != "proved.\n") {
       print(output)
     }
@@ -158,9 +169,9 @@ object Dirties {
   // Here we check to see if globally we can never be in both states
   // If there's a counterexample then there exists a trace which gets us to
   // both states
-  def acceptsAndGetsUsToBoth(
-    a: IEFSM,
-    b: IEFSM,
+  def recognisesAndGetsUsToBoth(
+    a: Inference.i_efsm_ext[Unit],
+    b: Inference.i_efsm_ext[Unit],
     s1: Nat.nat,
     s2: Nat.nat,
     ): Boolean = {
@@ -171,12 +182,12 @@ object Dirties {
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(a), "e1", Inference.tm(b), "e2", f)
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
       s"getsUsToBoth: THEOREM composition |- G(NOT(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)}));")
-    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(a, b)))+1}}!getsUsToBoth'").!!
+    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int_2(a, b))+1}}!getsUsToBoth'").!!
     FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
     if (!output.toString.startsWith("Counterexample")) {
       Log.root.warn(s"""Path failure:\n
         getsUsToBoth: THEOREM composition |- G(NOT(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)}));\n
-        sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(a, b)))+1}}!getsUsToBoth'""")
+        sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int_2(a, b))+1}}!getsUsToBoth'""")
     }
     return (output.toString.startsWith("Counterexample"))
   }
@@ -188,20 +199,27 @@ object Dirties {
     r: Nat.nat,
     t1: Transition,
     s2: Nat.nat,
-    e2: IEFSM,
+    e2: Inference.i_efsm_ext[Unit],
     s1: Nat.nat,
-    e1: IEFSM): Boolean = {
+    e1: Inference.i_efsm_ext[Unit]
+  ): Boolean = {
       val f = "intermediate_" + randomUUID.toString().replace("-", "_")
       TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
       addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
         s"possiblyNotValue: THEOREM composition |- G(NOT(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} AND r_${Code_Numeral.integer_of_nat(r)} = Some(${TypeConversion.salValue(v)}) AND input_sequence ! size?(I) = ${Code_Numeral.integer_of_nat(Transition.Arity(t1))} AND ${efsm2sal.guards2sal(Transition.Guard(t1))}));")
-      val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2)))+1}}!possiblyNotValue'").!!
+      val output = Seq(
+        "bash",
+        "-c",
+        s"cd salfiles; sal-smc --assertion='${f}{${
+          Code_Numeral.integer_of_int(Inference.max_int_2(e1, e2))+1
+        }}!possiblyNotValue'").!!
       FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
       return (output.toString.startsWith("Counterexample"))
     }
 
-  def scalaDirectlySubsumes(a: IEFSM,
-    b: IEFSM,
+  def scalaDirectlySubsumes(
+    a: Inference.i_efsm_ext[Unit],
+    b: Inference.i_efsm_ext[Unit],
     s: Nat.nat,
     s_prime: Nat.nat,
     t1: Transition.transition_ext[Unit],

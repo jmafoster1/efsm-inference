@@ -2,8 +2,8 @@ theory Ignore_Inputs
 imports "../Inference"
 begin
 
-definition enumerate_outputs :: "iEFSM \<Rightarrow> label \<Rightarrow> arity \<Rightarrow>  opred list fset" where
-  "enumerate_outputs e l a = (fimage (\<lambda>(_, _, t). Outputs t) (ffilter (\<lambda>(_, _, t). Label t = l \<and> Arity t = a) e))"
+definition enumerate_outputs :: "i_efsm \<Rightarrow> label \<Rightarrow> arity \<Rightarrow>  opred list fset" where
+  "enumerate_outputs e l a = (fimage (\<lambda>(_, _, t). Outputs t) (ffilter (\<lambda>(_, _, t). Label t = l \<and> Arity t = a) (T e)))"
 
 definition drop_guards :: "transition \<Rightarrow> transition" where
   "drop_guards t = \<lparr>Label = Label t, Arity = Arity t, Guard = [], Outputs = Outputs t, Updates = Updates t\<rparr>"
@@ -16,11 +16,11 @@ definition drop_inputs :: "update_modifier" where
      t1 = (get_by_id new t1ID);
      t2 = (get_by_id new t2ID) in
      if fis_singleton (enumerate_outputs new (Label t1) (Arity t1)) then
-     Some (fimage 
+     Some \<lparr>T = fimage 
       (\<lambda>(id, route, t). 
        if id = t1ID then
          (id, route, drop_guards t)
-       else (id, route, t)) (ffilter (\<lambda>(id, _). id \<noteq> t2ID) new))
+       else (id, route, t)) (ffilter (\<lambda>(id, _). id \<noteq> t2ID) (T new)), F = F new\<rparr>
      else None
    )"
 

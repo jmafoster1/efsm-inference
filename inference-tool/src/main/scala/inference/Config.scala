@@ -27,8 +27,8 @@ case class Config(
   file: File = null,
   outputname: String = null,
   dotfiles: String = "dotfiles",
-  nondeterminismMetric: IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, Nat.nat), (Types.Transition, Nat.nat))))] = (Inference.nondeterministic_pairs _),
-  strategy: Nat.nat => Nat.nat => IEFSM => Nat.nat = (SelectionStrategies.naive_score _).curried,
+  nondeterminismMetric: Inference.i_efsm_ext[Unit] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, Nat.nat), (Types.Transition, Nat.nat))))] = (Inference.nondeterministic_pairs _),
+  strategy: Nat.nat => Nat.nat => Inference.i_efsm_ext[Unit] => Nat.nat = (SelectionStrategies.naive_score _).curried,
   skip: Boolean = false,
   logLevel: Level = Level.DEBUG,
   logFile: String = null,
@@ -45,7 +45,7 @@ object Config {
 
   implicit val heuristicsRead: scopt.Read[Heuristics.Value] =
     scopt.Read.reads(Heuristics withName _)
-  implicit val strategiesRead: scopt.Read[Nat.nat => Nat.nat => IEFSM => Nat.nat] =
+  implicit val strategiesRead: scopt.Read[Nat.nat => Nat.nat => Inference.i_efsm_ext[Unit] => Nat.nat] =
     scopt.Read.reads {
       _.toLowerCase match {
         case "naive" => (SelectionStrategies.naive_score _).curried
@@ -68,7 +68,7 @@ object Config {
           throw new IllegalArgumentException(s"'${s}' is not a debug level.")
       }
     }
-  implicit val nondeterminismRead: scopt.Read[Types.IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, Nat.nat), (Types.Transition, Nat.nat))))]] =
+  implicit val nondeterminismRead: scopt.Read[Inference.i_efsm_ext[Unit] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, Nat.nat), (Types.Transition, Nat.nat))))]] =
     scopt.Read.reads {
       _.toLowerCase match {
         case "basic" => (Inference.nondeterministic_pairs _)
@@ -97,11 +97,11 @@ object Config {
         .valueName("k")
         .action((x, c) => c.copy(k = x))
         .text("The depth of the k-tails (defaults to zero)"),
-      opt[Nat.nat => Nat.nat => IEFSM => Nat.nat]('s', "strategy")
+      opt[Nat.nat => Nat.nat => Inference.i_efsm_ext[Unit] => Nat.nat]('s', "strategy")
         .valueName("strategy")
         .action((x, c) => c.copy(strategy = x))
         .text(s"The preferred strategy to rank state merges ${Strategies.values}"),
-      opt[Types.IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, Nat.nat), (Types.Transition, Nat.nat))))]]('n', "nondeterminism")
+      opt[Inference.i_efsm_ext[Unit] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, Nat.nat), (Types.Transition, Nat.nat))))]]('n', "nondeterminism")
         .valueName("nondeterminism checker")
         .action((x, c) => c.copy(nondeterminismMetric = x))
         .text(s"The preferred definition of nondeterminism - defaults to label, arity, and guard check ${Nondeterminisms.values}"),
@@ -176,7 +176,10 @@ object Config {
         // this.strategy = if (Config.config.oneFinal)
         //     (SelectionStrategies.score_one_final_state _).curried(strategies(config.strategy))
         //   else (strategies(config.strategy))
-        this.heuristics = Inference.try_heuristics_check((Inference.satisfies _).curried(Set.seta(config.log)), config.heuristics.map(x => heuristics(x)).toList, config.nondeterminismMetric)
+        this.heuristics = Inference.try_heuristics_check(
+          (Inference.satisfies _).curried(Set.seta(config.log)),
+          config.heuristics.map(x => heuristics(x)).toList,
+          config.nondeterminismMetric)
         this.config = config
 
       }
