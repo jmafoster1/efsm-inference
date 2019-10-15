@@ -27,8 +27,8 @@ object Dirties {
   def toZ3(a: AExp.aexp): String = a match {
     case AExp.L(v) => s"(Some ${toZ3(v)})"
     case AExp.V(v) => s"${toZ3(v)}"
-    case AExp.Plus(a1, a2) => s"(+ ${toZ3(a1)} ${toZ3(a2)})"
-    case AExp.Minus(a1, a2) => s"(- ${toZ3(a1)} ${toZ3(a2)})"
+    case AExp.Plus(a1, a2) => s"(Plus ${toZ3(a1)} ${toZ3(a2)})"
+    case AExp.Minus(a1, a2) => s"(Minus ${toZ3(a1)} ${toZ3(a2)})"
   }
 
   def toZ3(g: GExp.gexp): String = g match {
@@ -51,6 +51,44 @@ object Dirties {
 (declare-datatype Option (par (X) ((None) (Some (val X)))))
 (declare-datatype Value ((Num (num Int)) (Str (str String))))
 (declare-datatype Trilean ((true) (false) (invalid)))
+
+(define-fun Plus ((x (Option Value)) (y (Option Value))) (Option Value)
+  (match x (
+    ((Some v1)
+      (match y (
+        ((Some v2)
+          (match v1 (
+            ((Num n1)
+              (match v2 (
+                ((Num n2) (Some (Num (+ n1 n2))))
+                (_ None))
+              ))
+            (_ None))
+          ))
+        (_ None))
+      ))
+    (_ None))
+  )
+)
+
+(define-fun Minus ((x (Option Value)) (y (Option Value))) (Option Value)
+  (match x (
+    ((Some v1)
+      (match y (
+        ((Some v2)
+          (match v1 (
+            ((Num n1)
+              (match v2 (
+                ((Num n2) (Some (Num (- n1 n2))))
+                (_ None))
+              ))
+            (_ None))
+          ))
+        (_ None))
+      ))
+    (_ None))
+  )
+)
 
 (define-fun Nor ((x Trilean) (y Trilean)) Trilean
   (ite (and (= x true) (= y true)) false
