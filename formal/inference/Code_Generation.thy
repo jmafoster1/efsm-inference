@@ -566,7 +566,7 @@ definition "And = GExp.gAnd"
 
 export_code
   (* Essentials *)
-  try_heuristics try_heuristics_check aexp_type_check learn infer_types nondeterministic input_updates_register
+  try_heuristics try_heuristics_check learn nondeterministic input_updates_register
   step maxS add_transition make_pta make_pta_abstract
   (* Scoring functions *)
   naive_score naive_score_eq naive_score_outputs naive_score_comprehensive naive_score_comprehensive_eq_high

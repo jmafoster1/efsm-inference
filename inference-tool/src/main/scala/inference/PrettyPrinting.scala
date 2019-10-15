@@ -70,22 +70,6 @@ object PrettyPrinter {
     nataPairToString(t._1) + transitionToString(t._2) + "\n"
   }
 
-  def aexpToString(a: AExp.aexp, types: Map[VName.vname, Type_Inference.typea]): String = a match {
-    case AExp.L(v) => valueToString(v)
-    case AExp.V(v) => vnameToString(v) + "::" + types(v)
-    case AExp.Plus(a1, a2) => aexpToString(a1, types) + " + " + aexpToString(a2, types)
-    case AExp.Minus(a1, a2) => aexpToString(a1, types) + " + " + aexpToString(a2, types)
-  }
-
-  def gexpToString(g: GExp.gexp, types: Map[VName.vname, Type_Inference.typea]): String =  g match {
-    case GExp.Bc(a) => a.toString()
-    case GExp.Eq(a1, a2) => aexpToString(a1, types) + " = " + aexpToString(a2, types)
-    case GExp.Gt(a1, a2) => aexpToString(a1, types) + " > " + aexpToString(a2, types)
-    case GExp.In(v, l) => s"${vnameToString(v)} E {${l.map(valueToString).mkString(", ")}}"
-    case GExp.Nor(g1, g2) => "¬(" + gexpToString(g1, types) + " = " + gexpToString(g2, types) + ")"
-    case GExp.Null(v) => null
-  }
-
   def efsmToString(e: TransitionMatrix): String = {
     var string = "{"
     for (move <- TypeConversion.indexWithInts(FSet.sorted_list_of_fset(e)).sortBy(_._1)) {

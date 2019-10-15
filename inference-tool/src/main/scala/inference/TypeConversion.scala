@@ -4,7 +4,6 @@ import sys.process._
 import scala.io.Source
 
 import isabellesal._
-import Type_Inference._
 
 object Types {
   type Event = (String, (List[Value.value], List[Value.value]))
