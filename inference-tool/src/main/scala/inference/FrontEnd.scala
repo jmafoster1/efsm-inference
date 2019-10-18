@@ -6,24 +6,6 @@ import Types._
 
 object FrontEnd {
   def main(args: Array[String]): Unit = {
-    // implicit def `Int.equal`: HOL.equal[Int] = new HOL.equal[Int] {
-    //   val `HOL.equal` = (a: Int, b: Int) => a == b
-    // }
-    // implicit def `Int.ord_nat`: Orderings.linorder[Int] = new Orderings.linorder[Int] {
-    //   val `Orderings.less_eq` = (a: Int, b: Int) => a < b
-    //   val `Orderings.less` = (a: Int, b: Int) => a <= b
-    // }
-    //
-    // println(FSet.sorted_list_of_fset(FSet.fset_of_list((1 to 476349).reverse.toList)))
-    // println(List(1, 2, 3, 2, 5, 4, 5, 5, 10).sortWith((Orderings.less)))
-
-    println(
-      Dirties.satisfiable(Code_Generation.And(
-        GExp.Null(AExp.V(VName.I(Nat.Nata(1)))))(
-        GExp.Eq(AExp.V(VName.I(Nat.Nata(1))), AExp.L(Value.Numa(Int.int_of_integer(1))))
-        )
-      )
-    )
 
     val t1 = System.nanoTime
     Config.parseArgs(args)
@@ -45,6 +27,7 @@ object FrontEnd {
     Log.root.info(s"PTA has ${Config.numStates} states")
 
     PrettyPrinter.EFSM2dot(pta, s"pta_gen")
+    TypeConversion.efsmToSALTranslator(pta, "pta")
 
     try {
       val inferred = Inference.learn(
@@ -56,6 +39,7 @@ object FrontEnd {
         Config.config.nondeterminismMetric)
 
         // TypeConversion.doubleEFSMToSALTranslator(pta, "pta", inferred, "vend1", "compositionTest")
+        TypeConversion.efsmToSALTranslator(inferred, "inferred")
 
         Log.root.info("The inferred machine is " +
           (if (Inference.nondeterministic(Inference.toiEFSM(inferred), Inference.nondeterministic_pairs)) "non" else "") + "deterministic")
