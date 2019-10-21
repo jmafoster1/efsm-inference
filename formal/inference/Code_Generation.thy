@@ -9,6 +9,7 @@ theory Code_Generation
    "heuristics/Ignore_Inputs"
    "heuristics/Least_Upper_Bound"
    "heuristics/Equals"
+   "heuristics/Symbolic_Regression"
    EFSM_Dot
    Code_Target_FSet
    Code_Target_Set
@@ -394,7 +395,7 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
 lemma if_elim: "c \<longrightarrow> a = d \<Longrightarrow> \<not> c \<longrightarrow> d = b \<Longrightarrow> d = (if c then a else b)"
   by simp
 
-lemma directly_subsumes_cases:  "directly_subsumes m1 m2 s s' t1 t2 = directly_subsumes_cases m1 m2 s s' t1 t2"
+lemma directly_subsumes_cases [code]:  "directly_subsumes m1 m2 s s' t1 t2 = directly_subsumes_cases m1 m2 s s' t1 t2"
   unfolding directly_subsumes_cases_def
   apply (rule if_elim)
    apply (simp add: directly_subsumes_self)
@@ -532,11 +533,10 @@ code_printing
   | constant "finfun_const" \<rightharpoonup> (Scala) "Map().withDefaultValue((_))"
   | constant "finfun_update" \<rightharpoonup> (Scala) "_ + (_ -> _)"
   | constant "finfun_apply" \<rightharpoonup> (Scala) "_((_))"
+  | constant "finfun_to_list" \<rightharpoonup> (Scala) "_.keySet.toList"
 
-declare directly_subsumes_cases [code]
-
-(* declare directly_subsumes_def [code del] *)
-(* code_printing constant "directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes" *)
+declare finfun_to_list_const_code [code del]
+declare finfun_to_list_update_code [code del]
 
 lemma [code]: "satisfies_trace e s d l = satisfies_trace_prim e s d l"
   by (simp add: satisfies_trace_prim)
@@ -564,16 +564,22 @@ code_printing constant parseInt \<rightharpoonup> (Scala) "Int.int'_of'_integer(
 
 definition "And = GExp.gAnd"
 
+declare get_function_def [code del]
+code_printing constant get_function \<rightharpoonup> (Scala) "Dirties.getFunction"
+
+declare get_regs_def [code del]
+code_printing constant get_regs \<rightharpoonup> (Scala) "Dirties.getRegs"
+
 export_code
   (* Essentials *)
   try_heuristics try_heuristics_check learn nondeterministic input_updates_register
-  step maxS add_transition make_pta make_pta_abstract
+  step maxS add_transition make_pta make_pta_abstract AExp.enumerate_vars sorted_list_of_set
   (* Scoring functions *)
   naive_score naive_score_eq naive_score_outputs naive_score_comprehensive naive_score_comprehensive_eq_high
   origin_states
   (* Heuristics *)
   statewise_drop_inputs drop_inputs same_register insert_increment_2 heuristic_1 heuristic_2
-  transitionwise_drop_inputs lob gob gung_ho equals not_equals
+  transitionwise_drop_inputs lob gob gung_ho equals not_equals infer_output_functions
   (* Nondeterminism metrics *)
   nondeterministic_pairs nondeterministic_pairs_labar nondeterministic_pairs_labar_dest
   (* Utilities *)

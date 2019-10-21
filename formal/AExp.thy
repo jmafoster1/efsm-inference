@@ -722,4 +722,7 @@ fun enumerate_aexp_ints :: "aexp \<Rightarrow> int set" where
   "enumerate_aexp_ints (Plus a1 a2) = enumerate_aexp_ints a1 \<union> enumerate_aexp_ints a2" |
   "enumerate_aexp_ints (Minus a1 a2) = enumerate_aexp_ints a1 \<union> enumerate_aexp_ints a2"
 
+definition enumerate_vars :: "aexp \<Rightarrow> vname set" where
+  "enumerate_vars a = (image I (enumerate_aexp_inputs a)) \<union> (image R (enumerate_aexp_regs a))"
+
 end

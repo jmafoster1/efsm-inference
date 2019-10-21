@@ -50,21 +50,6 @@ definition indices :: "execution \<Rightarrow> index fset" where
 definition get_by_id_intratrace_matches :: "execution \<Rightarrow> (index \<times> index) fset" where
   "get_by_id_intratrace_matches e = ffilter (\<lambda>(a, b). lookup a e = lookup b e \<and> eventNum a \<le> eventNum b \<and> a \<noteq> b) (indices e |\<times>| indices e)"
 
-(* 
-  To detect all intertrace matches, walk the trace in the current machine and replace eventNo with
-  the corresponding transition's uid. If the uids match then there's an intertrace match.
-*)
-definition i_possible_steps :: "iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (nat \<times> nat \<times> transition) fset" where
-  "i_possible_steps e s r l i = fimage (\<lambda>(uid, (origin, dest), t). (uid, dest, t))
-  (ffilter (\<lambda>(uid, (origin, dest::nat), t::transition).
-      origin = s
-      \<and> (Label t) = l
-      \<and> (length i) = (Arity t)
-      \<and> apply_guards (Guard t) (join_ir i r)
-     ) 
-  e)"
-
-
 (*
   If the EFSM is nondeterministic, we need to make sure it chooses the right path so that it accepts
   the input trace.

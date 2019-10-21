@@ -8,6 +8,16 @@ import Types._
 import org.apache.commons.io.FileUtils
 import java.util.UUID.randomUUID
 
+import com.lagodiuk.gp.symbolic.SymbolicRegressionEngine
+import com.lagodiuk.gp.symbolic.Target
+import com.lagodiuk.gp.symbolic.TabulatedFunctionFitness
+import com.lagodiuk.gp.symbolic.SymbolicRegressionIterationListener
+
+import com.lagodiuk.gp.symbolic.interpreter.Functions
+import com.lagodiuk.gp.symbolic.interpreter.Expression;
+
+import scala.collection.JavaConverters._
+
 object Dirties {
 
   def makeBranch(
@@ -169,19 +179,6 @@ object Dirties {
       }
     }
 
-  // def randomMember[A](f: FSet.fset[A]): Option[A] = f match {
-  //   case FSet.Abs_fset(s) => s match {
-  //     case Set.seta(l) => {
-  //       if (l == List()) {
-  //         None
-  //       }
-  //       else {
-  //         Some(Random.shuffle(l).head)
-  //       }
-  //     }
-  //   }
-  // }
-
   def randomMember[A](f: FSet.fset[A]): Option[A] = f match {
     case FSet.fset_of_list(l) =>
       if (l == List()) {
@@ -310,7 +307,97 @@ object Dirties {
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
     println(s"Does ${PrettyPrinter.transitionToString(t1)} directly subsume ${PrettyPrinter.transitionToString(t2)}? (y/N)")
-    val subsumes = readLine("") == "y"
+    val subsumes = scala.io.StdIn.readLine() == "y"
     subsumes
   }
+
+  def getFunction(
+    r: Nat.nat,
+    values: List[Int.int],
+    i: List[List[Value.value]],
+    o: List[Value.value]
+  ): Option[AExp.aexp] = {
+      val targets = (i zip o).map{
+        case (i: List[Value.value], o: Value.value) => o match {
+          case Value.Str(_) => throw new IllegalArgumentException("Cannot handle strings")
+          case Value.Numa(Int.int_of_integer(n)) => new Target(
+            TypeConversion.toInteger(n),
+            i.map{
+              case Value.Str(_) => throw new IllegalArgumentException("Cannot handle strings")
+              case Value.Numa(Int.int_of_integer(n)) => TypeConversion.toInteger(n)
+            }: _*
+          )
+      }}
+      val fitness = new TabulatedFunctionFitness(targets: _*)
+      val vars = (1 to i(0).length).map(i => "i"+i)
+      val engine = new SymbolicRegressionEngine(
+				values.map(n => TypeConversion.toInteger(Code_Numeral.integer_of_int(n))).asJava,
+				fitness,
+				// define variables
+				("r"+Code_Numeral.integer_of_nat(r)::vars.toList).asJava,
+				// define base functions
+				List(
+								Functions.ADD,
+								Functions.SUB,
+								Functions.VARIABLE,
+								Functions.CONSTANT
+						).asJava
+				)
+        engine.addIterationListener(new SymbolicRegressionIterationListener() {
+          override def update(engine: SymbolicRegressionEngine): Unit = {
+            val bestSyntaxTree: Expression = engine.getBestSyntaxTree
+            val currFitValue: Double = engine.fitness(bestSyntaxTree)
+            // halt condition
+            if (currFitValue == 0) {
+              engine.terminate()
+            }
+          }
+        })
+        engine.evolve(20)
+        val best = engine.getBestSyntaxTree().simplify()
+        Some(TypeConversion.toAExp(best))
+  }
+
+  def getRegs(
+    i: List[Value.value],
+    f: AExp.aexp,
+    v: Value.value
+  ): Map[Nat.nat, Option[Value.value]] = {
+    val expVars = Lista.sorted_list_of_set(AExp.enumerate_vars(f)).map(v => PrettyPrinter.vnameToString(v))
+    val definedVars = (1 to i.length).map(v => f"i${v}")
+    val undefinedVars = expVars.filter(v => ! definedVars.contains(v))
+
+    var inputs: String = ""
+    for (v <- expVars) {
+      inputs += f"(${v} Int)"
+    }
+    var z3String: String = "(define-fun f (" + inputs + ") Int \n  " + toZ3(f) + "\n)\n"
+    for (v <- undefinedVars) {
+      z3String += "(declare-const " + v + " Int)\n"
+    }
+    val args = expVars.zipWithIndex.map{case (v:String, k:Int) =>
+      if (definedVars.contains(v)) {
+        i(k)
+      } else {
+        v
+      }
+    }
+
+    val assertion: String = "(assert (= " + PrettyPrinter.valueToString(v) + " (f " + args.mkString(" ") + ")))"
+    z3String += assertion
+    val ctx = new z3.Context()
+    val solver = ctx.mkSimpleSolver()
+    solver.fromString(z3String)
+    solver.check()
+    val model: z3.Model = solver.getModel
+
+    var regs: Map[Nat.nat, Option[Value.value]] = Map()
+    for (f <- model.getConstDecls) {
+      regs = regs + (Nat.Nata(BigInt(f.getName.toString.substring(1).toInt)) -> Some(Value.Numa(Int.int_of_integer(BigInt(model.getConstInterp(f).toString.toInt)))))
+    }
+    ctx.close()
+    regs
+  }
+
+
 }

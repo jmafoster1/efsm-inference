@@ -545,6 +545,8 @@ lemma to_from_in_S_uid_in_uids: "(uid, (from, to), t) |\<in>| e \<Longrightarrow
 definition max_reg :: "iEFSM \<Rightarrow> nat option" where
   "max_reg e = (let maxes = (fimage (\<lambda>(_, _, t). Transition.max_reg t) e) in if maxes = {||} then None else fMax maxes)"
 
+definition "max_reg_total e = (case max_reg e of None \<Rightarrow> 0 | Some r \<Rightarrow> r)"
+
 lemma fMax_None: "f \<noteq> {||} \<Longrightarrow> fMax f = None = (\<forall>x |\<in>| f. x = None)"
   apply standard
   using fMax_ge x_leq_None apply fastforce
@@ -759,4 +761,14 @@ lemma literal_args_eq: "literal_args (Eq a b) \<Longrightarrow> \<exists>v l. a 
      apply simp
     apply (cases b)
   by auto
+
+definition i_possible_steps :: "iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (tid \<times> cfstate \<times> transition) fset" where
+  "i_possible_steps e s r l i = fimage (\<lambda>(uid, (origin, dest), t). (uid, dest, t))
+  (ffilter (\<lambda>(uid, (origin, dest::nat), t::transition).
+      origin = s
+      \<and> (Label t) = l
+      \<and> (length i) = (Arity t)
+      \<and> apply_guards (Guard t) (join_ir i r)
+     ) 
+  e)"
 end

@@ -3,6 +3,10 @@ import java.io._
 import sys.process._
 import scala.io.Source
 
+import com.lagodiuk.gp.symbolic.interpreter.Expression;
+import com.lagodiuk.gp.symbolic.interpreter.Function;
+import com.lagodiuk.gp.symbolic.interpreter.Functions;
+
 import isabellesal._
 
 object Types {
@@ -13,7 +17,44 @@ object Types {
 }
 
 object TypeConversion {
+  def toVName(vname: String): VName.vname = {
+    val index = Nat.Nata(BigInt(vname.substring(1).toInt))
+    if (vname.startsWith("i")) {
+      VName.I(index)
+    }
+    else {
+      VName.R(index)
+    }
+  }
+
+  def toAExp(f: com.lagodiuk.gp.symbolic.interpreter.Function, expression: Expression): AExp.aexp = f match {
+    case Functions.CONSTANT => AExp.L(Value.Numa(Int.int_of_integer(BigInt(expression.getCoefficientsOfNode().get(0)))))
+    case Functions.VARIABLE => {
+      val vname = expression.getVariable().toString()
+      AExp.V(toVName(vname))
+    }
+    case Functions.ADD => {
+      val childs = expression.getChilds();
+      AExp.Plus(toAExp(childs.get(0)), toAExp(childs.get(1)))
+    }
+    case Functions.SUB => {
+      val childs = expression.getChilds();
+      AExp.Minus(toAExp(childs.get(0)), toAExp(childs.get(1)))
+    }
+
+  }
+
+  def toAExp(e: Expression): AExp.aexp = toAExp(e.getFunction(), e)
+
   def toInt(b: BigInt): Int = {
+    if (b.isValidInt) {
+      return b.toInt
+    } else {
+      throw new IllegalArgumentException(s"${b} is not a valid int")
+    }
+  }
+
+  def toInteger(b: BigInt): Integer = {
     if (b.isValidInt) {
       return b.toInt
     } else {
@@ -50,20 +91,20 @@ object TypeConversion {
 
   def vnameToSALTranslator(v: VName.vname): Variable = {
     v match {
-      case VName.I(Nat.Nata(n)) => Variable.newOneFrom('I', n.toLong + 1)
-      case VName.R(Nat.Nata(n)) => Variable.newOneFrom('R', n.toLong)
+      case VName.I(Nat.Nata(n)) => isabellesal.Variable.newOneFrom('I', n.toLong + 1)
+      case VName.R(Nat.Nata(n)) => isabellesal.Variable.newOneFrom('R', n.toLong)
     }
   }
 
-  def aexpToSALTranslator(a: AExp.aexp): Expression = a match {
-    case AExp.L(Value.Numa(Int.int_of_integer(n))) => Expression.newOneFrom(Constant.newOneFrom(toLong(n)))
-    case AExp.L(Value.Str(s)) => Expression.newOneFrom(Constant.newOneFrom(s))
-    case AExp.V(v) => Expression.newOneFrom(vnameToSALTranslator(v))
-    case AExp.Plus(a1, a2) => Expression.newInfixFrom(
+  def aexpToSALTranslator(a: AExp.aexp): isabellesal.Expression = a match {
+    case AExp.L(Value.Numa(Int.int_of_integer(n))) => isabellesal.Expression.newOneFrom(isabellesal.Constant.newOneFrom(toLong(n)))
+    case AExp.L(Value.Str(s)) => isabellesal.Expression.newOneFrom(isabellesal.Constant.newOneFrom(s))
+    case AExp.V(v) => isabellesal.Expression.newOneFrom(vnameToSALTranslator(v))
+    case AExp.Plus(a1, a2) => isabellesal.Expression.newInfixFrom(
       Token.PLUS,
       aexpToSALTranslator(a1),
       aexpToSALTranslator(a2))
-    case AExp.Minus(a1, a2) => Expression.newInfixFrom(
+    case AExp.Minus(a1, a2) => isabellesal.Expression.newInfixFrom(
       Token.MINUS,
       aexpToSALTranslator(a1),
       aexpToSALTranslator(a2))
@@ -77,14 +118,14 @@ object TypeConversion {
     case GExp.In(v, Nil) => throw new java.lang.IllegalArgumentException("Can't translate empty membership")
     case GExp.In(v, l :: Nil) => isabellesal.Predicate.newInfixFrom(
       Token.EQUALS,
-      Expression.newOneFrom(vnameToSALTranslator(v)),
+      isabellesal.Expression.newOneFrom(vnameToSALTranslator(v)),
       aexpToSALTranslator(AExp.L(l))
     )
     case GExp.In(v, l :: t) => isabellesal.Predicate.newInfixFrom(
       Token.OR,
       isabellesal.Predicate.newInfixFrom(
         Token.EQUALS,
-        Expression.newOneFrom(vnameToSALTranslator(v)),
+        isabellesal.Expression.newOneFrom(vnameToSALTranslator(v)),
         aexpToSALTranslator(AExp.L(l))
       ),
       gexpToSALTranslator(GExp.In(v, t))
@@ -115,7 +156,7 @@ object TypeConversion {
       Transition.Label(t),
       toInt(Code_Numeral.integer_of_nat(Transition.Arity(t))),
       isabellesal.Predicate.listOfPredicatesFrom(Transition.Guard(t).map(gexpToSALTranslator): _*),
-      Expression.newOutputs(Transition.Outputs(t).map(aexpToSALTranslator): _*),
+      isabellesal.Expression.newOutputs(Transition.Outputs(t).map(aexpToSALTranslator): _*),
       Transition.Updates(t).map(updateToExp): _*)
   }
 
