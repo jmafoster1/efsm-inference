@@ -37,6 +37,8 @@ definition ex :: "'a list \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bo
 lemma [code]: "list_ex f l = ex l f"
   by (simp add: ex_def)
 
+declare foldl_conv_fold[symmetric]
+
 lemma fold_conv_foldl [code]: "fold f xs s = foldl (\<lambda>x s. f s x) s xs"
   by (simp add: foldl_conv_fold)
 
@@ -71,15 +73,6 @@ qed
 
 lemma [code]: "upt i j = upt_tailrec i j []"
   by (metis upt_arbitrary_l append_Nil2)
-
-(*
-primrec insort_key :: "('b \<Rightarrow> 'a) \<Rightarrow> 'b \<Rightarrow> 'b list \<Rightarrow> 'b list" where
-"insort_key f x [] = [x]" |
-"insort_key f x (y#ys) = (if f x \<le> f y then (x#y#ys) else y#(insort_key f x ys))"
-*)
-
-lemma "Max (set (h#t)) \<in> set (h#t)"
-  using Max_eq_iff by blast
 
 function max_sort :: "('a::linorder) list \<Rightarrow> 'a list \<Rightarrow> 'a list" where
   "max_sort [] l = l" |
