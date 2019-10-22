@@ -239,7 +239,7 @@ object Dirties {
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.efsmToSALTranslator(Inference.tm(e), f)
 
-    addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = ${TypeConversion.salState(s)} => r_${Code_Numeral.integer_of_nat(r)} = value_option ! None);")
+    addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = ${TypeConversion.salState(s)} => r__${Code_Numeral.integer_of_nat(r)} = None);")
 
     val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(e))+1}}!initiallyUndefined'").!!
     if (output.toString != "proved.\n") {
@@ -255,7 +255,7 @@ object Dirties {
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
-      s"checkRegValue: THEOREM composition |- G(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} => r_${Code_Numeral.integer_of_nat(r)}.2 = Some(${TypeConversion.salValue(v)}));")
+      s"checkRegValue: THEOREM composition |- G(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} => r__${Code_Numeral.integer_of_nat(r)}.2 = Some(${TypeConversion.salValue(v)}));")
     val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2)))+1}}!checkRegValue'").!!
     if (output.toString != "proved.\n") {
       print(output)
@@ -338,7 +338,7 @@ object Dirties {
           }: _*
         )
     }}
-    println("  "+targets)
+    // println("  "+targets)
     val fitness = new TabulatedFunctionFitness(targets: _*)
     val vars = (1 to i(0).length).map(i => "i"+i)
     val engine = new SymbolicRegressionEngine(
@@ -366,7 +366,7 @@ object Dirties {
       })
       engine.evolve(Config.config.gpIterations)
       val best = engine.getBestSyntaxTree().simplify()
-      println("Best expression was "+best)
+      // println("Best expression was "+best)
       Some(TypeConversion.toAExp(best))
     }
     catch {
@@ -380,7 +380,7 @@ object Dirties {
     v: Value.value
   ): Map[Nat.nat, Option[Value.value]] = {
     val expVars = Lista.sorted_list_of_set(AExp.enumerate_vars(f)).map(v => PrettyPrinter.vnameToString(v))
-    println(Lista.sorted_list_of_set(AExp.enumerate_vars(f)))
+    // println(Lista.sorted_list_of_set(AExp.enumerate_vars(f)))
     val definedVars = (1 to i.length).map(v => f"i${v}")
     val undefinedVars = expVars.filter(v => ! definedVars.contains(v))
 
@@ -402,8 +402,6 @@ object Dirties {
 
     val assertion: String = "(assert (= " + PrettyPrinter.valueToString(v) + " (f " + args.mkString(" ") + ")))"
     z3String += assertion
-
-    println(z3String)
 
     val ctx = new z3.Context()
     val solver = ctx.mkSimpleSolver()

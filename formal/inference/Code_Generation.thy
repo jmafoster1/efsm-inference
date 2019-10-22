@@ -387,6 +387,8 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
       then False
     else if t1 = drop_guards t2
       then True
+    else if one_extra_update t1 t2 s' m2
+      then True
     \<comment> \<open>else if t2 = drop_guards t1 \<and> satisfiable_negation t1
       then False\<close>
     else dirty_directly_subsumes m1 m2 s s' t1 t2
@@ -425,6 +427,8 @@ lemma directly_subsumes_cases [code]:  "directly_subsumes m1 m2 s s' t1 t2 = dir
    apply (simp add: possibly_not_value_not_directly_subsumes)
   apply (clarify, rule if_elim)
    apply (simp add: drop_inputs_subsumption subsumes_in_all_contexts_directly_subsumes)
+  apply (clarify, rule if_elim)
+   apply (simp add: one_extra_update_direct_subsumption)
   by (simp add: dirty_directly_subsumes_def)
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
@@ -604,6 +608,7 @@ export_code
   equals
   not_equals
   infer_output_functions
+  infer_output_functions_2
   (* Nondeterminism metrics *)
   nondeterministic_pairs
   nondeterministic_pairs_labar

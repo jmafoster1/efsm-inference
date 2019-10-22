@@ -177,8 +177,8 @@ object TypeConversion {
   }
 
   def salValue(v: Value.value): String = v match {
-    case Value.Str(s) => s"STR(String_$s)"
-    case Value.Numa(n) => s"NUM(${Code_Numeral.integer_of_int(n)})"
+    case Value.Str(s) => s"Str(String__$s)"
+    case Value.Numa(n) => s"Num(${Code_Numeral.integer_of_int(n)})"
   }
 
   def salState(s: Nat.nat): String = s match {

@@ -720,4 +720,80 @@ lemma drop_update_add_guard_direct_subsumption:
   apply (simp add: initially_undefined_context_check_def)
   using updates_subset_conditions by blast
 
+definition not_updated :: "nat \<Rightarrow> transition \<Rightarrow> bool" where
+  "not_updated r t = (filter (\<lambda>(r', _). r' = r) (Updates t) = [])"
+
+lemma not_updated_aux: "filter (\<lambda>(r', _). r' = r) t2 = [] \<Longrightarrow> apply_updates t2 s s' $ r = s' $ r"
+proof(induct t2)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a t2)
+  then show ?case
+    apply (cases a)
+    apply (case_tac "aa = r")
+    by auto
+qed
+
+lemma not_updated: "not_updated r t2 \<Longrightarrow>
+       apply_updates (Updates t2) s s' $ r = s' $ r"
+  by (simp add: not_updated_def not_updated_aux)
+
+lemma one_extra_update_subsumes:
+  "Label t1 = Label t2 \<Longrightarrow>
+   Arity t1 = Arity t2 \<Longrightarrow>
+   Guard t1 = Guard t2 \<Longrightarrow>
+   Outputs t1 = Outputs t2 \<Longrightarrow>
+   Updates t1 = (r, u) # Updates t2 \<Longrightarrow>
+   not_updated r t2 \<Longrightarrow>
+   c $ r = None \<Longrightarrow>
+   subsumes t1 c t2"
+  apply (simp add: subsumes_def posterior_def posterior_separate_def can_take_transition_def can_take_def apply_guards_subset_append)
+  apply safe
+   apply (case_tac "r = r'")
+    apply (simp add: not_updated)
+   apply simp
+  apply (case_tac "r = ra")
+   apply (simp add: not_updated)
+  by simp
+
+lemma one_extra_update_directly_subsumes:
+  "Label t1 = Label t2 \<Longrightarrow>
+   Arity t1 = Arity t2 \<Longrightarrow>
+   Guard t1 = Guard t2 \<Longrightarrow>
+   Outputs t1 = Outputs t2 \<Longrightarrow>
+   Updates t1 = (r, u)#(Updates t2) \<Longrightarrow>
+   not_updated r t2 \<Longrightarrow>
+   initially_undefined_context_check e2 r s2 \<Longrightarrow>
+   directly_subsumes e1 e2 s1 s2 t1 t2"
+  apply (simp add: directly_subsumes_def)
+  apply standard
+   defer
+   apply (meson one_extra_update_subsumes finfun_const_apply)
+  apply (simp add: initially_undefined_context_check_def)
+  apply clarify
+  apply (erule_tac x=p in allE)
+  by (simp add: one_extra_update_subsumes)
+
+definition "one_extra_update t1 t2 s2 e2 =
+(Label t1 = Label t2 \<and>
+   Arity t1 = Arity t2 \<and>
+   Guard t1 = Guard t2 \<and>
+   Outputs t1 = Outputs t2 \<and>
+   Updates t1 \<noteq> [] \<and>
+   tl (Updates t1) = (Updates t2) \<and>
+   (\<exists>r \<in> set (map fst (Updates t1)). fst (hd (Updates t1)) = r \<and>
+   not_updated r t2 \<and>
+   initially_undefined_context_check e2 r s2))"
+
+lemma must_be_an_update: "U1 \<noteq> [] \<Longrightarrow> fst (hd U1) = r \<and> tl U1 = U2 \<Longrightarrow> \<exists>u. U1 = (r, u)#(U2)"
+  by (metis eq_fst_iff hd_Cons_tl)
+
+lemma one_extra_update_direct_subsumption:
+  "one_extra_update t1 t2 s2 e2 \<Longrightarrow> directly_subsumes e1 e2 s1 s2 t1 t2"
+  apply (insert must_be_an_update[of "Updates t1" r "Updates t2"])
+  apply (simp add: one_extra_update_def)
+  by (metis eq_fst_iff hd_Cons_tl one_extra_update_directly_subsumes)
+
 end

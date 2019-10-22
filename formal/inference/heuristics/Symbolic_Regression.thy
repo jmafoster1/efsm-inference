@@ -44,6 +44,51 @@ fun replace_transitions :: "(tid \<times> transition) list \<Rightarrow> iEFSM \
   "replace_transitions [] e = e" |
   "replace_transitions ((ti, t)#rest) e = replace_transitions rest (fimage (\<lambda>(id', od, t'). if id' = ti then (id', od, t) else (id', od, t')) e)"
 
+fun put_output_function_2_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_execution \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> tid option \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
+  "put_output_function_2_aux _ _ [] _ _ _ _ e _ _ = Some e" |
+  "put_output_function_2_aux fi f ((_, l, i, p)#t) label i_arity o_arity prevtid e s r = (
+    let
+    poss_steps = ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir i r) = map Some p) (i_possible_steps e s r l i) in
+    \<comment> \<open>No possible steps with matching output means something bad has happenned\<close>
+    case random_member poss_steps of
+      None \<Rightarrow> None |
+      Some (tid, s', ta) \<Rightarrow>
+       \<comment> \<open>Possible steps with a transition we need to modify\<close>
+      if l = label \<and> length i = i_arity \<and> length p = o_arity then
+        case prevtid of None \<Rightarrow> None | Some prevtid \<Rightarrow> let
+        necessaryRegs = finfun_to_list (get_regs i f (p!fi)) in
+        if length necessaryRegs \<noteq> 1 then None else let
+        newT = \<lparr>Label = Label ta, Arity = Arity ta, Guard = [], Outputs = list_update (Outputs ta) fi f, Updates = remdups ((hd necessaryRegs, f)#(Updates ta))\<rparr>;
+        satisfyingRegs = (get_regs i f (p!fi));
+        updates = map (\<lambda>r. case (satisfyingRegs $ r) of Some v' \<Rightarrow> (r, L v')) (necessaryRegs);
+        prevT = get_by_id e prevtid;
+        newPrevT = (if Label prevT = Label ta then
+          \<lparr>Label = Label prevT, Arity = Arity prevT, Guard = [], Outputs = Outputs prevT, Updates = remdups ((hd necessaryRegs, f)#(Updates prevT))\<rparr>
+          else
+          \<lparr>Label = Label prevT, Arity = Arity prevT, Guard = Guard prevT, Outputs = Outputs prevT, Updates = remdups (updates@(Updates prevT))\<rparr>);
+        newE = replace_transitions [(tid, newT), (prevtid, newPrevT)] e
+        in
+        put_output_function_2_aux fi f t label i_arity o_arity (Some tid) newE s' (apply_updates (Updates ta) (join_ir i r) r)
+       \<comment> \<open>Possible steps but not interesting - just take a transition and move on\<close>
+      else
+        put_output_function_2_aux fi f t label i_arity o_arity (Some tid) e s' (apply_updates (Updates ta) (join_ir i r) r)
+  )"
+
+primrec put_output_function_2 :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_log \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+  "put_output_function_2 _ _ [] _ e = Some e" |
+  "put_output_function_2 fi f (h#t) t1 e = (case put_output_function_2_aux fi f (snd h) (Label t1) (Arity t1) (length (Outputs t1)) None e 0 <> of
+    None \<Rightarrow> None |
+    Some e' \<Rightarrow> put_output_function_2 fi f t t1 e'
+  )"
+
+fun put_output_functions_2 :: "(nat \<times> aexp option) list \<Rightarrow> indexed_log \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+  "put_output_functions_2 [] _ _ e = Some e" |
+  "put_output_functions_2 ((_, None)#_) _ _ _ = None" |
+  "put_output_functions_2 ((fi, Some f)#rest) log t e = (case put_output_function_2 fi f log t e of
+    None \<Rightarrow> None |
+    Some e' \<Rightarrow> put_output_functions_2 rest log t e'
+  )"
+
 fun put_output_function_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_execution \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> tid option \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
   "put_output_function_aux _ _ [] _ _ _ _ e _ _ = Some e" |
   "put_output_function_aux fi f ((_, l, i, p)#t) label i_arity o_arity prevtid e s r = (
@@ -104,6 +149,19 @@ definition infer_output_functions :: "log \<Rightarrow> update_modifier" where
      max_reg = max_reg_total new;
      output_functions = get_functions max_reg values (length (Outputs t1)) relevant_events
      in put_output_functions (enumerate 0 output_functions) i_log t1 new
+   )"
+
+definition infer_output_functions_2 :: "log \<Rightarrow> update_modifier" where
+  "infer_output_functions_2 log t1ID t2ID s new old _ = (let
+     t1 = (get_by_id new t1ID);
+     t2 = (get_by_id new t2ID);
+     i_log = enumerate 0 (map (enumerate 0) log);
+     num_outs = length (Outputs t1);
+     relevant_events = flatten (map (\<lambda>(i, ex). (i, filter (\<lambda>(_, l, ip, op). l = Label t1 \<and> length ip = Arity t1 \<and> length op = num_outs) ex)) i_log) [];
+     values = enumerate_log_ints log;
+     max_reg = max_reg_total new;
+     output_functions = get_functions max_reg values (length (Outputs t1)) relevant_events
+     in put_output_functions_2 (enumerate 0 output_functions) i_log t1 new
    )"
 
 end
