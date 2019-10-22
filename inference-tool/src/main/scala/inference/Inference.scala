@@ -7529,9 +7529,8 @@ Option[Value.value]](((aa: Value.value) => Some[Value.value](aa)), p))
             match {
             case None => None
             case Some((tid, (sa, ta))) =>
-              (if ((l == label) && ((! (Nat.equal_nata(Nat.Nata(i.length),
-                i_arity))) && (! (Nat.equal_nata(Nat.Nata(p.length),
-          o_arity)))))
+              (if ((l == label) && ((Nat.equal_nata(Nat.Nata(i.length),
+             i_arity)) && (Nat.equal_nata(Nat.Nata(p.length), o_arity))))
                 {
                   val newT: Transition.transition_ext[Unit] =
                     Transition.transition_exta[Unit](Transition.Label[Unit](ta),
@@ -7561,7 +7560,7 @@ Option[Value.value]](((aa: Value.value) => Some[Value.value](aa)), p))
                      Transition.Arity[Unit](prevT),
                      Transition.Guard[Unit](prevT),
                      Transition.Outputs[Unit](prevT),
-                     Transition.Updates[Unit](prevT) ++ updates, ())
+                     (Transition.Updates[Unit](prevT) ++ updates).distinct, ())
                          val newE: FSet.fset[(Nat.nat,
        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
                            = replace_transitions(List((tid, newT),

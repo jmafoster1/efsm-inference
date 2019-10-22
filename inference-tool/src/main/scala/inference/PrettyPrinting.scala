@@ -122,4 +122,10 @@ object PrettyPrinter {
     case (label, (inputs, outputs)) =>
       return label + s"(${inputs.map(i => valueToString(i)).mkString(", ")})" + s"/[${outputs.map(i => valueToString(i)).mkString(", ")}]"
   }
+
+  def releventsToString(l: List[(Nat.nat, (Nat.nat, (String, (List[Value.value], List[Value.value]))))]): String = {
+    s"[${l.map{case (tIndex:Nat.nat, (eIndex: Nat.nat, (label: String, (inputs: List[Value.value], outputs: List[Value.value])))) =>
+      (label, (inputsToString(inputs), inputsToString(outputs)))
+    }.mkString(", ")}]"
+  }
 }

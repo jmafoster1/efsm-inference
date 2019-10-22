@@ -18,11 +18,12 @@ object Types {
 
 object TypeConversion {
   def toVName(vname: String): VName.vname = {
-    val index = Nat.Nata(BigInt(vname.substring(1).toInt))
     if (vname.startsWith("i")) {
+      val index = Nat.Nata(BigInt(vname.substring(1).toInt - 1))
       VName.I(index)
     }
     else {
+      val index = Nat.Nata(BigInt(vname.substring(1).toInt))
       VName.R(index)
     }
   }

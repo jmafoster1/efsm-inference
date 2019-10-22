@@ -63,7 +63,7 @@ object Dirties {
     }
 
     def toZ3(a: VName.vname): String = a match {
-      case VName.I(n) => s"i${Code_Numeral.integer_of_nat(n)}"
+      case VName.I(n) => s"i${Code_Numeral.integer_of_nat(n) + 1}"
       case VName.R(n) => s"r${Code_Numeral.integer_of_nat(n)}"
     }
 
@@ -72,6 +72,18 @@ object Dirties {
       case AExp.V(v) => s"${toZ3(v)}"
       case AExp.Plus(a1, a2) => s"(Plus ${toZ3(a1)} ${toZ3(a2)})"
       case AExp.Minus(a1, a2) => s"(Minus ${toZ3(a1)} ${toZ3(a2)})"
+    }
+
+    def toZ3Native(v: Value.value): String = v match {
+      case Value.Numa(n) => s"${Code_Numeral.integer_of_int(n).toString}"
+      case Value.Str(s) => s""""${s}""""
+    }
+
+    def toZ3Native(a: AExp.aexp): String = a match {
+      case AExp.L(v) => s"${toZ3Native(v)}"
+      case AExp.V(v) => s"${toZ3(v)}"
+      case AExp.Plus(a1, a2) => s"(+ ${toZ3Native(a1)} ${toZ3Native(a2)})"
+      case AExp.Minus(a1, a2) => s"(- ${toZ3Native(a1)} ${toZ3Native(a2)})"
     }
 
     def toZ3(g: GExp.gexp): String = g match {
@@ -315,7 +327,7 @@ object Dirties {
     o: List[Value.value]
   ): Option[AExp.aexp] = {
     try {
-      val targets = (i zip o).map{
+      val targets = (i zip o).distinct.map{
       case (i: List[Value.value], o: Value.value) => o match {
         case Value.Str(_) => throw new IllegalArgumentException("Cannot handle strings")
         case Value.Numa(Int.int_of_integer(n)) => new Target(
@@ -326,6 +338,7 @@ object Dirties {
           }: _*
         )
     }}
+    println("  "+targets)
     val fitness = new TabulatedFunctionFitness(targets: _*)
     val vars = (1 to i(0).length).map(i => "i"+i)
     val engine = new SymbolicRegressionEngine(
@@ -351,7 +364,7 @@ object Dirties {
           }
         }
       })
-      engine.evolve(20)
+      engine.evolve(Config.config.gpIterations)
       val best = engine.getBestSyntaxTree().simplify()
       println("Best expression was "+best)
       Some(TypeConversion.toAExp(best))
@@ -367,6 +380,7 @@ object Dirties {
     v: Value.value
   ): Map[Nat.nat, Option[Value.value]] = {
     val expVars = Lista.sorted_list_of_set(AExp.enumerate_vars(f)).map(v => PrettyPrinter.vnameToString(v))
+    println(Lista.sorted_list_of_set(AExp.enumerate_vars(f)))
     val definedVars = (1 to i.length).map(v => f"i${v}")
     val undefinedVars = expVars.filter(v => ! definedVars.contains(v))
 
@@ -374,13 +388,13 @@ object Dirties {
     for (v <- expVars) {
       inputs += f"(${v} Int)"
     }
-    var z3String: String = "(define-fun f (" + inputs + ") Int \n  " + toZ3(f) + "\n)\n"
+    var z3String: String = "(define-fun f (" + inputs + ") Int \n  " + toZ3Native(f) + "\n)\n"
     for (v <- undefinedVars) {
-      z3String += "(declare-const " + v + " Int)\n"
+      z3String += "(declare-const " + PrettyPrinter.vnameToString(TypeConversion.toVName(v)) + " Int)\n"
     }
     val args = expVars.zipWithIndex.map{case (v:String, k:Int) =>
       if (definedVars.contains(v)) {
-        i(k)
+        PrettyPrinter.valueToString(i(k))
       } else {
         v
       }
@@ -388,6 +402,9 @@ object Dirties {
 
     val assertion: String = "(assert (= " + PrettyPrinter.valueToString(v) + " (f " + args.mkString(" ") + ")))"
     z3String += assertion
+
+    println(z3String)
+
     val ctx = new z3.Context()
     val solver = ctx.mkSimpleSolver()
     solver.fromString(z3String)

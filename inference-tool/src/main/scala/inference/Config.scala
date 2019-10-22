@@ -34,7 +34,9 @@ case class Config(
   logFile: String = null,
   smallInts: Boolean = false,
   log: List[List[Types.Event]] = List(),
-  k: Int = 0)
+  k: Int = 0,
+  gpIterations: Int = 50
+  )
 
 object Config {
   val builder = OParser.builder[Config]
@@ -97,6 +99,10 @@ object Config {
         .valueName("k")
         .action((x, c) => c.copy(k = x))
         .text("The depth of the k-tails (defaults to zero)"),
+      opt[Int]('i', "gpIterations")
+        .valueName("GP iterations")
+        .action((x, c) => c.copy(gpIterations = x))
+        .text("The number of iterations to run the symbolic regression heuristic for (defaults to 50)"),
       opt[Nat.nat => Nat.nat => IEFSM => Nat.nat]('s', "strategy")
         .valueName("strategy")
         .action((x, c) => c.copy(strategy = x))

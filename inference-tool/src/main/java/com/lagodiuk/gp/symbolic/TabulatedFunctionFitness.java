@@ -88,7 +88,11 @@ public class TabulatedFunctionFitness implements ExpressionFitness {
 		
 		totalUsedVars.removeAll(expression.vars());
 		
-		return mistakes * ((diff/this.targets.size()) + totalUsedVars.size() + expression.vars().size());
+		if (totalUsedVars.size() == 0) {
+			return mistakes;
+		}
+		
+		return mistakes + ((diff/this.targets.size()) + totalUsedVars.size() + expression.vars().size());
 	}
 	
 //	This is solidly OK most of the time.

@@ -54,13 +54,13 @@ fun put_output_function_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_exe
       None \<Rightarrow> None |
       Some (tid, s', ta) \<Rightarrow>
        \<comment> \<open>Possible steps with a transition we need to modify\<close>
-      if l = label \<and> length i \<noteq> i_arity \<and> length p \<noteq> o_arity then let
+      if l = label \<and> length i = i_arity \<and> length p = o_arity then let
         newT = \<lparr>Label = Label ta, Arity = Arity ta, Guard = Guard ta, Outputs = list_update (Outputs ta) fi f, Updates = Updates ta\<rparr>;
         necessaryRegs = get_regs i f (p!fi);
         updates = map (\<lambda>r. case (necessaryRegs $ r) of Some v' \<Rightarrow> (r, L v')) (finfun_to_list necessaryRegs) in
         case prevtid of None \<Rightarrow> None | Some prevtid \<Rightarrow> let
         prevT = get_by_id e prevtid;
-        newPrevT = \<lparr>Label = Label prevT, Arity = Arity prevT, Guard = Guard prevT, Outputs = Outputs prevT, Updates = (Updates prevT)@updates\<rparr>;
+        newPrevT = \<lparr>Label = Label prevT, Arity = Arity prevT, Guard = Guard prevT, Outputs = Outputs prevT, Updates = remdups ((Updates prevT)@updates)\<rparr>;
         newE = replace_transitions [(tid, newT), (prevtid, newPrevT)] e
         in
         put_output_function_aux fi f t label i_arity o_arity (Some tid) newE s' (apply_updates (Updates ta) (join_ir i r) r)
@@ -73,7 +73,8 @@ primrec put_output_function :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_log
   "put_output_function _ _ [] _ e = Some e" |
   "put_output_function fi f (h#t) t1 e = (case put_output_function_aux fi f (snd h) (Label t1) (Arity t1) (length (Outputs t1)) None e 0 <> of
     None \<Rightarrow> None |
-    Some e' \<Rightarrow> put_output_function fi f t t1 e')"
+    Some e' \<Rightarrow> put_output_function fi f t t1 e'
+  )"
 
 fun put_output_functions :: "(nat \<times> aexp option) list \<Rightarrow> indexed_log \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
   "put_output_functions [] _ _ e = Some e" |
@@ -81,7 +82,7 @@ fun put_output_functions :: "(nat \<times> aexp option) list \<Rightarrow> index
   "put_output_functions ((fi, Some f)#rest) log t e = (case put_output_function fi f log t e of
     None \<Rightarrow> None |
     Some e' \<Rightarrow> put_output_functions rest log t e'
-   )"
+  )"
 
 definition enumerate_value_ints :: "value list \<Rightarrow> int list" where
   "enumerate_value_ints vs = map (\<lambda>v. case v of Num n \<Rightarrow> n) (filter (\<lambda>v. case v of Num _ \<Rightarrow> True | value.Str _ \<Rightarrow> False) vs)"
