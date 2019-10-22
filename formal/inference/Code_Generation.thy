@@ -572,18 +572,50 @@ code_printing constant get_regs \<rightharpoonup> (Scala) "Dirties.getRegs"
 
 export_code
   (* Essentials *)
-  try_heuristics try_heuristics_check learn nondeterministic input_updates_register
-  step maxS add_transition make_pta make_pta_abstract AExp.enumerate_vars sorted_list_of_set
+  try_heuristics
+  try_heuristics_check
+  learn
+  nondeterministic
+  input_updates_register
+  step
+  maxS
+  add_transition
+  make_pta
+  make_pta_abstract
+  AExp.enumerate_vars
+  sorted_list_of_set
   (* Scoring functions *)
-  naive_score naive_score_eq naive_score_outputs naive_score_comprehensive naive_score_comprehensive_eq_high
+  naive_score naive_score_eq
+  naive_score_outputs
+  naive_score_comprehensive
+  naive_score_comprehensive_eq_high
   origin_states
   (* Heuristics *)
-  statewise_drop_inputs drop_inputs same_register insert_increment_2 heuristic_1 heuristic_2
-  transitionwise_drop_inputs lob gob gung_ho equals not_equals infer_output_functions
+  statewise_drop_inputs
+  drop_inputs
+  same_register
+  insert_increment_2
+  heuristic_1
+  heuristic_2
+  transitionwise_drop_inputs
+  lob
+  gob
+  gung_ho
+  equals
+  not_equals
+  infer_output_functions
   (* Nondeterminism metrics *)
-  nondeterministic_pairs nondeterministic_pairs_labar nondeterministic_pairs_labar_dest
+  nondeterministic_pairs
+  nondeterministic_pairs_labar
+  nondeterministic_pairs_labar_dest
   (* Utilities *)
-  iefsm2dot efsm2dot guards2sal fold_In max_int use_smallest_ints And enumerate_vars
+  iefsm2dot
+  efsm2dot
+  guards2sal
+  fold_In max_int
+  use_smallest_ints
+  And
+  enumerate_vars
 in Scala
 file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

@@ -1,13 +1,13 @@
 /*******************************************************************************
  * Copyright 2012 Yuriy Lagodiuk
  * Modified by Michael Foster
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -45,7 +45,7 @@ public class Expression implements Cloneable {
 	public int eval(com.lagodiuk.gp.symbolic.interpreter.Context context) {
 		return this.function.eval(this, context);
 	}
-
+	
 	public Set<String> vars() {
 		return this.function.vars(this);
 	}
@@ -187,9 +187,6 @@ public class Expression implements Cloneable {
 	}
 
 	public Functions whatIs(Expr e) {
-		if (e.isMul()) {
-			return Functions.MUL;
-		}
 		if (e.isAdd()) {
 			return Functions.ADD;
 		}
@@ -233,8 +230,6 @@ public class Expression implements Cloneable {
 			return expr;
 		case ADD:
 			return makeBinary(ex.getArgs(), Functions.ADD);
-		case MUL:
-			return makeBinary(ex.getArgs(), Functions.MUL);
 		case SUB:
 			return makeBinary(ex.getArgs(), Functions.SUB);
 		default:
@@ -253,10 +248,13 @@ public class Expression implements Cloneable {
 		catch (NumberFormatException e) {
 			simpler = this.clone();
 		}
+		catch (IllegalArgumentException e) {
+			simpler = this.clone();
+		}
 		ctx.close();
 		return simpler;
 	}
-
+	
 	public String toString() {
 		return this.print();
 	}

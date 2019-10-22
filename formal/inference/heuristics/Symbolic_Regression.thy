@@ -92,7 +92,7 @@ definition enumerate_exec_ints :: "execution \<Rightarrow> int list" where
 definition enumerate_log_ints :: "log \<Rightarrow> int list" where
   "enumerate_log_ints l = fold (\<lambda>e I. enumerate_exec_ints e @ I) l []"
 
-fun infer_output_functions :: "log \<Rightarrow> update_modifier" where
+definition infer_output_functions :: "log \<Rightarrow> update_modifier" where
   "infer_output_functions log t1ID t2ID s new old _ = (let
      t1 = (get_by_id new t1ID);
      t2 = (get_by_id new t2ID);

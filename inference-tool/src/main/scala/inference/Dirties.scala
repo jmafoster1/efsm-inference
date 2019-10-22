@@ -8,10 +8,7 @@ import Types._
 import org.apache.commons.io.FileUtils
 import java.util.UUID.randomUUID
 
-import com.lagodiuk.gp.symbolic.SymbolicRegressionEngine
-import com.lagodiuk.gp.symbolic.Target
-import com.lagodiuk.gp.symbolic.TabulatedFunctionFitness
-import com.lagodiuk.gp.symbolic.SymbolicRegressionIterationListener
+import com.lagodiuk.gp.symbolic.{SymbolicRegressionEngine, Target, TabulatedFunctionFitness, SymbolicRegressionIterationListener}
 
 import com.lagodiuk.gp.symbolic.interpreter.Functions
 import com.lagodiuk.gp.symbolic.interpreter.Expression;
@@ -317,45 +314,51 @@ object Dirties {
     i: List[List[Value.value]],
     o: List[Value.value]
   ): Option[AExp.aexp] = {
+    try {
       val targets = (i zip o).map{
-        case (i: List[Value.value], o: Value.value) => o match {
-          case Value.Str(_) => throw new IllegalArgumentException("Cannot handle strings")
-          case Value.Numa(Int.int_of_integer(n)) => new Target(
-            TypeConversion.toInteger(n),
-            i.map{
-              case Value.Str(_) => throw new IllegalArgumentException("Cannot handle strings")
-              case Value.Numa(Int.int_of_integer(n)) => TypeConversion.toInteger(n)
-            }: _*
-          )
-      }}
-      val fitness = new TabulatedFunctionFitness(targets: _*)
-      val vars = (1 to i(0).length).map(i => "i"+i)
-      val engine = new SymbolicRegressionEngine(
-				values.map(n => TypeConversion.toInteger(Code_Numeral.integer_of_int(n))).asJava,
-				fitness,
-				// define variables
-				("r"+Code_Numeral.integer_of_nat(r)::vars.toList).asJava,
-				// define base functions
-				List(
-								Functions.ADD,
-								Functions.SUB,
-								Functions.VARIABLE,
-								Functions.CONSTANT
-						).asJava
-				)
-        engine.addIterationListener(new SymbolicRegressionIterationListener() {
-          override def update(engine: SymbolicRegressionEngine): Unit = {
-            val bestSyntaxTree: Expression = engine.getBestSyntaxTree
-            val currFitValue: Double = engine.fitness(bestSyntaxTree)
-            // halt condition
-            if (currFitValue == 0) {
-              engine.terminate()
-            }
+      case (i: List[Value.value], o: Value.value) => o match {
+        case Value.Str(_) => throw new IllegalArgumentException("Cannot handle strings")
+        case Value.Numa(Int.int_of_integer(n)) => new Target(
+          TypeConversion.toInteger(n),
+          i.map{
+            case Value.Str(_) => throw new IllegalArgumentException("Cannot handle strings")
+            case Value.Numa(Int.int_of_integer(n)) => TypeConversion.toInteger(n)
+          }: _*
+        )
+    }}
+    val fitness = new TabulatedFunctionFitness(targets: _*)
+    val vars = (1 to i(0).length).map(i => "i"+i)
+    val engine = new SymbolicRegressionEngine(
+			values.map(n => TypeConversion.toInteger(Code_Numeral.integer_of_int(n))).asJava,
+			fitness,
+			// define variables
+			("r"+(Code_Numeral.integer_of_nat(r)+1)::vars.toList).asJava,
+			// define base functions
+			List(
+							Functions.ADD,
+							Functions.SUB,
+							Functions.VARIABLE,
+							Functions.CONSTANT
+					).asJava
+			)
+      engine.addIterationListener(new SymbolicRegressionIterationListener() {
+        override def update(engine: SymbolicRegressionEngine): Unit = {
+          val bestSyntaxTree: Expression = engine.getBestSyntaxTree
+          val currFitValue: Double = engine.fitness(bestSyntaxTree)
+          // halt condition
+          if (currFitValue == 0) {
+            engine.terminate()
           }
-        })
-        engine.evolve(20)
-        val best = engine.getBestSyntaxTree().simplify()
-        Some(TypeConversion.toAExp(best))
+        }
+      })
+      engine.evolve(20)
+      val best = engine.getBestSyntaxTree().simplify()
+      println("Best expression was "+best)
+      Some(TypeConversion.toAExp(best))
+    }
+    catch {
+      case e: IllegalArgumentException => return None
+    }
   }
 
   def getRegs(
