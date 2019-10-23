@@ -31,7 +31,7 @@ definition t_replace_with :: "transition \<Rightarrow> nat \<Rightarrow> nat \<R
                              Updates = map (\<lambda>u. u_replace_with u r1 r2) (Updates t)\<rparr>"
 
 definition replace_with :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM" where
-  "replace_with e r1 r2 = fimage (\<lambda>(u, tf, t). (u, tf, t_replace_with t r1 r2)) e"
+  "replace_with e r1 r2 = to_new_representation (fimage (\<lambda>(u, tf, t). (u, tf, t_replace_with t r1 r2)) (to_old_representation e))"
 
 definition print :: "String.literal \<Rightarrow> unit" where
   "print p = ()"

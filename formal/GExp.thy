@@ -81,6 +81,8 @@ lemma nor_equiv: "gval (gNot (gOr a b)) s = gval (Nor a b) s"
 definition satisfiable :: "gexp \<Rightarrow> bool" where
   "satisfiable g \<equiv> (\<exists>i r. gval g (join_ir i r) = true)"
 
+definition "satisfiable_list l = satisfiable (fold gAnd l (Bc True))"
+
 lemma unsatisfiable_false: "\<not> satisfiable (Bc False)"
   by (simp add: satisfiable_def)
 

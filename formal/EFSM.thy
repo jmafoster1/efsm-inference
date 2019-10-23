@@ -464,4 +464,16 @@ definition enumerate_strings :: "transition_matrix \<Rightarrow> String.literal 
 definition enumerate_ints :: "transition_matrix \<Rightarrow> int set" where
   "enumerate_ints e = \<Union> (image (\<lambda>(_, t). Transition.enumerate_ints t) (fset e))"
 
+definition max_reg :: "transition_matrix \<Rightarrow> nat option" where
+  "max_reg e = (let maxes = (fimage (\<lambda>(_, t). Transition.max_reg t) e) in if maxes = {||} then None else fMax maxes)"
+
+definition max_output :: "transition_matrix \<Rightarrow> nat" where
+  "max_output e = fMax (fimage (\<lambda>(_, t). length (Outputs t)) e)"
+
+definition all_regs :: "transition_matrix \<Rightarrow> nat set" where
+  "all_regs e = \<Union> (image (\<lambda>(_, t). enumerate_registers t) (fset e))"
+
+definition max_input :: "transition_matrix \<Rightarrow> nat option" where
+  "max_input e = fMax (fimage (\<lambda>(_, t). Transition.max_input t) e)"
+
 end

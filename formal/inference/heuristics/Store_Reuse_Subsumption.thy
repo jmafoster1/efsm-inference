@@ -283,18 +283,18 @@ definition input_stored_in_reg :: "transition \<Rightarrow> transition \<Rightar
         else None
   )"
 
-definition initially_undefined_context_check :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "initially_undefined_context_check e r s = (\<forall>t. accepts_trace (tm e) t \<and> gets_us_to s (tm e) 0 <> t \<longrightarrow> (\<exists>a. (anterior_context (tm e) t) = Some a \<and> a $ r = None))"
+definition initially_undefined_context_check :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
+  "initially_undefined_context_check e r s = (\<forall>t. accepts_trace e t \<and> gets_us_to s (e) 0 <> t \<longrightarrow> (\<exists>a. (anterior_context (e) t) = Some a \<and> a $ r = None))"
 
-lemma no_incoming_to_zero: "\<forall>(id, (from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
-       (aaa, ba) |\<in>| possible_steps (tm e) s d l i \<Longrightarrow>
+lemma no_incoming_to_zero: "\<forall>((from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
+       (aaa, ba) |\<in>| possible_steps e s d l i \<Longrightarrow>
        aaa \<noteq> 0"
   using in_possible_steps in_tm
   by fast
 
 lemma no_return_to_zero:
-  "\<forall>(id, (from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
-   \<forall>r n. \<not> gets_us_to 0 (tm e) (Suc n) r t"
+  "\<forall>((from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
+   \<forall>r n. \<not> gets_us_to 0 e (Suc n) r t"
 proof(induct t)
   case Nil
   then show ?case
@@ -317,9 +317,9 @@ next
 qed
 
 lemma no_accepting_return_to_zero:
-  "\<forall>(id, (from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
-   accepts_trace (tm e) (a#t) \<Longrightarrow>
-   \<not>gets_us_to 0 (tm e) 0 <> (a#t)"
+  "\<forall>((from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
+   accepts_trace (e) (a#t) \<Longrightarrow>
+   \<not>gets_us_to 0 (e) 0 <> (a#t)"
   apply clarify
   apply (rule gets_us_to.cases)
      apply simp
@@ -332,8 +332,8 @@ lemma no_accepting_return_to_zero:
   by (simp add: step_none_rejects)
 
 lemma no_return_to_zero_must_be_empty:
-  "\<forall>(id, (from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
-   accepts_trace (tm e) t \<and> gets_us_to 0 (tm e) 0 <> t \<Longrightarrow>
+  "\<forall>((from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
+   accepts_trace (e) t \<and> gets_us_to 0 (e) 0 <> t \<Longrightarrow>
    t = []"
 proof(induct t)
 case Nil
@@ -349,13 +349,13 @@ case (Cons a t)
     using no_accepting_return_to_zero by auto
 qed
 
-lemma anterior_context_empty: "\<forall>(id, (from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
-           accepts_trace (tm e) t \<Longrightarrow> gets_us_to 0 (tm e) 0 <> t \<Longrightarrow> anterior_context (tm e) t = Some <>"
+lemma anterior_context_empty: "\<forall>((from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
+           accepts_trace (e) t \<Longrightarrow> gets_us_to 0 (e) 0 <> t \<Longrightarrow> anterior_context (e) t = Some <>"
   using no_return_to_zero_must_be_empty[of e]
         anterior_context_empty
   by auto
 
-lemma no_incoming_to_initial_gives_empty_reg: "\<forall>(id, (from, to), t) |\<in>| e. to \<noteq> 0 \<Longrightarrow> initially_undefined_context_check e r 0"
+lemma no_incoming_to_initial_gives_empty_reg: "\<forall>((from, to), t) |\<in>| e. to \<noteq> 0 \<Longrightarrow> initially_undefined_context_check e r 0"
   apply (simp only: initially_undefined_context_check_def)
   apply clarify
   apply standard
@@ -407,7 +407,7 @@ qed
 
 lemma input_stored_in_reg_is_generalisation: "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow> is_generalisation_of t' t i r"
   apply (simp add: input_stored_in_reg_def)
-  apply (cases "input_stored_in_reg_aux t' t (Inference.total_max_reg e) (max (Arity t) (Arity t'))")
+  apply (cases "input_stored_in_reg_aux t' t (total_max_reg e) (max (Arity t) (Arity t'))")
    apply simp
   apply (case_tac a)
   apply simp
@@ -420,7 +420,7 @@ lemma input_stored_in_reg_is_generalisation: "input_stored_in_reg t' t e = Some 
 *)
 lemma generalised_directly_subsumes_original: 
   "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
-   initially_undefined_context_check e r s' \<Longrightarrow>
+   initially_undefined_context_check (tm e) r s' \<Longrightarrow>
    no_illegal_updates t r \<Longrightarrow>
    directly_subsumes e1 e s s' t' t"
   using input_stored_in_reg_is_generalisation[of t' t e i r]
@@ -434,7 +434,7 @@ definition drop_guard_add_update_direct_subsumption :: "transition \<Rightarrow>
       None \<Rightarrow> False |
       Some (i, r) \<Rightarrow>
         if no_illegal_updates t r then
-          initially_undefined_context_check e r s'
+          initially_undefined_context_check (tm e) r s'
         else False
     )"
 
@@ -689,7 +689,7 @@ definition "drop_update_add_guard_direct_subsumption a b s s' t1 t2 =
    None \<Rightarrow> False |
    Some (i, r) \<Rightarrow>
      accepts_and_gets_us_to_both a b s s' \<and>
-     initially_undefined_context_check b r s' \<and>
+     initially_undefined_context_check (tm b) r s' \<and>
      updates_subset t1 t2 a
   )"
 
@@ -765,7 +765,7 @@ lemma one_extra_update_directly_subsumes:
    Outputs t1 = Outputs t2 \<Longrightarrow>
    Updates t1 = (r, u)#(Updates t2) \<Longrightarrow>
    not_updated r t2 \<Longrightarrow>
-   initially_undefined_context_check e2 r s2 \<Longrightarrow>
+   initially_undefined_context_check (tm e2) r s2 \<Longrightarrow>
    directly_subsumes e1 e2 s1 s2 t1 t2"
   apply (simp add: directly_subsumes_def)
   apply standard
@@ -791,7 +791,7 @@ lemma must_be_an_update: "U1 \<noteq> [] \<Longrightarrow> fst (hd U1) = r \<and
   by (metis eq_fst_iff hd_Cons_tl)
 
 lemma one_extra_update_direct_subsumption:
-  "one_extra_update t1 t2 s2 e2 \<Longrightarrow> directly_subsumes e1 e2 s1 s2 t1 t2"
+  "one_extra_update t1 t2 s2 (tm e2) \<Longrightarrow> directly_subsumes e1 e2 s1 s2 t1 t2"
   apply (insert must_be_an_update[of "Updates t1" r "Updates t2"])
   apply (simp add: one_extra_update_def)
   by (metis eq_fst_iff hd_Cons_tl one_extra_update_directly_subsumes)

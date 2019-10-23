@@ -266,4 +266,16 @@ lemma "\<forall>s. apply_guards (Guard t2) s \<longrightarrow> apply_guards (Gua
    apply auto[1]
   apply (simp add: posterior_def posterior_separate_def can_take_def)
   by auto
+
+lemma no_choice_no_subsumption:
+  "Label t = Label t' \<Longrightarrow>
+   Arity t = Arity t' \<Longrightarrow>
+   \<not> choice t t' \<Longrightarrow>
+   \<exists>i. can_take_transition t' i c \<Longrightarrow>
+  \<not> subsumes t c t'"
+  apply (rule bad_guards)
+  apply (simp add: can_take_transition_def can_take_def)
+  apply clarify
+  apply (rule_tac x=i in exI)
+  using choice_def by blast
 end

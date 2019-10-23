@@ -25,8 +25,10 @@ fun insert_increment :: update_modifier where
           newReg = R r;
           newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guard = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t1)\<rparr>;
           newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guard = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t2)\<rparr>;
-          initialised = fimage (\<lambda>(uid, (from, to), t). (uid, (from, to), (if (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2 then initialiseReg t r else t))) new;
-          newEFSM = (replaceAll (replaceAll initialised t2 newT2) t1 newT1)
+          to_initialise = ffilter (\<lambda>(uid, (from, to), t). (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2) (to_old_representation new);
+          initialisedTrans = fimage (\<lambda>(uid, (from, to), t). (uid, from, to, initialiseReg t r)) to_initialise;
+          initialised = replace_transitions new (sorted_list_of_fset initialisedTrans);
+          newEFSM = (replace_transitions new [(t1ID, origin t1ID new, dest t1ID new, newT1), (t2ID, origin t2ID new, dest t2ID new, newT2)])
           in 
           resolve_nondeterminism [] (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
      else
@@ -34,7 +36,11 @@ fun insert_increment :: update_modifier where
      )"
 
 definition struct_replace_all :: "iEFSM \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
-  "struct_replace_all e old new = fimage (\<lambda>(uid, (from, dest), t). if same_structure t old then (uid, (from, dest), new) else (uid, (from, dest), t)) e"
+  "struct_replace_all e old new = (let
+    to_replace = ffilter (\<lambda>(uid, (from, dest), t). same_structure t old) (to_old_representation e);
+    replacements = fimage (\<lambda>(uid, (from, to), t). (uid, from, to, new)) to_replace
+    in
+    replace_transitions e (sorted_list_of_fset replacements))"
 
 lemma output_match_symmetry: "(outputMatch t1 t2) = (outputMatch t2 t1)"
   apply (simp add: outputMatch_def)

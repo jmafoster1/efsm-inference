@@ -40,10 +40,6 @@ definition finfun2pairs :: "('a::linorder \<Rightarrow>f 'b) \<Rightarrow> ('a \
     in zip keys values
    )"
 
-fun replace_transitions :: "(tid \<times> transition) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "replace_transitions [] e = e" |
-  "replace_transitions ((ti, t)#rest) e = replace_transitions rest (fimage (\<lambda>(id', od, t'). if id' = ti then (id', od, t) else (id', od, t')) e)"
-
 definition insert_updates :: "transition \<Rightarrow> update_function list \<Rightarrow> transition" where
   "insert_updates t u = \<lparr>Label = Label t, Arity = Arity t, Guard = [], Outputs = Outputs t, Updates = (filter (\<lambda>(r, _). r \<notin> set (map fst u)) (Updates t))@u\<rparr>"
 
@@ -59,9 +55,9 @@ fun put_update_function_aux :: "aexp option \<Rightarrow> nat \<Rightarrow> upda
        \<comment> \<open>Possible steps with a transition we need to modify\<close>
       if l = label \<and> length i = i_arity then let
         newT = insert_outputs (insert_updates ta us) op ox;
-        newE = replace_transitions [(tid, newT)] e
+        newE = replace_transitions e [(tid, origin tid e, dest tid e, newT)]
         in
-        put_update_function_aux op ox us t label i_arity (make_distinct newE) s' (apply_updates (Updates ta) (join_ir i r) r)
+        put_update_function_aux op ox us t label i_arity newE s' (apply_updates (Updates ta) (join_ir i r) r)
        \<comment> \<open>Possible steps but not interesting - just take a transition and move on\<close>
       else
         put_update_function_aux op ox us t label i_arity e s' (apply_updates (Updates ta) (join_ir i r) r)
@@ -97,7 +93,7 @@ fun put_output_function_2_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_e
           \<lparr>Label = Label prevT, Arity = Arity prevT, Guard = [], Outputs = Outputs prevT, Updates = remdups ((hd necessaryRegs, f)#(Updates prevT))\<rparr>
           else
           \<lparr>Label = Label prevT, Arity = Arity prevT, Guard = Guard prevT, Outputs = Outputs prevT, Updates = remdups (updates@(Updates prevT))\<rparr>);
-        newE = replace_transitions [(tid, newT), (prevtid, newPrevT)] e
+        newE = replace_transitions e [(tid, origin tid e, dest tid e, newT), (prevtid, origin prevtid e, dest prevtid e, newPrevT)]
         in
         put_output_function_2_aux fi f t label i_arity o_arity (Some tid) newE s' (apply_updates (Updates ta) (join_ir i r) r)
        \<comment> \<open>Possible steps but not interesting - just take a transition and move on\<close>

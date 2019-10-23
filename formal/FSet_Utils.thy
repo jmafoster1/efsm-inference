@@ -171,4 +171,7 @@ lemma ffilter_out_all: "\<forall>e |\<in>| f. \<not>P e \<Longrightarrow> ffilte
 lemma fset_eq_alt: "(x = y) = (x |\<subseteq>| y \<and> size x = size y)"
   by (metis exists_least_iff le_less size_fsubset)
 
+definition these :: "'a option fset \<Rightarrow> 'a fset"
+  where "these A = the |`| (ffilter (\<lambda>x. x \<noteq> None) A)"
+
 end

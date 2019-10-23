@@ -39,12 +39,12 @@ definition "initially_undefined_context_check_full = initially_undefined_context
 
 lemma [code]:
 "initially_undefined_context_check e r s = (
-  if s = 0 \<and> (\<forall>(id, (from, to), t) |\<in>| e. to \<noteq> 0) then
+  if s = 0 \<and> (\<forall>((from, to), t) |\<in>| e. to \<noteq> 0) then
     True
   else
     initially_undefined_context_check_full e r s
   )"
-  apply (case_tac "s = 0 \<and> (\<forall>(id, (from, to), t)|\<in>|e. to \<noteq> 0)")
+  apply (case_tac "s = 0 \<and> (\<forall>((from, to), t)|\<in>|e. to \<noteq> 0)")
    apply (simp add: no_incoming_to_initial_gives_empty_reg)
   using initially_undefined_context_check_full_def by presburger
 
@@ -156,10 +156,10 @@ fun input_updates_register_aux :: "update_function list \<Rightarrow> nat option
   "input_updates_register_aux (h#t) = input_updates_register_aux t" |
   "input_updates_register_aux [] = None"
 
-definition input_updates_register :: "iEFSM \<Rightarrow> (nat \<times> String.literal)" where
+definition input_updates_register :: "transition_matrix \<Rightarrow> (nat \<times> String.literal)" where
   "input_updates_register e = (
-    case fthe_elem (ffilter (\<lambda>(_, _, t). input_updates_register_aux (Updates t) \<noteq> None) e) of
-      (_, _, t) \<Rightarrow> (case
+    case fthe_elem (ffilter (\<lambda>(_, t). input_updates_register_aux (Updates t) \<noteq> None) e) of
+      (_, t) \<Rightarrow> (case
         input_updates_register_aux (Updates t) of
           Some n \<Rightarrow> (n, Label t)
       )
@@ -387,7 +387,7 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
       then False
     else if t1 = drop_guards t2
       then True
-    else if one_extra_update t1 t2 s' m2
+    else if one_extra_update t1 t2 s' (tm m2)
       then True
     \<comment> \<open>else if t2 = drop_guards t1 \<and> satisfiable_negation t1
       then False\<close>
@@ -598,7 +598,6 @@ export_code
   naive_score_comprehensive_eq_high
   origin_states
   (* Heuristics *)
-  statewise_drop_inputs
   drop_inputs
   same_register
   insert_increment_2

@@ -23,7 +23,7 @@ fun equals :: update_modifier where
      t2 = (get_by_id new t2ID) in
      if is_equals t1 \<and> is_equals t2
      then
-           Some (replace (drop_transitions new {|t2ID|}) t1ID gen_eq)
+           Some (replace_transitions new [(t1ID, origin t1ID new, dest t1ID new, gen_eq), (t2ID, origin t2ID new, dest t2ID new, gen_eq)])
      else None
    )"
 
@@ -43,7 +43,7 @@ fun not_equals :: update_modifier where
      t2 = (get_by_id new t2ID) in
      if is_equals t1 \<and> is_equals t2
      then
-           Some (replace (drop_transitions new {|t2ID|}) t1ID gen_neq)
+           Some (replace_transitions new [(t1ID, origin t1ID new, dest t1ID new, gen_neq), (t2ID, origin t2ID new, dest t2ID new, gen_neq)])
      else None
    )"
 

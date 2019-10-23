@@ -79,11 +79,11 @@ definition find_intertrace_matches_aux :: "(index \<times> index) fset \<Rightar
 definition find_intertrace_matches :: "log \<Rightarrow> iEFSM \<Rightarrow> match list" where
   "find_intertrace_matches l e = filter (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). e1 \<noteq> e2) (concat (map (\<lambda>(t, m). sorted_list_of_fset (find_intertrace_matches_aux m e t)) (zip l (map get_by_id_intratrace_matches l))))"
 
-definition max_input :: "iEFSM \<Rightarrow> nat option" where
-  "max_input e = fMax (fimage (\<lambda>(_, _, t). Transition.max_input t) e)"
-
 definition total_max_input :: "iEFSM \<Rightarrow> nat" where
-  "total_max_input e = (case fMax (fimage (\<lambda>(_, _, t). Transition.max_input t) e) of None \<Rightarrow> 0 | Some i \<Rightarrow> i)"
+  "total_max_input e = (case EFSM.max_input (tm e) of None \<Rightarrow> 0 | Some i \<Rightarrow> i)"
+
+definition total_max_reg :: "iEFSM \<Rightarrow> nat" where
+  "total_max_reg e = (case EFSM.max_reg (tm e) of None \<Rightarrow> 0 | Some i \<Rightarrow> i)"
 
 definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
   "remove_guard_add_update t inputX outputX = \<lparr>
@@ -109,13 +109,17 @@ primrec count :: "'a \<Rightarrow> 'a list \<Rightarrow> nat" where
   "count _ [] = 0" |
   "count a (h#t) = (if a = h then 1+(count a t) else count a t)"
 
+definition replaceAll :: "iEFSM \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
+  "replaceAll e old new = to_new_representation (fimage (\<lambda>(uid, (from, dest), t). if t = old then (uid, (from, dest), new) else (uid, (from, dest), t)) (to_old_representation e))"
+
 primrec generalise_transitions :: "((((transition \<times> nat) \<times> ioTag \<times> nat) \<times>
      (transition \<times> nat) \<times> ioTag \<times> nat) \<times>
     ((transition \<times> nat) \<times> ioTag \<times> nat) \<times>
     (transition \<times> nat) \<times> ioTag \<times> nat) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "generalise_transitions [] e = e" |
-  "generalise_transitions (h#t) e = (let ((((orig1, u1), _), (orig2, u2), _), (((gen1, u1'), _), (gen2, u2), _)) = h in
-                                         generalise_transitions t (replaceAll (replaceAll e orig1 gen1) orig2 gen2))"
+  "generalise_transitions (h#t) e = (let
+    ((((orig1, u1), _), (orig2, u2), _), (((gen1, u1'), _), (gen2, u2), _)) = h in
+   generalise_transitions t (replaceAll (replaceAll e orig1 gen1) orig2 gen2))"
 
 definition strip_uids :: "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> (transition \<times> nat) \<times> ioTag \<times> nat) \<Rightarrow> ((transition \<times> ioTag \<times> nat) \<times> (transition \<times> ioTag \<times> nat))" where
   "strip_uids x = (let (((t1, u1), io1, in1), (t2, u2), io2, in2) = x in ((t1, io1, in1), (t2, io2, in2)))"
@@ -180,7 +184,7 @@ definition is_proper_generalisation_of :: "transition \<Rightarrow> transition \
  "is_proper_generalisation_of t' t e = (\<exists>i \<le> total_max_input e. \<exists> r \<le> total_max_reg e.
                                         is_generalisation_of t' t i r \<and>
                                         (\<forall>u \<in> set (Updates t). fst u \<noteq> r) \<and>
-                                        (\<forall>i \<le> max_input e. \<forall>u \<in> set (Updates t). fst u \<noteq> r)
+                                        (\<forall>i \<le> max_input (tm e). \<forall>u \<in> set (Updates t). fst u \<noteq> r)
                                        )"
 
 (* Recognising the same input used in multiple guards *)
