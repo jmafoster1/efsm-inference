@@ -76,6 +76,9 @@ abbreviation null_state ("<>") where
 lemma default_empty: "infinite (UNIV :: 'a set) \<Longrightarrow> finfun_default (<>::'a \<Rightarrow>f 'b option) = None"
   by (simp add: finfun_default_def finfun_default_aux_def)
 
+lemma finfun_to_list_empty: "infinite (UNIV :: 'a set) \<Longrightarrow> finfun_to_list (<>::'a::linorder \<Rightarrow>f 'b option) = []"
+  by (simp add: finfun_to_list_const)
+
 nonterminal maplets and maplet
 
 (* TODO: get the <1 := L (Num x)> kind of syntax back *)

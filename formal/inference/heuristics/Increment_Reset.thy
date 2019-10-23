@@ -59,7 +59,9 @@ fun insert_increment_2 :: update_modifier where
           newReg = R r;
           newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guard = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t1)\<rparr>;
           newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guard = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t2)\<rparr>;
-          initialised = fimage (\<lambda>(uid, (from, to), t). (uid, (from, to), (if (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2 then initialiseReg t r else t))) new ;
+          to_initialise = ffilter (\<lambda>(uid, (from, to), t). (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2) (to_old_representation new);
+          initialisedTrans = fimage (\<lambda>(uid, (from, to), t). (uid, from, to, initialiseReg t r)) to_initialise;
+          initialised = replace_transitions new (sorted_list_of_fset initialisedTrans);
           newEFSM = (struct_replace_all (struct_replace_all initialised t2 newT2) t1 newT1)
           in 
           resolve_nondeterminism [] (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np

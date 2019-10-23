@@ -133,7 +133,7 @@ fun put_output_function_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_exe
         case prevtid of None \<Rightarrow> None | Some prevtid \<Rightarrow> let
         prevT = get_by_id e prevtid;
         newPrevT = \<lparr>Label = Label prevT, Arity = Arity prevT, Guard = Guard prevT, Outputs = Outputs prevT, Updates = remdups ((Updates prevT)@updates)\<rparr>;
-        newE = replace_transitions [(tid, newT), (prevtid, newPrevT)] e
+        newE = replace_transitions e [(tid, origin tid e, dest tid e, newT), (prevtid, origin prevtid e, dest prevtid e, newPrevT)]
         in
         put_output_function_aux fi f t label i_arity o_arity (Some tid) newE s' (apply_updates (Updates ta) (join_ir i r) r)
        \<comment> \<open>Possible steps but not interesting - just take a transition and move on\<close>
