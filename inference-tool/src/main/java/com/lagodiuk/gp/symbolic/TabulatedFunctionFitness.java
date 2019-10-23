@@ -42,6 +42,10 @@ public class TabulatedFunctionFitness implements ExpressionFitness {
 		return this.targets;
 	}
 	
+	public void addTarget(Target t) {
+		this.targets.add(t);
+	}
+	
 	@Override
 	public double fitness(Expression expression, Context context) {
 		double diff = 0.0;
@@ -93,6 +97,52 @@ public class TabulatedFunctionFitness implements ExpressionFitness {
 		}
 		
 		return mistakes + ((diff/this.targets.size()) + totalUsedVars.size() + expression.vars().size());
+	}
+	
+	public boolean isCorrect(Expression expression, Context context) {
+		double mistakes = 0.0;
+		Set<String> totalUsedVars = new HashSet<String>();
+		
+		for (Target target : this.targets) {
+			Set<String> usedVars = target.getContextState().keySet();
+			for (String v: usedVars) {
+				totalUsedVars.add(v);
+			}
+			
+			double targetValue = target.getTargetValue();
+			
+			Set<String> undef = context.dom();
+			undef.removeAll(usedVars);
+			context.setup(target.getContextState().entrySet());
+
+			double minErr = Double.POSITIVE_INFINITY;
+			
+			if (undef.isEmpty()) {
+				double offBy = Math.abs(targetValue - expression.eval(context));
+				if (offBy < minErr) {
+					minErr = offBy;
+				}
+			}
+			else {
+				for (String v: undef) {
+					for (int i: context.getValues()) {
+						context.setVariable(v, i);
+						double offBy = Math.abs(targetValue - expression.eval(context));
+						if (offBy < minErr) {
+							minErr = offBy;
+						}
+					}
+				}
+			}
+			
+			if (minErr > 0) {
+				mistakes++;
+			}
+		}
+		
+		totalUsedVars.removeAll(expression.vars());
+		
+		return mistakes == 0;
 	}
 	
 //	This is solidly OK most of the time.

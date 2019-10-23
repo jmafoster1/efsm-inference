@@ -2,10 +2,14 @@ theory Code_Target_List
 imports Main
 begin
 
+declare List.insert_def [code del]
+declare member_rec [code del]
+lemma [code]: "List.insert x xs = (if List.member xs x then xs else x#xs)"
+  by (simp add: in_set_member)
+
 declare enumerate_eq_zip [code]
 declare foldr_conv_foldl [code]
 declare map_filter_map_filter [code_unfold del]
-declare ListMem_iff [code]
 
 (* Use the native implementations of list functions *)
 definition "flatmap l f = List.maps f l"

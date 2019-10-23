@@ -22,4 +22,6 @@ public interface ExpressionFitness {
 
 	double fitness(Expression expression, Context context);
 
+	boolean isCorrect(Expression e, Context context);
+
 }

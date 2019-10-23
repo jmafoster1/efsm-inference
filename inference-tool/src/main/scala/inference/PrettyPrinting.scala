@@ -87,6 +87,7 @@ object PrettyPrinter {
 
   def outputToString(o: Option[Value.value]) = o match {
     case Some(p) => valueToString(p)
+    case None => "NONE!!!"
   }
 
   def optOutputsToString(o: List[Option[Value.value]]) = o.map(PrettyPrinter.outputToString).mkString(", ")
@@ -108,6 +109,12 @@ object PrettyPrinter {
 
   def iEFSM2dot(e: IEFSM, f: Nat.nat) = {
     val pw = new PrintWriter(new File(f"${Config.config.dotfiles}/step_${Code_Numeral.integer_of_nat(f)}%03d.dot"))
+    pw.write(EFSM_Dot.iefsm2dot(e))
+    pw.close
+  }
+
+  def iEFSM2dot(e: IEFSM, f: Int) = {
+    val pw = new PrintWriter(new File(f"${Config.config.dotfiles}/step_${f}%03d.dot"))
     pw.write(EFSM_Dot.iefsm2dot(e))
     pw.close
   }

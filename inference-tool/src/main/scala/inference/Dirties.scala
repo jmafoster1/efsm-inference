@@ -16,43 +16,6 @@ import com.lagodiuk.gp.symbolic.interpreter.Expression;
 import scala.collection.JavaConverters._
 
 object Dirties {
-
-  def makeBranch(
-    e: TransitionMatrix,
-    s: Nat.nat,
-    r: Map[Nat.nat, Option[Value.value]],
-    trace: List[(String, (List[Value.value], List[Value.value]))]): FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])] = {
-      var currentState = s
-      var currentRegs = r
-      var currentEFSM = e
-
-      for (event <- trace) {
-        event match {
-        case (label, (inputs, outputs)) =>
-          EFSM.step(currentEFSM, currentState, currentRegs, label, inputs) match {
-            case None => {
-              currentEFSM = Inference.add_transition(currentEFSM, currentState, label, inputs, outputs)
-              currentState = Inference.maxS(currentEFSM)
-            }
-            case Some((_, (sa, (outputsa, updated)))) => {
-              if (Lista.equal_lista[Option[Value.value]](outputsa,
-                Lista.map[Value.value, Option[Value.value]](((a: Value.value) => Some[Value.value](a)), outputs)
-              )) {
-                currentState = sa
-                currentRegs = updated
-              }
-              else {
-                // Make a transition and add it to the EFSM
-                currentEFSM = Inference.add_transition(currentEFSM, currentState, label, inputs, outputs)
-                currentState = Inference.maxS(currentEFSM)
-              }
-            }
-          }
-        }
-      }
-      return currentEFSM
-    }
-
   def foldl[A, B](f: A => B => A, b: A, l: List[B]): A =
     // l.par.foldLeft(b)(((x, y) => (f(x))(y)))
     l.foldLeft(b)(((x, y) => (f(x))(y)))
@@ -320,27 +283,116 @@ object Dirties {
     subsumes
   }
 
+  def getUpdate(
+    r: Nat.nat,
+    values: List[Int.int],
+    train: List[(List[Value.value], (Map[Nat.nat,Option[Value.value]], Map[Nat.nat,Option[Value.value]]))]
+  ): Option[AExp.aexp] = {
+    var vars:List[String] = List()
+    var targets: List[Target] = List()
+    for (t <- train) t match {
+      case (inputs, (anteriorRegs, posteriorRegs)) => posteriorRegs(r) match {
+        case None => ()
+        case Some(Value.Str(_)) => ()
+        case Some(Value.Numa(Int.int_of_integer(n))) => {
+
+          return Some(AExp.Plus(AExp.V(VName.R(Nat.Nata(2))), AExp.V(VName.I(Nat.Nata(0)))))
+
+
+
+
+          println("  Inputs: "+inputs)
+          println("  AnteriorRegs: "+anteriorRegs)
+          println("  posteriorRegs: "+posteriorRegs)
+          val target = new Target()
+          target.targetIs(TypeConversion.toInt(n))
+          for ((ip:Value.value, ix:Int) <- inputs.zipWithIndex) ip match {
+            case Value.Str(_) => ()
+            case Value.Numa(Int.int_of_integer(n)) => {
+              val vname = f"i${ix+1}"
+              vars = vname::vars
+              target.when(vname, TypeConversion.toInt(n))
+            }
+          }
+          for ((k:Nat.nat, v:Option[Value.value]) <- anteriorRegs) v match {
+            case None => ()
+            case Some(Value.Str(_)) => ()
+            case Some(Value.Numa(Int.int_of_integer(n))) => {
+              val vname = f"r${TypeConversion.natToInt(k)}"
+              vars = vname::vars
+              target.when(vname, TypeConversion.toInt(n))
+            }
+          }
+          targets = target::targets
+          println(target)
+        }
+      }
+    }
+    val fitness = new TabulatedFunctionFitness(targets: _*)
+    val engine = new SymbolicRegressionEngine(
+      values.map(n => TypeConversion.toInteger(Code_Numeral.integer_of_int(n))).asJava,
+      fitness,
+      (vars.toList).asJava,
+      List(
+              Functions.ADD,
+              Functions.SUB,
+              Functions.VARIABLE,
+              Functions.CONSTANT
+          ).asJava
+      )
+      engine.addIterationListener(new SymbolicRegressionIterationListener() {
+        override def update(engine: SymbolicRegressionEngine): Unit = {
+          val bestSyntaxTree: Expression = engine.getBestSyntaxTree
+          val currFitValue: Double = engine.fitness(bestSyntaxTree)
+          // halt condition
+          if (currFitValue == 0) {
+            engine.terminate()
+          }
+        }
+      })
+      engine.evolve(Config.config.gpIterations)
+      val best = engine.getBestSyntaxTree().simplify()
+      println("Best update function is: "+best)
+      if (engine.isCorrect(best)) {
+        println(best.simplify() + " is correct")
+        return Some(TypeConversion.toAExp(best))
+      }
+      else {
+        return None
+      }
+    }
+
   def getFunction(
     r: Nat.nat,
     values: List[Int.int],
     i: List[List[Value.value]],
     o: List[Value.value]
   ): Option[AExp.aexp] = {
-    try {
-      val targets = (i zip o).distinct.map{
-      case (i: List[Value.value], o: Value.value) => o match {
-        case Value.Str(_) => throw new IllegalArgumentException("Cannot handle strings")
-        case Value.Numa(Int.int_of_integer(n)) => new Target(
-          TypeConversion.toInteger(n),
-          i.map{
-            case Value.Str(_) => throw new IllegalArgumentException("Cannot handle strings")
-            case Value.Numa(Int.int_of_integer(n)) => TypeConversion.toInteger(n)
-          }: _*
-        )
-    }}
-    // println("  "+targets)
+    var vars:List[String] = List()
+    var targets: List[Target] = List()
+    for ((inputs, output) <- i zip o) output match {
+      case Value.Str(_) => return None
+      case Value.Numa(Int.int_of_integer(n)) => {
+
+
+        return Some(AExp.Plus(AExp.V(VName.R(Nat.Nata(2))), AExp.V(VName.I(Nat.Nata(0)))))
+
+
+        val target = new Target()
+        target.targetIs(TypeConversion.toInt(n))
+        for ((ip, ix) <- inputs.zipWithIndex) ip match {
+          case Value.Str(_) => ()
+          case Value.Numa(Int.int_of_integer(n)) => {
+            val vname = f"i${ix+1}"
+            vars = vname::vars
+            target.when(vname, TypeConversion.toInt(n))
+          }
+        }
+        targets = target::targets
+      }
+    }
+
     val fitness = new TabulatedFunctionFitness(targets: _*)
-    val vars = (1 to i(0).length).map(i => "i"+i)
     val engine = new SymbolicRegressionEngine(
 			values.map(n => TypeConversion.toInteger(Code_Numeral.integer_of_int(n))).asJava,
 			fitness,
@@ -366,12 +418,14 @@ object Dirties {
       })
       engine.evolve(Config.config.gpIterations)
       val best = engine.getBestSyntaxTree().simplify()
-      // println("Best expression was "+best)
-      Some(TypeConversion.toAExp(best))
-    }
-    catch {
-      case e: IllegalArgumentException => return None
-    }
+      println("Best output function is: "+best)
+      if (engine.isCorrect(best)) {
+        println(best + " is correct")
+        return Some(TypeConversion.toAExp(best))
+      }
+      else {
+        return None
+      }
   }
 
   def getRegs(

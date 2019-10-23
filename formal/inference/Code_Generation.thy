@@ -574,6 +574,9 @@ code_printing constant get_function \<rightharpoonup> (Scala) "Dirties.getFuncti
 declare get_regs_def [code del]
 code_printing constant get_regs \<rightharpoonup> (Scala) "Dirties.getRegs"
 
+declare get_update_def [code del]
+code_printing constant get_update \<rightharpoonup> (Scala) "Dirties.getUpdate"
+
 export_code
   (* Essentials *)
   try_heuristics
@@ -609,6 +612,7 @@ export_code
   not_equals
   infer_output_functions
   infer_output_functions_2
+  infer_output_update_functions
   (* Nondeterminism metrics *)
   nondeterministic_pairs
   nondeterministic_pairs_labar

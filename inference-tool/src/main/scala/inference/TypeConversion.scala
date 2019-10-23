@@ -55,6 +55,10 @@ object TypeConversion {
     }
   }
 
+  def natToInt(n: Nat.nat): Int = n match {
+    case Nat.Nata(nn) => toInt(nn)
+  }
+
   def toInteger(b: BigInt): Integer = {
     if (b.isValidInt) {
       return b.toInt

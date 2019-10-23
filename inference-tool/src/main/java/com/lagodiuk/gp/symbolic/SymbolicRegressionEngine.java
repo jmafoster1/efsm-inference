@@ -143,5 +143,9 @@ public class SymbolicRegressionEngine {
 	public void setParentsSurviveCount(int n) {
 		this.environment.setParentChromosomesSurviveCount(n);
 	}
+	
+	public boolean isCorrect(Expression e) {
+		return this.expressionFitness.isCorrect(e, this.context);
+	}
 
 }
