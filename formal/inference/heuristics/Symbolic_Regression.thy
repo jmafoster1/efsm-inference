@@ -68,7 +68,7 @@ primrec put_update_functions :: "aexp option \<Rightarrow> nat \<Rightarrow> upd
   "put_update_functions op ox us (h#t) label arity e = (
     case put_update_function_aux op ox us (snd h) label arity e 0 <> of
       None \<Rightarrow> None |       
-      Some e' \<Rightarrow> put_update_functions op ox us t label arity (make_discinct e')
+      Some e' \<Rightarrow> put_update_functions op ox us t label arity (make_distinct e')
   )"
 
 fun put_output_function_2_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_execution \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> tids option \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
