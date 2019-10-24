@@ -538,7 +538,6 @@ code_printing
   | constant "finfun_update" \<rightharpoonup> (Scala) "_ + (_ -> _)"
   | constant "finfun_apply" \<rightharpoonup> (Scala) "_((_))"
   | constant "finfun_to_list" \<rightharpoonup> (Scala) "_.keySet.toList"
-
 declare finfun_to_list_const_code [code del]
 declare finfun_to_list_update_code [code del]
 

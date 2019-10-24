@@ -8,7 +8,7 @@ import java.nio.file.{Paths, Files}
 
 object Heuristics extends Enumeration {
   type Heuristic = Value
-  val store, inputgen, inc, sr, sr2, sru, same, ignore, ignoret, ignores, lob, gob, gungho, eq, neq = Value
+  val store, inputgen, inc, sr, sr2, sru, same, ignore, ignoret, lob, gob, gungho, eq, neq = Value
 }
 
 object Nondeterminisms extends Enumeration {
@@ -27,8 +27,8 @@ case class Config(
   file: File = null,
   outputname: String = null,
   dotfiles: String = "dotfiles",
-  nondeterminismMetric: IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, Nat.nat), (Types.Transition, Nat.nat))))] = (Inference.nondeterministic_pairs _),
-  strategy: Nat.nat => Nat.nat => IEFSM => Nat.nat = (SelectionStrategies.naive_score _).curried,
+  nondeterminismMetric: IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, List[Nat.nat]), (Types.Transition, List[Nat.nat]))))] = (Inference.nondeterministic_pairs _),
+  strategy: List[Nat.nat] => List[Nat.nat] => IEFSM => Nat.nat = (SelectionStrategies.naive_score _).curried,
   skip: Boolean = false,
   logLevel: Level = Level.DEBUG,
   logFile: String = null,
@@ -47,7 +47,7 @@ object Config {
 
   implicit val heuristicsRead: scopt.Read[Heuristics.Value] =
     scopt.Read.reads(Heuristics withName _)
-  implicit val strategiesRead: scopt.Read[Nat.nat => Nat.nat => IEFSM => Nat.nat] =
+  implicit val strategiesRead: scopt.Read[List[Nat.nat] => List[Nat.nat] => IEFSM => Nat.nat] =
     scopt.Read.reads {
       _.toLowerCase match {
         case "naive" => (SelectionStrategies.naive_score _).curried
@@ -70,7 +70,7 @@ object Config {
           throw new IllegalArgumentException(s"'${s}' is not a debug level.")
       }
     }
-  implicit val nondeterminismRead: scopt.Read[Types.IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, Nat.nat), (Types.Transition, Nat.nat))))]] =
+  implicit val nondeterminismRead: scopt.Read[Types.IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, List[Nat.nat]), (Types.Transition, List[Nat.nat]))))]] =
     scopt.Read.reads {
       _.toLowerCase match {
         case "basic" => (Inference.nondeterministic_pairs _)
@@ -103,11 +103,11 @@ object Config {
         .valueName("GP iterations")
         .action((x, c) => c.copy(gpIterations = x))
         .text("The number of iterations to run the symbolic regression heuristic for (defaults to 50)"),
-      opt[Nat.nat => Nat.nat => IEFSM => Nat.nat]('s', "strategy")
+      opt[List[Nat.nat] => List[Nat.nat] => IEFSM => Nat.nat]('s', "strategy")
         .valueName("strategy")
         .action((x, c) => c.copy(strategy = x))
         .text(s"The preferred strategy to rank state merges ${Strategies.values}"),
-      opt[Types.IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, Nat.nat), (Types.Transition, Nat.nat))))]]('n', "nondeterminism")
+      opt[Types.IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, List[Nat.nat]), (Types.Transition, List[Nat.nat]))))]]('n', "nondeterminism")
         .valueName("nondeterminism checker")
         .action((x, c) => c.copy(nondeterminismMetric = x))
         .text(s"The preferred definition of nondeterminism - defaults to label, arity, and guard check ${Nondeterminisms.values}"),
@@ -175,7 +175,6 @@ object Config {
           Heuristics.same -> (Same_Register.same_register _).curried,
           Heuristics.ignore -> (Ignore_Inputs.drop_inputs _).curried,
           Heuristics.ignoret -> (Ignore_Inputs.transitionwise_drop_inputs _).curried,
-          Heuristics.ignores -> (Ignore_Inputs.statewise_drop_inputs _).curried,
           Heuristics.lob -> (Least_Upper_Bound.lob _).curried,
           Heuristics.gob -> (Least_Upper_Bound.gob _).curried,
           Heuristics.gungho -> (Least_Upper_Bound.gung_ho _).curried,

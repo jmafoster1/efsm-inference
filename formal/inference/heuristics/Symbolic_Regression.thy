@@ -55,7 +55,7 @@ fun put_update_function_aux :: "aexp option \<Rightarrow> nat \<Rightarrow> upda
        \<comment> \<open>Possible steps with a transition we need to modify\<close>
       if l = label \<and> length i = i_arity then let
         newT = insert_outputs (insert_updates ta us) op ox;
-        newE = replace_transitions e [(tid, origin tid e, dest tid e, newT)]
+        newE = replace_transitions e [(tid, newT)]
         in
         put_update_function_aux op ox us t label i_arity newE s' (apply_updates (Updates ta) (join_ir i r) r)
        \<comment> \<open>Possible steps but not interesting - just take a transition and move on\<close>
@@ -71,34 +71,31 @@ primrec put_update_functions :: "aexp option \<Rightarrow> nat \<Rightarrow> upd
       Some e' \<Rightarrow> put_update_functions op ox us t label arity e'
   )"
 
-fun put_output_function_2_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_execution \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> tid option \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
+fun put_output_function_2_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_execution \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> tids option \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
   "put_output_function_2_aux _ _ [] _ _ _ _ e _ _ = Some e" |
   "put_output_function_2_aux fi f ((_, l, i, p)#t) label i_arity o_arity prevtid e s r = (
     let
-    poss_steps = ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir i r) = map Some p) (i_possible_steps e s r l i) in
-    \<comment> \<open>No possible steps with matching output means something bad has happenned\<close>
-    case random_member poss_steps of
-      None \<Rightarrow> None |
-      Some (tid, s', ta) \<Rightarrow>
-       \<comment> \<open>Possible steps with a transition we need to modify\<close>
-      if l = label \<and> length i = i_arity \<and> length p = o_arity then
-        case prevtid of None \<Rightarrow> None | Some prevtid \<Rightarrow> let
-        necessaryRegs = finfun_to_list (get_regs i f (p!fi)) in
-        if length necessaryRegs \<noteq> 1 then None else let
-        newT = \<lparr>Label = Label ta, Arity = Arity ta, Guard = [], Outputs = list_update (Outputs ta) fi f, Updates = remdups ((hd necessaryRegs, f)#(Updates ta))\<rparr>;
-        satisfyingRegs = (get_regs i f (p!fi));
-        updates = map (\<lambda>r. case (satisfyingRegs $ r) of Some v' \<Rightarrow> (r, L v')) (necessaryRegs);
-        prevT = get_by_id e prevtid;
-        newPrevT = (if Label prevT = Label ta then
-          \<lparr>Label = Label prevT, Arity = Arity prevT, Guard = [], Outputs = Outputs prevT, Updates = remdups ((hd necessaryRegs, f)#(Updates prevT))\<rparr>
-          else
-          \<lparr>Label = Label prevT, Arity = Arity prevT, Guard = Guard prevT, Outputs = Outputs prevT, Updates = remdups (updates@(Updates prevT))\<rparr>);
-        newE = replace_transitions e [(tid, origin tid e, dest tid e, newT), (prevtid, origin prevtid e, dest prevtid e, newPrevT)]
-        in
-        put_output_function_2_aux fi f t label i_arity o_arity (Some tid) newE s' (apply_updates (Updates ta) (join_ir i r) r)
-       \<comment> \<open>Possible steps but not interesting - just take a transition and move on\<close>
-      else
-        put_output_function_2_aux fi f t label i_arity o_arity (Some tid) e s' (apply_updates (Updates ta) (join_ir i r) r)
+    poss_steps = ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir i r) = map Some p) (i_possible_steps e s r l i);
+    (tid, s', ta) = fthe_elem poss_steps in
+     \<comment> \<open>Possible steps with a transition we need to modify\<close>
+    if l = label \<and> length i = i_arity \<and> length p = o_arity then
+      case prevtid of None \<Rightarrow> None | Some prevtid \<Rightarrow> let
+      necessaryRegs = finfun_to_list (get_regs i f (p!fi)) in
+      if length necessaryRegs \<noteq> 1 then None else let
+      newT = \<lparr>Label = Label ta, Arity = Arity ta, Guard = [], Outputs = list_update (Outputs ta) fi f, Updates = remdups ((hd necessaryRegs, f)#(Updates ta))\<rparr>;
+      satisfyingRegs = (get_regs i f (p!fi));
+      updates = map (\<lambda>r. case (satisfyingRegs $ r) of Some v' \<Rightarrow> (r, L v')) (necessaryRegs);
+      prevT = get_by_ids e prevtid;
+      newPrevT = (if Label prevT = Label ta then
+        \<lparr>Label = Label prevT, Arity = Arity prevT, Guard = [], Outputs = Outputs prevT, Updates = remdups ((hd necessaryRegs, f)#(Updates prevT))\<rparr>
+        else
+        \<lparr>Label = Label prevT, Arity = Arity prevT, Guard = Guard prevT, Outputs = Outputs prevT, Updates = remdups (updates@(Updates prevT))\<rparr>);
+      newE = replace_transitions e [(tid, newT), (prevtid, newPrevT)]
+      in
+      put_output_function_2_aux fi f t label i_arity o_arity (Some tid) newE s' (apply_updates (Updates ta) (join_ir i r) r)
+     \<comment> \<open>Possible steps but not interesting - just take a transition and move on\<close>
+    else
+      put_output_function_2_aux fi f t label i_arity o_arity (Some tid) e s' (apply_updates (Updates ta) (join_ir i r) r)
   )"
 
 primrec put_output_function_2 :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_log \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
@@ -116,7 +113,7 @@ fun put_output_functions_2 :: "(nat \<times> aexp option) list \<Rightarrow> ind
     Some e' \<Rightarrow> put_output_functions_2 rest log t e'
   )"
 
-fun put_output_function_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_execution \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> tid option \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
+fun put_output_function_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_execution \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> tids option \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
   "put_output_function_aux _ _ [] _ _ _ _ e _ _ = Some e" |
   "put_output_function_aux fi f ((_, l, i, p)#t) label i_arity o_arity prevtid e s r = (
     let
@@ -131,9 +128,9 @@ fun put_output_function_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_exe
         necessaryRegs = get_regs i f (p!fi);
         updates = map (\<lambda>r. case (necessaryRegs $ r) of Some v' \<Rightarrow> (r, L v')) (finfun_to_list necessaryRegs) in
         case prevtid of None \<Rightarrow> None | Some prevtid \<Rightarrow> let
-        prevT = get_by_id e prevtid;
+        prevT = get_by_ids e prevtid;
         newPrevT = \<lparr>Label = Label prevT, Arity = Arity prevT, Guard = Guard prevT, Outputs = Outputs prevT, Updates = remdups ((Updates prevT)@updates)\<rparr>;
-        newE = replace_transitions e [(tid, origin tid e, dest tid e, newT), (prevtid, origin prevtid e, dest prevtid e, newPrevT)]
+        newE = replace_transitions e [(tid, newT), (prevtid, newPrevT)]
         in
         put_output_function_aux fi f t label i_arity o_arity (Some tid) newE s' (apply_updates (Updates ta) (join_ir i r) r)
        \<comment> \<open>Possible steps but not interesting - just take a transition and move on\<close>

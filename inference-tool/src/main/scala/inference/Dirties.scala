@@ -197,14 +197,14 @@ object Dirties {
   }
 
   // Check that whenever we're in state s, register r is always undefined
-  def initiallyUndefinedContextCheck(e: IEFSM, r: Nat.nat, s: Nat.nat): Boolean = {
+  def initiallyUndefinedContextCheck(e: TransitionMatrix, r: Nat.nat, s: Nat.nat): Boolean = {
     println("initiallyUndefinedContextCheck")
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
-    TypeConversion.efsmToSALTranslator(Inference.tm(e), f)
+    TypeConversion.efsmToSALTranslator(e, f)
 
     addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = ${TypeConversion.salState(s)} => r__${Code_Numeral.integer_of_nat(r)} = None);")
 
-    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(e))+1}}!initiallyUndefined'").!!
+    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(EFSM.max_int(e))+1}}!initiallyUndefined'").!!
     if (output.toString != "proved.\n") {
       print(output)
     }

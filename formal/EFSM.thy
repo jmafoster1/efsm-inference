@@ -476,4 +476,9 @@ definition all_regs :: "transition_matrix \<Rightarrow> nat set" where
 definition max_input :: "transition_matrix \<Rightarrow> nat option" where
   "max_input e = fMax (fimage (\<lambda>(_, t). Transition.max_input t) e)"
 
+fun maxS :: "transition_matrix \<Rightarrow> nat" where
+  "maxS t = (if t = {||} then 0 else fMax ((fimage (\<lambda>((origin, dest), t). origin) t) |\<union>| (fimage (\<lambda>((origin, dest), t). dest) t)))"
+
+definition max_int :: "transition_matrix \<Rightarrow> int" where
+  "max_int e = Max (insert 0 (enumerate_ints e))"
 end

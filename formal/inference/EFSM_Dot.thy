@@ -41,6 +41,7 @@ where
 definition "show_int n  \<equiv> showsp_int ((STR '''')) n ((STR ''''))"
 definition "show_nat n  \<equiv> showsp_nat ((STR '''')) n ((STR ''''))"
 
+
 definition replace_backslash :: "String.literal \<Rightarrow> String.literal" where
   "replace_backslash s = String.implode (fold (@) (map (\<lambda>x. if x = CHR 0x5c then [CHR 0x5c,CHR 0x5c] else [x]) (String.explode s)) '''')"
 
@@ -65,6 +66,9 @@ fun join :: "String.literal list \<Rightarrow> String.literal \<Rightarrow> Stri
   "join [] _ = (STR '''')" |
   "join [a] _ = a" |
   "join (h#t) s = h+s+(join t s)"
+
+definition show_nats :: "nat list \<Rightarrow> String.literal" where
+  "show_nats l = join (map show_nat l) STR '', ''"
 
 fun gexp2dot :: "gexp \<Rightarrow> String.literal" where
   "gexp2dot (GExp.Bc True) = (STR ''True'')" |
@@ -123,7 +127,7 @@ definition iefsm2dot :: "iEFSM \<Rightarrow> String.literal" where
                  STR ''  node [color=''+quote+(STR ''black'')+quote+STR '', fillcolor=''+quote+(STR ''white'')+quote+STR '', shape=''+quote+(STR ''circle'')+quote+STR '', style=''+quote+(STR ''filled'')+quote+STR '', fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+
                  STR ''  edge [fontname=''+quote+STR ''Latin Modern Math''+quote+STR ''];''+newline+newline+
                   (join (map (\<lambda>s. STR ''  s''+show_nat s+STR ''[label=<s<sub>'' +show_nat s+ STR ''</sub>>];'') (sorted_list_of_fset (S e - {|0|}))) (newline))+newline+newline+
-                  (join ((map (\<lambda>(uid, (from, to), t). STR ''  s''+(show_nat from)+STR ''->s''+(show_nat to)+STR ''[label=<<i> (''+show_nat uid+STR '')''+(transition2dot t)+STR ''</i>>];'') (sorted_list_of_fset (to_old_representation e)))) newline)+newline+
+                  (join ((map (\<lambda>(uid, (from, to), t). STR ''  s''+(show_nat from)+STR ''->s''+(show_nat to)+STR ''[label=<<i> [''+show_nats uid+STR '']''+(transition2dot t)+STR ''</i>>];'') (sorted_list_of_fset e))) newline)+newline+
                 STR ''}''"
 
 abbreviation newline_str :: string where
@@ -131,12 +135,4 @@ abbreviation newline_str :: string where
 
 abbreviation quote_str :: string where
   "quote_str \<equiv> ''0x22''"
-
-definition iefsm2dot_str :: "iEFSM \<Rightarrow> string" where
-  "iefsm2dot_str e = ''digraph EFSM{''@newline_str@
-                 ''  graph [rankdir=''@quote_str@''LR''@quote_str@'', fontname=''@quote_str@''Latin Modern Math''@quote_str@''];''@newline_str@
-                 ''  node [color=''@quote_str@''black''@quote_str@'', fillcolor=''@quote_str@''white''@quote_str@'', shape=''@quote_str@''circle''@quote_str@'', style=''@quote_str@''filled''@quote_str@'', fontname=''@quote_str@''Latin Modern Math''@quote_str@''];''@newline_str@
-                 ''  edge [fontname=''@quote_str@''Latin Modern Math''@quote_str@''];''@newline_str@
-                  (String.explode (join (sorted_list_of_fset (fimage (\<lambda>(uid, (from, to), t).STR ''  ''+(show_nat from)+STR ''->''+(show_nat to)+STR ''[label=<(''+(show_nat uid)+STR '') ''+(transition2dot t)+STR ''>]'') (to_old_representation e))) newline)@newline_str)@
-                ''}''"
 end

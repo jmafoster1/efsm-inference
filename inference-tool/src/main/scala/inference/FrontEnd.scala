@@ -13,7 +13,7 @@ object FrontEnd {
     Log.root.info(args.mkString(" "))
     Log.root.info(s"Building PTA - ${Config.config.log.length} ${if (Config.config.log.length == 1) "trace" else "traces"}")
 
-    var pta: TransitionMatrix = null;
+    var pta: IEFSM = null;
 
     if (Config.config.abs) {
       pta = Inference.make_pta_abstract(Config.config.log, FSet.bot_fset)
@@ -21,13 +21,13 @@ object FrontEnd {
     else {
       pta = Inference.make_pta(Config.config.log, FSet.bot_fset)
     }
-    Config.numStates = Code_Numeral.integer_of_nat(FSet.size_fset(EFSM.S(pta)))
+    Config.numStates = Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(pta)))
     Config.ptaNumStates = Config.numStates
 
     Log.root.info(s"PTA has ${Config.numStates} states")
 
-    PrettyPrinter.EFSM2dot(pta, s"pta_gen")
-    TypeConversion.efsmToSALTranslator(pta, "pta")
+    PrettyPrinter.iEFSM2dot(pta, s"pta_gen")
+    TypeConversion.efsmToSALTranslator(Inference.tm(pta), "pta")
 
     try {
       val inferred = Inference.learn(
@@ -39,20 +39,20 @@ object FrontEnd {
         Config.config.nondeterminismMetric)
 
         // TypeConversion.doubleEFSMToSALTranslator(pta, "pta", inferred, "vend1", "compositionTest")
-        TypeConversion.efsmToSALTranslator(inferred, "inferred")
+        TypeConversion.efsmToSALTranslator(Inference.tm(inferred), "inferred")
 
         Log.root.info("The inferred machine is " +
-          (if (Inference.nondeterministic(Inference.toiEFSM(inferred), Inference.nondeterministic_pairs)) "non" else "") + "deterministic")
+          (if (Inference.nondeterministic(inferred, Inference.nondeterministic_pairs)) "non" else "") + "deterministic")
 
         val basename = (if (Config.config.outputname == null) (FilenameUtils.getBaseName(Config.config.file.getName()).replace("-", "_")) else Config.config.outputname.replace("-", "_"))
-        TypeConversion.efsmToSALTranslator(inferred, basename)
+        TypeConversion.efsmToSALTranslator(Inference.tm(inferred), basename)
 
-        PrettyPrinter.EFSM2dot(inferred, s"${basename}_gen")
+        PrettyPrinter.iEFSM2dot(inferred, s"${basename}_gen")
         val seconds = (System.nanoTime - t1) / 1e9d
         val minutes = (seconds / 60) % 60
         val hours = seconds / 3600
         Log.root.info(s"Completed in ${if (hours > 0) s"${hours.toInt}h " else ""}${if (minutes > 0) s"${minutes.toInt}m " else ""}${seconds % 60}s")
-        Log.root.info(s"states: ${FSet.size_fset(EFSM.S(inferred))}")
+        Log.root.info(s"states: ${FSet.size_fset(Inference.S(inferred))}")
         Log.root.info(s"transitions: ${FSet.size_fset(inferred)}")
     }
     catch {

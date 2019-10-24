@@ -54,7 +54,7 @@ definition get_by_id_intratrace_matches :: "execution \<Rightarrow> (index \<tim
   If the EFSM is nondeterministic, we need to make sure it chooses the right path so that it accepts
   the input trace.
 *)
-definition i_step :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> nat \<times> registers) option" where
+definition i_step :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> tids \<times> registers) option" where
   "i_step tr e s r l i = (let 
     poss_steps = (i_possible_steps e s r l i);
     possibilities = ffilter (\<lambda>(u, s', t). accepts (tm e) s' (apply_updates (Updates t) (join_ir i r) r) tr) poss_steps in
@@ -64,10 +64,10 @@ definition i_step :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarr
       Some (t, s', u, (apply_updates (Updates t) (join_ir i r) r))
   )"
 
-type_synonym match = "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> ((transition \<times> nat) \<times> ioTag \<times> nat))"
+type_synonym match = "(((transition \<times> tids) \<times> ioTag \<times> nat) \<times> ((transition \<times> tids) \<times> ioTag \<times> nat))"
 
 definition "exec2trace t = map (\<lambda>(label, inputs, _). (label, inputs)) t"
-primrec (nonexhaustive) walk_up_to :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (transition \<times> nat)" where
+primrec (nonexhaustive) walk_up_to :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (transition \<times> tids)" where
   "walk_up_to n e s r (h#t) =
     (case (i_step (exec2trace t) e s r (fst h) (fst (snd h))) of
       (Some (transition, s', uid, updated)) \<Rightarrow> (case n of 0 \<Rightarrow> (transition, uid) | Suc m \<Rightarrow> walk_up_to m e s' updated t)
@@ -110,21 +110,20 @@ primrec count :: "'a \<Rightarrow> 'a list \<Rightarrow> nat" where
   "count a (h#t) = (if a = h then 1+(count a t) else count a t)"
 
 definition replaceAll :: "iEFSM \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
-  "replaceAll e old new = to_new_representation (fimage (\<lambda>(uid, (from, dest), t). if t = old then (uid, (from, dest), new) else (uid, (from, dest), t)) (to_old_representation e))"
+  "replaceAll e old new = fimage (\<lambda>(uid, (from, dest), t). if t = old then (uid, (from, dest), new) else (uid, (from, dest), t)) e"
 
-primrec generalise_transitions :: "((((transition \<times> nat) \<times> ioTag \<times> nat) \<times>
-     (transition \<times> nat) \<times> ioTag \<times> nat) \<times>
-    ((transition \<times> nat) \<times> ioTag \<times> nat) \<times>
-    (transition \<times> nat) \<times> ioTag \<times> nat) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+primrec generalise_transitions ::
+  "((((transition \<times> tids) \<times> ioTag \<times> nat) \<times> (transition \<times> tids) \<times> ioTag \<times> nat) \<times>
+     ((transition \<times> tids) \<times> ioTag \<times> nat) \<times> (transition \<times> tids) \<times> ioTag \<times> nat) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "generalise_transitions [] e = e" |
   "generalise_transitions (h#t) e = (let
     ((((orig1, u1), _), (orig2, u2), _), (((gen1, u1'), _), (gen2, u2), _)) = h in
    generalise_transitions t (replaceAll (replaceAll e orig1 gen1) orig2 gen2))"
 
-definition strip_uids :: "(((transition \<times> nat) \<times> ioTag \<times> nat) \<times> (transition \<times> nat) \<times> ioTag \<times> nat) \<Rightarrow> ((transition \<times> ioTag \<times> nat) \<times> (transition \<times> ioTag \<times> nat))" where
+definition strip_uids :: "(((transition \<times> tids) \<times> ioTag \<times> nat) \<times> (transition \<times> tids) \<times> ioTag \<times> nat) \<Rightarrow> ((transition \<times> ioTag \<times> nat) \<times> (transition \<times> ioTag \<times> nat))" where
   "strip_uids x = (let (((t1, u1), io1, in1), (t2, u2), io2, in2) = x in ((t1, io1, in1), (t2, io2, in2)))"
 
-definition modify :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+definition modify :: "match list \<Rightarrow> tids \<Rightarrow> tids \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
   "modify matches u1 u2 old = (let relevant = filter (\<lambda>(((_, u1'), io, _), (_, u2'), io', _). io = In \<and> io' = Out \<and> (u1 = u1' \<or> u2 = u1' \<or> u1 = u2' \<or> u2 = u2')) matches;
                                    newReg = case max_reg old of None \<Rightarrow> 1 | Some r \<Rightarrow> r + 1;
                                    replacements = map (\<lambda>(((t1, u1), io1, inx1), (t2, u2), io2, inx2). (((remove_guard_add_update t1 inx1 newReg, u1), io1, inx1), (generalise_output t2 newReg inx2, u2), io2, inx2)) relevant;
@@ -218,7 +217,7 @@ definition remove_guards_add_update :: "transition \<Rightarrow> nat \<Rightarro
     Updates = (outputX, (V (vname.I inputX)))#(Updates t)
   \<rparr>"
 
-definition modify_2 :: "match list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+definition modify_2 :: "match list \<Rightarrow> tids \<Rightarrow> tids \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
   "modify_2 matches u1 u2 old = (let relevant = filter (\<lambda>(((_, u1'), io, _), (_, u2'), io', _). io = In \<and> io' = In \<and> (u1 = u1' \<or> u2 = u1' \<or> u1 = u2' \<or> u2 = u2')) matches;
                                    newReg = case max_reg old of None \<Rightarrow> 1 | Some r \<Rightarrow> r + 1;
                                    replacements = map (\<lambda>(((t1, u1), io1, inx1), (t2, u2), io2, inx2).

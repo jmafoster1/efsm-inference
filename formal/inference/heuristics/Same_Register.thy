@@ -31,21 +31,12 @@ definition t_replace_with :: "transition \<Rightarrow> nat \<Rightarrow> nat \<R
                              Updates = map (\<lambda>u. u_replace_with u r1 r2) (Updates t)\<rparr>"
 
 definition replace_with :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM" where
-  "replace_with e r1 r2 = to_new_representation (fimage (\<lambda>(u, tf, t). (u, tf, t_replace_with t r1 r2)) (to_old_representation e))"
-
-definition print :: "String.literal \<Rightarrow> unit" where
-  "print p = ()"
-
-definition tprint :: "transition \<Rightarrow> unit" where
-  "tprint p = ()"
-
-definition r_print :: "transition \<Rightarrow> transition" where
-  "r_print t = (let f = tprint t in t)"
+  "replace_with e r1 r2 = (fimage (\<lambda>(u, tf, t). (u, tf, t_replace_with t r1 r2)) e)"
 
 fun same_register :: update_modifier where
   "same_register t1ID t2ID s new old _ = (let
-     t1 = (get_by_id new t1ID);
-     t2 = (get_by_id new t2ID);
+     t1 = get_by_ids new t1ID;
+     t2 = get_by_ids new t2ID;
      ut1 = updates (Updates t1);
      ut2 = updates (Updates t2) in
      if same_structure t1 t2 then
@@ -54,9 +45,4 @@ fun same_register :: update_modifier where
        (_, _) \<Rightarrow> None
      else None
    )"
-
-code_printing
-  constant "print" \<rightharpoonup> (Scala) "println" |
-  constant "tprint" \<rightharpoonup> (Scala) "println"
-
 end

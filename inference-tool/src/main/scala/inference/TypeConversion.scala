@@ -13,7 +13,7 @@ object Types {
   type Event = (String, (List[Value.value], List[Value.value]))
   type Transition = Transition.transition_ext[Unit]
   type TransitionMatrix = FSet.fset[((Nat.nat, Nat.nat), Transition)]
-  type IEFSM = FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), Transition))]
+  type IEFSM = FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition))]
 }
 
 object TypeConversion {

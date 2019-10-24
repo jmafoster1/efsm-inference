@@ -289,8 +289,7 @@ definition initially_undefined_context_check :: "transition_matrix \<Rightarrow>
 lemma no_incoming_to_zero: "\<forall>((from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
        (aaa, ba) |\<in>| possible_steps e s d l i \<Longrightarrow>
        aaa \<noteq> 0"
-  using in_possible_steps in_tm
-  by fast
+  using in_possible_steps by fast
 
 lemma no_return_to_zero:
   "\<forall>((from, to), t)|\<in>|e. 0 < to \<Longrightarrow>

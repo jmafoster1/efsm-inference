@@ -107,6 +107,12 @@ object PrettyPrinter {
     return better.mkString(", \n")
   }
 
+  def iEFSM2dot(e: IEFSM, f: String) = {
+    val pw = new PrintWriter(new File(f"${Config.config.dotfiles}/${f}.dot"))
+    pw.write(EFSM_Dot.iefsm2dot(e))
+    pw.close
+  }
+
   def iEFSM2dot(e: IEFSM, f: Nat.nat) = {
     val pw = new PrintWriter(new File(f"${Config.config.dotfiles}/step_${Code_Numeral.integer_of_nat(f)}%03d.dot"))
     pw.write(EFSM_Dot.iefsm2dot(e))

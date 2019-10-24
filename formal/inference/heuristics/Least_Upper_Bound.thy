@@ -41,12 +41,12 @@ lemma lob_aux_some: "Outputs t1 = Outputs t2 \<Longrightarrow>
 
 fun lob :: update_modifier where
   "lob t1ID t2ID s new old _ = (let
-     t1 = (get_by_id new t1ID);
-     t2 = (get_by_id new t2ID) in
+     t1 = (get_by_ids new t1ID);
+     t2 = (get_by_ids new t2ID) in
      case lob_aux t1 t2 of
        None \<Rightarrow> None |
        Some lob_t \<Rightarrow>
-           Some (replace_transitions new [(t1ID, origin t1ID new, dest t1ID new, lob_t), (t2ID, origin t2ID new, dest t2ID new, lob_t)])
+           Some (replace_transitions new [(t1ID, lob_t), (t2ID, lob_t)])
    )"
 
 fun has_corresponding :: "gexp \<Rightarrow> gexp list \<Rightarrow> bool" where
@@ -609,12 +609,12 @@ definition gob_aux :: "transition \<Rightarrow> transition \<Rightarrow> transit
 
 fun gob :: update_modifier where
   "gob t1ID t2ID s new old _ = (let
-     t1 = (get_by_id new t1ID);
-     t2 = (get_by_id new t2ID) in
+     t1 = (get_by_ids new t1ID);
+     t2 = (get_by_ids new t2ID) in
      case gob_aux t1 t2 of
        None \<Rightarrow> None |
        Some gob_t \<Rightarrow> 
-           Some (replace_transitions new [(t1ID, origin t1ID new, dest t1ID new, gob_t), (t2ID, origin t2ID new, dest t2ID new, gob_t)])
+           Some (replace_transitions new [(t1ID, gob_t), (t2ID, gob_t)])
    )"
 
 definition gung_ho_aux :: "transition \<Rightarrow> transition \<Rightarrow> transition option" where

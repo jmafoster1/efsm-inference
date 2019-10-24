@@ -19,11 +19,11 @@ definition is_equals :: "transition \<Rightarrow> bool" where
 
 fun equals :: update_modifier where
   "equals t1ID t2ID s new old _ = (let
-     t1 = (get_by_id new t1ID);
-     t2 = (get_by_id new t2ID) in
+     t1 = (get_by_ids new t1ID);
+     t2 = (get_by_ids new t2ID) in
      if is_equals t1 \<and> is_equals t2
      then
-           Some (replace_transitions new [(t1ID, origin t1ID new, dest t1ID new, gen_eq), (t2ID, origin t2ID new, dest t2ID new, gen_eq)])
+           Some (replace_transitions new [(t1ID, gen_eq), (t2ID, gen_eq)])
      else None
    )"
 
@@ -39,11 +39,11 @@ definition is_not_equals :: "transition \<Rightarrow> bool" where
 
 fun not_equals :: update_modifier where
   "not_equals t1ID t2ID s new old _ = (let
-     t1 = (get_by_id new t1ID);
-     t2 = (get_by_id new t2ID) in
+     t1 = (get_by_ids new t1ID);
+     t2 = (get_by_ids new t2ID) in
      if is_equals t1 \<and> is_equals t2
      then
-           Some (replace_transitions new [(t1ID, origin t1ID new, dest t1ID new, gen_neq), (t2ID, origin t2ID new, dest t2ID new, gen_neq)])
+           Some (replace_transitions new [(t1ID, gen_neq), (t2ID, gen_neq)])
      else None
    )"
 

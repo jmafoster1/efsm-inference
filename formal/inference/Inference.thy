@@ -17,35 +17,35 @@ necessary because transitions may not be unique in an EFSM. Assigning transition
 identifier enables us dest look up the origin and destination states of transitions without having dest
 pass them around in the inference functions.
 \<close>
-type_synonym tid = "nat"
-type_synonym iEFSM = "tid \<Rightarrow>f ((cfstate \<times> cfstate) \<times> transition) option"
+type_synonym tid = nat
+type_synonym tids = "tid list"
+type_synonym iEFSM = "(tids \<times> (cfstate \<times> cfstate) \<times> transition) fset"
 
-definition get_by_id :: "iEFSM \<Rightarrow> tid \<Rightarrow> transition" ("(_|_|)" [20, 20] 40) where
-  "get_by_id e uid = (case e $ uid of Some ((origin, dest), t) \<Rightarrow> t)"
+definition get_by_id :: "iEFSM \<Rightarrow> tid \<Rightarrow> transition" where
+  "get_by_id e uid = (snd \<circ> snd) (fthe_elem (ffilter (\<lambda>(tids, _). uid \<in> set tids) e))"
 
-definition max_uid :: "iEFSM \<Rightarrow> nat" where
-  "max_uid e = Max (set (finfun_to_list e))"
+definition get_by_ids :: "iEFSM \<Rightarrow> tids \<Rightarrow> transition" where
+  "get_by_ids e uid = (snd \<circ> snd) (fthe_elem (ffilter (\<lambda>(tids, _). uid = tids) e))"
 
+definition uids :: "iEFSM \<Rightarrow> nat fset" where
+  "uids e = ffUnion (fimage (fset_of_list \<circ> fst) e)"
+
+definition max_uid :: "iEFSM \<Rightarrow> nat option" where
+  "max_uid e = (let uids = uids e in if uids = {||} then None else Some (fMax uids))"
+
+(*
 definition toiEFSM :: "transition_matrix \<Rightarrow> iEFSM" where
   "toiEFSM e = (let
     e_list = (sorted_list_of_fset e) in
     fold (\<lambda>(uid, tuple) iefsm. iefsm(uid $:= Some tuple)) (enumerate 0 e_list) <>
   )"
+*)
 
 definition tm :: "iEFSM \<Rightarrow> transition_matrix" where
-  "tm e = these (fset_of_list (map (\<lambda>uid. e $ uid) (finfun_to_list e)))"
+  "tm e = fimage snd e"
 
-lemma in_tm: "((s, a), bb) |\<in>| tm b \<Longrightarrow> \<exists>id. b $ id = Some ((s, a), bb)"
-  apply (simp add: tm_def fimage_def fmember_def Abs_fset_inverse these_def)
-  by auto
-
-(*fimage (\<lambda>(uid, (origin, dest), t). (uid, (if origin = x then y else origin , if dest = x then y else dest), t)) t"*)
 definition merge_states_aux :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "merge_states_aux s1 s2 e = foldr (\<lambda>tid acc.
-    case e $ tid of
-      Some ((origin, dest), t) \<Rightarrow> acc(tid $:= Some ((if origin = s1 then s2 else origin, if dest = s1 then s2 else dest), t)) |
-      None \<Rightarrow> acc(tid $:= None)
-  ) (finfun_to_list e) (K$ finfun_default e)"
+  "merge_states_aux s1 s2 e = fimage (\<lambda>(uid, (origin, dest), t). (uid, (if origin = s1 then s2 else origin , if dest = s1 then s2 else dest), t)) e"
 
 definition merge_states :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "merge_states x y t = (if x > y then merge_states_aux x y t else merge_states_aux y x t)"
@@ -58,19 +58,13 @@ lemma merge_states_symmetry: "merge_states x y t = merge_states y x t"
 
 (* declare[[show_types,show_sorts]] *)
 
-definition to_old_representation :: "iEFSM \<Rightarrow> (tid \<times> (cfstate \<times> cfstate) \<times> transition) fset" where
-  "to_old_representation e = fset_of_list (map (\<lambda>uid. (uid, the (e$uid))) (finfun_to_list e))"
+definition outgoing_transitions :: "cfstate \<Rightarrow> iEFSM \<Rightarrow> (cfstate \<times> transition \<times> tids) fset" where
+  "outgoing_transitions s e = fimage (\<lambda>(uid, (from, to), t'). (to, t', uid)) ((ffilter (\<lambda>(uid, (origin, dest), t). origin = s)) e)"
 
-definition to_new_representation :: "(tid \<times> (cfstate \<times> cfstate) \<times> transition) fset \<Rightarrow> iEFSM" where
-  "to_new_representation e = ffold (\<lambda>(uid, tran) acc. acc(uid $:= Some tran)) <> e"
+\<comment> \<open>Tuples of the form (cfstate \<times> (cfstate \<times> cfstate) \<times> ((transition \<times> tids) \<times> (transition \<times> tids)))\<close>
+type_synonym nondeterministic_pair = "(cfstate \<times> (cfstate \<times> cfstate) \<times> ((transition \<times> tids) \<times> (transition \<times> tids)))"
 
-definition outgoing_transitions :: "cfstate \<Rightarrow> iEFSM \<Rightarrow> (cfstate \<times> transition \<times> tid) fset" where
-  "outgoing_transitions s e = fimage (\<lambda>(uid, (from, to), t'). (to, t', uid)) ((ffilter (\<lambda>(uid, (origin, dest), t). origin = s)) (to_old_representation e))"
-
-\<comment> \<open>Tuples of the form (cfstate \<times> (cfstate \<times> cfstate) \<times> ((transition \<times> tid) \<times> (transition \<times> tid)))\<close>
-type_synonym nondeterministic_pair = "(cfstate \<times> (cfstate \<times> cfstate) \<times> ((transition \<times> tid) \<times> (transition \<times> tid)))"
-
-definition state_nondeterminism :: "nat \<Rightarrow> (cfstate \<times> transition \<times> tid) fset \<Rightarrow> nondeterministic_pair fset" where
+definition state_nondeterminism :: "nat \<Rightarrow> (cfstate \<times> transition \<times> tids) fset \<Rightarrow> nondeterministic_pair fset" where
   "state_nondeterminism origin nt = (if size nt < 2 then {||} else ffUnion (fimage (\<lambda>x. let (dest, t) = x in fimage (\<lambda>y. let (dest', t') = y in (origin, (dest, dest'), (t, t'))) (nt - {|x|})) nt))"
 
 lemma state_nondeterminism_empty[simp]: "state_nondeterminism a {||} = {||}"
@@ -80,9 +74,8 @@ lemma state_nondeterminism_singledestn[simp]: "state_nondeterminism a {|x|} = {|
   by (simp add: state_nondeterminism_def ffilter_def Set.filter_def)
 
 definition S :: "iEFSM \<Rightarrow> nat fset" where
-  "S m = (fimage (\<lambda>(uid, (s, s'), t). s) (to_old_representation m)) |\<union>| fimage (\<lambda>(uid, (s, s'), t). s') (to_old_representation m)"
+  "S m = (fimage (\<lambda>(uid, (s, s'), t). s) m) |\<union>| fimage (\<lambda>(uid, (s, s'), t). s') m"
 
-(*
 lemma S_alt: "S t = EFSM.S (tm t)"
   apply (simp add: S_def EFSM.S_def tm_def)
   by force
@@ -94,7 +87,6 @@ lemma to_in_S: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrig
 lemma from_in_S: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrightarrow> from |\<in>| S xb)"
   apply (simp add: S_def)
   by blast
-*)
 
 (* For each state, get its outgoing transitions and see if there's any nondeterminism there *)
 definition nondeterministic_pairs :: "iEFSM \<Rightarrow> nondeterministic_pair fset" where
@@ -118,14 +110,11 @@ definition deterministic :: "iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondetermi
 definition nondeterministic :: "iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> bool" where
   "nondeterministic t np = (\<not> deterministic t np)"
 
-definition replace_transition :: "iEFSM \<Rightarrow> tid \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> iEFSM" where
-  "replace_transition e uid from to new = e(uid $:= Some ((from, to), new))"
+definition replace_transition :: "iEFSM \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> iEFSM" where
+  "replace_transition e uid new = (fimage (\<lambda>(uids, (from, to), t). if uid = uids then (uids, (from, to), new) else (uids, (from, to), t)) e)"
 
-definition replace_transitions :: "iEFSM \<Rightarrow> (tid \<times> cfstate \<times> cfstate \<times> transition) list \<Rightarrow> iEFSM" where
-  "replace_transitions e ts = fold (\<lambda>(uid, from, to, new) acc. replace_transition acc uid from to new) ts e"
-
-definition exits_state :: "iEFSM \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> bool" where
-  "exits_state e t from = (\<exists>dest uid. (uid, (from, dest), t) |\<in>| (to_old_representation e))"
+definition replace_transitions :: "iEFSM \<Rightarrow> (tids \<times> transition) list \<Rightarrow> iEFSM" where
+  "replace_transitions e ts = fold (\<lambda>(uid, new) acc. replace_transition acc uid new) ts e"
 
 primrec make_guard :: "value list \<Rightarrow> nat \<Rightarrow> gexp list" where
 "make_guard [] _ = []" |
@@ -135,15 +124,15 @@ primrec make_outputs :: "value list \<Rightarrow> output_function list" where
   "make_outputs [] = []" |
   "make_outputs (h#t) = (L h)#(make_outputs t)"
 
-fun maxS :: "transition_matrix \<Rightarrow> nat" where
-  "maxS t = (if t = {||} then 0 else fMax ((fimage (\<lambda>((origin, dest), t). origin) t) |\<union>| (fimage (\<lambda>((origin, dest), t). dest) t)))"
-
 (* An execution represents a run of the software and has the form [(label, inputs, outputs)]*)
 type_synonym execution = "(label \<times> value list \<times> value list) list"
 type_synonym log = "execution list"
 
-definition add_transition :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> label \<Rightarrow> value list \<Rightarrow> value list \<Rightarrow> transition_matrix" where
-  "add_transition e s label inputs outputs = finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e"
+definition max_uid_total :: "iEFSM \<Rightarrow> nat" where
+  "max_uid_total e = (case max_uid e of None \<Rightarrow> 0 | Some u \<Rightarrow> u)"
+
+definition add_transition :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> label \<Rightarrow> value list \<Rightarrow> value list \<Rightarrow> iEFSM" where
+  "add_transition e s label inputs outputs = finsert ([max_uid_total e + 1], (s, (maxS (tm e))+1), \<lparr>Label=label, Arity=length inputs, Guard=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e"
 
 definition startsWith :: "String.literal \<Rightarrow> String.literal \<Rightarrow> bool" where
   "startsWith string start = (\<exists>s'. string = start + s')"
@@ -219,49 +208,49 @@ primrec make_outputs_abstract :: "value list \<Rightarrow> nat \<Rightarrow> (St
         make_outputs_abstract t maxR r ((L h)#P)
     )"
 
-definition add_transition_abstract :: "transition_matrix \<Rightarrow> (String.literal \<Rightarrow>f nat option) \<Rightarrow> cfstate \<Rightarrow> label \<Rightarrow> value list \<Rightarrow> value list \<Rightarrow> (transition_matrix \<times> (String.literal \<Rightarrow>f nat option))" where
+definition add_transition_abstract :: "iEFSM \<Rightarrow> (String.literal \<Rightarrow>f nat option) \<Rightarrow> cfstate \<Rightarrow> label \<Rightarrow> value list \<Rightarrow> value list \<Rightarrow> (iEFSM \<times> (String.literal \<Rightarrow>f nat option))" where
   "add_transition_abstract e r s label inputs outputs = (let
-    regs = fimage (comp total_max_reg snd) e;
+    regs = fimage (total_max_reg \<circ> snd) (tm e);
     maxR = (if regs = {||} then 1 else fMax regs);
     (G, U1, r') = make_guard_abstract inputs 0 maxR r [] [];
     P = make_outputs_abstract outputs maxR r' [] in
     if endsWith label STR ''*'' then
-      (finsert ((s, s), \<lparr>Label=dropRight label 1, Arity=length inputs, Guard=G, Outputs=P, Updates=U1\<rparr>) e, r')
+      (finsert ([max_uid_total e + 1], (s, s), \<lparr>Label=dropRight label 1, Arity=length inputs, Guard=G, Outputs=P, Updates=U1\<rparr>) e, r')
     else
-      (finsert ((s, (maxS e)+1), \<lparr>Label=label, Arity=length inputs, Guard=G, Outputs=P, Updates=U1\<rparr>) e, r')
+      (finsert ([max_uid_total e + 1], (s, (maxS (tm e))+1), \<lparr>Label=label, Arity=length inputs, Guard=G, Outputs=P, Updates=U1\<rparr>) e, r')
     )"
 
-fun make_branch :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> transition_matrix" where
+fun make_branch :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> iEFSM" where
   "make_branch e _ _ [] = e" |
   "make_branch e s r ((label, inputs, outputs)#t) =
-    (case (step e s r label inputs) of
+    (case (step (tm e) s r label inputs) of
       Some (transition, s', outputs', updated) \<Rightarrow> 
         if outputs' = (map Some outputs) then
           make_branch e s' updated t
         else 
-          make_branch (add_transition e s label inputs outputs) ((maxS e)+1) r t  |
+          make_branch (add_transition e s label inputs outputs) ((maxS (tm e))+1) r t  |
       None \<Rightarrow>
-          make_branch (add_transition e s label inputs outputs) ((maxS e)+1) r t
+          make_branch (add_transition e s label inputs outputs) ((maxS (tm e))+1) r t
     )"
 
-fun make_branch_abstract :: "(transition_matrix \<times> (String.literal \<Rightarrow>f nat option)) \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> transition_matrix" where
+fun make_branch_abstract :: "(iEFSM \<times> (String.literal \<Rightarrow>f nat option)) \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> iEFSM" where
   "make_branch_abstract (e, r) _ _ [] = e" |
   "make_branch_abstract (e, r1) s r ((label, inputs, outputs)#t) =
-    (case (step e s r label inputs) of
+    (case (step (tm e) s r label inputs) of
       Some (transition, s', outputs', updated) \<Rightarrow> 
         if outputs' = (map Some outputs) then
           make_branch_abstract (e, r1) s' updated t
         else 
-          make_branch_abstract (add_transition_abstract e r1 s label inputs outputs) ((maxS e)+1) r t  |
+          make_branch_abstract (add_transition_abstract e r1 s label inputs outputs) ((maxS (tm e))+1) r t  |
       None \<Rightarrow>
-          make_branch_abstract (add_transition_abstract e r1 s label inputs outputs) ((maxS e)+1) r t
+          make_branch_abstract (add_transition_abstract e r1 s label inputs outputs) ((maxS (tm e))+1) r t
     )"
 
-primrec make_pta :: "log \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
+primrec make_pta :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "make_pta [] e = e" |
   "make_pta (h#t) e = make_pta t (make_branch e 0 <> h)"
 
-definition make_pta_abstract :: "log \<Rightarrow> transition_matrix \<Rightarrow> transition_matrix" where
+definition make_pta_abstract :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "make_pta_abstract l e = fold (\<lambda>h e. make_branch_abstract (e, <>) 0 <> h) l e"
 
 lemma make_pta_fold_all_e: "\<forall>e. make_pta l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
@@ -278,15 +267,16 @@ qed
 lemma make_pta_fold: "make_pta l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
   by (simp add: make_pta_fold_all_e)
 
-type_synonym update_modifier = "tid \<Rightarrow> tid \<Rightarrow> cfstate \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option"
+type_synonym update_modifier = "tids \<Rightarrow> tids \<Rightarrow> cfstate \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option"
 
 definition null_modifier :: update_modifier where
   "null_modifier _ _ _ _ _ _ = None"
 
-type_synonym scoreboard = "(nat \<times> (cfstate \<times> cfstate)) fset"
-type_synonym strategy = "tid \<Rightarrow> tid \<Rightarrow> iEFSM \<Rightarrow> nat"
+type_synonym score = nat
+type_synonym scoreboard = "(score \<times> (cfstate \<times> cfstate)) fset"
+type_synonym strategy = "tids \<Rightarrow> tids \<Rightarrow> iEFSM \<Rightarrow> nat"
 
-primrec k_outgoing :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> (cfstate \<times> transition \<times> tid) fset" where
+primrec k_outgoing :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> (cfstate \<times> transition \<times> tids) fset" where
   "k_outgoing 0 i s = outgoing_transitions s i" |
   "k_outgoing (Suc m) i s = (let
      outgoing = outgoing_transitions s i;
@@ -306,11 +296,11 @@ definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarr
      ) pairs_to_score in
      ffilter (\<lambda>(score, _). score > 0) scores)"
 
-definition origin :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
-  "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. uid = fst x) (to_old_representation t)))))"
+definition origin :: "tids \<Rightarrow> iEFSM \<Rightarrow> nat" where
+  "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. uid = fst x) t))))"
 
-definition dest :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat" where
-  "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. uid = fst x) (to_old_representation t)))))"
+definition dest :: "tids \<Rightarrow> iEFSM \<Rightarrow> nat" where
+  "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. uid = fst x) t))))"
 
 inductive satisfies_trace :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
   base: "satisfies_trace e s d []" |                                         
@@ -385,6 +375,15 @@ lemma gets_us_to_and_not_subsumes:
 lemma cant_directly_subsume: "\<forall>c. \<not> subsumes t c t' \<Longrightarrow> \<not> directly_subsumes m m' s s' t t'"
   by (simp add: directly_subsumes_def)
 
+\<comment> \<open>When we replace one transition with another, we need to merge their uids to keep track of which\<close>
+\<comment> \<open>transition accounts for which event in the original traces                                     \<close>
+definition merge_transitions_aux :: "iEFSM \<Rightarrow> tids \<Rightarrow> tids \<Rightarrow> iEFSM" where
+  "merge_transitions_aux e oldID newID = (let
+    (uids1, (origin, dest), old) = fthe_elem (ffilter (\<lambda>(uids, _). oldID = uids) e);
+    (uids2, (origin, dest), new) = fthe_elem (ffilter (\<lambda>(uids, _). newID = uids) e) in
+    finsert (List.union uids1 uids2, (origin, dest), new) (e - {|(uids1, (origin, dest), old), (uids2, (origin, dest), new)|})
+  )"
+
 (* merge_transitions - Try dest merge transitions t\<^sub>1 and t\<^sub>2 dest help resolve nondeterminism in
                        newEFSM. If either subsumes the other directly then the subsumed transition
                        can simply be replaced with the subsuming one, else we try dest apply the
@@ -396,12 +395,14 @@ lemma cant_directly_subsume: "\<forall>c. \<not> subsumes t c t' \<Longrightarro
 (* @param t\<^sub>2        - a transition dest be merged with t\<^sub>1                                           *)
 (* @param u\<^sub>2        - the unique identifier of t\<^sub>2                                                 *)
 (* @param modifier  - an update modifier function which tries dest generalise transitions           *)
-definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
+definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> transition \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> tids \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
   "merge_transitions oldEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 modifier np = (
      if directly_subsumes oldEFSM destMerge (origin u\<^sub>1 oldEFSM) (origin u\<^sub>1 destMerge) t\<^sub>2 t\<^sub>1 then
-       Some (destMerge (u\<^sub>1 $:= Some (((origin u\<^sub>1 destMerge), (dest u\<^sub>1 destMerge)), t\<^sub>2)))
+       \<comment> \<open>Replace t1 with t2\<close>
+       Some (merge_transitions_aux destMerge u\<^sub>1 u\<^sub>2)
      else if directly_subsumes oldEFSM destMerge (origin u\<^sub>2 oldEFSM) (origin u\<^sub>2 destMerge) t\<^sub>1 t\<^sub>2 then
-       Some (destMerge (u\<^sub>2 $:= Some (((origin u\<^sub>2 destMerge), (dest u\<^sub>2 destMerge)), t\<^sub>1)))
+       \<comment> \<open>Replace t2 with t1\<close>
+       Some (merge_transitions_aux destMerge u\<^sub>2 u\<^sub>1)
      else
         modifier u\<^sub>1 u\<^sub>2 (origin u\<^sub>1 destMerge) destMerge oldEFSM np
    )"
@@ -431,7 +432,7 @@ function resolve_nondeterminism :: "(cfstate \<times> cfstate) list \<Rightarrow
        None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np |
        Some new \<Rightarrow>
          let newScores = (sorted_list_of_fset (np new)) in 
-         if length (newScores) + size (to_old_representation new) + size (S new) < length (ss) + 1 + size (to_old_representation newEFSM) + size (S newEFSM) then
+         if length (newScores) + size new + size (S new) < length (ss) + 1 + size newEFSM + size (S newEFSM) then
            case resolve_nondeterminism closed newScores oldEFSM new m check np of
              Some new' \<Rightarrow> Some new' |
              None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np
@@ -443,7 +444,7 @@ function resolve_nondeterminism :: "(cfstate \<times> cfstate) list \<Rightarrow
      apply (metis neq_Nil_conv prod_cases3 surj_pair)
   by auto
 termination
-  by (relation "measures [\<lambda>(_, ss, _, newEFSM, _). length ss + size (to_old_representation newEFSM) + size (S newEFSM)]", auto)
+  by (relation "measures [\<lambda>(_, ss, _, newEFSM, _). length ss + size newEFSM + size (S newEFSM)]", auto)
 
 (* Merge - tries dest merge two states in a given iEFSM and resolve the resulting nondeterminism    *)
 (* @param e     - an iEFSM                                                                        *)
@@ -515,14 +516,11 @@ fun make_smaller_val :: "nat list \<Rightarrow> value \<Rightarrow> value" where
   "make_smaller_val _ (value.Str s) = value.Str s" |
   "make_smaller_val s (Num n) = Num (make_smaller n s)"
 
-definition learn :: "nat \<Rightarrow> transition_matrix \<Rightarrow> log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> transition_matrix" where
+definition learn :: "nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "learn n pta l r m np = (
      let check = satisfies (set l) in
-         (tm (infer n (toiEFSM pta) r m check np))
+         (infer n pta r m check np)
    )"
-
-definition uids :: "iEFSM \<Rightarrow> nat fset" where
-  "uids e = fset_of_list (finfun_to_list e)"
 
 definition max_reg :: "iEFSM \<Rightarrow> nat option" where
   "max_reg e = EFSM.max_reg (tm e)"
@@ -691,7 +689,7 @@ lemma simple_mutex_direct_subsumption:
   by (metis satisfiable_list_snn can_take_satisfiable no_choice_no_subsumption)
 
 definition max_int :: "iEFSM \<Rightarrow> int" where
-  "max_int e = Max (insert 0 (EFSM.enumerate_ints (tm e)))"
+  "max_int e = EFSM.max_int (tm e)"
 
 fun literal_args :: "gexp \<Rightarrow> bool" where
   "literal_args (Bc v) = False" |
@@ -708,7 +706,7 @@ lemma literal_args_eq: "literal_args (Eq a b) \<Longrightarrow> \<exists>v l. a 
     apply (cases b)
   by auto
 
-definition i_possible_steps :: "iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (tid \<times> cfstate \<times> transition) fset" where
+definition i_possible_steps :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (tids \<times> cfstate \<times> transition) fset" where
   "i_possible_steps e s r l i = fimage (\<lambda>(uid, (origin, dest), t). (uid, dest, t))
   (ffilter (\<lambda>(uid, (origin, dest::nat), t::transition).
       origin = s
@@ -716,6 +714,6 @@ definition i_possible_steps :: "iEFSM \<Rightarrow> nat \<Rightarrow> registers 
       \<and> (length i) = (Arity t)
       \<and> apply_guards (Guard t) (join_ir i r)
      ) 
-    (to_old_representation e))"
+    e)"
 
 end
