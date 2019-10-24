@@ -34,23 +34,23 @@ definition naive_score_outputs :: strategy where
 (* Functions with same label, and input and output arities contribute one point for each guard    *)
 (* and output they share. *)
 definition naive_score_comprehensive :: strategy where
-  "naive_score_comprehensive t1ID t2ID e = (let x = e|t1ID|; y = e|t2ID| in 
-                                    if Label x = Label y \<and> Arity x = Arity y then
-                                      if length (Outputs x) = length (Outputs y) then
-                                        card (set (Guard x) \<inter> set (Guard y)) + length (filter (\<lambda>(p1, p2). p1 = p2) (zip (Outputs x) (Outputs y)))
+  "naive_score_comprehensive t1ID t2ID e = (let t1 = get_by_ids e t1ID; t2 = get_by_ids e t2ID in 
+                                    if Label t1 = Label t2 \<and> Arity t1 = Arity t2 then
+                                      if length (Outputs t1) = length (Outputs t2) then
+                                        card (set (Guard t1) \<inter> set (Guard t2)) + length (filter (\<lambda>(p1, p2). p1 = p2) (zip (Outputs t1) (Outputs t2)))
                                       else 0
                                     else 0)"
 
 (* Functions with same label, and input and output arities contribute one point for each guard    *)
 (* and output they share. Transitions which are exactly equal get a very high score. *)
 definition naive_score_comprehensive_eq_high :: strategy where
-  "naive_score_comprehensive_eq_high t1ID t2ID e = (let x = e|t1ID|; y = e|t2ID| in 
-                                           if x = y then
+  "naive_score_comprehensive_eq_high t1ID t2ID e = (let t1 = get_by_ids e t1ID; t2 = get_by_ids e t2ID in 
+                                           if t1 = t2 then
                                              100
                                            else
-                                             if Label x = Label y \<and> Arity x = Arity y then
-                                               if length (Outputs x) = length (Outputs y) then
-                                                 card (set (Guard x) \<inter> set (Guard y)) + length (filter (\<lambda>(p1, p2). p1 = p2) (zip (Outputs x) (Outputs y)))
+                                             if Label t1 = Label t2 \<and> Arity t1 = Arity t2 then
+                                               if length (Outputs t1) = length (Outputs t2) then
+                                                 card (set (Guard t1) \<inter> set (Guard t2)) + length (filter (\<lambda>(p1, p2). p1 = p2) (zip (Outputs t1) (Outputs t2)))
                                                else 0
                                              else 0)"
 

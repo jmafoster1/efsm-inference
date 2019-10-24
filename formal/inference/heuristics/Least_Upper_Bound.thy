@@ -624,12 +624,12 @@ definition gung_ho_aux :: "transition \<Rightarrow> transition \<Rightarrow> tra
 
 fun gung_ho :: update_modifier where
   "gung_ho t1ID t2ID s new old _ = (let
-     t1 = (get_by_id new t1ID);
-     t2 = (get_by_id new t2ID) in
+     t1 = (get_by_ids new t1ID);
+     t2 = (get_by_ids new t2ID) in
      case gung_ho_aux t1 t2 of
        None \<Rightarrow> None |
        Some gob_t \<Rightarrow> 
-           Some (replace_transitions new [(t1ID, origin t1ID new, dest t1ID new, gob_t), (t2ID, origin t2ID new, dest t2ID new, gob_t)])
+           Some (replace_transitions new [(t1ID, gob_t), (t2ID, gob_t)])
    )"
 
 lemma guard_subset_eq_outputs_updates_subsumption:

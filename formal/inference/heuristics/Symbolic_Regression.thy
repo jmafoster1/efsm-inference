@@ -164,7 +164,7 @@ definition enumerate_log_ints :: "log \<Rightarrow> int list" where
 
 definition infer_output_functions :: "log \<Rightarrow> update_modifier" where
   "infer_output_functions log t1ID t2ID s new old _ = (let
-     t1 = (get_by_id new t1ID);
+     t1 = get_by_ids new t1ID;
      i_log = enumerate 0 (map (enumerate 0) log);
      num_outs = length (Outputs t1);
      relevant_events = flatten (map (\<lambda>(i, ex). (i, filter (\<lambda>(_, l, ip, op). l = Label t1 \<and> length ip = Arity t1 \<and> length op = num_outs) ex)) i_log) [];
@@ -176,7 +176,7 @@ definition infer_output_functions :: "log \<Rightarrow> update_modifier" where
 
 definition infer_output_functions_2 :: "log \<Rightarrow> update_modifier" where
   "infer_output_functions_2 log t1ID t2ID s new old _ = (let
-     t1 = (get_by_id new t1ID);
+     t1 = get_by_ids new t1ID;
      i_log = enumerate 0 (map (enumerate 0) log);
      num_outs = length (Outputs t1);
      relevant_events = flatten (map (\<lambda>(i, ex). (i, filter (\<lambda>(_, l, ip, op). l = Label t1 \<and> length ip = Arity t1 \<and> length op = num_outs) ex)) i_log) [];
@@ -240,14 +240,14 @@ fun outputwise_updates :: "int list \<Rightarrow> nat \<Rightarrow> aexp option 
 
 definition infer_output_update_functions :: "log \<Rightarrow> update_modifier" where
   "infer_output_update_functions log t1ID t2ID s new old _ = (let
-     t1 = (get_by_id new t1ID);
+     t1 = get_by_ids new t1ID;
      i_log = enumerate 0 (map (enumerate 0) log);
      num_outs = length (Outputs t1);
      relevant_events = flatten (map (\<lambda>(i, ex). (i, filter (\<lambda>(_, l, ip, op). l = Label t1 \<and> length ip = Arity t1 \<and> length op = num_outs) ex)) i_log) [];
      values = enumerate_log_ints log;
      max_reg = max_reg_total new;
      output_functions = get_functions max_reg values (length (Outputs t1)) relevant_events;
-     pta = toiEFSM (make_pta log {||});
+     pta = make_pta log {||};
      lit_updates = put_output_functions (enumerate 0 output_functions) i_log t1 pta in
      case lit_updates of
       None \<Rightarrow> None |
