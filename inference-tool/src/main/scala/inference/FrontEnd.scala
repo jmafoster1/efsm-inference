@@ -38,7 +38,7 @@ object FrontEnd {
         Config.heuristics,
         Config.config.nondeterminismMetric)
 
-        // TypeConversion.doubleEFSMToSALTranslator(pta, "pta", inferred, "vend1", "compositionTest")
+        TypeConversion.doubleEFSMToSALTranslator(Inference.tm(pta), "pta", Inference.tm(inferred), "vend1", "compositionTest")
         TypeConversion.efsmToSALTranslator(Inference.tm(inferred), "inferred")
 
         Log.root.info("The inferred machine is " +

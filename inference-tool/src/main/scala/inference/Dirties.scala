@@ -269,6 +269,7 @@ object Dirties {
         s"possiblyNotValue: THEOREM composition |- G(NOT(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} AND r_${Code_Numeral.integer_of_nat(r)} = Some(${TypeConversion.salValue(v)}) AND input_sequence ! size?(I) = ${Code_Numeral.integer_of_nat(Transition.Arity(t1))} AND ${efsm2sal.guards2sal(Transition.Guard(t1))}));")
       val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2)))+1}}!possiblyNotValue'").!!
       FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
+      println(output)
       return (output.toString.startsWith("Counterexample"))
     }
 
@@ -295,15 +296,9 @@ object Dirties {
         case None => ()
         case Some(Value.Str(_)) => ()
         case Some(Value.Numa(Int.int_of_integer(n))) => {
-
-          return Some(AExp.Plus(AExp.V(VName.R(Nat.Nata(2))), AExp.V(VName.I(Nat.Nata(0)))))
-
-
-
-
-          println("  Inputs: "+inputs)
-          println("  AnteriorRegs: "+anteriorRegs)
-          println("  posteriorRegs: "+posteriorRegs)
+          // println("  Inputs: "+inputs)
+          // println("  AnteriorRegs: "+anteriorRegs)
+          // println("  posteriorRegs: "+posteriorRegs)
           val target = new Target()
           target.targetIs(TypeConversion.toInt(n))
           for ((ip:Value.value, ix:Int) <- inputs.zipWithIndex) ip match {
@@ -354,7 +349,7 @@ object Dirties {
       val best = engine.getBestSyntaxTree().simplify()
       println("Best update function is: "+best)
       if (engine.isCorrect(best)) {
-        println(best.simplify() + " is correct")
+        // println(best.simplify() + " is correct")
         return Some(TypeConversion.toAExp(best))
       }
       else {
@@ -373,11 +368,6 @@ object Dirties {
     for ((inputs, output) <- i zip o) output match {
       case Value.Str(_) => return None
       case Value.Numa(Int.int_of_integer(n)) => {
-
-
-        return Some(AExp.Plus(AExp.V(VName.R(Nat.Nata(2))), AExp.V(VName.I(Nat.Nata(0)))))
-
-
         val target = new Target()
         target.targetIs(TypeConversion.toInt(n))
         for ((ip, ix) <- inputs.zipWithIndex) ip match {
@@ -418,9 +408,9 @@ object Dirties {
       })
       engine.evolve(Config.config.gpIterations)
       val best = engine.getBestSyntaxTree().simplify()
-      println("Best output function is: "+best)
+      // println("Best output function is: "+best)
       if (engine.isCorrect(best)) {
-        println(best + " is correct")
+        // println(best + " is correct")
         return Some(TypeConversion.toAExp(best))
       }
       else {

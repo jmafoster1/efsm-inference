@@ -3560,15 +3560,15 @@ object Store_Reuse_Subsumption {
     e2: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]): Boolean =
     (Transition.Label[A](t1) ==
       Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[A](t1),
-        Transition.Arity[Unit](t2))) && ((Lista.equal_lista[GExp.gexp](Transition.Guard[A](t1),
-          Transition.Guard[Unit](t2))) && ((Lista.equal_lista[AExp.aexp](Transition.Outputs[A](t1),
+        Transition.Arity[Unit](t2))) && ((Lista.list_all[GExp.gexp](((a: GExp.gexp) =>
+          (Transition.Guard[Unit](t2)) contains a),
+          Transition.Guard[A](t1))) && ((Lista.equal_lista[AExp.aexp](Transition.Outputs[A](t1),
             Transition.Outputs[Unit](t2))) && ((!((Transition.Updates[A](t1)).isEmpty)) && ((Lista.equal_lista[(Nat.nat, AExp.aexp)](Lista.tl[(Nat.nat, AExp.aexp)](Transition.Updates[A](t1)),
               Transition.Updates[Unit](t2))) && (Lista.list_ex[Nat.nat](((r: Nat.nat) =>
                 (Nat.equal_nata((Lista.hd[(Nat.nat, AExp.aexp)](Transition.Updates[A](t1)))._1,
-                  r)) && ((not_updated(r, t2)) && (initially_undefined_context_check(e2,
-                    r, s2)))),
-                Lista.map[(Nat.nat, AExp.aexp), Nat.nat](((a: (Nat.nat, AExp.aexp)) => a._1),
-                  Transition.Updates[A](t1)))))))))
+                  r)) && ((not_updated(r, t2)) && (initially_undefined_context_check(e2, r,
+                    s2)))),
+                Lista.map[(Nat.nat, AExp.aexp), Nat.nat](((a: (Nat.nat, AExp.aexp)) => a._1), Transition.Updates[A](t1)))))))))
 
   def no_illegal_updates[A](t: Transition.transition_ext[A], r: Nat.nat): Boolean =
     Code_Generation.no_illegal_updates_code(Transition.Updates[A](t), r)
@@ -3579,16 +3579,21 @@ object Store_Reuse_Subsumption {
     t_2: Transition.transition_ext[Unit],
     t_1: Transition.transition_ext[Unit]): Boolean =
     (stored_reused(t_2, t_1) match {
-      case None => false
+      case None => {
+        println("Not reused")
+        false
+      }
       case Some((r, p)) =>
-        ((Transition.Outputs[Unit](t_1))(Code_Numeral.integer_of_nat(p).toInt) match {
+        {
+          println(f"Register ${r} is is output ${p}")
+          ((Transition.Outputs[Unit](t_1))(Code_Numeral.integer_of_nat(p).toInt) match {
           case AExp.L(v) =>
             (Nat.less_nat(p, Nat.Nata((Transition.Outputs[Unit](t_1)).length))) && (Dirties.possiblyNotValueCtx[Unit](v,
               r, t_1, s_2, e_2, s_1, e_1))
           case AExp.V(_) => false
           case AExp.Plus(_, _) => false
           case AExp.Minus(_, _) => false
-        })
+        })}
     })
 
   def generalise_output_direct_subsumption(ta: Transition.transition_ext[Unit],

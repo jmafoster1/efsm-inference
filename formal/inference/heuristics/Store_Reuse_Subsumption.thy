@@ -742,7 +742,7 @@ lemma not_updated: "not_updated r t2 \<Longrightarrow>
 lemma one_extra_update_subsumes:
   "Label t1 = Label t2 \<Longrightarrow>
    Arity t1 = Arity t2 \<Longrightarrow>
-   Guard t1 = Guard t2 \<Longrightarrow>
+   set (Guard t1) \<subseteq> set (Guard t2) \<Longrightarrow>
    Outputs t1 = Outputs t2 \<Longrightarrow>
    Updates t1 = (r, u) # Updates t2 \<Longrightarrow>
    not_updated r t2 \<Longrightarrow>
@@ -751,16 +751,18 @@ lemma one_extra_update_subsumes:
   apply (simp add: subsumes_def posterior_def posterior_separate_def can_take_transition_def can_take_def apply_guards_subset_append)
   apply safe
    apply (case_tac "r = r'")
-    apply (simp add: not_updated)
+  using apply_guards_subset apply blast
+  using apply_guards_subset apply blast
    apply simp
   apply (case_tac "r = ra")
-   apply (simp add: not_updated)
-  by simp
+    apply (metis not_updated finfun_upd_apply_other not_updated)
+   apply (metis finfun_update_get not_updated)
+  by (metis finfun_upd_apply_other not_updated option.distinct(1))
 
 lemma one_extra_update_directly_subsumes:
   "Label t1 = Label t2 \<Longrightarrow>
    Arity t1 = Arity t2 \<Longrightarrow>
-   Guard t1 = Guard t2 \<Longrightarrow>
+   set (Guard t1) \<subseteq> set (Guard t2) \<Longrightarrow>
    Outputs t1 = Outputs t2 \<Longrightarrow>
    Updates t1 = (r, u)#(Updates t2) \<Longrightarrow>
    not_updated r t2 \<Longrightarrow>
@@ -778,7 +780,7 @@ lemma one_extra_update_directly_subsumes:
 definition "one_extra_update t1 t2 s2 e2 =
 (Label t1 = Label t2 \<and>
    Arity t1 = Arity t2 \<and>
-   Guard t1 = Guard t2 \<and>
+   set (Guard t1) \<subseteq> set (Guard t2) \<and>
    Outputs t1 = Outputs t2 \<and>
    Updates t1 \<noteq> [] \<and>
    tl (Updates t1) = (Updates t2) \<and>
@@ -794,5 +796,24 @@ lemma one_extra_update_direct_subsumption:
   apply (insert must_be_an_update[of "Updates t1" r "Updates t2"])
   apply (simp add: one_extra_update_def)
   by (metis eq_fst_iff hd_Cons_tl one_extra_update_directly_subsumes)
+(*
+definition "t1 = \<lparr>Label=STR ''select'', Arity=1, Guard = [], Outputs = [], Updates = [(2, V (I 1)), (1, L (Num 100))]\<rparr>"
+definition "t2 = \<lparr>Label=STR ''select'', Arity=1, Guard = [], Outputs = [], Updates = [(1, L (Num 100))]\<rparr>"
+
+lemma "one_extra_update t1 t2 s2 e2"
+  apply (simp add: one_extra_update_def)
+  apply safe
+          apply (simp add: t1_def t2_def)
+  apply (simp add: t1_def t2_def)
+  apply (simp add: t1_def t2_def)
+  apply (simp add: t1_def t2_def)
+  apply (simp add: t1_def t2_def)
+  apply (simp add: t1_def t2_def)
+  apply (simp add: t1_def t2_def)
+  apply (simp add: t1_def t2_def not_updated_def)
+  apply (simp add: t1_def)
+  oops
+*)
+
 
 end
