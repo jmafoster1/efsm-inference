@@ -5,7 +5,7 @@ system traces.
 \<close>
 
 theory Inference
-  imports "../EFSM" "../Contexts" Transition_Ordering
+  imports "../EFSM" "../Contexts" "../FSet_Utils" Transition_Ordering
           "~~/src/HOL/Library/Product_Lexorder"
 begin
 
@@ -375,13 +375,29 @@ lemma gets_us_to_and_not_subsumes:
 lemma cant_directly_subsume: "\<forall>c. \<not> subsumes t c t' \<Longrightarrow> \<not> directly_subsumes m m' s s' t t'"
   by (simp add: directly_subsumes_def)
 
+definition insert_transition :: "tids \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "insert_transition uid from to t e = (
+    if \<nexists>(uid, (from', to'), t') |\<in>| e. from = from' \<and> to = to' \<and> t = t' then
+      finsert (uid, (from, to), t) e
+    else
+      fimage (\<lambda>(uid', (from', to'), t').
+        if from = from' \<and> to = to' \<and> t = t' then
+          (uid'@uid, (from', to'), t')
+        else
+          (uid', (from', to'), t')
+      ) e
+  )"
+
+definition make_distinct :: "iEFSM \<Rightarrow> iEFSM" where
+  "make_distinct e = fold (\<lambda>(uid, (from, to), t) acc. insert_transition uid from to t acc) (sorted_list_of_fset e) {||}"
+
 \<comment> \<open>When we replace one transition with another, we need to merge their uids to keep track of which\<close>
 \<comment> \<open>transition accounts for which event in the original traces                                     \<close>
 definition merge_transitions_aux :: "iEFSM \<Rightarrow> tids \<Rightarrow> tids \<Rightarrow> iEFSM" where
   "merge_transitions_aux e oldID newID = (let
     (uids1, (origin, dest), old) = fthe_elem (ffilter (\<lambda>(uids, _). oldID = uids) e);
     (uids2, (origin, dest), new) = fthe_elem (ffilter (\<lambda>(uids, _). newID = uids) e) in
-    finsert (List.union uids1 uids2, (origin, dest), new) (e - {|(uids1, (origin, dest), old), (uids2, (origin, dest), new)|})
+    make_distinct (finsert (List.union uids1 uids2, (origin, dest), new) (e - {|(uids1, (origin, dest), old), (uids2, (origin, dest), new)|}))
   )"
 
 (* merge_transitions - Try dest merge transitions t\<^sub>1 and t\<^sub>2 dest help resolve nondeterminism in
@@ -404,7 +420,9 @@ definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> transit
        \<comment> \<open>Replace t2 with t1\<close>
        Some (merge_transitions_aux destMerge u\<^sub>2 u\<^sub>1)
      else
-        modifier u\<^sub>1 u\<^sub>2 (origin u\<^sub>1 destMerge) destMerge oldEFSM np
+        case modifier u\<^sub>1 u\<^sub>2 (origin u\<^sub>1 destMerge) destMerge oldEFSM np of
+          None \<Rightarrow> None |
+          Some e \<Rightarrow> Some (make_distinct e)
    )"
 
 (* resolve_nondeterminism - tries dest resolve nondeterminism in a given iEFSM                      *)
@@ -458,7 +476,7 @@ definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> upd
     if s\<^sub>1 = s\<^sub>2 then
       None 
     else 
-      let e' = (merge_states s\<^sub>1 s\<^sub>2 e) in
+      let e' = make_distinct (merge_states s\<^sub>1 s\<^sub>2 e) in
       resolve_nondeterminism [] (sorted_list_of_fset (np e')) e e' m check np 
   )"
 

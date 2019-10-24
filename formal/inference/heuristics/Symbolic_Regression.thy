@@ -55,7 +55,7 @@ fun put_update_function_aux :: "aexp option \<Rightarrow> nat \<Rightarrow> upda
        \<comment> \<open>Possible steps with a transition we need to modify\<close>
       if l = label \<and> length i = i_arity then let
         newT = insert_outputs (insert_updates ta us) op ox;
-        newE = replace_transitions e [(tid, newT)]
+        newE = make_distinct (replace_transitions e [(tid, newT)])
         in
         put_update_function_aux op ox us t label i_arity newE s' (apply_updates (Updates ta) (join_ir i r) r)
        \<comment> \<open>Possible steps but not interesting - just take a transition and move on\<close>
@@ -68,7 +68,7 @@ primrec put_update_functions :: "aexp option \<Rightarrow> nat \<Rightarrow> upd
   "put_update_functions op ox us (h#t) label arity e = (
     case put_update_function_aux op ox us (snd h) label arity e 0 <> of
       None \<Rightarrow> None |       
-      Some e' \<Rightarrow> put_update_functions op ox us t label arity e'
+      Some e' \<Rightarrow> put_update_functions op ox us t label arity (make_discinct e')
   )"
 
 fun put_output_function_2_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_execution \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> tids option \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
