@@ -576,6 +576,9 @@ code_printing constant get_regs \<rightharpoonup> (Scala) "Dirties.getRegs"
 declare get_update_def [code del]
 code_printing constant get_update \<rightharpoonup> (Scala) "Dirties.getUpdate"
 
+lemma [code]: "Cardinality.subset' (set l1) (set l2) = ((list_all (\<lambda>x. List.member l2 x)) l1)"
+  by (meson in_set_member list.pred_set subset'_code(2))
+
 export_code
   (* Essentials *)
   try_heuristics

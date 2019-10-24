@@ -25,7 +25,7 @@ definition get_by_id :: "iEFSM \<Rightarrow> tid \<Rightarrow> transition" where
   "get_by_id e uid = (snd \<circ> snd) (fthe_elem (ffilter (\<lambda>(tids, _). uid \<in> set tids) e))"
 
 definition get_by_ids :: "iEFSM \<Rightarrow> tids \<Rightarrow> transition" where
-  "get_by_ids e uid = (snd \<circ> snd) (fthe_elem (ffilter (\<lambda>(tids, _). uid = tids) e))"
+  "get_by_ids e uid = (snd \<circ> snd) (fthe_elem (ffilter (\<lambda>(tids, _). set uid \<subseteq> set tids) e))"
 
 definition uids :: "iEFSM \<Rightarrow> nat fset" where
   "uids e = ffUnion (fimage (fset_of_list \<circ> fst) e)"
@@ -111,7 +111,7 @@ definition nondeterministic :: "iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondete
   "nondeterministic t np = (\<not> deterministic t np)"
 
 definition replace_transition :: "iEFSM \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> iEFSM" where
-  "replace_transition e uid new = (fimage (\<lambda>(uids, (from, to), t). if uid = uids then (uids, (from, to), new) else (uids, (from, to), t)) e)"
+  "replace_transition e uid new = (fimage (\<lambda>(uids, (from, to), t). if set uid \<subseteq> set uids then (uids, (from, to), new) else (uids, (from, to), t)) e)"
 
 definition replace_transitions :: "iEFSM \<Rightarrow> (tids \<times> transition) list \<Rightarrow> iEFSM" where
   "replace_transitions e ts = fold (\<lambda>(uid, new) acc. replace_transition acc uid new) ts e"
@@ -297,10 +297,10 @@ definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarr
      ffilter (\<lambda>(score, _). score > 0) scores)"
 
 definition origin :: "tids \<Rightarrow> iEFSM \<Rightarrow> nat" where
-  "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. uid = fst x) t))))"
+  "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. set uid \<subseteq> set (fst x)) t))))"
 
 definition dest :: "tids \<Rightarrow> iEFSM \<Rightarrow> nat" where
-  "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. uid = fst x) t))))"
+  "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. set uid \<subseteq> set (fst x)) t))))"
 
 inductive satisfies_trace :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
   base: "satisfies_trace e s d []" |                                         
@@ -413,10 +413,10 @@ definition merge_transitions_aux :: "iEFSM \<Rightarrow> tids \<Rightarrow> tids
 (* @param modifier  - an update modifier function which tries dest generalise transitions           *)
 definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> transition \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> tids \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
   "merge_transitions oldEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 modifier np = (
-     if directly_subsumes oldEFSM destMerge (origin u\<^sub>1 oldEFSM) (origin u\<^sub>1 destMerge) t\<^sub>2 t\<^sub>1 then
+     if \<forall>id \<in> set u\<^sub>1. directly_subsumes oldEFSM destMerge (origin [id] oldEFSM) (origin u\<^sub>1 destMerge) t\<^sub>2 t\<^sub>1 then
        \<comment> \<open>Replace t1 with t2\<close>
        Some (merge_transitions_aux destMerge u\<^sub>1 u\<^sub>2)
-     else if directly_subsumes oldEFSM destMerge (origin u\<^sub>2 oldEFSM) (origin u\<^sub>2 destMerge) t\<^sub>1 t\<^sub>2 then
+     else if \<forall>id \<in> set u\<^sub>2. directly_subsumes oldEFSM destMerge (origin [id] oldEFSM) (origin u\<^sub>2 destMerge) t\<^sub>1 t\<^sub>2 then
        \<comment> \<open>Replace t2 with t1\<close>
        Some (merge_transitions_aux destMerge u\<^sub>2 u\<^sub>1)
      else

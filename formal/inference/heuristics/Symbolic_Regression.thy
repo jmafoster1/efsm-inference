@@ -41,34 +41,38 @@ definition finfun2pairs :: "('a::linorder \<Rightarrow>f 'b) \<Rightarrow> ('a \
    )"
 
 definition insert_updates :: "transition \<Rightarrow> update_function list \<Rightarrow> transition" where
-  "insert_updates t u = \<lparr>Label = Label t, Arity = Arity t, Guard = [], Outputs = Outputs t, Updates = (filter (\<lambda>(r, _). r \<notin> set (map fst u)) (Updates t))@u\<rparr>"
+  "insert_updates t u = \<lparr>Label = Label t, Arity = Arity t, Guard = Guard t, Outputs = Outputs t, Updates = (filter (\<lambda>(r, _). r \<notin> set (map fst u)) (Updates t))@u\<rparr>"
+
+definition drop_guard :: "transition \<Rightarrow> transition" where
+  "drop_guard t = \<lparr>Label = Label t, Arity = Arity t, Guard = [], Outputs = Outputs t, Updates = Updates t\<rparr>"
 
 definition insert_outputs :: "transition \<Rightarrow> aexp option \<Rightarrow> nat \<Rightarrow> transition" where
   "insert_outputs t op ox = (case op of None \<Rightarrow> t | Some a \<Rightarrow> \<lparr>Label = Label t, Arity = Arity t, Guard = Guard t, Outputs = list_update (Outputs t) ox a, Updates = (Updates t)\<rparr>)"
 
-fun put_update_function_aux :: "aexp option \<Rightarrow> nat \<Rightarrow> update_function list \<Rightarrow> indexed_execution \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
-  "put_update_function_aux _ _ _ [] _ _ e _ _ = Some e" |
-  "put_update_function_aux op ox us ((_, l, i, p)#t) label i_arity e s r = (
+fun put_update_function_aux :: "aexp option \<Rightarrow> nat \<Rightarrow> update_function list \<Rightarrow> indexed_execution \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
+  "put_update_function_aux _ _ _ [] _ _ _ e _ _ = Some e" |
+  "put_update_function_aux op ox us ((_, l, i, p)#t) label i_arity pta target s r = (
     let
-    poss_steps = ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir i r) = map Some p) (i_possible_steps e s r l i);
-    (tid, s', ta) =  fthe_elem poss_steps in
+    poss_steps = ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir i r) = map Some p) (i_possible_steps pta s r l i);
+    (tid, s', ta) =  fthe_elem poss_steps;
+     ta = get_by_id target (hd tid) in
        \<comment> \<open>Possible steps with a transition we need to modify\<close>
       if l = label \<and> length i = i_arity then let
-        newT = insert_outputs (insert_updates ta us) op ox;
-        newE = make_distinct (replace_transitions e [(tid, newT)])
+        newT = drop_guard (insert_outputs (insert_updates ta us) op ox);
+        newE = make_distinct (replace_transitions target [(tid, newT)])
         in
-        put_update_function_aux op ox us t label i_arity newE s' (apply_updates (Updates ta) (join_ir i r) r)
+        put_update_function_aux op ox us t label i_arity pta newE s' (apply_updates (Updates ta) (join_ir i r) r)
        \<comment> \<open>Possible steps but not interesting - just take a transition and move on\<close>
       else
-        put_update_function_aux op ox us t label i_arity e s' (apply_updates (Updates ta) (join_ir i r) r)
+        put_update_function_aux op ox us t label i_arity pta target s' (apply_updates (Updates ta) (join_ir i r) r)
   )"
 
-primrec put_update_functions :: "aexp option \<Rightarrow> nat \<Rightarrow> update_function list \<Rightarrow> indexed_log \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
-  "put_update_functions _ _  _ [] _ _ e = Some e" |
-  "put_update_functions op ox us (h#t) label arity e = (
-    case put_update_function_aux op ox us (snd h) label arity e 0 <> of
+primrec put_update_functions :: "aexp option \<Rightarrow> nat \<Rightarrow> update_function list \<Rightarrow> indexed_log \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+  "put_update_functions _ _  _ [] _ _ pta target = Some target" |
+  "put_update_functions op ox us (h#t) label arity pta target = (
+    case put_update_function_aux op ox us (snd h) label arity pta target 0 <> of
       None \<Rightarrow> None |       
-      Some e' \<Rightarrow> put_update_functions op ox us t label arity (make_distinct e')
+      Some e' \<Rightarrow> put_update_functions op ox us t label arity pta (make_distinct e')
   )"
 
 fun put_output_function_2_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_execution \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> tids option \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
@@ -233,9 +237,18 @@ fun outputwise_updates :: "int list \<Rightarrow> nat \<Rightarrow> aexp option 
     train = get_log_reg_values a log label arity pta;
     update_functions = get_updates values train
     in
-    case put_update_functions (Some a) ox update_functions log label arity e of
+    case put_update_functions (Some a) ox update_functions log label arity pta e of
     None \<Rightarrow> None |
     Some e' \<Rightarrow> outputwise_updates values (ox + 1) t pta e' log label arity
+  )"
+
+fun transfer_updates :: "(tids \<times> (cfstate \<times> cfstate) \<times> transition) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "transfer_updates [] target = target" |
+  "transfer_updates ((uid, (from, to), t)#ts) target = (let
+    correspondingTransition = get_by_id target (hd uid);
+    updatedT = insert_updates correspondingTransition (Updates t)
+    in
+    transfer_updates ts (replace_transition target uid updatedT)
   )"
 
 definition infer_output_update_functions :: "log \<Rightarrow> update_modifier" where
@@ -251,7 +264,7 @@ definition infer_output_update_functions :: "log \<Rightarrow> update_modifier" 
      lit_updates = put_output_functions (enumerate 0 output_functions) i_log t1 pta in
      case lit_updates of
       None \<Rightarrow> None |
-      Some e' \<Rightarrow> outputwise_updates values 0 output_functions e' new i_log (Label t1) (Arity t1)
+      Some e' \<Rightarrow> outputwise_updates values 0 output_functions e' (transfer_updates (sorted_list_of_fset e') new) i_log (Label t1) (Arity t1)
    )"
 
 end
