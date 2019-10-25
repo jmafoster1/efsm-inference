@@ -189,7 +189,7 @@ object TypeConversion {
     case Nat.Nata(n) => s"State__${n}"
   }
 
-  def doubleEFSMToSALTranslator(e1: Types.TransitionMatrix, e1Name: String, e2: Types.TransitionMatrix, e2Name: String, f: String) = {
+  def doubleEFSMToSALTranslator(e1: Types.TransitionMatrix, e1Name: String, e2: Types.TransitionMatrix, e2Name: String, f: String, delete: Boolean = true) = {
     if (e1Name == e2Name) {
       throw new IllegalArgumentException("Models must have unique names");
     }
@@ -197,7 +197,9 @@ object TypeConversion {
     isabellesal.EFSM.newOneFrom(e1Name, FSet.sorted_list_of_fset(e1).map(toMichaelsMove): _*)
     isabellesal.EFSM.newOneFrom(e2Name, FSet.sorted_list_of_fset(e2).map(toMichaelsMove): _*)
     new Translator().writeSALandDOT(Paths.get("salfiles"), f);
-    // s"rm salfiles/${f}.dot".!
+    if (delete) {
+      s"rm salfiles/${f}.dot".!
+    }
   }
 
   def indexWithInts(e: List[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]): List[((Int, Int), Transition.transition_ext[Unit])] =

@@ -255,28 +255,41 @@ object Dirties {
 
   // Confirm the existance of a trace which gets us to the correct respective
   // states but produces a context in which register r holds the wrong value
-  def possiblyNotValueCtx[A](
-    v: Value.value,
-    r: Nat.nat,
-    t1: Transition,
-    s2: Nat.nat,
+  def diffOutputsCtx[A, B](
+    e1: IEFSM,
     e2: IEFSM,
     s1: Nat.nat,
-    e1: IEFSM): Boolean = {
+    s2: Nat.nat,
+    t1: Transition.transition_ext[A],
+    t2: Transition.transition_ext[B]): Boolean = {
+      if (Transition.Outputs(t1) == Transition.Outputs(t2))  {
+        return false
+      }
       val f = "intermediate_" + randomUUID.toString().replace("-", "_")
       TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
       addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
-        s"possiblyNotValue: THEOREM composition |- G(NOT(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} AND r_${Code_Numeral.integer_of_nat(r)} = Some(${TypeConversion.salValue(v)}) AND input_sequence ! size?(I) = ${Code_Numeral.integer_of_nat(Transition.Arity(t1))} AND ${efsm2sal.guards2sal(Transition.Guard(t1))}));")
-      val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2)))+1}}!possiblyNotValue'").!!
+        s"""diffOutputs: THEOREM composition |- G(
+          NOT(
+            cfstate.1 = ${TypeConversion.salState(s1)} AND
+            cfstate.2 = ${TypeConversion.salState(s2)} AND
+            input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t1))} AND ${efsm2sal.guards2sal(Transition.Guard(t1))} AND
+            input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t2))} AND ${efsm2sal.guards2sal(Transition.Guard(t2))} AND
+            X(o_e1 /= o_e2)
+          )
+        );""")
+      val cmd = s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2)))+1}}!diffOutputs'"
+      val output = Seq("bash", "-c", cmd).!!
       FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
-      println(output)
+      // println(cmd)
+      // println(output)
       return (output.toString.startsWith("Counterexample"))
     }
 
-  def scalaDirectlySubsumes(a: IEFSM,
-    b: IEFSM,
-    s: Nat.nat,
-    s_prime: Nat.nat,
+  def scalaDirectlySubsumes(
+    e1: IEFSM,
+    e2: IEFSM,
+    s1: Nat.nat,
+    s2: Nat.nat,
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
     println(s"Does ${PrettyPrinter.transitionToString(t1)} directly subsume ${PrettyPrinter.transitionToString(t2)}? (y/N)")

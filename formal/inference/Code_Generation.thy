@@ -358,12 +358,12 @@ definition "guard_superset_eq_outputs_updates t1 t2 = (Label t1 = Label t2 \<and
    set (Guard t2) \<supset> set (Guard t1))"
 
 definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "directly_subsumes_cases m1 m2 s s' t1 t2 = (
+  "directly_subsumes_cases e1 e2 s1 s2 t1 t2 = (
     if t1 = t2
       then True
     else if simple_mutex t2 t1
       then False
-    else if always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption m1 m2 s s' t2
+    else if always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption e1 e2 s1 s2 t2
       then False
     else if guard_subset_eq_outputs_updates t2 t1
       then True
@@ -371,27 +371,27 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
       then False
     else if opposite_gob t1 t2
       then False
-    else if always_different_outputs_direct_subsumption m1 m2 s s' t2 \<and> lob_distinguished_2 t1 t2
+    else if always_different_outputs_direct_subsumption e1 e2 s1 s2 t2 \<and> lob_distinguished_2 t1 t2
       then False
-    else if always_different_outputs_direct_subsumption m1 m2 s s' t2 \<and> lob_distinguished_3 t1 t2
+    else if always_different_outputs_direct_subsumption e1 e2 s1 s2 t2 \<and> lob_distinguished_3 t1 t2
       then False
     else if is_lob t2 t1
       then True
-    else if drop_guard_add_update_direct_subsumption t1 t2 m2 s'
+    else if drop_guard_add_update_direct_subsumption t1 t2 e2 s2
       then True
-    else if drop_update_add_guard_direct_subsumption m1 m2 s s' t1 t2
+    else if drop_update_add_guard_direct_subsumption e1 e2 s1 s2 t1 t2
       then False
-    else if generalise_output_direct_subsumption t1 t2 m1 m2 s s'
+    else if generalise_output_direct_subsumption t1 t2 e1 e2 s1 s2
       then True
-    else if possibly_not_value m1 m2 s s' t1 t2
+    else if diff_outputs_ctx e1 e2 s1 s2 t1 t2
       then False
     else if t1 = drop_guards t2
       then True
-    else if one_extra_update t1 t2 s' (tm m2)
+    else if one_extra_update t1 t2 s2 (tm e2)
       then True
     \<comment> \<open>else if t2 = drop_guards t1 \<and> satisfiable_negation t1
       then False\<close>
-    else dirty_directly_subsumes m1 m2 s s' t1 t2
+    else dirty_directly_subsumes e1 e2 s1 s2 t1 t2
   )"
 
 lemma if_elim: "c \<longrightarrow> a = d \<Longrightarrow> \<not> c \<longrightarrow> d = b \<Longrightarrow> d = (if c then a else b)"
@@ -424,7 +424,7 @@ lemma directly_subsumes_cases [code]:  "directly_subsumes m1 m2 s s' t1 t2 = dir
   apply (clarify, rule if_elim)
    apply (simp add: generalise_output_directly_subsumes_original_executable)
   apply (clarify, rule if_elim)
-   apply (simp add: possibly_not_value_not_directly_subsumes)
+   apply (simp add: diff_outputs_direct_subsumption)
   apply (clarify, rule if_elim)
    apply (simp add: drop_inputs_subsumption subsumes_in_all_contexts_directly_subsumes)
   apply (clarify, rule if_elim)
@@ -499,7 +499,7 @@ declare GExp.satisfiable_def [code del]
 declare initially_undefined_context_check_full_def [code del]
 declare generalise_output_context_check_def [code del]
 declare dirty_always_different_outputs_direct_subsumption_def [code del]
-declare possibly_not_value_ctx_def [code del]
+declare diff_outputs_ctx_def [code del]
 declare random_member_def [code del]
 declare dirty_directly_subsumes_def [code del]
 declare accepts_and_gets_us_to_both_def [code del]
@@ -514,7 +514,7 @@ code_printing
   constant "initially_undefined_context_check_full" \<rightharpoonup> (Scala) "Dirties.initiallyUndefinedContextCheck" |
   constant "generalise_output_context_check" \<rightharpoonup> (Scala) "Dirties.generaliseOutputContextCheck" |
   constant "dirty_always_different_outputs_direct_subsumption" \<rightharpoonup> (Scala) "Dirties.alwaysDifferentOutputsDirectSubsumption" |
-  constant "possibly_not_value_ctx" \<rightharpoonup> (Scala) "Dirties.possiblyNotValueCtx" |
+  constant "diff_outputs_ctx" \<rightharpoonup> (Scala) "Dirties.diffOutputsCtx" |
   constant "random_member" \<rightharpoonup> (Scala) "Dirties.randomMember"
 
 code_printing

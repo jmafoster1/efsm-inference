@@ -619,50 +619,27 @@ lemma input_stored_in_reg_updates_reg: "input_stored_in_reg t2 t1 a = Some (i, r
   apply simp
   by (simp add: is_generalisation_of_def remove_guard_add_update_def)
 
-definition "possibly_not_value_ctx v r t\<^sub>1 s\<^sub>2 e\<^sub>2 s\<^sub>1 e\<^sub>1 =
-  (\<exists>p. accepts_trace (tm e\<^sub>1) p \<and> gets_us_to s\<^sub>1 (tm e\<^sub>1) 0 <>  p \<and>
-       accepts_trace (tm e\<^sub>2) p \<and> gets_us_to s\<^sub>2 (tm e\<^sub>2) 0 <> p \<and>
-       (case anterior_context (tm e\<^sub>2) p of None \<Rightarrow> False | Some c \<Rightarrow>
-       (\<exists>i. can_take_transition t\<^sub>1 i c) \<and>
-       c $ r \<noteq> Some v)
-  )"
+definition "diff_outputs_ctx e1 e2 s1 s2 t1 t2 =
+  (if Outputs t1 = Outputs t2 then False else
+  (\<exists>p. accepts_trace (tm e1) p \<and> gets_us_to s1 (tm e1) 0 <> p \<and>
+       accepts_trace (tm e2) p \<and> gets_us_to s2 (tm e2) 0 <> p \<and>
+       (case anterior_context (tm e2) p of None \<Rightarrow> False | Some r \<Rightarrow>
+       (\<exists>i. can_take_transition t1 i r \<and> can_take_transition t2 i r \<and>
+       apply_outputs (Outputs t1) (join_ir i r) \<noteq> apply_outputs (Outputs t2) (join_ir i r)))
+  ))"
 
-lemma possibly_not_value: 
-  "stored_reused t\<^sub>2 t\<^sub>1 = Some (r, p) \<Longrightarrow>
-   nth (Outputs t\<^sub>1) p = L v \<Longrightarrow>
-   p < length (Outputs t\<^sub>1) \<Longrightarrow>
-   possibly_not_value_ctx v r t\<^sub>1 s\<^sub>2 e\<^sub>2 s\<^sub>1 e\<^sub>1 \<Longrightarrow>
-   \<not> directly_subsumes e\<^sub>1 e\<^sub>2 s\<^sub>1 s\<^sub>2 t\<^sub>2 t\<^sub>1"
-  apply (simp add: directly_subsumes_def possibly_not_value_ctx_def)
+lemma diff_outputs_direct_subsumption:
+  "diff_outputs_ctx e1 e2 s1 s2 t1 t2 \<Longrightarrow> \<not> directly_subsumes e1 e2 s1 s2 t1 t2"
+  apply (simp add: directly_subsumes_def diff_outputs_ctx_def)
   apply (rule disjI1)
-  apply clarify
-  apply (rule_tac x=pa in exI)
-  apply clarify
-  apply (case_tac "anterior_context (tm e\<^sub>2) pa")
-  apply simp
-  apply simp
-  using stored_reused_is_generalised_output_of[of t\<^sub>2 t\<^sub>1 r p]
-  using is_generalised_output_of_does_not_subsume[of t\<^sub>2 t\<^sub>1 r p v]
-  by auto
-
-definition "possibly_not_value e\<^sub>1 e\<^sub>2 s\<^sub>1 s\<^sub>2 t\<^sub>2 t\<^sub>1 =
-  (case stored_reused t\<^sub>2 t\<^sub>1 of None \<Rightarrow> False | Some (r, p) \<Rightarrow>
-    (case nth (Outputs t\<^sub>1) p of L v \<Rightarrow>
-      p < length (Outputs t\<^sub>1) \<and>
-      possibly_not_value_ctx v r t\<^sub>1 s\<^sub>2 e\<^sub>2 s\<^sub>1 e\<^sub>1 |
-    _ \<Rightarrow> False)
-  )"
-
-lemma possibly_not_value_not_directly_subsumes: 
-  "possibly_not_value e\<^sub>1 e\<^sub>2 s\<^sub>1 s\<^sub>2 t\<^sub>2 t\<^sub>1 \<Longrightarrow> \<not> directly_subsumes e\<^sub>1 e\<^sub>2 s\<^sub>1 s\<^sub>2 t\<^sub>2 t\<^sub>1"
-  apply (simp add: possibly_not_value_def)
-  apply (case_tac "stored_reused t\<^sub>2 t\<^sub>1")
+  apply (case_tac "Outputs t1 = Outputs t2")
    apply simp
-  apply (case_tac a)
   apply simp
-  apply (case_tac "Outputs t\<^sub>1 ! b")
-     apply (simp add: possibly_not_value)
-  by auto
+  apply (erule exE)
+  apply (rule_tac x=p in exI)
+  apply (case_tac "anterior_context (tm e2) p")
+   apply simp
+  using bad_outputs by force
 
 definition "accepts_and_gets_us_to_both a b s s' = (
   \<exists>p. accepts_trace (tm a) p \<and>
