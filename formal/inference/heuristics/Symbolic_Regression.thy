@@ -251,6 +251,10 @@ fun transfer_updates :: "(tids \<times> (cfstate \<times> cfstate) \<times> tran
     transfer_updates ts (replace_transition target uid updatedT)
   )"
 
+primrec overwrites_update :: "update_function list \<Rightarrow> nat set \<Rightarrow> bool" where
+  "overwrites_update [] _ = False" |
+  "overwrites_update (h#t) s = (if fst h \<in> s then True else overwrites_update t (insert (fst h) s))"
+
 definition infer_output_update_functions :: "log \<Rightarrow> update_modifier" where
   "infer_output_update_functions log t1ID t2ID s new old _ = (let
      t1 = get_by_ids new t1ID;
@@ -264,7 +268,12 @@ definition infer_output_update_functions :: "log \<Rightarrow> update_modifier" 
      lit_updates = put_output_functions (enumerate 0 output_functions) i_log t1 pta in
      case lit_updates of
       None \<Rightarrow> None |
-      Some e' \<Rightarrow> outputwise_updates values 0 output_functions e' (transfer_updates (sorted_list_of_fset e') new) i_log (Label t1) (Arity t1)
+      Some e' \<Rightarrow> (
+        if \<exists>(_, _, t) |\<in>| e'. overwrites_update (Updates t) {} then
+          None
+        else
+          outputwise_updates values 0 output_functions e' (transfer_updates (sorted_list_of_fset e') new) i_log (Label t1) (Arity t1)
+      )
    )"
 
 end

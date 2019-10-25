@@ -7936,6 +7936,16 @@ def transfer_updates(x0: List[(List[Nat.nat],
     }
 }
 
+def overwrites_update(x0: List[(Nat.nat, AExp.aexp)], uu: Set.set[Nat.nat]):
+      Boolean
+  =
+  (x0, uu) match {
+  case (Nil, uu) => false
+  case (h :: t, s) =>
+    (if (Set.member[Nat.nat](h._1, s)) true
+      else overwrites_update(t, Set.insert[Nat.nat](h._1, s)))
+}
+
 def enumerate_value_ints(vs: List[Value.value]): List[Int.int] =
   Lista.map_filter[Value.value,
                     Int.int](((x: Value.value) =>
@@ -8789,13 +8799,29 @@ List[Value.value])))])](((a: (Nat.nat,
        match {
        case None => None
        case Some(e) =>
-         outputwise_updates(values, Nat.zero_nata, output_functions, e,
-                             transfer_updates(FSet.sorted_list_of_fset[(List[Nat.nat],
-                                 ((Nat.nat, Nat.nat),
-                                   Transition.transition_ext[Unit]))](e),
-       newa),
-                             i_log, Transition.Label[Unit](t1),
-                             Transition.Arity[Unit](t1))
+         (if (FSet.fBex[(List[Nat.nat],
+                          ((Nat.nat, Nat.nat),
+                            Transition.transition_ext[Unit]))](e,
+                        ((a: (List[Nat.nat],
+                               ((Nat.nat, Nat.nat),
+                                 Transition.transition_ext[Unit])))
+                           =>
+                          {
+                            val (_, (_, t)):
+                                  (List[Nat.nat],
+                                    ((Nat.nat, Nat.nat),
+                                      Transition.transition_ext[Unit]))
+                              = a;
+                            overwrites_update(Transition.Updates[Unit](t),
+       Set.bot_set[Nat.nat])
+                          })))
+           None
+           else outputwise_updates(values, Nat.zero_nata, output_functions, e,
+                                    transfer_updates(FSet.sorted_list_of_fset[(List[Nat.nat],
+((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))](e),
+              newa),
+                                    i_log, Transition.Label[Unit](t1),
+                                    Transition.Arity[Unit](t1)))
      })
   }
 
