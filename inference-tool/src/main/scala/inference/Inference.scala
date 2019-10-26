@@ -8227,8 +8227,26 @@ def put_output_function_aux(uu: Nat.nat, uv: AExp.aexp,
   =
   (uu, uv, x2, uw, ux, uy, uz, e, va, vb) match {
   case (uu, uv, Nil, uw, ux, uy, uz, e, va, vb) =>
-    Some[FSet.fset[(List[Nat.nat],
-                     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]](e)
+    (if (FSet.fBex[(List[Nat.nat],
+                     ((Nat.nat, Nat.nat),
+                       Transition.transition_ext[Unit]))](e,
+                   ((a: (List[Nat.nat],
+                          ((Nat.nat, Nat.nat),
+                            Transition.transition_ext[Unit])))
+                      =>
+                     {
+                       val (_, (_, t)):
+                             (List[Nat.nat],
+                               ((Nat.nat, Nat.nat),
+                                 Transition.transition_ext[Unit]))
+                         = a;
+                       overwrites_update(Transition.Updates[Unit](t),
+  Set.bot_set[Nat.nat])
+                     })))
+      None
+      else Some[FSet.fset[(List[Nat.nat],
+                            ((Nat.nat, Nat.nat),
+                              Transition.transition_ext[Unit]))]](e))
   case (fi, f, (vc, (l, (i, p))) :: t, label, i_arity, o_arity, prevtid, e, s,
          r)
     => {
@@ -8294,10 +8312,21 @@ Option[Value.value]](((aa: Value.value) => Some[Value.value](aa)), p))
        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
                            = Inference.replace_transitions(e,
                     List((tid, newT), (prevtida, newPrevT)));
-                         put_output_function_aux(fi, f, t, label, i_arity,
-          o_arity, Some[List[Nat.nat]](tid), newE, sa,
-          EFSM.apply_updates(Transition.Updates[Unit](ta), AExp.join_ir(i, r),
-                              r))
+                         (if (FSet.fBex[(List[Nat.nat],
+  ((Nat.nat, Nat.nat),
+    Transition.transition_ext[Unit]))](newE,
+((a: (List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))) =>
+  {
+    val (_, (_, tb)):
+          (List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))
+      = a;
+    overwrites_update(Transition.Updates[Unit](tb), Set.bot_set[Nat.nat])
+  })))
+                           None
+                           else put_output_function_aux(fi, f, t, label,
+                 i_arity, o_arity, Some[List[Nat.nat]](tid), newE, sa,
+                 EFSM.apply_updates(Transition.Updates[Unit](ta),
+                                     AExp.join_ir(i, r), r)))
                        }
                    })
                 }
@@ -8799,29 +8828,13 @@ List[Value.value])))])](((a: (Nat.nat,
        match {
        case None => None
        case Some(e) =>
-         (if (FSet.fBex[(List[Nat.nat],
-                          ((Nat.nat, Nat.nat),
-                            Transition.transition_ext[Unit]))](e,
-                        ((a: (List[Nat.nat],
-                               ((Nat.nat, Nat.nat),
-                                 Transition.transition_ext[Unit])))
-                           =>
-                          {
-                            val (_, (_, t)):
-                                  (List[Nat.nat],
-                                    ((Nat.nat, Nat.nat),
-                                      Transition.transition_ext[Unit]))
-                              = a;
-                            overwrites_update(Transition.Updates[Unit](t),
-       Set.bot_set[Nat.nat])
-                          })))
-           None
-           else outputwise_updates(values, Nat.zero_nata, output_functions, e,
-                                    transfer_updates(FSet.sorted_list_of_fset[(List[Nat.nat],
-((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))](e),
-              newa),
-                                    i_log, Transition.Label[Unit](t1),
-                                    Transition.Arity[Unit](t1)))
+         outputwise_updates(values, Nat.zero_nata, output_functions, e,
+                             transfer_updates(FSet.sorted_list_of_fset[(List[Nat.nat],
+                                 ((Nat.nat, Nat.nat),
+                                   Transition.transition_ext[Unit]))](e),
+       newa),
+                             i_log, Transition.Label[Unit](t1),
+                             Transition.Arity[Unit](t1))
      })
   }
 
