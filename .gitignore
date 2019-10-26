@@ -11,8 +11,9 @@
 # Ignore Scala class files
 *.class
 
-# Ignore active.json
+# Ignore platform specific sbt stuff
 inference-tool/project/target/
+inference-tool/project/project
 inference-tool/target/
 
 # Ignore Isabelle output
