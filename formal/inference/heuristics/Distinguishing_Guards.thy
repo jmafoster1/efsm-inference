@@ -41,8 +41,9 @@ primrec collect_training_sets :: "log \<Rightarrow> iEFSM \<Rightarrow> tids \<R
 definition find_distinguishing_guards :: "(inputs \<times> registers) list \<Rightarrow> (inputs \<times> registers) list \<Rightarrow> (gexp \<times> gexp) option" where
   "find_distinguishing_guards G1 G2 = (
     let gs = {(g1, g2).
-      (\<forall>(i, r) \<in> set G1. gval g1 (join_ir i r) = true \<longrightarrow> gval g2 (join_ir i r) \<noteq> true) \<and>
-      (\<forall>(i, r) \<in> set G2. gval g2 (join_ir i r) = true \<longrightarrow> gval g1 (join_ir i r) \<noteq> true)
+      (\<forall>(i, r) \<in> set G1. gval g1 (join_ir i r) = true) \<and>
+      (\<forall>(i, r) \<in> set G2. gval g2 (join_ir i r) = true) \<and>
+      (\<forall>i r. \<not> (gval g1 (join_ir i r) = true \<and> gval g2 (join_ir i r) = true))
     } in
     if gs = {} then None else Some (Eps (\<lambda>g. g \<in> gs))
   )"
