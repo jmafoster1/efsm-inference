@@ -117,8 +117,16 @@ fun put_output_functions_2 :: "(nat \<times> aexp option) list \<Rightarrow> ind
     Some e' \<Rightarrow> put_output_functions_2 rest log t e'
   )"
 
+primrec overwrites_update :: "update_function list \<Rightarrow> nat set \<Rightarrow> bool" where
+  "overwrites_update [] _ = False" |
+  "overwrites_update (h#t) s = (if fst h \<in> s then True else overwrites_update t (insert (fst h) s))"
+
 fun put_output_function_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_execution \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> tids option \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
-  "put_output_function_aux _ _ [] _ _ _ _ e _ _ = Some e" |
+  "put_output_function_aux _ _ [] _ _ _ _ e _ _ = (
+    if \<exists>(_, _, t) |\<in>| e. overwrites_update (Updates t) {} then
+      None
+    else
+      Some e)" |
   "put_output_function_aux fi f ((_, l, i, p)#t) label i_arity o_arity prevtid e s r = (
     let
     poss_steps = ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir i r) = map Some p) (i_possible_steps e s r l i) in
@@ -136,7 +144,10 @@ fun put_output_function_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_exe
         newPrevT = \<lparr>Label = Label prevT, Arity = Arity prevT, Guard = Guard prevT, Outputs = Outputs prevT, Updates = remdups ((Updates prevT)@updates)\<rparr>;
         newE = replace_transitions e [(tid, newT), (prevtid, newPrevT)]
         in
-        put_output_function_aux fi f t label i_arity o_arity (Some tid) newE s' (apply_updates (Updates ta) (join_ir i r) r)
+        if \<exists>(_, _, t) |\<in>| newE. overwrites_update (Updates t) {} then
+          None
+        else
+          put_output_function_aux fi f t label i_arity o_arity (Some tid) newE s' (apply_updates (Updates ta) (join_ir i r) r)
        \<comment> \<open>Possible steps but not interesting - just take a transition and move on\<close>
       else
         put_output_function_aux fi f t label i_arity o_arity (Some tid) e s' (apply_updates (Updates ta) (join_ir i r) r)
@@ -251,10 +262,6 @@ fun transfer_updates :: "(tids \<times> (cfstate \<times> cfstate) \<times> tran
     transfer_updates ts (replace_transition target uid updatedT)
   )"
 
-primrec overwrites_update :: "update_function list \<Rightarrow> nat set \<Rightarrow> bool" where
-  "overwrites_update [] _ = False" |
-  "overwrites_update (h#t) s = (if fst h \<in> s then True else overwrites_update t (insert (fst h) s))"
-
 definition infer_output_update_functions :: "log \<Rightarrow> update_modifier" where
   "infer_output_update_functions log t1ID t2ID s new _ old _ = (let
      t1 = get_by_ids new t1ID;
@@ -269,9 +276,6 @@ definition infer_output_update_functions :: "log \<Rightarrow> update_modifier" 
      case lit_updates of
       None \<Rightarrow> None |
       Some e' \<Rightarrow> (
-        if \<exists>(_, _, t) |\<in>| e'. overwrites_update (Updates t) {} then
-          None
-        else
           outputwise_updates values 0 output_functions e' (transfer_updates (sorted_list_of_fset e') new) i_log (Label t1) (Arity t1)
       )
    )"
