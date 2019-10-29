@@ -40,7 +40,7 @@ lemma lob_aux_some: "Outputs t1 = Outputs t2 \<Longrightarrow>
   by (simp add: lob_aux_def)
 
 fun lob :: update_modifier where
-  "lob t1ID t2ID s new old _ = (let
+  "lob t1ID t2ID s new _ old _ = (let
      t1 = (get_by_ids new t1ID);
      t2 = (get_by_ids new t2ID) in
      case lob_aux t1 t2 of
@@ -608,7 +608,7 @@ definition gob_aux :: "transition \<Rightarrow> transition \<Rightarrow> transit
      else None)"
 
 fun gob :: update_modifier where
-  "gob t1ID t2ID s new old _ = (let
+  "gob t1ID t2ID s new _ old _ = (let
      t1 = (get_by_ids new t1ID);
      t2 = (get_by_ids new t2ID) in
      case gob_aux t1 t2 of
@@ -623,7 +623,7 @@ definition gung_ho_aux :: "transition \<Rightarrow> transition \<Rightarrow> tra
      else None)"
 
 fun gung_ho :: update_modifier where
-  "gung_ho t1ID t2ID s new old _ = (let
+  "gung_ho t1ID t2ID s new _ old _ = (let
      t1 = (get_by_ids new t1ID);
      t2 = (get_by_ids new t2ID) in
      case gung_ho_aux t1 t2 of

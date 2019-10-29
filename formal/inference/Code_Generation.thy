@@ -10,6 +10,7 @@ theory Code_Generation
    "heuristics/Least_Upper_Bound"
    "heuristics/Equals"
    "heuristics/Symbolic_Regression"
+   "heuristics/Distinguishing_Guards"
    EFSM_Dot
    Code_Target_FSet
    Code_Target_Set
@@ -611,6 +612,7 @@ export_code
   infer_output_functions
   infer_output_functions_2
   infer_output_update_functions
+  distinguish
   (* Nondeterminism metrics *)
   nondeterministic_pairs
   nondeterministic_pairs_labar

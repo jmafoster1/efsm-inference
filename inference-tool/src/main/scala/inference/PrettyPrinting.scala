@@ -13,11 +13,10 @@ object PrettyPrinter {
     (natToString(nn._1), natToString(nn._2)).toString()
   }
 
-  def valueToString(v: Value.value): String = {
+  def valueToString(v: Value.value): String =
     v match {
-      case Value.Numa(Int.int_of_integer(n)) => n.toString()
+      case Value.Numa(Int.int_of_integer(n)) => n.toString
       case Value.Str(s) => "\"" + s + "\""
-    }
   }
 
   def vnameToString(v: VName.vname): String = {
@@ -73,7 +72,7 @@ object PrettyPrinter {
   def efsmToString(e: TransitionMatrix): String = {
     var string = "{"
     for (move <- TypeConversion.indexWithInts(FSet.sorted_list_of_fset(e)).sortBy(_._1)) {
-      string += (s"  ((${move._1._1}, ${move._1._2}), ${PrettyPrinter.transitionToString(move._2)})\n")
+      string += (s"  ((${move._1._1}, ${move._1._2}), ${transitionToString(move._2)})\n")
     }
     return string + ("}")
   }
@@ -83,14 +82,14 @@ object PrettyPrinter {
     case (label, (inputs, outputs))::t => s"        ${label}(${inputs.map(valueToString)})/${outputs.map(valueToString)}\n" + traceToString(t)
   }
 
-  def inputsToString(i: List[Value.value]) = i.map(PrettyPrinter.valueToString).mkString(", ")
+  def inputsToString(i: List[Value.value], join: String = ", ") = i.map(valueToString).mkString(join)
 
   def outputToString(o: Option[Value.value]) = o match {
     case Some(p) => valueToString(p)
     case None => "NONE!!!"
   }
 
-  def optOutputsToString(o: List[Option[Value.value]]) = o.map(PrettyPrinter.outputToString).mkString(", ")
+  def optOutputsToString(o: List[Option[Value.value]]) = o.map(outputToString).mkString(", ")
   def litOutputsToString(o: List[Value.value]) = inputsToString(o)
 
   def pairToString(x:(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))) = x match {

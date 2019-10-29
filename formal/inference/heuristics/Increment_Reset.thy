@@ -17,7 +17,7 @@ lemma guard_match_length: "length (Guard t1) \<noteq> 1 \<or> length (Guard t2) 
   by auto
 
 fun insert_increment :: update_modifier where
-  "insert_increment t1ID t2ID s new old np = (let
+  "insert_increment t1ID t2ID s new _ old np = (let
      t1 = get_by_ids new t1ID;
      t2 = get_by_ids new t2ID in
      if guardMatch t1 t2 \<and> outputMatch t1 t2 then let 
@@ -51,7 +51,7 @@ lemma guard_match_symmetry: "(guardMatch t1 t2) = (guardMatch t2 t1)"
   by auto
 
 fun insert_increment_2 :: update_modifier where
-  "insert_increment_2 t1ID t2ID s new old np = (let
+  "insert_increment_2 t1ID t2ID s new _ old np = (let
      t1 = get_by_ids new t1ID;
      t2 = get_by_ids new t2ID in
      if guardMatch t1 t2 \<and> outputMatch t1 t2 then let 

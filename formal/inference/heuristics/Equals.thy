@@ -18,12 +18,12 @@ definition is_equals :: "transition \<Rightarrow> bool" where
         Outputs t = [L (Str ''true'')])"
 
 fun equals :: update_modifier where
-  "equals t1ID t2ID s new old _ = (let
-     t1 = (get_by_ids new t1ID);
-     t2 = (get_by_ids new t2ID) in
+  "equals t1ID t2ID s destMerge preDestMerge oldEFSM _ = (let
+     t1 = (get_by_ids destMerge t1ID);
+     t2 = (get_by_ids destMerge t2ID) in
      if is_equals t1 \<and> is_equals t2
      then
-           Some (replace_transitions new [(t1ID, gen_eq), (t2ID, gen_eq)])
+           Some (replace_transitions destMerge [(t1ID, gen_eq), (t2ID, gen_eq)])
      else None
    )"
 
@@ -38,12 +38,12 @@ definition is_not_equals :: "transition \<Rightarrow> bool" where
         Outputs t = [L (Str ''true'')])"
 
 fun not_equals :: update_modifier where
-  "not_equals t1ID t2ID s new old _ = (let
-     t1 = (get_by_ids new t1ID);
-     t2 = (get_by_ids new t2ID) in
+  "not_equals t1ID t2ID s destMerge preDestMerge oldEFSM _ = (let
+     t1 = (get_by_ids destMerge t1ID);
+     t2 = (get_by_ids destMerge t2ID) in
      if is_equals t1 \<and> is_equals t2
      then
-           Some (replace_transitions new [(t1ID, gen_neq), (t2ID, gen_neq)])
+           Some (replace_transitions destMerge [(t1ID, gen_neq), (t2ID, gen_neq)])
      else None
    )"
 

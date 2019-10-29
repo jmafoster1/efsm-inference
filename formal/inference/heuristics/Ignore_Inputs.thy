@@ -12,7 +12,7 @@ lemma can_take_transition_right_length: "length i = Arity t \<Longrightarrow> ca
   by (simp add: drop_guards_def can_take_transition_def can_take_def)
 
 definition drop_inputs :: "update_modifier" where
-  "drop_inputs t1ID t2ID s new old np = (let
+  "drop_inputs t1ID t2ID s new old _ np = (let
      t1 = (get_by_ids new t1ID);
      t2 = (get_by_ids new t2ID) in
      if fis_singleton (enumerate_outputs new (Label t1) (Arity t1)) then
@@ -25,7 +25,7 @@ definition drop_inputs :: "update_modifier" where
    )"
 
 definition transitionwise_drop_inputs :: update_modifier where
-  "transitionwise_drop_inputs t1ID t2ID s new old np = (let
+  "transitionwise_drop_inputs t1ID t2ID s new _ old np = (let
      t1 = (get_by_ids new t1ID);
      t2 = (get_by_ids new t2ID) in
      if Outputs t1 = Outputs t2 then

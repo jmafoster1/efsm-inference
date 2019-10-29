@@ -167,7 +167,7 @@ definition enumerate_log_ints :: "log \<Rightarrow> int list" where
   "enumerate_log_ints l = fold (\<lambda>e I. enumerate_exec_ints e @ I) l []"
 
 definition infer_output_functions :: "log \<Rightarrow> update_modifier" where
-  "infer_output_functions log t1ID t2ID s new old _ = (let
+  "infer_output_functions log t1ID t2ID s new _ old _ = (let
      t1 = get_by_ids new t1ID;
      i_log = enumerate 0 (map (enumerate 0) log);
      num_outs = length (Outputs t1);
@@ -179,7 +179,7 @@ definition infer_output_functions :: "log \<Rightarrow> update_modifier" where
    )"
 
 definition infer_output_functions_2 :: "log \<Rightarrow> update_modifier" where
-  "infer_output_functions_2 log t1ID t2ID s new old _ = (let
+  "infer_output_functions_2 log t1ID t2ID s new _ old _ = (let
      t1 = get_by_ids new t1ID;
      i_log = enumerate 0 (map (enumerate 0) log);
      num_outs = length (Outputs t1);
@@ -256,7 +256,7 @@ primrec overwrites_update :: "update_function list \<Rightarrow> nat set \<Right
   "overwrites_update (h#t) s = (if fst h \<in> s then True else overwrites_update t (insert (fst h) s))"
 
 definition infer_output_update_functions :: "log \<Rightarrow> update_modifier" where
-  "infer_output_update_functions log t1ID t2ID s new old _ = (let
+  "infer_output_update_functions log t1ID t2ID s new _ old _ = (let
      t1 = get_by_ids new t1ID;
      i_log = enumerate 0 (map (enumerate 0) log);
      num_outs = length (Outputs t1);

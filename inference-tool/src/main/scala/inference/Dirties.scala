@@ -297,6 +297,69 @@ object Dirties {
     subsumes
   }
 
+  def getTypes(i: List[Value.value]): List[String] = i.map {
+    case Value.Numa(_) => "Int"
+    case Value.Str(_) => "Str"
+  }
+
+  def getTypes(r: Map[Nat.nat,Option[Value.value]]): List[String] = {
+    val keys = r.keySet.toList.map(x => Code_Numeral.integer_of_nat(x))
+    keys.sorted
+    keys.map(key => r(Nat.Nata(key)) match {
+        case Some(Value.Numa(_)) => "Int"
+        case Some(Value.Str(_)) => "String"
+        case None => throw new IllegalArgumentException("Got none from a map")
+      }
+    )
+  }
+
+  def sortedValues(r: Map[Nat.nat,Option[Value.value]]): List[String] = {
+    val keys = r.keySet.toList.map(x => Code_Numeral.integer_of_nat(x))
+    keys.sorted
+    keys.map(key => r(Nat.Nata(key)) match {
+        case Some(Value.Numa(Int.int_of_integer(n))) => n.toString
+        case Some(Value.Str(s)) => "\"" + s + "\""
+        case None => throw new IllegalArgumentException("Got none from a map")
+      }
+    )
+  }
+
+  def findDistinguishingGuard(
+    g1: (List[(List[Value.value], Map[Nat.nat,Option[Value.value]])]),
+    g2: (List[(List[Value.value], Map[Nat.nat,Option[Value.value]])])
+  ): Option[(GExp.gexp, GExp.gexp)] = {
+    val inputTypes = getTypes(g1(0)._1)
+    val registerTypes = getTypes(g1(0)._2)
+
+    var z3String = s"(declare-fun g1 (${(inputTypes++registerTypes).map(t => s"(${t})").mkString(" ")}) bool)\n"
+    z3String = z3String + s"(declare-fun g2 (${(inputTypes++registerTypes).map(t => s"(${t})").mkString(" ")}) bool)\n"
+
+    for ((inputs, registers) <- g1) {
+      z3String = z3String + s"""(assert
+        (and
+          (g1 ${PrettyPrinter.inputsToString(inputs, " ")} ${sortedValues(registers).mkString(" ")})
+          (! (g2 ${PrettyPrinter.inputsToString(inputs, " ")} ${sortedValues(registers).mkString(" ")}))
+        )
+      )\n"""
+    }
+
+    for ((inputs, registers) <- g2) {
+      z3String = z3String + s"""(assert
+        (and
+          (g2 ${PrettyPrinter.inputsToString(inputs, " ")} ${sortedValues(registers).mkString(" ")})
+          (! (g1 ${PrettyPrinter.inputsToString(inputs, " ")} ${sortedValues(registers).mkString(" ")}))
+        )
+      )\n"""    }
+
+    // println(z3String)
+
+    // return None
+    return Some((
+      GExp.Gt(AExp.V(VName.R(Nat.Nata(2))), AExp.L(Value.Numa(Int.int_of_integer(99)))),
+      GExp.Gt(AExp.L(Value.Numa(Int.int_of_integer(100))), AExp.V(VName.R(Nat.Nata(2))))
+    ))
+  }
+
   def getUpdate(
     r: Nat.nat,
     values: List[Int.int],

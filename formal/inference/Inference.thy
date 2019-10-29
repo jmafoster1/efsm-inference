@@ -267,10 +267,10 @@ qed
 lemma make_pta_fold: "make_pta l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
   by (simp add: make_pta_fold_all_e)
 
-type_synonym update_modifier = "tids \<Rightarrow> tids \<Rightarrow> cfstate \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option"
+type_synonym update_modifier = "tids \<Rightarrow> tids \<Rightarrow> cfstate \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option"
 
 definition null_modifier :: update_modifier where
-  "null_modifier _ _ _ _ _ _ = None"
+  "null_modifier _ _ _ _ _ _ _ = None"
 
 type_synonym score = nat
 type_synonym scoreboard = "(score \<times> (cfstate \<times> cfstate)) fset"
@@ -403,16 +403,17 @@ definition merge_transitions_aux :: "iEFSM \<Rightarrow> tids \<Rightarrow> tids
 (* merge_transitions - Try dest merge transitions t\<^sub>1 and t\<^sub>2 dest help resolve nondeterminism in
                        newEFSM. If either subsumes the other directly then the subsumed transition
                        can simply be replaced with the subsuming one, else we try dest apply the
-                       modifier function dest resolve nondeterminism that way.                      *)
+                       modifier function dest resolve nondeterminism that way.                    *)
 (* @param oldEFSM   - the EFSM before merging the states which caused the nondeterminism          *)
+(* @param preDestMerge   - the EFSM after merging the states which caused the nondeterminism      *)
 (* @param newEFSM   - the current EFSM with nondeterminism                                        *)
-(* @param t\<^sub>1        - a transition dest be merged with t\<^sub>2                                           *)
+(* @param t\<^sub>1        - a transition dest be merged with t\<^sub>2                                         *)
 (* @param u\<^sub>1        - the unique identifier of t\<^sub>1                                                 *)
-(* @param t\<^sub>2        - a transition dest be merged with t\<^sub>1                                           *)
+(* @param t\<^sub>2        - a transition dest be merged with t\<^sub>1                                         *)
 (* @param u\<^sub>2        - the unique identifier of t\<^sub>2                                                 *)
-(* @param modifier  - an update modifier function which tries dest generalise transitions           *)
-definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> transition \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> tids \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
-  "merge_transitions oldEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 modifier np = (
+(* @param modifier  - an update modifier function which tries dest generalise transitions         *)
+definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> transition \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> tids \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
+  "merge_transitions oldEFSM preDestMerge destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 modifier np = (
      if \<forall>id \<in> set u\<^sub>1. directly_subsumes oldEFSM destMerge (origin [id] oldEFSM) (origin u\<^sub>1 destMerge) t\<^sub>2 t\<^sub>1 then
        \<comment> \<open>Replace t1 with t2\<close>
        Some (merge_transitions_aux destMerge u\<^sub>1 u\<^sub>2)
@@ -420,7 +421,7 @@ definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> transit
        \<comment> \<open>Replace t2 with t1\<close>
        Some (merge_transitions_aux destMerge u\<^sub>2 u\<^sub>1)
      else
-        case modifier u\<^sub>1 u\<^sub>2 (origin u\<^sub>1 destMerge) destMerge oldEFSM np of
+        case modifier u\<^sub>1 u\<^sub>2 (origin u\<^sub>1 destMerge) destMerge preDestMerge oldEFSM np of
           None \<Rightarrow> None |
           Some e \<Rightarrow> Some (make_distinct e)
    )"
@@ -446,7 +447,7 @@ function resolve_nondeterminism :: "(cfstate \<times> cfstate) list \<Rightarrow
      if (dest\<^sub>1, dest\<^sub>2) \<in> set closed then None else let
      destMerge = if dest\<^sub>1 = dest\<^sub>2 then newEFSM else merge_states dest\<^sub>1 dest\<^sub>2 newEFSM
      in
-     case merge_transitions oldEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m np of
+     case merge_transitions oldEFSM newEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m np of
        None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np |
        Some new \<Rightarrow>
          let newScores = (sorted_list_of_fset (np new)) in 
@@ -555,15 +556,15 @@ definition max_output :: "iEFSM \<Rightarrow> nat" where
 
 primrec try_heuristics :: "update_modifier list \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> update_modifier" where
   "try_heuristics [] _ = null_modifier" |
-  "try_heuristics (h#t) np = (\<lambda>a b c d e np. case h a b c d e np of Some e' \<Rightarrow> Some e' | None \<Rightarrow> (try_heuristics t np) a b c d e np)"
+  "try_heuristics (h#t) np = (\<lambda>a b c d e f np. case h a b c d e f np of Some e' \<Rightarrow> Some e' | None \<Rightarrow> (try_heuristics t np) a b c d e f np)"
 
 primrec try_heuristics_check :: "(transition_matrix \<Rightarrow> bool) \<Rightarrow> update_modifier list \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> update_modifier" where
   "try_heuristics_check _ [] _ = null_modifier" |
-  "try_heuristics_check check (h#t) np = (\<lambda>a b c d e np. 
-    case h a b c d e np of
+  "try_heuristics_check check (h#t) np = (\<lambda>a b c d e f np. 
+    case h a b c d e f np of
       Some e' \<Rightarrow>
-        if check (tm e') then Some e' else (try_heuristics_check check t np) a b c d e np |
-      None \<Rightarrow> (try_heuristics_check check t np) a b c d e np
+        if check (tm e') then Some e' else (try_heuristics_check check t np) a b c d e f np |
+      None \<Rightarrow> (try_heuristics_check check t np) a b c d e f np
     )"
 
 definition all_regs :: "iEFSM \<Rightarrow> nat set" where

@@ -34,7 +34,7 @@ definition replace_with :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarr
   "replace_with e r1 r2 = (fimage (\<lambda>(u, tf, t). (u, tf, t_replace_with t r1 r2)) e)"
 
 fun same_register :: update_modifier where
-  "same_register t1ID t2ID s new old _ = (let
+  "same_register t1ID t2ID s new _ old _ = (let
      t1 = get_by_ids new t1ID;
      t2 = get_by_ids new t2ID;
      ut1 = updates (Updates t1);

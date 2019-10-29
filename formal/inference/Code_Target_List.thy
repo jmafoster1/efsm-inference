@@ -122,5 +122,6 @@ code_printing
   | constant "ex" \<rightharpoonup> (Scala) "_.exists((_))"
   | constant "nth" \<rightharpoonup> (Scala) "_(Code'_Numeral.integer'_of'_nat((_)).toInt)"
   | constant "foldl" \<rightharpoonup> (Scala) "Dirties.foldl"
+  | constant "hd" \<rightharpoonup> (Scala) "_.head"
 
 end
