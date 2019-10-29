@@ -641,12 +641,6 @@ lemma diff_outputs_direct_subsumption:
    apply simp
   using bad_outputs by force
 
-definition "accepts_and_gets_us_to_both a b s s' = (
-  \<exists>p. accepts_trace (tm a) p \<and>
-      gets_us_to s (tm a) 0 <> p \<and>
-      accepts_trace (tm b) p \<and>
-      gets_us_to s' (tm b) 0 <> p)"
-
 definition updates_subset :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> bool" where
   "updates_subset t t' e = (
      case input_stored_in_reg t' t e of None \<Rightarrow> False | Some (i, r) \<Rightarrow>

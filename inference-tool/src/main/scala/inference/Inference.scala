@@ -4990,25 +4990,27 @@ def directly_subsumes_cases(e1: FSet.fset[(List[Nat.nat],
                       t2)) && (Least_Upper_Bound.lob_distinguished_3[Unit,
                               Unit](t1, t2)))
              false
-             else (if (Least_Upper_Bound.is_lob[Unit, Unit](t2, t1)) true
-                    else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
-                t2, e2, s2))
-                           true
-                           else (if (Store_Reuse_Subsumption.drop_update_add_guard_direct_subsumption(e1,
-                       e2, s1, s2, t1, t2))
-                                  false
-                                  else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
-                          t2, e1, e2, s1, s2))
- true
- else (if (Dirties.diffOutputsCtx[Unit, Unit](e1, e2, s1, s2, t1, t2)) false
-        else (if (Transition.equal_transition_exta[Unit](t1,
-                  Ignore_Inputs.drop_guards(t2)))
-               true
-               else (if (Store_Reuse_Subsumption.one_extra_update[Unit](t1, t2,
-                                 s2, Inference.tm(e2)))
+             else (if (Dirties.canStillTake(e1, e2, s1, s2, t1, t2)) true
+                    else (if (Least_Upper_Bound.is_lob[Unit, Unit](t2, t1)) true
+                           else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
+                       t2, e2, s2))
+                                  true
+                                  else (if (Store_Reuse_Subsumption.drop_update_add_guard_direct_subsumption(e1,
+                              e2, s1, s2, t1, t2))
+ false
+ else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1, t2,
+                                 e1, e2, s1, s2))
+        true
+        else (if (Dirties.diffOutputsCtx[Unit, Unit](e1, e2, s1, s2, t1, t2))
+               false
+               else (if (Transition.equal_transition_exta[Unit](t1,
+                         Ignore_Inputs.drop_guards(t2)))
                       true
-                      else Dirties.scalaDirectlySubsumes(e1, e2, s1, s2, t1,
-                  t2))))))))))))))))
+                      else (if (Store_Reuse_Subsumption.one_extra_update[Unit](t1,
+t2, s2, Inference.tm(e2)))
+                             true
+                             else Dirties.scalaDirectlySubsumes(e1, e2, s1, s2,
+                         t1, t2)))))))))))))))))
 
 def no_illegal_updates_code(x0: List[(Nat.nat, AExp.aexp)], uu: Nat.nat):
       Boolean
@@ -7163,8 +7165,7 @@ def aexp2sal(x0: AExp.aexp): String = x0 match {
     "Some(i(" +
       Code_Numeral.integer_of_nat(Nat.plus_nata(i, Nat.Nata((1)))).toString() +
       "))"
-  case AExp.V(VName.R(i)) =>
-    "r(" + Code_Numeral.integer_of_nat(i).toString() + ")"
+  case AExp.V(VName.R(i)) => "r__" + Code_Numeral.integer_of_nat(i).toString()
   case AExp.Plus(a1, a2) =>
     "value_plus(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
   case AExp.Minus(a1, a2) =>
@@ -7176,8 +7177,8 @@ def gexp2sal(x0: GExp.gexp): String = x0 match {
   case GExp.Bc(false) => "False"
   case GExp.Eq(a1, a2) =>
     "gval(value_eq(" + aexp2sal(a1) + ", " + aexp2sal(a2) + "))"
-  case GExp.Gt(a2, a1) =>
-    "gval(value_lt(" + aexp2sal(a1) + ", " + aexp2sal(a2) + "))"
+  case GExp.Gt(a1, a2) =>
+    "gval(value_gt(" + aexp2sal(a1) + ", " + aexp2sal(a2) + "))"
   case GExp.In(v, l) =>
     (Lista.map[Value.value,
                 String](((la: Value.value) =>
@@ -7195,6 +7196,54 @@ def guards2sal(x0: List[GExp.gexp]): String = x0 match {
   case v :: va =>
     (Lista.map[GExp.gexp,
                 String](((a: GExp.gexp) => gexp2sal(a)),
+                         v :: va)).mkString(" AND ")
+}
+
+def aexp2sal_num(x0: AExp.aexp, m: Nat.nat): String = (x0, m) match {
+  case (AExp.L(Value.Numa(n)), m) =>
+    "Some(Num(" + Code_Numeral.integer_of_int(n).toString() + "))"
+  case (AExp.L(Value.Str(n)), m) =>
+    "Some(Str(String__" +
+      (if (n == "") "_EMPTY__" else escape(n, replacements)) +
+      "))"
+  case (AExp.V(VName.I(i)), m) =>
+    "Some(i(" +
+      Code_Numeral.integer_of_nat(Nat.plus_nata(i, Nat.Nata((1)))).toString() +
+      "))"
+  case (AExp.V(VName.R(i)), m) =>
+    "r__" + Code_Numeral.integer_of_nat(i).toString() + "." +
+      Code_Numeral.integer_of_nat(m).toString()
+  case (AExp.Plus(a1, a2), m) =>
+    "value_plus(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
+  case (AExp.Minus(a1, a2), m) =>
+    "value_minus(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
+}
+
+def gexp2sal_num(x0: GExp.gexp, m: Nat.nat): String = (x0, m) match {
+  case (GExp.Bc(true), m) => "True"
+  case (GExp.Bc(false), m) => "False"
+  case (GExp.Eq(a1, a2), m) =>
+    "gval(value_eq(" + aexp2sal_num(a1, m) + ", " + aexp2sal_num(a2, m) + "))"
+  case (GExp.Gt(a1, a2), m) =>
+    "gval(value_gt(" + aexp2sal_num(a1, m) + ", " + aexp2sal_num(a2, m) + "))"
+  case (GExp.In(v, l), m) =>
+    (Lista.map[Value.value,
+                String](((la: Value.value) =>
+                          "gval(value_eq(" + aexp2sal_num(AExp.V(v), m) + ", " +
+                            aexp2sal_num(AExp.L(la), m) +
+                            "))"),
+                         l)).mkString(" OR ")
+  case (GExp.Nor(g1, g2), m) =>
+    "NOT (gval(" + gexp2sal_num(g1, m) + ") OR gval( " + gexp2sal_num(g2, m) +
+      "))"
+  case (GExp.Null(a1), m) => "a1 = None"
+}
+
+def guards2sal_num(x0: List[GExp.gexp], uu: Nat.nat): String = (x0, uu) match {
+  case (Nil, uu) => "TRUE"
+  case (v :: va, m) =>
+    (Lista.map[GExp.gexp,
+                String](((g: GExp.gexp) => gexp2sal_num(g, m)),
                          v :: va)).mkString(" AND ")
 }
 

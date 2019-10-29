@@ -735,4 +735,9 @@ definition i_possible_steps :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> regist
      ) 
     e)"
 
+definition "accepts_and_gets_us_to_both a b s s' = (
+  \<exists>p. accepts_trace (tm a) p \<and>
+      gets_us_to s (tm a) 0 <> p \<and>
+      accepts_trace (tm b) p \<and>
+      gets_us_to s' (tm b) 0 <> p)"
 end

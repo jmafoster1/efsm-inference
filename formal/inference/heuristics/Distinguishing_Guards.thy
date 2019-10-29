@@ -70,4 +70,63 @@ definition distinguish :: "log \<Rightarrow> update_modifier" where
         )
   )"
 
+definition can_still_take_ctx :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "can_still_take_ctx e1 e2 s1 s2 t1 t2 = (
+    \<forall>t. accepts_trace e1 t \<and> gets_us_to s1 e1 0 <> t \<and>  accepts_trace e2 t \<and> gets_us_to s2 e2 0 <> t \<longrightarrow>
+    (\<exists>a. anterior_context e2 t = Some a \<and> (\<forall>i. can_take_transition t2 i a \<longrightarrow> can_take_transition t1 i a))
+  )"
+
+lemma distinguishing_guard_subsumption:
+"Label t1 = Label t2 \<Longrightarrow>
+ Arity t1 = Arity t2 \<Longrightarrow>
+ Outputs t1 = Outputs t2 \<Longrightarrow>
+ Updates t1 = Updates t2 \<Longrightarrow>
+ can_still_take_ctx (tm e1) (tm e2) s1 s2 t1 t2 \<Longrightarrow>
+ accepts_and_gets_us_to_both e1 e2 s1 s2 \<Longrightarrow>
+ accepts_trace (tm e1) p \<Longrightarrow>
+ gets_us_to s1 (tm e1) 0 <> p \<Longrightarrow>
+ accepts_trace (tm e2) p \<Longrightarrow>
+ gets_us_to s2 (tm e2) 0 <> p \<Longrightarrow>
+ anterior_context (tm e2) p = Some c \<Longrightarrow>
+ subsumes t1 c t2"
+  apply (rule subsumption)
+      apply simp
+  using can_still_take_ctx_def apply auto[1]
+    apply simp
+  using posterior_separate_def apply auto[1]
+  using posterior_def posterior_separate_def by auto
+
+definition "can_still_take e1 e2 s1 s2 t1 t2 = (
+  Label t1 = Label t2 \<and>
+  Arity t1 = Arity t2 \<and>
+  Outputs t1 = Outputs t2 \<and>
+  Updates t1 = Updates t2 \<and>
+  can_still_take_ctx (tm e1) (tm e2) s1 s2 t1 t2 \<and>
+  accepts_and_gets_us_to_both e1 e2 s1 s2)"
+
+lemma can_still_take_direct_subsumption:
+ "can_still_take e1 e2 s1 s2 t1 t2 \<Longrightarrow>
+  directly_subsumes e1 e2 s1 s2 t1 t2"
+  apply (simp add: directly_subsumes_def can_still_take_def)
+  apply standard
+   apply clarify
+   apply (rule subsumption)
+       apply simp
+  using bad_guards distinguishing_guard_subsumption apply blast
+     apply simp
+  using posterior_separate_def apply auto[1]
+  using posterior_def posterior_separate_def apply auto[1]
+  apply (simp add: can_still_take_ctx_def accepts_and_gets_us_to_both_def)
+  apply (erule conjE)+
+  apply (erule exE)
+  apply (erule_tac x=p in allE)
+  apply simp
+  apply (erule exE)
+  apply (rule_tac x=a in exI)
+   apply (rule subsumption)
+       apply simp
+  using bad_guards distinguishing_guard_subsumption apply blast
+  using posterior_def posterior_separate_def by auto
+
+
 end

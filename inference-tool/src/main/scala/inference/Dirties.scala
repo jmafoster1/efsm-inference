@@ -285,6 +285,32 @@ object Dirties {
       return (output.toString.startsWith("Counterexample"))
     }
 
+    def canStillTake[A, B](
+      e1: IEFSM,
+      e2: IEFSM,
+      s1: Nat.nat,
+      s2: Nat.nat,
+      t1: Transition.transition_ext[A],
+      t2: Transition.transition_ext[B]): Boolean = {
+        val f = "intermediate_" + randomUUID.toString().replace("-", "_")
+        TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
+        addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
+          s"""canStillTake: THEOREM composition |- G(
+            NOT(
+              cfstate.1 = ${TypeConversion.salState(s1)} AND
+              cfstate.2 = ${TypeConversion.salState(s2)} AND
+              ((input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t2))} AND ${efsm2sal.guards2sal_num(Transition.Guard(t2), Nat.Nata(2))}) =>
+              (input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t1))} AND ${efsm2sal.guards2sal_num(Transition.Guard(t1), Nat.Nata(1))}))
+            )
+          );""")
+        val cmd = s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2)))+1}}!canStillTake'"
+        val output = Seq("bash", "-c", cmd).!!
+        FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
+        // println(cmd)
+        // println(output)
+        return (output.toString.startsWith("Counterexample"))
+      }
+
   def scalaDirectlySubsumes(
     e1: IEFSM,
     e2: IEFSM,
@@ -328,6 +354,16 @@ object Dirties {
     g1: (List[(List[Value.value], Map[Nat.nat,Option[Value.value]])]),
     g2: (List[(List[Value.value], Map[Nat.nat,Option[Value.value]])])
   ): Option[(GExp.gexp, GExp.gexp)] = {
+    println("Training set G1")
+    for ((i, r) <- g1) {
+      println("  "+i.toString + " " + r.toString)
+    }
+    println("Training set G2")
+    for ((i, r) <- g2) {
+      println("  "+i.toString + " " + r.toString)
+    }
+    println()
+
     val inputTypes = getTypes(g1(0)._1)
     val registerTypes = getTypes(g1(0)._2)
 

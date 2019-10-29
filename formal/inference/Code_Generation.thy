@@ -376,6 +376,8 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
       then False
     else if always_different_outputs_direct_subsumption e1 e2 s1 s2 t2 \<and> lob_distinguished_3 t1 t2
       then False
+    else if can_still_take e1 e2 s1 s2 t1 t2
+      then True
     else if is_lob t2 t1
       then True
     else if drop_guard_add_update_direct_subsumption t1 t2 e2 s2
@@ -416,6 +418,8 @@ lemma directly_subsumes_cases [code]:  "directly_subsumes m1 m2 s s' t1 t2 = dir
    apply (simp add: lob_distinguished_2_direct_subsumption)
   apply (clarify, rule if_elim)
    apply (simp add: lob_distinguished_3_direct_subsumption)
+  apply (clarify, rule if_elim)
+   apply (simp add: can_still_take_direct_subsumption)
   apply (clarify, rule if_elim)
    apply (simp add: is_lob_direct_subsumption)
   apply (clarify, rule if_elim)
@@ -505,6 +509,7 @@ declare random_member_def [code del]
 declare dirty_directly_subsumes_def [code del]
 declare accepts_and_gets_us_to_both_def [code del]
 declare initially_undefined_context_check_def [code del]
+declare can_still_take_ctx_def [code del]
 
 code_printing
   constant accepts_and_gets_us_to_both \<rightharpoonup> (Scala) "Dirties.acceptsAndGetsUsToBoth" |
@@ -516,6 +521,7 @@ code_printing
   constant "generalise_output_context_check" \<rightharpoonup> (Scala) "Dirties.generaliseOutputContextCheck" |
   constant "dirty_always_different_outputs_direct_subsumption" \<rightharpoonup> (Scala) "Dirties.alwaysDifferentOutputsDirectSubsumption" |
   constant "diff_outputs_ctx" \<rightharpoonup> (Scala) "Dirties.diffOutputsCtx" |
+  constant "can_still_take" \<rightharpoonup> (Scala) "Dirties.canStillTake" |
   constant "random_member" \<rightharpoonup> (Scala) "Dirties.randomMember"
 
 code_printing
@@ -621,6 +627,7 @@ export_code
   iefsm2dot
   efsm2dot
   guards2sal
+  guards2sal_num
   fold_In max_int
   use_smallest_ints
   And
