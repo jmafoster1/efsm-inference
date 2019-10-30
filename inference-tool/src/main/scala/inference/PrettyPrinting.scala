@@ -140,4 +140,26 @@ object PrettyPrinter {
       (label, (inputsToString(inputs), inputsToString(outputs)))
     }.mkString(", ")}]"
   }
+
+  def regsToString(r: Map[Nat.nat,Option[Value.value]]): String = {
+    val pairs = r.map{
+      case (k: Nat.nat, v: Option[Value.value]) =>
+        "r"+natToString(k) + ":=" + (v match {
+          case Some(Value.Numa(Int.int_of_integer(n))) => n.toString
+          case Some(Value.Str(s)) => s
+        })}
+    return s"<${pairs.mkString(", ")}>"
+  }
+
+  def eventInfoToString(e: (Nat.nat, (Map[Nat.nat,Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit]))))): String = e match {
+    case (state, (extraRegs, (inputs, (tids, tran)))) => {
+      return s"(${natToString(state)}, ${regsToString(extraRegs)}, [${inputsToString(inputs)}], [${tids.map(tid => natToString(tid)).mkString(", ")}], ${transitionToString(tran)})"
+    }
+  }
+
+  def targetInfoToString(e: (Map[Nat.nat,Option[Value.value]], (Nat.nat, (Map[Nat.nat,Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit])))))): String = e match {
+    case (target, (state, (extraRegs, (inputs, (tids, tran))))) => {
+      return s"(${regsToString(target)}, ${natToString(state)}, ${regsToString(extraRegs)}, [${inputsToString(inputs)}], [${tids.map(tid => natToString(tid)).mkString(", ")}], ${transitionToString(tran)})"
+    }
+  }
 }

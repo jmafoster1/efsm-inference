@@ -8,7 +8,7 @@ import java.nio.file.{Paths, Files}
 
 object Heuristics extends Enumeration {
   type Heuristic = Value
-  val store, inputgen, inc, sr, sr2, distinguish, sru, same, ignore, ignoret, lob, gob, gungho, eq, neq = Value
+  val store, inputgen, inc, sr, sr2, distinguish, srh, sru, same, ignore, ignoret, lob, gob, gungho, eq, neq = Value
 }
 
 object Nondeterminisms extends Enumeration {
@@ -172,6 +172,7 @@ object Config {
           Heuristics.sr -> (Symbolic_Regression.infer_output_functions _).curried(config.log),
           Heuristics.sr2 -> (Symbolic_Regression.infer_output_functions_2 _).curried(config.log),
           Heuristics.sru -> (Symbolic_Regression.infer_output_update_functions _).curried(config.log),
+          Heuristics.srh -> (Symbolic_Regression.historical_infer_output_update_functions _).curried(config.log),
           Heuristics.distinguish -> (Distinguishing_Guards.distinguish _).curried(config.log),
           Heuristics.same -> (Same_Register.same_register _).curried,
           Heuristics.ignore -> (Ignore_Inputs.drop_inputs _).curried,

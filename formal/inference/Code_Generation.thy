@@ -619,6 +619,7 @@ export_code
   infer_output_functions_2
   infer_output_update_functions
   distinguish
+  historical_infer_output_update_functions
   (* Nondeterminism metrics *)
   nondeterministic_pairs
   nondeterministic_pairs_labar
@@ -628,7 +629,8 @@ export_code
   efsm2dot
   guards2sal
   guards2sal_num
-  fold_In max_int
+  fold_In
+  max_int
   use_smallest_ints
   And
   enumerate_vars

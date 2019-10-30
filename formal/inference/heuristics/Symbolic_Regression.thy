@@ -29,17 +29,6 @@ definition get_outputs :: "flat_log \<Rightarrow> nat \<Rightarrow> value list" 
 definition get_functions :: "nat \<Rightarrow> int list \<Rightarrow> nat \<Rightarrow> flat_log \<Rightarrow> aexp option list" where
   "get_functions maxReg values n l = map (\<lambda>p. get_function maxReg values (get_inputs l) (get_outputs l p)) [0..<n]"
 
-\<comment> \<open>This will be replaced to calls to Z3 in the executable\<close>
-definition get_regs :: "inputs \<Rightarrow> aexp \<Rightarrow> value \<Rightarrow> registers" where
-  "get_regs i a v = Eps (\<lambda>r. aval a (join_ir i r) = Some v)"
-
-definition finfun2pairs :: "('a::linorder \<Rightarrow>f 'b) \<Rightarrow> ('a \<times> 'b) list" where
-  "finfun2pairs f = (let
-    keys = finfun_to_list f;
-    values = map (\<lambda>k. f $ k) keys
-    in zip keys values
-   )"
-
 definition insert_updates :: "transition \<Rightarrow> update_function list \<Rightarrow> transition" where
   "insert_updates t u = \<lparr>Label = Label t, Arity = Arity t, Guard = Guard t, Outputs = Outputs t, Updates = (filter (\<lambda>(r, _). r \<notin> set (map fst u)) (Updates t))@u\<rparr>"
 
@@ -53,18 +42,19 @@ fun put_update_function_aux :: "aexp option \<Rightarrow> nat \<Rightarrow> upda
   "put_update_function_aux _ _ _ [] _ _ _ e _ _ = Some e" |
   "put_update_function_aux op ox us ((_, l, i, p)#t) label i_arity pta target s r = (
     let
-    poss_steps = ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir i r) = map Some p) (i_possible_steps pta s r l i);
-    (tid, s', ta) =  fthe_elem poss_steps;
-     ta = get_by_id target (hd tid) in
-       \<comment> \<open>Possible steps with a transition we need to modify\<close>
-      if l = label \<and> length i = i_arity then let
-        newT = drop_guard (insert_outputs (insert_updates ta us) op ox);
-        newE = make_distinct (replace_transitions target [(tid, newT)])
-        in
-        put_update_function_aux op ox us t label i_arity pta newE s' (apply_updates (Updates ta) (join_ir i r) r)
-       \<comment> \<open>Possible steps but not interesting - just take a transition and move on\<close>
-      else
-        put_update_function_aux op ox us t label i_arity pta target s' (apply_updates (Updates ta) (join_ir i r) r)
+      poss_steps = ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir i r) = map Some p) (i_possible_steps pta s r l i);
+      (tid, s', ta) =  fthe_elem poss_steps;
+      ta = get_by_id target (hd tid)
+    in
+     \<comment> \<open>Possible steps with a transition we need to modify\<close>
+    if l = label \<and> length i = i_arity then let
+      newT = drop_guard (insert_outputs (insert_updates ta us) op ox);
+      newE = make_distinct (replace_transitions target [(tid, newT)])
+      in
+      put_update_function_aux op ox us t label i_arity pta newE s' (apply_updates (Updates ta) (join_ir i r) r)
+     \<comment> \<open>Possible steps but not interesting - just take a transition and move on\<close>
+    else
+      put_update_function_aux op ox us t label i_arity pta target s' (apply_updates (Updates ta) (join_ir i r) r)
   )"
 
 primrec put_update_functions :: "aexp option \<Rightarrow> nat \<Rightarrow> update_function list \<Rightarrow> indexed_log \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
@@ -75,12 +65,17 @@ primrec put_update_functions :: "aexp option \<Rightarrow> nat \<Rightarrow> upd
       Some e' \<Rightarrow> put_update_functions op ox us t label arity pta (make_distinct e')
   )"
 
+\<comment> \<open>This will be replaced to calls to Z3 in the executable\<close>
+definition get_regs :: "inputs \<Rightarrow> aexp \<Rightarrow> value \<Rightarrow> registers" where
+  "get_regs i a v = Eps (\<lambda>r. aval a (join_ir i r) = Some v)"
+
 fun put_output_function_2_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_execution \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> tids option \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
   "put_output_function_2_aux _ _ [] _ _ _ _ e _ _ = Some e" |
   "put_output_function_2_aux fi f ((_, l, i, p)#t) label i_arity o_arity prevtid e s r = (
     let
-    poss_steps = ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir i r) = map Some p) (i_possible_steps e s r l i);
-    (tid, s', ta) = fthe_elem poss_steps in
+      poss_steps = ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir i r) = map Some p) (i_possible_steps e s r l i);
+      (tid, s', ta) = fthe_elem poss_steps
+    in
      \<comment> \<open>Possible steps with a transition we need to modify\<close>
     if l = label \<and> length i = i_arity \<and> length p = o_arity then
       case prevtid of None \<Rightarrow> None | Some prevtid \<Rightarrow> let
@@ -244,9 +239,10 @@ definition get_updates :: "int list \<Rightarrow> (inputs \<times> registers \<t
 fun outputwise_updates :: "int list \<Rightarrow> nat \<Rightarrow> aexp option list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> indexed_log \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> iEFSM option" where
   "outputwise_updates _ _ [] pta e _ _ _ = Some e" |
   "outputwise_updates values ox (None#t) pta e log label arity = outputwise_updates values (ox + 1) t pta e log label arity" |
-  "outputwise_updates values ox ((Some a)#t) pta e log label arity = (let
-    train = get_log_reg_values a log label arity pta;
-    update_functions = get_updates values train
+  "outputwise_updates values ox ((Some a)#t) pta e log label arity = (
+    let
+      train = get_log_reg_values a log label arity pta;
+      update_functions = get_updates values train
     in
     case put_update_functions (Some a) ox update_functions log label arity pta e of
     None \<Rightarrow> None |
@@ -279,5 +275,61 @@ definition infer_output_update_functions :: "log \<Rightarrow> update_modifier" 
           outputwise_updates values 0 output_functions e' (transfer_updates (sorted_list_of_fset e') new) i_log (Label t1) (Arity t1)
       )
    )"
+
+type_synonym event_info = "(cfstate \<times> registers \<times> inputs \<times> tids \<times> transition)"
+type_synonym run_info = "event_info list"
+type_synonym targeted_run_info = "(registers \<times> event_info) list"
+
+fun everything_walk :: "output_function \<Rightarrow> nat \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> run_info" where
+  "everything_walk _ _ [] _ _ _ _ _ = []" |
+  "everything_walk f fi ((label, inputs, outputs)#t) oPTA s regs ll i_arity = (
+    let (tid, s', ta) = fthe_elem (i_possible_steps oPTA s regs label inputs) in
+     \<comment> \<open>Possible steps with a transition we need to modify\<close>
+    if ll = label \<and> length inputs = i_arity then
+      (s, get_regs inputs f (outputs!fi), inputs, tid, ta)#(everything_walk f fi t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) ll i_arity)
+    else
+      let empty = <> in
+      (s, empty, inputs, tid, ta)#(everything_walk f fi t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) ll i_arity)
+  )"
+
+definition everything_walk_log :: "output_function \<Rightarrow> nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> run_info list" where
+  "everything_walk_log f fi log e l a = map (\<lambda>t. everything_walk f fi t e 0 <> l a) log"
+
+fun target :: "registers \<Rightarrow> run_info \<Rightarrow> targeted_run_info" where
+  "target _ [] = []" |
+  "target tRegs ((s, regs, inputs, tid, ta)#t) = (
+    let newTarget = if finfun_to_list regs = [] then tRegs else regs in
+    (tRegs, s, regs, inputs, tid, ta)#target newTarget t
+  )"
+
+definition historical_infer_output_update_functions :: "log \<Rightarrow> update_modifier" where
+  "historical_infer_output_update_functions log t1ID t2ID s new _ old _ = (
+    let
+      i_log = enumerate 0 (map (enumerate 0) log);
+      t1 = get_by_ids new t1ID;
+      walked = everything_walk_log;
+      values = enumerate_log_ints log;
+      max_reg = max_reg_total new;
+      relevant_events = flatten (map (\<lambda>(i, ex). (i, filter (\<lambda>(_, l, ip, op). l = Label t1 \<and> length ip = Arity t1 \<and> length op = length (Outputs t1)) ex)) i_log) [];
+      output_functions = get_functions max_reg values (length (Outputs t1)) relevant_events;
+      pta = make_pta log {||};
+      lit_updates = put_output_functions (enumerate 0 output_functions) i_log t1 pta
+    in
+    case lit_updates of
+      None \<Rightarrow> None |
+      Some lit \<Rightarrow> (
+        \<comment> \<open>TODO: eventually we'll have to do this with all output functions\<close>
+        case hd output_functions of
+          None \<Rightarrow> None |
+          Some op \<Rightarrow> (
+            let
+              walked = everything_walk_log op 0 log lit (Label t1) (Arity t1);
+              targeted = map (\<lambda>w. rev (target <> (rev w))) walked
+            in
+            None
+          )
+      )
+  )"
+
 
 end
