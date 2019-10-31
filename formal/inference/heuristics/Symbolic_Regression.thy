@@ -302,6 +302,46 @@ fun target :: "registers \<Rightarrow> run_info \<Rightarrow> targeted_run_info"
     (tRegs, s, regs, inputs, tid, ta)#target newTarget t
   )"
 
+fun structural_insert :: "(registers \<times> event_info) \<Rightarrow> (registers \<times> event_info) list list \<Rightarrow> (registers \<times> event_info) list list" where
+  "structural_insert x [] = [[x]]" |
+  "structural_insert x (h#t) = (
+    case x of (_, _, _, _, _, ta) \<Rightarrow>
+    if \<exists>(_, _, _, _, _, tb) \<in> set h. same_structure ta tb then
+      (List.insert x h)#t
+    else
+      h#structural_insert x t
+  )"
+
+definition group_by_structure :: "targeted_run_info \<Rightarrow> targeted_run_info list \<Rightarrow> targeted_run_info list" where
+  "group_by_structure info groups = fold (\<lambda>event acc. structural_insert event acc) info []"
+
+definition get_updates_opt :: "int list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> (nat \<times> aexp option) list" where
+  "get_updates_opt values train = (let
+    updated_regs = fold List.union (map (finfun_to_list \<circ> snd \<circ> snd) train) [] in
+    map (\<lambda>r. (r, get_update r values train)) updated_regs
+  )"
+
+fun group_update :: "int list \<Rightarrow> targeted_run_info \<Rightarrow> (tids \<times> (nat \<times> aexp) list) option" where
+  "group_update values l = (
+    let
+      targeted = filter (\<lambda>(regs, _). finfun_to_list regs \<noteq> []) l;
+      maybe_updates = get_updates_opt values (map (\<lambda>(tRegs, s, regs, inputs, tid, ta). (inputs, regs, tRegs)) targeted)
+    in
+    if \<exists>(_, f_opt) \<in> set maybe_updates. f_opt = None then
+      None
+    else
+      Some (fold List.union (map (\<lambda>(tRegs, s, regs, inputs, tid, ta). tid) l) [], map (\<lambda>(r, f_o). (r, the f_o)) maybe_updates)
+  )"
+
+fun groupwise_updates :: "int list \<Rightarrow> targeted_run_info list \<Rightarrow> (tids \<times> (nat \<times> aexp) list) option list" where
+  "groupwise_updates values [] = []" |
+  "groupwise_updates values (g#gs) = (
+    if \<forall>(regs, _) \<in> set g. finfun_to_list regs = [] then
+      groupwise_updates values gs
+    else
+      (group_update values g) # groupwise_updates values gs 
+  )"
+
 definition historical_infer_output_update_functions :: "log \<Rightarrow> update_modifier" where
   "historical_infer_output_update_functions log t1ID t2ID s new _ old _ = (
     let
@@ -324,7 +364,9 @@ definition historical_infer_output_update_functions :: "log \<Rightarrow> update
           Some op \<Rightarrow> (
             let
               walked = everything_walk_log op 0 log lit (Label t1) (Arity t1);
-              targeted = map (\<lambda>w. rev (target <> (rev w))) walked
+              targeted = map (\<lambda>w. rev (target <> (rev w))) walked;
+              groups = group_by_structure (fold List.union targeted []) [];
+              group_updates = groupwise_updates values groups
             in
             None
           )
