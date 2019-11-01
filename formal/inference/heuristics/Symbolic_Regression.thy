@@ -320,7 +320,8 @@ definition get_updates_opt :: "int list \<Rightarrow> (inputs \<times> registers
     updated_regs = fold List.union (map (finfun_to_list \<circ> snd \<circ> snd) train) [] in
     map (\<lambda>r.
       let targetValues = remdups (map (\<lambda>(_, _, regs). regs $ r) train) in
-      if length targetValues = 1 then
+      \<comment> \<open>add inputs=[] to this too but only when we've got non-numericals working\<close>
+      if length targetValues = 1 \<and> (\<forall>(inputs, initialRegs, _) \<in> set train. finfun_to_list initialRegs = []) then
         case hd targetValues of Some v \<Rightarrow>
         (r, Some (L v))
       else

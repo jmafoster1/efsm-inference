@@ -8101,7 +8101,23 @@ val (_, (_, regs)):
 regs(r)
                                       }),
                                      train)).distinct;
- (if (Nat.equal_nata(Nat.Nata(targetValues.length), Nat.Nata((1))))
+ (if ((Nat.equal_nata(Nat.Nata(targetValues.length),
+                       Nat.Nata((1)))) && (Lista.list_all[(List[Value.value],
+                    (Map[Nat.nat, Option[Value.value]],
+                      Map[Nat.nat, Option[Value.value]]))](((aa:
+                       (List[Value.value],
+                         (Map[Nat.nat, Option[Value.value]],
+                           Map[Nat.nat, Option[Value.value]])))
+                      =>
+                     {
+                       val (_, (initialRegs, _)):
+                             (List[Value.value],
+                               (Map[Nat.nat, Option[Value.value]],
+                                 Map[Nat.nat, Option[Value.value]]))
+                         = aa;
+                       (initialRegs.keySet.toList).isEmpty
+                     }),
+                    train)))
    {
      val (Some(v)): Option[Value.value] = targetValues.head;
      (r, Some[AExp.aexp](AExp.L(v)))
