@@ -318,7 +318,14 @@ definition group_by_structure :: "targeted_run_info \<Rightarrow> targeted_run_i
 definition get_updates_opt :: "int list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> (nat \<times> aexp option) list" where
   "get_updates_opt values train = (let
     updated_regs = fold List.union (map (finfun_to_list \<circ> snd \<circ> snd) train) [] in
-    map (\<lambda>r. (r, get_update r values train)) updated_regs
+    map (\<lambda>r.
+      let targetValues = remdups (map (\<lambda>(_, _, regs). regs $ r) train) in
+      if length targetValues = 1 then
+        case hd targetValues of Some v \<Rightarrow>
+        (r, Some (L v))
+      else
+        (r, get_update r values train)
+    ) updated_regs
   )"
 
 fun group_update :: "int list \<Rightarrow> targeted_run_info \<Rightarrow> (tids \<times> (nat \<times> aexp) list) option" where
@@ -333,7 +340,7 @@ fun group_update :: "int list \<Rightarrow> targeted_run_info \<Rightarrow> (tid
       Some (fold List.union (map (\<lambda>(tRegs, s, regs, inputs, tid, ta). tid) l) [], map (\<lambda>(r, f_o). (r, the f_o)) maybe_updates)
   )"
 
-fun groupwise_updates :: "int list \<Rightarrow> targeted_run_info list \<Rightarrow> (tids \<times> (nat \<times> aexp) list) option list" where
+fun groupwise_updates :: "int list \<Rightarrow> targeted_run_info list \<Rightarrow> (tids \<times> update_function list) option list" where
   "groupwise_updates values [] = []" |
   "groupwise_updates values (g#gs) = (
     if \<forall>(regs, _) \<in> set g. finfun_to_list regs = [] then
@@ -341,6 +348,26 @@ fun groupwise_updates :: "int list \<Rightarrow> targeted_run_info list \<Righta
     else
       (group_update values g) # groupwise_updates values gs 
   )"
+
+fun add_groupwise_updates :: "(tids \<times> update_function list) option list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "add_groupwise_updates [] e = e" |
+  "add_groupwise_updates (None#t) e = add_groupwise_updates t e" |
+  "add_groupwise_updates (Some (tids, u)#t) e = (
+    let
+      newTransitions = map (\<lambda>tid. drop_guard (insert_updates (get_by_id e tid) u)) tids;
+      replacements = zip (map (\<lambda>id. [id]) tids) newTransitions
+    in
+    add_groupwise_updates t (replace_transitions e replacements)
+  )"
+
+definition lift_output_functions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> iEFSM" where
+  "lift_output_functions oPTA merged label arity = fold (\<lambda>(tid, _, t) acc.
+    let oldT = get_by_id merged (hd tid) in
+    if Label oldT = label \<and> Arity oldT = arity then
+      replace_transition acc tid \<lparr>Label = Label oldT, Arity = Arity oldT, Guard = Guard oldT, Outputs = Outputs t, Updates = Updates oldT\<rparr>
+    else
+      acc
+  ) (sorted_list_of_fset oPTA) merged"
 
 definition historical_infer_output_update_functions :: "log \<Rightarrow> update_modifier" where
   "historical_infer_output_update_functions log t1ID t2ID s new _ old _ = (
@@ -366,9 +393,11 @@ definition historical_infer_output_update_functions :: "log \<Rightarrow> update
               walked = everything_walk_log op 0 log lit (Label t1) (Arity t1);
               targeted = map (\<lambda>w. rev (target <> (rev w))) walked;
               groups = group_by_structure (fold List.union targeted []) [];
-              group_updates = groupwise_updates values groups
+              group_updates = groupwise_updates values groups;
+              lifted = lift_output_functions lit new (Label t1) (Arity t1);
+              updated = make_distinct (add_groupwise_updates group_updates lifted)
             in
-            None
+            Some updated
           )
       )
   )"

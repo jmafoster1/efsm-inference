@@ -17,7 +17,7 @@ object PrettyPrinter {
     v match {
       case Value.Numa(Int.int_of_integer(n)) => n.toString
       case Value.Str(s) => "\"" + s + "\""
-  }
+    }
 
   def vnameToString(v: VName.vname): String = {
     v match {
@@ -79,7 +79,7 @@ object PrettyPrinter {
 
   def traceToString(x1: List[(String, (List[Value.value], List[Value.value]))]): String = x1 match {
     case Nil => ""
-    case (label, (inputs, outputs))::t => s"        ${label}(${inputs.map(valueToString)})/${outputs.map(valueToString)}\n" + traceToString(t)
+    case (label, (inputs, outputs)) :: t => s"        ${label}(${inputs.map(valueToString)})/${outputs.map(valueToString)}\n" + traceToString(t)
   }
 
   def inputsToString(i: List[Value.value], join: String = ", ") = i.map(valueToString).mkString(join)
@@ -92,9 +92,9 @@ object PrettyPrinter {
   def optOutputsToString(o: List[Option[Value.value]]) = o.map(outputToString).mkString(", ")
   def litOutputsToString(o: List[Value.value]) = inputsToString(o)
 
-  def pairToString(x:(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))) = x match {
-    case (Nat.Nata(a),((Nat.Nata(b),Nat.Nata(c)), ((t,Nat.Nata(d)),(t_prime,Nat.Nata(e))))) =>
-    (a,((b, c), ((transitionToString(t), d),(transitionToString(t_prime), e))))
+  def pairToString(x: (Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))) = x match {
+    case (Nat.Nata(a), ((Nat.Nata(b), Nat.Nata(c)), ((t, Nat.Nata(d)), (t_prime, Nat.Nata(e))))) =>
+      (a, ((b, c), ((transitionToString(t), d), (transitionToString(t_prime), e))))
   }
 
   def nondeterministicPairsToString(p: FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))]): String = {
@@ -136,28 +136,32 @@ object PrettyPrinter {
   }
 
   def releventsToString(l: List[(Nat.nat, (Nat.nat, (String, (List[Value.value], List[Value.value]))))]): String = {
-    s"[${l.map{case (tIndex:Nat.nat, (eIndex: Nat.nat, (label: String, (inputs: List[Value.value], outputs: List[Value.value])))) =>
-      (label, (inputsToString(inputs), inputsToString(outputs)))
-    }.mkString(", ")}]"
+    s"[${
+      l.map {
+        case (tIndex: Nat.nat, (eIndex: Nat.nat, (label: String, (inputs: List[Value.value], outputs: List[Value.value])))) =>
+          (label, (inputsToString(inputs), inputsToString(outputs)))
+      }.mkString(", ")
+    }]"
   }
 
-  def regsToString(r: Map[Nat.nat,Option[Value.value]]): String = {
-    val pairs = r.map{
+  def regsToString(r: Map[Nat.nat, Option[Value.value]]): String = {
+    val pairs = r.map {
       case (k: Nat.nat, v: Option[Value.value]) =>
-        "r"+natToString(k) + ":=" + (v match {
+        "r" + natToString(k) + ":=" + (v match {
           case Some(Value.Numa(Int.int_of_integer(n))) => n.toString
           case Some(Value.Str(s)) => s
-        })}
+        })
+    }
     return s"<${pairs.mkString(", ")}>"
   }
 
-  def eventInfoToString(e: (Nat.nat, (Map[Nat.nat,Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit]))))): String = e match {
+  def eventInfoToString(e: (Nat.nat, (Map[Nat.nat, Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit]))))): String = e match {
     case (state, (extraRegs, (inputs, (tids, tran)))) => {
       return s"(${natToString(state)}, ${regsToString(extraRegs)}, [${inputsToString(inputs)}], [${tids.map(tid => natToString(tid)).mkString(", ")}], ${transitionToString(tran)})"
     }
   }
 
-  def targetInfoToString(e: (Map[Nat.nat,Option[Value.value]], (Nat.nat, (Map[Nat.nat,Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit])))))): String = e match {
+  def targetInfoToString(e: (Map[Nat.nat, Option[Value.value]], (Nat.nat, (Map[Nat.nat, Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit])))))): String = e match {
     case (target, (state, (extraRegs, (inputs, (tids, tran))))) => {
       return s"(${regsToString(target)}, ${natToString(state)}, ${regsToString(extraRegs)}, [${inputsToString(inputs)}], [${tids.map(tid => natToString(tid)).mkString(", ")}], ${transitionToString(tran)})"
     }
