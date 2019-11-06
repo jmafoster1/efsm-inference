@@ -8,12 +8,28 @@ import Types._
 import org.apache.commons.io.FileUtils
 import java.util.UUID.randomUUID
 
-import com.lagodiuk.gp.symbolic.{SymbolicRegressionEngine, Target, TabulatedFunctionFitness, SymbolicRegressionIterationListener}
-
-import com.lagodiuk.gp.symbolic.interpreter.Functions
-import com.lagodiuk.gp.symbolic.interpreter.Expression;
-
 import scala.collection.JavaConverters._
+
+import mint.inference.gp.Generator;
+import mint.inference.gp.tree.Node;
+import mint.inference.gp.tree.NonTerminal;
+import mint.inference.gp.tree.nonterminals.integers.AddIntegersOperator;
+import mint.inference.gp.tree.nonterminals.integers.SubtractIntegersOperator;
+import mint.inference.gp.tree.terminals.IntegerVariableAssignmentTerminal;
+import mint.inference.gp.tree.terminals.StringVariableAssignmentTerminal;
+import mint.inference.gp.tree.terminals.VariableTerminal;
+import mint.tracedata.types.IntegerVariableAssignment;
+import mint.tracedata.types.StringVariableAssignment;
+import mint.tracedata.types.VariableAssignment;
+import mint.inference.gp.SingleOutputGP;
+import mint.inference.evo.GPConfiguration;
+
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 
 object Dirties {
   def foldl[A, B](f: A => B => A, b: A, l: List[B]): A =
@@ -398,136 +414,164 @@ object Dirties {
 
   def getUpdate(
     r: Nat.nat,
-    values: List[Int.int],
+    values: List[Value.value],
     train: List[(List[Value.value], (Map[Nat.nat,Option[Value.value]], Map[Nat.nat,Option[Value.value]]))]
   ): Option[AExp.aexp] = {
-    var vars:List[String] = List()
-    var targets: List[Target] = List()
-    for (t <- train) t match {
-      case (inputs, (anteriorRegs, posteriorRegs)) => posteriorRegs(r) match {
-        case None => ()
-        case Some(Value.Str(_)) => ()
-        case Some(Value.Numa(Int.int_of_integer(n))) => {
-          // println("  Inputs: "+inputs)
-          // println("  AnteriorRegs: "+anteriorRegs)
-          // println("  posteriorRegs: "+posteriorRegs)
-          val target = new Target()
-          target.targetIs(TypeConversion.toInt(n))
-          for ((ip:Value.value, ix:Int) <- inputs.zipWithIndex) ip match {
-            case Value.Str(_) => ()
-            case Value.Numa(Int.int_of_integer(n)) => {
-              val vname = f"i${ix+1}"
-              vars = vname::vars
-              target.when(vname, TypeConversion.toInt(n))
-            }
-          }
-          for ((k:Nat.nat, v:Option[Value.value]) <- anteriorRegs) v match {
-            case None => ()
-            case Some(Value.Str(_)) => ()
-            case Some(Value.Numa(Int.int_of_integer(n))) => {
-              val vname = f"r${TypeConversion.natToInt(k)}"
-              vars = vname::vars
-              target.when(vname, TypeConversion.toInt(n))
-            }
-          }
-          targets = target::targets
-          println(target)
-        }
-      }
-    }
-    val fitness = new TabulatedFunctionFitness(targets: _*)
-    val engine = new SymbolicRegressionEngine(
-      values.map(n => TypeConversion.toInteger(Code_Numeral.integer_of_int(n))).asJava,
-      fitness,
-      (vars.toList).asJava,
-      List(
-              Functions.ADD,
-              Functions.SUB,
-              Functions.VARIABLE,
-              Functions.CONSTANT
-          ).asJava
-      )
-      engine.addIterationListener(new SymbolicRegressionIterationListener() {
-        override def update(engine: SymbolicRegressionEngine): Unit = {
-          val bestSyntaxTree: Expression = engine.getBestSyntaxTree
-          val currFitValue: Double = engine.fitness(bestSyntaxTree)
-          // halt condition
-          if (currFitValue == 0) {
-            engine.terminate()
-          }
-        }
-      })
-      engine.evolve(Config.config.gpIterations)
-      val best = engine.getBestSyntaxTree().simplify()
-      println("Best update function is: "+best)
-      if (engine.isCorrect(best)) {
-        // println(best.simplify() + " is correct")
-        return Some(TypeConversion.toAExp(best))
-      }
-      else {
-        return None
-      }
+    return Some(AExp.Plus(AExp.V(VName.R(Nat.Nata(2))), AExp.V(VName.I(Nat.Nata(1)))))
+    return None;
+    // var vars:List[String] = List()
+    // var targets: List[Target] = List()
+    // for (t <- train) t match {
+    //   case (inputs, (anteriorRegs, posteriorRegs)) => posteriorRegs(r) match {
+    //     case None => ()
+    //     case Some(Value.Str(_)) => ()
+    //     case Some(Value.Numa(Int.int_of_integer(n))) => {
+    //       // println("  Inputs: "+inputs)
+    //       // println("  AnteriorRegs: "+anteriorRegs)
+    //       // println("  posteriorRegs: "+posteriorRegs)
+    //       val target = new Target()
+    //       target.targetIs(TypeConversion.toInt(n))
+    //       for ((ip:Value.value, ix:Int) <- inputs.zipWithIndex) ip match {
+    //         case Value.Str(_) => ()
+    //         case Value.Numa(Int.int_of_integer(n)) => {
+    //           val vname = f"i${ix}"
+    //           vars = vname::vars
+    //           target.when(vname, TypeConversion.toInt(n))
+    //         }
+    //       }
+    //       for ((k:Nat.nat, v:Option[Value.value]) <- anteriorRegs) v match {
+    //         case None => ()
+    //         case Some(Value.Str(_)) => ()
+    //         case Some(Value.Numa(Int.int_of_integer(n))) => {
+    //           val vname = f"r${TypeConversion.natToInt(k)}"
+    //           vars = vname::vars
+    //           target.when(vname, TypeConversion.toInt(n))
+    //         }
+    //       }
+    //       targets = target::targets
+    //       println(target)
+    //     }
+    //   }
+    // }
+    // val fitness = new TabulatedFunctionFitness(targets: _*)
+    // val engine = new SymbolicRegressionEngine(
+    //   values.map(n => TypeConversion.toInteger(Code_Numeral.integer_of_int(n))).asJava,
+    //   fitness,
+    //   (vars.toList).asJava,
+    //   List(
+    //           Functions.ADD,
+    //           Functions.SUB,
+    //           Functions.VARIABLE,
+    //           Functions.CONSTANT
+    //       ).asJava
+    //   )
+    //   engine.addIterationListener(new SymbolicRegressionIterationListener() {
+    //     override def update(engine: SymbolicRegressionEngine): Unit = {
+    //       val bestSyntaxTree: Expression = engine.getBestSyntaxTree
+    //       val currFitValue: Double = engine.fitness(bestSyntaxTree)
+    //       // halt condition
+    //       if (currFitValue == 0) {
+    //         engine.terminate()
+    //       }
+    //     }
+    //   })
+    //   engine.evolve(Config.config.gpIterations)
+    //   val best = engine.getBestSyntaxTree().simplify()
+    //   println("Best update function is: "+best)
+    //   if (engine.isCorrect(best)) {
+    //     // println(best.simplify() + " is correct")
+    //     return Some(TypeConversion.toAExp(best))
+    //   }
+    //   else {
+    //     return None
+    //   }
     }
 
   def getFunction(
     r: Nat.nat,
-    values: List[Int.int],
+    values: List[Value.value],
     i: List[List[Value.value]],
     o: List[Value.value]
   ): Option[AExp.aexp] = {
-    var vars:List[String] = List()
-    var targets: List[Target] = List()
-    for ((inputs, output) <- i zip o) output match {
-      case Value.Str(_) => return None
-      case Value.Numa(Int.int_of_integer(n)) => {
-        val target = new Target()
-        target.targetIs(TypeConversion.toInt(n))
-        for ((ip, ix) <- inputs.zipWithIndex) ip match {
-          case Value.Str(_) => ()
-          case Value.Numa(Int.int_of_integer(n)) => {
-            val vname = f"i${ix+1}"
-            vars = vname::vars
-            target.when(vname, TypeConversion.toInt(n))
-          }
+    val maxReg = TypeConversion.toInt(r)
+
+    println("Getting function")
+    BasicConfigurator.resetConfiguration();
+    BasicConfigurator.configure();
+    Logger.getRootLogger().setLevel(Level.OFF);
+
+    val gpGenerator: Generator = new Generator(new java.util.Random(0))
+
+    val intNonTerms = List[NonTerminal[_]](new AddIntegersOperator(), new SubtractIntegersOperator())
+    gpGenerator.setIntegerFunctions(intNonTerms.asJava);
+
+    var intTerms = List[VariableTerminal[_]]()
+
+    // No supported stringNonTerms
+    var stringTerms = List[VariableTerminal[_]]()
+
+    for (v <- values) v match {
+      case Value.Numa(n) => intTerms = (new IntegerVariableAssignmentTerminal(TypeConversion.toInteger(n)))::intTerms
+      case Value.Str(s) => stringTerms = (new StringVariableAssignmentTerminal(s))::stringTerms
+    }
+
+    var stringVarNames = List[String](s"r${maxReg+1}")
+    var intVarNames = List[String](s"r${maxReg+2}")
+
+    // var trainingSet = Map[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
+    val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
+    for ((inputs, output) <- i zip o) {
+      println(inputs + "," + output)
+      var scenario = List[VariableAssignment[_]]()
+      for ((ip, ix) <- inputs.zipWithIndex) ip match {
+        case Value.Numa(n) => {
+          intVarNames = s"i${ix}"::intVarNames
+          scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toInteger(n)))::scenario
         }
-        targets = target::targets
+        case Value.Str(s) => {
+          stringVarNames = s"i${ix}"::stringVarNames
+          scenario = (new StringVariableAssignment(s"i${ix}", s))::scenario
+        }
+      }
+      output match {
+        case Value.Numa(n) => trainingSet.put(scenario.asJava, new IntegerVariableAssignment("o1", TypeConversion.toInteger(n)))
+        case Value.Str(s) => trainingSet.put(scenario.asJava, new StringVariableAssignment("o1", s))
       }
     }
 
-    val fitness = new TabulatedFunctionFitness(targets: _*)
-    val engine = new SymbolicRegressionEngine(
-			values.map(n => TypeConversion.toInteger(Code_Numeral.integer_of_int(n))).asJava,
-			fitness,
-			// define variables
-			("r"+(Code_Numeral.integer_of_nat(r)+1)::vars.toList).asJava,
-			// define base functions
-			List(
-							Functions.ADD,
-							Functions.SUB,
-							Functions.VARIABLE,
-							Functions.CONSTANT
-					).asJava
-			)
-      engine.addIterationListener(new SymbolicRegressionIterationListener() {
-        override def update(engine: SymbolicRegressionEngine): Unit = {
-          val bestSyntaxTree: Expression = engine.getBestSyntaxTree
-          val currFitValue: Double = engine.fitness(bestSyntaxTree)
-          // halt condition
-          if (currFitValue == 0) {
-            engine.terminate()
-          }
-        }
-      })
-      engine.evolve(Config.config.gpIterations)
-      val best = engine.getBestSyntaxTree().simplify()
-      // println("Best output function is: "+best)
-      if (engine.isCorrect(best)) {
-        // println(best + " is correct")
-        return Some(TypeConversion.toAExp(best))
-      }
-      else {
-        return None
-      }
+    for (intVarName <- intVarNames.distinct) {
+      intTerms = (new IntegerVariableAssignmentTerminal(intVarName))::intTerms
+    }
+
+    for (stringVarName <- stringVarNames.distinct) {
+      stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false))::stringTerms
+    }
+
+    gpGenerator.setIntegerTerminals(intTerms.asJava)
+    gpGenerator.setStringTerminals(stringTerms.asJava)
+
+    val gp = new SingleOutputGP(gpGenerator, trainingSet, new GPConfiguration(20,0.9f,0.01f,7,7))
+
+    println("intNonTerms: "+intNonTerms)
+    println("intTerms: "+intTerms)
+    println("stringTerms: "+stringTerms)
+
+    println("Training set: "+trainingSet)
+
+
+    val best: Node[_] = gp.evolve(10).asInstanceOf[Node[_]]
+
+    println("Best function is: "+best)
+
+    val ctx = new z3.Context()
+    val aexp = TypeConversion.fromZ3(best.toZ3(ctx))
+    ctx.close
+    if (best.isCorrect(trainingSet)) {
+      return Some(aexp)
+    }
+    else {
+      return None
+    }
   }
 
   def getRegs(
@@ -541,6 +585,7 @@ object Dirties {
     val undefinedVars = expVars.filter(v => ! definedVars.contains(v))
 
     var inputs: String = ""
+    println("expVars: "+expVars)
     for (v <- expVars) {
       inputs += f"(${v} Int)"
     }
@@ -556,11 +601,21 @@ object Dirties {
       }
     }
 
-    val assertion: String = "(assert (= " + PrettyPrinter.valueToString(v) + " (f " + args.mkString(" ") + ")))"
-    z3String += assertion
+    if (args.length == 0) {
+      val assertion: String = "(assert (= " + PrettyPrinter.valueToString(v) + " f))"
+      z3String += assertion
+    }
+    else {
+      val assertion: String = "(assert (= " + PrettyPrinter.valueToString(v) + " (f " + args.mkString(" ") + ")))"
+      z3String += assertion
+    }
+
 
     val ctx = new z3.Context()
     val solver = ctx.mkSimpleSolver()
+
+    println(z3String)
+
     solver.fromString(z3String)
     solver.check()
     val model: z3.Model = solver.getModel

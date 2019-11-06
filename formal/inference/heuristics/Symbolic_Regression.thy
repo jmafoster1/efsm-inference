@@ -13,7 +13,7 @@ fun flatten :: "indexed_log \<Rightarrow> flat_log \<Rightarrow> flat_log" where
   "flatten ((k, e)#t) l = flatten t (l@(map (\<lambda>v. (k, v)) e))"
 
 \<comment> \<open>This will be replaced by symbolic regression in the executable\<close>
-definition get_function :: "nat \<Rightarrow> int list \<Rightarrow> inputs list \<Rightarrow> value list \<Rightarrow> aexp option" where
+definition get_function :: "nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> value list \<Rightarrow> aexp option" where
   "get_function maxReg values I P = (let
     possible_funs = {a. \<forall>(i, p) \<in> set (zip I P). \<exists>r. aval a (join_ir i r) = Some p}
     in
@@ -26,7 +26,7 @@ definition get_inputs :: "flat_log \<Rightarrow> inputs list" where
 definition get_outputs :: "flat_log \<Rightarrow> nat \<Rightarrow> value list" where
   "get_outputs l n = map (\<lambda>(_, _, _, _, p). p ! n) l"
 
-definition get_functions :: "nat \<Rightarrow> int list \<Rightarrow> nat \<Rightarrow> flat_log \<Rightarrow> aexp option list" where
+definition get_functions :: "nat \<Rightarrow> value list \<Rightarrow> nat \<Rightarrow> flat_log \<Rightarrow> aexp option list" where
   "get_functions maxReg values n l = map (\<lambda>p. get_function maxReg values (get_inputs l) (get_outputs l p)) [0..<n]"
 
 definition insert_updates :: "transition \<Rightarrow> update_function list \<Rightarrow> transition" where
@@ -163,14 +163,11 @@ fun put_output_functions :: "(nat \<times> aexp option) list \<Rightarrow> index
     Some e' \<Rightarrow> put_output_functions rest log t e'
   )"
 
-definition enumerate_value_ints :: "value list \<Rightarrow> int list" where
-  "enumerate_value_ints vs = map (\<lambda>v. case v of Num n \<Rightarrow> n) (filter (\<lambda>v. case v of Num _ \<Rightarrow> True | value.Str _ \<Rightarrow> False) vs)"
+definition enumerate_exec_values :: "execution \<Rightarrow> value list" where
+  "enumerate_exec_values vs = fold (\<lambda>(_, i, p) I. List.union (List.union i p) I) vs []"
 
-definition enumerate_exec_ints :: "execution \<Rightarrow> int list" where
-  "enumerate_exec_ints vs = fold (\<lambda>(_, i, p) I. (enumerate_value_ints i) @ (enumerate_value_ints p) @ I) vs []"
-
-definition enumerate_log_ints :: "log \<Rightarrow> int list" where
-  "enumerate_log_ints l = fold (\<lambda>e I. enumerate_exec_ints e @ I) l []"
+definition enumerate_log_values :: "log \<Rightarrow> value list" where
+  "enumerate_log_values l = fold (\<lambda>e I. List.union (enumerate_exec_values e) I) l []"
 
 definition infer_output_functions :: "log \<Rightarrow> update_modifier" where
   "infer_output_functions log t1ID t2ID s new _ old _ = (let
@@ -178,7 +175,7 @@ definition infer_output_functions :: "log \<Rightarrow> update_modifier" where
      i_log = enumerate 0 (map (enumerate 0) log);
      num_outs = length (Outputs t1);
      relevant_events = flatten (map (\<lambda>(i, ex). (i, filter (\<lambda>(_, l, ip, op). l = Label t1 \<and> length ip = Arity t1 \<and> length op = num_outs) ex)) i_log) [];
-     values = enumerate_log_ints log;
+     values = enumerate_log_values log;
      max_reg = max_reg_total new;
      output_functions = get_functions max_reg values (length (Outputs t1)) relevant_events
      in put_output_functions (enumerate 0 output_functions) i_log t1 new
@@ -190,7 +187,7 @@ definition infer_output_functions_2 :: "log \<Rightarrow> update_modifier" where
      i_log = enumerate 0 (map (enumerate 0) log);
      num_outs = length (Outputs t1);
      relevant_events = flatten (map (\<lambda>(i, ex). (i, filter (\<lambda>(_, l, ip, op). l = Label t1 \<and> length ip = Arity t1 \<and> length op = num_outs) ex)) i_log) [];
-     values = enumerate_log_ints log;
+     values = enumerate_log_values log;
      max_reg = max_reg_total new;
      output_functions = get_functions max_reg values (length (Outputs t1)) relevant_events
      in put_output_functions_2 (enumerate 0 output_functions) i_log t1 new
@@ -221,14 +218,14 @@ fun get_log_reg_values :: "aexp \<Rightarrow> indexed_log \<Rightarrow> label \<
   "get_log_reg_values a (h#t) l ia pta = List.union (get_exec_reg_values a (snd h) l ia pta 0 <>) (get_log_reg_values a t l ia pta)"
 
 \<comment> \<open>This will be replaced by symbolic regression in the executable\<close>
-definition get_update :: "nat \<Rightarrow> int list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> aexp option" where
+definition get_update :: "nat \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> aexp option" where
   "get_update reg values train = (let
     possible_funs = {a. \<forall>(i, r, r') \<in> set train. aval a (join_ir i r) = r' $ reg}
     in
     if possible_funs = {} then None else Some (Eps (\<lambda>x. x \<in> possible_funs))
   )"
 
-definition get_updates :: "int list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> (nat \<times> aexp) list" where
+definition get_updates :: "value list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> (nat \<times> aexp) list" where
   "get_updates values train = (let
     updated_regs = fold List.union (map (finfun_to_list \<circ> snd \<circ> snd) train) [];
     maybe_updates = map (\<lambda>r. (r, get_update r values train)) updated_regs;
@@ -236,7 +233,7 @@ definition get_updates :: "int list \<Rightarrow> (inputs \<times> registers \<t
     in map (\<lambda>(r, u). case u of Some u' \<Rightarrow> (r, u')) updates
   )"
 
-fun outputwise_updates :: "int list \<Rightarrow> nat \<Rightarrow> aexp option list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> indexed_log \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> iEFSM option" where
+fun outputwise_updates :: "value list \<Rightarrow> nat \<Rightarrow> aexp option list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> indexed_log \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> iEFSM option" where
   "outputwise_updates _ _ [] pta e _ _ _ = Some e" |
   "outputwise_updates values ox (None#t) pta e log label arity = outputwise_updates values (ox + 1) t pta e log label arity" |
   "outputwise_updates values ox ((Some a)#t) pta e log label arity = (
@@ -264,7 +261,7 @@ definition infer_output_update_functions :: "log \<Rightarrow> update_modifier" 
      i_log = enumerate 0 (map (enumerate 0) log);
      num_outs = length (Outputs t1);
      relevant_events = flatten (map (\<lambda>(i, ex). (i, filter (\<lambda>(_, l, ip, op). l = Label t1 \<and> length ip = Arity t1 \<and> length op = num_outs) ex)) i_log) [];
-     values = enumerate_log_ints log;
+     values = enumerate_log_values log;
      max_reg = max_reg_total new;
      output_functions = get_functions max_reg values (length (Outputs t1)) relevant_events;
      pta = make_pta log {||};
@@ -315,7 +312,7 @@ fun structural_insert :: "(registers \<times> event_info) \<Rightarrow> (registe
 definition group_by_structure :: "targeted_run_info \<Rightarrow> targeted_run_info list \<Rightarrow> targeted_run_info list" where
   "group_by_structure info groups = fold (\<lambda>event acc. structural_insert event acc) info []"
 
-definition get_updates_opt :: "int list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> (nat \<times> aexp option) list" where
+definition get_updates_opt :: "value list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> (nat \<times> aexp option) list" where
   "get_updates_opt values train = (let
     updated_regs = fold List.union (map (finfun_to_list \<circ> snd \<circ> snd) train) [] in
     map (\<lambda>r.
@@ -329,7 +326,7 @@ definition get_updates_opt :: "int list \<Rightarrow> (inputs \<times> registers
     ) updated_regs
   )"
 
-fun group_update :: "int list \<Rightarrow> targeted_run_info \<Rightarrow> (tids \<times> (nat \<times> aexp) list) option" where
+fun group_update :: "value list \<Rightarrow> targeted_run_info \<Rightarrow> (tids \<times> (nat \<times> aexp) list) option" where
   "group_update values l = (
     let
       targeted = filter (\<lambda>(regs, _). finfun_to_list regs \<noteq> []) l;
@@ -341,7 +338,7 @@ fun group_update :: "int list \<Rightarrow> targeted_run_info \<Rightarrow> (tid
       Some (fold List.union (map (\<lambda>(tRegs, s, regs, inputs, tid, ta). tid) l) [], map (\<lambda>(r, f_o). (r, the f_o)) maybe_updates)
   )"
 
-fun groupwise_updates :: "int list \<Rightarrow> targeted_run_info list \<Rightarrow> (tids \<times> update_function list) option list" where
+fun groupwise_updates :: "value list \<Rightarrow> targeted_run_info list \<Rightarrow> (tids \<times> update_function list) option list" where
   "groupwise_updates values [] = []" |
   "groupwise_updates values (g#gs) = (
     if \<forall>(regs, _) \<in> set g. finfun_to_list regs = [] then
@@ -376,7 +373,7 @@ definition historical_infer_output_update_functions :: "log \<Rightarrow> update
       i_log = enumerate 0 (map (enumerate 0) log);
       t1 = get_by_ids new t1ID;
       walked = everything_walk_log;
-      values = enumerate_log_ints log;
+      values = enumerate_log_values log;
       max_reg = max_reg_total new;
       relevant_events = flatten (map (\<lambda>(i, ex). (i, filter (\<lambda>(_, l, ip, op). l = Label t1 \<and> length ip = Arity t1 \<and> length op = length (Outputs t1)) ex)) i_log) [];
       output_functions = get_functions max_reg values (length (Outputs t1)) relevant_events;

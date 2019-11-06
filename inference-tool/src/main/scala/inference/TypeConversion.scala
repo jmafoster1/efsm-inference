@@ -2,12 +2,13 @@ import java.nio.file.{ Files, Paths }
 import java.io._
 import sys.process._
 import scala.io.Source
-
-import com.lagodiuk.gp.symbolic.interpreter.Expression;
-import com.lagodiuk.gp.symbolic.interpreter.Function;
-import com.lagodiuk.gp.symbolic.interpreter.Functions;
+import com.microsoft.z3._
 
 import isabellesal._
+
+import mint.tracedata.types.VariableAssignment;
+import mint.tracedata.types.IntegerVariableAssignment;
+import mint.tracedata.types.StringVariableAssignment;
 
 object Types {
   type Event = (String, (List[Value.value], List[Value.value]))
@@ -17,6 +18,40 @@ object Types {
 }
 
 object TypeConversion {
+  def mkAdd(a: AExp.aexp, b: AExp.aexp): AExp.aexp = AExp.Plus(a, b)
+  def mkSub(a: AExp.aexp, b: AExp.aexp): AExp.aexp = AExp.Minus(a, b)
+
+  def makeBinary(e: List[Expr], f: (AExp.aexp => AExp.aexp => AExp.aexp)): AExp.aexp = e match {
+    case Nil => throw new IllegalArgumentException("Not enough children")
+    case (a::b::Nil) => f(fromZ3(a))(fromZ3(b))
+    case (a::bs) => f(fromZ3(a))(makeBinary(bs, f))
+  }
+
+  def fromZ3(e: Expr): AExp.aexp = {
+    if (e.isAdd) {
+      return makeBinary(e.getArgs().toList, (mkAdd _).curried)
+    }
+    if (e.isSub) {
+      return makeBinary(e.getArgs().toList, (mkSub _).curried)
+    }
+    if (e.isConst) {
+      val name = e.toString
+      if (name.startsWith("i")) {
+        return AExp.V(VName.I(Nat.Nata(name.drop(1).toInt)))
+      } else if (name.startsWith("r")) {
+        return AExp.V(VName.R(Nat.Nata(name.drop(1).toInt)))
+      }
+      else {
+        return AExp.L(Value.Str(e.toString))
+      }
+    }
+		if (e.isIntNum()) {
+      return AExp.L(Value.Numa(Int.int_of_integer(e.toString.toInt)))
+    }
+
+    throw new IllegalArgumentException("Couldn't convert from z3 expression "+e)
+  }
+
   def toVName(vname: String): VName.vname = {
     if (vname.startsWith("i")) {
       val index = Nat.Nata(BigInt(vname.substring(1).toInt - 1))
@@ -28,25 +63,6 @@ object TypeConversion {
     }
   }
 
-  def toAExp(f: com.lagodiuk.gp.symbolic.interpreter.Function, expression: Expression): AExp.aexp = f match {
-    case Functions.CONSTANT => AExp.L(Value.Numa(Int.int_of_integer(BigInt(expression.getCoefficientsOfNode().get(0)))))
-    case Functions.VARIABLE => {
-      val vname = expression.getVariable().toString()
-      AExp.V(toVName(vname))
-    }
-    case Functions.ADD => {
-      val childs = expression.getChilds();
-      AExp.Plus(toAExp(childs.get(0)), toAExp(childs.get(1)))
-    }
-    case Functions.SUB => {
-      val childs = expression.getChilds();
-      AExp.Minus(toAExp(childs.get(0)), toAExp(childs.get(1)))
-    }
-
-  }
-
-  def toAExp(e: Expression): AExp.aexp = toAExp(e.getFunction(), e)
-
   def toInt(b: BigInt): Int = {
     if (b.isValidInt) {
       return b.toInt
@@ -55,8 +71,17 @@ object TypeConversion {
     }
   }
 
-  def natToInt(n: Nat.nat): Int = n match {
+  def toInt(n: Nat.nat): Int = n match {
     case Nat.Nata(nn) => toInt(nn)
+  }
+
+  def toInteger(i: Int.int): Integer = {
+    val b = Code_Numeral.integer_of_int(i)
+    if (b.isValidInt) {
+      return b.toInt
+    } else {
+      throw new IllegalArgumentException(s"${b} is not a valid int")
+    }
   }
 
   def toInteger(b: BigInt): Integer = {

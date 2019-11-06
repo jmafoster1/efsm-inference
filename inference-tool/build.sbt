@@ -25,6 +25,11 @@ def cleanDirectory(dirName: String):Int = {
   return 0
 }
 
+assemblyMergeStrategy in assembly := {
+ case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+ case x => MergeStrategy.first
+}
+
 def mkdir(name: String) = {
   val dir = new File(name)
   if (!dir.isDirectory || !dir.exists) {
@@ -47,7 +52,10 @@ lazy val root = (project in file("."))
     libraryDependencies += "com.github.scopt" % "scopt_2.12" % "4.0.0-RC2",
     libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3",
     libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
-
+    libraryDependencies += "log4j" % "log4j" % "1.2.16",
+    libraryDependencies += "nz.ac.waikato.cms.weka" % "weka-dev" % "3.7.13",
+    libraryDependencies += "org.apache.commons" % "commons-math3" % "3.5",
+    libraryDependencies += "org.apache.commons" % "commons-collections4" % "4.1",
 
     cleanSalfiles := {
       cleanDirectory("salfiles")

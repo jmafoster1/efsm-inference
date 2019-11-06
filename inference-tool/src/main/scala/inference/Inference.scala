@@ -7978,7 +7978,7 @@ def get_outputs(l: List[(Nat.nat,
                             }),
                            l)
 
-def get_updates(values: List[Int.int],
+def get_updates(values: List[Value.value],
                  train:
                    List[(List[Value.value],
                           (Map[Nat.nat, Option[Value.value]],
@@ -8042,7 +8042,7 @@ updated_regs)
                               a)
   }
 
-def get_updates_opt(values: List[Int.int],
+def get_updates_opt(values: List[Value.value],
                      train:
                        List[(List[Value.value],
                               (Map[Nat.nat, Option[Value.value]],
@@ -8127,7 +8127,7 @@ regs(r)
                                       a)
   }
 
-def group_update(values: List[Int.int],
+def group_update(values: List[Value.value],
                   l: List[(Map[Nat.nat, Option[Value.value]],
                             (Nat.nat,
                               (Map[Nat.nat, Option[Value.value]],
@@ -8243,7 +8243,7 @@ def group_update(values: List[Int.int],
                            maybe_updates))))
   }
 
-def get_functions(maxReg: Nat.nat, values: List[Int.int], n: Nat.nat,
+def get_functions(maxReg: Nat.nat, values: List[Value.value], n: Nat.nat,
                    l: List[(Nat.nat,
                              (Nat.nat,
                                (String,
@@ -8352,7 +8352,7 @@ def transfer_updates(x0: List[(List[Nat.nat],
     }
 }
 
-def groupwise_updates(values: List[Int.int],
+def groupwise_updates(values: List[Value.value],
                        x1: List[List[(Map[Nat.nat, Option[Value.value]],
                                        (Nat.nat,
  (Map[Nat.nat, Option[Value.value]],
@@ -8471,52 +8471,6 @@ def structural_insert(x: (Map[Nat.nat, Option[Value.value]],
         else h :: structural_insert(x, t))
     }
 }
-
-def enumerate_value_ints(vs: List[Value.value]): List[Int.int] =
-  Lista.map_filter[Value.value,
-                    Int.int](((x: Value.value) =>
-                               (if ((x match {
-                                       case Value.Numa(_) => true
-                                       case Value.Str(_) => false
-                                     }))
-                                 Some[Int.int]({
-         val (Value.Numa(n)): Value.value = x;
-         n
-       })
-                                 else None)),
-                              vs)
-
-def enumerate_exec_ints(vs: List[(String,
-                                   (List[Value.value], List[Value.value]))]):
-      List[Int.int]
-  =
-  Lista.fold[(String, (List[Value.value], List[Value.value])),
-              List[Int.int]](((a: (String,
-                                    (List[Value.value], List[Value.value])))
-                                =>
-                               {
-                                 val (_, (i, p)):
-                                       (String,
- (List[Value.value], List[Value.value]))
-                                   = a;
-                                 ((ia: List[Int.int]) =>
-                                   enumerate_value_ints(i) ++
-                                     (enumerate_value_ints(p) ++ ia))
-                               }),
-                              vs, Nil)
-
-def enumerate_log_ints(l: List[List[(String,
-                                      (List[Value.value],
-List[Value.value]))]]):
-      List[Int.int]
-  =
-  Lista.fold[List[(String, (List[Value.value], List[Value.value]))],
-              List[Int.int]](((e: List[(String,
- (List[Value.value], List[Value.value]))])
-                                =>
-                               ((a: List[Int.int]) =>
-                                 enumerate_exec_ints(e) ++ a)),
-                              l, Nil)
 
 def get_exec_reg_values(uu: AExp.aexp,
                          x1: List[(Nat.nat,
@@ -8736,7 +8690,7 @@ def put_update_functions(uu: Option[AExp.aexp], uv: Nat.nat,
      })
 }
 
-def outputwise_updates(uu: List[Int.int], uv: Nat.nat,
+def outputwise_updates(uu: List[Value.value], uv: Nat.nat,
                         x2: List[Option[AExp.aexp]],
                         pta: FSet.fset[(List[Nat.nat],
  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
@@ -8953,6 +8907,33 @@ def put_output_function(uu: Nat.nat, uv: AExp.aexp,
        case Some(a) => put_output_function(fi, f, t, t1, a)
      })
 }
+
+def enumerate_exec_values(vs: List[(String,
+                                     (List[Value.value], List[Value.value]))]):
+      List[Value.value]
+  =
+  Lista.fold[(String, (List[Value.value], List[Value.value])),
+              List[Value.value]](((a: (String,
+(List[Value.value], List[Value.value])))
+                                    =>
+                                   {
+                                     val (_, (i, p)):
+   (String, (List[Value.value], List[Value.value]))
+                                       = a;
+                                     Lista.union[Value.value].apply(Lista.union[Value.value].apply(i).apply(p))
+                                   }),
+                                  vs, Nil)
+
+def enumerate_log_values(l: List[List[(String,
+(List[Value.value], List[Value.value]))]]):
+      List[Value.value]
+  =
+  Lista.fold[List[(String, (List[Value.value], List[Value.value]))],
+              List[Value.value]](((e: List[(String,
+     (List[Value.value], List[Value.value]))])
+                                    =>
+                                   Lista.union[Value.value].apply(enumerate_exec_values(e))),
+                                  l, Nil)
 
 def put_output_functions(x0: List[(Nat.nat, Option[AExp.aexp])],
                           uu: List[(Nat.nat,
@@ -9269,7 +9250,7 @@ List[Value.value])))])](((a: (Nat.nat,
                           }),
                          i_log),
                  Nil)
-    val values: List[Int.int] = enumerate_log_ints(log)
+    val values: List[Value.value] = enumerate_log_values(log)
     val max_reg: Nat.nat = Inference.max_reg_total(newa)
     val output_functions: List[Option[AExp.aexp]] =
       get_functions(max_reg, values,
@@ -9385,7 +9366,7 @@ List[Value.value])))])](((a: (Nat.nat,
                           }),
                          i_log),
                  Nil)
-    val values: List[Int.int] = enumerate_log_ints(log)
+    val values: List[Value.value] = enumerate_log_values(log)
     val max_reg: Nat.nat = Inference.max_reg_total(newa)
     val output_functions: List[Option[AExp.aexp]] =
       get_functions(max_reg, values,
@@ -9478,7 +9459,7 @@ List[Value.value])))])](((a: (Nat.nat,
                           }),
                          i_log),
                  Nil)
-    val values: List[Int.int] = enumerate_log_ints(log)
+    val values: List[Value.value] = enumerate_log_values(log)
     val max_reg: Nat.nat = Inference.max_reg_total(newa)
     val output_functions: List[Option[AExp.aexp]] =
       get_functions(max_reg, values,
@@ -9552,7 +9533,7 @@ def historical_infer_output_update_functions(log:
                       ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))])
         =>
       (e: String) => (f: Nat.nat) => everything_walk_log(a, b, c, d, e, f))
-    val values: List[Int.int] = enumerate_log_ints(log)
+    val values: List[Value.value] = enumerate_log_values(log)
     val max_reg: Nat.nat = Inference.max_reg_total(newa)
     val relevant_events:
           List[(Nat.nat,
