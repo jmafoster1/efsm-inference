@@ -35,12 +35,11 @@ public class SRPlayground {
         gpGenerator.setIntegerFunctions(intNonTerms);
         
         List<VariableTerminal<?>> intTerms = new ArrayList<VariableTerminal<?>>();
-        intTerms.add(new IntegerVariableAssignmentTerminal("i1"));
+        intTerms.add(new IntegerVariableAssignmentTerminal("i0"));
         intTerms.add(new IntegerVariableAssignmentTerminal("r1"));
         intTerms.add(new IntegerVariableAssignmentTerminal(50));
         intTerms.add(new IntegerVariableAssignmentTerminal(100));
         intTerms.add(new IntegerVariableAssignmentTerminal(0));
-        intTerms.add(new IntegerVariableAssignmentTerminal(10));
         gpGenerator.setIntegerTerminals(intTerms);
         
 		MultiValuedMap<List<VariableAssignment<?>>, VariableAssignment<?>> trainingSet = new HashSetValuedHashMap<List<VariableAssignment<?>>, VariableAssignment<?>>();
@@ -49,17 +48,20 @@ public class SRPlayground {
         IntegerVariableAssignment o1100 = new IntegerVariableAssignment("o1", 100);
         
         List<VariableAssignment<?>> s1 = new ArrayList<VariableAssignment<?>>();
-        s1.add(new IntegerVariableAssignment("i1", 50));
+        s1.add(new IntegerVariableAssignment("i0", 50));
         
         List<VariableAssignment<?>> s2 = new ArrayList<VariableAssignment<?>>();
-        s2.add(new IntegerVariableAssignment("i1", 50));
+        s2.add(new IntegerVariableAssignment("i0", 50));
         
         List<VariableAssignment<?>> s3 = new ArrayList<VariableAssignment<?>>();
-        s3.add(new IntegerVariableAssignment("i1", 100));
+        s3.add(new IntegerVariableAssignment("i0", 100));
 
         trainingSet.put(s1, o150);
         trainingSet.put(s2, o1100);
         trainingSet.put(s3, o1100);
+        
+        System.out.println("Training set: "+trainingSet);
+        System.out.println("IntTerms: "+intTerms);
         
 //        IntegerVariableAssignment o150 = new IntegerVariableAssignment("o1", 50);
 //        IntegerVariableAssignment o160 = new IntegerVariableAssignment("o1", 60);

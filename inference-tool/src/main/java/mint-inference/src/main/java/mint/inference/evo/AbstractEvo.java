@@ -46,22 +46,16 @@ public abstract class AbstractEvo {
 	public Chromosome evolve(int lim) {
 		assert (lim > 0);
 		population = generatePopulation(gpConf.getPopulationSize() - seeds.size());
-		System.out.println("population: "+population);
-
 		population.addAll(seeds);
 		Selection selection = null;
 		for (int i = 0; i < lim; i++) {
-//			System.out.println("Iteration: "+i);
 			selection = buildSelection(population);
 			population = select(population, selection);
 			if (selection.getBestFitness() <= 0D) { // If the result is perfect...
-//				System.out.println("Winning");
 				break;
 			}
 			assert (population.size() == gpConf.getPopulationSize());
 
-//			System.out.println("No win yet");
-			
 			AbstractIterator it = getIterator(selection);
 
 			population = new ArrayList<Chromosome>();

@@ -214,7 +214,6 @@ object Dirties {
 
   // Check that whenever we're in state s, register r is always undefined
   def initiallyUndefinedContextCheck(e: TransitionMatrix, r: Nat.nat, s: Nat.nat): Boolean = {
-    println("initiallyUndefinedContextCheck")
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.efsmToSALTranslator(e, f)
 
@@ -296,8 +295,6 @@ object Dirties {
       val cmd = s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2)))+1}}!diffOutputs'"
       val output = Seq("bash", "-c", cmd).!!
       FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
-      // println(cmd)
-      // println(output)
       return (output.toString.startsWith("Counterexample"))
     }
 
@@ -322,8 +319,6 @@ object Dirties {
         val cmd = s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2)))+1}}!canStillTake'"
         val output = Seq("bash", "-c", cmd).!!
         FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
-        // println(cmd)
-        // println(output)
         return (output.toString.startsWith("Counterexample"))
       }
 
@@ -370,16 +365,6 @@ object Dirties {
     g1: (List[(List[Value.value], Map[Nat.nat,Option[Value.value]])]),
     g2: (List[(List[Value.value], Map[Nat.nat,Option[Value.value]])])
   ): Option[(GExp.gexp, GExp.gexp)] = {
-    println("Training set G1")
-    for ((i, r) <- g1) {
-      println("  "+i.toString + " " + r.toString)
-    }
-    println("Training set G2")
-    for ((i, r) <- g2) {
-      println("  "+i.toString + " " + r.toString)
-    }
-    println()
-
     val inputTypes = getTypes(g1(0)._1)
     val registerTypes = getTypes(g1(0)._2)
 
@@ -403,9 +388,6 @@ object Dirties {
         )
       )\n"""    }
 
-    // println(z3String)
-
-    // return None
     return Some((
       GExp.Gt(AExp.V(VName.R(Nat.Nata(2))), AExp.L(Value.Numa(Int.int_of_integer(99)))),
       GExp.Gt(AExp.L(Value.Numa(Int.int_of_integer(100))), AExp.V(VName.R(Nat.Nata(2))))
@@ -417,85 +399,14 @@ object Dirties {
     values: List[Value.value],
     train: List[(List[Value.value], (Map[Nat.nat,Option[Value.value]], Map[Nat.nat,Option[Value.value]]))]
   ): Option[AExp.aexp] = {
-    return Some(AExp.Plus(AExp.V(VName.R(Nat.Nata(2))), AExp.V(VName.I(Nat.Nata(1)))))
-    return None;
-    // var vars:List[String] = List()
-    // var targets: List[Target] = List()
-    // for (t <- train) t match {
-    //   case (inputs, (anteriorRegs, posteriorRegs)) => posteriorRegs(r) match {
-    //     case None => ()
-    //     case Some(Value.Str(_)) => ()
-    //     case Some(Value.Numa(Int.int_of_integer(n))) => {
-    //       // println("  Inputs: "+inputs)
-    //       // println("  AnteriorRegs: "+anteriorRegs)
-    //       // println("  posteriorRegs: "+posteriorRegs)
-    //       val target = new Target()
-    //       target.targetIs(TypeConversion.toInt(n))
-    //       for ((ip:Value.value, ix:Int) <- inputs.zipWithIndex) ip match {
-    //         case Value.Str(_) => ()
-    //         case Value.Numa(Int.int_of_integer(n)) => {
-    //           val vname = f"i${ix}"
-    //           vars = vname::vars
-    //           target.when(vname, TypeConversion.toInt(n))
-    //         }
-    //       }
-    //       for ((k:Nat.nat, v:Option[Value.value]) <- anteriorRegs) v match {
-    //         case None => ()
-    //         case Some(Value.Str(_)) => ()
-    //         case Some(Value.Numa(Int.int_of_integer(n))) => {
-    //           val vname = f"r${TypeConversion.natToInt(k)}"
-    //           vars = vname::vars
-    //           target.when(vname, TypeConversion.toInt(n))
-    //         }
-    //       }
-    //       targets = target::targets
-    //       println(target)
-    //     }
-    //   }
-    // }
-    // val fitness = new TabulatedFunctionFitness(targets: _*)
-    // val engine = new SymbolicRegressionEngine(
-    //   values.map(n => TypeConversion.toInteger(Code_Numeral.integer_of_int(n))).asJava,
-    //   fitness,
-    //   (vars.toList).asJava,
-    //   List(
-    //           Functions.ADD,
-    //           Functions.SUB,
-    //           Functions.VARIABLE,
-    //           Functions.CONSTANT
-    //       ).asJava
-    //   )
-    //   engine.addIterationListener(new SymbolicRegressionIterationListener() {
-    //     override def update(engine: SymbolicRegressionEngine): Unit = {
-    //       val bestSyntaxTree: Expression = engine.getBestSyntaxTree
-    //       val currFitValue: Double = engine.fitness(bestSyntaxTree)
-    //       // halt condition
-    //       if (currFitValue == 0) {
-    //         engine.terminate()
-    //       }
-    //     }
-    //   })
-    //   engine.evolve(Config.config.gpIterations)
-    //   val best = engine.getBestSyntaxTree().simplify()
-    //   println("Best update function is: "+best)
-    //   if (engine.isCorrect(best)) {
-    //     // println(best.simplify() + " is correct")
-    //     return Some(TypeConversion.toAExp(best))
-    //   }
-    //   else {
-    //     return None
-    //   }
-    }
 
-  def getFunction(
-    r: Nat.nat,
-    values: List[Value.value],
-    i: List[List[Value.value]],
-    o: List[Value.value]
-  ): Option[AExp.aexp] = {
+    // if (train.exists(ip => ip._1.exists(v => v == Value.Numa(Int.int_of_integer(50)))))
+    //   return Some(
+    //     AExp.Plus(AExp.V(VName.R(Nat.Nata(2))), AExp.V(VName.I(Nat.Nata(0))))
+    //   )
+
     val maxReg = TypeConversion.toInt(r)
 
-    println("Getting function")
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
     Logger.getRootLogger().setLevel(Level.OFF);
@@ -505,7 +416,97 @@ object Dirties {
     val intNonTerms = List[NonTerminal[_]](new AddIntegersOperator(), new SubtractIntegersOperator())
     gpGenerator.setIntegerFunctions(intNonTerms.asJava);
 
-    var intTerms = List[VariableTerminal[_]]()
+    var intTerms = List[VariableTerminal[_]](new IntegerVariableAssignmentTerminal(0))
+
+    // No supported stringNonTerms
+    var stringTerms = List[VariableTerminal[_]]()
+
+    for (v <- values) v match {
+      case Value.Numa(n) => intTerms = (new IntegerVariableAssignmentTerminal(TypeConversion.toInteger(n)))::intTerms
+      case Value.Str(s) => stringTerms = (new StringVariableAssignmentTerminal(s))::stringTerms
+    }
+
+    var stringVarNames = List[String]()
+    var intVarNames = List[String]()
+
+    val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
+
+    for (t <- train) t match {
+        case (inputs, (anteriorRegs, posteriorRegs)) => {
+        var scenario = List[VariableAssignment[_]]()
+        for ((ip, ix) <- inputs.zipWithIndex) ip match {
+          case Value.Numa(n) => {
+            intVarNames = s"i${ix}"::intVarNames
+            scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toInteger(n)))::scenario
+          }
+          case Value.Str(s) => {
+            stringVarNames = s"i${ix}"::stringVarNames
+            scenario = (new StringVariableAssignment(s"i${ix}", s))::scenario
+          }
+        }
+        posteriorRegs(r) match {
+          case None => ()
+          case Some(Value.Numa(n)) => trainingSet.put(scenario.asJava, new IntegerVariableAssignment("o1", TypeConversion.toInteger(n)))
+          case Some(Value.Str(s)) => trainingSet.put(scenario.asJava, new StringVariableAssignment("o1", s))
+        }
+      }
+    }
+
+    for (intVarName <- intVarNames.distinct) {
+      intTerms = (new IntegerVariableAssignmentTerminal(intVarName))::intTerms
+    }
+
+    for (stringVarName <- stringVarNames.distinct) {
+      stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false))::stringTerms
+    }
+
+    gpGenerator.setIntegerTerminals(intTerms.asJava)
+    gpGenerator.setStringTerminals(stringTerms.asJava)
+
+    val gp = new SingleOutputGP(gpGenerator, trainingSet, new GPConfiguration(20,0.9f,0.01f,7,7))
+
+    val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
+
+    println("Update training set: "+trainingSet)
+    println("  Int terminals: "+intTerms)
+    println("  Best function is: "+best.simp())
+
+    val ctx = new z3.Context()
+    val aexp = TypeConversion.fromZ3(best.toZ3(ctx))
+    ctx.close
+    if (best.isCorrect(trainingSet)) {
+      return Some(aexp)
+    }
+    else {
+      return None
+    }
+    }
+
+  def getFunction(
+    r: Nat.nat,
+    values: List[Value.value],
+    i: List[List[Value.value]],
+    o: List[Value.value]
+  ): Option[(AExp.aexp, Map[VName.vname,String])] = {
+
+    // if (i.exists(ip => ip.exists(v => v == Value.Numa(Int.int_of_integer(50)))))
+    //   return Some(
+    //     AExp.Plus(AExp.V(VName.R(Nat.Nata(2))), AExp.V(VName.I(Nat.Nata(0)))),
+    //     Map().withDefaultValue(":I")
+    //   )
+
+    val maxReg = TypeConversion.toInt(r)
+
+    BasicConfigurator.resetConfiguration();
+    BasicConfigurator.configure();
+    Logger.getRootLogger().setLevel(Level.OFF);
+
+    val gpGenerator: Generator = new Generator(new java.util.Random(0))
+
+    val intNonTerms = List[NonTerminal[_]](new AddIntegersOperator(), new SubtractIntegersOperator())
+    gpGenerator.setIntegerFunctions(intNonTerms.asJava);
+
+    var intTerms = List[VariableTerminal[_]](new IntegerVariableAssignmentTerminal(0))
 
     // No supported stringNonTerms
     var stringTerms = List[VariableTerminal[_]]()
@@ -518,10 +519,8 @@ object Dirties {
     var stringVarNames = List[String](s"r${maxReg+1}")
     var intVarNames = List[String](s"r${maxReg+2}")
 
-    // var trainingSet = Map[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
     val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
-    for ((inputs, output) <- i zip o) {
-      println(inputs + "," + output)
+    for ((inputs, output) <- (i zip o).distinct) {
       var scenario = List[VariableAssignment[_]]()
       for ((ip, ix) <- inputs.zipWithIndex) ip match {
         case Value.Numa(n) => {
@@ -552,52 +551,58 @@ object Dirties {
 
     val gp = new SingleOutputGP(gpGenerator, trainingSet, new GPConfiguration(20,0.9f,0.01f,7,7))
 
-    println("intNonTerms: "+intNonTerms)
-    println("intTerms: "+intTerms)
-    println("stringTerms: "+stringTerms)
+    val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
-    println("Training set: "+trainingSet)
+    println("Output training set: "+trainingSet)
+    println("  Int terminals: "+intTerms)
+    println("  Best function is: "+best)
 
+    var types = Map[VName.vname, String]()
 
-    val best: Node[_] = gp.evolve(10).asInstanceOf[Node[_]]
-
-    println("Best function is: "+best)
+    for (v <- asScalaSet(best.varsInTree)) {
+      types = types + (TypeConversion.vnameFromString(v.getName) -> v.typeString)
+    }
 
     val ctx = new z3.Context()
     val aexp = TypeConversion.fromZ3(best.toZ3(ctx))
     ctx.close
     if (best.isCorrect(trainingSet)) {
-      return Some(aexp)
+      println("Function is correct")
+      return Some(aexp, types)
     }
     else {
+      println("Function is not correct")
       return None
     }
   }
 
   def getRegs(
+    types: Map[VName.vname,String],
     i: List[Value.value],
     f: AExp.aexp,
     v: Value.value
   ): Map[Nat.nat, Option[Value.value]] = {
-    val expVars = Lista.sorted_list_of_set(AExp.enumerate_vars(f)).map(v => PrettyPrinter.vnameToString(v))
-    // println(Lista.sorted_list_of_set(AExp.enumerate_vars(f)))
-    val definedVars = (1 to i.length).map(v => f"i${v}")
+    println("\noutputFun: " + PrettyPrinter.aexpToString(f, true) + " = " + PrettyPrinter.valueToString(v))
+    val expVars: List[VName.vname] = Lista.sorted_list_of_set(AExp.enumerate_vars(f))
+    println("  expVars: " + expVars)
+    val definedVars = (0 to i.length).map(i => VName.I(Nat.Nata(i)))
     val undefinedVars = expVars.filter(v => ! definedVars.contains(v))
 
+    println("  undefinedVars: " + undefinedVars)
+
     var inputs: String = ""
-    println("expVars: "+expVars)
     for (v <- expVars) {
-      inputs += f"(${v} Int)"
+      inputs += f"(${PrettyPrinter.vnameToString(v)} ${TypeConversion.expandTypeString(types(v))})"
     }
-    var z3String: String = "(define-fun f (" + inputs + ") Int \n  " + toZ3Native(f) + "\n)\n"
+    var z3String: String = f"(define-fun f (${inputs}) ${TypeConversion.typeString(v)} \n  ${toZ3Native(f)}\n)\n"
     for (v <- undefinedVars) {
-      z3String += "(declare-const " + PrettyPrinter.vnameToString(TypeConversion.toVName(v)) + " Int)\n"
+      z3String += f"(declare-const ${PrettyPrinter.vnameToString(v)} ${TypeConversion.expandTypeString(types(v))})\n"
     }
-    val args = expVars.zipWithIndex.map{case (v:String, k:Int) =>
+    val args = expVars.zipWithIndex.map{case (v:VName.vname, k:Int) =>
       if (definedVars.contains(v)) {
         PrettyPrinter.valueToString(i(k))
       } else {
-        v
+        PrettyPrinter.vnameToString(v)
       }
     }
 
@@ -610,11 +615,8 @@ object Dirties {
       z3String += assertion
     }
 
-
     val ctx = new z3.Context()
     val solver = ctx.mkSimpleSolver()
-
-    println(z3String)
 
     solver.fromString(z3String)
     solver.check()
@@ -622,11 +624,10 @@ object Dirties {
 
     var regs: Map[Nat.nat, Option[Value.value]] = Map()
     for (f <- model.getConstDecls) {
-      regs = regs + (Nat.Nata(BigInt(f.getName.toString.substring(1).toInt)) -> Some(Value.Numa(Int.int_of_integer(BigInt(model.getConstInterp(f).toString.toInt)))))
+      val constInterp = model.getConstInterp(f)
+      regs = regs + (Nat.Nata(BigInt(f.getName.toString.substring(1).toInt)) -> Some(TypeConversion.toValue(model.getConstInterp(f))))
     }
     ctx.close()
     regs
   }
-
-
 }

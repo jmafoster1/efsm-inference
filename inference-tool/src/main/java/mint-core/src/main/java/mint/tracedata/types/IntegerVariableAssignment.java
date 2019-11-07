@@ -1,18 +1,16 @@
 package mint.tracedata.types;
 
 import org.apache.log4j.Logger;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class IntegerVariableAssignment extends NumberVariableAssignment<Integer> {
-	
+
 	private final static Logger LOGGER = Logger.getLogger(IntegerVariableAssignment.class.getName());
 
 	protected static Map<String, Integer> constMap = new HashMap<String, Integer>();
-	
+
 	private static int getMinVal(int given) {
 		if (constMap.isEmpty())
 			return given;
@@ -140,10 +138,9 @@ public class IntegerVariableAssignment extends NumberVariableAssignment<Integer>
 	@Override
 	protected Integer generateRandom() {
 		List<Integer> vals = VariableAssignment.getIntValues();
-		System.out.println(vals);
 		if (vals.isEmpty()) {
 			return rand.nextInt(Integer.MAX_VALUE);
 		}
-		return vals.get(rand.nextInt(vals.size()-1));
+		return vals.get(rand.nextInt(vals.size() - 1));
 	}
 }

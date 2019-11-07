@@ -7,7 +7,6 @@ import mint.inference.gp.selection.SingleOutputTournament;
 import mint.tracedata.types.*;
 
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.collections4.MultiValuedMap;
 
@@ -41,5 +40,4 @@ public class SingleOutputGP extends GP<VariableAssignment<?>> {
 		else
 			return "List";
 	}
-
 }

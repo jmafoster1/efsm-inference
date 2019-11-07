@@ -44,6 +44,11 @@ public class StringSRPlayground {
 
         Node<?> best = (Node<?>) gp.evolve(2);
         best.simplify();
+        
+        for (VariableAssignment<?> var: best.varsInTree()) {
+        	System.out.println(var.getName()+"->"+var.typeString());
+        }
+        
         System.out.println(best);
         System.out.println(best.simp());
 

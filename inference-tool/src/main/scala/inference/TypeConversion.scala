@@ -21,6 +21,31 @@ object TypeConversion {
   def mkAdd(a: AExp.aexp, b: AExp.aexp): AExp.aexp = AExp.Plus(a, b)
   def mkSub(a: AExp.aexp, b: AExp.aexp): AExp.aexp = AExp.Minus(a, b)
 
+  def expandTypeString(t: String): String = {
+    if (t == ":S")
+      return "String"
+    else if (t == ":I")
+      return "Int"
+    else
+      throw new IllegalArgumentException("Type string must be either :I or :S")
+  }
+
+  def typeString(v: Value.value): String = v match {
+    case Value.Numa(_) => "Int"
+    case Value.Str(_) => "String"
+  }
+
+  def vnameFromString(name: String):VName.vname = {
+    if (name.startsWith("i")) {
+        return VName.I(Nat.Nata(name.drop(1).toInt))
+      } else if (name.startsWith("r")) {
+        return VName.R(Nat.Nata(name.drop(1).toInt))
+      }
+      else {
+        throw new IllegalArgumentException("variables must be of the form \"(i|r)\\d*\"")
+      }
+  }
+
   def makeBinary(e: List[Expr], f: (AExp.aexp => AExp.aexp => AExp.aexp)): AExp.aexp = e match {
     case Nil => throw new IllegalArgumentException("Not enough children")
     case (a::b::Nil) => f(fromZ3(a))(fromZ3(b))
@@ -36,6 +61,7 @@ object TypeConversion {
     }
     if (e.isConst) {
       val name = e.toString
+      // TODO: This is hacky at best
       if (name.startsWith("i")) {
         return AExp.V(VName.I(Nat.Nata(name.drop(1).toInt)))
       } else if (name.startsWith("r")) {
@@ -102,11 +128,24 @@ object TypeConversion {
 
   def toValue(n: BigInt): Value.value = Value.Numa(Int.int_of_integer(n))
   def toValue(s: String): Value.value = Value.Str(s)
+  def toValue(e: Expr): Value.value = {
+    if (e.isIntNum())
+      return Value.Numa(Int.int_of_integer(e.toString.toInt))
+    else if (e.isString()) {
+      val str = e.toString.slice(1, e.toString.length-1)
+      return Value.Str(str)
+    }
+    else
+      throw new IllegalArgumentException("Expressions can only be String or IntNum");
+  }
+
   def toValue(a: Any): Value.value = {
     if (a.isInstanceOf[String]) {
       toValue(a.asInstanceOf[String])
     } else if (a.isInstanceOf[BigInt]) {
       toValue(a.asInstanceOf[BigInt])
+    } else if (a.isInstanceOf[Expr]) {
+      toValue(a.asInstanceOf[Expr])
     } else {
       throw new IllegalArgumentException("Can only be String or BigInt");
     }

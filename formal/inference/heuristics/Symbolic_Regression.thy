@@ -13,11 +13,11 @@ fun flatten :: "indexed_log \<Rightarrow> flat_log \<Rightarrow> flat_log" where
   "flatten ((k, e)#t) l = flatten t (l@(map (\<lambda>v. (k, v)) e))"
 
 \<comment> \<open>This will be replaced by symbolic regression in the executable\<close>
-definition get_function :: "nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> value list \<Rightarrow> aexp option" where
+definition get_function :: "nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> value list \<Rightarrow> (aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
   "get_function maxReg values I P = (let
     possible_funs = {a. \<forall>(i, p) \<in> set (zip I P). \<exists>r. aval a (join_ir i r) = Some p}
     in
-    if possible_funs = {} then None else Some (Eps (\<lambda>x. x \<in> possible_funs))
+    if possible_funs = {} then None else Some (Eps (\<lambda>x. x \<in> possible_funs), (K$ STR ''int''))
   )"
 
 definition get_inputs :: "flat_log \<Rightarrow> inputs list" where
@@ -26,7 +26,7 @@ definition get_inputs :: "flat_log \<Rightarrow> inputs list" where
 definition get_outputs :: "flat_log \<Rightarrow> nat \<Rightarrow> value list" where
   "get_outputs l n = map (\<lambda>(_, _, _, _, p). p ! n) l"
 
-definition get_functions :: "nat \<Rightarrow> value list \<Rightarrow> nat \<Rightarrow> flat_log \<Rightarrow> aexp option list" where
+definition get_functions :: "nat \<Rightarrow> value list \<Rightarrow> nat \<Rightarrow> flat_log \<Rightarrow> (aexp \<times> (vname \<Rightarrow>f String.literal)) option list" where
   "get_functions maxReg values n l = map (\<lambda>p. get_function maxReg values (get_inputs l) (get_outputs l p)) [0..<n]"
 
 definition insert_updates :: "transition \<Rightarrow> update_function list \<Rightarrow> transition" where
@@ -66,12 +66,12 @@ primrec put_update_functions :: "aexp option \<Rightarrow> nat \<Rightarrow> upd
   )"
 
 \<comment> \<open>This will be replaced to calls to Z3 in the executable\<close>
-definition get_regs :: "inputs \<Rightarrow> aexp \<Rightarrow> value \<Rightarrow> registers" where
-  "get_regs i a v = Eps (\<lambda>r. aval a (join_ir i r) = Some v)"
+definition get_regs :: "(vname \<Rightarrow>f String.literal) \<Rightarrow> inputs \<Rightarrow> aexp \<Rightarrow> value \<Rightarrow> registers" where
+  "get_regs types inputs expression output = Eps (\<lambda>r. aval expression (join_ir inputs r) = Some output)"
 
-fun put_output_function_2_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_execution \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> tids option \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
-  "put_output_function_2_aux _ _ [] _ _ _ _ e _ _ = Some e" |
-  "put_output_function_2_aux fi f ((_, l, i, p)#t) label i_arity o_arity prevtid e s r = (
+fun put_output_function_2_aux :: "nat \<Rightarrow> aexp \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> indexed_execution \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> tids option \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
+  "put_output_function_2_aux _ _ _ [] _ _ _ _ e _ _ = Some e" |
+  "put_output_function_2_aux fi f types ((_, l, i, p)#t) label i_arity o_arity prevtid e s r = (
     let
       poss_steps = ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir i r) = map Some p) (i_possible_steps e s r l i);
       (tid, s', ta) = fthe_elem poss_steps
@@ -79,10 +79,10 @@ fun put_output_function_2_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_e
      \<comment> \<open>Possible steps with a transition we need to modify\<close>
     if l = label \<and> length i = i_arity \<and> length p = o_arity then
       case prevtid of None \<Rightarrow> None | Some prevtid \<Rightarrow> let
-      necessaryRegs = finfun_to_list (get_regs i f (p!fi)) in
+      satisfyingRegs = get_regs types i f (p!fi);
+      necessaryRegs = finfun_to_list satisfyingRegs in
       if length necessaryRegs \<noteq> 1 then None else let
       newT = \<lparr>Label = Label ta, Arity = Arity ta, Guard = [], Outputs = list_update (Outputs ta) fi f, Updates = remdups ((hd necessaryRegs, f)#(Updates ta))\<rparr>;
-      satisfyingRegs = (get_regs i f (p!fi));
       updates = map (\<lambda>r. case (satisfyingRegs $ r) of Some v' \<Rightarrow> (r, L v')) (necessaryRegs);
       prevT = get_by_ids e prevtid;
       newPrevT = (if Label prevT = Label ta then
@@ -91,23 +91,23 @@ fun put_output_function_2_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_e
         \<lparr>Label = Label prevT, Arity = Arity prevT, Guard = Guard prevT, Outputs = Outputs prevT, Updates = remdups (updates@(Updates prevT))\<rparr>);
       newE = replace_transitions e [(tid, newT), (prevtid, newPrevT)]
       in
-      put_output_function_2_aux fi f t label i_arity o_arity (Some tid) newE s' (apply_updates (Updates ta) (join_ir i r) r)
+      put_output_function_2_aux fi f types t label i_arity o_arity (Some tid) newE s' (apply_updates (Updates ta) (join_ir i r) r)
      \<comment> \<open>Possible steps but not interesting - just take a transition and move on\<close>
     else
-      put_output_function_2_aux fi f t label i_arity o_arity (Some tid) e s' (apply_updates (Updates ta) (join_ir i r) r)
+      put_output_function_2_aux fi f types t label i_arity o_arity (Some tid) e s' (apply_updates (Updates ta) (join_ir i r) r)
   )"
 
-primrec put_output_function_2 :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_log \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
-  "put_output_function_2 _ _ [] _ e = Some e" |
-  "put_output_function_2 fi f (h#t) t1 e = (case put_output_function_2_aux fi f (snd h) (Label t1) (Arity t1) (length (Outputs t1)) None e 0 <> of
+primrec put_output_function_2 :: "nat \<Rightarrow> aexp \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> indexed_log \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+  "put_output_function_2 _ _ _ [] _ e = Some e" |
+  "put_output_function_2 fi f types (h#t) t1 e = (case put_output_function_2_aux fi f types (snd h) (Label t1) (Arity t1) (length (Outputs t1)) None e 0 <> of
     None \<Rightarrow> None |
-    Some e' \<Rightarrow> put_output_function_2 fi f t t1 e'
+    Some e' \<Rightarrow> put_output_function_2 fi f types t t1 e'
   )"
 
-fun put_output_functions_2 :: "(nat \<times> aexp option) list \<Rightarrow> indexed_log \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+fun put_output_functions_2 :: "(nat \<times> (aexp \<times> (vname \<Rightarrow>f String.literal)) option) list \<Rightarrow> indexed_log \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
   "put_output_functions_2 [] _ _ e = Some e" |
   "put_output_functions_2 ((_, None)#_) _ _ _ = None" |
-  "put_output_functions_2 ((fi, Some f)#rest) log t e = (case put_output_function_2 fi f log t e of
+  "put_output_functions_2 ((fi, Some (f, types))#rest) log t e = (case put_output_function_2 fi f types log t e of
     None \<Rightarrow> None |
     Some e' \<Rightarrow> put_output_functions_2 rest log t e'
   )"
@@ -116,13 +116,13 @@ primrec overwrites_update :: "update_function list \<Rightarrow> nat set \<Right
   "overwrites_update [] _ = False" |
   "overwrites_update (h#t) s = (if fst h \<in> s then True else overwrites_update t (insert (fst h) s))"
 
-fun put_output_function_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_execution \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> tids option \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
-  "put_output_function_aux _ _ [] _ _ _ _ e _ _ = (
+fun put_output_function_aux :: "nat \<Rightarrow> aexp \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> indexed_execution \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> tids option \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
+  "put_output_function_aux _ _ _ [] _ _ _ _ e _ _ = (
     if \<exists>(_, _, t) |\<in>| e. overwrites_update (Updates t) {} then
       None
     else
       Some e)" |
-  "put_output_function_aux fi f ((_, l, i, p)#t) label i_arity o_arity prevtid e s r = (
+  "put_output_function_aux fi f types ((_, l, i, p)#t) label i_arity o_arity prevtid e s r = (
     let
     poss_steps = ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir i r) = map Some p) (i_possible_steps e s r l i) in
     \<comment> \<open>No possible steps with matching output means something bad has happenned\<close>
@@ -132,7 +132,7 @@ fun put_output_function_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_exe
        \<comment> \<open>Possible steps with a transition we need to modify\<close>
       if l = label \<and> length i = i_arity \<and> length p = o_arity then let
         newT = \<lparr>Label = Label ta, Arity = Arity ta, Guard = Guard ta, Outputs = list_update (Outputs ta) fi f, Updates = Updates ta\<rparr>;
-        necessaryRegs = get_regs i f (p!fi);
+        necessaryRegs = get_regs types i f (p!fi);
         updates = map (\<lambda>r. case (necessaryRegs $ r) of Some v' \<Rightarrow> (r, L v')) (finfun_to_list necessaryRegs) in
         case prevtid of None \<Rightarrow> None | Some prevtid \<Rightarrow> let
         prevT = get_by_ids e prevtid;
@@ -142,23 +142,23 @@ fun put_output_function_aux :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_exe
         if \<exists>(_, _, t) |\<in>| newE. overwrites_update (Updates t) {} then
           None
         else
-          put_output_function_aux fi f t label i_arity o_arity (Some tid) newE s' (apply_updates (Updates ta) (join_ir i r) r)
+          put_output_function_aux fi f types t label i_arity o_arity (Some tid) newE s' (apply_updates (Updates ta) (join_ir i r) r)
        \<comment> \<open>Possible steps but not interesting - just take a transition and move on\<close>
       else
-        put_output_function_aux fi f t label i_arity o_arity (Some tid) e s' (apply_updates (Updates ta) (join_ir i r) r)
+        put_output_function_aux fi f types t label i_arity o_arity (Some tid) e s' (apply_updates (Updates ta) (join_ir i r) r)
   )"
 
-primrec put_output_function :: "nat \<Rightarrow> aexp \<Rightarrow> indexed_log \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
-  "put_output_function _ _ [] _ e = Some e" |
-  "put_output_function fi f (h#t) t1 e = (case put_output_function_aux fi f (snd h) (Label t1) (Arity t1) (length (Outputs t1)) None e 0 <> of
+primrec put_output_function :: "nat \<Rightarrow> aexp \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> indexed_log \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+  "put_output_function _ _ _ [] _ e = Some e" |
+  "put_output_function fi f types (h#t) t1 e = (case put_output_function_aux fi f types (snd h) (Label t1) (Arity t1) (length (Outputs t1)) None e 0 <> of
     None \<Rightarrow> None |
-    Some e' \<Rightarrow> put_output_function fi f t t1 e'
+    Some e' \<Rightarrow> put_output_function fi f types t t1 e'
   )"
 
-fun put_output_functions :: "(nat \<times> aexp option) list \<Rightarrow> indexed_log \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+fun put_output_functions :: "(nat \<times> (aexp \<times> (vname \<Rightarrow>f String.literal)) option) list \<Rightarrow> indexed_log \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
   "put_output_functions [] _ _ e = Some e" |
   "put_output_functions ((_, None)#_) _ _ _ = None" |
-  "put_output_functions ((fi, Some f)#rest) log t e = (case put_output_function fi f log t e of
+  "put_output_functions ((fi, Some (f, types))#rest) log t e = (case put_output_function fi f types log t e of
     None \<Rightarrow> None |
     Some e' \<Rightarrow> put_output_functions rest log t e'
   )"
@@ -233,10 +233,10 @@ definition get_updates :: "value list \<Rightarrow> (inputs \<times> registers \
     in map (\<lambda>(r, u). case u of Some u' \<Rightarrow> (r, u')) updates
   )"
 
-fun outputwise_updates :: "value list \<Rightarrow> nat \<Rightarrow> aexp option list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> indexed_log \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> iEFSM option" where
+fun outputwise_updates :: "value list \<Rightarrow> nat \<Rightarrow> (aexp \<times> (vname \<Rightarrow>f String.literal)) option list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> indexed_log \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> iEFSM option" where
   "outputwise_updates _ _ [] pta e _ _ _ = Some e" |
   "outputwise_updates values ox (None#t) pta e log label arity = outputwise_updates values (ox + 1) t pta e log label arity" |
-  "outputwise_updates values ox ((Some a)#t) pta e log label arity = (
+  "outputwise_updates values ox ((Some (a, types))#t) pta e log label arity = (
     let
       train = get_log_reg_values a log label arity pta;
       update_functions = get_updates values train
@@ -277,20 +277,20 @@ type_synonym event_info = "(cfstate \<times> registers \<times> inputs \<times> 
 type_synonym run_info = "event_info list"
 type_synonym targeted_run_info = "(registers \<times> event_info) list"
 
-fun everything_walk :: "output_function \<Rightarrow> nat \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> run_info" where
-  "everything_walk _ _ [] _ _ _ _ _ = []" |
-  "everything_walk f fi ((label, inputs, outputs)#t) oPTA s regs ll i_arity = (
+fun everything_walk :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> run_info" where
+  "everything_walk _ _ _ [] _ _ _ _ _ = []" |
+  "everything_walk f fi types ((label, inputs, outputs)#t) oPTA s regs ll i_arity = (
     let (tid, s', ta) = fthe_elem (i_possible_steps oPTA s regs label inputs) in
      \<comment> \<open>Possible steps with a transition we need to modify\<close>
     if ll = label \<and> length inputs = i_arity then
-      (s, get_regs inputs f (outputs!fi), inputs, tid, ta)#(everything_walk f fi t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) ll i_arity)
+      (s, get_regs types inputs f (outputs!fi), inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) ll i_arity)
     else
       let empty = <> in
-      (s, empty, inputs, tid, ta)#(everything_walk f fi t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) ll i_arity)
+      (s, empty, inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) ll i_arity)
   )"
 
-definition everything_walk_log :: "output_function \<Rightarrow> nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> run_info list" where
-  "everything_walk_log f fi log e l a = map (\<lambda>t. everything_walk f fi t e 0 <> l a) log"
+definition everything_walk_log :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> run_info list" where
+  "everything_walk_log f fi types log e l a = map (\<lambda>t. everything_walk f fi types t e 0 <> l a) log"
 
 fun target :: "registers \<Rightarrow> run_info \<Rightarrow> targeted_run_info" where
   "target _ [] = []" |
@@ -372,7 +372,6 @@ definition historical_infer_output_update_functions :: "log \<Rightarrow> update
     let
       i_log = enumerate 0 (map (enumerate 0) log);
       t1 = get_by_ids new t1ID;
-      walked = everything_walk_log;
       values = enumerate_log_values log;
       max_reg = max_reg_total new;
       relevant_events = flatten (map (\<lambda>(i, ex). (i, filter (\<lambda>(_, l, ip, op). l = Label t1 \<and> length ip = Arity t1 \<and> length op = length (Outputs t1)) ex)) i_log) [];
@@ -386,9 +385,9 @@ definition historical_infer_output_update_functions :: "log \<Rightarrow> update
         \<comment> \<open>TODO: eventually we'll have to do this with all output functions\<close>
         case hd output_functions of
           None \<Rightarrow> None |
-          Some op \<Rightarrow> (
+          Some (op, types) \<Rightarrow> (
             let
-              walked = everything_walk_log op 0 log lit (Label t1) (Arity t1);
+              walked = everything_walk_log op 0 types log lit (Label t1) (Arity t1);
               targeted = map (\<lambda>w. rev (target <> (rev w))) walked;
               groups = group_by_structure (fold List.union targeted []) [];
               group_updates = groupwise_updates values groups;

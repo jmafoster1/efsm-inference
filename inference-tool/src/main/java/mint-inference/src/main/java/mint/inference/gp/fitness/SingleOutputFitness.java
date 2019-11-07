@@ -94,7 +94,7 @@ public abstract class SingleOutputFitness<T> extends Fitness {
 
 		Set<VariableAssignment<T>> undef = undefVars(individual, totalUsedVars);
 
-		System.out.println("Evaluating: " + individual + " Undef: " + undef);
+//		System.out.println("Evaluating: " + individual + " Undef: " + undef);
 
 		Set<String> totalUnusedVars = totalUsedVars;
 		for (VariableAssignment<T> vName : individual.varsInTree()) {
@@ -115,7 +115,7 @@ public abstract class SingleOutputFitness<T> extends Fitness {
 			return fitness;
 		}
 
-		System.out.println("individual: " + individual);
+//		System.out.println("individual: " + individual);
 		double proportionUnusedVars = totalUnusedVars.size() / (double) individual.numVarsInTree();
 		return fitness + proportionUnusedVars;
 	}

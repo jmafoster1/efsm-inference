@@ -1,12 +1,9 @@
 package mint.inference.gp.tree;
 
 import mint.inference.evo.Chromosome;
-import mint.inference.gp.CallableNodeExecutor;
 import mint.inference.gp.Generator;
-import mint.inference.gp.fitness.InvalidDistanceException;
 import mint.inference.gp.fitness.SingleOutputBooleanFitness;
 import mint.inference.gp.fitness.SingleOutputDoubleFitness;
-import mint.inference.gp.fitness.SingleOutputFitness;
 import mint.inference.gp.fitness.SingleOutputIntegerFitness;
 import mint.inference.gp.fitness.SingleOutputListFitness;
 import mint.inference.gp.fitness.SingleOutputStringFitness;
@@ -18,12 +15,9 @@ import mint.tracedata.types.VariableAssignment;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.collections4.MultiValuedMap;
-
-import java.util.Map.Entry;
 
 import com.microsoft.z3.Context;
 import com.microsoft.z3.Expr;
@@ -124,7 +118,9 @@ public abstract class Node<T extends VariableAssignment<?>> implements Chromosom
 	}
 
 	public abstract int numVarsInTree();
+
 	public abstract int numConstsInTree();
+
 	public abstract int numOpsInTree();
 
 	public abstract Set<T> varsInTree();
@@ -172,7 +168,7 @@ public abstract class Node<T extends VariableAssignment<?>> implements Chromosom
 	}
 
 	public abstract Expr toZ3(Context ctx);
-	
+
 	public Node<T> simp() {
 		try {
 			Context ctx = new Context();
@@ -180,36 +176,34 @@ public abstract class Node<T extends VariableAssignment<?>> implements Chromosom
 			Node<T> retVal = (Node<T>) NodeSimplifier.fromZ3(z3Expr);
 			ctx.close();
 			return retVal;
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			return this;
 		}
 	}
-	
+
 	public boolean isCorrect(MultiValuedMap<List<VariableAssignment<?>>, VariableAssignment<?>> evals) {
 		int maxDepth = 0;
 		try {
-		if (this.getType().equals("string"))
-			return new SingleOutputStringFitness(evals, VariableAssignment.getStringValues(),
-					(Node<VariableAssignment<String>>) this, maxDepth).correct();
-		else if (this.getType().equals("double"))
-			return new SingleOutputDoubleFitness(evals, VariableAssignment.getDoubleValues(),
-					(Node<VariableAssignment<Double>>) this, maxDepth).correct();
-		else if (this.getType().equals("integer"))
-			return new SingleOutputIntegerFitness(evals, VariableAssignment.getIntValues(),
-					(Node<VariableAssignment<Integer>>) this, maxDepth).correct();
-		else if (this.getType().equals("List"))
-			return new SingleOutputListFitness(evals, VariableAssignment.getListValues(),
-					(Node<VariableAssignment<List>>) this, maxDepth).correct();
-		else {
-			assert (this.getType().equals("boolean"));
-			return new SingleOutputBooleanFitness(evals, VariableAssignment.getBooleanValues(),
-					(Node<VariableAssignment<Boolean>>) this, maxDepth).correct();
-		}
-		}
-		catch (Exception e) {
+			if (this.getType().equals("string"))
+				return new SingleOutputStringFitness(evals, VariableAssignment.getStringValues(),
+						(Node<VariableAssignment<String>>) this, maxDepth).correct();
+			else if (this.getType().equals("double"))
+				return new SingleOutputDoubleFitness(evals, VariableAssignment.getDoubleValues(),
+						(Node<VariableAssignment<Double>>) this, maxDepth).correct();
+			else if (this.getType().equals("integer"))
+				return new SingleOutputIntegerFitness(evals, VariableAssignment.getIntValues(),
+						(Node<VariableAssignment<Integer>>) this, maxDepth).correct();
+			else if (this.getType().equals("List"))
+				return new SingleOutputListFitness(evals, VariableAssignment.getListValues(),
+						(Node<VariableAssignment<List>>) this, maxDepth).correct();
+			else {
+				assert (this.getType().equals("boolean"));
+				return new SingleOutputBooleanFitness(evals, VariableAssignment.getBooleanValues(),
+						(Node<VariableAssignment<Boolean>>) this, maxDepth).correct();
+			}
+		} catch (Exception e) {
 			return false;
 		}
 	}
-	
+
 }
