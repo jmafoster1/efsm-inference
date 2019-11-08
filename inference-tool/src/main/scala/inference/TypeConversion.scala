@@ -9,6 +9,7 @@ import isabellesal._
 import mint.tracedata.types.VariableAssignment;
 import mint.tracedata.types.IntegerVariableAssignment;
 import mint.tracedata.types.StringVariableAssignment;
+import mint.inference.gp.tree.Node;
 
 object Types {
   type Event = (String, (List[Value.value], List[Value.value]))
@@ -20,6 +21,13 @@ object Types {
 object TypeConversion {
   def mkAdd(a: AExp.aexp, b: AExp.aexp): AExp.aexp = AExp.Plus(a, b)
   def mkSub(a: AExp.aexp, b: AExp.aexp): AExp.aexp = AExp.Minus(a, b)
+
+  def toAExp(best: Node[VariableAssignment[_]]): AExp.aexp = {
+    val ctx = new Context()
+    val aexp = TypeConversion.fromZ3(best.toZ3(ctx))
+    ctx.close
+    return aexp
+  }
 
   def expandTypeString(t: String): String = {
     if (t == ":S")

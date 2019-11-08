@@ -8,7 +8,7 @@ import Types._
 import org.apache.commons.io.FileUtils
 import java.util.UUID.randomUUID
 
-import scala.collection.JavaConverters._
+import scala.collection.JavaConversions._
 
 import mint.inference.gp.Generator;
 import mint.inference.gp.tree.Node;
@@ -36,92 +36,92 @@ object Dirties {
     // l.par.foldLeft(b)(((x, y) => (f(x))(y)))
     l.foldLeft(b)(((x, y) => (f(x))(y)))
 
-    def toZ3(v: Value.value): String = v match {
-      case Value.Numa(n) => s"(Num ${Code_Numeral.integer_of_int(n).toString})"
-      case Value.Str(s) => s"""(Str "${s}")"""
-    }
+  def toZ3(v: Value.value): String = v match {
+    case Value.Numa(n) => s"(Num ${Code_Numeral.integer_of_int(n).toString})"
+    case Value.Str(s) => s"""(Str "${s}")"""
+  }
 
-    def toZ3(a: VName.vname): String = a match {
-      case VName.I(n) => s"i${Code_Numeral.integer_of_nat(n) + 1}"
-      case VName.R(n) => s"r${Code_Numeral.integer_of_nat(n)}"
-    }
+  def toZ3(a: VName.vname): String = a match {
+    case VName.I(n) => s"i${Code_Numeral.integer_of_nat(n) + 1}"
+    case VName.R(n) => s"r${Code_Numeral.integer_of_nat(n)}"
+  }
 
-    def toZ3(a: AExp.aexp): String = a match {
-      case AExp.L(v) => s"(Some ${toZ3(v)})"
-      case AExp.V(v) => s"${toZ3(v)}"
-      case AExp.Plus(a1, a2) => s"(Plus ${toZ3(a1)} ${toZ3(a2)})"
-      case AExp.Minus(a1, a2) => s"(Minus ${toZ3(a1)} ${toZ3(a2)})"
-    }
+  def toZ3(a: AExp.aexp): String = a match {
+    case AExp.L(v) => s"(Some ${toZ3(v)})"
+    case AExp.V(v) => s"${toZ3(v)}"
+    case AExp.Plus(a1, a2) => s"(Plus ${toZ3(a1)} ${toZ3(a2)})"
+    case AExp.Minus(a1, a2) => s"(Minus ${toZ3(a1)} ${toZ3(a2)})"
+  }
 
-    def toZ3Native(v: Value.value): String = v match {
-      case Value.Numa(n) => s"${Code_Numeral.integer_of_int(n).toString}"
-      case Value.Str(s) => s""""${s}""""
-    }
+  def toZ3Native(v: Value.value): String = v match {
+    case Value.Numa(n) => s"${Code_Numeral.integer_of_int(n).toString}"
+    case Value.Str(s) => s""""${s}""""
+  }
 
-    def toZ3Native(a: AExp.aexp): String = a match {
-      case AExp.L(v) => s"${toZ3Native(v)}"
-      case AExp.V(v) => s"${toZ3(v)}"
-      case AExp.Plus(a1, a2) => s"(+ ${toZ3Native(a1)} ${toZ3Native(a2)})"
-      case AExp.Minus(a1, a2) => s"(- ${toZ3Native(a1)} ${toZ3Native(a2)})"
-    }
+  def toZ3Native(a: AExp.aexp): String = a match {
+    case AExp.L(v) => s"${toZ3Native(v)}"
+    case AExp.V(v) => s"${toZ3(v)}"
+    case AExp.Plus(a1, a2) => s"(+ ${toZ3Native(a1)} ${toZ3Native(a2)})"
+    case AExp.Minus(a1, a2) => s"(- ${toZ3Native(a1)} ${toZ3Native(a2)})"
+  }
 
-    def toZ3(g: GExp.gexp): String = g match {
-      case GExp.Bc(a) => a.toString()
-      case GExp.Eq(a1, a2) => s"(Eq ${toZ3(a1)} ${toZ3(a2)})"
-      case GExp.Gt(a1, a2) => s"(Gt ${toZ3(a1)} ${toZ3(a2)})"
-      case GExp.In(v, l) => l.slice(0, 2).map(x => s"(Eq ${toZ3(v)} (Some ${toZ3(x)}))").fold("false")((x, y) => s"(Or ${x} ${y})")
-      case GExp.Nor(g1, g2) => s"(Nor ${toZ3(g1)} ${toZ3(g2)})"
-      case GExp.Null(AExp.V(v)) => s"(Eq ${toZ3(v)} None)"
-      case GExp.Null(v) => throw new java.lang.IllegalArgumentException("Z3 does not handle null of more complex arithmetic expressions")
-    }
+  def toZ3(g: GExp.gexp): String = g match {
+    case GExp.Bc(a) => a.toString()
+    case GExp.Eq(a1, a2) => s"(Eq ${toZ3(a1)} ${toZ3(a2)})"
+    case GExp.Gt(a1, a2) => s"(Gt ${toZ3(a1)} ${toZ3(a2)})"
+    case GExp.In(v, l) => l.slice(0, 2).map(x => s"(Eq ${toZ3(v)} (Some ${toZ3(x)}))").fold("false")((x, y) => s"(Or ${x} ${y})")
+    case GExp.Nor(g1, g2) => s"(Nor ${toZ3(g1)} ${toZ3(g2)})"
+    case GExp.Null(AExp.V(v)) => s"(Eq ${toZ3(v)} None)"
+    case GExp.Null(v) => throw new java.lang.IllegalArgumentException("Z3 does not handle null of more complex arithmetic expressions")
+  }
 
-    var sat_memo = scala.collection.immutable.Map[GExp.gexp, Boolean](GExp.Bc(true) -> true, GExp.Bc(false) -> false)
+  var sat_memo = scala.collection.immutable.Map[GExp.gexp, Boolean](GExp.Bc(true) -> true, GExp.Bc(false) -> false)
 
-    def satisfiable(g: GExp.gexp): Boolean = {
-      if (sat_memo isDefinedAt g) {
-        return sat_memo(g)
-      } else {
-            var z3String = """
-    (declare-datatype Option (par (X) ((None) (Some (val X)))))
-    (declare-datatype Value ((Num (num Int)) (Str (str String))))
-    (declare-datatype Trilean ((true) (false) (invalid)))
+  def satisfiable(g: GExp.gexp): Boolean = {
+    if (sat_memo isDefinedAt g) {
+      return sat_memo(g)
+    } else {
+      var z3String = """
+        (declare-datatype Option (par (X) ((None) (Some (val X)))))
+        (declare-datatype Value ((Num (num Int)) (Str (str String))))
+        (declare-datatype Trilean ((true) (false) (invalid)))
 
-    (define-fun Plus ((x (Option Value)) (y (Option Value))) (Option Value)
-    (match x (
-      ((Some v1)
-        (match y (
-          ((Some v2)
+        (define-fun Plus ((x (Option Value)) (y (Option Value))) (Option Value)
+        (match x (
+          ((Some v1)
+          (match y (
+            ((Some v2)
             (match v1 (
               ((Num n1)
-                (match v2 (
-                  ((Num n2) (Some (Num (+ n1 n2))))
-                  (_ None))
-                ))
+              (match v2 (
+                ((Num n2) (Some (Num (+ n1 n2))))
+                (_ None))
+              ))
               (_ None))
             ))
+            (_ None))
+          ))
           (_ None))
-        ))
-      (_ None))
-    )
-    )
+        )
+      )
 
-    (define-fun Minus ((x (Option Value)) (y (Option Value))) (Option Value)
-    (match x (
-      ((Some v1)
+      (define-fun Minus ((x (Option Value)) (y (Option Value))) (Option Value)
+      (match x (
+        ((Some v1)
         (match y (
           ((Some v2)
-            (match v1 (
-              ((Num n1)
-                (match v2 (
-                  ((Num n2) (Some (Num (- n1 n2))))
-                  (_ None))
-                ))
+          (match v1 (
+            ((Num n1)
+            (match v2 (
+              ((Num n2) (Some (Num (- n1 n2))))
               (_ None))
             ))
+            (_ None))
+          ))
           (_ None))
         ))
-      (_ None))
-    )
+        (_ None))
+      )
     )
 
     (define-fun Nor ((x Trilean) (y Trilean)) Trilean
@@ -130,42 +130,42 @@ object Dirties {
     (ite (and (= x false) (= y true)) false
     (ite (and (= x false) (= y false)) true
     invalid))))
-    )
+  )
 
-    (define-fun Or ((x Trilean) (y Trilean)) Trilean
-    (ite (and (= x true) (= y true)) true
-    (ite (and (= x true) (= y false)) true
-    (ite (and (= x false) (= y true)) true
-    (ite (and (= x false) (= y false)) false
-    invalid))))
-    )
+  (define-fun Or ((x Trilean) (y Trilean)) Trilean
+  (ite (and (= x true) (= y true)) true
+  (ite (and (= x true) (= y false)) true
+  (ite (and (= x false) (= y true)) true
+  (ite (and (= x false) (= y false)) false
+  invalid))))
+)
 
-    (define-fun Gt ((x (Option Value)) (y (Option Value))) Trilean
-    (ite (exists ((x1 Int)) (exists ((y1 Int)) (and (= x (Some (Num x1))) (and (= y (Some (Num y1))) (> x1 y1))))) true
-    (ite (exists ((x1 Int)) (exists ((y1 Int)) (and (= x (Some (Num x1))) (and (= y (Some (Num y1))) (not (> x1 y1)))))) false
-    invalid))
-    )
+(define-fun Gt ((x (Option Value)) (y (Option Value))) Trilean
+(ite (exists ((x1 Int)) (exists ((y1 Int)) (and (= x (Some (Num x1))) (and (= y (Some (Num y1))) (> x1 y1))))) true
+(ite (exists ((x1 Int)) (exists ((y1 Int)) (and (= x (Some (Num x1))) (and (= y (Some (Num y1))) (not (> x1 y1)))))) false
+invalid))
+)
 
-    (define-fun Eq ((x (Option Value)) (y (Option Value))) Trilean
-    (ite (= x y) true
-    false)
-    )
+(define-fun Eq ((x (Option Value)) (y (Option Value))) Trilean
+(ite (= x y) true
+false)
+)
 
-    """
-            val vars = GExp.enumerate_vars(g)
-            z3String += vars.map(v => s"(declare-const ${toZ3(v)} (Option Value))").foldLeft("")(((x, y) => x + y + "\n"))
-            z3String += s"\n(assert (= true ${toZ3(g)}))"
+"""
+      val vars = GExp.enumerate_vars(g)
+      z3String += vars.map(v => s"(declare-const ${toZ3(v)} (Option Value))").foldLeft("")(((x, y) => x + y + "\n"))
+      z3String += s"\n(assert (= true ${toZ3(g)}))"
 
-            val ctx = new z3.Context()
-            val solver = ctx.mkSimpleSolver()
-            solver.fromString(z3String)
-            val sat = solver.check()
-            ctx.close()
+      val ctx = new z3.Context()
+      val solver = ctx.mkSimpleSolver()
+      solver.fromString(z3String)
+      val sat = solver.check()
+      ctx.close()
 
-            sat_memo = sat_memo + (g -> (sat == z3.Status.SATISFIABLE))
-            return sat == z3.Status.SATISFIABLE
-      }
+      sat_memo = sat_memo + (g -> (sat == z3.Status.SATISFIABLE))
+      return sat == z3.Status.SATISFIABLE
     }
+  }
 
   def randomMember[A](f: FSet.fset[A]): Option[A] = f match {
     case FSet.fset_of_list(l) =>
@@ -189,12 +189,7 @@ object Dirties {
   // We're checking for the existence of a trace that gets us to the right
   // states in the respective machines such that we can take t2 so we check
   // the global negation of this to see if there's a counterexample
-  def alwaysDifferentOutputsDirectSubsumption[A](
-    e1: IEFSM,
-    e2: IEFSM,
-    s1: Nat.nat,
-    s2: Nat.nat,
-    t2: Transition.transition_ext[A]): Boolean = {
+  def alwaysDifferentOutputsDirectSubsumption[A](e1: IEFSM, e2: IEFSM, s1: Nat.nat, s2: Nat.nat, t2: Transition.transition_ext[A]): Boolean = {
     if (Config.config.skip) {
       return true
     }
@@ -202,13 +197,13 @@ object Dirties {
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
       s"canTake: THEOREM composition |- G(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} => NOT(input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t2))} AND ${efsm2sal.guards2sal(Transition.Guard(t2))}));")
-    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2)))+1}}!canTake'").!!
+    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2))) + 1}}!canTake'").!!
     if (!output.toString.startsWith("Counterexample")) {
       Log.root.warn(s"""Path failure:\n
-        G(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} => NOT(input_sequence ! size?(I) = ${Code_Numeral.integer_of_nat(Transition.Arity(t2))} AND ${efsm2sal.guards2sal(Transition.Guard(t2))}));\n
-        sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2)))+1}}!canTake'""")
+      G(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} => NOT(input_sequence ! size?(I) = ${Code_Numeral.integer_of_nat(Transition.Arity(t2))} AND ${efsm2sal.guards2sal(Transition.Guard(t2))}));\n
+      sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2))) + 1}}!canTake'""")
     }
-     FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
+    FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
     return (output.toString.startsWith("Counterexample"))
   }
 
@@ -219,7 +214,7 @@ object Dirties {
 
     addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = ${TypeConversion.salState(s)} => r__${Code_Numeral.integer_of_nat(r)} = None);")
 
-    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(EFSM.max_int(e))+1}}!initiallyUndefined'").!!
+    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(EFSM.max_int(e)) + 1}}!initiallyUndefined'").!!
     if (output.toString != "proved.\n") {
       print(output)
     }
@@ -229,12 +224,18 @@ object Dirties {
 
   // We're looking to confirm that traces which get us to s1 in e1 and s2 in e2
   // always leave register r (in e2) holding value v
-  def generaliseOutputContextCheck(v: Value.value, r: Nat.nat, s1: Nat.nat, s2: Nat.nat, e1: IEFSM, e2: IEFSM): Boolean = {
+  def generaliseOutputContextCheck(
+    v: Value.value,
+    r: Nat.nat,
+    s1: Nat.nat,
+    s2: Nat.nat,
+    e1: IEFSM,
+    e2: IEFSM): Boolean = {
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
       s"checkRegValue: THEOREM composition |- G(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} => r__${Code_Numeral.integer_of_nat(r)}.2 = Some(${TypeConversion.salValue(v)}));")
-    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2)))+1}}!checkRegValue'").!!
+    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2))) + 1}}!checkRegValue'").!!
     if (output.toString != "proved.\n") {
       print(output)
     }
@@ -249,21 +250,20 @@ object Dirties {
     a: IEFSM,
     b: IEFSM,
     s1: Nat.nat,
-    s2: Nat.nat,
-    ): Boolean = {
-      if (Config.config.skip) {
-        return true
-      }
+    s2: Nat.nat): Boolean = {
+    if (Config.config.skip) {
+      return true
+    }
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(a), "e1", Inference.tm(b), "e2", f)
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
       s"getsUsToBoth: THEOREM composition |- G(NOT(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)}));")
-    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(a, b)))+1}}!getsUsToBoth'").!!
+    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(a, b))) + 1}}!getsUsToBoth'").!!
     FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
     if (!output.toString.startsWith("Counterexample")) {
       Log.root.warn(s"""Path failure:\n
         getsUsToBoth: THEOREM composition |- G(NOT(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)}));\n
-        sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(a, b)))+1}}!getsUsToBoth'""")
+        sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(a, b))) + 1}}!getsUsToBoth'""")
     }
     return (output.toString.startsWith("Counterexample"))
   }
@@ -277,13 +277,13 @@ object Dirties {
     s2: Nat.nat,
     t1: Transition.transition_ext[A],
     t2: Transition.transition_ext[B]): Boolean = {
-      if (Transition.Outputs(t1) == Transition.Outputs(t2))  {
-        return false
-      }
-      val f = "intermediate_" + randomUUID.toString().replace("-", "_")
-      TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
-      addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
-        s"""diffOutputs: THEOREM composition |- G(
+    if (Transition.Outputs(t1) == Transition.Outputs(t2)) {
+      return false
+    }
+    val f = "intermediate_" + randomUUID.toString().replace("-", "_")
+    TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
+    addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
+      s"""diffOutputs: THEOREM composition |- G(
           NOT(
             cfstate.1 = ${TypeConversion.salState(s1)} AND
             cfstate.2 = ${TypeConversion.salState(s2)} AND
@@ -292,23 +292,23 @@ object Dirties {
             X(o_e1 /= o_e2)
           )
         );""")
-      val cmd = s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2)))+1}}!diffOutputs'"
-      val output = Seq("bash", "-c", cmd).!!
-      FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
-      return (output.toString.startsWith("Counterexample"))
-    }
+    val cmd = s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2))) + 1}}!diffOutputs'"
+    val output = Seq("bash", "-c", cmd).!!
+    FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
+    return (output.toString.startsWith("Counterexample"))
+  }
 
-    def canStillTake[A, B](
-      e1: IEFSM,
-      e2: IEFSM,
-      s1: Nat.nat,
-      s2: Nat.nat,
-      t1: Transition.transition_ext[A],
-      t2: Transition.transition_ext[B]): Boolean = {
-        val f = "intermediate_" + randomUUID.toString().replace("-", "_")
-        TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
-        addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
-          s"""canStillTake: THEOREM composition |- G(
+  def canStillTake[A, B](
+    e1: IEFSM,
+    e2: IEFSM,
+    s1: Nat.nat,
+    s2: Nat.nat,
+    t1: Transition.transition_ext[A],
+    t2: Transition.transition_ext[B]): Boolean = {
+    val f = "intermediate_" + randomUUID.toString().replace("-", "_")
+    TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
+    addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
+      s"""canStillTake: THEOREM composition |- G(
             NOT(
               cfstate.1 = ${TypeConversion.salState(s1)} AND
               cfstate.2 = ${TypeConversion.salState(s2)} AND
@@ -316,11 +316,11 @@ object Dirties {
               (input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t1))} AND ${efsm2sal.guards2sal_num(Transition.Guard(t1), Nat.Nata(1))}))
             )
           );""")
-        val cmd = s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2)))+1}}!canStillTake'"
-        val output = Seq("bash", "-c", cmd).!!
-        FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
-        return (output.toString.startsWith("Counterexample"))
-      }
+    val cmd = s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2))) + 1}}!canStillTake'"
+    val output = Seq("bash", "-c", cmd).!!
+    FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
+    return (output.toString.startsWith("Counterexample"))
+  }
 
   def scalaDirectlySubsumes(
     e1: IEFSM,
@@ -339,71 +339,63 @@ object Dirties {
     case Value.Str(_) => "Str"
   }
 
-  def getTypes(r: Map[Nat.nat,Option[Value.value]]): List[String] = {
+  def getTypes(r: Map[Nat.nat, Option[Value.value]]): List[String] = {
     val keys = r.keySet.toList.map(x => Code_Numeral.integer_of_nat(x))
     keys.sorted
     keys.map(key => r(Nat.Nata(key)) match {
-        case Some(Value.Numa(_)) => "Int"
-        case Some(Value.Str(_)) => "String"
-        case None => throw new IllegalArgumentException("Got none from a map")
-      }
-    )
+      case Some(Value.Numa(_)) => "Int"
+      case Some(Value.Str(_)) => "String"
+      case None => throw new IllegalArgumentException("Got none from a map")
+    })
   }
 
-  def sortedValues(r: Map[Nat.nat,Option[Value.value]]): List[String] = {
+  def sortedValues(r: Map[Nat.nat, Option[Value.value]]): List[String] = {
     val keys = r.keySet.toList.map(x => Code_Numeral.integer_of_nat(x))
     keys.sorted
     keys.map(key => r(Nat.Nata(key)) match {
-        case Some(Value.Numa(Int.int_of_integer(n))) => n.toString
-        case Some(Value.Str(s)) => "\"" + s + "\""
-        case None => throw new IllegalArgumentException("Got none from a map")
-      }
-    )
+      case Some(Value.Numa(Int.int_of_integer(n))) => n.toString
+      case Some(Value.Str(s)) => "\"" + s + "\""
+      case None => throw new IllegalArgumentException("Got none from a map")
+    })
   }
 
+  //TODO: Need to do this in GP
   def findDistinguishingGuard(
-    g1: (List[(List[Value.value], Map[Nat.nat,Option[Value.value]])]),
-    g2: (List[(List[Value.value], Map[Nat.nat,Option[Value.value]])])
-  ): Option[(GExp.gexp, GExp.gexp)] = {
+    g1: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])]),
+    g2: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])])): Option[(GExp.gexp, GExp.gexp)] = {
     val inputTypes = getTypes(g1(0)._1)
     val registerTypes = getTypes(g1(0)._2)
 
-    var z3String = s"(declare-fun g1 (${(inputTypes++registerTypes).map(t => s"(${t})").mkString(" ")}) bool)\n"
-    z3String = z3String + s"(declare-fun g2 (${(inputTypes++registerTypes).map(t => s"(${t})").mkString(" ")}) bool)\n"
+    var z3String = s"(declare-fun g1 (${(inputTypes ++ registerTypes).map(t => s"(${t})").mkString(" ")}) bool)\n"
+    z3String = z3String + s"(declare-fun g2 (${(inputTypes ++ registerTypes).map(t => s"(${t})").mkString(" ")}) bool)\n"
 
     for ((inputs, registers) <- g1) {
       z3String = z3String + s"""(assert
-        (and
-          (g1 ${PrettyPrinter.inputsToString(inputs, " ")} ${sortedValues(registers).mkString(" ")})
-          (! (g2 ${PrettyPrinter.inputsToString(inputs, " ")} ${sortedValues(registers).mkString(" ")}))
-        )
-      )\n"""
+            (and
+              (g1 ${PrettyPrinter.inputsToString(inputs, " ")} ${sortedValues(registers).mkString(" ")})
+              (! (g2 ${PrettyPrinter.inputsToString(inputs, " ")} ${sortedValues(registers).mkString(" ")}))
+            )
+          )\n"""
     }
 
     for ((inputs, registers) <- g2) {
       z3String = z3String + s"""(assert
-        (and
-          (g2 ${PrettyPrinter.inputsToString(inputs, " ")} ${sortedValues(registers).mkString(" ")})
-          (! (g1 ${PrettyPrinter.inputsToString(inputs, " ")} ${sortedValues(registers).mkString(" ")}))
-        )
-      )\n"""    }
+            (and
+              (g2 ${PrettyPrinter.inputsToString(inputs, " ")} ${sortedValues(registers).mkString(" ")})
+              (! (g1 ${PrettyPrinter.inputsToString(inputs, " ")} ${sortedValues(registers).mkString(" ")}))
+            )
+          )\n"""
+    }
 
     return Some((
       GExp.Gt(AExp.V(VName.R(Nat.Nata(2))), AExp.L(Value.Numa(Int.int_of_integer(99)))),
-      GExp.Gt(AExp.L(Value.Numa(Int.int_of_integer(100))), AExp.V(VName.R(Nat.Nata(2))))
-    ))
+      GExp.Gt(AExp.L(Value.Numa(Int.int_of_integer(100))), AExp.V(VName.R(Nat.Nata(2))))))
   }
 
   def getUpdate(
     r: Nat.nat,
     values: List[Value.value],
-    train: List[(List[Value.value], (Map[Nat.nat,Option[Value.value]], Map[Nat.nat,Option[Value.value]]))]
-  ): Option[AExp.aexp] = {
-
-    // if (train.exists(ip => ip._1.exists(v => v == Value.Numa(Int.int_of_integer(50)))))
-    //   return Some(
-    //     AExp.Plus(AExp.V(VName.R(Nat.Nata(2))), AExp.V(VName.I(Nat.Nata(0))))
-    //   )
+    train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Map[Nat.nat, Option[Value.value]]))]): Option[AExp.aexp] = {
 
     val maxReg = TypeConversion.toInt(r)
 
@@ -414,7 +406,7 @@ object Dirties {
     val gpGenerator: Generator = new Generator(new java.util.Random(0))
 
     val intNonTerms = List[NonTerminal[_]](new AddIntegersOperator(), new SubtractIntegersOperator())
-    gpGenerator.setIntegerFunctions(intNonTerms.asJava);
+    gpGenerator.setIntegerFunctions(intNonTerms);
 
     var intTerms = List[VariableTerminal[_]](new IntegerVariableAssignmentTerminal(0))
 
@@ -422,8 +414,8 @@ object Dirties {
     var stringTerms = List[VariableTerminal[_]]()
 
     for (v <- values) v match {
-      case Value.Numa(n) => intTerms = (new IntegerVariableAssignmentTerminal(TypeConversion.toInteger(n)))::intTerms
-      case Value.Str(s) => stringTerms = (new StringVariableAssignmentTerminal(s))::stringTerms
+      case Value.Numa(n) => intTerms = (new IntegerVariableAssignmentTerminal(TypeConversion.toInteger(n))) :: intTerms
+      case Value.Str(s) => stringTerms = (new StringVariableAssignmentTerminal(s)) :: stringTerms
     }
 
     var stringVarNames = List[String]()
@@ -432,78 +424,71 @@ object Dirties {
     val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
 
     for (t <- train) t match {
-        case (inputs, (anteriorRegs, posteriorRegs)) => {
+      case (inputs, (anteriorRegs, posteriorRegs)) => {
         var scenario = List[VariableAssignment[_]]()
         for ((ip, ix) <- inputs.zipWithIndex) ip match {
           case Value.Numa(n) => {
-            intVarNames = s"i${ix}"::intVarNames
-            scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toInteger(n)))::scenario
+            intVarNames = s"i${ix}" :: intVarNames
+            scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toInteger(n))) :: scenario
           }
           case Value.Str(s) => {
-            stringVarNames = s"i${ix}"::stringVarNames
-            scenario = (new StringVariableAssignment(s"i${ix}", s))::scenario
+            stringVarNames = s"i${ix}" :: stringVarNames
+            scenario = (new StringVariableAssignment(s"i${ix}", s)) :: scenario
           }
         }
         posteriorRegs(r) match {
           case None => ()
-          case Some(Value.Numa(n)) => trainingSet.put(scenario.asJava, new IntegerVariableAssignment("o1", TypeConversion.toInteger(n)))
-          case Some(Value.Str(s)) => trainingSet.put(scenario.asJava, new StringVariableAssignment("o1", s))
+          case Some(Value.Numa(n)) => trainingSet.put(scenario, new IntegerVariableAssignment("o1", TypeConversion.toInteger(n)))
+          case Some(Value.Str(s)) => trainingSet.put(scenario, new StringVariableAssignment("o1", s))
         }
       }
     }
 
     for (intVarName <- intVarNames.distinct) {
-      intTerms = (new IntegerVariableAssignmentTerminal(intVarName))::intTerms
+      intTerms = (new IntegerVariableAssignmentTerminal(intVarName)) :: intTerms
     }
 
     for (stringVarName <- stringVarNames.distinct) {
-      stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false))::stringTerms
+      stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false)) :: stringTerms
     }
 
-    gpGenerator.setIntegerTerminals(intTerms.asJava)
-    gpGenerator.setStringTerminals(stringTerms.asJava)
+    gpGenerator.setIntegerTerminals(intTerms)
+    gpGenerator.setStringTerminals(stringTerms)
 
-    val gp = new SingleOutputGP(gpGenerator, trainingSet, new GPConfiguration(20,0.9f,0.01f,7,7))
+    val gp = new SingleOutputGP(gpGenerator, trainingSet, new GPConfiguration(20, 0.9f, 0.01f, 7, 7))
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
-    println("Update training set: "+trainingSet)
-    println("  Int terminals: "+intTerms)
-    println("  Best function is: "+best.simp())
+    println("Update training set: " + trainingSet)
+    println("  Int terminals: " + intTerms)
+    println("  Best function is: " + best.simp())
 
     val ctx = new z3.Context()
     val aexp = TypeConversion.fromZ3(best.toZ3(ctx))
     ctx.close
     if (best.isCorrect(trainingSet)) {
       return Some(aexp)
-    }
-    else {
+    } else {
       return None
     }
-    }
+  }
 
-  var outputFunctionMap = Map[List[(List[Value.value], Value.value)], (AExp.aexp, Map[VName.vname,String])]()
+  def getTypes(best: Node[VariableAssignment[_]]): Map[VName.vname, String] = {
+    var types = Map[VName.vname, String]()
+
+    for (v <- asScalaSet(best.varsInTree)) {
+      types = types + (TypeConversion.vnameFromString(v.getName) -> v.typeString)
+    }
+    return types
+  }
 
   def getFunction(
     r: Nat.nat,
     values: List[Value.value],
     i: List[List[Value.value]],
-    o: List[Value.value]
-  ): Option[(AExp.aexp, Map[VName.vname,String])] = {
+    o: List[Value.value]): Option[(AExp.aexp, Map[VName.vname, String])] = {
 
     val ioPairs = (i zip o).distinct
-
-    if (outputFunctionMap.isDefinedAt(ioPairs)) {
-      println("MEMOISATION!")
-      return Some(outputFunctionMap(ioPairs))
-    }
-
-    // if (i.exists(ip => ip.exists(v => v == Value.Numa(Int.int_of_integer(50)))))
-    //   return Some(
-    //     AExp.Plus(AExp.V(VName.R(Nat.Nata(2))), AExp.V(VName.I(Nat.Nata(0)))),
-    //     Map().withDefaultValue(":I")
-    //   )
-
     val maxReg = TypeConversion.toInt(r)
 
     BasicConfigurator.resetConfiguration();
@@ -513,7 +498,7 @@ object Dirties {
     val gpGenerator: Generator = new Generator(new java.util.Random(0))
 
     val intNonTerms = List[NonTerminal[_]](new AddIntegersOperator(), new SubtractIntegersOperator())
-    gpGenerator.setIntegerFunctions(intNonTerms.asJava);
+    gpGenerator.setIntegerFunctions(intNonTerms);
 
     var intTerms = List[VariableTerminal[_]](new IntegerVariableAssignmentTerminal(0))
 
@@ -521,84 +506,72 @@ object Dirties {
     var stringTerms = List[VariableTerminal[_]]()
 
     for (v <- values) v match {
-      case Value.Numa(n) => intTerms = (new IntegerVariableAssignmentTerminal(TypeConversion.toInteger(n)))::intTerms
-      case Value.Str(s) => stringTerms = (new StringVariableAssignmentTerminal(s))::stringTerms
+      case Value.Numa(n) => intTerms = (new IntegerVariableAssignmentTerminal(TypeConversion.toInteger(n))) :: intTerms
+      case Value.Str(s) => stringTerms = (new StringVariableAssignmentTerminal(s)) :: stringTerms
     }
 
-    var stringVarNames = List[String](s"r${maxReg+1}")
-    var intVarNames = List[String](s"r${maxReg+2}")
+    var stringVarNames = List[String](s"r${maxReg + 1}")
+    var intVarNames = List[String](s"r${maxReg + 2}")
 
     val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
     for ((inputs, output) <- ioPairs) {
       var scenario = List[VariableAssignment[_]]()
       for ((ip, ix) <- inputs.zipWithIndex) ip match {
         case Value.Numa(n) => {
-          intVarNames = s"i${ix}"::intVarNames
-          scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toInteger(n)))::scenario
+          intVarNames = s"i${ix}" :: intVarNames
+          scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toInteger(n))) :: scenario
         }
         case Value.Str(s) => {
-          stringVarNames = s"i${ix}"::stringVarNames
-          scenario = (new StringVariableAssignment(s"i${ix}", s))::scenario
+          stringVarNames = s"i${ix}" :: stringVarNames
+          scenario = (new StringVariableAssignment(s"i${ix}", s)) :: scenario
         }
       }
       output match {
-        case Value.Numa(n) => trainingSet.put(scenario.asJava, new IntegerVariableAssignment("o1", TypeConversion.toInteger(n)))
-        case Value.Str(s) => trainingSet.put(scenario.asJava, new StringVariableAssignment("o1", s))
+        case Value.Numa(n) => trainingSet.put(scenario, new IntegerVariableAssignment("o1", TypeConversion.toInteger(n)))
+        case Value.Str(s) => trainingSet.put(scenario, new StringVariableAssignment("o1", s))
       }
     }
 
     for (intVarName <- intVarNames.distinct) {
-      intTerms = (new IntegerVariableAssignmentTerminal(intVarName))::intTerms
+      intTerms = (new IntegerVariableAssignmentTerminal(intVarName)) :: intTerms
     }
 
     for (stringVarName <- stringVarNames.distinct) {
-      stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false))::stringTerms
+      stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false)) :: stringTerms
     }
 
-    gpGenerator.setIntegerTerminals(intTerms.asJava)
-    gpGenerator.setStringTerminals(stringTerms.asJava)
+    gpGenerator.setIntegerTerminals(intTerms)
+    gpGenerator.setStringTerminals(stringTerms)
 
-    val gp = new SingleOutputGP(gpGenerator, trainingSet, new GPConfiguration(20,0.9f,0.01f,7,7))
+    val gp = new SingleOutputGP(gpGenerator, trainingSet, new GPConfiguration(20, 0.9f, 0.01f, 7, 7))
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
-    println("Output training set: "+trainingSet)
-    println("  Int terminals: "+intTerms)
-    println("  Best function is: "+best)
+    println("Output training set: " + trainingSet)
+    println("  Int terminals: " + intTerms)
+    println("  Best function is: " + best)
 
-    var types = Map[VName.vname, String]()
-
-    for (v <- asScalaSet(best.varsInTree)) {
-      types = types + (TypeConversion.vnameFromString(v.getName) -> v.typeString)
-    }
-
-    val ctx = new z3.Context()
-    val aexp = TypeConversion.fromZ3(best.toZ3(ctx))
-    ctx.close
     if (best.isCorrect(trainingSet)) {
       println("Function is correct")
-      outputFunctionMap = outputFunctionMap + (ioPairs -> (aexp, types))
-      return Some(aexp, types)
-    }
-    else {
+      return Some((TypeConversion.toAExp(best), getTypes(best)))
+    } else {
       println("Function is not correct")
       return None
     }
   }
 
   def getRegs(
-    types: Map[VName.vname,String],
+    types: Map[VName.vname, String],
     i: List[Value.value],
     f: AExp.aexp,
-    v: Value.value
-  ): Map[Nat.nat, Option[Value.value]] = {
-    println("\noutputFun: " + PrettyPrinter.aexpToString(f, true) + " = " + PrettyPrinter.valueToString(v))
+    v: Value.value): Map[Nat.nat, Option[Value.value]] = {
     val expVars: List[VName.vname] = Lista.sorted_list_of_set(AExp.enumerate_vars(f))
-    println("  expVars: " + expVars)
     val definedVars = (0 to i.length).map(i => VName.I(Nat.Nata(i)))
-    val undefinedVars = expVars.filter(v => ! definedVars.contains(v))
+    val undefinedVars = expVars.filter(v => !definedVars.contains(v))
 
-    println("  undefinedVars: " + undefinedVars)
+    // println("\noutputFun: " + PrettyPrinter.aexpToString(f, true) + " = " + PrettyPrinter.valueToString(v))
+    // println("  expVars: " + expVars)
+    // println("  undefinedVars: " + undefinedVars)
 
     var inputs: String = ""
     for (v <- expVars) {
@@ -608,19 +581,19 @@ object Dirties {
     for (v <- undefinedVars) {
       z3String += f"(declare-const ${PrettyPrinter.vnameToString(v)} ${TypeConversion.expandTypeString(types(v))})\n"
     }
-    val args = expVars.zipWithIndex.map{case (v:VName.vname, k:Int) =>
-      if (definedVars.contains(v)) {
-        PrettyPrinter.valueToString(i(k))
-      } else {
-        PrettyPrinter.vnameToString(v)
-      }
+    val args = expVars.zipWithIndex.map {
+      case (v: VName.vname, k: Int) =>
+        if (definedVars.contains(v)) {
+          PrettyPrinter.valueToString(i(k))
+        } else {
+          PrettyPrinter.vnameToString(v)
+        }
     }
 
     if (args.length == 0) {
       val assertion: String = "(assert (= " + PrettyPrinter.valueToString(v) + " f))"
       z3String += assertion
-    }
-    else {
+    } else {
       val assertion: String = "(assert (= " + PrettyPrinter.valueToString(v) + " (f " + args.mkString(" ") + ")))"
       z3String += assertion
     }

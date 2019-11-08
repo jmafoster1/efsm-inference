@@ -368,7 +368,7 @@ definition lift_output_functions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> lab
   ) (sorted_list_of_fset oPTA) merged"
 
 definition historical_infer_output_update_functions :: "log \<Rightarrow> update_modifier" where
-  "historical_infer_output_update_functions log t1ID t2ID s new _ old _ = (
+  "historical_infer_output_update_functions log t1ID t2ID s new _ old np = (
     let
       i_log = enumerate 0 (map (enumerate 0) log);
       t1 = get_by_ids new t1ID;
@@ -394,7 +394,7 @@ definition historical_infer_output_update_functions :: "log \<Rightarrow> update
               lifted = lift_output_functions lit new (Label t1) (Arity t1);
               updated = make_distinct (add_groupwise_updates group_updates lifted)
             in
-            Some updated
+              resolve_nondeterminism [] (sorted_list_of_fset (np updated)) old updated null_modifier (\<lambda>a. True) np
           )
       )
   )"

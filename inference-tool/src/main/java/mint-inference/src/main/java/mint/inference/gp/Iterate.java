@@ -73,14 +73,12 @@ public class Iterate extends AbstractIterator {
 		int count = 0;
 		// TODO can end up in an infinite loop
 		while (count < number) {
-			System.out.println(pop);
 			Set<Integer> avoid = new HashSet<Integer>();
 			int parentA = select(avoid, number);
 			if (parentA < 0)
 				break; // no more crossovers possible.
 			avoid.add(parentA);
 			boolean completedParentA = false;
-			System.out.println("parentA: "+parentA);
 			while (!completedParentA) {
 				int parentB = select(avoid, number);
 				if (parentB < 0) {
@@ -106,7 +104,6 @@ public class Iterate extends AbstractIterator {
 					crossOverA = selectCrossOverPoint(aCopy, null);
 					crossOverB = selectCrossOverPoint(bCopy, crossOverA);
 					if (crossOverB == null) {
-						System.out.println("Avoiding: "+parentB);
 						avoid.add(parentB);
 						continue;
 					}
@@ -123,7 +120,6 @@ public class Iterate extends AbstractIterator {
 				}
 				count++;
 				offSpring.add(aCopy.simp());
-				System.out.println("completedParentA");
 				completedParentA = true;
 			}
 		}
