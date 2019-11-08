@@ -27,7 +27,7 @@ public class StringSRPlayground {
         Generator gpGenerator = new Generator(new Random(0));
         
         List<VariableTerminal<?>> stringTerms = new ArrayList<VariableTerminal<?>>();
-        stringTerms.add(new StringVariableAssignmentTerminal(new StringVariableAssignment("r1"), false));
+//        stringTerms.add(new StringVariableAssignmentTerminal(new StringVariableAssignment("r1"), false));
         stringTerms.add(new StringVariableAssignmentTerminal("coke"));
         stringTerms.add(new StringVariableAssignmentTerminal("pepsi"));
         stringTerms.add(new StringVariableAssignmentTerminal("beer"));

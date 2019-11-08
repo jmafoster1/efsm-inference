@@ -7,8 +7,10 @@ import mint.inference.gp.tree.nonterminals.lists.RootListNonTerminal;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * If a GP infers a list of different types of elements, crude conventional
@@ -70,11 +72,10 @@ public class ListIterate extends Iterate {
 			int count = 0;
 			// TODO can end up in an infinite loop
 			while (count < number) {
-
-				int parentA = select(new ArrayList(), number);
+				Set<Integer> avoid = new HashSet<Integer>();
+				int parentA = select(avoid, number);
 				if (parentA < 0)
 					break; // no more crossovers possible.
-				ArrayList<Integer> avoid = new ArrayList<Integer>();
 				avoid.add(parentA);
 				boolean completedParentA = false;
 				while (!completedParentA) {

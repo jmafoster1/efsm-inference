@@ -482,12 +482,21 @@ object Dirties {
     }
     }
 
+  var outputFunctionMap = Map[List[(List[Value.value], Value.value)], (AExp.aexp, Map[VName.vname,String])]()
+
   def getFunction(
     r: Nat.nat,
     values: List[Value.value],
     i: List[List[Value.value]],
     o: List[Value.value]
   ): Option[(AExp.aexp, Map[VName.vname,String])] = {
+
+    val ioPairs = (i zip o).distinct
+
+    if (outputFunctionMap.isDefinedAt(ioPairs)) {
+      println("MEMOISATION!")
+      return Some(outputFunctionMap(ioPairs))
+    }
 
     // if (i.exists(ip => ip.exists(v => v == Value.Numa(Int.int_of_integer(50)))))
     //   return Some(
@@ -520,7 +529,7 @@ object Dirties {
     var intVarNames = List[String](s"r${maxReg+2}")
 
     val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
-    for ((inputs, output) <- (i zip o).distinct) {
+    for ((inputs, output) <- ioPairs) {
       var scenario = List[VariableAssignment[_]]()
       for ((ip, ix) <- inputs.zipWithIndex) ip match {
         case Value.Numa(n) => {
@@ -568,6 +577,7 @@ object Dirties {
     ctx.close
     if (best.isCorrect(trainingSet)) {
       println("Function is correct")
+      outputFunctionMap = outputFunctionMap + (ioPairs -> (aexp, types))
       return Some(aexp, types)
     }
     else {

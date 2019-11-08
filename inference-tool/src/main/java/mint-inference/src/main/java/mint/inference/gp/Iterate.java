@@ -57,7 +57,7 @@ public class Iterate extends AbstractIterator {
 		nt.removeAll(toRemove);
 	}
 
-	protected int select(List<Integer> avoid, int limit) {
+	protected int select(Set<Integer> avoid, int limit) {
 		List<Integer> possibilities = new ArrayList<Integer>();
 		for (int i = 0; i < limit; i++) {
 			possibilities.add(i);
@@ -73,26 +73,32 @@ public class Iterate extends AbstractIterator {
 		int count = 0;
 		// TODO can end up in an infinite loop
 		while (count < number) {
-			int parentA = select(new ArrayList<Integer>(), number);
+			System.out.println(pop);
+			Set<Integer> avoid = new HashSet<Integer>();
+			int parentA = select(avoid, number);
 			if (parentA < 0)
 				break; // no more crossovers possible.
-			ArrayList<Integer> avoid = new ArrayList<Integer>();
 			avoid.add(parentA);
 			boolean completedParentA = false;
+			System.out.println("parentA: "+parentA);
 			while (!completedParentA) {
 				int parentB = select(avoid, number);
 				if (parentB < 0) {
+					// No parent b so cannot do crossover
+					completedParentA = true;
+					count++;
 					break;
 				}
-				Node<?> parentBNode = (Node<?>) pop.get(parentB);
+				
 				Node<?> aCopy = (Node<?>) pop.get(parentA).copy();
+				Node<?> bCopy = (Node<?>) pop.get(parentB).copy();
 
-				if (aCopy.getType().equals("string")) {
-					return;
-//					offSpring.add(aCopy.simp());
-//					break; // have no parents, so cannot do crossover.
+				// Neither parent has child nodes so cannot do crossover
+				if (aCopy.getChildren().isEmpty() && bCopy.getChildren().isEmpty()) {
+					completedParentA = true;
+					count++;
+					break;
 				}
-				Node<?> bCopy = parentBNode.copy();
 
 				Node<?> crossOverA = null;
 				Node<?> crossOverB = null;
@@ -100,6 +106,7 @@ public class Iterate extends AbstractIterator {
 					crossOverA = selectCrossOverPoint(aCopy, null);
 					crossOverB = selectCrossOverPoint(bCopy, crossOverA);
 					if (crossOverB == null) {
+						System.out.println("Avoiding: "+parentB);
 						avoid.add(parentB);
 						continue;
 					}
@@ -107,14 +114,16 @@ public class Iterate extends AbstractIterator {
 					crossOverA.swapWith(crossOverB);
 
 				} catch (Exception e) {
+					System.out.println("Caught exception");
 					if (crossOverA == null) {
 						LOGGER.debug("null crossover for children of " + aCopy);
 					}
 					LOGGER.debug(crossOverA + ", " + crossOverB);
 					continue;
 				}
-				count = count + 1;
+				count++;
 				offSpring.add(aCopy.simp());
+				System.out.println("completedParentA");
 				completedParentA = true;
 			}
 		}

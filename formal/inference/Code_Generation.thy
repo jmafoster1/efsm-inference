@@ -486,7 +486,7 @@ function infer_with_log :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarr
     case inference_step e (rev (sorted_list_of_fset (k_score k e r))) m check np of
       None \<Rightarrow> e |
       Some new \<Rightarrow> let 
-        temp = iEFSM2dot e stepNo;
+        temp = iEFSM2dot new stepNo;
         temp2 = logStates (size (S new)) (size (S e)) in
         if (S new) |\<subset>| (S e) then
           infer_with_log (stepNo + 1) k new r m check np
