@@ -1,0 +1,3 @@
+[submodule "inference-tool/src/main/java/mintframework"]
+	path = inference-tool/src/main/java/mintframework
+	url = git@github.com:jmafoster1/mintframework.git
