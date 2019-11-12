@@ -56,6 +56,10 @@ lazy val root = (project in file("."))
     libraryDependencies += "nz.ac.waikato.cms.weka" % "weka-dev" % "3.7.13",
     libraryDependencies += "org.apache.commons" % "commons-math3" % "3.5",
     libraryDependencies += "org.apache.commons" % "commons-collections4" % "4.1",
+    libraryDependencies += "commons-cli" % "commons-cli" % "1.2",
+    libraryDependencies += "com.googlecode.json-simple" % "json-simple" % "1.1",
+    libraryDependencies += "org.biojava" % "biojava-structure" % "5.0.2",
+    libraryDependencies += "org.jgrapht" % "jgrapht-core" % "1.0.1",
 
     cleanSalfiles := {
       cleanDirectory("salfiles")
