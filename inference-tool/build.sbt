@@ -30,6 +30,8 @@ assemblyMergeStrategy in assembly := {
  case x => MergeStrategy.first
 }
 
+mainClass in assembly := Some("FrontEnd")
+
 def mkdir(name: String) = {
   val dir = new File(name)
   if (!dir.isDirectory || !dir.exists) {
@@ -58,8 +60,8 @@ lazy val root = (project in file("."))
     libraryDependencies += "org.apache.commons" % "commons-collections4" % "4.1",
     libraryDependencies += "commons-cli" % "commons-cli" % "1.2",
     libraryDependencies += "com.googlecode.json-simple" % "json-simple" % "1.1",
-    libraryDependencies += "org.biojava" % "biojava-structure" % "5.0.2",
-    libraryDependencies += "org.jgrapht" % "jgrapht-core" % "1.0.1",
+    libraryDependencies += "org.biojava" % "biojava-structure" % "5.3.0",
+    libraryDependencies += "org.jgrapht" % "jgrapht-core" % "1.1.0",
 
     cleanSalfiles := {
       cleanDirectory("salfiles")

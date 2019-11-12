@@ -21,7 +21,7 @@ import mint.inference.gp.tree.terminals.VariableTerminal;
 import mint.tracedata.types.IntegerVariableAssignment;
 import mint.tracedata.types.StringVariableAssignment;
 import mint.tracedata.types.VariableAssignment;
-import mint.inference.gp.SingleOutputGP;
+import mint.inference.gp.LatentVariableGP;
 import mint.inference.evo.GPConfiguration;
 
 import org.apache.log4j.BasicConfigurator;
@@ -455,7 +455,7 @@ false)
     gpGenerator.setIntegerTerminals(intTerms)
     gpGenerator.setStringTerminals(stringTerms)
 
-    val gp = new SingleOutputGP(gpGenerator, trainingSet, new GPConfiguration(20, 0.9f, 0.01f, 7, 7))
+    val gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(20, 0.9f, 0.01f, 7, 7))
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
@@ -466,7 +466,7 @@ false)
     val ctx = new z3.Context()
     val aexp = TypeConversion.fromZ3(best.toZ3(ctx))
     ctx.close
-    if (best.isCorrect(trainingSet)) {
+    if (gp.isCorrect(best)) {
       return Some(aexp)
     } else {
       return None
@@ -543,7 +543,7 @@ false)
     gpGenerator.setIntegerTerminals(intTerms)
     gpGenerator.setStringTerminals(stringTerms)
 
-    val gp = new SingleOutputGP(gpGenerator, trainingSet, new GPConfiguration(20, 0.9f, 0.01f, 7, 7))
+    val gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(20, 0.9f, 0.01f, 7, 7))
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
@@ -551,7 +551,7 @@ false)
     println("  Int terminals: " + intTerms)
     println("  Best function is: " + best)
 
-    if (best.isCorrect(trainingSet)) {
+    if (gp.isCorrect(best)) {
       println("Function is correct")
       return Some((TypeConversion.toAExp(best), getTypes(best)))
     } else {
