@@ -1253,6 +1253,20 @@ def equal_gexpa(x0: gexp, x1: gexp): Boolean = (x0, x1) match {
   case (Bc(x1), Bc(y1)) => x1 == y1
 }
 
+def gNot(g: gexp): gexp = Nor(g, g)
+
+def Lt(a: AExp.aexp, b: AExp.aexp): gexp = Gt(b, a)
+
+def Ge(v: AExp.aexp, va: AExp.aexp): gexp = gNot(Lt(v, va))
+
+def Le(v: AExp.aexp, va: AExp.aexp): gexp = gNot(Gt(v, va))
+
+def Ne(v: AExp.aexp, va: AExp.aexp): gexp = gNot(Eq(v, va))
+
+def gOr(v: gexp, va: gexp): gexp = Nor(Nor(v, va), Nor(v, va))
+
+def gAnd(v: gexp, va: gexp): gexp = Nor(Nor(v, v), Nor(va, va))
+
 def gval(x0: gexp, uu: VName.vname => Option[Value.value]): Trilean.trilean =
   (x0, uu) match {
   case (Bc(true), uu) => Trilean.truea()
@@ -1276,8 +1290,8 @@ def fold_In(uu: VName.vname, x1: List[Value.value]): gexp = (uu, x1) match {
   case (v, l :: va :: vb) =>
     Lista.fold[Value.value,
                 gexp](Fun.comp[gexp, gexp => gexp,
-                                Value.value](((vc: gexp) => (vaa: gexp) =>
-       Nor(Nor(vc, vaa), Nor(vc, vaa))),
+                                Value.value](((a: gexp) => (b: gexp) =>
+       gOr(a, b)),
       ((x: Value.value) => Eq(AExp.V(v), AExp.L(x)))),
                        va :: vb, Eq(AExp.V(v), AExp.L(l)))
 }
@@ -1288,7 +1302,7 @@ def enumerate_gexp_regs(x0: gexp): Set.set[Nat.nat] = x0 match {
   case Eq(v, va) =>
     Set.sup_set[Nat.nat](AExp.enumerate_aexp_regs(v),
                           AExp.enumerate_aexp_regs(va))
-  case Gt(va, v) =>
+  case Gt(v, va) =>
     Set.sup_set[Nat.nat](AExp.enumerate_aexp_regs(v),
                           AExp.enumerate_aexp_regs(va))
   case In(v, va) => AExp.enumerate_aexp_regs(AExp.V(v))
@@ -1309,7 +1323,7 @@ def enumerate_gexp_inputs(x0: gexp): Set.set[Nat.nat] = x0 match {
   case Eq(v, va) =>
     Set.sup_set[Nat.nat](AExp.enumerate_aexp_inputs(v),
                           AExp.enumerate_aexp_inputs(va))
-  case Gt(va, v) =>
+  case Gt(v, va) =>
     Set.sup_set[Nat.nat](AExp.enumerate_aexp_inputs(v),
                           AExp.enumerate_aexp_inputs(va))
   case In(v, va) => AExp.enumerate_aexp_inputs(AExp.V(v))
@@ -1376,8 +1390,7 @@ def restricted_once(v: VName.vname, g: List[gexp]): Boolean =
 
 def satisfiable_list(l: List[gexp]): Boolean =
   Dirties.satisfiable(Lista.fold[gexp,
-                                  gexp](((v: gexp) => (va: gexp) =>
-  Nor(Nor(v, v), Nor(va, va))),
+                                  gexp](((a: gexp) => (b: gexp) => gAnd(a, b)),
  l, Bc(true)))
 
 def enumerate_gexp_ints(x0: gexp): Set.set[Int.int] = x0 match {
@@ -3659,8 +3672,7 @@ def make_pta(x0: List[List[(String, (List[Value.value], List[Value.value]))]],
 
 def fold_into(n: Nat.nat, x1: List[GExp.gexp]): List[GExp.gexp] = (n, x1) match
   {
-  case (n, Nil) =>
-    List(GExp.Nor(GExp.Null(AExp.V(VName.I(n))), GExp.Null(AExp.V(VName.I(n)))))
+  case (n, Nil) => List(GExp.gNot(GExp.Null(AExp.V(VName.I(n)))))
   case (n, GExp.Eq(AExp.V(VName.I(i)), AExp.L(l)) :: t) =>
     (if (Nat.equal_nata(i, n)) GExp.Eq(AExp.V(VName.I(i)), AExp.L(l)) :: t
       else GExp.Eq(AExp.V(VName.I(i)), AExp.L(l)) :: fold_into(n, t))
@@ -3770,7 +3782,7 @@ def literal_args(x0: GExp.gexp): Boolean = x0 match {
   case GExp.Eq(uy, AExp.V(v)) => false
   case GExp.Eq(uy, AExp.Plus(v, va)) => false
   case GExp.Eq(uy, AExp.Minus(v, va)) => false
-  case GExp.Gt(v, va) => false
+  case GExp.Gt(va, v) => false
   case GExp.Null(v) => false
   case GExp.Nor(v, va) => (literal_args(v)) && (literal_args(va))
 }
@@ -4669,8 +4681,7 @@ taa)) || ((Lista.equal_lista[AExp.aexp](Transition.Outputs[Unit](ta),
 object Code_Generation {
 
 def And: GExp.gexp => GExp.gexp => GExp.gexp =
-  ((v: GExp.gexp) => (va: GExp.gexp) =>
-    GExp.Nor(GExp.Nor(v, v), GExp.Nor(va, va)))
+  ((a: GExp.gexp) => (b: GExp.gexp) => GExp.gAnd(a, b))
 
 def mutex(uu: GExp.gexp, uv: GExp.gexp): Boolean = (uu, uv) match {
   case (GExp.Eq(AExp.V(va), AExp.L(la)), GExp.Eq(AExp.V(v), AExp.L(l))) =>
@@ -4731,12 +4742,10 @@ def choice_cases(t1: Transition.transition_ext[Unit],
     else (if (Lista.equal_lista[GExp.gexp](Transition.Guard[Unit](t1),
     Transition.Guard[Unit](t2)))
            Dirties.satisfiable(Lista.foldr[GExp.gexp,
-    GExp.gexp](((v: GExp.gexp) => (va: GExp.gexp) =>
-                 GExp.Nor(GExp.Nor(v, v), GExp.Nor(va, va))),
+    GExp.gexp](((a: GExp.gexp) => (b: GExp.gexp) => GExp.gAnd(a, b)),
                 Transition.Guard[Unit](t1), GExp.Bc(true)))
            else Dirties.satisfiable(Lista.foldr[GExp.gexp,
-         GExp.gexp](((v: GExp.gexp) => (va: GExp.gexp) =>
-                      GExp.Nor(GExp.Nor(v, v), GExp.Nor(va, va))),
+         GExp.gexp](((a: GExp.gexp) => (b: GExp.gexp) => GExp.gAnd(a, b)),
                      Transition.Guard[Unit](t1) ++ Transition.Guard[Unit](t2),
                      GExp.Bc(true)))))
 
@@ -6939,7 +6948,7 @@ def gexp2dot(x0: GExp.gexp): String = x0 match {
   case GExp.Bc(true) => "True"
   case GExp.Bc(false) => "False"
   case GExp.Eq(a1, a2) => aexp2dot(a1) + " = " + aexp2dot(a2)
-  case GExp.Gt(a2, a1) => aexp2dot(a1) + " &lt; " + aexp2dot(a2)
+  case GExp.Gt(a1, a2) => aexp2dot(a1) + " &gt; " + aexp2dot(a2)
   case GExp.In(v, l) =>
     vname2dot(v) + "&isin;{" +
       (Lista.map[Value.value,

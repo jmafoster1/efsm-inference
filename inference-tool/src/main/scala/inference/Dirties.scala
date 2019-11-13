@@ -15,13 +15,21 @@ import mint.inference.gp.tree.Node;
 import mint.inference.gp.tree.NonTerminal;
 import mint.inference.gp.tree.nonterminals.integers.AddIntegersOperator;
 import mint.inference.gp.tree.nonterminals.integers.SubtractIntegersOperator;
+import mint.inference.gp.tree.nonterminals.booleans.LTBooleanIntegersOperator;
+import mint.inference.gp.tree.nonterminals.booleans.GTBooleanIntegersOperator;
+import mint.inference.gp.tree.nonterminals.booleans.AndBooleanOperator;
+import mint.inference.gp.tree.nonterminals.booleans.OrBooleanOperator;
+import mint.inference.gp.tree.nonterminals.booleans.NotBooleanOperator;
+import mint.inference.gp.tree.terminals.BooleanVariableAssignmentTerminal;
 import mint.inference.gp.tree.terminals.IntegerVariableAssignmentTerminal;
 import mint.inference.gp.tree.terminals.StringVariableAssignmentTerminal;
 import mint.inference.gp.tree.terminals.VariableTerminal;
+import mint.tracedata.types.BooleanVariableAssignment;
 import mint.tracedata.types.IntegerVariableAssignment;
 import mint.tracedata.types.StringVariableAssignment;
 import mint.tracedata.types.VariableAssignment;
 import mint.inference.gp.LatentVariableGP;
+import mint.inference.gp.SingleOutputGP;
 import mint.inference.evo.GPConfiguration;
 
 import org.apache.log4j.BasicConfigurator;
@@ -359,38 +367,126 @@ false)
     })
   }
 
-  //TODO: Need to do this in GP
   def findDistinguishingGuard(
     g1: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])]),
     g2: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])])): Option[(GExp.gexp, GExp.gexp)] = {
-    val inputTypes = getTypes(g1(0)._1)
-    val registerTypes = getTypes(g1(0)._2)
+    BasicConfigurator.resetConfiguration();
+    BasicConfigurator.configure();
+    Logger.getRootLogger().setLevel(Level.OFF);
 
-    var z3String = s"(declare-fun g1 (${(inputTypes ++ registerTypes).map(t => s"(${t})").mkString(" ")}) bool)\n"
-    z3String = z3String + s"(declare-fun g2 (${(inputTypes ++ registerTypes).map(t => s"(${t})").mkString(" ")}) bool)\n"
+    val gpGenerator: Generator = new Generator(new java.util.Random(0))
 
+    val intNonTerms = List[NonTerminal[_]](
+      new AddIntegersOperator(),
+      new SubtractIntegersOperator())
+    gpGenerator.setIntegerFunctions(intNonTerms);
+
+    var intTerms = List[VariableTerminal[_]](new IntegerVariableAssignmentTerminal(0))
+
+    // No supported stringNonTerms
+    var stringTerms = List[VariableTerminal[_]]()
+
+    // Boolean terminals
+    val boolTerms = List[VariableTerminal[_]](
+      new BooleanVariableAssignmentTerminal(new BooleanVariableAssignment("tr", true), true),
+      new BooleanVariableAssignmentTerminal(new BooleanVariableAssignment("fa", false), true))
+    gpGenerator.setBooleanTerminals(boolTerms)
+
+    // Boolean nonterminals
+    val boolNonTerms = List[NonTerminal[_]](
+      new LTBooleanIntegersOperator(),
+      new GTBooleanIntegersOperator(),
+      new NotBooleanOperator(),
+      new AndBooleanOperator(),
+      new OrBooleanOperator())
+    gpGenerator.setBooleanFunctions(boolNonTerms)
+
+    var stringVarNames = List[String]()
+    var intVarNames = List[String]()
+
+    val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
+
+    // g1 needs to be true
     for ((inputs, registers) <- g1) {
-      z3String = z3String + s"""(assert
-            (and
-              (g1 ${PrettyPrinter.inputsToString(inputs, " ")} ${sortedValues(registers).mkString(" ")})
-              (! (g2 ${PrettyPrinter.inputsToString(inputs, " ")} ${sortedValues(registers).mkString(" ")}))
-            )
-          )\n"""
+      var scenario = List[VariableAssignment[_]]()
+      for ((ip, ix) <- inputs.zipWithIndex) ip match {
+        case Value.Numa(n) => {
+          intVarNames = s"i${ix}" :: intVarNames
+          scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toInteger(n))) :: scenario
+        }
+        case Value.Str(s) => {
+          stringVarNames = s"i${ix}" :: stringVarNames
+          scenario = (new StringVariableAssignment(s"i${ix}", s)) :: scenario
+        }
+      }
+      for ((r, v) <- registers) v match {
+        case Some(Value.Numa(n)) => {
+          intVarNames = s"r${r}" :: intVarNames
+          scenario = (new IntegerVariableAssignment(s"r${r}", TypeConversion.toInteger(n))) :: scenario
+        }
+        case Some(Value.Str(s)) => {
+          stringVarNames = s"r${r}" :: stringVarNames
+          scenario = (new StringVariableAssignment(s"r${r}", s)) :: scenario
+        }
+      }
+      trainingSet.put(scenario, new BooleanVariableAssignment("g1", true))
     }
 
+    // g1 needs to be false if g2 is true
     for ((inputs, registers) <- g2) {
-      z3String = z3String + s"""(assert
-            (and
-              (g2 ${PrettyPrinter.inputsToString(inputs, " ")} ${sortedValues(registers).mkString(" ")})
-              (! (g1 ${PrettyPrinter.inputsToString(inputs, " ")} ${sortedValues(registers).mkString(" ")}))
-            )
-          )\n"""
+      var scenario = List[VariableAssignment[_]]()
+      for ((ip, ix) <- inputs.zipWithIndex) ip match {
+        case Value.Numa(n) => {
+          intVarNames = s"i${ix}" :: intVarNames
+          scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toInteger(n))) :: scenario
+        }
+        case Value.Str(s) => {
+          stringVarNames = s"i${ix}" :: stringVarNames
+          scenario = (new StringVariableAssignment(s"i${ix}", s)) :: scenario
+        }
+      }
+      for ((r, v) <- registers) v match {
+        case Some(Value.Numa(n)) => {
+          intVarNames = s"r${r}" :: intVarNames
+          scenario = (new IntegerVariableAssignment(s"r${r}", TypeConversion.toInteger(n))) :: scenario
+        }
+        case Some(Value.Str(s)) => {
+          stringVarNames = s"r${r}" :: stringVarNames
+          scenario = (new StringVariableAssignment(s"r${r}", s)) :: scenario
+        }
+      }
+      trainingSet.put(scenario, new BooleanVariableAssignment("g1", false))
     }
 
-    return Some((
-      GExp.Gt(AExp.V(VName.R(Nat.Nata(2))), AExp.L(Value.Numa(Int.int_of_integer(99)))),
-      GExp.Gt(AExp.L(Value.Numa(Int.int_of_integer(100))), AExp.V(VName.R(Nat.Nata(2))))))
+    for (intVarName <- intVarNames.distinct) {
+      intTerms = (new IntegerVariableAssignmentTerminal(intVarName)) :: intTerms
+    }
+
+    for (stringVarName <- stringVarNames.distinct) {
+      stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false)) :: stringTerms
+    }
+
+    gpGenerator.setIntegerTerminals(intTerms)
+    gpGenerator.setStringTerminals(stringTerms)
+
+    val gp = new SingleOutputGP(gpGenerator, trainingSet, new GPConfiguration(20, 0.9f, 0.01f, 7, 7), false)
+
+    val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
+
+    println("Guard training set: " + trainingSet)
+    println("  Int terminals: " + intTerms)
+    println("  Best function is: " + best.simp())
+
+    val ctx = new z3.Context()
+    val gexp = TypeConversion.gexpFromZ3(best.toZ3(ctx))
+    ctx.close
+    if (gp.isCorrect(best)) {
+      return Some((gexp, GExp.gNot(gexp)))
+    } else {
+      return None
+    }
   }
+
 
   def getUpdate(
     r: Nat.nat,
@@ -464,7 +560,7 @@ false)
     println("  Best function is: " + best.simp())
 
     val ctx = new z3.Context()
-    val aexp = TypeConversion.fromZ3(best.toZ3(ctx))
+    val aexp = TypeConversion.aexpFromZ3(best.toZ3(ctx))
     ctx.close
     if (gp.isCorrect(best)) {
       return Some(aexp)

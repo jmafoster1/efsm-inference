@@ -58,6 +58,7 @@ fun mutex :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
   "mutex _ _ = False"
 
 lemma mutex_not_gval: "mutex x y \<Longrightarrow> gval (gAnd y x) s \<noteq> true"
+  unfolding gAnd_def
   apply (induct x y rule: mutex.induct)
   apply (simp, metis option.inject)
   by auto
@@ -597,6 +598,14 @@ export_code
   make_pta_abstract
   AExp.enumerate_vars
   sorted_list_of_set
+  (* Logical connectives *)
+  gAnd
+  gOr
+  gNot
+  Lt
+  Le
+  Ge
+  Ne
   (* Scoring functions *)
   naive_score naive_score_eq
   naive_score_outputs

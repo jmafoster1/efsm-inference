@@ -22,9 +22,12 @@ object TypeConversion {
   def mkAdd(a: AExp.aexp, b: AExp.aexp): AExp.aexp = AExp.Plus(a, b)
   def mkSub(a: AExp.aexp, b: AExp.aexp): AExp.aexp = AExp.Minus(a, b)
 
+  def mkAnd(a: GExp.gexp, b: GExp.gexp): GExp.gexp = GExp.gAnd(a, b)
+  def mkOr(a: GExp.gexp, b: GExp.gexp): GExp.gexp = GExp.gOr(a, b)
+
   def toAExp(best: Node[VariableAssignment[_]]): AExp.aexp = {
     val ctx = new Context()
-    val aexp = TypeConversion.fromZ3(best.toZ3(ctx))
+    val aexp = aexpFromZ3(best.toZ3(ctx))
     ctx.close
     return aexp
   }
@@ -54,18 +57,61 @@ object TypeConversion {
       }
   }
 
-  def makeBinary(e: List[Expr], f: (AExp.aexp => AExp.aexp => AExp.aexp)): AExp.aexp = e match {
+  def makeBinaryGExp(e: List[Expr], f: (GExp.gexp => GExp.gexp => GExp.gexp)): GExp.gexp = e match {
     case Nil => throw new IllegalArgumentException("Not enough children")
-    case (a::b::Nil) => f(fromZ3(a))(fromZ3(b))
-    case (a::bs) => f(fromZ3(a))(makeBinary(bs, f))
+    case (a::b::Nil) => f(gexpFromZ3(a))(gexpFromZ3(b))
+    case (a::bs) => f(gexpFromZ3(a))(makeBinaryGExp(bs, f))
   }
 
-  def fromZ3(e: Expr): AExp.aexp = {
+  def gexpFromZ3(e: Expr): GExp.gexp = {
+    if (e.isAnd) {
+      return makeBinaryGExp(e.getArgs().toList, (mkAnd _).curried)
+    }
+    if (e.isOr) {
+      return makeBinaryGExp(e.getArgs().toList, (mkOr _).curried)
+    }
+    if (e.isNot) {
+      return GExp.gNot(gexpFromZ3(e.getArgs()(0)))
+    }
+    if (e.isLT) {
+      return GExp.Lt(
+        aexpFromZ3(e.getArgs()(0)),
+        aexpFromZ3(e.getArgs()(1))
+      )
+    }
+    if (e.isGT) {
+      return GExp.Gt(
+        aexpFromZ3(e.getArgs()(0)),
+        aexpFromZ3(e.getArgs()(1))
+      )
+    }
+    if (e.isEq) {
+      return GExp.Eq(
+        aexpFromZ3(e.getArgs()(0)),
+        aexpFromZ3(e.getArgs()(1))
+      )
+    }
+    if (e.isTrue) {
+      return GExp.Bc(true)
+    }
+    if (e.isFalse) {
+      return GExp.Bc(false)
+    }
+    throw new IllegalArgumentException("Couldn't convert from z3 expression "+e)
+  }
+
+  def makeBinaryAExp(e: List[Expr], f: (AExp.aexp => AExp.aexp => AExp.aexp)): AExp.aexp = e match {
+    case Nil => throw new IllegalArgumentException("Not enough children")
+    case (a::b::Nil) => f(aexpFromZ3(a))(aexpFromZ3(b))
+    case (a::bs) => f(aexpFromZ3(a))(makeBinaryAExp(bs, f))
+  }
+
+  def aexpFromZ3(e: Expr): AExp.aexp = {
     if (e.isAdd) {
-      return makeBinary(e.getArgs().toList, (mkAdd _).curried)
+      return makeBinaryAExp(e.getArgs().toList, (mkAdd _).curried)
     }
     if (e.isSub) {
-      return makeBinary(e.getArgs().toList, (mkSub _).curried)
+      return makeBinaryAExp(e.getArgs().toList, (mkSub _).curried)
     }
     if (e.isConst) {
       val name = e.toString

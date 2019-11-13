@@ -632,13 +632,14 @@ lemma fold_into_not_null: "apply_guards (fold_into a g) s \<Longrightarrow> gval
            apply (case_tac "x2")
             apply simp
             apply (case_tac "x1a = a")
-             apply simp
+             apply (simp add: gNot_def)
              apply (metis trilean.distinct(1))
-            apply simp+
+            apply (simp add: gNot_def)+
    apply (case_tac x51)
-    apply simp
-    apply (metis imageE list.inject trilean.distinct(1))
-  by auto
+    apply (simp add: gNot_def)
+    apply (metis (mono_tags) imageE list.inject maybe_not.simps(1) maybe_or_idempotent not_Some_eq not_true)
+  using not_Some_eq apply fastforce
+  by simp
 
 lemma apply_guards_snn_map_gNot:
   "apply_guards (smart_not_null l g) s \<Longrightarrow> apply_guards (g @ map (\<lambda>i. gNot (Null (V (I i)))) l) s"
@@ -715,7 +716,7 @@ fun literal_args :: "gexp \<Rightarrow> bool" where
   "literal_args (Eq (V _) (L _)) = True" |
   "literal_args (In _ _) = True" |
   "literal_args (Eq _ _) = False" |
-  "literal_args (Lt va v) = False" |
+  "literal_args (Gt va v) = False" |
   "literal_args (Null v) = False" |
   "literal_args (Nor v va) = (literal_args v \<and> literal_args va)"
 

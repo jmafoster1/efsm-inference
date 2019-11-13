@@ -36,47 +36,47 @@ fun gval :: "gexp \<Rightarrow> datastate \<Rightarrow> trilean" where
   "gval (In v l) s = (if s v \<in> set (map Some l) then true else false)" |
   "gval (Nor a\<^sub>1 a\<^sub>2) s = \<not>\<^sub>? ((gval a\<^sub>1 s) \<or>\<^sub>? (gval a\<^sub>2 s))"
 
-abbreviation gNot :: "gexp \<Rightarrow> gexp"  where
+definition gNot :: "gexp \<Rightarrow> gexp"  where
   "gNot g \<equiv> Nor g g"
 
-abbreviation gOr :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<or>" 60*) where
+definition gOr :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<or>" 60*) where
   "gOr v va \<equiv> Nor (Nor v va) (Nor v va)"
 
-abbreviation gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<and>" 60*) where
+definition gAnd :: "gexp \<Rightarrow> gexp \<Rightarrow> gexp" (*infix "\<and>" 60*) where
   "gAnd v va \<equiv> Nor (Nor v v) (Nor va va)"
 
-abbreviation Lt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "<" 60*) where
+definition Lt :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "<" 60*) where
   "Lt a b \<equiv> Gt b a"
 
-abbreviation Le :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<le>" 60*) where
+definition Le :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<le>" 60*) where
   "Le v va \<equiv> gNot (Gt v va)"
 
-abbreviation Ge :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<ge>" 60*) where
+definition Ge :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<ge>" 60*) where
   "Ge v va \<equiv> gNot (Lt v va)"
 
-abbreviation Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<noteq>" 60*) where
+definition Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<noteq>" 60*) where
   "Ne v va \<equiv> gNot (Eq v va)"
 
 lemma gval_gOr: "gval (gOr x y) r = (gval x r) \<or>\<^sub>? (gval y r)"
-  by (simp add: maybe_double_negation maybe_or_idempotent)
+  by (simp add: maybe_double_negation maybe_or_idempotent gOr_def)
 
 lemma gval_gNot: "gval (gNot x) s = \<not>\<^sub>? (gval x s)"
-  by (simp add: maybe_or_idempotent)
+  by (simp add: maybe_or_idempotent gNot_def)
 
 lemma gval_gAnd: "gval (gAnd g1 g2) s = (gval g1 s) \<and>\<^sub>? (gval g2 s)"
-  by (simp add: de_morgans_1 maybe_double_negation maybe_or_idempotent)
+  by (simp add: de_morgans_1 maybe_double_negation maybe_or_idempotent gAnd_def)
 
 lemma gAnd_commute: "gval (gAnd a b) s = gval (gAnd b a) s"
   using gval_gAnd times_trilean_commutative by auto
 
 lemma gOr_commute: "gval (gOr a b) s = gval (gOr b a) s"
-  by (simp add: plus_trilean_commutative)
+  by (simp add: plus_trilean_commutative gOr_def)
 
 lemma gval_gAnd_True: "(gval (gAnd g1 g2) s = true) = ((gval g1 s = true) \<and> gval g2 s = true)"
   using gval_gAnd maybe_and_not_true by fastforce
 
 lemma nor_equiv: "gval (gNot (gOr a b)) s = gval (Nor a b) s"
-  by (metis maybe_double_negation gval_gNot)
+  by (simp add: gval_gNot gval_gOr)
 
 definition satisfiable :: "gexp \<Rightarrow> bool" where
   "satisfiable g \<equiv> (\<exists>i r. gval g (join_ir i r) = true)"
@@ -133,7 +133,7 @@ fun enumerate_gexp_inputs :: "gexp \<Rightarrow> nat set" where
   "enumerate_gexp_inputs (Bc _) = {}" |
   "enumerate_gexp_inputs (Null v) = enumerate_aexp_inputs v" |
   "enumerate_gexp_inputs (Eq v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va" |
-  "enumerate_gexp_inputs (Lt v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va" |
+  "enumerate_gexp_inputs (Gt v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va" |
   "enumerate_gexp_inputs (In v va) = enumerate_aexp_inputs (V v)" |
   "enumerate_gexp_inputs (Nor v va) = enumerate_gexp_inputs v \<union> enumerate_gexp_inputs va"
 
@@ -184,7 +184,7 @@ fun enumerate_gexp_regs :: "gexp \<Rightarrow> nat set" where
   "enumerate_gexp_regs (Bc _) = {}" |
   "enumerate_gexp_regs (Null v) = enumerate_aexp_regs v" |
   "enumerate_gexp_regs (Eq v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
-  "enumerate_gexp_regs (Lt v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
+  "enumerate_gexp_regs (Gt v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
   "enumerate_gexp_regs (In v va) = enumerate_aexp_regs (V v)" |
   "enumerate_gexp_regs (Nor v va) = enumerate_gexp_regs v \<union> enumerate_gexp_regs va"
 
@@ -280,7 +280,7 @@ definition max_reg :: "gexp \<Rightarrow> nat option" where
   "max_reg g = (let regs = (enumerate_gexp_regs g) in if regs = {} then None else Some (Max regs))"
 
 lemma max_reg_gNot: "max_reg (gNot x) = max_reg x"
-  by (simp add: max_reg_def)
+  by (simp add: max_reg_def gNot_def)
 
 lemma max_reg_Eq: "max_reg (Eq a b) = max (AExp.max_reg a) (AExp.max_reg b)"
   apply (simp add: max_reg_def AExp.max_reg_def Let_def max_None max_Some_Some)
@@ -288,7 +288,7 @@ lemma max_reg_Eq: "max_reg (Eq a b) = max (AExp.max_reg a) (AExp.max_reg b)"
 
 lemma max_reg_Gt: "max_reg (Gt a b) = max (AExp.max_reg a) (AExp.max_reg b)"
   apply (simp add: max_reg_def AExp.max_reg_def Let_def max_None max_Some_Some)
-  by (metis List.finite_set Max.union enumerate_aexp_regs_list max.commute)
+  by (metis List.finite_set Max.union enumerate_aexp_regs_list)
 
 lemma max_reg_Nor: "max_reg (Nor a b) = max (max_reg a) (max_reg b)"
   apply (simp add: max_reg_def Let_def max_None max_Some_Some)
@@ -512,7 +512,7 @@ lemma max_input_Gt: "max_input (Gt a1 a2) = max (AExp.max_input a1) (AExp.max_in
   apply safe
     apply (simp add: max_None_l)
    apply (simp add: max.commute max_None_l)
-  by (metis List.finite_set Max.union enumerate_aexp_inputs_list max.commute max_Some_Some)
+  by (metis List.finite_set Max.union enumerate_aexp_inputs_list max_Some_Some)
 
 lemma gexp_max_input_Nor: "max_input (Nor g1 g2) = max (max_input g1) (max_input g2)"
   apply (simp add: max_input_def Let_def)
@@ -731,7 +731,7 @@ lemma gval_unfold_first: "gval (fold gOr (map (\<lambda>x. Eq (V v) (L x)) ls) (
 proof(induct ls)
   case Nil
   then show ?case
-    by simp
+    by (simp add: gOr_def)
 next
   case (Cons a ls)
   then show ?case
@@ -1017,7 +1017,7 @@ next
     apply (simp add: ensure_not_null_def apply_guards_append)
     apply (simp add: apply_guards_singleton maybe_negate_true maybe_or_false)
     apply (case_tac "join_ir ia r (vname.I a) = None")
-     apply simp
+     apply (simp add: gNot_def)
     by (simp add: Suc_leI datastate(1) input2state_not_None)
 qed
 
@@ -1067,7 +1067,7 @@ next
   case (Suc a)
   then show ?case
     apply (simp add: ensure_not_null_cons apply_guards_append apply_guards_singleton)
-    by (simp add: join_ir_def input2state_nth)
+    by (simp add: join_ir_def input2state_nth gNot_def)
 qed
 
 lemma apply_guards_ensure_not_null_length: "apply_guards (ensure_not_null a) (join_ir i r) = (length i \<ge> a)"
