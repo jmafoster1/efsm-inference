@@ -8146,16 +8146,16 @@ def everything_walk(uu: AExp.aexp, uv: Nat.nat, uw: Map[VName.vname, String],
                                      ((Nat.nat, Nat.nat),
                                        Transition.transition_ext[Unit]))],
                      uy: Nat.nat, uz: Map[Nat.nat, Option[Value.value]],
-                     va: String, vb: Nat.nat):
+                     va: String, vb: Nat.nat, vc: Nat.nat):
       List[(Nat.nat,
              (Map[Nat.nat, Option[Value.value]],
                (List[Value.value],
                  (List[Nat.nat], Transition.transition_ext[Unit]))))]
   =
-  (uu, uv, uw, x3, ux, uy, uz, va, vb) match {
-  case (uu, uv, uw, Nil, ux, uy, uz, va, vb) => Nil
+  (uu, uv, uw, x3, ux, uy, uz, va, vb, vc) match {
+  case (uu, uv, uw, Nil, ux, uy, uz, va, vb, vc) => Nil
   case (f, fi, types, (label, (inputs, outputs)) :: t, oPTA, s, regs, ll,
-         i_arity)
+         i_arity, o_arity)
     => {
          val (tid, (sa, ta)):
                (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))
@@ -8164,14 +8164,16 @@ def everything_walk(uu: AExp.aexp, uv: Nat.nat, uw: Map[VName.vname, String],
                                 Transition.transition_ext[Unit]))](Inference.i_possible_steps(oPTA,
                s, regs, label, inputs));
          (if ((ll ==
-                label) && (Nat.equal_nata(Nat.Nata(inputs.length), i_arity)))
+                label) && ((Nat.equal_nata(Nat.Nata(inputs.length),
+    i_arity)) && (Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](ta)).length),
+                                  o_arity))))
            (s, (Dirties.getRegs(types, inputs, f,
                                  outputs(Code_Numeral.integer_of_nat(fi).toInt)),
                  (inputs, (tid, ta)))) ::
              everything_walk(f, fi, types, t, oPTA, sa,
                               EFSM.apply_updates(Transition.Updates[Unit](ta),
           AExp.join_ir(inputs, regs), regs),
-                              ll, i_arity)
+                              ll, i_arity, o_arity)
            else {
                   val empty: Map[Nat.nat, Option[Value.value]] =
                     Map().withDefaultValue(None);
@@ -8179,7 +8181,7 @@ def everything_walk(uu: AExp.aexp, uv: Nat.nat, uw: Map[VName.vname, String],
                     everything_walk(f, fi, types, t, oPTA, sa,
                                      EFSM.apply_updates(Transition.Updates[Unit](ta),
                  AExp.join_ir(inputs, regs), regs),
-                                     ll, i_arity)
+                                     ll, i_arity, o_arity)
                 })
        }
 }
@@ -8190,7 +8192,7 @@ def everything_walk_log(f: AExp.aexp, fi: Nat.nat,
   (List[Value.value], List[Value.value]))]],
                          e: FSet.fset[(List[Nat.nat],
 ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-                         l: String, a: Nat.nat):
+                         l: String, ia: Nat.nat, oa: Nat.nat):
       List[List[(Nat.nat,
                   (Map[Nat.nat, Option[Value.value]],
                     (List[Value.value],
@@ -8206,7 +8208,7 @@ def everything_walk_log(f: AExp.aexp, fi: Nat.nat,
                                    (List[Value.value], List[Value.value]))])
                            =>
                           everything_walk(f, fi, types, t, e, Nat.zero_nata,
-   Map().withDefaultValue(None), l, a)),
+   Map().withDefaultValue(None), l, ia, oa)),
                          log)
 
 def structural_insert(x: (Map[Nat.nat, Option[Value.value]],
@@ -8590,7 +8592,8 @@ def put_updates(uu: List[List[(String,
                               Transition.transition_ext[Unit]))))]]
         = everything_walk_log(op, o_inx, types, log, lit,
                                Transition.Label[Unit](t1),
-                               Transition.Arity[Unit](t1))
+                               Transition.Arity[Unit](t1),
+                               Nat.Nata((Transition.Outputs[Unit](t1)).length))
       val targeted:
             List[List[(Map[Nat.nat, Option[Value.value]],
                         (Nat.nat,

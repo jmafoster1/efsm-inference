@@ -277,20 +277,20 @@ type_synonym event_info = "(cfstate \<times> registers \<times> inputs \<times> 
 type_synonym run_info = "event_info list"
 type_synonym targeted_run_info = "(registers \<times> event_info) list"
 
-fun everything_walk :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> run_info" where
-  "everything_walk _ _ _ [] _ _ _ _ _ = []" |
-  "everything_walk f fi types ((label, inputs, outputs)#t) oPTA s regs ll i_arity = (
+fun everything_walk :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> run_info" where
+  "everything_walk _ _ _ [] _ _ _ _ _ _ = []" |
+  "everything_walk f fi types ((label, inputs, outputs)#t) oPTA s regs ll i_arity o_arity  = (
     let (tid, s', ta) = fthe_elem (i_possible_steps oPTA s regs label inputs) in
      \<comment> \<open>Possible steps with a transition we need to modify\<close>
-    if ll = label \<and> length inputs = i_arity then
-      (s, get_regs types inputs f (outputs!fi), inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) ll i_arity)
+    if ll = label \<and> length inputs = i_arity \<and> length (Outputs ta) = o_arity then
+      (s, get_regs types inputs f (outputs!fi), inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) ll i_arity o_arity)
     else
       let empty = <> in
-      (s, empty, inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) ll i_arity)
+      (s, empty, inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) ll i_arity o_arity)
   )"
 
-definition everything_walk_log :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> run_info list" where
-  "everything_walk_log f fi types log e l a = map (\<lambda>t. everything_walk f fi types t e 0 <> l a) log"
+definition everything_walk_log :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> run_info list" where
+  "everything_walk_log f fi types log e l ia oa = map (\<lambda>t. everything_walk f fi types t e 0 <> l ia oa) log"
 
 fun target :: "registers \<Rightarrow> run_info \<Rightarrow> targeted_run_info" where
   "target _ [] = []" |
@@ -372,7 +372,7 @@ fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> transition \<Righ
   "put_updates _ _ _ _ ((_, None)#_) _ = None" |
   "put_updates log values t1 lit ((o_inx, (Some (op, types)))#ops) new = (
     let
-      walked = everything_walk_log op o_inx types log lit (Label t1) (Arity t1);
+      walked = everything_walk_log op o_inx types log lit (Label t1) (Arity t1) (length (Outputs t1));
       targeted = map (\<lambda>w. rev (target <> (rev w))) walked;
       groups = group_by_structure (fold List.union targeted []) [];
       group_updates = groupwise_updates values groups;
