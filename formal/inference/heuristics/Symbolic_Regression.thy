@@ -367,12 +367,12 @@ definition lift_output_functions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> lab
       acc
   ) (sorted_list_of_fset oPTA) merged"
 
-fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> transition \<Rightarrow>  iEFSM \<Rightarrow> (aexp \<times> vname \<Rightarrow>f String.literal) option list \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> transition \<Rightarrow>  iEFSM \<Rightarrow> (nat \<times> (aexp \<times> vname \<Rightarrow>f String.literal) option) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
   "put_updates _ _ _ _ [] e = Some e" |
-  "put_updates _ _ _ _ (None#_) _ = None" |
-  "put_updates log values t1 lit (Some (op, types)#ops) new = (
+  "put_updates _ _ _ _ ((_, None)#_) _ = None" |
+  "put_updates log values t1 lit ((o_inx, (Some (op, types)))#ops) new = (
     let
-      walked = everything_walk_log op 0 types log lit (Label t1) (Arity t1);
+      walked = everything_walk_log op o_inx types log lit (Label t1) (Arity t1);
       targeted = map (\<lambda>w. rev (target <> (rev w))) walked;
       groups = group_by_structure (fold List.union targeted []) [];
       group_updates = groupwise_updates values groups;
@@ -387,6 +387,7 @@ definition historical_infer_output_update_functions :: "log \<Rightarrow> update
     let
       i_log = enumerate 0 (map (enumerate 0) log);
       t1 = get_by_ids new t1ID;
+      t2 = get_by_ids new t1ID;
       values = enumerate_log_values log;
       max_reg = max_reg_total new;
       relevant_events = flatten (map (\<lambda>(i, ex). (i, filter (\<lambda>(_, l, ip, op). l = Label t1 \<and> length ip = Arity t1 \<and> length op = length (Outputs t1)) ex)) i_log) [];
@@ -394,13 +395,16 @@ definition historical_infer_output_update_functions :: "log \<Rightarrow> update
       pta = make_pta log {||};
       lit_updates = put_output_functions (enumerate 0 output_functions) i_log t1 pta
     in
-    case lit_updates of
-      None \<Rightarrow> None |
-      Some lit \<Rightarrow> (
-      case put_updates log values t1 lit output_functions new of
+    if length (Outputs t1) \<noteq> length (Outputs t2)
+      then None
+    else
+      case lit_updates of
         None \<Rightarrow> None |
-        Some updated \<Rightarrow> resolve_nondeterminism [] (sorted_list_of_fset (np updated)) old updated null_modifier (\<lambda>a. True) np
-      )
+        Some lit \<Rightarrow> (
+          case put_updates log values t1 lit (enumerate 0 output_functions) new of
+            None \<Rightarrow> None |
+            Some updated \<Rightarrow> resolve_nondeterminism [] (sorted_list_of_fset (np updated)) old updated null_modifier (\<lambda>a. True) np
+        )
   )"
 
 
