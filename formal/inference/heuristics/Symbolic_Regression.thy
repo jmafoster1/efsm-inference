@@ -367,6 +367,21 @@ definition lift_output_functions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> lab
       acc
   ) (sorted_list_of_fset oPTA) merged"
 
+fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> transition \<Rightarrow>  iEFSM \<Rightarrow> (aexp \<times> vname \<Rightarrow>f String.literal) option list \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+  "put_updates _ _ _ _ [] e = Some e" |
+  "put_updates _ _ _ _ (None#_) _ = None" |
+  "put_updates log values t1 lit (Some (op, types)#ops) new = (
+    let
+      walked = everything_walk_log op 0 types log lit (Label t1) (Arity t1);
+      targeted = map (\<lambda>w. rev (target <> (rev w))) walked;
+      groups = group_by_structure (fold List.union targeted []) [];
+      group_updates = groupwise_updates values groups;
+      lifted = lift_output_functions lit new (Label t1) (Arity t1);
+      updated = make_distinct (add_groupwise_updates group_updates lifted)
+    in
+      put_updates log values t1 lit ops updated
+  )"
+
 definition historical_infer_output_update_functions :: "log \<Rightarrow> update_modifier" where
   "historical_infer_output_update_functions log t1ID t2ID s new _ old np = (
     let
@@ -382,20 +397,9 @@ definition historical_infer_output_update_functions :: "log \<Rightarrow> update
     case lit_updates of
       None \<Rightarrow> None |
       Some lit \<Rightarrow> (
-        \<comment> \<open>TODO: eventually we'll have to do this with all output functions\<close>
-        case hd output_functions of
-          None \<Rightarrow> None |
-          Some (op, types) \<Rightarrow> (
-            let
-              walked = everything_walk_log op 0 types log lit (Label t1) (Arity t1);
-              targeted = map (\<lambda>w. rev (target <> (rev w))) walked;
-              groups = group_by_structure (fold List.union targeted []) [];
-              group_updates = groupwise_updates values groups;
-              lifted = lift_output_functions lit new (Label t1) (Arity t1);
-              updated = make_distinct (add_groupwise_updates group_updates lifted)
-            in
-              resolve_nondeterminism [] (sorted_list_of_fset (np updated)) old updated null_modifier (\<lambda>a. True) np
-          )
+      case put_updates log values t1 lit output_functions new of
+        None \<Rightarrow> None |
+        Some updated \<Rightarrow> resolve_nondeterminism [] (sorted_list_of_fset (np updated)) old updated null_modifier (\<lambda>a. True) np
       )
   )"
 
