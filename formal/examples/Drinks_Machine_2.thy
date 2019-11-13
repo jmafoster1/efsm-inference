@@ -42,7 +42,7 @@ lemma possible_steps_2_coin: "length i = 1 \<Longrightarrow> possible_steps drin
 lemma possible_steps_2_vend: "r $ 2 = Some (Num n) \<Longrightarrow> n \<ge> 100 \<Longrightarrow> possible_steps drinks2 2 r ((STR ''vend'')) [] = {|(3, vend)|}"
   apply (simp add: possible_steps_singleton drinks2_def)
   apply safe
-  by (simp_all add: transitions apply_guards_def value_gt_def join_ir_def)
+  by (simp_all add: transitions apply_guards_def value_gt_def join_ir_def connectives)
 
 lemma first_step_select: "(s', T) |\<in>| possible_steps drinks 0 r aa b \<Longrightarrow> s' = 1 \<and> T = select"
   apply (simp add: possible_steps_def fimage_def ffilter_def fmember_def Abs_fset_inverse Set.filter_def drinks_def)
@@ -62,14 +62,14 @@ lemma drinks2_vend_insufficient: "possible_steps drinks2 1 r ((STR ''vend'')) []
 lemma drinks2_vend_insufficient2: "r $ 2 = Some (Num x1) \<Longrightarrow> x1 < 100 \<Longrightarrow> possible_steps drinks2 2 r ((STR ''vend'')) [] = {|(2, vend_fail)|}"
   apply (simp add: possible_steps_singleton drinks2_def)
   apply safe
-  by (simp_all add: transitions apply_guards_def value_gt_def join_ir_def)
+  by (simp_all add: transitions apply_guards_def value_gt_def join_ir_def connectives)
 
 lemma drinks2_vend_sufficient: "r $ 2 = Some (Num x1) \<Longrightarrow>
                 \<not> x1 < 100 \<Longrightarrow>
                 possible_steps drinks2 2 r ((STR ''vend'')) [] = {|(3, vend)|}"
   apply (simp add: possible_steps_singleton drinks2_def)
   apply safe
-  by (simp_all add: transitions apply_guards_def value_gt_def join_ir_def)
+  by (simp_all add: transitions apply_guards_def value_gt_def join_ir_def connectives)
 
 lemma accepts_1_2: "\<forall>r. accepts drinks 1 r t \<longrightarrow> accepts drinks2 2 r t"
 proof(induct t)
@@ -179,7 +179,7 @@ lemma drinks2_0_invalid: "\<not> (aa = (STR ''select'') \<and> length (b) = 1) \
 lemma drinks2_vend_r2_none: "r $ 2 = None \<Longrightarrow> possible_steps drinks2 2 r ((STR ''vend'')) [] = {||}"
   apply (simp add: possible_steps_empty drinks2_def)
   apply safe
-  by (simp_all add: transitions apply_guards_def value_gt_def join_ir_def)
+  by (simp_all add: transitions apply_guards_def value_gt_def join_ir_def connectives)
 
 lemma drinks2_end: "possible_steps drinks2 3 r a b = {||}"
   apply (simp add: possible_steps_def drinks2_def transitions)
@@ -189,7 +189,7 @@ lemma drinks2_vend_r2_String: "r $ 2 = Some (value.Str x2) \<Longrightarrow>
                 possible_steps drinks2 2 r ((STR ''vend'')) [] = {||}"
   apply (simp add: possible_steps_empty drinks2_def)
   apply safe
-  by (simp_all add: transitions apply_guards_def value_gt_def join_ir_def)
+  by (simp_all add: transitions apply_guards_def value_gt_def join_ir_def connectives)
 
 lemma drinks2_2_invalid: "fst a = (STR ''coin'') \<longrightarrow> length (snd a) \<noteq> 1 \<Longrightarrow>
           a \<noteq> ((STR ''vend''), []) \<Longrightarrow>
@@ -211,7 +211,7 @@ lemma drinks2_1_invalid: "\<not>(a = (STR ''coin'') \<and> length b = 1) \<Longr
 lemma drinks2_vend_invalid: "\<nexists>n. r $ 2 = Some (Num n) \<Longrightarrow> possible_steps drinks2 2 r (STR ''vend'') [] = {||}"
   apply (simp add: possible_steps_empty drinks2_def)
   apply safe
-  by (simp_all add: transitions apply_guards_def join_ir_def value_gt_def MaybeBoolInt_not_num_1)
+  by (simp_all add: transitions apply_guards_def join_ir_def value_gt_def MaybeBoolInt_not_num_1 connectives)
 
 lemma rejects_1_2: "\<forall>r. \<not> accepts drinks 1 r t \<longrightarrow> \<not> accepts drinks2 2 r t"
 proof(induct t)
@@ -353,4 +353,9 @@ proof (induct t)
        apply simp+
     by (simp add: select_def join_ir_def input2state_nth equiv_1_1)
 qed
+
+lemma "\<not>same_structure vend vend_nothing"
+  apply (simp add: same_structure_def)
+  by (simp add: vend_def vend_nothing_def)
+
 end

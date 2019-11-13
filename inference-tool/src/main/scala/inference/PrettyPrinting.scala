@@ -106,6 +106,15 @@ object PrettyPrinter {
     return better.mkString(", \n")
   }
 
+  def iEFSM2dot(eo: Option[IEFSM], f: String) = eo match {
+    case Some(e) => {
+      val pw = new PrintWriter(new File(f"${Config.config.dotfiles}/${f}.dot"))
+      pw.write(EFSM_Dot.iefsm2dot(e))
+      pw.close
+    }
+    case None => println("IEFSM was none!")
+  }
+
   def iEFSM2dot(e: IEFSM, f: String) = {
     val pw = new PrintWriter(new File(f"${Config.config.dotfiles}/${f}.dot"))
     pw.write(EFSM_Dot.iefsm2dot(e))

@@ -39,6 +39,8 @@ import org.apache.log4j.Logger;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 
+import isabellesal._
+
 object Dirties {
   def foldl[A, B](f: A => B => A, b: A, l: List[B]): A =
     // l.par.foldLeft(b)(((x, y) => (f(x))(y)))
@@ -217,17 +219,25 @@ false)
 
   // Check that whenever we're in state s, register r is always undefined
   def initiallyUndefinedContextCheck(e: TransitionMatrix, r: Nat.nat, s: Nat.nat): Boolean = {
-    val f = "intermediate_" + randomUUID.toString().replace("-", "_")
-    TypeConversion.efsmToSALTranslator(e, f)
+    try {
+      val f = "intermediate_" + randomUUID.toString().replace("-", "_")
+      TypeConversion.efsmToSALTranslator(e, f)
 
-    addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = ${TypeConversion.salState(s)} => r__${Code_Numeral.integer_of_nat(r)} = None);")
+      addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = ${TypeConversion.salState(s)} => r__${Code_Numeral.integer_of_nat(r)} = None);")
 
-    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(EFSM.max_int(e)) + 1}}!initiallyUndefined'").!!
-    if (output.toString != "proved.\n") {
-      print(output)
+      val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(EFSM.max_int(e)) + 1}}!initiallyUndefined'").!!
+      if (output.toString != "proved.\n") {
+        print(output)
+      }
+      FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
+      return (output.toString == "proved.\n")
     }
-    FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
-    return (output.toString == "proved.\n")
+    catch {
+          case x: IsabelleException => {
+            // TODO: This is dangerous!
+            return true
+          }
+        }
   }
 
   // We're looking to confirm that traces which get us to s1 in e1 and s2 in e2
@@ -313,21 +323,31 @@ false)
     s2: Nat.nat,
     t1: Transition.transition_ext[A],
     t2: Transition.transition_ext[B]): Boolean = {
-    val f = "intermediate_" + randomUUID.toString().replace("-", "_")
-    TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
-    addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
-      s"""canStillTake: THEOREM composition |- G(
-            NOT(
-              cfstate.1 = ${TypeConversion.salState(s1)} AND
-              cfstate.2 = ${TypeConversion.salState(s2)} AND
-              ((input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t2))} AND ${efsm2sal.guards2sal_num(Transition.Guard(t2), Nat.Nata(2))}) =>
-              (input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t1))} AND ${efsm2sal.guards2sal_num(Transition.Guard(t1), Nat.Nata(1))}))
-            )
-          );""")
-    val cmd = s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2))) + 1}}!canStillTake'"
-    val output = Seq("bash", "-c", cmd).!!
-    FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
-    return (output.toString.startsWith("Counterexample"))
+      try {
+        val f = "intermediate_" + randomUUID.toString().replace("-", "_")
+        TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
+        addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
+          s"""canStillTake: THEOREM composition |- G(
+                NOT(
+                  cfstate.1 = ${TypeConversion.salState(s1)} AND
+                  cfstate.2 = ${TypeConversion.salState(s2)} AND
+                  ((input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t2))} AND ${efsm2sal.guards2sal_num(Transition.Guard(t2), Nat.Nata(2))}) =>
+                  (input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t1))} AND ${efsm2sal.guards2sal_num(Transition.Guard(t1), Nat.Nata(1))}))
+                )
+              );""")
+        val cmd = s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2))) + 1}}!canStillTake'"
+        val output = Seq("bash", "-c", cmd).!!
+        FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
+        return (output.toString.startsWith("Counterexample"))
+      }
+      catch {
+            case x: IsabelleException => {
+              // TODO: This is dangerous
+              PrettyPrinter.iEFSM2dot(e1, "e1")
+              PrettyPrinter.iEFSM2dot(e2, "e2")
+              return true
+        }
+    }
   }
 
   def scalaDirectlySubsumes(
@@ -421,12 +441,12 @@ false)
       }
       for ((r, v) <- registers) v match {
         case Some(Value.Numa(n)) => {
-          intVarNames = s"r${r}" :: intVarNames
-          scenario = (new IntegerVariableAssignment(s"r${r}", TypeConversion.toInteger(n))) :: scenario
+          intVarNames = s"r${PrettyPrinter.natToString(r)}" :: intVarNames
+          scenario = (new IntegerVariableAssignment(s"r${PrettyPrinter.natToString(r)}", TypeConversion.toInteger(n))) :: scenario
         }
         case Some(Value.Str(s)) => {
-          stringVarNames = s"r${r}" :: stringVarNames
-          scenario = (new StringVariableAssignment(s"r${r}", s)) :: scenario
+          stringVarNames = s"r${PrettyPrinter.natToString(r)}" :: stringVarNames
+          scenario = (new StringVariableAssignment(s"r${PrettyPrinter.natToString(r)}", s)) :: scenario
         }
       }
       trainingSet.put(scenario, new BooleanVariableAssignment("g1", true))
@@ -447,12 +467,12 @@ false)
       }
       for ((r, v) <- registers) v match {
         case Some(Value.Numa(n)) => {
-          intVarNames = s"r${r}" :: intVarNames
-          scenario = (new IntegerVariableAssignment(s"r${r}", TypeConversion.toInteger(n))) :: scenario
+          intVarNames = s"r${PrettyPrinter.natToString(r)}" :: intVarNames
+          scenario = (new IntegerVariableAssignment(s"r${PrettyPrinter.natToString(r)}", TypeConversion.toInteger(n))) :: scenario
         }
         case Some(Value.Str(s)) => {
-          stringVarNames = s"r${r}" :: stringVarNames
-          scenario = (new StringVariableAssignment(s"r${r}", s)) :: scenario
+          stringVarNames = s"r${PrettyPrinter.natToString(r)}" :: stringVarNames
+          scenario = (new StringVariableAssignment(s"r${PrettyPrinter.natToString(r)}", s)) :: scenario
         }
       }
       trainingSet.put(scenario, new BooleanVariableAssignment("g1", false))
@@ -473,9 +493,9 @@ false)
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
-    println("Guard training set: " + trainingSet)
-    println("  Int terminals: " + intTerms)
-    println("  Best function is: " + best.simp())
+    // println("Guard training set: " + trainingSet)
+    // println("  Int terminals: " + intTerms)
+    // println("  Best function is: " + best.simp())
 
     val ctx = new z3.Context()
     val gexp = TypeConversion.gexpFromZ3(best.toZ3(ctx))
@@ -486,7 +506,6 @@ false)
       return None
     }
   }
-
 
   def getUpdate(
     r: Nat.nat,
@@ -555,9 +574,9 @@ false)
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
-    println("Update training set: " + trainingSet)
-    println("  Int terminals: " + intTerms)
-    println("  Best function is: " + best.simp())
+    // println("Update training set: " + trainingSet)
+    // println("  Int terminals: " + intTerms)
+    // println("  Best function is: " + best.simp())
 
     val ctx = new z3.Context()
     val aexp = TypeConversion.aexpFromZ3(best.toZ3(ctx))
@@ -643,15 +662,13 @@ false)
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
-    println("Output training set: " + trainingSet)
-    println("  Int terminals: " + intTerms)
-    println("  Best function is: " + best)
+    // println("Output training set: " + trainingSet)
+    // println("  Int terminals: " + intTerms)
+    // println("  Best function is: " + best)
 
     if (gp.isCorrect(best)) {
-      println("Function is correct")
       return Some((TypeConversion.toAExp(best), getTypes(best)))
     } else {
-      println("Function is not correct")
       return None
     }
   }

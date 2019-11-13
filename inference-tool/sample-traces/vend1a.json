@@ -21,8 +21,10 @@
     {"label":"vend","inputs":[],"outputs":[]}
 ],
 [
-    {"label":"select","inputs":["coke"],"outputs":[]},
+    {"label":"select","inputs":["tizer"],"outputs":[]},
     {"label":"coin","inputs":[50],"outputs":[50]},
     {"label":"vend","inputs":[],"outputs":[]}
+    {"label":"coin","inputs":[50],"outputs":[100]},
+    {"label":"vend","inputs":[],"outputs":["tizer"]}
 ]
 ]

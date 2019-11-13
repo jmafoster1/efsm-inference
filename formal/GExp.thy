@@ -57,6 +57,8 @@ definition Ge :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<ge>" 60
 definition Ne :: "aexp \<Rightarrow> aexp \<Rightarrow> gexp" (*infix "\<noteq>" 60*) where
   "Ne v va \<equiv> gNot (Eq v va)"
 
+lemmas connectives = gAnd_def gOr_def gNot_def Lt_def Le_def Ge_def Ne_def
+
 lemma gval_gOr: "gval (gOr x y) r = (gval x r) \<or>\<^sub>? (gval y r)"
   by (simp add: maybe_double_negation maybe_or_idempotent gOr_def)
 

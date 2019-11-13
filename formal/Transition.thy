@@ -21,9 +21,11 @@ record transition =
 text_raw\<open>}%endsnip\<close>
 
 definition same_structure :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "same_structure t1 t2 = (Label t1 = Label t2 \<and>
-                           Arity t1 = Arity t2 \<and>
-                           list_all (\<lambda>(g1, g2). gexp_same_structure g1 g2) (zip (Guard t1) (Guard t2)))"
+  "same_structure t1 t2 = (
+    Label t1 = Label t2 \<and>
+    Arity t1 = Arity t2 \<and>
+    length (Outputs t1) = length (Outputs t2)
+  )"
 
 definition enumerate_inputs :: "transition \<Rightarrow> nat set" where
   "enumerate_inputs t = (\<Union> (set (map enumerate_gexp_inputs (Guard t)))) \<union>
