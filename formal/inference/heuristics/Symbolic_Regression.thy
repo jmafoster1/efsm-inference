@@ -1,5 +1,5 @@
 theory Symbolic_Regression
-imports "../Inference"
+imports "../Inference" "Distinguishing_Guards"
 begin
 
 hide_const I
@@ -404,7 +404,7 @@ fun remove_redundant_updates :: "execution \<Rightarrow> iEFSM \<Rightarrow> cfs
         (updated, redundant) = apply_updates_redundancy (Updates ta) (join_ir inputs r) r []
        in
       \<comment> \<open>If there aren't any outgoing transitions, we don't need any updates\<close>
-      if outgoing_transitions s' e = {||} then
+      if outgoing_transitions s' e = {||} \<or> Label ta = STR ''vend'' then
         let newT = \<lparr>Label = Label ta, Arity = Arity ta, Guard = Guard ta, Outputs = Outputs ta, Updates = []\<rparr> in
         remove_redundant_updates t (replace_transition e tid newT) s' updated
       \<comment> \<open>We want to maintain suposedly redundant updates on self transitions because they'll be visited more than once\<close>
@@ -446,7 +446,7 @@ definition historical_infer_output_update_functions :: "log \<Rightarrow> update
           case put_updates log values t1 lit (enumerate 0 output_functions) new of
             None \<Rightarrow> None |
             Some updated \<Rightarrow> (
-              case resolve_nondeterminism [] (sorted_list_of_fset (np updated)) old updated null_modifier (\<lambda>a. True) np of
+              case resolve_nondeterminism [] (sorted_list_of_fset (np updated)) old updated (distinguish log) (\<lambda>a. True) np of
                 None \<Rightarrow> None |
                 Some new \<Rightarrow> remove_redundant_updates_log log new
           )

@@ -515,6 +515,17 @@ false)
     values: List[Value.value],
     train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Map[Nat.nat, Option[Value.value]]))]): Option[AExp.aexp] = {
 
+      val ioPairs = (train.map{
+          case (inputs, (aregs, pregs)) => pregs(r) match {
+              case Some(v) => ((inputs, aregs), v)
+          }
+        }
+      )
+
+      if (funMap isDefinedAt ioPairs) {
+        return Some(funMap(ioPairs)._1)
+      }
+
     val maxReg = TypeConversion.toInt(r)
 
     BasicConfigurator.resetConfiguration();
@@ -577,14 +588,15 @@ false)
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
-    // println("Update training set: " + trainingSet)
+    println("Update training set: " + trainingSet)
     // println("  Int terminals: " + intTerms)
-    // println("  Best function is: " + best.simp())
+    println("  Best function is: " + best.simp())
 
     val ctx = new z3.Context()
     val aexp = TypeConversion.aexpFromZ3(best.toZ3(ctx))
     ctx.close
     if (gp.isCorrect(best)) {
+      funMap = funMap + ((ioPairs) -> (aexp, getTypes(best)))
       return Some(aexp)
     } else {
       return None
@@ -600,13 +612,20 @@ false)
     return types
   }
 
+  var funMap = Map[List[((List[Value.value], Map[Nat.nat, Option[Value.value]]), Value.value)], (AExp.aexp, Map[VName.vname, String])]()
+
   def getFunction(
     r: Nat.nat,
     values: List[Value.value],
     i: List[List[Value.value]],
     o: List[Value.value]): Option[(AExp.aexp, Map[VName.vname, String])] = {
 
-    val ioPairs = (i zip o).distinct
+      val ioPairs = i zip i.map(i => null) zip o
+
+      if (funMap isDefinedAt ioPairs) {
+        return Some(funMap(ioPairs))
+      }
+
     val maxReg = TypeConversion.toInt(r)
 
     BasicConfigurator.resetConfiguration();
@@ -632,7 +651,7 @@ false)
     var intVarNames = List[String](s"r${maxReg + 2}")
 
     val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
-    for ((inputs, output) <- ioPairs) {
+    for (((inputs, _), output) <- ioPairs) {
       var scenario = List[VariableAssignment[_]]()
       for ((ip, ix) <- inputs.zipWithIndex) ip match {
         case Value.Numa(n) => {
@@ -665,11 +684,12 @@ false)
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
-    // println("Output training set: " + trainingSet)
+    println("Output training set: " + trainingSet)
     // println("  Int terminals: " + intTerms)
-    // println("  Best function is: " + best)
+    println("  Best function is: " + best)
 
     if (gp.isCorrect(best)) {
+      funMap = funMap + (ioPairs -> (TypeConversion.toAExp(best), getTypes(best)))
       return Some((TypeConversion.toAExp(best), getTypes(best)))
     } else {
       return None
