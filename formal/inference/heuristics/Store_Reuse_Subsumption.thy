@@ -474,30 +474,8 @@ lemma aval_unconstrained:
   v = ia ! i \<Longrightarrow>
   v' \<noteq> v \<Longrightarrow>
   aval a (join_ir ia c) = aval a (join_ir (list_update ia i v') c)"
-proof(induct a)
-  case (L x)
-  then show ?case
-    by simp
-next
-  case (V x)
-  then show ?case
-    apply (simp add: join_ir_def)
-    apply (cases x)
-     defer
-     apply simp
-    apply simp
-    apply (case_tac "x1 < length ia")
-     apply (simp add: input2state_nth)
-    by (simp add: input2state_out_of_bounds)
-next
-  case (Plus a1 a2)
-  then show ?case
-    by simp
-next
-  case (Minus a1 a2)
-  then show ?case
-    by simp
-qed
+  apply(induct a rule: aexp_induct_separate_V_cases)
+  using input_not_constrained_aval_swap_inputs by blast+
 
 lemma gval_unconstrained: 
  " \<not> gexp_constrains a (V (vname.I i)) \<Longrightarrow>

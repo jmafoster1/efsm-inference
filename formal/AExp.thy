@@ -28,8 +28,15 @@ type_synonym registers = "nat \<Rightarrow>f value option"
 type_synonym datastate = "vname \<Rightarrow> value option"
 
 text_raw\<open>\snip{aexptype}{1}{2}{%\<close>
-datatype aexp = L "value" | V vname | Plus aexp aexp | Minus aexp aexp
+datatype aexp = L "value" | V vname | Plus aexp aexp | Minus aexp aexp | Times aexp aexp
 text_raw\<open>}%endsnip\<close>
+
+lemma aexp_induct_separate_V_cases: "(\<And>x. P (L x)) \<Longrightarrow>
+    (\<And>x. P (V (I x))) \<Longrightarrow>
+    (\<And>x. P (V (R x))) \<Longrightarrow>
+    (\<And>x1a x2a. P x1a \<Longrightarrow> P x2a \<Longrightarrow> P (Plus x1a x2a)) \<Longrightarrow>
+    (\<And>x1a x2a. P x1a \<Longrightarrow> P x2a \<Longrightarrow> P (Minus x1a x2a)) \<Longrightarrow> (\<And>x1a x2a. P x1a \<Longrightarrow> P x2a \<Longrightarrow> P (Times x1a x2a)) \<Longrightarrow> P aexp"
+  by (metis aexp.induct vname.exhaust)
 
 fun MaybeArithInt :: "(int \<Rightarrow> int \<Rightarrow> int) \<Rightarrow> value option \<Rightarrow> value option \<Rightarrow> value option" where
   "MaybeArithInt f (Some (Num x)) (Some (Num y)) = Some (Num (f x y))" |
@@ -61,11 +68,14 @@ definition "value_minus = MaybeArithInt (-)"
 lemma minus_never_string: "value_minus a b \<noteq> Some (Str x)"
   by (simp add: plus_never_string value_minus_def)
 
+definition "value_times = MaybeArithInt (*)"
+
 fun aval :: "aexp \<Rightarrow> datastate \<Rightarrow> value option" where
   "aval (L x) s = Some x" |
   "aval (V x) s = s x" |
   "aval (Plus a\<^sub>1 a\<^sub>2) s = value_plus (aval a\<^sub>1 s)(aval a\<^sub>2 s)" |
-  "aval (Minus a\<^sub>1 a\<^sub>2) s = value_minus (aval a\<^sub>1 s) (aval a\<^sub>2 s)"
+  "aval (Minus a\<^sub>1 a\<^sub>2) s = value_minus (aval a\<^sub>1 s) (aval a\<^sub>2 s)" |
+  "aval (Times a\<^sub>1 a\<^sub>2) s = value_times (aval a\<^sub>1 s) (aval a\<^sub>2 s)"
 
 lemma aval_plus_symmetry: "aval (Plus x y) s = aval (Plus y x) s"
   by (simp add: value_plus_symmetry)
@@ -352,7 +362,8 @@ fun aexp_constrains :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
   "aexp_constrains (L l) a = (L l = a)" |
   "aexp_constrains (V v) v' = (V v = v')" |
   "aexp_constrains (Plus a1 a2) v = ((Plus a1 a2) = v \<or> (Plus a1 a2) = v \<or> (aexp_constrains a1 v \<or> aexp_constrains a2 v))" |
-  "aexp_constrains (Minus a1 a2) v = ((Minus a1 a2) = v \<or> (aexp_constrains a1 v \<or> aexp_constrains a2 v))"
+  "aexp_constrains (Minus a1 a2) v = ((Minus a1 a2) = v \<or> (aexp_constrains a1 v \<or> aexp_constrains a2 v))" |
+  "aexp_constrains (Times a1 a2) v = ((Times a1 a2) = v \<or> (aexp_constrains a1 v \<or> aexp_constrains a2 v))"
 
 fun aexp_same_structure :: "aexp \<Rightarrow> aexp \<Rightarrow> bool" where
   "aexp_same_structure (L v) (L v') = True" |
@@ -366,7 +377,8 @@ fun enumerate_aexp_inputs :: "aexp \<Rightarrow> nat set" where
   "enumerate_aexp_inputs (V (I n)) = {n}" |
   "enumerate_aexp_inputs (V (R n)) = {}" |
   "enumerate_aexp_inputs (Plus v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va" |
-  "enumerate_aexp_inputs (Minus v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va"
+  "enumerate_aexp_inputs (Minus v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va" |
+  "enumerate_aexp_inputs (Times v va) = enumerate_aexp_inputs v \<union> enumerate_aexp_inputs va"
 
 lemma enumerate_aexp_inputs_list: "\<exists>l. enumerate_aexp_inputs a = set l"
 proof(induct a)
@@ -376,15 +388,21 @@ proof(induct a)
 next
   case (V x)
   then show ?case
-    by (metis List.set_insert aexp.distinct(7) aexp.distinct(9) empty_set enumerate_aexp_inputs.elims)
+    apply (cases x)
+     apply (metis empty_set enumerate_aexp_inputs.simps(2) list.simps(15))
+    by simp
 next
   case (Plus a1 a2)
   then show ?case
-    by (metis enumerate_aexp_inputs.simps(4) set_union)
+    by (metis enumerate_aexp_inputs.simps(4) set_append)
 next
   case (Minus a1 a2)
   then show ?case
-    by (metis enumerate_aexp_inputs.simps(5) set_union)
+    by (metis enumerate_aexp_inputs.simps(5) set_append)
+next
+  case (Times a1 a2)
+  then show ?case
+    by (metis enumerate_aexp_inputs.simps(6) set_append)
 qed
 
 fun enumerate_aexp_regs :: "aexp \<Rightarrow> nat set" where
@@ -392,17 +410,18 @@ fun enumerate_aexp_regs :: "aexp \<Rightarrow> nat set" where
   "enumerate_aexp_regs (V (R n)) = {n}" |
   "enumerate_aexp_regs (V (I _)) = {}" |
   "enumerate_aexp_regs (Plus v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
-  "enumerate_aexp_regs (Minus v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va"
+  "enumerate_aexp_regs (Minus v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va" |
+  "enumerate_aexp_regs (Times v va) = enumerate_aexp_regs v \<union> enumerate_aexp_regs va"
 
 lemma enumerate_aexp_regs_list: "\<exists>l. enumerate_aexp_regs a = set l"
 proof(induct a)
-case (L x)
+  case (L x)
   then show ?case
     by simp
 next
   case (V x)
   then show ?case
-    by (metis List.set_insert aexp.distinct(7) aexp.distinct(9) empty_set enumerate_aexp_regs.elims)
+    by (metis List.set_insert aexp.distinct(11) aexp.distinct(13) aexp.distinct(9) empty_set enumerate_aexp_regs.elims)
 next
   case (Plus a1 a2)
 then show ?case
@@ -411,29 +430,17 @@ next
   case (Minus a1 a2)
   then show ?case
     by (metis enumerate_aexp_regs.simps(5) set_union)
+next
+  case (Times a1 a2)
+  then show ?case
+    by (metis enumerate_aexp_regs.simps(6) set_union)
 qed
 
 lemma no_variables_aval:
   "enumerate_aexp_inputs a = {} \<Longrightarrow>
    enumerate_aexp_regs a = {} \<Longrightarrow>
    aval a s = aval a s'"
-proof(induct a)
-case (L x)
-  then show ?case by simp
-next
-  case (V x)
-  then show ?case
-    apply (cases x)
-    by auto
-next
-  case (Plus a1 a2)
-  then show ?case
-    by simp
-next
-  case (Minus a1 a2)
-  then show ?case
-    by simp
-qed
+  by (induct a rule: aexp_induct_separate_V_cases, auto)
 
 lemma enumerate_aexp_inputs_not_empty: "(enumerate_aexp_inputs a \<noteq> {}) = (\<exists>b c. enumerate_aexp_inputs a = set (b#c))"
   using enumerate_aexp_inputs_list by fastforce
@@ -460,8 +467,7 @@ next
   case (Plus a1 a2)
   then show ?case
     apply (simp only: enumerate_aexp_inputs_not_empty[of "Plus a1 a2"])
-    apply (erule exE)
-    apply (erule exE)
+    apply (erule exE)+
     apply (simp only: neq_Nil_conv List.linorder_class.Max.set_eq_fold)
     apply (case_tac "fold max c b \<le> length i")
      apply simp
@@ -471,12 +477,21 @@ next
   case (Minus a1 a2)
   then show ?case
     apply (simp only: enumerate_aexp_inputs_not_empty[of "Minus a1 a2"])
-    apply (erule exE)
-    apply (erule exE)
+    apply (erule exE)+
     apply (simp only: neq_Nil_conv List.linorder_class.Max.set_eq_fold)
     apply (case_tac "fold max c b \<le> length i")
      apply simp
     apply (metis List.finite_set Max.union Minus.prems(4) enumerate_aexp_inputs.simps(5) enumerate_aexp_inputs_not_empty max_less_iff_conj no_variables_aval sup_bot.left_neutral sup_bot.right_neutral)
+    by simp
+next
+  case (Times a1 a2)
+  then show ?case
+    apply (simp only: enumerate_aexp_inputs_not_empty[of "Times a1 a2"])
+    apply (erule exE)+
+    apply (simp only: neq_Nil_conv List.linorder_class.Max.set_eq_fold)
+    apply (case_tac "fold max c b \<le> length i")
+     apply simp
+    apply (metis List.finite_set Max.union Times.prems(4) enumerate_aexp_inputs.simps(6) enumerate_aexp_inputs_not_empty max_less_iff_conj no_variables_aval sup_bot.left_neutral sup_bot.right_neutral)
     by simp
 qed
 
@@ -502,18 +517,21 @@ lemma max_reg_Minus: "max_reg (Minus a1 a2) = max (max_reg a1) (max_reg a2)"
   apply (simp add: max_reg_def Let_def max_None max_Some_Some)
   by (metis List.finite_set Max.union enumerate_aexp_regs_list)
 
-lemma no_reg_aval_swap_regs: "AExp.max_reg a = None \<Longrightarrow> aval a (join_ir i r) = aval a (join_ir i r')"
+lemma max_reg_Times: "max_reg (Times a1 a2) = max (max_reg a1) (max_reg a2)"
+  apply (simp add: max_reg_def Let_def max_None max_Some_Some)
+  by (metis List.finite_set Max.union enumerate_aexp_regs_list)
+
+lemma no_reg_aval_swap_regs: "max_reg a = None \<Longrightarrow> aval a (join_ir i r) = aval a (join_ir i r')"
 proof(induct a)
-case (L x)
-then show ?case
-  by simp
+  case (L x)
+  then show ?case
+    by simp
 next
   case (V x)
   then show ?case
     apply (cases x)
      apply (simp add: join_ir_def)
-    apply (simp add: join_ir_def)
-    by (simp add: max_reg_def)
+    by (simp add: join_ir_def max_reg_def)
 next
   case (Plus a1 a2)
   then show ?case
@@ -522,177 +540,81 @@ next
   case (Minus a1 a2)
   then show ?case
     by (simp add: max_reg_Minus max_is_None)
+next
+  case (Times a1 a2)
+  then show ?case
+    by (simp add: max_reg_Times max_is_None)
 qed
-
 
 lemma enumerate_aexp_regs_empty_reg_unconstrained:
   "enumerate_aexp_regs a = {} \<Longrightarrow> \<forall>r. \<not> aexp_constrains a (V (R r))"
-proof(induct a)
-case (L x)
-  then show ?case
-    by simp
-next
-  case (V x)
-  then show ?case
-    apply (cases x)
-     apply simp
-    by simp
-next
-  case (Plus a1 a2)
-  then show ?case
-    by simp
-next
-  case (Minus a1 a2)
-  then show ?case
-    by simp
-qed
+  by (induct a rule: aexp_induct_separate_V_cases, auto)
 
 lemma enumerate_aexp_inputs_empty_input_unconstrained:
   "enumerate_aexp_inputs a = {} \<Longrightarrow> \<forall>r. \<not> aexp_constrains a (V (I r))"
-proof(induct a)
-case (L x)
-  then show ?case
-    by simp
-next
-  case (V x)
-  then show ?case
-    apply (cases x)
-     apply simp
-    by simp
-next
-  case (Plus a1 a2)
-  then show ?case
-    by simp
-next
-  case (Minus a1 a2)
-  then show ?case
-    by simp
-qed
+  by (induct a rule: aexp_induct_separate_V_cases, auto)
 
 lemma input_unconstrained_aval_input_swap:
   "\<forall>i. \<not> aexp_constrains a (V (I i)) \<Longrightarrow> aval a (join_ir i r) = aval a (join_ir i' r)"
-proof(induct a)
-case (L x)
-  then show ?case
-    by simp
-next
-  case (V x)
-  then show ?case
-    apply (cases x)
-     apply simp
-    by (simp add: join_ir_def)
-next
-  case (Plus a1 a2)
-  then show ?case
-    by simp
-next
-  case (Minus a1 a2)
-  then show ?case
-    by simp
-qed
+  using join_ir_def
+  by (induct a rule: aexp_induct_separate_V_cases, auto)
 
 lemma input_unconstrained_aval_register_swap:
   "\<forall>i. \<not> aexp_constrains a (V (R i)) \<Longrightarrow> aval a (join_ir i r) = aval a (join_ir i r')"
-proof(induct a)
-case (L x)
-  then show ?case
-    by simp
-next
-  case (V x)
-  then show ?case
-    apply (cases x)
-     apply (simp add: join_ir_def)
-    by simp
-next
-  case (Plus a1 a2)
-  then show ?case
-    by simp
-next
-  case (Minus a1 a2)
-  then show ?case
-    by simp
-qed
+  using join_ir_def
+  by (induct a rule: aexp_induct_separate_V_cases, auto)
 
 lemma unconstrained_variable_swap_aval: 
   "\<forall>i. \<not> aexp_constrains a (V (I i)) \<Longrightarrow>
    \<forall>r. \<not> aexp_constrains a (V (R r)) \<Longrightarrow>
    aval a s = aval a s'"
-proof(induct a)
-case (L x)
-  then show ?case
-    by simp
-next
-  case (V x)
-  then show ?case
-    apply (cases x)
-    by auto
-next
-  case (Plus a1 a2)
-  then show ?case
-    by simp
-next
-  case (Minus a1 a2)
-  then show ?case
-    by simp
-qed
+  by (induct a rule: aexp_induct_separate_V_cases, auto)
 
-lemma max_input_I: "AExp.max_input (V (vname.I i)) = Some i"
-  by (simp add: AExp.max_input_def)
+lemma max_input_I: "max_input (V (vname.I i)) = Some i"
+  by (simp add: max_input_def)
 
-lemma max_input_Plus: "AExp.max_input (Plus a1 a2) = max (AExp.max_input a1) (AExp.max_input a2)"
-  apply (simp add: AExp.max_input_def Let_def)
-  apply safe
-    apply (simp add: max_None_l)
-   apply (simp add: max.commute max_None_l)
+lemma max_input_Plus: "max_input (Plus a1 a2) = max (max_input a1) (max_input a2)"
+  apply (simp add: max_input_def Let_def max.commute max_None_l)
   by (metis List.finite_set Max.union enumerate_aexp_inputs_list max_Some_Some)
 
-lemma max_input_Minus: "AExp.max_input (Minus a1 a2) = max (AExp.max_input a1) (AExp.max_input a2)"
-  apply (simp add: AExp.max_input_def Let_def)
-  apply safe
-    apply (simp add: max_None_l)
-   apply (simp add: max.commute max_None_l)
+lemma max_input_Minus: "max_input (Minus a1 a2) = max (max_input a1) (max_input a2)"
+  apply (simp add: max_input_def Let_def max.commute max_None_l)
   by (metis List.finite_set Max.union enumerate_aexp_inputs_list max_Some_Some)
 
-lemma max_reg_list_Minus: "AExp.max_reg (Minus a1 a2) = max (AExp.max_reg a1) (AExp.max_reg a2)"
-  apply (simp add: AExp.max_reg_def Let_def)
-  apply safe
-    apply (simp add: max_None_l)
-   apply (simp add: max.commute max_None_l)
-  by (metis List.finite_set Max.union enumerate_aexp_regs_list max_Some_Some)
+lemma max_input_Times: "max_input (Times a1 a2) = max (max_input a1) (max_input a2)"
+  apply (simp add: max_input_def Let_def max.commute max_None_l)
+  by (metis List.finite_set Max.union enumerate_aexp_inputs_list max_Some_Some)
 
-lemma max_reg_list_Plus: "AExp.max_reg (Plus a1 a2) = max (AExp.max_reg a1) (AExp.max_reg a2)"
-  apply (simp add: AExp.max_reg_def Let_def)
-  apply safe
-    apply (simp add: max_None_l)
-   apply (simp add: max.commute max_None_l)
-  by (metis List.finite_set Max.union enumerate_aexp_regs_list max_Some_Some)
-
-lemma aval_take: "AExp.max_input x < Some a \<Longrightarrow> aval x (join_ir i r) = aval x (join_ir (take a i) r)"
-proof(induct x)
-  case (L x)
-  then show ?case
+lemma aval_take: "max_input x < Some a \<Longrightarrow> aval x (join_ir i r) = aval x (join_ir (take a i) r)"
+proof(induct x rule: aexp_induct_separate_V_cases)
+  case (1 x)
+  then show ?case 
     by simp
 next
-  case (V x)
+  case (2 x)
   then show ?case
-    apply (cases x)
-    apply (simp add: join_ir_def max_input_I)
-    apply (metis leI nat_less_le take_all input2state_take)
-    using enumerate_aexp_inputs.simps(3) enumerate_aexp_inputs_empty_input_unconstrained input_unconstrained_aval_input_swap
-    by blast
+    by (metis aval.simps(2) input2state_take join_ir_def less_option.simps(4) max_input_I nat_le_linear take_all vname.simps(5))
 next
-  case (Plus x1 x2)
+  case (3 x)
+  then show ?case
+    by (simp add: join_ir_def)
+next
+  case (4 x1a x2a)
   then show ?case
     by (simp add: max_input_Plus)
 next
-  case (Minus x1 x2)
+  case (5 x1a x2a)
   then show ?case
     by (simp add: max_input_Minus)
+next
+  case (6 x1a x2a)
+  then show ?case
+    by (simp add: max_input_Times)
 qed
 
 lemma aval_no_reg_swap_regs:
-  "AExp.max_input x < Some a \<Longrightarrow>
-   AExp.max_reg x = None \<Longrightarrow>
+  "max_input x < Some a \<Longrightarrow>
+   max_reg x = None \<Longrightarrow>
    aval x (join_ir i ra) = aval x (join_ir (take a i) r)"
 proof(induct x)
 case (L x)
@@ -703,15 +625,19 @@ next
   then show ?case
     apply (cases x)
      apply (metis aval_take enumerate_aexp_regs.simps(3) enumerate_aexp_regs_empty_reg_unconstrained input_unconstrained_aval_register_swap)
-    by (simp add: AExp.max_reg_def)
+    by (simp add: max_reg_def)
 next
   case (Plus x1 x2)
   then show ?case
-    by (simp add: max_input_Plus max_is_None max_reg_list_Plus)
+    by (simp add: max_input_Plus max_is_None max_reg_Plus)
 next
   case (Minus x1 x2)
   then show ?case
-    by (simp add: max_input_Minus max_is_None max_reg_list_Minus)
+    by (simp add: max_input_Minus max_is_None max_reg_Minus)
+next
+  case (Times x1 x2)
+  then show ?case
+    by (simp add: max_input_Times max_is_None max_reg_Times)
 qed
 
 fun enumerate_aexp_strings :: "aexp \<Rightarrow> String.literal set" where
@@ -719,14 +645,16 @@ fun enumerate_aexp_strings :: "aexp \<Rightarrow> String.literal set" where
   "enumerate_aexp_strings (L (Num s)) = {}" |
   "enumerate_aexp_strings (V _) = {}" |
   "enumerate_aexp_strings (Plus a1 a2) = enumerate_aexp_strings a1 \<union> enumerate_aexp_strings a2" |
-  "enumerate_aexp_strings (Minus a1 a2) = enumerate_aexp_strings a1 \<union> enumerate_aexp_strings a2"
+  "enumerate_aexp_strings (Minus a1 a2) = enumerate_aexp_strings a1 \<union> enumerate_aexp_strings a2" |
+  "enumerate_aexp_strings (Times a1 a2) = enumerate_aexp_strings a1 \<union> enumerate_aexp_strings a2"
 
 fun enumerate_aexp_ints :: "aexp \<Rightarrow> int set" where
   "enumerate_aexp_ints (L (Str s)) = {}" |
   "enumerate_aexp_ints (L (Num s)) = {s}" |
   "enumerate_aexp_ints (V _) = {}" |
   "enumerate_aexp_ints (Plus a1 a2) = enumerate_aexp_ints a1 \<union> enumerate_aexp_ints a2" |
-  "enumerate_aexp_ints (Minus a1 a2) = enumerate_aexp_ints a1 \<union> enumerate_aexp_ints a2"
+  "enumerate_aexp_ints (Minus a1 a2) = enumerate_aexp_ints a1 \<union> enumerate_aexp_ints a2" |
+  "enumerate_aexp_ints (Times a1 a2) = enumerate_aexp_ints a1 \<union> enumerate_aexp_ints a2"
 
 definition enumerate_vars :: "aexp \<Rightarrow> vname set" where
   "enumerate_vars a = (image I (enumerate_aexp_inputs a)) \<union> (image R (enumerate_aexp_regs a))"

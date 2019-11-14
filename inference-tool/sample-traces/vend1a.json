@@ -17,10 +17,6 @@
     {"label":"vend","inputs":[],"outputs":["pepsi"]}
 ],
 [
-    {"label":"select","inputs":["coke"],"outputs":[]},
-    {"label":"vend","inputs":[],"outputs":[]}
-],
-[
     {"label":"select","inputs":["tizer"],"outputs":[]},
     {"label":"coin","inputs":[50],"outputs":[50]},
     {"label":"vend","inputs":[],"outputs":[]}

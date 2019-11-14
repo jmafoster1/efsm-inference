@@ -21,6 +21,7 @@ object Types {
 object TypeConversion {
   def mkAdd(a: AExp.aexp, b: AExp.aexp): AExp.aexp = AExp.Plus(a, b)
   def mkSub(a: AExp.aexp, b: AExp.aexp): AExp.aexp = AExp.Minus(a, b)
+  def mkMul(a: AExp.aexp, b: AExp.aexp): AExp.aexp = AExp.Times(a, b)
 
   def mkAnd(a: GExp.gexp, b: GExp.gexp): GExp.gexp = GExp.gAnd(a, b)
   def mkOr(a: GExp.gexp, b: GExp.gexp): GExp.gexp = GExp.gOr(a, b)
@@ -112,6 +113,9 @@ object TypeConversion {
     }
     if (e.isSub) {
       return makeBinaryAExp(e.getArgs().toList, (mkSub _).curried)
+    }
+    if (e.isMul) {
+      return makeBinaryAExp(e.getArgs().toList, (mkMul _).curried)
     }
     if (e.isConst) {
       val name = e.toString
@@ -231,6 +235,10 @@ object TypeConversion {
       Token.MINUS,
       aexpToSALTranslator(a1),
       aexpToSALTranslator(a2))
+    case AExp.Times(a1, a2) => isabellesal.Expression.newInfixFrom(
+        Token.TIMES,
+        aexpToSALTranslator(a1),
+        aexpToSALTranslator(a2))
   }
 
   def gexpToSALTranslator(g: GExp.gexp): isabellesal.Predicate = g match {

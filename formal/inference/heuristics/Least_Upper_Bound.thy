@@ -304,26 +304,11 @@ lemma In_apply_guards: "In v l \<in> set G1 \<Longrightarrow> apply_guards G1 s 
 
 lemma input_not_constrained_aval_swap_inputs:
   "\<not> aexp_constrains a (V (I v)) \<Longrightarrow>
-   aval a (join_ir i c) = aval a (join_ir (i[v := x]) c)"
-proof(induct a)
-  case (L x)
-  then show ?case
-    by simp
-next
-  case (V x)
-  then show ?case
-    apply (cases x)
-     apply (metis aexp_constrains.simps(2) aval.simps(2) input2state_nth input2state_out_of_bounds join_ir_def length_list_update not_le nth_list_update_neq vname.simps(5))
-    by (simp add: join_ir_def)
-next
-  case (Plus a1 a2)
-  then show ?case
-    by simp
-next
-  case (Minus a1 a2)
-  then show ?case
-    by simp
-qed
+   aval a (join_ir i c) = aval a (join_ir (list_update i v x) c)"
+  apply(induct a rule: aexp_induct_separate_V_cases)
+       apply simp
+      apply (metis aexp_constrains.simps(2) aval.simps(2) input2state_nth input2state_out_of_bounds join_ir_def length_list_update not_le nth_list_update_neq vname.simps(5))
+  using join_ir_def by auto
 
 lemma input_not_constrained_gval_swap_inputs:
   "\<not> gexp_constrains a (V (I v)) \<Longrightarrow>

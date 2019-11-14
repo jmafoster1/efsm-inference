@@ -48,7 +48,8 @@ fun aexp2sal_num :: "aexp \<Rightarrow> nat \<Rightarrow> String.literal" where
   "aexp2sal_num (V (vname.I i)) m = STR ''Some(i('' + show_nat (i+1) + STR ''))''" |
   "aexp2sal_num (V (vname.R i)) m = STR ''r__'' + show_nat i + STR ''.'' + show_nat m" |
   "aexp2sal_num (Plus a1 a2) m = STR ''value_plus(''+aexp2sal a1 + STR '', '' + aexp2sal a2 + STR '')''" |
-  "aexp2sal_num (Minus a1 a2) m = STR ''value_minus(''+aexp2sal a1 + STR '', '' + aexp2sal a2 + STR '')''"
+  "aexp2sal_num (Minus a1 a2) m = STR ''value_minus(''+aexp2sal a1 + STR '', '' + aexp2sal a2 + STR '')''" |
+  "aexp2sal_num (Times a1 a2) m = STR ''value_times(''+aexp2sal a1 + STR '', '' + aexp2sal a2 + STR '')''"
 
 fun gexp2sal_num :: "gexp \<Rightarrow> nat \<Rightarrow> String.literal" where
   "gexp2sal_num (Bc True) m = STR ''True''" |

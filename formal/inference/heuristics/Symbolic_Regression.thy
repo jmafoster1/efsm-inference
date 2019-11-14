@@ -392,24 +392,37 @@ primrec apply_updates_redundancy :: "updates \<Rightarrow> datastate \<Rightarro
       (apply_updates_redundancy t old (new(fst h $:= aval (snd h) old)) redundant)
   )"
 
-fun remove_redundant_updates :: "execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM" where
-  "remove_redundant_updates [] e _ _ = e" |
+fun remove_redundant_updates :: "execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM option" where
+  "remove_redundant_updates [] e _ _ = Some e" |
   "remove_redundant_updates ((label, inputs, outputs)#t) e s r = (
-    let (tid, s', ta) = fthe_elem (ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir inputs r) = map Some outputs) (i_possible_steps e s r label inputs)) in
-    if outgoing_transitions s' e = {||} then
-      let newT = \<lparr>Label = Label ta, Arity = Arity ta, Guard = Guard ta, Outputs = Outputs ta, Updates = []\<rparr> in
-      remove_redundant_updates t (replace_transition e tid newT) s' r
+    let poss_steps = ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir inputs r) = map Some outputs) (i_possible_steps e s r label inputs) in
+    if \<not> fis_singleton poss_steps then
+      None
     else
       let
-      (updated, redundant) = apply_updates_redundancy (Updates ta) (join_ir inputs r) r [];
-      newT = \<lparr>Label = Label ta, Arity = Arity ta, Guard = Guard ta, Outputs = Outputs ta, Updates = filter (\<lambda>u. u \<notin> set redundant) (Updates ta)\<rparr>
-    in
-      remove_redundant_updates t (replace_transition e tid newT) s' updated
+        (tid, s', ta) = fthe_elem (ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir inputs r) = map Some outputs) (i_possible_steps e s r label inputs));
+        (updated, redundant) = apply_updates_redundancy (Updates ta) (join_ir inputs r) r []
+       in
+      \<comment> \<open>If there aren't any outgoing transitions, we don't need any updates\<close>
+      if outgoing_transitions s' e = {||} then
+        let newT = \<lparr>Label = Label ta, Arity = Arity ta, Guard = Guard ta, Outputs = Outputs ta, Updates = []\<rparr> in
+        remove_redundant_updates t (replace_transition e tid newT) s' updated
+      \<comment> \<open>We want to maintain suposedly redundant updates on self transitions because they'll be visited more than once\<close>
+      else if s' = s then
+        remove_redundant_updates t e s' updated
+      else
+        let
+        newT = \<lparr>Label = Label ta, Arity = Arity ta, Guard = Guard ta, Outputs = Outputs ta, Updates = filter (\<lambda>u. u \<notin> set redundant) (Updates ta)\<rparr>
+      in
+        remove_redundant_updates t (replace_transition e tid newT) s' updated
   )"
 
-primrec remove_redundant_updates_log :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "remove_redundant_updates_log [] e = e" |
-  "remove_redundant_updates_log (h#t) e = remove_redundant_updates_log t (remove_redundant_updates h e 0 <>)"
+primrec remove_redundant_updates_log :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+  "remove_redundant_updates_log [] e = Some e" |
+  "remove_redundant_updates_log (h#t) e = (case remove_redundant_updates h e 0 <> of
+    None \<Rightarrow> None |
+    Some e \<Rightarrow> remove_redundant_updates_log t e
+  )"
 
 definition historical_infer_output_update_functions :: "log \<Rightarrow> update_modifier" where
   "historical_infer_output_update_functions log t1ID t2ID s new _ old np = (
@@ -435,10 +448,9 @@ definition historical_infer_output_update_functions :: "log \<Rightarrow> update
             Some updated \<Rightarrow> (
               case resolve_nondeterminism [] (sorted_list_of_fset (np updated)) old updated null_modifier (\<lambda>a. True) np of
                 None \<Rightarrow> None |
-                Some new \<Rightarrow> Some (remove_redundant_updates_log log new)
+                Some new \<Rightarrow> remove_redundant_updates_log log new
           )
         )
   )"
-
 
 end

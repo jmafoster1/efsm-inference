@@ -11,21 +11,31 @@ fun less_aexpr :: "aexp \<Rightarrow> aexp \<Rightarrow> bool"  where
   "less_aexpr (L l1) (V v2) = True" |
   "less_aexpr (L l1) (Plus e1 e2) = True" |
   "less_aexpr (L l1) (Minus e1 e2) = True" |
+  "less_aexpr (L l1) (Times e1 e2) = True" |
 
   "less_aexpr (V v1) (L l1) = False" |
   "less_aexpr (V v1) (V v2) = (v1 < v2)" |
   "less_aexpr (V v1) (Plus e1 e2) = True" |
   "less_aexpr (V v1) (Minus e1 e2) = True" |
+  "less_aexpr (V v1) (Times e1 e2) = True" |
 
   "less_aexpr (Plus e1 e2) (L l2) = False" |
   "less_aexpr (Plus e1 e2) (V v2) = False" |
   "less_aexpr (Plus e1 e2) (Plus e1' e2') = ((less_aexpr e1 e1') \<or> ((e1 = e1') \<and> (less_aexpr e2 e2')))" |
   "less_aexpr (Plus e1 e2) (Minus e1' e2') = True" |
+  "less_aexpr (Plus e1 e2) (Times e1' e2') = True" |
 
   "less_aexpr (Minus e1 e2) (L l2) = False" |
   "less_aexpr (Minus e1 e2) (V v2) = False" |
   "less_aexpr (Minus e1 e2) (Plus e1' e2') = False" |
-  "less_aexpr (Minus e1 e2) (Minus e1' e2') = ((less_aexpr e1 e1') \<or> ((e1 = e1') \<and> (less_aexpr e2 e2')))"
+  "less_aexpr (Minus e1 e2) (Minus e1' e2') = ((less_aexpr e1 e1') \<or> ((e1 = e1') \<and> (less_aexpr e2 e2')))" |
+  "less_aexpr (Minus e1 e2) (Times e1' e2') = True" |
+
+  "less_aexpr (Times e1 e2) (L l2) = False" |
+  "less_aexpr (Times e1 e2) (V v2) = False" |
+  "less_aexpr (Times e1 e2) (Plus e1' e2') = False" |
+  "less_aexpr (Times e1 e2) (Minus e1' e2') = False" |
+  "less_aexpr (Times e1 e2) (Times e1' e2') = ((less_aexpr e1 e1') \<or> ((e1 = e1') \<and> (less_aexpr e2 e2')))"
 
   definition less_eq_aexp :: "aexp \<Rightarrow> aexp \<Rightarrow> bool"
     where "less_eq_aexp e1 e2 \<equiv> (less_aexpr e1 e2) \<or> (e1 = e2)"
@@ -36,72 +46,82 @@ fun less_aexpr :: "aexp \<Rightarrow> aexp \<Rightarrow> bool"  where
   lemma aexp_antisym: "less_aexpr x y = (\<not>(less_aexpr y x) \<and> (x \<noteq> y))"
     by (induction x y rule: less_aexpr.induct) auto
 
-
-  lemma aexp_trans: "less_aexpr x y \<Longrightarrow> less_aexpr y z \<Longrightarrow> less_aexpr x z"
+lemma aexp_trans: "less_aexpr x y \<Longrightarrow> less_aexpr y z \<Longrightarrow> less_aexpr x z"
   proof (induction x y arbitrary: z rule: less_aexpr.induct)
     case (1 l1 l2)
-    then show ?case
-      by (cases z) auto
+    then show ?case by (cases z, auto)
   next
     case (2 l1 v2)
-    then show ?case
-      by (cases z) auto
+    then show ?case by (cases z, auto)
   next
     case (3 l1 e1 e2)
-    then show ?case
-      by (cases z) auto
+    then show ?case by (cases z, auto)
   next
     case (4 l1 e1 e2)
-    then show ?case
-      by (cases z) auto
+    then show ?case by (cases z, auto)
   next
-    case (5 v1 l1)
-    then show ?case
-      by (cases z) auto
+    case (5 l1 e1 e2)
+    then show ?case by (cases z, auto)
   next
-    case (6 v1 v2)
-    then show ?case
-      by (cases z) auto
+    case (6 v1 l1)
+    then show ?case by (cases z, auto)
   next
-    case (7 v1 e1 e2)
-    then show ?case
-      by (cases z) auto
+    case (7 v1 v2)
+    then show ?case by (cases z, auto)
   next
     case (8 v1 e1 e2)
-    then show ?case
-      by (cases z) auto
+    then show ?case by (cases z, auto)
   next
-  case (9 e1 e2 l2)
-    then show ?case
-      by (cases z) auto
+    case (9 v1 e1 e2)
+  then show ?case by (cases z, auto)
   next
-  case (10 e1 e2 v2)
-  then show ?case
-      by (cases z) auto
+  case (10 v1 e1 e2)
+    then show ?case by (cases z, auto)
   next
-    case (11 e1 e2 e1' e2')
-    then show ?case
-      by (cases z) auto
+    case (11 e1 e2 l2)
+    then show ?case by (cases z, auto)
   next
-    case (12 e1 e2 e1' e2')
-    then show ?case
-      by (cases z) auto
+    case (12 e1 e2 v2)
+    then show ?case by (cases z, auto)
   next
-    case (13 e1 e2 l2)
-    then show ?case
-      by (cases z) auto
+    case (13 e1 e2 e1' e2')
+    then show ?case by (cases z, auto)
   next
-    case (14 e1 e2 v2)
-    then show ?case
-      by (cases z) auto
+    case (14 e1 e2 e1' e2')
+    then show ?case by (cases z, auto)
   next
     case (15 e1 e2 e1' e2')
-    then show ?case
-      by (cases z) auto
+    then show ?case by (cases z, auto)
   next
-    case (16 e1 e2 e1' e2')
-    then show ?case
-      by (cases z) auto
+    case (16 e1 e2 l2)
+    then show ?case by (cases z, auto)
+  next
+    case (17 e1 e2 v2)
+    then show ?case by (cases z, auto)
+  next
+  case (18 e1 e2 e1' e2')
+    then show ?case by (cases z, auto)
+  next
+  case (19 e1 e2 e1' e2')
+  then show ?case by (cases z, auto)
+  next
+    case (20 e1 e2 e1' e2')
+  then show ?case by (cases z, auto)
+  next
+    case (21 e1 e2 l2)
+  then show ?case by (cases z, auto)
+  next
+    case (22 e1 e2 v2)
+    then show ?case by (cases z, auto)
+  next
+    case (23 e1 e2 e1' e2')
+    then show ?case by (cases z, auto)
+  next
+    case (24 e1 e2 e1' e2')
+  then show ?case by (cases z, auto)
+  next
+    case (25 e1 e2 e1' e2')
+    then show ?case by (cases z, auto)
   qed
 
   instance proof

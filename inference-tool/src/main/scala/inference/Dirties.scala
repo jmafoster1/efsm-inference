@@ -61,6 +61,7 @@ object Dirties {
     case AExp.V(v) => s"${toZ3(v)}"
     case AExp.Plus(a1, a2) => s"(Plus ${toZ3(a1)} ${toZ3(a2)})"
     case AExp.Minus(a1, a2) => s"(Minus ${toZ3(a1)} ${toZ3(a2)})"
+    case AExp.Times(a1, a2) => s"(Times ${toZ3(a1)} ${toZ3(a2)})"
   }
 
   def toZ3Native(v: Value.value): String = v match {
@@ -73,6 +74,7 @@ object Dirties {
     case AExp.V(v) => s"${toZ3(v)}"
     case AExp.Plus(a1, a2) => s"(+ ${toZ3Native(a1)} ${toZ3Native(a2)})"
     case AExp.Minus(a1, a2) => s"(- ${toZ3Native(a1)} ${toZ3Native(a2)})"
+    case AExp.Times(a1, a2) => s"(* ${toZ3Native(a1)} ${toZ3Native(a2)})"
   }
 
   def toZ3(g: GExp.gexp): String = g match {
@@ -133,6 +135,25 @@ object Dirties {
         (_ None))
       )
     )
+
+    (define-fun Times ((x (Option Value)) (y (Option Value))) (Option Value)
+    (match x (
+      ((Some v1)
+      (match y (
+        ((Some v2)
+        (match v1 (
+          ((Num n1)
+          (match v2 (
+            ((Num n2) (Some (Num (* n1 n2))))
+            (_ None))
+          ))
+          (_ None))
+        ))
+        (_ None))
+      ))
+      (_ None))
+    )
+  )
 
     (define-fun Nor ((x Trilean) (y Trilean)) Trilean
     (ite (and (= x true) (= y true)) false
@@ -219,7 +240,6 @@ false)
 
   // Check that whenever we're in state s, register r is always undefined
   def initiallyUndefinedContextCheck(e: TransitionMatrix, r: Nat.nat, s: Nat.nat): Boolean = {
-    try {
       val f = "intermediate_" + randomUUID.toString().replace("-", "_")
       TypeConversion.efsmToSALTranslator(e, f)
 
@@ -231,13 +251,6 @@ false)
       }
       FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
       return (output.toString == "proved.\n")
-    }
-    catch {
-          case x: IsabelleException => {
-            // TODO: This is dangerous!
-            return true
-          }
-        }
   }
 
   // We're looking to confirm that traces which get us to s1 in e1 and s2 in e2
@@ -323,7 +336,6 @@ false)
     s2: Nat.nat,
     t1: Transition.transition_ext[A],
     t2: Transition.transition_ext[B]): Boolean = {
-      try {
         val f = "intermediate_" + randomUUID.toString().replace("-", "_")
         TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
         addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
@@ -337,17 +349,8 @@ false)
               );""")
         val cmd = s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2))) + 1}}!canStillTake'"
         val output = Seq("bash", "-c", cmd).!!
-        FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
+        // FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
         return (output.toString.startsWith("Counterexample"))
-      }
-      catch {
-            case x: IsabelleException => {
-              // TODO: This is dangerous
-              PrettyPrinter.iEFSM2dot(e1, "e1")
-              PrettyPrinter.iEFSM2dot(e2, "e2")
-              return true
-        }
-    }
   }
 
   def scalaDirectlySubsumes(

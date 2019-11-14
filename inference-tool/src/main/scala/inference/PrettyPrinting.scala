@@ -175,4 +175,8 @@ object PrettyPrinter {
       return s"(${regsToString(target)}, ${natToString(state)}, ${regsToString(extraRegs)}, [${inputsToString(inputs)}], [${tids.map(tid => natToString(tid)).mkString(", ")}], ${transitionToString(tran)})"
     }
   }
+
+  def i_stepToString(s: (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))) = s match {
+    case (ids, (s_prime, t)) => ("[" + ids.map(id => natToString(id)).mkString(",") + "]", natToString(s_prime), transitionToString(t))
+  }
 }
