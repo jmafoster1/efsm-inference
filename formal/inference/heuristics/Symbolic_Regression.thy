@@ -421,7 +421,7 @@ primrec remove_redundant_updates_log :: "log \<Rightarrow> iEFSM \<Rightarrow> i
   "remove_redundant_updates_log [] e = Some e" |
   "remove_redundant_updates_log (h#t) e = (case remove_redundant_updates h e 0 <> of
     None \<Rightarrow> None |
-    Some e \<Rightarrow> remove_redundant_updates_log t e
+    Some e' \<Rightarrow> remove_redundant_updates_log t e'
   )"
 
 definition historical_infer_output_update_functions :: "log \<Rightarrow> update_modifier" where
@@ -445,10 +445,10 @@ definition historical_infer_output_update_functions :: "log \<Rightarrow> update
         Some lit \<Rightarrow> (
           case put_updates log values t1 lit (enumerate 0 output_functions) new of
             None \<Rightarrow> None |
-            Some updated \<Rightarrow> (
-              case resolve_nondeterminism [] (sorted_list_of_fset (np updated)) old updated (distinguish log) (\<lambda>a. True) np of
+            Some put \<Rightarrow> (
+              case remove_redundant_updates_log log put of
                 None \<Rightarrow> None |
-                Some new \<Rightarrow> remove_redundant_updates_log log new
+                Some new \<Rightarrow> resolve_nondeterminism [] (sorted_list_of_fset (np new)) old new (distinguish log) (\<lambda>a. True) np
           )
         )
   )"

@@ -404,7 +404,12 @@ false)
       new SubtractIntegersOperator())
     gpGenerator.setIntegerFunctions(intNonTerms);
 
-    var intTerms = List[VariableTerminal[_]](new IntegerVariableAssignmentTerminal(0))
+    var intTerms = List[VariableTerminal[_]](
+      new IntegerVariableAssignmentTerminal(0),
+      new IntegerVariableAssignmentTerminal(51),
+      new IntegerVariableAssignmentTerminal(49),
+      new IntegerVariableAssignmentTerminal(50)
+    )
 
     // No supported stringNonTerms
     var stringTerms = List[VariableTerminal[_]]()
@@ -496,14 +501,23 @@ false)
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
-    // println("Guard training set: " + trainingSet)
-    // println("  Int terminals: " + intTerms)
-    // println("  Best function is: " + best.simp())
+    if (Symbolic_Regression.numH == 80) {
+      println("g1Train:")
+      for (kv <- g1)
+        println("  "+kv)
+      println("g2Train:")
+      for (kv <- g2)
+        println("  "+kv)
+      println("Guard training set: " + trainingSet)
+      println("  Int terminals: " + intTerms)
+      // println("  Best function is: " + best.simp())
+    }
 
     val ctx = new z3.Context()
     val gexp = TypeConversion.gexpFromZ3(best.toZ3(ctx))
     ctx.close
     if (gp.isCorrect(best)) {
+      println("g1: "+PrettyPrinter.gexpToString(gexp))
       return Some((gexp, GExp.gNot(gexp)))
     } else {
       return None
@@ -588,9 +602,9 @@ false)
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
-    println("Update training set: " + trainingSet)
+    // println("Update training set: " + trainingSet)
     // println("  Int terminals: " + intTerms)
-    println("  Best function is: " + best.simp())
+    // println("  Best function is: " + best.simp())
 
     val ctx = new z3.Context()
     val aexp = TypeConversion.aexpFromZ3(best.toZ3(ctx))
