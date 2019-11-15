@@ -607,7 +607,9 @@ export_code
   Ge
   Ne
   (* Scoring functions *)
-  naive_score naive_score_eq
+  naive_score
+  naive_score_eq_bonus
+  naive_score_eq
   naive_score_outputs
   naive_score_comprehensive
   naive_score_comprehensive_eq_high

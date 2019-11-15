@@ -323,9 +323,11 @@ object TypeConversion {
     isabellesal.EFSM.newOneFrom(e1Name, FSet.sorted_list_of_fset(e1).map(toMichaelsMove): _*)
     isabellesal.EFSM.newOneFrom(e2Name, FSet.sorted_list_of_fset(e2).map(toMichaelsMove): _*)
     new Translator().writeSALandDOT(Paths.get("salfiles"), f);
-    if (delete) {
-      s"rm salfiles/${f}.dot".!
-    }
+    PrettyPrinter.EFSM2dot(e1, f + "1")
+    PrettyPrinter.EFSM2dot(e2, f + "2")
+    // if (delete) {
+    //   s"rm salfiles/${f}.dot".!
+    // }
   }
 
   def indexWithInts(e: List[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]): List[((Int, Int), Transition.transition_ext[Unit])] =

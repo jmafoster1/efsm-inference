@@ -501,17 +501,17 @@ false)
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
-    if (Symbolic_Regression.numH == 80) {
-      println("g1Train:")
-      for (kv <- g1)
-        println("  "+kv)
-      println("g2Train:")
-      for (kv <- g2)
-        println("  "+kv)
-      println("Guard training set: " + trainingSet)
-      println("  Int terminals: " + intTerms)
-      // println("  Best function is: " + best.simp())
-    }
+    // if (Symbolic_Regression.numH == 80) {
+    //   println("g1Train:")
+    //   for (kv <- g1)
+    //     println("  "+kv)
+    //   println("g2Train:")
+    //   for (kv <- g2)
+    //     println("  "+kv)
+    //   println("Guard training set: " + trainingSet)
+    //   println("  Int terminals: " + intTerms)
+    //   // println("  Best function is: " + best.simp())
+    // }
 
     val ctx = new z3.Context()
     val gexp = TypeConversion.gexpFromZ3(best.toZ3(ctx))
@@ -529,12 +529,15 @@ false)
     values: List[Value.value],
     train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Map[Nat.nat, Option[Value.value]]))]): Option[AExp.aexp] = {
 
+      val r_index = TypeConversion.toInt(r)
       val ioPairs = (train.map{
           case (inputs, (aregs, pregs)) => pregs(r) match {
               case Some(v) => ((inputs, aregs), v)
           }
         }
-      )
+      ).distinct
+
+println("ioPairs: "+ioPairs)
 
       if (funMap isDefinedAt ioPairs) {
         return Some(funMap(ioPairs)._1)
@@ -566,8 +569,8 @@ false)
 
     val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
 
-    for (t <- train) t match {
-      case (inputs, (anteriorRegs, posteriorRegs)) => {
+    for (t <- ioPairs) t match {
+      case ((inputs, anteriorRegs), updatedReg) => {
         var scenario = List[VariableAssignment[_]]()
         for ((ip, ix) <- inputs.zipWithIndex) ip match {
           case Value.Numa(n) => {
@@ -579,10 +582,15 @@ false)
             scenario = (new StringVariableAssignment(s"i${ix}", s)) :: scenario
           }
         }
-        posteriorRegs(r) match {
-          case None => ()
-          case Some(Value.Numa(n)) => trainingSet.put(scenario, new IntegerVariableAssignment("o1", TypeConversion.toInteger(n)))
-          case Some(Value.Str(s)) => trainingSet.put(scenario, new StringVariableAssignment("o1", s))
+        updatedReg match {
+          case Value.Numa(n) => {
+            intVarNames = "r"+r_index :: intVarNames
+            trainingSet.put(scenario, new IntegerVariableAssignment("r"+r_index, TypeConversion.toInteger(n)))
+          }
+          case Value.Str(s) => {
+            stringVarNames = "r"+r_index :: stringVarNames
+            trainingSet.put(scenario, new StringVariableAssignment("r"+r_index, s))
+          }
         }
       }
     }
@@ -602,9 +610,9 @@ false)
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
-    // println("Update training set: " + trainingSet)
-    // println("  Int terminals: " + intTerms)
-    // println("  Best function is: " + best.simp())
+    println("Update training set: " + trainingSet)
+    println("  Int terminals: " + intTerms)
+    println("  Best function is: " + best.simp())
 
     val ctx = new z3.Context()
     val aexp = TypeConversion.aexpFromZ3(best.toZ3(ctx))
@@ -634,7 +642,7 @@ false)
     i: List[List[Value.value]],
     o: List[Value.value]): Option[(AExp.aexp, Map[VName.vname, String])] = {
 
-      val ioPairs = i zip i.map(i => null) zip o
+      val ioPairs = (i zip i.map(i => null) zip o).distinct
 
       if (funMap isDefinedAt ioPairs) {
         return Some(funMap(ioPairs))

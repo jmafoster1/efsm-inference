@@ -14,7 +14,21 @@ subsection\<open>One of the simplest strategies is to look only at the labels an
 transitions of each state. Pairs of states are ranked by how many transitions with the same label
 and arity they have in common.\<close>
 definition naive_score :: strategy where
-  "naive_score t1ID t2ID e = (let t1 = get_by_ids e t1ID; t2 = get_by_ids e t2ID in bool2nat (Label t1 = Label t2 \<and> Arity t1 = Arity t2))"
+  "naive_score t1ID t2ID e = (
+    let
+      t1 = get_by_ids e t1ID;
+      t2 = get_by_ids e t2ID
+    in
+    bool2nat (Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2)))"
+
+definition naive_score_eq_bonus :: strategy where
+  "naive_score_eq_bonus t1ID t2ID e = (
+    let
+      t1 = get_by_ids e t1ID;
+      t2 = get_by_ids e t2ID
+    in
+    bool2nat (Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2)) +
+    bool2nat (t1 = t2))"
 
 (* One point if they're equal *)
 definition naive_score_eq :: strategy where

@@ -5156,8 +5156,9 @@ object SelectionStrategies {
       val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t1ID)
       val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t2ID);
       bool2nat((Transition.Label[Unit](t1) ==
-        Transition.Label[Unit](t2)) && (Nat.equal_nata(Transition.Arity[Unit](t1),
-          Transition.Arity[Unit](t2))))
+        Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
+          Transition.Arity[Unit](t2))) && (Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](t1)).length),
+            Nat.Nata((Transition.Outputs[Unit](t2)).length)))))
     }
 
   def origin_states(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
@@ -5187,6 +5188,18 @@ object SelectionStrategies {
           Transition.Arity[Unit](t2)))),
         bool2nat(Lista.equal_lista[AExp.aexp](Transition.Outputs[Unit](t1),
           Transition.Outputs[Unit](t2))))
+    }
+
+  def naive_score_eq_bonus(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
+    e: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]): Nat.nat =
+    {
+      val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t1ID)
+      val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t2ID);
+      Nat.plus_nata(bool2nat((Transition.Label[Unit](t1) ==
+        Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
+          Transition.Arity[Unit](t2))) && (Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](t1)).length),
+            Nat.Nata((Transition.Outputs[Unit](t2)).length))))),
+        bool2nat(Transition.equal_transition_exta[Unit](t1, t2)))
     }
 
   def naive_score_comprehensive(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
@@ -5325,8 +5338,6 @@ object Distinguishing_Guards {
       FSet.sorted_list_of_fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))](e),
       pta)
 
-  var numD = 0
-
   def distinguish(log: List[List[(String, (List[Value.value], List[Value.value]))]],
     t1ID: List[Nat.nat], t2ID: List[Nat.nat], s: Nat.nat,
     destMerge: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
@@ -5334,20 +5345,14 @@ object Distinguishing_Guards {
     old: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
     np: (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]): Option[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]] =
     {
-      numD += 1
-      val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(destMerge, t1ID)
-      val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(destMerge, t2ID)
-      val uPTA: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] = transfer_updates(destMerge, Inference.make_pta(log, FSet.bot_fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]))
+      val t1: Transition.transition_ext[Unit] =
+        Inference.get_by_ids(destMerge, t1ID)
+      val t2: Transition.transition_ext[Unit] =
+        Inference.get_by_ids(destMerge, t2ID)
+      val uPTA: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] = transfer_updates(destMerge,
+        Inference.make_pta(log,
+          FSet.bot_fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]))
       val (g1, g2): (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])], List[(List[Value.value], Map[Nat.nat, Option[Value.value]])]) = collect_training_sets(log, uPTA, t1ID, t2ID, Nil, Nil);
-      if (Symbolic_Regression.numH == 80) {
-        PrettyPrinter.iEFSM2dot(uPTA, "uPTA" + numD)
-          println("g1:")
-          for (kv <- g1)
-            println("  "+kv)
-          println("g2:")
-          for (kv <- g2)
-            println("  "+kv)
-        }
       (Dirties.findDistinguishingGuard(g1, g2) match {
         case None => None
         case Some((g1a, g2a)) =>
@@ -6342,97 +6347,72 @@ object Symbolic_Regression {
     }
 
     var numH = 0
-    def historical_infer_output_update_functions(log: List[List[(String, (List[Value.value], List[Value.value]))]],
-      t1ID: List[Nat.nat], t2ID: List[Nat.nat], s: Nat.nat,
-      newa: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-      uu: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-      old: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-      np: (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]): Option[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]] =
-      {
-        numH += 1
-        val i_log: List[(Nat.nat, List[(Nat.nat, (String, (List[Value.value], List[Value.value])))])] = Lista.enumerate[List[(Nat.nat, (String, (List[Value.value], List[Value.value])))]](Nat.zero_nata,
-          Lista.map[List[(String, (List[Value.value], List[Value.value]))], List[(Nat.nat, (String, (List[Value.value], List[Value.value])))]](((a: List[(String, (List[Value.value], List[Value.value]))]) =>
-            Lista.enumerate[(String, (List[Value.value], List[Value.value]))](Nat.zero_nata, a)),
-            log))
-        val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(newa, t1ID)
-        val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(newa, t1ID)
-        val values: List[Value.value] = enumerate_log_values(log)
-        val max_reg: Nat.nat = Inference.max_reg_total(newa)
-        val relevant_events: List[(Nat.nat, (Nat.nat, (String, (List[Value.value], List[Value.value]))))] = flatten(Lista.map[(Nat.nat, List[(Nat.nat, (String, (List[Value.value], List[Value.value])))]), (Nat.nat, List[(Nat.nat, (String, (List[Value.value], List[Value.value])))])](((a: (Nat.nat, List[(Nat.nat, (String, (List[Value.value], List[Value.value])))])) =>
-          {
-            val (i, ex): (Nat.nat, List[(Nat.nat, (String, (List[Value.value], List[Value.value])))]) = a;
-            (i, Lista.filter[(Nat.nat, (String, (List[Value.value], List[Value.value])))](((aa: (Nat.nat, (String, (List[Value.value], List[Value.value])))) =>
-              {
-                val (_, (l, (ip, op))): (Nat.nat, (String, (List[Value.value], List[Value.value]))) = aa;
-                (l == Transition.Label[Unit](t1)) && ((Nat.equal_nata(Nat.Nata(ip.length),
-                  Transition.Arity[Unit](t1))) && (Nat.equal_nata(Nat.Nata(op.length),
-                    Nat.Nata((Transition.Outputs[Unit](t1)).length))))
-              }),
-              ex))
-          }),
-          i_log),
-          Nil)
-        val output_functions: List[Option[(AExp.aexp, Map[VName.vname, String])]] =
-          get_functions(max_reg, values,
-            Nat.Nata((Transition.Outputs[Unit](t1)).length),
-            relevant_events)
-        val pta: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] = Inference.make_pta(log, FSet.bot_fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))])
-        val lit_updates: Option[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]] = put_output_functions(Lista.enumerate[Option[(AExp.aexp, Map[VName.vname, String])]](Nat.zero_nata, output_functions),
-          i_log, t1, pta);
-        (if (!(Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](t1)).length),
-          Nat.Nata((Transition.Outputs[Unit](t2)).length))))
-          None
-        else (lit_updates match {
-          case None => None
-          case Some(lit) =>
+
+  def historical_infer_output_update_functions(log: List[List[(String, (List[Value.value], List[Value.value]))]],
+    t1ID: List[Nat.nat], t2ID: List[Nat.nat], s: Nat.nat,
+    newa: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+    uu: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+    old: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+    np: (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]): Option[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]] =
+    {
+      numH += 1
+      val i_log: List[(Nat.nat, List[(Nat.nat, (String, (List[Value.value], List[Value.value])))])] = Lista.enumerate[List[(Nat.nat, (String, (List[Value.value], List[Value.value])))]](Nat.zero_nata,
+        Lista.map[List[(String, (List[Value.value], List[Value.value]))], List[(Nat.nat, (String, (List[Value.value], List[Value.value])))]](((a: List[(String, (List[Value.value], List[Value.value]))]) =>
+          Lista.enumerate[(String, (List[Value.value], List[Value.value]))](Nat.zero_nata, a)),
+          log))
+      val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(newa, t1ID)
+      val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(newa, t1ID)
+      val values: List[Value.value] = enumerate_log_values(log)
+      val max_reg: Nat.nat = Inference.max_reg_total(newa)
+      val relevant_events: List[(Nat.nat, (Nat.nat, (String, (List[Value.value], List[Value.value]))))] = flatten(Lista.map[(Nat.nat, List[(Nat.nat, (String, (List[Value.value], List[Value.value])))]), (Nat.nat, List[(Nat.nat, (String, (List[Value.value], List[Value.value])))])](((a: (Nat.nat, List[(Nat.nat, (String, (List[Value.value], List[Value.value])))])) =>
+        {
+          val (i, ex): (Nat.nat, List[(Nat.nat, (String, (List[Value.value], List[Value.value])))]) = a;
+          (i, Lista.filter[(Nat.nat, (String, (List[Value.value], List[Value.value])))](((aa: (Nat.nat, (String, (List[Value.value], List[Value.value])))) =>
             {
-              println(numH + "lit")
-              PrettyPrinter.iEFSM2dot(lit, numH)
-              put_updates(log, values, t1, lit, Lista.enumerate[Option[(AExp.aexp, Map[VName.vname, String])]](Nat.zero_nata, output_functions), newa) match {
-                case None => {
-                  println(numH + "Failed to put")
-                  None
-                }
-                case Some(put) => {
-                    println(numH + "put")
-                    PrettyPrinter.iEFSM2dot(put, numH + "put")
-                    remove_redundant_updates_log(log, put) match {
-                      case None => {
-                        println(numH + "Failed to remove")
-                        None
-                      }
-                      case Some(newb) => {
-                        println(numH + "removed")
-                        PrettyPrinter.iEFSM2dot(newb, numH + "removed")
-                        Inference.resolve_nondeterminism(Nil,
-                          FSet.sorted_list_of_fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))](np(newb)),
-                          old, newb,
-                          ((a: List[Nat.nat]) => (b: List[Nat.nat]) => (c: Nat.nat) =>
-                            (d: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
-                              (e: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
-                                (f: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
-                                  (g: (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]) =>
-                                    Distinguishing_Guards.distinguish(log, a, b, c, d, e, f,
-                                      g)),
-                          ((_: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]) =>
-                            true),
-                          np) match {
-                            case None => {
-                              println(numH + "Failed to resolve")
-                              None
-                            }
-                            case Some(resolved) => {
-                              println(numH + "resolved")
-                              PrettyPrinter.iEFSM2dot(resolved, numH + "resolved")
-                              Some(resolved)
-                            }
-                          }
-                      }
+              val (_, (l, (ip, op))): (Nat.nat, (String, (List[Value.value], List[Value.value]))) = aa;
+              (l == Transition.Label[Unit](t1)) && ((Nat.equal_nata(Nat.Nata(ip.length),
+                Transition.Arity[Unit](t1))) && (Nat.equal_nata(Nat.Nata(op.length),
+                  Nat.Nata((Transition.Outputs[Unit](t1)).length))))
+            }),
+            ex))
+        }),
+        i_log),
+        Nil)
+      val output_functions: List[Option[(AExp.aexp, Map[VName.vname, String])]] =
+        get_functions(max_reg, values,
+          Nat.Nata((Transition.Outputs[Unit](t1)).length),
+          relevant_events)
+      val pta: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] = Inference.make_pta(log, FSet.bot_fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))])
+      val lit_updates: Option[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]] = put_output_functions(Lista.enumerate[Option[(AExp.aexp, Map[VName.vname, String])]](Nat.zero_nata, output_functions),
+        i_log, t1, pta);
+      (if (!(Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](t1)).length),
+        Nat.Nata((Transition.Outputs[Unit](t2)).length))))
+        None
+      else (lit_updates match {
+        case None => None
+        case Some(lit) =>
+          (put_updates(log, values, t1, lit, Lista.enumerate[Option[(AExp.aexp, Map[VName.vname, String])]](Nat.zero_nata, output_functions), newa) match {
+              case None => None
+              case Some(put) =>
+                {
+                  PrettyPrinter.iEFSM2dot(put, numH + "put")
+
+                  (remove_redundant_updates_log(log, put) match {
+                  case None => None
+                  case Some(newb) => {
+                    PrettyPrinter.iEFSM2dot(newb, numH + "newb")
+                    Inference.resolve_nondeterminism(Nil, FSet.sorted_list_of_fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))](np(newb)), old, newb,
+                      ((a: List[Nat.nat]) => (b: List[Nat.nat]) => (c: Nat.nat) =>
+                        (d: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
+                          (e: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
+                            (f: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
+                              (g: (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]) =>
+                                Distinguishing_Guards.distinguish(log, a, b, c, d, e, f, g)),
+                      ((_: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]) => true), np)
                     }
-                  }
-              }
-            }
-        }))
-      }
+                })}
+            })
+      }))
+    }
 
 } /* object Symbolic_Regression */
