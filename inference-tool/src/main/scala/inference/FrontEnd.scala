@@ -54,6 +54,10 @@ object FrontEnd {
         Log.root.info(s"Completed in ${if (hours > 0) s"${hours.toInt}h " else ""}${if (minutes > 0) s"${minutes.toInt}m " else ""}${seconds % 60}s")
         Log.root.info(s"states: ${FSet.size_fset(Inference.S(inferred))}")
         Log.root.info(s"transitions: ${FSet.size_fset(inferred)}")
+
+        // for (tran <- FSet.sorted_list_of_fset(inferred)) {
+        //   println(tran)
+        // }
     }
     catch {
       case e: Throwable => {

@@ -34,9 +34,6 @@ lemma MaybeBoolInt_not_num_1: "\<forall>n. r \<noteq> Some (Num n) \<Longrightar
 definition value_gt :: "value option \<Rightarrow> value option \<Rightarrow> trilean"  where
   "value_gt a b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x>y)) a b"
 
-definition value_lt :: "value option \<Rightarrow> value option \<Rightarrow> trilean"  where
-  "value_lt a b \<equiv> MaybeBoolInt (\<lambda>x::int.\<lambda>y::int.(x<y)) a b"
-
 definition value_eq :: "value option \<Rightarrow> value option \<Rightarrow> trilean"  where
   "value_eq a b \<equiv> (if a = b then true else false)"
 declare value_eq_def [simp]
