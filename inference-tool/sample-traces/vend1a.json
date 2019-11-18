@@ -14,7 +14,6 @@
     {"label":"select","inputs":["pepsi"],"outputs":[]},
     {"label":"coin","inputs":[50],"outputs":[50]},
     {"label":"coin","inputs":[50],"outputs":[100]},
-    {"label":"coin","inputs":[50],"outputs":[150]},
     {"label":"vend","inputs":[],"outputs":["pepsi"]}
 ],
 [

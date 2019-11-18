@@ -30,7 +30,17 @@ definition get_functions :: "nat \<Rightarrow> value list \<Rightarrow> nat \<Ri
   "get_functions maxReg values n l = map (\<lambda>p. get_function maxReg values (get_inputs l) (get_outputs l p)) [0..<n]"
 
 definition insert_updates :: "transition \<Rightarrow> update_function list \<Rightarrow> transition" where
-  "insert_updates t u = \<lparr>Label = Label t, Arity = Arity t, Guard = Guard t, Outputs = Outputs t, Updates = (filter (\<lambda>(r, _). r \<notin> set (map fst u)) (Updates t))@u\<rparr>"
+  "insert_updates t u = (
+    let
+      \<comment> \<open>Need to derestrict variables which occur in the updates but keep unrelated ones to avoid \<close>
+      \<comment> \<open>nondeterminism creeping in too early in the inference process                            \<close>
+      relevant_vars = image V (fold (\<lambda>(r, u) acc. acc \<union> (AExp.enumerate_vars u)) u {});
+      \<comment> \<open>Want to filter out null updates of the form rn := rn. It doesn't affect anything but it  \<close>
+      \<comment> \<open>does make things look cleaner                                                            \<close>
+      necessary_updates = filter (\<lambda>(r, u). u \<noteq> V (R r)) u
+    in
+    \<lparr>Label = Label t, Arity = Arity t, Guard = filter (\<lambda>g. \<forall>v \<in> relevant_vars. \<not> gexp_constrains g v) (Guard t), Outputs = Outputs t, Updates = (filter (\<lambda>(r, _). r \<notin> set (map fst u)) (Updates t))@necessary_updates\<rparr>
+  )"
 
 definition drop_guard :: "transition \<Rightarrow> transition" where
   "drop_guard t = \<lparr>Label = Label t, Arity = Arity t, Guard = [], Outputs = Outputs t, Updates = Updates t\<rparr>"
@@ -121,7 +131,8 @@ fun put_output_function_aux :: "nat \<Rightarrow> aexp \<Rightarrow> (vname \<Ri
     if \<exists>(_, _, t) |\<in>| e. overwrites_update (Updates t) {} then
       None
     else
-      Some e)" |
+      Some e
+  )" |
   "put_output_function_aux fi f types ((_, l, i, p)#t) label i_arity o_arity prevtid e s r = (
     let
     poss_steps = ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir i r) = map Some p) (i_possible_steps e s r l i) in
@@ -352,7 +363,7 @@ fun add_groupwise_updates :: "(tids \<times> update_function list) option list \
   "add_groupwise_updates (None#t) e = add_groupwise_updates t e" |
   "add_groupwise_updates (Some (tids, u)#t) e = (
     let
-      newTransitions = map (\<lambda>tid. drop_guard (insert_updates (get_by_id e tid) u)) tids;
+      newTransitions = map (\<lambda>tid. (insert_updates (get_by_id e tid) u)) tids;
       replacements = zip (map (\<lambda>id. [id]) tids) newTransitions
     in
     add_groupwise_updates t (replace_transitions e replacements)

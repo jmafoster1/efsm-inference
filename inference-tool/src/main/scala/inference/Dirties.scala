@@ -334,8 +334,10 @@ false)
     e2: IEFSM,
     s1: Nat.nat,
     s2: Nat.nat,
-    t1: Transition.transition_ext[A],
-    t2: Transition.transition_ext[B]): Boolean = {
+    t1: Transition.transition_ext[Unit],
+    t2: Transition.transition_ext[Unit]): Boolean = {
+      return false // TODO: Delete this
+
         val f = "intermediate_" + randomUUID.toString().replace("-", "_")
         TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
         addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
@@ -537,7 +539,7 @@ false)
         }
       ).distinct
 
-println("ioPairs: "+ioPairs)
+// println("ioPairs: "+ioPairs)
 
       if (funMap isDefinedAt ioPairs) {
         return Some(funMap(ioPairs)._1)
@@ -702,12 +704,12 @@ println("ioPairs: "+ioPairs)
     gpGenerator.setIntegerTerminals(intTerms)
     gpGenerator.setStringTerminals(stringTerms)
 
-    val gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(20, 0.9f, 0.01f, 7, 7))
+    val gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(30, 0.9f, 0.01f, 7, 7))
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
     println("Output training set: " + trainingSet)
-    // println("  Int terminals: " + intTerms)
+    println("  Int terminals: " + intTerms)
     println("  Best function is: " + best)
 
     if (gp.isCorrect(best)) {
