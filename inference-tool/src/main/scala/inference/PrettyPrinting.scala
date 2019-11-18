@@ -32,6 +32,7 @@ object PrettyPrinter {
       case AExp.V(v) => vnameToString(v, raw)
       case AExp.Plus(a1, a2) => aexpToString(a1, raw) + " + " + aexpToString(a2, raw)
       case AExp.Minus(a1, a2) => aexpToString(a1, raw) + " - " + aexpToString(a2, raw)
+      case AExp.Times(a1, a2) => aexpToString(a1, raw) + " * " + aexpToString(a2, raw)
     }
   }
 

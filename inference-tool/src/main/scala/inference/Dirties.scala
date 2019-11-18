@@ -15,6 +15,7 @@ import mint.inference.gp.tree.Node;
 import mint.inference.gp.tree.NonTerminal;
 import mint.inference.gp.tree.nonterminals.integers.AddIntegersOperator;
 import mint.inference.gp.tree.nonterminals.integers.SubtractIntegersOperator;
+import mint.inference.gp.tree.nonterminals.integers.MultiplyIntegersOperator;
 import mint.inference.gp.tree.nonterminals.booleans.LTBooleanIntegersOperator;
 import mint.inference.gp.tree.nonterminals.booleans.GTBooleanIntegersOperator;
 import mint.inference.gp.tree.nonterminals.booleans.AndBooleanOperator;
@@ -240,17 +241,17 @@ false)
 
   // Check that whenever we're in state s, register r is always undefined
   def initiallyUndefinedContextCheck(e: TransitionMatrix, r: Nat.nat, s: Nat.nat): Boolean = {
-      val f = "intermediate_" + randomUUID.toString().replace("-", "_")
-      TypeConversion.efsmToSALTranslator(e, f)
+    val f = "intermediate_" + randomUUID.toString().replace("-", "_")
+    TypeConversion.efsmToSALTranslator(e, f)
 
-      addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = ${TypeConversion.salState(s)} => r__${Code_Numeral.integer_of_nat(r)} = None);")
+    addLTL("salfiles/" + f + ".sal", s"  initiallyUndefined: THEOREM MichaelsEFSM |- G(cfstate = ${TypeConversion.salState(s)} => r__${Code_Numeral.integer_of_nat(r)} = None);")
 
-      val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(EFSM.max_int(e)) + 1}}!initiallyUndefined'").!!
-      if (output.toString != "proved.\n") {
-        print(output)
-      }
-      FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
-      return (output.toString == "proved.\n")
+    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(EFSM.max_int(e)) + 1}}!initiallyUndefined'").!!
+    if (output.toString != "proved.\n") {
+      print(output)
+    }
+    FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
+    return (output.toString == "proved.\n")
   }
 
   // We're looking to confirm that traces which get us to s1 in e1 and s2 in e2
@@ -336,12 +337,12 @@ false)
     s2: Nat.nat,
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
-      return false // TODO: Delete this
+    // return false // TODO: Delete this
 
-        val f = "intermediate_" + randomUUID.toString().replace("-", "_")
-        TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
-        addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
-          s"""canStillTake: THEOREM composition |- G(
+    val f = "intermediate_" + randomUUID.toString().replace("-", "_")
+    TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
+    addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
+      s"""canStillTake: THEOREM composition |- G(
                 NOT(
                   cfstate.1 = ${TypeConversion.salState(s1)} AND
                   cfstate.2 = ${TypeConversion.salState(s2)} AND
@@ -349,10 +350,10 @@ false)
                   (input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t1))} AND ${efsm2sal.guards2sal_num(Transition.Guard(t1), Nat.Nata(1))}))
                 )
               );""")
-        val cmd = s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2))) + 1}}!canStillTake'"
-        val output = Seq("bash", "-c", cmd).!!
-        // FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
-        return (output.toString.startsWith("Counterexample"))
+    val cmd = s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2))) + 1}}!canStillTake'"
+    val output = Seq("bash", "-c", cmd).!!
+    // FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
+    return (output.toString.startsWith("Counterexample"))
   }
 
   def scalaDirectlySubsumes(
@@ -406,12 +407,10 @@ false)
       new SubtractIntegersOperator())
     gpGenerator.setIntegerFunctions(intNonTerms);
 
-    var intTerms = List[VariableTerminal[_]](
-      new IntegerVariableAssignmentTerminal(0),
-      new IntegerVariableAssignmentTerminal(51),
-      new IntegerVariableAssignmentTerminal(49),
-      new IntegerVariableAssignmentTerminal(50)
-    )
+    var intVarVals = List(0, 1)
+    var stringVarVals = List[String]()
+
+    var intTerms = List[VariableTerminal[_]]()
 
     // No supported stringNonTerms
     var stringTerms = List[VariableTerminal[_]]()
@@ -441,20 +440,25 @@ false)
       var scenario = List[VariableAssignment[_]]()
       for ((ip, ix) <- inputs.zipWithIndex) ip match {
         case Value.Numa(n) => {
+          intVarVals = TypeConversion.toInteger(n) :: intVarVals
           intVarNames = s"i${ix}" :: intVarNames
           scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toInteger(n))) :: scenario
         }
         case Value.Str(s) => {
+          stringVarVals = s :: stringVarVals
           stringVarNames = s"i${ix}" :: stringVarNames
           scenario = (new StringVariableAssignment(s"i${ix}", s)) :: scenario
         }
       }
       for ((r, v) <- registers) v match {
+        case None => throw new IllegalStateException("Got None from registers")
         case Some(Value.Numa(n)) => {
+          intVarVals = TypeConversion.toInteger(n) :: intVarVals
           intVarNames = s"r${PrettyPrinter.natToString(r)}" :: intVarNames
           scenario = (new IntegerVariableAssignment(s"r${PrettyPrinter.natToString(r)}", TypeConversion.toInteger(n))) :: scenario
         }
         case Some(Value.Str(s)) => {
+          stringVarVals = s :: stringVarVals
           stringVarNames = s"r${PrettyPrinter.natToString(r)}" :: stringVarNames
           scenario = (new StringVariableAssignment(s"r${PrettyPrinter.natToString(r)}", s)) :: scenario
         }
@@ -467,20 +471,25 @@ false)
       var scenario = List[VariableAssignment[_]]()
       for ((ip, ix) <- inputs.zipWithIndex) ip match {
         case Value.Numa(n) => {
+          intVarVals = TypeConversion.toInteger(n) :: intVarVals
           intVarNames = s"i${ix}" :: intVarNames
           scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toInteger(n))) :: scenario
         }
         case Value.Str(s) => {
+          stringVarVals = s :: stringVarVals
           stringVarNames = s"i${ix}" :: stringVarNames
           scenario = (new StringVariableAssignment(s"i${ix}", s)) :: scenario
         }
       }
       for ((r, v) <- registers) v match {
+        case None => throw new IllegalStateException("Got None from registers")
         case Some(Value.Numa(n)) => {
+          intVarVals = TypeConversion.toInteger(n) :: intVarVals
           intVarNames = s"r${PrettyPrinter.natToString(r)}" :: intVarNames
           scenario = (new IntegerVariableAssignment(s"r${PrettyPrinter.natToString(r)}", TypeConversion.toInteger(n))) :: scenario
         }
         case Some(Value.Str(s)) => {
+          stringVarVals = s :: stringVarVals
           stringVarNames = s"r${PrettyPrinter.natToString(r)}" :: stringVarNames
           scenario = (new StringVariableAssignment(s"r${PrettyPrinter.natToString(r)}", s)) :: scenario
         }
@@ -488,13 +497,20 @@ false)
       trainingSet.put(scenario, new BooleanVariableAssignment("g1", false))
     }
 
-    for (intVarName <- intVarNames.distinct) {
-      intTerms = (new IntegerVariableAssignmentTerminal(intVarName)) :: intTerms
-    }
+    intTerms = intVarNames.distinct.map(intVarName => new IntegerVariableAssignmentTerminal(intVarName)) ++
+               intVarVals.distinct.map(intVarVal => new IntegerVariableAssignmentTerminal(intVarVal)) ++
+               intTerms
+    stringTerms = stringVarNames.distinct.map(stringVarName => new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false)) ++
+                  stringVarVals.distinct.map(stringVarVal => new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarVal, stringVarVal), true)) ++
+                  stringTerms
 
-    for (stringVarName <- stringVarNames.distinct) {
-      stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false)) :: stringTerms
-    }
+    // for (intVarName <- intVarNames.distinct) {
+    //   intTerms = (new IntegerVariableAssignmentTerminal(intVarName)) :: intTerms
+    // }
+    //
+    // for (stringVarName <- stringVarNames.distinct) {
+    //   stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false)) :: stringTerms
+    // }
 
     gpGenerator.setIntegerTerminals(intTerms)
     gpGenerator.setStringTerminals(stringTerms)
@@ -503,23 +519,15 @@ false)
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
-    // if (Symbolic_Regression.numH == 80) {
-    //   println("g1Train:")
-    //   for (kv <- g1)
-    //     println("  "+kv)
-    //   println("g2Train:")
-    //   for (kv <- g2)
-    //     println("  "+kv)
-    //   println("Guard training set: " + trainingSet)
-    //   println("  Int terminals: " + intTerms)
-    //   // println("  Best function is: " + best.simp())
-    // }
+    println("Guard training set: " + trainingSet)
+    println("  Int terminals: " + intTerms)
+    println("  Best function is: " + best.simp())
 
     val ctx = new z3.Context()
     val gexp = TypeConversion.gexpFromZ3(best.toZ3(ctx))
     ctx.close
     if (gp.isCorrect(best)) {
-      println("g1: "+PrettyPrinter.gexpToString(gexp))
+      println("g1: " + PrettyPrinter.gexpToString(gexp))
       return Some((gexp, GExp.gNot(gexp)))
     } else {
       return None
@@ -531,19 +539,17 @@ false)
     values: List[Value.value],
     train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Map[Nat.nat, Option[Value.value]]))]): Option[AExp.aexp] = {
 
-      val r_index = TypeConversion.toInt(r)
-      val ioPairs = (train.map{
-          case (inputs, (aregs, pregs)) => pregs(r) match {
-              case Some(v) => ((inputs, aregs), v)
-          }
-        }
-      ).distinct
-
-// println("ioPairs: "+ioPairs)
-
-      if (funMap isDefinedAt ioPairs) {
-        return Some(funMap(ioPairs)._1)
+    val r_index = TypeConversion.toInt(r)
+    val ioPairs = (train.map {
+      case (inputs, (aregs, pregs)) => pregs(r) match {
+        case None => throw new IllegalStateException("Got None from registers")
+        case Some(v) => ((inputs, aregs), v)
       }
+    }).distinct
+
+    if (funMap isDefinedAt ioPairs) {
+      return Some(funMap(ioPairs)._1)
+    }
 
     val maxReg = TypeConversion.toInt(r)
 
@@ -553,10 +559,15 @@ false)
 
     val gpGenerator: Generator = new Generator(new java.util.Random(0))
 
-    val intNonTerms = List[NonTerminal[_]](new AddIntegersOperator(), new SubtractIntegersOperator())
+    val intNonTerms = List[NonTerminal[_]](
+      new AddIntegersOperator(),
+      new SubtractIntegersOperator())
     gpGenerator.setIntegerFunctions(intNonTerms);
 
-    var intTerms = List[VariableTerminal[_]](new IntegerVariableAssignmentTerminal(0))
+    var intTerms = List[VariableTerminal[_]](
+      new IntegerVariableAssignmentTerminal(0),
+      new IntegerVariableAssignmentTerminal(1)
+    )
 
     // No supported stringNonTerms
     var stringTerms = List[VariableTerminal[_]]()
@@ -586,24 +597,19 @@ false)
         }
         updatedReg match {
           case Value.Numa(n) => {
-            intVarNames = "r"+r_index :: intVarNames
-            trainingSet.put(scenario, new IntegerVariableAssignment("r"+r_index, TypeConversion.toInteger(n)))
+            intVarNames = "r" + r_index :: intVarNames
+            trainingSet.put(scenario, new IntegerVariableAssignment("r" + r_index, TypeConversion.toInteger(n)))
           }
           case Value.Str(s) => {
-            stringVarNames = "r"+r_index :: stringVarNames
-            trainingSet.put(scenario, new StringVariableAssignment("r"+r_index, s))
+            stringVarNames = "r" + r_index :: stringVarNames
+            trainingSet.put(scenario, new StringVariableAssignment("r" + r_index, s))
           }
         }
       }
     }
 
-    for (intVarName <- intVarNames.distinct) {
-      intTerms = (new IntegerVariableAssignmentTerminal(intVarName)) :: intTerms
-    }
-
-    for (stringVarName <- stringVarNames.distinct) {
-      stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false)) :: stringTerms
-    }
+    intTerms = intVarNames.distinct.map(intVarName => new IntegerVariableAssignmentTerminal(intVarName)) ++ intTerms
+    stringTerms = stringVarNames.distinct.map(stringVarName => new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false)) ++ stringTerms
 
     gpGenerator.setIntegerTerminals(intTerms)
     gpGenerator.setStringTerminals(stringTerms)
@@ -644,11 +650,11 @@ false)
     i: List[List[Value.value]],
     o: List[Value.value]): Option[(AExp.aexp, Map[VName.vname, String])] = {
 
-      val ioPairs = (i zip i.map(i => null) zip o).distinct
+    val ioPairs = (i zip i.map(i => null) zip o).distinct
 
-      if (funMap isDefinedAt ioPairs) {
-        return Some(funMap(ioPairs))
-      }
+    if (funMap isDefinedAt ioPairs) {
+      return Some(funMap(ioPairs))
+    }
 
     val maxReg = TypeConversion.toInt(r)
 
@@ -658,7 +664,9 @@ false)
 
     val gpGenerator: Generator = new Generator(new java.util.Random(0))
 
-    val intNonTerms = List[NonTerminal[_]](new AddIntegersOperator(), new SubtractIntegersOperator())
+    val intNonTerms = List[NonTerminal[_]](
+      new AddIntegersOperator(),
+      new SubtractIntegersOperator())
     gpGenerator.setIntegerFunctions(intNonTerms);
 
     var intTerms = List[VariableTerminal[_]](new IntegerVariableAssignmentTerminal(0))

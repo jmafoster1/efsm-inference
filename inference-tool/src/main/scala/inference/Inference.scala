@@ -7132,6 +7132,12 @@ def iefsm2dot(e: FSet.fset[(List[Nat.nat],
     "];" +
     "\u000A" +
     "\u000A" +
+    "  s0[fillcolor=" +
+    "\"" +
+    "gray" +
+    "\"" +
+    ", label=<s<sub>0</sub>>];" +
+    "\u000A" +
     (Lista.map[Nat.nat,
                 String](((s: Nat.nat) =>
                           "  s" + Code_Numeral.integer_of_nat(s).toString() +
