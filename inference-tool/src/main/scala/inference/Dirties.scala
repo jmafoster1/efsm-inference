@@ -53,7 +53,7 @@ object Dirties {
   }
 
   def toZ3(a: VName.vname): String = a match {
-    case VName.I(n) => s"i${Code_Numeral.integer_of_nat(n) + 1}"
+    case VName.I(n) => s"i${Code_Numeral.integer_of_nat(n)}"
     case VName.R(n) => s"r${Code_Numeral.integer_of_nat(n)}"
   }
 
@@ -210,12 +210,13 @@ false)
 
   def addLTL(f: String, e: String) = {
     val lines = Source.fromFile(f).getLines().toList.dropRight(1)
-
     val pw = new PrintWriter(new File(f))
-
     (lines :+ (e + "\nEND")).foreach(pw.println)
-
     pw.close()
+  }
+
+  def maxNum(e1: IEFSM, e2: IEFSM = FSet.bot_fset): Int = {
+    maxNum(e1, e2)
   }
 
   // We're checking for the existence of a trace that gets us to the right
@@ -229,11 +230,11 @@ false)
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
       s"canTake: THEOREM composition |- G(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} => NOT(input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t2))} AND ${efsm2sal.guards2sal(Transition.Guard(t2))}));")
-    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2))) + 1}}!canTake'").!!
+    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${maxNum(e1, e2)}}!canTake'").!!
     if (!output.toString.startsWith("Counterexample")) {
       Log.root.warn(s"""Path failure:\n
       G(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} => NOT(input_sequence ! size?(I) = ${Code_Numeral.integer_of_nat(Transition.Arity(t2))} AND ${efsm2sal.guards2sal(Transition.Guard(t2))}));\n
-      sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2))) + 1}}!canTake'""")
+      sal-smc --assertion='${f}{${maxNum(e1, e2)}}!canTake'""")
     }
     FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
     return (output.toString.startsWith("Counterexample"))
@@ -267,7 +268,7 @@ false)
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
       s"checkRegValue: THEOREM composition |- G(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)} => r__${Code_Numeral.integer_of_nat(r)}.2 = Some(${TypeConversion.salValue(v)}));")
-    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2))) + 1}}!checkRegValue'").!!
+    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${maxNum(e1, e2)}}!checkRegValue'").!!
     if (output.toString != "proved.\n") {
       print(output)
     }
@@ -290,12 +291,12 @@ false)
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(a), "e1", Inference.tm(b), "e2", f)
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
       s"getsUsToBoth: THEOREM composition |- G(NOT(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)}));")
-    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(a, b))) + 1}}!getsUsToBoth'").!!
+    val output = Seq("bash", "-c", s"cd salfiles; sal-smc --assertion='${f}{${maxNum(a, b)}}!getsUsToBoth'").!!
     FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
     if (!output.toString.startsWith("Counterexample")) {
       Log.root.warn(s"""Path failure:\n
         getsUsToBoth: THEOREM composition |- G(NOT(cfstate.1 = ${TypeConversion.salState(s1)} AND cfstate.2 = ${TypeConversion.salState(s2)}));\n
-        sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(a, b))) + 1}}!getsUsToBoth'""")
+        sal-smc --assertion='${f}{${maxNum(a, b)}}!getsUsToBoth'""")
     }
     return (output.toString.startsWith("Counterexample"))
   }
@@ -324,7 +325,7 @@ false)
             X(o_e1 /= o_e2)
           )
         );""")
-    val cmd = s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2))) + 1}}!diffOutputs'"
+    val cmd = s"cd salfiles; sal-smc --assertion='${f}{${maxNum(e1, e2)}}!diffOutputs'"
     val output = Seq("bash", "-c", cmd).!!
     FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
     return (output.toString.startsWith("Counterexample"))
@@ -350,7 +351,7 @@ false)
                   (input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t1))} AND ${efsm2sal.guards2sal_num(Transition.Guard(t1), Nat.Nata(1))}))
                 )
               );""")
-    val cmd = s"cd salfiles; sal-smc --assertion='${f}{${Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2))) + 1}}!canStillTake'"
+    val cmd = s"cd salfiles; sal-smc --assertion='${f}{${maxNum(e1, e2)}}!canStillTake'"
     val output = Seq("bash", "-c", cmd).!!
     // FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
     return (output.toString.startsWith("Counterexample"))

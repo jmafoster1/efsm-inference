@@ -218,7 +218,7 @@ object TypeConversion {
 
   def vnameToSALTranslator(v: VName.vname): Variable = {
     v match {
-      case VName.I(Nat.Nata(n)) => isabellesal.Variable.newOneFrom('I', n.toLong + 1)
+      case VName.I(Nat.Nata(n)) => isabellesal.Variable.newOneFrom('I', n.toLong)
       case VName.R(Nat.Nata(n)) => isabellesal.Variable.newOneFrom('R', n.toLong)
     }
   }

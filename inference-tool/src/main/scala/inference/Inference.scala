@@ -6923,9 +6923,7 @@ object EFSM_Dot {
 
 def vname2dot(x0: VName.vname): String = x0 match {
   case VName.I(n) =>
-    "i<sub>" +
-      Code_Numeral.integer_of_nat(Nat.plus_nata(n, Nat.Nata((1)))).toString() +
-      "</sub>"
+    "i<sub>" + Code_Numeral.integer_of_nat(n).toString() + "</sub>"
   case VName.R(n) =>
     "r<sub>" + Code_Numeral.integer_of_nat(n).toString() + "</sub>"
 }
@@ -7211,14 +7209,14 @@ def aexp2sal(x0: AExp.aexp): String = x0 match {
       (if (n == "") "_EMPTY__" else escape(n, replacements)) +
       "))"
   case AExp.V(VName.I(i)) =>
-    "Some(i(" +
-      Code_Numeral.integer_of_nat(Nat.plus_nata(i, Nat.Nata((1)))).toString() +
-      "))"
-  case AExp.V(VName.R(i)) => "r__" + Code_Numeral.integer_of_nat(i).toString()
+    "Some(i(" + Code_Numeral.integer_of_nat(i).toString() + "))"
+  case AExp.V(VName.R(r)) => "r__" + Code_Numeral.integer_of_nat(r).toString()
   case AExp.Plus(a1, a2) =>
     "value_plus(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
   case AExp.Minus(a1, a2) =>
     "value_minus(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
+  case AExp.Times(a1, a2) =>
+    "value_times(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
 }
 
 def gexp2sal(x0: GExp.gexp): String = x0 match {
@@ -7248,31 +7246,29 @@ def guards2sal(x0: List[GExp.gexp]): String = x0 match {
                          v :: va)).mkString(" AND ")
 }
 
-def aexp2sal_num(x0: AExp.aexp, m: Nat.nat): String = (x0, m) match {
-  case (AExp.L(Value.Numa(n)), m) =>
+def aexp2sal_num(x0: AExp.aexp, uu: Nat.nat): String = (x0, uu) match {
+  case (AExp.L(Value.Numa(n)), uu) =>
     "Some(Num(" + Code_Numeral.integer_of_int(n).toString() + "))"
-  case (AExp.L(Value.Str(n)), m) =>
+  case (AExp.L(Value.Str(n)), uv) =>
     "Some(Str(String__" +
       (if (n == "") "_EMPTY__" else escape(n, replacements)) +
       "))"
-  case (AExp.V(VName.I(i)), m) =>
-    "Some(i(" +
-      Code_Numeral.integer_of_nat(Nat.plus_nata(i, Nat.Nata((1)))).toString() +
-      "))"
+  case (AExp.V(VName.I(i)), uw) =>
+    "Some(i(" + Code_Numeral.integer_of_nat(i).toString() + "))"
   case (AExp.V(VName.R(i)), m) =>
     "r__" + Code_Numeral.integer_of_nat(i).toString() + "." +
       Code_Numeral.integer_of_nat(m).toString()
-  case (AExp.Plus(a1, a2), m) =>
+  case (AExp.Plus(a1, a2), ux) =>
     "value_plus(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
-  case (AExp.Minus(a1, a2), m) =>
+  case (AExp.Minus(a1, a2), uy) =>
     "value_minus(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
-  case (AExp.Times(a1, a2), m) =>
+  case (AExp.Times(a1, a2), uz) =>
     "value_times(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
 }
 
-def gexp2sal_num(x0: GExp.gexp, m: Nat.nat): String = (x0, m) match {
-  case (GExp.Bc(true), m) => "True"
-  case (GExp.Bc(false), m) => "False"
+def gexp2sal_num(x0: GExp.gexp, uu: Nat.nat): String = (x0, uu) match {
+  case (GExp.Bc(true), uu) => "True"
+  case (GExp.Bc(false), uv) => "False"
   case (GExp.Eq(a1, a2), m) =>
     "gval(value_eq(" + aexp2sal_num(a1, m) + ", " + aexp2sal_num(a2, m) + "))"
   case (GExp.Gt(a1, a2), m) =>
@@ -7287,7 +7283,7 @@ def gexp2sal_num(x0: GExp.gexp, m: Nat.nat): String = (x0, m) match {
   case (GExp.Nor(g1, g2), m) =>
     "NOT (gval(" + gexp2sal_num(g1, m) + ") OR gval( " + gexp2sal_num(g2, m) +
       "))"
-  case (GExp.Null(a1), m) => "a1 = None"
+  case (GExp.Null(a1), uw) => "a1 = None"
 }
 
 def guards2sal_num(x0: List[GExp.gexp], uu: Nat.nat): String = (x0, uu) match {
