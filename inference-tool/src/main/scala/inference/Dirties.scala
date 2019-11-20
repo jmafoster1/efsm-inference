@@ -216,7 +216,7 @@ false)
   }
 
   def maxNum(e1: IEFSM, e2: IEFSM = FSet.bot_fset): Int = {
-    maxNum(e1, e2)
+    TypeConversion.toInt(Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2))) + 1)
   }
 
   // We're checking for the existence of a trace that gets us to the right
