@@ -345,15 +345,15 @@ false)
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
       s"""canStillTake: THEOREM composition |- G(
                 NOT(
-                  cfstate.1 = ${TypeConversion.salState(s1)} AND
-                  cfstate.2 = ${TypeConversion.salState(s2)} AND
-                  ((input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t2))} AND ${efsm2sal.guards2sal_num(Transition.Guard(t2), Nat.Nata(2))}) =>
+                    cfstate.1 = ${TypeConversion.salState(s1)} =>
+                    cfstate.2 = ${TypeConversion.salState(s2)} =>
+                    ((input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t2))} AND ${efsm2sal.guards2sal_num(Transition.Guard(t2), Nat.Nata(2))}) =>
                   (input_sequence ! size?(i) = ${Code_Numeral.integer_of_nat(Transition.Arity(t1))} AND ${efsm2sal.guards2sal_num(Transition.Guard(t1), Nat.Nata(1))}))
                 )
               );""")
     val cmd = s"cd salfiles; sal-smc --assertion='${f}{${maxNum(e1, e2)}}!canStillTake'"
     val output = Seq("bash", "-c", cmd).!!
-    // FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
+    FileUtils.deleteQuietly(new File(s"salfiles/${f}.sal"))
     return (output.toString.startsWith("Counterexample"))
   }
 
@@ -364,7 +364,7 @@ false)
     s2: Nat.nat,
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
-    println(s"Does ${PrettyPrinter.transitionToString(t1)} directly subsume ${PrettyPrinter.transitionToString(t2)}? (y/N)")
+    Log.root.debug(s"Does ${PrettyPrinter.transitionToString(t1)} directly subsume ${PrettyPrinter.transitionToString(t2)}? (y/N)")
     val subsumes = scala.io.StdIn.readLine() == "y"
     subsumes
   }
@@ -418,8 +418,8 @@ false)
 
     // Boolean terminals
     val boolTerms = List[VariableTerminal[_]](
-      new BooleanVariableAssignmentTerminal(new BooleanVariableAssignment("tr", true), true),
-      new BooleanVariableAssignmentTerminal(new BooleanVariableAssignment("fa", false), true))
+      new BooleanVariableAssignmentTerminal(new BooleanVariableAssignment("tr", true), true, false),
+      new BooleanVariableAssignmentTerminal(new BooleanVariableAssignment("fa", false), true, false))
     gpGenerator.setBooleanTerminals(boolTerms)
 
     // Boolean nonterminals
@@ -498,11 +498,11 @@ false)
       trainingSet.put(scenario, new BooleanVariableAssignment("g1", false))
     }
 
-    intTerms = intVarNames.distinct.map(intVarName => new IntegerVariableAssignmentTerminal(intVarName)) ++
+    intTerms = intVarNames.distinct.map(intVarName => new IntegerVariableAssignmentTerminal(intVarName, false)) ++
                intVarVals.distinct.map(intVarVal => new IntegerVariableAssignmentTerminal(intVarVal)) ++
                intTerms
-    stringTerms = stringVarNames.distinct.map(stringVarName => new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false)) ++
-                  stringVarVals.distinct.map(stringVarVal => new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarVal, stringVarVal), true)) ++
+    stringTerms = stringVarNames.distinct.map(stringVarName => new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) ++
+                  stringVarVals.distinct.map(stringVarVal => new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarVal, stringVarVal), true, false)) ++
                   stringTerms
 
     // for (intVarName <- intVarNames.distinct) {
@@ -520,15 +520,15 @@ false)
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
-    println("Guard training set: " + trainingSet)
-    println("  Int terminals: " + intTerms)
-    println("  Best function is: " + best.simp())
+    Log.root.debug("Guard training set: " + trainingSet)
+    Log.root.debug("  Int terminals: " + intTerms)
+    Log.root.debug("  Best function is: " + best.simp())
 
     val ctx = new z3.Context()
     val gexp = TypeConversion.gexpFromZ3(best.toZ3(ctx))
     ctx.close
     if (gp.isCorrect(best)) {
-      println("g1: " + PrettyPrinter.gexpToString(gexp))
+      Log.root.debug("g1: " + PrettyPrinter.gexpToString(gexp))
       return Some((gexp, GExp.gNot(gexp)))
     } else {
       return None
@@ -578,10 +578,11 @@ false)
       case Value.Str(s) => stringTerms = (new StringVariableAssignmentTerminal(s)) :: stringTerms
     }
 
+    val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
+
+
     var stringVarNames = List[String]()
     var intVarNames = List[String]()
-
-    val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
 
     for (t <- ioPairs) t match {
       case ((inputs, anteriorRegs), updatedReg) => {
@@ -598,19 +599,30 @@ false)
         }
         updatedReg match {
           case Value.Numa(n) => {
-            intVarNames = "r" + r_index :: intVarNames
+            intVarNames = s"r${r_index}" :: intVarNames
             trainingSet.put(scenario, new IntegerVariableAssignment("r" + r_index, TypeConversion.toInteger(n)))
           }
           case Value.Str(s) => {
-            stringVarNames = "r" + r_index :: stringVarNames
+            stringVarNames = s"r${r_index}" :: stringVarNames
             trainingSet.put(scenario, new StringVariableAssignment("r" + r_index, s))
           }
         }
       }
     }
 
-    intTerms = intVarNames.distinct.map(intVarName => new IntegerVariableAssignmentTerminal(intVarName)) ++ intTerms
-    stringTerms = stringVarNames.distinct.map(stringVarName => new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false)) ++ stringTerms
+    for (intVarName <- intVarNames.distinct) {
+      if (intVarName.startsWith("i"))
+        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
+      else
+        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, true)) :: intTerms
+    }
+
+    for (stringVarName <- stringVarNames.distinct) {
+      if (stringVarName.startsWith("i"))
+        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
+      else
+        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, true)) :: stringTerms
+    }
 
     gpGenerator.setIntegerTerminals(intTerms)
     gpGenerator.setStringTerminals(stringTerms)
@@ -619,9 +631,9 @@ false)
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
-    println("Update training set: " + trainingSet)
-    println("  Int terminals: " + intTerms)
-    println("  Best function is: " + best.simp())
+    Log.root.debug("Update training set: " + trainingSet)
+    Log.root.debug("  Int terminals: " + intTerms)
+    Log.root.debug("  Best function is: " + best.simp())
 
     val ctx = new z3.Context()
     val aexp = TypeConversion.aexpFromZ3(best.toZ3(ctx))
@@ -638,7 +650,8 @@ false)
     var types = Map[VName.vname, String]()
 
     for (v <- asScalaSet(best.varsInTree)) {
-      types = types + (TypeConversion.vnameFromString(v.getName) -> v.typeString)
+      if (!v.isConstant)
+        types = types + (TypeConversion.vnameFromString(v.getName) -> v.typeString)
     }
     return types
   }
@@ -703,11 +716,17 @@ false)
     }
 
     for (intVarName <- intVarNames.distinct) {
-      intTerms = (new IntegerVariableAssignmentTerminal(intVarName)) :: intTerms
+      if (intVarName.startsWith("i"))
+        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
+      else
+        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, true)) :: intTerms
     }
 
     for (stringVarName <- stringVarNames.distinct) {
-      stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false)) :: stringTerms
+      if (stringVarName.startsWith("i"))
+        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
+      else
+        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, true)) :: stringTerms
     }
 
     gpGenerator.setIntegerTerminals(intTerms)
@@ -717,9 +736,9 @@ false)
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
-    println("Output training set: " + trainingSet)
-    println("  Int terminals: " + intTerms)
-    println("  Best function is: " + best)
+    Log.root.debug("Output training set: " + trainingSet)
+    Log.root.debug("  Int terminals: " + intTerms)
+    Log.root.debug("  Best function is: " + best)
 
     if (gp.isCorrect(best)) {
       funMap = funMap + (ioPairs -> (TypeConversion.toAExp(best), getTypes(best)))
@@ -738,9 +757,9 @@ false)
     val definedVars = (0 to i.length).map(i => VName.I(Nat.Nata(i)))
     val undefinedVars = expVars.filter(v => !definedVars.contains(v))
 
-    // println("\noutputFun: " + PrettyPrinter.aexpToString(f, true) + " = " + PrettyPrinter.valueToString(v))
-    // println("  expVars: " + expVars)
-    // println("  undefinedVars: " + undefinedVars)
+    // Log.root.debug("\noutputFun: " + PrettyPrinter.aexpToString(f, true) + " = " + PrettyPrinter.valueToString(v))
+    // Log.root.debug("  expVars: " + expVars)
+    // Log.root.debug("  undefinedVars: " + undefinedVars)
 
     var inputs: String = ""
     for (v <- expVars) {

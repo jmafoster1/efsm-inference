@@ -54,7 +54,7 @@ object TypeConversion {
         return VName.R(Nat.Nata(name.drop(1).toInt))
       }
       else {
-        throw new IllegalArgumentException("variables must be of the form \"(i|r)\\d*\"")
+        throw new IllegalArgumentException(s"""Cannot convert $name. Variables must be of the form \"(i|r)\\d*\"""")
       }
   }
 
@@ -299,13 +299,6 @@ object TypeConversion {
         "_" + System.currentTimeMillis, move._2))
   }
 
-  def efsmToSALTranslator(e: Types.TransitionMatrix, f: String) = {
-    Translator.clearEverything()
-    isabellesal.EFSM.newOneFrom("MichaelsEFSM", FSet.sorted_list_of_fset(e).map(toMichaelsMove): _*)
-    new Translator().writeSALandDOT(Paths.get("salfiles"), f);
-    s"mv salfiles/${f}.dot ${Config.config.dotfiles}/".!
-  }
-
   def salValue(v: Value.value): String = v match {
     case Value.Str(s) => s"Str(String__$s)"
     case Value.Numa(n) => s"Num(${Code_Numeral.integer_of_int(n)})"
@@ -313,6 +306,16 @@ object TypeConversion {
 
   def salState(s: Nat.nat): String = s match {
     case Nat.Nata(n) => s"State__${n}"
+  }
+
+  def efsmToSALTranslator(e: Types.TransitionMatrix, f: String, delete: Boolean = true) = {
+    Translator.clearEverything()
+    isabellesal.EFSM.newOneFrom("MichaelsEFSM", FSet.sorted_list_of_fset(e).map(toMichaelsMove): _*)
+    new Translator().writeSALandDOT(Paths.get("salfiles"), f);
+    if (delete)
+      s"rm salfiles/${f}.dot".!
+    else
+      s"mv salfiles/${f}.dot ${Config.config.dotfiles}/".!
   }
 
   def doubleEFSMToSALTranslator(e1: Types.TransitionMatrix, e1Name: String, e2: Types.TransitionMatrix, e2Name: String, f: String, delete: Boolean = true) = {
@@ -323,11 +326,10 @@ object TypeConversion {
     isabellesal.EFSM.newOneFrom(e1Name, FSet.sorted_list_of_fset(e1).map(toMichaelsMove): _*)
     isabellesal.EFSM.newOneFrom(e2Name, FSet.sorted_list_of_fset(e2).map(toMichaelsMove): _*)
     new Translator().writeSALandDOT(Paths.get("salfiles"), f);
-    PrettyPrinter.EFSM2dot(e1, f + "1")
-    PrettyPrinter.EFSM2dot(e2, f + "2")
-    // if (delete) {
-    //   s"rm salfiles/${f}.dot".!
-    // }
+    if (delete)
+      s"rm salfiles/${f}.dot".!
+    else
+      s"mv salfiles/${f}.dot ${Config.config.dotfiles}/".!
   }
 
   def indexWithInts(e: List[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]): List[((Int, Int), Transition.transition_ext[Unit])] =

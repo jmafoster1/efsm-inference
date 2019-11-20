@@ -19,20 +19,20 @@ object PrettyPrinter {
       case Value.Str(s) => "\"" + s + "\""
     }
 
-  def vnameToString(v: VName.vname, raw: Boolean = false): String = {
+  def vnameToString(v: VName.vname): String = {
     v match {
-      case VName.I(Nat.Nata(n)) => "i" + (if (raw) n else n + 1)
+      case VName.I(Nat.Nata(n)) => "i" + n
       case VName.R(Nat.Nata(n)) => "r" + n
     }
   }
 
-  def aexpToString(a: AExp.aexp, raw: Boolean = false): String = {
+  def aexpToString(a: AExp.aexp): String = {
     a match {
       case AExp.L(v) => valueToString(v)
-      case AExp.V(v) => vnameToString(v, raw)
-      case AExp.Plus(a1, a2) => aexpToString(a1, raw) + " + " + aexpToString(a2, raw)
-      case AExp.Minus(a1, a2) => aexpToString(a1, raw) + " - " + aexpToString(a2, raw)
-      case AExp.Times(a1, a2) => aexpToString(a1, raw) + " * " + aexpToString(a2, raw)
+      case AExp.V(v) => vnameToString(v)
+      case AExp.Plus(a1, a2) => aexpToString(a1) + " + " + aexpToString(a2)
+      case AExp.Minus(a1, a2) => aexpToString(a1) + " - " + aexpToString(a2)
+      case AExp.Times(a1, a2) => aexpToString(a1) + " * " + aexpToString(a2)
     }
   }
 
