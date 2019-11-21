@@ -742,48 +742,12 @@ false)
     Log.root.debug("  Int terminals: " + intTerms)
     Log.root.debug("  Best function is: " + best)
 
-    // if (gp.isCorrect(best)) {
-    //   funMap = funMap + (ioPairs -> (TypeConversion.toAExp(best), getTypes(best)))
-    //   return Some((TypeConversion.toAExp(best), getTypes(best)))
-    // } else {
-    //   return None
-    // }
-
-
-
-
-
-    // val intTerms = new ArrayList[VariableTerminal[_]]()
-    // intTerms.add(new IntegerVariableAssignmentTerminal("i0", false))
-    // intTerms.add(new IntegerVariableAssignmentTerminal("r1", true))
-    // intTerms.add(new IntegerVariableAssignmentTerminal(0))
-    // intTerms.add(new IntegerVariableAssignmentTerminal(50))
-    // intTerms.add(new IntegerVariableAssignmentTerminal(100))
-    // gpGenerator.setIntegerTerminals(intTerms)
-    // val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
-    // val s1 = new ArrayList[VariableAssignment[_]]()
-    // s1.add(new IntegerVariableAssignment("i0", 50))
-    // val s2 = new ArrayList[VariableAssignment[_]]()
-    // s2.add(new IntegerVariableAssignment("i0", 50))
-    // val s3 = new ArrayList[VariableAssignment[_]]()
-    // s3.add(new IntegerVariableAssignment("i0", 100))
-    // trainingSet.put(s1, new IntegerVariableAssignment("o1", 50))
-    // trainingSet.put(s2, new IntegerVariableAssignment("o1", 100))
-    // trainingSet.put(s3, new IntegerVariableAssignment("o1", 100))
-    println("Training set: " + trainingSet)
-    println("IntTerms: " + intTerms)
-    println("Int values: " + IntegerVariableAssignment.values)
-    // val gp: LatentVariableGP = new LatentVariableGP(
-    //   gpGenerator,
-    //   trainingSet,
-    //   new GPConfiguration(9, 0.9f, 0.01f, 7, 2))
-    // val best: Node[_] = gp.evolve(10).asInstanceOf[Node[_]]
-    // best.simplify()
-    // println(best)
-    // println()
-
-    System.exit(0)
-    return None
+    if (gp.isCorrect(best)) {
+      funMap = funMap + (ioPairs -> (TypeConversion.toAExp(best), getTypes(best)))
+      return Some((TypeConversion.toAExp(best), getTypes(best)))
+    } else {
+      return None
+    }
   }
 
   def getRegs(
