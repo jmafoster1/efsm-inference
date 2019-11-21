@@ -12,16 +12,6 @@ import scala.collection.JavaConversions._
 
 import mint.inference.gp.Generator;
 import mint.inference.gp.tree.Node;
-import mint.inference.gp.tree.NonTerminal;
-import mint.inference.gp.tree.nonterminals.integers.AddIntegersOperator;
-import mint.inference.gp.tree.nonterminals.integers.SubtractIntegersOperator;
-import mint.inference.gp.tree.nonterminals.integers.MultiplyIntegersOperator;
-import mint.inference.gp.tree.nonterminals.booleans.LTBooleanIntegersOperator;
-import mint.inference.gp.tree.nonterminals.booleans.GTBooleanIntegersOperator;
-import mint.inference.gp.tree.nonterminals.booleans.AndBooleanOperator;
-import mint.inference.gp.tree.nonterminals.booleans.OrBooleanOperator;
-import mint.inference.gp.tree.nonterminals.booleans.NotBooleanOperator;
-import mint.inference.gp.tree.terminals.BooleanVariableAssignmentTerminal;
 import mint.inference.gp.tree.terminals.IntegerVariableAssignmentTerminal;
 import mint.inference.gp.tree.terminals.StringVariableAssignmentTerminal;
 import mint.inference.gp.tree.terminals.VariableTerminal;
@@ -405,10 +395,7 @@ false)
 
     val gpGenerator: Generator = new Generator(new java.util.Random(0))
 
-    val intNonTerms = List[NonTerminal[_]](
-      new AddIntegersOperator(),
-      new SubtractIntegersOperator())
-    gpGenerator.setIntegerFunctions(intNonTerms);
+    gpGenerator.setIntegerFunctions(GP.intNonTerms);
 
     var intVarVals = List(0, 1)
     var stringVarVals = List[String]()
@@ -418,20 +405,8 @@ false)
     // No supported stringNonTerms
     var stringTerms = List[VariableTerminal[_]]()
 
-    // Boolean terminals
-    val boolTerms = List[VariableTerminal[_]](
-      new BooleanVariableAssignmentTerminal(new BooleanVariableAssignment("tr", true), true, false),
-      new BooleanVariableAssignmentTerminal(new BooleanVariableAssignment("fa", false), true, false))
-    gpGenerator.setBooleanTerminals(boolTerms)
-
-    // Boolean nonterminals
-    val boolNonTerms = List[NonTerminal[_]](
-      new LTBooleanIntegersOperator(),
-      new GTBooleanIntegersOperator(),
-      new NotBooleanOperator(),
-      new AndBooleanOperator(),
-      new OrBooleanOperator())
-    gpGenerator.setBooleanFunctions(boolNonTerms)
+    gpGenerator.setBooleanTerminals(GP.boolTerms)
+    gpGenerator.setBooleanFunctions(GP.boolNonTerms)
 
     var stringVarNames = List[String]()
     var intVarNames = List[String]()
@@ -501,19 +476,11 @@ false)
     }
 
     intTerms = intVarNames.distinct.map(intVarName => new IntegerVariableAssignmentTerminal(intVarName, false)) ++
-               intVarVals.distinct.map(intVarVal => new IntegerVariableAssignmentTerminal(intVarVal)) ++
-               intTerms
+      intVarVals.distinct.map(intVarVal => new IntegerVariableAssignmentTerminal(intVarVal)) ++
+      intTerms
     stringTerms = stringVarNames.distinct.map(stringVarName => new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) ++
-                  stringVarVals.distinct.map(stringVarVal => new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarVal, stringVarVal), true, false)) ++
-                  stringTerms
-
-    // for (intVarName <- intVarNames.distinct) {
-    //   intTerms = (new IntegerVariableAssignmentTerminal(intVarName)) :: intTerms
-    // }
-    //
-    // for (stringVarName <- stringVarNames.distinct) {
-    //   stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false)) :: stringTerms
-    // }
+      stringVarVals.distinct.map(stringVarVal => new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarVal, stringVarVal), true, false)) ++
+      stringTerms
 
     gpGenerator.setIntegerTerminals(intTerms)
     gpGenerator.setStringTerminals(stringTerms)
@@ -550,39 +517,19 @@ false)
       }
     }).distinct
 
-    if (funMap isDefinedAt ioPairs) {
+    if (funMap isDefinedAt ioPairs)
       return Some(funMap(ioPairs)._1)
-    }
-
-    val maxReg = TypeConversion.toInt(r)
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
-    Logger.getRootLogger().setLevel(Level.OFF);
+    Logger.getRootLogger().setLevel(Level.DEBUG);
 
     val gpGenerator: Generator = new Generator(new java.util.Random(0))
+    gpGenerator.setIntegerFunctions(GP.intNonTerms);
 
-    val intNonTerms = List[NonTerminal[_]](
-      new AddIntegersOperator(),
-      new SubtractIntegersOperator())
-    gpGenerator.setIntegerFunctions(intNonTerms);
-
-    var intTerms = List[VariableTerminal[_]](
-      new IntegerVariableAssignmentTerminal(0),
-      new IntegerVariableAssignmentTerminal(1)
-    )
-
-    // No supported stringNonTerms
-    var stringTerms = List[VariableTerminal[_]]()
-
-    for (v <- values) v match {
-      case Value.Numa(n) => intTerms = (new IntegerVariableAssignmentTerminal(TypeConversion.toInteger(n))) :: intTerms
-      case Value.Str(s) => stringTerms = (new StringVariableAssignmentTerminal(s)) :: stringTerms
-    }
+    var (intTerms, stringTerms) = GP.getValueTerminals(values)
 
     val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
-
-
     var stringVarNames = List[String]()
     var intVarNames = List[String]()
 
@@ -599,6 +546,17 @@ false)
             scenario = (new StringVariableAssignment(s"i${ix}", s)) :: scenario
           }
         }
+        for ((k: Nat.nat, v: Option[Value.value]) <- anteriorRegs) v match {
+          case None => throw new IllegalStateException("Got None from registers")
+          case Some(Value.Numa(n)) => {
+            intVarNames = s"r${TypeConversion.toInt(k)}" :: intVarNames
+            scenario = (new IntegerVariableAssignment(s"r${TypeConversion.toInt(k)}", TypeConversion.toInteger(n))) :: scenario
+          }
+          case Some(Value.Str(s)) => {
+            stringVarNames = s"r${TypeConversion.toInt(k)}" :: stringVarNames
+            scenario = (new StringVariableAssignment(s"r${TypeConversion.toInt(k)}", s)) :: scenario
+          }
+        }
         updatedReg match {
           case Value.Numa(n) => {
             intVarNames = s"r${r_index}" :: intVarNames
@@ -613,36 +571,33 @@ false)
     }
 
     for (intVarName <- intVarNames.distinct) {
-      if (intVarName.startsWith("i"))
         intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
-      else
-        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, true)) :: intTerms
     }
 
     for (stringVarName <- stringVarNames.distinct) {
-      if (stringVarName.startsWith("i"))
         stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
-      else
-        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, true)) :: stringTerms
     }
 
     gpGenerator.setIntegerTerminals(intTerms)
     gpGenerator.setStringTerminals(stringTerms)
 
-    val gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(20, 0.9f, 0.01f, 7, 7))
+    println("Training set: " + trainingSet)
+    println("IntTerms: " + intTerms)
+    println("Int values: " + IntegerVariableAssignment.values)
 
-    val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(9, 0.9f, 0.01f, 5, 2));
 
-    Log.root.debug("Update training set: " + trainingSet)
+    val best = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
+
+    Log.root.debug("Output training set: " + trainingSet)
     Log.root.debug("  Int terminals: " + intTerms)
-    Log.root.debug("  Best function is: " + best.simp())
+    Log.root.debug("  Best function is: " + best)
 
-    val ctx = new z3.Context()
-    val aexp = TypeConversion.aexpFromZ3(best.toZ3(ctx))
-    ctx.close
+    System.exit(0)
+
     if (gp.isCorrect(best)) {
-      funMap = funMap + ((ioPairs) -> (aexp, getTypes(best)))
-      return Some(aexp)
+      funMap = funMap + (ioPairs -> (TypeConversion.toAExp(best), getTypes(best)))
+      return Some((TypeConversion.toAExp(best)))
     } else {
       return None
     }
@@ -678,22 +633,11 @@ false)
     BasicConfigurator.configure();
     Logger.getRootLogger().setLevel(Level.DEBUG);
 
-    val gpGenerator: Generator = new Generator(new java.util.Random(0))
+    val gpGenerator: Generator = new Generator(new java.util.Random(1))
 
-    val intNonTerms = List[NonTerminal[_]](
-      new AddIntegersOperator(),
-      new SubtractIntegersOperator())
-    gpGenerator.setIntegerFunctions(intNonTerms);
+    gpGenerator.setIntegerFunctions(GP.intNonTerms);
 
-    var intTerms = List[VariableTerminal[_]]()
-
-    // No supported stringNonTerms
-    var stringTerms = List[VariableTerminal[_]]()
-
-    for (v <- (Value.Numa(Int.int_of_integer(0)) :: values).distinct.reverse) v match {
-      case Value.Numa(n) => intTerms = (new IntegerVariableAssignmentTerminal(TypeConversion.toInteger(n))) :: intTerms
-      case Value.Str(s) => stringTerms = (new StringVariableAssignmentTerminal(s)) :: stringTerms
-    }
+    var (intTerms, stringTerms) = GP.getValueTerminals(values)
 
     var stringVarNames = List[String](s"r${maxReg + 1}")
     var intVarNames = List[String](s"r${maxReg + 2}")
@@ -734,9 +678,9 @@ false)
     gpGenerator.setIntegerTerminals(intTerms)
     gpGenerator.setStringTerminals(stringTerms)
 
-    val gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(9, 0.9f, 0.01f, 7, 2));
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(9, 0.9f, 0.01f, 5, 2));
 
-    val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
+    val best = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
     Log.root.debug("Output training set: " + trainingSet)
     Log.root.debug("  Int terminals: " + intTerms)
