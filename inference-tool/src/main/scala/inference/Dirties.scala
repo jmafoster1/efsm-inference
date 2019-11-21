@@ -42,6 +42,8 @@ import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 
 import isabellesal._
 
+import java.util.ArrayList
+
 object Dirties {
   def foldl[A, B](f: A => B => A, b: A, l: List[B]): A =
     // l.par.foldLeft(b)(((x, y) => (f(x))(y)))
@@ -674,7 +676,7 @@ false)
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
-    Logger.getRootLogger().setLevel(Level.OFF);
+    Logger.getRootLogger().setLevel(Level.DEBUG);
 
     val gpGenerator: Generator = new Generator(new java.util.Random(0))
 
@@ -683,12 +685,12 @@ false)
       new SubtractIntegersOperator())
     gpGenerator.setIntegerFunctions(intNonTerms);
 
-    var intTerms = List[VariableTerminal[_]](new IntegerVariableAssignmentTerminal(0))
+    var intTerms = List[VariableTerminal[_]]()
 
     // No supported stringNonTerms
     var stringTerms = List[VariableTerminal[_]]()
 
-    for (v <- values) v match {
+    for (v <- (Value.Numa(Int.int_of_integer(0)) :: values).distinct.reverse) v match {
       case Value.Numa(n) => intTerms = (new IntegerVariableAssignmentTerminal(TypeConversion.toInteger(n))) :: intTerms
       case Value.Str(s) => stringTerms = (new StringVariableAssignmentTerminal(s)) :: stringTerms
     }
@@ -715,14 +717,14 @@ false)
       }
     }
 
-    for (intVarName <- intVarNames.distinct) {
+    for (intVarName <- intVarNames.distinct.reverse) {
       if (intVarName.startsWith("i"))
         intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
       else
         intTerms = (new IntegerVariableAssignmentTerminal(intVarName, true)) :: intTerms
     }
 
-    for (stringVarName <- stringVarNames.distinct) {
+    for (stringVarName <- stringVarNames.distinct.reverse) {
       if (stringVarName.startsWith("i"))
         stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
       else
@@ -732,7 +734,7 @@ false)
     gpGenerator.setIntegerTerminals(intTerms)
     gpGenerator.setStringTerminals(stringTerms)
 
-    val gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(30, 0.9f, 0.01f, 7, 7))
+    val gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(9, 0.9f, 0.01f, 7, 2));
 
     val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
@@ -740,12 +742,48 @@ false)
     Log.root.debug("  Int terminals: " + intTerms)
     Log.root.debug("  Best function is: " + best)
 
-    if (gp.isCorrect(best)) {
-      funMap = funMap + (ioPairs -> (TypeConversion.toAExp(best), getTypes(best)))
-      return Some((TypeConversion.toAExp(best), getTypes(best)))
-    } else {
-      return None
-    }
+    // if (gp.isCorrect(best)) {
+    //   funMap = funMap + (ioPairs -> (TypeConversion.toAExp(best), getTypes(best)))
+    //   return Some((TypeConversion.toAExp(best), getTypes(best)))
+    // } else {
+    //   return None
+    // }
+
+
+
+
+
+    // val intTerms = new ArrayList[VariableTerminal[_]]()
+    // intTerms.add(new IntegerVariableAssignmentTerminal("i0", false))
+    // intTerms.add(new IntegerVariableAssignmentTerminal("r1", true))
+    // intTerms.add(new IntegerVariableAssignmentTerminal(0))
+    // intTerms.add(new IntegerVariableAssignmentTerminal(50))
+    // intTerms.add(new IntegerVariableAssignmentTerminal(100))
+    // gpGenerator.setIntegerTerminals(intTerms)
+    // val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
+    // val s1 = new ArrayList[VariableAssignment[_]]()
+    // s1.add(new IntegerVariableAssignment("i0", 50))
+    // val s2 = new ArrayList[VariableAssignment[_]]()
+    // s2.add(new IntegerVariableAssignment("i0", 50))
+    // val s3 = new ArrayList[VariableAssignment[_]]()
+    // s3.add(new IntegerVariableAssignment("i0", 100))
+    // trainingSet.put(s1, new IntegerVariableAssignment("o1", 50))
+    // trainingSet.put(s2, new IntegerVariableAssignment("o1", 100))
+    // trainingSet.put(s3, new IntegerVariableAssignment("o1", 100))
+    println("Training set: " + trainingSet)
+    println("IntTerms: " + intTerms)
+    println("Int values: " + IntegerVariableAssignment.values)
+    // val gp: LatentVariableGP = new LatentVariableGP(
+    //   gpGenerator,
+    //   trainingSet,
+    //   new GPConfiguration(9, 0.9f, 0.01f, 7, 2))
+    // val best: Node[_] = gp.evolve(10).asInstanceOf[Node[_]]
+    // best.simplify()
+    // println(best)
+    // println()
+
+    System.exit(0)
+    return None
   }
 
   def getRegs(
