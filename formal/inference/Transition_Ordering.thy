@@ -1,6 +1,7 @@
 theory Transition_Ordering
-  imports "../Transition" GExp_Orderings
-          "~~/src/HOL/Library/Product_Lexorder"
+  imports "../EFSM/Transition"
+    GExp_Orderings
+    "HOL-Library.Product_Lexorder"
 begin
 
 instantiation "transition_ext" :: (linorder) linorder begin

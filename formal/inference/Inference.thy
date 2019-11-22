@@ -5,8 +5,9 @@ system traces.
 \<close>
 
 theory Inference
-  imports "../EFSM" "../Contexts" "../FSet_Utils" Transition_Ordering
-          "~~/src/HOL/Library/Product_Lexorder"
+  imports "../EFSM/Contexts"
+    Transition_Ordering
+    "HOL-Library.Product_Lexorder"
 begin
 
 declare One_nat_def [simp del]
@@ -547,9 +548,7 @@ definition max_reg :: "iEFSM \<Rightarrow> nat option" where
 definition "max_reg_total e = (case max_reg e of None \<Rightarrow> 0 | Some r \<Rightarrow> r)"
 
 lemma fMax_None: "f \<noteq> {||} \<Longrightarrow> fMax f = None = (\<forall>x |\<in>| f. x = None)"
-  apply standard
-  using fMax_ge x_leq_None apply fastforce
-  by (meson fBallE fMax_in)
+  by (metis (mono_tags, lifting) bot_option_def fBallI fMax.in_idem fMax_in fbspec max_bot2)
 
 definition max_output :: "iEFSM \<Rightarrow> nat" where
   "max_output e = EFSM.max_output (tm e)"

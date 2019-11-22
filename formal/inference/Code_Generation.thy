@@ -222,7 +222,7 @@ lemma quick_negation:
   apply (simp add: length_take_or_pad)
   apply (simp add: apply_guards_ensure_not_null_length take_or_pad_def negate_true_guard)
   apply (simp add: apply_guards_fold)
-  by (metis (no_types, lifting) less_eq_Some_trans gval_fold_swap_regs gval_fold_take trilean.simps(2))
+  by (metis dual_order.order_iff_strict gval_fold_swap_regs gval_fold_take less_eq_option_Some less_le_trans trilean.simps(2))
 
 definition "satisfiable_negation t = (max_reg_list (Guard t) = None \<and>
    max_input_list (Guard t) < Some (Arity t) \<and>

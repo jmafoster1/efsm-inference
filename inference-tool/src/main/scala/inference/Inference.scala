@@ -114,13 +114,12 @@ object ord {
     val `Orderings.less` = (a: (A, B), b: (A, B)) =>
       Product_Lexorder.less_prod[A, B](a, b)
   }
-  implicit def
-    `Option_Lexorder.ord_option`[A : HOL.equal : linorder]: ord[Option[A]] = new
+  implicit def `Option_ord.ord_option`[A : preorder]: ord[Option[A]] = new
     ord[Option[A]] {
     val `Orderings.less_eq` = (a: Option[A], b: Option[A]) =>
-      Option_Lexorder.less_eq_option[A](a, b)
+      Option_ord.less_eq_option[A](a, b)
     val `Orderings.less` = (a: Option[A], b: Option[A]) =>
-      Option_Lexorder.less_option[A](a, b)
+      Option_ord.less_option[A](a, b)
   }
   implicit def `Value.ord_value`: ord[Value.value] = new ord[Value.value] {
     val `Orderings.less_eq` = (a: Value.value, b: Value.value) =>
@@ -199,14 +198,12 @@ object preorder {
     val `Orderings.less` = (a: (A, B), b: (A, B)) =>
       Product_Lexorder.less_prod[A, B](a, b)
   }
-  implicit def
-    `Option_Lexorder.preorder_option`[A : HOL.equal : linorder]:
-      preorder[Option[A]]
-    = new preorder[Option[A]] {
+  implicit def `Option_ord.preorder_option`[A : preorder]: preorder[Option[A]] =
+    new preorder[Option[A]] {
     val `Orderings.less_eq` = (a: Option[A], b: Option[A]) =>
-      Option_Lexorder.less_eq_option[A](a, b)
+      Option_ord.less_eq_option[A](a, b)
     val `Orderings.less` = (a: Option[A], b: Option[A]) =>
-      Option_Lexorder.less_option[A](a, b)
+      Option_ord.less_option[A](a, b)
   }
   implicit def `Value.preorder_value`: preorder[Value.value] = new
     preorder[Value.value] {
@@ -288,13 +285,12 @@ object order {
     val `Orderings.less` = (a: (A, B), b: (A, B)) =>
       Product_Lexorder.less_prod[A, B](a, b)
   }
-  implicit def
-    `Option_Lexorder.order_option`[A : HOL.equal : linorder]: order[Option[A]] =
-    new order[Option[A]] {
+  implicit def `Option_ord.order_option`[A : order]: order[Option[A]] = new
+    order[Option[A]] {
     val `Orderings.less_eq` = (a: Option[A], b: Option[A]) =>
-      Option_Lexorder.less_eq_option[A](a, b)
+      Option_ord.less_eq_option[A](a, b)
     val `Orderings.less` = (a: Option[A], b: Option[A]) =>
-      Option_Lexorder.less_option[A](a, b)
+      Option_ord.less_option[A](a, b)
   }
   implicit def `Value.order_value`: order[Value.value] = new order[Value.value]
     {
@@ -377,14 +373,12 @@ object linorder {
     val `Orderings.less` = (a: (A, B), b: (A, B)) =>
       Product_Lexorder.less_prod[A, B](a, b)
   }
-  implicit def
-    `Option_Lexorder.linorder_option`[A : HOL.equal : linorder]:
-      linorder[Option[A]]
-    = new linorder[Option[A]] {
+  implicit def `Option_ord.linorder_option`[A : linorder]: linorder[Option[A]] =
+    new linorder[Option[A]] {
     val `Orderings.less_eq` = (a: Option[A], b: Option[A]) =>
-      Option_Lexorder.less_eq_option[A](a, b)
+      Option_ord.less_eq_option[A](a, b)
     val `Orderings.less` = (a: Option[A], b: Option[A]) =>
-      Option_Lexorder.less_option[A](a, b)
+      Option_ord.less_option[A](a, b)
   }
   implicit def `VName.linorder_vname`: linorder[VName.vname] = new
     linorder[VName.vname] {
@@ -1082,24 +1076,6 @@ def Sup_set[A](x0: Set.set[Set.set[A]]): Set.set[A] = x0 match {
 
 } /* object Complete_Lattices */
 
-object Option_Lexorder {
-
-def less_option[A : Orderings.linorder](x0: Option[A], x1: Option[A]): Boolean =
-  (x0, x1) match {
-  case (None, None) => false
-  case (None, Some(v)) => true
-  case (Some(uv), None) => false
-  case (Some(a), Some(b)) => Orderings.less[A](a, b)
-}
-
-def less_eq_option[A : HOL.equal : Orderings.linorder](a: Option[A],
-                b: Option[A]):
-      Boolean
-  =
-  (less_option[A](a, b)) || (Optiona.equal_optiona[A](a, b))
-
-} /* object Option_Lexorder */
-
 object Product_Lexorder {
 
 def less_eq_prod[A : Orderings.ord, B : Orderings.ord](x0: (A, B), x1: (A, B)):
@@ -1211,6 +1187,26 @@ def subset[A : card_UNIV](x0: Set.set[A], x1: Set.set[A]): Boolean = (x0, x1)
 }
 
 } /* object Cardinality */
+
+object Option_ord {
+
+def less_eq_option[A : Orderings.preorder](xa0: Option[A], x: Option[A]):
+      Boolean
+  =
+  (xa0, x) match {
+  case (Some(x), Some(y)) => Orderings.less_eq[A](x, y)
+  case (Some(x), None) => false
+  case (None, x) => true
+}
+
+def less_option[A : Orderings.preorder](x: Option[A], xa1: Option[A]): Boolean =
+  (x, xa1) match {
+  case (Some(x), Some(y)) => Orderings.less[A](x, y)
+  case (None, Some(x)) => true
+  case (x, None) => false
+}
+
+} /* object Option_ord */
 
 object GExp {
 
@@ -2359,28 +2355,27 @@ def in_not_subset[A, B](t1: Transition.transition_ext[A],
   =
   (Transition.Label[A](t1) ==
     Transition.Label[B](t2)) && ((Nat.equal_nata(Transition.Arity[A](t1),
-          Transition.Arity[B](t2))) && ((Optiona.is_none[Nat.nat](GExp.max_reg_list(Transition.Guard[B](t2)))) && ((Option_Lexorder.less_option[Nat.nat](GExp.max_input_list(Transition.Guard[B](t2)),
-                                  Some[Nat.nat](Transition.Arity[B](t2)))) && ((GExp.satisfiable_list(Inference.smart_not_null(Lista.upt(Nat.zero_nata,
-                  Transition.Arity[B](t2)),
-        Transition.Guard[B](t2)))) && (Lista.list_ex[(Nat.nat,
-               List[Value.value])](((a: (Nat.nat, List[Value.value])) =>
-                                     {
-                                       val (i, s1): (Nat.nat, List[Value.value])
- = a;
-                                       Lista.list_ex[(Nat.nat,
-               List[Value.value])](((aa: (Nat.nat, List[Value.value])) =>
-                                     {
-                                       val
- (ia, s2): (Nat.nat, List[Value.value]) = aa;
-                                       (Nat.equal_nata(i,
-                ia)) && ((! (Lista.list_all[Value.value](((ab: Value.value) =>
-                   s1 contains ab),
-                  s2))) && (GExp.restricted_once(VName.I(i),
-          Transition.Guard[B](t2))))
-                                     }),
-                                    get_ins(Transition.Guard[B](t2)))
-                                     }),
-                                    get_ins(Transition.Guard[A](t1))))))))
+          Transition.Arity[B](t2))) && ((Optiona.is_none[Nat.nat](GExp.max_reg_list(Transition.Guard[B](t2)))) && ((Option_ord.less_option[Nat.nat](GExp.max_input_list(Transition.Guard[B](t2)),
+                             Some[Nat.nat](Transition.Arity[B](t2)))) && ((GExp.satisfiable_list(Inference.smart_not_null(Lista.upt(Nat.zero_nata,
+             Transition.Arity[B](t2)),
+   Transition.Guard[B](t2)))) && (Lista.list_ex[(Nat.nat,
+          List[Value.value])](((a: (Nat.nat, List[Value.value])) =>
+                                {
+                                  val (i, s1): (Nat.nat, List[Value.value]) = a;
+                                  Lista.list_ex[(Nat.nat,
+          List[Value.value])](((aa: (Nat.nat, List[Value.value])) =>
+                                {
+                                  val (ia, s2): (Nat.nat, List[Value.value]) =
+                                    aa;
+                                  (Nat.equal_nata(i,
+           ia)) && ((! (Lista.list_all[Value.value](((ab: Value.value) =>
+              s1 contains ab),
+             s2))) && (GExp.restricted_once(VName.I(i),
+     Transition.Guard[B](t2))))
+                                }),
+                               get_ins(Transition.Guard[B](t2)))
+                                }),
+                               get_ins(Transition.Guard[A](t1))))))))
 
 def lob_distinguished_2[A, B](t1: Transition.transition_ext[A],
                                t2: Transition.transition_ext[B]):
@@ -3806,10 +3801,10 @@ def simple_mutex(ta: Transition.transition_ext[Unit],
   =
   (Transition.Label[Unit](ta) ==
     Transition.Label[Unit](t)) && ((Nat.equal_nata(Transition.Arity[Unit](ta),
-            Transition.Arity[Unit](t))) && ((Optiona.is_none[Nat.nat](GExp.max_reg_list(Transition.Guard[Unit](ta)))) && ((Option_Lexorder.less_option[Nat.nat](GExp.max_input_list(Transition.Guard[Unit](ta)),
- Some[Nat.nat](Transition.Arity[Unit](ta)))) && ((GExp.satisfiable_list(smart_not_null(Lista.upt(Nat.zero_nata,
-                  Transition.Arity[Unit](ta)),
-        Transition.Guard[Unit](ta)))) && (! (EFSM.choice(t, ta)))))))
+            Transition.Arity[Unit](t))) && ((Optiona.is_none[Nat.nat](GExp.max_reg_list(Transition.Guard[Unit](ta)))) && ((Option_ord.less_option[Nat.nat](GExp.max_input_list(Transition.Guard[Unit](ta)),
+                                    Some[Nat.nat](Transition.Arity[Unit](ta)))) && ((GExp.satisfiable_list(smart_not_null(Lista.upt(Nat.zero_nata,
+             Transition.Arity[Unit](ta)),
+   Transition.Guard[Unit](ta)))) && (! (EFSM.choice(t, ta)))))))
 
 def max_reg_total(e: FSet.fset[(List[Nat.nat],
                                  ((Nat.nat, Nat.nat),
@@ -5184,11 +5179,11 @@ def updates_subset(ta: Transition.transition_ext[Unit],
                                   Transition.Updates[Unit](t)))) contains r)) && ((! ((Lista.map[(Nat.nat,
                    AExp.aexp),
                   Nat.nat](((a: (Nat.nat, AExp.aexp)) => a._1),
-                            Transition.Updates[Unit](ta))) contains r)) && ((Option_Lexorder.less_option[Nat.nat](GExp.max_input_list(Transition.Guard[Unit](ta)),
-                                   Some[Nat.nat](Transition.Arity[Unit](ta)))) && ((GExp.satisfiable_list(Inference.smart_not_null(Lista.upt(Nat.zero_nata,
-                      Transition.Arity[Unit](ta)),
-            Transition.Guard[Unit](ta)))) && ((Optiona.is_none[Nat.nat](GExp.max_reg_list(Transition.Guard[Unit](ta)))) && (Nat.less_nat(i,
-                  Transition.Arity[Unit](ta)))))))))
+                            Transition.Updates[Unit](ta))) contains r)) && ((Option_ord.less_option[Nat.nat](GExp.max_input_list(Transition.Guard[Unit](ta)),
+                              Some[Nat.nat](Transition.Arity[Unit](ta)))) && ((GExp.satisfiable_list(Inference.smart_not_null(Lista.upt(Nat.zero_nata,
+                 Transition.Arity[Unit](ta)),
+       Transition.Guard[Unit](ta)))) && ((Optiona.is_none[Nat.nat](GExp.max_reg_list(Transition.Guard[Unit](ta)))) && (Nat.less_nat(i,
+             Transition.Arity[Unit](ta)))))))))
    })
 
 def initially_undefined_context_check(e:
