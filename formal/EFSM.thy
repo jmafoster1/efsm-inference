@@ -207,14 +207,6 @@ inductive accepts :: "transition_matrix \<Rightarrow> nat \<Rightarrow> register
          accepts e s' (apply_updates (Updates T) (join_ir i d) d) t \<Longrightarrow>
          accepts e s d ((l, i)#t)"
 
-lemma accepts_step: "accepts e s d ((l, i)#t) = (\<exists>(s', T) |\<in>| possible_steps e s d l i.
-         accepts e s' (apply_updates (Updates T) (join_ir i d) d) t)"
-  apply standard
-   defer
-   apply (simp add: accepts.step)
-  apply (rule accepts.cases)
-  by auto
-
 fun accepts_prim :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> bool" where
   "accepts_prim e s d [] = True" |
   "accepts_prim e s d ((l, i)#t) = (
@@ -226,6 +218,13 @@ fun accepts_prim :: "transition_matrix \<Rightarrow> nat \<Rightarrow> registers
       (\<exists>(s', T) |\<in>| poss_steps. accepts_prim e s' (apply_updates (Updates T) (join_ir i d) d) t)
   )"
 
+lemma accepts_cons: "accepts e s d (h#t) = (\<exists>(s', T) |\<in>| possible_steps e s d (fst h) (snd h). accepts e s' (apply_updates (Updates T) (join_ir (snd h) d) d) t)"
+  apply (cases h)
+  apply simp
+  apply standard
+   apply (metis accepts.simps fst_conv list.distinct(1) list.inject snd_conv)
+  by (simp add: accepts.step)
+
 lemma accepts_prim: "\<forall>d s. accepts e s d t = accepts_prim e s d t"
 proof(induct t)
 case Nil
@@ -235,9 +234,14 @@ next
   case (Cons a t)
   then show ?case
     apply (cases a)
-    apply (simp add: accepts_step Let_def fis_singleton_alt)
+    apply (simp add: accepts_cons Let_def fis_singleton_alt)
     by auto
 qed
+
+lemma accepts_single_possible_step: "possible_steps e s d l i = {|(s', t)|} \<Longrightarrow>
+       accepts e s' (apply_updates (Updates t) (join_ir i d) d) trace \<Longrightarrow>
+       accepts e s d ((l, i)#trace)"
+  by (simp add: accepts_prim)
 
 abbreviation "rejects e s d t \<equiv> \<not> accepts e s d t"
 
@@ -369,13 +373,6 @@ lemma accepts_must_be_step: "accepts e s d (h#ts) \<Longrightarrow> \<exists>t s
   apply (simp add: random_member_def)
   apply (case_tac "SOME xa. xa = x \<or> xa |\<in>| S'")
   by simp
-
-lemma accepts_cons: "accepts e s d (h#t) = (\<exists>(s', T) |\<in>| possible_steps e s d (fst h) (snd h). accepts e s' (apply_updates (Updates T) (join_ir (snd h) d) d) t)"
-  apply (cases h)
-  apply simp
-  apply standard
-   apply (metis accepts.simps fst_conv list.distinct(1) list.inject snd_conv)
-  by (simp add: accepts.step)
 
 lemma accepts_cons_step: "accepts e s r (h # t) \<Longrightarrow> step e s r (fst h) (snd h) \<noteq>  None"
   by (simp add: accepts_must_be_step)
