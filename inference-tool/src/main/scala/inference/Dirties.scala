@@ -388,14 +388,23 @@ false)
     })
   }
 
+  var guardMap = Map[List[((List[Value.value], Map[Nat.nat, Option[Value.value]]), Boolean)], GExp.gexp]()
+
   def findDistinguishingGuard(
     g1: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])]),
     g2: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])])): Option[(GExp.gexp, GExp.gexp)] = {
+
+    val ioPairs = (g1 zip List.fill(g1.length)(true)) ++ (g1 zip List.fill(g1.length)(false))
+
+    if (guardMap isDefinedAt ioPairs) {
+      return Some((guardMap(ioPairs), GExp.gNot(guardMap(ioPairs))))
+    }
+
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
     Logger.getRootLogger().setLevel(Level.OFF);
 
-    val gpGenerator: Generator = new Generator(new java.util.Random(0))
+    val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.guardSeed))
 
     gpGenerator.setIntegerFunctions(GP.intNonTerms);
 
@@ -500,6 +509,7 @@ false)
     ctx.close
     if (gp.isCorrect(best)) {
       Log.root.debug("g1: " + PrettyPrinter.gexpToString(gexp))
+      guardMap = guardMap + (ioPairs -> gexp)
       return Some((gexp, GExp.gNot(gexp)))
     } else {
       return None
@@ -510,8 +520,6 @@ false)
     r: Nat.nat,
     values: List[Value.value],
     train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Map[Nat.nat, Option[Value.value]]))]): Option[AExp.aexp] = {
-
-      println("Getting update function")
 
     val r_index = TypeConversion.toInt(r)
     val ioPairs = (train.map {
@@ -528,7 +536,7 @@ false)
     BasicConfigurator.configure();
     Logger.getRootLogger().setLevel(Level.DEBUG);
 
-    val gpGenerator: Generator = new Generator(new java.util.Random(3))
+    val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.updateSeed))
     gpGenerator.setIntegerFunctions(GP.intNonTerms);
 
     var (intTerms, stringTerms) = GP.getValueTerminals(values)
@@ -536,6 +544,9 @@ false)
     val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
     var stringVarNames = List[String]()
     var intVarNames = List[String]()
+
+    for (entry <- ioPairs)
+      println(entry)
 
     for (t <- ioPairs) t match {
       case ((inputs, anteriorRegs), updatedReg) => {
@@ -575,11 +586,11 @@ false)
     }
 
     for (intVarName <- intVarNames.distinct) {
-        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
+      intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
     }
 
     for (stringVarName <- stringVarNames.distinct) {
-        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
+      stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
     }
 
     gpGenerator.setIntegerTerminals(intTerms)
@@ -589,15 +600,15 @@ false)
     println("IntTerms: " + intTerms)
     println("Int values: " + IntegerVariableAssignment.values)
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(9, 0.9f, 0.01f, 5, 2));
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(6, 0.9f, 0.5f, 5, 2));
 
     val best = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 
-    Log.root.debug("Output training set: " + trainingSet)
+    Log.root.debug("Update training set: " + trainingSet)
     Log.root.debug("  Int terminals: " + intTerms)
     Log.root.debug("  Best function is: " + best)
 
-    // System.exit(0)
+    System.exit(0)
 
     if (gp.isCorrect(best)) {
       funMap = funMap + (ioPairs -> (TypeConversion.toAExp(best), getTypes(best)))
@@ -625,8 +636,6 @@ false)
     i: List[List[Value.value]],
     o: List[Value.value]): Option[(AExp.aexp, Map[VName.vname, String])] = {
 
-      println("Getting output function")
-
     val ioPairs = (i zip i.map(i => null) zip o).distinct
 
     if (funMap isDefinedAt ioPairs) {
@@ -637,9 +646,9 @@ false)
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
-    Logger.getRootLogger().setLevel(Level.DEBUG);
+    Logger.getRootLogger().setLevel(Level.OFF);
 
-    val gpGenerator: Generator = new Generator(new java.util.Random(1))
+    val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.outputSeed))
 
     gpGenerator.setIntegerFunctions(GP.intNonTerms);
 
@@ -686,7 +695,7 @@ false)
 
     Collections.reverse(IntegerVariableAssignment.values())
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(9, 0.9f, 0.01f, 5, 2));
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(20, 0.9f, 0.01f, 5, 2));
 
     val best = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
 

@@ -6,8 +6,8 @@ Created on Tue Nov 19 09:50:36 2019
 @author: michael
 """
 import re
+import os
 
-num_repeats = 100
 root = "."
 
 
@@ -30,13 +30,13 @@ def get_best_experiments(xs):
     return best_indices
 
 
-def get_num_states(i):
-    with open(f"{root}/dotfiles-{i+1}/log") as f:
+def get_num_states(d):
+    with open(f"{root}/{d}/log") as f:
         num_states_line = f.readlines()[-2]
         return int(re.search("Nata\((\d+)\)", num_states_line)[1])
 
 
-states_record = [get_num_states(i) for i in range(num_repeats)]
+states_record = [get_num_states(i) for i in os.listdir() if i.startswith("dotfiles")]
 
 print(count_values(states_record))
 print(get_best_experiments(states_record))

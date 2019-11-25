@@ -4,7 +4,7 @@ import scala.io.Source
 import net.liftweb.json._
 import ch.qos.logback.classic.Level
 import Types._
-import java.nio.file.{Paths, Files}
+import java.nio.file.{ Paths, Files }
 
 object Heuristics extends Enumeration {
   type Heuristic = Value
@@ -35,8 +35,10 @@ case class Config(
   smallInts: Boolean = false,
   log: List[List[Types.Event]] = List(),
   k: Int = 0,
-  gpIterations: Int = 50
-  )
+  gpIterations: Int = 50,
+  guardSeed: Int = 0,
+  outputSeed: Int = 0,
+  updateSeed: Int = 0)
 
 object Config {
   val builder = OParser.builder[Config]
@@ -136,7 +138,16 @@ object Config {
       arg[File]("filename")
         .required()
         .action((x, c) => c.copy(file = x))
-        .text("The json file listing the traces"))
+        .text("The json file listing the traces"),
+      opt[Int]('g', "guardSeed")
+        .valueName("Random seed for guard GP")
+        .action((x, c) => c.copy(guardSeed = x)),
+      opt[Int]('p', "outputSeed")
+        .valueName("Random seed for output GP")
+        .action((x, c) => c.copy(outputSeed = x)),
+      opt[Int]('u', "updateSeed")
+        .valueName("Random seed for update GP")
+        .action((x, c) => c.copy(updateSeed = x)))
   }
 
   def parseArgs(args: Array[String]) = {
