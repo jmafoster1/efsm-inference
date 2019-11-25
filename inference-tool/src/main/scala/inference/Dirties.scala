@@ -6,7 +6,9 @@ import scala.util.Random
 import sys.process._
 import Types._
 import org.apache.commons.io.FileUtils
+
 import java.util.UUID.randomUUID
+import java.util.Collections
 
 import scala.collection.JavaConversions._
 
@@ -509,6 +511,8 @@ false)
     values: List[Value.value],
     train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Map[Nat.nat, Option[Value.value]]))]): Option[AExp.aexp] = {
 
+      println("Getting update function")
+
     val r_index = TypeConversion.toInt(r)
     val ioPairs = (train.map {
       case (inputs, (aregs, pregs)) => pregs(r) match {
@@ -524,7 +528,7 @@ false)
     BasicConfigurator.configure();
     Logger.getRootLogger().setLevel(Level.DEBUG);
 
-    val gpGenerator: Generator = new Generator(new java.util.Random(0))
+    val gpGenerator: Generator = new Generator(new java.util.Random(3))
     gpGenerator.setIntegerFunctions(GP.intNonTerms);
 
     var (intTerms, stringTerms) = GP.getValueTerminals(values)
@@ -593,7 +597,7 @@ false)
     Log.root.debug("  Int terminals: " + intTerms)
     Log.root.debug("  Best function is: " + best)
 
-    System.exit(0)
+    // System.exit(0)
 
     if (gp.isCorrect(best)) {
       funMap = funMap + (ioPairs -> (TypeConversion.toAExp(best), getTypes(best)))
@@ -620,6 +624,8 @@ false)
     values: List[Value.value],
     i: List[List[Value.value]],
     o: List[Value.value]): Option[(AExp.aexp, Map[VName.vname, String])] = {
+
+      println("Getting output function")
 
     val ioPairs = (i zip i.map(i => null) zip o).distinct
 
@@ -678,6 +684,8 @@ false)
     gpGenerator.setIntegerTerminals(intTerms)
     gpGenerator.setStringTerminals(stringTerms)
 
+    Collections.reverse(IntegerVariableAssignment.values())
+
     var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(9, 0.9f, 0.01f, 5, 2));
 
     val best = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
@@ -685,6 +693,9 @@ false)
     Log.root.debug("Output training set: " + trainingSet)
     Log.root.debug("  Int terminals: " + intTerms)
     Log.root.debug("  Best function is: " + best)
+    Log.root.debug("Int values: " + IntegerVariableAssignment.values())
+
+    // System.exit(0)
 
     if (gp.isCorrect(best)) {
       funMap = funMap + (ioPairs -> (TypeConversion.toAExp(best), getTypes(best)))
