@@ -8,7 +8,7 @@ Created on Tue Nov 19 09:50:36 2019
 import re
 import os
 
-root = "."
+root = "dotfiles"
 
 
 def count_values(xs):
@@ -36,7 +36,13 @@ def get_num_states(d):
         return int(re.search("Nata\((\d+)\)", num_states_line)[1])
 
 
-states_record = [get_num_states(i) for i in os.listdir() if i.startswith("dotfiles")]
+states_record = [get_num_states(i) for i in os.listdir(root) if i.startswith("dotfiles-")]
 
-print(count_values(states_record))
+counts = count_values(states_record)
+
+num_min = counts[min(counts.keys())]
+total_runs = sum(counts.values())
+
+print(counts)
 print(get_best_experiments(states_record))
+print("Achieved smalles model " + str(num_min/total_runs * 100) + "% of the time")

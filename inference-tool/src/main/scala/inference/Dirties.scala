@@ -534,7 +534,7 @@ false)
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
-    Logger.getRootLogger().setLevel(Level.DEBUG);
+    Logger.getRootLogger().setLevel(Level.OFF);
 
     val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.updateSeed))
     gpGenerator.setIntegerFunctions(GP.intNonTerms);
@@ -544,9 +544,6 @@ false)
     val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
     var stringVarNames = List[String]()
     var intVarNames = List[String]()
-
-    for (entry <- ioPairs)
-      println(entry)
 
     for (t <- ioPairs) t match {
       case ((inputs, anteriorRegs), updatedReg) => {
@@ -607,8 +604,6 @@ false)
     Log.root.debug("Update training set: " + trainingSet)
     Log.root.debug("  Int terminals: " + intTerms)
     Log.root.debug("  Best function is: " + best)
-
-    System.exit(0)
 
     if (gp.isCorrect(best)) {
       funMap = funMap + (ioPairs -> (TypeConversion.toAExp(best), getTypes(best)))
@@ -703,8 +698,6 @@ false)
     Log.root.debug("  Int terminals: " + intTerms)
     Log.root.debug("  Best function is: " + best)
     Log.root.debug("Int values: " + IntegerVariableAssignment.values())
-
-    // System.exit(0)
 
     if (gp.isCorrect(best)) {
       funMap = funMap + (ioPairs -> (TypeConversion.toAExp(best), getTypes(best)))

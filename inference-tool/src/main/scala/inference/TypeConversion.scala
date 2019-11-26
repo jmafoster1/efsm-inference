@@ -118,7 +118,7 @@ object TypeConversion {
       return makeBinaryAExp(e.getArgs().toList, (mkMul _).curried)
     }
     if (e.isConst) {
-      val name = e.toString
+      val name = e.toString.replace("latent", "")
       // TODO: This is hacky at best
       if (name.startsWith("i")) {
         return AExp.V(VName.I(Nat.Nata(name.drop(1).toInt)))

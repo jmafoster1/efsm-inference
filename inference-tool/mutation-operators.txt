@@ -1,0 +1,23 @@
+case 0: ret.mutateByRandomChangeOfFunction();
+	Randomly swap out a node to a different function. Either + goes to -, etc. or nonterminal goes to terminal.
+	This needs to be abstract because we need to make sure the new function is of the same type signature
+
+case 1: ret.mutateByRandomChangeOfChild();
+	Make a child a terminal node
+	This will also need to be abstract so we can make sure it's of the correct type
+
+case 2: ret.mutateByRandomChangeOfNodeToChild();
+	Change a node to one of its children
+
+case 3: ret.mutateByReverseOfChildsList();
+	Swap children round
+
+case 4: ret.mutateByRootGrowth();
+	Make the current tree a subtree of a new tree and pad with random terminal children
+	This needs to be abstract because we need to make sure the new function is of the same type signature
+
+case 5: ret.syntaxTree = SyntaxTreeUtils.createTree(2, this.context);
+	Completely reinitialise the node with a new random binary expression - I don't want this.
+
+case 6: ret.mutateByReplaceEntireTreeWithAnySubTree();
+	Make the current node one of its subtrees
