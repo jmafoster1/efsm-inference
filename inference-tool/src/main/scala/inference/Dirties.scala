@@ -496,9 +496,9 @@ false)
     gpGenerator.setIntegerTerminals(intTerms)
     gpGenerator.setStringTerminals(stringTerms)
 
-    val gp = new SingleOutputGP(gpGenerator, trainingSet, new GPConfiguration(20, 0.9f, 0.01f, 7, 7), false)
+    val gp = new SingleOutputGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 7, 7), false)
 
-    val best: Node[VariableAssignment[_]] = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
+    val best: Node[VariableAssignment[_]] = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
 
     Log.root.debug("Guard training set: " + trainingSet)
     Log.root.debug("  Int terminals: " + intTerms)
@@ -597,9 +597,9 @@ false)
     println("IntTerms: " + intTerms)
     println("Int values: " + IntegerVariableAssignment.values)
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(6, 0.9f, 0.5f, 5, 2));
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 5, 2));
 
-    val best = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
+    val best = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
 
     Log.root.debug("Update training set: " + trainingSet)
     Log.root.debug("  Int terminals: " + intTerms)
@@ -690,9 +690,9 @@ false)
 
     Collections.reverse(IntegerVariableAssignment.values())
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(20, 0.9f, 0.01f, 5, 2));
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 5, 2));
 
-    val best = gp.evolve(10).asInstanceOf[Node[VariableAssignment[_]]]
+    val best = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
 
     Log.root.debug("Output training set: " + trainingSet)
     Log.root.debug("  Int terminals: " + intTerms)
