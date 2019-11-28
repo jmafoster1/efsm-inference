@@ -22,7 +22,6 @@ import mint.tracedata.types.IntegerVariableAssignment;
 import mint.tracedata.types.StringVariableAssignment;
 import mint.tracedata.types.VariableAssignment;
 import mint.inference.gp.LatentVariableGP;
-import mint.inference.gp.SingleOutputGP;
 import mint.inference.evo.GPConfiguration;
 
 import org.apache.log4j.BasicConfigurator;
@@ -496,7 +495,7 @@ false)
     gpGenerator.setIntegerTerminals(intTerms)
     gpGenerator.setStringTerminals(stringTerms)
 
-    val gp = new SingleOutputGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 7, 7), false)
+    val gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 7, 7))
 
     val best: Node[VariableAssignment[_]] = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
 

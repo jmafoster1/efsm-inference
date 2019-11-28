@@ -315,7 +315,7 @@ object TypeConversion {
     if (delete)
       s"rm salfiles/${f}.dot".!
     else
-      s"mv salfiles/${f}.dot ${Config.config.dotfiles}/".!
+      s"mv dotfiles/${f}.dot ${Config.config.dotfiles}/".!
   }
 
   def doubleEFSMToSALTranslator(e1: Types.TransitionMatrix, e1Name: String, e2: Types.TransitionMatrix, e2Name: String, f: String, delete: Boolean = true) = {

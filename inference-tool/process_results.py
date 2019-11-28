@@ -34,6 +34,12 @@ def get_num_states(d):
     with open(f"{root}/{d}/log") as f:
         num_states_line = f.readlines()[-2]
         return int(re.search("Nata\((\d+)\)", num_states_line)[1])
+    
+
+for i in os.listdir(root):
+    if i.startswith("dotfiles-"):
+        print(i)
+        get_num_states(i)
 
 
 states_record = [get_num_states(i) for i in os.listdir(root) if i.startswith("dotfiles-")]

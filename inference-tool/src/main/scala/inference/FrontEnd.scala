@@ -27,7 +27,7 @@ object FrontEnd {
     Log.root.info(s"PTA has ${Config.numStates} states")
 
     PrettyPrinter.iEFSM2dot(pta, s"pta_gen")
-    TypeConversion.efsmToSALTranslator(Inference.tm(pta), "pta")
+    TypeConversion.efsmToSALTranslator(Inference.tm(pta), "pta", false)
 
     try {
       val inferred = Inference.learn(
@@ -58,6 +58,9 @@ object FrontEnd {
         // for (tran <- FSet.sorted_list_of_fset(inferred)) {
         //   println(tran)
         // }
+
+        TypeConversion.efsmToSALTranslator(Inference.tm(inferred), "inferred", false)
+
     }
     catch {
       case e: Throwable => {
