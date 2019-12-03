@@ -83,7 +83,7 @@ object PrettyPrinter {
     case (label, (inputs, outputs)) :: t => s"        ${label}(${inputs.map(valueToString)})/${outputs.map(valueToString)}\n" + traceToString(t)
   }
 
-  def inputsToString(i: List[Value.value], join: String = ", ") = i.map(valueToString).mkString(join)
+  def inputsToString(i: List[Value.value], join: String = ", ") = s"[${i.map(valueToString).mkString(join)}]"
 
   def outputToString(o: Option[Value.value]) = o match {
     case Some(p) => valueToString(p)

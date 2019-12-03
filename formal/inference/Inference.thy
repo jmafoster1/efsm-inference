@@ -34,14 +34,6 @@ definition uids :: "iEFSM \<Rightarrow> nat fset" where
 definition max_uid :: "iEFSM \<Rightarrow> nat option" where
   "max_uid e = (let uids = uids e in if uids = {||} then None else Some (fMax uids))"
 
-(*
-definition toiEFSM :: "transition_matrix \<Rightarrow> iEFSM" where
-  "toiEFSM e = (let
-    e_list = (sorted_list_of_fset e) in
-    fold (\<lambda>(uid, tuple) iefsm. iefsm(uid $:= Some tuple)) (enumerate 0 e_list) <>
-  )"
-*)
-
 definition tm :: "iEFSM \<Rightarrow> transition_matrix" where
   "tm e = fimage snd e"
 
@@ -740,4 +732,10 @@ definition "accepts_and_gets_us_to_both a b s s' = (
       gets_us_to s (tm a) 0 <> p \<and>
       accepts_trace (tm b) p \<and>
       gets_us_to s' (tm b) 0 <> p)"
+
+definition enumerate_exec_values :: "execution \<Rightarrow> value list" where
+  "enumerate_exec_values vs = fold (\<lambda>(_, i, p) I. List.union (List.union i p) I) vs []"
+
+definition enumerate_log_values :: "log \<Rightarrow> value list" where
+  "enumerate_log_values l = fold (\<lambda>e I. List.union (enumerate_exec_values e) I) l []"
 end

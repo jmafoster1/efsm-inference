@@ -11,4 +11,4 @@ do
 	done
 done
 make dot
-# shutdown
+shutdown

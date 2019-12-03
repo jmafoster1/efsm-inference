@@ -19,6 +19,8 @@ definition get_function :: "nat \<Rightarrow> value list \<Rightarrow> inputs li
     in
     if possible_funs = {} then None else Some (Eps (\<lambda>x. x \<in> possible_funs), (K$ STR ''int''))
   )"
+declare get_function_def [code del]
+code_printing constant get_function \<rightharpoonup> (Scala) "Dirties.getFunction"
 
 definition get_inputs :: "flat_log \<Rightarrow> inputs list" where
   "get_inputs l = map (\<lambda>(_, _, _, i, _). i) l"
@@ -173,12 +175,6 @@ fun put_output_functions :: "(nat \<times> (aexp \<times> (vname \<Rightarrow>f 
     None \<Rightarrow> None |
     Some e' \<Rightarrow> put_output_functions rest log t e'
   )"
-
-definition enumerate_exec_values :: "execution \<Rightarrow> value list" where
-  "enumerate_exec_values vs = fold (\<lambda>(_, i, p) I. List.union (List.union i p) I) vs []"
-
-definition enumerate_log_values :: "log \<Rightarrow> value list" where
-  "enumerate_log_values l = fold (\<lambda>e I. List.union (enumerate_exec_values e) I) l []"
 
 definition infer_output_functions :: "log \<Rightarrow> update_modifier" where
   "infer_output_functions log t1ID t2ID s new _ old _ = (let

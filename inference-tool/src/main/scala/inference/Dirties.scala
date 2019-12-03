@@ -612,6 +612,106 @@ false)
     }
   }
 
+  def getOutput(
+    maxReg: Nat.nat,
+    values: List[Value.value],
+    inputs: List[List[Value.value]],
+    registers: List[Map[Nat.nat, Option[Value.value]]],
+    outputs: List[Value.value]): Option[(AExp.aexp, Map[VName.vname, String])] = {
+
+      val r_index = TypeConversion.toInt(maxReg)
+
+      val ioPairs = (inputs zip registers zip outputs).distinct
+
+      if (funMap isDefinedAt ioPairs) {
+        return Some(funMap(ioPairs))
+      }
+
+    BasicConfigurator.resetConfiguration();
+    BasicConfigurator.configure();
+    Logger.getRootLogger().setLevel(Level.OFF);
+
+    val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.outputSeed))
+    gpGenerator.setIntegerFunctions(GP.intNonTerms);
+
+    var (intTerms, stringTerms) = GP.getValueTerminals(values)
+
+    val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
+    var stringVarNames = List[String]()
+    var intVarNames = List[String]()
+
+    for (t <- ioPairs) t match {
+      case ((inputs, anteriorRegs), output) => {
+        var scenario = List[VariableAssignment[_]]()
+        for ((ip, ix) <- inputs.zipWithIndex) ip match {
+          case Value.Numa(n) => {
+            intVarNames = s"i${ix}" :: intVarNames
+            scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toInteger(n))) :: scenario
+          }
+          case Value.Str(s) => {
+            stringVarNames = s"i${ix}" :: stringVarNames
+            scenario = (new StringVariableAssignment(s"i${ix}", s)) :: scenario
+          }
+        }
+        for ((k: Nat.nat, v: Option[Value.value]) <- anteriorRegs) v match {
+          case None => throw new IllegalStateException("Got None from registers")
+          case Some(Value.Numa(n)) => {
+            intVarNames = s"r${TypeConversion.toInt(k)}" :: intVarNames
+            scenario = (new IntegerVariableAssignment(s"r${TypeConversion.toInt(k)}", TypeConversion.toInteger(n))) :: scenario
+          }
+          case Some(Value.Str(s)) => {
+            stringVarNames = s"r${TypeConversion.toInt(k)}" :: stringVarNames
+            scenario = (new StringVariableAssignment(s"r${TypeConversion.toInt(k)}", s)) :: scenario
+          }
+        }
+        output match {
+          case Value.Numa(n) => {
+            intVarNames = s"r${r_index}" :: intVarNames
+            trainingSet.put(scenario, new IntegerVariableAssignment("r" + r_index, TypeConversion.toInteger(n)))
+          }
+          case Value.Str(s) => {
+            stringVarNames = s"r${r_index}" :: stringVarNames
+            trainingSet.put(scenario, new StringVariableAssignment("r" + r_index, s))
+          }
+        }
+      }
+    }
+
+    for (intVarName <- intVarNames.distinct) {
+      if (intVarName.startsWith("i"))
+        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
+      else
+        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, true)) :: intTerms
+    }
+
+    for (stringVarName <- stringVarNames.distinct) {
+      if (stringVarName.startsWith("i"))
+        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
+      else
+        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, true)) :: stringTerms
+    }
+
+    gpGenerator.setIntegerTerminals(intTerms)
+    gpGenerator.setStringTerminals(stringTerms)
+
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 5, 2));
+
+    val best = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
+
+    Log.root.debug("Output training set: " + trainingSet)
+    Log.root.debug("  Int terminals: " + intTerms)
+    Log.root.debug("  String terminals: " + stringTerms)
+    Log.root.debug("  Best function is: " + best)
+
+    if (gp.isCorrect(best)) {
+      Log.root.debug("  Best function is correct")
+      funMap = funMap + (ioPairs -> (TypeConversion.toAExp(best), getTypes(best)))
+      return Some((TypeConversion.toAExp(best), getTypes(best)))
+    } else {
+      return None
+    }
+  }
+
   def getTypes(best: Node[VariableAssignment[_]]): Map[VName.vname, String] = {
     var types = Map[VName.vname, String]()
 
@@ -746,6 +846,10 @@ false)
 
     val ctx = new z3.Context()
     val solver = ctx.mkSimpleSolver()
+
+    println(types)
+    println(z3String)
+
 
     solver.fromString(z3String)
     solver.check()

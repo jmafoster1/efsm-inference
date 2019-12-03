@@ -11,6 +11,7 @@ theory Code_Generation
    "heuristics/Equals"
    "heuristics/Symbolic_Regression"
    "heuristics/Distinguishing_Guards"
+   "heuristics/PTA_Generalisation"
    EFSM_Dot
    Code_Target_FSet
    Code_Target_Set
@@ -575,9 +576,6 @@ code_printing constant parseInt \<rightharpoonup> (Scala) "Int.int'_of'_integer(
 
 definition "And = GExp.gAnd"
 
-declare get_function_def [code del]
-code_printing constant get_function \<rightharpoonup> (Scala) "Dirties.getFunction"
-
 declare get_regs_def [code del]
 code_printing constant get_regs \<rightharpoonup> (Scala) "Dirties.getRegs"
 
@@ -645,6 +643,8 @@ export_code
   use_smallest_ints
   And
   enumerate_vars
+pta_generalise_outputs
+put_updates
 in Scala
 file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
