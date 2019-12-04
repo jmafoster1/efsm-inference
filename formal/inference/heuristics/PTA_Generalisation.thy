@@ -68,13 +68,10 @@ fun put_outputs :: "(((aexp \<times> (vname \<Rightarrow>f String.literal)) opti
   "put_outputs ((None, p)#t) = p#(put_outputs t)" |
   "put_outputs ((Some (p, _), _)#t) = p#(put_outputs t)"
 
-definition finfun_to_pairs :: "'a::linorder \<Rightarrow>f 'b \<Rightarrow> ('a \<times> 'b) list" where
-  "finfun_to_pairs f = map (\<lambda>k. (k, f $ k)) (finfun_to_list f)"
+type_synonym output_types = "(nat \<times> (aexp \<times> vname \<Rightarrow>f String.literal) option) list"
 
-record typed_transition = transition + Types :: "(aexp \<times> (vname \<times> String.literal) list) option list"
-type_synonym typed_iEFSM = "(tids \<times> (cfstate \<times> cfstate) \<times> typed_transition) fset"
-
-definition generalise_outputs :: "value list \<Rightarrow> ((tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> (tids \<times> typed_transition) list list" where
+(*This is where the types stuff originates*)
+definition generalise_outputs :: "value list \<Rightarrow> ((tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> (tids \<times> transition \<times> output_types) list list" where
   "generalise_outputs values groups = map (\<lambda>(maxReg, group).
     let
       I = map (\<lambda>(regs, ins, outs).ins) (snd group);
@@ -82,24 +79,24 @@ definition generalise_outputs :: "value list \<Rightarrow> ((tids \<times> trans
       P = map (\<lambda>(regs, ins, outs).outs) (snd group);
       outputs = get_outputs maxReg values I R P
     in
-    map (\<lambda>(id, tran). (id, \<lparr>Label = Label tran, Arity = Arity tran, Guard = Guard tran, Outputs = put_outputs (zip outputs (Outputs tran)), Updates = Updates tran, Types=map (\<lambda>at. case at of None \<Rightarrow> None | Some (a, t) \<Rightarrow> Some (a, finfun_to_pairs t)) outputs\<rparr>)) (fst group)
+    map (\<lambda>(id, tran). (id, \<lparr>Label = Label tran, Arity = Arity tran, Guard = Guard tran, Outputs = put_outputs (zip outputs (Outputs tran)), Updates = Updates tran\<rparr>, enumerate 0 outputs)) (fst group)
   ) (enumerate 0 groups)"
 
-definition replace_typed_transition :: "typed_iEFSM \<Rightarrow> tids \<Rightarrow> typed_transition \<Rightarrow> typed_iEFSM" where
-  "replace_typed_transition e uid new = (fimage (\<lambda>(uids, (from, to), t). if set uid \<subseteq> set uids then (uids, (from, to), new) else (uids, (from, to), t)) e)"
+definition replace_transition :: "iEFSM \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> iEFSM" where
+  "replace_transition e uid new = (fimage (\<lambda>(uids, (from, to), t). if set uid \<subseteq> set uids then (uids, (from, to), new) else (uids, (from, to), t)) e)"
 
-primrec replace_groups :: "(tids \<times> typed_transition) list list \<Rightarrow> typed_iEFSM \<Rightarrow> typed_iEFSM" where
+primrec replace_groups :: "(tids \<times> transition) list list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "replace_groups [] e = e" |
-  "replace_groups (h#t) e = replace_groups t (fold (\<lambda>(id, t) acc. replace_typed_transition acc id t) h e)"
+  "replace_groups (h#t) e = (replace_groups t (fold (\<lambda>(id, t) acc. replace_transition acc id t) h e))"
 
-definition pta_generalise_outputs :: "log \<Rightarrow> typed_iEFSM" where
+definition pta_generalise_outputs :: "log \<Rightarrow> (iEFSM \<times> ((tids \<times> transition \<times> output_types) list list))" where
   "pta_generalise_outputs log = (
     let
       values = enumerate_log_values log;
       pta = make_pta log {||};
       training_set = make_training_set pta log;
       generalised_outs = generalise_outputs values training_set
-    in replace_groups generalised_outs (fimage (\<lambda>(id, tf, tran). (id, tf, \<lparr>Label=Label tran, Arity = Arity tran, Guard = Guard tran, Outputs = Outputs tran, Updates = Updates tran, Types = []\<rparr>)) pta)
+    in (replace_groups (map (\<lambda>lst. map (\<lambda>(tids, tran, types). (tids, tran)) lst) generalised_outs) pta, generalised_outs)
   )"
 
 definition insert_updates :: "transition \<Rightarrow> update_function list \<Rightarrow> transition" where
@@ -126,45 +123,43 @@ fun add_groupwise_updates :: "(tids \<times> update_function list) option list \
     add_groupwise_updates t (replace_transitions e replacements)
   )"
 
-fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow>  iEFSM \<Rightarrow> (nat \<times> (aexp \<times> vname \<Rightarrow>f String.literal) option) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
-  "put_updates _ _ _ _ _ _ [] e = Some e" |
-  "put_updates _ _ _ _ _ _ ((_, None)#_) _ = None" |
-  "put_updates log values label ia oa lit ((o_inx, (Some (op, types)))#ops) new = (
+fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> output_types \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+  "put_updates _ _ _ _ _ [] e = Some e" |
+  "put_updates _ _ _ _ _ ((_, None)#_) _ = None" |
+  "put_updates log values label ia oa ((o_inx, (Some (op, types)))#ops) lit = (
     let
       walked = everything_walk_log op o_inx types log lit label ia oa;
       targeted = map (\<lambda>w. rev (target <> (rev w))) walked;
       groups = group_by_structure (fold List.union targeted []) [];
       group_updates = groupwise_updates values groups;
-      lifted = lift_output_functions lit new label ia;
+      lifted = lift_output_functions lit lit label ia;
       updated = make_distinct (add_groupwise_updates group_updates lifted)
     in
-      put_updates log values label ia oa lit ops updated
+      put_updates log values label ia oa ops updated
   )"
 
-instantiation "typed_transition_ext" :: (linorder) linorder begin
-definition less_eq_typed_transition_ext ::
-    "\<lparr>Types :: (aexp \<times> (vname \<times> String.literal) list) option list, \<dots> :: 'a\<rparr>
-    \<Rightarrow> \<lparr>Types :: (aexp \<times> (vname \<times> String.literal) list) option list, \<dots> :: 'a\<rparr> \<Rightarrow> bool" where
-"less_eq_typed_transition_ext t1 t2 = (if Types t1 = Types t2 then more t1 < more t2 else Types t2 < Types t2)"
+fun update_groups :: "log \<Rightarrow> value list \<Rightarrow> (transition \<times> output_types) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "update_groups _ _ [] e = e" |
+  "update_groups log values ((tran, types)#lst) e = (
+    case put_updates log values (Label tran) (Arity tran) (length (Outputs tran)) types e of
+      None \<Rightarrow> update_groups log values lst e |
+      Some e' \<Rightarrow> update_groups log values lst e'
+  )"
 
-instance
-  apply standard
-  try
-  sorry
-end
-
-definition typed_transition_groups :: "typed_iEFSM \<Rightarrow> (tids \<times> typed_transition) list list" where
-  "typed_transition_groups e = fold (\<lambda>(tid, _, transition) acc. insert_into_group acc (tid, transition)) (sorted_list_of_fset e) []"
+(* output_types = "(nat \<times> (aexp \<times> vname \<Rightarrow>f String.literal) option) list"*)
+(* put_updates :: "log \<Rightarrow> value list \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> output_types \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" *)
+(* types :: (tids \<times> transition \<times> output_types) list list *)
+(* group_details :: (transition \<times> output_types) list *)
 
 definition normalised_pta :: "log \<Rightarrow> iEFSM" where
   "normalised_pta log = (
     let
-      output_funs = pta_generalise_outputs log;
-      groups = typed_transition_groups output_funs;
-      group_details = map (\<lambda>t. (Label t, Arity t, Outputs t, Types t)) (map hd (map (\<lambda>l. map snd l) groups));
-      updated = fold (\<lambda>x acc. acc) groups output_funs
+      values = enumerate_log_values log;
+      (output_funs, types) = pta_generalise_outputs log;
+      group_details = map (snd \<circ> hd) types;
+      updated = update_groups log values group_details output_funs
     in
-      fimage (\<lambda>(id, tf, t). (id, tf, \<lparr>Label = Label t, Arity = Arity t, Guard = Guard t, Outputs = Outputs t, Updates = Updates t\<rparr>)) updated
+      updated
   )"
 
 end

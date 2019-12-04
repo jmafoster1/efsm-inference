@@ -645,6 +645,7 @@ export_code
   enumerate_vars
 pta_generalise_outputs
 put_updates
+normalised_pta
 in Scala
 file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
