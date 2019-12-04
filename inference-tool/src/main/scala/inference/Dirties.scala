@@ -331,7 +331,7 @@ false)
     s2: Nat.nat,
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
-    // return false // TODO: Delete this
+    return false // TODO: Delete this
 
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f, false)
@@ -619,13 +619,13 @@ false)
     registers: List[Map[Nat.nat, Option[Value.value]]],
     outputs: List[Value.value]): Option[(AExp.aexp, Map[VName.vname, String])] = {
 
-      val r_index = TypeConversion.toInt(maxReg)
+    val r_index = TypeConversion.toInt(maxReg)
 
-      val ioPairs = (inputs zip registers zip outputs).distinct
+    val ioPairs = (inputs zip registers zip outputs).distinct
 
-      if (funMap isDefinedAt ioPairs) {
-        return Some(funMap(ioPairs))
-      }
+    if (funMap isDefinedAt ioPairs) {
+      return Some(funMap(ioPairs))
+    }
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();

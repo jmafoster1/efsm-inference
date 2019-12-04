@@ -179,4 +179,25 @@ definition normalised_pta :: "log \<Rightarrow> iEFSM" where
       remove_redundant_updates_log updated log
   )"
 
+\<comment> \<open>Need to derestrict variables which occur in the updates but keep unrelated ones to avoid \<close>
+\<comment> \<open>nondeterminism creeping in too early in the inference process                            \<close>
+definition derestrict_transition :: "transition \<Rightarrow> transition" where
+  "derestrict_transition t = (
+    let relevant_vars = image V (fold (\<lambda>(r, u) acc. acc \<union> (AExp.enumerate_vars u)) (Updates t) {}) in
+    t\<lparr>Guard := filter (\<lambda>g. \<forall>v \<in> relevant_vars. \<not> gexp_constrains g v) (Guard t)\<rparr>
+  )"
+
+definition derestrict :: "log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
+  "derestrict log m np = (
+    let
+      pta = make_pta log {||};
+      normalised = normalised_pta log;
+      derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, derestrict_transition tran)) normalised;
+      nondeterministic_pairs = sorted_list_of_fset (np derestricted)
+    in
+    case resolve_nondeterminism [] nondeterministic_pairs pta derestricted m (satisfies (set log)) np of
+      None \<Rightarrow> pta |
+      Some resolved \<Rightarrow> resolved
+  )"
+
 end
