@@ -1,0 +1,81 @@
+All "more states" scenarios are nonsence. There isn't currently a way to split states and this is not condoned.
+['more states', 'more transitions', 'more nondeterminism']
+	- Bad
+
+['more states', 'more transitions', 'less nondeterminism']
+	- Nonsense. Metric will likely fail as (states * transitions) will outweigh resolution of nondeterminism
+
+['more states', 'more transitions', 'same nondeterminism']
+	- Bad.
+
+['more states', 'less transitions', 'more nondeterminism']
+	- Nonsense. There is no sensible way this would happen.
+
+['more states', 'less transitions', 'less nondeterminism']
+	- Nonsense but fine as long as the state increase doesn't outweigh the transitions and nondeterminism.
+
+['more states', 'less transitions', 'same nondeterminism']
+	- Nonsense but fine as long as the increase of states doesn't outweigh the transitions
+
+['more states', 'same transitions', 'more nondeterminism']
+	- Bad
+
+['more states', 'same transitions', 'less nondeterminism']
+	- Not awful - states now distinguished with guards and some states split
+
+['more states', 'same transitions', 'same nondeterminism']
+	- Bad
+
+['less states', 'more transitions', 'more nondeterminism']
+	- Nonsense. More transitions is silly
+
+['less states', 'more transitions', 'less nondeterminism']
+	- Nonsense. More transitions is silly
+
+['less states', 'more transitions', 'same nondeterminism']
+	- Nonsense. More transitions is silly
+
+['less states', 'less transitions', 'more nondeterminism']
+	- Acceptable. Merging states is good but may introduce some nondeterminism to be resolved of later
+
+['less states', 'less transitions', 'less nondeterminism']
+	- Ideal!
+
+['less states', 'less transitions', 'same nondeterminism']
+	- Good - eventually we'll reduce to very few states and then nondeterminism will play a larger role
+
+['less states', 'same transitions', 'more nondeterminism']
+	- Acceptable. Merging states is good but may introduce some nondeterminism to be resolved of later
+
+['less states', 'same transitions', 'less nondeterminism']
+	- Good - merged a pair of states and distinguished two transitions with a guard
+
+['less states', 'same transitions', 'same nondeterminism']
+	- Acceptable to continue
+
+['same states', 'more transitions', 'more nondeterminism']
+	- Bad - termination metric will kick it out
+
+['same states', 'more transitions', 'less nondeterminism']
+	- Nonsense. More transitions is silly
+
+['same states', 'more transitions', 'same nondeterminism']
+	- Nonsense. More transitions is silly
+
+['same states', 'less transitions', 'more nondeterminism']
+	- Not intended but conceivable if two transitions are merged and a guard is relaxed. As long as the nondeterminism increase is reasonable (i.e. less than the number of states in the machine) then the termination metric will allow it.
+
+['same states', 'less transitions', 'less nondeterminism']
+	- Good
+
+['same states', 'less transitions', 'same nondeterminism']
+	- Fine
+
+['same states', 'same transitions', 'more nondeterminism']
+	- Bad - kick it out
+
+['same states', 'same transitions', 'less nondeterminism']
+	- Fine - reducing nondeterminism is the aim
+
+['same states', 'same transitions', 'same nondeterminism']
+	- Bad - no progress made
