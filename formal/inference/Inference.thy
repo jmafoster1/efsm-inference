@@ -444,7 +444,7 @@ function resolve_nondeterminism :: "(cfstate \<times> cfstate) list \<Rightarrow
        None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np |
        Some new \<Rightarrow>
          let newScores = (sorted_list_of_fset (np new)) in 
-         if length (newScores) * size new * size (S new) < length (ss) * size newEFSM * size (S newEFSM) then
+         if length (newScores) + size new * size (S new) < length (ss) + size newEFSM * size (S newEFSM) then
            case resolve_nondeterminism closed newScores oldEFSM new m check np of
              Some new' \<Rightarrow> Some new' |
              None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np
@@ -456,7 +456,7 @@ function resolve_nondeterminism :: "(cfstate \<times> cfstate) list \<Rightarrow
      apply (metis neq_Nil_conv prod_cases3 surj_pair)
   by auto
 termination
-  by (relation "measures [\<lambda>(_, ss, _, newEFSM, _). length ss + size newEFSM + size (S newEFSM)]", auto)
+  by (relation "measures [\<lambda>(_, ss, _, newEFSM, _). length ss + size newEFSM * size (S newEFSM)]", auto)
 
 (* Merge - tries dest merge two states in a given iEFSM and resolve the resulting nondeterminism    *)
 (* @param e     - an iEFSM                                                                        *)
