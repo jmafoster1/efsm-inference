@@ -1679,6 +1679,17 @@ def enumerate_inputs(t: transition_ext[Unit]): Set.set[Nat.nat] =
                                      }),
                                     Updates[Unit](t)))))
 
+def Updates_update[A](updatesa:
+                        (List[(Nat.nat, AExp.aexp)]) =>
+                          List[(Nat.nat, AExp.aexp)],
+                       x1: transition_ext[A]):
+      transition_ext[A]
+  =
+  (updatesa, x1) match {
+  case (updatesa, transition_exta(label, arity, guard, outputs, updates, more))
+    => transition_exta[A](label, arity, guard, outputs, updatesa(updates), more)
+}
+
 } /* object Transition */
 
 object Transition_Ordering {
@@ -10325,6 +10336,94 @@ def update_groups(uu: List[List[(String,
      })
 }
 
+def strip_redundant_updates(regs: List[Nat.nat], tids: List[Nat.nat],
+                             e: FSet.fset[(List[Nat.nat],
+    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
+      FSet.fset[(List[Nat.nat],
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+  =
+  FSet.fimage[(List[Nat.nat],
+                ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])),
+               (List[Nat.nat],
+                 ((Nat.nat, Nat.nat),
+                   Transition.transition_ext[Unit]))](((a:
+                  (List[Nat.nat],
+                    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
+                 =>
+                {
+                  val (id, (tf, tran)):
+                        (List[Nat.nat],
+                          ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))
+                    = a;
+                  (if (Lista.equal_lista[Nat.nat](id, tids))
+                    (id, (tf, Transition.Updates_update[Unit](((_:
+                          List[(Nat.nat, AExp.aexp)])
+                         =>
+                        Lista.filter[(Nat.nat,
+                                       AExp.aexp)](((aa: (Nat.nat, AExp.aexp))
+              =>
+             {
+               val (r, _): (Nat.nat, AExp.aexp) = aa;
+               ! (regs contains r)
+             }),
+            Transition.Updates[Unit](tran))),
+                       tran)))
+                    else (id, (tf, tran)))
+                }),
+               e)
+
+def remove_redundant_updates(e: FSet.fset[(List[Nat.nat],
+    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+                              x1: List[(String,
+ (List[Value.value], List[Value.value]))],
+                              uu: Nat.nat,
+                              uv: Map[Nat.nat, Option[Value.value]]):
+      FSet.fset[(List[Nat.nat],
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+  =
+  (e, x1, uu, uv) match {
+  case (e, Nil, uu, uv) => e
+  case (e, (l, (i, uw)) :: t, s, r) =>
+    {
+      val (tid, (sa, tran)):
+            (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))
+        = FSet.fthe_elem[(List[Nat.nat],
+                           (Nat.nat,
+                             Transition.transition_ext[Unit]))](Inference.i_possible_steps(e,
+            s, r, l, i))
+      val ra: Map[Nat.nat, Option[Value.value]] =
+        EFSM.apply_updates(Transition.Updates[Unit](tran), AExp.join_ir(i, r),
+                            r)
+      val redundantly_updated: List[Nat.nat] =
+        Lista.map_filter[(Nat.nat, AExp.aexp),
+                          Nat.nat](((x: (Nat.nat, AExp.aexp)) =>
+                                     (if ({
+    val (rx, _): (Nat.nat, AExp.aexp) = x;
+    Optiona.equal_optiona[Value.value](r(rx), ra(rx))
+  })
+                                       Some[Nat.nat](x._1) else None)),
+                                    Transition.Updates[Unit](tran));
+      remove_redundant_updates(strip_redundant_updates(redundantly_updated, tid,
+                e),
+                                t, sa, ra)
+    }
+}
+
+def remove_redundant_updates_log(e: FSet.fset[(List[Nat.nat],
+        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+                                  x1: List[List[(String,
+          (List[Value.value], List[Value.value]))]]):
+      FSet.fset[(List[Nat.nat],
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+  =
+  (e, x1) match {
+  case (e, Nil) => e
+  case (e, h :: t) =>
+    remove_redundant_updates_log(remove_redundant_updates(e, h, Nat.zero_nata,
+                   Map().withDefaultValue(None)),
+                                  t)
+}
+
 def generalise_outputs(values: List[Value.value],
                         groups:
                           List[(List[(List[Nat.nat],
@@ -10797,7 +10896,7 @@ Map[VName.vname, String])])])))
           FSet.fset[(List[Nat.nat],
                       ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
       = update_groups(log, values, group_details.reverse, output_funs);
-    updated
+    remove_redundant_updates_log(updated, log)
   }
 
 } /* object PTA_Generalisation */

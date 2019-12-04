@@ -334,7 +334,7 @@ false)
     // return false // TODO: Delete this
 
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
-    TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
+    TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f, false)
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
       s"""canStillTake: THEOREM composition |- G(
                 NOT(

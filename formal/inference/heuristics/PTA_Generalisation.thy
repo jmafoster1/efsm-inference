@@ -145,6 +145,29 @@ fun update_groups :: "log \<Rightarrow> value list \<Rightarrow> (transition \<t
       Some e' \<Rightarrow> update_groups log values lst e'
   )"
 
+definition strip_redundant_updates :: "nat list \<Rightarrow> tids \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "strip_redundant_updates regs tids e = fimage (\<lambda>(id, tf, tran).
+    if id = tids then
+      (id, tf, tran\<lparr>Updates := filter (\<lambda>(r, _). r \<notin> set regs) (Updates tran)\<rparr>)
+    else
+      (id, tf, tran)
+  ) e"
+
+fun remove_redundant_updates :: "iEFSM \<Rightarrow> execution \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM" where
+  "remove_redundant_updates e [] _ _ = e" |
+  "remove_redundant_updates e ((l, i, _)#t) s r = (
+    let
+      (tid, s', tran) = fthe_elem (i_possible_steps e s r l i);
+      r' = apply_updates (Updates tran) (join_ir i r) r;
+      redundantly_updated = map fst (filter (\<lambda>(rx, _). r $ rx = r' $ rx) (Updates tran))
+    in
+    remove_redundant_updates (strip_redundant_updates redundantly_updated tid e) t s' r'
+  )"
+
+primrec remove_redundant_updates_log :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
+  "remove_redundant_updates_log e [] = e" |
+  "remove_redundant_updates_log e (h#t) = remove_redundant_updates_log (remove_redundant_updates e h 0 <>) t"
+
 definition normalised_pta :: "log \<Rightarrow> iEFSM" where
   "normalised_pta log = (
     let
@@ -153,7 +176,7 @@ definition normalised_pta :: "log \<Rightarrow> iEFSM" where
       group_details = map (snd \<circ> hd) types;
       updated = update_groups log values (rev group_details) output_funs
     in
-      updated
+      remove_redundant_updates_log updated log
   )"
 
 end

@@ -31,8 +31,6 @@ object FrontEnd {
     val normalised_pta = PTA_Generalisation.normalised_pta(Config.config.log)
     PrettyPrinter.iEFSM2dot(normalised_pta, "normalised")
 
-    System.exit(0)
-
     pta = normalised_pta
 
     TypeConversion.efsmToSALTranslator(Inference.tm(pta), "pta", false)
