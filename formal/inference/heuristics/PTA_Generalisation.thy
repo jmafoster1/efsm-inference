@@ -132,8 +132,7 @@ fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> label \<Rightarro
       targeted = map (\<lambda>w. rev (target <> (rev w))) walked;
       groups = group_by_structure (fold List.union targeted []) [];
       group_updates = groupwise_updates values groups;
-      lifted = lift_output_functions lit lit label ia;
-      updated = make_distinct (add_groupwise_updates group_updates lifted)
+      updated = make_distinct (add_groupwise_updates group_updates lit)
     in
       put_updates log values label ia oa ops updated
   )"
@@ -146,18 +145,13 @@ fun update_groups :: "log \<Rightarrow> value list \<Rightarrow> (transition \<t
       Some e' \<Rightarrow> update_groups log values lst e'
   )"
 
-(* output_types = "(nat \<times> (aexp \<times> vname \<Rightarrow>f String.literal) option) list"*)
-(* put_updates :: "log \<Rightarrow> value list \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> output_types \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" *)
-(* types :: (tids \<times> transition \<times> output_types) list list *)
-(* group_details :: (transition \<times> output_types) list *)
-
 definition normalised_pta :: "log \<Rightarrow> iEFSM" where
   "normalised_pta log = (
     let
       values = enumerate_log_values log;
       (output_funs, types) = pta_generalise_outputs log;
       group_details = map (snd \<circ> hd) types;
-      updated = update_groups log values group_details output_funs
+      updated = update_groups log values (rev group_details) output_funs
     in
       updated
   )"

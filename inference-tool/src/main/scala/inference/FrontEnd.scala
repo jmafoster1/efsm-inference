@@ -28,31 +28,12 @@ object FrontEnd {
 
     Log.root.info(s"PTA has ${Config.numStates} states")
 
-    val generalised = PTA_Generalisation.pta_generalise_outputs(Config.config.log)
-    PrettyPrinter.iEFSM2dot(generalised._1, "generalised")
-
     val normalised_pta = PTA_Generalisation.normalised_pta(Config.config.log)
     PrettyPrinter.iEFSM2dot(normalised_pta, "normalised")
 
-    pta = normalised_pta
+    System.exit(0)
 
-    // val values = Inference.enumerate_log_values(Config.config.log)
-    //
-    // val funs = Dirties.funMap.values.toList
-    // val updated1 = PTA_Generalisation.put_updates(Config.config.log, values, "coin", Nat.Nata(1), Nat.Nata(1), generalised, List((Nat.Nata(0), Some(funs(0)))), generalised)
-    //
-    // updated1 match {
-    //   case Some(e1) => {
-    //     PrettyPrinter.iEFSM2dot(e1, s"updated1")
-    //     val updated2 = PTA_Generalisation.put_updates(Config.config.log, values, "vend", Nat.Nata(0), Nat.Nata(1), e1, List((Nat.Nata(0), Some(funs(1)))), e1)
-    //     updated2 match {
-    //       case Some(e2) => {
-    //         PrettyPrinter.iEFSM2dot(e2, s"updated2")
-    //         pta = e2
-    //       }
-    //     }
-    //   }
-    // }
+    pta = normalised_pta
 
     TypeConversion.efsmToSALTranslator(Inference.tm(pta), "pta", false)
 

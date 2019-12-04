@@ -847,10 +847,6 @@ false)
     val ctx = new z3.Context()
     val solver = ctx.mkSimpleSolver()
 
-    println(types)
-    println(z3String)
-
-
     solver.fromString(z3String)
     solver.check()
     val model: z3.Model = solver.getModel

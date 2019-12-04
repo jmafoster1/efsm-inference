@@ -325,7 +325,9 @@ definition get_updates_opt :: "value list \<Rightarrow> (inputs \<times> registe
     map (\<lambda>r.
       let targetValues = remdups (map (\<lambda>(_, _, regs). regs $ r) train) in
       \<comment> \<open>add inputs=[] to this too but only when we've got non-numericals working\<close>
-      if length targetValues = 1 \<and> (\<forall>(inputs, initialRegs, _) \<in> set train. finfun_to_list initialRegs = []) then
+      if  (\<forall>(_, anteriorRegs, posteriorRegs) \<in> set train. anteriorRegs $ r = posteriorRegs $ r) then
+        (r, Some (V (R r)))
+      else if length targetValues = 1 \<and> (\<forall>(inputs, initialRegs, _) \<in> set train. finfun_to_list initialRegs = []) then
         case hd targetValues of Some v \<Rightarrow>
         (r, Some (L v))
       else
@@ -369,7 +371,7 @@ definition lift_output_functions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> lab
   "lift_output_functions oPTA merged label arity = fold (\<lambda>(tid, _, t) acc.
     let oldT = get_by_id merged (hd tid) in
     if Label oldT = label \<and> Arity oldT = arity then
-      replace_transition acc tid \<lparr>Label = Label oldT, Arity = Arity oldT, Guard = Guard oldT, Outputs = Outputs t, Updates = Updates oldT\<rparr>
+      replace_transition acc tid \<lparr>Label = label, Arity = arity, Guard = Guard oldT, Outputs = Outputs t, Updates = Updates oldT\<rparr>
     else
       acc
   ) (sorted_list_of_fset oPTA) merged"

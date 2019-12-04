@@ -8286,10 +8286,9 @@ def lift_output_functions(oPTA: FSet.fset[(List[Nat.nat],
                                        label) && (Nat.equal_nata(Transition.Arity[Unit](oldT),
                           arity)))
                                   Inference.replace_transition(acc, tid,
-                        Transition.transition_exta[Unit](Transition.Label[Unit](oldT),
-                  Transition.Arity[Unit](oldT), Transition.Guard[Unit](oldT),
-                  Transition.Outputs[Unit](t), Transition.Updates[Unit](oldT),
-                  ()))
+                        Transition.transition_exta[Unit](label, arity,
+                  Transition.Guard[Unit](oldT), Transition.Outputs[Unit](t),
+                  Transition.Updates[Unit](oldT), ()))
                                   else acc)
                               })
                           }),
@@ -8612,28 +8611,46 @@ val (_, (_, regs)):
 regs(r)
                                       }),
                                      train)).distinct;
- (if ((Nat.equal_nata(Nat.Nata(targetValues.length),
-                       Nat.Nata((1)))) && (Lista.list_all[(List[Value.value],
-                    (Map[Nat.nat, Option[Value.value]],
-                      Map[Nat.nat, Option[Value.value]]))](((aa:
-                       (List[Value.value],
-                         (Map[Nat.nat, Option[Value.value]],
-                           Map[Nat.nat, Option[Value.value]])))
-                      =>
-                     {
-                       val (_, (initialRegs, _)):
-                             (List[Value.value],
-                               (Map[Nat.nat, Option[Value.value]],
-                                 Map[Nat.nat, Option[Value.value]]))
-                         = aa;
-                       (initialRegs.keySet.toList).isEmpty
-                     }),
-                    train)))
-   {
-     val (Some(v)): Option[Value.value] = targetValues.head;
-     (r, Some[AExp.aexp](AExp.L(v)))
-   }
-   else (r, Dirties.getUpdate(r, values, train)))
+ (if (Lista.list_all[(List[Value.value],
+                       (Map[Nat.nat, Option[Value.value]],
+                         Map[Nat.nat, Option[Value.value]]))](((aa:
+                          (List[Value.value],
+                            (Map[Nat.nat, Option[Value.value]],
+                              Map[Nat.nat, Option[Value.value]])))
+                         =>
+                        {
+                          val (_, (anteriorRegs, posteriorRegs)):
+                                (List[Value.value],
+                                  (Map[Nat.nat, Option[Value.value]],
+                                    Map[Nat.nat, Option[Value.value]]))
+                            = aa;
+                          Optiona.equal_optiona[Value.value](anteriorRegs(r),
+                      posteriorRegs(r))
+                        }),
+                       train))
+   (r, Some[AExp.aexp](AExp.V(VName.R(r))))
+   else (if ((Nat.equal_nata(Nat.Nata(targetValues.length),
+                              Nat.Nata((1)))) && (Lista.list_all[(List[Value.value],
+                           (Map[Nat.nat, Option[Value.value]],
+                             Map[Nat.nat, Option[Value.value]]))](((aa:
+                              (List[Value.value],
+                                (Map[Nat.nat, Option[Value.value]],
+                                  Map[Nat.nat, Option[Value.value]])))
+                             =>
+                            {
+                              val (_, (initialRegs, _)):
+                                    (List[Value.value],
+                                      (Map[Nat.nat, Option[Value.value]],
+Map[Nat.nat, Option[Value.value]]))
+                                = aa;
+                              (initialRegs.keySet.toList).isEmpty
+                            }),
+                           train)))
+          {
+            val (Some(v)): Option[Value.value] = targetValues.head;
+            (r, Some[AExp.aexp](AExp.L(v)))
+          }
+          else (r, Dirties.getUpdate(r, values, train))))
                                        }),
                                       a)
   }
@@ -10276,13 +10293,9 @@ def put_updates(uu: List[List[(String,
       val group_updates:
             List[Option[(List[Nat.nat], List[(Nat.nat, AExp.aexp)])]]
         = Symbolic_Regression.groupwise_updates(values, groups)
-      val lifted:
-            FSet.fset[(List[Nat.nat],
-                        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
-        = Symbolic_Regression.lift_output_functions(lit, lit, label, ia)
       val a: FSet.fset[(List[Nat.nat],
                          ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
-        = Inference.make_distinct(add_groupwise_updates(group_updates, lifted));
+        = Inference.make_distinct(add_groupwise_updates(group_updates, lit));
       put_updates(log, values, label, ia, oa, ops, a)
     }
 }
@@ -10783,7 +10796,7 @@ Map[VName.vname, String])])])))
     val updated:
           FSet.fset[(List[Nat.nat],
                       ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
-      = update_groups(log, values, group_details, output_funs);
+      = update_groups(log, values, group_details.reverse, output_funs);
     updated
   }
 
