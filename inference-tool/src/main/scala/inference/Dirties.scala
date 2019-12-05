@@ -387,7 +387,8 @@ false)
     })
   }
 
-  var guardMap = Map[List[((List[Value.value], Map[Nat.nat, Option[Value.value]]), Boolean)], GExp.gexp]()
+  var guardMap = Map[List[((List[Value.value], Map[Nat.nat, Option[Value.value]]), Boolean)], Option[GExp.gexp]]()
+  var funMap = Map[List[((List[Value.value], Map[Nat.nat, Option[Value.value]]), Value.value)], Option[(AExp.aexp, Map[VName.vname, String])]]()
 
   def findDistinguishingGuard(
     g1: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])]),
@@ -395,8 +396,9 @@ false)
 
     val ioPairs = (g1 zip List.fill(g1.length)(true)) ++ (g1 zip List.fill(g1.length)(false))
 
-    if (guardMap isDefinedAt ioPairs) {
-      return Some((guardMap(ioPairs), GExp.gNot(guardMap(ioPairs))))
+    if (guardMap isDefinedAt ioPairs) guardMap(ioPairs) match {
+      case None => return None
+      case Some(g) => return Some((g, GExp.gNot(g)))
     }
 
     BasicConfigurator.resetConfiguration();
@@ -508,9 +510,10 @@ false)
     ctx.close
     if (gp.isCorrect(best)) {
       Log.root.debug("g1: " + PrettyPrinter.gexpToString(gexp))
-      guardMap = guardMap + (ioPairs -> gexp)
+      guardMap = guardMap + (ioPairs -> Some(gexp))
       return Some((gexp, GExp.gNot(gexp)))
     } else {
+            guardMap = guardMap + (ioPairs -> None)
       return None
     }
   }
@@ -528,8 +531,10 @@ false)
       }
     }).distinct
 
-    if (funMap isDefinedAt ioPairs)
-      return Some(funMap(ioPairs)._1)
+    if (funMap isDefinedAt ioPairs) funMap(ioPairs) match {
+      case None => return None
+      case Some((f, _)) => return Some(f)
+    }
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
@@ -592,10 +597,6 @@ false)
     gpGenerator.setIntegerTerminals(intTerms)
     gpGenerator.setStringTerminals(stringTerms)
 
-    println("Training set: " + trainingSet)
-    println("IntTerms: " + intTerms)
-    println("Int values: " + IntegerVariableAssignment.values)
-
     var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 5, 2));
 
     val best = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
@@ -605,9 +606,10 @@ false)
     Log.root.debug("  Best function is: " + best)
 
     if (gp.isCorrect(best)) {
-      funMap = funMap + (ioPairs -> (TypeConversion.toAExp(best), getTypes(best)))
+      funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
       return Some((TypeConversion.toAExp(best)))
     } else {
+      funMap = funMap + (ioPairs -> None)
       return None
     }
   }
@@ -623,8 +625,9 @@ false)
 
     val ioPairs = (inputs zip registers zip outputs).distinct
 
-    if (funMap isDefinedAt ioPairs) {
-      return Some(funMap(ioPairs))
+    if (funMap isDefinedAt ioPairs) funMap(ioPairs) match {
+      case None => return None
+      case Some((f, types)) => return Some((f, types))
     }
 
     BasicConfigurator.resetConfiguration();
@@ -705,9 +708,10 @@ false)
 
     if (gp.isCorrect(best)) {
       Log.root.debug("  Best function is correct")
-      funMap = funMap + (ioPairs -> (TypeConversion.toAExp(best), getTypes(best)))
+      funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
       return Some((TypeConversion.toAExp(best), getTypes(best)))
     } else {
+      funMap = funMap + (ioPairs -> None)
       return None
     }
   }
@@ -722,8 +726,6 @@ false)
     return types
   }
 
-  var funMap = Map[List[((List[Value.value], Map[Nat.nat, Option[Value.value]]), Value.value)], (AExp.aexp, Map[VName.vname, String])]()
-
   def getFunction(
     r: Nat.nat,
     values: List[Value.value],
@@ -732,8 +734,9 @@ false)
 
     val ioPairs = (i zip i.map(i => null) zip o).distinct
 
-    if (funMap isDefinedAt ioPairs) {
-      return Some(funMap(ioPairs))
+    if (funMap isDefinedAt ioPairs) funMap(ioPairs) match {
+      case None => return None
+      case Some((f, types)) => return Some((f, types))
     }
 
     val maxReg = TypeConversion.toInt(r)
@@ -799,9 +802,10 @@ false)
     Log.root.debug("Int values: " + IntegerVariableAssignment.values())
 
     if (gp.isCorrect(best)) {
-      funMap = funMap + (ioPairs -> (TypeConversion.toAExp(best), getTypes(best)))
+      funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
       return Some((TypeConversion.toAExp(best), getTypes(best)))
     } else {
+      funMap = funMap + (ioPairs -> None)
       return None
     }
   }
