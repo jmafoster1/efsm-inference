@@ -3,6 +3,7 @@ theory Code_Generation
    "HOL-Library.Code_Target_Numeral"
    Inference SelectionStrategies
    Type_Inference
+   Guard_Implication_Subsumption
    "heuristics/Store_Reuse_Subsumption"
    "heuristics/Increment_Reset"
    "heuristics/Same_Register"
@@ -380,6 +381,8 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
       then False
     else if can_still_take e1 e2 s1 s2 t1 t2
       then True
+    else if guard_implication_subsumption t2 t1
+      then True
     else if is_lob t2 t1
       then True
     else if drop_guard_add_update_direct_subsumption t1 t2 e2 s2
@@ -406,36 +409,22 @@ lemma directly_subsumes_cases [code]:  "directly_subsumes m1 m2 s s' t1 t2 = dir
   unfolding directly_subsumes_cases_def
   apply (rule if_elim)
    apply (simp add: directly_subsumes_self)
-  apply (clarify, rule if_elim)
-   apply (simp add: simple_mutex_direct_subsumption)
-  apply (clarify, rule if_elim)
-   apply (simp add: always_different_outputs_direct_subsumption)
-  apply (clarify, rule if_elim)
-   apply (simp add: guard_subset_eq_outputs_updates_def guard_subset_eq_outputs_updates_direct_subsumption)
-  apply (clarify, rule if_elim)
-   apply (simp add: in_not_subset_direct_subsumption)
-  apply (clarify, rule if_elim)
-   apply (simp add: opposite_gob_directly_subsumption)
-  apply (clarify, rule if_elim)
-   apply (simp add: lob_distinguished_2_direct_subsumption)
-  apply (clarify, rule if_elim)
-   apply (simp add: lob_distinguished_3_direct_subsumption)
-  apply (clarify, rule if_elim)
-   apply (simp add: can_still_take_direct_subsumption)
-  apply (clarify, rule if_elim)
-   apply (simp add: is_lob_direct_subsumption)
-  apply (clarify, rule if_elim)
-   apply (simp add: drop_guard_add_update_direct_subsumption_implies_direct_subsumption)
-  apply (clarify, rule if_elim)
-   apply (simp add: drop_update_add_guard_direct_subsumption)
-  apply (clarify, rule if_elim)
-   apply (simp add: generalise_output_directly_subsumes_original_executable)
-  apply (clarify, rule if_elim)
-   apply (simp add: diff_outputs_direct_subsumption)
-  apply (clarify, rule if_elim)
-   apply (simp add: drop_inputs_subsumption subsumes_in_all_contexts_directly_subsumes)
-  apply (clarify, rule if_elim)
-   apply (simp add: one_extra_update_direct_subsumption)
+  apply (clarify, rule if_elim, simp add: simple_mutex_direct_subsumption)
+  apply (clarify, rule if_elim, simp add: always_different_outputs_direct_subsumption)
+  apply (clarify, rule if_elim, simp add: guard_subset_eq_outputs_updates_def guard_subset_eq_outputs_updates_direct_subsumption)
+  apply (clarify, rule if_elim, simp add: in_not_subset_direct_subsumption)
+  apply (clarify, rule if_elim, simp add: opposite_gob_directly_subsumption)
+  apply (clarify, rule if_elim, simp add: lob_distinguished_2_direct_subsumption)
+  apply (clarify, rule if_elim, simp add: lob_distinguished_3_direct_subsumption)
+  apply (clarify, rule if_elim, simp add: can_still_take_direct_subsumption)
+  apply (clarify, rule if_elim, simp add: guard_implication_subsumption)
+  apply (clarify, rule if_elim, simp add: is_lob_direct_subsumption)
+  apply (clarify, rule if_elim, simp add: drop_guard_add_update_direct_subsumption_implies_direct_subsumption)
+  apply (clarify, rule if_elim, simp add: drop_update_add_guard_direct_subsumption)
+  apply (clarify, rule if_elim, simp add: generalise_output_directly_subsumes_original_executable)
+  apply (clarify, rule if_elim, simp add: diff_outputs_direct_subsumption)
+  apply (clarify, rule if_elim, simp add: drop_inputs_subsumption subsumes_in_all_contexts_directly_subsumes)
+  apply (clarify, rule if_elim, simp add: one_extra_update_direct_subsumption)
   by (simp add: dirty_directly_subsumes_def)
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where

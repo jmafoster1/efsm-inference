@@ -38,8 +38,7 @@ case class Config(
   gpIterations: Int = 50,
   guardSeed: Int = 0,
   outputSeed: Int = 0,
-  updateSeed: Int = 0
-)
+  updateSeed: Int = 0)
 
 object Config {
   val builder = OParser.builder[Config]
@@ -48,8 +47,7 @@ object Config {
   var numStates: BigInt = 0
   var ptaNumStates: BigInt = 0
 
-  implicit val heuristicsRead: scopt.Read[Heuristics.Value] =
-    scopt.Read.reads(Heuristics withName _)
+  implicit val heuristicsRead: scopt.Read[Heuristics.Value] = scopt.Read.reads(Heuristics withName _)
   implicit val strategiesRead: scopt.Read[List[Nat.nat] => List[Nat.nat] => IEFSM => Nat.nat] =
     scopt.Read.reads {
       _.toLowerCase match {
@@ -84,6 +82,9 @@ object Config {
           throw new IllegalArgumentException(s"'${s}' is not a valid strategy ${Nondeterminisms.values}")
       }
     }
+
+  val source = scala.io.Source.fromFile("lib/head.smt2")
+  val z3Head = try source.mkString finally source.close()
 
   val parser1 = {
     import builder._

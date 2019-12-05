@@ -352,7 +352,7 @@ lemma directly_subsumes_self: "directly_subsumes e1 e2 s s' t t"
   by (simp add: transition_subsumes_self)
 
 lemma subsumes_in_all_contexts_directly_subsumes:
-  "\<forall>c. subsumes t2 c t1 \<Longrightarrow> directly_subsumes e1 e2 s s' t2 t1"
+  "(\<And>c. subsumes t2 c t1) \<Longrightarrow> directly_subsumes e1 e2 s s' t2 t1"
   by (simp add: directly_subsumes_def)
 
 lemma gets_us_to_and_not_subsumes: 

@@ -83,103 +83,19 @@ object Dirties {
 
   var sat_memo = scala.collection.immutable.Map[GExp.gexp, Boolean](GExp.Bc(true) -> true, GExp.Bc(false) -> false)
 
+  def toZ3String(g: GExp.gexp): String = {
+    val vars = GExp.enumerate_vars(g)
+    var z3String = vars.map(v => s"(declare-const ${toZ3(v)} (Option Value))").foldLeft("")(((x, y) => x + y + "\n"))
+    z3String += s"\n(assert (= true ${toZ3(g)}))"
+    return z3String
+  }
+
   def satisfiable(g: GExp.gexp): Boolean = {
     if (sat_memo isDefinedAt g) {
       return sat_memo(g)
     } else {
-      var z3String = """
-        (declare-datatype Option (par (X) ((None) (Some (val X)))))
-        (declare-datatype Value ((Num (num Int)) (Str (str String))))
-        (declare-datatype Trilean ((true) (false) (invalid)))
-
-        (define-fun Plus ((x (Option Value)) (y (Option Value))) (Option Value)
-        (match x (
-          ((Some v1)
-          (match y (
-            ((Some v2)
-            (match v1 (
-              ((Num n1)
-              (match v2 (
-                ((Num n2) (Some (Num (+ n1 n2))))
-                (_ None))
-              ))
-              (_ None))
-            ))
-            (_ None))
-          ))
-          (_ None))
-        )
-      )
-
-      (define-fun Minus ((x (Option Value)) (y (Option Value))) (Option Value)
-      (match x (
-        ((Some v1)
-        (match y (
-          ((Some v2)
-          (match v1 (
-            ((Num n1)
-            (match v2 (
-              ((Num n2) (Some (Num (- n1 n2))))
-              (_ None))
-            ))
-            (_ None))
-          ))
-          (_ None))
-        ))
-        (_ None))
-      )
-    )
-
-    (define-fun Times ((x (Option Value)) (y (Option Value))) (Option Value)
-    (match x (
-      ((Some v1)
-      (match y (
-        ((Some v2)
-        (match v1 (
-          ((Num n1)
-          (match v2 (
-            ((Num n2) (Some (Num (* n1 n2))))
-            (_ None))
-          ))
-          (_ None))
-        ))
-        (_ None))
-      ))
-      (_ None))
-    )
-  )
-
-    (define-fun Nor ((x Trilean) (y Trilean)) Trilean
-    (ite (and (= x true) (= y true)) false
-    (ite (and (= x true) (= y false)) false
-    (ite (and (= x false) (= y true)) false
-    (ite (and (= x false) (= y false)) true
-    invalid))))
-  )
-
-  (define-fun Or ((x Trilean) (y Trilean)) Trilean
-  (ite (and (= x true) (= y true)) true
-  (ite (and (= x true) (= y false)) true
-  (ite (and (= x false) (= y true)) true
-  (ite (and (= x false) (= y false)) false
-  invalid))))
-)
-
-(define-fun Gt ((x (Option Value)) (y (Option Value))) Trilean
-(ite (exists ((x1 Int)) (exists ((y1 Int)) (and (= x (Some (Num x1))) (and (= y (Some (Num y1))) (> x1 y1))))) true
-(ite (exists ((x1 Int)) (exists ((y1 Int)) (and (= x (Some (Num x1))) (and (= y (Some (Num y1))) (not (> x1 y1)))))) false
-invalid))
-)
-
-(define-fun Eq ((x (Option Value)) (y (Option Value))) Trilean
-(ite (= x y) true
-false)
-)
-
-"""
-      val vars = GExp.enumerate_vars(g)
-      z3String += vars.map(v => s"(declare-const ${toZ3(v)} (Option Value))").foldLeft("")(((x, y) => x + y + "\n"))
-      z3String += s"\n(assert (= true ${toZ3(g)}))"
+      var z3String = Config.z3Head
+      z3String += toZ3String(g)
 
       val ctx = new z3.Context()
       val solver = ctx.mkSimpleSolver()
@@ -190,6 +106,17 @@ false)
       sat_memo = sat_memo + (g -> (sat == z3.Status.SATISFIABLE))
       return sat == z3.Status.SATISFIABLE
     }
+  }
+
+  def gexpImplies(g1: GExp.gexp, g2: GExp.gexp): Boolean = {
+    var z3String = Config.z3Head
+    z3String += toZ3String(g1)
+    z3String += toZ3String(g2)
+
+    println(z3String)
+    System.exit(0)
+
+    true
   }
 
   def randomMember[A](f: FSet.fset[A]): Option[A] = f match {
@@ -513,7 +440,7 @@ false)
       guardMap = guardMap + (ioPairs -> Some(gexp))
       return Some((gexp, GExp.gNot(gexp)))
     } else {
-            guardMap = guardMap + (ioPairs -> None)
+      guardMap = guardMap + (ioPairs -> None)
       return None
     }
   }

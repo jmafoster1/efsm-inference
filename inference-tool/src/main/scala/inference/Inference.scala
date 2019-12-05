@@ -1098,53 +1098,6 @@ def Sup_set[A](x0: Set.set[Set.set[A]]): Set.set[A] = x0 match {
 
 } /* object Complete_Lattices */
 
-object Product_Lexorder {
-
-def less_eq_prod[A : Orderings.ord, B : Orderings.ord](x0: (A, B), x1: (A, B)):
-      Boolean
-  =
-  (x0, x1) match {
-  case ((x1, y1), (x2, y2)) =>
-    (Orderings.less[A](x1, x2)) || ((Orderings.less_eq[A](x1,
-                   x2)) && (Orderings.less_eq[B](y1, y2)))
-}
-
-def less_prod[A : Orderings.ord, B : Orderings.ord](x0: (A, B), x1: (A, B)):
-      Boolean
-  =
-  (x0, x1) match {
-  case ((x1, y1), (x2, y2)) =>
-    (Orderings.less[A](x1, x2)) || ((Orderings.less_eq[A](x1,
-                   x2)) && (Orderings.less[B](y1, y2)))
-}
-
-} /* object Product_Lexorder */
-
-object List_Lexorder {
-
-def less_eq_list[A : HOL.equal : Orderings.order](x0: List[A], xs: List[A]):
-      Boolean
-  =
-  (x0, xs) match {
-  case (x :: xs, y :: ys) =>
-    (Orderings.less[A](x, y)) || ((HOL.eq[A](x,
-      y)) && (less_eq_list[A](xs, ys)))
-  case (Nil, xs) => true
-  case (x :: xs, Nil) => false
-}
-
-def less_list[A : HOL.equal : Orderings.order](xs: List[A], x1: List[A]):
-      Boolean
-  =
-  (xs, x1) match {
-  case (x :: xs, y :: ys) =>
-    (Orderings.less[A](x, y)) || ((HOL.eq[A](x, y)) && (less_list[A](xs, ys)))
-  case (Nil, x :: xs) => true
-  case (xs, Nil) => false
-}
-
-} /* object List_Lexorder */
-
 object Lattices_Big {
 
 def Max[A : Orderings.linorder](x0: Set.set[A]): A = x0 match {
@@ -1447,101 +1400,6 @@ def enumerate_gexp_ints(x0: gexp): Set.set[Int.int] = x0 match {
 
 } /* object GExp */
 
-object GExp_Orderings {
-
-def less_aexpr(x0: AExp.aexp, x1: AExp.aexp): Boolean = (x0, x1) match {
-  case (AExp.L(l1), AExp.L(l2)) => Value.less_value(l1, l2)
-  case (AExp.L(l1), AExp.V(v2)) => true
-  case (AExp.L(l1), AExp.Plus(e1, e2)) => true
-  case (AExp.L(l1), AExp.Minus(e1, e2)) => true
-  case (AExp.L(l1), AExp.Times(e1, e2)) => true
-  case (AExp.V(v1), AExp.L(l1)) => false
-  case (AExp.V(v1), AExp.V(v2)) => VName.less_vname(v1, v2)
-  case (AExp.V(v1), AExp.Plus(e1, e2)) => true
-  case (AExp.V(v1), AExp.Minus(e1, e2)) => true
-  case (AExp.V(v1), AExp.Times(e1, e2)) => true
-  case (AExp.Plus(e1, e2), AExp.L(l2)) => false
-  case (AExp.Plus(e1, e2), AExp.V(v2)) => false
-  case (AExp.Plus(e1a, e2a), AExp.Plus(e1, e2)) =>
-    (less_aexpr(e1a, e1)) || ((AExp.equal_aexpa(e1a,
-         e1)) && (less_aexpr(e2a, e2)))
-  case (AExp.Plus(e1a, e2a), AExp.Minus(e1, e2)) => true
-  case (AExp.Plus(e1a, e2a), AExp.Times(e1, e2)) => true
-  case (AExp.Minus(e1, e2), AExp.L(l2)) => false
-  case (AExp.Minus(e1, e2), AExp.V(v2)) => false
-  case (AExp.Minus(e1a, e2a), AExp.Plus(e1, e2)) => false
-  case (AExp.Minus(e1a, e2a), AExp.Minus(e1, e2)) =>
-    (less_aexpr(e1a, e1)) || ((AExp.equal_aexpa(e1a,
-         e1)) && (less_aexpr(e2a, e2)))
-  case (AExp.Minus(e1a, e2a), AExp.Times(e1, e2)) => true
-  case (AExp.Times(e1, e2), AExp.L(l2)) => false
-  case (AExp.Times(e1, e2), AExp.V(v2)) => false
-  case (AExp.Times(e1a, e2a), AExp.Plus(e1, e2)) => false
-  case (AExp.Times(e1a, e2a), AExp.Minus(e1, e2)) => false
-  case (AExp.Times(e1a, e2a), AExp.Times(e1, e2)) =>
-    (less_aexpr(e1a, e1)) || ((AExp.equal_aexpa(e1a,
-         e1)) && (less_aexpr(e2a, e2)))
-}
-
-def less_eq_aexp(e1: AExp.aexp, e2: AExp.aexp): Boolean =
-  (less_aexpr(e1, e2)) || (AExp.equal_aexpa(e1, e2))
-
-def less_aexp(e1: AExp.aexp, e2: AExp.aexp): Boolean = less_aexpr(e1, e2)
-
-def less_gexpr(x0: GExp.gexp, x1: GExp.gexp): Boolean = (x0, x1) match {
-  case (GExp.Bc(b1), GExp.Bc(b2)) => Orderings.less_bool(b1, b2)
-  case (GExp.Bc(b1), GExp.Eq(v, va)) => true
-  case (GExp.Bc(b1), GExp.Gt(v, va)) => true
-  case (GExp.Bc(b1), GExp.Null(v)) => true
-  case (GExp.Bc(b1), GExp.In(v, va)) => true
-  case (GExp.Bc(b1), GExp.Nor(v, va)) => true
-  case (GExp.Eq(e1, e2), GExp.Bc(b2)) => false
-  case (GExp.Eq(e1a, e2a), GExp.Eq(e1, e2)) =>
-    (less_aexpr(e1a, e1)) || ((AExp.equal_aexpa(e1a,
-         e1)) && (less_aexpr(e2a, e2)))
-  case (GExp.Eq(e1, e2), GExp.Gt(v, va)) => true
-  case (GExp.Eq(e1, e2), GExp.Null(v)) => true
-  case (GExp.Eq(e1, e2), GExp.In(v, va)) => true
-  case (GExp.Eq(e1, e2), GExp.Nor(v, va)) => true
-  case (GExp.Gt(e1, e2), GExp.Bc(b2)) => false
-  case (GExp.Gt(e1a, e2a), GExp.Eq(e1, e2)) => false
-  case (GExp.Gt(e1a, e2a), GExp.Gt(e1, e2)) =>
-    (less_aexpr(e1a, e1)) || ((AExp.equal_aexpa(e1a,
-         e1)) && (less_aexpr(e2a, e2)))
-  case (GExp.Gt(e1, e2), GExp.Null(v)) => true
-  case (GExp.Gt(e1, e2), GExp.In(v, va)) => true
-  case (GExp.Gt(e1, e2), GExp.Nor(v, va)) => true
-  case (GExp.Null(v), GExp.Bc(b2)) => false
-  case (GExp.Null(v), GExp.Eq(e1, e2)) => false
-  case (GExp.Null(v), GExp.Gt(e1, e2)) => false
-  case (GExp.Null(va), GExp.Null(v)) => less_aexp(va, v)
-  case (GExp.Null(v), GExp.In(va, vb)) => true
-  case (GExp.Null(v), GExp.Nor(va, vb)) => true
-  case (GExp.In(vb, vc), GExp.Nor(v, va)) => true
-  case (GExp.In(vb, vc), GExp.In(v, va)) =>
-    (VName.less_vname(vb, v)) || ((VName.equal_vname(vb,
-              v)) && (List_Lexorder.less_list[Value.value](vc, va)))
-  case (GExp.In(vb, vc), GExp.Bc(v)) => false
-  case (GExp.In(vb, vc), GExp.Eq(v, va)) => false
-  case (GExp.In(vb, vc), GExp.Gt(v, va)) => false
-  case (GExp.In(vb, vc), GExp.Null(v)) => false
-  case (GExp.Nor(g1a, g2a), GExp.Nor(g1, g2)) =>
-    (less_gexpr(g1a, g1)) || ((GExp.equal_gexpa(g1a,
-         g1)) && (less_gexpr(g2a, g2)))
-  case (GExp.Nor(g1, g2), GExp.Bc(v)) => false
-  case (GExp.Nor(g1, g2), GExp.Eq(v, va)) => false
-  case (GExp.Nor(g1, g2), GExp.Gt(v, va)) => false
-  case (GExp.Nor(g1, g2), GExp.Null(v)) => false
-  case (GExp.Nor(g1, g2), GExp.In(v, va)) => false
-}
-
-def less_eq_gexp(e1: GExp.gexp, e2: GExp.gexp): Boolean =
-  (less_gexpr(e1, e2)) || (GExp.equal_gexpa(e1, e2))
-
-def less_gexp(e1: GExp.gexp, e2: GExp.gexp): Boolean = less_gexpr(e1, e2)
-
-} /* object GExp_Orderings */
-
 object Transition {
 
 abstract sealed class transition_ext[A]
@@ -1692,6 +1550,168 @@ def Guard_update[A](guarda: (List[GExp.gexp]) => List[GExp.gexp],
 }
 
 } /* object Transition */
+
+object Guard_Implication_Subsumption {
+
+def guard_implication_subsumption(t1: Transition.transition_ext[Unit],
+                                   t2: Transition.transition_ext[Unit]):
+      Boolean
+  =
+  (Transition.Label[Unit](t1) ==
+    Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
+             Transition.Arity[Unit](t2))) && ((Lista.equal_lista[AExp.aexp](Transition.Outputs[Unit](t1),
+                                     Transition.Outputs[Unit](t2))) && ((Lista.equal_lista[(Nat.nat,
+             AExp.aexp)](Transition.Updates[Unit](t1),
+                          Transition.Updates[Unit](t2))) && (Dirties.gexpImplies(Lista.fold[GExp.gexp,
+             GExp.gexp](((a: GExp.gexp) => (b: GExp.gexp) => GExp.gAnd(a, b)),
+                         Transition.Guard[Unit](t1), GExp.Bc(true)),
+  Lista.fold[GExp.gexp,
+              GExp.gexp](((a: GExp.gexp) => (b: GExp.gexp) => GExp.gAnd(a, b)),
+                          Transition.Guard[Unit](t2), GExp.Bc(true)))))))
+
+} /* object Guard_Implication_Subsumption */
+
+object Product_Lexorder {
+
+def less_eq_prod[A : Orderings.ord, B : Orderings.ord](x0: (A, B), x1: (A, B)):
+      Boolean
+  =
+  (x0, x1) match {
+  case ((x1, y1), (x2, y2)) =>
+    (Orderings.less[A](x1, x2)) || ((Orderings.less_eq[A](x1,
+                   x2)) && (Orderings.less_eq[B](y1, y2)))
+}
+
+def less_prod[A : Orderings.ord, B : Orderings.ord](x0: (A, B), x1: (A, B)):
+      Boolean
+  =
+  (x0, x1) match {
+  case ((x1, y1), (x2, y2)) =>
+    (Orderings.less[A](x1, x2)) || ((Orderings.less_eq[A](x1,
+                   x2)) && (Orderings.less[B](y1, y2)))
+}
+
+} /* object Product_Lexorder */
+
+object List_Lexorder {
+
+def less_eq_list[A : HOL.equal : Orderings.order](x0: List[A], xs: List[A]):
+      Boolean
+  =
+  (x0, xs) match {
+  case (x :: xs, y :: ys) =>
+    (Orderings.less[A](x, y)) || ((HOL.eq[A](x,
+      y)) && (less_eq_list[A](xs, ys)))
+  case (Nil, xs) => true
+  case (x :: xs, Nil) => false
+}
+
+def less_list[A : HOL.equal : Orderings.order](xs: List[A], x1: List[A]):
+      Boolean
+  =
+  (xs, x1) match {
+  case (x :: xs, y :: ys) =>
+    (Orderings.less[A](x, y)) || ((HOL.eq[A](x, y)) && (less_list[A](xs, ys)))
+  case (Nil, x :: xs) => true
+  case (xs, Nil) => false
+}
+
+} /* object List_Lexorder */
+
+object GExp_Orderings {
+
+def less_aexpr(x0: AExp.aexp, x1: AExp.aexp): Boolean = (x0, x1) match {
+  case (AExp.L(l1), AExp.L(l2)) => Value.less_value(l1, l2)
+  case (AExp.L(l1), AExp.V(v2)) => true
+  case (AExp.L(l1), AExp.Plus(e1, e2)) => true
+  case (AExp.L(l1), AExp.Minus(e1, e2)) => true
+  case (AExp.L(l1), AExp.Times(e1, e2)) => true
+  case (AExp.V(v1), AExp.L(l1)) => false
+  case (AExp.V(v1), AExp.V(v2)) => VName.less_vname(v1, v2)
+  case (AExp.V(v1), AExp.Plus(e1, e2)) => true
+  case (AExp.V(v1), AExp.Minus(e1, e2)) => true
+  case (AExp.V(v1), AExp.Times(e1, e2)) => true
+  case (AExp.Plus(e1, e2), AExp.L(l2)) => false
+  case (AExp.Plus(e1, e2), AExp.V(v2)) => false
+  case (AExp.Plus(e1a, e2a), AExp.Plus(e1, e2)) =>
+    (less_aexpr(e1a, e1)) || ((AExp.equal_aexpa(e1a,
+         e1)) && (less_aexpr(e2a, e2)))
+  case (AExp.Plus(e1a, e2a), AExp.Minus(e1, e2)) => true
+  case (AExp.Plus(e1a, e2a), AExp.Times(e1, e2)) => true
+  case (AExp.Minus(e1, e2), AExp.L(l2)) => false
+  case (AExp.Minus(e1, e2), AExp.V(v2)) => false
+  case (AExp.Minus(e1a, e2a), AExp.Plus(e1, e2)) => false
+  case (AExp.Minus(e1a, e2a), AExp.Minus(e1, e2)) =>
+    (less_aexpr(e1a, e1)) || ((AExp.equal_aexpa(e1a,
+         e1)) && (less_aexpr(e2a, e2)))
+  case (AExp.Minus(e1a, e2a), AExp.Times(e1, e2)) => true
+  case (AExp.Times(e1, e2), AExp.L(l2)) => false
+  case (AExp.Times(e1, e2), AExp.V(v2)) => false
+  case (AExp.Times(e1a, e2a), AExp.Plus(e1, e2)) => false
+  case (AExp.Times(e1a, e2a), AExp.Minus(e1, e2)) => false
+  case (AExp.Times(e1a, e2a), AExp.Times(e1, e2)) =>
+    (less_aexpr(e1a, e1)) || ((AExp.equal_aexpa(e1a,
+         e1)) && (less_aexpr(e2a, e2)))
+}
+
+def less_eq_aexp(e1: AExp.aexp, e2: AExp.aexp): Boolean =
+  (less_aexpr(e1, e2)) || (AExp.equal_aexpa(e1, e2))
+
+def less_aexp(e1: AExp.aexp, e2: AExp.aexp): Boolean = less_aexpr(e1, e2)
+
+def less_gexpr(x0: GExp.gexp, x1: GExp.gexp): Boolean = (x0, x1) match {
+  case (GExp.Bc(b1), GExp.Bc(b2)) => Orderings.less_bool(b1, b2)
+  case (GExp.Bc(b1), GExp.Eq(v, va)) => true
+  case (GExp.Bc(b1), GExp.Gt(v, va)) => true
+  case (GExp.Bc(b1), GExp.Null(v)) => true
+  case (GExp.Bc(b1), GExp.In(v, va)) => true
+  case (GExp.Bc(b1), GExp.Nor(v, va)) => true
+  case (GExp.Eq(e1, e2), GExp.Bc(b2)) => false
+  case (GExp.Eq(e1a, e2a), GExp.Eq(e1, e2)) =>
+    (less_aexpr(e1a, e1)) || ((AExp.equal_aexpa(e1a,
+         e1)) && (less_aexpr(e2a, e2)))
+  case (GExp.Eq(e1, e2), GExp.Gt(v, va)) => true
+  case (GExp.Eq(e1, e2), GExp.Null(v)) => true
+  case (GExp.Eq(e1, e2), GExp.In(v, va)) => true
+  case (GExp.Eq(e1, e2), GExp.Nor(v, va)) => true
+  case (GExp.Gt(e1, e2), GExp.Bc(b2)) => false
+  case (GExp.Gt(e1a, e2a), GExp.Eq(e1, e2)) => false
+  case (GExp.Gt(e1a, e2a), GExp.Gt(e1, e2)) =>
+    (less_aexpr(e1a, e1)) || ((AExp.equal_aexpa(e1a,
+         e1)) && (less_aexpr(e2a, e2)))
+  case (GExp.Gt(e1, e2), GExp.Null(v)) => true
+  case (GExp.Gt(e1, e2), GExp.In(v, va)) => true
+  case (GExp.Gt(e1, e2), GExp.Nor(v, va)) => true
+  case (GExp.Null(v), GExp.Bc(b2)) => false
+  case (GExp.Null(v), GExp.Eq(e1, e2)) => false
+  case (GExp.Null(v), GExp.Gt(e1, e2)) => false
+  case (GExp.Null(va), GExp.Null(v)) => less_aexp(va, v)
+  case (GExp.Null(v), GExp.In(va, vb)) => true
+  case (GExp.Null(v), GExp.Nor(va, vb)) => true
+  case (GExp.In(vb, vc), GExp.Nor(v, va)) => true
+  case (GExp.In(vb, vc), GExp.In(v, va)) =>
+    (VName.less_vname(vb, v)) || ((VName.equal_vname(vb,
+              v)) && (List_Lexorder.less_list[Value.value](vc, va)))
+  case (GExp.In(vb, vc), GExp.Bc(v)) => false
+  case (GExp.In(vb, vc), GExp.Eq(v, va)) => false
+  case (GExp.In(vb, vc), GExp.Gt(v, va)) => false
+  case (GExp.In(vb, vc), GExp.Null(v)) => false
+  case (GExp.Nor(g1a, g2a), GExp.Nor(g1, g2)) =>
+    (less_gexpr(g1a, g1)) || ((GExp.equal_gexpa(g1a,
+         g1)) && (less_gexpr(g2a, g2)))
+  case (GExp.Nor(g1, g2), GExp.Bc(v)) => false
+  case (GExp.Nor(g1, g2), GExp.Eq(v, va)) => false
+  case (GExp.Nor(g1, g2), GExp.Gt(v, va)) => false
+  case (GExp.Nor(g1, g2), GExp.Null(v)) => false
+  case (GExp.Nor(g1, g2), GExp.In(v, va)) => false
+}
+
+def less_eq_gexp(e1: GExp.gexp, e2: GExp.gexp): Boolean =
+  (less_gexpr(e1, e2)) || (GExp.equal_gexpa(e1, e2))
+
+def less_gexp(e1: GExp.gexp, e2: GExp.gexp): Boolean = less_gexpr(e1, e2)
+
+} /* object GExp_Orderings */
 
 object Transition_Ordering {
 
@@ -5081,26 +5101,32 @@ def directly_subsumes_cases(e1: FSet.fset[(List[Nat.nat],
                               Unit](t1, t2)))
              false
              else (if (Dirties.canStillTake(e1, e2, s1, s2, t1, t2)) true
-                    else (if (Least_Upper_Bound.is_lob[Unit, Unit](t2, t1)) true
-                           else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
-                       t2, e2, s2))
+                    else (if (Guard_Implication_Subsumption.guard_implication_subsumption(t2,
+           t1))
+                           true
+                           else (if (Least_Upper_Bound.is_lob[Unit,
+                       Unit](t2, t1))
                                   true
-                                  else (if (Store_Reuse_Subsumption.drop_update_add_guard_direct_subsumption(e1,
-                              e2, s1, s2, t1, t2))
- false
- else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1, t2,
-                                 e1, e2, s1, s2))
-        true
-        else (if (Dirties.diffOutputsCtx[Unit, Unit](e1, e2, s1, s2, t1, t2))
-               false
-               else (if (Transition.equal_transition_exta[Unit](t1,
-                         Ignore_Inputs.drop_guards(t2)))
-                      true
-                      else (if (Store_Reuse_Subsumption.one_extra_update[Unit](t1,
-t2, s2, Inference.tm(e2)))
+                                  else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
+                              t2, e2, s2))
+ true
+ else (if (Store_Reuse_Subsumption.drop_update_add_guard_direct_subsumption(e1,
+                                     e2, s1, s2, t1, t2))
+        false
+        else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
+t2, e1, e2, s1, s2))
+               true
+               else (if (Dirties.diffOutputsCtx[Unit,
+         Unit](e1, e2, s1, s2, t1, t2))
+                      false
+                      else (if (Transition.equal_transition_exta[Unit](t1,
+                                Ignore_Inputs.drop_guards(t2)))
                              true
-                             else Dirties.scalaDirectlySubsumes(e1, e2, s1, s2,
-                         t1, t2)))))))))))))))))
+                             else (if (Store_Reuse_Subsumption.one_extra_update[Unit](t1,
+       t2, s2, Inference.tm(e2)))
+                                    true
+                                    else Dirties.scalaDirectlySubsumes(e1, e2,
+                                s1, s2, t1, t2))))))))))))))))))
 
 def no_illegal_updates_code(x0: List[(Nat.nat, AExp.aexp)], uu: Nat.nat):
       Boolean
