@@ -83,40 +83,52 @@ object Dirties {
 
   var sat_memo = scala.collection.immutable.Map[GExp.gexp, Boolean](GExp.Bc(true) -> true, GExp.Bc(false) -> false)
 
-  def toZ3String(g: GExp.gexp): String = {
-    val vars = GExp.enumerate_vars(g)
-    var z3String = vars.map(v => s"(declare-const ${toZ3(v)} (Option Value))").foldLeft("")(((x, y) => x + y + "\n"))
-    z3String += s"\n(assert (= true ${toZ3(g)}))"
-    return z3String
+  def check(z3String: String, expected: z3.Status = z3.Status.SATISFIABLE): Boolean = {
+    val ctx = new z3.Context()
+    val solver = ctx.mkSimpleSolver()
+    solver.fromString(z3String)
+    val sat = solver.check()
+    ctx.close()
+
+    return sat == expected
   }
 
   def satisfiable(g: GExp.gexp): Boolean = {
-    if (sat_memo isDefinedAt g) {
+    if (sat_memo isDefinedAt g)
       return sat_memo(g)
-    } else {
+    else {
       var z3String = Config.z3Head
-      z3String += toZ3String(g)
+      z3String += GExp.enumerate_vars(g).map(v => s"(declare-const ${toZ3(v)} (Option Value))").foldLeft("")(((x, y) => x + y + "\n"))
+      z3String += s"\n(assert (= true ${toZ3(g)}))"
 
-      val ctx = new z3.Context()
-      val solver = ctx.mkSimpleSolver()
-      solver.fromString(z3String)
-      val sat = solver.check()
-      ctx.close()
-
-      sat_memo = sat_memo + (g -> (sat == z3.Status.SATISFIABLE))
-      return sat == z3.Status.SATISFIABLE
+      val sat = check(z3String)
+      sat_memo = sat_memo + (g -> sat)
+      return sat
     }
   }
 
   def gexpImplies(g1: GExp.gexp, g2: GExp.gexp): Boolean = {
     var z3String = Config.z3Head
-    z3String += toZ3String(g1)
-    z3String += toZ3String(g2)
+    z3String += (GExp.enumerate_vars(g1) ++ GExp.enumerate_vars(g2)).distinct.map(v => s"(declare-const ${toZ3(v)} (Option Value))").foldLeft("")(((x, y) => x + y + "\n"))
 
-    println(z3String)
-    System.exit(0)
+    z3String += s"""
+        (assert
+          (!
+            (=>
+              (= true ${toZ3(g1)})
+              (= true ${toZ3(g2)})
+            )
+          )
+        )
+        """
 
-    true
+    val sat = check(z3String, z3.Status.UNSATISFIABLE)
+    println(PrettyPrinter.gexpToString(g1) + " ==> " + PrettyPrinter.gexpToString(g2) + " " + sat)
+
+println(z3String)
+System.exit(0)
+
+    return sat
   }
 
   def randomMember[A](f: FSet.fset[A]): Option[A] = f match {

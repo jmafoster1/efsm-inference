@@ -18,12 +18,6 @@ definition gexp_implies :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
 declare gexp_implies_def [code del]
 code_printing constant gexp_implies \<rightharpoonup> (Scala) "Dirties.gexpImplies"
 
-lemma gImplication: "valid (gImplies g1 g2) \<Longrightarrow> (gexp_implies g1 g2)"
-  apply (simp add: gexp_implies_def valid_def gImplies_def gOr_def gNot_def)
-  apply standard
-   apply (erule_tac x=s in allE)
-  by (metis maybe_not.simps(1) maybe_not.simps(2) maybe_not_eq maybe_or_idempotent maybe_or_zero)
-
 definition guard_implication_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "guard_implication_subsumption t1 t2 = (
     Label t1 = Label t2 \<and>

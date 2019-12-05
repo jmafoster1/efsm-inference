@@ -36,13 +36,33 @@ object PrettyPrinter {
     }
   }
 
-  def gexpToString(g: GExp.gexp): String = g match {
+  def gexpToString(g: GExp.gexp): String = s"(${gexpToString_aux(g)})"
+
+  def gexpToString_aux(g: GExp.gexp): String = g match {
     case GExp.Bc(v) => v.toString()
     case GExp.Eq(a, b) => (aexpToString(a) + "=" + aexpToString(b))
     case GExp.Gt(a, b) => (aexpToString(a) + ">" + aexpToString(b))
     case GExp.Null(v) => (aexpToString(v) + "= NULL")
     case GExp.In(v, l) => s"${vnameToString(v)} E {${l.map(valueToString).mkString(", ")}}"
-    case GExp.Nor(g1, g2) => ("!(" + gexpToString(g1) + "||" + gexpToString(g2) + ")")
+    case GExp.Nor(g1, g2) => {
+      if (g1 == GExp.Bc(true) && g2 == GExp.Bc(true))
+        return "false"
+      if (g1 == GExp.Bc(false) && g2 == GExp.Bc(false))
+        return "true"
+      if (g1 == g2)
+        return s"! ${gexpToString(g1)}"
+
+      val g1Str = gexpToString(g1)
+      val g2Str = gexpToString(g2)
+
+      if (g1Str == "(false)")
+        return g2Str
+
+      if (g2Str == "(false)")
+        return g1Str
+
+      return s"! (or ${g1Str} ${g2Str})"
+    }
   }
 
   def guardsToString(g: List[GExp.gexp]): String = {
@@ -158,6 +178,7 @@ object PrettyPrinter {
     val pairs = r.map {
       case (k: Nat.nat, v: Option[Value.value]) =>
         "r" + natToString(k) + ":=" + (v match {
+          case None => throw new IllegalStateException("Got None from registers")
           case Some(Value.Numa(Int.int_of_integer(n))) => n.toString
           case Some(Value.Str(s)) => s
         })
