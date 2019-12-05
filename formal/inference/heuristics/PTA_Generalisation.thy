@@ -112,6 +112,30 @@ definition insert_updates :: "transition \<Rightarrow> update_function list \<Ri
     \<lparr>Label = Label t, Arity = Arity t, Guard = (Guard t), Outputs = Outputs t, Updates = (filter (\<lambda>(r, _). r \<notin> set (map fst u)) (Updates t))@necessary_updates\<rparr>
   )"
 
+definition get_updates :: "(tids \<times> update_function list) list \<Rightarrow> tids \<Rightarrow> update_function list" where
+  "get_updates u t = List.maps snd (filter (\<lambda>(tids, fs). set t \<subseteq> set tids) u)"
+
+fun add_groupwise_updates_trace :: "execution  \<Rightarrow> (tids \<times> update_function list) list \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM" where
+  "add_groupwise_updates_trace [] _ e _ _ = e" |
+  "add_groupwise_updates_trace ((l, i, _)#trace) funs e s r = (
+    let
+      (id, s', t) = fthe_elem (i_possible_steps e s r l i);
+      updated = apply_updates (Updates t) (join_ir i r) r;
+      newUpdates = get_updates funs id;
+      t' = insert_updates t newUpdates;
+      updated' = apply_updates (Updates t') (join_ir i r) r;
+      necessaryUpdates = filter (\<lambda>(r, _). updated $ r \<noteq> updated' $ r) newUpdates;
+      t'' = insert_updates t necessaryUpdates;
+      e' = replace_transition e id t''
+    in
+    add_groupwise_updates_trace trace funs e' s' updated'
+  )"
+
+primrec add_groupwise_updates :: "log  \<Rightarrow> (tids \<times> update_function list) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "add_groupwise_updates [] _ e = e" |
+  "add_groupwise_updates (h#t) funs e = add_groupwise_updates t funs (add_groupwise_updates_trace h funs e 0 <>)"
+
+(*
 fun add_groupwise_updates :: "(tids \<times> update_function list) option list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "add_groupwise_updates [] e = e" |
   "add_groupwise_updates (None#t) e = add_groupwise_updates t e" |
@@ -122,6 +146,20 @@ fun add_groupwise_updates :: "(tids \<times> update_function list) option list \
     in
     add_groupwise_updates t (replace_transitions e replacements)
   )"
+*)
+
+lemma these: "List.maps (\<lambda>x. case x of Some thing \<Rightarrow> [thing] | None \<Rightarrow> []) lst =
+              map (\<lambda>x. case x of Some thing \<Rightarrow> thing) (filter (\<lambda>x. x \<noteq> None) lst)"
+proof (induct lst)
+  case Nil
+  then show ?case
+    by (simp add: List.maps_def)
+next
+  case (Cons a lst)
+  then show ?case
+    apply (simp add: List.maps_def)
+    by auto
+qed
 
 fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> output_types \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
   "put_updates _ _ _ _ _ [] e = Some e" |
@@ -131,8 +169,8 @@ fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> label \<Rightarro
       walked = everything_walk_log op o_inx types log lit label ia oa;
       targeted = map (\<lambda>w. rev (target <> (rev w))) walked;
       groups = group_by_structure (fold List.union targeted []) [];
-      group_updates = groupwise_updates values groups;
-      updated = make_distinct (add_groupwise_updates group_updates lit)
+      group_updates = List.maps (\<lambda>x. case x of Some thing \<Rightarrow> [thing] | None \<Rightarrow> []) (groupwise_updates values groups);
+      updated = make_distinct (add_groupwise_updates log group_updates lit)
     in
       put_updates log values label ia oa ops updated
   )"
@@ -145,38 +183,14 @@ fun update_groups :: "log \<Rightarrow> value list \<Rightarrow> (transition \<t
       Some e' \<Rightarrow> update_groups log values lst e'
   )"
 
-definition strip_redundant_updates :: "nat list \<Rightarrow> tids \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "strip_redundant_updates regs tids e = fimage (\<lambda>(id, tf, tran).
-    if id = tids then
-      (id, tf, tran\<lparr>Updates := filter (\<lambda>(r, _). r \<notin> set regs) (Updates tran)\<rparr>)
-    else
-      (id, tf, tran)
-  ) e"
-
-fun remove_redundant_updates :: "iEFSM \<Rightarrow> execution \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM" where
-  "remove_redundant_updates e [] _ _ = e" |
-  "remove_redundant_updates e ((l, i, _)#t) s r = (
-    let
-      (tid, s', tran) = fthe_elem (i_possible_steps e s r l i);
-      r' = apply_updates (Updates tran) (join_ir i r) r;
-      redundantly_updated = map fst (filter (\<lambda>(rx, _). r $ rx = r' $ rx) (Updates tran))
-    in
-    remove_redundant_updates (strip_redundant_updates redundantly_updated tid e) t s' r'
-  )"
-
-primrec remove_redundant_updates_log :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
-  "remove_redundant_updates_log e [] = e" |
-  "remove_redundant_updates_log e (h#t) = remove_redundant_updates_log (remove_redundant_updates e h 0 <>) t"
-
 definition normalised_pta :: "log \<Rightarrow> iEFSM" where
   "normalised_pta log = (
     let
       values = enumerate_log_values log;
       (output_funs, types) = pta_generalise_outputs log;
-      group_details = map (snd \<circ> hd) types;
-      updated = update_groups log values (rev group_details) output_funs
+      group_details = map (snd \<circ> hd) types
     in
-      remove_redundant_updates_log updated log
+      update_groups log values (rev group_details) output_funs
   )"
 
 \<comment> \<open>Need to derestrict variables which occur in the updates but keep unrelated ones to avoid \<close>

@@ -628,7 +628,6 @@ export_code
   infer_output_functions_2
   infer_output_update_functions
   distinguish
-  historical_infer_output_update_functions
   (* Nondeterminism metrics *)
   nondeterministic_pairs
   nondeterministic_pairs_labar
