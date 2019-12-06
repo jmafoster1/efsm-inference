@@ -269,7 +269,7 @@ object Dirties {
     s2: Nat.nat,
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
-    return false // TODO: Delete this
+    // return false // TODO: Delete this
 
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f, false)
@@ -347,7 +347,7 @@ object Dirties {
 
     gpGenerator.setIntegerFunctions(GP.intNonTerms);
 
-    var intVarVals = List(0, 1)
+    var intVarVals = List(0, 1, 2)
     var stringVarVals = List[String]()
 
     var intTerms = List[VariableTerminal[_]]()
