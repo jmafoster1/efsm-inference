@@ -76,9 +76,11 @@ object Dirties {
     case GExp.Eq(a1, a2) => s"(Eq ${toZ3(a1)} ${toZ3(a2)})"
     case GExp.Gt(a1, a2) => s"(Gt ${toZ3(a1)} ${toZ3(a2)})"
     case GExp.In(v, l) => l.slice(0, 2).map(x => s"(Eq ${toZ3(v)} (Some ${toZ3(x)}))").fold("false")((x, y) => s"(Or ${x} ${y})")
-    case GExp.Nor(g1, g2) => s"(Nor ${toZ3(g1)} ${toZ3(g2)})"
     case GExp.Null(AExp.V(v)) => s"(Eq ${toZ3(v)} None)"
     case GExp.Null(v) => throw new java.lang.IllegalArgumentException("Z3 does not handle null of more complex arithmetic expressions")
+    case GExp.Nor(g1, g2) => {
+      s"(Nor ${toZ3(g1)} ${toZ3(g2)})"
+    }
   }
 
   var sat_memo = scala.collection.immutable.Map[GExp.gexp, Boolean](GExp.Bc(true) -> true, GExp.Bc(false) -> false)
@@ -113,7 +115,7 @@ object Dirties {
 
     z3String += s"""
         (assert
-          (!
+          (not
             (=>
               (= true ${toZ3(g1)})
               (= true ${toZ3(g2)})
@@ -123,10 +125,7 @@ object Dirties {
         """
 
     val sat = check(z3String, z3.Status.UNSATISFIABLE)
-    println(PrettyPrinter.gexpToString(g1) + " ==> " + PrettyPrinter.gexpToString(g2) + " " + sat)
-
-println(z3String)
-System.exit(0)
+    println(s"(=> ${PrettyPrinter.gexpToString(g1)}  ${PrettyPrinter.gexpToString(g2)})")
 
     return sat
   }

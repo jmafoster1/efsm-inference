@@ -76,9 +76,23 @@ invalid))))
 )
 
 (define-fun Gt ((x (Option Value)) (y (Option Value))) Trilean
-(ite (exists ((x1 Int)) (exists ((y1 Int)) (and (= x (Some (Num x1))) (and (= y (Some (Num y1))) (> x1 y1))))) true
-(ite (exists ((x1 Int)) (exists ((y1 Int)) (and (= x (Some (Num x1))) (and (= y (Some (Num y1))) (not (> x1 y1)))))) false
-invalid))
+(match x (
+((Some v1)
+(match y (
+((Some v2)
+(match v1 (
+  ((Num n1)
+  (match v2 (
+      ((Num n2) (ite (> n1 n2) true false))
+      (_ invalid)
+    )
+  ))
+  (_ invalid))
+))
+(_ invalid))
+))
+(_ invalid))
+)
 )
 
 (define-fun Eq ((x (Option Value)) (y (Option Value))) Trilean
