@@ -30,9 +30,6 @@ object FrontEnd {
 
 
     // TODO: Turn this into a switchable option
-    val normalised_pta = PTA_Generalisation.normalised_pta(Config.config.log)
-    PrettyPrinter.iEFSM2dot(normalised_pta, "normalised")
-
     val resolved_pta = PTA_Generalisation.derestrict(Config.config.log, Config.heuristics, Config.config.nondeterminismMetric)
     PrettyPrinter.iEFSM2dot(resolved_pta, "resolved")
 

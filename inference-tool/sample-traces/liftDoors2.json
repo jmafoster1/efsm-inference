@@ -1,0 +1,101 @@
+[
+  [
+    {"label": "setTimer", "inputs": [], "outputs": [5]},
+    {"label": "waitTimer", "inputs": [], "outputs": [4]},
+    {"label": "waitTimer", "inputs": [], "outputs": [3]},
+    {"label": "waitTimer", "inputs": [], "outputs": [2]},
+    {"label": "waitTimer", "inputs": [], "outputs": [1]},
+    {"label": "waitTimer", "inputs": [], "outputs": [0]},
+    {"label": "systemInitReady", "inputs": [], "outputs": [10]},
+    {"label": "closingDoor", "inputs": [], "outputs": [9]},
+    {"label": "closingDoor", "inputs": [], "outputs": [8]},
+    {"label": "closingDoor", "inputs": [], "outputs": [7]},
+    {"label": "closingDoor", "inputs": [], "outputs": [6]}
+  ],
+  [
+    {"label": "setTimer", "inputs": [], "outputs": [5]},
+    {"label": "waitTimer", "inputs": [], "outputs": [4]},
+    {"label": "waitTimer", "inputs": [], "outputs": [3]},
+    {"label": "waitTimer", "inputs": [], "outputs": [2]},
+    {"label": "waitTimer", "inputs": [], "outputs": [1]}
+  ],
+  [
+    {"label": "setTimer", "inputs": [], "outputs": [5]},
+    {"label": "waitTimer", "inputs": [], "outputs": [4]},
+    {"label": "waitTimer", "inputs": [], "outputs": [3]},
+    {"label": "waitTimer", "inputs": [], "outputs": [2]},
+    {"label": "waitTimer", "inputs": [], "outputs": [1]},
+    {"label": "waitTimer", "inputs": [], "outputs": [0]},
+    {"label": "systemInitReady", "inputs": [], "outputs": [10]}
+  ],
+  [
+    {"label": "setTimer", "inputs": [], "outputs": [5]},
+    {"label": "waitTimer", "inputs": [], "outputs": [4]},
+    {"label": "waitTimer", "inputs": [], "outputs": [3]},
+    {"label": "waitTimer", "inputs": [], "outputs": [2]},
+    {"label": "waitTimer", "inputs": [], "outputs": [1]},
+    {"label": "waitTimer", "inputs": [], "outputs": [0]},
+    {"label": "systemInitReady", "inputs": [], "outputs": [10]},
+    {"label": "closingDoor", "inputs": [], "outputs": [9]},
+    {"label": "closingDoor", "inputs": [], "outputs": [8]},
+    {"label": "closingDoor", "inputs": [], "outputs": [7]},
+    {"label": "closingDoor", "inputs": [], "outputs": [6]}
+  ],
+  [],
+  [
+    {"label": "setTimer", "inputs": [], "outputs": [5]},
+    {"label": "waitTimer", "inputs": [], "outputs": [4]},
+    {"label": "waitTimer", "inputs": [], "outputs": [3]},
+    {"label": "waitTimer", "inputs": [], "outputs": [2]},
+    {"label": "waitTimer", "inputs": [], "outputs": [1]},
+    {"label": "waitTimer", "inputs": [], "outputs": [0]},
+    {"label": "systemInitReady", "inputs": [], "outputs": [10]},
+    {"label": "closingDoor", "inputs": [], "outputs": [9]},
+    {"label": "closingDoor", "inputs": [], "outputs": [8]},
+    {"label": "closingDoor", "inputs": [], "outputs": [7]},
+    {"label": "closingDoor", "inputs": [], "outputs": [6]}
+  ],
+  [
+    {"label": "setTimer", "inputs": [], "outputs": [5]},
+    {"label": "waitTimer", "inputs": [], "outputs": [4]},
+    {"label": "waitTimer", "inputs": [], "outputs": [3]},
+    {"label": "waitTimer", "inputs": [], "outputs": [2]},
+    {"label": "waitTimer", "inputs": [], "outputs": [1]}
+  ],
+  [
+    {"label": "setTimer", "inputs": [], "outputs": [5]},
+    {"label": "waitTimer", "inputs": [], "outputs": [4]},
+    {"label": "waitTimer", "inputs": [], "outputs": [3]},
+    {"label": "waitTimer", "inputs": [], "outputs": [2]},
+    {"label": "waitTimer", "inputs": [], "outputs": [1]},
+    {"label": "waitTimer", "inputs": [], "outputs": [0]},
+    {"label": "systemInitReady", "inputs": [], "outputs": [10]},
+    {"label": "closingDoor", "inputs": [], "outputs": [9]},
+    {"label": "closingDoor", "inputs": [], "outputs": [8]},
+    {"label": "buttonInterrupted", "inputs": [], "outputs": [3]},
+    {"label": "openingDoor", "inputs": [], "outputs": [2]}
+  ],
+  [
+    {"label": "setTimer", "inputs": [], "outputs": [5]},
+    {"label": "waitTimer", "inputs": [], "outputs": [4]},
+    {"label": "waitTimer", "inputs": [], "outputs": [3]},
+    {"label": "waitTimer", "inputs": [], "outputs": [2]},
+    {"label": "waitTimer", "inputs": [], "outputs": [1]},
+    {"label": "waitTimer", "inputs": [], "outputs": [0]},
+    {"label": "systemInitReady", "inputs": [], "outputs": [10]},
+    {"label": "closingDoor", "inputs": [], "outputs": [9]},
+    {"label": "closingDoor", "inputs": [], "outputs": [8]},
+    {"label": "closingDoor", "inputs": [], "outputs": [7]},
+    {"label": "closingDoor", "inputs": [], "outputs": [6]}
+  ],
+  [
+    {"label": "setTimer", "inputs": [], "outputs": [5]},
+    {"label": "waitTimer", "inputs": [], "outputs": [4]},
+    {"label": "waitTimer", "inputs": [], "outputs": [3]},
+    {"label": "waitTimer", "inputs": [], "outputs": [2]},
+    {"label": "waitTimer", "inputs": [], "outputs": [1]},
+    {"label": "waitTimer", "inputs": [], "outputs": [0]},
+    {"label": "systemInitReady", "inputs": [], "outputs": [10]},
+    {"label": "closingDoor", "inputs": [], "outputs": [9]}
+  ]
+]

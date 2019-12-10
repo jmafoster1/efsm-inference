@@ -345,7 +345,8 @@ object Dirties {
 
     val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.guardSeed))
 
-    gpGenerator.setIntegerFunctions(GP.intNonTerms);
+    gpGenerator.addFunctions(GP.intNonTerms);
+    gpGenerator.addFunctions(GP.boolNonTerms)
 
     var intVarVals = List(0, 1, 2)
     var stringVarVals = List[String]()
@@ -354,9 +355,6 @@ object Dirties {
 
     // No supported stringNonTerms
     var stringTerms = List[VariableTerminal[_]]()
-
-    gpGenerator.setBooleanTerminals(GP.boolTerms)
-    gpGenerator.setBooleanFunctions(GP.boolNonTerms)
 
     var stringVarNames = List[String]()
     var intVarNames = List[String]()
@@ -425,6 +423,9 @@ object Dirties {
       trainingSet.put(scenario, new BooleanVariableAssignment("g1", false))
     }
 
+    Log.root.debug("Guard training set: " + trainingSet)
+    Log.root.debug("  Terminals: " + gpGenerator.getTerminals())
+
     intTerms = intVarNames.distinct.map(intVarName => new IntegerVariableAssignmentTerminal(intVarName, false)) ++
       intVarVals.distinct.map(intVarVal => new IntegerVariableAssignmentTerminal(intVarVal)) ++
       intTerms
@@ -432,27 +433,32 @@ object Dirties {
       stringVarVals.distinct.map(stringVarVal => new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarVal, stringVarVal), true, false)) ++
       stringTerms
 
-    gpGenerator.setIntegerTerminals(intTerms)
-    gpGenerator.setStringTerminals(stringTerms)
+    gpGenerator.addTerminals(intTerms)
+    gpGenerator.addTerminals(stringTerms)
 
     val gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 7, 7))
 
-    val best: Node[VariableAssignment[_]] = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
+    try {
+      val best: Node[VariableAssignment[_]] = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
 
-    Log.root.debug("Guard training set: " + trainingSet)
-    Log.root.debug("  Int terminals: " + intTerms)
-    Log.root.debug("  Best function is: " + best.simp())
+      Log.root.debug("  Best function is: " + best.simp())
 
-    val ctx = new z3.Context()
-    val gexp = TypeConversion.gexpFromZ3(best.toZ3(ctx))
-    ctx.close
-    if (gp.isCorrect(best)) {
-      Log.root.debug("g1: " + PrettyPrinter.gexpToString(gexp))
-      guardMap = guardMap + (ioPairs -> Some(gexp))
-      return Some((gexp, GExp.gNot(gexp)))
-    } else {
-      guardMap = guardMap + (ioPairs -> None)
-      return None
+      val ctx = new z3.Context()
+      val gexp = TypeConversion.gexpFromZ3(best.toZ3(ctx))
+      ctx.close
+      if (gp.isCorrect(best)) {
+        Log.root.debug("g1: " + PrettyPrinter.gexpToString(gexp))
+        guardMap = guardMap + (ioPairs -> Some(gexp))
+        return Some((gexp, GExp.gNot(gexp)))
+      } else {
+        guardMap = guardMap + (ioPairs -> None)
+        return None
+      }
+    } catch {
+      case e: java.lang.IllegalArgumentException => {
+        guardMap = guardMap + (ioPairs -> None)
+        return None
+      }
     }
   }
 
@@ -479,7 +485,7 @@ object Dirties {
     Logger.getRootLogger().setLevel(Level.OFF);
 
     val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.updateSeed))
-    gpGenerator.setIntegerFunctions(GP.intNonTerms);
+    gpGenerator.addFunctions(GP.intNonTerms);
 
     var (intTerms, stringTerms) = GP.getValueTerminals(values)
 
@@ -532,8 +538,8 @@ object Dirties {
       stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
     }
 
-    gpGenerator.setIntegerTerminals(intTerms)
-    gpGenerator.setStringTerminals(stringTerms)
+    gpGenerator.addTerminals(intTerms)
+    gpGenerator.addTerminals(stringTerms)
 
     var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 5, 2));
 
@@ -563,6 +569,9 @@ object Dirties {
 
     val ioPairs = (inputs zip registers zip outputs).distinct
 
+    if (outputs.distinct.length == 1)
+      return Some(AExp.L(outputs(0)), Map())
+
     if (funMap isDefinedAt ioPairs) funMap(ioPairs) match {
       case None => return None
       case Some((f, types)) => return Some((f, types))
@@ -573,7 +582,7 @@ object Dirties {
     Logger.getRootLogger().setLevel(Level.OFF);
 
     val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.outputSeed))
-    gpGenerator.setIntegerFunctions(GP.intNonTerms);
+    gpGenerator.addFunctions(GP.intNonTerms);
 
     var (intTerms, stringTerms) = GP.getValueTerminals(values)
 
@@ -632,8 +641,8 @@ object Dirties {
         stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, true)) :: stringTerms
     }
 
-    gpGenerator.setIntegerTerminals(intTerms)
-    gpGenerator.setStringTerminals(stringTerms)
+    gpGenerator.addTerminals(intTerms)
+    gpGenerator.addTerminals(stringTerms)
 
     var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 5, 2));
 
@@ -685,7 +694,7 @@ object Dirties {
 
     val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.outputSeed))
 
-    gpGenerator.setIntegerFunctions(GP.intNonTerms);
+    gpGenerator.addFunctions(GP.intNonTerms);
 
     var (intTerms, stringTerms) = GP.getValueTerminals(values)
 
@@ -725,8 +734,8 @@ object Dirties {
         stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, true)) :: stringTerms
     }
 
-    gpGenerator.setIntegerTerminals(intTerms)
-    gpGenerator.setStringTerminals(stringTerms)
+    gpGenerator.addTerminals(intTerms)
+    gpGenerator.addTerminals(stringTerms)
 
     Collections.reverse(IntegerVariableAssignment.values())
 

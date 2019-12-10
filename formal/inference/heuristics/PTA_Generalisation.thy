@@ -135,19 +135,6 @@ primrec add_groupwise_updates :: "log  \<Rightarrow> (tids \<times> update_funct
   "add_groupwise_updates [] _ e = e" |
   "add_groupwise_updates (h#t) funs e = add_groupwise_updates t funs (add_groupwise_updates_trace h funs e 0 <>)"
 
-(*
-fun add_groupwise_updates :: "(tids \<times> update_function list) option list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "add_groupwise_updates [] e = e" |
-  "add_groupwise_updates (None#t) e = add_groupwise_updates t e" |
-  "add_groupwise_updates (Some (tids, u)#t) e = (
-    let
-      newTransitions = map (\<lambda>tid. (insert_updates (get_by_id e tid) u)) tids;
-      replacements = zip (map (\<lambda>id. [id]) tids) newTransitions
-    in
-    add_groupwise_updates t (replace_transitions e replacements)
-  )"
-*)
-
 lemma these: "List.maps (\<lambda>x. case x of Some thing \<Rightarrow> [thing] | None \<Rightarrow> []) lst =
               map (\<lambda>x. case x of Some thing \<Rightarrow> thing) (filter (\<lambda>x. x \<noteq> None) lst)"
 proof (induct lst)
