@@ -271,7 +271,7 @@ definition infer_output_update_functions :: "log \<Rightarrow> update_modifier" 
      values = enumerate_log_values log;
      max_reg = max_reg_total new;
      output_functions = get_functions max_reg values (length (Outputs t1)) relevant_events;
-     pta = make_pta log {||};
+     pta = make_pta log;
      lit_updates = put_output_functions (enumerate 0 output_functions) i_log t1 pta in
      case lit_updates of
       None \<Rightarrow> None |

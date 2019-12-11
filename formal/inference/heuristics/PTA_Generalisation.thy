@@ -93,7 +93,7 @@ definition pta_generalise_outputs :: "log \<Rightarrow> (iEFSM \<times> ((tids \
   "pta_generalise_outputs log = (
     let
       values = enumerate_log_values log;
-      pta = make_pta log {||};
+      pta = make_pta log;
       training_set = make_training_set pta log;
       generalised_outs = generalise_outputs values training_set
     in (replace_groups (map (\<lambda>lst. map (\<lambda>(tids, tran, types). (tids, tran)) lst) generalised_outs) pta, generalised_outs)
@@ -135,19 +135,6 @@ primrec add_groupwise_updates :: "log  \<Rightarrow> (tids \<times> update_funct
   "add_groupwise_updates [] _ e = e" |
   "add_groupwise_updates (h#t) funs e = add_groupwise_updates t funs (add_groupwise_updates_trace h funs e 0 <>)"
 
-lemma these: "List.maps (\<lambda>x. case x of Some thing \<Rightarrow> [thing] | None \<Rightarrow> []) lst =
-              map (\<lambda>x. case x of Some thing \<Rightarrow> thing) (filter (\<lambda>x. x \<noteq> None) lst)"
-proof (induct lst)
-  case Nil
-  then show ?case
-    by (simp add: List.maps_def)
-next
-  case (Cons a lst)
-  then show ?case
-    apply (simp add: List.maps_def)
-    by auto
-qed
-
 fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> output_types \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
   "put_updates _ _ _ _ _ [] e = Some e" |
   "put_updates _ _ _ _ _ ((_, None)#_) _ = None" |
@@ -180,6 +167,59 @@ definition normalised_pta :: "log \<Rightarrow> iEFSM" where
       update_groups log values (rev group_details) output_funs
   )"
 
+(*
+definition generalise_outputs :: "value list \<Rightarrow> ((tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> (tids \<times> transition \<times> output_types) list list" where
+  "generalise_outputs values groups = map (\<lambda>(maxReg, group).
+    let
+      I = map (\<lambda>(regs, ins, outs).ins) (snd group);
+      R = map (\<lambda>(regs, ins, outs).regs) (snd group);
+      P = map (\<lambda>(regs, ins, outs).outs) (snd group);
+      outputs = get_outputs maxReg values I R P
+    in
+    map (\<lambda>(id, tran). (id, \<lparr>Label = Label tran, Arity = Arity tran, Guard = Guard tran, Outputs = put_outputs (zip outputs (Outputs tran)), Updates = Updates tran\<rparr>, enumerate 0 outputs)) (fst group)
+  ) (enumerate 0 groups)"
+*)
+
+(*This is where the types stuff originates*)
+definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list \<Rightarrow> iEFSM option" where
+  "generalise_and_update log e gp = (
+    let
+      values = enumerate_log_values log;
+      I = map (\<lambda>(regs, ins, outs).ins) (snd gp);
+      R = map (\<lambda>(regs, ins, outs).regs) (snd gp);
+      P = map (\<lambda>(regs, ins, outs).outs) (snd gp);
+      max_reg = max_reg_total e;
+      outputs = get_outputs max_reg values I R P;
+      changes = map (\<lambda>(id, tran). (id, tran\<lparr>Outputs := put_outputs (zip outputs (Outputs tran))\<rparr>)) (fst gp);
+      generalised_model = fold (\<lambda>(id, t) acc. replace_transition acc id t) changes e;
+      tran = snd (hd (fst gp))
+  in
+  case put_updates log values (Label tran) (Arity tran) (length (Outputs tran)) (enumerate 0 outputs) generalised_model of
+    None \<Rightarrow> None |
+    Some e' \<Rightarrow> if satisfies (set log) (tm e') then Some e' else None
+  )"
+
+primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> ((tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> iEFSM" where
+  "groupwise_generalise_and_update _ e [] = e" |
+  "groupwise_generalise_and_update log e (gp#t) = (
+    case generalise_and_update log e gp of
+      None \<Rightarrow> groupwise_generalise_and_update log e t |
+      Some e' \<Rightarrow> groupwise_generalise_and_update log e' t
+  )"
+
+(* Instead of doing all the outputs and all the updates, do it one output and update at a time    *)
+(* This way if one update fails, we don't end up losing the rest by having to default back to the *)
+(* original PTA if the normalised one doesn't reproduce the original behaviour                    *)
+definition incremental_normalised_pta :: "log \<Rightarrow> iEFSM" where
+  "incremental_normalised_pta log = (
+    let
+      values = enumerate_log_values log;
+      pta = make_pta log;
+      training_set = make_training_set pta log
+    in
+    groupwise_generalise_and_update log pta training_set
+  )"
+
 \<comment> \<open>Need to derestrict variables which occur in the updates but keep unrelated ones to avoid \<close>
 \<comment> \<open>nondeterminism creeping in too early in the inference process                            \<close>
 definition derestrict_transition :: "transition \<Rightarrow> transition" where
@@ -191,8 +231,8 @@ definition derestrict_transition :: "transition \<Rightarrow> transition" where
 definition derestrict :: "log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "derestrict log m np = (
     let
-      pta = make_pta log {||};
-      normalised = normalised_pta log;
+      pta = make_pta log;
+      normalised = incremental_normalised_pta log;
       derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, derestrict_transition tran)) normalised;
       nondeterministic_pairs = sorted_list_of_fset (np derestricted)
     in

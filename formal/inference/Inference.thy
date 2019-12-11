@@ -239,14 +239,16 @@ fun make_branch_abstract :: "(iEFSM \<times> (String.literal \<Rightarrow>f nat 
           make_branch_abstract (add_transition_abstract e r1 s label inputs outputs) ((maxS (tm e))+1) r t
     )"
 
-primrec make_pta :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "make_pta [] e = e" |
-  "make_pta (h#t) e = make_pta t (make_branch e 0 <> h)"
+primrec make_pta_aux :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "make_pta_aux [] e = e" |
+  "make_pta_aux (h#t) e = make_pta_aux t (make_branch e 0 <> h)"
+
+definition "make_pta log = make_pta_aux log {||}"
 
 definition make_pta_abstract :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "make_pta_abstract l e = fold (\<lambda>h e. make_branch_abstract (e, <>) 0 <> h) l e"
 
-lemma make_pta_fold_all_e: "\<forall>e. make_pta l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
+lemma make_pta_fold_all_e: "\<forall>e. make_pta_aux l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
 proof(induct l)
 case Nil
   then show ?case
@@ -257,7 +259,7 @@ next
     by simp
 qed
 
-lemma make_pta_fold: "make_pta l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
+lemma make_pta_fold: "make_pta_aux l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
   by (simp add: make_pta_fold_all_e)
 
 type_synonym update_modifier = "tids \<Rightarrow> tids \<Rightarrow> cfstate \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option"

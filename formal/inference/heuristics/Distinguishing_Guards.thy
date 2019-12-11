@@ -58,7 +58,7 @@ definition distinguish :: "log \<Rightarrow> update_modifier" where
     let
       t1 = get_by_ids destMerge t1ID;
       t2 = get_by_ids destMerge t2ID;
-      uPTA = transfer_updates destMerge (make_pta log {||});
+      uPTA = transfer_updates destMerge (make_pta log);
       (G1, G2) = collect_training_sets log uPTA t1ID t2ID [] []
     in
       case find_distinguishing_guards G1 G2 of

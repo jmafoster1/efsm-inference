@@ -473,6 +473,9 @@ object Dirties {
     values: List[Value.value],
     train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Map[Nat.nat, Option[Value.value]]))]): Option[AExp.aexp] = {
 
+      if (PTA_Generalisation.currentGroup == "closingDoor")
+      println("  Getting update")
+
     val r_index = TypeConversion.toInt(r)
     val ioPairs = (train.map {
       case (inputs, (aregs, pregs)) => pregs(r) match {
@@ -555,6 +558,12 @@ object Dirties {
     Log.root.debug("  Int terminals: " + intTerms)
     Log.root.debug("  Best function is: " + best)
 
+    // <Danger zone>
+    funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
+    return Some((TypeConversion.toAExp(best)))
+    // </Danger Zone>
+
+
     if (gp.isCorrect(best)) {
       funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
       return Some((TypeConversion.toAExp(best)))
@@ -571,7 +580,7 @@ object Dirties {
     registers: List[Map[Nat.nat, Option[Value.value]]],
     outputs: List[Value.value]): Option[(AExp.aexp, Map[VName.vname, String])] = {
 
-    val r_index = TypeConversion.toInt(maxReg)
+    val r_index = TypeConversion.toInt(maxReg) + 1
 
     val ioPairs = (inputs zip registers zip outputs).distinct
 
@@ -623,11 +632,11 @@ object Dirties {
         output match {
           case Value.Numa(n) => {
             intVarNames = s"r${r_index}" :: intVarNames
-            trainingSet.put(scenario, new IntegerVariableAssignment("r" + r_index, TypeConversion.toInteger(n)))
+            trainingSet.put(scenario, new IntegerVariableAssignment("o", TypeConversion.toInteger(n)))
           }
           case Value.Str(s) => {
             stringVarNames = s"r${r_index}" :: stringVarNames
-            trainingSet.put(scenario, new StringVariableAssignment("r" + r_index, s))
+            trainingSet.put(scenario, new StringVariableAssignment("o", s))
           }
         }
       }
