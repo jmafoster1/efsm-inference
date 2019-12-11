@@ -269,7 +269,7 @@ object Dirties {
     s2: Nat.nat,
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
-    // return false // TODO: Delete this
+    return false // TODO: Delete this
 
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f, false)
@@ -341,11 +341,16 @@ object Dirties {
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
-    Logger.getRootLogger().setLevel(Level.OFF);
+    Logger.getRootLogger().setLevel(Level.DEBUG);
 
     val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.guardSeed))
 
+    gpGenerator.addTerminals(GP.boolTerms);
+    Log.root.debug("  Nonterminals: " + gpGenerator.getNonTerminals())
+
     gpGenerator.addFunctions(GP.intNonTerms);
+    Log.root.debug("  Nonterminals: " + gpGenerator.getNonTerminals())
+
     gpGenerator.addFunctions(GP.boolNonTerms)
 
     var intVarVals = List(0, 1, 2)
@@ -392,7 +397,7 @@ object Dirties {
       trainingSet.put(scenario, new BooleanVariableAssignment("g1", true))
     }
 
-    // g1 needs to be false if g2 is true
+    // g2 needs to be false if g1 is true
     for ((inputs, registers) <- g2) {
       var scenario = List[VariableAssignment[_]]()
       for ((ip, ix) <- inputs.zipWithIndex) ip match {
@@ -420,11 +425,8 @@ object Dirties {
           scenario = (new StringVariableAssignment(s"r${PrettyPrinter.natToString(r)}", s)) :: scenario
         }
       }
-      trainingSet.put(scenario, new BooleanVariableAssignment("g1", false))
+      trainingSet.put(scenario, new BooleanVariableAssignment("g2", false))
     }
-
-    Log.root.debug("Guard training set: " + trainingSet)
-    Log.root.debug("  Terminals: " + gpGenerator.getTerminals())
 
     intTerms = intVarNames.distinct.map(intVarName => new IntegerVariableAssignmentTerminal(intVarName, false)) ++
       intVarVals.distinct.map(intVarVal => new IntegerVariableAssignmentTerminal(intVarVal)) ++
@@ -436,11 +438,14 @@ object Dirties {
     gpGenerator.addTerminals(intTerms)
     gpGenerator.addTerminals(stringTerms)
 
+    Log.root.debug("Guard training set: " + trainingSet)
+    Log.root.debug("  Terminals: " + gpGenerator.getTerminals())
+    Log.root.debug("  Nonterminals: " + gpGenerator.getNonTerminals())
+
     val gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 7, 7))
 
     try {
       val best: Node[VariableAssignment[_]] = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
-
       Log.root.debug("  Best function is: " + best.simp())
 
       val ctx = new z3.Context()
@@ -456,6 +461,7 @@ object Dirties {
       }
     } catch {
       case e: java.lang.IllegalArgumentException => {
+        e.printStackTrace
         guardMap = guardMap + (ioPairs -> None)
         return None
       }

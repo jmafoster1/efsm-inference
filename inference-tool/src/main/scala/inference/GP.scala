@@ -18,19 +18,19 @@ import mint.inference.gp.tree.nonterminals.booleans.NotBooleanOperator;
 
 object GP {
   // Integer non-terminals
-  val intNonTerms = List[NonTerminal[_]](
+  def intNonTerms = List[NonTerminal[_]](
     new AddIntegersOperator(),
     new SubtractIntegersOperator()
   )
 
   // Boolean terminals
-  val boolTerms = List[VariableTerminal[_]](
+  def boolTerms = List[VariableTerminal[_]](
     new BooleanVariableAssignmentTerminal(new BooleanVariableAssignment("tr", true), true, false),
     new BooleanVariableAssignmentTerminal(new BooleanVariableAssignment("fa", false), true, false)
   )
 
   // Boolean non-terminals
-  val boolNonTerms = List[NonTerminal[_]](
+  def boolNonTerms = List[NonTerminal[_]](
     new LTBooleanIntegersOperator(),
     new GTBooleanIntegersOperator(),
     new NotBooleanOperator(),

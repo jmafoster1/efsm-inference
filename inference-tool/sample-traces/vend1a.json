@@ -17,6 +17,15 @@
     {"label":"vend","inputs":[],"outputs":["pepsi"]}
 ],
 [
+    {"label":"select","inputs":["pepsi"],"outputs":[]}
+    ,{"label":"coin","inputs":[20],"outputs":[20]}
+    ,{"label":"coin","inputs":[20],"outputs":[40]}
+    ,{"label":"coin","inputs":[20],"outputs":[60]}
+    ,{"label":"coin","inputs":[20],"outputs":[80]}
+    ,{"label":"coin","inputs":[20],"outputs":[100]}
+    ,{"label":"vend","inputs":[],"outputs":["pepsi"]}
+],
+[
     {"label":"select","inputs":["tizer"],"outputs":[]},
     {"label":"coin","inputs":[50],"outputs":[50]},
     {"label":"vend","inputs":[],"outputs":[]}
