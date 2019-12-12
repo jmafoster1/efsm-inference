@@ -12,7 +12,7 @@ env:
 
 dot:
 	@ for b in $(basename $(shell find . -path ./pdfs -prune -o -name '*.dot' -print)) ; do \
-	  dot -T pdf -o $$b.pdf $$b.dot ; \
+	  dot -T pdf -o $$b.pdf $$b.dot & \
 	done
 
 stepwise-dot:

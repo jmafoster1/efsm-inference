@@ -113,7 +113,10 @@ definition insert_updates :: "transition \<Rightarrow> update_function list \<Ri
   )"
 
 definition get_updates :: "(tids \<times> update_function list) list \<Rightarrow> tids \<Rightarrow> update_function list" where
-  "get_updates u t = List.maps snd (filter (\<lambda>(tids, fs). set t \<subseteq> set tids) u)"
+  "get_updates u t = List.maps snd (filter (\<lambda>(tids, _). set t \<subseteq> set tids) u)"
+
+definition get_ids :: "(tids \<times> update_function list) list \<Rightarrow> tids \<Rightarrow> tids" where
+  "get_ids u t = List.maps fst (filter (\<lambda>(tids, _). set t \<subseteq> set tids) u)"
 
 fun add_groupwise_updates_trace :: "execution  \<Rightarrow> (tids \<times> update_function list) list \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM" where
   "add_groupwise_updates_trace [] _ e _ _ = e" |
@@ -134,6 +137,9 @@ fun add_groupwise_updates_trace :: "execution  \<Rightarrow> (tids \<times> upda
 primrec add_groupwise_updates :: "log  \<Rightarrow> (tids \<times> update_function list) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "add_groupwise_updates [] _ e = e" |
   "add_groupwise_updates (h#t) funs e = add_groupwise_updates t funs (add_groupwise_updates_trace h funs e 0 <>)"
+
+lemma fold_add_groupwise_updates: "add_groupwise_updates log funs e = fold (\<lambda>trace acc. add_groupwise_updates_trace trace funs acc 0 <>) log e"
+  by (induct log arbitrary: e, auto)
 
 fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> output_types \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
   "put_updates _ _ _ _ _ [] e = Some e" |
@@ -167,19 +173,6 @@ definition normalised_pta :: "log \<Rightarrow> iEFSM" where
       update_groups log values (rev group_details) output_funs
   )"
 
-(*
-definition generalise_outputs :: "value list \<Rightarrow> ((tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> (tids \<times> transition \<times> output_types) list list" where
-  "generalise_outputs values groups = map (\<lambda>(maxReg, group).
-    let
-      I = map (\<lambda>(regs, ins, outs).ins) (snd group);
-      R = map (\<lambda>(regs, ins, outs).regs) (snd group);
-      P = map (\<lambda>(regs, ins, outs).outs) (snd group);
-      outputs = get_outputs maxReg values I R P
-    in
-    map (\<lambda>(id, tran). (id, \<lparr>Label = Label tran, Arity = Arity tran, Guard = Guard tran, Outputs = put_outputs (zip outputs (Outputs tran)), Updates = Updates tran\<rparr>, enumerate 0 outputs)) (fst group)
-  ) (enumerate 0 groups)"
-*)
-
 (*This is where the types stuff originates*)
 definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list \<Rightarrow> iEFSM option" where
   "generalise_and_update log e gp = (
@@ -207,6 +200,26 @@ primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow
       Some e' \<Rightarrow> groupwise_generalise_and_update log e' t
   )"
 
+definition standardise_group :: "(tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list" where
+  "standardise_group g = (
+    let
+      updates = remdups (List.maps (Updates \<circ> snd) g)
+    in
+      map (\<lambda>(id, t). (id, t\<lparr>Updates := updates\<rparr>)) g
+  )"
+
+(* Sometimes inserting updates without redundancy can cause certain transitions to not get a      *)
+(* particular update function. This can lead to disparate groups of transitions which we want to  *)
+(* standardise such that every group of transitions has the same update function                  *)
+definition standardise_groups :: "iEFSM \<Rightarrow> iEFSM" where
+  "standardise_groups e = (
+    let
+      groups = transition_groups e;
+      standardised_groups = map standardise_group groups
+    in
+      replace_transitions e (fold (@) standardised_groups [])
+  )"
+
 (* Instead of doing all the outputs and all the updates, do it one output and update at a time    *)
 (* This way if one update fails, we don't end up losing the rest by having to default back to the *)
 (* original PTA if the normalised one doesn't reproduce the original behaviour                    *)
@@ -217,8 +230,8 @@ definition incremental_normalised_pta :: "log \<Rightarrow> iEFSM" where
       pta = make_pta log;
       training_set = make_training_set pta log
     in
-    groupwise_generalise_and_update log pta training_set
-  )"
+    standardise_groups (groupwise_generalise_and_update log pta training_set)
+  )"                 
 
 \<comment> \<open>Need to derestrict variables which occur in the updates but keep unrelated ones to avoid \<close>
 \<comment> \<open>nondeterminism creeping in too early in the inference process                            \<close>

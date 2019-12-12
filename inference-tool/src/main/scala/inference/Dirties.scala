@@ -132,11 +132,12 @@ object Dirties {
 
   def randomMember[A](f: FSet.fset[A]): Option[A] = f match {
     case FSet.fset_of_list(l) =>
-      if (l == List()) {
-        None
-      } else {
+      if (l == List())
+        return None
+      if (l.length == 1)
+        return Some(l.head)
+      else
         Some(Random.shuffle(l).head)
-      }
   }
 
   def addLTL(f: String, e: String) = {
@@ -154,6 +155,7 @@ object Dirties {
   // states in the respective machines such that we can take t2 so we check
   // the global negation of this to see if there's a counterexample
   def alwaysDifferentOutputsDirectSubsumption[A](e1: IEFSM, e2: IEFSM, s1: Nat.nat, s2: Nat.nat, t2: Transition.transition_ext[A]): Boolean = {
+    Log.root.debug("alwaysDifferentOutputsDirectSubsumption")
     if (Config.config.skip) {
       return true
     }
@@ -173,6 +175,7 @@ object Dirties {
 
   // Check that whenever we're in state s, register r is always undefined
   def initiallyUndefinedContextCheck(e: TransitionMatrix, r: Nat.nat, s: Nat.nat): Boolean = {
+    Log.root.debug("initiallyUndefinedContextCheck")
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.efsmToSALTranslator(e, f)
 
@@ -195,6 +198,7 @@ object Dirties {
     s2: Nat.nat,
     e1: IEFSM,
     e2: IEFSM): Boolean = {
+    Log.root.debug("generaliseOutputContextCheck")
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
@@ -209,15 +213,17 @@ object Dirties {
 
   // Here we check to see if globally we can never be in both states
   // If there's a counterexample then there exists a trace which gets us to
-  // both states
+  // both states. This should trivially hold.
   def acceptsAndGetsUsToBoth(
     a: IEFSM,
     b: IEFSM,
     s1: Nat.nat,
     s2: Nat.nat): Boolean = {
-    if (Config.config.skip) {
+    Log.root.debug("acceptsAndGetsUsToBoth - " + FSet.size_fset(Inference.S(b)))
+
+
+    if (Config.config.skip)
       return true
-    }
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(a), "e1", Inference.tm(b), "e2", f)
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
@@ -241,9 +247,9 @@ object Dirties {
     s2: Nat.nat,
     t1: Transition.transition_ext[A],
     t2: Transition.transition_ext[B]): Boolean = {
-    if (Transition.Outputs(t1) == Transition.Outputs(t2)) {
+    Log.root.debug("diffOutputsCtx")
+    if (Transition.Outputs(t1) == Transition.Outputs(t2))
       return false
-    }
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f)
     addLTL(s"salfiles/${f}.sal", s"composition: MODULE = (RENAME o to o_e1 IN e1) || (RENAME o to o_e2 IN e2);\n" +
@@ -269,6 +275,7 @@ object Dirties {
     s2: Nat.nat,
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
+    Log.root.debug("canStillTake")
     return false // TODO: Delete this
 
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
@@ -473,9 +480,6 @@ object Dirties {
     values: List[Value.value],
     train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Map[Nat.nat, Option[Value.value]]))]): Option[AExp.aexp] = {
 
-      if (PTA_Generalisation.currentGroup == "closingDoor")
-      println("  Getting update")
-
     val r_index = TypeConversion.toInt(r)
     val ioPairs = (train.map {
       case (inputs, (aregs, pregs)) => pregs(r) match {
@@ -562,7 +566,6 @@ object Dirties {
     funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
     return Some((TypeConversion.toAExp(best)))
     // </Danger Zone>
-
 
     if (gp.isCorrect(best)) {
       funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))

@@ -32,7 +32,7 @@ object FrontEnd {
     PrettyPrinter.iEFSM2dot(normalised, "normalised")
     System.out.println("normalised PTA satisfies original traces? " + Inference.satisfies(Set.seta(Config.config.log), Inference.tm(normalised)))
 
-    System.exit(0)
+    // System.exit(0)
 
 
     // TODO: Turn this into a switchable option

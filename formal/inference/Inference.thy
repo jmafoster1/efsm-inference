@@ -106,6 +106,9 @@ definition nondeterministic :: "iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondete
 definition replace_transition :: "iEFSM \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> iEFSM" where
   "replace_transition e uid new = (fimage (\<lambda>(uids, (from, to), t). if set uid \<subseteq> set uids then (uids, (from, to), new) else (uids, (from, to), t)) e)"
 
+definition replace_all :: "iEFSM \<Rightarrow> tids list \<Rightarrow> transition \<Rightarrow> iEFSM" where
+  "replace_all e ids new = fold (\<lambda>id acc. replace_transition acc id new) ids e"
+
 definition replace_transitions :: "iEFSM \<Rightarrow> (tids \<times> transition) list \<Rightarrow> iEFSM" where
   "replace_transitions e ts = fold (\<lambda>(uid, new) acc. replace_transition acc uid new) ts e"
 
@@ -243,24 +246,13 @@ primrec make_pta_aux :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "make_pta_aux [] e = e" |
   "make_pta_aux (h#t) e = make_pta_aux t (make_branch e 0 <> h)"
 
-definition "make_pta log = make_pta_aux log {||}"
-
 definition make_pta_abstract :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "make_pta_abstract l e = fold (\<lambda>h e. make_branch_abstract (e, <>) 0 <> h) l e"
 
-lemma make_pta_fold_all_e: "\<forall>e. make_pta_aux l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
-proof(induct l)
-case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a l)
-  then show ?case
-    by simp
-qed
+definition "make_pta log = make_pta_aux log {||}"
 
-lemma make_pta_fold: "make_pta_aux l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
-  by (simp add: make_pta_fold_all_e)
+lemma make_pta_fold [code]: "make_pta_aux l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
+  by(induct l arbitrary: e, auto)
 
 type_synonym update_modifier = "tids \<Rightarrow> tids \<Rightarrow> cfstate \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option"
 
@@ -327,8 +319,8 @@ fun satisfies_trace_prim :: "transition_matrix \<Rightarrow> cfstate \<Rightarro
          apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
          satisfies_trace_prim e s' (apply_updates (Updates T) (join_ir i d) d) t))"
 
-lemma satisfies_trace_prim: "\<forall>s d. satisfies_trace e s d l = satisfies_trace_prim e s d l"
-proof(induct l)
+lemma satisfies_trace_prim: "satisfies_trace e s d l = satisfies_trace_prim e s d l"
+proof(induct l arbitrary: s d)
 case Nil
   then show ?case
     by (simp add: satisfies_trace.base)
@@ -572,6 +564,9 @@ fun fold_into :: "nat \<Rightarrow> gexp list \<Rightarrow> gexp list" where
 primrec smart_not_null :: "nat list \<Rightarrow> gexp list \<Rightarrow> gexp list" where
   "smart_not_null [] g = g" |
   "smart_not_null (h#t) g = fold_into h (smart_not_null t g)"
+
+lemma smart_not_null_foldr [code]: "smart_not_null l g = foldr fold_into l g"
+  by(induct l, auto)
 
 lemma fold_into_supset: "set (fold_into a g) \<supseteq> set g"
   by(induct g rule: fold_into.induct, auto)
