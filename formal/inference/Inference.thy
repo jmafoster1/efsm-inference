@@ -479,10 +479,10 @@ definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> upd
 (* @param m     - an update modifier function which tries dest generalise transitions               *)
 (* @param check - a function which takes an EFSM and returns a bool dest ensure that certain
                   properties hold in the new iEFSM                                                *)
-fun inference_step :: "iEFSM \<Rightarrow> (nat \<times> nat \<times> nat) list \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
+fun inference_step :: "iEFSM \<Rightarrow> score list \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
   "inference_step _ [] _ _ _ = None" |
-  "inference_step e ((_, s\<^sub>1, s\<^sub>2)#t) m check np = (
-     case merge e s\<^sub>1 s\<^sub>2 m check np of
+  "inference_step e (h#t) m check np = (
+     case merge e (S1 h) (S2 h) m check np of
        Some new \<Rightarrow> Some new |
        None \<Rightarrow> inference_step e t m check np
   )"
@@ -492,18 +492,33 @@ lemma measures_fsubset: "S x2 |\<subset>| S e \<Longrightarrow>
   using size_fsubset[of "S x2" "S e"]
   by simp
 
+
+(* We want to sort first by score (highest to lowest) and then by state pairs (lowest to highest) *)
+(* so we end up merging the states with the highest scores first and then break ties by those     *)
+(* state pairs which are closest to the origin                                                    *)
 instantiation score_ext :: (linorder) linorder begin
+definition less_score_ext :: "'a::linorder score_ext \<Rightarrow> 'a score_ext \<Rightarrow> bool" where
+"less_score_ext t1 t2 = ((Score t2, S1 t1, S2 t1, more t1) < (Score t1, S1 t2, S2 t2, more t2) )"
 
-definition less_score_ext :: "score \<Rightarrow> score \<Rightarrow> bool" where
-  "less_score_ext s1 s2 = (if Score s1 = Score s2 then (S1 s1, S2 s1) < (S1 s2, S2 s2) else Score s1 < Score s2)"
-
-definition less_eq_score_ext :: "score \<Rightarrow> score \<Rightarrow> bool" where
+definition less_eq_score_ext :: "'a::linorder score_ext \<Rightarrow> 'a::linorder score_ext \<Rightarrow> bool" where
  "less_eq_score_ext s1 s2 = (s1 < s2 \<or> s1 = s2)"
 
 instance
   apply (standard)
-  try
-
+  unfolding less_score_ext_def less_eq_score_ext_def
+      apply auto[1]
+     apply simp
+    defer
+    apply (metis not_less_iff_gr_or_eq)
+  using score.equality apply fastforce
+  apply (case_tac "Score x = Score y")
+   apply (case_tac "S1 x = S1 y")
+    apply (case_tac "S2 x = S2 y")
+     apply auto[1]
+    apply simp
+  using not_less_iff_gr_or_eq apply fastforce
+  using not_less_iff_gr_or_eq apply fastforce
+  using not_less_iff_gr_or_eq by fastforce
 end
 
 (* Takes an iEFSM and iterates inference_step until no further states can be successfully merged  *)
@@ -514,7 +529,7 @@ end
                   properties hold in the new iEFSM                                                *)
 function infer :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "infer n e r m check np = (
-    case inference_step e (rev (sorted_list_of_fset (k_score n e r))) m check np of
+    case inference_step e (sorted_list_of_fset (k_score n e r)) m check np of
       None \<Rightarrow> e |
       Some new \<Rightarrow> if (S new) |\<subset>| (S e) then infer n new r m check np else e
   )"
