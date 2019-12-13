@@ -259,8 +259,11 @@ type_synonym update_modifier = "tids \<Rightarrow> tids \<Rightarrow> cfstate \<
 definition null_modifier :: update_modifier where
   "null_modifier _ _ _ _ _ _ _ = None"
 
-type_synonym score = nat
-type_synonym scoreboard = "(score \<times> (cfstate \<times> cfstate)) fset"
+record score = 
+  Score :: nat
+  S1 :: cfstate
+  S2 :: cfstate
+type_synonym scoreboard = "score fset"
 type_synonym strategy = "tids \<Rightarrow> tids \<Rightarrow> iEFSM \<Rightarrow> nat"
 
 primrec k_outgoing :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> (cfstate \<times> transition \<times> tids) fset" where
@@ -272,16 +275,18 @@ primrec k_outgoing :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarro
   )"
 
 definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
-  "k_score n e rank = (let 
-     states = (S e);
-     pairs_to_score = (ffilter (\<lambda>(x, y). x < y) (states |\<times>| states));
-     scores = fimage (\<lambda>(s1, s2). let
-        outgoing_s1 = fimage (snd \<circ> snd) (k_outgoing n e s1);
-        outgoing_s2 = fimage (snd \<circ> snd) (k_outgoing n e s2);
-        scores = fimage (\<lambda>(x, y). rank x y e) (outgoing_s1 |\<times>| outgoing_s2) in
-       \<comment> \<open>if outgoing_s1 = {||} \<and> outgoing_s2 = {||} then (s1, s2, 1) else\<close> (fSum scores, s1, s2 )
-     ) pairs_to_score in
-     ffilter (\<lambda>(score, _). score > 0) scores)"
+  "k_score n e rank = (
+    let 
+    states = (S e);
+    pairs_to_score = (ffilter (\<lambda>(x, y). x < y) (states |\<times>| states));
+      scores = fimage (\<lambda>(s1, s2). let
+      outgoing_s1 = fimage (snd \<circ> snd) (k_outgoing n e s1);
+      outgoing_s2 = fimage (snd \<circ> snd) (k_outgoing n e s2);
+      scores = fimage (\<lambda>(x, y). rank x y e) (outgoing_s1 |\<times>| outgoing_s2) in
+      \<lparr>Score = fSum scores, S1 = s1, S2 = s2\<rparr>
+      ) pairs_to_score in
+    ffilter (\<lambda>x. Score x > 0) scores
+)"
 
 definition origin :: "tids \<Rightarrow> iEFSM \<Rightarrow> nat" where
   "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. set uid \<subseteq> set (fst x)) t))))"
@@ -486,6 +491,17 @@ lemma measures_fsubset: "S x2 |\<subset>| S e \<Longrightarrow>
        ((x2, r, m, check, np), e, r, m, check, np) \<in> measures [\<lambda>(e, r, m, check, np). size (Inference.S e)]"
   using size_fsubset[of "S x2" "S e"]
   by simp
+
+instantiation score_ext :: (linorder) linorder begin
+
+definition less_score_ext :: "score \<Rightarrow> score \<Rightarrow> bool" where
+  "less_score_ext s1 s2 = (if Score s1 = Score s2 then (S1 s1, S2 s1) < (S1 s2, S2 s2) else Score s1 < Score s2)"
+
+definition less_eq_score_ext :: "score \<Rightarrow> score \<Rightarrow> bool" where
+ "less_eq_score_ext s1 s2 = (s1 < s2 \<or> s1 = s2)"
+
+
+end
 
 (* Takes an iEFSM and iterates inference_step until no further states can be successfully merged  *)
 (* @param e - an iEFSM dest be generalised                                                          *)

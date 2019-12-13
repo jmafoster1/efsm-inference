@@ -219,7 +219,7 @@ object Dirties {
     b: IEFSM,
     s1: Nat.nat,
     s2: Nat.nat): Boolean = {
-    Log.root.debug("acceptsAndGetsUsToBoth - " + FSet.size_fset(Inference.S(b)))
+    // Log.root.debug("acceptsAndGetsUsToBoth - " + FSet.size_fset(Inference.S(b)))
 
 
     if (Config.config.skip)
