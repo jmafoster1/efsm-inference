@@ -500,6 +500,9 @@ definition less_score_ext :: "score \<Rightarrow> score \<Rightarrow> bool" wher
 definition less_eq_score_ext :: "score \<Rightarrow> score \<Rightarrow> bool" where
  "less_eq_score_ext s1 s2 = (s1 < s2 \<or> s1 = s2)"
 
+instance
+  apply (standard)
+  try
 
 end
 
