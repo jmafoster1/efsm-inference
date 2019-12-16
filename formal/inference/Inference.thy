@@ -22,6 +22,12 @@ type_synonym tid = nat
 type_synonym tids = "tid list"
 type_synonym iEFSM = "(tids \<times> (cfstate \<times> cfstate) \<times> transition) fset"
 
+definition origin :: "tids \<Rightarrow> iEFSM \<Rightarrow> nat" where
+  "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. set uid \<subseteq> set (fst x)) t))))"
+
+definition dest :: "tids \<Rightarrow> iEFSM \<Rightarrow> nat" where
+  "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. set uid \<subseteq> set (fst x)) t))))"
+
 definition get_by_id :: "iEFSM \<Rightarrow> tid \<Rightarrow> transition" where
   "get_by_id e uid = (snd \<circ> snd) (fthe_elem (ffilter (\<lambda>(tids, _). uid \<in> set tids) e))"
 
@@ -58,7 +64,7 @@ definition outgoing_transitions :: "cfstate \<Rightarrow> iEFSM \<Rightarrow> (c
 type_synonym nondeterministic_pair = "(cfstate \<times> (cfstate \<times> cfstate) \<times> ((transition \<times> tids) \<times> (transition \<times> tids)))"
 
 definition state_nondeterminism :: "nat \<Rightarrow> (cfstate \<times> transition \<times> tids) fset \<Rightarrow> nondeterministic_pair fset" where
-  "state_nondeterminism origin nt = (if size nt < 2 then {||} else ffUnion (fimage (\<lambda>x. let (dest, t) = x in fimage (\<lambda>y. let (dest', t') = y in (origin, (dest, dest'), (t, t'))) (nt - {|x|})) nt))"
+  "state_nondeterminism og nt = (if size nt < 2 then {||} else ffUnion (fimage (\<lambda>x. let (dest, t) = x in fimage (\<lambda>y. let (dest', t') = y in (og, (dest, dest'), (t, t'))) (nt - {|x|})) nt))"
 
 lemma state_nondeterminism_empty[simp]: "state_nondeterminism a {||} = {||}"
   by (simp add: state_nondeterminism_def ffilter_def Set.filter_def)
@@ -266,33 +272,35 @@ record score =
 type_synonym scoreboard = "score fset"
 type_synonym strategy = "tids \<Rightarrow> tids \<Rightarrow> iEFSM \<Rightarrow> nat"
 
-primrec k_outgoing :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> (cfstate \<times> transition \<times> tids) fset" where
-  "k_outgoing 0 i s = outgoing_transitions s i" |
-  "k_outgoing (Suc m) i s = (let
-     outgoing = outgoing_transitions s i;
-     others = fimage fst outgoing in
-     outgoing |\<union>| ffUnion (fimage (\<lambda>s. k_outgoing m i s) others)
+primrec k_score_aux :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> strategy \<Rightarrow> nat" where
+  "k_score_aux 0 e s1 s2 strat = (
+    let
+     outgoing_1 = outgoing_transitions s1 e;
+     outgoing_2 = outgoing_transitions s2 e;
+     pairs = ffilter (\<lambda>(x, y). x < y) (outgoing_1 |\<times>| outgoing_2);
+     scores = fimage (\<lambda>((d1, _, x), (d2, _, y)). (d1, d2, strat x y e)) pairs
+    in
+     fold (\<lambda>(s1, s2, s) acc. acc + s) (sorted_list_of_fset scores) 0
+  )" |
+  "k_score_aux (Suc m) e s1 s2 strat = (
+    let
+     outgoing_1 = outgoing_transitions s1 e;
+     outgoing_2 = outgoing_transitions s2 e;
+     pairs = ffilter (\<lambda>(x, y). x < y) (outgoing_1 |\<times>| outgoing_2);
+     scores = fimage (\<lambda>((d1, _, x), (d2, _, y)). (d1, d2, strat x y e)) pairs
+    in
+     fold (\<lambda>(s1, s2, s) acc. acc + (k_score_aux m e s1 s2 strat)) (sorted_list_of_fset scores) 0
   )"
 
 definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
-  "k_score n e rank = (
+  "k_score k e strat = (
     let 
-    states = (S e);
-    pairs_to_score = (ffilter (\<lambda>(x, y). x < y) (states |\<times>| states));
-      scores = fimage (\<lambda>(s1, s2). let
-      outgoing_s1 = fimage (snd \<circ> snd) (k_outgoing n e s1);
-      outgoing_s2 = fimage (snd \<circ> snd) (k_outgoing n e s2);
-      scores = fimage (\<lambda>(x, y). rank x y e) (outgoing_s1 |\<times>| outgoing_s2) in
-      \<lparr>Score = fSum scores, S1 = s1, S2 = s2\<rparr>
-      ) pairs_to_score in
+      states = (S e);
+      pairs_to_score = (ffilter (\<lambda>(x, y). x < y) (states |\<times>| states));
+      scores = fimage (\<lambda>(s1, s2). \<lparr>Score = k_score_aux k e s1 s2 strat, S1 = s2, S2 = s2\<rparr>) pairs_to_score
+    in
     ffilter (\<lambda>x. Score x > 0) scores
 )"
-
-definition origin :: "tids \<Rightarrow> iEFSM \<Rightarrow> nat" where
-  "origin uid t = fst (fst (snd (fthe_elem (ffilter (\<lambda>x. set uid \<subseteq> set (fst x)) t))))"
-
-definition dest :: "tids \<Rightarrow> iEFSM \<Rightarrow> nat" where
-  "dest uid t = snd (fst (snd (fthe_elem (ffilter (\<lambda>x. set uid \<subseteq> set (fst x)) t))))"
 
 inductive satisfies_trace :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
   base: "satisfies_trace e s d []" |                                         
@@ -504,27 +512,16 @@ definition less_eq_score_ext :: "'a::linorder score_ext \<Rightarrow> 'a::linord
  "less_eq_score_ext s1 s2 = (s1 < s2 \<or> s1 = s2)"
 
 instance
-  apply (standard)
+  apply standard prefer 5
   unfolding less_score_ext_def less_eq_score_ext_def
-      apply auto[1]
-     apply simp
-    defer
-    apply (metis not_less_iff_gr_or_eq)
   using score.equality apply fastforce
-  apply (case_tac "Score x = Score y")
-   apply (case_tac "S1 x = S1 y")
-    apply (case_tac "S2 x = S2 y")
-     apply auto[1]
-    apply simp
-  using not_less_iff_gr_or_eq apply fastforce
-  using not_less_iff_gr_or_eq apply fastforce
-  using not_less_iff_gr_or_eq by fastforce
+  by auto
 end
 
 (* Takes an iEFSM and iterates inference_step until no further states can be successfully merged  *)
-(* @param e - an iEFSM dest be generalised                                                          *)
-(* @param r - a strategy dest identify and prioritise pairs of states dest merge                      *)
-(* @param m     - an update modifier function which tries dest generalise transitions               *)
+(* @param e - an iEFSM dest be generalised                                                        *)
+(* @param r - a strategy dest identify and prioritise pairs of states dest merge                  *)
+(* @param m     - an update modifier function which tries dest generalise transitions             *)
 (* @param check - a function which takes an EFSM and returns a bool dest ensure that certain
                   properties hold in the new iEFSM                                                *)
 function infer :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where

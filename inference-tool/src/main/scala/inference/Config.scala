@@ -156,18 +156,16 @@ object Config {
     OParser.parse(parser1, args, Config()) match {
       case Some(configuration) => {
         var config = configuration
-        if (config.logFile == null) {
+        if (config.logFile == null)
           config = config.copy(logFile = config.dotfiles + "/log")
-        }
-        if (!Files.exists(Paths.get(config.dotfiles))) {
+        if (!Files.exists(Paths.get(config.dotfiles)))
           new java.io.File(config.dotfiles).mkdirs
-        }
-        if (Files.list(Paths.get(config.dotfiles)).findAny().isPresent()) {
+        if (Files.list(Paths.get(config.dotfiles)).findAny().isPresent())
           throw new IllegalArgumentException(s"Dotfiles directory '${config.dotfiles}' is not empty")
-        }
-        if (Files.exists(Paths.get(config.logFile))) {
+        if (Files.exists(Paths.get(config.logFile)))
           throw new IllegalArgumentException(s"Log file '${config.logFile}' already exists")
-        }
+        if (config.k < 0)
+          throw new IllegalArgumentException(s"k must be greater than 0")
 
         // Set up the log
         val rawJson = Source.fromFile(config.file).getLines.mkString
