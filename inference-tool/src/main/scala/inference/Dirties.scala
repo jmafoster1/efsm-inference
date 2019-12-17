@@ -543,6 +543,8 @@ object Dirties {
       }
     }
 
+    // We need to have our target register as latent still because it might not be in the training set
+
     for (intVarName <- intVarNames.distinct) {
       if (intVarName == s"r${r_index}")
         intTerms = (new IntegerVariableAssignmentTerminal(intVarName, true)) :: intTerms
