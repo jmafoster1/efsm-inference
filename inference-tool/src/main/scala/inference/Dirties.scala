@@ -544,11 +544,17 @@ object Dirties {
     }
 
     for (intVarName <- intVarNames.distinct) {
-      intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
+      if (intVarName == s"r${r_index}")
+        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, true)) :: intTerms
+      else
+        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
     }
 
     for (stringVarName <- stringVarNames.distinct) {
-      stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
+      if (stringVarName == s"r${r_index}")
+        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, true)) :: stringTerms
+      else
+        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
     }
 
     gpGenerator.addTerminals(intTerms)
@@ -560,6 +566,7 @@ object Dirties {
 
     Log.root.debug("Update training set: " + trainingSet)
     Log.root.debug("  Int terminals: " + intTerms)
+    Log.root.debug("  String terminals: " + stringTerms)
     Log.root.debug("  Best function is: " + best)
 
     // <Danger zone>
@@ -567,13 +574,13 @@ object Dirties {
     return Some((TypeConversion.toAExp(best)))
     // </Danger Zone>
 
-    if (gp.isCorrect(best)) {
-      funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
-      return Some((TypeConversion.toAExp(best)))
-    } else {
-      funMap = funMap + (ioPairs -> None)
-      return None
-    }
+    // if (gp.isCorrect(best)) {
+    //   funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
+    //   return Some((TypeConversion.toAExp(best)))
+    // } else {
+    //   funMap = funMap + (ioPairs -> None)
+    //   return None
+    // }
   }
 
   def getOutput(
@@ -704,7 +711,7 @@ object Dirties {
       case Some((f, types)) => return Some((f, types))
     }
 
-    val maxReg = TypeConversion.toInt(r)
+    val maxReg = TypeConversion.toInt(r) + 1
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();

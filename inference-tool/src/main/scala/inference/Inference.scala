@@ -2656,9 +2656,6 @@ object Inference {
     (if (Nat.equal_nata(m, Nat.zero_nat)) {
       val outgoing_1: FSet.fset[(Nat.nat, (Transition.transition_ext[Unit], List[Nat.nat]))] = outgoing_transitions(s1, e)
       val outgoing_2: FSet.fset[(Nat.nat, (Transition.transition_ext[Unit], List[Nat.nat]))] = outgoing_transitions(s2, e)
-      for ((s, (t, id)) <- FSet.sorted_list_of_fset(outgoing_1))
-        println(PrettyPrinter.natToString(s1) + "->" + PrettyPrinter.natToString(s) + ":" + PrettyPrinter.transitionToString(t))
-
       val pairs: FSet.fset[((Nat.nat, (Transition.transition_ext[Unit], List[Nat.nat])), (Nat.nat, (Transition.transition_ext[Unit], List[Nat.nat])))] = FSet.ffilter[((Nat.nat, (Transition.transition_ext[Unit], List[Nat.nat])), (Nat.nat, (Transition.transition_ext[Unit], List[Nat.nat])))](((a: ((Nat.nat, (Transition.transition_ext[Unit], List[Nat.nat])), (Nat.nat, (Transition.transition_ext[Unit], List[Nat.nat])))) =>
         {
           val (aa, b): ((Nat.nat, (Transition.transition_ext[Unit], List[Nat.nat])), (Nat.nat, (Transition.transition_ext[Unit], List[Nat.nat]))) = a;
@@ -5544,15 +5541,24 @@ object Symbolic_Regression {
     x1: List[List[(Map[Nat.nat, Option[Value.value]], (Nat.nat, (Map[Nat.nat, Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit])))))]]): List[Option[(List[Nat.nat], List[(Nat.nat, AExp.aexp)])]] =
     (values, x1) match {
       case (values, Nil) => Nil
-      case (values, g :: gs) =>
-        (if (Lista.list_all[(Map[Nat.nat, Option[Value.value]], (Nat.nat, (Map[Nat.nat, Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit])))))](((a: (Map[Nat.nat, Option[Value.value]], (Nat.nat, (Map[Nat.nat, Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit])))))) =>
+      case (values, g :: gs) => {
+        // for (group <- x1)
+        //   for (target <- group)
+        println(PrettyPrinter.targetInfoToString(g(0)))
+
+        if (Lista.list_all[(Map[Nat.nat, Option[Value.value]], (Nat.nat, (Map[Nat.nat, Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit])))))](((a: (Map[Nat.nat, Option[Value.value]], (Nat.nat, (Map[Nat.nat, Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit])))))) =>
           {
             val (regs, _): (Map[Nat.nat, Option[Value.value]], (Nat.nat, (Map[Nat.nat, Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit]))))) = a;
             (regs.keySet.toList).isEmpty
           }),
-          g))
+          g)) {
+          println("No register targets")
           groupwise_updates(values, gs)
-        else group_update(values, g) :: groupwise_updates(values, gs))
+        } else {
+          println("Need to update")
+          group_update(values, g) :: groupwise_updates(values, gs)
+        }
+      }
     }
 
   def overwrites_update(x0: List[(Nat.nat, AExp.aexp)], uu: Set.set[Nat.nat]): Boolean =
@@ -6249,10 +6255,13 @@ object PTA_Generalisation {
       Dirties.getOutput(maxReg, values, i, r, a)),
       Lista.transpose[Value.value](outputs))
 
+  var g = 0
+
   def generalise_and_update(log: List[List[(String, (List[Value.value], List[Value.value]))]],
     e: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
     gp: (List[(List[Nat.nat], Transition.transition_ext[Unit])], List[(Map[Nat.nat, Option[Value.value]], (List[Value.value], List[Value.value]))])): Option[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]] =
     {
+      g += 1
       val values: List[Value.value] = Inference.enumerate_log_values(log)
       val i: List[List[Value.value]] =
         Lista.map[(Map[Nat.nat, Option[Value.value]], (List[Value.value], List[Value.value])), List[Value.value]](((a: (Map[Nat.nat, Option[Value.value]], (List[Value.value], List[Value.value]))) =>
@@ -6294,6 +6303,7 @@ object PTA_Generalisation {
             replace_transition(acc, id, t))
         }),
         changes, e)
+      PrettyPrinter.iEFSM2dot(generalised_model, s"${g}_outputs")
       val tran: Transition.transition_ext[Unit] = ((gp._1).head)._2;
       (put_updates(log, values, Transition.Label[Unit](tran),
         Transition.Arity[Unit](tran),
@@ -6301,11 +6311,13 @@ object PTA_Generalisation {
         Lista.enumerate[Option[(AExp.aexp, Map[VName.vname, String])]](Nat.zero_nat, outputs),
         generalised_model) match {
           case None => None
-          case Some(ea) =>
+          case Some(ea) => {
+            PrettyPrinter.iEFSM2dot(ea, s"${g}_updates")
             (if (Inference.satisfies(Set.seta[List[(String, (List[Value.value], List[Value.value]))]](log),
               Inference.tm(ea)))
               Some[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]](ea)
             else None)
+          }
         })
     }
 
