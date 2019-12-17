@@ -280,7 +280,7 @@ definition infer_output_update_functions :: "log \<Rightarrow> update_modifier" 
       )
    )"
 
-type_synonym event_info = "(cfstate \<times> registers \<times> inputs \<times> tids \<times> transition)"
+type_synonym event_info = "(cfstate \<times> registers \<times> registers \<times> inputs \<times> tids \<times> transition)"
 type_synonym run_info = "event_info list"
 type_synonym targeted_run_info = "(registers \<times> event_info) list"
 
@@ -290,27 +290,30 @@ fun everything_walk :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \
     let (tid, s', ta) = fthe_elem (i_possible_steps oPTA s regs label inputs) in
      \<comment> \<open>Possible steps with a transition we need to modify\<close>
     if ll = label \<and> length inputs = i_arity \<and> length (Outputs ta) = o_arity then
-      (s, get_regs types inputs f (outputs!fi), inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) ll i_arity o_arity)
+      (s, regs, get_regs types inputs f (outputs!fi), inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) ll i_arity o_arity)
     else
       let empty = <> in
-      (s, empty, inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) ll i_arity o_arity)
+      (s, regs, empty, inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) ll i_arity o_arity)
   )"
 
 definition everything_walk_log :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> run_info list" where
   "everything_walk_log f fi types log e l ia oa = map (\<lambda>t. everything_walk f fi types t e 0 <> l ia oa) log"
 
+definition finfun_add :: "(('a::linorder) \<Rightarrow>f 'b) \<Rightarrow> ('a \<Rightarrow>f 'b) \<Rightarrow> ('a \<Rightarrow>f 'b)" where
+  "finfun_add a b = fold (\<lambda>k f. f(k $:= b $ k)) (finfun_to_list b) a"
+
 fun target :: "registers \<Rightarrow> run_info \<Rightarrow> targeted_run_info" where
   "target _ [] = []" |
-  "target tRegs ((s, regs, inputs, tid, ta)#t) = (
+  "target tRegs ((s, oldregs, regs, inputs, tid, ta)#t) = (
     let newTarget = if finfun_to_list regs = [] then tRegs else regs in
-    (tRegs, s, regs, inputs, tid, ta)#target newTarget t
+    (tRegs, s, oldregs, regs, inputs, tid, ta)#target newTarget t
   )"
 
 fun structural_insert :: "(registers \<times> event_info) \<Rightarrow> (registers \<times> event_info) list list \<Rightarrow> (registers \<times> event_info) list list" where
   "structural_insert x [] = [[x]]" |
   "structural_insert x (h#t) = (
-    case x of (_, _, _, _, _, ta) \<Rightarrow>
-    if \<exists>(_, _, _, _, _, tb) \<in> set h. same_structure ta tb then
+    case x of (_, _, _, _, _, _, ta) \<Rightarrow>
+    if \<exists>(_, _, _, _, _, _, tb) \<in> set h. same_structure ta tb then
       (List.insert x h)#t
     else
       h#structural_insert x t
@@ -339,12 +342,12 @@ fun group_update :: "value list \<Rightarrow> targeted_run_info \<Rightarrow> (t
   "group_update values l = (
     let
       targeted = filter (\<lambda>(regs, _). finfun_to_list regs \<noteq> []) l;
-      maybe_updates = get_updates_opt values (map (\<lambda>(tRegs, s, regs, inputs, tid, ta). (inputs, regs, tRegs)) targeted)
+      maybe_updates = get_updates_opt values (map (\<lambda>(tRegs, s, oldRegs, regs, inputs, tid, ta). (inputs, finfun_add oldRegs regs, tRegs)) targeted)
     in
     if \<exists>(_, f_opt) \<in> set maybe_updates. f_opt = None then
       None
     else
-      Some (fold List.union (map (\<lambda>(tRegs, s, regs, inputs, tid, ta). tid) l) [], map (\<lambda>(r, f_o). (r, the f_o)) maybe_updates)
+      Some (fold List.union (map (\<lambda>(tRegs, s, oldRegs, regs, inputs, tid, ta). tid) l) [], map (\<lambda>(r, f_o). (r, the f_o)) maybe_updates)
   )"
 
 fun groupwise_updates :: "value list \<Rightarrow> targeted_run_info list \<Rightarrow> (tids \<times> update_function list) option list" where
@@ -355,7 +358,5 @@ fun groupwise_updates :: "value list \<Rightarrow> targeted_run_info list \<Righ
     else
       (group_update values g) # groupwise_updates values gs 
   )"
-
-
 
 end

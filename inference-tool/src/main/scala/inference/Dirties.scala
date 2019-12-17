@@ -546,16 +546,16 @@ object Dirties {
     // We need to have our target register as latent still because it might not be in the training set
 
     for (intVarName <- intVarNames.distinct) {
-      if (intVarName == s"r${r_index}")
-        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, true)) :: intTerms
-      else
+      // if (intVarName == s"r${r_index}")
+      //   intTerms = (new IntegerVariableAssignmentTerminal(intVarName, true)) :: intTerms
+      // else
         intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
     }
 
     for (stringVarName <- stringVarNames.distinct) {
-      if (stringVarName == s"r${r_index}")
-        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, true)) :: stringTerms
-      else
+      // if (stringVarName == s"r${r_index}")
+      //   stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, true)) :: stringTerms
+      // else
         stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
     }
 

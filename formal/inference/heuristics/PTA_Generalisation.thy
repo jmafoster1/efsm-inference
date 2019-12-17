@@ -141,6 +141,31 @@ primrec add_groupwise_updates :: "log  \<Rightarrow> (tids \<times> update_funct
 lemma fold_add_groupwise_updates: "add_groupwise_updates log funs e = fold (\<lambda>trace acc. add_groupwise_updates_trace trace funs acc 0 <>) log e"
   by (induct log arbitrary: e, auto)
 
+fun groupwise_put_updates :: "(tids \<times> transition) list list \<Rightarrow> log \<Rightarrow> value list \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> (nat \<times> (aexp \<times> vname \<Rightarrow>f String.literal)) \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "groupwise_put_updates [] _ _ _ _ _ _ e = e" |
+  "groupwise_put_updates (gp#gps) log values label ia oa (o_inx, (op, types)) e = (
+    let
+      walked = everything_walk_log op o_inx types log e label ia oa;
+      targeted = map (\<lambda>x. filter (\<lambda>(_, _, _, _, _, id, tran). (id, tran) \<in> set gp) x) (map (\<lambda>w. rev (target <> (rev w))) walked);
+      group = fold List.union targeted [];
+      group_updates = List.maps (\<lambda>x. case x of Some thing \<Rightarrow> [thing] | None \<Rightarrow> []) (groupwise_updates values [group]);
+      updated = make_distinct (add_groupwise_updates log group_updates e)
+    in
+      groupwise_put_updates gps log values label ia oa (o_inx, (op, types)) updated
+  )"
+
+fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> output_types \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+  "put_updates _ _ _ _ _ [] e = Some e" |
+  "put_updates _ _ _ _ _ ((_, None)#_) _ = None" |
+  "put_updates log values label ia oa ((o_inx, (Some (op, types)))#ops) e = (
+    let
+      groups = transition_groups e;
+      updated = groupwise_put_updates groups log values label ia oa (o_inx, (op, types)) e
+    in
+      put_updates log values label ia oa ops updated
+  )"
+
+(*
 fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> output_types \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
   "put_updates _ _ _ _ _ [] e = Some e" |
   "put_updates _ _ _ _ _ ((_, None)#_) _ = None" |
@@ -148,12 +173,13 @@ fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> label \<Rightarro
     let
       walked = everything_walk_log op o_inx types log lit label ia oa;
       targeted = map (\<lambda>w. rev (target <> (rev w))) walked;
-      groups = group_by_structure (fold List.union targeted []) [];
+      groups = rev (group_by_structure (fold List.union targeted []) []);
       group_updates = List.maps (\<lambda>x. case x of Some thing \<Rightarrow> [thing] | None \<Rightarrow> []) (groupwise_updates values groups);
       updated = make_distinct (add_groupwise_updates log group_updates lit)
     in
       put_updates log values label ia oa ops updated
   )"
+*)
 
 fun update_groups :: "log \<Rightarrow> value list \<Rightarrow> (transition \<times> output_types) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "update_groups _ _ [] e = e" |

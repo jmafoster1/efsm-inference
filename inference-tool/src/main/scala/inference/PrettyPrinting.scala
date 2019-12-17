@@ -174,9 +174,9 @@ object PrettyPrinter {
     }
   }
 
-  def targetInfoToString(e: (Map[Nat.nat, Option[Value.value]], (Nat.nat, (Map[Nat.nat, Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit])))))): String = e match {
-    case (target, (state, (extraRegs, (inputs, (tids, tran))))) => {
-      return s"(${natToString(state)}, ${regsToString(extraRegs)}, ${regsToString(target)}, [${inputsToString(inputs)}], [${tids.map(tid => natToString(tid)).mkString(", ")}], ${transitionToString(tran)})"
+  def targetInfoToString(e: (Map[Nat.nat, Option[Value.value]], (Nat.nat, (Map[Nat.nat, Option[Value.value]], (Map[Nat.nat, Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit]))))))): String = e match {
+    case (target, (state, (oldRegs, (extraRegs, (inputs, (tids, tran)))))) => {
+      return s"(${natToString(state)}, ${regsToString(oldRegs)}, ${regsToString(extraRegs)}, ${regsToString(target)}, [${inputsToString(inputs)}], [${tids.map(tid => natToString(tid)).mkString(", ")}], ${transitionToString(tran)})"
     }
   }
 

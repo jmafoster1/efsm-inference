@@ -32,9 +32,6 @@ object FrontEnd {
     PrettyPrinter.iEFSM2dot(normalised, "normalised")
     System.out.println("normalised PTA satisfies original traces? " + Inference.satisfies(Set.seta(Config.config.log), Inference.tm(normalised)))
 
-    System.exit(0)
-
-
     // TODO: Turn this into a switchable option
     val resolved_pta = PTA_Generalisation.derestrict(Config.config.log, Config.heuristics, Config.config.nondeterminismMetric)
     PrettyPrinter.iEFSM2dot(resolved_pta, "resolved")
