@@ -32,11 +32,11 @@ fun aexp2sal :: "aexp \<Rightarrow> String.literal" where
 fun gexp2sal :: "gexp \<Rightarrow> String.literal" where
   "gexp2sal (Bc True) = STR ''True''" |
   "gexp2sal (Bc False) = STR ''False''" |
-  "gexp2sal (Eq a1 a2) = STR ''gval(value_eq('' + aexp2sal a1 + STR '', '' + aexp2sal a2 + STR ''))''" |
-  "gexp2sal (Gt a1 a2) = STR ''gval(value_gt('' + aexp2sal a1 + STR '', '' + aexp2sal a2 + STR ''))''" |
+  "gexp2sal (Eq a1 a2) = STR ''value_eq('' + aexp2sal a1 + STR '', '' + aexp2sal a2 + STR '')''" |
+  "gexp2sal (Gt a1 a2) = STR ''value_gt('' + aexp2sal a1 + STR '', '' + aexp2sal a2 + STR '')''" |
   "gexp2sal (In v l) = join (map (\<lambda>l'.  STR ''gval(value_eq('' + aexp2sal (V v) + STR '', '' + aexp2sal (L l') + STR ''))'') l) STR '' OR ''" |
   "gexp2sal (Nor g1 g2) = STR ''NOT (gval('' + gexp2sal g1 + STR '') OR gval( '' + gexp2sal g2 + STR ''))''" |
-  "gexp2sal (Null a1) = STR ''a1 = None''"
+  "gexp2sal (Null a1) = STR ''value_eq( '' + aexp2sal a1 + STR ''None)''"
 
 fun guards2sal :: "gexp list \<Rightarrow> String.literal" where
   "guards2sal [] = STR ''TRUE''" |
@@ -57,7 +57,7 @@ fun gexp2sal_num :: "gexp \<Rightarrow> nat \<Rightarrow> String.literal" where
   "gexp2sal_num (Eq a1 a2) m = STR ''gval(value_eq('' + aexp2sal_num a1 m + STR '', '' + aexp2sal_num a2 m + STR ''))''" |
   "gexp2sal_num (Gt a1 a2) m = STR ''gval(value_gt('' + aexp2sal_num a1 m + STR '', '' + aexp2sal_num a2 m + STR ''))''" |
   "gexp2sal_num (In v l) m = join (map (\<lambda>l'.  STR ''gval(value_eq('' + aexp2sal_num (V v) m + STR '', '' + aexp2sal_num (L l') m + STR ''))'') l) STR '' OR ''" |
-  "gexp2sal_num (Nor g1 g2) m = STR ''NOT (gval('' + gexp2sal_num g1 m + STR '') OR gval( '' + gexp2sal_num g2 m + STR ''))''" |
+  "gexp2sal_num (Nor g1 g2) m = STR ''NOT ('' + gexp2sal_num g1 m + STR '' OR '' + gexp2sal_num g2 m + STR '')''" |
   "gexp2sal_num (Null a1) _ = STR ''a1 = None''"
 
 fun guards2sal_num :: "gexp list \<Rightarrow> nat \<Rightarrow> String.literal" where

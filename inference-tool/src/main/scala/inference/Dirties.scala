@@ -276,7 +276,7 @@ object Dirties {
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
     Log.root.debug("canStillTake")
-    return false // TODO: Delete this
+    // return false // TODO: Delete this
 
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f, false)
@@ -543,19 +543,11 @@ object Dirties {
       }
     }
 
-    // We need to have our target register as latent still because it might not be in the training set
-
     for (intVarName <- intVarNames.distinct) {
-      // if (intVarName == s"r${r_index}")
-      //   intTerms = (new IntegerVariableAssignmentTerminal(intVarName, true)) :: intTerms
-      // else
         intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
     }
 
     for (stringVarName <- stringVarNames.distinct) {
-      // if (stringVarName == s"r${r_index}")
-      //   stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, true)) :: stringTerms
-      // else
         stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
     }
 

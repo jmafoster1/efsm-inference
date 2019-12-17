@@ -28,14 +28,9 @@ object FrontEnd {
 
     Log.root.info(s"PTA has ${Config.numStates} states")
 
-    val normalised = PTA_Generalisation.incremental_normalised_pta(Config.config.log)
-    PrettyPrinter.iEFSM2dot(normalised, "normalised")
-    System.out.println("normalised PTA satisfies original traces? " + Inference.satisfies(Set.seta(Config.config.log), Inference.tm(normalised)))
-
     // TODO: Turn this into a switchable option
     val resolved_pta = PTA_Generalisation.derestrict(Config.config.log, Config.heuristics, Config.config.nondeterminismMetric)
     PrettyPrinter.iEFSM2dot(resolved_pta, "resolved")
-
 
     pta = resolved_pta
     // </TODO>

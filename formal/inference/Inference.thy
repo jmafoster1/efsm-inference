@@ -277,19 +277,20 @@ primrec k_score_aux :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarr
     let
      outgoing_1 = outgoing_transitions s1 e;
      outgoing_2 = outgoing_transitions s2 e;
-     pairs = ffilter (\<lambda>(x, y). x < y) (outgoing_1 |\<times>| outgoing_2);
-     scores = fimage (\<lambda>((d1, _, x), (d2, _, y)). (d1, d2, strat x y e)) pairs
+     pairs = (outgoing_1 |\<times>| outgoing_2)
     in
-     fold (\<lambda>(s1, s2, s) acc. acc + s) (sorted_list_of_fset scores) 0
+     fold (\<lambda>((dest1, (t1, id1)), (dest2, (t2, id2))) acc. acc + strat id1 id2 e) (sorted_list_of_fset pairs) 0
   )" |
   "k_score_aux (Suc m) e s1 s2 strat = (
     let
      outgoing_1 = outgoing_transitions s1 e;
      outgoing_2 = outgoing_transitions s2 e;
-     pairs = ffilter (\<lambda>(x, y). x < y) (outgoing_1 |\<times>| outgoing_2);
-     scores = fimage (\<lambda>((d1, _, x), (d2, _, y)). (d1, d2, strat x y e)) pairs
+     pairs = (outgoing_1 |\<times>| outgoing_2);
+     base_score = fold (\<lambda>((dest1, (t1, id1)), (dest2, (t2, id2))) acc. acc + strat id1 id2 e) (sorted_list_of_fset pairs) 0;
+     dest_scores = fimage (\<lambda>((d1, _, x), (d2, _, y)). (d1, d2, k_score_aux m e d1 d2 strat)) pairs;
+     nonzero_scores = ffilter (\<lambda>(_, _, s). s > 0) dest_scores
     in
-     fold (\<lambda>(s1, s2, s) acc. acc + (k_score_aux m e s1 s2 strat)) (sorted_list_of_fset scores) 0
+      fold (\<lambda>(s1, s2, s) acc. acc + s) (sorted_list_of_fset nonzero_scores) base_score
   )"
 
 definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
@@ -297,7 +298,7 @@ definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarr
     let 
       states = (S e);
       pairs_to_score = (ffilter (\<lambda>(x, y). x < y) (states |\<times>| states));
-      scores = fimage (\<lambda>(s1, s2). \<lparr>Score = k_score_aux k e s1 s2 strat, S1 = s2, S2 = s2\<rparr>) pairs_to_score
+      scores = fimage (\<lambda>(s1, s2). \<lparr>Score = k_score_aux k e s1 s2 strat, S1 = s1, S2 = s2\<rparr>) pairs_to_score
     in
     ffilter (\<lambda>x. Score x > 0) scores
 )"
