@@ -272,6 +272,20 @@ record score =
 type_synonym scoreboard = "score fset"
 type_synonym strategy = "tids \<Rightarrow> tids \<Rightarrow> iEFSM \<Rightarrow> nat"
 
+(*
+primrec paths_of_length :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> (tids \<times> transition) list fset" where
+  "paths_of_length 0 _ _ = {||}" |
+  "paths_of_length (Suc m) e s = (
+    let
+      outgoing = outgoing_transitions s e;
+      paths = ffUnion (fimage (\<lambda>(d, t, id). fimage (\<lambda>p. (id, t)#p) paths_of_length m e d) outgoing);
+      right_length = ffilter (\<lambda>l. length l = Suc m) paths
+      
+    in
+      {||}
+  )"
+*)
+
 primrec k_score_aux :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> strategy \<Rightarrow> nat" where
   "k_score_aux 0 e s1 s2 strat = (
     let
@@ -286,11 +300,10 @@ primrec k_score_aux :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarr
      outgoing_1 = outgoing_transitions s1 e;
      outgoing_2 = outgoing_transitions s2 e;
      pairs = (outgoing_1 |\<times>| outgoing_2);
-     base_score = fold (\<lambda>((dest1, (t1, id1)), (dest2, (t2, id2))) acc. acc + strat id1 id2 e) (sorted_list_of_fset pairs) 0;
-     dest_scores = fimage (\<lambda>((d1, _, x), (d2, _, y)). (d1, d2, k_score_aux m e d1 d2 strat)) pairs;
-     nonzero_scores = ffilter (\<lambda>(_, _, s). s > 0) dest_scores
+     pairs_scores = ffilter (\<lambda>(_, _, s). s > 0) (fimage (\<lambda>((dest1, (_, id1)), (dest2, (_, id2))). (dest1, dest2, strat id1 id2 e)) pairs);
+     deep_scores = fimage (\<lambda>(d1, d2, s). k_score_aux m e d1 d2 strat) pairs_scores
     in
-      fold (\<lambda>(s1, s2, s) acc. acc + s) (sorted_list_of_fset nonzero_scores) base_score
+      fSum (fimage (snd \<circ> snd) pairs_scores) + fSum deep_scores
   )"
 
 definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
@@ -452,7 +465,7 @@ function resolve_nondeterminism :: "(cfstate \<times> cfstate) list \<Rightarrow
        None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np |
        Some new \<Rightarrow>
          let newScores = (sorted_list_of_fset (np new)) in 
-         if length (newScores) + size new * size (S new) < length (ss) + size newEFSM * size (S newEFSM) then
+         if (size new, size (S new), length (newScores)) < (size newEFSM, size (S newEFSM), length (ss)) then
            case resolve_nondeterminism closed newScores oldEFSM new m check np of
              Some new' \<Rightarrow> Some new' |
              None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np
@@ -464,7 +477,9 @@ function resolve_nondeterminism :: "(cfstate \<times> cfstate) list \<Rightarrow
      apply (metis neq_Nil_conv prod_cases3 surj_pair)
   by auto
 termination
-  by (relation "measures [\<lambda>(_, ss, _, newEFSM, _). length ss + size newEFSM * size (S newEFSM)]", auto)
+  by (relation "measures [\<lambda>(_, _, _, newEFSM, _). size newEFSM,
+                          \<lambda>(_, _, _, newEFSM, _). size (S newEFSM),
+                          \<lambda>(_, ss, _, _, _). length ss]", auto)
 
 (* Merge - tries dest merge two states in a given iEFSM and resolve the resulting nondeterminism    *)
 (* @param e     - an iEFSM                                                                        *)
