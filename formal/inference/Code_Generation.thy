@@ -630,9 +630,7 @@ export_code
   use_smallest_ints
   And
   enumerate_vars
-pta_generalise_outputs
 put_updates
-normalised_pta
 derestrict
 in Scala
 file "../../inference-tool/src/main/scala/inference/Inference.scala"
