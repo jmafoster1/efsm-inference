@@ -272,38 +272,34 @@ record score =
 type_synonym scoreboard = "score fset"
 type_synonym strategy = "tids \<Rightarrow> tids \<Rightarrow> iEFSM \<Rightarrow> nat"
 
-(*
-primrec paths_of_length :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> (tids \<times> transition) list fset" where
-  "paths_of_length 0 _ _ = {||}" |
+
+primrec paths_of_length :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> tids list fset" where
+  "paths_of_length 0 _ _ = {|[]|}" |
   "paths_of_length (Suc m) e s = (
     let
       outgoing = outgoing_transitions s e;
-      paths = ffUnion (fimage (\<lambda>(d, t, id). fimage (\<lambda>p. (id, t)#p) paths_of_length m e d) outgoing);
-      right_length = ffilter (\<lambda>l. length l = Suc m) paths
-      
+      paths = ffUnion (fimage (\<lambda>(d, t, id). fimage (\<lambda>p. id#p) (paths_of_length m e d)) outgoing)
     in
-      {||}
+      ffilter (\<lambda>l. length l = Suc m) paths
   )"
-*)
 
-primrec k_score_aux :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> strategy \<Rightarrow> nat" where
-  "k_score_aux 0 e s1 s2 strat = (
+fun step_score :: "(tids \<times> tids) list \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> nat" where
+  "step_score [] _ _ = 0" |
+  "step_score ((id1, id2)#t) e s = (
+    let score = s id1 id2 e in
+    if score = 0 then
+      0
+    else
+      score + (step_score t e s)
+  )"
+
+definition score_from_list :: "tids list fset \<Rightarrow> tids list fset \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> nat" where
+  "score_from_list P1 P2 e s = (
     let
-     outgoing_1 = outgoing_transitions s1 e;
-     outgoing_2 = outgoing_transitions s2 e;
-     pairs = (outgoing_1 |\<times>| outgoing_2)
+      pairs = fimage (\<lambda>(l1, l2). zip l1 l2) (P1 |\<times>| P2);
+      scored_pairs = fimage (\<lambda>l. step_score l e s) pairs
     in
-     fold (\<lambda>((dest1, (t1, id1)), (dest2, (t2, id2))) acc. acc + strat id1 id2 e) (sorted_list_of_fset pairs) 0
-  )" |
-  "k_score_aux (Suc m) e s1 s2 strat = (
-    let
-     outgoing_1 = outgoing_transitions s1 e;
-     outgoing_2 = outgoing_transitions s2 e;
-     pairs = (outgoing_1 |\<times>| outgoing_2);
-     pairs_scores = ffilter (\<lambda>(_, _, s). s > 0) (fimage (\<lambda>((dest1, (_, id1)), (dest2, (_, id2))). (dest1, dest2, strat id1 id2 e)) pairs);
-     deep_scores = fimage (\<lambda>(d1, d2, s). k_score_aux m e d1 d2 strat) pairs_scores
-    in
-      fSum (fimage (snd \<circ> snd) pairs_scores) + fSum deep_scores
+    fSum scored_pairs
   )"
 
 definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
@@ -311,7 +307,8 @@ definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarr
     let 
       states = (S e);
       pairs_to_score = (ffilter (\<lambda>(x, y). x < y) (states |\<times>| states));
-      scores = fimage (\<lambda>(s1, s2). \<lparr>Score = k_score_aux k e s1 s2 strat, S1 = s1, S2 = s2\<rparr>) pairs_to_score
+      paths = fimage (\<lambda>(s1, s2). (s1, s2, paths_of_length k e s1, paths_of_length k e s2)) pairs_to_score;
+      scores = fimage (\<lambda>(s1, s2, p1, p2). \<lparr>Score = score_from_list p1 p2 e strat, S1 = s1, S2 = s2\<rparr>) paths
     in
     ffilter (\<lambda>x. Score x > 0) scores
 )"

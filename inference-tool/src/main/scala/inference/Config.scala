@@ -34,7 +34,7 @@ case class Config(
   logFile: String = null,
   smallInts: Boolean = false,
   log: List[List[Types.Event]] = List(),
-  k: Int = 0,
+  k: Int = 1,
   gpIterations: Int = 50,
   guardSeed: Int = 0,
   outputSeed: Int = 0,

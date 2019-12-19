@@ -284,7 +284,7 @@ definition input_stored_in_reg :: "transition \<Rightarrow> transition \<Rightar
   )"
 
 definition initially_undefined_context_check :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "initially_undefined_context_check e r s = (\<forall>t. accepts_trace e t \<and> gets_us_to s (e) 0 <> t \<longrightarrow> (\<exists>a. (anterior_context (e) t) = Some a \<and> a $ r = None))"
+  "initially_undefined_context_check e r s = (\<forall>t. accepts_trace e t \<and> gets_us_to s e 0 <> t \<longrightarrow> (\<exists>a. (anterior_context (e) t) = Some a \<and> a $ r = None))"
 
 lemma no_incoming_to_zero: "\<forall>((from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
        (aaa, ba) |\<in>| possible_steps e s d l i \<Longrightarrow>
