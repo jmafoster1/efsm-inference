@@ -141,50 +141,34 @@ primrec add_groupwise_updates :: "log  \<Rightarrow> (tids \<times> update_funct
 lemma fold_add_groupwise_updates: "add_groupwise_updates log funs e = fold (\<lambda>trace acc. add_groupwise_updates_trace trace funs acc 0 <>) log e"
   by (induct log arbitrary: e, auto)
 
-fun groupwise_put_updates :: "(tids \<times> transition) list list \<Rightarrow> log \<Rightarrow> value list \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> (nat \<times> (aexp \<times> vname \<Rightarrow>f String.literal)) \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "groupwise_put_updates [] _ _ _ _ _ _ e = e" |
-  "groupwise_put_updates (gp#gps) log values label ia oa (o_inx, (op, types)) e = (
+fun groupwise_put_updates :: "(tids \<times> transition) list list \<Rightarrow> log \<Rightarrow> value list \<Rightarrow> tids list \<Rightarrow> (nat \<times> (aexp \<times> vname \<Rightarrow>f String.literal)) \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "groupwise_put_updates [] _ _ _ _  e = e" |
+  "groupwise_put_updates (gp#gps) log values current (o_inx, (op, types)) e = (
     let
-      walked = everything_walk_log op o_inx types log e label ia oa;
+      walked = everything_walk_log op o_inx types log e current;
       targeted = map (\<lambda>x. filter (\<lambda>(_, _, _, _, _, id, tran). (id, tran) \<in> set gp) x) (map (\<lambda>w. rev (target <> (rev w))) walked);
       group = fold List.union targeted [];
       group_updates = List.maps (\<lambda>x. case x of Some thing \<Rightarrow> [thing] | None \<Rightarrow> []) (groupwise_updates values [group]);
       updated = make_distinct (add_groupwise_updates log group_updates e)
     in
-      groupwise_put_updates gps log values label ia oa (o_inx, (op, types)) updated
+      groupwise_put_updates gps log values current (o_inx, (op, types)) updated
   )"
 
-fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> output_types \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
-  "put_updates _ _ _ _ _ [] e = Some e" |
-  "put_updates _ _ _ _ _ ((_, None)#_) _ = None" |
-  "put_updates log values label ia oa ((o_inx, (Some (op, types)))#ops) e = (
+fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> tids list \<Rightarrow> output_types \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+  "put_updates _ _ _ [] e = Some e" |
+  "put_updates _ _ _ ((_, None)#_) _ = None" |
+  "put_updates log values current ((o_inx, (Some (op, types)))#ops) e = (
     let
       groups = transition_groups e;
-      updated = groupwise_put_updates groups log values label ia oa (o_inx, (op, types)) e
+      updated = groupwise_put_updates groups log values current (o_inx, (op, types)) e
     in
-      put_updates log values label ia oa ops updated
+      put_updates log values current ops updated
   )"
 
-(*
-fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> output_types \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
-  "put_updates _ _ _ _ _ [] e = Some e" |
-  "put_updates _ _ _ _ _ ((_, None)#_) _ = None" |
-  "put_updates log values label ia oa ((o_inx, (Some (op, types)))#ops) lit = (
-    let
-      walked = everything_walk_log op o_inx types log lit label ia oa;
-      targeted = map (\<lambda>w. rev (target <> (rev w))) walked;
-      groups = rev (group_by_structure (fold List.union targeted []) []);
-      group_updates = List.maps (\<lambda>x. case x of Some thing \<Rightarrow> [thing] | None \<Rightarrow> []) (groupwise_updates values groups);
-      updated = make_distinct (add_groupwise_updates log group_updates lit)
-    in
-      put_updates log values label ia oa ops updated
-  )"
-*)
-
-fun update_groups :: "log \<Rightarrow> value list \<Rightarrow> (transition \<times> output_types) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+fun update_groups :: "log \<Rightarrow> value list \<Rightarrow> (tids list \<times> output_types) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "update_groups _ _ [] e = e" |
-  "update_groups log values ((tran, types)#lst) e = (
-    case put_updates log values (Label tran) (Arity tran) (length (Outputs tran)) types e of
+  "update_groups log values ((gp, types)#lst) e = (
+    case put_updates log values gp types e of
       None \<Rightarrow> update_groups log values lst e |
       Some e' \<Rightarrow> update_groups log values lst e'
   )"
@@ -194,7 +178,7 @@ definition normalised_pta :: "log \<Rightarrow> iEFSM" where
     let
       values = enumerate_log_values log;
       (output_funs, types) = pta_generalise_outputs log;
-      group_details = map (snd \<circ> hd) types
+      group_details = map (\<lambda>l. fold (\<lambda>(id, _, types) (tids, _). (id#tids, types)) l ([], [])) types
     in
       update_groups log values (rev group_details) output_funs
   )"
@@ -210,10 +194,9 @@ definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids
       max_reg = max_reg_total e;
       outputs = get_outputs max_reg values I R P;
       changes = map (\<lambda>(id, tran). (id, tran\<lparr>Outputs := put_outputs (zip outputs (Outputs tran))\<rparr>)) (fst gp);
-      generalised_model = fold (\<lambda>(id, t) acc. replace_transition acc id t) changes e;
-      tran = snd (hd (fst gp))
+      generalised_model = fold (\<lambda>(id, t) acc. replace_transition acc id t) changes e
   in
-  case put_updates log values (Label tran) (Arity tran) (length (Outputs tran)) (enumerate 0 outputs) generalised_model of
+  case put_updates log values (map fst (fst gp)) (enumerate 0 outputs) generalised_model of
     None \<Rightarrow> None |
     Some e' \<Rightarrow> if satisfies (set log) (tm e') then Some e' else None
   )"

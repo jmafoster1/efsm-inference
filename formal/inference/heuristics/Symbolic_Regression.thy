@@ -284,20 +284,20 @@ type_synonym event_info = "(cfstate \<times> registers \<times> registers \<time
 type_synonym run_info = "event_info list"
 type_synonym targeted_run_info = "(registers \<times> event_info) list"
 
-fun everything_walk :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> run_info" where
-  "everything_walk _ _ _ [] _ _ _ _ _ _ = []" |
-  "everything_walk f fi types ((label, inputs, outputs)#t) oPTA s regs ll i_arity o_arity  = (
+fun everything_walk :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> tids list \<Rightarrow> run_info" where
+  "everything_walk _ _ _ [] _ _ _ _ = []" |
+  "everything_walk f fi types ((label, inputs, outputs)#t) oPTA s regs gp  = (
     let (tid, s', ta) = fthe_elem (i_possible_steps oPTA s regs label inputs) in
      \<comment> \<open>Possible steps with a transition we need to modify\<close>
-    if ll = label \<and> length inputs = i_arity \<and> length (Outputs ta) = o_arity then
-      (s, regs, get_regs types inputs f (outputs!fi), inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) ll i_arity o_arity)
+    if tid \<in> set gp then
+      (s, regs, get_regs types inputs f (outputs!fi), inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) gp)
     else
       let empty = <> in
-      (s, regs, empty, inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) ll i_arity o_arity)
+      (s, regs, empty, inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) gp)
   )"
 
-definition everything_walk_log :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> run_info list" where
-  "everything_walk_log f fi types log e l ia oa = map (\<lambda>t. everything_walk f fi types t e 0 <> l ia oa) log"
+definition everything_walk_log :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> tids list \<Rightarrow> run_info list" where
+  "everything_walk_log f fi types log e gp = map (\<lambda>t. everything_walk f fi types t e 0 <> gp) log"
 
 definition finfun_add :: "(('a::linorder) \<Rightarrow>f 'b) \<Rightarrow> ('a \<Rightarrow>f 'b) \<Rightarrow> ('a \<Rightarrow>f 'b)" where
   "finfun_add a b = fold (\<lambda>k f. f(k $:= b $ k)) (finfun_to_list b) a"
