@@ -302,7 +302,7 @@ object Dirties {
     s2: Nat.nat,
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
-    Log.root.debug(s"Does ${PrettyPrinter.transitionToString(t1)} directly subsume ${PrettyPrinter.transitionToString(t2)}? (y/N)")
+    Log.root.debug(s"Does ${PrettyPrinter.show(t1)} directly subsume ${PrettyPrinter.show(t2)}? (y/N)")
     val subsumes = scala.io.StdIn.readLine() == "y"
     subsumes
   }
@@ -392,13 +392,13 @@ object Dirties {
         case None => throw new IllegalStateException("Got None from registers")
         case Some(Value.Numa(n)) => {
           intVarVals = TypeConversion.toInteger(n) :: intVarVals
-          intVarNames = s"r${PrettyPrinter.natToString(r)}" :: intVarNames
-          scenario = (new IntegerVariableAssignment(s"r${PrettyPrinter.natToString(r)}", TypeConversion.toInteger(n))) :: scenario
+          intVarNames = s"r${PrettyPrinter.show(r)}" :: intVarNames
+          scenario = (new IntegerVariableAssignment(s"r${PrettyPrinter.show(r)}", TypeConversion.toInteger(n))) :: scenario
         }
         case Some(Value.Str(s)) => {
           stringVarVals = s :: stringVarVals
-          stringVarNames = s"r${PrettyPrinter.natToString(r)}" :: stringVarNames
-          scenario = (new StringVariableAssignment(s"r${PrettyPrinter.natToString(r)}", s)) :: scenario
+          stringVarNames = s"r${PrettyPrinter.show(r)}" :: stringVarNames
+          scenario = (new StringVariableAssignment(s"r${PrettyPrinter.show(r)}", s)) :: scenario
         }
       }
       trainingSet.put(scenario, new BooleanVariableAssignment("g1", true))
@@ -423,13 +423,13 @@ object Dirties {
         case None => throw new IllegalStateException("Got None from registers")
         case Some(Value.Numa(n)) => {
           intVarVals = TypeConversion.toInteger(n) :: intVarVals
-          intVarNames = s"r${PrettyPrinter.natToString(r)}" :: intVarNames
-          scenario = (new IntegerVariableAssignment(s"r${PrettyPrinter.natToString(r)}", TypeConversion.toInteger(n))) :: scenario
+          intVarNames = s"r${PrettyPrinter.show(r)}" :: intVarNames
+          scenario = (new IntegerVariableAssignment(s"r${PrettyPrinter.show(r)}", TypeConversion.toInteger(n))) :: scenario
         }
         case Some(Value.Str(s)) => {
           stringVarVals = s :: stringVarVals
-          stringVarNames = s"r${PrettyPrinter.natToString(r)}" :: stringVarNames
-          scenario = (new StringVariableAssignment(s"r${PrettyPrinter.natToString(r)}", s)) :: scenario
+          stringVarNames = s"r${PrettyPrinter.show(r)}" :: stringVarNames
+          scenario = (new StringVariableAssignment(s"r${PrettyPrinter.show(r)}", s)) :: scenario
         }
       }
       trainingSet.put(scenario, new BooleanVariableAssignment("g2", false))
@@ -588,8 +588,8 @@ object Dirties {
 
     val ioPairs = (inputs zip registers zip outputs).distinct
 
-    // if (outputs.distinct.length == 1)
-    //   return Some(AExp.L(outputs(0)), Map())
+    if (outputs.distinct.length == 1)
+      return Some(AExp.L(outputs(0)), Map())
 
     if (funMap isDefinedAt ioPairs) funMap(ioPairs) match {
       case None => return None
@@ -816,7 +816,7 @@ object Dirties {
     val ctx = new z3.Context()
     val solver = ctx.mkSimpleSolver()
 
-    println(z3String)
+    // println(z3String)
 
     solver.fromString(z3String)
     solver.check()

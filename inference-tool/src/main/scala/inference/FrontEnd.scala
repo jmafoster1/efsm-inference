@@ -37,7 +37,7 @@ object FrontEnd {
 
     TypeConversion.efsmToSALTranslator(Inference.tm(pta), "pta", false)
 
-    // System.exit(0)
+    System.exit(0)
 
     try {
       val inferred = Inference.learn(

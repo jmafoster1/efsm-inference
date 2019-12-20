@@ -3,14 +3,14 @@ import Types._
 
 object PrettyPrinter {
 
-  def natToString(n: Nat.nat): String = {
+  def show(n: Nat.nat): String = {
     n match {
       case Nat.Nata(m) => m.toString()
     }
   }
 
   def nataPairToString(nn: (Nat.nat, Nat.nat)): String = {
-    (natToString(nn._1), natToString(nn._2)).toString()
+    (show(nn._1), show(nn._2)).toString()
   }
 
   def valueToString(v: Value.value): String =
@@ -59,9 +59,13 @@ object PrettyPrinter {
     "[" + g.map(a => (vnameToString(VName.R(a._1)) + ":=" + aexpToString(a._2))).mkString(", ") + "]"
   }
 
-  def transitionToString(t: Transition.transition_ext[Unit]): String = {
+  def show(ns: List[Nat.nat]): String = {
+    s"[${ns.map(n => show(n)).mkString(", ")}]"
+  }
+
+  def show(t: Transition.transition_ext[Unit]): String = {
     Transition.Label(t) +
-      ":" + natToString(Transition.Arity(t)) +
+      ":" + show(Transition.Arity(t)) +
       guardsToString(Transition.Guard(t)) +
       "/" +
       outputsToString(Transition.Outputs(t)) +
@@ -69,13 +73,13 @@ object PrettyPrinter {
   }
 
   def efsmToStringAux(t: ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])): String = {
-    nataPairToString(t._1) + transitionToString(t._2) + "\n"
+    nataPairToString(t._1) + show(t._2) + "\n"
   }
 
   def efsmToString(e: TransitionMatrix): String = {
     var string = "{"
     for (move <- TypeConversion.indexWithInts(FSet.sorted_list_of_fset(e)).sortBy(_._1)) {
-      string += (s"  ((${move._1._1}, ${move._1._2}), ${transitionToString(move._2)})\n")
+      string += (s"  ((${move._1._1}, ${move._1._2}), ${show(move._2)})\n")
     }
     return string + ("}")
   }
@@ -97,7 +101,7 @@ object PrettyPrinter {
 
   def pairToString(x: (Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))) = x match {
     case (Nat.Nata(a), ((Nat.Nata(b), Nat.Nata(c)), ((t, Nat.Nata(d)), (t_prime, Nat.Nata(e))))) =>
-      (a, ((b, c), ((transitionToString(t), d), (transitionToString(t_prime), e))))
+      (a, ((b, c), ((show(t), d), (show(t_prime), e))))
   }
 
   def nondeterministicPairsToString(p: FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))]): String = {
@@ -159,7 +163,7 @@ object PrettyPrinter {
   def regsToString(r: Map[Nat.nat, Option[Value.value]]): String = {
     val pairs = r.map {
       case (k: Nat.nat, v: Option[Value.value]) =>
-        "r" + natToString(k) + ":=" + (v match {
+        "r" + show(k) + ":=" + (v match {
           case None => throw new IllegalStateException("Got None from registers")
           case Some(Value.Numa(Int.int_of_integer(n))) => n.toString
           case Some(Value.Str(s)) => s
@@ -170,17 +174,17 @@ object PrettyPrinter {
 
   def eventInfoToString(e: (Nat.nat, (Map[Nat.nat, Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit]))))): String = e match {
     case (state, (extraRegs, (inputs, (tids, tran)))) => {
-      return s"(${natToString(state)}, ${regsToString(extraRegs)}, [${inputsToString(inputs)}], [${tids.map(tid => natToString(tid)).mkString(", ")}], ${transitionToString(tran)})"
+      return s"(${show(state)}, ${regsToString(extraRegs)}, [${inputsToString(inputs)}], [${tids.map(tid => show(tid)).mkString(", ")}], ${show(tran)})"
     }
   }
 
   def targetInfoToString(e: (Map[Nat.nat, Option[Value.value]], (Nat.nat, (Map[Nat.nat, Option[Value.value]], (Map[Nat.nat, Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit]))))))): String = e match {
     case (target, (state, (oldRegs, (extraRegs, (inputs, (tids, tran)))))) => {
-      return s"(${natToString(state)}, ${regsToString(oldRegs)}, ${regsToString(extraRegs)}, ${regsToString(target)}, [${inputsToString(inputs)}], [${tids.map(tid => natToString(tid)).mkString(", ")}], ${transitionToString(tran)})"
+      return s"(${show(state)}, ${regsToString(oldRegs)}, ${regsToString(extraRegs)}, ${regsToString(target)}, [${inputsToString(inputs)}], [${tids.map(tid => show(tid)).mkString(", ")}], ${show(tran)})"
     }
   }
 
   def i_stepToString(s: (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))) = s match {
-    case (ids, (s_prime, t)) => ("[" + ids.map(id => natToString(id)).mkString(",") + "]", natToString(s_prime), transitionToString(t))
+    case (ids, (s_prime, t)) => ("[" + ids.map(id => show(id)).mkString(",") + "]", show(s_prime), show(t))
   }
 }
