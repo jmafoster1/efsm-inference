@@ -257,12 +257,18 @@ primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow
       Some e' \<Rightarrow> groupwise_generalise_and_update log e' t
   )"
 
+definition standardise_outputs :: "aexp list \<Rightarrow> aexp list \<Rightarrow> aexp list" where
+  "standardise_outputs p1 p2 = map (\<lambda>(p1, p2). max p1 p2) (zip p1 p2)"
+
 definition standardise_group :: "(tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list" where
   "standardise_group g = (
     let
-      updates = remdups (List.maps (Updates \<circ> snd) g)
+      updates = remdups (List.maps (Updates \<circ> snd) g);
+      outputs = case g of 
+        [] \<Rightarrow> [] |
+        (h#t) \<Rightarrow> fold (\<lambda>x acc. standardise_outputs x acc) (map (Outputs \<circ> snd) t) (Outputs (snd h))
     in
-      map (\<lambda>(id, t). (id, t\<lparr>Updates := updates\<rparr>)) g
+      map (\<lambda>(id, t). (id, t\<lparr>Outputs := outputs, Updates := updates\<rparr>)) g
   )"
 
 definition group_by_structure :: "iEFSM \<Rightarrow> (tids \<times> transition) list list" where
@@ -271,14 +277,21 @@ definition group_by_structure :: "iEFSM \<Rightarrow> (tids \<times> transition)
 (* Sometimes inserting updates without redundancy can cause certain transitions to not get a      *)
 (* particular update function. This can lead to disparate groups of transitions which we want to  *)
 (* standardise such that every group of transitions has the same update function                  *)
-definition standardise_groups :: "iEFSM \<Rightarrow> iEFSM" where
-  "standardise_groups e = (
+primrec standardise_groups_aux :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list \<Rightarrow> iEFSM" where
+  "standardise_groups_aux e _ [] = e" |
+  "standardise_groups_aux e l (h#t) = (
     let
-      groups = group_by_structure e;
-      standardised_groups = map standardise_group groups
+      standardised = standardise_group h;
+      e' = replace_transitions e standardised
     in
-      replace_transitions e (fold (@) standardised_groups [])
+      if satisfies (set l) (tm e') then
+        standardise_groups_aux e' l t
+      else
+        standardise_groups_aux e l t
   )"
+
+definition standardise_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
+  "standardise_groups e l = standardise_groups_aux e l (group_by_structure e)"
 
 (* Instead of doing all the outputs and all the updates, do it one output and update at a time    *)
 (* This way if one update fails, we don't end up losing the rest by having to default back to the *)
@@ -290,7 +303,7 @@ definition incremental_normalised_pta :: "log \<Rightarrow> iEFSM" where
       pta = make_pta log;
       training_set = make_training_set pta log
     in
-    (groupwise_generalise_and_update log pta training_set)
+    standardise_groups (groupwise_generalise_and_update log pta training_set) log
   )"                 
 
 \<comment> \<open>Need to derestrict variables which occur in the updates but keep unrelated ones to avoid \<close>
