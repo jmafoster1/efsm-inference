@@ -18,7 +18,7 @@ object Nondeterminisms extends Enumeration {
 
 object Strategies extends Enumeration {
   type Strategy = Value
-  val naive, naive_eq_bonus, rank, comprehensive, comprehensiveEQ = Value
+  val naive, naive_eq_bonus, rank, comprehensive, comprehensiveEQ, eq = Value
 }
 
 case class Config(
@@ -51,6 +51,7 @@ object Config {
   implicit val strategiesRead: scopt.Read[List[Nat.nat] => List[Nat.nat] => IEFSM => Nat.nat] =
     scopt.Read.reads {
       _.toLowerCase match {
+        case "eq" => (SelectionStrategies.exactly_equal _).curried
         case "naive" => (SelectionStrategies.naive_score _).curried
         case "naive_eq_bonus" => (SelectionStrategies.naive_score_eq_bonus _).curried
         case "rank" => (SelectionStrategies.naive_score_outputs _).curried

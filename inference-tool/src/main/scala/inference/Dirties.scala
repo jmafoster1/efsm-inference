@@ -221,7 +221,6 @@ object Dirties {
     s2: Nat.nat): Boolean = {
     // Log.root.debug("acceptsAndGetsUsToBoth - " + FSet.size_fset(Inference.S(b)))
 
-
     if (Config.config.skip)
       return true
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
@@ -276,7 +275,7 @@ object Dirties {
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
     Log.root.debug("canStillTake")
-    // return false // TODO: Delete this
+    return true // TODO: Delete this
 
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f, false)
@@ -302,7 +301,7 @@ object Dirties {
     s2: Nat.nat,
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
-    Log.root.debug(s"Does ${PrettyPrinter.transitionToString(t1)} directly subsume ${PrettyPrinter.transitionToString(t2)}? (y/N)")
+    Log.root.debug(s"Does ${PrettyPrinter.show(t1)} directly subsume ${PrettyPrinter.show(t2)}? (y/N)")
     val subsumes = scala.io.StdIn.readLine() == "y"
     subsumes
   }
@@ -392,13 +391,13 @@ object Dirties {
         case None => throw new IllegalStateException("Got None from registers")
         case Some(Value.Numa(n)) => {
           intVarVals = TypeConversion.toInteger(n) :: intVarVals
-          intVarNames = s"r${PrettyPrinter.natToString(r)}" :: intVarNames
-          scenario = (new IntegerVariableAssignment(s"r${PrettyPrinter.natToString(r)}", TypeConversion.toInteger(n))) :: scenario
+          intVarNames = s"r${PrettyPrinter.show(r)}" :: intVarNames
+          scenario = (new IntegerVariableAssignment(s"r${PrettyPrinter.show(r)}", TypeConversion.toInteger(n))) :: scenario
         }
         case Some(Value.Str(s)) => {
           stringVarVals = s :: stringVarVals
-          stringVarNames = s"r${PrettyPrinter.natToString(r)}" :: stringVarNames
-          scenario = (new StringVariableAssignment(s"r${PrettyPrinter.natToString(r)}", s)) :: scenario
+          stringVarNames = s"r${PrettyPrinter.show(r)}" :: stringVarNames
+          scenario = (new StringVariableAssignment(s"r${PrettyPrinter.show(r)}", s)) :: scenario
         }
       }
       trainingSet.put(scenario, new BooleanVariableAssignment("g1", true))
@@ -423,13 +422,13 @@ object Dirties {
         case None => throw new IllegalStateException("Got None from registers")
         case Some(Value.Numa(n)) => {
           intVarVals = TypeConversion.toInteger(n) :: intVarVals
-          intVarNames = s"r${PrettyPrinter.natToString(r)}" :: intVarNames
-          scenario = (new IntegerVariableAssignment(s"r${PrettyPrinter.natToString(r)}", TypeConversion.toInteger(n))) :: scenario
+          intVarNames = s"r${PrettyPrinter.show(r)}" :: intVarNames
+          scenario = (new IntegerVariableAssignment(s"r${PrettyPrinter.show(r)}", TypeConversion.toInteger(n))) :: scenario
         }
         case Some(Value.Str(s)) => {
           stringVarVals = s :: stringVarVals
-          stringVarNames = s"r${PrettyPrinter.natToString(r)}" :: stringVarNames
-          scenario = (new StringVariableAssignment(s"r${PrettyPrinter.natToString(r)}", s)) :: scenario
+          stringVarNames = s"r${PrettyPrinter.show(r)}" :: stringVarNames
+          scenario = (new StringVariableAssignment(s"r${PrettyPrinter.show(r)}", s)) :: scenario
         }
       }
       trainingSet.put(scenario, new BooleanVariableAssignment("g2", false))
@@ -522,12 +521,16 @@ object Dirties {
         for ((k: Nat.nat, v: Option[Value.value]) <- anteriorRegs) v match {
           case None => throw new IllegalStateException("Got None from registers")
           case Some(Value.Numa(n)) => {
-            intVarNames = s"r${TypeConversion.toInt(k)}" :: intVarNames
-            scenario = (new IntegerVariableAssignment(s"r${TypeConversion.toInt(k)}", TypeConversion.toInteger(n))) :: scenario
+            if (k == r) {
+              intVarNames = s"r${TypeConversion.toInt(k)}" :: intVarNames
+              scenario = (new IntegerVariableAssignment(s"r${TypeConversion.toInt(k)}", TypeConversion.toInteger(n))) :: scenario
+            }
           }
           case Some(Value.Str(s)) => {
-            stringVarNames = s"r${TypeConversion.toInt(k)}" :: stringVarNames
-            scenario = (new StringVariableAssignment(s"r${TypeConversion.toInt(k)}", s)) :: scenario
+            if (k == r) {
+              stringVarNames = s"r${TypeConversion.toInt(k)}" :: stringVarNames
+              scenario = (new StringVariableAssignment(s"r${TypeConversion.toInt(k)}", s)) :: scenario
+            }
           }
         }
         updatedReg match {
@@ -544,11 +547,11 @@ object Dirties {
     }
 
     for (intVarName <- intVarNames.distinct) {
-        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
+      intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
     }
 
     for (stringVarName <- stringVarNames.distinct) {
-        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
+      stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
     }
 
     gpGenerator.addTerminals(intTerms)
@@ -559,22 +562,23 @@ object Dirties {
     val best = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
 
     Log.root.debug("Update training set: " + trainingSet)
-    Log.root.debug("  Int terminals: " + intTerms)
-    Log.root.debug("  String terminals: " + stringTerms)
+    // Log.root.debug("  Int terminals: " + intTerms)
+    // Log.root.debug("  String terminals: " + stringTerms)
     Log.root.debug("  Best function is: " + best)
 
     // <Danger zone>
-    funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
-    return Some((TypeConversion.toAExp(best)))
+    // funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
+    // return Some((TypeConversion.toAExp(best)))
     // </Danger Zone>
 
-    // if (gp.isCorrect(best)) {
-    //   funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
-    //   return Some((TypeConversion.toAExp(best)))
-    // } else {
-    //   funMap = funMap + (ioPairs -> None)
-    //   return None
-    // }
+    if (gp.isCorrect(best)) {
+      Log.root.debug("  Best function is correct")
+      funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
+      return Some((TypeConversion.toAExp(best)))
+    } else {
+      funMap = funMap + (ioPairs -> None)
+      return None
+    }
   }
 
   def getOutput(

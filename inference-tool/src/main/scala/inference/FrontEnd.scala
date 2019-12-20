@@ -23,6 +23,20 @@ object FrontEnd {
     }
     PrettyPrinter.iEFSM2dot(pta, s"pta_gen")
 
+    // val groups = PTA_Generalisation.log_group_transitions(pta, Config.config.log)
+    // for ((prev, group) <- groups) {
+    //   for ((id, tran) <- group.reverse)
+    //     println("  " + PrettyPrinter.show(id) + PrettyPrinter.show(tran))
+    //   println()
+    // }
+    //
+    // val groups1 = PTA_Generalisation.transition_groups(pta, Config.config.log)
+    // for (group <- groups1) {
+    //   for ((id, tran) <- group.reverse)
+    //     println(PrettyPrinter.show(id) + PrettyPrinter.show(tran))
+    //   println()
+    // }
+
     Config.numStates = Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(pta)))
     Config.ptaNumStates = Config.numStates
 
@@ -36,6 +50,14 @@ object FrontEnd {
     // </TODO>
 
     TypeConversion.efsmToSALTranslator(Inference.tm(pta), "pta", false)
+
+    // for (group <- PTA_Generalisation.group_by_structure(pta)){
+    //   for ((id, tran) <- group)
+    //     println(PrettyPrinter.show(id), PrettyPrinter.show(tran))
+    //   println()
+    // }
+
+    // System.exit(0)
 
     try {
       val inferred = Inference.learn(

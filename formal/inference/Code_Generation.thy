@@ -595,7 +595,7 @@ export_code
   (* Scoring functions *)
   naive_score
   naive_score_eq_bonus
-  naive_score_eq
+  exactly_equal
   naive_score_outputs
   naive_score_comprehensive
   naive_score_comprehensive_eq_high

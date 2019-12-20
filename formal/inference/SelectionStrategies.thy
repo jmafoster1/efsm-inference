@@ -31,8 +31,8 @@ definition naive_score_eq_bonus :: strategy where
     bool2nat (t1 = t2))"
 
 (* One point if they're equal *)
-definition naive_score_eq :: strategy where
-  "naive_score_eq t1ID t2ID e = bool2nat ((get_by_ids e t1ID) = (get_by_ids e t2ID))"
+definition exactly_equal :: strategy where
+  "exactly_equal t1ID t2ID e = bool2nat ((get_by_ids e t1ID) = (get_by_ids e t2ID))"
 
 (* One point if one subsumes the other *)
 definition naive_score_subsumption :: "strategy" where
