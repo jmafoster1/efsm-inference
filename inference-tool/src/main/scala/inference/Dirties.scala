@@ -348,15 +348,15 @@ object Dirties {
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
-    Logger.getRootLogger().setLevel(Level.OFF);
+    Logger.getRootLogger().setLevel(Level.DEBUG);
 
     val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.guardSeed))
 
     gpGenerator.addTerminals(GP.boolTerms);
-    // Log.root.debug("  Nonterminals: " + gpGenerator.getNonTerminals())
+    Log.root.debug("  Nonterminals: " + gpGenerator.getNonTerminals())
 
     gpGenerator.addFunctions(GP.intNonTerms);
-    // Log.root.debug("  Nonterminals: " + gpGenerator.getNonTerminals())
+    Log.root.debug("  Nonterminals: " + gpGenerator.getNonTerminals())
 
     gpGenerator.addFunctions(GP.boolNonTerms)
 
@@ -445,21 +445,21 @@ object Dirties {
     gpGenerator.addTerminals(intTerms)
     gpGenerator.addTerminals(stringTerms)
 
-    // Log.root.debug("Guard training set: " + trainingSet)
-    // Log.root.debug("  Terminals: " + gpGenerator.getTerminals())
-    // Log.root.debug("  Nonterminals: " + gpGenerator.getNonTerminals())
+    Log.root.debug("Guard training set: " + trainingSet)
+    Log.root.debug("  Terminals: " + gpGenerator.getTerminals())
+    Log.root.debug("  Nonterminals: " + gpGenerator.getNonTerminals())
 
     val gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 7, 7))
 
     try {
       val best: Node[VariableAssignment[_]] = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
-      Log.root.debug("  Best guard function is: " + best.simp())
+      Log.root.debug("  Best function is: " + best.simp())
 
       val ctx = new z3.Context()
       val gexp = TypeConversion.gexpFromZ3(best.toZ3(ctx))
       ctx.close
       if (gp.isCorrect(best)) {
-        // Log.root.debug("g1: " + PrettyPrinter.gexpToString(gexp))
+        Log.root.debug("g1: " + PrettyPrinter.gexpToString(gexp))
         guardMap = guardMap + (ioPairs -> Some(gexp))
         return Some((gexp, GExp.gNot(gexp)))
       } else {
@@ -559,9 +559,9 @@ object Dirties {
     val best = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
 
     Log.root.debug("Update training set: " + trainingSet)
-    // Log.root.debug("  Int terminals: " + intTerms)
-    // Log.root.debug("  String terminals: " + stringTerms)
-    Log.root.debug("  Best update function is: " + best)
+    Log.root.debug("  Int terminals: " + intTerms)
+    Log.root.debug("  String terminals: " + stringTerms)
+    Log.root.debug("  Best function is: " + best)
 
     // <Danger zone>
     funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
@@ -588,8 +588,8 @@ object Dirties {
 
     val ioPairs = (inputs zip registers zip outputs).distinct
 
-    // if (outputs.distinct.length == 1)
-    //   return Some(AExp.L(outputs(0)), Map())
+    if (outputs.distinct.length == 1)
+      return Some(AExp.L(outputs(0)), Map())
 
     if (funMap isDefinedAt ioPairs) funMap(ioPairs) match {
       case None => return None
@@ -667,13 +667,13 @@ object Dirties {
 
     val best = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
 
-    // Log.root.debug("Output training set: " + trainingSet)
-    // Log.root.debug("  Int terminals: " + intTerms)
-    // Log.root.debug("  String terminals: " + stringTerms)
-    Log.root.debug("  Best output function is: " + best)
+    Log.root.debug("Output training set: " + trainingSet)
+    Log.root.debug("  Int terminals: " + intTerms)
+    Log.root.debug("  String terminals: " + stringTerms)
+    Log.root.debug("  Best function is: " + best)
 
     if (gp.isCorrect(best)) {
-      Log.root.debug("  Best output function is correct")
+      Log.root.debug("  Best function is correct")
       funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
       return Some((TypeConversion.toAExp(best), getTypes(best)))
     } else {
@@ -762,9 +762,10 @@ object Dirties {
 
     val best = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
 
-    // Log.root.debug("Output training set: " + trainingSet)
-    // Log.root.debug("  Int terminals: " + intTerms)
-    Log.root.debug("  Best output function is: " + best)
+    Log.root.debug("Output training set: " + trainingSet)
+    Log.root.debug("  Int terminals: " + intTerms)
+    Log.root.debug("  Best function is: " + best)
+    Log.root.debug("Int values: " + IntegerVariableAssignment.values())
 
     if (gp.isCorrect(best)) {
       funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
@@ -815,8 +816,6 @@ object Dirties {
 
     val ctx = new z3.Context()
     val solver = ctx.mkSimpleSolver()
-
-    println(z3String)
 
     solver.fromString(z3String)
     solver.check()

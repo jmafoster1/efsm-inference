@@ -2,6 +2,13 @@ theory PTA_Generalisation
   imports "Symbolic_Regression"
 begin
 
+definition same_structure :: "'a transition_ext \<Rightarrow> 'a transition_ext \<Rightarrow> bool" where
+  "same_structure t1 t2 = (
+    Label t1 = Label t2 \<and>
+    Arity t1 = Arity t2 \<and>
+    length (Outputs t1) = length (Outputs t2)
+  )"
+
 primrec insert_into_group :: "(tids \<times> 'a transition_ext) list list \<Rightarrow> (tids \<times> 'a transition_ext) \<Rightarrow> (tids \<times> 'a transition_ext) list list" where
   "insert_into_group [] pair = [[pair]]" |
   "insert_into_group (h#t) pair = (
@@ -10,6 +17,9 @@ primrec insert_into_group :: "(tids \<times> 'a transition_ext) list list \<Righ
     else
       h#(insert_into_group t pair)
     )"
+
+definition transition_groups :: "iEFSM \<Rightarrow> (tids \<times> transition) list list" where
+  "transition_groups e = fold (\<lambda>(tid, _, transition) acc. insert_into_group acc (tid, transition)) (sorted_list_of_fset e) []"
 
 (* Assign registers and inputs with associated outputs to the correct training set based on       *)
 (* transition id                                                                                  *)
@@ -21,6 +31,24 @@ definition assign_training_set :: "(((tids \<times> transition) list) \<times> (
     else
       gp
   ) data"
+
+fun trace_training_set :: "iEFSM \<Rightarrow> execution \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list" where
+  "trace_training_set _ [] _ _ ts = ts" |
+  "trace_training_set e ((label, inputs, outputs)#t) s r ts = (
+    let (id, s', transition) = fthe_elem (i_possible_steps e s r label inputs) in
+    trace_training_set e t s' (apply_updates (Updates transition) (join_ir inputs r) r) (assign_training_set ts id label inputs r outputs)
+  )"
+
+primrec log_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list" where
+  "log_training_set _ [] ts = ts" |
+  "log_training_set e (h#t) ts = log_training_set e t (trace_training_set e h 0 <> ts)"
+
+(* This will generate the training sets in the same order that the PTA was built, i.e. traces     *)
+(* that appear earlier in the logs will appear earlier in the list of training sets. This allows  *)
+(* us to infer register updates according to trace precidence so  we won't get redundant updates  *)
+(* on later transitions which spoil the data state                                                *)
+definition make_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list" where
+  "make_training_set e l = log_training_set e l (map (\<lambda>x. (x, [])) (transition_groups e))"
 
 \<comment> \<open>This will be replaced by symbolic regression in the executable\<close>
 definition get_output :: "nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> value list \<Rightarrow> (aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
@@ -51,7 +79,7 @@ definition generalise_outputs :: "value list \<Rightarrow> ((tids \<times> trans
       P = map (\<lambda>(regs, ins, outs).outs) (snd group);
       outputs = get_outputs maxReg values I R P
     in
-    map (\<lambda>(id, tran). (id, tran \<lparr>Outputs := put_outputs (zip outputs (Outputs tran))\<rparr>, enumerate 0 outputs)) (fst group)
+    map (\<lambda>(id, tran). (id, \<lparr>Label = Label tran, Arity = Arity tran, Guard = Guard tran, Outputs = put_outputs (zip outputs (Outputs tran)), Updates = Updates tran\<rparr>, enumerate 0 outputs)) (fst group)
   ) (enumerate 0 groups)"
 
 definition replace_transition :: "iEFSM \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> iEFSM" where
@@ -60,6 +88,16 @@ definition replace_transition :: "iEFSM \<Rightarrow> tids \<Rightarrow> transit
 primrec replace_groups :: "(tids \<times> transition) list list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "replace_groups [] e = e" |
   "replace_groups (h#t) e = (replace_groups t (fold (\<lambda>(id, t) acc. replace_transition acc id t) h e))"
+
+definition pta_generalise_outputs :: "log \<Rightarrow> (iEFSM \<times> ((tids \<times> transition \<times> output_types) list list))" where
+  "pta_generalise_outputs log = (
+    let
+      values = enumerate_log_values log;
+      pta = make_pta log;
+      training_set = make_training_set pta log;
+      generalised_outs = generalise_outputs values training_set
+    in (replace_groups (map (\<lambda>lst. map (\<lambda>(tids, tran, types). (tids, tran)) lst) generalised_outs) pta, generalised_outs)
+  )"
 
 definition insert_updates :: "transition \<Rightarrow> update_function list \<Rightarrow> transition" where
   "insert_updates t u = (
@@ -116,56 +154,32 @@ fun groupwise_put_updates :: "(tids \<times> transition) list list \<Rightarrow>
       groupwise_put_updates gps log values label ia oa (o_inx, (op, types)) updated
   )"
 
-definition is_defined_at :: "('a \<Rightarrow>f 'b) \<Rightarrow> 'a \<Rightarrow> bool" where
-  "is_defined_at f a = (a \<in> {x. finfun_dom f $ x})"
-code_printing constant is_defined_at \<rightharpoonup> (Scala) "_ isDefinedAt _"
-
-fun assign_group :: "(transition option \<times> ((tids \<times> transition) list list)) list \<Rightarrow> transition option \<Rightarrow> tids \<times> transition \<Rightarrow> (transition option \<times> ((tids \<times> transition) list list)) list" where
-  "assign_group [] k v = [(k, [[v]])]" |
-  "assign_group ((k, groups)#t) k' v = (
-    if same_structure_opt k k' then
-      (k, insert_into_group groups v)#t
-    else
-      (k, groups)#(assign_group t k' v)
-  )"
-
-fun trace_group_transitions :: "iEFSM \<Rightarrow> execution \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> transition option \<Rightarrow> (transition option \<times> ((tids \<times> transition) list list)) list \<Rightarrow> (transition option \<times> ((tids \<times> transition) list list)) list" where
-  "trace_group_transitions _ [] _ _ _ g = g" |
-  "trace_group_transitions e ((l, i, _)#trace) s r prev g = (
-    let
-      (id, s', t) = fthe_elem (i_possible_steps e s r l i);
-      r' = apply_updates (Updates t) (join_ir i r) r;
-      g' = assign_group g prev (id, t)
-    in
-    trace_group_transitions e trace s' r' (Some t) g'
-  )"
-
-definition log_group_transitions :: "iEFSM \<Rightarrow> log \<Rightarrow> (transition option \<times> ((tids \<times> transition) list list)) list" where
-  "log_group_transitions e l = (fold (\<lambda>t acc. trace_group_transitions e t 0 <> None acc) l ([]))"
-
-(*
-definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list" where
-  "transition_groups e l = fold (\<lambda>(tid, _, transition) acc. insert_into_group acc (tid, transition)) (sorted_list_of_fset e) []"
-*)
-
-definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list" where
-  "transition_groups e l = (
-    let
-      group_dict = log_group_transitions e l
-    in
-      fold (\<lambda>(k, v) acc. List.union acc v) group_dict []
-  )"
-
 fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> output_types \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
   "put_updates _ _ _ _ _ [] e = Some e" |
   "put_updates _ _ _ _ _ ((_, None)#_) _ = None" |
   "put_updates log values label ia oa ((o_inx, (Some (op, types)))#ops) e = (
     let
-      groups = transition_groups e log;
+      groups = transition_groups e;
       updated = groupwise_put_updates groups log values label ia oa (o_inx, (op, types)) e
     in
       put_updates log values label ia oa ops updated
   )"
+
+(*
+fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> label \<Rightarrow> arity \<Rightarrow> arity \<Rightarrow> output_types \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
+  "put_updates _ _ _ _ _ [] e = Some e" |
+  "put_updates _ _ _ _ _ ((_, None)#_) _ = None" |
+  "put_updates log values label ia oa ((o_inx, (Some (op, types)))#ops) lit = (
+    let
+      walked = everything_walk_log op o_inx types log lit label ia oa;
+      targeted = map (\<lambda>w. rev (target <> (rev w))) walked;
+      groups = rev (group_by_structure (fold List.union targeted []) []);
+      group_updates = List.maps (\<lambda>x. case x of Some thing \<Rightarrow> [thing] | None \<Rightarrow> []) (groupwise_updates values groups);
+      updated = make_distinct (add_groupwise_updates log group_updates lit)
+    in
+      put_updates log values label ia oa ops updated
+  )"
+*)
 
 fun update_groups :: "log \<Rightarrow> value list \<Rightarrow> (transition \<times> output_types) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "update_groups _ _ [] e = e" |
@@ -175,29 +189,39 @@ fun update_groups :: "log \<Rightarrow> value list \<Rightarrow> (transition \<t
       Some e' \<Rightarrow> update_groups log values lst e'
   )"
 
-(*This is where the types stuff originates*)
-definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (registers \<times> value list \<times> value list) list \<Rightarrow> iEFSM option" where
-  "generalise_and_update log e tt train = (
+definition normalised_pta :: "log \<Rightarrow> iEFSM" where
+  "normalised_pta log = (
     let
       values = enumerate_log_values log;
-      I = map (\<lambda>(regs, ins, outs).ins) train;
-      R = map (\<lambda>(regs, ins, outs).regs) train;
-      P = map (\<lambda>(regs, ins, outs).outs) train;
+      (output_funs, types) = pta_generalise_outputs log;
+      group_details = map (snd \<circ> hd) types
+    in
+      update_groups log values (rev group_details) output_funs
+  )"
+
+(*This is where the types stuff originates*)
+definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list \<Rightarrow> iEFSM option" where
+  "generalise_and_update log e gp = (
+    let
+      values = enumerate_log_values log;
+      I = map (\<lambda>(regs, ins, outs).ins) (snd gp);
+      R = map (\<lambda>(regs, ins, outs).regs) (snd gp);
+      P = map (\<lambda>(regs, ins, outs).outs) (snd gp);
       max_reg = max_reg_total e;
       outputs = get_outputs max_reg values I R P;
-      changes = map (\<lambda>(id, tran). (id, tran\<lparr>Outputs := put_outputs (zip outputs (Outputs tran))\<rparr>)) tt;
+      changes = map (\<lambda>(id, tran). (id, tran\<lparr>Outputs := put_outputs (zip outputs (Outputs tran))\<rparr>)) (fst gp);
       generalised_model = fold (\<lambda>(id, t) acc. replace_transition acc id t) changes e;
-      tran = snd (hd tt)
+      tran = snd (hd (fst gp))
   in
   case put_updates log values (Label tran) (Arity tran) (length (Outputs tran)) (enumerate 0 outputs) generalised_model of
     None \<Rightarrow> None |
     Some e' \<Rightarrow> if satisfies (set log) (tm e') then Some e' else None
   )"
 
-fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> ((tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> iEFSM" where
+primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> ((tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> iEFSM" where
   "groupwise_generalise_and_update _ e [] = e" |
-  "groupwise_generalise_and_update log e ((tt, train)#t) = (
-    case generalise_and_update log e tt train of
+  "groupwise_generalise_and_update log e (gp#t) = (
+    case generalise_and_update log e gp of
       None \<Rightarrow> groupwise_generalise_and_update log e t |
       Some e' \<Rightarrow> groupwise_generalise_and_update log e' t
   )"
@@ -213,43 +237,26 @@ definition standardise_group :: "(tids \<times> transition) list \<Rightarrow> (
 (* Sometimes inserting updates without redundancy can cause certain transitions to not get a      *)
 (* particular update function. This can lead to disparate groups of transitions which we want to  *)
 (* standardise such that every group of transitions has the same update function                  *)
-definition standardise_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
-  "standardise_groups e l = (
+definition standardise_groups :: "iEFSM \<Rightarrow> iEFSM" where
+  "standardise_groups e = (
     let
-      groups = transition_groups e l;
+      groups = transition_groups e;
       standardised_groups = map standardise_group groups
     in
       replace_transitions e (fold (@) standardised_groups [])
   )"
 
-fun trace_training_set :: "iEFSM \<Rightarrow> execution \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list" where
-  "trace_training_set _ [] _ _ ts = ts" |
-  "trace_training_set e ((label, inputs, outputs)#t) s r ts = (
-    let (id, s', transition) = fthe_elem (i_possible_steps e s r label inputs) in
-    trace_training_set e t s' (apply_updates (Updates transition) (join_ir inputs r) r) (assign_training_set ts id label inputs r outputs)
-  )"
-
-primrec log_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list" where
-  "log_training_set _ [] ts = ts" |
-  "log_training_set e (h#t) ts = log_training_set e t (trace_training_set e h 0 <> ts)"
-
-(* This will generate the training sets in the same order that the PTA was built, i.e. traces     *)
-(* that appear earlier in the logs will appear earlier in the list of training sets. This allows  *)
-(* us to infer register updates according to trace precidence so  we won't get redundant updates  *)
-(* on later transitions which spoil the data state                                                *)
-definition make_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list" where
-  "make_training_set e l = log_training_set e l (map (\<lambda>x. (x, [])) (transition_groups e l))"
-
 (* Instead of doing all the outputs and all the updates, do it one output and update at a time    *)
 (* This way if one update fails, we don't end up losing the rest by having to default back to the *)
 (* original PTA if the normalised one doesn't reproduce the original behaviour                    *)
-definition incremental_normalised_pta :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
-  "incremental_normalised_pta pta log = (
+definition incremental_normalised_pta :: "log \<Rightarrow> iEFSM" where
+  "incremental_normalised_pta log = (
     let
       values = enumerate_log_values log;
+      pta = make_pta log;
       training_set = make_training_set pta log
     in
-    standardise_groups (groupwise_generalise_and_update log pta training_set) log
+    standardise_groups (groupwise_generalise_and_update log pta training_set)
   )"                 
 
 \<comment> \<open>Need to derestrict variables which occur in the updates but keep unrelated ones to avoid \<close>
@@ -263,8 +270,8 @@ definition derestrict_transition :: "transition \<Rightarrow> transition" where
 definition derestrict :: "log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "derestrict log m np = (
     let
-      pta = make_pta log;     
-      normalised = incremental_normalised_pta pta log;
+      pta = make_pta log;
+      normalised = incremental_normalised_pta log;
       derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, derestrict_transition tran)) normalised;
       nondeterministic_pairs = sorted_list_of_fset (np derestricted)
     in
