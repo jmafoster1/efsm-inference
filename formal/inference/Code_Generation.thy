@@ -395,8 +395,8 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
       then False
     else if t1 = drop_guards t2
       then True
-    else if one_extra_update t1 t2 s2 (tm e2)
-      then True
+    \<comment> \<open>else if one_extra_update t1 t2 s2 (tm e2)
+      then True\<close>
     \<comment> \<open>else if t2 = drop_guards t1 \<and> satisfiable_negation t1
       then False\<close>
     else dirty_directly_subsumes e1 e2 s1 s2 t1 t2
@@ -424,7 +424,7 @@ lemma directly_subsumes_cases [code]:  "directly_subsumes m1 m2 s s' t1 t2 = dir
   apply (clarify, rule if_elim, simp add: generalise_output_directly_subsumes_original_executable)
   apply (clarify, rule if_elim, simp add: diff_outputs_direct_subsumption)
   apply (clarify, rule if_elim, simp add: drop_inputs_subsumption subsumes_in_all_contexts_directly_subsumes)
-  apply (clarify, rule if_elim, simp add: one_extra_update_direct_subsumption)
+  (*apply (clarify, rule if_elim, simp add: one_extra_update_direct_subsumption)*)
   by (simp add: dirty_directly_subsumes_def)
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
@@ -570,6 +570,9 @@ code_printing constant get_regs \<rightharpoonup> (Scala) "Dirties.getRegs"
 declare get_update_def [code del]
 code_printing constant get_update \<rightharpoonup> (Scala) "Dirties.getUpdate"
 
+definition mismatched_updates :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "mismatched_updates t1 t2 = (\<exists>r \<in> set (map fst (Updates t1)). r \<notin> set (map fst (Updates t2)))"
+
 export_code
   (* Essentials *)
   try_heuristics
@@ -621,6 +624,7 @@ export_code
   nondeterministic_pairs_labar
   nondeterministic_pairs_labar_dest
   (* Utilities *)
+mismatched_updates
   iefsm2dot
   efsm2dot
   guards2sal

@@ -26,21 +26,21 @@ object PrettyPrinter {
     }
   }
 
-  def aexpToString(a: AExp.aexp): String = {
+  def show(a: AExp.aexp): String = {
     a match {
       case AExp.L(v) => valueToString(v)
       case AExp.V(v) => vnameToString(v)
-      case AExp.Plus(a1, a2) => aexpToString(a1) + " + " + aexpToString(a2)
-      case AExp.Minus(a1, a2) => aexpToString(a1) + " - " + aexpToString(a2)
-      case AExp.Times(a1, a2) => aexpToString(a1) + " * " + aexpToString(a2)
+      case AExp.Plus(a1, a2) => show(a1) + " + " + show(a2)
+      case AExp.Minus(a1, a2) => show(a1) + " - " + show(a2)
+      case AExp.Times(a1, a2) => show(a1) + " * " + show(a2)
     }
   }
 
   def gexpToString(g: GExp.gexp): String = g match {
     case GExp.Bc(v) => v.toString()
-    case GExp.Eq(a, b) => s"(= ${aexpToString(a)} ${aexpToString(b)})"
-    case GExp.Gt(a, b) => s"(> ${aexpToString(a)} ${aexpToString(b)})"
-    case GExp.Null(v) => (aexpToString(v) + "= NULL")
+    case GExp.Eq(a, b) => s"(= ${show(a)} ${show(b)})"
+    case GExp.Gt(a, b) => s"(> ${show(a)} ${show(b)})"
+    case GExp.Null(v) => (show(v) + "= NULL")
     case GExp.In(v, l) => s"${vnameToString(v)} E {${l.map(valueToString).mkString(", ")}}"
     case GExp.Nor(g1, g2) => {
       return s"(not (or ${gexpToString(g1)} ${gexpToString(g2)}))"
@@ -52,11 +52,11 @@ object PrettyPrinter {
   }
 
   def outputsToString(g: List[AExp.aexp]): String = {
-    g.zipWithIndex.map(x => "o" + (x._2 + 1) + ":=" + aexpToString(x._1)).mkString(", ")
+    g.zipWithIndex.map(x => "o" + (x._2 + 1) + ":=" + show(x._1)).mkString(", ")
   }
 
   def updatesToString(g: List[(Nat.nat, AExp.aexp)]): String = {
-    "[" + g.map(a => (vnameToString(VName.R(a._1)) + ":=" + aexpToString(a._2))).mkString(", ") + "]"
+    "[" + g.map(a => (vnameToString(VName.R(a._1)) + ":=" + show(a._2))).mkString(", ") + "]"
   }
 
   def show(t: Transition.transition_ext[Unit]): String = {

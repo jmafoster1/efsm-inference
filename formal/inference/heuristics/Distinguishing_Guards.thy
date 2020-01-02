@@ -70,6 +70,7 @@ definition distinguish :: "log \<Rightarrow> update_modifier" where
         )
   )"
 
+
 definition can_still_take_ctx :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "can_still_take_ctx e1 e2 s1 s2 t1 t2 = (
     \<forall>t. accepts_trace e1 t \<and> gets_us_to s1 e1 0 <> t \<and>  accepts_trace e2 t \<and> gets_us_to s2 e2 0 <> t \<longrightarrow>

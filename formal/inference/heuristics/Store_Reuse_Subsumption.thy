@@ -726,16 +726,17 @@ lemma one_extra_update_directly_subsumes:
   apply (erule_tac x=p in allE)
   by (simp add: one_extra_update_subsumes)
 
-definition "one_extra_update t1 t2 s2 e2 =
-(Label t1 = Label t2 \<and>
-   Arity t1 = Arity t2 \<and>
-   set (Guard t1) \<subseteq> set (Guard t2) \<and>
-   Outputs t1 = Outputs t2 \<and>
-   Updates t1 \<noteq> [] \<and>
-   tl (Updates t1) = (Updates t2) \<and>
-   (\<exists>r \<in> set (map fst (Updates t1)). fst (hd (Updates t1)) = r \<and>
-   not_updated r t2 \<and>
-   initially_undefined_context_check e2 r s2))"
+definition "one_extra_update t1 t2 s2 e2 = (
+  Label t1 = Label t2 \<and>
+  Arity t1 = Arity t2 \<and>
+  set (Guard t1) \<subseteq> set (Guard t2) \<and>
+  Outputs t1 = Outputs t2 \<and>
+  Updates t1 \<noteq> [] \<and>
+  tl (Updates t1) = (Updates t2) \<and>
+  (\<exists>r \<in> set (map fst (Updates t1)). fst (hd (Updates t1)) = r \<and>
+  not_updated r t2 \<and>
+  initially_undefined_context_check e2 r s2)
+)"
 
 lemma must_be_an_update: "U1 \<noteq> [] \<Longrightarrow> fst (hd U1) = r \<and> tl U1 = U2 \<Longrightarrow> \<exists>u. U1 = (r, u)#(U2)"
   by (metis eq_fst_iff hd_Cons_tl)

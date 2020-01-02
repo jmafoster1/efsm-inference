@@ -247,6 +247,7 @@ object Dirties {
     t1: Transition.transition_ext[A],
     t2: Transition.transition_ext[B]): Boolean = {
     Log.root.debug("diffOutputsCtx")
+    return false
     if (Transition.Outputs(t1) == Transition.Outputs(t2))
       return false
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
@@ -275,7 +276,7 @@ object Dirties {
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
     Log.root.debug("canStillTake")
-    // return true // TODO: Delete this
+    return true // TODO: Delete this
 
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f, false)
@@ -301,6 +302,8 @@ object Dirties {
     s2: Nat.nat,
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
+      if (Code_Generation.mismatched_updates(t1, t2))
+        return false
     Log.root.debug(s"Does ${PrettyPrinter.show(t1)} directly subsume ${PrettyPrinter.show(t2)}? (y/N)")
     val subsumes = scala.io.StdIn.readLine() == "y"
     subsumes
@@ -347,7 +350,7 @@ object Dirties {
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
-    Logger.getRootLogger().setLevel(Level.DEBUG);
+    Logger.getRootLogger().setLevel(Level.OFF);
 
     val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.guardSeed))
 
@@ -479,6 +482,8 @@ object Dirties {
     values: List[Value.value],
     train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Map[Nat.nat, Option[Value.value]]))]): Option[AExp.aexp] = {
 
+    println("  Getting update")
+
     val r_index = TypeConversion.toInt(r)
     val ioPairs = (train.map {
       case (inputs, (aregs, pregs)) => pregs(r) match {
@@ -487,10 +492,10 @@ object Dirties {
       }
     }).distinct
 
-    if (funMap isDefinedAt ioPairs) funMap(ioPairs) match {
-      case None => return None
-      case Some((f, _)) => return Some(f)
-    }
+    // if (funMap isDefinedAt ioPairs) funMap(ioPairs) match {
+    //   case None => return None
+    //   case Some((f, _)) => return Some(f)
+    // }
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
@@ -587,18 +592,27 @@ object Dirties {
     inputs: List[List[Value.value]],
     registers: List[Map[Nat.nat, Option[Value.value]]],
     outputs: List[Value.value]): Option[(AExp.aexp, Map[VName.vname, String])] = {
+    println("Getting Output...")
+
+    if (outputs.distinct.length == 1) {
+      println("  Singleton literal output")
+      return Some(AExp.L(outputs(0)), Map())
+    }
 
     val r_index = TypeConversion.toInt(maxReg) + 1
 
     val ioPairs = (inputs zip registers zip outputs).distinct
 
-    if (outputs.distinct.length == 1)
-      return Some(AExp.L(outputs(0)), Map())
-
-    if (funMap isDefinedAt ioPairs) funMap(ioPairs) match {
-      case None => return None
-      case Some((f, types)) => return Some((f, types))
-    }
+    // if (funMap isDefinedAt ioPairs) funMap(ioPairs) match {
+    //   case None => {
+    //     println("  Previously failed")
+    //     return None
+    //   }
+    //   case Some((f, types)) => {
+    //     println("  Previously succeeded: " + PrettyPrinter.show(f))
+    //     return Some((f, types))
+    //   }
+    // }
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();

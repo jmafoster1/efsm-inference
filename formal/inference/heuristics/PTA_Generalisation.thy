@@ -23,47 +23,40 @@ fun same_structure_opt :: "'a transition_ext option \<Rightarrow> 'a transition_
   "same_structure_opt (Some t) (Some t') = same_structure t t'" |
   "same_structure_opt _ _ = False"
 
-type_synonym admission_function = "transition option \<Rightarrow> transition option \<Rightarrow> bool"
+type_synonym transition_group = "transition option \<times> nat \<times> ((tids \<times> transition) list)"
 
-fun assign_group :: "(admission_function \<times> ((tids \<times> transition) list)) list \<Rightarrow> transition option \<Rightarrow> tids \<times> transition \<Rightarrow> (admission_function \<times> ((tids \<times> transition) list)) list" where
-  "assign_group [] ld (tid, t) = [((\<lambda>ld' t'. same_structure_opt ld ld' \<and> same_structure_opt (Some t) t'), [(tid, t)])]" |
-  "assign_group ((k, groups)#t) ld (tid, tr) = (
-    if k ld (Some tr) then
-      (k, List.insert (tid, tr) groups)#t
+fun assign_group :: "transition_group list \<Rightarrow> (transition option \<Rightarrow> nat) \<Rightarrow> transition option \<Rightarrow> tids \<times> transition \<Rightarrow> transition_group list" where
+  "assign_group [] count prev (tid, t) = [(prev, count prev, [(tid, t)])]" |
+  "assign_group ((prev', c, gp)#t) count prev (tid, tr) = (
+    if same_structure_opt prev prev' \<and> (\<forall>(_, tr') \<in> set gp. same_structure tr tr') \<and> count prev = c then
+      (prev', c, List.insert (tid, tr) gp)#t
     else
-      (k, groups)#assign_group t ld (tid, tr)
+      (prev', c, gp)#assign_group t count prev (tid, tr)
   )"
-(*  "assign_group ((k, groups)#t) ld (tid, tr) = (
-    if k ld (Some tr) then
-      (k, insert_into_group groups (tid, tr))#t
-    else
-      (k, groups)#(assign_group t k' v)
-  )"*)
 
-fun trace_group_transitions :: "iEFSM \<Rightarrow> execution \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> transition option \<Rightarrow> transition option \<Rightarrow> (admission_function \<times> ((tids \<times> transition) list)) list \<Rightarrow> (admission_function \<times> ((tids \<times> transition) list)) list" where
-  "trace_group_transitions _ [] _ _ _ _ g = g" |
-  "trace_group_transitions e ((l, i, _)#trace) s r prevGroup currentGroup g = (
+fun trace_group_transitions :: "(transition option \<Rightarrow> nat) \<Rightarrow> iEFSM \<Rightarrow> execution \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> transition option \<Rightarrow> transition option \<Rightarrow> transition_group list \<Rightarrow> transition_group list" where
+  "trace_group_transitions _ _ [] _ _ _ _ g = g" |
+  "trace_group_transitions count e ((l, i, _)#trace) s r prevGroup currentGroup g = (
     let
       (id, s', t) = fthe_elem (i_possible_steps e s r l i);
-      r' = apply_updates (Updates t) (join_ir i r) r
+      r' = apply_updates (Updates t) (join_ir i r) r;
+      newCount = (\<lambda>x. if x = Some t then Suc (count x) else count x)
     in
     if (same_structure_opt (Some t) currentGroup) then
-      trace_group_transitions e trace s' r' prevGroup currentGroup (assign_group g prevGroup (id, t))
+      trace_group_transitions newCount e trace s' r' prevGroup currentGroup (assign_group g count prevGroup (id, t))
     else
-      trace_group_transitions e trace s' r' currentGroup (Some t) (assign_group g currentGroup (id, t))
+      trace_group_transitions newCount e trace s' r' currentGroup (Some t) (assign_group g count currentGroup (id, t))
   )"
 
-export_code trace_group_transitions in Scala
-
-definition log_group_transitions :: "iEFSM \<Rightarrow> log \<Rightarrow> (admission_function \<times> ((tids \<times> transition) list)) list" where
-  "log_group_transitions e l = (fold (\<lambda>t acc. trace_group_transitions e t 0 <> None None acc) l ([]))"
+definition log_group_transitions :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group list" where
+  "log_group_transitions e l = fold (\<lambda>t acc. trace_group_transitions (\<lambda>x. 0) e t 0 <> None None acc) l []"
 
 definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list" where
   "transition_groups e l = (
     let
       group_dict = log_group_transitions e l
     in
-      map snd group_dict
+      map (snd \<circ> snd) group_dict
   )"
 
 (* Assign registers and inputs with associated outputs to the correct training set based on       *)
@@ -195,11 +188,11 @@ fun groupwise_put_updates :: "(tids \<times> transition) list list \<Rightarrow>
     let
       walked = everything_walk_log op o_inx types log e current;
       targeted = map (\<lambda>x. filter (\<lambda>(_, _, _, _, _, id, tran). (id, tran) \<in> set gp) x) (map (\<lambda>w. rev (target <> (rev w))) walked);
-      group = fold List.union targeted [];
-      group_updates = List.maps (\<lambda>x. case x of Some thing \<Rightarrow> [thing] | None \<Rightarrow> []) (groupwise_updates values [group]);
-      updated = make_distinct (add_groupwise_updates log group_updates e)
+      group = fold List.union targeted []
     in
-      groupwise_put_updates gps log values current (o_inx, (op, types)) updated
+    case group_update values group of
+      None \<Rightarrow> groupwise_put_updates gps log values current (o_inx, (op, types)) e |
+      Some u \<Rightarrow> groupwise_put_updates gps log values current (o_inx, (op, types)) (make_distinct (add_groupwise_updates log [u] e))
   )"
 
 fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> tids list \<Rightarrow> output_types \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
@@ -271,6 +264,18 @@ definition standardise_group :: "(tids \<times> transition) list \<Rightarrow> (
       map (\<lambda>(id, t). (id, t\<lparr>Outputs := outputs, Updates := updates\<rparr>)) g
   )"
 
+lemma length_standardise_group: "length (standardise_group g) = length g"
+proof (induct g)
+  case Nil
+  then show ?case
+    by (simp add: standardise_group_def)
+next
+  case (Cons a g)
+  then show ?case
+    apply (simp add: standardise_group_def)
+    by (metis Suc_length_conv length_map)
+qed
+
 definition group_by_structure :: "iEFSM \<Rightarrow> (tids \<times> transition) list list" where
   "group_by_structure e = fold (\<lambda>(tid, _, transition) acc. insert_into_group acc (tid, transition)) (sorted_list_of_fset e) []"
 
@@ -296,11 +301,10 @@ definition standardise_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" w
 (* Instead of doing all the outputs and all the updates, do it one output and update at a time    *)
 (* This way if one update fails, we don't end up losing the rest by having to default back to the *)
 (* original PTA if the normalised one doesn't reproduce the original behaviour                    *)
-definition incremental_normalised_pta :: "log \<Rightarrow> iEFSM" where
-  "incremental_normalised_pta log = (
+definition incremental_normalised_pta :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "incremental_normalised_pta log pta = (
     let
       values = enumerate_log_values log;
-      pta = make_pta log;
       training_set = make_training_set pta log
     in
     standardise_groups (groupwise_generalise_and_update log pta training_set) log
@@ -318,7 +322,7 @@ definition derestrict :: "log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM
   "derestrict log m np = (
     let
       pta = make_pta log;
-      normalised = incremental_normalised_pta log;
+      normalised = incremental_normalised_pta log pta;
       derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, derestrict_transition tran)) normalised;
       nondeterministic_pairs = sorted_list_of_fset (np derestricted)
     in
