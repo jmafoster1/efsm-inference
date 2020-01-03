@@ -2,14 +2,7 @@ theory PTA_Generalisation
   imports "Symbolic_Regression"
 begin
 
-definition same_structure :: "'a transition_ext \<Rightarrow> 'a transition_ext \<Rightarrow> bool" where
-  "same_structure t1 t2 = (
-    Label t1 = Label t2 \<and>
-    Arity t1 = Arity t2 \<and>
-    length (Outputs t1) = length (Outputs t2)
-  )"
-
-primrec insert_into_group :: "(tids \<times> 'a transition_ext) list list \<Rightarrow> (tids \<times> 'a transition_ext) \<Rightarrow> (tids \<times> 'a transition_ext) list list" where
+primrec insert_into_group :: "(tids \<times> transition) list list \<Rightarrow> (tids \<times> transition) \<Rightarrow> (tids \<times> transition) list list" where
   "insert_into_group [] pair = [[pair]]" |
   "insert_into_group (h#t) pair = (
     if \<forall>(_, t) \<in> set h. same_structure (snd pair) t then
@@ -318,12 +311,67 @@ definition derestrict_transition :: "transition \<Rightarrow> transition" where
     t\<lparr>Guard := filter (\<lambda>g. \<forall>v \<in> relevant_vars. \<not> gexp_constrains g v) (Guard t)\<rparr>
   )"
 
+fun find_initialisation_of_trace :: "nat \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> (tids \<times> transition) option" where
+  "find_initialisation_of_trace _ [] _ _ _ = None" |
+  "find_initialisation_of_trace r' ((l, i, _)#es) e s r = (
+    let
+      (tids, s', t) = fthe_elem (i_possible_steps e s r l i)
+    in
+    if (\<exists>(rr, u) \<in> set (Updates t). rr = r') then
+      Some (tids, t)
+    else
+      find_initialisation_of_trace r' es e s' (apply_updates (Updates t) (join_ir i r) r)
+  )"
+
+primrec find_initialisation_of :: "nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list" where
+  "find_initialisation_of _ _ [] = []" |
+  "find_initialisation_of r e (h#t) = (
+    case find_initialisation_of_trace r h e 0 <> of
+      None \<Rightarrow> find_initialisation_of r e t |
+      Some thing \<Rightarrow> [thing]
+  )"
+
+definition delay_initialisation_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> tids list \<Rightarrow> iEFSM" where
+  "delay_initialisation_of r l e tids = (
+    let
+      (i_tids, t) = hd (find_initialisation_of r e l);
+      origins = map (\<lambda>id. origin id e) tids;
+      init_val = snd (hd (filter (\<lambda>(r', _). r = r') (Updates t)))
+    in
+    fimage (\<lambda>(id, (origin', dest), tr).
+      \<comment> \<open>Strip the initialisation update from the original initialising transition\<close>
+      \<comment> \<open>Add the initialisation update to incumbant transitions\<close>
+      if dest \<in> set origins then
+        (id, (origin', dest), tr\<lparr>Updates := List.insert (r, init_val) (Updates tr)\<rparr>)
+      else if id = i_tids then
+        (id, (origin', dest), tr\<lparr>Updates := filter (\<lambda>(r', _). r \<noteq> r') (Updates tr)\<rparr>)
+      else
+        (id, (origin', dest), tr)
+    ) e
+  )"
+
+fun find_first_use_of_trace :: "nat \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> tids option" where
+  "find_first_use_of_trace _ [] _ _ _ = None" |
+  "find_first_use_of_trace rr ((l, i, _)#es) e s r = (
+    let
+      (id, s', t) = fthe_elem (i_possible_steps e s r l i)
+    in
+      if (\<exists>p \<in> set (Outputs t). aexp_constrains p (V (R rr))) then
+        Some id
+      else
+        find_first_use_of_trace rr es e s' (apply_updates (Updates t) (join_ir i r) r)
+  )"
+
+definition find_first_uses_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> tids list" where
+  "find_first_uses_of r l e = List.maps (\<lambda>x. case x of None \<Rightarrow> [] | Some x \<Rightarrow> [x]) (map (\<lambda>t. find_first_use_of_trace r t e 0 <>) l)"
+
 definition derestrict :: "log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "derestrict log m np = (
     let
       pta = make_pta log;
       normalised = incremental_normalised_pta log pta;
-      derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, derestrict_transition tran)) normalised;
+      delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs normalised)) normalised;
+      derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, derestrict_transition tran)) delayed;
       nondeterministic_pairs = sorted_list_of_fset (np derestricted)
     in
     case resolve_nondeterminism [] nondeterministic_pairs pta derestricted m (satisfies (set log)) np of
