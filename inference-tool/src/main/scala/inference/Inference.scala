@@ -5255,7 +5255,52 @@ def directly_subsumes_cases(e1: FSet.fset[(List[Nat.nat],
       Boolean
   =
   (if (Transition.equal_transition_exta[Unit](t1, t2)) true
-    else false)
+    else (if (Inference.simple_mutex(t2, t1)) false
+           else (if ((always_different_outputs(Transition.Outputs[Unit](t1),
+        Transition.Outputs[Unit](t2))) && (always_different_outputs_direct_subsumption(e1,
+        e2, s1, s2, t2)))
+                  false
+                  else (if (guard_subset_eq_outputs_updates[Unit, Unit](t2, t1))
+                         true
+                         else (if (Least_Upper_Bound.in_not_subset[Unit,
+                            Unit](t1, t2))
+                                false
+                                else (if (Least_Upper_Bound.opposite_gob(t1,
+                                  t2))
+                                       false
+                                       else (if ((always_different_outputs_direct_subsumption(e1,
+               e2, s1, s2,
+               t2)) && (Least_Upper_Bound.lob_distinguished_2[Unit,
+                       Unit](t1, t2)))
+      false
+      else (if ((always_different_outputs_direct_subsumption(e1, e2, s1, s2,
+                      t2)) && (Least_Upper_Bound.lob_distinguished_3[Unit,
+                              Unit](t1, t2)))
+             false
+             else (if (Dirties.canStillTake(e1, e2, s1, s2, t1, t2)) true
+                    else (if (Guard_Implication_Subsumption.guard_implication_subsumption(t2,
+           t1))
+                           true
+                           else (if (Least_Upper_Bound.is_lob[Unit,
+                       Unit](t2, t1))
+                                  true
+                                  else (if (Store_Reuse_Subsumption.drop_guard_add_update_direct_subsumption(t1,
+                              t2, e2, s2))
+ true
+ else (if (Store_Reuse_Subsumption.drop_update_add_guard_direct_subsumption(e1,
+                                     e2, s1, s2, t1, t2))
+        false
+        else (if (Store_Reuse_Subsumption.generalise_output_direct_subsumption(t1,
+t2, e1, e2, s1, s2))
+               true
+               else (if (Dirties.diffOutputsCtx[Unit,
+         Unit](e1, e2, s1, s2, t1, t2))
+                      false
+                      else (if (Transition.equal_transition_exta[Unit](t1,
+                                Ignore_Inputs.drop_guards(t2)))
+                             true
+                             else Dirties.scalaDirectlySubsumes(e1, e2, s1, s2,
+                         t1, t2)))))))))))))))))
 
 def no_illegal_updates_code(x0: List[(Nat.nat, AExp.aexp)], uu: Nat.nat):
       Boolean
@@ -9738,22 +9783,13 @@ targeted, Nil);
     }
 }
 
-def same_structure[A](t1: Transition.transition_ext[A],
-                       t2: Transition.transition_ext[A]):
-      Boolean
-  =
-  (Transition.Label[A](t1) ==
-    Transition.Label[A](t2)) && ((Nat.equal_nata(Transition.Arity[A](t1),
-          Transition.Arity[A](t2))) && (Nat.equal_nata(Nat.Nata((Transition.Outputs[A](t1)).length),
-                Nat.Nata((Transition.Outputs[A](t2)).length))))
-
-def same_structure_opt[A](x0: Option[Transition.transition_ext[A]],
-                           x1: Option[Transition.transition_ext[A]]):
+def same_structure_opt(x0: Option[Transition.transition_ext[Unit]],
+                        x1: Option[Transition.transition_ext[Unit]]):
       Boolean
   =
   (x0, x1) match {
   case (None, None) => true
-  case (Some(ta), Some(t)) => same_structure[A](ta, t)
+  case (Some(ta), Some(t)) => Transition.same_structure(ta, t)
   case (Some(v), None) => false
   case (None, Some(v)) => false
 }
@@ -9772,18 +9808,17 @@ def assign_group(x0: List[(Option[Transition.transition_ext[Unit]],
   case (Nil, count, prev, (tid, t)) =>
     List((prev, (count(prev), List((tid, t)))))
   case ((preva, (c, gp)) :: t, count, prev, (tid, tr)) =>
-    (if ((same_structure_opt[Unit](prev,
-                                    preva)) && ((Lista.list_all[(List[Nat.nat],
-                          Transition.transition_ext[Unit])](((a:
-                        (List[Nat.nat], Transition.transition_ext[Unit]))
-                       =>
-                      {
-                        val (_, aa):
-                              (List[Nat.nat], Transition.transition_ext[Unit])
-                          = a;
-                        same_structure[Unit](tr, aa)
-                      }),
-                     gp)) && (Nat.equal_nata(count(prev), c))))
+    (if ((same_structure_opt(prev,
+                              preva)) && ((Lista.list_all[(List[Nat.nat],
+                    Transition.transition_ext[Unit])](((a:
+                  (List[Nat.nat], Transition.transition_ext[Unit]))
+                 =>
+                {
+                  val (_, aa): (List[Nat.nat], Transition.transition_ext[Unit])
+                    = a;
+                  Transition.same_structure(tr, aa)
+                }),
+               gp)) && (Nat.equal_nata(count(prev), c))))
       (preva,
         (c, Lista.insert[(List[Nat.nat],
                            Transition.transition_ext[Unit])]((tid, tr), gp))) ::
@@ -9823,8 +9858,8 @@ def trace_group_transitions(uu: Option[Transition.transition_ext[Unit]] =>
           (if (Optiona.equal_optiona[Transition.transition_ext[Unit]](x,
                                Some[Transition.transition_ext[Unit]](t)))
             Nat.Suc(count(x)) else count(x)));
-      (if (same_structure_opt[Unit](Some[Transition.transition_ext[Unit]](t),
-                                     currentGroup))
+      (if (same_structure_opt(Some[Transition.transition_ext[Unit]](t),
+                               currentGroup))
         trace_group_transitions(newCount, e, trace, sa, ra, prevGroup,
                                  currentGroup,
                                  assign_group(g, count, prevGroup, (id, t)))
@@ -10177,26 +10212,28 @@ def standardise_groups_aux(e: FSet.fset[(List[Nat.nat],
     }
 }
 
-def insert_into_group[A](x0: List[List[(List[Nat.nat],
- Transition.transition_ext[A])]],
-                          pair: (List[Nat.nat], Transition.transition_ext[A])):
-      List[List[(List[Nat.nat], Transition.transition_ext[A])]]
+def insert_into_group(x0: List[List[(List[Nat.nat],
+                                      Transition.transition_ext[Unit])]],
+                       pair: (List[Nat.nat], Transition.transition_ext[Unit])):
+      List[List[(List[Nat.nat], Transition.transition_ext[Unit])]]
   =
   (x0, pair) match {
   case (Nil, pair) => List(List(pair))
   case (h :: t, pair) =>
     (if (Lista.list_all[(List[Nat.nat],
-                          Transition.transition_ext[A])](((a:
-                     (List[Nat.nat], Transition.transition_ext[A]))
-                    =>
-                   {
-                     val (_, aa): (List[Nat.nat], Transition.transition_ext[A])
-                       = a;
-                     same_structure[A](pair._2, aa)
-                   }),
-                  h))
-      Lista.insert[(List[Nat.nat], Transition.transition_ext[A])](pair, h) :: t
-      else h :: insert_into_group[A](t, pair))
+                          Transition.transition_ext[Unit])](((a:
+                        (List[Nat.nat], Transition.transition_ext[Unit]))
+                       =>
+                      {
+                        val (_, aa):
+                              (List[Nat.nat], Transition.transition_ext[Unit])
+                          = a;
+                        Transition.same_structure(pair._2, aa)
+                      }),
+                     h))
+      Lista.insert[(List[Nat.nat], Transition.transition_ext[Unit])](pair, h) ::
+        t
+      else h :: insert_into_group(t, pair))
 }
 
 def group_by_structure(e: FSet.fset[(List[Nat.nat],
@@ -10221,7 +10258,7 @@ Transition.transition_ext[Unit]))]):
                           ((acc: List[List[(List[Nat.nat],
      Transition.transition_ext[Unit])]])
                              =>
-                            insert_into_group[Unit](acc, (tid, transition)))
+                            insert_into_group(acc, (tid, transition)))
                         }),
                        FSet.sorted_list_of_fset[(List[Nat.nat],
           ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))](e),

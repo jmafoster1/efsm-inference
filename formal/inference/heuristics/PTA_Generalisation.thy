@@ -11,7 +11,7 @@ primrec insert_into_group :: "(tids \<times> transition) list list \<Rightarrow>
       h#(insert_into_group t pair)
     )"
 
-fun same_structure_opt :: "'a transition_ext option \<Rightarrow> 'a transition_ext option \<Rightarrow> bool" where
+fun same_structure_opt :: "transition option \<Rightarrow> transition option \<Rightarrow> bool" where
   "same_structure_opt None None = True" |
   "same_structure_opt (Some t) (Some t') = same_structure t t'" |
   "same_structure_opt _ _ = False"
