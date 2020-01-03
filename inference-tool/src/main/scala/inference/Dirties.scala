@@ -247,7 +247,6 @@ object Dirties {
     t1: Transition.transition_ext[A],
     t2: Transition.transition_ext[B]): Boolean = {
     Log.root.debug("diffOutputsCtx")
-    return false
     if (Transition.Outputs(t1) == Transition.Outputs(t2))
       return false
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
@@ -276,7 +275,7 @@ object Dirties {
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
     Log.root.debug("canStillTake")
-    return true // TODO: Delete this
+    // return true // TODO: Delete this
 
     val f = "intermediate_" + randomUUID.toString().replace("-", "_")
     TypeConversion.doubleEFSMToSALTranslator(Inference.tm(e1), "e1", Inference.tm(e2), "e2", f, false)
