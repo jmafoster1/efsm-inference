@@ -317,37 +317,39 @@ fun find_initialisation_of_trace :: "nat \<Rightarrow> execution \<Rightarrow> i
     let
       (tids, s', t) = fthe_elem (i_possible_steps e s r l i)
     in
-    if (\<exists>(rr, u) \<in> set (Updates t). rr = r') then
+    if (\<exists>(rr, u) \<in> set (Updates t). rr = r' \<and> is_lit u) then
       Some (tids, t)
     else
       find_initialisation_of_trace r' es e s' (apply_updates (Updates t) (join_ir i r) r)
   )"
 
-primrec find_initialisation_of :: "nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list" where
-  "find_initialisation_of _ _ [] = []" |
+primrec find_initialisation_of :: "nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) option" where
+  "find_initialisation_of _ _ [] = None" |
   "find_initialisation_of r e (h#t) = (
     case find_initialisation_of_trace r h e 0 <> of
       None \<Rightarrow> find_initialisation_of r e t |
-      Some thing \<Rightarrow> [thing]
+      Some thing \<Rightarrow> Some thing
   )"
 
 definition delay_initialisation_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> tids list \<Rightarrow> iEFSM" where
   "delay_initialisation_of r l e tids = (
-    let
-      (i_tids, t) = hd (find_initialisation_of r e l);
-      origins = map (\<lambda>id. origin id e) tids;
-      init_val = snd (hd (filter (\<lambda>(r', _). r = r') (Updates t)))
-    in
-    fimage (\<lambda>(id, (origin', dest), tr).
-      \<comment> \<open>Strip the initialisation update from the original initialising transition\<close>
-      \<comment> \<open>Add the initialisation update to incumbant transitions\<close>
-      if dest \<in> set origins then
-        (id, (origin', dest), tr\<lparr>Updates := List.insert (r, init_val) (Updates tr)\<rparr>)
-      else if id = i_tids then
-        (id, (origin', dest), tr\<lparr>Updates := filter (\<lambda>(r', _). r \<noteq> r') (Updates tr)\<rparr>)
-      else
-        (id, (origin', dest), tr)
-    ) e
+    case find_initialisation_of r e l of
+      None \<Rightarrow> e |
+    Some (i_tids, t) \<Rightarrow>
+      let
+        origins = map (\<lambda>id. origin id e) tids;
+        init_val = snd (hd (filter (\<lambda>(r', _). r = r') (Updates t)))
+      in
+      fimage (\<lambda>(id, (origin', dest), tr).
+        \<comment> \<open>Strip the initialisation update from the original initialising transition\<close>
+        \<comment> \<open>Add the initialisation update to incumbant transitions\<close>
+        if dest \<in> set origins then
+          (id, (origin', dest), tr\<lparr>Updates := List.insert (r, init_val) (Updates tr)\<rparr>)
+        else if id = i_tids then
+          (id, (origin', dest), tr\<lparr>Updates := filter (\<lambda>(r', _). r \<noteq> r') (Updates tr)\<rparr>)
+        else
+          (id, (origin', dest), tr)
+      ) e
   )"
 
 fun find_first_use_of_trace :: "nat \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> tids option" where
