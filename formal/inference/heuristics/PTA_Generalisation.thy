@@ -371,8 +371,7 @@ definition derestrict :: "log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM
       pta = make_pta log;
       normalised = incremental_normalised_pta log pta;
       delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs normalised)) normalised;
-      standardised = standardise_groups_updates delayed log;
-      derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, derestrict_transition tran)) standardised;
+      derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, derestrict_transition tran)) delayed;
       nondeterministic_pairs = sorted_list_of_fset (np derestricted)
     in
     case resolve_nondeterminism [] nondeterministic_pairs pta derestricted m (satisfies (set log)) np of
