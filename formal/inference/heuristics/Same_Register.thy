@@ -10,14 +10,17 @@ fun a_replace_with :: "aexp \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> ae
   "a_replace_with (L v) _ _ = L v" |
   "a_replace_with (V v) r1 r2 = (if v = R r1 then V (R r2) else V v)" |
   "a_replace_with (Plus a1 a2) r1 r2 = Plus (a_replace_with a1 r1 r2) (a_replace_with a2 r1 r2)" |
-  "a_replace_with (Minus a1 a2) r1 r2 = Plus (a_replace_with a1 r1 r2) (a_replace_with a2 r1 r2)"
+  "a_replace_with (Minus a1 a2) r1 r2 = Minus (a_replace_with a1 r1 r2) (a_replace_with a2 r1 r2)" |
+  "a_replace_with (Times a1 a2) r1 r2 = Times (a_replace_with a1 r1 r2) (a_replace_with a2 r1 r2)"
+
 
 fun g_replace_with :: "gexp \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> gexp" where
   "g_replace_with (gexp.Bc x) _ _ = gexp.Bc x" |
   "g_replace_with (gexp.Eq a1 a2) r1 r2 = gexp.Eq (a_replace_with a1 r1 r2) (a_replace_with a2 r1 r2)" |
   "g_replace_with (gexp.Gt a1 a2) r1 r2 = gexp.Eq (a_replace_with a1 r1 r2) (a_replace_with a2 r1 r2)" |
   "g_replace_with (gexp.Nor g1 g2) r1 r2 = gexp.Nor (g_replace_with g1 r1 r2) (g_replace_with g2 r1 r2)" |
-  "g_replace_with (gexp.Null a1) r1 r2 = gexp.Null (a_replace_with a1 r1 r2)"
+  "g_replace_with (gexp.Null a1) r1 r2 = gexp.Null (a_replace_with a1 r1 r2)" |
+  "g_replace_with (gexp.In v s) r1 r2 = gexp.In v s"
 
 (* replace r1 with r2 *)
 fun u_replace_with :: "update_function \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> update_function" where

@@ -10,7 +10,8 @@ fun aexp_get_variables :: "aexp \<Rightarrow> vname list" where
   "aexp_get_variables (L _) = []" |
   "aexp_get_variables (V v) = [v]" |
   "aexp_get_variables (Plus a1 a2) = remdups (aexp_get_variables a1 @ aexp_get_variables a2)" |
-  "aexp_get_variables (Minus a1 a2) = remdups (aexp_get_variables a1 @ aexp_get_variables a2)"
+  "aexp_get_variables (Minus a1 a2) = remdups (aexp_get_variables a1 @ aexp_get_variables a2)" |
+  "aexp_get_variables (Times a1 a2) = remdups (aexp_get_variables a1 @ aexp_get_variables a2)"
 
 definition assign_all :: "type \<Rightarrow> vname list \<Rightarrow> (vname \<times> type) list" where
   "assign_all t l = remdups (map (\<lambda>v. (v, t)) l)"
@@ -100,7 +101,8 @@ fun type_of :: "aexp \<Rightarrow> (vname \<Rightarrow>f type) \<Rightarrow> typ
   "type_of (L (Str _)) _ = STRING" |
   "type_of (V v) types = finfun_apply types v" |
   "type_of (Plus _ _) _ = NUM" |
-  "type_of (Minus _ _) _ = NUM"
+  "type_of (Minus _ _) _ = NUM" |
+  "type_of (Times _ _) _ = NUM"
 
 fun type_check_aux :: "type \<Rightarrow> type \<Rightarrow> bool" where
   "type_check_aux NUM NUM = True" |

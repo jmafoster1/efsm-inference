@@ -470,7 +470,6 @@ function resolve_nondeterminism :: "(cfstate \<times> cfstate) list \<Rightarrow
           None
    )"
      apply clarify
-     apply simp
      apply (metis neq_Nil_conv prod_cases3 surj_pair)
   by auto
 termination

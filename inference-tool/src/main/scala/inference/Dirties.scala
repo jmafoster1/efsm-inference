@@ -487,7 +487,7 @@ object Dirties {
     val ioPairs = (train.map {
       case (inputs, (aregs, pregs)) => pregs(r) match {
         case None => throw new IllegalStateException("Got None from registers")
-        case Some(v) => ((inputs, aregs), v)
+        case Some(v) => ((inputs, aregs.filterKeys(_ == r)), v)
       }
     }).distinct
 
