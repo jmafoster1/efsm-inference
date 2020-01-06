@@ -13,6 +13,7 @@ theory Code_Generation
    "heuristics/Symbolic_Regression"
    "heuristics/Distinguishing_Guards"
    "heuristics/PTA_Generalisation"
+   "heuristics/Weak_Subsumption"
    EFSM_Dot
    Code_Target_FSet
    Code_Target_Set
@@ -619,6 +620,7 @@ export_code
   infer_output_functions_2
   infer_output_update_functions
   distinguish
+  weak_subsumption
   (* Nondeterminism metrics *)
   nondeterministic_pairs
   nondeterministic_pairs_labar

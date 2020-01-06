@@ -11,6 +11,9 @@ primrec insert_into_group :: "(tids \<times> transition) list list \<Rightarrow>
       h#(insert_into_group t pair)
     )"
 
+definition group_by_structure :: "iEFSM \<Rightarrow> (tids \<times> transition) list list" where
+  "group_by_structure e = fold (\<lambda>(tid, _, transition) acc. insert_into_group acc (tid, transition)) (sorted_list_of_fset e) []"
+
 fun same_structure_opt :: "transition option \<Rightarrow> transition option \<Rightarrow> bool" where
   "same_structure_opt None None = True" |
   "same_structure_opt (Some t) (Some t') = same_structure t t'" |
@@ -246,50 +249,45 @@ primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow
 definition standardise_outputs :: "aexp list \<Rightarrow> aexp list \<Rightarrow> aexp list" where
   "standardise_outputs p1 p2 = map (\<lambda>(p1, p2). max p1 p2) (zip p1 p2)"
 
-definition standardise_group :: "(tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list" where
-  "standardise_group g = (
+definition standardise_group_outputs :: "(tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list" where
+  "standardise_group_outputs g = (
     let
-      updates = remdups (List.maps (Updates \<circ> snd) g);
       outputs = case g of 
         [] \<Rightarrow> [] |
         (h#t) \<Rightarrow> fold (\<lambda>x acc. standardise_outputs x acc) (map (Outputs \<circ> snd) t) (Outputs (snd h))
     in
-      map (\<lambda>(id, t). (id, t\<lparr>Outputs := outputs, Updates := updates\<rparr>)) g
+      map (\<lambda>(id, t). (id, t\<lparr>Outputs := outputs\<rparr>)) g
   )"
 
-lemma length_standardise_group: "length (standardise_group g) = length g"
-proof (induct g)
-  case Nil
-  then show ?case
-    by (simp add: standardise_group_def)
-next
-  case (Cons a g)
-  then show ?case
-    apply (simp add: standardise_group_def)
-    by (metis Suc_length_conv length_map)
-qed
-
-definition group_by_structure :: "iEFSM \<Rightarrow> (tids \<times> transition) list list" where
-  "group_by_structure e = fold (\<lambda>(tid, _, transition) acc. insert_into_group acc (tid, transition)) (sorted_list_of_fset e) []"
+definition standardise_group_updates :: "(tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list" where
+  "standardise_group_updates g = (
+    let
+      updates = remdups (List.maps (Updates \<circ> snd) g)
+    in
+      map (\<lambda>(id, t). (id, t\<lparr>Updates := updates\<rparr>)) g
+  )"
 
 (* Sometimes inserting updates without redundancy can cause certain transitions to not get a      *)
 (* particular update function. This can lead to disparate groups of transitions which we want to  *)
 (* standardise such that every group of transitions has the same update function                  *)
-primrec standardise_groups_aux :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list \<Rightarrow> iEFSM" where
-  "standardise_groups_aux e _ [] = e" |
-  "standardise_groups_aux e l (h#t) = (
+primrec standardise_groups_aux :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list \<Rightarrow> ((tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list) \<Rightarrow> iEFSM" where
+  "standardise_groups_aux e _ [] _ = e" |
+  "standardise_groups_aux e l (h#t) s = (
     let
-      standardised = standardise_group h;
+      standardised = s h;
       e' = replace_transitions e standardised
     in
       if satisfies (set l) (tm e') then
-        standardise_groups_aux e' l t
+        standardise_groups_aux e' l t s
       else
-        standardise_groups_aux e l t
+        standardise_groups_aux e l t s
   )"
 
 definition standardise_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
-  "standardise_groups e l = standardise_groups_aux e l (group_by_structure e)"
+  "standardise_groups e l = standardise_groups_aux e l (group_by_structure e) (standardise_group_outputs \<circ> standardise_group_updates)"
+
+definition standardise_groups_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
+  "standardise_groups_updates e l = standardise_groups_aux e l (group_by_structure e) (standardise_group_updates)"
 
 (* Instead of doing all the outputs and all the updates, do it one output and update at a time    *)
 (* This way if one update fails, we don't end up losing the rest by having to default back to the *)
@@ -373,7 +371,8 @@ definition derestrict :: "log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM
       pta = make_pta log;
       normalised = incremental_normalised_pta log pta;
       delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs normalised)) normalised;
-      derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, derestrict_transition tran)) delayed;
+      standardised = standardise_groups_updates delayed log;
+      derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, derestrict_transition tran)) standardised;
       nondeterministic_pairs = sorted_list_of_fset (np derestricted)
     in
     case resolve_nondeterminism [] nondeterministic_pairs pta derestricted m (satisfies (set log)) np of
