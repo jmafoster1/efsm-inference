@@ -488,7 +488,7 @@ function infer_with_log :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarr
 termination
   apply (relation "measures [\<lambda>(_, _, e, _). size (S e)]")
    apply simp
-  using measures_fsubset by auto
+  by (metis (no_types, lifting) case_prod_conv measures_less size_fsubset)
 
 (* declare make_pta_fold [code] *)
 declare GExp.satisfiable_def [code del]
@@ -640,6 +640,7 @@ pta_generalise_outputs
 put_updates
 normalised_pta
 derestrict
+outgoing_transitions_from
 in Scala
 file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

@@ -28,13 +28,11 @@ lemma bot_fset [code]: "{||} = fset_of_list []"
 lemma finsert [code]: "finsert a (fset_of_list as) = fset_of_list (List.insert a as)"
   by (simp add: List.insert_def finsert_absorb fset_of_list_elem)
 
-lemma ffilter_filter [code]: "ffilter f (fset_of_list as) = fset_of_list (remdups (List.filter f as))"
-  by (induct as, auto)
+lemma ffilter_filter [code]: "ffilter f (fset_of_list as) = fset_of_list (List.filter f (remdups as))"
+  by simp
 
-lemma fimage_map [code]: "fimage f (fset_of_list as) = fset_of_list (remdups (List.map f as))"
-  apply (induct as)
-   apply simp
-  by (metis fset_of_list_map fset_of_list_remdups)
+lemma fimage_map [code]: "fimage f (fset_of_list as) = fset_of_list (List.map f (remdups as))"
+  by simp
 
 lemma ffUnion_fold [code]: "ffUnion (fset_of_list as) = fold (|\<union>|) as {||}"
   by (simp add: fold_union_ffUnion)

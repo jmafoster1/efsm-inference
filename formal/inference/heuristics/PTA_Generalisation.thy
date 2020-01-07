@@ -105,6 +105,18 @@ fun put_outputs :: "(((aexp \<times> (vname \<Rightarrow>f String.literal)) opti
   "put_outputs ((None, p)#t) = p#(put_outputs t)" |
   "put_outputs ((Some (p, _), _)#t) = p#(put_outputs t)"
 
+lemma put_outputs_fold [code]: "put_outputs xs = foldr (\<lambda>x acc. case x of (None, p) \<Rightarrow> p#acc | (Some (p, _), _) \<Rightarrow> p#acc) xs []"
+proof (induct xs)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a xs)
+  then show ?case
+    apply (cases a)
+    apply (case_tac aa)
+    by auto
+qed
+
 type_synonym output_types = "(nat \<times> (aexp \<times> vname \<Rightarrow>f String.literal) option) list"
 
 (*This is where the types stuff originates*)
@@ -124,7 +136,10 @@ definition replace_transition :: "iEFSM \<Rightarrow> tids \<Rightarrow> transit
 
 primrec replace_groups :: "(tids \<times> transition) list list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "replace_groups [] e = e" |
-  "replace_groups (h#t) e = (replace_groups t (fold (\<lambda>(id, t) acc. replace_transition acc id t) h e))"
+  "replace_groups (h#t) e = replace_groups t (fold (\<lambda>(id, t) acc. replace_transition acc id t) h e)"
+
+lemma replace_groups_fold [code]: "replace_groups xs e = fold (\<lambda>h acc'. (fold (\<lambda>(id, t) acc. replace_transition acc id t) h acc')) xs e"
+  by (induct xs arbitrary: e,  auto)
 
 definition pta_generalise_outputs :: "log \<Rightarrow> (iEFSM \<times> ((tids \<times> transition \<times> output_types) list list))" where
   "pta_generalise_outputs log = (

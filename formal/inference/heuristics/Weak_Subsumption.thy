@@ -2,7 +2,7 @@ theory Weak_Subsumption
 imports "../Inference"
 begin
 
-definition maxBy :: "('a \<Rightarrow> 'b::ord) \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> 'a" where
+definition maxBy :: "('a \<Rightarrow> 'b::linorder) \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> 'a" where
   "maxBy f a b = (if (f a > f b) then a else b)"
 
 fun weak_subsumption :: "log \<Rightarrow> update_modifier" where

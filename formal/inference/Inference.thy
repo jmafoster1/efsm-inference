@@ -272,7 +272,6 @@ record score =
 type_synonym scoreboard = "score fset"
 type_synonym strategy = "tids \<Rightarrow> tids \<Rightarrow> iEFSM \<Rightarrow> nat"
 
-
 primrec paths_of_length :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> tids list fset" where
   "paths_of_length 0 _ _ = {|[]|}" |
   "paths_of_length (Suc m) e s = (
@@ -292,6 +291,22 @@ fun step_score :: "(tids \<times> tids) list \<Rightarrow> iEFSM \<Rightarrow> s
     else
       score + (step_score t e s)
   )"
+
+lemma step_score_foldr [code]: "step_score xs e s = foldr (\<lambda>(id1, id2) acc. let score = s id1 id2 e in
+    if score = 0 then
+      0
+    else
+      score + acc) xs 0"
+proof(induct xs)
+case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a xs)
+  then show ?case
+    apply (cases a, clarify)
+    by (simp add: Let_def)
+qed
 
 definition score_from_list :: "tids list fset \<Rightarrow> tids list fset \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> nat" where
   "score_from_list P1 P2 e s = (
@@ -393,7 +408,7 @@ definition insert_transition :: "tids \<Rightarrow> cfstate \<Rightarrow> cfstat
     else
       fimage (\<lambda>(uid', (from', to'), t').
         if from = from' \<and> to = to' \<and> t = t' then
-          (uid'@uid, (from', to'), t')
+          (List.union uid' uid, (from', to'), t')
         else
           (uid', (from', to'), t')
       ) e
@@ -437,6 +452,9 @@ definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \
           Some e \<Rightarrow> Some (make_distinct e)
    )"
 
+definition outgoing_transitions_from :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> transition fset" where
+  "outgoing_transitions_from e s = fimage (\<lambda>(_, _, t). t) (ffilter (\<lambda>(_, (orig, _), _). orig = s) e)"
+
 (* resolve_nondeterminism - tries dest resolve nondeterminism in a given iEFSM                      *)
 (* @param ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) - a list of nondeterministic pairs where
           from - nat - the state from which t\<^sub>1 and t\<^sub>2 eminate
@@ -455,22 +473,23 @@ definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \
 function resolve_nondeterminism :: "(cfstate \<times> cfstate) list \<Rightarrow> nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
   "resolve_nondeterminism _ [] _ new _ check np = (if deterministic new np \<and> check (tm new) then Some new else None)" |
   "resolve_nondeterminism closed ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) oldEFSM newEFSM m check np = (
-     if (dest\<^sub>1, dest\<^sub>2) \<in> set closed then None else let
-     destMerge = if dest\<^sub>1 = dest\<^sub>2 then newEFSM else merge_states dest\<^sub>1 dest\<^sub>2 newEFSM
-     in
-     case merge_transitions oldEFSM newEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m np of
-       None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np |
-       Some new \<Rightarrow>
-         let newScores = (sorted_list_of_fset (np new)) in 
-         if (size new, size (S new), length (newScores)) < (size newEFSM, size (S newEFSM), length (ss)) then
-           case resolve_nondeterminism closed newScores oldEFSM new m check np of
-             Some new' \<Rightarrow> Some new' |
-             None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np
-         else
+    if (dest\<^sub>1, dest\<^sub>2) \<in> set closed then
+      None
+    else
+    let destMerge = merge_states dest\<^sub>1 dest\<^sub>2 newEFSM in
+    case merge_transitions oldEFSM newEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m np of
+      None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np |
+      Some new \<Rightarrow> (
+        let newScores = sorted_list_of_fset (np new) in 
+        if (size new, size (S new), length (newScores)) < (size newEFSM, size (S newEFSM), length (ss)) then
+          case resolve_nondeterminism closed newScores oldEFSM new m check np of
+            Some new' \<Rightarrow> Some new' |
+            None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np
+        else
           None
-   )"
-     apply clarify
-     apply (metis neq_Nil_conv prod_cases3 surj_pair)
+      )
+)"
+     apply (clarify, metis neq_Nil_conv prod_cases3 surj_pair)
   by auto
 termination
   by (relation "measures [\<lambda>(_, _, _, newEFSM, _). size newEFSM,
@@ -507,12 +526,6 @@ fun inference_step :: "iEFSM \<Rightarrow> score list \<Rightarrow> update_modif
        None \<Rightarrow> inference_step e t m check np
   )"
 
-lemma measures_fsubset: "S x2 |\<subset>| S e \<Longrightarrow>
-       ((x2, r, m, check, np), e, r, m, check, np) \<in> measures [\<lambda>(e, r, m, check, np). size (Inference.S e)]"
-  using size_fsubset[of "S x2" "S e"]
-  by simp
-
-
 (* We want to sort first by score (highest to lowest) and then by state pairs (lowest to highest) *)
 (* so we end up merging the states with the highest scores first and then break ties by those     *)
 (* state pairs which are closest to the origin                                                    *)
@@ -546,24 +559,11 @@ function infer :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> 
 termination
   apply (relation "measures [\<lambda>(n, e, _). size (S e)]")
    apply simp
-  using measures_fsubset by auto
+  by (metis (no_types, lifting) case_prod_conv measures_less size_fsubset)
 
 fun get_ints :: "execution \<Rightarrow> int list" where
   "get_ints [] = []" |
   "get_ints ((_, inputs, outputs)#t) = (map (\<lambda>x. case x of Num n \<Rightarrow> n) (filter is_Num (inputs@outputs)))"
-
-fun get_smallest :: "nat \<Rightarrow> nat list \<Rightarrow> nat" where
-  "get_smallest n s = (if n \<notin> set s then n else get_smallest (n + 1) (removeAll n s))"
-
-definition make_smaller_aux :: "nat \<Rightarrow> nat list \<Rightarrow> nat" where
-  "make_smaller_aux i s = (if i < 100 then i else get_smallest i s)"
-
-fun make_smaller :: "int \<Rightarrow> nat list \<Rightarrow> int" where
-  "make_smaller n s = (if n < 0 then - (int (make_smaller_aux (nat n) s)) else int (make_smaller_aux (nat n) s))"
-
-fun make_smaller_val :: "nat list \<Rightarrow> value \<Rightarrow> value" where
-  "make_smaller_val _ (value.Str s) = value.Str s" |
-  "make_smaller_val s (Num n) = Num (make_smaller n s)"
 
 definition learn :: "nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "learn n pta l r m np = (
@@ -575,9 +575,6 @@ definition max_reg :: "iEFSM \<Rightarrow> nat option" where
   "max_reg e = EFSM.max_reg (tm e)"
 
 definition "max_reg_total e = (case max_reg e of None \<Rightarrow> 0 | Some r \<Rightarrow> r)"
-
-lemma fMax_None: "f \<noteq> {||} \<Longrightarrow> fMax f = None = (\<forall>x |\<in>| f. x = None)"
-  by (metis (mono_tags, lifting) bot_option_def fBallI fMax.in_idem fMax_in fbspec max_bot2)
 
 definition max_output :: "iEFSM \<Rightarrow> nat" where
   "max_output e = EFSM.max_output (tm e)"
