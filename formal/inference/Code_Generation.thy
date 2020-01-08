@@ -10,7 +10,6 @@ theory Code_Generation
    "heuristics/Ignore_Inputs"
    "heuristics/Least_Upper_Bound"
    "heuristics/Equals"
-   "heuristics/Symbolic_Regression"
    "heuristics/Distinguishing_Guards"
    "heuristics/PTA_Generalisation"
    "heuristics/Weak_Subsumption"
@@ -616,9 +615,6 @@ export_code
   gung_ho
   equals
   not_equals
-  infer_output_functions
-  infer_output_functions_2
-  infer_output_update_functions
   distinguish
   weak_subsumption
   (* Nondeterminism metrics *)
@@ -638,7 +634,6 @@ mismatched_updates
   enumerate_vars
 pta_generalise_outputs
 put_updates
-normalised_pta
 derestrict
 outgoing_transitions_from
 in Scala

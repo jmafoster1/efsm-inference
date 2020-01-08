@@ -1,7 +1,10 @@
 theory PTA_Generalisation
-  imports "Symbolic_Regression"
+  imports "../Inference"
 begin
 
+hide_const I
+
+\<comment> \<open>Cannot be converted to fold due to early termination in the "true" case of the "if"\<close>
 primrec insert_into_group :: "(tids \<times> transition) list list \<Rightarrow> (tids \<times> transition) \<Rightarrow> (tids \<times> transition) list list" where
   "insert_into_group [] pair = [[pair]]" |
   "insert_into_group (h#t) pair = (
@@ -21,6 +24,7 @@ fun same_structure_opt :: "transition option \<Rightarrow> transition option \<R
 
 type_synonym transition_group = "transition option \<times> nat \<times> ((tids \<times> transition) list)"
 
+\<comment> \<open>Cannot be converted to fold due to early termination in the "true" case of the "if"\<close>
 fun assign_group :: "transition_group list \<Rightarrow> (transition option \<Rightarrow> nat) \<Rightarrow> transition option \<Rightarrow> tids \<times> transition \<Rightarrow> transition_group list" where
   "assign_group [] count prev (tid, t) = [(prev, count prev, [(tid, t)])]" |
   "assign_group ((prev', c, gp)#t) count prev (tid, tr) = (
@@ -73,12 +77,8 @@ fun trace_training_set :: "iEFSM \<Rightarrow> execution \<Rightarrow> cfstate \
     trace_training_set e t s' (apply_updates (Updates transition) (join_ir inputs r) r) (assign_training_set ts id label inputs r outputs)
   )"
 
-primrec log_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list" where
-  "log_training_set _ [] ts = ts" |
-  "log_training_set e (h#t) ts = log_training_set e t (trace_training_set e h 0 <> ts)"
-
-lemma fold_log_training_set: "log_training_set e l ts = fold (\<lambda>h a. trace_training_set e h 0 <> a) l ts"
-  by (induct l arbitrary: ts, auto)
+definition log_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list" where
+  "log_training_set e l ts = fold (\<lambda>h a. trace_training_set e h 0 <> a) l ts"
 
 (* This will generate the training sets in the same order that the PTA was built, i.e. traces     *)
 (* that appear earlier in the logs will appear earlier in the list of training sets. This allows  *)
@@ -190,8 +190,118 @@ primrec add_groupwise_updates :: "log  \<Rightarrow> (tids \<times> update_funct
   "add_groupwise_updates [] _ e = e" |
   "add_groupwise_updates (h#t) funs e = add_groupwise_updates t funs (add_groupwise_updates_trace h funs e 0 <>)"
 
-lemma fold_add_groupwise_updates: "add_groupwise_updates log funs e = fold (\<lambda>trace acc. add_groupwise_updates_trace trace funs acc 0 <>) log e"
+lemma fold_add_groupwise_updates [code]: "add_groupwise_updates log funs e = fold (\<lambda>trace acc. add_groupwise_updates_trace trace funs acc 0 <>) log e"
   by (induct log arbitrary: e, auto)
+
+\<comment> \<open>This will be replaced to calls to Z3 in the executable\<close>
+definition get_regs :: "(vname \<Rightarrow>f String.literal) \<Rightarrow> inputs \<Rightarrow> aexp \<Rightarrow> value \<Rightarrow> registers" where
+  "get_regs types inputs expression output = Eps (\<lambda>r. aval expression (join_ir inputs r) = Some output)"
+
+type_synonym event_info = "(cfstate \<times> registers \<times> registers \<times> inputs \<times> tids \<times> transition)"
+type_synonym run_info = "event_info list"
+type_synonym targeted_run_info = "(registers \<times> event_info) list"
+
+fun everything_walk :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> tids list \<Rightarrow> run_info" where
+  "everything_walk _ _ _ [] _ _ _ _ = []" |
+  "everything_walk f fi types ((label, inputs, outputs)#t) oPTA s regs gp  = (
+    let (tid, s', ta) = fthe_elem (i_possible_steps oPTA s regs label inputs) in
+     \<comment> \<open>Possible steps with a transition we need to modify\<close>
+    if tid \<in> set gp then
+      (s, regs, get_regs types inputs f (outputs!fi), inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) gp)
+    else
+      let empty = <> in
+      (s, regs, empty, inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) gp)
+  )"
+
+definition everything_walk_log :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> tids list \<Rightarrow> run_info list" where
+  "everything_walk_log f fi types log e gp = map (\<lambda>t. everything_walk f fi types t e 0 <> gp) log"
+
+fun target :: "registers \<Rightarrow> run_info \<Rightarrow> targeted_run_info" where
+  "target _ [] = []" |
+  "target tRegs ((s, oldregs, regs, inputs, tid, ta)#t) = (
+    let newTarget = if finfun_to_list regs = [] then tRegs else regs in
+    (tRegs, s, oldregs, regs, inputs, tid, ta)#target newTarget t
+  )"
+
+fun target_tail :: "registers \<Rightarrow> run_info \<Rightarrow> targeted_run_info \<Rightarrow> targeted_run_info" where
+  "target_tail _ [] tt = rev tt" |
+  "target_tail tRegs ((s, oldregs, regs, inputs, tid, ta)#t) tt = (
+    let newTarget = if finfun_to_list regs = [] then tRegs else regs in
+    target_tail newTarget t ((tRegs, s, oldregs, regs, inputs, tid, ta)#tt)
+  )"
+
+lemma target_tail: "(rev bs)@(target tRegs ts) = target_tail tRegs ts bs"
+proof(induct ts arbitrary: bs tRegs)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a ts)
+  then show ?case
+    apply (cases a)
+    apply simp
+    apply standard
+    by (metis (no_types, lifting) append_eq_append_conv2 rev.simps(2) rev_append rev_swap self_append_conv2)+
+qed
+
+definition "target_fold tRegs ts b = fst (fold (\<lambda>(s, oldregs, regs, inputs, tid, ta) (acc, tRegs).
+let newTarget = if finfun_to_list regs = [] then tRegs else regs in
+    (acc@[(tRegs, s, oldregs, regs, inputs, tid, ta)], newTarget)
+) ts (rev b, tRegs))"
+
+lemma target_tail_fold: "target_tail tRegs ts b = target_fold tRegs ts b"
+proof(induct ts arbitrary: tRegs b)
+  case Nil
+  then show ?case
+    by (simp add: target_fold_def)
+next
+  case (Cons a ts)
+  then show ?case
+    apply (cases a)
+    by (simp add: target_fold_def)
+qed
+
+lemma target_fold [code]: "target tRegs ts = target_fold tRegs ts []"
+  by (metis append_self_conv2 rev.simps(1) target_tail_fold target_tail)
+
+\<comment> \<open>This will be replaced by symbolic regression in the executable\<close>
+definition get_update :: "nat \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> aexp option" where
+  "get_update reg values train = (let
+    possible_funs = {a. \<forall>(i, r, r') \<in> set train. aval a (join_ir i r) = r' $ reg}
+    in
+    if possible_funs = {} then None else Some (Eps (\<lambda>x. x \<in> possible_funs))
+  )"
+
+definition get_updates_opt :: "value list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> (nat \<times> aexp option) list" where
+  "get_updates_opt values train = (let
+    updated_regs = fold List.union (map (finfun_to_list \<circ> snd \<circ> snd) train) [] in
+    map (\<lambda>r.
+      let targetValues = remdups (map (\<lambda>(_, _, regs). regs $ r) train) in
+      \<comment> \<open>add inputs=[] to this too but only when we've got non-numericals working\<close>
+      if  (\<forall>(_, anteriorRegs, posteriorRegs) \<in> set train. anteriorRegs $ r = posteriorRegs $ r) then
+        (r, Some (V (R r)))
+      else if length targetValues = 1 \<and> (\<forall>(inputs, initialRegs, _) \<in> set train. finfun_to_list initialRegs = []) then
+        case hd targetValues of Some v \<Rightarrow>
+        (r, Some (L v))
+      else
+        (r, get_update r values train)
+    ) updated_regs
+  )"
+
+definition finfun_add :: "(('a::linorder) \<Rightarrow>f 'b) \<Rightarrow> ('a \<Rightarrow>f 'b) \<Rightarrow> ('a \<Rightarrow>f 'b)" where
+  "finfun_add a b = fold (\<lambda>k f. f(k $:= b $ k)) (finfun_to_list b) a"
+
+definition group_update :: "value list \<Rightarrow> targeted_run_info \<Rightarrow> (tids \<times> (nat \<times> aexp) list) option" where
+  "group_update values l = (
+    let
+      targeted = filter (\<lambda>(regs, _). finfun_to_list regs \<noteq> []) l;
+      maybe_updates = get_updates_opt values (map (\<lambda>(tRegs, s, oldRegs, regs, inputs, tid, ta). (inputs, finfun_add oldRegs regs, tRegs)) targeted)
+    in
+    if \<exists>(_, f_opt) \<in> set maybe_updates. f_opt = None then
+      None
+    else
+      Some (fold List.union (map (\<lambda>(tRegs, s, oldRegs, regs, inputs, tid, ta). tid) l) [], map (\<lambda>(r, f_o). (r, the f_o)) maybe_updates)
+  )"
 
 fun groupwise_put_updates :: "(tids \<times> transition) list list \<Rightarrow> log \<Rightarrow> value list \<Rightarrow> tids list \<Rightarrow> (nat \<times> (aexp \<times> vname \<Rightarrow>f String.literal)) \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "groupwise_put_updates [] _ _ _ _  e = e" |
@@ -209,7 +319,7 @@ fun groupwise_put_updates :: "(tids \<times> transition) list list \<Rightarrow>
 fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> tids list \<Rightarrow> output_types \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
   "put_updates _ _ _ [] e = Some e" |
   "put_updates _ _ _ ((_, None)#_) _ = None" |
-  "put_updates log values current ((o_inx, (Some (op, types)))#ops) e = (
+  "put_updates log values current ((o_inx, Some (op, types))#ops) e = (
     let
       groups = transition_groups e log;
       updated = groupwise_put_updates groups log values current (o_inx, (op, types)) e
@@ -217,23 +327,47 @@ fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> tids list \<Right
       put_updates log values current ops updated
   )"
 
-fun update_groups :: "log \<Rightarrow> value list \<Rightarrow> (tids list \<times> output_types) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "update_groups _ _ [] e = e" |
-  "update_groups log values ((gp, types)#lst) e = (
-    case put_updates log values gp types e of
-      None \<Rightarrow> update_groups log values lst e |
-      Some e' \<Rightarrow> update_groups log values lst e'
-  )"
+definition "put_updates_fold log values current = fold (\<lambda>(o_inx, t) acc.
+  case acc of
+    None \<Rightarrow> None |
+    Some e \<Rightarrow> (
+      case t of
+        None \<Rightarrow> None |
+        Some (op, types) \<Rightarrow>
+          let
+            groups = transition_groups e log;
+            updated = groupwise_put_updates groups log values current (o_inx, (op, types)) e
+          in
+            Some updated
+    )
+)"
 
-definition normalised_pta :: "log \<Rightarrow> iEFSM" where
-  "normalised_pta log = (
-    let
-      values = enumerate_log_values log;
-      (output_funs, types) = pta_generalise_outputs log;
-      group_details = map (\<lambda>l. fold (\<lambda>(id, _, types) (tids, _). (id#tids, types)) l ([], [])) types
-    in
-      update_groups log values (rev group_details) output_funs
-  )"
+lemma put_updates_fold_None: "put_updates_fold log values current xs None = None"
+proof(induct xs)
+  case Nil
+  then show ?case
+    by (simp add: put_updates_fold_def)
+next
+  case (Cons a xs)
+  then show ?case
+    apply (cases a)
+    by (simp add: put_updates_fold_def)
+qed
+
+lemma put_updates_fold [code]: "put_updates log values current xs e = put_updates_fold log values current xs (Some e)"
+proof(induct xs arbitrary: e)
+  case Nil
+  then show ?case
+    by (simp add: put_updates_fold_def)
+next
+  case (Cons a xs)
+  then show ?case
+    apply (cases a)
+    apply (simp add: put_updates_fold_def)
+    apply (case_tac b)
+     apply (simp add: put_updates_fold_def[symmetric] put_updates_fold_None)
+    by auto
+qed
 
 (*This is where the types stuff originates*)
 definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list \<Rightarrow> iEFSM option" where
@@ -260,6 +394,16 @@ primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow
       None \<Rightarrow> groupwise_generalise_and_update log e t |
       Some e' \<Rightarrow> groupwise_generalise_and_update log e' t
   )"
+
+lemma groupwise_generalise_and_update_fold [code]: 
+"groupwise_generalise_and_update log e gs = fold (\<lambda>gp e.
+  case generalise_and_update log e gp of
+        None \<Rightarrow> e |
+        Some e' \<Rightarrow> e'
+  ) gs e"
+  apply(induct gs arbitrary: e)
+  apply simp
+  by (case_tac "generalise_and_update log e a", auto)
 
 definition standardise_outputs :: "aexp list \<Rightarrow> aexp list \<Rightarrow> aexp list" where
   "standardise_outputs p1 p2 = map (\<lambda>(p1, p2). max p1 p2) (zip p1 p2)"
@@ -297,6 +441,25 @@ primrec standardise_groups_aux :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \
       else
         standardise_groups_aux e l t s
   )"
+
+lemma standardise_groups_aux_fold [code]: "standardise_groups_aux e l xs s = fold (\<lambda>h acc. 
+  let
+      e' = replace_transitions acc (s h)
+    in
+      if satisfies (set l) (tm e') then
+        e'
+      else
+        acc
+  ) xs e"
+proof(induct xs arbitrary: e s l)
+case Nil
+  then show ?case
+    by simp
+next
+case (Cons a xs)
+  then show ?case
+    by (simp add: Let_def)
+qed
 
 definition standardise_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
   "standardise_groups e l = standardise_groups_aux e l (group_by_structure e) (standardise_group_outputs \<circ> standardise_group_updates)"
@@ -336,17 +499,16 @@ fun find_initialisation_of_trace :: "nat \<Rightarrow> execution \<Rightarrow> i
       find_initialisation_of_trace r' es e s' (apply_updates (Updates t) (join_ir i r) r)
   )"
 
-primrec find_initialisation_of :: "nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) option" where
-  "find_initialisation_of _ _ [] = None" |
+primrec find_initialisation_of :: "nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) option list" where
+  "find_initialisation_of _ _ [] = []" |
   "find_initialisation_of r e (h#t) = (
     case find_initialisation_of_trace r h e 0 <> of
       None \<Rightarrow> find_initialisation_of r e t |
-      Some thing \<Rightarrow> Some thing
+      Some thing \<Rightarrow> Some thing#(find_initialisation_of r e t)
   )"
 
 definition delay_initialisation_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> tids list \<Rightarrow> iEFSM" where
-  "delay_initialisation_of r l e tids = (
-    case find_initialisation_of r e l of
+  "delay_initialisation_of r l e tids = fold (\<lambda>x e. case x of
       None \<Rightarrow> e |
     Some (i_tids, t) \<Rightarrow>
       let
@@ -363,7 +525,7 @@ definition delay_initialisation_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM
         else
           (id, (origin', dest), tr)
       ) e
-  )"
+  ) (find_initialisation_of r e l) e"
 
 fun find_first_use_of_trace :: "nat \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> tids option" where
   "find_first_use_of_trace _ [] _ _ _ = None" |

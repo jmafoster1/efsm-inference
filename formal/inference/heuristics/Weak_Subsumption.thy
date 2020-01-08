@@ -11,13 +11,9 @@ fun weak_subsumption :: "log \<Rightarrow> update_modifier" where
      t2 = get_by_ids new t2ID
      in
      if
-      Label t1 = Label t2 \<and>
-      Arity t1 = Arity t2 \<and>
-      Guard t1 = Guard t2 \<and>
-      Outputs t1 = Outputs t2 \<and>
-      length (Updates t1) \<noteq> length (Updates t2)
+      same_structure t1 t2
      then
-      let newEFSM = replace_all new [t1ID, t2ID] (maxBy (length \<circ> Updates) t1 t2) in
+      let newEFSM = replace_all new [t1ID, t2ID] (maxBy (\<lambda>x. ((length \<circ> Updates) x, map snd (Updates x))) t1 t2) in
       if satisfies (set log) (tm newEFSM) then
         Some newEFSM
       else
