@@ -1,3 +1,4 @@
+#!/bin/bash
 module load apps/java
 cd Documents/efsm-inference/inference-tool
 rm dotfiles/* salfiles/*
