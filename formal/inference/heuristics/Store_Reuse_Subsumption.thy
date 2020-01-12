@@ -27,9 +27,10 @@ lemma is_generalisation_of_preserves_reg_2:
    apply_updates (Updates t) (join_ir ia c) c $ ra = apply_updates (Updates t') (join_ir ia c) c $ ra"
   by (simp add: is_generalisation_of_def remove_guard_add_update_def)
 
-lemma is_generalisation_of_apply_guards: "is_generalisation_of t' t i r \<Longrightarrow>
-       apply_guards (Guard t) j \<Longrightarrow>
-       apply_guards (Guard t') j"
+lemma is_generalisation_of_apply_guards:
+  "is_generalisation_of t' t i r \<Longrightarrow>
+   apply_guards (Guard t) j \<Longrightarrow>
+   apply_guards (Guard t') j"
   using is_generalisation_of_guard_subset apply_guards_subset by blast
 
 (*
@@ -40,16 +41,8 @@ lemma is_generalisation_of_subsumes_original:
   "is_generalisation_of t' t i r \<Longrightarrow>
    c $ r = None \<Longrightarrow>
    subsumes t' c t"
-  apply (rule subsumption)
-      apply (simp add: is_generalisation_of_def remove_guard_add_update_def)
-     apply (simp add: is_generalisation_of_medial)
-    apply (simp add: is_generalisation_of_def remove_guard_add_update_def)
-   apply (simp add: posterior_def can_take_def is_generalisation_of_apply_guards generalisation_of_preserves)
-   apply clarify
-   apply (case_tac "r' = r")
-    apply (metis is_generalisation_of_preserves_reg option.distinct(1) option.sel posterior_separate_def)
-   apply (metis is_generalisation_of_preserves_reg_2 option.inject option.simps(3) posterior_separate_def)
-  by (metis is_generalisation_of_preserves_reg is_generalisation_of_preserves_reg_2 option.distinct(1) option.sel posterior_def posterior_separate_def)
+  apply (simp add: subsumes_def generalisation_of_preserves can_take_transition_def can_take_def posterior_separate_def)
+  by (metis is_generalisation_of_apply_guards is_generalisation_of_preserves_reg is_generalisation_of_preserves_reg_2)
 
 lemma generalise_output_posterior:
 "posterior (generalise_output t p r) i ra = posterior t i ra"
@@ -73,12 +66,7 @@ lemma generalise_output_subsumes_original:
   "Outputs t ! r = L v \<Longrightarrow>
    c $ p = Some v \<Longrightarrow>
    subsumes (generalise_output t p r) c t"
-  apply (rule subsumption)
-      apply (simp add: generalise_output_def)
-     apply (simp add: generalise_output_def can_take_def can_take_transition_def)
-    apply (simp add: generalise_output_def generalise_output_eq)
-  using generalise_output_preserves_updates posterior_separate_def apply auto[1]
-  using generalise_output_posterior by auto
+  by (simp add: can_take_transition_def generalise_output_def generalise_output_eq subsumes_def)
 
 primrec stored_reused_aux_per_reg :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (nat \<times> nat) option" where
   "stored_reused_aux_per_reg t' t 0 p = (
@@ -117,10 +105,8 @@ proof(induct mr)
   next
     case (Suc mp)
     then show ?case
-      apply simp
       apply (case_tac "is_generalised_output_of t' t 0 (Suc mp)")
-       apply simp
-      by simp
+      by auto
   qed
 next
   case (Suc mr)
@@ -141,8 +127,7 @@ next
        apply simp
       apply simp
       apply (case_tac "is_generalised_output_of t' t (Suc mr) (Suc mp)")
-       apply simp
-      by simp
+      by auto
   qed
 qed
 
@@ -156,14 +141,8 @@ lemma is_generalised_output_of_subsumes:
    nth (Outputs t) p = L v \<Longrightarrow>
    c $ r = Some v \<Longrightarrow>
    subsumes t' c t"
-  apply (rule subsumption)
-      apply (simp add: generalise_output_preserves_arity generalise_output_preserves_label is_generalised_output_of_def)
-     apply (simp add: can_take_transition_def generalise_output_def is_generalised_output_of_def)
-    apply clarify
-    apply (simp add: generalise_output_eq)
-    apply (simp add: generalise_output_def is_generalised_output_of_def)
-  using generalise_output_preserves_updates is_generalised_output_of_def posterior_separate_def 
-  generalise_output_posterior is_generalised_output_of_def by auto
+  apply (simp add: subsumes_def generalise_output_preserves can_take_transition_def can_take_def posterior_separate_def)
+  by (simp add: generalise_output_def generalise_output_eq is_generalised_output_of_def)
 
 lemma lists_neq_if: "\<exists>i. l ! i \<noteq> l' ! i \<Longrightarrow> l \<noteq> l'"
   by auto
@@ -464,9 +443,7 @@ lemma "\<forall>i. \<not> can_take_transition t i r \<and> \<not> can_take_trans
        Label t = Label t' \<Longrightarrow>
        Arity t = Arity t' \<Longrightarrow>
        subsumes t' r t"
-  apply (simp add: subsumes_def)
-   apply (simp add: posterior_separate_def can_take_transition_def)
-  by (simp add: can_take_transition_def posterior_def posterior_separate_def)
+  by (simp add: subsumes_def posterior_separate_def can_take_transition_def)
 
 lemma aval_unconstrained:
   " \<not> aexp_constrains a (V (vname.I i)) \<Longrightarrow>
@@ -507,7 +484,6 @@ next
   then show ?case
     by simp
 qed
-
 
 (*
   If input i is stored in register r by transition t then if we can take transition t' then for some
@@ -576,18 +552,16 @@ lemma general_not_subsume_orig:
    c $ r = None \<Longrightarrow>
    i < Arity t \<Longrightarrow>
    \<not> subsumes t c t'"
-  apply (rule inconsistent_updates2)
+  apply (rule inconsistent_updates)
   apply (erule_tac exE)
-  apply (rule_tac x="apply_updates (Updates t') (join_ir ia c) c" in exI)
   apply (rule_tac x="apply_updates (Updates t) (join_ir ia c) c" in exI)
+  apply (rule_tac x="apply_updates (Updates t') (join_ir ia c) c" in exI)
   apply standard
    apply (rule_tac x=ia in exI)
-   apply (simp add: posterior_separate_def can_take_append_subset can_take_transition_def)
-  using apply_guards_subset can_take_def apply auto[1]
-  apply (rule_tac x="\<lambda>x. x = None" in exI)
+  apply (metis can_take_def can_take_transition_def medial_subset posterior_separate_def psubsetE)
   apply (rule_tac x=r in exI)
-  apply standard
-   apply (simp add: r_not_updated_stays_the_same)
+  apply (simp add: r_not_updated_stays_the_same)
+  apply (rule_tac x="\<lambda>x. x = None" in exI)
   apply (simp add: aval_updated can_take_transition_def can_take_def)
   apply (rule_tac x="ia ! i" in exI)
   by (simp add: aval_updated join_ir_def input2state_nth)
@@ -697,16 +671,8 @@ lemma one_extra_update_subsumes:
    not_updated r t2 \<Longrightarrow>
    c $ r = None \<Longrightarrow>
    subsumes t1 c t2"
-  apply (simp add: subsumes_def posterior_def posterior_separate_def can_take_transition_def can_take_def apply_guards_subset_append)
-  apply safe
-   apply (case_tac "r = r'")
-  using apply_guards_subset apply blast
-  using apply_guards_subset apply blast
-   apply simp
-  apply (case_tac "r = ra")
-    apply (metis not_updated finfun_upd_apply_other not_updated)
-   apply (metis finfun_update_get not_updated)
-  by (metis finfun_upd_apply_other not_updated option.distinct(1))
+  apply (simp add: subsumes_def posterior_def posterior_separate_def can_take_transition_def can_take_def)
+  by (simp add: apply_guards_subset finfun_upd_apply not_updated)
 
 lemma one_extra_update_directly_subsumes:
   "Label t1 = Label t2 \<Longrightarrow>

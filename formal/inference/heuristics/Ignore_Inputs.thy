@@ -34,13 +34,6 @@ definition transitionwise_drop_inputs :: update_modifier where
        None)"
 
 lemma drop_inputs_subsumption: "subsumes (drop_guards t1) c t1"
-  apply (rule subsumption)
-      apply (simp add: drop_guards_def)
-     apply (simp add: drop_guards_def can_take_def can_take_transition_def)
-    apply (simp add: drop_guards_def)
-   apply (simp add: drop_guards_def posterior_separate_def)
-   apply auto[1]
-  apply (simp add: drop_guards_def posterior_def posterior_separate_def)
-  by auto
+  by (simp add: can_take_def can_take_transition_def drop_guards_def subsumption)
 
 end

@@ -174,14 +174,7 @@ lemma correspondence_subsumption:
    Updates t1 = Updates t2 \<Longrightarrow>
    \<forall>g \<in> set (Guard t2). has_corresponding g (Guard t1) \<Longrightarrow>
    subsumes t2 c t1"
-  apply (rule subsumption)
-      apply simp
-     apply (simp add: can_take_transition_def can_take_def)
-     apply clarify
-  apply (simp add: has_corresponding_apply_guards)
-    apply simp
-  using posterior_separate_def apply auto[1]
-  using posterior_def posterior_separate_def by auto
+  by (simp add: can_take_def can_take_transition_def has_corresponding_apply_guards subsumption)
 
 definition "is_lob t1 t2 = (
   Label t1 = Label t2 \<and>
@@ -624,15 +617,7 @@ lemma guard_subset_eq_outputs_updates_subsumption:
    Updates t1 = Updates t2 \<Longrightarrow>
    set (Guard t2) \<subseteq> set (Guard t1) \<Longrightarrow>
    subsumes t2 c t1"
-  apply (rule subsumption)
-      apply simp
-     apply (simp add: can_take_transition_def can_take_def apply_guards_def)
-     apply auto[1]
-    apply simp
-   apply (simp add: posterior_separate_def can_take_def)
-   apply auto[1]
-  apply (simp add: posterior_def posterior_separate_def can_take_def)
-  by auto
+  by (metis (no_types, lifting) can_take_def can_take_transition_def medial_subset option.simps(1) subsumption)
 
 lemma guard_subset_eq_outputs_updates_direct_subsumption:
   "Label t1 = Label t2 \<Longrightarrow>
@@ -674,7 +659,6 @@ proof -
   then show "length (filter (\<lambda>g. gexp_constrains g (V (I x))) G) \<le> 1"
     by (metis (no_types) impossible_Cons le_cases order.trans)
 qed
-
 
 lemma literal_args_can_take:
   "\<forall>g\<in>set G. \<exists>i v s. g = Eq (V (I i)) (L v) \<or> g = In (I i) s \<and> s \<noteq> [] \<Longrightarrow>
@@ -792,34 +776,6 @@ lemma opposite_gob_directly_subsumption:
        apply (meson is_input_in.elims(2) is_lit_eq_general.elims(2))+
      apply (metis is_lit_eq.elims(2))
   by auto
-
-(*
-definition "i1 = V (I 0)"
-definition "i2 = V (I 1)"
-
-definition "t1 = \<lparr>
-  Label = STR ''setBaseItemLabelGenerator'',
-  Arity = 2,
-  Guard = [Eq i1 (L (Str ''org.jfree.chart.renderer.category.BarRenderer@354dd86c'')),
-           Eq i2 (L (Str ''org.jfree.chart.labels.StandardCategoryItemLabelGenerator@5d6dd612''))],
-  Outputs = [], Updates = []\<rparr>"
-
-definition "t2 = \<lparr>
-  Label = STR ''setBaseItemLabelGenerator'',
-  Arity = 2,
-  Guard = [Eq i1 (L (Str ''org.jfree.chart.renderer.category.BarRenderer@354dd86c''))],
-  Outputs = [], Updates = []\<rparr>"
-
-lemma "opposite_gob t1 t2"
-  apply (simp add: opposite_gob_def)
-  apply safe
-       apply (simp add: t1_def i1_def i2_def)
-       apply auto[1]
-      apply (simp add: t2_def t1_def i1_def)
-     apply (simp add: t2_def t1_def enumerate_inputs_def i1_def i2_def)
-    apply (simp add: t1_def t2_def)
-   apply (simp add: t2_def enumerate_inputs_def i1_def)
-  by (simp add: t2_def enumerate_inputs_def i1_def)*)
 
 fun get_in :: "gexp \<Rightarrow> (vname \<times> value list) option" where
   "get_in (In v s) = Some (v, s)" |

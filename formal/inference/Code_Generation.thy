@@ -267,17 +267,8 @@ definition guard_subset_subsumption :: "transition \<Rightarrow> transition \<Ri
 
 lemma guard_subset_subsumption: "guard_subset_subsumption t1 t2 \<Longrightarrow> directly_subsumes a b s s' t1 t2"
   apply (rule subsumes_in_all_contexts_directly_subsumes)
-  apply (simp add: guard_subset_subsumption_def)
-  apply clarify
-  apply (rule subsumption)
-      apply simp
-     apply (simp add: can_take_transition_def can_take_def apply_guards_def)
-     apply auto[1]
-    apply simp+
-   apply (simp add: posterior_separate_def can_take_def apply_guards_def)
-   apply auto[1]
-  apply (simp add: posterior_def posterior_separate_def can_take_def apply_guards_def)
-  by auto
+  apply (simp add: subsumes_def guard_subset_subsumption_def)
+  by (metis can_take_def can_take_transition_def medial_subset)
 
 lemma lob_distinguished_direct_subsumption:
   "always_different_outputs_direct_subsumption e1 e2 s s' t1 \<Longrightarrow>
