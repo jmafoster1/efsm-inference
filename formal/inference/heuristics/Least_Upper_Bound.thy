@@ -68,10 +68,6 @@ lemma no_corresponding_nor: "\<not>has_corresponding (Nor x1 y1) G1"
   apply (induct G1)
   by auto
 
-lemma no_corresponding_null: "\<not>has_corresponding (Null x1) G1"
-  apply (induct G1)
-  by auto
-
 lemma has_corresponding_eq: "has_corresponding (Eq x21 x22) G1 \<Longrightarrow> (Eq x21 x22) \<in> set G1"
 proof(induct G1)
   case Nil
@@ -133,39 +129,32 @@ next
   case (Cons a G2)
   then show ?case
     apply (cases a)
-         apply (simp add: no_corresponding_bc)
-        defer
-        apply (simp add: no_corresponding_gt)
-       apply (simp add: no_corresponding_null)
+        apply (simp add: no_corresponding_bc)
+       apply (meson apply_guards_cons gval_each_one has_corresponding_eq list.set_intros(1) list.set_intros(2))
+      apply (simp add: no_corresponding_gt)
       defer
       apply (simp add: no_corresponding_nor)
-     apply (simp add: apply_guards_cons apply_guards_def)
-     apply clarify
-    using has_corresponding_eq
-     apply (metis apply_guards(7) trilean.distinct(1) value_eq_def)
     apply (simp add: apply_guards_cons)
     apply clarify
-    apply simp
-    apply (case_tac "(\<exists>l'. In x51 l' \<in> set G1 \<and> set l' \<subseteq> set x52)")
+    apply (case_tac "(\<exists>l'. In x41 l' \<in> set G1 \<and> set l' \<subseteq> set x42)")
      apply clarify
-     apply (case_tac "gval (In x51 l') (join_ir i c)")
+     apply (case_tac "gval (In x41 l') (join_ir i c)")
        apply simp
-       apply (case_tac "join_ir i c x51 \<in> Some ` set l'")
+       apply (case_tac "join_ir i c x41 \<in> Some ` set l'")
     apply auto[1]
        apply simp
     using gval_each_one apply fastforce
     using gval_each_one apply fastforce
-    apply (case_tac "(\<exists>l' \<in> set x52. (Eq (V x51) (L l')) \<in> set G1)")
+    apply (case_tac "(\<exists>l' \<in> set x42. (Eq (V x41) (L l')) \<in> set G1)")
      defer
     using has_corresponding_In apply blast
     apply clarify
-    apply (case_tac "gval (Eq (V x51) (L l')) (join_ir i c)")
+    apply (case_tac "gval (Eq (V x41) (L l')) (join_ir i c)")
       apply simp
     using image_iff apply fastforce
     using gval_each_one apply fastforce
     using gval_each_one by fastforce
 qed
-
 
 lemma correspondence_subsumption: 
   "Label t1 = Label t2 \<Longrightarrow>
@@ -257,9 +246,8 @@ next
               apply (case_tac x2)
                apply fastforce
               apply simp+
-      apply (case_tac x51)
-       apply simp
-       apply metis
+      apply (case_tac x41)
+       apply (simp, metis)
     by auto
 qed
 
@@ -316,10 +304,6 @@ next
     using input_not_constrained_aval_swap_inputs by auto
 next
   case (Gt x1a x2)
-  then show ?case
-    using input_not_constrained_aval_swap_inputs by auto
-next
-  case (Null x)
   then show ?case
     using input_not_constrained_aval_swap_inputs by auto
 next
@@ -395,7 +379,7 @@ next
     apply (simp add: get_Ins_def)
     apply (cases a)
          apply simp+
-     apply (case_tac x51)
+     apply (case_tac x41)
     by auto
 qed
 
@@ -411,7 +395,7 @@ next
   then show ?case
     apply (cases a)
          apply (simp add: get_Ins_Cons_equiv insert_Diff_if)+
-     apply (case_tac x51)
+     apply (case_tac x41)
       apply simp
       apply (metis In_in_get_Ins equals0D list.set(1) list.set_intros(1))
      apply (simp add: get_Ins_Cons_equiv)
@@ -880,27 +864,6 @@ lemma In_swap_inputs:
    apply (metis filter_empty_conv gval_each_one input_not_constrained_gval_swap_inputs length_0_conv not_restricted_def remove_restricted test_aux)
   by blast
 
-lemma guard_not_subset_subsumption:
-  "\<exists>g \<in> set (Guard t1). get_in g = Some (I i, s1) \<Longrightarrow>
-   \<exists>g \<in> set (Guard t2). get_in g = Some (I i, s2) \<Longrightarrow>
-   \<not> (set s2) \<subseteq> (set s1) \<Longrightarrow>
-   restricted_once (I i) (Guard t2) \<Longrightarrow>
-   Label t1 = Label t2 \<Longrightarrow>
-   Arity t1 = Arity t2 \<Longrightarrow>
-   max_reg_list (Guard t2) = None \<Longrightarrow>
-   max_input_list (Guard t2) < Some (Arity t2) \<Longrightarrow>
-   satisfiable_list (Guard t2 @ ensure_not_null (Arity t2)) \<Longrightarrow>
-   \<not> subsumes t1 c t2"
-  apply (rule bad_guards)
-  using can_take_satisfiable[of t2 c]
-  apply (simp add: Bex_def get_in_is not_subset_not_in can_take_def can_take_transition_def)
-  apply clarify
-  apply (rule_tac x="list_update iaa i ia" in exI)
-  apply simp
-  apply standard
-  apply (simp add: In_swap_inputs)
-  by (metis In_apply_guards input2state_nth input2state_within_bounds join_ir_def nth_list_update_eq option.sel vname.simps(5))
-
 definition these :: "'a option list \<Rightarrow> 'a list" where
   "these as = map (\<lambda>x. case x of Some y \<Rightarrow> y) (filter (\<lambda>x. x \<noteq> None) as)"
 
@@ -911,17 +874,6 @@ lemma these_cons: "these (a#as) = (case a of None \<Rightarrow> these as | Some 
 
 definition get_ins :: "gexp list \<Rightarrow> (nat \<times> value list) list" where
   "get_ins g = map (\<lambda>(v, s). case v of I i \<Rightarrow> (i, s)) (filter (\<lambda>(v, _). case v of I _ \<Rightarrow> True | R _ \<Rightarrow> False) (these (map get_in g)))"
-
-definition "in_not_subset t1 t2 = (Label t1 = Label t2 \<and>
-   Arity t1 = Arity t2 \<and>
-   max_reg_list (Guard t2) = None \<and>
-   max_input_list (Guard t2) < Some (Arity t2) \<and>
-   satisfiable_list (smart_not_null [0..<(Arity t2)] (Guard t2)) \<and>
-   (\<exists>(i, s1) \<in> set (get_ins (Guard t1)).
-   \<exists>(i', s2) \<in> set (get_ins (Guard t2)).
-   i = i' \<and>
-   \<not> (set s2) \<subseteq> (set s1) \<and>
-   restricted_once (I i) (Guard t2)))"
 
 lemma in_get_ins:
   "(I x1a, b) \<in> set (these (map get_in G)) \<Longrightarrow>
@@ -939,57 +891,6 @@ next
     by auto
 qed
 
-lemma in_in_t1_and_t2:
-  "in_not_subset t1 t2 \<Longrightarrow>
-   \<exists>i s s'.
-    (\<exists>g\<in>set (Guard t1). get_in g = Some (I i, s)) \<and>
-    (\<exists>g\<in>set (Guard t2). get_in g = Some (I i, s')) \<and>
-    (\<not> set s' \<subseteq> set s) \<and>
-    restricted_once (I i) (Guard t2)"
-  apply (simp add: in_not_subset_def get_ins_def get_in_is)
-  apply (erule conjE)+
-  apply (erule exE)+
-  apply (case_tac a)
-   defer
-   apply simp
-  apply simp
-  apply (erule conjE)+
-  apply (erule exE)+
-  apply (case_tac aa)
-   defer
-   apply simp
-  apply simp
-  apply (rule_tac x=x1a in exI)
-  apply (rule_tac x=b in exI)
-  apply standard
-   apply (simp add: in_get_ins)
-  apply (rule_tac x=ba in exI)
-  apply standard
-   apply (simp add: in_get_ins)
-  by auto
-
-lemma in_not_subset_subsumption:
-  "in_not_subset t1 t2 \<Longrightarrow>
-       x \<in> set (Guard t1) \<Longrightarrow>
-       get_in x = Some (I i, s) \<Longrightarrow>
-       restricted_once (I i) (Guard t2) \<Longrightarrow>
-       xb \<in> set s' \<Longrightarrow> xa \<in> set (Guard t2) \<Longrightarrow> get_in xa = Some (I i, s') \<Longrightarrow> xb \<notin> set s \<Longrightarrow>
-   \<not>subsumes t1 c t2"
-  apply (rule guard_not_subset_subsumption[of t1 i s t2 s'])
-          apply auto[1]
-         apply auto[1]
-        apply auto[1]
-       apply simp
-  by (simp_all add: in_not_subset_def satisfiable_list_snn)
-
-lemma in_not_subset_direct_subsumption: "in_not_subset t1 t2 \<Longrightarrow> \<not> directly_subsumes e1 e2 s1 s2 t1 t2"
-  apply (rule cant_directly_subsume)
-  apply (rule allI)
-  apply (insert in_in_t1_and_t2[of t1 t2])
-  apply (simp add: Bex_def)
-  using in_not_subset_subsumption
-  by auto
-
 lemma restricted_head: "\<forall>v. restricted_once v (Eq (V x2) (L x1) # G) \<or> not_restricted v (Eq (V x2) (L x1) # G) \<Longrightarrow>
       not_restricted x2 G"
   apply (erule_tac x=x2 in allE)
@@ -998,7 +899,6 @@ lemma restricted_head: "\<forall>v. restricted_once v (Eq (V x2) (L x1) # G) \<o
 fun atomic :: "gexp \<Rightarrow> bool" where
   "atomic (Eq (V _) (L _)) = True" |
   "atomic (In _ _) = True" |
-  "atomic (Null (V (R r))) = True" |
   "atomic _ = False"
 
 lemma restricted_max_once_cons: "\<forall>v. restricted_once v (g#gs) \<or> not_restricted v (g#gs) \<Longrightarrow>

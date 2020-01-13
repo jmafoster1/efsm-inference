@@ -169,7 +169,7 @@ definition input_updates_register :: "transition_matrix \<Rightarrow> (nat \<tim
       )
   )"
 
-definition "dirty_directly_subsumes = directly_subsumes"
+definition "dirty_directly_subsumes e1 e2 s1 s2 t1 t2 = (if t1 = t2 then True else directly_subsumes e1 e2 s1 s2 t1 t2)"
 
 definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> bool" where
 "always_different_outputs_direct_subsumption m1 m2 s s' t2 = (
@@ -212,37 +212,6 @@ lemma negate_true_guard: "(gval (negate G) s = true) = (gval (fold gAnd G (Bc Tr
 
 lemma gval_negate_not_invalid: "(gval (negate gs) (join_ir i ra) \<noteq> invalid) = (gval (fold gAnd gs (Bc True)) (join_ir i ra) \<noteq> invalid)"
   using gval_gNot maybe_not_invalid negate_def by auto
-
-lemma quick_negation:
-  "max_reg_list (Guard t) = None \<Longrightarrow>
-   max_input_list (Guard t) < Some (Arity t) \<Longrightarrow>
-   satisfiable_list (negate (Guard t) # ensure_not_null (Arity t)) \<Longrightarrow>
-   \<exists>i. length i = Arity t \<and> \<not> apply_guards (Guard t) (join_ir i r)"
-  apply (simp add: satisfiable_list_def satisfiable_def fold_apply_guards apply_guards_cons del: fold.simps)
-  apply clarify
-  apply (rule_tac x="take_or_pad i (Arity t)" in exI)
-  apply (simp add: length_take_or_pad)
-  apply (simp add: apply_guards_ensure_not_null_length take_or_pad_def negate_true_guard)
-  apply (simp add: apply_guards_fold)
-  by (metis dual_order.order_iff_strict gval_fold_swap_regs gval_fold_take less_eq_option_Some less_le_trans trilean.simps(2))
-
-definition "satisfiable_negation t = (max_reg_list (Guard t) = None \<and>
-   max_input_list (Guard t) < Some (Arity t) \<and>
-   satisfiable_list (negate (Guard t) # ensure_not_null (Arity t)))"
-
-lemma satisfiable_negation_cant_subsume:
-  assumes prem: "satisfiable_negation t"
-  shows "\<not> subsumes t c (drop_guards t)"
-proof-
-  have ponens: "\<forall>i. (length i = Arity t \<and> (length i = Arity t \<longrightarrow> \<not> apply_guards (Guard t) (join_ir i c))) =
-                (length i = Arity t \<and> \<not> apply_guards (Guard t) (join_ir i c))"
-    by auto
-  show ?thesis
-    apply (rule bad_guards)
-    apply (simp add: can_take_transition_def can_take_def drop_guards_def ponens)
-    using satisfiable_negation_def quick_negation prem
-    by auto
-qed
 
 definition "dirty_always_different_outputs_direct_subsumption = always_different_outputs_direct_subsumption"
 
@@ -356,14 +325,10 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
   "directly_subsumes_cases e1 e2 s1 s2 t1 t2 = (
     if t1 = t2
       then True
-    else if simple_mutex t2 t1
-      then False
     else if always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption e1 e2 s1 s2 t2
       then False
     else if guard_subset_eq_outputs_updates t2 t1
       then True
-    else if in_not_subset t1 t2
-      then False
     else if opposite_gob t1 t2
       then False
     else if always_different_outputs_direct_subsumption e1 e2 s1 s2 t2 \<and> lob_distinguished_2 t1 t2
@@ -378,8 +343,6 @@ definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> n
       then True
     else if drop_guard_add_update_direct_subsumption t1 t2 e2 s2
       then True
-    else if drop_update_add_guard_direct_subsumption e1 e2 s1 s2 t1 t2
-      then False
     else if generalise_output_direct_subsumption t1 t2 e1 e2 s1 s2
       then True
     else if diff_outputs_ctx e1 e2 s1 s2 t1 t2
@@ -400,10 +363,8 @@ lemma directly_subsumes_cases [code]:  "directly_subsumes m1 m2 s s' t1 t2 = dir
   unfolding directly_subsumes_cases_def
   apply (rule if_elim)
    apply (simp add: directly_subsumes_self)
-  apply (clarify, rule if_elim, simp add: simple_mutex_direct_subsumption)
   apply (clarify, rule if_elim, simp add: always_different_outputs_direct_subsumption)
   apply (clarify, rule if_elim, simp add: guard_subset_eq_outputs_updates_def guard_subset_eq_outputs_updates_direct_subsumption)
-  apply (clarify, rule if_elim, simp add: in_not_subset_direct_subsumption)
   apply (clarify, rule if_elim, simp add: opposite_gob_directly_subsumption)
   apply (clarify, rule if_elim, simp add: lob_distinguished_2_direct_subsumption)
   apply (clarify, rule if_elim, simp add: lob_distinguished_3_direct_subsumption)
@@ -411,7 +372,6 @@ lemma directly_subsumes_cases [code]:  "directly_subsumes m1 m2 s s' t1 t2 = dir
   apply (clarify, rule if_elim, simp add: guard_implication_subsumption)
   apply (clarify, rule if_elim, simp add: is_lob_direct_subsumption)
   apply (clarify, rule if_elim, simp add: drop_guard_add_update_direct_subsumption_implies_direct_subsumption)
-  apply (clarify, rule if_elim, simp add: drop_update_add_guard_direct_subsumption)
   apply (clarify, rule if_elim, simp add: generalise_output_directly_subsumes_original_executable)
   apply (clarify, rule if_elim, simp add: diff_outputs_direct_subsumption)
   apply (clarify, rule if_elim, simp add: drop_inputs_subsumption subsumes_in_all_contexts_directly_subsumes)
@@ -479,6 +439,10 @@ termination
   apply (relation "measures [\<lambda>(_, _, e, _). size (S e)]")
    apply simp
   by (metis (no_types, lifting) case_prod_conv measures_less size_fsubset)
+
+lemma [code]: "directly_subsumes = dirty_directly_subsumes"
+  apply (rule ext)+
+  by (simp add: directly_subsumes_self dirty_directly_subsumes_def)
 
 (* declare make_pta_fold [code] *)
 declare GExp.satisfiable_def [code del]

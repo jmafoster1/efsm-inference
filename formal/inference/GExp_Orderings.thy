@@ -150,12 +150,6 @@ fun less_gexp :: "gexp \<Rightarrow> gexp \<Rightarrow> bool"  where
   "less_gexp (Gt e1 e2) (Gt e1' e2') = ((e1 < e1') \<or> ((e1 = e1') \<and> (e2 < e2')))" |
   "less_gexp (Gt e1 e2) _ = True" |
 
-  "less_gexp (Null v) (Bc b2) = False" |
-  "less_gexp (Null v) (Eq e1' e2') = False" |
-  "less_gexp (Null v) (Gt e1' e2') = False" |
-  "less_gexp (Null v) (Null v') = (v < v')" |
-  "less_gexp (Null v) _ = True" |
-
   "less_gexp (In vb vc) (Nor v va) = True" |
   "less_gexp (In vb vc) (In v va) = (vb < v \<or> (vb = v \<and> vc < va))" |
   "less_gexp (In vb vc) _ = False" |
@@ -163,11 +157,10 @@ fun less_gexp :: "gexp \<Rightarrow> gexp \<Rightarrow> bool"  where
   "less_gexp (Nor g1 g2) (Nor g1' g2') = ((less_gexp g1 g1') \<or> ((g1 = g1') \<and> (less_gexp g2 g2')))" |
   "less_gexp (Nor g1 g2) _ = False"
 
+definition less_eq_gexp :: "gexp \<Rightarrow> gexp \<Rightarrow> bool"
+  where "less_eq_gexp e1 e2 \<equiv> (e1 < e2) \<or> (e1 = e2)"
 
-  definition less_eq_gexp :: "gexp \<Rightarrow> gexp \<Rightarrow> bool"
-    where "less_eq_gexp e1 e2 \<equiv> (e1 < e2) \<or> (e1 = e2)"
-
-  lemma gexp_antisym: "(x::gexp) < y = (\<not>(y < x) \<and> (x \<noteq> y))"
+lemma gexp_antisym: "(x::gexp) < y = (\<not>(y < x) \<and> (x \<noteq> y))"
     apply (induction x y rule: less_gexp.induct)
                         apply auto[1]
                         apply simp+
@@ -179,7 +172,7 @@ fun less_gexp :: "gexp \<Rightarrow> gexp \<Rightarrow> bool"  where
 lemma gexp_trans: "(x::gexp) < y \<Longrightarrow> y < z \<Longrightarrow> x < z"
 proof (induction x y arbitrary: z rule: less_gexp.induct)
 case (1 b1 b2)
-then show ?case
+  then show ?case
     by (cases z, auto)
 next
   case ("2_1" b1 v va)
@@ -187,144 +180,94 @@ next
     by (cases z, auto)
 next
   case ("2_2" b1 v va)
-  then show ?case
+  then show ?case 
     by (cases z, auto)
 next
-  case ("2_3" b1 v)
-  then show ?case
+  case ("2_3" b1 v va)
+  then show ?case 
     by (cases z, auto)
 next
   case ("2_4" b1 v va)
-  then show ?case
-    by (cases z, auto)
-next
-  case ("2_5" b1 v va)
-  then show ?case
+  then show ?case 
     by (cases z, auto)
 next
   case (3 e1 e2 b2)
-  then show ?case
+  then show ?case 
     by (cases z, auto)
 next
   case (4 e1 e2 e1' e2')
-  then show ?case
-    apply (cases z)
-         apply simp+
-    using aexp_trans apply blast
-    by auto
-next
-case ("5_1" e1 e2 v va)
-  then show ?case
+  then show ?case 
     by (cases z, auto)
 next
-case ("5_2" e1 e2 v)
-  then show ?case
+  case ("5_1" e1 e2 v va)
+  then show ?case 
+    by (cases z, auto)
+next
+  case ("5_2" e1 e2 v va)
+  then show ?case 
     by (cases z, auto)
 next
   case ("5_3" e1 e2 v va)
-  then show ?case
-    by (cases z, auto)
-next
-  case ("5_4" e1 e2 v va)
-  then show ?case
+  then show ?case  
     by (cases z, auto)
 next
   case (6 e1 e2 b2)
-  then show ?case
+  then show ?case  
     by (cases z, auto)
 next
   case (7 e1 e2 e1' e2')
-  then show ?case
+  then show ?case  
     by (cases z, auto)
 next
   case (8 e1 e2 e1' e2')
-  then show ?case
-    apply (cases z)
-         apply simp+
-    using aexp_trans apply blast
-    by auto
+  then show ?case  
+    by (cases z, auto)
 next
-  case ("9_1" e1 e2 v)
-  then show ?case
+  case ("9_1" e1 e2 v va)
+  then show ?case  
     by (cases z, auto)
 next
   case ("9_2" e1 e2 v va)
+  then show ?case  
+    by (cases z, auto)
+next
+  case (10 vb vc v va)
+  then show ?case  
+    by (cases z, auto)
+next
+  case (11 vb vc v va)
+  then show ?case  
+    by (cases z, auto)
+next
+  case ("12_1" vb vc v)
+  then show ?case  
+    by (cases z, auto)
+next
+  case ("12_2" vb vc v va)
+  then show ?case  
+    by (cases z, auto)
+next
+  case ("12_3" vb vc v va)
+  then show ?case  
+    by (cases z, auto)
+next
+  case (13 g1 g2 g1' g2')
   then show ?case
     by (cases z, auto)
 next
-  case ("9_3" e1 e2 v va)
-  then show ?case
+  case ("14_1" g1 g2 v)
+  then show ?case  
     by (cases z, auto)
 next
-  case (10 v b2)
-  then show ?case
-    by (cases z, auto)
-next
-  case (11 v e1' e2')
-  then show ?case
-    by (cases z, auto)
-next
-  case (12 v e1' e2')
-  then show ?case
-    by (cases z, auto)
-next
-  case (13 v v')
-  then show ?case
-    by (cases z, auto)
-next
-  case ("14_1" v va vb)
-  then show ?case
-    by (cases z, auto)
-next
-  case ("14_2" v va vb)
-  then show ?case
-    by (cases z, auto)
-next
-  case (15 vb vc v va)
-  then show ?case
-    by (cases z, auto)
-next
-  case (16 vb vc v va)
-  then show ?case
-    by (cases z, auto)
-next
-  case ("17_1" vb vc v)
-  then show ?case
-    by (cases z, auto)
-next
-  case ("17_2" vb vc v va)
-  then show ?case
-    by (cases z, auto)
-next
-  case ("17_3" vb vc v va)
-  then show ?case
-    by (cases z, auto)
-next
-  case ("17_4" vb vc v)
-  then show ?case
-    by (cases z, auto)
-next
-  case (18 g1 g2 g1' g2')
-  then show ?case
-    by (cases z, auto)
-next
-  case ("19_1" g1 g2 v)
+  case ("14_2" g1 g2 v va)
   then show ?case
     by simp
 next
-  case ("19_2" g1 g2 v va)
+  case ("14_3" g1 g2 v va)
   then show ?case
     by simp
 next
-  case ("19_3" g1 g2 v va)
-  then show ?case
-    by simp
-next
-  case ("19_4" g1 g2 v)
-  then show ?case
-    by simp
-next
-  case ("19_5" g1 g2 v va)
+  case ("14_4" g1 g2 v va)
   then show ?case
     by simp
 qed
@@ -343,5 +286,4 @@ instance proof
     unfolding less_eq_gexp_def using gexp_antisym by blast
 qed
 end
-
 end

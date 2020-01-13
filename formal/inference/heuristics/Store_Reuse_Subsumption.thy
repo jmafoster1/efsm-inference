@@ -466,19 +466,15 @@ proof(induct a)
 next
   case (Eq x1a x2)
   then show ?case 
-    by (metis apply_guards(7) aval_unconstrained gexp_constrains.simps(3) list_update_id)
+    using input_not_constrained_gval_swap_inputs by blast
 next
   case (Gt x1a x2)
   then show ?case 
-    by (metis apply_guards(6) aval_unconstrained gexp_constrains.simps(4) list_update_id)
-next
-  case (Null x)
-  then show ?case 
-    by (metis aval_unconstrained gexp_constrains.simps(2) gval.simps(5) list_update_id)
+    using input_not_constrained_gval_swap_inputs by blast
 next
   case (In x1a x2)
   then show ?case 
-    by (metis aval.simps(2) aval_unconstrained gexp_constrains.simps(6) gval.simps(6) list_update_id)
+    using input_not_constrained_gval_swap_inputs by blast
 next
   case (Nor a1 a2)
   then show ?case
@@ -593,55 +589,6 @@ lemma diff_outputs_direct_subsumption:
    apply simp
   using bad_outputs by force
 
-definition updates_subset :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> bool" where
-  "updates_subset t t' e = (
-     case input_stored_in_reg t' t e of None \<Rightarrow> False | Some (i, r) \<Rightarrow>
-     Arity t' = Arity t \<and>
-     set (Guard t') \<subset> set (Guard t) \<and>
-     r \<notin> set (map fst (removeAll (r, V (I i)) (Updates t'))) \<and>
-     r \<notin> set (map fst (Updates t)) \<and>
-     max_input_list (Guard t) < Some (Arity t) \<and>
-     satisfiable_list (smart_not_null [0..<(Arity t)] (Guard t)) \<and>
-     max_reg_list (Guard t) = None \<and>
-     i < Arity t
-  )"
-
-definition "drop_update_add_guard_direct_subsumption a b s s' t1 t2 = 
-  (case input_stored_in_reg t2 t1 a of
-   None \<Rightarrow> False |
-   Some (i, r) \<Rightarrow>
-     accepts_and_gets_us_to_both a b s s' \<and>
-     initially_undefined_context_check (tm b) r s' \<and>
-     updates_subset t1 t2 a
-  )"
-
-lemma updates_subset_conditions: 
-  "updates_subset t1 t2 e \<Longrightarrow>
-   input_stored_in_reg t2 t1 e = Some (i, r) \<Longrightarrow>
-   c $ r = None \<Longrightarrow>
-   \<not> subsumes t1 c t2"
-  apply (simp add: updates_subset_def)
-  using can_take_satisfiable[of t1 c]
-  apply simp
-  apply (rule general_not_subsume_orig)
-  using input_stored_in_reg_updates_reg satisfiable_list_snn
-  by auto
-
-lemma drop_update_add_guard_direct_subsumption:
-  "drop_update_add_guard_direct_subsumption a b s s' t1 t2 \<Longrightarrow>
-  \<not>directly_subsumes a b s s' t1 t2"
-  apply (simp add: drop_update_add_guard_direct_subsumption_def)
-  apply (case_tac "input_stored_in_reg t2 t1 a")
-   apply simp
-  apply (simp add: directly_subsumes_def)
-  apply (case_tac aa)
-  apply (rule disjI1)
-  apply (simp add: accepts_and_gets_us_to_both_def)
-  apply clarify
-  apply (rule_tac x=p in exI)
-  apply (simp add: initially_undefined_context_check_def)
-  using updates_subset_conditions by blast
-
 definition not_updated :: "nat \<Rightarrow> transition \<Rightarrow> bool" where
   "not_updated r t = (filter (\<lambda>(r', _). r' = r) (Updates t) = [])"
 
@@ -712,24 +659,5 @@ lemma one_extra_update_direct_subsumption:
   apply (insert must_be_an_update[of "Updates t1" r "Updates t2"])
   apply (simp add: one_extra_update_def)
   by (metis eq_fst_iff hd_Cons_tl one_extra_update_directly_subsumes)
-(*
-definition "t1 = \<lparr>Label=STR ''select'', Arity=1, Guard = [], Outputs = [], Updates = [(2, V (I 1)), (1, L (Num 100))]\<rparr>"
-definition "t2 = \<lparr>Label=STR ''select'', Arity=1, Guard = [], Outputs = [], Updates = [(1, L (Num 100))]\<rparr>"
-
-lemma "one_extra_update t1 t2 s2 e2"
-  apply (simp add: one_extra_update_def)
-  apply safe
-          apply (simp add: t1_def t2_def)
-  apply (simp add: t1_def t2_def)
-  apply (simp add: t1_def t2_def)
-  apply (simp add: t1_def t2_def)
-  apply (simp add: t1_def t2_def)
-  apply (simp add: t1_def t2_def)
-  apply (simp add: t1_def t2_def)
-  apply (simp add: t1_def t2_def not_updated_def)
-  apply (simp add: t1_def)
-  oops
-*)
-
 
 end
