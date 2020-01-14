@@ -52,16 +52,17 @@ fun value2dot :: "value \<Rightarrow> String.literal" where
   "value2dot (value.Str s) = quote + replace_backslash s + quote" |
   "value2dot (Num n) = show_int n"
 
-fun vname2dot :: "vname \<Rightarrow> String.literal" where
-  "vname2dot (vname.I n) = STR ''i<sub>''+(show_nat (n))+STR ''</sub>''" |
-  "vname2dot (R n) = STR ''r<sub>''+(show_nat n)+STR ''</sub>''"
+fun vname2dot :: "vname_o \<Rightarrow> String.literal" where
+  "vname2dot (vname_o.I n) = STR ''i<sub>''+(show_nat (n))+STR ''</sub>''" |
+  "vname2dot (vname_o.R n) = STR ''r<sub>''+(show_nat n)+STR ''</sub>''" |
+  "vname2dot (vname_o.O n) = STR ''o<sub>''+(show_nat n)+STR ''</sub>''"
 
-fun aexp2dot :: "aexp \<Rightarrow> String.literal" where
-  "aexp2dot (L v) = value2dot v" |
-  "aexp2dot (V v) = vname2dot v" |
-  "aexp2dot (Plus a1 a2) = (aexp2dot a1)+STR '' + ''+(aexp2dot a2)" |
-  "aexp2dot (Minus a1 a2) = (aexp2dot a1)+STR '' - ''+(aexp2dot a2)" |
-  "aexp2dot (Times a1 a2) = (aexp2dot a1)+STR '' &times; ''+(aexp2dot a2)"
+fun aexp2dot :: "aexp_o \<Rightarrow> String.literal" where
+  "aexp2dot (aexp_o.L v) = value2dot v" |
+  "aexp2dot (aexp_o.V v) = vname2dot v" |
+  "aexp2dot (aexp_o.Plus a1 a2) = (aexp2dot a1)+STR '' + ''+(aexp2dot a2)" |
+  "aexp2dot (aexp_o.Minus a1 a2) = (aexp2dot a1)+STR '' - ''+(aexp2dot a2)" |
+  "aexp2dot (aexp_o.Times a1 a2) = (aexp2dot a1)+STR '' &times; ''+(aexp2dot a2)"
 
 fun join :: "String.literal list \<Rightarrow> String.literal \<Rightarrow> String.literal" where
   "join [] _ = (STR '''')" |
@@ -71,7 +72,7 @@ fun join :: "String.literal list \<Rightarrow> String.literal \<Rightarrow> Stri
 definition show_nats :: "nat list \<Rightarrow> String.literal" where
   "show_nats l = join (map show_nat l) STR '', ''"
 
-fun gexp2dot :: "gexp \<Rightarrow> String.literal" where
+fun gexp2dot :: "gexp_o \<Rightarrow> String.literal" where
   "gexp2dot (GExp.Bc True) = (STR ''True'')" |
   "gexp2dot (GExp.Bc False) = (STR ''False'')" |
   "gexp2dot (GExp.Eq a1 a2) = (aexp2dot a1)+STR '' = ''+(aexp2dot a2)" |
@@ -79,37 +80,37 @@ fun gexp2dot :: "gexp \<Rightarrow> String.literal" where
   "gexp2dot (GExp.In v l) = (vname2dot v)+STR ''&isin;{''+(join (map value2dot l) STR '', '')+STR ''}''" |
   "gexp2dot (Nor g1 g2) = STR ''!(''+(gexp2dot g1)+STR ''&or;''+(gexp2dot g2)+STR '')''"
 
-primrec guards2dot_aux :: "gexp list \<Rightarrow> String.literal list" where
+primrec guards2dot_aux :: "gexp_o list \<Rightarrow> String.literal list" where
   "guards2dot_aux [] = []" |
   "guards2dot_aux (h#t) = (gexp2dot h)#(guards2dot_aux t)"
 
 lemma gexp2dot_aux_code [code]: "guards2dot_aux l = map gexp2dot l"
   by (induct l, simp_all)
 
-primrec updates2dot_aux :: "update_function list \<Rightarrow> String.literal list" where
+primrec updates2dot_aux :: "(nat \<times> aexp_o) list \<Rightarrow> String.literal list" where
   "updates2dot_aux [] = []" |
-  "updates2dot_aux (h#t) = ((vname2dot (R (fst h)))+STR '' := ''+(aexp2dot (snd h)))#(updates2dot_aux t)"
+  "updates2dot_aux (h#t) = ((vname2dot (vname_o.R (fst h)))+STR '' := ''+(aexp2dot (snd h)))#(updates2dot_aux t)"
 
-lemma updates2dot_aux_code [code]: "updates2dot_aux l = map (\<lambda>(r, u). (vname2dot (R r))+STR '' := ''+(aexp2dot u)) l"
+lemma updates2dot_aux_code [code]: "updates2dot_aux l = map (\<lambda>(r, u). (vname2dot (vname_o.R r))+STR '' := ''+(aexp2dot u)) l"
   by (induct l, auto)
 
-primrec outputs2dot :: "output_function list \<Rightarrow> nat \<Rightarrow> String.literal list" where
-  "outputs2dot [] _ = []" |
-  "outputs2dot (h#t) n = ((STR ''o<sub>''+(show_nat n))+STR ''</sub> := ''+(aexp2dot h))#(outputs2dot t (n+1))"
+primrec outputs2dot_o :: "aexp_o list \<Rightarrow> nat \<Rightarrow> String.literal list" where
+  "outputs2dot_o [] _ = []" |
+  "outputs2dot_o (h#t) n = ((STR ''o<sub>''+(show_nat n))+STR ''</sub> := ''+(aexp2dot h))#(outputs2dot_o t (n+1))"
 
-fun updates2dot :: "update_function list \<Rightarrow> String.literal" where
+fun updates2dot :: "(nat \<times> aexp_o) list \<Rightarrow> String.literal" where
   "updates2dot [] = (STR '''')" |
   "updates2dot a = STR ''&#91;''+(join (updates2dot_aux a) STR '', '')+STR ''&#93;''"
 
-fun guards2dot :: "gexp list \<Rightarrow> String.literal" where
+fun guards2dot :: "gexp_o list \<Rightarrow> String.literal" where
   "guards2dot [] = (STR '''')" |
   "guards2dot a = STR ''&#91;''+(join (guards2dot_aux a) STR '', '')+STR ''&#93;''"
 
 definition latter2dot :: "transition \<Rightarrow> String.literal" where
-  "latter2dot t = (let l = (join (outputs2dot (Outputs t) 1) STR '', '')+(updates2dot (Updates t)) in (if l = (STR '''') then (STR '''') else STR ''/''+l))"
+  "latter2dot t = (let l = (join (outputs2dot_o (map aexp (Outputs t)) 1) STR '', '')+(updates2dot (map (\<lambda>(r, u). (r, aexp u)) (Updates t))) in (if l = (STR '''') then (STR '''') else STR ''/''+l))"
 
 definition transition2dot :: "transition \<Rightarrow> String.literal" where
-  "transition2dot t = (Label t)+STR '':''+(show_nat (Arity t))+(guards2dot (Guard t))+(latter2dot t)"
+  "transition2dot t = (Label t)+STR '':''+(show_nat (Arity t))+(guards2dot (map gexp (Guard t)))+(latter2dot t)"
 
 definition efsm2dot :: "transition_matrix \<Rightarrow> String.literal" where
   "efsm2dot e = STR ''digraph EFSM{''+newline+
@@ -136,4 +137,5 @@ abbreviation newline_str :: string where
 
 abbreviation quote_str :: string where
   "quote_str \<equiv> ''0x22''"
+
 end

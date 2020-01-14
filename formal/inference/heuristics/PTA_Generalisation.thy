@@ -3,6 +3,7 @@ theory PTA_Generalisation
 begin
 
 hide_const I
+hide_const vname_o.I
 
 \<comment> \<open>Cannot be converted to fold due to early termination in the "true" case of the "if"\<close>
 primrec insert_into_group :: "(tids \<times> transition) list list \<Rightarrow> (tids \<times> transition) \<Rightarrow> (tids \<times> transition) list list" where
@@ -39,7 +40,7 @@ fun trace_group_transitions :: "(transition option \<Rightarrow> nat) \<Rightarr
   "trace_group_transitions count e ((l, i, _)#trace) s r prevGroup currentGroup g = (
     let
       (id, s', t) = fthe_elem (i_possible_steps e s r l i);
-      r' = apply_updates (Updates t) (join_ir i r) r;
+      r' = apply_updates (Updates t) i r r;
       newCount = (\<lambda>x. if x = Some t then Suc (count x) else count x)
     in
     if (same_structure_opt (Some t) currentGroup) then
@@ -74,7 +75,7 @@ fun trace_training_set :: "iEFSM \<Rightarrow> execution \<Rightarrow> cfstate \
   "trace_training_set _ [] _ _ ts = ts" |
   "trace_training_set e ((label, inputs, outputs)#t) s r ts = (
     let (id, s', transition) = fthe_elem (i_possible_steps e s r label inputs) in
-    trace_training_set e t s' (apply_updates (Updates transition) (join_ir inputs r) r) (assign_training_set ts id label inputs r outputs)
+    trace_training_set e t s' (apply_updates (Updates transition) inputs r r) (assign_training_set ts id label inputs r outputs)
   )"
 
 definition log_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list" where
@@ -90,7 +91,7 @@ definition make_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> (((tids \
 \<comment> \<open>This will be replaced by symbolic regression in the executable\<close>
 definition get_output :: "nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> value list \<Rightarrow> (aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
   "get_output maxReg values I r P = (let
-    possible_funs = {a. \<forall>(i, r, p) \<in> set (zip I (zip r P)). aval a (join_ir i r) = Some p}
+    possible_funs = {a. \<forall>(i, r, p) \<in> set (zip I (zip r P)). aval a i r = Some p}
     in
     if possible_funs = {} then None else Some (Eps (\<lambda>x. x \<in> possible_funs), (K$ STR ''int''))
   )"
@@ -156,7 +157,7 @@ definition insert_updates :: "transition \<Rightarrow> update_function list \<Ri
     let
       \<comment> \<open>Need to derestrict variables which occur in the updates but keep unrelated ones to avoid \<close>
       \<comment> \<open>nondeterminism creeping in too early in the inference process                            \<close>
-      relevant_vars = image V (fold (\<lambda>(r, u) acc. acc \<union> (AExp.enumerate_vars u)) u {});
+      relevant_vars = image (aexp_o.V) (fold (\<lambda>(r, u) acc. acc \<union> (AExp.enumerate_vars u)) u {});
       \<comment> \<open>Want to filter out null updates of the form rn := rn. It doesn't affect anything but it  \<close>
       \<comment> \<open>does make things look cleaner                                                            \<close>
       necessary_updates = filter (\<lambda>(r, u). u \<noteq> V (R r)) u
@@ -175,10 +176,10 @@ fun add_groupwise_updates_trace :: "execution  \<Rightarrow> (tids \<times> upda
   "add_groupwise_updates_trace ((l, i, _)#trace) funs e s r = (
     let
       (id, s', t) = fthe_elem (i_possible_steps e s r l i);
-      updated = apply_updates (Updates t) (join_ir i r) r;
+      updated = apply_updates (Updates t) i r r;
       newUpdates = get_updates funs id;
       t' = insert_updates t newUpdates;
-      updated' = apply_updates (Updates t') (join_ir i r) r;
+      updated' = apply_updates (Updates t') i r r;
       necessaryUpdates = filter (\<lambda>(r, _). updated $ r \<noteq> updated' $ r) newUpdates;
       t'' = insert_updates t necessaryUpdates;
       e' = replace_transition e id t''
@@ -195,7 +196,7 @@ lemma fold_add_groupwise_updates [code]: "add_groupwise_updates log funs e = fol
 
 \<comment> \<open>This will be replaced to calls to Z3 in the executable\<close>
 definition get_regs :: "(vname \<Rightarrow>f String.literal) \<Rightarrow> inputs \<Rightarrow> aexp \<Rightarrow> value \<Rightarrow> registers" where
-  "get_regs types inputs expression output = Eps (\<lambda>r. aval expression (join_ir inputs r) = Some output)"
+  "get_regs types inputs expression output = Eps (\<lambda>r. aval expression inputs r = Some output)"
 
 type_synonym event_info = "(cfstate \<times> registers \<times> registers \<times> inputs \<times> tids \<times> transition)"
 type_synonym run_info = "event_info list"
@@ -207,10 +208,10 @@ fun everything_walk :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \
     let (tid, s', ta) = fthe_elem (i_possible_steps oPTA s regs label inputs) in
      \<comment> \<open>Possible steps with a transition we need to modify\<close>
     if tid \<in> set gp then
-      (s, regs, get_regs types inputs f (outputs!fi), inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) gp)
+      (s, regs, get_regs types inputs f (outputs!fi), inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) inputs regs regs) gp)
     else
       let empty = <> in
-      (s, regs, empty, inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) gp)
+      (s, regs, empty, inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) inputs regs regs) gp)
   )"
 
 definition everything_walk_log :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> tids list \<Rightarrow> run_info list" where
@@ -267,7 +268,7 @@ lemma target_fold [code]: "target tRegs ts = target_fold tRegs ts []"
 \<comment> \<open>This will be replaced by symbolic regression in the executable\<close>
 definition get_update :: "nat \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> aexp option" where
   "get_update reg values train = (let
-    possible_funs = {a. \<forall>(i, r, r') \<in> set train. aval a (join_ir i r) = r' $ reg}
+    possible_funs = {a. \<forall>(i, r, r') \<in> set train. aval a i r = r' $ reg}
     in
     if possible_funs = {} then None else Some (Eps (\<lambda>x. x \<in> possible_funs))
   )"
@@ -483,8 +484,8 @@ definition incremental_normalised_pta :: "log \<Rightarrow> iEFSM \<Rightarrow> 
 \<comment> \<open>nondeterminism creeping in too early in the inference process                            \<close>
 definition derestrict_transition :: "transition \<Rightarrow> transition" where
   "derestrict_transition t = (
-    let relevant_vars = image V (fold (\<lambda>(r, u) acc. acc \<union> (AExp.enumerate_vars u)) (Updates t) {}) in
-    t\<lparr>Guard := filter (\<lambda>g. \<forall>v \<in> relevant_vars. \<not> gexp_constrains g v) (Guard t)\<rparr>
+    let relevant_vars = image (aexp_o.V) (fold (\<lambda>(r, u) acc. acc \<union> (AExp.enumerate_vars u)) (Updates t) {}) in
+    t\<lparr>Guard := filter (\<lambda>g. \<forall>v \<in> relevant_vars. \<not> gexp_constrains g (Abs_aexp v)) (Guard t)\<rparr>
   )"
 
 fun find_initialisation_of_trace :: "nat \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> (tids \<times> transition) option" where
@@ -493,10 +494,10 @@ fun find_initialisation_of_trace :: "nat \<Rightarrow> execution \<Rightarrow> i
     let
       (tids, s', t) = fthe_elem (i_possible_steps e s r l i)
     in
-    if (\<exists>(rr, u) \<in> set (Updates t). rr = r' \<and> is_lit u) then
+    if (\<exists>(rr, u) \<in> set (Updates t). rr = r' \<and> is_lit (aexp u)) then
       Some (tids, t)
     else
-      find_initialisation_of_trace r' es e s' (apply_updates (Updates t) (join_ir i r) r)
+      find_initialisation_of_trace r' es e s' (apply_updates (Updates t) i r r)
   )"
 
 primrec find_initialisation_of :: "nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) option list" where
@@ -536,7 +537,7 @@ fun find_first_use_of_trace :: "nat \<Rightarrow> execution \<Rightarrow> iEFSM 
       if (\<exists>p \<in> set (Outputs t). aexp_constrains p (V (R rr))) then
         Some id
       else
-        find_first_use_of_trace rr es e s' (apply_updates (Updates t) (join_ir i r) r)
+        find_first_use_of_trace rr es e s' (apply_updates (Updates t) i r r)
   )"
 
 definition find_first_uses_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> tids list" where

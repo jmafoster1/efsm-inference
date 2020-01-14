@@ -21,7 +21,7 @@ fun trace_collect_training_sets :: "execution \<Rightarrow> iEFSM \<Rightarrow> 
   "trace_collect_training_sets ((label, inputs, outputs)#t) uPTA s registers T1 T2 G1 G2 = (
     let
       (uids, s', tran) = fthe_elem (i_possible_steps uPTA s registers label inputs);
-      updated = (apply_updates (Updates tran) (join_ir inputs registers) registers)
+      updated = (apply_updates (Updates tran) inputs registers registers)
     in
     if hd uids \<in> set T1 then
       trace_collect_training_sets t uPTA s' updated T1 T2 ((inputs, registers)#G1) G2
@@ -41,9 +41,9 @@ primrec collect_training_sets :: "log \<Rightarrow> iEFSM \<Rightarrow> tids \<R
 definition find_distinguishing_guards :: "(inputs \<times> registers) list \<Rightarrow> (inputs \<times> registers) list \<Rightarrow> (gexp \<times> gexp) option" where
   "find_distinguishing_guards G1 G2 = (
     let gs = {(g1, g2).
-      (\<forall>(i, r) \<in> set G1. gval g1 (join_ir i r) = true) \<and>
-      (\<forall>(i, r) \<in> set G2. gval g2 (join_ir i r) = true) \<and>
-      (\<forall>i r. \<not> (gval g1 (join_ir i r) = true \<and> gval g2 (join_ir i r) = true))
+      (\<forall>(i, r) \<in> set G1. gval g1 i r = true) \<and>
+      (\<forall>(i, r) \<in> set G2. gval g2 i r = true) \<and>
+      (\<forall>i r. \<not> (gval g1 i r = true \<and> gval g2 i r = true))
     } in
     if gs = {} then None else Some (Eps (\<lambda>g. g \<in> gs))
   )"

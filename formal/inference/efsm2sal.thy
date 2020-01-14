@@ -2,6 +2,19 @@ theory efsm2sal
   imports "EFSM_Dot"
 begin
 
+hide_const Transition.L
+hide_const Transition.V
+hide_const Transition.I
+hide_const Transition.R
+hide_const Transition.Plus
+hide_const Transition.Minus
+hide_const Transition.Times
+hide_const Transition.Bc
+hide_const Transition.Eq
+hide_const Transition.Gt
+
+no_notation relcomp (infixr "O" 75)
+
 definition replace :: "String.literal \<Rightarrow> String.literal \<Rightarrow> String.literal \<Rightarrow> String.literal" where
   "replace s old new = s"
 
@@ -20,16 +33,17 @@ definition "replacements = [
   (STR ''@'', STR ''_COMMAT__'')
 ]"
 
-fun aexp2sal :: "aexp \<Rightarrow> String.literal" where
+fun aexp2sal :: "aexp_o \<Rightarrow> String.literal" where
   "aexp2sal (L (Num n)) = STR ''Some(Num(''+ show_int n + STR ''))''"|
   "aexp2sal (L (value.Str n)) = STR ''Some(Str(String__''+ (if n = STR '''' then STR ''_EMPTY__'' else escape n replacements) + STR ''))''" |
   "aexp2sal (V (I i)) = STR ''Some(i('' + show_nat (i) + STR ''))''" |
   "aexp2sal (V (R r)) = STR ''r__'' + show_nat r" |
+  "aexp2sal (V (O r)) = STR ''o__'' + show_nat r" |
   "aexp2sal (Plus a1 a2) = STR ''value_plus(''+aexp2sal a1 + STR '', '' + aexp2sal a2 + STR '')''" |
   "aexp2sal (Minus a1 a2) = STR ''value_minus(''+aexp2sal a1 + STR '', '' + aexp2sal a2 + STR '')''" |
   "aexp2sal (Times a1 a2) = STR ''value_times(''+aexp2sal a1 + STR '', '' + aexp2sal a2 + STR '')''"
 
-fun gexp2sal :: "gexp \<Rightarrow> String.literal" where
+fun gexp2sal :: "gexp_o \<Rightarrow> String.literal" where
   "gexp2sal (Bc True) = STR ''True''" |
   "gexp2sal (Bc False) = STR ''False''" |
   "gexp2sal (Eq a1 a2) = STR ''value_eq('' + aexp2sal a1 + STR '', '' + aexp2sal a2 + STR '')''" |
@@ -37,20 +51,21 @@ fun gexp2sal :: "gexp \<Rightarrow> String.literal" where
   "gexp2sal (In v l) = join (map (\<lambda>l'.  STR ''gval(value_eq('' + aexp2sal (V v) + STR '', '' + aexp2sal (L l') + STR ''))'') l) STR '' OR ''" |
   "gexp2sal (Nor g1 g2) = STR ''NOT (gval('' + gexp2sal g1 + STR '') OR gval( '' + gexp2sal g2 + STR ''))''"
 
-fun guards2sal :: "gexp list \<Rightarrow> String.literal" where
+fun guards2sal :: "gexp_o list \<Rightarrow> String.literal" where
   "guards2sal [] = STR ''TRUE''" |
   "guards2sal G = join (map gexp2sal G) STR '' AND ''"
 
-fun aexp2sal_num :: "aexp \<Rightarrow> nat \<Rightarrow> String.literal" where
+fun aexp2sal_num :: "aexp_o \<Rightarrow> nat \<Rightarrow> String.literal" where
   "aexp2sal_num (L (Num n)) _ = STR ''Some(Num(''+ show_int n + STR ''))''"|
   "aexp2sal_num (L (value.Str n)) _ = STR ''Some(Str(String__''+ (if n = STR '''' then STR ''_EMPTY__'' else escape n replacements) + STR ''))''" |
-  "aexp2sal_num (V (vname.I i)) _ = STR ''Some(i('' + show_nat i + STR ''))''" |
-  "aexp2sal_num (V (vname.R i)) m = STR ''r__'' + show_nat i + STR ''.'' + show_nat m" |
+  "aexp2sal_num (V (I i)) _ = STR ''Some(i('' + show_nat i + STR ''))''" |
+  "aexp2sal_num (V (R i)) m = STR ''r__'' + show_nat i + STR ''.'' + show_nat m" |
+  "aexp2sal_num (V (O i)) m = STR ''o__'' + show_nat i + STR ''.'' + show_nat m" |
   "aexp2sal_num (Plus a1 a2) _ = STR ''value_plus(''+aexp2sal a1 + STR '', '' + aexp2sal a2 + STR '')''" |
   "aexp2sal_num (Minus a1 a2) _ = STR ''value_minus(''+aexp2sal a1 + STR '', '' + aexp2sal a2 + STR '')''" |
   "aexp2sal_num (Times a1 a2) _ = STR ''value_times(''+aexp2sal a1 + STR '', '' + aexp2sal a2 + STR '')''"
 
-fun gexp2sal_num :: "gexp \<Rightarrow> nat \<Rightarrow> String.literal" where
+fun gexp2sal_num :: "gexp_o \<Rightarrow> nat \<Rightarrow> String.literal" where
   "gexp2sal_num (Bc True) _ = STR ''True''" |
   "gexp2sal_num (Bc False) _ = STR ''False''" |
   "gexp2sal_num (Eq a1 a2) m = STR ''gval(value_eq('' + aexp2sal_num a1 m + STR '', '' + aexp2sal_num a2 m + STR ''))''" |
@@ -60,6 +75,6 @@ fun gexp2sal_num :: "gexp \<Rightarrow> nat \<Rightarrow> String.literal" where
 
 fun guards2sal_num :: "gexp list \<Rightarrow> nat \<Rightarrow> String.literal" where
   "guards2sal_num [] _ = STR ''TRUE''" |
-  "guards2sal_num G m = join (map (\<lambda>g. gexp2sal_num g m) G) STR '' AND ''"
+  "guards2sal_num G m = join (map (\<lambda>g. gexp2sal_num (gexp g) m) G) STR '' AND ''"
 
 end

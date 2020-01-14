@@ -1,6 +1,7 @@
 theory Store_Reuse
 imports "../Inference"
 begin
+
 datatype ioTag = In | Out
 
 instantiation ioTag :: linorder begin
@@ -57,11 +58,11 @@ definition get_by_id_intratrace_matches :: "execution \<Rightarrow> (index \<tim
 definition i_step :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> tids \<times> registers) option" where
   "i_step tr e s r l i = (let 
     poss_steps = (i_possible_steps e s r l i);
-    possibilities = ffilter (\<lambda>(u, s', t). accepts (tm e) s' (apply_updates (Updates t) (join_ir i r) r) tr) poss_steps in
+    possibilities = ffilter (\<lambda>(u, s', t). accepts (tm e) s' (apply_updates (Updates t) i r r) tr) poss_steps in
     case random_member possibilities of
       None \<Rightarrow> None |
       Some (u, s', t) \<Rightarrow>
-      Some (t, s', u, (apply_updates (Updates t) (join_ir i r) r))
+      Some (t, s', u, (apply_updates (Updates t) i r r))
   )"
 
 type_synonym match = "(((transition \<times> tids) \<times> ioTag \<times> nat) \<times> ((transition \<times> tids) \<times> ioTag \<times> nat))"
@@ -88,9 +89,9 @@ definition total_max_reg :: "iEFSM \<Rightarrow> nat" where
 definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
   "remove_guard_add_update t inputX outputX = \<lparr>
     Label = (Label t), Arity = (Arity t),
-    Guard = (filter (\<lambda>g. \<not> gexp_constrains g (V (vname.I inputX))) (Guard t)),
+    Guard = (filter (\<lambda>g. \<not> gexp_constrains g (V (I inputX))) (Guard t)),
     Outputs = (Outputs t),
-    Updates = (outputX, (V (vname.I inputX)))#(Updates t)
+    Updates = (outputX, (V (I inputX)))#(Updates t)
   \<rparr>"
 
 definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
@@ -155,7 +156,7 @@ lemmas remove_guard_add_update_preserves = remove_guard_add_update_preserves_lab
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and> 
                                     i < Arity t \<and>
-                                    (\<exists>v. Eq (V (vname.I i)) (L v) \<in> set (Guard t)) \<and>
+                                    (\<exists>v. Eq (V (I i)) (L v) \<in> set (Guard t)) \<and>
                                     r \<notin> set (map fst (Updates t)))"
 
 lemma generalise_output_preserves_label: "Label (generalise_output t r p) = Label t"
@@ -191,7 +192,10 @@ definition generalise_input :: "transition \<Rightarrow> nat \<Rightarrow> nat \
   "generalise_input t r i = \<lparr>
       Label = Label t,
       Arity = Arity t,
-      Guard = map (\<lambda>g. case g of Eq (V (I i')) (L _) \<Rightarrow> if i = i' then Eq (V (I i)) (V (R r)) else g | _ \<Rightarrow> g) (Guard t),
+      Guard = map (\<lambda>g. case gexp g of
+        gexp_o.Eq (aexp_o.V (vname_o.I i')) (aexp_o.L _) \<Rightarrow> if i = i' then Abs_gexp (gexp_o.Eq (aexp_o.V (vname_o.I i)) (aexp_o.V (vname_o.R r))) else g |
+         _ \<Rightarrow> g
+      ) (Guard t),
       Outputs = Outputs t,
       Updates = Updates t
     \<rparr>"
@@ -210,11 +214,9 @@ fun structural_count :: "((transition \<times> ioTag \<times> nat) \<times> (tra
     )"
 
 definition remove_guards_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
-  "remove_guards_add_update t inputX outputX = \<lparr>
-    Label = (Label t), Arity = (Arity t),
-    Guard = [],
-    Outputs = (Outputs t),
-    Updates = (outputX, (V (vname.I inputX)))#(Updates t)
+  "remove_guards_add_update t inputX outputX = t\<lparr>
+    Guard := [],
+    Updates := (outputX, (V (I inputX)))#(Updates t)
   \<rparr>"
 
 definition modify_2 :: "match list \<Rightarrow> tids \<Rightarrow> tids \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where

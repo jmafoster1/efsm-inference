@@ -6,17 +6,17 @@ unbundle finfun_syntax
 
 datatype type = NUM | STRING | UNBOUND
 
-fun aexp_get_variables :: "aexp \<Rightarrow> vname list" where
-  "aexp_get_variables (L _) = []" |
-  "aexp_get_variables (V v) = [v]" |
-  "aexp_get_variables (Plus a1 a2) = remdups (aexp_get_variables a1 @ aexp_get_variables a2)" |
-  "aexp_get_variables (Minus a1 a2) = remdups (aexp_get_variables a1 @ aexp_get_variables a2)" |
-  "aexp_get_variables (Times a1 a2) = remdups (aexp_get_variables a1 @ aexp_get_variables a2)"
+fun aexp_o_get_variables :: "aexp_o \<Rightarrow> vname_o list" where
+  "aexp_o_get_variables (L _) = []" |
+  "aexp_o_get_variables (V v) = [v]" |
+  "aexp_o_get_variables (Plus a1 a2) = remdups (aexp_o_get_variables a1 @ aexp_o_get_variables a2)" |
+  "aexp_o_get_variables (Minus a1 a2) = remdups (aexp_o_get_variables a1 @ aexp_o_get_variables a2)" |
+  "aexp_o_get_variables (Times a1 a2) = remdups (aexp_o_get_variables a1 @ aexp_o_get_variables a2)"
 
-definition assign_all :: "type \<Rightarrow> vname list \<Rightarrow> (vname \<times> type) list" where
+definition assign_all :: "type \<Rightarrow> vname_o list \<Rightarrow> (vname_o \<times> type) list" where
   "assign_all t l = remdups (map (\<lambda>v. (v, t)) l)"
 
-fun add_pair :: "(vname \<times> type) \<Rightarrow> (vname \<times> type) list \<Rightarrow> (vname \<times> type) list" where
+fun add_pair :: "(vname_o \<times> type) \<Rightarrow> (vname_o \<times> type) list \<Rightarrow> (vname_o \<times> type) list" where
   "add_pair p [] = [p]" |
   "add_pair (v, t) ((v', t')#tail) = (
     if v = v' then
@@ -26,7 +26,7 @@ fun add_pair :: "(vname \<times> type) \<Rightarrow> (vname \<times> type) list 
         (v, t)#tail
     else (v', t')#(add_pair (v, t) tail))"
 
-primrec add_pairs :: "(vname \<times> type) list \<Rightarrow> (vname \<times> type) list \<Rightarrow> (vname \<times> type) list" where
+primrec add_pairs :: "(vname_o \<times> type) list \<Rightarrow> (vname_o \<times> type) list \<Rightarrow> (vname_o \<times> type) list" where
   "add_pairs [] l = l" |
   "add_pairs (h#t) l = (add_pair h (add_pairs t l))"
 
@@ -38,9 +38,9 @@ fun is_str :: "value \<Rightarrow> bool" where
   "is_str (Num _) = False" |
   "is_str (Str _) = True"
 
-fun infer_types_aux :: "gexp \<Rightarrow> ((vname \<times> type) list \<times> (vname \<times> vname) list)" where
+fun infer_types_aux :: "gexp_o \<Rightarrow> ((vname_o \<times> type) list \<times> (vname_o \<times> vname_o) list)" where
   "infer_types_aux (Bc _) = ([], [])" |
-  "infer_types_aux (Gt a1 a2) = (assign_all NUM ((aexp_get_variables a1) @ (aexp_get_variables a2)), [])" |
+  "infer_types_aux (Gt a1 a2) = (assign_all NUM ((aexp_o_get_variables a1) @ (aexp_o_get_variables a2)), [])" |
   "infer_types_aux (Nor g1 g2) = (let (t1, g1) = infer_types_aux g1; (t2, g2) = infer_types_aux g2 in ((add_pairs t1  t2, remdups (g1@g2))))" |
   "infer_types_aux (Eq (L _) (L _)) = ([], [])" |
   "infer_types_aux (In v va) = (if \<forall>v' \<in> set va. is_num v' then ([(v, NUM)], []) else
@@ -52,7 +52,7 @@ fun infer_types_aux :: "gexp \<Rightarrow> ((vname \<times> type) list \<times> 
   "infer_types_aux (Eq (L (Num s)) (V v)) = ([(v, NUM)], [])" |
   "infer_types_aux (Eq _ _) = ([], [])"
 
-fun collapse_group :: "(vname \<times> vname) \<Rightarrow> vname list list \<Rightarrow> vname list list" where
+fun collapse_group :: "(vname_o \<times> vname_o) \<Rightarrow> vname_o list list \<Rightarrow> vname_o list list" where
   "collapse_group (v1, v2) [] = [remdups [v1, v2]]" |
   "collapse_group (v1, v2) (h#t) = (
      if List.member h v1 \<or> List.member h v2 then
@@ -61,19 +61,19 @@ fun collapse_group :: "(vname \<times> vname) \<Rightarrow> vname list list \<Ri
        collapse_group (v1, v2) t
    )"
 
-primrec collapse_groups :: "(vname \<times> vname) list \<Rightarrow> vname list list \<Rightarrow> vname list list" where
+primrec collapse_groups :: "(vname_o \<times> vname_o) list \<Rightarrow> vname_o list list \<Rightarrow> vname_o list list" where
   "collapse_groups [] g = g" |
   "collapse_groups (h#t) g = collapse_groups t (collapse_group h g)"
 
-primrec get_type_of :: "vname \<Rightarrow> (vname \<times> type) list \<Rightarrow> type" where
+primrec get_type_of :: "vname_o \<Rightarrow> (vname_o \<times> type) list \<Rightarrow> type" where
   "get_type_of _ [] = UNBOUND" |
   "get_type_of v (h#t) = (if fst h = v then snd h else get_type_of v t)"
 
-primrec get_group_type :: "vname list \<Rightarrow> (vname \<times> type) list \<Rightarrow> type" where
+primrec get_group_type :: "vname_o list \<Rightarrow> (vname_o \<times> type) list \<Rightarrow> type" where
   "get_group_type [] _ = UNBOUND" |
   "get_group_type (h#t) types = (let gt = get_type_of h types in (if gt = UNBOUND then get_group_type t types else gt))"
 
-primrec assign_group_types :: "vname list list \<Rightarrow> (vname \<times> type) list \<Rightarrow> (vname \<times> type) list" where
+primrec assign_group_types :: "vname_o list list \<Rightarrow> (vname_o \<times> type) list \<Rightarrow> (vname_o \<times> type) list" where
   "assign_group_types [] types = types" |
   "assign_group_types (h#t) types = assign_group_types t (assign_all (get_group_type h types) h)"
 
@@ -81,13 +81,13 @@ primrec fun_of :: "('a \<times> 'b) list \<Rightarrow> 'b \<Rightarrow> ('a \<Ri
   "fun_of [] b = (K$ b)" |
   "fun_of (h#t) b = (fun_of t b)(fst h $:= snd h)"
 
-definition type_check_var :: "vname \<Rightarrow> (vname \<times> type) list \<Rightarrow> bool" where
+definition type_check_var :: "vname_o \<Rightarrow> (vname_o \<times> type) list \<Rightarrow> bool" where
   "type_check_var v l = (card (set (map (\<lambda>(_, t). t) (filter (\<lambda>(v', _). v' = v) l))) \<ge> 1)"
 
-definition type_check :: "(vname \<times> type) list \<Rightarrow> bool" where
+definition type_check :: "(vname_o \<times> type) list \<Rightarrow> bool" where
   "type_check l = (\<forall>x \<in> set l. type_check_var (fst x) l)"
 
-definition infer_types :: "gexp \<Rightarrow> (vname \<Rightarrow>f type) option" where
+definition infer_types :: "gexp_o \<Rightarrow> (vname_o \<Rightarrow>f type) option" where
   "infer_types g = (let (types, groups) = infer_types_aux g;
                         type_lst = assign_group_types (collapse_groups groups []) types in
                     if type_check type_lst then
@@ -95,7 +95,7 @@ definition infer_types :: "gexp \<Rightarrow> (vname \<Rightarrow>f type) option
                     else None
                    )"
 
-fun type_of :: "aexp \<Rightarrow> (vname \<Rightarrow>f type) \<Rightarrow> type" where
+fun type_of :: "aexp_o \<Rightarrow> (vname_o \<Rightarrow>f type) \<Rightarrow> type" where
   "type_of (L (Num _)) _ = NUM" |
   "type_of (L (Str _)) _ = STRING" |
   "type_of (V v) types = finfun_apply types v" |
@@ -111,7 +111,7 @@ fun type_check_aux :: "type \<Rightarrow> type \<Rightarrow> bool" where
   "type_check_aux NUM _ = False" |
   "type_check_aux _ NUM = False"
 
-definition aexp_type_check :: "aexp \<Rightarrow> aexp \<Rightarrow> (vname \<Rightarrow>f type) \<Rightarrow> bool" where
-  "aexp_type_check a1 a2 t = type_check_aux (type_of a1 t) (type_of a2 t)"
+definition aexp_o_type_check :: "aexp_o \<Rightarrow> aexp_o \<Rightarrow> (vname_o \<Rightarrow>f type) \<Rightarrow> bool" where
+  "aexp_o_type_check a1 a2 t = type_check_aux (type_of a1 t) (type_of a2 t)"
 
 end

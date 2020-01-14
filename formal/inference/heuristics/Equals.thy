@@ -2,15 +2,15 @@ theory Equals
 imports "../Inference"
 begin
 
-fun equality_pairs :: "gexp list \<Rightarrow> (nat \<times> value) list" where
+fun equality_pairs :: "gexp_o list \<Rightarrow> (nat \<times> value) list" where
   "equality_pairs [] = []" |
-  "equality_pairs ((Eq (V (I n)) (L l))#t) = ((n, l)#(equality_pairs t))" |
+  "equality_pairs ((gexp_o.Eq (aexp_o.V (vname_o.I n)) (aexp_o.L l))#t) = ((n, l)#(equality_pairs t))" |
   "equality_pairs (h#t) = equality_pairs t"
 
 definition "gen_eq = \<lparr>Label = STR ''equals'', Arity = 2, Guard = [Eq (V (I 0)) (V (I 1))], Outputs = [L (Str ''true'')], Updates = []\<rparr>"
 
 definition is_equals :: "transition \<Rightarrow> bool" where
-  "is_equals t = (let ep = (equality_pairs (Guard t)) in 
+  "is_equals t = (let ep = (equality_pairs (map gexp (Guard t))) in 
         Label t = STR ''equals'' \<and>
         Arity t = 2 \<and>
         snd (ep ! 0) = snd (ep ! 1) \<and>
@@ -30,7 +30,7 @@ fun equals :: update_modifier where
 definition "gen_neq = \<lparr>Label = STR ''equals'', Arity = 2, Guard = [Eq (V (I 0)) (V (I 1))], Outputs = [L (Str ''true'')], Updates = []\<rparr>"
 
 definition is_not_equals :: "transition \<Rightarrow> bool" where
-  "is_not_equals t = (let ep = (equality_pairs (Guard t)) in 
+  "is_not_equals t = (let ep = (equality_pairs (map gexp (Guard t))) in 
         Label t = STR ''equals'' \<and>
         Arity t = 2 \<and>
         snd (ep ! 0) \<noteq> snd (ep ! 1) \<and>

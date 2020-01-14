@@ -7,14 +7,14 @@ lemma guard_implication:
   Arity t1 = Arity t2 \<Longrightarrow>
   Outputs t1 = Outputs t2 \<Longrightarrow>
   Updates t1 = Updates t2 \<Longrightarrow>
-  (\<forall>s. apply_guards (Guard t1) s \<longrightarrow> apply_guards (Guard t2) s) \<Longrightarrow>
+  (\<forall>i r. apply_guards (Guard t1) i r \<longrightarrow> apply_guards (Guard t2) i r) \<Longrightarrow>
   subsumes t2 c t1"
   apply (rule subsumption)
   unfolding can_take_transition_def can_take_def
   using can_take_transition_def can_take_def posterior_def posterior_separate_def can_take_def by auto
 
 definition gexp_implies :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
-  "gexp_implies g1 g2 = (\<forall>s. gval g1 s = true \<longrightarrow> gval g2 s = true)"
+  "gexp_implies g1 g2 = (\<forall>i r. gval g1 i r = true \<longrightarrow> gval g2 i r = true)"
 declare gexp_implies_def [code del]
 code_printing constant gexp_implies \<rightharpoonup> (Scala) "Dirties.gexpImplies"
 

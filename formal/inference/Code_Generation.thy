@@ -8,7 +8,6 @@ theory Code_Generation
    "heuristics/Increment_Reset"
    "heuristics/Same_Register"
    "heuristics/Ignore_Inputs"
-   "heuristics/Least_Upper_Bound"
    "heuristics/Equals"
    "heuristics/Distinguishing_Guards"
    "heuristics/PTA_Generalisation"
@@ -52,36 +51,44 @@ lemma [code]:
   using initially_undefined_context_check_full_def by presburger
 
 (* This gives us a speedup because we can check this before we have to call out to z3 *)
-fun mutex :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
-  "mutex (Eq (V v) (L l)) (Eq (V v') (L l')) = (if v = v' then l \<noteq> l' else False)" |
-  "mutex (gexp.In v l) (Eq (V v') (L l')) = (v = v' \<and> l' \<notin> set l)" |
-  "mutex (Eq (V v') (L l')) (gexp.In v l) = (v = v' \<and> l' \<notin> set l)" |
-  "mutex (gexp.In v l) (gexp.In v' l') = (v = v' \<and> set l \<inter> set l' = {})" |
-  "mutex _ _ = False"
+fun mutex_o :: "gexp_o \<Rightarrow> gexp_o \<Rightarrow> bool" where
+  "mutex_o (gexp_o.Eq (aexp_o.V v) (aexp_o.L l)) (gexp_o.Eq (aexp_o.V v') (aexp_o.L l')) = (if v = v' then l \<noteq> l' else False)" |
+  "mutex_o (gexp_o.In v l) (gexp_o.Eq (aexp_o.V v') (aexp_o.L l')) = (v = v' \<and> l' \<notin> set l)" |
+  "mutex_o (gexp_o.Eq (aexp_o.V v') (aexp_o.L l')) (gexp_o.In v l) = (v = v' \<and> l' \<notin> set l)" |
+  "mutex_o (gexp_o.In v l) (gexp_o.In v' l') = (v = v' \<and> set l \<inter> set l' = {})" |
+  "mutex_o _ _ = False"
 
-lemma mutex_not_gval: "mutex x y \<Longrightarrow> gval (gAnd y x) s \<noteq> true"
-  unfolding gAnd_def
-  apply (induct x y rule: mutex.induct)
-  apply (simp, metis option.inject)
+lemma mutex_not_gval: "mutex_o x y \<Longrightarrow> gval_o (gAnd_o y x) i r p \<noteq> true"
+  apply (induct x y rule: mutex_o.induct)
+  apply (simp_all add: gval_o_gAnd_o)
+     apply (metis option.inject)
+  apply (simp add: maybe_and_one)
+     apply (case_tac v')
+       apply simp
+      apply auto[1]
+     apply auto[1]
+  apply (case_tac v')
+     apply simp
+    apply auto[1]
+   apply auto[1]
+  apply (case_tac v')
   by auto
 
-(* (\<exists>(i, s1) \<in> set (get_ins (Guard t1)).
-   \<exists>(i', s2) \<in> set (get_ins (Guard t2)).
-   i = i' \<and>
-   \<not> (set s2) \<subseteq> (set s1) \<and>
-   restricted_once (I i) (Guard t2)) *)
+context includes gexp.lifting begin
+lift_definition mutex :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" is mutex_o.
+end
 
 definition choice_cases :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "choice_cases t1 t2 = (
      if \<exists>(x, y) \<in> set (List.product (Guard t1) (Guard t2)). mutex x y then
        False
      else if Guard t1 = Guard t2 then
-       satisfiable (fold gAnd (rev (Guard t1)) (gexp.Bc True))
+       satisfiable ((fold gAnd (rev (Guard t1)) ((Bc True))))
      else
-       satisfiable ((fold gAnd (rev (Guard t1@Guard t2)) (gexp.Bc True)))
+       satisfiable ((fold gAnd (rev (Guard t1@Guard t2)) ((Bc True))))
    )"
 
-lemma existing_mutex_not_true: "\<exists>x\<in>set G. \<exists>y\<in>set G. mutex x y \<Longrightarrow> \<not> apply_guards G s"
+lemma existing_mutex_not_true: "\<exists>x\<in>set G. \<exists>y\<in>set G. mutex x y \<Longrightarrow> \<not> apply_guards G i r"
   apply clarify
   apply (simp add: apply_guards_rearrange)
   apply (case_tac "y \<in> set (x#G)")
@@ -91,7 +98,66 @@ lemma existing_mutex_not_true: "\<exists>x\<in>set G. \<exists>y\<in>set G. mute
   apply simp
   apply (simp only: apply_guards_double_cons)
   using mutex_not_gval
-  by simp
+  by (simp add: gAnd.rep_eq gval.rep_eq mutex.rep_eq)
+
+lemma aexp_o_constrains_aval_o_aval: "\<forall>n. \<not> aexp_o_constrains y (aexp_o.V (vname_o.O n)) \<Longrightarrow> aval_o y i r p = aval_o y i r []"
+proof(induct y)
+  case (L x)
+  then show ?case
+    by simp
+next
+  case (V x)
+  then show ?case by (cases x, auto)
+next
+  case (Plus y1 y2)
+  then show ?case
+    by simp
+next
+  case (Minus y1 y2)
+  then show ?case by simp
+next
+  case (Times y1 y2)
+  then show ?case by simp
+qed
+
+lemma aval_o_aval: "aval_o (aexp g) i r p = aval g i r"
+  apply(induct g)
+  apply (simp add: Abs_aexp_inverse aval_def)
+  using aexp_o_constrains_aval_o_aval by blast
+
+lemma gexp_o_constrains_gval_o_gval: "\<forall>n. \<not> gexp_o_constrains y (aexp_o.V (vname_o.O n)) \<Longrightarrow> gval_o y i r p = gval_o y i r []"
+proof(induct y)
+  case (Bc x)
+  then show ?case
+    by (simp add: no_variables_list_gval_o)
+next
+  case (Eq x1a x2)
+  then show ?case
+    apply simp
+    by (metis aexp_o_constrains_aval_o_aval)
+next
+  case (Gt x1a x2)
+  then show ?case
+    apply simp
+    by (metis aexp_o_constrains_aval_o_aval)
+next
+  case (In x1a x2)
+  then show ?case
+    by (cases x1a, auto)
+next
+  case (Nor y1 y2)
+  then show ?case
+    by simp
+qed
+
+lemma gval_o_gval: "gval_o (gexp g) i r p = gval g i r"
+  apply (induct g)
+  apply (simp add: gval_def Abs_gexp_inverse)
+  using gexp_o_constrains_gval_o_gval by blast
+
+lemma "gval_o (gexp (foldr gAnd G ((Bc True)))) i r p = true \<Longrightarrow>
+       gval_o (gexp (foldr gAnd G ((Bc True)))) i r [] = true"
+  by (simp add: gval_o_gval)
 
 lemma [code]: "choice t t' = choice_cases t t'"
   apply (simp only: choice_alt choice_cases_def)
@@ -100,39 +166,97 @@ lemma [code]: "choice t t' = choice_cases t t'"
    apply (metis existing_mutex_not_true Un_iff set_append)
   apply (case_tac "Guard t = Guard t'")
    apply (simp add: choice_alt_def apply_guards_append)
-   apply (simp add: apply_guards_foldr fold_conv_foldr satisfiable_def)
-  by (simp add: apply_guards_foldr choice_alt_def fold_conv_foldr satisfiable_def)
+   apply (simp add: apply_guards_foldr fold_conv_foldr satisfiable_def satisfiable_o_def gval_def)
+   apply standard
+    apply auto[1]
+   apply clarify
+  apply (rule_tac x=i in exI)
+  apply (rule_tac x=r in exI)
+   apply (simp add: gval_o_gval)
+  apply simp
+  apply (simp add: satisfiable_def satisfiable_o_def choice_alt_def apply_guards_append)
+  apply standard
+   apply clarify
+   apply (rule_tac x=i in exI)
+   apply (rule_tac x=r in exI)
+   apply (metis apply_guards_append apply_guards_foldr foldr_append foldr_conv_fold gval.rep_eq)
+  apply clarify
+   apply (rule_tac x=i in exI)
+   apply (rule_tac x=r in exI)
+  by (metis apply_guards_append apply_guards_foldr foldr_append foldr_conv_fold gval_o_gval)
 
-fun guardMatch_code :: "gexp list \<Rightarrow> gexp list \<Rightarrow> bool" where
-  "guardMatch_code [(gexp.Eq (V (vname.I i)) (L (Num n)))] [(gexp.Eq (V (vname.I i')) (L (Num n')))] = (i = 0 \<and> i' = 0)" |
+fun guardMatch_code :: "gexp_o list \<Rightarrow> gexp_o list \<Rightarrow> bool" where
+  "guardMatch_code [(gexp_o.Eq (aexp_o.V (vname_o.I i)) (aexp_o.L (Num n)))] [(gexp_o.Eq (aexp_o.V (vname_o.I i')) (aexp_o.L (Num n')))] = (i = 0 \<and> i' = 0)" |
   "guardMatch_code _ _ = False"
 
-lemma [code]: "guardMatch t1 t2 = guardMatch_code (Guard t1) (Guard t2)"
+lemma [code]: "guardMatch t1 t2 = guardMatch_code (map gexp (Guard t1)) (map gexp (Guard t2))"
   apply (simp add: guardMatch_def)
-  using guardMatch_code.elims(2) by fastforce
+  apply standard
+   apply clarify
+  using gval_eq_i_l apply auto[1]
+  apply (case_tac "Guard t1")
+   apply simp
+  apply (case_tac "Guard t2")
+   apply simp
+  apply standard
+   apply (case_tac list)
+    apply simp
+    apply (case_tac a)
+    apply (metis gexp_inverse guardMatch_code.elims(2) gval_eq_i_l list.inject)
+   apply simp
+  apply simp
+  apply standard
+   apply (case_tac lista)
+    apply simp
+    apply (case_tac aa)
+    apply (metis gexp_inject guardMatch_code.elims(2) gval_eq_i_l list.inject)
+   apply simp
+  using guardMatch_code.elims(2) by auto
 
-fun outputMatch_code :: "output_function list \<Rightarrow> output_function list \<Rightarrow> bool" where
-  "outputMatch_code [L (Num n)] [L (Num n')] = True" |
+fun outputMatch_code :: "aexp_o list \<Rightarrow> aexp_o list \<Rightarrow> bool" where
+  "outputMatch_code [aexp_o.L (Num n)] [aexp_o.L (Num n')] = True" |
   "outputMatch_code _ _ = False"
 
-lemma [code]: "outputMatch t1 t2 = outputMatch_code (Outputs t1) (Outputs t2)"
-  by (metis outputMatch_code.elims(2) outputMatch_code.simps(1) outputMatch_def)
+lemma [code]: "outputMatch t1 t2 = outputMatch_code (map aexp (Outputs t1)) (map aexp (Outputs t2))"
+  apply (simp add: outputMatch_def)
+  apply standard
+   apply clarify
+  apply (simp add: Abs_aexp_inverse)
+  apply (case_tac "Outputs t1")
+   apply simp
+  apply (case_tac "Outputs t2")
+   apply simp
+  apply standard
+   apply (case_tac list)
+    apply simp
+  apply (metis aexp_inverse list.inject outputMatch_code.elims(2))
+   apply simp
+  apply (case_tac lista)
+   apply (metis aexp_inverse list.inject list.simps(9) outputMatch_code.elims(2))
+  by simp
 
-fun always_different_outputs :: "aexp list \<Rightarrow> aexp list \<Rightarrow> bool" where
+fun always_different_outputs :: "aexp_o list \<Rightarrow> aexp_o list \<Rightarrow> bool" where
   "always_different_outputs [] [] = False" |
   "always_different_outputs [] (a#_) = True" |
   "always_different_outputs (a#_) [] = True" |
-  "always_different_outputs ((L v)#t) ((L v')#t') = (if v = v' then always_different_outputs t t' else True)" |
+  "always_different_outputs ((aexp_o.L v)#t) ((aexp_o.L v')#t') = (if v = v' then always_different_outputs t t' else True)" |
   "always_different_outputs (h#t) (h'#t') = always_different_outputs t t'"
 
 lemma always_different_outputs_outputs_never_equal:
   "always_different_outputs O1 O2 \<Longrightarrow>
-   apply_outputs O1 s \<noteq> apply_outputs O2 s"
+   apply_outputs (map Abs_aexp O1) i r \<noteq> apply_outputs (map Abs_aexp O2) i r"
   apply(induct O1 O2 rule: always_different_outputs.induct)
   by (simp_all add: apply_outputs_def)
 
-fun tests_input_equality :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
-  "tests_input_equality i (gexp.Eq (V (vname.I i')) (L _)) = (i = i')" |
+lemma always_different_outputs_outputs_never_equal2:
+  "always_different_outputs (map aexp O1) (map aexp O2) \<Longrightarrow>
+   apply_outputs O1 i r \<noteq> apply_outputs O2 i r"
+  using always_different_outputs_outputs_never_equal[of "(map aexp O1)" "(map aexp O2)" i r]
+  apply simp
+  by (simp add: aexp_inverse comp_def)
+
+fun tests_input_equality :: "nat \<Rightarrow> gexp_o \<Rightarrow> bool" where
+  "tests_input_equality i (gexp_o.Eq (aexp_o.V (vname_o.I i')) (aexp_o.L _)) = (i = i')" |
   "tests_input_equality _ _ = False"
 
 fun no_illegal_updates_code :: "update_function list \<Rightarrow> nat \<Rightarrow> bool" where
@@ -155,16 +279,16 @@ qed
 lemma no_illegal_updates_code [code]: "no_illegal_updates t r = no_illegal_updates_code (Updates t) r"
   by (simp add: no_illegal_updates_def no_illegal_updates_code_aux)
 
-fun input_updates_register_aux :: "update_function list \<Rightarrow> nat option" where
-  "input_updates_register_aux ((n, V (vname.I n'))#_) = Some n'" |
+fun input_updates_register_aux :: "(nat \<times> aexp_o) list \<Rightarrow> nat option" where
+  "input_updates_register_aux ((n, aexp_o.V (vname_o.I n'))#_) = Some n'" |
   "input_updates_register_aux (h#t) = input_updates_register_aux t" |
   "input_updates_register_aux [] = None"
 
 definition input_updates_register :: "transition_matrix \<Rightarrow> (nat \<times> String.literal)" where
   "input_updates_register e = (
-    case fthe_elem (ffilter (\<lambda>(_, t). input_updates_register_aux (Updates t) \<noteq> None) e) of
+    case fthe_elem (ffilter (\<lambda>(_, t). input_updates_register_aux (map (\<lambda>(r, u). (r, aexp u)) (Updates t)) \<noteq> None) e) of
       (_, t) \<Rightarrow> (case
-        input_updates_register_aux (Updates t) of
+        input_updates_register_aux (map (\<lambda>(r, u). (r, aexp u)) (Updates t)) of
           Some n \<Rightarrow> (n, Label t)
       )
   )"
@@ -180,16 +304,17 @@ definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iE
     (case anterior_context (tm m2) p of Some c \<Rightarrow> (\<exists>i. can_take_transition t2 i c))))"
 
 lemma always_different_outputs_can_take_transition_not_subsumed:
-  "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
+  "always_different_outputs (map aexp (Outputs t1)) (map aexp (Outputs t2)) \<Longrightarrow>
    \<forall>c. posterior_sequence (tm m2) 0 <> p = Some c \<longrightarrow> (\<exists>i. can_take_transition t2 i c) \<longrightarrow> \<not> subsumes t1 c t2"
   apply standard
   apply standard
   apply standard
   apply (rule bad_outputs)
-  by (metis always_different_outputs_outputs_never_equal)
+  using always_different_outputs_outputs_never_equal2
+  by metis
 
 lemma always_different_outputs_direct_subsumption: 
-  "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
+  "always_different_outputs (map aexp (Outputs t1)) (map aexp (Outputs t2)) \<Longrightarrow>
    always_different_outputs_direct_subsumption m1 m2 s s' t2 \<Longrightarrow>
    \<not> directly_subsumes m1 m2 s s' t1 t2"
   apply (simp add: directly_subsumes_def always_different_outputs_direct_subsumption_def)
@@ -201,11 +326,11 @@ lemma always_different_outputs_direct_subsumption:
   by fastforce
 
 definition negate :: "gexp list \<Rightarrow> gexp" where
-  "negate g = gNot (fold gAnd g (Bc True))"
+  "negate g = Abs_gexp (gNot (gexp (fold gAnd g (Bc True))))"
 
-lemma gval_negate_cons: "gval (negate (a # G)) s = gval (gNot a) s \<or>\<^sub>? gval (negate G) s"
-  apply (simp only: negate_def gval_gNot gval_fold_equiv_gval_foldr)
-  by (simp only: foldr.simps comp_def gval_gAnd de_morgans_2)
+lemma gval_negate_cons: "gval (negate (a # G)) i r = gval_o (gNot (gexp a)) i r p \<or>\<^sub>? gval (negate G) i r"
+  apply (simp add: gNot_def negate_def gval_def)
+  oops
 
 lemma negate_true_guard: "(gval (negate G) s = true) = (gval (fold gAnd G (Bc True)) s = false)"
   by (metis (no_types, lifting) gval_gNot maybe_double_negation maybe_not.simps(1) negate_def)
@@ -291,7 +416,7 @@ lemma lob_distinguished_2_direct_subsumption:
   apply standard
    apply (simp add: can_take_transition_def can_take_def another_swap_inputs)
   apply (simp add: can_take_transition_def can_take_def)
-  by (metis Eq_apply_guards input2state_nth join_ir_def length_list_update nth_list_update_eq option.inject vname.simps(5))
+  by (metis Eq_apply_guards input2state_nth join_ir_def length_list_update nth_list_update_eq option.inject simps(5))
 
 lemma lob_distinguished_3_direct_subsumption:
   "always_different_outputs_direct_subsumption e1 e2 s s' t2 \<Longrightarrow>
@@ -387,7 +512,7 @@ definition is_generalisation_of :: "transition \<Rightarrow> transition \<Righta
   )"
 
 lemma tests_input_equality:
-  "(\<exists>v. gexp.Eq (V (vname.I xb)) (L v) \<in> set G) = (1 \<le> length (filter (tests_input_equality xb) G))"
+  "(\<exists>v. Eq (aexp_o.V (I xb)) (L v) \<in> set G) = (1 \<le> length (filter (tests_input_equality xb) G))"
 proof(induct G)
   case Nil
   then show ?case by simp
@@ -400,7 +525,7 @@ next
        apply (case_tac x21)
           apply simp
          apply simp
-         apply (case_tac "x2 = vname.I xb")
+         apply (case_tac "x2 = I xb")
           apply simp
           defer
           defer

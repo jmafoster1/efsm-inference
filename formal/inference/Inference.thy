@@ -120,7 +120,7 @@ definition replace_transitions :: "iEFSM \<Rightarrow> (tids \<times> transition
 
 primrec make_guard :: "value list \<Rightarrow> nat \<Rightarrow> gexp list" where
 "make_guard [] _ = []" |
-"make_guard (h#t) n = (gexp.Eq (V (vname.I n)) (L h))#(make_guard t (n+1))"
+"make_guard (h#t) n = (Eq (V (I n)) (L h))#(make_guard t (n+1))"
 
 primrec make_outputs :: "value list \<Rightarrow> output_function list" where
   "make_outputs [] = []" |
@@ -174,28 +174,28 @@ primrec make_guard_abstract :: "value list \<Rightarrow> nat \<Rightarrow> nat \
   "make_guard_abstract [] _ _ r G U = (G, U, r)" |
   "make_guard_abstract (h#t) i maxR r G U = (
     case h of
-      value.Num _ \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Eq (V (vname.I i)) (L h))#G) U |
+      value.Num _ \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Eq (V (I i)) (L h))#G) U |
       value.Str s \<Rightarrow>
         if s = STR ''_'' then
           make_guard_abstract t (i+1) maxR r G U
         else if startsWith s STR ''$'' then
           case r $ s of
             None \<Rightarrow> make_guard_abstract t (i+1) (maxR + 1) (r(s := maxR)) G ((maxR, V (I i))#U) |
-            Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Eq (V (vname.I i)) (V (R reg)))#G) U
+            Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Eq (V (I i)) (V (R reg)))#G) U
         else if startsWith s STR ''<'' then
           if startsWith (substring s 1) STR ''$'' then
             case r $ (substring s 1) of
-              Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (V (R reg)))#G) U
+              Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Gt (V (I i)) (V (R reg)))#G) U
           else
-            make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (L (Num (parseInt (substring s 2)))))#G) U
+            make_guard_abstract t (i+1) maxR r ((Gt (V (I i)) (L (Num (parseInt (substring s 2)))))#G) U
         else if startsWith s STR ''/='' then
           if startsWith (substring s 1) STR ''$'' then
             case r $ (substring s 2) of
-              Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (V (R reg)))#G) U
+              Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Gt (V (I i)) (V (R reg)))#G) U
           else
-            make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (L (Num (parseInt (substring s 3)))))#G) U
+            make_guard_abstract t (i+1) maxR r ((Gt (V (I i)) (L (Num (parseInt (substring s 3)))))#G) U
         else
-          make_guard_abstract t (i+1) maxR r ((Eq (V (vname.I i)) (L h))#G) U
+          make_guard_abstract t (i+1) maxR r ((Eq (V (I i)) (L h))#G) U
   )"
 
 primrec make_outputs_abstract :: "value list \<Rightarrow> nat \<Rightarrow> (String.literal \<Rightarrow>f nat option) \<Rightarrow> output_function list \<Rightarrow> output_function list" where
@@ -331,13 +331,13 @@ definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarr
 inductive satisfies_trace :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
   base: "satisfies_trace e s d []" |                                         
   step: "\<exists>(s', T) |\<in>| possible_steps e s d l i.
-         apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
-         satisfies_trace e s' (apply_updates (Updates T) (join_ir i d) d) t \<Longrightarrow>
+         apply_outputs (Outputs T) i d = (map Some p) \<and>
+         satisfies_trace e s' (apply_updates (Updates T) i d d) t \<Longrightarrow>
          satisfies_trace e s d ((l, i, p)#t)"
 
 lemma satisfies_trace_step: "satisfies_trace e s d ((l, i, p)#t) = (\<exists>(s', T) |\<in>| possible_steps e s d l i.
-         apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
-         satisfies_trace e s' (apply_updates (Updates T) (join_ir i d) d) t)"
+         apply_outputs (Outputs T) i d = (map Some p) \<and>
+         satisfies_trace e s' (apply_updates (Updates T) i d d) t)"
   apply standard
    defer
    apply (simp add: satisfies_trace.step)
@@ -350,13 +350,13 @@ fun satisfies_trace_prim :: "transition_matrix \<Rightarrow> cfstate \<Rightarro
     let poss_steps = possible_steps e s d l i in
     if fis_singleton poss_steps then
       let (s', T) = fthe_elem poss_steps in
-      if apply_outputs (Outputs T) (join_ir i d) = (map Some p) then
-        satisfies_trace_prim e s' (apply_updates (Updates T) (join_ir i d) d) t
+      if apply_outputs (Outputs T) i d = (map Some p) then
+        satisfies_trace_prim e s' (apply_updates (Updates T) i d d) t
       else False
     else
       (\<exists>(s', T) |\<in>| poss_steps.
-         apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
-         satisfies_trace_prim e s' (apply_updates (Updates T) (join_ir i d) d) t))"
+         apply_outputs (Outputs T) i d = (map Some p) \<and>
+         satisfies_trace_prim e s' (apply_updates (Updates T) i d d) t))"
 
 lemma satisfies_trace_prim: "satisfies_trace e s d l = satisfies_trace_prim e s d l"
 proof(induct l arbitrary: s d)
@@ -598,15 +598,15 @@ definition all_regs :: "iEFSM \<Rightarrow> nat set" where
 definition max_int :: "iEFSM \<Rightarrow> int" where
   "max_int e = EFSM.max_int (tm e)"
 
-fun literal_args :: "gexp \<Rightarrow> bool" where
-  "literal_args (Bc v) = False" |
-  "literal_args (Eq (V _) (L _)) = True" |
+fun literal_args :: "gexp_o \<Rightarrow> bool" where
+  "literal_args (gexp_o.Bc v) = False" |
+  "literal_args (gexp_o.Eq (aexp_o.V _) (aexp_o.L _)) = True" |
   "literal_args (In _ _) = True" |
-  "literal_args (Eq _ _) = False" |
-  "literal_args (Gt va v) = False" |
+  "literal_args (gexp_o.Eq _ _) = False" |
+  "literal_args (gexp_o.Gt va v) = False" |
   "literal_args (Nor v va) = (literal_args v \<and> literal_args va)"
 
-lemma literal_args_eq: "literal_args (Eq a b) \<Longrightarrow> \<exists>v l. a = (V v) \<and> b = (L l)"
+lemma literal_args_eq: "literal_args (gexp_o.Eq a b) \<Longrightarrow> \<exists>v l. a = (aexp_o.V v) \<and> b = (aexp_o.L l)"
   apply (cases a)
      apply simp
     apply (cases b)
@@ -618,7 +618,7 @@ definition i_possible_steps :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> regist
       origin = s
       \<and> (Label t) = l
       \<and> (length i) = (Arity t)
-      \<and> apply_guards (Guard t) (join_ir i r)
+      \<and> apply_guards (Guard t) i r
      ) 
     e)"
 
