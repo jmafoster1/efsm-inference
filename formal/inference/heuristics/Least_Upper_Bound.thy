@@ -4,19 +4,19 @@ begin
 
 definition "all_literal_args t = (\<forall>g \<in> set (Guard t). literal_args g)"
 
-fun merge_in_eq :: "vname \<Rightarrow> value \<Rightarrow> gexp list \<Rightarrow> gexp list" where
+fun merge_in_eq :: "vname \<Rightarrow> value \<Rightarrow> vname gexp list \<Rightarrow> vname gexp list" where
   "merge_in_eq v l [] = [Eq (V v) (L l)]" |
   "merge_in_eq v l ((Eq (V v') (L l'))#t) = (if v = v' \<and> l \<noteq> l' then (In v [l, l'])#t else (Eq (V v') (L l'))#(merge_in_eq v l t))" |
   "merge_in_eq v l ((In v' l')#t) = (if v = v' then (In v (remdups (l#l')))#t else (In v' l')#(merge_in_eq v l t))" |
   "merge_in_eq v l (h#t) = h#(merge_in_eq v l t)"
 
-fun merge_in_in :: "vname \<Rightarrow> value list \<Rightarrow> gexp list \<Rightarrow> gexp list" where
+fun merge_in_in :: "vname \<Rightarrow> value list \<Rightarrow> vname gexp list \<Rightarrow> vname gexp list" where
   "merge_in_in v l [] = [In v l]" |
   "merge_in_in v l ((Eq (V v') (L l'))#t) = (if v = v' then (In v (List.insert l' l))#t else (Eq (V v') (L l'))#(merge_in_in v l t))" |
   "merge_in_in v l ((In v' l')#t) = (if v = v' then (In v (List.union l l'))#t else (In v' l')#(merge_in_in v l t))" |
   "merge_in_in v l (h#t) = h#(merge_in_in v l t)"
 
-fun merge_guards :: "gexp list \<Rightarrow> gexp list \<Rightarrow> gexp list" where
+fun merge_guards :: "vname gexp list \<Rightarrow> vname gexp list \<Rightarrow> vname gexp list" where
   "merge_guards [] g2 = g2" |
   "merge_guards ((Eq (V v) (L l))#t) g2 =  merge_guards t (merge_in_eq v l g2)" |
   "merge_guards ((In v l)#t) g2 = merge_guards t (merge_in_in v l g2)" |
@@ -49,7 +49,7 @@ fun lob :: update_modifier where
            Some (replace_transitions new [(t1ID, lob_t), (t2ID, lob_t)])
    )"
 
-fun has_corresponding :: "gexp \<Rightarrow> gexp list \<Rightarrow> bool" where
+fun has_corresponding :: "vname gexp \<Rightarrow> vname gexp list \<Rightarrow> bool" where
   "has_corresponding g [] = False" |
   "has_corresponding (Eq (V v) (L l)) ((Eq (V v') (L l'))#t) = (if v = v' \<and> l = l' then True else has_corresponding (Eq (V v) (L l)) t)" |
   "has_corresponding (In v' l') ((Eq (V v) (L l))#t) = (if v = v' \<and> l \<in> set l' then True else has_corresponding (In v' l') t)" |
@@ -177,7 +177,7 @@ lemma is_lob_direct_subsumption:
   apply (rule subsumes_in_all_contexts_directly_subsumes)
   by (simp add: is_lob_def correspondence_subsumption)
 
-fun has_distinguishing :: "gexp \<Rightarrow> gexp list \<Rightarrow> bool" where
+fun has_distinguishing :: "vname gexp \<Rightarrow> vname gexp list \<Rightarrow> bool" where
   "has_distinguishing g [] = False" |
   "has_distinguishing (Eq (V v) (L l)) ((Eq (V v') (L l'))#t) = (if v = v' \<and> l \<noteq> l' then True else has_distinguishing (Eq (V v) (L l)) t)" |
   "has_distinguishing (In (I v') l') ((Eq (V (I v)) (L l))#t) = (if v = v' \<and> l \<notin> set l' then True else has_distinguishing (In (I v') l') t)" |
@@ -355,7 +355,7 @@ lemma test:
   apply (simp add: apply_guards_cons join_ir_def)
   by (metis None_notin_image_Some in_these_eq input2state_not_None input2state_nth length_list_update nth_list_update_eq these_image_Some_eq)
 
-definition get_Ins :: "gexp list \<Rightarrow> (nat \<times> value list) list" where
+definition get_Ins :: "vname gexp list \<Rightarrow> (nat \<times> value list) list" where
   "get_Ins G = map (\<lambda>g. case g of (In (I v) l) \<Rightarrow> (v, l)) (filter (\<lambda>g. case g of (In (I _) _ ) \<Rightarrow> True | _ \<Rightarrow> False) G)"
 
 lemma get_Ins_Cons_equiv: "\<nexists>v l. a = In (I v) l \<Longrightarrow> get_Ins (a # G) = get_Ins G"
@@ -560,7 +560,7 @@ definition "lob_distinguished_3 t1 t2 = (\<exists>(i, l) \<in> set (get_Ins (Gua
     (\<exists>(i', l') \<in> set (get_Ins (Guard t1)). i = i' \<and> set l' \<subset> set l) \<and>
    Arity t1 = Arity t2)"
 
-fun is_In :: "gexp \<Rightarrow> bool" where
+fun is_In :: "'a gexp \<Rightarrow> bool" where
   "is_In (In _ _) = True" |
   "is_In _ = False"
 
@@ -634,7 +634,7 @@ lemma each_input_guarded_once_cons:
   apply (simp add: Ball_def)
   apply clarify
 proof -
-  fix x :: nat and xa :: gexp
+  fix x :: nat and xa :: "vname gexp"
   assume a1: "\<forall>x. (x \<in> enumerate_gexp_inputs a \<longrightarrow> length (if gexp_constrains a (V (I x)) then a # filter (\<lambda>g. gexp_constrains g (V (I x))) G else filter (\<lambda>g. gexp_constrains g (V (I x))) G) \<le> 1) \<and> ((\<exists>xa\<in>set G. x \<in> enumerate_gexp_inputs xa) \<longrightarrow> length (if gexp_constrains a (V (I x)) then a # filter (\<lambda>g. gexp_constrains g (V (I x))) G else filter (\<lambda>g. gexp_constrains g (V (I x))) G) \<le> 1)"
   assume a2: "xa \<in> set G"
   assume "x \<in> enumerate_gexp_inputs xa"
@@ -723,18 +723,18 @@ lemma opposite_gob_subsumption: "\<forall>g \<in> set (Guard t1). \<exists>i v s
    apply (metis (mono_tags) someI_ex value.simps(4))
   by (metis input2state_within_bounds length_list_update)
 
-fun is_lit_eq :: "gexp \<Rightarrow> nat \<Rightarrow> bool" where
+fun is_lit_eq :: "vname gexp \<Rightarrow> nat \<Rightarrow> bool" where
   "is_lit_eq (Eq (V (I i)) (L v)) i' = (i = i')" |
   "is_lit_eq _ _ = False"
 
 lemma "(\<exists>v. Eq (V (I i)) (L v) \<in> set G) = (\<exists>g \<in> set G. is_lit_eq g i)"
   by (metis is_lit_eq.elims(2) is_lit_eq.simps(1))
 
-fun is_lit_eq_general :: "gexp \<Rightarrow> bool" where
+fun is_lit_eq_general :: "vname gexp \<Rightarrow> bool" where
   "is_lit_eq_general (Eq (V (I _)) (L _)) = True" |
   "is_lit_eq_general _ = False"
 
-fun is_input_in :: "gexp \<Rightarrow> bool" where
+fun is_input_in :: "vname gexp \<Rightarrow> bool" where
   "is_input_in (In (I i) s) = (s \<noteq> [])" |
   "is_input_in _ = False"
 
@@ -761,7 +761,7 @@ lemma opposite_gob_directly_subsumption:
      apply (metis is_lit_eq.elims(2))
   by auto
 
-fun get_in :: "gexp \<Rightarrow> (vname \<times> value list) option" where
+fun get_in :: "'a gexp \<Rightarrow> ('a \<times> value list) option" where
   "get_in (In v s) = Some (v, s)" |
   "get_in _ = None"
 
@@ -801,10 +801,10 @@ lemma remove_restricted:
   apply clarify
   apply (case_tac "e = g")
    defer
-   apply (metis DiffE Diff_insert_absorb empty_set filter.simps(2) filter_append in_set_conv_decomp insert_iff list.set(2))
+  apply (metis (no_types, lifting) DiffE Diff_insert_absorb Set.set_insert empty_set filter.simps(2) filter_append in_set_conv_decomp insert_iff list.set(2))
   apply (simp add: filter_empty_conv)
   proof -
-    fix e :: gexp
+    fix e :: "'a gexp"
     assume "filter (\<lambda>g. gexp_constrains g (V v)) G = [g]"
     then have "{g \<in> set G. gexp_constrains g (V v)} = {g}"
       by (metis (no_types) empty_set list.simps(15) set_filter)
@@ -872,7 +872,7 @@ lemma these_cons: "these (a#as) = (case a of None \<Rightarrow> these as | Some 
    apply (simp add: these_def)
   by (simp add: these_def)
 
-definition get_ins :: "gexp list \<Rightarrow> (nat \<times> value list) list" where
+definition get_ins :: "vname gexp list \<Rightarrow> (nat \<times> value list) list" where
   "get_ins g = map (\<lambda>(v, s). case v of I i \<Rightarrow> (i, s)) (filter (\<lambda>(v, _). case v of I _ \<Rightarrow> True | R _ \<Rightarrow> False) (these (map get_in g)))"
 
 lemma in_get_ins:
@@ -896,7 +896,7 @@ lemma restricted_head: "\<forall>v. restricted_once v (Eq (V x2) (L x1) # G) \<o
   apply (erule_tac x=x2 in allE)
   by (simp add: restricted_once_def not_restricted_def)
 
-fun atomic :: "gexp \<Rightarrow> bool" where
+fun atomic :: "'a gexp \<Rightarrow> bool" where
   "atomic (Eq (V _) (L _)) = True" |
   "atomic (In _ _) = True" |
   "atomic _ = False"

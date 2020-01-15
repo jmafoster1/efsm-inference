@@ -5,8 +5,8 @@ begin
 (* datatype vname = I nat | R nat *)
 (* datatype gexp = Bc bool | Eq aexp aexp | Gt aexp aexp | Nor gexp gexp | Null vname *)
 
-instantiation aexp :: "linorder" begin
-fun less_aexp :: "aexp \<Rightarrow> aexp \<Rightarrow> bool"  where
+instantiation aexp :: (linorder) linorder begin
+fun less_aexp :: "'a aexp \<Rightarrow> 'a aexp \<Rightarrow> bool"  where
   "less_aexp (L l1) (L l2) = (l1 < l2)" |
   "less_aexp (L l1) (V v2) = True" |
   "less_aexp (L l1) (Plus e1 e2) = True" |
@@ -37,13 +37,13 @@ fun less_aexp :: "aexp \<Rightarrow> aexp \<Rightarrow> bool"  where
   "less_aexp (Times e1 e2) (Minus e1' e2') = False" |
   "less_aexp (Times e1 e2) (Times e1' e2') = ((less_aexp e1 e1') \<or> ((e1 = e1') \<and> (less_aexp e2 e2')))"
 
-  definition less_eq_aexp :: "aexp \<Rightarrow> aexp \<Rightarrow> bool"
-    where "less_eq_aexp e1 e2 \<equiv> (e1 < e2) \<or> (e1 = e2)"
+definition less_eq_aexp :: "'a aexp \<Rightarrow> 'a aexp \<Rightarrow> bool"
+  where "less_eq_aexp e1 e2 \<equiv> (e1 < e2) \<or> (e1 = e2)"
 
-  lemma aexp_antisym: "(x::aexp) < y = (\<not>(y < x) \<and> (x \<noteq> y))"
-    by (induction x y rule: less_aexp.induct) auto
+lemma aexp_antisym: "(x::'a aexp) < y = (\<not>(y < x) \<and> (x \<noteq> y))"
+  by (induction x y rule: less_aexp.induct) auto
 
-lemma aexp_trans: "(x::aexp) < y \<Longrightarrow> y < z \<Longrightarrow> x < z"
+lemma aexp_trans: "(x::'a aexp) < y \<Longrightarrow> y < z \<Longrightarrow> x < z"
   proof (induction x y arbitrary: z rule: less_aexp.induct)
     case (1 l1 l2)
     then show ?case by (cases z, auto)
@@ -122,7 +122,7 @@ lemma aexp_trans: "(x::aexp) < y \<Longrightarrow> y < z \<Longrightarrow> x < z
   qed
 
 instance proof
-    fix x y z :: aexp
+    fix x y z :: "'a aexp"
     show "(x < y) = (x \<le> y \<and> \<not> y \<le> x)"
       by (metis aexp_antisym less_eq_aexp_def)
     show "(x \<le> x)"
@@ -136,8 +136,8 @@ instance proof
   qed
 end
 
-instantiation gexp :: "linorder" begin
-fun less_gexp :: "gexp \<Rightarrow> gexp \<Rightarrow> bool"  where
+instantiation gexp :: (linorder) linorder begin
+fun less_gexp :: "'a gexp \<Rightarrow> 'a gexp \<Rightarrow> bool"  where
   "less_gexp (Bc b1) (Bc b2) = (b1 < b2)" |
   "less_gexp (Bc b1) _ = True" |
 
@@ -157,10 +157,10 @@ fun less_gexp :: "gexp \<Rightarrow> gexp \<Rightarrow> bool"  where
   "less_gexp (Nor g1 g2) (Nor g1' g2') = ((less_gexp g1 g1') \<or> ((g1 = g1') \<and> (less_gexp g2 g2')))" |
   "less_gexp (Nor g1 g2) _ = False"
 
-definition less_eq_gexp :: "gexp \<Rightarrow> gexp \<Rightarrow> bool"
+definition less_eq_gexp :: "'a gexp \<Rightarrow> 'a gexp \<Rightarrow> bool"
   where "less_eq_gexp e1 e2 \<equiv> (e1 < e2) \<or> (e1 = e2)"
 
-lemma gexp_antisym: "(x::gexp) < y = (\<not>(y < x) \<and> (x \<noteq> y))"
+lemma gexp_antisym: "(x::'a gexp) < y = (\<not>(y < x) \<and> (x \<noteq> y))"
     apply (induction x y rule: less_gexp.induct)
                         apply auto[1]
                         apply simp+
@@ -169,7 +169,7 @@ lemma gexp_antisym: "(x::gexp) < y = (\<not>(y < x) \<and> (x \<noteq> y))"
     using aexp_antisym apply blast
     by auto
 
-lemma gexp_trans: "(x::gexp) < y \<Longrightarrow> y < z \<Longrightarrow> x < z"
+lemma gexp_trans: "(x::'a gexp) < y \<Longrightarrow> y < z \<Longrightarrow> x < z"
 proof (induction x y arbitrary: z rule: less_gexp.induct)
 case (1 b1 b2)
   then show ?case
@@ -273,7 +273,7 @@ next
 qed
 
 instance proof
-  fix x y z :: gexp
+  fix x y z :: "'a gexp"
   show "(x < y) = (x \<le> y \<and> \<not> y \<le> x)"
     by (metis gexp_antisym less_eq_gexp_def)
   show "(x \<le> x)"

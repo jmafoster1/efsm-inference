@@ -52,7 +52,7 @@ lemma [code]:
   using initially_undefined_context_check_full_def by presburger
 
 (* This gives us a speedup because we can check this before we have to call out to z3 *)
-fun mutex :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
+fun mutex :: "'a gexp \<Rightarrow> 'a gexp \<Rightarrow> bool" where
   "mutex (Eq (V v) (L l)) (Eq (V v') (L l')) = (if v = v' then l \<noteq> l' else False)" |
   "mutex (gexp.In v l) (Eq (V v') (L l')) = (v = v' \<and> l' \<notin> set l)" |
   "mutex (Eq (V v') (L l')) (gexp.In v l) = (v = v' \<and> l' \<notin> set l)" |
@@ -91,7 +91,7 @@ lemma existing_mutex_not_true: "\<exists>x\<in>set G. \<exists>y\<in>set G. mute
   apply simp
   apply (simp only: apply_guards_double_cons)
   using mutex_not_gval
-  by simp
+  by auto
 
 lemma [code]: "choice t t' = choice_cases t t'"
   apply (simp only: choice_alt choice_cases_def)
@@ -103,7 +103,7 @@ lemma [code]: "choice t t' = choice_cases t t'"
    apply (simp add: apply_guards_foldr fold_conv_foldr satisfiable_def)
   by (simp add: apply_guards_foldr choice_alt_def fold_conv_foldr satisfiable_def)
 
-fun guardMatch_code :: "gexp list \<Rightarrow> gexp list \<Rightarrow> bool" where
+fun guardMatch_code :: "vname gexp list \<Rightarrow> vname gexp list \<Rightarrow> bool" where
   "guardMatch_code [(gexp.Eq (V (vname.I i)) (L (Num n)))] [(gexp.Eq (V (vname.I i')) (L (Num n')))] = (i = 0 \<and> i' = 0)" |
   "guardMatch_code _ _ = False"
 
@@ -118,7 +118,7 @@ fun outputMatch_code :: "output_function list \<Rightarrow> output_function list
 lemma [code]: "outputMatch t1 t2 = outputMatch_code (Outputs t1) (Outputs t2)"
   by (metis outputMatch_code.elims(2) outputMatch_code.simps(1) outputMatch_def)
 
-fun always_different_outputs :: "aexp list \<Rightarrow> aexp list \<Rightarrow> bool" where
+fun always_different_outputs :: "vname aexp list \<Rightarrow> vname aexp list \<Rightarrow> bool" where
   "always_different_outputs [] [] = False" |
   "always_different_outputs [] (a#_) = True" |
   "always_different_outputs (a#_) [] = True" |
@@ -131,7 +131,7 @@ lemma always_different_outputs_outputs_never_equal:
   apply(induct O1 O2 rule: always_different_outputs.induct)
   by (simp_all add: apply_outputs_def)
 
-fun tests_input_equality :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
+fun tests_input_equality :: "nat \<Rightarrow> vname gexp \<Rightarrow> bool" where
   "tests_input_equality i (gexp.Eq (V (vname.I i')) (L _)) = (i = i')" |
   "tests_input_equality _ _ = False"
 
@@ -200,7 +200,7 @@ lemma always_different_outputs_direct_subsumption:
   using always_different_outputs_can_take_transition_not_subsumed accepts_trace_gives_context accepts_gives_context
   by fastforce
 
-definition negate :: "gexp list \<Rightarrow> gexp" where
+definition negate :: "'a gexp list \<Rightarrow> 'a gexp" where
   "negate g = gNot (fold gAnd g (Bc True))"
 
 lemma gval_negate_cons: "gval (negate (a # G)) s = gval (gNot a) s \<or>\<^sub>? gval (negate G) s"
@@ -211,7 +211,7 @@ lemma negate_true_guard: "(gval (negate G) s = true) = (gval (fold gAnd G (Bc Tr
   by (metis (no_types, lifting) gval_gNot maybe_double_negation maybe_not.simps(1) negate_def)
 
 lemma gval_negate_not_invalid: "(gval (negate gs) (join_ir i ra) \<noteq> invalid) = (gval (fold gAnd gs (Bc True)) (join_ir i ra) \<noteq> invalid)"
-  using gval_gNot maybe_not_invalid negate_def by auto
+  by (metis gval_gNot maybe_not_invalid negate_def)
 
 definition "dirty_always_different_outputs_direct_subsumption = always_different_outputs_direct_subsumption"
 
@@ -539,7 +539,6 @@ export_code
   maxS
   add_transition
   make_pta
-  make_pta_abstract
   AExp.enumerate_vars
   sorted_list_of_set
   (* Logical connectives *)

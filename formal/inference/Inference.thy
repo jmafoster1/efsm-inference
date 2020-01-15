@@ -118,7 +118,7 @@ definition replace_all :: "iEFSM \<Rightarrow> tids list \<Rightarrow> transitio
 definition replace_transitions :: "iEFSM \<Rightarrow> (tids \<times> transition) list \<Rightarrow> iEFSM" where
   "replace_transitions e ts = fold (\<lambda>(uid, new) acc. replace_transition acc uid new) ts e"
 
-primrec make_guard :: "value list \<Rightarrow> nat \<Rightarrow> gexp list" where
+primrec make_guard :: "value list \<Rightarrow> nat \<Rightarrow> vname gexp list" where
 "make_guard [] _ = []" |
 "make_guard (h#t) n = (gexp.Eq (V (vname.I n)) (L h))#(make_guard t (n+1))"
 
@@ -170,58 +170,6 @@ definition parseInt :: "String.literal \<Rightarrow> int" where
 definition substring :: "String.literal \<Rightarrow> nat \<Rightarrow> String.literal" where
   "substring s n = String.implode (drop n (String.explode s))"
 
-primrec make_guard_abstract :: "value list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (String.literal \<Rightarrow>f nat option) \<Rightarrow> gexp list \<Rightarrow> update_function list \<Rightarrow> (gexp list \<times> update_function list \<times> (String.literal \<Rightarrow>f nat option))" where
-  "make_guard_abstract [] _ _ r G U = (G, U, r)" |
-  "make_guard_abstract (h#t) i maxR r G U = (
-    case h of
-      value.Num _ \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Eq (V (vname.I i)) (L h))#G) U |
-      value.Str s \<Rightarrow>
-        if s = STR ''_'' then
-          make_guard_abstract t (i+1) maxR r G U
-        else if startsWith s STR ''$'' then
-          case r $ s of
-            None \<Rightarrow> make_guard_abstract t (i+1) (maxR + 1) (r(s := maxR)) G ((maxR, V (I i))#U) |
-            Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Eq (V (vname.I i)) (V (R reg)))#G) U
-        else if startsWith s STR ''<'' then
-          if startsWith (substring s 1) STR ''$'' then
-            case r $ (substring s 1) of
-              Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (V (R reg)))#G) U
-          else
-            make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (L (Num (parseInt (substring s 2)))))#G) U
-        else if startsWith s STR ''/='' then
-          if startsWith (substring s 1) STR ''$'' then
-            case r $ (substring s 2) of
-              Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (V (R reg)))#G) U
-          else
-            make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (L (Num (parseInt (substring s 3)))))#G) U
-        else
-          make_guard_abstract t (i+1) maxR r ((Eq (V (vname.I i)) (L h))#G) U
-  )"
-
-primrec make_outputs_abstract :: "value list \<Rightarrow> nat \<Rightarrow> (String.literal \<Rightarrow>f nat option) \<Rightarrow> output_function list \<Rightarrow> output_function list" where
-  "make_outputs_abstract []_ _ P = rev P" |
-  "make_outputs_abstract (h#t) maxR r P = (case h of
-    value.Num _ \<Rightarrow> make_outputs_abstract t maxR r ((L h)#P) |
-    value.Str s \<Rightarrow>
-      if startsWith s STR ''$'' then 
-        case r $ s of
-          Some reg \<Rightarrow> make_outputs_abstract t maxR r ((V (R reg))#P)
-      else
-        make_outputs_abstract t maxR r ((L h)#P)
-    )"
-
-definition add_transition_abstract :: "iEFSM \<Rightarrow> (String.literal \<Rightarrow>f nat option) \<Rightarrow> cfstate \<Rightarrow> label \<Rightarrow> value list \<Rightarrow> value list \<Rightarrow> (iEFSM \<times> (String.literal \<Rightarrow>f nat option))" where
-  "add_transition_abstract e r s label inputs outputs = (let
-    regs = fimage (total_max_reg \<circ> snd) (tm e);
-    maxR = (if regs = {||} then 1 else fMax regs);
-    (G, U1, r') = make_guard_abstract inputs 0 maxR r [] [];
-    P = make_outputs_abstract outputs maxR r' [] in
-    if endsWith label STR ''*'' then
-      (finsert ([max_uid_total e + 1], (s, s), \<lparr>Label=dropRight label 1, Arity=length inputs, Guard=G, Outputs=P, Updates=U1\<rparr>) e, r')
-    else
-      (finsert ([max_uid_total e + 1], (s, (maxS (tm e))+1), \<lparr>Label=label, Arity=length inputs, Guard=G, Outputs=P, Updates=U1\<rparr>) e, r')
-    )"
-
 fun make_branch :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> iEFSM" where
   "make_branch e _ _ [] = e" |
   "make_branch e s r ((label, inputs, outputs)#t) =
@@ -235,25 +183,9 @@ fun make_branch :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Righta
           make_branch (add_transition e s label inputs outputs) ((maxS (tm e))+1) r t
     )"
 
-fun make_branch_abstract :: "(iEFSM \<times> (String.literal \<Rightarrow>f nat option)) \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> iEFSM" where
-  "make_branch_abstract (e, r) _ _ [] = e" |
-  "make_branch_abstract (e, r1) s r ((label, inputs, outputs)#t) =
-    (case (step (tm e) s r label inputs) of
-      Some (transition, s', outputs', updated) \<Rightarrow> 
-        if outputs' = (map Some outputs) then
-          make_branch_abstract (e, r1) s' updated t
-        else 
-          make_branch_abstract (add_transition_abstract e r1 s label inputs outputs) ((maxS (tm e))+1) r t  |
-      None \<Rightarrow>
-          make_branch_abstract (add_transition_abstract e r1 s label inputs outputs) ((maxS (tm e))+1) r t
-    )"
-
 primrec make_pta_aux :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "make_pta_aux [] e = e" |
   "make_pta_aux (h#t) e = make_pta_aux t (make_branch e 0 <> h)"
-
-definition make_pta_abstract :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "make_pta_abstract l e = fold (\<lambda>h e. make_branch_abstract (e, <>) 0 <> h) l e"
 
 definition "make_pta log = make_pta_aux log {||}"
 
@@ -598,7 +530,7 @@ definition all_regs :: "iEFSM \<Rightarrow> nat set" where
 definition max_int :: "iEFSM \<Rightarrow> int" where
   "max_int e = EFSM.max_int (tm e)"
 
-fun literal_args :: "gexp \<Rightarrow> bool" where
+fun literal_args :: "'a gexp \<Rightarrow> bool" where
   "literal_args (Bc v) = False" |
   "literal_args (Eq (V _) (L _)) = True" |
   "literal_args (In _ _) = True" |
@@ -609,7 +541,7 @@ fun literal_args :: "gexp \<Rightarrow> bool" where
 lemma literal_args_eq: "literal_args (Eq a b) \<Longrightarrow> \<exists>v l. a = (V v) \<and> b = (L l)"
   apply (cases a)
      apply simp
-    apply (cases b)
+      apply (cases b)
   by auto
 
 definition i_possible_steps :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (tids \<times> cfstate \<times> transition) fset" where

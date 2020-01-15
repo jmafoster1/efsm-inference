@@ -38,7 +38,7 @@ primrec collect_training_sets :: "log \<Rightarrow> iEFSM \<Rightarrow> tids \<R
     collect_training_sets t uPTA T1 T2 (List.union G1 G1a) (List.union G2 G2a)
   )"
 
-definition find_distinguishing_guards :: "(inputs \<times> registers) list \<Rightarrow> (inputs \<times> registers) list \<Rightarrow> (gexp \<times> gexp) option" where
+definition find_distinguishing_guards :: "(inputs \<times> registers) list \<Rightarrow> (inputs \<times> registers) list \<Rightarrow> (vname gexp \<times> vname gexp) option" where
   "find_distinguishing_guards G1 G2 = (
     let gs = {(g1, g2).
       (\<forall>(i, r) \<in> set G1. gval g1 (join_ir i r) = true) \<and>
@@ -50,7 +50,7 @@ definition find_distinguishing_guards :: "(inputs \<times> registers) list \<Rig
 declare find_distinguishing_guards_def [code del]
 code_printing constant find_distinguishing_guards \<rightharpoonup> (Scala) "Dirties.findDistinguishingGuard"
 
-definition add_guard :: "transition \<Rightarrow> gexp \<Rightarrow> transition" where
+definition add_guard :: "transition \<Rightarrow> vname gexp \<Rightarrow> transition" where
   "add_guard t g = \<lparr>Label = Label t, Arity = Arity t, Guard = g#(Guard t), Outputs = Outputs t, Updates = Updates t\<rparr>"
 
 definition distinguish :: "log \<Rightarrow> update_modifier" where

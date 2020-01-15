@@ -2,7 +2,7 @@ theory Equals
 imports "../Inference"
 begin
 
-fun equality_pairs :: "gexp list \<Rightarrow> (nat \<times> value) list" where
+fun equality_pairs :: "vname gexp list \<Rightarrow> (nat \<times> value) list" where
   "equality_pairs [] = []" |
   "equality_pairs ((Eq (V (I n)) (L l))#t) = ((n, l)#(equality_pairs t))" |
   "equality_pairs (h#t) = equality_pairs t"

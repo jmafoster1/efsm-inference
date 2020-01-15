@@ -88,7 +88,7 @@ definition make_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> (((tids \
   "make_training_set e l = log_training_set e l (map (\<lambda>x. (x, [])) (transition_groups e l))"
 
 \<comment> \<open>This will be replaced by symbolic regression in the executable\<close>
-definition get_output :: "nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> value list \<Rightarrow> (aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
+definition get_output :: "nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> value list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
   "get_output maxReg values I r P = (let
     possible_funs = {a. \<forall>(i, r, p) \<in> set (zip I (zip r P)). aval a (join_ir i r) = Some p}
     in
@@ -97,10 +97,10 @@ definition get_output :: "nat \<Rightarrow> value list \<Rightarrow> inputs list
 declare get_output_def [code del]
 code_printing constant get_output \<rightharpoonup> (Scala) "Dirties.getOutput"
 
-definition get_outputs :: "nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> value list list \<Rightarrow> (aexp \<times> (vname \<Rightarrow>f String.literal)) option list" where
+definition get_outputs :: "nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> value list list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option list" where
   "get_outputs maxReg values I r outputs = map (\<lambda>ps. get_output maxReg values I r ps) (transpose outputs)" 
 
-fun put_outputs :: "(((aexp \<times> (vname \<Rightarrow>f String.literal)) option) \<times> aexp) list \<Rightarrow> aexp list" where
+fun put_outputs :: "(((vname aexp \<times> (vname \<Rightarrow>f String.literal)) option) \<times> vname aexp) list \<Rightarrow> vname aexp list" where
   "put_outputs [] = []" |
   "put_outputs ((None, p)#t) = p#(put_outputs t)" |
   "put_outputs ((Some (p, _), _)#t) = p#(put_outputs t)"
