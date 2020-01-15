@@ -2699,25 +2699,19 @@ def merge_transitions_aux(e: FSet.fset[(List[Nat.nat],
      })(b)
   }
 
-def directly_subsumes:
-      (FSet.fset[(List[Nat.nat],
-                   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
-        (FSet.fset[(List[Nat.nat],
-                     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
-          Nat.nat =>
-            Nat.nat =>
-              (Transition.transition_ext[Unit]) =>
-                (Transition.transition_ext[Unit]) => Boolean
+def directly_subsumes(e1: FSet.fset[(List[Nat.nat],
+                                      ((Nat.nat, Nat.nat),
+Transition.transition_ext[Unit]))],
+                       e2: FSet.fset[(List[Nat.nat],
+                                       ((Nat.nat, Nat.nat),
+ Transition.transition_ext[Unit]))],
+                       s1: Nat.nat, s2: Nat.nat,
+                       t1: Transition.transition_ext[Unit],
+                       t2: Transition.transition_ext[Unit]):
+      Boolean
   =
-  ((a: FSet.fset[(List[Nat.nat],
-                   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))])
-     =>
-    (b: FSet.fset[(List[Nat.nat],
-                    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))])
-      =>
-    (c: Nat.nat) => (d: Nat.nat) => (e: Transition.transition_ext[Unit]) =>
-    (f: Transition.transition_ext[Unit]) =>
-    Dirties.scalaDirectlySubsumes(a, b, c, d, e, f))
+  (if (Transition.equal_transition_exta[Unit](t1, t2)) true
+    else Dirties.scalaDirectlySubsumes(e1, e2, s1, s2, t1, t2))
 
 def origin(uid: List[Nat.nat],
             t: FSet.fset[(List[Nat.nat],
@@ -2781,17 +2775,16 @@ def merge_transitions(oldEFSM:
                            Transition.transition_ext[Unit]))]]
   =
   (if (Lista.list_all[Nat.nat](((id: Nat.nat) =>
-                                 directly_subsumes.apply(oldEFSM).apply(destMerge).apply(origin(List(id),
-                 oldEFSM)).apply(origin(u_1, destMerge)).apply(t_2).apply(t_1)),
+                                 directly_subsumes(oldEFSM, destMerge,
+            origin(List(id), oldEFSM), origin(u_1, destMerge), t_2, t_1)),
                                 u_1))
     Some[FSet.fset[(List[Nat.nat],
                      ((Nat.nat, Nat.nat),
                        Transition.transition_ext[Unit]))]](merge_transitions_aux(destMerge,
   u_1, u_2))
     else (if (Lista.list_all[Nat.nat](((id: Nat.nat) =>
-directly_subsumes.apply(oldEFSM).apply(destMerge).apply(origin(List(id),
-                        oldEFSM)).apply(origin(u_2,
-        destMerge)).apply(t_1).apply(t_2)),
+directly_subsumes(oldEFSM, destMerge, origin(List(id), oldEFSM),
+                   origin(u_2, destMerge), t_1, t_2)),
                                        u_2))
            Some[FSet.fset[(List[Nat.nat],
                             ((Nat.nat, Nat.nat),

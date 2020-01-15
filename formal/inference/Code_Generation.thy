@@ -440,10 +440,6 @@ termination
    apply simp
   by (metis (no_types, lifting) case_prod_conv measures_less size_fsubset)
 
-lemma [code]: "directly_subsumes = dirty_directly_subsumes"
-  apply (rule ext)+
-  by (simp add: directly_subsumes_self dirty_directly_subsumes_def)
-
 (* declare make_pta_fold [code] *)
 declare GExp.satisfiable_def [code del]
 declare initially_undefined_context_check_full_def [code del]
@@ -527,6 +523,9 @@ code_printing constant get_update \<rightharpoonup> (Scala) "Dirties.getUpdate"
 
 definition mismatched_updates :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "mismatched_updates t1 t2 = (\<exists>r \<in> set (map fst (Updates t1)). r \<notin> set (map fst (Updates t2)))"
+
+lemma [code]: "directly_subsumes e1 e2 s1 s2 t1 t2  = (if t1 = t2 then True else dirty_directly_subsumes e1 e2 s1 s2 t1 t2)"
+  by (simp add: directly_subsumes_self dirty_directly_subsumes_def)
 
 export_code
   (* Essentials *)

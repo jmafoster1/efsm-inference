@@ -26,7 +26,7 @@ object PrettyPrinter {
     }
   }
 
-  def show(a: AExp.aexp): String = {
+  def show(a: AExp.aexp[VName.vname]): String = {
     a match {
       case AExp.L(v) => valueToString(v)
       case AExp.V(v) => vnameToString(v)
@@ -36,26 +36,25 @@ object PrettyPrinter {
     }
   }
 
-  def gexpToString(g: GExp.gexp): String = g match {
+  def gexpToString(g: GExp.gexp[VName.vname]): String = g match {
     case GExp.Bc(v) => v.toString()
     case GExp.Eq(a, b) => s"(= ${show(a)} ${show(b)})"
     case GExp.Gt(a, b) => s"(> ${show(a)} ${show(b)})"
-    case GExp.Null(v) => (show(v) + "= NULL")
     case GExp.In(v, l) => s"${vnameToString(v)} E {${l.map(valueToString).mkString(", ")}}"
     case GExp.Nor(g1, g2) => {
       return s"(not (or ${gexpToString(g1)} ${gexpToString(g2)}))"
     }
   }
 
-  def guardsToString(g: List[GExp.gexp]): String = {
+  def guardsToString(g: List[GExp.gexp[VName.vname]]): String = {
     "[" + g.map(x => gexpToString(x)).mkString(", ") + "]"
   }
 
-  def outputsToString(g: List[AExp.aexp]): String = {
+  def outputsToString(g: List[AExp.aexp[VName.vname]]): String = {
     g.zipWithIndex.map(x => "o" + (x._2 + 1) + ":=" + show(x._1)).mkString(", ")
   }
 
-  def updatesToString(g: List[(Nat.nat, AExp.aexp)]): String = {
+  def updatesToString(g: List[(Nat.nat, AExp.aexp[VName.vname])]): String = {
     "[" + g.map(a => (vnameToString(VName.R(a._1)) + ":=" + show(a._2))).mkString(", ") + "]"
   }
 

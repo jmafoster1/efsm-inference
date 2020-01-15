@@ -13,14 +13,8 @@ object FrontEnd {
     Log.root.info(args.mkString(" "))
     Log.root.info(s"Building PTA - ${Config.config.log.length} ${if (Config.config.log.length == 1) "trace" else "traces"}")
 
-    var pta: IEFSM = null;
+    var pta: IEFSM = Inference.make_pta(Config.config.log)
 
-    if (Config.config.abs) {
-      pta = Inference.make_pta_abstract(Config.config.log, FSet.bot_fset)
-    }
-    else {
-      pta = Inference.make_pta(Config.config.log)
-    }
     PrettyPrinter.iEFSM2dot(pta, s"pta_gen")
 
     // val groups = PTA_Generalisation.log_group_transitions(pta, Config.config.log)

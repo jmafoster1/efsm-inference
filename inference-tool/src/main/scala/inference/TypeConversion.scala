@@ -19,14 +19,14 @@ object Types {
 }
 
 object TypeConversion {
-  def mkAdd(a: AExp.aexp, b: AExp.aexp): AExp.aexp = AExp.Plus(a, b)
-  def mkSub(a: AExp.aexp, b: AExp.aexp): AExp.aexp = AExp.Minus(a, b)
-  def mkMul(a: AExp.aexp, b: AExp.aexp): AExp.aexp = AExp.Times(a, b)
+  def mkAdd(a: AExp.aexp[VName.vname], b: AExp.aexp[VName.vname]): AExp.aexp[VName.vname] = AExp.Plus(a, b)
+  def mkSub(a: AExp.aexp[VName.vname], b: AExp.aexp[VName.vname]): AExp.aexp[VName.vname] = AExp.Minus(a, b)
+  def mkMul(a: AExp.aexp[VName.vname], b: AExp.aexp[VName.vname]): AExp.aexp[VName.vname] = AExp.Times(a, b)
 
-  def mkAnd(a: GExp.gexp, b: GExp.gexp): GExp.gexp = GExp.gAnd(a, b)
-  def mkOr(a: GExp.gexp, b: GExp.gexp): GExp.gexp = GExp.gOr(a, b)
+  def mkAnd(a: GExp.gexp[VName.vname], b: GExp.gexp[VName.vname]): GExp.gexp[VName.vname] = GExp.gAnd(a, b)
+  def mkOr(a: GExp.gexp[VName.vname], b: GExp.gexp[VName.vname]): GExp.gexp[VName.vname] = GExp.gOr(a, b)
 
-  def toAExp(best: Node[VariableAssignment[_]]): AExp.aexp = {
+  def toAExp(best: Node[VariableAssignment[_]]): AExp.aexp[VName.vname] = {
     val ctx = new Context()
     val aexp = aexpFromZ3(best.toZ3(ctx))
     ctx.close
@@ -58,13 +58,13 @@ object TypeConversion {
       }
   }
 
-  def makeBinaryGExp(e: List[Expr], f: (GExp.gexp => GExp.gexp => GExp.gexp)): GExp.gexp = e match {
+  def makeBinaryGExp(e: List[Expr], f: (GExp.gexp[VName.vname] => GExp.gexp[VName.vname] => GExp.gexp[VName.vname])): GExp.gexp[VName.vname] = e match {
     case Nil => throw new IllegalArgumentException("Not enough children")
     case (a::b::Nil) => f(gexpFromZ3(a))(gexpFromZ3(b))
     case (a::bs) => f(gexpFromZ3(a))(makeBinaryGExp(bs, f))
   }
 
-  def gexpFromZ3(e: Expr): GExp.gexp = {
+  def gexpFromZ3(e: Expr): GExp.gexp[VName.vname] = {
     if (e.isAnd) {
       return makeBinaryGExp(e.getArgs().toList, (mkAnd _).curried)
     }
@@ -101,13 +101,13 @@ object TypeConversion {
     throw new IllegalArgumentException("Couldn't convert from z3 expression "+e)
   }
 
-  def makeBinaryAExp(e: List[Expr], f: (AExp.aexp => AExp.aexp => AExp.aexp)): AExp.aexp = e match {
+  def makeBinaryAExp(e: List[Expr], f: (AExp.aexp[VName.vname] => AExp.aexp[VName.vname] => AExp.aexp[VName.vname])): AExp.aexp[VName.vname] = e match {
     case Nil => throw new IllegalArgumentException("Not enough children")
     case (a::b::Nil) => f(aexpFromZ3(a))(aexpFromZ3(b))
     case (a::bs) => f(aexpFromZ3(a))(makeBinaryAExp(bs, f))
   }
 
-  def aexpFromZ3(e: Expr): AExp.aexp = {
+  def aexpFromZ3(e: Expr): AExp.aexp[VName.vname] = {
     if (e.isAdd) {
       return makeBinaryAExp(e.getArgs().toList, (mkAdd _).curried)
     }
@@ -223,7 +223,7 @@ object TypeConversion {
     }
   }
 
-  def aexpToSALTranslator(a: AExp.aexp): isabellesal.Expression = a match {
+  def aexpToSALTranslator(a: AExp.aexp[VName.vname]): isabellesal.Expression = a match {
     case AExp.L(Value.Numa(Int.int_of_integer(n))) => isabellesal.Expression.newOneFrom(isabellesal.Constant.newOneFrom(toLong(n)))
     case AExp.L(Value.Str(s)) => isabellesal.Expression.newOneFrom(isabellesal.Constant.newOneFrom(s))
     case AExp.V(v) => isabellesal.Expression.newOneFrom(vnameToSALTranslator(v))
@@ -241,11 +241,8 @@ object TypeConversion {
         aexpToSALTranslator(a2))
   }
 
-  def gexpToSALTranslator(g: GExp.gexp): isabellesal.Predicate = g match {
+  def gexpToSALTranslator(g: GExp.gexp[VName.vname]): isabellesal.Predicate = g match {
     case GExp.Bc(v) => throw new java.lang.IllegalArgumentException("Can't translate boolean values")
-    case GExp.Null(AExp.V(a)) => isabellesal.Predicate.newNullTest(vnameToSALTranslator(a))
-    case GExp.Null(a) => throw new java.lang.IllegalArgumentException("Can only translate null guards of variables")
-    // case GExp.In(v, l) => gexpToSALTranslator(GExp.fold_In(v, l))
     case GExp.In(v, Nil) => throw new java.lang.IllegalArgumentException("Can't translate empty membership")
     case GExp.In(v, l :: Nil) => isabellesal.Predicate.newInfixFrom(
       Token.EQUALS,
@@ -275,7 +272,7 @@ object TypeConversion {
       gexpToSALTranslator(g2))
   }
 
-  def updateToExp(u: (Nat.nat, AExp.aexp)): Assignment = u match {
+  def updateToExp(u: (Nat.nat, AExp.aexp[VName.vname])): Assignment = u match {
     case (r, a) => Assignment.newOne(
       vnameToSALTranslator(VName.R(r)),
       aexpToSALTranslator(a))
