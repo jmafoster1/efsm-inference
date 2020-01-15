@@ -117,7 +117,7 @@ next
     by auto
 qed
 
-type_synonym output_types = "(nat \<times> (aexp \<times> vname \<Rightarrow>f String.literal) option) list"
+type_synonym output_types = "(nat \<times> (vname aexp \<times> vname \<Rightarrow>f String.literal) option) list"
 
 (*This is where the types stuff originates*)
 definition generalise_outputs :: "value list \<Rightarrow> ((tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> (tids \<times> transition \<times> output_types) list list" where
@@ -194,7 +194,7 @@ lemma fold_add_groupwise_updates [code]: "add_groupwise_updates log funs e = fol
   by (induct log arbitrary: e, auto)
 
 \<comment> \<open>This will be replaced to calls to Z3 in the executable\<close>
-definition get_regs :: "(vname \<Rightarrow>f String.literal) \<Rightarrow> inputs \<Rightarrow> aexp \<Rightarrow> value \<Rightarrow> registers" where
+definition get_regs :: "(vname \<Rightarrow>f String.literal) \<Rightarrow> inputs \<Rightarrow> vname aexp \<Rightarrow> value \<Rightarrow> registers" where
   "get_regs types inputs expression output = Eps (\<lambda>r. aval expression (join_ir inputs r) = Some output)"
 
 type_synonym event_info = "(cfstate \<times> registers \<times> registers \<times> inputs \<times> tids \<times> transition)"
@@ -265,14 +265,14 @@ lemma target_fold [code]: "target tRegs ts = target_fold tRegs ts []"
   by (metis append_self_conv2 rev.simps(1) target_tail_fold target_tail)
 
 \<comment> \<open>This will be replaced by symbolic regression in the executable\<close>
-definition get_update :: "nat \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> aexp option" where
+definition get_update :: "nat \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> vname aexp option" where
   "get_update reg values train = (let
     possible_funs = {a. \<forall>(i, r, r') \<in> set train. aval a (join_ir i r) = r' $ reg}
     in
     if possible_funs = {} then None else Some (Eps (\<lambda>x. x \<in> possible_funs))
   )"
 
-definition get_updates_opt :: "value list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> (nat \<times> aexp option) list" where
+definition get_updates_opt :: "value list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> (nat \<times> vname aexp option) list" where
   "get_updates_opt values train = (let
     updated_regs = fold List.union (map (finfun_to_list \<circ> snd \<circ> snd) train) [] in
     map (\<lambda>r.
@@ -291,7 +291,7 @@ definition get_updates_opt :: "value list \<Rightarrow> (inputs \<times> registe
 definition finfun_add :: "(('a::linorder) \<Rightarrow>f 'b) \<Rightarrow> ('a \<Rightarrow>f 'b) \<Rightarrow> ('a \<Rightarrow>f 'b)" where
   "finfun_add a b = fold (\<lambda>k f. f(k $:= b $ k)) (finfun_to_list b) a"
 
-definition group_update :: "value list \<Rightarrow> targeted_run_info \<Rightarrow> (tids \<times> (nat \<times> aexp) list) option" where
+definition group_update :: "value list \<Rightarrow> targeted_run_info \<Rightarrow> (tids \<times> (nat \<times> vname aexp) list) option" where
   "group_update values l = (
     let
       targeted = filter (\<lambda>(regs, _). finfun_to_list regs \<noteq> []) l;
@@ -303,7 +303,7 @@ definition group_update :: "value list \<Rightarrow> targeted_run_info \<Rightar
       Some (fold List.union (map (\<lambda>(tRegs, s, oldRegs, regs, inputs, tid, ta). tid) l) [], map (\<lambda>(r, f_o). (r, the f_o)) maybe_updates)
   )"
 
-fun groupwise_put_updates :: "(tids \<times> transition) list list \<Rightarrow> log \<Rightarrow> value list \<Rightarrow> tids list \<Rightarrow> (nat \<times> (aexp \<times> vname \<Rightarrow>f String.literal)) \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+fun groupwise_put_updates :: "(tids \<times> transition) list list \<Rightarrow> log \<Rightarrow> value list \<Rightarrow> tids list \<Rightarrow> (nat \<times> (vname aexp \<times> vname \<Rightarrow>f String.literal)) \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "groupwise_put_updates [] _ _ _ _  e = e" |
   "groupwise_put_updates (gp#gps) log values current (o_inx, (op, types)) e = (
     let
@@ -405,7 +405,7 @@ lemma groupwise_generalise_and_update_fold [code]:
   apply simp
   by (case_tac "generalise_and_update log e a", auto)
 
-definition standardise_outputs :: "aexp list \<Rightarrow> aexp list \<Rightarrow> aexp list" where
+definition standardise_outputs :: "vname aexp list \<Rightarrow> vname aexp list \<Rightarrow> vname aexp list" where
   "standardise_outputs p1 p2 = map (\<lambda>(p1, p2). max p1 p2) (zip p1 p2)"
 
 definition standardise_group_outputs :: "(tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list" where
