@@ -17,7 +17,6 @@ theory Code_Generation
    Code_Target_FSet
    Code_Target_Set
    Code_Target_List
-   Use_Small_Numbers
 efsm2sal
 begin
 
@@ -575,6 +574,7 @@ export_code
   nondeterministic_pairs_labar
   nondeterministic_pairs_labar_dest
   (* Utilities *)
+  test_log
 mismatched_updates
   iefsm2dot
   efsm2dot
@@ -582,7 +582,6 @@ mismatched_updates
   guards2sal_num
   fold_In
   max_int
-  use_smallest_ints
   And
   enumerate_vars
 pta_generalise_outputs

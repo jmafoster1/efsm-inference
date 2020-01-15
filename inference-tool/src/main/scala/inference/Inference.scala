@@ -1,3 +1,9 @@
+object Fun {
+
+def comp[A, B, C](f: A => B, g: C => A): C => B = ((x: C) => f(g(x)))
+
+} /* object Fun */
+
 object HOL {
 
 trait equal[A] {
@@ -58,23 +64,11 @@ object equal {
   implicit def `Nat.equal_nat`: equal[Nat.nat] = new equal[Nat.nat] {
     val `HOL.equal` = (a: Nat.nat, b: Nat.nat) => Nat.equal_nata(a, b)
   }
-  implicit def `Int.equal_int`: equal[Int.int] = new equal[Int.int] {
-    val `HOL.equal` = (a: Int.int, b: Int.int) => Int.equal_inta(a, b)
-  }
 }
 
 def eq[A : equal](a: A, b: A): Boolean = equal[A](a, b)
 
 } /* object HOL */
-
-object Fun {
-
-def comp[A, B, C](f: A => B, g: C => A): C => B = ((x: C) => f(g(x)))
-
-def fun_upd[A : HOL.equal, B](f: A => B, a: A, b: B): A => B =
-  ((x: A) => (if (HOL.eq[A](x, a)) b else f(x)))
-
-} /* object Fun */
 
 object Orderings {
 
@@ -640,22 +634,20 @@ object Int {
 abstract sealed class int
 final case class int_of_integer(a: BigInt) extends int
 
-def equal_inta(k: int, l: int): Boolean =
-  Code_Numeral.integer_of_int(k) == Code_Numeral.integer_of_int(l)
-
 def less_eq_int(k: int, l: int): Boolean =
   Code_Numeral.integer_of_int(k) <= Code_Numeral.integer_of_int(l)
 
 def less_int(k: int, l: int): Boolean =
   Code_Numeral.integer_of_int(k) < Code_Numeral.integer_of_int(l)
 
-def one_int: int = int_of_integer(BigInt(1))
-
 def plus_int(k: int, l: int): int =
   int_of_integer(Code_Numeral.integer_of_int(k) +
                    Code_Numeral.integer_of_int(l))
 
 def zero_int: int = int_of_integer(BigInt(0))
+
+def equal_int(k: int, l: int): Boolean =
+  Code_Numeral.integer_of_int(k) == Code_Numeral.integer_of_int(l)
 
 def minus_int(k: int, l: int): int =
   int_of_integer(Code_Numeral.integer_of_int(k) -
@@ -713,12 +705,6 @@ def fold[A, B](f: A => B => B, xs: List[A], s: B): B =
   Dirties.foldl[B, A](((x: B) => (sa: A) => (f(sa))(x)), s, xs)
 
 def maps[A, B](f: A => List[B], l: List[A]): List[B] = l.flatMap(f)
-
-def upto_aux(i: Int.int, j: Int.int, js: List[Int.int]): List[Int.int] =
-  (if (Int.less_int(j, i)) js
-    else upto_aux(i, Int.minus_int(j, Int.one_int), j :: js))
-
-def upto(i: Int.int, j: Int.int): List[Int.int] = upto_aux(i, j, Nil)
 
 def foldr[A, B](f: A => B => B, xs: List[A], a: B): B =
   Dirties.foldl[B, A](((x: B) => (y: A) => (f(y))(x)), a, xs.reverse)
@@ -898,7 +884,7 @@ def equal_valuea(x0: value, x1: value): Boolean = (x0, x1) match {
   case (Numa(x1), Str(x2)) => false
   case (Str(x2), Numa(x1)) => false
   case (Str(x2), Str(y2)) => x2 == y2
-  case (Numa(x1), Numa(y1)) => Int.equal_inta(x1, y1)
+  case (Numa(x1), Numa(y1)) => Int.equal_int(x1, y1)
 }
 
 def less_eq_value(x0: value, x1: value): Boolean = (x0, x1) match {
@@ -4460,6 +4446,60 @@ def all_regs(e: FSet.fset[((Nat.nat, Nat.nat),
                            FSet.fset[((Nat.nat, Nat.nat),
                                        Transition.transition_ext[Unit])](e)))
 
+def test_exec(x0: List[(String, (List[Value.value], List[Value.value]))],
+               uu: FSet.fset[((Nat.nat, Nat.nat),
+                               Transition.transition_ext[Unit])],
+               uv: Nat.nat, uw: Map[Nat.nat, Option[Value.value]]):
+      List[(String,
+             (List[Value.value],
+               (Nat.nat,
+                 (Map[Nat.nat, Option[Value.value]],
+                   (List[Value.value], List[Option[Value.value]])))))]
+  =
+  (x0, uu, uv, uw) match {
+  case (Nil, uu, uv, uw) => Nil
+  case ((l, (i, expected)) :: es, e, s, r) =>
+    {
+      val ps: FSet.fset[(Nat.nat, Transition.transition_ext[Unit])] =
+        possible_steps(e, s, r, l, i);
+      (if (FSet_Utils.fis_singleton[(Nat.nat,
+                                      Transition.transition_ext[Unit])](ps))
+        {
+          val (sa, t): (Nat.nat, Transition.transition_ext[Unit]) =
+            FSet.fthe_elem[(Nat.nat, Transition.transition_ext[Unit])](ps)
+          val ra: Map[Nat.nat, Option[Value.value]] =
+            apply_updates(Transition.Updates[Unit](t), AExp.join_ir(i, r), r)
+          val actual: List[Option[Value.value]] =
+            apply_outputs[VName.vname](Transition.Outputs[Unit](t),
+AExp.join_ir(i, r));
+          (l, (i, (s, (r, (expected, actual))))) :: test_exec(es, e, sa, ra)
+        }
+        else Nil)
+    }
+}
+
+def test_log(l: List[List[(String, (List[Value.value], List[Value.value]))]],
+              e: FSet.fset[((Nat.nat, Nat.nat),
+                             Transition.transition_ext[Unit])]):
+      List[List[(String,
+                  (List[Value.value],
+                    (Nat.nat,
+                      (Map[Nat.nat, Option[Value.value]],
+                        (List[Value.value], List[Option[Value.value]])))))]]
+  =
+  Lista.map[List[(String, (List[Value.value], List[Value.value]))],
+             List[(String,
+                    (List[Value.value],
+                      (Nat.nat,
+                        (Map[Nat.nat, Option[Value.value]],
+                          (List[Value.value],
+                            List[Option[Value.value]])))))]](((t:
+                         List[(String, (List[Value.value], List[Value.value]))])
+                        =>
+                       test_exec(t, e, Nat.zero_nata,
+                                  Map().withDefaultValue(None))),
+                      l)
+
 } /* object EFSM */
 
 object Equals {
@@ -6496,13 +6536,6 @@ r1, r2))
 
 } /* object Same_Register */
 
-object Code_Target_Nat {
-
-def int_of_nat(n: Nat.nat): Int.int =
-  Int.int_of_integer(Code_Numeral.integer_of_nat(n))
-
-} /* object Code_Target_Nat */
-
 object Increment_Reset {
 
 def guardMatch[A, B](t1: Transition.transition_ext[A],
@@ -7121,119 +7154,6 @@ def gung_ho(t1ID: List[Nat.nat], t2ID: List[Nat.nat], s: Nat.nat,
   }
 
 } /* object Least_Upper_Bound */
-
-object Use_Small_Numbers {
-
-def is_Num(x0: Value.value): Boolean = x0 match {
-  case Value.Numa(uu) => true
-  case Value.Str(v) => false
-}
-
-def map_of[A : HOL.equal, B](l: List[(A, B)]): A => Option[B] =
-  Lista.foldr[(A, B),
-               A => Option[B]](((a: (A, B)) =>
-                                 {
-                                   val (aa, b): (A, B) = a;
-                                   ((m: A => Option[B]) =>
-                                     Fun.fun_upd[A,
-          Option[B]](m, aa, Some[B](b)))
-                                 }),
-                                l, ((_: A) => None))
-
-def enumerate[A](l: List[A]): List[(A, Int.int)] =
-  (l zip (Lista.upto(Int.zero_int,
-                      Code_Target_Nat.int_of_nat(Nat.Nata(l.length)))))
-
-def make_small(f: Int.int => Option[Int.int], l: List[Value.value]):
-      List[Value.value]
-  =
-  Lista.map[Value.value,
-             Value.value](((x: Value.value) =>
-                            (x match {
-                               case Value.Numa(n) =>
-                                 {
-                                   val (Some(a)): Option[Int.int] = f(n);
-                                   Value.Numa(a)
-                                 }
-                               case Value.Str(_) => x
-                             })),
-                           l)
-
-def trace_enumerate_ints(t: List[(String,
-                                   (List[Value.value], List[Value.value]))]):
-      List[Int.int]
-  =
-  Lista.map[Value.value,
-             Int.int](((a: Value.value) =>
-                        {
-                          val (Value.Numa(n)): Value.value = a;
-                          n
-                        }),
-                       Lista.fold[(String,
-                                    (List[Value.value], List[Value.value])),
-                                   List[Value.value]](Fun.comp[List[Value.value],
-                        (List[Value.value]) => List[Value.value],
-                        (String,
-                          (List[Value.value],
-                            List[Value.value]))](Lista.union[Value.value],
-          ((a: (String, (List[Value.value], List[Value.value]))) =>
-            {
-              val (_, (inputs, outputs)):
-                    (String, (List[Value.value], List[Value.value]))
-                = a;
-              Lista.filter[Value.value](((aa: Value.value) => is_Num(aa)),
- inputs ++ outputs)
-            })),
-               t, Nil))
-
-def log_enumerate_ints(l: List[List[(String,
-                                      (List[Value.value],
-List[Value.value]))]]):
-      List[Int.int]
-  =
-  Lista.fold[List[(String, (List[Value.value], List[Value.value]))],
-              List[Int.int]](Fun.comp[List[Int.int],
-                                       (List[Int.int]) => List[Int.int],
-                                       List[(String,
-      (List[Value.value],
-        List[Value.value]))]](Lista.union[Int.int],
-                               ((a: List[(String,
-   (List[Value.value], List[Value.value]))])
-                                  =>
-                                 trace_enumerate_ints(a))),
-                              l, Nil)
-
-def use_smallest_ints(l: List[List[(String,
-                                     (List[Value.value], List[Value.value]))]]):
-      List[List[(String, (List[Value.value], List[Value.value]))]]
-  =
-  {
-    val ints: List[Int.int] = log_enumerate_ints(l)
-    val f: Int.int => Option[Int.int] =
-      map_of[Int.int, Int.int](enumerate[Int.int](ints));
-    Lista.map[List[(String, (List[Value.value], List[Value.value]))],
-               List[(String,
-                      (List[Value.value],
-                        List[Value.value]))]](((a:
-          List[(String, (List[Value.value], List[Value.value]))])
-         =>
-        Lista.map[(String, (List[Value.value], List[Value.value])),
-                   (String,
-                     (List[Value.value],
-                       List[Value.value]))](((aa:
-        (String, (List[Value.value], List[Value.value])))
-       =>
-      {
-        val (la, (inputs, outputs)):
-              (String, (List[Value.value], List[Value.value]))
-          = aa;
-        (la, (make_small(f, inputs), make_small(f, outputs)))
-      }),
-     a)),
-       l)
-  }
-
-} /* object Use_Small_Numbers */
 
 object PTA_Generalisation {
 
@@ -8828,34 +8748,6 @@ def delay_initialisation_of(r: Nat.nat,
                            })),
                          find_initialisation_of(r, e, l), e)
 
-def derestrict_transition(t: Transition.transition_ext[Unit]):
-      Transition.transition_ext[Unit]
-  =
-  {
-    val relevant_vars: Set.set[AExp.aexp[VName.vname]] =
-      Set.image[VName.vname,
-                 AExp.aexp[VName.vname]](((a: VName.vname) =>
-   AExp.V[VName.vname](a)),
-  Lista.fold[(Nat.nat, AExp.aexp[VName.vname]),
-              Set.set[VName.vname]](((a: (Nat.nat, AExp.aexp[VName.vname])) =>
-                                      {
-val (_, u): (Nat.nat, AExp.aexp[VName.vname]) = a;
-((acc: Set.set[VName.vname]) =>
-  Set.sup_set[VName.vname](acc, AExp.enumerate_vars(u)))
-                                      }),
-                                     Transition.Updates[Unit](t),
-                                     Set.bot_set[VName.vname]));
-    Transition.Guard_update[Unit](((_: List[GExp.gexp[VName.vname]]) =>
-                                    Lista.filter[GExp.gexp[VName.vname]](((g:
-                                     GExp.gexp[VName.vname])
-                                    =>
-                                   Set.Ball[AExp.aexp[VName.vname]](relevant_vars,
-                             ((v: AExp.aexp[VName.vname]) =>
-                               ! (GExp.gexp_constrains[VName.vname](g, v))))),
-                                  Transition.Guard[Unit](t))),
-                                   t)
-  }
-
 def find_first_use_of_trace(uu: Nat.nat,
                              x1: List[(String,
 (List[Value.value], List[Value.value]))],
@@ -8984,7 +8876,11 @@ List[Nat.nat]))))]):
                                 ((Nat.nat, Nat.nat),
                                   Transition.transition_ext[Unit]))
                           = a;
-                        (id, (tf, derestrict_transition(tran)))
+                        (id, (tf, Transition.Guard_update[Unit](((_:
+                            List[GExp.gexp[VName.vname]])
+                           =>
+                          Nil),
+                         tran)))
                       }),
                      delayed)
     val nondeterministic_pairs:

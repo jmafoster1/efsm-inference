@@ -95,8 +95,7 @@ object PrettyPrinter {
     case None => "NONE!!!"
   }
 
-  def optOutputsToString(o: List[Option[Value.value]]) = o.map(outputToString).mkString(", ")
-  def litOutputsToString(o: List[Value.value]) = show(o)
+  def show[X: ClassManifest](o: List[Option[Value.value]]) = s"""[${o.map(outputToString).mkString(", ")}]"""
 
   def pairToString(x: (Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))) = x match {
     case (Nat.Nata(a), ((Nat.Nata(b), Nat.Nata(c)), ((t, Nat.Nata(d)), (t_prime, Nat.Nata(e))))) =>
@@ -193,5 +192,21 @@ object PrettyPrinter {
 
   def i_stepToString(s: (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))) = s match {
     case (ids, (s_prime, t)) => ("[" + ids.map(id => show(id)).mkString(",") + "]", show(s_prime), show(t))
+  }
+
+  def to_JSON(r: Map[Nat.nat, Option[Value.value]]): String = {
+    val pairs = r.map {
+      case (k: Nat.nat, v: Option[Value.value]) =>
+        s""""r${show(k)}":""" + (v match {
+          case None => throw new IllegalStateException("Got None from registers")
+          case Some(Value.Numa(Int.int_of_integer(n))) => n.toString
+          case Some(Value.Str(s)) => s
+        })
+    }
+    return s"{${pairs.mkString(", ")}}"
+  }
+
+  def to_JSON(e: (String, (List[Value.value], (Nat.nat, (Map[Nat.nat,Option[Value.value]], (List[Value.value], List[Option[Value.value]])))))): String = e match {
+    case (label, (inputs, (state, (regs, (expected, actual))))) => s"""{"label": "$label", "inputs": ${show(inputs)}, "state": ${show(state)}, "regs": ${to_JSON(regs)}, "expected": ${show(expected)}, "actual": ${show(actual)}}"""
   }
 }

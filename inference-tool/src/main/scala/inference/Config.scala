@@ -23,7 +23,7 @@ object Strategies extends Enumeration {
 
 case class Config(
   heuristics: Seq[Heuristics.Heuristic] = Seq(),
-  file: File = null,
+  prep: Boolean = true,
   outputname: String = null,
   dotfiles: String = "dotfiles",
   nondeterminismMetric: IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, List[Nat.nat]), (Types.Transition, List[Nat.nat]))))] = (Inference.nondeterministic_pairs _),
@@ -31,8 +31,10 @@ case class Config(
   skip: Boolean = false,
   logLevel: Level = Level.DEBUG,
   logFile: String = null,
-  smallInts: Boolean = false,
-  log: List[List[Types.Event]] = List(),
+  trainFile: File = null,
+  train: List[List[Types.Event]] = List(),
+  testFile: File = null,
+  test: List[List[Types.Event]] = List(),
   k: Int = 1,
   gpIterations: Int = 50,
   guardSeed: Int = 0,
@@ -123,6 +125,9 @@ object Config {
       opt[Unit]("skip")
         .action((_, c) => c.copy(skip = true))
         .text("Set this flag to skip some model checking tests which should be trivially true"),
+      opt[Unit]("no-prep")
+        .action((_, c) => c.copy(prep = false))
+        .text("Set this flag to skip PTA preprocessing"),
       opt[Unit]("small")
         .action((_, c) => c.copy(skip = true))
         .text("Set this flag to map integers down to smaller values"),
@@ -133,11 +138,7 @@ object Config {
       opt[String]('f', "logFile")
         .valueName("logFile")
         .action((x, c) => c.copy(logFile = x))
-        .text(s"The name/location of the logfile"),
-      arg[File]("filename")
-        .required()
-        .action((x, c) => c.copy(file = x))
-        .text("The json file listing the traces"),
+        .text(s"The name/location of the logFile"),
       opt[Int]('g', "guardSeed")
         .valueName("Random seed for guard GP")
         .action((x, c) => c.copy(guardSeed = x)),
@@ -146,7 +147,16 @@ object Config {
         .action((x, c) => c.copy(outputSeed = x)),
       opt[Int]('u', "updateSeed")
         .valueName("Random seed for update GP")
-        .action((x, c) => c.copy(updateSeed = x)))
+        .action((x, c) => c.copy(updateSeed = x)),
+      arg[File]("trainFile")
+        .required()
+        .action((x, c) => c.copy(trainFile = x))
+        .text("The json file listing the training traces"),
+      arg[File]("testFile")
+        .required()
+        .action((x, c) => c.copy(testFile = x))
+        .text("The json file listing the test traces")
+      )
   }
 
   def parseArgs(args: Array[String]) = {
@@ -164,21 +174,19 @@ object Config {
         if (config.k < 0)
           throw new IllegalArgumentException(s"k must be greater than 0")
 
-        // Set up the log
-        val rawJson = Source.fromFile(config.file).getLines.mkString
-        val parsed = (parse(rawJson))
-        val list = parsed.values.asInstanceOf[List[List[Map[String, Any]]]]
-        config = config.copy(log = list.map(run => run.map(x => TypeConversion.toEventTuple(x))))
-        if (config.smallInts) {
-          config = config.copy(log = Use_Small_Numbers.use_smallest_ints(Config.config.log))
-        }
+        // Set up the logs
+        val trainParsed = parse(Source.fromFile(config.trainFile).getLines.mkString).values.asInstanceOf[List[List[Map[String, Any]]]]
+        config = config.copy(train = trainParsed.map(run => run.map(x => TypeConversion.toEventTuple(x))))
+
+        val testParsed = parse(Source.fromFile(config.testFile).getLines.mkString).values.asInstanceOf[List[List[Map[String, Any]]]]
+        config = config.copy(test = testParsed.map(run => run.map(x => TypeConversion.toEventTuple(x))))
 
         // Set up the heuristics
         val heuristics = scala.collection.immutable.Map(
-          Heuristics.store -> Store_Reuse.heuristic_1(config.log),
-          Heuristics.inputgen -> Store_Reuse.heuristic_2(config.log),
+          Heuristics.store -> Store_Reuse.heuristic_1(config.train),
+          Heuristics.inputgen -> Store_Reuse.heuristic_2(config.train),
           Heuristics.inc -> (Increment_Reset.insert_increment_2 _).curried,
-          Heuristics.distinguish -> (Distinguishing_Guards.distinguish _).curried(config.log),
+          Heuristics.distinguish -> (Distinguishing_Guards.distinguish _).curried(config.train),
           Heuristics.same -> (Same_Register.same_register _).curried,
           Heuristics.ignore -> (Ignore_Inputs.drop_inputs _).curried,
           Heuristics.ignoret -> (Ignore_Inputs.transitionwise_drop_inputs _).curried,
@@ -186,13 +194,13 @@ object Config {
           Heuristics.gob -> (Least_Upper_Bound.gob _).curried,
           Heuristics.gungho -> (Least_Upper_Bound.gung_ho _).curried,
           Heuristics.eq -> (Equals.equals _).curried,
-          Heuristics.ws -> (Weak_Subsumption.weak_subsumption _).curried(config.log),
+          Heuristics.ws -> (Weak_Subsumption.weak_subsumption _).curried(config.train),
           Heuristics.neq -> (Equals.not_equals _).curried)
 
         // this.strategy = if (Config.config.oneFinal)
         //     (SelectionStrategies.score_one_final_state _).curried(strategies(config.strategy))
         //   else (strategies(config.strategy))
-        this.heuristics = Inference.try_heuristics_check((Inference.satisfies _).curried(Set.seta(config.log)), config.heuristics.map(x => heuristics(x)).toList, config.nondeterminismMetric)
+        this.heuristics = Inference.try_heuristics_check((Inference.satisfies _).curried(Set.seta(config.train)), config.heuristics.map(x => heuristics(x)).toList, config.nondeterminismMetric)
         this.config = config
 
       }

@@ -126,10 +126,6 @@ primrec make_outputs :: "value list \<Rightarrow> output_function list" where
   "make_outputs [] = []" |
   "make_outputs (h#t) = (L h)#(make_outputs t)"
 
-(* An execution represents a run of the software and has the form [(label, inputs, outputs)]*)
-type_synonym execution = "(label \<times> value list \<times> value list) list"
-type_synonym log = "execution list"
-
 definition max_uid_total :: "iEFSM \<Rightarrow> nat" where
   "max_uid_total e = (case max_uid e of None \<Rightarrow> 0 | Some u \<Rightarrow> u)"
 

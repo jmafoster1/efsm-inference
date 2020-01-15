@@ -548,7 +548,7 @@ definition derestrict :: "log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM
       pta = make_pta log;
       normalised = incremental_normalised_pta log pta;
       delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs normalised)) normalised;
-      derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, derestrict_transition tran)) delayed;
+      derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, tran\<lparr>Guard := []\<rparr>)) delayed;
       nondeterministic_pairs = sorted_list_of_fset (np derestricted)
     in
     case resolve_nondeterminism [] nondeterministic_pairs pta derestricted m (satisfies (set log)) np of
