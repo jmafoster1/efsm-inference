@@ -754,7 +754,6 @@ lemma "is_lit_eq_general g \<or> is_input_in g \<Longrightarrow>
 lemma opposite_gob_directly_subsumption:
   "opposite_gob t1 t2 \<Longrightarrow> \<not> directly_subsumes m1 m2 s1 s2 t1 t2"
   apply (rule cant_directly_subsume)
-  apply (rule allI)
   apply (rule opposite_gob_subsumption)
   unfolding opposite_gob_def
        apply (meson is_input_in.elims(2) is_lit_eq_general.elims(2))+

@@ -300,11 +300,9 @@ object Dirties {
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
       return false
-      if (Code_Generation.mismatched_updates(t1, t2))
-        return false
-    Log.root.debug(s"Does ${PrettyPrinter.show(t1)} directly subsume ${PrettyPrinter.show(t2)}? (y/N)")
-    val subsumes = scala.io.StdIn.readLine() == "y"
-    subsumes
+    // Log.root.debug(s"Does ${PrettyPrinter.show(t1)} directly subsume ${PrettyPrinter.show(t2)}? (y/N)")
+    // val subsumes = scala.io.StdIn.readLine() == "y"
+    // subsumes
   }
 
   def getTypes(i: List[Value.value]): List[String] = i.map {

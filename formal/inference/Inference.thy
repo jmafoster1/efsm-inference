@@ -326,7 +326,7 @@ lemma gets_us_to_and_not_subsumes:
    \<not> directly_subsumes e1 e2 s s' t1 t2"
   unfolding directly_subsumes_def by auto
 
-lemma cant_directly_subsume: "\<forall>c. \<not> subsumes t c t' \<Longrightarrow> \<not> directly_subsumes m m' s s' t t'"
+lemma cant_directly_subsume: "(\<And>c. \<not> subsumes t c t') \<Longrightarrow> \<not> directly_subsumes m m' s s' t t'"
   by (simp add: directly_subsumes_def)
 
 definition insert_transition :: "tids \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
