@@ -8,7 +8,7 @@ import java.nio.file.{ Paths, Files }
 
 object Heuristics extends Enumeration {
   type Heuristic = Value
-  val store, inputgen, inc, distinguish, same, ignore, ignoret, lob, gob, gungho, eq, neq, ws = Value
+  val store, inputgen, inc, distinguish, same, ws = Value
 }
 
 object Nondeterminisms extends Enumeration {
@@ -188,14 +188,8 @@ object Config {
           Heuristics.inc -> (Increment_Reset.insert_increment_2 _).curried,
           Heuristics.distinguish -> (Distinguishing_Guards.distinguish _).curried(config.train),
           Heuristics.same -> (Same_Register.same_register _).curried,
-          Heuristics.ignore -> (Ignore_Inputs.drop_inputs _).curried,
-          Heuristics.ignoret -> (Ignore_Inputs.transitionwise_drop_inputs _).curried,
-          Heuristics.lob -> (Least_Upper_Bound.lob _).curried,
-          Heuristics.gob -> (Least_Upper_Bound.gob _).curried,
-          Heuristics.gungho -> (Least_Upper_Bound.gung_ho _).curried,
-          Heuristics.eq -> (Equals.equals _).curried,
-          Heuristics.ws -> (Weak_Subsumption.weak_subsumption _).curried(config.train),
-          Heuristics.neq -> (Equals.not_equals _).curried)
+          Heuristics.ws -> (Weak_Subsumption.weak_subsumption _).curried(config.train)
+        )
 
         // this.strategy = if (Config.config.oneFinal)
         //     (SelectionStrategies.score_one_final_state _).curried(strategies(config.strategy))
