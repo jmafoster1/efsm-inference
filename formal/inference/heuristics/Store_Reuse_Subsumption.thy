@@ -1,5 +1,5 @@
 theory Store_Reuse_Subsumption
-imports Store_Reuse Least_Upper_Bound
+imports Store_Reuse
 begin
 
 lemma generalisation_of_preserves: "is_generalisation_of t' t i r \<Longrightarrow>
@@ -445,6 +445,14 @@ lemma "\<forall>i. \<not> can_take_transition t i r \<and> \<not> can_take_trans
        subsumes t' r t"
   by (simp add: subsumes_def posterior_separate_def can_take_transition_def)
 
+lemma input_not_constrained_aval_swap_inputs:
+  "\<not> aexp_constrains a (V (I v)) \<Longrightarrow>
+   aval a (join_ir i c) = aval a (join_ir (list_update i v x) c)"
+  apply(induct a rule: aexp_induct_separate_V_cases)
+       apply simp
+      apply (metis aexp_constrains.simps(2) aval.simps(2) input2state_nth input2state_out_of_bounds join_ir_def length_list_update not_le nth_list_update_neq vname.simps(5))
+  using join_ir_def by auto
+
 lemma aval_unconstrained:
   " \<not> aexp_constrains a (V (vname.I i)) \<Longrightarrow>
   i < length ia \<Longrightarrow>
@@ -453,6 +461,32 @@ lemma aval_unconstrained:
   aval a (join_ir ia c) = aval a (join_ir (list_update ia i v') c)"
   apply(induct a rule: aexp_induct_separate_V_cases)
   using input_not_constrained_aval_swap_inputs by blast+
+
+lemma input_not_constrained_gval_swap_inputs:
+  "\<not> gexp_constrains a (V (I v)) \<Longrightarrow>
+   gval a (join_ir i c) = gval a (join_ir (i[v := x]) c)"
+proof(induct a)
+  case (Bc x)
+  then show ?case
+    by (metis (full_types) apply_guards(4) apply_guards(5))
+next
+  case (Eq x1a x2)
+  then show ?case
+    using input_not_constrained_aval_swap_inputs by auto
+next
+  case (Gt x1a x2)
+  then show ?case
+    using input_not_constrained_aval_swap_inputs by auto
+next
+  case (In x1a x2)
+  then show ?case
+    apply simp
+    by (metis (full_types) aexp.inject(2) aexp_constrains.simps(2) aval.simps(2) input_not_constrained_aval_swap_inputs)
+next
+  case (Nor a1 a2)
+  then show ?case
+    by simp
+qed
 
 lemma gval_unconstrained: 
  " \<not> gexp_constrains a (V (vname.I i)) \<Longrightarrow>
@@ -558,9 +592,7 @@ lemma general_not_subsume_orig:
   apply (rule_tac x=r in exI)
   apply (simp add: r_not_updated_stays_the_same)
   apply (rule_tac x="\<lambda>x. x = None" in exI)
-  apply (simp add: aval_updated can_take_transition_def can_take_def)
-  apply (rule_tac x="ia ! i" in exI)
-  by (simp add: aval_updated join_ir_def input2state_nth)
+  by (simp add: aval_updated can_take_transition_def can_take_def)
 
 lemma input_stored_in_reg_updates_reg: "input_stored_in_reg t2 t1 a = Some (i, r) \<Longrightarrow> (r, V (I i)) \<in> set (Updates t2)"
   using input_stored_in_reg_is_generalisation[of t2 t1 a i r]
