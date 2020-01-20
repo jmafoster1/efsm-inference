@@ -447,6 +447,9 @@ object Dirties {
     Log.root.debug("  Terminals: " + gpGenerator.getTerminals())
     Log.root.debug("  Nonterminals: " + gpGenerator.getNonTerminals())
 
+    if (trainingSet.keys().stream().anyMatch(x => trainingSet.get(x).size() > 1))
+      return None
+
     val gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 7, 7))
 
     try {
@@ -457,7 +460,7 @@ object Dirties {
       val gexp = TypeConversion.gexpFromZ3(best.toZ3(ctx))
       ctx.close
       if (gp.isCorrect(best)) {
-        Log.root.debug("g1: " + PrettyPrinter.gexpToString(gexp))
+        Log.root.debug("  Best function is correct")
         guardMap = guardMap + (ioPairs -> Some(gexp))
         return Some((gexp, GExp.gNot(gexp)))
       } else {

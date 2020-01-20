@@ -22,8 +22,8 @@ object FrontEnd {
 
     Log.root.info(s"PTA has ${Config.numStates} states")
 
-    if (Config.config.prep) {
-      val resolved_pta = PTA_Generalisation.derestrict(Config.config.train, Config.heuristics, Config.config.nondeterminismMetric)
+    if (Config.preprocessor != null) {
+      val resolved_pta = Config.preprocessor(pta)(Config.config.train)(Config.heuristics)(Config.config.nondeterminismMetric)
       PrettyPrinter.iEFSM2dot(resolved_pta, "resolved")
       Log.root.info(s"Resolved PTA has ${Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(pta)))} states")
       pta = resolved_pta

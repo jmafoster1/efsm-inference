@@ -36,7 +36,7 @@ fun assign_group :: "transition_group list \<Rightarrow> (transition option \<Ri
 
 fun trace_group_transitions :: "(transition option \<Rightarrow> nat) \<Rightarrow> iEFSM \<Rightarrow> execution \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> transition option \<Rightarrow> transition option \<Rightarrow> transition_group list \<Rightarrow> transition_group list" where
   "trace_group_transitions _ _ [] _ _ _ _ g = g" |
-  "trace_group_transitions count e ((l, i, _)#trace) s r prevGroup currentGroup g = (
+  "trace_group_transitions count e ((l, i, outputs)#trace) s r prevGroup currentGroup g = (
     let
       (id, s', t) = fthe_elem (i_possible_steps e s r l i);
       r' = apply_updates (Updates t) (join_ir i r) r;
@@ -73,7 +73,7 @@ definition assign_training_set :: "(((tids \<times> transition) list) \<times> (
 fun trace_training_set :: "iEFSM \<Rightarrow> execution \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list" where
   "trace_training_set _ [] _ _ ts = ts" |
   "trace_training_set e ((label, inputs, outputs)#t) s r ts = (
-    let (id, s', transition) = fthe_elem (i_possible_steps e s r label inputs) in
+    let (id, s', transition) = fthe_elem (ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir inputs r) = map Some outputs) (i_possible_steps e s r label inputs)) in
     trace_training_set e t s' (apply_updates (Updates transition) (join_ir inputs r) r) (assign_training_set ts id label inputs r outputs)
   )"
 
@@ -511,18 +511,25 @@ fun find_first_use_of_trace :: "nat \<Rightarrow> execution \<Rightarrow> iEFSM 
 definition find_first_uses_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> tids list" where
   "find_first_uses_of r l e = List.maps (\<lambda>x. case x of None \<Rightarrow> [] | Some x \<Rightarrow> [x]) (map (\<lambda>t. find_first_use_of_trace r t e 0 <>) l)"
 
-definition derestrict :: "log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
-  "derestrict log m np = (
-    let
-      pta = make_pta log;
-      normalised = incremental_normalised_pta log pta;
-      delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs normalised)) normalised;
-      derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, tran\<lparr>Guard := []\<rparr>)) delayed;
+definition drop_all_guards :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
+"drop_all_guards e pta log m np = (let
+      derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, tran\<lparr>Guard := []\<rparr>)) e;
       nondeterministic_pairs = sorted_list_of_fset (np derestricted)
     in
     case resolve_nondeterminism [] nondeterministic_pairs pta derestricted m (satisfies (set log)) np of
       None \<Rightarrow> pta |
       Some resolved \<Rightarrow> resolved
   )"
+
+definition derestrict :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
+  "derestrict pta log m np = (
+    let
+      normalised = incremental_normalised_pta log pta;
+      delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs normalised)) normalised
+    in
+      drop_all_guards delayed pta log m np
+  )"
+
+definition "drop_pta_guards pta log m np = drop_all_guards pta pta log m np"
 
 end

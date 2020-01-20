@@ -21,9 +21,14 @@ object Strategies extends Enumeration {
   val naive, naive_eq_bonus, rank, comprehensive, comprehensiveEQ, eq = Value
 }
 
+object Preprocessors extends Enumeration {
+  type Preprocessor = Value
+  val gp, dropGuards = Value
+}
+
 case class Config(
   heuristics: Seq[Heuristics.Heuristic] = Seq(),
-  prep: Boolean = true,
+  prep: Preprocessors.Preprocessor = null,
   outputname: String = null,
   dotfiles: String = "dotfiles",
   nondeterminismMetric: IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, List[Nat.nat]), (Types.Transition, List[Nat.nat]))))] = (Inference.nondeterministic_pairs _),
@@ -47,8 +52,10 @@ object Config {
   var heuristics = Inference.try_heuristics(List(), (Inference.nondeterministic_pairs _))
   var numStates: BigInt = 0
   var ptaNumStates: BigInt = 0
+  var preprocessor: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (List[List[(String, (List[Value.value], List[Value.value]))]] => ((List[Nat.nat] => (List[Nat.nat] => (Nat.nat => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => ((FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]) => Option[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]]))))))) => ((FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]) => FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]))) = null
 
   implicit val heuristicsRead: scopt.Read[Heuristics.Value] = scopt.Read.reads(Heuristics withName _)
+  implicit val proprocessorsRead: scopt.Read[Preprocessors.Value] = scopt.Read.reads(Preprocessors withName _)
   implicit val strategiesRead: scopt.Read[List[Nat.nat] => List[Nat.nat] => IEFSM => Nat.nat] =
     scopt.Read.reads {
       _.toLowerCase match {
@@ -98,10 +105,6 @@ object Config {
         .valueName("<heuristic1>,<heuristic2>...")
         .action((x, c) => c.copy(heuristics = x))
         .text(s"heuristics to give the inference process ${Heuristics.values}"),
-      opt[String]('o', "output")
-        .valueName("filename")
-        .action((x, c) => c.copy(outputname = x))
-        .text("The preferred name of the file to output the SAL and DOT representations of the inferred model to - defaults to the input file name"),
       opt[Int]('k', "k")
         .valueName("k")
         .action((x, c) => c.copy(k = x))
@@ -125,9 +128,10 @@ object Config {
       opt[Unit]("skip")
         .action((_, c) => c.copy(skip = true))
         .text("Set this flag to skip some model checking tests which should be trivially true"),
-      opt[Unit]("no-prep")
-        .action((_, c) => c.copy(prep = false))
-        .text("Set this flag to skip PTA preprocessing"),
+      opt[Preprocessors.Preprocessor]('p', "preprocessor")
+        .valueName("preprocessor")
+        .action((x, c) => c.copy(prep = x))
+        .text(s"Preprocessor to use before inference begins ${Preprocessors.values}"),
       opt[Unit]("small")
         .action((_, c) => c.copy(skip = true))
         .text("Set this flag to map integers down to smaller values"),
@@ -142,7 +146,7 @@ object Config {
       opt[Int]('g', "guardSeed")
         .valueName("Random seed for guard GP")
         .action((x, c) => c.copy(guardSeed = x)),
-      opt[Int]('p', "outputSeed")
+      opt[Int]('o', "outputSeed")
         .valueName("Random seed for output GP")
         .action((x, c) => c.copy(outputSeed = x)),
       opt[Int]('u', "updateSeed")
@@ -155,8 +159,7 @@ object Config {
       arg[File]("testFile")
         .required()
         .action((x, c) => c.copy(testFile = x))
-        .text("The json file listing the test traces")
-      )
+        .text("The json file listing the test traces"))
   }
 
   def parseArgs(args: Array[String]) = {
@@ -190,7 +193,12 @@ object Config {
           Heuristics.inc -> (Increment_Reset.insert_increment_2 _).curried,
           Heuristics.distinguish -> (Distinguishing_Guards.distinguish _).curried(config.train),
           Heuristics.same -> (Same_Register.same_register _).curried,
-          Heuristics.ws -> (Weak_Subsumption.weak_subsumption _).curried(config.train)
+          Heuristics.ws -> (Weak_Subsumption.weak_subsumption _).curried(config.train))
+
+        // Set up the preprocessor
+        val preprocessors = scala.collection.immutable.Map(
+          Preprocessors.gp -> (PTA_Generalisation.derestrict _).curried,
+          Preprocessors.dropGuards -> (PTA_Generalisation.drop_pta_guards _).curried
         )
 
         // this.strategy = if (Config.config.oneFinal)
@@ -198,6 +206,8 @@ object Config {
         //   else (strategies(config.strategy))
         this.heuristics = Inference.try_heuristics_check((Inference.satisfies _).curried(Set.seta(config.train)), config.heuristics.map(x => heuristics(x)).toList, config.nondeterminismMetric)
         this.config = config
+        if (config.prep != null)
+          this.preprocessor = preprocessors(config.prep)
 
       }
       case _ =>

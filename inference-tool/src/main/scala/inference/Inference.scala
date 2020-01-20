@@ -7209,31 +7209,31 @@ def trace_group_transitions(uu: Option[Transition.transition_ext[Unit]] =>
   =
   (uu, uv, x2, uw, ux, uy, uz, g) match {
   case (uu, uv, Nil, uw, ux, uy, uz, g) => g
-  case (count, e, (l, (i, va)) :: trace, s, r, prevGroup, currentGroup, g) =>
-    {
-      val (id, (sa, t)):
-            (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))
-        = FSet.fthe_elem[(List[Nat.nat],
-                           (Nat.nat,
-                             Transition.transition_ext[Unit]))](Inference.i_possible_steps(e,
-            s, r, l, i))
-      val ra: Map[Nat.nat, Option[Value.value]] =
-        EFSM.apply_updates(Transition.Updates[Unit](t), AExp.join_ir(i, r), r)
-      val newCount: Option[Transition.transition_ext[Unit]] => Nat.nat =
-        ((x: Option[Transition.transition_ext[Unit]]) =>
-          (if (Optiona.equal_optiona[Transition.transition_ext[Unit]](x,
-                               Some[Transition.transition_ext[Unit]](t)))
-            Nat.Suc(count(x)) else count(x)));
-      (if (same_structure_opt(Some[Transition.transition_ext[Unit]](t),
-                               currentGroup))
-        trace_group_transitions(newCount, e, trace, sa, ra, prevGroup,
-                                 currentGroup,
-                                 assign_group(g, count, prevGroup, (id, t)))
-        else trace_group_transitions(newCount, e, trace, sa, ra, currentGroup,
-                                      Some[Transition.transition_ext[Unit]](t),
-                                      assign_group(g, count, currentGroup,
-            (id, t))))
-    }
+  case (count, e, (l, (i, outputs)) :: trace, s, r, prevGroup, currentGroup, g)
+    => {
+         val (id, (sa, t)):
+               (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))
+           = FSet.fthe_elem[(List[Nat.nat],
+                              (Nat.nat,
+                                Transition.transition_ext[Unit]))](Inference.i_possible_steps(e,
+               s, r, l, i))
+         val ra: Map[Nat.nat, Option[Value.value]] =
+           EFSM.apply_updates(Transition.Updates[Unit](t), AExp.join_ir(i, r),
+                               r)
+         val newCount: Option[Transition.transition_ext[Unit]] => Nat.nat =
+           ((x: Option[Transition.transition_ext[Unit]]) =>
+             (if (Optiona.equal_optiona[Transition.transition_ext[Unit]](x,
+                                  Some[Transition.transition_ext[Unit]](t)))
+               Nat.Suc(count(x)) else count(x)));
+         (if (same_structure_opt(Some[Transition.transition_ext[Unit]](t),
+                                  currentGroup))
+           trace_group_transitions(newCount, e, trace, sa, ra, prevGroup,
+                                    currentGroup,
+                                    assign_group(g, count, prevGroup, (id, t)))
+           else trace_group_transitions(newCount, e, trace, sa, ra,
+ currentGroup, Some[Transition.transition_ext[Unit]](t),
+ assign_group(g, count, currentGroup, (id, t))))
+       }
 }
 
 def log_group_transitions(e: FSet.fset[(List[Nat.nat],
@@ -7804,8 +7804,22 @@ def trace_training_set(uu: FSet.fset[(List[Nat.nat],
             (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))
         = FSet.fthe_elem[(List[Nat.nat],
                            (Nat.nat,
-                             Transition.transition_ext[Unit]))](Inference.i_possible_steps(e,
-            s, r, label, inputs));
+                             Transition.transition_ext[Unit]))](FSet.ffilter[(List[Nat.nat],
+                                       (Nat.nat,
+ Transition.transition_ext[Unit]))](((a:
+(List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit])))
+                                       =>
+                                      {
+val (_, (_, ta)): (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit])) =
+  a;
+Lista.equal_lista[Option[Value.value]](EFSM.apply_outputs[VName.vname](Transition.Outputs[Unit](ta),
+                                AExp.join_ir(inputs, r)),
+Lista.map[Value.value,
+           Option[Value.value]](((aa: Value.value) => Some[Value.value](aa)),
+                                 outputs))
+                                      }),
+                                     Inference.i_possible_steps(e, s, r, label,
+                         inputs)));
       trace_training_set(e, t, sa,
                           EFSM.apply_updates(Transition.Updates[Unit](transition),
       AExp.join_ir(inputs, r), r),
@@ -8081,8 +8095,99 @@ def find_first_uses_of(r: Nat.nat,
            Map().withDefaultValue(None))),
                          l))
 
-def derestrict(log: List[List[(String,
-                                (List[Value.value], List[Value.value]))]],
+def drop_all_guards(e: FSet.fset[(List[Nat.nat],
+                                   ((Nat.nat, Nat.nat),
+                                     Transition.transition_ext[Unit]))],
+                     pta: FSet.fset[(List[Nat.nat],
+                                      ((Nat.nat, Nat.nat),
+Transition.transition_ext[Unit]))],
+                     log: List[List[(String,
+                                      (List[Value.value], List[Value.value]))]],
+                     m: (List[Nat.nat]) =>
+                          (List[Nat.nat]) =>
+                            Nat.nat =>
+                              (FSet.fset[(List[Nat.nat],
+   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
+                                (FSet.fset[(List[Nat.nat],
+     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
+                                  (FSet.fset[(List[Nat.nat],
+       ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
+                                    ((FSet.fset[(List[Nat.nat],
+          ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
+                                      FSet.fset[(Nat.nat,
+          ((Nat.nat, Nat.nat),
+            ((Transition.transition_ext[Unit], List[Nat.nat]),
+              (Transition.transition_ext[Unit], List[Nat.nat]))))]) =>
+                                      Option[FSet.fset[(List[Nat.nat],
+                 ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]],
+                     np: (FSet.fset[(List[Nat.nat],
+                                      ((Nat.nat, Nat.nat),
+Transition.transition_ext[Unit]))]) =>
+                           FSet.fset[(Nat.nat,
+                                       ((Nat.nat, Nat.nat),
+ ((Transition.transition_ext[Unit], List[Nat.nat]),
+   (Transition.transition_ext[Unit], List[Nat.nat]))))]):
+      FSet.fset[(List[Nat.nat],
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+  =
+  {
+    val derestricted:
+          FSet.fset[(List[Nat.nat],
+                      ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+      = FSet.fimage[(List[Nat.nat],
+                      ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])),
+                     (List[Nat.nat],
+                       ((Nat.nat, Nat.nat),
+                         Transition.transition_ext[Unit]))](((a:
+                        (List[Nat.nat],
+                          ((Nat.nat, Nat.nat),
+                            Transition.transition_ext[Unit])))
+                       =>
+                      {
+                        val (id, (tf, tran)):
+                              (List[Nat.nat],
+                                ((Nat.nat, Nat.nat),
+                                  Transition.transition_ext[Unit]))
+                          = a;
+                        (id, (tf, Transition.Guard_update[Unit](((_:
+                            List[GExp.gexp[VName.vname]])
+                           =>
+                          Nil),
+                         tran)))
+                      }),
+                     e)
+    val nondeterministic_pairs:
+          List[(Nat.nat,
+                 ((Nat.nat, Nat.nat),
+                   ((Transition.transition_ext[Unit], List[Nat.nat]),
+                     (Transition.transition_ext[Unit], List[Nat.nat]))))]
+      = FSet.sorted_list_of_fset[(Nat.nat,
+                                   ((Nat.nat, Nat.nat),
+                                     ((Transition.transition_ext[Unit],
+List[Nat.nat]),
+                                       (Transition.transition_ext[Unit],
+ List[Nat.nat]))))](np(derestricted));
+    (Inference.resolve_nondeterminism(Nil, nondeterministic_pairs, pta,
+                                       derestricted, m,
+                                       ((a:
+   FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])])
+  =>
+ Inference.satisfies(Set.seta[List[(String,
+                                     (List[Value.value],
+                                       List[Value.value]))]](log),
+                      a)),
+                                       np)
+       match {
+       case None => pta
+       case Some(resolved) => resolved
+     })
+  }
+
+def derestrict(pta: FSet.fset[(List[Nat.nat],
+                                ((Nat.nat, Nat.nat),
+                                  Transition.transition_ext[Unit]))],
+                log: List[List[(String,
+                                 (List[Value.value], List[Value.value]))]],
                 m: (List[Nat.nat]) =>
                      (List[Nat.nat]) =>
                        Nat.nat =>
@@ -8114,9 +8219,6 @@ List[Nat.nat]))))]):
                   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
   =
   {
-    val pta: FSet.fset[(List[Nat.nat],
-                         ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
-      = Inference.make_pta(log)
     val normalised:
           FSet.fset[(List[Nat.nat],
                       ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
@@ -8136,57 +8238,8 @@ List[Nat.nat]))))]):
                                 delay_initialisation_of(r, log, acc,
                  find_first_uses_of(r, log, acc))),
                                Lista.sorted_list_of_set[Nat.nat](Inference.all_regs(normalised)),
-                               normalised)
-    val derestricted:
-          FSet.fset[(List[Nat.nat],
-                      ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
-      = FSet.fimage[(List[Nat.nat],
-                      ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])),
-                     (List[Nat.nat],
-                       ((Nat.nat, Nat.nat),
-                         Transition.transition_ext[Unit]))](((a:
-                        (List[Nat.nat],
-                          ((Nat.nat, Nat.nat),
-                            Transition.transition_ext[Unit])))
-                       =>
-                      {
-                        val (id, (tf, tran)):
-                              (List[Nat.nat],
-                                ((Nat.nat, Nat.nat),
-                                  Transition.transition_ext[Unit]))
-                          = a;
-                        (id, (tf, Transition.Guard_update[Unit](((_:
-                            List[GExp.gexp[VName.vname]])
-                           =>
-                          Nil),
-                         tran)))
-                      }),
-                     delayed)
-    val nondeterministic_pairs:
-          List[(Nat.nat,
-                 ((Nat.nat, Nat.nat),
-                   ((Transition.transition_ext[Unit], List[Nat.nat]),
-                     (Transition.transition_ext[Unit], List[Nat.nat]))))]
-      = FSet.sorted_list_of_fset[(Nat.nat,
-                                   ((Nat.nat, Nat.nat),
-                                     ((Transition.transition_ext[Unit],
-List[Nat.nat]),
-                                       (Transition.transition_ext[Unit],
- List[Nat.nat]))))](np(derestricted));
-    (Inference.resolve_nondeterminism(Nil, nondeterministic_pairs, pta,
-                                       derestricted, m,
-                                       ((a:
-   FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])])
-  =>
- Inference.satisfies(Set.seta[List[(String,
-                                     (List[Value.value],
-                                       List[Value.value]))]](log),
-                      a)),
-                                       np)
-       match {
-       case None => pta
-       case Some(resolved) => resolved
-     })
+                               normalised);
+    drop_all_guards(delayed, pta, log, m, np)
   }
 
 def replace_groups(xs: List[List[(List[Nat.nat],
@@ -8224,6 +8277,40 @@ def replace_groups(xs: List[List[(List[Nat.nat],
           }),
          a, b)),
                          xs, e)
+
+def drop_pta_guards(pta: FSet.fset[(List[Nat.nat],
+                                     ((Nat.nat, Nat.nat),
+                                       Transition.transition_ext[Unit]))],
+                     log: List[List[(String,
+                                      (List[Value.value], List[Value.value]))]],
+                     m: (List[Nat.nat]) =>
+                          (List[Nat.nat]) =>
+                            Nat.nat =>
+                              (FSet.fset[(List[Nat.nat],
+   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
+                                (FSet.fset[(List[Nat.nat],
+     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
+                                  (FSet.fset[(List[Nat.nat],
+       ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
+                                    ((FSet.fset[(List[Nat.nat],
+          ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
+                                      FSet.fset[(Nat.nat,
+          ((Nat.nat, Nat.nat),
+            ((Transition.transition_ext[Unit], List[Nat.nat]),
+              (Transition.transition_ext[Unit], List[Nat.nat]))))]) =>
+                                      Option[FSet.fset[(List[Nat.nat],
+                 ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]],
+                     np: (FSet.fset[(List[Nat.nat],
+                                      ((Nat.nat, Nat.nat),
+Transition.transition_ext[Unit]))]) =>
+                           FSet.fset[(Nat.nat,
+                                       ((Nat.nat, Nat.nat),
+ ((Transition.transition_ext[Unit], List[Nat.nat]),
+   (Transition.transition_ext[Unit], List[Nat.nat]))))]):
+      FSet.fset[(List[Nat.nat],
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+  =
+  drop_all_guards(pta, pta, log, m, np)
 
 def generalise_outputs(values: List[Value.value],
                         groups:
@@ -8575,8 +8662,22 @@ def trace_collect_training_sets(x0: List[(String,
             (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))
         = FSet.fthe_elem[(List[Nat.nat],
                            (Nat.nat,
-                             Transition.transition_ext[Unit]))](Inference.i_possible_steps(uPTA,
-            s, registers, label, inputs))
+                             Transition.transition_ext[Unit]))](FSet.ffilter[(List[Nat.nat],
+                                       (Nat.nat,
+ Transition.transition_ext[Unit]))](((a:
+(List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit])))
+                                       =>
+                                      {
+val (_, (_, tran)): (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))
+  = a;
+Lista.equal_lista[Option[Value.value]](EFSM.apply_outputs[VName.vname](Transition.Outputs[Unit](tran),
+                                AExp.join_ir(inputs, registers)),
+Lista.map[Value.value,
+           Option[Value.value]](((aa: Value.value) => Some[Value.value](aa)),
+                                 outputs))
+                                      }),
+                                     Inference.i_possible_steps(uPTA, s,
+                         registers, label, inputs)))
       val updated: Map[Nat.nat, Option[Value.value]] =
         EFSM.apply_updates(Transition.Updates[Unit](tran),
                             AExp.join_ir(inputs, registers), registers);

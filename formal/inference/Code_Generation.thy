@@ -437,6 +437,7 @@ export_code
   nondeterministic_pairs_labar
   nondeterministic_pairs_labar_dest
   (* Utilities *)
+  drop_pta_guards
   test_log
 mismatched_updates
   iefsm2dot

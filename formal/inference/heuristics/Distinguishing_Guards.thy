@@ -20,7 +20,7 @@ fun trace_collect_training_sets :: "execution \<Rightarrow> iEFSM \<Rightarrow> 
   "trace_collect_training_sets [] uPTA s registers T1 T2 G1 G2 = (G1, G2)" |
   "trace_collect_training_sets ((label, inputs, outputs)#t) uPTA s registers T1 T2 G1 G2 = (
     let
-      (uids, s', tran) = fthe_elem (i_possible_steps uPTA s registers label inputs);
+      (uids, s', tran) = fthe_elem (ffilter (\<lambda>(uids, s', tran). apply_outputs (Outputs tran) (join_ir inputs registers) = map Some outputs) (i_possible_steps uPTA s registers label inputs));
       updated = (apply_updates (Updates tran) (join_ir inputs registers) registers)
     in
     if hd uids \<in> set T1 then
