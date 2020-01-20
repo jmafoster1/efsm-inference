@@ -1,0 +1,109 @@
+[
+  [
+    {"label": "init", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "engineOn", "inputs": [0, 0, 0, 0], "outputs": [7]},
+    {"label": "accelerator", "inputs": [0, 0, 7, 4], "outputs": [11]},
+    {"label": "resume", "inputs": [0, 0, 11, 3], "outputs": [11]},
+    {"label": "on", "inputs": [0, 0, 11, 0], "outputs": [0]},
+    {"label": "engineOff", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "on", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "brake", "inputs": [0, 0, 0, 0], "outputs": [0]}
+  ],  
+  [
+    {"label": "init", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "resume", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "engineOn", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "on", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "resume", "inputs": [0, 0, 0, 0], "outputs": [4]},
+    {"label": "accelerator", "inputs": [0, 0, 4, 4], "outputs": [8]},
+    {"label": "engineOn", "inputs": [0, 0, 8, 4], "outputs": [7]},
+    {"label": "resume", "inputs": [0, 0, 7, 0], "outputs": [6]},
+    {"label": "resume", "inputs": [0, 0, 6, 0], "outputs": [6]}
+  ],  
+  [
+    {"label": "init", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "engineOn", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "brake", "inputs": [1, 0, 0, 0], "outputs": [7]},
+    {"label": "accelerator", "inputs": [0, 0, 7, 4], "outputs": [5]},
+    {"label": "brake", "inputs": [1, 0, 5, 0], "outputs": [3]},
+    {"label": "engineOn", "inputs": [1, 0, 3, 0], "outputs": [0]},
+    {"label": "resume", "inputs": [1, 0, 0, 0], "outputs": [0]},
+    {"label": "brake", "inputs": [2, 0, 0, 0], "outputs": [0]},
+    {"label": "off", "inputs": [2, 0, 0, 0], "outputs": [1]}
+  ],  
+  [
+    {"label": "init", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "brake", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "off", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "brake", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "engineOn", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "off", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "off", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "off", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "on", "inputs": [0, 0, 0, 0], "outputs": [0]}
+  ],  
+  [
+    {"label": "init", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "accelerator", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "off", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "engineOn", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "resume", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "brake", "inputs": [1, 0, 0, 0], "outputs": [1]},
+    {"label": "accelerator", "inputs": [0, 0, 1, 4], "outputs": [0]},
+    {"label": "on", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "brake", "inputs": [1, 0, 0, 0], "outputs": [0]}
+  ],  
+  [
+    {"label": "init", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "resume", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "accelerator", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "engineOn", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "engineOff", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "on", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "accelerator", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "on", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "off", "inputs": [0, 0, 0, 0], "outputs": [0]}
+  ],  
+  [
+    {"label": "init", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "engineOn", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "on", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "resume", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "off", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "engineOn", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "off", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "on", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "resume", "inputs": [0, 0, 0, 0], "outputs": [0]}
+  ],  
+  [
+    {"label": "init", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "resume", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "brake", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "engineOn", "inputs": [0, 0, 0, 0], "outputs": [1]},
+    {"label": "accelerator", "inputs": [0, 0, 1, 4], "outputs": [3]},
+    {"label": "engineOn", "inputs": [0, 0, 3, 4], "outputs": [7]},
+    {"label": "resume", "inputs": [0, 0, 7, 4], "outputs": [7]},
+    {"label": "on", "inputs": [0, 0, 7, 0], "outputs": [7]},
+    {"label": "on", "inputs": [0, 0, 7, 0], "outputs": [7]}
+  ],  
+  [
+    {"label": "init", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "off", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "engineOn", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "engineOn", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "on", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "brake", "inputs": [1, 0, 0, 0], "outputs": [1]},
+    {"label": "accelerator", "inputs": [0, 0, 1, 4], "outputs": [1]},
+    {"label": "resume", "inputs": [0, 0, 1, 0], "outputs": [9]},
+    {"label": "accelerator", "inputs": [0, 0, 9, 4], "outputs": [14]}
+  ],  
+  [
+    {"label": "init", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "engineOn", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "engineOff", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "engineOn", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "engineOn", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "off", "inputs": [0, 0, 0, 0], "outputs": [0]},
+    {"label": "brake", "inputs": [1, 0, 0, 0], "outputs": [0]}
+  ]
+]

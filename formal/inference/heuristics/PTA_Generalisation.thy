@@ -320,54 +320,18 @@ fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> tids list \<Right
   "put_updates _ _ _ [] e = Some e" |
   "put_updates _ _ _ ((_, None)#_) _ = None" |
   "put_updates log values current ((o_inx, Some (op, types))#ops) e = (
-    let
-      groups = transition_groups e log;
-      updated = groupwise_put_updates groups log values current (o_inx, (op, types)) e
-    in
-      put_updates log values current ops updated
+    if enumerate_aexp_regs op = {} then
+      if satisfies (set log) (tm e) then
+        Some e
+      else
+        None
+    else
+      let
+        groups = transition_groups e log;
+        updated = groupwise_put_updates groups log values current (o_inx, (op, types)) e
+      in
+        put_updates log values current ops updated
   )"
-
-definition "put_updates_fold log values current = fold (\<lambda>(o_inx, t) acc.
-  case acc of
-    None \<Rightarrow> None |
-    Some e \<Rightarrow> (
-      case t of
-        None \<Rightarrow> None |
-        Some (op, types) \<Rightarrow>
-          let
-            groups = transition_groups e log;
-            updated = groupwise_put_updates groups log values current (o_inx, (op, types)) e
-          in
-            Some updated
-    )
-)"
-
-lemma put_updates_fold_None: "put_updates_fold log values current xs None = None"
-proof(induct xs)
-  case Nil
-  then show ?case
-    by (simp add: put_updates_fold_def)
-next
-  case (Cons a xs)
-  then show ?case
-    apply (cases a)
-    by (simp add: put_updates_fold_def)
-qed
-
-lemma put_updates_fold [code]: "put_updates log values current xs e = put_updates_fold log values current xs (Some e)"
-proof(induct xs arbitrary: e)
-  case Nil
-  then show ?case
-    by (simp add: put_updates_fold_def)
-next
-  case (Cons a xs)
-  then show ?case
-    apply (cases a)
-    apply (simp add: put_updates_fold_def)
-    apply (case_tac b)
-     apply (simp add: put_updates_fold_def[symmetric] put_updates_fold_None)
-    by auto
-qed
 
 (*This is where the types stuff originates*)
 definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list \<Rightarrow> iEFSM option" where
@@ -513,18 +477,23 @@ definition delay_initialisation_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM
     Some (i_tids, t) \<Rightarrow>
       let
         origins = map (\<lambda>id. origin id e) tids;
-        init_val = snd (hd (filter (\<lambda>(r', _). r = r') (Updates t)))
-      in
-      fimage (\<lambda>(id, (origin', dest), tr).
-        \<comment> \<open>Strip the initialisation update from the original initialising transition\<close>
+        init_val = snd (hd (filter (\<lambda>(r', _). r = r') (Updates t)));
+        e' = fimage (\<lambda>(id, (origin', dest), tr).
         \<comment> \<open>Add the initialisation update to incumbant transitions\<close>
         if dest \<in> set origins then
           (id, (origin', dest), tr\<lparr>Updates := List.insert (r, init_val) (Updates tr)\<rparr>)
+        \<comment> \<open>Strip the initialisation update from the original initialising transition\<close>
         else if id = i_tids then
           (id, (origin', dest), tr\<lparr>Updates := filter (\<lambda>(r', _). r \<noteq> r') (Updates tr)\<rparr>)
         else
           (id, (origin', dest), tr)
       ) e
+      in
+      \<comment> \<open>We don't want to update a register twice so just leave it\<close>
+      if satisfies (set l) (tm e') then
+        e'
+      else
+        e
   ) (find_initialisation_of r e l) e"
 
 fun find_first_use_of_trace :: "nat \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> tids option" where

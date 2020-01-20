@@ -1,0 +1,109 @@
+types
+init brake:I[0:10] distance:N[0:1000000] speed:I[0:1000000] throttle:N[0:10] ignition:S time:NI
+on brake:I[0:10] distance:N[0:1000000] speed:I[0:1000000] throttle:N[0:10] ignition:S time:NI
+engineOff brake:I[0:10] distance:N[0:1000000] speed:I[0:1000000] throttle:N[0:10] ignition:S time:NI
+engineOn brake:I[0:10] distance:N[0:1000000] speed:I[0:1000000] throttle:N[0:10] ignition:S time:NI
+resume brake:I[0:10] distance:N[0:1000000] speed:I[0:1000000] throttle:N[0:10] ignition:S time:NI
+off brake:I[0:10] distance:N[0:1000000] speed:I[0:1000000] throttle:N[0:10] ignition:S time:NI
+accelerator brake:I[0:10] distance:N[0:1000000] speed:I[0:1000000] throttle:N[0:10] ignition:S time:NI
+brake brake:I[0:10] distance:N[0:1000000] speed:I[0:1000000] throttle:N[0:10] ignition:S time:NI
+trace
+init 0 0 0 0 false 0
+engineOn 0 0 0 0 true 1371
+brake 1 0 0 0 true 1224
+brake 2 0 0 0 true 1002
+engineOn 2 0 0 0 true 1156
+engineOn 2 0 0 0 true 832
+trace
+init 0 0 0 0 false 0
+engineOn 0 0 0 0 true 173
+engineOn 0 0 0 0 true 841
+resume 0 0 0 0 true 1044
+resume 0 0 0 0 true 225
+engineOn 0 0 0 0 true 717
+on 0 0 0 0 true 1631
+off 0 0 0 0 true 1714
+engineOn 0 0 0 0 true 805
+on 0 0 0 0 true 1204
+trace
+init 0 0 0 0 false 0
+engineOn 0 0 0 0 true 1276
+on 0 0 0 0 true 74
+off 0 0 0 0 true 1258
+off 0 0 0 0 true 1727
+on 0 0 0 0 true 722
+brake 1 0 0 0 true 1935
+off 1 0 0 0 true 490
+accelerator 0 0 6 4 true 1560
+accelerator 0 0 8 9 true 69
+trace
+init 0 0 0 0 false 0
+engineOn 0 0 0 0 true 306
+resume 0 0 0 0 true 1354
+off 0 0 0 0 true 1048
+off 0 0 0 0 true 1392
+engineOn 0 0 0 0 true 1807
+on 0 0 0 0 true 107
+trace
+init 0 0 0 0 false 0
+on 0 0 0 0 false 1613
+on 0 0 0 0 false 1889
+engineOn 0 0 0 0 true 946
+engineOn 0 0 0 0 true 1778
+accelerator 0 0 7 4 true 1729
+resume 0 0 9 3 true 640
+accelerator 0 0 18 8 true 1196
+brake 1 1 14 0 true 1602
+on 0 1 13 0 true 957
+trace
+init 0 0 0 0 false 0
+engineOn 0 0 0 0 true 755
+resume 0 0 0 0 true 98
+brake 1 0 0 0 true 189
+resume 1 0 0 0 true 1961
+off 1 0 0 0 true 668
+on 0 0 0 0 true 571
+on 0 0 0 0 true 1334
+trace
+init 0 0 0 0 false 0
+engineOn 0 0 0 0 true 1811
+off 0 0 0 0 true 1637
+on 0 0 0 0 true 1067
+accelerator 0 0 1 4 true 393
+off 0 0 7 4 true 1155
+off 0 0 7 4 true 180
+on 0 0 7 0 true 1281
+off 0 0 6 0 true 359
+on 0 0 6 0 true 633
+trace
+init 0 0 0 0 false 0
+accelerator 0 0 0 0 false 354
+engineOn 0 0 0 0 true 1575
+on 0 0 0 0 true 1592
+off 0 0 0 0 true 1407
+engineOn 0 0 0 0 true 1520
+resume 0 0 0 0 true 207
+brake 1 0 0 0 true 1047
+accelerator 0 0 1 4 true 244
+trace
+init 0 0 0 0 false 0
+engineOn 0 0 0 0 true 75
+engineOn 0 0 0 0 true 1620
+engineOff 0 0 0 0 false 351
+engineOn 0 0 0 0 true 439
+engineOff 0 0 0 0 false 1886
+accelerator 0 0 0 0 false 842
+engineOn 0 0 0 0 true 1779
+off 0 0 0 0 true 1199
+resume 0 0 0 0 true 1692
+trace
+init 0 0 0 0 false 0
+engineOn 0 0 0 0 true 1136
+brake 1 0 0 0 true 1536
+off 1 0 0 0 true 234
+brake 2 0 0 0 true 1269
+resume 2 0 0 0 true 475
+off 2 0 0 0 true 1484
+brake 3 0 0 0 true 1625
+resume 3 0 0 0 true 1311
+off 3 0 0 0 true 1741
