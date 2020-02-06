@@ -57,7 +57,7 @@ object FrontEnd {
 
         val eval = EFSM.test_log(Config.config.test, Inference.tm(inferred))
         val eval_json = s"""[\n  ${eval.map{
-          case (trace, rejected) => s"""{\n    "trace": [${if (trace.length > 0) "\n      " else ""}${trace.map(event => PrettyPrinter.to_JSON(event)).mkString(",\n      ")}${if (trace.length > 0) "\n    " else ""}],\n    "rejected": [${if (rejected.length > 0) "\n      " else ""}${rejected.map(event => PrettyPrinter.to_JSON(event)).mkString(",\n      ")}${if (rejected.length > 0) "\n    " else ""}]\n  }"""}.mkString(",\n  ")}]"""
+          case (trace, rejected) => s"""{\n    "trace": [${if (trace.length > 0) "\n      " else ""}${trace.map(event => PrettyPrinter.to_JSON(event)).mkString(",\n      ")}${if (trace.length > 0) "\n    " else ""}],\n    "rejected": [${if (rejected.length > 0) "\n      " else ""}${rejected.map(event => PrettyPrinter.to_JSON(event)).mkString(",\n      ")}${if (rejected.length > 0) "\n    " else ""}]\n  }"""}.mkString(",\n  ")}\n]"""
 
         val file = new File(Config.config.dotfiles + "/testLog.json")
         val bw = new BufferedWriter(new FileWriter(file))
