@@ -27,7 +27,7 @@ object TypeConversion {
   def mkOr(a: GExp.gexp[VName.vname], b: GExp.gexp[VName.vname]): GExp.gexp[VName.vname] = GExp.gOr(a, b)
 
   def toAExp(best: Node[VariableAssignment[_]]): AExp.aexp[VName.vname] = {
-    val ctx = new Context()
+    val ctx = new com.microsoft.z3.Context()
     val aexp = aexpFromZ3(best.toZ3(ctx))
     ctx.close
     return aexp

@@ -4366,14 +4366,15 @@ def test_exec(x0: List[(String, (List[Value.value], List[Value.value]))],
                uu: FSet.fset[((Nat.nat, Nat.nat),
                                Transition.transition_ext[Unit])],
                uv: Nat.nat, uw: Map[Nat.nat, Option[Value.value]]):
-      List[(String,
-             (List[Value.value],
-               (Nat.nat,
-                 (Map[Nat.nat, Option[Value.value]],
-                   (List[Value.value], List[Option[Value.value]])))))]
+      (List[(String,
+              (List[Value.value],
+                (Nat.nat,
+                  (Map[Nat.nat, Option[Value.value]],
+                    (List[Value.value], List[Option[Value.value]])))))],
+        List[(String, (List[Value.value], List[Value.value]))])
   =
   (x0, uu, uv, uw) match {
-  case (Nil, uu, uv, uw) => Nil
+  case (Nil, uu, uv, uw) => (Nil, Nil)
   case ((l, (i, expected)) :: es, e, s, r) =>
     {
       val ps: FSet.fset[(Nat.nat, Transition.transition_ext[Unit])] =
@@ -4387,34 +4388,53 @@ def test_exec(x0: List[(String, (List[Value.value], List[Value.value]))],
             apply_updates(Transition.Updates[Unit](t), AExp.join_ir(i, r), r)
           val actual: List[Option[Value.value]] =
             apply_outputs[VName.vname](Transition.Outputs[Unit](t),
-AExp.join_ir(i, r));
-          (l, (i, (s, (r, (expected, actual))))) :: test_exec(es, e, sa, ra)
+AExp.join_ir(i, r))
+          val a: (List[(String,
+                         (List[Value.value],
+                           (Nat.nat,
+                             (Map[Nat.nat, Option[Value.value]],
+                               (List[Value.value],
+                                 List[Option[Value.value]])))))],
+                   List[(String, (List[Value.value], List[Value.value]))])
+            = test_exec(es, e, sa, ra)
+          val (est, aa):
+                (List[(String,
+                        (List[Value.value],
+                          (Nat.nat,
+                            (Map[Nat.nat, Option[Value.value]],
+                              (List[Value.value],
+                                List[Option[Value.value]])))))],
+                  List[(String, (List[Value.value], List[Value.value]))])
+            = a;
+          ((l, (i, (s, (r, (expected, actual))))) :: est, aa)
         }
-        else Nil)
+        else (Nil, (l, (i, expected)) :: es))
     }
 }
 
 def test_log(l: List[List[(String, (List[Value.value], List[Value.value]))]],
               e: FSet.fset[((Nat.nat, Nat.nat),
                              Transition.transition_ext[Unit])]):
-      List[List[(String,
-                  (List[Value.value],
-                    (Nat.nat,
-                      (Map[Nat.nat, Option[Value.value]],
-                        (List[Value.value], List[Option[Value.value]])))))]]
+      List[(List[(String,
+                   (List[Value.value],
+                     (Nat.nat,
+                       (Map[Nat.nat, Option[Value.value]],
+                         (List[Value.value], List[Option[Value.value]])))))],
+             List[(String, (List[Value.value], List[Value.value]))])]
   =
   Lista.map[List[(String, (List[Value.value], List[Value.value]))],
-             List[(String,
-                    (List[Value.value],
-                      (Nat.nat,
-                        (Map[Nat.nat, Option[Value.value]],
-                          (List[Value.value],
-                            List[Option[Value.value]])))))]](((t:
-                         List[(String, (List[Value.value], List[Value.value]))])
-                        =>
-                       test_exec(t, e, Nat.zero_nata,
-                                  Map().withDefaultValue(None))),
-                      l)
+             (List[(String,
+                     (List[Value.value],
+                       (Nat.nat,
+                         (Map[Nat.nat, Option[Value.value]],
+                           (List[Value.value], List[Option[Value.value]])))))],
+               List[(String,
+                      (List[Value.value],
+                        List[Value.value]))])](((t:
+           List[(String, (List[Value.value], List[Value.value]))])
+          =>
+         test_exec(t, e, Nat.zero_nata, Map().withDefaultValue(None))),
+        l)
 
 } /* object EFSM */
 
