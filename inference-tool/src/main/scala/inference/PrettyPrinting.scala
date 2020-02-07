@@ -200,7 +200,7 @@ object PrettyPrinter {
         s""""r${show(k)}":""" + (v match {
           case None => throw new IllegalStateException("Got None from registers")
           case Some(Value.Numa(Int.int_of_integer(n))) => n.toString
-          case Some(Value.Str(s)) => s
+          case Some(Value.Str(s)) => s""""$s""""
         })
     }
     return s"{${pairs.mkString(", ")}}"
