@@ -6,11 +6,12 @@ unbundle finfun_syntax
 
 datatype type = NUM | STRING | UNBOUND
 
-fun aexp_get_variables :: "aexp \<Rightarrow> vname list" where
+fun aexp_get_variables :: "vname aexp \<Rightarrow> vname list" where
   "aexp_get_variables (L _) = []" |
   "aexp_get_variables (V v) = [v]" |
   "aexp_get_variables (Plus a1 a2) = remdups (aexp_get_variables a1 @ aexp_get_variables a2)" |
-  "aexp_get_variables (Minus a1 a2) = remdups (aexp_get_variables a1 @ aexp_get_variables a2)"
+  "aexp_get_variables (Minus a1 a2) = remdups (aexp_get_variables a1 @ aexp_get_variables a2)" |
+  "aexp_get_variables (Times a1 a2) = remdups (aexp_get_variables a1 @ aexp_get_variables a2)"
 
 definition assign_all :: "type \<Rightarrow> vname list \<Rightarrow> (vname \<times> type) list" where
   "assign_all t l = remdups (map (\<lambda>v. (v, t)) l)"
@@ -37,13 +38,12 @@ fun is_str :: "value \<Rightarrow> bool" where
   "is_str (Num _) = False" |
   "is_str (Str _) = True"
 
-fun infer_types_aux :: "gexp \<Rightarrow> ((vname \<times> type) list \<times> (vname \<times> vname) list)" where
+fun infer_types_aux :: "vname gexp \<Rightarrow> ((vname \<times> type) list \<times> (vname \<times> vname) list)" where
   "infer_types_aux (Bc _) = ([], [])" |
-  "infer_types_aux (Null v) = (assign_all UNBOUND ((aexp_get_variables v)), [])" |
   "infer_types_aux (Gt a1 a2) = (assign_all NUM ((aexp_get_variables a1) @ (aexp_get_variables a2)), [])" |
   "infer_types_aux (Nor g1 g2) = (let (t1, g1) = infer_types_aux g1; (t2, g2) = infer_types_aux g2 in ((add_pairs t1  t2, remdups (g1@g2))))" |
   "infer_types_aux (Eq (L _) (L _)) = ([], [])" |
- "infer_types_aux (In v va) = (if \<forall>v' \<in> set va. is_num v' then ([(v, NUM)], []) else
+  "infer_types_aux (In v va) = (if \<forall>v' \<in> set va. is_num v' then ([(v, NUM)], []) else
                                 if \<forall>v' \<in> set va. is_str v' then ([(v, STRING)], []) else ([], []))" |
   "infer_types_aux (Eq (V v1) (V v2)) = ([], [(v1, v2)])" |
   "infer_types_aux (Eq (V v) (L (Str s))) = ([(v, STRING)], [])" |
@@ -87,7 +87,7 @@ definition type_check_var :: "vname \<Rightarrow> (vname \<times> type) list \<R
 definition type_check :: "(vname \<times> type) list \<Rightarrow> bool" where
   "type_check l = (\<forall>x \<in> set l. type_check_var (fst x) l)"
 
-definition infer_types :: "gexp \<Rightarrow> (vname \<Rightarrow>f type) option" where
+definition infer_types :: "vname gexp \<Rightarrow> (vname \<Rightarrow>f type) option" where
   "infer_types g = (let (types, groups) = infer_types_aux g;
                         type_lst = assign_group_types (collapse_groups groups []) types in
                     if type_check type_lst then
@@ -95,12 +95,13 @@ definition infer_types :: "gexp \<Rightarrow> (vname \<Rightarrow>f type) option
                     else None
                    )"
 
-fun type_of :: "aexp \<Rightarrow> (vname \<Rightarrow>f type) \<Rightarrow> type" where
+fun type_of :: "vname aexp \<Rightarrow> (vname \<Rightarrow>f type) \<Rightarrow> type" where
   "type_of (L (Num _)) _ = NUM" |
   "type_of (L (Str _)) _ = STRING" |
   "type_of (V v) types = finfun_apply types v" |
   "type_of (Plus _ _) _ = NUM" |
-  "type_of (Minus _ _) _ = NUM"
+  "type_of (Minus _ _) _ = NUM" |
+  "type_of (Times _ _) _ = NUM"
 
 fun type_check_aux :: "type \<Rightarrow> type \<Rightarrow> bool" where
   "type_check_aux NUM NUM = True" |
@@ -110,7 +111,7 @@ fun type_check_aux :: "type \<Rightarrow> type \<Rightarrow> bool" where
   "type_check_aux NUM _ = False" |
   "type_check_aux _ NUM = False"
 
-definition aexp_type_check :: "aexp \<Rightarrow> aexp \<Rightarrow> (vname \<Rightarrow>f type) \<Rightarrow> bool" where
+definition aexp_type_check :: "vname aexp \<Rightarrow> vname aexp \<Rightarrow> (vname \<Rightarrow>f type) \<Rightarrow> bool" where
   "aexp_type_check a1 a2 t = type_check_aux (type_of a1 t) (type_of a2 t)"
 
 end

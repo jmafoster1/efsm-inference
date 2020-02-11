@@ -26,37 +26,36 @@ object PrettyPrinter {
     }
   }
 
-  def aexpToString(a: AExp.aexp): String = {
+  def show(a: AExp.aexp[VName.vname]): String = {
     a match {
       case AExp.L(v) => valueToString(v)
       case AExp.V(v) => vnameToString(v)
-      case AExp.Plus(a1, a2) => aexpToString(a1) + " + " + aexpToString(a2)
-      case AExp.Minus(a1, a2) => aexpToString(a1) + " - " + aexpToString(a2)
-      case AExp.Times(a1, a2) => aexpToString(a1) + " * " + aexpToString(a2)
+      case AExp.Plus(a1, a2) => show(a1) + " + " + show(a2)
+      case AExp.Minus(a1, a2) => show(a1) + " - " + show(a2)
+      case AExp.Times(a1, a2) => show(a1) + " * " + show(a2)
     }
   }
 
-  def gexpToString(g: GExp.gexp): String = g match {
+  def gexpToString(g: GExp.gexp[VName.vname]): String = g match {
     case GExp.Bc(v) => v.toString()
-    case GExp.Eq(a, b) => s"(= ${aexpToString(a)} ${aexpToString(b)})"
-    case GExp.Gt(a, b) => s"(> ${aexpToString(a)} ${aexpToString(b)})"
-    case GExp.Null(v) => (aexpToString(v) + "= NULL")
+    case GExp.Eq(a, b) => s"(= ${show(a)} ${show(b)})"
+    case GExp.Gt(a, b) => s"(> ${show(a)} ${show(b)})"
     case GExp.In(v, l) => s"${vnameToString(v)} E {${l.map(valueToString).mkString(", ")}}"
     case GExp.Nor(g1, g2) => {
       return s"(not (or ${gexpToString(g1)} ${gexpToString(g2)}))"
     }
   }
 
-  def guardsToString(g: List[GExp.gexp]): String = {
+  def guardsToString(g: List[GExp.gexp[VName.vname]]): String = {
     "[" + g.map(x => gexpToString(x)).mkString(", ") + "]"
   }
 
-  def outputsToString(g: List[AExp.aexp]): String = {
-    g.zipWithIndex.map(x => "o" + (x._2 + 1) + ":=" + aexpToString(x._1)).mkString(", ")
+  def outputsToString(g: List[AExp.aexp[VName.vname]]): String = {
+    g.zipWithIndex.map(x => "o" + (x._2 + 1) + ":=" + show(x._1)).mkString(", ")
   }
 
-  def updatesToString(g: List[(Nat.nat, AExp.aexp)]): String = {
-    "[" + g.map(a => (vnameToString(VName.R(a._1)) + ":=" + aexpToString(a._2))).mkString(", ") + "]"
+  def updatesToString(g: List[(Nat.nat, AExp.aexp[VName.vname])]): String = {
+    "[" + g.map(a => (vnameToString(VName.R(a._1)) + ":=" + show(a._2))).mkString(", ") + "]"
   }
 
   def show(t: Transition.transition_ext[Unit]): String = {
@@ -96,8 +95,7 @@ object PrettyPrinter {
     case None => "NONE!!!"
   }
 
-  def optOutputsToString(o: List[Option[Value.value]]) = o.map(outputToString).mkString(", ")
-  def litOutputsToString(o: List[Value.value]) = show(o)
+  def show[X: ClassManifest](o: List[Option[Value.value]]) = s"""[${o.map(outputToString).mkString(", ")}]"""
 
   def pairToString(x: (Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))) = x match {
     case (Nat.Nata(a), ((Nat.Nata(b), Nat.Nata(c)), ((t, Nat.Nata(d)), (t_prime, Nat.Nata(e))))) =>
@@ -194,5 +192,25 @@ object PrettyPrinter {
 
   def i_stepToString(s: (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))) = s match {
     case (ids, (s_prime, t)) => ("[" + ids.map(id => show(id)).mkString(",") + "]", show(s_prime), show(t))
+  }
+
+  def to_JSON(r: Map[Nat.nat, Option[Value.value]]): String = {
+    val pairs = r.map {
+      case (k: Nat.nat, v: Option[Value.value]) =>
+        s""""r${show(k)}":""" + (v match {
+          case None => throw new IllegalStateException("Got None from registers")
+          case Some(Value.Numa(Int.int_of_integer(n))) => n.toString
+          case Some(Value.Str(s)) => s""""$s""""
+        })
+    }
+    return s"{${pairs.mkString(", ")}}"
+  }
+
+  def to_JSON(e: (String, (List[Value.value], (Nat.nat, (Map[Nat.nat,Option[Value.value]], (List[Value.value], List[Option[Value.value]])))))): String = e match {
+    case (label, (inputs, (state, (regs, (expected, actual))))) => s"""{"label": "$label", "inputs": ${show(inputs)}, "state": ${show(state)}, "regs": ${to_JSON(regs)}, "expected": ${show(expected)}, "actual": ${show(actual)}}"""
+  }
+
+  def to_JSON[X: ClassManifest](e: (String, (List[Value.value], List[Value.value]))): String = e match {
+    case (label, (inputs, outputs)) => s"""{"label": "$label", "inputs": ${show(inputs)}, "outputs": ${show(outputs)}}"""
   }
 }

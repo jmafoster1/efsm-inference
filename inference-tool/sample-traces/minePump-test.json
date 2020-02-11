@@ -1,0 +1,112 @@
+[
+  [
+    {"label": "highwater", "inputs": [74, 584, "false"], "outputs": [74, 584, "false"]},
+    {"label": "switch_pump_on", "inputs": [74, 584, "false"], "outputs": [74, 584, "false"]},
+    {"label": "turn_on", "inputs": [74, 584, "false"], "outputs": [55, 606, "true"]},
+    {"label": "critical", "inputs": [55, 606, "true"], "outputs": [55, 606, "true"]},
+    {"label": "switch_pump_off", "inputs": [55, 606, "true"], "outputs": [55, 606, "true"]},
+    {"label": "turn_off", "inputs": [55, 606, "true"], "outputs": [56, 604, "false"]},
+    {"label": "critical", "inputs": [56, 604, "false"], "outputs": [57, 602, "false"]},
+    {"label": "critical", "inputs": [57, 602, "false"], "outputs": [58, 601, "false"]},
+    {"label": "critical", "inputs": [58, 601, "false"], "outputs": [59, 593, "false"]}
+  ],  
+  [
+    {"label": "critical", "inputs": [73, 610, "false"], "outputs": [73, 603, "false"]},
+    {"label": "highwater", "inputs": [73, 603, "false"], "outputs": [74, 602, "false"]},
+    {"label": "critical", "inputs": [74, 602, "false"], "outputs": [76, 592, "false"]},
+    {"label": "not_critical", "inputs": [76, 592, "false"], "outputs": [76, 592, "false"]},
+    {"label": "switch_pump_on", "inputs": [76, 592, "false"], "outputs": [76, 592, "false"]},
+    {"label": "turn_on", "inputs": [76, 592, "false"], "outputs": [74, 600, "true"]},
+    {"label": "critical", "inputs": [74, 600, "true"], "outputs": [74, 600, "true"]},
+    {"label": "switch_pump_off", "inputs": [74, 600, "true"], "outputs": [74, 600, "true"]},
+    {"label": "turn_off", "inputs": [74, 600, "true"], "outputs": [75, 591, "false"]}
+  ],  
+  [
+    {"label": "critical", "inputs": [74, 621, "false"], "outputs": [75, 618, "false"]},
+    {"label": "highwater", "inputs": [75, 618, "false"], "outputs": [76, 617, "false"]},
+    {"label": "critical", "inputs": [76, 617, "false"], "outputs": [78, 608, "false"]},
+    {"label": "critical", "inputs": [78, 608, "false"], "outputs": [79, 603, "false"]},
+    {"label": "critical", "inputs": [79, 603, "false"], "outputs": [81, 597, "false"]},
+    {"label": "not_critical", "inputs": [81, 597, "false"], "outputs": [81, 597, "false"]},
+    {"label": "switch_pump_on", "inputs": [81, 597, "false"], "outputs": [81, 597, "false"]},
+    {"label": "turn_on", "inputs": [81, 597, "false"], "outputs": [70, 600, "true"]},
+    {"label": "critical", "inputs": [70, 600, "true"], "outputs": [70, 600, "true"]}
+  ],  
+  [
+    {"label": "critical", "inputs": [73, 600, "false"], "outputs": [74, 593, "false"]},
+    {"label": "not_critical", "inputs": [74, 593, "false"], "outputs": [76, 584, "false"]},
+    {"label": "highwater", "inputs": [76, 584, "false"], "outputs": [76, 584, "false"]},
+    {"label": "switch_pump_on", "inputs": [76, 584, "false"], "outputs": [76, 584, "false"]},
+    {"label": "turn_on", "inputs": [76, 584, "false"], "outputs": [29, 567, "true"]},
+    {"label": "low_water", "inputs": [29, 567, "true"], "outputs": [29, 567, "true"]},
+    {"label": "switch_pump_off", "inputs": [29, 567, "true"], "outputs": [29, 567, "true"]},
+    {"label": "turn_off", "inputs": [29, 567, "true"], "outputs": [30, 575, "false"]},
+    {"label": "highwater", "inputs": [30, 575, "false"], "outputs": [30, 575, "false"]}
+  ],  
+  [
+    {"label": "highwater", "inputs": [73, 562, "false"], "outputs": [73, 562, "false"]},
+    {"label": "switch_pump_on", "inputs": [73, 562, "false"], "outputs": [73, 562, "false"]},
+    {"label": "turn_on", "inputs": [73, 562, "false"], "outputs": [29, 524, "true"]},
+    {"label": "low_water", "inputs": [29, 524, "true"], "outputs": [29, 524, "true"]},
+    {"label": "switch_pump_off", "inputs": [29, 524, "true"], "outputs": [29, 524, "true"]},
+    {"label": "turn_off", "inputs": [29, 524, "true"], "outputs": [30, 516, "false"]},
+    {"label": "highwater", "inputs": [30, 516, "false"], "outputs": [30, 516, "false"]},
+    {"label": "switch_pump_on", "inputs": [30, 516, "false"], "outputs": [30, 516, "false"]},
+    {"label": "turn_on", "inputs": [30, 516, "false"], "outputs": [29, 518, "true"]}
+  ],  
+  [
+    {"label": "highwater", "inputs": [73, 577, "false"], "outputs": [73, 577, "false"]},
+    {"label": "switch_pump_on", "inputs": [73, 577, "false"], "outputs": [73, 577, "false"]},
+    {"label": "turn_on", "inputs": [73, 577, "false"], "outputs": [28, 542, "true"]},
+    {"label": "low_water", "inputs": [28, 542, "true"], "outputs": [28, 542, "true"]},
+    {"label": "switch_pump_off", "inputs": [28, 542, "true"], "outputs": [28, 542, "true"]},
+    {"label": "turn_off", "inputs": [28, 542, "true"], "outputs": [30, 536, "false"]},
+    {"label": "highwater", "inputs": [30, 536, "false"], "outputs": [30, 536, "false"]},
+    {"label": "switch_pump_on", "inputs": [30, 536, "false"], "outputs": [30, 536, "false"]},
+    {"label": "turn_on", "inputs": [30, 536, "false"], "outputs": [29, 543, "true"]}
+  ],  
+  [
+    {"label": "critical", "inputs": [74, 643, "false"], "outputs": [75, 633, "false"]},
+    {"label": "highwater", "inputs": [75, 633, "false"], "outputs": [76, 630, "false"]},
+    {"label": "critical", "inputs": [76, 630, "false"], "outputs": [77, 620, "false"]},
+    {"label": "critical", "inputs": [77, 620, "false"], "outputs": [79, 616, "false"]},
+    {"label": "critical", "inputs": [79, 616, "false"], "outputs": [81, 615, "false"]},
+    {"label": "critical", "inputs": [81, 615, "false"], "outputs": [82, 610, "false"]},
+    {"label": "critical", "inputs": [82, 610, "false"], "outputs": [83, 606, "false"]},
+    {"label": "critical", "inputs": [83, 606, "false"], "outputs": [84, 597, "false"]},
+    {"label": "not_critical", "inputs": [84, 597, "false"], "outputs": [84, 597, "false"]}
+  ],  
+  [
+    {"label": "highwater", "inputs": [73, 595, "false"], "outputs": [73, 595, "false"]},
+    {"label": "switch_pump_on", "inputs": [73, 595, "false"], "outputs": [73, 595, "false"]},
+    {"label": "turn_on", "inputs": [73, 595, "false"], "outputs": [73, 604, "true"]},
+    {"label": "critical", "inputs": [73, 604, "true"], "outputs": [73, 604, "true"]},
+    {"label": "switch_pump_off", "inputs": [73, 604, "true"], "outputs": [73, 604, "true"]},
+    {"label": "turn_off", "inputs": [73, 604, "true"], "outputs": [75, 601, "false"]},
+    {"label": "critical", "inputs": [75, 601, "false"], "outputs": [75, 592, "false"]},
+    {"label": "not_critical", "inputs": [75, 592, "false"], "outputs": [75, 592, "false"]},
+    {"label": "switch_pump_on", "inputs": [75, 592, "false"], "outputs": [75, 592, "false"]}
+  ],  
+  [
+    {"label": "critical", "inputs": [73, 613, "false"], "outputs": [74, 611, "false"]},
+    {"label": "highwater", "inputs": [74, 611, "false"], "outputs": [74, 607, "false"]},
+    {"label": "critical", "inputs": [74, 607, "false"], "outputs": [74, 597, "false"]},
+    {"label": "not_critical", "inputs": [74, 597, "false"], "outputs": [74, 597, "false"]},
+    {"label": "switch_pump_on", "inputs": [74, 597, "false"], "outputs": [74, 597, "false"]},
+    {"label": "turn_on", "inputs": [74, 597, "false"], "outputs": [70, 603, "true"]},
+    {"label": "critical", "inputs": [70, 603, "true"], "outputs": [70, 603, "true"]},
+    {"label": "switch_pump_off", "inputs": [70, 603, "true"], "outputs": [70, 603, "true"]},
+    {"label": "turn_off", "inputs": [70, 603, "true"], "outputs": [71, 596, "false"]}
+  ],  
+  [
+    {"label": "critical", "inputs": [73, 623, "false"], "outputs": [74, 621, "false"]},
+    {"label": "highwater", "inputs": [74, 621, "false"], "outputs": [76, 614, "false"]},
+    {"label": "critical", "inputs": [76, 614, "false"], "outputs": [77, 614, "false"]},
+    {"label": "critical", "inputs": [77, 614, "false"], "outputs": [79, 606, "false"]},
+    {"label": "critical", "inputs": [79, 606, "false"], "outputs": [79, 598, "false"]},
+    {"label": "not_critical", "inputs": [79, 598, "false"], "outputs": [79, 598, "false"]},
+    {"label": "switch_pump_on", "inputs": [79, 598, "false"], "outputs": [79, 598, "false"]},
+    {"label": "turn_on", "inputs": [79, 598, "false"], "outputs": [78, 607, "true"]},
+    {"label": "critical", "inputs": [78, 607, "true"], "outputs": [78, 607, "true"]}
+  ]
+]

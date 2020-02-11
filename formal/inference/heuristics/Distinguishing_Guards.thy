@@ -20,7 +20,7 @@ fun trace_collect_training_sets :: "execution \<Rightarrow> iEFSM \<Rightarrow> 
   "trace_collect_training_sets [] uPTA s registers T1 T2 G1 G2 = (G1, G2)" |
   "trace_collect_training_sets ((label, inputs, outputs)#t) uPTA s registers T1 T2 G1 G2 = (
     let
-      (uids, s', tran) = fthe_elem (i_possible_steps uPTA s registers label inputs);
+      (uids, s', tran) = fthe_elem (ffilter (\<lambda>(uids, s', tran). apply_outputs (Outputs tran) (join_ir inputs registers) = map Some outputs) (i_possible_steps uPTA s registers label inputs));
       updated = (apply_updates (Updates tran) (join_ir inputs registers) registers)
     in
     if hd uids \<in> set T1 then
@@ -38,7 +38,7 @@ primrec collect_training_sets :: "log \<Rightarrow> iEFSM \<Rightarrow> tids \<R
     collect_training_sets t uPTA T1 T2 (List.union G1 G1a) (List.union G2 G2a)
   )"
 
-definition find_distinguishing_guards :: "(inputs \<times> registers) list \<Rightarrow> (inputs \<times> registers) list \<Rightarrow> (gexp \<times> gexp) option" where
+definition find_distinguishing_guards :: "(inputs \<times> registers) list \<Rightarrow> (inputs \<times> registers) list \<Rightarrow> (vname gexp \<times> vname gexp) option" where
   "find_distinguishing_guards G1 G2 = (
     let gs = {(g1, g2).
       (\<forall>(i, r) \<in> set G1. gval g1 (join_ir i r) = true) \<and>
@@ -50,7 +50,7 @@ definition find_distinguishing_guards :: "(inputs \<times> registers) list \<Rig
 declare find_distinguishing_guards_def [code del]
 code_printing constant find_distinguishing_guards \<rightharpoonup> (Scala) "Dirties.findDistinguishingGuard"
 
-definition add_guard :: "transition \<Rightarrow> gexp \<Rightarrow> transition" where
+definition add_guard :: "transition \<Rightarrow> vname gexp \<Rightarrow> transition" where
   "add_guard t g = \<lparr>Label = Label t, Arity = Arity t, Guard = g#(Guard t), Outputs = Outputs t, Updates = Updates t\<rparr>"
 
 definition distinguish :: "log \<Rightarrow> update_modifier" where
@@ -89,12 +89,7 @@ lemma distinguishing_guard_subsumption:
  gets_us_to s2 (tm e2) 0 <> p \<Longrightarrow>
  anterior_context (tm e2) p = Some c \<Longrightarrow>
  subsumes t1 c t2"
-  apply (rule subsumption)
-      apply simp
-  using can_still_take_ctx_def apply auto[1]
-    apply simp
-  using posterior_separate_def apply auto[1]
-  using posterior_def posterior_separate_def by auto
+  using subsumes_def can_still_take_ctx_def by auto
 
 definition "can_still_take e1 e2 s1 s2 t1 t2 = (
   Label t1 = Label t2 \<and>
@@ -108,25 +103,6 @@ lemma can_still_take_direct_subsumption:
  "can_still_take e1 e2 s1 s2 t1 t2 \<Longrightarrow>
   directly_subsumes e1 e2 s1 s2 t1 t2"
   apply (simp add: directly_subsumes_def can_still_take_def)
-  apply standard
-   apply clarify
-   apply (rule subsumption)
-       apply simp
-  using bad_guards distinguishing_guard_subsumption apply blast
-     apply simp
-  using posterior_separate_def apply auto[1]
-  using posterior_def posterior_separate_def apply auto[1]
-  apply (simp add: can_still_take_ctx_def accepts_and_gets_us_to_both_def)
-  apply (erule conjE)+
-  apply (erule exE)
-  apply (erule_tac x=p in allE)
-  apply simp
-  apply (erule exE)
-  apply (rule_tac x=a in exI)
-   apply (rule subsumption)
-       apply simp
-  using bad_guards distinguishing_guard_subsumption apply blast
-  using posterior_def posterior_separate_def by auto
-
+  using accepts_and_gets_us_to_both_def accepts_trace_gives_context distinguishing_guard_subsumption by blast
 
 end

@@ -88,7 +88,7 @@ termination
    apply simp
   by (metis Max_eq_iff List.finite_set case_prod_conv length_removeAll_less list.distinct(1) measures_less set_empty)
 
-lemma remdups_fold: "remdups l = foldr (\<lambda>i l. if i \<in> set l then l else i#l) l []"
+lemma remdups_fold [code]: "remdups l = foldr (\<lambda>i l. if i \<in> set l then l else i#l) l []"
 proof(induct l)
   case Nil
   then show ?case

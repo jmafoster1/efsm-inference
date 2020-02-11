@@ -350,13 +350,4 @@ fun group_update :: "value list \<Rightarrow> targeted_run_info \<Rightarrow> (t
       Some (fold List.union (map (\<lambda>(tRegs, s, oldRegs, regs, inputs, tid, ta). tid) l) [], map (\<lambda>(r, f_o). (r, the f_o)) maybe_updates)
   )"
 
-fun groupwise_updates :: "value list \<Rightarrow> targeted_run_info list \<Rightarrow> (tids \<times> update_function list) option list" where
-  "groupwise_updates values [] = []" |
-  "groupwise_updates values (g#gs) = (
-    if \<forall>(regs, _) \<in> set g. finfun_to_list regs = [] then
-      groupwise_updates values gs
-    else
-      (group_update values g) # groupwise_updates values gs 
-  )"
-
 end

@@ -11,70 +11,40 @@ object FrontEnd {
     Config.parseArgs(args)
 
     Log.root.info(args.mkString(" "))
-    Log.root.info(s"Building PTA - ${Config.config.log.length} ${if (Config.config.log.length == 1) "trace" else "traces"}")
+    Log.root.info(s"Building PTA - ${Config.config.train.length} ${if (Config.config.train.length == 1) "trace" else "traces"}")
 
-    var pta: IEFSM = null;
+    var pta: IEFSM = Inference.make_pta(Config.config.train)
 
-    if (Config.config.abs) {
-      pta = Inference.make_pta_abstract(Config.config.log, FSet.bot_fset)
-    }
-    else {
-      pta = Inference.make_pta(Config.config.log)
-    }
     PrettyPrinter.iEFSM2dot(pta, s"pta_gen")
-
-    // val groups = PTA_Generalisation.log_group_transitions(pta, Config.config.log)
-    // for ((prev, group) <- groups) {
-    //   for ((id, tran) <- group.reverse)
-    //     println("  " + PrettyPrinter.show(id) + PrettyPrinter.show(tran))
-    //   println()
-    // }
-    //
-    // val groups1 = PTA_Generalisation.transition_groups(pta, Config.config.log)
-    // for (group <- groups1) {
-    //   for ((id, tran) <- group.reverse)
-    //     println(PrettyPrinter.show(id) + PrettyPrinter.show(tran))
-    //   println()
-    // }
 
     Config.numStates = Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(pta)))
     Config.ptaNumStates = Config.numStates
 
     Log.root.info(s"PTA has ${Config.numStates} states")
 
-    // TODO: Turn this into a switchable option
-    val resolved_pta = PTA_Generalisation.derestrict(Config.config.log, Config.heuristics, Config.config.nondeterminismMetric)
-    PrettyPrinter.iEFSM2dot(resolved_pta, "resolved")
-
-    pta = resolved_pta
-    // </TODO>
-
-    TypeConversion.efsmToSALTranslator(Inference.tm(pta), "pta", false)
-
-    // for (group <- PTA_Generalisation.group_by_structure(pta)){
-    //   for ((id, tran) <- group)
-    //     println(PrettyPrinter.show(id), PrettyPrinter.show(tran))
-    //   println()
-    // }
-
-    // System.exit(0)
+    if (Config.preprocessor != null) {
+      val resolved_pta = Config.preprocessor(pta)(Config.config.train)(Config.heuristics)(Config.config.nondeterminismMetric)
+      PrettyPrinter.iEFSM2dot(resolved_pta, "resolved")
+      Log.root.info(s"Resolved PTA has ${Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(pta)))} states")
+      pta = resolved_pta
+    }
 
     try {
       val inferred = Inference.learn(
         Nat.Nata(Config.config.k),
         pta,
-        Config.config.log,
+        Config.config.train,
         Config.config.strategy,
         Config.heuristics,
         Config.config.nondeterminismMetric)
 
-        TypeConversion.doubleEFSMToSALTranslator(Inference.tm(pta), "pta", Inference.tm(inferred), "vend1", "compositionTest", false)
-        TypeConversion.efsmToSALTranslator(Inference.tm(inferred), "inferred")
+        // TypeConversion.doubleEFSMToSALTranslator(Inference.tm(pta), "pta", Inference.tm(inferred), "vend1", "compositionTest", false)
+        // TypeConversion.efsmToSALTranslator(Inference.tm(inferred), "inferred")
 
         Log.root.info("The inferred machine is " +
           (if (Inference.nondeterministic(inferred, Inference.nondeterministic_pairs)) "non" else "") + "deterministic")
 
-        val basename = (if (Config.config.outputname == null) (FilenameUtils.getBaseName(Config.config.file.getName()).replace("-", "_")) else Config.config.outputname.replace("-", "_"))
+        val basename = (if (Config.config.outputname == null) (FilenameUtils.getBaseName(Config.config.trainFile.getName()).replace("-", "_")) else Config.config.outputname.replace("-", "_"))
         TypeConversion.efsmToSALTranslator(Inference.tm(inferred), basename)
 
         PrettyPrinter.iEFSM2dot(inferred, s"${basename}_gen")
@@ -82,15 +52,17 @@ object FrontEnd {
         val minutes = (seconds / 60) % 60
         val hours = seconds / 3600
         Log.root.info(s"Completed in ${if (hours > 0) s"${hours.toInt}h " else ""}${if (minutes > 0) s"${minutes.toInt}m " else ""}${seconds % 60}s")
-        Log.root.info(s"states: ${FSet.size_fset(Inference.S(inferred))}")
-        Log.root.info(s"transitions: ${FSet.size_fset(inferred)}")
+        Log.root.info(s"states: ${Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(inferred)))}")
+        Log.root.info(s"transitions: ${Code_Numeral.integer_of_nat(FSet.size_fset(inferred))}")
 
-        // for (tran <- FSet.sorted_list_of_fset(inferred)) {
-        //   println(tran)
-        // }
+        val eval = EFSM.test_log(Config.config.test, Inference.tm(inferred))
+        val eval_json = s"""[\n  ${eval.map{
+          case (trace, rejected) => s"""{\n    "trace": [${if (trace.length > 0) "\n      " else ""}${trace.map(event => PrettyPrinter.to_JSON(event)).mkString(",\n      ")}${if (trace.length > 0) "\n    " else ""}],\n    "rejected": [${if (rejected.length > 0) "\n      " else ""}${rejected.map(event => PrettyPrinter.to_JSON(event)).mkString(",\n      ")}${if (rejected.length > 0) "\n    " else ""}]\n  }"""}.mkString(",\n  ")}\n]"""
 
-        TypeConversion.efsmToSALTranslator(Inference.tm(inferred), "inferred", false)
-
+        val file = new File(Config.config.dotfiles + "/testLog.json")
+        val bw = new BufferedWriter(new FileWriter(file))
+        bw.write(eval_json)
+        bw.close()
     }
     catch {
       case e: Throwable => {

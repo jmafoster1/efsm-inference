@@ -69,11 +69,11 @@ fun insert_increment_2 :: update_modifier where
        None
      )"
 
-fun guardMatch_alt_2 :: "gexp list \<Rightarrow> bool" where
+fun guardMatch_alt_2 :: "vname gexp list \<Rightarrow> bool" where
   "guardMatch_alt_2 [(gexp.Eq (V (vname.I i)) (L (Num n)))] = (i = 1)" |
   "guardMatch_alt_2 _ = False"
 
-fun outputMatch_alt_2 :: "aexp list \<Rightarrow> bool" where
+fun outputMatch_alt_2 :: "vname aexp list \<Rightarrow> bool" where
   "outputMatch_alt_2 [(L (Num n))] = True" |
   "outputMatch_alt_2 _ = False"
 

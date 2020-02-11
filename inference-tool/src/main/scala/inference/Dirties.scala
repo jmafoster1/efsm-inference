@@ -50,7 +50,7 @@ object Dirties {
     case VName.R(n) => s"r${Code_Numeral.integer_of_nat(n)}"
   }
 
-  def toZ3(a: AExp.aexp): String = a match {
+  def toZ3(a: AExp.aexp[VName.vname]): String = a match {
     case AExp.L(v) => s"(Some ${toZ3(v)})"
     case AExp.V(v) => s"${toZ3(v)}"
     case AExp.Plus(a1, a2) => s"(Plus ${toZ3(a1)} ${toZ3(a2)})"
@@ -63,7 +63,7 @@ object Dirties {
     case Value.Str(s) => s""""${s}""""
   }
 
-  def toZ3Native(a: AExp.aexp): String = a match {
+  def toZ3Native(a: AExp.aexp[VName.vname]): String = a match {
     case AExp.L(v) => s"${toZ3Native(v)}"
     case AExp.V(v) => s"${toZ3(v)}"
     case AExp.Plus(a1, a2) => s"(+ ${toZ3Native(a1)} ${toZ3Native(a2)})"
@@ -71,19 +71,17 @@ object Dirties {
     case AExp.Times(a1, a2) => s"(* ${toZ3Native(a1)} ${toZ3Native(a2)})"
   }
 
-  def toZ3(g: GExp.gexp): String = g match {
+  def toZ3(g: GExp.gexp[VName.vname]): String = g match {
     case GExp.Bc(a) => a.toString()
     case GExp.Eq(a1, a2) => s"(Eq ${toZ3(a1)} ${toZ3(a2)})"
     case GExp.Gt(a1, a2) => s"(Gt ${toZ3(a1)} ${toZ3(a2)})"
     case GExp.In(v, l) => l.slice(0, 2).map(x => s"(Eq ${toZ3(v)} (Some ${toZ3(x)}))").fold("false")((x, y) => s"(Or ${x} ${y})")
-    case GExp.Null(AExp.V(v)) => s"(Eq ${toZ3(v)} None)"
-    case GExp.Null(v) => throw new java.lang.IllegalArgumentException("Z3 does not handle null of more complex arithmetic expressions")
     case GExp.Nor(g1, g2) => {
       s"(Nor ${toZ3(g1)} ${toZ3(g2)})"
     }
   }
 
-  var sat_memo = scala.collection.immutable.Map[GExp.gexp, Boolean](GExp.Bc(true) -> true, GExp.Bc(false) -> false)
+  var sat_memo = scala.collection.immutable.Map[GExp.gexp[VName.vname], Boolean](GExp.Bc(true) -> true, GExp.Bc(false) -> false)
 
   def check(z3String: String, expected: z3.Status = z3.Status.SATISFIABLE): Boolean = {
     val ctx = new z3.Context()
@@ -95,7 +93,7 @@ object Dirties {
     return sat == expected
   }
 
-  def satisfiable(g: GExp.gexp): Boolean = {
+  def satisfiable(g: GExp.gexp[VName.vname]): Boolean = {
     if (sat_memo isDefinedAt g)
       return sat_memo(g)
     else {
@@ -109,7 +107,7 @@ object Dirties {
     }
   }
 
-  def gexpImplies(g1: GExp.gexp, g2: GExp.gexp): Boolean = {
+  def gexpImplies(g1: GExp.gexp[VName.vname], g2: GExp.gexp[VName.vname]): Boolean = {
     var z3String = Config.z3Head
     z3String += (GExp.enumerate_vars(g1) ++ GExp.enumerate_vars(g2)).distinct.map(v => s"(declare-const ${toZ3(v)} (Option Value))").foldLeft("")(((x, y) => x + y + "\n"))
 
@@ -301,9 +299,10 @@ object Dirties {
     s2: Nat.nat,
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
-    Log.root.debug(s"Does ${PrettyPrinter.show(t1)} directly subsume ${PrettyPrinter.show(t2)}? (y/N)")
-    val subsumes = scala.io.StdIn.readLine() == "y"
-    subsumes
+      return false
+    // Log.root.debug(s"Does ${PrettyPrinter.show(t1)} directly subsume ${PrettyPrinter.show(t2)}? (y/N)")
+    // val subsumes = scala.io.StdIn.readLine() == "y"
+    // subsumes
   }
 
   def getTypes(i: List[Value.value]): List[String] = i.map {
@@ -331,12 +330,12 @@ object Dirties {
     })
   }
 
-  var guardMap = Map[List[((List[Value.value], Map[Nat.nat, Option[Value.value]]), Boolean)], Option[GExp.gexp]]()
-  var funMap = Map[List[((List[Value.value], Map[Nat.nat, Option[Value.value]]), Value.value)], Option[(AExp.aexp, Map[VName.vname, String])]]()
+  var guardMap = Map[List[((List[Value.value], Map[Nat.nat, Option[Value.value]]), Boolean)], Option[GExp.gexp[VName.vname]]]()
+  var funMap = Map[List[((List[Value.value], Map[Nat.nat, Option[Value.value]]), Value.value)], Option[(AExp.aexp[VName.vname], Map[VName.vname, String])]]()
 
   def findDistinguishingGuard(
     g1: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])]),
-    g2: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])])): Option[(GExp.gexp, GExp.gexp)] = {
+    g2: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])])): Option[(GExp.gexp[VName.vname], GExp.gexp[VName.vname])] = {
 
     val ioPairs = (g1 zip List.fill(g1.length)(true)) ++ (g1 zip List.fill(g1.length)(false))
 
@@ -347,7 +346,7 @@ object Dirties {
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
-    Logger.getRootLogger().setLevel(Level.DEBUG);
+    Logger.getRootLogger().setLevel(Level.OFF);
 
     val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.guardSeed))
 
@@ -448,6 +447,9 @@ object Dirties {
     Log.root.debug("  Terminals: " + gpGenerator.getTerminals())
     Log.root.debug("  Nonterminals: " + gpGenerator.getNonTerminals())
 
+    if (trainingSet.keys().stream().anyMatch(x => trainingSet.get(x).size() > 1))
+      return None
+
     val gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 7, 7))
 
     try {
@@ -458,7 +460,7 @@ object Dirties {
       val gexp = TypeConversion.gexpFromZ3(best.toZ3(ctx))
       ctx.close
       if (gp.isCorrect(best)) {
-        Log.root.debug("g1: " + PrettyPrinter.gexpToString(gexp))
+        Log.root.debug("  Best function is correct")
         guardMap = guardMap + (ioPairs -> Some(gexp))
         return Some((gexp, GExp.gNot(gexp)))
       } else {
@@ -477,20 +479,22 @@ object Dirties {
   def getUpdate(
     r: Nat.nat,
     values: List[Value.value],
-    train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Map[Nat.nat, Option[Value.value]]))]): Option[AExp.aexp] = {
+    train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Map[Nat.nat, Option[Value.value]]))]): Option[AExp.aexp[VName.vname]] = {
+
+    println("  Getting update")
 
     val r_index = TypeConversion.toInt(r)
     val ioPairs = (train.map {
       case (inputs, (aregs, pregs)) => pregs(r) match {
         case None => throw new IllegalStateException("Got None from registers")
-        case Some(v) => ((inputs, aregs), v)
+        case Some(v) => ((inputs, aregs.filterKeys(_ == r)), v)
       }
     }).distinct
 
-    if (funMap isDefinedAt ioPairs) funMap(ioPairs) match {
-      case None => return None
-      case Some((f, _)) => return Some(f)
-    }
+    // if (funMap isDefinedAt ioPairs) funMap(ioPairs) match {
+    //   case None => return None
+    //   case Some((f, _)) => return Some(f)
+    // }
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
@@ -586,19 +590,28 @@ object Dirties {
     values: List[Value.value],
     inputs: List[List[Value.value]],
     registers: List[Map[Nat.nat, Option[Value.value]]],
-    outputs: List[Value.value]): Option[(AExp.aexp, Map[VName.vname, String])] = {
+    outputs: List[Value.value]): Option[(AExp.aexp[VName.vname], Map[VName.vname, String])] = {
+    println("Getting Output...")
+
+    if (outputs.distinct.length == 1) {
+      println("  Singleton literal output")
+      return Some(AExp.L(outputs(0)), Map())
+    }
 
     val r_index = TypeConversion.toInt(maxReg) + 1
 
     val ioPairs = (inputs zip registers zip outputs).distinct
 
-    if (outputs.distinct.length == 1)
-      return Some(AExp.L(outputs(0)), Map())
-
-    if (funMap isDefinedAt ioPairs) funMap(ioPairs) match {
-      case None => return None
-      case Some((f, types)) => return Some((f, types))
-    }
+    // if (funMap isDefinedAt ioPairs) funMap(ioPairs) match {
+    //   case None => {
+    //     println("  Previously failed")
+    //     return None
+    //   }
+    //   case Some((f, types)) => {
+    //     println("  Previously succeeded: " + PrettyPrinter.show(f))
+    //     return Some((f, types))
+    //   }
+    // }
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
@@ -700,7 +713,7 @@ object Dirties {
     r: Nat.nat,
     values: List[Value.value],
     i: List[List[Value.value]],
-    o: List[Value.value]): Option[(AExp.aexp, Map[VName.vname, String])] = {
+    o: List[Value.value]): Option[(AExp.aexp[VName.vname], Map[VName.vname, String])] = {
 
     val ioPairs = (i zip i.map(i => null) zip o).distinct
 
@@ -783,7 +796,7 @@ object Dirties {
   def getRegs(
     types: Map[VName.vname, String],
     i: List[Value.value],
-    f: AExp.aexp,
+    f: AExp.aexp[VName.vname],
     v: Value.value): Map[Nat.nat, Option[Value.value]] = {
     val expVars: List[VName.vname] = Lista.sorted_list_of_set(AExp.enumerate_vars(f))
     val definedVars = (0 to i.length).map(i => VName.I(Nat.Nata(i)))

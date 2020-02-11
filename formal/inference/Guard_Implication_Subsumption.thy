@@ -13,7 +13,7 @@ lemma guard_implication:
   unfolding can_take_transition_def can_take_def
   using can_take_transition_def can_take_def posterior_def posterior_separate_def can_take_def by auto
 
-definition gexp_implies :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
+definition gexp_implies :: "'a gexp \<Rightarrow> 'a gexp \<Rightarrow> bool" where
   "gexp_implies g1 g2 = (\<forall>s. gval g1 s = true \<longrightarrow> gval g2 s = true)"
 declare gexp_implies_def [code del]
 code_printing constant gexp_implies \<rightharpoonup> (Scala) "Dirties.gexpImplies"

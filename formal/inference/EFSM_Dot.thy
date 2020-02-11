@@ -56,7 +56,7 @@ fun vname2dot :: "vname \<Rightarrow> String.literal" where
   "vname2dot (vname.I n) = STR ''i<sub>''+(show_nat (n))+STR ''</sub>''" |
   "vname2dot (R n) = STR ''r<sub>''+(show_nat n)+STR ''</sub>''"
 
-fun aexp2dot :: "aexp \<Rightarrow> String.literal" where
+fun aexp2dot :: "vname aexp \<Rightarrow> String.literal" where
   "aexp2dot (L v) = value2dot v" |
   "aexp2dot (V v) = vname2dot v" |
   "aexp2dot (Plus a1 a2) = (aexp2dot a1)+STR '' + ''+(aexp2dot a2)" |
@@ -71,16 +71,15 @@ fun join :: "String.literal list \<Rightarrow> String.literal \<Rightarrow> Stri
 definition show_nats :: "nat list \<Rightarrow> String.literal" where
   "show_nats l = join (map show_nat l) STR '', ''"
 
-fun gexp2dot :: "gexp \<Rightarrow> String.literal" where
+fun gexp2dot :: "vname gexp \<Rightarrow> String.literal" where
   "gexp2dot (GExp.Bc True) = (STR ''True'')" |
   "gexp2dot (GExp.Bc False) = (STR ''False'')" |
   "gexp2dot (GExp.Eq a1 a2) = (aexp2dot a1)+STR '' = ''+(aexp2dot a2)" |
   "gexp2dot (GExp.Gt a1 a2) = (aexp2dot a1)+STR '' &gt; ''+(aexp2dot a2)" |
   "gexp2dot (GExp.In v l) = (vname2dot v)+STR ''&isin;{''+(join (map value2dot l) STR '', '')+STR ''}''" |
-  "gexp2dot (Nor g1 g2) = STR ''!(''+(gexp2dot g1)+STR ''&or;''+(gexp2dot g2)+STR '')''" |
-  "gexp2dot (Null v) = (aexp2dot v)+STR '' = NULL''"
+  "gexp2dot (Nor g1 g2) = STR ''!(''+(gexp2dot g1)+STR ''&or;''+(gexp2dot g2)+STR '')''"
 
-primrec guards2dot_aux :: "gexp list \<Rightarrow> String.literal list" where
+primrec guards2dot_aux :: "vname gexp list \<Rightarrow> String.literal list" where
   "guards2dot_aux [] = []" |
   "guards2dot_aux (h#t) = (gexp2dot h)#(guards2dot_aux t)"
 
@@ -102,7 +101,7 @@ fun updates2dot :: "update_function list \<Rightarrow> String.literal" where
   "updates2dot [] = (STR '''')" |
   "updates2dot a = STR ''&#91;''+(join (updates2dot_aux a) STR '', '')+STR ''&#93;''"
 
-fun guards2dot :: "gexp list \<Rightarrow> String.literal" where
+fun guards2dot :: "vname gexp list \<Rightarrow> String.literal" where
   "guards2dot [] = (STR '''')" |
   "guards2dot a = STR ''&#91;''+(join (guards2dot_aux a) STR '', '')+STR ''&#93;''"
 

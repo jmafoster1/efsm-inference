@@ -118,17 +118,13 @@ definition replace_all :: "iEFSM \<Rightarrow> tids list \<Rightarrow> transitio
 definition replace_transitions :: "iEFSM \<Rightarrow> (tids \<times> transition) list \<Rightarrow> iEFSM" where
   "replace_transitions e ts = fold (\<lambda>(uid, new) acc. replace_transition acc uid new) ts e"
 
-primrec make_guard :: "value list \<Rightarrow> nat \<Rightarrow> gexp list" where
+primrec make_guard :: "value list \<Rightarrow> nat \<Rightarrow> vname gexp list" where
 "make_guard [] _ = []" |
 "make_guard (h#t) n = (gexp.Eq (V (vname.I n)) (L h))#(make_guard t (n+1))"
 
 primrec make_outputs :: "value list \<Rightarrow> output_function list" where
   "make_outputs [] = []" |
   "make_outputs (h#t) = (L h)#(make_outputs t)"
-
-(* An execution represents a run of the software and has the form [(label, inputs, outputs)]*)
-type_synonym execution = "(label \<times> value list \<times> value list) list"
-type_synonym log = "execution list"
 
 definition max_uid_total :: "iEFSM \<Rightarrow> nat" where
   "max_uid_total e = (case max_uid e of None \<Rightarrow> 0 | Some u \<Rightarrow> u)"
@@ -170,58 +166,6 @@ definition parseInt :: "String.literal \<Rightarrow> int" where
 definition substring :: "String.literal \<Rightarrow> nat \<Rightarrow> String.literal" where
   "substring s n = String.implode (drop n (String.explode s))"
 
-primrec make_guard_abstract :: "value list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (String.literal \<Rightarrow>f nat option) \<Rightarrow> gexp list \<Rightarrow> update_function list \<Rightarrow> (gexp list \<times> update_function list \<times> (String.literal \<Rightarrow>f nat option))" where
-  "make_guard_abstract [] _ _ r G U = (G, U, r)" |
-  "make_guard_abstract (h#t) i maxR r G U = (
-    case h of
-      value.Num _ \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Eq (V (vname.I i)) (L h))#G) U |
-      value.Str s \<Rightarrow>
-        if s = STR ''_'' then
-          make_guard_abstract t (i+1) maxR r G U
-        else if startsWith s STR ''$'' then
-          case r $ s of
-            None \<Rightarrow> make_guard_abstract t (i+1) (maxR + 1) (r(s := maxR)) G ((maxR, V (I i))#U) |
-            Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Eq (V (vname.I i)) (V (R reg)))#G) U
-        else if startsWith s STR ''<'' then
-          if startsWith (substring s 1) STR ''$'' then
-            case r $ (substring s 1) of
-              Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (V (R reg)))#G) U
-          else
-            make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (L (Num (parseInt (substring s 2)))))#G) U
-        else if startsWith s STR ''/='' then
-          if startsWith (substring s 1) STR ''$'' then
-            case r $ (substring s 2) of
-              Some reg \<Rightarrow> make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (V (R reg)))#G) U
-          else
-            make_guard_abstract t (i+1) maxR r ((Gt (V (vname.I i)) (L (Num (parseInt (substring s 3)))))#G) U
-        else
-          make_guard_abstract t (i+1) maxR r ((Eq (V (vname.I i)) (L h))#G) U
-  )"
-
-primrec make_outputs_abstract :: "value list \<Rightarrow> nat \<Rightarrow> (String.literal \<Rightarrow>f nat option) \<Rightarrow> output_function list \<Rightarrow> output_function list" where
-  "make_outputs_abstract []_ _ P = rev P" |
-  "make_outputs_abstract (h#t) maxR r P = (case h of
-    value.Num _ \<Rightarrow> make_outputs_abstract t maxR r ((L h)#P) |
-    value.Str s \<Rightarrow>
-      if startsWith s STR ''$'' then 
-        case r $ s of
-          Some reg \<Rightarrow> make_outputs_abstract t maxR r ((V (R reg))#P)
-      else
-        make_outputs_abstract t maxR r ((L h)#P)
-    )"
-
-definition add_transition_abstract :: "iEFSM \<Rightarrow> (String.literal \<Rightarrow>f nat option) \<Rightarrow> cfstate \<Rightarrow> label \<Rightarrow> value list \<Rightarrow> value list \<Rightarrow> (iEFSM \<times> (String.literal \<Rightarrow>f nat option))" where
-  "add_transition_abstract e r s label inputs outputs = (let
-    regs = fimage (total_max_reg \<circ> snd) (tm e);
-    maxR = (if regs = {||} then 1 else fMax regs);
-    (G, U1, r') = make_guard_abstract inputs 0 maxR r [] [];
-    P = make_outputs_abstract outputs maxR r' [] in
-    if endsWith label STR ''*'' then
-      (finsert ([max_uid_total e + 1], (s, s), \<lparr>Label=dropRight label 1, Arity=length inputs, Guard=G, Outputs=P, Updates=U1\<rparr>) e, r')
-    else
-      (finsert ([max_uid_total e + 1], (s, (maxS (tm e))+1), \<lparr>Label=label, Arity=length inputs, Guard=G, Outputs=P, Updates=U1\<rparr>) e, r')
-    )"
-
 fun make_branch :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> iEFSM" where
   "make_branch e _ _ [] = e" |
   "make_branch e s r ((label, inputs, outputs)#t) =
@@ -235,25 +179,9 @@ fun make_branch :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Righta
           make_branch (add_transition e s label inputs outputs) ((maxS (tm e))+1) r t
     )"
 
-fun make_branch_abstract :: "(iEFSM \<times> (String.literal \<Rightarrow>f nat option)) \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> iEFSM" where
-  "make_branch_abstract (e, r) _ _ [] = e" |
-  "make_branch_abstract (e, r1) s r ((label, inputs, outputs)#t) =
-    (case (step (tm e) s r label inputs) of
-      Some (transition, s', outputs', updated) \<Rightarrow> 
-        if outputs' = (map Some outputs) then
-          make_branch_abstract (e, r1) s' updated t
-        else 
-          make_branch_abstract (add_transition_abstract e r1 s label inputs outputs) ((maxS (tm e))+1) r t  |
-      None \<Rightarrow>
-          make_branch_abstract (add_transition_abstract e r1 s label inputs outputs) ((maxS (tm e))+1) r t
-    )"
-
 primrec make_pta_aux :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "make_pta_aux [] e = e" |
   "make_pta_aux (h#t) e = make_pta_aux t (make_branch e 0 <> h)"
-
-definition make_pta_abstract :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "make_pta_abstract l e = fold (\<lambda>h e. make_branch_abstract (e, <>) 0 <> h) l e"
 
 definition "make_pta log = make_pta_aux log {||}"
 
@@ -271,7 +199,6 @@ record score =
   S2 :: cfstate
 type_synonym scoreboard = "score fset"
 type_synonym strategy = "tids \<Rightarrow> tids \<Rightarrow> iEFSM \<Rightarrow> nat"
-
 
 primrec paths_of_length :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> tids list fset" where
   "paths_of_length 0 _ _ = {|[]|}" |
@@ -292,6 +219,22 @@ fun step_score :: "(tids \<times> tids) list \<Rightarrow> iEFSM \<Rightarrow> s
     else
       score + (step_score t e s)
   )"
+
+lemma step_score_foldr [code]: "step_score xs e s = foldr (\<lambda>(id1, id2) acc. let score = s id1 id2 e in
+    if score = 0 then
+      0
+    else
+      score + acc) xs 0"
+proof(induct xs)
+case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a xs)
+  then show ?case
+    apply (cases a, clarify)
+    by (simp add: Let_def)
+qed
 
 definition score_from_list :: "tids list fset \<Rightarrow> tids list fset \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> nat" where
   "score_from_list P1 P2 e s = (
@@ -383,7 +326,7 @@ lemma gets_us_to_and_not_subsumes:
    \<not> directly_subsumes e1 e2 s s' t1 t2"
   unfolding directly_subsumes_def by auto
 
-lemma cant_directly_subsume: "\<forall>c. \<not> subsumes t c t' \<Longrightarrow> \<not> directly_subsumes m m' s s' t t'"
+lemma cant_directly_subsume: "(\<And>c. \<not> subsumes t c t') \<Longrightarrow> \<not> directly_subsumes m m' s s' t t'"
   by (simp add: directly_subsumes_def)
 
 definition insert_transition :: "tids \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
@@ -393,7 +336,7 @@ definition insert_transition :: "tids \<Rightarrow> cfstate \<Rightarrow> cfstat
     else
       fimage (\<lambda>(uid', (from', to'), t').
         if from = from' \<and> to = to' \<and> t = t' then
-          (uid'@uid, (from', to'), t')
+          (List.union uid' uid, (from', to'), t')
         else
           (uid', (from', to'), t')
       ) e
@@ -437,6 +380,9 @@ definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \
           Some e \<Rightarrow> Some (make_distinct e)
    )"
 
+definition outgoing_transitions_from :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> transition fset" where
+  "outgoing_transitions_from e s = fimage (\<lambda>(_, _, t). t) (ffilter (\<lambda>(_, (orig, _), _). orig = s) e)"
+
 (* resolve_nondeterminism - tries dest resolve nondeterminism in a given iEFSM                      *)
 (* @param ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) - a list of nondeterministic pairs where
           from - nat - the state from which t\<^sub>1 and t\<^sub>2 eminate
@@ -455,23 +401,23 @@ definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \
 function resolve_nondeterminism :: "(cfstate \<times> cfstate) list \<Rightarrow> nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
   "resolve_nondeterminism _ [] _ new _ check np = (if deterministic new np \<and> check (tm new) then Some new else None)" |
   "resolve_nondeterminism closed ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) oldEFSM newEFSM m check np = (
-     if (dest\<^sub>1, dest\<^sub>2) \<in> set closed then None else let
-     destMerge = if dest\<^sub>1 = dest\<^sub>2 then newEFSM else merge_states dest\<^sub>1 dest\<^sub>2 newEFSM
-     in
-     case merge_transitions oldEFSM newEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m np of
-       None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np |
-       Some new \<Rightarrow>
-         let newScores = (sorted_list_of_fset (np new)) in 
-         if (size new, size (S new), length (newScores)) < (size newEFSM, size (S newEFSM), length (ss)) then
-           case resolve_nondeterminism closed newScores oldEFSM new m check np of
-             Some new' \<Rightarrow> Some new' |
-             None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np
-         else
+    if (dest\<^sub>1, dest\<^sub>2) \<in> set closed then
+      None
+    else
+    let destMerge = merge_states dest\<^sub>1 dest\<^sub>2 newEFSM in
+    case merge_transitions oldEFSM newEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m np of
+      None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np |
+      Some new \<Rightarrow> (
+        let newScores = sorted_list_of_fset (np new) in 
+        if (size new, size (S new), length (newScores)) < (size newEFSM, size (S newEFSM), length (ss)) then
+          case resolve_nondeterminism closed newScores oldEFSM new m check np of
+            Some new' \<Rightarrow> Some new' |
+            None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np
+        else
           None
-   )"
-     apply clarify
-     apply simp
-     apply (metis neq_Nil_conv prod_cases3 surj_pair)
+      )
+)"
+     apply (clarify, metis neq_Nil_conv prod_cases3 surj_pair)
   by auto
 termination
   by (relation "measures [\<lambda>(_, _, _, newEFSM, _). size newEFSM,
@@ -508,12 +454,6 @@ fun inference_step :: "iEFSM \<Rightarrow> score list \<Rightarrow> update_modif
        None \<Rightarrow> inference_step e t m check np
   )"
 
-lemma measures_fsubset: "S x2 |\<subset>| S e \<Longrightarrow>
-       ((x2, r, m, check, np), e, r, m, check, np) \<in> measures [\<lambda>(e, r, m, check, np). size (Inference.S e)]"
-  using size_fsubset[of "S x2" "S e"]
-  by simp
-
-
 (* We want to sort first by score (highest to lowest) and then by state pairs (lowest to highest) *)
 (* so we end up merging the states with the highest scores first and then break ties by those     *)
 (* state pairs which are closest to the origin                                                    *)
@@ -547,24 +487,11 @@ function infer :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> 
 termination
   apply (relation "measures [\<lambda>(n, e, _). size (S e)]")
    apply simp
-  using measures_fsubset by auto
+  by (metis (no_types, lifting) case_prod_conv measures_less size_fsubset)
 
 fun get_ints :: "execution \<Rightarrow> int list" where
   "get_ints [] = []" |
   "get_ints ((_, inputs, outputs)#t) = (map (\<lambda>x. case x of Num n \<Rightarrow> n) (filter is_Num (inputs@outputs)))"
-
-fun get_smallest :: "nat \<Rightarrow> nat list \<Rightarrow> nat" where
-  "get_smallest n s = (if n \<notin> set s then n else get_smallest (n + 1) (removeAll n s))"
-
-definition make_smaller_aux :: "nat \<Rightarrow> nat list \<Rightarrow> nat" where
-  "make_smaller_aux i s = (if i < 100 then i else get_smallest i s)"
-
-fun make_smaller :: "int \<Rightarrow> nat list \<Rightarrow> int" where
-  "make_smaller n s = (if n < 0 then - (int (make_smaller_aux (nat n) s)) else int (make_smaller_aux (nat n) s))"
-
-fun make_smaller_val :: "nat list \<Rightarrow> value \<Rightarrow> value" where
-  "make_smaller_val _ (value.Str s) = value.Str s" |
-  "make_smaller_val s (Num n) = Num (make_smaller n s)"
 
 definition learn :: "nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "learn n pta l r m np = (
@@ -576,9 +503,6 @@ definition max_reg :: "iEFSM \<Rightarrow> nat option" where
   "max_reg e = EFSM.max_reg (tm e)"
 
 definition "max_reg_total e = (case max_reg e of None \<Rightarrow> 0 | Some r \<Rightarrow> r)"
-
-lemma fMax_None: "f \<noteq> {||} \<Longrightarrow> fMax f = None = (\<forall>x |\<in>| f. x = None)"
-  by (metis (mono_tags, lifting) bot_option_def fBallI fMax.in_idem fMax_in fbspec max_bot2)
 
 definition max_output :: "iEFSM \<Rightarrow> nat" where
   "max_output e = EFSM.max_output (tm e)"
@@ -599,163 +523,21 @@ primrec try_heuristics_check :: "(transition_matrix \<Rightarrow> bool) \<Righta
 definition all_regs :: "iEFSM \<Rightarrow> nat set" where
   "all_regs e = EFSM.all_regs (tm e)"
 
-fun fold_into :: "nat \<Rightarrow> gexp list \<Rightarrow> gexp list" where
-  "fold_into n [] = [gNot (Null (V (I n)))]" |
-  "fold_into n ((Eq (V (I i)) (L l))#t) = (if i = n then (Eq (V (I i)) (L l))#t else (Eq (V (I i)) (L l))#(fold_into n t))" |
-  "fold_into n ((In (I i) l)#t) = (if i = n then (In (I i) l)#t else (In (I i) l)#(fold_into n t))" |
-  "fold_into n (h#t) = h#(fold_into n t)"
-
-primrec smart_not_null :: "nat list \<Rightarrow> gexp list \<Rightarrow> gexp list" where
-  "smart_not_null [] g = g" |
-  "smart_not_null (h#t) g = fold_into h (smart_not_null t g)"
-
-lemma smart_not_null_foldr [code]: "smart_not_null l g = foldr fold_into l g"
-  by(induct l, auto)
-
-lemma fold_into_supset: "set (fold_into a g) \<supseteq> set g"
-  by(induct g rule: fold_into.induct, auto)
-
-lemma fold_into_gNot_or_not: "fold_into a g = g \<or> fold_into a g = g@[(gNot (Null (V (I a))))]"
-proof(induct g)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a g)
-  then show ?case
-    apply (cases a)
-         apply simp+
-        apply (case_tac x21)
-           apply simp
-          apply (case_tac x22)
-             apply simp
-             apply (metis Cons.hyps fold_into.simps(1) fold_into.simps(2) fold_into.simps(6) vname.exhaust)
-            apply simp+
-     apply (case_tac x51)
-    by auto
-qed
-
-lemma smart_not_null_superset: "set (smart_not_null l g) \<supseteq> set g"
-proof(induct l)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a l)
-  then show ?case
-    apply simp
-    using fold_into_supset by blast
-qed
-
-lemma fold_into_not_null: "apply_guards (fold_into a g) s \<Longrightarrow> gval (gNot (Null (V (I a)))) s = true"
-  apply (insert fold_into_gNot_or_not[of a g])
-  apply (case_tac "fold_into a g = g @ [gNot (Null (V (I a)))]")
-   apply (simp add: apply_guards_singleton apply_guards_append)
-  apply simp
-  apply (induct g)
-   apply simp
-   apply (simp add: apply_guards_cons)
-  apply (case_tac aa)
-       apply simp
-      apply (case_tac x21)
-         apply simp
-        apply (case_tac x22)
-           apply simp
-           apply (case_tac "x2")
-            apply simp
-            apply (case_tac "x1a = a")
-             apply (simp add: gNot_def)
-             apply (metis trilean.distinct(1))
-            apply (simp add: gNot_def)+
-   apply (case_tac x51)
-    apply (simp add: gNot_def)
-    apply (metis (mono_tags) imageE list.inject maybe_not.simps(1) maybe_or_idempotent not_Some_eq not_true)
-  using not_Some_eq apply fastforce
-  by simp
-
-lemma apply_guards_snn_map_gNot:
-  "apply_guards (smart_not_null l g) s \<Longrightarrow> apply_guards (g @ map (\<lambda>i. gNot (Null (V (I i)))) l) s"
-proof(induct l)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a l)
-  then show ?case
-    apply (simp add: apply_guards_append apply_guards_cons del: gval.simps)
-    apply standard
-     apply (metis smart_not_null_superset apply_guards_subset smart_not_null.simps(2))
-    apply standard
-    using fold_into_not_null apply blast
-    using apply_guards_subset fold_into_supset by blast
-qed
-
-lemma apply_guards_snn: "apply_guards (smart_not_null [0..<a] g) s \<Longrightarrow> apply_guards (g @ ensure_not_null a) s"
-  by (simp only: ensure_not_null_def apply_guards_snn_map_gNot)
-
-lemma satisfiable_list_snn: "satisfiable_list (smart_not_null [0..<a] g) \<Longrightarrow> satisfiable_list (g @ ensure_not_null a)"
-  apply (simp add: satisfiable_list_def satisfiable_def apply_guards_fold[symmetric] del: fold_append)
-  using apply_guards_snn by blast
-
-definition simple_mutex :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "simple_mutex t t' = (
-     Label t = Label t' \<and>
-     Arity t = Arity t' \<and>
-     max_reg_list (Guard t) = None \<and>
-     max_input_list (Guard t) < Some (Arity t) \<and>
-     satisfiable_list (smart_not_null [0..<(Arity t)] (Guard t)) \<and>
-     \<not> choice t' t)"
-
-lemma satisfiable_can_take:
-  "max_input_list (Guard t) < Some (Arity t) \<Longrightarrow>
-   satisfiable_list ((Guard t) @ ensure_not_null (Arity t)) \<Longrightarrow>
-   \<exists>i r. can_take_transition t i r"
-  apply (simp add: can_take_transition_def satisfiable_list_def satisfiable_def fold_apply_guards
-                   apply_guards_append can_take_def del: fold_append)
-  apply clarify
-  apply (rule_tac x="take_or_pad i (Arity t)" in exI)
-  apply standard
-   apply (simp add: length_take_or_pad)
-  apply (rule_tac x=r in exI)
-  by (simp add: apply_guards_take_or_pad)
-
-lemma can_take_satisfiable:
-  "max_reg_list (Guard t) = None \<Longrightarrow>
-   max_input_list (Guard t) < Some (Arity t) \<Longrightarrow>
-   satisfiable_list ((Guard t) @ ensure_not_null (Arity t)) \<Longrightarrow>
-   \<exists>i. can_take_transition t i r"
-  apply (simp add: can_take_transition_def satisfiable_list_def satisfiable_def fold_apply_guards
-                   apply_guards_append can_take_def del: fold_append)
-  apply clarify
-  apply (rule_tac x="take_or_pad i (Arity t)" in exI)
-  apply standard
-   apply (simp add: length_take_or_pad)
-  by (simp add: apply_guards_no_reg_swap_regs)
-
-lemma simple_mutex_direct_subsumption:
-  "simple_mutex t t' \<Longrightarrow>
-   \<not> directly_subsumes e e' s s' t' t"
-  apply (rule cant_directly_subsume)
-  apply (rule allI)
-  apply (simp add: simple_mutex_def)
-  by (metis satisfiable_list_snn can_take_satisfiable no_choice_no_subsumption)
-
 definition max_int :: "iEFSM \<Rightarrow> int" where
   "max_int e = EFSM.max_int (tm e)"
 
-fun literal_args :: "gexp \<Rightarrow> bool" where
+fun literal_args :: "'a gexp \<Rightarrow> bool" where
   "literal_args (Bc v) = False" |
   "literal_args (Eq (V _) (L _)) = True" |
   "literal_args (In _ _) = True" |
   "literal_args (Eq _ _) = False" |
   "literal_args (Gt va v) = False" |
-  "literal_args (Null v) = False" |
   "literal_args (Nor v va) = (literal_args v \<and> literal_args va)"
 
 lemma literal_args_eq: "literal_args (Eq a b) \<Longrightarrow> \<exists>v l. a = (V v) \<and> b = (L l)"
   apply (cases a)
      apply simp
-    apply (cases b)
+      apply (cases b)
   by auto
 
 definition i_possible_steps :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (tids \<times> cfstate \<times> transition) fset" where

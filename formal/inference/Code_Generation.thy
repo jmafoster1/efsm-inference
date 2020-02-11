@@ -7,17 +7,13 @@ theory Code_Generation
    "heuristics/Store_Reuse_Subsumption"
    "heuristics/Increment_Reset"
    "heuristics/Same_Register"
-   "heuristics/Ignore_Inputs"
-   "heuristics/Least_Upper_Bound"
-   "heuristics/Equals"
-   "heuristics/Symbolic_Regression"
    "heuristics/Distinguishing_Guards"
    "heuristics/PTA_Generalisation"
+   "heuristics/Weak_Subsumption"
    EFSM_Dot
    Code_Target_FSet
    Code_Target_Set
    Code_Target_List
-   Use_Small_Numbers
 efsm2sal
 begin
 
@@ -52,7 +48,7 @@ lemma [code]:
   using initially_undefined_context_check_full_def by presburger
 
 (* This gives us a speedup because we can check this before we have to call out to z3 *)
-fun mutex :: "gexp \<Rightarrow> gexp \<Rightarrow> bool" where
+fun mutex :: "'a gexp \<Rightarrow> 'a gexp \<Rightarrow> bool" where
   "mutex (Eq (V v) (L l)) (Eq (V v') (L l')) = (if v = v' then l \<noteq> l' else False)" |
   "mutex (gexp.In v l) (Eq (V v') (L l')) = (v = v' \<and> l' \<notin> set l)" |
   "mutex (Eq (V v') (L l')) (gexp.In v l) = (v = v' \<and> l' \<notin> set l)" |
@@ -91,7 +87,7 @@ lemma existing_mutex_not_true: "\<exists>x\<in>set G. \<exists>y\<in>set G. mute
   apply simp
   apply (simp only: apply_guards_double_cons)
   using mutex_not_gval
-  by simp
+  by auto
 
 lemma [code]: "choice t t' = choice_cases t t'"
   apply (simp only: choice_alt choice_cases_def)
@@ -103,7 +99,7 @@ lemma [code]: "choice t t' = choice_cases t t'"
    apply (simp add: apply_guards_foldr fold_conv_foldr satisfiable_def)
   by (simp add: apply_guards_foldr choice_alt_def fold_conv_foldr satisfiable_def)
 
-fun guardMatch_code :: "gexp list \<Rightarrow> gexp list \<Rightarrow> bool" where
+fun guardMatch_code :: "vname gexp list \<Rightarrow> vname gexp list \<Rightarrow> bool" where
   "guardMatch_code [(gexp.Eq (V (vname.I i)) (L (Num n)))] [(gexp.Eq (V (vname.I i')) (L (Num n')))] = (i = 0 \<and> i' = 0)" |
   "guardMatch_code _ _ = False"
 
@@ -118,7 +114,7 @@ fun outputMatch_code :: "output_function list \<Rightarrow> output_function list
 lemma [code]: "outputMatch t1 t2 = outputMatch_code (Outputs t1) (Outputs t2)"
   by (metis outputMatch_code.elims(2) outputMatch_code.simps(1) outputMatch_def)
 
-fun always_different_outputs :: "aexp list \<Rightarrow> aexp list \<Rightarrow> bool" where
+fun always_different_outputs :: "vname aexp list \<Rightarrow> vname aexp list \<Rightarrow> bool" where
   "always_different_outputs [] [] = False" |
   "always_different_outputs [] (a#_) = True" |
   "always_different_outputs (a#_) [] = True" |
@@ -131,7 +127,7 @@ lemma always_different_outputs_outputs_never_equal:
   apply(induct O1 O2 rule: always_different_outputs.induct)
   by (simp_all add: apply_outputs_def)
 
-fun tests_input_equality :: "nat \<Rightarrow> gexp \<Rightarrow> bool" where
+fun tests_input_equality :: "nat \<Rightarrow> vname gexp \<Rightarrow> bool" where
   "tests_input_equality i (gexp.Eq (V (vname.I i')) (L _)) = (i = i')" |
   "tests_input_equality _ _ = False"
 
@@ -169,7 +165,7 @@ definition input_updates_register :: "transition_matrix \<Rightarrow> (nat \<tim
       )
   )"
 
-definition "dirty_directly_subsumes = directly_subsumes"
+definition "dirty_directly_subsumes e1 e2 s1 s2 t1 t2 = (if t1 = t2 then True else directly_subsumes e1 e2 s1 s2 t1 t2)"
 
 definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> bool" where
 "always_different_outputs_direct_subsumption m1 m2 s s' t2 = (
@@ -200,7 +196,7 @@ lemma always_different_outputs_direct_subsumption:
   using always_different_outputs_can_take_transition_not_subsumed accepts_trace_gives_context accepts_gives_context
   by fastforce
 
-definition negate :: "gexp list \<Rightarrow> gexp" where
+definition negate :: "'a gexp list \<Rightarrow> 'a gexp" where
   "negate g = gNot (fold gAnd g (Bc True))"
 
 lemma gval_negate_cons: "gval (negate (a # G)) s = gval (gNot a) s \<or>\<^sub>? gval (negate G) s"
@@ -211,38 +207,7 @@ lemma negate_true_guard: "(gval (negate G) s = true) = (gval (fold gAnd G (Bc Tr
   by (metis (no_types, lifting) gval_gNot maybe_double_negation maybe_not.simps(1) negate_def)
 
 lemma gval_negate_not_invalid: "(gval (negate gs) (join_ir i ra) \<noteq> invalid) = (gval (fold gAnd gs (Bc True)) (join_ir i ra) \<noteq> invalid)"
-  using gval_gNot maybe_not_invalid negate_def by auto
-
-lemma quick_negation:
-  "max_reg_list (Guard t) = None \<Longrightarrow>
-   max_input_list (Guard t) < Some (Arity t) \<Longrightarrow>
-   satisfiable_list (negate (Guard t) # ensure_not_null (Arity t)) \<Longrightarrow>
-   \<exists>i. length i = Arity t \<and> \<not> apply_guards (Guard t) (join_ir i r)"
-  apply (simp add: satisfiable_list_def satisfiable_def fold_apply_guards apply_guards_cons del: fold.simps)
-  apply clarify
-  apply (rule_tac x="take_or_pad i (Arity t)" in exI)
-  apply (simp add: length_take_or_pad)
-  apply (simp add: apply_guards_ensure_not_null_length take_or_pad_def negate_true_guard)
-  apply (simp add: apply_guards_fold)
-  by (metis dual_order.order_iff_strict gval_fold_swap_regs gval_fold_take less_eq_option_Some less_le_trans trilean.simps(2))
-
-definition "satisfiable_negation t = (max_reg_list (Guard t) = None \<and>
-   max_input_list (Guard t) < Some (Arity t) \<and>
-   satisfiable_list (negate (Guard t) # ensure_not_null (Arity t)))"
-
-lemma satisfiable_negation_cant_subsume:
-  assumes prem: "satisfiable_negation t"
-  shows "\<not> subsumes t c (drop_guards t)"
-proof-
-  have ponens: "\<forall>i. (length i = Arity t \<and> (length i = Arity t \<longrightarrow> \<not> apply_guards (Guard t) (join_ir i c))) =
-                (length i = Arity t \<and> \<not> apply_guards (Guard t) (join_ir i c))"
-    by auto
-  show ?thesis
-    apply (rule bad_guards)
-    apply (simp add: can_take_transition_def can_take_def drop_guards_def ponens)
-    using satisfiable_negation_def quick_negation prem
-    by auto
-qed
+  by (metis gval_gNot maybe_not_invalid negate_def)
 
 definition "dirty_always_different_outputs_direct_subsumption = always_different_outputs_direct_subsumption"
 
@@ -267,87 +232,8 @@ definition guard_subset_subsumption :: "transition \<Rightarrow> transition \<Ri
 
 lemma guard_subset_subsumption: "guard_subset_subsumption t1 t2 \<Longrightarrow> directly_subsumes a b s s' t1 t2"
   apply (rule subsumes_in_all_contexts_directly_subsumes)
-  apply (simp add: guard_subset_subsumption_def)
-  apply clarify
-  apply (rule subsumption)
-      apply simp
-     apply (simp add: can_take_transition_def can_take_def apply_guards_def)
-     apply auto[1]
-    apply simp+
-   apply (simp add: posterior_separate_def can_take_def apply_guards_def)
-   apply auto[1]
-  apply (simp add: posterior_def posterior_separate_def can_take_def apply_guards_def)
-  by auto
-
-lemma lob_distinguished_direct_subsumption:
-  "always_different_outputs_direct_subsumption e1 e2 s s' t1 \<Longrightarrow>
-   lob_distinguished t1 t2 \<Longrightarrow>
-   \<not> directly_subsumes e1 e2 s s' t2 t1"
-  apply (simp add: directly_subsumes_def always_different_outputs_direct_subsumption_def)
-  apply (rule disjI1)
-  apply (erule exE)
-  apply (rule_tac x=p in exI)
-  apply simp
-  apply (case_tac "\<exists>c. anterior_context (tm e2) p = Some c")
-   defer
-   apply (simp add: accepts_trace_gives_context)
-  apply (simp add: lob_distinguished_def)
-  apply (erule exE)
-  apply (rule_tac x=c in exI)
-  apply simp
-  apply (erule conjE)+
-  using distinguishing_subsumption[of t2 t1]
-  by simp
-
-lemma lob_distinguished_2_direct_subsumption:
-  "always_different_outputs_direct_subsumption e1 e2 s s' t2 \<Longrightarrow>
-   lob_distinguished_2 t1 t2 \<Longrightarrow>
-   \<not> directly_subsumes e1 e2 s s' t1 t2"
-  apply (simp add: directly_subsumes_def always_different_outputs_direct_subsumption_def)
-  apply (rule disjI1)
-  apply (erule exE)
-  apply (rule_tac x=p in exI)
-  apply simp
-  apply (case_tac "\<exists>c. anterior_context (tm e2) p = Some c")
-   defer
-   apply (simp add: accepts_trace_gives_context)
-  apply (erule exE)
-  apply (rule_tac x=c in exI)
-  apply standard
-   apply simp
-  apply (rule bad_guards)
-  apply clarify
-  apply (case_tac "anterior_context (tm e2) p")
-   apply simp
-  apply (simp add: lob_distinguished_2_def Bex_def)
-  apply clarify
-  apply simp
-  apply (case_tac "\<exists>x' \<in> set b. x \<noteq> x'")
-   defer
-   apply (simp add: must_be_another)
-  apply (simp add: Bex_def)
-  apply (erule exE)
-  apply (rule_tac x="list_update i aa xa" in exI)
-  apply standard
-   apply (simp add: can_take_transition_def can_take_def another_swap_inputs)
-  apply (simp add: can_take_transition_def can_take_def)
-  by (metis Eq_apply_guards input2state_nth join_ir_def length_list_update nth_list_update_eq option.inject vname.simps(5))
-
-lemma lob_distinguished_3_direct_subsumption:
-  "always_different_outputs_direct_subsumption e1 e2 s s' t2 \<Longrightarrow>
-   lob_distinguished_3 t1 t2 \<Longrightarrow>
-   \<not> directly_subsumes e1 e2 s s' t1 t2"
-  apply (simp add: directly_subsumes_def always_different_outputs_direct_subsumption_def)
-  apply (rule disjI1)
-  apply (erule exE)
-  apply (erule conjE)+
-  apply (case_tac "anterior_context (tm e2) p")
-   apply (simp add: accepts_trace_anterior_not_none)
-  apply (rule_tac x=p in exI)
-  apply simp
-  apply (erule exE)
-  apply (simp add: lob_distinguished_3_def)
-  using lob_distinguished_3_not_subsumes by blast
+  apply (simp add: subsumes_def guard_subset_subsumption_def)
+  by (metis can_take_def can_take_transition_def medial_subset)
 
 definition "guard_subset_eq_outputs_updates t1 t2 = (Label t1 = Label t2 \<and>
    Arity t1 = Arity t2 \<and>
@@ -360,72 +246,6 @@ definition "guard_superset_eq_outputs_updates t1 t2 = (Label t1 = Label t2 \<and
    Outputs t1 = Outputs t2 \<and>
    Updates t1 = Updates t2 \<and>
    set (Guard t2) \<supset> set (Guard t1))"
-
-definition directly_subsumes_cases :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "directly_subsumes_cases e1 e2 s1 s2 t1 t2 = (
-    if t1 = t2
-      then True
-    else if simple_mutex t2 t1
-      then False
-    else if always_different_outputs (Outputs t1) (Outputs t2) \<and> always_different_outputs_direct_subsumption e1 e2 s1 s2 t2
-      then False
-    else if guard_subset_eq_outputs_updates t2 t1
-      then True
-    else if in_not_subset t1 t2
-      then False
-    else if opposite_gob t1 t2
-      then False
-    else if always_different_outputs_direct_subsumption e1 e2 s1 s2 t2 \<and> lob_distinguished_2 t1 t2
-      then False
-    else if always_different_outputs_direct_subsumption e1 e2 s1 s2 t2 \<and> lob_distinguished_3 t1 t2
-      then False
-    else if can_still_take e1 e2 s1 s2 t1 t2
-      then True
-    else if guard_implication_subsumption t2 t1
-      then True
-    else if is_lob t2 t1
-      then True
-    else if drop_guard_add_update_direct_subsumption t1 t2 e2 s2
-      then True
-    else if drop_update_add_guard_direct_subsumption e1 e2 s1 s2 t1 t2
-      then False
-    else if generalise_output_direct_subsumption t1 t2 e1 e2 s1 s2
-      then True
-    else if diff_outputs_ctx e1 e2 s1 s2 t1 t2
-      then False
-    else if t1 = drop_guards t2
-      then True
-    else if one_extra_update t1 t2 s2 (tm e2)
-      then True
-    \<comment> \<open>else if t2 = drop_guards t1 \<and> satisfiable_negation t1
-      then False\<close>
-    else dirty_directly_subsumes e1 e2 s1 s2 t1 t2
-  )"
-
-lemma if_elim: "c \<longrightarrow> a = d \<Longrightarrow> \<not> c \<longrightarrow> d = b \<Longrightarrow> d = (if c then a else b)"
-  by simp
-
-lemma directly_subsumes_cases [code]:  "directly_subsumes m1 m2 s s' t1 t2 = directly_subsumes_cases m1 m2 s s' t1 t2"
-  unfolding directly_subsumes_cases_def
-  apply (rule if_elim)
-   apply (simp add: directly_subsumes_self)
-  apply (clarify, rule if_elim, simp add: simple_mutex_direct_subsumption)
-  apply (clarify, rule if_elim, simp add: always_different_outputs_direct_subsumption)
-  apply (clarify, rule if_elim, simp add: guard_subset_eq_outputs_updates_def guard_subset_eq_outputs_updates_direct_subsumption)
-  apply (clarify, rule if_elim, simp add: in_not_subset_direct_subsumption)
-  apply (clarify, rule if_elim, simp add: opposite_gob_directly_subsumption)
-  apply (clarify, rule if_elim, simp add: lob_distinguished_2_direct_subsumption)
-  apply (clarify, rule if_elim, simp add: lob_distinguished_3_direct_subsumption)
-  apply (clarify, rule if_elim, simp add: can_still_take_direct_subsumption)
-  apply (clarify, rule if_elim, simp add: guard_implication_subsumption)
-  apply (clarify, rule if_elim, simp add: is_lob_direct_subsumption)
-  apply (clarify, rule if_elim, simp add: drop_guard_add_update_direct_subsumption_implies_direct_subsumption)
-  apply (clarify, rule if_elim, simp add: drop_update_add_guard_direct_subsumption)
-  apply (clarify, rule if_elim, simp add: generalise_output_directly_subsumes_original_executable)
-  apply (clarify, rule if_elim, simp add: diff_outputs_direct_subsumption)
-  apply (clarify, rule if_elim, simp add: drop_inputs_subsumption subsumes_in_all_contexts_directly_subsumes)
-  apply (clarify, rule if_elim, simp add: one_extra_update_direct_subsumption)
-  by (simp add: dirty_directly_subsumes_def)
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalisation_of t' t i r = (
@@ -487,7 +307,7 @@ function infer_with_log :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarr
 termination
   apply (relation "measures [\<lambda>(_, _, e, _). size (S e)]")
    apply simp
-  using measures_fsubset by auto
+  by (metis (no_types, lifting) case_prod_conv measures_less size_fsubset)
 
 (* declare make_pta_fold [code] *)
 declare GExp.satisfiable_def [code del]
@@ -570,6 +390,12 @@ code_printing constant get_regs \<rightharpoonup> (Scala) "Dirties.getRegs"
 declare get_update_def [code del]
 code_printing constant get_update \<rightharpoonup> (Scala) "Dirties.getUpdate"
 
+definition mismatched_updates :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "mismatched_updates t1 t2 = (\<exists>r \<in> set (map fst (Updates t1)). r \<notin> set (map fst (Updates t2)))"
+
+lemma [code]: "directly_subsumes e1 e2 s1 s2 t1 t2  = (if t1 = t2 then True else dirty_directly_subsumes e1 e2 s1 s2 t1 t2)"
+  by (simp add: directly_subsumes_self dirty_directly_subsumes_def)
+
 export_code
   (* Essentials *)
   try_heuristics
@@ -581,7 +407,6 @@ export_code
   maxS
   add_transition
   make_pta
-  make_pta_abstract
   AExp.enumerate_vars
   sorted_list_of_set
   (* Logical connectives *)
@@ -601,39 +426,32 @@ export_code
   naive_score_comprehensive_eq_high
   origin_states
   (* Heuristics *)
-  drop_inputs
   same_register
   insert_increment_2
   heuristic_1
   heuristic_2
-  transitionwise_drop_inputs
-  lob
-  gob
-  gung_ho
-  equals
-  not_equals
-  infer_output_functions
-  infer_output_functions_2
-  infer_output_update_functions
   distinguish
+  weak_subsumption
   (* Nondeterminism metrics *)
   nondeterministic_pairs
   nondeterministic_pairs_labar
   nondeterministic_pairs_labar_dest
   (* Utilities *)
+  drop_pta_guards
+  test_log
+mismatched_updates
   iefsm2dot
   efsm2dot
   guards2sal
   guards2sal_num
   fold_In
   max_int
-  use_smallest_ints
   And
   enumerate_vars
 pta_generalise_outputs
 put_updates
-normalised_pta
 derestrict
+outgoing_transitions_from
 in Scala
 file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
