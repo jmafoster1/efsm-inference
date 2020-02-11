@@ -8,7 +8,7 @@ Created on Tue Feb 11 12:58:30 2020
 
 import json
 
-inputFile = "dotfiles/testLog-soft.json"
+inputFile = "dotfiles/testLog.json"
 
 def get_metric(trace, rejected):
     i = 0
