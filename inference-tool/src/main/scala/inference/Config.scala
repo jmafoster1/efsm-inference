@@ -23,7 +23,7 @@ object Strategies extends Enumeration {
 
 object Preprocessors extends Enumeration {
   type Preprocessor = Value
-  val gp, dropGuards = Value
+  val gp, dropGuards, none = Value
 }
 
 case class Config(
@@ -206,7 +206,7 @@ object Config {
         //   else (strategies(config.strategy))
         this.heuristics = Inference.try_heuristics_check((Inference.satisfies _).curried(Set.seta(config.train)), config.heuristics.map(x => heuristics(x)).toList, config.nondeterminismMetric)
         this.config = config
-        if (config.prep != null)
+        if (config.prep != null && config.prep != Preprocessors.none)
           this.preprocessor = preprocessors(config.prep)
 
       }
