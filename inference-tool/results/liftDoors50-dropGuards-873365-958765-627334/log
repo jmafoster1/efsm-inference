@@ -1,0 +1,88 @@
+14:13:50.597 [main] INFO  ROOT - -p dropGuards -g 873365 -o 958765 -u 627334 -h same,ws,distinguish -d results/liftDoors50-dropGuards-873365-958765-627334 experimental-data/liftDoors50-train.json experimental-data/liftDoors50-test.json
+14:13:50.599 [main] INFO  ROOT - Building PTA - 50 traces
+14:14:09.793 [main] INFO  ROOT - PTA has 741 states
+14:16:12.704 [main] INFO  ROOT - Resolved PTA has 741 states
+14:23:33.555 [main] DEBUG ROOT -   Nonterminals: []
+14:23:33.593 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- )]
+14:23:33.616 [main] DEBUG ROOT - Guard training set: {[i0=4]=[g2=false], [i0=5]=[g1=true]}
+14:23:33.644 [main] DEBUG ROOT -   Terminals: [true, false, i0, 4, 5, 0, 1, 2]
+14:23:33.644 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- ), (< ), (> ), (not ), (and ), (or )]
+14:23:36.606 [main] DEBUG ROOT -   Best function is: (not (> 5 i0))
+14:23:36.607 [main] DEBUG ROOT -   Best function is correct
+14:23:40.251 [main] DEBUG ROOT - 534 -> 533
+14:31:51.274 [main] DEBUG ROOT -   Nonterminals: []
+14:31:51.275 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- )]
+14:31:51.276 [main] DEBUG ROOT - Guard training set: {[i0=2]=[g2=false], [i0=4]=[g1=true]}
+14:31:51.276 [main] DEBUG ROOT -   Terminals: [true, false, i0, 2, 4, 0, 1]
+14:31:51.282 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- ), (< ), (> ), (not ), (and ), (or )]
+14:31:52.622 [main] DEBUG ROOT -   Best function is: (> i0 2)
+14:31:52.623 [main] DEBUG ROOT -   Best function is correct
+14:31:56.280 [main] DEBUG ROOT - 533 -> 532
+14:39:16.835 [main] DEBUG ROOT -   Nonterminals: []
+14:39:16.836 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- )]
+14:39:16.836 [main] DEBUG ROOT - Guard training set: {[i0=4]=[g2=false], [i0=3]=[g1=true]}
+14:39:16.837 [main] DEBUG ROOT -   Terminals: [true, false, i0, 4, 3, 0, 1, 2]
+14:39:16.837 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- ), (< ), (> ), (not ), (and ), (or )]
+14:39:18.573 [main] DEBUG ROOT -   Best function is: (or (not (> 7 i0)) (> 4 i0))
+14:39:18.575 [main] DEBUG ROOT -   Best function is correct
+14:40:32.347 [main] DEBUG ROOT -   Nonterminals: []
+14:40:32.348 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- )]
+14:40:32.348 [main] DEBUG ROOT - Guard training set: {[i0=1]=[g1=true], [i0=3]=[g2=false]}
+14:40:32.349 [main] DEBUG ROOT -   Terminals: [true, false, i0, 3, 1, 0, 2]
+14:40:32.349 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- ), (< ), (> ), (not ), (and ), (or )]
+14:40:33.327 [main] DEBUG ROOT -   Best function is: (> 2 i0)
+14:40:33.328 [main] DEBUG ROOT -   Best function is correct
+14:40:59.436 [main] DEBUG ROOT -   Nonterminals: []
+14:40:59.437 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- )]
+14:40:59.437 [main] DEBUG ROOT - Guard training set: {[i0=9]=[g2=false], [i0=10]=[g1=true]}
+14:40:59.437 [main] DEBUG ROOT -   Terminals: [true, false, i0, 9, 10, 0, 1, 2]
+14:40:59.437 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- ), (< ), (> ), (not ), (and ), (or )]
+14:41:03.642 [main] DEBUG ROOT -   Best function is: false
+14:41:27.140 [main] DEBUG ROOT -   Nonterminals: []
+14:41:27.149 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- )]
+14:41:27.150 [main] DEBUG ROOT - Guard training set: {[i0=10]=[g2=false], [i0=9]=[g1=true]}
+14:41:27.150 [main] DEBUG ROOT -   Terminals: [true, false, i0, 10, 9, 0, 1, 2]
+14:41:27.150 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- ), (< ), (> ), (not ), (and ), (or )]
+14:41:27.988 [main] DEBUG ROOT -   Best function is: (not (> i0 9))
+14:41:27.988 [main] DEBUG ROOT -   Best function is correct
+14:42:17.629 [main] DEBUG ROOT -   Nonterminals: []
+14:42:17.629 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- )]
+14:42:17.631 [main] DEBUG ROOT - Guard training set: {[i0=8]=[g1=true], [i0=10]=[g2=false]}
+14:42:17.631 [main] DEBUG ROOT -   Terminals: [true, false, i0, 10, 8, 0, 1, 2]
+14:42:17.632 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- ), (< ), (> ), (not ), (and ), (or )]
+14:42:18.466 [main] DEBUG ROOT -   Best function is: (> 9 i0)
+14:42:18.467 [main] DEBUG ROOT -   Best function is correct
+14:43:08.226 [main] DEBUG ROOT -   Nonterminals: []
+14:43:08.227 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- )]
+14:43:08.227 [main] DEBUG ROOT - Guard training set: {[i0=7]=[g1=true], [i0=10]=[g2=false]}
+14:43:08.227 [main] DEBUG ROOT -   Terminals: [true, false, i0, 10, 7, 0, 1, 2]
+14:43:08.228 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- ), (< ), (> ), (not ), (and ), (or )]
+14:43:09.048 [main] DEBUG ROOT -   Best function is: (> 9 i0)
+14:43:09.049 [main] DEBUG ROOT -   Best function is correct
+14:43:58.819 [main] DEBUG ROOT -   Nonterminals: []
+14:43:58.820 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- )]
+14:43:58.821 [main] DEBUG ROOT - Guard training set: {[i0=10]=[g2=false], [i0=6]=[g1=true]}
+14:43:58.825 [main] DEBUG ROOT -   Terminals: [true, false, i0, 10, 6, 0, 1, 2]
+14:43:58.825 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- ), (< ), (> ), (not ), (and ), (or )]
+14:43:59.642 [main] DEBUG ROOT -   Best function is: (> 7 i0)
+14:43:59.643 [main] DEBUG ROOT -   Best function is correct
+14:47:15.869 [main] DEBUG ROOT -   Nonterminals: []
+14:47:15.870 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- )]
+14:47:15.871 [main] DEBUG ROOT - Guard training set: {[i0=2]=[g1=true], [i0=10]=[g2=false]}
+14:47:15.871 [main] DEBUG ROOT -   Terminals: [true, false, i0, 10, 2, 0, 1]
+14:47:15.871 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- ), (< ), (> ), (not ), (and ), (or )]
+14:47:16.737 [main] DEBUG ROOT -   Best function is: (> 6 i0)
+14:47:16.737 [main] DEBUG ROOT -   Best function is correct
+16:32:25.884 [main] DEBUG ROOT - 532 -> 511
+18:27:03.224 [main] DEBUG ROOT - 511 -> 485
+18:35:02.093 [main] DEBUG ROOT - 485 -> 484
+18:48:01.874 [main] DEBUG ROOT - 484 -> 468
+19:00:13.811 [main] DEBUG ROOT - 468 -> 458
+19:12:02.988 [main] DEBUG ROOT -   Nonterminals: []
+19:12:02.989 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- )]
+19:12:02.990 [main] DEBUG ROOT - Guard training set: {[i0=1]=[g1=true], [i0=7]=[g1=true], [i0=8]=[g2=false]}
+19:12:02.991 [main] DEBUG ROOT -   Terminals: [true, false, i0, 8, 7, 1, 0, 2]
+19:12:02.993 [main] DEBUG ROOT -   Nonterminals: [(+ ), (- ), (< ), (> ), (not ), (and ), (or )]
+19:12:03.846 [main] DEBUG ROOT -   Best function is: (> 8 i0)
+19:12:03.848 [main] DEBUG ROOT -   Best function is correct
+19:12:26.365 [main] DEBUG ROOT - 458 -> 395

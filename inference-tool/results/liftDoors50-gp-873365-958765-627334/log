@@ -1,0 +1,61 @@
+13:55:31.173 [main] INFO  ROOT - -p gp -g 873365 -o 958765 -u 627334 -h same,ws,distinguish -d results/liftDoors50-gp-873365-958765-627334 experimental-data/liftDoors50-train.json experimental-data/liftDoors50-test.json
+13:55:31.174 [main] INFO  ROOT - Building PTA - 50 traces
+13:55:44.916 [main] INFO  ROOT - PTA has 741 states
+13:55:51.547 [main] DEBUG ROOT - Output training set: {[i0=1]=[o=0], [i0=4]=[o=3], [i0=5]=[o=4], [i0=2]=[o=1], [i0=3]=[o=2]}
+13:55:51.548 [main] DEBUG ROOT -   Int terminals: List(i0, r1, 0, 5, 4, 3, 2, 1, 10, 9, 8, 7, 6)
+13:55:51.548 [main] DEBUG ROOT -   String terminals: List()
+13:55:51.548 [main] DEBUG ROOT -   Best function is: (+ 2 (+ i0 (* -1 r1)))
+13:55:51.548 [main] DEBUG ROOT -   Best function is correct
+13:57:49.771 [main] DEBUG ROOT - Output training set: {[i0=6]=[o=5], [i0=2]=[o=1], [i0=10]=[o=9], [i0=4]=[o=3], [i0=8]=[o=7], [i0=1]=[o=0], [i0=3]=[o=2], [i0=5]=[o=4], [i0=7]=[o=6], [i0=9]=[o=8]}
+13:57:49.772 [main] DEBUG ROOT -   Int terminals: List(i0, r2, 0, 5, 4, 3, 2, 1, 10, 9, 8, 7, 6)
+13:57:49.772 [main] DEBUG ROOT -   String terminals: List()
+13:57:49.772 [main] DEBUG ROOT -   Best function is: (+ (* -1 r2) i0)
+13:57:49.772 [main] DEBUG ROOT -   Best function is correct
+13:59:43.914 [main] DEBUG ROOT - Output training set: {[i0=1]=[o=0], [i0=2]=[o=1]}
+13:59:43.928 [main] DEBUG ROOT -   Int terminals: List(i0, r3, 0, 5, 4, 3, 2, 1, 10, 9, 8, 7, 6)
+13:59:43.928 [main] DEBUG ROOT -   String terminals: List()
+13:59:43.928 [main] DEBUG ROOT -   Best function is: (+ -1 (+ i0 (* -1 r3)))
+13:59:43.928 [main] DEBUG ROOT -   Best function is correct
+14:01:32.486 [main] DEBUG ROOT - Output training set: {[i0=3]=[o=2], [i0=2]=[o=1], [i0=4]=[o=3], [i0=1]=[o=0], [i0=5]=[o=4]}
+14:01:32.488 [main] DEBUG ROOT -   Int terminals: List(i0, r4, 0, 5, 4, 3, 2, 1, 10, 9, 8, 7, 6)
+14:01:32.489 [main] DEBUG ROOT -   String terminals: List()
+14:01:32.489 [main] DEBUG ROOT -   Best function is: (+ 2 (+ i0 (* -1 r4)))
+14:01:32.489 [main] DEBUG ROOT -   Best function is correct
+14:03:19.487 [main] DEBUG ROOT - Output training set: {[i0=8]=[o=7], [i0=9]=[o=8], [i0=6]=[o=5], [i0=7]=[o=6], [i0=10]=[o=9], [i0=3]=[o=2], [i0=4]=[o=3], [i0=5]=[o=4]}
+14:03:19.488 [main] DEBUG ROOT -   Int terminals: List(i0, r5, 0, 5, 4, 3, 2, 1, 10, 9, 8, 7, 6)
+14:03:19.488 [main] DEBUG ROOT -   String terminals: List()
+14:03:19.488 [main] DEBUG ROOT -   Best function is: (+ 2 (+ i0 (* -1 r5)))
+14:03:19.488 [main] DEBUG ROOT -   Best function is correct
+14:05:09.008 [main] DEBUG ROOT - Output training set: {[i0=5]=[o=4], [i0=4]=[o=3], [i0=1]=[o=0], [i0=2]=[o=1], [i0=3]=[o=2]}
+14:05:09.008 [main] DEBUG ROOT -   Int terminals: List(i0, r6, 0, 5, 4, 3, 2, 1, 10, 9, 8, 7, 6)
+14:05:09.008 [main] DEBUG ROOT -   String terminals: List()
+14:05:09.008 [main] DEBUG ROOT -   Best function is: (+ 2 (+ i0 (* -1 r6)))
+14:05:09.009 [main] DEBUG ROOT -   Best function is correct
+14:06:47.670 [main] DEBUG ROOT - Output training set: {[i0=1]=[o=0], [i0=2]=[o=1]}
+14:06:47.670 [main] DEBUG ROOT -   Int terminals: List(i0, r7, 0, 5, 4, 3, 2, 1, 10, 9, 8, 7, 6)
+14:06:47.670 [main] DEBUG ROOT -   String terminals: List()
+14:06:47.670 [main] DEBUG ROOT -   Best function is: (+ -1 (+ i0 (* -1 r7)))
+14:06:47.670 [main] DEBUG ROOT -   Best function is correct
+14:08:26.321 [main] DEBUG ROOT - Output training set: {[i0=5]=[o=4], [i0=1]=[o=0], [i0=2]=[o=1], [i0=3]=[o=2], [i0=4]=[o=3]}
+14:08:26.322 [main] DEBUG ROOT -   Int terminals: List(i0, r8, 0, 5, 4, 3, 2, 1, 10, 9, 8, 7, 6)
+14:08:26.322 [main] DEBUG ROOT -   String terminals: List()
+14:08:26.322 [main] DEBUG ROOT -   Best function is: (+ 2 (+ i0 (* -1 r8)))
+14:08:26.322 [main] DEBUG ROOT -   Best function is correct
+14:10:06.357 [main] DEBUG ROOT - Output training set: {[i0=1]=[o=0], [i0=2]=[o=1]}
+14:10:06.357 [main] DEBUG ROOT -   Int terminals: List(i0, r9, 0, 5, 4, 3, 2, 1, 10, 9, 8, 7, 6)
+14:10:06.357 [main] DEBUG ROOT -   String terminals: List()
+14:10:06.357 [main] DEBUG ROOT -   Best function is: (+ -1 (+ i0 (* -1 r9)))
+14:10:06.358 [main] DEBUG ROOT -   Best function is correct
+14:22:15.109 [main] INFO  ROOT - Resolved PTA has 741 states
+14:28:41.788 [main] DEBUG ROOT - 534 -> 529
+14:36:00.613 [main] DEBUG ROOT - 529 -> 308
+14:37:54.304 [main] DEBUG ROOT - 308 -> 159
+14:38:17.531 [main] DEBUG ROOT - 159 -> 42
+14:38:19.538 [main] DEBUG ROOT - 42 -> 18
+14:38:19.696 [main] DEBUG ROOT - 18 -> 16
+14:38:20.096 [main] DEBUG ROOT - 16 -> 6
+14:38:20.150 [main] DEBUG ROOT - 6 -> 4
+14:38:20.164 [main] INFO  ROOT - The inferred machine is deterministic
+14:38:20.288 [main] INFO  ROOT - Completed in 0h 42m 50.35216220800021s
+14:38:20.289 [main] INFO  ROOT - states: 4
+14:38:20.293 [main] INFO  ROOT - transitions: 10

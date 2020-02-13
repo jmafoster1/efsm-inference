@@ -9,7 +9,7 @@ Created on Tue Feb 11 15:05:24 2020
 import json
 import numpy as np
 
-file = "results/liftDoors2-0-0-0/testLog.json"
+file = "results/liftDoors50-none-873365-958765-627334/testLog.json"
 
 
 def match_prefix(expected, actual):
@@ -19,8 +19,7 @@ def match_prefix(expected, actual):
             return prefix
         else:
             prefix.append(e1)
-    if len(prefix) < len(expected):
-        return prefix
+    return (prefix, expected)
 
 
 def make_trace_pair(trace, rejected):
@@ -38,15 +37,18 @@ with open(file) as f:
     log = json.loads("".join(f.readlines()))
     
 trace_pairs = make_trace_pairs(log)
+prefixes = [match_prefix(expected, actual) for expected, actual in trace_pairs]
+matching_prefixes = [x for x, y in prefixes if (len(x)/len(y)) < 1]
 
-matching_prefixes = [x for x in [match_prefix(expected, actual) for expected, actual in trace_pairs] if x is not None]
-
-for t in matching_prefixes:
-    print([f"{label}{tuple(inputs)}/{outputs}" for label, inputs, outputs in t])
+#for t in matching_prefixes:
+#    print([f"{label}{tuple(inputs)}/{outputs}" for label, inputs, outputs in t])
 
 lengths = [len(t) for t in matching_prefixes]
 print("min:", min(lengths) if lengths != [] else None)
 print("avg:", np.mean(lengths) if lengths != [] else None)
 print("ultra:", 2**-min(lengths) if lengths != [] else 0)
+print("mean frac got through:", np.mean([(len(x)/len(y)) for x, y in prefixes]))
 
-zipped = zip(lengths, trace_pairs)
+correct_events = [item for sublist in [x for x, y in prefixes] for item in sublist]
+total_events = [item for sublist in [y for x, y in prefixes] for item in sublist]
+print("prop correct events", len(correct_events)/len(total_events))
