@@ -272,8 +272,8 @@ object TypeConversion {
       gexpToSALTranslator(g2))
   }
 
-  def updateToExp(u: (Nat.nat, AExp.aexp[VName.vname])): Assignment = u match {
-    case (r, a) => Assignment.newOne(
+  def updateToExp(u: (Nat.nat, AExp.aexp[VName.vname])): Update = u match {
+    case (r, a) => Update.newOne(
       vnameToSALTranslator(VName.R(r)),
       aexpToSALTranslator(a))
   }
