@@ -8,9 +8,28 @@ Created on Tue Feb 11 15:05:24 2020
 
 import json
 import numpy as np
+import re
 
-file = "results/liftDoors50-none-873365-958765-627334/testLog.json"
+state_re = re.compile("\d*:\d*:\d*.\d* \[main\] INFO  ROOT - states: (\d+)")
+transition_re = re.compile("\d*:\d*:\d*.\d* \[main\] INFO  ROOT - transitions: (\d+)")
 
+root = "results/liftDoors50-none-873365-958765-627334/"
+
+
+def total_states():
+    with open(root + "log") as f:
+        for line in f:
+            match = state_re.search(line)
+            if match:
+                return int(match.group(1))
+
+
+def total_transitions():
+    with open(root + "log") as f:
+        for line in f:
+            match = transition_re.search(line)
+            if match:
+                return int(match.group(1))
 
 def match_prefix(expected, actual):
     prefix = []
@@ -33,7 +52,7 @@ def make_trace_pairs(log):
     return [make_trace_pair(obj['trace'], obj['rejected']) for obj in log]
 
 
-with open(file) as f:
+with open(root + "testLog.json") as f:
     log = json.loads("".join(f.readlines()))
     
 trace_pairs = make_trace_pairs(log)
@@ -42,6 +61,9 @@ matching_prefixes = [x for x, y in prefixes if (len(x)/len(y)) < 1]
 
 #for t in matching_prefixes:
 #    print([f"{label}{tuple(inputs)}/{outputs}" for label, inputs, outputs in t])
+
+print("states:", total_states())
+print("transitions:", total_transitions())
 
 lengths = [len(t) for t in matching_prefixes]
 print("min:", min(lengths) if lengths != [] else None)
@@ -52,3 +74,13 @@ print("mean frac got through:", np.mean([(len(x)/len(y)) for x, y in prefixes]))
 correct_events = [item for sublist in [x for x, y in prefixes] for item in sublist]
 total_events = [item for sublist in [y for x, y in prefixes] for item in sublist]
 print("prop correct events", len(correct_events)/len(total_events))
+
+states_covered = set()
+for obj in log:
+    states_covered = states_covered.union(set([event['state'] for event in obj['trace']]))
+
+print("state coverage:", len(states_covered)/total_states())
+
+valid_traces = sum([len(x)/len(y) == 1 for x, y in prefixes])
+print("precision:", valid_traces/len(prefixes))
+
