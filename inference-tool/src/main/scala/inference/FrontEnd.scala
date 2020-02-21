@@ -55,7 +55,7 @@ object FrontEnd {
         Log.root.info(s"states: ${Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(inferred)))}")
         Log.root.info(s"transitions: ${Code_Numeral.integer_of_nat(FSet.size_fset(inferred))}")
 
-        val eval = EFSM.test_log(Config.config.test, Inference.tm(inferred))
+        val eval = Inference.test_log(Config.config.test, inferred)
         val eval_json = s"""[\n  ${eval.map{
           case (trace, rejected) => s"""{\n    "trace": [${if (trace.length > 0) "\n      " else ""}${trace.map(event => PrettyPrinter.to_JSON(event)).mkString(",\n      ")}${if (trace.length > 0) "\n    " else ""}],\n    "rejected": [${if (rejected.length > 0) "\n      " else ""}${rejected.map(event => PrettyPrinter.to_JSON(event)).mkString(",\n      ")}${if (rejected.length > 0) "\n    " else ""}]\n  }"""}.mkString(",\n  ")}\n]"""
 

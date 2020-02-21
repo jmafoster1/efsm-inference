@@ -206,8 +206,8 @@ object PrettyPrinter {
     return s"{${pairs.mkString(", ")}}"
   }
 
-  def to_JSON(e: (String, (List[Value.value], (Nat.nat, (Map[Nat.nat,Option[Value.value]], (List[Value.value], List[Option[Value.value]])))))): String = e match {
-    case (label, (inputs, (state, (regs, (expected, actual))))) => s"""{"label": "$label", "inputs": ${show(inputs)}, "state": ${show(state)}, "regs": ${to_JSON(regs)}, "expected": ${show(expected)}, "actual": ${show(actual)}}"""
+  def to_JSON(e: (String, (List[Value.value], (Nat.nat, (Nat.nat, (Map[Nat.nat,Option[Value.value]], (List[Nat.nat], (List[Value.value], List[Option[Value.value]])))))))): String = e match {
+    case (label, (inputs, (currentState, (nextState, (regs, (tids, (expected, actual))))))) => s"""{"label": "$label", "inputs": ${show(inputs)}, "currentState": ${show(currentState)}, "nextState": ${show(nextState)}, "regs": ${to_JSON(regs)}, "transition": ${show(tids)}, "expected": ${show(expected)}, "actual": ${show(actual)}}"""
   }
 
   def to_JSON[X: ClassManifest](e: (String, (List[Value.value], List[Value.value]))): String = e match {
