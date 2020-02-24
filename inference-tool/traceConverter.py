@@ -13,7 +13,7 @@ import random
 root = "/home/michael/Documents/mintframework/mint-inference/src/tests/resources/"
 newRoot = "/home/michael/Documents/efsm-inference/inference-tool/experimental-data/"
 file = "liftDoors2"
-outfile = "liftDoors50a"
+outfile = "liftDoors30"
 numTraces = 50
 
 brake = 0
