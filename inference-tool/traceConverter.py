@@ -16,10 +16,10 @@ newRoot = "/home/michael/Documents/efsm-inference/inference-tool/experimental-da
 #file = "liftDoors2"
 #outfile = "liftDoors30"
 
-numTraces = 10
+numTraces = 25
 file = "cruiseControl"
-outfile = "cruiseControl1"
-#outfile += str(numTraces)
+outfile = "cruiseControl"
+outfile += str(numTraces)
 
 brake = 0
 distance = 1
