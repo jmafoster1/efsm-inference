@@ -110,16 +110,16 @@ code_printing
   | constant "List.length" \<rightharpoonup> (Scala) "Nat.Nata(_.length)"
   | constant "zip" \<rightharpoonup> (Scala) "(_ zip _)"
   | constant "flatmap" \<rightharpoonup> (Scala) "_.par.flatMap((_)).toList" 
-  | constant "flatmap" \<rightharpoonup> (Scala) "_.flatMap((_))"
+  (*| constant "flatmap" \<rightharpoonup> (Scala) "_.flatMap((_))"*)
   | constant "List.null" \<rightharpoonup> (Scala) "_.isEmpty"
   | constant "map_code" \<rightharpoonup> (Scala) "_.par.map((_)).toList" 
-  | constant "map_code" \<rightharpoonup> (Scala) "_.map((_))"
+  (*| constant "map_code" \<rightharpoonup> (Scala) "_.map((_))"*)
   | constant "filter_code" \<rightharpoonup> (Scala) "_.par.filter((_)).toList" 
-  | constant "filter_code" \<rightharpoonup> (Scala) "_.filter((_))"
+  (*| constant "filter_code" \<rightharpoonup> (Scala) "_.filter((_))"*)
   | constant "all" \<rightharpoonup> (Scala) "_.par.forall((_))" 
-  | constant "all" \<rightharpoonup> (Scala) "_.forall((_))"
+  (*| constant "all" \<rightharpoonup> (Scala) "_.forall((_))"*)
   | constant "ex" \<rightharpoonup> (Scala) "_.par.exists((_))" 
-  | constant "ex" \<rightharpoonup> (Scala) "_.exists((_))"
+  (*| constant "ex" \<rightharpoonup> (Scala) "_.exists((_))"*)
   | constant "nth" \<rightharpoonup> (Scala) "_(Code'_Numeral.integer'_of'_nat((_)).toInt)"
   | constant "foldl" \<rightharpoonup> (Scala) "Dirties.foldl"
   | constant "hd" \<rightharpoonup> (Scala) "_.head"

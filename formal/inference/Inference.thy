@@ -210,6 +210,22 @@ primrec paths_of_length :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Righ
       ffilter (\<lambda>l. length l = Suc m) paths
   )"
 
+lemma fBall_ffilter: "\<forall>x |\<in>| X. f x \<Longrightarrow> ffilter f X = X"
+  by auto
+
+lemma fBall_ffilter2: "X = Y \<Longrightarrow> \<forall>x |\<in>| X. f x \<Longrightarrow> ffilter f X = Y"
+  by auto
+
+lemma paths_of_length_1:  "paths_of_length 1 e s = fimage (\<lambda>(d, t, id). [id]) (outgoing_transitions s e)"
+  apply (simp add: One_nat_def)
+  apply (simp add: outgoing_transitions_def comp_def One_nat_def[symmetric])
+  apply (rule fBall_ffilter2)
+   defer
+   apply (simp add: ffilter_def ffUnion_def fBall_def Abs_fset_inverse)
+   apply auto[1]
+  apply (simp add: ffilter_def ffUnion_def fBall_def Abs_fset_inverse fset_both_sides)
+  by force
+
 fun step_score :: "(tids \<times> tids) list \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> nat" where
   "step_score [] _ _ = 0" |
   "step_score ((id1, id2)#t) e s = (
@@ -248,13 +264,61 @@ definition score_from_list :: "tids list fset \<Rightarrow> tids list fset \<Rig
 definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
   "k_score k e strat = (
     let 
-      states = (S e);
+      states = S e;
       pairs_to_score = (ffilter (\<lambda>(x, y). x < y) (states |\<times>| states));
       paths = fimage (\<lambda>(s1, s2). (s1, s2, paths_of_length k e s1, paths_of_length k e s2)) pairs_to_score;
       scores = fimage (\<lambda>(s1, s2, p1, p2). \<lparr>Score = score_from_list p1 p2 e strat, S1 = s1, S2 = s2\<rparr>) paths
     in
     ffilter (\<lambda>x. Score x > 0) scores
 )"
+
+definition score_state_pair :: "strategy \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> nat" where
+  "score_state_pair strat e s1 s2 = (
+    let
+      T1 = outgoing_transitions s1 e;
+      T2 = outgoing_transitions s2 e
+    in
+      fSum (fimage (\<lambda>((_, _, t1), (_, _, t2)). strat t1 t2 e) (T1 |\<times>| T2))
+  )"
+
+definition score_1 :: "iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
+  "score_1 e strat = (
+    let
+      states = S e;
+      pairs_to_score = (ffilter (\<lambda>(x, y). x < y) (states |\<times>| states));
+      scores = fimage (\<lambda>(s1, s2). \<lparr>Score = score_state_pair strat e s1 s2, S1 = s1, S2 = s2\<rparr>) pairs_to_score
+    in
+      ffilter (\<lambda>x. Score x > 0) scores
+  )"
+
+lemma fprod_fimage: "((\<lambda>(_, _, id). [id]) |`| a |\<times>| (\<lambda>(_, _, id). [id]) |`| b) =
+       fimage (\<lambda>((_, _, id1), (_, _, id2)). ([id1], [id2])) (a |\<times>| b)"
+  apply (simp add: fimage_def fprod_def Abs_fset_inverse fset_both_sides)
+  by force
+
+lemma score_1: "score_1 e s = k_score 1 e s"
+  apply (simp add: score_1_def k_score_def Let_def comp_def)
+  apply (rule arg_cong[of _ _ "ffilter (\<lambda>x. 0 < Score x)"])
+  apply (rule fun_cong[of _ _ "(Inference.S e |\<times>| Inference.S e)"])
+  apply (rule ext)
+  subgoal for x
+    apply (rule fun_cong[of _ _ "ffilter (\<lambda>a. case a of (a, b) \<Rightarrow> a < b) x"])
+    apply (rule arg_cong[of _ _ fimage])
+    apply (rule ext)
+    apply (case_tac x)
+    apply simp
+    apply (simp add: paths_of_length_1)
+    apply (simp add: score_state_pair_def Let_def score_from_list_def comp_def)
+    subgoal for x a b
+      apply (rule arg_cong[of _ _ fSum])
+      apply (simp add: fprod_fimage)
+      apply (rule fun_cong[of _ _ "(outgoing_transitions a e |\<times>| outgoing_transitions b e)"])
+      apply (rule arg_cong[of _ _ fimage])
+      apply (rule ext)
+      apply clarify
+      by (simp add: Let_def)
+    done
+  done
 
 inductive satisfies_trace :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
   base: "satisfies_trace e s d []" |                                         
@@ -478,10 +542,11 @@ end
 (* @param check - a function which takes an EFSM and returns a bool dest ensure that certain
                   properties hold in the new iEFSM                                                *)
 function infer :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
-  "infer n e r m check np = (
-    case inference_step e (sorted_list_of_fset (k_score n e r)) m check np of
+  "infer k e r m check np = (
+    let scores = if k = 1 then score_1 e r else (k_score k e r) in
+    case inference_step e (sorted_list_of_fset scores) m check np of
       None \<Rightarrow> e |
-      Some new \<Rightarrow> if (S new) |\<subset>| (S e) then infer n new r m check np else e
+      Some new \<Rightarrow> if (S new) |\<subset>| (S e) then infer k new r m check np else e
   )"
   by auto
 termination

@@ -205,7 +205,7 @@ object TypeConversion {
     } else if (a.isInstanceOf[Expr]) {
       toValue(a.asInstanceOf[Expr])
     } else {
-      throw new IllegalArgumentException(s"Invalit type ${a.getClass}. Can only be String or BigInt");
+      throw new IllegalArgumentException(s"Invalid type ${a.getClass}. Can only be String or BigInt");
     }
   }
 

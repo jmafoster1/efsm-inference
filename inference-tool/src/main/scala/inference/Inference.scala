@@ -653,7 +653,7 @@ def less_unit(uu: Unit, uv: Unit): Boolean = false
 
 object Lista {
 
-def list_all[A](f: A => Boolean, l: List[A]): Boolean = l.forall(f)
+def list_all[A](f: A => Boolean, l: List[A]): Boolean = l.par.forall(f)
 
 def equal_lista[A : HOL.equal](xs: List[A], ys: List[A]): Boolean =
   (Nat.equal_nata(Nat.Nata(xs.length),
@@ -670,7 +670,7 @@ def upt(i: Nat.nat, j: Nat.nat): List[Nat.nat] =
 def fold[A, B](f: A => B => B, xs: List[A], s: B): B =
   Dirties.foldl[B, A](((x: B) => (sa: A) => (f(sa))(x)), s, xs)
 
-def maps[A, B](f: A => List[B], l: List[A]): List[B] = l.flatMap(f)
+def maps[A, B](f: A => List[B], l: List[A]): List[B] = l.par.flatMap(f).toList
 
 def foldr[A, B](f: A => B => B, xs: List[A], a: B): B =
   Dirties.foldl[B, A](((x: B) => (y: A) => (f(y))(x)), a, xs.reverse)
@@ -681,11 +681,11 @@ def union[A]: (List[A]) => (List[A]) => List[A] =
   ((a: List[A]) => (b: List[A]) =>
     fold[A, List[A]](((aa: A) => (ba: List[A]) => insert[A](aa, ba)), a, b))
 
-def filter[A](l: A => Boolean, f: List[A]): List[A] = f.filter(l)
+def filter[A](l: A => Boolean, f: List[A]): List[A] = f.par.filter(l).toList
 
-def list_ex[A](f: A => Boolean, l: List[A]): Boolean = l.exists(f)
+def list_ex[A](f: A => Boolean, l: List[A]): Boolean = l.par.exists(f)
 
-def map[A, B](f: A => B, l: List[A]): List[B] = l.map(f)
+def map[A, B](f: A => B, l: List[A]): List[B] = l.par.map(f).toList
 
 def product[A, B](xs: List[A], ys: List[B]): List[(A, B)] =
   maps[A, (A, B)](((x: A) => map[B, (A, B)](((a: B) => (x, a)), ys)), xs)
@@ -1928,21 +1928,25 @@ def infer_with_log(stepNo: Nat.nat, k: Nat.nat,
       FSet.fset[(List[Nat.nat],
                   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
   =
-  (Inference.inference_step(e, FSet.sorted_list_of_fset[Inference.score_ext[Unit]](Inference.k_score(k,
-                      e, r)),
-                             m, check, np)
-     match {
-     case None => e
-     case Some(newa) =>
-       {
-         PrettyPrinter.iEFSM2dot(newa, stepNo);
-         Log.logStates((FSet.size_fset[Nat.nat](Inference.S(newa))), (FSet.size_fset[Nat.nat](Inference.S(e))));
-         (if (FSet.less_fset[Nat.nat](Inference.S(newa), Inference.S(e)))
-           infer_with_log(Nat.plus_nata(stepNo, Nat.Nata((1))), k, newa, r, m,
-                           check, np)
-           else e)
-       }
-   })
+  {
+    val scores: FSet.fset[Inference.score_ext[Unit]] =
+      (if (Nat.equal_nata(k, Nat.Nata((1)))) Inference.score_1(e, r)
+        else Inference.k_score(k, e, r));
+    (Inference.inference_step(e, FSet.sorted_list_of_fset[Inference.score_ext[Unit]](scores),
+                               m, check, np)
+       match {
+       case None => e
+       case Some(newa) =>
+         {
+           PrettyPrinter.iEFSM2dot(newa, stepNo);
+           Log.logStates((FSet.size_fset[Nat.nat](Inference.S(newa))), (FSet.size_fset[Nat.nat](Inference.S(e))));
+           (if (FSet.less_fset[Nat.nat](Inference.S(newa), Inference.S(e)))
+             infer_with_log(Nat.plus_nata(stepNo, Nat.Nata((1))), k, newa, r, m,
+                             check, np)
+             else e)
+         }
+     })
+  }
 
 def guardMatch_code(uu: List[GExp.gexp[VName.vname]],
                      uv: List[GExp.gexp[VName.vname]]):
@@ -3169,6 +3173,100 @@ def max_uid(e: FSet.fset[(List[Nat.nat],
     val uidsa: FSet.fset[Nat.nat] = uids(e);
     (if (FSet.equal_fset[Nat.nat](uidsa, FSet.bot_fset[Nat.nat])) None
       else Some[Nat.nat](FSet.fMax[Nat.nat](uidsa)))
+  }
+
+def score_state_pair(strat:
+                       (List[Nat.nat]) =>
+                         (List[Nat.nat]) =>
+                           (FSet.fset[(List[Nat.nat],
+((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) =>
+                             Nat.nat,
+                      e: FSet.fset[(List[Nat.nat],
+                                     ((Nat.nat, Nat.nat),
+                                       Transition.transition_ext[Unit]))],
+                      s1: Nat.nat, s2: Nat.nat):
+      Nat.nat
+  =
+  {
+    val t1: FSet.fset[(Nat.nat,
+                        (Transition.transition_ext[Unit], List[Nat.nat]))]
+      = outgoing_transitions(s1, e)
+    val t2: FSet.fset[(Nat.nat,
+                        (Transition.transition_ext[Unit], List[Nat.nat]))]
+      = outgoing_transitions(s2, e);
+    FSet_Utils.fSum[Nat.nat](FSet.fimage[((Nat.nat,
+    (Transition.transition_ext[Unit], List[Nat.nat])),
+   (Nat.nat, (Transition.transition_ext[Unit], List[Nat.nat]))),
+  Nat.nat](((a: ((Nat.nat, (Transition.transition_ext[Unit], List[Nat.nat])),
+                  (Nat.nat, (Transition.transition_ext[Unit], List[Nat.nat]))))
+              =>
+             {
+               val (aa, b):
+                     ((Nat.nat,
+                        (Transition.transition_ext[Unit], List[Nat.nat])),
+                       (Nat.nat,
+                         (Transition.transition_ext[Unit], List[Nat.nat])))
+                 = a;
+               ({
+                  val (_, (_, t1a)):
+                        (Nat.nat,
+                          (Transition.transition_ext[Unit], List[Nat.nat]))
+                    = aa;
+                  ((ab: (Nat.nat,
+                          (Transition.transition_ext[Unit], List[Nat.nat])))
+                     =>
+                    {
+                      val (_, (_, t2a)):
+                            (Nat.nat,
+                              (Transition.transition_ext[Unit], List[Nat.nat]))
+                        = ab;
+                      ((strat(t1a))(t2a))(e)
+                    })
+                })(b)
+             }),
+            FSet_Utils.fprod[(Nat.nat,
+                               (Transition.transition_ext[Unit],
+                                 List[Nat.nat])),
+                              (Nat.nat,
+                                (Transition.transition_ext[Unit],
+                                  List[Nat.nat]))](t1, t2)))
+  }
+
+def score_1(e: FSet.fset[(List[Nat.nat],
+                           ((Nat.nat, Nat.nat),
+                             Transition.transition_ext[Unit]))],
+             strat:
+               (List[Nat.nat]) =>
+                 (List[Nat.nat]) =>
+                   (FSet.fset[(List[Nat.nat],
+                                ((Nat.nat, Nat.nat),
+                                  Transition.transition_ext[Unit]))]) =>
+                     Nat.nat):
+      FSet.fset[score_ext[Unit]]
+  =
+  {
+    val states: FSet.fset[Nat.nat] = S(e)
+    val pairs_to_score: FSet.fset[(Nat.nat, Nat.nat)] =
+      FSet.ffilter[(Nat.nat,
+                     Nat.nat)](((a: (Nat.nat, Nat.nat)) =>
+                                 {
+                                   val (aa, b): (Nat.nat, Nat.nat) = a;
+                                   Nat.less_nat(aa, b)
+                                 }),
+                                FSet_Utils.fprod[Nat.nat,
+          Nat.nat](states, states))
+    val a: FSet.fset[score_ext[Unit]] =
+      FSet.fimage[(Nat.nat, Nat.nat),
+                   score_ext[Unit]](((a: (Nat.nat, Nat.nat)) =>
+                                      {
+val (s1, s2): (Nat.nat, Nat.nat) = a;
+score_exta[Unit](score_state_pair(strat, e, s1, s2), s1, s2, ())
+                                      }),
+                                     pairs_to_score);
+    FSet.ffilter[score_ext[Unit]](((x: score_ext[Unit]) =>
+                                    Nat.less_nat(Nat.zero_nata,
+          Score[Unit](x))),
+                                   a)
   }
 
 def all_regs(e: FSet.fset[(List[Nat.nat],

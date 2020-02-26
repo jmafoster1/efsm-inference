@@ -14,7 +14,7 @@ import math
 state_re = re.compile("\d*:\d*:\d*.\d* \[main\] INFO  ROOT - states: (\d+)")
 transition_re = re.compile("\d*:\d*:\d*.\d* \[main\] INFO  ROOT - transitions: (\d+)")
 
-root = "results/liftDoors30-none-873365-958765-27335/"
+root = "results/cruiseControl1-obfuscated-time-gp-873365-958765-27335/"
 
 
 def total_states():
