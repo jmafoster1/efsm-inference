@@ -13,26 +13,26 @@ import random
 root = "/home/michael/Documents/mintframework/mint-inference/src/tests/resources/"
 newRoot = "/home/michael/Documents/efsm-inference/inference-tool/experimental-data/"
 
+root = "/home/michael/eclipse-workspace/concurrency/"
+
 #file = "liftDoors2"
 #outfile = "liftDoors30"
 
-numTraces = 25
-file = "cruiseControl"
-outfile = "cruiseControl"
+numTraces = 30
+file = "app.log"
+outfile = "spaceInvaders"
 outfile += str(numTraces)
 
-brake = 0
-distance = 1
-speed = 2
-throttle = 3
-ignition = 4
-time = 5
+x = 0
+y = 1
+aliens = 2
+shields = 3
 
 #desired_inputs = [0]
 #desired_outputs = [0]
 
-desired_outputs = [speed]
-desired_inputs = [brake, distance, speed, throttle, ignition, time]
+desired_outputs = [x, y, aliens, shields]
+desired_inputs = [x, y, aliens, shields]
 
 typeHead = "types\n"
 
@@ -114,6 +114,7 @@ with open(root+file) as f:
     traces.append(trace)
 
 traces = [trace for trace in traces if len(trace) >= 5]
+print(len(traces), "traces in total")
 traces = random.sample(traces, 2*numTraces)
 
 io_traces = [format_trace(t) for t in traces]
