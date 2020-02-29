@@ -13,11 +13,21 @@ fun weak_subsumption :: "log \<Rightarrow> update_modifier" where
      if
       same_structure t1 t2
      then
-      let newEFSM = replace_all new [t1ID, t2ID] (maxBy (\<lambda>x. ((length \<circ> Updates) x, map snd (Updates x))) t1 t2) in
-      if satisfies (set log) (tm newEFSM) then
-        Some newEFSM
+      let
+        maxT = maxBy (\<lambda>x. ((length \<circ> Updates) x, map snd (Updates x))) t1 t2;
+        minT = if maxT = t1 then t2 else t1;
+        newEFSMmax = replace_all new [t1ID, t2ID] maxT in
+      \<comment> \<open>Most of the time, we'll want the transition with the most updates so start with that one\<close>
+      if satisfies (set log) (tm newEFSMmax) then
+        Some newEFSMmax
       else
-        None
+        \<comment> \<open>There may be other occasions where we want to try the other transition\<close>
+        \<comment> \<open>e.g. if their updates are equal but one has a different guard\<close>
+        let newEFSMmin = replace_all new [t1ID, t2ID] minT in
+        if satisfies (set log) (tm newEFSMmin) then
+          Some newEFSMmin
+        else
+          None
      else
       None
    )"

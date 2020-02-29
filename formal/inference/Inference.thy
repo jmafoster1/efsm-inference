@@ -185,7 +185,7 @@ primrec make_pta_aux :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
 
 definition "make_pta log = make_pta_aux log {||}"
 
-lemma make_pta_fold [code]: "make_pta_aux l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
+lemma make_pta_aux_fold [code]: "make_pta_aux l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
   by(induct l arbitrary: e, auto)
 
 type_synonym update_modifier = "tids \<Rightarrow> tids \<Rightarrow> cfstate \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option"

@@ -387,7 +387,7 @@ object Dirties {
         }
       }
       for ((r, v) <- registers) v match {
-        case None => throw new IllegalStateException("Got None from registers")
+        case None => {}
         case Some(Value.Numa(n)) => {
           intVarVals = TypeConversion.toInteger(n) :: intVarVals
           intVarNames = s"r${PrettyPrinter.show(r)}" :: intVarNames

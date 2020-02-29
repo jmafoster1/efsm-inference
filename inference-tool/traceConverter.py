@@ -13,12 +13,12 @@ import random
 root = "/home/michael/Documents/mintframework/mint-inference/src/tests/resources/"
 newRoot = "/home/michael/Documents/efsm-inference/inference-tool/experimental-data/"
 
-root = "/home/michael/eclipse-workspace/concurrency/"
+root = newRoot
 
 #file = "liftDoors2"
 #outfile = "liftDoors30"
 
-numTraces = 30
+numTraces = 5
 file = "app.log"
 outfile = "spaceInvaders"
 outfile += str(numTraces)
