@@ -18,7 +18,7 @@ root = newRoot
 #file = "liftDoors2"
 #outfile = "liftDoors30"
 
-numTraces = 5
+numTraces = 30
 file = "app.log"
 outfile = "spaceInvaders"
 outfile += str(numTraces)
@@ -115,6 +115,7 @@ with open(root+file) as f:
 
 traces = [trace for trace in traces if len(trace) >= 5]
 print(len(traces), "traces in total")
+print(list(enumerate([len(t) for t in traces])))
 traces = random.sample(traces, 2*numTraces)
 
 io_traces = [format_trace(t) for t in traces]
