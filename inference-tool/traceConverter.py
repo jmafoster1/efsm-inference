@@ -10,16 +10,14 @@ import re
 import json
 import random
 
-root = "/home/michael/Documents/mintframework/mint-inference/src/tests/resources/"
+root = "/home/michael/eclipse-workspace/concurrency/"
 newRoot = "/home/michael/Documents/efsm-inference/inference-tool/experimental-data/"
-
-root = newRoot
 
 #file = "liftDoors2"
 #outfile = "liftDoors30"
 
-numTraces = 30
-file = "app.log"
+numTraces = 5
+file = "new.log"
 outfile = "spaceInvaders"
 outfile += str(numTraces)
 
@@ -115,7 +113,9 @@ with open(root+file) as f:
 
 traces = [trace for trace in traces if len(trace) >= 5]
 print(len(traces), "traces in total")
-print(list(enumerate([len(t) for t in traces])))
+for x in enumerate([len(t) for t in traces]):
+    print(x)
+
 traces = random.sample(traces, 2*numTraces)
 
 io_traces = [format_trace(t) for t in traces]
