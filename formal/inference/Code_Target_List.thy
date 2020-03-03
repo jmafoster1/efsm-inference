@@ -63,7 +63,6 @@ fun upt_tailrec :: "nat \<Rightarrow> nat \<Rightarrow> nat list \<Rightarrow> n
   "upt_tailrec i 0 l = l" |
   "upt_tailrec i (Suc j) l = (if i \<le> j then upt_tailrec i j ([j]@l) else l)"
 
-
 lemma upt_arbitrary_l: "(upt i j)@l = upt_tailrec i j l"
 proof(induct i j l rule: upt_tailrec.induct)
   case (1 i l)
@@ -104,11 +103,11 @@ qed
 
 code_printing
   constant Cons \<rightharpoonup> (Scala) "_::_"
-  | constant rev \<rightharpoonup> (Scala) "_.reverse"
-  | constant List.member \<rightharpoonup> (Scala) "_ contains _"
-  | constant "List.remdups" \<rightharpoonup> (Scala) "_.distinct"
-  | constant "List.length" \<rightharpoonup> (Scala) "Nat.Nata(_.length)"
-  | constant "zip" \<rightharpoonup> (Scala) "(_ zip _)"
+  | constant rev \<rightharpoonup> (Scala) "_.par.reverse.toList"
+  | constant List.member \<rightharpoonup> (Scala) "_.contains((_))"
+  | constant "List.remdups" \<rightharpoonup> (Scala) "_.par.distinct.toList"
+  | constant "List.length" \<rightharpoonup> (Scala) "Nat.Nata(_.par.length)"
+  | constant "zip" \<rightharpoonup> (Scala) "_.par.zip((_)).toList"
   | constant "flatmap" \<rightharpoonup> (Scala) "_.par.flatMap((_)).toList" 
   (*| constant "flatmap" \<rightharpoonup> (Scala) "_.flatMap((_))"*)
   | constant "List.null" \<rightharpoonup> (Scala) "_.isEmpty"

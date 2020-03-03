@@ -22,17 +22,23 @@ outfile = "spaceInvaders"
 outfile += str(numTraces)
 
 x = 0
-y = 1
-aliens = 2
-shields = 3
+aliens = 1
+shields = 2
 
-#desired_inputs = [0]
-#desired_outputs = [0]
 
-desired_outputs = [x, y, aliens, shields]
-desired_inputs = [x, y, aliens, shields]
+desired_inputs = {
+    "start": [x, aliens, shields],
+    "alienHit": [aliens],
+    "addAlien": [],
+    "moveWest": [x],
+    "moveEast": [x],
+    "launchMissile": [],
+    "shieldHit": [shields],
+    "win": [],
+    "lose": []
+}
 
-typeHead = "types\n"
+desired_outputs = desired_inputs
 
 
 def varname(obj, namespace=globals()):
@@ -58,6 +64,9 @@ def trim(traces, numEvents):
     return [[event for event in trace[:numEvents]] for trace in traces]
 
 
+typeHead = "types\n"
+
+
 def print_original_trace(f, traces):
     print(typeHead, file=f, end="")
     for trace in traces:
@@ -72,8 +81,8 @@ def format_trace(trace):
     outputs = [inputs for label, inputs in trace[1:]]
     return [{
             'label': label,
-            'inputs': [p for x, p in enumerate(inputs) if x in desired_inputs],
-            'outputs': [p for x, p in enumerate(outputs) if x in desired_outputs]
+            'inputs': [p for x, p in enumerate(inputs) if x in desired_inputs[label]],
+            'outputs': [p for x, p in enumerate(outputs) if x in desired_outputs[label]]
             } for label, inputs, outputs in zip(labels, inputs, outputs)]
 
 
@@ -83,8 +92,8 @@ def obfuscate_inputs(trace, obfuscated_inputs):
     outputs = [inputs for label, inputs in trace[1:]]
     return [{
             'label': label,
-            'inputs': [n for i, n in enumerate(inputs) if i in desired_inputs and i not in obfuscated_inputs],
-            'outputs': [p for x, p in enumerate(outputs) if x in desired_outputs]
+            'inputs': [n for i, n in enumerate(inputs) if i in desired_inputs[label] and i not in obfuscated_inputs],
+            'outputs': [p for x, p in enumerate(outputs) if x in desired_outputs[label]]
             } for label, inputs, outputs in zip(labels, inputs, outputs)]
 
 
@@ -132,7 +141,7 @@ with open(newRoot+outfile+"-train.json", 'w') as f:
 with open(newRoot+outfile+"-test.json", 'w') as f:
     print("[\n" + ",  \n".join(["  [\n    " + ",\n    ".join([json.dumps(event) for event in trace]) + "\n  ]" for trace in io_traces[numTraces:]]) + "\n]", file=f)
 
-for var in desired_inputs:
+for var in [item for sublist in desired_outputs.values() for item in sublist]:
     print("sbatch bessemer-run.sh 873365 958765 27335 "+outfile+f"-obfuscated-{varname(var)} gp")
     obfuscated_inputs = [var]
     obfuscated_traces = [obfuscate_inputs(t, obfuscated_inputs) for t in traces]

@@ -554,6 +554,12 @@ termination
    apply simp
   by (metis (no_types, lifting) case_prod_conv measures_less size_fsubset)
 
+lemma min_insert_zero: "a \<noteq> Min (insert a l) \<Longrightarrow> Min (insert a l) = Min l"
+  by (metis Min.coboundedI Min.infinite Min.subset_imp Min_in Min_singleton antisym finite_insert insertE insert_not_empty subset_insertI)
+
+lemma hd_insort: "a \<noteq> Min (insert a (set l)) \<Longrightarrow> hd (insort a (sort l)) = hd (sort l)"
+  by (metis Min_singleton hd_sort_Min list.distinct(1) list.simps(15) min_insert_zero set_empty2 sort_key_simps(2))
+
 fun get_ints :: "execution \<Rightarrow> int list" where
   "get_ints [] = []" |
   "get_ints ((_, inputs, outputs)#t) = (map (\<lambda>x. case x of Num n \<Rightarrow> n) (filter is_Num (inputs@outputs)))"
@@ -627,6 +633,11 @@ definition enumerate_exec_values :: "execution \<Rightarrow> value list" where
 definition enumerate_log_values :: "log \<Rightarrow> value list" where
   "enumerate_log_values l = fold (\<lambda>e I. List.union (enumerate_exec_values e) I) l []"
 
+definition enumerate_exec_values_by_label :: "label \<Rightarrow> execution \<Rightarrow> value list" where
+  "enumerate_exec_values_by_label label vs = fold (\<lambda>(l, i, p) I. if l = label then List.union (List.union i p) I else I) vs []"
+
+definition enumerate_log_values_by_label :: "label \<Rightarrow> log \<Rightarrow> value list" where
+  "enumerate_log_values_by_label label log = fold (\<lambda>e I. List.union (enumerate_exec_values_by_label label e) I) log []"
 
 fun test_exec :: "execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> ((label \<times> inputs \<times> cfstate \<times> cfstate \<times> registers \<times> tids \<times> value list \<times> outputs) list \<times> execution)" where
   "test_exec [] _ _ _ = ([], [])" |

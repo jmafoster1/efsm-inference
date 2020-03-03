@@ -37,8 +37,8 @@ import java.util.ArrayList
 
 object Dirties {
   def foldl[A, B](f: A => B => A, b: A, l: List[B]): A =
-    // l.par.foldLeft(b)(((x, y) => (f(x))(y)))
-    l.foldLeft(b)(((x, y) => (f(x))(y)))
+    l.par.foldLeft(b)(((x, y) => (f(x))(y)))
+  // l.foldLeft(b)(((x, y) => (f(x))(y)))
 
   def toZ3(v: Value.value): String = v match {
     case Value.Numa(n) => s"(Num ${Code_Numeral.integer_of_int(n).toString})"
@@ -299,7 +299,7 @@ object Dirties {
     s2: Nat.nat,
     t1: Transition.transition_ext[Unit],
     t2: Transition.transition_ext[Unit]): Boolean = {
-      return false
+    return false
     // Log.root.debug(s"Does ${PrettyPrinter.show(t1)} directly subsume ${PrettyPrinter.show(t2)}? (y/N)")
     // val subsumes = scala.io.StdIn.readLine() == "y"
     // subsumes
@@ -331,7 +331,6 @@ object Dirties {
   }
 
   var guardMap = Map[List[((List[Value.value], Map[Nat.nat, Option[Value.value]]), Boolean)], Option[GExp.gexp[VName.vname]]]()
-  var funMap = Map[List[((List[Value.value], Map[Nat.nat, Option[Value.value]]), Value.value)], Option[(AExp.aexp[VName.vname], Map[VName.vname, String])]]()
 
   def findDistinguishingGuard(
     g1: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])]),
@@ -351,11 +350,7 @@ object Dirties {
     val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.guardSeed))
 
     gpGenerator.addTerminals(GP.boolTerms);
-    Log.root.debug("  Nonterminals: " + gpGenerator.getNonTerminals())
-
     gpGenerator.addFunctions(GP.intNonTerms);
-    Log.root.debug("  Nonterminals: " + gpGenerator.getNonTerminals())
-
     gpGenerator.addFunctions(GP.boolNonTerms)
 
     var intVarVals = List(0, 1, 2)
@@ -445,12 +440,11 @@ object Dirties {
 
     Log.root.debug("Guard training set: " + trainingSet)
     Log.root.debug("  Terminals: " + gpGenerator.getTerminals())
-    Log.root.debug("  Nonterminals: " + gpGenerator.getNonTerminals())
 
     if (trainingSet.keys().stream().anyMatch(x => trainingSet.get(x).size() > 1))
       return None
 
-    val gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 7, 7))
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 5, 2));
 
     try {
       val best: Node[VariableAssignment[_]] = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
@@ -481,7 +475,7 @@ object Dirties {
     values: List[Value.value],
     train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Map[Nat.nat, Option[Value.value]]))]): Option[AExp.aexp[VName.vname]] = {
 
-    println("  Getting update")
+    Log.root.debug("  Getting update")
 
     val r_index = TypeConversion.toInt(r)
     val ioPairs = (train.map {
@@ -490,11 +484,6 @@ object Dirties {
         case Some(v) => ((inputs, aregs.filterKeys(_ == r)), v)
       }
     }).distinct
-
-    // if (funMap isDefinedAt ioPairs) funMap(ioPairs) match {
-    //   case None => return None
-    //   case Some((f, _)) => return Some(f)
-    // }
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
@@ -561,26 +550,20 @@ object Dirties {
     gpGenerator.addTerminals(intTerms)
     gpGenerator.addTerminals(stringTerms)
 
+    Log.root.debug("Update training set: " + trainingSet)
+    // Log.root.debug("  Int terminals: " + intTerms)
+    // Log.root.debug("  String terminals: " + stringTerms)
+
     var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 5, 2));
 
     val best = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
 
-    Log.root.debug("Update training set: " + trainingSet)
-    // Log.root.debug("  Int terminals: " + intTerms)
-    // Log.root.debug("  String terminals: " + stringTerms)
     Log.root.debug("  Best function is: " + best)
-
-    // <Danger zone>
-    // funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
-    // return Some((TypeConversion.toAExp(best)))
-    // </Danger Zone>
 
     if (gp.isCorrect(best)) {
       Log.root.debug("  Best function is correct")
-      funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
       return Some((TypeConversion.toAExp(best)))
     } else {
-      funMap = funMap + (ioPairs -> None)
       return None
     }
   }
@@ -590,28 +573,18 @@ object Dirties {
     values: List[Value.value],
     inputs: List[List[Value.value]],
     registers: List[Map[Nat.nat, Option[Value.value]]],
-    outputs: List[Value.value]): Option[(AExp.aexp[VName.vname], Map[VName.vname, String])] = {
-    println("Getting Output...")
+    outputs: List[Value.value],
+    latentVariable: Boolean = false): Option[(AExp.aexp[VName.vname], Map[VName.vname, String])] = {
+    Log.root.debug("Getting Output...")
 
     if (outputs.distinct.length == 1) {
-      println("  Singleton literal output")
+      Log.root.debug("  Singleton literal output")
       return Some(AExp.L(outputs(0)), Map())
     }
 
     val r_index = TypeConversion.toInt(maxReg) + 1
 
     val ioPairs = (inputs zip registers zip outputs).distinct
-
-    // if (funMap isDefinedAt ioPairs) funMap(ioPairs) match {
-    //   case None => {
-    //     println("  Previously failed")
-    //     return None
-    //   }
-    //   case Some((f, types)) => {
-    //     println("  Previously succeeded: " + PrettyPrinter.show(f))
-    //     return Some((f, types))
-    //   }
-    // }
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
@@ -663,6 +636,14 @@ object Dirties {
       }
     }
 
+    if (!latentVariable) {
+      Log.root.debug("No latent variable")
+      intVarNames = intVarNames.filter(_ != s"r${r_index}")
+      stringVarNames = stringVarNames.filter(_ != s"r${r_index}")
+    } else {
+      Log.root.debug(s"Latent variable: r$r_index")
+    }
+
     for (intVarName <- intVarNames.distinct) {
       if (intVarName.startsWith("i"))
         intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
@@ -680,22 +661,21 @@ object Dirties {
     gpGenerator.addTerminals(intTerms)
     gpGenerator.addTerminals(stringTerms)
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 5, 2));
-
-    val best = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 3, 2));
 
     Log.root.debug("Output training set: " + trainingSet)
     Log.root.debug("  Int terminals: " + intTerms)
-    Log.root.debug("  String terminals: " + stringTerms)
+    // Log.root.debug("  String terminals: " + stringTerms)
+
+    val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]]
+
     Log.root.debug("  Best function is: " + best)
 
     if (gp.isCorrect(best)) {
       Log.root.debug("  Best function is correct")
-      funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
       return Some((TypeConversion.toAExp(best), getTypes(best)))
     } else {
-      funMap = funMap + (ioPairs -> None)
-      return None
+      return getOutput(maxReg, values, inputs, registers, outputs, true)
     }
   }
 
@@ -716,11 +696,6 @@ object Dirties {
     o: List[Value.value]): Option[(AExp.aexp[VName.vname], Map[VName.vname, String])] = {
 
     val ioPairs = (i zip i.map(i => null) zip o).distinct
-
-    if (funMap isDefinedAt ioPairs) funMap(ioPairs) match {
-      case None => return None
-      case Some((f, types)) => return Some((f, types))
-    }
 
     val maxReg = TypeConversion.toInt(r) + 1
 
@@ -785,10 +760,8 @@ object Dirties {
     Log.root.debug("Int values: " + IntegerVariableAssignment.values())
 
     if (gp.isCorrect(best)) {
-      funMap = funMap + (ioPairs -> Some((TypeConversion.toAExp(best), getTypes(best))))
       return Some((TypeConversion.toAExp(best), getTypes(best)))
     } else {
-      funMap = funMap + (ioPairs -> None)
       return None
     }
   }

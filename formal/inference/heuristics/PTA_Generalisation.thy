@@ -119,18 +119,6 @@ qed
 
 type_synonym output_types = "(nat \<times> (vname aexp \<times> vname \<Rightarrow>f String.literal) option) list"
 
-(*This is where the types stuff originates*)
-definition generalise_outputs :: "value list \<Rightarrow> ((tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> (tids \<times> transition \<times> output_types) list list" where
-  "generalise_outputs values groups = map (\<lambda>(maxReg, group).
-    let
-      I = map (\<lambda>(regs, ins, outs).ins) (snd group);
-      R = map (\<lambda>(regs, ins, outs).regs) (snd group);
-      P = map (\<lambda>(regs, ins, outs).outs) (snd group);
-      outputs = get_outputs maxReg values I R P
-    in
-    map (\<lambda>(id, tran). (id, \<lparr>Label = Label tran, Arity = Arity tran, Guard = Guard tran, Outputs = put_outputs (zip outputs (Outputs tran)), Updates = Updates tran\<rparr>, enumerate 0 outputs)) (fst group)
-  ) (enumerate 0 groups)"
-
 definition replace_transition :: "iEFSM \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> iEFSM" where
   "replace_transition e uid new = (fimage (\<lambda>(uids, (from, to), t). if set uid \<subseteq> set uids then (uids, (from, to), new) else (uids, (from, to), t)) e)"
 
@@ -140,16 +128,6 @@ primrec replace_groups :: "(tids \<times> transition) list list \<Rightarrow> iE
 
 lemma replace_groups_fold [code]: "replace_groups xs e = fold (\<lambda>h acc'. (fold (\<lambda>(id, t) acc. replace_transition acc id t) h acc')) xs e"
   by (induct xs arbitrary: e,  auto)
-
-definition pta_generalise_outputs :: "log \<Rightarrow> (iEFSM \<times> ((tids \<times> transition \<times> output_types) list list))" where
-  "pta_generalise_outputs log = (
-    let
-      values = enumerate_log_values log;
-      pta = make_pta log;
-      training_set = make_training_set pta log;
-      generalised_outs = generalise_outputs values training_set
-    in (replace_groups (map (\<lambda>lst. map (\<lambda>(tids, tran, types). (tids, tran)) lst) generalised_outs) pta, generalised_outs)
-  )"
 
 definition insert_updates :: "transition \<Rightarrow> update_function list \<Rightarrow> transition" where
   "insert_updates t u = (
@@ -337,7 +315,8 @@ fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> tids list \<Right
 definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list \<Rightarrow> iEFSM option" where
   "generalise_and_update log e gp = (
     let
-      values = enumerate_log_values log;
+      label = Label (snd (hd (fst gp)));
+      values = enumerate_log_values_by_label label log;
       I = map (\<lambda>(regs, ins, outs).ins) (snd gp);
       R = map (\<lambda>(regs, ins, outs).regs) (snd gp);
       P = map (\<lambda>(regs, ins, outs).outs) (snd gp);
@@ -437,7 +416,6 @@ definition standardise_groups_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> 
 definition incremental_normalised_pta :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "incremental_normalised_pta log pta = (
     let
-      values = enumerate_log_values log;
       training_set = make_training_set pta log
     in
     standardise_groups (groupwise_generalise_and_update log pta training_set) log

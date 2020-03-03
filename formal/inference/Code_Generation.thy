@@ -342,9 +342,6 @@ code_printing
 
 (* I'd ideally like to fix this at some point *)
 lemma [code]: "infer = infer_with_log 0"
-  apply (simp add: fun_eq_iff)
-  apply clarify
-  unfolding Let_def add_0
   sorry
 
 (*
@@ -449,7 +446,6 @@ mismatched_updates
   max_int
   And
   enumerate_vars
-pta_generalise_outputs
 put_updates
 derestrict
 outgoing_transitions_from

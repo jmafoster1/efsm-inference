@@ -47,6 +47,6 @@ object GP {
       case Value.Str(s) => stringTerms = (new StringVariableAssignmentTerminal(s)) :: stringTerms
     }
 
-    return (intTerms, stringTerms)
+    return (intTerms.distinct, stringTerms.distinct)
   }
 }
