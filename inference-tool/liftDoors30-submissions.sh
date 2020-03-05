@@ -1,150 +1,150 @@
-sbatch bessemer-run.sh 943731 542285 852409 liftDoors30-train gp
-sbatch bessemer-run.sh 943731 542285 852409 liftDoors30-train none
-sbatch bessemer-run.sh 943731 542285 852409 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 943731 542285 852409 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 363916 459458 294914 liftDoors30 gp
+sbatch bessemer-run.sh 363916 459458 294914 liftDoors30 none
+sbatch bessemer-run.sh 363916 459458 294914 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 363916 459458 294914 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 204268 103336 856211 liftDoors30-train gp
-sbatch bessemer-run.sh 204268 103336 856211 liftDoors30-train none
-sbatch bessemer-run.sh 204268 103336 856211 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 204268 103336 856211 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 729656 319187 865445 liftDoors30 gp
+sbatch bessemer-run.sh 729656 319187 865445 liftDoors30 none
+sbatch bessemer-run.sh 729656 319187 865445 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 729656 319187 865445 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 318222 92325 517827 liftDoors30-train gp
-sbatch bessemer-run.sh 318222 92325 517827 liftDoors30-train none
-sbatch bessemer-run.sh 318222 92325 517827 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 318222 92325 517827 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 64725 864099 915359 liftDoors30 gp
+sbatch bessemer-run.sh 64725 864099 915359 liftDoors30 none
+sbatch bessemer-run.sh 64725 864099 915359 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 64725 864099 915359 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 698855 380330 832267 liftDoors30-train gp
-sbatch bessemer-run.sh 698855 380330 832267 liftDoors30-train none
-sbatch bessemer-run.sh 698855 380330 832267 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 698855 380330 832267 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 547590 920675 29637 liftDoors30 gp
+sbatch bessemer-run.sh 547590 920675 29637 liftDoors30 none
+sbatch bessemer-run.sh 547590 920675 29637 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 547590 920675 29637 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 735774 995992 461821 liftDoors30-train gp
-sbatch bessemer-run.sh 735774 995992 461821 liftDoors30-train none
-sbatch bessemer-run.sh 735774 995992 461821 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 735774 995992 461821 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 5482 858295 569364 liftDoors30 gp
+sbatch bessemer-run.sh 5482 858295 569364 liftDoors30 none
+sbatch bessemer-run.sh 5482 858295 569364 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 5482 858295 569364 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 808805 97662 600138 liftDoors30-train gp
-sbatch bessemer-run.sh 808805 97662 600138 liftDoors30-train none
-sbatch bessemer-run.sh 808805 97662 600138 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 808805 97662 600138 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 702513 409280 869713 liftDoors30 gp
+sbatch bessemer-run.sh 702513 409280 869713 liftDoors30 none
+sbatch bessemer-run.sh 702513 409280 869713 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 702513 409280 869713 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 473937 926148 698268 liftDoors30-train gp
-sbatch bessemer-run.sh 473937 926148 698268 liftDoors30-train none
-sbatch bessemer-run.sh 473937 926148 698268 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 473937 926148 698268 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 358816 236402 791273 liftDoors30 gp
+sbatch bessemer-run.sh 358816 236402 791273 liftDoors30 none
+sbatch bessemer-run.sh 358816 236402 791273 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 358816 236402 791273 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 589869 895421 777393 liftDoors30-train gp
-sbatch bessemer-run.sh 589869 895421 777393 liftDoors30-train none
-sbatch bessemer-run.sh 589869 895421 777393 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 589869 895421 777393 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 555930 708558 955225 liftDoors30 gp
+sbatch bessemer-run.sh 555930 708558 955225 liftDoors30 none
+sbatch bessemer-run.sh 555930 708558 955225 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 555930 708558 955225 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 246738 324164 253693 liftDoors30-train gp
-sbatch bessemer-run.sh 246738 324164 253693 liftDoors30-train none
-sbatch bessemer-run.sh 246738 324164 253693 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 246738 324164 253693 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 866713 995106 35852 liftDoors30 gp
+sbatch bessemer-run.sh 866713 995106 35852 liftDoors30 none
+sbatch bessemer-run.sh 866713 995106 35852 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 866713 995106 35852 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 517335 45638 626710 liftDoors30-train gp
-sbatch bessemer-run.sh 517335 45638 626710 liftDoors30-train none
-sbatch bessemer-run.sh 517335 45638 626710 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 517335 45638 626710 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 304976 712043 316831 liftDoors30 gp
+sbatch bessemer-run.sh 304976 712043 316831 liftDoors30 none
+sbatch bessemer-run.sh 304976 712043 316831 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 304976 712043 316831 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 393553 239320 81123 liftDoors30-train gp
-sbatch bessemer-run.sh 393553 239320 81123 liftDoors30-train none
-sbatch bessemer-run.sh 393553 239320 81123 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 393553 239320 81123 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 927489 525658 51275 liftDoors30 gp
+sbatch bessemer-run.sh 927489 525658 51275 liftDoors30 none
+sbatch bessemer-run.sh 927489 525658 51275 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 927489 525658 51275 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 802344 437195 350907 liftDoors30-train gp
-sbatch bessemer-run.sh 802344 437195 350907 liftDoors30-train none
-sbatch bessemer-run.sh 802344 437195 350907 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 802344 437195 350907 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 62490 857779 191363 liftDoors30 gp
+sbatch bessemer-run.sh 62490 857779 191363 liftDoors30 none
+sbatch bessemer-run.sh 62490 857779 191363 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 62490 857779 191363 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 45737 507683 32905 liftDoors30-train gp
-sbatch bessemer-run.sh 45737 507683 32905 liftDoors30-train none
-sbatch bessemer-run.sh 45737 507683 32905 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 45737 507683 32905 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 638721 575420 493628 liftDoors30 gp
+sbatch bessemer-run.sh 638721 575420 493628 liftDoors30 none
+sbatch bessemer-run.sh 638721 575420 493628 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 638721 575420 493628 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 336393 979388 79842 liftDoors30-train gp
-sbatch bessemer-run.sh 336393 979388 79842 liftDoors30-train none
-sbatch bessemer-run.sh 336393 979388 79842 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 336393 979388 79842 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 480565 90129 504808 liftDoors30 gp
+sbatch bessemer-run.sh 480565 90129 504808 liftDoors30 none
+sbatch bessemer-run.sh 480565 90129 504808 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 480565 90129 504808 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 201303 36447 353483 liftDoors30-train gp
-sbatch bessemer-run.sh 201303 36447 353483 liftDoors30-train none
-sbatch bessemer-run.sh 201303 36447 353483 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 201303 36447 353483 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 465474 316336 517001 liftDoors30 gp
+sbatch bessemer-run.sh 465474 316336 517001 liftDoors30 none
+sbatch bessemer-run.sh 465474 316336 517001 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 465474 316336 517001 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 802208 865484 784856 liftDoors30-train gp
-sbatch bessemer-run.sh 802208 865484 784856 liftDoors30-train none
-sbatch bessemer-run.sh 802208 865484 784856 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 802208 865484 784856 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 109331 450540 401404 liftDoors30 gp
+sbatch bessemer-run.sh 109331 450540 401404 liftDoors30 none
+sbatch bessemer-run.sh 109331 450540 401404 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 109331 450540 401404 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 802555 186551 291069 liftDoors30-train gp
-sbatch bessemer-run.sh 802555 186551 291069 liftDoors30-train none
-sbatch bessemer-run.sh 802555 186551 291069 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 802555 186551 291069 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 778870 114012 858539 liftDoors30 gp
+sbatch bessemer-run.sh 778870 114012 858539 liftDoors30 none
+sbatch bessemer-run.sh 778870 114012 858539 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 778870 114012 858539 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 415464 271324 40476 liftDoors30-train gp
-sbatch bessemer-run.sh 415464 271324 40476 liftDoors30-train none
-sbatch bessemer-run.sh 415464 271324 40476 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 415464 271324 40476 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 317059 722663 581056 liftDoors30 gp
+sbatch bessemer-run.sh 317059 722663 581056 liftDoors30 none
+sbatch bessemer-run.sh 317059 722663 581056 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 317059 722663 581056 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 571818 197092 50047 liftDoors30-train gp
-sbatch bessemer-run.sh 571818 197092 50047 liftDoors30-train none
-sbatch bessemer-run.sh 571818 197092 50047 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 571818 197092 50047 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 90881 215622 866831 liftDoors30 gp
+sbatch bessemer-run.sh 90881 215622 866831 liftDoors30 none
+sbatch bessemer-run.sh 90881 215622 866831 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 90881 215622 866831 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 730042 578738 457693 liftDoors30-train gp
-sbatch bessemer-run.sh 730042 578738 457693 liftDoors30-train none
-sbatch bessemer-run.sh 730042 578738 457693 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 730042 578738 457693 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 470453 477874 817719 liftDoors30 gp
+sbatch bessemer-run.sh 470453 477874 817719 liftDoors30 none
+sbatch bessemer-run.sh 470453 477874 817719 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 470453 477874 817719 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 143556 229610 434766 liftDoors30-train gp
-sbatch bessemer-run.sh 143556 229610 434766 liftDoors30-train none
-sbatch bessemer-run.sh 143556 229610 434766 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 143556 229610 434766 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 843747 216025 252276 liftDoors30 gp
+sbatch bessemer-run.sh 843747 216025 252276 liftDoors30 none
+sbatch bessemer-run.sh 843747 216025 252276 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 843747 216025 252276 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 722658 696734 340292 liftDoors30-train gp
-sbatch bessemer-run.sh 722658 696734 340292 liftDoors30-train none
-sbatch bessemer-run.sh 722658 696734 340292 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 722658 696734 340292 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 979802 280854 826574 liftDoors30 gp
+sbatch bessemer-run.sh 979802 280854 826574 liftDoors30 none
+sbatch bessemer-run.sh 979802 280854 826574 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 979802 280854 826574 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 606930 856561 883526 liftDoors30-train gp
-sbatch bessemer-run.sh 606930 856561 883526 liftDoors30-train none
-sbatch bessemer-run.sh 606930 856561 883526 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 606930 856561 883526 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 280460 193131 550391 liftDoors30 gp
+sbatch bessemer-run.sh 280460 193131 550391 liftDoors30 none
+sbatch bessemer-run.sh 280460 193131 550391 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 280460 193131 550391 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 153541 873531 630214 liftDoors30-train gp
-sbatch bessemer-run.sh 153541 873531 630214 liftDoors30-train none
-sbatch bessemer-run.sh 153541 873531 630214 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 153541 873531 630214 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 424034 112974 81648 liftDoors30 gp
+sbatch bessemer-run.sh 424034 112974 81648 liftDoors30 none
+sbatch bessemer-run.sh 424034 112974 81648 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 424034 112974 81648 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 619301 547349 934799 liftDoors30-train gp
-sbatch bessemer-run.sh 619301 547349 934799 liftDoors30-train none
-sbatch bessemer-run.sh 619301 547349 934799 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 619301 547349 934799 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 809824 380777 172358 liftDoors30 gp
+sbatch bessemer-run.sh 809824 380777 172358 liftDoors30 none
+sbatch bessemer-run.sh 809824 380777 172358 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 809824 380777 172358 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 59894 905763 641254 liftDoors30-train gp
-sbatch bessemer-run.sh 59894 905763 641254 liftDoors30-train none
-sbatch bessemer-run.sh 59894 905763 641254 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 59894 905763 641254 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 515499 905920 256421 liftDoors30 gp
+sbatch bessemer-run.sh 515499 905920 256421 liftDoors30 none
+sbatch bessemer-run.sh 515499 905920 256421 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 515499 905920 256421 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 6893 397959 512669 liftDoors30-train gp
-sbatch bessemer-run.sh 6893 397959 512669 liftDoors30-train none
-sbatch bessemer-run.sh 6893 397959 512669 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 6893 397959 512669 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 290847 738012 681368 liftDoors30 gp
+sbatch bessemer-run.sh 290847 738012 681368 liftDoors30 none
+sbatch bessemer-run.sh 290847 738012 681368 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 290847 738012 681368 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 857304 461368 968664 liftDoors30-train gp
-sbatch bessemer-run.sh 857304 461368 968664 liftDoors30-train none
-sbatch bessemer-run.sh 857304 461368 968664 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 857304 461368 968664 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 220632 805837 295755 liftDoors30 gp
+sbatch bessemer-run.sh 220632 805837 295755 liftDoors30 none
+sbatch bessemer-run.sh 220632 805837 295755 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 220632 805837 295755 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 12599 764750 557878 liftDoors30-train gp
-sbatch bessemer-run.sh 12599 764750 557878 liftDoors30-train none
-sbatch bessemer-run.sh 12599 764750 557878 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 12599 764750 557878 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 371288 291930 321571 liftDoors30 gp
+sbatch bessemer-run.sh 371288 291930 321571 liftDoors30 none
+sbatch bessemer-run.sh 371288 291930 321571 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 371288 291930 321571 liftDoors30-obfuscated-time none
 
-sbatch bessemer-run.sh 717215 360289 215636 liftDoors30-train gp
-sbatch bessemer-run.sh 717215 360289 215636 liftDoors30-train none
-sbatch bessemer-run.sh 717215 360289 215636 liftDoors30-obfuscated-train gp
-sbatch bessemer-run.sh 717215 360289 215636 liftDoors30-obfuscated-train none
+sbatch bessemer-run.sh 83819 714212 592423 liftDoors30 gp
+sbatch bessemer-run.sh 83819 714212 592423 liftDoors30 none
+sbatch bessemer-run.sh 83819 714212 592423 liftDoors30-obfuscated-time gp
+sbatch bessemer-run.sh 83819 714212 592423 liftDoors30-obfuscated-time none
 
