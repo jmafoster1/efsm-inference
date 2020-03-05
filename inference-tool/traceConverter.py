@@ -11,12 +11,9 @@ import json
 import random
 
 root = "/home/michael/eclipse-workspace/concurrency/"
-newRoot = "/home/michael/Documents/efsm-inference/inference-tool/experimental-data/"
+newRoot = "/home/michael/Documents/efsm-inference/inference-tool/experimental-data/spaceInvadersTest/"
 
-#file = "liftDoors2"
-#outfile = "liftDoors30"
-
-numTraces = 5
+numTraces = 30
 file = "new.log"
 outfile = "spaceInvaders"
 outfile += str(numTraces)
@@ -28,6 +25,7 @@ shields = 2
 
 desired_inputs = {
     "start": [x, aliens, shields],
+    "stop": [x, aliens, shields],
     "alienHit": [aliens],
     "addAlien": [],
     "moveWest": [x],
@@ -72,7 +70,7 @@ def print_original_trace(f, traces):
     for trace in traces:
         print("trace", file=f)
         for (label, inputs) in trace:
-            print(label, " ".join([str(x) for x in inputs]), file=f)
+            print(label, " ".join([str(p) for x, p in enumerate(inputs) if x in desired_inputs[label]]), file=f)
 
 
 def format_trace(trace):
@@ -122,10 +120,10 @@ with open(root+file) as f:
 
 traces = [trace for trace in traces if len(trace) >= 5]
 print(len(traces), "traces in total")
-for x in enumerate([len(t) for t in traces]):
-    print(x)
 
 traces = random.sample(traces, 2*numTraces)
+for x in enumerate([len(t) for t in traces]):
+    print(x)
 
 io_traces = [format_trace(t) for t in traces]
 
@@ -142,9 +140,8 @@ with open(newRoot+outfile+"-test.json", 'w') as f:
     print("[\n" + ",  \n".join(["  [\n    " + ",\n    ".join([json.dumps(event) for event in trace]) + "\n  ]" for trace in io_traces[numTraces:]]) + "\n]", file=f)
 
 for var in [item for sublist in desired_outputs.values() for item in sublist]:
-    print("sbatch bessemer-run.sh 873365 958765 27335 "+outfile+f"-obfuscated-{varname(var)} gp")
-    obfuscated_inputs = [var]
-    obfuscated_traces = [obfuscate_inputs(t, obfuscated_inputs) for t in traces]
+    print(f"sbatch bessemer-run.sh 873365 958765 27335 {outfile}-obfuscated-{varname(var)} gp")
+    obfuscated_traces = [obfuscate_inputs(t, [var]) for t in traces]
     
     with open(newRoot+outfile+f"-obfuscated-{varname(var)}-train.json", 'w') as f:
         print("[\n" + ",  \n".join(["  [\n    " + ",\n    ".join([json.dumps(event) for event in trace]) + "\n  ]" for trace in obfuscated_traces[:numTraces]]) + "\n]", file=f)
