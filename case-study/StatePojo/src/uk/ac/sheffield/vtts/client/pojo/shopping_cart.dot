@@ -1,0 +1,31 @@
+digraph ShoppingCart {
+    graph [rankdir="LR", fontname="Latin Modern Math", margin=0];
+    node [color="black", fillcolor="white", shape="circle", style="filled", fontname="Latin Modern Math"];
+    edge [fontname="Latin Modern Math"];
+
+    ready   [fillcolor="gray", label=<s<sub>0</sub>>];
+    shopping[label=<s<sub>1</sub>>];
+    checkout[label=<s<sub>2</sub>>];
+    payment [label=<s<sub>3</sub>>];
+
+    /* s0->s1[label=<<i>init:0/&#91;r<sub>1</sub> := 0&#93;</i>>];
+    s1->s1[label=<<i>coin:0/&#91;r<sub>1</sub> := r<sub>1</sub> + 1&#93;</i>>];
+    s1->s2[label=<<i>vend:0&#91;r<sub>1</sub> &gt; 0&#93;/o<sub>1</sub> := "tea"&#91;r<sub>1</sub> := r<sub>1</sub>&#93;</i>>]; */
+
+    ready -> shopping [label=<enterShop:0>]
+
+    shopping -> shopping [label=<addItem:1[OK]>]
+    shopping -> shopping [label=<addItem:1[notOK]/error>]
+    shopping -> shopping [label=<removeItem:1[OK]>]
+    shopping -> shopping [label=<removeItem:1[notOK]/error>]
+    shopping -> shopping [label=<clearItems:0>]
+    shopping -> checkout [label=<checkout:0>]
+
+    checkout -> shopping [label=<enterShop:0>]
+    checkout -> checkout [label=<getBill:0>]
+    checkout -> payment [label=<payBill:2>]
+
+    payment -> payment [label=<getBill:0>]
+    payment -> checkout [label=<checkout:0>]
+    payment -> ready [label=<confirm:0>]
+}
