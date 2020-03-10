@@ -441,6 +441,7 @@ object Dirties {
     Log.root.debug("Guard training set: " + trainingSet)
     Log.root.debug("  Terminals: " + gpGenerator.getTerminals())
 
+    // If any of the guards need to simultaneously be true and false then stop
     if (trainingSet.keys().stream().anyMatch(x => trainingSet.get(x).size() > 1))
       return None
 
