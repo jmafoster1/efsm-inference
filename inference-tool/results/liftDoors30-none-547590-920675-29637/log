@@ -1,0 +1,59 @@
+16:23:34.345 [main] INFO  ROOT - -p none -g 547590 -o 920675 -u 29637 -h same,ws,distinguish -d results/liftDoors30-none-547590-920675-29637 experimental-data/liftDoors30-train.json experimental-data/liftDoors30-test.json
+16:23:34.347 [main] INFO  ROOT - Building PTA - 30 traces
+16:23:43.062 [main] INFO  ROOT - PTA has 516 states
+16:33:11.002 [main] DEBUG ROOT - 516 -> 515
+16:42:35.802 [main] DEBUG ROOT - 515 -> 514
+16:52:00.478 [main] DEBUG ROOT - 514 -> 513
+17:01:53.287 [main] DEBUG ROOT - 513 -> 512
+17:11:45.007 [main] DEBUG ROOT - 512 -> 472
+17:19:46.038 [main] DEBUG ROOT - 472 -> 452
+17:25:06.715 [main] DEBUG ROOT - 452 -> 435
+17:29:55.422 [main] DEBUG ROOT - 435 -> 427
+17:34:39.591 [main] DEBUG ROOT - 427 -> 398
+17:38:36.451 [main] DEBUG ROOT - 398 -> 379
+17:42:04.472 [main] DEBUG ROOT - 379 -> 368
+17:45:19.948 [main] DEBUG ROOT - 368 -> 354
+17:48:19.895 [main] DEBUG ROOT - 354 -> 338
+17:51:02.698 [main] DEBUG ROOT - 338 -> 324
+17:53:26.876 [main] DEBUG ROOT - 324 -> 323
+17:55:50.465 [main] DEBUG ROOT - 323 -> 322
+17:58:18.826 [main] DEBUG ROOT - 322 -> 321
+18:00:52.676 [main] DEBUG ROOT - 321 -> 320
+18:03:22.101 [main] DEBUG ROOT - 320 -> 319
+18:05:45.460 [main] DEBUG ROOT - 319 -> 318
+18:08:09.020 [main] DEBUG ROOT - 318 -> 317
+18:10:35.789 [main] DEBUG ROOT - 317 -> 305
+18:12:46.152 [main] DEBUG ROOT - 305 -> 304
+18:14:56.632 [main] DEBUG ROOT - 304 -> 303
+18:17:06.863 [main] DEBUG ROOT - 303 -> 302
+18:19:59.981 [main] DEBUG ROOT - 302 -> 246
+18:21:24.817 [main] DEBUG ROOT - 246 -> 242
+18:22:46.780 [main] DEBUG ROOT - 242 -> 238
+18:24:17.380 [main] DEBUG ROOT - 238 -> 221
+18:25:43.955 [main] DEBUG ROOT - 221 -> 193
+18:26:30.171 [main] DEBUG ROOT - 193 -> 174
+18:27:20.731 [main] DEBUG ROOT - 174 -> 139
+18:27:47.411 [main] DEBUG ROOT - 139 -> 116
+18:28:01.976 [main] DEBUG ROOT - 116 -> 112
+18:28:30.536 [main] DEBUG ROOT - 112 -> 51
+18:28:33.476 [main] DEBUG ROOT - 51 -> 50
+18:28:36.366 [main] DEBUG ROOT - 50 -> 49
+18:28:39.306 [main] DEBUG ROOT - 49 -> 48
+18:28:42.141 [main] DEBUG ROOT - 48 -> 47
+18:28:44.969 [main] DEBUG ROOT - 47 -> 46
+18:28:47.784 [main] DEBUG ROOT - 46 -> 45
+18:28:50.560 [main] DEBUG ROOT - 45 -> 44
+18:28:53.834 [main] DEBUG ROOT - 44 -> 40
+18:28:56.773 [main] DEBUG ROOT - 40 -> 36
+18:28:59.399 [main] DEBUG ROOT - 36 -> 32
+18:29:01.730 [main] DEBUG ROOT - 32 -> 28
+18:29:03.751 [main] DEBUG ROOT - 28 -> 24
+18:29:05.521 [main] DEBUG ROOT - 24 -> 20
+18:29:07.057 [main] DEBUG ROOT - 20 -> 16
+18:29:08.282 [main] DEBUG ROOT - 16 -> 12
+18:29:09.187 [main] DEBUG ROOT - 12 -> 8
+18:29:09.745 [main] DEBUG ROOT - 8 -> 7
+18:29:10.160 [main] INFO  ROOT - The inferred machine is deterministic
+18:29:10.173 [main] INFO  ROOT - Completed in 2h 5m 37.34556914000041s
+18:29:10.174 [main] INFO  ROOT - states: 7
+18:29:10.175 [main] INFO  ROOT - transitions: 49

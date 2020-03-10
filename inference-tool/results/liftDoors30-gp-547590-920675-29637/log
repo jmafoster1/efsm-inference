@@ -1,0 +1,106 @@
+16:16:18.042 [main] INFO  ROOT - -p gp -g 547590 -o 920675 -u 29637 -h same,ws,distinguish -d results/liftDoors30-gp-547590-920675-29637 experimental-data/liftDoors30-train.json experimental-data/liftDoors30-test.json
+16:16:18.044 [main] INFO  ROOT - Building PTA - 30 traces
+16:16:26.142 [main] INFO  ROOT - PTA has 516 states
+16:16:31.533 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:31.534 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:16:34.175 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:34.329 [scala-execution-context-global-10] DEBUG ROOT - No latent variable
+16:16:34.358 [scala-execution-context-global-10] DEBUG ROOT - Output training set: {[i0=2]=[o=1], [i0=1]=[o=0], [i0=3]=[o=2], [i0=5]=[o=4], [i0=4]=[o=3]}
+16:16:34.370 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 5, 4, 3, 2, 1)
+16:16:35.243 [scala-execution-context-global-10] DEBUG ROOT -   Best function is: (+ -1 i0)
+16:16:35.245 [scala-execution-context-global-10] DEBUG ROOT -   Best function is correct
+16:16:37.136 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:37.137 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:16:38.387 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:38.394 [scala-execution-context-global-10] DEBUG ROOT - No latent variable
+16:16:38.395 [scala-execution-context-global-10] DEBUG ROOT - Output training set: {[i0=3]=[o=2], [i0=5]=[o=4], [i0=9]=[o=8], [i0=4]=[o=3], [i0=6]=[o=5], [i0=8]=[o=7], [i0=10]=[o=9], [i0=7]=[o=6], [i0=2]=[o=1], [i0=1]=[o=0]}
+16:16:38.395 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+16:16:38.952 [scala-execution-context-global-10] DEBUG ROOT -   Best function is: (+ -1 i0)
+16:16:38.952 [scala-execution-context-global-10] DEBUG ROOT -   Best function is correct
+16:16:40.205 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:40.205 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:16:41.524 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:41.524 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:16:42.632 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:42.634 [scala-execution-context-global-10] DEBUG ROOT - No latent variable
+16:16:42.634 [scala-execution-context-global-10] DEBUG ROOT - Output training set: {[i0=1]=[o=0], [i0=2]=[o=1]}
+16:16:42.635 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 2, 1)
+16:16:43.213 [scala-execution-context-global-10] DEBUG ROOT -   Best function is: (+ -1 i0)
+16:16:43.214 [scala-execution-context-global-10] DEBUG ROOT -   Best function is correct
+16:16:44.595 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:44.595 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:16:45.872 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:45.874 [scala-execution-context-global-10] DEBUG ROOT - No latent variable
+16:16:45.875 [scala-execution-context-global-10] DEBUG ROOT - Output training set: {[i0=4]=[o=3], [i0=1]=[o=0], [i0=3]=[o=2], [i0=5]=[o=4], [i0=2]=[o=1]}
+16:16:45.875 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+16:16:46.245 [scala-execution-context-global-10] DEBUG ROOT -   Best function is: (+ -1 i0)
+16:16:46.258 [scala-execution-context-global-10] DEBUG ROOT -   Best function is correct
+16:16:47.722 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:47.726 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:16:49.012 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:49.013 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:16:50.279 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:50.289 [scala-execution-context-global-10] DEBUG ROOT - No latent variable
+16:16:50.289 [scala-execution-context-global-10] DEBUG ROOT - Output training set: {[i0=4]=[o=3], [i0=5]=[o=4], [i0=3]=[o=2], [i0=6]=[o=5], [i0=10]=[o=9], [i0=8]=[o=7], [i0=7]=[o=6], [i0=9]=[o=8]}
+16:16:50.289 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 3, 2, 10, 9, 8, 7, 6, 5, 4)
+16:16:50.643 [scala-execution-context-global-10] DEBUG ROOT -   Best function is: (+ -1 i0)
+16:16:50.643 [scala-execution-context-global-10] DEBUG ROOT -   Best function is correct
+16:16:52.033 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:52.033 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:16:53.346 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:53.346 [scala-execution-context-global-10] DEBUG ROOT - No latent variable
+16:16:53.347 [scala-execution-context-global-10] DEBUG ROOT - Output training set: {[i0=1]=[o=0], [i0=2]=[o=1], [i0=3]=[o=2], [i0=5]=[o=4], [i0=4]=[o=3]}
+16:16:53.347 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+16:16:54.157 [scala-execution-context-global-10] DEBUG ROOT -   Best function is: (+ -1 i0)
+16:16:54.157 [scala-execution-context-global-10] DEBUG ROOT -   Best function is correct
+16:16:55.592 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:55.592 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:16:56.838 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:56.838 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:16:58.064 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:58.065 [scala-execution-context-global-10] DEBUG ROOT - No latent variable
+16:16:58.065 [scala-execution-context-global-10] DEBUG ROOT - Output training set: {[i0=1]=[o=0], [i0=2]=[o=1]}
+16:16:58.065 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 2, 1)
+16:16:58.486 [scala-execution-context-global-10] DEBUG ROOT -   Best function is: (+ -1 i0)
+16:16:58.487 [scala-execution-context-global-10] DEBUG ROOT -   Best function is correct
+16:16:59.817 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:16:59.820 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:17:01.071 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:17:01.071 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:17:02.299 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:17:02.299 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:17:03.532 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:17:03.532 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:17:04.749 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:17:04.749 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:17:05.966 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:17:05.968 [scala-execution-context-global-10] DEBUG ROOT - No latent variable
+16:17:05.969 [scala-execution-context-global-10] DEBUG ROOT - Output training set: {[i0=3]=[o=2], [i0=1]=[o=0], [i0=5]=[o=4], [i0=2]=[o=1], [i0=4]=[o=3]}
+16:17:05.969 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+16:17:06.443 [scala-execution-context-global-10] DEBUG ROOT -   Best function is: (+ -1 i0)
+16:17:06.448 [scala-execution-context-global-10] DEBUG ROOT -   Best function is correct
+16:17:07.691 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:17:07.693 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:17:08.910 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:17:08.910 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:17:10.129 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:17:10.133 [scala-execution-context-global-10] DEBUG ROOT - No latent variable
+16:17:10.133 [scala-execution-context-global-10] DEBUG ROOT - Output training set: {[i0=1]=[o=0], [i0=2]=[o=1]}
+16:17:10.133 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 2, 1)
+16:17:10.427 [scala-execution-context-global-10] DEBUG ROOT -   Best function is: (+ -1 i0)
+16:17:10.429 [scala-execution-context-global-10] DEBUG ROOT -   Best function is correct
+16:17:11.653 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+16:17:11.653 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+16:18:17.380 [main] INFO  ROOT - Resolved PTA has 516 states
+16:20:19.372 [main] DEBUG ROOT - 328 -> 323
+16:22:35.713 [main] DEBUG ROOT - 323 -> 201
+16:23:15.725 [main] DEBUG ROOT - 201 -> 87
+16:23:23.254 [main] DEBUG ROOT - 87 -> 25
+16:23:23.813 [main] DEBUG ROOT - 25 -> 18
+16:23:23.945 [main] DEBUG ROOT - 18 -> 16
+16:23:24.198 [main] DEBUG ROOT - 16 -> 6
+16:23:24.243 [main] DEBUG ROOT - 6 -> 4
+16:23:24.268 [main] INFO  ROOT - The inferred machine is deterministic
+16:23:24.274 [main] INFO  ROOT - Completed in 0h 7m 7.786168893000024s
+16:23:24.274 [main] INFO  ROOT - states: 4
+16:23:24.274 [main] INFO  ROOT - transitions: 10
