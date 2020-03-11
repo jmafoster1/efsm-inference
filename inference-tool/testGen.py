@@ -11,7 +11,7 @@ import os
 import glob
 
 root = "experimental-data"
-testfile = "spaceInvaders30"
+testfile = "liftDoors30"
 numRepeats = 30
 
 randoms = set()
@@ -25,7 +25,7 @@ for i in range(numRepeats):
 datafiles = [os.path.splitext(os.path.basename(n))[0] for n in glob.glob(f"{root}/{testfile}*train.json")]
 
 for d in datafiles:
-    with open(f"{testfile}-{d.replace('-train', '')}-submissions.sh", 'w') as f:
+    with open(f"{d.replace('-train', '')}-submissions.sh", 'w') as f:
         for g, p, u in randoms:
             print(f"sbatch bessemer-run.sh {g} {p} {u} {d.replace('-train', '')} gp", file=f)
             print(f"sbatch bessemer-run.sh {g} {p} {u} {d.replace('-train', '')} none", file=f)
