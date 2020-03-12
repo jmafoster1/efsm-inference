@@ -1,0 +1,32 @@
+21:37:39.215 [main] INFO  ROOT - -p none -g 913539 -o 965505 -u 890314 -h same,ws,distinguish -d results/liftDoors30-none-913539-965505-890314 experimental-data/liftDoors30-train.json experimental-data/liftDoors30-test.json
+21:37:39.217 [main] INFO  ROOT - Building PTA - 30 traces
+21:37:47.665 [main] INFO  ROOT - PTA has 516 states
+21:47:16.461 [main] DEBUG ROOT - 516 -> 515
+21:56:44.462 [main] DEBUG ROOT - 515 -> 514
+22:06:13.336 [main] DEBUG ROOT - 514 -> 513
+22:15:39.642 [main] DEBUG ROOT - 513 -> 512
+22:25:30.279 [main] DEBUG ROOT - 512 -> 472
+22:33:37.350 [main] DEBUG ROOT - 472 -> 452
+22:38:58.398 [main] DEBUG ROOT - 452 -> 435
+22:43:47.530 [main] DEBUG ROOT - 435 -> 427
+22:48:29.642 [main] DEBUG ROOT - 427 -> 398
+22:52:27.574 [main] DEBUG ROOT - 398 -> 379
+22:55:53.632 [main] DEBUG ROOT - 379 -> 368
+22:59:07.722 [main] DEBUG ROOT - 368 -> 354
+23:02:10.666 [main] DEBUG ROOT - 354 -> 338
+23:04:51.455 [main] DEBUG ROOT - 338 -> 324
+23:07:13.548 [main] DEBUG ROOT - 324 -> 323
+23:09:37.710 [main] DEBUG ROOT - 323 -> 322
+23:12:01.621 [main] DEBUG ROOT - 322 -> 321
+23:14:23.011 [main] DEBUG ROOT - 321 -> 320
+23:16:43.595 [main] DEBUG ROOT - 320 -> 319
+23:19:08.131 [main] DEBUG ROOT - 319 -> 318
+23:21:28.556 [main] DEBUG ROOT - 318 -> 317
+23:23:53.332 [main] DEBUG ROOT - 317 -> 305
+23:26:01.720 [main] DEBUG ROOT - 305 -> 304
+23:28:13.169 [main] DEBUG ROOT - 304 -> 303
+23:30:21.247 [main] DEBUG ROOT - 303 -> 302
+23:33:12.596 [main] DEBUG ROOT - 302 -> 246
+23:34:36.364 [main] DEBUG ROOT - 246 -> 242
+23:36:00.677 [main] DEBUG ROOT - 242 -> 238
+23:37:30.623 [main] DEBUG ROOT - 238 -> 221
