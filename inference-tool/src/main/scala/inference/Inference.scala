@@ -8444,6 +8444,23 @@ Transition.transition_ext[Unit]))]) =>
 
 object SelectionStrategies {
 
+def leaves(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
+            e: FSet.fset[(List[Nat.nat],
+                           ((Nat.nat, Nat.nat),
+                             Transition.transition_ext[Unit]))]):
+      Nat.nat
+  =
+  {
+    val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t1ID)
+    val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t2ID);
+    (if ((Transition.Label[Unit](t1) ==
+           Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
+                    Transition.Arity[Unit](t2))) && (Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](t1)).par.length),
+                             Nat.Nata((Transition.Outputs[Unit](t2)).par.length)))))
+      Nat.plus_nata(Inference.origin(t1ID, e), Inference.origin(t2ID, e))
+      else Nat.zero_nata)
+  }
+
 def bool2nat(x0: Boolean): Nat.nat = x0 match {
   case true => Nat.Nata((1))
   case false => Nat.zero_nata
@@ -8472,21 +8489,6 @@ def exactly_equal(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
   =
   bool2nat(Transition.equal_transition_exta[Unit](Inference.get_by_ids(e, t1ID),
            Inference.get_by_ids(e, t2ID)))
-
-def origin_states(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
-                   e: FSet.fset[(List[Nat.nat],
-                                  ((Nat.nat, Nat.nat),
-                                    Transition.transition_ext[Unit]))]):
-      Nat.nat
-  =
-  {
-    val t1Orig: Nat.nat = Inference.origin(t1ID, e)
-    val t2Orig: Nat.nat = Inference.origin(t2ID, e);
-    (if ((Nat.equal_nata(t1Orig,
-                          Code_Numeral.nat_of_integer(BigInt(9)))) && (Nat.equal_nata(t2Orig,
-       Code_Numeral.nat_of_integer(BigInt(58)))))
-      Code_Numeral.nat_of_integer(BigInt(1000)) else Nat.zero_nata)
-  }
 
 def naive_score_outputs(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
                          e: FSet.fset[(List[Nat.nat],

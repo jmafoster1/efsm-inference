@@ -555,9 +555,9 @@ object Dirties {
     // Log.root.debug("  Int terminals: " + intTerms)
     // Log.root.debug("  String terminals: " + stringTerms)
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 5, 2));
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 5, 2));
 
-    val best = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
+    val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]]
 
     Log.root.debug("  Best function is: " + best)
 
@@ -662,11 +662,15 @@ object Dirties {
     gpGenerator.addTerminals(intTerms)
     gpGenerator.addTerminals(stringTerms)
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 3, 2));
-
     Log.root.debug("Output training set: " + trainingSet)
     Log.root.debug("  Int terminals: " + intTerms)
     // Log.root.debug("  String terminals: " + stringTerms)
+
+    // If we have a key that's empty but returns more than one value then we need a latent variable
+    if ((!latentVariable) && trainingSet.keys().stream().anyMatch(x => x.size() == 0 && trainingSet.get(x).size() > 1))
+      return getOutput(maxReg, values, inputs, registers, outputs, true)
+
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 3, 2));
 
     val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]]
 

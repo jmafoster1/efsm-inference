@@ -422,7 +422,7 @@ export_code
   naive_score_outputs
   naive_score_comprehensive
   naive_score_comprehensive_eq_high
-  origin_states
+  leaves
   (* Heuristics *)
   same_register
   insert_increment_2

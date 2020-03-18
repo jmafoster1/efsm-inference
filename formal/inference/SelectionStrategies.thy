@@ -68,12 +68,16 @@ definition naive_score_comprehensive_eq_high :: strategy where
                                                else 0
                                              else 0)"
 
-(* Orders by the origin state so we should get zipping down the PTA *)
-definition origin_states :: strategy where
-  "origin_states t1ID t2ID e = (let
-    t1Orig = origin t1ID e;
-    t2Orig = origin t2ID e in
-    if t1Orig = 9 \<and> t2Orig = 58 then 1000 else
-    0)"
+(* Orders by the origin state so we merge leaves first *)
+definition leaves :: strategy where
+  "leaves t1ID t2ID e = (
+    let
+      t1 = get_by_ids e t1ID;
+      t2 = get_by_ids e t2ID
+    in
+    if (Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2)) then
+      origin t1ID e + origin t2ID e
+    else
+      0)"
 
 end
