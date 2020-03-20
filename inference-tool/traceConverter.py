@@ -11,16 +11,24 @@ import json
 import random
 
 root = "/home/michael/eclipse-workspace/concurrency/"
-newRoot = "/home/michael/Documents/efsm-inference/inference-tool/experimental-data/spaceInvadersTest/"
+root = "/home/michael/Documents/ICSMEData/"
+
+newRoot = "/home/michael/Documents/efsm-inference/inference-tool/experimental-data/"
 
 numTraces = 30
+
 file = "new.log"
+file = "liftDoors2"
+
 outfile = "spaceInvaders"
+outfile = "liftDoors-2-"
+
 outfile += str(numTraces)
 
 x = 0
 aliens = 1
 shields = 2
+time = 0
 
 
 desired_inputs = {
@@ -33,7 +41,19 @@ desired_inputs = {
     "launchMissile": [],
     "shieldHit": [shields],
     "win": [],
-    "lose": []
+    "lose": [],
+    
+    "setTimer": [time],
+    "waitTimer": [time],
+    "fullyOpen": [time],
+    "fullyClosed": [time],
+    "systemInitReady": [time],
+    "closingDoor": [time],
+    "buttonInterrupted": [time],
+    "openingDoor": [time],
+    "timeout": [time],
+    "requestOpen": [time]
+
 }
 
 desired_outputs = desired_inputs

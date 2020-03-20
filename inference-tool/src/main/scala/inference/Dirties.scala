@@ -599,6 +599,7 @@ object Dirties {
     val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
     var stringVarNames = List[String]()
     var intVarNames = List[String]()
+    var latentInt = true
 
     for (t <- ioPairs) t match {
       case ((inputs, anteriorRegs), output) => {
@@ -630,6 +631,7 @@ object Dirties {
             trainingSet.put(scenario, new IntegerVariableAssignment("o", TypeConversion.toInteger(n)))
           }
           case Value.Str(s) => {
+            latentInt = false
             stringVarNames = s"r${r_index}" :: stringVarNames
             trainingSet.put(scenario, new StringVariableAssignment("o", s))
           }
@@ -667,10 +669,21 @@ object Dirties {
     // Log.root.debug("  String terminals: " + stringTerms)
 
     // If we have a key that's empty but returns more than one value then we need a latent variable
-    if ((!latentVariable) && trainingSet.keys().stream().anyMatch(x => x.size() == 0 && trainingSet.get(x).size() > 1))
-      return getOutput(maxReg, values, inputs, registers, outputs, true)
+    if ((!latentVariable) && trainingSet.keys().stream().anyMatch(x => x.size() == 0 && trainingSet.get(x).size() > 1)) {
+      if (latentInt) {
+        val best = new IntegerVariableAssignmentTerminal(f"r$r_index", true).asInstanceOf[Node[VariableAssignment[_]]]
+        Log.root.debug("  Secret best function is: " + best)
+        return Some((TypeConversion.toAExp(best), getTypes(best)))
+      }
+      else {
+        val best = new StringVariableAssignmentTerminal(new StringVariableAssignment(f"r$r_index"), false, true).asInstanceOf[Node[VariableAssignment[_]]]
+        Log.root.debug("  Secret best function is: " + best)
+        return Some((TypeConversion.toAExp(best), getTypes(best)))
+      }
+    }
 
     var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 3, 2));
+    gp.setSeeds(intTerms)
 
     val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]]
 
