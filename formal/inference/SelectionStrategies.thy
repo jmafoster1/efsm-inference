@@ -6,10 +6,6 @@ theory SelectionStrategies
 imports Inference
 begin
 
-fun bool2nat :: "bool \<Rightarrow> nat" where
-  "bool2nat True = 1" |
-  "bool2nat False = 0"
-
 subsection\<open>One of the simplest strategies is to look only at the labels and arities of outgoing
 transitions of each state. Pairs of states are ranked by how many transitions with the same label
 and arity they have in common.\<close>

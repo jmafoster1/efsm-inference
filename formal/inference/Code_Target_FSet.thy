@@ -57,6 +57,10 @@ qed
 lemma fMax_fold [code]: "fMax (fset_of_list (a#as)) = fold max as a"
   by (metis Max.set_eq_fold fMax.F.rep_eq fset_of_list.rep_eq)
 
+lemma fMin_fold [code]: "fMin (fset_of_list (h#t)) = fold min t h"
+  apply (simp add: fset_of_list_def)
+  by (metis Min.set_eq_fold fMin_Min fset_of_list.abs_eq list.simps(15))
+
 lemma fremove_code [code]: "fremove a (fset_of_list A) = fset_of_list (filter (\<lambda>x. x \<noteq> a) A)"
   apply (simp add: fremove_def minus_fset_def ffilter_def fset_both_sides Abs_fset_inverse fset_of_list.rep_eq)
   by auto
@@ -100,10 +104,43 @@ lemma code_fBex [code]: "fBex (fset_of_list l) f = list_ex f l"
 definition "nativeSort = sort"
 code_printing constant nativeSort \<rightharpoonup> (Scala) "_.sortWith((Orderings.less))"
 
-lemma sorted_list_of_fset_sort: "sorted_list_of_fset (fset_of_list as) = sort (remdups as)"
-  by (metis fset_of_list.rep_eq sorted_list_of_fset.rep_eq sorted_list_of_set_sort_remdups)
-
 lemma [code]: "sorted_list_of_fset (fset_of_list l) = nativeSort (remdups l)"
   by (simp add: nativeSort_def sorted_list_of_fset_sort)
+
+lemma [code]: "sorted_list_of_set (set l) = nativeSort (remdups l)"
+  by (simp add: nativeSort_def sorted_list_of_set_sort_remdups)
+
+lemma [code]: "fMin (fset_of_list (h#t)) = hd (nativeSort (h#t))"
+  by (metis fMin_Min hd_sort_Min list.distinct(1) nativeSort_def)
+
+lemma sorted_Max_Cons: "l \<noteq> [] \<Longrightarrow> sorted (a#l) \<Longrightarrow> Max (set (a#l)) = Max (set l)"
+  using eq_iff by fastforce
+
+lemma sorted_Max: "l \<noteq> [] \<Longrightarrow> sorted l \<Longrightarrow> Max (set l) = hd (rev l)"
+proof(induct l)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a l)
+  then show ?case
+    by (metis sorted_Max_Cons Max_singleton hd_rev last.simps list.set(1) list.simps(15) sorted.simps(2))
+qed
+
+lemma [code]: "fMax (fset_of_list (h#t)) = last (nativeSort (h#t))"
+  by (metis Max.set_eq_fold fMax_fold hd_rev list.simps(3) nativeSort_def set_empty2 set_sort sorted_Max sorted_sort)
+
+definition "list_max l = fold max l"
+
+lemma [code]: "fMax (fset_of_list (h#t)) = list_max t h"
+  by (metis fMax_fold list_max_def)
+
+code_printing constant list_max \<rightharpoonup> (Scala) "_.par.fold((_))(Orderings.max)"
+
+definition "list_min l = fold min l"
+
+lemma [code]: "fMin (fset_of_list (h#t)) = list_min t h"
+  by (metis fMin_fold list_min_def)
+
+code_printing constant list_min \<rightharpoonup> (Scala) "_.par.fold((_))(Orderings.min)"
 
 end

@@ -295,7 +295,7 @@ definition logStates :: "nat \<Rightarrow> nat \<Rightarrow> unit" where
 function infer_with_log :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "infer_with_log stepNo k e r m check np = (
     let scores = if k = 1 then score_1 e r else (k_score k e r) in
-    case inference_step e (sorted_list_of_fset scores) m check np of
+    case inference_step e scores m check np of
       None \<Rightarrow> e |
       Some new \<Rightarrow> let 
         temp = iEFSM2dot new stepNo;
@@ -435,6 +435,8 @@ export_code
   nondeterministic_pairs_labar
   nondeterministic_pairs_labar_dest
   (* Utilities *)
+  min
+  max
   drop_pta_guards
   test_log
 mismatched_updates

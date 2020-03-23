@@ -624,22 +624,22 @@ lemma diff_outputs_direct_subsumption:
 definition not_updated :: "nat \<Rightarrow> transition \<Rightarrow> bool" where
   "not_updated r t = (filter (\<lambda>(r', _). r' = r) (Updates t) = [])"
 
-lemma not_updated_aux: "filter (\<lambda>(r', _). r' = r) t2 = [] \<Longrightarrow> apply_updates t2 s s' $ r = s' $ r"
-proof(induct t2)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a t2)
-  then show ?case
-    apply (cases a)
-    apply (case_tac "aa = r")
-    by auto
+lemma not_updated: 
+  assumes "not_updated r t2"
+  shows "apply_updates (Updates t2) s s' $ r = s' $ r"
+proof-
+  have not_updated_aux: "\<And>t2. filter (\<lambda>(r', _). r' = r) t2 = [] \<Longrightarrow> apply_updates t2 s s' $ r = s' $ r"
+    subgoal for t2
+      apply (induct t2)
+       apply simp
+      apply (case_tac a)
+      apply (case_tac "aa = r")
+      by auto
+    done
+  show ?thesis
+    using assms
+    by (simp add: not_updated_def not_updated_aux)
 qed
-
-lemma not_updated: "not_updated r t2 \<Longrightarrow>
-       apply_updates (Updates t2) s s' $ r = s' $ r"
-  by (simp add: not_updated_def not_updated_aux)
 
 lemma one_extra_update_subsumes:
   "Label t1 = Label t2 \<Longrightarrow>

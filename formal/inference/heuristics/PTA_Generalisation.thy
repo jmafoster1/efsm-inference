@@ -1,5 +1,5 @@
 theory PTA_Generalisation
-  imports "../Inference"
+  imports "../Inference" Same_Register
 begin
 
 hide_const I
@@ -494,9 +494,34 @@ definition drop_all_guards :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> log \<Rig
       derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, tran\<lparr>Guard := []\<rparr>)) e;
       nondeterministic_pairs = sorted_list_of_fset (np derestricted)
     in
-    case resolve_nondeterminism [] nondeterministic_pairs pta derestricted m (satisfies (set log)) np of
+    case resolve_nondeterminism {} nondeterministic_pairs pta derestricted m (satisfies (set log)) np of
       None \<Rightarrow> pta |
       Some resolved \<Rightarrow> resolved
+  )"
+
+fun merge_if_same :: "iEFSM \<Rightarrow> log \<Rightarrow> (nat \<times> nat) list \<Rightarrow> iEFSM" where
+  "merge_if_same e _ [] = e" |
+  "merge_if_same e l ((r1, r2)#rs) = (
+    let transitions = fimage (snd \<circ> snd) e in
+    if \<exists>(t1, t2) |\<in>| ffilter (\<lambda>(t1, t2). t1 < t2) (transitions |\<times>| transitions).
+      same_structure t1 t2 \<and> r1 \<in> enumerate_registers t1 \<and> r2 \<in> enumerate_registers t2
+    then
+      let newE = replace_with e r1 r2 in
+      if satisfies (set l) (tm newE) then
+        merge_if_same newE l rs
+      else
+        merge_if_same e l rs
+    else
+      merge_if_same e l rs
+  )"
+
+definition merge_regs :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
+  "merge_regs e l = (
+    let
+      regs = (\<Union> (fset (fimage (\<lambda> (_, _, t). enumerate_registers t) e)));
+      reg_pairs = sorted_list_of_set (Set.filter (\<lambda>(r1, r2). r1 < r2) (regs \<times> regs))
+    in
+    merge_if_same e l reg_pairs
   )"
 
 definition derestrict :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
@@ -505,7 +530,7 @@ definition derestrict :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier 
       normalised = incremental_normalised_pta log pta;
       delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs normalised)) normalised
     in
-      drop_all_guards delayed pta log m np
+      merge_regs (drop_all_guards delayed pta log m np) log
   )"
 
 definition "drop_pta_guards pta log m np = drop_all_guards pta pta log m np"

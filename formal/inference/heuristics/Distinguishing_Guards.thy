@@ -66,7 +66,7 @@ definition distinguish :: "log \<Rightarrow> update_modifier" where
         Some (g1, g2) \<Rightarrow> (
           let newEFSM = replace_transitions preDestMerge [(t1ID, add_guard t1 g1), (t2ID, add_guard t2 g2)]
           in
-          resolve_nondeterminism [] (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
+          resolve_nondeterminism {} (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
         )
   )"
 

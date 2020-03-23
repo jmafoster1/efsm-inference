@@ -449,13 +449,13 @@ object Dirties {
 
     try {
       val best: Node[VariableAssignment[_]] = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
-      Log.root.debug("  Best function is: " + best.simp())
+      Log.root.debug("  Best guard is: " + best.simp())
 
       val ctx = new z3.Context()
       val gexp = TypeConversion.gexpFromZ3(best.toZ3(ctx))
       ctx.close
       if (gp.isCorrect(best)) {
-        Log.root.debug("  Best function is correct")
+        Log.root.debug("  Best guard is correct")
         guardMap = guardMap + (ioPairs -> Some(gexp))
         return Some((gexp, GExp.gNot(gexp)))
       } else {
@@ -551,18 +551,23 @@ object Dirties {
     gpGenerator.addTerminals(intTerms)
     gpGenerator.addTerminals(stringTerms)
 
-    Log.root.debug("Update training set: " + trainingSet)
+    Log.root.debug("    Update training set: " + trainingSet)
     // Log.root.debug("  Int terminals: " + intTerms)
     // Log.root.debug("  String terminals: " + stringTerms)
+
+    if (trainingSet.keys().stream().anyMatch(x => x.size() == 0 && trainingSet.get(x).size() > 1)) {
+      Log.root.debug("    Multiple updates for no input")
+      return None
+    }
 
     var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 5, 2));
 
     val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]]
 
-    Log.root.debug("  Best function is: " + best)
+    Log.root.debug("    Best update is: " + best)
 
     if (gp.isCorrect(best)) {
-      Log.root.debug("  Best function is correct")
+      Log.root.debug("    Best update is correct")
       return Some((TypeConversion.toAExp(best)))
     } else {
       return None
@@ -640,11 +645,11 @@ object Dirties {
     }
 
     if (!latentVariable) {
-      Log.root.debug("No latent variable")
+      Log.root.debug("  No latent variable")
       intVarNames = intVarNames.filter(_ != s"r${r_index}")
       stringVarNames = stringVarNames.filter(_ != s"r${r_index}")
     } else {
-      Log.root.debug(s"Latent variable: r$r_index")
+      Log.root.debug(s"  Latent variable: r$r_index")
     }
 
     for (intVarName <- intVarNames.distinct) {
@@ -664,7 +669,7 @@ object Dirties {
     gpGenerator.addTerminals(intTerms)
     gpGenerator.addTerminals(stringTerms)
 
-    Log.root.debug("Output training set: " + trainingSet)
+    Log.root.debug("  Output training set: " + trainingSet)
     Log.root.debug("  Int terminals: " + intTerms)
     // Log.root.debug("  String terminals: " + stringTerms)
 
@@ -672,12 +677,12 @@ object Dirties {
     if ((!latentVariable) && trainingSet.keys().stream().anyMatch(x => x.size() == 0 && trainingSet.get(x).size() > 1)) {
       if (latentInt) {
         val best = new IntegerVariableAssignmentTerminal(f"r$r_index", true).asInstanceOf[Node[VariableAssignment[_]]]
-        Log.root.debug("  Secret best function is: " + best)
+        Log.root.debug("  Secret best output is: " + best)
         return Some((TypeConversion.toAExp(best), getTypes(best)))
       }
       else {
         val best = new StringVariableAssignmentTerminal(new StringVariableAssignment(f"r$r_index"), false, true).asInstanceOf[Node[VariableAssignment[_]]]
-        Log.root.debug("  Secret best function is: " + best)
+        Log.root.debug("  Secret best output is: " + best)
         return Some((TypeConversion.toAExp(best), getTypes(best)))
       }
     }
@@ -687,10 +692,10 @@ object Dirties {
 
     val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]]
 
-    Log.root.debug("  Best function is: " + best)
+    Log.root.debug("  Best output is: " + best)
 
     if (gp.isCorrect(best)) {
-      Log.root.debug("  Best function is correct")
+      Log.root.debug("  Best output is correct")
       return Some((TypeConversion.toAExp(best), getTypes(best)))
     } else {
       return getOutput(maxReg, values, inputs, registers, outputs, true)
@@ -707,84 +712,7 @@ object Dirties {
     return types
   }
 
-  def getFunction(
-    r: Nat.nat,
-    values: List[Value.value],
-    i: List[List[Value.value]],
-    o: List[Value.value]): Option[(AExp.aexp[VName.vname], Map[VName.vname, String])] = {
-
-    val ioPairs = (i zip i.map(i => null) zip o).distinct
-
-    val maxReg = TypeConversion.toInt(r) + 1
-
-    BasicConfigurator.resetConfiguration();
-    BasicConfigurator.configure();
-    Logger.getRootLogger().setLevel(Level.OFF);
-
-    val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.outputSeed))
-
-    gpGenerator.addFunctions(GP.intNonTerms);
-
-    var (intTerms, stringTerms) = GP.getValueTerminals(values)
-
-    var stringVarNames = List[String](s"r${maxReg + 1}")
-    var intVarNames = List[String](s"r${maxReg + 2}")
-
-    val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
-    for (((inputs, _), output) <- ioPairs) {
-      var scenario = List[VariableAssignment[_]]()
-      for ((ip, ix) <- inputs.zipWithIndex) ip match {
-        case Value.Numa(n) => {
-          intVarNames = s"i${ix}" :: intVarNames
-          scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toInteger(n))) :: scenario
-        }
-        case Value.Str(s) => {
-          stringVarNames = s"i${ix}" :: stringVarNames
-          scenario = (new StringVariableAssignment(s"i${ix}", s)) :: scenario
-        }
-      }
-      output match {
-        case Value.Numa(n) => trainingSet.put(scenario, new IntegerVariableAssignment("o1", TypeConversion.toInteger(n)))
-        case Value.Str(s) => trainingSet.put(scenario, new StringVariableAssignment("o1", s))
-      }
-    }
-
-    for (intVarName <- intVarNames.distinct.reverse) {
-      if (intVarName.startsWith("i"))
-        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
-      else
-        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, true)) :: intTerms
-    }
-
-    for (stringVarName <- stringVarNames.distinct.reverse) {
-      if (stringVarName.startsWith("i"))
-        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
-      else
-        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, true)) :: stringTerms
-    }
-
-    gpGenerator.addTerminals(intTerms)
-    gpGenerator.addTerminals(stringTerms)
-
-    Collections.reverse(IntegerVariableAssignment.values())
-
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 5, 2));
-
-    val best = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
-
-    Log.root.debug("Output training set: " + trainingSet)
-    Log.root.debug("  Int terminals: " + intTerms)
-    Log.root.debug("  Best function is: " + best)
-    Log.root.debug("Int values: " + IntegerVariableAssignment.values())
-
-    if (gp.isCorrect(best)) {
-      return Some((TypeConversion.toAExp(best), getTypes(best)))
-    } else {
-      return None
-    }
-  }
-
-  def getRegs(
+    def getRegs(
     types: Map[VName.vname, String],
     i: List[Value.value],
     f: AExp.aexp[VName.vname],

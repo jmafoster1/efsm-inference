@@ -49,11 +49,17 @@ definition merge_states_aux :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Righ
 definition merge_states :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "merge_states x y t = (if x > y then merge_states_aux x y t else merge_states_aux y x t)"
 
-lemma finfun_update_get: "f(a $:= b) $ c = (if c = a then b else f $ c)"
-  by simp
-
 lemma merge_states_symmetry: "merge_states x y t = merge_states y x t"
   by (simp add: merge_states_def)
+
+lemma merge_state_self: "merge_states s s t = t"
+  apply (simp add: merge_states_def merge_states_aux_def)
+  by force
+
+lemma merge_states_self_simp [code]:
+  "merge_states x y t = (if x = y then t else if x > y then merge_states_aux x y t else merge_states_aux y x t)"
+  apply (simp add: merge_states_def merge_states_aux_def)
+  by force
 
 (* declare[[show_types,show_sorts]] *)
 
@@ -407,7 +413,7 @@ definition insert_transition :: "tids \<Rightarrow> cfstate \<Rightarrow> cfstat
   )"
 
 definition make_distinct :: "iEFSM \<Rightarrow> iEFSM" where
-  "make_distinct e = fold (\<lambda>(uid, (from, to), t) acc. insert_transition uid from to t acc) (sorted_list_of_fset e) {||}"
+  "make_distinct e = ffold_ord (\<lambda>(uid, (from, to), t) acc. insert_transition uid from to t acc) e {||}"
 
 \<comment> \<open>When we replace one transition with another, we need to merge their uids to keep track of which\<close>
 \<comment> \<open>transition accounts for which event in the original traces                                     \<close>
@@ -447,6 +453,21 @@ definition merge_transitions :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \
 definition outgoing_transitions_from :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> transition fset" where
   "outgoing_transitions_from e s = fimage (\<lambda>(_, _, t). t) (ffilter (\<lambda>(_, (orig, _), _). orig = s) e)"
 
+fun bool2nat :: "bool \<Rightarrow> nat" where
+  "bool2nat True = 1" |
+  "bool2nat False = 0"
+
+definition score_transitions :: "transition \<Rightarrow> transition \<Rightarrow> nat" where
+  "score_transitions t1 t2 = (
+    if Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) then
+      bool2nat (t1 = t2) + card ((set (Guard t2)) \<inter> (set (Guard t2))) + card ((set (Updates t2)) \<inter> (set (Updates t2))) + card ((set (Outputs t2)) \<inter> (set (Outputs t2)))
+    else
+      0
+  )"
+
+definition order_nondeterministic_pairs :: "nondeterministic_pair fset \<Rightarrow> nondeterministic_pair list" where
+  "order_nondeterministic_pairs s = map snd (sorted_list_of_fset (fimage (\<lambda>s. let (_, _, (t1, _), (t2, _)) = s in (score_transitions t1 t2, s)) s))"
+
 (* resolve_nondeterminism - tries dest resolve nondeterminism in a given iEFSM                      *)
 (* @param ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) - a list of nondeterministic pairs where
           from - nat - the state from which t\<^sub>1 and t\<^sub>2 eminate
@@ -462,31 +483,33 @@ definition outgoing_transitions_from :: "iEFSM \<Rightarrow> cfstate \<Rightarro
 (* @param m       - an update modifier function which tries dest generalise transitions             *)
 (* @param check - a function which takes an EFSM and returns a bool dest ensure that certain
                   properties hold in the new iEFSM                                                *)
-function resolve_nondeterminism :: "(cfstate \<times> cfstate) list \<Rightarrow> nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
-  "resolve_nondeterminism _ [] _ new _ check np = (if deterministic new np \<and> check (tm new) then Some new else None)" |
+function resolve_nondeterminism :: "(cfstate \<times> cfstate) set \<Rightarrow> nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
+  "resolve_nondeterminism _ [] _ newEFSM _ check np = (
+      if deterministic newEFSM np \<and> check (tm newEFSM) then Some newEFSM else None)" |
   "resolve_nondeterminism closed ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) oldEFSM newEFSM m check np = (
-    if (dest\<^sub>1, dest\<^sub>2) \<in> set closed then
+    if (dest\<^sub>1, dest\<^sub>2) \<in> closed then
       None
     else
     let destMerge = merge_states dest\<^sub>1 dest\<^sub>2 newEFSM in
     case merge_transitions oldEFSM newEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m np of
-      None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np |
+      None \<Rightarrow> resolve_nondeterminism ({(dest\<^sub>1, dest\<^sub>2), (dest\<^sub>2, dest\<^sub>1)} \<union> closed) ss oldEFSM newEFSM m check np |
       Some new \<Rightarrow> (
-        let newScores = sorted_list_of_fset (np new) in 
-        if (size new, size (S new), length (newScores)) < (size newEFSM, size (S newEFSM), length (ss)) then
+        let newScores = order_nondeterministic_pairs (np new) in 
+        if (size new, size (S new), size (newScores)) < (size newEFSM, size (S newEFSM), size ss) then
           case resolve_nondeterminism closed newScores oldEFSM new m check np of
             Some new' \<Rightarrow> Some new' |
-            None \<Rightarrow> resolve_nondeterminism ((dest\<^sub>1, dest\<^sub>2)#closed) ss oldEFSM newEFSM m check np
+            None \<Rightarrow> resolve_nondeterminism ({(dest\<^sub>1, dest\<^sub>2), (dest\<^sub>2, dest\<^sub>1)} \<union> closed) ss oldEFSM newEFSM m check np
         else
           None
       )
-)"
+  )"
      apply (clarify, metis neq_Nil_conv prod_cases3 surj_pair)
   by auto
 termination
   by (relation "measures [\<lambda>(_, _, _, newEFSM, _). size newEFSM,
                           \<lambda>(_, _, _, newEFSM, _). size (S newEFSM),
-                          \<lambda>(_, ss, _, _, _). length ss]", auto)
+                          \<lambda>(_, ss, _, _, _). size ss]", auto)
+
 
 (* Merge - tries dest merge two states in a given iEFSM and resolve the resulting nondeterminism    *)
 (* @param e     - an iEFSM                                                                        *)
@@ -501,21 +524,7 @@ definition merge :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> upd
       None 
     else 
       let e' = make_distinct (merge_states s\<^sub>1 s\<^sub>2 e) in
-      resolve_nondeterminism [] (sorted_list_of_fset (np e')) e e' m check np 
-  )"
-
-(* inference_step - attempt dest carry out a single step of the inference process by merging the    *)
-(* @param e - an iEFSM dest be generalised                                                          *)
-(* @param ((s, s1, s2)#t) - a list of triples of the form (score, state, state) dest be merged      *)
-(* @param m     - an update modifier function which tries dest generalise transitions               *)
-(* @param check - a function which takes an EFSM and returns a bool dest ensure that certain
-                  properties hold in the new iEFSM                                                *)
-fun inference_step :: "iEFSM \<Rightarrow> score list \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
-  "inference_step _ [] _ _ _ = None" |
-  "inference_step e (h#t) m check np = (
-     case merge e (S1 h) (S2 h) m check np of
-       Some new \<Rightarrow> Some new |
-       None \<Rightarrow> inference_step e t m check np
+      resolve_nondeterminism {} (order_nondeterministic_pairs (np e')) e e' m check np 
   )"
 
 (* We want to sort first by score (highest to lowest) and then by state pairs (lowest to highest) *)
@@ -535,6 +544,29 @@ instance
   by auto
 end
 
+(* inference_step - attempt dest carry out a single step of the inference process by merging the  *)
+(* @param e - an iEFSM dest be generalised                                                        *)
+(* @param ((s, s1, s2)#t) - a list of triples of the form (score, state, state) dest be merged    *)
+(* @param m     - an update modifier function which tries dest generalise transitions             *)
+(* @param check - a function which takes an EFSM and returns a bool dest ensure that certain
+                  properties hold in the new iEFSM                                                *)
+function inference_step :: "iEFSM \<Rightarrow> score fset \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option" where
+  "inference_step e s m check np = (
+     if s = {||} then None else
+     let
+      h = fMin s;
+      t = s - {|h|}
+    in
+    case merge e (S1 h) (S2 h) m check np of
+      Some new \<Rightarrow> Some new |
+      None \<Rightarrow> inference_step e t m check np
+  )"
+  by auto
+termination
+  apply (relation "measures [\<lambda>(a, s, ab, ac, b). size s]")
+   apply simp
+  by (simp add: card_minus_fMin)
+
 (* Takes an iEFSM and iterates inference_step until no further states can be successfully merged  *)
 (* @param e - an iEFSM dest be generalised                                                        *)
 (* @param r - a strategy dest identify and prioritise pairs of states dest merge                  *)
@@ -544,7 +576,7 @@ end
 function infer :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "infer k e r m check np = (
     let scores = if k = 1 then score_1 e r else (k_score k e r) in
-    case inference_step e (sorted_list_of_fset scores) m check np of
+    case inference_step e scores m check np of
       None \<Rightarrow> e |
       Some new \<Rightarrow> if (S new) |\<subset>| (S e) then infer k new r m check np else e
   )"

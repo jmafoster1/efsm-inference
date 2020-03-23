@@ -30,7 +30,7 @@ fun insert_increment :: update_modifier where
           initialised = replace_transitions new (sorted_list_of_fset initialisedTrans);
           newEFSM = (replace_transitions new [(t1ID, newT1), (t2ID, newT2)])
           in 
-          resolve_nondeterminism [] (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
+          resolve_nondeterminism {} (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
      else
        None
      )"
@@ -64,7 +64,7 @@ fun insert_increment_2 :: update_modifier where
           initialised = replace_transitions new (sorted_list_of_fset initialisedTrans);
           newEFSM = (struct_replace_all (struct_replace_all initialised t2 newT2) t1 newT1)
           in 
-          resolve_nondeterminism [] (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
+          resolve_nondeterminism {} (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
      else
        None
      )"
