@@ -460,7 +460,7 @@ fun bool2nat :: "bool \<Rightarrow> nat" where
 definition score_transitions :: "transition \<Rightarrow> transition \<Rightarrow> nat" where
   "score_transitions t1 t2 = (
     if Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) then
-      bool2nat (t1 = t2) + card ((set (Guard t2)) \<inter> (set (Guard t2))) + card ((set (Updates t2)) \<inter> (set (Updates t2))) + card ((set (Outputs t2)) \<inter> (set (Outputs t2)))
+      1 + bool2nat (t1 = t2) + card ((set (Guard t2)) \<inter> (set (Guard t2))) + card ((set (Updates t2)) \<inter> (set (Updates t2))) + card ((set (Outputs t2)) \<inter> (set (Outputs t2)))
     else
       0
   )"

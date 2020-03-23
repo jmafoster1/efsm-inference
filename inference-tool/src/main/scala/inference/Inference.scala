@@ -2021,8 +2021,8 @@ object Inference {
       Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
         Transition.Arity[Unit](t2))) && (Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](t1)).par.length),
           Nat.Nata((Transition.Outputs[Unit](t2)).par.length)))))
-      Nat.plus_nata(Nat.plus_nata(Nat.plus_nata(bool2nat(Transition.equal_transition_exta[Unit](t1,
-      t2)),
+      Nat.plus_nata(Nat.plus_nata(Nat.plus_nata(Nat.plus_nata(Nat.Nata((1)),
+      bool2nat(Transition.equal_transition_exta[Unit](t1, t2))),
       Finite_Set.card[GExp.gexp[VName.vname]](Set.inf_set[GExp.gexp[VName.vname]](Set.seta[GExp.gexp[VName.vname]](Transition.Guard[Unit](t2)),
         Set.seta[GExp.gexp[VName.vname]](Transition.Guard[Unit](t2))))),
       Finite_Set.card[(Nat.nat, AExp.aexp[VName.vname])](Set.inf_set[(Nat.nat, AExp.aexp[VName.vname])](Set.seta[(Nat.nat, AExp.aexp[VName.vname])](Transition.Updates[Unit](t2)),
@@ -2222,11 +2222,11 @@ object Inference {
       case (closed, (from, ((dest_1, dest_2), ((t_1, u_1), (t_2, u_2)))) :: ss, oldEFSM, newEFSM, m, check, np) =>
         (if (Set.member[(Nat.nat, Nat.nat)]((dest_1, dest_2), closed)) None
         else {
-          println(f"Merging states $dest_1 and $dest_2")
+          Log.root.debug(f"Merging states $dest_1 and $dest_2")
           val destMerge: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] = merge_states(dest_1, dest_2, newEFSM);
           (merge_transitions(oldEFSM, newEFSM, destMerge, t_1, u_1, t_2, u_2, m, np) match {
             case None => {
-              println("  Failed to resolve")
+              Log.root.debug("  Failed to resolve")
               resolve_nondeterminism(Set.sup_set[(Nat.nat, Nat.nat)](Set.insert[(Nat.nat, Nat.nat)]((dest_1, dest_2),
                 Set.insert[(Nat.nat, Nat.nat)]((dest_2, dest_1),
                   Set.bot_set[(Nat.nat, Nat.nat)])),
@@ -2236,7 +2236,7 @@ object Inference {
 
             case Some(newa) => {
               val newScores: List[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))] = order_nondeterministic_pairs(np(newa));
-              println(f"  merged transitions OK - ${newScores.length} nondeterministic pairs, ${FSet.size_fset(S(newa))} states, ${FSet.size_fset(newa)} transitions")
+              Log.root.debug(f"  merged transitions OK - ${newScores.length} nondeterministic pairs, ${FSet.size_fset(S(newa))} states, ${FSet.size_fset(newa)} transitions")
               (if (Product_Lexorder.less_prod[Nat.nat, (Nat.nat, Nat.nat)]((FSet.size_fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))](newa),
                 (FSet.size_fset[Nat.nat](S(newa)),
                   Nat.Nata(newScores.par.length))),
@@ -5145,13 +5145,8 @@ object SelectionStrategies {
     e: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]): Nat.nat =
     {
       val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t1ID)
-      val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t2ID);
-      Nat.plus_nata(Inference.bool2nat((Transition.Label[Unit](t1) ==
-        Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
-          Transition.Arity[Unit](t2))) && (Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](t1)).par.length),
-            Nat.Nata((Transition.Outputs[Unit](t2)).par.length))))),
-        Inference.bool2nat(Transition.equal_transition_exta[Unit](t1,
-          t2)))
+      val a: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t2ID);
+      Inference.score_transitions(t1, a)
     }
 
   def naive_score_comprehensive(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
