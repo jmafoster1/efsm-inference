@@ -518,7 +518,7 @@ fun merge_if_same :: "iEFSM \<Rightarrow> log \<Rightarrow> (nat \<times> nat) l
 definition merge_regs :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
   "merge_regs e l = (
     let
-      regs = (\<Union> (fset (fimage (\<lambda> (_, _, t). enumerate_registers t) e)));
+      regs = all_regs e;
       reg_pairs = sorted_list_of_set (Set.filter (\<lambda>(r1, r2). r1 < r2) (regs \<times> regs))
     in
     merge_if_same e l reg_pairs

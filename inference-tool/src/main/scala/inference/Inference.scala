@@ -2207,6 +2207,9 @@ object Inference {
     else (if (Nat.less_nat(y, x)) merge_states_aux(x, y, t)
     else merge_states_aux(y, x, t)))
 
+  var failedTransitionMerges = List[(Transition.transition_ext[Unit], Transition.transition_ext[Unit])]()
+  var failedStateMerges = List[(Nat.nat, Nat.nat)]()
+
   def resolve_nondeterminism(uu: Set.set[(Nat.nat, Nat.nat)],
     x1: List[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))],
     uv: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
@@ -2220,13 +2223,14 @@ object Inference {
           Some[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]](newEFSM)
         else None)
       case (closed, (from, ((dest_1, dest_2), ((t_1, u_1), (t_2, u_2)))) :: ss, oldEFSM, newEFSM, m, check, np) =>
-        (if (Set.member[(Nat.nat, Nat.nat)]((dest_1, dest_2), closed)) None
+        (if (failedStateMerges.contains(dest_1, dest_2) || failedTransitionMerges.contains(t_1, t_2)) None
         else {
           Log.root.debug(f"Merging states $dest_1 and $dest_2")
           val destMerge: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] = merge_states(dest_1, dest_2, newEFSM);
           (merge_transitions(oldEFSM, newEFSM, destMerge, t_1, u_1, t_2, u_2, m, np) match {
             case None => {
               Log.root.debug("  Failed to resolve")
+              failedTransitionMerges = (t_1, t_2)::(t_2, t_2)::failedTransitionMerges
               resolve_nondeterminism(Set.sup_set[(Nat.nat, Nat.nat)](Set.insert[(Nat.nat, Nat.nat)]((dest_1, dest_2),
                 Set.insert[(Nat.nat, Nat.nat)]((dest_2, dest_1),
                   Set.bot_set[(Nat.nat, Nat.nat)])),
@@ -2243,18 +2247,22 @@ object Inference {
                 (FSet.size_fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))](newEFSM),
                   (FSet.size_fset[Nat.nat](S(newEFSM)),
                     Nat.Nata(ss.par.length)))))
-                (resolve_nondeterminism(closed, newScores, oldEFSM,
-                newa, m, check, np) match {
-                  case None =>
+                (resolve_nondeterminism(closed, newScores, oldEFSM, newa, m, check, np) match {
+                  case None => {
+                    failedStateMerges = (dest_1, dest_2)::(dest_2, dest_1)::failedStateMerges
                     resolve_nondeterminism(Set.sup_set[(Nat.nat, Nat.nat)](Set.insert[(Nat.nat, Nat.nat)]((dest_1, dest_2),
                       Set.insert[(Nat.nat, Nat.nat)]((dest_2, dest_1),
                         Set.bot_set[(Nat.nat, Nat.nat)])),
                       closed),
                       ss, oldEFSM, newEFSM, m, check, np)
+                    }
                   case Some(a) =>
                     Some[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]](a)
                 })
-              else None)
+              else {
+                failedStateMerges = (dest_1, dest_2)::(dest_2, dest_1)::failedStateMerges
+                None
+              })
             }
           })
         })
@@ -2265,12 +2273,14 @@ object Inference {
     m: (List[Nat.nat]) => (List[Nat.nat]) => Nat.nat => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) => ((FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]) => Option[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]],
     check: (FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]) => Boolean,
     np: (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]) => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]): Option[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]] =
-    (if (Nat.equal_nata(s_1, s_2)) None
+    (if (Nat.equal_nata(s_1, s_2) || failedStateMerges.contains((s_1, s_2))) None
     else {
       val ea: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] = make_distinct(merge_states(s_1, s_2, e));
-      resolve_nondeterminism(Set.bot_set[(Nat.nat, Nat.nat)],
-        order_nondeterministic_pairs(np(ea)), e, ea,
-        m, check, np)
+      val res = resolve_nondeterminism(Set.bot_set[(Nat.nat, Nat.nat)], order_nondeterministic_pairs(np(ea)), e, ea, m, check, np)
+      if (res == None) {
+        failedStateMerges = (s_1, s_2)::(s_2, s_2)::failedStateMerges
+      }
+      return res
     })
 
   def step_score(xs: List[(List[Nat.nat], List[Nat.nat])],
