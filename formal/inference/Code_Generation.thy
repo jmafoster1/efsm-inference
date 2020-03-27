@@ -288,10 +288,11 @@ lemma [code]: "Store_Reuse.is_generalisation_of x xa xb xc = is_generalisation_o
 definition iEFSM2dot :: "iEFSM \<Rightarrow> nat \<Rightarrow> unit" where
   "iEFSM2dot _ _ = ()"
 
-definition logStates :: "nat \<Rightarrow> nat \<Rightarrow> unit" where
+definition logStates :: "iEFSM \<Rightarrow> nat \<Rightarrow> unit" where
   "logStates _ _ = ()"
 
 (* This is the infer function but with logging *)
+(*
 function infer_with_log :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "infer_with_log stepNo k e r m check np = (
     let scores = if k = 1 then score_1 e r else (k_score k e r) in
@@ -304,11 +305,28 @@ function infer_with_log :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarr
           infer_with_log (stepNo + 1) k new r m check np
         else e
   )"
+*)
+
+function infer_with_log :: "(cfstate \<times> cfstate) set \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
+  "infer_with_log failedMerges k e r m check np = (
+    let scores = if k = 1 then score_1 e r else (k_score k e r) in
+    case inference_step failedMerges e (ffilter (\<lambda>s. (S1 s, S2 s) \<notin> failedMerges) scores) m check np of
+      (None, _) \<Rightarrow> e |
+      (Some new, failedMerges) \<Rightarrow> if (S new) |\<subset>| (S e) then
+      let temp2 = logStates new (size (S e)) in
+      infer_with_log failedMerges k new r m check np else e
+  )"
   by auto
 termination
   apply (relation "measures [\<lambda>(_, _, e, _). size (S e)]")
    apply simp
   by (metis (no_types, lifting) case_prod_conv measures_less size_fsubset)
+
+lemma infer_empty: "infer f k {||} r m check np = {||}"
+  by (simp add: score_1_def S_def fprod_empty k_score_def)
+
+lemma [code]: "infer f k e r m check np = infer_with_log f k e r m check np"
+  sorry
 
 (* declare make_pta_fold [code] *)
 declare GExp.satisfiable_def [code del]
@@ -339,10 +357,6 @@ code_printing
   constant "show_nat" \<rightharpoonup> (Scala) "Code'_Numeral.integer'_of'_nat((_)).toString()"
   | constant "show_int" \<rightharpoonup> (Scala) "Code'_Numeral.integer'_of'_int((_)).toString()"
   | constant "join" \<rightharpoonup> (Scala) "_.mkString((_))"
-
-(* I'd ideally like to fix this at some point *)
-lemma [code]: "infer = infer_with_log 0"
-  sorry
 
 (*
   Mapping finfuns to Scala native Maps
@@ -396,7 +410,6 @@ lemma [code]: "directly_subsumes e1 e2 s1 s2 t1 t2  = (if t1 = t2 then True else
 
 export_code
   (* Essentials *)
-  try_heuristics
   try_heuristics_check
   learn
   nondeterministic

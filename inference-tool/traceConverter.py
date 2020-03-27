@@ -11,23 +11,23 @@ import json
 import random
 
 root = "/home/michael/eclipse-workspace/concurrency/"
-root = "/home/michael/Documents/ICSMEData/"
+#root = "/home/michael/Documents/ICSMEData/"
 
 newRoot = "/home/michael/Documents/efsm-inference/inference-tool/experimental-data/"
 
 numTraces = 30
 
-file = "new.log"
-file = "liftDoors2"
+file = "all.log"
+#file = "liftDoors2"
 
 outfile = "spaceInvaders"
-outfile = "liftDoors-2-"
+#outfile = "liftDoors-2-"
 
 outfile += str(numTraces)
 
 x = 0
-aliens = 1
-shields = 2
+shields = 1
+aliens = 2
 time = 0
 
 

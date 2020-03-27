@@ -8,354 +8,70 @@ win x:N aliens:N shields:N
 lose x:N aliens:N shields:N
 stop x:N aliens:N shields:N
 trace
-start 200 0 3
+start 200 3 0
+moveWest 200
 alienHit 0
-moveEast 200
-moveEast 250
-moveEast 300
-moveEast 350
-moveWest 400
-moveWest 350
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-moveEast 0
-moveEast 50
-moveEast 100
 moveEast 150
+moveEast 200
+shieldHit 3
 alienHit 1
-moveWest 200
-moveWest 150
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-moveWest 300
-shieldHit 2
 alienHit 2
 moveEast 250
 alienHit 3
+moveWest 300
+moveWest 250
+moveWest 200
+moveWest 150
 alienHit 4
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-alienHit 5
-moveWest 100
-moveWest 50
-alienHit 6
-moveEast 0
-moveEast 50
-moveEast 100
-moveEast 150
-alienHit 7
-moveEast 200
-moveEast 250
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-moveEast 0
-alienHit 8
-moveWest 50
-moveEast 0
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-moveEast 300
-moveEast 350
-moveWest 400
-alienHit 9
-shieldHit 1
-alienHit 10
-moveWest 350
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveEast 100
-shieldHit 0
 win 
-stop 150 11 0
+stop 100 2 5
 trace
-start 200 0 3
-alienHit 0
-moveEast 200
-moveEast 250
-moveEast 300
-moveWest 350
-moveWest 300
-moveWest 250
-moveWest 200
-moveEast 150
-moveEast 200
-alienHit 1
-moveWest 250
-moveWest 200
-moveEast 150
-moveEast 200
-moveEast 250
-moveEast 300
-shieldHit 2
-alienHit 2
-moveWest 350
-moveWest 300
-moveWest 250
+start 200 3 0
 moveWest 200
 moveWest 150
-moveWest 100
-moveWest 50
-shieldHit 1
-alienHit 3
-shieldHit 0
-lose 
-stop 0 4 0
-trace
-start 200 0 3
-alienHit 0
-moveWest 200
-moveWest 150
-moveWest 100
-alienHit 1
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-moveWest 250
-shieldHit 2
-alienHit 2
-shieldHit 1
-alienHit 3
-moveWest 200
-moveWest 150
-alienHit 4
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-moveWest 300
-moveWest 250
-moveEast 200
-moveEast 250
-alienHit 5
-moveWest 300
-shieldHit 0
-lose 
-stop 250 6 0
-trace
-start 200 0 3
-alienHit 0
-moveWest 200
-moveWest 150
-alienHit 1
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-moveEast 300
-moveWest 350
-alienHit 2
-alienHit 3
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-alienHit 4
-moveEast 0
-moveEast 50
-alienHit 5
 moveWest 100
 moveWest 50
 moveEast 0
 moveEast 50
 moveEast 100
 moveEast 150
-moveEast 200
-moveEast 250
-moveEast 300
-alienHit 6
-moveWest 350
-moveWest 300
-moveWest 250
 moveWest 200
-moveWest 150
-moveWest 100
-moveEast 50
-moveWest 100
-alienHit 7
-moveEast 50
-moveEast 100
+shieldHit 3
+alienHit 0
+alienHit 1
 moveEast 150
 moveEast 200
 moveEast 250
-moveEast 300
-shieldHit 2
-alienHit 8
-moveWest 350
-shieldHit 1
-alienHit 9
-moveEast 300
-shieldHit 0
+alienHit 2
+alienHit 3
+moveWest 300
+alienHit 4
 win 
-stop 350 10 0
+stop 250 2 5
 trace
-start 200 0 3
-alienHit 0
-moveWest 200
-moveEast 150
-alienHit 1
-moveEast 200
-alienHit 2
-moveEast 250
-moveEast 300
-moveWest 350
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-alienHit 3
-alienHit 4
-moveEast 0
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-moveEast 0
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-shieldHit 2
-alienHit 5
-moveEast 250
-moveEast 300
-moveWest 350
-moveWest 300
-moveEast 250
-moveEast 300
-shieldHit 1
-alienHit 6
-moveWest 350
-moveWest 300
-moveWest 250
-moveWest 200
-alienHit 7
-alienHit 8
-moveWest 150
-moveWest 100
-shieldHit 0
-win 
-stop 50 9 0
-trace
-start 200 0 3
+start 200 3 0
 alienHit 0
 moveWest 200
 moveWest 150
 moveWest 100
 moveWest 50
-moveEast 0
-moveEast 50
-moveWest 100
 alienHit 1
+moveEast 0
 moveEast 50
 moveEast 100
 moveEast 150
 moveEast 200
 moveEast 250
 moveEast 300
+shieldHit 3
 alienHit 2
 moveWest 350
 moveWest 300
 moveWest 250
 moveWest 200
 moveWest 150
-moveWest 100
-moveWest 50
-moveEast 0
-alienHit 3
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-moveEast 300
-alienHit 4
-moveWest 350
-moveWest 300
-moveWest 250
-moveEast 200
-moveEast 250
-moveEast 300
-alienHit 5
-moveWest 350
-moveWest 300
 shieldHit 2
-alienHit 6
-moveEast 250
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-moveEast 0
-shieldHit 1
-alienHit 7
-alienHit 8
-moveEast 50
-moveEast 100
-alienHit 9
-moveWest 150
-moveWest 100
-moveWest 50
-alienHit 10
-moveEast 0
-moveEast 50
-moveEast 100
-moveWest 150
-moveEast 100
-alienHit 11
-moveEast 150
-moveEast 200
-alienHit 12
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-alienHit 13
-moveEast 0
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-alienHit 14
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-alienHit 15
-moveWest 50
-moveEast 0
-moveEast 50
+alienHit 3
 moveEast 100
 moveEast 150
 moveEast 200
@@ -364,716 +80,214 @@ moveEast 300
 moveEast 350
 moveWest 400
 moveWest 350
-shieldHit 0
-win 
-stop 300 16 0
-trace
-start 200 0 3
-alienHit 0
-moveEast 200
-moveEast 250
-moveEast 300
-moveEast 350
-moveWest 400
-moveWest 350
 moveWest 300
 moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-moveEast 0
-shieldHit 2
-alienHit 1
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-moveEast 300
 shieldHit 1
-alienHit 2
-moveWest 350
-moveWest 300
-moveEast 250
-moveEast 300
-moveWest 350
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-alienHit 3
-shieldHit 0
 lose 
-stop 50 4 0
+stop 200 0 4
 trace
-start 200 0 3
-alienHit 0
+start 200 3 0
 moveWest 200
 moveWest 150
-moveWest 100
-moveEast 50
-alienHit 1
-alienHit 2
 moveEast 100
-alienHit 3
-moveEast 150
-moveEast 200
+shieldHit 3
+alienHit 0
 shieldHit 2
-alienHit 4
-moveWest 250
-moveWest 200
-moveEast 150
-moveEast 200
-alienHit 5
-moveWest 250
-moveWest 200
-alienHit 6
-moveEast 150
-shieldHit 1
-alienHit 7
-alienHit 8
-moveEast 200
-moveEast 250
-moveWest 300
-moveWest 250
-moveWest 200
+alienHit 1
 moveWest 150
 moveWest 100
-shieldHit 0
+moveWest 50
+alienHit 2
+alienHit 3
+moveEast 0
+alienHit 4
 win 
-stop 50 9 0
+stop 50 1 5
 trace
-start 200 0 3
-alienHit 0
+start 200 3 0
 moveEast 200
 moveEast 250
-shieldHit 2
-alienHit 1
 moveWest 300
 moveWest 250
 moveWest 200
 moveWest 150
-alienHit 2
+shieldHit 3
+alienHit 0
 moveWest 100
 moveWest 50
 moveEast 0
-moveEast 50
-moveWest 100
-shieldHit 1
+shieldHit 2
+alienHit 1
+alienHit 2
 alienHit 3
-alienHit 4
-alienHit 5
 moveEast 50
-moveEast 100
-moveWest 150
 moveEast 100
 moveEast 150
 moveEast 200
-shieldHit 0
+moveEast 250
+shieldHit 1
 lose 
-stop 250 6 0
+stop 300 0 4
 trace
-start 200 0 3
+start 200 3 0
 alienHit 0
-moveWest 200
-moveWest 150
-moveWest 100
-moveEast 50
-moveEast 100
+moveEast 200
+moveEast 250
 alienHit 1
+moveWest 300
+moveWest 250
+moveWest 200
+moveWest 150
 alienHit 2
-moveEast 150
-moveEast 200
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveEast 50
 moveEast 100
 moveEast 150
+moveEast 200
+moveEast 250
+moveEast 300
+shieldHit 3
 alienHit 3
-alienHit 4
-moveWest 200
-moveWest 150
-moveWest 100
-moveEast 50
-moveEast 100
-moveEast 150
-alienHit 5
-alienHit 6
-moveWest 200
-moveEast 150
-moveEast 200
-moveEast 250
-moveEast 300
-moveEast 350
-moveWest 400
 moveWest 350
 moveWest 300
 moveWest 250
 moveWest 200
 moveWest 150
-moveWest 100
-moveEast 50
 moveEast 100
-alienHit 7
-moveWest 150
-moveWest 100
-alienHit 8
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-alienHit 9
-alienHit 10
-moveEast 0
 shieldHit 2
-alienHit 11
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-moveEast 300
-moveEast 350
-moveWest 400
-moveWest 350
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-moveEast 0
-shieldHit 1
-alienHit 12
-moveEast 50
-moveEast 100
-moveEast 150
-alienHit 13
-shieldHit 0
+alienHit 4
 win 
-stop 200 14 0
+stop 150 1 5
 trace
-start 200 0 3
+start 200 3 0
+moveWest 200
+moveWest 150
+moveWest 100
 alienHit 0
+moveEast 50
+moveEast 100
+moveEast 150
+moveEast 200
+moveEast 250
+alienHit 1
+shieldHit 3
+alienHit 2
+moveWest 300
+moveWest 250
+moveWest 200
+moveWest 150
+moveWest 100
+moveWest 50
+moveEast 0
+moveEast 50
+moveEast 100
+moveEast 150
 moveEast 200
 moveEast 250
 moveEast 300
-moveEast 350
-moveWest 400
-moveWest 350
-moveWest 300
-alienHit 1
-moveWest 250
-moveWest 200
-alienHit 2
-moveWest 150
-moveWest 100
 shieldHit 2
 alienHit 3
-moveEast 50
-moveEast 100
-moveEast 150
-moveWest 200
-moveWest 150
-moveEast 100
-moveEast 150
-moveEast 200
-shieldHit 1
 alienHit 4
-moveWest 250
-shieldHit 0
-lose 
-stop 200 5 0
-trace
-start 200 0 3
-alienHit 0
-alienHit 1
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-moveEast 0
-moveEast 50
-moveWest 100
-moveWest 50
-moveEast 0
-shieldHit 2
-alienHit 2
-alienHit 3
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-shieldHit 1
-alienHit 4
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-moveEast 0
-moveEast 50
-shieldHit 0
-lose 
-stop 100 5 0
-trace
-start 200 0 3
-moveEast 200
-moveEast 250
-moveEast 300
-moveEast 350
-moveWest 400
-moveWest 350
-alienHit 0
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveEast 100
-moveEast 150
-alienHit 1
-alienHit 2
-moveWest 200
-moveWest 150
-moveWest 100
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-moveEast 300
-alienHit 3
-moveEast 350
-alienHit 4
-moveWest 400
-moveWest 350
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-alienHit 5
-moveEast 0
-moveEast 50
-alienHit 6
-shieldHit 2
-alienHit 7
-moveEast 100
-alienHit 8
-moveWest 150
-moveWest 100
-moveWest 50
-moveEast 0
-moveEast 50
-moveEast 100
-alienHit 9
-moveEast 150
-moveEast 200
-moveEast 250
-moveEast 300
-moveEast 350
-moveWest 400
-moveWest 350
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-moveEast 0
-moveEast 50
-alienHit 10
-moveEast 100
-alienHit 11
-alienHit 12
-moveEast 150
-moveEast 200
-moveEast 250
-moveEast 300
-moveEast 350
-alienHit 13
-moveWest 400
-moveWest 350
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-moveEast 0
-moveEast 50
-alienHit 14
-alienHit 15
-moveWest 100
-moveWest 50
-moveEast 0
-moveEast 50
-moveEast 100
-moveEast 150
-shieldHit 1
-alienHit 16
-moveWest 200
-moveWest 150
-shieldHit 0
 win 
-stop 100 17 0
+stop 350 1 5
 trace
-start 200 0 3
-alienHit 0
-moveWest 200
-moveEast 150
-moveEast 200
-alienHit 1
-moveWest 250
-alienHit 2
+start 200 3 0
 moveEast 200
 moveEast 250
-shieldHit 2
+moveEast 300
+moveWest 350
+moveWest 300
+moveEast 250
+alienHit 0
+moveWest 300
+moveWest 250
+alienHit 1
+moveEast 200
+moveEast 250
+alienHit 2
 alienHit 3
 moveWest 300
 moveWest 250
-moveWest 200
-moveWest 150
-shieldHit 1
 alienHit 4
-moveWest 100
-moveWest 50
-shieldHit 0
-lose 
-stop 0 5 0
-trace
-start 200 0 3
-alienHit 0
-moveEast 200
-moveEast 250
-alienHit 1
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveEast 50
-moveEast 100
-moveEast 150
-moveWest 200
-moveWest 150
-moveEast 100
-moveEast 150
-alienHit 2
-moveEast 200
-alienHit 3
-moveWest 250
-moveWest 200
-shieldHit 2
-alienHit 4
-moveWest 150
-moveWest 100
-moveWest 50
-alienHit 5
-alienHit 6
-moveEast 0
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-moveEast 300
-moveEast 350
-moveWest 400
-moveWest 350
-moveWest 300
-alienHit 7
-alienHit 8
-alienHit 9
-moveWest 250
-moveWest 200
-moveEast 150
-moveEast 200
-moveWest 250
-shieldHit 1
-alienHit 10
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-alienHit 11
-alienHit 12
-moveEast 0
-moveEast 50
-moveEast 100
-alienHit 13
-moveWest 150
-moveWest 100
-moveWest 50
-moveEast 0
-moveEast 50
-moveEast 100
-moveWest 150
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-moveEast 300
-alienHit 14
-moveEast 350
-alienHit 15
-moveWest 400
-moveWest 350
-alienHit 16
-moveWest 300
-moveWest 250
-moveEast 200
-moveEast 250
-moveEast 300
-moveWest 350
-shieldHit 0
 win 
-stop 300 17 0
+stop 200 3 5
 trace
-start 200 0 3
+start 200 3 0
+moveWest 200
+moveWest 150
+moveEast 100
+moveEast 150
+moveEast 200
+moveEast 250
+shieldHit 3
 alienHit 0
-moveWest 200
-moveWest 150
-alienHit 1
-moveEast 100
-moveEast 150
-moveWest 200
-moveWest 150
-moveWest 100
-alienHit 2
-moveEast 50
-alienHit 3
-moveEast 100
-moveEast 150
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-moveEast 0
-moveEast 50
-moveWest 100
-shieldHit 2
-alienHit 4
-alienHit 5
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-shieldHit 1
-alienHit 6
-moveWest 250
-moveWest 200
-moveWest 150
-shieldHit 0
-lose 
-stop 100 7 0
-trace
-start 200 0 3
-alienHit 0
-alienHit 1
-moveEast 200
-alienHit 2
-moveWest 250
-alienHit 3
-moveWest 200
-moveWest 150
-moveWest 100
-shieldHit 2
-alienHit 4
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-moveEast 300
-moveEast 350
-moveWest 400
-moveWest 350
-moveWest 300
-moveWest 250
-moveWest 200
-moveEast 150
-shieldHit 1
-alienHit 5
-moveEast 200
-moveEast 250
-shieldHit 0
-lose 
-stop 300 6 0
-trace
-start 200 0 3
-alienHit 0
-moveEast 200
-moveEast 250
-moveWest 300
-alienHit 1
-moveEast 250
-shieldHit 2
-alienHit 2
-shieldHit 1
-alienHit 3
 moveWest 300
 moveWest 250
 moveWest 200
 moveWest 150
 moveWest 100
 moveWest 50
-moveEast 0
-shieldHit 0
-lose 
-stop 50 4 0
-trace
-start 200 0 3
-alienHit 0
-moveWest 200
-moveWest 150
-alienHit 1
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-moveEast 300
-moveEast 350
-moveWest 400
-moveWest 350
-moveEast 300
 shieldHit 2
-alienHit 2
+alienHit 1
+moveEast 0
 shieldHit 1
-alienHit 3
-moveWest 350
-moveWest 300
-moveWest 250
-moveWest 200
-moveEast 150
-moveEast 200
-moveWest 250
-shieldHit 0
 lose 
-stop 200 4 0
+stop 50 0 2
 trace
-start 200 0 3
-alienHit 0
-moveEast 200
-moveEast 250
-moveWest 300
-moveWest 250
+start 200 3 0
 moveWest 200
 moveWest 150
 moveWest 100
 moveWest 50
-alienHit 1
 moveEast 0
 moveEast 50
 moveEast 100
 moveEast 150
-moveEast 200
-moveWest 250
-moveWest 200
-moveEast 150
-moveEast 200
-moveWest 250
-moveWest 200
-moveEast 150
-moveEast 200
-moveWest 250
-shieldHit 2
-alienHit 2
-alienHit 3
-shieldHit 1
-alienHit 4
-moveWest 200
-moveWest 150
-alienHit 5
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-moveEast 300
-moveEast 350
-moveWest 400
-moveWest 350
-shieldHit 0
-lose 
-stop 300 6 0
-trace
-start 200 0 3
 alienHit 0
-moveWest 200
-moveWest 150
-moveWest 100
-alienHit 1
-moveEast 50
-moveEast 100
-moveEast 150
-alienHit 2
 moveEast 200
-moveWest 250
-shieldHit 2
-alienHit 3
-alienHit 4
-alienHit 5
-moveWest 200
-moveWest 150
-moveWest 100
-shieldHit 1
-alienHit 6
-moveWest 50
-alienHit 7
-alienHit 8
-moveEast 0
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-alienHit 9
 moveEast 250
 moveEast 300
-moveEast 350
-alienHit 10
-moveWest 400
-alienHit 11
+alienHit 1
 moveWest 350
 moveWest 300
 moveWest 250
 moveWest 200
+alienHit 2
 moveEast 150
-shieldHit 0
+moveEast 200
+alienHit 3
+moveWest 250
+moveWest 200
+shieldHit 3
+alienHit 4
 win 
-stop 200 12 0
+stop 150 2 5
 trace
-start 200 0 3
-alienHit 0
+start 200 3 0
 moveWest 200
 moveWest 150
 moveWest 100
-moveWest 50
-alienHit 1
-moveEast 0
 moveEast 50
+moveEast 100
+moveWest 150
+moveWest 100
+moveEast 50
+shieldHit 3
+alienHit 0
 moveEast 100
 moveEast 150
 moveEast 200
+shieldHit 2
+alienHit 1
 alienHit 2
 moveEast 250
 moveWest 300
 moveWest 250
 moveWest 200
 moveWest 150
+moveWest 100
+moveWest 50
+moveEast 0
+moveEast 50
+alienHit 3
 moveEast 100
 moveEast 150
 moveEast 200
@@ -1081,239 +295,108 @@ moveEast 250
 moveEast 300
 moveEast 350
 moveWest 400
-moveWest 350
-moveWest 300
-alienHit 3
+alienHit 4
+win 
+stop 350 1 5
+trace
+start 200 3 0
+moveWest 200
+moveWest 150
+alienHit 0
+moveEast 100
+moveEast 150
+moveEast 200
 moveEast 250
 moveEast 300
-moveWest 350
-shieldHit 2
-alienHit 4
-moveEast 300
 moveEast 350
-alienHit 5
+shieldHit 3
+alienHit 1
 moveWest 400
 moveWest 350
 moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-alienHit 6
-moveWest 100
-moveWest 50
-moveEast 0
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-alienHit 7
 moveEast 250
-moveEast 300
-alienHit 8
-moveEast 350
-moveWest 400
-moveWest 350
-shieldHit 1
-alienHit 9
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveEast 50
-moveEast 100
-moveWest 150
-shieldHit 0
-win 
-stop 100 10 0
-trace
-start 200 0 3
-alienHit 0
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-moveEast 0
-moveEast 50
-moveEast 100
-alienHit 1
-moveEast 150
-moveEast 200
-alienHit 2
-moveEast 250
-moveEast 300
-alienHit 3
-moveWest 350
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-alienHit 4
-moveEast 100
 shieldHit 2
-alienHit 5
-alienHit 6
-shieldHit 1
-alienHit 7
-moveEast 150
-alienHit 8
-moveEast 200
-moveEast 250
+alienHit 2
 moveWest 300
-shieldHit 0
-win 
-stop 250 9 0
-trace
-start 200 0 3
-alienHit 0
-moveWest 200
-moveWest 150
-moveEast 100
-moveEast 150
-moveWest 200
-alienHit 1
-moveEast 150
+moveWest 250
 moveEast 200
 moveEast 250
 moveEast 300
-alienHit 2
-moveWest 350
-shieldHit 2
-alienHit 3
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
 shieldHit 1
-alienHit 4
-alienHit 5
-alienHit 6
-moveEast 0
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-moveWest 250
-moveWest 200
-moveWest 150
-moveWest 100
-moveWest 50
-moveEast 0
-moveEast 50
-moveWest 100
-moveWest 50
-alienHit 7
-moveEast 0
-shieldHit 0
-win 
-stop 50 8 0
-trace
-start 200 0 3
-alienHit 0
-moveWest 200
-moveWest 150
-moveEast 100
-moveEast 150
-moveWest 200
-shieldHit 2
-alienHit 1
-moveWest 150
-moveWest 100
-moveWest 50
-alienHit 2
-moveEast 0
-moveEast 50
-shieldHit 1
-alienHit 3
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-shieldHit 0
 lose 
-stop 300 4 0
+stop 350 0 3
 trace
-start 200 0 3
+start 200 3 0
+moveWest 200
+moveWest 150
+moveWest 100
+moveEast 50
+moveEast 100
+moveWest 150
 alienHit 0
+alienHit 1
+alienHit 2
+moveEast 100
+moveEast 150
+moveWest 200
+moveWest 150
+moveEast 100
+moveEast 150
 moveEast 200
 moveEast 250
-moveEast 300
-moveEast 350
-moveWest 400
-moveWest 350
+alienHit 3
 moveWest 300
 moveWest 250
 moveWest 200
-shieldHit 2
-alienHit 1
-alienHit 2
 moveWest 150
-alienHit 3
-moveWest 100
 alienHit 4
+win 
+stop 100 3 5
+trace
+start 200 3 0
+alienHit 0
+moveWest 200
+moveWest 150
+moveWest 100
+moveWest 50
+shieldHit 3
+alienHit 1
+moveEast 0
 moveEast 50
 moveEast 100
-shieldHit 1
-alienHit 5
+alienHit 2
 moveEast 150
-shieldHit 0
+moveWest 200
+moveWest 150
+moveWest 100
+moveWest 50
+moveEast 0
+shieldHit 2
+alienHit 3
+moveEast 50
+moveEast 100
+moveEast 150
+moveEast 200
+moveEast 250
+shieldHit 1
 lose 
-stop 200 6 0
+stop 300 0 4
 trace
-start 200 0 3
+start 200 3 0
 alienHit 0
-moveWest 200
-moveWest 150
-shieldHit 2
-alienHit 1
-moveEast 100
-moveEast 150
 moveEast 200
 moveEast 250
 moveWest 300
 moveWest 250
-shieldHit 1
-alienHit 2
-alienHit 3
-alienHit 4
-moveWest 200
-moveWest 150
-moveWest 100
-alienHit 5
-alienHit 6
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-alienHit 7
-moveEast 250
-moveEast 300
-moveWest 350
-moveWest 300
-shieldHit 0
-win 
-stop 250 8 0
-trace
-start 200 0 3
-alienHit 0
-shieldHit 2
-alienHit 1
 moveEast 200
 moveEast 250
 moveEast 300
 moveEast 350
 moveWest 400
-moveWest 350
-moveWest 300
-moveEast 250
+alienHit 1
 alienHit 2
-moveWest 300
-moveWest 250
-moveEast 200
-moveEast 250
 alienHit 3
+moveWest 350
 moveWest 300
 moveWest 250
 moveWest 200
@@ -1321,31 +404,15 @@ moveWest 150
 moveWest 100
 moveWest 50
 alienHit 4
-alienHit 5
-moveEast 0
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-moveEast 300
-shieldHit 1
-alienHit 6
-moveWest 350
-moveWest 300
-moveWest 250
-moveWest 200
-moveWest 150
-alienHit 7
-moveEast 100
-moveEast 150
-alienHit 8
+win 
+stop 0 3 5
+trace
+start 200 3 0
 moveWest 200
 moveWest 150
 moveWest 100
 moveWest 50
-alienHit 9
-alienHit 10
+alienHit 0
 moveEast 0
 moveEast 50
 moveEast 100
@@ -1353,105 +420,284 @@ moveEast 150
 moveEast 200
 moveEast 250
 moveEast 300
-moveEast 350
-alienHit 11
-moveWest 400
+alienHit 1
 moveWest 350
-moveEast 300
-moveEast 350
-moveWest 400
-shieldHit 0
+moveWest 300
+shieldHit 3
+alienHit 2
+moveWest 250
+moveWest 200
+moveWest 150
+moveEast 100
+moveEast 150
+alienHit 3
+moveEast 200
+moveEast 250
+alienHit 4
 win 
-stop 350 12 0
+stop 300 2 5
 trace
-start 200 0 3
+start 200 3 0
 alienHit 0
 moveWest 200
 moveWest 150
-moveWest 100
-moveWest 50
-moveEast 0
-moveEast 50
-moveEast 100
-moveEast 150
-moveEast 200
-moveEast 250
-moveWest 300
-moveWest 250
-moveEast 200
-moveEast 250
-moveWest 300
-shieldHit 2
+shieldHit 3
 alienHit 1
-moveWest 250
-moveWest 200
-moveWest 150
-shieldHit 1
 alienHit 2
 moveEast 100
 moveEast 150
 moveEast 200
-moveEast 250
-moveWest 300
+shieldHit 2
+alienHit 3
 moveWest 250
 moveWest 200
 moveWest 150
-moveWest 100
-shieldHit 0
+moveEast 100
+shieldHit 1
 lose 
-stop 50 3 0
+stop 150 0 4
 trace
-start 200 0 3
+start 200 3 0
+alienHit 0
+moveWest 200
+moveWest 150
+moveWest 100
+moveWest 50
+alienHit 1
+moveEast 0
+moveEast 50
+moveEast 100
+moveEast 150
+moveEast 200
+shieldHit 3
+alienHit 2
+moveWest 250
+moveWest 200
+moveWest 150
+shieldHit 2
+alienHit 3
+shieldHit 1
+lose 
+stop 100 0 4
+trace
+start 200 3 0
+shieldHit 3
+alienHit 0
+moveEast 200
+alienHit 1
+alienHit 2
+moveWest 250
+alienHit 3
+moveEast 200
+moveEast 250
+moveWest 300
+moveWest 250
+moveEast 200
+moveEast 250
+moveWest 300
+shieldHit 2
+alienHit 4
+win 
+stop 250 1 5
+trace
+start 200 3 0
+moveEast 200
+moveEast 250
+alienHit 0
+moveEast 300
+moveEast 350
+alienHit 1
+moveWest 400
+moveWest 350
+moveWest 300
+moveWest 250
+moveWest 200
+moveWest 150
+shieldHit 3
+alienHit 2
+moveEast 100
+moveEast 150
+moveEast 200
+moveEast 250
+shieldHit 2
+alienHit 3
+moveWest 300
+moveWest 250
+moveEast 200
+shieldHit 1
+lose 
+stop 250 0 4
+trace
+start 200 3 0
+moveWest 200
+moveWest 150
+moveWest 100
+moveWest 50
+moveEast 0
+moveEast 50
+moveEast 100
+moveEast 150
 alienHit 0
 moveEast 200
 moveEast 250
 moveEast 300
+moveEast 350
+moveWest 400
+alienHit 1
+alienHit 2
 moveWest 350
+moveWest 300
+moveWest 250
+moveWest 200
+moveWest 150
+alienHit 3
+alienHit 4
+win 
+stop 100 3 5
+trace
+start 200 3 0
+moveEast 200
+moveEast 250
+alienHit 0
+moveWest 300
+moveWest 250
+moveWest 200
+moveWest 150
+moveWest 100
+moveWest 50
+alienHit 1
+moveEast 0
+moveEast 50
+moveEast 100
+moveEast 150
+alienHit 2
+moveEast 200
+moveEast 250
+moveEast 300
+moveEast 350
+moveWest 400
+shieldHit 3
+alienHit 3
+moveEast 350
+alienHit 4
+win 
+stop 400 2 5
+trace
+start 200 3 0
+moveWest 200
+moveWest 150
+alienHit 0
+moveWest 100
+moveWest 50
+moveEast 0
+moveEast 50
+moveEast 100
+moveEast 150
+moveEast 200
+moveEast 250
+moveEast 300
+moveEast 350
+moveWest 400
+shieldHit 3
+alienHit 1
+alienHit 2
+moveWest 350
+moveWest 300
+moveWest 250
+moveWest 200
+moveWest 150
+moveWest 100
+moveWest 50
+moveEast 0
+alienHit 3
+moveEast 50
+moveEast 100
+moveEast 150
+moveEast 200
+moveEast 250
+alienHit 4
+win 
+stop 300 2 5
+trace
+start 200 3 0
+moveEast 200
+moveEast 250
+moveWest 300
+moveWest 250
+moveWest 200
+alienHit 0
+moveEast 150
+moveEast 200
+moveEast 250
 alienHit 1
 moveWest 300
 moveWest 250
 moveWest 200
 moveWest 150
 moveWest 100
+alienHit 2
+alienHit 3
+moveEast 50
+moveEast 100
+alienHit 4
+win 
+stop 150 3 5
+trace
+start 200 3 0
+alienHit 0
+alienHit 1
+moveWest 200
+moveWest 150
+moveWest 100
 moveWest 50
 alienHit 2
+alienHit 3
 moveEast 0
 moveEast 50
-alienHit 3
 moveEast 100
 moveEast 150
 moveEast 200
-moveEast 250
 alienHit 4
-moveWest 300
-moveWest 250
+win 
+stop 250 3 5
+trace
+start 200 3 0
 moveWest 200
 moveWest 150
 moveWest 100
 moveWest 50
-alienHit 5
 moveEast 0
+moveEast 50
+alienHit 0
+moveWest 100
+moveWest 50
+alienHit 1
+moveEast 0
+alienHit 2
 moveEast 50
 moveEast 100
 moveEast 150
 moveEast 200
 moveEast 250
+moveWest 300
+moveEast 250
 moveEast 300
+alienHit 3
 moveWest 350
-alienHit 6
-moveEast 300
-shieldHit 2
-alienHit 7
-moveWest 350
-alienHit 8
 moveWest 300
 moveWest 250
 moveWest 200
 moveWest 150
+alienHit 4
+win 
+stop 100 3 5
+trace
+start 200 3 0
+moveWest 200
+moveWest 150
 moveWest 100
+alienHit 0
 moveEast 50
-shieldHit 1
-alienHit 9
 moveEast 100
 moveEast 150
 moveEast 200
@@ -1460,7 +706,106 @@ moveEast 300
 moveEast 350
 moveWest 400
 moveWest 350
+alienHit 1
+alienHit 2
+moveEast 300
+moveEast 350
+moveWest 400
+moveWest 350
+shieldHit 3
+alienHit 3
 moveWest 300
-shieldHit 0
+moveWest 250
+moveWest 200
+moveWest 150
+moveWest 100
+shieldHit 2
+alienHit 4
 win 
-stop 250 10 0
+stop 50 1 5
+trace
+start 200 3 0
+moveWest 200
+moveWest 150
+moveEast 100
+moveEast 150
+moveEast 200
+moveEast 250
+moveEast 300
+moveEast 350
+moveWest 400
+alienHit 0
+moveWest 350
+moveWest 300
+moveWest 250
+moveWest 200
+moveWest 150
+alienHit 1
+moveEast 100
+moveEast 150
+moveWest 200
+moveWest 150
+alienHit 2
+moveEast 100
+moveEast 150
+moveEast 200
+alienHit 3
+moveWest 250
+moveWest 200
+alienHit 4
+win 
+stop 150 3 5
+trace
+start 200 3 0
+alienHit 0
+moveWest 200
+alienHit 1
+moveEast 150
+moveEast 200
+moveEast 250
+moveEast 300
+alienHit 2
+moveWest 350
+moveWest 300
+moveWest 250
+moveWest 200
+moveWest 150
+moveWest 100
+moveWest 50
+moveEast 0
+moveEast 50
+moveEast 100
+shieldHit 3
+alienHit 3
+moveWest 150
+moveWest 100
+shieldHit 2
+alienHit 4
+win 
+stop 50 1 5
+trace
+start 200 3 0
+moveWest 200
+moveWest 150
+moveWest 100
+moveWest 50
+moveEast 0
+shieldHit 3
+alienHit 0
+alienHit 1
+moveEast 50
+moveEast 100
+moveEast 150
+moveEast 200
+moveEast 250
+moveWest 300
+moveWest 250
+moveWest 200
+moveWest 150
+alienHit 2
+alienHit 3
+moveWest 100
+moveWest 50
+alienHit 4
+win 
+stop 0 2 5

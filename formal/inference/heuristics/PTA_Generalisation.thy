@@ -495,8 +495,8 @@ definition drop_all_guards :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> log \<Rig
       nondeterministic_pairs = sorted_list_of_fset (np derestricted)
     in
     case resolve_nondeterminism {} nondeterministic_pairs pta derestricted m (satisfies (set log)) np of
-      None \<Rightarrow> pta |
-      Some resolved \<Rightarrow> resolved
+      (None, _) \<Rightarrow> pta |
+      (Some resolved, _) \<Rightarrow> resolved
   )"
 
 fun merge_if_same :: "iEFSM \<Rightarrow> log \<Rightarrow> (nat \<times> nat) list \<Rightarrow> iEFSM" where
@@ -524,13 +524,42 @@ definition merge_regs :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
     merge_if_same e l reg_pairs
   )"
 
+definition updated_regs :: "transition \<Rightarrow> nat set" where
+  "updated_regs t = set (map fst (Updates t))"
+
+definition fewer_updates :: "transition \<Rightarrow> transition fset \<Rightarrow> transition option" where
+  "fewer_updates t T = (
+    let p = ffilter (\<lambda>t'. same_structure t t' \<and> Outputs t = Outputs t' \<and> updated_regs t' \<subset> updated_regs t) T in
+    if p = {||} then None else Some (snd (fMin (fimage (\<lambda>t. (length (Updates t), t)) p))))"
+
+fun remove_spurious_updates_aux :: "iEFSM \<Rightarrow> (tids \<times> transition) list \<Rightarrow> transition fset \<Rightarrow> log \<Rightarrow> iEFSM" where
+  "remove_spurious_updates_aux e [] _ _ = e" |
+  "remove_spurious_updates_aux e ((tid, t)#ts) T l = (
+    case fewer_updates t T of
+      None \<Rightarrow> remove_spurious_updates_aux e ts T l |
+      Some t' \<Rightarrow> (
+        let e' = replace_transition e tid t' in
+        if satisfies (set l) (tm e') then
+          remove_spurious_updates_aux e' ts T l
+        else
+          remove_spurious_updates_aux e ts T l
+      )
+  )"
+
+(* This goes through and tries to remove spurious updates that get introduced during preprocessing *)
+definition remove_spurious_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
+  "remove_spurious_updates e l = (
+    let transitions = fimage (\<lambda>(tid, _, t). (tid, t)) e in
+      remove_spurious_updates_aux e (sorted_list_of_fset transitions) (fimage snd transitions) l
+  )"
+
 definition derestrict :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "derestrict pta log m np = (
     let
       normalised = incremental_normalised_pta log pta;
       delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs normalised)) normalised
     in
-      merge_regs (drop_all_guards delayed pta log m np) log
+      remove_spurious_updates (merge_regs (drop_all_guards delayed pta log m np) log) log
   )"
 
 definition "drop_pta_guards pta log m np = drop_all_guards pta pta log m np"

@@ -17,7 +17,7 @@ lemma guard_match_length: "length (Guard t1) \<noteq> 1 \<or> length (Guard t2) 
   by auto
 
 fun insert_increment :: update_modifier where
-  "insert_increment t1ID t2ID s new _ old np = (let
+  "insert_increment closed t1ID t2ID s new _ old np = (let
      t1 = get_by_ids new t1ID;
      t2 = get_by_ids new t2ID in
      if guardMatch t1 t2 \<and> outputMatch t1 t2 then let 
@@ -30,9 +30,9 @@ fun insert_increment :: update_modifier where
           initialised = replace_transitions new (sorted_list_of_fset initialisedTrans);
           newEFSM = (replace_transitions new [(t1ID, newT1), (t2ID, newT2)])
           in 
-          resolve_nondeterminism {} (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
+          resolve_nondeterminism closed (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
      else
-       None
+       (None, closed)
      )"
 
 definition struct_replace_all :: "iEFSM \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
@@ -51,7 +51,7 @@ lemma guard_match_symmetry: "(guardMatch t1 t2) = (guardMatch t2 t1)"
   by auto
 
 fun insert_increment_2 :: update_modifier where
-  "insert_increment_2 t1ID t2ID s new _ old np = (let
+  "insert_increment_2 closed t1ID t2ID s new _ old np = (let
      t1 = get_by_ids new t1ID;
      t2 = get_by_ids new t2ID in
      if guardMatch t1 t2 \<and> outputMatch t1 t2 then let 
@@ -64,9 +64,9 @@ fun insert_increment_2 :: update_modifier where
           initialised = replace_transitions new (sorted_list_of_fset initialisedTrans);
           newEFSM = (struct_replace_all (struct_replace_all initialised t2 newT2) t1 newT1)
           in 
-          resolve_nondeterminism {} (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
+          resolve_nondeterminism closed (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
      else
-       None
+       (None, closed)
      )"
 
 fun guardMatch_alt_2 :: "vname gexp list \<Rightarrow> bool" where

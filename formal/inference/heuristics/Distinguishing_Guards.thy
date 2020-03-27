@@ -54,7 +54,7 @@ definition add_guard :: "transition \<Rightarrow> vname gexp \<Rightarrow> trans
   "add_guard t g = \<lparr>Label = Label t, Arity = Arity t, Guard = g#(Guard t), Outputs = Outputs t, Updates = Updates t\<rparr>"
 
 definition distinguish :: "log \<Rightarrow> update_modifier" where
-  "distinguish log t1ID t2ID s destMerge preDestMerge old np = (
+  "distinguish log closed t1ID t2ID s destMerge preDestMerge old np = (
     let
       t1 = get_by_ids destMerge t1ID;
       t2 = get_by_ids destMerge t2ID;
@@ -62,11 +62,11 @@ definition distinguish :: "log \<Rightarrow> update_modifier" where
       (G1, G2) = collect_training_sets log uPTA t1ID t2ID [] []
     in
       case find_distinguishing_guards G1 G2 of
-        None \<Rightarrow> None |
+        None \<Rightarrow> (None, closed) |
         Some (g1, g2) \<Rightarrow> (
           let newEFSM = replace_transitions preDestMerge [(t1ID, add_guard t1 g1), (t2ID, add_guard t2 g2)]
           in
-          resolve_nondeterminism {} (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
+          resolve_nondeterminism closed (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
         )
   )"
 
