@@ -29,11 +29,10 @@ object FrontEnd {
       if (FSet.equal_fseta(pta, resolved_pta))
         Log.root.info("Defaulting back to original PTA")
       else {
+        pta = resolved_pta
         Log.root.info(s"Resolved PTA has ${Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(pta)))} states")
         Log.root.info(s"Resolved PTA has ${Code_Numeral.integer_of_nat(FSet.size_fset(pta))} transitions")
       }
-
-      pta = resolved_pta
     }
 
     try {

@@ -1,11 +1,11 @@
 types
 start x:N aliens:N shields:N
-moveEast x:N aliens:N shields:N
-moveWest x:N aliens:N shields:N
-alienHit x:N aliens:N shields:N
-shieldHit x:N aliens:N shields:N
-win x:N aliens:N shields:N
-lose x:N aliens:N shields:N
+moveEast x:N
+moveWest x:N
+alienHit aliens:N
+shieldHit shields:N
+win
+lose
 stop x:N aliens:N shields:N
 trace
 start 200 3 0
@@ -23,7 +23,7 @@ moveWest 250
 moveWest 200
 moveWest 150
 alienHit 4
-win 
+win
 stop 100 2 5
 trace
 start 200 3 0
@@ -46,7 +46,7 @@ alienHit 2
 alienHit 3
 moveWest 300
 alienHit 4
-win 
+win
 stop 250 2 5
 trace
 start 200 3 0
@@ -83,7 +83,7 @@ moveWest 350
 moveWest 300
 moveWest 250
 shieldHit 1
-lose 
+lose
 stop 200 0 4
 trace
 start 200 3 0
@@ -101,7 +101,7 @@ alienHit 2
 alienHit 3
 moveEast 0
 alienHit 4
-win 
+win
 stop 50 1 5
 trace
 start 200 3 0
@@ -126,7 +126,7 @@ moveEast 150
 moveEast 200
 moveEast 250
 shieldHit 1
-lose 
+lose
 stop 300 0 4
 trace
 start 200 3 0
@@ -154,7 +154,7 @@ moveWest 150
 moveEast 100
 shieldHit 2
 alienHit 4
-win 
+win
 stop 150 1 5
 trace
 start 200 3 0
@@ -186,7 +186,7 @@ moveEast 300
 shieldHit 2
 alienHit 3
 alienHit 4
-win 
+win
 stop 350 1 5
 trace
 start 200 3 0
@@ -207,7 +207,7 @@ alienHit 3
 moveWest 300
 moveWest 250
 alienHit 4
-win 
+win
 stop 200 3 5
 trace
 start 200 3 0
@@ -229,7 +229,7 @@ shieldHit 2
 alienHit 1
 moveEast 0
 shieldHit 1
-lose 
+lose
 stop 50 0 2
 trace
 start 200 3 0
@@ -258,7 +258,7 @@ moveWest 250
 moveWest 200
 shieldHit 3
 alienHit 4
-win 
+win
 stop 150 2 5
 trace
 start 200 3 0
@@ -296,7 +296,7 @@ moveEast 300
 moveEast 350
 moveWest 400
 alienHit 4
-win 
+win
 stop 350 1 5
 trace
 start 200 3 0
@@ -323,7 +323,7 @@ moveEast 200
 moveEast 250
 moveEast 300
 shieldHit 1
-lose 
+lose
 stop 350 0 3
 trace
 start 200 3 0
@@ -350,7 +350,7 @@ moveWest 250
 moveWest 200
 moveWest 150
 alienHit 4
-win 
+win
 stop 100 3 5
 trace
 start 200 3 0
@@ -379,7 +379,7 @@ moveEast 150
 moveEast 200
 moveEast 250
 shieldHit 1
-lose 
+lose
 stop 300 0 4
 trace
 start 200 3 0
@@ -404,7 +404,7 @@ moveWest 150
 moveWest 100
 moveWest 50
 alienHit 4
-win 
+win
 stop 0 3 5
 trace
 start 200 3 0
@@ -434,7 +434,7 @@ alienHit 3
 moveEast 200
 moveEast 250
 alienHit 4
-win 
+win
 stop 300 2 5
 trace
 start 200 3 0
@@ -454,7 +454,7 @@ moveWest 200
 moveWest 150
 moveEast 100
 shieldHit 1
-lose 
+lose
 stop 150 0 4
 trace
 start 200 3 0
@@ -477,7 +477,7 @@ moveWest 150
 shieldHit 2
 alienHit 3
 shieldHit 1
-lose 
+lose
 stop 100 0 4
 trace
 start 200 3 0
@@ -497,7 +497,7 @@ moveEast 250
 moveWest 300
 shieldHit 2
 alienHit 4
-win 
+win
 stop 250 1 5
 trace
 start 200 3 0
@@ -525,7 +525,7 @@ moveWest 300
 moveWest 250
 moveEast 200
 shieldHit 1
-lose 
+lose
 stop 250 0 4
 trace
 start 200 3 0
@@ -552,7 +552,7 @@ moveWest 200
 moveWest 150
 alienHit 3
 alienHit 4
-win 
+win
 stop 100 3 5
 trace
 start 200 3 0
@@ -580,7 +580,7 @@ shieldHit 3
 alienHit 3
 moveEast 350
 alienHit 4
-win 
+win
 stop 400 2 5
 trace
 start 200 3 0
@@ -616,7 +616,7 @@ moveEast 150
 moveEast 200
 moveEast 250
 alienHit 4
-win 
+win
 stop 300 2 5
 trace
 start 200 3 0
@@ -640,7 +640,7 @@ alienHit 3
 moveEast 50
 moveEast 100
 alienHit 4
-win 
+win
 stop 150 3 5
 trace
 start 200 3 0
@@ -658,7 +658,7 @@ moveEast 100
 moveEast 150
 moveEast 200
 alienHit 4
-win 
+win
 stop 250 3 5
 trace
 start 200 3 0
@@ -689,7 +689,7 @@ moveWest 250
 moveWest 200
 moveWest 150
 alienHit 4
-win 
+win
 stop 100 3 5
 trace
 start 200 3 0
@@ -721,7 +721,7 @@ moveWest 150
 moveWest 100
 shieldHit 2
 alienHit 4
-win 
+win
 stop 50 1 5
 trace
 start 200 3 0
@@ -753,7 +753,7 @@ alienHit 3
 moveWest 250
 moveWest 200
 alienHit 4
-win 
+win
 stop 150 3 5
 trace
 start 200 3 0
@@ -781,7 +781,7 @@ moveWest 150
 moveWest 100
 shieldHit 2
 alienHit 4
-win 
+win
 stop 50 1 5
 trace
 start 200 3 0
@@ -807,5 +807,5 @@ alienHit 3
 moveWest 100
 moveWest 50
 alienHit 4
-win 
+win
 stop 0 2 5

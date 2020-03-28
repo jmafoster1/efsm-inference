@@ -142,8 +142,6 @@ traces = [trace for trace in traces if len(trace) >= 5]
 print(len(traces), "traces in total")
 
 traces = random.sample(traces, 2*numTraces)
-for x in enumerate([len(t) for t in traces]):
-    print(x)
 
 io_traces = [format_trace(t) for t in traces]
 
@@ -159,8 +157,10 @@ with open(newRoot+outfile+"-train.json", 'w') as f:
 with open(newRoot+outfile+"-test.json", 'w') as f:
     print("[\n" + ",  \n".join(["  [\n    " + ",\n    ".join([json.dumps(event) for event in trace]) + "\n  ]" for trace in io_traces[numTraces:]]) + "\n]", file=f)
 
+outfiles = set([f"{outfile}"])
+
 for var in [item for sublist in desired_outputs.values() for item in sublist]:
-    print(f"sbatch bessemer-run.sh 873365 958765 27335 {outfile}-obfuscated-{varname(var)} gp")
+    outfiles.add(f"{outfile}-obfuscated-{varname(var)}")
     obfuscated_traces = [obfuscate_inputs(t, [var]) for t in traces]
     
     with open(newRoot+outfile+f"-obfuscated-{varname(var)}-train.json", 'w') as f:
@@ -168,3 +168,11 @@ for var in [item for sublist in desired_outputs.values() for item in sublist]:
     
     with open(newRoot+outfile+f"-obfuscated-{varname(var)}-test.json", 'w') as f:
         print("[\n" + ",  \n".join(["  [\n    " + ",\n    ".join([json.dumps(event) for event in trace]) + "\n  ]" for trace in obfuscated_traces[numTraces:]]) + "\n]", file=f)
+
+preprocessors = ["gp", "none"]
+
+for p in preprocessors:
+    for file in outfiles:
+        with open(newRoot+file+f"-{p}-submissions.sh", 'w') as f:
+            for i in range(30):
+                print(f"sbatch bessemer-run.sh {random.randint(10000, 99999)} {random.randint(10000, 99999)} {random.randint(10000, 99999)} {file} {p}", file=f)
