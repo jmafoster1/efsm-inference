@@ -1,0 +1,4 @@
+bessemer-run.sh: line 9: module: command not found
+bessemer-run.sh: line 12: cd: Documents/efsm-inference/inference-tool: No such file or directory
+bessemer-run.sh: line 16: srun: command not found
+bessemer-run.sh: line 17: 28617 Aborted                 (core dumped) java -jar target/scala-2.12/inference-tool-assembly-0.1.0-SNAPSHOT.jar -s naive_eq_bonus -p $5 -g $1 -o $2 -u $3 -h same,ws,distinguish -d results/$4-$5-$1-$2-$3 experimental-data/$4-train.json experimental-data/$4-test.json

@@ -43,7 +43,7 @@ object GP {
     var stringTerms = List[VariableTerminal[_]]()
 
     for (v <- (Value.Numa(Int.int_of_integer(0)) :: values).distinct.reverse) v match {
-      case Value.Numa(n) => intTerms = (new IntegerVariableAssignmentTerminal(TypeConversion.toInteger(n))) :: intTerms
+      case Value.Numa(n) => intTerms = (new IntegerVariableAssignmentTerminal(TypeConversion.toLong(n))) :: intTerms
       case Value.Str(s) => stringTerms = (new StringVariableAssignmentTerminal(s)) :: stringTerms
     }
 

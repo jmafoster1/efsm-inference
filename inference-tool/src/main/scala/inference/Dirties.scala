@@ -353,7 +353,7 @@ object Dirties {
     gpGenerator.addFunctions(GP.intNonTerms);
     gpGenerator.addFunctions(GP.boolNonTerms)
 
-    var intVarVals = List(0, 1, 2)
+    var intVarVals = List(0l, 1l, 2l)
     var stringVarVals = List[String]()
 
     var intTerms = List[VariableTerminal[_]]()
@@ -371,9 +371,9 @@ object Dirties {
       var scenario = List[VariableAssignment[_]]()
       for ((ip, ix) <- inputs.zipWithIndex) ip match {
         case Value.Numa(n) => {
-          intVarVals = TypeConversion.toInteger(n) :: intVarVals
+          intVarVals = TypeConversion.toLong(n) :: intVarVals
           intVarNames = s"i${ix}" :: intVarNames
-          scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toInteger(n))) :: scenario
+          scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toLong(n))) :: scenario
         }
         case Value.Str(s) => {
           stringVarVals = s :: stringVarVals
@@ -384,9 +384,9 @@ object Dirties {
       for ((r, v) <- registers) v match {
         case None => {}
         case Some(Value.Numa(n)) => {
-          intVarVals = TypeConversion.toInteger(n) :: intVarVals
+          intVarVals = TypeConversion.toLong(n) :: intVarVals
           intVarNames = s"r${PrettyPrinter.show(r)}" :: intVarNames
-          scenario = (new IntegerVariableAssignment(s"r${PrettyPrinter.show(r)}", TypeConversion.toInteger(n))) :: scenario
+          scenario = (new IntegerVariableAssignment(s"r${PrettyPrinter.show(r)}", TypeConversion.toLong(n))) :: scenario
         }
         case Some(Value.Str(s)) => {
           stringVarVals = s :: stringVarVals
@@ -402,9 +402,9 @@ object Dirties {
       var scenario = List[VariableAssignment[_]]()
       for ((ip, ix) <- inputs.zipWithIndex) ip match {
         case Value.Numa(n) => {
-          intVarVals = TypeConversion.toInteger(n) :: intVarVals
+          intVarVals = TypeConversion.toLong(n) :: intVarVals
           intVarNames = s"i${ix}" :: intVarNames
-          scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toInteger(n))) :: scenario
+          scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toLong(n))) :: scenario
         }
         case Value.Str(s) => {
           stringVarVals = s :: stringVarVals
@@ -415,9 +415,9 @@ object Dirties {
       for ((r, v) <- registers) v match {
         case None => {}
         case Some(Value.Numa(n)) => {
-          intVarVals = TypeConversion.toInteger(n) :: intVarVals
+          intVarVals = TypeConversion.toLong(n) :: intVarVals
           intVarNames = s"r${PrettyPrinter.show(r)}" :: intVarNames
-          scenario = (new IntegerVariableAssignment(s"r${PrettyPrinter.show(r)}", TypeConversion.toInteger(n))) :: scenario
+          scenario = (new IntegerVariableAssignment(s"r${PrettyPrinter.show(r)}", TypeConversion.toLong(n))) :: scenario
         }
         case Some(Value.Str(s)) => {
           stringVarVals = s :: stringVarVals
@@ -505,7 +505,7 @@ object Dirties {
         for ((ip, ix) <- inputs.zipWithIndex) ip match {
           case Value.Numa(n) => {
             intVarNames = s"i${ix}" :: intVarNames
-            scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toInteger(n))) :: scenario
+            scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toLong(n))) :: scenario
           }
           case Value.Str(s) => {
             stringVarNames = s"i${ix}" :: stringVarNames
@@ -517,7 +517,7 @@ object Dirties {
           case Some(Value.Numa(n)) => {
             if (k == r) {
               intVarNames = s"r${TypeConversion.toInt(k)}" :: intVarNames
-              scenario = (new IntegerVariableAssignment(s"r${TypeConversion.toInt(k)}", TypeConversion.toInteger(n))) :: scenario
+              scenario = (new IntegerVariableAssignment(s"r${TypeConversion.toInt(k)}", TypeConversion.toLong(n))) :: scenario
             }
           }
           case Some(Value.Str(s)) => {
@@ -530,7 +530,7 @@ object Dirties {
         updatedReg match {
           case Value.Numa(n) => {
             intVarNames = s"r${r_index}" :: intVarNames
-            trainingSet.put(scenario, new IntegerVariableAssignment("r" + r_index, TypeConversion.toInteger(n)))
+            trainingSet.put(scenario, new IntegerVariableAssignment("r" + r_index, TypeConversion.toLong(n)))
           }
           case Value.Str(s) => {
             stringVarNames = s"r${r_index}" :: stringVarNames
@@ -612,7 +612,7 @@ object Dirties {
         for ((ip, ix) <- inputs.zipWithIndex) ip match {
           case Value.Numa(n) => {
             intVarNames = s"i${ix}" :: intVarNames
-            scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toInteger(n))) :: scenario
+            scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toLong(n))) :: scenario
           }
           case Value.Str(s) => {
             stringVarNames = s"i${ix}" :: stringVarNames
@@ -623,7 +623,7 @@ object Dirties {
           case None => throw new IllegalStateException("Got None from registers")
           case Some(Value.Numa(n)) => {
             intVarNames = s"r${TypeConversion.toInt(k)}" :: intVarNames
-            scenario = (new IntegerVariableAssignment(s"r${TypeConversion.toInt(k)}", TypeConversion.toInteger(n))) :: scenario
+            scenario = (new IntegerVariableAssignment(s"r${TypeConversion.toInt(k)}", TypeConversion.toLong(n))) :: scenario
           }
           case Some(Value.Str(s)) => {
             stringVarNames = s"r${TypeConversion.toInt(k)}" :: stringVarNames
@@ -633,7 +633,7 @@ object Dirties {
         output match {
           case Value.Numa(n) => {
             intVarNames = s"r${r_index}" :: intVarNames
-            trainingSet.put(scenario, new IntegerVariableAssignment("o", TypeConversion.toInteger(n)))
+            trainingSet.put(scenario, new IntegerVariableAssignment("o", TypeConversion.toLong(n)))
           }
           case Value.Str(s) => {
             latentInt = false

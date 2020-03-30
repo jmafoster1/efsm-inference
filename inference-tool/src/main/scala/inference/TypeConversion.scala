@@ -121,9 +121,9 @@ object TypeConversion {
       val name = e.toString.replace("latent", "")
       // TODO: This is hacky at best
       if (name.startsWith("i")) {
-        return AExp.V(VName.I(Nat.Nata(name.drop(1).toInt)))
+        return AExp.V(VName.I(Nat.Nata(name.drop(1).toLong)))
       } else if (name.startsWith("r")) {
-        return AExp.V(VName.R(Nat.Nata(name.drop(1).toInt)))
+        return AExp.V(VName.R(Nat.Nata(name.drop(1).toLong)))
       }
       else {
         return AExp.L(Value.Str(e.toString))
@@ -163,6 +163,15 @@ object TypeConversion {
     val b = Code_Numeral.integer_of_int(i)
     if (b.isValidInt) {
       return b.toInt
+    } else {
+      throw new IllegalArgumentException(s"${b} is not a valid int")
+    }
+  }
+
+  def toLong(i: Int.int): Long = {
+    val b = Code_Numeral.integer_of_int(i)
+    if (b.isValidLong) {
+      return b.toLong
     } else {
       throw new IllegalArgumentException(s"${b} is not a valid int")
     }
