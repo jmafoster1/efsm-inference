@@ -1,0 +1,496 @@
+2020-04-02 18:23:20.922 [main] INFO  ROOT - -s naive_eq_bonus -p gp -g 95364 -o 75781 -u 36820 -h same,ws,distinguish -d results/spaceInvaders30-obfuscated-shields-gp-95364-75781-36820 experimental-data/spaceInvaders30-obfuscated-shields-train.json experimental-data/spaceInvaders30-obfuscated-shields-test.json
+2020-04-02 18:23:20.925 [main] INFO  ROOT - Building PTA - 30 traces
+2020-04-02 18:23:33.457 [main] INFO  ROOT - PTA has 541 states
+2020-04-02 18:23:33.459 [main] INFO  ROOT - PTA has 540 transitions
+2020-04-02 18:23:39.043 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:23:39.044 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+2020-04-02 18:23:39.045 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:23:39.045 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+2020-04-02 18:23:39.045 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:23:39.046 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+2020-04-02 18:23:41.957 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:23:42.120 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:23:42.138 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[i0=50]=[o=0], [i0=100]=[o=50], [i0=200]=[o=150], [i0=150]=[o=100]}
+2020-04-02 18:23:42.163 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 200, 150, 100, 400, 350, 300, 250, 50)
+2020-04-02 18:23:43.612 [scala-execution-context-global-10] DEBUG ROOT -   Best output is: (+ -50 i0)
+2020-04-02 18:23:43.613 [scala-execution-context-global-10] DEBUG ROOT -   Best output is correct
+2020-04-02 18:23:45.993 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:23:45.995 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:23:45.996 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[i0=50]=[o=100], [i0=200]=[o=250], [i0=250]=[o=300], [i0=0]=[o=50], [i0=300]=[o=350], [i0=350]=[o=400], [i0=100]=[o=150], [i0=150]=[o=200]}
+2020-04-02 18:23:45.998 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 100, 150, 200, 250, 300, 350, 400, 50)
+2020-04-02 18:23:47.293 [scala-execution-context-global-10] DEBUG ROOT -   Best output is: (+ 50 i0)
+2020-04-02 18:23:47.307 [scala-execution-context-global-10] DEBUG ROOT -   Best output is correct
+2020-04-02 18:23:48.856 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:23:48.860 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:23:48.860 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[i0=100]=[o=50], [i0=150]=[o=100], [i0=200]=[o=150], [i0=250]=[o=200], [i0=300]=[o=250], [i0=350]=[o=300], [i0=400]=[o=350], [i0=50]=[o=0]}
+2020-04-02 18:23:48.864 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 200, 150, 100, 400, 350, 300, 250, 50)
+2020-04-02 18:23:49.550 [scala-execution-context-global-10] DEBUG ROOT -   Best output is: (+ -50 i0)
+2020-04-02 18:23:49.550 [scala-execution-context-global-10] DEBUG ROOT -   Best output is correct
+2020-04-02 18:23:50.973 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:23:50.974 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:23:50.974 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[i0=100]=[o=150], [i0=300]=[o=350], [i0=150]=[o=200], [i0=50]=[o=100], [i0=0]=[o=50], [i0=200]=[o=250], [i0=350]=[o=400], [i0=250]=[o=300]}
+2020-04-02 18:23:50.974 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 100, 150, 200, 250, 300, 350, 400, 50)
+2020-04-02 18:23:51.994 [scala-execution-context-global-10] DEBUG ROOT -   Best output is: (+ 50 i0)
+2020-04-02 18:23:51.995 [scala-execution-context-global-10] DEBUG ROOT -   Best output is correct
+2020-04-02 18:23:53.794 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:23:53.797 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:23:53.797 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[]=[o=0, o=1, o=2]}
+2020-04-02 18:23:53.798 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(0, 1, 2)
+2020-04-02 18:23:53.799 [scala-execution-context-global-10] DEBUG ROOT -   Secret best output is: r1
+2020-04-02 18:23:55.745 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:23:55.787 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i1=0, i0=200]=[r1=2], [i1=0, i0=200]=[r1=0], [i1=0, i0=200]=[r1=1]}
+2020-04-02 18:24:16.387 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 1
+2020-04-02 18:24:17.140 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:24:17.148 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=50]=[r1=0], [i0=200]=[r1=0], [i0=150]=[r1=0], [i0=100]=[r1=0], [i0=200]=[r1=2], [i0=150]=[r1=2]}
+2020-04-02 18:24:33.693 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 0
+2020-04-02 18:24:34.438 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:24:34.441 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=200]=[r1=2], [i0=150]=[r1=2], [i0=100]=[r1=2], [i0=0]=[r1=0], [i0=300]=[r1=0]}
+2020-04-02 18:24:51.710 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 2
+2020-04-02 18:24:52.472 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:24:52.478 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=150]=[r1=2], [i0=200]=[r1=2], [i0=250]=[r1=2], [i0=300]=[r1=2], [i0=350]=[r1=0], [i0=400]=[r1=0], [i0=250]=[r1=1], [i0=300]=[r1=1]}
+2020-04-02 18:25:09.960 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 2
+2020-04-02 18:25:14.400 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:25:14.401 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[r1=1]=[r1=0]}
+2020-04-02 18:25:15.606 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 0
+2020-04-02 18:25:15.606 [scala-execution-context-global-10] DEBUG ROOT -     Best update is correct
+2020-04-02 18:25:19.217 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:25:19.218 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[r1=0, i0=1]=[r1=0], [i0=0]=[r1=1], [i0=1]=[r1=0], [i0=0]=[r1=0]}
+2020-04-02 18:25:35.349 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 0
+2020-04-02 18:25:43.494 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:25:43.495 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[r1=0, i0=250]=[r1=0], [i0=50]=[r1=0], [i0=200]=[r1=0], [i0=350]=[r1=0], [i0=100]=[r1=0], [i0=150]=[r1=0], [i0=300]=[r1=0], [r1=0, i0=300]=[r1=0], [i0=250]=[r1=0], [i0=200]=[r1=1], [i0=0]=[r1=0]}
+2020-04-02 18:26:01.466 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 0
+2020-04-02 18:26:13.000 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:26:13.001 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[]=[r1=0, r1=1]}
+2020-04-02 18:26:13.003 [scala-execution-context-global-10] DEBUG ROOT -     Multiple updates for no input
+2020-04-02 18:26:31.724 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:26:31.726 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=200]=[r1=0], [i0=250]=[r1=2], [i0=250]=[r1=0], [i0=250]=[r1=1], [i0=200]=[r1=1], [i0=200]=[r1=2]}
+2020-04-02 18:26:50.247 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 1
+2020-04-02 18:27:15.223 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:27:15.224 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:27:15.225 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[i0=2]=[o=3], [i0=3]=[o=4], [i0=4]=[o=5], [i0=0]=[o=1], [i0=1]=[o=2]}
+2020-04-02 18:27:15.225 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 1, 2, 3, 4, 5)
+2020-04-02 18:27:15.781 [scala-execution-context-global-10] DEBUG ROOT -   Best output is: (+ 1 i0)
+2020-04-02 18:27:15.781 [scala-execution-context-global-10] DEBUG ROOT -   Best output is correct
+2020-04-02 18:27:17.128 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:27:17.134 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:27:17.134 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[i0=150]=[o=100], [i0=50]=[o=0], [i0=200]=[o=150], [i0=100]=[o=50], [i0=400]=[o=350], [i0=350]=[o=300], [i0=300]=[o=250], [i0=250]=[o=200]}
+2020-04-02 18:27:17.134 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 200, 150, 100, 400, 350, 300, 250, 50)
+2020-04-02 18:27:17.566 [scala-execution-context-global-10] DEBUG ROOT -   Best output is: (+ -50 i0)
+2020-04-02 18:27:17.567 [scala-execution-context-global-10] DEBUG ROOT -   Best output is correct
+2020-04-02 18:27:19.102 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:27:19.103 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:27:19.104 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[i0=2]=[o=3], [i0=0]=[o=1], [i0=3]=[o=4], [i0=1]=[o=2], [i0=4]=[o=5]}
+2020-04-02 18:27:19.104 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 1, 2, 3, 4, 5)
+2020-04-02 18:27:19.654 [scala-execution-context-global-10] DEBUG ROOT -   Best output is: (+ 1 i0)
+2020-04-02 18:27:19.654 [scala-execution-context-global-10] DEBUG ROOT -   Best output is correct
+2020-04-02 18:27:21.020 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:27:21.023 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:27:21.024 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[i0=150]=[o=200], [i0=50]=[o=100], [i0=300]=[o=350], [i0=250]=[o=300], [i0=100]=[o=150], [i0=200]=[o=250], [i0=0]=[o=50], [i0=350]=[o=400]}
+2020-04-02 18:27:21.027 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 100, 150, 200, 250, 300, 350, 400, 50)
+2020-04-02 18:27:21.616 [scala-execution-context-global-10] DEBUG ROOT -   Best output is: (+ 50 i0)
+2020-04-02 18:27:21.616 [scala-execution-context-global-10] DEBUG ROOT -   Best output is correct
+2020-04-02 18:27:23.140 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:27:23.141 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:27:23.141 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[i0=4]=[o=5], [i0=3]=[o=4]}
+2020-04-02 18:27:23.142 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 1, 2, 3, 4, 5)
+2020-04-02 18:27:23.697 [scala-execution-context-global-10] DEBUG ROOT -   Best output is: (+ 1 i0)
+2020-04-02 18:27:23.697 [scala-execution-context-global-10] DEBUG ROOT -   Best output is correct
+2020-04-02 18:27:25.744 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:27:25.745 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:27:25.745 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[i0=0]=[o=1], [i0=1]=[o=2]}
+2020-04-02 18:27:25.745 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 1, 2, 3, 4, 5)
+2020-04-02 18:27:26.295 [scala-execution-context-global-10] DEBUG ROOT -   Best output is: (+ 1 i0)
+2020-04-02 18:27:26.295 [scala-execution-context-global-10] DEBUG ROOT -   Best output is correct
+2020-04-02 18:27:27.655 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:27:27.656 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:27:27.657 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[]=[o=0, o=1, o=2]}
+2020-04-02 18:27:27.657 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(0, 1, 2)
+2020-04-02 18:27:27.658 [scala-execution-context-global-10] DEBUG ROOT -   Secret best output is: r1
+2020-04-02 18:27:29.412 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:27:29.414 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i1=0, i0=200]=[r1=2], [i1=0, i0=200]=[r1=0], [i1=0, i0=200]=[r1=1]}
+2020-04-02 18:27:47.205 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 1
+2020-04-02 18:27:51.548 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:27:51.550 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[r1=0, i0=350]=[r1=0], [r1=0, i0=300]=[r1=0], [i0=200]=[r1=1], [i0=250]=[r1=1], [i0=200]=[r1=0]}
+2020-04-02 18:28:08.295 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 0
+2020-04-02 18:28:09.061 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:28:09.062 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=250]=[r1=0], [i0=300]=[r1=0], [i0=250]=[r1=1], [r1=0, i0=300]=[r1=0], [i0=300]=[r1=1], [i0=150]=[r1=2], [i0=150]=[r1=0]}
+2020-04-02 18:28:26.778 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 0
+2020-04-02 18:28:34.700 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:28:34.706 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[r1=0, i0=2]=[r1=0], [i0=0]=[r1=0], [r1=0, i0=1]=[r1=0], [i0=2]=[r1=0], [i0=1]=[r1=0], [i0=2]=[r1=1]}
+2020-04-02 18:28:50.179 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 0
+2020-04-02 18:28:50.956 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:28:50.957 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=50]=[r1=2], [i0=150]=[r1=0], [i0=100]=[r1=2], [i0=150]=[r1=2], [i0=200]=[r1=2], [i0=50]=[r1=0], [i0=100]=[r1=0], [r1=0, i0=200]=[r1=0], [r1=0, i0=100]=[r1=0], [i0=200]=[r1=0], [r1=0, i0=150]=[r1=0], [i0=250]=[r1=0]}
+2020-04-02 18:29:07.776 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 0
+2020-04-02 18:29:08.552 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:29:08.554 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=1]=[r1=2], [r1=0, i0=0]=[r1=0]}
+2020-04-02 18:29:09.342 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: (+ (* 2 i0) (* -1 r1))
+2020-04-02 18:29:09.343 [scala-execution-context-global-10] DEBUG ROOT -     Best update is correct
+2020-04-02 18:29:13.343 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:29:13.351 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=100]=[r1=2], [i0=0]=[r1=0], [i0=200]=[r1=0], [i0=100]=[r1=0], [i0=50]=[r1=2], [r1=0, i0=150]=[r1=0], [r1=0, i0=200]=[r1=0], [r1=0, i0=250]=[r1=0], [i0=200]=[r1=1], [r1=0, i0=350]=[r1=0], [i0=50]=[r1=0], [r1=0, i0=100]=[r1=0], [i0=0]=[r1=2], [i0=250]=[r1=1], [r1=0, i0=300]=[r1=0], [r1=0, i0=50]=[r1=0]}
+2020-04-02 18:29:30.565 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 0
+2020-04-02 18:29:38.544 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:29:38.546 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=0]=[r1=1], [i0=0]=[r1=0], [i0=0]=[r1=2], [i0=1]=[r1=1]}
+2020-04-02 18:29:56.426 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 1
+2020-04-02 18:30:08.022 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:30:08.025 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[]=[r1=0], [r1=0]=[r1=0]}
+2020-04-02 18:30:09.194 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 0
+2020-04-02 18:30:09.194 [scala-execution-context-global-10] DEBUG ROOT -     Best update is correct
+2020-04-02 18:30:12.811 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:30:12.813 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[]=[r1=0], [r1=0]=[r1=0]}
+2020-04-02 18:30:13.998 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 0
+2020-04-02 18:30:14.001 [scala-execution-context-global-10] DEBUG ROOT -     Best update is correct
+2020-04-02 18:30:42.324 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:30:42.328 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:30:42.328 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[i0=1]=[o=2], [i0=4]=[o=5], [i0=3]=[o=4], [i0=2]=[o=3]}
+2020-04-02 18:30:42.328 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 1, 2, 3, 4, 5)
+2020-04-02 18:30:42.871 [scala-execution-context-global-10] DEBUG ROOT -   Best output is: (+ 1 i0)
+2020-04-02 18:30:42.873 [scala-execution-context-global-10] DEBUG ROOT -   Best output is correct
+2020-04-02 18:30:44.260 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:30:44.261 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:30:44.262 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[]=[o=1, o=2]}
+2020-04-02 18:30:44.263 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(0, 1, 2)
+2020-04-02 18:30:44.266 [scala-execution-context-global-10] DEBUG ROOT -   Secret best output is: r1
+2020-04-02 18:30:45.946 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:30:45.947 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i1=0, i0=200]=[r1=2], [i1=0, i0=200]=[r1=1]}
+2020-04-02 18:31:01.351 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 1
+2020-04-02 18:31:05.701 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:31:05.702 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=150]=[r1=1], [i0=300]=[r1=1], [i0=350]=[r1=1], [i0=100]=[r1=1], [i0=250]=[r1=1], [i0=50]=[r1=1], [i0=200]=[r1=1], [i0=300]=[r1=2]}
+2020-04-02 18:31:23.457 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 1
+2020-04-02 18:31:34.959 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:31:34.961 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[r1=1, i0=1]=[r1=1], [i0=1]=[r1=1], [r1=1, i0=3]=[r1=1], [i0=0]=[r1=1], [r1=1, i0=0]=[r1=1]}
+2020-04-02 18:31:35.739 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 1
+2020-04-02 18:31:35.740 [scala-execution-context-global-10] DEBUG ROOT -     Best update is correct
+2020-04-02 18:31:39.399 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:31:39.400 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[r1=1, i0=250]=[r1=1], [i0=150]=[r1=2], [i0=250]=[r1=2], [r1=1, i0=200]=[r1=1], [i0=350]=[r1=2], [i0=100]=[r1=2], [i0=200]=[r1=2], [i0=150]=[r1=1], [i0=300]=[r1=2], [i0=400]=[r1=2], [r1=1, i0=300]=[r1=1], [i0=200]=[r1=1], [r1=1, i0=350]=[r1=1], [r1=1, i0=400]=[r1=1]}
+2020-04-02 18:32:08.365 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: (+ 2 (* -1 r1))
+2020-04-02 18:32:12.633 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:32:12.634 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=300]=[r1=1], [i0=200]=[r1=2], [i0=50]=[r1=2], [i0=200]=[r1=1], [i0=100]=[r1=2], [i0=350]=[r1=2], [i0=300]=[r1=2], [i0=250]=[r1=1], [i0=150]=[r1=2], [i0=250]=[r1=2]}
+2020-04-02 18:32:30.292 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 2
+2020-04-02 18:32:38.122 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:32:38.123 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=0]=[r1=2], [i0=0]=[r1=1], [i0=1]=[r1=2]}
+2020-04-02 18:32:55.397 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 2
+2020-04-02 18:33:06.704 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:33:06.704 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[]=[r1=1], [r1=1]=[r1=1]}
+2020-04-02 18:33:07.843 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 1
+2020-04-02 18:33:07.843 [scala-execution-context-global-10] DEBUG ROOT -     Best update is correct
+2020-04-02 18:33:18.559 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:33:18.560 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=200]=[r1=2], [i0=350]=[r1=2], [i0=300]=[r1=2], [i0=200]=[r1=1], [i0=250]=[r1=1], [i0=250]=[r1=2]}
+2020-04-02 18:33:36.148 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 2
+2020-04-02 18:33:36.913 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:33:36.914 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=0]=[r1=2], [i0=3]=[r1=2], [r1=1, i0=1]=[r1=1], [i0=1]=[r1=2], [r1=1, i0=2]=[r1=1]}
+2020-04-02 18:33:37.671 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: (+ 2 (* -1 r1))
+2020-04-02 18:33:37.671 [scala-execution-context-global-10] DEBUG ROOT -     Best update is correct
+2020-04-02 18:33:54.556 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:33:54.562 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:33:54.562 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[]=[o=2, o=0, o=1]}
+2020-04-02 18:33:54.563 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(0, 1, 2)
+2020-04-02 18:33:54.563 [scala-execution-context-global-10] DEBUG ROOT -   Secret best output is: r1
+2020-04-02 18:33:56.199 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:33:56.203 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i1=0, i0=200]=[r1=2], [i1=0, i0=200]=[r1=1]}
+2020-04-02 18:34:11.043 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 1
+2020-04-02 18:34:11.777 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:34:11.779 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=100]=[r1=2], [i0=50]=[r1=2], [i0=200]=[r1=2], [i0=150]=[r1=2], [i0=100]=[r1=1], [i0=200]=[r1=1], [i0=150]=[r1=1]}
+2020-04-02 18:34:30.005 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 2
+2020-04-02 18:34:34.229 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:34:34.230 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=400]=[r1=1], [i0=300]=[r1=1], [i0=350]=[r1=2], [i0=400]=[r1=2], [i0=250]=[r1=2], [i0=300]=[r1=2], [i0=150]=[r1=2], [i0=200]=[r1=2], [i0=100]=[r1=2]}
+2020-04-02 18:34:51.217 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 2
+2020-04-02 18:34:59.038 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:34:59.039 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=0]=[r1=1], [i0=2]=[r1=0], [i0=1]=[r1=0], [i0=1]=[r1=1]}
+2020-04-02 18:35:13.886 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 0
+2020-04-02 18:35:14.646 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:35:14.648 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[r1=2, i0=400]=[r1=2], [i0=150]=[r1=1], [i0=50]=[r1=1], [i0=100]=[r1=0], [i0=200]=[r1=1], [i0=200]=[r1=2], [r1=2, i0=300]=[r1=2], [i0=100]=[r1=1], [r1=2, i0=350]=[r1=2], [r1=2, i0=250]=[r1=2], [i0=250]=[r1=1], [r1=2, i0=200]=[r1=2], [i0=150]=[r1=2]}
+2020-04-02 18:35:38.195 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 2
+2020-04-02 18:35:42.477 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:35:42.478 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[r1=1, i0=50]=[r1=1], [i0=0]=[r1=1], [i0=300]=[r1=2], [r1=1, i0=100]=[r1=1], [r1=1, i0=200]=[r1=1], [i0=150]=[r1=1], [i0=250]=[r1=1], [i0=100]=[r1=1], [r1=1, i0=250]=[r1=1], [i0=350]=[r1=1], [i0=200]=[r1=2], [i0=200]=[r1=1], [i0=250]=[r1=2], [r1=1, i0=150]=[r1=1], [i0=300]=[r1=1], [i0=50]=[r1=1]}
+2020-04-02 18:36:05.577 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 1
+2020-04-02 18:36:13.495 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:36:13.495 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=0]=[r1=2], [i0=0]=[r1=1]}
+2020-04-02 18:36:28.386 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 2
+2020-04-02 18:36:36.426 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:36:36.427 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[]=[r1=0, r1=1]}
+2020-04-02 18:36:36.427 [scala-execution-context-global-10] DEBUG ROOT -     Multiple updates for no input
+2020-04-02 18:36:37.193 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:36:37.193 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[r1=2]=[r1=0], [r1=2]=[r1=1]}
+2020-04-02 18:36:52.987 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 0
+2020-04-02 18:36:53.757 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:36:53.758 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[]=[r1=1], [r1=1]=[r1=1]}
+2020-04-02 18:36:54.905 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 1
+2020-04-02 18:36:54.906 [scala-execution-context-global-10] DEBUG ROOT -     Best update is correct
+2020-04-02 18:37:29.439 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:37:29.440 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:37:29.440 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[]=[o=2, o=0, o=1]}
+2020-04-02 18:37:29.440 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(0, 1, 2)
+2020-04-02 18:37:29.441 [scala-execution-context-global-10] DEBUG ROOT -   Secret best output is: r1
+2020-04-02 18:37:31.073 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:37:31.075 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i1=0, i0=200]=[r1=1], [i1=0, i0=200]=[r1=0], [i1=0, i0=200]=[r1=2]}
+2020-04-02 18:37:48.505 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 1
+2020-04-02 18:37:49.255 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:37:49.255 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=200]=[r1=0], [i0=150]=[r1=0], [i0=100]=[r1=2], [i0=150]=[r1=2], [i0=200]=[r1=2]}
+2020-04-02 18:38:07.887 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 2
+2020-04-02 18:38:08.661 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:38:08.662 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=200]=[r1=1], [i0=150]=[r1=0]}
+2020-04-02 18:38:22.971 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 0
+2020-04-02 18:38:23.695 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:38:23.696 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=300]=[r1=0], [i0=250]=[r1=1], [i0=300]=[r1=1]}
+2020-04-02 18:38:40.301 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 1
+2020-04-02 18:38:48.125 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:38:48.127 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=0]=[r1=1], [i0=1]=[r1=0], [i0=0]=[r1=0], [i0=2]=[r1=0]}
+2020-04-02 18:39:04.089 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 0
+2020-04-02 18:39:04.852 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:39:04.852 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=150]=[r1=0], [i0=300]=[r1=0], [i0=250]=[r1=0], [i0=400]=[r1=0], [i0=350]=[r1=0], [i0=200]=[r1=1], [i0=200]=[r1=0], [i0=250]=[r1=1]}
+2020-04-02 18:39:20.466 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 0
+2020-04-02 18:39:24.689 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:39:24.689 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=150]=[r1=0], [i0=350]=[r1=0], [r1=2, i0=150]=[r1=2], [i0=300]=[r1=0], [r1=2, i0=50]=[r1=2], [i0=250]=[r1=0], [r1=2, i0=100]=[r1=2], [i0=200]=[r1=2], [i0=100]=[r1=0], [i0=200]=[r1=0]}
+2020-04-02 18:39:45.021 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: r1
+2020-04-02 18:39:52.869 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:39:52.871 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=0]=[r1=0], [i0=0]=[r1=2]}
+2020-04-02 18:40:07.463 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 2
+2020-04-02 18:40:18.661 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:40:18.661 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[r1=0]=[r1=0], []=[r1=0]}
+2020-04-02 18:40:19.742 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 0
+2020-04-02 18:40:19.743 [scala-execution-context-global-10] DEBUG ROOT -     Best update is correct
+2020-04-02 18:40:30.117 [scala-execution-context-global-10] DEBUG ROOT -   Getting update
+2020-04-02 18:40:30.120 [scala-execution-context-global-10] DEBUG ROOT -     Update training set: {[i0=200]=[r1=1], [i0=200]=[r1=2], [i0=250]=[r1=1], [i0=250]=[r1=2]}
+2020-04-02 18:40:45.591 [scala-execution-context-global-10] DEBUG ROOT -     Best update is: 2
+2020-04-02 18:41:04.141 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:41:04.144 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:41:04.146 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[i0=200]=[o=250], [i0=350]=[o=400], [i0=300]=[o=350], [i0=250]=[o=300]}
+2020-04-02 18:41:04.146 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 100, 150, 200, 250, 300, 350, 400, 50)
+2020-04-02 18:41:04.599 [scala-execution-context-global-10] DEBUG ROOT -   Best output is: (+ 50 i0)
+2020-04-02 18:41:04.599 [scala-execution-context-global-10] DEBUG ROOT -   Best output is correct
+2020-04-02 18:41:05.912 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:41:05.921 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:41:05.921 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[i0=0]=[o=1], [i0=1]=[o=2], [i0=4]=[o=5], [i0=3]=[o=4], [i0=2]=[o=3]}
+2020-04-02 18:41:05.921 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 1, 2, 3, 4, 5)
+2020-04-02 18:41:06.453 [scala-execution-context-global-10] DEBUG ROOT -   Best output is: (+ 1 i0)
+2020-04-02 18:41:06.453 [scala-execution-context-global-10] DEBUG ROOT -   Best output is correct
+2020-04-02 18:41:07.904 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:41:07.904 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:41:07.904 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[i0=0]=[o=1], [i0=1]=[o=2], [i0=4]=[o=5], [i0=2]=[o=3], [i0=3]=[o=4]}
+2020-04-02 18:41:07.904 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 1, 2, 3, 4, 5)
+2020-04-02 18:41:08.429 [scala-execution-context-global-10] DEBUG ROOT -   Best output is: (+ 1 i0)
+2020-04-02 18:41:08.429 [scala-execution-context-global-10] DEBUG ROOT -   Best output is correct
+2020-04-02 18:41:09.757 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:41:09.759 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:41:09.759 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[i0=400]=[o=350], [i0=250]=[o=200], [i0=150]=[o=100], [i0=300]=[o=250], [i0=200]=[o=150], [i0=350]=[o=300], [i0=100]=[o=50], [i0=50]=[o=0]}
+2020-04-02 18:41:09.759 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 200, 150, 100, 400, 350, 300, 250, 50)
+2020-04-02 18:41:10.184 [scala-execution-context-global-10] DEBUG ROOT -   Best output is: (+ -50 i0)
+2020-04-02 18:41:10.184 [scala-execution-context-global-10] DEBUG ROOT -   Best output is correct
+2020-04-02 18:41:11.544 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:41:11.545 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+2020-04-02 18:41:12.871 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:41:12.871 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:41:12.871 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[i0=150]=[o=200], [i0=250]=[o=300], [i0=200]=[o=250], [i0=100]=[o=150]}
+2020-04-02 18:41:12.871 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 100, 150, 200, 250, 300, 350, 400, 50)
+2020-04-02 18:41:13.439 [scala-execution-context-global-10] DEBUG ROOT -   Best output is: (+ 50 i0)
+2020-04-02 18:41:13.439 [scala-execution-context-global-10] DEBUG ROOT -   Best output is correct
+2020-04-02 18:41:14.768 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:41:14.768 [scala-execution-context-global-10] DEBUG ROOT -   No latent variable
+2020-04-02 18:41:14.768 [scala-execution-context-global-10] DEBUG ROOT -   Output training set: {[i0=300]=[o=250], [i0=350]=[o=300]}
+2020-04-02 18:41:14.769 [scala-execution-context-global-10] DEBUG ROOT -   Int terminals: List(i0, 0, 200, 150, 100, 400, 350, 300, 250, 50)
+2020-04-02 18:41:15.189 [scala-execution-context-global-10] DEBUG ROOT -   Best output is: (+ -50 i0)
+2020-04-02 18:41:15.189 [scala-execution-context-global-10] DEBUG ROOT -   Best output is correct
+2020-04-02 18:41:16.519 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:41:16.520 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+2020-04-02 18:41:17.844 [scala-execution-context-global-10] DEBUG ROOT - Getting Output...
+2020-04-02 18:41:17.844 [scala-execution-context-global-10] DEBUG ROOT -   Singleton literal output
+2020-04-02 18:41:26.204 [main] INFO  ROOT - Resolved PTA has 541 states
+2020-04-02 18:41:26.208 [main] INFO  ROOT - Resolved PTA has 540 transitions
+2020-04-02 18:52:48.228 [main] DEBUG ROOT - 541 -> 517
+2020-04-02 19:02:36.830 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:02:36.830 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:02:50.638 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:02:50.639 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:03:04.496 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:03:04.496 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:03:18.167 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:03:18.167 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:03:32.021 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:03:32.021 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:03:45.690 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:03:45.691 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:03:59.283 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:03:59.283 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:04:13.246 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:04:13.246 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:04:27.016 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:04:27.016 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:04:40.737 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:04:40.737 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:05:55.921 [main] DEBUG ROOT - 517 -> 451
+2020-04-02 19:10:27.980 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:10:27.981 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:10:38.438 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:10:38.438 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:10:48.928 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:10:48.928 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:10:59.384 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:10:59.384 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:11:09.962 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:11:09.963 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:11:20.412 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:11:20.412 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:11:30.994 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:11:30.994 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:11:41.467 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:11:41.467 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:11:51.995 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:11:51.995 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:12:02.662 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:12:02.663 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:12:13.085 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:12:13.094 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:12:23.704 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:12:23.704 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:12:34.275 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:12:34.275 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:12:44.783 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:12:44.783 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:12:55.277 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:12:55.277 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:13:05.857 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:13:05.857 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:13:16.436 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:13:16.436 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:13:27.147 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:13:27.148 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:13:35.590 [main] DEBUG ROOT - 451 -> 441
+2020-04-02 19:17:41.461 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:17:41.462 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:17:52.011 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:17:52.011 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:21:42.671 [main] DEBUG ROOT - 441 -> 154
+2020-04-02 19:22:08.391 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:22:08.391 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:22:17.963 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:22:17.963 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:22:27.452 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:22:27.452 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:22:38.205 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:22:38.205 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:22:50.571 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:22:50.571 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:23:02.536 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:23:02.536 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:23:14.781 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:23:14.781 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:23:28.262 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:23:28.262 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:23:40.468 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:23:40.468 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:23:44.717 [main] DEBUG ROOT - 154 -> 141
+2020-04-02 19:24:08.150 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:24:08.151 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:24:10.096 [main] DEBUG ROOT - 141 -> 137
+2020-04-02 19:24:31.222 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:24:31.222 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:24:37.007 [main] DEBUG ROOT - 137 -> 118
+2020-04-02 19:24:58.964 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:24:58.964 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:25:12.289 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:25:12.289 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:25:23.179 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:25:23.180 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:25:24.412 [main] DEBUG ROOT - 118 -> 115
+2020-04-02 19:25:33.040 [main] DEBUG ROOT - 115 -> 110
+2020-04-02 19:25:49.597 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:25:49.597 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:25:58.998 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:25:58.999 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:26:08.471 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:26:08.471 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:26:09.301 [main] DEBUG ROOT - 110 -> 103
+2020-04-02 19:26:23.173 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:26:23.173 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:26:24.909 [main] DEBUG ROOT - 103 -> 97
+2020-04-02 19:26:38.400 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:26:38.401 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:26:39.346 [main] DEBUG ROOT - 97 -> 93
+2020-04-02 19:26:52.461 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:26:52.461 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:27:02.009 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:27:02.009 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:27:11.699 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:27:11.699 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:27:12.286 [main] DEBUG ROOT - 93 -> 89
+2020-04-02 19:27:25.114 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:27:25.114 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:27:34.534 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:27:34.535 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:27:35.158 [main] DEBUG ROOT - 89 -> 83
+2020-04-02 19:27:47.580 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:27:47.580 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:27:47.823 [main] DEBUG ROOT - 83 -> 81
+2020-04-02 19:28:00.124 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:28:00.124 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:28:00.846 [main] DEBUG ROOT - 81 -> 73
+2020-04-02 19:28:12.543 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:28:12.543 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:28:21.962 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:28:21.962 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:28:31.366 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:28:31.366 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:28:40.717 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:28:40.718 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:28:50.110 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:28:50.110 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:28:50.342 [main] DEBUG ROOT - 73 -> 71
+2020-04-02 19:29:02.075 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:29:02.075 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:29:11.587 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:29:11.587 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:29:20.912 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:29:20.912 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:29:30.282 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:29:30.282 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:29:39.604 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:29:39.604 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:29:40.068 [main] DEBUG ROOT - 71 -> 65
+2020-04-02 19:29:51.436 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:29:51.436 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:30:00.821 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:30:00.821 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:30:10.267 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:30:10.267 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:30:19.754 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:30:19.754 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:30:29.194 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:30:29.194 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:30:39.531 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:30:39.532 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:30:49.806 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:30:49.806 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:30:59.819 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:30:59.819 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:31:00.085 [main] DEBUG ROOT - 65 -> 62
+2020-04-02 19:31:11.929 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:31:11.930 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:31:21.676 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:31:21.676 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:31:22.285 [main] DEBUG ROOT - 62 -> 52
+2020-04-02 19:31:33.196 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:31:33.196 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:31:42.654 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:31:42.655 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:31:42.885 [main] DEBUG ROOT - 52 -> 49
+2020-04-02 19:31:44.472 [main] DEBUG ROOT - 49 -> 46
+2020-04-02 19:31:47.135 [main] DEBUG ROOT - 46 -> 44
+2020-04-02 19:31:49.100 [main] DEBUG ROOT - 44 -> 43
+2020-04-02 19:31:51.124 [main] DEBUG ROOT - 43 -> 42
+2020-04-02 19:31:52.337 [main] DEBUG ROOT - 42 -> 41
+2020-04-02 19:31:53.492 [main] DEBUG ROOT - 41 -> 40
+2020-04-02 19:31:55.264 [main] DEBUG ROOT - 40 -> 38
+2020-04-02 19:32:06.119 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-02 19:32:06.119 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:32:06.496 [main] DEBUG ROOT - 38 -> 35
+2020-04-02 19:32:17.296 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:32:17.296 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:32:17.440 [main] DEBUG ROOT - 35 -> 33
+2020-04-02 19:32:18.461 [main] DEBUG ROOT - 33 -> 31
+2020-04-02 19:32:19.152 [main] DEBUG ROOT - 31 -> 29
+2020-04-02 19:32:29.096 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-02 19:32:29.096 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-02 19:32:29.115 [main] INFO  ROOT - The inferred machine is deterministic
+2020-04-02 19:32:29.120 [main] INFO  ROOT - Completed in 1h 9m 9.84649721400001s
+2020-04-02 19:32:29.120 [main] INFO  ROOT - states: 29
+2020-04-02 19:32:29.120 [main] INFO  ROOT - transitions: 55
