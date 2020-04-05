@@ -3,7 +3,7 @@
 #SBATCH --ntasks-per-node=1
 #sBatch -c=4
 #SBATCH --mem=8000
-#SBATCH --time=20:00:00
+#SBATCH --time=10:00:00
 #SBATCH --mail-user=jmafoster1@sheffield.ac.uk
 
 module load Java/11
