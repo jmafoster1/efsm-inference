@@ -110,7 +110,8 @@ def split_trace(trace, rejected=None):
 program = "spaceInvaders"
 configurations = [
                     "obfuscated-x-gp",
-                    "obfuscated-shields-gp"
+                    "obfuscated-shields-gp",
+                    "obfuscated-aliens-gp"
                  ]
 
 fig1, ax1 = plt.subplots()
@@ -220,4 +221,3 @@ ax1.set_xticklabels(
 
 plt.tight_layout()
 plt.savefig("test.pgf")
-plt.savefig("test.pdf")

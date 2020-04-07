@@ -468,7 +468,7 @@ lemma input_not_constrained_gval_swap_inputs:
 proof(induct a)
   case (Bc x)
   then show ?case
-    by (metis (full_types) apply_guards(4) apply_guards(5))
+    by (metis (full_types) gval.simps(1) gval.simps(2))
 next
   case (Eq x1a x2)
   then show ?case

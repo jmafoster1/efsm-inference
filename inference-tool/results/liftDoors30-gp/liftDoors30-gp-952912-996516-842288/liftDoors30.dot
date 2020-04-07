@@ -1,0 +1,21 @@
+digraph EFSM{
+  graph [rankdir="LR", fontname="Latin Modern Math"];
+  node [color="black", fillcolor="white", shape="circle", style="filled", fontname="Latin Modern Math"];
+  edge [fontname="Latin Modern Math"];
+
+  s0[fillcolor="gray", label=<s<sub>0</sub>>];
+  s1[label=<s<sub>1</sub>>];
+  s7[label=<s<sub>7</sub>>];
+  s15[label=<s<sub>15</sub>>];
+
+  s7->s7[label=<<i>fullyClosed:1/o<sub>1</sub> := 0</i>>];
+  s0->s1[label=<<i>setTimer:1/o<sub>1</sub> := 5</i>>];
+  s1->s7[label=<<i>systemInitReady:1/o<sub>1</sub> := 10</i>>];
+  s7->s15[label=<<i>buttonInterrupted:1/o<sub>1</sub> := 3</i>>];
+  s1->s1[label=<<i>waitTimer:1/o<sub>1</sub> := -1 + i<sub>0</sub></i>>];
+  s7->s15[label=<<i>requestOpen:1/o<sub>1</sub> := 10</i>>];
+  s15->s15[label=<<i>openingDoor:1/o<sub>1</sub> := -1 + i<sub>0</sub></i>>];
+  s15->s15[label=<<i>fullyOpen:1/o<sub>1</sub> := -1 + i<sub>0</sub></i>>];
+  s15->s7[label=<<i>timeout:1/o<sub>1</sub> := 5</i>>];
+  s7->s7[label=<<i>closingDoor:1/o<sub>1</sub> := -1 + i<sub>0</sub></i>>];
+}
