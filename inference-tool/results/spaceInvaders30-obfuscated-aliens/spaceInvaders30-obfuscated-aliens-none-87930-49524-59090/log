@@ -1,0 +1,1022 @@
+2020-04-05 19:05:49.641 [main] INFO  ROOT - -s naive_eq_bonus -p none -g 87930 -o 49524 -u 59090 -h same,ws,distinguish -d results/spaceInvaders30-obfuscated-aliens-none-87930-49524-59090 experimental-data/spaceInvaders30-obfuscated-aliens-train.json experimental-data/spaceInvaders30-obfuscated-aliens-test.json
+2020-04-05 19:05:49.643 [main] INFO  ROOT - Building PTA - 30 traces
+2020-04-05 19:06:00.775 [main] INFO  ROOT - PTA has 541 states
+2020-04-05 19:06:00.777 [main] INFO  ROOT - PTA has 540 transitions
+2020-04-05 19:16:50.650 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 19:16:50.661 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 19:16:55.782 [main] DEBUG ROOT - 541 -> 538
+2020-04-05 19:27:35.181 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 19:27:35.182 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 19:27:47.178 [main] DEBUG ROOT - 538 -> 529
+2020-04-05 19:38:06.366 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-05 19:38:06.367 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 19:38:13.327 [main] DEBUG ROOT - 529 -> 524
+2020-04-05 19:48:21.691 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-05 19:48:21.692 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 19:48:27.616 [main] DEBUG ROOT - 524 -> 520
+2020-04-05 19:58:25.209 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 19:58:25.210 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 19:58:33.018 [main] DEBUG ROOT - 520 -> 514
+2020-04-05 20:08:13.231 [main] DEBUG ROOT - 514 -> 509
+2020-04-05 20:17:54.838 [main] DEBUG ROOT - 509 -> 497
+2020-04-05 20:27:08.307 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 20:27:08.308 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 20:27:13.213 [main] DEBUG ROOT - 497 -> 495
+2020-04-05 20:36:15.724 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 20:36:15.725 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 20:36:31.075 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 20:36:31.076 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 20:36:37.135 [main] DEBUG ROOT - 495 -> 492
+2020-04-05 20:45:36.938 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 20:45:36.939 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 20:45:44.160 [main] DEBUG ROOT - 492 -> 489
+2020-04-05 20:54:24.900 [main] DEBUG ROOT - 489 -> 485
+2020-04-05 21:03:05.666 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 21:03:05.667 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 21:03:12.855 [main] DEBUG ROOT - 485 -> 480
+2020-04-05 21:11:42.422 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 21:11:42.423 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 21:11:55.244 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 21:11:55.244 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 21:12:03.726 [main] DEBUG ROOT - 480 -> 474
+2020-04-05 21:20:20.008 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-05 21:20:20.009 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 21:20:27.521 [main] DEBUG ROOT - 474 -> 469
+2020-04-05 21:28:38.788 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 21:28:38.789 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 21:28:47.068 [main] DEBUG ROOT - 469 -> 465
+2020-04-05 21:36:43.472 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-05 21:36:43.474 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 21:37:07.725 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 21:37:07.726 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 21:37:22.345 [main] DEBUG ROOT - 465 -> 458
+2020-04-05 21:44:52.327 [main] DEBUG ROOT - 458 -> 456
+2020-04-05 21:52:23.407 [main] DEBUG ROOT - 456 -> 453
+2020-04-05 21:59:49.013 [main] DEBUG ROOT - 453 -> 451
+2020-04-05 22:07:21.120 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 22:07:21.127 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 22:07:26.955 [main] DEBUG ROOT - 451 -> 447
+2020-04-05 22:14:42.355 [main] DEBUG ROOT - 447 -> 442
+2020-04-05 22:21:57.528 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 22:21:57.530 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 22:22:04.950 [main] DEBUG ROOT - 442 -> 436
+2020-04-05 22:27:22.341 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 22:27:22.342 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 22:27:39.016 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 22:27:39.028 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 22:27:53.936 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 22:27:53.936 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 22:28:07.428 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 22:28:07.429 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 22:28:14.473 [main] DEBUG ROOT - 436 -> 430
+2020-04-05 22:33:20.475 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 22:33:20.476 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 22:33:23.405 [main] DEBUG ROOT - 430 -> 428
+2020-04-05 22:38:14.024 [main] DEBUG ROOT - 428 -> 424
+2020-04-05 22:43:03.729 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 22:43:03.729 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 22:43:17.021 [main] DEBUG ROOT - 424 -> 417
+2020-04-05 22:48:01.476 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-05 22:48:01.478 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 22:48:14.182 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-05 22:48:14.184 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 22:48:17.018 [main] DEBUG ROOT - 417 -> 415
+2020-04-05 22:53:00.575 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 22:53:00.576 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 22:53:03.602 [main] DEBUG ROOT - 415 -> 413
+2020-04-05 22:57:34.302 [main] DEBUG ROOT - 413 -> 406
+2020-04-05 23:02:04.839 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:02:04.841 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:02:22.269 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:02:22.270 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:02:38.124 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:02:38.125 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:02:43.273 [main] DEBUG ROOT - 406 -> 402
+2020-04-05 23:07:04.790 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:07:04.792 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:07:20.563 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:07:20.563 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:07:40.697 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:07:40.697 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:07:53.338 [main] DEBUG ROOT - 402 -> 393
+2020-04-05 23:12:07.581 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:12:07.582 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:12:23.268 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-05 23:12:23.269 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:12:29.409 [main] DEBUG ROOT - 393 -> 389
+2020-04-05 23:16:31.382 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:16:31.384 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:16:37.438 [main] DEBUG ROOT - 389 -> 384
+2020-04-05 23:20:36.463 [main] DEBUG ROOT - 384 -> 373
+2020-04-05 23:24:18.746 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-05 23:24:18.747 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:24:31.050 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:24:31.051 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:24:35.446 [main] DEBUG ROOT - 373 -> 369
+2020-04-05 23:28:17.877 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:28:17.878 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:28:30.226 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:28:30.226 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:28:42.420 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:28:42.420 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:28:56.164 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:28:56.165 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:29:11.913 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:29:11.915 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:29:18.772 [main] DEBUG ROOT - 369 -> 362
+2020-04-05 23:32:49.137 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:32:49.140 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:32:54.919 [main] DEBUG ROOT - 362 -> 356
+2020-04-05 23:36:17.323 [main] DEBUG ROOT - 356 -> 346
+2020-04-05 23:39:22.557 [main] DEBUG ROOT - 346 -> 344
+2020-04-05 23:42:22.677 [main] DEBUG ROOT - 344 -> 341
+2020-04-05 23:45:35.557 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:45:35.559 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:45:48.672 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:45:48.681 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:46:05.682 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-05 23:46:05.682 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:46:21.062 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-05 23:46:21.062 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:46:26.615 [main] DEBUG ROOT - 341 -> 335
+2020-04-05 23:49:29.241 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:49:29.241 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:49:37.931 [main] DEBUG ROOT - 335 -> 325
+2020-04-05 23:52:28.699 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:52:28.702 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:52:40.809 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:52:40.809 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:52:45.465 [main] DEBUG ROOT - 325 -> 320
+2020-04-05 23:55:37.883 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:55:37.886 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:55:51.447 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:55:51.447 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:56:05.863 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:56:05.863 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:56:27.545 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:56:27.546 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:56:40.124 [main] DEBUG ROOT - 320 -> 313
+2020-04-05 23:59:22.052 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:59:22.052 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:59:35.166 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-05 23:59:35.169 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:59:49.004 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-05 23:59:49.005 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-05 23:59:56.711 [main] DEBUG ROOT - 313 -> 305
+2020-04-06 00:02:24.234 [main] DEBUG ROOT - 305 -> 297
+2020-04-06 00:04:55.477 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 00:04:55.481 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:05:00.706 [main] DEBUG ROOT - 297 -> 292
+2020-04-06 00:07:21.611 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:07:21.612 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:07:26.125 [main] DEBUG ROOT - 292 -> 288
+2020-04-06 00:09:42.516 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:09:42.517 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:09:55.519 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:09:55.520 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:09:58.510 [main] DEBUG ROOT - 288 -> 285
+2020-04-06 00:12:17.254 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:12:17.256 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:12:29.371 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:12:29.372 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:12:32.521 [main] DEBUG ROOT - 285 -> 282
+2020-04-06 00:14:37.696 [main] DEBUG ROOT - 282 -> 277
+2020-04-06 00:16:45.276 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:16:45.277 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:16:59.794 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:16:59.794 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:17:14.260 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:17:14.260 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:17:19.570 [main] DEBUG ROOT - 277 -> 272
+2020-04-06 00:19:28.701 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:19:28.703 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:19:36.433 [main] DEBUG ROOT - 272 -> 270
+2020-04-06 00:21:42.062 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 00:21:42.062 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:21:59.000 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 00:21:59.000 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:22:14.133 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:22:14.133 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:22:18.035 [main] DEBUG ROOT - 270 -> 267
+2020-04-06 00:24:13.225 [main] DEBUG ROOT - 267 -> 261
+2020-04-06 00:26:12.189 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:26:12.190 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:26:24.896 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:26:24.897 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:26:41.153 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:26:41.154 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:26:56.937 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:26:56.937 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:26:59.998 [main] DEBUG ROOT - 261 -> 258
+2020-04-06 00:28:59.310 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:28:59.310 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:29:11.690 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:29:11.693 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:29:24.172 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:29:24.172 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:29:29.708 [main] DEBUG ROOT - 258 -> 255
+2020-04-06 00:31:23.033 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 00:31:23.034 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:31:35.040 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:31:35.040 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:31:47.185 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 00:31:47.185 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:31:59.485 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:31:59.486 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:32:16.811 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:32:16.811 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:32:19.119 [main] DEBUG ROOT - 255 -> 253
+2020-04-06 00:34:02.804 [main] DEBUG ROOT - 253 -> 250
+2020-04-06 00:35:44.672 [main] DEBUG ROOT - 250 -> 247
+2020-04-06 00:37:27.924 [main] DEBUG ROOT - 247 -> 244
+2020-04-06 00:39:16.302 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:39:16.303 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:39:19.301 [main] DEBUG ROOT - 244 -> 241
+2020-04-06 00:40:55.996 [main] DEBUG ROOT - 241 -> 238
+2020-04-06 00:42:28.448 [main] DEBUG ROOT - 238 -> 236
+2020-04-06 00:44:11.109 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:44:11.109 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:44:17.585 [main] DEBUG ROOT - 236 -> 232
+2020-04-06 00:46:00.398 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:46:00.399 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:46:01.925 [main] DEBUG ROOT - 232 -> 231
+2020-04-06 00:47:32.555 [main] DEBUG ROOT - 231 -> 228
+2020-04-06 00:49:11.291 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:49:11.291 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:49:15.421 [main] DEBUG ROOT - 228 -> 224
+2020-04-06 00:50:48.775 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:50:48.776 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:51:00.515 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:51:00.516 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:51:05.219 [main] DEBUG ROOT - 224 -> 221
+2020-04-06 00:52:36.530 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:52:36.531 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:52:48.295 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 00:52:48.295 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:53:05.733 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 00:53:05.735 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:53:19.219 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:53:19.220 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:53:23.168 [main] DEBUG ROOT - 221 -> 216
+2020-04-06 00:54:58.042 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:54:58.043 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:55:04.935 [main] DEBUG ROOT - 216 -> 213
+2020-04-06 00:56:40.215 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:56:40.216 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:56:56.895 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:56:56.895 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:57:03.489 [main] DEBUG ROOT - 213 -> 207
+2020-04-06 00:58:31.370 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:58:31.370 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:58:46.780 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 00:58:46.780 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 00:58:50.171 [main] DEBUG ROOT - 207 -> 203
+2020-04-06 01:00:14.520 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:00:14.520 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:00:29.487 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:00:29.487 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:00:32.153 [main] DEBUG ROOT - 203 -> 202
+2020-04-06 01:01:48.469 [main] DEBUG ROOT - 202 -> 200
+2020-04-06 01:02:59.482 [main] DEBUG ROOT - 200 -> 198
+2020-04-06 01:04:17.465 [main] DEBUG ROOT - 198 -> 195
+2020-04-06 01:05:28.420 [main] DEBUG ROOT - 195 -> 191
+2020-04-06 01:06:32.481 [main] DEBUG ROOT - 191 -> 190
+2020-04-06 01:07:45.578 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:07:45.579 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:07:50.299 [main] DEBUG ROOT - 190 -> 185
+2020-04-06 01:09:00.692 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:09:00.693 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:09:12.431 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:09:12.431 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:09:14.200 [main] DEBUG ROOT - 185 -> 183
+2020-04-06 01:10:13.385 [main] DEBUG ROOT - 183 -> 181
+2020-04-06 01:11:22.193 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:11:22.193 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:11:26.577 [main] DEBUG ROOT - 181 -> 174
+2020-04-06 01:12:29.426 [main] DEBUG ROOT - 174 -> 172
+2020-04-06 01:13:33.603 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:13:33.604 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:13:35.286 [main] DEBUG ROOT - 172 -> 171
+2020-04-06 01:14:28.714 [main] DEBUG ROOT - 171 -> 170
+2020-04-06 01:15:36.009 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:15:36.009 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:15:48.135 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:15:48.135 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:16:05.230 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:16:05.231 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:16:17.635 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:16:17.636 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:16:20.315 [main] DEBUG ROOT - 170 -> 168
+2020-04-06 01:17:22.083 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:17:22.084 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:17:35.250 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:17:35.250 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:17:49.868 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:17:49.868 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:17:54.033 [main] DEBUG ROOT - 168 -> 164
+2020-04-06 01:18:46.770 [main] DEBUG ROOT - 164 -> 162
+2020-04-06 01:19:45.775 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:19:45.776 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:19:57.474 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:19:57.474 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:20:01.576 [main] DEBUG ROOT - 162 -> 161
+2020-04-06 01:20:54.464 [main] DEBUG ROOT - 161 -> 159
+2020-04-06 01:21:41.711 [main] DEBUG ROOT - 159 -> 158
+2020-04-06 01:22:28.987 [main] DEBUG ROOT - 158 -> 156
+2020-04-06 01:23:20.788 [main] DEBUG ROOT - 156 -> 153
+2020-04-06 01:24:06.129 [main] DEBUG ROOT - 153 -> 150
+2020-04-06 01:24:39.661 [main] DEBUG ROOT - 150 -> 148
+2020-04-06 01:25:21.133 [main] DEBUG ROOT - 148 -> 146
+2020-04-06 01:25:52.806 [main] DEBUG ROOT - 146 -> 144
+2020-04-06 01:26:33.939 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:26:33.939 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:26:45.617 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:26:45.618 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:26:57.289 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:26:57.289 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:27:08.913 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:27:08.913 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:27:21.778 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:27:21.778 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:27:33.430 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:27:33.430 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:27:45.111 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:27:45.111 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:27:56.680 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:27:56.680 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:28:08.209 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:28:08.209 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:28:19.633 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:28:19.633 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:28:31.120 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:28:31.120 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:28:42.807 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:28:42.807 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:28:54.737 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:28:54.738 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:29:08.293 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:29:08.293 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:29:19.971 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:29:19.971 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:29:31.301 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:29:31.301 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:29:42.952 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:29:42.953 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:29:54.605 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:29:54.605 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:30:06.165 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:30:06.166 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:30:17.717 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:30:17.718 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:30:29.240 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:30:29.240 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:30:41.241 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:30:41.242 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:30:52.848 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:30:52.848 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:31:04.418 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:31:04.418 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:31:15.756 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:31:15.757 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:31:27.876 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:31:27.877 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:31:39.593 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:31:39.595 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:31:51.209 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:31:51.209 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:32:02.675 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:32:02.675 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:32:13.970 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:32:13.970 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:32:25.434 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:32:25.434 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:32:36.877 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:32:36.878 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:32:48.464 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:32:48.465 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:33:00.364 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:33:00.364 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:33:11.781 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:33:11.786 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:33:23.279 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:33:23.279 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:33:34.695 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:33:34.695 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:33:46.124 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:33:46.124 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:33:57.607 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:33:57.607 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:34:09.586 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:34:09.586 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:34:21.224 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:34:21.224 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:34:32.995 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:34:32.995 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:34:46.793 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:34:46.793 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:34:59.520 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:34:59.521 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:35:11.009 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:35:11.009 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:35:22.663 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:35:22.664 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:35:34.214 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:35:34.215 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:35:46.448 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:35:46.449 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:35:57.913 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:35:57.914 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:36:09.849 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:36:09.850 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:36:21.474 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:36:21.474 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:36:33.206 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:36:33.207 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:36:45.284 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:36:45.284 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:36:56.740 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:36:56.741 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:37:08.278 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:37:08.278 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:37:19.855 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:37:19.856 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:37:31.449 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:37:31.449 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:37:43.012 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:37:43.012 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:37:55.032 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:37:55.032 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:38:06.558 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:38:06.558 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:38:18.291 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:38:18.291 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:38:29.862 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:38:29.863 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:38:41.496 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:38:41.496 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:38:53.816 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:38:53.816 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:39:05.852 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:39:05.852 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:39:17.289 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:39:17.289 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:39:28.658 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:39:28.658 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:39:40.194 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:39:40.194 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:39:51.701 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:39:51.702 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:40:03.421 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:40:03.421 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:40:14.863 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:40:14.864 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:40:26.676 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:40:26.677 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:40:38.120 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:40:38.120 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:40:49.606 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:40:49.607 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:41:01.988 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:41:01.989 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:41:13.585 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:41:13.585 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:41:25.474 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:41:25.474 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:41:37.399 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:41:37.399 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:41:48.721 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:41:48.721 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:42:00.159 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:42:00.160 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:42:12.421 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:42:12.421 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:42:23.905 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:42:23.905 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:42:35.271 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:42:35.271 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:42:46.601 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:42:46.601 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:42:58.934 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:42:58.934 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:43:10.898 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:43:10.899 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:43:24.377 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:43:24.377 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:43:36.841 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:43:36.841 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:43:48.234 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:43:48.234 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:43:59.772 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:43:59.772 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:44:11.533 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:44:11.534 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:44:23.636 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:44:23.637 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:44:35.190 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:44:35.190 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:44:46.653 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:44:46.654 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:44:58.111 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:44:58.111 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:45:09.892 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:45:09.893 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:45:21.266 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:45:21.266 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:45:33.332 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:45:33.333 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:45:45.018 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:45:45.019 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:45:56.657 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:45:56.657 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:46:08.021 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:46:08.021 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:46:20.838 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:46:20.838 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:46:32.363 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:46:32.363 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:46:43.749 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:46:43.750 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:46:55.868 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:46:55.868 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:47:07.830 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:47:07.831 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:47:23.846 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:47:23.846 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:47:35.400 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:47:35.400 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:47:46.927 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:47:46.928 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:47:58.404 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:47:58.405 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:48:09.856 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:48:09.857 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:48:21.261 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:48:21.261 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:48:32.710 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:48:32.711 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:48:43.991 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:48:43.991 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:48:55.479 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:48:55.479 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:49:06.977 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:49:06.978 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:49:18.511 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:49:18.512 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:49:29.842 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:49:29.843 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:49:41.280 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:49:41.280 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:49:52.765 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:49:52.766 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:50:04.653 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:50:04.653 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:50:16.166 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:50:16.166 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:50:28.240 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:50:28.240 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:50:39.564 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:50:39.565 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:50:55.766 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:50:55.767 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:51:07.034 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:51:07.034 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:51:18.288 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:51:18.288 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:51:29.815 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:51:29.815 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:51:41.522 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:51:41.522 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:51:53.037 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:51:53.038 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:52:06.256 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:52:06.256 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:52:19.269 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:52:19.270 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:52:30.953 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:52:30.953 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:52:42.482 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:52:42.482 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:52:54.044 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:52:54.044 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:53:05.693 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:53:05.704 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:53:17.051 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:53:17.052 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:53:28.400 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:53:28.400 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:53:40.598 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:53:40.598 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:53:52.575 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:53:52.575 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:54:04.287 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:54:04.287 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:54:16.149 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:54:16.150 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:54:27.690 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:54:27.690 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:54:39.226 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:54:39.226 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:54:51.065 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:54:51.065 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:55:02.868 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:55:02.868 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:55:14.307 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:55:14.308 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:55:25.643 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:55:25.643 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:55:37.342 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:55:37.342 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:55:48.776 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:55:48.776 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:56:00.298 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:56:00.298 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:56:11.767 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:56:11.768 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:56:23.419 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:56:23.420 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:56:35.043 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:56:35.043 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:56:46.490 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:56:46.490 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:56:58.002 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:56:58.002 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:57:09.416 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:57:09.416 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:57:21.016 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:57:21.017 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:57:32.749 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:57:32.750 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:57:44.263 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:57:44.263 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:57:55.759 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:57:55.759 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:58:07.197 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:58:07.198 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:58:18.760 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:58:18.760 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:58:30.111 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:58:30.112 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:58:41.541 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 01:58:41.541 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:58:53.067 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:58:53.067 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:59:04.697 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:59:04.697 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:59:16.163 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:59:16.164 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:59:28.062 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:59:28.063 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:59:39.646 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:59:39.646 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 01:59:51.294 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 01:59:51.294 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:00:02.653 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:00:02.653 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:00:14.113 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:00:14.114 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:00:26.004 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:00:26.004 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:00:37.482 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:00:37.482 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:00:50.970 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:00:50.971 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:01:04.065 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:01:04.065 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:01:16.186 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:01:16.187 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:01:28.952 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:01:28.952 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:01:40.812 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:01:40.812 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:01:52.179 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:01:52.180 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:02:03.770 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:02:03.770 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:02:15.321 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:02:15.321 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:02:27.308 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:02:27.315 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:02:38.795 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:02:38.795 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:02:50.284 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:02:50.284 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:03:01.748 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:03:01.749 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:03:13.219 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:03:13.219 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:03:24.781 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:03:24.781 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:03:36.632 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:03:36.632 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:03:48.478 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:03:48.478 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:03:59.744 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:03:59.745 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:04:12.051 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:04:12.051 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:04:23.719 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:04:23.719 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:04:38.381 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:04:38.382 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:04:50.696 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:04:50.697 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:05:02.183 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:05:02.183 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:05:13.599 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:05:13.599 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:05:25.037 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:05:25.038 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:05:36.512 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:05:36.512 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:05:48.052 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:05:48.053 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:05:59.544 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:05:59.544 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:06:11.016 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:06:11.016 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:06:22.388 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:06:22.389 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:06:33.933 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:06:33.933 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:06:45.464 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:06:45.464 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:06:57.028 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:06:57.028 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:07:08.656 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:07:08.657 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:07:20.520 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:07:20.521 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:07:32.031 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:07:32.031 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:07:44.381 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:07:44.381 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:07:56.004 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:07:56.004 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:08:09.916 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:08:09.916 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:08:21.616 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:08:21.617 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:08:33.225 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:08:33.225 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:08:44.787 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:08:44.787 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:08:57.610 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:08:57.610 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:09:09.280 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:09:09.280 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:09:20.763 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:09:20.763 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:09:34.441 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:09:34.441 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:09:47.429 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:09:47.429 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:09:59.958 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:09:59.958 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:10:11.463 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:10:11.463 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:10:23.886 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:10:23.887 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:10:35.459 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:10:35.459 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:10:47.040 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:10:47.040 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:10:58.642 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:10:58.642 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:11:10.651 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:11:10.651 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:11:22.130 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:11:22.131 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:11:33.546 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:11:33.547 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:11:45.092 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:11:45.092 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:11:56.789 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:11:56.790 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:12:08.805 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:12:08.806 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:12:20.575 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:12:20.576 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:12:32.362 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:12:32.362 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:12:43.837 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:12:43.838 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:12:55.593 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:12:55.594 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:13:07.277 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:13:07.277 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:13:18.755 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:13:18.756 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:13:30.183 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:13:30.183 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:13:41.737 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:13:41.737 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:13:53.161 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:13:53.161 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:14:04.763 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:14:04.764 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:14:18.549 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:14:18.549 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:14:30.122 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:14:30.123 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:14:42.169 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:14:42.169 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:14:53.757 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:14:53.757 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:15:05.405 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:15:05.405 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:15:16.945 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:15:16.946 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:15:28.532 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:15:28.533 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:15:35.000 [main] DEBUG ROOT - 144 -> 143
+2020-04-06 02:16:17.502 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:16:17.502 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:16:29.811 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:16:29.812 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:16:41.457 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:16:41.458 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:16:53.820 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:16:53.833 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:17:06.066 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:17:06.066 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:17:19.334 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:17:19.334 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:17:30.811 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:17:30.812 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:17:32.514 [main] DEBUG ROOT - 143 -> 142
+2020-04-06 02:18:11.461 [main] DEBUG ROOT - 142 -> 138
+2020-04-06 02:18:54.231 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:18:54.232 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:18:55.509 [main] DEBUG ROOT - 138 -> 136
+2020-04-06 02:19:24.035 [main] DEBUG ROOT - 136 -> 135
+2020-04-06 02:19:53.523 [main] DEBUG ROOT - 135 -> 134
+2020-04-06 02:20:35.114 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:20:35.115 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:20:37.935 [main] DEBUG ROOT - 134 -> 132
+2020-04-06 02:21:18.118 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:21:18.118 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:21:21.714 [main] DEBUG ROOT - 132 -> 131
+2020-04-06 02:21:59.357 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:21:59.357 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:22:13.745 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:22:13.745 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:22:15.336 [main] DEBUG ROOT - 131 -> 129
+2020-04-06 02:22:52.243 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:22:52.243 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:23:03.691 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:23:03.691 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:23:15.535 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:23:15.536 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:23:27.229 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:23:27.230 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:23:39.072 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:23:39.072 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:23:50.457 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:23:50.458 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:24:01.819 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:24:01.819 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:24:13.226 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:24:13.226 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:24:24.401 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:24:24.401 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:24:36.028 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:24:36.028 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:24:47.470 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:24:47.470 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:24:58.765 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:24:58.765 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:25:11.022 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:25:11.022 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:25:22.484 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:25:22.485 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:25:23.323 [main] DEBUG ROOT - 129 -> 128
+2020-04-06 02:25:50.148 [main] DEBUG ROOT - 128 -> 127
+2020-04-06 02:26:17.629 [main] DEBUG ROOT - 127 -> 126
+2020-04-06 02:26:44.678 [main] DEBUG ROOT - 126 -> 125
+2020-04-06 02:27:13.934 [main] DEBUG ROOT - 125 -> 124
+2020-04-06 02:27:40.006 [main] DEBUG ROOT - 124 -> 123
+2020-04-06 02:28:06.183 [main] DEBUG ROOT - 123 -> 122
+2020-04-06 02:28:32.331 [main] DEBUG ROOT - 122 -> 120
+2020-04-06 02:29:15.966 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:29:15.967 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:29:18.014 [main] DEBUG ROOT - 120 -> 119
+2020-04-06 02:29:42.817 [main] DEBUG ROOT - 119 -> 118
+2020-04-06 02:30:15.787 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:30:15.787 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:30:27.024 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:30:27.025 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:30:27.826 [main] DEBUG ROOT - 118 -> 117
+2020-04-06 02:30:49.545 [main] DEBUG ROOT - 117 -> 116
+2020-04-06 02:31:13.142 [main] DEBUG ROOT - 116 -> 115
+2020-04-06 02:31:35.242 [main] DEBUG ROOT - 115 -> 114
+2020-04-06 02:31:56.396 [main] DEBUG ROOT - 114 -> 113
+2020-04-06 02:32:17.974 [main] DEBUG ROOT - 113 -> 112
+2020-04-06 02:32:38.510 [main] DEBUG ROOT - 112 -> 111
+2020-04-06 02:32:58.533 [main] DEBUG ROOT - 111 -> 110
+2020-04-06 02:33:18.610 [main] DEBUG ROOT - 110 -> 109
+2020-04-06 02:33:38.383 [main] DEBUG ROOT - 109 -> 108
+2020-04-06 02:33:58.005 [main] DEBUG ROOT - 108 -> 107
+2020-04-06 02:34:19.387 [main] DEBUG ROOT - 107 -> 106
+2020-04-06 02:34:48.493 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:34:48.493 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:35:00.088 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:35:00.088 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:35:01.077 [main] DEBUG ROOT - 106 -> 105
+2020-04-06 02:35:26.578 [main] DEBUG ROOT - 105 -> 102
+2020-04-06 02:35:48.491 [main] DEBUG ROOT - 102 -> 99
+2020-04-06 02:36:08.557 [main] DEBUG ROOT - 99 -> 96
+2020-04-06 02:36:27.979 [main] DEBUG ROOT - 96 -> 93
+2020-04-06 02:36:45.859 [main] DEBUG ROOT - 93 -> 90
+2020-04-06 02:37:03.698 [main] DEBUG ROOT - 90 -> 89
+2020-04-06 02:37:20.944 [main] DEBUG ROOT - 89 -> 86
+2020-04-06 02:37:37.522 [main] DEBUG ROOT - 86 -> 83
+2020-04-06 02:37:53.568 [main] DEBUG ROOT - 83 -> 80
+2020-04-06 02:38:09.311 [main] DEBUG ROOT - 80 -> 77
+2020-04-06 02:38:24.329 [main] DEBUG ROOT - 77 -> 74
+2020-04-06 02:38:38.933 [main] DEBUG ROOT - 74 -> 71
+2020-04-06 02:38:53.123 [main] DEBUG ROOT - 71 -> 68
+2020-04-06 02:39:25.784 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:39:25.785 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:39:31.011 [main] DEBUG ROOT - 68 -> 67
+2020-04-06 02:39:58.564 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:39:58.565 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:40:01.616 [main] DEBUG ROOT - 67 -> 66
+2020-04-06 02:40:14.668 [main] DEBUG ROOT - 66 -> 65
+2020-04-06 02:40:27.538 [main] DEBUG ROOT - 65 -> 64
+2020-04-06 02:40:39.863 [main] DEBUG ROOT - 64 -> 63
+2020-04-06 02:40:55.066 [main] DEBUG ROOT - 63 -> 62
+2020-04-06 02:41:07.617 [main] DEBUG ROOT - 62 -> 61
+2020-04-06 02:41:19.659 [main] DEBUG ROOT - 61 -> 60
+2020-04-06 02:41:31.215 [main] DEBUG ROOT - 60 -> 59
+2020-04-06 02:41:45.208 [main] DEBUG ROOT - 59 -> 56
+2020-04-06 02:42:05.152 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:42:05.152 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:42:07.011 [main] DEBUG ROOT - 56 -> 53
+2020-04-06 02:42:18.123 [main] DEBUG ROOT - 53 -> 50
+2020-04-06 02:42:37.866 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:42:37.866 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:42:47.831 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:42:47.831 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:43:00.915 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:43:00.916 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:43:02.531 [main] DEBUG ROOT - 50 -> 49
+2020-04-06 02:43:25.945 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:43:25.945 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:43:36.866 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:43:36.866 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:43:46.582 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:43:46.583 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:43:56.805 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:43:56.806 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:44:06.926 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:44:06.926 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:44:16.619 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:44:16.619 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:44:26.783 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:44:26.783 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:44:27.620 [main] DEBUG ROOT - 49 -> 48
+2020-04-06 02:44:37.622 [main] DEBUG ROOT - 48 -> 47
+2020-04-06 02:45:02.411 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:45:02.411 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:45:12.918 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:45:12.918 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:45:23.740 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:45:23.740 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:45:34.632 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:45:34.633 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:45:48.177 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:45:48.178 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:45:57.795 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:45:57.796 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:46:07.960 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:46:07.961 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:46:19.045 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:46:19.045 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:46:30.191 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:46:30.191 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:46:39.722 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:46:39.722 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:46:50.585 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:46:50.585 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:46:51.646 [main] DEBUG ROOT - 47 -> 45
+2020-04-06 02:47:18.098 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:47:18.098 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:47:28.686 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:47:28.687 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:47:40.256 [main] DEBUG ROOT - Guard training set: {[]=[g2=false, g1=true]}
+2020-04-06 02:47:40.256 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:47:43.385 [main] DEBUG ROOT - 45 -> 43
+2020-04-06 02:47:52.858 [main] DEBUG ROOT - 43 -> 41
+2020-04-06 02:48:02.148 [main] DEBUG ROOT - 41 -> 39
+2020-04-06 02:48:21.498 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:48:21.498 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:48:31.674 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:48:31.674 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:48:41.238 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:48:41.238 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:48:56.843 [main] DEBUG ROOT - Guard training set: {[]=[g1=true, g2=false]}
+2020-04-06 02:48:56.844 [main] DEBUG ROOT -   Terminals: [true, false, 0, 1, 2]
+2020-04-06 02:49:00.584 [main] INFO  ROOT - The inferred machine is deterministic
+2020-04-06 02:49:00.600 [main] INFO  ROOT - Completed in 7h 43m 12.435687026001688s
+2020-04-06 02:49:00.601 [main] INFO  ROOT - states: 39
+2020-04-06 02:49:00.601 [main] INFO  ROOT - transitions: 152

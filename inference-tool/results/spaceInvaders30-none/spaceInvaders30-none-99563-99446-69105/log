@@ -1,0 +1,30 @@
+2020-04-05 19:41:40.596 [main] INFO  ROOT - -s naive_eq_bonus -p none -g 99563 -o 99446 -u 69105 -h same,ws,distinguish -d results/spaceInvaders30-none-99563-99446-69105 experimental-data/spaceInvaders30-train.json experimental-data/spaceInvaders30-test.json
+2020-04-05 19:41:40.598 [main] INFO  ROOT - Building PTA - 30 traces
+2020-04-05 19:41:51.856 [main] INFO  ROOT - PTA has 541 states
+2020-04-05 19:41:51.858 [main] INFO  ROOT - PTA has 540 transitions
+2020-04-05 19:51:14.526 [main] DEBUG ROOT - 541 -> 538
+2020-04-05 20:00:42.537 [main] DEBUG ROOT - 538 -> 535
+2020-04-05 20:10:43.066 [main] DEBUG ROOT - 535 -> 526
+2020-04-05 20:20:00.999 [main] DEBUG ROOT - 526 -> 521
+2020-04-05 20:28:50.460 [main] DEBUG ROOT - 521 -> 517
+2020-04-05 20:37:29.417 [main] DEBUG ROOT - 517 -> 512
+2020-04-05 20:46:40.876 [main] DEBUG ROOT - 512 -> 480
+2020-04-05 20:54:02.417 [main] DEBUG ROOT - 480 -> 471
+2020-04-05 21:00:59.918 [main] DEBUG ROOT - 471 -> 468
+2020-04-05 21:08:19.854 [main] DEBUG ROOT - 468 -> 444
+2020-04-05 21:12:51.632 [main] DEBUG ROOT - 444 -> 429
+2020-04-05 21:17:05.468 [main] DEBUG ROOT - 429 -> 422
+2020-04-05 21:21:19.468 [main] DEBUG ROOT - 422 -> 399
+2020-04-05 21:24:59.399 [main] DEBUG ROOT - 399 -> 389
+2020-04-05 21:28:52.945 [main] DEBUG ROOT - 389 -> 349
+2020-04-05 21:31:36.648 [main] DEBUG ROOT - 349 -> 339
+2020-04-05 21:34:48.701 [main] DEBUG ROOT - 339 -> 287
+2020-04-05 21:36:39.789 [main] DEBUG ROOT - 287 -> 268
+2020-04-05 21:38:35.256 [main] DEBUG ROOT - 268 -> 229
+2020-04-05 21:39:59.969 [main] DEBUG ROOT - 229 -> 201
+2020-04-05 21:42:09.749 [main] DEBUG ROOT - 201 -> 81
+2020-04-05 21:42:42.241 [main] DEBUG ROOT - 81 -> 6
+2020-04-05 21:42:42.343 [main] INFO  ROOT - The inferred machine is deterministic
+2020-04-05 21:42:42.355 [main] INFO  ROOT - Completed in 2h 1m 3.4649593349995484s
+2020-04-05 21:42:42.359 [main] INFO  ROOT - states: 6
+2020-04-05 21:42:42.360 [main] INFO  ROOT - transitions: 27
