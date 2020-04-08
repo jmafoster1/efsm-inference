@@ -17,6 +17,8 @@ from itertools import takewhile, dropwhile
 import pandas as pd
 import matplotlib.pyplot as plt
 
+program = "spaceInvaders"
+
 state_re = re.compile("INFO  ROOT - states: (\d+)")
 transition_re = re.compile("INFO  ROOT - transitions: (\d+)")
 transition_re = re.compile("INFO  ROOT - transitions: (\d+)")
@@ -43,9 +45,9 @@ def total_runtime():
         for line in f:
             match = runtime_re.search(line)
             if match:
-                return ((int(match.group(1)) * 3600) +
-                        (int(match.group(2)) * 60) +
-                        int(match.group(3)))
+                return ((int(match.group(1)) * 60) +
+                        (int(match.group(2))) +
+                        int(match.group(3))/60.0)
 
 
 def match_prefix(expected, actual):
@@ -107,14 +109,10 @@ def split_trace(trace, rejected=None):
     return (list(takewhile(match, trace)), list(dropwhile(match, trace)))
 
 
-program = "spaceInvaders"
-configurations = [
-                    "obfuscated-x-gp",
-                    "obfuscated-shields-gp",
-                    "obfuscated-aliens-gp"
-                 ]
+configurations = sorted(["-".join(os.path.basename(f).split("-")[1:]) for f in glob.glob(f"results/{program}*")])
 
-fig1, ax1 = plt.subplots()
+columns = ['states', 'transitions', 'min', 'avg', 'ultra', 'prop', 'sensitivity',
+           'rmse', 'nrmse', 'state coverage', 'runtime', 'transition coverage']
 
 config_data = []
 
@@ -123,10 +121,7 @@ for config in configurations:
     roots = ([d for d in glob.glob(f"results/{config}/{config}-*/")
               if os.path.isdir(d) and os.path.exists(d + "testLog.json")])
 
-    data = pd.DataFrame(
-            columns=['states', 'transitions', 'min', 'avg', 'ultra', 'prop',
-                     'precision', 'rmse', 'nrmse', 'state coverage', 'runtime',
-                     'transition coverage'])
+    data = pd.DataFrame(columns=columns)
 
     for root in roots:
         info = {}
@@ -151,7 +146,7 @@ for config in configurations:
                 [len(p)/(len(p) + len(s1) + len(s2)) for p, s1, s2 in triples])
     
         valid_traces = sum([s1 == [] and s2 == [] for _, s1, s2 in triples])
-        info['precision'] = valid_traces/len(log)
+        info['sensitivity'] = valid_traces/len(log)
 
         rmse = sum([
                     sum([
@@ -184,40 +179,51 @@ for config in configurations:
         data = data.append(pd.DataFrame(info, index=[root]))
     config_data.append(data)
 
-ax1.set_title('Numbers of states')
-bp = ax1.boxplot(
-        [data.states.astype(int) for data in config_data],
-        medianprops={"linewidth": 0},
-        boxprops={"linewidth": 0},
-        whiskerprops={"linewidth": 0},
-        capprops={"linewidth": 0}
-     )
+for column in columns:
+    fig1, ax1 = plt.subplots()
+    ax1.set_title(f"{program} {column}")
+    bp = ax1.boxplot(
+            [data[column].astype(float) for data in config_data],
+            medianprops={"linewidth": 0},
+            boxprops={"linewidth": 0},
+            whiskerprops={"linewidth": 0},
+            capprops={"linewidth": 0}
+         )
+    
+    # Shift the median lines so they look good on pgf
+    for median in bp['medians']:
+        x, y = median.get_data()
+        ax1.plot(x+0.003, y, color="k", linewidth=1, solid_capstyle="butt", zorder=0)
+    
+    # Only draw the boxes that have a nonzero size
+    for box in bp['boxes']:
+        x, y = box.get_data()
+        if len(set(y)) > 1:
+            ax1.plot(x, y, color="k", linewidth=1, zorder=4)
+    
+    for whisker, cap in zip(bp['whiskers'], bp['caps']):
+        w_x, w_y = whisker.get_data()
+        c_x, c_y = cap.get_data()
+        if len(set(w_y)) > 1:
+            ax1.plot(w_x, w_y, color="k", linewidth=1)
+            ax1.plot(c_x, c_y, color="k", linewidth=1)
+    
+    ax1.set_xticklabels(
+            [f"{program}\n{' '.join(config.split('-'))}" for config in configurations],
+            rotation=45,
+            fontsize=12,
+            ha='right',
+            ma='left'
+        )
+    
+    plt.tight_layout()
+    plt.savefig(f"graphs/{program}-{column}.pgf")
 
-# Shift the median lines so they look good on pgf
-for median in bp['medians']:
-    x, y = median.get_data()
-    ax1.plot(x+0.003, y, color="k", linewidth=1, solid_capstyle="butt", zorder=0)
-
-# Only draw the boxes that have a nonzero size
-for box in bp['boxes']:
-    x, y = box.get_data()
-    if len(set(y)) > 1:
-        ax1.plot(x, y, color="k", linewidth=1, zorder=4)
-
-for whisker, cap in zip(bp['whiskers'], bp['caps']):
-    w_x, w_y = whisker.get_data()
-    c_x, c_y = cap.get_data()
-    if len(set(w_y)) > 1:
-        ax1.plot(w_x, w_y, color="k", linewidth=1)
-        ax1.plot(c_x, c_y, color="k", linewidth=1)
-
-ax1.set_xticklabels(
-        [f"{program}\n{config}" for config in configurations],
-        rotation=45,
-        fontsize=12,
-        ha='right',
-        ma='left'
-    )
-
-plt.tight_layout()
-plt.savefig("test.pgf")
+with open(f"graphs/{program}-graphs.tex", 'w') as f:
+    print("\\documentclass{article}", file=f)
+    print("\\usepackage{tikz}", file=f)
+    print("\\begin{document}", file=f)
+    print("\\centering", file=f)
+    for column in columns:
+        print("\\input{"+program+"-"+column+".pgf}", file=f)
+    print("\\end{document}", file=f)
