@@ -143,4 +143,8 @@ lemma [code]: "fMin (fset_of_list (h#t)) = list_min t h"
 
 code_printing constant list_min \<rightharpoonup> (Scala) "_.par.fold((_))(Orderings.min)"
 
+lemma fis_singleton_code [code]: "fis_singleton s = (size s = 1)"
+  apply (simp add: fis_singleton_def is_singleton_def)
+  by (simp add: card_Suc_eq)
+
 end
