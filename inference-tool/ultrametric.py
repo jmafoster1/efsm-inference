@@ -8,7 +8,6 @@ Created on Tue Feb 11 15:05:24 2020
 
 import json
 from numpy import mean
-import numpy as np
 import re
 import math
 import glob
@@ -16,11 +15,13 @@ import os
 from itertools import takewhile, dropwhile
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
 
 state_re = re.compile("INFO  ROOT - states: (\d+)")
 transition_re = re.compile("INFO  ROOT - transitions: (\d+)")
 transition_re = re.compile("INFO  ROOT - transitions: (\d+)")
 runtime_re = re.compile("INFO  ROOT - Completed in (\d+)h (\d+)m (\d+).\d+s")
+
 
 def total_states():
     with open(root + "log") as f:
@@ -107,8 +108,9 @@ def split_trace(trace, rejected=None):
     return (list(takewhile(match, trace)), list(dropwhile(match, trace)))
 
 
-columns = ['states', 'transitions', 'min', 'avg', 'ultra', 'prop', 'sensitivity',
-           'rmse', 'nrmse', 'state coverage', 'runtime', 'transition coverage']
+columns = ['states', 'transitions', 'min', 'avg', 'ultra', 'prop',
+           'sensitivity', 'rmse', 'nrmse', 'state coverage', 'runtime',
+           'transition coverage', 't1', 't2', 't3']
 
 programs = ["liftDoors", "spaceInvaders"]
 
@@ -132,16 +134,21 @@ for program in programs:
             info['states'] = total_states()
             info['transitions'] = total_transitions()
             info['runtime'] = total_runtime()
-    
+
             triples = [split_trace(trace['trace'], trace['rejected']) for trace in log]
-            lengths = [len(t) for t, _, _ in triples]
-    
+            info['t1'] = mean([len(x)/(len(x) + len(y) + len(z)) for x, y, z in triples]),
+            info['t2'] = mean([len(y)/(len(x) + len(y) + len(z)) for x, y, z in triples]),
+            info['t3'] = mean([len(z)/(len(x) + len(y) + len(z)) for x, y, z in triples]),
+
+            lengths = [len(x)/(len(x) + len(y) + len(z)) for x, y, z in triples]
+            # lengths = [len(t) for t, _, _ in triples]
+
             # Minimum number of events before we can tell the models apart - useless
-            info['min'] = min(lengths) if lengths != [] else None
+            info['min'] = min(lengths)
             # Average number of events before we can tell the models apart - useless
-            info['avg'] = mean(lengths) if lengths != [] else None
+            info['avg'] = mean(lengths)
             # Ultrametric from the paper - useless
-            info['ultra'] = 2**-min(lengths) if lengths != [] else 0
+            info['ultra'] = 2**-min(lengths)
             # Mean prop. of the trace got through before we can tell the trace apart
             info['prop'] = mean(
                     [len(p)/(len(p) + len(s1) + len(s2)) for p, s1, s2 in triples])
@@ -158,14 +165,14 @@ for program in programs:
                     ])
             rmse = math.sqrt(rmse)
             info['rmse'] = rmse
-    
+
             outputs = set()
             for obj in log:
                 for event in obj['trace']:
                     outputs = outputs.union([to_num(o) for o in event['expected']])
                     outputs = outputs.union([to_num(o) for o in event['actual']])
             info['nrmse'] = rmse/(max(outputs) - min(outputs))
-    
+
             states_covered = set()
             for obj in log:
                 for event in obj['trace']:
@@ -179,9 +186,9 @@ for program in programs:
             info['transition coverage'] = len(transitions_covered)/total_transitions()
             data = data.append(pd.DataFrame(info, index=[root]))
         config_data.append(data)
-    
-    for column in columns:
-        fig1, ax1 = plt.subplots()
+
+    for column in [c for c in columns if c not in ['t1', 't2', 't3']]:
+        fig1, ax1 = plt.subplots(figsize=(8, 4))
         ax1.set_title(f"{program} {column}")
         bp = ax1.boxplot(
                 [data[column].astype(float) for data in config_data],
@@ -190,7 +197,7 @@ for program in programs:
                 whiskerprops={"linewidth": 0},
                 capprops={"linewidth": 0}
              )
-        
+
         # Shift the median lines so they look good on pgf
         for median in bp['medians']:
             x, y = median.get_data()
@@ -201,14 +208,14 @@ for program in programs:
             x, y = box.get_data()
             if len(set(y)) > 1:
                 ax1.plot(x, y, color="k", linewidth=1, zorder=4)
-        
+
         for whisker, cap in zip(bp['whiskers'], bp['caps']):
             w_x, w_y = whisker.get_data()
             c_x, c_y = cap.get_data()
             if len(set(w_y)) > 1:
                 ax1.plot(w_x, w_y, color="k", linewidth=1)
                 ax1.plot(c_x, c_y, color="k", linewidth=1)
-        
+
         ax1.set_xticklabels(
                 [' '.join(config.split('-')) for config in configurations],
                 rotation=45,
@@ -217,16 +224,49 @@ for program in programs:
                 va='top',
                 ma='right'
             )
-        
+
         plt.tight_layout()
         plt.savefig(f"graphs/{program}-{column}.pgf")
-    
+
+    fig1, ax1 = plt.subplots(figsize=(8, 4))
+    t1Means = [mean(data['t1']) for data in config_data]
+    t2Means = [mean(data['t2']) + t1Means[i] for i, data in enumerate(config_data)]
+    t3Means = [mean(data['t3']) + t2Means[i] for i, data in enumerate(config_data)]
+
+    ind = range(len(t1Means))
+
+    p3 = ax1.bar(ind, t3Means, color='red')
+    p2 = ax1.bar(ind, t2Means, color='orange')
+    p1 = ax1.bar(ind, t1Means, color='green')
+
+    ttl = plt.title(f"{program} traces")
+#    ttl.set_position([.5, 1.35])
+#    rcParams['axes.titlepad'] = 20 
+
+    ax1.set_xticks(ind)
+    ax1.set_xticklabels(
+            [' '.join(config.split('-')) for config in configurations],
+            rotation=45,
+            fontsize=12,
+            ha='right',
+            va='top',
+            ma='right'
+        )
+    plt.tight_layout()
+    plt.legend((p1[0], p2[0], p3[0]),
+               ('Correct', 'Incorrect', "Rejected"),
+               loc='upper center',
+               bbox_to_anchor=(0.5, 1.3),
+               ncol=3)
+    plt.savefig(f"graphs/{program}-traces.pgf")
+    plt.show()
+
     with open(f"graphs/{program}-graphs.tex", 'w') as f:
         print("\\documentclass{article}", file=f)
         print("\\usepackage{tikz}", file=f)
         print("\\usepackage{a4wide}", file=f)
         print("\\begin{document}", file=f)
         print("\\centering", file=f)
-        for column in columns:
+        for column in [c for c in columns + ["traces"] if c not in ['t1', 't2', 't3']]:
             print("\\resizebox{\\textwidth}{!}{\\input{"+program+"-"+column+".pgf}}", file=f)
         print("\\end{document}", file=f)

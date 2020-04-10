@@ -52,7 +52,7 @@ object Config {
   var heuristics = (Inference.null_modifier _).curried
   var numStates: BigInt = 0
   var ptaNumStates: BigInt = 0
-  var preprocessor: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (List[List[(String, (List[Value.value], List[Value.value]))]] => ((Set.set[(Nat.nat, Nat.nat)] => (List[Nat.nat] => (List[Nat.nat] => (Nat.nat => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => ((FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]) => (Option[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]], Set.set[(Nat.nat, Nat.nat)]))))))))) => ((FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]) => FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]))) = null
+  var preprocessor: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (List[List[(String, (List[Value.value], List[Value.value]))]] => ((List[Nat.nat] => (List[Nat.nat] => (Nat.nat => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => ((FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]) => Option[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]]))))))) => ((FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]) => FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]))) = null
 
   implicit val heuristicsRead: scopt.Read[Heuristics.Value] = scopt.Read.reads(Heuristics withName _)
   implicit val proprocessorsRead: scopt.Read[Preprocessors.Value] = scopt.Read.reads(Preprocessors withName _)
@@ -77,6 +77,7 @@ object Config {
         case "warn" => Level.WARN
         case "info" => Level.INFO
         case "error" => Level.ERROR
+        case "off" => Level.OFF
         case s =>
           throw new IllegalArgumentException(s"'${s}' is not a debug level.")
       }

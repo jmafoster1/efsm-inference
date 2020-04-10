@@ -194,10 +194,10 @@ definition "make_pta log = make_pta_aux log {||}"
 lemma make_pta_aux_fold [code]: "make_pta_aux l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
   by(induct l arbitrary: e, auto)
 
-type_synonym update_modifier = "(cfstate \<times> cfstate) set \<Rightarrow> tids \<Rightarrow> tids \<Rightarrow> cfstate \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> (iEFSM option \<times> (cfstate \<times> cfstate) set)"
+type_synonym update_modifier = "tids \<Rightarrow> tids \<Rightarrow> cfstate \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option"
 
 definition null_modifier :: update_modifier where
-  "null_modifier f _ _ _ _ _ _ _ = (None, f)"
+  "null_modifier f _ _ _ _ _ _ = None"
 
 record score = 
   Score :: nat
@@ -445,9 +445,9 @@ definition merge_transitions :: "(cfstate \<times> cfstate) set \<Rightarrow> iE
        \<comment> \<open>Replace t2 with t1\<close>
        (Some (merge_transitions_aux destMerge u\<^sub>2 u\<^sub>1), failedMerges)
      else
-        case modifier failedMerges u\<^sub>1 u\<^sub>2 (origin u\<^sub>1 destMerge) destMerge preDestMerge oldEFSM np of
-          (None, failedMerges) \<Rightarrow> (None, failedMerges) |
-          (Some e, failedMerges) \<Rightarrow> (Some (make_distinct e), failedMerges)
+        case modifier u\<^sub>1 u\<^sub>2 (origin u\<^sub>1 destMerge) destMerge preDestMerge oldEFSM np of
+          None \<Rightarrow> (None, failedMerges) |
+          Some e \<Rightarrow> (Some (make_distinct e), failedMerges)
    )"
 
 definition outgoing_transitions_from :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> transition fset" where
@@ -613,11 +613,10 @@ definition max_output :: "iEFSM \<Rightarrow> nat" where
 
 primrec try_heuristics_check :: "(transition_matrix \<Rightarrow> bool) \<Rightarrow> update_modifier list \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> update_modifier" where
   "try_heuristics_check _ [] _ = null_modifier" |
-  "try_heuristics_check check (h#t) np = (\<lambda>closed a b c d e f np. 
-    case h closed a b c d e f np of
-      (Some e', closed) \<Rightarrow>
-        if check (tm e') then (Some e', closed) else (try_heuristics_check check t np) closed a b c d e f np |
-      (None, closed) \<Rightarrow> (try_heuristics_check check t np) closed a b c d e f np
+  "try_heuristics_check check (h#t) np = (\<lambda>a b c d e f np. 
+    case h a b c d e f np of
+      Some e' \<Rightarrow> if check (tm e') then Some e' else (try_heuristics_check check t np) a b c d e f np |
+      None \<Rightarrow> (try_heuristics_check check t np) a b c d e f np
     )"
 
 definition all_regs :: "iEFSM \<Rightarrow> nat set" where

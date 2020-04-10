@@ -36,15 +36,15 @@ definition replace_with :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarr
   "replace_with e r1 r2 = (fimage (\<lambda>(u, tf, t). (u, tf, t_replace_with t r1 r2)) e)"
 
 fun same_register :: update_modifier where
-  "same_register closed t1ID t2ID s new _ old _ = (let
+  "same_register t1ID t2ID s new _ old _ = (let
      t1 = get_by_ids new t1ID;
      t2 = get_by_ids new t2ID;
      ut1 = updates (Updates t1);
      ut2 = updates (Updates t2) in
      if same_structure t1 t2 then
       case (ut1, ut2) of
-       (Some (R r1), Some (R r2)) \<Rightarrow> (Some (replace_with new r1 r2), closed) |
-       (_, _) \<Rightarrow> (None, closed)
-     else (None, closed)
+       (Some (R r1), Some (R r2)) \<Rightarrow> Some (replace_with new r1 r2) |
+       (_, _) \<Rightarrow> None
+     else None
    )"
 end

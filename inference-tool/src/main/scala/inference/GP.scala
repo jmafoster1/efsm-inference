@@ -20,7 +20,8 @@ object GP {
   // Integer non-terminals
   def intNonTerms = List[NonTerminal[_]](
     new AddIntegersOperator(),
-    new SubtractIntegersOperator()
+    new SubtractIntegersOperator(),
+    new MultiplyIntegersOperator()
   )
 
   // Boolean terminals

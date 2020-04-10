@@ -51,10 +51,10 @@ declare find_distinguishing_guards_def [code del]
 code_printing constant find_distinguishing_guards \<rightharpoonup> (Scala) "Dirties.findDistinguishingGuard"
 
 definition add_guard :: "transition \<Rightarrow> vname gexp \<Rightarrow> transition" where
-  "add_guard t g = \<lparr>Label = Label t, Arity = Arity t, Guard = g#(Guard t), Outputs = Outputs t, Updates = Updates t\<rparr>"
+  "add_guard t g = \<lparr>Label = Label t, Arity = Arity t, Guard = List.insert g (Guard t), Outputs = Outputs t, Updates = Updates t\<rparr>"
 
 definition distinguish :: "log \<Rightarrow> update_modifier" where
-  "distinguish log closed t1ID t2ID s destMerge preDestMerge old np = (
+  "distinguish log t1ID t2ID s destMerge preDestMerge old np = (
     let
       t1 = get_by_ids destMerge t1ID;
       t2 = get_by_ids destMerge t2ID;
@@ -62,13 +62,12 @@ definition distinguish :: "log \<Rightarrow> update_modifier" where
       (G1, G2) = collect_training_sets log uPTA t1ID t2ID [] []
     in
       case find_distinguishing_guards G1 G2 of
-        None \<Rightarrow> (None, closed) |
+        None \<Rightarrow> None |
         Some (g1, g2) \<Rightarrow> (
-          let newEFSM = replace_transitions preDestMerge [(t1ID, add_guard t1 g1), (t2ID, add_guard t2 g2)]
-          in
-          resolve_nondeterminism closed (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
+          Some (replace_transitions preDestMerge [(t1ID, add_guard t1 g1), (t2ID, add_guard t2 g2)])
         )
   )"
+
 
 definition can_still_take_ctx :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "can_still_take_ctx e1 e2 s1 s2 t1 t2 = (

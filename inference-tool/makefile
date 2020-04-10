@@ -11,7 +11,7 @@ env:
 	@ echo "$$SALCONTEXTPATH"
 
 dot:
-	@ for b in $(basename $(shell find . -path ./pdfs -prune -o -name '*.dot' -print)) ; do \
+	@ for b in $(basename $(shell find . -path ./results -prune -o -name '*.dot' -print)) ; do \
 	  dot -T pdf -o $$b.pdf $$b.dot & \
 	done
 

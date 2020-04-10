@@ -135,12 +135,7 @@ definition modify :: "match list \<Rightarrow> tids \<Rightarrow> tids \<Rightar
 
 (* type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option" *)
 definition heuristic_1 :: "log \<Rightarrow> update_modifier" where
-  "heuristic_1 l closed t1 t2 s new _ old np = (
-    let newEFSMopt = (modify (find_intertrace_matches l old) t1 t2 new) in
-    case newEFSMopt of
-      None \<Rightarrow> (None, closed) |
-      Some newEFSM \<Rightarrow> resolve_nondeterminism closed (sorted_list_of_fset (np newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
-    )"
+  "heuristic_1 l t1 t2 s new _ old np = modify (find_intertrace_matches l old) t1 t2 new"
 
 lemma remove_guard_add_update_preserves_outputs: "Outputs (remove_guard_add_update t i r) = Outputs t"
   by (simp add: remove_guard_add_update_def)
@@ -234,12 +229,7 @@ definition modify_2 :: "match list \<Rightarrow> tids \<Rightarrow> tids \<Right
 
 (* type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option" *)
 definition heuristic_2 :: "log \<Rightarrow> update_modifier" where
-  "heuristic_2 l closed t1 t2 s new _ old np = (
-    let newEFSMopt = (modify_2 (find_intertrace_matches l old) t1 t2 new) in
-    case newEFSMopt of
-      None \<Rightarrow> (None, closed) |
-      Some newEFSM \<Rightarrow> resolve_nondeterminism closed (sorted_list_of_fset (nondeterministic_pairs newEFSM)) old newEFSM null_modifier (\<lambda>a. True) np
-  )"
+  "heuristic_2 l t1 t2 s new _ old np = modify_2 (find_intertrace_matches l old) t1 t2 new"
 hide_const ioTag.In
 
 end                                                   
