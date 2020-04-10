@@ -336,17 +336,12 @@ object Dirties {
     g1: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])]),
     g2: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])])): Option[(GExp.gexp[VName.vname], GExp.gexp[VName.vname])] = {
 
-      println("findDistinguishingGuard")
-
     val ioPairs = (g1 zip List.fill(g1.length)(true)) ++ (g1 zip List.fill(g1.length)(false))
 
     if (guardMap isDefinedAt ioPairs) guardMap(ioPairs) match {
       case None => return None
       case Some(g) => return Some((g, GExp.gNot(g)))
     }
-
-    println("Not yet defined")
-
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
@@ -446,24 +441,20 @@ object Dirties {
     Log.root.debug("Guard training set: " + trainingSet)
     Log.root.debug("  Terminals: " + gpGenerator.getTerminals())
 
-    println("Guard training set: " + trainingSet)
-    println("  Terminals: " + gpGenerator.getTerminals())
-
     // If any of the guards need to simultaneously be true and false then stop
     if (trainingSet.keys().stream().anyMatch(x => trainingSet.get(x).size() > 1))
       return None
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(50, 0.9f, 1f, 5, 2));
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 5, 2));
 
     try {
-      val best: Node[VariableAssignment[_]] = gp.evolve(50).asInstanceOf[Node[VariableAssignment[_]]]
+      val best: Node[VariableAssignment[_]] = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]]
       Log.root.debug("  Best guard is: " + best.simp())
 
       val ctx = new z3.Context()
       val gexp = TypeConversion.gexpFromZ3(best.toZ3(ctx))
       ctx.close
       if (gp.isCorrect(best)) {
-        println("  Best guard is: " + best.simp())
         Log.root.debug("  Best guard is correct")
         guardMap = guardMap + (ioPairs -> Some(gexp))
         return Some((gexp, GExp.gNot(gexp)))

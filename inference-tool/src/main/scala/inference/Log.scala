@@ -12,7 +12,6 @@ object Log {
 		val s_1 = FSet.size_fset(Inference.S(e))
 		Config.numStates = Code_Numeral.integer_of_nat(s_1)
 		PrettyPrinter.iEFSM2dot(e, f"${PrettyPrinter.show(s_2)}-${PrettyPrinter.show(s_1)}")
-		// println(Config.numStates)
     root.debug(s"${Code_Numeral.integer_of_nat(s_2)} -> ${Code_Numeral.integer_of_nat(s_1)}")
   }
 

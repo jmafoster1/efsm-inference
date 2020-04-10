@@ -36,7 +36,6 @@ object FrontEnd {
     }
 
     try {
-      println()
       var inferred = Inference.learn(
         Nat.Nata(Config.config.k),
         pta,
