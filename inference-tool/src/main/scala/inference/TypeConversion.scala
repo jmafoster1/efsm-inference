@@ -130,7 +130,7 @@ object TypeConversion {
       }
     }
 		if (e.isIntNum()) {
-      return AExp.L(Value.Numa(Int.int_of_integer(e.toString.toInt)))
+      return AExp.L(Value.Numa(Int.int_of_integer(e.toString.toLong)))
     }
 
     throw new IllegalArgumentException("Couldn't convert from z3 expression "+e)

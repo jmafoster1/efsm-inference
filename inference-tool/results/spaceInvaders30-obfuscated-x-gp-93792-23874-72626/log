@@ -1,0 +1,26 @@
+2020-04-10 22:54:34.130 [main] INFO  ROOT - -s naive_eq_bonus -p gp -g 93792 -o 23874 -u 72626 -h same,ws,distinguish -d results/spaceInvaders30-obfuscated-x-gp-93792-23874-72626 experimental-data/spaceInvaders30-obfuscated-x-train.json experimental-data/spaceInvaders30-obfuscated-x-test.json
+2020-04-10 22:54:34.132 [main] INFO  ROOT - Building PTA - 30 traces
+2020-04-10 22:54:44.316 [main] INFO  ROOT - PTA has 541 states
+2020-04-10 22:54:44.317 [main] INFO  ROOT - PTA has 540 transitions
+2020-04-10 22:54:46.989 [scala-execution-context-global-15] DEBUG ROOT - Getting Output...
+2020-04-10 22:54:46.989 [scala-execution-context-global-19] DEBUG ROOT - Getting Output...
+2020-04-10 22:54:46.989 [scala-execution-context-global-18] DEBUG ROOT - Getting Output...
+2020-04-10 22:54:46.990 [scala-execution-context-global-19] DEBUG ROOT -   Singleton literal output
+2020-04-10 22:54:46.990 [scala-execution-context-global-15] DEBUG ROOT -   Singleton literal output
+2020-04-10 22:54:46.990 [scala-execution-context-global-18] DEBUG ROOT -   Singleton literal output
+2020-04-10 22:54:47.417 [scala-execution-context-global-20] DEBUG ROOT - Getting Output...
+2020-04-10 22:54:47.468 [scala-execution-context-global-20] DEBUG ROOT -   No latent variable
+2020-04-10 22:54:47.480 [scala-execution-context-global-20] DEBUG ROOT -   Output training set: {[]=[o=50, o=150, o=100, o=0]}
+2020-04-10 22:54:47.488 [scala-execution-context-global-20] DEBUG ROOT -   Int terminals: List(0, 150, 100, 350, 300, 250, 200, 50)
+2020-04-10 22:54:47.495 [scala-execution-context-global-20] DEBUG ROOT -   Secret best output is: r1
+2020-04-10 22:54:51.826 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
+2020-04-10 22:54:51.840 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[r1=50]=[r1=0], [r1=100]=[r1=50], [r1=150]=[r1=100]}
+2020-04-10 22:54:52.531 [scala-execution-context-global-18] DEBUG ROOT -     Best update is: (+ -50 r1)
+2020-04-10 22:54:52.532 [scala-execution-context-global-18] DEBUG ROOT -     Best update is correct
+2020-04-10 22:56:19.073 [scala-execution-context-global-21] DEBUG ROOT - Getting Output...
+2020-04-10 22:56:19.075 [scala-execution-context-global-21] DEBUG ROOT -   No latent variable
+2020-04-10 22:56:19.075 [scala-execution-context-global-21] DEBUG ROOT -   Output training set: {[]=[o=50, o=250, o=350, o=300, o=150, o=400, o=100, o=200]}
+2020-04-10 22:56:19.075 [scala-execution-context-global-21] DEBUG ROOT -   Int terminals: List(0, 50, 150, 200, 250, 300, 350, 400, 100)
+2020-04-10 22:56:19.075 [scala-execution-context-global-21] DEBUG ROOT -   Secret best output is: r2
+2020-04-10 22:56:20.540 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
+2020-04-10 22:56:20.541 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[i1=0, i0=3]=[r2=100], [i1=0, i0=3]=[r2=50], [i1=0, i0=3]=[r2=200], [i1=0, i0=3]=[r2=150], [i1=0, i0=3]=[r2=350], [i1=0, i0=3]=[r2=250]}
