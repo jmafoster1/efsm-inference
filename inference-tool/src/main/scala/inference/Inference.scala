@@ -2925,7 +2925,7 @@ def merge_states(x: Nat.nat, y: Nat.nat,
     else (if (Nat.less_nat(y, x)) merge_states_aux(x, y, t)
            else merge_states_aux(y, x, t)))
 
-def resolve_nondeterminism(closed: Set.set[(Nat.nat, Nat.nat)],
+def resolve_nondeterminism(failedMerges: Set.set[(Nat.nat, Nat.nat)],
                             x1: List[(Nat.nat,
                                        ((Nat.nat, Nat.nat),
  ((Transition.transition_ext[Unit], List[Nat.nat]),
@@ -2968,37 +2968,36 @@ def resolve_nondeterminism(closed: Set.set[(Nat.nat, Nat.nat)],
                             Transition.transition_ext[Unit]))]],
         Set.set[(Nat.nat, Nat.nat)])
   =
-  (closed, x1, uu, newEFSM, uv, check, np) match {
-  case (closed, Nil, uu, newEFSM, uv, check, np) =>
+  (failedMerges, x1, uu, newEFSM, uv, check, np) match {
+  case (failedMerges, Nil, uu, newEFSM, uv, check, np) =>
     ((if ((deterministic(newEFSM, np)) && (check(tm(newEFSM))))
        Some[FSet.fset[(List[Nat.nat],
                         ((Nat.nat, Nat.nat),
                           Transition.transition_ext[Unit]))]](newEFSM)
        else None),
-      closed)
-  case (closed, (from, ((dest_1, dest_2), ((t_1, u_1), (t_2, u_2)))) :: ss,
-         oldEFSM, newEFSM, m, check, np)
-    => (if (Set.member[(Nat.nat, Nat.nat)]((dest_1, dest_2), closed))
-         (None, closed)
+      failedMerges)
+  case (failedMerges,
+         (from, ((dest_1, dest_2), ((t_1, u_1), (t_2, u_2)))) :: ss, oldEFSM,
+         newEFSM, m, check, np)
+    => (if ((Set.member[(Nat.nat,
+                          Nat.nat)]((dest_1, dest_2),
+                                     failedMerges)) || (Set.member[(Nat.nat,
+                             Nat.nat)]((dest_2, dest_1), failedMerges)))
+         (None, failedMerges)
          else {
                 val destMerge:
                       FSet.fset[(List[Nat.nat],
                                   ((Nat.nat, Nat.nat),
                                     Transition.transition_ext[Unit]))]
                   = merge_states(dest_1, dest_2, newEFSM);
-                (merge_transitions(closed, oldEFSM, newEFSM, destMerge, t_1,
-                                    u_1, t_2, u_2, m, np)
+                (merge_transitions(failedMerges, oldEFSM, newEFSM, destMerge,
+                                    t_1, u_1, t_2, u_2, m, np)
                    match {
-                   case (None, closeda) =>
-                     resolve_nondeterminism(Set.sup_set[(Nat.nat,
-                  Nat.nat)](Set.insert[(Nat.nat,
- Nat.nat)]((dest_1, dest_2),
-            Set.insert[(Nat.nat,
-                         Nat.nat)]((dest_2, dest_1),
-                                    Set.bot_set[(Nat.nat, Nat.nat)])),
-                             closeda),
+                   case (None, failedMergesa) =>
+                     resolve_nondeterminism(Set.insert[(Nat.nat,
+                 Nat.nat)]((dest_1, dest_2), failedMergesa),
      ss, oldEFSM, newEFSM, m, check, np)
-                   case (Some(newa), closeda) =>
+                   case (Some(newa), failedMergesa) =>
                      {
                        val newScores:
                              List[(Nat.nat,
@@ -3017,24 +3016,19 @@ def resolve_nondeterminism(closed: Set.set[(Nat.nat, Nat.nat)],
        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))](newEFSM),
                                (FSet.size_fset[Nat.nat](S(newEFSM)),
                                  Nat.Nata(ss.par.length)))))
-                         (resolve_nondeterminism(closeda, newScores, oldEFSM,
-          newa, m, check, np)
+                         (resolve_nondeterminism(failedMergesa, newScores,
+          oldEFSM, newa, m, check, np)
                             match {
-                            case (None, closedb) =>
-                              resolve_nondeterminism(Set.sup_set[(Nat.nat,
-                           Nat.nat)](Set.insert[(Nat.nat,
-          Nat.nat)]((dest_1, dest_2),
-                     Set.insert[(Nat.nat,
-                                  Nat.nat)]((dest_2, dest_1),
-     Set.bot_set[(Nat.nat, Nat.nat)])),
-                                      closedb),
+                            case (None, failedMergesb) =>
+                              resolve_nondeterminism(Set.insert[(Nat.nat,
+                          Nat.nat)]((dest_1, dest_2), failedMergesb),
               ss, oldEFSM, newEFSM, m, check, np)
-                            case (Some(newb), closedb) =>
+                            case (Some(newb), failedMergesb) =>
                               (Some[FSet.fset[(List[Nat.nat],
         ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]](newb),
-                                closedb)
+                                failedMergesb)
                           })
-                         else (None, closeda))
+                         else (None, failedMergesa))
                      }
                  })
               })
@@ -3083,7 +3077,11 @@ def merge(failedMerges: Set.set[(Nat.nat, Nat.nat)],
                             Transition.transition_ext[Unit]))]],
         Set.set[(Nat.nat, Nat.nat)])
   =
-  (if (Nat.equal_nata(s_1, s_2)) (None, failedMerges)
+  (if ((Nat.equal_nata(s_1, s_2)) || ((Set.member[(Nat.nat,
+            Nat.nat)]((s_1, s_2),
+                       failedMerges)) || (Set.member[(Nat.nat,
+               Nat.nat)]((s_2, s_1), failedMerges))))
+    (None, failedMerges)
     else {
            val ea: FSet.fset[(List[Nat.nat],
                                ((Nat.nat, Nat.nat),
@@ -3847,13 +3845,8 @@ def inference_step(failedMerges: Set.set[(Nat.nat, Nat.nat)],
            (merge(failedMerges, e, S1[Unit](h), S2[Unit](h), m, check, np) match
               {
               case (None, failedMergesa) =>
-                inference_step(Set.sup_set[(Nat.nat,
-     Nat.nat)](Set.insert[(Nat.nat,
-                            Nat.nat)]((S1[Unit](h), S2[Unit](h)),
-                                       Set.insert[(Nat.nat,
-            Nat.nat)]((S2[Unit](h), S1[Unit](h)),
-                       Set.bot_set[(Nat.nat, Nat.nat)])),
-                failedMergesa),
+                inference_step(Set.insert[(Nat.nat,
+    Nat.nat)]((S1[Unit](h), S2[Unit](h)), failedMergesa),
                                 e, t, m, check, np)
               case (Some(newa), failedMergesa) =>
                 (Some[FSet.fset[(List[Nat.nat],

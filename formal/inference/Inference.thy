@@ -484,24 +484,24 @@ definition order_nondeterministic_pairs :: "nondeterministic_pair fset \<Rightar
 (* @param check - a function which takes an EFSM and returns a bool dest ensure that certain
                   properties hold in the new iEFSM                                                *)
 function resolve_nondeterminism :: "(cfstate \<times> cfstate) set \<Rightarrow> nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> (iEFSM option \<times> (cfstate \<times> cfstate) set)" where
-  "resolve_nondeterminism closed [] _ newEFSM _ check np = (
-      if deterministic newEFSM np \<and> check (tm newEFSM) then Some newEFSM else None, closed
+  "resolve_nondeterminism failedMerges [] _ newEFSM _ check np = (
+      if deterministic newEFSM np \<and> check (tm newEFSM) then Some newEFSM else None, failedMerges
   )" |
-  "resolve_nondeterminism closed ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) oldEFSM newEFSM m check np = (
-    if (dest\<^sub>1, dest\<^sub>2) \<in> closed then
-      (None, closed)
+  "resolve_nondeterminism failedMerges ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) oldEFSM newEFSM m check np = (
+    if (dest\<^sub>1, dest\<^sub>2) \<in> failedMerges \<or> (dest\<^sub>2, dest\<^sub>1) \<in> failedMerges then
+      (None, failedMerges)
     else
     let destMerge = merge_states dest\<^sub>1 dest\<^sub>2 newEFSM in
-    case merge_transitions closed oldEFSM newEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m np of
-      (None, closed) \<Rightarrow> resolve_nondeterminism ({(dest\<^sub>1, dest\<^sub>2), (dest\<^sub>2, dest\<^sub>1)} \<union> closed) ss oldEFSM newEFSM m check np |
-      (Some new, closed) \<Rightarrow> (
+    case merge_transitions failedMerges oldEFSM newEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m np of
+      (None, failedMerges) \<Rightarrow> resolve_nondeterminism (insert (dest\<^sub>1, dest\<^sub>2) failedMerges) ss oldEFSM newEFSM m check np |
+      (Some new, failedMerges) \<Rightarrow> (
         let newScores = order_nondeterministic_pairs (np new) in 
         if (size new, size (S new), size (newScores)) < (size newEFSM, size (S newEFSM), size ss) then
-          case resolve_nondeterminism closed newScores oldEFSM new m check np of
-            (Some new', closed) \<Rightarrow> (Some new', closed) |
-            (None, closed) \<Rightarrow> resolve_nondeterminism ({(dest\<^sub>1, dest\<^sub>2), (dest\<^sub>2, dest\<^sub>1)} \<union> closed) ss oldEFSM newEFSM m check np
+          case resolve_nondeterminism failedMerges newScores oldEFSM new m check np of
+            (Some new', failedMerges) \<Rightarrow> (Some new', failedMerges) |
+            (None, failedMerges) \<Rightarrow> resolve_nondeterminism (insert (dest\<^sub>1, dest\<^sub>2) failedMerges) ss oldEFSM newEFSM m check np
         else
-          (None, closed)
+          (None, failedMerges)
       )
   )"
      apply (clarify, metis neq_Nil_conv prod_cases3 surj_pair)
@@ -521,7 +521,7 @@ termination
                   properties hold in the new iEFSM                                                *)
 definition merge :: "(cfstate \<times> cfstate) set \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> (iEFSM option \<times> (cfstate \<times> cfstate) set)" where
   "merge failedMerges e s\<^sub>1 s\<^sub>2 m check np = (
-    if s\<^sub>1 = s\<^sub>2 then
+    if s\<^sub>1 = s\<^sub>2 \<or> (s\<^sub>1, s\<^sub>2) \<in> failedMerges \<or> (s\<^sub>2, s\<^sub>1) \<in> failedMerges then
       (None, failedMerges)
     else 
       let e' = make_distinct (merge_states s\<^sub>1 s\<^sub>2 e) in
@@ -560,7 +560,7 @@ function inference_step :: "(cfstate \<times> cfstate) set \<Rightarrow> iEFSM \
     in
     case merge failedMerges e (S1 h) (S2 h) m check np of
       (Some new, failedMerges) \<Rightarrow> (Some new, failedMerges) |
-      (None, failedMerges) \<Rightarrow> inference_step ({(S1 h, S2 h), (S2 h, S1 h)} \<union> failedMerges) e t m check np
+      (None, failedMerges) \<Rightarrow> inference_step (insert ((S1 h), (S2 h)) failedMerges) e t m check np
   )"
   by auto
 termination
@@ -577,7 +577,7 @@ termination
 function infer :: "(cfstate \<times> cfstate) set \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "infer failedMerges k e r m check np = (
     let scores = if k = 1 then score_1 e r else (k_score k e r) in
-    case inference_step failedMerges e (ffilter (\<lambda>s. (S1 s, S2 s) \<notin> failedMerges) scores) m check np of
+    case inference_step failedMerges e (ffilter (\<lambda>s. (S1 s, S2 s) \<notin> failedMerges \<and> (S2 s, S1 s) \<notin> failedMerges) scores) m check np of
       (None, _) \<Rightarrow> e |
       (Some new, failedMerges) \<Rightarrow> if (S new) |\<subset>| (S e) then infer failedMerges k new r m check np else e
   )"
