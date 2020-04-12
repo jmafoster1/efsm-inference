@@ -15,7 +15,6 @@ import os
 from itertools import takewhile, dropwhile
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib import rcParams
 
 state_re = re.compile("INFO  ROOT - states: (\d+)")
 transition_re = re.compile("INFO  ROOT - transitions: (\d+)")
