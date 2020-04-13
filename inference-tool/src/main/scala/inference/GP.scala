@@ -21,14 +21,12 @@ object GP {
   def intNonTerms = List[NonTerminal[_]](
     new AddIntegersOperator(),
     new SubtractIntegersOperator(),
-    new MultiplyIntegersOperator()
-  )
+    new MultiplyIntegersOperator())
 
   // Boolean terminals
   def boolTerms = List[VariableTerminal[_]](
     new BooleanVariableAssignmentTerminal(new BooleanVariableAssignment("tr", true), true, false),
-    new BooleanVariableAssignmentTerminal(new BooleanVariableAssignment("fa", false), true, false)
-  )
+    new BooleanVariableAssignmentTerminal(new BooleanVariableAssignment("fa", false), true, false))
 
   // Boolean non-terminals
   def boolNonTerms = List[NonTerminal[_]](
@@ -36,14 +34,13 @@ object GP {
     new GTBooleanIntegersOperator(),
     new NotBooleanOperator(),
     new AndBooleanOperator(),
-    new OrBooleanOperator()
-  )
+    new OrBooleanOperator())
 
   def getValueTerminals(values: List[Value.value]): (List[VariableTerminal[_]], List[VariableTerminal[_]]) = {
     var intTerms = List[VariableTerminal[_]]()
     var stringTerms = List[VariableTerminal[_]]()
 
-    for (v <- (Value.Numa(Int.int_of_integer(0)) :: values).distinct.reverse) v match {
+    for (v <- (Value.Numa(Int.int_of_integer(0)) :: Value.Numa(Int.int_of_integer(1)) :: Value.Numa(Int.int_of_integer(2)) :: values).distinct.reverse) v match {
       case Value.Numa(n) => intTerms = (new IntegerVariableAssignmentTerminal(TypeConversion.toLong(n))) :: intTerms
       case Value.Str(s) => stringTerms = (new StringVariableAssignmentTerminal(s)) :: stringTerms
     }
