@@ -477,8 +477,8 @@ object Dirties {
     guardMem.find(f => gp.isCorrect(f)) match {
       case None => {}
       case Some(best) => {
-        Log.root.debug("    Best update is: " + best)
-        Log.root.debug("    Best update is correct")
+        Log.root.debug("    Best memoised guard is: " + best)
+        Log.root.debug("    Best guard is correct")
         val gexp = TypeConversion.gexpFromZ3(best.toZ3(ctx))
         return Some((gexp, GExp.gNot(gexp)))
       }
@@ -596,7 +596,7 @@ object Dirties {
     funMem.find(f => gp.isCorrect(f)) match {
       case None => {}
       case Some(best) => {
-        Log.root.debug("    Best update is: " + best)
+        Log.root.debug("    Best memoised update is: " + best)
         Log.root.debug("    Best update is correct")
         return Some((TypeConversion.toAExp(best)))
       }
@@ -695,6 +695,25 @@ object Dirties {
       Log.root.debug(s"  Latent variable: r$r_index")
     }
 
+    Log.root.debug("  Output training set: " + trainingSet)
+
+    // If we have a key that's empty but returns more than one value then we need a latent variable
+    if ((!latentVariable) && trainingSet.keys().stream().anyMatch(x => x.size() == 0 && trainingSet.get(x).size() > 1)) {
+      if (latentInt) {
+        val best = new IntegerVariableAssignmentTerminal(f"r$r_index", true).asInstanceOf[Node[VariableAssignment[_]]]
+        Log.root.debug("  Secret best output is: " + best)
+        return Some((TypeConversion.toAExp(best), getTypes(best)))
+      } else {
+        val best = new StringVariableAssignmentTerminal(new StringVariableAssignment(f"r$r_index"), false, true).asInstanceOf[Node[VariableAssignment[_]]]
+        Log.root.debug("  Secret best output is: " + best)
+        return Some((TypeConversion.toAExp(best), getTypes(best)))
+      }
+    }
+
+    if ((!latentVariable) && trainingSet.keys().stream().anyMatch(x => x.size() < trainingSet.get(x).size())) {
+      return getOutput(maxReg, values, inputs, registers, outputs, true)
+    }
+
     for (intVarName <- intVarNames.distinct) {
       if (intVarName.startsWith("i"))
         intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
@@ -712,29 +731,15 @@ object Dirties {
     gpGenerator.addTerminals(intTerms)
     gpGenerator.addTerminals(stringTerms)
 
-    Log.root.debug("  Output training set: " + trainingSet)
-    Log.root.debug("  Int terminals: " + intTerms)
+    // Log.root.debug("  Int terminals: " + intTerms)
     // Log.root.debug("  String terminals: " + stringTerms)
-
-    // If we have a key that's empty but returns more than one value then we need a latent variable
-    if ((!latentVariable) && trainingSet.keys().stream().anyMatch(x => x.size() == 0 && trainingSet.get(x).size() > 1)) {
-      if (latentInt) {
-        val best = new IntegerVariableAssignmentTerminal(f"r$r_index", true).asInstanceOf[Node[VariableAssignment[_]]]
-        Log.root.debug("  Secret best output is: " + best)
-        return Some((TypeConversion.toAExp(best), getTypes(best)))
-      } else {
-        val best = new StringVariableAssignmentTerminal(new StringVariableAssignment(f"r$r_index"), false, true).asInstanceOf[Node[VariableAssignment[_]]]
-        Log.root.debug("  Secret best output is: " + best)
-        return Some((TypeConversion.toAExp(best), getTypes(best)))
-      }
-    }
 
     var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 3, 2));
 
     funMem.find(f => gp.isCorrect(f)) match {
       case None => {}
       case Some(best) => {
-        Log.root.debug("    Best output is: " + best)
+        Log.root.debug("    Best memoised output is: " + best)
         Log.root.debug("    Best output is correct")
         return Some((TypeConversion.toAExp(best), getTypes(best)))
       }
