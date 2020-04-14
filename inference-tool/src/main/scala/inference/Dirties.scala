@@ -332,6 +332,25 @@ object Dirties {
 
   var guardMap = Map[List[((List[Value.value], Map[Nat.nat, Option[Value.value]]), Boolean)], Option[GExp.gexp[VName.vname]]]()
   var guardMem: List[mint.inference.gp.tree.Node[mint.tracedata.types.VariableAssignment[_]]] = List()
+  var vars: Map[(String, Value.value), VariableAssignment[_]] = Map()
+
+  def varOf(name: String, value: Value.value): VariableAssignment[_] = varOf((name, value))
+
+  def varOf(nv: (String, Value.value)): VariableAssignment[_] = nv match {
+    case (name, value) => {
+      value match {
+        case Value.Numa(n) => {
+          if (!vars.isDefinedAt((name, Value.Numa(n))))
+            vars += ((name, Value.Numa(n)) -> new IntegerVariableAssignment(name, TypeConversion.toLong(n)))
+        }
+        case Value.Str(s) => {
+          if (!vars.isDefinedAt((name, Value.Str(s))))
+            vars += ((name, Value.Str(s)) -> new StringVariableAssignment(name, s))
+        }
+      }
+      return vars((name, value))
+    }
+  }
 
   def findDistinguishingGuard(
     g1: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])]),
@@ -367,8 +386,6 @@ object Dirties {
 
     val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
 
-    var vars: Map[(String, Value.value), VariableAssignment[_]] = Map()
-
     // g1 needs to be true
     for ((inputs, registers) <- g1) {
       var scenario = List[VariableAssignment[_]]()
@@ -376,16 +393,12 @@ object Dirties {
         case Value.Numa(n) => {
           intVarVals = TypeConversion.toLong(n) :: intVarVals
           intVarNames = s"i${ix}" :: intVarNames
-          if (!vars.isDefinedAt((s"i${ix}", Value.Numa(n))))
-            vars += ((s"i${ix}", Value.Numa(n)) -> new IntegerVariableAssignment(s"i${ix}", TypeConversion.toLong(n)))
-          scenario = (vars((s"i${ix}", Value.Numa(n))))::scenario
+          scenario = (varOf((s"i${ix}", Value.Numa(n)))) :: scenario
         }
         case Value.Str(s) => {
           stringVarVals = s :: stringVarVals
           stringVarNames = s"i${ix}" :: stringVarNames
-          if (!vars.isDefinedAt((s"i${ix}", Value.Str(s))))
-            vars += ((s"i${ix}", Value.Str(s)) -> new StringVariableAssignment(s"i${ix}", s))
-          scenario = (vars((s"i${ix}", Value.Str(s))))::scenario
+          scenario = (varOf((s"i${ix}", Value.Str(s)))) :: scenario
         }
       }
       for ((r, v) <- registers) v match {
@@ -393,16 +406,12 @@ object Dirties {
         case Some(Value.Numa(n)) => {
           intVarVals = TypeConversion.toLong(n) :: intVarVals
           intVarNames = s"r${PrettyPrinter.show(r)}" :: intVarNames
-          if (!vars.isDefinedAt((s"r${PrettyPrinter.show(r)}", Value.Numa(n))))
-            vars += ((s"r${PrettyPrinter.show(r)}", Value.Numa(n)) -> new IntegerVariableAssignment(s"r${PrettyPrinter.show(r)}", TypeConversion.toLong(n)))
-          scenario = vars((s"r${PrettyPrinter.show(r)}", Value.Numa(n)))::scenario
+          scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Numa(n))) :: scenario
         }
         case Some(Value.Str(s)) => {
           stringVarVals = s :: stringVarVals
           stringVarNames = s"r${PrettyPrinter.show(r)}" :: stringVarNames
-          if (!vars.isDefinedAt((s"r${PrettyPrinter.show(r)}", Value.Str(s))))
-            vars += ((s"r${PrettyPrinter.show(r)}", Value.Str(s)) -> new StringVariableAssignment(s"r${PrettyPrinter.show(r)}", s))
-          scenario = vars((s"r${PrettyPrinter.show(r)}", Value.Str(s)))::scenario
+          scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Str(s))) :: scenario
 
         }
       }
@@ -416,16 +425,12 @@ object Dirties {
         case Value.Numa(n) => {
           intVarVals = TypeConversion.toLong(n) :: intVarVals
           intVarNames = s"i${ix}" :: intVarNames
-          if (!vars.isDefinedAt((s"i${ix}", Value.Numa(n))))
-            vars += ((s"i${ix}", Value.Numa(n)) -> new IntegerVariableAssignment(s"i${ix}", TypeConversion.toLong(n)))
-          scenario = (vars((s"i${ix}", Value.Numa(n))))::scenario
+          scenario = (varOf((s"i${ix}", Value.Numa(n)))) :: scenario
         }
         case Value.Str(s) => {
           stringVarVals = s :: stringVarVals
           stringVarNames = s"i${ix}" :: stringVarNames
-          if (!vars.isDefinedAt((s"i${ix}", Value.Str(s))))
-            vars += ((s"i${ix}", Value.Str(s)) -> new StringVariableAssignment(s"i${ix}", s))
-          scenario = (vars((s"i${ix}", Value.Str(s))))::scenario
+          scenario = (varOf((s"i${ix}", Value.Str(s)))) :: scenario
         }
       }
       for ((r, v) <- registers) v match {
@@ -433,16 +438,12 @@ object Dirties {
         case Some(Value.Numa(n)) => {
           intVarVals = TypeConversion.toLong(n) :: intVarVals
           intVarNames = s"r${PrettyPrinter.show(r)}" :: intVarNames
-          if (!vars.isDefinedAt((s"r${PrettyPrinter.show(r)}", Value.Numa(n))))
-            vars += ((s"r${PrettyPrinter.show(r)}", Value.Numa(n)) -> new IntegerVariableAssignment(s"r${PrettyPrinter.show(r)}", TypeConversion.toLong(n)))
-          scenario = vars((s"r${PrettyPrinter.show(r)}", Value.Numa(n)))::scenario
+          scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Numa(n))) :: scenario
         }
         case Some(Value.Str(s)) => {
           stringVarVals = s :: stringVarVals
           stringVarNames = s"r${PrettyPrinter.show(r)}" :: stringVarNames
-          if (!vars.isDefinedAt((s"r${PrettyPrinter.show(r)}", Value.Str(s))))
-            vars += ((s"r${PrettyPrinter.show(r)}", Value.Str(s)) -> new StringVariableAssignment(s"r${PrettyPrinter.show(r)}", s))
-          scenario = vars((s"r${PrettyPrinter.show(r)}", Value.Str(s)))::scenario
+          scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Str(s))) :: scenario
 
         }
       }
@@ -535,11 +536,11 @@ object Dirties {
         for ((ip, ix) <- inputs.zipWithIndex) ip match {
           case Value.Numa(n) => {
             intVarNames = s"i${ix}" :: intVarNames
-            scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toLong(n))) :: scenario
+            scenario = (varOf(s"i${ix}", ip)) :: scenario
           }
           case Value.Str(s) => {
             stringVarNames = s"i${ix}" :: stringVarNames
-            scenario = (new StringVariableAssignment(s"i${ix}", s)) :: scenario
+            scenario = (varOf(s"i${ix}", ip)) :: scenario
           }
         }
         for ((k: Nat.nat, v: Option[Value.value]) <- anteriorRegs) v match {
@@ -547,24 +548,24 @@ object Dirties {
           case Some(Value.Numa(n)) => {
             if (k == r) {
               intVarNames = s"r${TypeConversion.toInt(k)}" :: intVarNames
-              scenario = (new IntegerVariableAssignment(s"r${TypeConversion.toInt(k)}", TypeConversion.toLong(n))) :: scenario
+              scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Numa(n))) :: scenario
             }
           }
           case Some(Value.Str(s)) => {
             if (k == r) {
               stringVarNames = s"r${TypeConversion.toInt(k)}" :: stringVarNames
-              scenario = (new StringVariableAssignment(s"r${TypeConversion.toInt(k)}", s)) :: scenario
+              scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Str(s))) :: scenario
             }
           }
         }
         updatedReg match {
           case Value.Numa(n) => {
             intVarNames = s"r${r_index}" :: intVarNames
-            trainingSet.put(scenario, new IntegerVariableAssignment("r" + r_index, TypeConversion.toLong(n)))
+            trainingSet.put(scenario, varOf("r" + r_index, updatedReg))
           }
           case Value.Str(s) => {
             stringVarNames = s"r${r_index}" :: stringVarNames
-            trainingSet.put(scenario, new StringVariableAssignment("r" + r_index, s))
+            trainingSet.put(scenario, varOf("r" + r_index, updatedReg))
           }
         }
       }
@@ -649,36 +650,38 @@ object Dirties {
     for (t <- ioPairs) t match {
       case ((inputs, anteriorRegs), output) => {
         var scenario = List[VariableAssignment[_]]()
-        for ((ip, ix) <- inputs.zipWithIndex) ip match {
-          case Value.Numa(n) => {
-            intVarNames = s"i${ix}" :: intVarNames
-            scenario = (new IntegerVariableAssignment(s"i${ix}", TypeConversion.toLong(n))) :: scenario
-          }
-          case Value.Str(s) => {
-            stringVarNames = s"i${ix}" :: stringVarNames
-            scenario = (new StringVariableAssignment(s"i${ix}", s)) :: scenario
+        for ((ip, ix) <- inputs.zipWithIndex) {
+          scenario = (varOf(s"i${ix}", ip)) :: scenario
+          ip match {
+            case Value.Numa(n) => {
+              intVarNames = s"i${ix}" :: intVarNames
+            }
+            case Value.Str(s) => {
+              stringVarNames = s"i${ix}" :: stringVarNames
+            }
           }
         }
         for ((k: Nat.nat, v: Option[Value.value]) <- anteriorRegs) v match {
           case None => throw new IllegalStateException("Got None from registers")
           case Some(Value.Numa(n)) => {
             intVarNames = s"r${TypeConversion.toInt(k)}" :: intVarNames
-            scenario = (new IntegerVariableAssignment(s"r${TypeConversion.toInt(k)}", TypeConversion.toLong(n))) :: scenario
+            scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Numa(n))) :: scenario
           }
           case Some(Value.Str(s)) => {
             stringVarNames = s"r${TypeConversion.toInt(k)}" :: stringVarNames
-            scenario = (new StringVariableAssignment(s"r${TypeConversion.toInt(k)}", s)) :: scenario
+            scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Str(s))) :: scenario
           }
         }
+
+        trainingSet.put(scenario, varOf("o", output))
+
         output match {
           case Value.Numa(n) => {
             intVarNames = s"r${r_index}" :: intVarNames
-            trainingSet.put(scenario, new IntegerVariableAssignment("o", TypeConversion.toLong(n)))
           }
           case Value.Str(s) => {
             latentInt = false
             stringVarNames = s"r${r_index}" :: stringVarNames
-            trainingSet.put(scenario, new StringVariableAssignment("o", s))
           }
         }
       }
