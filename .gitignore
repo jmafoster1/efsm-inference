@@ -22,3 +22,5 @@ formal/output/
 # ignore output files
 inference-tool/salfiles*
 inference-tool/dotfiles*
+
+output
