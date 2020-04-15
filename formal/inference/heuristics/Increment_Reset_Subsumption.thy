@@ -1,5 +1,5 @@
 theory Increment_Reset_Subsumption
-imports "../../Contexts"
+imports "../../EFSM/Contexts"
 begin
 
 declare One_nat_def [simp del]

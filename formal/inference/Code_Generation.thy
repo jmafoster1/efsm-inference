@@ -11,9 +11,9 @@ theory Code_Generation
    "heuristics/PTA_Generalisation"
    "heuristics/Weak_Subsumption"
    EFSM_Dot
-   Code_Target_FSet
-   Code_Target_Set
-   Code_Target_List
+   "Code_Target_FSet"
+   "Code_Target_Set"
+   "Code_Target_List"
 efsm2sal
 begin
 

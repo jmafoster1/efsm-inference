@@ -1,5 +1,5 @@
 theory GExp_Orderings
-imports "../EFSM/GExp" "~~/src/HOL/Library/List_Lexorder"
+imports "../EFSM/GExp" "HOL-Library.List_Lexorder"
 begin
 
 (* datatype vname = I nat | R nat *)
