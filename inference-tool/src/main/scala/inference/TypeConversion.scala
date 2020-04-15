@@ -126,7 +126,9 @@ object TypeConversion {
         return AExp.V(VName.R(Nat.Nata(name.drop(1).toLong)))
       }
       else {
-        return AExp.L(Value.Str(e.toString))
+
+        println("STRING: "+Value.Str(e.toString.replaceAll("^\"|\"$", "")))
+        return AExp.L(Value.Str(e.toString.replaceAll("^\"|\"$", "")))
       }
     }
 		if (e.isIntNum()) {
@@ -194,6 +196,7 @@ object TypeConversion {
   }
 
   def toValue(n: BigInt): Value.value = Value.Numa(Int.int_of_integer(n))
+  def toValue(n: Long): Value.value = Value.Numa(Int.int_of_integer(n))
   def toValue(s: String): Value.value = Value.Str(s)
   def toValue(e: Expr): Value.value = {
     if (e.isIntNum())

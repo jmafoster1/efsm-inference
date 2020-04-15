@@ -1,0 +1,14 @@
+2020-04-15 18:10:39.032 [main] INFO  ROOT - -s naive_eq_bonus -p gp -g 33979 -o 39699 -u 3066 -h same,ws,distinguish -d results/spaceInvaders30-obfuscated-x-gp-33979-39699-3066 experimental-data/spaceInvaders30-obfuscated-x-train.json experimental-data/spaceInvaders30-obfuscated-x-test.json
+2020-04-15 18:10:39.035 [main] INFO  ROOT - Building PTA - 30 traces
+2020-04-15 18:10:49.593 [main] INFO  ROOT - PTA has 541 states
+2020-04-15 18:10:49.594 [main] INFO  ROOT - PTA has 540 transitions
+2020-04-15 18:10:52.462 [scala-execution-context-global-12] DEBUG ROOT - Getting Output...
+2020-04-15 18:10:52.462 [scala-execution-context-global-12] DEBUG ROOT -   Singleton literal output
+2020-04-15 18:10:52.462 [scala-execution-context-global-13] DEBUG ROOT - Getting Output...
+2020-04-15 18:10:52.462 [scala-execution-context-global-18] DEBUG ROOT - Getting Output...
+2020-04-15 18:10:52.463 [scala-execution-context-global-18] DEBUG ROOT -   Singleton literal output
+2020-04-15 18:10:52.463 [scala-execution-context-global-13] DEBUG ROOT -   Singleton literal output
+2020-04-15 18:10:52.713 [scala-execution-context-global-16] DEBUG ROOT - Getting Output...
+2020-04-15 18:10:52.761 [scala-execution-context-global-16] DEBUG ROOT -   No latent variable
+2020-04-15 18:10:52.769 [scala-execution-context-global-16] DEBUG ROOT -   Output training set: {[]=[o=100, o=0, o=150, o=50]}
+2020-04-15 18:10:52.776 [scala-execution-context-global-16] DEBUG ROOT -   Secret best output is: r1

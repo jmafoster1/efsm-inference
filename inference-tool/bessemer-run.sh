@@ -9,7 +9,6 @@
 module load Java/11
 
 echo "bash bessemer-run.sh "$@
-cd Documents/efsm-inference/inference-tool
 export LD_LIBRARY_PATH=/home/acp17jmf/z3/build
 mkdir -p results/$4-$5-$1-$2-$3
 

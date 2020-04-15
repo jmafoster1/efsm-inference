@@ -509,6 +509,20 @@ object Dirties {
 
     Log.root.debug("  Getting update")
 
+    // if (train.length == 1) train.head match {
+    //   case (inputs, (anterior, posterior)) => {
+    //     if (inputs.length == 0 && anterior.size == 0) {
+    //       posterior.head match {
+    //         case (_, Some(best)) => {
+    //           Log.root.debug("    Singleton update: " + PrettyPrinter.show(best))
+    //           return Some(AExp.L(best))
+    //         }
+    //         case (_, None) => {}
+    //       }
+    //     }
+    //   }
+    // }
+
     val r_index = TypeConversion.toInt(r)
     val ioPairs = (train.map {
       case (inputs, (aregs, pregs)) => pregs(r) match {
@@ -546,16 +560,12 @@ object Dirties {
         for ((k: Nat.nat, v: Option[Value.value]) <- anteriorRegs) v match {
           case None => throw new IllegalStateException("Got None from registers")
           case Some(Value.Numa(n)) => {
-            if (k == r) {
-              intVarNames = s"r${TypeConversion.toInt(k)}" :: intVarNames
-              scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Numa(n))) :: scenario
-            }
+            intVarNames = s"r${TypeConversion.toInt(k)}" :: intVarNames
+            scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Numa(n))) :: scenario
           }
           case Some(Value.Str(s)) => {
-            if (k == r) {
-              stringVarNames = s"r${TypeConversion.toInt(k)}" :: stringVarNames
-              scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Str(s))) :: scenario
-            }
+            stringVarNames = s"r${TypeConversion.toInt(k)}" :: stringVarNames
+            scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Str(s))) :: scenario
           }
         }
         updatedReg match {
@@ -583,25 +593,27 @@ object Dirties {
     gpGenerator.addTerminals(stringTerms)
 
     Log.root.debug("    Update training set: " + trainingSet)
-    Log.root.debug("  Int terminals: " + intTerms)
+    // Log.root.debug("  Int terminals: " + intTerms)
     // Log.root.debug("  String terminals: " + stringTerms)
 
-    if (trainingSet.keys().stream().anyMatch(x => x.size() == 0 && trainingSet.get(x).size() > 1)) {
-      Log.root.debug("    Multiple updates for no input")
+    // If number of inputs < possible outputs then we can't solve it
+    if (trainingSet.keys().stream().anyMatch(x => trainingSet.get(x).size() > 1 && x.size() < trainingSet.get(x).size())) {
+      Log.root.debug("    Too few inputs for possible updates")
       return None
     }
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 5, 2));
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 2, 2));
 
     funMem.find(f => gp.isCorrect(f)) match {
       case None => {}
       case Some(best) => {
         Log.root.debug("    Best memoised update is: " + best)
         Log.root.debug("    Best update is correct")
-        return Some((TypeConversion.toAExp(best)))
+        return Some(TypeConversion.toAExp(best))
       }
     }
 
+    gp.setSeeds(intTerms ++ stringTerms)
     val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]]
 
     Log.root.debug("    Best update is: " + best)
@@ -710,6 +722,7 @@ object Dirties {
       }
     }
 
+    // Cut straight to having a latent variable if there's more possible outputs than inputs
     if ((!latentVariable) && trainingSet.keys().stream().anyMatch(x => x.size() < trainingSet.get(x).size())) {
       return getOutput(maxReg, values, inputs, registers, outputs, true)
     }
@@ -731,10 +744,10 @@ object Dirties {
     gpGenerator.addTerminals(intTerms)
     gpGenerator.addTerminals(stringTerms)
 
-    // Log.root.debug("  Int terminals: " + intTerms)
+    Log.root.debug("  Int terminals: " + intTerms)
     // Log.root.debug("  String terminals: " + stringTerms)
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 3, 2));
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 2, 2));
 
     funMem.find(f => gp.isCorrect(f)) match {
       case None => {}
@@ -745,7 +758,7 @@ object Dirties {
       }
     }
 
-    // gp.setSeeds(intTerms)
+    gp.setSeeds(intTerms ++ stringTerms)
     val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]]
 
     Log.root.debug("  Best output is: " + best)
@@ -778,7 +791,7 @@ object Dirties {
     val definedVars = (0 to i.length).map(i => VName.I(Nat.Nata(i)))
     val undefinedVars = expVars.filter(v => !definedVars.contains(v))
 
-    // Log.root.debug("\noutputFun: " + PrettyPrinter.aexpToString(f, true) + " = " + PrettyPrinter.valueToString(v))
+    // Log.root.debug("\noutputFun: " + PrettyPrinter.aexpToString(f, true) + " = " + PrettyPrinter.show(v))
     // Log.root.debug("  expVars: " + expVars)
     // Log.root.debug("  undefinedVars: " + undefinedVars)
 
@@ -793,17 +806,17 @@ object Dirties {
     val args = expVars.zipWithIndex.map {
       case (v: VName.vname, k: Int) =>
         if (definedVars.contains(v)) {
-          PrettyPrinter.valueToString(i(k))
+          PrettyPrinter.show(i(k))
         } else {
           PrettyPrinter.vnameToString(v)
         }
     }
 
     if (args.length == 0) {
-      val assertion: String = "(assert (= " + PrettyPrinter.valueToString(v) + " f))"
+      val assertion: String = "(assert (= " + PrettyPrinter.show(v) + " f))"
       z3String += assertion
     } else {
-      val assertion: String = "(assert (= " + PrettyPrinter.valueToString(v) + " (f " + args.mkString(" ") + ")))"
+      val assertion: String = "(assert (= " + PrettyPrinter.show(v) + " (f " + args.mkString(" ") + ")))"
       z3String += assertion
     }
 
