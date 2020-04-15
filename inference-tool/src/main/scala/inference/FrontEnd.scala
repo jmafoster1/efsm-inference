@@ -33,6 +33,10 @@ object FrontEnd {
         Log.root.info(s"Resolved PTA has ${Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(pta)))} states")
         Log.root.info(s"Resolved PTA has ${Code_Numeral.integer_of_nat(FSet.size_fset(pta))} transitions")
       }
+      val seconds = (System.nanoTime - t1) / 1e9d
+      val minutes = (seconds / 60) % 60
+      val hours = seconds / 3600
+      Log.root.info(s"Preprocessing completed in ${if (hours > 0) s"${hours.toInt}h " else ""}${if (minutes > 0) s"${minutes.toInt}m " else ""}${seconds % 60}s")
     }
 
     try {

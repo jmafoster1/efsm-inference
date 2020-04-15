@@ -13,7 +13,7 @@ object PrettyPrinter {
     (show(nn._1), show(nn._2)).toString()
   }
 
-  def valueToString(v: Value.value): String =
+  def show(v: Value.value): String =
     v match {
       case Value.Numa(Int.int_of_integer(n)) => n.toString
       case Value.Str(s) => "\"" + s + "\""
@@ -28,7 +28,7 @@ object PrettyPrinter {
 
   def show(a: AExp.aexp[VName.vname]): String = {
     a match {
-      case AExp.L(v) => valueToString(v)
+      case AExp.L(v) => show(v)
       case AExp.V(v) => vnameToString(v)
       case AExp.Plus(a1, a2) => show(a1) + " + " + show(a2)
       case AExp.Minus(a1, a2) => show(a1) + " - " + show(a2)
@@ -40,7 +40,7 @@ object PrettyPrinter {
     case GExp.Bc(v) => v.toString()
     case GExp.Eq(a, b) => s"(= ${show(a)} ${show(b)})"
     case GExp.Gt(a, b) => s"(> ${show(a)} ${show(b)})"
-    case GExp.In(v, l) => s"${vnameToString(v)} E {${l.map(valueToString).mkString(", ")}}"
+    case GExp.In(v, l) => s"${vnameToString(v)} E {${l.map(show).mkString(", ")}}"
     case GExp.Nor(g1, g2) => {
       return s"(not (or ${gexpToString(g1)} ${gexpToString(g2)}))"
     }
@@ -85,13 +85,13 @@ object PrettyPrinter {
 
   def traceToString(x1: List[(String, (List[Value.value], List[Value.value]))]): String = x1 match {
     case Nil => ""
-    case (label, (inputs, outputs)) :: t => s"        ${label}(${inputs.map(valueToString)})/${outputs.map(valueToString)}\n" + traceToString(t)
+    case (label, (inputs, outputs)) :: t => s"        ${label}(${inputs.map(show)})/${outputs.map(show)}\n" + traceToString(t)
   }
 
-  def show(i: List[Value.value], join: String = ", ") = s"[${i.map(valueToString).mkString(join)}]"
+  def show(i: List[Value.value], join: String = ", "): String = s"[${i.map(show).mkString(join)}]"
 
-  def outputToString(o: Option[Value.value]) = o match {
-    case Some(p) => valueToString(p)
+  def outputToString(o: Option[Value.value]): String = o match {
+    case Some(p) => show(p)
     case None => "NONE!!!"
   }
 
@@ -146,7 +146,7 @@ object PrettyPrinter {
 
   def event2String(e: (String, (List[Value.value], List[Value.value]))): String = e match {
     case (label, (inputs, outputs)) =>
-      return label + s"(${inputs.map(i => valueToString(i)).mkString(", ")})" + s"/[${outputs.map(i => valueToString(i)).mkString(", ")}]"
+      return label + s"(${inputs.map(i => show(i)).mkString(", ")})" + s"/[${outputs.map(i => show(i)).mkString(", ")}]"
   }
 
   def releventsToString(l: List[(Nat.nat, (Nat.nat, (String, (List[Value.value], List[Value.value]))))]): String = {
