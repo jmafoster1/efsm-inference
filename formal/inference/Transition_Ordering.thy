@@ -1,5 +1,5 @@
 theory Transition_Ordering
-  imports "../EFSM/Transition"
+  imports "EFSM.Transition"
     GExp_Orderings
     "HOL-Library.Product_Lexorder"
 begin

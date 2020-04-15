@@ -1,5 +1,5 @@
 theory Increment_Reset_Subsumption
-imports "../../EFSM/Contexts"
+imports "EFSM.Contexts"
 begin
 
 declare One_nat_def [simp del]
@@ -15,12 +15,13 @@ lemma satisfies_context_eq_contra: "c (V v) = {|cexp.Eq x|} \<Longrightarrow>
   apply (simp add: cval_def)
   apply (case_tac "r v")
   by auto
-
+(*
 lemma satisfies_context_eq: "c (V v) = {|cexp.Eq x|} \<Longrightarrow>
        satisfies_context r c \<Longrightarrow>
        r v = Some x"
   using satisfies_context_eq_contra
   by auto
+*)
 
 primrec updates :: "vname \<Rightarrow> update_function list \<Rightarrow> bool" where
   "updates _ [] = False" |
@@ -34,10 +35,10 @@ lemma same_posterior: "ra \<noteq> V (R r) \<Longrightarrow>
   apply clarify
   apply (simp add: remove_obsolete_constraints_def)
   by auto
-
+(*
 lemma test: "r \<noteq> V (I 1) \<Longrightarrow> medial c [gexp.Eq (V (I 1)) (L (Num n))] r = c r"
   by (simp add: medial_def List.maps_def pairs2context_def cval_def)
-
+*)
 lemma not_updates_remains_same: "\<not> updates (R r) u \<Longrightarrow>
     Contexts.apply_updates x c u (V (R r)) = c (V (R r))"
 proof(induct u)

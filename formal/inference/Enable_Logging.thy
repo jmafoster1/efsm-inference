@@ -18,26 +18,26 @@ fun vname2string :: "vname \<Rightarrow> String.literal" where
   "vname2string (vname.I n) = STR ''i''+show_nat n" |
   "vname2string (R s) = STR ''r''+show_nat s"
 
-fun aexp2string :: "aexp \<Rightarrow> String.literal" where
+fun aexp2string :: "vname aexp \<Rightarrow> String.literal" where
   "aexp2string (L v) = value2string v" |
   "aexp2string (V v) = vname2string v" |
   "aexp2string (Plus a b) = aexp2string a + STR ''+''+aexp2string b" |
   "aexp2string (Minus a b) = aexp2string a + STR ''-''+aexp2string b"
 
-fun gexp2string :: "gexp \<Rightarrow> String.literal" where
+fun gexp2string :: "vname gexp \<Rightarrow> String.literal" where
   "gexp2string (gexp.Bc True) = STR ''TRUE''" |
   "gexp2string (gexp.Bc False) = STR ''FALSE''" |
   "gexp2string (gexp.Eq a b) = aexp2string a + STR ''=''+aexp2string b" |
   "gexp2string (gexp.Gt a b) = aexp2string a + STR ''>''+aexp2string b" |
-  "gexp2string (gexp.Nor a b) = STR ''!(''+gexp2string a + STR ''||''+gexp2string b+STR '')''" |
-  "gexp2string (gexp.Null v) = STR ''NULL ''+aexp2string v"
+  "gexp2string (gexp.Nor a b) = STR ''!(''+gexp2string a + STR ''||''+gexp2string b+STR '')''" 
+(*  "gexp2string (gexp.Null v) = STR ''NULL ''+aexp2string v" *)
 
 fun join :: "String.literal list \<Rightarrow> String.literal \<Rightarrow> String.literal" where
   "join [] _ = STR ''''" |
   "join [h] _ = h" |
   "join (a#b#t) j = a+j+b+(join t j)"
 
-primrec outputs2string :: "aexp list \<Rightarrow> nat \<Rightarrow> String.literal list" where
+primrec outputs2string :: "vname aexp list \<Rightarrow> nat \<Rightarrow> String.literal list" where
   "outputs2string [] _ = []" |
   "outputs2string (h#t) n = (STR ''o''+show_nat n+STR '':=''+aexp2string h)#outputs2string t (n+1)"
 

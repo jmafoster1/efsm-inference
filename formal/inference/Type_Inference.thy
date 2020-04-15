@@ -1,5 +1,5 @@
 theory Type_Inference
-  imports "../EFSM/GExp" "HOL-Library.FSet" FinFun.FinFun
+  imports "EFSM.GExp" "HOL-Library.FSet" FinFun.FinFun
 begin
 
 unbundle finfun_syntax

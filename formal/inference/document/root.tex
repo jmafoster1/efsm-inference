@@ -1,15 +1,4 @@
-\documentclass[10pt,DIV14,a4paper,twoside=semi,openright]
-{scrartcl}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Overrides the (rightfully issued) warnings by Koma Script that \rm
-%%% etc. should not be used (they are deprecated since more than a
-%%% decade)
-  \DeclareOldFontCommand{\rm}{\normalfont\rmfamily}{\mathrm}
-  \DeclareOldFontCommand{\sf}{\normalfont\sffamily}{\mathsf}
-  \DeclareOldFontCommand{\tt}{\normalfont\ttfamily}{\mathtt}
-  \DeclareOldFontCommand{\bf}{\normalfont\bfseries}{\mathbf}
-  \DeclareOldFontCommand{\it}{\normalfont\itshape}{\mathit}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[10pt,DIV16,a4paper,abstract=true,twoside=semi,openright]{scrreprt}
 \usepackage[USenglish]{babel}
 \usepackage[numbers, sort&compress]{natbib}
 \usepackage{isabelle,isabellesym}
@@ -19,32 +8,23 @@
 \usepackage{amssymb}
 \usepackage{xspace}
 \usepackage{xcolor}
-\usepackage{listings}
-\lstloadlanguages{HTML}
-\usepackage[]{mathtools}
-\usepackage[pdfpagelabels, pageanchor=false, plainpages=false]{hyperref}
+\usepackage{hyperref}
 
-\lstdefinestyle{html}{language=XML,
-  basicstyle=\ttfamily,
-  commentstyle=\itshape,
-  keywordstyle=\color{blue},
-  ndkeywordstyle=\color{blue},
-}
-\lstdefinestyle{displayhtml}{style=html,
-  floatplacement={tbp},
-  captionpos=b,
-  framexleftmargin=0pt,
-  basicstyle=\ttfamily\scriptsize,
-  backgroundcolor=\color{black!2},
-  frame=lines,
-}
-\lstnewenvironment{html}[1][]{\lstset{style=displayhtml, #1}}{}
-\def\inlinehtml{\lstinline[style=html, columns=fullflexible]}
 
+\pagestyle{headings}
 \isabellestyle{default}
-\setcounter{tocdepth}{2}
+\setcounter{tocdepth}{1}
 \newcommand{\ie}{i.\,e.\xspace}
 \newcommand{\eg}{e.\,g.\xspace}
+\newcommand{\thy}{\isabellecontext}
+\renewcommand{\isamarkupsection}[1]{%
+  \begingroup% 
+  \def\isacharunderscore{\textunderscore}%
+  \section{#1 (\thy)}%
+  \def\isacharunderscore{-}%
+  \expandafter\label{sec:\isabellecontext}%
+  \endgroup% 
+}
 
 \newcommand{\orcidID}[1]{} % temp. hack
 
@@ -68,32 +48,38 @@
 	\href{mailto:j.derrick@sheffield.ac.uk}{j.derrick}
   \}@sheffield.ac.uk}
 }
-\begin{document}
-\begin{titlepage}
-  \maketitle
-  \thispagestyle{empty}
-  \begin{abstract}
-    In this article, we formalize
 
+\begin{document}
+  \maketitle
+  \begin{abstract}
+    \begin{quote}
 
     \bigskip
     \noindent{\textbf{Keywords:}}
+    \end{quote}
   \end{abstract}
-\end{titlepage}
-\cleardoublepage
+
 
 \tableofcontents
 \cleardoublepage
 
-\section{Introduction}
-\cite{foster.ea:efsm:2018}
+\chapter{Introduction}
+
 \begin{figure}
   \centering
-  \includegraphics[width=.3\textwidth]{session_graph}
+    \includegraphics[height=\textheight]{session_graph}
   \caption{The Dependency Graph of the Isabelle Theories.\label{fig:session-graph}}
 \end{figure}
+  The rest of this document is automatically generated from the
+  formalization in Isabelle/HOL, i.e., all content is checked by
+  Isabelle.  Overall, the structure of this document follows the
+  theory dependencies (see \autoref{fig:session-graph}): 
+
+\nocite{foster.ea:efsm:2018}
 
 \clearpage
+\chapter{Theories}
+
 \input{session}
 
 
@@ -102,6 +88,7 @@
   \bibliography{root}
 }
 \end{document}
+\endinput 
 
 %%% Local Variables:
 %%% mode: latex

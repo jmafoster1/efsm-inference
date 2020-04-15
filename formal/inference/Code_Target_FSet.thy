@@ -1,5 +1,5 @@
 theory Code_Target_FSet
-  imports "../EFSM/FSet_Utils"
+  imports "EFSM.FSet_Utils"
 begin
 
 code_datatype fset_of_list

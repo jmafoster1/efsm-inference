@@ -1,0 +1,31 @@
+session "inference" = "EFSM" +
+options [quick_and_dirty, document = pdf, document_output = "output"]
+directories
+  "heuristics"
+theories
+  "Code_Target_List"
+  "Always_Different_Outputs"
+  "Guard_Implication_Subsumption"
+  "Inference"
+  "Code_Generation"
+  "EFSM_Dot"
+  "Transition_Ordering"
+  "Code_Target_Set"
+  "GExp_Orderings"
+  "SelectionStrategies"
+  "Enable_Logging"
+  "Code_Target_FSet"
+  "heuristics/Same_Register"
+  "heuristics/Store_Reuse"
+  "heuristics/Increment_Reset"
+  (* "heuristics/Increment_Reset_Subsumption" *)
+  "heuristics/Distinguishing_Guards"
+  "heuristics/Store_Reuse_Subsumption"
+  "heuristics/Weak_Subsumption"
+  "heuristics/Separation"
+  "heuristics/PTA_Generalisation"
+  "Type_Inference"
+  "efsm2sal"
+document_files
+  "root.tex"
+  "root.bib"

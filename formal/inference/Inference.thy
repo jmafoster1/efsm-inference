@@ -5,7 +5,7 @@ system traces.
 \<close>
 
 theory Inference
-  imports "../EFSM/Contexts"
+  imports "EFSM.Contexts"
     Transition_Ordering
     "HOL-Library.Product_Lexorder"
 begin
@@ -66,7 +66,7 @@ lemma merge_states_self_simp [code]:
 definition outgoing_transitions :: "cfstate \<Rightarrow> iEFSM \<Rightarrow> (cfstate \<times> transition \<times> tids) fset" where
   "outgoing_transitions s e = fimage (\<lambda>(uid, (from, to), t'). (to, t', uid)) ((ffilter (\<lambda>(uid, (origin, dest), t). origin = s)) e)"
 
-\<comment> \<open>Tuples of the form (cfstate \<times> (cfstate \<times> cfstate) \<times> ((transition \<times> tids) \<times> (transition \<times> tids)))\<close>
+\<comment> \<open>Tuples of the form $(cfstate \times (cfstate \times cfstate) \times ((transition \times tids) \times (transition \times tids)))$\<close>
 type_synonym nondeterministic_pair = "(cfstate \<times> (cfstate \<times> cfstate) \<times> ((transition \<times> tids) \<times> (transition \<times> tids)))"
 
 definition state_nondeterminism :: "nat \<Rightarrow> (cfstate \<times> transition \<times> tids) fset \<Rightarrow> nondeterministic_pair fset" where

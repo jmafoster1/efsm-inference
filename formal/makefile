@@ -1,5 +1,7 @@
+jedit: 
+	isabelle jedit -d . 
 build:
-	isabelle build -d . michael-efsm
+	isabelle build -D . 
 
 snippets:
 	isabelle build -d . EFSM

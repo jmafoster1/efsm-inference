@@ -5,10 +5,10 @@ begin
 definition always_different_outputs :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "always_different_outputs t1 t2 = (\<forall>s. apply_outputs (Outputs t1) s \<noteq> apply_outputs (Outputs t2) s)"
 
-definition restricting_guards :: "gexp list \<Rightarrow> vname \<Rightarrow> gexp list" where
+definition restricting_guards :: "(vname gexp) list \<Rightarrow> vname \<Rightarrow> vname gexp list" where
   "restricting_guards G v = filter (\<lambda>g. gexp_constrains g (V v)) G"
 
-definition enumerate_gexp_list_inputs :: "gexp list \<Rightarrow> nat set" where
+definition enumerate_gexp_list_inputs :: "vname gexp list \<Rightarrow> nat set" where
   "enumerate_gexp_list_inputs G = (\<Union> (set (map enumerate_gexp_inputs G)))"
 
 lemma aexp_constrains_input_swap:
@@ -33,6 +33,10 @@ next
   case (Minus a1 a2)
   then show ?case
     by simp
+next
+  case (Times a1 a2)
+  then show ?case 
+    by simp
 qed
 
 lemma gexp_constrains_input_swap:
@@ -51,14 +55,14 @@ next
   case (Gt x1a x2)
   then show ?case
     using aexp_constrains_input_swap by auto
-next
+(*next
   case (Null x)
   then show ?case
     using aexp_constrains_input_swap by auto
-next
+*)next
   case (In x1a x2)
-  then show ?case
-    by (metis aexp_constrains_input_swap aval.simps(2) gexp_constrains.simps(6) gval.simps(6))
+  then show ?case 
+    by (smt aexp_constrains_input_swap aval.simps gexp_constrains.simps gval.simps)
 next
   case (Nor a1 a2)
   then show ?case
@@ -91,7 +95,7 @@ lemma restricting_guards_cons:
    length (restricting_guards G (I x1)) = 0"
   by (simp add: enumerate_gexp_list_inputs_def Ball_def Bex_def restricting_guards_def)
 
-fun get_input_pairs :: "gexp list \<Rightarrow> (nat \<times> value) list" where
+fun get_input_pairs :: "vname gexp list \<Rightarrow> (nat \<times> value) list" where
   "get_input_pairs [] = []" |
   "get_input_pairs (Eq (V (I x1)) (L x1a) # G) = (x1, x1a)#(get_input_pairs G)" |
   "get_input_pairs (h#t) = get_input_pairs t"
@@ -102,6 +106,7 @@ lemma enumerate_gexp_list_inputs_cons: "enumerate_gexp_list_inputs (g # G) = enu
 lemma "\<forall>i\<in>enumerate_gexp_list_inputs (g # G). length (restricting_guards (g # G) (I i)) = 1 \<Longrightarrow>
        \<forall>i\<in>enumerate_gexp_list_inputs G. length (restricting_guards G (I i)) = 1"
   apply (simp add: enumerate_gexp_list_inputs_def)
+  oops
 
 lemma "\<forall>i \<in> enumerate_gexp_list_inputs G. length (restricting_guards G (I i)) = 1 \<and> i < a \<Longrightarrow>
        \<forall>g \<in> set G. literal_args g \<Longrightarrow>
@@ -117,8 +122,6 @@ next
     apply (erule_tac x=g in allE)
     apply simp
     apply (erule conjE)
-
-
-qed
+    oops
 
 end
