@@ -304,20 +304,20 @@ fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> tids list \<Right
   )"
 
 (*This is where the types stuff originates*)
-definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list \<Rightarrow> iEFSM option" where
-  "generalise_and_update log e gp = (
+definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (registers \<times> value list \<times> value list) list \<Rightarrow> iEFSM option" where
+  "generalise_and_update log e gp tr = (
     let
-      label = Label (snd (hd (fst gp)));
+      label = Label (snd (hd gp));
       values = enumerate_log_values_by_label label log;
-      I = map (\<lambda>(regs, ins, outs).ins) (snd gp);
-      R = map (\<lambda>(regs, ins, outs).regs) (snd gp);
-      P = map (\<lambda>(regs, ins, outs).outs) (snd gp);
+      I = map (\<lambda>(regs, ins, outs).ins) tr;
+      R = map (\<lambda>(regs, ins, outs).regs) tr;
+      P = map (\<lambda>(regs, ins, outs).outs) tr;
       max_reg = max_reg_total e;
       outputs = get_outputs max_reg values I R P;
-      changes = map (\<lambda>(id, tran). (id, tran\<lparr>Outputs := put_outputs (zip outputs (Outputs tran))\<rparr>)) (fst gp);
+      changes = map (\<lambda>(id, tran). (id, tran\<lparr>Outputs := put_outputs (zip outputs (Outputs tran))\<rparr>)) gp;
       generalised_model = fold (\<lambda>(id, t) acc. replace_transition acc id t) changes e
   in
-  case put_updates log values (map fst (fst gp)) (enumerate 0 outputs) generalised_model of
+  case put_updates log values (map fst gp) (enumerate 0 outputs) generalised_model of
     None \<Rightarrow> None |
     Some e' \<Rightarrow> if satisfies (set log) (tm e') then Some e' else None
   )"
@@ -325,20 +325,20 @@ definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids
 primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> ((tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> iEFSM" where
   "groupwise_generalise_and_update _ e [] = e" |
   "groupwise_generalise_and_update log e (gp#t) = (
-    case generalise_and_update log e gp of
+    case generalise_and_update log e (fst gp) (snd gp) of
       None \<Rightarrow> groupwise_generalise_and_update log e t |
       Some e' \<Rightarrow> groupwise_generalise_and_update log e' t
   )"
 
 lemma groupwise_generalise_and_update_fold [code]: 
 "groupwise_generalise_and_update log e gs = fold (\<lambda>gp e.
-  case generalise_and_update log e gp of
+  case generalise_and_update log e (fst gp) (snd gp) of
         None \<Rightarrow> e |
         Some e' \<Rightarrow> e'
   ) gs e"
   apply(induct gs arbitrary: e)
-  apply simp
-  by (case_tac "generalise_and_update log e a", auto)
+   apply simp
+  by (case_tac a, case_tac "generalise_and_update log e aa b", auto)
 
 definition standardise_outputs :: "(vname aexp \<Rightarrow> vname aexp \<Rightarrow> vname aexp) \<Rightarrow> vname aexp list \<Rightarrow> vname aexp list \<Rightarrow> vname aexp list" where
   "standardise_outputs f p1 p2 = map (\<lambda>(p1, p2). f p1 p2) (zip p1 p2)"
@@ -418,27 +418,45 @@ primrec find_outputs :: "output_function list list \<Rightarrow> iEFSM \<Rightar
         find_outputs t e l g
   )"
 
+definition "this x = (case x of Some y \<Rightarrow> y)"
+
+definition replace_updates :: "transition \<Rightarrow> update_function list \<Rightarrow> transition" where
+  "replace_updates t u = (
+    let
+      oldUpdates = map_of (Updates t);
+      newUpdates = (\<lambda>r. case (map_of u) r of Some a \<Rightarrow> Some a | None \<Rightarrow> oldUpdates r)
+    in
+    t\<lparr>Updates := map (\<lambda>(r, _). (r, this (newUpdates r))) (Updates t)\<rparr>
+  )"
+
 primrec find_updates_outputs :: "update_function list list \<Rightarrow> output_function list list \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (output_function list \<times> update_function list) option" where
   "find_updates_outputs [] _ _ _ _ = None" |
   "find_updates_outputs (h#t) p e l g = (
     let
-      updates = fold (\<lambda>(tids, t) acc. replace_transition acc tids (t\<lparr>Updates := h\<rparr>)) g e
+      updates = fold (\<lambda>(tids, t) acc. replace_transition acc tids (replace_updates t h)) g e
     in
       case find_outputs p updates l g of
         Some pp \<Rightarrow> Some (pp, h) |
         None \<Rightarrow> find_updates_outputs t p e l g
   )"
 
+definition power_list :: "('a::linorder) list \<Rightarrow> 'a list list" where
+  "power_list l = sorted_list_of_set (image sorted_list_of_set (Pow (set l)))"
+
+definition power_lists :: "'a::linorder list list \<Rightarrow> 'a list list" where
+  "power_lists l = fold List.union (map power_list l) []"
+
 (* Try max and min output function with satisfies *)
 definition standardise_group_outputs_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list" where
   "standardise_group_outputs_updates e l g = (
     let
       update_groups = cartProdN (group_by updates_same (sort (remdups (List.maps (Updates \<circ> snd) g))));
+      update_groups_subs = power_lists update_groups;
       output_groups = cartProdN (transpose (remdups (map (Outputs \<circ> snd) g)))
     in
-    case find_updates_outputs update_groups output_groups e l g of
+    case find_updates_outputs update_groups_subs output_groups e l g of
       None \<Rightarrow> g |
-      Some (p, u) \<Rightarrow> map (\<lambda>(id, t). (id, t\<lparr>Outputs := [], Updates := u\<rparr>)) g
+      Some (p, u) \<Rightarrow> map (\<lambda>(id, t). (id, t\<lparr>Outputs := p, Updates := u\<rparr>)) g
   )"
 
 (* Sometimes inserting updates without redundancy can cause certain transitions to not get a      *)
@@ -481,17 +499,6 @@ definition standardise_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" w
 
 definition standardise_groups_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
   "standardise_groups_updates e l = standardise_groups_aux e l (group_by_structure e) (\<lambda>_ _. standardise_group_updates)"
-
-(* Instead of doing all the outputs and all the updates, do it one output and update at a time    *)
-(* This way if one update fails, we don't end up losing the rest by having to default back to the *)
-(* original PTA if the normalised one doesn't reproduce the original behaviour                    *)
-definition incremental_normalised_pta :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "incremental_normalised_pta log pta = (
-    let
-      training_set = make_training_set pta log
-    in
-    standardise_groups (groupwise_generalise_and_update log pta training_set) log
-  )"                 
 
 \<comment> \<open>Need to derestrict variables which occur in the updates but keep unrelated ones to avoid \<close>
 \<comment> \<open>nondeterminism creeping in too early in the inference process                            \<close>
@@ -628,11 +635,13 @@ definition remove_spurious_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> iEF
 definition derestrict :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "derestrict pta log m np = (
     let
-      normalised = incremental_normalised_pta log pta;
-      delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs normalised)) normalised;
-      standardised = merge_regs delayed log
+      training_set = make_training_set pta log;
+      normalised = groupwise_generalise_and_update log pta training_set;
+      standardised = standardise_groups normalised log;
+      delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs standardised)) standardised;
+      merged = remove_spurious_updates (merge_regs delayed log) log
     in
-      remove_spurious_updates (drop_all_guards standardised pta log m np) log
+      drop_all_guards merged pta log m np
   )"
 
 definition "drop_pta_guards pta log m np = drop_all_guards pta pta log m np"

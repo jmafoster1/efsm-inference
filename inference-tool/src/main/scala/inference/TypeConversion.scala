@@ -33,6 +33,13 @@ object TypeConversion {
     return aexp
   }
 
+  def toGExp(best: Node[VariableAssignment[_]]): GExp.gexp[VName.vname] = {
+    val ctx = new com.microsoft.z3.Context()
+    val gexp = gexpFromZ3(best.toZ3(ctx))
+    ctx.close
+    return gexp
+  }
+
   def expandTypeString(t: String): String = {
     if (t == ":S")
       return "String"

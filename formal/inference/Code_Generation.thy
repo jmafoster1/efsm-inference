@@ -363,7 +363,7 @@ code_printing
 *)
 code_printing
   type_constructor finfun \<rightharpoonup> (Scala) "Map[_, _]"
-  | constant "finfun_const" \<rightharpoonup> (Scala) "Map().withDefaultValue((_))"
+  | constant "finfun_const" \<rightharpoonup> (Scala) "scala.collection.immutable.Map().withDefaultValue((_))"
   | constant "finfun_update" \<rightharpoonup> (Scala) "_ + (_ -> _)"
   | constant "finfun_apply" \<rightharpoonup> (Scala) "_((_))"
   | constant "finfun_to_list" \<rightharpoonup> (Scala) "_.keySet.toList"
@@ -413,13 +413,8 @@ export_code
   try_heuristics_check
   learn
   nondeterministic
-  input_updates_register
-  step
-  maxS
-  add_transition
   make_pta
   AExp.enumerate_vars
-  sorted_list_of_set
   (* Logical connectives *)
   gAnd
   gOr
@@ -452,18 +447,14 @@ export_code
   max
   drop_pta_guards
   test_log
-mismatched_updates
   iefsm2dot
   efsm2dot
   guards2sal
   guards2sal_num
   fold_In
   max_int
-  And
   enumerate_vars
-put_updates
-derestrict
-outgoing_transitions_from
+  derestrict
 in Scala
 file "../../inference-tool/src/main/scala/inference/Inference.scala"
 

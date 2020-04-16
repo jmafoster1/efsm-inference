@@ -664,7 +664,7 @@ definition enumerate_log_values :: "log \<Rightarrow> value list" where
 definition enumerate_exec_values_by_label :: "label \<Rightarrow> execution \<Rightarrow> value list" where
   "enumerate_exec_values_by_label label vs = fold (\<lambda>(l, i, p) I. if l = label then List.union (List.union i p) I else I) vs []"
 
-definition enumerate_log_values_by_label :: "label \<Rightarrow> log \<Rightarrow> value list" where
+definition enumerate_log_values_by_label :: "label \<Rightarrow> log \<Rightarrow> value list" where 
   "enumerate_log_values_by_label label log = fold (\<lambda>e I. List.union (enumerate_exec_values_by_label label e) I) log []"
 
 fun test_exec :: "execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> ((label \<times> inputs \<times> cfstate \<times> cfstate \<times> registers \<times> tids \<times> value list \<times> outputs) list \<times> execution)" where

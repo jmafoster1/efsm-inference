@@ -330,9 +330,9 @@ object Dirties {
     })
   }
 
-  var guardMap = Map[List[((List[Value.value], Map[Nat.nat, Option[Value.value]]), Boolean)], Option[GExp.gexp[VName.vname]]]()
+  var guardMap = scala.collection.immutable.Map[List[((List[Value.value], scala.collection.immutable.Map[Nat.nat, Option[Value.value]]), Boolean)], Option[GExp.gexp[VName.vname]]]()
   var guardMem: List[mint.inference.gp.tree.Node[mint.tracedata.types.VariableAssignment[_]]] = List()
-  var vars: Map[(String, Value.value), VariableAssignment[_]] = Map()
+  var vars: scala.collection.immutable.Map[(String, Value.value), VariableAssignment[_]] = scala.collection.immutable.Map()
 
   def varOf(name: String, value: Value.value): VariableAssignment[_] = varOf((name, value))
 
@@ -368,6 +368,9 @@ object Dirties {
     Logger.getRootLogger().setLevel(Level.OFF);
 
     val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.guardSeed))
+
+    IntegerVariableAssignment.clearValues()
+    StringVariableAssignment.clearValues()
 
     gpGenerator.addTerminals(GP.boolTerms);
     gpGenerator.addFunctions(GP.intNonTerms);
@@ -472,23 +475,22 @@ object Dirties {
 
     var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 5, 2));
 
-    val ctx = new z3.Context()
-
     guardMem.find(f => gp.isCorrect(f)) match {
       case None => {}
       case Some(best) => {
         Log.root.debug("    Best memoised guard is: " + best)
         Log.root.debug("    Best guard is correct")
-        val gexp = TypeConversion.gexpFromZ3(best.toZ3(ctx))
+        val gexp = TypeConversion.toGExp(best)
         return Some((gexp, GExp.gNot(gexp)))
       }
     }
 
-    val best: Node[VariableAssignment[_]] = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]]
-    Log.root.debug("  Best guard is: " + best.simp())
+    val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]].simp
 
-    val gexp = TypeConversion.gexpFromZ3(best.toZ3(ctx))
-    ctx.close
+    Log.root.debug("  Best guard is: " + best)
+
+    val gexp = TypeConversion.toGExp(best)
+
     if (gp.isCorrect(best)) {
       Log.root.debug("  Best guard is correct")
       guardMap = guardMap + (ioPairs -> Some(gexp))
@@ -536,7 +538,10 @@ object Dirties {
     Logger.getRootLogger().setLevel(Level.OFF);
 
     val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.updateSeed))
-    gpGenerator.addFunctions(GP.intNonTerms);
+    gpGenerator.addFunctions(GP.intNonTerms)
+
+    IntegerVariableAssignment.clearValues()
+    StringVariableAssignment.clearValues()
 
     var (intTerms, stringTerms) = GP.getValueTerminals(values)
 
@@ -614,7 +619,7 @@ object Dirties {
     }
 
     gp.setSeeds(intTerms ++ stringTerms)
-    val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]]
+    val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]].simp
 
     Log.root.debug("    Best update is: " + best)
 
@@ -638,7 +643,7 @@ object Dirties {
 
     if (outputs.distinct.length == 1) {
       Log.root.debug("  Singleton literal output")
-      return Some(AExp.L(outputs(0)), Map())
+      return Some(AExp.L(outputs(0)), scala.collection.immutable.Map())
     }
 
     val r_index = TypeConversion.toInt(maxReg) + 1
@@ -650,6 +655,10 @@ object Dirties {
     Logger.getRootLogger().setLevel(Level.OFF);
 
     val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.outputSeed))
+
+    IntegerVariableAssignment.clearValues()
+    StringVariableAssignment.clearValues()
+
     gpGenerator.addFunctions(GP.intNonTerms);
 
     var (intTerms, stringTerms) = GP.getValueTerminals(values)
@@ -759,7 +768,7 @@ object Dirties {
     }
 
     gp.setSeeds(intTerms ++ stringTerms)
-    val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]]
+    val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]].simp
 
     Log.root.debug("  Best output is: " + best)
 
@@ -772,8 +781,8 @@ object Dirties {
     }
   }
 
-  def getTypes(best: Node[VariableAssignment[_]]): Map[VName.vname, String] = {
-    var types = Map[VName.vname, String]()
+  def getTypes(best: Node[VariableAssignment[_]]): scala.collection.immutable.Map[VName.vname, String] = {
+    var types = scala.collection.immutable.Map[VName.vname, String]()
 
     for (v <- asScalaSet(best.varsInTree)) {
       if (!v.isConstant)
@@ -827,7 +836,7 @@ object Dirties {
     solver.check()
     val model: z3.Model = solver.getModel
 
-    var regs: Map[Nat.nat, Option[Value.value]] = Map()
+    var regs: Map[Nat.nat, Option[Value.value]] = scala.collection.immutable.Map()
     for (f <- model.getConstDecls) {
       val constInterp = model.getConstInterp(f)
       regs = regs + (Nat.Nata(BigInt(f.getName.toString.substring(1).toInt)) -> Some(TypeConversion.toValue(model.getConstInterp(f))))

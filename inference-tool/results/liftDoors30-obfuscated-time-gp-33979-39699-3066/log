@@ -1,680 +1,681 @@
-2020-04-15 17:54:23.432 [main] INFO  ROOT - -s naive_eq_bonus -p gp -g 33979 -o 39699 -u 3066 -h same,ws,distinguish -d results/liftDoors30-obfuscated-time-gp-33979-39699-3066 experimental-data/liftDoors30-obfuscated-time-train.json experimental-data/liftDoors30-obfuscated-time-test.json
-2020-04-15 17:54:23.433 [main] INFO  ROOT - Building PTA - 30 traces
-2020-04-15 17:54:27.768 [main] INFO  ROOT - PTA has 328 states
-2020-04-15 17:54:27.768 [main] INFO  ROOT - PTA has 327 transitions
-2020-04-15 17:54:30.084 [scala-execution-context-global-12] DEBUG ROOT - Getting Output...
-2020-04-15 17:54:30.084 [scala-execution-context-global-12] DEBUG ROOT -   Singleton literal output
-2020-04-15 17:54:30.279 [scala-execution-context-global-21] DEBUG ROOT - Getting Output...
-2020-04-15 17:54:30.349 [scala-execution-context-global-21] DEBUG ROOT -   No latent variable
-2020-04-15 17:54:30.361 [scala-execution-context-global-21] DEBUG ROOT -   Output training set: {[]=[o=3, o=4, o=1, o=2, o=0]}
-2020-04-15 17:54:30.370 [scala-execution-context-global-21] DEBUG ROOT -   Secret best output is: r1
-2020-04-15 17:54:33.947 [scala-execution-context-global-14] DEBUG ROOT -   Getting update
-2020-04-15 17:54:33.966 [scala-execution-context-global-14] DEBUG ROOT -     Update training set: {[r1=4]=[r1=3], [r1=2]=[r1=1], [r1=3]=[r1=2], [r1=1]=[r1=0]}
-2020-04-15 17:54:34.320 [scala-execution-context-global-14] DEBUG ROOT -     Best update is: (+ -1 r1)
-2020-04-15 17:54:34.320 [scala-execution-context-global-14] DEBUG ROOT -     Best update is correct
-2020-04-15 17:55:23.714 [scala-execution-context-global-15] DEBUG ROOT - Getting Output...
-2020-04-15 17:55:23.715 [scala-execution-context-global-15] DEBUG ROOT -   Singleton literal output
-2020-04-15 17:55:23.830 [scala-execution-context-global-15] DEBUG ROOT - Getting Output...
-2020-04-15 17:55:23.832 [scala-execution-context-global-15] DEBUG ROOT -   No latent variable
-2020-04-15 17:55:23.832 [scala-execution-context-global-15] DEBUG ROOT -   Output training set: {[]=[o=5, o=6, o=7, o=8, o=9, o=3, o=4, o=2, o=1, o=0]}
-2020-04-15 17:55:23.833 [scala-execution-context-global-15] DEBUG ROOT -   Secret best output is: r2
-2020-04-15 17:55:26.726 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 17:55:26.729 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r2=9]}
-2020-04-15 17:55:26.738 [scala-execution-context-global-20] DEBUG ROOT -     Best update is: 9
-2020-04-15 17:55:26.738 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 17:55:28.557 [scala-execution-context-global-12] DEBUG ROOT -   Getting update
-2020-04-15 17:55:28.558 [scala-execution-context-global-12] DEBUG ROOT -     Update training set: {[]=[r2=9]}
-2020-04-15 17:55:28.559 [scala-execution-context-global-12] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 17:55:28.559 [scala-execution-context-global-12] DEBUG ROOT -     Best update is correct
-2020-04-15 17:55:30.402 [scala-execution-context-global-19] DEBUG ROOT -   Getting update
-2020-04-15 17:55:30.404 [scala-execution-context-global-19] DEBUG ROOT -     Update training set: {[r2=6]=[r2=5], [r2=7]=[r2=6], [r2=8]=[r2=7], [r2=2]=[r2=1], [r2=3]=[r2=2], [r2=4]=[r2=3], [r2=5]=[r2=4], [r2=1]=[r2=0], [r2=9]=[r2=8]}
-2020-04-15 17:55:30.788 [scala-execution-context-global-19] DEBUG ROOT -     Best update is: (+ -1 r2)
-2020-04-15 17:55:30.788 [scala-execution-context-global-19] DEBUG ROOT -     Best update is correct
-2020-04-15 17:56:28.274 [scala-execution-context-global-20] DEBUG ROOT - Getting Output...
-2020-04-15 17:56:28.274 [scala-execution-context-global-20] DEBUG ROOT -   Singleton literal output
-2020-04-15 17:56:28.402 [scala-execution-context-global-14] DEBUG ROOT - Getting Output...
-2020-04-15 17:56:28.402 [scala-execution-context-global-14] DEBUG ROOT -   Singleton literal output
-2020-04-15 17:56:28.521 [scala-execution-context-global-14] DEBUG ROOT - Getting Output...
-2020-04-15 17:56:28.522 [scala-execution-context-global-14] DEBUG ROOT -   No latent variable
-2020-04-15 17:56:28.523 [scala-execution-context-global-14] DEBUG ROOT -   Output training set: {[]=[o=0, o=1]}
-2020-04-15 17:56:28.523 [scala-execution-context-global-14] DEBUG ROOT -   Secret best output is: r3
-2020-04-15 17:56:31.644 [scala-execution-context-global-22] DEBUG ROOT -   Getting update
-2020-04-15 17:56:31.645 [scala-execution-context-global-22] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:56:31.651 [scala-execution-context-global-22] DEBUG ROOT -     Best update is: 1
-2020-04-15 17:56:31.651 [scala-execution-context-global-22] DEBUG ROOT -     Best update is correct
-2020-04-15 17:56:33.532 [scala-execution-context-global-15] DEBUG ROOT -   Getting update
-2020-04-15 17:56:33.533 [scala-execution-context-global-15] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:56:33.533 [scala-execution-context-global-15] DEBUG ROOT -     Best memoised update is: 1
-2020-04-15 17:56:33.533 [scala-execution-context-global-15] DEBUG ROOT -     Best update is correct
-2020-04-15 17:56:35.403 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
-2020-04-15 17:56:35.404 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:56:35.404 [scala-execution-context-global-18] DEBUG ROOT -     Best memoised update is: 1
-2020-04-15 17:56:35.405 [scala-execution-context-global-18] DEBUG ROOT -     Best update is correct
-2020-04-15 17:56:37.258 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
-2020-04-15 17:56:37.258 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:56:37.258 [scala-execution-context-global-18] DEBUG ROOT -     Best memoised update is: 1
-2020-04-15 17:56:37.259 [scala-execution-context-global-18] DEBUG ROOT -     Best update is correct
-2020-04-15 17:56:39.147 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
-2020-04-15 17:56:39.148 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:56:39.148 [scala-execution-context-global-18] DEBUG ROOT -     Best memoised update is: 1
-2020-04-15 17:56:39.148 [scala-execution-context-global-18] DEBUG ROOT -     Best update is correct
-2020-04-15 17:56:41.006 [scala-execution-context-global-21] DEBUG ROOT -   Getting update
-2020-04-15 17:56:41.008 [scala-execution-context-global-21] DEBUG ROOT -     Update training set: {[r3=1]=[r3=0], [r3=0]=[r3=1]}
-2020-04-15 17:56:41.012 [scala-execution-context-global-21] DEBUG ROOT -     Best update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:56:41.013 [scala-execution-context-global-21] DEBUG ROOT -     Best update is correct
-2020-04-15 17:56:42.928 [scala-execution-context-global-15] DEBUG ROOT -   Getting update
-2020-04-15 17:56:42.929 [scala-execution-context-global-15] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:56:42.930 [scala-execution-context-global-15] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:56:42.930 [scala-execution-context-global-15] DEBUG ROOT -     Best update is correct
-2020-04-15 17:56:44.919 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 17:56:44.920 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:56:44.920 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:56:44.920 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 17:56:47.085 [scala-execution-context-global-16] DEBUG ROOT -   Getting update
-2020-04-15 17:56:47.086 [scala-execution-context-global-16] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:56:47.086 [scala-execution-context-global-16] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:56:47.086 [scala-execution-context-global-16] DEBUG ROOT -     Best update is correct
-2020-04-15 17:56:49.406 [scala-execution-context-global-12] DEBUG ROOT -   Getting update
-2020-04-15 17:56:49.407 [scala-execution-context-global-12] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:56:49.408 [scala-execution-context-global-12] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:56:49.408 [scala-execution-context-global-12] DEBUG ROOT -     Best update is correct
-2020-04-15 17:56:51.857 [scala-execution-context-global-12] DEBUG ROOT -   Getting update
-2020-04-15 17:56:51.859 [scala-execution-context-global-12] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:56:51.859 [scala-execution-context-global-12] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:56:51.859 [scala-execution-context-global-12] DEBUG ROOT -     Best update is correct
-2020-04-15 17:56:57.198 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
-2020-04-15 17:56:57.199 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:56:57.200 [scala-execution-context-global-18] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:56:57.200 [scala-execution-context-global-18] DEBUG ROOT -     Best update is correct
-2020-04-15 17:57:00.047 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
-2020-04-15 17:57:00.048 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:57:00.049 [scala-execution-context-global-18] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:57:00.049 [scala-execution-context-global-18] DEBUG ROOT -     Best update is correct
-2020-04-15 17:57:02.911 [scala-execution-context-global-19] DEBUG ROOT -   Getting update
-2020-04-15 17:57:02.912 [scala-execution-context-global-19] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:57:02.912 [scala-execution-context-global-19] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:57:02.912 [scala-execution-context-global-19] DEBUG ROOT -     Best update is correct
-2020-04-15 17:57:05.740 [scala-execution-context-global-15] DEBUG ROOT -   Getting update
-2020-04-15 17:57:05.741 [scala-execution-context-global-15] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:57:05.741 [scala-execution-context-global-15] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:57:05.741 [scala-execution-context-global-15] DEBUG ROOT -     Best update is correct
-2020-04-15 17:57:08.643 [scala-execution-context-global-16] DEBUG ROOT -   Getting update
-2020-04-15 17:57:08.644 [scala-execution-context-global-16] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:57:08.644 [scala-execution-context-global-16] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:57:08.645 [scala-execution-context-global-16] DEBUG ROOT -     Best update is correct
-2020-04-15 17:57:11.583 [scala-execution-context-global-13] DEBUG ROOT -   Getting update
-2020-04-15 17:57:11.584 [scala-execution-context-global-13] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:57:11.584 [scala-execution-context-global-13] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:57:11.584 [scala-execution-context-global-13] DEBUG ROOT -     Best update is correct
-2020-04-15 17:57:14.458 [scala-execution-context-global-15] DEBUG ROOT -   Getting update
-2020-04-15 17:57:14.458 [scala-execution-context-global-15] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:57:14.459 [scala-execution-context-global-15] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:57:14.459 [scala-execution-context-global-15] DEBUG ROOT -     Best update is correct
-2020-04-15 17:57:17.398 [scala-execution-context-global-21] DEBUG ROOT -   Getting update
-2020-04-15 17:57:17.398 [scala-execution-context-global-21] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:57:17.399 [scala-execution-context-global-21] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:57:17.399 [scala-execution-context-global-21] DEBUG ROOT -     Best update is correct
-2020-04-15 17:57:20.321 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
-2020-04-15 17:57:20.322 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:57:20.323 [scala-execution-context-global-18] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:57:20.323 [scala-execution-context-global-18] DEBUG ROOT -     Best update is correct
-2020-04-15 17:57:23.266 [scala-execution-context-global-19] DEBUG ROOT -   Getting update
-2020-04-15 17:57:23.267 [scala-execution-context-global-19] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:57:23.268 [scala-execution-context-global-19] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:57:23.268 [scala-execution-context-global-19] DEBUG ROOT -     Best update is correct
-2020-04-15 17:57:26.241 [scala-execution-context-global-22] DEBUG ROOT -   Getting update
-2020-04-15 17:57:26.242 [scala-execution-context-global-22] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:57:26.243 [scala-execution-context-global-22] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:57:26.243 [scala-execution-context-global-22] DEBUG ROOT -     Best update is correct
-2020-04-15 17:57:29.266 [scala-execution-context-global-19] DEBUG ROOT -   Getting update
-2020-04-15 17:57:29.267 [scala-execution-context-global-19] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:57:29.268 [scala-execution-context-global-19] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:57:29.268 [scala-execution-context-global-19] DEBUG ROOT -     Best update is correct
-2020-04-15 17:57:32.337 [scala-execution-context-global-12] DEBUG ROOT -   Getting update
-2020-04-15 17:57:32.338 [scala-execution-context-global-12] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:57:32.338 [scala-execution-context-global-12] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:57:32.338 [scala-execution-context-global-12] DEBUG ROOT -     Best update is correct
-2020-04-15 17:57:35.405 [scala-execution-context-global-19] DEBUG ROOT -   Getting update
-2020-04-15 17:57:35.406 [scala-execution-context-global-19] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:57:35.406 [scala-execution-context-global-19] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:57:35.406 [scala-execution-context-global-19] DEBUG ROOT -     Best update is correct
-2020-04-15 17:57:41.696 [scala-execution-context-global-17] DEBUG ROOT -   Getting update
-2020-04-15 17:57:41.697 [scala-execution-context-global-17] DEBUG ROOT -     Update training set: {[]=[r3=1]}
-2020-04-15 17:57:41.697 [scala-execution-context-global-17] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 17:57:41.697 [scala-execution-context-global-17] DEBUG ROOT -     Best update is correct
-2020-04-15 17:58:00.757 [scala-execution-context-global-22] DEBUG ROOT - Getting Output...
-2020-04-15 17:58:00.757 [scala-execution-context-global-22] DEBUG ROOT -   Singleton literal output
-2020-04-15 17:58:00.889 [scala-execution-context-global-21] DEBUG ROOT - Getting Output...
-2020-04-15 17:58:00.890 [scala-execution-context-global-21] DEBUG ROOT -   No latent variable
-2020-04-15 17:58:00.890 [scala-execution-context-global-21] DEBUG ROOT -   Output training set: {[]=[o=3, o=4, o=1, o=2, o=0]}
-2020-04-15 17:58:00.890 [scala-execution-context-global-21] DEBUG ROOT -   Secret best output is: r3
-2020-04-15 17:58:04.062 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
-2020-04-15 17:58:04.062 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[]=[r3=4]}
-2020-04-15 17:58:04.066 [scala-execution-context-global-18] DEBUG ROOT -     Best update is: 4
-2020-04-15 17:58:04.066 [scala-execution-context-global-18] DEBUG ROOT -     Best update is correct
-2020-04-15 17:58:05.961 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 17:58:05.962 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r3=4]}
-2020-04-15 17:58:05.962 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 17:58:05.962 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 17:58:07.899 [scala-execution-context-global-22] DEBUG ROOT -   Getting update
-2020-04-15 17:58:07.900 [scala-execution-context-global-22] DEBUG ROOT -     Update training set: {[]=[r3=4]}
-2020-04-15 17:58:07.901 [scala-execution-context-global-22] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 17:58:07.901 [scala-execution-context-global-22] DEBUG ROOT -     Best update is correct
-2020-04-15 17:58:09.807 [scala-execution-context-global-14] DEBUG ROOT -   Getting update
-2020-04-15 17:58:09.808 [scala-execution-context-global-14] DEBUG ROOT -     Update training set: {[]=[r3=4]}
-2020-04-15 17:58:09.808 [scala-execution-context-global-14] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 17:58:09.808 [scala-execution-context-global-14] DEBUG ROOT -     Best update is correct
-2020-04-15 17:58:11.718 [scala-execution-context-global-21] DEBUG ROOT -   Getting update
-2020-04-15 17:58:11.719 [scala-execution-context-global-21] DEBUG ROOT -     Update training set: {[]=[r3=4]}
-2020-04-15 17:58:11.720 [scala-execution-context-global-21] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 17:58:11.720 [scala-execution-context-global-21] DEBUG ROOT -     Best update is correct
-2020-04-15 17:58:13.632 [scala-execution-context-global-17] DEBUG ROOT -   Getting update
-2020-04-15 17:58:13.633 [scala-execution-context-global-17] DEBUG ROOT -     Update training set: {[]=[r3=4]}
-2020-04-15 17:58:13.633 [scala-execution-context-global-17] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 17:58:13.633 [scala-execution-context-global-17] DEBUG ROOT -     Best update is correct
-2020-04-15 17:58:15.503 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
-2020-04-15 17:58:15.504 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[]=[r3=4]}
-2020-04-15 17:58:15.505 [scala-execution-context-global-18] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 17:58:15.505 [scala-execution-context-global-18] DEBUG ROOT -     Best update is correct
-2020-04-15 17:58:17.382 [scala-execution-context-global-22] DEBUG ROOT -   Getting update
-2020-04-15 17:58:17.384 [scala-execution-context-global-22] DEBUG ROOT -     Update training set: {[r3=3]=[r3=2], [r3=4]=[r3=3], [r3=1]=[r3=0], [r3=2]=[r3=1]}
-2020-04-15 17:58:17.631 [scala-execution-context-global-22] DEBUG ROOT -     Best update is: (+ -1 r3)
-2020-04-15 17:58:17.631 [scala-execution-context-global-22] DEBUG ROOT -     Best update is correct
-2020-04-15 17:58:23.527 [scala-execution-context-global-19] DEBUG ROOT -   Getting update
-2020-04-15 17:58:23.528 [scala-execution-context-global-19] DEBUG ROOT -     Update training set: {[]=[r3=4]}
-2020-04-15 17:58:23.528 [scala-execution-context-global-19] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 17:58:23.528 [scala-execution-context-global-19] DEBUG ROOT -     Best update is correct
-2020-04-15 17:58:29.530 [scala-execution-context-global-17] DEBUG ROOT -   Getting update
-2020-04-15 17:58:29.531 [scala-execution-context-global-17] DEBUG ROOT -     Update training set: {[]=[r3=4]}
-2020-04-15 17:58:29.532 [scala-execution-context-global-17] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 17:58:29.532 [scala-execution-context-global-17] DEBUG ROOT -     Best update is correct
-2020-04-15 17:58:31.502 [scala-execution-context-global-16] DEBUG ROOT -   Getting update
-2020-04-15 17:58:31.503 [scala-execution-context-global-16] DEBUG ROOT -     Update training set: {[]=[r3=4]}
-2020-04-15 17:58:31.503 [scala-execution-context-global-16] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 17:58:31.503 [scala-execution-context-global-16] DEBUG ROOT -     Best update is correct
-2020-04-15 17:58:33.604 [scala-execution-context-global-21] DEBUG ROOT -   Getting update
-2020-04-15 17:58:33.605 [scala-execution-context-global-21] DEBUG ROOT -     Update training set: {[]=[r3=4]}
-2020-04-15 17:58:33.605 [scala-execution-context-global-21] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 17:58:33.605 [scala-execution-context-global-21] DEBUG ROOT -     Best update is correct
-2020-04-15 17:58:37.731 [scala-execution-context-global-16] DEBUG ROOT -   Getting update
-2020-04-15 17:58:37.732 [scala-execution-context-global-16] DEBUG ROOT -     Update training set: {[]=[r3=4]}
-2020-04-15 17:58:37.733 [scala-execution-context-global-16] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 17:58:37.733 [scala-execution-context-global-16] DEBUG ROOT -     Best update is correct
-2020-04-15 17:58:39.761 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 17:58:39.762 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r3=4]}
-2020-04-15 17:58:39.762 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 17:58:39.762 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 17:58:41.755 [scala-execution-context-global-13] DEBUG ROOT -   Getting update
-2020-04-15 17:58:41.756 [scala-execution-context-global-13] DEBUG ROOT -     Update training set: {[]=[r3=4]}
-2020-04-15 17:58:41.757 [scala-execution-context-global-13] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 17:58:41.757 [scala-execution-context-global-13] DEBUG ROOT -     Best update is correct
-2020-04-15 17:58:49.772 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 17:58:49.773 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r3=4]}
-2020-04-15 17:58:49.773 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 17:58:49.773 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 17:58:51.808 [scala-execution-context-global-19] DEBUG ROOT -   Getting update
-2020-04-15 17:58:51.809 [scala-execution-context-global-19] DEBUG ROOT -     Update training set: {[]=[r3=4]}
-2020-04-15 17:58:51.809 [scala-execution-context-global-19] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 17:58:51.809 [scala-execution-context-global-19] DEBUG ROOT -     Best update is correct
-2020-04-15 17:59:04.035 [scala-execution-context-global-12] DEBUG ROOT -   Getting update
-2020-04-15 17:59:04.037 [scala-execution-context-global-12] DEBUG ROOT -     Update training set: {[]=[r3=4]}
-2020-04-15 17:59:04.037 [scala-execution-context-global-12] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 17:59:04.037 [scala-execution-context-global-12] DEBUG ROOT -     Best update is correct
-2020-04-15 17:59:12.231 [scala-execution-context-global-20] DEBUG ROOT - Getting Output...
-2020-04-15 17:59:12.231 [scala-execution-context-global-20] DEBUG ROOT -   Singleton literal output
-2020-04-15 17:59:12.413 [scala-execution-context-global-21] DEBUG ROOT - Getting Output...
-2020-04-15 17:59:12.413 [scala-execution-context-global-21] DEBUG ROOT -   Singleton literal output
-2020-04-15 17:59:12.532 [scala-execution-context-global-21] DEBUG ROOT - Getting Output...
-2020-04-15 17:59:12.533 [scala-execution-context-global-21] DEBUG ROOT -   No latent variable
-2020-04-15 17:59:12.533 [scala-execution-context-global-21] DEBUG ROOT -   Output training set: {[]=[o=5, o=6, o=7, o=8, o=9, o=3, o=4, o=2]}
-2020-04-15 17:59:12.534 [scala-execution-context-global-21] DEBUG ROOT -   Secret best output is: r4
-2020-04-15 17:59:15.476 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
-2020-04-15 17:59:15.478 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 17:59:15.478 [scala-execution-context-global-18] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 17:59:15.478 [scala-execution-context-global-18] DEBUG ROOT -     Best update is correct
-2020-04-15 17:59:17.521 [scala-execution-context-global-17] DEBUG ROOT -   Getting update
-2020-04-15 17:59:17.522 [scala-execution-context-global-17] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 17:59:17.522 [scala-execution-context-global-17] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 17:59:17.523 [scala-execution-context-global-17] DEBUG ROOT -     Best update is correct
-2020-04-15 17:59:19.586 [scala-execution-context-global-22] DEBUG ROOT -   Getting update
-2020-04-15 17:59:19.587 [scala-execution-context-global-22] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 17:59:19.587 [scala-execution-context-global-22] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 17:59:19.587 [scala-execution-context-global-22] DEBUG ROOT -     Best update is correct
-2020-04-15 17:59:21.741 [scala-execution-context-global-13] DEBUG ROOT -   Getting update
-2020-04-15 17:59:21.742 [scala-execution-context-global-13] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 17:59:21.742 [scala-execution-context-global-13] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 17:59:21.742 [scala-execution-context-global-13] DEBUG ROOT -     Best update is correct
-2020-04-15 17:59:23.851 [scala-execution-context-global-12] DEBUG ROOT -   Getting update
-2020-04-15 17:59:23.851 [scala-execution-context-global-12] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 17:59:23.852 [scala-execution-context-global-12] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 17:59:23.852 [scala-execution-context-global-12] DEBUG ROOT -     Best update is correct
-2020-04-15 17:59:25.977 [scala-execution-context-global-15] DEBUG ROOT -   Getting update
-2020-04-15 17:59:25.978 [scala-execution-context-global-15] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 17:59:25.978 [scala-execution-context-global-15] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 17:59:25.978 [scala-execution-context-global-15] DEBUG ROOT -     Best update is correct
-2020-04-15 17:59:28.063 [scala-execution-context-global-16] DEBUG ROOT -   Getting update
-2020-04-15 17:59:28.064 [scala-execution-context-global-16] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 17:59:28.065 [scala-execution-context-global-16] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 17:59:28.065 [scala-execution-context-global-16] DEBUG ROOT -     Best update is correct
-2020-04-15 17:59:30.136 [scala-execution-context-global-16] DEBUG ROOT -   Getting update
-2020-04-15 17:59:30.137 [scala-execution-context-global-16] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 17:59:30.137 [scala-execution-context-global-16] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 17:59:30.137 [scala-execution-context-global-16] DEBUG ROOT -     Best update is correct
-2020-04-15 17:59:32.165 [scala-execution-context-global-14] DEBUG ROOT -   Getting update
-2020-04-15 17:59:32.166 [scala-execution-context-global-14] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 17:59:32.167 [scala-execution-context-global-14] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 17:59:32.167 [scala-execution-context-global-14] DEBUG ROOT -     Best update is correct
-2020-04-15 17:59:34.232 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 17:59:34.233 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 17:59:34.233 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 17:59:34.233 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 17:59:36.308 [scala-execution-context-global-13] DEBUG ROOT -   Getting update
-2020-04-15 17:59:36.312 [scala-execution-context-global-13] DEBUG ROOT -     Update training set: {[r4=4]=[r4=3], [r4=5]=[r4=4], [r4=3]=[r4=2], [r4=8]=[r4=7], [r4=6]=[r4=5], [r4=7]=[r4=6], [r4=9]=[r4=8]}
-2020-04-15 17:59:36.728 [scala-execution-context-global-13] DEBUG ROOT -     Best update is: (+ -1 r4)
-2020-04-15 17:59:36.728 [scala-execution-context-global-13] DEBUG ROOT -     Best update is correct
-2020-04-15 17:59:41.091 [scala-execution-context-global-13] DEBUG ROOT -   Getting update
-2020-04-15 17:59:41.092 [scala-execution-context-global-13] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 17:59:41.092 [scala-execution-context-global-13] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 17:59:41.092 [scala-execution-context-global-13] DEBUG ROOT -     Best update is correct
-2020-04-15 17:59:43.268 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
-2020-04-15 17:59:43.269 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 17:59:43.269 [scala-execution-context-global-18] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 17:59:43.269 [scala-execution-context-global-18] DEBUG ROOT -     Best update is correct
-2020-04-15 17:59:54.463 [scala-execution-context-global-19] DEBUG ROOT -   Getting update
-2020-04-15 17:59:54.464 [scala-execution-context-global-19] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 17:59:54.464 [scala-execution-context-global-19] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 17:59:54.464 [scala-execution-context-global-19] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:01.067 [scala-execution-context-global-17] DEBUG ROOT -   Getting update
-2020-04-15 18:00:01.068 [scala-execution-context-global-17] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 18:00:01.068 [scala-execution-context-global-17] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 18:00:01.068 [scala-execution-context-global-17] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:03.326 [scala-execution-context-global-21] DEBUG ROOT -   Getting update
-2020-04-15 18:00:03.327 [scala-execution-context-global-21] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 18:00:03.327 [scala-execution-context-global-21] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 18:00:03.327 [scala-execution-context-global-21] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:05.527 [scala-execution-context-global-16] DEBUG ROOT -   Getting update
-2020-04-15 18:00:05.528 [scala-execution-context-global-16] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 18:00:05.528 [scala-execution-context-global-16] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 18:00:05.528 [scala-execution-context-global-16] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:07.746 [scala-execution-context-global-17] DEBUG ROOT -   Getting update
-2020-04-15 18:00:07.747 [scala-execution-context-global-17] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 18:00:07.747 [scala-execution-context-global-17] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 18:00:07.748 [scala-execution-context-global-17] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:09.989 [scala-execution-context-global-19] DEBUG ROOT -   Getting update
-2020-04-15 18:00:09.990 [scala-execution-context-global-19] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 18:00:09.990 [scala-execution-context-global-19] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 18:00:09.990 [scala-execution-context-global-19] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:12.265 [scala-execution-context-global-14] DEBUG ROOT -   Getting update
-2020-04-15 18:00:12.266 [scala-execution-context-global-14] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 18:00:12.267 [scala-execution-context-global-14] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 18:00:12.267 [scala-execution-context-global-14] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:14.506 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 18:00:14.507 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 18:00:14.507 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 18:00:14.507 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:16.733 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 18:00:16.734 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 18:00:16.734 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 18:00:16.734 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:19.034 [scala-execution-context-global-16] DEBUG ROOT -   Getting update
-2020-04-15 18:00:19.035 [scala-execution-context-global-16] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 18:00:19.035 [scala-execution-context-global-16] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 18:00:19.035 [scala-execution-context-global-16] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:21.313 [scala-execution-context-global-14] DEBUG ROOT -   Getting update
-2020-04-15 18:00:21.313 [scala-execution-context-global-14] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 18:00:21.314 [scala-execution-context-global-14] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 18:00:21.314 [scala-execution-context-global-14] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:23.545 [scala-execution-context-global-15] DEBUG ROOT -   Getting update
-2020-04-15 18:00:23.546 [scala-execution-context-global-15] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 18:00:23.546 [scala-execution-context-global-15] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 18:00:23.546 [scala-execution-context-global-15] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:25.820 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 18:00:25.821 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r4=9]}
-2020-04-15 18:00:25.821 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: 9
-2020-04-15 18:00:25.821 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:28.203 [scala-execution-context-global-12] DEBUG ROOT - Getting Output...
-2020-04-15 18:00:28.203 [scala-execution-context-global-12] DEBUG ROOT -   Singleton literal output
-2020-04-15 18:00:28.384 [scala-execution-context-global-13] DEBUG ROOT - Getting Output...
-2020-04-15 18:00:28.385 [scala-execution-context-global-13] DEBUG ROOT -   No latent variable
-2020-04-15 18:00:28.385 [scala-execution-context-global-13] DEBUG ROOT -   Output training set: {[]=[o=3, o=4, o=1, o=2, o=0]}
-2020-04-15 18:00:28.385 [scala-execution-context-global-13] DEBUG ROOT -   Secret best output is: r5
-2020-04-15 18:00:31.976 [scala-execution-context-global-17] DEBUG ROOT -   Getting update
-2020-04-15 18:00:31.977 [scala-execution-context-global-17] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:00:31.977 [scala-execution-context-global-17] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:00:31.977 [scala-execution-context-global-17] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:34.259 [scala-execution-context-global-21] DEBUG ROOT -   Getting update
-2020-04-15 18:00:34.260 [scala-execution-context-global-21] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:00:34.260 [scala-execution-context-global-21] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:00:34.260 [scala-execution-context-global-21] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:36.499 [scala-execution-context-global-19] DEBUG ROOT -   Getting update
-2020-04-15 18:00:36.500 [scala-execution-context-global-19] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:00:36.501 [scala-execution-context-global-19] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:00:36.501 [scala-execution-context-global-19] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:38.760 [scala-execution-context-global-13] DEBUG ROOT -   Getting update
-2020-04-15 18:00:38.761 [scala-execution-context-global-13] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:00:38.761 [scala-execution-context-global-13] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:00:38.761 [scala-execution-context-global-13] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:40.992 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 18:00:40.993 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:00:40.993 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:00:40.993 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:43.292 [scala-execution-context-global-12] DEBUG ROOT -   Getting update
-2020-04-15 18:00:43.293 [scala-execution-context-global-12] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:00:43.293 [scala-execution-context-global-12] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:00:43.293 [scala-execution-context-global-12] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:45.557 [scala-execution-context-global-15] DEBUG ROOT -   Getting update
-2020-04-15 18:00:45.558 [scala-execution-context-global-15] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:00:45.558 [scala-execution-context-global-15] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:00:45.558 [scala-execution-context-global-15] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:47.792 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 18:00:47.793 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:00:47.793 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:00:47.793 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:50.070 [scala-execution-context-global-19] DEBUG ROOT -   Getting update
-2020-04-15 18:00:50.071 [scala-execution-context-global-19] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:00:50.071 [scala-execution-context-global-19] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:00:50.072 [scala-execution-context-global-19] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:52.341 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 18:00:52.342 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:00:52.342 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:00:52.342 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:54.621 [scala-execution-context-global-19] DEBUG ROOT -   Getting update
-2020-04-15 18:00:54.622 [scala-execution-context-global-19] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:00:54.623 [scala-execution-context-global-19] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:00:54.623 [scala-execution-context-global-19] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:56.840 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
-2020-04-15 18:00:56.841 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:00:56.842 [scala-execution-context-global-18] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:00:56.842 [scala-execution-context-global-18] DEBUG ROOT -     Best update is correct
-2020-04-15 18:00:59.123 [scala-execution-context-global-15] DEBUG ROOT -   Getting update
-2020-04-15 18:00:59.124 [scala-execution-context-global-15] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:00:59.124 [scala-execution-context-global-15] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:00:59.124 [scala-execution-context-global-15] DEBUG ROOT -     Best update is correct
-2020-04-15 18:01:01.353 [scala-execution-context-global-22] DEBUG ROOT -   Getting update
-2020-04-15 18:01:01.358 [scala-execution-context-global-22] DEBUG ROOT -     Update training set: {[r5=4]=[r5=3], [r5=1]=[r5=0], [r5=3]=[r5=2], [r5=2]=[r5=1]}
-2020-04-15 18:01:02.143 [scala-execution-context-global-22] DEBUG ROOT -     Best update is: (+ -1 r5)
-2020-04-15 18:01:02.143 [scala-execution-context-global-22] DEBUG ROOT -     Best update is correct
-2020-04-15 18:01:13.661 [scala-execution-context-global-21] DEBUG ROOT -   Getting update
-2020-04-15 18:01:13.661 [scala-execution-context-global-21] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:01:13.662 [scala-execution-context-global-21] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:01:13.662 [scala-execution-context-global-21] DEBUG ROOT -     Best update is correct
-2020-04-15 18:01:15.899 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 18:01:15.899 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:01:15.899 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:01:15.899 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 18:01:18.186 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
-2020-04-15 18:01:18.186 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:01:18.186 [scala-execution-context-global-18] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:01:18.186 [scala-execution-context-global-18] DEBUG ROOT -     Best update is correct
-2020-04-15 18:01:20.491 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 18:01:20.491 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:01:20.492 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:01:20.492 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 18:01:22.714 [scala-execution-context-global-12] DEBUG ROOT -   Getting update
-2020-04-15 18:01:22.715 [scala-execution-context-global-12] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:01:22.715 [scala-execution-context-global-12] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:01:22.715 [scala-execution-context-global-12] DEBUG ROOT -     Best update is correct
-2020-04-15 18:01:29.472 [scala-execution-context-global-16] DEBUG ROOT -   Getting update
-2020-04-15 18:01:29.472 [scala-execution-context-global-16] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:01:29.472 [scala-execution-context-global-16] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:01:29.472 [scala-execution-context-global-16] DEBUG ROOT -     Best update is correct
-2020-04-15 18:01:33.924 [scala-execution-context-global-21] DEBUG ROOT -   Getting update
-2020-04-15 18:01:33.925 [scala-execution-context-global-21] DEBUG ROOT -     Update training set: {[]=[r5=4]}
-2020-04-15 18:01:33.925 [scala-execution-context-global-21] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:01:33.925 [scala-execution-context-global-21] DEBUG ROOT -     Best update is correct
-2020-04-15 18:01:45.063 [scala-execution-context-global-21] DEBUG ROOT - Getting Output...
-2020-04-15 18:01:45.063 [scala-execution-context-global-21] DEBUG ROOT -   Singleton literal output
-2020-04-15 18:01:45.260 [scala-execution-context-global-15] DEBUG ROOT - Getting Output...
-2020-04-15 18:01:45.260 [scala-execution-context-global-15] DEBUG ROOT -   Singleton literal output
-2020-04-15 18:01:45.468 [scala-execution-context-global-19] DEBUG ROOT - Getting Output...
-2020-04-15 18:01:45.469 [scala-execution-context-global-19] DEBUG ROOT -   No latent variable
-2020-04-15 18:01:45.469 [scala-execution-context-global-19] DEBUG ROOT -   Output training set: {[]=[o=0, o=1]}
-2020-04-15 18:01:45.469 [scala-execution-context-global-19] DEBUG ROOT -   Secret best output is: r6
-2020-04-15 18:01:49.093 [scala-execution-context-global-14] DEBUG ROOT -   Getting update
-2020-04-15 18:01:49.094 [scala-execution-context-global-14] DEBUG ROOT -     Update training set: {[]=[r6=1]}
-2020-04-15 18:01:49.094 [scala-execution-context-global-14] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:01:49.094 [scala-execution-context-global-14] DEBUG ROOT -     Best update is correct
-2020-04-15 18:01:51.500 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 18:01:51.501 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r6=1]}
-2020-04-15 18:01:51.501 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:01:51.501 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 18:01:53.850 [scala-execution-context-global-15] DEBUG ROOT -   Getting update
-2020-04-15 18:01:53.851 [scala-execution-context-global-15] DEBUG ROOT -     Update training set: {[]=[r6=1]}
-2020-04-15 18:01:53.852 [scala-execution-context-global-15] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:01:53.852 [scala-execution-context-global-15] DEBUG ROOT -     Best update is correct
-2020-04-15 18:01:58.497 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
-2020-04-15 18:01:58.498 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[]=[r6=1]}
-2020-04-15 18:01:58.498 [scala-execution-context-global-18] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:01:58.498 [scala-execution-context-global-18] DEBUG ROOT -     Best update is correct
-2020-04-15 18:02:00.852 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 18:02:00.853 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r6=1]}
-2020-04-15 18:02:00.853 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:02:00.853 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 18:02:03.154 [scala-execution-context-global-21] DEBUG ROOT -   Getting update
-2020-04-15 18:02:03.155 [scala-execution-context-global-21] DEBUG ROOT -     Update training set: {[]=[r6=1]}
-2020-04-15 18:02:03.155 [scala-execution-context-global-21] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:02:03.155 [scala-execution-context-global-21] DEBUG ROOT -     Best update is correct
-2020-04-15 18:02:05.410 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 18:02:05.411 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r6=1]}
-2020-04-15 18:02:05.411 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:02:05.411 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 18:02:31.276 [scala-execution-context-global-22] DEBUG ROOT -   Getting update
-2020-04-15 18:02:31.276 [scala-execution-context-global-22] DEBUG ROOT -     Update training set: {[]=[r6=1]}
-2020-04-15 18:02:31.276 [scala-execution-context-global-22] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:02:31.276 [scala-execution-context-global-22] DEBUG ROOT -     Best update is correct
-2020-04-15 18:02:33.650 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
-2020-04-15 18:02:33.651 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[]=[r6=1]}
-2020-04-15 18:02:33.651 [scala-execution-context-global-18] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:02:33.651 [scala-execution-context-global-18] DEBUG ROOT -     Best update is correct
-2020-04-15 18:02:36.045 [scala-execution-context-global-16] DEBUG ROOT -   Getting update
-2020-04-15 18:02:36.046 [scala-execution-context-global-16] DEBUG ROOT -     Update training set: {[]=[r6=1]}
-2020-04-15 18:02:36.046 [scala-execution-context-global-16] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:02:36.046 [scala-execution-context-global-16] DEBUG ROOT -     Best update is correct
-2020-04-15 18:02:38.470 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
-2020-04-15 18:02:38.471 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[]=[r6=1]}
-2020-04-15 18:02:38.471 [scala-execution-context-global-18] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:02:38.471 [scala-execution-context-global-18] DEBUG ROOT -     Best update is correct
-2020-04-15 18:02:40.979 [scala-execution-context-global-22] DEBUG ROOT -   Getting update
-2020-04-15 18:02:40.980 [scala-execution-context-global-22] DEBUG ROOT -     Update training set: {[r6=1]=[r6=0]}
-2020-04-15 18:02:40.984 [scala-execution-context-global-22] DEBUG ROOT -     Best update is: 0
-2020-04-15 18:02:40.984 [scala-execution-context-global-22] DEBUG ROOT -     Best update is correct
-2020-04-15 18:02:50.690 [scala-execution-context-global-19] DEBUG ROOT -   Getting update
-2020-04-15 18:02:50.690 [scala-execution-context-global-19] DEBUG ROOT -     Update training set: {[]=[r6=1]}
-2020-04-15 18:02:50.691 [scala-execution-context-global-19] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:02:50.691 [scala-execution-context-global-19] DEBUG ROOT -     Best update is correct
-2020-04-15 18:03:02.864 [scala-execution-context-global-14] DEBUG ROOT - Getting Output...
-2020-04-15 18:03:02.864 [scala-execution-context-global-14] DEBUG ROOT -   Singleton literal output
-2020-04-15 18:03:03.012 [scala-execution-context-global-18] DEBUG ROOT - Getting Output...
-2020-04-15 18:03:03.012 [scala-execution-context-global-18] DEBUG ROOT -   Singleton literal output
-2020-04-15 18:03:03.163 [scala-execution-context-global-18] DEBUG ROOT - Getting Output...
-2020-04-15 18:03:03.163 [scala-execution-context-global-18] DEBUG ROOT -   Singleton literal output
-2020-04-15 18:03:03.385 [scala-execution-context-global-20] DEBUG ROOT - Getting Output...
-2020-04-15 18:03:03.385 [scala-execution-context-global-20] DEBUG ROOT -   Singleton literal output
-2020-04-15 18:03:03.523 [scala-execution-context-global-14] DEBUG ROOT - Getting Output...
-2020-04-15 18:03:03.523 [scala-execution-context-global-14] DEBUG ROOT -   Singleton literal output
-2020-04-15 18:03:03.675 [scala-execution-context-global-13] DEBUG ROOT - Getting Output...
-2020-04-15 18:03:03.676 [scala-execution-context-global-13] DEBUG ROOT -   No latent variable
-2020-04-15 18:03:03.676 [scala-execution-context-global-13] DEBUG ROOT -   Output training set: {[]=[o=3, o=4, o=1, o=2, o=0]}
-2020-04-15 18:03:03.676 [scala-execution-context-global-13] DEBUG ROOT -   Secret best output is: r6
-2020-04-15 18:03:07.320 [scala-execution-context-global-14] DEBUG ROOT -   Getting update
-2020-04-15 18:03:07.320 [scala-execution-context-global-14] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:03:07.321 [scala-execution-context-global-14] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:03:07.321 [scala-execution-context-global-14] DEBUG ROOT -     Best update is correct
-2020-04-15 18:03:09.629 [scala-execution-context-global-21] DEBUG ROOT -   Getting update
-2020-04-15 18:03:09.630 [scala-execution-context-global-21] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:03:09.630 [scala-execution-context-global-21] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:03:09.630 [scala-execution-context-global-21] DEBUG ROOT -     Best update is correct
-2020-04-15 18:03:11.918 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 18:03:11.919 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:03:11.920 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:03:11.920 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 18:03:16.420 [scala-execution-context-global-15] DEBUG ROOT -   Getting update
-2020-04-15 18:03:16.421 [scala-execution-context-global-15] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:03:16.421 [scala-execution-context-global-15] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:03:16.421 [scala-execution-context-global-15] DEBUG ROOT -     Best update is correct
-2020-04-15 18:03:18.733 [scala-execution-context-global-21] DEBUG ROOT -   Getting update
-2020-04-15 18:03:18.736 [scala-execution-context-global-21] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:03:18.736 [scala-execution-context-global-21] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:03:18.736 [scala-execution-context-global-21] DEBUG ROOT -     Best update is correct
-2020-04-15 18:03:21.003 [scala-execution-context-global-22] DEBUG ROOT -   Getting update
-2020-04-15 18:03:21.004 [scala-execution-context-global-22] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:03:21.004 [scala-execution-context-global-22] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:03:21.004 [scala-execution-context-global-22] DEBUG ROOT -     Best update is correct
-2020-04-15 18:03:23.283 [scala-execution-context-global-21] DEBUG ROOT -   Getting update
-2020-04-15 18:03:23.284 [scala-execution-context-global-21] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:03:23.284 [scala-execution-context-global-21] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:03:23.284 [scala-execution-context-global-21] DEBUG ROOT -     Best update is correct
-2020-04-15 18:03:25.571 [scala-execution-context-global-14] DEBUG ROOT -   Getting update
-2020-04-15 18:03:25.574 [scala-execution-context-global-14] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:03:25.574 [scala-execution-context-global-14] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:03:25.574 [scala-execution-context-global-14] DEBUG ROOT -     Best update is correct
-2020-04-15 18:03:30.123 [scala-execution-context-global-17] DEBUG ROOT -   Getting update
-2020-04-15 18:03:30.124 [scala-execution-context-global-17] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:03:30.124 [scala-execution-context-global-17] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:03:30.124 [scala-execution-context-global-17] DEBUG ROOT -     Best update is correct
-2020-04-15 18:03:32.351 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 18:03:32.351 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:03:32.351 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:03:32.351 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 18:03:34.614 [scala-execution-context-global-21] DEBUG ROOT -   Getting update
-2020-04-15 18:03:34.615 [scala-execution-context-global-21] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:03:34.615 [scala-execution-context-global-21] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:03:34.615 [scala-execution-context-global-21] DEBUG ROOT -     Best update is correct
-2020-04-15 18:03:36.880 [scala-execution-context-global-15] DEBUG ROOT -   Getting update
-2020-04-15 18:03:36.884 [scala-execution-context-global-15] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:03:36.885 [scala-execution-context-global-15] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:03:36.885 [scala-execution-context-global-15] DEBUG ROOT -     Best update is correct
-2020-04-15 18:03:48.435 [scala-execution-context-global-21] DEBUG ROOT -   Getting update
-2020-04-15 18:03:48.436 [scala-execution-context-global-21] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:03:48.436 [scala-execution-context-global-21] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:03:48.436 [scala-execution-context-global-21] DEBUG ROOT -     Best update is correct
-2020-04-15 18:03:50.684 [scala-execution-context-global-22] DEBUG ROOT -   Getting update
-2020-04-15 18:03:50.685 [scala-execution-context-global-22] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:03:50.685 [scala-execution-context-global-22] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:03:50.685 [scala-execution-context-global-22] DEBUG ROOT -     Best update is correct
-2020-04-15 18:03:55.296 [scala-execution-context-global-16] DEBUG ROOT -   Getting update
-2020-04-15 18:03:55.297 [scala-execution-context-global-16] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:03:55.297 [scala-execution-context-global-16] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:03:55.297 [scala-execution-context-global-16] DEBUG ROOT -     Best update is correct
-2020-04-15 18:03:57.640 [scala-execution-context-global-17] DEBUG ROOT -   Getting update
-2020-04-15 18:03:57.641 [scala-execution-context-global-17] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:03:57.641 [scala-execution-context-global-17] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:03:57.641 [scala-execution-context-global-17] DEBUG ROOT -     Best update is correct
-2020-04-15 18:04:04.682 [scala-execution-context-global-12] DEBUG ROOT -   Getting update
-2020-04-15 18:04:04.683 [scala-execution-context-global-12] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:04:04.683 [scala-execution-context-global-12] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:04:04.683 [scala-execution-context-global-12] DEBUG ROOT -     Best update is correct
-2020-04-15 18:04:07.091 [scala-execution-context-global-21] DEBUG ROOT -   Getting update
-2020-04-15 18:04:07.092 [scala-execution-context-global-21] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:04:07.092 [scala-execution-context-global-21] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:04:07.092 [scala-execution-context-global-21] DEBUG ROOT -     Best update is correct
-2020-04-15 18:04:09.484 [scala-execution-context-global-21] DEBUG ROOT -   Getting update
-2020-04-15 18:04:09.485 [scala-execution-context-global-21] DEBUG ROOT -     Update training set: {[r6=3]=[r6=2], [r6=2]=[r6=1], [r6=4]=[r6=3], [r6=1]=[r6=0]}
-2020-04-15 18:04:09.800 [scala-execution-context-global-21] DEBUG ROOT -     Best update is: (+ -1 r6)
-2020-04-15 18:04:09.800 [scala-execution-context-global-21] DEBUG ROOT -     Best update is correct
-2020-04-15 18:04:12.276 [scala-execution-context-global-12] DEBUG ROOT -   Getting update
-2020-04-15 18:04:12.277 [scala-execution-context-global-12] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:04:12.277 [scala-execution-context-global-12] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:04:12.277 [scala-execution-context-global-12] DEBUG ROOT -     Best update is correct
-2020-04-15 18:04:16.977 [scala-execution-context-global-13] DEBUG ROOT -   Getting update
-2020-04-15 18:04:16.977 [scala-execution-context-global-13] DEBUG ROOT -     Update training set: {[]=[r6=4]}
-2020-04-15 18:04:16.978 [scala-execution-context-global-13] DEBUG ROOT -     Best memoised update is: 4
-2020-04-15 18:04:16.978 [scala-execution-context-global-13] DEBUG ROOT -     Best update is correct
-2020-04-15 18:04:19.459 [scala-execution-context-global-22] DEBUG ROOT - Getting Output...
-2020-04-15 18:04:19.459 [scala-execution-context-global-22] DEBUG ROOT -   Singleton literal output
-2020-04-15 18:04:19.605 [scala-execution-context-global-13] DEBUG ROOT - Getting Output...
-2020-04-15 18:04:19.605 [scala-execution-context-global-13] DEBUG ROOT -   Singleton literal output
-2020-04-15 18:04:19.742 [scala-execution-context-global-13] DEBUG ROOT - Getting Output...
-2020-04-15 18:04:19.742 [scala-execution-context-global-13] DEBUG ROOT -   Singleton literal output
-2020-04-15 18:04:19.879 [scala-execution-context-global-13] DEBUG ROOT - Getting Output...
-2020-04-15 18:04:19.879 [scala-execution-context-global-13] DEBUG ROOT -   No latent variable
-2020-04-15 18:04:19.879 [scala-execution-context-global-13] DEBUG ROOT -   Output training set: {[]=[o=0, o=1]}
-2020-04-15 18:04:19.879 [scala-execution-context-global-13] DEBUG ROOT -   Secret best output is: r7
-2020-04-15 18:04:23.710 [scala-execution-context-global-13] DEBUG ROOT -   Getting update
-2020-04-15 18:04:23.710 [scala-execution-context-global-13] DEBUG ROOT -     Update training set: {[]=[r7=1]}
-2020-04-15 18:04:23.711 [scala-execution-context-global-13] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:04:23.711 [scala-execution-context-global-13] DEBUG ROOT -     Best update is correct
-2020-04-15 18:04:26.060 [scala-execution-context-global-22] DEBUG ROOT -   Getting update
-2020-04-15 18:04:26.061 [scala-execution-context-global-22] DEBUG ROOT -     Update training set: {[]=[r7=1]}
-2020-04-15 18:04:26.061 [scala-execution-context-global-22] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:04:26.061 [scala-execution-context-global-22] DEBUG ROOT -     Best update is correct
-2020-04-15 18:04:28.454 [scala-execution-context-global-19] DEBUG ROOT -   Getting update
-2020-04-15 18:04:28.454 [scala-execution-context-global-19] DEBUG ROOT -     Update training set: {[]=[r7=1]}
-2020-04-15 18:04:28.454 [scala-execution-context-global-19] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:04:28.455 [scala-execution-context-global-19] DEBUG ROOT -     Best update is correct
-2020-04-15 18:04:33.033 [scala-execution-context-global-22] DEBUG ROOT -   Getting update
-2020-04-15 18:04:33.034 [scala-execution-context-global-22] DEBUG ROOT -     Update training set: {[]=[r7=1]}
-2020-04-15 18:04:33.034 [scala-execution-context-global-22] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:04:33.034 [scala-execution-context-global-22] DEBUG ROOT -     Best update is correct
-2020-04-15 18:04:35.415 [scala-execution-context-global-18] DEBUG ROOT -   Getting update
-2020-04-15 18:04:35.415 [scala-execution-context-global-18] DEBUG ROOT -     Update training set: {[]=[r7=1]}
-2020-04-15 18:04:35.416 [scala-execution-context-global-18] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:04:35.416 [scala-execution-context-global-18] DEBUG ROOT -     Best update is correct
-2020-04-15 18:04:37.738 [scala-execution-context-global-23] DEBUG ROOT -   Getting update
-2020-04-15 18:04:37.739 [scala-execution-context-global-23] DEBUG ROOT -     Update training set: {[]=[r7=1]}
-2020-04-15 18:04:37.739 [scala-execution-context-global-23] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:04:37.739 [scala-execution-context-global-23] DEBUG ROOT -     Best update is correct
-2020-04-15 18:04:40.124 [scala-execution-context-global-21] DEBUG ROOT -   Getting update
-2020-04-15 18:04:40.124 [scala-execution-context-global-21] DEBUG ROOT -     Update training set: {[]=[r7=1]}
-2020-04-15 18:04:40.125 [scala-execution-context-global-21] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:04:40.125 [scala-execution-context-global-21] DEBUG ROOT -     Best update is correct
-2020-04-15 18:04:52.184 [scala-execution-context-global-12] DEBUG ROOT -   Getting update
-2020-04-15 18:04:52.184 [scala-execution-context-global-12] DEBUG ROOT -     Update training set: {[]=[r7=1]}
-2020-04-15 18:04:52.185 [scala-execution-context-global-12] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:04:52.185 [scala-execution-context-global-12] DEBUG ROOT -     Best update is correct
-2020-04-15 18:04:54.651 [scala-execution-context-global-12] DEBUG ROOT -   Getting update
-2020-04-15 18:04:54.652 [scala-execution-context-global-12] DEBUG ROOT -     Update training set: {[]=[r7=1]}
-2020-04-15 18:04:54.652 [scala-execution-context-global-12] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:04:54.652 [scala-execution-context-global-12] DEBUG ROOT -     Best update is correct
-2020-04-15 18:05:07.304 [scala-execution-context-global-22] DEBUG ROOT -   Getting update
-2020-04-15 18:05:07.305 [scala-execution-context-global-22] DEBUG ROOT -     Update training set: {[]=[r7=1]}
-2020-04-15 18:05:07.305 [scala-execution-context-global-22] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:05:07.305 [scala-execution-context-global-22] DEBUG ROOT -     Best update is correct
-2020-04-15 18:05:09.868 [scala-execution-context-global-20] DEBUG ROOT -   Getting update
-2020-04-15 18:05:09.868 [scala-execution-context-global-20] DEBUG ROOT -     Update training set: {[]=[r7=1]}
-2020-04-15 18:05:09.869 [scala-execution-context-global-20] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:05:09.869 [scala-execution-context-global-20] DEBUG ROOT -     Best update is correct
-2020-04-15 18:05:14.848 [scala-execution-context-global-15] DEBUG ROOT -   Getting update
-2020-04-15 18:05:14.849 [scala-execution-context-global-15] DEBUG ROOT -     Update training set: {[]=[r7=1]}
-2020-04-15 18:05:14.849 [scala-execution-context-global-15] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:05:14.849 [scala-execution-context-global-15] DEBUG ROOT -     Best update is correct
-2020-04-15 18:05:17.388 [scala-execution-context-global-23] DEBUG ROOT -   Getting update
-2020-04-15 18:05:17.389 [scala-execution-context-global-23] DEBUG ROOT -     Update training set: {[]=[r7=1]}
-2020-04-15 18:05:17.389 [scala-execution-context-global-23] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:05:17.389 [scala-execution-context-global-23] DEBUG ROOT -     Best update is correct
-2020-04-15 18:05:32.853 [scala-execution-context-global-16] DEBUG ROOT -   Getting update
-2020-04-15 18:05:32.854 [scala-execution-context-global-16] DEBUG ROOT -     Update training set: {[r7=1]=[r7=0]}
-2020-04-15 18:05:32.854 [scala-execution-context-global-16] DEBUG ROOT -     Best memoised update is: 0
-2020-04-15 18:05:32.854 [scala-execution-context-global-16] DEBUG ROOT -     Best update is correct
-2020-04-15 18:05:35.407 [scala-execution-context-global-12] DEBUG ROOT -   Getting update
-2020-04-15 18:05:35.408 [scala-execution-context-global-12] DEBUG ROOT -     Update training set: {[]=[r7=1]}
-2020-04-15 18:05:35.408 [scala-execution-context-global-12] DEBUG ROOT -     Best memoised update is: (+ (- 0 r3) (+ 0 1))
-2020-04-15 18:05:35.408 [scala-execution-context-global-12] DEBUG ROOT -     Best update is correct
-2020-04-15 18:05:40.573 [scala-execution-context-global-16] DEBUG ROOT - Getting Output...
-2020-04-15 18:05:40.573 [scala-execution-context-global-16] DEBUG ROOT -   Singleton literal output
-2020-04-15 18:06:16.570 [main] INFO  ROOT - Resolved PTA has 328 states
-2020-04-15 18:06:16.572 [main] INFO  ROOT - Resolved PTA has 327 transitions
-2020-04-15 18:06:16.572 [main] INFO  ROOT - Preprocessing completed in 0h 11m 53.81606387299996s
-2020-04-15 18:07:53.548 [main] DEBUG ROOT - 328 -> 207
-2020-04-15 18:08:29.867 [main] DEBUG ROOT - 207 -> 94
-2020-04-15 18:08:32.792 [main] DEBUG ROOT - 94 -> 89
-2020-04-15 18:08:38.456 [main] DEBUG ROOT - 89 -> 27
-2020-04-15 18:08:38.672 [main] DEBUG ROOT - 27 -> 22
-2020-04-15 18:08:38.765 [main] DEBUG ROOT - 22 -> 21
-2020-04-15 18:08:38.869 [main] DEBUG ROOT - 21 -> 20
-2020-04-15 18:08:38.950 [main] DEBUG ROOT - 20 -> 19
-2020-04-15 18:08:39.026 [main] DEBUG ROOT - 19 -> 18
-2020-04-15 18:08:39.195 [main] DEBUG ROOT - 18 -> 10
-2020-04-15 18:08:39.240 [main] DEBUG ROOT - 10 -> 9
-2020-04-15 18:08:44.414 [main] DEBUG ROOT - Guard training set: {[r6=5, r1=-1]=[g2=false], [r6=8, r1=-1]=[g2=false], [r4=7, r6=-1, r1=-1]=[g1=true], [r6=7, r1=-1]=[g2=false], [r4=4, r6=-1, r1=-1]=[g1=true], [r4=1, r6=3, r1=-1]=[g2=false], [r4=5, r6=-1, r1=-1]=[g1=true], [r4=3, r6=-1, r1=-1]=[g1=true], [r4=8, r6=-1, r1=-1]=[g1=true], [r6=2, r1=-1]=[g2=false], [r6=-1, r1=-1]=[g2=false], [r6=1, r1=-1]=[g2=false], [r6=0, r1=-1]=[g2=false], [r6=3, r1=-1]=[g2=false], [r4=9, r6=-1, r1=-1]=[g1=true], [r4=2, r6=-1, r1=-1]=[g1=true], [r4=6, r6=-1, r1=-1]=[g1=true], [r6=6, r1=-1]=[g2=false]}
-2020-04-15 18:08:44.414 [main] DEBUG ROOT -   Terminals: [true, false, r6, r1, r4, 6, -1, 3, 8, 7, 1, 0, 5, 2, 9, 4]
-2020-04-15 18:08:44.465 [main] DEBUG ROOT -   Best guard is: (> (* 4 r1) (+ 15 (* (+ 1 (* -2 r4)) (+ 1 (+ r4 (* -7 r1))))))
-2020-04-15 18:08:44.467 [main] DEBUG ROOT -   Best guard is correct
-2020-04-15 18:08:44.572 [main] DEBUG ROOT - 9 -> 7
-2020-04-15 18:08:49.699 [main] DEBUG ROOT - Guard training set: {[r6=5, r1=-1]=[g2=false, g1=true], [r6=8, r1=-1]=[g1=true, g2=false], [r6=7, r1=-1]=[g2=false, g1=true], [r6=-1, r1=-1]=[g1=true, g2=false], [r4=1, r6=3, r1=-1]=[g1=true], [r4=1, r6=-1, r1=-1]=[g1=true, g2=false], [r6=2, r1=-1]=[g2=false, g1=true], [r6=1, r1=-1]=[g1=true, g2=false], [r6=0, r1=-1]=[g1=true, g2=false], [r6=3, r1=-1]=[g2=false, g1=true], [r6=6, r1=-1]=[g1=true, g2=false]}
-2020-04-15 18:08:49.699 [main] DEBUG ROOT -   Terminals: [true, false, r4, r6, r1, 1, -1, 6, 3, 8, 7, 0, 5, 2]
-2020-04-15 18:08:49.699 [main] DEBUG ROOT -     UNSATISFIABLE
-2020-04-15 18:08:49.703 [main] INFO  ROOT - The inferred machine is deterministic
-2020-04-15 18:08:49.705 [main] INFO  ROOT - Completed in 0h 14m 26.949549372999968s
-2020-04-15 18:08:49.706 [main] INFO  ROOT - states: 7
-2020-04-15 18:08:49.706 [main] INFO  ROOT - transitions: 12
+2020-04-16 15:27:36.663 - -s naive_eq_bonus -p gp -g 33979 -o 39699 -u 3066 -h ws,distinguish -d results/liftDoors30-obfuscated-time-gp-33979-39699-3066 experimental-data/liftDoors30-obfuscated-time-train.json experimental-data/liftDoors30-obfuscated-time-test.json
+2020-04-16 15:27:36.665 - Building PTA - 30 traces
+2020-04-16 15:27:41.140 - PTA has 328 states
+2020-04-16 15:27:41.142 - PTA has 327 transitions
+2020-04-16 15:27:43.283 - Getting Output...
+2020-04-16 15:27:43.284 -   Singleton literal output
+2020-04-16 15:27:43.453 - Getting Output...
+2020-04-16 15:27:43.505 -   No latent variable
+2020-04-16 15:27:43.514 -   Output training set: {[]=[o=3, o=4, o=1, o=2, o=0]}
+2020-04-16 15:27:43.521 -   Secret best output is: r1
+2020-04-16 15:27:46.529 -   Getting update
+2020-04-16 15:27:46.545 -     Update training set: {[r1=4]=[r1=3], [r1=2]=[r1=1], [r1=3]=[r1=2], [r1=1]=[r1=0]}
+2020-04-16 15:27:46.835 -     Best update is: (+ -1 r1)
+2020-04-16 15:27:46.835 -     Best update is correct
+2020-04-16 15:28:36.386 - Getting Output...
+2020-04-16 15:28:36.386 -   Singleton literal output
+2020-04-16 15:28:36.502 - Getting Output...
+2020-04-16 15:28:36.504 -   No latent variable
+2020-04-16 15:28:36.504 -   Output training set: {[]=[o=5, o=6, o=7, o=8, o=9, o=3, o=4, o=2, o=1, o=0]}
+2020-04-16 15:28:36.504 -   Secret best output is: r2
+2020-04-16 15:28:39.552 -   Getting update
+2020-04-16 15:28:39.555 -     Update training set: {[]=[r2=9]}
+2020-04-16 15:28:39.566 -     Best update is: 9
+2020-04-16 15:28:39.567 -     Best update is correct
+2020-04-16 15:28:41.456 -   Getting update
+2020-04-16 15:28:41.458 -     Update training set: {[]=[r2=9]}
+2020-04-16 15:28:41.458 -     Best memoised update is: 9
+2020-04-16 15:28:41.458 -     Best update is correct
+2020-04-16 15:28:43.330 -   Getting update
+2020-04-16 15:28:43.332 -     Update training set: {[r2=9]=[r2=8], [r2=3]=[r2=2], [r2=4]=[r2=3], [r2=1]=[r2=0], [r2=2]=[r2=1], [r2=8]=[r2=7], [r2=5]=[r2=4], [r2=6]=[r2=5], [r2=7]=[r2=6]}
+2020-04-16 15:28:43.766 -     Best update is: (+ -1 r2)
+2020-04-16 15:28:43.766 -     Best update is correct
+2020-04-16 15:29:43.119 - Getting Output...
+2020-04-16 15:29:43.120 -   Singleton literal output
+2020-04-16 15:29:43.240 - Getting Output...
+2020-04-16 15:29:43.241 -   Singleton literal output
+2020-04-16 15:29:43.366 - Getting Output...
+2020-04-16 15:29:43.367 -   No latent variable
+2020-04-16 15:29:43.367 -   Output training set: {[]=[o=0, o=1]}
+2020-04-16 15:29:43.367 -   Secret best output is: r3
+2020-04-16 15:29:46.530 -   Getting update
+2020-04-16 15:29:46.530 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:29:46.536 -     Best update is: 1
+2020-04-16 15:29:46.536 -     Best update is correct
+2020-04-16 15:29:48.440 -   Getting update
+2020-04-16 15:29:48.441 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:29:48.441 -     Best memoised update is: 1
+2020-04-16 15:29:48.441 -     Best update is correct
+2020-04-16 15:29:50.382 -   Getting update
+2020-04-16 15:29:50.383 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:29:50.384 -     Best memoised update is: 1
+2020-04-16 15:29:50.384 -     Best update is correct
+2020-04-16 15:29:52.327 -   Getting update
+2020-04-16 15:29:52.328 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:29:52.328 -     Best memoised update is: 1
+2020-04-16 15:29:52.328 -     Best update is correct
+2020-04-16 15:29:54.239 -   Getting update
+2020-04-16 15:29:54.240 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:29:54.240 -     Best memoised update is: 1
+2020-04-16 15:29:54.240 -     Best update is correct
+2020-04-16 15:29:56.209 -   Getting update
+2020-04-16 15:29:56.211 -     Update training set: {[r3=0]=[r3=1], [r3=1]=[r3=0]}
+2020-04-16 15:29:56.218 -     Best update is: (+ 1 (* -1 r3))
+2020-04-16 15:29:56.219 -     Best update is correct
+2020-04-16 15:29:58.134 -   Getting update
+2020-04-16 15:29:58.135 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:29:58.135 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:29:58.135 -     Best update is correct
+2020-04-16 15:30:00.168 -   Getting update
+2020-04-16 15:30:00.169 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:00.169 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:00.169 -     Best update is correct
+2020-04-16 15:30:02.311 -   Getting update
+2020-04-16 15:30:02.312 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:02.312 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:02.312 -     Best update is correct
+2020-04-16 15:30:04.598 -   Getting update
+2020-04-16 15:30:04.599 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:04.599 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:04.599 -     Best update is correct
+2020-04-16 15:30:07.064 -   Getting update
+2020-04-16 15:30:07.066 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:07.066 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:07.066 -     Best update is correct
+2020-04-16 15:30:12.192 -   Getting update
+2020-04-16 15:30:12.194 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:12.194 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:12.194 -     Best update is correct
+2020-04-16 15:30:14.869 -   Getting update
+2020-04-16 15:30:14.870 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:14.870 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:14.870 -     Best update is correct
+2020-04-16 15:30:17.507 -   Getting update
+2020-04-16 15:30:17.508 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:17.508 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:17.508 -     Best update is correct
+2020-04-16 15:30:20.192 -   Getting update
+2020-04-16 15:30:20.193 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:20.193 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:20.193 -     Best update is correct
+2020-04-16 15:30:22.836 -   Getting update
+2020-04-16 15:30:22.838 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:22.838 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:22.838 -     Best update is correct
+2020-04-16 15:30:25.591 -   Getting update
+2020-04-16 15:30:25.592 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:25.592 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:25.592 -     Best update is correct
+2020-04-16 15:30:28.288 -   Getting update
+2020-04-16 15:30:28.289 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:28.289 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:28.289 -     Best update is correct
+2020-04-16 15:30:31.051 -   Getting update
+2020-04-16 15:30:31.052 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:31.052 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:31.052 -     Best update is correct
+2020-04-16 15:30:33.726 -   Getting update
+2020-04-16 15:30:33.727 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:33.727 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:33.727 -     Best update is correct
+2020-04-16 15:30:36.432 -   Getting update
+2020-04-16 15:30:36.433 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:36.434 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:36.434 -     Best update is correct
+2020-04-16 15:30:39.155 -   Getting update
+2020-04-16 15:30:39.156 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:39.156 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:39.156 -     Best update is correct
+2020-04-16 15:30:41.944 -   Getting update
+2020-04-16 15:30:41.945 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:41.945 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:41.945 -     Best update is correct
+2020-04-16 15:30:44.651 -   Getting update
+2020-04-16 15:30:44.652 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:44.652 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:44.652 -     Best update is correct
+2020-04-16 15:30:47.479 -   Getting update
+2020-04-16 15:30:47.480 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:47.480 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:47.480 -     Best update is correct
+2020-04-16 15:30:53.171 -   Getting update
+2020-04-16 15:30:53.172 -     Update training set: {[]=[r3=1]}
+2020-04-16 15:30:53.172 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:30:53.172 -     Best update is correct
+2020-04-16 15:31:10.472 - Getting Output...
+2020-04-16 15:31:10.473 -   Singleton literal output
+2020-04-16 15:31:10.589 - Getting Output...
+2020-04-16 15:31:10.590 -   No latent variable
+2020-04-16 15:31:10.590 -   Output training set: {[]=[o=3, o=4, o=1, o=2, o=0]}
+2020-04-16 15:31:10.590 -   Secret best output is: r3
+2020-04-16 15:31:13.934 -   Getting update
+2020-04-16 15:31:13.936 -     Update training set: {[]=[r3=4]}
+2020-04-16 15:31:13.940 -     Best update is: 4
+2020-04-16 15:31:13.940 -     Best update is correct
+2020-04-16 15:31:15.815 -   Getting update
+2020-04-16 15:31:15.816 -     Update training set: {[]=[r3=4]}
+2020-04-16 15:31:15.816 -     Best memoised update is: 4
+2020-04-16 15:31:15.816 -     Best update is correct
+2020-04-16 15:31:17.719 -   Getting update
+2020-04-16 15:31:17.720 -     Update training set: {[]=[r3=4]}
+2020-04-16 15:31:17.720 -     Best memoised update is: 4
+2020-04-16 15:31:17.720 -     Best update is correct
+2020-04-16 15:31:19.658 -   Getting update
+2020-04-16 15:31:19.659 -     Update training set: {[]=[r3=4]}
+2020-04-16 15:31:19.660 -     Best memoised update is: 4
+2020-04-16 15:31:19.660 -     Best update is correct
+2020-04-16 15:31:21.562 -   Getting update
+2020-04-16 15:31:21.563 -     Update training set: {[]=[r3=4]}
+2020-04-16 15:31:21.563 -     Best memoised update is: 4
+2020-04-16 15:31:21.563 -     Best update is correct
+2020-04-16 15:31:23.547 -   Getting update
+2020-04-16 15:31:23.548 -     Update training set: {[]=[r3=4]}
+2020-04-16 15:31:23.548 -     Best memoised update is: 4
+2020-04-16 15:31:23.548 -     Best update is correct
+2020-04-16 15:31:25.438 -   Getting update
+2020-04-16 15:31:25.439 -     Update training set: {[]=[r3=4]}
+2020-04-16 15:31:25.439 -     Best memoised update is: 4
+2020-04-16 15:31:25.439 -     Best update is correct
+2020-04-16 15:31:27.363 -   Getting update
+2020-04-16 15:31:27.365 -     Update training set: {[r3=4]=[r3=3], [r3=3]=[r3=2], [r3=2]=[r3=1], [r3=1]=[r3=0]}
+2020-04-16 15:31:27.682 -     Best update is: (+ -1 r3)
+2020-04-16 15:31:27.682 -     Best update is correct
+2020-04-16 15:31:33.569 -   Getting update
+2020-04-16 15:31:33.570 -     Update training set: {[]=[r3=4]}
+2020-04-16 15:31:33.570 -     Best memoised update is: 4
+2020-04-16 15:31:33.570 -     Best update is correct
+2020-04-16 15:31:39.529 -   Getting update
+2020-04-16 15:31:39.530 -     Update training set: {[]=[r3=4]}
+2020-04-16 15:31:39.530 -     Best memoised update is: 4
+2020-04-16 15:31:39.530 -     Best update is correct
+2020-04-16 15:31:41.531 -   Getting update
+2020-04-16 15:31:41.532 -     Update training set: {[]=[r3=4]}
+2020-04-16 15:31:41.532 -     Best memoised update is: 4
+2020-04-16 15:31:41.532 -     Best update is correct
+2020-04-16 15:31:43.537 -   Getting update
+2020-04-16 15:31:43.538 -     Update training set: {[]=[r3=4]}
+2020-04-16 15:31:43.539 -     Best memoised update is: 4
+2020-04-16 15:31:43.539 -     Best update is correct
+2020-04-16 15:31:47.599 -   Getting update
+2020-04-16 15:31:47.600 -     Update training set: {[]=[r3=4]}
+2020-04-16 15:31:47.600 -     Best memoised update is: 4
+2020-04-16 15:31:47.600 -     Best update is correct
+2020-04-16 15:31:49.617 -   Getting update
+2020-04-16 15:31:49.618 -     Update training set: {[]=[r3=4]}
+2020-04-16 15:31:49.619 -     Best memoised update is: 4
+2020-04-16 15:31:49.619 -     Best update is correct
+2020-04-16 15:31:51.679 -   Getting update
+2020-04-16 15:31:51.680 -     Update training set: {[]=[r3=4]}
+2020-04-16 15:31:51.680 -     Best memoised update is: 4
+2020-04-16 15:31:51.680 -     Best update is correct
+2020-04-16 15:31:59.769 -   Getting update
+2020-04-16 15:31:59.770 -     Update training set: {[]=[r3=4]}
+2020-04-16 15:31:59.770 -     Best memoised update is: 4
+2020-04-16 15:31:59.770 -     Best update is correct
+2020-04-16 15:32:01.839 -   Getting update
+2020-04-16 15:32:01.840 -     Update training set: {[]=[r3=4]}
+2020-04-16 15:32:01.840 -     Best memoised update is: 4
+2020-04-16 15:32:01.840 -     Best update is correct
+2020-04-16 15:32:14.143 -   Getting update
+2020-04-16 15:32:14.144 -     Update training set: {[]=[r3=4]}
+2020-04-16 15:32:14.144 -     Best memoised update is: 4
+2020-04-16 15:32:14.144 -     Best update is correct
+2020-04-16 15:32:22.646 - Getting Output...
+2020-04-16 15:32:22.646 -   Singleton literal output
+2020-04-16 15:32:22.791 - Getting Output...
+2020-04-16 15:32:22.791 -   Singleton literal output
+2020-04-16 15:32:22.923 - Getting Output...
+2020-04-16 15:32:22.923 -   No latent variable
+2020-04-16 15:32:22.923 -   Output training set: {[]=[o=5, o=6, o=7, o=8, o=9, o=3, o=4, o=2]}
+2020-04-16 15:32:22.924 -   Secret best output is: r4
+2020-04-16 15:32:26.340 -   Getting update
+2020-04-16 15:32:26.341 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:32:26.341 -     Best memoised update is: 9
+2020-04-16 15:32:26.341 -     Best update is correct
+2020-04-16 15:32:28.380 -   Getting update
+2020-04-16 15:32:28.381 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:32:28.381 -     Best memoised update is: 9
+2020-04-16 15:32:28.381 -     Best update is correct
+2020-04-16 15:32:30.441 -   Getting update
+2020-04-16 15:32:30.442 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:32:30.442 -     Best memoised update is: 9
+2020-04-16 15:32:30.442 -     Best update is correct
+2020-04-16 15:32:32.526 -   Getting update
+2020-04-16 15:32:32.526 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:32:32.526 -     Best memoised update is: 9
+2020-04-16 15:32:32.527 -     Best update is correct
+2020-04-16 15:32:34.597 -   Getting update
+2020-04-16 15:32:34.598 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:32:34.598 -     Best memoised update is: 9
+2020-04-16 15:32:34.598 -     Best update is correct
+2020-04-16 15:32:36.648 -   Getting update
+2020-04-16 15:32:36.650 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:32:36.650 -     Best memoised update is: 9
+2020-04-16 15:32:36.650 -     Best update is correct
+2020-04-16 15:32:38.700 -   Getting update
+2020-04-16 15:32:38.700 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:32:38.701 -     Best memoised update is: 9
+2020-04-16 15:32:38.701 -     Best update is correct
+2020-04-16 15:32:40.706 -   Getting update
+2020-04-16 15:32:40.707 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:32:40.707 -     Best memoised update is: 9
+2020-04-16 15:32:40.708 -     Best update is correct
+2020-04-16 15:32:42.729 -   Getting update
+2020-04-16 15:32:42.730 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:32:42.730 -     Best memoised update is: 9
+2020-04-16 15:32:42.730 -     Best update is correct
+2020-04-16 15:32:44.807 -   Getting update
+2020-04-16 15:32:44.808 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:32:44.808 -     Best memoised update is: 9
+2020-04-16 15:32:44.808 -     Best update is correct
+2020-04-16 15:32:46.875 -   Getting update
+2020-04-16 15:32:46.877 -     Update training set: {[r4=6]=[r4=5], [r4=7]=[r4=6], [r4=8]=[r4=7], [r4=9]=[r4=8], [r4=3]=[r4=2], [r4=4]=[r4=3], [r4=5]=[r4=4]}
+2020-04-16 15:32:47.121 -     Best update is: (+ -1 r4)
+2020-04-16 15:32:47.122 -     Best update is correct
+2020-04-16 15:32:51.466 -   Getting update
+2020-04-16 15:32:51.467 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:32:51.467 -     Best memoised update is: 9
+2020-04-16 15:32:51.467 -     Best update is correct
+2020-04-16 15:32:53.687 -   Getting update
+2020-04-16 15:32:53.688 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:32:53.688 -     Best memoised update is: 9
+2020-04-16 15:32:53.688 -     Best update is correct
+2020-04-16 15:33:04.788 -   Getting update
+2020-04-16 15:33:04.789 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:33:04.789 -     Best memoised update is: 9
+2020-04-16 15:33:04.789 -     Best update is correct
+2020-04-16 15:33:11.490 -   Getting update
+2020-04-16 15:33:11.491 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:33:11.491 -     Best memoised update is: 9
+2020-04-16 15:33:11.491 -     Best update is correct
+2020-04-16 15:33:13.774 -   Getting update
+2020-04-16 15:33:13.775 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:33:13.775 -     Best memoised update is: 9
+2020-04-16 15:33:13.775 -     Best update is correct
+2020-04-16 15:33:15.990 -   Getting update
+2020-04-16 15:33:15.991 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:33:15.991 -     Best memoised update is: 9
+2020-04-16 15:33:15.991 -     Best update is correct
+2020-04-16 15:33:18.252 -   Getting update
+2020-04-16 15:33:18.252 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:33:18.253 -     Best memoised update is: 9
+2020-04-16 15:33:18.253 -     Best update is correct
+2020-04-16 15:33:20.551 -   Getting update
+2020-04-16 15:33:20.552 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:33:20.552 -     Best memoised update is: 9
+2020-04-16 15:33:20.552 -     Best update is correct
+2020-04-16 15:33:22.792 -   Getting update
+2020-04-16 15:33:22.792 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:33:22.792 -     Best memoised update is: 9
+2020-04-16 15:33:22.792 -     Best update is correct
+2020-04-16 15:33:25.020 -   Getting update
+2020-04-16 15:33:25.020 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:33:25.021 -     Best memoised update is: 9
+2020-04-16 15:33:25.021 -     Best update is correct
+2020-04-16 15:33:27.296 -   Getting update
+2020-04-16 15:33:27.297 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:33:27.297 -     Best memoised update is: 9
+2020-04-16 15:33:27.297 -     Best update is correct
+2020-04-16 15:33:29.567 -   Getting update
+2020-04-16 15:33:29.568 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:33:29.568 -     Best memoised update is: 9
+2020-04-16 15:33:29.568 -     Best update is correct
+2020-04-16 15:33:31.830 -   Getting update
+2020-04-16 15:33:31.830 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:33:31.830 -     Best memoised update is: 9
+2020-04-16 15:33:31.830 -     Best update is correct
+2020-04-16 15:33:34.102 -   Getting update
+2020-04-16 15:33:34.103 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:33:34.103 -     Best memoised update is: 9
+2020-04-16 15:33:34.103 -     Best update is correct
+2020-04-16 15:33:36.400 -   Getting update
+2020-04-16 15:33:36.401 -     Update training set: {[]=[r4=9]}
+2020-04-16 15:33:36.401 -     Best memoised update is: 9
+2020-04-16 15:33:36.401 -     Best update is correct
+2020-04-16 15:33:38.834 - Getting Output...
+2020-04-16 15:33:38.834 -   Singleton literal output
+2020-04-16 15:33:39.001 - Getting Output...
+2020-04-16 15:33:39.002 -   No latent variable
+2020-04-16 15:33:39.002 -   Output training set: {[]=[o=3, o=4, o=1, o=2, o=0]}
+2020-04-16 15:33:39.002 -   Secret best output is: r5
+2020-04-16 15:33:42.601 -   Getting update
+2020-04-16 15:33:42.602 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:33:42.602 -     Best memoised update is: 4
+2020-04-16 15:33:42.602 -     Best update is correct
+2020-04-16 15:33:44.881 -   Getting update
+2020-04-16 15:33:44.882 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:33:44.882 -     Best memoised update is: 4
+2020-04-16 15:33:44.882 -     Best update is correct
+2020-04-16 15:33:47.160 -   Getting update
+2020-04-16 15:33:47.161 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:33:47.161 -     Best memoised update is: 4
+2020-04-16 15:33:47.161 -     Best update is correct
+2020-04-16 15:33:49.429 -   Getting update
+2020-04-16 15:33:49.430 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:33:49.430 -     Best memoised update is: 4
+2020-04-16 15:33:49.430 -     Best update is correct
+2020-04-16 15:33:51.676 -   Getting update
+2020-04-16 15:33:51.677 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:33:51.677 -     Best memoised update is: 4
+2020-04-16 15:33:51.677 -     Best update is correct
+2020-04-16 15:33:53.915 -   Getting update
+2020-04-16 15:33:53.916 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:33:53.917 -     Best memoised update is: 4
+2020-04-16 15:33:53.917 -     Best update is correct
+2020-04-16 15:33:56.193 -   Getting update
+2020-04-16 15:33:56.194 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:33:56.194 -     Best memoised update is: 4
+2020-04-16 15:33:56.195 -     Best update is correct
+2020-04-16 15:33:58.495 -   Getting update
+2020-04-16 15:33:58.495 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:33:58.495 -     Best memoised update is: 4
+2020-04-16 15:33:58.496 -     Best update is correct
+2020-04-16 15:34:00.743 -   Getting update
+2020-04-16 15:34:00.744 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:34:00.744 -     Best memoised update is: 4
+2020-04-16 15:34:00.744 -     Best update is correct
+2020-04-16 15:34:03.004 -   Getting update
+2020-04-16 15:34:03.005 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:34:03.005 -     Best memoised update is: 4
+2020-04-16 15:34:03.005 -     Best update is correct
+2020-04-16 15:34:05.183 -   Getting update
+2020-04-16 15:34:05.184 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:34:05.184 -     Best memoised update is: 4
+2020-04-16 15:34:05.184 -     Best update is correct
+2020-04-16 15:34:07.374 -   Getting update
+2020-04-16 15:34:07.374 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:34:07.375 -     Best memoised update is: 4
+2020-04-16 15:34:07.375 -     Best update is correct
+2020-04-16 15:34:09.525 -   Getting update
+2020-04-16 15:34:09.526 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:34:09.526 -     Best memoised update is: 4
+2020-04-16 15:34:09.526 -     Best update is correct
+2020-04-16 15:34:11.791 -   Getting update
+2020-04-16 15:34:11.796 -     Update training set: {[r5=3]=[r5=2], [r5=4]=[r5=3], [r5=1]=[r5=0], [r5=2]=[r5=1]}
+2020-04-16 15:34:12.128 -     Best update is: (+ -1 r5)
+2020-04-16 15:34:12.128 -     Best update is correct
+2020-04-16 15:34:23.599 -   Getting update
+2020-04-16 15:34:23.600 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:34:23.600 -     Best memoised update is: 4
+2020-04-16 15:34:23.600 -     Best update is correct
+2020-04-16 15:34:25.919 -   Getting update
+2020-04-16 15:34:25.920 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:34:25.920 -     Best memoised update is: 4
+2020-04-16 15:34:25.920 -     Best update is correct
+2020-04-16 15:34:28.244 -   Getting update
+2020-04-16 15:34:28.245 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:34:28.245 -     Best memoised update is: 4
+2020-04-16 15:34:28.245 -     Best update is correct
+2020-04-16 15:34:30.605 -   Getting update
+2020-04-16 15:34:30.606 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:34:30.606 -     Best memoised update is: 4
+2020-04-16 15:34:30.606 -     Best update is correct
+2020-04-16 15:34:32.911 -   Getting update
+2020-04-16 15:34:32.912 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:34:32.912 -     Best memoised update is: 4
+2020-04-16 15:34:32.912 -     Best update is correct
+2020-04-16 15:34:39.922 -   Getting update
+2020-04-16 15:34:39.922 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:34:39.923 -     Best memoised update is: 4
+2020-04-16 15:34:39.923 -     Best update is correct
+2020-04-16 15:34:44.635 -   Getting update
+2020-04-16 15:34:44.636 -     Update training set: {[]=[r5=4]}
+2020-04-16 15:34:44.636 -     Best memoised update is: 4
+2020-04-16 15:34:44.636 -     Best update is correct
+2020-04-16 15:34:56.542 - Getting Output...
+2020-04-16 15:34:56.542 -   Singleton literal output
+2020-04-16 15:34:56.690 - Getting Output...
+2020-04-16 15:34:56.690 -   Singleton literal output
+2020-04-16 15:34:56.844 - Getting Output...
+2020-04-16 15:34:56.845 -   No latent variable
+2020-04-16 15:34:56.845 -   Output training set: {[]=[o=0, o=1]}
+2020-04-16 15:34:56.845 -   Secret best output is: r6
+2020-04-16 15:35:00.588 -   Getting update
+2020-04-16 15:35:00.589 -     Update training set: {[]=[r6=1]}
+2020-04-16 15:35:00.589 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:35:00.589 -     Best update is correct
+2020-04-16 15:35:02.971 -   Getting update
+2020-04-16 15:35:02.971 -     Update training set: {[]=[r6=1]}
+2020-04-16 15:35:02.971 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:35:02.971 -     Best update is correct
+2020-04-16 15:35:05.266 -   Getting update
+2020-04-16 15:35:05.268 -     Update training set: {[]=[r6=1]}
+2020-04-16 15:35:05.268 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:35:05.268 -     Best update is correct
+2020-04-16 15:35:09.904 -   Getting update
+2020-04-16 15:35:09.904 -     Update training set: {[]=[r6=1]}
+2020-04-16 15:35:09.904 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:35:09.904 -     Best update is correct
+2020-04-16 15:35:12.250 -   Getting update
+2020-04-16 15:35:12.250 -     Update training set: {[]=[r6=1]}
+2020-04-16 15:35:12.250 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:35:12.250 -     Best update is correct
+2020-04-16 15:35:14.580 -   Getting update
+2020-04-16 15:35:14.581 -     Update training set: {[]=[r6=1]}
+2020-04-16 15:35:14.581 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:35:14.581 -     Best update is correct
+2020-04-16 15:35:16.942 -   Getting update
+2020-04-16 15:35:16.943 -     Update training set: {[]=[r6=1]}
+2020-04-16 15:35:16.943 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:35:16.943 -     Best update is correct
+2020-04-16 15:35:43.525 -   Getting update
+2020-04-16 15:35:43.526 -     Update training set: {[]=[r6=1]}
+2020-04-16 15:35:43.526 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:35:43.526 -     Best update is correct
+2020-04-16 15:35:45.987 -   Getting update
+2020-04-16 15:35:45.987 -     Update training set: {[]=[r6=1]}
+2020-04-16 15:35:45.988 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:35:45.988 -     Best update is correct
+2020-04-16 15:35:48.435 -   Getting update
+2020-04-16 15:35:48.436 -     Update training set: {[]=[r6=1]}
+2020-04-16 15:35:48.436 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:35:48.436 -     Best update is correct
+2020-04-16 15:35:50.855 -   Getting update
+2020-04-16 15:35:50.856 -     Update training set: {[]=[r6=1]}
+2020-04-16 15:35:50.856 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:35:50.856 -     Best update is correct
+2020-04-16 15:35:53.269 -   Getting update
+2020-04-16 15:35:53.270 -     Update training set: {[r6=1]=[r6=0]}
+2020-04-16 15:35:53.273 -     Best update is: 0
+2020-04-16 15:35:53.273 -     Best update is correct
+2020-04-16 15:36:02.928 -   Getting update
+2020-04-16 15:36:02.929 -     Update training set: {[]=[r6=1]}
+2020-04-16 15:36:02.929 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:36:02.929 -     Best update is correct
+2020-04-16 15:36:15.306 - Getting Output...
+2020-04-16 15:36:15.306 -   Singleton literal output
+2020-04-16 15:36:15.461 - Getting Output...
+2020-04-16 15:36:15.461 -   Singleton literal output
+2020-04-16 15:36:15.610 - Getting Output...
+2020-04-16 15:36:15.610 -   Singleton literal output
+2020-04-16 15:36:15.820 - Getting Output...
+2020-04-16 15:36:15.821 -   Singleton literal output
+2020-04-16 15:36:15.962 - Getting Output...
+2020-04-16 15:36:15.962 -   Singleton literal output
+2020-04-16 15:36:16.123 - Getting Output...
+2020-04-16 15:36:16.124 -   No latent variable
+2020-04-16 15:36:16.124 -   Output training set: {[]=[o=3, o=4, o=1, o=2, o=0]}
+2020-04-16 15:36:16.124 -   Secret best output is: r6
+2020-04-16 15:36:19.744 -   Getting update
+2020-04-16 15:36:19.745 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:36:19.745 -     Best memoised update is: 4
+2020-04-16 15:36:19.745 -     Best update is correct
+2020-04-16 15:36:22.027 -   Getting update
+2020-04-16 15:36:22.028 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:36:22.028 -     Best memoised update is: 4
+2020-04-16 15:36:22.028 -     Best update is correct
+2020-04-16 15:36:24.386 -   Getting update
+2020-04-16 15:36:24.387 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:36:24.387 -     Best memoised update is: 4
+2020-04-16 15:36:24.387 -     Best update is correct
+2020-04-16 15:36:28.951 -   Getting update
+2020-04-16 15:36:28.952 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:36:28.953 -     Best memoised update is: 4
+2020-04-16 15:36:28.953 -     Best update is correct
+2020-04-16 15:36:31.207 -   Getting update
+2020-04-16 15:36:31.208 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:36:31.209 -     Best memoised update is: 4
+2020-04-16 15:36:31.209 -     Best update is correct
+2020-04-16 15:36:33.490 -   Getting update
+2020-04-16 15:36:33.491 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:36:33.491 -     Best memoised update is: 4
+2020-04-16 15:36:33.491 -     Best update is correct
+2020-04-16 15:36:35.824 -   Getting update
+2020-04-16 15:36:35.825 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:36:35.825 -     Best memoised update is: 4
+2020-04-16 15:36:35.825 -     Best update is correct
+2020-04-16 15:36:38.199 -   Getting update
+2020-04-16 15:36:38.200 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:36:38.200 -     Best memoised update is: 4
+2020-04-16 15:36:38.200 -     Best update is correct
+2020-04-16 15:36:42.784 -   Getting update
+2020-04-16 15:36:42.785 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:36:42.785 -     Best memoised update is: 4
+2020-04-16 15:36:42.785 -     Best update is correct
+2020-04-16 15:36:45.087 -   Getting update
+2020-04-16 15:36:45.088 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:36:45.088 -     Best memoised update is: 4
+2020-04-16 15:36:45.088 -     Best update is correct
+2020-04-16 15:36:47.338 -   Getting update
+2020-04-16 15:36:47.339 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:36:47.339 -     Best memoised update is: 4
+2020-04-16 15:36:47.339 -     Best update is correct
+2020-04-16 15:36:49.749 -   Getting update
+2020-04-16 15:36:49.750 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:36:49.750 -     Best memoised update is: 4
+2020-04-16 15:36:49.750 -     Best update is correct
+2020-04-16 15:37:01.577 -   Getting update
+2020-04-16 15:37:01.578 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:37:01.578 -     Best memoised update is: 4
+2020-04-16 15:37:01.578 -     Best update is correct
+2020-04-16 15:37:03.978 -   Getting update
+2020-04-16 15:37:03.979 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:37:03.979 -     Best memoised update is: 4
+2020-04-16 15:37:03.979 -     Best update is correct
+2020-04-16 15:37:08.789 -   Getting update
+2020-04-16 15:37:08.789 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:37:08.789 -     Best memoised update is: 4
+2020-04-16 15:37:08.789 -     Best update is correct
+2020-04-16 15:37:11.100 -   Getting update
+2020-04-16 15:37:11.101 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:37:11.101 -     Best memoised update is: 4
+2020-04-16 15:37:11.101 -     Best update is correct
+2020-04-16 15:37:18.209 -   Getting update
+2020-04-16 15:37:18.210 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:37:18.210 -     Best memoised update is: 4
+2020-04-16 15:37:18.211 -     Best update is correct
+2020-04-16 15:37:20.609 -   Getting update
+2020-04-16 15:37:20.609 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:37:20.609 -     Best memoised update is: 4
+2020-04-16 15:37:20.609 -     Best update is correct
+2020-04-16 15:37:22.907 -   Getting update
+2020-04-16 15:37:22.908 -     Update training set: {[r6=4]=[r6=3], [r6=1]=[r6=0], [r6=3]=[r6=2], [r6=2]=[r6=1]}
+2020-04-16 15:37:23.216 -     Best update is: (+ -1 r6)
+2020-04-16 15:37:23.216 -     Best update is correct
+2020-04-16 15:37:25.488 -   Getting update
+2020-04-16 15:37:25.489 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:37:25.489 -     Best memoised update is: 4
+2020-04-16 15:37:25.489 -     Best update is correct
+2020-04-16 15:37:30.078 -   Getting update
+2020-04-16 15:37:30.079 -     Update training set: {[]=[r6=4]}
+2020-04-16 15:37:30.079 -     Best memoised update is: 4
+2020-04-16 15:37:30.079 -     Best update is correct
+2020-04-16 15:37:32.591 - Getting Output...
+2020-04-16 15:37:32.591 -   Singleton literal output
+2020-04-16 15:37:32.736 - Getting Output...
+2020-04-16 15:37:32.736 -   Singleton literal output
+2020-04-16 15:37:32.886 - Getting Output...
+2020-04-16 15:37:32.887 -   Singleton literal output
+2020-04-16 15:37:33.033 - Getting Output...
+2020-04-16 15:37:33.033 -   No latent variable
+2020-04-16 15:37:33.033 -   Output training set: {[]=[o=0, o=1]}
+2020-04-16 15:37:33.033 -   Secret best output is: r7
+2020-04-16 15:37:36.686 -   Getting update
+2020-04-16 15:37:36.687 -     Update training set: {[]=[r7=1]}
+2020-04-16 15:37:36.687 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:37:36.687 -     Best update is correct
+2020-04-16 15:37:38.993 -   Getting update
+2020-04-16 15:37:38.994 -     Update training set: {[]=[r7=1]}
+2020-04-16 15:37:38.994 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:37:38.994 -     Best update is correct
+2020-04-16 15:37:41.291 -   Getting update
+2020-04-16 15:37:41.292 -     Update training set: {[]=[r7=1]}
+2020-04-16 15:37:41.292 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:37:41.292 -     Best update is correct
+2020-04-16 15:37:45.917 -   Getting update
+2020-04-16 15:37:45.917 -     Update training set: {[]=[r7=1]}
+2020-04-16 15:37:45.918 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:37:45.918 -     Best update is correct
+2020-04-16 15:37:48.235 -   Getting update
+2020-04-16 15:37:48.236 -     Update training set: {[]=[r7=1]}
+2020-04-16 15:37:48.236 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:37:48.236 -     Best update is correct
+2020-04-16 15:37:50.586 -   Getting update
+2020-04-16 15:37:50.586 -     Update training set: {[]=[r7=1]}
+2020-04-16 15:37:50.587 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:37:50.587 -     Best update is correct
+2020-04-16 15:37:52.925 -   Getting update
+2020-04-16 15:37:52.925 -     Update training set: {[]=[r7=1]}
+2020-04-16 15:37:52.926 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:37:52.926 -     Best update is correct
+2020-04-16 15:38:04.902 -   Getting update
+2020-04-16 15:38:04.903 -     Update training set: {[]=[r7=1]}
+2020-04-16 15:38:04.903 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:38:04.903 -     Best update is correct
+2020-04-16 15:38:07.343 -   Getting update
+2020-04-16 15:38:07.344 -     Update training set: {[]=[r7=1]}
+2020-04-16 15:38:07.344 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:38:07.344 -     Best update is correct
+2020-04-16 15:38:19.500 -   Getting update
+2020-04-16 15:38:19.500 -     Update training set: {[]=[r7=1]}
+2020-04-16 15:38:19.500 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:38:19.500 -     Best update is correct
+2020-04-16 15:38:22.030 -   Getting update
+2020-04-16 15:38:22.030 -     Update training set: {[]=[r7=1]}
+2020-04-16 15:38:22.030 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:38:22.030 -     Best update is correct
+2020-04-16 15:38:27.010 -   Getting update
+2020-04-16 15:38:27.011 -     Update training set: {[]=[r7=1]}
+2020-04-16 15:38:27.011 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:38:27.011 -     Best update is correct
+2020-04-16 15:38:29.518 -   Getting update
+2020-04-16 15:38:29.519 -     Update training set: {[]=[r7=1]}
+2020-04-16 15:38:29.519 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:38:29.519 -     Best update is correct
+2020-04-16 15:38:44.655 -   Getting update
+2020-04-16 15:38:44.656 -     Update training set: {[r7=1]=[r7=0]}
+2020-04-16 15:38:44.656 -     Best memoised update is: 0
+2020-04-16 15:38:44.656 -     Best update is correct
+2020-04-16 15:38:47.160 -   Getting update
+2020-04-16 15:38:47.161 -     Update training set: {[]=[r7=1]}
+2020-04-16 15:38:47.161 -     Best memoised update is: (+ 1 (* -1 r3))
+2020-04-16 15:38:47.161 -     Best update is correct
+2020-04-16 15:38:52.283 - Getting Output...
+2020-04-16 15:38:52.283 -   Singleton literal output
+2020-04-16 15:39:36.808 - Resolved PTA has 328 states
+2020-04-16 15:39:36.809 - Resolved PTA has 327 transitions
+2020-04-16 15:39:36.809 - Preprocessing completed in 0h 12m 0.8350973269999713s
+2020-04-16 15:40:37.947 - 328 -> 308
+2020-04-16 15:41:40.816 - 308 -> 272
+2020-04-16 15:42:20.903 - 272 -> 267
+2020-04-16 15:43:30.335 - 267 -> 123
+2020-04-16 15:43:37.018 - 123 -> 104
+2020-04-16 15:43:42.051 - 104 -> 69
+2020-04-16 15:43:45.207 - 69 -> 26
+2020-04-16 15:43:45.493 - 26 -> 19
+2020-04-16 15:43:45.578 - 19 -> 18
+2020-04-16 15:43:45.744 - 18 -> 10
+2020-04-16 15:43:45.792 - 10 -> 9
+2020-04-16 15:43:51.173 - Guard training set: {[r4=8, r6=-1, r1=-1]=[g1=true], [r4=5, r6=-1, r1=-1]=[g1=true], [r4=9, r6=-1, r1=-1]=[g1=true], [r6=4, r1=-1]=[g2=false], [r4=3, r6=-1, r1=-1]=[g1=true], [r4=2, r6=-1, r1=-1]=[g1=true], [r4=6, r6=-1, r1=-1]=[g1=true], [r4=7, r6=-1, r1=-1]=[g1=true], [r4=4, r6=-1, r1=-1]=[g1=true], [r4=1, r6=4, r1=-1]=[g2=false]}
+2020-04-16 15:43:51.173 -   Terminals: [true, false, r4, r6, r1, 1, 4, -1, 9, 8, 7, 6, 5, 3, 2, 0]
+2020-04-16 15:43:51.210 -   Best guard is: (> 2 r6)
+2020-04-16 15:43:51.211 -   Best guard is correct
+2020-04-16 15:43:51.286 - 9 -> 8
+2020-04-16 15:43:51.341 - 8 -> 6
+2020-04-16 15:43:56.686 - Guard training set: {[r6=4, r1=-1]=[g1=true, g2=false], [r4=1, r6=-1, r1=-1]=[g1=true, g2=false], [r4=1, r6=4, r1=-1]=[g1=true]}
+2020-04-16 15:43:56.686 -   Terminals: [true, false, r4, r6, r1, 1, -1, 4, 0, 2]
+2020-04-16 15:43:56.686 -     UNSATISFIABLE
+2020-04-16 15:43:56.692 - The inferred machine is deterministic
+2020-04-16 15:43:56.695 - Completed in 0h 16m 20.721001624999985s
+2020-04-16 15:43:56.695 - states: 6
+2020-04-16 15:43:56.695 - transitions: 12
