@@ -2,19 +2,17 @@ session "inference" = "EFSM" +
 options [quick_and_dirty, document = pdf, document_output = "output"]
 directories
   "heuristics"
+  "code-targets"
 theories
-  "Code_Target_List"
-  "Always_Different_Outputs"
+  "code-targets/Code_Target_List"
   "Guard_Implication_Subsumption"
   "Inference"
   "Code_Generation"
   "EFSM_Dot"
-  "Transition_Ordering"
-  "Code_Target_Set"
-  "GExp_Orderings"
+  "code-targets/Code_Target_Set"
   "SelectionStrategies"
   "Enable_Logging"
-  "Code_Target_FSet"
+  "code-targets/Code_Target_FSet"
   "heuristics/Same_Register"
   "heuristics/Store_Reuse"
   "heuristics/Increment_Reset"

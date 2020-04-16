@@ -6,7 +6,7 @@ system traces.
 
 theory Inference
   imports "EFSM.Contexts"
-    Transition_Ordering
+    "EFSM.Transition_Lexorder"
     "HOL-Library.Product_Lexorder"
 begin
 
