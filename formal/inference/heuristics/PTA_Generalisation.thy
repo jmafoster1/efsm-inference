@@ -105,7 +105,8 @@ fun put_outputs :: "(((vname aexp \<times> (vname \<Rightarrow>f String.literal)
   "put_outputs ((None, p)#t) = p#(put_outputs t)" |
   "put_outputs ((Some (p, _), _)#t) = p#(put_outputs t)"
 
-lemma put_outputs_fold [code]: "put_outputs xs = foldr (\<lambda>x acc. case x of (None, p) \<Rightarrow> p#acc | (Some (p, _), _) \<Rightarrow> p#acc) xs []"
+lemma put_outputs_fold [code]:
+"put_outputs xs = foldr (\<lambda>x acc. case x of (None, p) \<Rightarrow> p#acc | (Some (p, _), _) \<Rightarrow> p#acc) xs []"
 proof (induct xs)
   case Nil
   then show ?case by simp
@@ -126,7 +127,8 @@ primrec replace_groups :: "(tids \<times> transition) list list \<Rightarrow> iE
   "replace_groups [] e = e" |
   "replace_groups (h#t) e = replace_groups t (fold (\<lambda>(id, t) acc. replace_transition acc id t) h e)"
 
-lemma replace_groups_fold [code]: "replace_groups xs e = fold (\<lambda>h acc'. (fold (\<lambda>(id, t) acc. replace_transition acc id t) h acc')) xs e"
+lemma replace_groups_fold [code]:
+"replace_groups xs e = fold (\<lambda>h acc'. (fold (\<lambda>(id, t) acc. replace_transition acc id t) h acc')) xs e"
   by (induct xs arbitrary: e,  auto)
 
 definition insert_updates :: "transition \<Rightarrow> update_function list \<Rightarrow> transition" where
@@ -165,7 +167,8 @@ primrec add_groupwise_updates :: "log  \<Rightarrow> (tids \<times> update_funct
   "add_groupwise_updates [] _ e = e" |
   "add_groupwise_updates (h#t) funs e = add_groupwise_updates t funs (add_groupwise_updates_trace h funs e 0 <>)"
 
-lemma fold_add_groupwise_updates [code]: "add_groupwise_updates log funs e = fold (\<lambda>trace acc. add_groupwise_updates_trace trace funs acc 0 <>) log e"
+lemma fold_add_groupwise_updates [code]:
+"add_groupwise_updates log funs e = fold (\<lambda>trace acc. add_groupwise_updates_trace trace funs acc 0 <>) log e"
   by (induct log arbitrary: e, auto)
 
 \<comment> \<open>This will be replaced to calls to Z3 in the executable\<close>
@@ -205,7 +208,8 @@ fun target_tail :: "registers \<Rightarrow> run_info \<Rightarrow> targeted_run_
     target_tail newTarget t ((tRegs, s, oldregs, regs, inputs, tid, ta)#tt)
   )"
 
-lemma target_tail: "(rev bs)@(target tRegs ts) = target_tail tRegs ts bs"
+lemma target_tail:
+"(rev bs)@(target tRegs ts) = target_tail tRegs ts bs"
 proof(induct ts arbitrary: bs tRegs)
   case Nil
   then show ?case
@@ -224,7 +228,8 @@ let newTarget = if finfun_to_list regs = [] then tRegs else regs in
     (acc@[(tRegs, s, oldregs, regs, inputs, tid, ta)], newTarget)
 ) ts (rev b, tRegs))"
 
-lemma target_tail_fold: "target_tail tRegs ts b = target_fold tRegs ts b"
+lemma target_tail_fold:
+"target_tail tRegs ts b = target_fold tRegs ts b"
 proof(induct ts arbitrary: tRegs b)
   case Nil
   then show ?case
@@ -236,7 +241,8 @@ next
     by (simp add: target_fold_def)
 qed
 
-lemma target_fold [code]: "target tRegs ts = target_fold tRegs ts []"
+lemma target_fold [code]:
+"target tRegs ts = target_fold tRegs ts []"
   by (metis append_self_conv2 rev.simps(1) target_tail_fold target_tail)
 
 \<comment> \<open>This will be replaced by symbolic regression in the executable\<close>
@@ -293,7 +299,7 @@ fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> tids list \<Right
   "put_updates _ _ _ [] e = Some e" |
   "put_updates _ _ _ ((_, None)#_) _ = None" |
   "put_updates log values current ((o_inx, Some (op, types))#ops) e = (
-    if enumerate_aexp_regs op = {} then Some e
+    if AExp.enumerate_regs op = {} then Some e
     else
       let
         walked = everything_walk_log op o_inx types log e current;
@@ -330,7 +336,8 @@ primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow
       Some e' \<Rightarrow> groupwise_generalise_and_update log e' t
   )"
 
-lemma groupwise_generalise_and_update_fold [code]: 
+lemma groupwise_generalise_and_update_fold [code]:
+
 "groupwise_generalise_and_update log e gs = fold (\<lambda>gp e.
   case generalise_and_update log e (fst gp) (snd gp) of
         None \<Rightarrow> e |
@@ -387,7 +394,8 @@ fun group_by :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a list 
       )
   )"
 
-lemma no_empty_groups: "\<forall>x \<in> set (group_by f xs). x \<noteq> []"
+lemma no_empty_groups:
+"\<forall>x \<in> set (group_by f xs). x \<noteq> []"
 proof(induct xs)
   case Nil
   then show ?case
@@ -475,7 +483,8 @@ primrec standardise_groups_aux :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \
         standardise_groups_aux e l t s
   )"
 
-lemma standardise_groups_aux_fold [code]: "standardise_groups_aux e l xs s = fold (\<lambda>h acc. 
+lemma standardise_groups_aux_fold [code]:
+"standardise_groups_aux e l xs s = fold (\<lambda>h acc. 
   let
       e' = replace_transitions acc (s acc l h)
     in
@@ -505,7 +514,7 @@ definition standardise_groups_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> 
 definition derestrict_transition :: "transition \<Rightarrow> transition" where
   "derestrict_transition t = (
     let relevant_vars = image V (fold (\<lambda>(r, u) acc. acc \<union> (AExp.enumerate_vars u)) (Updates t) {}) in
-    t\<lparr>Guard := filter (\<lambda>g. \<forall>v \<in> relevant_vars. \<not> gexp_constrains g v) (Guard t)\<rparr>
+    t\<lparr>Guards := filter (\<lambda>g. \<forall>v \<in> relevant_vars. \<not> gexp_constrains g v) (Guards t)\<rparr>
   )"
 
 fun find_initialisation_of_trace :: "nat \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> (tids \<times> transition) option" where
@@ -570,7 +579,7 @@ definition find_first_uses_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM \<Ri
 
 definition drop_all_guards :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
 "drop_all_guards e pta log m np = (let
-      derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, tran\<lparr>Guard := []\<rparr>)) e;
+      derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, tran\<lparr>Guards := []\<rparr>)) e;
       nondeterministic_pairs = sorted_list_of_fset (np derestricted)
     in
     case resolve_nondeterminism {} nondeterministic_pairs pta derestricted m (satisfies (set log)) np of
@@ -583,7 +592,7 @@ fun merge_if_same :: "iEFSM \<Rightarrow> log \<Rightarrow> (nat \<times> nat) l
   "merge_if_same e l ((r1, r2)#rs) = (
     let transitions = fimage (snd \<circ> snd) e in
     if \<exists>(t1, t2) |\<in>| ffilter (\<lambda>(t1, t2). t1 < t2) (transitions |\<times>| transitions).
-      same_structure t1 t2 \<and> r1 \<in> enumerate_registers t1 \<and> r2 \<in> enumerate_registers t2
+      same_structure t1 t2 \<and> r1 \<in> enumerate_regs t1 \<and> r2 \<in> enumerate_regs t2
     then
       let newE = replace_with e r1 r2 in
       if satisfies (set l) (tm newE) then

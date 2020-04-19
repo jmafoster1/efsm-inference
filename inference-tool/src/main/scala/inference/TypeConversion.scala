@@ -302,7 +302,7 @@ object TypeConversion {
       id,
       Transition.Label(t),
       toInt(Code_Numeral.integer_of_nat(Transition.Arity(t))),
-      isabellesal.Predicate.listOfPredicatesFrom(Transition.Guard(t).map(gexpToSALTranslator): _*),
+      isabellesal.Predicate.listOfPredicatesFrom(Transition.Guards(t).map(gexpToSALTranslator): _*),
       isabellesal.Expression.newOutputs(Transition.Outputs(t).map(aexpToSALTranslator): _*),
       Transition.Updates(t).map(updateToExp): _*)
   }

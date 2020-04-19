@@ -3,16 +3,18 @@ theory Increment_Reset
 begin
 
 definition initialiseReg :: "transition \<Rightarrow> nat \<Rightarrow> transition" where
-  "initialiseReg t newReg = \<lparr>Label = Label t, Arity = Arity t, Guard = Guard t, Outputs = Outputs t, Updates = ((newReg, L (Num 0))#Updates t)\<rparr>"
+  "initialiseReg t newReg = \<lparr>Label = Label t, Arity = Arity t, Guards = Guards t, Outputs = Outputs t, Updates = ((newReg, L (Num 0))#Updates t)\<rparr>"
 
-definition "guardMatch t1 t2  = (\<exists>n n'. Guard t1 = [gexp.Eq (V (vname.I 0)) (L (Num n))] \<and> Guard t2 = [gexp.Eq (V (vname.I 0)) (L (Num n'))])"
+definition "guardMatch t1 t2  = (\<exists>n n'. Guards t1 = [gexp.Eq (V (vname.I 0)) (L (Num n))] \<and> Guards t2 = [gexp.Eq (V (vname.I 0)) (L (Num n'))])"
 definition "outputMatch t1 t2 = (\<exists>m m'. Outputs t1 = [L (Num m)] \<and> Outputs t2 = [L (Num m')])"
 
-lemma guard_match_commute: "guardMatch t1 t2 = guardMatch t2 t1"
+lemma guard_match_commute:
+"guardMatch t1 t2 = guardMatch t2 t1"
   apply (simp add: guardMatch_def)
   by auto
 
-lemma guard_match_length: "length (Guard t1) \<noteq> 1 \<or> length (Guard t2) \<noteq> 1 \<Longrightarrow> \<not> guardMatch t1 t2"
+lemma guard_match_length:
+"length (Guards t1) \<noteq> 1 \<or> length (Guards t2) \<noteq> 1 \<Longrightarrow> \<not> guardMatch t1 t2"
   apply (simp add: guardMatch_def)
   by auto
 
@@ -23,8 +25,8 @@ fun insert_increment :: update_modifier where
      if guardMatch t1 t2 \<and> outputMatch t1 t2 then let 
           r = case max_reg new of None \<Rightarrow> 1 | Some r \<Rightarrow> r+ 1;
           newReg = R r;
-          newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guard = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t1)\<rparr>;
-          newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guard = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t2)\<rparr>;
+          newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guards = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t1)\<rparr>;
+          newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guards = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t2)\<rparr>;
           to_initialise = ffilter (\<lambda>(uid, (from, to), t). (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2) new;
           initialisedTrans = fimage (\<lambda>(uid, (from, to), t). (uid, initialiseReg t r)) to_initialise;
           initialised = replace_transitions new (sorted_list_of_fset initialisedTrans)
@@ -41,11 +43,13 @@ definition struct_replace_all :: "iEFSM \<Rightarrow> transition \<Rightarrow> t
     in
     replace_transitions e (sorted_list_of_fset replacements))"
 
-lemma output_match_symmetry: "(outputMatch t1 t2) = (outputMatch t2 t1)"
+lemma output_match_symmetry:
+"(outputMatch t1 t2) = (outputMatch t2 t1)"
   apply (simp add: outputMatch_def)
   by auto
 
-lemma guard_match_symmetry: "(guardMatch t1 t2) = (guardMatch t2 t1)"
+lemma guard_match_symmetry:
+"(guardMatch t1 t2) = (guardMatch t2 t1)"
   apply (simp add: guardMatch_def)
   by auto
 
@@ -56,8 +60,8 @@ fun insert_increment_2 :: update_modifier where
      if guardMatch t1 t2 \<and> outputMatch t1 t2 then let 
           r = case max_reg new of None \<Rightarrow> 1 | Some r \<Rightarrow> r + 1;
           newReg = R r;
-          newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guard = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t1)\<rparr>;
-          newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guard = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t2)\<rparr>;
+          newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guards = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t1)\<rparr>;
+          newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guards = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t2)\<rparr>;
           to_initialise = ffilter (\<lambda>(uid, (from, to), t). (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2) new;
           initialisedTrans = fimage (\<lambda>(uid, (from, to), t). (uid, initialiseReg t r)) to_initialise;
           initialised = replace_transitions new (sorted_list_of_fset initialisedTrans)

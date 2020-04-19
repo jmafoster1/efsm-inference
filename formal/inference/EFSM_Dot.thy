@@ -83,14 +83,16 @@ primrec guards2dot_aux :: "vname gexp list \<Rightarrow> String.literal list" wh
   "guards2dot_aux [] = []" |
   "guards2dot_aux (h#t) = (gexp2dot h)#(guards2dot_aux t)"
 
-lemma gexp2dot_aux_code [code]: "guards2dot_aux l = map gexp2dot l"
+lemma gexp2dot_aux_code [code]:
+"guards2dot_aux l = map gexp2dot l"
   by (induct l, simp_all)
 
 primrec updates2dot_aux :: "update_function list \<Rightarrow> String.literal list" where
   "updates2dot_aux [] = []" |
   "updates2dot_aux (h#t) = ((vname2dot (R (fst h)))+STR '' := ''+(aexp2dot (snd h)))#(updates2dot_aux t)"
 
-lemma updates2dot_aux_code [code]: "updates2dot_aux l = map (\<lambda>(r, u). (vname2dot (R r))+STR '' := ''+(aexp2dot u)) l"
+lemma updates2dot_aux_code [code]:
+"updates2dot_aux l = map (\<lambda>(r, u). (vname2dot (R r))+STR '' := ''+(aexp2dot u)) l"
   by (induct l, auto)
 
 primrec outputs2dot :: "output_function list \<Rightarrow> nat \<Rightarrow> String.literal list" where
@@ -109,7 +111,7 @@ definition latter2dot :: "transition \<Rightarrow> String.literal" where
   "latter2dot t = (let l = (join (outputs2dot (Outputs t) 1) STR '', '')+(updates2dot (Updates t)) in (if l = (STR '''') then (STR '''') else STR ''/''+l))"
 
 definition transition2dot :: "transition \<Rightarrow> String.literal" where
-  "transition2dot t = (Label t)+STR '':''+(show_nat (Arity t))+(guards2dot (Guard t))+(latter2dot t)"
+  "transition2dot t = (Label t)+STR '':''+(show_nat (Arity t))+(guards2dot (Guards t))+(latter2dot t)"
 
 definition efsm2dot :: "transition_matrix \<Rightarrow> String.literal" where
   "efsm2dot e = STR ''digraph EFSM{''+newline+

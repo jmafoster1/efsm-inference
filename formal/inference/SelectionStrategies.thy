@@ -46,7 +46,7 @@ definition naive_score_comprehensive :: strategy where
   "naive_score_comprehensive t1ID t2ID e = (let t1 = get_by_ids e t1ID; t2 = get_by_ids e t2ID in 
                                     if Label t1 = Label t2 \<and> Arity t1 = Arity t2 then
                                       if length (Outputs t1) = length (Outputs t2) then
-                                        card (set (Guard t1) \<inter> set (Guard t2)) + length (filter (\<lambda>(p1, p2). p1 = p2) (zip (Outputs t1) (Outputs t2)))
+                                        card (set (Guards t1) \<inter> set (Guards t2)) + length (filter (\<lambda>(p1, p2). p1 = p2) (zip (Outputs t1) (Outputs t2)))
                                       else 0
                                     else 0)"
 
@@ -59,7 +59,7 @@ definition naive_score_comprehensive_eq_high :: strategy where
                                            else
                                              if Label t1 = Label t2 \<and> Arity t1 = Arity t2 then
                                                if length (Outputs t1) = length (Outputs t2) then
-                                                 card (set (Guard t1) \<inter> set (Guard t2)) + length (filter (\<lambda>(p1, p2). p1 = p2) (zip (Outputs t1) (Outputs t2)))
+                                                 card (set (Guards t1) \<inter> set (Guards t2)) + length (filter (\<lambda>(p1, p2). p1 = p2) (zip (Outputs t1) (Outputs t2)))
                                                else 0
                                              else 0)"
 

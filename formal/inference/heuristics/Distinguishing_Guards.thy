@@ -8,7 +8,7 @@ definition put_updates :: "tids \<Rightarrow> update_function list \<Rightarrow>
   "put_updates uids updates iefsm = fimage (\<lambda>(uid, fromTo, tran).
       case uid of [u] \<Rightarrow>
       if u \<in> set uids then
-        (uid, fromTo, \<lparr>Label = Label tran, Arity = Arity tran, Guard = Guard tran, Outputs = Outputs tran, Updates = (Updates tran)@updates\<rparr>)
+        (uid, fromTo, \<lparr>Label = Label tran, Arity = Arity tran, Guards = Guards tran, Outputs = Outputs tran, Updates = (Updates tran)@updates\<rparr>)
       else
         (uid, fromTo, tran)
       ) iefsm"
@@ -48,10 +48,10 @@ definition find_distinguishing_guards :: "(inputs \<times> registers) list \<Rig
     if gs = {} then None else Some (Eps (\<lambda>g. g \<in> gs))
   )"
 declare find_distinguishing_guards_def [code del]
-code_printing constant find_distinguishing_guards \<rightharpoonup> (Scala) "Dirties.findDistinguishingGuard"
+code_printing constant find_distinguishing_guards \<rightharpoonup> (Scala) "Dirties.findDistinguishingGuards"
 
 definition add_guard :: "transition \<Rightarrow> vname gexp \<Rightarrow> transition" where
-  "add_guard t g = \<lparr>Label = Label t, Arity = Arity t, Guard = List.insert g (Guard t), Outputs = Outputs t, Updates = Updates t\<rparr>"
+  "add_guard t g = \<lparr>Label = Label t, Arity = Arity t, Guards = List.insert g (Guards t), Outputs = Outputs t, Updates = Updates t\<rparr>"
 
 definition distinguish :: "log \<Rightarrow> update_modifier" where
   "distinguish log t1ID t2ID s destMerge preDestMerge old np = (

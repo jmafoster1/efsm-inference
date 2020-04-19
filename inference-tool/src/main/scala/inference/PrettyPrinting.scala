@@ -61,7 +61,7 @@ object PrettyPrinter {
   def show(t: Transition.transition_ext[Unit]): String = {
     Transition.Label(t) +
       ":" + show(Transition.Arity(t)) +
-      guardsToString(Transition.Guard(t)) +
+      guardsToString(Transition.Guards(t)) +
       "/" +
       outputsToString(Transition.Outputs(t)) +
       updatesToString(Transition.Updates(t))

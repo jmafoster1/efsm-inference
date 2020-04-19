@@ -69,12 +69,12 @@ lemma mutex_not_gval: "mutex x y \<Longrightarrow> gval (gAnd y x) s \<noteq> tr
 
 definition choice_cases :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "choice_cases t1 t2 = (
-     if \<exists>(x, y) \<in> set (List.product (Guard t1) (Guard t2)). mutex x y then
+     if \<exists>(x, y) \<in> set (List.product (Guards t1) (Guards t2)). mutex x y then
        False
-     else if Guard t1 = Guard t2 then
-       satisfiable (fold gAnd (rev (Guard t1)) (gexp.Bc True))
+     else if Guards t1 = Guards t2 then
+       satisfiable (fold gAnd (rev (Guards t1)) (gexp.Bc True))
      else
-       satisfiable ((fold gAnd (rev (Guard t1@Guard t2)) (gexp.Bc True)))
+       satisfiable ((fold gAnd (rev (Guards t1@Guards t2)) (gexp.Bc True)))
    )"
 
 lemma existing_mutex_not_true: "\<exists>x\<in>set G. \<exists>y\<in>set G. mutex x y \<Longrightarrow> \<not> apply_guards G s"
@@ -91,10 +91,10 @@ lemma existing_mutex_not_true: "\<exists>x\<in>set G. \<exists>y\<in>set G. mute
 
 lemma [code]: "choice t t' = choice_cases t t'"
   apply (simp only: choice_alt choice_cases_def)
-  apply (case_tac "\<exists>x\<in>set (map (\<lambda>(x, y). mutex x y) (List.product (Guard t) (Guard t'))). x")
+  apply (case_tac "\<exists>x\<in>set (map (\<lambda>(x, y). mutex x y) (List.product (Guards t) (Guards t'))). x")
    apply (simp add: choice_alt_def)
    apply (metis existing_mutex_not_true Un_iff set_append)
-  apply (case_tac "Guard t = Guard t'")
+  apply (case_tac "Guards t = Guards t'")
    apply (simp add: choice_alt_def apply_guards_append)
    apply (simp add: apply_guards_foldr fold_conv_foldr satisfiable_def)
   by (simp add: apply_guards_foldr choice_alt_def fold_conv_foldr satisfiable_def)
@@ -103,7 +103,7 @@ fun guardMatch_code :: "vname gexp list \<Rightarrow> vname gexp list \<Rightarr
   "guardMatch_code [(gexp.Eq (V (vname.I i)) (L (Num n)))] [(gexp.Eq (V (vname.I i')) (L (Num n')))] = (i = 0 \<and> i' = 0)" |
   "guardMatch_code _ _ = False"
 
-lemma [code]: "guardMatch t1 t2 = guardMatch_code (Guard t1) (Guard t2)"
+lemma [code]: "guardMatch t1 t2 = guardMatch_code (Guards t1) (Guards t2)"
   apply (simp add: guardMatch_def)
   using guardMatch_code.elims(2) by fastforce
 
@@ -212,7 +212,7 @@ lemma gval_negate_not_invalid: "(gval (negate gs) (join_ir i ra) \<noteq> invali
 definition "dirty_always_different_outputs_direct_subsumption = always_different_outputs_direct_subsumption"
 
 lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (
-  if Guard t = [] then
+  if Guards t = [] then
     accepts_and_gets_us_to_both m1 m2 s s'
   else
     dirty_always_different_outputs_direct_subsumption m1 m2 s s' t
@@ -228,7 +228,7 @@ lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (
   by (simp add: always_different_outputs_direct_subsumption_def dirty_always_different_outputs_direct_subsumption_def)
 
 definition guard_subset_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "guard_subset_subsumption t1 t2 = (Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> set (Guard t1) \<subseteq> set (Guard t2) \<and> Outputs t1 = Outputs t2 \<and> Updates t1 = Updates t2)"
+  "guard_subset_subsumption t1 t2 = (Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> set (Guards t1) \<subseteq> set (Guards t2) \<and> Outputs t1 = Outputs t2 \<and> Updates t1 = Updates t2)"
 
 lemma guard_subset_subsumption: "guard_subset_subsumption t1 t2 \<Longrightarrow> directly_subsumes a b s s' t1 t2"
   apply (rule subsumes_in_all_contexts_directly_subsumes)
@@ -239,20 +239,20 @@ definition "guard_subset_eq_outputs_updates t1 t2 = (Label t1 = Label t2 \<and>
    Arity t1 = Arity t2 \<and>
    Outputs t1 = Outputs t2 \<and>
    Updates t1 = Updates t2 \<and>
-   set (Guard t2) \<subseteq> set (Guard t1))"
+   set (Guards t2) \<subseteq> set (Guards t1))"
 
 definition "guard_superset_eq_outputs_updates t1 t2 = (Label t1 = Label t2 \<and>
    Arity t1 = Arity t2 \<and>
    Outputs t1 = Outputs t2 \<and>
    Updates t1 = Updates t2 \<and>
-   set (Guard t2) \<supset> set (Guard t1))"
+   set (Guards t2) \<supset> set (Guards t1))"
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalisation_of t' t i r = (
     t' = remove_guard_add_update t i r \<and>
     i < Arity t \<and>
     r \<notin> set (map fst (Updates t)) \<and>
-    (length (filter (tests_input_equality i) (Guard t)) \<ge> 1)
+    (length (filter (tests_input_equality i) (Guards t)) \<ge> 1)
   )"
 
 lemma tests_input_equality:

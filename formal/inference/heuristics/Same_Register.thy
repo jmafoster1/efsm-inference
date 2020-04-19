@@ -28,7 +28,7 @@ fun u_replace_with :: "update_function \<Rightarrow> nat \<Rightarrow> nat \<Rig
 definition t_replace_with :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
   "t_replace_with t r1 r2 = \<lparr>Label = Label t,
                              Arity = Arity t,
-                             Guard = map (\<lambda>g. g_replace_with g r1 r2) (Guard t),
+                             Guards = map (\<lambda>g. g_replace_with g r1 r2) (Guards t),
                              Outputs = map (\<lambda>p. a_replace_with p r1 r2) (Outputs t),
                              Updates = map (\<lambda>u. u_replace_with u r1 r2) (Updates t)\<rparr>"
 

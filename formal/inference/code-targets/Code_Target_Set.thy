@@ -2,6 +2,12 @@ theory Code_Target_Set
   imports "HOL-Library.Cardinality"
 begin
 
+subsection\<open>Sets\<close>
+text\<open>While the default code generator setup for sets works fine, it does not make for particularly
+readable code. The reason for this is that the default setup needs to work with potentially infinite
+sets. All of the sets we need to use here are finite so we present an alternative setup for the
+basic set operations which generates much cleaner code.\<close>
+
 code_datatype set
 declare List.union_coset_filter [code del]
 declare insert_code [code del]

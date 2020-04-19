@@ -2,21 +2,25 @@ theory Store_Reuse_Subsumption
 imports Store_Reuse
 begin
 
-lemma generalisation_of_preserves: "is_generalisation_of t' t i r \<Longrightarrow>
+lemma generalisation_of_preserves:
+"is_generalisation_of t' t i r \<Longrightarrow>
     Label t = Label t' \<and>
     Arity t = Arity t' \<and>
     (Outputs t) = (Outputs t')"
   apply (simp add: is_generalisation_of_def)
   using remove_guard_add_update_preserves by auto
 
-lemma is_generalisation_of_guard_subset: "is_generalisation_of t' t i r \<Longrightarrow> set (Guard t') \<subseteq> set (Guard t)"
+lemma is_generalisation_of_guard_subset:
+"is_generalisation_of t' t i r \<Longrightarrow> set (Guards t') \<subseteq> set (Guards t)"
   by (simp add: is_generalisation_of_def remove_guard_add_update_def)
 
-lemma is_generalisation_of_medial: "is_generalisation_of t' t i r \<Longrightarrow> can_take_transition t ip rg \<longrightarrow> can_take_transition t' ip rg"
+lemma is_generalisation_of_medial:
+"is_generalisation_of t' t i r \<Longrightarrow> can_take_transition t ip rg \<longrightarrow> can_take_transition t' ip rg"
   using is_generalisation_of_guard_subset medial_subset generalisation_of_preserves
   by (metis (no_types, lifting) can_take_def can_take_transition_def)
 
-lemma is_generalisation_of_preserves_reg: 
+lemma is_generalisation_of_preserves_reg:
+
   "is_generalisation_of t' t i r \<Longrightarrow>
    apply_updates (Updates t) (join_ir ia c) c $ r = c $ r"
   by (simp add: is_generalisation_of_def r_not_updated_stays_the_same)
@@ -29,8 +33,8 @@ lemma is_generalisation_of_preserves_reg_2:
 
 lemma is_generalisation_of_apply_guards:
   "is_generalisation_of t' t i r \<Longrightarrow>
-   apply_guards (Guard t) j \<Longrightarrow>
-   apply_guards (Guard t') j"
+   apply_guards (Guards t) j \<Longrightarrow>
+   apply_guards (Guards t') j"
   using is_generalisation_of_guard_subset apply_guards_subset by blast
 
 (*
@@ -55,14 +59,15 @@ lemma generalise_output_eq:
   apply (rule nth_equalityI)
    apply (simp add: apply_outputs_preserves_length)
   apply (case_tac "ia = r")
-   apply (metis apply_outputs_literal apply_outputs_register)
-  by (metis apply_outputs_unupdated)
+   apply (simp add: apply_outputs_literal apply_outputs_preserves_length apply_outputs_register)
+  by (simp add: apply_outputs_preserves_length apply_outputs_unupdated)
 
 (* 
   This shows that if we can guarantee that the value of a particular register is the literal output
   then the generalised output subsumes the specific output
 *)
-lemma generalise_output_subsumes_original: 
+lemma generalise_output_subsumes_original:
+
   "Outputs t ! r = L v \<Longrightarrow>
    c $ p = Some v \<Longrightarrow>
    subsumes (generalise_output t p r) c t"
@@ -92,7 +97,8 @@ primrec stored_reused_aux :: "transition \<Rightarrow> transition \<Rightarrow> 
 definition stored_reused :: "transition \<Rightarrow> transition \<Rightarrow> (nat \<times> nat) option" where
   "stored_reused t' t = stored_reused_aux t' t (max (Transition.total_max_reg t) (Transition.total_max_reg t')) (max (length (Outputs t)) (length (Outputs t')))"
 
-lemma stored_reused_aux_is_generalised_output_of: 
+lemma stored_reused_aux_is_generalised_output_of:
+
 "stored_reused_aux t' t mr mp = Some (p, r) \<Longrightarrow> is_generalised_output_of t' t p r"
 proof(induct mr)
   case 0
@@ -136,7 +142,8 @@ lemma stored_reused_is_generalised_output_of:
    is_generalised_output_of t' t p r"
   by (simp add: stored_reused_def stored_reused_aux_is_generalised_output_of)
 
-lemma is_generalised_output_of_subsumes: 
+lemma is_generalised_output_of_subsumes:
+
   "is_generalised_output_of t' t r p \<Longrightarrow>
    nth (Outputs t) p = L v \<Longrightarrow>
    c $ r = Some v \<Longrightarrow>
@@ -144,10 +151,12 @@ lemma is_generalised_output_of_subsumes:
   apply (simp add: subsumes_def generalise_output_preserves can_take_transition_def can_take_def posterior_separate_def)
   by (simp add: generalise_output_def generalise_output_eq is_generalised_output_of_def)
 
-lemma lists_neq_if: "\<exists>i. l ! i \<noteq> l' ! i \<Longrightarrow> l \<noteq> l'"
+lemma lists_neq_if:
+"\<exists>i. l ! i \<noteq> l' ! i \<Longrightarrow> l \<noteq> l'"
   by auto
 
-lemma is_generalised_output_of_does_not_subsume: 
+lemma is_generalised_output_of_does_not_subsume:
+
   "is_generalised_output_of t' t r p \<Longrightarrow>
    p < length (Outputs t) \<Longrightarrow>
    nth (Outputs t) p = L v \<Longrightarrow>
@@ -166,7 +175,8 @@ lemma is_generalised_output_of_does_not_subsume:
     This shows that we can use the model checker to test whether the relevant register is the correct
     value for direct subsumption 
 *)
-lemma generalise_output_directly_subsumes_original: 
+lemma generalise_output_directly_subsumes_original:
+
       "stored_reused t' t = Some (r, p) \<Longrightarrow>
        nth (Outputs t) p = L v \<Longrightarrow>
        (\<forall>p. accepts_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
@@ -186,7 +196,8 @@ definition "generalise_output_context_check v r s\<^sub>1 s\<^sub>2 e\<^sub>1 e\
      accepts_trace (tm e\<^sub>2) t \<and> gets_us_to s\<^sub>2 (tm e\<^sub>2) 0 <>  t \<longrightarrow>
  (\<exists>c. anterior_context (tm e\<^sub>2) t = Some c \<and> c $ r = Some v))"
 
-lemma generalise_output_context_check_directly_subsumes_original: 
+lemma generalise_output_context_check_directly_subsumes_original:
+
       "stored_reused t' t = Some (r, p) \<Longrightarrow>
        nth (Outputs t) p = L v \<Longrightarrow>
        generalise_output_context_check v r s s' e1 e2 \<Longrightarrow>
@@ -203,7 +214,8 @@ definition generalise_output_direct_subsumption :: "transition \<Rightarrow> tra
   )"
 
 (* This allows us to just run the two functions for quick subsumption *)
-lemma generalise_output_directly_subsumes_original_executable: 
+lemma generalise_output_directly_subsumes_original_executable:
+
       "generalise_output_direct_subsumption t' t e e' s s' \<Longrightarrow> directly_subsumes e e' s s' t' t"
   apply (simp add: generalise_output_direct_subsumption_def)
   apply (case_tac "stored_reused t' t")
@@ -215,7 +227,8 @@ lemma generalise_output_directly_subsumes_original_executable:
      apply (simp add: generalise_output_context_check_directly_subsumes_original)
   by auto
 
-lemma original_does_not_subsume_generalised_output: 
+lemma original_does_not_subsume_generalised_output:
+
       "stored_reused t' t = Some (p, r) \<Longrightarrow>
        r < length (Outputs t) \<Longrightarrow>
        nth (Outputs t) r = L v \<Longrightarrow>
@@ -265,10 +278,25 @@ definition input_stored_in_reg :: "transition \<Rightarrow> transition \<Rightar
 definition initially_undefined_context_check :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "initially_undefined_context_check e r s = (\<forall>t. accepts_trace e t \<and> gets_us_to s e 0 <> t \<longrightarrow> (\<exists>a. (anterior_context (e) t) = Some a \<and> a $ r = None))"
 
-lemma no_incoming_to_zero: "\<forall>((from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
+lemma no_incoming_to_zero:
+"\<forall>((from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
        (aaa, ba) |\<in>| possible_steps e s d l i \<Longrightarrow>
        aaa \<noteq> 0"
-  using in_possible_steps by fast
+proof(induct e)
+  case empty
+  then show ?case
+    by (simp add: possible_steps_def)
+next
+  case (insert x e)
+  then show ?case
+    apply (cases x)
+    apply (case_tac a)
+    apply (simp add: possible_steps_def ffilter_finsert)
+    apply (case_tac "aa = s \<and> Label b = l \<and> length i = Arity b \<and> apply_guards (Guards b) (join_ir i d)")
+    apply simp
+     apply blast
+    by simp
+qed
 
 lemma no_return_to_zero:
   "\<forall>((from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
@@ -327,13 +355,15 @@ case (Cons a t)
     using no_accepting_return_to_zero by auto
 qed
 
-lemma anterior_context_empty: "\<forall>((from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
+lemma anterior_context_empty:
+"\<forall>((from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
            accepts_trace (e) t \<Longrightarrow> gets_us_to 0 (e) 0 <> t \<Longrightarrow> anterior_context (e) t = Some <>"
   using no_return_to_zero_must_be_empty[of e]
         anterior_context_empty
   by auto
 
-lemma no_incoming_to_initial_gives_empty_reg: "\<forall>((from, to), t) |\<in>| e. to \<noteq> 0 \<Longrightarrow> initially_undefined_context_check e r 0"
+lemma no_incoming_to_initial_gives_empty_reg:
+"\<forall>((from, to), t) |\<in>| e. to \<noteq> 0 \<Longrightarrow> initially_undefined_context_check e r 0"
   apply (simp only: initially_undefined_context_check_def)
   apply clarify
   apply standard
@@ -342,7 +372,8 @@ lemma no_incoming_to_initial_gives_empty_reg: "\<forall>((from, to), t) |\<in>| 
 
 definition "no_illegal_updates t r = (\<forall>u \<in> set (Updates t). fst u \<noteq> r)"
 
-lemma input_stored_in_reg_aux_is_generalisation_aux: "input_stored_in_reg_aux t' t mr mi = Some (i, r) \<Longrightarrow> is_generalisation_of t' t i r"
+lemma input_stored_in_reg_aux_is_generalisation_aux:
+"input_stored_in_reg_aux t' t mr mi = Some (i, r) \<Longrightarrow> is_generalisation_of t' t i r"
 proof(induct mi)
   case 0
   then show ?case
@@ -383,7 +414,8 @@ next
   qed
 qed
 
-lemma input_stored_in_reg_is_generalisation: "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow> is_generalisation_of t' t i r"
+lemma input_stored_in_reg_is_generalisation:
+"input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow> is_generalisation_of t' t i r"
   apply (simp add: input_stored_in_reg_def)
   apply (cases "input_stored_in_reg_aux t' t (total_max_reg e) (max (Arity t) (Arity t'))")
    apply simp
@@ -396,7 +428,8 @@ lemma input_stored_in_reg_is_generalisation: "input_stored_in_reg t' t e = Some 
 (*
   This allows us to call these three functions for direct subsumption of generalised
 *)
-lemma generalised_directly_subsumes_original: 
+lemma generalised_directly_subsumes_original:
+
   "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
    initially_undefined_context_check (tm e) r s' \<Longrightarrow>
    no_illegal_updates t r \<Longrightarrow>
@@ -427,16 +460,20 @@ lemma drop_guard_add_update_direct_subsumption_implies_direct_subsumption:
    apply (simp add: generalised_directly_subsumes_original)
   by simp
 
-lemma is_generalisation_of_constrains_input: "is_generalisation_of t' t i r \<Longrightarrow> \<exists>v. gexp.Eq (V (vname.I i)) (L v) \<in> set (Guard t)"
+lemma is_generalisation_of_constrains_input:
+"is_generalisation_of t' t i r \<Longrightarrow> \<exists>v. gexp.Eq (V (vname.I i)) (L v) \<in> set (Guards t)"
   by (simp add: is_generalisation_of_def)
 
-lemma is_generalisation_of_derestricts_input: "is_generalisation_of t' t i r \<Longrightarrow> \<forall>g \<in> set (Guard t'). \<not> gexp_constrains g (V (vname.I i))"
+lemma is_generalisation_of_derestricts_input:
+"is_generalisation_of t' t i r \<Longrightarrow> \<forall>g \<in> set (Guards t'). \<not> gexp_constrains g (V (vname.I i))"
   by (simp add: is_generalisation_of_def remove_guard_add_update_def)
 
-lemma is_generalisation_of_same_arity: "is_generalisation_of t' t i r \<Longrightarrow> Arity t = Arity t'"
+lemma is_generalisation_of_same_arity:
+"is_generalisation_of t' t i r \<Longrightarrow> Arity t = Arity t'"
   by (simp add: is_generalisation_of_def remove_guard_add_update_def)
 
-lemma is_generalisation_of_i_lt_arity: "is_generalisation_of t' t i r \<Longrightarrow> i < Arity t"
+lemma is_generalisation_of_i_lt_arity:
+"is_generalisation_of t' t i r \<Longrightarrow> i < Arity t"
   by (simp add: is_generalisation_of_def)
 
 lemma "\<forall>i. \<not> can_take_transition t i r \<and> \<not> can_take_transition t' i r \<Longrightarrow>
@@ -488,38 +525,12 @@ next
     by simp
 qed
 
-lemma gval_unconstrained: 
- " \<not> gexp_constrains a (V (vname.I i)) \<Longrightarrow>
-  i < length ia \<Longrightarrow>
-  v = ia ! i \<Longrightarrow>
-  gval a (join_ir ia c) = gval a (join_ir (list_update ia i v') c)"
-proof(induct a)
-  case (Bc x)
-  then show ?case 
-    by (simp add: unconstrained_variable_swap_gval)
-next
-  case (Eq x1a x2)
-  then show ?case 
-    using input_not_constrained_gval_swap_inputs by blast
-next
-  case (Gt x1a x2)
-  then show ?case 
-    using input_not_constrained_gval_swap_inputs by blast
-next
-  case (In x1a x2)
-  then show ?case 
-    using input_not_constrained_gval_swap_inputs by blast
-next
-  case (Nor a1 a2)
-  then show ?case
-    by simp
-qed
-
 (*
   If input i is stored in register r by transition t then if we can take transition t' then for some
   input I then transition t does not subsume t' 
 *)
-lemma input_stored_in_reg_not_subsumed: 
+lemma input_stored_in_reg_not_subsumed:
+
   "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
    \<exists>i. can_take_transition t' i c \<Longrightarrow>
    \<not> subsumes t c t'"
@@ -536,7 +547,7 @@ lemma input_stored_in_reg_not_subsumed:
    apply simp
    apply standard
     apply (simp add: apply_guards_def)
-    apply (metis gval_unconstrained is_generalisation_of_i_lt_arity is_generalisation_of_same_arity)
+    apply (metis input_not_constrained_gval_swap_inputs is_generalisation_of_i_lt_arity is_generalisation_of_same_arity)
    apply (simp add: apply_guards_def Bex_def)
    apply standard
    apply (rule_tac x="Eq (V (vname.I i)) (L (Num x1))" in exI)
@@ -545,13 +556,14 @@ lemma input_stored_in_reg_not_subsumed:
    apply simp
    apply standard
     apply (simp add: apply_guards_def)
-    apply (metis gval_unconstrained is_generalisation_of_i_lt_arity is_generalisation_of_same_arity)
+    apply (metis input_not_constrained_gval_swap_inputs is_generalisation_of_i_lt_arity is_generalisation_of_same_arity)
    apply (simp add: apply_guards_def Bex_def)
    apply standard
    apply (rule_tac x="Eq (V (vname.I i)) (L (value.Str x2))" in exI)
   by (simp add: join_ir_def input2state_nth is_generalisation_of_i_lt_arity str_not_num)
 
-lemma aval_updated: "(r, u) \<in> set U \<Longrightarrow> r \<notin> set (map fst (removeAll (r, u) U)) \<Longrightarrow> apply_updates U s c $ r = aval u s"
+lemma aval_updated:
+"(r, u) \<in> set U \<Longrightarrow> r \<notin> set (map fst (removeAll (r, u) U)) \<Longrightarrow> apply_updates U s c $ r = aval u s"
 proof(induct U)
   case Nil
   then show ?case
@@ -564,8 +576,9 @@ next
     by auto
 qed
 
-lemma can_take_append_subset: "set (Guard t') \<subset> set (Guard t) \<Longrightarrow>
-can_take a (Guard t @ Guard t') ia c = can_take a (Guard t) ia c"
+lemma can_take_append_subset:
+"set (Guards t') \<subset> set (Guards t) \<Longrightarrow>
+can_take a (Guards t @ Guards t') ia c = can_take a (Guards t) ia c"
   by (metis apply_guards_append apply_guards_subset_append can_take_def dual_order.strict_implies_order)
 
 (*
@@ -574,7 +587,7 @@ can_take a (Guard t @ Guard t') ia c = can_take a (Guard t) ia c"
 *)
 lemma general_not_subsume_orig:
   "Arity t' = Arity t \<Longrightarrow>
-   set (Guard t') \<subset> set (Guard t) \<Longrightarrow>
+   set (Guards t') \<subset> set (Guards t) \<Longrightarrow>
    (r, (V (I i))) \<in> set (Updates t') \<Longrightarrow>
    r \<notin> set (map fst (removeAll (r, V (I i)) (Updates t'))) \<Longrightarrow>
    r \<notin> set (map fst (Updates t)) \<Longrightarrow>
@@ -594,7 +607,8 @@ lemma general_not_subsume_orig:
   apply (rule_tac x="\<lambda>x. x = None" in exI)
   by (simp add: aval_updated can_take_transition_def can_take_def)
 
-lemma input_stored_in_reg_updates_reg: "input_stored_in_reg t2 t1 a = Some (i, r) \<Longrightarrow> (r, V (I i)) \<in> set (Updates t2)"
+lemma input_stored_in_reg_updates_reg:
+"input_stored_in_reg t2 t1 a = Some (i, r) \<Longrightarrow> (r, V (I i)) \<in> set (Updates t2)"
   using input_stored_in_reg_is_generalisation[of t2 t1 a i r]
   apply simp
   by (simp add: is_generalisation_of_def remove_guard_add_update_def)
@@ -624,7 +638,8 @@ lemma diff_outputs_direct_subsumption:
 definition not_updated :: "nat \<Rightarrow> transition \<Rightarrow> bool" where
   "not_updated r t = (filter (\<lambda>(r', _). r' = r) (Updates t) = [])"
 
-lemma not_updated: 
+lemma not_updated:
+
   assumes "not_updated r t2"
   shows "apply_updates (Updates t2) s s' $ r = s' $ r"
 proof-
@@ -644,7 +659,7 @@ qed
 lemma one_extra_update_subsumes:
   "Label t1 = Label t2 \<Longrightarrow>
    Arity t1 = Arity t2 \<Longrightarrow>
-   set (Guard t1) \<subseteq> set (Guard t2) \<Longrightarrow>
+   set (Guards t1) \<subseteq> set (Guards t2) \<Longrightarrow>
    Outputs t1 = Outputs t2 \<Longrightarrow>
    Updates t1 = (r, u) # Updates t2 \<Longrightarrow>
    not_updated r t2 \<Longrightarrow>
@@ -656,7 +671,7 @@ lemma one_extra_update_subsumes:
 lemma one_extra_update_directly_subsumes:
   "Label t1 = Label t2 \<Longrightarrow>
    Arity t1 = Arity t2 \<Longrightarrow>
-   set (Guard t1) \<subseteq> set (Guard t2) \<Longrightarrow>
+   set (Guards t1) \<subseteq> set (Guards t2) \<Longrightarrow>
    Outputs t1 = Outputs t2 \<Longrightarrow>
    Updates t1 = (r, u)#(Updates t2) \<Longrightarrow>
    not_updated r t2 \<Longrightarrow>
@@ -674,7 +689,7 @@ lemma one_extra_update_directly_subsumes:
 definition "one_extra_update t1 t2 s2 e2 = (
   Label t1 = Label t2 \<and>
   Arity t1 = Arity t2 \<and>
-  set (Guard t1) \<subseteq> set (Guard t2) \<and>
+  set (Guards t1) \<subseteq> set (Guards t2) \<and>
   Outputs t1 = Outputs t2 \<and>
   Updates t1 \<noteq> [] \<and>
   tl (Updates t1) = (Updates t2) \<and>
@@ -683,7 +698,8 @@ definition "one_extra_update t1 t2 s2 e2 = (
   initially_undefined_context_check e2 r s2)
 )"
 
-lemma must_be_an_update: "U1 \<noteq> [] \<Longrightarrow> fst (hd U1) = r \<and> tl U1 = U2 \<Longrightarrow> \<exists>u. U1 = (r, u)#(U2)"
+lemma must_be_an_update:
+"U1 \<noteq> [] \<Longrightarrow> fst (hd U1) = r \<and> tl U1 = U2 \<Longrightarrow> \<exists>u. U1 = (r, u)#(U2)"
   by (metis eq_fst_iff hd_Cons_tl)
 
 lemma one_extra_update_direct_subsumption:

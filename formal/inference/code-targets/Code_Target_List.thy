@@ -2,8 +2,16 @@ theory Code_Target_List
 imports Main
 begin
 
+subsection\<open>Lists\<close>
+text\<open>Here we define some equivalent definitions which make for a faster implementation. We also
+make use of the \texttt{code_printing} statement such that native Scala implementations of common
+list operations are used instead of redefining them. This allows us to use the \texttt{par}
+construct such that the parallel implementations are used, which makes for an even faster
+implementation.\<close>
+
 declare List.insert_def [code del]
 declare member_rec [code del]
+
 lemma [code]: "List.insert x xs = (if List.member xs x then xs else x#xs)"
   by (simp add: in_set_member)
 
@@ -14,7 +22,7 @@ declare map_filter_map_filter [code_unfold del]
 (* Use the native implementations of list functions *)
 definition "flatmap l f = List.maps f l"
 
-lemma [code]:"List.maps f l = flatmap l f"
+lemma [code]: "List.maps f l = flatmap l f"
   by (simp add: flatmap_def)
 
 definition "map_code l f = List.map f l"
@@ -46,7 +54,8 @@ declare foldl_conv_fold[symmetric]
 lemma fold_conv_foldl [code]: "fold f xs s = foldl (\<lambda>x s. f s x) s xs"
   by (simp add: foldl_conv_fold)
 
-lemma code_list_eq [code]: "HOL.equal xs ys \<longleftrightarrow> length xs = length ys \<and> (\<forall>(x,y) \<in> set (zip xs ys). x = y)"
+lemma code_list_eq [code]:
+  "HOL.equal xs ys \<longleftrightarrow> length xs = length ys \<and> (\<forall>(x,y) \<in> set (zip xs ys). x = y)"
   apply (simp add: HOL.equal_class.equal_eq)
   by (simp add: Ball_set list_eq_iff_zip_eq)
 
@@ -64,15 +73,7 @@ fun upt_tailrec :: "nat \<Rightarrow> nat \<Rightarrow> nat list \<Rightarrow> n
   "upt_tailrec i (Suc j) l = (if i \<le> j then upt_tailrec i j ([j]@l) else l)"
 
 lemma upt_arbitrary_l: "(upt i j)@l = upt_tailrec i j l"
-proof(induct i j l rule: upt_tailrec.induct)
-  case (1 i l)
-  then show ?case
-    by simp
-next
-  case (2 i j l)
-  then show ?case
-    by simp
-qed
+  by (induct i j l rule: upt_tailrec.induct, auto)
 
 lemma [code]: "upt i j = upt_tailrec i j []"
   by (metis upt_arbitrary_l append_Nil2)
@@ -117,6 +118,5 @@ code_printing
   | constant "nth" \<rightharpoonup> (Scala) "_(Code'_Numeral.integer'_of'_nat((_)).toInt)"
   | constant "foldl" \<rightharpoonup> (Scala) "Dirties.foldl"
   | constant "hd" \<rightharpoonup> (Scala) "_.head"
-
 
 end

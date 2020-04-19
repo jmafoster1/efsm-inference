@@ -6,7 +6,8 @@ declare One_nat_def [simp del]
 declare gval.simps [simp]
 declare value_eq_def [simp]
 
-lemma satisfies_context_eq_contra: "c (V v) = {|cexp.Eq x|} \<Longrightarrow>
+lemma satisfies_context_eq_contra:
+"c (V v) = {|cexp.Eq x|} \<Longrightarrow>
        r v \<noteq> Some x \<Longrightarrow>
        \<not> satisfies_context r c"
   apply (simp add: satisfies_context_def consistent_def datastate2context_def)
@@ -16,7 +17,8 @@ lemma satisfies_context_eq_contra: "c (V v) = {|cexp.Eq x|} \<Longrightarrow>
   apply (case_tac "r v")
   by auto
 (*
-lemma satisfies_context_eq: "c (V v) = {|cexp.Eq x|} \<Longrightarrow>
+lemma satisfies_context_eq:
+"c (V v) = {|cexp.Eq x|} \<Longrightarrow>
        satisfies_context r c \<Longrightarrow>
        r v = Some x"
   using satisfies_context_eq_contra
@@ -27,19 +29,22 @@ primrec updates :: "vname \<Rightarrow> update_function list \<Rightarrow> bool"
   "updates _ [] = False" |
   "updates v (h#t) = (if fst h = v then True else updates v t)"
 
-lemma same_posterior: "ra \<noteq> V (R r) \<Longrightarrow>
+lemma same_posterior:
+"ra \<noteq> V (R r) \<Longrightarrow>
       \<not> updates (R r) (Updates t1) \<Longrightarrow>
-      Guard t1 = [gexp.Eq (V (I 1)) (L (Num n))] \<Longrightarrow>
+      Guards t1 = [gexp.Eq (V (I 1)) (L (Num n))] \<Longrightarrow>
       posterior_separate c [gexp.Eq (V (I 1)) (L (Num n))] ((R r, Plus (V (R r)) (V (I 1))) # Updates t1) ra = posterior c t1 ra"
   apply (simp add: posterior_def posterior_separate_def Let_def)
   apply clarify
   apply (simp add: remove_obsolete_constraints_def)
   by auto
 (*
-lemma test: "r \<noteq> V (I 1) \<Longrightarrow> medial c [gexp.Eq (V (I 1)) (L (Num n))] r = c r"
+lemma test:
+"r \<noteq> V (I 1) \<Longrightarrow> medial c [gexp.Eq (V (I 1)) (L (Num n))] r = c r"
   by (simp add: medial_def List.maps_def pairs2context_def cval_def)
 *)
-lemma not_updates_remains_same: "\<not> updates (R r) u \<Longrightarrow>
+lemma not_updates_remains_same:
+"\<not> updates (R r) u \<Longrightarrow>
     Contexts.apply_updates x c u (V (R r)) = c (V (R r))"
 proof(induct u)
   case Nil
@@ -56,7 +61,8 @@ next
     by auto
 qed
 
-lemma aux1: "consistent (medial c [gexp.Eq (V (I 1)) (L (Num n))]) \<Longrightarrow>
+lemma aux1:
+"consistent (medial c [gexp.Eq (V (I 1)) (L (Num n))]) \<Longrightarrow>
        c (V (R r)) = {|cexp.Eq (Num (m - n))|} \<Longrightarrow>
        \<not> updates (R r) (Updates t1) \<Longrightarrow>
        posterior_separate c [gexp.Eq (V (I 1)) (L (Num n))] (Updates t1) (V (R r)) = c (V (R r))"

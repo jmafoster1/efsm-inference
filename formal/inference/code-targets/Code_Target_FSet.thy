@@ -1,25 +1,26 @@
 theory Code_Target_FSet
   imports "EFSM.FSet_Utils"
 begin
+subsection\<open>Finite Sets\<close>
+text\<open>Here we define the operations on the \texttt{fset} datatype in terms of lists rather than sets.
+This allows the Scala implementation to skip a case match each time, which makes for cleaner and
+slightly faster code.\<close>
 
 code_datatype fset_of_list
 
 declare FSet.fset_of_list.rep_eq [code]
-
-lemma fset_of_list_remdups [simp]: "fset_of_list (remdups l) = fset_of_list l"
-  apply (induct l)
-   apply simp
-  by (simp add: finsert_absorb fset_of_list_elem)
 
 lemma fprod_code [code]:
   "fprod (fset_of_list xs) (fset_of_list ys) = fset_of_list (remdups [(x, y). x \<leftarrow> xs, y \<leftarrow> ys])"
   apply (simp add: fprod_def fset_of_list_def fset_both_sides Abs_fset_inverse)
   by auto
 
-lemma fminus_fset_filter [code]: "fset_of_list A -  xs = fset_of_list (remdups (filter (\<lambda>x. x |\<notin>| xs) A))"
+lemma fminus_fset_filter [code]:
+"fset_of_list A -  xs = fset_of_list (remdups (filter (\<lambda>x. x |\<notin>| xs) A))"
   by auto
 
-lemma sup_fset_fold [code]: "(fset_of_list f1) |\<union>| (fset_of_list f2) = fset_of_list (remdups (f1@f2))"
+lemma sup_fset_fold [code]:
+"(fset_of_list f1) |\<union>| (fset_of_list f2) = fset_of_list (remdups (f1@f2))"
   by simp
 
 lemma bot_fset [code]: "{||} = fset_of_list []"
@@ -28,7 +29,8 @@ lemma bot_fset [code]: "{||} = fset_of_list []"
 lemma finsert [code]: "finsert a (fset_of_list as) = fset_of_list (List.insert a as)"
   by (simp add: List.insert_def finsert_absorb fset_of_list_elem)
 
-lemma ffilter_filter [code]: "ffilter f (fset_of_list as) = fset_of_list (List.filter f (remdups as))"
+lemma ffilter_filter [code]:
+  "ffilter f (fset_of_list as) = fset_of_list (List.filter f (remdups as))"
   by simp
 
 lemma fimage_map [code]: "fimage f (fset_of_list as) = fset_of_list (List.map f (remdups as))"
@@ -82,7 +84,8 @@ next
     by (simp add: add.commute fold_plus_sum_list_rev fset_of_list.rep_eq fsum.F.rep_eq fSum_def)
 qed
 
-lemma code_fset_eq [code]: "HOL.equal X (fset_of_list Y) \<longleftrightarrow> size X = length (remdups Y) \<and> (\<forall>x |\<in>| X. List.member Y x)"
+lemma code_fset_eq [code]:
+  "HOL.equal X (fset_of_list Y) \<longleftrightarrow> size X = length (remdups Y) \<and> (\<forall>x |\<in>| X. List.member Y x)"
   apply (simp only: HOL.equal_class.equal_eq fset_eq_alt)
   apply (simp only: size)
   using fmember by fastforce
@@ -130,18 +133,16 @@ lemma [code]: "fMax (fset_of_list (h#t)) = last (nativeSort (h#t))"
   by (metis Max.set_eq_fold fMax_fold hd_rev list.simps(3) nativeSort_def set_empty2 set_sort sorted_Max sorted_sort)
 
 definition "list_max l = fold max l"
+code_printing constant list_max \<rightharpoonup> (Scala) "_.par.fold((_))(Orderings.max)"
 
 lemma [code]: "fMax (fset_of_list (h#t)) = list_max t h"
   by (metis fMax_fold list_max_def)
 
-code_printing constant list_max \<rightharpoonup> (Scala) "_.par.fold((_))(Orderings.max)"
-
 definition "list_min l = fold min l"
+code_printing constant list_min \<rightharpoonup> (Scala) "_.par.fold((_))(Orderings.min)"
 
 lemma [code]: "fMin (fset_of_list (h#t)) = list_min t h"
   by (metis fMin_fold list_min_def)
-
-code_printing constant list_min \<rightharpoonup> (Scala) "_.par.fold((_))(Orderings.min)"
 
 lemma fis_singleton_code [code]: "fis_singleton s = (size s = 1)"
   apply (simp add: fis_singleton_def is_singleton_def)

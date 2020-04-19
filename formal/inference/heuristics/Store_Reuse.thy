@@ -88,7 +88,7 @@ definition total_max_reg :: "iEFSM \<Rightarrow> nat" where
 definition remove_guard_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
   "remove_guard_add_update t inputX outputX = \<lparr>
     Label = (Label t), Arity = (Arity t),
-    Guard = (filter (\<lambda>g. \<not> gexp_constrains g (V (vname.I inputX))) (Guard t)),
+    Guards = (filter (\<lambda>g. \<not> gexp_constrains g (V (vname.I inputX))) (Guards t)),
     Outputs = (Outputs t),
     Updates = (outputX, (V (vname.I inputX)))#(Updates t)
   \<rparr>"
@@ -97,7 +97,7 @@ definition generalise_output :: "transition \<Rightarrow> nat \<Rightarrow> nat 
   "generalise_output t regX outputX = \<lparr>
       Label = (Label t),
       Arity = (Arity t),
-      Guard = (Guard t),
+      Guards = (Guards t),
       Outputs = list_update (Outputs t) outputX (V (R regX)),
       Updates = (Updates t)
     \<rparr>"
@@ -137,13 +137,16 @@ definition modify :: "match list \<Rightarrow> tids \<Rightarrow> tids \<Rightar
 definition heuristic_1 :: "log \<Rightarrow> update_modifier" where
   "heuristic_1 l t1 t2 s new _ old np = modify (find_intertrace_matches l old) t1 t2 new"
 
-lemma remove_guard_add_update_preserves_outputs: "Outputs (remove_guard_add_update t i r) = Outputs t"
+lemma remove_guard_add_update_preserves_outputs:
+"Outputs (remove_guard_add_update t i r) = Outputs t"
   by (simp add: remove_guard_add_update_def)
 
-lemma remove_guard_add_update_preserves_label: "Label (remove_guard_add_update t i r) = Label t"
+lemma remove_guard_add_update_preserves_label:
+"Label (remove_guard_add_update t i r) = Label t"
   by (simp add: remove_guard_add_update_def)
 
-lemma remove_guard_add_update_preserves_arity: "Arity (remove_guard_add_update t i r) = Arity t"
+lemma remove_guard_add_update_preserves_arity:
+"Arity (remove_guard_add_update t i r) = Arity t"
   by (simp add: remove_guard_add_update_def)
 
 lemmas remove_guard_add_update_preserves = remove_guard_add_update_preserves_label
@@ -153,22 +156,27 @@ lemmas remove_guard_add_update_preserves = remove_guard_add_update_preserves_lab
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and> 
                                     i < Arity t \<and>
-                                    (\<exists>v. Eq (V (vname.I i)) (L v) \<in> set (Guard t)) \<and>
+                                    (\<exists>v. Eq (V (vname.I i)) (L v) \<in> set (Guards t)) \<and>
                                     r \<notin> set (map fst (Updates t)))"
 
-lemma generalise_output_preserves_label: "Label (generalise_output t r p) = Label t"
+lemma generalise_output_preserves_label:
+"Label (generalise_output t r p) = Label t"
   by (simp add: generalise_output_def)
 
-lemma generalise_output_preserves_arity: "Arity (generalise_output t r p) = Arity t"
+lemma generalise_output_preserves_arity:
+"Arity (generalise_output t r p) = Arity t"
   by (simp add: generalise_output_def)
 
-lemma generalise_output_preserves_guard: "Guard (generalise_output t r p) = Guard t"
+lemma generalise_output_preserves_guard:
+"Guards (generalise_output t r p) = Guards t"
   by (simp add: generalise_output_def)
 
-lemma generalise_output_preserves_output_length: "length (Outputs (generalise_output t r p)) = length (Outputs t)"
+lemma generalise_output_preserves_output_length:
+"length (Outputs (generalise_output t r p)) = length (Outputs t)"
   by (simp add: generalise_output_def)
 
-lemma generalise_output_preserves_updates: "Updates (generalise_output t r p) = Updates t"
+lemma generalise_output_preserves_updates:
+"Updates (generalise_output t r p) = Updates t"
   by (simp add: generalise_output_def)
 
 lemmas generalise_output_preserves = generalise_output_preserves_label
@@ -189,7 +197,7 @@ definition generalise_input :: "transition \<Rightarrow> nat \<Rightarrow> nat \
   "generalise_input t r i = \<lparr>
       Label = Label t,
       Arity = Arity t,
-      Guard = map (\<lambda>g. case g of Eq (V (I i')) (L _) \<Rightarrow> if i = i' then Eq (V (I i)) (V (R r)) else g | _ \<Rightarrow> g) (Guard t),
+      Guards = map (\<lambda>g. case g of Eq (V (I i')) (L _) \<Rightarrow> if i = i' then Eq (V (I i)) (V (R r)) else g | _ \<Rightarrow> g) (Guards t),
       Outputs = Outputs t,
       Updates = Updates t
     \<rparr>"
@@ -210,7 +218,7 @@ fun structural_count :: "((transition \<times> ioTag \<times> nat) \<times> (tra
 definition remove_guards_add_update :: "transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> transition" where
   "remove_guards_add_update t inputX outputX = \<lparr>
     Label = (Label t), Arity = (Arity t),
-    Guard = [],
+    Guards = [],
     Outputs = (Outputs t),
     Updates = (outputX, (V (vname.I inputX)))#(Updates t)
   \<rparr>"

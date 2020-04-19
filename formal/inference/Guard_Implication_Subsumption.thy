@@ -7,7 +7,7 @@ lemma guard_implication:
   Arity t1 = Arity t2 \<Longrightarrow>
   Outputs t1 = Outputs t2 \<Longrightarrow>
   Updates t1 = Updates t2 \<Longrightarrow>
-  (\<forall>s. apply_guards (Guard t1) s \<longrightarrow> apply_guards (Guard t2) s) \<Longrightarrow>
+  (\<forall>s. apply_guards (Guards t1) s \<longrightarrow> apply_guards (Guards t2) s) \<Longrightarrow>
   subsumes t2 c t1"
   apply (rule subsumption)
   unfolding can_take_transition_def can_take_def
@@ -24,7 +24,7 @@ definition guard_implication_subsumption :: "transition \<Rightarrow> transition
     Arity t1 = Arity t2 \<and>
     Outputs t1 = Outputs t2 \<and>
     Updates t1 = Updates t2 \<and>
-    gexp_implies (fold gAnd (Guard t1) (Bc True)) (fold gAnd (Guard t2) (Bc True))
+    gexp_implies (fold gAnd (Guards t1) (Bc True)) (fold gAnd (Guards t2) (Bc True))
   )"
 
 lemma guard_implication_subsumption:

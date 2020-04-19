@@ -5,7 +5,7 @@ directories
   "code-targets"
 theories
   "code-targets/Code_Target_List"
-  "Guard_Implication_Subsumption"
+  "Guards_Implication_Subsumption"
   "Inference"
   "Code_Generation"
   "EFSM_Dot"
@@ -17,7 +17,7 @@ theories
   "heuristics/Store_Reuse"
   "heuristics/Increment_Reset"
   (* "heuristics/Increment_Reset_Subsumption" *)
-  "heuristics/Distinguishing_Guards"
+  "heuristics/Distinguishing_Guardss"
   "heuristics/Store_Reuse_Subsumption"
   "heuristics/Weak_Subsumption"
   "heuristics/Separation"
