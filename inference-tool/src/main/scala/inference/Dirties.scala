@@ -9,6 +9,7 @@ import org.apache.commons.io.FileUtils
 
 import java.util.UUID.randomUUID
 import java.util.Collections
+import java.util.stream.Collectors;
 
 import scala.collection.JavaConversions._
 
@@ -475,7 +476,7 @@ object Dirties {
 
     var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 5, 2));
 
-    guardMem.find(f => gp.isCorrect(f)) match {
+    guardMem.find(f => gp.isCorrect(f)  && checkVarConsistent(intTerms++stringTerms, f)) match {
       case None => {}
       case Some(best) => {
         Log.root.debug("    Best memoised guard is: " + best)
@@ -503,6 +504,21 @@ object Dirties {
   }
 
   var funMem: List[mint.inference.gp.tree.Node[mint.tracedata.types.VariableAssignment[_]]] = List()
+
+  def checkVarConsistent(terms: List[mint.inference.gp.tree.terminals.VariableTerminal[_]], best:Node[VariableAssignment[_]]): Boolean = {
+    val termVarNames = terms.stream().filter(x => !x.isConstant()).collect(Collectors.toList()).map(x => x.toString())
+    val latentVarNames = terms.stream().filter(x => x.isLatent()).collect(Collectors.toList()).map(x => x.toString())
+
+    return (
+      best.varsInTree().stream().filter(x => !x.isConstant()).allMatch(
+        x => termVarNames.contains(x.toString())
+      )
+      &&
+      best.varsInTree().stream().filter(x => x.isLatent()).allMatch(
+        x => latentVarNames.contains(x.toString())
+      )
+    )
+  }
 
   def getUpdate(
     r: Nat.nat,
@@ -609,11 +625,12 @@ object Dirties {
 
     var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 2, 2));
 
-    funMem.find(f => gp.isCorrect(f)) match {
+    funMem.find(f => gp.isCorrect(f) && checkVarConsistent(intTerms++stringTerms, f)) match {
       case None => {}
       case Some(best) => {
         Log.root.debug("    Best memoised update is: " + best)
         Log.root.debug("    Best update is correct")
+
         return Some(TypeConversion.toAExp(best))
       }
     }
@@ -625,8 +642,10 @@ object Dirties {
 
     if (gp.isCorrect(best)) {
       Log.root.debug("    Best update is correct")
-      funMem = best :: funMem
-      return Some((TypeConversion.toAExp(best)))
+      val aexp = TypeConversion.toAExp(best)
+      if (!AExp.is_lit(aexp))
+        funMem = best :: funMem
+      return Some(aexp)
     } else {
       return None
     }
@@ -758,11 +777,12 @@ object Dirties {
 
     var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 2, 2));
 
-    funMem.find(f => gp.isCorrect(f)) match {
+    funMem.find(f => gp.isCorrect(f) && checkVarConsistent(intTerms++stringTerms, f)) match {
       case None => {}
       case Some(best) => {
         Log.root.debug("    Best memoised output is: " + best)
         Log.root.debug("    Best output is correct")
+
         return Some((TypeConversion.toAExp(best), getTypes(best)))
       }
     }
@@ -774,8 +794,11 @@ object Dirties {
 
     if (gp.isCorrect(best)) {
       Log.root.debug("  Best output is correct")
+      val aexp = TypeConversion.toAExp(best)
+      if (!AExp.is_lit(aexp))
+        funMem = best :: funMem
       funMem = best :: funMem
-      return Some((TypeConversion.toAExp(best), getTypes(best)))
+      return Some((aexp, getTypes(best)))
     } else {
       return getOutput(maxReg, values, inputs, registers, outputs, true)
     }

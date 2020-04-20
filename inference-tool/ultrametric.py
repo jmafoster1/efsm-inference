@@ -16,10 +16,10 @@ from itertools import takewhile, dropwhile
 import pandas as pd
 import matplotlib.pyplot as plt
 
-state_re = re.compile("INFO  ROOT - states: (\d+)")
-transition_re = re.compile("INFO  ROOT - transitions: (\d+)")
-transition_re = re.compile("INFO  ROOT - transitions: (\d+)")
-runtime_re = re.compile("INFO  ROOT - Completed in (\d+)h (\d+)m (\d+).\d+s")
+state_re = re.compile("states: (\d+)")
+transition_re = re.compile("transitions: (\d+)")
+transition_re = re.compile("transitions: (\d+)")
+runtime_re = re.compile("Completed in (\d+)h (\d+)m (\d+).\d+s")
 
 
 def total_states():
@@ -124,7 +124,7 @@ for program in programs:
                   if os.path.isdir(d) and os.path.exists(d + "testLog.json")])
     
         data = pd.DataFrame(columns=columns)
-    
+
         for root in roots:
             info = {}
             with open(root + "testLog.json") as f:

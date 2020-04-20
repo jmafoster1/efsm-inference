@@ -443,6 +443,7 @@ export_code
   nondeterministic_pairs_labar
   nondeterministic_pairs_labar_dest
   (* Utilities *)
+  AExp.is_lit
   min
   max
   drop_pta_guards
