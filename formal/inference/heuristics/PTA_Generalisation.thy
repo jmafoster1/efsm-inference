@@ -24,40 +24,73 @@ fun same_structure_opt :: "transition option \<Rightarrow> transition option \<R
 
 type_synonym transition_group = "transition option \<times> nat \<times> ((tids \<times> transition) list)"
 
-\<comment> \<open>Cannot be converted to fold due to early termination in the "true" case of the "if"\<close>
-fun assign_group :: "transition_group list \<Rightarrow> (transition option \<Rightarrow> nat) \<Rightarrow> transition option \<Rightarrow> tids \<times> transition \<Rightarrow> transition_group list" where
-  "assign_group [] count prev (tid, t) = [(prev, count prev, [(tid, t)])]" |
-  "assign_group ((prev', c, gp)#t) count prev (tid, tr) = (
-    if same_structure_opt prev prev' \<and> (\<forall>(_, tr') \<in> set gp. same_structure tr tr') \<and> count prev = c then
-      (prev', c, List.insert (tid, tr) gp)#t
-    else
-      (prev', c, gp)#assign_group t count prev (tid, tr)
+fun group_by :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a list list" where
+  "group_by _ [] = []" |
+  "group_by f (h#t) = (
+    let groups = group_by f t in
+    case groups of
+      [] \<Rightarrow> [[h]] |
+      (g#gs) \<Rightarrow> (
+        case g of
+          [] \<Rightarrow> [h]#gs |
+          (x#xs) \<Rightarrow> if f h x then (h#g)#gs else [h]#g#gs
+      )
   )"
 
-fun trace_group_transitions :: "(transition option \<Rightarrow> nat) \<Rightarrow> iEFSM \<Rightarrow> execution \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> transition option \<Rightarrow> transition option \<Rightarrow> transition_group list \<Rightarrow> transition_group list" where
-  "trace_group_transitions _ _ [] _ _ _ _ g = g" |
-  "trace_group_transitions count e ((l, i, outputs)#trace) s r prevGroup currentGroup g = (
+lemma no_empty_groups:
+"\<forall>x \<in> set (group_by f xs). x \<noteq> []"
+proof(induct xs)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a xs)
+  then show ?case
+    apply simp
+    apply (cases "group_by f xs")
+     apply simp
+    by (case_tac aa, auto)
+qed
+
+definition "make_transition label inputs outputs = \<lparr>Label=label, Arity=length inputs, Guards=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>"
+
+fun observe_all :: "iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (tids \<times> transition) list" where
+  "observe_all _ _ _ [] = []" |
+  "observe_all e s r ((l, i)#es)  =
+    (case random_member (i_possible_steps e s r l i)  of
+      (Some (ids, s', t)) \<Rightarrow> (((ids, t)#(observe_all e s' (apply_updates (Updates t) (join_ir i r) r) es))) |
+      _ \<Rightarrow> []
+    )"
+
+definition transition_groups_exec :: "iEFSM \<Rightarrow> execution \<Rightarrow> (tids \<times> transition) list list" where
+  "transition_groups_exec e t = (
     let
-      (id, s', t) = fthe_elem (i_possible_steps e s r l i);
-      r' = apply_updates (Updates t) (join_ir i r) r;
-      newCount = (\<lambda>x. if x = Some t then Suc (count x) else count x)
+      walked = observe_all e 0 <> (map (\<lambda>(x, y, _). (x, y)) t)
     in
-    if (same_structure_opt (Some t) currentGroup) then
-      trace_group_transitions newCount e trace s' r' prevGroup currentGroup (assign_group g count prevGroup (id, t))
-    else
-      trace_group_transitions newCount e trace s' r' currentGroup (Some t) (assign_group g count currentGroup (id, t))
+    group_by (\<lambda>(_, t1) (_, t2). same_structure t1 t2) walked
   )"
 
-definition log_group_transitions :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group list" where
-  "log_group_transitions e l = fold (\<lambda>t acc. trace_group_transitions (\<lambda>x. 0) e t 0 <> None None acc) l []"
+fun tag :: "(label \<times> arity \<times> arity) option \<Rightarrow> (tids \<times> transition) list list \<Rightarrow> ((label \<times> arity \<times> arity) option \<times> (label \<times> arity \<times> arity) \<times> (tids \<times> transition) list) list" where
+  "tag _ [] = []" |
+  "tag t (g#gs) = (
+    let
+      head = snd (hd g);
+      struct = (Label head, Arity head, length (Outputs head))
+    in
+    (t, struct, g)#(tag (Some struct) gs)
+  )"
 
 definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list" where
   "transition_groups e l = (
     let
-      group_dict = log_group_transitions e l
+      trace_groups = map (transition_groups_exec e) l;
+      tagged = map (tag None) trace_groups;
+      flat =  sort (fold (@) tagged []);
+      pairwise_groups = group_by (\<lambda>(l1, s1, g1) (l2, s2, g2). l1 = l2 \<and> s1 = s2) flat
     in
-      map (snd \<circ> snd) group_dict
+    map (\<lambda>l. fold (@) (map ((\<lambda>(l1, s1, g1). g1)) l) []) pairwise_groups
   )"
+
 
 (* Assign registers and inputs with associated outputs to the correct training set based on       *)
 (* transition id                                                                                  *)
@@ -380,34 +413,6 @@ definition max_min_outputs :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<tim
       if satisfies (set l) (tm e_min) then outputs_min else
       ts
 )"
-
-fun group_by :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a list list" where
-  "group_by _ [] = []" |
-  "group_by f (h#t) = (
-    let groups = group_by f t in
-    case groups of
-      [] \<Rightarrow> [[h]] |
-      (g#gs) \<Rightarrow> (
-        case g of
-          [] \<Rightarrow> [h]#gs |
-          (x#xs) \<Rightarrow> if f h x then (h#g)#gs else [h]#g#gs
-      )
-  )"
-
-lemma no_empty_groups:
-"\<forall>x \<in> set (group_by f xs). x \<noteq> []"
-proof(induct xs)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a xs)
-  then show ?case
-    apply simp
-    apply (cases "group_by f xs")
-     apply simp
-    by (case_tac aa, auto)
-qed
 
 definition "updates_same u1 u2 = (fst u1 = fst u2)"
 

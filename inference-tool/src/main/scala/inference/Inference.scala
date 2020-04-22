@@ -38,6 +38,9 @@ object equal {
     val `HOL.equal` = (a: (A, B), b: (A, B)) =>
       Product_Type.equal_proda[A, B](a, b)
   }
+  implicit def `String.equal_literal`: equal[String] = new equal[String] {
+    val `HOL.equal` = (a: String, b: String) => a == b
+  }
   implicit def `Optiona.equal_option`[A : equal]: equal[Option[A]] = new
     equal[Option[A]] {
     val `HOL.equal` = (a: Option[A], b: Option[A]) =>
@@ -240,6 +243,11 @@ object preorder {
     val `Orderings.less` = (a: (A, B), b: (A, B)) =>
       Product_Lexorder.less_prod[A, B](a, b)
   }
+  implicit def `String.preorder_literal`: preorder[String] = new
+    preorder[String] {
+    val `Orderings.less_eq` = (a: String, b: String) => a <= b
+    val `Orderings.less` = (a: String, b: String) => a < b
+  }
   implicit def `Option_ord.preorder_option`[A : preorder]: preorder[Option[A]] =
     new preorder[Option[A]] {
     val `Orderings.less_eq` = (a: Option[A], b: Option[A]) =>
@@ -342,6 +350,10 @@ object order {
     val `Orderings.less` = (a: (A, B), b: (A, B)) =>
       Product_Lexorder.less_prod[A, B](a, b)
   }
+  implicit def `String.order_literal`: order[String] = new order[String] {
+    val `Orderings.less_eq` = (a: String, b: String) => a <= b
+    val `Orderings.less` = (a: String, b: String) => a < b
+  }
   implicit def `Option_ord.order_option`[A : order]: order[Option[A]] = new
     order[Option[A]] {
     val `Orderings.less_eq` = (a: Option[A], b: Option[A]) =>
@@ -442,6 +454,11 @@ object linorder {
       Product_Lexorder.less_eq_prod[A, B](a, b)
     val `Orderings.less` = (a: (A, B), b: (A, B)) =>
       Product_Lexorder.less_prod[A, B](a, b)
+  }
+  implicit def `String.linorder_literal`: linorder[String] = new
+    linorder[String] {
+    val `Orderings.less_eq` = (a: String, b: String) => a <= b
+    val `Orderings.less` = (a: String, b: String) => a < b
   }
   implicit def `Option_ord.linorder_option`[A : linorder]: linorder[Option[A]] =
     new linorder[Option[A]] {
@@ -6458,6 +6475,25 @@ Transition.transition_ext[Unit]))],
 
 object PTA_Generalisation {
 
+def tag(uu: Option[(String, (Nat.nat, Nat.nat))],
+         x1: List[List[(List[Nat.nat], Transition.transition_ext[Unit])]]):
+      List[(Option[(String, (Nat.nat, Nat.nat))],
+             ((String, (Nat.nat, Nat.nat)),
+               List[(List[Nat.nat], Transition.transition_ext[Unit])]))]
+  =
+  (uu, x1) match {
+  case (uu, Nil) => Nil
+  case (t, g :: gs) =>
+    {
+      val head: Transition.transition_ext[Unit] = (g.head)._2
+      val struct: (String, (Nat.nat, Nat.nat)) =
+        (Transition.Label[Unit](head),
+          (Transition.Arity[Unit](head),
+            Nat.Nata((Transition.Outputs[Unit](head)).par.length)));
+      (t, (struct, g)) :: tag(Some[(String, (Nat.nat, Nat.nat))](struct), gs)
+    }
+}
+
 def thisa[A](x: Option[A]): A = {
                                   val (Some(y)): Option[A] = x;
                                   y
@@ -7155,119 +7191,68 @@ def everything_walk_log(f: AExp.aexp[VName.vname], fi: Nat.nat,
       scala.collection.immutable.Map().withDefaultValue(None), gp)),
                             log)
 
-def same_structure_opt(x0: Option[Transition.transition_ext[Unit]],
-                        x1: Option[Transition.transition_ext[Unit]]):
-      Boolean
+def observe_all(uu: FSet.fset[(List[Nat.nat],
+                                ((Nat.nat, Nat.nat),
+                                  Transition.transition_ext[Unit]))],
+                 uv: Nat.nat, uw: Map[Nat.nat, Option[Value.value]],
+                 x3: List[(String, List[Value.value])]):
+      List[(List[Nat.nat], Transition.transition_ext[Unit])]
   =
-  (x0, x1) match {
-  case (None, None) => true
-  case (Some(ta), Some(t)) => Transition.same_structure(ta, t)
-  case (Some(v), None) => false
-  case (None, Some(v)) => false
-}
-
-def assign_group(x0: List[(Option[Transition.transition_ext[Unit]],
+  (uu, uv, uw, x3) match {
+  case (uu, uv, uw, Nil) => Nil
+  case (e, s, r, (l, i) :: es) =>
+    (Dirties.randomMember[(List[Nat.nat],
                             (Nat.nat,
-                              List[(List[Nat.nat],
-                                     Transition.transition_ext[Unit])]))],
-                  count: Option[Transition.transition_ext[Unit]] => Nat.nat,
-                  prev: Option[Transition.transition_ext[Unit]],
-                  x3: (List[Nat.nat], Transition.transition_ext[Unit])):
-      List[(Option[Transition.transition_ext[Unit]],
-             (Nat.nat, List[(List[Nat.nat], Transition.transition_ext[Unit])]))]
-  =
-  (x0, count, prev, x3) match {
-  case (Nil, count, prev, (tid, t)) =>
-    List((prev, (count(prev), List((tid, t)))))
-  case ((preva, (c, gp)) :: t, count, prev, (tid, tr)) =>
-    (if ((same_structure_opt(prev,
-                              preva)) && ((Lista.list_all[(List[Nat.nat],
-                    Transition.transition_ext[Unit])](((a:
-                  (List[Nat.nat], Transition.transition_ext[Unit]))
-                 =>
-                {
-                  val (_, aa): (List[Nat.nat], Transition.transition_ext[Unit])
-                    = a;
-                  Transition.same_structure(tr, aa)
-                }),
-               gp)) && (Nat.equal_nata(count(prev), c))))
-      (preva,
-        (c, Lista.insert[(List[Nat.nat],
-                           Transition.transition_ext[Unit])]((tid, tr), gp))) ::
-        t
-      else (preva, (c, gp)) :: assign_group(t, count, prev, (tid, tr)))
+                              Transition.transition_ext[Unit]))](Inference.i_possible_steps(e,
+             s, r, l, i))
+       match {
+       case None => Nil
+       case Some((ids, (sa, t))) =>
+         (ids, t) ::
+           observe_all(e, sa,
+                        Transition.apply_updates(Transition.Updates[Unit](t),
+          AExp.join_ir(i, r), r),
+                        es)
+     })
 }
 
-def trace_group_transitions(uu: Option[Transition.transition_ext[Unit]] =>
-                                  Nat.nat,
-                             uv: FSet.fset[(List[Nat.nat],
-     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-                             x2: List[(String,
-(List[Value.value], List[Value.value]))],
-                             uw: Nat.nat, ux: Map[Nat.nat, Option[Value.value]],
-                             uy: Option[Transition.transition_ext[Unit]],
-                             uz: Option[Transition.transition_ext[Unit]],
-                             g: List[(Option[Transition.transition_ext[Unit]],
-                                       (Nat.nat,
- List[(List[Nat.nat], Transition.transition_ext[Unit])]))]):
-      List[(Option[Transition.transition_ext[Unit]],
-             (Nat.nat, List[(List[Nat.nat], Transition.transition_ext[Unit])]))]
+def transition_groups_exec(e: FSet.fset[(List[Nat.nat],
+  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+                            t: List[(String,
+                                      (List[Value.value], List[Value.value]))]):
+      List[List[(List[Nat.nat], Transition.transition_ext[Unit])]]
   =
-  (uu, uv, x2, uw, ux, uy, uz, g) match {
-  case (uu, uv, Nil, uw, ux, uy, uz, g) => g
-  case (count, e, (l, (i, outputs)) :: trace, s, r, prevGroup, currentGroup, g)
-    => {
-         val (id, (sa, t)):
-               (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))
-           = FSet.fthe_elem[(List[Nat.nat],
-                              (Nat.nat,
-                                Transition.transition_ext[Unit]))](Inference.i_possible_steps(e,
-               s, r, l, i))
-         val ra: Map[Nat.nat, Option[Value.value]] =
-           Transition.apply_updates(Transition.Updates[Unit](t),
-                                     AExp.join_ir(i, r), r)
-         val newCount: Option[Transition.transition_ext[Unit]] => Nat.nat =
-           ((x: Option[Transition.transition_ext[Unit]]) =>
-             (if (Optiona.equal_optiona[Transition.transition_ext[Unit]](x,
-                                  Some[Transition.transition_ext[Unit]](t)))
-               Nat.Suc(count(x)) else count(x)));
-         (if (same_structure_opt(Some[Transition.transition_ext[Unit]](t),
-                                  currentGroup))
-           trace_group_transitions(newCount, e, trace, sa, ra, prevGroup,
-                                    currentGroup,
-                                    assign_group(g, count, prevGroup, (id, t)))
-           else trace_group_transitions(newCount, e, trace, sa, ra,
- currentGroup, Some[Transition.transition_ext[Unit]](t),
- assign_group(g, count, currentGroup, (id, t))))
-       }
-}
-
-def log_group_transitions(e: FSet.fset[(List[Nat.nat],
- ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-                           l: List[List[(String,
-  (List[Value.value], List[Value.value]))]]):
-      List[(Option[Transition.transition_ext[Unit]],
-             (Nat.nat, List[(List[Nat.nat], Transition.transition_ext[Unit])]))]
-  =
-  Lista.fold[List[(String, (List[Value.value], List[Value.value]))],
-              List[(Option[Transition.transition_ext[Unit]],
-                     (Nat.nat,
-                       List[(List[Nat.nat],
-                              Transition.transition_ext[Unit])]))]](((t:
-                                List[(String,
-                                       (List[Value.value], List[Value.value]))])
-                               =>
-                              ((a: List[(Option[Transition.transition_ext[Unit]],
-  (Nat.nat, List[(List[Nat.nat], Transition.transition_ext[Unit])]))])
-                                 =>
-                                trace_group_transitions(((_:
-                    Option[Transition.transition_ext[Unit]])
-                   =>
-                  Nat.zero_nata),
-                 e, t, Nat.zero_nata,
-                 scala.collection.immutable.Map().withDefaultValue(None), None,
-                 None, a))),
-                             l, Nil)
+  {
+    val a: List[(List[Nat.nat], Transition.transition_ext[Unit])] =
+      observe_all(e, Nat.zero_nata,
+                   scala.collection.immutable.Map().withDefaultValue(None),
+                   Lista.map[(String, (List[Value.value], List[Value.value])),
+                              (String,
+                                List[Value.value])](((a:
+                (String, (List[Value.value], List[Value.value])))
+               =>
+              {
+                val (x, (y, _)):
+                      (String, (List[Value.value], List[Value.value]))
+                  = a;
+                (x, y)
+              }),
+             t));
+    group_by[(List[Nat.nat],
+               Transition.transition_ext[Unit])](((aa:
+             (List[Nat.nat], Transition.transition_ext[Unit]))
+            =>
+           {
+             val (_, t1): (List[Nat.nat], Transition.transition_ext[Unit]) = aa;
+             ((ab: (List[Nat.nat], Transition.transition_ext[Unit])) =>
+               {
+                 val (_, ac): (List[Nat.nat], Transition.transition_ext[Unit]) =
+                   ab;
+                 Transition.same_structure(t1, ac)
+               })
+           }),
+          a)
+  }
 
 def transition_groups(e: FSet.fset[(List[Nat.nat],
                                      ((Nat.nat, Nat.nat),
@@ -7278,32 +7263,147 @@ List[Value.value]))]]):
       List[List[(List[Nat.nat], Transition.transition_ext[Unit])]]
   =
   {
-    val a: List[(Option[Transition.transition_ext[Unit]],
-                  (Nat.nat,
-                    List[(List[Nat.nat], Transition.transition_ext[Unit])]))]
-      = log_group_transitions(e, l);
-    Lista.map[(Option[Transition.transition_ext[Unit]],
-                (Nat.nat,
-                  List[(List[Nat.nat], Transition.transition_ext[Unit])])),
-               List[(List[Nat.nat],
-                      Transition.transition_ext[Unit])]](Fun.comp[(Nat.nat,
+    val trace_groups:
+          List[List[List[(List[Nat.nat], Transition.transition_ext[Unit])]]]
+      = Lista.map[List[(String, (List[Value.value], List[Value.value]))],
+                   List[List[(List[Nat.nat],
+                               Transition.transition_ext[Unit])]]](((a:
+                               List[(String,
+                                      (List[Value.value], List[Value.value]))])
+                              =>
+                             transition_groups_exec(e, a)),
+                            l)
+    val tagged:
+          List[List[(Option[(String, (Nat.nat, Nat.nat))],
+                      ((String, (Nat.nat, Nat.nat)),
+                        List[(List[Nat.nat],
+                               Transition.transition_ext[Unit])]))]]
+      = Lista.map[List[List[(List[Nat.nat], Transition.transition_ext[Unit])]],
+                   List[(Option[(String, (Nat.nat, Nat.nat))],
+                          ((String, (Nat.nat, Nat.nat)),
                             List[(List[Nat.nat],
-                                   Transition.transition_ext[Unit])]),
+                                   Transition.transition_ext[Unit])]))]](((a:
+                                     List[List[(List[Nat.nat],
+         Transition.transition_ext[Unit])]])
+                                    =>
+                                   tag(None, a)),
+                                  trace_groups)
+    val flat: List[(Option[(String, (Nat.nat, Nat.nat))],
+                     ((String, (Nat.nat, Nat.nat)),
+                       List[(List[Nat.nat], Transition.transition_ext[Unit])]))]
+      = Lista.sort_key[(Option[(String, (Nat.nat, Nat.nat))],
+                         ((String, (Nat.nat, Nat.nat)),
                            List[(List[Nat.nat],
-                                  Transition.transition_ext[Unit])],
-                           (Option[Transition.transition_ext[Unit]],
-                             (Nat.nat,
+                                  Transition.transition_ext[Unit])])),
+                        (Option[(String, (Nat.nat, Nat.nat))],
+                          ((String, (Nat.nat, Nat.nat)),
+                            List[(List[Nat.nat],
+                                   Transition.transition_ext[Unit])]))](((x:
+                                    (Option[(String, (Nat.nat, Nat.nat))],
+                                      ((String, (Nat.nat, Nat.nat)),
+List[(List[Nat.nat], Transition.transition_ext[Unit])])))
+                                   =>
+                                  x),
+                                 Lista.fold[List[(Option[(String,
+                   (Nat.nat, Nat.nat))],
+           ((String, (Nat.nat, Nat.nat)),
+             List[(List[Nat.nat], Transition.transition_ext[Unit])]))],
+     List[(Option[(String, (Nat.nat, Nat.nat))],
+            ((String, (Nat.nat, Nat.nat)),
+              List[(List[Nat.nat],
+                     Transition.transition_ext[Unit])]))]](((a:
+                       List[(Option[(String, (Nat.nat, Nat.nat))],
+                              ((String, (Nat.nat, Nat.nat)),
+                                List[(List[Nat.nat],
+                                       Transition.transition_ext[Unit])]))])
+                      =>
+                     (b: List[(Option[(String, (Nat.nat, Nat.nat))],
+                                ((String, (Nat.nat, Nat.nat)),
+                                  List[(List[Nat.nat],
+ Transition.transition_ext[Unit])]))])
+                       =>
+                     a ++ b),
+                    tagged, Nil))
+    val a: List[List[(Option[(String, (Nat.nat, Nat.nat))],
+                       ((String, (Nat.nat, Nat.nat)),
+                         List[(List[Nat.nat],
+                                Transition.transition_ext[Unit])]))]]
+      = group_by[(Option[(String, (Nat.nat, Nat.nat))],
+                   ((String, (Nat.nat, Nat.nat)),
+                     List[(List[Nat.nat],
+                            Transition.transition_ext[Unit])]))](((a:
+                             (Option[(String, (Nat.nat, Nat.nat))],
+                               ((String, (Nat.nat, Nat.nat)),
+                                 List[(List[Nat.nat],
+Transition.transition_ext[Unit])])))
+                            =>
+                           {
+                             val (l1, (s1, _)):
+                                   (Option[(String, (Nat.nat, Nat.nat))],
+                                     ((String, (Nat.nat, Nat.nat)),
+                                       List[(List[Nat.nat],
+      Transition.transition_ext[Unit])]))
+                               = a;
+                             ((aa: (Option[(String, (Nat.nat, Nat.nat))],
+                                     ((String, (Nat.nat, Nat.nat)),
+                                       List[(List[Nat.nat],
+      Transition.transition_ext[Unit])])))
+                                =>
+                               {
+                                 val (l2, (s2, _)):
+                                       (Option[(String, (Nat.nat, Nat.nat))],
+ ((String, (Nat.nat, Nat.nat)),
+   List[(List[Nat.nat], Transition.transition_ext[Unit])]))
+                                   = aa;
+                                 (Optiona.equal_optiona[(String,
+                  (Nat.nat,
+                    Nat.nat))](l1, l2)) && (Product_Type.equal_proda[String,
+                              (Nat.nat, Nat.nat)](s1, s2))
+                               })
+                           }),
+                          flat);
+    Lista.map[List[(Option[(String, (Nat.nat, Nat.nat))],
+                     ((String, (Nat.nat, Nat.nat)),
+                       List[(List[Nat.nat],
+                              Transition.transition_ext[Unit])]))],
+               List[(List[Nat.nat],
+                      Transition.transition_ext[Unit])]](((la:
+                     List[(Option[(String, (Nat.nat, Nat.nat))],
+                            ((String, (Nat.nat, Nat.nat)),
+                              List[(List[Nat.nat],
+                                     Transition.transition_ext[Unit])]))])
+                    =>
+                   Lista.fold[(Option[(String, (Nat.nat, Nat.nat))],
+                                ((String, (Nat.nat, Nat.nat)),
+                                  List[(List[Nat.nat],
+ Transition.transition_ext[Unit])])),
                                List[(List[Nat.nat],
-                                      Transition.transition_ext[Unit])]))](((aa:
-                                       (Nat.nat,
- List[(List[Nat.nat], Transition.transition_ext[Unit])]))
-                                      =>
-                                     aa._2),
-                                    ((aa:
-(Option[Transition.transition_ext[Unit]],
-  (Nat.nat, List[(List[Nat.nat], Transition.transition_ext[Unit])])))
-                                       =>
-                                      aa._2)),
+                                      Transition.transition_ext[Unit])]](Fun.comp[List[(List[Nat.nat],
+         Transition.transition_ext[Unit])],
+   (List[(List[Nat.nat], Transition.transition_ext[Unit])]) =>
+     List[(List[Nat.nat], Transition.transition_ext[Unit])],
+   (Option[(String, (Nat.nat, Nat.nat))],
+     ((String, (Nat.nat, Nat.nat)),
+       List[(List[Nat.nat],
+              Transition.transition_ext[Unit])]))](((aa:
+               List[(List[Nat.nat], Transition.transition_ext[Unit])])
+              =>
+             (b: List[(List[Nat.nat], Transition.transition_ext[Unit])]) =>
+             aa ++ b),
+            ((aa: (Option[(String, (Nat.nat, Nat.nat))],
+                    ((String, (Nat.nat, Nat.nat)),
+                      List[(List[Nat.nat], Transition.transition_ext[Unit])])))
+               =>
+              {
+                val (_, (_, g1)):
+                      (Option[(String, (Nat.nat, Nat.nat))],
+                        ((String, (Nat.nat, Nat.nat)),
+                          List[(List[Nat.nat],
+                                 Transition.transition_ext[Unit])]))
+                  = aa;
+                g1
+              })),
+                                  la, Nil)),
                   a)
   }
 
