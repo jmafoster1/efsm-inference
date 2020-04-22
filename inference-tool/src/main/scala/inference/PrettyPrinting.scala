@@ -67,7 +67,18 @@ object PrettyPrinter {
       updatesToString(Transition.Updates(t))
   }
 
-  def show(event: (Nat.nat, (Map[Nat.nat,Option[Value.value]], (Map[Nat.nat,Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit])))))): String = event match {
+  def show(t: Transition.transition_ext[Unit],
+    os: List[AExp.aexp[VName.vname]],
+    us: List[(Nat.nat, AExp.aexp[VName.vname])]): String = {
+    Transition.Label(t) +
+      ":" + show(Transition.Arity(t)) +
+      guardsToString(Transition.Guards(t)) +
+      "/" +
+      outputsToString(os) +
+      updatesToString(us)
+  }
+
+  def show(event: (Nat.nat, (Map[Nat.nat, Option[Value.value]], (Map[Nat.nat, Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit])))))): String = event match {
     case (s, (oldRegs, (newRegs, (inputs, (id, t))))) => s"(${show(s)}, ${show(oldRegs)}, ${show(newRegs)}, ${show(inputs)}, ${show(id)}, ${show(t)})"
   }
 
@@ -206,7 +217,7 @@ object PrettyPrinter {
     return s"{${pairs.mkString(", ")}}"
   }
 
-  def to_JSON(e: (String, (List[Value.value], (Nat.nat, (Nat.nat, (Map[Nat.nat,Option[Value.value]], (List[Nat.nat], (List[Value.value], List[Option[Value.value]])))))))): String = e match {
+  def to_JSON(e: (String, (List[Value.value], (Nat.nat, (Nat.nat, (Map[Nat.nat, Option[Value.value]], (List[Nat.nat], (List[Value.value], List[Option[Value.value]])))))))): String = e match {
     case (label, (inputs, (currentState, (nextState, (regs, (tids, (expected, actual))))))) => s"""{"label": "$label", "inputs": ${show(inputs)}, "currentState": ${show(currentState)}, "nextState": ${show(nextState)}, "regs": ${to_JSON(regs)}, "transition": ${show(tids)}, "expected": ${show(expected)}, "actual": ${show(actual)}}"""
   }
 

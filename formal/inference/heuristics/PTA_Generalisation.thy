@@ -51,12 +51,79 @@ fun trace_group_transitions :: "(transition option \<Rightarrow> nat) \<Rightarr
 definition log_group_transitions :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group list" where
   "log_group_transitions e l = fold (\<lambda>t acc. trace_group_transitions (\<lambda>x. 0) e t 0 <> None None acc) l []"
 
-definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list" where
-  "transition_groups e l = (
+definition transition_groups_old :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list" where
+  "transition_groups_old e l = (
     let
       group_dict = log_group_transitions e l
     in
       map (snd \<circ> snd) group_dict
+  )"
+
+fun group_by :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a list list" where
+  "group_by _ [] = []" |
+  "group_by f (h#t) = (
+    let groups = group_by f t in
+    case groups of
+      [] \<Rightarrow> [[h]] |
+      (g#gs) \<Rightarrow> (
+        case g of
+          [] \<Rightarrow> [h]#gs |
+          (x#xs) \<Rightarrow> if f h x then (h#g)#gs else [h]#g#gs
+      )
+  )"
+
+lemma no_empty_groups:
+"\<forall>x \<in> set (group_by f xs). x \<noteq> []"
+proof(induct xs)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a xs)
+  then show ?case
+    apply simp
+    apply (cases "group_by f xs")
+     apply simp
+    by (case_tac aa, auto)
+qed
+
+definition "make_transition label inputs outputs = \<lparr>Label=label, Arity=length inputs, Guards=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>"
+
+fun observe_all :: "iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (tids \<times> transition) list" where
+  "observe_all _ _ _ [] = []" |
+  "observe_all e s r ((l, i)#es)  =
+    (case random_member (i_possible_steps e s r l i)  of
+      (Some (ids, s', t)) \<Rightarrow> (((ids, t)#(observe_all e s' (apply_updates (Updates t) (join_ir i r) r) es))) |
+      _ \<Rightarrow> []
+    )"
+
+definition transition_groups_exec :: "iEFSM \<Rightarrow> execution \<Rightarrow> (tids \<times> transition) list list" where
+  "transition_groups_exec e t = (
+    let
+      walked = observe_all e 0 <> (map (\<lambda>(x, y, _). (x, y)) t)
+    in
+    group_by (\<lambda>(_, t1) (_, t2). same_structure t1 t2) walked
+  )"
+
+fun tag :: "(label \<times> arity \<times> arity) option \<Rightarrow> (tids \<times> transition) list list \<Rightarrow> ((label \<times> arity \<times> arity) option \<times> (label \<times> arity \<times> arity) \<times> (tids \<times> transition) list) list" where
+  "tag _ [] = []" |
+  "tag t (g#gs) = (
+    let
+      head = snd (hd g);
+      struct = (Label head, Arity head, length (Outputs head))
+    in
+    (t, struct, g)#(tag (Some struct) gs)
+  )"
+
+definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list" where
+  "transition_groups e l = (
+    let
+      trace_groups = map (transition_groups_exec e) l;
+      tagged = map (tag None) trace_groups;
+      flat =  sort (fold (@) tagged []);
+      pairwise_groups = group_by (\<lambda>(l1, s1, g1) (l2, s2, g2). l1 = l2 \<and> s1 = s2) flat
+    in
+    map (\<lambda>l. fold (@) (map ((\<lambda>(l1, s1, g1). g1)) l) []) pairwise_groups
   )"
 
 (* Assign registers and inputs with associated outputs to the correct training set based on       *)
@@ -381,34 +448,6 @@ definition max_min_outputs :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<tim
       ts
 )"
 
-fun group_by :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a list list" where
-  "group_by _ [] = []" |
-  "group_by f (h#t) = (
-    let groups = group_by f t in
-    case groups of
-      [] \<Rightarrow> [[h]] |
-      (g#gs) \<Rightarrow> (
-        case g of
-          [] \<Rightarrow> [h]#gs |
-          (x#xs) \<Rightarrow> if f h x then (h#g)#gs else [h]#g#gs
-      )
-  )"
-
-lemma no_empty_groups:
-"\<forall>x \<in> set (group_by f xs). x \<noteq> []"
-proof(induct xs)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a xs)
-  then show ?case
-    apply simp
-    apply (cases "group_by f xs")
-     apply simp
-    by (case_tac aa, auto)
-qed
-
 definition "updates_same u1 u2 = (fst u1 = fst u2)"
 
 definition cartProdN :: "'a list list \<Rightarrow> 'a list list" where
@@ -441,7 +480,7 @@ primrec find_updates_outputs :: "update_function list list \<Rightarrow> output_
   "find_updates_outputs [] _ _ _ _ = None" |
   "find_updates_outputs (h#t) p e l g = (
     let
-      updates = fold (\<lambda>(tids, t) acc. replace_transition acc tids (replace_updates t h)) g e
+      updates = fold (\<lambda>(tids, t) acc. replace_transition acc tids (t\<lparr>Updates := h\<rparr>)) g e
     in
       case find_outputs p updates l g of
         Some pp \<Rightarrow> Some (pp, h) |
@@ -454,13 +493,32 @@ definition power_list :: "('a::linorder) list \<Rightarrow> 'a list list" where
 definition power_lists :: "'a::linorder list list \<Rightarrow> 'a list list" where
   "power_lists l = fold List.union (map power_list l) []"
 
+definition output_configs :: "(tids \<times> transition) list \<Rightarrow> output_function list list" where
+  "output_configs g = (
+    let 
+      configs = cartProdN (transpose (remdups (map (Outputs \<circ> snd) g)));
+      filtered = filter (\<lambda>x. \<forall>p \<in> set x. is_lit p) configs
+    in
+    if length filtered > 1 then
+      filter (\<lambda>x. x \<notin> set filtered) configs
+    else
+      configs
+  )"
+
+definition update_configs :: "(tids \<times> transition) list \<Rightarrow> update_function list list" where
+  "update_configs g = (
+    let
+     update_groups = cartProdN (group_by updates_same (sort (remdups (List.maps (Updates \<circ> snd) g))))
+    in
+    power_lists update_groups
+    )"
+
 (* Try max and min output function with satisfies *)
 definition standardise_group_outputs_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list" where
   "standardise_group_outputs_updates e l g = (
     let
-      update_groups = cartProdN (group_by updates_same (sort (remdups (List.maps (Updates \<circ> snd) g))));
-      update_groups_subs = power_lists update_groups;
-      output_groups = cartProdN (transpose (remdups (map (Outputs \<circ> snd) g)))
+      update_groups_subs = update_configs g;
+      output_groups = output_configs g
     in
     case find_updates_outputs update_groups_subs output_groups e l g of
       None \<Rightarrow> g |
@@ -503,11 +561,40 @@ case (Cons a xs)
     by (simp add: Let_def)
 qed
 
-definition standardise_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
-  "standardise_groups e l = standardise_groups_aux e l (group_by_structure e) standardise_group_outputs_updates"
+definition standardise_groups_old :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
+  "standardise_groups_old e l = standardise_groups_aux e l (group_by_structure e) standardise_group_outputs_updates"
 
-definition standardise_groups_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
-  "standardise_groups_updates e l = standardise_groups_aux e l (group_by_structure e) (\<lambda>_ _. standardise_group_updates)"
+fun find_config :: "((tids \<times> transition) list \<times> output_function list \<times> update_function list) list list \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
+  "find_config [] e _ = e" |
+  "find_config (h#t) e l = (
+    let
+      standardised = fold (\<lambda>(g, os, us) acc.
+        fold (\<lambda>(tids, t) acc. replace_transition acc tids (t\<lparr>Outputs := os, Updates := us\<rparr>)) g acc
+      ) h e
+    in
+    if satisfies (set l) (tm standardised) then
+      standardised
+    else
+      find_config t e l
+  )"
+
+definition lift_ou_configs :: "((tids \<times> transition) list \<times> output_function list list \<times> update_function list list) \<Rightarrow>
+((tids \<times> transition) list \<times> output_function list \<times> update_function list) list" where
+  "lift_ou_configs l = (
+    let (g, os, us) = l in
+    map (\<lambda>x. (g, x)) [(p,u). p \<leftarrow> os, u \<leftarrow> us]
+  )"
+
+definition standardise_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
+  "standardise_groups e l = (
+    let
+      structural_groups = group_by_structure e;
+      group_configs = map (\<lambda>g. (g, output_configs g, update_configs g)) structural_groups;
+      lifted = map lift_ou_configs group_configs;
+      configs = cartProdN lifted
+    in
+    find_config (rev (sort configs)) e l
+  )"
 
 \<comment> \<open>Need to derestrict variables which occur in the updates but keep unrelated ones to avoid \<close>
 \<comment> \<open>nondeterminism creeping in too early in the inference process                            \<close>
