@@ -25,9 +25,6 @@ import mint.tracedata.types.VariableAssignment;
 import mint.inference.gp.LatentVariableGP;
 import mint.inference.evo.GPConfiguration;
 
-import mint.inference.gp.tree.nonterminals.integers.AddIntegersOperator;
-import mint.inference.gp.tree.nonterminals.integers.SubtractIntegersOperator;
-
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -790,15 +787,7 @@ object Dirties {
       }
     }
 
-    val add: AddIntegersOperator = new AddIntegersOperator()
-    add.addChild(new IntegerVariableAssignmentTerminal("r1", true))
-    add.addChild(new IntegerVariableAssignmentTerminal("i0", false))
-
-    if (r_index == 1)
-      gp.setSeeds(List(add))
-    else
-      gp.setSeeds(intTerms ++ stringTerms)
-
+    gp.setSeeds(intTerms ++ stringTerms)
     val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]].simp
 
     Log.root.debug("  Best output is: " + best)
