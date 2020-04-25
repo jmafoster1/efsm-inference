@@ -668,9 +668,9 @@ definition derestrict :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier 
     let
       training_set = make_training_set pta log;
       normalised = groupwise_generalise_and_update log pta training_set;
-      standardised = standardise_groups normalised log;
-      delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs standardised)) standardised;
-      merged = remove_spurious_updates (merge_regs delayed log) log
+      delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs normalised)) normalised;
+      standardised = standardise_groups delayed log;
+      merged = remove_spurious_updates (delayed) log
     in
       drop_all_guards merged pta log m np
   )"
