@@ -54,31 +54,45 @@ qed
 
 definition "make_transition label inputs outputs = \<lparr>Label=label, Arity=length inputs, Guards=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>"
 
-fun observe_all :: "iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (tids \<times> transition) list" where
+fun observe_all :: "iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (cfstate \<times> cfstate \<times> tids \<times> transition) list" where
   "observe_all _ _ _ [] = []" |
   "observe_all e s r ((l, i)#es)  =
     (case random_member (i_possible_steps e s r l i)  of
-      (Some (ids, s', t)) \<Rightarrow> (((ids, t)#(observe_all e s' (apply_updates (Updates t) (join_ir i r) r) es))) |
+      (Some (ids, s', t)) \<Rightarrow> (((s, s', ids, t)#(observe_all e s' (apply_updates (Updates t) (join_ir i r) r) es))) |
       _ \<Rightarrow> []
     )"
 
-definition transition_groups_exec :: "iEFSM \<Rightarrow> execution \<Rightarrow> (tids \<times> transition) list list" where
+definition transition_groups_exec :: "iEFSM \<Rightarrow> execution \<Rightarrow> (cfstate \<times> cfstate \<times> tids \<times> transition) list list" where
   "transition_groups_exec e t = (
     let
       walked = observe_all e 0 <> (map (\<lambda>(x, y, _). (x, y)) t)
     in
-    group_by (\<lambda>(_, t1) (_, t2). same_structure t1 t2) walked
+    group_by (\<lambda>(_, _, _, t1) (_, _, _, t2). same_structure t1 t2) walked
   )"
 
-fun tag :: "(label \<times> arity \<times> arity) option \<Rightarrow> (tids \<times> transition) list list \<Rightarrow> ((label \<times> arity \<times> arity) option \<times> (label \<times> arity \<times> arity) \<times> (tids \<times> transition) list) list" where
+type_synonym struct = "(label \<times> arity \<times> arity)"
+
+fun tag :: "struct option \<Rightarrow> (cfstate \<times> cfstate \<times> tids \<times> transition) list list \<Rightarrow> (struct option \<times> struct \<times> (cfstate \<times> cfstate \<times> tids \<times> transition) list) list" where
   "tag _ [] = []" |
   "tag t (g#gs) = (
     let
-      head = snd (hd g);
+      (_, _, _, head) = hd g;
       struct = (Label head, Arity head, length (Outputs head))
     in
     (t, struct, g)#(tag (Some struct) gs)
   )"
+
+definition min_s :: "(struct option \<times> struct \<times> (cfstate \<times> cfstate \<times> tids \<times> transition) list) \<Rightarrow> (struct option \<times> cfstate \<times> struct \<times> (cfstate \<times> cfstate \<times> tids \<times> transition) list)" where
+  "min_s g = (
+    let
+      (tag, struct, group) = g;
+      states = map fst group;
+      min = Min (set states)
+    in
+    (tag, min, struct, group)
+  )"
+
+definition "strip_ss = map (\<lambda>(_, _, id, t). (id, t))"
 
 definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list" where
   "transition_groups e l = (
@@ -86,9 +100,12 @@ definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<t
       trace_groups = map (transition_groups_exec e) l;
       tagged = map (tag None) trace_groups;
       flat =  sort (fold (@) tagged []);
-      pairwise_groups = group_by (\<lambda>(l1, s1, g1) (l2, s2, g2). l1 = l2 \<and> s1 = s2) flat
+      minned = sort (map min_s flat);
+      pairwise_groups = group_by (\<lambda>(t1, m1, s1, g1) (t2, m2, s2, g2). t1 = t2 \<and> s1 = s2) minned;
+      group_minned = map (\<lambda>g. (fst (snd (hd g)), map (\<lambda>(t1, m1, s1, g1). (t1, s1, strip_ss g1)) g)) pairwise_groups;
+      stripped = map snd (sort group_minned)
     in
-    map (\<lambda>l. fold (@) (map ((\<lambda>(l1, s1, g1). g1)) l) []) pairwise_groups
+    map (\<lambda>l. fold (@) (map ((\<lambda>(l1, s1, g1). g1)) l) []) stripped
   )"
 
 
