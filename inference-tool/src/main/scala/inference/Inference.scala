@@ -1458,17 +1458,18 @@ def apply_outputs[A](p: List[AExp.aexp[A]], s: A => Option[Value.value]):
              Option[Value.value]](((pa: AExp.aexp[A]) => AExp.aval[A](pa, s)),
                                    p)
 
-def apply_updates(x0: List[(Nat.nat, AExp.aexp[VName.vname])],
-                   uu: VName.vname => Option[Value.value],
-                   newa: Map[Nat.nat, Option[Value.value]]):
-      Map[Nat.nat, Option[Value.value]]
+def apply_updates(u: List[(Nat.nat, AExp.aexp[VName.vname])],
+                   old: VName.vname => Option[Value.value]):
+      (Map[Nat.nat, Option[Value.value]]) => Map[Nat.nat, Option[Value.value]]
   =
-  (x0, uu, newa) match {
-  case (Nil, uu, newa) => newa
-  case (h :: t, old, newa) =>
-    (apply_updates(t, old,
-                    newa)) + ((h._1) -> (AExp.aval[VName.vname](h._2, old)))
-}
+  ((a: Map[Nat.nat, Option[Value.value]]) =>
+    Lista.fold[(Nat.nat, AExp.aexp[VName.vname]),
+                Map[Nat.nat, Option[Value.value]]](((h:
+               (Nat.nat, AExp.aexp[VName.vname]))
+              =>
+             (r: Map[Nat.nat, Option[Value.value]]) =>
+             r + ((h._1) -> (AExp.aval[VName.vname](h._2, old)))),
+            u, a))
 
 def enumerate_ints(t: transition_ext[Unit]): Set.set[Int.int] =
   Set.sup_set[Int.int](Set.sup_set[Int.int](Set.sup_set[Int.int](Complete_Lattices.Sup_set[Int.int](Set.seta[Set.set[Int.int]](Lista.map[GExp.gexp[VName.vname],
@@ -1751,6 +1752,28 @@ def less_eq_transition_ext[A : HOL.equal : Orderings.linorder](t1:
 
 } /* object Transition_Lexorder */
 
+object Option_ord {
+
+def less_eq_option[A : Orderings.preorder](xa0: Option[A], x: Option[A]):
+      Boolean
+  =
+  (xa0, x) match {
+  case (Some(x), Some(y)) => Orderings.less_eq[A](x, y)
+  case (Some(x), None) => false
+  case (None, x) => true
+}
+
+def less_option[A : Orderings.preorder](x: Option[A], xa1: Option[A]): Boolean =
+  (x, xa1) match {
+  case (Some(x), Some(y)) => Orderings.less[A](x, y)
+  case (None, Some(x)) => true
+  case (x, None) => false
+}
+
+def bot_option[A : Orderings.order]: Option[A] = None
+
+} /* object Option_ord */
+
 object Finite_Set {
 
 def card[A](x0: Set.set[A]): Nat.nat = x0 match {
@@ -1893,26 +1916,6 @@ def fis_singleton[A](s: FSet.fset[A]): Boolean =
   Nat.equal_nata(FSet.size_fset[A](s), Nat.Nata((1)))
 
 } /* object FSet_Utils */
-
-object Option_ord {
-
-def less_eq_option[A : Orderings.preorder](xa0: Option[A], x: Option[A]):
-      Boolean
-  =
-  (xa0, x) match {
-  case (Some(x), Some(y)) => Orderings.less_eq[A](x, y)
-  case (Some(x), None) => false
-  case (None, x) => true
-}
-
-def less_option[A : Orderings.preorder](x: Option[A], xa1: Option[A]): Boolean =
-  (x, xa1) match {
-  case (Some(x), Some(y)) => Orderings.less[A](x, y)
-  case (None, Some(x)) => true
-  case (x, None) => false
-}
-
-} /* object Option_ord */
 
 object Code_Generation {
 
@@ -2347,8 +2350,8 @@ def satisfies_trace_prim(uu: FSet.fset[((Nat.nat, Nat.nat),
          Some[Value.value](a)),
         p)))
             satisfies_trace_prim(e, sa,
-                                  Transition.apply_updates(Transition.Updates[Unit](ta),
-                    AExp.join_ir(i, d), d),
+                                  (Transition.apply_updates(Transition.Updates[Unit](ta),
+                     AExp.join_ir(i, d))).apply(d),
                                   t)
             else false)
         }
@@ -2364,8 +2367,8 @@ def satisfies_trace_prim(uu: FSet.fset[((Nat.nat, Nat.nat),
                                     Option[Value.value]](((aa: Value.value) =>
                    Some[Value.value](aa)),
                   p))) && (satisfies_trace_prim(e, sa,
-         Transition.apply_updates(Transition.Updates[Unit](ta),
-                                   AExp.join_ir(i, d), d),
+         (Transition.apply_updates(Transition.Updates[Unit](ta),
+                                    AExp.join_ir(i, d))).apply(d),
          t))
                       })))
     }
@@ -2390,7 +2393,7 @@ def satisfies(t: Set.set[List[(String,
                     List[Value.value]))]](t,
    ((a: List[(String, (List[Value.value], List[Value.value]))]) =>
      satisfies_trace(e, Nat.zero_nata,
-                      scala.collection.immutable.Map().withDefaultValue(None),
+                      scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]),
                       a)))
 
 def learn(n: Nat.nat,
@@ -3514,7 +3517,7 @@ def make_pta_aux(l: List[List[(String,
    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))])
                             =>
                           make_branch(ea, Nat.zero_nata,
-                                       scala.collection.immutable.Map().withDefaultValue(None),
+                                       scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]),
                                        h)),
                          l, e)
 
@@ -3613,8 +3616,8 @@ Transition.transition_ext[Unit]))](ps))
             = FSet.fthe_elem[(List[Nat.nat],
                                (Nat.nat, Transition.transition_ext[Unit]))](ps)
           val ra: Map[Nat.nat, Option[Value.value]] =
-            Transition.apply_updates(Transition.Updates[Unit](t),
-                                      AExp.join_ir(i, r), r)
+            (Transition.apply_updates(Transition.Updates[Unit](t),
+                                       AExp.join_ir(i, r))).apply(r)
           val actual: List[Option[Value.value]] =
             Transition.apply_outputs[VName.vname](Transition.Outputs[Unit](t),
            AExp.join_ir(i, r))
@@ -3674,7 +3677,7 @@ def test_log(l: List[List[(String, (List[Value.value], List[Value.value]))]],
            List[(String, (List[Value.value], List[Value.value]))])
           =>
          test_exec(t, e, Nat.zero_nata,
-                    scala.collection.immutable.Map().withDefaultValue(None))),
+                    scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]))),
         l)
 
 def get_by_ids(e: FSet.fset[(List[Nat.nat],
@@ -4437,8 +4440,8 @@ def step(e: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
                   Map[Nat.nat, Option[Value.value]])))]((t,
                   (sa, (Transition.apply_outputs[VName.vname](Transition.Outputs[Unit](t),
                        AExp.join_ir(i, r)),
-                         Transition.apply_updates(Transition.Updates[Unit](t),
-           AExp.join_ir(i, r), r)))))
+                         (Transition.apply_updates(Transition.Updates[Unit](t),
+            AExp.join_ir(i, r))).apply(r)))))
    })
 
 def choice(ta: Transition.transition_ext[Unit],
@@ -4465,8 +4468,8 @@ def accepts_prim(e: FSet.fset[((Nat.nat, Nat.nat),
                {
                  val (sa, ta): (Nat.nat, Transition.transition_ext[Unit]) = a;
                  accepts_prim(e, sa,
-                               Transition.apply_updates(Transition.Updates[Unit](ta),
-                 AExp.join_ir(i, d), d),
+                               (Transition.apply_updates(Transition.Updates[Unit](ta),
+                  AExp.join_ir(i, d))).apply(d),
                                t)
                }))
     }
@@ -4994,8 +4997,8 @@ def i_step(tr: List[(String, List[Value.value])],
                                 (Nat.nat, Transition.transition_ext[Unit]))
                           = a;
                         EFSM.accepts(Inference.tm(e), sa,
-                                      Transition.apply_updates(Transition.Updates[Unit](t),
-                        AExp.join_ir(i, r), r),
+                                      (Transition.apply_updates(Transition.Updates[Unit](t),
+                         AExp.join_ir(i, r))).apply(r),
                                       tr)
                       }),
                      poss_steps);
@@ -5009,8 +5012,8 @@ def i_step(tr: List[(String, List[Value.value])],
                 (Nat.nat,
                   (List[Nat.nat],
                     Map[Nat.nat, Option[Value.value]])))]((t,
-                    (sa, (u, Transition.apply_updates(Transition.Updates[Unit](t),
-               AExp.join_ir(i, r), r)))))
+                    (sa, (u, (Transition.apply_updates(Transition.Updates[Unit](t),
+                AExp.join_ir(i, r))).apply(r)))))
      })
   }
 
@@ -5888,10 +5891,12 @@ val (e1, (io1, inx1)): (Nat.nat, (ioTag, Nat.nat)) = aa;
   {
     val (e2, (io2, inx2)): (Nat.nat, (ioTag, Nat.nat)) = ab;
     ((walk_up_to(e1, e, Nat.zero_nata,
-                  scala.collection.immutable.Map().withDefaultValue(None), t),
+                  scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]),
+                  t),
        (io1, inx1)),
       (walk_up_to(e2, e, Nat.zero_nata,
-                   scala.collection.immutable.Map().withDefaultValue(None), t),
+                   scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]),
+                   t),
         (io2, inx2)))
   })
                                       })(b)
@@ -6734,14 +6739,14 @@ def add_groupwise_updates_trace(x0: List[(String,
                              Transition.transition_ext[Unit]))](Inference.i_possible_steps(e,
             s, r, l, i))
       val updated: Map[Nat.nat, Option[Value.value]] =
-        Transition.apply_updates(Transition.Updates[Unit](t),
-                                  AExp.join_ir(i, r), r)
+        (Transition.apply_updates(Transition.Updates[Unit](t),
+                                   AExp.join_ir(i, r))).apply(r)
       val newUpdates: List[(Nat.nat, AExp.aexp[VName.vname])] =
         get_updates(funs, id)
       val ta: Transition.transition_ext[Unit] = insert_updates(t, newUpdates)
       val updateda: Map[Nat.nat, Option[Value.value]] =
-        Transition.apply_updates(Transition.Updates[Unit](ta),
-                                  AExp.join_ir(i, r), r)
+        (Transition.apply_updates(Transition.Updates[Unit](ta),
+                                   AExp.join_ir(i, r))).apply(r)
       val necessaryUpdates: List[(Nat.nat, AExp.aexp[VName.vname])] =
         Lista.filter[(Nat.nat,
                        AExp.aexp[VName.vname])](((a:
@@ -6783,7 +6788,7 @@ List[(Nat.nat, AExp.aexp[VName.vname])])],
                             =>
                           add_groupwise_updates_trace(trace, funs, acc,
                Nat.zero_nata,
-               scala.collection.immutable.Map().withDefaultValue(None))),
+               scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]))),
                          log, e)
 
 def get_updates_opt(values: List[Value.value],
@@ -7124,7 +7129,7 @@ Transition.transition_ext[Unit])))))))
 (Map[Nat.nat, Option[Value.value]],
   (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit])))))])
                               =>
-                             (target(scala.collection.immutable.Map().withDefaultValue(None),
+                             (target(scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]),
                                       w.par.reverse.toList)).par.reverse.toList),
                             walked))
       val group:
@@ -7197,16 +7202,16 @@ def everything_walk(uu: AExp.aexp[VName.vname], uv: Nat.nat,
                                 outputs(Code_Numeral.integer_of_nat(fi).toInt)),
                 (inputs, (tid, ta))))) ::
           everything_walk(f, fi, types, t, oPTA, sa,
-                           Transition.apply_updates(Transition.Updates[Unit](ta),
-             AExp.join_ir(inputs, regs), regs),
+                           (Transition.apply_updates(Transition.Updates[Unit](ta),
+              AExp.join_ir(inputs, regs))).apply(regs),
                            gp)
         else {
                val empty: Map[Nat.nat, Option[Value.value]] =
-                 scala.collection.immutable.Map().withDefaultValue(None);
+                 scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]);
                (s, (regs, (empty, (inputs, (tid, ta))))) ::
                  everything_walk(f, fi, types, t, oPTA, sa,
-                                  Transition.apply_updates(Transition.Updates[Unit](ta),
-                    AExp.join_ir(inputs, regs), regs),
+                                  (Transition.apply_updates(Transition.Updates[Unit](ta),
+                     AExp.join_ir(inputs, regs))).apply(regs),
                                   gp)
              })
     }
@@ -7236,7 +7241,8 @@ def everything_walk_log(f: AExp.aexp[VName.vname], fi: Nat.nat,
                                       (List[Value.value], List[Value.value]))])
                               =>
                              everything_walk(f, fi, types, t, e, Nat.zero_nata,
-      scala.collection.immutable.Map().withDefaultValue(None), gp)),
+      scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]),
+      gp)),
                             log)
 
 def observe_all(uu: FSet.fset[(List[Nat.nat],
@@ -7259,8 +7265,8 @@ def observe_all(uu: FSet.fset[(List[Nat.nat],
        case Some((ids, (sa, t))) =>
          (s, (sa, (ids, t))) ::
            observe_all(e, sa,
-                        Transition.apply_updates(Transition.Updates[Unit](t),
-          AExp.join_ir(i, r), r),
+                        (Transition.apply_updates(Transition.Updates[Unit](t),
+           AExp.join_ir(i, r))).apply(r),
                         es)
      })
 }
@@ -7276,7 +7282,7 @@ def transition_groups_exec(e: FSet.fset[(List[Nat.nat],
     val a: List[(Nat.nat,
                   (Nat.nat, (List[Nat.nat], Transition.transition_ext[Unit])))]
       = observe_all(e, Nat.zero_nata,
-                     scala.collection.immutable.Map().withDefaultValue(None),
+                     scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]),
                      Lista.map[(String, (List[Value.value], List[Value.value])),
                                 (String,
                                   List[Value.value])](((a:
@@ -8032,8 +8038,8 @@ def find_initialisation_of_trace(uu: Nat.nat,
              Transition.Updates[Unit](t)))
         Some[(List[Nat.nat], Transition.transition_ext[Unit])]((tids, t))
         else find_initialisation_of_trace(ra, es, e, sa,
-   Transition.apply_updates(Transition.Updates[Unit](t), AExp.join_ir(i, r),
-                             r)))
+   (Transition.apply_updates(Transition.Updates[Unit](t),
+                              AExp.join_ir(i, r))).apply(r)))
     }
 }
 
@@ -8048,7 +8054,7 @@ def find_initialisation_of(uu: Nat.nat,
   case (uu, uv, Nil) => Nil
   case (r, e, h :: t) =>
     (find_initialisation_of_trace(r, h, e, Nat.zero_nata,
-                                   scala.collection.immutable.Map().withDefaultValue(None))
+                                   scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]))
        match {
        case None => find_initialisation_of(r, e, t)
        case Some(thing) =>
@@ -8497,8 +8503,8 @@ def find_first_use_of_trace(uu: Nat.nat,
           Transition.Outputs[Unit](t)))
         Some[List[Nat.nat]](id)
         else find_first_use_of_trace(rr, es, e, sa,
-                                      Transition.apply_updates(Transition.Updates[Unit](t),
-                        AExp.join_ir(i, r), r)))
+                                      (Transition.apply_updates(Transition.Updates[Unit](t),
+                         AExp.join_ir(i, r))).apply(r)))
     }
 }
 
@@ -8523,7 +8529,7 @@ def find_first_uses_of(r: Nat.nat,
                                     (List[Value.value], List[Value.value]))])
                            =>
                           find_first_use_of_trace(r, t, e, Nat.zero_nata,
-           scala.collection.immutable.Map().withDefaultValue(None))),
+           scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]))),
                          l))
 
 def assign_training_set(data: List[(List[(List[Nat.nat],
@@ -8611,8 +8617,8 @@ Lista.map[Value.value,
                                      Inference.i_possible_steps(e, s, r, label,
                          inputs)));
       trace_training_set(e, t, sa,
-                          Transition.apply_updates(Transition.Updates[Unit](transition),
-            AExp.join_ir(inputs, r), r),
+                          (Transition.apply_updates(Transition.Updates[Unit](transition),
+             AExp.join_ir(inputs, r))).apply(r),
                           assign_training_set(ts, id, label, inputs, r,
        outputs))
     }
@@ -8644,7 +8650,7 @@ def log_training_set(e: FSet.fset[(List[Nat.nat],
                                    (List[Value.value], List[Value.value]))])])
                    =>
                   trace_training_set(e, h, Nat.zero_nata,
-                                      scala.collection.immutable.Map().withDefaultValue(None),
+                                      scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]),
                                       a))),
                l, ts)
 
@@ -9050,8 +9056,9 @@ Lista.map[Value.value,
                                      Inference.i_possible_steps(uPTA, s,
                          registers, label, inputs)))
       val updated: Map[Nat.nat, Option[Value.value]] =
-        Transition.apply_updates(Transition.Updates[Unit](tran),
-                                  AExp.join_ir(inputs, registers), registers);
+        (Transition.apply_updates(Transition.Updates[Unit](tran),
+                                   AExp.join_ir(inputs,
+         registers))).apply(registers);
       (if (t1.contains(uids.head))
         trace_collect_training_sets(t, uPTA, sa, updated, t1, t2,
                                      (inputs, registers) :: g1, g2)
@@ -9083,7 +9090,7 @@ def collect_training_sets(x0: List[List[(String,
             (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])],
               List[(List[Value.value], Map[Nat.nat, Option[Value.value]])])
         = trace_collect_training_sets(h, uPTA, Nat.zero_nata,
-                                       scala.collection.immutable.Map().withDefaultValue(None),
+                                       scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]),
                                        t1, t2, Nil, Nil);
       collect_training_sets(t, uPTA, t1, t2,
                              Lista.union[(List[Value.value],

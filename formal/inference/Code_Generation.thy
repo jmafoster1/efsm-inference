@@ -2,7 +2,6 @@ theory Code_Generation
   imports 
    "HOL-Library.Code_Target_Numeral"
    Inference SelectionStrategies
-   Type_Inference
    Guard_Implication_Subsumption
    "heuristics/Store_Reuse_Subsumption"
    "heuristics/Increment_Reset"
@@ -96,8 +95,9 @@ lemma [code]: "choice t t' = choice_cases t t'"
    apply (metis existing_mutex_not_true Un_iff set_append)
   apply (case_tac "Guards t = Guards t'")
    apply (simp add: choice_alt_def apply_guards_append)
-   apply (simp add: apply_guards_foldr fold_conv_foldr satisfiable_def)
-  by (simp add: apply_guards_foldr choice_alt_def fold_conv_foldr satisfiable_def)
+   apply (simp add: fold_apply_guards rev_apply_guards satisfiable_def)
+  apply (simp add: choice_alt_def satisfiable_def)
+  by (metis foldr_append foldr_apply_guards foldr_conv_fold)
 
 fun guardMatch_code :: "vname gexp list \<Rightarrow> vname gexp list \<Rightarrow> bool" where
   "guardMatch_code [(gexp.Eq (V (vname.I i)) (L (Num n)))] [(gexp.Eq (V (vname.I i')) (L (Num n')))] = (i = 0 \<and> i' = 0)" |
@@ -224,7 +224,7 @@ lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (
     apply (rule_tac x=p in exI)
   using can_take_transition_empty_guard accepts_gives_context apply fastforce
    apply (simp add: dirty_always_different_outputs_direct_subsumption_def)
-  using always_different_outputs_direct_subsumption_def apply blast
+  using always_different_outputs_direct_subsumption_def apply auto[1]
   by (simp add: always_different_outputs_direct_subsumption_def dirty_always_different_outputs_direct_subsumption_def)
 
 definition guard_subset_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> bool" where

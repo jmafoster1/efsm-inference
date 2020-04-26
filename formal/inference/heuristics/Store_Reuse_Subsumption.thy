@@ -20,16 +20,21 @@ lemma is_generalisation_of_medial:
   by (metis (no_types, lifting) can_take_def can_take_transition_def)
 
 lemma is_generalisation_of_preserves_reg:
-
   "is_generalisation_of t' t i r \<Longrightarrow>
    apply_updates (Updates t) (join_ir ia c) c $ r = c $ r"
   by (simp add: is_generalisation_of_def r_not_updated_stays_the_same)
 
+lemma apply_updates_foldr: 
+  "apply_updates u old = foldr (\<lambda>h r. r(fst h $:= aval (snd h) old)) (rev u)"
+  by (simp add: apply_updates_def foldr_conv_fold)
+
 lemma is_generalisation_of_preserves_reg_2:
-  "is_generalisation_of t' t i r \<Longrightarrow>
-   ra \<noteq> r \<Longrightarrow>
-   apply_updates (Updates t) (join_ir ia c) c $ ra = apply_updates (Updates t') (join_ir ia c) c $ ra"
-  by (simp add: is_generalisation_of_def remove_guard_add_update_def)
+  assumes gen: "is_generalisation_of t' t i r"
+  and dif: "ra \<noteq> r"
+shows "apply_updates (Updates t) (join_ir ia c) c $ ra = apply_updates (Updates t') (join_ir ia c) c $ ra"
+  using assms
+  apply (simp add: apply_updates_def is_generalisation_of_def remove_guard_add_update_def del: fold.simps)
+  by (simp add: apply_updates_def[symmetric] apply_updates_cons)
 
 lemma is_generalisation_of_apply_guards:
   "is_generalisation_of t' t i r \<Longrightarrow>
@@ -364,11 +369,7 @@ lemma anterior_context_empty:
 
 lemma no_incoming_to_initial_gives_empty_reg:
 "\<forall>((from, to), t) |\<in>| e. to \<noteq> 0 \<Longrightarrow> initially_undefined_context_check e r 0"
-  apply (simp only: initially_undefined_context_check_def)
-  apply clarify
-  apply standard
-  apply (simp add: anterior_context_empty)
-  by auto
+  using Store_Reuse_Subsumption.anterior_context_empty initially_undefined_context_check_def by auto
 
 definition "no_illegal_updates t r = (\<forall>u \<in> set (Updates t). fst u \<noteq> r)"
 
@@ -562,18 +563,16 @@ lemma input_stored_in_reg_not_subsumed:
    apply (rule_tac x="Eq (V (vname.I i)) (L (value.Str x2))" in exI)
   by (simp add: join_ir_def input2state_nth is_generalisation_of_i_lt_arity str_not_num)
 
-lemma aval_updated:
-"(r, u) \<in> set U \<Longrightarrow> r \<notin> set (map fst (removeAll (r, u) U)) \<Longrightarrow> apply_updates U s c $ r = aval u s"
-proof(induct U)
+lemma aval_updated: "(r, u) \<in> set U \<Longrightarrow> r \<notin> set (map fst (removeAll (r, u) U)) \<Longrightarrow> apply_updates U s c $ r = aval u s"
+proof(induct U rule: rev_induct)
   case Nil
   then show ?case
     by simp
 next
-  case (Cons a U)
+  case (snoc a U)
   then show ?case
-    apply simp
     apply (case_tac "(r, u) = a")
-    by auto
+    using apply_updates_foldr by auto
 qed
 
 lemma can_take_append_subset:
@@ -639,18 +638,12 @@ definition not_updated :: "nat \<Rightarrow> transition \<Rightarrow> bool" wher
   "not_updated r t = (filter (\<lambda>(r', _). r' = r) (Updates t) = [])"
 
 lemma not_updated:
-
   assumes "not_updated r t2"
   shows "apply_updates (Updates t2) s s' $ r = s' $ r"
 proof-
   have not_updated_aux: "\<And>t2. filter (\<lambda>(r', _). r' = r) t2 = [] \<Longrightarrow> apply_updates t2 s s' $ r = s' $ r"
-    subgoal for t2
-      apply (induct t2)
-       apply simp
-      apply (case_tac a)
-      apply (case_tac "aa = r")
-      by auto
-    done
+    apply (rule r_not_updated_stays_the_same)
+    by (metis (mono_tags, lifting) filter_empty_conv imageE prod.case_eq_if)
   show ?thesis
     using assms
     by (simp add: not_updated_def not_updated_aux)
@@ -665,8 +658,8 @@ lemma one_extra_update_subsumes:
    not_updated r t2 \<Longrightarrow>
    c $ r = None \<Longrightarrow>
    subsumes t1 c t2"
-  apply (simp add: subsumes_def posterior_def posterior_separate_def can_take_transition_def can_take_def)
-  by (simp add: apply_guards_subset finfun_upd_apply not_updated)
+  apply (simp add: subsumes_def posterior_separate_def can_take_transition_def can_take_def)
+  by (metis apply_guards_subset apply_updates_cons not_updated)
 
 lemma one_extra_update_directly_subsumes:
   "Label t1 = Label t2 \<Longrightarrow>
