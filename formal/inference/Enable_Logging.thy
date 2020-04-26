@@ -54,5 +54,4 @@ code_printing
   constant "timestamp" \<rightharpoonup> (Scala) "System.currentTimeMillis.toString" |
   constant "println" \<rightharpoonup> (Scala) "println"
 
-
 end

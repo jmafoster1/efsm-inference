@@ -27,7 +27,7 @@ declare subset_eq [code]
 lemma [code del]: "x \<in> List.coset xs \<longleftrightarrow> \<not> List.member xs x"
   by (simp add: member_def)
 
-lemma sup_set_append [code]: "(set x) \<union> (set y) = set (x @ y)"
+lemma sup_set_append[code]: "(set x) \<union> (set y) = set (x @ y)"
   by simp
 
 declare product_concat_map [code]

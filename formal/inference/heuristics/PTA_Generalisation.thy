@@ -37,8 +37,7 @@ fun group_by :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a list 
       )
   )"
 
-lemma no_empty_groups:
-"\<forall>x \<in> set (group_by f xs). x \<noteq> []"
+lemma no_empty_groups: "\<forall>x \<in> set (group_by f xs). x \<noteq> []"
 proof(induct xs)
   case Nil
   then show ?case
@@ -108,7 +107,6 @@ definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<t
     map (\<lambda>l. fold (@) (map ((\<lambda>(l1, s1, g1). g1)) l) []) stripped
   )"
 
-
 (* Assign registers and inputs with associated outputs to the correct training set based on       *)
 (* transition id                                                                                  *)
 definition assign_training_set :: "(((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> tids \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> registers \<Rightarrow> value list \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list" where
@@ -155,8 +153,7 @@ fun put_outputs :: "(((vname aexp \<times> (vname \<Rightarrow>f String.literal)
   "put_outputs ((None, p)#t) = p#(put_outputs t)" |
   "put_outputs ((Some (p, _), _)#t) = p#(put_outputs t)"
 
-lemma put_outputs_fold [code]:
-"put_outputs xs = foldr (\<lambda>x acc. case x of (None, p) \<Rightarrow> p#acc | (Some (p, _), _) \<Rightarrow> p#acc) xs []"
+lemma put_outputs_fold [code]: "put_outputs xs = foldr (\<lambda>x acc. case x of (None, p) \<Rightarrow> p#acc | (Some (p, _), _) \<Rightarrow> p#acc) xs []"
 proof (induct xs)
   case Nil
   then show ?case by simp
@@ -177,8 +174,7 @@ primrec replace_groups :: "(tids \<times> transition) list list \<Rightarrow> iE
   "replace_groups [] e = e" |
   "replace_groups (h#t) e = replace_groups t (fold (\<lambda>(id, t) acc. replace_transition acc id t) h e)"
 
-lemma replace_groups_fold [code]:
-"replace_groups xs e = fold (\<lambda>h acc'. (fold (\<lambda>(id, t) acc. replace_transition acc id t) h acc')) xs e"
+lemma replace_groups_fold [code]: "replace_groups xs e = fold (\<lambda>h acc'. (fold (\<lambda>(id, t) acc. replace_transition acc id t) h acc')) xs e"
   by (induct xs arbitrary: e,  auto)
 
 definition insert_updates :: "transition \<Rightarrow> update_function list \<Rightarrow> transition" where
@@ -217,8 +213,7 @@ primrec add_groupwise_updates :: "log  \<Rightarrow> (tids \<times> update_funct
   "add_groupwise_updates [] _ e = e" |
   "add_groupwise_updates (h#t) funs e = add_groupwise_updates t funs (add_groupwise_updates_trace h funs e 0 <>)"
 
-lemma fold_add_groupwise_updates [code]:
-"add_groupwise_updates log funs e = fold (\<lambda>trace acc. add_groupwise_updates_trace trace funs acc 0 <>) log e"
+lemma fold_add_groupwise_updates [code]: "add_groupwise_updates log funs e = fold (\<lambda>trace acc. add_groupwise_updates_trace trace funs acc 0 <>) log e"
   by (induct log arbitrary: e, auto)
 
 \<comment> \<open>This will be replaced to calls to Z3 in the executable\<close>
@@ -258,8 +253,7 @@ fun target_tail :: "registers \<Rightarrow> run_info \<Rightarrow> targeted_run_
     target_tail newTarget t ((tRegs, s, oldregs, regs, inputs, tid, ta)#tt)
   )"
 
-lemma target_tail:
-"(rev bs)@(target tRegs ts) = target_tail tRegs ts bs"
+lemma target_tail: "(rev bs)@(target tRegs ts) = target_tail tRegs ts bs"
 proof(induct ts arbitrary: bs tRegs)
   case Nil
   then show ?case
@@ -278,8 +272,7 @@ let newTarget = if finfun_to_list regs = [] then tRegs else regs in
     (acc@[(tRegs, s, oldregs, regs, inputs, tid, ta)], newTarget)
 ) ts (rev b, tRegs))"
 
-lemma target_tail_fold:
-"target_tail tRegs ts b = target_fold tRegs ts b"
+lemma target_tail_fold: "target_tail tRegs ts b = target_fold tRegs ts b"
 proof(induct ts arbitrary: tRegs b)
   case Nil
   then show ?case
@@ -291,8 +284,7 @@ next
     by (simp add: target_fold_def)
 qed
 
-lemma target_fold [code]:
-"target tRegs ts = target_fold tRegs ts []"
+lemma target_fold [code]: "target tRegs ts = target_fold tRegs ts []"
   by (metis append_self_conv2 rev.simps(1) target_tail_fold target_tail)
 
 \<comment> \<open>This will be replaced by symbolic regression in the executable\<close>
@@ -387,7 +379,6 @@ primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow
   )"
 
 lemma groupwise_generalise_and_update_fold [code]:
-
 "groupwise_generalise_and_update log e gs = fold (\<lambda>gp e.
   case generalise_and_update log e (fst gp) (snd gp) of
         None \<Rightarrow> e |
@@ -505,8 +496,7 @@ primrec standardise_groups_aux :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \
         standardise_groups_aux e l t s
   )"
 
-lemma standardise_groups_aux_fold [code]:
-"standardise_groups_aux e l xs s = fold (\<lambda>h acc. 
+lemma standardise_groups_aux_fold [code]: "standardise_groups_aux e l xs s = fold (\<lambda>h acc. 
   let
       e' = replace_transitions acc (s acc l h)
     in

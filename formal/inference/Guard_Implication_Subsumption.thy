@@ -2,8 +2,7 @@ theory Guard_Implication_Subsumption
 imports Inference
 begin
 
-lemma guard_implication:
-  "Label t1 = Label t2 \<Longrightarrow>
+lemma guard_implication: "Label t1 = Label t2 \<Longrightarrow>
   Arity t1 = Arity t2 \<Longrightarrow>
   Outputs t1 = Outputs t2 \<Longrightarrow>
   Updates t1 = Updates t2 \<Longrightarrow>
@@ -27,14 +26,11 @@ definition guard_implication_subsumption :: "transition \<Rightarrow> transition
     gexp_implies (fold gAnd (Guards t1) (Bc True)) (fold gAnd (Guards t2) (Bc True))
   )"
 
-lemma guard_implication_subsumption:
-  "guard_implication_subsumption t1 t2 \<Longrightarrow> directly_subsumes m1 m2 s1 s2 t2 t1"
+lemma guard_implication_subsumption: "guard_implication_subsumption t1 t2 \<Longrightarrow> directly_subsumes m1 m2 s1 s2 t2 t1"
   apply (rule subsumes_in_all_contexts_directly_subsumes)
   apply (rule subsumption)
   unfolding guard_implication_subsumption_def can_take_transition_def can_take_def
   using gexp_implies_def apply_guards_fold can_take_transition_def can_take_def
         posterior_def posterior_separate_def can_take_def by auto
-
-
 
 end

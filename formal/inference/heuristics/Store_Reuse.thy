@@ -112,8 +112,7 @@ primrec count :: "'a \<Rightarrow> 'a list \<Rightarrow> nat" where
 definition replaceAll :: "iEFSM \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
   "replaceAll e old new = fimage (\<lambda>(uid, (from, dest), t). if t = old then (uid, (from, dest), new) else (uid, (from, dest), t)) e"
 
-primrec generalise_transitions ::
-  "((((transition \<times> tids) \<times> ioTag \<times> nat) \<times> (transition \<times> tids) \<times> ioTag \<times> nat) \<times>
+primrec generalise_transitions :: "((((transition \<times> tids) \<times> ioTag \<times> nat) \<times> (transition \<times> tids) \<times> ioTag \<times> nat) \<times>
      ((transition \<times> tids) \<times> ioTag \<times> nat) \<times> (transition \<times> tids) \<times> ioTag \<times> nat) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "generalise_transitions [] e = e" |
   "generalise_transitions (h#t) e = (let
@@ -137,16 +136,13 @@ definition modify :: "match list \<Rightarrow> tids \<Rightarrow> tids \<Rightar
 definition heuristic_1 :: "log \<Rightarrow> update_modifier" where
   "heuristic_1 l t1 t2 s new _ old np = modify (find_intertrace_matches l old) t1 t2 new"
 
-lemma remove_guard_add_update_preserves_outputs:
-"Outputs (remove_guard_add_update t i r) = Outputs t"
+lemma remove_guard_add_update_preserves_outputs: "Outputs (remove_guard_add_update t i r) = Outputs t"
   by (simp add: remove_guard_add_update_def)
 
-lemma remove_guard_add_update_preserves_label:
-"Label (remove_guard_add_update t i r) = Label t"
+lemma remove_guard_add_update_preserves_label: "Label (remove_guard_add_update t i r) = Label t"
   by (simp add: remove_guard_add_update_def)
 
-lemma remove_guard_add_update_preserves_arity:
-"Arity (remove_guard_add_update t i r) = Arity t"
+lemma remove_guard_add_update_preserves_arity: "Arity (remove_guard_add_update t i r) = Arity t"
   by (simp add: remove_guard_add_update_def)
 
 lemmas remove_guard_add_update_preserves = remove_guard_add_update_preserves_label
@@ -159,24 +155,19 @@ definition is_generalisation_of :: "transition \<Rightarrow> transition \<Righta
                                     (\<exists>v. Eq (V (vname.I i)) (L v) \<in> set (Guards t)) \<and>
                                     r \<notin> set (map fst (Updates t)))"
 
-lemma generalise_output_preserves_label:
-"Label (generalise_output t r p) = Label t"
+lemma generalise_output_preserves_label: "Label (generalise_output t r p) = Label t"
   by (simp add: generalise_output_def)
 
-lemma generalise_output_preserves_arity:
-"Arity (generalise_output t r p) = Arity t"
+lemma generalise_output_preserves_arity: "Arity (generalise_output t r p) = Arity t"
   by (simp add: generalise_output_def)
 
-lemma generalise_output_preserves_guard:
-"Guards (generalise_output t r p) = Guards t"
+lemma generalise_output_preserves_guard: "Guards (generalise_output t r p) = Guards t"
   by (simp add: generalise_output_def)
 
-lemma generalise_output_preserves_output_length:
-"length (Outputs (generalise_output t r p)) = length (Outputs t)"
+lemma generalise_output_preserves_output_length: "length (Outputs (generalise_output t r p)) = length (Outputs t)"
   by (simp add: generalise_output_def)
 
-lemma generalise_output_preserves_updates:
-"Updates (generalise_output t r p) = Updates t"
+lemma generalise_output_preserves_updates: "Updates (generalise_output t r p) = Updates t"
   by (simp add: generalise_output_def)
 
 lemmas generalise_output_preserves = generalise_output_preserves_label
@@ -240,4 +231,4 @@ definition heuristic_2 :: "log \<Rightarrow> update_modifier" where
   "heuristic_2 l t1 t2 s new _ old np = modify_2 (find_intertrace_matches l old) t1 t2 new"
 hide_const ioTag.In
 
-end                                                   
+end

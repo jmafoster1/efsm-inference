@@ -8,13 +8,11 @@ definition initialiseReg :: "transition \<Rightarrow> nat \<Rightarrow> transiti
 definition "guardMatch t1 t2  = (\<exists>n n'. Guards t1 = [gexp.Eq (V (vname.I 0)) (L (Num n))] \<and> Guards t2 = [gexp.Eq (V (vname.I 0)) (L (Num n'))])"
 definition "outputMatch t1 t2 = (\<exists>m m'. Outputs t1 = [L (Num m)] \<and> Outputs t2 = [L (Num m')])"
 
-lemma guard_match_commute:
-"guardMatch t1 t2 = guardMatch t2 t1"
+lemma guard_match_commute: "guardMatch t1 t2 = guardMatch t2 t1"
   apply (simp add: guardMatch_def)
   by auto
 
-lemma guard_match_length:
-"length (Guards t1) \<noteq> 1 \<or> length (Guards t2) \<noteq> 1 \<Longrightarrow> \<not> guardMatch t1 t2"
+lemma guard_match_length: "length (Guards t1) \<noteq> 1 \<or> length (Guards t2) \<noteq> 1 \<Longrightarrow> \<not> guardMatch t1 t2"
   apply (simp add: guardMatch_def)
   by auto
 
@@ -43,13 +41,11 @@ definition struct_replace_all :: "iEFSM \<Rightarrow> transition \<Rightarrow> t
     in
     replace_transitions e (sorted_list_of_fset replacements))"
 
-lemma output_match_symmetry:
-"(outputMatch t1 t2) = (outputMatch t2 t1)"
+lemma output_match_symmetry: "(outputMatch t1 t2) = (outputMatch t2 t1)"
   apply (simp add: outputMatch_def)
   by auto
 
-lemma guard_match_symmetry:
-"(guardMatch t1 t2) = (guardMatch t2 t1)"
+lemma guard_match_symmetry: "(guardMatch t1 t2) = (guardMatch t2 t1)"
   apply (simp add: guardMatch_def)
   by auto
 

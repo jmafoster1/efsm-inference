@@ -54,8 +54,7 @@ declare foldl_conv_fold[symmetric]
 lemma fold_conv_foldl [code]: "fold f xs s = foldl (\<lambda>x s. f s x) s xs"
   by (simp add: foldl_conv_fold)
 
-lemma code_list_eq [code]:
-  "HOL.equal xs ys \<longleftrightarrow> length xs = length ys \<and> (\<forall>(x,y) \<in> set (zip xs ys). x = y)"
+lemma code_list_eq [code]: "HOL.equal xs ys \<longleftrightarrow> length xs = length ys \<and> (\<forall>(x,y) \<in> set (zip xs ys). x = y)"
   apply (simp add: HOL.equal_class.equal_eq)
   by (simp add: Ball_set list_eq_iff_zip_eq)
 

@@ -68,15 +68,13 @@ definition distinguish :: "log \<Rightarrow> update_modifier" where
         )
   )"
 
-
 definition can_still_take_ctx :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "can_still_take_ctx e1 e2 s1 s2 t1 t2 = (
     \<forall>t. accepts_trace e1 t \<and> gets_us_to s1 e1 0 <> t \<and>  accepts_trace e2 t \<and> gets_us_to s2 e2 0 <> t \<longrightarrow>
     (\<exists>a. anterior_context e2 t = Some a \<and> (\<forall>i. can_take_transition t2 i a \<longrightarrow> can_take_transition t1 i a))
   )"
 
-lemma distinguishing_guard_subsumption:
-"Label t1 = Label t2 \<Longrightarrow>
+lemma distinguishing_guard_subsumption: "Label t1 = Label t2 \<Longrightarrow>
  Arity t1 = Arity t2 \<Longrightarrow>
  Outputs t1 = Outputs t2 \<Longrightarrow>
  Updates t1 = Updates t2 \<Longrightarrow>
@@ -98,8 +96,7 @@ definition "can_still_take e1 e2 s1 s2 t1 t2 = (
   can_still_take_ctx (tm e1) (tm e2) s1 s2 t1 t2 \<and>
   accepts_and_gets_us_to_both e1 e2 s1 s2)"
 
-lemma can_still_take_direct_subsumption:
- "can_still_take e1 e2 s1 s2 t1 t2 \<Longrightarrow>
+lemma can_still_take_direct_subsumption: "can_still_take e1 e2 s1 s2 t1 t2 \<Longrightarrow>
   directly_subsumes e1 e2 s1 s2 t1 t2"
   apply (simp add: directly_subsumes_def can_still_take_def)
   apply standard

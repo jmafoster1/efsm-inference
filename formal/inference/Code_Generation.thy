@@ -35,8 +35,7 @@ code_printing
 *)
 definition "initially_undefined_context_check_full = initially_undefined_context_check"
 
-lemma [code]:
-"initially_undefined_context_check e r s = (
+lemma [code]: "initially_undefined_context_check e r s = (
   if s = 0 \<and> (\<forall>((from, to), t) |\<in>| e. to \<noteq> 0) then
     True
   else
@@ -121,8 +120,7 @@ fun always_different_outputs :: "vname aexp list \<Rightarrow> vname aexp list \
   "always_different_outputs ((L v)#t) ((L v')#t') = (if v = v' then always_different_outputs t t' else True)" |
   "always_different_outputs (h#t) (h'#t') = always_different_outputs t t'"
 
-lemma always_different_outputs_outputs_never_equal:
-  "always_different_outputs O1 O2 \<Longrightarrow>
+lemma always_different_outputs_outputs_never_equal: "always_different_outputs O1 O2 \<Longrightarrow>
    apply_outputs O1 s \<noteq> apply_outputs O2 s"
   apply(induct O1 O2 rule: always_different_outputs.induct)
   by (simp_all add: apply_outputs_def)
@@ -175,8 +173,7 @@ definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iE
     gets_us_to s' (tm m2) 0 <> p \<and>
     (case anterior_context (tm m2) p of Some c \<Rightarrow> (\<exists>i. can_take_transition t2 i c))))"
 
-lemma always_different_outputs_can_take_transition_not_subsumed:
-  "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
+lemma always_different_outputs_can_take_transition_not_subsumed: "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
    \<forall>c. posterior_sequence (tm m2) 0 <> p = Some c \<longrightarrow> (\<exists>i. can_take_transition t2 i c) \<longrightarrow> \<not> subsumes t1 c t2"
   apply standard
   apply standard
@@ -184,7 +181,7 @@ lemma always_different_outputs_can_take_transition_not_subsumed:
   apply (rule bad_outputs)
   by (metis always_different_outputs_outputs_never_equal)
 
-lemma always_different_outputs_direct_subsumption: 
+lemma always_different_outputs_direct_subsumption:
   "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
    always_different_outputs_direct_subsumption m1 m2 s s' t2 \<Longrightarrow>
    \<not> directly_subsumes m1 m2 s s' t1 t2"
@@ -255,8 +252,7 @@ definition is_generalisation_of :: "transition \<Rightarrow> transition \<Righta
     (length (filter (tests_input_equality i) (Guards t)) \<ge> 1)
   )"
 
-lemma tests_input_equality:
-  "(\<exists>v. gexp.Eq (V (vname.I xb)) (L v) \<in> set G) = (1 \<le> length (filter (tests_input_equality xb) G))"
+lemma tests_input_equality: "(\<exists>v. gexp.Eq (V (vname.I xb)) (L v) \<in> set G) = (1 \<le> length (filter (tests_input_equality xb) G))"
 proof(induct G)
   case Nil
   then show ?case by simp

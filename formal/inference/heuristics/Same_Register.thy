@@ -13,7 +13,6 @@ fun a_replace_with :: "vname aexp \<Rightarrow> nat \<Rightarrow> nat \<Rightarr
   "a_replace_with (Minus a1 a2) r1 r2 = Minus (a_replace_with a1 r1 r2) (a_replace_with a2 r1 r2)" |
   "a_replace_with (Times a1 a2) r1 r2 = Times (a_replace_with a1 r1 r2) (a_replace_with a2 r1 r2)"
 
-
 fun g_replace_with :: "vname gexp \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> vname gexp" where
   "g_replace_with (Bc x) _ _ = gexp.Bc x" |
   "g_replace_with (Eq a1 a2) r1 r2 = Eq (a_replace_with a1 r1 r2) (a_replace_with a2 r1 r2)" |
