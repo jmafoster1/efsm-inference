@@ -96,7 +96,8 @@ definition "can_still_take e1 e2 s1 s2 t1 t2 = (
   can_still_take_ctx (tm e1) (tm e2) s1 s2 t1 t2 \<and>
   accepts_and_gets_us_to_both e1 e2 s1 s2)"
 
-lemma can_still_take_direct_subsumption: "can_still_take e1 e2 s1 s2 t1 t2 \<Longrightarrow>
+lemma can_still_take_direct_subsumption:
+  "can_still_take e1 e2 s1 s2 t1 t2 \<Longrightarrow>
   directly_subsumes e1 e2 s1 s2 t1 t2"
   apply (simp add: directly_subsumes_def can_still_take_def)
   apply standard

@@ -54,7 +54,8 @@ declare foldl_conv_fold[symmetric]
 lemma fold_conv_foldl [code]: "fold f xs s = foldl (\<lambda>x s. f s x) s xs"
   by (simp add: foldl_conv_fold)
 
-lemma code_list_eq [code]: "HOL.equal xs ys \<longleftrightarrow> length xs = length ys \<and> (\<forall>(x,y) \<in> set (zip xs ys). x = y)"
+lemma code_list_eq [code]:
+  "HOL.equal xs ys \<longleftrightarrow> length xs = length ys \<and> (\<forall>(x,y) \<in> set (zip xs ys). x = y)"
   apply (simp add: HOL.equal_class.equal_eq)
   by (simp add: Ball_set list_eq_iff_zip_eq)
 
@@ -87,7 +88,8 @@ termination
    apply simp
   by (metis Max_eq_iff List.finite_set case_prod_conv length_removeAll_less list.distinct(1) measures_less set_empty)
 
-lemma remdups_fold [code]: "remdups l = foldr (\<lambda>i l. if i \<in> set l then l else i#l) l []"
+lemma remdups_fold [code]:
+  "remdups l = foldr (\<lambda>i l. if i \<in> set l then l else i#l) l []"
 proof(induct l)
   case Nil
   then show ?case
@@ -108,12 +110,12 @@ code_printing
   | constant "List.remdups" \<rightharpoonup> (Scala) "_.par.distinct.toList"
   | constant "List.length" \<rightharpoonup> (Scala) "Nat.Nata(_.par.length)"
   | constant "zip" \<rightharpoonup> (Scala) "_.par.zip((_)).toList"
-  | constant "flatmap" \<rightharpoonup> (Scala) "_.par.flatMap((_)).toList" 
+  | constant "flatmap" \<rightharpoonup> (Scala) "_.par.flatMap((_)).toList"
   | constant "List.null" \<rightharpoonup> (Scala) "_.isEmpty"
-  | constant "map_code" \<rightharpoonup> (Scala) "_.par.map((_)).toList" 
-  | constant "filter_code" \<rightharpoonup> (Scala) "_.par.filter((_)).toList" 
-  | constant "all" \<rightharpoonup> (Scala) "_.par.forall((_))" 
-  | constant "ex" \<rightharpoonup> (Scala) "_.par.exists((_))" 
+  | constant "map_code" \<rightharpoonup> (Scala) "_.par.map((_)).toList"
+  | constant "filter_code" \<rightharpoonup> (Scala) "_.par.filter((_)).toList"
+  | constant "all" \<rightharpoonup> (Scala) "_.par.forall((_))"
+  | constant "ex" \<rightharpoonup> (Scala) "_.par.exists((_))"
   | constant "nth" \<rightharpoonup> (Scala) "_(Code'_Numeral.integer'_of'_nat((_)).toInt)"
   | constant "foldl" \<rightharpoonup> (Scala) "Dirties.foldl"
   | constant "hd" \<rightharpoonup> (Scala) "_.head"

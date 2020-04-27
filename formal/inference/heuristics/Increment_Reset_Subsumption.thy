@@ -36,7 +36,8 @@ lemma same_posterior: "ra \<noteq> V (R r) \<Longrightarrow>
   apply (simp add: remove_obsolete_constraints_def)
   by auto
 (*
-lemma test: "r \<noteq> V (I 1) \<Longrightarrow> medial c [gexp.Eq (V (I 1)) (L (Num n))] r = c r"
+lemma test:
+  "r \<noteq> V (I 1) \<Longrightarrow> medial c [gexp.Eq (V (I 1)) (L (Num n))] r = c r"
   by (simp add: medial_def List.maps_def pairs2context_def cval_def)
 *)
 lemma not_updates_remains_same: "\<not> updates (R r) u \<Longrightarrow>
@@ -56,7 +57,8 @@ next
     by auto
 qed
 
-lemma aux1: "consistent (medial c [gexp.Eq (V (I 1)) (L (Num n))]) \<Longrightarrow>
+lemma aux1:
+  "consistent (medial c [gexp.Eq (V (I 1)) (L (Num n))]) \<Longrightarrow>
        c (V (R r)) = {|cexp.Eq (Num (m - n))|} \<Longrightarrow>
        \<not> updates (R r) (Updates t1) \<Longrightarrow>
        posterior_separate c [gexp.Eq (V (I 1)) (L (Num n))] (Updates t1) (V (R r)) = c (V (R r))"

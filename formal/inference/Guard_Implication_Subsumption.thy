@@ -26,7 +26,8 @@ definition guard_implication_subsumption :: "transition \<Rightarrow> transition
     gexp_implies (fold gAnd (Guards t1) (Bc True)) (fold gAnd (Guards t2) (Bc True))
   )"
 
-lemma guard_implication_subsumption: "guard_implication_subsumption t1 t2 \<Longrightarrow> directly_subsumes m1 m2 s1 s2 t2 t1"
+lemma guard_implication_subsumption:
+  "guard_implication_subsumption t1 t2 \<Longrightarrow> directly_subsumes m1 m2 s1 s2 t2 t1"
   apply (rule subsumes_in_all_contexts_directly_subsumes)
   apply (rule subsumption)
   unfolding guard_implication_subsumption_def can_take_transition_def can_take_def

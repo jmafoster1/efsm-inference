@@ -89,7 +89,8 @@ primrec updates2dot_aux :: "update_function list \<Rightarrow> String.literal li
   "updates2dot_aux [] = []" |
   "updates2dot_aux (h#t) = ((vname2dot (R (fst h)))+STR '' := ''+(aexp2dot (snd h)))#(updates2dot_aux t)"
 
-lemma updates2dot_aux_code [code]: "updates2dot_aux l = map (\<lambda>(r, u). (vname2dot (R r))+STR '' := ''+(aexp2dot u)) l"
+lemma updates2dot_aux_code [code]:
+  "updates2dot_aux l = map (\<lambda>(r, u). (vname2dot (R r))+STR '' := ''+(aexp2dot u)) l"
   by (induct l, auto)
 
 primrec outputs2dot :: "output_function list \<Rightarrow> nat \<Rightarrow> String.literal list" where

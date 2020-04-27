@@ -56,7 +56,8 @@ lemma merge_state_self: "merge_states s s t = t"
   apply (simp add: merge_states_def merge_states_aux_def)
   by force
 
-lemma merge_states_self_simp [code]: "merge_states x y t = (if x = y then t else if x > y then merge_states_aux x y t else merge_states_aux y x t)"
+lemma merge_states_self_simp [code]:
+  "merge_states x y t = (if x = y then t else if x > y then merge_states_aux x y t else merge_states_aux y x t)"
   apply (simp add: merge_states_def merge_states_aux_def)
   by force
 
@@ -74,7 +75,8 @@ definition state_nondeterminism :: "nat \<Rightarrow> (cfstate \<times> transiti
 lemma state_nondeterminism_empty[simp]: "state_nondeterminism a {||} = {||}"
   by (simp add: state_nondeterminism_def ffilter_def Set.filter_def)
 
-lemma state_nondeterminism_singledestn[simp]: "state_nondeterminism a {|x|} = {||}"
+lemma state_nondeterminism_singledestn[simp]:
+  "state_nondeterminism a {|x|} = {||}"
   by (simp add: state_nondeterminism_def ffilter_def Set.filter_def)
 
 definition S :: "iEFSM \<Rightarrow> nat fset" where
@@ -84,11 +86,13 @@ lemma S_alt: "S t = EFSM.S (tm t)"
   apply (simp add: S_def EFSM.S_def tm_def)
   by force
 
-lemma to_in_S: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrightarrow> to |\<in>| S xb)"
+lemma to_in_S:
+  "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrightarrow> to |\<in>| S xb)"
   apply (simp add: S_def)
   by blast
 
-lemma from_in_S: "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrightarrow> from |\<in>| S xb)"
+lemma from_in_S:
+  "(\<exists>to from uid. (uid, (from, to), t) |\<in>| xb \<longrightarrow> from |\<in>| S xb)"
   apply (simp add: S_def)
   by blast
 
@@ -175,10 +179,10 @@ fun make_branch :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Righta
   "make_branch e _ _ [] = e" |
   "make_branch e s r ((label, inputs, outputs)#t) =
     (case (step (tm e) s r label inputs) of
-      Some (transition, s', outputs', updated) \<Rightarrow> 
+      Some (transition, s', outputs', updated) \<Rightarrow>
         if outputs' = (map Some outputs) then
           make_branch e s' updated t
-        else 
+        else
           make_branch (add_transition e s label inputs outputs) ((maxS (tm e))+1) r t  |
       None \<Rightarrow>
           make_branch (add_transition e s label inputs outputs) ((maxS (tm e))+1) r t
@@ -190,7 +194,8 @@ primrec make_pta_aux :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
 
 definition "make_pta log = make_pta_aux log {||}"
 
-lemma make_pta_aux_fold [code]: "make_pta_aux l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
+lemma make_pta_aux_fold [code]:
+  "make_pta_aux l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
   by(induct l arbitrary: e, auto)
 
 type_synonym update_modifier = "tids \<Rightarrow> tids \<Rightarrow> cfstate \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option"
@@ -198,7 +203,7 @@ type_synonym update_modifier = "tids \<Rightarrow> tids \<Rightarrow> cfstate \<
 definition null_modifier :: update_modifier where
   "null_modifier f _ _ _ _ _ _ = None"
 
-record score = 
+record score =
   Score :: nat
   S1 :: cfstate
   S2 :: cfstate
@@ -215,13 +220,18 @@ primrec paths_of_length :: "nat \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Righ
       ffilter (\<lambda>l. length l = Suc m) paths
   )"
 
-lemma fBall_ffilter: "\<forall>x |\<in>| X. f x \<Longrightarrow> ffilter f X = X"
+lemma fBall_ffilter:
+  "\<forall>x |\<in>| X. f x \<Longrightarrow> ffilter f X = X"
   by auto
 
-lemma fBall_ffilter2: "X = Y \<Longrightarrow> \<forall>x |\<in>| X. f x \<Longrightarrow> ffilter f X = Y"
+lemma fBall_ffilter2:
+  "X = Y \<Longrightarrow>
+   \<forall>x |\<in>| X. f x \<Longrightarrow>
+   ffilter f X = Y"
   by auto
 
-lemma paths_of_length_1: "paths_of_length 1 e s = fimage (\<lambda>(d, t, id). [id]) (outgoing_transitions s e)"
+lemma paths_of_length_1:
+  "paths_of_length 1 e s = fimage (\<lambda>(d, t, id). [id]) (outgoing_transitions s e)"
   apply (simp add: One_nat_def)
   apply (simp add: outgoing_transitions_def comp_def One_nat_def[symmetric])
   apply (rule fBall_ffilter2)
@@ -241,7 +251,8 @@ fun step_score :: "(tids \<times> tids) list \<Rightarrow> iEFSM \<Rightarrow> s
       score + (step_score t e s)
   )"
 
-lemma step_score_foldr [code]: "step_score xs e s = foldr (\<lambda>(id1, id2) acc. let score = s id1 id2 e in
+lemma step_score_foldr [code]:
+  "step_score xs e s = foldr (\<lambda>(id1, id2) acc. let score = s id1 id2 e in
     if score = 0 then
       0
     else
@@ -268,7 +279,7 @@ definition score_from_list :: "tids list fset \<Rightarrow> tids list fset \<Rig
 
 definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
   "k_score k e strat = (
-    let 
+    let
       states = S e;
       pairs_to_score = (ffilter (\<lambda>(x, y). x < y) (states |\<times>| states));
       paths = fimage (\<lambda>(s1, s2). (s1, s2, paths_of_length k e s1, paths_of_length k e s2)) pairs_to_score;
@@ -296,7 +307,8 @@ definition score_1 :: "iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" wh
       ffilter (\<lambda>x. Score x > 0) scores
   )"
 
-lemma fprod_fimage: "((\<lambda>(_, _, id). [id]) |`| a |\<times>| (\<lambda>(_, _, id). [id]) |`| b) =
+lemma fprod_fimage:
+  "((\<lambda>(_, _, id). [id]) |`| a |\<times>| (\<lambda>(_, _, id). [id]) |`| b) =
        fimage (\<lambda>((_, _, id1), (_, _, id2)). ([id1], [id2])) (a |\<times>| b)"
   apply (simp add: fimage_def fprod_def Abs_fset_inverse fset_both_sides)
   by force
@@ -326,13 +338,14 @@ lemma score_1: "score_1 e s = k_score 1 e s"
   done
 
 inductive satisfies_trace :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
-  base: "satisfies_trace e s d []" |                                         
+  base: "satisfies_trace e s d []" |
   step: "\<exists>(s', T) |\<in>| possible_steps e s d l i.
          apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
          satisfies_trace e s' (apply_updates (Updates T) (join_ir i d) d) t \<Longrightarrow>
          satisfies_trace e s d ((l, i, p)#t)"
 
-lemma satisfies_trace_step: "satisfies_trace e s d ((l, i, p)#t) = (\<exists>(s', T) |\<in>| possible_steps e s d l i.
+lemma satisfies_trace_step:
+  "satisfies_trace e s d ((l, i, p)#t) = (\<exists>(s', T) |\<in>| possible_steps e s d l i.
          apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
          satisfies_trace e s' (apply_updates (Updates T) (join_ir i d) d) t)"
   apply standard
@@ -355,7 +368,8 @@ fun satisfies_trace_prim :: "transition_matrix \<Rightarrow> cfstate \<Rightarro
          apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
          satisfies_trace_prim e s' (apply_updates (Updates T) (join_ir i d) d) t))"
 
-lemma satisfies_trace_prim: "satisfies_trace e s d l = satisfies_trace_prim e s d l"
+lemma satisfies_trace_prim:
+  "satisfies_trace e s d l = satisfies_trace_prim e s d l"
 proof(induct l arbitrary: s d)
 case Nil
   then show ?case
@@ -381,7 +395,8 @@ lemma directly_subsumes_self: "directly_subsumes e1 e2 s s' t t"
   apply (simp add: directly_subsumes_def)
   by (simp add: transition_subsumes_self)
 
-lemma subsumes_in_all_contexts_directly_subsumes: "(\<And>c. subsumes t2 c t1) \<Longrightarrow> directly_subsumes e1 e2 s s' t2 t1"
+lemma subsumes_in_all_contexts_directly_subsumes:
+  "(\<And>c. subsumes t2 c t1) \<Longrightarrow> directly_subsumes e1 e2 s s' t2 t1"
   by (simp add: directly_subsumes_def)
 
 lemma gets_us_to_and_not_subsumes:
@@ -394,7 +409,8 @@ lemma gets_us_to_and_not_subsumes:
    \<not> directly_subsumes e1 e2 s s' t1 t2"
   unfolding directly_subsumes_def by auto
 
-lemma cant_directly_subsume: "(\<And>c. \<not> subsumes t c t') \<Longrightarrow> \<not> directly_subsumes m m' s s' t t'"
+lemma cant_directly_subsume:
+  "(\<And>c. \<not> subsumes t c t') \<Longrightarrow> \<not> directly_subsumes m m' s s' t t'"
   by (simp add: directly_subsumes_def)
 
 definition insert_transition :: "tids \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
@@ -493,7 +509,7 @@ function resolve_nondeterminism :: "(cfstate \<times> cfstate) set \<Rightarrow>
     case merge_transitions failedMerges oldEFSM newEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m np of
       (None, failedMerges) \<Rightarrow> resolve_nondeterminism (insert (dest\<^sub>1, dest\<^sub>2) failedMerges) ss oldEFSM newEFSM m check np |
       (Some new, failedMerges) \<Rightarrow> (
-        let newScores = order_nondeterministic_pairs (np new) in 
+        let newScores = order_nondeterministic_pairs (np new) in
         if (size new, size (S new), size (newScores)) < (size newEFSM, size (S newEFSM), size ss) then
           case resolve_nondeterminism failedMerges newScores oldEFSM new m check np of
             (Some new', failedMerges) \<Rightarrow> (Some new', failedMerges) |
@@ -520,9 +536,9 @@ definition merge :: "(cfstate \<times> cfstate) set \<Rightarrow> iEFSM \<Righta
   "merge failedMerges e s\<^sub>1 s\<^sub>2 m check np = (
     if s\<^sub>1 = s\<^sub>2 \<or> (s\<^sub>1, s\<^sub>2) \<in> failedMerges \<or> (s\<^sub>2, s\<^sub>1) \<in> failedMerges then
       (None, failedMerges)
-    else 
+    else
       let e' = make_distinct (merge_states s\<^sub>1 s\<^sub>2 e) in
-      resolve_nondeterminism failedMerges (order_nondeterministic_pairs (np e')) e e' m check np 
+      resolve_nondeterminism failedMerges (order_nondeterministic_pairs (np e')) e e' m check np
   )"
 
 (* We want to sort first by score (highest to lowest) and then by state pairs (lowest to highest) *)
@@ -582,10 +598,12 @@ termination
    apply simp
   by (metis (no_types, lifting) case_prod_conv measures_less size_fsubset)
 
-lemma min_insert_zero: "a \<noteq> Min (insert a l) \<Longrightarrow> Min (insert a l) = Min l"
+lemma min_insert_zero:
+  "a \<noteq> Min (insert a l) \<Longrightarrow> Min (insert a l) = Min l"
   by (metis Min.coboundedI Min.infinite Min.subset_imp Min_in Min_singleton antisym finite_insert insertE insert_not_empty subset_insertI)
 
-lemma hd_insort: "a \<noteq> Min (insert a (set l)) \<Longrightarrow> hd (insort a (sort l)) = hd (sort l)"
+lemma hd_insort:
+  "a \<noteq> Min (insert a (set l)) \<Longrightarrow> hd (insort a (sort l)) = hd (sort l)"
   by (metis Min_singleton hd_sort_Min list.distinct(1) list.simps(15) min_insert_zero set_empty2 sort_key_simps(2))
 
 fun get_ints :: "execution \<Rightarrow> int list" where
@@ -608,7 +626,7 @@ definition max_output :: "iEFSM \<Rightarrow> nat" where
 
 primrec try_heuristics_check :: "(transition_matrix \<Rightarrow> bool) \<Rightarrow> update_modifier list \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> update_modifier" where
   "try_heuristics_check _ [] _ = null_modifier" |
-  "try_heuristics_check check (h#t) np = (\<lambda>a b c d e f np. 
+  "try_heuristics_check check (h#t) np = (\<lambda>a b c d e f np.
     case h a b c d e f np of
       Some e' \<Rightarrow> if check (tm e') then Some e' else (try_heuristics_check check t np) a b c d e f np |
       None \<Rightarrow> (try_heuristics_check check t np) a b c d e f np
@@ -628,7 +646,8 @@ fun literal_args :: "'a gexp \<Rightarrow> bool" where
   "literal_args (Gt va v) = False" |
   "literal_args (Nor v va) = (literal_args v \<and> literal_args va)"
 
-lemma literal_args_eq: "literal_args (Eq a b) \<Longrightarrow> \<exists>v l. a = (V v) \<and> b = (L l)"
+lemma literal_args_eq:
+  "literal_args (Eq a b) \<Longrightarrow> \<exists>v l. a = (V v) \<and> b = (L l)"
   apply (cases a)
      apply simp
       apply (cases b)
@@ -641,7 +660,7 @@ definition i_possible_steps :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> regist
       \<and> (Label t) = l
       \<and> (length i) = (Arity t)
       \<and> apply_guards (Guards t) (join_ir i r)
-     ) 
+     )
     e)"
 
 definition "accepts_and_gets_us_to_both a b s s' = (
@@ -659,7 +678,7 @@ definition enumerate_log_values :: "log \<Rightarrow> value list" where
 definition enumerate_exec_values_by_label :: "label \<Rightarrow> execution \<Rightarrow> value list" where
   "enumerate_exec_values_by_label label vs = fold (\<lambda>(l, i, p) I. if l = label then List.union (List.union i p) I else I) vs []"
 
-definition enumerate_log_values_by_label :: "label \<Rightarrow> log \<Rightarrow> value list" where 
+definition enumerate_log_values_by_label :: "label \<Rightarrow> log \<Rightarrow> value list" where
   "enumerate_log_values_by_label label log = fold (\<lambda>e I. List.union (enumerate_exec_values_by_label label e) I) log []"
 
 fun test_exec :: "execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> ((label \<times> inputs \<times> cfstate \<times> cfstate \<times> registers \<times> tids \<times> value list \<times> outputs) list \<times> execution)" where

@@ -12,7 +12,8 @@ lemma guard_match_commute: "guardMatch t1 t2 = guardMatch t2 t1"
   apply (simp add: guardMatch_def)
   by auto
 
-lemma guard_match_length: "length (Guards t1) \<noteq> 1 \<or> length (Guards t2) \<noteq> 1 \<Longrightarrow> \<not> guardMatch t1 t2"
+lemma guard_match_length:
+  "length (Guards t1) \<noteq> 1 \<or> length (Guards t2) \<noteq> 1 \<Longrightarrow> \<not> guardMatch t1 t2"
   apply (simp add: guardMatch_def)
   by auto
 
@@ -20,7 +21,7 @@ fun insert_increment :: update_modifier where
   "insert_increment t1ID t2ID s new _ old np = (let
      t1 = get_by_ids new t1ID;
      t2 = get_by_ids new t2ID in
-     if guardMatch t1 t2 \<and> outputMatch t1 t2 then let 
+     if guardMatch t1 t2 \<and> outputMatch t1 t2 then let
           r = case max_reg new of None \<Rightarrow> 1 | Some r \<Rightarrow> r+ 1;
           newReg = R r;
           newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guards = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t1)\<rparr>;
@@ -53,7 +54,7 @@ fun insert_increment_2 :: update_modifier where
   "insert_increment_2 t1ID t2ID s new _ old np = (let
      t1 = get_by_ids new t1ID;
      t2 = get_by_ids new t2ID in
-     if guardMatch t1 t2 \<and> outputMatch t1 t2 then let 
+     if guardMatch t1 t2 \<and> outputMatch t1 t2 then let
           r = case max_reg new of None \<Rightarrow> 1 | Some r \<Rightarrow> r + 1;
           newReg = R r;
           newT1 = \<lparr>Label = Label t1, Arity = Arity t1, Guards = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t1)\<rparr>;

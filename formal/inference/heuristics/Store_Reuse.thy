@@ -55,7 +55,7 @@ definition get_by_id_intratrace_matches :: "execution \<Rightarrow> (index \<tim
   the input trace.
 *)
 definition i_step :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> tids \<times> registers) option" where
-  "i_step tr e s r l i = (let 
+  "i_step tr e s r l i = (let
     poss_steps = (i_possible_steps e s r l i);
     possibilities = ffilter (\<lambda>(u, s', t). accepts (tm e) s' (apply_updates (Updates t) (join_ir i r) r) tr) poss_steps in
     case random_member possibilities of
@@ -74,7 +74,7 @@ primrec (nonexhaustive) walk_up_to :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat
     )"
 
 definition find_intertrace_matches_aux :: "(index \<times> index) fset \<Rightarrow> iEFSM \<Rightarrow> execution \<Rightarrow> match fset" where
-  "find_intertrace_matches_aux intras e t = fimage (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). (((walk_up_to e1 e 0 <> t), io1, inx1), ((walk_up_to e2 e 0 <> t), io2, inx2))) intras" 
+  "find_intertrace_matches_aux intras e t = fimage (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). (((walk_up_to e1 e 0 <> t), io1, inx1), ((walk_up_to e2 e 0 <> t), io2, inx2))) intras"
 
 definition find_intertrace_matches :: "log \<Rightarrow> iEFSM \<Rightarrow> match list" where
   "find_intertrace_matches l e = filter (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). e1 \<noteq> e2) (concat (map (\<lambda>(t, m). sorted_list_of_fset (find_intertrace_matches_aux m e t)) (zip l (map get_by_id_intratrace_matches l))))"
@@ -136,13 +136,16 @@ definition modify :: "match list \<Rightarrow> tids \<Rightarrow> tids \<Rightar
 definition heuristic_1 :: "log \<Rightarrow> update_modifier" where
   "heuristic_1 l t1 t2 s new _ old np = modify (find_intertrace_matches l old) t1 t2 new"
 
-lemma remove_guard_add_update_preserves_outputs: "Outputs (remove_guard_add_update t i r) = Outputs t"
+lemma remove_guard_add_update_preserves_outputs:
+  "Outputs (remove_guard_add_update t i r) = Outputs t"
   by (simp add: remove_guard_add_update_def)
 
-lemma remove_guard_add_update_preserves_label: "Label (remove_guard_add_update t i r) = Label t"
+lemma remove_guard_add_update_preserves_label:
+  "Label (remove_guard_add_update t i r) = Label t"
   by (simp add: remove_guard_add_update_def)
 
-lemma remove_guard_add_update_preserves_arity: "Arity (remove_guard_add_update t i r) = Arity t"
+lemma remove_guard_add_update_preserves_arity:
+  "Arity (remove_guard_add_update t i r) = Arity t"
   by (simp add: remove_guard_add_update_def)
 
 lemmas remove_guard_add_update_preserves = remove_guard_add_update_preserves_label
@@ -150,24 +153,29 @@ lemmas remove_guard_add_update_preserves = remove_guard_add_update_preserves_lab
                                            remove_guard_add_update_preserves_outputs
 
 definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and> 
+  "is_generalisation_of t' t i r = (t' = remove_guard_add_update t i r \<and>
                                     i < Arity t \<and>
                                     (\<exists>v. Eq (V (vname.I i)) (L v) \<in> set (Guards t)) \<and>
                                     r \<notin> set (map fst (Updates t)))"
 
-lemma generalise_output_preserves_label: "Label (generalise_output t r p) = Label t"
+lemma generalise_output_preserves_label:
+  "Label (generalise_output t r p) = Label t"
   by (simp add: generalise_output_def)
 
-lemma generalise_output_preserves_arity: "Arity (generalise_output t r p) = Arity t"
+lemma generalise_output_preserves_arity:
+  "Arity (generalise_output t r p) = Arity t"
   by (simp add: generalise_output_def)
 
-lemma generalise_output_preserves_guard: "Guards (generalise_output t r p) = Guards t"
+lemma generalise_output_preserves_guard:
+  "Guards (generalise_output t r p) = Guards t"
   by (simp add: generalise_output_def)
 
-lemma generalise_output_preserves_output_length: "length (Outputs (generalise_output t r p)) = length (Outputs t)"
+lemma generalise_output_preserves_output_length:
+  "length (Outputs (generalise_output t r p)) = length (Outputs t)"
   by (simp add: generalise_output_def)
 
-lemma generalise_output_preserves_updates: "Updates (generalise_output t r p) = Updates t"
+lemma generalise_output_preserves_updates:
+  "Updates (generalise_output t r p) = Updates t"
   by (simp add: generalise_output_def)
 
 lemmas generalise_output_preserves = generalise_output_preserves_label

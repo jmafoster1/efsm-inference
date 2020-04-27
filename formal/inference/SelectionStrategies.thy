@@ -43,7 +43,7 @@ definition naive_score_outputs :: strategy where
 (* Functions with same label, and input and output arities contribute one point for each guard    *)
 (* and output they share. *)
 definition naive_score_comprehensive :: strategy where
-  "naive_score_comprehensive t1ID t2ID e = (let t1 = get_by_ids e t1ID; t2 = get_by_ids e t2ID in 
+  "naive_score_comprehensive t1ID t2ID e = (let t1 = get_by_ids e t1ID; t2 = get_by_ids e t2ID in
                                     if Label t1 = Label t2 \<and> Arity t1 = Arity t2 then
                                       if length (Outputs t1) = length (Outputs t2) then
                                         card (set (Guards t1) \<inter> set (Guards t2)) + length (filter (\<lambda>(p1, p2). p1 = p2) (zip (Outputs t1) (Outputs t2)))
@@ -53,7 +53,7 @@ definition naive_score_comprehensive :: strategy where
 (* Functions with same label, and input and output arities contribute one point for each guard    *)
 (* and output they share. Transitions which are exactly equal get a very high score. *)
 definition naive_score_comprehensive_eq_high :: strategy where
-  "naive_score_comprehensive_eq_high t1ID t2ID e = (let t1 = get_by_ids e t1ID; t2 = get_by_ids e t2ID in 
+  "naive_score_comprehensive_eq_high t1ID t2ID e = (let t1 = get_by_ids e t1ID; t2 = get_by_ids e t2ID in
                                            if t1 = t2 then
                                              100
                                            else

@@ -29,7 +29,7 @@ fun gexp2string :: "vname gexp \<Rightarrow> String.literal" where
   "gexp2string (gexp.Bc False) = STR ''FALSE''" |
   "gexp2string (gexp.Eq a b) = aexp2string a + STR ''=''+aexp2string b" |
   "gexp2string (gexp.Gt a b) = aexp2string a + STR ''>''+aexp2string b" |
-  "gexp2string (gexp.Nor a b) = STR ''!(''+gexp2string a + STR ''||''+gexp2string b+STR '')''" 
+  "gexp2string (gexp.Nor a b) = STR ''!(''+gexp2string a + STR ''||''+gexp2string b+STR '')''"
 (*  "gexp2string (gexp.Null v) = STR ''NULL ''+aexp2string v" *)
 
 fun join :: "String.literal list \<Rightarrow> String.literal \<Rightarrow> String.literal" where

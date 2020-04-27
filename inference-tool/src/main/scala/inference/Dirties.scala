@@ -422,7 +422,7 @@ object Dirties {
       trainingSet.put(scenario, new BooleanVariableAssignment("g1", true))
     }
 
-    // g2 needs to be false if g1 is true
+    // g1 needs to be false if g2 is true
     for ((inputs, registers) <- g2) {
       var scenario = List[VariableAssignment[_]]()
       for ((ip, ix) <- inputs.zipWithIndex) ip match {
@@ -451,7 +451,7 @@ object Dirties {
 
         }
       }
-      trainingSet.put(scenario, new BooleanVariableAssignment("g2", false))
+      trainingSet.put(scenario, new BooleanVariableAssignment("g1", false))
     }
 
     intTerms = intVarNames.distinct.map(intVarName => new IntegerVariableAssignmentTerminal(intVarName, false)) ++

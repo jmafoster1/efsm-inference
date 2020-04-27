@@ -1,5 +1,5 @@
 theory Code_Generation
-  imports 
+  imports
    "HOL-Library.Code_Target_Numeral"
    Inference SelectionStrategies
    Guard_Implication_Subsumption
@@ -53,7 +53,8 @@ fun mutex :: "'a gexp \<Rightarrow> 'a gexp \<Rightarrow> bool" where
   "mutex (gexp.In v l) (gexp.In v' l') = (v = v' \<and> set l \<inter> set l' = {})" |
   "mutex _ _ = False"
 
-lemma mutex_not_gval: "mutex x y \<Longrightarrow> gval (gAnd y x) s \<noteq> true"
+lemma mutex_not_gval:
+  "mutex x y \<Longrightarrow> gval (gAnd y x) s \<noteq> true"
   unfolding gAnd_def
   apply (induct x y rule: mutex.induct)
   apply (simp, metis option.inject)
@@ -75,7 +76,8 @@ definition choice_cases :: "transition \<Rightarrow> transition \<Rightarrow> bo
        satisfiable ((fold gAnd (rev (Guards t1@Guards t2)) (gexp.Bc True)))
    )"
 
-lemma existing_mutex_not_true: "\<exists>x\<in>set G. \<exists>y\<in>set G. mutex x y \<Longrightarrow> \<not> apply_guards G s"
+lemma existing_mutex_not_true:
+  "\<exists>x\<in>set G. \<exists>y\<in>set G. mutex x y \<Longrightarrow> \<not> apply_guards G s"
   apply clarify
   apply (simp add: apply_guards_rearrange)
   apply (case_tac "y \<in> set (x#G)")
@@ -120,7 +122,8 @@ fun always_different_outputs :: "vname aexp list \<Rightarrow> vname aexp list \
   "always_different_outputs ((L v)#t) ((L v')#t') = (if v = v' then always_different_outputs t t' else True)" |
   "always_different_outputs (h#t) (h'#t') = always_different_outputs t t'"
 
-lemma always_different_outputs_outputs_never_equal: "always_different_outputs O1 O2 \<Longrightarrow>
+lemma always_different_outputs_outputs_never_equal:
+  "always_different_outputs O1 O2 \<Longrightarrow>
    apply_outputs O1 s \<noteq> apply_outputs O2 s"
   apply(induct O1 O2 rule: always_different_outputs.induct)
   by (simp_all add: apply_outputs_def)
@@ -133,7 +136,8 @@ fun no_illegal_updates_code :: "update_function list \<Rightarrow> nat \<Rightar
   "no_illegal_updates_code [] _ = True" |
   "no_illegal_updates_code ((r', u)#t) r = (r \<noteq> r' \<and> no_illegal_updates_code t r)"
 
-lemma no_illegal_updates_code_aux: "(\<forall>u\<in>set u. fst u \<noteq> r) = no_illegal_updates_code u r"
+lemma no_illegal_updates_code_aux:
+  "(\<forall>u\<in>set u. fst u \<noteq> r) = no_illegal_updates_code u r"
 proof(induct u)
 case Nil
   then show ?case
@@ -146,7 +150,8 @@ case (Cons a u)
     by auto
 qed
 
-lemma no_illegal_updates_code [code]: "no_illegal_updates t r = no_illegal_updates_code (Updates t) r"
+lemma no_illegal_updates_code [code]:
+  "no_illegal_updates t r = no_illegal_updates_code (Updates t) r"
   by (simp add: no_illegal_updates_def no_illegal_updates_code_aux)
 
 fun input_updates_register_aux :: "update_function list \<Rightarrow> nat option" where
@@ -173,7 +178,8 @@ definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iE
     gets_us_to s' (tm m2) 0 <> p \<and>
     (case anterior_context (tm m2) p of Some c \<Rightarrow> (\<exists>i. can_take_transition t2 i c))))"
 
-lemma always_different_outputs_can_take_transition_not_subsumed: "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
+lemma always_different_outputs_can_take_transition_not_subsumed:
+  "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
    \<forall>c. posterior_sequence (tm m2) 0 <> p = Some c \<longrightarrow> (\<exists>i. can_take_transition t2 i c) \<longrightarrow> \<not> subsumes t1 c t2"
   apply standard
   apply standard
@@ -196,14 +202,17 @@ lemma always_different_outputs_direct_subsumption:
 definition negate :: "'a gexp list \<Rightarrow> 'a gexp" where
   "negate g = gNot (fold gAnd g (Bc True))"
 
-lemma gval_negate_cons: "gval (negate (a # G)) s = gval (gNot a) s \<or>\<^sub>? gval (negate G) s"
+lemma gval_negate_cons:
+  "gval (negate (a # G)) s = gval (gNot a) s \<or>\<^sub>? gval (negate G) s"
   apply (simp only: negate_def gval_gNot gval_fold_equiv_gval_foldr)
   by (simp only: foldr.simps comp_def gval_gAnd de_morgans_2)
 
-lemma negate_true_guard: "(gval (negate G) s = true) = (gval (fold gAnd G (Bc True)) s = false)"
+lemma negate_true_guard:
+  "(gval (negate G) s = true) = (gval (fold gAnd G (Bc True)) s = false)"
   by (metis (no_types, lifting) gval_gNot maybe_double_negation maybe_not.simps(1) negate_def)
 
-lemma gval_negate_not_invalid: "(gval (negate gs) (join_ir i ra) \<noteq> invalid) = (gval (fold gAnd gs (Bc True)) (join_ir i ra) \<noteq> invalid)"
+lemma gval_negate_not_invalid:
+  "(gval (negate gs) (join_ir i ra) \<noteq> invalid) = (gval (fold gAnd gs (Bc True)) (join_ir i ra) \<noteq> invalid)"
   by (metis gval_gNot maybe_not_invalid negate_def)
 
 definition "dirty_always_different_outputs_direct_subsumption = always_different_outputs_direct_subsumption"
@@ -227,7 +236,8 @@ lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (
 definition guard_subset_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "guard_subset_subsumption t1 t2 = (Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> set (Guards t1) \<subseteq> set (Guards t2) \<and> Outputs t1 = Outputs t2 \<and> Updates t1 = Updates t2)"
 
-lemma guard_subset_subsumption: "guard_subset_subsumption t1 t2 \<Longrightarrow> directly_subsumes a b s s' t1 t2"
+lemma guard_subset_subsumption:
+  "guard_subset_subsumption t1 t2 \<Longrightarrow> directly_subsumes a b s s' t1 t2"
   apply (rule subsumes_in_all_contexts_directly_subsumes)
   apply (simp add: subsumes_def guard_subset_subsumption_def)
   by (metis can_take_def can_take_transition_def medial_subset)
@@ -252,7 +262,8 @@ definition is_generalisation_of :: "transition \<Rightarrow> transition \<Righta
     (length (filter (tests_input_equality i) (Guards t)) \<ge> 1)
   )"
 
-lemma tests_input_equality: "(\<exists>v. gexp.Eq (V (vname.I xb)) (L v) \<in> set G) = (1 \<le> length (filter (tests_input_equality xb) G))"
+lemma tests_input_equality:
+  "(\<exists>v. gexp.Eq (V (vname.I xb)) (L v) \<in> set G) = (1 \<le> length (filter (tests_input_equality xb) G))"
 proof(induct G)
   case Nil
   then show ?case by simp
@@ -276,8 +287,9 @@ next
     apply (case_tac x22)
     using tests_input_equality.elims(2) by auto
 qed
-                                                                  
-lemma [code]: "Store_Reuse.is_generalisation_of x xa xb xc = is_generalisation_of x xa xb xc"
+
+lemma [code]:
+  "Store_Reuse.is_generalisation_of x xa xb xc = is_generalisation_of x xa xb xc"
   apply (simp add: Store_Reuse.is_generalisation_of_def is_generalisation_of_def)
   using tests_input_equality by blast
 
@@ -294,7 +306,7 @@ function infer_with_log :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarr
     let scores = if k = 1 then score_1 e r else (k_score k e r) in
     case inference_step e scores m check np of
       None \<Rightarrow> e |
-      Some new \<Rightarrow> let 
+      Some new \<Rightarrow> let
         temp = iEFSM2dot new stepNo;
         temp2 = logStates (size (S new)) (size (S e)) in
         if (S new) |\<subset>| (S e) then
@@ -401,7 +413,8 @@ code_printing constant get_update \<rightharpoonup> (Scala) "Dirties.getUpdate"
 definition mismatched_updates :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "mismatched_updates t1 t2 = (\<exists>r \<in> set (map fst (Updates t1)). r \<notin> set (map fst (Updates t2)))"
 
-lemma [code]: "directly_subsumes e1 e2 s1 s2 t1 t2  = (if t1 = t2 then True else dirty_directly_subsumes e1 e2 s1 s2 t1 t2)"
+lemma [code]:
+  "directly_subsumes e1 e2 s1 s2 t1 t2  = (if t1 = t2 then True else dirty_directly_subsumes e1 e2 s1 s2 t1 t2)"
   by (simp add: directly_subsumes_self dirty_directly_subsumes_def)
 
 export_code

@@ -24,7 +24,8 @@ declare Cardinality.subset'_code [code del]
 declare subset_eq [code]
 
 (* Get rid of that one unnamed lemma *)
-lemma [code del]: "x \<in> List.coset xs \<longleftrightarrow> \<not> List.member xs x"
+lemma [code del]:
+  "x \<in> List.coset xs \<longleftrightarrow> \<not> List.member xs x"
   by (simp add: member_def)
 
 lemma sup_set_append[code]: "(set x) \<union> (set y) = set (x @ y)"
@@ -36,7 +37,8 @@ lemma [code]: "insert x (set s) = (if x \<in> set s then set s else set (x#s))"
   apply (simp)
   by auto
 
-lemma [code]: "Cardinality.subset' (set l1) (set l2) = ((list_all (\<lambda>x. List.member l2 x)) l1)"
+lemma [code]:
+  "Cardinality.subset' (set l1) (set l2) = ((list_all (\<lambda>x. List.member l2 x)) l1)"
   by (meson in_set_member list.pred_set subset'_code(2))
 
 end
