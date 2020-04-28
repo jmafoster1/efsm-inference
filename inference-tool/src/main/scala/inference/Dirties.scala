@@ -335,23 +335,22 @@ object Dirties {
   var guardMem: List[mint.inference.gp.tree.Node[mint.tracedata.types.VariableAssignment[_]]] = List()
   var vars: scala.collection.immutable.Map[(String, Value.value), VariableAssignment[_]] = scala.collection.immutable.Map()
 
-  def varOf(name: String, value: Value.value): VariableAssignment[_] = varOf((name, value))
-
-  def varOf(nv: (String, Value.value)): VariableAssignment[_] = nv match {
-    case (name, value) => {
-      value match {
-        case Value.Numa(n) => {
-          if (!vars.isDefinedAt((name, Value.Numa(n))))
-            vars += ((name, Value.Numa(n)) -> new IntegerVariableAssignment(name, TypeConversion.toLong(n)))
-        }
-        case Value.Str(s) => {
-          if (!vars.isDefinedAt((name, Value.Str(s))))
-            vars += ((name, Value.Str(s)) -> new StringVariableAssignment(name, s))
-        }
-      }
+  def varOf(name: String, value: Value.value): VariableAssignment[_] = {
+    if (vars.isDefinedAt((name, value)))
       return vars((name, value))
+    value match {
+      case Value.Numa(n) => {
+        vars += ((name, value) -> new IntegerVariableAssignment(name, TypeConversion.toLong(n)))
+      }
+      case Value.Str(s) => {
+        vars += ((name, value) -> new StringVariableAssignment(name, s))
+      }
     }
+    return vars((name, value))
   }
+
+  def varOf(nv: (String, Value.value)): VariableAssignment[_] = varOf(nv._1, nv._2)
+
 
   def findDistinguishingGuards(
     g1: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])]),
@@ -373,12 +372,11 @@ object Dirties {
     IntegerVariableAssignment.clearValues()
     StringVariableAssignment.clearValues()
 
-    gpGenerator.addTerminals(GP.boolTerms);
     gpGenerator.addFunctions(GP.intNonTerms);
     gpGenerator.addFunctions(GP.boolNonTerms)
 
     var intVarVals = List(0l, 1l, 2l)
-    var stringVarVals = List[String]()
+    var stringVarVals = List[String]("")
 
     var intTerms = List[VariableTerminal[_]]()
 
@@ -461,11 +459,12 @@ object Dirties {
       stringVarVals.distinct.map(stringVarVal => new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarVal, stringVarVal), true, false)) ++
       stringTerms
 
-    gpGenerator.addTerminals(intTerms)
-    gpGenerator.addTerminals(stringTerms)
+    gpGenerator.setTerminals(GP.boolTerms++intTerms++stringTerms)
+
+    println("INT TERMS: "+intTerms)
+    println("STRING TERMS: "+stringTerms)
 
     Log.root.debug("Guard training set: " + trainingSet)
-    Log.root.debug("  Terminals: " + gpGenerator.getTerminals())
 
     // If any of the guards need to simultaneously be true and false then stop
     if (trainingSet.keys().stream().anyMatch(x => trainingSet.get(x).size() > 1)) {
@@ -474,7 +473,7 @@ object Dirties {
       return None
     }
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 5, 2));
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 2));
 
     guardMem.find(f => gp.isCorrect(f)  && checkVarConsistent(intTerms++stringTerms, f)) match {
       case None => {}
@@ -526,20 +525,6 @@ object Dirties {
     train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Map[Nat.nat, Option[Value.value]]))]): Option[AExp.aexp[VName.vname]] = {
 
     Log.root.debug("  Getting update")
-
-    // if (train.length == 1) train.head match {
-    //   case (inputs, (anterior, posterior)) => {
-    //     if (inputs.length == 0 && anterior.size == 0) {
-    //       posterior.head match {
-    //         case (_, Some(best)) => {
-    //           Log.root.debug("    Singleton update: " + PrettyPrinter.show(best))
-    //           return Some(AExp.L(best))
-    //         }
-    //         case (_, None) => {}
-    //       }
-    //     }
-    //   }
-    // }
 
     val r_index = TypeConversion.toInt(r)
     val ioPairs = (train.map {
@@ -610,12 +595,9 @@ object Dirties {
       stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
     }
 
-    gpGenerator.addTerminals(intTerms)
-    gpGenerator.addTerminals(stringTerms)
+    gpGenerator.setTerminals(intTerms++stringTerms)
 
     Log.root.debug("    Update training set: " + trainingSet)
-    // Log.root.debug("  Int terminals: " + intTerms)
-    // Log.root.debug("  String terminals: " + stringTerms)
 
     // If number of inputs < possible outputs then we can't solve it
     if (trainingSet.keys().stream().anyMatch(x => trainingSet.get(x).size() > 1 && x.size() < trainingSet.get(x).size())) {
@@ -623,7 +605,7 @@ object Dirties {
       return None
     }
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 2, 2));
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 2));
 
     funMem.find(f => gp.isCorrect(f) && checkVarConsistent(intTerms++stringTerms, f)) match {
       case None => {}
@@ -635,7 +617,7 @@ object Dirties {
       }
     }
 
-    gp.setSeeds(intTerms ++ stringTerms)
+    gp.setSeeds((intTerms ++ stringTerms))
     val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]].simp
 
     Log.root.debug("    Best update is: " + best)
@@ -659,6 +641,8 @@ object Dirties {
     outputs: List[Value.value],
     latentVariable: Boolean = false): Option[(AExp.aexp[VName.vname], Map[VName.vname, String])] = {
     Log.root.debug("Getting Output...")
+
+    println("  registers: "+registers)
 
     if (outputs.distinct.length == 1) {
       Log.root.debug("  Singleton literal output")
@@ -735,16 +719,16 @@ object Dirties {
       Log.root.debug(s"  Latent variable: r$r_index")
     }
 
-    Log.root.debug("  Output training set: " + trainingSet)
-
     // If we have a key that's empty but returns more than one value then we need a latent variable
     if ((!latentVariable) && trainingSet.keys().stream().anyMatch(x => x.size() == 0 && trainingSet.get(x).size() > 1)) {
       if (latentInt) {
         val best = new IntegerVariableAssignmentTerminal(f"r$r_index", true).asInstanceOf[Node[VariableAssignment[_]]]
+        Log.root.debug("  Output training set: " + trainingSet)
         Log.root.debug("  Secret best output is: " + best)
         return Some((TypeConversion.toAExp(best), getTypes(best)))
       } else {
         val best = new StringVariableAssignmentTerminal(new StringVariableAssignment(f"r$r_index"), false, true).asInstanceOf[Node[VariableAssignment[_]]]
+        Log.root.debug("  Output training set: " + trainingSet)
         Log.root.debug("  Secret best output is: " + best)
         return Some((TypeConversion.toAExp(best), getTypes(best)))
       }
@@ -769,31 +753,30 @@ object Dirties {
         stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, true)) :: stringTerms
     }
 
-    gpGenerator.addTerminals(intTerms)
-    gpGenerator.addTerminals(stringTerms)
+    Log.root.debug("  Output training set: " + trainingSet)
+    Log.root.debug("intTerms: " + intTerms)
 
-    Log.root.debug("  Int terminals: " + intTerms)
-    // Log.root.debug("  String terminals: " + stringTerms)
+    gpGenerator.setTerminals(intTerms++stringTerms)
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 2, 2));
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 2));
 
     funMem.find(f => gp.isCorrect(f) && checkVarConsistent(intTerms++stringTerms, f)) match {
       case None => {}
       case Some(best) => {
         Log.root.debug("    Best memoised output is: " + best)
         Log.root.debug("    Best output is correct")
-
         return Some((TypeConversion.toAExp(best), getTypes(best)))
       }
     }
 
-    gp.setSeeds(intTerms ++ stringTerms)
+    gp.setSeeds((intTerms ++ stringTerms).filter(x => !x.isConstant()))
     val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]].simp
 
     Log.root.debug("  Best output is: " + best)
 
     if (gp.isCorrect(best)) {
       Log.root.debug("  Best output is correct")
+      // System.exit(0)
       val aexp = TypeConversion.toAExp(best)
       if (!AExp.is_lit(aexp))
         funMem = best :: funMem

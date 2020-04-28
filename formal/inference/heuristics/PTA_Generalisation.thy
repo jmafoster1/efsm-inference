@@ -93,18 +93,21 @@ definition min_s :: "(struct option \<times> struct \<times> (cfstate \<times> c
 
 definition "strip_ss = map (\<lambda>(_, _, id, t). (id, t))"
 
+definition groups :: "(struct option \<times> struct \<times> (nat \<times> nat \<times> nat list \<times> transition) list) list \<Rightarrow>
+                      (struct option \<times> struct) \<Rightarrow>f (nat \<times> nat \<times> nat list \<times> transition) list" where
+"groups l = fold (\<lambda>(tag, s, gp) f. f((tag, s) $:= gp@(f$(tag, s)))) l (K$ [])"
+
 definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list" where
   "transition_groups e l = (
     let
       trace_groups = map (transition_groups_exec e) l;
       tagged = map (tag None) trace_groups;
       flat =  sort (fold (@) tagged []);
-      minned = sort (map min_s flat);
-      pairwise_groups = group_by (\<lambda>(t1, m1, s1, g1) (t2, m2, s2, g2). t1 = t2 \<and> s1 = s2) minned;
-      group_minned = map (\<lambda>g. (fst (snd (hd g)), map (\<lambda>(t1, m1, s1, g1). (t1, s1, strip_ss g1)) g)) pairwise_groups;
-      stripped = map snd (sort group_minned)
+      group_fun = groups flat;
+      grouped = map (\<lambda>x. group_fun $ x) (finfun_to_list group_fun);
+      state_groups = map (\<lambda>gp. (Max (set (map fst gp)), map (snd \<circ> snd) gp)) grouped
     in
-    map (\<lambda>l. fold (@) (map ((\<lambda>(l1, s1, g1). g1)) l) []) stripped
+      map snd (sort state_groups)
   )"
 
 (* Assign registers and inputs with associated outputs to the correct training set based on       *)
@@ -146,7 +149,25 @@ declare get_output_def [code del]
 code_printing constant get_output \<rightharpoonup> (Scala) "Dirties.getOutput"
 
 definition get_outputs :: "nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> value list list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option list" where
-  "get_outputs maxReg values I r outputs = map (\<lambda>ps. get_output maxReg values I r ps) (transpose outputs)"
+  "get_outputs maxReg values I r outputs = map (\<lambda>(maxReg, ps). get_output maxReg values I r ps) (enumerate maxReg (transpose outputs))"
+
+primrec get_outputs_prim :: "nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> value list list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option list" where
+  "get_outputs_prim maxReg values I r [] = []" |
+  "get_outputs_prim maxReg values I r (h#t) = (get_output maxReg values I r h)#(get_outputs_prim (maxReg+1) values I r t)"
+
+lemma [code]:
+  shows "get_outputs maxReg values I r outputs = get_outputs_prim maxReg values I r (transpose outputs)"
+proof-
+  have aux: "\<And>p. map (\<lambda>(maxReg, ps). get_output maxReg values I r ps) (enumerate maxReg p) =
+                 get_outputs_prim maxReg values I r p"
+    subgoal for p
+      apply (induct p arbitrary: maxReg)
+       apply simp
+      by (simp add: Suc_eq_plus1)
+    done
+  show ?thesis
+    by (simp add: get_outputs_def aux)
+qed
 
 fun put_outputs :: "(((vname aexp \<times> (vname \<Rightarrow>f String.literal)) option) \<times> vname aexp) list \<Rightarrow> vname aexp list" where
   "put_outputs [] = []" |
@@ -373,19 +394,44 @@ definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids
     Some e' \<Rightarrow> if satisfies (set log) (tm e') then Some e' else None
   )"
 
+fun merge_if_same :: "iEFSM \<Rightarrow> log \<Rightarrow> (nat \<times> nat) list \<Rightarrow> iEFSM" where
+  "merge_if_same e _ [] = e" |
+  "merge_if_same e l ((r1, r2)#rs) = (
+    let transitions = fimage (snd \<circ> snd) e in
+    if \<exists>(t1, t2) |\<in>| ffilter (\<lambda>(t1, t2). t1 < t2) (transitions |\<times>| transitions).
+      same_structure t1 t2 \<and> r1 \<in> enumerate_regs t1 \<and> r2 \<in> enumerate_regs t2
+    then
+      let newE = replace_with e r1 r2 in
+      if satisfies (set l) (tm newE) then
+        merge_if_same newE l rs
+      else
+        merge_if_same e l rs
+    else
+      merge_if_same e l rs
+  )"
+
+definition merge_regs :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
+  "merge_regs e l = (
+    let
+      regs = all_regs e;
+      reg_pairs = sorted_list_of_set (Set.filter (\<lambda>(r1, r2). r1 < r2) (regs \<times> regs))
+    in
+    merge_if_same e l reg_pairs
+  )"
+
 primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> ((tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> iEFSM" where
   "groupwise_generalise_and_update _ e [] = e" |
   "groupwise_generalise_and_update log e (gp#t) = (
     case generalise_and_update log e (fst gp) (snd gp) of
       None \<Rightarrow> groupwise_generalise_and_update log e t |
-      Some e' \<Rightarrow> groupwise_generalise_and_update log e' t
+      Some e' \<Rightarrow> groupwise_generalise_and_update log (merge_regs e' log) t
   )"
 
-lemma groupwise_generalise_and_update_fold [code]:
+lemma groupwise_generalise_and_update_fold:
 "groupwise_generalise_and_update log e gs = fold (\<lambda>gp e.
   case generalise_and_update log e (fst gp) (snd gp) of
         None \<Rightarrow> e |
-        Some e' \<Rightarrow> e'
+        Some e' \<Rightarrow> (merge_regs e' log)
   ) gs e"
   apply(induct gs arbitrary: e)
    apply simp
@@ -603,31 +649,6 @@ definition drop_all_guards :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> log \<Rig
       (Some resolved, _) \<Rightarrow> resolved
   )"
 
-fun merge_if_same :: "iEFSM \<Rightarrow> log \<Rightarrow> (nat \<times> nat) list \<Rightarrow> iEFSM" where
-  "merge_if_same e _ [] = e" |
-  "merge_if_same e l ((r1, r2)#rs) = (
-    let transitions = fimage (snd \<circ> snd) e in
-    if \<exists>(t1, t2) |\<in>| ffilter (\<lambda>(t1, t2). t1 < t2) (transitions |\<times>| transitions).
-      same_structure t1 t2 \<and> r1 \<in> enumerate_regs t1 \<and> r2 \<in> enumerate_regs t2
-    then
-      let newE = replace_with e r1 r2 in
-      if satisfies (set l) (tm newE) then
-        merge_if_same newE l rs
-      else
-        merge_if_same e l rs
-    else
-      merge_if_same e l rs
-  )"
-
-definition merge_regs :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
-  "merge_regs e l = (
-    let
-      regs = all_regs e;
-      reg_pairs = sorted_list_of_set (Set.filter (\<lambda>(r1, r2). r1 < r2) (regs \<times> regs))
-    in
-    merge_if_same e l reg_pairs
-  )"
-
 definition updated_regs :: "transition \<Rightarrow> nat set" where
   "updated_regs t = set (map fst (Updates t))"
 
@@ -663,8 +684,8 @@ definition derestrict :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier 
       training_set = make_training_set pta log;
       normalised = groupwise_generalise_and_update log pta training_set;
       delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs normalised)) normalised;
-      standardised = standardise_groups delayed log;
-      merged = remove_spurious_updates (delayed) log
+      merged = merge_regs delayed log;
+      standardised = standardise_groups merged log
     in
       drop_all_guards merged pta log m np
   )"

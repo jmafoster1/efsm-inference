@@ -452,6 +452,7 @@ export_code
   nondeterministic_pairs_labar
   nondeterministic_pairs_labar_dest
   (* Utilities *)
+  replace_reg
   AExp.is_lit
   min
   max

@@ -133,8 +133,6 @@ object TypeConversion {
         return AExp.V(VName.R(Nat.Nata(name.drop(1).toLong)))
       }
       else {
-
-        println("STRING: "+Value.Str(e.toString.replaceAll("^\"|\"$", "")))
         return AExp.L(Value.Str(e.toString.replaceAll("^\"|\"$", "")))
       }
     }

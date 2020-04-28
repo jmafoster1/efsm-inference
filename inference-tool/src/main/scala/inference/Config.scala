@@ -44,7 +44,9 @@ case class Config(
   gpIterations: Int = 50,
   guardSeed: Int = 0,
   outputSeed: Int = 0,
-  updateSeed: Int = 0)
+  updateSeed: Int = 0,
+  numTraces: Int = 30
+)
 
 object Config {
   val builder = OParser.builder[Config]
@@ -110,6 +112,10 @@ object Config {
         .valueName("k")
         .action((x, c) => c.copy(k = x))
         .text("The depth of the k-tails (defaults to zero)"),
+      opt[Int]('t', "numTraces")
+        .valueName("numTraces")
+        .action((x, c) => c.copy(numTraces = x))
+        .text("The number of traces in the log to actually use"),
       opt[Int]('i', "gpIterations")
         .valueName("GP iterations")
         .action((x, c) => c.copy(gpIterations = x))
@@ -182,7 +188,7 @@ object Config {
 
         // Set up the logs
         val trainParsed = parse(Source.fromFile(config.trainFile).getLines.mkString).values.asInstanceOf[List[List[Map[String, Any]]]]
-        config = config.copy(train = trainParsed.map(run => run.map(x => TypeConversion.toEventTuple(x))))
+        config = config.copy(train = trainParsed.take(config.numTraces).map(run => run.map(x => TypeConversion.toEventTuple(x))))
 
         val testParsed = parse(Source.fromFile(config.testFile).getLines.mkString).values.asInstanceOf[List[List[Map[String, Any]]]]
         config = config.copy(test = testParsed.map(run => run.map(x => TypeConversion.toEventTuple(x))))

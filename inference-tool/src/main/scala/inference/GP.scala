@@ -12,6 +12,8 @@ import mint.inference.gp.tree.nonterminals.integers.SubtractIntegersOperator;
 import mint.inference.gp.tree.nonterminals.integers.MultiplyIntegersOperator;
 import mint.inference.gp.tree.nonterminals.booleans.LTBooleanIntegersOperator;
 import mint.inference.gp.tree.nonterminals.booleans.GTBooleanIntegersOperator;
+import mint.inference.gp.tree.nonterminals.booleans.EQIntegersOperator;
+import mint.inference.gp.tree.nonterminals.booleans.EQStringsOperator;
 import mint.inference.gp.tree.nonterminals.booleans.AndBooleanOperator;
 import mint.inference.gp.tree.nonterminals.booleans.OrBooleanOperator;
 import mint.inference.gp.tree.nonterminals.booleans.NotBooleanOperator;
@@ -32,6 +34,8 @@ object GP {
   def boolNonTerms = List[NonTerminal[_]](
     new LTBooleanIntegersOperator(),
     new GTBooleanIntegersOperator(),
+    new EQIntegersOperator(),
+    new EQStringsOperator(),
     new NotBooleanOperator(),
     new AndBooleanOperator(),
     new OrBooleanOperator())
