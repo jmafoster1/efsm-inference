@@ -97,17 +97,57 @@ definition groups :: "(struct option \<times> struct \<times> (nat \<times> nat 
                       (struct option \<times> struct) \<Rightarrow>f (nat \<times> nat \<times> nat list \<times> transition) list" where
 "groups l = fold (\<lambda>(tag, s, gp) f. f((tag, s) $:= gp@(f$(tag, s)))) l (K$ [])"
 
+term insert_into_group
+
+(* Whizz through flat and assign group *)
 definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list" where
   "transition_groups e l = (
     let
       trace_groups = map (transition_groups_exec e) l;
       tagged = map (tag None) trace_groups;
       flat =  sort (fold (@) tagged []);
+\<comment> \<open>in fold insert_into_group flat\<close>
+
       group_fun = groups flat;
       grouped = map (\<lambda>x. group_fun $ x) (finfun_to_list group_fun);
       state_groups = map (\<lambda>gp. (Max (set (map fst gp)), map (snd \<circ> snd) gp)) grouped
     in
       map snd (sort state_groups)
+  )"
+
+\<comment> \<open>Cannot be converted to fold due to early termination in the "true" case of the "if"\<close>
+fun assign_group :: "transition_group list \<Rightarrow> (transition option \<Rightarrow> nat) \<Rightarrow> transition option \<Rightarrow> tids \<times> transition \<Rightarrow> transition_group list" where
+  "assign_group [] count prev (tid, t) = [(prev, count prev, [(tid, t)])]" |
+  "assign_group ((prev', c, gp)#t) count prev (tid, tr) = (
+    if same_structure_opt prev prev' \<and> (\<forall>(_, tr') \<in> set gp. same_structure tr tr') \<and> count prev = c then
+      (prev', c, List.insert (tid, tr) gp)#t
+    else
+      (prev', c, gp)#assign_group t count prev (tid, tr)
+  )"
+
+fun trace_group_transitions :: "(transition option \<Rightarrow> nat) \<Rightarrow> iEFSM \<Rightarrow> execution \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> transition option \<Rightarrow> transition option \<Rightarrow> transition_group list \<Rightarrow> transition_group list" where
+  "trace_group_transitions _ _ [] _ _ _ _ g = g" |
+  "trace_group_transitions count e ((l, i, outputs)#trace) s r prevGroup currentGroup g = (
+    let
+      (id, s', t) = fthe_elem (i_possible_steps e s r l i);
+      r' = apply_updates (Updates t) (join_ir i r) r;
+      newCount = (\<lambda>x. if x = Some t then Suc (count x) else count x)
+    in
+    if (same_structure_opt (Some t) currentGroup) then
+      trace_group_transitions newCount e trace s' r' prevGroup currentGroup (assign_group g count prevGroup (id, t))
+    else
+      trace_group_transitions newCount e trace s' r' currentGroup (Some t) (assign_group g count currentGroup (id, t))
+  )"
+
+definition log_group_transitions :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group list" where
+  "log_group_transitions e l = fold (\<lambda>t acc. trace_group_transitions (\<lambda>x. 0) e t 0 <> None None acc) l []"
+
+definition transition_groups_old :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list" where
+  "transition_groups_old e l = (
+    let
+      group_dict = log_group_transitions e l
+    in
+      map (snd \<circ> snd) group_dict
   )"
 
 (* Assign registers and inputs with associated outputs to the correct training set based on       *)
@@ -381,8 +421,11 @@ definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids
     let
       label = Label (snd (hd gp));
       values = enumerate_log_values_by_label label log;
+      new_ts = make_training_set e log;
+      new_gp_tss = filter (\<lambda>(gg, ts). \<exists>(id, _) \<in> set gg. \<exists>(id', _) \<in> set gp. id = id') new_ts;
+      new_gp_ts = snd (hd new_gp_tss);
       I = map (\<lambda>(regs, ins, outs).ins) tr;
-      R = map (\<lambda>(regs, ins, outs).regs) tr;
+      R = map (\<lambda>(regs, ins, outs).regs) new_gp_ts;
       P = map (\<lambda>(regs, ins, outs).outs) tr;
       max_reg = max_reg_total e;
       outputs = get_outputs max_reg values I R P;

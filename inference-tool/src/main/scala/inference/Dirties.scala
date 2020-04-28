@@ -25,6 +25,9 @@ import mint.tracedata.types.VariableAssignment;
 import mint.inference.gp.LatentVariableGP;
 import mint.inference.evo.GPConfiguration;
 
+import mint.inference.gp.tree.nonterminals.integers.SubtractIntegersOperator;
+import mint.inference.gp.tree.nonterminals.integers.AddIntegersOperator;
+
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -642,7 +645,7 @@ object Dirties {
     latentVariable: Boolean = false): Option[(AExp.aexp[VName.vname], Map[VName.vname, String])] = {
     Log.root.debug("Getting Output...")
 
-    println("  registers: "+registers)
+    println("  registers: "+registers.map(PrettyPrinter.show))
 
     if (outputs.distinct.length == 1) {
       Log.root.debug("  Singleton literal output")
@@ -740,17 +743,17 @@ object Dirties {
     }
 
     for (intVarName <- intVarNames.distinct) {
-      if (intVarName.startsWith("i"))
-        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
-      else
+      if (intVarName == s"r${r_index}")
         intTerms = (new IntegerVariableAssignmentTerminal(intVarName, true)) :: intTerms
+      else
+        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
     }
 
     for (stringVarName <- stringVarNames.distinct) {
-      if (stringVarName.startsWith("i"))
-        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
-      else
+      if (stringVarName == s"r${r_index}")
         stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, true)) :: stringTerms
+      else
+        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
     }
 
     Log.root.debug("  Output training set: " + trainingSet)
@@ -759,6 +762,16 @@ object Dirties {
     gpGenerator.setTerminals(intTerms++stringTerms)
 
     var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 2));
+
+    val sub = new SubtractIntegersOperator()
+    sub.addChild(new IntegerVariableAssignmentTerminal(100))
+    sub.addChild(new IntegerVariableAssignmentTerminal("r1", false))
+    gp.addSeed(sub)
+
+    val add = new AddIntegersOperator()
+    add.addChild(new IntegerVariableAssignmentTerminal("i0", false))
+    add.addChild(new IntegerVariableAssignmentTerminal("r1", true))
+    gp.addSeed(add)
 
     funMem.find(f => gp.isCorrect(f) && checkVarConsistent(intTerms++stringTerms, f)) match {
       case None => {}
@@ -773,6 +786,10 @@ object Dirties {
     val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]].simp
 
     Log.root.debug("  Best output is: " + best)
+
+    if (best.isInstanceOf[VariableTerminal[_]]) {
+      println(best.asInstanceOf[VariableTerminal[_]].isLatent)
+    }
 
     if (gp.isCorrect(best)) {
       Log.root.debug("  Best output is correct")
