@@ -109,9 +109,9 @@ definition make_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> (((tids \
 text\<open>We want to return an aexp which, when evaluated in the correct context accounts for the literal
 input-output pairs within the training set. This will be replaced by symbolic regression in the
 executable\<close>
-definition get_output :: "nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> value list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
-  "get_output maxReg values I r P = (let
-    possible_funs = {a. \<forall>(i, r, p) \<in> set (zip I (zip r P)). aval a (join_ir i r) = Some p}
+definition get_output :: "nat \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> value) list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
+  "get_output maxReg values train = (let
+    possible_funs = {a. \<forall>(i, r, p) \<in> set train. aval a (join_ir i r) = Some p}
     in
     if possible_funs = {} then None else Some (Eps (\<lambda>x. x \<in> possible_funs), (K$ STR ''int''))
   )"
@@ -119,25 +119,7 @@ declare get_output_def [code del]
 code_printing constant get_output \<rightharpoonup> (Scala) "Dirties.getOutput"
 
 definition get_outputs :: "nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> value list list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option list" where
-  "get_outputs maxReg values I r outputs = map (\<lambda>(maxReg, ps). get_output maxReg values I r ps) (enumerate maxReg (transpose outputs))"
-
-primrec get_outputs_prim :: "nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> value list list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option list" where
-  "get_outputs_prim maxReg values I r [] = []" |
-  "get_outputs_prim maxReg values I r (h#t) = (get_output maxReg values I r h)#(get_outputs_prim (maxReg+1) values I r t)"
-
-lemma [code]:
-  shows "get_outputs maxReg values I r outputs = get_outputs_prim maxReg values I r (transpose outputs)"
-proof-
-  have aux: "\<And>p. map (\<lambda>(maxReg, ps). get_output maxReg values I r ps) (enumerate maxReg p) =
-                 get_outputs_prim maxReg values I r p"
-    subgoal for p
-      apply (induct p arbitrary: maxReg)
-       apply simp
-      by (simp add: Suc_eq_plus1)
-    done
-  show ?thesis
-    by (simp add: get_outputs_def aux)
-qed
+  "get_outputs maxReg values I r outputs = map (\<lambda>(maxReg, ps). get_output maxReg values (zip I (zip r ps))) (enumerate maxReg (transpose outputs))"
 
 fun put_outputs :: "(((vname aexp \<times> (vname \<Rightarrow>f String.literal)) option) \<times> vname aexp) list \<Rightarrow> vname aexp list" where
   "put_outputs [] = []" |

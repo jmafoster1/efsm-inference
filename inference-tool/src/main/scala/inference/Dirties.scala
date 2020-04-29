@@ -639,13 +639,11 @@ object Dirties {
   def getOutput(
     maxReg: Nat.nat,
     values: List[Value.value],
-    inputs: List[List[Value.value]],
-    registers: List[Map[Nat.nat, Option[Value.value]]],
-    outputs: List[Value.value],
+    ioPairs: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Value.value))],
     latentVariable: Boolean = false): Option[(AExp.aexp[VName.vname], Map[VName.vname, String])] = {
     Log.root.debug("Getting Output...")
 
-    println("  registers: "+registers.map(PrettyPrinter.show))
+    val outputs = ioPairs.map(x => x._2._2)
 
     if (outputs.distinct.length == 1) {
       Log.root.debug("  Singleton literal output")
@@ -653,8 +651,6 @@ object Dirties {
     }
 
     val r_index = TypeConversion.toInt(maxReg) + 1
-
-    val ioPairs = (inputs zip registers zip outputs).distinct
 
     BasicConfigurator.resetConfiguration();
     BasicConfigurator.configure();
@@ -675,7 +671,7 @@ object Dirties {
     var latentInt = true
 
     for (t <- ioPairs) t match {
-      case ((inputs, anteriorRegs), output) => {
+      case (inputs, (anteriorRegs, output)) => {
         var scenario = List[VariableAssignment[_]]()
         for ((ip, ix) <- inputs.zipWithIndex) {
           scenario = (varOf(s"i${ix}", ip)) :: scenario
@@ -741,7 +737,7 @@ object Dirties {
 
     // Cut straight to having a latent variable if there's more possible outputs than inputs
     if ((!latentVariable) && trainingSet.keys().stream().anyMatch(x => x.size() < trainingSet.get(x).size())) {
-      return getOutput(maxReg, values, inputs, registers, outputs, true)
+      return getOutput(maxReg, values, ioPairs, true)
     }
 
     for (intVarName <- intVarNames.distinct) {
@@ -809,7 +805,7 @@ object Dirties {
       funMem = best :: funMem
       return Some((aexp, getTypes(best)))
     } else {
-      return getOutput(maxReg, values, inputs, registers, outputs, true)
+      return getOutput(maxReg, values, ioPairs, true)
     }
   }
 
