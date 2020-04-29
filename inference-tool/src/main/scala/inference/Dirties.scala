@@ -759,7 +759,6 @@ object Dirties {
     }
 
     Log.root.debug("  Output training set: " + trainingSet)
-    Log.root.debug("intTerms: " + intTerms)
 
     gpGenerator.setTerminals(intTerms++stringTerms)
 

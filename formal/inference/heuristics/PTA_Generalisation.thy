@@ -4,26 +4,6 @@ begin
 
 hide_const I
 
-\<comment> \<open>Cannot be converted to fold due to early termination in the "true" case of the "if"\<close>
-primrec insert_into_group :: "(tids \<times> transition) list list \<Rightarrow> (tids \<times> transition) \<Rightarrow> (tids \<times> transition) list list" where
-  "insert_into_group [] pair = [[pair]]" |
-  "insert_into_group (h#t) pair = (
-    if \<forall>(_, t) \<in> set h. same_structure (snd pair) t then
-      ((List.insert pair h))#t
-    else
-      h#(insert_into_group t pair)
-    )"
-
-definition group_by_structure :: "iEFSM \<Rightarrow> (tids \<times> transition) list list" where
-  "group_by_structure e = fold (\<lambda>(tid, _, transition) acc. insert_into_group acc (tid, transition)) (sorted_list_of_fset e) []"
-
-fun same_structure_opt :: "transition option \<Rightarrow> transition option \<Rightarrow> bool" where
-  "same_structure_opt None None = True" |
-  "same_structure_opt (Some t) (Some t') = same_structure t t'" |
-  "same_structure_opt _ _ = False"
-
-type_synonym transition_group = "transition option \<times> nat \<times> ((tids \<times> transition) list)"
-
 fun group_by :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a list list" where
   "group_by _ [] = []" |
   "group_by f (h#t) = (
@@ -51,7 +31,8 @@ next
     by (case_tac aa, auto)
 qed
 
-definition "make_transition label inputs outputs = \<lparr>Label=label, Arity=length inputs, Guards=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>"
+definition group_by_structure :: "iEFSM \<Rightarrow> (tids \<times> transition) list list" where
+  "group_by_structure e = map (map (\<lambda>(t, id). (id, t))) (group_by (\<lambda>(t1, id1) (t2, id2). same_structure t1 t2) (sorted_list_of_fset (fimage (\<lambda>(id, _, t). (t, id)) e)))"
 
 fun observe_all :: "iEFSM \<Rightarrow>  cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (tids \<times> transition) list" where
   "observe_all _ _ _ [] = []" |
@@ -71,6 +52,8 @@ definition transition_groups_exec :: "iEFSM \<Rightarrow> execution \<Rightarrow
 
 type_synonym struct = "(label \<times> arity \<times> arity)"
 
+text\<open>We need to take the list of transition groups and tag them with the last transition that was
+taken which had a different structure.\<close>
 fun tag :: "struct option \<Rightarrow> (nat \<times> tids \<times> transition) list list \<Rightarrow> (struct option \<times> struct \<times> (nat \<times> tids \<times> transition) list) list" where
   "tag _ [] = []" |
   "tag t (g#gs) = (
@@ -81,71 +64,21 @@ fun tag :: "struct option \<Rightarrow> (nat \<times> tids \<times> transition) 
     (t, struct, g)#(tag (Some struct) gs)
   )"
 
-definition min_s :: "(struct option \<times> struct \<times> (nat \<times> tids \<times> transition) list) \<Rightarrow> (struct option \<times> cfstate \<times> struct \<times> (nat \<times> tids \<times> transition) list)" where
-  "min_s g = (
-    let
-      (tag, struct, group) = g;
-      states = map fst group;
-      min = Min (set states)
-    in
-    (tag, min, struct, group)
-  )"
-
-definition "strip_ss = map (\<lambda>(_, _, id, t). (id, t))"
-
-definition groups :: "(struct option \<times> struct \<times> (nat \<times> tids \<times> transition) list) list \<Rightarrow>
-                      (struct option \<times> struct) \<Rightarrow>f (nat \<times> tids \<times> transition) list" where
-"groups l = fold (\<lambda>(tag, s, gp) f. f((tag, s) $:= gp@(f$(tag, s)))) l (K$ [])"
-
-term insert_into_group
-
-(* Whizz through flat and assign group *)
+text\<open>We need to group transitions not just by their structure but also by their history - i.e. the
+last transition which was taken which had a different structure. We need to order these groups by
+their relative positions within the traces such that output and update functions can be inferred in
+the correct order.\<close>
 definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list" where
   "transition_groups e l = (
     let
       trace_groups = map (transition_groups_exec e) l;
       tagged = map (tag None) trace_groups;
       flat =  sort (fold (@) tagged []);
-      group_fun = groups flat;
+      group_fun = fold (\<lambda>(tag, s, gp) f. f((tag, s) $:= gp@(f$(tag, s)))) flat (K$ []);
       grouped = map (\<lambda>x. group_fun $ x) (finfun_to_list group_fun);
       state_groups = map (\<lambda>gp. (Min (set (map fst gp)), map snd gp)) grouped
     in
       map snd (sort state_groups)
-  )"
-
-\<comment> \<open>Cannot be converted to fold due to early termination in the "true" case of the "if"\<close>
-fun assign_group :: "transition_group list \<Rightarrow> (transition option \<Rightarrow> nat) \<Rightarrow> transition option \<Rightarrow> tids \<times> transition \<Rightarrow> transition_group list" where
-  "assign_group [] count prev (tid, t) = [(prev, count prev, [(tid, t)])]" |
-  "assign_group ((prev', c, gp)#t) count prev (tid, tr) = (
-    if same_structure_opt prev prev' \<and> (\<forall>(_, tr') \<in> set gp. same_structure tr tr') \<and> count prev = c then
-      (prev', c, List.insert (tid, tr) gp)#t
-    else
-      (prev', c, gp)#assign_group t count prev (tid, tr)
-  )"
-
-fun trace_group_transitions :: "(transition option \<Rightarrow> nat) \<Rightarrow> iEFSM \<Rightarrow> execution \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> transition option \<Rightarrow> transition option \<Rightarrow> transition_group list \<Rightarrow> transition_group list" where
-  "trace_group_transitions _ _ [] _ _ _ _ g = g" |
-  "trace_group_transitions count e ((l, i, outputs)#trace) s r prevGroup currentGroup g = (
-    let
-      (id, s', t) = fthe_elem (i_possible_steps e s r l i);
-      r' = apply_updates (Updates t) (join_ir i r) r;
-      newCount = (\<lambda>x. if x = Some t then Suc (count x) else count x)
-    in
-    if (same_structure_opt (Some t) currentGroup) then
-      trace_group_transitions newCount e trace s' r' prevGroup currentGroup (assign_group g count prevGroup (id, t))
-    else
-      trace_group_transitions newCount e trace s' r' currentGroup (Some t) (assign_group g count currentGroup (id, t))
-  )"
-
-definition log_group_transitions :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group list" where
-  "log_group_transitions e l = fold (\<lambda>t acc. trace_group_transitions (\<lambda>x. 0) e t 0 <> None None acc) l []"
-
-definition transition_groups_old :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list" where
-  "transition_groups_old e l = (
-    let
-      group_dict = log_group_transitions e l
-    in
-      map (snd \<circ> snd) group_dict
   )"
 
 (* Assign registers and inputs with associated outputs to the correct training set based on       *)
@@ -166,17 +99,16 @@ fun trace_training_set :: "iEFSM \<Rightarrow> execution \<Rightarrow> cfstate \
     trace_training_set e t s' (apply_updates (Updates transition) (join_ir inputs r) r) (assign_training_set ts id label inputs r outputs)
   )"
 
-definition log_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list" where
-  "log_training_set e l ts = fold (\<lambda>h a. trace_training_set e h 0 <> a) l ts"
-
 (* This will generate the training sets in the same order that the PTA was built, i.e. traces     *)
 (* that appear earlier in the logs will appear earlier in the list of training sets. This allows  *)
 (* us to infer register updates according to trace precidence so  we won't get redundant updates  *)
 (* on later transitions which spoil the data state                                                *)
 definition make_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list" where
-  "make_training_set e l = log_training_set e l (map (\<lambda>x. (x, [])) (transition_groups e l))"
+  "make_training_set e l = fold (\<lambda>h a. trace_training_set e h 0 <> a) l (map (\<lambda>x. (x, [])) (transition_groups e l))"
 
-\<comment> \<open>This will be replaced by symbolic regression in the executable\<close>
+text\<open>We want to return an aexp which, when evaluated in the correct context accounts for the literal
+input-output pairs within the training set. This will be replaced by symbolic regression in the
+executable\<close>
 definition get_output :: "nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> value list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
   "get_output maxReg values I r P = (let
     possible_funs = {a. \<forall>(i, r, p) \<in> set (zip I (zip r P)). aval a (join_ir i r) = Some p}
@@ -250,9 +182,6 @@ definition insert_updates :: "transition \<Rightarrow> update_function list \<Ri
 
 definition get_updates :: "(tids \<times> update_function list) list \<Rightarrow> tids \<Rightarrow> update_function list" where
   "get_updates u t = List.maps snd (filter (\<lambda>(tids, _). set t \<subseteq> set tids) u)"
-
-definition get_ids :: "(tids \<times> update_function list) list \<Rightarrow> tids \<Rightarrow> tids" where
-  "get_ids u t = List.maps fst (filter (\<lambda>(tids, _). set t \<subseteq> set tids) u)"
 
 fun add_groupwise_updates_trace :: "execution  \<Rightarrow> (tids \<times> update_function list) list \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM" where
   "add_groupwise_updates_trace [] _ e _ _ = e" |
@@ -512,27 +441,6 @@ definition standardise_group_outputs :: "(vname aexp \<Rightarrow> vname aexp \<
       map (\<lambda>(id, t). (id, t\<lparr>Outputs := outputs\<rparr>)) g
   )"
 
-definition standardise_group_updates :: "(tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list" where
-  "standardise_group_updates g = (
-    let
-      updates = remdups (List.maps (Updates \<circ> snd) g)
-    in
-      map (\<lambda>(id, t). (id, t\<lparr>Updates := updates\<rparr>)) g
-  )"
-
-definition max_min_outputs :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list" where
-"max_min_outputs e l ts = (
-    let
-      outputs_max = standardise_group_outputs max ts;
-      outputs_min = standardise_group_outputs min ts;
-      e_max = fold (\<lambda>(tids, t) acc. replace_transition acc tids t) outputs_max e;
-      e_min = fold (\<lambda>(tids, t) acc. replace_transition acc tids t) outputs_min e
-    in
-      if satisfies (set l) (tm e_max) then outputs_max else
-      if satisfies (set l) (tm e_min) then outputs_min else
-      ts
-)"
-
 definition "updates_same u1 u2 = (fst u1 = fst u2)"
 
 primrec find_outputs :: "output_function list list \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> output_function list option" where
@@ -548,15 +456,6 @@ primrec find_outputs :: "output_function list list \<Rightarrow> iEFSM \<Rightar
   )"
 
 definition "this x = (case x of Some y \<Rightarrow> y)"
-
-definition replace_updates :: "transition \<Rightarrow> update_function list \<Rightarrow> transition" where
-  "replace_updates t u = (
-    let
-      oldUpdates = map_of (Updates t);
-      newUpdates = (\<lambda>r. case (map_of u) r of Some a \<Rightarrow> Some a | None \<Rightarrow> oldUpdates r)
-    in
-    t\<lparr>Updates := map (\<lambda>(r, _). (r, this (newUpdates r))) (Updates t)\<rparr>
-  )"
 
 primrec find_updates_outputs :: "update_function list list \<Rightarrow> output_function list list \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (output_function list \<times> update_function list) option" where
   "find_updates_outputs [] _ _ _ _ = None" |
@@ -574,9 +473,6 @@ definition power_list :: "('a::linorder) list \<Rightarrow> 'a list list" where
 
 definition power_lists :: "'a::linorder list list \<Rightarrow> 'a list list" where
   "power_lists l = fold List.union (map power_list l) []"
-
-definition standardise_groups_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
-  "standardise_groups_updates e l = standardise_groups_aux e l (group_by_structure e) (\<lambda>_ _. standardise_group_updates)"
 
 (* Try max and min output function with satisfies *)
 definition standardise_group_outputs_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list" where
@@ -620,14 +516,6 @@ lemma groupwise_generalise_and_update_fold:
   apply(induct gs arbitrary: e)
    apply simp
   by (case_tac a, case_tac "generalise_and_update log e aa b", auto)
-
-\<comment> \<open>Need to derestrict variables which occur in the updates but keep unrelated ones to avoid \<close>
-\<comment> \<open>nondeterminism creeping in too early in the inference process                            \<close>
-definition derestrict_transition :: "transition \<Rightarrow> transition" where
-  "derestrict_transition t = (
-    let relevant_vars = image V (fold (\<lambda>(r, u) acc. acc \<union> (AExp.enumerate_vars u)) (Updates t) {}) in
-    t\<lparr>Guards := filter (\<lambda>g. \<forall>v \<in> relevant_vars. \<not> gexp_constrains g v) (Guards t)\<rparr>
-  )"
 
 fun find_initialisation_of_trace :: "nat \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> (tids \<times> transition) option" where
   "find_initialisation_of_trace _ [] _ _ _ = None" |
