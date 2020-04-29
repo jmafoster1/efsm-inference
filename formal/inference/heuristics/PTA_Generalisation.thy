@@ -81,6 +81,21 @@ definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<t
       map snd (sort state_groups)
   )"
 
+fun trace_group_training_set :: "(tids \<times> transition) list \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (registers \<times> value list \<times> value list) list \<Rightarrow> (registers \<times> value list \<times> value list) list" where
+  "trace_group_training_set _ _ _ _ [] train = train" |
+  "trace_group_training_set gp e s r ((l, i, p)#t) train = (
+    let
+      (id, s', transition) = fthe_elem (i_possible_steps e s r l i)
+    in
+    if \<exists>(id', _) \<in> set gp. id' = id then
+      trace_group_training_set gp e s' (apply_updates (Updates transition) (join_ir i r) r) t ((r, i, p)#train)
+    else
+      trace_group_training_set gp e s' (apply_updates (Updates transition) (join_ir i r) r) t train
+  )"
+
+definition make_group_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (registers \<times> value list \<times> value list) list" where
+  "make_group_training_set e l gp = fold (\<lambda>h a. trace_group_training_set gp e 0 <> h a) l []"
+
 (* Assign registers and inputs with associated outputs to the correct training set based on       *)
 (* transition id                                                                                  *)
 definition assign_training_set :: "(((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> tids \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> registers \<Rightarrow> value list \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list" where
@@ -325,17 +340,15 @@ fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> tids list \<Right
   )"
 
 (*This is where the types stuff originates*)
-definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (registers \<times> value list \<times> value list) list \<Rightarrow> iEFSM option" where
-  "generalise_and_update log e gp tr = (
+definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids \<times> transition) list \<Rightarrow> iEFSM option" where
+  "generalise_and_update log e gp = (
     let
       label = Label (snd (hd gp));
       values = enumerate_log_values_by_label label log;
-      new_ts = make_training_set e log;
-      new_gp_tss = filter (\<lambda>(gg, ts). \<exists>(id, _) \<in> set gg. \<exists>(id', _) \<in> set gp. id = id') new_ts;
-      new_gp_ts = snd (hd new_gp_tss);
-      I = map (\<lambda>(regs, ins, outs).ins) tr;
+      new_gp_ts = make_group_training_set e log gp;
+      I = map (\<lambda>(regs, ins, outs).ins) new_gp_ts;
       R = map (\<lambda>(regs, ins, outs).regs) new_gp_ts;
-      P = map (\<lambda>(regs, ins, outs).outs) tr;
+      P = map (\<lambda>(regs, ins, outs).outs) new_gp_ts;
       max_reg = max_reg_total e;
       outputs = get_outputs max_reg values I R P;
       changes = map (\<lambda>(id, tran). (id, tran\<lparr>Outputs := put_outputs (zip outputs (Outputs tran))\<rparr>)) gp;
@@ -472,10 +485,10 @@ definition standardise_group_outputs_updates :: "iEFSM \<Rightarrow> log \<Right
 definition standardise_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
   "standardise_groups e l = standardise_groups_aux e l (group_by_structure e) standardise_group_outputs_updates"
 
-primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> ((tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> iEFSM" where
+primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids \<times> transition) list list \<Rightarrow> iEFSM" where
   "groupwise_generalise_and_update _ e [] = e" |
   "groupwise_generalise_and_update log e (gp#t) = (
-    case generalise_and_update log e (fst gp) (snd gp) of
+    case generalise_and_update log e gp of
       None \<Rightarrow> groupwise_generalise_and_update log e t |
       Some e' \<Rightarrow> (
         let
@@ -487,7 +500,7 @@ primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow
 
 lemma groupwise_generalise_and_update_fold:
 "groupwise_generalise_and_update log e gs = fold (\<lambda>gp e.
-  case generalise_and_update log e (fst gp) (snd gp) of
+  case generalise_and_update log e gp of
         None \<Rightarrow> e |
         Some e' \<Rightarrow> (
           let
@@ -497,7 +510,7 @@ lemma groupwise_generalise_and_update_fold:
   ) gs e"
   apply(induct gs arbitrary: e)
    apply simp
-  by (case_tac a, case_tac "generalise_and_update log e aa b", auto)
+  by (case_tac "generalise_and_update log e a", auto)
 
 fun find_initialisation_of_trace :: "nat \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> (tids \<times> transition) option" where
   "find_initialisation_of_trace _ [] _ _ _ = None" |
@@ -601,8 +614,7 @@ definition remove_spurious_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> iEF
 definition derestrict :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "derestrict pta log m np = (
     let
-      training_set = make_training_set pta log;
-      normalised = groupwise_generalise_and_update log pta training_set;
+      normalised = groupwise_generalise_and_update log pta (transition_groups pta log);
       delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs normalised)) normalised;
       merged = merge_regs delayed log;
       standardised = standardise_groups merged log
