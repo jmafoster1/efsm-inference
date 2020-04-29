@@ -53,35 +53,35 @@ qed
 
 definition "make_transition label inputs outputs = \<lparr>Label=label, Arity=length inputs, Guards=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>"
 
-fun observe_all :: "iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (cfstate \<times> cfstate \<times> tids \<times> transition) list" where
+fun observe_all :: "iEFSM \<Rightarrow>  cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (tids \<times> transition) list" where
   "observe_all _ _ _ [] = []" |
-  "observe_all e s r ((l, i)#es)  =
+  "observe_all e s r ((l, i, _)#es)  =
     (case random_member (i_possible_steps e s r l i)  of
-      (Some (ids, s', t)) \<Rightarrow> (((s, s', ids, t)#(observe_all e s' (apply_updates (Updates t) (join_ir i r) r) es))) |
+      (Some (ids, s', t)) \<Rightarrow> (((ids, t)#(observe_all e s' (apply_updates (Updates t) (join_ir i r) r) es))) |
       _ \<Rightarrow> []
     )"
 
-definition transition_groups_exec :: "iEFSM \<Rightarrow> execution \<Rightarrow> (cfstate \<times> cfstate \<times> tids \<times> transition) list list" where
+definition transition_groups_exec :: "iEFSM \<Rightarrow> execution \<Rightarrow> (nat \<times> tids \<times> transition) list list" where
   "transition_groups_exec e t = (
     let
-      walked = observe_all e 0 <> (map (\<lambda>(x, y, _). (x, y)) t)
+      walked = enumerate 0 (observe_all e 0 <> t)
     in
-    group_by (\<lambda>(_, _, _, t1) (_, _, _, t2). same_structure t1 t2) walked
+    group_by (\<lambda>(_, _, t1) (_, _, t2). same_structure t1 t2) walked
   )"
 
 type_synonym struct = "(label \<times> arity \<times> arity)"
 
-fun tag :: "struct option \<Rightarrow> (cfstate \<times> cfstate \<times> tids \<times> transition) list list \<Rightarrow> (struct option \<times> struct \<times> (cfstate \<times> cfstate \<times> tids \<times> transition) list) list" where
+fun tag :: "struct option \<Rightarrow> (nat \<times> tids \<times> transition) list list \<Rightarrow> (struct option \<times> struct \<times> (nat \<times> tids \<times> transition) list) list" where
   "tag _ [] = []" |
   "tag t (g#gs) = (
     let
-      (_, _, _, head) = hd g;
+      (_, _, head) = hd g;
       struct = (Label head, Arity head, length (Outputs head))
     in
     (t, struct, g)#(tag (Some struct) gs)
   )"
 
-definition min_s :: "(struct option \<times> struct \<times> (cfstate \<times> cfstate \<times> tids \<times> transition) list) \<Rightarrow> (struct option \<times> cfstate \<times> struct \<times> (cfstate \<times> cfstate \<times> tids \<times> transition) list)" where
+definition min_s :: "(struct option \<times> struct \<times> (nat \<times> tids \<times> transition) list) \<Rightarrow> (struct option \<times> cfstate \<times> struct \<times> (nat \<times> tids \<times> transition) list)" where
   "min_s g = (
     let
       (tag, struct, group) = g;
@@ -93,8 +93,8 @@ definition min_s :: "(struct option \<times> struct \<times> (cfstate \<times> c
 
 definition "strip_ss = map (\<lambda>(_, _, id, t). (id, t))"
 
-definition groups :: "(struct option \<times> struct \<times> (nat \<times> nat \<times> nat list \<times> transition) list) list \<Rightarrow>
-                      (struct option \<times> struct) \<Rightarrow>f (nat \<times> nat \<times> nat list \<times> transition) list" where
+definition groups :: "(struct option \<times> struct \<times> (nat \<times> tids \<times> transition) list) list \<Rightarrow>
+                      (struct option \<times> struct) \<Rightarrow>f (nat \<times> tids \<times> transition) list" where
 "groups l = fold (\<lambda>(tag, s, gp) f. f((tag, s) $:= gp@(f$(tag, s)))) l (K$ [])"
 
 term insert_into_group
@@ -106,11 +106,9 @@ definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<t
       trace_groups = map (transition_groups_exec e) l;
       tagged = map (tag None) trace_groups;
       flat =  sort (fold (@) tagged []);
-\<comment> \<open>in fold insert_into_group flat\<close>
-
       group_fun = groups flat;
       grouped = map (\<lambda>x. group_fun $ x) (finfun_to_list group_fun);
-      state_groups = map (\<lambda>gp. (Max (set (map fst gp)), map (snd \<circ> snd) gp)) grouped
+      state_groups = map (\<lambda>gp. (Min (set (map fst gp)), map snd gp)) grouped
     in
       map snd (sort state_groups)
   )"
@@ -462,23 +460,44 @@ definition merge_regs :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
     merge_if_same e l reg_pairs
   )"
 
-primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> ((tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> iEFSM" where
-  "groupwise_generalise_and_update _ e [] = e" |
-  "groupwise_generalise_and_update log e (gp#t) = (
-    case generalise_and_update log e (fst gp) (snd gp) of
-      None \<Rightarrow> groupwise_generalise_and_update log e t |
-      Some e' \<Rightarrow> groupwise_generalise_and_update log (merge_regs e' log) t
+(* Sometimes inserting updates without redundancy can cause certain transitions to not get a      *)
+(* particular update function. This can lead to disparate groups of transitions which we want to  *)
+(* standardise such that every group of transitions has the same update function                  *)
+primrec standardise_groups_aux :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list \<Rightarrow> (iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list) \<Rightarrow> iEFSM" where
+  "standardise_groups_aux e _ [] _ = e" |
+  "standardise_groups_aux e l (h#t) s = (
+    let
+      standardised = s e l h;
+      e' = replace_transitions e standardised
+    in
+      if satisfies (set l) (tm e') then
+        standardise_groups_aux e' l t s
+      else
+        standardise_groups_aux e l t s
   )"
 
-lemma groupwise_generalise_and_update_fold:
-"groupwise_generalise_and_update log e gs = fold (\<lambda>gp e.
-  case generalise_and_update log e (fst gp) (snd gp) of
-        None \<Rightarrow> e |
-        Some e' \<Rightarrow> (merge_regs e' log)
-  ) gs e"
-  apply(induct gs arbitrary: e)
-   apply simp
-  by (case_tac a, case_tac "generalise_and_update log e aa b", auto)
+lemma standardise_groups_aux_fold [code]:
+  "standardise_groups_aux e l xs s = fold (\<lambda>h acc.
+  let
+      e' = replace_transitions acc (s acc l h)
+    in
+      if satisfies (set l) (tm e') then
+        e'
+      else
+        acc
+  ) xs e"
+proof(induct xs arbitrary: e s l)
+case Nil
+  then show ?case
+    by simp
+next
+case (Cons a xs)
+  then show ?case
+    by (simp add: Let_def)
+qed
+
+definition cartProdN :: "'a list list \<Rightarrow> 'a list list" where
+  "cartProdN l = foldr (\<lambda>xs as. [ x # a. x \<leftarrow> xs , a \<leftarrow> as ]) l [[]]"
 
 definition standardise_outputs :: "(vname aexp \<Rightarrow> vname aexp \<Rightarrow> vname aexp) \<Rightarrow> vname aexp list \<Rightarrow> vname aexp list \<Rightarrow> vname aexp list" where
   "standardise_outputs f p1 p2 = map (\<lambda>(p1, p2). f p1 p2) (zip p1 p2)"
@@ -516,9 +535,6 @@ definition max_min_outputs :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<tim
 
 definition "updates_same u1 u2 = (fst u1 = fst u2)"
 
-definition cartProdN :: "'a list list \<Rightarrow> 'a list list" where
-  "cartProdN l = foldr (\<lambda>xs as. [ x # a. x \<leftarrow> xs , a \<leftarrow> as ]) l [[]]"
-
 primrec find_outputs :: "output_function list list \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> output_function list option" where
   "find_outputs [] _ _ _ = None" |
   "find_outputs (h#t) e l g = (
@@ -546,9 +562,9 @@ primrec find_updates_outputs :: "update_function list list \<Rightarrow> output_
   "find_updates_outputs [] _ _ _ _ = None" |
   "find_updates_outputs (h#t) p e l g = (
     let
-      updates = fold (\<lambda>(tids, t) acc. replace_transition acc tids (replace_updates t h)) g e
+      updates = fold (\<lambda>(tids, t) acc. replace_transition acc tids (t\<lparr>Updates := h\<rparr>)) g e
     in
-      case find_outputs p updates l g of
+      case find_outputs p updates l (map (\<lambda>(id, t). (id,t\<lparr>Updates := h\<rparr>))  g) of
         Some pp \<Rightarrow> Some (pp, h) |
         None \<Rightarrow> find_updates_outputs t p e l g
   )"
@@ -558,6 +574,9 @@ definition power_list :: "('a::linorder) list \<Rightarrow> 'a list list" where
 
 definition power_lists :: "'a::linorder list list \<Rightarrow> 'a list list" where
   "power_lists l = fold List.union (map power_list l) []"
+
+definition standardise_groups_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
+  "standardise_groups_updates e l = standardise_groups_aux e l (group_by_structure e) (\<lambda>_ _. standardise_group_updates)"
 
 (* Try max and min output function with satisfies *)
 definition standardise_group_outputs_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list" where
@@ -572,47 +591,35 @@ definition standardise_group_outputs_updates :: "iEFSM \<Rightarrow> log \<Right
       Some (p, u) \<Rightarrow> map (\<lambda>(id, t). (id, t\<lparr>Outputs := p, Updates := u\<rparr>)) g
   )"
 
-(* Sometimes inserting updates without redundancy can cause certain transitions to not get a      *)
-(* particular update function. This can lead to disparate groups of transitions which we want to  *)
-(* standardise such that every group of transitions has the same update function                  *)
-primrec standardise_groups_aux :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list \<Rightarrow> (iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list) \<Rightarrow> iEFSM" where
-  "standardise_groups_aux e _ [] _ = e" |
-  "standardise_groups_aux e l (h#t) s = (
-    let
-      standardised = s e l h;
-      e' = replace_transitions e standardised
-    in
-      if satisfies (set l) (tm e') then
-        standardise_groups_aux e' l t s
-      else
-        standardise_groups_aux e l t s
-  )"
-
-lemma standardise_groups_aux_fold [code]:
-  "standardise_groups_aux e l xs s = fold (\<lambda>h acc.
-  let
-      e' = replace_transitions acc (s acc l h)
-    in
-      if satisfies (set l) (tm e') then
-        e'
-      else
-        acc
-  ) xs e"
-proof(induct xs arbitrary: e s l)
-case Nil
-  then show ?case
-    by simp
-next
-case (Cons a xs)
-  then show ?case
-    by (simp add: Let_def)
-qed
-
 definition standardise_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
   "standardise_groups e l = standardise_groups_aux e l (group_by_structure e) standardise_group_outputs_updates"
 
-definition standardise_groups_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
-  "standardise_groups_updates e l = standardise_groups_aux e l (group_by_structure e) (\<lambda>_ _. standardise_group_updates)"
+primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> ((tids \<times> transition) list \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> iEFSM" where
+  "groupwise_generalise_and_update _ e [] = e" |
+  "groupwise_generalise_and_update log e (gp#t) = (
+    case generalise_and_update log e (fst gp) (snd gp) of
+      None \<Rightarrow> groupwise_generalise_and_update log e t |
+      Some e' \<Rightarrow> (
+        let
+          standardised = standardise_groups e' log
+        in
+        groupwise_generalise_and_update log (merge_regs standardised log) t
+      )
+  )"
+
+lemma groupwise_generalise_and_update_fold:
+"groupwise_generalise_and_update log e gs = fold (\<lambda>gp e.
+  case generalise_and_update log e (fst gp) (snd gp) of
+        None \<Rightarrow> e |
+        Some e' \<Rightarrow> (
+          let
+          standardised = standardise_groups e' log
+        in
+          merge_regs standardised log)
+  ) gs e"
+  apply(induct gs arbitrary: e)
+   apply simp
+  by (case_tac a, case_tac "generalise_and_update log e aa b", auto)
 
 \<comment> \<open>Need to derestrict variables which occur in the updates but keep unrelated ones to avoid \<close>
 \<comment> \<open>nondeterminism creeping in too early in the inference process                            \<close>

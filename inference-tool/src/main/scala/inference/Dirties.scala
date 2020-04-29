@@ -720,6 +720,8 @@ object Dirties {
       stringVarNames = stringVarNames.filter(_ != s"r${r_index}")
     } else {
       Log.root.debug(s"  Latent variable: r$r_index")
+      intVarNames = intVarNames.filter(x => x.startsWith("i") || x == s"r${r_index}")
+      stringVarNames = stringVarNames.filter(x => x.startsWith("i") || x == s"r${r_index}")
     }
 
     // If we have a key that's empty but returns more than one value then we need a latent variable
@@ -763,6 +765,8 @@ object Dirties {
 
     var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 2));
 
+    // =========================================================================
+    // Delete these seeds
     val sub = new SubtractIntegersOperator()
     sub.addChild(new IntegerVariableAssignmentTerminal(100))
     sub.addChild(new IntegerVariableAssignmentTerminal("r1", false))
@@ -772,6 +776,12 @@ object Dirties {
     add.addChild(new IntegerVariableAssignmentTerminal("i0", false))
     add.addChild(new IntegerVariableAssignmentTerminal("r1", true))
     gp.addSeed(add)
+
+    val add2 = new AddIntegersOperator()
+    add2.addChild(new IntegerVariableAssignmentTerminal("i0", false))
+    add2.addChild(new IntegerVariableAssignmentTerminal("r2", true))
+    gp.addSeed(add2)
+    // =========================================================================
 
     funMem.find(f => gp.isCorrect(f) && checkVarConsistent(intTerms++stringTerms, f)) match {
       case None => {}
