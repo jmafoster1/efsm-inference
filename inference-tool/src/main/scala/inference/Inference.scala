@@ -6581,6 +6581,41 @@ def cartProdN[A](l: List[List[A]]): List[List[A]] =
               xs)),
                                l, List(Nil))
 
+def replace_transition(e: FSet.fset[(List[Nat.nat],
+                                      ((Nat.nat, Nat.nat),
+Transition.transition_ext[Unit]))],
+                        uid: List[Nat.nat],
+                        newa: Transition.transition_ext[Unit]):
+      FSet.fset[(List[Nat.nat],
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+  =
+  FSet.fimage[(List[Nat.nat],
+                ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])),
+               (List[Nat.nat],
+                 ((Nat.nat, Nat.nat),
+                   Transition.transition_ext[Unit]))](((a:
+                  (List[Nat.nat],
+                    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
+                 =>
+                {
+                  val (uids, aa):
+                        (List[Nat.nat],
+                          ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))
+                    = a
+                  val (ab, b):
+                        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])
+                    = aa;
+                  ({
+                     val (from, to): (Nat.nat, Nat.nat) = ab;
+                     ((t: Transition.transition_ext[Unit]) =>
+                       (if (Cardinality.subset[Nat.nat](Set.seta[Nat.nat](uid),
+                 Set.seta[Nat.nat](uids)))
+                         (uids, ((from, to), newa))
+                         else (uids, ((from, to), t))))
+                   })(b)
+                }),
+               e)
+
 def trace_group_training_set(uu: List[(List[Nat.nat],
 Transition.transition_ext[Unit])],
                               uv: FSet.fset[(List[Nat.nat],
@@ -6628,12 +6663,13 @@ Transition.transition_ext[Unit])],
     }
 }
 
-def make_group_training_set(e: FSet.fset[(List[Nat.nat],
-   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-                             l: List[List[(String,
-    (List[Value.value], List[Value.value]))]],
-                             gp: List[(List[Nat.nat],
-Transition.transition_ext[Unit])]):
+def make_training_set(e: FSet.fset[(List[Nat.nat],
+                                     ((Nat.nat, Nat.nat),
+                                       Transition.transition_ext[Unit]))],
+                       l: List[List[(String,
+                                      (List[Value.value], List[Value.value]))]],
+                       gp: List[(List[Nat.nat],
+                                  Transition.transition_ext[Unit])]):
       List[(Map[Nat.nat, Option[Value.value]],
              (List[Value.value], List[Value.value]))]
   =
@@ -6650,41 +6686,6 @@ Transition.transition_ext[Unit])]):
                                  scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]),
                                  a, b)),
       l, Nil)
-
-def replace_transition(e: FSet.fset[(List[Nat.nat],
-                                      ((Nat.nat, Nat.nat),
-Transition.transition_ext[Unit]))],
-                        uid: List[Nat.nat],
-                        newa: Transition.transition_ext[Unit]):
-      FSet.fset[(List[Nat.nat],
-                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
-  =
-  FSet.fimage[(List[Nat.nat],
-                ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])),
-               (List[Nat.nat],
-                 ((Nat.nat, Nat.nat),
-                   Transition.transition_ext[Unit]))](((a:
-                  (List[Nat.nat],
-                    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
-                 =>
-                {
-                  val (uids, aa):
-                        (List[Nat.nat],
-                          ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))
-                    = a
-                  val (ab, b):
-                        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])
-                    = aa;
-                  ({
-                     val (from, to): (Nat.nat, Nat.nat) = ab;
-                     ((t: Transition.transition_ext[Unit]) =>
-                       (if (Cardinality.subset[Nat.nat](Set.seta[Nat.nat](uid),
-                 Set.seta[Nat.nat](uids)))
-                         (uids, ((from, to), newa))
-                         else (uids, ((from, to), t))))
-                   })(b)
-                }),
-               e)
 
 def insert_updates(t: Transition.transition_ext[Unit],
                     u: List[(Nat.nat, AExp.aexp[VName.vname])]):
@@ -7301,39 +7302,32 @@ def transition_groups_exec(e: FSet.fset[(List[Nat.nat],
                                       (List[Value.value], List[Value.value]))]):
       List[List[(Nat.nat, (List[Nat.nat], Transition.transition_ext[Unit]))]]
   =
-  {
-    val a: List[(Nat.nat, (List[Nat.nat], Transition.transition_ext[Unit]))] =
-      Lista.enumerate[(List[Nat.nat],
-                        Transition.transition_ext[Unit])](Nat.zero_nata,
-                   observe_all(e, Nat.zero_nata,
-                                scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]),
-                                t));
-    group_by[(Nat.nat,
-               (List[Nat.nat],
-                 Transition.transition_ext[Unit]))](((aa:
-                (Nat.nat, (List[Nat.nat], Transition.transition_ext[Unit])))
-               =>
-              {
-                val (_, (_, t1)):
-                      (Nat.nat,
-                        (List[Nat.nat], Transition.transition_ext[Unit]))
-                  = aa;
-                ((ab: (Nat.nat,
-                        (List[Nat.nat], Transition.transition_ext[Unit])))
-                   =>
-                  {
-                    val (_, ac):
-                          (Nat.nat,
-                            (List[Nat.nat], Transition.transition_ext[Unit]))
-                      = ab
-                    val (_, ad):
-                          (List[Nat.nat], Transition.transition_ext[Unit])
-                      = ac;
-                    Transition.same_structure(t1, ad)
-                  })
-              }),
-             a)
-  }
+  group_by[(Nat.nat,
+             (List[Nat.nat],
+               Transition.transition_ext[Unit]))](((a:
+              (Nat.nat, (List[Nat.nat], Transition.transition_ext[Unit])))
+             =>
+            {
+              val (_, (_, t1)):
+                    (Nat.nat, (List[Nat.nat], Transition.transition_ext[Unit]))
+                = a;
+              ((aa: (Nat.nat, (List[Nat.nat], Transition.transition_ext[Unit])))
+                 =>
+                {
+                  val (_, ab):
+                        (Nat.nat,
+                          (List[Nat.nat], Transition.transition_ext[Unit]))
+                    = aa
+                  val (_, ac): (List[Nat.nat], Transition.transition_ext[Unit])
+                    = ab;
+                  Transition.same_structure(t1, ac)
+                })
+            }),
+           Lista.enumerate[(List[Nat.nat],
+                             Transition.transition_ext[Unit])](Nat.zero_nata,
+                        observe_all(e, Nat.zero_nata,
+                                     scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]),
+                                     t)))
 
 def transition_groups(e: FSet.fset[(List[Nat.nat],
                                      ((Nat.nat, Nat.nat),
@@ -7617,7 +7611,7 @@ def generalise_and_update(log: List[List[(String,
     val new_gp_ts:
           List[(Map[Nat.nat, Option[Value.value]],
                  (List[Value.value], List[Value.value]))]
-      = make_group_training_set(e, log, gp)
+      = make_training_set(e, log, gp)
     val i: List[List[Value.value]] =
       Lista.map[(Map[Nat.nat, Option[Value.value]],
                   (List[Value.value], List[Value.value])),

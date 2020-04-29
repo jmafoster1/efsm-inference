@@ -43,12 +43,7 @@ fun observe_all :: "iEFSM \<Rightarrow>  cfstate \<Rightarrow> registers \<Right
     )"
 
 definition transition_groups_exec :: "iEFSM \<Rightarrow> execution \<Rightarrow> (nat \<times> tids \<times> transition) list list" where
-  "transition_groups_exec e t = (
-    let
-      walked = enumerate 0 (observe_all e 0 <> t)
-    in
-    group_by (\<lambda>(_, _, t1) (_, _, t2). same_structure t1 t2) walked
-  )"
+  "transition_groups_exec e t = group_by (\<lambda>(_, _, t1) (_, _, t2). same_structure t1 t2) (enumerate 0 (observe_all e 0 <> t))"
 
 type_synonym struct = "(label \<times> arity \<times> arity)"
 
@@ -93,33 +88,8 @@ fun trace_group_training_set :: "(tids \<times> transition) list \<Rightarrow> i
       trace_group_training_set gp e s' (apply_updates (Updates transition) (join_ir i r) r) t train
   )"
 
-definition make_group_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (registers \<times> value list \<times> value list) list" where
-  "make_group_training_set e l gp = fold (\<lambda>h a. trace_group_training_set gp e 0 <> h a) l []"
-
-(* Assign registers and inputs with associated outputs to the correct training set based on       *)
-(* transition id                                                                                  *)
-definition assign_training_set :: "(((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> tids \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> registers \<Rightarrow> value list \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list" where
-  "assign_training_set data tids label inputs registers outputs = map (\<lambda>gp.
-    let (transitions, trainingSet) = gp in
-    if \<exists>(tids', _) \<in> set transitions. tids' = tids then
-      (transitions, (registers, inputs, outputs)#trainingSet)
-    else
-      gp
-  ) data"
-
-fun trace_training_set :: "iEFSM \<Rightarrow> execution \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list" where
-  "trace_training_set _ [] _ _ ts = ts" |
-  "trace_training_set e ((label, inputs, outputs)#t) s r ts = (
-    let (id, s', transition) = fthe_elem (ffilter (\<lambda>(_, _, t). apply_outputs (Outputs t) (join_ir inputs r) = map Some outputs) (i_possible_steps e s r label inputs)) in
-    trace_training_set e t s' (apply_updates (Updates transition) (join_ir inputs r) r) (assign_training_set ts id label inputs r outputs)
-  )"
-
-(* This will generate the training sets in the same order that the PTA was built, i.e. traces     *)
-(* that appear earlier in the logs will appear earlier in the list of training sets. This allows  *)
-(* us to infer register updates according to trace precidence so  we won't get redundant updates  *)
-(* on later transitions which spoil the data state                                                *)
-definition make_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> (((tids \<times> transition) list) \<times> (registers \<times> value list \<times> value list) list) list" where
-  "make_training_set e l = fold (\<lambda>h a. trace_training_set e h 0 <> a) l (map (\<lambda>x. (x, [])) (transition_groups e l))"
+definition make_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (registers \<times> value list \<times> value list) list" where
+  "make_training_set e l gp = fold (\<lambda>h a. trace_group_training_set gp e 0 <> h a) l []"
 
 text\<open>We want to return an aexp which, when evaluated in the correct context accounts for the literal
 input-output pairs within the training set. This will be replaced by symbolic regression in the
@@ -345,7 +315,7 @@ definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids
     let
       label = Label (snd (hd gp));
       values = enumerate_log_values_by_label label log;
-      new_gp_ts = make_group_training_set e log gp;
+      new_gp_ts = make_training_set e log gp;
       I = map (\<lambda>(regs, ins, outs).ins) new_gp_ts;
       R = map (\<lambda>(regs, ins, outs).regs) new_gp_ts;
       P = map (\<lambda>(regs, ins, outs).outs) new_gp_ts;
@@ -384,9 +354,9 @@ definition merge_regs :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
     merge_if_same e l reg_pairs
   )"
 
-(* Sometimes inserting updates without redundancy can cause certain transitions to not get a      *)
-(* particular update function. This can lead to disparate groups of transitions which we want to  *)
-(* standardise such that every group of transitions has the same update function                  *)
+text \<open>Sometimes inserting updates without redundancy can cause certain transitions to not get a
+      particular update function. This can lead to disparate groups of transitions which we want to
+      standardise such that every group of transitions has the same update function\<close>
 primrec standardise_groups_aux :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list \<Rightarrow> (iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list) \<Rightarrow> iEFSM" where
   "standardise_groups_aux e _ [] _ = e" |
   "standardise_groups_aux e l (h#t) s = (
@@ -410,15 +380,7 @@ lemma standardise_groups_aux_fold [code]:
       else
         acc
   ) xs e"
-proof(induct xs arbitrary: e s l)
-case Nil
-  then show ?case
-    by simp
-next
-case (Cons a xs)
-  then show ?case
-    by (simp add: Let_def)
-qed
+  by(induct xs arbitrary: e s l, simp_all add: Let_def)
 
 definition cartProdN :: "'a list list \<Rightarrow> 'a list list" where
   "cartProdN l = foldr (\<lambda>xs as. [ x # a. x \<leftarrow> xs , a \<leftarrow> as ]) l [[]]"
