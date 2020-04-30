@@ -575,10 +575,9 @@ definition derestrict :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier 
   "derestrict pta log m np = (
     let
       normalised = groupwise_generalise_and_update log pta (transition_groups pta log);
-      delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs normalised)) normalised;
-      merged = merge_regs delayed log
+      delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs normalised)) normalised
     in
-      drop_all_guards merged pta log m np
+      drop_all_guards delayed pta log m np
   )"
 
 definition "drop_pta_guards pta log m np = drop_all_guards pta pta log m np"

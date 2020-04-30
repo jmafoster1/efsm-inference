@@ -454,7 +454,7 @@ object Dirties {
 
     var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 2));
 
-    guardMem.find(f => gp.isCorrect(f)  && checkVarConsistent(intTerms++stringTerms, f)) match {
+    guardMem.find(f => gp.isCorrect(f)  && f.varsInTree().stream().allMatch(v => !v.isLatent())) match {
       case None => {}
       case Some(best) => {
         Log.root.debug("    Best memoised guard is: " + best)
@@ -482,21 +482,6 @@ object Dirties {
   }
 
   var funMem: List[mint.inference.gp.tree.Node[mint.tracedata.types.VariableAssignment[_]]] = List()
-
-  def checkVarConsistent(terms: List[mint.inference.gp.tree.terminals.VariableTerminal[_]], best:Node[VariableAssignment[_]]): Boolean = {
-    val termVarNames = terms.stream().filter(x => !x.isConstant()).collect(Collectors.toList()).map(x => x.toString())
-    val latentVarNames = terms.stream().filter(x => x.isLatent()).collect(Collectors.toList()).map(x => x.toString())
-
-    return (
-      best.varsInTree().stream().filter(x => !x.isConstant()).allMatch(
-        x => termVarNames.contains(x.toString())
-      )
-      &&
-      best.varsInTree().stream().filter(x => x.isLatent()).allMatch(
-        x => latentVarNames.contains(x.toString())
-      )
-    )
-  }
 
   def getUpdate(
     l: String,
@@ -587,7 +572,7 @@ object Dirties {
 
     var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 2));
 
-    funMem.find(f => gp.isCorrect(f) && checkVarConsistent(intTerms++stringTerms, f)) match {
+    funMem.find(f => gp.isCorrect(f) && f.varsInTree().stream().allMatch(v => !v.isLatent())) match {
       case None => {}
       case Some(best) => {
         Log.root.debug("    Best memoised update is: " + best)
@@ -756,7 +741,7 @@ object Dirties {
     gp.addSeed(add2)
     // =========================================================================
 
-    funMem.find(f => gp.isCorrect(f) && checkVarConsistent(intTerms++stringTerms, f)) match {
+    funMem.find(f => gp.isCorrect(f) && f.varsInTree().stream().allMatch(v => if (v.isLatent()) v.getName() == f"r$r_index" else true )) match {
       case None => {}
       case Some(best) => {
         Log.root.debug("    Best memoised output is: " + best)

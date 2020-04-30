@@ -8511,12 +8511,8 @@ List[Nat.nat]))))]):
                                 delay_initialisation_of(r, log, acc,
                  find_first_uses_of(r, log, acc))),
                                Lista.sorted_list_of_set[Nat.nat](Inference.all_regs(normalised)),
-                               normalised)
-    val merged:
-          FSet.fset[(List[Nat.nat],
-                      ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
-      = merge_regs(delayed, log);
-    drop_all_guards(merged, pta, log, m, np)
+                               normalised);
+    drop_all_guards(delayed, pta, log, m, np)
   }
 
 def drop_pta_guards(pta: FSet.fset[(List[Nat.nat],
