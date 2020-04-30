@@ -7911,6 +7911,37 @@ Lista.sort_key[(Nat.nat, AExp.aexp[VName.vname]),
      })
   }
 
+def standardise_group(e: FSet.fset[(List[Nat.nat],
+                                     ((Nat.nat, Nat.nat),
+                                       Transition.transition_ext[Unit]))],
+                       l: List[List[(String,
+                                      (List[Value.value], List[Value.value]))]],
+                       gp: List[(List[Nat.nat],
+                                  Transition.transition_ext[Unit])],
+                       s: (FSet.fset[(List[Nat.nat],
+                                       ((Nat.nat, Nat.nat),
+ Transition.transition_ext[Unit]))]) =>
+                            (List[List[(String,
+ (List[Value.value], List[Value.value]))]]) =>
+                              (List[(List[Nat.nat],
+                                      Transition.transition_ext[Unit])]) =>
+                                List[(List[Nat.nat],
+                                       Transition.transition_ext[Unit])]):
+      FSet.fset[(List[Nat.nat],
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+  =
+  {
+    val standardised: List[(List[Nat.nat], Transition.transition_ext[Unit])] =
+      ((s(e))(l))(gp)
+    val ea: FSet.fset[(List[Nat.nat],
+                        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+      = Inference.replace_transitions(e, standardised);
+    (if (Inference.satisfies(Set.seta[List[(String,
+     (List[Value.value], List[Value.value]))]](l),
+                              Inference.tm(ea)))
+      ea else e)
+  }
+
 def standardise_groups_aux(e: FSet.fset[(List[Nat.nat],
   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
                             l: List[List[(String,
@@ -7938,16 +7969,7 @@ def standardise_groups_aux(e: FSet.fset[(List[Nat.nat],
                           (acc: FSet.fset[(List[Nat.nat],
     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))])
                             =>
-                          {
-                            val ea: FSet.fset[(List[Nat.nat],
-        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
-                              = Inference.replace_transitions(acc,
-                       ((s(acc))(l))(h));
-                            (if (Inference.satisfies(Set.seta[List[(String,
-                             (List[Value.value], List[Value.value]))]](l),
-              Inference.tm(ea)))
-                              ea else acc)
-                          }),
+                          standardise_group(acc, l, h, s)),
                          xs, e)
 
 def group_by_structure(e: FSet.fset[(List[Nat.nat],

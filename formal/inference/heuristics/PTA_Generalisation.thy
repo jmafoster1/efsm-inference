@@ -75,6 +75,7 @@ definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<t
     in
       map snd (sort state_groups)
   )"
+
 text\<open>For a given trace group, log, and EFSM, we want to build the training set for that group. That
 is, the set of inputs, registers, and expected outputs from those transitions. To do this, we must
 walk the traces in the EFSM to obtain the register values.\<close>
@@ -113,7 +114,7 @@ fun put_outputs :: "(((vname aexp \<times> (vname \<Rightarrow>f String.literal)
   "put_outputs ((None, p)#t) = p#(put_outputs t)" |
   "put_outputs ((Some (p, _), _)#t) = p#(put_outputs t)"
 
-lemma put_outputs_fold [code]:
+lemma put_outputs_foldr [code]:
   "put_outputs xs = foldr (\<lambda>x acc. case x of (None, p) \<Rightarrow> p#acc | (Some (p, _), _) \<Rightarrow> p#acc) xs []"
 proof (induct xs)
   case Nil
@@ -125,8 +126,6 @@ next
     apply (case_tac aa)
     by auto
 qed
-
-type_synonym output_types = "(nat \<times> (vname aexp \<times> vname \<Rightarrow>f String.literal) option) list"
 
 definition replace_transition :: "iEFSM \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> iEFSM" where
   "replace_transition e uid new = (fimage (\<lambda>(uids, (from, to), t). if set uid \<subseteq> set uids then (uids, (from, to), new) else (uids, (from, to), t)) e)"
@@ -297,6 +296,8 @@ fun groupwise_put_updates :: "(tids \<times> transition) list list \<Rightarrow>
       Some u \<Rightarrow> groupwise_put_updates gps log values walked (o_inx, (op, types)) (make_distinct (add_groupwise_updates log [u] e))
   )"
 
+type_synonym output_types = "(nat \<times> (vname aexp \<times> vname \<Rightarrow>f String.literal) option) list"
+
 fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> tids list \<Rightarrow> output_types \<Rightarrow> iEFSM \<Rightarrow> iEFSM option" where
   "put_updates _ _ _ [] e = Some e" |
   "put_updates _ _ _ ((_, None)#_) _ = None" |
@@ -377,9 +378,18 @@ definition merge_regs :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
     merge_if_same e l reg_pairs
   )"
 
-text \<open>Sometimes inserting updates without redundancy can cause certain transitions to not get a
-      particular update function. This can lead to disparate groups of transitions which we want to
-      standardise such that every group of transitions has the same update function\<close>
+text \<open>Splitting structural groups up into subgroups by previous transition can cause different
+subgroups to get different updates. We ideally want structural groups to have the same output and
+update functions, as structural groups are likely to be instances of the same underlying behaviour.\<close>
+definition standardise_group :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list) \<Rightarrow> iEFSM" where
+  "standardise_group e l gp s= (
+    let
+      standardised = s e l gp;
+      e' = replace_transitions e standardised
+    in
+      if satisfies (set l) (tm e') then e' else e
+)"
+
 primrec standardise_groups_aux :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list \<Rightarrow> (iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list) \<Rightarrow> iEFSM" where
   "standardise_groups_aux e _ [] _ = e" |
   "standardise_groups_aux e l (h#t) s = (
@@ -394,16 +404,8 @@ primrec standardise_groups_aux :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \
   )"
 
 lemma standardise_groups_aux_fold [code]:
-  "standardise_groups_aux e l xs s = fold (\<lambda>h acc.
-  let
-      e' = replace_transitions acc (s acc l h)
-    in
-      if satisfies (set l) (tm e') then
-        e'
-      else
-        acc
-  ) xs e"
-  by(induct xs arbitrary: e s l, simp_all add: Let_def)
+  "standardise_groups_aux e l xs s = fold (\<lambda>h acc. standardise_group acc l h s) xs e"
+  by(induct xs arbitrary: e s l, simp_all add: Let_def standardise_group_def)
 
 definition cartProdN :: "'a list list \<Rightarrow> 'a list list" where
   "cartProdN l = foldr (\<lambda>xs as. [ x # a. x \<leftarrow> xs , a \<leftarrow> as ]) l [[]]"
