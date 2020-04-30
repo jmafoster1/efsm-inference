@@ -111,27 +111,6 @@ object Dirties {
     }
   }
 
-  def gexpImplies(g1: GExp.gexp[VName.vname], g2: GExp.gexp[VName.vname]): Boolean = {
-    var z3String = Config.z3Head
-    z3String += (GExp.enumerate_vars(g1) ++ GExp.enumerate_vars(g2)).distinct.map(v => s"(declare-const ${toZ3(v)} (Option Value))").foldLeft("")(((x, y) => x + y + "\n"))
-
-    z3String += s"""
-        (assert
-          (not
-            (=>
-              (= true ${toZ3(g1)})
-              (= true ${toZ3(g2)})
-            )
-          )
-        )
-        """
-
-    val sat = check(z3String, z3.Status.UNSATISFIABLE)
-    println(s"(=> ${PrettyPrinter.gexpToString(g1)}  ${PrettyPrinter.gexpToString(g2)})")
-
-    return sat
-  }
-
   def randomMember[A](f: FSet.fset[A]): Option[A] = f match {
     case FSet.fset_of_list(l) =>
       if (l == List())
@@ -464,9 +443,6 @@ object Dirties {
 
     gpGenerator.setTerminals(GP.boolTerms++intTerms++stringTerms)
 
-    println("INT TERMS: "+intTerms)
-    println("STRING TERMS: "+stringTerms)
-
     Log.root.debug("Guard training set: " + trainingSet)
 
     // If any of the guards need to simultaneously be true and false then stop
@@ -523,11 +499,12 @@ object Dirties {
   }
 
   def getUpdate(
+    l: String,
     r: Nat.nat,
     values: List[Value.value],
     train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Map[Nat.nat, Option[Value.value]]))]): Option[AExp.aexp[VName.vname]] = {
 
-    Log.root.debug("  Getting update")
+    Log.root.debug(f"  Getting update for $l")
 
     val r_index = TypeConversion.toInt(r)
     val ioPairs = (train.map {
@@ -637,11 +614,12 @@ object Dirties {
   }
 
   def getOutput(
+    label: String,
     maxReg: Nat.nat,
     values: List[Value.value],
     ioPairs: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Value.value))],
     latentVariable: Boolean = false): Option[(AExp.aexp[VName.vname], Map[VName.vname, String])] = {
-    Log.root.debug("Getting Output...")
+    Log.root.debug(f"Getting Output for $label")
 
     val outputs = ioPairs.map(x => x._2._2)
 
@@ -737,7 +715,7 @@ object Dirties {
 
     // Cut straight to having a latent variable if there's more possible outputs than inputs
     if ((!latentVariable) && trainingSet.keys().stream().anyMatch(x => x.size() < trainingSet.get(x).size())) {
-      return getOutput(maxReg, values, ioPairs, true)
+      return getOutput(label, maxReg, values, ioPairs, true)
     }
 
     for (intVarName <- intVarNames.distinct) {
@@ -792,10 +770,6 @@ object Dirties {
 
     Log.root.debug("  Best output is: " + best)
 
-    if (best.isInstanceOf[VariableTerminal[_]]) {
-      println(best.asInstanceOf[VariableTerminal[_]].isLatent)
-    }
-
     if (gp.isCorrect(best)) {
       Log.root.debug("  Best output is correct")
       // System.exit(0)
@@ -805,7 +779,7 @@ object Dirties {
       funMem = best :: funMem
       return Some((aexp, getTypes(best)))
     } else {
-      return getOutput(maxReg, values, ioPairs, true)
+      return getOutput(label, maxReg, values, ioPairs, true)
     }
   }
 

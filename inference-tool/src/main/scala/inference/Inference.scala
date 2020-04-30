@@ -707,6 +707,14 @@ def map[A, B](f: A => B, l: List[A]): List[B] = l.par.map(f).toList
 def product[A, B](xs: List[A], ys: List[B]): List[(A, B)] =
   maps[A, (A, B)](((x: A) => map[B, (A, B)](((a: B) => (x, a)), ys)), xs)
 
+def subseqs[A](x0: List[A]): List[List[A]] = x0 match {
+  case Nil => List(Nil)
+  case x :: xs => {
+                    val xss: List[List[A]] = subseqs[A](xs);
+                    map[List[A], List[A]](((a: List[A]) => x :: a), xss) ++ xss
+                  }
+}
+
 def enumerate[A](n: Nat.nat, xs: List[A]): List[(Nat.nat, A)] =
   (upt(n, Nat.plus_nata(n, Nat.Nata(xs.par.length)))).par.zip(xs).toList
 
@@ -734,6 +742,16 @@ def list_update[A](x0: List[A], i: Nat.nat, y: A): List[A] = (x0, i, y) match {
   case (x :: xs, i, y) =>
     (if (Nat.equal_nata(i, Nat.zero_nata)) y :: xs
       else x :: list_update[A](xs, Nat.minus_nat(i, Nat.Nata((1))), y))
+}
+
+def product_lists[A](x0: List[List[A]]): List[List[A]] = x0 match {
+  case Nil => List(Nil)
+  case xs :: xss =>
+    maps[A, List[A]](((x: A) =>
+                       map[List[A],
+                            List[A]](((a: List[A]) => x :: a),
+                                      product_lists[A](xss))),
+                      xs)
 }
 
 def insort_key[A, B : Orderings.linorder](f: A => B, x: A, xa2: List[A]):
@@ -785,47 +803,37 @@ object Set {
 abstract sealed class set[A]
 final case class seta[A](a: List[A]) extends set[A]
 
-def insert[A](x: A, xa1: set[A]): set[A] = (x, xa1) match {
-  case (x, seta(s)) => (if (s.contains(x)) seta[A](s) else seta[A](x :: s))
+def Ball[A](x0: set[A], p: A => Boolean): Boolean = (x0, p) match {
+  case (seta(xs), p) => Lista.list_all[A](p, xs)
 }
-
-def sup_set[A](x0: set[A], a: set[A]): set[A] = (x0, a) match {
-  case (seta(x), seta(y)) => seta[A](x ++ y)
-  case (seta(xs), a) =>
-    Lista.fold[A, set[A]](((aa: A) => (b: set[A]) => insert[A](aa, b)), xs, a)
-}
-
-def bot_set[A]: set[A] = seta[A](Nil)
 
 def image[A, B](f: A => B, x1: set[A]): set[B] = (f, x1) match {
   case (f, seta(xs)) => seta[B](Lista.map[A, B](f, xs))
-}
-
-def Pow[A](x0: set[A]): set[set[A]] = x0 match {
-  case seta(x :: xs) =>
-    {
-      val a: set[set[A]] = Pow[A](seta[A](xs));
-      sup_set[set[A]](a, image[set[A],
-                                set[A]](((aa: set[A]) => insert[A](x, aa)), a))
-    }
-  case seta(Nil) => insert[set[A]](bot_set[A], bot_set[set[A]])
-}
-
-def Ball[A](x0: set[A], p: A => Boolean): Boolean = (x0, p) match {
-  case (seta(xs), p) => Lista.list_all[A](p, xs)
 }
 
 def filter[A](p: A => Boolean, x1: set[A]): set[A] = (p, x1) match {
   case (p, seta(xs)) => seta[A](Lista.filter[A](p, xs))
 }
 
+def insert[A](x: A, xa1: set[A]): set[A] = (x, xa1) match {
+  case (x, seta(s)) => (if (s.contains(x)) seta[A](s) else seta[A](x :: s))
+}
+
 def member[A](x: A, xa1: set[A]): Boolean = (x, xa1) match {
   case (x, seta(xs)) => xs.contains(x)
 }
 
+def bot_set[A]: set[A] = seta[A](Nil)
+
 def inf_set[A](a: set[A], x1: set[A]): set[A] = (a, x1) match {
   case (a, seta(xs)) =>
     seta[A](Lista.filter[A](((x: A) => member[A](x, a)), xs))
+}
+
+def sup_set[A](x0: set[A], a: set[A]): set[A] = (x0, a) match {
+  case (seta(x), seta(y)) => seta[A](x ++ y)
+  case (seta(xs), a) =>
+    Lista.fold[A, set[A]](((aa: A) => (b: set[A]) => insert[A](aa, b)), xs, a)
 }
 
 def less_eq_set[A](a: set[A], b: set[A]): Boolean =
@@ -6595,15 +6603,6 @@ def group_by[A](uu: A => A => Boolean, x1: List[A]): List[List[A]] = (uu, x1)
      })
 }
 
-def cartProdN[A](l: List[List[A]]): List[List[A]] =
-  Lista.foldr[List[A],
-               List[List[A]]](((xs: List[A]) => (as: List[List[A]]) =>
-                                Lista.maps[A,
-    List[A]](((x: A) =>
-               Lista.map[List[A], List[A]](((a: List[A]) => x :: a), as)),
-              xs)),
-                               l, List(Nil))
-
 def replace_transition(e: FSet.fset[(List[Nat.nat],
                                       ((Nat.nat, Nat.nat),
 Transition.transition_ext[Unit]))],
@@ -6741,31 +6740,6 @@ necessary_updates),
                                      t)
   }
 
-def get_updates(u: List[(List[Nat.nat],
-                          List[(Nat.nat, AExp.aexp[VName.vname])])],
-                 t: List[Nat.nat]):
-      List[(Nat.nat, AExp.aexp[VName.vname])]
-  =
-  Lista.maps[(List[Nat.nat], List[(Nat.nat, AExp.aexp[VName.vname])]),
-              (Nat.nat,
-                AExp.aexp[VName.vname])](((a:
-     (List[Nat.nat], List[(Nat.nat, AExp.aexp[VName.vname])]))
-    =>
-   a._2),
-  Lista.filter[(List[Nat.nat],
-                 List[(Nat.nat,
-                        AExp.aexp[VName.vname])])](((a:
-               (List[Nat.nat], List[(Nat.nat, AExp.aexp[VName.vname])]))
-              =>
-             {
-               val (tids, _):
-                     (List[Nat.nat], List[(Nat.nat, AExp.aexp[VName.vname])])
-                 = a;
-               Cardinality.subset[Nat.nat](Set.seta[Nat.nat](t),
-    Set.seta[Nat.nat](tids))
-             }),
-            u))
-
 def add_groupwise_updates_trace(x0: List[(String,
    (List[Value.value], List[Value.value]))],
                                  uu: List[(List[Nat.nat],
@@ -6791,7 +6765,26 @@ def add_groupwise_updates_trace(x0: List[(String,
         (Transition.apply_updates(Transition.Updates[Unit](t),
                                    AExp.join_ir(i, r))).apply(r)
       val newUpdates: List[(Nat.nat, AExp.aexp[VName.vname])] =
-        get_updates(funs, id)
+        Lista.maps[(List[Nat.nat], List[(Nat.nat, AExp.aexp[VName.vname])]),
+                    (Nat.nat,
+                      AExp.aexp[VName.vname])](((a:
+           (List[Nat.nat], List[(Nat.nat, AExp.aexp[VName.vname])]))
+          =>
+         a._2),
+        Lista.filter[(List[Nat.nat],
+                       List[(Nat.nat,
+                              AExp.aexp[VName.vname])])](((a:
+                     (List[Nat.nat], List[(Nat.nat, AExp.aexp[VName.vname])]))
+                    =>
+                   {
+                     val (tids, _):
+                           (List[Nat.nat],
+                             List[(Nat.nat, AExp.aexp[VName.vname])])
+                       = a;
+                     Cardinality.subset[Nat.nat](Set.seta[Nat.nat](id),
+          Set.seta[Nat.nat](tids))
+                   }),
+                  funs))
       val ta: Transition.transition_ext[Unit] = insert_updates(t, newUpdates)
       val updateda: Map[Nat.nat, Option[Value.value]] =
         (Transition.apply_updates(Transition.Updates[Unit](ta),
@@ -6840,7 +6833,7 @@ List[(Nat.nat, AExp.aexp[VName.vname])])],
                scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]))),
                          log, e)
 
-def get_updates_opt(values: List[Value.value],
+def get_updates_opt(l: String, values: List[Value.value],
                      train:
                        List[(List[Value.value],
                               (Map[Nat.nat, Option[Value.value]],
@@ -6938,7 +6931,7 @@ train)))
                          val (Some(v)): Option[Value.value] = targetValues.head;
                          (r, Some[AExp.aexp[VName.vname]](AExp.L[VName.vname](v)))
                        }
-                       else (r, Dirties.getUpdate(r, values, train))))
+                       else (r, Dirties.getUpdate(l, r, values, train))))
             }),
            a)
   }
@@ -6961,6 +6954,14 @@ def group_update(values: List[Value.value],
       Option[(List[Nat.nat], List[(Nat.nat, AExp.aexp[VName.vname])])]
   =
   {
+    val (_, (_, (_, (_, (_, (_, t)))))):
+          (Map[Nat.nat, Option[Value.value]],
+            (Nat.nat,
+              (Map[Nat.nat, Option[Value.value]],
+                (Map[Nat.nat, Option[Value.value]],
+                  (List[Value.value],
+                    (List[Nat.nat], Transition.transition_ext[Unit]))))))
+      = l.head
     val targeted:
           List[(Map[Nat.nat, Option[Value.value]],
                  (Nat.nat,
@@ -6994,7 +6995,7 @@ def group_update(values: List[Value.value],
                                   }),
                                  l)
     val maybe_updates: List[(Nat.nat, Option[AExp.aexp[VName.vname]])] =
-      get_updates_opt(values,
+      get_updates_opt(Transition.Label[Unit](t), values,
                        Lista.map[(Map[Nat.nat, Option[Value.value]],
                                    (Nat.nat,
                                      (Map[Nat.nat, Option[Value.value]],
@@ -7598,7 +7599,7 @@ def put_outputs(xs: List[(Option[(AExp.aexp[VName.vname],
        }),
       xs, Nil)
 
-def get_outputs(maxReg: Nat.nat, values: List[Value.value],
+def get_outputs(l: String, maxReg: Nat.nat, values: List[Value.value],
                  i: List[List[Value.value]],
                  r: List[Map[Nat.nat, Option[Value.value]]],
                  outputs: List[List[Value.value]]):
@@ -7611,7 +7612,7 @@ def get_outputs(maxReg: Nat.nat, values: List[Value.value],
              =>
             {
               val (maxRega, ps): (Nat.nat, List[Value.value]) = a;
-              Dirties.getOutput(maxRega, values,
+              Dirties.getOutput(l, maxRega, values,
                                  i.par.zip(r.par.zip(ps).toList).toList)
             }),
            Lista.enumerate[List[Value.value]](maxReg,
@@ -7643,7 +7644,7 @@ def generalise_and_update(log: List[List[(String,
     val max_reg: Nat.nat = Inference.max_reg_total(e)
     val outputs:
           List[Option[(AExp.aexp[VName.vname], Map[VName.vname, String])]]
-      = get_outputs(max_reg, values, i, r, p)
+      = get_outputs(label, max_reg, values, i, r, p)
     val changes: List[(List[Nat.nat], Transition.transition_ext[Unit])] =
       Lista.map[(List[Nat.nat], Transition.transition_ext[Unit]),
                  (List[Nat.nat],
@@ -7822,21 +7823,6 @@ Transition.transition_ext[Unit])
 def updates_same[A : HOL.equal, B, C](u1: (A, B), u2: (A, C)): Boolean =
   HOL.eq[A](u1._1, u2._1)
 
-def power_list[A : HOL.equal : Orderings.linorder](l: List[A]): List[List[A]] =
-  Lista.sorted_list_of_set[List[A]](Set.image[Set.set[A],
-       List[A]](((a: Set.set[A]) => Lista.sorted_list_of_set[A](a)),
-                 Set.Pow[A](Set.seta[A](l))))
-
-def power_lists[A : HOL.equal : Orderings.linorder](l: List[List[A]]):
-      List[List[A]]
-  =
-  Lista.fold[List[A],
-              List[List[A]]](Fun.comp[List[List[A]],
-                                       (List[List[A]]) => List[List[A]],
-                                       List[A]](Lista.union[List[A]],
-         ((a: List[A]) => power_list[A](a))),
-                              l, Nil)
-
 def standardise_group_outputs_updates(e:
 FSet.fset[(List[Nat.nat],
             ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
@@ -7848,43 +7834,58 @@ FSet.fset[(List[Nat.nat],
   =
   {
     val update_groups: List[List[(Nat.nat, AExp.aexp[VName.vname])]] =
-      cartProdN[(Nat.nat,
-                  AExp.aexp[VName.vname])](group_by[(Nat.nat,
-              AExp.aexp[VName.vname])](((a: (Nat.nat, AExp.aexp[VName.vname]))
-  =>
- (b: (Nat.nat, AExp.aexp[VName.vname])) =>
- updates_same[Nat.nat, AExp.aexp[VName.vname], AExp.aexp[VName.vname]](a, b)),
-Lista.sort_key[(Nat.nat, AExp.aexp[VName.vname]),
-                (Nat.nat,
-                  AExp.aexp[VName.vname])](((x:
-       (Nat.nat, AExp.aexp[VName.vname]))
-      =>
-     x),
-    (Lista.maps[(List[Nat.nat], Transition.transition_ext[Unit]),
-                 (Nat.nat,
-                   AExp.aexp[VName.vname])](Fun.comp[Transition.transition_ext[Unit],
-              List[(Nat.nat, AExp.aexp[VName.vname])],
-              (List[Nat.nat],
-                Transition.transition_ext[Unit])](((a:
-              Transition.transition_ext[Unit])
-             =>
-            Transition.Updates[Unit](a)),
-           ((a: (List[Nat.nat], Transition.transition_ext[Unit])) => a._2)),
-     g)).par.distinct.toList)))
+      Lista.product_lists[(Nat.nat,
+                            AExp.aexp[VName.vname])](group_by[(Nat.nat,
+                        AExp.aexp[VName.vname])](((a:
+             (Nat.nat, AExp.aexp[VName.vname]))
+            =>
+           (b: (Nat.nat, AExp.aexp[VName.vname])) =>
+           updates_same[Nat.nat, AExp.aexp[VName.vname],
+                         AExp.aexp[VName.vname]](a, b)),
+          Lista.sort_key[(Nat.nat, AExp.aexp[VName.vname]),
+                          (Nat.nat,
+                            AExp.aexp[VName.vname])](((x:
+                 (Nat.nat, AExp.aexp[VName.vname]))
+                =>
+               x),
+              (Lista.maps[(List[Nat.nat], Transition.transition_ext[Unit]),
+                           (Nat.nat,
+                             AExp.aexp[VName.vname])](Fun.comp[Transition.transition_ext[Unit],
+                        List[(Nat.nat, AExp.aexp[VName.vname])],
+                        (List[Nat.nat],
+                          Transition.transition_ext[Unit])](((a:
+                        Transition.transition_ext[Unit])
+                       =>
+                      Transition.Updates[Unit](a)),
+                     ((a: (List[Nat.nat], Transition.transition_ext[Unit])) =>
+                       a._2)),
+               g)).par.distinct.toList)))
     val update_groups_subs: List[List[(Nat.nat, AExp.aexp[VName.vname])]] =
-      power_lists[(Nat.nat, AExp.aexp[VName.vname])](update_groups)
+      Lista.fold[List[(Nat.nat, AExp.aexp[VName.vname])],
+                  List[List[(Nat.nat,
+                              AExp.aexp[VName.vname])]]](Fun.comp[List[List[(Nat.nat,
+                                      AExp.aexp[VName.vname])]],
+                           (List[List[(Nat.nat, AExp.aexp[VName.vname])]]) =>
+                             List[List[(Nat.nat, AExp.aexp[VName.vname])]],
+                           List[(Nat.nat,
+                                  AExp.aexp[VName.vname])]](Lista.union[List[(Nat.nat,
+                                       AExp.aexp[VName.vname])]],
+                     ((a: List[(Nat.nat, AExp.aexp[VName.vname])]) =>
+                       Lista.subseqs[(Nat.nat, AExp.aexp[VName.vname])](a))),
+                  update_groups, Nil)
     val output_groups: List[List[AExp.aexp[VName.vname]]] =
-      cartProdN[AExp.aexp[VName.vname]](Lista.transpose[AExp.aexp[VName.vname]]((Lista.map[(List[Nat.nat],
-             Transition.transition_ext[Unit]),
-            List[AExp.aexp[VName.vname]]](Fun.comp[Transition.transition_ext[Unit],
-            List[AExp.aexp[VName.vname]],
-            (List[Nat.nat],
-              Transition.transition_ext[Unit])](((a:
-            Transition.transition_ext[Unit])
-           =>
-          Transition.Outputs[Unit](a)),
-         ((a: (List[Nat.nat], Transition.transition_ext[Unit])) => a._2)),
-   g)).par.distinct.toList));
+      Lista.product_lists[AExp.aexp[VName.vname]](Lista.transpose[AExp.aexp[VName.vname]]((Lista.map[(List[Nat.nat],
+                       Transition.transition_ext[Unit]),
+                      List[AExp.aexp[VName.vname]]](Fun.comp[Transition.transition_ext[Unit],
+                      List[AExp.aexp[VName.vname]],
+                      (List[Nat.nat],
+                        Transition.transition_ext[Unit])](((a:
+                      Transition.transition_ext[Unit])
+                     =>
+                    Transition.Outputs[Unit](a)),
+                   ((a: (List[Nat.nat], Transition.transition_ext[Unit])) =>
+                     a._2)),
+             g)).par.distinct.toList));
     (find_updates_outputs(update_groups_subs, output_groups, e, l, g) match {
        case None => g
        case Some((p, u)) =>
@@ -8515,7 +8516,6 @@ List[Nat.nat]))))]):
           FSet.fset[(List[Nat.nat],
                       ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
       = merge_regs(delayed, log);
-    standardise_groups(merged, log);
     drop_all_guards(merged, pta, log, m, np)
   }
 

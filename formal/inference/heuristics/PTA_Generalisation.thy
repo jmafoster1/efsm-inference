@@ -94,21 +94,6 @@ fun trace_group_training_set :: "(tids \<times> transition) list \<Rightarrow> i
 definition make_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (inputs \<times> registers \<times> value list) list" where
   "make_training_set e l gp = fold (\<lambda>h a. trace_group_training_set gp e 0 <> h a) l []"
 
-text\<open>We want to return an aexp which, when evaluated in the correct context accounts for the literal
-input-output pairs within the training set. This will be replaced by symbolic regression in the
-executable\<close>
-definition get_output :: "nat \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> value) list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
-  "get_output maxReg values train = (let
-    possible_funs = {a. \<forall>(i, r, p) \<in> set train. aval a (join_ir i r) = Some p}
-    in
-    if possible_funs = {} then None else Some (Eps (\<lambda>x. x \<in> possible_funs), (K$ STR ''int''))
-  )"
-declare get_output_def [code del]
-code_printing constant get_output \<rightharpoonup> (Scala) "Dirties.getOutput"
-
-definition get_outputs :: "nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> value list list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option list" where
-  "get_outputs maxReg values I r outputs = map (\<lambda>(maxReg, ps). get_output maxReg values (zip I (zip r ps))) (enumerate maxReg (transpose outputs))"
-
 fun put_outputs :: "(((vname aexp \<times> (vname \<Rightarrow>f String.literal)) option) \<times> vname aexp) list \<Rightarrow> vname aexp list" where
   "put_outputs [] = []" |
   "put_outputs ((None, p)#t) = p#(put_outputs t)" |
@@ -148,16 +133,13 @@ definition insert_updates :: "transition \<Rightarrow> update_function list \<Ri
     t\<lparr>Updates := (filter (\<lambda>(r, _). r \<notin> set (map fst u)) (Updates t))@necessary_updates\<rparr>
   )"
 
-definition get_updates :: "(tids \<times> update_function list) list \<Rightarrow> tids \<Rightarrow> update_function list" where
-  "get_updates u t = List.maps snd (filter (\<lambda>(tids, _). set t \<subseteq> set tids) u)"
-
 fun add_groupwise_updates_trace :: "execution  \<Rightarrow> (tids \<times> update_function list) list \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM" where
   "add_groupwise_updates_trace [] _ e _ _ = e" |
   "add_groupwise_updates_trace ((l, i, _)#trace) funs e s r = (
     let
       (id, s', t) = fthe_elem (i_possible_steps e s r l i);
       updated = apply_updates (Updates t) (join_ir i r) r;
-      newUpdates = get_updates funs id;
+      newUpdates = List.maps snd (filter (\<lambda>(tids, _). set id \<subseteq> set tids) funs);
       t' = insert_updates t newUpdates;
       updated' = apply_updates (Updates t') (join_ir i r) r;
       necessaryUpdates = filter (\<lambda>(r, _). updated $ r \<noteq> updated' $ r) newUpdates;
@@ -247,15 +229,15 @@ lemma target_fold [code]: "target tRegs ts = target_fold tRegs ts []"
   by (metis append_self_conv2 rev.simps(1) target_tail_fold target_tail)
 
 \<comment> \<open>This will be replaced by symbolic regression in the executable\<close>
-definition get_update :: "nat \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> vname aexp option" where
-  "get_update reg values train = (let
+definition get_update :: "label \<Rightarrow> nat \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> vname aexp option" where
+  "get_update _ reg values train = (let
     possible_funs = {a. \<forall>(i, r, r') \<in> set train. aval a (join_ir i r) = r' $ reg}
     in
     if possible_funs = {} then None else Some (Eps (\<lambda>x. x \<in> possible_funs))
   )"
 
-definition get_updates_opt :: "value list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> (nat \<times> vname aexp option) list" where
-  "get_updates_opt values train = (let
+definition get_updates_opt :: "label \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> (nat \<times> vname aexp option) list" where
+  "get_updates_opt l values train = (let
     updated_regs = fold List.union (map (finfun_to_list \<circ> snd \<circ> snd) train) [] in
     map (\<lambda>r.
       let targetValues = remdups (map (\<lambda>(_, _, regs). regs $ r) train) in
@@ -265,7 +247,7 @@ definition get_updates_opt :: "value list \<Rightarrow> (inputs \<times> registe
         case hd targetValues of Some v \<Rightarrow>
         (r, Some (L v))
       else
-        (r, get_update r values train)
+        (r, get_update l r values train)
     ) updated_regs
   )"
 
@@ -275,8 +257,9 @@ definition finfun_add :: "(('a::linorder) \<Rightarrow>f 'b) \<Rightarrow> ('a \
 definition group_update :: "value list \<Rightarrow> targeted_run_info \<Rightarrow> (tids \<times> (nat \<times> vname aexp) list) option" where
   "group_update values l = (
     let
+      (_, (_, _, _, _, _, t)) = hd l;
       targeted = filter (\<lambda>(regs, _). finfun_to_list regs \<noteq> []) l;
-      maybe_updates = get_updates_opt values (map (\<lambda>(tRegs, s, oldRegs, regs, inputs, tid, ta). (inputs, finfun_add oldRegs regs, tRegs)) targeted)
+      maybe_updates = get_updates_opt (Label t) values (map (\<lambda>(tRegs, s, oldRegs, regs, inputs, tid, ta). (inputs, finfun_add oldRegs regs, tRegs)) targeted)
     in
     if \<exists>(_, f_opt) \<in> set maybe_updates. f_opt = None then
       None
@@ -335,6 +318,21 @@ lemma unzip_3_tailrec [code]: "unzip_3 l = unzip_3_tailrec l"
   apply (simp only: unzip_3_tailrec_def unzip_3_tailrec_rev)
   by (simp add: Let_def map_tailrec_rev unzip_3)
 
+text\<open>We want to return an aexp which, when evaluated in the correct context accounts for the literal
+input-output pairs within the training set. This will be replaced by symbolic regression in the
+executable\<close>
+definition get_output :: "label \<Rightarrow> nat \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> value) list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
+  "get_output _ maxReg values train = (let
+    possible_funs = {a. \<forall>(i, r, p) \<in> set train. aval a (join_ir i r) = Some p}
+    in
+    if possible_funs = {} then None else Some (Eps (\<lambda>x. x \<in> possible_funs), (K$ STR ''int''))
+  )"
+declare get_output_def [code del]
+code_printing constant get_output \<rightharpoonup> (Scala) "Dirties.getOutput"
+
+definition get_outputs :: "label \<Rightarrow> nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> value list list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option list" where
+  "get_outputs l maxReg values I r outputs = map (\<lambda>(maxReg, ps). get_output l maxReg values (zip I (zip r ps))) (enumerate maxReg (transpose outputs))"
+
 (*This is where the types stuff originates*)
 definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids \<times> transition) list \<Rightarrow> iEFSM option" where
   "generalise_and_update log e gp = (
@@ -344,7 +342,7 @@ definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids
       new_gp_ts = make_training_set e log gp;
       (I, R, P) = unzip_3 new_gp_ts;
       max_reg = max_reg_total e;
-      outputs = get_outputs max_reg values I R P;
+      outputs = get_outputs label max_reg values I R P;
       changes = map (\<lambda>(id, tran). (id, tran\<lparr>Outputs := put_outputs (zip outputs (Outputs tran))\<rparr>)) gp;
       generalised_model = fold (\<lambda>(id, t) acc. replace_transition acc id t) changes e
   in
@@ -407,22 +405,6 @@ lemma standardise_groups_aux_fold [code]:
   "standardise_groups_aux e l xs s = fold (\<lambda>h acc. standardise_group acc l h s) xs e"
   by(induct xs arbitrary: e s l, simp_all add: Let_def standardise_group_def)
 
-definition cartProdN :: "'a list list \<Rightarrow> 'a list list" where
-  "cartProdN l = foldr (\<lambda>xs as. [ x # a. x \<leftarrow> xs , a \<leftarrow> as ]) l [[]]"
-
-definition standardise_outputs :: "(vname aexp \<Rightarrow> vname aexp \<Rightarrow> vname aexp) \<Rightarrow> vname aexp list \<Rightarrow> vname aexp list \<Rightarrow> vname aexp list" where
-  "standardise_outputs f p1 p2 = map (\<lambda>(p1, p2). f p1 p2) (zip p1 p2)"
-
-definition standardise_group_outputs :: "(vname aexp \<Rightarrow> vname aexp \<Rightarrow> vname aexp) \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list" where
-  "standardise_group_outputs f g = (
-    let
-      outputs = case g of
-        [] \<Rightarrow> [] |
-        (h#t) \<Rightarrow> fold (\<lambda>x acc. standardise_outputs f x acc) (map (Outputs \<circ> snd) t) (Outputs (snd h))
-    in
-      map (\<lambda>(id, t). (id, t\<lparr>Outputs := outputs\<rparr>)) g
-  )"
-
 definition "updates_same u1 u2 = (fst u1 = fst u2)"
 
 primrec find_outputs :: "output_function list list \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> output_function list option" where
@@ -437,8 +419,6 @@ primrec find_outputs :: "output_function list list \<Rightarrow> iEFSM \<Rightar
         find_outputs t e l g
   )"
 
-definition "this x = (case x of Some y \<Rightarrow> y)"
-
 primrec find_updates_outputs :: "update_function list list \<Rightarrow> output_function list list \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (output_function list \<times> update_function list) option" where
   "find_updates_outputs [] _ _ _ _ = None" |
   "find_updates_outputs (h#t) p e l g = (
@@ -450,19 +430,12 @@ primrec find_updates_outputs :: "update_function list list \<Rightarrow> output_
         None \<Rightarrow> find_updates_outputs t p e l g
   )"
 
-definition power_list :: "('a::linorder) list \<Rightarrow> 'a list list" where
-  "power_list l = sorted_list_of_set (image sorted_list_of_set (Pow (set l)))"
-
-definition power_lists :: "'a::linorder list list \<Rightarrow> 'a list list" where
-  "power_lists l = fold List.union (map power_list l) []"
-
-(* Try max and min output function with satisfies *)
 definition standardise_group_outputs_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list" where
   "standardise_group_outputs_updates e l g = (
     let
-      update_groups = cartProdN (group_by updates_same (sort (remdups (List.maps (Updates \<circ> snd) g))));
-      update_groups_subs = power_lists update_groups;
-      output_groups = cartProdN (transpose (remdups (map (Outputs \<circ> snd) g)))
+      update_groups = product_lists (group_by updates_same (sort (remdups (List.maps (Updates \<circ> snd) g))));
+      update_groups_subs = fold (List.union \<circ> subseqs) update_groups [];
+      output_groups = product_lists (transpose (remdups (map (Outputs \<circ> snd) g)))
     in
     case find_updates_outputs update_groups_subs output_groups e l g of
       None \<Rightarrow> g |
@@ -603,8 +576,7 @@ definition derestrict :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier 
     let
       normalised = groupwise_generalise_and_update log pta (transition_groups pta log);
       delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs normalised)) normalised;
-      merged = merge_regs delayed log;
-      standardised = standardise_groups merged log
+      merged = merge_regs delayed log
     in
       drop_all_guards merged pta log m np
   )"
