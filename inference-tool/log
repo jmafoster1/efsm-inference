@@ -1,0 +1,36 @@
+bash bessemer-run.sh 33979 396 3065 liftDoors30-obfuscated-time gp
+-s naive_eq_bonus -p gp -g 33979 -o 396 -u 3065 -h ws,distinguish -d results/liftDoors30-obfuscated-time-gp-33979-396-3065 experimental-data/liftDoors30-obfuscated-time-train.json experimental-data/liftDoors30-obfuscated-time-test.json
+Building PTA - 30 traces
+PTA has 328 states
+PTA has 327 transitions
+fullyClosed:0/1: requestOpen:0/1: buttonInterrupted:0/1: openingDoor:0/1: closingDoor:0/1: buttonInterrupted:0/1: None: setTimer:0/1: closingDoor:0/1: fullyClosed:0/1: requestOpen:0/1: openingDoor:0/1: waitTimer:0/1: systemInitReady:0/1: timeout:0/1: closingDoor:0/1: fullyOpen:0/1: timeout:0/1: systemInitReady:0/1: closingDoor:0/1: setTimer:0/1: waitTimer:0/1: openingDoor:0/1: fullyOpen:0/1: Getting Output for setTimer
+  Singleton literal output
+Getting Output for waitTimer
+  No latent variable
+  Output training set: {[]=[o=3, o=4, o=1, o=2, o=0]}
+  Secret best output is: r1
+fullyClosed:0/1: requestOpen:0/1: buttonInterrupted:0/1: openingDoor:0/1: closingDoor:0/1: buttonInterrupted:0/1: None: setTimer:0/1: closingDoor:0/1: fullyClosed:0/1: requestOpen:0/1: openingDoor:0/1: waitTimer:0/1: systemInitReady:0/1: timeout:0/1: closingDoor:0/1: fullyOpen:0/1: timeout:0/1: systemInitReady:0/1: closingDoor:0/1: setTimer:0/1: waitTimer:0/1: openingDoor:0/1: fullyOpen:0/1:   Getting update for waitTimer
+    Update training set: {[r1=4]=[r1=3], [r1=2]=[r1=1], [r1=3]=[r1=2], [r1=1]=[r1=0]}
+    Best update is: (+ -1 r1)
+    Best update is correct
+Getting Output for systemInitReady
+  Singleton literal output
+Getting Output for closingDoor
+  No latent variable
+Getting Output for closingDoor
+  Latent variable: r2
+  Output training set: {[r1=-1]=[o=3, o=4, o=2, o=1, o=5, o=6, o=0, o=7, o=8, o=9]}
+  Best output is: r2
+  Best output is correct
+fullyClosed:0/1: requestOpen:0/1: buttonInterrupted:0/1: openingDoor:0/1: closingDoor:0/1: buttonInterrupted:0/1: None: setTimer:0/1: closingDoor:0/1: fullyClosed:0/1: requestOpen:0/1: openingDoor:0/1: waitTimer:0/1: systemInitReady:0/1: timeout:0/1: closingDoor:0/1: fullyOpen:0/1: timeout:0/1: systemInitReady:0/1: closingDoor:0/1: setTimer:0/1: waitTimer:0/1: openingDoor:0/1: fullyOpen:0/1:   Getting update for waitTimer
+    Update training set: {[]=[r2=9]}
+    Best update is: 9
+    Best update is correct
+  Getting update for systemInitReady
+    Update training set: {[]=[r2=9]}
+    Best update is: 9
+    Best update is correct
+  Getting update for closingDoor
+    Update training set: {[r2=9]=[r2=8], [r2=7]=[r2=6], [r2=8]=[r2=7], [r2=4]=[r2=3], [r2=5]=[r2=4], [r2=6]=[r2=5], [r2=1]=[r2=0], [r2=2]=[r2=1], [r2=3]=[r2=2]}
+    Best update is: (+ -1 r2)
+    Best update is correct

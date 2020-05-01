@@ -4,18 +4,28 @@ begin
 
 hide_const I
 
-fun group_by :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a list list" where
+fun insert_into_groups :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> 'a list list \<Rightarrow> 'a list list" where
+  "insert_into_groups f h [] = [[h]]" |
+  "insert_into_groups f h ([]#gs) = [h]#gs" |
+  "insert_into_groups f h ((x#xs)#gs) = (if f h x then (h#x#xs)#gs else [h]#(x#xs)#gs)"
+
+fun group_by:: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a list list" where
   "group_by _ [] = []" |
-  "group_by f (h#t) = (
-    let groups = group_by f t in
-    case groups of
-      [] \<Rightarrow> [[h]] |
-      (g#gs) \<Rightarrow> (
-        case g of
-          [] \<Rightarrow> [h]#gs |
-          (x#xs) \<Rightarrow> if f h x then (h#g)#gs else [h]#g#gs
-      )
-  )"
+  "group_by f (h#t) = insert_into_groups f h (group_by f t)"
+
+lemma group_by_empty: "group_by f xs = [] \<longleftrightarrow> xs = []"
+proof(induct xs)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a xs)
+  then show ?case
+    apply simp
+    apply (case_tac "group_by f xs")
+     apply simp
+    by (case_tac aa, auto)
+qed
 
 lemma no_empty_groups: "\<forall>x \<in> set (group_by f xs). x \<noteq> []"
 proof(induct xs)
@@ -26,9 +36,32 @@ next
   case (Cons a xs)
   then show ?case
     apply simp
-    apply (cases "group_by f xs")
+    apply (case_tac "group_by f xs")
      apply simp
     by (case_tac aa, auto)
+qed
+
+lemma test: "(hd xs) \<noteq> [] \<Longrightarrow> \<not> f h (hd (hd xs)) \<Longrightarrow> insert_into_groups f h xs = [h]#xs"
+  apply (case_tac xs)
+   apply simp
+  apply (case_tac list)
+   apply simp
+  apply (metis hd_Cons_tl insert_into_groups.simps(3))
+  apply simp
+  by (metis insert_into_groups.simps(3) list.sel(1) neq_Nil_conv)
+
+lemma test2: "(hd xs) \<noteq> [] \<Longrightarrow> \<not> f h (hd (hd xs)) \<Longrightarrow> hd (insert_into_groups f h xs) = [h]"
+  by (simp add: test)
+
+lemma hd_hd_insert_into_groups: "(hd (hd (insert_into_groups f a as))) = a"
+proof(induct as)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons x xs)
+  then show ?case
+    by (metis insert_into_groups.simps(2) insert_into_groups.simps(3) list.collapse list.sel(1))
 qed
 
 definition group_by_structure :: "iEFSM \<Rightarrow> (tids \<times> transition) list list" where
@@ -380,11 +413,12 @@ text \<open>Splitting structural groups up into subgroups by previous transition
 subgroups to get different updates. We ideally want structural groups to have the same output and
 update functions, as structural groups are likely to be instances of the same underlying behaviour.\<close>
 definition standardise_group :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list) \<Rightarrow> iEFSM" where
-  "standardise_group e l gp s= (
+  "standardise_group e l gp s = (
     let
       standardised = s e l gp;
       e' = replace_transitions e standardised
     in
+      if e' = e then e else
       if satisfies (set l) (tm e') then e' else e
 )"
 
@@ -452,7 +486,9 @@ primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow
       None \<Rightarrow> groupwise_generalise_and_update log e t |
       Some e' \<Rightarrow> (
         let
-          standardised = standardise_groups e' log
+          rep = snd (hd (gp));
+          structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(_, _, t). same_structure rep t) e');
+          standardised = standardise_group e' log (sorted_list_of_fset structural_group) standardise_group_outputs_updates
         in
         groupwise_generalise_and_update log (merge_regs standardised log) t
       )
@@ -464,9 +500,11 @@ lemma groupwise_generalise_and_update_fold:
         None \<Rightarrow> e |
         Some e' \<Rightarrow> (
           let
-          standardised = standardise_groups e' log
-        in
-          merge_regs standardised log)
+            rep = snd (hd (gp));
+            structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(_, _, t). same_structure rep t) e');
+            standardised = standardise_group e' log (sorted_list_of_fset structural_group) standardise_group_outputs_updates
+          in
+            merge_regs standardised log)
   ) gs e"
   apply(induct gs arbitrary: e)
    apply simp
