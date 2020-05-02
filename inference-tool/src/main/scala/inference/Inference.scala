@@ -683,6 +683,13 @@ def equal_lista[A : HOL.equal](xs: List[A], ys: List[A]): Boolean =
 def upt(i: Nat.nat, j: Nat.nat): List[Nat.nat] =
   Code_Target_List.upt_tailrec(i, j, Nil)
 
+def drop[A](n: Nat.nat, x1: List[A]): List[A] = (n, x1) match {
+  case (n, Nil) => Nil
+  case (n, x :: xs) =>
+    (if (Nat.equal_nata(n, Nat.zero_nata)) x :: xs
+      else drop[A](Nat.minus_nat(n, Nat.Nata((1))), xs))
+}
+
 def fold[A, B](f: A => B => B, xs: List[A], s: B): B =
   Dirties.foldl[B, A](((x: B) => (sa: A) => (f(sa))(x)), s, xs)
 
@@ -717,6 +724,11 @@ def subseqs[A](x0: List[A]): List[List[A]] = x0 match {
 
 def enumerate[A](n: Nat.nat, xs: List[A]): List[(Nat.nat, A)] =
   (upt(n, Nat.plus_nata(n, Nat.Nata(xs.par.length)))).par.zip(xs).toList
+
+def takeWhile[A](p: A => Boolean, x1: List[A]): List[A] = (p, x1) match {
+  case (p, Nil) => Nil
+  case (p, x :: xs) => (if (p(x)) x :: takeWhile[A](p, xs) else Nil)
+}
 
 def transpose[A](x0: List[List[A]]): List[List[A]] = x0 match {
   case Nil => Nil
@@ -4835,6 +4847,21 @@ def iefsm2dot(e: FSet.fset[(List[Nat.nat],
 
 } /* object EFSM_Dot */
 
+object Group_By {
+
+def group_by[A](f: A => A => Boolean, x1: List[A]): List[List[A]] = (f, x1)
+  match {
+  case (f, Nil) => Nil
+  case (f, h :: t) =>
+    {
+      val group: List[A] = Lista.takeWhile[A](f(h), t)
+      val dropped: List[A] = Lista.drop[A](Nat.Nata(group.par.length), t);
+      (h :: group) :: group_by[A](f, dropped)
+    }
+}
+
+} /* object Group_By */
+
 object efsm2sal {
 
 def escape(s: String, replacements: List[(String, String)]): String =
@@ -6588,22 +6615,6 @@ def unzip_3_tailrec[A, B, C](l: List[(A, (B, C))]):
 def unzip_3[A, B, C](l: List[(A, (B, C))]): (List[A], (List[B], List[C])) =
   unzip_3_tailrec[A, B, C](l)
 
-def insert_into_groups[A](f: A => A => Boolean, h: A, x2: List[List[A]]):
-      List[List[A]]
-  =
-  (f, h, x2) match {
-  case (f, h, Nil) => List(List(h))
-  case (f, h, Nil :: gs) => List(h) :: gs
-  case (f, h, (x :: xs) :: gs) =>
-    (if ((f(h))(x)) (h :: x :: xs) :: gs else List(h) :: (x :: xs) :: gs)
-}
-
-def group_by[A](uu: A => A => Boolean, x1: List[A]): List[List[A]] = (uu, x1)
-  match {
-  case (uu, Nil) => Nil
-  case (f, h :: t) => insert_into_groups[A](f, h, group_by[A](f, t))
-}
-
 def replace_transition(e: FSet.fset[(List[Nat.nat],
                                       ((Nat.nat, Nat.nat),
 Transition.transition_ext[Unit]))],
@@ -7548,32 +7559,39 @@ def transition_groups_exec(e: FSet.fset[(List[Nat.nat],
                                       (List[Value.value], List[Value.value]))]):
       List[List[(Nat.nat, (List[Nat.nat], Transition.transition_ext[Unit]))]]
   =
-  group_by[(Nat.nat,
-             (List[Nat.nat],
-               Transition.transition_ext[Unit]))](((a:
-              (Nat.nat, (List[Nat.nat], Transition.transition_ext[Unit])))
-             =>
-            {
-              val (_, (_, t1)):
-                    (Nat.nat, (List[Nat.nat], Transition.transition_ext[Unit]))
-                = a;
-              ((aa: (Nat.nat, (List[Nat.nat], Transition.transition_ext[Unit])))
-                 =>
-                {
-                  val (_, ab):
-                        (Nat.nat,
-                          (List[Nat.nat], Transition.transition_ext[Unit]))
-                    = aa
-                  val (_, ac): (List[Nat.nat], Transition.transition_ext[Unit])
-                    = ab;
-                  Transition.same_structure(t1, ac)
-                })
-            }),
-           Lista.enumerate[(List[Nat.nat],
-                             Transition.transition_ext[Unit])](Nat.zero_nata,
-                        observe_all(e, Nat.zero_nata,
-                                     scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]),
-                                     t)))
+  Group_By.group_by[(Nat.nat,
+                      (List[Nat.nat],
+                        Transition.transition_ext[Unit]))](((a:
+                       (Nat.nat,
+                         (List[Nat.nat], Transition.transition_ext[Unit])))
+                      =>
+                     {
+                       val (_, (_, t1)):
+                             (Nat.nat,
+                               (List[Nat.nat], Transition.transition_ext[Unit]))
+                         = a;
+                       ((aa: (Nat.nat,
+                               (List[Nat.nat],
+                                 Transition.transition_ext[Unit])))
+                          =>
+                         {
+                           val (_, ab):
+                                 (Nat.nat,
+                                   (List[Nat.nat],
+                                     Transition.transition_ext[Unit]))
+                             = aa
+                           val (_, ac):
+                                 (List[Nat.nat],
+                                   Transition.transition_ext[Unit])
+                             = ab;
+                           Transition.same_structure(t1, ac)
+                         })
+                     }),
+                    Lista.enumerate[(List[Nat.nat],
+                                      Transition.transition_ext[Unit])](Nat.zero_nata,
+                                 observe_all(e, Nat.zero_nata,
+      scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]),
+      t)))
 
 def transition_groups(e: FSet.fset[(List[Nat.nat],
                                      ((Nat.nat, Nat.nat),

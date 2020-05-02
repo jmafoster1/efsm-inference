@@ -1,68 +1,8 @@
 theory PTA_Generalisation
-  imports "../Inference" Same_Register
+  imports "../Inference" Same_Register "../Group_By"
 begin
 
 hide_const I
-
-fun insert_into_groups :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> 'a list list \<Rightarrow> 'a list list" where
-  "insert_into_groups f h [] = [[h]]" |
-  "insert_into_groups f h ([]#gs) = [h]#gs" |
-  "insert_into_groups f h ((x#xs)#gs) = (if f h x then (h#x#xs)#gs else [h]#(x#xs)#gs)"
-
-fun group_by:: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a list list" where
-  "group_by _ [] = []" |
-  "group_by f (h#t) = insert_into_groups f h (group_by f t)"
-
-lemma group_by_empty: "group_by f xs = [] \<longleftrightarrow> xs = []"
-proof(induct xs)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a xs)
-  then show ?case
-    apply simp
-    apply (case_tac "group_by f xs")
-     apply simp
-    by (case_tac aa, auto)
-qed
-
-lemma no_empty_groups: "\<forall>x \<in> set (group_by f xs). x \<noteq> []"
-proof(induct xs)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a xs)
-  then show ?case
-    apply simp
-    apply (case_tac "group_by f xs")
-     apply simp
-    by (case_tac aa, auto)
-qed
-
-lemma test: "(hd xs) \<noteq> [] \<Longrightarrow> \<not> f h (hd (hd xs)) \<Longrightarrow> insert_into_groups f h xs = [h]#xs"
-  apply (case_tac xs)
-   apply simp
-  apply (case_tac list)
-   apply simp
-  apply (metis hd_Cons_tl insert_into_groups.simps(3))
-  apply simp
-  by (metis insert_into_groups.simps(3) list.sel(1) neq_Nil_conv)
-
-lemma test2: "(hd xs) \<noteq> [] \<Longrightarrow> \<not> f h (hd (hd xs)) \<Longrightarrow> hd (insert_into_groups f h xs) = [h]"
-  by (simp add: test)
-
-lemma hd_hd_insert_into_groups: "(hd (hd (insert_into_groups f a as))) = a"
-proof(induct as)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons x xs)
-  then show ?case
-    by (metis insert_into_groups.simps(2) insert_into_groups.simps(3) list.collapse list.sel(1))
-qed
 
 fun observe_all :: "iEFSM \<Rightarrow>  cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (tids \<times> transition) list" where
   "observe_all _ _ _ [] = []" |
