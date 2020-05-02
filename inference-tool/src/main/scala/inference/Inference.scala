@@ -6754,8 +6754,32 @@ Transition.transition_ext[Unit])
     }
 }
 
-def updates_same[A : HOL.equal, B, C](u1: (A, B), u2: (A, C)): Boolean =
-  HOL.eq[A](u1._1, u2._1)
+def updates_for(u: List[(Nat.nat, AExp.aexp[VName.vname])]):
+      List[List[(Nat.nat, AExp.aexp[VName.vname])]]
+  =
+  {
+    val uf: Map[Nat.nat, (List[AExp.aexp[VName.vname]])] =
+      Lista.fold[(Nat.nat, AExp.aexp[VName.vname]),
+                  Map[Nat.nat, (List[AExp.aexp[VName.vname]])]](((a:
+                            (Nat.nat, AExp.aexp[VName.vname]))
+                           =>
+                          {
+                            val (r, ua): (Nat.nat, AExp.aexp[VName.vname]) = a;
+                            ((f: Map[Nat.nat, (List[AExp.aexp[VName.vname]])])
+                               =>
+                              f + (r -> (ua :: f(r))))
+                          }),
+                         u, scala.collection.immutable.Map().withDefaultValue(Nil));
+    Lista.map[Nat.nat,
+               List[(Nat.nat,
+                      AExp.aexp[VName.vname])]](((r: Nat.nat) =>
+          Lista.map[AExp.aexp[VName.vname],
+                     (Nat.nat,
+                       AExp.aexp[VName.vname])](((a: AExp.aexp[VName.vname]) =>
+          (r, a)),
+         uf(r))),
+         uf.keySet.toList)
+  }
 
 def standardise_group_outputs_updates(e:
 FSet.fset[(List[Nat.nat],
@@ -6769,31 +6793,21 @@ FSet.fset[(List[Nat.nat],
   {
     val update_groups: List[List[(Nat.nat, AExp.aexp[VName.vname])]] =
       Lista.product_lists[(Nat.nat,
-                            AExp.aexp[VName.vname])](group_by[(Nat.nat,
-                        AExp.aexp[VName.vname])](((a:
-             (Nat.nat, AExp.aexp[VName.vname]))
-            =>
-           (b: (Nat.nat, AExp.aexp[VName.vname])) =>
-           updates_same[Nat.nat, AExp.aexp[VName.vname],
-                         AExp.aexp[VName.vname]](a, b)),
-          Lista.sort_key[(Nat.nat, AExp.aexp[VName.vname]),
-                          (Nat.nat,
-                            AExp.aexp[VName.vname])](((x:
-                 (Nat.nat, AExp.aexp[VName.vname]))
-                =>
-               x),
-              (Lista.maps[(List[Nat.nat], Transition.transition_ext[Unit]),
-                           (Nat.nat,
-                             AExp.aexp[VName.vname])](Fun.comp[Transition.transition_ext[Unit],
-                        List[(Nat.nat, AExp.aexp[VName.vname])],
-                        (List[Nat.nat],
-                          Transition.transition_ext[Unit])](((a:
-                        Transition.transition_ext[Unit])
-                       =>
-                      Transition.Updates[Unit](a)),
-                     ((a: (List[Nat.nat], Transition.transition_ext[Unit])) =>
-                       a._2)),
-               g)).par.distinct.toList)))
+                            AExp.aexp[VName.vname])](updates_for((Lista.maps[(List[Nat.nat],
+                                       Transition.transition_ext[Unit]),
+                                      (Nat.nat,
+AExp.aexp[VName.vname])](Fun.comp[Transition.transition_ext[Unit],
+                                   List[(Nat.nat, AExp.aexp[VName.vname])],
+                                   (List[Nat.nat],
+                                     Transition.transition_ext[Unit])](((a:
+                                   Transition.transition_ext[Unit])
+                                  =>
+                                 Transition.Updates[Unit](a)),
+                                ((a: (List[Nat.nat],
+                                       Transition.transition_ext[Unit]))
+                                   =>
+                                  a._2)),
+                          g)).par.distinct.toList))
     val update_groups_subs: List[List[(Nat.nat, AExp.aexp[VName.vname])]] =
       Lista.fold[List[(Nat.nat, AExp.aexp[VName.vname])],
                   List[List[(Nat.nat,

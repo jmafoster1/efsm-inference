@@ -64,9 +64,6 @@ next
     by (metis insert_into_groups.simps(2) insert_into_groups.simps(3) list.collapse list.sel(1))
 qed
 
-definition group_by_structure :: "iEFSM \<Rightarrow> (tids \<times> transition) list list" where
-  "group_by_structure e = map (map (\<lambda>(t, id). (id, t))) (group_by (\<lambda>(t1, id1) (t2, id2). same_structure t1 t2) (sorted_list_of_fset (fimage (\<lambda>(id, _, t). (t, id)) e)))"
-
 fun observe_all :: "iEFSM \<Rightarrow>  cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (tids \<times> transition) list" where
   "observe_all _ _ _ [] = []" |
   "observe_all e s r ((l, i, _)#es)  =
@@ -422,25 +419,6 @@ definition standardise_group :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<t
       if satisfies (set l) (tm e') then e' else e
 )"
 
-primrec standardise_groups_aux :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list list \<Rightarrow> (iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list) \<Rightarrow> iEFSM" where
-  "standardise_groups_aux e _ [] _ = e" |
-  "standardise_groups_aux e l (h#t) s = (
-    let
-      standardised = s e l h;
-      e' = replace_transitions e standardised
-    in
-      if satisfies (set l) (tm e') then
-        standardise_groups_aux e' l t s
-      else
-        standardise_groups_aux e l t s
-  )"
-
-lemma standardise_groups_aux_fold [code]:
-  "standardise_groups_aux e l xs s = fold (\<lambda>h acc. standardise_group acc l h s) xs e"
-  by(induct xs arbitrary: e s l, simp_all add: Let_def standardise_group_def)
-
-definition "updates_same u1 u2 = (fst u1 = fst u2)"
-
 primrec find_outputs :: "output_function list list \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> output_function list option" where
   "find_outputs [] _ _ _ = None" |
   "find_outputs (h#t) e l g = (
@@ -464,10 +442,16 @@ primrec find_updates_outputs :: "update_function list list \<Rightarrow> output_
         None \<Rightarrow> find_updates_outputs t p e l g
   )"
 
+definition updates_for :: "update_function list \<Rightarrow> update_function list list" where
+  "updates_for U = (
+    let uf = fold (\<lambda>(r, u) f. f(r $:= u#(f $ r))) U (K$ []) in
+    map (\<lambda>r. map (\<lambda>u. (r, u)) (uf $ r)) (finfun_to_list uf)
+  )"
+
 definition standardise_group_outputs_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (tids \<times> transition) list" where
   "standardise_group_outputs_updates e l g = (
     let
-      update_groups = product_lists (group_by updates_same (sort (remdups (List.maps (Updates \<circ> snd) g))));
+      update_groups = product_lists (updates_for (remdups (List.maps (Updates \<circ> snd) g)));
       update_groups_subs = fold (List.union \<circ> subseqs) update_groups [];
       output_groups = product_lists (transpose (remdups (map (Outputs \<circ> snd) g)))
     in
@@ -475,9 +459,6 @@ definition standardise_group_outputs_updates :: "iEFSM \<Rightarrow> log \<Right
       None \<Rightarrow> g |
       Some (p, u) \<Rightarrow> map (\<lambda>(id, t). (id, t\<lparr>Outputs := p, Updates := u\<rparr>)) g
   )"
-
-definition standardise_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
-  "standardise_groups e l = standardise_groups_aux e l (group_by_structure e) standardise_group_outputs_updates"
 
 primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> (tids \<times> transition) list list \<Rightarrow> iEFSM" where
   "groupwise_generalise_and_update _ e [] = e" |
