@@ -511,9 +511,6 @@ object Dirties {
 
     var (intTerms, stringTerms) = GP.getValueTerminals(values)
 
-    println("values: "+values)
-    println("stringValueTerminals: "+stringTerms)
-
     val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
     var stringVarNames = List[String]()
     var intVarNames = List[String]()
@@ -730,10 +727,10 @@ object Dirties {
 
     // =========================================================================
     // Delete these seeds
-    // val sub = new SubtractIntegersOperator()
-    // sub.addChild(new IntegerVariableAssignmentTerminal(100))
-    // sub.addChild(new IntegerVariableAssignmentTerminal("r1", false))
-    // gp.addSeed(sub)
+    val sub = new SubtractIntegersOperator()
+    sub.addChild(new IntegerVariableAssignmentTerminal(100))
+    sub.addChild(new IntegerVariableAssignmentTerminal("r1", false))
+    gp.addSeed(sub)
     //
     // val add = new AddIntegersOperator()
     // add.addChild(new IntegerVariableAssignmentTerminal("i0", false))
