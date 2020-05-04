@@ -404,12 +404,6 @@ code_printing constant parseInt \<rightharpoonup> (Scala) "Int.int'_of'_integer(
 
 definition "And = GExp.gAnd"
 
-declare get_regs_def [code del]
-code_printing constant get_regs \<rightharpoonup> (Scala) "Dirties.getRegs"
-
-declare get_update_def [code del]
-code_printing constant get_update \<rightharpoonup> (Scala) "Dirties.getUpdate"
-
 definition mismatched_updates :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "mismatched_updates t1 t2 = (\<exists>r \<in> set (map fst (Updates t1)). r \<notin> set (map fst (Updates t2)))"
 

@@ -7442,13 +7442,17 @@ Transition.transition_ext[Unit])))))))
                  (Map[Nat.nat, Option[Value.value]],
                    (List[Value.value],
                      (List[Nat.nat], Transition.transition_ext[Unit]))))))],
-targeted, Nil);
-      (group_update(values, group) match {
+targeted, Nil)
+      val label: String = Transition.Label[Unit]((gp.head)._2)
+      val valuesa: List[Value.value] =
+        values ++ Inference.enumerate_log_values_by_label(label, log);
+      (group_update(valuesa, group) match {
          case None =>
-           groupwise_put_updates(gps, log, values, walked, (o_inx, (op, types)),
-                                  e)
+           groupwise_put_updates(gps, log, valuesa, walked,
+                                  (o_inx, (op, types)), e)
          case Some(u) =>
-           groupwise_put_updates(gps, log, values, walked, (o_inx, (op, types)),
+           groupwise_put_updates(gps, log, valuesa, walked,
+                                  (o_inx, (op, types)),
                                   Inference.make_distinct(add_groupwise_updates(log,
  List(u), e)))
        })
@@ -8675,12 +8679,10 @@ object Distinguishing_Guards {
 def add_guard(t: Transition.transition_ext[Unit], g: GExp.gexp[VName.vname]):
       Transition.transition_ext[Unit]
   =
-  Transition.transition_exta[Unit](Transition.Label[Unit](t),
-                                    Transition.Arity[Unit](t),
-                                    Lista.insert[GExp.gexp[VName.vname]](g,
-                                  Transition.Guards[Unit](t)),
-                                    Transition.Outputs[Unit](t),
-                                    Transition.Updates[Unit](t), ())
+  Transition.Guards_update[Unit](((_: List[GExp.gexp[VName.vname]]) =>
+                                   Lista.insert[GExp.gexp[VName.vname]](g,
+                                 Transition.Guards[Unit](t))),
+                                  t)
 
 def trace_collect_training_sets(x0: List[(String,
    (List[Value.value], List[Value.value]))],

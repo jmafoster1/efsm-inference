@@ -511,6 +511,9 @@ object Dirties {
 
     var (intTerms, stringTerms) = GP.getValueTerminals(values)
 
+    println("values: "+values)
+    println("stringValueTerminals: "+stringTerms)
+
     val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
     var stringVarNames = List[String]()
     var intVarNames = List[String]()
@@ -559,6 +562,8 @@ object Dirties {
     for (stringVarName <- stringVarNames.distinct) {
       stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
     }
+
+    println("STRINGS: "+stringTerms)
 
     gpGenerator.setTerminals(intTerms++stringTerms)
 
@@ -725,20 +730,20 @@ object Dirties {
 
     // =========================================================================
     // Delete these seeds
-    val sub = new SubtractIntegersOperator()
-    sub.addChild(new IntegerVariableAssignmentTerminal(100))
-    sub.addChild(new IntegerVariableAssignmentTerminal("r1", false))
-    gp.addSeed(sub)
-
-    val add = new AddIntegersOperator()
-    add.addChild(new IntegerVariableAssignmentTerminal("i0", false))
-    add.addChild(new IntegerVariableAssignmentTerminal("r1", true))
-    gp.addSeed(add)
-
-    val add2 = new AddIntegersOperator()
-    add2.addChild(new IntegerVariableAssignmentTerminal("i0", false))
-    add2.addChild(new IntegerVariableAssignmentTerminal("r2", true))
-    gp.addSeed(add2)
+    // val sub = new SubtractIntegersOperator()
+    // sub.addChild(new IntegerVariableAssignmentTerminal(100))
+    // sub.addChild(new IntegerVariableAssignmentTerminal("r1", false))
+    // gp.addSeed(sub)
+    //
+    // val add = new AddIntegersOperator()
+    // add.addChild(new IntegerVariableAssignmentTerminal("i0", false))
+    // add.addChild(new IntegerVariableAssignmentTerminal("r1", true))
+    // gp.addSeed(add)
+    //
+    // val add2 = new AddIntegersOperator()
+    // add2.addChild(new IntegerVariableAssignmentTerminal("i0", false))
+    // add2.addChild(new IntegerVariableAssignmentTerminal("r2", true))
+    // gp.addSeed(add2)
     // =========================================================================
 
     funMem.find(f => gp.isCorrect(f) && f.varsInTree().stream().allMatch(v => if (v.isLatent()) v.getName() == f"r$r_index" else true )) match {

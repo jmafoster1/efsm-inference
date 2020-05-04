@@ -51,7 +51,7 @@ declare find_distinguishing_guards_def [code del]
 code_printing constant find_distinguishing_guards \<rightharpoonup> (Scala) "Dirties.findDistinguishingGuards"
 
 definition add_guard :: "transition \<Rightarrow> vname gexp \<Rightarrow> transition" where
-  "add_guard t g = \<lparr>Label = Label t, Arity = Arity t, Guards = List.insert g (Guards t), Outputs = Outputs t, Updates = Updates t\<rparr>"
+  "add_guard t g = t\<lparr>Guards := List.insert g (Guards t)\<rparr>"
 
 definition distinguish :: "log \<Rightarrow> update_modifier" where
   "distinguish log t1ID t2ID s destMerge preDestMerge old np = (

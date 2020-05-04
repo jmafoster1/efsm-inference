@@ -131,6 +131,9 @@ lemma fold_add_groupwise_updates [code]:
 definition get_regs :: "(vname \<Rightarrow>f String.literal) \<Rightarrow> inputs \<Rightarrow> vname aexp \<Rightarrow> value \<Rightarrow> registers" where
   "get_regs types inputs expression output = Eps (\<lambda>r. aval expression (join_ir inputs r) = Some output)"
 
+declare get_regs_def [code del]
+code_printing constant get_regs \<rightharpoonup> (Scala) "Dirties.getRegs"
+
 type_synonym event_info = "(cfstate \<times> registers \<times> registers \<times> inputs \<times> tids \<times> transition)"
 type_synonym run_info = "event_info list"
 type_synonym targeted_run_info = "(registers \<times> event_info) list"
@@ -206,6 +209,9 @@ definition get_update :: "label \<Rightarrow> nat \<Rightarrow> value list \<Rig
     if possible_funs = {} then None else Some (Eps (\<lambda>x. x \<in> possible_funs))
   )"
 
+declare get_update_def [code del]
+code_printing constant get_update \<rightharpoonup> (Scala) "Dirties.getUpdate"
+
 definition get_updates_opt :: "label \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> (nat \<times> vname aexp option) list" where
   "get_updates_opt l values train = (let
     updated_regs = fold List.union (map (finfun_to_list \<circ> snd \<circ> snd) train) [] in
@@ -242,7 +248,9 @@ fun groupwise_put_updates :: "(tids \<times> transition) list list \<Rightarrow>
   "groupwise_put_updates (gp#gps) log values walked (o_inx, (op, types)) e = (
     let
       targeted = map (\<lambda>x. filter (\<lambda>(_, _, _, _, _, id, tran). (id, tran) \<in> set gp) x) (map (\<lambda>w. rev (target <> (rev w))) walked);
-      group = fold List.union targeted []
+      group = fold List.union targeted [];
+      label = Label (snd (hd gp));
+      values = values@enumerate_log_values_by_label label log
     in
     case group_update values group of
       None \<Rightarrow> groupwise_put_updates gps log values walked (o_inx, (op, types)) e |
