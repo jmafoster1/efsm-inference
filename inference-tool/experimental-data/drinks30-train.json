@@ -34,8 +34,7 @@
     {"label": "coin", "inputs": [10], "outputs": [130]},
     {"label": "coin", "inputs": [50], "outputs": [180]},
     {"label": "coin", "inputs": [10], "outputs": [190]},
-    {"label": "coin", "inputs": [10], "outputs": [200]},
-    {"label": "vend", "inputs": [], "outputs": ["tea", 100]},
+    {"label": "vend", "inputs": [], "outputs": ["tea", 90]},
   ],
   [
     {"label": "select", "inputs": ["coffee"], "outputs": []},

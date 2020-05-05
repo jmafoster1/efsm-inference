@@ -3943,6 +3943,33 @@ def replace_transitions(e: FSet.fset[(List[Nat.nat],
                           }),
                          ts, e)
 
+def enumerate_exec_values(vs: List[(String,
+                                     (List[Value.value], List[Value.value]))]):
+      List[Value.value]
+  =
+  Lista.fold[(String, (List[Value.value], List[Value.value])),
+              List[Value.value]](((a: (String,
+(List[Value.value], List[Value.value])))
+                                    =>
+                                   {
+                                     val (_, (i, p)):
+   (String, (List[Value.value], List[Value.value]))
+                                       = a;
+                                     Lista.union[Value.value].apply(Lista.union[Value.value].apply(i).apply(p))
+                                   }),
+                                  vs, Nil)
+
+def enumerate_log_values(l: List[List[(String,
+(List[Value.value], List[Value.value]))]]):
+      List[Value.value]
+  =
+  Lista.fold[List[(String, (List[Value.value], List[Value.value]))],
+              List[Value.value]](((e: List[(String,
+     (List[Value.value], List[Value.value]))])
+                                    =>
+                                   Lista.union[Value.value].apply(enumerate_exec_values(e))),
+                                  l, Nil)
+
 def state_nondeterminism(og: Nat.nat,
                           nt: FSet.fset[(Nat.nat,
   (Transition.transition_ext[Unit], List[Nat.nat]))]):
@@ -4240,39 +4267,6 @@ taa)) || (Lista.equal_lista[AExp.aexp[VName.vname]](Transition.Outputs[Unit](ta)
                                   List[Nat.nat]))))]](((s: Nat.nat) =>
                 state_nondeterminism(s, outgoing_transitions(s, t))),
                S(t))))
-
-def enumerate_exec_values_by_label(label: String,
-                                    vs: List[(String,
-       (List[Value.value], List[Value.value]))]):
-      List[Value.value]
-  =
-  Lista.fold[(String, (List[Value.value], List[Value.value])),
-              List[Value.value]](((a: (String,
-(List[Value.value], List[Value.value])))
-                                    =>
-                                   {
-                                     val (l, (i, p)):
-   (String, (List[Value.value], List[Value.value]))
-                                       = a;
-                                     ((ia: List[Value.value]) =>
-                                       (if (l == label)
- Lista.union[Value.value].apply(Lista.union[Value.value].apply(i).apply(p)).apply(ia)
- else ia))
-                                   }),
-                                  vs, Nil)
-
-def enumerate_log_values_by_label(label: String,
-                                   log: List[List[(String,
-            (List[Value.value], List[Value.value]))]]):
-      List[Value.value]
-  =
-  Lista.fold[List[(String, (List[Value.value], List[Value.value]))],
-              List[Value.value]](((e: List[(String,
-     (List[Value.value], List[Value.value]))])
-                                    =>
-                                   Lista.union[Value.value].apply(enumerate_exec_values_by_label(label,
-                  e))),
-                                  log, Nil)
 
 def nondeterministic_pairs_labar_dest(t:
 FSet.fset[(List[Nat.nat],
@@ -7451,17 +7445,13 @@ Transition.transition_ext[Unit])))))))
                  (Map[Nat.nat, Option[Value.value]],
                    (List[Value.value],
                      (List[Nat.nat], Transition.transition_ext[Unit]))))))],
-targeted, Nil)
-      val label: String = Transition.Label[Unit]((gp.head)._2)
-      val valuesa: List[Value.value] =
-        values ++ Inference.enumerate_log_values_by_label(label, log);
-      (group_update(valuesa, group) match {
+targeted, Nil);
+      (group_update(values, group) match {
          case None =>
-           groupwise_put_updates(gps, log, valuesa, walked,
-                                  (o_inx, (op, types)), e)
+           groupwise_put_updates(gps, log, values, walked, (o_inx, (op, types)),
+                                  e)
          case Some(u) =>
-           groupwise_put_updates(gps, log, valuesa, walked,
-                                  (o_inx, (op, types)),
+           groupwise_put_updates(gps, log, values, walked, (o_inx, (op, types)),
                                   Inference.make_distinct(add_groupwise_updates(log,
  List(u), e)))
        })
@@ -7927,8 +7917,7 @@ def generalise_and_update(log: List[List[(String,
   =
   {
     val label: String = Transition.Label[Unit]((gp.head)._2)
-    val values: List[Value.value] =
-      Inference.enumerate_log_values_by_label(label, log)
+    val values: List[Value.value] = Inference.enumerate_log_values(log)
     val new_gp_ts:
           List[(List[Value.value],
                  (Map[Nat.nat, Option[Value.value]], List[Value.value]))]

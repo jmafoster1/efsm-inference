@@ -250,9 +250,7 @@ fun groupwise_put_updates :: "transition_group list \<Rightarrow> log \<Rightarr
   "groupwise_put_updates (gp#gps) log values walked (o_inx, (op, types)) e = (
     let
       targeted = map (\<lambda>x. filter (\<lambda>(_, _, _, _, _, id, tran). (id, tran) \<in> set gp) x) (map (\<lambda>w. rev (target <> (rev w))) walked);
-      group = fold List.union targeted [];
-      label = Label (snd (hd gp));
-      values = values@enumerate_log_values_by_label label log
+      group = fold List.union targeted []
     in
     case group_update values group of
       None \<Rightarrow> groupwise_put_updates gps log values walked (o_inx, (op, types)) e |
@@ -330,7 +328,7 @@ definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> trans
   "generalise_and_update log e gp = (
     let
       label = Label (snd (hd gp));
-      values = enumerate_log_values_by_label label log;
+      values = enumerate_log_values log;
       new_gp_ts = make_training_set e log gp;
       (I, R, P) = unzip_3 new_gp_ts;
       max_reg = max_reg_total e;
