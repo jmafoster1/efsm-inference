@@ -43,9 +43,9 @@ definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> transitio
       flat =  sort (fold (@) tagged []);
       group_fun = fold (\<lambda>(tag, s, gp) f. f((tag, s) $:= gp@(f$(tag, s)))) flat (K$ []);
       grouped = map (\<lambda>x. group_fun $ x) (finfun_to_list group_fun);
-      state_groups = map (\<lambda>gp. (Min (set (map fst gp)), map snd gp)) grouped
+      inx_groups = map (\<lambda>gp. (Min (set (map fst gp)), map snd gp)) grouped
     in
-      map snd (sort state_groups)
+      map snd (sort inx_groups)
   )"
 
 text\<open>For a given trace group, log, and EFSM, we want to build the training set for that group. That
@@ -308,7 +308,7 @@ definition "unzip_3_tailrec l = (let (as, bs, cs) = unzip_3_tailrec_rev l ([],[]
 
 lemma unzip_3_tailrec [code]: "unzip_3 l = unzip_3_tailrec l"
   apply (simp only: unzip_3_tailrec_def unzip_3_tailrec_rev)
-  by (simp add: Let_def map_tailrec_rev unzip_3)
+  by (simp add: Let_def map_tailrec_rev unzip_3 map_eq_map_tailrec)
 
 text\<open>We want to return an aexp which, when evaluated in the correct context accounts for the literal
 input-output pairs within the training set. This will be replaced by symbolic regression in the
@@ -323,7 +323,7 @@ declare get_output_def [code del]
 code_printing constant get_output \<rightharpoonup> (Scala) "Dirties.getOutput"
 
 definition get_outputs :: "label \<Rightarrow> nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> value list list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option list" where
-  "get_outputs l maxReg values I r outputs = map (\<lambda>(maxReg, ps). get_output l maxReg values (zip I (zip r ps))) (enumerate maxReg (transpose outputs))"
+  "get_outputs l maxReg values I r outputs = map_tailrec (\<lambda>(maxReg, ps). get_output l maxReg values (zip I (zip r ps))) (enumerate maxReg (transpose outputs))"
 
 (*This is where the types stuff originates*)
 definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group \<Rightarrow> iEFSM" where

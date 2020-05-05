@@ -41,8 +41,8 @@ import java.util.ArrayList
 
 object Dirties {
   def foldl[A, B](f: A => B => A, b: A, l: List[B]): A =
-    l.par.foldLeft(b)(((x, y) => (f(x))(y)))
-  // l.foldLeft(b)(((x, y) => (f(x))(y)))
+    // l.par.foldLeft(b)(((x, y) => (f(x))(y)))
+  l.foldLeft(b)(((x, y) => (f(x))(y)))
 
   def toZ3(v: Value.value): String = v match {
     case Value.Numa(n) => s"(Num ${Code_Numeral.integer_of_int(n).toString})"
@@ -452,7 +452,7 @@ object Dirties {
       return None
     }
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 2));
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 10, 1f, 2));
 
     guardMem.find(f => gp.isCorrect(f)  && f.varsInTree().stream().allMatch(v => !v.isLatent())) match {
       case None => {}
@@ -560,8 +560,6 @@ object Dirties {
       stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
     }
 
-    println("STRINGS: "+stringTerms)
-
     gpGenerator.setTerminals(intTerms++stringTerms)
 
     Log.root.debug("    Update training set: " + trainingSet)
@@ -572,7 +570,7 @@ object Dirties {
       return None
     }
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 2));
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 10, 1f, 2));
 
     funMem.find(f => gp.isCorrect(f) && f.varsInTree().stream().allMatch(v => !v.isLatent())) match {
       case None => {}
@@ -723,14 +721,14 @@ object Dirties {
 
     gpGenerator.setTerminals(intTerms++stringTerms)
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 0.9f, 1f, 2));
+    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 10, 1f, 2));
 
     // =========================================================================
     // Delete these seeds
-    val sub = new SubtractIntegersOperator()
-    sub.addChild(new IntegerVariableAssignmentTerminal(100))
-    sub.addChild(new IntegerVariableAssignmentTerminal("r1", false))
-    gp.addSeed(sub)
+    // val sub = new SubtractIntegersOperator()
+    // sub.addChild(new IntegerVariableAssignmentTerminal(100))
+    // sub.addChild(new IntegerVariableAssignmentTerminal("r1", false))
+    // gp.addSeed(sub)
     //
     // val add = new AddIntegersOperator()
     // add.addChild(new IntegerVariableAssignmentTerminal("i0", false))
