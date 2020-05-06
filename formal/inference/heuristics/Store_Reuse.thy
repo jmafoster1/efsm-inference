@@ -134,7 +134,10 @@ definition modify :: "match list \<Rightarrow> tids \<Rightarrow> tids \<Rightar
 
 (* type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option" *)
 definition heuristic_1 :: "log \<Rightarrow> update_modifier" where
-  "heuristic_1 l t1 t2 s new _ old np = modify (find_intertrace_matches l old) t1 t2 new"
+  "heuristic_1 l t1 t2 s new _ old check = (case modify (find_intertrace_matches l old) t1 t2 new of
+    None \<Rightarrow> None |
+    Some e \<Rightarrow> if check (tm e) then Some e else None
+  )"
 
 lemma remove_guard_add_update_preserves_outputs:
   "Outputs (remove_guard_add_update t i r) = Outputs t"
@@ -236,7 +239,10 @@ definition modify_2 :: "match list \<Rightarrow> tids \<Rightarrow> tids \<Right
 
 (* type_synonym update_modifier = "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> (nat \<Rightarrow> nat) \<times> (nat \<Rightarrow> nat)) option" *)
 definition heuristic_2 :: "log \<Rightarrow> update_modifier" where
-  "heuristic_2 l t1 t2 s new _ old np = modify_2 (find_intertrace_matches l old) t1 t2 new"
+  "heuristic_2 l t1 t2 s new _ old check = (case modify_2 (find_intertrace_matches l old) t1 t2 new of
+    None \<Rightarrow> None |
+    Some e \<Rightarrow> if check (tm e) then Some e else None
+  )"
 hide_const ioTag.In
 
 end

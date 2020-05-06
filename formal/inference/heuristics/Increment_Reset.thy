@@ -18,7 +18,7 @@ lemma guard_match_length:
   by auto
 
 fun insert_increment :: update_modifier where
-  "insert_increment t1ID t2ID s new _ old np = (let
+  "insert_increment t1ID t2ID s new _ old check = (let
      t1 = get_by_ids new t1ID;
      t2 = get_by_ids new t2ID in
      if guardMatch t1 t2 \<and> outputMatch t1 t2 then let
@@ -28,9 +28,10 @@ fun insert_increment :: update_modifier where
           newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guards = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t2)\<rparr>;
           to_initialise = ffilter (\<lambda>(uid, (from, to), t). (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2) new;
           initialisedTrans = fimage (\<lambda>(uid, (from, to), t). (uid, initialiseReg t r)) to_initialise;
-          initialised = replace_transitions new (sorted_list_of_fset initialisedTrans)
+          initialised = replace_transitions new (sorted_list_of_fset initialisedTrans);
+          rep = replace_transitions new [(t1ID, newT1), (t2ID, newT2)]
      in
-          Some (replace_transitions new [(t1ID, newT1), (t2ID, newT2)])
+          if check (tm rep) then Some rep else None
      else
        None
      )"
@@ -51,7 +52,7 @@ lemma guard_match_symmetry: "(guardMatch t1 t2) = (guardMatch t2 t1)"
   by auto
 
 fun insert_increment_2 :: update_modifier where
-  "insert_increment_2 t1ID t2ID s new _ old np = (let
+  "insert_increment_2 t1ID t2ID s new _ old check = (let
      t1 = get_by_ids new t1ID;
      t2 = get_by_ids new t2ID in
      if guardMatch t1 t2 \<and> outputMatch t1 t2 then let
@@ -61,9 +62,10 @@ fun insert_increment_2 :: update_modifier where
           newT2 = \<lparr>Label = Label t2, Arity = Arity t2, Guards = [], Outputs = [Plus (V newReg) (V (vname.I 0))], Updates=((r, Plus (V newReg) (V (vname.I 0)))#Updates t2)\<rparr>;
           to_initialise = ffilter (\<lambda>(uid, (from, to), t). (to = dest t1ID new \<or> to = dest t2ID new) \<and> t \<noteq> t1 \<and> t \<noteq> t2) new;
           initialisedTrans = fimage (\<lambda>(uid, (from, to), t). (uid, initialiseReg t r)) to_initialise;
-          initialised = replace_transitions new (sorted_list_of_fset initialisedTrans)
+          initialised = replace_transitions new (sorted_list_of_fset initialisedTrans);
+          rep = struct_replace_all (struct_replace_all initialised t2 newT2) t1 newT1
       in
-          Some (struct_replace_all (struct_replace_all initialised t2 newT2) t1 newT1)
+          if check (tm rep) then Some rep else None
      else
        None
      )"

@@ -757,11 +757,9 @@ object Dirties {
 
     if (gp.isCorrect(best)) {
       Log.root.debug("  Best output is correct")
-      // System.exit(0)
       val aexp = TypeConversion.toAExp(best)
       if (!AExp.is_lit(aexp))
         funMem = best :: funMem
-      funMem = best :: funMem
       return Some((aexp, getTypes(best)))
     } else {
       return getOutput(label, maxReg, values, ioPairs, true)

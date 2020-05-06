@@ -150,31 +150,6 @@ definition endsWith :: "String.literal \<Rightarrow> String.literal \<Rightarrow
 definition dropRight :: "String.literal \<Rightarrow> nat \<Rightarrow> String.literal" where
   "dropRight l n = String.implode (rev (drop n (rev (String.explode l))))"
 
-fun nat_of_char :: "char \<Rightarrow> nat" where
-  "nat_of_char CHR ''0'' = 0" |
-  "nat_of_char CHR ''1'' = 1" |
-  "nat_of_char CHR ''2'' = 2" |
-  "nat_of_char CHR ''3'' = 3" |
-  "nat_of_char CHR ''4'' = 4" |
-  "nat_of_char CHR ''5'' = 5" |
-  "nat_of_char CHR ''6'' = 6" |
-  "nat_of_char CHR ''7'' = 7" |
-  "nat_of_char CHR ''8'' = 8" |
-  "nat_of_char CHR ''9'' = 9"
-
-definition parseNat :: "string \<Rightarrow> nat" where
-  "parseNat s = (let
-    nats = map nat_of_char s;
-    zipped = enumerate 0 (rev nats) in
-    fold (\<lambda>(index, value) total. total + (value * (10 ^ index))) zipped 0
-  )"
-
-definition parseInt :: "String.literal \<Rightarrow> int" where
-  "parseInt s = (if startsWith s STR ''-'' then -(int (parseNat (String.explode s))) else int (parseNat (String.explode s)))"
-
-definition substring :: "String.literal \<Rightarrow> nat \<Rightarrow> String.literal" where
-  "substring s n = String.implode (drop n (String.explode s))"
-
 fun make_branch :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> iEFSM" where
   "make_branch e _ _ [] = e" |
   "make_branch e s r ((label, inputs, outputs)#t) =
@@ -198,7 +173,7 @@ lemma make_pta_aux_fold [code]:
   "make_pta_aux l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
   by(induct l arbitrary: e, auto)
 
-type_synonym update_modifier = "tids \<Rightarrow> tids \<Rightarrow> cfstate \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM option"
+type_synonym update_modifier = "tids \<Rightarrow> tids \<Rightarrow> cfstate \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM option"
 
 definition null_modifier :: update_modifier where
   "null_modifier f _ _ _ _ _ _ = None"
@@ -450,18 +425,18 @@ definition merge_transitions_aux :: "iEFSM \<Rightarrow> tids \<Rightarrow> tids
 (* @param t\<^sub>2        - a transition dest be merged with t\<^sub>1                                         *)
 (* @param u\<^sub>2        - the unique identifier of t\<^sub>2                                                 *)
 (* @param modifier  - an update modifier function which tries dest generalise transitions         *)
-definition merge_transitions :: "(cfstate \<times> cfstate) set \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> transition \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> tids \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> (iEFSM option \<times> (cfstate \<times> cfstate) set)" where
-  "merge_transitions failedMerges oldEFSM preDestMerge destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 modifier np = (
+definition merge_transitions :: "(cfstate \<times> cfstate) set \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> transition \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> tids \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM option" where
+  "merge_transitions failedMerges oldEFSM preDestMerge destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 modifier check = (
      if \<forall>id \<in> set u\<^sub>1. directly_subsumes oldEFSM destMerge (origin [id] oldEFSM) (origin u\<^sub>1 destMerge) t\<^sub>2 t\<^sub>1 then
        \<comment> \<open>Replace t1 with t2\<close>
-       (Some (merge_transitions_aux destMerge u\<^sub>1 u\<^sub>2), failedMerges)
+       Some (merge_transitions_aux destMerge u\<^sub>1 u\<^sub>2)
      else if \<forall>id \<in> set u\<^sub>2. directly_subsumes oldEFSM destMerge (origin [id] oldEFSM) (origin u\<^sub>2 destMerge) t\<^sub>1 t\<^sub>2 then
        \<comment> \<open>Replace t2 with t1\<close>
-       (Some (merge_transitions_aux destMerge u\<^sub>2 u\<^sub>1), failedMerges)
+       Some (merge_transitions_aux destMerge u\<^sub>2 u\<^sub>1)
      else
-        case modifier u\<^sub>1 u\<^sub>2 (origin u\<^sub>1 destMerge) destMerge preDestMerge oldEFSM np of
-          None \<Rightarrow> (None, failedMerges) |
-          Some e \<Rightarrow> (Some (make_distinct e), failedMerges)
+        case modifier u\<^sub>1 u\<^sub>2 (origin u\<^sub>1 destMerge) destMerge preDestMerge oldEFSM check of
+          None \<Rightarrow> None |
+          Some e \<Rightarrow> Some (make_distinct e)
    )"
 
 definition outgoing_transitions_from :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> transition fset" where
@@ -506,9 +481,9 @@ function resolve_nondeterminism :: "(cfstate \<times> cfstate) set \<Rightarrow>
       (None, failedMerges)
     else
     let destMerge = merge_states dest\<^sub>1 dest\<^sub>2 newEFSM in
-    case merge_transitions failedMerges oldEFSM newEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m np of
-      (None, failedMerges) \<Rightarrow> resolve_nondeterminism (insert (dest\<^sub>1, dest\<^sub>2) failedMerges) ss oldEFSM newEFSM m check np |
-      (Some new, failedMerges) \<Rightarrow> (
+    case merge_transitions failedMerges oldEFSM newEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m check of
+      None \<Rightarrow> resolve_nondeterminism (insert (dest\<^sub>1, dest\<^sub>2) failedMerges) ss oldEFSM newEFSM m check np |
+      Some new \<Rightarrow> (
         let newScores = order_nondeterministic_pairs (np new) in
         if (size new, size (S new), size (newScores)) < (size newEFSM, size (S newEFSM), size ss) then
           case resolve_nondeterminism failedMerges newScores oldEFSM new m check np of
@@ -624,12 +599,12 @@ definition "max_reg_total e = (case max_reg e of None \<Rightarrow> 0 | Some r \
 definition max_output :: "iEFSM \<Rightarrow> nat" where
   "max_output e = EFSM.max_output (tm e)"
 
-primrec try_heuristics_check :: "(transition_matrix \<Rightarrow> bool) \<Rightarrow> update_modifier list \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> update_modifier" where
-  "try_heuristics_check _ [] _ = null_modifier" |
-  "try_heuristics_check check (h#t) np = (\<lambda>a b c d e f np.
-    case h a b c d e f np of
-      Some e' \<Rightarrow> if check (tm e') then Some e' else (try_heuristics_check check t np) a b c d e f np |
-      None \<Rightarrow> (try_heuristics_check check t np) a b c d e f np
+primrec try_heuristics_check :: "(transition_matrix \<Rightarrow> bool) \<Rightarrow> update_modifier list \<Rightarrow> update_modifier" where
+  "try_heuristics_check _ [] = null_modifier" |
+  "try_heuristics_check check (h#t) = (\<lambda>a b c d e f ch.
+    case h a b c d e f ch of
+      Some e' \<Rightarrow> Some e' |
+      None \<Rightarrow> (try_heuristics_check check t) a b c d e f ch
     )"
 
 definition all_regs :: "iEFSM \<Rightarrow> nat set" where

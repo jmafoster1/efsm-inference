@@ -54,7 +54,7 @@ object Config {
   var heuristics = (Inference.null_modifier _).curried
   var numStates: BigInt = 0
   var ptaNumStates: BigInt = 0
-  var preprocessor: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (List[List[(String, (List[Value.value], List[Value.value]))]] => ((List[Nat.nat] => (List[Nat.nat] => (Nat.nat => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => ((FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]) => Option[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]]))))))) => ((FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]) => FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]))) = null
+  var preprocessor: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (List[List[(String, (List[Value.value], List[Value.value]))]] => ((List[Nat.nat] => (List[Nat.nat] => (Nat.nat => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => ((FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])] => Boolean) => Option[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]]))))))) => ((FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]) => FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]))) = null
 
   implicit val heuristicsRead: scopt.Read[Heuristics.Value] = scopt.Read.reads(Heuristics withName _)
   implicit val proprocessorsRead: scopt.Read[Preprocessors.Value] = scopt.Read.reads(Preprocessors withName _)
@@ -200,7 +200,8 @@ object Config {
           Heuristics.inc -> (Increment_Reset.insert_increment_2 _).curried,
           Heuristics.distinguish -> (Distinguishing_Guards.distinguish _).curried(config.train),
           Heuristics.same -> (Same_Register.same_register _).curried,
-          Heuristics.ws -> (Weak_Subsumption.weak_subsumption _).curried(config.train))
+          Heuristics.ws -> (Weak_Subsumption.weak_subsumption _).curried
+        )
 
         // Set up the preprocessor
         val preprocessors = scala.collection.immutable.Map(
@@ -211,7 +212,7 @@ object Config {
         // this.strategy = if (Config.config.oneFinal)
         //     (SelectionStrategies.score_one_final_state _).curried(strategies(config.strategy))
         //   else (strategies(config.strategy))
-        this.heuristics = Inference.try_heuristics_check((Inference.satisfies _).curried(Set.seta(config.train)), config.heuristics.map(x => heuristics(x)).toList, config.nondeterminismMetric)
+        this.heuristics = Inference.try_heuristics_check((Inference.satisfies _).curried(Set.seta(config.train)), config.heuristics.map(x => heuristics(x)).toList)
         this.config = config
         if (config.prep != null && config.prep != Preprocessors.none)
           this.preprocessor = preprocessors(config.prep)

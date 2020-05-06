@@ -66,27 +66,6 @@ fun trace_group_training_set :: "transition_group \<Rightarrow> iEFSM \<Rightarr
 definition make_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> (inputs \<times> registers \<times> value list) list" where
   "make_training_set e l gp = fold (\<lambda>h a. trace_group_training_set gp e 0 <> h a) l []"
 
-fun put_outputs :: "(((vname aexp \<times> (vname \<Rightarrow>f String.literal)) option) \<times> vname aexp) list \<Rightarrow> vname aexp list" where
-  "put_outputs [] = []" |
-  "put_outputs ((None, p)#t) = p#(put_outputs t)" |
-  "put_outputs ((Some (p, _), _)#t) = p#(put_outputs t)"
-
-lemma put_outputs_foldr:
-  "put_outputs xs = foldr (\<lambda>x acc. case x of (None, p) \<Rightarrow> p#acc | (Some (p, _), _) \<Rightarrow> p#acc) xs []"
-proof (induct xs)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons a xs)
-  then show ?case
-    apply (cases a)
-    apply (case_tac aa)
-    by auto
-qed
-
-definition replace_transition :: "iEFSM \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> iEFSM" where
-  "replace_transition e uid new = (fimage (\<lambda>(uids, (from, to), t). if set uid \<subseteq> set uids then (uids, (from, to), new) else (uids, (from, to), t)) e)"
-
 primrec replace_groups :: "transition_group list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "replace_groups [] e = e" |
   "replace_groups (h#t) e = replace_groups t (fold (\<lambda>(id, t) acc. replace_transition acc id t) h e)"
@@ -337,31 +316,6 @@ definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> trans
       put_updates log values gp (enumerate 0 outputs) e
   )"
 
-fun merge_if_same :: "iEFSM \<Rightarrow> log \<Rightarrow> (nat \<times> nat) list \<Rightarrow> iEFSM" where
-  "merge_if_same e _ [] = e" |
-  "merge_if_same e l ((r1, r2)#rs) = (
-    let transitions = fimage (snd \<circ> snd) e in
-    if \<exists>(t1, t2) |\<in>| ffilter (\<lambda>(t1, t2). t1 < t2) (transitions |\<times>| transitions).
-      same_structure t1 t2 \<and> r1 \<in> enumerate_regs t1 \<and> r2 \<in> enumerate_regs t2
-    then
-      let newE = replace_with e r1 r2 in
-      if satisfies (set l) (tm newE) then
-        merge_if_same newE l rs
-      else
-        merge_if_same e l rs
-    else
-      merge_if_same e l rs
-  )"
-
-definition merge_regs :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
-  "merge_regs e l = (
-    let
-      regs = all_regs e;
-      reg_pairs = sorted_list_of_set (Set.filter (\<lambda>(r1, r2). r1 < r2) (regs \<times> regs))
-    in
-    merge_if_same e l reg_pairs
-  )"
-
 text \<open>Splitting structural groups up into subgroups by previous transition can cause different
 subgroups to get different updates. We ideally want structural groups to have the same output and
 update functions, as structural groups are likely to be instances of the same underlying behaviour.\<close>
@@ -425,7 +379,7 @@ primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow
           structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(_, _, t). same_structure rep t) e');
           standardised = standardise_group e' log (sorted_list_of_fset structural_group) standardise_group_outputs_updates
         in
-        groupwise_generalise_and_update log (merge_regs standardised log) t
+        groupwise_generalise_and_update log (merge_regs standardised (satisfies (set log))) t
   )"
 
 lemma groupwise_generalise_and_update_fold:
@@ -436,7 +390,7 @@ lemma groupwise_generalise_and_update_fold:
             structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(_, _, t). same_structure rep t) e');
             standardised = standardise_group e' log (sorted_list_of_fset structural_group) standardise_group_outputs_updates
           in
-            merge_regs standardised log
+            merge_regs standardised (satisfies (set log))
   ) gs e"
   apply(induct gs arbitrary: e)
    apply simp

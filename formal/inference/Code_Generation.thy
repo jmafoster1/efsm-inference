@@ -396,12 +396,6 @@ code_printing constant endsWith \<rightharpoonup> (Scala) "_.endsWith((_))"
 declare dropRight_def [code del]
 code_printing constant dropRight \<rightharpoonup> (Scala) "_.dropRight(Code'_Numeral.integer'_of'_nat((_)).toInt)"
 
-declare substring_def [code del]
-code_printing constant "substring" \<rightharpoonup> (Scala) "_.substring(Code'_Numeral.integer'_of'_nat((_)).toInt)"
-
-declare parseInt_def [code del]
-code_printing constant parseInt \<rightharpoonup> (Scala) "Int.int'_of'_integer(BigInt(_.toInt))"
-
 definition "And = GExp.gAnd"
 
 definition mismatched_updates :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
@@ -446,8 +440,6 @@ export_code
   nondeterministic_pairs_labar
   nondeterministic_pairs_labar_dest
   (* Utilities *)
-  replace_reg
-  AExp.is_lit
   min
   max
   drop_pta_guards

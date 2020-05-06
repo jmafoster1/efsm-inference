@@ -54,7 +54,7 @@ definition add_guard :: "transition \<Rightarrow> vname gexp \<Rightarrow> trans
   "add_guard t g = t\<lparr>Guards := List.insert g (Guards t)\<rparr>"
 
 definition distinguish :: "log \<Rightarrow> update_modifier" where
-  "distinguish log t1ID t2ID s destMerge preDestMerge old np = (
+  "distinguish log t1ID t2ID s destMerge preDestMerge old check = (
     let
       t1 = get_by_ids destMerge t1ID;
       t2 = get_by_ids destMerge t2ID;
@@ -64,7 +64,8 @@ definition distinguish :: "log \<Rightarrow> update_modifier" where
       case find_distinguishing_guards G1 G2 of
         None \<Rightarrow> None |
         Some (g1, g2) \<Rightarrow> (
-          Some (replace_transitions preDestMerge [(t1ID, add_guard t1 g1), (t2ID, add_guard t2 g2)])
+          let rep = replace_transitions preDestMerge [(t1ID, add_guard t1 g1), (t2ID, add_guard t2 g2)] in
+          if check (tm rep) then Some rep else None
         )
   )"
 
