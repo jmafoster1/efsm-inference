@@ -1714,43 +1714,68 @@ def less_value(x0: Value.value, x1: Value.value): Boolean = (x0, x1) match {
 
 object AExp_Lexorder {
 
-def less_aexp[A : HOL.equal : Orderings.linorder](x0: AExp.aexp[A],
-           x1: AExp.aexp[A]):
+def less_aexp_aux[A : HOL.equal : Orderings.linorder](x0: AExp.aexp[A],
+               x1: AExp.aexp[A]):
       Boolean
   =
   (x0, x1) match {
   case (AExp.L(l1), AExp.L(l2)) => Value_Lexorder.less_value(l1, l2)
-  case (AExp.L(l1), AExp.V(v2)) => true
-  case (AExp.L(l1), AExp.Plus(e1, e2)) => true
-  case (AExp.L(l1), AExp.Minus(e1, e2)) => true
-  case (AExp.L(l1), AExp.Times(e1, e2)) => true
+  case (AExp.L(l1), AExp.V(v)) => true
+  case (AExp.L(l1), AExp.Plus(v, va)) => true
+  case (AExp.L(l1), AExp.Minus(v, va)) => true
+  case (AExp.L(l1), AExp.Times(v, va)) => true
   case (AExp.V(v1), AExp.L(l1)) => false
   case (AExp.V(v1), AExp.V(v2)) => Orderings.less[A](v1, v2)
-  case (AExp.V(v1), AExp.Plus(e1, e2)) => true
-  case (AExp.V(v1), AExp.Minus(e1, e2)) => true
-  case (AExp.V(v1), AExp.Times(e1, e2)) => true
+  case (AExp.V(v1), AExp.Plus(v, va)) => true
+  case (AExp.V(v1), AExp.Minus(v, va)) => true
+  case (AExp.V(v1), AExp.Times(v, va)) => true
   case (AExp.Plus(e1, e2), AExp.L(l2)) => false
   case (AExp.Plus(e1, e2), AExp.V(v2)) => false
   case (AExp.Plus(e1a, e2a), AExp.Plus(e1, e2)) =>
-    (less_aexp[A](e1a, e1)) || ((AExp.equal_aexpa[A](e1a,
-              e1)) && (less_aexp[A](e2a, e2)))
-  case (AExp.Plus(e1a, e2a), AExp.Minus(e1, e2)) => true
-  case (AExp.Plus(e1a, e2a), AExp.Times(e1, e2)) => true
-  case (AExp.Minus(e1, e2), AExp.L(l2)) => false
-  case (AExp.Minus(e1, e2), AExp.V(v2)) => false
-  case (AExp.Minus(e1a, e2a), AExp.Plus(e1, e2)) => false
+    (less_aexp_aux[A](e1a, e1)) || ((AExp.equal_aexpa[A](e1a,
+                  e1)) && (less_aexp_aux[A](e2a, e2)))
+  case (AExp.Plus(e1, e2), AExp.Minus(v, va)) => true
+  case (AExp.Plus(e1, e2), AExp.Times(v, va)) => true
   case (AExp.Minus(e1a, e2a), AExp.Minus(e1, e2)) =>
-    (less_aexp[A](e1a, e1)) || ((AExp.equal_aexpa[A](e1a,
-              e1)) && (less_aexp[A](e2a, e2)))
+    (less_aexp_aux[A](e1a, e1)) || ((AExp.equal_aexpa[A](e1a,
+                  e1)) && (less_aexp_aux[A](e2a, e2)))
   case (AExp.Minus(e1a, e2a), AExp.Times(e1, e2)) => true
-  case (AExp.Times(e1, e2), AExp.L(l2)) => false
-  case (AExp.Times(e1, e2), AExp.V(v2)) => false
-  case (AExp.Times(e1a, e2a), AExp.Plus(e1, e2)) => false
-  case (AExp.Times(e1a, e2a), AExp.Minus(e1, e2)) => false
+  case (AExp.Minus(e1, e2), AExp.L(v)) => false
+  case (AExp.Minus(e1, e2), AExp.V(v)) => false
+  case (AExp.Minus(e1, e2), AExp.Plus(v, va)) => false
   case (AExp.Times(e1a, e2a), AExp.Times(e1, e2)) =>
-    (less_aexp[A](e1a, e1)) || ((AExp.equal_aexpa[A](e1a,
-              e1)) && (less_aexp[A](e2a, e2)))
+    (less_aexp_aux[A](e1a, e1)) || ((AExp.equal_aexpa[A](e1a,
+                  e1)) && (less_aexp_aux[A](e2a, e2)))
+  case (AExp.Times(e1, e2), AExp.L(v)) => false
+  case (AExp.Times(e1, e2), AExp.V(v)) => false
+  case (AExp.Times(e1, e2), AExp.Plus(v, va)) => false
+  case (AExp.Times(e1, e2), AExp.Minus(v, va)) => false
 }
+
+def height[A](x0: AExp.aexp[A]): Nat.nat = x0 match {
+  case AExp.L(l2) => Nat.Nata((1))
+  case AExp.V(v2) => Nat.Nata((1))
+  case AExp.Plus(e1, e2) =>
+    Nat.plus_nata(Nat.Nata((1)),
+                   Orderings.max[Nat.nat](height[A](e1), height[A](e2)))
+  case AExp.Minus(e1, e2) =>
+    Nat.plus_nata(Nat.Nata((1)),
+                   Orderings.max[Nat.nat](height[A](e1), height[A](e2)))
+  case AExp.Times(e1, e2) =>
+    Nat.plus_nata(Nat.Nata((1)),
+                   Orderings.max[Nat.nat](height[A](e1), height[A](e2)))
+}
+
+def less_aexp[A : HOL.equal : Orderings.linorder](a1: AExp.aexp[A],
+           a2: AExp.aexp[A]):
+      Boolean
+  =
+  {
+    val h1: Nat.nat = height[A](a1)
+    val h2: Nat.nat = height[A](a2);
+    (if (Nat.equal_nata(h1, h2)) less_aexp_aux[A](a1, a2)
+      else Nat.less_nat(h1, h2))
+  }
 
 def less_eq_aexp[A : HOL.equal : Orderings.linorder](e1: AExp.aexp[A],
               e2: AExp.aexp[A]):
@@ -1762,8 +1787,8 @@ def less_eq_aexp[A : HOL.equal : Orderings.linorder](e1: AExp.aexp[A],
 
 object GExp_Lexorder {
 
-def less_gexp[A : HOL.equal : Orderings.linorder](x0: GExp.gexp[A],
-           x1: GExp.gexp[A]):
+def less_gexp_aux[A : HOL.equal : Orderings.linorder](x0: GExp.gexp[A],
+               x1: GExp.gexp[A]):
       Boolean
   =
   (x0, x1) match {
@@ -1794,13 +1819,42 @@ def less_gexp[A : HOL.equal : Orderings.linorder](x0: GExp.gexp[A],
   case (GExp.In(vb, vc), GExp.Eq(v, va)) => false
   case (GExp.In(vb, vc), GExp.Gt(v, va)) => false
   case (GExp.Nor(g1a, g2a), GExp.Nor(g1, g2)) =>
-    (less_gexp[A](g1a, g1)) || ((GExp.equal_gexpa[A](g1a,
-              g1)) && (less_gexp[A](g2a, g2)))
+    (less_gexp_aux[A](g1a, g1)) || ((GExp.equal_gexpa[A](g1a,
+                  g1)) && (less_gexp_aux[A](g2a, g2)))
   case (GExp.Nor(g1, g2), GExp.Bc(v)) => false
   case (GExp.Nor(g1, g2), GExp.Eq(v, va)) => false
   case (GExp.Nor(g1, g2), GExp.Gt(v, va)) => false
   case (GExp.Nor(g1, g2), GExp.In(v, va)) => false
 }
+
+def height[A](x0: GExp.gexp[A]): Nat.nat = x0 match {
+  case GExp.Bc(uu) => Nat.Nata((1))
+  case GExp.Gt(a_1, a_2) =>
+    Nat.plus_nata(Nat.Nata((1)),
+                   Orderings.max[Nat.nat](AExp_Lexorder.height[A](a_1),
+   AExp_Lexorder.height[A](a_2)))
+  case GExp.Eq(a_1, a_2) =>
+    Nat.plus_nata(Nat.Nata((1)),
+                   Orderings.max[Nat.nat](AExp_Lexorder.height[A](a_1),
+   AExp_Lexorder.height[A](a_2)))
+  case GExp.In(v, l) =>
+    Nat.plus_nata(Code_Numeral.nat_of_integer(BigInt(2)),
+                   Nat.Nata(l.par.length))
+  case GExp.Nor(g_1, g_2) =>
+    Nat.plus_nata(Nat.Nata((1)),
+                   Orderings.max[Nat.nat](height[A](g_1), height[A](g_2)))
+}
+
+def less_gexp[A : HOL.equal : Orderings.linorder](a1: GExp.gexp[A],
+           a2: GExp.gexp[A]):
+      Boolean
+  =
+  {
+    val h1: Nat.nat = height[A](a1)
+    val h2: Nat.nat = height[A](a2);
+    (if (Nat.equal_nata(h1, h2)) less_gexp_aux[A](a1, a2)
+      else Nat.less_nat(h1, h2))
+  }
 
 def less_eq_gexp[A : HOL.equal : Orderings.linorder](e1: GExp.gexp[A],
               e2: GExp.gexp[A]):
