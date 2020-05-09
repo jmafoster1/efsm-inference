@@ -1003,19 +1003,15 @@ def equal_vnamea(x0: vname, x1: vname): Boolean = (x0, x1) match {
   case (I(x1), I(y1)) => Nat.equal_nata(x1, y1)
 }
 
-def less_eq_vname(x0: vname, x1: vname): Boolean = (x0, x1) match {
-  case (I(n1), R(n2)) => true
-  case (R(n1), I(n2)) => false
-  case (I(n1), I(n2)) => Nat.less_eq_nat(n1, n2)
-  case (R(n1), R(n2)) => Nat.less_eq_nat(n1, n2)
-}
-
 def less_vname(x0: vname, x1: vname): Boolean = (x0, x1) match {
   case (I(n1), R(n2)) => true
   case (R(n1), I(n2)) => false
   case (I(n1), I(n2)) => Nat.less_nat(n1, n2)
   case (R(n1), R(n2)) => Nat.less_nat(n1, n2)
 }
+
+def less_eq_vname(v1: vname, v2: vname): Boolean =
+  (less_vname(v1, v2)) || (equal_vnamea(v1, v2))
 
 } /* object VName */
 
@@ -1696,19 +1692,15 @@ def less_list[A : HOL.equal : Orderings.order](xs: List[A], x1: List[A]):
 
 object Value_Lexorder {
 
-def less_eq_value(x0: Value.value, x1: Value.value): Boolean = (x0, x1) match {
-  case (Value.Numa(n), Value.Str(s)) => true
-  case (Value.Str(s), Value.Numa(n)) => false
-  case (Value.Str(n), Value.Str(s)) => n <= s
-  case (Value.Numa(n), Value.Numa(s)) => Int.less_eq_int(n, s)
-}
-
 def less_value(x0: Value.value, x1: Value.value): Boolean = (x0, x1) match {
   case (Value.Numa(n), Value.Str(s)) => true
   case (Value.Str(s), Value.Numa(n)) => false
-  case (Value.Str(n), Value.Str(s)) => n < s
-  case (Value.Numa(n), Value.Numa(s)) => Int.less_int(n, s)
+  case (Value.Str(s1), Value.Str(s2)) => s1 < s2
+  case (Value.Numa(n1), Value.Numa(n2)) => Int.less_int(n1, n2)
 }
+
+def less_eq_value(v1: Value.value, v2: Value.value): Boolean =
+  (less_value(v1, v2)) || (Value.equal_valuea(v1, v2))
 
 } /* object Value_Lexorder */
 
@@ -1829,11 +1821,11 @@ def less_gexp_aux[A : HOL.equal : Orderings.linorder](x0: GExp.gexp[A],
 
 def height[A](x0: GExp.gexp[A]): Nat.nat = x0 match {
   case GExp.Bc(uu) => Nat.Nata((1))
-  case GExp.Gt(a_1, a_2) =>
+  case GExp.Eq(a_1, a_2) =>
     Nat.plus_nata(Nat.Nata((1)),
                    Orderings.max[Nat.nat](AExp_Lexorder.height[A](a_1),
    AExp_Lexorder.height[A](a_2)))
-  case GExp.Eq(a_1, a_2) =>
+  case GExp.Gt(a_1, a_2) =>
     Nat.plus_nata(Nat.Nata((1)),
                    Orderings.max[Nat.nat](AExp_Lexorder.height[A](a_1),
    AExp_Lexorder.height[A](a_2)))
@@ -3706,11 +3698,11 @@ def i_possible_steps(e: FSet.fset[(List[Nat.nat],
                              }),
                             e))
 
-def test_exec(x0: List[(String, (List[Value.value], List[Value.value]))],
-               uu: FSet.fset[(List[Nat.nat],
-                               ((Nat.nat, Nat.nat),
-                                 Transition.transition_ext[Unit]))],
-               uv: Nat.nat, uw: Map[Nat.nat, Option[Value.value]]):
+def test_trace(x0: List[(String, (List[Value.value], List[Value.value]))],
+                uu: FSet.fset[(List[Nat.nat],
+                                ((Nat.nat, Nat.nat),
+                                  Transition.transition_ext[Unit]))],
+                uv: Nat.nat, uw: Map[Nat.nat, Option[Value.value]]):
       (List[(String,
               (List[Value.value],
                 (Nat.nat,
@@ -3750,7 +3742,7 @@ Transition.transition_ext[Unit]))](ps))
                                    (List[Value.value],
                                      List[Option[Value.value]])))))))],
                    List[(String, (List[Value.value], List[Value.value]))])
-            = test_exec(es, e, sa, ra)
+            = test_trace(es, e, sa, ra)
           val (est, aa):
                 (List[(String,
                         (List[Value.value],
@@ -3796,8 +3788,8 @@ def test_log(l: List[List[(String, (List[Value.value], List[Value.value]))]],
                         List[Value.value]))])](((t:
            List[(String, (List[Value.value], List[Value.value]))])
           =>
-         test_exec(t, e, Nat.zero_nata,
-                    scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]))),
+         test_trace(t, e, Nat.zero_nata,
+                     scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]))),
         l)
 
 def get_by_ids(e: FSet.fset[(List[Nat.nat],

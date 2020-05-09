@@ -24,7 +24,7 @@ end
 
 type_synonym index = "nat \<times> ioTag \<times> nat"
 
-fun lookup :: "index \<Rightarrow> execution \<Rightarrow> value" where
+fun lookup :: "index \<Rightarrow> trace \<Rightarrow> value" where
   "lookup (eventNo, In, inx) t = (let (_, inputs, _) = nth t eventNo in nth inputs inx)" |
   "lookup (eventNo, Out, inx) t = (let (_, _, outputs) = nth t eventNo in nth outputs inx)"
 
@@ -44,17 +44,17 @@ primrec index :: "value list \<Rightarrow> nat \<Rightarrow> ioTag \<Rightarrow>
 definition io_index :: "nat \<Rightarrow> value list \<Rightarrow> value list \<Rightarrow> index fset" where
   "io_index eventNo inputs outputs = (index inputs eventNo In 0) |\<union>| (index outputs eventNo Out 0)"
 
-definition indices :: "execution \<Rightarrow> index fset" where
+definition indices :: "trace \<Rightarrow> index fset" where
   "indices e = foldl (|\<union>|) {||} (map (\<lambda>(eventNo, (label, inputs, outputs)). io_index eventNo inputs outputs) (enumerate 0 e))"
 
-definition get_by_id_intratrace_matches :: "execution \<Rightarrow> (index \<times> index) fset" where
+definition get_by_id_intratrace_matches :: "trace \<Rightarrow> (index \<times> index) fset" where
   "get_by_id_intratrace_matches e = ffilter (\<lambda>(a, b). lookup a e = lookup b e \<and> eventNum a \<le> eventNum b \<and> a \<noteq> b) (indices e |\<times>| indices e)"
 
 (*
   If the EFSM is nondeterministic, we need to make sure it chooses the right path so that it accepts
   the input trace.
 *)
-definition i_step :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> tids \<times> registers) option" where
+definition i_step :: "execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> tids \<times> registers) option" where
   "i_step tr e s r l i = (let
     poss_steps = (i_possible_steps e s r l i);
     possibilities = ffilter (\<lambda>(u, s', t). accepts (tm e) s' (apply_updates (Updates t) (join_ir i r) r) tr) poss_steps in
@@ -67,13 +67,13 @@ definition i_step :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarr
 type_synonym match = "(((transition \<times> tids) \<times> ioTag \<times> nat) \<times> ((transition \<times> tids) \<times> ioTag \<times> nat))"
 
 definition "exec2trace t = map (\<lambda>(label, inputs, _). (label, inputs)) t"
-primrec (nonexhaustive) walk_up_to :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (transition \<times> tids)" where
+primrec (nonexhaustive) walk_up_to :: "nat \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (transition \<times> tids)" where
   "walk_up_to n e s r (h#t) =
     (case (i_step (exec2trace t) e s r (fst h) (fst (snd h))) of
       (Some (transition, s', uid, updated)) \<Rightarrow> (case n of 0 \<Rightarrow> (transition, uid) | Suc m \<Rightarrow> walk_up_to m e s' updated t)
     )"
 
-definition find_intertrace_matches_aux :: "(index \<times> index) fset \<Rightarrow> iEFSM \<Rightarrow> execution \<Rightarrow> match fset" where
+definition find_intertrace_matches_aux :: "(index \<times> index) fset \<Rightarrow> iEFSM \<Rightarrow> trace \<Rightarrow> match fset" where
   "find_intertrace_matches_aux intras e t = fimage (\<lambda>((e1, io1, inx1), (e2, io2, inx2)). (((walk_up_to e1 e 0 <> t), io1, inx1), ((walk_up_to e2 e 0 <> t), io2, inx2))) intras"
 
 definition find_intertrace_matches :: "log \<Rightarrow> iEFSM \<Rightarrow> match list" where

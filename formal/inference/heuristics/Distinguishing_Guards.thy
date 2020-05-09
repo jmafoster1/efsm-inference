@@ -16,7 +16,7 @@ definition put_updates :: "tids \<Rightarrow> update_function list \<Rightarrow>
 definition transfer_updates :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "transfer_updates e pta = fold (\<lambda>(tids, (from, to), tran) acc. put_updates tids (Updates tran) acc) (sorted_list_of_fset e) pta"
 
-fun trace_collect_training_sets :: "execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> tids \<Rightarrow> tids \<Rightarrow> (inputs \<times> registers) list \<Rightarrow> (inputs \<times> registers) list \<Rightarrow> ((inputs \<times> registers) list \<times> (inputs \<times> registers) list)" where
+fun trace_collect_training_sets :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> tids \<Rightarrow> tids \<Rightarrow> (inputs \<times> registers) list \<Rightarrow> (inputs \<times> registers) list \<Rightarrow> ((inputs \<times> registers) list \<times> (inputs \<times> registers) list)" where
   "trace_collect_training_sets [] uPTA s registers T1 T2 G1 G2 = (G1, G2)" |
   "trace_collect_training_sets ((label, inputs, outputs)#t) uPTA s registers T1 T2 G1 G2 = (
     let

@@ -150,7 +150,7 @@ definition endsWith :: "String.literal \<Rightarrow> String.literal \<Rightarrow
 definition dropRight :: "String.literal \<Rightarrow> nat \<Rightarrow> String.literal" where
   "dropRight l n = String.implode (rev (drop n (rev (String.explode l))))"
 
-fun make_branch :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> iEFSM" where
+fun make_branch :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> iEFSM" where
   "make_branch e _ _ [] = e" |
   "make_branch e s r ((label, inputs, outputs)#t) =
     (case (step (tm e) s r label inputs) of
@@ -312,7 +312,7 @@ lemma score_1: "score_1 e s = k_score 1 e s"
     done
   done
 
-inductive satisfies_trace :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
+inductive satisfies_trace :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> bool" where
   base: "satisfies_trace e s d []" |
   step: "\<exists>(s', T) |\<in>| possible_steps e s d l i.
          apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
@@ -329,7 +329,7 @@ lemma satisfies_trace_step:
   apply (rule satisfies_trace.cases)
   by auto
 
-fun satisfies_trace_prim :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
+fun satisfies_trace_prim :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> bool" where
   "satisfies_trace_prim _ _ _ [] = True" |
   "satisfies_trace_prim e s d ((l, i, p)#t) = (
     let poss_steps = possible_steps e s d l i in
@@ -357,7 +357,7 @@ case (Cons a l)
     by auto
 qed
 
-definition satisfies :: "execution set \<Rightarrow> transition_matrix \<Rightarrow> bool" where
+definition satisfies :: "trace set \<Rightarrow> transition_matrix \<Rightarrow> bool" where
   "satisfies T e = (\<forall>t \<in> T. satisfies_trace e 0 <> t)"
 
 definition directly_subsumes :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
@@ -581,7 +581,7 @@ lemma hd_insort:
   "a \<noteq> Min (insert a (set l)) \<Longrightarrow> hd (insort a (sort l)) = hd (sort l)"
   by (metis Min_singleton hd_sort_Min list.distinct(1) list.simps(15) min_insert_zero set_empty2 sort_key_simps(2))
 
-fun get_ints :: "execution \<Rightarrow> int list" where
+fun get_ints :: "trace \<Rightarrow> int list" where
   "get_ints [] = []" |
   "get_ints ((_, inputs, outputs)#t) = (map (\<lambda>x. case x of Num n \<Rightarrow> n) (filter is_Num (inputs@outputs)))"
 
@@ -644,15 +644,20 @@ definition "accepts_and_gets_us_to_both a b s s' = (
       accepts_trace (tm b) p \<and>
       gets_us_to s' (tm b) 0 <> p)"
 
-definition enumerate_exec_values :: "execution \<Rightarrow> value list" where
+definition enumerate_exec_values :: "trace \<Rightarrow> value list" where
   "enumerate_exec_values vs = fold (\<lambda>(_, i, p) I. List.union (List.union i p) I) vs []"
 
 definition enumerate_log_values :: "log \<Rightarrow> value list" where
   "enumerate_log_values l = fold (\<lambda>e I. List.union (enumerate_exec_values e) I) l []"
 
-fun test_exec :: "execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> ((label \<times> inputs \<times> cfstate \<times> cfstate \<times> registers \<times> tids \<times> value list \<times> outputs) list \<times> execution)" where
-  "test_exec [] _ _ _ = ([], [])" |
-  "test_exec ((l, i, expected)#es) e s r = (
+text\<open>We need a function to test the EFSMs we infer. The \texttt{test\_trace} function executes a
+trace in the model and outputs a more comprehensive trace such that the expected outputs and actual
+outputs can be compared. If a point is reached where the model does not recognise an event, the
+remainder of the trace forms the second element of the output pair such that we know the exact point
+at which the model stopped processing.\<close>
+fun test_trace :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> ((label \<times> inputs \<times> cfstate \<times> cfstate \<times> registers \<times> tids \<times> value list \<times> outputs) list \<times> trace)" where
+  "test_trace [] _ _ _ = ([], [])" |
+  "test_trace ((l, i, expected)#es) e s r = (
     let
       ps = i_possible_steps e s r l i
     in
@@ -661,14 +666,16 @@ fun test_exec :: "execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarr
           (id, s', t) = fthe_elem ps;
           r' = apply_updates (Updates t) (join_ir i r) r;
           actual = apply_outputs (Outputs t) (join_ir i r);
-          (est, fail) = (test_exec es e s' r')
+          (est, fail) = (test_trace es e s' r')
         in
         ((l, i, s, s', r, id, expected, actual)#est, fail)
       else
         ([], (l, i, expected)#es)
   )"
 
-definition test_log :: "log \<Rightarrow> iEFSM \<Rightarrow> ((label \<times> inputs \<times> cfstate \<times> cfstate \<times> registers \<times> tids \<times> value list \<times> outputs) list \<times> execution) list" where
-  "test_log l e = map (\<lambda>t. test_exec t e 0 <>) l"
+text\<open>The \texttt{test\_log} function executes the \texttt{test\_trace} function on a collection of
+traces known as the \empt{test set.}\<close>
+definition test_log :: "log \<Rightarrow> iEFSM \<Rightarrow> ((label \<times> inputs \<times> cfstate \<times> cfstate \<times> registers \<times> tids \<times> value list \<times> outputs) list \<times> trace) list" where
+  "test_log l e = map (\<lambda>t. test_trace t e 0 <>) l"
 
 end

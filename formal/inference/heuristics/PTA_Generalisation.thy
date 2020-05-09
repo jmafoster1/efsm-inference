@@ -6,7 +6,7 @@ hide_const I
 
 type_synonym transition_group = "(tids \<times> transition) list"
 
-fun observe_all :: "iEFSM \<Rightarrow>  cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> transition_group" where
+fun observe_all :: "iEFSM \<Rightarrow>  cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> transition_group" where
   "observe_all _ _ _ [] = []" |
   "observe_all e s r ((l, i, _)#es)  =
     (case random_member (i_possible_steps e s r l i)  of
@@ -14,7 +14,7 @@ fun observe_all :: "iEFSM \<Rightarrow>  cfstate \<Rightarrow> registers \<Right
       _ \<Rightarrow> []
     )"
 
-definition transition_groups_exec :: "iEFSM \<Rightarrow> execution \<Rightarrow> (nat \<times> tids \<times> transition) list list" where
+definition transition_groups_exec :: "iEFSM \<Rightarrow> trace \<Rightarrow> (nat \<times> tids \<times> transition) list list" where
   "transition_groups_exec e t = group_by (\<lambda>(_, _, t1) (_, _, t2). same_structure t1 t2) (enumerate 0 (observe_all e 0 <> t))"
 
 type_synonym struct = "(label \<times> arity \<times> arity)"
@@ -51,7 +51,7 @@ definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> transitio
 text\<open>For a given trace group, log, and EFSM, we want to build the training set for that group. That
 is, the set of inputs, registers, and expected outputs from those transitions. To do this, we must
 walk the traces in the EFSM to obtain the register values.\<close>
-fun trace_group_training_set :: "transition_group \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> (inputs \<times> registers \<times> value list) list \<Rightarrow> (inputs \<times> registers \<times> value list) list" where
+fun trace_group_training_set :: "transition_group \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (inputs \<times> registers \<times> value list) list \<Rightarrow> (inputs \<times> registers \<times> value list) list" where
   "trace_group_training_set _ _ _ _ [] train = train" |
   "trace_group_training_set gp e s r ((l, i, p)#t) train = (
     let
@@ -119,7 +119,7 @@ type_synonym event_info = "(cfstate \<times> registers \<times> registers \<time
 type_synonym run_info = "event_info list"
 type_synonym targeted_run_info = "(registers \<times> event_info) list"
 
-fun everything_walk :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> transition_group \<Rightarrow> run_info" where
+fun everything_walk :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> transition_group \<Rightarrow> run_info" where
   "everything_walk _ _ _ [] _ _ _ _ = []" |
   "everything_walk f fi types ((label, inputs, outputs)#t) oPTA s regs gp  = (
     let (tid, s', ta) = fthe_elem (i_possible_steps oPTA s regs label inputs) in
@@ -397,7 +397,7 @@ lemma groupwise_generalise_and_update_fold:
   apply simp
   by metis
 
-fun find_initialisation_of_trace :: "nat \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> (tids \<times> transition) option" where
+fun find_initialisation_of_trace :: "nat \<Rightarrow> trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> (tids \<times> transition) option" where
   "find_initialisation_of_trace _ [] _ _ _ = None" |
   "find_initialisation_of_trace r' ((l, i, _)#es) e s r = (
     let
@@ -442,7 +442,7 @@ definition delay_initialisation_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM
         e
   ) (find_initialisation_of r e l) e"
 
-fun find_first_use_of_trace :: "nat \<Rightarrow> execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> tids option" where
+fun find_first_use_of_trace :: "nat \<Rightarrow> trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> tids option" where
   "find_first_use_of_trace _ [] _ _ _ = None" |
   "find_first_use_of_trace rr ((l, i, _)#es) e s r = (
     let
