@@ -25,11 +25,11 @@ end
 type_synonym index = "nat \<times> ioTag \<times> nat"
 
 fun lookup :: "index \<Rightarrow> trace \<Rightarrow> value" where
-  "lookup (eventNo, In, inx) t = (let (_, inputs, _) = nth t eventNo in nth inputs inx)" |
-  "lookup (eventNo, Out, inx) t = (let (_, _, outputs) = nth t eventNo in nth outputs inx)"
+  "lookup (actionNo, In, inx) t = (let (_, inputs, _) = nth t actionNo in nth inputs inx)" |
+  "lookup (actionNo, Out, inx) t = (let (_, _, outputs) = nth t actionNo in nth outputs inx)"
 
-abbreviation eventNum :: "index \<Rightarrow> nat" where
-  "eventNum i \<equiv> fst i"
+abbreviation actionNum :: "index \<Rightarrow> nat" where
+  "actionNum i \<equiv> fst i"
 
 abbreviation ioTag :: "index \<Rightarrow> ioTag" where
   "ioTag i \<equiv> fst (snd i)"
@@ -39,16 +39,16 @@ abbreviation inx :: "index \<Rightarrow> nat" where
 
 primrec index :: "value list \<Rightarrow> nat \<Rightarrow> ioTag \<Rightarrow> nat \<Rightarrow> index fset" where
   "index [] _ _ _ = {||}" |
-  "index (h#t) eventNo io ind = finsert (eventNo, io, ind) (index t eventNo io (ind + 1))"
+  "index (h#t) actionNo io ind = finsert (actionNo, io, ind) (index t actionNo io (ind + 1))"
 
 definition io_index :: "nat \<Rightarrow> value list \<Rightarrow> value list \<Rightarrow> index fset" where
-  "io_index eventNo inputs outputs = (index inputs eventNo In 0) |\<union>| (index outputs eventNo Out 0)"
+  "io_index actionNo inputs outputs = (index inputs actionNo In 0) |\<union>| (index outputs actionNo Out 0)"
 
 definition indices :: "trace \<Rightarrow> index fset" where
-  "indices e = foldl (|\<union>|) {||} (map (\<lambda>(eventNo, (label, inputs, outputs)). io_index eventNo inputs outputs) (enumerate 0 e))"
+  "indices e = foldl (|\<union>|) {||} (map (\<lambda>(actionNo, (label, inputs, outputs)). io_index actionNo inputs outputs) (enumerate 0 e))"
 
 definition get_by_id_intratrace_matches :: "trace \<Rightarrow> (index \<times> index) fset" where
-  "get_by_id_intratrace_matches e = ffilter (\<lambda>(a, b). lookup a e = lookup b e \<and> eventNum a \<le> eventNum b \<and> a \<noteq> b) (indices e |\<times>| indices e)"
+  "get_by_id_intratrace_matches e = ffilter (\<lambda>(a, b). lookup a e = lookup b e \<and> actionNum a \<le> actionNum b \<and> a \<noteq> b) (indices e |\<times>| indices e)"
 
 (*
   If the EFSM is nondeterministic, we need to make sure it chooses the right path so that it accepts

@@ -5043,11 +5043,11 @@ def index(x0: List[Value.value], uu: Nat.nat, uv: ioTag, uw: Nat.nat):
   =
   (x0, uu, uv, uw) match {
   case (Nil, uu, uv, uw) => FSet.bot_fset[(Nat.nat, (ioTag, Nat.nat))]
-  case (h :: t, eventNo, io, ind) =>
+  case (h :: t, actionNo, io, ind) =>
     FSet.finsert[(Nat.nat,
                    (ioTag,
-                     Nat.nat))]((eventNo, (io, ind)),
-                                 index(t, eventNo, io,
+                     Nat.nat))]((actionNo, (io, ind)),
+                                 index(t, actionNo, io,
 Nat.plus_nata(ind, Nat.Nata((1)))))
 }
 
@@ -5103,16 +5103,16 @@ def lookup(x0: (Nat.nat, (ioTag, Nat.nat)),
       Value.value
   =
   (x0, t) match {
-  case ((eventNo, (In(), inx)), t) =>
+  case ((actionNo, (In(), inx)), t) =>
     {
       val (_, (inputs, _)): (String, (List[Value.value], List[Value.value])) =
-        t(Code_Numeral.integer_of_nat(eventNo).toInt);
+        t(Code_Numeral.integer_of_nat(actionNo).toInt);
       inputs(Code_Numeral.integer_of_nat(inx).toInt)
     }
-  case ((eventNo, (Out(), inx)), t) =>
+  case ((actionNo, (Out(), inx)), t) =>
     {
       val (_, (_, outputs)): (String, (List[Value.value], List[Value.value])) =
-        t(Code_Numeral.integer_of_nat(eventNo).toInt);
+        t(Code_Numeral.integer_of_nat(actionNo).toInt);
       outputs(Code_Numeral.integer_of_nat(inx).toInt)
     }
 }
@@ -5560,14 +5560,14 @@ matches)
           old)))
   }
 
-def io_index(eventNo: Nat.nat, inputs: List[Value.value],
+def io_index(actionNo: Nat.nat, inputs: List[Value.value],
               outputs: List[Value.value]):
       FSet.fset[(Nat.nat, (ioTag, Nat.nat))]
   =
   FSet.sup_fset[(Nat.nat,
                   (ioTag,
-                    Nat.nat))](index(inputs, eventNo, In(), Nat.zero_nata),
-                                index(outputs, eventNo, Out(), Nat.zero_nata))
+                    Nat.nat))](index(inputs, actionNo, In(), Nat.zero_nata),
+                                index(outputs, actionNo, Out(), Nat.zero_nata))
 
 def indices(e: List[(String, (List[Value.value], List[Value.value]))]):
       FSet.fset[(Nat.nat, (ioTag, Nat.nat))]
@@ -5583,11 +5583,11 @@ def indices(e: List[(String, (List[Value.value], List[Value.value]))]):
        FSet.sup_fset[(Nat.nat,
                        (ioTag,
                          Nat.nat))](a, {
- val (eventNo, aa): (Nat.nat, (String, (List[Value.value], List[Value.value])))
+ val (actionNo, aa): (Nat.nat, (String, (List[Value.value], List[Value.value])))
    = x
  val (_, ab): (String, (List[Value.value], List[Value.value])) = aa
  val (ac, b): (List[Value.value], List[Value.value]) = ab;
- io_index(eventNo, ac, b)
+ io_index(actionNo, ac, b)
                                        })),
       FSet.bot_fset[(Nat.nat, (ioTag, Nat.nat))],
       Lista.enumerate[(String,

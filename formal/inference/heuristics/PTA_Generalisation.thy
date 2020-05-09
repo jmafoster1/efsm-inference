@@ -84,7 +84,7 @@ definition insert_updates :: "transition \<Rightarrow> update_function list \<Ri
     t\<lparr>Updates := (filter (\<lambda>(r, _). r \<notin> set (map fst u)) (Updates t))@necessary_updates\<rparr>
   )"
 
-fun add_groupwise_updates_trace :: "execution  \<Rightarrow> (tids \<times> update_function list) list \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM" where
+fun add_groupwise_updates_trace :: "trace  \<Rightarrow> (tids \<times> update_function list) list \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> iEFSM" where
   "add_groupwise_updates_trace [] _ e _ _ = e" |
   "add_groupwise_updates_trace ((l, i, _)#trace) funs e s r = (
     let
@@ -115,9 +115,9 @@ definition get_regs :: "(vname \<Rightarrow>f String.literal) \<Rightarrow> inpu
 declare get_regs_def [code del]
 code_printing constant get_regs \<rightharpoonup> (Scala) "Dirties.getRegs"
 
-type_synonym event_info = "(cfstate \<times> registers \<times> registers \<times> inputs \<times> tids \<times> transition)"
-type_synonym run_info = "event_info list"
-type_synonym targeted_run_info = "(registers \<times> event_info) list"
+type_synonym action_info = "(cfstate \<times> registers \<times> registers \<times> inputs \<times> tids \<times> transition)"
+type_synonym run_info = "action_info list"
+type_synonym targeted_run_info = "(registers \<times> action_info) list"
 
 fun everything_walk :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> transition_group \<Rightarrow> run_info" where
   "everything_walk _ _ _ [] _ _ _ _ = []" |

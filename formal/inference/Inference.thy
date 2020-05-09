@@ -405,7 +405,7 @@ definition make_distinct :: "iEFSM \<Rightarrow> iEFSM" where
   "make_distinct e = ffold_ord (\<lambda>(uid, (from, to), t) acc. insert_transition uid from to t acc) e {||}"
 
 \<comment> \<open>When we replace one transition with another, we need to merge their uids to keep track of which\<close>
-\<comment> \<open>transition accounts for which event in the original traces                                     \<close>
+\<comment> \<open>transition accounts for which action in the original traces                                     \<close>
 definition merge_transitions_aux :: "iEFSM \<Rightarrow> tids \<Rightarrow> tids \<Rightarrow> iEFSM" where
   "merge_transitions_aux e oldID newID = (let
     (uids1, (origin, dest), old) = fthe_elem (ffilter (\<lambda>(uids, _). oldID = uids) e);
@@ -652,7 +652,7 @@ definition enumerate_log_values :: "log \<Rightarrow> value list" where
 
 text\<open>We need a function to test the EFSMs we infer. The \texttt{test\_trace} function executes a
 trace in the model and outputs a more comprehensive trace such that the expected outputs and actual
-outputs can be compared. If a point is reached where the model does not recognise an event, the
+outputs can be compared. If a point is reached where the model does not recognise an action, the
 remainder of the trace forms the second element of the output pair such that we know the exact point
 at which the model stopped processing.\<close>
 fun test_trace :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> ((label \<times> inputs \<times> cfstate \<times> cfstate \<times> registers \<times> tids \<times> value list \<times> outputs) list \<times> trace)" where
