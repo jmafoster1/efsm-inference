@@ -18,3 +18,17 @@ eod:
 	git add -A ; \
 	git commit -m "end of day $(DATE)" ; \
 	git push origin $(BRANCH) ; \
+
+commit:
+	cd inference-tool/src/main/java/mintframework; \
+	git add -A ; \
+	git commit -m "$m" ; \
+	git push origin master ; \
+	cd ../../../../../formal/EFSM; \
+	git add -A ; \
+	git commit -m "$m" ; \
+	git push origin master ; \
+	cd ../../; \
+	git add -A ; \
+	git commit -m "$m" ; \
+	git push origin $(BRANCH) ; \

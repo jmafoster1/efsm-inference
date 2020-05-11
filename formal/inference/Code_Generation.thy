@@ -378,15 +378,6 @@ code_printing
 declare finfun_to_list_const_code [code del]
 declare finfun_to_list_update_code [code del]
 
-lemma [code]: "satisfies_trace e s d l = satisfies_trace_prim e s d l"
-  by (simp add: satisfies_trace_prim)
-
-lemma [code]: "recognises e s d t = recognises_prim e s d t"
-  by (simp add: recognises_prim)
-
-(* declare make_branch.simps [code del] *)
-(* code_printing constant "make_branch" \<rightharpoonup> (Scala) "Dirties.makeBranch" *)
-
 declare startsWith_def [code del]
 code_printing constant startsWith \<rightharpoonup> (Scala) "_.startsWith((_))"
 
@@ -395,8 +386,6 @@ code_printing constant endsWith \<rightharpoonup> (Scala) "_.endsWith((_))"
 
 declare dropRight_def [code del]
 code_printing constant dropRight \<rightharpoonup> (Scala) "_.dropRight(Code'_Numeral.integer'_of'_nat((_)).toInt)"
-
-definition "And = GExp.gAnd"
 
 definition mismatched_updates :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "mismatched_updates t1 t2 = (\<exists>r \<in> set (map fst (Updates t1)). r \<notin> set (map fst (Updates t2)))"

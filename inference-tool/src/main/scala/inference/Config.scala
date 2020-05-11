@@ -209,10 +209,7 @@ object Config {
           Preprocessors.dropGuards -> (PTA_Generalisation.drop_pta_guards _).curried
         )
 
-        // this.strategy = if (Config.config.oneFinal)
-        //     (SelectionStrategies.score_one_final_state _).curried(strategies(config.strategy))
-        //   else (strategies(config.strategy))
-        this.heuristics = Inference.try_heuristics_check((Inference.satisfies _).curried(Set.seta(config.train)), config.heuristics.map(x => heuristics(x)).toList)
+        this.heuristics = Inference.try_heuristics_check((EFSM.accepts_log _).curried(Set.seta(config.train)), config.heuristics.map(x => heuristics(x)).toList)
         this.config = config
         if (config.prep != null && config.prep != Preprocessors.none)
           this.preprocessor = preprocessors(config.prep)

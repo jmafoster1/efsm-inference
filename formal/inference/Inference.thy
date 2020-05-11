@@ -312,53 +312,52 @@ lemma score_1: "score_1 e s = k_score 1 e s"
     done
   done
 
-inductive satisfies_trace :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> bool" where
-  base: "satisfies_trace e s d []" |
+inductive accepts_trace :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> bool" where
+  base: "accepts_trace e s d []" |
   step: "\<exists>(s', T) |\<in>| possible_steps e s d l i.
          apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
-         satisfies_trace e s' (apply_updates (Updates T) (join_ir i d) d) t \<Longrightarrow>
-         satisfies_trace e s d ((l, i, p)#t)"
+         accepts_trace e s' (apply_updates (Updates T) (join_ir i d) d) t \<Longrightarrow>
+         accepts_trace e s d ((l, i, p)#t)"
 
-lemma satisfies_trace_step:
-  "satisfies_trace e s d ((l, i, p)#t) = (\<exists>(s', T) |\<in>| possible_steps e s d l i.
+lemma accepts_trace_step:
+  "accepts_trace e s d ((l, i, p)#t) = (\<exists>(s', T) |\<in>| possible_steps e s d l i.
          apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
-         satisfies_trace e s' (apply_updates (Updates T) (join_ir i d) d) t)"
+         accepts_trace e s' (apply_updates (Updates T) (join_ir i d) d) t)"
   apply standard
    defer
-   apply (simp add: satisfies_trace.step)
-  apply (rule satisfies_trace.cases)
+   apply (simp add: accepts_trace.step)
+  apply (rule accepts_trace.cases)
   by auto
 
-fun satisfies_trace_prim :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> bool" where
-  "satisfies_trace_prim _ _ _ [] = True" |
-  "satisfies_trace_prim e s d ((l, i, p)#t) = (
+fun accepts_trace_prim :: "transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> bool" where
+  "accepts_trace_prim _ _ _ [] = True" |
+  "accepts_trace_prim e s d ((l, i, p)#t) = (
     let poss_steps = possible_steps e s d l i in
     if fis_singleton poss_steps then
       let (s', T) = fthe_elem poss_steps in
       if apply_outputs (Outputs T) (join_ir i d) = (map Some p) then
-        satisfies_trace_prim e s' (apply_updates (Updates T) (join_ir i d) d) t
+        accepts_trace_prim e s' (apply_updates (Updates T) (join_ir i d) d) t
       else False
     else
       (\<exists>(s', T) |\<in>| poss_steps.
          apply_outputs (Outputs T) (join_ir i d) = (map Some p) \<and>
-         satisfies_trace_prim e s' (apply_updates (Updates T) (join_ir i d) d) t))"
+         accepts_trace_prim e s' (apply_updates (Updates T) (join_ir i d) d) t))"
 
-lemma satisfies_trace_prim:
-  "satisfies_trace e s d l = satisfies_trace_prim e s d l"
+lemma accepts_trace_prim [code]: "accepts_trace e s d l = accepts_trace_prim e s d l"
 proof(induct l arbitrary: s d)
 case Nil
   then show ?case
-    by (simp add: satisfies_trace.base)
+    by (simp add: accepts_trace.base)
 next
 case (Cons a l)
   then show ?case
     apply (cases a)
-    apply (simp add: satisfies_trace_step Let_def fis_singleton_alt)
+    apply (simp add: accepts_trace_step Let_def fis_singleton_alt)
     by auto
 qed
 
-definition satisfies :: "trace set \<Rightarrow> transition_matrix \<Rightarrow> bool" where
-  "satisfies T e = (\<forall>t \<in> T. satisfies_trace e 0 <> t)"
+definition accepts_log :: "trace set \<Rightarrow> transition_matrix \<Rightarrow> bool" where
+  "accepts_log T e = (\<forall>t \<in> T. accepts_trace e 0 <> t)"
 
 definition directly_subsumes :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes e1 e2 s s' t1 t2 \<equiv> (\<forall>p. recognises_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
@@ -587,7 +586,7 @@ fun get_ints :: "trace \<Rightarrow> int list" where
 
 definition learn :: "nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "learn n pta l r m np = (
-     let check = satisfies (set l) in
+     let check = accepts_log (set l) in
          (infer {} n pta r m check np)
    )"
 

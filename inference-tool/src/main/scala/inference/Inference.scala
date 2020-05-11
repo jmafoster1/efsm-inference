@@ -2455,78 +2455,6 @@ Transition.transition_ext[Unit])]) =>
   =
   Code_Generation.infer_with_log(f, k, e, r, m, check, np)
 
-def satisfies_trace_prim(uu: FSet.fset[((Nat.nat, Nat.nat),
- Transition.transition_ext[Unit])],
-                          uv: Nat.nat, uw: Map[Nat.nat, Option[Value.value]],
-                          x3: List[(String,
-                                     (List[Value.value], List[Value.value]))]):
-      Boolean
-  =
-  (uu, uv, uw, x3) match {
-  case (uu, uv, uw, Nil) => true
-  case (e, s, d, (l, (i, p)) :: t) =>
-    {
-      val poss_steps: FSet.fset[(Nat.nat, Transition.transition_ext[Unit])] =
-        EFSM.possible_steps(e, s, d, l, i);
-      (if (FSet_Utils.fis_singleton[(Nat.nat,
-                                      Transition.transition_ext[Unit])](poss_steps))
-        {
-          val (sa, ta): (Nat.nat, Transition.transition_ext[Unit]) =
-            FSet.fthe_elem[(Nat.nat,
-                             Transition.transition_ext[Unit])](poss_steps);
-          (if (Lista.equal_lista[Option[Value.value]](Transition.apply_outputs[VName.vname](Transition.Outputs[Unit](ta),
-             AExp.join_ir(i, d)),
-               Lista.map[Value.value,
-                          Option[Value.value]](((a: Value.value) =>
-         Some[Value.value](a)),
-        p)))
-            satisfies_trace_prim(e, sa,
-                                  (Transition.apply_updates(Transition.Updates[Unit](ta),
-                     AExp.join_ir(i, d))).apply(d),
-                                  t)
-            else false)
-        }
-        else FSet.fBex[(Nat.nat,
-                         Transition.transition_ext[Unit])](poss_steps,
-                    ((a: (Nat.nat, Transition.transition_ext[Unit])) =>
-                      {
-                        val (sa, ta): (Nat.nat, Transition.transition_ext[Unit])
-                          = a;
-                        (Lista.equal_lista[Option[Value.value]](Transition.apply_outputs[VName.vname](Transition.Outputs[Unit](ta),
-                       AExp.join_ir(i, d)),
-                         Lista.map[Value.value,
-                                    Option[Value.value]](((aa: Value.value) =>
-                   Some[Value.value](aa)),
-                  p))) && (satisfies_trace_prim(e, sa,
-         (Transition.apply_updates(Transition.Updates[Unit](ta),
-                                    AExp.join_ir(i, d))).apply(d),
-         t))
-                      })))
-    }
-}
-
-def satisfies_trace(e: FSet.fset[((Nat.nat, Nat.nat),
-                                   Transition.transition_ext[Unit])],
-                     s: Nat.nat, d: Map[Nat.nat, Option[Value.value]],
-                     l: List[(String, (List[Value.value], List[Value.value]))]):
-      Boolean
-  =
-  satisfies_trace_prim(e, s, d, l)
-
-def satisfies(t: Set.set[List[(String,
-                                (List[Value.value], List[Value.value]))]],
-               e: FSet.fset[((Nat.nat, Nat.nat),
-                              Transition.transition_ext[Unit])]):
-      Boolean
-  =
-  Set.Ball[List[(String,
-                  (List[Value.value],
-                    List[Value.value]))]](t,
-   ((a: List[(String, (List[Value.value], List[Value.value]))]) =>
-     satisfies_trace(e, Nat.zero_nata,
-                      scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]),
-                      a)))
-
 def learn(n: Nat.nat,
            pta: FSet.fset[(List[Nat.nat],
                             ((Nat.nat, Nat.nat),
@@ -2573,10 +2501,9 @@ Transition.transition_ext[Unit])]) =>
             Boolean
       = ((a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])])
            =>
-          satisfies(Set.seta[List[(String,
-                                    (List[Value.value],
-                                      List[Value.value]))]](l),
-                     a));
+          EFSM.accepts_log(Set.seta[List[(String,
+   (List[Value.value], List[Value.value]))]](l),
+                            a));
     infer(Set.bot_set[(Nat.nat, Nat.nat)], n, pta, r, m, check, np)
   }
 
@@ -4608,11 +4535,83 @@ def recognises_prim(e: FSet.fset[((Nat.nat, Nat.nat),
 
 def recognises(e: FSet.fset[((Nat.nat, Nat.nat),
                               Transition.transition_ext[Unit])],
-                s: Nat.nat, d: Map[Nat.nat, Option[Value.value]],
+                s: Nat.nat, r: Map[Nat.nat, Option[Value.value]],
                 t: List[(String, List[Value.value])]):
       Boolean
   =
-  recognises_prim(e, s, d, t)
+  recognises_prim(e, s, r, t)
+
+def accepts_trace_prim(uu: FSet.fset[((Nat.nat, Nat.nat),
+                                       Transition.transition_ext[Unit])],
+                        uv: Nat.nat, uw: Map[Nat.nat, Option[Value.value]],
+                        x3: List[(String,
+                                   (List[Value.value], List[Value.value]))]):
+      Boolean
+  =
+  (uu, uv, uw, x3) match {
+  case (uu, uv, uw, Nil) => true
+  case (e, s, d, (l, (i, p)) :: t) =>
+    {
+      val poss_steps: FSet.fset[(Nat.nat, Transition.transition_ext[Unit])] =
+        possible_steps(e, s, d, l, i);
+      (if (FSet_Utils.fis_singleton[(Nat.nat,
+                                      Transition.transition_ext[Unit])](poss_steps))
+        {
+          val (sa, ta): (Nat.nat, Transition.transition_ext[Unit]) =
+            FSet.fthe_elem[(Nat.nat,
+                             Transition.transition_ext[Unit])](poss_steps);
+          (if (Lista.equal_lista[Option[Value.value]](Transition.apply_outputs[VName.vname](Transition.Outputs[Unit](ta),
+             AExp.join_ir(i, d)),
+               Lista.map[Value.value,
+                          Option[Value.value]](((a: Value.value) =>
+         Some[Value.value](a)),
+        p)))
+            accepts_trace_prim(e, sa,
+                                (Transition.apply_updates(Transition.Updates[Unit](ta),
+                   AExp.join_ir(i, d))).apply(d),
+                                t)
+            else false)
+        }
+        else FSet.fBex[(Nat.nat,
+                         Transition.transition_ext[Unit])](poss_steps,
+                    ((a: (Nat.nat, Transition.transition_ext[Unit])) =>
+                      {
+                        val (sa, ta): (Nat.nat, Transition.transition_ext[Unit])
+                          = a;
+                        (Lista.equal_lista[Option[Value.value]](Transition.apply_outputs[VName.vname](Transition.Outputs[Unit](ta),
+                       AExp.join_ir(i, d)),
+                         Lista.map[Value.value,
+                                    Option[Value.value]](((aa: Value.value) =>
+                   Some[Value.value](aa)),
+                  p))) && (accepts_trace_prim(e, sa,
+       (Transition.apply_updates(Transition.Updates[Unit](ta),
+                                  AExp.join_ir(i, d))).apply(d),
+       t))
+                      })))
+    }
+}
+
+def accepts_trace(e: FSet.fset[((Nat.nat, Nat.nat),
+                                 Transition.transition_ext[Unit])],
+                   s: Nat.nat, d: Map[Nat.nat, Option[Value.value]],
+                   l: List[(String, (List[Value.value], List[Value.value]))]):
+      Boolean
+  =
+  accepts_trace_prim(e, s, d, l)
+
+def accepts_log(t: Set.set[List[(String,
+                                  (List[Value.value], List[Value.value]))]],
+                 e: FSet.fset[((Nat.nat, Nat.nat),
+                                Transition.transition_ext[Unit])]):
+      Boolean
+  =
+  Set.Ball[List[(String,
+                  (List[Value.value],
+                    List[Value.value]))]](t,
+   ((a: List[(String, (List[Value.value], List[Value.value]))]) =>
+     accepts_trace(e, Nat.zero_nata,
+                    scala.collection.immutable.Map().withDefaultValue(Option_ord.bot_option[Value.value]),
+                    a)))
 
 } /* object EFSM */
 
@@ -6710,9 +6709,9 @@ FSet.fset[(List[Nat.nat],
                      ta)))
                                   }),
                                  g, e);
-      (if (Inference.satisfies(Set.seta[List[(String,
-       (List[Value.value], List[Value.value]))]](l),
-                                Inference.tm(outputs)))
+      (if (EFSM.accepts_log(Set.seta[List[(String,
+    (List[Value.value], List[Value.value]))]](l),
+                             Inference.tm(outputs)))
         Some[List[AExp.aexp[VName.vname]]](h) else find_outputs(t, e, l, g))
     }
 }
@@ -7028,9 +7027,9 @@ def delay_initialisation_of(r: Nat.nat,
               })(b)
            }),
           ea);
-                                 (if (Inference.satisfies(Set.seta[List[(String,
-                                  (List[Value.value], List[Value.value]))]](l),
-                   Inference.tm(eaa)))
+                                 (if (EFSM.accepts_log(Set.seta[List[(String,
+                               (List[Value.value], List[Value.value]))]](l),
+                Inference.tm(eaa)))
                                    eaa else ea)
                                }
                            })),
@@ -8041,9 +8040,9 @@ FSet.fset[(List[Nat.nat],
                             Transition.transition_ext[Unit]))]
         = updates_for_output(log, values, gp, o_inx, op, types,
                               generalised_model);
-      (if (Inference.satisfies(Set.seta[List[(String,
-       (List[Value.value], List[Value.value]))]](log),
-                                Inference.tm(ea)))
+      (if (EFSM.accepts_log(Set.seta[List[(String,
+    (List[Value.value], List[Value.value]))]](log),
+                             Inference.tm(ea)))
         put_updates(log, values, gpa, ops, ea)
         else put_updates(log, values, gp, ops, e))
     }
@@ -8181,9 +8180,9 @@ def standardise_group(e: FSet.fset[(List[Nat.nat],
     (if (FSet.equal_fseta[(List[Nat.nat],
                             ((Nat.nat, Nat.nat),
                               Transition.transition_ext[Unit]))](ea, e))
-      e else (if (Inference.satisfies(Set.seta[List[(String,
-              (List[Value.value], List[Value.value]))]](l),
-                                       Inference.tm(ea)))
+      e else (if (EFSM.accepts_log(Set.seta[List[(String,
+           (List[Value.value], List[Value.value]))]](l),
+                                    Inference.tm(ea)))
                ea else e))
   }
 
@@ -8279,9 +8278,9 @@ Transition.transition_ext[Unit])))
                              ((a: FSet.fset[((Nat.nat, Nat.nat),
       Transition.transition_ext[Unit])])
                                 =>
-                               Inference.satisfies(Set.seta[List[(String,
-                           (List[Value.value], List[Value.value]))]](log),
-            a))),
+                               EFSM.accepts_log(Set.seta[List[(String,
+                        (List[Value.value], List[Value.value]))]](log),
+         a))),
                                        t)
     }
 }
@@ -8361,10 +8360,10 @@ List[Nat.nat]),
                                        ((a:
    FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])])
   =>
- Inference.satisfies(Set.seta[List[(String,
-                                     (List[Value.value],
-                                       List[Value.value]))]](log),
-                      a)),
+ EFSM.accepts_log(Set.seta[List[(String,
+                                  (List[Value.value],
+                                    List[Value.value]))]](log),
+                   a)),
                                        np)
        match {
        case (None, _) => pta
