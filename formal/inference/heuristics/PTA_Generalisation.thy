@@ -370,32 +370,20 @@ definition standardise_group_outputs_updates :: "iEFSM \<Rightarrow> log \<Right
       Some (p, u) \<Rightarrow> map (\<lambda>(id, t). (id, t\<lparr>Outputs := p, Updates := u\<rparr>)) g
   )"
 
-primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> iEFSM" where
-  "groupwise_generalise_and_update _ e [] = e" |
-  "groupwise_generalise_and_update log e (gp#t) = (
-        let
-          e' = generalise_and_update log e gp;
-          rep = snd (hd (gp));
-          structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(_, _, t). same_structure rep t) e');
-          standardised = standardise_group e' log (sorted_list_of_fset structural_group) standardise_group_outputs_updates
-        in
-        groupwise_generalise_and_update log (merge_regs standardised (satisfies (set log))) t
+fun find_first_use_of_trace :: "nat \<Rightarrow> trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> tids option" where
+  "find_first_use_of_trace _ [] _ _ _ = None" |
+  "find_first_use_of_trace rr ((l, i, _)#es) e s r = (
+    let
+      (id, s', t) = fthe_elem (i_possible_steps e s r l i)
+    in
+      if (\<exists>p \<in> set (Outputs t). aexp_constrains p (V (R rr))) then
+        Some id
+      else
+        find_first_use_of_trace rr es e s' (apply_updates (Updates t) (join_ir i r) r)
   )"
 
-lemma groupwise_generalise_and_update_fold:
-"groupwise_generalise_and_update log e gs = fold (\<lambda>gp e.
-          let
-            e' = generalise_and_update log e gp;
-            rep = snd (hd (gp));
-            structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(_, _, t). same_structure rep t) e');
-            standardised = standardise_group e' log (sorted_list_of_fset structural_group) standardise_group_outputs_updates
-          in
-            merge_regs standardised (satisfies (set log))
-  ) gs e"
-  apply(induct gs arbitrary: e)
-   apply simp
-  apply simp
-  by metis
+definition find_first_uses_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> tids list" where
+  "find_first_uses_of r l e = List.maps (\<lambda>x. case x of None \<Rightarrow> [] | Some x \<Rightarrow> [x]) (map (\<lambda>t. find_first_use_of_trace r t e 0 <>) l)"
 
 fun find_initialisation_of_trace :: "nat \<Rightarrow> trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> (tids \<times> transition) option" where
   "find_initialisation_of_trace _ [] _ _ _ = None" |
@@ -442,20 +430,34 @@ definition delay_initialisation_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM
         e
   ) (find_initialisation_of r e l) e"
 
-fun find_first_use_of_trace :: "nat \<Rightarrow> trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> tids option" where
-  "find_first_use_of_trace _ [] _ _ _ = None" |
-  "find_first_use_of_trace rr ((l, i, _)#es) e s r = (
-    let
-      (id, s', t) = fthe_elem (i_possible_steps e s r l i)
-    in
-      if (\<exists>p \<in> set (Outputs t). aexp_constrains p (V (R rr))) then
-        Some id
-      else
-        find_first_use_of_trace rr es e s' (apply_updates (Updates t) (join_ir i r) r)
+primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> iEFSM" where
+  "groupwise_generalise_and_update _ e [] = e" |
+  "groupwise_generalise_and_update log e (gp#t) = (
+        let
+          e' = generalise_and_update log e gp;
+          rep = snd (hd (gp));
+          structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(_, _, t). same_structure rep t) e');
+          delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs e')) e';
+          standardised = standardise_group delayed log (sorted_list_of_fset structural_group) standardise_group_outputs_updates
+        in
+        groupwise_generalise_and_update log (merge_regs standardised (satisfies (set log))) t
   )"
 
-definition find_first_uses_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> tids list" where
-  "find_first_uses_of r l e = List.maps (\<lambda>x. case x of None \<Rightarrow> [] | Some x \<Rightarrow> [x]) (map (\<lambda>t. find_first_use_of_trace r t e 0 <>) l)"
+lemma groupwise_generalise_and_update_fold:
+"groupwise_generalise_and_update log e gs = fold (\<lambda>gp e.
+          let
+            e' = generalise_and_update log e gp;
+            rep = snd (hd (gp));
+            structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(_, _, t). same_structure rep t) e');
+            delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs e')) e';
+            standardised = standardise_group delayed log (sorted_list_of_fset structural_group) standardise_group_outputs_updates
+          in
+          merge_regs standardised (satisfies (set log))
+  ) gs e"
+  apply(induct gs arbitrary: e)
+   apply simp
+  apply simp
+  by metis
 
 definition drop_all_guards :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
 "drop_all_guards e pta log m np = (let
@@ -499,10 +501,9 @@ definition remove_spurious_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> iEF
 definition derestrict :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "derestrict pta log m np = (
     let
-      normalised = groupwise_generalise_and_update log pta (transition_groups pta log);
-      delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs normalised)) normalised
+      normalised = groupwise_generalise_and_update log pta (transition_groups pta log)
     in
-      drop_all_guards delayed pta log m np
+      drop_all_guards normalised pta log m np
   )"
 
 definition "drop_pta_guards pta log m np = drop_all_guards pta pta log m np"
