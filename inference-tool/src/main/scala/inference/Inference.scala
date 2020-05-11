@@ -4516,38 +4516,6 @@ def choice(ta: Transition.transition_ext[Unit],
   =
   Code_Generation.choice_cases(ta, t)
 
-def accepts_prim(e: FSet.fset[((Nat.nat, Nat.nat),
-                                Transition.transition_ext[Unit])],
-                  s: Nat.nat, d: Map[Nat.nat, Option[Value.value]],
-                  x3: List[(String, List[Value.value])]):
-      Boolean
-  =
-  (e, s, d, x3) match {
-  case (e, s, d, Nil) => true
-  case (e, s, d, (l, i) :: t) =>
-    {
-      val poss_steps: FSet.fset[(Nat.nat, Transition.transition_ext[Unit])] =
-        possible_steps(e, s, d, l, i);
-      FSet.fBex[(Nat.nat,
-                  Transition.transition_ext[Unit])](poss_steps,
-             ((a: (Nat.nat, Transition.transition_ext[Unit])) =>
-               {
-                 val (sa, ta): (Nat.nat, Transition.transition_ext[Unit]) = a;
-                 accepts_prim(e, sa,
-                               (Transition.apply_updates(Transition.Updates[Unit](ta),
-                  AExp.join_ir(i, d))).apply(d),
-                               t)
-               }))
-    }
-}
-
-def accepts(e: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])],
-             s: Nat.nat, d: Map[Nat.nat, Option[Value.value]],
-             t: List[(String, List[Value.value])]):
-      Boolean
-  =
-  accepts_prim(e, s, d, t)
-
 def enumerate_ints(e: FSet.fset[((Nat.nat, Nat.nat),
                                   Transition.transition_ext[Unit])]):
       Set.set[Int.int]
@@ -4612,6 +4580,39 @@ def all_regs(e: FSet.fset[((Nat.nat, Nat.nat),
                             }),
                            FSet.fset[((Nat.nat, Nat.nat),
                                        Transition.transition_ext[Unit])](e)))
+
+def recognises_prim(e: FSet.fset[((Nat.nat, Nat.nat),
+                                   Transition.transition_ext[Unit])],
+                     s: Nat.nat, d: Map[Nat.nat, Option[Value.value]],
+                     x3: List[(String, List[Value.value])]):
+      Boolean
+  =
+  (e, s, d, x3) match {
+  case (e, s, d, Nil) => true
+  case (e, s, d, (l, i) :: t) =>
+    {
+      val poss_steps: FSet.fset[(Nat.nat, Transition.transition_ext[Unit])] =
+        possible_steps(e, s, d, l, i);
+      FSet.fBex[(Nat.nat,
+                  Transition.transition_ext[Unit])](poss_steps,
+             ((a: (Nat.nat, Transition.transition_ext[Unit])) =>
+               {
+                 val (sa, ta): (Nat.nat, Transition.transition_ext[Unit]) = a;
+                 recognises_prim(e, sa,
+                                  (Transition.apply_updates(Transition.Updates[Unit](ta),
+                     AExp.join_ir(i, d))).apply(d),
+                                  t)
+               }))
+    }
+}
+
+def recognises(e: FSet.fset[((Nat.nat, Nat.nat),
+                              Transition.transition_ext[Unit])],
+                s: Nat.nat, d: Map[Nat.nat, Option[Value.value]],
+                t: List[(String, List[Value.value])]):
+      Boolean
+  =
+  recognises_prim(e, s, d, t)
 
 } /* object EFSM */
 
@@ -5077,10 +5078,10 @@ def i_step(tr: List[(String, List[Value.value])],
                               (List[Nat.nat],
                                 (Nat.nat, Transition.transition_ext[Unit]))
                           = a;
-                        EFSM.accepts(Inference.tm(e), sa,
-                                      (Transition.apply_updates(Transition.Updates[Unit](t),
-                         AExp.join_ir(i, r))).apply(r),
-                                      tr)
+                        EFSM.recognises(Inference.tm(e), sa,
+ (Transition.apply_updates(Transition.Updates[Unit](t),
+                            AExp.join_ir(i, r))).apply(r),
+ tr)
                       }),
                      poss_steps);
     (Dirties.randomMember[(List[Nat.nat],

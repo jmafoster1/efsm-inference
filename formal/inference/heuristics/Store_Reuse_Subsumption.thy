@@ -180,8 +180,8 @@ lemma is_generalised_output_of_does_not_subsume:
 lemma generalise_output_directly_subsumes_original:
       "stored_reused t' t = Some (r, p) \<Longrightarrow>
        nth (Outputs t) p = L v \<Longrightarrow>
-       (\<forall>p. accepts_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
-            accepts_trace (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
+       (\<forall>p. recognises_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
+            recognises_trace (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
        (\<exists>c. anterior_context (tm e2) p = Some c \<and> c $ r = Some v)) \<Longrightarrow>
        directly_subsumes e1 e2 s s' t' t "
   apply (simp add: directly_subsumes_def)
@@ -195,8 +195,8 @@ lemma generalise_output_directly_subsumes_original:
    is_generalised_output_of t' t r p\<close> finfun_const.rep_eq)
 
 definition "generalise_output_context_check v r s\<^sub>1 s\<^sub>2 e\<^sub>1 e\<^sub>2 =
-(\<forall>t. accepts_trace (tm e\<^sub>1) t \<and> gets_us_to s\<^sub>1 (tm e\<^sub>1) 0 <> t \<longrightarrow>
-     accepts_trace (tm e\<^sub>2) t \<and> gets_us_to s\<^sub>2 (tm e\<^sub>2) 0 <>  t \<longrightarrow>
+(\<forall>t. recognises_trace (tm e\<^sub>1) t \<and> gets_us_to s\<^sub>1 (tm e\<^sub>1) 0 <> t \<longrightarrow>
+     recognises_trace (tm e\<^sub>2) t \<and> gets_us_to s\<^sub>2 (tm e\<^sub>2) 0 <>  t \<longrightarrow>
  (\<exists>c. anterior_context (tm e\<^sub>2) t = Some c \<and> c $ r = Some v))"
 
 lemma generalise_output_context_check_directly_subsumes_original:
@@ -233,9 +233,9 @@ lemma original_does_not_subsume_generalised_output:
       "stored_reused t' t = Some (p, r) \<Longrightarrow>
        r < length (Outputs t) \<Longrightarrow>
        nth (Outputs t) r = L v \<Longrightarrow>
-       \<exists>tr a. accepts_trace (tm e1) tr \<and>
+       \<exists>tr a. recognises_trace (tm e1) tr \<and>
         gets_us_to s (tm e1) 0 <> tr \<and>
-        accepts_trace (tm e) tr \<and>
+        recognises_trace (tm e) tr \<and>
         gets_us_to s' (tm e) 0 <> tr \<and>
         anterior_context (tm e) tr = Some a \<and>
         a $ p \<noteq> Some v \<and>
@@ -277,7 +277,7 @@ definition input_stored_in_reg :: "transition \<Rightarrow> transition \<Rightar
   )"
 
 definition initially_undefined_context_check :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "initially_undefined_context_check e r s = (\<forall>t. accepts_trace e t \<and> gets_us_to s e 0 <> t \<longrightarrow> (\<exists>a. (anterior_context (e) t) = Some a \<and> a $ r = None))"
+  "initially_undefined_context_check e r s = (\<forall>t. recognises_trace e t \<and> gets_us_to s e 0 <> t \<longrightarrow> (\<exists>a. (anterior_context (e) t) = Some a \<and> a $ r = None))"
 
 lemma no_incoming_to_zero:
   "\<forall>((from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
@@ -325,7 +325,7 @@ qed
 
 lemma no_accepting_return_to_zero:
   "\<forall>((from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
-   accepts_trace (e) (a#t) \<Longrightarrow>
+   recognises_trace (e) (a#t) \<Longrightarrow>
    \<not>gets_us_to 0 (e) 0 <> (a#t)"
   apply clarify
   apply (rule gets_us_to.cases)
@@ -340,7 +340,7 @@ lemma no_accepting_return_to_zero:
 
 lemma no_return_to_zero_must_be_empty:
   "\<forall>((from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
-   accepts_trace (e) t \<and> gets_us_to 0 (e) 0 <> t \<Longrightarrow>
+   recognises_trace (e) t \<and> gets_us_to 0 (e) 0 <> t \<Longrightarrow>
    t = []"
 proof(induct t)
 case Nil
@@ -350,7 +350,7 @@ next
 case (Cons a t)
   then show ?case
     apply simp
-    apply (rule accepts.cases)
+    apply (rule recognises.cases)
       apply auto[1]
      apply simp
     using no_accepting_return_to_zero by auto
@@ -358,7 +358,7 @@ qed
 
 lemma anterior_context_empty:
   "\<forall>((from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
-           accepts_trace (e) t \<Longrightarrow>
+           recognises_trace (e) t \<Longrightarrow>
    gets_us_to 0 (e) 0 <> t \<Longrightarrow>
    anterior_context (e) t = Some <>"
   using no_return_to_zero_must_be_empty[of e]
@@ -617,8 +617,8 @@ lemma input_stored_in_reg_updates_reg:
 
 definition "diff_outputs_ctx e1 e2 s1 s2 t1 t2 =
   (if Outputs t1 = Outputs t2 then False else
-  (\<exists>p. accepts_trace (tm e1) p \<and> gets_us_to s1 (tm e1) 0 <> p \<and>
-       accepts_trace (tm e2) p \<and> gets_us_to s2 (tm e2) 0 <> p \<and>
+  (\<exists>p. recognises_trace (tm e1) p \<and> gets_us_to s1 (tm e1) 0 <> p \<and>
+       recognises_trace (tm e2) p \<and> gets_us_to s2 (tm e2) 0 <> p \<and>
        (case anterior_context (tm e2) p of None \<Rightarrow> False | Some r \<Rightarrow>
        (\<exists>i. can_take_transition t1 i r \<and> can_take_transition t2 i r \<and>
        apply_outputs (Outputs t1) (join_ir i r) \<noteq> apply_outputs (Outputs t2) (join_ir i r)))

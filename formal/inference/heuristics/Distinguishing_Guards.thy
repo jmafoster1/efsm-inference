@@ -71,7 +71,7 @@ definition distinguish :: "log \<Rightarrow> update_modifier" where
 
 definition can_still_take_ctx :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "can_still_take_ctx e1 e2 s1 s2 t1 t2 = (
-    \<forall>t. accepts_trace e1 t \<and> gets_us_to s1 e1 0 <> t \<and>  accepts_trace e2 t \<and> gets_us_to s2 e2 0 <> t \<longrightarrow>
+    \<forall>t. recognises_trace e1 t \<and> gets_us_to s1 e1 0 <> t \<and>  recognises_trace e2 t \<and> gets_us_to s2 e2 0 <> t \<longrightarrow>
     (\<exists>a. anterior_context e2 t = Some a \<and> (\<forall>i. can_take_transition t2 i a \<longrightarrow> can_take_transition t1 i a))
   )"
 
@@ -80,10 +80,10 @@ lemma distinguishing_guard_subsumption: "Label t1 = Label t2 \<Longrightarrow>
  Outputs t1 = Outputs t2 \<Longrightarrow>
  Updates t1 = Updates t2 \<Longrightarrow>
  can_still_take_ctx (tm e1) (tm e2) s1 s2 t1 t2 \<Longrightarrow>
- accepts_and_gets_us_to_both e1 e2 s1 s2 \<Longrightarrow>
- accepts_trace (tm e1) p \<Longrightarrow>
+ recognises_and_gets_us_to_both e1 e2 s1 s2 \<Longrightarrow>
+ recognises_trace (tm e1) p \<Longrightarrow>
  gets_us_to s1 (tm e1) 0 <> p \<Longrightarrow>
- accepts_trace (tm e2) p \<Longrightarrow>
+ recognises_trace (tm e2) p \<Longrightarrow>
  gets_us_to s2 (tm e2) 0 <> p \<Longrightarrow>
  anterior_context (tm e2) p = Some c \<Longrightarrow>
  subsumes t1 c t2"
@@ -95,7 +95,7 @@ definition "can_still_take e1 e2 s1 s2 t1 t2 = (
   Outputs t1 = Outputs t2 \<and>
   Updates t1 = Updates t2 \<and>
   can_still_take_ctx (tm e1) (tm e2) s1 s2 t1 t2 \<and>
-  accepts_and_gets_us_to_both e1 e2 s1 s2)"
+  recognises_and_gets_us_to_both e1 e2 s1 s2)"
 
 lemma can_still_take_direct_subsumption:
   "can_still_take e1 e2 s1 s2 t1 t2 \<Longrightarrow>
@@ -103,6 +103,6 @@ lemma can_still_take_direct_subsumption:
   apply (simp add: directly_subsumes_def can_still_take_def)
   apply standard
   using distinguishing_guard_subsumption apply auto[1]
-  by (meson accepts_and_gets_us_to_both_def can_still_take_ctx_def distinguishing_guard_subsumption)
+  by (meson recognises_and_gets_us_to_both_def can_still_take_ctx_def distinguishing_guard_subsumption)
 
 end

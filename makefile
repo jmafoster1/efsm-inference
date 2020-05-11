@@ -10,7 +10,11 @@ eod:
 	git add -A ; \
 	git commit -m "end of day $(DATE)" ; \
 	git push origin master ; \
-	cd ../../../..; \
+	cd ../../../../../formal/EFSM; \
+	git add -A ; \
+	git commit -m "end of day $(DATE)" ; \
+	git push origin master ; \
+	cd ../../; \
 	git add -A ; \
 	git commit -m "end of day $(DATE)" ; \
 	git push origin $(BRANCH) ; \

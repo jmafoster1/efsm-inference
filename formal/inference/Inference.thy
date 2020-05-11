@@ -361,8 +361,8 @@ definition satisfies :: "trace set \<Rightarrow> transition_matrix \<Rightarrow>
   "satisfies T e = (\<forall>t \<in> T. satisfies_trace e 0 <> t)"
 
 definition directly_subsumes :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "directly_subsumes e1 e2 s s' t1 t2 \<equiv> (\<forall>p. accepts_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
-                                             accepts_trace (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
+  "directly_subsumes e1 e2 s s' t1 t2 \<equiv> (\<forall>p. recognises_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
+                                             recognises_trace (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
                                              (\<forall>c. anterior_context (tm e2) p = Some c \<longrightarrow> subsumes t1 c t2)) \<and>
                                          (\<exists>c. subsumes t1 c t2)"
 
@@ -375,9 +375,9 @@ lemma subsumes_in_all_contexts_directly_subsumes:
   by (simp add: directly_subsumes_def)
 
 lemma gets_us_to_and_not_subsumes:
-  "\<exists>p. accepts_trace (tm e1) p \<and>
+  "\<exists>p. recognises_trace (tm e1) p \<and>
        gets_us_to s (tm e1) 0 (K$ None) p \<and>
-       accepts_trace (tm e2) p \<and>
+       recognises_trace (tm e2) p \<and>
        gets_us_to s' (tm e2) 0 (K$ None) p \<and>
        (anterior_context (tm e2) p) = Some a \<and>
        \<not> subsumes t1 a t2 \<Longrightarrow>
@@ -638,10 +638,10 @@ definition i_possible_steps :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> regist
      )
     e)"
 
-definition "accepts_and_gets_us_to_both a b s s' = (
-  \<exists>p. accepts_trace (tm a) p \<and>
+definition "recognises_and_gets_us_to_both a b s s' = (
+  \<exists>p. recognises_trace (tm a) p \<and>
       gets_us_to s (tm a) 0 <> p \<and>
-      accepts_trace (tm b) p \<and>
+      recognises_trace (tm b) p \<and>
       gets_us_to s' (tm b) 0 <> p)"
 
 definition enumerate_exec_values :: "trace \<Rightarrow> value list" where

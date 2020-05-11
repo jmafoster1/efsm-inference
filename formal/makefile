@@ -1,7 +1,7 @@
-jedit: 
-	isabelle jedit -d . 
+jedit:
+	isabelle jedit -d .
 build:
-	isabelle build -D . 
+	isabelle build -D .
 
 snippets:
 	isabelle build -d . EFSM
@@ -10,3 +10,13 @@ snippets:
 
 clean:
 	@find . -name "*thy~*" -exec rm {} \;
+
+commit:
+	cd EFSM ; \
+	git add -A ; \
+	git commit -m "$m" ; \
+	git push origin master ; \
+	cd .. ; \
+	git add -A ; \
+	git commit -m "$m" ; \
+	git push origin master

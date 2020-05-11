@@ -51,13 +51,13 @@ definition get_by_id_intratrace_matches :: "trace \<Rightarrow> (index \<times> 
   "get_by_id_intratrace_matches e = ffilter (\<lambda>(a, b). lookup a e = lookup b e \<and> actionNum a \<le> actionNum b \<and> a \<noteq> b) (indices e |\<times>| indices e)"
 
 (*
-  If the EFSM is nondeterministic, we need to make sure it chooses the right path so that it accepts
+  If the EFSM is nondeterministic, we need to make sure it chooses the right path so that it recognises
   the input trace.
 *)
 definition i_step :: "execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> tids \<times> registers) option" where
   "i_step tr e s r l i = (let
     poss_steps = (i_possible_steps e s r l i);
-    possibilities = ffilter (\<lambda>(u, s', t). accepts (tm e) s' (apply_updates (Updates t) (join_ir i r) r) tr) poss_steps in
+    possibilities = ffilter (\<lambda>(u, s', t). recognises (tm e) s' (apply_updates (Updates t) (join_ir i r) r) tr) poss_steps in
     case random_member possibilities of
       None \<Rightarrow> None |
       Some (u, s', t) \<Rightarrow>

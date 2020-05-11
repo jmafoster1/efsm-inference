@@ -172,9 +172,9 @@ definition "dirty_directly_subsumes e1 e2 s1 s2 t1 t2 = (if t1 = t2 then True el
 
 definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> bool" where
 "always_different_outputs_direct_subsumption m1 m2 s s' t2 = (
-   (\<exists>p. accepts (tm m1) 0 <> p \<and>
+   (\<exists>p. recognises (tm m1) 0 <> p \<and>
     gets_us_to s (tm m1) 0 <> p \<and>
-    accepts (tm m2) 0 <> p \<and>
+    recognises (tm m2) 0 <> p \<and>
     gets_us_to s' (tm m2) 0 <> p \<and>
     (case anterior_context (tm m2) p of Some c \<Rightarrow> (\<exists>i. can_take_transition t2 i c))))"
 
@@ -196,7 +196,7 @@ lemma always_different_outputs_direct_subsumption:
   apply clarify
   apply (rule_tac x=p in exI)
   apply simp
-  using always_different_outputs_can_take_transition_not_subsumed accepts_trace_gives_context accepts_gives_context
+  using always_different_outputs_can_take_transition_not_subsumed recognises_trace_gives_context recognises_gives_context
   by fastforce
 
 definition negate :: "'a gexp list \<Rightarrow> 'a gexp" where
@@ -219,16 +219,16 @@ definition "dirty_always_different_outputs_direct_subsumption = always_different
 
 lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (
   if Guards t = [] then
-    accepts_and_gets_us_to_both m1 m2 s s'
+    recognises_and_gets_us_to_both m1 m2 s s'
   else
     dirty_always_different_outputs_direct_subsumption m1 m2 s s' t
   )"
   apply (simp add: always_different_outputs_direct_subsumption_def)
-  apply (simp add: accepts_and_gets_us_to_both_def)
+  apply (simp add: recognises_and_gets_us_to_both_def)
   apply safe
      apply auto[1]
     apply (rule_tac x=p in exI)
-  using can_take_transition_empty_guard accepts_gives_context apply fastforce
+  using can_take_transition_empty_guard recognises_gives_context apply fastforce
    apply (simp add: dirty_always_different_outputs_direct_subsumption_def)
   using always_different_outputs_direct_subsumption_def apply auto[1]
   by (simp add: always_different_outputs_direct_subsumption_def dirty_always_different_outputs_direct_subsumption_def)
@@ -344,12 +344,12 @@ declare dirty_always_different_outputs_direct_subsumption_def [code del]
 declare diff_outputs_ctx_def [code del]
 declare random_member_def [code del]
 declare dirty_directly_subsumes_def [code del]
-declare accepts_and_gets_us_to_both_def [code del]
+declare recognises_and_gets_us_to_both_def [code del]
 declare initially_undefined_context_check_def [code del]
 declare can_still_take_ctx_def [code del]
 
 code_printing
-  constant accepts_and_gets_us_to_both \<rightharpoonup> (Scala) "Dirties.acceptsAndGetsUsToBoth" |
+  constant recognises_and_gets_us_to_both \<rightharpoonup> (Scala) "Dirties.recognisesAndGetsUsToBoth" |
   constant iEFSM2dot \<rightharpoonup> (Scala) "PrettyPrinter.iEFSM2dot(_, _)" |
   constant logStates \<rightharpoonup> (Scala) "Log.logStates(_, _)" |
   constant "dirty_directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes" |
@@ -381,8 +381,8 @@ declare finfun_to_list_update_code [code del]
 lemma [code]: "satisfies_trace e s d l = satisfies_trace_prim e s d l"
   by (simp add: satisfies_trace_prim)
 
-lemma [code]: "accepts e s d t = accepts_prim e s d t"
-  by (simp add: accepts_prim)
+lemma [code]: "recognises e s d t = recognises_prim e s d t"
+  by (simp add: recognises_prim)
 
 (* declare make_branch.simps [code del] *)
 (* code_printing constant "make_branch" \<rightharpoonup> (Scala) "Dirties.makeBranch" *)
