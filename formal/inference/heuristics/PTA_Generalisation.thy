@@ -258,7 +258,7 @@ fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> transition_group 
       generalised_model = fold (\<lambda>(id, t) acc. replace_transition acc id t) gp' e;
       e' = updates_for_output log values gp o_inx op types generalised_model
     in
-    if accepts (set log) (tm e') then
+    if accepts_log (set log) (tm e') then
      put_updates log values gp' ops e'
     else
      put_updates log values gp ops e
@@ -326,7 +326,7 @@ definition standardise_group :: "iEFSM \<Rightarrow> log \<Rightarrow> transitio
       e' = replace_transitions e standardised
     in
       if e' = e then e else
-      if accepts (set l) (tm e') then e' else e
+      if accepts_log (set l) (tm e') then e' else e
 )"
 
 primrec find_outputs :: "output_function list list \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> output_function list option" where
@@ -335,7 +335,7 @@ primrec find_outputs :: "output_function list list \<Rightarrow> iEFSM \<Rightar
     let
       outputs = fold (\<lambda>(tids, t) acc. replace_transition acc tids (t\<lparr>Outputs := h\<rparr>)) g e
     in
-      if accepts (set l) (tm outputs) then
+      if accepts_log (set l) (tm outputs) then
         Some h
       else
         find_outputs t e l g
@@ -424,7 +424,7 @@ definition delay_initialisation_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM
       ) e
       in
       \<comment> \<open>We don't want to update a register twice so just leave it\<close>
-      if accepts (set l) (tm e') then
+      if accepts_log (set l) (tm e') then
         e'
       else
         e
@@ -440,7 +440,7 @@ primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow
           delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs e')) e';
           standardised = standardise_group delayed log (sorted_list_of_fset structural_group) standardise_group_outputs_updates
         in
-        groupwise_generalise_and_update log (merge_regs standardised (accepts (set log))) t
+        groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) t
   )"
 
 lemma groupwise_generalise_and_update_fold:
@@ -452,7 +452,7 @@ lemma groupwise_generalise_and_update_fold:
             delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs e')) e';
             standardised = standardise_group delayed log (sorted_list_of_fset structural_group) standardise_group_outputs_updates
           in
-          merge_regs standardised (accepts (set log))
+          merge_regs standardised (accepts_log (set log))
   ) gs e"
   apply(induct gs arbitrary: e)
    apply simp
@@ -464,7 +464,7 @@ definition drop_all_guards :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> log \<Rig
       derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, tran\<lparr>Guards := []\<rparr>)) e;
       nondeterministic_pairs = sorted_list_of_fset (np derestricted)
     in
-    case resolve_nondeterminism {} nondeterministic_pairs pta derestricted m (accepts (set log)) np of
+    case resolve_nondeterminism {} nondeterministic_pairs pta derestricted m (accepts_log (set log)) np of
       (None, _) \<Rightarrow> pta |
       (Some resolved, _) \<Rightarrow> resolved
   )"
@@ -484,7 +484,7 @@ fun remove_spurious_updates_aux :: "iEFSM \<Rightarrow> transition_group \<Right
       None \<Rightarrow> remove_spurious_updates_aux e ts T l |
       Some t' \<Rightarrow> (
         let e' = replace_transition e tid t' in
-        if accepts (set l) (tm e') then
+        if accepts_log (set l) (tm e') then
           remove_spurious_updates_aux e' ts T l
         else
           remove_spurious_updates_aux e ts T l
