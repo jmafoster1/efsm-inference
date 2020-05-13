@@ -473,21 +473,21 @@ definition updated_regs :: "transition \<Rightarrow> nat set" where
   "updated_regs t = set (map fst (Updates t))"
 
 definition fewer_updates :: "transition \<Rightarrow> transition fset \<Rightarrow> transition option" where
-  "fewer_updates t T = (
-    let p = ffilter (\<lambda>t'. same_structure t t' \<and> Outputs t = Outputs t' \<and> updated_regs t' \<subset> updated_regs t) T in
+  "fewer_updates t tt = (
+    let p = ffilter (\<lambda>t'. same_structure t t' \<and> Outputs t = Outputs t' \<and> updated_regs t' \<subset> updated_regs t) tt in
     if p = {||} then None else Some (snd (fMin (fimage (\<lambda>t. (length (Updates t), t)) p))))"
 
 fun remove_spurious_updates_aux :: "iEFSM \<Rightarrow> transition_group \<Rightarrow> transition fset \<Rightarrow> log \<Rightarrow> iEFSM" where
   "remove_spurious_updates_aux e [] _ _ = e" |
-  "remove_spurious_updates_aux e ((tid, t)#ts) T l = (
-    case fewer_updates t T of
-      None \<Rightarrow> remove_spurious_updates_aux e ts T l |
+  "remove_spurious_updates_aux e ((tid, t)#ts) tt l = (
+    case fewer_updates t tt of
+      None \<Rightarrow> remove_spurious_updates_aux e ts tt l |
       Some t' \<Rightarrow> (
         let e' = replace_transition e tid t' in
         if accepts_log (set l) (tm e') then
-          remove_spurious_updates_aux e' ts T l
+          remove_spurious_updates_aux e' ts tt l
         else
-          remove_spurious_updates_aux e ts T l
+          remove_spurious_updates_aux e ts tt l
       )
   )"
 
