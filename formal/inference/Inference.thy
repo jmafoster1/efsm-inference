@@ -328,9 +328,9 @@ lemma subsumes_in_all_contexts_directly_subsumes:
 
 lemma gets_us_to_and_not_subsumes:
   "\<exists>p. recognises_trace (tm e1) p \<and>
-       gets_us_to s (tm e1) 0 (K$ None) p \<and>
+       gets_us_to s (tm e1) 0 (<>) p \<and>
        recognises_trace (tm e2) p \<and>
-       gets_us_to s' (tm e2) 0 (K$ None) p \<and>
+       gets_us_to s' (tm e2) 0 (<>) p \<and>
        (anterior_context (tm e2) p) = Some a \<and>
        \<not> subsumes t1 a t2 \<Longrightarrow>
    \<not> directly_subsumes e1 e2 s s' t1 t2"
