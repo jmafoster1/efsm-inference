@@ -1,10 +1,11 @@
-theory Code_Target_FSet
-  imports "EFSM.FSet_Utils"
-begin
 subsection\<open>Finite Sets\<close>
 text\<open>Here we define the operations on the \texttt{fset} datatype in terms of lists rather than sets.
 This allows the Scala implementation to skip a case match each time, which makes for cleaner and
 slightly faster code.\<close>
+
+theory Code_Target_FSet
+  imports "EFSM.FSet_Utils"
+begin
 
 code_datatype fset_of_list
 
