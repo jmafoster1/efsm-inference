@@ -17,12 +17,12 @@ lemma is_generalisation_of_guard_subset:
 lemma is_generalisation_of_medial:
   "is_generalisation_of t' t i r \<Longrightarrow>
    can_take_transition t ip rg \<longrightarrow> can_take_transition t' ip rg"
-  using is_generalisation_of_guard_subset medial_subset generalisation_of_preserves
+  using is_generalisation_of_guard_subset can_take_subset generalisation_of_preserves
   by (metis (no_types, lifting) can_take_def can_take_transition_def)
 
 lemma is_generalisation_of_preserves_reg:
   "is_generalisation_of t' t i r \<Longrightarrow>
-   apply_updates (Updates t) (join_ir ia c) c $ r = c $ r"
+   evaluate_updates t ia c $ r = c $ r"
   by (simp add: is_generalisation_of_def r_not_updated_stays_the_same)
 
 lemma apply_updates_foldr:
@@ -32,7 +32,7 @@ lemma apply_updates_foldr:
 lemma is_generalisation_of_preserves_reg_2:
   assumes gen: "is_generalisation_of t' t i r"
   and dif: "ra \<noteq> r"
-shows "apply_updates (Updates t) (join_ir ia c) c $ ra = apply_updates (Updates t') (join_ir ia c) c $ ra"
+shows "evaluate_updates t ia c $ ra = apply_updates (Updates t') (join_ir ia c) c $ ra"
   using assms
   apply (simp add: apply_updates_def is_generalisation_of_def remove_guard_add_update_def del: fold.simps)
   by (simp add: apply_updates_def[symmetric] apply_updates_cons)
@@ -60,7 +60,7 @@ lemma generalise_output_posterior:
 
 lemma generalise_output_eq: "(Outputs t) ! r = L v \<Longrightarrow>
    c $ p = Some v \<Longrightarrow>
-   apply_outputs (Outputs t) (join_ir i c) = apply_outputs (list_update (Outputs t) r (V (R p))) (join_ir i c)"
+   evaluate_outputs t i c = apply_outputs (list_update (Outputs t) r (V (R p))) (join_ir i c)"
   apply (rule nth_equalityI)
    apply (simp add: apply_outputs_preserves_length)
   apply (case_tac "ia = r")
@@ -598,11 +598,11 @@ lemma general_not_subsume_orig: "Arity t' = Arity t \<Longrightarrow>
    \<not> subsumes t c t'"
   apply (rule inconsistent_updates)
   apply (erule_tac exE)
-  apply (rule_tac x="apply_updates (Updates t) (join_ir ia c) c" in exI)
+  apply (rule_tac x="evaluate_updates t ia c" in exI)
   apply (rule_tac x="apply_updates (Updates t') (join_ir ia c) c" in exI)
   apply standard
    apply (rule_tac x=ia in exI)
-  apply (metis can_take_def can_take_transition_def medial_subset posterior_separate_def psubsetE)
+  apply (metis can_take_def can_take_transition_def can_take_subset posterior_separate_def psubsetE)
   apply (rule_tac x=r in exI)
   apply (simp add: r_not_updated_stays_the_same)
   apply (rule_tac x="\<lambda>x. x = None" in exI)
@@ -621,7 +621,7 @@ definition "diff_outputs_ctx e1 e2 s1 s2 t1 t2 =
        recognises (tm e2) p \<and> gets_us_to s2 (tm e2) 0 <> p \<and>
        (case anterior_context (tm e2) p of None \<Rightarrow> False | Some r \<Rightarrow>
        (\<exists>i. can_take_transition t1 i r \<and> can_take_transition t2 i r \<and>
-       apply_outputs (Outputs t1) (join_ir i r) \<noteq> apply_outputs (Outputs t2) (join_ir i r)))
+       evaluate_outputs t1 i r \<noteq> evaluate_outputs t2 i r))
   ))"
 
 lemma diff_outputs_direct_subsumption:

@@ -616,8 +616,8 @@ fun test_trace :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow>
       if fis_singleton ps then
         let
           (id, s', t) = fthe_elem ps;
-          r' = apply_updates (Updates t) (join_ir i r) r;
-          actual = apply_outputs (Outputs t) (join_ir i r);
+          r' = evaluate_updates t i r;
+          actual = evaluate_outputs t i r;
           (est, fail) = (test_trace es e s' r')
         in
         ((l, i, s, s', r, id, expected, actual)#est, fail)

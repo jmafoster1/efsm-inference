@@ -10,7 +10,7 @@ fun observe_all :: "iEFSM \<Rightarrow>  cfstate \<Rightarrow> registers \<Right
   "observe_all _ _ _ [] = []" |
   "observe_all e s r ((l, i, _)#es)  =
     (case random_member (i_possible_steps e s r l i)  of
-      (Some (ids, s', t)) \<Rightarrow> (((ids, t)#(observe_all e s' (apply_updates (Updates t) (join_ir i r) r) es))) |
+      (Some (ids, s', t)) \<Rightarrow> (((ids, t)#(observe_all e s' (evaluate_updates t i r) es))) |
       _ \<Rightarrow> []
     )"
 
@@ -58,9 +58,9 @@ fun trace_group_training_set :: "transition_group \<Rightarrow> iEFSM \<Rightarr
       (id, s', transition) = fthe_elem (i_possible_steps e s r l i)
     in
     if \<exists>(id', _) \<in> set gp. id' = id then
-      trace_group_training_set gp e s' (apply_updates (Updates transition) (join_ir i r) r) t ((i, r, p)#train)
+      trace_group_training_set gp e s' (evaluate_updates transition i r) t ((i, r, p)#train)
     else
-      trace_group_training_set gp e s' (apply_updates (Updates transition) (join_ir i r) r) t train
+      trace_group_training_set gp e s' (evaluate_updates transition i r) t train
   )"
 
 definition make_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> (inputs \<times> registers \<times> value list) list" where
@@ -89,7 +89,7 @@ fun add_groupwise_updates_trace :: "trace  \<Rightarrow> (tids \<times> update_f
   "add_groupwise_updates_trace ((l, i, _)#trace) funs e s r = (
     let
       (id, s', t) = fthe_elem (i_possible_steps e s r l i);
-      updated = apply_updates (Updates t) (join_ir i r) r;
+      updated = evaluate_updates t i r;
       newUpdates = List.maps snd (filter (\<lambda>(tids, _). set id \<subseteq> set tids) funs);
       t' = insert_updates t newUpdates;
       updated' = apply_updates (Updates t') (join_ir i r) r;
@@ -125,10 +125,10 @@ fun everything_walk :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \
     let (tid, s', ta) = fthe_elem (i_possible_steps oPTA s regs label inputs) in
      \<comment> \<open>Possible steps with a transition we need to modify\<close>
     if \<exists>(tid', _) \<in> set gp. tid = tid' then
-      (s, regs, get_regs types inputs f (outputs!fi), inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) gp)
+      (s, regs, get_regs types inputs f (outputs!fi), inputs, tid, ta)#(everything_walk f fi types t oPTA s' (evaluate_updates ta inputs regs) gp)
     else
       let empty = <> in
-      (s, regs, empty, inputs, tid, ta)#(everything_walk f fi types t oPTA s' (apply_updates (Updates ta) (join_ir inputs regs) regs) gp)
+      (s, regs, empty, inputs, tid, ta)#(everything_walk f fi types t oPTA s' (evaluate_updates ta inputs regs) gp)
   )"
 
 definition everything_walk_log :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> transition_group \<Rightarrow> run_info list" where
@@ -379,7 +379,7 @@ fun find_first_use_of_trace :: "nat \<Rightarrow> trace \<Rightarrow> iEFSM \<Ri
       if (\<exists>p \<in> set (Outputs t). aexp_constrains p (V (R rr))) then
         Some id
       else
-        find_first_use_of_trace rr es e s' (apply_updates (Updates t) (join_ir i r) r)
+        find_first_use_of_trace rr es e s' (evaluate_updates t i r)
   )"
 
 definition find_first_uses_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> tids list" where
@@ -394,7 +394,7 @@ fun find_initialisation_of_trace :: "nat \<Rightarrow> trace \<Rightarrow> iEFSM
     if (\<exists>(rr, u) \<in> set (Updates t). rr = r' \<and> is_lit u) then
       Some (tids, t)
     else
-      find_initialisation_of_trace r' es e s' (apply_updates (Updates t) (join_ir i r) r)
+      find_initialisation_of_trace r' es e s' (evaluate_updates t i r)
   )"
 
 primrec find_initialisation_of :: "nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) option list" where

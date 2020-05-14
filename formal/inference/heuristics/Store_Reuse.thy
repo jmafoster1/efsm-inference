@@ -57,11 +57,11 @@ definition get_by_id_intratrace_matches :: "trace \<Rightarrow> (index \<times> 
 definition i_step :: "execution \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> label \<Rightarrow> inputs \<Rightarrow> (transition \<times> cfstate \<times> tids \<times> registers) option" where
   "i_step tr e s r l i = (let
     poss_steps = (i_possible_steps e s r l i);
-    possibilities = ffilter (\<lambda>(u, s', t). recognises_execution (tm e) s' (apply_updates (Updates t) (join_ir i r) r) tr) poss_steps in
+    possibilities = ffilter (\<lambda>(u, s', t). recognises_execution (tm e) s' (evaluate_updates t i r) tr) poss_steps in
     case random_member possibilities of
       None \<Rightarrow> None |
       Some (u, s', t) \<Rightarrow>
-      Some (t, s', u, (apply_updates (Updates t) (join_ir i r) r))
+      Some (t, s', u, (evaluate_updates t i r))
   )"
 
 type_synonym match = "(((transition \<times> tids) \<times> ioTag \<times> nat) \<times> ((transition \<times> tids) \<times> ioTag \<times> nat))"

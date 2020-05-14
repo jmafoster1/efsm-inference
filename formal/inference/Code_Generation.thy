@@ -240,7 +240,7 @@ lemma guard_subset_subsumption:
   "guard_subset_subsumption t1 t2 \<Longrightarrow> directly_subsumes a b s s' t1 t2"
   apply (rule subsumes_in_all_contexts_directly_subsumes)
   apply (simp add: subsumes_def guard_subset_subsumption_def)
-  by (metis can_take_def can_take_transition_def medial_subset)
+  by (metis can_take_def can_take_transition_def can_take_subset)
 
 definition "guard_subset_eq_outputs_updates t1 t2 = (Label t1 = Label t2 \<and>
    Arity t1 = Arity t2 \<and>
