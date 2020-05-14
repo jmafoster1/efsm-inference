@@ -1,6 +1,6 @@
 subsection\<open>Lists\<close>
 text\<open>Here we define some equivalent definitions which make for a faster implementation. We also
-make use of the \texttt{code_printing} statement such that native Scala implementations of common
+make use of the \texttt{code\_printing} statement such that native Scala implementations of common
 list operations are used instead of redefining them. This allows us to use the \texttt{par}
 construct such that the parallel implementations are used, which makes for an even faster
 implementation.\<close>

@@ -1,7 +1,7 @@
 theory Same_Register
   imports "../Inference"
 begin
-text\<open>The \texttt{same_register} heuristic aims to replace registers which are used in the same way.\<close>
+text\<open>The \texttt{same\_register} heuristic aims to replace registers which are used in the same way.\<close>
 
 definition replace_with :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM" where
   "replace_with e r1 r2 = (fimage (\<lambda>(u, tf, t). (u, tf,Transition.rename_regs (id(r1:=r2)) t)) e)"

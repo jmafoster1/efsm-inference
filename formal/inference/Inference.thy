@@ -626,7 +626,7 @@ fun test_trace :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow>
   )"
 
 text\<open>The \texttt{test\_log} function executes the \texttt{test\_trace} function on a collection of
-traces known as the \empt{test set.}\<close>
+traces known as the \emph{test set.}\<close>
 definition test_log :: "log \<Rightarrow> iEFSM \<Rightarrow> ((label \<times> inputs \<times> cfstate \<times> cfstate \<times> registers \<times> tids \<times> value list \<times> outputs) list \<times> trace) list" where
   "test_log l e = map (\<lambda>t. test_trace t e 0 <>) l"
 
