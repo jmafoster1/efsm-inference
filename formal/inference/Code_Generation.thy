@@ -172,9 +172,9 @@ definition "dirty_directly_subsumes e1 e2 s1 s2 t1 t2 = (if t1 = t2 then True el
 
 definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> bool" where
 "always_different_outputs_direct_subsumption m1 m2 s s' t2 = (
-   (\<exists>p. recognises (tm m1) 0 <> p \<and>
+   (\<exists>p. recognises (tm m1) p \<and>
     gets_us_to s (tm m1) 0 <> p \<and>
-    recognises (tm m2) 0 <> p \<and>
+    recognises (tm m2) p \<and>
     gets_us_to s' (tm m2) 0 <> p \<and>
     (case anterior_context (tm m2) p of Some c \<Rightarrow> (\<exists>i. can_take_transition t2 i c))))"
 
@@ -196,7 +196,7 @@ lemma always_different_outputs_direct_subsumption:
   apply clarify
   apply (rule_tac x=p in exI)
   apply simp
-  using always_different_outputs_can_take_transition_not_subsumed recognises_trace_gives_context recognises_gives_context
+  using always_different_outputs_can_take_transition_not_subsumed recognises_execution_gives_context
   by fastforce
 
 definition negate :: "'a gexp list \<Rightarrow> 'a gexp" where
@@ -228,7 +228,7 @@ lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (
   apply safe
      apply auto[1]
     apply (rule_tac x=p in exI)
-  using can_take_transition_empty_guard recognises_gives_context apply fastforce
+  using can_take_transition_empty_guard recognises_execution_gives_context apply fastforce
    apply (simp add: dirty_always_different_outputs_direct_subsumption_def)
   using always_different_outputs_direct_subsumption_def apply auto[1]
   by (simp add: always_different_outputs_direct_subsumption_def dirty_always_different_outputs_direct_subsumption_def)

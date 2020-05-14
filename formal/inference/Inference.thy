@@ -313,8 +313,8 @@ lemma score_1: "score_1 e s = k_score 1 e s"
   done
 
 definition directly_subsumes :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "directly_subsumes e1 e2 s s' t1 t2 \<equiv> (\<forall>p. recognises_trace (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
-                                             recognises_trace (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
+  "directly_subsumes e1 e2 s s' t1 t2 \<equiv> (\<forall>p. recognises (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
+                                             recognises (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
                                              (\<forall>c. anterior_context (tm e2) p = Some c \<longrightarrow> subsumes t1 c t2)) \<and>
                                          (\<exists>c. subsumes t1 c t2)"
 
@@ -327,9 +327,9 @@ lemma subsumes_in_all_contexts_directly_subsumes:
   by (simp add: directly_subsumes_def)
 
 lemma gets_us_to_and_not_subsumes:
-  "\<exists>p. recognises_trace (tm e1) p \<and>
+  "\<exists>p. recognises (tm e1) p \<and>
        gets_us_to s (tm e1) 0 (<>) p \<and>
-       recognises_trace (tm e2) p \<and>
+       recognises (tm e2) p \<and>
        gets_us_to s' (tm e2) 0 (<>) p \<and>
        (anterior_context (tm e2) p) = Some a \<and>
        \<not> subsumes t1 a t2 \<Longrightarrow>
@@ -591,9 +591,9 @@ definition i_possible_steps :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> regist
     e)"
 
 definition "recognises_and_gets_us_to_both a b s s' = (
-  \<exists>p. recognises_trace (tm a) p \<and>
+  \<exists>p. recognises (tm a) p \<and>
       gets_us_to s (tm a) 0 <> p \<and>
-      recognises_trace (tm b) p \<and>
+      recognises (tm b) p \<and>
       gets_us_to s' (tm b) 0 <> p)"
 
 definition enumerate_exec_values :: "trace \<Rightarrow> value list" where

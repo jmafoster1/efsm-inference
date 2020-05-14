@@ -71,7 +71,7 @@ definition distinguish :: "log \<Rightarrow> update_modifier" where
 
 definition can_still_take_ctx :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "can_still_take_ctx e1 e2 s1 s2 t1 t2 = (
-    \<forall>t. recognises_trace e1 t \<and> gets_us_to s1 e1 0 <> t \<and>  recognises_trace e2 t \<and> gets_us_to s2 e2 0 <> t \<longrightarrow>
+    \<forall>t. recognises e1 t \<and> gets_us_to s1 e1 0 <> t \<and>  recognises e2 t \<and> gets_us_to s2 e2 0 <> t \<longrightarrow>
     (\<exists>a. anterior_context e2 t = Some a \<and> (\<forall>i. can_take_transition t2 i a \<longrightarrow> can_take_transition t1 i a))
   )"
 
@@ -81,9 +81,9 @@ lemma distinguishing_guard_subsumption: "Label t1 = Label t2 \<Longrightarrow>
  Updates t1 = Updates t2 \<Longrightarrow>
  can_still_take_ctx (tm e1) (tm e2) s1 s2 t1 t2 \<Longrightarrow>
  recognises_and_gets_us_to_both e1 e2 s1 s2 \<Longrightarrow>
- recognises_trace (tm e1) p \<Longrightarrow>
+ recognises (tm e1) p \<Longrightarrow>
  gets_us_to s1 (tm e1) 0 <> p \<Longrightarrow>
- recognises_trace (tm e2) p \<Longrightarrow>
+ recognises (tm e2) p \<Longrightarrow>
  gets_us_to s2 (tm e2) 0 <> p \<Longrightarrow>
  anterior_context (tm e2) p = Some c \<Longrightarrow>
  subsumes t1 c t2"

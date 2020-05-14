@@ -4523,39 +4523,6 @@ def all_regs(e: FSet.fset[((Nat.nat, Nat.nat),
                            FSet.fset[((Nat.nat, Nat.nat),
                                        Transition.transition_ext[Unit])](e)))
 
-def recognises_prim(e: FSet.fset[((Nat.nat, Nat.nat),
-                                   Transition.transition_ext[Unit])],
-                     s: Nat.nat, d: Map[Nat.nat, Option[Value.value]],
-                     x3: List[(String, List[Value.value])]):
-      Boolean
-  =
-  (e, s, d, x3) match {
-  case (e, s, d, Nil) => true
-  case (e, s, d, (l, i) :: t) =>
-    {
-      val poss_steps: FSet.fset[(Nat.nat, Transition.transition_ext[Unit])] =
-        possible_steps(e, s, d, l, i);
-      FSet.fBex[(Nat.nat,
-                  Transition.transition_ext[Unit])](poss_steps,
-             ((a: (Nat.nat, Transition.transition_ext[Unit])) =>
-               {
-                 val (sa, ta): (Nat.nat, Transition.transition_ext[Unit]) = a;
-                 recognises_prim(e, sa,
-                                  (Transition.apply_updates(Transition.Updates[Unit](ta),
-                     AExp.join_ir(i, d))).apply(d),
-                                  t)
-               }))
-    }
-}
-
-def recognises(e: FSet.fset[((Nat.nat, Nat.nat),
-                              Transition.transition_ext[Unit])],
-                s: Nat.nat, r: Map[Nat.nat, Option[Value.value]],
-                t: List[(String, List[Value.value])]):
-      Boolean
-  =
-  recognises_prim(e, s, r, t)
-
 def accepts_trace_prim(uu: FSet.fset[((Nat.nat, Nat.nat),
                                        Transition.transition_ext[Unit])],
                         uv: Nat.nat, uw: Map[Nat.nat, Option[Value.value]],
@@ -4614,7 +4581,7 @@ def accepts_trace(e: FSet.fset[((Nat.nat, Nat.nat),
   =
   accepts_trace_prim(e, s, d, l)
 
-def accepts_log(t: Set.set[List[(String,
+def accepts_log(l: Set.set[List[(String,
                                   (List[Value.value], List[Value.value]))]],
                  e: FSet.fset[((Nat.nat, Nat.nat),
                                 Transition.transition_ext[Unit])]):
@@ -4622,10 +4589,43 @@ def accepts_log(t: Set.set[List[(String,
   =
   Set.Ball[List[(String,
                   (List[Value.value],
-                    List[Value.value]))]](t,
+                    List[Value.value]))]](l,
    ((a: List[(String, (List[Value.value], List[Value.value]))]) =>
      accepts_trace(e, Nat.zero_nata,
                     AExp.null_state[Nat.nat, Option[Value.value]], a)))
+
+def recognises_prim(e: FSet.fset[((Nat.nat, Nat.nat),
+                                   Transition.transition_ext[Unit])],
+                     s: Nat.nat, d: Map[Nat.nat, Option[Value.value]],
+                     x3: List[(String, List[Value.value])]):
+      Boolean
+  =
+  (e, s, d, x3) match {
+  case (e, s, d, Nil) => true
+  case (e, s, d, (l, i) :: t) =>
+    {
+      val poss_steps: FSet.fset[(Nat.nat, Transition.transition_ext[Unit])] =
+        possible_steps(e, s, d, l, i);
+      FSet.fBex[(Nat.nat,
+                  Transition.transition_ext[Unit])](poss_steps,
+             ((a: (Nat.nat, Transition.transition_ext[Unit])) =>
+               {
+                 val (sa, ta): (Nat.nat, Transition.transition_ext[Unit]) = a;
+                 recognises_prim(e, sa,
+                                  (Transition.apply_updates(Transition.Updates[Unit](ta),
+                     AExp.join_ir(i, d))).apply(d),
+                                  t)
+               }))
+    }
+}
+
+def recognises_execution(e: FSet.fset[((Nat.nat, Nat.nat),
+Transition.transition_ext[Unit])],
+                          s: Nat.nat, r: Map[Nat.nat, Option[Value.value]],
+                          t: List[(String, List[Value.value])]):
+      Boolean
+  =
+  recognises_prim(e, s, r, t)
 
 } /* object EFSM */
 
@@ -5091,10 +5091,10 @@ def i_step(tr: List[(String, List[Value.value])],
                               (List[Nat.nat],
                                 (Nat.nat, Transition.transition_ext[Unit]))
                           = a;
-                        EFSM.recognises(Inference.tm(e), sa,
- (Transition.apply_updates(Transition.Updates[Unit](t),
-                            AExp.join_ir(i, r))).apply(r),
- tr)
+                        EFSM.recognises_execution(Inference.tm(e), sa,
+           (Transition.apply_updates(Transition.Updates[Unit](t),
+                                      AExp.join_ir(i, r))).apply(r),
+           tr)
                       }),
                      poss_steps);
     (Dirties.randomMember[(List[Nat.nat],
