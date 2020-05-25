@@ -430,7 +430,7 @@ definition delay_initialisation_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM
         e
   ) (find_initialisation_of r e l) e"
 
-primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> iEFSM" where
+fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> iEFSM" where
   "groupwise_generalise_and_update _ e [] = e" |
   "groupwise_generalise_and_update log e (gp#t) = (
         let
@@ -440,7 +440,12 @@ primrec groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow
           delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs e')) e';
           standardised = standardise_group delayed log (sorted_list_of_fset structural_group) standardise_group_outputs_updates
         in
-        groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) t
+        \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and
+            updates for the other historical subgroups so can filter them out.\<close>
+        if standardised \<noteq> delayed then
+          groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. set g \<inter> fset structural_group = {}) t)
+        else
+          groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) t
   )"
 
 lemma groupwise_generalise_and_update_fold:

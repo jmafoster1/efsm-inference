@@ -8285,14 +8285,40 @@ Transition.transition_ext[Unit])))
   Transition.transition_ext[Unit])])
                                  =>
                                standardise_group_outputs_updates(a, b, c)));
-      groupwise_generalise_and_update(log, Same_Register.merge_regs(standardised,
-                             ((a: FSet.fset[((Nat.nat, Nat.nat),
-      Transition.transition_ext[Unit])])
-                                =>
-                               EFSM.accepts_log(Set.seta[List[(String,
-                        (List[Value.value], List[Value.value]))]](log),
-         a))),
-                                       t)
+      (if (! (FSet.equal_fseta[(List[Nat.nat],
+                                 ((Nat.nat, Nat.nat),
+                                   Transition.transition_ext[Unit]))](standardised,
+                               delayed)))
+        groupwise_generalise_and_update(log,
+ Same_Register.merge_regs(standardised,
+                           ((a: FSet.fset[((Nat.nat, Nat.nat),
+    Transition.transition_ext[Unit])])
+                              =>
+                             EFSM.accepts_log(Set.seta[List[(String,
+                      (List[Value.value], List[Value.value]))]](log),
+       a))),
+ Lista.filter[List[(List[Nat.nat],
+                     Transition.transition_ext[Unit])]](((g:
+                    List[(List[Nat.nat], Transition.transition_ext[Unit])])
+                   =>
+                  Set.equal_set[(List[Nat.nat],
+                                  Transition.transition_ext[Unit])](Set.inf_set[(List[Nat.nat],
+  Transition.transition_ext[Unit])](Set.seta[(List[Nat.nat],
+       Transition.transition_ext[Unit])](g),
+                                     FSet.fset[(List[Nat.nat],
+         Transition.transition_ext[Unit])](structural_group)),
+                             Set.bot_set[(List[Nat.nat],
+   Transition.transition_ext[Unit])])),
+                 t))
+        else groupwise_generalise_and_update(log,
+      Same_Register.merge_regs(standardised,
+                                ((a: FSet.fset[((Nat.nat, Nat.nat),
+         Transition.transition_ext[Unit])])
+                                   =>
+                                  EFSM.accepts_log(Set.seta[List[(String,
+                           (List[Value.value], List[Value.value]))]](log),
+            a))),
+      t))
     }
 }
 
