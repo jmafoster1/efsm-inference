@@ -448,22 +448,6 @@ fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> tr
           groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) t
   )"
 
-lemma groupwise_generalise_and_update_fold:
-"groupwise_generalise_and_update log e gs = fold (\<lambda>gp e.
-          let
-            e' = generalise_and_update log e gp;
-            rep = snd (hd (gp));
-            structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(_, _, t). same_structure rep t) e');
-            delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs e')) e';
-            standardised = standardise_group delayed log (sorted_list_of_fset structural_group) standardise_group_outputs_updates
-          in
-          merge_regs standardised (accepts_log (set log))
-  ) gs e"
-  apply(induct gs arbitrary: e)
-   apply simp
-  apply simp
-  by metis
-
 definition drop_all_guards :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
 "drop_all_guards e pta log m np = (let
       derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, tran\<lparr>Guards := []\<rparr>)) e;

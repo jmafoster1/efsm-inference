@@ -1,7 +1,10 @@
-jedit:
-	isabelle jedit -d .
 build:
 	isabelle build -D .
+EFSM:
+	isabelle build -d . EFSM
+
+inference:
+	isabelle build -d. inference
 
 snippets:
 	sed -n '/\\snip{/,/endsnip/p' EFSM/output/document/*.tex > snippets.tex; \
