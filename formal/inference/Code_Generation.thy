@@ -9,6 +9,7 @@ theory Code_Generation
    "heuristics/Distinguishing_Guards"
    "heuristics/PTA_Generalisation"
    "heuristics/Weak_Subsumption"
+   "heuristics/Least_Upper_Bound"
    EFSM_Dot
    "code-targets/Code_Target_FSet"
    "code-targets/Code_Target_Set"
@@ -320,13 +321,13 @@ function infer_with_log :: "(cfstate \<times> cfstate) set \<Rightarrow> nat \<R
     let scores = if k = 1 then score_1 e r else (k_score k e r) in
     case inference_step failedMerges e (ffilter (\<lambda>s. (S1 s, S2 s) \<notin> failedMerges) scores) m check np of
       (None, _) \<Rightarrow> e |
-      (Some new, failedMerges) \<Rightarrow> if (S new) |\<subset>| (S e) then
-      let temp2 = logStates new (size (S e)) in
+      (Some new, failedMerges) \<Rightarrow> if (Inference.S new) |\<subset>| (Inference.S e) then
+      let temp2 = logStates new (size (Inference.S e)) in
       infer_with_log failedMerges k new r m check np else e
   )"
   by auto
 termination
-  apply (relation "measures [\<lambda>(_, _, e, _). size (S e)]")
+  apply (relation "measures [\<lambda>(_, _, e, _). size (Inference.S e)]")
    apply simp
   by (metis (no_types, lifting) case_prod_conv measures_less size_fsubset)
 
@@ -424,6 +425,7 @@ export_code
   heuristic_2
   distinguish
   weak_subsumption
+  lob
   (* Nondeterminism metrics *)
   nondeterministic_pairs
   nondeterministic_pairs_labar

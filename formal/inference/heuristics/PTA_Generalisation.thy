@@ -4,6 +4,44 @@ begin
 
 hide_const I
 
+datatype value_type = N | S
+
+instantiation value_type :: linorder begin
+fun less_value_type :: "value_type \<Rightarrow> value_type \<Rightarrow> bool" where
+  "less_value_type N S = True" |
+  "less_value_type _ _ = False"
+
+definition less_eq_value_type :: "value_type \<Rightarrow> value_type \<Rightarrow> bool" where
+ "less_eq_value_type v1 v2 \<equiv> (v1 < v2 \<or> v1 = v2)"
+
+instance
+  apply standard
+  using less_eq_value_type_def less_value_type.elims(2) apply blast
+     apply (simp add: less_eq_value_type_def)
+    apply (metis less_eq_value_type_def value_type.exhaust)
+  using less_eq_value_type_def less_value_type.elims(2) apply blast
+  by (metis less_eq_value_type_def less_value_type.elims(3) value_type.simps(2))
+
+end
+
+\<comment> \<open>This is a very hacky way of making sure that things with differently typed outputs don't get
+    lumped together.\<close>
+fun typeSig :: "output_function \<Rightarrow> value_type" where
+  "typeSig (L (value.Str _)) = S" |
+  "typeSig _ = N"
+
+definition same_structure :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "same_structure t1 t2 = (
+    Label t1 = Label t2 \<and>
+    Arity t1 = Arity t2 \<and>
+    map typeSig (Outputs t1) = map typeSig (Outputs t2)
+  )"
+
+lemma same_structure_equiv:
+  "Outputs t1 = [L (Num m)] \<Longrightarrow> Outputs t2 = [L (Num n)] \<Longrightarrow>
+   same_structure t1 t2 = Transition.same_structure t1 t2"
+  by (simp add: same_structure_def Transition.same_structure_def)
+
 type_synonym transition_group = "(tids \<times> transition) list"
 
 fun observe_all :: "iEFSM \<Rightarrow>  cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> transition_group" where
@@ -17,7 +55,7 @@ fun observe_all :: "iEFSM \<Rightarrow>  cfstate \<Rightarrow> registers \<Right
 definition transition_groups_exec :: "iEFSM \<Rightarrow> trace \<Rightarrow> (nat \<times> tids \<times> transition) list list" where
   "transition_groups_exec e t = group_by (\<lambda>(_, _, t1) (_, _, t2). same_structure t1 t2) (enumerate 0 (observe_all e 0 <> t))"
 
-type_synonym struct = "(label \<times> arity \<times> arity)"
+type_synonym struct = "(label \<times> arity \<times> value_type list)"
 
 text\<open>We need to take the list of transition groups and tag them with the last transition that was
 taken which had a different structure.\<close>
@@ -26,7 +64,7 @@ fun tag :: "struct option \<Rightarrow> (nat \<times> tids \<times> transition) 
   "tag t (g#gs) = (
     let
       (_, _, head) = hd g;
-      struct = (Label head, Arity head, length (Outputs head))
+      struct = (Label head, Arity head, map typeSig (Outputs head))
     in
     (t, struct, g)#(tag (Some struct) gs)
   )"

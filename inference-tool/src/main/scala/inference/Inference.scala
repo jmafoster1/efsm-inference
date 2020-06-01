@@ -14,6 +14,13 @@ object equal {
       Transition.equal_transition_exta[A](a, b)
   }
   implicit def
+    `PTA_Generalisation.equal_value_type`: equal[PTA_Generalisation.value_type]
+    = new equal[PTA_Generalisation.value_type] {
+    val `HOL.equal` =
+      (a: PTA_Generalisation.value_type, b: PTA_Generalisation.value_type) =>
+      PTA_Generalisation.equal_value_typea(a, b)
+  }
+  implicit def
     `Inference.equal_score_ext`[A : equal]: equal[Inference.score_ext[A]] = new
     equal[Inference.score_ext[A]] {
     val `HOL.equal` = (a: Inference.score_ext[A], b: Inference.score_ext[A]) =>
@@ -109,6 +116,16 @@ object ord {
     val `Orderings.less` =
       (a: Transition.transition_ext[A], b: Transition.transition_ext[A]) =>
       Transition_Lexorder.less_transition_ext[A](a, b)
+  }
+  implicit def
+    `PTA_Generalisation.ord_value_type`: ord[PTA_Generalisation.value_type] =
+    new ord[PTA_Generalisation.value_type] {
+    val `Orderings.less_eq` =
+      (a: PTA_Generalisation.value_type, b: PTA_Generalisation.value_type) =>
+      PTA_Generalisation.less_eq_value_type(a, b)
+    val `Orderings.less` =
+      (a: PTA_Generalisation.value_type, b: PTA_Generalisation.value_type) =>
+      PTA_Generalisation.less_value_type(a, b)
   }
   implicit def
     `Inference.ord_score_ext`[A : HOL.equal : linorder]:
@@ -214,6 +231,17 @@ object preorder {
     val `Orderings.less` =
       (a: Transition.transition_ext[A], b: Transition.transition_ext[A]) =>
       Transition_Lexorder.less_transition_ext[A](a, b)
+  }
+  implicit def
+    `PTA_Generalisation.preorder_value_type`:
+      preorder[PTA_Generalisation.value_type]
+    = new preorder[PTA_Generalisation.value_type] {
+    val `Orderings.less_eq` =
+      (a: PTA_Generalisation.value_type, b: PTA_Generalisation.value_type) =>
+      PTA_Generalisation.less_eq_value_type(a, b)
+    val `Orderings.less` =
+      (a: PTA_Generalisation.value_type, b: PTA_Generalisation.value_type) =>
+      PTA_Generalisation.less_value_type(a, b)
   }
   implicit def
     `Inference.preorder_score_ext`[A : HOL.equal : linorder]:
@@ -325,6 +353,16 @@ object order {
       Transition_Lexorder.less_transition_ext[A](a, b)
   }
   implicit def
+    `PTA_Generalisation.order_value_type`: order[PTA_Generalisation.value_type]
+    = new order[PTA_Generalisation.value_type] {
+    val `Orderings.less_eq` =
+      (a: PTA_Generalisation.value_type, b: PTA_Generalisation.value_type) =>
+      PTA_Generalisation.less_eq_value_type(a, b)
+    val `Orderings.less` =
+      (a: PTA_Generalisation.value_type, b: PTA_Generalisation.value_type) =>
+      PTA_Generalisation.less_value_type(a, b)
+  }
+  implicit def
     `Inference.order_score_ext`[A : HOL.equal : linorder]:
       order[Inference.score_ext[A]]
     = new order[Inference.score_ext[A]] {
@@ -426,6 +464,17 @@ object linorder {
     val `Orderings.less` =
       (a: Transition.transition_ext[A], b: Transition.transition_ext[A]) =>
       Transition_Lexorder.less_transition_ext[A](a, b)
+  }
+  implicit def
+    `PTA_Generalisation.linorder_value_type`:
+      linorder[PTA_Generalisation.value_type]
+    = new linorder[PTA_Generalisation.value_type] {
+    val `Orderings.less_eq` =
+      (a: PTA_Generalisation.value_type, b: PTA_Generalisation.value_type) =>
+      PTA_Generalisation.less_eq_value_type(a, b)
+    val `Orderings.less` =
+      (a: PTA_Generalisation.value_type, b: PTA_Generalisation.value_type) =>
+      PTA_Generalisation.less_value_type(a, b)
   }
   implicit def
     `Inference.linorder_score_ext`[A : HOL.equal : linorder]:
@@ -3825,6 +3874,22 @@ def replace_all(e: FSet.fset[(List[Nat.nat],
                           replace_transition(acc, id, newa)),
                          ids, e)
 
+def literal_args[A](x0: GExp.gexp[A]): Boolean = x0 match {
+  case GExp.Bc(v) => false
+  case GExp.Eq(AExp.V(uu), AExp.L(uv)) => true
+  case GExp.In(uw, ux) => true
+  case GExp.Eq(AExp.L(v), uz) => false
+  case GExp.Eq(AExp.Plus(v, va), uz) => false
+  case GExp.Eq(AExp.Minus(v, va), uz) => false
+  case GExp.Eq(AExp.Times(v, va), uz) => false
+  case GExp.Eq(uy, AExp.V(v)) => false
+  case GExp.Eq(uy, AExp.Plus(v, va)) => false
+  case GExp.Eq(uy, AExp.Minus(v, va)) => false
+  case GExp.Eq(uy, AExp.Times(v, va)) => false
+  case GExp.Gt(va, v) => false
+  case GExp.Nor(v, va) => (literal_args[A](v)) && (literal_args[A](va))
+}
+
 def max_reg_total(e: FSet.fset[(List[Nat.nat],
                                  ((Nat.nat, Nat.nat),
                                    Transition.transition_ext[Unit]))]):
@@ -6584,13 +6649,229 @@ Transition.transition_ext[Unit]))],
 
 } /* object Weak_Subsumption */
 
+object Least_Upper_Bound {
+
+def all_literal_args[A](t: Transition.transition_ext[A]): Boolean =
+  Lista.list_all[GExp.gexp[VName.vname]](((a: GExp.gexp[VName.vname]) =>
+   Inference.literal_args[VName.vname](a)),
+  Transition.Guards[A](t))
+
+def merge_in_in(v: VName.vname, l: List[Value.value],
+                 x2: List[GExp.gexp[VName.vname]]):
+      List[GExp.gexp[VName.vname]]
+  =
+  (v, l, x2) match {
+  case (v, l, Nil) => List(GExp.In[VName.vname](v, l))
+  case (va, la, GExp.Eq(AExp.V(v), AExp.L(l)) :: t) =>
+    (if (VName.equal_vnamea(va, v))
+      GExp.In[VName.vname](va, Lista.insert[Value.value](l, la)) :: t
+      else GExp.Eq[VName.vname](AExp.V[VName.vname](v),
+                                 AExp.L[VName.vname](l)) ::
+             merge_in_in(va, la, t))
+  case (va, la, GExp.In(v, l) :: t) =>
+    (if (VName.equal_vnamea(va, v))
+      GExp.In[VName.vname](va, Lista.union[Value.value].apply(la).apply(l)) :: t
+      else GExp.In[VName.vname](v, l) :: merge_in_in(va, la, t))
+  case (v, l, GExp.Bc(va) :: t) =>
+    GExp.Bc[VName.vname](va) :: merge_in_in(v, l, t)
+  case (v, l, GExp.Eq(AExp.L(vc), vb) :: t) =>
+    GExp.Eq[VName.vname](AExp.L[VName.vname](vc), vb) :: merge_in_in(v, l, t)
+  case (v, l, GExp.Eq(AExp.Plus(vc, vd), vb) :: t) =>
+    GExp.Eq[VName.vname](AExp.Plus[VName.vname](vc, vd), vb) ::
+      merge_in_in(v, l, t)
+  case (v, l, GExp.Eq(AExp.Minus(vc, vd), vb) :: t) =>
+    GExp.Eq[VName.vname](AExp.Minus[VName.vname](vc, vd), vb) ::
+      merge_in_in(v, l, t)
+  case (v, l, GExp.Eq(AExp.Times(vc, vd), vb) :: t) =>
+    GExp.Eq[VName.vname](AExp.Times[VName.vname](vc, vd), vb) ::
+      merge_in_in(v, l, t)
+  case (v, l, GExp.Eq(va, AExp.V(vc)) :: t) =>
+    GExp.Eq[VName.vname](va, AExp.V[VName.vname](vc)) :: merge_in_in(v, l, t)
+  case (v, l, GExp.Eq(va, AExp.Plus(vc, vd)) :: t) =>
+    GExp.Eq[VName.vname](va, AExp.Plus[VName.vname](vc, vd)) ::
+      merge_in_in(v, l, t)
+  case (v, l, GExp.Eq(va, AExp.Minus(vc, vd)) :: t) =>
+    GExp.Eq[VName.vname](va, AExp.Minus[VName.vname](vc, vd)) ::
+      merge_in_in(v, l, t)
+  case (v, l, GExp.Eq(va, AExp.Times(vc, vd)) :: t) =>
+    GExp.Eq[VName.vname](va, AExp.Times[VName.vname](vc, vd)) ::
+      merge_in_in(v, l, t)
+  case (v, l, GExp.Gt(va, vb) :: t) =>
+    GExp.Gt[VName.vname](va, vb) :: merge_in_in(v, l, t)
+  case (v, l, GExp.Nor(va, vb) :: t) =>
+    GExp.Nor[VName.vname](va, vb) :: merge_in_in(v, l, t)
+}
+
+def merge_in_eq(v: VName.vname, l: Value.value,
+                 x2: List[GExp.gexp[VName.vname]]):
+      List[GExp.gexp[VName.vname]]
+  =
+  (v, l, x2) match {
+  case (v, l, Nil) =>
+    List(GExp.Eq[VName.vname](AExp.V[VName.vname](v), AExp.L[VName.vname](l)))
+  case (va, la, GExp.Eq(AExp.V(v), AExp.L(l)) :: t) =>
+    (if ((VName.equal_vnamea(va, v)) && (! (Value.equal_valuea(la, l))))
+      GExp.In[VName.vname](va, List(la, l)) :: t
+      else GExp.Eq[VName.vname](AExp.V[VName.vname](v),
+                                 AExp.L[VName.vname](l)) ::
+             merge_in_eq(va, la, t))
+  case (va, la, GExp.In(v, l) :: t) =>
+    (if (VName.equal_vnamea(va, v))
+      GExp.In[VName.vname](va, (la :: l).par.distinct.toList) :: t
+      else GExp.In[VName.vname](v, l) :: merge_in_eq(va, la, t))
+  case (v, l, GExp.Bc(va) :: t) =>
+    GExp.Bc[VName.vname](va) :: merge_in_eq(v, l, t)
+  case (v, l, GExp.Eq(AExp.L(vc), vb) :: t) =>
+    GExp.Eq[VName.vname](AExp.L[VName.vname](vc), vb) :: merge_in_eq(v, l, t)
+  case (v, l, GExp.Eq(AExp.Plus(vc, vd), vb) :: t) =>
+    GExp.Eq[VName.vname](AExp.Plus[VName.vname](vc, vd), vb) ::
+      merge_in_eq(v, l, t)
+  case (v, l, GExp.Eq(AExp.Minus(vc, vd), vb) :: t) =>
+    GExp.Eq[VName.vname](AExp.Minus[VName.vname](vc, vd), vb) ::
+      merge_in_eq(v, l, t)
+  case (v, l, GExp.Eq(AExp.Times(vc, vd), vb) :: t) =>
+    GExp.Eq[VName.vname](AExp.Times[VName.vname](vc, vd), vb) ::
+      merge_in_eq(v, l, t)
+  case (v, l, GExp.Eq(va, AExp.V(vc)) :: t) =>
+    GExp.Eq[VName.vname](va, AExp.V[VName.vname](vc)) :: merge_in_eq(v, l, t)
+  case (v, l, GExp.Eq(va, AExp.Plus(vc, vd)) :: t) =>
+    GExp.Eq[VName.vname](va, AExp.Plus[VName.vname](vc, vd)) ::
+      merge_in_eq(v, l, t)
+  case (v, l, GExp.Eq(va, AExp.Minus(vc, vd)) :: t) =>
+    GExp.Eq[VName.vname](va, AExp.Minus[VName.vname](vc, vd)) ::
+      merge_in_eq(v, l, t)
+  case (v, l, GExp.Eq(va, AExp.Times(vc, vd)) :: t) =>
+    GExp.Eq[VName.vname](va, AExp.Times[VName.vname](vc, vd)) ::
+      merge_in_eq(v, l, t)
+  case (v, l, GExp.Gt(va, vb) :: t) =>
+    GExp.Gt[VName.vname](va, vb) :: merge_in_eq(v, l, t)
+  case (v, l, GExp.Nor(va, vb) :: t) =>
+    GExp.Nor[VName.vname](va, vb) :: merge_in_eq(v, l, t)
+}
+
+def merge_guards(x0: List[GExp.gexp[VName.vname]],
+                  g2: List[GExp.gexp[VName.vname]]):
+      List[GExp.gexp[VName.vname]]
+  =
+  (x0, g2) match {
+  case (Nil, g2) => g2
+  case (GExp.Eq(AExp.V(v), AExp.L(l)) :: t, g2) =>
+    merge_guards(t, merge_in_eq(v, l, g2))
+  case (GExp.In(v, l) :: t, g2) => merge_guards(t, merge_in_in(v, l, g2))
+  case (GExp.Bc(v) :: t, g2) => GExp.Bc[VName.vname](v) :: merge_guards(t, g2)
+  case (GExp.Eq(AExp.L(vb), va) :: t, g2) =>
+    GExp.Eq[VName.vname](AExp.L[VName.vname](vb), va) :: merge_guards(t, g2)
+  case (GExp.Eq(AExp.Plus(vb, vc), va) :: t, g2) =>
+    GExp.Eq[VName.vname](AExp.Plus[VName.vname](vb, vc), va) ::
+      merge_guards(t, g2)
+  case (GExp.Eq(AExp.Minus(vb, vc), va) :: t, g2) =>
+    GExp.Eq[VName.vname](AExp.Minus[VName.vname](vb, vc), va) ::
+      merge_guards(t, g2)
+  case (GExp.Eq(AExp.Times(vb, vc), va) :: t, g2) =>
+    GExp.Eq[VName.vname](AExp.Times[VName.vname](vb, vc), va) ::
+      merge_guards(t, g2)
+  case (GExp.Eq(v, AExp.V(vb)) :: t, g2) =>
+    GExp.Eq[VName.vname](v, AExp.V[VName.vname](vb)) :: merge_guards(t, g2)
+  case (GExp.Eq(v, AExp.Plus(vb, vc)) :: t, g2) =>
+    GExp.Eq[VName.vname](v, AExp.Plus[VName.vname](vb, vc)) ::
+      merge_guards(t, g2)
+  case (GExp.Eq(v, AExp.Minus(vb, vc)) :: t, g2) =>
+    GExp.Eq[VName.vname](v, AExp.Minus[VName.vname](vb, vc)) ::
+      merge_guards(t, g2)
+  case (GExp.Eq(v, AExp.Times(vb, vc)) :: t, g2) =>
+    GExp.Eq[VName.vname](v, AExp.Times[VName.vname](vb, vc)) ::
+      merge_guards(t, g2)
+  case (GExp.Gt(v, va) :: t, g2) =>
+    GExp.Gt[VName.vname](v, va) :: merge_guards(t, g2)
+  case (GExp.Nor(v, va) :: t, g2) =>
+    GExp.Nor[VName.vname](v, va) :: merge_guards(t, g2)
+}
+
+def lob_aux(t1: Transition.transition_ext[Unit],
+             t2: Transition.transition_ext[Unit]):
+      Option[Transition.transition_ext[Unit]]
+  =
+  (if ((Lista.equal_lista[AExp.aexp[VName.vname]](Transition.Outputs[Unit](t1),
+           Transition.Outputs[Unit](t2))) && ((Lista.equal_lista[(Nat.nat,
+                           AExp.aexp[VName.vname])](Transition.Updates[Unit](t1),
+             Transition.Updates[Unit](t2))) && ((all_literal_args[Unit](t1)) && (all_literal_args[Unit](t2)))))
+    Some[Transition.transition_ext[Unit]](Transition.transition_exta[Unit](Transition.Label[Unit](t1),
+                                    Transition.Arity[Unit](t1),
+                                    (merge_guards(Transition.Guards[Unit](t1),
+           Transition.Guards[Unit](t2))).par.distinct.toList,
+                                    Transition.Outputs[Unit](t1),
+                                    Transition.Updates[Unit](t1), ()))
+    else None)
+
+def lob(t1ID: List[Nat.nat], t2ID: List[Nat.nat], s: Nat.nat,
+         newa: FSet.fset[(List[Nat.nat],
+                           ((Nat.nat, Nat.nat),
+                             Transition.transition_ext[Unit]))],
+         uu: FSet.fset[(List[Nat.nat],
+                         ((Nat.nat, Nat.nat),
+                           Transition.transition_ext[Unit]))],
+         old: FSet.fset[(List[Nat.nat],
+                          ((Nat.nat, Nat.nat),
+                            Transition.transition_ext[Unit]))],
+         uv: (FSet.fset[((Nat.nat, Nat.nat),
+                          Transition.transition_ext[Unit])]) =>
+               Boolean):
+      Option[FSet.fset[(List[Nat.nat],
+                         ((Nat.nat, Nat.nat),
+                           Transition.transition_ext[Unit]))]]
+  =
+  {
+    val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(newa, t1ID)
+    val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(newa, t2ID);
+    (lob_aux(t1, t2) match {
+       case None => None
+       case Some(lob_t) =>
+         Some[FSet.fset[(List[Nat.nat],
+                          ((Nat.nat, Nat.nat),
+                            Transition.transition_ext[Unit]))]](Inference.replace_transitions(newa,
+               List((t1ID, lob_t), (t2ID, lob_t))))
+     })
+  }
+
+} /* object Least_Upper_Bound */
+
 object PTA_Generalisation {
 
-def tag(uu: Option[(String, (Nat.nat, Nat.nat))],
+abstract sealed class value_type
+final case class N() extends value_type
+final case class S() extends value_type
+
+def equal_value_typea(x0: value_type, x1: value_type): Boolean = (x0, x1) match
+  {
+  case (N(), S()) => false
+  case (S(), N()) => false
+  case (S(), S()) => true
+  case (N(), N()) => true
+}
+
+def less_value_type(uu: value_type, uv: value_type): Boolean = (uu, uv) match {
+  case (N(), S()) => true
+  case (S(), uv) => false
+  case (uu, N()) => false
+}
+
+def less_eq_value_type(v1: value_type, v2: value_type): Boolean =
+  (less_value_type(v1, v2)) || (equal_value_typea(v1, v2))
+
+def typeSig(x0: AExp.aexp[VName.vname]): value_type = x0 match {
+  case AExp.L(Value.Str(uu)) => S()
+  case AExp.L(Value.Numa(va)) => N()
+  case AExp.V(v) => N()
+  case AExp.Plus(v, va) => N()
+  case AExp.Minus(v, va) => N()
+  case AExp.Times(v, va) => N()
+}
+
+def tag(uu: Option[(String, (Nat.nat, List[value_type]))],
          x1: List[List[(Nat.nat,
                          (List[Nat.nat], Transition.transition_ext[Unit]))]]):
-      List[(Option[(String, (Nat.nat, Nat.nat))],
-             ((String, (Nat.nat, Nat.nat)),
+      List[(Option[(String, (Nat.nat, List[value_type]))],
+             ((String, (Nat.nat, List[value_type])),
                List[(Nat.nat,
                       (List[Nat.nat], Transition.transition_ext[Unit]))]))]
   =
@@ -6601,11 +6882,14 @@ def tag(uu: Option[(String, (Nat.nat, Nat.nat))],
       val (_, (_, head)):
             (Nat.nat, (List[Nat.nat], Transition.transition_ext[Unit]))
         = g.head
-      val struct: (String, (Nat.nat, Nat.nat)) =
+      val struct: (String, (Nat.nat, List[value_type])) =
         (Transition.Label[Unit](head),
           (Transition.Arity[Unit](head),
-            Nat.Nata((Transition.Outputs[Unit](head)).par.length)));
-      (t, (struct, g)) :: tag(Some[(String, (Nat.nat, Nat.nat))](struct), gs)
+            Lista.map[AExp.aexp[VName.vname],
+                       value_type](((a: AExp.aexp[VName.vname]) => typeSig(a)),
+                                    Transition.Outputs[Unit](head))));
+      (t, (struct, g)) ::
+        tag(Some[(String, (Nat.nat, List[value_type]))](struct), gs)
     }
 }
 
@@ -7716,6 +8000,19 @@ def everything_walk_log(f: AExp.aexp[VName.vname], fi: Nat.nat,
       AExp.null_state[Nat.nat, Option[Value.value]], gp)),
                             log)
 
+def same_structure(t1: Transition.transition_ext[Unit],
+                    t2: Transition.transition_ext[Unit]):
+      Boolean
+  =
+  (Transition.Label[Unit](t1) ==
+    Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
+             Transition.Arity[Unit](t2))) && (Lista.equal_lista[value_type](Lista.map[AExp.aexp[VName.vname],
+       value_type](((a: AExp.aexp[VName.vname]) => typeSig(a)),
+                    Transition.Outputs[Unit](t1)),
+                                     Lista.map[AExp.aexp[VName.vname],
+        value_type](((a: AExp.aexp[VName.vname]) => typeSig(a)),
+                     Transition.Outputs[Unit](t2)))))
+
 def observe_all(uu: FSet.fset[(List[Nat.nat],
                                 ((Nat.nat, Nat.nat),
                                   Transition.transition_ext[Unit]))],
@@ -7772,7 +8069,7 @@ def transition_groups_exec(e: FSet.fset[(List[Nat.nat],
                                  (List[Nat.nat],
                                    Transition.transition_ext[Unit])
                              = ab;
-                           Transition.same_structure(t1, ac)
+                           same_structure(t1, ac)
                          })
                      }),
                     Lista.enumerate[(List[Nat.nat],
@@ -7802,16 +8099,16 @@ List[Value.value]))]]):
                                 transition_groups_exec(e, a)),
                                l)
     val tagged:
-          List[List[(Option[(String, (Nat.nat, Nat.nat))],
-                      ((String, (Nat.nat, Nat.nat)),
+          List[List[(Option[(String, (Nat.nat, List[value_type]))],
+                      ((String, (Nat.nat, List[value_type])),
                         List[(Nat.nat,
                                (List[Nat.nat],
                                  Transition.transition_ext[Unit]))]))]]
       = Lista.map[List[List[(Nat.nat,
                               (List[Nat.nat],
                                 Transition.transition_ext[Unit]))]],
-                   List[(Option[(String, (Nat.nat, Nat.nat))],
-                          ((String, (Nat.nat, Nat.nat)),
+                   List[(Option[(String, (Nat.nat, List[value_type]))],
+                          ((String, (Nat.nat, List[value_type])),
                             List[(Nat.nat,
                                    (List[Nat.nat],
                                      Transition.transition_ext[Unit]))]))]](((a:
@@ -7819,96 +8116,102 @@ List[List[(Nat.nat, (List[Nat.nat], Transition.transition_ext[Unit]))]])
                                        =>
                                       tag(None, a)),
                                      trace_groups)
-    val flat: List[(Option[(String, (Nat.nat, Nat.nat))],
-                     ((String, (Nat.nat, Nat.nat)),
+    val flat: List[(Option[(String, (Nat.nat, List[value_type]))],
+                     ((String, (Nat.nat, List[value_type])),
                        List[(Nat.nat,
                               (List[Nat.nat],
                                 Transition.transition_ext[Unit]))]))]
-      = Lista.sort_key[(Option[(String, (Nat.nat, Nat.nat))],
-                         ((String, (Nat.nat, Nat.nat)),
+      = Lista.sort_key[(Option[(String, (Nat.nat, List[value_type]))],
+                         ((String, (Nat.nat, List[value_type])),
                            List[(Nat.nat,
                                   (List[Nat.nat],
                                     Transition.transition_ext[Unit]))])),
-                        (Option[(String, (Nat.nat, Nat.nat))],
-                          ((String, (Nat.nat, Nat.nat)),
+                        (Option[(String, (Nat.nat, List[value_type]))],
+                          ((String, (Nat.nat, List[value_type])),
                             List[(Nat.nat,
                                    (List[Nat.nat],
                                      Transition.transition_ext[Unit]))]))](((x:
-                                       (Option[(String, (Nat.nat, Nat.nat))],
- ((String, (Nat.nat, Nat.nat)),
+                                       (Option[(String,
+         (Nat.nat, List[value_type]))],
+ ((String, (Nat.nat, List[value_type])),
    List[(Nat.nat, (List[Nat.nat], Transition.transition_ext[Unit]))])))
                                       =>
                                      x),
                                     Lista.fold[List[(Option[(String,
-                      (Nat.nat, Nat.nat))],
-              ((String, (Nat.nat, Nat.nat)),
+                      (Nat.nat, List[value_type]))],
+              ((String, (Nat.nat, List[value_type])),
                 List[(Nat.nat,
                        (List[Nat.nat], Transition.transition_ext[Unit]))]))],
-        List[(Option[(String, (Nat.nat, Nat.nat))],
-               ((String, (Nat.nat, Nat.nat)),
+        List[(Option[(String, (Nat.nat, List[value_type]))],
+               ((String, (Nat.nat, List[value_type])),
                  List[(Nat.nat,
                         (List[Nat.nat],
                           Transition.transition_ext[Unit]))]))]](((a:
-                             List[(Option[(String, (Nat.nat, Nat.nat))],
-                                    ((String, (Nat.nat, Nat.nat)),
+                             List[(Option[(String,
+    (Nat.nat, List[value_type]))],
+                                    ((String, (Nat.nat, List[value_type])),
                                       List[(Nat.nat,
      (List[Nat.nat], Transition.transition_ext[Unit]))]))])
                             =>
-                           (b: List[(Option[(String, (Nat.nat, Nat.nat))],
-                                      ((String, (Nat.nat, Nat.nat)),
+                           (b: List[(Option[(String,
+      (Nat.nat, List[value_type]))],
+                                      ((String, (Nat.nat, List[value_type])),
 List[(Nat.nat, (List[Nat.nat], Transition.transition_ext[Unit]))]))])
                              =>
                            a ++ b),
                           tagged, Nil))
     val group_fun:
-          Map[((Option[(String, (Nat.nat, Nat.nat))],
+          Map[((Option[(String, (Nat.nat, List[value_type]))],
                 (String,
                   (Nat.nat,
-                    Nat.nat)))), (List[(Nat.nat,
- (List[Nat.nat], Transition.transition_ext[Unit]))])]
-      = Lista.fold[(Option[(String, (Nat.nat, Nat.nat))],
-                     ((String, (Nat.nat, Nat.nat)),
+                    List[value_type])))), (List[(Nat.nat,
+          (List[Nat.nat], Transition.transition_ext[Unit]))])]
+      = Lista.fold[(Option[(String, (Nat.nat, List[value_type]))],
+                     ((String, (Nat.nat, List[value_type])),
                        List[(Nat.nat,
                               (List[Nat.nat],
                                 Transition.transition_ext[Unit]))])),
-                    Map[((Option[(String, (Nat.nat, Nat.nat))],
+                    Map[((Option[(String, (Nat.nat, List[value_type]))],
                           (String,
                             (Nat.nat,
-                              Nat.nat)))), (List[(Nat.nat,
-           (List[Nat.nat],
-             Transition.transition_ext[Unit]))])]](((a:
-               (Option[(String, (Nat.nat, Nat.nat))],
-                 ((String, (Nat.nat, Nat.nat)),
-                   List[(Nat.nat,
-                          (List[Nat.nat], Transition.transition_ext[Unit]))])))
-              =>
-             {
-               val (taga, (s, gp)):
-                     (Option[(String, (Nat.nat, Nat.nat))],
-                       ((String, (Nat.nat, Nat.nat)),
-                         List[(Nat.nat,
-                                (List[Nat.nat],
-                                  Transition.transition_ext[Unit]))]))
-                 = a;
-               ((f: Map[((Option[(String, (Nat.nat, Nat.nat))],
-                          (String,
-                            (Nat.nat,
-                              Nat.nat)))), (List[(Nat.nat,
-           (List[Nat.nat], Transition.transition_ext[Unit]))])])
-                  =>
-                 f + ((taga, s) -> (gp ++ f((taga, s)))))
-             }),
-            flat, scala.collection.immutable.Map().withDefaultValue(Nil))
+                              List[value_type])))), (List[(Nat.nat,
+                    (List[Nat.nat],
+                      Transition.transition_ext[Unit]))])]](((a:
+                        (Option[(String, (Nat.nat, List[value_type]))],
+                          ((String, (Nat.nat, List[value_type])),
+                            List[(Nat.nat,
+                                   (List[Nat.nat],
+                                     Transition.transition_ext[Unit]))])))
+                       =>
+                      {
+                        val (taga, (s, gp)):
+                              (Option[(String, (Nat.nat, List[value_type]))],
+                                ((String, (Nat.nat, List[value_type])),
+                                  List[(Nat.nat,
+ (List[Nat.nat], Transition.transition_ext[Unit]))]))
+                          = a;
+                        ((f: Map[((Option[(String,
+    (Nat.nat, List[value_type]))],
+                                   (String,
+                                     (Nat.nat,
+                                       List[value_type])))), (List[(Nat.nat,
+                             (List[Nat.nat],
+                               Transition.transition_ext[Unit]))])])
+                           =>
+                          f + ((taga, s) -> (gp ++ f((taga, s)))))
+                      }),
+                     flat,
+                     scala.collection.immutable.Map().withDefaultValue(Nil))
     val grouped:
           List[List[(Nat.nat,
                       (List[Nat.nat], Transition.transition_ext[Unit]))]]
-      = Lista.map[(Option[(String, (Nat.nat, Nat.nat))],
-                    (String, (Nat.nat, Nat.nat))),
+      = Lista.map[(Option[(String, (Nat.nat, List[value_type]))],
+                    (String, (Nat.nat, List[value_type]))),
                    List[(Nat.nat,
                           (List[Nat.nat],
                             Transition.transition_ext[Unit]))]](((a:
-                            (Option[(String, (Nat.nat, Nat.nat))],
-                              (String, (Nat.nat, Nat.nat))))
+                            (Option[(String, (Nat.nat, List[value_type]))],
+                              (String, (Nat.nat, List[value_type]))))
                            =>
                           group_fun(a)),
                          group_fun.keySet.toList)
@@ -8250,7 +8553,7 @@ Transition.transition_ext[Unit])))
                                     val (_, ab):
   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])
                                       = aa;
-                                    Transition.same_structure(rep, ab)
+                                    same_structure(rep, ab)
                                   }),
                                  ea))
       val delayed:
