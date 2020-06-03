@@ -1,3 +1,7 @@
+section\<open>Increment and Reset\<close>
+text\<open>The ``increment and reset'' heuristic proposed in \cite{foster2019} is a naive way of
+introducing an incrementing register into a model. This this theory implements that heuristic.\<close>
+
 theory Increment_Reset
   imports "../Inference"
 begin

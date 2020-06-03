@@ -1,3 +1,15 @@
+section\<open>Weak Subsumption\<close>
+text\<open>While the approach proposed in \cite{foster2019} of using a model checker to check properties
+which imply direct subsumption initially seems attractive, it makes the inference process
+prohibitively slow for all but the smallest of examples. This is due to the problem of state space
+explosion experienced by all model checkers. To allow the inference tool to scale to the realistic
+examples needed to properly evaluate it in \autoref{chap:evaluation}, a different approach is
+needed.
+
+Rather than checking full direct subsumption, this heuristic simply tries to delete each transition
+in turn and runs the original traces used to build the PTA are still accepted. If so, this is taken
+as an acceptable substitute for direct subsumption.\<close>
+
 theory Weak_Subsumption
 imports "../Inference"
 begin

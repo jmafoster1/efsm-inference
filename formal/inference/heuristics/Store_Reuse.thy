@@ -1,3 +1,10 @@
+section\<open>Store and Reuse\<close>
+text\<open>An obvious candidate for generalisation is the ``store and reuse'' pattern. This manifests
+itself  when the input of one transition is subsequently used as the output of another. Recognising
+this usage pattern allows us to introduce a \emph{storage register} to abstract away concrete data
+values and replace two transitions whose outputs differ with a single transition that outputs the
+content of the register.\<close>
+
 theory Store_Reuse
 imports "../Inference"
 begin

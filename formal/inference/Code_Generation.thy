@@ -1,3 +1,7 @@
+section\<open>Code Generation\<close>
+text\<open>This theory is used to generate an executable Scala implementation of the inference tool which
+can be used to infer real EFSMs from real traces.\<close>
+
 theory Code_Generation
   imports
    "HOL-Library.Code_Target_Numeral"
@@ -378,15 +382,6 @@ code_printing
   | constant "finfun_to_list" \<rightharpoonup> (Scala) "_.keySet.toList"
 declare finfun_to_list_const_code [code del]
 declare finfun_to_list_update_code [code del]
-
-declare startsWith_def [code del]
-code_printing constant startsWith \<rightharpoonup> (Scala) "_.startsWith((_))"
-
-declare endsWith_def [code del]
-code_printing constant endsWith \<rightharpoonup> (Scala) "_.endsWith((_))"
-
-declare dropRight_def [code del]
-code_printing constant dropRight \<rightharpoonup> (Scala) "_.dropRight(Code'_Numeral.integer'_of'_nat((_)).toInt)"
 
 definition mismatched_updates :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "mismatched_updates t1 t2 = (\<exists>r \<in> set (map fst (Updates t1)). r \<notin> set (map fst (Updates t2)))"

@@ -9,13 +9,11 @@ theories
 
   "heuristics/Distinguishing_Guards"
   "heuristics/Increment_Reset"
-  "heuristics/Increment_Reset_Subsumption"
   "heuristics/Least_Upper_Bound"
-  "heuristics/PTA_Generalisation"
   "heuristics/Same_Register"
-  "heuristics/Separation"
   "heuristics/Store_Reuse"
   "heuristics/Store_Reuse_Subsumption"
+  "heuristics/PTA_Generalisation"
   "heuristics/Weak_Subsumption"
 
   "code-targets/Code_Target_List"

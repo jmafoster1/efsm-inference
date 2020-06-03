@@ -1,6 +1,26 @@
+section\<open>Least Upper Bound\<close>
+text\<open>T he simplest way to merge a pair of transitions with identical outputs and updates is to
+simply take the least upper bound of their \emph{guards}. This theory presents several variants on
+this theme.\<close>
+
 theory Least_Upper_Bound
   imports "../Inference"
 begin
+
+fun literal_args :: "'a gexp \<Rightarrow> bool" where
+  "literal_args (Bc v) = False" |
+  "literal_args (Eq (V _) (L _)) = True" |
+  "literal_args (In _ _) = True" |
+  "literal_args (Eq _ _) = False" |
+  "literal_args (Gt va v) = False" |
+  "literal_args (Nor v va) = (literal_args v \<and> literal_args va)"
+
+lemma literal_args_eq:
+  "literal_args (Eq a b) \<Longrightarrow> \<exists>v l. a = (V v) \<and> b = (L l)"
+  apply (cases a)
+     apply simp
+      apply (cases b)
+  by auto
 
 definition "all_literal_args t = (\<forall>g \<in> set (Guards t). literal_args g)"
 
@@ -22,10 +42,22 @@ fun merge_guards :: "vname gexp list \<Rightarrow> vname gexp list \<Rightarrow>
   "merge_guards ((In v l)#t) g2 = merge_guards t (merge_in_in v l g2)" |
   "merge_guards (h#t) g2 = h#(merge_guards t g2)"
 
+text\<open>The ``least upper bound'' (lob) heuristic simply disjoins the guards of two transitions with
+identical outputs and updates.\<close>
 definition lob_aux :: "transition \<Rightarrow> transition \<Rightarrow> transition option" where
   "lob_aux t1 t2 = (if Outputs t1 = Outputs t2 \<and> Updates t1 = Updates t2 \<and> all_literal_args t1 \<and> all_literal_args t2 then
       Some \<lparr>Label = Label t1, Arity = Arity t1, Guards = remdups (merge_guards (Guards t1) (Guards t2)), Outputs = Outputs t1, Updates = Updates t1\<rparr>
      else None)"
+
+fun lob :: update_modifier where
+  "lob t1ID t2ID s new _ old _ = (let
+     t1 = (get_by_ids new t1ID);
+     t2 = (get_by_ids new t2ID) in
+     case lob_aux t1 t2 of
+       None \<Rightarrow> None |
+       Some lob_t \<Rightarrow>
+           Some (replace_transitions new [(t1ID, lob_t), (t2ID, lob_t)])
+   )"
 
 lemma lob_aux_some: "Outputs t1 = Outputs t2 \<Longrightarrow>
        Updates t1 = Updates t2 \<Longrightarrow>
@@ -38,16 +70,6 @@ lemma lob_aux_some: "Outputs t1 = Outputs t2 \<Longrightarrow>
        Updates t = Updates t1 \<Longrightarrow>
        lob_aux t1 t2 = Some t"
   by (simp add: lob_aux_def)
-
-fun lob :: update_modifier where
-  "lob t1ID t2ID s new _ old _ = (let
-     t1 = (get_by_ids new t1ID);
-     t2 = (get_by_ids new t2ID) in
-     case lob_aux t1 t2 of
-       None \<Rightarrow> None |
-       Some lob_t \<Rightarrow>
-           Some (replace_transitions new [(t1ID, lob_t), (t2ID, lob_t)])
-   )"
 
 fun has_corresponding :: "vname gexp \<Rightarrow> vname gexp list \<Rightarrow> bool" where
   "has_corresponding g [] = False" |
@@ -564,6 +586,9 @@ fun is_In :: "'a gexp \<Rightarrow> bool" where
   "is_In (In _ _) = True" |
   "is_In _ = False"
 
+text\<open>The ``greatest upper bound'' (gob) heuristic is similar to \texttt{lob} but applies a more
+intellegent approach to guard merging.\<close>
+
 definition gob_aux :: "transition \<Rightarrow> transition \<Rightarrow> transition option" where
   "gob_aux t1 t2 = (if Outputs t1 = Outputs t2 \<and> Updates t1 = Updates t2 \<and> all_literal_args t1 \<and> all_literal_args t2 then
       Some \<lparr>Label = Label t1, Arity = Arity t1, Guards = remdups (filter (Not \<circ> is_In) (merge_guards (Guards t1) (Guards t2))), Outputs = Outputs t1, Updates = Updates t1\<rparr>
@@ -579,6 +604,7 @@ fun gob :: update_modifier where
            Some (replace_transitions new [(t1ID, gob_t), (t2ID, gob_t)])
    )"
 
+text\<open>The ``Gung Ho'' heuristic simply drops the guards of both transitions, making them identical.\<close>
 definition gung_ho_aux :: "transition \<Rightarrow> transition \<Rightarrow> transition option" where
   "gung_ho_aux t1 t2 = (if Outputs t1 = Outputs t2 \<and> Updates t1 = Updates t2 \<and> all_literal_args t1 \<and> all_literal_args t2 then
       Some \<lparr>Label = Label t1, Arity = Arity t1, Guards = [], Outputs = Outputs t1, Updates = Updates t1\<rparr>

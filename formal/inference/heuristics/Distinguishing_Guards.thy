@@ -1,3 +1,9 @@
+section\<open>Distinguishing Guards\<close>
+text\<open>If we cannot resolve the nondeterminism which arises from merging states by merging
+transitions, we might then conclude that those states should not be merged. Alternatively, we could
+consider the possibility of \emph{value-dependent} behaviour. This theory presents a heuristic which
+tries to find a guard which distinguishes between a pair of transitions.\<close>
+
 theory Distinguishing_Guards
 imports "../Inference"
 begin
@@ -89,6 +95,12 @@ lemma distinguishing_guard_subsumption: "Label t1 = Label t2 \<Longrightarrow>
  subsumes t1 c t2"
   using subsumes_def can_still_take_ctx_def by auto
 
+definition "recognises_and_gets_us_to_both a b s s' = (
+  \<exists>p. recognises (tm a) p \<and>
+      gets_us_to s (tm a) 0 <> p \<and>
+      recognises (tm b) p \<and>
+      gets_us_to s' (tm b) 0 <> p)"
+
 definition "can_still_take e1 e2 s1 s2 t1 t2 = (
   Label t1 = Label t2 \<and>
   Arity t1 = Arity t2 \<and>
@@ -103,6 +115,6 @@ lemma can_still_take_direct_subsumption:
   apply (simp add: directly_subsumes_def can_still_take_def)
   apply standard
   using distinguishing_guard_subsumption apply auto[1]
-  by (meson recognises_and_gets_us_to_both_def can_still_take_ctx_def distinguishing_guard_subsumption)
+  by (meson distinguishing_guard_subsumption recognises_and_gets_us_to_both_def recognises_execution_gives_context)
 
 end

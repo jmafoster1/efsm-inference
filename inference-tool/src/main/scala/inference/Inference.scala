@@ -3874,22 +3874,6 @@ def replace_all(e: FSet.fset[(List[Nat.nat],
                           replace_transition(acc, id, newa)),
                          ids, e)
 
-def literal_args[A](x0: GExp.gexp[A]): Boolean = x0 match {
-  case GExp.Bc(v) => false
-  case GExp.Eq(AExp.V(uu), AExp.L(uv)) => true
-  case GExp.In(uw, ux) => true
-  case GExp.Eq(AExp.L(v), uz) => false
-  case GExp.Eq(AExp.Plus(v, va), uz) => false
-  case GExp.Eq(AExp.Minus(v, va), uz) => false
-  case GExp.Eq(AExp.Times(v, va), uz) => false
-  case GExp.Eq(uy, AExp.V(v)) => false
-  case GExp.Eq(uy, AExp.Plus(v, va)) => false
-  case GExp.Eq(uy, AExp.Minus(v, va)) => false
-  case GExp.Eq(uy, AExp.Times(v, va)) => false
-  case GExp.Gt(va, v) => false
-  case GExp.Nor(v, va) => (literal_args[A](v)) && (literal_args[A](va))
-}
-
 def max_reg_total(e: FSet.fset[(List[Nat.nat],
                                  ((Nat.nat, Nat.nat),
                                    Transition.transition_ext[Unit]))]):
@@ -4013,33 +3997,6 @@ def replace_transitions(e: FSet.fset[(List[Nat.nat],
                               replace_transition(acc, uid, newa))
                           }),
                          ts, e)
-
-def enumerate_exec_values(vs: List[(String,
-                                     (List[Value.value], List[Value.value]))]):
-      List[Value.value]
-  =
-  Lista.fold[(String, (List[Value.value], List[Value.value])),
-              List[Value.value]](((a: (String,
-(List[Value.value], List[Value.value])))
-                                    =>
-                                   {
-                                     val (_, (i, p)):
-   (String, (List[Value.value], List[Value.value]))
-                                       = a;
-                                     Lista.union[Value.value].apply(Lista.union[Value.value].apply(i).apply(p))
-                                   }),
-                                  vs, Nil)
-
-def enumerate_log_values(l: List[List[(String,
-(List[Value.value], List[Value.value]))]]):
-      List[Value.value]
-  =
-  Lista.fold[List[(String, (List[Value.value], List[Value.value]))],
-              List[Value.value]](((e: List[(String,
-     (List[Value.value], List[Value.value]))])
-                                    =>
-                                   Lista.union[Value.value].apply(enumerate_exec_values(e))),
-                                  l, Nil)
 
 def state_nondeterminism(og: Nat.nat,
                           nt: FSet.fset[(Nat.nat,
@@ -6651,9 +6608,25 @@ Transition.transition_ext[Unit]))],
 
 object Least_Upper_Bound {
 
+def literal_args[A](x0: GExp.gexp[A]): Boolean = x0 match {
+  case GExp.Bc(v) => false
+  case GExp.Eq(AExp.V(uu), AExp.L(uv)) => true
+  case GExp.In(uw, ux) => true
+  case GExp.Eq(AExp.L(v), uz) => false
+  case GExp.Eq(AExp.Plus(v, va), uz) => false
+  case GExp.Eq(AExp.Minus(v, va), uz) => false
+  case GExp.Eq(AExp.Times(v, va), uz) => false
+  case GExp.Eq(uy, AExp.V(v)) => false
+  case GExp.Eq(uy, AExp.Plus(v, va)) => false
+  case GExp.Eq(uy, AExp.Minus(v, va)) => false
+  case GExp.Eq(uy, AExp.Times(v, va)) => false
+  case GExp.Gt(va, v) => false
+  case GExp.Nor(v, va) => (literal_args[A](v)) && (literal_args[A](va))
+}
+
 def all_literal_args[A](t: Transition.transition_ext[A]): Boolean =
   Lista.list_all[GExp.gexp[VName.vname]](((a: GExp.gexp[VName.vname]) =>
-   Inference.literal_args[VName.vname](a)),
+   literal_args[VName.vname](a)),
   Transition.Guards[A](t))
 
 def merge_in_in(v: VName.vname, l: List[Value.value],
@@ -7331,6 +7304,33 @@ def delay_initialisation_of(r: Nat.nat,
                                }
                            })),
                          find_initialisation_of(r, e, l), e)
+
+def enumerate_exec_values(vs: List[(String,
+                                     (List[Value.value], List[Value.value]))]):
+      List[Value.value]
+  =
+  Lista.fold[(String, (List[Value.value], List[Value.value])),
+              List[Value.value]](((a: (String,
+(List[Value.value], List[Value.value])))
+                                    =>
+                                   {
+                                     val (_, (i, p)):
+   (String, (List[Value.value], List[Value.value]))
+                                       = a;
+                                     Lista.union[Value.value].apply(Lista.union[Value.value].apply(i).apply(p))
+                                   }),
+                                  vs, Nil)
+
+def enumerate_log_values(l: List[List[(String,
+(List[Value.value], List[Value.value]))]]):
+      List[Value.value]
+  =
+  Lista.fold[List[(String, (List[Value.value], List[Value.value]))],
+              List[Value.value]](((e: List[(String,
+     (List[Value.value], List[Value.value]))])
+                                    =>
+                                   Lista.union[Value.value].apply(enumerate_exec_values(e))),
+                                  l, Nil)
 
 def trace_group_training_set(uu: List[(List[Nat.nat],
 Transition.transition_ext[Unit])],
@@ -8392,7 +8392,7 @@ def generalise_and_update(log: List[List[(String,
   =
   {
     val label: String = Transition.Label[Unit]((gp.head)._2)
-    val values: List[Value.value] = Inference.enumerate_log_values(log)
+    val values: List[Value.value] = enumerate_log_values(log)
     val new_gp_ts:
           List[(List[Value.value],
                  (Map[Nat.nat, Option[Value.value]], List[Value.value]))]

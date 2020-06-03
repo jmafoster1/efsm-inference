@@ -1,3 +1,11 @@
+section\<open>PTA Generalisation\<close>
+text\<open>The problem with the simplistic heuristics of \cite{foster2019} is that the performance of the
+inference technique is almost entirely dependent on the quality and applicability of the heuristics
+provided to it. Producing high-quality heuristics often requires some inside-knowledge of the system
+under inference. If the user has this knowledge already, they are unlikely to require automated
+inference. Ideally, we would like something more generally applicable. This theory presents a more
+abstract \emph{metaheuristic} which can be implemented with genetic programming.\<close>
+
 theory PTA_Generalisation
   imports "../Inference" Same_Register Group_By
 begin
@@ -339,6 +347,12 @@ code_printing constant get_output \<rightharpoonup> (Scala) "Dirties.getOutput"
 
 definition get_outputs :: "label \<Rightarrow> nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> value list list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option list" where
   "get_outputs l maxReg values I r outputs = map_tailrec (\<lambda>(maxReg, ps). get_output l maxReg values (zip I (zip r ps))) (enumerate maxReg (transpose outputs))"
+
+definition enumerate_exec_values :: "trace \<Rightarrow> value list" where
+  "enumerate_exec_values vs = fold (\<lambda>(_, i, p) I. List.union (List.union i p) I) vs []"
+
+definition enumerate_log_values :: "log \<Rightarrow> value list" where
+  "enumerate_log_values l = fold (\<lambda>e I. List.union (enumerate_exec_values e) I) l []"
 
 (*This is where the types stuff originates*)
 definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group \<Rightarrow> iEFSM" where
