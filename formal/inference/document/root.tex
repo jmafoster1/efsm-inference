@@ -9,6 +9,7 @@
 \usepackage{xspace}
 \usepackage{xcolor}
 \usepackage{hyperref}
+\usepackage{rotating}
 
 
 \pagestyle{headings}
@@ -18,12 +19,12 @@
 \newcommand{\eg}{e.\,g.\xspace}
 \newcommand{\thy}{\isabellecontext}
 \renewcommand{\isamarkupsection}[1]{%
-  \begingroup% 
+  \begingroup%
   \def\isacharunderscore{\textunderscore}%
   \section{#1 (\thy)}%
   \def\isacharunderscore{-}%
   \expandafter\label{sec:\isabellecontext}%
-  \endgroup% 
+  \endgroup%
 }
 
 \newcommand{\orcidID}[1]{} % temp. hack
@@ -50,30 +51,30 @@
 }
 
 \begin{document}
-  \maketitle
-  \begin{abstract}
-    \begin{quote}
+\maketitle
+\begin{abstract}
+  This theory formalises a technique based on state merging to infer EFSM models from black box traces, as presented in \cite{foster2019}. A Code Generator setup to create executable Scala code is also defined.
 
+  \begin{quote}
     \bigskip
-    \noindent{\textbf{Keywords:}}
-    \end{quote}
-  \end{abstract}
+    \noindent{\textbf{Keywords:}EFSM inference, Model inference, Reverse engineering }
+  \end{quote}
+\end{abstract}
 
 
 \tableofcontents
 \cleardoublepage
 
 \chapter{Introduction}
+This theory formalises the EFSM inference technique from \cite{foster2019}. The technique builds off classical FSM inference techniques which work by merging states which share behaviour. The process first builds a Prefix Tree Acceptor from the traces, and then states are iteratively merged to form a smaller model.
 
-\begin{figure}
+The rest of this document is automatically generated from the formalization in Isabelle/HOL, i.e., all content is checked by Isabelle.  Overall, the structure of this document follows the theory dependencies (see \autoref{fig:session-graph}).
+
+\begin{sidewaysfigure}
   \centering
-    \includegraphics[height=\textheight]{session_graph}
+  \resizebox{\textheight}{!}{\includegraphics[height=\textheight]{session_graph}}
   \caption{The Dependency Graph of the Isabelle Theories.\label{fig:session-graph}}
-\end{figure}
-  The rest of this document is automatically generated from the
-  formalization in Isabelle/HOL, i.e., all content is checked by
-  Isabelle.  Overall, the structure of this document follows the
-  theory dependencies (see \autoref{fig:session-graph}): 
+\end{sidewaysfigure}
 
 \nocite{foster.ea:efsm:2018}
 
@@ -88,7 +89,7 @@
   \bibliography{root}
 }
 \end{document}
-\endinput 
+\endinput
 
 %%% Local Variables:
 %%% mode: latex

@@ -6,7 +6,7 @@ theory SelectionStrategies
 imports Inference
 begin
 
-subsection\<open>One of the simplest strategies is to look only at the labels and arities of outgoing
+text\<open>One of the simplest strategies is to look only at the labels and arities of outgoing
 transitions of each state. Pairs of states are ranked by how many transitions with the same label
 and arity they have in common.\<close>
 definition naive_score :: strategy where
@@ -17,6 +17,8 @@ definition naive_score :: strategy where
     in
     bool2nat (Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2)))"
 
+text\<open>Building off the above strategy, it makes sense to give transitions an extra ``bonus point'' if
+they are exactly equal.\<close>
 definition naive_score_eq_bonus :: strategy where
   "naive_score_eq_bonus t1ID t2ID e = (
     let

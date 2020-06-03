@@ -1,8 +1,8 @@
 theory Code_Generation
   imports
    "HOL-Library.Code_Target_Numeral"
-   Inference SelectionStrategies
-   Guard_Implication_Subsumption
+   Inference
+   SelectionStrategies
    "heuristics/Store_Reuse_Subsumption"
    "heuristics/Increment_Reset"
    "heuristics/Same_Register"

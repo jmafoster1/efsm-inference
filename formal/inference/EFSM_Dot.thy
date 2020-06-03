@@ -1,11 +1,17 @@
+section\<open>Graphical Output\<close>
+text\<open>It is often more intuitive and aesthetically pleasing to view EFSMs graphically. DOT is a graph
+layout engine which converts textual representations of graphs to more useful formats, such as SVG
+or PNG representations. This theory defines functions to convert arbitrary EFSMs to DOT for easier
+viewing. Here, transitions use the syntactic sugar presented in \cite{foster2018} such that they
+take the form $\textit{label}:\textit{arity}[g_1, \ldots, g_g]/f_1, \ldots, f_f[u_1, \ldots, u_u]$.\<close>
+
 theory EFSM_Dot
 imports Inference
 begin
 
-fun string_of_digit :: "nat \<Rightarrow> String.literal"
-where
-  "string_of_digit n =
-    (if n = 0 then (STR ''0'')
+fun string_of_digit :: "nat \<Rightarrow> String.literal" where
+  "string_of_digit n = (
+         if n = 0 then (STR ''0'')
     else if n = 1 then (STR ''1'')
     else if n = 2 then (STR ''2'')
     else if n = 3 then (STR ''3'')

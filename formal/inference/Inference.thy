@@ -1,11 +1,12 @@
-subsection \<open>Extended Finite State Machine Inference\<close>
+section \<open>Extended Finite State Machine Inference\<close>
 text\<open>
 This theory sets out the key definitions for the inference of extended finite state machines from
 system traces.
 \<close>
 
 theory Inference
-  imports "EFSM.Contexts"
+  imports
+    "EFSM.Contexts"
     "EFSM.Transition_Lexorder"
     "HOL-Library.Product_Lexorder"
 begin
@@ -13,9 +14,9 @@ begin
 declare One_nat_def [simp del]
 
 text\<open>
-We first need dest define the iEFSM data type which assigns each transition a unique identity. This is
+We first need to define the iEFSM data type which assigns each transition a unique identity. This is
 necessary because transitions may not be unique in an EFSM. Assigning transitions a unique
-identifier enables us dest look up the origin and destination states of transitions without having dest
+identifier enables us to look up the origin and destination states of transitions without having to
 pass them around in the inference functions.
 \<close>
 type_synonym tid = nat
@@ -61,8 +62,6 @@ lemma merge_states_self_simp [code]:
   apply (simp add: merge_states_def merge_states_aux_def)
   by force
 
-(* declare[[show_types,show_sorts]] *)
-
 definition outgoing_transitions :: "cfstate \<Rightarrow> iEFSM \<Rightarrow> (cfstate \<times> transition \<times> tids) fset" where
   "outgoing_transitions s e = fimage (\<lambda>(uid, (from, to), t'). (to, t', uid)) ((ffilter (\<lambda>(uid, (origin, dest), t). origin = s)) e)"
 
@@ -72,11 +71,10 @@ type_synonym nondeterministic_pair = "(cfstate \<times> (cfstate \<times> cfstat
 definition state_nondeterminism :: "nat \<Rightarrow> (cfstate \<times> transition \<times> tids) fset \<Rightarrow> nondeterministic_pair fset" where
   "state_nondeterminism og nt = (if size nt < 2 then {||} else ffUnion (fimage (\<lambda>x. let (dest, t) = x in fimage (\<lambda>y. let (dest', t') = y in (og, (dest, dest'), (t, t'))) (nt - {|x|})) nt))"
 
-lemma state_nondeterminism_empty[simp]: "state_nondeterminism a {||} = {||}"
+lemma state_nondeterminism_empty [simp]: "state_nondeterminism a {||} = {||}"
   by (simp add: state_nondeterminism_def ffilter_def Set.filter_def)
 
-lemma state_nondeterminism_singledestn[simp]:
-  "state_nondeterminism a {|x|} = {||}"
+lemma state_nondeterminism_singledestn [simp]: "state_nondeterminism a {|x|} = {||}"
   by (simp add: state_nondeterminism_def ffilter_def Set.filter_def)
 
 definition S :: "iEFSM \<Rightarrow> nat fset" where
@@ -312,6 +310,7 @@ lemma score_1: "score_1 e s = k_score 1 e s"
     done
   done
 
+subsection\<open>Direct Subsumption\<close>
 definition directly_subsumes :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "directly_subsumes e1 e2 s s' t1 t2 \<equiv> (\<forall>p. recognises (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
                                              recognises (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
@@ -355,6 +354,36 @@ definition insert_transition :: "tids \<Rightarrow> cfstate \<Rightarrow> cfstat
 
 definition make_distinct :: "iEFSM \<Rightarrow> iEFSM" where
   "make_distinct e = ffold_ord (\<lambda>(uid, (from, to), t) acc. insert_transition uid from to t acc) e {||}"
+
+lemma guard_implication: "Label t1 = Label t2 \<Longrightarrow>
+  Arity t1 = Arity t2 \<Longrightarrow>
+  Outputs t1 = Outputs t2 \<Longrightarrow>
+  Updates t1 = Updates t2 \<Longrightarrow>
+  (\<forall>s. apply_guards (Guards t1) s \<longrightarrow> apply_guards (Guards t2) s) \<Longrightarrow>
+  subsumes t2 c t1"
+  apply (rule subsumption)
+  unfolding can_take_transition_def can_take_def
+  using can_take_transition_def can_take_def posterior_def posterior_separate_def can_take_def by auto
+
+definition gexp_implies :: "'a gexp \<Rightarrow> 'a gexp \<Rightarrow> bool" where
+  "gexp_implies g1 g2 = (\<forall>s. gval g1 s = true \<longrightarrow> gval g2 s = true)"
+
+definition guard_implication_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+  "guard_implication_subsumption t1 t2 = (
+    Label t1 = Label t2 \<and>
+    Arity t1 = Arity t2 \<and>
+    Outputs t1 = Outputs t2 \<and>
+    Updates t1 = Updates t2 \<and>
+    gexp_implies (fold gAnd (Guards t1) (Bc True)) (fold gAnd (Guards t2) (Bc True))
+  )"
+
+lemma guard_implication_subsumption:
+  "guard_implication_subsumption t1 t2 \<Longrightarrow> directly_subsumes m1 m2 s1 s2 t2 t1"
+  apply (rule subsumes_in_all_contexts_directly_subsumes)
+  apply (rule subsumption)
+  unfolding guard_implication_subsumption_def can_take_transition_def can_take_def
+  using gexp_implies_def apply_guards_fold can_take_transition_def can_take_def
+        posterior_def posterior_separate_def can_take_def by auto
 
 \<comment> \<open>When we replace one transition with another, we need to merge their uids to keep track of which\<close>
 \<comment> \<open>transition accounts for which action in the original traces                                     \<close>

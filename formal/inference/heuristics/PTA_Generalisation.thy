@@ -1,5 +1,5 @@
 theory PTA_Generalisation
-  imports "../Inference" Same_Register "../Group_By"
+  imports "../Inference" Same_Register Group_By
 begin
 
 hide_const I
