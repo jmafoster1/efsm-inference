@@ -13,8 +13,8 @@ import os
 
 numTraces = 30
 
-outfile = "spaceInvaders"
-# outfile = "liftDoors"
+# outfile = "spaceInvaders"
+outfile = "liftDoors"
 
 outfile += str(numTraces)
 
@@ -192,4 +192,4 @@ for sample in range(1, 31):
         for file in outfiles:
             with open(newRoot+file+f"-{p}-submissions.sh", 'w') as f:
                 for o, u, g in seeds:
-                    print(f"bash bessemer-run.sh {o} {u} {g} {file} {p} {sample}", file=f)
+                    print(f"sbatch bessemer-run.sh {o} {u} {g} {file} {p} {sample}", file=f)
