@@ -1,30 +1,31 @@
-sbatch bessemer-run.sh 70627 22661 96910 spaceInvaders30 none
-sbatch bessemer-run.sh 64546 82819 71611 spaceInvaders30 none
-sbatch bessemer-run.sh 90276 10202 33491 spaceInvaders30 none
-sbatch bessemer-run.sh 94089 20087 57297 spaceInvaders30 none
-sbatch bessemer-run.sh 33626 77327 69570 spaceInvaders30 none
-sbatch bessemer-run.sh 72539 68812 68534 spaceInvaders30 none
-sbatch bessemer-run.sh 10387 69679 64338 spaceInvaders30 none
-sbatch bessemer-run.sh 52741 50401 30469 spaceInvaders30 none
-sbatch bessemer-run.sh 86523 47398 24727 spaceInvaders30 none
-sbatch bessemer-run.sh 23015 78032 51841 spaceInvaders30 none
-sbatch bessemer-run.sh 90304 98626 38290 spaceInvaders30 none
-sbatch bessemer-run.sh 49792 44376 82025 spaceInvaders30 none
-sbatch bessemer-run.sh 10587 43451 96710 spaceInvaders30 none
-sbatch bessemer-run.sh 85044 25302 11865 spaceInvaders30 none
-sbatch bessemer-run.sh 81929 41639 58164 spaceInvaders30 none
-sbatch bessemer-run.sh 40859 27253 35554 spaceInvaders30 none
-sbatch bessemer-run.sh 40693 57895 94577 spaceInvaders30 none
-sbatch bessemer-run.sh 76260 20767 86506 spaceInvaders30 none
-sbatch bessemer-run.sh 99563 99446 69105 spaceInvaders30 none
-sbatch bessemer-run.sh 44255 32190 27014 spaceInvaders30 none
-sbatch bessemer-run.sh 46129 54693 71437 spaceInvaders30 none
-sbatch bessemer-run.sh 15147 96830 99040 spaceInvaders30 none
-sbatch bessemer-run.sh 33970 52093 70773 spaceInvaders30 none
-sbatch bessemer-run.sh 23181 30439 69539 spaceInvaders30 none
-sbatch bessemer-run.sh 97824 34613 64269 spaceInvaders30 none
-sbatch bessemer-run.sh 42307 89404 62822 spaceInvaders30 none
-sbatch bessemer-run.sh 15412 95327 47878 spaceInvaders30 none
-sbatch bessemer-run.sh 19941 91146 99796 spaceInvaders30 none
-sbatch bessemer-run.sh 63466 65400 63116 spaceInvaders30 none
-sbatch bessemer-run.sh 81075 74054 33252 spaceInvaders30 none
+bash experimental-data/spaceInvaders30/spaceInvaders30-1/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-10/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-11/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-12/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-13/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-14/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-15/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-16/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-17/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-18/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-19/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-2/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-20/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-21/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-22/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-23/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-24/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-25/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-26/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-27/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-28/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-29/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-3/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-30/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-4/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-5/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-6/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-7/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-8/spaceInvaders30-none-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-9/spaceInvaders30-none-submissions.sh
+

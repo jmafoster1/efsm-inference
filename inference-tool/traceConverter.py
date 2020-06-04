@@ -9,52 +9,54 @@ Created on Tue Dec 10 13:25:34 2019
 import re
 import json
 import random
-
-root = "/home/michael/eclipse-workspace/concurrency/"
-#root = "/home/michael/Documents/ICSMEData/"
-
-newRoot = "/home/michael/Documents/efsm-inference/inference-tool/experimental-data/"
+import os
 
 numTraces = 30
 
-file = "all.log"
-#file = "liftDoors2"
-
 outfile = "spaceInvaders"
-#outfile = "liftDoors-2-"
+# outfile = "liftDoors"
 
 outfile += str(numTraces)
 
-x = 0
-shields = 1
-aliens = 2
-time = 0
+desired_inputs = {}
+root = ""
+inFile = ""
 
+if "liftDoors" in outfile:
+    time = 0
+    inFile = "liftDoors2"
+    root = "/home/michael/Documents/ICSMEData/"
+    desired_inputs = {
+        "setTimer": [time],
+        "waitTimer": [time],
+        "fullyOpen": [time],
+        "fullyClosed": [time],
+        "systemInitReady": [time],
+        "closingDoor": [time],
+        "buttonInterrupted": [time],
+        "openingDoor": [time],
+        "timeout": [time],
+        "requestOpen": [time]
+    }
 
-desired_inputs = {
-    "start": [x, aliens, shields],
-    "stop": [x, aliens, shields],
-    "alienHit": [aliens],
-    "addAlien": [],
-    "moveWest": [x],
-    "moveEast": [x],
-    "launchMissile": [],
-    "shieldHit": [shields],
-    "win": [],
-    "lose": [],
-    
-    "setTimer": [time],
-    "waitTimer": [time],
-    "fullyOpen": [time],
-    "fullyClosed": [time],
-    "systemInitReady": [time],
-    "closingDoor": [time],
-    "buttonInterrupted": [time],
-    "openingDoor": [time],
-    "timeout": [time],
-    "requestOpen": [time]
-
-}
+else:
+    x = 0
+    shields = 1
+    aliens = 2
+    root = "/home/michael/eclipse-workspace/concurrency/"
+    inFile = "all.log"
+    desired_inputs = {
+        "start": [x, aliens, shields],
+        "stop": [x, aliens, shields],
+        "alienHit": [aliens],
+        "addAlien": [],
+        "moveWest": [x],
+        "moveEast": [x],
+        "launchMissile": [],
+        "shieldHit": [shields],
+        "win": [],
+        "lose": []
+    }
 
 desired_outputs = desired_inputs
 
@@ -115,64 +117,79 @@ def obfuscate_inputs(trace, obfuscated_inputs):
             } for label, inputs, outputs in zip(labels, inputs, outputs)]
 
 
-with open(root+file) as f:
-    types = getTypes(f)
+seeds = []
 
-    eventRE = re.compile("(\w+) (.*)")
+with open("/home/michael/Documents/efsm-inference/inference-tool/experimental-data/seeds") as f:
+    for line in f:
+        lst = line.strip().split(" ")
+        seeds.append((int(lst[0]), int(lst[1]), int(lst[2])))
 
-    traces = []
-    trace = []
-
-    for line in f.readlines():
-        line = line.strip()
-        if line == "":
-            continue
-        if line == "trace":
-            if trace != []:
-                traces.append(trace)
-                trace = []
-            continue
-        match = eventRE.search(line)
-        label = match.group(1)
-        inputs = [valueOf(i) for valueOf, i in zip(types[label], match.group(2).split(" "))]
-        trace.append((label, inputs))
-    traces.append(trace)
-
-traces = [trace for trace in traces if len(trace) >= 5]
-print(len(traces), "traces in total")
-
-traces = random.sample(traces, 2*numTraces)
-
-io_traces = [format_trace(t) for t in traces]
-
-with open(newRoot+outfile+"-original-train", 'w') as f:
-    print_original_trace(f, traces[:numTraces])
-
-with open(newRoot+outfile+"-original-test", 'w') as f:
-    print_original_trace(f, traces[numTraces:])
-
-with open(newRoot+outfile+"-train.json", 'w') as f:
-    print("[\n" + ",  \n".join(["  [\n    " + ",\n    ".join([json.dumps(event) for event in trace]) + "\n  ]" for trace in io_traces[:numTraces]]) + "\n]", file=f)
-
-with open(newRoot+outfile+"-test.json", 'w') as f:
-    print("[\n" + ",  \n".join(["  [\n    " + ",\n    ".join([json.dumps(event) for event in trace]) + "\n  ]" for trace in io_traces[numTraces:]]) + "\n]", file=f)
-
-outfiles = set([f"{outfile}"])
-
-for var in [item for sublist in desired_outputs.values() for item in sublist]:
-    outfiles.add(f"{outfile}-obfuscated-{varname(var)}")
-    obfuscated_traces = [obfuscate_inputs(t, [var]) for t in traces]
+for sample in range(1, 31):
+    newRoot = f"/home/michael/Documents/efsm-inference/inference-tool/experimental-data/{outfile}-{sample}/"
     
-    with open(newRoot+outfile+f"-obfuscated-{varname(var)}-train.json", 'w') as f:
-        print("[\n" + ",  \n".join(["  [\n    " + ",\n    ".join([json.dumps(event) for event in trace]) + "\n  ]" for trace in obfuscated_traces[:numTraces]]) + "\n]", file=f)
+    if not os.path.exists(newRoot):
+        os.mkdir(newRoot)
     
-    with open(newRoot+outfile+f"-obfuscated-{varname(var)}-test.json", 'w') as f:
-        print("[\n" + ",  \n".join(["  [\n    " + ",\n    ".join([json.dumps(event) for event in trace]) + "\n  ]" for trace in obfuscated_traces[numTraces:]]) + "\n]", file=f)
-
-preprocessors = ["gp", "none"]
-
-for p in preprocessors:
-    for file in outfiles:
-        with open(newRoot+file+f"-{p}-submissions.sh", 'w') as f:
-            for i in range(30):
-                print(f"sbatch bessemer-run.sh {random.randint(10000, 99999)} {random.randint(10000, 99999)} {random.randint(10000, 99999)} {file} {p}", file=f)
+    with open(root+inFile) as f:
+        types = getTypes(f)
+    
+        eventRE = re.compile("(\w+) (.*)")
+    
+        traces = []
+        trace = []
+    
+        for line in f.readlines():
+            line = line.strip()
+            if line == "":
+                continue
+            if line == "trace":
+                if trace != []:
+                    traces.append(trace)
+                    trace = []
+                continue
+            match = eventRE.search(line)
+            label = match.group(1)
+            inputs = [valueOf(i) for valueOf, i in zip(types[label], match.group(2).split(" "))]
+            trace.append((label, inputs))
+        traces.append(trace)
+    
+    traces = [trace for trace in traces if len(trace) >= 5]
+    print(len(traces), "traces in total")
+    
+    traces = random.sample(traces, 2*numTraces)
+    
+    io_traces = [format_trace(t) for t in traces]
+    
+    with open(newRoot+outfile+"-original-train", 'w') as f:
+        print_original_trace(f, traces[:numTraces])
+    
+    with open(newRoot+outfile+"-original-test", 'w') as f:
+        print_original_trace(f, traces[numTraces:])
+    
+    with open(newRoot+outfile+"-train.json", 'w') as f:
+        print("[\n" + ",  \n".join(["  [\n    " + ",\n    ".join([json.dumps(event) for event in trace]) + "\n  ]" for trace in io_traces[:numTraces]]) + "\n]", file=f)
+    
+    with open(newRoot+outfile+"-test.json", 'w') as f:
+        print("[\n" + ",  \n".join(["  [\n    " + ",\n    ".join([json.dumps(event) for event in trace]) + "\n  ]" for trace in io_traces[numTraces:]]) + "\n]", file=f)
+    
+    outfiles = set([f"{outfile}"])
+    
+    obfuscations = [item for sublist in desired_outputs.values() for item in sublist]
+    
+    for var in obfuscations:
+        outfiles.add(f"{outfile}-obfuscated-{varname(var)}")
+        obfuscated_traces = [obfuscate_inputs(t, [var]) for t in traces]
+        
+        with open(newRoot+outfile+f"-obfuscated-{varname(var)}-train.json", 'w') as f:
+            print("[\n" + ",  \n".join(["  [\n    " + ",\n    ".join([json.dumps(event) for event in trace]) + "\n  ]" for trace in obfuscated_traces[:numTraces]]) + "\n]", file=f)
+        
+        with open(newRoot+outfile+f"-obfuscated-{varname(var)}-test.json", 'w') as f:
+            print("[\n" + ",  \n".join(["  [\n    " + ",\n    ".join([json.dumps(event) for event in trace]) + "\n  ]" for trace in obfuscated_traces[numTraces:]]) + "\n]", file=f)
+    
+    preprocessors = ["gp", "none"]
+    
+    for p in preprocessors:
+        for file in outfiles:
+            with open(newRoot+file+f"-{p}-submissions.sh", 'w') as f:
+                for o, u, g in seeds:
+                    print(f"bash bessemer-run.sh {o} {u} {g} {file} {p} {sample}", file=f)

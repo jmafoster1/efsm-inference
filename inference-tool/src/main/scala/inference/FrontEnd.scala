@@ -10,6 +10,11 @@ object FrontEnd {
     val t1 = System.nanoTime
     Config.parseArgs(args)
 
+    if (Config.config.mkdir) {
+      Log.root.info("Successfully created directories")
+      System.exit(0)
+    }
+
     Log.root.info(args.mkString(" "))
     Log.root.info(s"Building PTA - ${Config.config.train.length} ${if (Config.config.train.length == 1) "trace" else "traces"}")
 

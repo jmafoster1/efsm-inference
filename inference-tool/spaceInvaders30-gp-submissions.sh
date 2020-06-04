@@ -1,30 +1,31 @@
-sbatch bessemer-run.sh 83987 51750 28180 spaceInvaders30 gp
-sbatch bessemer-run.sh 97348 64305 46704 spaceInvaders30 gp
-sbatch bessemer-run.sh 98331 84292 78512 spaceInvaders30 gp
-sbatch bessemer-run.sh 68560 21165 73554 spaceInvaders30 gp
-sbatch bessemer-run.sh 46275 59219 63495 spaceInvaders30 gp
-sbatch bessemer-run.sh 11716 79846 51532 spaceInvaders30 gp
-sbatch bessemer-run.sh 96143 83936 31814 spaceInvaders30 gp
-sbatch bessemer-run.sh 21496 95855 13023 spaceInvaders30 gp
-sbatch bessemer-run.sh 60783 80794 37860 spaceInvaders30 gp
-sbatch bessemer-run.sh 28009 54240 17448 spaceInvaders30 gp
-sbatch bessemer-run.sh 76746 49020 76913 spaceInvaders30 gp
-sbatch bessemer-run.sh 70275 52818 40421 spaceInvaders30 gp
-sbatch bessemer-run.sh 58946 45216 85768 spaceInvaders30 gp
-sbatch bessemer-run.sh 12713 22594 64625 spaceInvaders30 gp
-sbatch bessemer-run.sh 36175 89325 26092 spaceInvaders30 gp
-sbatch bessemer-run.sh 35695 37219 12109 spaceInvaders30 gp
-sbatch bessemer-run.sh 21571 54174 52232 spaceInvaders30 gp
-sbatch bessemer-run.sh 95480 27105 11806 spaceInvaders30 gp
-sbatch bessemer-run.sh 95443 27865 10687 spaceInvaders30 gp
-sbatch bessemer-run.sh 68463 13303 54648 spaceInvaders30 gp
-sbatch bessemer-run.sh 92246 53080 58055 spaceInvaders30 gp
-sbatch bessemer-run.sh 98343 42170 21929 spaceInvaders30 gp
-sbatch bessemer-run.sh 13699 27217 26195 spaceInvaders30 gp
-sbatch bessemer-run.sh 68056 46056 84031 spaceInvaders30 gp
-sbatch bessemer-run.sh 76533 64103 97895 spaceInvaders30 gp
-sbatch bessemer-run.sh 40971 29959 24777 spaceInvaders30 gp
-sbatch bessemer-run.sh 92790 43717 42588 spaceInvaders30 gp
-sbatch bessemer-run.sh 52143 85079 93133 spaceInvaders30 gp
-sbatch bessemer-run.sh 70800 31792 78273 spaceInvaders30 gp
-sbatch bessemer-run.sh 66360 19344 66501 spaceInvaders30 gp
+bash experimental-data/spaceInvaders30/spaceInvaders30-1/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-10/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-11/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-12/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-13/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-14/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-15/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-16/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-17/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-18/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-19/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-2/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-20/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-21/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-22/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-23/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-24/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-25/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-26/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-27/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-28/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-29/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-3/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-30/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-4/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-5/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-6/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-7/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-8/spaceInvaders30-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-9/spaceInvaders30-gp-submissions.sh
+

@@ -45,7 +45,8 @@ case class Config(
   guardSeed: Int = 0,
   outputSeed: Int = 0,
   updateSeed: Int = 0,
-  numTraces: Int = 30
+  numTraces: Int = 30,
+  mkdir: Boolean=false
 )
 
 object Config {
@@ -135,6 +136,9 @@ object Config {
       opt[Unit]("skip")
         .action((_, c) => c.copy(skip = true))
         .text("Set this flag to skip some model checking tests which should be trivially true"),
+      opt[Unit]("mkdir")
+        .action((_, c) => c.copy(mkdir = true))
+        .text("Set this flag to skip all inference and just test the making of directories"),
       opt[Preprocessors.Preprocessor]('p', "preprocessor")
         .valueName("preprocessor")
         .action((x, c) => c.copy(prep = x))

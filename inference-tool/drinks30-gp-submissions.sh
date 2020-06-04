@@ -1,30 +1,31 @@
-sbatch bessemer-run.sh 57412 67520 77951 drinks30 gp
-sbatch bessemer-run.sh 62227 88542 35246 drinks30 gp
-sbatch bessemer-run.sh 75004 15649 34412 drinks30 gp
-sbatch bessemer-run.sh 52052 97236 74703 drinks30 gp
-sbatch bessemer-run.sh 18151 23836 54195 drinks30 gp
-sbatch bessemer-run.sh 72742 32586 34772 drinks30 gp
-sbatch bessemer-run.sh 22289 14383 86249 drinks30 gp
-sbatch bessemer-run.sh 23455 87425 33676 drinks30 gp
-sbatch bessemer-run.sh 37723 37465 59881 drinks30 gp
-sbatch bessemer-run.sh 72267 50863 22707 drinks30 gp
-sbatch bessemer-run.sh 64490 96562 96221 drinks30 gp
-sbatch bessemer-run.sh 80793 34196 24378 drinks30 gp
-sbatch bessemer-run.sh 91240 50046 30088 drinks30 gp
-sbatch bessemer-run.sh 63844 64036 25161 drinks30 gp
-sbatch bessemer-run.sh 24627 48227 86988 drinks30 gp
-sbatch bessemer-run.sh 98698 19639 55520 drinks30 gp
-sbatch bessemer-run.sh 10020 39629 26037 drinks30 gp
-sbatch bessemer-run.sh 79871 56589 69095 drinks30 gp
-sbatch bessemer-run.sh 20532 20788 72720 drinks30 gp
-sbatch bessemer-run.sh 97111 77934 90015 drinks30 gp
-sbatch bessemer-run.sh 20375 17354 38111 drinks30 gp
-sbatch bessemer-run.sh 63332 98524 22191 drinks30 gp
-sbatch bessemer-run.sh 99397 25379 45761 drinks30 gp
-sbatch bessemer-run.sh 54325 58785 53526 drinks30 gp
-sbatch bessemer-run.sh 51281 37108 31888 drinks30 gp
-sbatch bessemer-run.sh 34292 76022 22647 drinks30 gp
-sbatch bessemer-run.sh 12109 99392 81637 drinks30 gp
-sbatch bessemer-run.sh 47047 14270 43405 drinks30 gp
-sbatch bessemer-run.sh 95333 80569 44367 drinks30 gp
-sbatch bessemer-run.sh 56168 57893 47269 drinks30 gp
+bash experimental-data/drinks30/drinks30-30/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-29/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-28/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-27/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-26/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-25/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-24/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-23/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-22/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-21/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-20/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-19/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-18/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-17/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-16/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-15/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-14/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-13/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-12/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-11/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-10/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-9/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-8/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-7/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-6/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-5/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-4/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-3/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-2/drinks30-gp-submissions.sh
+bash experimental-data/drinks30/drinks30-1/drinks30-gp-submissions.sh
+

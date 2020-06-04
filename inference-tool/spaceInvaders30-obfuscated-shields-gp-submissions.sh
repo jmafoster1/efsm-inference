@@ -1,30 +1,31 @@
-sbatch bessemer-run.sh 29626 12894 89971 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 28677 70294 17008 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 66470 75853 35126 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 35326 11021 19346 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 95364 75781 36820 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 93355 62190 77535 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 69348 16459 86495 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 27380 61365 37625 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 16383 14406 70357 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 14973 40374 26986 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 16138 48593 39231 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 19179 17416 46614 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 32677 33745 67086 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 72617 43487 42023 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 27038 57059 34666 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 22748 27894 51146 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 97815 31515 36323 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 49801 94916 32041 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 58492 69740 56579 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 87391 87329 41283 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 32875 76755 45135 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 70101 18014 99018 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 64379 16852 35770 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 11221 80732 81580 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 47501 60424 49479 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 25070 98049 68895 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 69746 26515 43637 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 94689 73175 39738 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 30170 91558 70427 spaceInvaders30-obfuscated-shields gp
-sbatch bessemer-run.sh 22548 80613 34137 spaceInvaders30-obfuscated-shields gp
+bash experimental-data/spaceInvaders30/spaceInvaders30-1/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-10/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-11/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-12/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-13/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-14/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-15/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-16/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-17/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-18/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-19/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-2/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-20/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-21/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-22/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-23/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-24/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-25/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-26/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-27/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-28/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-29/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-3/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-30/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-4/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-5/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-6/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-7/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-8/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+bash experimental-data/spaceInvaders30/spaceInvaders30-9/spaceInvaders30-obfuscated-shields-gp-submissions.sh
+
