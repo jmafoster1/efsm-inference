@@ -1,0 +1,225 @@
+2020-06-10 13:33:35.920 - -s naive_eq_bonus -p gp -g 75251 -o 52608 -u 88889 -h ws -d results/liftDoors30/22/gp/liftDoors30-obfuscated-time-gp-75251-52608-88889 experimental-data/liftDoors30/liftDoors30-22/liftDoors30-obfuscated-time-train.json experimental-data/liftDoors30/liftDoors30-22/liftDoors30-obfuscated-time-test.json
+2020-06-10 13:33:35.921 - Building PTA - 30 traces
+2020-06-10 13:33:40.127 - PTA has 287 states
+2020-06-10 13:33:40.128 - PTA has 286 transitions
+2020-06-10 13:33:41.565 - Getting Output for setTimer
+2020-06-10 13:33:41.565 -   Singleton literal output
+2020-06-10 13:33:42.970 - Getting Output for waitTimer
+2020-06-10 13:33:43.076 -   No latent variable
+2020-06-10 13:33:43.131 -   Output training set: {[]=[o=3, o=4, o=1, o=2, o=0]}
+2020-06-10 13:33:43.131 -   Secret best output is: r1
+2020-06-10 13:33:46.541 -   Getting update for waitTimer
+2020-06-10 13:33:46.568 -     Update training set: {[r1=3]=[r1=2], [r1=4]=[r1=3], [r1=2]=[r1=1], [r1=1]=[r1=0]}
+2020-06-10 13:33:46.764 -     Best update is: (+ -1 r1)
+2020-06-10 13:33:46.765 -     Best update is correct
+2020-06-10 13:34:07.976 - Getting Output for systemInitReady
+2020-06-10 13:34:07.977 -   Singleton literal output
+2020-06-10 13:34:16.766 - Getting Output for closingDoor
+2020-06-10 13:34:16.790 -   No latent variable
+2020-06-10 13:34:16.792 - Getting Output for closingDoor
+2020-06-10 13:34:16.798 -   Latent variable: r2
+2020-06-10 13:34:16.801 -   Output training set: {[r1=-1]=[o=3, o=4, o=8, o=9, o=5, o=6, o=7, o=1, o=2, o=0]}
+2020-06-10 13:34:32.200 -   Best output is: r2
+2020-06-10 13:34:32.200 -   Best output is correct
+2020-06-10 13:34:34.683 -   Getting update for waitTimer
+2020-06-10 13:34:34.688 -     Update training set: {[]=[r2=9]}
+2020-06-10 13:34:34.695 -     Best update is: 9
+2020-06-10 13:34:34.695 -     Best update is correct
+2020-06-10 13:34:35.996 -   Getting update for systemInitReady
+2020-06-10 13:34:35.996 -     Update training set: {[]=[r2=9]}
+2020-06-10 13:34:36.005 -     Best update is: 9
+2020-06-10 13:34:36.005 -     Best update is correct
+2020-06-10 13:34:36.987 -   Getting update for closingDoor
+2020-06-10 13:34:36.991 -     Update training set: {[r2=4]=[r2=3], [r2=5]=[r2=4], [r2=6]=[r2=5], [r2=7]=[r2=6], [r2=8]=[r2=7], [r2=1]=[r2=0], [r2=2]=[r2=1], [r2=3]=[r2=2], [r2=9]=[r2=8]}
+2020-06-10 13:34:37.022 -     Best update is: (+ -1 r2)
+2020-06-10 13:34:37.022 -     Best update is correct
+2020-06-10 13:35:03.552 - Getting Output for buttonInterrupted
+2020-06-10 13:35:03.553 -   Singleton literal output
+2020-06-10 13:35:19.232 - Getting Output for openingDoor
+2020-06-10 13:35:19.233 -   Singleton literal output
+2020-06-10 13:35:35.412 - Getting Output for fullyOpen
+2020-06-10 13:35:35.429 -   No latent variable
+2020-06-10 13:35:35.430 -   Output training set: {[r2=-1, r1=-1]=[o=1, o=0], [r2=2, r1=-1]=[o=1, o=0], [r2=1, r1=-1]=[o=1, o=0], [r2=8, r1=-1]=[o=1, o=0], [r2=7, r1=-1]=[o=1, o=0], [r2=5, r1=-1]=[o=1, o=0], [r2=6, r1=-1]=[o=1, o=0]}
+2020-06-10 13:35:45.167 -   Best output is: (+ r2 (* r1 r2))
+2020-06-10 13:35:45.169 - Getting Output for fullyOpen
+2020-06-10 13:35:45.184 -   Latent variable: r3
+2020-06-10 13:35:45.185 -   Output training set: {[r2=-1, r1=-1]=[o=1, o=0], [r2=2, r1=-1]=[o=1, o=0], [r2=1, r1=-1]=[o=1, o=0], [r2=8, r1=-1]=[o=1, o=0], [r2=7, r1=-1]=[o=1, o=0], [r2=5, r1=-1]=[o=1, o=0], [r2=6, r1=-1]=[o=1, o=0]}
+2020-06-10 13:35:56.245 -   Best output is: r3
+2020-06-10 13:35:56.246 -   Best output is correct
+2020-06-10 13:35:58.303 -   Getting update for waitTimer
+2020-06-10 13:35:58.305 -     Update training set: {[]=[r3=1]}
+2020-06-10 13:35:58.320 -     Best update is: 1
+2020-06-10 13:35:58.321 -     Best update is correct
+2020-06-10 13:35:59.361 -   Getting update for systemInitReady
+2020-06-10 13:35:59.361 -     Update training set: {[]=[r3=1]}
+2020-06-10 13:35:59.363 -     Best update is: 1
+2020-06-10 13:35:59.363 -     Best update is correct
+2020-06-10 13:36:00.335 -   Getting update for closingDoor
+2020-06-10 13:36:00.336 -     Update training set: {[]=[r3=1]}
+2020-06-10 13:36:00.338 -     Best update is: 1
+2020-06-10 13:36:00.338 -     Best update is correct
+2020-06-10 13:36:01.436 -   Getting update for buttonInterrupted
+2020-06-10 13:36:01.438 -     Update training set: {[]=[r3=1]}
+2020-06-10 13:36:01.439 -     Best update is: 1
+2020-06-10 13:36:01.439 -     Best update is correct
+2020-06-10 13:36:02.501 -   Getting update for openingDoor
+2020-06-10 13:36:02.502 -     Update training set: {[]=[r3=1]}
+2020-06-10 13:36:02.507 -     Best update is: 1
+2020-06-10 13:36:02.507 -     Best update is correct
+2020-06-10 13:36:03.586 -   Getting update for fullyOpen
+2020-06-10 13:36:03.589 -     Update training set: {[r3=0]=[r3=1], [r3=1]=[r3=0]}
+2020-06-10 13:36:03.591 -     Best update is: (+ 1 (* -1 r3))
+2020-06-10 13:36:03.591 -     Best update is correct
+2020-06-10 13:36:04.768 -   Getting update for timeout
+2020-06-10 13:36:04.769 -     Update training set: {[]=[r3=1]}
+2020-06-10 13:36:04.771 -     Best update is: 1
+2020-06-10 13:36:04.771 -     Best update is correct
+2020-06-10 13:36:05.934 -   Getting update for closingDoor
+2020-06-10 13:36:05.938 -     Update training set: {[]=[r3=1]}
+2020-06-10 13:36:05.940 -     Best update is: 1
+2020-06-10 13:36:05.940 -     Best update is correct
+2020-06-10 13:36:07.102 -   Getting update for fullyClosed
+2020-06-10 13:36:07.104 -     Update training set: {[]=[r3=1]}
+2020-06-10 13:36:07.106 -     Best update is: 1
+2020-06-10 13:36:07.106 -     Best update is correct
+2020-06-10 13:36:08.245 -   Getting update for requestOpen
+2020-06-10 13:36:08.247 -     Update training set: {[]=[r3=1]}
+2020-06-10 13:36:08.250 -     Best update is: 1
+2020-06-10 13:36:08.250 -     Best update is correct
+2020-06-10 13:36:09.403 -   Getting update for openingDoor
+2020-06-10 13:36:09.406 -     Update training set: {[]=[r3=1]}
+2020-06-10 13:36:09.408 -     Best update is: 1
+2020-06-10 13:36:09.408 -     Best update is correct
+2020-06-10 13:36:36.407 - Getting Output for timeout
+2020-06-10 13:36:36.407 -   Singleton literal output
+2020-06-10 13:36:58.256 - Getting Output for closingDoor
+2020-06-10 13:36:58.263 -   No latent variable
+2020-06-10 13:36:58.264 - Getting Output for closingDoor
+2020-06-10 13:36:58.265 -   Latent variable: r4
+2020-06-10 13:36:58.266 -   Output training set: {[r3=1, r2=1, r1=-1]=[o=3, o=4, o=2], [r3=1, r2=7, r1=-1]=[o=3, o=4, o=2], [r3=1, r2=6, r1=-1]=[o=3, o=4, o=1, o=2, o=0], [r3=1, r2=5, r1=-1]=[o=3, o=4, o=2], [r3=1, r2=2, r1=-1]=[o=3, o=4, o=1, o=2, o=0], [r3=1, r2=-1, r1=-1]=[o=3, o=4, o=1, o=2, o=0], [r3=1, r2=8, r1=-1]=[o=3, o=4, o=1, o=2, o=0]}
+2020-06-10 13:37:14.654 -   Best output is: r4
+2020-06-10 13:37:14.654 -   Best output is correct
+2020-06-10 13:37:16.955 -   Getting update for waitTimer
+2020-06-10 13:37:16.956 -     Update training set: {[]=[r4=4]}
+2020-06-10 13:37:16.958 -     Best update is: 4
+2020-06-10 13:37:16.958 -     Best update is correct
+2020-06-10 13:37:18.050 -   Getting update for systemInitReady
+2020-06-10 13:37:18.052 -     Update training set: {[]=[r4=4]}
+2020-06-10 13:37:18.053 -     Best update is: 4
+2020-06-10 13:37:18.053 -     Best update is correct
+2020-06-10 13:37:19.180 -   Getting update for closingDoor
+2020-06-10 13:37:19.182 -     Update training set: {[]=[r4=4]}
+2020-06-10 13:37:19.184 -     Best update is: 4
+2020-06-10 13:37:19.185 -     Best update is correct
+2020-06-10 13:37:20.256 -   Getting update for buttonInterrupted
+2020-06-10 13:37:20.259 -     Update training set: {[]=[r4=4]}
+2020-06-10 13:37:20.278 -     Best update is: 4
+2020-06-10 13:37:20.278 -     Best update is correct
+2020-06-10 13:37:21.412 -   Getting update for openingDoor
+2020-06-10 13:37:21.413 -     Update training set: {[]=[r4=4]}
+2020-06-10 13:37:21.414 -     Best update is: 4
+2020-06-10 13:37:21.415 -     Best update is correct
+2020-06-10 13:37:22.554 -   Getting update for fullyOpen
+2020-06-10 13:37:22.557 -     Update training set: {[]=[r4=4]}
+2020-06-10 13:37:22.560 -     Best update is: 4
+2020-06-10 13:37:22.560 -     Best update is correct
+2020-06-10 13:37:23.690 -   Getting update for timeout
+2020-06-10 13:37:23.692 -     Update training set: {[]=[r4=4]}
+2020-06-10 13:37:23.695 -     Best update is: 4
+2020-06-10 13:37:23.701 -     Best update is correct
+2020-06-10 13:37:24.844 -   Getting update for closingDoor
+2020-06-10 13:37:24.845 -     Update training set: {[r4=2]=[r4=1, r4=4], [r4=1]=[r4=0], [r4=4]=[r4=3, r4=4], [r4=0]=[r4=4], [r4=3]=[r4=4, r4=2]}
+2020-06-10 13:37:24.845 -     Too few inputs for possible updates
+2020-06-10 13:37:24.872 -   Getting update for fullyClosed
+2020-06-10 13:37:24.873 -     Update training set: {[]=[r4=4]}
+2020-06-10 13:37:24.874 -     Best update is: 4
+2020-06-10 13:37:24.874 -     Best update is correct
+2020-06-10 13:37:26.002 -   Getting update for requestOpen
+2020-06-10 13:37:26.005 -     Update training set: {[]=[r4=4]}
+2020-06-10 13:37:26.007 -     Best update is: 4
+2020-06-10 13:37:26.007 -     Best update is correct
+2020-06-10 13:37:27.146 -   Getting update for openingDoor
+2020-06-10 13:37:27.146 -     Update training set: {[]=[r4=4]}
+2020-06-10 13:37:27.148 -     Best update is: 4
+2020-06-10 13:37:27.148 -     Best update is correct
+2020-06-10 13:37:50.548 - Getting Output for fullyClosed
+2020-06-10 13:37:50.549 -   Singleton literal output
+2020-06-10 13:38:12.314 - Getting Output for requestOpen
+2020-06-10 13:38:12.314 -   Singleton literal output
+2020-06-10 13:38:34.049 - Getting Output for openingDoor
+2020-06-10 13:38:34.063 -   No latent variable
+2020-06-10 13:38:34.064 - Getting Output for openingDoor
+2020-06-10 13:38:34.067 -   Latent variable: r4
+2020-06-10 13:38:34.067 -   Output training set: {[r2=-1, r1=-1]=[o=3, o=4, o=9, o=8, o=5, o=6, o=7, o=2], [r3=1, r2=6, r1=-1]=[o=3, o=4, o=8, o=9, o=5, o=6, o=7, o=2], [r3=1, r2=2, r1=-1]=[o=3, o=4, o=8, o=9, o=5, o=6, o=7, o=2], [r3=1, r2=8, r1=-1]=[o=3, o=4, o=8, o=9, o=5, o=6, o=7, o=2]}
+2020-06-10 13:38:34.068 -     Best memoised output is: r4
+2020-06-10 13:38:34.068 -     Best output is correct
+2020-06-10 13:38:36.329 -   Getting update for waitTimer
+2020-06-10 13:38:36.330 -     Update training set: {[]=[r4=9]}
+2020-06-10 13:38:36.332 -     Best update is: 9
+2020-06-10 13:38:36.332 -     Best update is correct
+2020-06-10 13:38:37.451 -   Getting update for systemInitReady
+2020-06-10 13:38:37.452 -     Update training set: {[]=[r4=9]}
+2020-06-10 13:38:37.455 -     Best update is: 9
+2020-06-10 13:38:37.456 -     Best update is correct
+2020-06-10 13:38:38.621 -   Getting update for closingDoor
+2020-06-10 13:38:38.622 -     Update training set: {[]=[r4=9]}
+2020-06-10 13:38:38.624 -     Best update is: 9
+2020-06-10 13:38:38.624 -     Best update is correct
+2020-06-10 13:38:39.791 -   Getting update for buttonInterrupted
+2020-06-10 13:38:39.793 -     Update training set: {[]=[r4=9]}
+2020-06-10 13:38:39.794 -     Best update is: 9
+2020-06-10 13:38:39.795 -     Best update is correct
+2020-06-10 13:38:40.854 -   Getting update for openingDoor
+2020-06-10 13:38:40.855 -     Update training set: {[]=[r4=9]}
+2020-06-10 13:38:40.857 -     Best update is: 9
+2020-06-10 13:38:40.857 -     Best update is correct
+2020-06-10 13:38:41.991 -   Getting update for fullyOpen
+2020-06-10 13:38:41.992 -     Update training set: {[]=[r4=9]}
+2020-06-10 13:38:41.994 -     Best update is: 9
+2020-06-10 13:38:41.994 -     Best update is correct
+2020-06-10 13:38:43.145 -   Getting update for timeout
+2020-06-10 13:38:43.145 -     Update training set: {[]=[r4=9]}
+2020-06-10 13:38:43.157 -     Best update is: 9
+2020-06-10 13:38:43.157 -     Best update is correct
+2020-06-10 13:38:44.319 -   Getting update for closingDoor
+2020-06-10 13:38:44.325 -     Update training set: {[]=[r4=9]}
+2020-06-10 13:38:44.327 -     Best update is: 9
+2020-06-10 13:38:44.327 -     Best update is correct
+2020-06-10 13:38:45.495 -   Getting update for fullyClosed
+2020-06-10 13:38:45.498 -     Update training set: {[]=[r4=9]}
+2020-06-10 13:38:45.499 -     Best update is: 9
+2020-06-10 13:38:45.500 -     Best update is correct
+2020-06-10 13:38:46.668 -   Getting update for requestOpen
+2020-06-10 13:38:46.673 -     Update training set: {[]=[r4=9]}
+2020-06-10 13:38:46.674 -     Best update is: 9
+2020-06-10 13:38:46.675 -     Best update is correct
+2020-06-10 13:38:47.838 -   Getting update for openingDoor
+2020-06-10 13:38:47.845 -     Update training set: {[r4=5]=[r4=4], [r4=4]=[r4=3], [r4=9]=[r4=8], [r4=6]=[r4=5], [r4=7]=[r4=6], [r4=3]=[r4=2], [r4=8]=[r4=7]}
+2020-06-10 13:38:47.849 -     Best update is: (+ -1 r4)
+2020-06-10 13:38:47.849 -     Best update is correct
+2020-06-10 13:39:11.699 - Resolved PTA has 287 states
+2020-06-10 13:39:11.700 - Resolved PTA has 286 transitions
+2020-06-10 13:39:11.700 - Preprocessing completed in 0h 5m 37.25264212100001s
+2020-06-10 13:41:11.148 - 287 -> 213
+2020-06-10 13:41:49.938 - 213 -> 208
+2020-06-10 13:42:22.048 - 208 -> 207
+2020-06-10 13:42:56.354 - 207 -> 196
+2020-06-10 13:43:26.514 - 196 -> 189
+2020-06-10 13:43:53.601 - 189 -> 180
+2020-06-10 13:44:17.359 - 180 -> 168
+2020-06-10 13:44:37.255 - 168 -> 166
+2020-06-10 13:44:57.357 - 166 -> 160
+2020-06-10 13:45:16.308 - 160 -> 150
+2020-06-10 13:45:33.072 - 150 -> 134
+2020-06-10 13:45:46.240 - 134 -> 125
+2020-06-10 13:45:57.018 - 125 -> 121
+2020-06-10 13:46:07.772 - 121 -> 111
+2020-06-10 13:46:17.869 - 111 -> 90
+2020-06-10 13:46:25.059 - 90 -> 22
+2020-06-10 13:46:25.377 - 22 -> 21
+2020-06-10 13:46:25.567 - 21 -> 20
+2020-06-10 13:46:25.742 - 20 -> 18
+2020-06-10 13:46:26.142 - The inferred machine is deterministic
+2020-06-10 13:46:26.147 - Completed in 0h 12m 51.69990900899995s
+2020-06-10 13:46:26.147 - states: 18
+2020-06-10 13:46:26.147 - transitions: 27

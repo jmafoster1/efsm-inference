@@ -1,0 +1,67 @@
+2020-06-06 02:41:18.025 - -s naive_eq_bonus -p gp -g 60687 -o 90298 -u 48634 -h ws -d results/spaceInvaders30/20/gp/spaceInvaders30-gp-60687-90298-48634 experimental-data/spaceInvaders30/spaceInvaders30-20/spaceInvaders30-train.json experimental-data/spaceInvaders30/spaceInvaders30-20/spaceInvaders30-test.json
+2020-06-06 02:41:18.027 - Building PTA - 30 traces
+2020-06-06 02:41:30.508 - PTA has 556 states
+2020-06-06 02:41:30.510 - PTA has 555 transitions
+2020-06-06 02:41:32.761 - Getting Output for start
+2020-06-06 02:41:32.761 -   Singleton literal output
+2020-06-06 02:41:32.762 - Getting Output for start
+2020-06-06 02:41:32.762 -   Singleton literal output
+2020-06-06 02:41:32.762 - Getting Output for start
+2020-06-06 02:41:32.762 -   Singleton literal output
+2020-06-06 02:41:36.742 - Getting Output for alienHit
+2020-06-06 02:41:36.844 -   No latent variable
+2020-06-06 02:41:36.898 -   Output training set: {[i0=0]=[o=1], [i0=1]=[o=2]}
+2020-06-06 02:41:37.514 -   Best output is: (+ 1 i0)
+2020-06-06 02:41:37.514 -   Best output is correct
+2020-06-06 02:41:41.343 - Getting Output for moveWest
+2020-06-06 02:41:41.353 -   No latent variable
+2020-06-06 02:41:41.358 -   Output training set: {[i0=50]=[o=0], [i0=100]=[o=50], [i0=150]=[o=100], [i0=200]=[o=150]}
+2020-06-06 02:41:50.497 -   Best output is: (+ -51 i0)
+2020-06-06 02:41:50.498 - Getting Output for moveWest
+2020-06-06 02:41:50.502 -   Latent variable: r1
+2020-06-06 02:41:50.503 -   Output training set: {[i0=50]=[o=0], [i0=100]=[o=50], [i0=150]=[o=100], [i0=200]=[o=150]}
+2020-06-06 02:41:50.544 -   Best output is: r1
+2020-06-06 02:41:50.545 -   Best output is correct
+2020-06-06 02:41:58.085 -   Getting update for moveWest
+2020-06-06 02:41:58.123 -     Update training set: {[r1=100, i0=150]=[r1=50], [r1=150, i0=200]=[r1=100], [r1=50, i0=100]=[r1=0]}
+2020-06-06 02:42:00.034 -     Best update is: (+ -50 r1)
+2020-06-06 02:42:00.034 -     Best update is correct
+2020-06-06 02:43:05.599 - Getting Output for moveEast
+2020-06-06 02:43:05.603 -   No latent variable
+2020-06-06 02:43:05.604 -   Output training set: {[r1=150, i0=300]=[o=350], [r1=150, i0=200]=[o=250], [r1=150, i0=350]=[o=400], [r1=150, i0=250]=[o=300]}
+2020-06-06 02:43:05.693 -   Best output is: (+ -100 (+ r1 i0))
+2020-06-06 02:43:05.694 -   Best output is correct
+2020-06-06 02:44:14.826 - Getting Output for moveWest
+2020-06-06 02:44:14.868 -   No latent variable
+2020-06-06 02:44:14.870 -   Output training set: {[r1=150, i0=150]=[o=100], [r1=0, i0=100]=[o=50], [r1=-50, i0=200]=[o=150], [r1=50, i0=200]=[o=150], [r1=150, i0=400]=[o=350], [r1=0, i0=350]=[o=300], [r1=0, i0=300]=[o=250], [r1=-50, i0=50]=[o=0], [r1=50, i0=400]=[o=350], [r1=150, i0=100]=[o=50], [r1=50, i0=50]=[o=0], [r1=0, i0=50]=[o=0], [r1=0, i0=400]=[o=350], [r1=150, i0=350]=[o=300], [r1=50, i0=300]=[o=250], [r1=50, i0=250]=[o=200], [r1=-50, i0=250]=[o=200], [r1=150, i0=300]=[o=250], [r1=50, i0=350]=[o=300], [r1=0, i0=200]=[o=150], [r1=-50, i0=100]=[o=50], [r1=50, i0=100]=[o=50], [r1=-50, i0=350]=[o=300], [r1=150, i0=50]=[o=0], [r1=0, i0=250]=[o=200], [r1=-50, i0=300]=[o=250], [r1=150, i0=250]=[o=200], [r1=150, i0=200]=[o=150], [r1=-50, i0=150]=[o=100], [r1=0, i0=150]=[o=100], [r1=50, i0=150]=[o=100]}
+2020-06-06 02:44:19.749 -   Best output is: (+ -50 i0)
+2020-06-06 02:44:19.750 -   Best output is correct
+2020-06-06 02:44:43.497 - Getting Output for shieldHit
+2020-06-06 02:44:43.498 -   No latent variable
+2020-06-06 02:44:43.498 -   Output training set: {[r1=150, i0=1]=[o=0], [r1=150, i0=2]=[o=1], [r1=150, i0=3]=[o=2]}
+2020-06-06 02:44:43.642 -   Best output is: (+ -1 i0)
+2020-06-06 02:44:43.642 -   Best output is correct
+2020-06-06 02:45:06.921 - Getting Output for moveEast
+2020-06-06 02:45:06.936 -   No latent variable
+2020-06-06 02:45:06.942 -   Output training set: {[r1=150, i0=300]=[o=350], [r1=150, i0=200]=[o=250], [r1=150, i0=150]=[o=200], [r1=150, i0=100]=[o=150], [r1=150, i0=50]=[o=100], [r1=150, i0=350]=[o=400], [r1=150, i0=0]=[o=50], [r1=150, i0=250]=[o=300]}
+2020-06-06 02:45:06.942 -     Best memoised output is: (+ -100 (+ r1 i0))
+2020-06-06 02:45:06.942 -     Best output is correct
+2020-06-06 02:47:10.416 - Resolved PTA has 556 states
+2020-06-06 02:47:10.418 - Resolved PTA has 555 transitions
+2020-06-06 02:47:10.419 - Preprocessing completed in 0h 5m 54.120072583000024s
+2020-06-06 02:58:26.160 - 556 -> 549
+2020-06-06 03:09:26.790 - 549 -> 533
+2020-06-06 03:19:42.004 - 533 -> 521
+2020-06-06 03:29:13.411 - 521 -> 510
+2020-06-06 03:38:36.242 - 510 -> 489
+2020-06-06 03:47:33.292 - 489 -> 453
+2020-06-06 03:52:29.130 - 453 -> 449
+2020-06-06 03:57:18.623 - 449 -> 439
+2020-06-06 04:02:13.825 - 439 -> 410
+2020-06-06 04:13:38.463 - 410 -> 118
+2020-06-06 04:14:14.763 - 118 -> 5
+2020-06-06 04:14:14.807 - 5 -> 4
+2020-06-06 04:14:14.819 - The inferred machine is deterministic
+2020-06-06 04:14:14.826 - Completed in 1h 32m 58.52709122299984s
+2020-06-06 04:14:14.829 - states: 4
+2020-06-06 04:14:14.829 - transitions: 7

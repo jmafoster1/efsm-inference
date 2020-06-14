@@ -1,0 +1,75 @@
+2020-06-13 21:36:06.812 - -s naive_eq_bonus -p gp -g 67824 -o 77709 -u 31030 -h ws -d results/spaceInvaders30/15/gp/spaceInvaders30-obfuscated-aliens-gp-67824-77709-31030 experimental-data/spaceInvaders30/spaceInvaders30-15/spaceInvaders30-obfuscated-aliens-train.json experimental-data/spaceInvaders30/spaceInvaders30-15/spaceInvaders30-obfuscated-aliens-test.json
+2020-06-13 21:36:06.814 - Building PTA - 30 traces
+2020-06-13 21:36:23.147 - PTA has 634 states
+2020-06-13 21:36:23.149 - PTA has 633 transitions
+2020-06-13 21:36:25.898 - Getting Output for start
+2020-06-13 21:36:25.911 -   Singleton literal output
+2020-06-13 21:36:25.911 - Getting Output for start
+2020-06-13 21:36:25.911 -   Singleton literal output
+2020-06-13 21:36:25.912 - Getting Output for start
+2020-06-13 21:36:25.912 -   Singleton literal output
+2020-06-13 21:36:30.296 - Getting Output for moveWest
+2020-06-13 21:36:30.415 -   No latent variable
+2020-06-13 21:36:30.472 -   Output training set: {[i0=200]=[o=150], [i0=150]=[o=100], [i0=100]=[o=50], [i0=50]=[o=0]}
+2020-06-13 21:36:40.887 -   Best output is: (+ -52 i0)
+2020-06-13 21:36:40.887 - Getting Output for moveWest
+2020-06-13 21:36:40.890 -   Latent variable: r1
+2020-06-13 21:36:40.894 -   Output training set: {[i0=200]=[o=150], [i0=150]=[o=100], [i0=100]=[o=50], [i0=50]=[o=0]}
+2020-06-13 21:36:41.144 -   Best output is: (+ 100 (+ i0 (* -1 r1)))
+2020-06-13 21:36:41.144 -   Best output is correct
+2020-06-13 21:38:07.161 - Getting Output for moveEast
+2020-06-13 21:38:07.168 -   No latent variable
+2020-06-13 21:38:07.168 -   Output training set: {[r1=150, i0=300]=[o=350], [r1=150, i0=200]=[o=250], [r1=150, i0=350]=[o=400], [r1=150, i0=250]=[o=300]}
+2020-06-13 21:38:08.234 -   Best output is: (+ 50 i0)
+2020-06-13 21:38:08.235 -   Best output is correct
+2020-06-13 21:38:42.984 - Getting Output for alienHit
+2020-06-13 21:38:42.987 -   No latent variable
+2020-06-13 21:38:42.987 - Getting Output for alienHit
+2020-06-13 21:38:42.995 -   Latent variable: r2
+2020-06-13 21:38:42.996 -   Output training set: {[r1=150]=[o=4, o=3, o=1, o=2]}
+2020-06-13 21:38:52.721 -   Best output is: r2
+2020-06-13 21:38:52.721 -   Best output is correct
+2020-06-13 21:39:06.345 -   Getting update for alienHit
+2020-06-13 21:39:06.373 -     Update training set: {[r2=1]=[r2=2], [r2=2]=[r2=3], [r2=3]=[r2=4]}
+2020-06-13 21:39:06.835 -     Best update is: (+ 1 r2)
+2020-06-13 21:39:06.835 -     Best update is correct
+2020-06-13 21:41:01.458 - Getting Output for shieldHit
+2020-06-13 21:41:01.459 -   Singleton literal output
+2020-06-13 21:44:15.060 - Resolved PTA has 634 states
+2020-06-13 21:44:15.062 - Resolved PTA has 633 transitions
+2020-06-13 21:44:15.062 - Preprocessing completed in 0h 8m 9.917288680000013s
+2020-06-13 22:04:43.789 - 634 -> 623
+2020-06-13 22:25:47.247 - 623 -> 575
+2020-06-13 22:42:00.500 - 575 -> 555
+2020-06-13 22:59:10.711 - 555 -> 486
+2020-06-13 23:11:11.907 - 486 -> 431
+2020-06-13 23:17:15.236 - 431 -> 410
+2020-06-13 23:24:15.743 - 410 -> 300
+2020-06-13 23:28:29.000 - 300 -> 150
+2020-06-13 23:28:53.716 - 150 -> 127
+2020-06-13 23:29:21.831 - 127 -> 123
+2020-06-13 23:29:37.175 - 123 -> 115
+2020-06-13 23:29:51.867 - 115 -> 109
+2020-06-13 23:30:03.823 - 109 -> 107
+2020-06-13 23:30:15.734 - 107 -> 102
+2020-06-13 23:30:25.671 - 102 -> 95
+2020-06-13 23:30:34.269 - 95 -> 87
+2020-06-13 23:30:40.966 - 87 -> 80
+2020-06-13 23:30:47.059 - 80 -> 61
+2020-06-13 23:30:50.715 - 61 -> 55
+2020-06-13 23:30:54.736 - 55 -> 52
+2020-06-13 23:30:56.994 - 52 -> 49
+2020-06-13 23:31:04.688 - 49 -> 46
+2020-06-13 23:31:08.072 - 46 -> 45
+2020-06-13 23:31:10.296 - 45 -> 43
+2020-06-13 23:31:12.058 - 43 -> 42
+2020-06-13 23:31:14.495 - 42 -> 36
+2020-06-13 23:31:15.553 - 36 -> 35
+2020-06-13 23:31:18.357 - 35 -> 32
+2020-06-13 23:31:19.771 - 32 -> 30
+2020-06-13 23:31:20.622 - 30 -> 28
+2020-06-13 23:31:21.427 - 28 -> 26
+2020-06-13 23:31:22.080 - The inferred machine is deterministic
+2020-06-13 23:31:22.088 - Completed in 1h 55m 16.942768283000078s
+2020-06-13 23:31:22.088 - states: 26
+2020-06-13 23:31:22.088 - transitions: 46

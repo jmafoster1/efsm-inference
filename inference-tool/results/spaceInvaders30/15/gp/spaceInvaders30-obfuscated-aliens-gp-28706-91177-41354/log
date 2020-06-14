@@ -1,0 +1,74 @@
+2020-06-13 18:24:52.528 - -s naive_eq_bonus -p gp -g 28706 -o 91177 -u 41354 -h ws -d results/spaceInvaders30/15/gp/spaceInvaders30-obfuscated-aliens-gp-28706-91177-41354 experimental-data/spaceInvaders30/spaceInvaders30-15/spaceInvaders30-obfuscated-aliens-train.json experimental-data/spaceInvaders30/spaceInvaders30-15/spaceInvaders30-obfuscated-aliens-test.json
+2020-06-13 18:24:52.529 - Building PTA - 30 traces
+2020-06-13 18:25:05.267 - PTA has 634 states
+2020-06-13 18:25:05.268 - PTA has 633 transitions
+2020-06-13 18:25:07.390 - Getting Output for start
+2020-06-13 18:25:07.399 -   Singleton literal output
+2020-06-13 18:25:07.399 - Getting Output for start
+2020-06-13 18:25:07.400 -   Singleton literal output
+2020-06-13 18:25:07.400 - Getting Output for start
+2020-06-13 18:25:07.400 -   Singleton literal output
+2020-06-13 18:25:11.171 - Getting Output for moveWest
+2020-06-13 18:25:11.259 -   No latent variable
+2020-06-13 18:25:11.305 -   Output training set: {[i0=200]=[o=150], [i0=150]=[o=100], [i0=100]=[o=50], [i0=50]=[o=0]}
+2020-06-13 18:25:19.399 -   Best output is: (+ -48 i0)
+2020-06-13 18:25:19.400 - Getting Output for moveWest
+2020-06-13 18:25:19.417 -   Latent variable: r1
+2020-06-13 18:25:19.418 -   Output training set: {[i0=200]=[o=150], [i0=150]=[o=100], [i0=100]=[o=50], [i0=50]=[o=0]}
+2020-06-13 18:25:19.460 -   Best output is: (+ i0 (* -1 r1))
+2020-06-13 18:25:19.460 -   Best output is correct
+2020-06-13 18:26:29.884 - Getting Output for moveEast
+2020-06-13 18:26:29.890 -   No latent variable
+2020-06-13 18:26:29.891 -   Output training set: {[r1=50, i0=250]=[o=300], [r1=50, i0=200]=[o=250], [r1=50, i0=350]=[o=400], [r1=50, i0=300]=[o=350]}
+2020-06-13 18:26:29.924 -   Best output is: (+ r1 i0)
+2020-06-13 18:26:29.925 -   Best output is correct
+2020-06-13 18:27:48.103 - Getting Output for alienHit
+2020-06-13 18:27:48.106 -   No latent variable
+2020-06-13 18:27:48.106 - Getting Output for alienHit
+2020-06-13 18:27:48.108 -   Latent variable: r2
+2020-06-13 18:27:48.108 -   Output training set: {[r1=50]=[o=3, o=4, o=1, o=2]}
+2020-06-13 18:27:56.223 -   Best output is: r2
+2020-06-13 18:27:56.223 -   Best output is correct
+2020-06-13 18:28:06.981 -   Getting update for alienHit
+2020-06-13 18:28:07.003 -     Update training set: {[r2=3]=[r2=4], [r2=2]=[r2=3], [r2=1]=[r2=2]}
+2020-06-13 18:28:07.127 -     Best update is: (+ 1 r2)
+2020-06-13 18:28:07.127 -     Best update is correct
+2020-06-13 18:29:41.770 - Getting Output for shieldHit
+2020-06-13 18:29:41.780 -   Singleton literal output
+2020-06-13 18:32:16.537 - Resolved PTA has 634 states
+2020-06-13 18:32:16.539 - Resolved PTA has 633 transitions
+2020-06-13 18:32:16.539 - Preprocessing completed in 0h 7m 25.253998723999985s
+2020-06-13 18:47:49.489 - 634 -> 623
+2020-06-13 19:03:41.036 - 623 -> 575
+2020-06-13 19:16:41.521 - 575 -> 537
+2020-06-13 19:27:20.210 - 537 -> 523
+2020-06-13 19:37:21.222 - 523 -> 503
+2020-06-13 19:46:34.832 - 503 -> 484
+2020-06-13 19:55:20.871 - 484 -> 443
+2020-06-13 20:05:36.066 - 443 -> 150
+2020-06-13 20:05:56.839 - 150 -> 127
+2020-06-13 20:06:17.526 - 127 -> 123
+2020-06-13 20:06:30.174 - 123 -> 115
+2020-06-13 20:06:42.975 - 115 -> 109
+2020-06-13 20:06:54.308 - 109 -> 107
+2020-06-13 20:07:02.772 - 107 -> 102
+2020-06-13 20:07:10.923 - 102 -> 95
+2020-06-13 20:07:18.226 - 95 -> 87
+2020-06-13 20:07:23.816 - 87 -> 80
+2020-06-13 20:07:29.046 - 80 -> 61
+2020-06-13 20:07:32.287 - 61 -> 55
+2020-06-13 20:07:35.661 - 55 -> 52
+2020-06-13 20:07:37.567 - 52 -> 49
+2020-06-13 20:07:41.829 - 49 -> 48
+2020-06-13 20:07:44.402 - 48 -> 39
+2020-06-13 20:07:45.857 - 39 -> 33
+2020-06-13 20:07:47.203 - 33 -> 31
+2020-06-13 20:07:48.391 - 31 -> 30
+2020-06-13 20:07:49.159 - 30 -> 29
+2020-06-13 20:07:50.030 - 29 -> 28
+2020-06-13 20:07:50.946 - 28 -> 26
+2020-06-13 20:07:51.479 - 26 -> 24
+2020-06-13 20:07:51.878 - The inferred machine is deterministic
+2020-06-13 20:07:51.884 - Completed in 1h 43m 0.598849166999571s
+2020-06-13 20:07:51.884 - states: 24
+2020-06-13 20:07:51.885 - transitions: 42

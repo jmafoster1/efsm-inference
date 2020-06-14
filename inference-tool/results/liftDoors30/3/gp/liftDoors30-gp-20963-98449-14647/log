@@ -1,0 +1,53 @@
+2020-06-04 23:30:25.946 - -s naive_eq_bonus -p gp -g 20963 -o 98449 -u 14647 -h ws -d results/liftDoors30/3/gp/liftDoors30-gp-20963-98449-14647 experimental-data/liftDoors30/liftDoors30-3/liftDoors30-train.json experimental-data/liftDoors30/liftDoors30-3/liftDoors30-test.json
+2020-06-04 23:30:25.949 - Building PTA - 30 traces
+2020-06-04 23:30:34.783 - PTA has 525 states
+2020-06-04 23:30:34.785 - PTA has 524 transitions
+2020-06-04 23:30:37.152 - Getting Output for setTimer
+2020-06-04 23:30:37.153 -   Singleton literal output
+2020-06-04 23:30:39.581 - Getting Output for waitTimer
+2020-06-04 23:30:39.690 -   No latent variable
+2020-06-04 23:30:39.748 -   Output training set: {[i0=4]=[o=3], [i0=3]=[o=2], [i0=5]=[o=4], [i0=1]=[o=0], [i0=2]=[o=1]}
+2020-06-04 23:30:40.309 -   Best output is: (+ -1 i0)
+2020-06-04 23:30:40.309 -   Best output is correct
+2020-06-04 23:30:43.173 - Getting Output for systemInitReady
+2020-06-04 23:30:43.173 -   Singleton literal output
+2020-06-04 23:30:45.470 - Getting Output for closingDoor
+2020-06-04 23:30:45.487 -   No latent variable
+2020-06-04 23:30:45.491 -   Output training set: {[i0=4]=[o=3], [i0=3]=[o=2], [i0=5]=[o=4], [i0=9]=[o=8], [i0=1]=[o=0], [i0=2]=[o=1], [i0=10]=[o=9], [i0=7]=[o=6], [i0=6]=[o=5], [i0=8]=[o=7]}
+2020-06-04 23:30:45.492 -     Best memoised output is: (+ -1 i0)
+2020-06-04 23:30:45.492 -     Best output is correct
+2020-06-04 23:30:48.874 - Getting Output for buttonInterrupted
+2020-06-04 23:30:48.875 -   Singleton literal output
+2020-06-04 23:30:50.832 - Getting Output for openingDoor
+2020-06-04 23:30:50.833 -   Singleton literal output
+2020-06-04 23:30:53.022 - Getting Output for fullyOpen
+2020-06-04 23:30:53.026 -   No latent variable
+2020-06-04 23:30:53.027 -   Output training set: {[i0=1]=[o=0], [i0=2]=[o=1]}
+2020-06-04 23:30:53.028 -     Best memoised output is: (+ -1 i0)
+2020-06-04 23:30:53.028 -     Best output is correct
+2020-06-04 23:30:55.169 - Getting Output for timeout
+2020-06-04 23:30:55.169 -   Singleton literal output
+2020-06-04 23:30:57.494 - Getting Output for fullyClosed
+2020-06-04 23:30:57.494 -   Singleton literal output
+2020-06-04 23:31:00.090 - Getting Output for requestOpen
+2020-06-04 23:31:00.091 -   Singleton literal output
+2020-06-04 23:31:02.131 - Getting Output for openingDoor
+2020-06-04 23:31:02.139 -   No latent variable
+2020-06-04 23:31:02.139 -   Output training set: {[i0=4]=[o=3], [i0=3]=[o=2], [i0=5]=[o=4], [i0=9]=[o=8], [i0=10]=[o=9], [i0=7]=[o=6], [i0=6]=[o=5], [i0=8]=[o=7]}
+2020-06-04 23:31:02.139 -     Best memoised output is: (+ -1 i0)
+2020-06-04 23:31:02.140 -     Best output is correct
+2020-06-04 23:33:33.180 - Resolved PTA has 295 states
+2020-06-04 23:33:33.181 - Resolved PTA has 294 transitions
+2020-06-04 23:33:33.181 - Preprocessing completed in 0h 3m 8.618830757000012s
+2020-06-04 23:35:01.665 - 295 -> 290
+2020-06-04 23:36:55.556 - 290 -> 169
+2020-06-04 23:37:24.129 - 169 -> 114
+2020-06-04 23:37:38.393 - 114 -> 29
+2020-06-04 23:37:39.321 - 29 -> 18
+2020-06-04 23:37:39.442 - 18 -> 16
+2020-06-04 23:37:39.665 - 16 -> 6
+2020-06-04 23:37:39.729 - 6 -> 4
+2020-06-04 23:37:39.744 - The inferred machine is deterministic
+2020-06-04 23:37:39.749 - Completed in 0h 7m 15.186538593000023s
+2020-06-04 23:37:39.749 - states: 4
+2020-06-04 23:37:39.750 - transitions: 10

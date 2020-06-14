@@ -1,0 +1,18 @@
+2020-06-14 11:40:26.049 - -s naive_eq_bonus -p gp -g 45669 -o 27211 -u 76018 -h ws -d results/spaceInvaders30/20/gp/spaceInvaders30-obfuscated-aliens-gp-45669-27211-76018 experimental-data/spaceInvaders30/spaceInvaders30-20/spaceInvaders30-obfuscated-aliens-train.json experimental-data/spaceInvaders30/spaceInvaders30-20/spaceInvaders30-obfuscated-aliens-test.json
+2020-06-14 11:40:26.052 - Building PTA - 30 traces
+2020-06-14 11:40:39.863 - PTA has 556 states
+2020-06-14 11:40:39.866 - PTA has 555 transitions
+2020-06-14 11:40:42.391 - Getting Output for start
+2020-06-14 11:40:42.393 -   Singleton literal output
+2020-06-14 11:40:42.393 - Getting Output for start
+2020-06-14 11:40:42.393 -   Singleton literal output
+2020-06-14 11:40:42.394 - Getting Output for start
+2020-06-14 11:40:42.394 -   Singleton literal output
+2020-06-14 11:40:46.621 - Getting Output for alienHit
+2020-06-14 11:40:46.771 -   No latent variable
+2020-06-14 11:40:46.822 -   Output training set: {[]=[o=1, o=2]}
+2020-06-14 11:40:46.822 -   Secret best output is: r1
+2020-06-14 11:40:52.487 -   Getting update for alienHit
+2020-06-14 11:40:52.517 -     Update training set: {[r1=1]=[r1=2]}
+2020-06-14 11:40:52.759 -     Best update is: (+ (* r1 r1) r1)
+2020-06-14 11:40:52.760 -     Best update is correct

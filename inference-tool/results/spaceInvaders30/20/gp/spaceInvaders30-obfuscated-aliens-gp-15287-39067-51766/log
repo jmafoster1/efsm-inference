@@ -1,0 +1,192 @@
+2020-06-14 10:11:13.206 - -s naive_eq_bonus -p gp -g 15287 -o 39067 -u 51766 -h ws -d results/spaceInvaders30/20/gp/spaceInvaders30-obfuscated-aliens-gp-15287-39067-51766 experimental-data/spaceInvaders30/spaceInvaders30-20/spaceInvaders30-obfuscated-aliens-train.json experimental-data/spaceInvaders30/spaceInvaders30-20/spaceInvaders30-obfuscated-aliens-test.json
+2020-06-14 10:11:13.208 - Building PTA - 30 traces
+2020-06-14 10:11:26.334 - PTA has 556 states
+2020-06-14 10:11:26.336 - PTA has 555 transitions
+2020-06-14 10:11:28.627 - Getting Output for start
+2020-06-14 10:11:28.628 -   Singleton literal output
+2020-06-14 10:11:28.628 - Getting Output for start
+2020-06-14 10:11:28.628 -   Singleton literal output
+2020-06-14 10:11:28.628 - Getting Output for start
+2020-06-14 10:11:28.629 -   Singleton literal output
+2020-06-14 10:11:32.693 - Getting Output for alienHit
+2020-06-14 10:11:32.824 -   No latent variable
+2020-06-14 10:11:32.871 -   Output training set: {[]=[o=1, o=2]}
+2020-06-14 10:11:32.872 -   Secret best output is: r1
+2020-06-14 10:11:37.900 -   Getting update for alienHit
+2020-06-14 10:11:37.923 -     Update training set: {[r1=1]=[r1=2]}
+2020-06-14 10:11:38.122 -     Best update is: (* 2 (* r1 r1))
+2020-06-14 10:11:38.122 -     Best update is correct
+2020-06-14 10:12:43.045 - Getting Output for moveWest
+2020-06-14 10:12:43.061 -   No latent variable
+2020-06-14 10:12:43.064 -   Output training set: {[r1=1, i0=100]=[o=50], [r1=1, i0=150]=[o=100], [r1=1, i0=200]=[o=150], [r1=1, i0=50]=[o=0]}
+2020-06-14 10:12:48.714 -   Best output is: (+ -50 i0)
+2020-06-14 10:12:48.714 -   Best output is correct
+2020-06-14 10:13:12.874 - Getting Output for moveEast
+2020-06-14 10:13:12.879 -   No latent variable
+2020-06-14 10:13:12.880 -   Output training set: {[r1=1, i0=200]=[o=250], [r1=1, i0=350]=[o=400], [r1=1, i0=300]=[o=350], [r1=1, i0=250]=[o=300]}
+2020-06-14 10:13:12.885 -   Best output is: (+ (* 50 r1) i0)
+2020-06-14 10:13:12.888 -   Best output is correct
+2020-06-14 10:14:24.963 - Getting Output for shieldHit
+2020-06-14 10:14:24.976 -   No latent variable
+2020-06-14 10:14:24.977 -   Output training set: {[r1=1, i0=3]=[o=2], [r1=1, i0=2]=[o=1], [r1=2, i0=3]=[o=2], [r1=1, i0=1]=[o=0], [r1=2, i0=1]=[o=0]}
+2020-06-14 10:14:25.359 -   Best output is: (+ -1 i0)
+2020-06-14 10:14:25.360 -   Best output is correct
+2020-06-14 10:14:48.731 - Getting Output for moveEast
+2020-06-14 10:14:48.751 -   No latent variable
+2020-06-14 10:14:48.766 -   Output training set: {[r1=2, i0=200]=[o=250], [r1=1, i0=150]=[o=200], [r1=1, i0=350]=[o=400], [r1=2, i0=300]=[o=350], [r1=8, i0=200]=[o=250], [r1=8, i0=100]=[o=150], [r1=2, i0=250]=[o=300], [r1=2, i0=0]=[o=50], [r1=2, i0=100]=[o=150], [r1=1, i0=50]=[o=100], [r1=1, i0=100]=[o=150], [r1=1, i0=200]=[o=250], [r1=1, i0=300]=[o=350], [r1=2, i0=350]=[o=400], [r1=8, i0=0]=[o=50], [r1=1, i0=250]=[o=300], [r1=8, i0=150]=[o=200], [r1=8, i0=50]=[o=100], [r1=1, i0=0]=[o=50], [r1=2, i0=50]=[o=100], [r1=2, i0=150]=[o=200]}
+2020-06-14 10:14:49.394 -   Best output is: (+ 50 i0)
+2020-06-14 10:14:49.396 -   Best output is correct
+2020-06-14 10:15:13.433 - Getting Output for alienHit
+2020-06-14 10:15:13.435 -   No latent variable
+2020-06-14 10:15:13.436 - Getting Output for alienHit
+2020-06-14 10:15:13.441 -   Latent variable: r2
+2020-06-14 10:15:13.449 -   Output training set: {[r1=1]=[o=4, o=5, o=3, o=2, o=1], [r1=2]=[o=4, o=5, o=3, o=2]}
+2020-06-14 10:15:25.828 -   Best output is: r2
+2020-06-14 10:15:25.829 -   Best output is correct
+2020-06-14 10:15:28.017 -   Getting update for start
+2020-06-14 10:15:28.020 -     Update training set: {[i1=3, i0=200]=[r2=1, r2=2, r2=3, r2=4]}
+2020-06-14 10:15:28.020 -     Too few inputs for possible updates
+2020-06-14 10:15:28.023 -   Getting update for alienHit
+2020-06-14 10:15:28.026 -     Update training set: {[]=[r2=4, r2=2, r2=3]}
+2020-06-14 10:15:28.027 -     Too few inputs for possible updates
+2020-06-14 10:15:28.032 -   Getting update for moveWest
+2020-06-14 10:15:28.033 -     Update training set: {[i0=50]=[r2=1], [i0=100]=[r2=1, r2=3], [i0=150]=[r2=1, r2=3], [i0=200]=[r2=1, r2=3]}
+2020-06-14 10:15:28.033 -     Too few inputs for possible updates
+2020-06-14 10:15:28.043 -   Getting update for moveEast
+2020-06-14 10:15:28.043 -     Update training set: {[i0=300]=[r2=1, r2=2], [i0=350]=[r2=1], [i0=250]=[r2=1, r2=2], [i0=200]=[r2=1, r2=2]}
+2020-06-14 10:15:28.044 -     Too few inputs for possible updates
+2020-06-14 10:15:28.074 -   Getting update for moveWest
+2020-06-14 10:15:28.092 -     Update training set: {[i0=300]=[r2=4, r2=3, r2=2], [i0=350]=[r2=4, r2=3, r2=2], [i0=400]=[r2=4, r2=3], [i0=250]=[r2=4, r2=3, r2=2], [i0=50]=[r2=4, r2=3, r2=2], [i0=100]=[r2=4, r2=3, r2=2], [i0=150]=[r2=4, r2=3, r2=2], [i0=200]=[r2=4, r2=3, r2=2]}
+2020-06-14 10:15:28.092 -     Too few inputs for possible updates
+2020-06-14 10:15:28.108 -   Getting update for shieldHit
+2020-06-14 10:15:28.109 -     Update training set: {[i0=3]=[r2=2, r2=3], [i0=2]=[r2=2]}
+2020-06-14 10:15:28.110 -     Too few inputs for possible updates
+2020-06-14 10:15:28.129 -   Getting update for moveEast
+2020-06-14 10:15:28.137 -     Update training set: {[i0=300]=[r2=4, r2=2, r2=3], [i0=350]=[r2=4, r2=2], [i0=250]=[r2=4, r2=2, r2=3], [i0=100]=[r2=4, r2=2, r2=3], [i0=50]=[r2=4, r2=2, r2=3], [i0=150]=[r2=4, r2=2, r2=3], [i0=200]=[r2=4, r2=2, r2=3], [i0=0]=[r2=2, r2=3, r2=5, r2=4]}
+2020-06-14 10:15:28.137 -     Too few inputs for possible updates
+2020-06-14 10:15:28.155 -   Getting update for moveWest
+2020-06-14 10:15:28.157 -     Update training set: {[i0=300]=[r2=2, r2=3], [i0=350]=[r2=3, r2=2], [i0=400]=[r2=1, r2=2, r2=3], [i0=250]=[r2=2, r2=3], [i0=100]=[r2=1, r2=3, r2=2, r2=4], [i0=50]=[r2=3], [i0=150]=[r2=1, r2=2], [i0=200]=[r2=2, r2=3]}
+2020-06-14 10:15:28.157 -     Too few inputs for possible updates
+2020-06-14 10:15:28.162 -   Getting update for shieldHit
+2020-06-14 10:15:28.163 -     Update training set: {[i0=3]=[r2=1, r2=4, r2=2], [i0=2]=[r2=4, r2=2, r2=3]}
+2020-06-14 10:15:28.163 -     Too few inputs for possible updates
+2020-06-14 10:15:28.179 -   Getting update for moveEast
+2020-06-14 10:15:28.190 -     Update training set: {[i0=300]=[r2=4, r2=3], [i0=350]=[r2=3], [i0=250]=[r2=1, r2=4, r2=3], [i0=100]=[r2=1, r2=3, r2=2, r2=4], [i0=50]=[r2=1, r2=4, r2=3], [i0=150]=[r2=1, r2=3, r2=2, r2=4], [i0=200]=[r2=1, r2=3, r2=2, r2=4], [i0=0]=[r2=4, r2=3]}
+2020-06-14 10:15:28.190 -     Too few inputs for possible updates
+2020-06-14 10:15:28.194 -   Getting update for shieldHit
+2020-06-14 10:15:28.197 -     Update training set: {[i0=3]=[r2=1, r2=2, r2=3], [i0=2]=[r2=3, r2=2, r2=5, r2=4]}
+2020-06-14 10:15:28.198 -     Too few inputs for possible updates
+2020-06-14 10:15:28.209 -   Getting update for alienHit
+2020-06-14 10:15:28.212 -     Update training set: {[r2=3]=[r2=4], [r2=1]=[r2=2, r2=3], [r2=2]=[r2=4, r2=3], [r2=4]=[r2=5]}
+2020-06-14 10:15:28.213 -     Too few inputs for possible updates
+2020-06-14 10:15:28.224 -   Getting update for alienHit
+2020-06-14 10:15:28.226 -     Update training set: {[]=[r2=4, r2=3, r2=2]}
+2020-06-14 10:15:28.226 -     Too few inputs for possible updates
+2020-06-14 10:15:28.238 -   Getting update for alienHit
+2020-06-14 10:15:28.239 -     Update training set: {[]=[r2=4, r2=3]}
+2020-06-14 10:15:28.240 -     Too few inputs for possible updates
+2020-06-14 10:15:58.648 - Getting Output for alienHit
+2020-06-14 10:15:58.652 -   No latent variable
+2020-06-14 10:15:58.652 - Getting Output for alienHit
+2020-06-14 10:15:58.653 -   Latent variable: r2
+2020-06-14 10:15:58.653 -   Output training set: {[r1=1]=[o=4, o=5, o=3, o=2, o=1], [r1=2]=[o=4, o=5, o=3, o=2], [r1=8]=[o=4, o=3, o=5]}
+2020-06-14 10:15:58.667 -     Best memoised output is: r2
+2020-06-14 10:15:58.667 -     Best output is correct
+2020-06-14 10:16:00.576 -   Getting update for start
+2020-06-14 10:16:00.577 -     Update training set: {[i1=3, i0=200]=[r2=1, r2=2, r2=3, r2=4, r2=5]}
+2020-06-14 10:16:00.577 -     Too few inputs for possible updates
+2020-06-14 10:16:00.582 -   Getting update for alienHit
+2020-06-14 10:16:00.583 -     Update training set: {[]=[r2=5, r2=2, r2=3]}
+2020-06-14 10:16:00.583 -     Too few inputs for possible updates
+2020-06-14 10:16:00.590 -   Getting update for moveWest
+2020-06-14 10:16:00.592 -     Update training set: {[i0=50]=[r2=4, r2=2], [i0=100]=[r2=1, r2=2, r2=4, r2=5], [i0=150]=[r2=1, r2=2, r2=3, r2=4, r2=5], [i0=200]=[r2=1, r2=2, r2=3, r2=4, r2=5]}
+2020-06-14 10:16:00.592 -     Too few inputs for possible updates
+2020-06-14 10:16:00.598 -   Getting update for moveEast
+2020-06-14 10:16:00.599 -     Update training set: {[i0=300]=[r2=1, r2=2], [i0=350]=[r2=2], [i0=250]=[r2=1, r2=2], [i0=200]=[r2=1, r2=2]}
+2020-06-14 10:16:00.600 -     Too few inputs for possible updates
+2020-06-14 10:16:00.615 -   Getting update for moveWest
+2020-06-14 10:16:00.618 -     Update training set: {[i0=300]=[r2=2, r2=3, r2=5, r2=4], [i0=350]=[r2=2, r2=3, r2=5, r2=4], [i0=400]=[r2=4, r2=5, r2=3], [i0=250]=[r2=2, r2=3, r2=5, r2=4], [i0=50]=[r2=5, r2=2, r2=3], [i0=100]=[r2=5, r2=2, r2=3], [i0=150]=[r2=2, r2=3, r2=5, r2=4], [i0=200]=[r2=2, r2=3, r2=5, r2=4]}
+2020-06-14 10:16:00.618 -     Too few inputs for possible updates
+2020-06-14 10:16:03.544 -   Getting update for moveEast
+2020-06-14 10:16:03.552 -     Update training set: {[i0=300]=[r2=4, r2=5, r2=2], [i0=350]=[r2=4, r2=5, r2=2], [i0=250]=[r2=2, r2=3, r2=5, r2=4], [i0=100]=[r2=5, r2=4, r2=2], [i0=50]=[r2=5, r2=4, r2=2], [i0=150]=[r2=5, r2=4, r2=2], [i0=200]=[r2=2, r2=3, r2=5, r2=4], [i0=0]=[r2=5, r2=4, r2=2]}
+2020-06-14 10:16:03.552 -     Too few inputs for possible updates
+2020-06-14 10:16:03.568 -   Getting update for moveWest
+2020-06-14 10:16:03.569 -     Update training set: {[i0=300]=[r2=1, r2=2, r2=5, r2=4], [i0=350]=[r2=1, r2=4, r2=2], [i0=400]=[r2=1, r2=5, r2=2], [i0=250]=[r2=1, r2=2, r2=4, r2=5], [i0=100]=[r2=1, r2=4, r2=5], [i0=50]=[r2=1, r2=5, r2=4], [i0=150]=[r2=1, r2=4, r2=5], [i0=200]=[r2=1, r2=4, r2=5]}
+2020-06-14 10:16:03.569 -     Too few inputs for possible updates
+2020-06-14 10:16:03.572 -   Getting update for shieldHit
+2020-06-14 10:16:03.573 -     Update training set: {[i0=3]=[r2=4, r2=2, r2=3], [i0=2]=[r2=4]}
+2020-06-14 10:16:03.573 -     Too few inputs for possible updates
+2020-06-14 10:16:03.581 -   Getting update for moveEast
+2020-06-14 10:16:03.584 -     Update training set: {[i0=300]=[r2=1, r2=2, r2=3, r2=5, r2=4], [i0=350]=[r2=1, r2=2, r2=3], [i0=250]=[r2=1, r2=2, r2=3, r2=5, r2=4], [i0=50]=[r2=1, r2=5, r2=2], [i0=100]=[r2=1, r2=2, r2=3, r2=4, r2=5], [i0=150]=[r2=1, r2=2, r2=3, r2=4, r2=5], [i0=200]=[r2=1, r2=2, r2=3, r2=4, r2=5], [i0=0]=[r2=5, r2=2]}
+2020-06-14 10:16:03.584 -     Too few inputs for possible updates
+2020-06-14 10:16:03.587 -   Getting update for shieldHit
+2020-06-14 10:16:03.588 -     Update training set: {[i0=3]=[r2=4, r2=5, r2=2], [i0=2]=[r2=4, r2=5]}
+2020-06-14 10:16:03.588 -     Too few inputs for possible updates
+2020-06-14 10:16:03.592 -   Getting update for alienHit
+2020-06-14 10:16:03.592 -     Update training set: {[]=[r2=2, r2=3, r2=4, r2=5]}
+2020-06-14 10:16:03.592 -     Too few inputs for possible updates
+2020-06-14 10:16:03.598 -   Getting update for alienHit
+2020-06-14 10:16:03.609 -     Update training set: {[r2=3]=[r2=5, r2=4], [r2=1]=[r2=4, r2=2], [r2=2]=[r2=5, r2=4, r2=3], [r2=4]=[r2=5]}
+2020-06-14 10:16:03.609 -     Too few inputs for possible updates
+2020-06-14 10:16:03.613 -   Getting update for alienHit
+2020-06-14 10:16:03.615 -     Update training set: {[]=[r2=2, r2=3, r2=5, r2=4]}
+2020-06-14 10:16:03.615 -     Too few inputs for possible updates
+2020-06-14 10:16:33.649 - Getting Output for alienHit
+2020-06-14 10:16:33.656 -   No latent variable
+2020-06-14 10:16:33.657 - Getting Output for alienHit
+2020-06-14 10:16:33.658 -   Latent variable: r2
+2020-06-14 10:16:33.658 -   Output training set: {[r1=1]=[o=4, o=5, o=3, o=1, o=2], [r1=2]=[o=4, o=5, o=3, o=2], [r1=8]=[o=4, o=5]}
+2020-06-14 10:16:33.658 -     Best memoised output is: r2
+2020-06-14 10:16:33.658 -     Best output is correct
+2020-06-14 10:16:35.625 -   Getting update for start
+2020-06-14 10:16:35.626 -     Update training set: {[i1=3, i0=200]=[r2=1, r2=3, r2=2, r2=4, r2=5]}
+2020-06-14 10:16:35.626 -     Too few inputs for possible updates
+2020-06-14 10:16:35.628 -   Getting update for alienHit
+2020-06-14 10:16:35.629 -     Update training set: {[]=[r2=3, r2=2, r2=4, r2=5]}
+2020-06-14 10:16:35.629 -     Too few inputs for possible updates
+2020-06-14 10:16:35.632 -   Getting update for moveWest
+2020-06-14 10:16:35.633 -     Update training set: {[i0=50]=[r2=1, r2=2], [i0=100]=[r2=1, r2=3, r2=2, r2=5, r2=4], [i0=150]=[r2=1, r2=3, r2=2, r2=5, r2=4], [i0=200]=[r2=1, r2=3, r2=2, r2=5, r2=4]}
+2020-06-14 10:16:35.633 -     Too few inputs for possible updates
+2020-06-14 10:16:35.657 -   Getting update for moveEast
+2020-06-14 10:16:35.662 -     Update training set: {[i0=300]=[r2=1, r2=5, r2=3], [i0=350]=[r2=3], [i0=250]=[r2=1, r2=5, r2=3], [i0=200]=[r2=1, r2=5, r2=3]}
+2020-06-14 10:16:35.662 -     Too few inputs for possible updates
+2020-06-14 10:16:35.676 -   Getting update for moveWest
+2020-06-14 10:16:35.680 -     Update training set: {[i0=300]=[r2=5, r2=4, r2=3], [i0=350]=[r2=5, r2=4, r2=3], [i0=400]=[r2=5, r2=4], [i0=250]=[r2=5, r2=4, r2=3], [i0=50]=[r2=4, r2=5, r2=3], [i0=100]=[r2=4, r2=5, r2=3], [i0=150]=[r2=4, r2=5, r2=3], [i0=200]=[r2=4, r2=5, r2=3]}
+2020-06-14 10:16:35.680 -     Too few inputs for possible updates
+2020-06-14 10:16:38.562 -   Getting update for moveEast
+2020-06-14 10:16:38.568 -     Update training set: {[i0=300]=[r2=5, r2=4, r2=3], [i0=350]=[r2=5, r2=4, r2=3], [i0=250]=[r2=3, r2=2, r2=4, r2=5], [i0=100]=[r2=3, r2=2, r2=4, r2=5], [i0=50]=[r2=3, r2=2, r2=4, r2=5], [i0=150]=[r2=3, r2=2, r2=4, r2=5], [i0=200]=[r2=3, r2=2, r2=4, r2=5], [i0=0]=[r2=3, r2=2, r2=4, r2=5]}
+2020-06-14 10:16:38.569 -     Too few inputs for possible updates
+2020-06-14 10:16:38.575 -   Getting update for moveWest
+2020-06-14 10:16:38.579 -     Update training set: {[i0=300]=[r2=1, r2=4, r2=5], [i0=350]=[r2=1, r2=5, r2=3], [i0=400]=[r2=5, r2=3], [i0=250]=[r2=5, r2=4], [i0=50]=[r2=4, r2=3], [i0=100]=[r2=5, r2=4, r2=3], [i0=150]=[r2=5, r2=4, r2=3], [i0=200]=[r2=5, r2=4]}
+2020-06-14 10:16:38.580 -     Too few inputs for possible updates
+2020-06-14 10:16:38.583 -   Getting update for shieldHit
+2020-06-14 10:16:38.583 -     Update training set: {[i0=3]=[r2=3, r2=2], [i0=2]=[r2=4]}
+2020-06-14 10:16:38.583 -     Too few inputs for possible updates
+2020-06-14 10:16:38.590 -   Getting update for moveEast
+2020-06-14 10:16:38.598 -     Update training set: {[i0=300]=[r2=1, r2=4, r2=5], [i0=350]=[r2=1, r2=5], [i0=250]=[r2=1, r2=3, r2=4, r2=5], [i0=50]=[r2=1, r2=3, r2=5, r2=4], [i0=100]=[r2=1, r2=3, r2=5, r2=4], [i0=150]=[r2=1, r2=3, r2=5, r2=4], [i0=200]=[r2=1, r2=3, r2=5, r2=4], [i0=0]=[r2=1, r2=4, r2=5]}
+2020-06-14 10:16:38.598 -     Too few inputs for possible updates
+2020-06-14 10:16:38.601 -   Getting update for shieldHit
+2020-06-14 10:16:38.602 -     Update training set: {[i0=3]=[r2=5, r2=4, r2=3], [i0=2]=[r2=5, r2=4]}
+2020-06-14 10:16:38.603 -     Too few inputs for possible updates
+2020-06-14 10:16:38.608 -   Getting update for alienHit
+2020-06-14 10:16:38.610 -     Update training set: {[]=[r2=3, r2=2, r2=5, r2=4]}
+2020-06-14 10:16:38.611 -     Too few inputs for possible updates
+2020-06-14 10:16:38.615 -   Getting update for alienHit
+2020-06-14 10:16:38.616 -     Update training set: {[]=[r2=3, r2=2, r2=5, r2=4]}
+2020-06-14 10:16:38.616 -     Too few inputs for possible updates
+2020-06-14 10:16:38.620 -   Getting update for alienHit
+2020-06-14 10:16:38.622 -     Update training set: {[r2=3]=[r2=4, r2=5], [r2=1]=[r2=3, r2=2], [r2=2]=[r2=4, r2=3], [r2=4]=[r2=5]}
+2020-06-14 10:16:38.623 -     Too few inputs for possible updates
+2020-06-14 10:17:54.031 - Resolved PTA has 556 states
+2020-06-14 10:17:54.033 - Resolved PTA has 555 transitions
+2020-06-14 10:17:54.033 - Preprocessing completed in 0h 6m 42.603988899s
+2020-06-14 10:30:29.332 - 556 -> 542
+2020-06-14 10:41:48.748 - 542 -> 534
+2020-06-14 10:53:03.788 - 534 -> 514
+2020-06-14 11:03:28.613 - 514 -> 482
+2020-06-14 11:12:43.554 - 482 -> 472
+2020-06-14 11:20:59.899 - 472 -> 453
+2020-06-14 11:27:01.762 - 453 -> 421
+2020-06-14 11:31:51.904 - 421 -> 412
+2020-06-14 11:36:18.546 - 412 -> 394
+2020-06-14 11:40:18.871 - 394 -> 381

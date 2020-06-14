@@ -1,0 +1,44 @@
+2020-06-06 23:23:43.823 - -s naive_eq_bonus -p gp -g 43585 -o 66350 -u 16324 -h ws -d results/spaceInvaders30/9/gp/spaceInvaders30-gp-43585-66350-16324 experimental-data/spaceInvaders30/spaceInvaders30-9/spaceInvaders30-train.json experimental-data/spaceInvaders30/spaceInvaders30-9/spaceInvaders30-test.json
+2020-06-06 23:23:43.825 - Building PTA - 30 traces
+2020-06-06 23:24:01.895 - PTA has 651 states
+2020-06-06 23:24:01.898 - PTA has 650 transitions
+2020-06-06 23:24:04.734 - Getting Output for start
+2020-06-06 23:24:04.735 -   Singleton literal output
+2020-06-06 23:24:04.736 - Getting Output for start
+2020-06-06 23:24:04.736 -   Singleton literal output
+2020-06-06 23:24:04.736 - Getting Output for start
+2020-06-06 23:24:04.736 -   Singleton literal output
+2020-06-06 23:24:09.442 - Getting Output for alienHit
+2020-06-06 23:24:09.549 -   No latent variable
+2020-06-06 23:24:09.606 -   Output training set: {[i0=0]=[o=1], [i0=1]=[o=2]}
+2020-06-06 23:24:11.956 -   Best output is: (+ 1 i0)
+2020-06-06 23:24:11.956 -   Best output is correct
+2020-06-06 23:24:16.250 - Getting Output for shieldHit
+2020-06-06 23:24:16.250 -   Singleton literal output
+2020-06-06 23:24:18.464 - Getting Output for moveWest
+2020-06-06 23:24:18.469 -   No latent variable
+2020-06-06 23:24:18.469 -   Output training set: {[i0=50]=[o=0], [i0=100]=[o=50], [i0=150]=[o=100], [i0=200]=[o=150]}
+2020-06-06 23:24:20.097 -   Best output is: (+ -50 i0)
+2020-06-06 23:24:20.098 -   Best output is correct
+2020-06-06 23:24:27.834 - Getting Output for moveEast
+2020-06-06 23:24:27.840 -   No latent variable
+2020-06-06 23:24:27.841 -   Output training set: {[i0=250]=[o=300], [i0=300]=[o=350], [i0=350]=[o=400], [i0=200]=[o=250]}
+2020-06-06 23:24:27.999 -   Best output is: (+ 50 i0)
+2020-06-06 23:24:27.999 -   Best output is correct
+2020-06-06 23:24:37.474 - Getting Output for shieldHit
+2020-06-06 23:24:37.477 -   No latent variable
+2020-06-06 23:24:37.478 -   Output training set: {[i0=2]=[o=1], [i0=3]=[o=2]}
+2020-06-06 23:24:37.627 -   Best output is: (+ -1 i0)
+2020-06-06 23:24:37.628 -   Best output is correct
+2020-06-06 23:24:48.132 - Resolved PTA has 651 states
+2020-06-06 23:24:48.133 - Resolved PTA has 650 transitions
+2020-06-06 23:24:48.134 - Preprocessing completed in 0h 1m 5.825119056999995s
+2020-06-06 23:41:40.607 - 651 -> 627
+2020-06-06 23:57:54.917 - 627 -> 562
+2020-06-07 00:17:16.512 - 562 -> 270
+2020-06-07 00:21:49.999 - 270 -> 5
+2020-06-07 00:21:50.098 - 5 -> 4
+2020-06-07 00:21:50.110 - The inferred machine is deterministic
+2020-06-07 00:21:50.117 - Completed in 0h 58m 7.80824587799998s
+2020-06-07 00:21:50.117 - states: 4
+2020-06-07 00:21:50.117 - transitions: 7

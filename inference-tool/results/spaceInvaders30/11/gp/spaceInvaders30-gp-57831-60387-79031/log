@@ -1,0 +1,45 @@
+2020-06-05 12:40:13.810 - -s naive_eq_bonus -p gp -g 57831 -o 60387 -u 79031 -h ws -d results/spaceInvaders30/11/gp/spaceInvaders30-gp-57831-60387-79031 experimental-data/spaceInvaders30/spaceInvaders30-11/spaceInvaders30-train.json experimental-data/spaceInvaders30/spaceInvaders30-11/spaceInvaders30-test.json
+2020-06-05 12:40:13.812 - Building PTA - 30 traces
+2020-06-05 12:40:27.375 - PTA has 630 states
+2020-06-05 12:40:27.377 - PTA has 629 transitions
+2020-06-05 12:40:29.917 - Getting Output for start
+2020-06-05 12:40:29.918 -   Singleton literal output
+2020-06-05 12:40:29.918 - Getting Output for start
+2020-06-05 12:40:29.919 -   Singleton literal output
+2020-06-05 12:40:29.919 - Getting Output for start
+2020-06-05 12:40:29.919 -   Singleton literal output
+2020-06-05 12:40:34.256 - Getting Output for moveWest
+2020-06-05 12:40:34.369 -   No latent variable
+2020-06-05 12:40:34.426 -   Output training set: {[i0=200]=[o=150], [i0=150]=[o=100], [i0=100]=[o=50], [i0=50]=[o=0]}
+2020-06-05 12:40:44.107 -   Best output is: (+ -50 i0)
+2020-06-05 12:40:44.107 -   Best output is correct
+2020-06-05 12:40:48.545 - Getting Output for moveEast
+2020-06-05 12:40:48.550 -   No latent variable
+2020-06-05 12:40:48.550 -   Output training set: {[i0=350]=[o=400], [i0=200]=[o=250], [i0=250]=[o=300], [i0=300]=[o=350]}
+2020-06-05 12:40:48.852 -   Best output is: (+ 50 i0)
+2020-06-05 12:40:48.852 -   Best output is correct
+2020-06-05 12:40:55.671 - Getting Output for alienHit
+2020-06-05 12:40:55.671 -   Singleton literal output
+2020-06-05 12:40:58.713 - Getting Output for shieldHit
+2020-06-05 12:40:58.714 -   Singleton literal output
+2020-06-05 12:41:00.787 - Getting Output for alienHit
+2020-06-05 12:41:00.791 -   No latent variable
+2020-06-05 12:41:00.792 -   Output training set: {[i0=2]=[o=3], [i0=4]=[o=5], [i0=1]=[o=2], [i0=0]=[o=1], [i0=3]=[o=4]}
+2020-06-05 12:41:00.930 -   Best output is: (+ 1 i0)
+2020-06-05 12:41:00.930 -   Best output is correct
+2020-06-05 12:41:04.762 - Getting Output for shieldHit
+2020-06-05 12:41:04.764 -   No latent variable
+2020-06-05 12:41:04.765 -   Output training set: {[i0=2]=[o=1], [i0=1]=[o=0], [i0=3]=[o=2]}
+2020-06-05 12:41:04.886 -   Best output is: (+ -1 i0)
+2020-06-05 12:41:04.886 -   Best output is correct
+2020-06-05 12:41:13.372 - Resolved PTA has 630 states
+2020-06-05 12:41:13.373 - Resolved PTA has 629 transitions
+2020-06-05 12:41:13.373 - Preprocessing completed in 0h 1m 1.0984918130000025s
+2020-06-05 12:56:47.819 - 630 -> 604
+2020-06-05 13:11:59.514 - 604 -> 524
+2020-06-05 13:21:55.617 - 524 -> 499
+2020-06-05 13:38:14.752 - 499 -> 4
+2020-06-05 13:38:14.783 - The inferred machine is deterministic
+2020-06-05 13:38:14.795 - Completed in 0h 58m 2.520425572000022s
+2020-06-05 13:38:14.796 - states: 4
+2020-06-05 13:38:14.796 - transitions: 7
