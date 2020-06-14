@@ -10,36 +10,36 @@ import json
 from numpy import mean
 import re
 import math
-import glob
 import os
 from itertools import takewhile, dropwhile
 import pandas as pd
 import matplotlib.pyplot as plt
 
-state_re = re.compile("states: (\d+)")
-transition_re = re.compile("transitions: (\d+)")
-transition_re = re.compile("transitions: (\d+)")
 runtime_re = re.compile("Completed in (\d+)h (\d+)m (\d+).\d+s")
 
 
-def total_states():
-    with open(root + "log") as f:
+def configs(p):
+    return sorted(list(p.keys()))
+
+
+def total_states(root, state_re = "states: (\d+)"):
+    with open(f"{root}/log") as f:
         for line in f:
-            match = state_re.search(line)
+            match = re.search(state_re, line)
             if match:
                 return int(match.group(1))
 
 
-def total_transitions():
-    with open(root + "log") as f:
+def total_transitions(root, transition_re = "transitions: (\d+)"):
+    with open(f"{root}/log") as f:
         for line in f:
-            match = transition_re.search(line)
+            match = re.search(transition_re, line)
             if match:
                 return int(match.group(1))
 
 
-def total_runtime():
-    with open(root + "log") as f:
+def total_runtime(root):
+    with open(f"{root}/log") as f:
         for line in f:
             match = runtime_re.search(line)
             if match:
@@ -107,90 +107,110 @@ def split_trace(trace, rejected=None):
     return (list(takewhile(match, trace)), list(dropwhile(match, trace)))
 
 
+def get_info(root, fileName):
+    info = {}
+
+    if fileName == "testLog.json":
+        info['states'] = total_states(root)
+        info['transitions'] = total_transitions(root)
+    elif fileName == "ptaLog.json":
+        info['states'] = total_states(root, "PTA has (\d+) states")
+        info['transitions'] = total_transitions(root, "PTA has (\d+) transitions")
+        
+    with open(f"{root}/{fileName}") as f:
+        log = json.loads("".join(f.readlines()))
+
+    info['runtime'] = total_runtime(root)
+
+    triples = [split_trace(trace['trace'], trace['rejected']) for trace in log]
+    info['t1'] = mean([len(x)/(len(x) + len(y) + len(z)) for x, y, z in triples]),
+    info['t2'] = mean([len(y)/(len(x) + len(y) + len(z)) for x, y, z in triples]),
+    info['t3'] = mean([len(z)/(len(x) + len(y) + len(z)) for x, y, z in triples]),
+
+    lengths = [len(x)/(len(x) + len(y) + len(z)) for x, y, z in triples]
+    # lengths = [len(t) for t, _, _ in triples]
+
+    # Minimum number of events before we can tell the models apart - useless
+    info['min'] = min(lengths)
+    # Average number of events before we can tell the models apart - useless
+    info['avg'] = mean(lengths)
+    # Ultrametric from the paper - useless
+    info['ultra'] = 2**-min(lengths)
+    # Mean prop. of the trace got through before we can tell the trace apart
+    info['prop'] = mean(
+            [len(p)/(len(p) + len(s1) + len(s2)) for p, s1, s2 in triples])
+
+    valid_traces = sum([s1 == [] and s2 == [] for _, s1, s2 in triples])
+    info['sensitivity'] = valid_traces/len(log)
+
+    rmse = sum([
+                sum([
+                        outputs_distance(event['expected'], event['actual'])
+                        for event in obj['trace']
+                    ])
+                for obj in log
+            ])
+    rmse = math.sqrt(rmse)
+    info['rmse'] = rmse
+
+    outputs = set()
+    for obj in log:
+        for event in obj['trace']:
+            outputs = outputs.union([to_num(o) for o in event['expected']])
+            outputs = outputs.union([to_num(o) for o in event['actual']])
+    info['nrmse'] = rmse/(max(outputs) - min(outputs))
+
+    states_covered = set()
+    for obj in log:
+        for event in obj['trace']:
+            states_covered.add(event['currentState'])
+            states_covered.add(event['nextState'])
+    info['state coverage'] = len(states_covered)/info['states']
+    transitions_covered = set()
+    for obj in log:
+        for event in obj['trace']:
+            transitions_covered.add(tuple(event['transition']))
+    info['transition coverage'] = len(transitions_covered)/info['transitions']
+    return info
+
+
 columns = ['states', 'transitions', 'min', 'avg', 'ultra', 'prop',
            'sensitivity', 'rmse', 'nrmse', 'state coverage', 'runtime',
            'transition coverage', 't1', 't2', 't3']
 
-programs = ["liftDoors", "spaceInvaders"]
+programs = {"liftDoors":{}, "spaceInvaders":{}}
+
+homedir = "/home/michael/Documents/results"
 
 for program in programs:
-    configurations = sorted(["-".join(os.path.basename(f).split("-")[1:]) for f in glob.glob(f"results/{program}*")])
-    
-    config_data = []
-    
-    for config in configurations:
-        config = f"{program}30-{config}"
-        roots = ([d for d in glob.glob(f"results/{config}/{config}-*/")
-                  if os.path.isdir(d) and os.path.exists(d + "testLog.json")])
-    
-        data = pd.DataFrame(columns=columns)
+    logs = os.listdir(f"{homedir}/{program}30")
 
-        for root in roots:
-            info = {}
-            with open(root + "testLog.json") as f:
-                log = json.loads("".join(f.readlines()))
-    
-            info['states'] = total_states()
-            info['transitions'] = total_transitions()
-            info['runtime'] = total_runtime()
-
-            triples = [split_trace(trace['trace'], trace['rejected']) for trace in log]
-            info['t1'] = mean([len(x)/(len(x) + len(y) + len(z)) for x, y, z in triples]),
-            info['t2'] = mean([len(y)/(len(x) + len(y) + len(z)) for x, y, z in triples]),
-            info['t3'] = mean([len(z)/(len(x) + len(y) + len(z)) for x, y, z in triples]),
-
-            lengths = [len(x)/(len(x) + len(y) + len(z)) for x, y, z in triples]
-            # lengths = [len(t) for t, _, _ in triples]
-
-            # Minimum number of events before we can tell the models apart - useless
-            info['min'] = min(lengths)
-            # Average number of events before we can tell the models apart - useless
-            info['avg'] = mean(lengths)
-            # Ultrametric from the paper - useless
-            info['ultra'] = 2**-min(lengths)
-            # Mean prop. of the trace got through before we can tell the trace apart
-            info['prop'] = mean(
-                    [len(p)/(len(p) + len(s1) + len(s2)) for p, s1, s2 in triples])
+    for log in logs:
+        configurations = os.listdir(f"{homedir}/{program}30/{log}")
         
-            valid_traces = sum([s1 == [] and s2 == [] for _, s1, s2 in triples])
-            info['sensitivity'] = valid_traces/len(log)
+        for config in configurations:
+            if config not in programs[program]:
+                programs[program][config] = pd.DataFrame(columns=columns)
+        
     
-            rmse = sum([
-                        sum([
-                                outputs_distance(event['expected'], event['actual'])
-                                for event in obj['trace']
-                            ])
-                        for obj in log
-                    ])
-            rmse = math.sqrt(rmse)
-            info['rmse'] = rmse
-
-            outputs = set()
-            for obj in log:
-                for event in obj['trace']:
-                    outputs = outputs.union([to_num(o) for o in event['expected']])
-                    outputs = outputs.union([to_num(o) for o in event['actual']])
-            info['nrmse'] = rmse/(max(outputs) - min(outputs))
-
-            states_covered = set()
-            for obj in log:
-                for event in obj['trace']:
-                    states_covered.add(event['currentState'])
-                    states_covered.add(event['nextState'])
-            info['state coverage'] = len(states_covered)/total_states()
-            transitions_covered = set()
-            for obj in log:
-                for event in obj['trace']:
-                    transitions_covered.add(tuple(event['transition']))
-            info['transition coverage'] = len(transitions_covered)/total_transitions()
-            data = data.append(pd.DataFrame(info, index=[root]))
-        config_data.append(data)
+            dd = f"{homedir}/{program}30/{log}/{config}"
+            roots = ([f"{dd}/{d}" for d in os.listdir(dd)
+                      if os.path.isdir(f"{dd}/{d}") and os.path.exists(f"{dd}/{d}/testLog.json")])
+    
+            for r in roots:
+                programs[program][config] = programs[program][config].append(pd.DataFrame(get_info(r, "testLog.json"), index=[r]))
+            
+            # Add in PTA - we don't need to loop and average as it's always the same
+            # for each trace set
+            if 'pta' not in programs[program]:
+                programs[program]['pta'] = pd.DataFrame(columns=columns)
+            programs[program]['pta'] = programs[program]['pta'].append(pd.DataFrame(get_info(roots[0], "ptaLog.json"), index=[roots[0]]))
 
     for column in [c for c in columns if c not in ['t1', 't2', 't3']]:
         fig1, ax1 = plt.subplots(figsize=(8, 4))
         ax1.set_title(f"{program} {column}")
         bp = ax1.boxplot(
-                [data[column].astype(float) for data in config_data],
+                [programs[program][config][column].astype(float) for config in configs(programs[program])],
                 medianprops={"linewidth": 0},
                 boxprops={"linewidth": 0},
                 whiskerprops={"linewidth": 0},
@@ -216,7 +236,7 @@ for program in programs:
                 ax1.plot(c_x, c_y, color="k", linewidth=1)
 
         ax1.set_xticklabels(
-                [' '.join(config.split('-')) for config in configurations],
+                [' '.join(config.split('-')) for config in configs(programs[program])],
                 rotation=45,
                 fontsize=12,
                 ha='right',
@@ -225,12 +245,16 @@ for program in programs:
             )
 
         plt.tight_layout()
-        plt.savefig(f"graphs/{program}-{column}.pgf")
+        plt.savefig(f"{homedir}/graphs/{program}-{column}.pgf")
 
     fig1, ax1 = plt.subplots(figsize=(8, 4))
-    t1Means = [mean(data['t1']) for data in config_data]
-    t2Means = [mean(data['t2']) + t1Means[i] for i, data in enumerate(config_data)]
-    t3Means = [mean(data['t3']) + t2Means[i] for i, data in enumerate(config_data)]
+    t1Means = [mean(programs[program][config]['t1']) for i, config in enumerate(configs(programs[program]))]
+    t2Means = [mean(programs[program][config]['t2']) + t1Means[i] for i, config in enumerate(configs(programs[program]))]
+    t3Means = [mean(programs[program][config]['t3']) + t2Means[i] for i, config in enumerate(configs(programs[program]))]
+
+    # t1Means = [mean(data['t1']) for data in programs[program]]
+    # t2Means = [mean(data['t2']) + t1Means[i] for i, data in enumerate(programs[program])]
+    # t3Means = [mean(data['t3']) + t2Means[i] for i, data in enumerate(programs[program])]
 
     ind = range(len(t1Means))
 
@@ -239,12 +263,10 @@ for program in programs:
     p1 = ax1.bar(ind, t1Means, color='green')
 
     ttl = plt.title(f"{program} traces")
-#    ttl.set_position([.5, 1.35])
-#    rcParams['axes.titlepad'] = 20 
 
     ax1.set_xticks(ind)
     ax1.set_xticklabels(
-            [' '.join(config.split('-')) for config in configurations],
+            [' '.join(config.split('-')) for config in configs(programs[program])],
             rotation=45,
             fontsize=12,
             ha='right',
@@ -253,14 +275,14 @@ for program in programs:
         )
     plt.tight_layout()
     plt.legend((p1[0], p2[0], p3[0]),
-               ('Correct', 'Incorrect', "Rejected"),
+               ('Accepted', 'Recognised', "Rejected"),
                loc='upper center',
                bbox_to_anchor=(0.5, 1.3),
                ncol=3)
-    plt.savefig(f"graphs/{program}-traces.pgf")
+    plt.savefig(f"{homedir}/graphs/{program}-traces.pgf")
     plt.show()
 
-    with open(f"graphs/{program}-graphs.tex", 'w') as f:
+    with open(f"{homedir}/graphs/{program}-graphs.tex", 'w') as f:
         print("\\documentclass{article}", file=f)
         print("\\usepackage{tikz}", file=f)
         print("\\usepackage{a4wide}", file=f)
