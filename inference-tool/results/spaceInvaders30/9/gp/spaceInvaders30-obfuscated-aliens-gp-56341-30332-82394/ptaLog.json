@@ -1,0 +1,862 @@
+[
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveEast", "inputs": [200], "currentState": 1, "nextState": 180, "regs": {}, "transition": [180], "expected": [250], "actual": [250]},
+      {"label": "moveEast", "inputs": [250], "currentState": 180, "nextState": 181, "regs": {}, "transition": [181], "expected": [300], "actual": [300]},
+      {"label": "moveEast", "inputs": [300], "currentState": 181, "nextState": 263, "regs": {}, "transition": [263], "expected": [350], "actual": [350]},
+      {"label": "moveWest", "inputs": [350], "currentState": 263, "nextState": 264, "regs": {}, "transition": [264], "expected": [300], "actual": [300]},
+      {"label": "moveWest", "inputs": [300], "currentState": 264, "nextState": 265, "regs": {}, "transition": [265], "expected": [250], "actual": [250]}
+    ],
+    "rejected": [
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "alienHit", "inputs": [], "outputs": [1]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "alienHit", "inputs": [], "currentState": 1, "nextState": 2, "regs": {}, "transition": [2], "expected": [1], "actual": [1]},
+      {"label": "moveWest", "inputs": [200], "currentState": 2, "nextState": 3, "regs": {}, "transition": [3], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 3, "nextState": 575, "regs": {}, "transition": [575], "expected": [100], "actual": [100]},
+      {"label": "moveWest", "inputs": [100], "currentState": 575, "nextState": 576, "regs": {}, "transition": [576], "expected": [50], "actual": [50]},
+      {"label": "moveWest", "inputs": [50], "currentState": 576, "nextState": 577, "regs": {}, "transition": [577], "expected": [0], "actual": [0]},
+      {"label": "alienHit", "inputs": [], "currentState": 577, "nextState": 578, "regs": {}, "transition": [578], "expected": [2], "actual": [2]},
+      {"label": "moveEast", "inputs": [0], "currentState": 578, "nextState": 579, "regs": {}, "transition": [579], "expected": [50], "actual": [50]},
+      {"label": "moveEast", "inputs": [50], "currentState": 579, "nextState": 580, "regs": {}, "transition": [580], "expected": [100], "actual": [100]},
+      {"label": "moveEast", "inputs": [100], "currentState": 580, "nextState": 581, "regs": {}, "transition": [581], "expected": [150], "actual": [150]}
+    ],
+    "rejected": [
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "shieldHit", "inputs": [2], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveEast", "inputs": [350], "outputs": [400]},
+      {"label": "moveWest", "inputs": [400], "outputs": [350]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "shieldHit", "inputs": [1], "outputs": [0]},
+      {"label": "lose", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "alienHit", "inputs": [], "currentState": 1, "nextState": 2, "regs": {}, "transition": [2], "expected": [1], "actual": [1]},
+      {"label": "alienHit", "inputs": [], "currentState": 2, "nextState": 27, "regs": {}, "transition": [27], "expected": [2], "actual": [2]}
+    ],
+    "rejected": [
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveWest", "inputs": [100], "outputs": [50]},
+      {"label": "moveWest", "inputs": [50], "outputs": [0]},
+      {"label": "moveEast", "inputs": [0], "outputs": [50]},
+      {"label": "moveEast", "inputs": [50], "outputs": [100]},
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveEast", "inputs": [200], "currentState": 1, "nextState": 180, "regs": {}, "transition": [180], "expected": [250], "actual": [250]},
+      {"label": "moveEast", "inputs": [250], "currentState": 180, "nextState": 181, "regs": {}, "transition": [181], "expected": [300], "actual": [300]},
+      {"label": "moveWest", "inputs": [300], "currentState": 181, "nextState": 459, "regs": {}, "transition": [459], "expected": [250], "actual": [250]},
+      {"label": "moveWest", "inputs": [250], "currentState": 459, "nextState": 460, "regs": {}, "transition": [460], "expected": [200], "actual": [200]},
+      {"label": "moveWest", "inputs": [200], "currentState": 460, "nextState": 461, "regs": {}, "transition": [461], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 461, "nextState": 462, "regs": {}, "transition": [462], "expected": [100], "actual": [100]}
+    ],
+    "rejected": [
+      {"label": "moveWest", "inputs": [100], "outputs": [50]},
+      {"label": "alienHit", "inputs": [], "outputs": [1]},
+      {"label": "moveWest", "inputs": [50], "outputs": [0]},
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "moveEast", "inputs": [0], "outputs": [50]},
+      {"label": "moveEast", "inputs": [50], "outputs": [100]},
+      {"label": "moveWest", "inputs": [100], "outputs": [50]},
+      {"label": "moveWest", "inputs": [50], "outputs": [0]},
+      {"label": "moveEast", "inputs": [0], "outputs": [50]},
+      {"label": "moveEast", "inputs": [50], "outputs": [100]},
+      {"label": "moveWest", "inputs": [100], "outputs": [50]},
+      {"label": "shieldHit", "inputs": [2], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "shieldHit", "inputs": [1], "outputs": [0]},
+      {"label": "lose", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveWest", "inputs": [200], "currentState": 1, "nextState": 73, "regs": {}, "transition": [73], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 73, "nextState": 74, "regs": {}, "transition": [74], "expected": [100], "actual": [100]}
+    ],
+    "rejected": [
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [1]},
+      {"label": "shieldHit", "inputs": [2], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "shieldHit", "inputs": [1], "outputs": [0]},
+      {"label": "lose", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "alienHit", "inputs": [], "currentState": 1, "nextState": 2, "regs": {}, "transition": [2], "expected": [1], "actual": [1]},
+      {"label": "moveWest", "inputs": [200], "currentState": 2, "nextState": 3, "regs": {}, "transition": [3], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 3, "nextState": 575, "regs": {}, "transition": [575], "expected": [100], "actual": [100]},
+      {"label": "moveWest", "inputs": [100], "currentState": 575, "nextState": 576, "regs": {}, "transition": [576], "expected": [50], "actual": [50]},
+      {"label": "moveWest", "inputs": [50], "currentState": 576, "nextState": 577, "regs": {}, "transition": [577], "expected": [0], "actual": [0]},
+      {"label": "alienHit", "inputs": [], "currentState": 577, "nextState": 578, "regs": {}, "transition": [578], "expected": [2], "actual": [2]},
+      {"label": "moveEast", "inputs": [0], "currentState": 578, "nextState": 579, "regs": {}, "transition": [579], "expected": [50], "actual": [50]},
+      {"label": "moveEast", "inputs": [50], "currentState": 579, "nextState": 580, "regs": {}, "transition": [580], "expected": [100], "actual": [100]},
+      {"label": "moveEast", "inputs": [100], "currentState": 580, "nextState": 581, "regs": {}, "transition": [581], "expected": [150], "actual": [150]}
+    ],
+    "rejected": [
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "shieldHit", "inputs": [2], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "shieldHit", "inputs": [1], "outputs": [0]},
+      {"label": "lose", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveEast", "inputs": [200], "currentState": 1, "nextState": 180, "regs": {}, "transition": [180], "expected": [250], "actual": [250]},
+      {"label": "moveEast", "inputs": [250], "currentState": 180, "nextState": 181, "regs": {}, "transition": [181], "expected": [300], "actual": [300]},
+      {"label": "moveEast", "inputs": [300], "currentState": 181, "nextState": 263, "regs": {}, "transition": [263], "expected": [350], "actual": [350]},
+      {"label": "moveEast", "inputs": [350], "currentState": 263, "nextState": 293, "regs": {}, "transition": [293], "expected": [400], "actual": [400]},
+      {"label": "alienHit", "inputs": [], "currentState": 293, "nextState": 594, "regs": {}, "transition": [594], "expected": [1], "actual": [1]},
+      {"label": "moveWest", "inputs": [400], "currentState": 594, "nextState": 595, "regs": {}, "transition": [595], "expected": [350], "actual": [350]},
+      {"label": "moveWest", "inputs": [350], "currentState": 595, "nextState": 596, "regs": {}, "transition": [596], "expected": [300], "actual": [300]}
+    ],
+    "rejected": [
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveWest", "inputs": [100], "outputs": [50]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "moveEast", "inputs": [50], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveEast", "inputs": [350], "outputs": [400]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveWest", "inputs": [200], "currentState": 1, "nextState": 73, "regs": {}, "transition": [73], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 73, "nextState": 74, "regs": {}, "transition": [74], "expected": [100], "actual": [100]},
+      {"label": "moveWest", "inputs": [100], "currentState": 74, "nextState": 209, "regs": {}, "transition": [209], "expected": [50], "actual": [50]},
+      {"label": "moveEast", "inputs": [50], "currentState": 209, "nextState": 210, "regs": {}, "transition": [210], "expected": [100], "actual": [100]},
+      {"label": "moveEast", "inputs": [100], "currentState": 210, "nextState": 211, "regs": {}, "transition": [211], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 211, "nextState": 431, "regs": {}, "transition": [431], "expected": [100], "actual": [100]}
+    ],
+    "rejected": [
+      {"label": "alienHit", "inputs": [], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveWest", "inputs": [200], "currentState": 1, "nextState": 73, "regs": {}, "transition": [73], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 73, "nextState": 74, "regs": {}, "transition": [74], "expected": [100], "actual": [100]},
+      {"label": "moveWest", "inputs": [100], "currentState": 74, "nextState": 209, "regs": {}, "transition": [209], "expected": [50], "actual": [50]},
+      {"label": "moveWest", "inputs": [50], "currentState": 209, "nextState": 243, "regs": {}, "transition": [243], "expected": [0], "actual": [0]},
+      {"label": "shieldHit", "inputs": [3], "currentState": 243, "nextState": 519, "regs": {}, "transition": [519], "expected": [2], "actual": [2]},
+      {"label": "alienHit", "inputs": [], "currentState": 519, "nextState": 520, "regs": {}, "transition": [520], "expected": [1], "actual": [1]},
+      {"label": "moveEast", "inputs": [0], "currentState": 520, "nextState": 521, "regs": {}, "transition": [521], "expected": [50], "actual": [50]},
+      {"label": "moveEast", "inputs": [50], "currentState": 521, "nextState": 522, "regs": {}, "transition": [522], "expected": [100], "actual": [100]},
+      {"label": "moveEast", "inputs": [100], "currentState": 522, "nextState": 523, "regs": {}, "transition": [523], "expected": [150], "actual": [150]}
+    ],
+    "rejected": [
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveEast", "inputs": [350], "outputs": [400]},
+      {"label": "moveWest", "inputs": [400], "outputs": [350]},
+      {"label": "shieldHit", "inputs": [2], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveWest", "inputs": [100], "outputs": [50]},
+      {"label": "moveWest", "inputs": [50], "outputs": [0]},
+      {"label": "moveEast", "inputs": [0], "outputs": [50]},
+      {"label": "shieldHit", "inputs": [1], "outputs": [0]},
+      {"label": "lose", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "alienHit", "inputs": [], "currentState": 1, "nextState": 2, "regs": {}, "transition": [2], "expected": [1], "actual": [1]},
+      {"label": "moveWest", "inputs": [200], "currentState": 2, "nextState": 3, "regs": {}, "transition": [3], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 3, "nextState": 575, "regs": {}, "transition": [575], "expected": [100], "actual": [100]},
+      {"label": "moveWest", "inputs": [100], "currentState": 575, "nextState": 576, "regs": {}, "transition": [576], "expected": [50], "actual": [50]},
+      {"label": "moveWest", "inputs": [50], "currentState": 576, "nextState": 577, "regs": {}, "transition": [577], "expected": [0], "actual": [0]},
+      {"label": "alienHit", "inputs": [], "currentState": 577, "nextState": 578, "regs": {}, "transition": [578], "expected": [2], "actual": [2]},
+      {"label": "moveEast", "inputs": [0], "currentState": 578, "nextState": 579, "regs": {}, "transition": [579], "expected": [50], "actual": [50]},
+      {"label": "moveEast", "inputs": [50], "currentState": 579, "nextState": 580, "regs": {}, "transition": [580], "expected": [100], "actual": [100]},
+      {"label": "moveEast", "inputs": [100], "currentState": 580, "nextState": 581, "regs": {}, "transition": [581], "expected": [150], "actual": [150]}
+    ],
+    "rejected": [
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveEast", "inputs": [350], "outputs": [400]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "moveWest", "inputs": [400], "outputs": [350]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "alienHit", "inputs": [], "currentState": 1, "nextState": 2, "regs": {}, "transition": [2], "expected": [1], "actual": [1]},
+      {"label": "moveEast", "inputs": [200], "currentState": 2, "nextState": 125, "regs": {}, "transition": [125], "expected": [250], "actual": [250]},
+      {"label": "moveEast", "inputs": [250], "currentState": 125, "nextState": 126, "regs": {}, "transition": [126], "expected": [300], "actual": [300]}
+    ],
+    "rejected": [
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveEast", "inputs": [350], "outputs": [400]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveWest", "inputs": [400], "outputs": [350]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "alienHit", "inputs": [], "currentState": 1, "nextState": 2, "regs": {}, "transition": [2], "expected": [1], "actual": [1]},
+      {"label": "moveEast", "inputs": [200], "currentState": 2, "nextState": 125, "regs": {}, "transition": [125], "expected": [250], "actual": [250]},
+      {"label": "moveEast", "inputs": [250], "currentState": 125, "nextState": 126, "regs": {}, "transition": [126], "expected": [300], "actual": [300]}
+    ],
+    "rejected": [
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveEast", "inputs": [350], "outputs": [400]},
+      {"label": "moveWest", "inputs": [400], "outputs": [350]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveWest", "inputs": [100], "outputs": [50]},
+      {"label": "moveWest", "inputs": [50], "outputs": [0]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "alienHit", "inputs": [], "currentState": 1, "nextState": 2, "regs": {}, "transition": [2], "expected": [1], "actual": [1]},
+      {"label": "moveWest", "inputs": [200], "currentState": 2, "nextState": 3, "regs": {}, "transition": [3], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 3, "nextState": 575, "regs": {}, "transition": [575], "expected": [100], "actual": [100]}
+    ],
+    "rejected": [
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "shieldHit", "inputs": [2], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "moveWest", "inputs": [100], "outputs": [50]},
+      {"label": "shieldHit", "inputs": [1], "outputs": [0]},
+      {"label": "lose", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveWest", "inputs": [200], "currentState": 1, "nextState": 73, "regs": {}, "transition": [73], "expected": [150], "actual": [150]}
+    ],
+    "rejected": [
+      {"label": "alienHit", "inputs": [], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveWest", "inputs": [200], "currentState": 1, "nextState": 73, "regs": {}, "transition": [73], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 73, "nextState": 74, "regs": {}, "transition": [74], "expected": [100], "actual": [100]},
+      {"label": "moveWest", "inputs": [100], "currentState": 74, "nextState": 209, "regs": {}, "transition": [209], "expected": [50], "actual": [50]}
+    ],
+    "rejected": [
+      {"label": "alienHit", "inputs": [], "outputs": [1]},
+      {"label": "moveEast", "inputs": [50], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveWest", "inputs": [100], "outputs": [50]},
+      {"label": "moveWest", "inputs": [50], "outputs": [0]},
+      {"label": "moveEast", "inputs": [0], "outputs": [50]},
+      {"label": "moveEast", "inputs": [50], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "shieldHit", "inputs": [2], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveWest", "inputs": [200], "currentState": 1, "nextState": 73, "regs": {}, "transition": [73], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 73, "nextState": 74, "regs": {}, "transition": [74], "expected": [100], "actual": [100]},
+      {"label": "moveWest", "inputs": [100], "currentState": 74, "nextState": 209, "regs": {}, "transition": [209], "expected": [50], "actual": [50]}
+    ],
+    "rejected": [
+      {"label": "alienHit", "inputs": [], "outputs": [1]},
+      {"label": "moveEast", "inputs": [50], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveEast", "inputs": [350], "outputs": [400]},
+      {"label": "moveWest", "inputs": [400], "outputs": [350]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveEast", "inputs": [350], "outputs": [400]},
+      {"label": "moveWest", "inputs": [400], "outputs": [350]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveWest", "inputs": [100], "outputs": [50]},
+      {"label": "shieldHit", "inputs": [2], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveEast", "inputs": [200], "currentState": 1, "nextState": 180, "regs": {}, "transition": [180], "expected": [250], "actual": [250]},
+      {"label": "moveEast", "inputs": [250], "currentState": 180, "nextState": 181, "regs": {}, "transition": [181], "expected": [300], "actual": [300]},
+      {"label": "moveEast", "inputs": [300], "currentState": 181, "nextState": 263, "regs": {}, "transition": [263], "expected": [350], "actual": [350]}
+    ],
+    "rejected": [
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [1]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveWest", "inputs": [100], "outputs": [50]},
+      {"label": "shieldHit", "inputs": [2], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "shieldHit", "inputs": [1], "outputs": [0]},
+      {"label": "lose", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveEast", "inputs": [200], "currentState": 1, "nextState": 180, "regs": {}, "transition": [180], "expected": [250], "actual": [250]},
+      {"label": "moveEast", "inputs": [250], "currentState": 180, "nextState": 181, "regs": {}, "transition": [181], "expected": [300], "actual": [300]},
+      {"label": "moveEast", "inputs": [300], "currentState": 181, "nextState": 263, "regs": {}, "transition": [263], "expected": [350], "actual": [350]},
+      {"label": "moveEast", "inputs": [350], "currentState": 263, "nextState": 293, "regs": {}, "transition": [293], "expected": [400], "actual": [400]},
+      {"label": "moveWest", "inputs": [400], "currentState": 293, "nextState": 294, "regs": {}, "transition": [294], "expected": [350], "actual": [350]},
+      {"label": "moveWest", "inputs": [350], "currentState": 294, "nextState": 295, "regs": {}, "transition": [295], "expected": [300], "actual": [300]},
+      {"label": "moveWest", "inputs": [300], "currentState": 295, "nextState": 296, "regs": {}, "transition": [296], "expected": [250], "actual": [250]},
+      {"label": "moveWest", "inputs": [250], "currentState": 296, "nextState": 297, "regs": {}, "transition": [297], "expected": [200], "actual": [200]}
+    ],
+    "rejected": [
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "alienHit", "inputs": [], "outputs": [1]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveWest", "inputs": [100], "outputs": [50]},
+      {"label": "moveWest", "inputs": [50], "outputs": [0]},
+      {"label": "moveEast", "inputs": [0], "outputs": [50]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "moveWest", "inputs": [50], "outputs": [0]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "moveEast", "inputs": [0], "outputs": [50]},
+      {"label": "moveEast", "inputs": [50], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveWest", "inputs": [200], "currentState": 1, "nextState": 73, "regs": {}, "transition": [73], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 73, "nextState": 74, "regs": {}, "transition": [74], "expected": [100], "actual": [100]},
+      {"label": "moveWest", "inputs": [100], "currentState": 74, "nextState": 209, "regs": {}, "transition": [209], "expected": [50], "actual": [50]},
+      {"label": "moveWest", "inputs": [50], "currentState": 209, "nextState": 243, "regs": {}, "transition": [243], "expected": [0], "actual": [0]}
+    ],
+    "rejected": [
+      {"label": "alienHit", "inputs": [], "outputs": [1]},
+      {"label": "moveEast", "inputs": [0], "outputs": [50]},
+      {"label": "moveEast", "inputs": [50], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveEast", "inputs": [200], "currentState": 1, "nextState": 180, "regs": {}, "transition": [180], "expected": [250], "actual": [250]},
+      {"label": "moveEast", "inputs": [250], "currentState": 180, "nextState": 181, "regs": {}, "transition": [181], "expected": [300], "actual": [300]},
+      {"label": "moveEast", "inputs": [300], "currentState": 181, "nextState": 263, "regs": {}, "transition": [263], "expected": [350], "actual": [350]},
+      {"label": "moveEast", "inputs": [350], "currentState": 263, "nextState": 293, "regs": {}, "transition": [293], "expected": [400], "actual": [400]},
+      {"label": "moveWest", "inputs": [400], "currentState": 293, "nextState": 294, "regs": {}, "transition": [294], "expected": [350], "actual": [350]},
+      {"label": "shieldHit", "inputs": [3], "currentState": 294, "nextState": 411, "regs": {}, "transition": [411], "expected": [2], "actual": [2]},
+      {"label": "alienHit", "inputs": [], "currentState": 411, "nextState": 412, "regs": {}, "transition": [412], "expected": [1], "actual": [1]},
+      {"label": "moveWest", "inputs": [350], "currentState": 412, "nextState": 413, "regs": {}, "transition": [413], "expected": [300], "actual": [300]},
+      {"label": "moveWest", "inputs": [300], "currentState": 413, "nextState": 414, "regs": {}, "transition": [414], "expected": [250], "actual": [250]},
+      {"label": "moveWest", "inputs": [250], "currentState": 414, "nextState": 415, "regs": {}, "transition": [415], "expected": [200], "actual": [200]},
+      {"label": "moveWest", "inputs": [200], "currentState": 415, "nextState": 416, "regs": {}, "transition": [416], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 416, "nextState": 417, "regs": {}, "transition": [417], "expected": [100], "actual": [100]}
+    ],
+    "rejected": [
+      {"label": "moveWest", "inputs": [100], "outputs": [50]},
+      {"label": "moveWest", "inputs": [50], "outputs": [0]},
+      {"label": "shieldHit", "inputs": [2], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "shieldHit", "inputs": [1], "outputs": [0]},
+      {"label": "lose", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveWest", "inputs": [200], "currentState": 1, "nextState": 73, "regs": {}, "transition": [73], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 73, "nextState": 74, "regs": {}, "transition": [74], "expected": [100], "actual": [100]},
+      {"label": "moveEast", "inputs": [100], "currentState": 74, "nextState": 75, "regs": {}, "transition": [75], "expected": [150], "actual": [150]},
+      {"label": "moveEast", "inputs": [150], "currentState": 75, "nextState": 76, "regs": {}, "transition": [76], "expected": [200], "actual": [200]},
+      {"label": "moveEast", "inputs": [200], "currentState": 76, "nextState": 355, "regs": {}, "transition": [355], "expected": [250], "actual": [250]},
+      {"label": "moveEast", "inputs": [250], "currentState": 355, "nextState": 356, "regs": {}, "transition": [356], "expected": [300], "actual": [300]},
+      {"label": "moveEast", "inputs": [300], "currentState": 356, "nextState": 357, "regs": {}, "transition": [357], "expected": [350], "actual": [350]},
+      {"label": "moveEast", "inputs": [350], "currentState": 357, "nextState": 358, "regs": {}, "transition": [358], "expected": [400], "actual": [400]}
+    ],
+    "rejected": [
+      {"label": "alienHit", "inputs": [], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "moveWest", "inputs": [400], "outputs": [350]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveWest", "inputs": [200], "currentState": 1, "nextState": 73, "regs": {}, "transition": [73], "expected": [150], "actual": [150]}
+    ],
+    "rejected": [
+      {"label": "alienHit", "inputs": [], "outputs": [1]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "alienHit", "inputs": [], "currentState": 1, "nextState": 2, "regs": {}, "transition": [2], "expected": [1], "actual": [1]},
+      {"label": "moveEast", "inputs": [200], "currentState": 2, "nextState": 125, "regs": {}, "transition": [125], "expected": [250], "actual": [250]}
+    ],
+    "rejected": [
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveWest", "inputs": [100], "outputs": [50]},
+      {"label": "moveWest", "inputs": [50], "outputs": [0]},
+      {"label": "shieldHit", "inputs": [2], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "moveEast", "inputs": [0], "outputs": [50]},
+      {"label": "moveEast", "inputs": [50], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "shieldHit", "inputs": [1], "outputs": [0]},
+      {"label": "lose", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveEast", "inputs": [200], "currentState": 1, "nextState": 180, "regs": {}, "transition": [180], "expected": [250], "actual": [250]},
+      {"label": "moveEast", "inputs": [250], "currentState": 180, "nextState": 181, "regs": {}, "transition": [181], "expected": [300], "actual": [300]},
+      {"label": "moveWest", "inputs": [300], "currentState": 181, "nextState": 459, "regs": {}, "transition": [459], "expected": [250], "actual": [250]},
+      {"label": "moveWest", "inputs": [250], "currentState": 459, "nextState": 460, "regs": {}, "transition": [460], "expected": [200], "actual": [200]}
+    ],
+    "rejected": [
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [1]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "shieldHit", "inputs": [2], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "shieldHit", "inputs": [1], "outputs": [0]},
+      {"label": "lose", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "alienHit", "inputs": [], "currentState": 1, "nextState": 2, "regs": {}, "transition": [2], "expected": [1], "actual": [1]},
+      {"label": "moveWest", "inputs": [200], "currentState": 2, "nextState": 3, "regs": {}, "transition": [3], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 3, "nextState": 575, "regs": {}, "transition": [575], "expected": [100], "actual": [100]}
+    ],
+    "rejected": [
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveEast", "inputs": [350], "outputs": [400]},
+      {"label": "moveWest", "inputs": [400], "outputs": [350]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveEast", "inputs": [200], "currentState": 1, "nextState": 180, "regs": {}, "transition": [180], "expected": [250], "actual": [250]}
+    ],
+    "rejected": [
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [1]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveEast", "inputs": [350], "outputs": [400]},
+      {"label": "moveWest", "inputs": [400], "outputs": [350]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "shieldHit", "inputs": [2], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveEast", "inputs": [350], "outputs": [400]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveWest", "inputs": [200], "currentState": 1, "nextState": 73, "regs": {}, "transition": [73], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 73, "nextState": 74, "regs": {}, "transition": [74], "expected": [100], "actual": [100]},
+      {"label": "moveWest", "inputs": [100], "currentState": 74, "nextState": 209, "regs": {}, "transition": [209], "expected": [50], "actual": [50]},
+      {"label": "moveEast", "inputs": [50], "currentState": 209, "nextState": 210, "regs": {}, "transition": [210], "expected": [100], "actual": [100]},
+      {"label": "moveEast", "inputs": [100], "currentState": 210, "nextState": 211, "regs": {}, "transition": [211], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 211, "nextState": 431, "regs": {}, "transition": [431], "expected": [100], "actual": [100]}
+    ],
+    "rejected": [
+      {"label": "moveWest", "inputs": [100], "outputs": [50]},
+      {"label": "moveWest", "inputs": [50], "outputs": [0]},
+      {"label": "alienHit", "inputs": [], "outputs": [1]},
+      {"label": "moveEast", "inputs": [0], "outputs": [50]},
+      {"label": "moveEast", "inputs": [50], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveEast", "inputs": [350], "outputs": [400]},
+      {"label": "moveWest", "inputs": [400], "outputs": [350]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveEast", "inputs": [350], "outputs": [400]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveWest", "inputs": [400], "outputs": [350]},
+      {"label": "moveWest", "inputs": [350], "outputs": [300]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveEast", "inputs": [200], "currentState": 1, "nextState": 180, "regs": {}, "transition": [180], "expected": [250], "actual": [250]},
+      {"label": "moveEast", "inputs": [250], "currentState": 180, "nextState": 181, "regs": {}, "transition": [181], "expected": [300], "actual": [300]},
+      {"label": "moveWest", "inputs": [300], "currentState": 181, "nextState": 459, "regs": {}, "transition": [459], "expected": [250], "actual": [250]},
+      {"label": "moveWest", "inputs": [250], "currentState": 459, "nextState": 460, "regs": {}, "transition": [460], "expected": [200], "actual": [200]},
+      {"label": "moveWest", "inputs": [200], "currentState": 460, "nextState": 461, "regs": {}, "transition": [461], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 461, "nextState": 462, "regs": {}, "transition": [462], "expected": [100], "actual": [100]}
+    ],
+    "rejected": [
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [1]},
+      {"label": "moveWest", "inputs": [100], "outputs": [50]},
+      {"label": "moveWest", "inputs": [50], "outputs": [0]},
+      {"label": "moveEast", "inputs": [0], "outputs": [50]},
+      {"label": "shieldHit", "inputs": [2], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveEast", "inputs": [50], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "shieldHit", "inputs": [1], "outputs": [0]},
+      {"label": "lose", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "moveEast", "inputs": [200], "currentState": 1, "nextState": 180, "regs": {}, "transition": [180], "expected": [250], "actual": [250]},
+      {"label": "moveEast", "inputs": [250], "currentState": 180, "nextState": 181, "regs": {}, "transition": [181], "expected": [300], "actual": [300]}
+    ],
+    "rejected": [
+      {"label": "alienHit", "inputs": [], "outputs": [1]},
+      {"label": "moveWest", "inputs": [300], "outputs": [250]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveWest", "inputs": [100], "outputs": [50]},
+      {"label": "moveWest", "inputs": [50], "outputs": [0]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "moveEast", "inputs": [0], "outputs": [50]},
+      {"label": "moveEast", "inputs": [50], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "moveEast", "inputs": [250], "outputs": [300]},
+      {"label": "moveEast", "inputs": [300], "outputs": [350]},
+      {"label": "moveEast", "inputs": [350], "outputs": [400]},
+      {"label": "moveWest", "inputs": [400], "outputs": [350]},
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveEast", "inputs": [350], "outputs": [400]},
+      {"label": "alienHit", "inputs": [], "outputs": [5]},
+      {"label": "win", "inputs": [], "outputs": []}
+    ]
+  },
+  {
+    "trace": [
+      {"label": "start", "inputs": [200, 3], "currentState": 0, "nextState": 1, "regs": {}, "transition": [1], "expected": [200, 3, 0], "actual": [200, 3, 0]},
+      {"label": "alienHit", "inputs": [], "currentState": 1, "nextState": 2, "regs": {}, "transition": [2], "expected": [1], "actual": [1]},
+      {"label": "moveWest", "inputs": [200], "currentState": 2, "nextState": 3, "regs": {}, "transition": [3], "expected": [150], "actual": [150]},
+      {"label": "moveWest", "inputs": [150], "currentState": 3, "nextState": 575, "regs": {}, "transition": [575], "expected": [100], "actual": [100]}
+    ],
+    "rejected": [
+      {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [2]},
+      {"label": "alienHit", "inputs": [], "outputs": [3]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "moveEast", "inputs": [150], "outputs": [200]},
+      {"label": "moveEast", "inputs": [200], "outputs": [250]},
+      {"label": "shieldHit", "inputs": [2], "outputs": [1]},
+      {"label": "alienHit", "inputs": [], "outputs": [4]},
+      {"label": "moveWest", "inputs": [250], "outputs": [200]},
+      {"label": "moveWest", "inputs": [200], "outputs": [150]},
+      {"label": "moveWest", "inputs": [150], "outputs": [100]},
+      {"label": "moveEast", "inputs": [100], "outputs": [150]},
+      {"label": "shieldHit", "inputs": [1], "outputs": [0]},
+      {"label": "lose", "inputs": [], "outputs": []}
+    ]
+  }
+]

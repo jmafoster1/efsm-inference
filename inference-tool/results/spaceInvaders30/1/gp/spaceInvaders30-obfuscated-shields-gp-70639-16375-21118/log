@@ -1,0 +1,18 @@
+2020-06-17 07:43:13.051 - -s naive_eq_bonus -p gp -g 70639 -o 16375 -u 21118 -h ws -d results/spaceInvaders30/1/gp/spaceInvaders30-obfuscated-shields-gp-70639-16375-21118 experimental-data/spaceInvaders30/spaceInvaders30-1/spaceInvaders30-obfuscated-shields-train.json experimental-data/spaceInvaders30/spaceInvaders30-1/spaceInvaders30-obfuscated-shields-test.json
+2020-06-17 07:43:13.053 - Building PTA - 30 traces
+2020-06-17 07:43:29.776 - PTA has 624 states
+2020-06-17 07:43:29.778 - PTA has 623 transitions
+2020-06-17 07:43:32.312 - Getting Output for start
+2020-06-17 07:43:32.312 -   Singleton literal output
+2020-06-17 07:43:32.313 - Getting Output for start
+2020-06-17 07:43:32.313 -   Singleton literal output
+2020-06-17 07:43:32.313 - Getting Output for start
+2020-06-17 07:43:32.313 -   Singleton literal output
+2020-06-17 07:43:37.099 - Getting Output for alienHit
+2020-06-17 07:43:37.224 -   No latent variable
+2020-06-17 07:43:37.284 -   Output training set: {[i0=0]=[o=1], [i0=1]=[o=2]}
+2020-06-17 07:43:37.951 -   Best output is: (+ 1 i0)
+2020-06-17 07:43:37.951 -   Best output is correct
+2020-06-17 07:43:42.207 - Getting Output for moveWest
+2020-06-17 07:43:42.211 -   No latent variable
+2020-06-17 07:43:42.212 -   Output training set: {[i0=50]=[o=0], [i0=100]=[o=50], [i0=150]=[o=100], [i0=200]=[o=150]}
