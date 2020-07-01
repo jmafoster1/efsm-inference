@@ -213,4 +213,18 @@ object PrettyPrinter {
   def to_JSON[X: ClassManifest](e: (String, (List[Value.value], List[Value.value]))): String = e match {
     case (label, (inputs, outputs)) => s"""{"label": "$label", "inputs": ${show(inputs)}, "outputs": ${show(outputs)}}"""
   }
+
+  def stringify(x: Object): String = x match {
+    case x: Transition.transition_ext[Unit] => show(x)
+    case ((s1: Nat.nat, s2: Nat.nat), t: Transition.transition_ext[Unit]) => ((show(s1), show(s2)), show(t)).toString
+    case (id: List[Nat.nat], ((s1: Nat.nat, s2: Nat.nat), t: Transition.transition_ext[Unit])) => "  " + ((show(s1), show(s2)), show(t)) + "\n"
+    case _ => x.toString
+  }
+
+  def print(x: Object): Unit = x match {
+    case t: Transition.transition_ext[Unit] => println(show(t))
+    case FSet.fset_of_list(l) => print(l.distinct)
+    case l: List[_] => println(l.asInstanceOf[List[Object]].map(x => stringify(x)))
+    case _ => println(x)
+  }
 }

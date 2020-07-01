@@ -490,11 +490,12 @@ fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> tr
           rep = snd (hd (gp));
           structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(_, _, t). same_structure rep t) e');
           delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs e')) e';
-          standardised = standardise_group delayed log (sorted_list_of_fset structural_group) standardise_group_outputs_updates
+          standardised = standardise_group delayed log (sorted_list_of_fset structural_group) standardise_group_outputs_updates;
+          structural_group2 = fimage (\<lambda>(_, _, t). (Outputs t, Updates t)) (ffilter (\<lambda>(_, _, t).  Label rep = Label t \<and> Arity rep = Arity t \<and> length (Outputs rep) = length (Outputs t)) standardised)
         in
         \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and
             updates for the other historical subgroups so can filter them out.\<close>
-        if standardised \<noteq> delayed then
+        if fis_singleton structural_group2 then
           groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. set g \<inter> fset structural_group = {}) t)
         else
           groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) t

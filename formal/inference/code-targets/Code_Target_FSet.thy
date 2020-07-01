@@ -4,7 +4,7 @@ This allows the Scala implementation to skip a case match each time, which makes
 slightly faster code.\<close>
 
 theory Code_Target_FSet
-  imports "EFSM.FSet_Utils"
+  imports "../../EFSM/FSet_Utils"
 begin
 
 code_datatype fset_of_list

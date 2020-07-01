@@ -27,8 +27,8 @@ def configs(p):
         return [
             'pta', 'none', 'gp',
             'obfuscated-aliens-none', 'obfuscated-aliens-gp',
-            # 'obfuscated-shields-none', 'obfuscated-shields-gp',
-            # 'obfuscated-x-none', 'obfuscated-x-gp'
+            'obfuscated-shields-none', 'obfuscated-shields-gp',
+            'obfuscated-x-none', 'obfuscated-x-gp'
             ]
     return sorted(list(p.keys()))
 
@@ -142,8 +142,7 @@ def get_info(root, fileName):
     #     if mean(info['t3'][0]) > 0:
     #         print("atom", root+"/testlog.json")
 
-    lengths = [len(x)/(len(x) + len(y) + len(z)) for x, y, z in triples]
-    # lengths = [len(t) for t, _, _ in triples]
+    lengths = [len(t) for t, _, _ in triples]
 
     # Minimum number of events before we can tell the models apart - useless
     info['min'] = min(lengths)
@@ -153,7 +152,7 @@ def get_info(root, fileName):
     info['ultra'] = 2**-min(lengths)
     # Mean prop. of the trace got through before we can tell the trace apart
     info['prop'] = mean(
-            [(len(filter(lambda e: e['expected'] == e['actual'], obj['trace'])))/(len(obj['trace'])+len(obj['rejected'])) for obj in log])
+            [len(list(filter(lambda e: e['expected'] == e['actual'], obj['trace'])))/(len(obj['trace'])+len(obj['rejected'])) for obj in log])
 
     valid_traces = sum([s1 == [] and s2 == [] for _, s1, s2 in triples])
     info['sensitivity'] = valid_traces/len(log)
@@ -189,13 +188,20 @@ def get_info(root, fileName):
     return info
 
 def box(column, ps, cfgs, fname, title):
-    fig1, ax1 = plt.subplots(figsize=(len(configs(program)), 3))
+    if column == 'runtime':
+        cfgs = [c for c in cfgs if c != 'pta']
+    
+    fig1, ax1 = plt.subplots(figsize=(0.7*len(configs(program)), 3))
     ax1.set_title(title)
     
-    # print(column, programs, cfgs)
-    
-    boxes = [programs[program][config][column].astype(float) for program in ps for config in cfgs]
 
+    if column == 't1':
+        boxes_aux = [programs[program][config][column] for program in ps for config in cfgs]
+        boxes = []
+        for l in boxes_aux:
+            boxes.append([item for sublist in l for item in sublist])
+    else:
+        boxes = [programs[program][config][column].astype(float) for program in ps for config in cfgs]
 
     bp = ax1.boxplot(
             boxes,
@@ -235,7 +241,8 @@ def box(column, ps, cfgs, fname, title):
         rotation_mode="anchor"
     )
     
-    # plt.tight_layout()
+    ax1.set_ylim(ymin=0)
+    
     plt.savefig(f"{homedir}/graphs/{fname}-{column}.pdf", bbox_inches='tight')
     plt.close()
 
@@ -251,7 +258,7 @@ def ts(ps, cfgs, fname, title):
     
     ind = range(len(t1Means))
     
-    fig1, ax1 = plt.subplots(figsize=(len(t1Means), 3))
+    fig1, ax1 = plt.subplots(figsize=(0.7*len(t1Means), 3))
     p3 = ax1.bar(ind, t3Means, color='red')
     p2 = ax1.bar(ind, t2Means, color='orange')
     p1 = ax1.bar(ind, t1Means, color='green')
@@ -280,6 +287,28 @@ def ts(ps, cfgs, fname, title):
     plt.savefig(f"{homedir}/graphs/{fname}-traces.pdf", bbox_inches='tight')
     plt.show()
 
+def hist(bars, program, config, column, xlabel=False):
+
+    fig1, ax1 = plt.subplots(figsize=(5, 3))
+
+    ax1.hist(bars, bins=30)
+    ttl = " ".join(config.split("-"))
+    ax1.set_title(f"{program} {ttl} {column.capitalize()}")
+    
+    if xlabel:
+        ax1.set_xlabel(xlabel)
+    else:
+        ax1.set_xlabel(column)
+
+    ax1.set_ylabel("Frequency")
+
+    if config == "t1":
+        ax1.set_xticks([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    plt.tight_layout()
+    plt.savefig(f"{homedir}/graphs/{program}-{config}-{column}.pdf", bbox_inches='tight')
+    plt.close()
+
+
 
 columns = ['states', 'transitions', 'min', 'avg', 'ultra', 'prop',
            'sensitivity', 'rmse', 'nrmse', 'state coverage', 'runtime',
@@ -299,6 +328,8 @@ if os.path.exists(f"{homedir}/programs.dic"):
         programs = pickle.load(f)
 else:
     for program in programs:
+        # Add in PTA - we don't need to loop and average as it's always the
+        # same for each trace set
         if 'pta' not in programs[program]:
             programs[program]['pta'] = pd.DataFrame(columns=columns)
             
@@ -322,9 +353,6 @@ else:
                 for r in roots:
                     programs[program][config] = programs[program][config].append(pd.DataFrame(get_info(r, "testLog.json"), index=[r]))
 
-            # Add in PTA - we don't need to loop and average as it's always the same
-            # for each trace set
-            
             # TODO: DELETE THIS WHEN DRAWING ACTUAL RESULTS
             # It just stops it erroring for stuff which timed out
             if roots == []:
@@ -341,14 +369,14 @@ with open(f"{homedir}/mann-whitney-u.csv", 'w') as m:
     print("system", "x", "y", "U", "p", "significant", file=m, sep=",")
 
 for program in programs:
-    for column in [c for c in columns if c not in ['t1', 't2', 't3']]:
+    for column in [c for c in columns if c not in ['t2', 't3']]:
         box(column, [program], configs(program), program, f"{program} {column}")
     with open(f"{homedir}/mann-whitney-u.csv", 'a') as m:
         print(program, file=m)
     for x in configs(program):
         for y in configs(program):
             if x > y:
-                mwu = mannwhitneyu(programs[program][x]['t1'], programs[program][y]['t1'])
+                mwu = mannwhitneyu(programs[program][x]['prop'], programs[program][y]['prop'])
                 with open(f"{homedir}/mann-whitney-u.csv", 'a') as m:
                     print("", x, y, mwu.statistic, mwu.pvalue, mwu.pvalue < 0.05, file=m, sep=",")
 
@@ -357,24 +385,14 @@ for program in programs:
     for config in configs(program):
         # should be 30 for non-gp things and 900 otherwise
         print("", config, len(programs[program][config]['t1']))
+        t1_bars = sorted([item for sublist in programs[program][config]['t1'] for item in sublist])
+        hist(t1_bars, program, config, 't1', "Normalised length of correct prefix")
         
-        bars = sorted([item for sublist in programs[program][config]['t1'] for item in sublist])
-
-        fig1, ax1 = plt.subplots(figsize=(5, 3))
-
-        p1 = ax1.hist(bars, bins=30)
-        # p1 = ax1.bar(range(len(bars)), bars)
-        ttl = " ".join(config.split("-"))
-        ax1.set_title(f"{program} {ttl} T1")
+        states_bars = sorted(programs[program][config]['states'])
+        hist(states_bars, program, config, 'states', f"Number of states for {config}")
         
-        ax1.set_xlabel("Normalised length of correct prefix")
-        ax1.set_ylabel("Frequency density")
-
-        ax1.set_xticks([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-        plt.tight_layout()
-        plt.savefig(f"{homedir}/graphs/{program}-{config}-t1.pdf", bbox_inches='tight')
-        plt.close()
-
+        transitions_bars = sorted(programs[program][config]['states'])
+        hist(transitions_bars, program, config, 'transitions', f"Number of transitions for {config}")
 
     # Trace correctness
     ts([program], configs(program), program, f"{program} Trace Parts")
@@ -389,13 +407,16 @@ for program in programs:
             print("\\resizebox{\\textwidth}{!}{\\input{"+program+"-"+column+".pdf}}", file=f)
         print("\\end{document}", file=f)
 
-# Aggregate trace correctness
-
-
-
-
 cfgs = ["pta", "none", "gp"]
 ps = list(programs.keys())
 
 ts(ps, cfgs, "ldsi", "Trace Parts")
 box("sensitivity", programs, cfgs, "ldsi", "Sensitivity")
+box("nrmse", programs, cfgs, "ldsi", "NRMSE")
+box("states", programs, cfgs, "ldsi", "States")
+box("transitions", programs, cfgs[1:], "ldsi-no-pta", "Transitions")
+box("runtime", programs, cfgs, "ldsi", "Runtime")
+box("prop", programs, cfgs, "ldsi", "Proportion of Correct events")
+
+box("t1", programs, cfgs, "ldsi", "Proportional Lengths of Accepted Prefixes")
+
