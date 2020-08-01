@@ -19,18 +19,34 @@ from scipy.stats import mannwhitneyu
 
 runtime_re = re.compile("Completed in (\d+)h (\d+)m (\d+).\d+s")
 
+homedir = "/home/michael/Documents/efsm-inference/inference-tool/results"
+# homedir = "/home/michael/Documents/results"
+
+programs = {
+    # "liftDoors": {},
+    # "spaceInvaders": {},
+    "drinks": {},
+    "spaceInvadersGuards": {}
+    }
+
 
 def configs(p):
     if p == "liftDoors":
-        return ['pta', 'none', 'gp', 'obfuscated-time-none', 'obfuscated-time-gp']
+        return [
+            'pta',
+            'none',
+            'gp',
+            # 'obfuscated-time-none',
+            # 'obfuscated-time-gp'
+            ]
     if p == "spaceInvaders":
         return [
             'pta', 'none', 'gp',
-            'obfuscated-aliens-none', 'obfuscated-aliens-gp',
-            'obfuscated-shields-none', 'obfuscated-shields-gp',
-            'obfuscated-x-none', 'obfuscated-x-gp'
+            # 'obfuscated-aliens-none', 'obfuscated-aliens-gp',
+            # 'obfuscated-shields-none', 'obfuscated-shields-gp',
+            # 'obfuscated-x-none', 'obfuscated-x-gp'
             ]
-    return sorted(list(p.keys()))
+    return sorted(list(programs[p].keys()))
 
 
 def total_states(root, state_re = "states: (\d+)"):
@@ -188,13 +204,10 @@ def get_info(root, fileName):
     return info
 
 def box(column, ps, cfgs, fname, title):
+    cfgs = [c for c in cfgs if c in programs[program]]
     if column == 'runtime':
         cfgs = [c for c in cfgs if c != 'pta']
     
-    fig1, ax1 = plt.subplots(figsize=(0.7*len(configs(program)), 3))
-    ax1.set_title(title)
-    
-
     if column == 't1':
         boxes_aux = [programs[program][config][column] for program in ps for config in cfgs]
         boxes = []
@@ -202,6 +215,12 @@ def box(column, ps, cfgs, fname, title):
             boxes.append([item for sublist in l for item in sublist])
     else:
         boxes = [programs[program][config][column].astype(float) for program in ps for config in cfgs]
+        
+    fig1, ax1 = plt.subplots(figsize=(0.7*len(boxes), 3))
+    ax1.set_title(title)
+    
+    print(f"box {fname}-{column} size: {0.7*len(boxes)}")
+
 
     bp = ax1.boxplot(
             boxes,
@@ -241,13 +260,19 @@ def box(column, ps, cfgs, fname, title):
         rotation_mode="anchor"
     )
     
-    ax1.set_ylim(ymin=0)
+    ax1.set_ylim(ymin=-0.1)
+    
+    if column in ['sensitivity', 'prop']:
+        ax1.set_ylim(ymax=1.1)
+
     
     plt.savefig(f"{homedir}/graphs/{fname}-{column}.pdf", bbox_inches='tight')
     plt.close()
 
 def ts(ps, cfgs, fname, title):
-    t1Means = [mean([mean(x) for x in programs[ps[0]][c]['t1']]) for c in cfgs]
+    cfgs =  [c for c in cfgs if c in programs[ps[0]]]
+    
+    t1Means = [mean([mean(x) for x in programs[ps[0]][c]['t1']]) for c in cfgs if c in programs[ps[0]]]
     t2Means = [mean([mean(x) for x in programs[ps[0]][c]['t2']]) + t1Means[i] for i, c in enumerate(cfgs)]
     
     for p in ps[1:]:
@@ -313,10 +338,6 @@ def hist(bars, program, config, column, xlabel=False):
 columns = ['states', 'transitions', 'min', 'avg', 'ultra', 'prop',
            'sensitivity', 'rmse', 'nrmse', 'state coverage', 'runtime',
            'transition coverage', 't1', 't2', 't3']
-
-programs = {"liftDoors":{}, "spaceInvaders":{}}
-
-homedir = "/home/michael/Documents/efsm-inference/inference-tool/results"
 
 if not os.path.exists(f"{homedir}/graphs"):
     os.mkdir(f"{homedir}/graphs")
@@ -393,6 +414,8 @@ for program in programs:
         
         transitions_bars = sorted(programs[program][config]['states'])
         hist(transitions_bars, program, config, 'transitions', f"Number of transitions for {config}")
+        
+        hist(sorted(programs[program][config]['sensitivity']), program, config, 'sensitivity', f"Sensitivity for {config}")
 
     # Trace correctness
     ts([program], configs(program), program, f"{program} Trace Parts")
@@ -414,9 +437,39 @@ ts(ps, cfgs, "ldsi", "Trace Parts")
 box("sensitivity", programs, cfgs, "ldsi", "Sensitivity")
 box("nrmse", programs, cfgs, "ldsi", "NRMSE")
 box("states", programs, cfgs, "ldsi", "States")
+box("transitions", programs, cfgs, "ldsi", "Transitions")
+
 box("transitions", programs, cfgs[1:], "ldsi-no-pta", "Transitions")
 box("runtime", programs, cfgs, "ldsi", "Runtime")
 box("prop", programs, cfgs, "ldsi", "Proportion of Correct events")
 
 box("t1", programs, cfgs, "ldsi", "Proportional Lengths of Accepted Prefixes")
 
+fig, ax = plt.subplots()
+states = list(programs['drinks']['gp']['states'])
+t1 = list([mean(y) for y in programs['drinks']['gp']['sensitivity']])
+ax.scatter(states, t1, color="b", marker='o')
+states = list(programs['drinks']['gp-distinguish']['states'])
+t1 = list([mean(y) for y in programs['drinks']['gp-distinguish']['sensitivity']])
+ax.scatter(states, t1, color="r", marker='x')
+
+ax.set_xlabel("Number of States")
+ax.set_ylabel("Sensitivity")
+ax.set_title("Number of States vs. Sensitivity")
+plt.savefig(f"{homedir}/graphs/drinks-sensitivity-size.pdf", bbox_inches='tight')
+plt.close()
+
+fig, ax = plt.subplots()
+states = list(programs['spaceInvadersGuards']['gp']['states'])
+t1 = list([mean(y) for y in programs['spaceInvadersGuards']['gp']['sensitivity']])
+ax.scatter(states, t1, color="b", marker='o')
+
+states = list(programs['spaceInvadersGuards']['gp-distinguish']['states'])
+t1 = list([mean(y) for y in programs['spaceInvadersGuards']['gp-distinguish']['sensitivity']])
+ax.scatter(states, t1, color="r", marker='x')
+
+ax.set_xlabel("Number of States")
+ax.set_ylabel("Sensitivity")
+ax.set_title("Number of States vs. Sensitivity")
+plt.savefig(f"{homedir}/graphs/spaceInvaders-sensitivity-size.pdf", bbox_inches='tight')
+plt.close()
