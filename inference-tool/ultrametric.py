@@ -23,8 +23,8 @@ homedir = "/home/michael/Documents/efsm-inference/inference-tool/results"
 # homedir = "/home/michael/Documents/results"
 
 programs = {
-    # "liftDoors": {},
-    # "spaceInvaders": {},
+    "liftDoors": {},
+    "spaceInvaders": {},
     "drinks": {},
     "spaceInvadersGuards": {}
     }
@@ -34,17 +34,22 @@ def configs(p):
     if p == "liftDoors":
         return [
             'pta',
-            'none',
+            # 'none',
             'gp',
             # 'obfuscated-time-none',
             # 'obfuscated-time-gp'
             ]
     if p == "spaceInvaders":
         return [
-            'pta', 'none', 'gp',
-            # 'obfuscated-aliens-none', 'obfuscated-aliens-gp',
-            # 'obfuscated-shields-none', 'obfuscated-shields-gp',
-            # 'obfuscated-x-none', 'obfuscated-x-gp'
+            'pta',
+            # 'none',
+            'gp',
+            # 'obfuscated-aliens-none',
+            'obfuscated-aliens-gp',
+            # 'obfuscated-shields-none',
+            'obfuscated-shields-gp',
+            # 'obfuscated-x-none',
+            'obfuscated-x-gp'
             ]
     return sorted(list(programs[p].keys()))
 
@@ -281,6 +286,9 @@ def ts(ps, cfgs, fname, title):
     
     t3Means = [1] * len(t2Means)
     
+    if any([t > 1 for t in t2Means]):
+        raise Exception("More than 1")
+    
     ind = range(len(t1Means))
     
     fig1, ax1 = plt.subplots(figsize=(0.7*len(t1Means), 3))
@@ -445,31 +453,31 @@ box("prop", programs, cfgs, "ldsi", "Proportion of Correct events")
 
 box("t1", programs, cfgs, "ldsi", "Proportional Lengths of Accepted Prefixes")
 
-fig, ax = plt.subplots()
-states = list(programs['drinks']['gp']['states'])
-t1 = list([mean(y) for y in programs['drinks']['gp']['sensitivity']])
-ax.scatter(states, t1, color="b", marker='o')
-states = list(programs['drinks']['gp-distinguish']['states'])
-t1 = list([mean(y) for y in programs['drinks']['gp-distinguish']['sensitivity']])
-ax.scatter(states, t1, color="r", marker='x')
+# fig, ax = plt.subplots()
+# states = list(programs['drinks']['gp']['states'])
+# t1 = list([mean(y) for y in programs['drinks']['gp']['sensitivity']])
+# ax.scatter(states, t1, color="b", marker='o')
+# states = list(programs['drinks']['gp-distinguish']['states'])
+# t1 = list([mean(y) for y in programs['drinks']['gp-distinguish']['sensitivity']])
+# ax.scatter(states, t1, color="r", marker='x')
 
-ax.set_xlabel("Number of States")
-ax.set_ylabel("Sensitivity")
-ax.set_title("Number of States vs. Sensitivity")
-plt.savefig(f"{homedir}/graphs/drinks-sensitivity-size.pdf", bbox_inches='tight')
-plt.close()
+# ax.set_xlabel("Number of States")
+# ax.set_ylabel("Sensitivity")
+# ax.set_title("Number of States vs. Sensitivity")
+# plt.savefig(f"{homedir}/graphs/drinks-sensitivity-size.pdf", bbox_inches='tight')
+# plt.close()
 
-fig, ax = plt.subplots()
-states = list(programs['spaceInvadersGuards']['gp']['states'])
-t1 = list([mean(y) for y in programs['spaceInvadersGuards']['gp']['sensitivity']])
-ax.scatter(states, t1, color="b", marker='o')
+# fig, ax = plt.subplots()
+# states = list(programs['spaceInvadersGuards']['gp']['states'])
+# t1 = list([mean(y) for y in programs['spaceInvadersGuards']['gp']['sensitivity']])
+# ax.scatter(states, t1, color="b", marker='o')
 
-states = list(programs['spaceInvadersGuards']['gp-distinguish']['states'])
-t1 = list([mean(y) for y in programs['spaceInvadersGuards']['gp-distinguish']['sensitivity']])
-ax.scatter(states, t1, color="r", marker='x')
+# states = list(programs['spaceInvadersGuards']['gp-distinguish']['states'])
+# t1 = list([mean(y) for y in programs['spaceInvadersGuards']['gp-distinguish']['sensitivity']])
+# ax.scatter(states, t1, color="r", marker='x')
 
-ax.set_xlabel("Number of States")
-ax.set_ylabel("Sensitivity")
-ax.set_title("Number of States vs. Sensitivity")
-plt.savefig(f"{homedir}/graphs/spaceInvaders-sensitivity-size.pdf", bbox_inches='tight')
-plt.close()
+# ax.set_xlabel("Number of States")
+# ax.set_ylabel("Sensitivity")
+# ax.set_title("Number of States vs. Sensitivity")
+# plt.savefig(f"{homedir}/graphs/spaceInvaders-sensitivity-size.pdf", bbox_inches='tight')
+# plt.close()
