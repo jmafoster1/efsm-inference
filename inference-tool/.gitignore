@@ -1,3 +1,4 @@
 slurm-*.out
 *.pgf
 results/
+results.zip
