@@ -8,7 +8,7 @@ lemma generalisation_of_preserves:
     Arity t = Arity t' \<and>
     (Outputs t) = (Outputs t')"
   apply (simp add: is_generalisation_of_def)
-  using remove_guard_add_update_preserves by auto
+  by (metis remove_guard_add_update_preserves)
 
 lemma is_generalisation_of_guard_subset:
   "is_generalisation_of t' t i r \<Longrightarrow> set (Guards t') \<subseteq> set (Guards t)"
@@ -77,7 +77,7 @@ lemma generalise_output_subsumes_original:
    subsumes (generalise_output t p r) c t"
   by (simp add: can_take_transition_def generalise_output_def generalise_output_eq subsumes_def)
 
-primrec stored_reused_aux_per_reg :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (nat \<times> nat) option" where
+primrec stored_reused_aux_per_reg :: "('a::{aexp_value,order}) transition \<Rightarrow> 'a transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (nat \<times> nat) option" where
   "stored_reused_aux_per_reg t' t 0 p = (
     if is_generalised_output_of t' t 0 p then
       Some (0, p)
@@ -91,14 +91,14 @@ primrec stored_reused_aux_per_reg :: "transition \<Rightarrow> transition \<Righ
       stored_reused_aux_per_reg t' t r p
   )"
 
-primrec stored_reused_aux :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (nat \<times> nat) option" where
+primrec stored_reused_aux :: "('a::{aexp_value,order}) transition \<Rightarrow> 'a transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (nat \<times> nat) option" where
   "stored_reused_aux t' t r 0 = stored_reused_aux_per_reg t' t r 0" |
   "stored_reused_aux t' t r (Suc p) = (case stored_reused_aux_per_reg t' t r (Suc p) of
                                           Some x \<Rightarrow> Some x |
                                           None \<Rightarrow> stored_reused_aux t' t r p
                                         )"
 
-definition stored_reused :: "transition \<Rightarrow> transition \<Rightarrow> (nat \<times> nat) option" where
+definition stored_reused :: "('a::{aexp_value,order}) transition \<Rightarrow> 'a transition \<Rightarrow> (nat \<times> nat) option" where
   "stored_reused t' t = stored_reused_aux t' t (max (Transition.total_max_reg t) (Transition.total_max_reg t')) (max (length (Outputs t)) (length (Outputs t')))"
 
 lemma stored_reused_aux_is_generalised_output_of:
@@ -206,7 +206,7 @@ lemma generalise_output_context_check_directly_subsumes_original:
        directly_subsumes e1 e2 s s' t' t "
   by (simp add: generalise_output_context_check_def generalise_output_directly_subsumes_original)
 
-definition generalise_output_direct_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
+definition generalise_output_direct_subsumption :: "('a::{aexp_value,order}) transition \<Rightarrow> 'a transition \<Rightarrow> 'a iEFSM \<Rightarrow> 'a iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "generalise_output_direct_subsumption t' t e e' s s' = (case stored_reused t' t of
     None \<Rightarrow> False |
     Some (r, p) \<Rightarrow>
@@ -253,12 +253,12 @@ lemma original_does_not_subsume_generalised_output:
   by auto
 
 (* t' is the generalised transition *)
-primrec input_i_stored_in_reg :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (nat \<times> nat) option" where
+primrec input_i_stored_in_reg :: "('a::{aexp_value,order}) transition \<Rightarrow> 'a transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (nat \<times> nat) option" where
   "input_i_stored_in_reg t' t i 0 = (if is_generalisation_of t' t i 0 then Some (i, 0) else None)" |
   "input_i_stored_in_reg t' t i (Suc r) = (if is_generalisation_of t' t i (Suc r) then Some (i, (Suc r)) else input_i_stored_in_reg t' t i r)"
 
 (* t' is the generalised transition *)
-primrec input_stored_in_reg_aux :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (nat \<times> nat) option" where
+primrec input_stored_in_reg_aux :: "('a::{aexp_value,order}) transition \<Rightarrow> 'a transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (nat \<times> nat) option" where
   "input_stored_in_reg_aux t' t 0 r = input_i_stored_in_reg t' t 0 r" |
   "input_stored_in_reg_aux t' t (Suc i) r = (case input_i_stored_in_reg t' t (Suc i) r of
                                               None \<Rightarrow> input_i_stored_in_reg t' t i r |
@@ -266,7 +266,7 @@ primrec input_stored_in_reg_aux :: "transition \<Rightarrow> transition \<Righta
                                             ) "
 
 (* t' is the generalised transition *)
-definition input_stored_in_reg :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> (nat \<times> nat) option" where
+definition input_stored_in_reg :: "('a::{aexp_value,order}) transition \<Rightarrow> 'a transition \<Rightarrow> 'a iEFSM \<Rightarrow> (nat \<times> nat) option" where
   "input_stored_in_reg t' t e = (
     case input_stored_in_reg_aux t' t (total_max_reg e) (max (Arity t) (Arity t')) of
       None \<Rightarrow> None |
@@ -276,7 +276,7 @@ definition input_stored_in_reg :: "transition \<Rightarrow> transition \<Rightar
         else None
   )"
 
-definition initially_undefined_context_check :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
+definition initially_undefined_context_check :: "('a::{aexp_value,order}) transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "initially_undefined_context_check e r s = (\<forall>t. recognises e t \<and> gets_us_to s e 0 <> t \<longrightarrow> (\<exists>a. (anterior_context (e) t) = Some a \<and> a $ r = None))"
 
 lemma no_incoming_to_zero:
@@ -353,7 +353,7 @@ case (Cons a t)
     apply (rule recognises_execution.cases)
       apply auto[1]
      apply simp
-    using no_accepting_return_to_zero by auto
+    using no_accepting_return_to_zero by blast
 qed
 
 lemma anterior_context_empty:
@@ -368,7 +368,7 @@ lemma anterior_context_empty:
 lemma no_incoming_to_initial_gives_empty_reg:
   "\<forall>((from, to), t) |\<in>| e. to \<noteq> 0 \<Longrightarrow>
    initially_undefined_context_check e r 0"
-  using Store_Reuse_Subsumption.anterior_context_empty initially_undefined_context_check_def by auto
+  by (simp add: Store_Reuse_Subsumption.anterior_context_empty initially_undefined_context_check_def)
 
 definition "no_illegal_updates t r = (\<forall>u \<in> set (Updates t). fst u \<noteq> r)"
 
@@ -439,7 +439,7 @@ lemma generalised_directly_subsumes_original:
   using is_generalisation_of_subsumes_original finfun_const_apply
   by (metis option.inject)
 
-definition drop_guard_add_update_direct_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> bool" where
+definition drop_guard_add_update_direct_subsumption :: "('a::{aexp_value,order}) transition \<Rightarrow> 'a transition \<Rightarrow> 'a iEFSM \<Rightarrow> nat \<Rightarrow> bool" where
   "drop_guard_add_update_direct_subsumption t' t e s' = (
     case input_stored_in_reg t' t e of
       None \<Rightarrow> False |
@@ -511,11 +511,11 @@ proof(induct a)
 next
   case (Eq x1a x2)
   then show ?case
-    using input_not_constrained_aval_swap_inputs by auto
+    by (metis gexp_constrains.simps(2) gval.simps(4) input_not_constrained_aval_swap_inputs)
 next
   case (Gt x1a x2)
   then show ?case
-    using input_not_constrained_aval_swap_inputs by auto
+    by (metis gexp_constrains.simps(3) gval.simps(3) input_not_constrained_aval_swap_inputs)
 next
   case (In x1a x2)
   then show ?case
@@ -527,13 +527,51 @@ next
     by simp
 qed
 
+definition is_finite :: "'a \<Rightarrow> bool" where
+  "is_finite g = (if finite (UNIV::'a set) then True else False)"
+
+definition "exists_neq x = (\<exists>x'. x' \<noteq> x)"
+
+lemma finite_card_insert: "finite s \<Longrightarrow> x \<in> s \<Longrightarrow> s = insert x s' \<Longrightarrow> x \<notin> s' \<Longrightarrow> card s = 1 + card s'"
+  by simp
+
+lemma exists_neq_code [code]: "exists_neq (x::'a) = (infinite (UNIV:: 'a set) \<or> (CARD('a) > 1))"
+  apply (simp add: exists_neq_def)
+  apply standard
+   apply clarify
+   apply (insert mk_disjoint_insert[of x UNIV])
+   apply clarsimp
+  subgoal for x' B
+    using finite_card_insert[of UNIV x B]
+    apply simp
+    apply (insert mk_disjoint_insert[of x' B])
+    apply (case_tac "x \<in> B")
+     apply simp
+    by (metis UNIV_I card_gt_0_iff empty_iff finite_insert insert_iff)
+  by (metis (mono_tags, lifting) One_nat_def card.empty card_UNIV_unit card_insert_if card_mono ex_new_if_finite finite.intros(1) finite_UNIV_card_ge_0 finite_class.finite_UNIV finite_insert not_le subsetI)
+
+lemma apply_guards_swap_inputs:
+  "\<forall>g\<in>set G. \<not> gexp_constrains g (V (I i)) \<Longrightarrow>
+   apply_guards G (join_ir ia c) \<Longrightarrow> 
+   apply_guards G (join_ir (ia[i := x']) c)"
+proof(induct G)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a G)
+  then show ?case
+    apply (simp add: apply_guards_cons)
+    using input_not_constrained_gval_swap_inputs by fastforce
+qed
+
 (*
   If input i is stored in register r by transition t then if we can take transition t' then for some
   input I then transition t does not subsume t'
 *)
 lemma input_stored_in_reg_not_subsumed:
-  "input_stored_in_reg t' t e = Some (i, r) \<Longrightarrow>
+  "input_stored_in_reg t' (t::'a::{order,aexp_value} transition) e = Some (i, r) \<Longrightarrow>
    \<exists>i. can_take_transition t' i c \<Longrightarrow>
+   (infinite (UNIV:: 'a set) \<or> (CARD('a) > 1)) \<Longrightarrow>
    \<not> subsumes t c t'"
   using input_stored_in_reg_is_generalisation[of t' t e i r]
   using is_generalisation_of_constrains_input[of t' t i r]
@@ -543,25 +581,20 @@ lemma input_stored_in_reg_not_subsumed:
   apply clarify
   apply (simp add: can_take_transition_def can_take_def)
   apply clarify
-  apply (case_tac "v")
-   apply (rule_tac x="list_update ia i (Str s)" in exI)
-   apply simp
-   apply standard
-    apply (simp add: apply_guards_def)
-    apply (metis input_not_constrained_gval_swap_inputs)
-   apply (simp add: apply_guards_def Bex_def)
-   apply standard
-   apply (rule_tac x="Eq (V (vname.I i)) (L (Num x1))" in exI)
-   apply (simp add: join_ir_def input2state_nth is_generalisation_of_i_lt_arity str_not_num)
-   apply (rule_tac x="list_update ia i (Num s)" in exI)
-   apply simp
-   apply standard
-    apply (simp add: apply_guards_def)
-    apply (metis input_not_constrained_gval_swap_inputs)
-   apply (simp add: apply_guards_def Bex_def)
-   apply standard
-   apply (rule_tac x="Eq (V (vname.I i)) (L (value.Str x2))" in exI)
-  by (simp add: join_ir_def input2state_nth is_generalisation_of_i_lt_arity str_not_num)
+  apply (case_tac "exists_neq v")
+  defer
+   apply (meson exists_neq_code exists_neq_def)
+  apply (simp add: exists_neq_def)
+  apply clarsimp
+  apply (rule_tac x="list_update ia i x'" in exI)
+  apply (simp add: apply_guards_swap_inputs)
+  apply (simp add: apply_guards_def)
+  apply clarify
+  apply (rule_tac x="Eq (V (I i)) (L v)" in bexI)
+   apply (case_tac "i < Arity t'")
+    apply (simp add: join_ir_nth)
+   apply (simp add: is_generalisation_of_i_lt_arity)
+  by simp
 
 lemma aval_updated:
   "(r, u) \<in> set U \<Longrightarrow>
@@ -574,8 +607,12 @@ proof(induct U rule: rev_induct)
 next
   case (snoc a U)
   then show ?case
+    apply (simp only: apply_updates_foldr[of "U@[a]" s])
+    apply simp
     apply (case_tac "(r, u) = a")
-    using apply_updates_foldr by auto
+     apply auto[1]
+    apply simp
+    by (metis (mono_tags, lifting) apply_updates_foldr)
 qed
 
 lemma can_take_append_subset:
@@ -606,7 +643,7 @@ lemma general_not_subsume_orig: "Arity t' = Arity t \<Longrightarrow>
   apply (rule_tac x=r in exI)
   apply (simp add: r_not_updated_stays_the_same)
   apply (rule_tac x="\<lambda>x. x = None" in exI)
-  by (simp add: aval_updated can_take_transition_def can_take_def)
+  by (simp add: aval_updated can_take(1) can_take_transition_def join_ir_nth(1))
 
 lemma input_stored_in_reg_updates_reg:
   "input_stored_in_reg t2 t1 a = Some (i, r) \<Longrightarrow>
@@ -638,7 +675,7 @@ lemma diff_outputs_direct_subsumption:
    apply simp
   using bad_outputs by force
 
-definition not_updated :: "nat \<Rightarrow> transition \<Rightarrow> bool" where
+definition not_updated :: "nat \<Rightarrow> 'a transition \<Rightarrow> bool" where
   "not_updated r t = (filter (\<lambda>(r', _). r' = r) (Updates t) = [])"
 
 lemma not_updated: assumes "not_updated r t2"

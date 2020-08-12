@@ -17,7 +17,7 @@ begin
 definition maxBy :: "('a \<Rightarrow> 'b::linorder) \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> 'a" where
   "maxBy f a b = (if (f a > f b) then a else b)"
 
-fun weak_subsumption :: "update_modifier" where
+fun weak_subsumption :: "('a::linorder) update_modifier" where
   "weak_subsumption t1ID t2ID s new _ old check = (let
      t1 = get_by_ids new t1ID;
      t2 = get_by_ids new t2ID

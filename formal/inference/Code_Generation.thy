@@ -48,10 +48,10 @@ lemma [code]: "initially_undefined_context_check e r s = (
   )"
   apply (case_tac "s = 0 \<and> (\<forall>((from, to), t)|\<in>|e. to \<noteq> 0)")
    apply (simp add: no_incoming_to_initial_gives_empty_reg)
-  using initially_undefined_context_check_full_def by presburger
+  using initially_undefined_context_check_full_def by metis
 
 (* This gives us a speedup because we can check this before we have to call out to z3 *)
-fun mutex :: "'a gexp \<Rightarrow> 'a gexp \<Rightarrow> bool" where
+fun mutex :: "('b, 'a) gexp \<Rightarrow> ('b, 'a) gexp \<Rightarrow> bool" where
   "mutex (Eq (V v) (L l)) (Eq (V v') (L l')) = (if v = v' then l \<noteq> l' else False)" |
   "mutex (gexp.In v l) (Eq (V v') (L l')) = (v = v' \<and> l' \<notin> set l)" |
   "mutex (Eq (V v') (L l')) (gexp.In v l) = (v = v' \<and> l' \<notin> set l)" |
@@ -71,7 +71,7 @@ lemma mutex_not_gval:
    \<not> (set s2) \<subseteq> (set s1) \<and>
    restricted_once (I i) (Guard t2)) *)
 
-definition choice_cases :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+definition choice_cases :: "('a::aexp_value) transition \<Rightarrow> 'a transition \<Rightarrow> bool" where
   "choice_cases t1 t2 = (
      if \<exists>(x, y) \<in> set (List.product (Guards t1) (Guards t2)). mutex x y then
        False
@@ -105,22 +105,7 @@ lemma [code]: "choice t t' = choice_cases t t'"
   apply (simp add: choice_alt_def satisfiable_def)
   by (metis foldr_append foldr_apply_guards foldr_conv_fold)
 
-fun guardMatch_code :: "vname gexp list \<Rightarrow> vname gexp list \<Rightarrow> bool" where
-  "guardMatch_code [(gexp.Eq (V (vname.I i)) (L (Num n)))] [(gexp.Eq (V (vname.I i')) (L (Num n')))] = (i = 0 \<and> i' = 0)" |
-  "guardMatch_code _ _ = False"
-
-lemma [code]: "guardMatch t1 t2 = guardMatch_code (Guards t1) (Guards t2)"
-  apply (simp add: guardMatch_def)
-  using guardMatch_code.elims(2) by fastforce
-
-fun outputMatch_code :: "output_function list \<Rightarrow> output_function list \<Rightarrow> bool" where
-  "outputMatch_code [L (Num n)] [L (Num n')] = True" |
-  "outputMatch_code _ _ = False"
-
-lemma [code]: "outputMatch t1 t2 = outputMatch_code (Outputs t1) (Outputs t2)"
-  by (metis outputMatch_code.elims(2) outputMatch_code.simps(1) outputMatch_def)
-
-fun always_different_outputs :: "vname aexp list \<Rightarrow> vname aexp list \<Rightarrow> bool" where
+fun always_different_outputs :: "(vname, 'a) aexp list \<Rightarrow> (vname, 'a) aexp list \<Rightarrow> bool" where
   "always_different_outputs [] [] = False" |
   "always_different_outputs [] (a#_) = True" |
   "always_different_outputs (a#_) [] = True" |
@@ -133,11 +118,11 @@ lemma always_different_outputs_outputs_never_equal:
   apply(induct O1 O2 rule: always_different_outputs.induct)
   by (simp_all add: apply_outputs_def)
 
-fun tests_input_equality :: "nat \<Rightarrow> vname gexp \<Rightarrow> bool" where
+fun tests_input_equality :: "nat \<Rightarrow> (vname, 'a) gexp \<Rightarrow> bool" where
   "tests_input_equality i (gexp.Eq (V (vname.I i')) (L _)) = (i = i')" |
   "tests_input_equality _ _ = False"
 
-fun no_illegal_updates_code :: "update_function list \<Rightarrow> nat \<Rightarrow> bool" where
+fun no_illegal_updates_code :: "'a update_function list \<Rightarrow> nat \<Rightarrow> bool" where
   "no_illegal_updates_code [] _ = True" |
   "no_illegal_updates_code ((r', u)#t) r = (r \<noteq> r' \<and> no_illegal_updates_code t r)"
 
@@ -159,12 +144,12 @@ lemma no_illegal_updates_code [code]:
   "no_illegal_updates t r = no_illegal_updates_code (Updates t) r"
   by (simp add: no_illegal_updates_def no_illegal_updates_code_aux)
 
-fun input_updates_register_aux :: "update_function list \<Rightarrow> nat option" where
+fun input_updates_register_aux :: "'a update_function list \<Rightarrow> nat option" where
   "input_updates_register_aux ((n, V (vname.I n'))#_) = Some n'" |
   "input_updates_register_aux (h#t) = input_updates_register_aux t" |
   "input_updates_register_aux [] = None"
 
-definition input_updates_register :: "transition_matrix \<Rightarrow> (nat \<times> String.literal)" where
+definition input_updates_register :: "'a transition_matrix \<Rightarrow> (nat \<times> String.literal)" where
   "input_updates_register e = (
     case fthe_elem (ffilter (\<lambda>(_, t). input_updates_register_aux (Updates t) \<noteq> None) e) of
       (_, t) \<Rightarrow> (case
@@ -175,7 +160,7 @@ definition input_updates_register :: "transition_matrix \<Rightarrow> (nat \<tim
 
 definition "dirty_directly_subsumes e1 e2 s1 s2 t1 t2 = (if t1 = t2 then True else directly_subsumes e1 e2 s1 s2 t1 t2)"
 
-definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> bool" where
+definition always_different_outputs_direct_subsumption ::"('a::{order,aexp_value}) iEFSM \<Rightarrow> 'a iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> 'a transition \<Rightarrow> bool" where
 "always_different_outputs_direct_subsumption m1 m2 s s' t2 = (
    (\<exists>p. recognises (tm m1) p \<and>
     gets_us_to s (tm m1) 0 <> p \<and>
@@ -204,7 +189,7 @@ lemma always_different_outputs_direct_subsumption:
   using always_different_outputs_can_take_transition_not_subsumed recognises_execution_gives_context
   by fastforce
 
-definition negate :: "'a gexp list \<Rightarrow> 'a gexp" where
+definition negate :: "('b, 'a) gexp list \<Rightarrow> ('b, 'a) gexp" where
   "negate g = gNot (fold gAnd g (Bc True))"
 
 lemma gval_negate_cons:
@@ -235,10 +220,10 @@ lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (
     apply (rule_tac x=p in exI)
   using can_take_transition_empty_guard recognises_execution_gives_context apply fastforce
    apply (simp add: dirty_always_different_outputs_direct_subsumption_def)
-  using always_different_outputs_direct_subsumption_def apply auto[1]
+  using always_different_outputs_direct_subsumption_def apply blast
   by (simp add: always_different_outputs_direct_subsumption_def dirty_always_different_outputs_direct_subsumption_def)
 
-definition guard_subset_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+definition guard_subset_subsumption :: "'a transition \<Rightarrow> 'a transition \<Rightarrow> bool" where
   "guard_subset_subsumption t1 t2 = (Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> set (Guards t1) \<subseteq> set (Guards t2) \<and> Outputs t1 = Outputs t2 \<and> Updates t1 = Updates t2)"
 
 lemma guard_subset_subsumption:
@@ -259,7 +244,7 @@ definition "guard_superset_eq_outputs_updates t1 t2 = (Label t1 = Label t2 \<and
    Updates t1 = Updates t2 \<and>
    set (Guards t2) \<supset> set (Guards t1))"
 
-definition is_generalisation_of :: "transition \<Rightarrow> transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
+definition is_generalisation_of :: "('a::{order,aexp_value}) transition \<Rightarrow> 'a transition \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
   "is_generalisation_of t' t i r = (
     t' = remove_guard_add_update t i r \<and>
     i < Arity t \<and>
@@ -296,12 +281,12 @@ qed
 lemma [code]:
   "Store_Reuse.is_generalisation_of x xa xb xc = is_generalisation_of x xa xb xc"
   apply (simp add: Store_Reuse.is_generalisation_of_def is_generalisation_of_def)
-  using tests_input_equality by blast
+  using tests_input_equality by force
 
-definition iEFSM2dot :: "iEFSM \<Rightarrow> nat \<Rightarrow> unit" where
+definition iEFSM2dot :: "'a iEFSM \<Rightarrow> nat \<Rightarrow> unit" where
   "iEFSM2dot _ _ = ()"
 
-definition logStates :: "iEFSM \<Rightarrow> nat \<Rightarrow> unit" where
+definition logStates :: "'a iEFSM \<Rightarrow> nat \<Rightarrow> unit" where
   "logStates _ _ = ()"
 
 (* This is the infer function but with logging *)
@@ -320,7 +305,7 @@ function infer_with_log :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarr
   )"
 *)
 
-function infer_with_log :: "(cfstate \<times> cfstate) set \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
+function infer_with_log :: "(cfstate \<times> cfstate) set \<Rightarrow> nat \<Rightarrow> ('a::{linorder,aexp_value}) iEFSM \<Rightarrow> 'a strategy \<Rightarrow> 'a update_modifier \<Rightarrow> ('a transition_matrix \<Rightarrow> bool) \<Rightarrow> ('a iEFSM \<Rightarrow> 'a nondeterministic_pair fset) \<Rightarrow> 'a iEFSM" where
   "infer_with_log failedMerges k e r m check np = (
     let scores = if k = 1 then score_1 e r else (k_score k e r) in
     case inference_step failedMerges e (ffilter (\<lambda>s. (S1 s, S2 s) \<notin> failedMerges) scores) m check np of
@@ -383,12 +368,12 @@ code_printing
 declare finfun_to_list_const_code [code del]
 declare finfun_to_list_update_code [code del]
 
-definition mismatched_updates :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
+definition mismatched_updates :: "'a transition \<Rightarrow> 'a transition \<Rightarrow> bool" where
   "mismatched_updates t1 t2 = (\<exists>r \<in> set (map fst (Updates t1)). r \<notin> set (map fst (Updates t2)))"
 
 lemma [code]:
   "directly_subsumes e1 e2 s1 s2 t1 t2  = (if t1 = t2 then True else dirty_directly_subsumes e1 e2 s1 s2 t1 t2)"
-  by (simp add: directly_subsumes_self dirty_directly_subsumes_def)
+  by (simp add: directly_subsumes_reflexive dirty_directly_subsumes_def)
 
 export_code
   (* Essentials *)

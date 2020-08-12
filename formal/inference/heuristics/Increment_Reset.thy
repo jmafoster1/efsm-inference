@@ -10,7 +10,14 @@ definition initialiseReg :: "value transition \<Rightarrow> nat \<Rightarrow> va
   "initialiseReg t newReg = \<lparr>Label = Label t, Arity = Arity t, Guards = Guards t, Outputs = Outputs t, Updates = ((newReg, L (Num 0))#Updates t)\<rparr>"
 
 definition "guardMatch t1 t2  = (\<exists>n n'. Guards t1 = [gexp.Eq (V (vname.I 0)) (L (Num n))] \<and> Guards t2 = [gexp.Eq (V (vname.I 0)) (L (Num n'))])"
-definition "outputMatch t1 t2 = (\<exists>m m'. Outputs t1 = [L (Num m)] \<and> Outputs t2 = [L (Num m')])"
+
+fun guardMatch_code :: "(vname, value) gexp list \<Rightarrow> (vname, value) gexp list \<Rightarrow> bool" where
+  "guardMatch_code [(gexp.Eq (V (vname.I i)) (L (Num n)))] [(gexp.Eq (V (vname.I i')) (L (Num n')))] = (i = 0 \<and> i' = 0)" |
+  "guardMatch_code _ _ = False"
+
+lemma [code]: "guardMatch t1 t2 = guardMatch_code (Guards t1) (Guards t2)"
+  apply (simp add: guardMatch_def)
+  using guardMatch_code.elims(2) by fastforce
 
 lemma guard_match_commute: "guardMatch t1 t2 = guardMatch t2 t1"
   apply (simp add: guardMatch_def)
@@ -20,6 +27,15 @@ lemma guard_match_length:
   "length (Guards t1) \<noteq> 1 \<or> length (Guards t2) \<noteq> 1 \<Longrightarrow> \<not> guardMatch t1 t2"
   apply (simp add: guardMatch_def)
   by auto
+
+definition "outputMatch t1 t2 = (\<exists>m m'. Outputs t1 = [L (Num m)] \<and> Outputs t2 = [L (Num m')])"
+
+fun outputMatch_code :: "value output_function list \<Rightarrow> value output_function list \<Rightarrow> bool" where
+  "outputMatch_code [L (Num n)] [L (Num n')] = True" |
+  "outputMatch_code _ _ = False"
+
+lemma [code]: "outputMatch t1 t2 = outputMatch_code (Outputs t1) (Outputs t2)"
+  by (metis outputMatch_code.elims(2) outputMatch_code.simps(1) outputMatch_def)
 
 fun insert_increment :: "value update_modifier" where
   "insert_increment t1ID t2ID s new _ old check = (let
