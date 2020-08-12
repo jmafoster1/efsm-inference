@@ -8,13 +8,13 @@ begin
 
 (* One point if they're equal *)
 text\<open>The simplest strategy is to assign one point for each shared pair of transitions.\<close>
-definition exactly_equal :: strategy where
+definition exactly_equal :: "'a strategy" where
   "exactly_equal t1ID t2ID e = bool2nat ((get_by_ids e t1ID) = (get_by_ids e t2ID))"
 
 text\<open>Another simple strategy is to look at the labels and arities of outgoing transitions of each
 state. Pairs of states are ranked by how many transitions with the same label and arity they have in
 common.\<close>
-definition naive_score :: strategy where
+definition naive_score :: "'a strategy" where
   "naive_score t1ID t2ID e = (
   let
     t1 = get_by_ids e t1ID;
@@ -25,7 +25,7 @@ definition naive_score :: strategy where
 
 text\<open>Building off the above strategy, it makes sense to give transitions an extra ``bonus point'' if
 they are exactly equal.\<close>
-definition naive_score_eq_bonus :: strategy where
+definition naive_score_eq_bonus :: "'a strategy" where
   "naive_score_eq_bonus t1ID t2ID e = (
   let
     t1 = get_by_ids e t1ID;
@@ -36,7 +36,7 @@ definition naive_score_eq_bonus :: strategy where
 
 (* One point each for equal label, arity, and outputs *)
 text\<open>Another strategy is to assign bonus points for each shared output.\<close>
-definition naive_score_outputs :: strategy where
+definition naive_score_outputs :: "'a strategy" where
   "naive_score_outputs t1ID t2ID e = (
   let
     t1 = get_by_ids e t1ID;
@@ -48,7 +48,7 @@ definition naive_score_outputs :: strategy where
 (* Functions with same label, and input and output arities contribute one point for each guard    *)
 (* and output they share. *)
 text\<open>Along similar lines, we can assign additional bonus points for shared guards.\<close>
-definition naive_score_comprehensive :: strategy where
+definition naive_score_comprehensive :: "'a strategy" where
   "naive_score_comprehensive t1ID t2ID e = (
   let
     t1 = get_by_ids e t1ID;
@@ -65,7 +65,7 @@ definition naive_score_comprehensive :: strategy where
 (* and output they share. Transitions which are exactly equal get a very high score. *)
 text\<open>This strategy is similar to the one above except that transitions which are exactly equal get
 100 bonus points. \<close>
-definition naive_score_comprehensive_eq_high :: strategy where
+definition naive_score_comprehensive_eq_high :: "'a strategy" where
   "naive_score_comprehensive_eq_high t1ID t2ID e = (
   let
     t1 = get_by_ids e t1ID;
@@ -84,7 +84,7 @@ definition naive_score_comprehensive_eq_high :: strategy where
 (* One point if one subsumes the other *)
 text\<open>We can incorporate the subsumption relation into the scoring of merges such that a pair of
 states receives one point for each pair of transitions where one directly subsumes the other.\<close>
-definition naive_score_subsumption :: "strategy" where
+definition naive_score_subsumption :: "('a::{order, aexp_value}) strategy" where
   "naive_score_subsumption t1ID t2ID e = (
   let
     t1 = get_by_ids e t1ID;
@@ -96,7 +96,7 @@ definition naive_score_subsumption :: "strategy" where
 
 (* Orders by the origin state so we merge leaves first *)
 text\<open>An alternative strategy is to simply score merges based on the states' proximity to the origin.\<close>
-definition leaves :: strategy where
+definition leaves :: "'a strategy" where
   "leaves t1ID t2ID e = (
     let
       t1 = get_by_ids e t1ID;

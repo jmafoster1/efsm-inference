@@ -5,10 +5,10 @@ theory Same_Register
   imports "../Inference"
 begin
 
-definition replace_with :: "iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM" where
+definition replace_with :: "'a iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a iEFSM" where
   "replace_with e r1 r2 = (fimage (\<lambda>(u, tf, t). (u, tf,Transition.rename_regs (id(r1:=r2)) t)) e)"
 
-fun merge_if_same :: "iEFSM \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (nat \<times> nat) list \<Rightarrow> iEFSM" where
+fun merge_if_same :: "('a::linorder) iEFSM \<Rightarrow> ('a transition_matrix \<Rightarrow> bool) \<Rightarrow> (nat \<times> nat) list \<Rightarrow> 'a iEFSM" where
   "merge_if_same e _ [] = e" |
   "merge_if_same e check ((r1, r2)#rs) = (
     let transitions = fimage (snd \<circ> snd) e in
@@ -24,7 +24,7 @@ fun merge_if_same :: "iEFSM \<Rightarrow> (transition_matrix \<Rightarrow> bool)
       merge_if_same e check rs
   )"
 
-definition merge_regs :: "iEFSM \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM" where
+definition merge_regs :: "('a::linorder) iEFSM \<Rightarrow> ('a transition_matrix \<Rightarrow> bool) \<Rightarrow> 'a iEFSM" where
   "merge_regs e check = (
     let
       regs = all_regs e;
@@ -33,7 +33,7 @@ definition merge_regs :: "iEFSM \<Rightarrow> (transition_matrix \<Rightarrow> b
     merge_if_same e check reg_pairs
   )"
 
-fun same_register :: update_modifier where
+fun same_register :: "('a::linorder) update_modifier" where
   "same_register t1ID t2ID s new _ old check = (
     let new' = merge_regs new check in
     if new' = new then None else Some new'

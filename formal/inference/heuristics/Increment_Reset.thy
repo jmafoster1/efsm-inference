@@ -6,7 +6,7 @@ theory Increment_Reset
   imports "../Inference"
 begin
 
-definition initialiseReg :: "transition \<Rightarrow> nat \<Rightarrow> transition" where
+definition initialiseReg :: "value transition \<Rightarrow> nat \<Rightarrow> value transition" where
   "initialiseReg t newReg = \<lparr>Label = Label t, Arity = Arity t, Guards = Guards t, Outputs = Outputs t, Updates = ((newReg, L (Num 0))#Updates t)\<rparr>"
 
 definition "guardMatch t1 t2  = (\<exists>n n'. Guards t1 = [gexp.Eq (V (vname.I 0)) (L (Num n))] \<and> Guards t2 = [gexp.Eq (V (vname.I 0)) (L (Num n'))])"
@@ -21,7 +21,7 @@ lemma guard_match_length:
   apply (simp add: guardMatch_def)
   by auto
 
-fun insert_increment :: update_modifier where
+fun insert_increment :: "value update_modifier" where
   "insert_increment t1ID t2ID s new _ old check = (let
      t1 = get_by_ids new t1ID;
      t2 = get_by_ids new t2ID in
@@ -40,7 +40,7 @@ fun insert_increment :: update_modifier where
        None
      )"
 
-definition struct_replace_all :: "iEFSM \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> iEFSM" where
+definition struct_replace_all :: "value iEFSM \<Rightarrow> value transition \<Rightarrow> value transition \<Rightarrow> value iEFSM" where
   "struct_replace_all e old new = (let
     to_replace = ffilter (\<lambda>(uid, (from, dest), t). same_structure t old) e;
     replacements = fimage (\<lambda>(uid, (from, to), t). (uid, new)) to_replace
@@ -55,7 +55,7 @@ lemma guard_match_symmetry: "(guardMatch t1 t2) = (guardMatch t2 t1)"
   apply (simp add: guardMatch_def)
   by auto
 
-fun insert_increment_2 :: update_modifier where
+fun insert_increment_2 :: "value update_modifier" where
   "insert_increment_2 t1ID t2ID s new _ old check = (let
      t1 = get_by_ids new t1ID;
      t2 = get_by_ids new t2ID in
@@ -74,11 +74,11 @@ fun insert_increment_2 :: update_modifier where
        None
      )"
 
-fun guardMatch_alt_2 :: "vname gexp list \<Rightarrow> bool" where
+fun guardMatch_alt_2 :: "(vname, value) gexp list \<Rightarrow> bool" where
   "guardMatch_alt_2 [(gexp.Eq (V (vname.I i)) (L (Num n)))] = (i = 1)" |
   "guardMatch_alt_2 _ = False"
 
-fun outputMatch_alt_2 :: "vname aexp list \<Rightarrow> bool" where
+fun outputMatch_alt_2 :: "(vname, value) aexp list \<Rightarrow> bool" where
   "outputMatch_alt_2 [(L (Num n))] = True" |
   "outputMatch_alt_2 _ = False"
 

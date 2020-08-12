@@ -7,7 +7,7 @@ theory Least_Upper_Bound
   imports "../Inference"
 begin
 
-fun literal_args :: "'a gexp \<Rightarrow> bool" where
+fun literal_args :: "('a, 'b) gexp \<Rightarrow> bool" where
   "literal_args (Bc v) = False" |
   "literal_args (Eq (V _) (L _)) = True" |
   "literal_args (In _ _) = True" |
@@ -24,32 +24,32 @@ lemma literal_args_eq:
 
 definition "all_literal_args t = (\<forall>g \<in> set (Guards t). literal_args g)"
 
-fun merge_in_eq :: "vname \<Rightarrow> value \<Rightarrow> vname gexp list \<Rightarrow> vname gexp list" where
+fun merge_in_eq :: "'b \<Rightarrow> 'a \<Rightarrow> ('b,'a) gexp list \<Rightarrow> ('b, 'a) gexp list" where
   "merge_in_eq v l [] = [Eq (V v) (L l)]" |
   "merge_in_eq v l ((Eq (V v') (L l'))#t) = (if v = v' \<and> l \<noteq> l' then (In v [l, l'])#t else (Eq (V v') (L l'))#(merge_in_eq v l t))" |
   "merge_in_eq v l ((In v' l')#t) = (if v = v' then (In v (remdups (l#l')))#t else (In v' l')#(merge_in_eq v l t))" |
   "merge_in_eq v l (h#t) = h#(merge_in_eq v l t)"
 
-fun merge_in_in :: "vname \<Rightarrow> value list \<Rightarrow> vname gexp list \<Rightarrow> vname gexp list" where
+fun merge_in_in :: "'b \<Rightarrow> 'a list \<Rightarrow> ('b, 'a) gexp list \<Rightarrow> ('b, 'a) gexp list" where
   "merge_in_in v l [] = [In v l]" |
   "merge_in_in v l ((Eq (V v') (L l'))#t) = (if v = v' then (In v (List.insert l' l))#t else (Eq (V v') (L l'))#(merge_in_in v l t))" |
   "merge_in_in v l ((In v' l')#t) = (if v = v' then (In v (List.union l l'))#t else (In v' l')#(merge_in_in v l t))" |
   "merge_in_in v l (h#t) = h#(merge_in_in v l t)"
 
-fun merge_guards :: "vname gexp list \<Rightarrow> vname gexp list \<Rightarrow> vname gexp list" where
+fun merge_guards :: "('b, 'a) gexp list \<Rightarrow> ('b, 'a) gexp list \<Rightarrow> ('b, 'a) gexp list" where
   "merge_guards [] g2 = g2" |
   "merge_guards ((Eq (V v) (L l))#t) g2 =  merge_guards t (merge_in_eq v l g2)" |
   "merge_guards ((In v l)#t) g2 = merge_guards t (merge_in_in v l g2)" |
   "merge_guards (h#t) g2 = h#(merge_guards t g2)"
 
-text\<open>The ``least upper bound'' (lob) heuristic simply disjoins the guards of two transitions with
+text\<open>The ``least upper bound'' (lob) heuristic simply disjoins the guards of two 'a transitions with
 identical outputs and updates.\<close>
-definition lob_aux :: "transition \<Rightarrow> transition \<Rightarrow> transition option" where
+definition lob_aux :: "'a transition \<Rightarrow> 'a transition \<Rightarrow> 'a transition option" where
   "lob_aux t1 t2 = (if Outputs t1 = Outputs t2 \<and> Updates t1 = Updates t2 \<and> all_literal_args t1 \<and> all_literal_args t2 then
       Some \<lparr>Label = Label t1, Arity = Arity t1, Guards = remdups (merge_guards (Guards t1) (Guards t2)), Outputs = Outputs t1, Updates = Updates t1\<rparr>
      else None)"
 
-fun lob :: update_modifier where
+fun lob :: "'a update_modifier" where
   "lob t1ID t2ID s new _ old _ = (let
      t1 = (get_by_ids new t1ID);
      t2 = (get_by_ids new t2ID) in
@@ -71,7 +71,7 @@ lemma lob_aux_some: "Outputs t1 = Outputs t2 \<Longrightarrow>
        lob_aux t1 t2 = Some t"
   by (simp add: lob_aux_def)
 
-fun has_corresponding :: "vname gexp \<Rightarrow> vname gexp list \<Rightarrow> bool" where
+fun has_corresponding :: "('b, 'a) gexp \<Rightarrow> ('b, 'a) gexp list \<Rightarrow> bool" where
   "has_corresponding g [] = False" |
   "has_corresponding (Eq (V v) (L l)) ((Eq (V v') (L l'))#t) = (if v = v' \<and> l = l' then True else has_corresponding (Eq (V v) (L l)) t)" |
   "has_corresponding (In v' l') ((Eq (V v) (L l))#t) = (if v = v' \<and> l \<in> set l' then True else has_corresponding (In v' l') t)" |
@@ -169,7 +169,7 @@ next
     using gval_each_one apply fastforce
     apply (case_tac "(\<exists>l' \<in> set x42. (Eq (V x41) (L l')) \<in> set G1)")
      defer
-    using has_corresponding_In apply blast
+    using has_corresponding_In apply force
     apply clarify
     apply (case_tac "gval (Eq (V x41) (L l')) (join_ir i c)")
       apply simp
@@ -199,7 +199,7 @@ lemma is_lob_direct_subsumption:
   apply (rule subsumes_in_all_contexts_directly_subsumes)
   by (simp add: is_lob_def correspondence_subsumption)
 
-fun has_distinguishing :: "vname gexp \<Rightarrow> vname gexp list \<Rightarrow> bool" where
+fun has_distinguishing :: "(vname, 'a) gexp \<Rightarrow> (vname, 'a) gexp list \<Rightarrow> bool" where
   "has_distinguishing g [] = False" |
   "has_distinguishing (Eq (V v) (L l)) ((Eq (V v') (L l'))#t) = (if v = v' \<and> l \<noteq> l' then True else has_distinguishing (Eq (V v) (L l)) t)" |
   "has_distinguishing (In (I v') l') ((Eq (V (I v)) (L l))#t) = (if v = v' \<and> l \<notin> set l' then True else has_distinguishing (In (I v') l') t)" |
@@ -323,11 +323,11 @@ proof(induct a)
 next
   case (Eq x1a x2)
   then show ?case
-    using input_not_constrained_aval_swap_inputs by auto
+    by (metis gexp_constrains.simps(2) gval.simps(4) input_not_constrained_aval_swap_inputs)
 next
   case (Gt x1a x2)
   then show ?case
-    using input_not_constrained_aval_swap_inputs by auto
+    by (metis gexp_constrains.simps(3) gval.simps(3) input_not_constrained_aval_swap_inputs)
 next
   case (In x1a x2)
   then show ?case
@@ -354,7 +354,7 @@ next
     apply (case_tac "a = In (I v) l")
      apply (simp add: join_ir_def)
      apply (metis in_these_eq input2state_nth input2state_out_of_bounds length_list_update not_le_imp_less nth_list_update_eq these_image_Some_eq trilean.distinct(1))
-    using input_not_constrained_gval_swap_inputs by auto
+    using input_not_constrained_gval_swap_inputs by force
 qed
 
 lemma test:
@@ -377,7 +377,7 @@ lemma test:
   apply (simp add: apply_guards_cons join_ir_def)
   by (metis None_notin_image_Some in_these_eq input2state_not_None input2state_nth length_list_update nth_list_update_eq these_image_Some_eq)
 
-definition get_Ins :: "vname gexp list \<Rightarrow> (nat \<times> value list) list" where
+definition get_Ins :: "(vname, 'a) gexp list \<Rightarrow> (nat \<times> 'a list) list" where
   "get_Ins G = map (\<lambda>g. case g of (In (I v) l) \<Rightarrow> (v, l)) (filter (\<lambda>g. case g of (In (I _) _ ) \<Rightarrow> True | _ \<Rightarrow> False) G)"
 
 lemma get_Ins_Cons_equiv: "\<nexists>v l. a = In (I v) l \<Longrightarrow> get_Ins (a # G) = get_Ins G"
@@ -514,7 +514,7 @@ next
     apply (simp add: apply_guards_cons)
     apply (case_tac "gexp_constrains g (V (I a))")
      defer
-    using input_not_constrained_gval_swap_inputs apply auto[1]
+    using input_not_constrained_gval_swap_inputs apply force
      apply simp
     apply (case_tac "join_ir i c (I a) \<in> Some ` set b")
      defer
@@ -522,8 +522,7 @@ next
     apply simp
     apply clarify
     apply standard
-    using apply_guards_def input_not_constrained_gval_swap_inputs
-     apply (simp add: filter_empty_conv)
+    apply (metis (no_types, lifting) Cons.hyps Cons.prems(2) filter_empty_conv removeAll_id set_ConsD test_aux)
     by (simp add: input2state_not_None input2state_nth join_ir_def)
 qed
 
@@ -582,19 +581,19 @@ definition "lob_distinguished_3 t1 t2 = (\<exists>(i, l) \<in> set (get_Ins (Gua
     (\<exists>(i', l') \<in> set (get_Ins (Guards t1)). i = i' \<and> set l' \<subset> set l) \<and>
    Arity t1 = Arity t2)"
 
-fun is_In :: "'a gexp \<Rightarrow> bool" where
+fun is_In :: "('a, 'b) gexp \<Rightarrow> bool" where
   "is_In (In _ _) = True" |
   "is_In _ = False"
 
 text\<open>The ``greatest upper bound'' (gob) heuristic is similar to \texttt{lob} but applies a more
 intellegent approach to guard merging.\<close>
 
-definition gob_aux :: "transition \<Rightarrow> transition \<Rightarrow> transition option" where
+definition gob_aux :: "'a transition \<Rightarrow> 'a transition \<Rightarrow> 'a transition option" where
   "gob_aux t1 t2 = (if Outputs t1 = Outputs t2 \<and> Updates t1 = Updates t2 \<and> all_literal_args t1 \<and> all_literal_args t2 then
       Some \<lparr>Label = Label t1, Arity = Arity t1, Guards = remdups (filter (Not \<circ> is_In) (merge_guards (Guards t1) (Guards t2))), Outputs = Outputs t1, Updates = Updates t1\<rparr>
      else None)"
 
-fun gob :: update_modifier where
+fun gob :: "'a update_modifier" where
   "gob t1ID t2ID s new _ old _ = (let
      t1 = (get_by_ids new t1ID);
      t2 = (get_by_ids new t2ID) in
@@ -604,13 +603,13 @@ fun gob :: update_modifier where
            Some (replace_transitions new [(t1ID, gob_t), (t2ID, gob_t)])
    )"
 
-text\<open>The ``Gung Ho'' heuristic simply drops the guards of both transitions, making them identical.\<close>
-definition gung_ho_aux :: "transition \<Rightarrow> transition \<Rightarrow> transition option" where
+text\<open>The ``Gung Ho'' heuristic simply drops the guards of both 'a transitions, making them identical.\<close>
+definition gung_ho_aux :: "'a transition \<Rightarrow> 'a transition \<Rightarrow> 'a transition option" where
   "gung_ho_aux t1 t2 = (if Outputs t1 = Outputs t2 \<and> Updates t1 = Updates t2 \<and> all_literal_args t1 \<and> all_literal_args t2 then
       Some \<lparr>Label = Label t1, Arity = Arity t1, Guards = [], Outputs = Outputs t1, Updates = Updates t1\<rparr>
      else None)"
 
-fun gung_ho :: update_modifier where
+fun gung_ho :: "'a update_modifier" where
   "gung_ho t1ID t2ID s new _ old _ = (let
      t1 = (get_by_ids new t1ID);
      t2 = (get_by_ids new t2ID) in
@@ -659,18 +658,10 @@ qed
 lemma each_input_guarded_once_cons: 
    "\<forall>i\<in>\<Union> (enumerate_gexp_inputs ` set (a # G)). length (filter (\<lambda>g. gexp_constrains g (V (I i))) (a # G)) \<le> 1 \<Longrightarrow>
     \<forall>i\<in>\<Union> (enumerate_gexp_inputs ` set G). length (filter (\<lambda>g. gexp_constrains g (V (I i))) G) \<le> 1"
-  apply (simp add: Ball_def)
-  apply clarify
-proof -
-  fix x :: nat and xa :: "vname gexp"
-  assume a1: "\<forall>x. (x \<in> enumerate_gexp_inputs a \<longrightarrow> length (if gexp_constrains a (V (I x)) then a # filter (\<lambda>g. gexp_constrains g (V (I x))) G else filter (\<lambda>g. gexp_constrains g (V (I x))) G) \<le> 1) \<and> ((\<exists>xa\<in>set G. x \<in> enumerate_gexp_inputs xa) \<longrightarrow> length (if gexp_constrains a (V (I x)) then a # filter (\<lambda>g. gexp_constrains g (V (I x))) G else filter (\<lambda>g. gexp_constrains g (V (I x))) G) \<le> 1)"
-  assume a2: "xa \<in> set G"
-  assume "x \<in> enumerate_gexp_inputs xa"
-  then have "if gexp_constrains a (V (I x)) then length (a # filter (\<lambda>g. gexp_constrains g (V (I x))) G) \<le> 1 else length (filter (\<lambda>g. gexp_constrains g (V (I x))) G) \<le> 1"
-    using a2 a1 by fastforce
-  then show "length (filter (\<lambda>g. gexp_constrains g (V (I x))) G) \<le> 1"
-    by (metis (no_types) impossible_Cons le_cases order.trans)
-qed
+  apply (rule ballI)
+  apply (erule_tac x=i in ballE)
+  using dual_order.trans apply fastforce
+  by simp
 
 lemma literal_args_can_take:
   "\<forall>g\<in>set G. \<exists>i v s. g = Eq (V (I i)) (L v) \<or> g = In (I i) s \<and> s \<noteq> [] \<Longrightarrow>
@@ -683,82 +674,40 @@ proof(induct G)
     using Ex_list_of_length
     by auto
 next
-  case (Cons a G)
+  case (Cons g gs)
   then show ?case
-    apply simp
-    apply (case_tac "\<forall>y\<in>set G. \<forall>i\<in>enumerate_gexp_inputs y. length (filter (\<lambda>g. gexp_constrains g (V (I i))) G) \<le> 1")
-     defer
-    using each_input_guarded_once_cons apply auto[1]
-    apply (simp add: ball_Un)
-    apply clarsimp
-    apply (induct a)
-        apply simp
+    apply (case_tac "\<forall>y\<in>set gs. \<forall>i\<in>enumerate_gexp_inputs y. length (filter (\<lambda>g. gexp_constrains g (V (I i))) gs) \<le> 1")
+     apply simp
+     apply clarify
+     apply (simp add: apply_guards_cons)
+     apply (rule disjE)
        apply simp
-       apply (case_tac x2)
-           apply (rule_tac x="list_update i ia x1" in exI)
-           apply (simp add: apply_guards_cons unconstrained_input filter_empty_conv)
-          apply simp+
-     apply (case_tac x2)
-      apply simp
-     apply (rule_tac x="list_update i ia aa" in exI)
-     apply (simp add: apply_guards_cons unconstrained_input filter_empty_conv)
-    by simp
+      apply clarsimp
+      apply (rule_tac x= "list_update i ia v" in exI)
+      apply standard
+       apply (simp add: filter_empty_conv unconstrained_input)
+      apply (simp add: join_ir_nth)
+    apply clarsimp
+     apply (rule_tac x= "list_update i ia (hd s)" in exI)
+     apply standard
+      apply (simp add: filter_empty_conv unconstrained_input)
+     apply (simp add: join_ir_nth)
+    apply clarsimp
+    by (metis Cons.prems(3) UN_I each_input_guarded_once_cons)
 qed
 
-lemma "(SOME x'. x' \<noteq> (v::value)) \<noteq> v"
-proof(induct v)
-  case (Num x)
-  then show ?case
-    by (metis (full_types) someI_ex value.simps(4))
-next
-  case (Str x)
-  then show ?case
-    by (metis (full_types) someI_ex value.simps(4))
-qed
-
-lemma opposite_gob_subsumption: "\<forall>g \<in> set (Guards t1). \<exists>i v s. g = Eq (V (I i)) (L v) \<or> (g = In (I i) s \<and> s \<noteq> []) \<Longrightarrow>
-       \<forall>g \<in> set (Guards t2). \<exists>i v s. g = Eq (V (I i)) (L v) \<or> (g = In (I i) s \<and> s \<noteq> []) \<Longrightarrow>
-       \<exists> i. \<exists>v. Eq (V (I i)) (L v) \<in> set (Guards t1) \<and>
-         (\<forall>g \<in> set (Guards t2). \<not> gexp_constrains g (V (I i))) \<Longrightarrow>
-       Arity t1 = Arity t2 \<Longrightarrow>
-       \<forall>i \<in> enumerate_inputs t2. i < Arity t2 \<Longrightarrow>
-       \<forall>i \<in> enumerate_inputs t2. length (filter (\<lambda>g. gexp_constrains g (V (I i))) (Guards t2)) \<le> 1 \<Longrightarrow>
-       \<not> subsumes t1 c t2"
-  apply (rule bad_guards)
-  apply (simp add: enumerate_inputs_def can_take_transition_def can_take_def Bex_def)
-  using literal_args_can_take[of "Guards t2" "Arity t2" c]
-  apply simp
-  apply clarify
-  apply (rule_tac x="list_update ia i (Eps (\<lambda>x'. x' \<noteq> v))" in exI)
-  apply simp
-  apply standard
-   apply (simp add: apply_guards_def)
-  using input_not_constrained_gval_swap_inputs apply simp
-  apply (simp add: apply_guards_def Bex_def)
-  apply (rule_tac x="Eq (V (I i)) (L v)" in exI)
-  apply (simp add: join_ir_def)
-  apply (case_tac "input2state (ia[i := SOME x'. x' \<noteq> v]) $ i")
-   apply simp
-  apply simp
-  apply (case_tac "i < length ia")
-   apply (simp add: input2state_nth)
-   apply (case_tac v)
-    apply (metis (mono_tags) someI_ex value.simps(4))
-   apply (metis (mono_tags) someI_ex value.simps(4))
-  by (metis input2state_within_bounds length_list_update)
-
-fun is_lit_eq :: "vname gexp \<Rightarrow> nat \<Rightarrow> bool" where
+fun is_lit_eq :: "(vname, 'a) gexp \<Rightarrow> nat \<Rightarrow> bool" where
   "is_lit_eq (Eq (V (I i)) (L v)) i' = (i = i')" |
   "is_lit_eq _ _ = False"
 
 lemma "(\<exists>v. Eq (V (I i)) (L v) \<in> set G) = (\<exists>g \<in> set G. is_lit_eq g i)"
   by (metis is_lit_eq.elims(2) is_lit_eq.simps(1))
 
-fun is_lit_eq_general :: "vname gexp \<Rightarrow> bool" where
+fun is_lit_eq_general :: "(vname, 'a) gexp \<Rightarrow> bool" where
   "is_lit_eq_general (Eq (V (I _)) (L _)) = True" |
   "is_lit_eq_general _ = False"
 
-fun is_input_in :: "vname gexp \<Rightarrow> bool" where
+fun is_input_in :: "(vname, 'a) gexp \<Rightarrow> bool" where
   "is_input_in (In (I i) s) = (s \<noteq> [])" |
   "is_input_in _ = False"
 
@@ -775,16 +724,7 @@ lemma "is_lit_eq_general g \<or> is_input_in g \<Longrightarrow>
        \<exists>i v s. g = Eq (V (I i)) (L v) \<or> g = In (I i) s \<and> s \<noteq> []"
   by (meson is_input_in.elims(2) is_lit_eq_general.elims(2))
 
-lemma opposite_gob_directly_subsumption:
-  "opposite_gob t1 t2 \<Longrightarrow> \<not> directly_subsumes m1 m2 s1 s2 t1 t2"
-  apply (rule cant_directly_subsume)
-  apply (rule opposite_gob_subsumption)
-  unfolding opposite_gob_def
-       apply (meson is_input_in.elims(2) is_lit_eq_general.elims(2))+
-     apply (metis is_lit_eq.elims(2))
-  by auto
-
-fun get_in :: "'a gexp \<Rightarrow> ('a \<times> value list) option" where
+fun get_in :: "('a, 'b) gexp \<Rightarrow> ('a \<times> 'b list) option" where
   "get_in (In v s) = Some (v, s)" |
   "get_in _ = None"
 
@@ -827,7 +767,7 @@ lemma remove_restricted:
   apply (metis (no_types, lifting) DiffE Diff_insert_absorb Set.set_insert empty_set filter.simps(2) filter_append in_set_conv_decomp insert_iff list.set(2))
   apply (simp add: filter_empty_conv)
   proof -
-    fix e :: "'a gexp"
+    fix e :: "('a, 'b) gexp"
     assume "filter (\<lambda>g. gexp_constrains g (V v)) G = [g]"
     then have "{g \<in> set G. gexp_constrains g (V v)} = {g}"
       by (metis (no_types) empty_set list.simps(15) set_filter)
@@ -871,7 +811,7 @@ next
        apply (simp add: not_restricted_def restricted_once_def)
       apply (meson apply_guards_subset set_subset_Cons)
      apply (simp add: apply_guards_rearrange not_restricted_def restricted_once_def unrestricted_input_swap)
-    by (metis apply_guards_cons filter.simps(2) filter_empty_conv input_not_constrained_gval_swap_inputs list.inject restricted_once_def singleton_list)
+    using apply_guards_cons filter_empty_conv input_not_constrained_gval_swap_inputs not_restricted_def restricted_once_cons by fastforce
 qed
 
 lemma In_swap_inputs:
@@ -895,7 +835,7 @@ lemma these_cons: "these (a#as) = (case a of None \<Rightarrow> these as | Some 
    apply (simp add: these_def)
   by (simp add: these_def)
 
-definition get_ins :: "vname gexp list \<Rightarrow> (nat \<times> value list) list" where
+definition get_ins :: "(vname, 'a) gexp list \<Rightarrow> (nat \<times> 'a list) list" where
   "get_ins g = map (\<lambda>(v, s). case v of I i \<Rightarrow> (i, s)) (filter (\<lambda>(v, _). case v of I _ \<Rightarrow> True | R _ \<Rightarrow> False) (these (map get_in g)))"
 
 lemma in_get_ins:
@@ -919,7 +859,7 @@ lemma restricted_head: "\<forall>v. restricted_once v (Eq (V x2) (L x1) # G) \<o
   apply (erule_tac x=x2 in allE)
   by (simp add: restricted_once_def not_restricted_def)
 
-fun atomic :: "'a gexp \<Rightarrow> bool" where
+fun atomic :: "('a, 'b) gexp \<Rightarrow> bool" where
   "atomic (Eq (V _) (L _)) = True" |
   "atomic (In _ _) = True" |
   "atomic _ = False"
@@ -942,6 +882,6 @@ next
   case (Cons a G)
   then show ?case
     apply (simp add: apply_guards_cons not_restricted_cons)
-    using input_not_constrained_gval_swap_inputs by auto
+    using input_not_constrained_gval_swap_inputs by force
 qed
 end

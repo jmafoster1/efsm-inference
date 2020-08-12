@@ -2,7 +2,7 @@ section\<open>Distinguishing Guards\<close>
 text\<open>If we cannot resolve the nondeterminism which arises from merging states by merging
 transitions, we might then conclude that those states should not be merged. Alternatively, we could
 consider the possibility of \emph{value-dependent} behaviour. This theory presents a heuristic which
-tries to find a guard which distinguishes between a pair of transitions.\<close>
+tries to find a guard which distinguishes between a pair of 'a transitions.\<close>
 
 theory Distinguishing_Guards
 imports "../Inference"
@@ -10,7 +10,7 @@ begin
 
 hide_const uids
 
-definition put_updates :: "tids \<Rightarrow> update_function list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+definition put_updates :: "tids \<Rightarrow> 'a update_function list \<Rightarrow> 'a iEFSM \<Rightarrow> 'a iEFSM" where
   "put_updates uids updates iefsm = fimage (\<lambda>(uid, fromTo, tran).
       case uid of [u] \<Rightarrow>
       if u \<in> set uids then
@@ -19,10 +19,10 @@ definition put_updates :: "tids \<Rightarrow> update_function list \<Rightarrow>
         (uid, fromTo, tran)
       ) iefsm"
 
-definition transfer_updates :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+definition transfer_updates :: "('a::linorder) iEFSM \<Rightarrow> 'a iEFSM \<Rightarrow> 'a iEFSM" where
   "transfer_updates e pta = fold (\<lambda>(tids, (from, to), tran) acc. put_updates tids (Updates tran) acc) (sorted_list_of_fset e) pta"
 
-fun trace_collect_training_sets :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> tids \<Rightarrow> tids \<Rightarrow> (inputs \<times> registers) list \<Rightarrow> (inputs \<times> registers) list \<Rightarrow> ((inputs \<times> registers) list \<times> (inputs \<times> registers) list)" where
+fun trace_collect_training_sets :: "('a::aexp_value) trace \<Rightarrow> 'a iEFSM \<Rightarrow> cfstate \<Rightarrow> 'a registers \<Rightarrow> tids \<Rightarrow> tids \<Rightarrow> ('a inputs \<times> 'a registers) list \<Rightarrow> ('a inputs \<times> 'a registers) list \<Rightarrow> (('a inputs \<times> 'a registers) list \<times> ('a inputs \<times> 'a registers) list)" where
   "trace_collect_training_sets [] uPTA s registers T1 T2 G1 G2 = (G1, G2)" |
   "trace_collect_training_sets ((label, inputs, outputs)#t) uPTA s registers T1 T2 G1 G2 = (
     let
@@ -37,14 +37,14 @@ fun trace_collect_training_sets :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfst
       trace_collect_training_sets t uPTA s' updated T1 T2 G1 G2
   )"
 
-primrec collect_training_sets :: "log \<Rightarrow> iEFSM \<Rightarrow> tids \<Rightarrow> tids \<Rightarrow> (inputs \<times> registers) list \<Rightarrow> (inputs \<times> registers) list \<Rightarrow> ((inputs \<times> registers) list \<times> (inputs \<times> registers) list)" where
+primrec collect_training_sets :: "('a::{aexp_value,order}) log \<Rightarrow> 'a iEFSM \<Rightarrow> tids \<Rightarrow> tids \<Rightarrow> ('a inputs \<times> 'a registers) list \<Rightarrow> ('a inputs \<times> 'a registers) list \<Rightarrow> (('a inputs \<times> 'a registers) list \<times> ('a inputs \<times> 'a registers) list)" where
   "collect_training_sets [] uPTA T1 T2 G1 G2 = (G1, G2)" |
   "collect_training_sets (h#t) uPTA T1 T2 G1 G2 = (
     let (G1a, G2a) = trace_collect_training_sets h uPTA 0 <> T1 T2 [] [] in
     collect_training_sets t uPTA T1 T2 (List.union G1 G1a) (List.union G2 G2a)
   )"
 
-definition find_distinguishing_guards :: "(inputs \<times> registers) list \<Rightarrow> (inputs \<times> registers) list \<Rightarrow> (vname gexp \<times> vname gexp) option" where
+definition find_distinguishing_guards :: "(('a::aexp_value) inputs \<times> 'a registers) list \<Rightarrow> ('a inputs \<times> 'a registers) list \<Rightarrow> ((vname, 'a) gexp \<times> (vname, 'a) gexp) option" where
   "find_distinguishing_guards G1 G2 = (
     let gs = {(g1, g2).
       (\<forall>(i, r) \<in> set G1. gval g1 (join_ir i r) = true) \<and>
@@ -56,10 +56,10 @@ definition find_distinguishing_guards :: "(inputs \<times> registers) list \<Rig
 declare find_distinguishing_guards_def [code del]
 code_printing constant find_distinguishing_guards \<rightharpoonup> (Scala) "Dirties.findDistinguishingGuards"
 
-definition add_guard :: "transition \<Rightarrow> vname gexp \<Rightarrow> transition" where
+definition add_guard :: "'a transition \<Rightarrow> (vname, 'a) gexp \<Rightarrow> 'a transition" where
   "add_guard t g = t\<lparr>Guards := List.insert g (Guards t)\<rparr>"
 
-definition distinguish :: "log \<Rightarrow> update_modifier" where
+definition distinguish :: "('a::{linorder,aexp_value}) log \<Rightarrow> 'a update_modifier" where
   "distinguish log t1ID t2ID s destMerge preDestMerge old check = (
     let
       t1 = get_by_ids destMerge t1ID;
@@ -75,11 +75,17 @@ definition distinguish :: "log \<Rightarrow> update_modifier" where
         )
   )"
 
-definition can_still_take_ctx :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
+definition can_still_take_ctx :: "('a::{order,aexp_value}) transition_matrix \<Rightarrow> 'a transition_matrix \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> 'a transition \<Rightarrow> 'a transition \<Rightarrow> bool" where
   "can_still_take_ctx e1 e2 s1 s2 t1 t2 = (
     \<forall>t. recognises e1 t \<and> gets_us_to s1 e1 0 <> t \<and>  recognises e2 t \<and> gets_us_to s2 e2 0 <> t \<longrightarrow>
     (\<exists>a. anterior_context e2 t = Some a \<and> (\<forall>i. can_take_transition t2 i a \<longrightarrow> can_take_transition t1 i a))
   )"
+
+definition "recognises_and_gets_us_to_both a b s s' = (
+  \<exists>p. recognises (tm a) p \<and>
+      gets_us_to s (tm a) 0 <> p \<and>
+      recognises (tm b) p \<and>
+      gets_us_to s' (tm b) 0 <> p)"
 
 lemma distinguishing_guard_subsumption: "Label t1 = Label t2 \<Longrightarrow>
  Arity t1 = Arity t2 \<Longrightarrow>
@@ -93,13 +99,7 @@ lemma distinguishing_guard_subsumption: "Label t1 = Label t2 \<Longrightarrow>
  gets_us_to s2 (tm e2) 0 <> p \<Longrightarrow>
  anterior_context (tm e2) p = Some c \<Longrightarrow>
  subsumes t1 c t2"
-  using subsumes_def can_still_take_ctx_def by auto
-
-definition "recognises_and_gets_us_to_both a b s s' = (
-  \<exists>p. recognises (tm a) p \<and>
-      gets_us_to s (tm a) 0 <> p \<and>
-      recognises (tm b) p \<and>
-      gets_us_to s' (tm b) 0 <> p)"
+  using subsumes_def can_still_take_ctx_def by fastforce
 
 definition "can_still_take e1 e2 s1 s2 t1 t2 = (
   Label t1 = Label t2 \<and>
@@ -114,7 +114,7 @@ lemma can_still_take_direct_subsumption:
   directly_subsumes e1 e2 s1 s2 t1 t2"
   apply (simp add: directly_subsumes_def can_still_take_def)
   apply standard
-  using distinguishing_guard_subsumption apply auto[1]
+  using distinguishing_guard_subsumption apply fastforce
   by (meson distinguishing_guard_subsumption recognises_and_gets_us_to_both_def recognises_execution_gives_context)
 
 end
