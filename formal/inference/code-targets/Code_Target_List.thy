@@ -1,5 +1,6 @@
 chapter\<open>Code Generation\<close>
-text\<open>This chapter details the code generator setup for our inference technique.\<close>
+text\<open>This chapter details the code generator setup to produce executable Scala code for our
+inference technique.\<close>
 
 section\<open>Lists\<close>
 text\<open>Here we define some equivalent definitions which make for a faster implementation. We also
