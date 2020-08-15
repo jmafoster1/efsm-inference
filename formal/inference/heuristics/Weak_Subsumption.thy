@@ -1,14 +1,20 @@
-section\<open>Weak Subsumption\<close>
-text\<open>While the approach proposed in \cite{foster2019} of using a model checker to check properties
-which imply direct subsumption initially seems attractive, it makes the inference process
-prohibitively slow for all but the smallest of examples. This is due to the problem of state space
-explosion experienced by all model checkers. To allow the inference tool to scale to the realistic
-examples needed to properly evaluate it in \autoref{chap:evaluation}, a different approach is
-needed.
+subsection\<open>Weak Subsumption\<close>
+text\<open>Unfortunately, the \emph{direct subsumption} relation cannot be transformed into executable
+code. To solve this problem, \cite{foster2019} advocates for the use of a model checker, but this
+turns out to be prohibitively slow for all but the smallest of examples. To solve this problem, we
+must make a practical compromise and use another heuristic: the \emph{weak subsumption} heuristic.
+This heuristic simply tries to delete each transition in turn and runs the original traces used to
+build the PTA are still accepted. If so, this is taken as an acceptable substitute for direct
+subsumption.
 
-Rather than checking full direct subsumption, this heuristic simply tries to delete each transition
-in turn and runs the original traces used to build the PTA are still accepted. If so, this is taken
-as an acceptable substitute for direct subsumption.\<close>
+The acceptability of this, with respect to model behaviour, is justified by the fact that the
+original traces are checked for acceptance. In situations where one transition genuinely does
+directly subsume the other, the merge will go ahead as normal. In situations where one transition
+does not directly subsume the other, the merge may still go ahead if replacing one transition with
+the other still allows the model to accept the original traces. In this case, the heuristic makes an
+overgeneralisation, but this is deemed to be acceptable since this is what heuristics are for. This
+approach is clearly not as formal as we would like, but the compromise is necessary to allow models
+to be inferred in reasonable time.\<close>
 
 theory Weak_Subsumption
 imports "../Inference"

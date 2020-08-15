@@ -1,3 +1,6 @@
+section\<open>Output\<close>
+text\<open>This chapter provides two different output formats for EFSMs.\<close> 
+
 section\<open>Graphical Output\<close>
 text\<open>It is often more intuitive and aesthetically pleasing to view EFSMs graphically. DOT is a graph
 layout engine which converts textual representations of graphs to more useful formats, such as SVG

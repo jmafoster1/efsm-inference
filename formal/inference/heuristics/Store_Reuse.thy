@@ -1,3 +1,31 @@
+chapter\<open>Heuristics\<close>
+text\<open>As part of this inference technique, we make use of certain \emph{heuristics} to abstract away
+concrete values into registers. This allows us to generalise from examples of behaviour. These
+heuristics are as follows.
+
+\begin{description}
+  \item [Store and Reuse] - This heuristic aims to recognise when input values are subsequently used
+as an output. Such behaviour is generalised by storing the relevant input in a register, and
+replacing the literal output with the content of the register. This enables the EFSM to
+\emph{predict} how the underlying system might behave when faced with unseen inputs.
+  \item [Increment and Reset] - This heuristic is a naive attempt to introduce additive behaviour.
+The idea here is that if we want to merge two transitions with identical input values and different
+numeric outputs, for example $\textit{coin}:1[i_0=50]/o_0:=50$ and $\textit{coin}:1[i_0=50]/o_0:=100$,
+then the behaviour must depend on the value of an internal variable. This heuristic works by
+dropping the input guard and adding an update to a fresh register, in this case summing the current
+register value with the input. A similar principle can be applied to other numeric functions such as
+subtraction.
+  \item [Same Register] - Because of the way heuristics are applied, it is possible for different
+registers to be introduced to serve the same purpose. This heuristic attempts to identify when this
+has happened and merge the two registers.
+  \item [Least Upper Bound] - In certain situations, transitions may produce the same output for
+different inputs. This technique forms the least upper bound of the transition guards
+--- their disjunction --- such that they can be merged into a single behaviour.
+  \item [Distinguishing Guards] - Under certain circumstances, we explicitly do not want to merge
+two transitions into one. This heuristic resolves nondeterminism between transitions by attempting
+to find apply mutually exclusive guards to each transition such that their behaviour is distinguished.
+\end{description}\<close>
+
 section\<open>Store and Reuse\<close>
 text\<open>An obvious candidate for generalisation is the ``store and reuse'' pattern. This manifests
 itself  when the input of one transition is subsequently used as the output of another. Recognising

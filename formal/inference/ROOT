@@ -7,14 +7,16 @@ theories
   "Inference"
   "SelectionStrategies"
 
-  "heuristics/Distinguishing_Guards"
-  "heuristics/Increment_Reset"
-  "heuristics/Least_Upper_Bound"
-  "heuristics/Same_Register"
   "heuristics/Store_Reuse"
   "heuristics/Store_Reuse_Subsumption"
-  "heuristics/PTA_Generalisation"
+  "heuristics/Increment_Reset"
+  "heuristics/Same_Register"
+  "heuristics/Least_Upper_Bound"
+
+  "heuristics/Distinguishing_Guards"
   "heuristics/Weak_Subsumption"
+
+  "heuristics/PTA_Generalisation"
 
   "code-targets/Code_Target_List"
   "code-targets/Code_Target_Set"

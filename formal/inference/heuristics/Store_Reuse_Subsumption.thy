@@ -1,3 +1,8 @@
+subsection\<open>Store and Reuse Subsumption\<close>
+text\<open>This theory provides proofs of various properties of the \emph{store and reuse} heuristic,
+including the preconditions necessary for the transitions it introduces to directly subsume their
+ungeneralised counterparts.\<close>
+
 theory Store_Reuse_Subsumption
 imports Store_Reuse
 begin

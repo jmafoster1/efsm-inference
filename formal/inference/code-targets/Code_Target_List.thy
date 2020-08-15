@@ -1,4 +1,7 @@
-subsection\<open>Lists\<close>
+chapter\<open>Code Generation\<close>
+text\<open>This chapter details the code generator setup for our inference technique.\<close>
+
+section\<open>Lists\<close>
 text\<open>Here we define some equivalent definitions which make for a faster implementation. We also
 make use of the \texttt{code\_printing} statement such that native Scala implementations of common
 list operations are used instead of redefining them. This allows us to use the \texttt{par}

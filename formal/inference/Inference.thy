@@ -1,4 +1,7 @@
-section \<open>Extended Finite State Machine Inference\<close>
+chapter\<open>EFSM Inference\<close>
+text\<open>This chapter presents the definitions necessary for EFSM inference by state-merging.\<close>
+
+chapter\<open>Inference by State-Merging\<close>
 text\<open>This theory sets out the key definitions for the inference of EFSMs from system traces.\<close>
 
 theory Inference

@@ -1,4 +1,4 @@
-subsection\<open>Sets\<close>
+section\<open>Sets\<close>
 text\<open>While the default code generator setup for sets works fine, it does not make for particularly
 readable code. The reason for this is that the default setup needs to work with potentially infinite
 sets. All of the sets we need to use here are finite so we present an alternative setup for the

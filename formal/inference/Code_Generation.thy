@@ -1,6 +1,7 @@
 section\<open>Code Generation\<close>
 text\<open>This theory is used to generate an executable Scala implementation of the inference tool which
-can be used to infer real EFSMs from real traces.\<close>
+can be used to infer real EFSMs from real traces. Certain functions are replaced with native
+implementations. These can be found at \url{https://github.com/jmafoster1/efsm-inference/blob/master/inference-tool/src/main/scala/inference/Dirties.scala}.\<close>
 
 theory Code_Generation
   imports
