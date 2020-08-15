@@ -1,4 +1,4 @@
-section\<open>Output\<close>
+chapter\<open>Output\<close>
 text\<open>This chapter provides two different output formats for EFSMs.\<close> 
 
 section\<open>Graphical Output\<close>
