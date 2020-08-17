@@ -91,7 +91,7 @@ definition naive_score_subsumption :: "strategy" where
     t2 = get_by_ids e t2ID;
     s = origin t1ID e
   in
-  bool2nat (directly_subsumes e e s s t1 t2) + bool2nat (directly_subsumes e e s s t2 t1)
+  bool2nat (directly_subsumes (tm e) (tm e) s s t1 t2) + bool2nat (directly_subsumes (tm e) (tm e) s s t2 t1)
 )"
 
 (* Orders by the origin state so we merge leaves first *)

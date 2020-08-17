@@ -41,16 +41,6 @@ code_printing
 *)
 definition "initially_undefined_context_check_full = initially_undefined_context_check"
 
-lemma [code]: "initially_undefined_context_check e r s = (
-  if s = 0 \<and> (\<forall>((from, to), t) |\<in>| e. to \<noteq> 0) then
-    True
-  else
-    initially_undefined_context_check_full e r s
-  )"
-  apply (case_tac "s = 0 \<and> (\<forall>((from, to), t)|\<in>|e. to \<noteq> 0)")
-   apply (simp add: no_incoming_to_initial_gives_empty_reg)
-  using initially_undefined_context_check_full_def by presburger
-
 (* This gives us a speedup because we can check this before we have to call out to z3 *)
 fun mutex :: "'a gexp \<Rightarrow> 'a gexp \<Rightarrow> bool" where
   "mutex (Eq (V v) (L l)) (Eq (V v') (L l')) = (if v = v' then l \<noteq> l' else False)" |
@@ -176,17 +166,7 @@ definition input_updates_register :: "transition_matrix \<Rightarrow> (nat \<tim
 
 definition "dirty_directly_subsumes e1 e2 s1 s2 t1 t2 = (if t1 = t2 then True else directly_subsumes e1 e2 s1 s2 t1 t2)"
 
-definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> bool" where
-"always_different_outputs_direct_subsumption m1 m2 s s' t2 = ((\<exists>p c1 c. obtains s c1 (tm m1) 0 <> p \<and> obtains s' c (tm m2) 0 <> p \<and> (\<exists>i. can_take_transition t2 i c)))"
-
-lemma always_different_outputs_can_take_transition_not_subsumed:
-  "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
-   \<forall>c. posterior_sequence (tm m2) 0 <> p = Some c \<longrightarrow> (\<exists>i. can_take_transition t2 i c) \<longrightarrow> \<not> subsumes t1 c t2"
-  apply standard
-  apply standard
-  apply standard
-  apply (rule bad_outputs)
-  by (metis always_different_outputs_outputs_never_equal)
+definition "always_different_outputs_direct_subsumption m1 m2 s s' t2 = ((\<exists>p c1 c. obtains s c1 m1 0 <> p \<and> obtains s' c m2 0 <> p \<and> (\<exists>i. can_take_transition t2 i c)))"
 
 lemma always_different_outputs_direct_subsumption:
   "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
@@ -260,7 +240,7 @@ lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (
      apply (rule_tac x=p in exI)
      apply auto[1]
   using can_take_transition_empty_guard apply blast
-  using always_different_outputs_direct_subsumption_def dirty_always_different_outputs_direct_subsumption_def apply auto[1]
+  apply (metis always_different_outputs_direct_subsumption_def dirty_always_different_outputs_direct_subsumption_def)
   by (simp add: always_different_outputs_direct_subsumption_def dirty_always_different_outputs_direct_subsumption_def)
 
 definition guard_subset_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> bool" where

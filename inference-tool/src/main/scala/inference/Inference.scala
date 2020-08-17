@@ -1952,36 +1952,6 @@ def less_eq_transition_ext[A : HOL.equal : Orderings.linorder](t1:
 
 } /* object Transition_Lexorder */
 
-object Option_ord {
-
-def bot_optiona[A : Orderings.order]: Option[A] = None
-
-def less_eq_option[A : Orderings.preorder](xa0: Option[A], x: Option[A]):
-      Boolean
-  =
-  (xa0, x) match {
-  case (Some(x), Some(y)) => Orderings.less_eq[A](x, y)
-  case (Some(x), None) => false
-  case (None, x) => true
-}
-
-def less_option[A : Orderings.preorder](x: Option[A], xa1: Option[A]): Boolean =
-  (x, xa1) match {
-  case (Some(x), Some(y)) => Orderings.less[A](x, y)
-  case (None, Some(x)) => true
-  case (x, None) => false
-}
-
-} /* object Option_ord */
-
-object Finite_Set {
-
-def card[A](x0: Set.set[A]): Nat.nat = x0 match {
-  case Set.seta(xs) => Nat.Nata((xs.par.distinct.toList).par.length)
-}
-
-} /* object Finite_Set */
-
 object FSet {
 
 abstract sealed class fset[A]
@@ -2078,6 +2048,52 @@ def minus_fset[A](x0: fset[A], xs: fset[A]): fset[A] = (x0, xs) match {
 }
 
 } /* object FSet */
+
+object Subsumption {
+
+def directly_subsumes(e1: FSet.fset[((Nat.nat, Nat.nat),
+                                      Transition.transition_ext[Unit])],
+                       e2: FSet.fset[((Nat.nat, Nat.nat),
+                                       Transition.transition_ext[Unit])],
+                       s1: Nat.nat, s2: Nat.nat,
+                       t1: Transition.transition_ext[Unit],
+                       t2: Transition.transition_ext[Unit]):
+      Boolean
+  =
+  (if (Transition.equal_transition_exta[Unit](t1, t2)) true
+    else Dirties.scalaDirectlySubsumes(e1, e2, s1, s2, t1, t2))
+
+} /* object Subsumption */
+
+object Option_ord {
+
+def bot_optiona[A : Orderings.order]: Option[A] = None
+
+def less_eq_option[A : Orderings.preorder](xa0: Option[A], x: Option[A]):
+      Boolean
+  =
+  (xa0, x) match {
+  case (Some(x), Some(y)) => Orderings.less_eq[A](x, y)
+  case (Some(x), None) => false
+  case (None, x) => true
+}
+
+def less_option[A : Orderings.preorder](x: Option[A], xa1: Option[A]): Boolean =
+  (x, xa1) match {
+  case (Some(x), Some(y)) => Orderings.less[A](x, y)
+  case (None, Some(x)) => true
+  case (x, None) => false
+}
+
+} /* object Option_ord */
+
+object Finite_Set {
+
+def card[A](x0: Set.set[A]): Nat.nat = x0 match {
+  case Set.seta(xs) => Nat.Nata((xs.par.distinct.toList).par.length)
+}
+
+} /* object Finite_Set */
 
 object FSet_Utils {
 
@@ -2877,20 +2893,6 @@ def merge_transitions_aux(e: FSet.fset[(List[Nat.nat],
      })(b)
   }
 
-def directly_subsumes(e1: FSet.fset[(List[Nat.nat],
-                                      ((Nat.nat, Nat.nat),
-Transition.transition_ext[Unit]))],
-                       e2: FSet.fset[(List[Nat.nat],
-                                       ((Nat.nat, Nat.nat),
- Transition.transition_ext[Unit]))],
-                       s1: Nat.nat, s2: Nat.nat,
-                       t1: Transition.transition_ext[Unit],
-                       t2: Transition.transition_ext[Unit]):
-      Boolean
-  =
-  (if (Transition.equal_transition_exta[Unit](t1, t2)) true
-    else Dirties.scalaDirectlySubsumes(e1, e2, s1, s2, t1, t2))
-
 def origin(uid: List[Nat.nat],
             t: FSet.fset[(List[Nat.nat],
                            ((Nat.nat, Nat.nat),
@@ -2949,16 +2951,18 @@ def merge_transitions(failedMerges: Set.set[(Nat.nat, Nat.nat)],
                            Transition.transition_ext[Unit]))]]
   =
   (if (Lista.list_all[Nat.nat](((id: Nat.nat) =>
-                                 directly_subsumes(oldEFSM, destMerge,
-            origin(List(id), oldEFSM), origin(u_1, destMerge), t_2, t_1)),
+                                 Subsumption.directly_subsumes(tm(oldEFSM),
+                        tm(destMerge), origin(List(id), oldEFSM),
+                        origin(u_1, destMerge), t_2, t_1)),
                                 u_1))
     Some[FSet.fset[(List[Nat.nat],
                      ((Nat.nat, Nat.nat),
                        Transition.transition_ext[Unit]))]](merge_transitions_aux(destMerge,
   u_1, u_2))
     else (if (Lista.list_all[Nat.nat](((id: Nat.nat) =>
-directly_subsumes(oldEFSM, destMerge, origin(List(id), oldEFSM),
-                   origin(u_2, destMerge), t_1, t_2)),
+Subsumption.directly_subsumes(tm(oldEFSM), tm(destMerge),
+                               origin(List(id), oldEFSM),
+                               origin(u_2, destMerge), t_1, t_2)),
                                        u_2))
            Some[FSet.fset[(List[Nat.nat],
                             ((Nat.nat, Nat.nat),

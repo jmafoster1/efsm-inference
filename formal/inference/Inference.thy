@@ -1,12 +1,12 @@
 chapter\<open>EFSM Inference\<close>
 text\<open>This chapter presents the definitions necessary for EFSM inference by state-merging.\<close>
 
-chapter\<open>Inference by State-Merging\<close>
+section\<open>Inference by State-Merging\<close>
 text\<open>This theory sets out the key definitions for the inference of EFSMs from system traces.\<close>
 
 theory Inference
   imports
-    "EFSM.Contexts"
+    "EFSM.Subsumption"
     "EFSM.Transition_Lexorder"
     "HOL-Library.Product_Lexorder"
 begin
@@ -314,183 +314,6 @@ definition score_transitions :: "transition \<Rightarrow> transition \<Rightarro
       0
   )"
 
-subsection\<open>Direct Subsumption\<close>
-text\<open>When merging EFSM transitions, one must \emph{account for} the behaviour of the other. The
-\emph{subsumption in context} relation formalises the intuition that, in certain contexts, a
-transition $t_2$ reproduces the behaviour of, and updates the data state in a manner consistent
-with, another transition $t_1$, meaning that $t_2$ can be used in place of $t_1$ with no observable
-difference in behaviour.
-
-The subsumption in context relation requires us to supply a context in which to test subsumption,
-but there is a problem when we try to apply this to inference: Which context should we use? The
-\emph{direct subsumption} relation works at EFSM level to determine when and whether one transition
-is able to account for the behaviour of another such that we can use one in place of another without
-adversely effecting observable behaviour.\<close>
-
-definition directly_subsumes :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "directly_subsumes e1 e2 s1 s2 t1 t2 \<equiv> (\<exists>c. subsumes t1 c t2) \<and>
-                                         (\<forall>c1 c2. (obtainable s1 c1 (tm e1) \<and> obtainable s2 c2 (tm e2)) \<longrightarrow> subsumes t1 c2 t2)"
-
-lemma recognises_execution_accepting_sequence:
-  "recognises_execution e s r p \<Longrightarrow>
-   \<exists>t. accepting_sequence e s r p q = Some t"
-proof(induct p arbitrary: s r q)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a p)
-  then show ?case
-    apply (cases a)
-    apply simp
-    apply (case_tac "random_member
-                  (ffilter (\<lambda>(s', tt). recognises_execution e s' (evaluate_updates tt b r) p) (possible_steps e s r aa b))")
-     apply simp
-    using recognises_step_equiv apply auto[1]
-    apply (case_tac aaa)
-    apply (simp add: Let_def)
-    using random_member_is_member by fastforce
-qed
-
-lemma accepting_sequence_empty:
-  "accepting_sequence e s r p q = Some [] \<Longrightarrow> p = [] \<and> q = []"
-proof(induct p arbitrary: s r q)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons p ps)
-  then show ?case
-    apply simp
-    apply (case_tac "random_member
-           (ffilter (\<lambda>(s', tt). recognises_execution e s' (evaluate_updates tt (snd p) r) ps)
-             (possible_steps e s r (fst p) (snd p)))")
-     apply simp
-    by (metis (no_types, lifting) list.simps(3) option.case(2) split_beta)
-qed
-
-lemma accepting_sequence_empty2:
-  "accepting_sequence e s r (a # p) [] = Some t \<Longrightarrow> t \<noteq> []"
-  using accepting_sequence_empty by blast
-
-lemma accepting_sequence_None_prefix_independent:
- "accepting_sequence e s r t p = None \<Longrightarrow>
-  accepting_sequence e s r t q = None"
-proof(induct t arbitrary: s r p)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons t ts)
-  then show ?case
-    apply clarsimp
-    apply (case_tac "random_member
-                (ffilter (\<lambda>(s', tt). recognises_execution e s' (evaluate_updates tt (snd t) r) ts)
-                  (possible_steps e s r (fst t) (snd t)))")
-     apply simp
-    apply (case_tac a)
-    apply (simp add: Let_def)
-    using no_accepting_sequence_rejected random_member_is_member by fastforce
-qed
-
-lemma accepting_sequence_not_None_prefix_independent:
-  "accepting_sequence e s r t p \<noteq> None \<Longrightarrow>
-   accepting_sequence e s r t q \<noteq> None"
-proof(induct t arbitrary: s r p)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons t ts)
-  then show ?case
-    apply clarsimp
-    apply (case_tac "random_member
-                (ffilter (\<lambda>(s', tt). recognises_execution e s' (evaluate_updates tt (snd t) r) ts)
-                  (possible_steps e s r (fst t) (snd t)))")
-     apply simp
-    apply (case_tac a)
-    apply (simp add: Let_def)
-    using random_member_is_member recognises_execution_accepting_sequence by fastforce
-qed
-
-lemma accepting_sequence_length:
-  "accepting_sequence e s r t p = Some ab \<Longrightarrow> length ab = length t + length p"
-proof(induct t arbitrary: s r p)
-  case Nil
-  then show ?case
-    by auto
-next
-  case (Cons a t)
-  then show ?case
-    apply simp
-    apply (case_tac "random_member
-           (ffilter (\<lambda>(s', tt). recognises_execution e s' (evaluate_updates tt (snd a) r) t)
-             (possible_steps e s r (fst a) (snd a)))")
-     apply simp
-    apply simp
-    by (metis (no_types, lifting) add_Suc_right case_prod_beta length_Cons)
-qed
-
-lemma directly_subsumes_self: "directly_subsumes e1 e2 s s' t t"
-  apply (simp add: directly_subsumes_def)
-  by (simp add: transition_subsumes_self)
-
-lemma subsumes_in_all_contexts_directly_subsumes:
-  "(\<And>c. subsumes t2 c t1) \<Longrightarrow> directly_subsumes e1 e2 s s' t2 t1"
-  by (simp add: directly_subsumes_def)
-
-lemma gets_us_to_and_not_subsumes:
-  "(\<exists>c1. obtainable s c1 (tm e1)) \<and> (\<exists>c2. obtainable s' c2 (tm e2) \<and> \<not> subsumes t1 c2 t2) \<Longrightarrow>
-   \<not> directly_subsumes e1 e2 s s' t1 t2"
-  by (simp add: directly_subsumes_def)
-
-lemma cant_directly_subsume:
-  "(\<And>c. \<not> subsumes t c t') \<Longrightarrow> \<not> directly_subsumes m m' s s' t t'"
-  by (simp add: directly_subsumes_def)
-
-definition insert_transition :: "tids \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "insert_transition uid from to t e = (
-    if \<nexists>(uid, (from', to'), t') |\<in>| e. from = from' \<and> to = to' \<and> t = t' then
-      finsert (uid, (from, to), t) e
-    else
-      fimage (\<lambda>(uid', (from', to'), t').
-        if from = from' \<and> to = to' \<and> t = t' then
-          (List.union uid' uid, (from', to'), t')
-        else
-          (uid', (from', to'), t')
-      ) e
-  )"
-
-lemma guard_implication: "Label t1 = Label t2 \<Longrightarrow>
-  Arity t1 = Arity t2 \<Longrightarrow>
-  Outputs t1 = Outputs t2 \<Longrightarrow>
-  Updates t1 = Updates t2 \<Longrightarrow>
-  (\<forall>s. apply_guards (Guards t1) s \<longrightarrow> apply_guards (Guards t2) s) \<Longrightarrow>
-  subsumes t2 c t1"
-  apply (rule subsumption)
-  unfolding can_take_transition_def can_take_def
-  using can_take_transition_def can_take_def posterior_def posterior_separate_def can_take_def by auto
-
-definition gexp_implies :: "'a gexp \<Rightarrow> 'a gexp \<Rightarrow> bool" where
-  "gexp_implies g1 g2 = (\<forall>s. gval g1 s = true \<longrightarrow> gval g2 s = true)"
-
-definition guard_implication_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "guard_implication_subsumption t1 t2 = (
-    Label t1 = Label t2 \<and>
-    Arity t1 = Arity t2 \<and>
-    Outputs t1 = Outputs t2 \<and>
-    Updates t1 = Updates t2 \<and>
-    gexp_implies (fold gAnd (Guards t1) (Bc True)) (fold gAnd (Guards t2) (Bc True))
-  )"
-
-lemma guard_implication_subsumption:
-  "guard_implication_subsumption t1 t2 \<Longrightarrow> directly_subsumes m1 m2 s1 s2 t2 t1"
-  apply (rule subsumes_in_all_contexts_directly_subsumes)
-  apply (rule subsumption)
-  unfolding guard_implication_subsumption_def can_take_transition_def can_take_def
-  using gexp_implies_def apply_guards_fold can_take_transition_def can_take_def
-        posterior_def posterior_separate_def can_take_def by auto
-
 subsection\<open>Merging States\<close>
 definition merge_states_aux :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "merge_states_aux s1 s2 e = fimage (\<lambda>(uid, (origin, dest), t). (uid, (if origin = s1 then s2 else origin , if dest = s1 then s2 else dest), t)) e"
@@ -550,6 +373,19 @@ definition deterministic :: "iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondetermi
 definition nondeterministic :: "iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> bool" where
   "nondeterministic t np = (\<not> deterministic t np)"
 
+definition insert_transition :: "tids \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "insert_transition uid from to t e = (
+    if \<nexists>(uid, (from', to'), t') |\<in>| e. from = from' \<and> to = to' \<and> t = t' then
+      finsert (uid, (from, to), t) e
+    else
+      fimage (\<lambda>(uid', (from', to'), t').
+        if from = from' \<and> to = to' \<and> t = t' then
+          (List.union uid' uid, (from', to'), t')
+        else
+          (uid', (from', to'), t')
+      ) e
+  )"
+
 definition make_distinct :: "iEFSM \<Rightarrow> iEFSM" where
   "make_distinct e = ffold_ord (\<lambda>(uid, (from, to), t) acc. insert_transition uid from to t acc) e {||}"
 
@@ -576,10 +412,10 @@ definition merge_transitions_aux :: "iEFSM \<Rightarrow> tids \<Rightarrow> tids
 (* @param modifier  - an update modifier function which tries dest generalise transitions         *)
 definition merge_transitions :: "(cfstate \<times> cfstate) set \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> transition \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> tids \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM option" where
   "merge_transitions failedMerges oldEFSM preDestMerge destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 modifier check = (
-     if \<forall>id \<in> set u\<^sub>1. directly_subsumes oldEFSM destMerge (origin [id] oldEFSM) (origin u\<^sub>1 destMerge) t\<^sub>2 t\<^sub>1 then
+     if \<forall>id \<in> set u\<^sub>1. directly_subsumes (tm oldEFSM) (tm destMerge) (origin [id] oldEFSM) (origin u\<^sub>1 destMerge) t\<^sub>2 t\<^sub>1 then
        \<comment> \<open>Replace t1 with t2\<close>
        Some (merge_transitions_aux destMerge u\<^sub>1 u\<^sub>2)
-     else if \<forall>id \<in> set u\<^sub>2. directly_subsumes oldEFSM destMerge (origin [id] oldEFSM) (origin u\<^sub>2 destMerge) t\<^sub>1 t\<^sub>2 then
+     else if \<forall>id \<in> set u\<^sub>2. directly_subsumes (tm oldEFSM) (tm destMerge) (origin [id] oldEFSM) (origin u\<^sub>2 destMerge) t\<^sub>1 t\<^sub>2 then
        \<comment> \<open>Replace t2 with t1\<close>
        Some (merge_transitions_aux destMerge u\<^sub>2 u\<^sub>1)
      else

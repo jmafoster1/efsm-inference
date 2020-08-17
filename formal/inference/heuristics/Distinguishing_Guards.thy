@@ -81,14 +81,15 @@ definition can_still_take_ctx :: "transition_matrix \<Rightarrow> transition_mat
     (\<forall>a. obtains s2 a e2 0 <> t  \<and> (\<forall>i. can_take_transition t2 i a \<longrightarrow> can_take_transition t1 i a))
   )"
 
-lemma distinguishing_guard_subsumption: "Label t1 = Label t2 \<Longrightarrow>
+lemma distinguishing_guard_subsumption:
+"Label t1 = Label t2 \<Longrightarrow>
  Arity t1 = Arity t2 \<Longrightarrow>
  Outputs t1 = Outputs t2 \<Longrightarrow>
  Updates t1 = Updates t2 \<Longrightarrow>
- can_still_take_ctx (tm e1) (tm e2) s1 s2 t1 t2 \<Longrightarrow>
- recognises (tm e1) p \<Longrightarrow>
- gets_us_to s1 (tm e1) 0 <> p \<Longrightarrow>
- obtains s2 c (tm e2) 0 <> p \<Longrightarrow>
+ can_still_take_ctx e1 e2 s1 s2 t1 t2 \<Longrightarrow>
+ recognises e1 p \<Longrightarrow>
+ gets_us_to s1 e1 0 <> p \<Longrightarrow>
+ obtains s2 c e2 0 <> p \<Longrightarrow>
  subsumes t1 c t2"
   apply (simp add: subsumes_def can_still_take_ctx_def)
   apply (erule_tac x=p in allE)
@@ -96,14 +97,14 @@ lemma distinguishing_guard_subsumption: "Label t1 = Label t2 \<Longrightarrow>
   by (simp add: obtains_recognises obtains_gets_us_to)
 
 definition "recognises_and_gets_us_to_both a b s s' = (
-  \<exists>p c1 c2. obtains s c1 (tm a) 0 <> p \<and> obtains s' c2 (tm b) 0 <> p)"
+  \<exists>p c1 c2. obtains s c1 a 0 <> p \<and> obtains s' c2 b 0 <> p)"
 
 definition "can_still_take e1 e2 s1 s2 t1 t2 = (
   Label t1 = Label t2 \<and>
   Arity t1 = Arity t2 \<and>
   Outputs t1 = Outputs t2 \<and>
   Updates t1 = Updates t2 \<and>
-  can_still_take_ctx (tm e1) (tm e2) s1 s2 t1 t2 \<and>
+  can_still_take_ctx e1 e2 s1 s2 t1 t2 \<and>
   recognises_and_gets_us_to_both e1 e2 s1 s2)"
 
 lemma can_still_take_direct_subsumption:
