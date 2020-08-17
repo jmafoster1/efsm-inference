@@ -328,10 +328,108 @@ is able to account for the behaviour of another such that we can use one in plac
 adversely effecting observable behaviour.\<close>
 
 definition directly_subsumes :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "directly_subsumes e1 e2 s s' t1 t2 \<equiv> (\<forall>p. recognises (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
-                                             recognises (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
-                                             (\<forall>c. anterior_context (tm e2) p = Some c \<longrightarrow> subsumes t1 c t2)) \<and>
-                                         (\<exists>c. subsumes t1 c t2)"
+  "directly_subsumes e1 e2 s1 s2 t1 t2 \<equiv> (\<exists>c. subsumes t1 c t2) \<and>
+                                         (\<forall>c1 c2. (obtainable s1 c1 (tm e1) \<and> obtainable s2 c2 (tm e2)) \<longrightarrow> subsumes t1 c2 t2)"
+
+lemma recognises_execution_accepting_sequence:
+  "recognises_execution e s r p \<Longrightarrow>
+   \<exists>t. accepting_sequence e s r p q = Some t"
+proof(induct p arbitrary: s r q)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a p)
+  then show ?case
+    apply (cases a)
+    apply simp
+    apply (case_tac "random_member
+                  (ffilter (\<lambda>(s', tt). recognises_execution e s' (evaluate_updates tt b r) p) (possible_steps e s r aa b))")
+     apply simp
+    using recognises_step_equiv apply auto[1]
+    apply (case_tac aaa)
+    apply (simp add: Let_def)
+    using random_member_is_member by fastforce
+qed
+
+lemma accepting_sequence_empty:
+  "accepting_sequence e s r p q = Some [] \<Longrightarrow> p = [] \<and> q = []"
+proof(induct p arbitrary: s r q)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons p ps)
+  then show ?case
+    apply simp
+    apply (case_tac "random_member
+           (ffilter (\<lambda>(s', tt). recognises_execution e s' (evaluate_updates tt (snd p) r) ps)
+             (possible_steps e s r (fst p) (snd p)))")
+     apply simp
+    by (metis (no_types, lifting) list.simps(3) option.case(2) split_beta)
+qed
+
+lemma accepting_sequence_empty2:
+  "accepting_sequence e s r (a # p) [] = Some t \<Longrightarrow> t \<noteq> []"
+  using accepting_sequence_empty by blast
+
+lemma accepting_sequence_None_prefix_independent:
+ "accepting_sequence e s r t p = None \<Longrightarrow>
+  accepting_sequence e s r t q = None"
+proof(induct t arbitrary: s r p)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons t ts)
+  then show ?case
+    apply clarsimp
+    apply (case_tac "random_member
+                (ffilter (\<lambda>(s', tt). recognises_execution e s' (evaluate_updates tt (snd t) r) ts)
+                  (possible_steps e s r (fst t) (snd t)))")
+     apply simp
+    apply (case_tac a)
+    apply (simp add: Let_def)
+    using no_accepting_sequence_rejected random_member_is_member by fastforce
+qed
+
+lemma accepting_sequence_not_None_prefix_independent:
+  "accepting_sequence e s r t p \<noteq> None \<Longrightarrow>
+   accepting_sequence e s r t q \<noteq> None"
+proof(induct t arbitrary: s r p)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons t ts)
+  then show ?case
+    apply clarsimp
+    apply (case_tac "random_member
+                (ffilter (\<lambda>(s', tt). recognises_execution e s' (evaluate_updates tt (snd t) r) ts)
+                  (possible_steps e s r (fst t) (snd t)))")
+     apply simp
+    apply (case_tac a)
+    apply (simp add: Let_def)
+    using random_member_is_member recognises_execution_accepting_sequence by fastforce
+qed
+
+lemma accepting_sequence_length:
+  "accepting_sequence e s r t p = Some ab \<Longrightarrow> length ab = length t + length p"
+proof(induct t arbitrary: s r p)
+  case Nil
+  then show ?case
+    by auto
+next
+  case (Cons a t)
+  then show ?case
+    apply simp
+    apply (case_tac "random_member
+           (ffilter (\<lambda>(s', tt). recognises_execution e s' (evaluate_updates tt (snd a) r) t)
+             (possible_steps e s r (fst a) (snd a)))")
+     apply simp
+    apply simp
+    by (metis (no_types, lifting) add_Suc_right case_prod_beta length_Cons)
+qed
 
 lemma directly_subsumes_self: "directly_subsumes e1 e2 s s' t t"
   apply (simp add: directly_subsumes_def)
@@ -342,14 +440,9 @@ lemma subsumes_in_all_contexts_directly_subsumes:
   by (simp add: directly_subsumes_def)
 
 lemma gets_us_to_and_not_subsumes:
-  "\<exists>p. recognises (tm e1) p \<and>
-       gets_us_to s (tm e1) 0 (<>) p \<and>
-       recognises (tm e2) p \<and>
-       gets_us_to s' (tm e2) 0 (<>) p \<and>
-       (anterior_context (tm e2) p) = Some a \<and>
-       \<not> subsumes t1 a t2 \<Longrightarrow>
+  "(\<exists>c1. obtainable s c1 (tm e1)) \<and> (\<exists>c2. obtainable s' c2 (tm e2) \<and> \<not> subsumes t1 c2 t2) \<Longrightarrow>
    \<not> directly_subsumes e1 e2 s s' t1 t2"
-  unfolding directly_subsumes_def by auto
+  by (simp add: directly_subsumes_def)
 
 lemma cant_directly_subsume:
   "(\<And>c. \<not> subsumes t c t') \<Longrightarrow> \<not> directly_subsumes m m' s s' t t'"

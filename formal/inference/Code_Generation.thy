@@ -177,12 +177,7 @@ definition input_updates_register :: "transition_matrix \<Rightarrow> (nat \<tim
 definition "dirty_directly_subsumes e1 e2 s1 s2 t1 t2 = (if t1 = t2 then True else directly_subsumes e1 e2 s1 s2 t1 t2)"
 
 definition always_different_outputs_direct_subsumption ::"iEFSM \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> bool" where
-"always_different_outputs_direct_subsumption m1 m2 s s' t2 = (
-   (\<exists>p. recognises (tm m1) p \<and>
-    gets_us_to s (tm m1) 0 <> p \<and>
-    recognises (tm m2) p \<and>
-    gets_us_to s' (tm m2) 0 <> p \<and>
-    (case anterior_context (tm m2) p of Some c \<Rightarrow> (\<exists>i. can_take_transition t2 i c))))"
+"always_different_outputs_direct_subsumption m1 m2 s s' t2 = ((\<exists>p c1 c. obtains s c1 (tm m1) 0 <> p \<and> obtains s' c (tm m2) 0 <> p \<and> (\<exists>i. can_take_transition t2 i c)))"
 
 lemma always_different_outputs_can_take_transition_not_subsumed:
   "always_different_outputs (Outputs t1) (Outputs t2) \<Longrightarrow>
@@ -198,12 +193,14 @@ lemma always_different_outputs_direct_subsumption:
    always_different_outputs_direct_subsumption m1 m2 s s' t2 \<Longrightarrow>
    \<not> directly_subsumes m1 m2 s s' t1 t2"
   apply (simp add: directly_subsumes_def always_different_outputs_direct_subsumption_def)
+  apply (simp add: obtainable_def)
+  apply (erule exE)
+  apply (erule conjE)
+  apply (erule exE)+
+  apply (rule disjI2)
   apply standard
-  apply clarify
-  apply (rule_tac x=p in exI)
-  apply simp
-  using always_different_outputs_can_take_transition_not_subsumed recognises_execution_gives_context
-  by fastforce
+   apply auto[1]
+  by (metis always_different_outputs_outputs_never_equal bad_outputs)
 
 definition negate :: "'a gexp list \<Rightarrow> 'a gexp" where
   "negate g = gNot (fold gAnd g (Bc True))"
@@ -223,6 +220,34 @@ lemma gval_negate_not_invalid:
 
 definition "dirty_always_different_outputs_direct_subsumption = always_different_outputs_direct_subsumption"
 
+lemma ex_comm4:
+  "(\<exists>c1 s a b. (a, b) \<in> fset (possible_steps e s' r l i) \<and> obtains s c1 e a (evaluate_updates b i r) t) =
+   (\<exists>a b s c1. (a, b) \<in> fset (possible_steps e s' r l i) \<and> obtains s c1 e a (evaluate_updates b i r) t)"
+  by auto
+
+lemma recognises_execution_obtains:
+  "recognises_execution e s' r t \<Longrightarrow> \<exists>c1 s. obtains s c1 e s' r t"
+proof(induct t arbitrary: s' r)
+  case Nil
+  then show ?case
+    by (simp add: obtains_empty)
+next
+  case (Cons a t)
+  then show ?case
+    apply (cases a)
+    apply (simp add: obtains_step)
+    apply (rule recognises_execution.cases)
+      apply simp
+     apply simp
+    apply clarsimp
+    apply (simp add: fBex_def Bex_def ex_comm4)
+    apply (rule_tac x=s' in exI)
+    apply (rule_tac x=t in exI)
+    apply standard
+     apply (simp add: fmember_implies_member)
+    by blast
+qed
+
 lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (
   if Guards t = [] then
     recognises_and_gets_us_to_both m1 m2 s s'
@@ -232,11 +257,10 @@ lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (
   apply (simp add: always_different_outputs_direct_subsumption_def)
   apply (simp add: recognises_and_gets_us_to_both_def)
   apply safe
+     apply (rule_tac x=p in exI)
      apply auto[1]
-    apply (rule_tac x=p in exI)
-  using can_take_transition_empty_guard recognises_execution_gives_context apply fastforce
-   apply (simp add: dirty_always_different_outputs_direct_subsumption_def)
-  using always_different_outputs_direct_subsumption_def apply auto[1]
+  using can_take_transition_empty_guard apply blast
+  using always_different_outputs_direct_subsumption_def dirty_always_different_outputs_direct_subsumption_def apply auto[1]
   by (simp add: always_different_outputs_direct_subsumption_def dirty_always_different_outputs_direct_subsumption_def)
 
 definition guard_subset_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
@@ -324,7 +348,7 @@ function infer_with_log :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarr
 function infer_with_log :: "(cfstate \<times> cfstate) set \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "infer_with_log failedMerges k e r m check np = (
     let scores = if k = 1 then score_1 e r else (k_score k e r) in
-    case inference_step failedMerges e (ffilter (\<lambda>s. (S1 s, S2 s) \<notin> failedMerges) scores) m check np of
+    case inference_step failedMerges e (ffilter (\<lambda>s. (S1 s, S2 s) \<notin> failedMerges \<and> (S2 s, S1 s) \<notin> failedMerges) scores) m check np of
       (None, _) \<Rightarrow> e |
       (Some new, failedMerges) \<Rightarrow> if (Inference.S new) |\<subset>| (Inference.S e) then
       let temp2 = logStates new (size (Inference.S e)) in

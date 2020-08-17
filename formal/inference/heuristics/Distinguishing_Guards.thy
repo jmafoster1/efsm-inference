@@ -77,8 +77,8 @@ definition distinguish :: "log \<Rightarrow> update_modifier" where
 
 definition can_still_take_ctx :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "can_still_take_ctx e1 e2 s1 s2 t1 t2 = (
-    \<forall>t. recognises e1 t \<and> gets_us_to s1 e1 0 <> t \<and>  recognises e2 t \<and> gets_us_to s2 e2 0 <> t \<longrightarrow>
-    (\<exists>a. anterior_context e2 t = Some a \<and> (\<forall>i. can_take_transition t2 i a \<longrightarrow> can_take_transition t1 i a))
+    \<forall>t. recognises e1 t \<and> gets_us_to s1 e1 0 <> t \<and> recognises e2 t \<and> gets_us_to s2 e2 0 <> t \<longrightarrow>
+    (\<forall>a. obtains s2 a e2 0 <> t  \<and> (\<forall>i. can_take_transition t2 i a \<longrightarrow> can_take_transition t1 i a))
   )"
 
 lemma distinguishing_guard_subsumption: "Label t1 = Label t2 \<Longrightarrow>
@@ -86,20 +86,17 @@ lemma distinguishing_guard_subsumption: "Label t1 = Label t2 \<Longrightarrow>
  Outputs t1 = Outputs t2 \<Longrightarrow>
  Updates t1 = Updates t2 \<Longrightarrow>
  can_still_take_ctx (tm e1) (tm e2) s1 s2 t1 t2 \<Longrightarrow>
- recognises_and_gets_us_to_both e1 e2 s1 s2 \<Longrightarrow>
  recognises (tm e1) p \<Longrightarrow>
  gets_us_to s1 (tm e1) 0 <> p \<Longrightarrow>
- recognises (tm e2) p \<Longrightarrow>
- gets_us_to s2 (tm e2) 0 <> p \<Longrightarrow>
- anterior_context (tm e2) p = Some c \<Longrightarrow>
+ obtains s2 c (tm e2) 0 <> p \<Longrightarrow>
  subsumes t1 c t2"
-  using subsumes_def can_still_take_ctx_def by auto
+  apply (simp add: subsumes_def can_still_take_ctx_def)
+  apply (erule_tac x=p in allE)
+  apply simp
+  by (simp add: obtains_recognises obtains_gets_us_to)
 
 definition "recognises_and_gets_us_to_both a b s s' = (
-  \<exists>p. recognises (tm a) p \<and>
-      gets_us_to s (tm a) 0 <> p \<and>
-      recognises (tm b) p \<and>
-      gets_us_to s' (tm b) 0 <> p)"
+  \<exists>p c1 c2. obtains s c1 (tm a) 0 <> p \<and> obtains s' c2 (tm b) 0 <> p)"
 
 definition "can_still_take e1 e2 s1 s2 t1 t2 = (
   Label t1 = Label t2 \<and>
@@ -114,7 +111,7 @@ lemma can_still_take_direct_subsumption:
   directly_subsumes e1 e2 s1 s2 t1 t2"
   apply (simp add: directly_subsumes_def can_still_take_def)
   apply standard
-  using distinguishing_guard_subsumption apply auto[1]
-  by (meson distinguishing_guard_subsumption recognises_and_gets_us_to_both_def recognises_execution_gives_context)
+   apply (meson distinguishing_guard_subsumption obtains_gets_us_to obtains_recognises recognises_and_gets_us_to_both_def)
+  by (meson can_still_take_ctx_def distinguishing_guard_subsumption obtains_gets_us_to obtains_recognises recognises_and_gets_us_to_both_def)
 
 end

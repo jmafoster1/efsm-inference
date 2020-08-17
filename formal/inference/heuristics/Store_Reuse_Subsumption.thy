@@ -185,24 +185,19 @@ lemma is_generalised_output_of_does_not_subsume:
 lemma generalise_output_directly_subsumes_original:
       "stored_reused t' t = Some (r, p) \<Longrightarrow>
        nth (Outputs t) p = L v \<Longrightarrow>
-       (\<forall>p. recognises (tm e1) p \<and> gets_us_to s (tm e1) 0 <>  p \<longrightarrow>
-            recognises (tm e2) p \<and> gets_us_to s' (tm e2) 0 <>  p \<longrightarrow>
-       (\<exists>c. anterior_context (tm e2) p = Some c \<and> c $ r = Some v)) \<Longrightarrow>
-       directly_subsumes e1 e2 s s' t' t "
+      (\<forall>c1 c2. obtainable s c1 (tm e1) \<and> obtainable s' c2 (tm e2) \<longrightarrow> c2 $ r = Some v) \<Longrightarrow>
+       directly_subsumes e1 e2 s s' t' t"
   apply (simp add: directly_subsumes_def)
   apply standard
-   apply clarify
-  using stored_reused_is_generalised_output_of[of t' t r p]
-        is_generalised_output_of_subsumes[of t' t r p v]
-   apply auto[1]
-  by (meson \<open>\<And>c. \<lbrakk>is_generalised_output_of t' t r p; Outputs t ! p = L v; c $ r = Some v\<rbrakk> \<Longrightarrow>
-   subsumes t' c t\<close> \<open>stored_reused t' t = Some (r, p) \<Longrightarrow>
-   is_generalised_output_of t' t r p\<close> finfun_const.rep_eq)
+  apply (metis finfun_const_apply is_generalised_output_of_subsumes stored_reused_aux_is_generalised_output_of stored_reused_def)
+  apply clarify
+  apply (erule_tac x=c1 in allE)
+  apply (erule_tac x=c2 in allE)
+  apply simp
+  using is_generalised_output_of_subsumes stored_reused_aux_is_generalised_output_of stored_reused_def by fastforce
 
 definition "generalise_output_context_check v r s\<^sub>1 s\<^sub>2 e\<^sub>1 e\<^sub>2 =
-(\<forall>t. recognises (tm e\<^sub>1) t \<and> gets_us_to s\<^sub>1 (tm e\<^sub>1) 0 <> t \<longrightarrow>
-     recognises (tm e\<^sub>2) t \<and> gets_us_to s\<^sub>2 (tm e\<^sub>2) 0 <>  t \<longrightarrow>
- (\<exists>c. anterior_context (tm e\<^sub>2) t = Some c \<and> c $ r = Some v))"
+(\<forall>c\<^sub>1 c\<^sub>2. obtainable s\<^sub>1 c\<^sub>1 (tm e\<^sub>1) \<and> obtainable s\<^sub>2 c\<^sub>2 (tm e\<^sub>2) \<longrightarrow> c\<^sub>2 $ r = Some v)"
 
 lemma generalise_output_context_check_directly_subsumes_original:
       "stored_reused t' t = Some (r, p) \<Longrightarrow>
@@ -238,19 +233,10 @@ lemma original_does_not_subsume_generalised_output:
       "stored_reused t' t = Some (p, r) \<Longrightarrow>
        r < length (Outputs t) \<Longrightarrow>
        nth (Outputs t) r = L v \<Longrightarrow>
-       \<exists>tr a. recognises (tm e1) tr \<and>
-        gets_us_to s (tm e1) 0 <> tr \<and>
-        recognises (tm e) tr \<and>
-        gets_us_to s' (tm e) 0 <> tr \<and>
-        anterior_context (tm e) tr = Some a \<and>
-        a $ p \<noteq> Some v \<and>
-        (\<exists>i. can_take_transition t i a) \<Longrightarrow>
+       \<exists>a c1. obtainable s c1 (tm e1) \<and> obtainable s' a (tm e) \<and> a $ p \<noteq> Some v \<and> (\<exists>i. can_take_transition t i a) \<Longrightarrow>
        \<not>directly_subsumes e1 e s s' t' t"
   apply (simp add: directly_subsumes_def)
-  apply (rule disjI1)
-  apply (erule exE)+
-  apply (rule_tac x=tr in exI)
-  apply simp
+  apply (rule disjI2)
   apply clarify
   apply (rule_tac x=a in exI)
   using stored_reused_is_generalised_output_of[of t' t p r]
@@ -282,7 +268,7 @@ definition input_stored_in_reg :: "transition \<Rightarrow> transition \<Rightar
   )"
 
 definition initially_undefined_context_check :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "initially_undefined_context_check e r s = (\<forall>t. recognises e t \<and> gets_us_to s e 0 <> t \<longrightarrow> (\<exists>a. (anterior_context (e) t) = Some a \<and> a $ r = None))"
+  "initially_undefined_context_check e r s = (\<forall>t a. obtains s a e 0 <> t \<longrightarrow> a $ r = None)"
 
 lemma no_incoming_to_zero:
   "\<forall>((from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
@@ -345,9 +331,9 @@ lemma no_accepting_return_to_zero:
 
 lemma no_return_to_zero_must_be_empty:
   "\<forall>((from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
-   recognises (e) t \<and> gets_us_to 0 (e) 0 <> t \<Longrightarrow>
+   obtains 0 a e s r t \<Longrightarrow>
    t = []"
-proof(induct t)
+proof(induct t arbitrary: s r)
 case Nil
   then show ?case
     by simp
@@ -355,25 +341,40 @@ next
 case (Cons a t)
   then show ?case
     apply simp
-    apply (rule recognises_execution.cases)
-      apply auto[1]
+    apply (rule obtains.cases)
+      apply simp
      apply simp
-    using no_accepting_return_to_zero by auto
+    apply clarsimp
+    by (metis no_incoming_to_zero obtains_empty)
 qed
 
 lemma anterior_context_empty:
   "\<forall>((from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
-           recognises (e) t \<Longrightarrow>
-   gets_us_to 0 (e) 0 <> t \<Longrightarrow>
-   anterior_context (e) t = Some <>"
-  using no_return_to_zero_must_be_empty[of e]
-        anterior_context_empty
-  by auto
+           obtains 0 a e s r t \<Longrightarrow> a = r"
+proof(induct t)
+  case Nil
+  then show ?case
+    by (simp add: obtains_empty)
+next
+  case (Cons a t)
+  then show ?case
+    apply (cases a)
+    apply (rule obtains.cases)
+      apply simp
+     apply simp
+    apply clarsimp
+    using Cons.prems(1) no_return_to_zero_must_be_empty by blast
+qed
 
 lemma no_incoming_to_initial_gives_empty_reg:
   "\<forall>((from, to), t) |\<in>| e. to \<noteq> 0 \<Longrightarrow>
    initially_undefined_context_check e r 0"
-  using Store_Reuse_Subsumption.anterior_context_empty initially_undefined_context_check_def by auto
+  apply (simp add: initially_undefined_context_check_def)
+  apply clarify
+  subgoal for t a
+    using anterior_context_empty[of e a 0 <> t]
+    by simp
+  done
 
 definition "no_illegal_updates t r = (\<forall>u \<in> set (Updates t). fst u \<noteq> r)"
 
@@ -439,10 +440,17 @@ lemma generalised_directly_subsumes_original:
    initially_undefined_context_check (tm e) r s' \<Longrightarrow>
    no_illegal_updates t r \<Longrightarrow>
    directly_subsumes e1 e s s' t' t"
-  using input_stored_in_reg_is_generalisation[of t' t e i r]
-  apply (simp add: initially_undefined_context_check_def directly_subsumes_def no_illegal_updates_def)
-  using is_generalisation_of_subsumes_original finfun_const_apply
-  by (metis option.inject)
+  apply (simp add: directly_subsumes_def)
+  apply standard
+  apply (meson finfun_const.rep_eq input_stored_in_reg_is_generalisation is_generalisation_of_subsumes_original)
+  apply clarify
+  apply (rule is_generalisation_of_subsumes_original)
+  using input_stored_in_reg_is_generalisation apply blast
+  apply (simp add: initially_undefined_context_check_def)
+  apply (simp add: obtainable_def)
+  apply clarify
+  apply (erule_tac x=taa in allE)
+  by simp
 
 definition drop_guard_add_update_direct_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> bool" where
   "drop_guard_add_update_direct_subsumption t' t e s' = (
@@ -622,26 +630,24 @@ lemma input_stored_in_reg_updates_reg:
 
 definition "diff_outputs_ctx e1 e2 s1 s2 t1 t2 =
   (if Outputs t1 = Outputs t2 then False else
-  (\<exists>p. recognises (tm e1) p \<and> gets_us_to s1 (tm e1) 0 <> p \<and>
-       recognises (tm e2) p \<and> gets_us_to s2 (tm e2) 0 <> p \<and>
-       (case anterior_context (tm e2) p of None \<Rightarrow> False | Some r \<Rightarrow>
+  (\<exists>p c1 r. obtains s1 c1 (tm e1) 0 <> p \<and>
+       obtains s2 r (tm e2) 0 <> p \<and>
        (\<exists>i. can_take_transition t1 i r \<and> can_take_transition t2 i r \<and>
-       evaluate_outputs t1 i r \<noteq> evaluate_outputs t2 i r))
+       evaluate_outputs t1 i r \<noteq> evaluate_outputs t2 i r)
   ))"
 
 lemma diff_outputs_direct_subsumption:
   "diff_outputs_ctx e1 e2 s1 s2 t1 t2 \<Longrightarrow>
    \<not> directly_subsumes e1 e2 s1 s2 t1 t2"
   apply (simp add: directly_subsumes_def diff_outputs_ctx_def)
-  apply (rule disjI1)
+  apply (rule disjI2)
   apply (case_tac "Outputs t1 = Outputs t2")
    apply simp
-  apply simp
-  apply (erule exE)
-  apply (rule_tac x=p in exI)
-  apply (case_tac "anterior_context (tm e2) p")
-   apply simp
-  using bad_outputs by force
+  apply clarsimp
+  apply (simp add: obtainable_def)
+  apply standard
+   apply auto[1]
+  by (metis bad_outputs)
 
 definition not_updated :: "nat \<Rightarrow> transition \<Rightarrow> bool" where
   "not_updated r t = (filter (\<lambda>(r', _). r' = r) (Updates t) = [])"
@@ -679,12 +685,10 @@ lemma one_extra_update_directly_subsumes: "Label t1 = Label t2 \<Longrightarrow>
    directly_subsumes e1 e2 s1 s2 t1 t2"
   apply (simp add: directly_subsumes_def)
   apply standard
-   defer
    apply (meson one_extra_update_subsumes finfun_const_apply)
   apply (simp add: initially_undefined_context_check_def)
   apply clarify
-  apply (erule_tac x=p in allE)
-  by (simp add: one_extra_update_subsumes)
+  using obtainable_def one_extra_update_subsumes by auto
 
 definition "one_extra_update t1 t2 s2 e2 = (
   Label t1 = Label t2 \<and>

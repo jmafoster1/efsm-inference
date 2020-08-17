@@ -2243,9 +2243,11 @@ def infer_with_log(failedMerges: Set.set[(Nat.nat, Nat.nat)], k: Nat.nat,
                                FSet.ffilter[Inference.score_ext[Unit]](((s:
                                    Inference.score_ext[Unit])
                                   =>
-                                 ! (Set.member[(Nat.nat,
-         Nat.nat)]((Inference.S1[Unit](s), Inference.S2[Unit](s)),
-                    failedMerges))),
+                                 (! (Set.member[(Nat.nat,
+          Nat.nat)]((Inference.S1[Unit](s), Inference.S2[Unit](s)),
+                     failedMerges))) && (! (Set.member[(Nat.nat,
+                 Nat.nat)]((Inference.S2[Unit](s), Inference.S1[Unit](s)),
+                            failedMerges)))),
                                 scores),
                                m, check, np)
        match {
