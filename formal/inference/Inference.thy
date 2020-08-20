@@ -6,7 +6,7 @@ text\<open>This theory sets out the key definitions for the inference of EFSMs f
 
 theory Inference
   imports
-    "EFSM.Subsumption"
+    Subsumption
     "EFSM.Transition_Lexorder"
     "HOL-Library.Product_Lexorder"
 begin

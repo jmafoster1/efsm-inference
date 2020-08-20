@@ -141,8 +141,8 @@ lemma gval_each_one: "g \<in> set G \<Longrightarrow> apply_guards G s \<Longrig
 
 lemma has_corresponding_apply_guards:
   "\<forall>g\<in>set G2. has_corresponding g G1 \<Longrightarrow>
-   apply_guards G1 (join_ir i c) \<Longrightarrow>
-   apply_guards G2 (join_ir i c)"
+   apply_guards G1 s \<Longrightarrow>
+   apply_guards G2 s"
 proof(induct G2)
   case Nil
   then show ?case
@@ -152,30 +152,36 @@ next
   then show ?case
     apply (cases a)
         apply (simp add: no_corresponding_bc)
-       apply (meson apply_guards_cons gval_each_one has_corresponding_eq list.set_intros(1) list.set_intros(2))
+       apply simp
+       apply (metis (full_types) has_corresponding_eq append_Cons append_self_conv2 apply_guards_append apply_guards_rearrange)
       apply (simp add: no_corresponding_gt)
-      defer
-      apply (simp add: no_corresponding_nor)
-    apply (simp add: apply_guards_cons)
-    apply clarify
-    apply (case_tac "(\<exists>l'. In x41 l' \<in> set G1 \<and> set l' \<subseteq> set x42)")
-     apply clarify
-     apply (case_tac "gval (In x41 l') (join_ir i c)")
-       apply simp
-       apply (case_tac "join_ir i c x41 \<in> Some ` set l'")
-    apply auto[1]
-       apply simp
-    using gval_each_one apply fastforce
-    using gval_each_one apply fastforce
-    apply (case_tac "(\<exists>l' \<in> set x42. (Eq (V x41) (L l')) \<in> set G1)")
-     defer
-    using has_corresponding_In apply blast
-    apply clarify
-    apply (case_tac "gval (Eq (V x41) (L l')) (join_ir i c)")
+     apply simp
+    subgoal for v l
+      apply (insert has_corresponding_In[of v l G1])
       apply simp
-    using image_iff apply fastforce
-    using gval_each_one apply fastforce
-    using gval_each_one by fastforce
+      apply (erule disjE)
+       apply clarsimp
+      subgoal for l'
+        apply (insert apply_guards_rearrange[of "In v l'" G1 s])
+        apply simp
+        apply (simp only: apply_guards_cons[of "In v l" G2])
+        apply (simp only: apply_guards_cons[of "In v l'" G1])
+        apply simp
+        apply (cases "s v")
+         apply simp
+        by force
+      apply clarsimp
+      subgoal for l'
+        apply (insert apply_guards_rearrange[of "Eq (V v) (L l')" G1 s])
+        apply simp
+        apply (simp only: apply_guards_cons[of "In v l" G2])
+        apply (simp only: apply_guards_cons[of "Eq (V v) (L l')" G1])
+        apply (cases "s v")
+         apply simp
+        apply simp
+        using trilean.distinct(1) by presburger
+      done
+    by (simp add: no_corresponding_nor)
 qed
 
 lemma correspondence_subsumption: 
@@ -246,6 +252,8 @@ lemma ex_mutex: "Eq (V v) (L l) \<in> set G1 \<Longrightarrow>
        \<not> apply_guards G2 s"
   apply (simp add: apply_guards_def Bex_def)
   apply (rule_tac x="Eq (V v) (L l')" in exI)
+  apply simp
+  apply (case_tac "s v")
   by auto
 
 lemma has_distinguishing_In: 
@@ -279,6 +287,9 @@ lemma Eq_apply_guards:
    s v = Some l"
   apply (simp add: apply_guards_rearrange)
   apply (simp add: apply_guards_cons)
+  apply (cases "s v")
+   apply simp
+  apply simp
   using trilean.distinct(1) by presburger
 
 lemma In_neq_apply_guards:
@@ -303,6 +314,9 @@ qed
 lemma In_apply_guards: "In v l \<in> set G1 \<Longrightarrow> apply_guards G1 s \<Longrightarrow> \<exists>v' \<in> set l. s v = Some v'"
   apply (simp add: apply_guards_rearrange)
   apply (simp add: apply_guards_cons)
+  apply (cases "s v")
+   apply simp
+  apply simp
   by (meson image_iff trilean.simps(2))
 
 lemma input_not_constrained_aval_swap_inputs:
@@ -332,7 +346,13 @@ next
   case (In x1a x2)
   then show ?case
     apply simp
-    by (metis (full_types) aexp.inject(2) aexp_constrains.simps(2) aval.simps(2) input_not_constrained_aval_swap_inputs)
+    apply (case_tac "join_ir i c x1a")
+     apply (case_tac "join_ir (i[v := x]) c x1a")
+      apply simp
+     apply (metis In.prems aval.simps(2) gexp_constrains.simps(5) input_not_constrained_aval_swap_inputs option.discI)
+    apply (case_tac "join_ir (i[v := x]) c x1a")
+     apply (metis In.prems aval.simps(2) gexp_constrains.simps(5) input_not_constrained_aval_swap_inputs option.discI)
+    by (metis In.prems aval.simps(2) gexp_constrains.simps(5) input_not_constrained_aval_swap_inputs)
 next
   case (Nor a1 a2)
   then show ?case
@@ -352,8 +372,16 @@ next
   then show ?case
     apply (simp only: apply_guards_cons)
     apply (case_tac "a = In (I v) l")
-     apply (simp add: join_ir_def)
-     apply (metis in_these_eq input2state_nth input2state_out_of_bounds length_list_update not_le_imp_less nth_list_update_eq these_image_Some_eq trilean.distinct(1))
+     apply simp
+     apply (case_tac "join_ir i c (I v)")
+      apply simp
+     apply (case_tac "join_ir (i[v := x]) c (I v)")
+      apply (metis join_ir_nth le_less_linear length_list_update list_update_beyond option.discI)
+     apply simp
+    apply (metis join_ir_nth le_less_linear length_list_update list_update_beyond nth_list_update_eq option.inject trilean.distinct(1))
+    apply (case_tac "join_ir (i[v := x]) c (I v)")
+     apply (metis join_ir_nth le_less_linear length_list_update list_update_beyond option.discI)
+    apply simp
     using input_not_constrained_gval_swap_inputs by auto
 qed
 
@@ -375,7 +403,10 @@ lemma test:
   using p1 p4
   apply (simp add: apply_guards_rearrange)
   apply (simp add: apply_guards_cons join_ir_def)
-  by (metis None_notin_image_Some in_these_eq input2state_not_None input2state_nth length_list_update nth_list_update_eq these_image_Some_eq)
+  apply (case_tac "input2state (i[v := x]) $ v")
+   apply simp
+  apply simp
+  by (metis input2state_nth input2state_within_bounds length_list_update nth_list_update_eq option.inject)
 
 definition get_Ins :: "vname gexp list \<Rightarrow> (nat \<times> value list) list" where
   "get_Ins G = map (\<lambda>g. case g of (In (I v) l) \<Rightarrow> (v, l)) (filter (\<lambda>g. case g of (In (I _) _ ) \<Rightarrow> True | _ \<Rightarrow> False) G)"
@@ -519,12 +550,30 @@ next
     apply (case_tac "join_ir i c (I a) \<in> Some ` set b")
      defer
      apply simp
-    apply simp
     apply clarify
     apply standard
     using apply_guards_def input_not_constrained_gval_swap_inputs
-     apply (simp add: filter_empty_conv)
-    by (simp add: input2state_not_None input2state_nth join_ir_def)
+      apply (simp add: filter_empty_conv)
+      apply (case_tac "join_ir i c (I a)")
+       apply simp
+      apply (case_tac "join_ir (i[a := xa]) c (I a)")
+       apply simp
+       apply (metis image_eqI trilean.distinct(1))
+      apply simp
+      apply (metis image_eqI trilean.distinct(1))
+     apply (case_tac "join_ir i c (I a)")
+      apply simp
+     apply simp
+     apply (metis image_eqI trilean.distinct(1))
+    apply (case_tac "join_ir i c (I a)")
+     apply simp
+    apply (case_tac "join_ir (i[a := xa]) c (I a)")
+     apply simp
+     apply (metis join_ir_nth le_less_linear length_list_update list_update_beyond option.discI)
+    apply simp
+    apply standard
+     apply (metis (no_types, lifting) Cons.hyps Cons.prems(2) filter_empty_conv removeAll_id set_ConsD test_aux)
+    by (metis in_these_eq join_ir_nth le_less_linear length_list_update list_update_beyond nth_list_update_eq these_image_Some_eq)
 qed
 
 lemma lob_distinguished_2_not_subsumes:

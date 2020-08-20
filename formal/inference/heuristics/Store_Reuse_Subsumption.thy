@@ -179,7 +179,7 @@ correct value for direct subsumption.\<close>
 lemma generalise_output_directly_subsumes_original:
       "stored_reused t' t = Some (r, p) \<Longrightarrow>
        nth (Outputs t) p = L v \<Longrightarrow>
-      (\<forall>c1 c2. obtainable s c1 e1 \<and> obtainable s' c2 e2 \<longrightarrow> c2 $ r = Some v) \<Longrightarrow>
+      (\<forall>c1 c2 t. obtains s c1 e1 0 <> t \<and> obtains s' c2 e2 0 <> t \<longrightarrow> c2 $ r = Some v) \<Longrightarrow>
        directly_subsumes e1 e2 s s' t' t"
   apply (simp add: directly_subsumes_def)
   apply standard
@@ -187,11 +187,10 @@ lemma generalise_output_directly_subsumes_original:
   apply clarify
   apply (erule_tac x=c1 in allE)
   apply (erule_tac x=c2 in allE)
-  apply simp
   using is_generalised_output_of_subsumes stored_reused_aux_is_generalised_output_of stored_reused_def by fastforce
 
 definition "generalise_output_context_check v r s\<^sub>1 s\<^sub>2 e\<^sub>1 e\<^sub>2 =
-(\<forall>c\<^sub>1 c\<^sub>2. obtainable s\<^sub>1 c\<^sub>1 (tm e\<^sub>1) \<and> obtainable s\<^sub>2 c\<^sub>2 (tm e\<^sub>2) \<longrightarrow> c\<^sub>2 $ r = Some v)"
+(\<forall>c\<^sub>1 c\<^sub>2 t. obtains s\<^sub>1 c\<^sub>1 (tm e\<^sub>1) 0 <> t \<and> obtains s\<^sub>2 c\<^sub>2 (tm e\<^sub>2) 0 <> t \<longrightarrow> c\<^sub>2 $ r = Some v)"
 
 lemma generalise_output_context_check_directly_subsumes_original:
       "stored_reused t' t = Some (r, p) \<Longrightarrow>
@@ -227,11 +226,12 @@ lemma original_does_not_subsume_generalised_output:
       "stored_reused t' t = Some (p, r) \<Longrightarrow>
        r < length (Outputs t) \<Longrightarrow>
        nth (Outputs t) r = L v \<Longrightarrow>
-       \<exists>a c1. obtainable s c1 e1 \<and> obtainable s' a e \<and> a $ p \<noteq> Some v \<and> (\<exists>i. can_take_transition t i a) \<Longrightarrow>
+       \<exists>a c1 tt. obtains s c1 e1 0 <> tt \<and> obtains s' a e 0 <> tt \<and> a $ p \<noteq> Some v \<and> (\<exists>i. can_take_transition t i a) \<Longrightarrow>
        \<not>directly_subsumes e1 e s s' t' t"
   apply (simp add: directly_subsumes_def)
   apply (rule disjI2)
   apply clarify
+  apply (rule_tac x=c1 in exI)
   apply (rule_tac x=a in exI)
   using stored_reused_is_generalised_output_of[of t' t p r]
         is_generalised_output_of_does_not_subsume[of t' t p r v]
@@ -412,11 +412,7 @@ lemma generalised_directly_subsumes_original:
   apply clarify
   apply (rule is_generalisation_of_subsumes_original)
   using input_stored_in_reg_is_generalisation apply blast
-  apply (simp add: initially_undefined_context_check_def)
-  apply (simp add: obtainable_def)
-  apply clarify
-  apply (erule_tac x=taa in allE)
-  by simp
+  by (simp add: initially_undefined_context_check_def)
 
 definition drop_guard_add_update_direct_subsumption :: "transition \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> bool" where
   "drop_guard_add_update_direct_subsumption t' t e s' = (
@@ -499,7 +495,19 @@ next
   case (In x1a x2)
   then show ?case
     apply simp
-    by (metis (full_types) aexp.inject(2) aexp_constrains.simps(2) aval.simps(2) input_not_constrained_aval_swap_inputs)
+    apply (case_tac "join_ir i c x1a")
+     apply simp
+     apply (case_tac "join_ir (i[v := x]) c x1a")
+      apply simp
+     apply simp
+     apply (metis aexp.inject(2) aexp_constrains.simps(2) aval.simps(2) input_not_constrained_aval_swap_inputs option.discI)
+    apply (case_tac "join_ir i c x1a")
+     apply simp
+     apply (case_tac "join_ir (i[v := x]) c x1a")
+     apply simp
+     apply (metis aexp.inject(2) aexp_constrains.simps(2) aval.simps(2) input_not_constrained_aval_swap_inputs option.discI)
+    apply simp
+    by (metis (no_types, lifting) datastate(1) input2state_within_bounds join_ir_R join_ir_nth le_less_linear list_update_beyond nth_list_update option.inject vname.case(1) vname.exhaust)
 next
   case (Nor a1 a2)
   then show ?case
@@ -606,10 +614,9 @@ lemma diff_outputs_direct_subsumption:
   apply (case_tac "Outputs t1 = Outputs t2")
    apply simp
   apply clarsimp
-  apply (simp add: obtainable_def)
-  apply standard
-   apply auto[1]
-  by (metis bad_outputs)
+  apply (rule_tac x=c1 in exI)
+  apply (rule_tac x=r in exI)
+  using bad_outputs by force
 
 definition not_updated :: "nat \<Rightarrow> transition \<Rightarrow> bool" where
   "not_updated r t = (filter (\<lambda>(r', _). r' = r) (Updates t) = [])"

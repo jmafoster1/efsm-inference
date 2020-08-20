@@ -8,6 +8,7 @@ Created on Tue Feb 11 15:05:24 2020
 
 import json
 from numpy import mean
+import numpy as np
 import re
 import math
 import os
@@ -37,7 +38,8 @@ def configs(p):
             # 'none',
             'gp',
             # 'obfuscated-time-none',
-            # 'obfuscated-time-gp'
+            'obfuscated-time-gp',
+            'MINT'
             ]
     if p == "spaceInvaders":
         return [
@@ -49,7 +51,8 @@ def configs(p):
             # 'obfuscated-shields-none',
             'obfuscated-shields-gp',
             # 'obfuscated-x-none',
-            'obfuscated-x-gp'
+            'obfuscated-x-gp',
+            'MINT'
             ]
     return sorted(list(programs[p].keys()))
 
@@ -60,6 +63,7 @@ def total_states(root, state_re = "states: (\d+)"):
             match = re.search(state_re, line)
             if match:
                 return int(match.group(1))
+    raise Exception(f"No states for {root}")
 
 
 def total_transitions(root, transition_re = "transitions: (\d+)"):
@@ -68,6 +72,7 @@ def total_transitions(root, transition_re = "transitions: (\d+)"):
             match = re.search(transition_re, line)
             if match:
                 return int(match.group(1))
+    raise Exception(f"No transitions for {root}")
 
 
 def total_runtime(root):
@@ -78,6 +83,7 @@ def total_runtime(root):
                 return ((int(match.group(1)) * 60) +
                         (int(match.group(2))) +
                         int(match.group(3))/60.0)
+    raise Exception(f"No runtime for {root}")
 
 
 def match_prefix(expected, actual):
@@ -140,6 +146,8 @@ def split_trace(trace, rejected=None):
 
 
 def get_info(root, fileName):
+    print(root)
+    
     info = {}
 
     if fileName == "testLog.json":
@@ -155,6 +163,9 @@ def get_info(root, fileName):
     info['runtime'] = total_runtime(root)
 
     triples = [split_trace(trace['trace'], trace['rejected']) for trace in log]
+    
+    # info['triples'] = [(len(x), len(y), len(z)) for x, y, z in triples]
+    
     info['t1'] = [len(x)/(len(x) + len(y) + len(z)) for x, y, z in triples],
     info['t2'] = [len(y)/(len(x) + len(y) + len(z)) for x, y, z in triples],
     info['t3'] = [len(z)/(len(x) + len(y) + len(z)) for x, y, z in triples],
@@ -163,14 +174,14 @@ def get_info(root, fileName):
     #     if mean(info['t3'][0]) > 0:
     #         print("atom", root+"/testlog.json")
 
-    lengths = [len(t) for t, _, _ in triples]
+    # lengths = [len(t) for t, _, _ in triples]
 
     # Minimum number of events before we can tell the models apart - useless
-    info['min'] = min(lengths)
+    # info['min'] = min(lengths)
     # Average number of events before we can tell the models apart - useless
-    info['avg'] = mean(lengths)
+    # info['avg'] = mean(lengths)
     # Ultrametric from the paper - useless
-    info['ultra'] = 2**-min(lengths)
+    # info['ultra'] = 2**-min(lengths)
     # Mean prop. of the trace got through before we can tell the trace apart
     info['prop'] = mean(
             [len(list(filter(lambda e: e['expected'] == e['actual'], obj['trace'])))/(len(obj['trace'])+len(obj['rejected'])) for obj in log])
@@ -195,29 +206,27 @@ def get_info(root, fileName):
             outputs = outputs.union([to_num(o) for o in event['actual']])
     info['nrmse'] = rmse/(max(outputs) - min(outputs))
 
-    states_covered = set()
-    for obj in log:
-        for event in obj['trace']:
-            states_covered.add(event['currentState'])
-            states_covered.add(event['nextState'])
-    info['state coverage'] = len(states_covered)/info['states']
-    transitions_covered = set()
-    for obj in log:
-        for event in obj['trace']:
-            transitions_covered.add(tuple(event['transition']))
-    info['transition coverage'] = len(transitions_covered)/info['transitions']
+    # states_covered = set()
+    # for obj in log:
+    #     for event in obj['trace']:
+    #         states_covered.add(event['currentState'])
+    #         states_covered.add(event['nextState'])
+    # info['state coverage'] = len(states_covered)/info['states']
+    # transitions_covered = set()
+    # for obj in log:
+    #     for event in obj['trace']:
+    #         transitions_covered.add(tuple(event['transition']))
+    # info['transition coverage'] = len(transitions_covered)/info['transitions']
     return info
 
 def box(column, ps, cfgs, fname, title):
     cfgs = [c for c in cfgs if c in programs[program]]
-    if column == 'runtime':
-        cfgs = [c for c in cfgs if c != 'pta']
+    # if column == 'runtime':
+    #     cfgs = [c for c in cfgs if c != 'pta']
     
     if column == 't1':
         boxes_aux = [programs[program][config][column] for program in ps for config in cfgs]
-        boxes = []
-        for l in boxes_aux:
-            boxes.append([item for sublist in l for item in sublist])
+        boxes = [[item for sublist in l for item in sublist] for l in boxes_aux]
     else:
         boxes = [programs[program][config][column].astype(float) for program in ps for config in cfgs]
         
@@ -225,15 +234,14 @@ def box(column, ps, cfgs, fname, title):
     ax1.set_title(title)
     
     print(f"box {fname}-{column} size: {0.7*len(boxes)}")
-
-
+    
     bp = ax1.boxplot(
             boxes,
             medianprops={"linewidth": 0},
             boxprops={"linewidth": 0},
             whiskerprops={"linewidth": 0},
             capprops={"linewidth": 0}
-         )
+          )
     
     # Shift the median lines so they look good on pdf
     for median in bp['medians']:
@@ -275,21 +283,19 @@ def box(column, ps, cfgs, fname, title):
     plt.close()
 
 def ts(ps, cfgs, fname, title):
-    cfgs =  [c for c in cfgs if c in programs[ps[0]]]
+    for p in ps:
+        print(p)
     
-    t1Means = [mean([mean(x) for x in programs[ps[0]][c]['t1']]) for c in cfgs if c in programs[ps[0]]]
-    t2Means = [mean([mean(x) for x in programs[ps[0]][c]['t2']]) + t1Means[i] for i, c in enumerate(cfgs)]
-    
-    for p in ps[1:]:
-        t1Means += [mean([mean(x) for x in programs[p][c]['t1']]) for i, c in enumerate(cfgs, start=len(cfgs))]
-        t2Means += [mean([mean(x) for x in programs[p][c]['t2']]) + t1Means[i] for i, c in enumerate(cfgs, start=len(cfgs))]
-    
-    t3Means = [1] * len(t2Means)
-    
-    if any([t > 1 for t in t2Means]):
-        raise Exception("More than 1")
-    
-    ind = range(len(t1Means))
+        cfgs =  [c for c in cfgs if c in programs[p]]
+        
+        t1Means = [mean([mean(x) for x in programs[p][c]['t1']]) for c in cfgs if c in programs[p]]
+        t2Means = [mean([mean(x) for x in programs[p][c]['t2']]) + t1Means[i] for i, c in enumerate(cfgs)]
+        t3Means = [1] * len(t2Means)
+        
+        if any([t > 1 for t in t2Means]):
+            raise Exception("More than 1")
+        
+        ind = range(len(t1Means))
     
     fig1, ax1 = plt.subplots(figsize=(0.7*len(t1Means), 3))
     p3 = ax1.bar(ind, t3Means, color='red')
@@ -343,9 +349,8 @@ def hist(bars, program, config, column, xlabel=False):
 
 
 
-columns = ['states', 'transitions', 'min', 'avg', 'ultra', 'prop',
-           'sensitivity', 'rmse', 'nrmse', 'state coverage', 'runtime',
-           'transition coverage', 't1', 't2', 't3']
+columns = ['states', 'transitions', 'prop', 'sensitivity', 'nrmse', 'runtime', 't1']
+           # 'min', 'avg', 'ultra', 'rmse', 'state coverage', 'transition coverage', 't2', 't3']
 
 if not os.path.exists(f"{homedir}/graphs"):
     os.mkdir(f"{homedir}/graphs")
@@ -385,9 +390,10 @@ else:
             # TODO: DELETE THIS WHEN DRAWING ACTUAL RESULTS
             # It just stops it erroring for stuff which timed out
             if roots == []:
-                print(dd)
+                # print(dd)
                 continue
-            programs[program]['pta'] = programs[program]['pta'].append(pd.DataFrame(get_info(roots[0], "ptaLog.json"), index=[roots[0]+"-pta"]))
+            if "MINT" not in roots[0]:
+                programs[program]['pta'] = programs[program]['pta'].append(pd.DataFrame(get_info(roots[0], "ptaLog.json"), index=[roots[0]+"-pta"]))
 
     with open(f'{homedir}/programs.dic', 'wb') as f:
         pickle.dump(programs, f)
@@ -402,12 +408,12 @@ for program in programs:
         box(column, [program], configs(program), program, f"{program} {column}")
     with open(f"{homedir}/mann-whitney-u.csv", 'a') as m:
         print(program, file=m)
-    for x in configs(program):
-        for y in configs(program):
-            if x > y:
-                mwu = mannwhitneyu(programs[program][x]['prop'], programs[program][y]['prop'])
-                with open(f"{homedir}/mann-whitney-u.csv", 'a') as m:
-                    print("", x, y, mwu.statistic, mwu.pvalue, mwu.pvalue < 0.05, file=m, sep=",")
+    # for x in configs(program):
+    #     for y in configs(program):
+    #         if x > y:
+    #             mwu = mannwhitneyu(programs[program][x]['prop'], programs[program][y]['prop'])
+    #             with open(f"{homedir}/mann-whitney-u.csv", 'a') as m:
+    #                 print("", x, y, mwu.statistic, mwu.pvalue, mwu.pvalue < 0.05, file=m, sep=",")
 
     # t1 configs
     print("\n" + program)
@@ -441,17 +447,18 @@ for program in programs:
 cfgs = ["pta", "none", "gp"]
 ps = list(programs.keys())
 
-ts(ps, cfgs, "ldsi", "Trace Parts")
-box("sensitivity", programs, cfgs, "ldsi", "Sensitivity")
-box("nrmse", programs, cfgs, "ldsi", "NRMSE")
-box("states", programs, cfgs, "ldsi", "States")
-box("transitions", programs, cfgs, "ldsi", "Transitions")
+fname = "".join([p[:2] for p in ps])
+ts(ps, cfgs, fname, "Trace Parts")
+box("sensitivity", programs, cfgs, "".join([p[:2] for p in ps]), "Sensitivity")
+box("nrmse", programs, cfgs, fname, "NRMSE")
+box("states", programs, cfgs, fname, "States")
+box("transitions", programs, cfgs, fname, "Transitions")
 
-box("transitions", programs, cfgs[1:], "ldsi-no-pta", "Transitions")
-box("runtime", programs, cfgs, "ldsi", "Runtime")
-box("prop", programs, cfgs, "ldsi", "Proportion of Correct events")
+box("transitions", programs, cfgs[1:], f"fname-no-pta", "Transitions")
+box("runtime", programs, cfgs, fname, "Runtime")
+box("prop", programs, cfgs, fname, "Proportion of Correct events")
 
-box("t1", programs, cfgs, "ldsi", "Proportional Lengths of Accepted Prefixes")
+box("t1", programs, cfgs, fname, "Proportional Lengths of Accepted Prefixes")
 
 # fig, ax = plt.subplots()
 # states = list(programs['drinks']['gp']['states'])

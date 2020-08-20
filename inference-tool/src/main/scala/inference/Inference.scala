@@ -1001,9 +1001,13 @@ def equal_valuea(x0: value, x1: value): Boolean = (x0, x1) match {
   case (Numa(x1), Numa(y1)) => Int.equal_int(x1, y1)
 }
 
-def value_eq(a: Option[value], b: Option[value]): Trilean.trilean =
-  (if (Optiona.equal_optiona[value](a, b)) Trilean.truea()
-    else Trilean.falsea())
+def value_eq(x0: Option[value], uu: Option[value]): Trilean.trilean = (x0, uu)
+  match {
+  case (None, uu) => Trilean.invalid()
+  case (Some(v), None) => Trilean.invalid()
+  case (Some(a), Some(b)) =>
+    (if (equal_valuea(a, b)) Trilean.truea() else Trilean.falsea())
+}
 
 def MaybeBoolInt(f: Int.int => Int.int => Boolean, uv: Option[value],
                   uw: Option[value]):
@@ -1388,25 +1392,19 @@ def gval[A](x0: gexp[A], uu: A => Option[Value.value]): Trilean.trilean =
   case (Eq(a_1, a_2), s) =>
     Value.value_eq(AExp.aval[A](a_1, s), AExp.aval[A](a_2, s))
   case (In(v, l), s) =>
-    (if ((Lista.map[Value.value,
-                     Option[Value.value]](((a: Value.value) =>
-    Some[Value.value](a)),
-   l)).contains(s(v)))
-      Trilean.truea() else Trilean.falsea())
+    (s(v) match {
+       case None => Trilean.invalid()
+       case Some(vv) =>
+         (if (l.contains(vv)) Trilean.truea() else Trilean.falsea())
+     })
   case (Nor(a_1, a_2), s) =>
     Trilean.maybe_not(Trilean.plus_trilean(gval[A](a_1, s), gval[A](a_2, s)))
 }
 
 def fold_In[A](uu: A, x1: List[Value.value]): gexp[A] = (uu, x1) match {
   case (uu, Nil) => Bc[A](false)
-  case (v, List(l)) => Eq[A](AExp.V[A](v), AExp.L[A](l))
-  case (v, l :: va :: vb) =>
-    Lista.fold[Value.value,
-                gexp[A]](Fun.comp[gexp[A], (gexp[A]) => gexp[A],
-                                   Value.value](((a: gexp[A]) => (b: gexp[A]) =>
-          gOr[A](a, b)),
-         ((x: Value.value) => Eq[A](AExp.V[A](v), AExp.L[A](x)))),
-                          va :: vb, Eq[A](AExp.V[A](v), AExp.L[A](l)))
+  case (v, l :: t) =>
+    gOr[A](Eq[A](AExp.V[A](v), AExp.L[A](l)), fold_In[A](v, t))
 }
 
 def rename_regs(uu: Nat.nat => Nat.nat, x1: gexp[VName.vname]):

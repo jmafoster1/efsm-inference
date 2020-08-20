@@ -53,7 +53,28 @@ lemma mutex_not_gval:
   "mutex x y \<Longrightarrow> gval (gAnd y x) s \<noteq> true"
   unfolding gAnd_def
   apply (induct x y rule: mutex.induct)
-  apply (simp, metis option.inject)
+                      apply simp_all
+     apply (case_tac "s v")
+      apply (case_tac "s v'")
+       apply simp
+      apply simp
+     apply (case_tac "s v")
+      apply (case_tac "s v'")
+       apply simp
+      apply simp
+     apply (metis maybe_negate_true maybe_or_false trilean.distinct(1) value_eq.simps(3))
+    apply (case_tac "s v")
+     apply (case_tac "s v'")
+      apply simp
+     apply simp
+    apply simp
+    apply (case_tac "s v")
+     apply (case_tac "s v'")
+      apply simp
+    apply simp
+   apply simp
+    apply (case_tac "s v")
+     apply (case_tac "s v'")
   by auto
 
 (* (\<exists>(i, s1) \<in> set (get_ins (Guard t1)).
@@ -173,13 +194,12 @@ lemma always_different_outputs_direct_subsumption:
    always_different_outputs_direct_subsumption m1 m2 s s' t2 \<Longrightarrow>
    \<not> directly_subsumes m1 m2 s s' t1 t2"
   apply (simp add: directly_subsumes_def always_different_outputs_direct_subsumption_def)
-  apply (simp add: obtainable_def)
   apply (erule exE)
   apply (erule conjE)
   apply (erule exE)+
   apply (rule disjI2)
-  apply standard
-   apply auto[1]
+  apply (rule_tac x=c1 in exI)
+  apply (rule_tac x=c in exI)
   by (metis always_different_outputs_outputs_never_equal bad_outputs)
 
 definition negate :: "'a gexp list \<Rightarrow> 'a gexp" where

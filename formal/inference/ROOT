@@ -4,6 +4,7 @@ directories
   "heuristics"
   "code-targets"
 theories
+  "Subsumption"
   "Inference"
   "SelectionStrategies"
 
