@@ -183,11 +183,7 @@ lemma generalise_output_directly_subsumes_original:
        directly_subsumes e1 e2 s s' t' t"
   apply (simp add: directly_subsumes_def)
   apply standard
-  apply (metis finfun_const_apply is_generalised_output_of_subsumes stored_reused_aux_is_generalised_output_of stored_reused_def)
-  apply clarify
-  apply (erule_tac x=c1 in allE)
-  apply (erule_tac x=c2 in allE)
-  using is_generalised_output_of_subsumes stored_reused_aux_is_generalised_output_of stored_reused_def by fastforce
+  by (metis is_generalised_output_of_subsumes stored_reused_aux_is_generalised_output_of stored_reused_def)
 
 definition "generalise_output_context_check v r s\<^sub>1 s\<^sub>2 e\<^sub>1 e\<^sub>2 =
 (\<forall>c\<^sub>1 c\<^sub>2 t. obtains s\<^sub>1 c\<^sub>1 (tm e\<^sub>1) 0 <> t \<and> obtains s\<^sub>2 c\<^sub>2 (tm e\<^sub>2) 0 <> t \<longrightarrow> c\<^sub>2 $ r = Some v)"
@@ -229,7 +225,6 @@ lemma original_does_not_subsume_generalised_output:
        \<exists>a c1 tt. obtains s c1 e1 0 <> tt \<and> obtains s' a e 0 <> tt \<and> a $ p \<noteq> Some v \<and> (\<exists>i. can_take_transition t i a) \<Longrightarrow>
        \<not>directly_subsumes e1 e s s' t' t"
   apply (simp add: directly_subsumes_def)
-  apply (rule disjI2)
   apply clarify
   apply (rule_tac x=c1 in exI)
   apply (rule_tac x=a in exI)
@@ -338,8 +333,7 @@ case (Cons a t)
     apply (rule obtains.cases)
       apply simp
      apply simp
-    apply clarsimp
-    by (metis no_incoming_to_zero obtains_empty)
+    by (metis (no_types, lifting) case_prodE fBexE list.inject no_further_steps no_incoming_to_zero unobtainable_if)
 qed
 
 definition "no_illegal_updates t r = (\<forall>u \<in> set (Updates t). fst u \<noteq> r)"
@@ -409,7 +403,6 @@ lemma generalised_directly_subsumes_original:
   apply (simp add: directly_subsumes_def)
   apply standard
   apply (meson finfun_const.rep_eq input_stored_in_reg_is_generalisation is_generalisation_of_subsumes_original)
-  apply clarify
   apply (rule is_generalisation_of_subsumes_original)
   using input_stored_in_reg_is_generalisation apply blast
   by (simp add: initially_undefined_context_check_def)
@@ -610,7 +603,6 @@ lemma diff_outputs_direct_subsumption:
   "diff_outputs_ctx e1 e2 s1 s2 t1 t2 \<Longrightarrow>
    \<not> directly_subsumes e1 e2 s1 s2 t1 t2"
   apply (simp add: directly_subsumes_def diff_outputs_ctx_def)
-  apply (rule disjI2)
   apply (case_tac "Outputs t1 = Outputs t2")
    apply simp
   apply clarsimp
@@ -657,7 +649,6 @@ lemma one_extra_update_directly_subsumes:
   apply standard
    apply (meson one_extra_update_subsumes finfun_const_apply)
   apply (simp add: initially_undefined_context_check_def)
-  apply clarify
   using obtainable_def one_extra_update_subsumes by auto
 
 definition "one_extra_update t1 t2 s2 e2 = (

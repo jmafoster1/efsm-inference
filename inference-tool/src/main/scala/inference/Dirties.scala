@@ -276,8 +276,8 @@ object Dirties {
   }
 
   def scalaDirectlySubsumes(
-    e1: IEFSM,
-    e2: IEFSM,
+    e1: TransitionMatrix,
+    e2: TransitionMatrix,
     s1: Nat.nat,
     s2: Nat.nat,
     t1: Transition.transition_ext[Unit],

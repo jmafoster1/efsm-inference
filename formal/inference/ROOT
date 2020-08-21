@@ -1,10 +1,12 @@
 session "inference" = "EFSM" +
-options [quick_and_dirty, document = pdf, document_output = "output"]
+options [document = pdf, document_output = "output"]
 directories
   "heuristics"
   "code-targets"
+  "examples"
 theories
   "Subsumption"
+  "examples/Drinks_Subsumption"
   "Inference"
   "SelectionStrategies"
 

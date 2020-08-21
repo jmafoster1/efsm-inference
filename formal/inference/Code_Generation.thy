@@ -197,7 +197,6 @@ lemma always_different_outputs_direct_subsumption:
   apply (erule exE)
   apply (erule conjE)
   apply (erule exE)+
-  apply (rule disjI2)
   apply (rule_tac x=c1 in exI)
   apply (rule_tac x=c in exI)
   by (metis always_different_outputs_outputs_never_equal bad_outputs)
@@ -230,7 +229,7 @@ lemma recognises_execution_obtains:
 proof(induct t arbitrary: s' r)
   case Nil
   then show ?case
-    by (simp add: obtains_empty)
+    by (simp add: obtains_base)
 next
   case (Cons a t)
   then show ?case
@@ -345,6 +344,9 @@ function infer_with_log :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarr
   )"
 *)
 
+(*
+function infer_with_log :: "(cfstate \<times> cfstate) set \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where *)
+
 function infer_with_log :: "(cfstate \<times> cfstate) set \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "infer_with_log failedMerges k e r m check np = (
     let scores = if k = 1 then score_1 e r else (k_score k e r) in
@@ -363,8 +365,10 @@ termination
 lemma infer_empty: "infer f k {||} r m check np = {||}"
   by (simp add: score_1_def S_def fprod_empty k_score_def)
 
+(*
 lemma [code]: "infer f k e r m check np = infer_with_log f k e r m check np"
   sorry
+*)
 
 (* declare make_pta_fold [code] *)
 declare GExp.satisfiable_def [code del]
@@ -379,6 +383,7 @@ declare initially_undefined_context_check_def [code del]
 declare can_still_take_ctx_def [code del]
 
 code_printing
+  constant infer \<rightharpoonup> (Scala) "Code'_Generation.infer'_with'_log" |
   constant recognises_and_gets_us_to_both \<rightharpoonup> (Scala) "Dirties.recognisesAndGetsUsToBoth" |
   constant iEFSM2dot \<rightharpoonup> (Scala) "PrettyPrinter.iEFSM2dot(_, _)" |
   constant logStates \<rightharpoonup> (Scala) "Log.logStates(_, _)" |
@@ -413,12 +418,13 @@ definition mismatched_updates :: "transition \<Rightarrow> transition \<Rightarr
 
 lemma [code]:
   "directly_subsumes e1 e2 s1 s2 t1 t2  = (if t1 = t2 then True else dirty_directly_subsumes e1 e2 s1 s2 t1 t2)"
-  by (simp add: directly_subsumes_self dirty_directly_subsumes_def)
+  by (simp add: directly_subsumes_reflexive dirty_directly_subsumes_def)
 
 export_code
   (* Essentials *)
   try_heuristics_check
   learn
+  infer_with_log
   nondeterministic
   make_pta
   AExp.enumerate_vars

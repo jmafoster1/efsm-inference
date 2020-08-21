@@ -115,7 +115,7 @@ text_raw\<open>\snip{subsumptionPreorder}{1}{2}{%\<close>
 lemma subsumes_reflexive: "subsumes t c t"
   by (simp add: subsumes_def)
 
-lemma subsumption_transitive:
+lemma subsumes_transitive:
   assumes p1: "subsumes t1 c t2"
       and p2: "subsumes t2 c t3"
   shows "subsumes t1 c t3"
@@ -156,13 +156,10 @@ but there is a problem when we try to apply this to inference: Which context sho
 is able to account for the behaviour of another such that we can use one in place of another without
 adversely effecting observable behaviour.\<close>
 
+text_raw\<open>\snip{directlySubsumes}{1}{2}{%\<close>
 definition directly_subsumes :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "directly_subsumes e1 e2 s1 s2 t1 t2 \<equiv> (\<exists>c. subsumes t1 c t2) \<and>
-                                         (\<forall>c1 c2 t. (obtains s1 c1 e1 0 <> t \<and> obtains s2 c2 e2 0 <> t) \<longrightarrow> subsumes t1 c2 t2)"
-
-lemma directly_subsumes_self: "directly_subsumes e1 e2 s s' t t"
-  apply (simp add: directly_subsumes_def)
-  by (simp add: transition_subsumes_self)
+  "directly_subsumes e1 e2 s1 s2 t1 t2 \<equiv> (\<forall>c1 c2 t. (obtains s1 c1 e1 0 <> t \<and> obtains s2 c2 e2 0 <> t) \<longrightarrow> subsumes t1 c2 t2)"
+text_raw\<open>}%endsnip\<close>
 
 lemma subsumes_in_all_contexts_directly_subsumes:
   "(\<And>c. subsumes t2 c t1) \<Longrightarrow> directly_subsumes e1 e2 s s' t2 t1"
@@ -174,8 +171,19 @@ lemma gets_us_to_and_not_subsumes:
   apply (simp add: directly_subsumes_def)
   by auto
 
-lemma cant_directly_subsume:
-  "(\<And>c. \<not> subsumes t c t') \<Longrightarrow> \<not> directly_subsumes m m' s s' t t'"
-  by (simp add: directly_subsumes_def)
+text_raw\<open>\snip{directSubsumptionPreorder}{1}{2}{%\<close>
+lemma directly_subsumes_reflexive: "directly_subsumes e1 e2 s1 s2 t t"
+  apply (simp add: directly_subsumes_def)
+  by (simp add: transition_subsumes_self)
+
+lemma directly_subsumes_transitive:
+  assumes p1: "directly_subsumes e1 e2 s1 s2 t1 t2"
+      and p2: "directly_subsumes e1 e2 s1 s2 t2 t3"
+  shows "directly_subsumes e1 e2 s1 s2 t1 t3"
+  using p1 p2
+  apply (simp add: directly_subsumes_def)
+  using subsumes_transitive by blast
+
+text_raw\<open>}%endsnip\<close>
 
 end

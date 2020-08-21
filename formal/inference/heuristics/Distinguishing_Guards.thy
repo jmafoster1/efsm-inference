@@ -112,7 +112,6 @@ lemma can_still_take_direct_subsumption:
   directly_subsumes e1 e2 s1 s2 t1 t2"
   apply (simp add: directly_subsumes_def can_still_take_def)
   apply standard
-   apply (meson distinguishing_guard_subsumption obtains_gets_us_to obtains_recognises recognises_and_gets_us_to_both_def)
-  by (meson can_still_take_ctx_def distinguishing_guard_subsumption obtains_gets_us_to obtains_recognises recognises_and_gets_us_to_both_def)
+  by (meson distinguishing_guard_subsumption obtains_gets_us_to obtains_recognises recognises_and_gets_us_to_both_def)
 
 end

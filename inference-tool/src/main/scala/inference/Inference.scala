@@ -2489,51 +2489,6 @@ Transition.transition_ext[Unit])),
                              a._1)),
                   e))
 
-def infer(f: Set.set[(Nat.nat, Nat.nat)], k: Nat.nat,
-           e: FSet.fset[(List[Nat.nat],
-                          ((Nat.nat, Nat.nat),
-                            Transition.transition_ext[Unit]))],
-           r: (List[Nat.nat]) =>
-                (List[Nat.nat]) =>
-                  (FSet.fset[(List[Nat.nat],
-                               ((Nat.nat, Nat.nat),
-                                 Transition.transition_ext[Unit]))]) =>
-                    Nat.nat,
-           m: (List[Nat.nat]) =>
-                (List[Nat.nat]) =>
-                  Nat.nat =>
-                    (FSet.fset[(List[Nat.nat],
-                                 ((Nat.nat, Nat.nat),
-                                   Transition.transition_ext[Unit]))]) =>
-                      (FSet.fset[(List[Nat.nat],
-                                   ((Nat.nat, Nat.nat),
-                                     Transition.transition_ext[Unit]))]) =>
-                        (FSet.fset[(List[Nat.nat],
-                                     ((Nat.nat, Nat.nat),
-                                       Transition.transition_ext[Unit]))]) =>
-                          ((FSet.fset[((Nat.nat, Nat.nat),
-Transition.transition_ext[Unit])]) =>
-                            Boolean) =>
-                            Option[FSet.fset[(List[Nat.nat],
-       ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]],
-           check:
-             (FSet.fset[((Nat.nat, Nat.nat),
-                          Transition.transition_ext[Unit])]) =>
-               Boolean,
-           np: (FSet.fset[(List[Nat.nat],
-                            ((Nat.nat, Nat.nat),
-                              Transition.transition_ext[Unit]))]) =>
-                 FSet.fset[(Nat.nat,
-                             ((Nat.nat, Nat.nat),
-                               ((Transition.transition_ext[Unit],
-                                  List[Nat.nat]),
-                                 (Transition.transition_ext[Unit],
-                                   List[Nat.nat]))))]):
-      FSet.fset[(List[Nat.nat],
-                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
-  =
-  Code_Generation.infer_with_log(f, k, e, r, m, check, np)
-
 def learn(n: Nat.nat,
            pta: FSet.fset[(List[Nat.nat],
                             ((Nat.nat, Nat.nat),
@@ -2583,7 +2538,8 @@ Transition.transition_ext[Unit])]) =>
           EFSM.accepts_log(Set.seta[List[(String,
    (List[Value.value], List[Value.value]))]](l),
                             a));
-    infer(Set.bot_set[(Nat.nat, Nat.nat)], n, pta, r, m, check, np)
+    Code_Generation.infer_with_log(Set.bot_set[(Nat.nat, Nat.nat)], n, pta, r,
+                                    m, check, np)
   }
 
 def bool2nat(x0: Boolean): Nat.nat = x0 match {
