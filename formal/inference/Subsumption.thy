@@ -161,15 +161,28 @@ definition directly_subsumes :: "transition_matrix \<Rightarrow> transition_matr
   "directly_subsumes e1 e2 s1 s2 t1 t2 \<equiv> (\<forall>c1 c2 t. (obtains s1 c1 e1 0 <> t \<and> obtains s2 c2 e2 0 <> t) \<longrightarrow> subsumes t1 c2 t2)"
 text_raw\<open>}%endsnip\<close>
 
+text_raw\<open>\snip{subsumesAllContexts}{1}{2}{%\<close>
 lemma subsumes_in_all_contexts_directly_subsumes:
   "(\<And>c. subsumes t2 c t1) \<Longrightarrow> directly_subsumes e1 e2 s s' t2 t1"
   by (simp add: directly_subsumes_def)
+text_raw\<open>}%endsnip\<close>
 
-lemma gets_us_to_and_not_subsumes:
+text_raw\<open>\snip{directSubsumption}{1}{2}{%\<close>
+lemma direct_subsumption:
+  "(\<And>t c1 c2. obtains s1 c1 e1 0 <> t \<Longrightarrow> obtains s2 c2 e2 0 <> t \<Longrightarrow> f c2) \<Longrightarrow>
+   (\<And>c. f c \<Longrightarrow> subsumes t1 c t2) \<Longrightarrow>
+   directly_subsumes e1 e2 s1 s2 t1 t2"
+  apply (simp add: directly_subsumes_def)
+  by auto
+text_raw\<open>}%endsnip\<close>
+
+text_raw\<open>\snip{obtainableNoSubsumption}{1}{2}{%\<close>
+lemma visits_and_not_subsumes:
   "(\<exists>c1 c2 t. obtains s c1 e1 0 <> t \<and> obtains s' c2 e2 0 <> t \<and> \<not> subsumes t1 c2 t2) \<Longrightarrow>
    \<not> directly_subsumes e1 e2 s s' t1 t2"
   apply (simp add: directly_subsumes_def)
   by auto
+text_raw\<open>}%endsnip\<close>
 
 text_raw\<open>\snip{directSubsumptionPreorder}{1}{2}{%\<close>
 lemma directly_subsumes_reflexive: "directly_subsumes e1 e2 s1 s2 t t"
@@ -183,7 +196,6 @@ lemma directly_subsumes_transitive:
   using p1 p2
   apply (simp add: directly_subsumes_def)
   using subsumes_transitive by blast
-
 text_raw\<open>}%endsnip\<close>
 
 end

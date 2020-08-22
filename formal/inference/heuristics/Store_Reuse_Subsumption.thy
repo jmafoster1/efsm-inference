@@ -281,7 +281,7 @@ qed
 
 lemma no_return_to_zero:
   "\<forall>((from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
-   \<forall>r n. \<not> gets_us_to 0 e (Suc n) r t"
+   \<forall>r n. \<not> visits 0 e (Suc n) r t"
 proof(induct t)
   case Nil
   then show ?case
@@ -290,7 +290,7 @@ next
   case (Cons a t)
   then show ?case
     apply clarify
-    apply (rule gets_us_to.cases)
+    apply (rule visits.cases)
        apply simp
       apply simp
      defer
@@ -306,17 +306,16 @@ qed
 lemma no_accepting_return_to_zero:
   "\<forall>((from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
    recognises (e) (a#t) \<Longrightarrow>
-   \<not>gets_us_to 0 (e) 0 <> (a#t)"
+   \<not>visits 0 (e) 0 <> (a#t)"
   apply clarify
-  apply (rule gets_us_to.cases)
+  apply (rule visits.cases)
      apply simp
     apply simp
    apply clarify
   apply simp
   apply (case_tac aaa)
   using no_incoming_to_zero apply blast
-  apply (simp add: no_return_to_zero)
-  by (simp add: step_none_rejects)
+  by (simp add: no_return_to_zero)
 
 lemma no_return_to_zero_must_be_empty:
   "\<forall>((from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>

@@ -77,7 +77,7 @@ definition distinguish :: "log \<Rightarrow> update_modifier" where
 
 definition can_still_take_ctx :: "transition_matrix \<Rightarrow> transition_matrix \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> transition \<Rightarrow> bool" where
   "can_still_take_ctx e1 e2 s1 s2 t1 t2 = (
-    \<forall>t. recognises e1 t \<and> gets_us_to s1 e1 0 <> t \<and> recognises e2 t \<and> gets_us_to s2 e2 0 <> t \<longrightarrow>
+    \<forall>t. recognises e1 t \<and> visits s1 e1 0 <> t \<and> recognises e2 t \<and> visits s2 e2 0 <> t \<longrightarrow>
     (\<forall>a. obtains s2 a e2 0 <> t  \<and> (\<forall>i. can_take_transition t2 i a \<longrightarrow> can_take_transition t1 i a))
   )"
 
@@ -88,15 +88,15 @@ lemma distinguishing_guard_subsumption:
  Updates t1 = Updates t2 \<Longrightarrow>
  can_still_take_ctx e1 e2 s1 s2 t1 t2 \<Longrightarrow>
  recognises e1 p \<Longrightarrow>
- gets_us_to s1 e1 0 <> p \<Longrightarrow>
+ visits s1 e1 0 <> p \<Longrightarrow>
  obtains s2 c e2 0 <> p \<Longrightarrow>
  subsumes t1 c t2"
   apply (simp add: subsumes_def can_still_take_ctx_def)
   apply (erule_tac x=p in allE)
   apply simp
-  by (simp add: obtains_recognises obtains_gets_us_to)
+  by (simp add: obtains_recognises obtains_visits)
 
-definition "recognises_and_gets_us_to_both a b s s' = (
+definition "recognises_and_visits_both a b s s' = (
   \<exists>p c1 c2. obtains s c1 a 0 <> p \<and> obtains s' c2 b 0 <> p)"
 
 definition "can_still_take e1 e2 s1 s2 t1 t2 = (
@@ -105,13 +105,13 @@ definition "can_still_take e1 e2 s1 s2 t1 t2 = (
   Outputs t1 = Outputs t2 \<and>
   Updates t1 = Updates t2 \<and>
   can_still_take_ctx e1 e2 s1 s2 t1 t2 \<and>
-  recognises_and_gets_us_to_both e1 e2 s1 s2)"
+  recognises_and_visits_both e1 e2 s1 s2)"
 
 lemma can_still_take_direct_subsumption:
   "can_still_take e1 e2 s1 s2 t1 t2 \<Longrightarrow>
   directly_subsumes e1 e2 s1 s2 t1 t2"
   apply (simp add: directly_subsumes_def can_still_take_def)
   apply standard
-  by (meson distinguishing_guard_subsumption obtains_gets_us_to obtains_recognises recognises_and_gets_us_to_both_def)
+  by (meson distinguishing_guard_subsumption obtains_visits obtains_recognises recognises_and_visits_both_def)
 
 end

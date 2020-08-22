@@ -136,22 +136,21 @@ next
 qed
 
 lemma directly_subsumes: "directly_subsumes drinks2 drinks 1 1 vend_fail vend_nothing"
-  apply (simp add: directly_subsumes_def)
-  apply clarsimp
+  apply (rule direct_subsumption[of _ _ _ _ "\<lambda>c2. c2 $ 2 = Some (Num 0)"])
+   apply (simp add: obtains_1_c2)
   apply (rule subsumption)
      apply (simp add: vend_fail_def vend_nothing_def)
     apply (simp add: vend_fail_def vend_nothing_def can_take value_gt_true)
-  using obtains_1_c2 apply simp
    apply (simp add: vend_fail_def vend_nothing_def)
   by (simp add: posterior_separate_def vend_fail_def vend_nothing_def)
 
 lemma directly_subsumes_flip: "directly_subsumes drinks2 drinks 1 1 vend_nothing vend_fail"
-  apply (simp add: directly_subsumes_def)
-  apply clarsimp
+  apply (rule direct_subsumption[of _ _ _ _ "\<lambda>c2. c2 $ 2 = Some (Num 0)"])
+   apply (simp add: obtains_1_c2)
   apply (rule subsumption)
      apply (simp add: vend_fail_def vend_nothing_def)
     apply (simp add: vend_fail_def vend_nothing_def can_take value_gt_true)
-    apply (simp add: vend_fail_def vend_nothing_def can_take value_gt_true)
+   apply (simp add: vend_fail_def vend_nothing_def can_take value_gt_true)
   by (simp add: posterior_separate_def vend_fail_def vend_nothing_def)
 
 end

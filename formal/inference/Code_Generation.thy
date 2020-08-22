@@ -249,12 +249,12 @@ qed
 
 lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (
   if Guards t = [] then
-    recognises_and_gets_us_to_both m1 m2 s s'
+    recognises_and_visits_both m1 m2 s s'
   else
     dirty_always_different_outputs_direct_subsumption m1 m2 s s' t
   )"
   apply (simp add: always_different_outputs_direct_subsumption_def)
-  apply (simp add: recognises_and_gets_us_to_both_def)
+  apply (simp add: recognises_and_visits_both_def)
   apply safe
      apply (rule_tac x=p in exI)
      apply auto[1]
@@ -378,13 +378,13 @@ declare dirty_always_different_outputs_direct_subsumption_def [code del]
 declare diff_outputs_ctx_def [code del]
 declare random_member_def [code del]
 declare dirty_directly_subsumes_def [code del]
-declare recognises_and_gets_us_to_both_def [code del]
+declare recognises_and_visits_both_def [code del]
 declare initially_undefined_context_check_def [code del]
 declare can_still_take_ctx_def [code del]
 
 code_printing
   constant infer \<rightharpoonup> (Scala) "Code'_Generation.infer'_with'_log" |
-  constant recognises_and_gets_us_to_both \<rightharpoonup> (Scala) "Dirties.recognisesAndGetsUsToBoth" |
+  constant recognises_and_visits_both \<rightharpoonup> (Scala) "Dirties.recognisesAndGetsUsToBoth" |
   constant iEFSM2dot \<rightharpoonup> (Scala) "PrettyPrinter.iEFSM2dot(_, _)" |
   constant logStates \<rightharpoonup> (Scala) "Log.logStates(_, _)" |
   constant "dirty_directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes" |
