@@ -121,7 +121,8 @@ lemma subsumes_transitive:
   shows "subsumes t1 c t3"
   using p1 p2
   apply (simp add: subsumes_def)
-  by (metis subsumes_update_equality p1 p2 can_take_transition_def option.distinct(1) option.sel posterior_separate_def)
+  by (metis subsumes_update_equality p1 p2 can_take_transition_def option.distinct(1)
+      option.sel posterior_separate_def)
 text_raw\<open>}%endsnip\<close>
 
 lemma subsumes_possible_steps_replace:
@@ -178,8 +179,10 @@ text_raw\<open>}%endsnip\<close>
 
 text_raw\<open>\snip{obtainableNoSubsumption}{1}{2}{%\<close>
 lemma visits_and_not_subsumes:
-  "(\<exists>c1 c2 t. obtains s c1 e1 0 <> t \<and> obtains s' c2 e2 0 <> t \<and> \<not> subsumes t1 c2 t2) \<Longrightarrow>
-   \<not> directly_subsumes e1 e2 s s' t1 t2"
+  "(\<exists>c1 c2 t. obtains s1 c1 e1 0 <> t \<and>
+              obtains s2 c2 e2 0 <> t \<and>
+              \<not> subsumes t1 c2 t2) \<Longrightarrow>
+   \<not> directly_subsumes e1 e2 s1 s2 t1 t2"
   apply (simp add: directly_subsumes_def)
   by auto
 text_raw\<open>}%endsnip\<close>

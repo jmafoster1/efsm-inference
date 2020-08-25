@@ -297,10 +297,7 @@ next
     apply simp
     apply clarify
     apply simp
-    apply (case_tac aaa)
-    using no_incoming_to_zero
-     apply blast
-    by simp
+    by (metis no_incoming_to_zero not0_implies_Suc)
 qed
 
 lemma no_accepting_return_to_zero:
@@ -313,9 +310,7 @@ lemma no_accepting_return_to_zero:
     apply simp
    apply clarify
   apply simp
-  apply (case_tac aaa)
-  using no_incoming_to_zero apply blast
-  by (simp add: no_return_to_zero)
+  by (metis no_incoming_to_zero no_return_to_zero old.nat.exhaust)
 
 lemma no_return_to_zero_must_be_empty:
   "\<forall>((from, to), t)|\<in>|e. to \<noteq> 0 \<Longrightarrow>
