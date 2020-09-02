@@ -205,7 +205,7 @@ definition negate :: "'a gexp list \<Rightarrow> 'a gexp" where
   "negate g = gNot (fold gAnd g (Bc True))"
 
 lemma gval_negate_cons:
-  "gval (negate (a # G)) s = gval (gNot a) s \<or>\<^sub>? gval (negate G) s"
+  "gval (negate (a # G)) s = gval (gNot a) s \<or>? gval (negate G) s"
   apply (simp only: negate_def gval_gNot gval_fold_equiv_gval_foldr)
   by (simp only: foldr.simps comp_def gval_gAnd de_morgans_2)
 
@@ -218,34 +218,6 @@ lemma gval_negate_not_invalid:
   by (metis gval_gNot maybe_not_invalid negate_def)
 
 definition "dirty_always_different_outputs_direct_subsumption = always_different_outputs_direct_subsumption"
-
-lemma ex_comm4:
-  "(\<exists>c1 s a b. (a, b) \<in> fset (possible_steps e s' r l i) \<and> obtains s c1 e a (evaluate_updates b i r) t) =
-   (\<exists>a b s c1. (a, b) \<in> fset (possible_steps e s' r l i) \<and> obtains s c1 e a (evaluate_updates b i r) t)"
-  by auto
-
-lemma recognises_execution_obtains:
-  "recognises_execution e s' r t \<Longrightarrow> \<exists>c1 s. obtains s c1 e s' r t"
-proof(induct t arbitrary: s' r)
-  case Nil
-  then show ?case
-    by (simp add: obtains_base)
-next
-  case (Cons a t)
-  then show ?case
-    apply (cases a)
-    apply (simp add: obtains_step)
-    apply (rule recognises_execution.cases)
-      apply simp
-     apply simp
-    apply clarsimp
-    apply (simp add: fBex_def Bex_def ex_comm4)
-    apply (rule_tac x=s' in exI)
-    apply (rule_tac x=t in exI)
-    apply standard
-     apply (simp add: fmember_implies_member)
-    by blast
-qed
 
 lemma [code]: "always_different_outputs_direct_subsumption m1 m2 s s' t = (
   if Guards t = [] then

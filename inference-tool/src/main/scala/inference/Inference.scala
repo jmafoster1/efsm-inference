@@ -1025,8 +1025,8 @@ def MaybeBoolInt(f: Int.int => Int.int => Boolean, uv: Option[value],
 def value_gt(a: Option[value], b: Option[value]): Trilean.trilean =
   MaybeBoolInt(((x: Int.int) => (y: Int.int) => Int.less_int(y, x)), a, b)
 
-def MaybeArithInt(f: Int.int => Int.int => Int.int, uv: Option[value],
-                   uw: Option[value]):
+def maybe_arith_int(f: Int.int => Int.int => Int.int, uv: Option[value],
+                     uw: Option[value]):
       Option[value]
   =
   (f, uv, uw) match {
@@ -1039,18 +1039,18 @@ def MaybeArithInt(f: Int.int => Int.int => Int.int, uv: Option[value],
 
 def value_plus: Option[value] => Option[value] => Option[value] =
   ((a: Option[value]) => (b: Option[value]) =>
-    MaybeArithInt(((aa: Int.int) => (ba: Int.int) => Int.plus_int(aa, ba)), a,
-                   b))
+    maybe_arith_int(((aa: Int.int) => (ba: Int.int) => Int.plus_int(aa, ba)), a,
+                     b))
 
 def value_minus: Option[value] => Option[value] => Option[value] =
   ((a: Option[value]) => (b: Option[value]) =>
-    MaybeArithInt(((aa: Int.int) => (ba: Int.int) => Int.minus_int(aa, ba)), a,
-                   b))
+    maybe_arith_int(((aa: Int.int) => (ba: Int.int) => Int.minus_int(aa, ba)),
+                     a, b))
 
 def value_times: Option[value] => Option[value] => Option[value] =
   ((a: Option[value]) => (b: Option[value]) =>
-    MaybeArithInt(((aa: Int.int) => (ba: Int.int) => Int.times_int(aa, ba)), a,
-                   b))
+    maybe_arith_int(((aa: Int.int) => (ba: Int.int) => Int.times_int(aa, ba)),
+                     a, b))
 
 } /* object Value */
 
@@ -1124,12 +1124,12 @@ def aval[A](x0: aexp[A], s: A => Option[Value.value]): Option[Value.value] =
   (x0, s) match {
   case (L(x), s) => Some[Value.value](x)
   case (V(x), s) => s(x)
-  case (Plus(a_1, a_2), s) =>
-    Value.value_plus.apply(aval[A](a_1, s)).apply(aval[A](a_2, s))
-  case (Minus(a_1, a_2), s) =>
-    Value.value_minus.apply(aval[A](a_1, s)).apply(aval[A](a_2, s))
-  case (Times(a_1, a_2), s) =>
-    Value.value_times.apply(aval[A](a_1, s)).apply(aval[A](a_2, s))
+  case (Plus(a1, a2), s) =>
+    Value.value_plus.apply(aval[A](a1, s)).apply(aval[A](a2, s))
+  case (Minus(a1, a2), s) =>
+    Value.value_minus.apply(aval[A](a1, s)).apply(aval[A](a2, s))
+  case (Times(a1, a2), s) =>
+    Value.value_times.apply(aval[A](a1, s)).apply(aval[A](a2, s))
 }
 
 def is_lit[A](x0: aexp[A]): Boolean = x0 match {
@@ -1387,18 +1387,18 @@ def gval[A](x0: gexp[A], uu: A => Option[Value.value]): Trilean.trilean =
   (x0, uu) match {
   case (Bc(true), uu) => Trilean.truea()
   case (Bc(false), uv) => Trilean.falsea()
-  case (Gt(a_1, a_2), s) =>
-    Value.value_gt(AExp.aval[A](a_1, s), AExp.aval[A](a_2, s))
-  case (Eq(a_1, a_2), s) =>
-    Value.value_eq(AExp.aval[A](a_1, s), AExp.aval[A](a_2, s))
+  case (Gt(a1, a2), s) =>
+    Value.value_gt(AExp.aval[A](a1, s), AExp.aval[A](a2, s))
+  case (Eq(a1, a2), s) =>
+    Value.value_eq(AExp.aval[A](a1, s), AExp.aval[A](a2, s))
   case (In(v, l), s) =>
     (s(v) match {
        case None => Trilean.invalid()
        case Some(vv) =>
          (if (l.contains(vv)) Trilean.truea() else Trilean.falsea())
      })
-  case (Nor(a_1, a_2), s) =>
-    Trilean.maybe_not(Trilean.plus_trilean(gval[A](a_1, s), gval[A](a_2, s)))
+  case (Nor(a1, a2), s) =>
+    Trilean.maybe_not(Trilean.plus_trilean(gval[A](a1, s), gval[A](a2, s)))
 }
 
 def fold_In[A](uu: A, x1: List[Value.value]): gexp[A] = (uu, x1) match {
@@ -1882,20 +1882,20 @@ def less_gexp_aux[A : HOL.equal : Orderings.linorder](x0: GExp.gexp[A],
 
 def height[A](x0: GExp.gexp[A]): Nat.nat = x0 match {
   case GExp.Bc(uu) => Nat.Nata((1))
-  case GExp.Eq(a_1, a_2) =>
+  case GExp.Eq(a1, a2) =>
     Nat.plus_nata(Nat.Nata((1)),
-                   Orderings.max[Nat.nat](AExp_Lexorder.height[A](a_1),
-   AExp_Lexorder.height[A](a_2)))
-  case GExp.Gt(a_1, a_2) =>
+                   Orderings.max[Nat.nat](AExp_Lexorder.height[A](a1),
+   AExp_Lexorder.height[A](a2)))
+  case GExp.Gt(a1, a2) =>
     Nat.plus_nata(Nat.Nata((1)),
-                   Orderings.max[Nat.nat](AExp_Lexorder.height[A](a_1),
-   AExp_Lexorder.height[A](a_2)))
+                   Orderings.max[Nat.nat](AExp_Lexorder.height[A](a1),
+   AExp_Lexorder.height[A](a2)))
   case GExp.In(v, l) =>
     Nat.plus_nata(Code_Numeral.nat_of_integer(BigInt(2)),
                    Nat.Nata(l.par.length))
-  case GExp.Nor(g_1, g_2) =>
+  case GExp.Nor(g1, g2) =>
     Nat.plus_nata(Nat.Nata((1)),
-                   Orderings.max[Nat.nat](height[A](g_1), height[A](g_2)))
+                   Orderings.max[Nat.nat](height[A](g1), height[A](g2)))
 }
 
 def less_gexp[A : HOL.equal : Orderings.linorder](a1: GExp.gexp[A],
@@ -2879,8 +2879,8 @@ def merge_transitions(failedMerges: Set.set[(Nat.nat, Nat.nat)],
                          FSet.fset[(List[Nat.nat],
                                      ((Nat.nat, Nat.nat),
                                        Transition.transition_ext[Unit]))],
-                       t_1: Transition.transition_ext[Unit], u_1: List[Nat.nat],
-                       t_2: Transition.transition_ext[Unit], u_2: List[Nat.nat],
+                       t1: Transition.transition_ext[Unit], u1: List[Nat.nat],
+                       t2: Transition.transition_ext[Unit], u2: List[Nat.nat],
                        modifier:
                          (List[Nat.nat]) =>
                            (List[Nat.nat]) =>
@@ -2907,23 +2907,23 @@ def merge_transitions(failedMerges: Set.set[(Nat.nat, Nat.nat)],
   (if (Lista.list_all[Nat.nat](((id: Nat.nat) =>
                                  Subsumption.directly_subsumes(tm(oldEFSM),
                         tm(destMerge), origin(List(id), oldEFSM),
-                        origin(u_1, destMerge), t_2, t_1)),
-                                u_1))
+                        origin(u1, destMerge), t2, t1)),
+                                u1))
     Some[FSet.fset[(List[Nat.nat],
                      ((Nat.nat, Nat.nat),
                        Transition.transition_ext[Unit]))]](merge_transitions_aux(destMerge,
-  u_1, u_2))
+  u1, u2))
     else (if (Lista.list_all[Nat.nat](((id: Nat.nat) =>
 Subsumption.directly_subsumes(tm(oldEFSM), tm(destMerge),
-                               origin(List(id), oldEFSM),
-                               origin(u_2, destMerge), t_1, t_2)),
-                                       u_2))
+                               origin(List(id), oldEFSM), origin(u2, destMerge),
+                               t1, t2)),
+                                       u2))
            Some[FSet.fset[(List[Nat.nat],
                             ((Nat.nat, Nat.nat),
                               Transition.transition_ext[Unit]))]](merge_transitions_aux(destMerge,
-         u_2, u_1))
-           else (((((((modifier(u_1))(u_2))(origin(u_1,
-            destMerge)))(destMerge))(preDestMerge))(oldEFSM))(check)
+         u2, u1))
+           else (((((((modifier(u1))(u2))(origin(u1,
+          destMerge)))(destMerge))(preDestMerge))(oldEFSM))(check)
                    match {
                    case None => None
                    case Some(e) =>
@@ -3046,26 +3046,25 @@ def resolve_nondeterminism(failedMerges: Set.set[(Nat.nat, Nat.nat)],
                           Transition.transition_ext[Unit]))]](newEFSM)
        else None),
       failedMerges)
-  case (failedMerges,
-         (from, ((dest_1, dest_2), ((t_1, u_1), (t_2, u_2)))) :: ss, oldEFSM,
-         newEFSM, m, check, np)
+  case (failedMerges, (from, ((dest1, dest2), ((t1, u1), (t2, u2)))) :: ss,
+         oldEFSM, newEFSM, m, check, np)
     => (if ((Set.member[(Nat.nat,
-                          Nat.nat)]((dest_1, dest_2),
+                          Nat.nat)]((dest1, dest2),
                                      failedMerges)) || (Set.member[(Nat.nat,
-                             Nat.nat)]((dest_2, dest_1), failedMerges)))
+                             Nat.nat)]((dest2, dest1), failedMerges)))
          (None, failedMerges)
          else {
                 val destMerge:
                       FSet.fset[(List[Nat.nat],
                                   ((Nat.nat, Nat.nat),
                                     Transition.transition_ext[Unit]))]
-                  = merge_states(dest_1, dest_2, newEFSM);
+                  = merge_states(dest1, dest2, newEFSM);
                 (merge_transitions(failedMerges, oldEFSM, newEFSM, destMerge,
-                                    t_1, u_1, t_2, u_2, m, check)
+                                    t1, u1, t2, u2, m, check)
                    match {
                    case None =>
                      resolve_nondeterminism(Set.insert[(Nat.nat,
-                 Nat.nat)]((dest_1, dest_2), failedMerges),
+                 Nat.nat)]((dest1, dest2), failedMerges),
      ss, oldEFSM, newEFSM, m, check, np)
                    case Some(newa) =>
                      {
@@ -3091,7 +3090,7 @@ def resolve_nondeterminism(failedMerges: Set.set[(Nat.nat, Nat.nat)],
                             match {
                             case (None, failedMergesa) =>
                               resolve_nondeterminism(Set.insert[(Nat.nat,
-                          Nat.nat)]((dest_1, dest_2), failedMergesa),
+                          Nat.nat)]((dest1, dest2), failedMergesa),
               ss, oldEFSM, newEFSM, m, check, np)
                             case (Some(newb), failedMergesa) =>
                               (Some[FSet.fset[(List[Nat.nat],
@@ -3108,7 +3107,7 @@ def merge(failedMerges: Set.set[(Nat.nat, Nat.nat)],
            e: FSet.fset[(List[Nat.nat],
                           ((Nat.nat, Nat.nat),
                             Transition.transition_ext[Unit]))],
-           s_1: Nat.nat, s_2: Nat.nat,
+           s1: Nat.nat, s2: Nat.nat,
            m: (List[Nat.nat]) =>
                 (List[Nat.nat]) =>
                   Nat.nat =>
@@ -3144,16 +3143,16 @@ Transition.transition_ext[Unit])]) =>
                             Transition.transition_ext[Unit]))]],
         Set.set[(Nat.nat, Nat.nat)])
   =
-  (if ((Nat.equal_nata(s_1, s_2)) || ((Set.member[(Nat.nat,
-            Nat.nat)]((s_1, s_2),
-                       failedMerges)) || (Set.member[(Nat.nat,
-               Nat.nat)]((s_2, s_1), failedMerges))))
+  (if ((Nat.equal_nata(s1, s2)) || ((Set.member[(Nat.nat,
+          Nat.nat)]((s1, s2),
+                     failedMerges)) || (Set.member[(Nat.nat,
+             Nat.nat)]((s2, s1), failedMerges))))
     (None, failedMerges)
     else {
            val ea: FSet.fset[(List[Nat.nat],
                                ((Nat.nat, Nat.nat),
                                  Transition.transition_ext[Unit]))]
-             = make_distinct(merge_states(s_1, s_2, e));
+             = make_distinct(merge_states(s1, s2, e));
            resolve_nondeterminism(failedMerges,
                                    order_nondeterministic_pairs(np(ea)), e, ea,
                                    m, check, np)
@@ -4514,10 +4513,10 @@ def accepts_trace_prim(uu: FSet.fset[((Nat.nat, Nat.nat),
   =
   (uu, uv, uw, x3) match {
   case (uu, uv, uw, Nil) => true
-  case (e, s, d, (l, (i, p)) :: t) =>
+  case (e, s, r, (l, (i, p)) :: t) =>
     {
       val poss_steps: FSet.fset[(Nat.nat, Transition.transition_ext[Unit])] =
-        possible_steps(e, s, d, l, i);
+        possible_steps(e, s, r, l, i);
       (if (FSet_Utils.fis_singleton[(Nat.nat,
                                       Transition.transition_ext[Unit])](poss_steps))
         {
@@ -4525,14 +4524,14 @@ def accepts_trace_prim(uu: FSet.fset[((Nat.nat, Nat.nat),
             FSet.fthe_elem[(Nat.nat,
                              Transition.transition_ext[Unit])](poss_steps);
           (if (Lista.equal_lista[Option[Value.value]](Transition.apply_outputs[VName.vname](Transition.Outputs[Unit](ta),
-             AExp.join_ir(i, d)),
+             AExp.join_ir(i, r)),
                Lista.map[Value.value,
                           Option[Value.value]](((a: Value.value) =>
          Some[Value.value](a)),
         p)))
             accepts_trace_prim(e, sa,
                                 (Transition.apply_updates(Transition.Updates[Unit](ta),
-                   AExp.join_ir(i, d))).apply(d),
+                   AExp.join_ir(i, r))).apply(r),
                                 t)
             else false)
         }
@@ -4543,13 +4542,13 @@ def accepts_trace_prim(uu: FSet.fset[((Nat.nat, Nat.nat),
                         val (sa, ta): (Nat.nat, Transition.transition_ext[Unit])
                           = a;
                         (Lista.equal_lista[Option[Value.value]](Transition.apply_outputs[VName.vname](Transition.Outputs[Unit](ta),
-                       AExp.join_ir(i, d)),
+                       AExp.join_ir(i, r)),
                          Lista.map[Value.value,
                                     Option[Value.value]](((aa: Value.value) =>
                    Some[Value.value](aa)),
                   p))) && (accepts_trace_prim(e, sa,
        (Transition.apply_updates(Transition.Updates[Unit](ta),
-                                  AExp.join_ir(i, d))).apply(d),
+                                  AExp.join_ir(i, r))).apply(r),
        t))
                       })))
     }
@@ -4557,11 +4556,11 @@ def accepts_trace_prim(uu: FSet.fset[((Nat.nat, Nat.nat),
 
 def accepts_trace(e: FSet.fset[((Nat.nat, Nat.nat),
                                  Transition.transition_ext[Unit])],
-                   s: Nat.nat, d: Map[Nat.nat, Option[Value.value]],
+                   s: Nat.nat, r: Map[Nat.nat, Option[Value.value]],
                    l: List[(String, (List[Value.value], List[Value.value]))]):
       Boolean
   =
-  accepts_trace_prim(e, s, d, l)
+  accepts_trace_prim(e, s, r, l)
 
 def accepts_log(l: Set.set[List[(String,
                                   (List[Value.value], List[Value.value]))]],
@@ -4578,16 +4577,16 @@ def accepts_log(l: Set.set[List[(String,
 
 def recognises_prim(e: FSet.fset[((Nat.nat, Nat.nat),
                                    Transition.transition_ext[Unit])],
-                     s: Nat.nat, d: Map[Nat.nat, Option[Value.value]],
+                     s: Nat.nat, r: Map[Nat.nat, Option[Value.value]],
                      x3: List[(String, List[Value.value])]):
       Boolean
   =
-  (e, s, d, x3) match {
-  case (e, s, d, Nil) => true
-  case (e, s, d, (l, i) :: t) =>
+  (e, s, r, x3) match {
+  case (e, s, r, Nil) => true
+  case (e, s, r, (l, i) :: t) =>
     {
       val poss_steps: FSet.fset[(Nat.nat, Transition.transition_ext[Unit])] =
-        possible_steps(e, s, d, l, i);
+        possible_steps(e, s, r, l, i);
       FSet.fBex[(Nat.nat,
                   Transition.transition_ext[Unit])](poss_steps,
              ((a: (Nat.nat, Transition.transition_ext[Unit])) =>
@@ -4595,7 +4594,7 @@ def recognises_prim(e: FSet.fset[((Nat.nat, Nat.nat),
                  val (sa, ta): (Nat.nat, Transition.transition_ext[Unit]) = a;
                  recognises_prim(e, sa,
                                   (Transition.apply_updates(Transition.Updates[Unit](ta),
-                     AExp.join_ir(i, d))).apply(d),
+                     AExp.join_ir(i, r))).apply(r),
                                   t)
                }))
     }

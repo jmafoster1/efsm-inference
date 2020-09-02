@@ -24,9 +24,6 @@ definition subsumes :: "transition \<Rightarrow> registers \<Rightarrow> transit
                                   (\<forall>P r'. (p1 $ r' = None) \<or> (P (p2 $ r') \<longrightarrow> P (p1 $ r'))))
                       )"
 
-lemma transition_subsumes_self: "subsumes t c t"
-  by (simp add: subsumes_def)
-
 lemma no_functionality_subsumed:
   "Label t1 = Label t2 \<Longrightarrow>
    Arity t1 = Arity t2 \<Longrightarrow>
@@ -111,19 +108,20 @@ lemma subsumes_update_equality:
   apply (erule_tac x=r' in allE)
   by auto
 
-text_raw\<open>\snip{subsumptionPreorder}{1}{2}{%\<close>
+text_raw\<open>\snip{subsumptionReflexive}{1}{2}{%\<close>
 lemma subsumes_reflexive: "subsumes t c t"
+text_raw\<open>\isanewline$\langle\isa{proof}\rangle$}%endsnip\<close>
   by (simp add: subsumes_def)
 
+text_raw\<open>\snip{subsumptionTransitive}{1}{2}{%\<close>
 lemma subsumes_transitive:
   assumes p1: "subsumes t1 c t2"
       and p2: "subsumes t2 c t3"
   shows "subsumes t1 c t3"
+text_raw\<open>\isanewline$\langle \isa{proof}\rangle$}%endsnip\<close>
   using p1 p2
   apply (simp add: subsumes_def)
-  by (metis subsumes_update_equality p1 p2 can_take_transition_def option.distinct(1)
-      option.sel posterior_separate_def)
-text_raw\<open>}%endsnip\<close>
+  by (metis subsumes_update_equality p1 p2 can_take_transition_def option.distinct(1) option.sel posterior_separate_def)
 
 lemma subsumes_possible_steps_replace:
   "(s2', t2') |\<in>| possible_steps e2 s2 r2 l i \<Longrightarrow>
@@ -165,40 +163,39 @@ text_raw\<open>}%endsnip\<close>
 text_raw\<open>\snip{subsumesAllContexts}{1}{2}{%\<close>
 lemma subsumes_in_all_contexts_directly_subsumes:
   "(\<And>c. subsumes t2 c t1) \<Longrightarrow> directly_subsumes e1 e2 s s' t2 t1"
+text_raw\<open>\isanewline$\langle \isa{proof}\rangle$}%endsnip\<close>
   by (simp add: directly_subsumes_def)
-text_raw\<open>}%endsnip\<close>
 
 text_raw\<open>\snip{directSubsumption}{1}{2}{%\<close>
 lemma direct_subsumption:
-  "(\<And>t c1 c2. obtains s1 c1 e1 0 <> t \<Longrightarrow> obtains s2 c2 e2 0 <> t \<Longrightarrow> f c2) \<Longrightarrow>
-   (\<And>c. f c \<Longrightarrow> subsumes t1 c t2) \<Longrightarrow>
+  "(\<And>t c1 c2. obtains s1 c1 e1 0 <> t \<Longrightarrow> obtains s2 c2 e2 0 <> t \<Longrightarrow> f c2) \<Longrightarrow> (\<And>c. f c \<Longrightarrow> subsumes t1 c t2) \<Longrightarrow>
    directly_subsumes e1 e2 s1 s2 t1 t2"
+   text_raw\<open>\isanewline$\langle \isa{proof}\rangle$}%endsnip\<close>
   apply (simp add: directly_subsumes_def)
   by auto
-text_raw\<open>}%endsnip\<close>
 
 text_raw\<open>\snip{obtainableNoSubsumption}{1}{2}{%\<close>
 lemma visits_and_not_subsumes:
-  "(\<exists>c1 c2 t. obtains s1 c1 e1 0 <> t \<and>
-              obtains s2 c2 e2 0 <> t \<and>
-              \<not> subsumes t1 c2 t2) \<Longrightarrow>
+  "(\<exists>c1 c2 t. obtains s1 c1 e1 0 <> t \<and> obtains s2 c2 e2 0 <> t \<and> \<not> subsumes t1 c2 t2) \<Longrightarrow>
    \<not> directly_subsumes e1 e2 s1 s2 t1 t2"
+text_raw\<open>\isanewline$\langle \isa{proof}\rangle$}%endsnip\<close>
   apply (simp add: directly_subsumes_def)
   by auto
-text_raw\<open>}%endsnip\<close>
 
-text_raw\<open>\snip{directSubsumptionPreorder}{1}{2}{%\<close>
+text_raw\<open>\snip{directSubsumptionReflexive}{1}{2}{%\<close>
 lemma directly_subsumes_reflexive: "directly_subsumes e1 e2 s1 s2 t t"
+text_raw\<open>\isanewline$\langle \isa{proof}\rangle$}%endsnip\<close>
   apply (simp add: directly_subsumes_def)
-  by (simp add: transition_subsumes_self)
+  by (simp add: subsumes_reflexive)
 
+text_raw\<open>\snip{directSubsumptionTransitive}{1}{2}{%\<close>
 lemma directly_subsumes_transitive:
   assumes p1: "directly_subsumes e1 e2 s1 s2 t1 t2"
       and p2: "directly_subsumes e1 e2 s1 s2 t2 t3"
   shows "directly_subsumes e1 e2 s1 s2 t1 t3"
+  text_raw\<open>\isanewline$\langle \isa{proof}\rangle$}%endsnip\<close>
   using p1 p2
   apply (simp add: directly_subsumes_def)
   using subsumes_transitive by blast
-text_raw\<open>}%endsnip\<close>
 
 end

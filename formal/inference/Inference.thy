@@ -398,28 +398,28 @@ definition merge_transitions_aux :: "iEFSM \<Rightarrow> tids \<Rightarrow> tids
     make_distinct (finsert (List.union uids1 uids2, (origin, dest), new) (e - {|(uids1, (origin, dest), old), (uids2, (origin, dest), new)|}))
   )"
 
-(* merge_transitions - Try dest merge transitions t\<^sub>1 and t\<^sub>2 dest help resolve nondeterminism in
+(* merge_transitions - Try dest merge transitions t1 and t2 dest help resolve nondeterminism in
                        newEFSM. If either subsumes the other directly then the subsumed transition
                        can simply be replaced with the subsuming one, else we try dest apply the
                        modifier function dest resolve nondeterminism that way.                    *)
 (* @param oldEFSM   - the EFSM before merging the states which caused the nondeterminism          *)
 (* @param preDestMerge   - the EFSM after merging the states which caused the nondeterminism      *)
 (* @param newEFSM   - the current EFSM with nondeterminism                                        *)
-(* @param t\<^sub>1        - a transition dest be merged with t\<^sub>2                                         *)
-(* @param u\<^sub>1        - the unique identifier of t\<^sub>1                                                 *)
-(* @param t\<^sub>2        - a transition dest be merged with t\<^sub>1                                         *)
-(* @param u\<^sub>2        - the unique identifier of t\<^sub>2                                                 *)
+(* @param t1        - a transition dest be merged with t2                                         *)
+(* @param u1        - the unique identifier of t1                                                 *)
+(* @param t2        - a transition dest be merged with t1                                         *)
+(* @param u2        - the unique identifier of t2                                                 *)
 (* @param modifier  - an update modifier function which tries dest generalise transitions         *)
 definition merge_transitions :: "(cfstate \<times> cfstate) set \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> transition \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> tids \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> iEFSM option" where
-  "merge_transitions failedMerges oldEFSM preDestMerge destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 modifier check = (
-     if \<forall>id \<in> set u\<^sub>1. directly_subsumes (tm oldEFSM) (tm destMerge) (origin [id] oldEFSM) (origin u\<^sub>1 destMerge) t\<^sub>2 t\<^sub>1 then
+  "merge_transitions failedMerges oldEFSM preDestMerge destMerge t1 u1 t2 u2 modifier check = (
+     if \<forall>id \<in> set u1. directly_subsumes (tm oldEFSM) (tm destMerge) (origin [id] oldEFSM) (origin u1 destMerge) t2 t1 then
        \<comment> \<open>Replace t1 with t2\<close>
-       Some (merge_transitions_aux destMerge u\<^sub>1 u\<^sub>2)
-     else if \<forall>id \<in> set u\<^sub>2. directly_subsumes (tm oldEFSM) (tm destMerge) (origin [id] oldEFSM) (origin u\<^sub>2 destMerge) t\<^sub>1 t\<^sub>2 then
+       Some (merge_transitions_aux destMerge u1 u2)
+     else if \<forall>id \<in> set u2. directly_subsumes (tm oldEFSM) (tm destMerge) (origin [id] oldEFSM) (origin u2 destMerge) t1 t2 then
        \<comment> \<open>Replace t2 with t1\<close>
-       Some (merge_transitions_aux destMerge u\<^sub>2 u\<^sub>1)
+       Some (merge_transitions_aux destMerge u2 u1)
      else
-        case modifier u\<^sub>1 u\<^sub>2 (origin u\<^sub>1 destMerge) destMerge preDestMerge oldEFSM check of
+        case modifier u1 u2 (origin u1 destMerge) destMerge preDestMerge oldEFSM check of
           None \<Rightarrow> None |
           Some e \<Rightarrow> Some (make_distinct e)
    )"
@@ -431,14 +431,14 @@ definition order_nondeterministic_pairs :: "nondeterministic_pair fset \<Rightar
   "order_nondeterministic_pairs s = map snd (sorted_list_of_fset (fimage (\<lambda>s. let (_, _, (t1, _), (t2, _)) = s in (score_transitions t1 t2, s)) s))"
 
 (* resolve_nondeterminism - tries dest resolve nondeterminism in a given iEFSM                      *)
-(* @param ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) - a list of nondeterministic pairs where
-          from - nat - the state from which t\<^sub>1 and t\<^sub>2 eminate
-          dest\<^sub>1  - nat - the destination state of t\<^sub>1
-          dest\<^sub>2  - nat - the destination state of t\<^sub>2
-          t\<^sub>1   - transition - a transition dest be merged with t\<^sub>2
-          t\<^sub>2   - transition - a transition dest be merged with t\<^sub>1
-          u\<^sub>1   - nat - the unique identifier of t\<^sub>1
-          u\<^sub>2   - nat - the unique identifier of t\<^sub>2
+(* @param ((from, (dest1, dest2), ((t1, u1), (t2, u2)))#ss) - a list of nondeterministic pairs where
+          from - nat - the state from which t1 and t2 eminate
+          dest1  - nat - the destination state of t1
+          dest2  - nat - the destination state of t2
+          t1   - transition - a transition dest be merged with t2
+          t2   - transition - a transition dest be merged with t1
+          u1   - nat - the unique identifier of t1
+          u2   - nat - the unique identifier of t2
           ss   - list - the rest of the list                                                      *)
 (* @param oldEFSM - the EFSM before merging the states which caused the nondeterminism            *)
 (* @param newEFSM - the current EFSM with nondeterminism                                          *)
@@ -449,19 +449,19 @@ function resolve_nondeterminism :: "(cfstate \<times> cfstate) set \<Rightarrow>
   "resolve_nondeterminism failedMerges [] _ newEFSM _ check np = (
       if deterministic newEFSM np \<and> check (tm newEFSM) then Some newEFSM else None, failedMerges
   )" |
-  "resolve_nondeterminism failedMerges ((from, (dest\<^sub>1, dest\<^sub>2), ((t\<^sub>1, u\<^sub>1), (t\<^sub>2, u\<^sub>2)))#ss) oldEFSM newEFSM m check np = (
-    if (dest\<^sub>1, dest\<^sub>2) \<in> failedMerges \<or> (dest\<^sub>2, dest\<^sub>1) \<in> failedMerges then
+  "resolve_nondeterminism failedMerges ((from, (dest1, dest2), ((t1, u1), (t2, u2)))#ss) oldEFSM newEFSM m check np = (
+    if (dest1, dest2) \<in> failedMerges \<or> (dest2, dest1) \<in> failedMerges then
       (None, failedMerges)
     else
-    let destMerge = merge_states dest\<^sub>1 dest\<^sub>2 newEFSM in
-    case merge_transitions failedMerges oldEFSM newEFSM destMerge t\<^sub>1 u\<^sub>1 t\<^sub>2 u\<^sub>2 m check of
-      None \<Rightarrow> resolve_nondeterminism (insert (dest\<^sub>1, dest\<^sub>2) failedMerges) ss oldEFSM newEFSM m check np |
+    let destMerge = merge_states dest1 dest2 newEFSM in
+    case merge_transitions failedMerges oldEFSM newEFSM destMerge t1 u1 t2 u2 m check of
+      None \<Rightarrow> resolve_nondeterminism (insert (dest1, dest2) failedMerges) ss oldEFSM newEFSM m check np |
       Some new \<Rightarrow> (
         let newScores = order_nondeterministic_pairs (np new) in
         if (size new, size (S new), size (newScores)) < (size newEFSM, size (S newEFSM), size ss) then
           case resolve_nondeterminism failedMerges newScores oldEFSM new m check np of
             (Some new', failedMerges) \<Rightarrow> (Some new', failedMerges) |
-            (None, failedMerges) \<Rightarrow> resolve_nondeterminism (insert (dest\<^sub>1, dest\<^sub>2) failedMerges) ss oldEFSM newEFSM m check np
+            (None, failedMerges) \<Rightarrow> resolve_nondeterminism (insert (dest1, dest2) failedMerges) ss oldEFSM newEFSM m check np
         else
           (None, failedMerges)
       )
@@ -483,11 +483,11 @@ subsection\<open>EFSM Inference\<close>
 (* @param check - a function which takes an EFSM and returns a bool dest ensure that certain
                   properties hold in the new iEFSM                                                *)
 definition merge :: "(cfstate \<times> cfstate) set \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> (iEFSM option \<times> (cfstate \<times> cfstate) set)" where
-  "merge failedMerges e s\<^sub>1 s\<^sub>2 m check np = (
-    if s\<^sub>1 = s\<^sub>2 \<or> (s\<^sub>1, s\<^sub>2) \<in> failedMerges \<or> (s\<^sub>2, s\<^sub>1) \<in> failedMerges then
+  "merge failedMerges e s1 s2 m check np = (
+    if s1 = s2 \<or> (s1, s2) \<in> failedMerges \<or> (s2, s1) \<in> failedMerges then
       (None, failedMerges)
     else
-      let e' = make_distinct (merge_states s\<^sub>1 s\<^sub>2 e) in
+      let e' = make_distinct (merge_states s1 s2 e) in
       resolve_nondeterminism failedMerges (order_nondeterministic_pairs (np e')) e e' m check np
   )"
 

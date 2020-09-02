@@ -15,47 +15,69 @@ import os
 from itertools import takewhile, dropwhile
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 import pickle
 from scipy.stats import mannwhitneyu
+from matplotlib import rc, rcParams
+rc('text', usetex=True)
+
+rcParams.update(
+    {   
+    "text.usetex": True,                
+    "font.family": "sans-serif",
+    "text.latex.preamble" : r"\usepackage{cmbright}\usepackage[notmath]{sansmathfonts}"
+    }
+)
 
 runtime_re = re.compile("Completed in (\d+)h (\d+)m (\d+).\d+s")
 
 homedir = "/home/michael/Documents/efsm-inference/inference-tool/results"
 # homedir = "/home/michael/Documents/results"
 
-programs = {
+data = {
     "liftDoors": {},
     "spaceInvaders": {},
     "drinks": {},
     "spaceInvadersGuards": {}
     }
 
+systems = ["drinks", "spaceInvadersGuards"]
+# systems = ["liftDoors", "spaceInvaders"]
+
 
 def configs(p):
     if p == "liftDoors":
         return [
             'pta',
-            # 'none',
+            'none',
             'gp',
-            # 'obfuscated-time-none',
+            'obfuscated-time-none',
             'obfuscated-time-gp',
             'MINT'
             ]
     if p == "spaceInvaders":
         return [
             'pta',
-            # 'none',
+            'none',
             'gp',
-            # 'obfuscated-aliens-none',
+            'obfuscated-aliens-none',
             'obfuscated-aliens-gp',
-            # 'obfuscated-shields-none',
+            'obfuscated-shields-none',
             'obfuscated-shields-gp',
-            # 'obfuscated-x-none',
+            'obfuscated-x-none',
             'obfuscated-x-gp',
             'MINT'
             ]
-    return sorted(list(programs[p].keys()))
+    return sorted(list(data[p].keys()))
 
+
+def axesColour(ax):
+    ax.spines['bottom'].set_color('#dddddd')
+    ax.spines['top'].set_color('#dddddd') 
+    ax.spines['right'].set_color('#dddddd')
+    ax.spines['left'].set_color('#dddddd')
+    ax.tick_params(axis='x', color='#dddddd')
+    ax.tick_params(axis='y', color='#dddddd')
 
 def total_states(root, state_re = "states: (\d+)"):
     with open(f"{root}/log") as f:
@@ -146,7 +168,7 @@ def split_trace(trace, rejected=None):
 
 
 def get_info(root, fileName):
-    print(root)
+    # print(root)
     
     info = {}
 
@@ -219,51 +241,48 @@ def get_info(root, fileName):
     # info['transition coverage'] = len(transitions_covered)/info['transitions']
     return info
 
-def box(column, ps, cfgs, fname, title):
-    cfgs = [c for c in cfgs if c in programs[program]]
+
+def box1(column, program, cfgs, fname, title, ax1):
+    print(program, data[program].keys())
+    cfgs = [c for c in cfgs if c in data[program]]
     # if column == 'runtime':
     #     cfgs = [c for c in cfgs if c != 'pta']
     
     if column == 't1':
-        boxes_aux = [programs[program][config][column] for program in ps for config in cfgs]
+        boxes_aux = [data[program][config][column] for config in cfgs]
         boxes = [[item for sublist in l for item in sublist] for l in boxes_aux]
     else:
-        boxes = [programs[program][config][column].astype(float) for program in ps for config in cfgs]
-        
-    fig1, ax1 = plt.subplots(figsize=(0.7*len(boxes), 3))
-    ax1.set_title(title)
-    
-    print(f"box {fname}-{column} size: {0.7*len(boxes)}")
-    
+        boxes = [data[program][config][column].astype(float) for config in cfgs]
+
     bp = ax1.boxplot(
             boxes,
-            medianprops={"linewidth": 0},
-            boxprops={"linewidth": 0},
-            whiskerprops={"linewidth": 0},
-            capprops={"linewidth": 0}
+            # medianprops={"linewidth": 0},
+            # boxprops={"linewidth": 0},
+            # whiskerprops={"linewidth": 0},
+            # capprops={"linewidth": 0},
+            widths=0.4
           )
     
-    # Shift the median lines so they look good on pdf
-    for median in bp['medians']:
-        x, y = median.get_data()
-        ax1.plot(x+0.003, y, color="k", linewidth=1, solid_capstyle="butt", zorder=0)
+    # # Shift the median lines so they look good on pdf
+    # for median in bp['medians']:
+    #     x, y = median.get_data()
+    #     ax1.plot(x+0.003, y, color="r", linewidth=1, solid_capstyle="butt", zorder=0)
     
-    # Only draw the boxes that have a nonzero size
-    for b in bp['boxes']:
-        x, y = b.get_data()
-        if len(set(y)) > 1:
-            ax1.plot(x, y, color="k", linewidth=1, zorder=4)
+    # # Only draw the boxes that have a nonzero size
+    # for b in bp['boxes']:
+    #     x, y = b.get_data()
+    #     if len(set(y)) > 1:
+    #         ax1.plot(x, y, color="k", linewidth=1, zorder=4)
     
-    for whisker, cap in zip(bp['whiskers'], bp['caps']):
-        w_x, w_y = whisker.get_data()
-        c_x, c_y = cap.get_data()
-        if len(set(w_y)) > 1:
-            ax1.plot(w_x, w_y, color="k", linewidth=1)
-            ax1.plot(c_x, c_y, color="k", linewidth=1)
-    
+    # for whisker, cap in zip(bp['whiskers'], bp['caps']):
+    #     w_x, w_y = whisker.get_data()
+    #     c_x, c_y = cap.get_data()
+    #     if len(set(w_y)) > 1:
+    #         ax1.plot(w_x, w_y, color="k", linewidth=1)
+    #         ax1.plot(c_x, c_y, color="k", linewidth=1)
+
     labels = [" ".join(c.replace("obfuscated", "obfuscated\n").split("-")) for c in cfgs]
-    if len(ps) > 1:
-        labels = [f"{program}\n{c}" for program in ps for c in cfgs]
+    # ax1.set_xticks(range(0, len(labels)+1))
     ax1.set_xticklabels(
         labels,
         rotation=45,
@@ -272,8 +291,100 @@ def box(column, ps, cfgs, fname, title):
         ma='right',
         rotation_mode="anchor"
     )
+    axesColour(ax1)
+    ax1.set_title(title)
+
+    # ax1.set_ylim(ymin=0)
+    ax1.margins()
     
-    ax1.set_ylim(ymin=-0.1)
+    if column in ['sensitivity', 'prop']:
+        ax1.set_ylim(ymax=1.1)
+
+def boxPlots(column, ps, fname, systems):
+    size = 0
+    for p in systems:
+        for c in ps[p]:
+            size += 1
+    
+    fig1 = plt.figure(figsize=(0.8*size, 3))
+    spec = gridspec.GridSpec(nrows=1, ncols=len(systems), width_ratios=[len(ps[p]) for p in systems])
+    # fig1, ax = plt.subplots(nrows=1, ncols=len(ps), width_ratios=[len(ps[p]) for p in ps], figsize=(0.7*size, 3))
+    
+    print(f"box {fname}-{column} size: {size}")
+    
+    title = (
+        "Accepted Prefix" if column == "t1" else 
+        "NRMSE" if column == "nrmse" else 
+        column.capitalize()
+        )
+    
+    for i, p in enumerate(systems):
+        ax = fig1.add_subplot(spec[i])
+        cfgs = configs(p)
+        if column not in ["states", "transitions", "runtime"]:
+            cfgs = [c for c in cfgs if c != "MINT"]
+        box1(column, p, cfgs, fname, r"\textsc{"+p+"} "+title, ax)
+
+    # plt.tight_layout()
+    plt.savefig(f"{homedir}/graphs/{fname}.pdf", bbox_inches='tight')
+    plt.close()
+
+
+def box(column, cfgs, fname, title, ps):
+    if column == 't1':
+        boxes_aux = [data[p][c][column] for p in ps for c in cfgs if c in data[p]]
+        boxes = [[item for sublist in l for item in sublist] for l in boxes_aux]
+    else:
+        boxes = [data[p][c][column].astype(float) for p in ps for c in cfgs if c in data[p]]
+        
+    fig1, ax1 = plt.subplots(figsize=(0.7*len(boxes), 3))
+    ax1.set_title(title)
+    
+    print(f"box {fname}-{column} size: {0.7*len(boxes)}")
+    
+    bp = ax1.boxplot(
+            boxes,
+            # medianprops={"linewidth": 0},
+            # boxprops={"linewidth": 0},
+            # whiskerprops={"linewidth": 0},
+            # capprops={"linewidth": 0}
+            widths=0.4
+          )
+    
+    # # Shift the median lines so they look good on pdf
+    # for median in bp['medians']:
+    #     x, y = median.get_data()
+    #     ax1.plot(x+0.003, y, color="r", linewidth=1, solid_capstyle="butt", zorder=0)
+    
+    # # Only draw the boxes that have a nonzero size
+    # for b in bp['boxes']:
+    #     x, y = b.get_data()
+    #     if len(set(y)) > 1:
+    #         ax1.plot(x, y, color="k", linewidth=1, zorder=4)
+    
+    # for whisker, cap in zip(bp['whiskers'], bp['caps']):
+    #     w_x, w_y = whisker.get_data()
+    #     c_x, c_y = cap.get_data()
+    #     if len(set(w_y)) > 1:
+    #         ax1.plot(w_x, w_y, color="k", linewidth=1)
+    #         ax1.plot(c_x, c_y, color="k", linewidth=1)
+    
+    labels = [" ".join(c.replace("obfuscated", "obfuscated\n").split("-")) for c in cfgs]
+    if len(ps) > 1:
+        labels = [f'{program.replace("Guards", "")}\n{c}' for program in ps for c in cfgs]
+    ax1.set_xticks(range(0, len(labels)+1))
+    ax1.set_xticklabels(
+        [""]+labels,
+        rotation=45,
+        ha='right',
+        va='top',
+        ma='right',
+        rotation_mode="anchor"
+    )
+    axesColour(ax1)
+    
+    # ax1.set_ylim(ymin=0)
+    ax1.margins()
     
     if column in ['sensitivity', 'prop']:
         ax1.set_ylim(ymax=1.1)
@@ -284,12 +395,15 @@ def box(column, ps, cfgs, fname, title):
 
 def ts(ps, cfgs, fname, title):
     for p in ps:
-        print(p)
+        print(p, cfgs)
     
-        cfgs =  [c for c in cfgs if c in programs[p]]
+        cfgs =  [c for c in cfgs if c in data[p]]
         
-        t1Means = [mean([mean(x) for x in programs[p][c]['t1']]) for c in cfgs if c in programs[p]]
-        t2Means = [mean([mean(x) for x in programs[p][c]['t2']]) + t1Means[i] for i, c in enumerate(cfgs)]
+        for c in cfgs:
+            print(c, "t2" in data[p][c])
+        
+        t1Means = [mean([mean(x) for x in data[p][c]['t1']]) for c in cfgs]
+        t2Means = [mean([mean(x) for x in data[p][c]['t2']]) + t1Means[i] for i, c in enumerate(cfgs)]
         t3Means = [1] * len(t2Means)
         
         if any([t > 1 for t in t2Means]):
@@ -308,14 +422,17 @@ def ts(ps, cfgs, fname, title):
     labels = [" ".join(c.replace("obfuscated", "obfuscated\n").split("-")) for c in cfgs]
     if len(ps) > 1:
         labels = [f"{program}\n{c}" for program in ps for c in cfgs]
+
+    ax1.set_xticks(range(0, len(labels)+1))
     ax1.set_xticklabels(
-        labels,
+        [""]+labels,
         rotation=45,
         ha='right',
         va='top',
         ma='right',
         rotation_mode="anchor"
     )
+    axesColour(ax1)
 
     # plt.tight_layout()
     plt.legend((p1[0], p2[0], p3[0]),
@@ -352,27 +469,29 @@ def hist(bars, program, config, column, xlabel=False):
 columns = ['states', 'transitions', 'prop', 'sensitivity', 'nrmse', 'runtime', 't1']
            # 'min', 'avg', 'ultra', 'rmse', 'state coverage', 'transition coverage', 't2', 't3']
 
+
+
 if not os.path.exists(f"{homedir}/graphs"):
     os.mkdir(f"{homedir}/graphs")
 
 
 # Load in the data from pickle if we can so we don't have to keep recalculating stuff
-if os.path.exists(f"{homedir}/programs.dic"):
-    with open(f'{homedir}/programs.dic', 'rb') as f:
-        programs = pickle.load(f)
+if os.path.exists(f"{homedir}/data.dic"):
+    with open(f'{homedir}/data.dic', 'rb') as f:
+        data = pickle.load(f)
 else:
-    for program in programs:
+    for program in data:
         # Add in PTA - we don't need to loop and average as it's always the
         # same for each trace set
-        if 'pta' not in programs[program]:
-            programs[program]['pta'] = pd.DataFrame(columns=columns)
+        if 'pta' not in data[program]:
+            data[program]['pta'] = pd.DataFrame(columns=columns)
             
         for log in os.listdir(f"{homedir}/{program}30"):
             configurations = os.listdir(f"{homedir}/{program}30/{log}")
 
             for config in configurations:
-                if config not in programs[program]:
-                    programs[program][config] = pd.DataFrame(columns=columns)
+                if config not in data[program]:
+                    data[program][config] = pd.DataFrame(columns=columns)
 
 
                 dd = f"{homedir}/{program}30/{log}/{config}"
@@ -385,7 +504,10 @@ else:
                     continue
 
                 for r in roots:
-                    programs[program][config] = programs[program][config].append(pd.DataFrame(get_info(r, "testLog.json"), index=[r]))
+                    try:
+                        data[program][config] = data[program][config].append(pd.DataFrame(get_info(r, "testLog.json"), index=[r]))
+                    except:
+                        print(r)
 
             # TODO: DELETE THIS WHEN DRAWING ACTUAL RESULTS
             # It just stops it erroring for stuff which timed out
@@ -393,25 +515,32 @@ else:
                 # print(dd)
                 continue
             if "MINT" not in roots[0]:
-                programs[program]['pta'] = programs[program]['pta'].append(pd.DataFrame(get_info(roots[0], "ptaLog.json"), index=[roots[0]+"-pta"]))
+                data[program]['pta'] = data[program]['pta'].append(pd.DataFrame(get_info(roots[0], "ptaLog.json"), index=[roots[0]+"-pta"]))
 
-    with open(f'{homedir}/programs.dic', 'wb') as f:
-        pickle.dump(programs, f)
+    with open(f'{homedir}/data.dic', 'wb') as f:
+        pickle.dump(data, f)
 
 if os.path.exists(f"{homedir}/mann-whitney-u.csv"):
     os.remove(f"{homedir}/mann-whitney-u.csv")
 with open(f"{homedir}/mann-whitney-u.csv", 'w') as m:
     print("system", "x", "y", "U", "p", "significant", file=m, sep=",")
+    
+fname = "".join([p[:2] for p in systems])
 
-for program in programs:
-    for column in [c for c in columns if c not in ['t2', 't3']]:
-        box(column, [program], configs(program), program, f"{program} {column}")
+for column in [c for c in columns if c not in ['t2', 't3']]:
+    ps = {p:configs(p) for p in data}
+    
+    boxPlots(column, ps, f"{fname}-{column}-plots", systems)
+
+for program in data:
+    # for column in [c for c in columns if c not in ['t2', 't3']]:
+    #     box(column, [program], configs(program), program, f"{program} {column}")
     with open(f"{homedir}/mann-whitney-u.csv", 'a') as m:
         print(program, file=m)
     # for x in configs(program):
     #     for y in configs(program):
     #         if x > y:
-    #             mwu = mannwhitneyu(programs[program][x]['prop'], programs[program][y]['prop'])
+    #             mwu = mannwhitneyu(data[program][x]['prop'], data[program][y]['prop'])
     #             with open(f"{homedir}/mann-whitney-u.csv", 'a') as m:
     #                 print("", x, y, mwu.statistic, mwu.pvalue, mwu.pvalue < 0.05, file=m, sep=",")
 
@@ -419,20 +548,20 @@ for program in programs:
     print("\n" + program)
     for config in configs(program):
         # should be 30 for non-gp things and 900 otherwise
-        print("", config, len(programs[program][config]['t1']))
-        t1_bars = sorted([item for sublist in programs[program][config]['t1'] for item in sublist])
-        hist(t1_bars, program, config, 't1', "Normalised length of correct prefix")
+        print("", config, len(data[program][config]['t1']))
+        # t1_bars = sorted([item for sublist in data[program][config]['t1'] for item in sublist])
+        # hist(t1_bars, program, config, 't1', "Normalised length of correct prefix")
         
-        states_bars = sorted(programs[program][config]['states'])
-        hist(states_bars, program, config, 'states', f"Number of states for {config}")
+        # states_bars = sorted(data[program][config]['states'])
+        # hist(states_bars, program, config, 'states', f"Number of states for {config}")
         
-        transitions_bars = sorted(programs[program][config]['states'])
-        hist(transitions_bars, program, config, 'transitions', f"Number of transitions for {config}")
+        # transitions_bars = sorted(data[program][config]['states'])
+        # hist(transitions_bars, program, config, 'transitions', f"Number of transitions for {config}")
         
-        hist(sorted(programs[program][config]['sensitivity']), program, config, 'sensitivity', f"Sensitivity for {config}")
+        # hist(sorted(data[program][config]['sensitivity']), program, config, 'sensitivity', f"Sensitivity for {config}")
 
     # Trace correctness
-    ts([program], configs(program), program, f"{program} Trace Parts")
+    # ts([program], configs(program), program, f"{program} Trace Parts")
 
     with open(f"{homedir}/graphs/{program}-graphs.tex", 'w') as f:
         print("\\documentclass{article}", file=f)
@@ -444,28 +573,28 @@ for program in programs:
             print("\\resizebox{\\textwidth}{!}{\\input{"+program+"-"+column+".pdf}}", file=f)
         print("\\end{document}", file=f)
 
-cfgs = ["pta", "none", "gp"]
-ps = list(programs.keys())
+if systems == ["liftDoors", "spaceInvaders"]:
+    cfgs = ["pta", "none", "gp", "MINT"]
 
-fname = "".join([p[:2] for p in ps])
-ts(ps, cfgs, fname, "Trace Parts")
-box("sensitivity", programs, cfgs, "".join([p[:2] for p in ps]), "Sensitivity")
-box("nrmse", programs, cfgs, fname, "NRMSE")
-box("states", programs, cfgs, fname, "States")
-box("transitions", programs, cfgs, fname, "Transitions")
+    # ts(ps, cfgs, fname, "Trace Parts")
+    box("sensitivity", cfgs, fname, "Sensitivity", systems)
+    box("nrmse", cfgs, fname, "NRMSE", systems)
+    box("prop", cfgs, fname, "Proportion of Correct events", systems)
+    box("t1", cfgs, fname, "Proportional Lengths of Accepted Prefixes", systems)
+    
+    
+    box("states", cfgs, fname, "States", systems)
+    box("transitions", cfgs, fname, "Transitions", systems)
+    
+    box("runtime", cfgs, fname, "Runtime", systems)
 
-box("transitions", programs, cfgs[1:], f"fname-no-pta", "Transitions")
-box("runtime", programs, cfgs, fname, "Runtime")
-box("prop", programs, cfgs, fname, "Proportion of Correct events")
-
-box("t1", programs, cfgs, fname, "Proportional Lengths of Accepted Prefixes")
 
 # fig, ax = plt.subplots()
-# states = list(programs['drinks']['gp']['states'])
-# t1 = list([mean(y) for y in programs['drinks']['gp']['sensitivity']])
+# states = list(data['drinks']['gp']['states'])
+# t1 = list([mean(y) for y in data['drinks']['gp']['sensitivity']])
 # ax.scatter(states, t1, color="b", marker='o')
-# states = list(programs['drinks']['gp-distinguish']['states'])
-# t1 = list([mean(y) for y in programs['drinks']['gp-distinguish']['sensitivity']])
+# states = list(data['drinks']['gp-distinguish']['states'])
+# t1 = list([mean(y) for y in data['drinks']['gp-distinguish']['sensitivity']])
 # ax.scatter(states, t1, color="r", marker='x')
 
 # ax.set_xlabel("Number of States")
@@ -475,12 +604,12 @@ box("t1", programs, cfgs, fname, "Proportional Lengths of Accepted Prefixes")
 # plt.close()
 
 # fig, ax = plt.subplots()
-# states = list(programs['spaceInvadersGuards']['gp']['states'])
-# t1 = list([mean(y) for y in programs['spaceInvadersGuards']['gp']['sensitivity']])
+# states = list(data['spaceInvadersGuards']['gp']['states'])
+# t1 = list([mean(y) for y in data['spaceInvadersGuards']['gp']['sensitivity']])
 # ax.scatter(states, t1, color="b", marker='o')
 
-# states = list(programs['spaceInvadersGuards']['gp-distinguish']['states'])
-# t1 = list([mean(y) for y in programs['spaceInvadersGuards']['gp-distinguish']['sensitivity']])
+# states = list(data['spaceInvadersGuards']['gp-distinguish']['states'])
+# t1 = list([mean(y) for y in data['spaceInvadersGuards']['gp-distinguish']['sensitivity']])
 # ax.scatter(states, t1, color="r", marker='x')
 
 # ax.set_xlabel("Number of States")

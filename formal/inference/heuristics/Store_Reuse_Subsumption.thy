@@ -185,8 +185,8 @@ lemma generalise_output_directly_subsumes_original:
   apply standard
   by (metis is_generalised_output_of_subsumes stored_reused_aux_is_generalised_output_of stored_reused_def)
 
-definition "generalise_output_context_check v r s\<^sub>1 s\<^sub>2 e\<^sub>1 e\<^sub>2 =
-(\<forall>c\<^sub>1 c\<^sub>2 t. obtains s\<^sub>1 c\<^sub>1 (tm e\<^sub>1) 0 <> t \<and> obtains s\<^sub>2 c\<^sub>2 (tm e\<^sub>2) 0 <> t \<longrightarrow> c\<^sub>2 $ r = Some v)"
+definition "generalise_output_context_check v r s1 s2 e1 e2 =
+(\<forall>c1 c2 t. obtains s1 c1 (tm e1) 0 <> t \<and> obtains s2 c2 (tm e2) 0 <> t \<longrightarrow> c2 $ r = Some v)"
 
 lemma generalise_output_context_check_directly_subsumes_original:
       "stored_reused t' t = Some (r, p) \<Longrightarrow>
