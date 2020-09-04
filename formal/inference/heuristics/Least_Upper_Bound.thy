@@ -1,5 +1,5 @@
 section\<open>Least Upper Bound\<close>
-text\<open>T he simplest way to merge a pair of transitions with identical outputs and updates is to
+text\<open>The simplest way to merge a pair of transitions with identical outputs and updates is to
 simply take the least upper bound of their \emph{guards}. This theory presents several variants on
 this theme.\<close>
 
@@ -184,7 +184,7 @@ next
     by (simp add: no_corresponding_nor)
 qed
 
-lemma correspondence_subsumption: 
+lemma correspondence_subsumption:
   "Label t1 = Label t2 \<Longrightarrow>
    Arity t1 = Arity t2 \<Longrightarrow>
    Outputs t1 = Outputs t2 \<Longrightarrow>
@@ -256,7 +256,7 @@ lemma ex_mutex: "Eq (V v) (L l) \<in> set G1 \<Longrightarrow>
   apply (case_tac "s v")
   by auto
 
-lemma has_distinguishing_In: 
+lemma has_distinguishing_In:
   "has_distinguishing (In v l) G \<Longrightarrow>
    (\<exists>l' i. v = I i \<and> Eq (V v) (L l') \<in> set G \<and> l' \<notin> set l) \<or> (\<exists>l' i. v = I i \<and> In v l' \<in> set G \<and> set l' \<supset> set l)"
 proof(induct G)
@@ -281,7 +281,7 @@ next
     by auto
 qed
 
-lemma Eq_apply_guards: 
+lemma Eq_apply_guards:
   "Eq (V v) (L l) \<in> set G1 \<Longrightarrow>
    apply_guards G1 s \<Longrightarrow>
    s v = Some l"
@@ -649,7 +649,7 @@ fun gob :: update_modifier where
      t2 = (get_by_ids new t2ID) in
      case gob_aux t1 t2 of
        None \<Rightarrow> None |
-       Some gob_t \<Rightarrow> 
+       Some gob_t \<Rightarrow>
            Some (replace_transitions new [(t1ID, gob_t), (t2ID, gob_t)])
    )"
 
@@ -665,7 +665,7 @@ fun gung_ho :: update_modifier where
      t2 = (get_by_ids new t2ID) in
      case gung_ho_aux t1 t2 of
        None \<Rightarrow> None |
-       Some gob_t \<Rightarrow> 
+       Some gob_t \<Rightarrow>
            Some (replace_transitions new [(t1ID, gob_t), (t2ID, gob_t)])
    )"
 
@@ -705,7 +705,7 @@ next
     by simp
 qed
 
-lemma each_input_guarded_once_cons: 
+lemma each_input_guarded_once_cons:
    "\<forall>i\<in>\<Union> (enumerate_gexp_inputs ` set (a # G)). length (filter (\<lambda>g. gexp_constrains g (V (I i))) (a # G)) \<le> 1 \<Longrightarrow>
     \<forall>i\<in>\<Union> (enumerate_gexp_inputs ` set G). length (filter (\<lambda>g. gexp_constrains g (V (I i))) G) \<le> 1"
   apply (simp add: Ball_def)
@@ -846,7 +846,7 @@ lemma gval_rearrange:
   "g \<in> set G \<Longrightarrow>
    gval g s = true \<Longrightarrow>
    apply_guards (removeAll g G) s \<Longrightarrow>
-   apply_guards G s" 
+   apply_guards G s"
 proof(induct G)
   case Nil
   then show ?case

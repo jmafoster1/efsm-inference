@@ -110,7 +110,7 @@ lemma subsumes_update_equality:
 
 text_raw\<open>\snip{subsumptionReflexive}{1}{2}{%\<close>
 lemma subsumes_reflexive: "subsumes t c t"
-text_raw\<open>\isanewline$\langle\isa{proof}\rangle$}%endsnip\<close>
+text_raw\<open>$\langle\isa{proof}\rangle$}%endsnip\<close>
   by (simp add: subsumes_def)
 
 text_raw\<open>\snip{subsumptionTransitive}{1}{2}{%\<close>
@@ -118,7 +118,7 @@ lemma subsumes_transitive:
   assumes p1: "subsumes t1 c t2"
       and p2: "subsumes t2 c t3"
   shows "subsumes t1 c t3"
-text_raw\<open>\isanewline$\langle \isa{proof}\rangle$}%endsnip\<close>
+text_raw\<open>}%endsnip\<close>
   using p1 p2
   apply (simp add: subsumes_def)
   by (metis subsumes_update_equality p1 p2 can_take_transition_def option.distinct(1) option.sel posterior_separate_def)
@@ -163,14 +163,15 @@ text_raw\<open>}%endsnip\<close>
 text_raw\<open>\snip{subsumesAllContexts}{1}{2}{%\<close>
 lemma subsumes_in_all_contexts_directly_subsumes:
   "(\<And>c. subsumes t2 c t1) \<Longrightarrow> directly_subsumes e1 e2 s s' t2 t1"
-text_raw\<open>\isanewline$\langle \isa{proof}\rangle$}%endsnip\<close>
+text_raw\<open>}%endsnip\<close>
   by (simp add: directly_subsumes_def)
 
 text_raw\<open>\snip{directSubsumption}{1}{2}{%\<close>
 lemma direct_subsumption:
-  "(\<And>t c1 c2. obtains s1 c1 e1 0 <> t \<Longrightarrow> obtains s2 c2 e2 0 <> t \<Longrightarrow> f c2) \<Longrightarrow> (\<And>c. f c \<Longrightarrow> subsumes t1 c t2) \<Longrightarrow>
+  "(\<And>t c1 c2. obtains s1 c1 e1 0 <> t \<Longrightarrow> obtains s2 c2 e2 0 <> t \<Longrightarrow> f c2) \<Longrightarrow>
+   (\<And>c. f c \<Longrightarrow> subsumes t1 c t2) \<Longrightarrow>
    directly_subsumes e1 e2 s1 s2 t1 t2"
-   text_raw\<open>\isanewline$\langle \isa{proof}\rangle$}%endsnip\<close>
+   text_raw\<open>}%endsnip\<close>
   apply (simp add: directly_subsumes_def)
   by auto
 
@@ -178,13 +179,13 @@ text_raw\<open>\snip{obtainableNoSubsumption}{1}{2}{%\<close>
 lemma visits_and_not_subsumes:
   "(\<exists>c1 c2 t. obtains s1 c1 e1 0 <> t \<and> obtains s2 c2 e2 0 <> t \<and> \<not> subsumes t1 c2 t2) \<Longrightarrow>
    \<not> directly_subsumes e1 e2 s1 s2 t1 t2"
-text_raw\<open>\isanewline$\langle \isa{proof}\rangle$}%endsnip\<close>
+text_raw\<open>}%endsnip\<close>
   apply (simp add: directly_subsumes_def)
   by auto
 
 text_raw\<open>\snip{directSubsumptionReflexive}{1}{2}{%\<close>
 lemma directly_subsumes_reflexive: "directly_subsumes e1 e2 s1 s2 t t"
-text_raw\<open>\isanewline$\langle \isa{proof}\rangle$}%endsnip\<close>
+text_raw\<open>}%endsnip\<close>
   apply (simp add: directly_subsumes_def)
   by (simp add: subsumes_reflexive)
 
@@ -193,7 +194,7 @@ lemma directly_subsumes_transitive:
   assumes p1: "directly_subsumes e1 e2 s1 s2 t1 t2"
       and p2: "directly_subsumes e1 e2 s1 s2 t2 t3"
   shows "directly_subsumes e1 e2 s1 s2 t1 t3"
-  text_raw\<open>\isanewline$\langle \isa{proof}\rangle$}%endsnip\<close>
+  text_raw\<open>}%endsnip\<close>
   using p1 p2
   apply (simp add: directly_subsumes_def)
   using subsumes_transitive by blast

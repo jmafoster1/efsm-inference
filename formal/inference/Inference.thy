@@ -15,8 +15,8 @@ declare One_nat_def [simp del]
 
 subsection\<open>Transition Identifiers\<close>
 
-text\<open>We first need to define the iEFSM data type which assigns each transition a unique identity.
-This is necessary because transitions may not be unique in an EFSM. Assigning transitions a unique
+text\<open>We first need to define the \texttt{iEFSM} data type which assigns each transition a unique identity.
+This is necessary because transitions may not occur uniquely in an EFSM. Assigning transitions a unique
 identifier enables us to look up the origin and destination states of transitions without having to
 pass them around in the inference functions.\<close>
 

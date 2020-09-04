@@ -1,7 +1,5 @@
-subsection{*Generalisation*}
-text{*This theory presents a simple EFSM definition and uses contexts to prove
-transition subsumption.
-*}
+subsection{*Example*}
+text{*This theory shows how contexts can be used to prove transition subsumption.*}
 theory Drinks_Subsumption
 imports "inference.Subsumption" "EFSM.Drinks_Machine_2"
 begin
