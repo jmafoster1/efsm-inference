@@ -1,6 +1,6 @@
 section\<open>PTA Generalisation\<close>
 text\<open>The problem with the simplistic heuristics of \cite{foster2019} is that the performance of the
-inference technique is almost entirely dependent on the quality and applicability of the heuristics
+Inference technique is almost entirely dependent on the quality and applicability of the heuristics
 provided to it. Producing high quality heuristics often requires some inside knowledge of the system
 under inference. If the user has this knowledge already, they are unlikely to require automated
 inference. Ideally, we would like something more generally applicable. This theory presents a more

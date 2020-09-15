@@ -1,4 +1,4 @@
-session "inference" = "EFSM" +
+session "EFSM_Inference" = "EFSM" +
 options [document = pdf, document_output = "output"]
 directories
   "heuristics"

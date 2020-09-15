@@ -41,8 +41,8 @@ data = {
     "spaceInvadersGuards": {}
     }
 
-systems = ["drinks", "spaceInvadersGuards"]
-# systems = ["liftDoors", "spaceInvaders"]
+# systems = ["drinks", "spaceInvadersGuards"]
+systems = ["liftDoors", "spaceInvaders"]
 
 
 def configs(p):
@@ -67,6 +67,13 @@ def configs(p):
             'obfuscated-x-none',
             'obfuscated-x-gp',
             'MINT'
+            ]
+    if p == "drinks" or p == "spaceInvadersGuards":
+        return [
+            'pta',
+            'none',
+            'gp',
+            'gp-distinguish'
             ]
     return sorted(list(data[p].keys()))
 
@@ -176,6 +183,7 @@ def get_info(root, fileName):
         info['states'] = total_states(root)
         info['transitions'] = total_transitions(root)
     elif fileName == "ptaLog.json":
+        # print("Doing PTA for", root)
         info['states'] = total_states(root, "PTA has (\d+) states")
         info['transitions'] = total_transitions(root, "PTA has (\d+) transitions")
 
@@ -205,8 +213,9 @@ def get_info(root, fileName):
     # Ultrametric from the paper - useless
     # info['ultra'] = 2**-min(lengths)
     # Mean prop. of the trace got through before we can tell the trace apart
-    info['prop'] = mean(
-            [len(list(filter(lambda e: e['expected'] == e['actual'], obj['trace'])))/(len(obj['trace'])+len(obj['rejected'])) for obj in log])
+    # info['prop'] = [len(list(filter(lambda e: e['expected'] == e['actual'], obj['trace'])))/(len(obj['trace'])+len(obj['rejected'])) for obj in log]
+    info['prop'] = [(len(x) + len([e for e in y if e['expected'] == e['actual']]))/(len(x) + len(y) + len(z)) for x, y, z in triples],
+
 
     valid_traces = sum([s1 == [] and s2 == [] for _, s1, s2 in triples])
     info['sensitivity'] = valid_traces/len(log)
@@ -245,10 +254,10 @@ def get_info(root, fileName):
 def box1(column, program, cfgs, fname, title, ax1):
     print(program, data[program].keys())
     cfgs = [c for c in cfgs if c in data[program]]
-    # if column == 'runtime':
-    #     cfgs = [c for c in cfgs if c != 'pta']
+    if column == 'runtime':
+        cfgs = [c for c in cfgs if c != 'pta']
     
-    if column == 't1':
+    if column == 't1' or column == "prop":
         boxes_aux = [data[program][config][column] for config in cfgs]
         boxes = [[item for sublist in l for item in sublist] for l in boxes_aux]
     else:
@@ -281,7 +290,7 @@ def box1(column, program, cfgs, fname, title, ax1):
     #         ax1.plot(w_x, w_y, color="k", linewidth=1)
     #         ax1.plot(c_x, c_y, color="k", linewidth=1)
 
-    labels = [" ".join(c.replace("obfuscated", "obfuscated\n").split("-")) for c in cfgs]
+    labels = [" ".join(c.replace("obfuscated", "obfuscated\n").replace("distinguish", "\ndistinguish").split("-")) for c in cfgs]
     # ax1.set_xticks(range(0, len(labels)+1))
     ax1.set_xticklabels(
         labels,
@@ -291,39 +300,42 @@ def box1(column, program, cfgs, fname, title, ax1):
         ma='right',
         rotation_mode="anchor"
     )
+    ax1.tick_params(axis='both', labelsize=10)
+
     axesColour(ax1)
     ax1.set_title(title)
-
-    # ax1.set_ylim(ymin=0)
     ax1.margins()
     
-    if column in ['sensitivity', 'prop']:
-        ax1.set_ylim(ymax=1.1)
-
 def boxPlots(column, ps, fname, systems):
     size = 0
     for p in systems:
         for c in ps[p]:
             size += 1
     
-    fig1 = plt.figure(figsize=(0.8*size, 3))
-    spec = gridspec.GridSpec(nrows=1, ncols=len(systems), width_ratios=[len(ps[p]) for p in systems])
-    # fig1, ax = plt.subplots(nrows=1, ncols=len(ps), width_ratios=[len(ps[p]) for p in ps], figsize=(0.7*size, 3))
+    # fig1 = plt.figure(figsize=(0.8*size, 3))
+    # spec = gridspec.GridSpec(nrows=1, ncols=len(systems), width_ratios=[len(ps[p]) for p in systems])
+
+    fig, axs = plt.subplots(nrows=1, ncols=len(systems), sharex='col', sharey='row', figsize=(0.8*size, 3))
     
     print(f"box {fname}-{column} size: {size}")
     
     title = (
         "Accepted Prefix" if column == "t1" else 
         "NRMSE" if column == "nrmse" else 
+        "Runtime (Minutes)" if column == "runtime" else
         column.capitalize()
         )
     
     for i, p in enumerate(systems):
-        ax = fig1.add_subplot(spec[i])
+        ax = axs[i]
+        ax.yaxis.set_tick_params(which='both', labelleft=True)
+
         cfgs = configs(p)
         if column not in ["states", "transitions", "runtime"]:
             cfgs = [c for c in cfgs if c != "MINT"]
+        
         box1(column, p, cfgs, fname, r"\textsc{"+p+"} "+title, ax)
+
 
     # plt.tight_layout()
     plt.savefig(f"{homedir}/graphs/{fname}.pdf", bbox_inches='tight')
@@ -331,7 +343,7 @@ def boxPlots(column, ps, fname, systems):
 
 
 def box(column, cfgs, fname, title, ps):
-    if column == 't1':
+    if column == 't1' or column == "prop":
         boxes_aux = [data[p][c][column] for p in ps for c in cfgs if c in data[p]]
         boxes = [[item for sublist in l for item in sublist] for l in boxes_aux]
     else:
@@ -382,6 +394,7 @@ def box(column, cfgs, fname, title, ps):
         rotation_mode="anchor"
     )
     axesColour(ax1)
+    ax1.tick_params(axis='both', labelsize=10)
     
     # ax1.set_ylim(ymin=0)
     ax1.margins()
@@ -443,8 +456,8 @@ def ts(ps, cfgs, fname, title):
     plt.savefig(f"{homedir}/graphs/{fname}-traces.pdf", bbox_inches='tight')
     plt.show()
 
-def hist(bars, program, config, column, xlabel=False):
-
+def hist(program, config, column, xlabel=False):
+    bars = data[program][config][column]
     fig1, ax1 = plt.subplots(figsize=(5, 3))
 
     ax1.hist(bars, bins=30)
@@ -460,16 +473,14 @@ def hist(bars, program, config, column, xlabel=False):
 
     if config == "t1":
         ax1.set_xticks([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-    plt.tight_layout()
-    plt.savefig(f"{homedir}/graphs/{program}-{config}-{column}.pdf", bbox_inches='tight')
-    plt.close()
+    plt.show()
+    # plt.savefig(f"{homedir}/graphs/{program}-{config}-{column}.pdf", bbox_inches='tight')
+    # plt.close()
 
 
 
 columns = ['states', 'transitions', 'prop', 'sensitivity', 'nrmse', 'runtime', 't1']
            # 'min', 'avg', 'ultra', 'rmse', 'state coverage', 'transition coverage', 't2', 't3']
-
-
 
 if not os.path.exists(f"{homedir}/graphs"):
     os.mkdir(f"{homedir}/graphs")
@@ -485,11 +496,15 @@ else:
         # same for each trace set
         if 'pta' not in data[program]:
             data[program]['pta'] = pd.DataFrame(columns=columns)
+        
+        for i in range(1, 31):
+            dd = f"{homedir}/{program}30/{i}/none/{program}30-none-57831-60387-79031"
+            data[program]['pta'] = data[program]['pta'].append(pd.DataFrame(get_info(dd, "ptaLog.json"), index=[dd+"-pta"]))
             
         for log in os.listdir(f"{homedir}/{program}30"):
             configurations = os.listdir(f"{homedir}/{program}30/{log}")
 
-            for config in configurations:
+            for config in [c for c in configurations if c != "pta"]:
                 if config not in data[program]:
                     data[program][config] = pd.DataFrame(columns=columns)
 
@@ -498,24 +513,11 @@ else:
                 roots = ([f"{dd}/{d}" for d in os.listdir(dd)
                           if os.path.isdir(f"{dd}/{d}") and os.path.exists(f"{dd}/{d}/testLog.json")])
 
-                # TODO: DELETE THIS WHEN DRAWING ACTUAL RESULTS
-                # It just stops it erroring for stuff which timed out
-                if roots == []:
-                    continue
-
                 for r in roots:
                     try:
                         data[program][config] = data[program][config].append(pd.DataFrame(get_info(r, "testLog.json"), index=[r]))
                     except:
                         print(r)
-
-            # TODO: DELETE THIS WHEN DRAWING ACTUAL RESULTS
-            # It just stops it erroring for stuff which timed out
-            if roots == []:
-                # print(dd)
-                continue
-            if "MINT" not in roots[0]:
-                data[program]['pta'] = data[program]['pta'].append(pd.DataFrame(get_info(roots[0], "ptaLog.json"), index=[roots[0]+"-pta"]))
 
     with open(f'{homedir}/data.dic', 'wb') as f:
         pickle.dump(data, f)
@@ -608,9 +610,8 @@ if systems == ["liftDoors", "spaceInvaders"]:
 # t1 = list([mean(y) for y in data['spaceInvadersGuards']['gp']['sensitivity']])
 # ax.scatter(states, t1, color="b", marker='o')
 
-# states = list(data['spaceInvadersGuards']['gp-distinguish']['states'])
-# t1 = list([mean(y) for y in data['spaceInvadersGuards']['gp-distinguish']['sensitivity']])
-# ax.scatter(states, t1, color="r", marker='x')
+hist('spaceInvaders', 'MINT', 'sensitivity')
+hist('spaceInvaders', 'MINT', 'states')
 
 # ax.set_xlabel("Number of States")
 # ax.set_ylabel("Sensitivity")

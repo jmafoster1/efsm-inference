@@ -2,3 +2,4 @@ slurm-*.out
 *.pgf
 results/
 results-old
+*.zip

@@ -1,7 +1,7 @@
 subsection{*Example*}
 text{*This theory shows how contexts can be used to prove transition subsumption.*}
 theory Drinks_Subsumption
-imports "inference.Subsumption" "EFSM.Drinks_Machine_2"
+imports "EFSM_Inference.Subsumption" "EFSM.Drinks_Machine_2"
 begin
 
 lemma stop_at_3: "\<not>obtains 1 c drinks2 3 r t"
@@ -140,7 +140,7 @@ lemma directly_subsumes: "directly_subsumes drinks2 drinks 1 1 vend_fail vend_no
      apply (simp add: vend_fail_def vend_nothing_def)
     apply (simp add: vend_fail_def vend_nothing_def can_take value_gt_true)
    apply (simp add: vend_fail_def vend_nothing_def)
-  by (simp add: posterior_separate_def vend_fail_def vend_nothing_def)
+  by (simp add: posterior_separate_def vend_fail_def vend_nothing_def apply_updates_def)
 
 lemma directly_subsumes_flip: "directly_subsumes drinks2 drinks 1 1 vend_nothing vend_fail"
   apply (rule direct_subsumption[of _ _ _ _ "\<lambda>c2. c2 $ 2 = Some (Num 0)"])
@@ -149,6 +149,6 @@ lemma directly_subsumes_flip: "directly_subsumes drinks2 drinks 1 1 vend_nothing
      apply (simp add: vend_fail_def vend_nothing_def)
     apply (simp add: vend_fail_def vend_nothing_def can_take value_gt_true)
    apply (simp add: vend_fail_def vend_nothing_def can_take value_gt_true)
-  by (simp add: posterior_separate_def vend_fail_def vend_nothing_def)
+  by (simp add: posterior_separate_def vend_fail_def vend_nothing_def apply_updates_def finfun_upd_apply)
 
 end

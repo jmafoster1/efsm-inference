@@ -24,3 +24,5 @@ inference-tool/salfiles*
 inference-tool/dotfiles*
 
 output
+
+*.zip

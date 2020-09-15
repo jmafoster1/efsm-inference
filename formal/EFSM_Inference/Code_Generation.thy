@@ -442,6 +442,6 @@ export_code
   enumerate_vars
   derestrict
 in Scala
-file "../../inference-tool/src/main/scala/inference/Inference.scala"
+(* file "../../inference-tool/src/main/scala/inference/Inference.scala" *)
 
 end

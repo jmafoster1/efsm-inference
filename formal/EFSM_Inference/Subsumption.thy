@@ -110,7 +110,7 @@ lemma subsumes_update_equality:
 
 text_raw\<open>\snip{subsumptionReflexive}{1}{2}{%\<close>
 lemma subsumes_reflexive: "subsumes t c t"
-text_raw\<open>$\langle\isa{proof}\rangle$}%endsnip\<close>
+text_raw\<open>}%endsnip\<close>
   by (simp add: subsumes_def)
 
 text_raw\<open>\snip{subsumptionTransitive}{1}{2}{%\<close>
