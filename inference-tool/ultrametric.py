@@ -41,8 +41,8 @@ data = {
     "spaceInvadersGuards": {}
     }
 
-# systems = ["drinks", "spaceInvadersGuards"]
-systems = ["liftDoors", "spaceInvaders"]
+systems = ["drinks", "spaceInvadersGuards"]
+# systems = ["liftDoors", "spaceInvaders"]
 
 
 def configs(p):
@@ -342,6 +342,57 @@ def boxPlots(column, ps, fname, systems):
     plt.close()
 
 
+def statesPlots(column, ps, fname, systems):
+    size = 0
+    for p in systems:
+        for c in ps[p]:
+            size += 1
+    
+    fig = plt.figure(figsize=(0.8*size, 3))
+    spec = gridspec.GridSpec(nrows=1, ncols=3, width_ratios=[5, 9, 2])
+    axs = [fig.add_subplot(spec[i]) for i,_ in enumerate((spec))]
+    
+    # fig, axs = plt.subplots(nrows=1, ncols=len(systems)+1, figsize=(0.8*size, 3))
+    
+    print(f"box {fname}-{column} size: {size}")
+    
+    title = column.capitalize()
+    
+    for i, p in enumerate(systems):
+        ax = axs[i]
+        ax.yaxis.set_tick_params(which='both', labelleft=True)
+
+        cfgs = [c for c in configs(p) if c != "pta"]
+        
+        box1(column, p, cfgs, fname, r"\textsc{"+p+"} "+title, ax)
+    
+    ax1 = axs[len(systems)]
+    ax1.yaxis.set_tick_params(which='both', labelleft=True)
+
+    cfgs = ['pta']
+    
+    boxes = [data[p]['pta'][column].astype(float) for p in systems]
+
+    ax1.boxplot(boxes, widths=0.4)
+    
+    labels = [r"\textsc{"+p+"}\nPTA" for p in systems]
+    ax1.set_xticklabels(
+        labels,
+        rotation=45,
+        ha='right',
+        va='top',
+        ma='right',
+        rotation_mode="anchor"
+    )
+    ax1.tick_params(axis='both', labelsize=10)
+
+    axesColour(ax1)
+    ax1.set_title("PTA "+title)
+    ax1.margins()
+    plt.savefig(f"{homedir}/graphs/{fname}.pdf", bbox_inches='tight')
+    plt.close()
+
+
 def box(column, cfgs, fname, title, ps):
     if column == 't1' or column == "prop":
         boxes_aux = [data[p][c][column] for p in ps for c in cfgs if c in data[p]]
@@ -529,10 +580,14 @@ with open(f"{homedir}/mann-whitney-u.csv", 'w') as m:
     
 fname = "".join([p[:2] for p in systems])
 
+ps = {p:configs(p) for p in data}
+
 for column in [c for c in columns if c not in ['t2', 't3']]:
-    ps = {p:configs(p) for p in data}
-    
     boxPlots(column, ps, f"{fname}-{column}-plots", systems)
+
+statesPlots("states", ps, f"{fname}-states-plots", systems)
+statesPlots("transitions", ps, f"{fname}-transitions-plots", systems)
+
 
 for program in data:
     # for column in [c for c in columns if c not in ['t2', 't3']]:
@@ -581,7 +636,7 @@ if systems == ["liftDoors", "spaceInvaders"]:
     # ts(ps, cfgs, fname, "Trace Parts")
     box("sensitivity", cfgs, fname, "Sensitivity", systems)
     box("nrmse", cfgs, fname, "NRMSE", systems)
-    box("prop", cfgs, fname, "Proportion of Correct events", systems)
+    box("prop", cfgs, fname, "Proportion of Correct Events", systems)
     box("t1", cfgs, fname, "Proportional Lengths of Accepted Prefixes", systems)
     
     
