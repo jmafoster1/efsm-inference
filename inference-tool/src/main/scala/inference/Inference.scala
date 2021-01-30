@@ -2251,8 +2251,9 @@ def infer_with_log(failedMerges: Set.set[(Nat.nat, Nat.nat)], k: Nat.nat,
   =
   {
     val scores: FSet.fset[Inference.score_ext[Unit]] =
-      (if (Nat.equal_nata(k, Nat.Nata((1)))) Inference.score_1(e, r)
-        else Inference.k_score(k, e, r));
+      (if (Nat.equal_nata(k, Nat.Nata((1))))
+        Inference.score_1(e, r, failedMerges)
+        else Inference.k_score(k, e, r, failedMerges));
     (Inference.inference_step(failedMerges, e,
                                FSet.ffilter[Inference.score_ext[Unit]](((s:
                                    Inference.score_ext[Unit])
@@ -2542,6 +2543,18 @@ Transition.transition_ext[Unit])]) =>
                                     m, check, np)
   }
 
+def match_outputs[A](x0: (AExp.aexp[A], AExp.aexp[A])): Boolean = x0 match {
+  case (AExp.L(m), AExp.L(n)) => Value.equal_valuea(m, n)
+  case (AExp.V(vb), va) => true
+  case (AExp.Plus(vb, vc), va) => true
+  case (AExp.Minus(vb, vc), va) => true
+  case (AExp.Times(vb, vc), va) => true
+  case (v, AExp.V(vb)) => true
+  case (v, AExp.Plus(vb, vc)) => true
+  case (v, AExp.Minus(vb, vc)) => true
+  case (v, AExp.Times(vb, vc)) => true
+}
+
 def bool2nat(x0: Boolean): Nat.nat = x0 match {
   case true => Nat.Nata((1))
   case false => Nat.zero_nata
@@ -2553,8 +2566,16 @@ def score_transitions(t1: Transition.transition_ext[Unit],
   =
   (if ((Transition.Label[Unit](t1) ==
          Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
-                  Transition.Arity[Unit](t2))) && (Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](t1)).par.length),
-                           Nat.Nata((Transition.Outputs[Unit](t2)).par.length)))))
+                  Transition.Arity[Unit](t2))) && ((Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](t1)).par.length),
+                            Nat.Nata((Transition.Outputs[Unit](t2)).par.length))) && (Lista.list_all[Boolean](((x:
+                                  Boolean)
+                                 =>
+                                x),
+                               Lista.map[(AExp.aexp[VName.vname],
+   AExp.aexp[VName.vname]),
+  Boolean](((a: (AExp.aexp[VName.vname], AExp.aexp[VName.vname])) =>
+             match_outputs[VName.vname](a)),
+            (Transition.Outputs[Unit](t1)).par.zip(Transition.Outputs[Unit](t2)).toList))))))
     Nat.plus_nata(Nat.plus_nata(Nat.plus_nata(Nat.plus_nata(Nat.Nata((1)),
                      bool2nat(Transition.equal_transition_exta[Unit](t1, t2))),
        Finite_Set.card[GExp.gexp[VName.vname]](Set.inf_set[GExp.gexp[VName.vname]](Set.seta[GExp.gexp[VName.vname]](Transition.Guards[Unit](t2)),
@@ -3295,6 +3316,107 @@ def paths_of_length(m: Nat.nat,
       a)
          })
 
+def choosePairs(e: FSet.fset[(List[Nat.nat],
+                               ((Nat.nat, Nat.nat),
+                                 Transition.transition_ext[Unit]))],
+                 failedMerges: Set.set[(Nat.nat, Nat.nat)]):
+      FSet.fset[(Nat.nat, Nat.nat)]
+  =
+  {
+    val states: FSet.fset[Nat.nat] = S(e)
+    val pairs_to_score: FSet.fset[(Nat.nat, Nat.nat)] =
+      FSet.ffilter[(Nat.nat,
+                     Nat.nat)](((a: (Nat.nat, Nat.nat)) =>
+                                 {
+                                   val (x, y): (Nat.nat, Nat.nat) = a;
+                                   (Nat.less_nat(x,
+          y)) && ((! (Set.member[(Nat.nat,
+                                   Nat.nat)]((x, y),
+      failedMerges))) && ((! (Set.member[(Nat.nat,
+   Nat.nat)]((y, x),
+              failedMerges))) && ({
+                                    val allOutgoingX:
+  FSet.fset[(List[Nat.nat],
+              ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+                                      = FSet.ffilter[(List[Nat.nat],
+               ((Nat.nat, Nat.nat),
+                 Transition.transition_ext[Unit]))](((aa:
+                (List[Nat.nat],
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
+               =>
+              {
+                val (_, ab):
+                      (List[Nat.nat],
+                        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))
+                  = aa
+                val (ac, b):
+                      ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])
+                  = ab;
+                ({
+                   val (_, to): (Nat.nat, Nat.nat) = ac;
+                   ((_: Transition.transition_ext[Unit]) =>
+                     Nat.equal_nata(to, x))
+                 })(b)
+              }),
+             e)
+                                    val allOutgoingY:
+  FSet.fset[(List[Nat.nat],
+              ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
+                                      = FSet.ffilter[(List[Nat.nat],
+               ((Nat.nat, Nat.nat),
+                 Transition.transition_ext[Unit]))](((aa:
+                (List[Nat.nat],
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
+               =>
+              {
+                val (_, ab):
+                      (List[Nat.nat],
+                        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))
+                  = aa
+                val (ac, b):
+                      ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])
+                  = ab;
+                ({
+                   val (_, to): (Nat.nat, Nat.nat) = ac;
+                   ((_: Transition.transition_ext[Unit]) =>
+                     Nat.equal_nata(to, y))
+                 })(b)
+              }),
+             e);
+                                    FSet.fBex[(List[Nat.nat],
+        ((Nat.nat, Nat.nat),
+          Transition.transition_ext[Unit]))](allOutgoingX,
+      ((aa: (List[Nat.nat],
+              ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])))
+         =>
+        {
+          val (_, (_, t)):
+                (List[Nat.nat],
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))
+            = aa;
+          FSet.fBex[(List[Nat.nat],
+                      ((Nat.nat, Nat.nat),
+                        Transition.transition_ext[Unit]))](allOutgoingY,
+                    ((ab: (List[Nat.nat],
+                            ((Nat.nat, Nat.nat),
+                              Transition.transition_ext[Unit])))
+                       =>
+                      {
+                        val (_, (_, ta)):
+                              (List[Nat.nat],
+                                ((Nat.nat, Nat.nat),
+                                  Transition.transition_ext[Unit]))
+                          = ab;
+                        Nat.less_nat(Nat.zero_nata, score_transitions(t, ta))
+                      }))
+        }))
+                                  })))
+                                 }),
+                                FSet_Utils.fprod[Nat.nat,
+          Nat.nat](states, states));
+    pairs_to_score
+  }
+
 def k_score(k: Nat.nat,
              e: FSet.fset[(List[Nat.nat],
                             ((Nat.nat, Nat.nat),
@@ -3305,20 +3427,13 @@ def k_score(k: Nat.nat,
                    (FSet.fset[(List[Nat.nat],
                                 ((Nat.nat, Nat.nat),
                                   Transition.transition_ext[Unit]))]) =>
-                     Nat.nat):
+                     Nat.nat,
+             failedMerges: Set.set[(Nat.nat, Nat.nat)]):
       FSet.fset[score_ext[Unit]]
   =
   {
-    val states: FSet.fset[Nat.nat] = S(e)
     val pairs_to_score: FSet.fset[(Nat.nat, Nat.nat)] =
-      FSet.ffilter[(Nat.nat,
-                     Nat.nat)](((a: (Nat.nat, Nat.nat)) =>
-                                 {
-                                   val (aa, b): (Nat.nat, Nat.nat) = a;
-                                   Nat.less_nat(aa, b)
-                                 }),
-                                FSet_Utils.fprod[Nat.nat,
-          Nat.nat](states, states))
+      choosePairs(e, failedMerges)
     val paths:
           FSet.fset[(Nat.nat,
                       (Nat.nat,
@@ -3452,20 +3567,13 @@ def score_1(e: FSet.fset[(List[Nat.nat],
                    (FSet.fset[(List[Nat.nat],
                                 ((Nat.nat, Nat.nat),
                                   Transition.transition_ext[Unit]))]) =>
-                     Nat.nat):
+                     Nat.nat,
+             failedMerges: Set.set[(Nat.nat, Nat.nat)]):
       FSet.fset[score_ext[Unit]]
   =
   {
-    val states: FSet.fset[Nat.nat] = S(e)
     val pairs_to_score: FSet.fset[(Nat.nat, Nat.nat)] =
-      FSet.ffilter[(Nat.nat,
-                     Nat.nat)](((a: (Nat.nat, Nat.nat)) =>
-                                 {
-                                   val (aa, b): (Nat.nat, Nat.nat) = a;
-                                   Nat.less_nat(aa, b)
-                                 }),
-                                FSet_Utils.fprod[Nat.nat,
-          Nat.nat](states, states))
+      choosePairs(e, failedMerges)
     val a: FSet.fset[score_ext[Unit]] =
       FSet.fimage[(Nat.nat, Nat.nat),
                    score_ext[Unit]](((a: (Nat.nat, Nat.nat)) =>

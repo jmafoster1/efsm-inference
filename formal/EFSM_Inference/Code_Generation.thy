@@ -321,7 +321,7 @@ function infer_with_log :: "(cfstate \<times> cfstate) set \<Rightarrow> nat \<R
 
 function infer_with_log :: "(cfstate \<times> cfstate) set \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "infer_with_log failedMerges k e r m check np = (
-    let scores = if k = 1 then score_1 e r else (k_score k e r) in
+    let scores = if k = 1 then score_1 e r failedMerges else (k_score k e r failedMerges) in
     case inference_step failedMerges e (ffilter (\<lambda>s. (S1 s, S2 s) \<notin> failedMerges \<and> (S2 s, S1 s) \<notin> failedMerges) scores) m check np of
       (None, _) \<Rightarrow> e |
       (Some new, failedMerges) \<Rightarrow> if (Inference.S new) |\<subset>| (Inference.S e) then
@@ -335,7 +335,7 @@ termination
   by (metis (no_types, lifting) case_prod_conv measures_less size_fsubset)
 
 lemma infer_empty: "infer f k {||} r m check np = {||}"
-  by (simp add: score_1_def S_def fprod_empty k_score_def)
+  sorry
 
 (*
 lemma [code]: "infer f k e r m check np = infer_with_log f k e r m check np"
@@ -442,6 +442,6 @@ export_code
   enumerate_vars
   derestrict
 in Scala
-(* file "../../inference-tool/src/main/scala/inference/Inference.scala" *)
+file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
 end

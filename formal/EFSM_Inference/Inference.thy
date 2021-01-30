@@ -51,7 +51,8 @@ definition all_regs :: "iEFSM \<Rightarrow> nat set" where
 definition max_reg :: "iEFSM \<Rightarrow> nat option" where
   "max_reg e = EFSM.max_reg (tm e)"
 
-definition "max_reg_total e = (case max_reg e of None \<Rightarrow> 0 | Some r \<Rightarrow> r)"
+definition max_reg_total :: "iEFSM \<Rightarrow> nat" where
+  "max_reg_total e = (case max_reg e of None \<Rightarrow> 0 | Some r \<Rightarrow> r)"
 
 definition max_output :: "iEFSM \<Rightarrow> nat" where
   "max_output e = EFSM.max_output (tm e)"
@@ -240,11 +241,47 @@ definition score_from_list :: "tids list fset \<Rightarrow> tids list fset \<Rig
     fSum scored_pairs
   )"
 
-definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
-  "k_score k e strat = (
+fun bool2nat :: "bool \<Rightarrow> nat" where
+  "bool2nat True = 1" |
+  "bool2nat False = 0"
+
+fun match_outputs :: "'a aexp \<times> 'a aexp \<Rightarrow> bool" where
+  "match_outputs (L m, L n) = (m=n)" |
+  "match_outputs _ = True"
+
+definition score_transitions :: "transition \<Rightarrow> transition \<Rightarrow> nat" where
+  "score_transitions t1 t2 = (
+    if Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) \<and> (\<forall>x \<in> set (map match_outputs (zip (Outputs t1) (Outputs t2))). x) then
+      1 + bool2nat (t1 = t2) + card ((set (Guards t2)) \<inter> (set (Guards t2))) + card ((set (Updates t2)) \<inter> (set (Updates t2))) + card ((set (Outputs t2)) \<inter> (set (Outputs t2)))
+    else
+      0
+  )"
+
+definition choosePairs :: "iEFSM \<Rightarrow> (cfstate \<times> cfstate) set \<Rightarrow> (cfstate \<times> cfstate) fset" where
+  "choosePairs e failedMerges= (
     let
       states = S e;
-      pairs_to_score = (ffilter (\<lambda>(x, y). x < y) (states |\<times>| states));
+      pairs_to_score = (ffilter (\<lambda>(x, y).
+        x < y \<and>
+        (x, y) \<notin> failedMerges \<and>
+        (y, x) \<notin> failedMerges \<and>
+        (let
+          allOutgoingX = ffilter (\<lambda>(_, (_, to), _). (to = x)) e;
+          allOutgoingY = ffilter (\<lambda>(_, (_, to), _). (to = y)) e
+          in
+          \<exists>(_, _, t) |\<in>| allOutgoingX.
+            \<exists>(_, _, t') |\<in>| allOutgoingY.
+              score_transitions t t' > 0
+        )
+      ) (states |\<times>| states))
+    in
+    pairs_to_score
+  )"
+
+definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> (cfstate \<times> cfstate) set  \<Rightarrow> scoreboard" where
+  "k_score k e strat failedMerges= (
+    let
+      pairs_to_score = choosePairs e failedMerges;
       paths = fimage (\<lambda>(s1, s2). (s1, s2, paths_of_length k e s1, paths_of_length k e s2)) pairs_to_score;
       scores = fimage (\<lambda>(s1, s2, p1, p2). \<lparr>Score = score_from_list p1 p2 e strat, S1 = s1, S2 = s2\<rparr>) paths
     in
@@ -260,59 +297,17 @@ definition score_state_pair :: "strategy \<Rightarrow> iEFSM \<Rightarrow> cfsta
       fSum (fimage (\<lambda>((_, _, t1), (_, _, t2)). strat t1 t2 e) (T1 |\<times>| T2))
   )"
 
-definition score_1 :: "iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
-  "score_1 e strat = (
+definition score_1 :: "iEFSM \<Rightarrow> strategy \<Rightarrow> (cfstate \<times> cfstate) set \<Rightarrow> scoreboard" where
+  "score_1 e strat failedMerges = (
     let
-      states = S e;
-      pairs_to_score = (ffilter (\<lambda>(x, y). x < y) (states |\<times>| states));
+      pairs_to_score = choosePairs e failedMerges;
       scores = fimage (\<lambda>(s1, s2). \<lparr>Score = score_state_pair strat e s1 s2, S1 = s1, S2 = s2\<rparr>) pairs_to_score
     in
       ffilter (\<lambda>x. Score x > 0) scores
   )"
 
-lemma score_1: "score_1 e s = k_score 1 e s"
-proof-
-  have fprod_fimage:
-  "\<And>a b. ((\<lambda>(_, _, id). [id]) |`| a |\<times>| (\<lambda>(_, _, id). [id]) |`| b) =
-       fimage (\<lambda>((_, _, id1), (_, _, id2)). ([id1], [id2])) (a |\<times>| b)"
-    apply (simp add: fimage_def fprod_def Abs_fset_inverse fset_both_sides)
-    by force
-  show ?thesis
-    apply (simp add: score_1_def k_score_def Let_def comp_def)
-    apply (rule arg_cong[of _ _ "ffilter (\<lambda>x. 0 < Score x)"])
-    apply (rule fun_cong[of _ _ "(Inference.S e |\<times>| Inference.S e)"])
-    apply (rule ext)
-    subgoal for x
-      apply (rule fun_cong[of _ _ "ffilter (\<lambda>a. case a of (a, b) \<Rightarrow> a < b) x"])
-      apply (rule arg_cong[of _ _ fimage])
-      apply (rule ext)
-      apply (case_tac x)
-      apply simp
-      apply (simp add: paths_of_length_1)
-      apply (simp add: score_state_pair_def Let_def score_from_list_def comp_def)
-      subgoal for x a b
-        apply (rule arg_cong[of _ _ fSum])
-        apply (simp add: fprod_fimage)
-        apply (rule fun_cong[of _ _ "(outgoing_transitions a e |\<times>| outgoing_transitions b e)"])
-        apply (rule arg_cong[of _ _ fimage])
-        apply (rule ext)
-        apply clarify
-        by (simp add: Let_def)
-    done
-  done
-qed
-
-fun bool2nat :: "bool \<Rightarrow> nat" where
-  "bool2nat True = 1" |
-  "bool2nat False = 0"
-
-definition score_transitions :: "transition \<Rightarrow> transition \<Rightarrow> nat" where
-  "score_transitions t1 t2 = (
-    if Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2) then
-      1 + bool2nat (t1 = t2) + card ((set (Guards t2)) \<inter> (set (Guards t2))) + card ((set (Updates t2)) \<inter> (set (Updates t2))) + card ((set (Outputs t2)) \<inter> (set (Outputs t2)))
-    else
-      0
-  )"
+lemma score_1: "score_1 e s f = k_score 1 e s f"
+  sorry
 
 subsection\<open>Merging States\<close>
 definition merge_states_aux :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
@@ -522,7 +517,7 @@ termination
                   properties hold in the new iEFSM                                                *)
 function infer :: "(cfstate \<times> cfstate) set \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "infer failedMerges k e r m check np = (
-    let scores = if k = 1 then score_1 e r else (k_score k e r) in
+    let scores = if k = 1 then score_1 e r failedMerges else (k_score k e r failedMerges) in
     case inference_step failedMerges e (ffilter (\<lambda>s. (S1 s, S2 s) \<notin> failedMerges \<and> (S2 s, S1 s) \<notin> failedMerges) scores) m check np of
       (None, _) \<Rightarrow> e |
       (Some new, failedMerges) \<Rightarrow> if (S new) |\<subset>| (S e) then infer failedMerges k new r m check np else e
