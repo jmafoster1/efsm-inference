@@ -1,5 +1,7 @@
 #!/bin/bash
-#SBATCH --mem=6000
+#SBATCH --nodes=1
+#sBatch -c=4
+#SBATCH --mem=8000
 #SBATCH --time=24:00:00
 #SBATCH --mail-user=jmafoster1@sheffield.ac.uk
 
@@ -7,7 +9,6 @@ module load Java/11
 
 echo "sbatch bessemer-run.sh "$@
 export LD_LIBRARY_PATH=/home/acp17jmf/z3/build
-export MALLOC_ARENA_MAX=1
 
 IFS='-' # hyphen (-) is set as delimiter
 read -ra ADDR <<< "$4" # str is read into an array as tokens separated by IFS

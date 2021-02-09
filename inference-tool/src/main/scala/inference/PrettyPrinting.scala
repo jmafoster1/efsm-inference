@@ -92,7 +92,7 @@ object PrettyPrinter {
 
   def outputToString(o: Option[Value.value]): String = o match {
     case Some(p) => show(p)
-    case None => "NONE!!!"
+    case None => "null"
   }
 
   def show[X: ClassManifest](o: List[Option[Value.value]]) = s"""[${o.map(outputToString).mkString(", ")}]"""
