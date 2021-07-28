@@ -13,8 +13,8 @@ import os
 
 numTraces = 30
 
-# outfile = "spaceInvaders"
-outfile = "liftDoors"
+outfile = "spaceInvaders"
+#outfile = "liftDoors"
 
 outfile += str(numTraces)
 
@@ -119,13 +119,13 @@ def obfuscate_inputs(trace, obfuscated_inputs):
 
 seeds = []
 
-with open("/home/michael/Documents/efsm-inference/inference-tool/experimental-data/seeds") as f:
+with open("/tmp/inference-tool/experimental-data/seeds") as f:
     for line in f:
         lst = line.strip().split(" ")
         seeds.append((int(lst[0]), int(lst[1]), int(lst[2])))
 
 for sample in range(1, 31):
-    newRoot = f"/home/michael/Documents/efsm-inference/inference-tool/experimental-data/{outfile}-{sample}/"
+    newRoot = f"/tmp/inference-tool/experimental-data/{outfile}-{sample}/"
     
     if not os.path.exists(newRoot):
         os.mkdir(newRoot)
@@ -155,6 +155,8 @@ for sample in range(1, 31):
     
     traces = [trace for trace in traces if len(trace) >= 5]
     print(len(traces), "traces in total")
+    events = sum([len(trace) for trace in traces])
+    print(events, "events in total")
     
     traces = random.sample(traces, 2*numTraces)
     

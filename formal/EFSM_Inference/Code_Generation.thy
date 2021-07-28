@@ -335,7 +335,7 @@ termination
   by (metis (no_types, lifting) case_prod_conv measures_less size_fsubset)
 
 lemma infer_empty: "infer f k {||} r m check np = {||}"
-  sorry
+  by (simp add: score_1_def choosePairs_def S_def fprod_empty k_score_def)
 
 (*
 lemma [code]: "infer f k e r m check np = infer_with_log f k e r m check np"

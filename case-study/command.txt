@@ -1,1 +1,0 @@
-strace -v -qq ls |& b3 >> ~/Documents/case-study/strace-traces/ls/ls-home.json

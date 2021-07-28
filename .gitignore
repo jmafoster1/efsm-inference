@@ -16,9 +16,6 @@ inference-tool/project/target/
 inference-tool/project/project
 inference-tool/target/
 
-# Ignore Isabelle output
-formal/output/
-
 # ignore output files
 inference-tool/salfiles*
 inference-tool/dotfiles*

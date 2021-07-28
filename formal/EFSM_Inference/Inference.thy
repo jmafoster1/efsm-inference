@@ -306,8 +306,49 @@ definition score_1 :: "iEFSM \<Rightarrow> strategy \<Rightarrow> (cfstate \<tim
       ffilter (\<lambda>x. Score x > 0) scores
   )"
 
+lemma score_1_aux: "((\<lambda>(s1, s2). \<lparr>Score = score_state_pair s e s1 s2, S1 = s1, S2 = s2\<rparr>)) =
+     ((\<lambda>x. case case x of (s1, s2) \<Rightarrow> (s1, s2, paths_of_length 1 e s1, paths_of_length 1 e s2) of
+           (s1, s2, p1, p2) \<Rightarrow> \<lparr>Score = score_from_list p1 p2 e s, S1 = s1, S2 = s2\<rparr>)) \<Longrightarrow>
+ffilter (\<lambda>x. 0 < Score x) ((\<lambda>(s1, s2). \<lparr>Score = score_state_pair s e s1 s2, S1 = s1, S2 = s2\<rparr>) |`| choosePairs e f) =
+    ffilter (\<lambda>x. 0 < Score x)
+     ((\<lambda>x. case case x of (s1, s2) \<Rightarrow> (s1, s2, paths_of_length 1 e s1, paths_of_length 1 e s2) of
+           (s1, s2, p1, p2) \<Rightarrow> \<lparr>Score = score_from_list p1 p2 e s, S1 = s1, S2 = s2\<rparr>) |`|
+      choosePairs e f)"
+  by simp
+
+fun step_score_aux :: "((cfstate \<times> transition \<times> tids) \<times> (cfstate \<times> transition \<times> tids)) \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> nat" where
+  "step_score_aux ((_, _, id1), (_, _, id2)) e s = step_score (zip [id1] [id2]) e s"
+
+lemma f_equal: "(\<And>e. e |\<in>| f \<Longrightarrow> e |\<in>| f')\<Longrightarrow> (\<And> e. e |\<in>| f' \<Longrightarrow> e |\<in>| f) \<Longrightarrow> f = f'"
+  by auto
+
+lemma fin_fimage: "e |\<in>| fimage ff f = (\<exists>e'. e' |\<in>| f \<and> ff e' = e)"
+  by auto
+
+lemma fin_fprod: "(a, b) |\<in>| A |\<times>| B = (a |\<in>| A \<and> b |\<in>| B)"
+  by (simp add: fmember.rep_eq fprod.rep_eq)
+
+lemma step_score_aux: "(\<lambda>x. step_score (case x of (x, xa) \<Rightarrow> zip x xa) e s) |`| ((\<lambda>(d, t, id). [id]) |`| a |\<times>| (\<lambda>(d, t, id). [id]) |`| b) =
+(\<lambda>x. step_score_aux x e s) |`| (a |\<times>| b)"
+  apply (rule f_equal)
+   apply (simp add: fin_fimage fin_fprod, fastforce)
+  by (simp add: fin_fimage fin_fprod, fastforce)
+
 lemma score_1: "score_1 e s f = k_score 1 e s f"
-  sorry
+  apply (simp add: score_1_def k_score_def comp_def)
+  apply (rule score_1_aux)
+  apply (rule ext)
+  apply clarsimp
+  apply (simp add: score_state_pair_def score_from_list_def paths_of_length_1 comp_def)
+  subgoal for a b
+    apply (rule arg_cong[of "((\<lambda>((uu1, uu2, t1), uu3, uu4, t2). s t1 t2 e) |`|
+                 (Inference.outgoing_transitions a e |\<times>| Inference.outgoing_transitions b e))"])
+    apply (simp add: step_score_aux)
+    apply (rule arg_cong[of "(\<lambda>((ua, ub, t1), uc, ud, t2). s t1 t2 e)"])
+    apply (rule ext)
+    apply clarsimp
+    by (simp add: Let_def)
+  done
 
 subsection\<open>Merging States\<close>
 definition merge_states_aux :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where

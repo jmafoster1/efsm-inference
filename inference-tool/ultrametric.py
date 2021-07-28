@@ -48,17 +48,18 @@ systems = ["liftDoors", "spaceInvaders"]
 def configs(p):
     if p == "liftDoors":
         return [
-            'pta',
-            'none',
+            # 'pta',
+            # 'none',
+            'MINT',
             'gp',
             # 'obfuscated-time-none',
-            'obfuscated-time-gp',
-            'MINT'
+            'obfuscated-time-gp'
             ]
     if p == "spaceInvaders":
         return [
-            'pta',
-            'none',
+            # 'pta',
+            # 'none',
+            'MINT',
             'gp',
             # 'obfuscated-aliens-none',
             'obfuscated-aliens-gp',
@@ -66,7 +67,6 @@ def configs(p):
             'obfuscated-shields-gp',
             # 'obfuscated-x-none',
             'obfuscated-x-gp',
-            'MINT',
             # Extras
             'obfuscated-aliens-x-gp',
             'obfuscated-x-shields-gp',
@@ -294,11 +294,11 @@ def box1(column, program, cfgs, fname, title, ax1):
     #         ax1.plot(w_x, w_y, color="k", linewidth=1)
     #         ax1.plot(c_x, c_y, color="k", linewidth=1)
 
-    labels = [" ".join(c.replace("obfuscated", "obfuscated\n").replace("none", "no preprocessing").replace("distinguish", "\nguards").replace("gp", "GP").split("-")) for c in cfgs]
+    labels = [" ".join(c.replace("obfuscated", "obfuscated\n").replace("pta", "PTA").replace("none", "without\npreprocessing").replace("distinguish", "\nguards").replace("gp", "GP").split("-")) for c in cfgs]
     # ax1.set_xticks(range(0, len(labels)+1))
     ax1.set_xticklabels(
         labels,
-        rotation=45,
+        rotation=30,
         ha='right',
         va='top',
         ma='right',
@@ -324,10 +324,10 @@ def boxPlots(column, ps, fname, systems):
         ncols=len(systems),
         sharex='col',
         sharey='row',
-        figsize=(0.8*size, 3),
+        figsize=(0.8*size, 2.5),
         gridspec_kw={'width_ratios': [len(ps[p]) for p in systems]}
         )
-    plt.subplots_adjust(wspace=0.08)
+    # plt.subplots_adjust(wspace=0.08)
     
     print(f"box {fname}-{column} size: {size}")
     
@@ -343,8 +343,8 @@ def boxPlots(column, ps, fname, systems):
         ax.yaxis.set_tick_params(which='both', labelleft=True)
 
         cfgs = configs(p)
-        if column not in ["states", "transitions", "runtime"]:
-            cfgs = [c for c in cfgs if c != "MINT"]
+        # if column not in ["states", "transitions", "runtime"]:
+        #     cfgs = [c for c in cfgs if c != "MINT"]
         
         box1(column, p, cfgs, fname, r"\textsc{"+p+"} "+title, ax)
 

@@ -1,0 +1,5 @@
+# Ignore Isabelle output
+formal/output/
+
+# Ignore code snippets
+snippets.tex
