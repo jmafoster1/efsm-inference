@@ -1,6 +1,6 @@
 # EFSM Inference
 
-EFSM inference tool which takes in system execution traces and returns an EFSM model of the observed behaviour. The inference process is formalised in [Isabelle/HOL](https://www.isa-afp.org/entries/Extended_Finite_State_Machine_Inference.html) and then exported to an executable tool using the code generator. Further details of the process can be found in \[[1]("#subsumptionPaper"), [2]("#inferencePaper")\].
+EFSM inference tool which takes in system execution traces and returns an EFSM model of the observed behaviour. The inference process is formalised in [Isabelle/HOL](https://www.isa-afp.org/entries/Extended_Finite_State_Machine_Inference.html) and then exported to an executable tool using the code generator. Further details of the process can be found in \[[1](#subsumptionPaper), [2](#inferencePaper)\].
 
 ## Install requirements
 In order to run the tool, certain requirements must be met:
