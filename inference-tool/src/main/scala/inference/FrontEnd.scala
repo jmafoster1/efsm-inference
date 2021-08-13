@@ -62,14 +62,10 @@ object FrontEnd {
         Config.heuristics,
         Config.config.nondeterminismMetric)
 
-        // TypeConversion.doubleEFSMToSALTranslator(Inference.tm(pta), "pta", Inference.tm(inferred), "vend1", "compositionTest", false)
-        // TypeConversion.efsmToSALTranslator(Inference.tm(inferred), "inferred")
-
         Log.root.info("The inferred machine is " +
           (if (Inference.nondeterministic(inferred, Inference.nondeterministic_pairs)) "non" else "") + "deterministic")
 
         val basename = (if (Config.config.outputname == null) (FilenameUtils.getBaseName(Config.config.trainFile.getName()).replace("-", "_")) else Config.config.outputname.replace("-", "_"))
-        // TypeConversion.efsmToSALTranslator(Inference.tm(inferred), basename)
 
         PrettyPrinter.iEFSM2dot(inferred, s"${basename}_gen")
         val seconds = (System.nanoTime - t1) / 1e9d

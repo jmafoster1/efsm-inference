@@ -727,7 +727,7 @@ def upt_tailrec(i: Nat.nat, j: Nat.nat, l: List[Nat.nat]): List[Nat.nat] =
   (if (Nat.equal_nata(j, Nat.zero_nata)) l
     else (if (Nat.less_eq_nat(i, Nat.minus_nat(j, Nat.Nata((1)))))
            upt_tailrec(i, Nat.minus_nat(j, Nat.Nata((1))),
-                        List(Nat.minus_nat(j, Nat.Nata((1)))) ++ l)
+                        ((Nat.minus_nat(j, Nat.Nata((1))))::Nil) ++ l)
            else l))
 
 } /* object Code_Target_List */
@@ -750,8 +750,8 @@ def upt(i: Nat.nat, j: Nat.nat): List[Nat.nat] =
 
 def drop[A](n: Nat.nat, x1: List[A]): List[A] = (n, x1) match {
   case (n, Nil) => Nil
-  case (n, x :: xs) =>
-    (if (Nat.equal_nata(n, Nat.zero_nata)) x :: xs
+  case (n, (x::xs)) =>
+    (if (Nat.equal_nata(n, Nat.zero_nata)) (x::xs)
       else drop[A](Nat.minus_nat(n, Nat.Nata((1))), xs))
 }
 
@@ -764,7 +764,7 @@ def foldr[A, B](f: A => B => B, xs: List[A], a: B): B =
   Dirties.foldl[B, A](((x: B) => (y: A) => (f(y))(x)), a, xs.par.reverse.toList)
 
 def insert[A](x: A, xs: List[A]): List[A] =
-  (if (xs.contains(x)) xs else x :: xs)
+  (if (xs.contains(x)) xs else (x::xs))
 
 def union[A]: (List[A]) => (List[A]) => List[A] =
   ((a: List[A]) => (b: List[A]) =>
@@ -780,10 +780,10 @@ def product[A, B](xs: List[A], ys: List[B]): List[(A, B)] =
   maps[A, (A, B)](((x: A) => map[B, (A, B)](((a: B) => (x, a)), ys)), xs)
 
 def subseqs[A](x0: List[A]): List[List[A]] = x0 match {
-  case Nil => List(Nil)
-  case x :: xs => {
+  case Nil => (Nil::Nil)
+  case (x::xs) => {
                     val xss: List[List[A]] = subseqs[A](xs);
-                    map[List[A], List[A]](((a: List[A]) => x :: a), xss) ++ xss
+                    map[List[A], List[A]](((a: List[A]) => (x::a)), xss) ++ xss
                   }
 }
 
@@ -792,50 +792,48 @@ def enumerate[A](n: Nat.nat, xs: List[A]): List[(Nat.nat, A)] =
 
 def takeWhile[A](p: A => Boolean, x1: List[A]): List[A] = (p, x1) match {
   case (p, Nil) => Nil
-  case (p, x :: xs) => (if (p(x)) x :: takeWhile[A](p, xs) else Nil)
+  case (p, (x::xs)) => (if (p(x)) (x::(takeWhile[A](p, xs))) else Nil)
 }
 
 def transpose[A](x0: List[List[A]]): List[List[A]] = x0 match {
   case Nil => Nil
-  case Nil :: xss => transpose[A](xss)
-  case (x :: xs) :: xss =>
-    (x :: maps[List[A],
-                A](((a: List[A]) => (a match {
-                                       case Nil => Nil
-                                       case h :: _ => List(h)
-                                     })),
-                    xss)) ::
-      transpose[A](xs :: maps[List[A],
-                               List[A]](((a: List[A]) =>
-  (a match {
+  case (Nil::xss) => transpose[A](xss)
+  case (((x::xs))::xss) =>
+    (((x::(maps[List[A],
+                 A](((a: List[A]) => (a match {
+case Nil => Nil
+case (h::_) => (h::Nil)
+                                      })),
+                     xss))))::(transpose[A]((xs::(maps[List[A],
+                List[A]](((a: List[A]) => (a match {
      case Nil => Nil
-     case _ :: t => List(t)
+     case (_::t) => (t::Nil)
    })),
- xss))
+                          xss))))))
 }
 
 def list_update[A](x0: List[A], i: Nat.nat, y: A): List[A] = (x0, i, y) match {
   case (Nil, i, y) => Nil
-  case (x :: xs, i, y) =>
-    (if (Nat.equal_nata(i, Nat.zero_nata)) y :: xs
-      else x :: list_update[A](xs, Nat.minus_nat(i, Nat.Nata((1))), y))
+  case ((x::xs), i, y) =>
+    (if (Nat.equal_nata(i, Nat.zero_nata)) (y::xs)
+      else (x::(list_update[A](xs, Nat.minus_nat(i, Nat.Nata((1))), y))))
 }
 
 def map_tailrec_rev[A, B](f: A => B, x1: List[A], bs: List[B]): List[B] =
   (f, x1, bs) match {
   case (f, Nil, bs) => bs
-  case (f, a :: as, bs) => map_tailrec_rev[A, B](f, as, f(a) :: bs)
+  case (f, (a::as), bs) => map_tailrec_rev[A, B](f, as, ((f(a))::bs))
 }
 
 def map_tailrec[A, B](f: A => B, as: List[A]): List[B] =
   (map_tailrec_rev[A, B](f, as, Nil)).par.reverse.toList
 
 def product_lists[A](x0: List[List[A]]): List[List[A]] = x0 match {
-  case Nil => List(Nil)
-  case xs :: xss =>
+  case Nil => (Nil::Nil)
+  case (xs::xss) =>
     maps[A, List[A]](((x: A) =>
                        map[List[A],
-                            List[A]](((a: List[A]) => x :: a),
+                            List[A]](((a: List[A]) => (x::a)),
                                       product_lists[A](xss))),
                       xs)
 }
@@ -844,10 +842,10 @@ def insort_key[A, B : Orderings.linorder](f: A => B, x: A, xa2: List[A]):
       List[A]
   =
   (f, x, xa2) match {
-  case (f, x, Nil) => List(x)
-  case (f, x, y :: ys) =>
-    (if (Orderings.less_eq[B](f(x), f(y))) x :: y :: ys
-      else y :: insort_key[A, B](f, x, ys))
+  case (f, x, Nil) => (x::Nil)
+  case (f, x, (y::ys)) =>
+    (if (Orderings.less_eq[B](f(x), f(y))) (x::((y::ys)))
+      else (y::(insort_key[A, B](f, x, ys))))
 }
 
 def sort_key[A, B : Orderings.linorder](f: A => B, xs: List[A]): List[A] =
@@ -902,7 +900,7 @@ def filter[A](p: A => Boolean, x1: set[A]): set[A] = (p, x1) match {
 }
 
 def insert[A](x: A, xa1: set[A]): set[A] = (x, xa1) match {
-  case (x, seta(s)) => (if (s.contains(x)) seta[A](s) else seta[A](x :: s))
+  case (x, seta(s)) => (if (s.contains(x)) seta[A](s) else seta[A]((x::s)))
 }
 
 def member[A](x: A, xa1: set[A]): Boolean = (x, xa1) match {
@@ -1258,12 +1256,12 @@ def Sup_set[A](x0: Set.set[Set.set[A]]): Set.set[A] = x0 match {
 object Lattices_Big {
 
 def Max[A : Orderings.linorder](x0: Set.set[A]): A = x0 match {
-  case Set.seta(x :: xs) =>
+  case Set.seta((x::xs)) =>
     Lista.fold[A, A](((a: A) => (b: A) => Orderings.max[A](a, b)), xs, x)
 }
 
 def Min[A : Orderings.linorder](x0: Set.set[A]): A = x0 match {
-  case Set.seta(x :: xs) =>
+  case Set.seta((x::xs)) =>
     Lista.fold[A, A](((a: A) => (b: A) => Orderings.min[A](a, b)), xs, x)
 }
 
@@ -1403,7 +1401,7 @@ def gval[A](x0: gexp[A], uu: A => Option[Value.value]): Trilean.trilean =
 
 def fold_In[A](uu: A, x1: List[Value.value]): gexp[A] = (uu, x1) match {
   case (uu, Nil) => Bc[A](false)
-  case (v, l :: t) =>
+  case (v, (l::t)) =>
     gOr[A](Eq[A](AExp.V[A](v), AExp.L[A](l)), fold_In[A](v, t))
 }
 
@@ -1732,20 +1730,20 @@ def less_eq_list[A : HOL.equal : Orderings.order](x0: List[A], xs: List[A]):
       Boolean
   =
   (x0, xs) match {
-  case (x :: xs, y :: ys) =>
+  case ((x::xs), (y::ys)) =>
     (Orderings.less[A](x, y)) || ((HOL.eq[A](x,
       y)) && (less_eq_list[A](xs, ys)))
   case (Nil, xs) => true
-  case (x :: xs, Nil) => false
+  case ((x::xs), Nil) => false
 }
 
 def less_list[A : HOL.equal : Orderings.order](xs: List[A], x1: List[A]):
       Boolean
   =
   (xs, x1) match {
-  case (x :: xs, y :: ys) =>
+  case ((x::xs), (y::ys)) =>
     (Orderings.less[A](x, y)) || ((HOL.eq[A](x, y)) && (less_list[A](xs, ys)))
-  case (Nil, x :: xs) => true
+  case (Nil, (x::xs)) => true
   case (xs, Nil) => false
 }
 
@@ -2015,15 +2013,15 @@ def fset[A](x0: fset[A]): Set.set[A] = x0 match {
 }
 
 def fthe_elem[A](x0: fset[A]): A = x0 match {
-  case fset_of_list(List(x)) => x
+  case fset_of_list((x::Nil)) => x
 }
 
 def fMax[A : Orderings.linorder](x0: fset[A]): A = x0 match {
-  case fset_of_list(h :: t) => t.par.fold(h)(Orderings.max)
+  case fset_of_list((h::t)) => t.par.fold(h)(Orderings.max)
 }
 
 def fMin[A : Orderings.linorder](x0: fset[A]): A = x0 match {
-  case fset_of_list(h :: t) => t.par.fold(h)(Orderings.min)
+  case fset_of_list((h::t)) => t.par.fold(h)(Orderings.min)
 }
 
 def sorted_list_of_fset[A : Orderings.linorder](x0: fset[A]): List[A] = x0 match
@@ -2282,41 +2280,41 @@ def guardMatch_code(uu: List[GExp.gexp[VName.vname]],
       Boolean
   =
   (uu, uv) match {
-  case (List(GExp.Eq(AExp.V(VName.I(ia)), AExp.L(Value.Numa(na)))),
-         List(GExp.Eq(AExp.V(VName.I(i)), AExp.L(Value.Numa(n)))))
+  case (((GExp.Eq(AExp.V(VName.I(ia)), AExp.L(Value.Numa(na))))::Nil),
+         ((GExp.Eq(AExp.V(VName.I(i)), AExp.L(Value.Numa(n))))::Nil))
     => (Nat.equal_nata(ia, Nat.zero_nata)) && (Nat.equal_nata(i, Nat.zero_nata))
   case (Nil, uv) => false
-  case (GExp.Bc(vb) :: va, uv) => false
-  case (GExp.Eq(AExp.L(vd), vc) :: va, uv) => false
-  case (GExp.Eq(AExp.V(VName.R(ve)), vc) :: va, uv) => false
-  case (GExp.Eq(AExp.Plus(vd, ve), vc) :: va, uv) => false
-  case (GExp.Eq(AExp.Minus(vd, ve), vc) :: va, uv) => false
-  case (GExp.Eq(AExp.Times(vd, ve), vc) :: va, uv) => false
-  case (GExp.Eq(vb, AExp.L(Value.Str(ve))) :: va, uv) => false
-  case (GExp.Eq(vb, AExp.V(vd)) :: va, uv) => false
-  case (GExp.Eq(vb, AExp.Plus(vd, ve)) :: va, uv) => false
-  case (GExp.Eq(vb, AExp.Minus(vd, ve)) :: va, uv) => false
-  case (GExp.Eq(vb, AExp.Times(vd, ve)) :: va, uv) => false
-  case (GExp.Gt(vb, vc) :: va, uv) => false
-  case (GExp.In(vb, vc) :: va, uv) => false
-  case (GExp.Nor(vb, vc) :: va, uv) => false
-  case (v :: vb :: vc, uv) => false
+  case (((GExp.Bc(vb))::va), uv) => false
+  case (((GExp.Eq(AExp.L(vd), vc))::va), uv) => false
+  case (((GExp.Eq(AExp.V(VName.R(ve)), vc))::va), uv) => false
+  case (((GExp.Eq(AExp.Plus(vd, ve), vc))::va), uv) => false
+  case (((GExp.Eq(AExp.Minus(vd, ve), vc))::va), uv) => false
+  case (((GExp.Eq(AExp.Times(vd, ve), vc))::va), uv) => false
+  case (((GExp.Eq(vb, AExp.L(Value.Str(ve))))::va), uv) => false
+  case (((GExp.Eq(vb, AExp.V(vd)))::va), uv) => false
+  case (((GExp.Eq(vb, AExp.Plus(vd, ve)))::va), uv) => false
+  case (((GExp.Eq(vb, AExp.Minus(vd, ve)))::va), uv) => false
+  case (((GExp.Eq(vb, AExp.Times(vd, ve)))::va), uv) => false
+  case (((GExp.Gt(vb, vc))::va), uv) => false
+  case (((GExp.In(vb, vc))::va), uv) => false
+  case (((GExp.Nor(vb, vc))::va), uv) => false
+  case ((v::((vb::vc))), uv) => false
   case (uu, Nil) => false
-  case (uu, GExp.Bc(vb) :: va) => false
-  case (uu, GExp.Eq(AExp.L(vd), vc) :: va) => false
-  case (uu, GExp.Eq(AExp.V(VName.R(ve)), vc) :: va) => false
-  case (uu, GExp.Eq(AExp.Plus(vd, ve), vc) :: va) => false
-  case (uu, GExp.Eq(AExp.Minus(vd, ve), vc) :: va) => false
-  case (uu, GExp.Eq(AExp.Times(vd, ve), vc) :: va) => false
-  case (uu, GExp.Eq(vb, AExp.L(Value.Str(ve))) :: va) => false
-  case (uu, GExp.Eq(vb, AExp.V(vd)) :: va) => false
-  case (uu, GExp.Eq(vb, AExp.Plus(vd, ve)) :: va) => false
-  case (uu, GExp.Eq(vb, AExp.Minus(vd, ve)) :: va) => false
-  case (uu, GExp.Eq(vb, AExp.Times(vd, ve)) :: va) => false
-  case (uu, GExp.Gt(vb, vc) :: va) => false
-  case (uu, GExp.In(vb, vc) :: va) => false
-  case (uu, GExp.Nor(vb, vc) :: va) => false
-  case (uu, v :: vb :: vc) => false
+  case (uu, ((GExp.Bc(vb))::va)) => false
+  case (uu, ((GExp.Eq(AExp.L(vd), vc))::va)) => false
+  case (uu, ((GExp.Eq(AExp.V(VName.R(ve)), vc))::va)) => false
+  case (uu, ((GExp.Eq(AExp.Plus(vd, ve), vc))::va)) => false
+  case (uu, ((GExp.Eq(AExp.Minus(vd, ve), vc))::va)) => false
+  case (uu, ((GExp.Eq(AExp.Times(vd, ve), vc))::va)) => false
+  case (uu, ((GExp.Eq(vb, AExp.L(Value.Str(ve))))::va)) => false
+  case (uu, ((GExp.Eq(vb, AExp.V(vd)))::va)) => false
+  case (uu, ((GExp.Eq(vb, AExp.Plus(vd, ve)))::va)) => false
+  case (uu, ((GExp.Eq(vb, AExp.Minus(vd, ve)))::va)) => false
+  case (uu, ((GExp.Eq(vb, AExp.Times(vd, ve)))::va)) => false
+  case (uu, ((GExp.Gt(vb, vc))::va)) => false
+  case (uu, ((GExp.In(vb, vc))::va)) => false
+  case (uu, ((GExp.Nor(vb, vc))::va)) => false
+  case (uu, (v::((vb::vc)))) => false
 }
 
 def outputMatch_code(uu: List[AExp.aexp[VName.vname]],
@@ -2324,21 +2322,21 @@ def outputMatch_code(uu: List[AExp.aexp[VName.vname]],
       Boolean
   =
   (uu, uv) match {
-  case (List(AExp.L(Value.Numa(na))), List(AExp.L(Value.Numa(n)))) => true
+  case (((AExp.L(Value.Numa(na)))::Nil), ((AExp.L(Value.Numa(n)))::Nil)) => true
   case (Nil, uv) => false
-  case (AExp.L(Value.Str(vc)) :: va, uv) => false
-  case (AExp.V(vb) :: va, uv) => false
-  case (AExp.Plus(vb, vc) :: va, uv) => false
-  case (AExp.Minus(vb, vc) :: va, uv) => false
-  case (AExp.Times(vb, vc) :: va, uv) => false
-  case (v :: vb :: vc, uv) => false
+  case (((AExp.L(Value.Str(vc)))::va), uv) => false
+  case (((AExp.V(vb))::va), uv) => false
+  case (((AExp.Plus(vb, vc))::va), uv) => false
+  case (((AExp.Minus(vb, vc))::va), uv) => false
+  case (((AExp.Times(vb, vc))::va), uv) => false
+  case ((v::((vb::vc))), uv) => false
   case (uu, Nil) => false
-  case (uu, AExp.L(Value.Str(vc)) :: va) => false
-  case (uu, AExp.V(vb) :: va) => false
-  case (uu, AExp.Plus(vb, vc) :: va) => false
-  case (uu, AExp.Minus(vb, vc) :: va) => false
-  case (uu, AExp.Times(vb, vc) :: va) => false
-  case (uu, v :: vb :: vc) => false
+  case (uu, ((AExp.L(Value.Str(vc)))::va)) => false
+  case (uu, ((AExp.V(vb))::va)) => false
+  case (uu, ((AExp.Plus(vb, vc))::va)) => false
+  case (uu, ((AExp.Minus(vb, vc))::va)) => false
+  case (uu, ((AExp.Times(vb, vc))::va)) => false
+  case (uu, (v::((vb::vc)))) => false
 }
 
 } /* object Code_Generation */
@@ -2927,7 +2925,7 @@ def merge_transitions(failedMerges: Set.set[(Nat.nat, Nat.nat)],
   =
   (if (Lista.list_all[Nat.nat](((id: Nat.nat) =>
                                  Subsumption.directly_subsumes(tm(oldEFSM),
-                        tm(destMerge), origin(List(id), oldEFSM),
+                        tm(destMerge), origin((id::Nil), oldEFSM),
                         origin(u1, destMerge), t2, t1)),
                                 u1))
     Some[FSet.fset[(List[Nat.nat],
@@ -2936,8 +2934,8 @@ def merge_transitions(failedMerges: Set.set[(Nat.nat, Nat.nat)],
   u1, u2))
     else (if (Lista.list_all[Nat.nat](((id: Nat.nat) =>
 Subsumption.directly_subsumes(tm(oldEFSM), tm(destMerge),
-                               origin(List(id), oldEFSM), origin(u2, destMerge),
-                               t1, t2)),
+                               origin((id::Nil), oldEFSM),
+                               origin(u2, destMerge), t1, t2)),
                                        u2))
            Some[FSet.fset[(List[Nat.nat],
                             ((Nat.nat, Nat.nat),
@@ -3067,7 +3065,7 @@ def resolve_nondeterminism(failedMerges: Set.set[(Nat.nat, Nat.nat)],
                           Transition.transition_ext[Unit]))]](newEFSM)
        else None),
       failedMerges)
-  case (failedMerges, (from, ((dest1, dest2), ((t1, u1), (t2, u2)))) :: ss,
+  case (failedMerges, ((from, ((dest1, dest2), ((t1, u1), (t2, u2))))::ss),
          oldEFSM, newEFSM, m, check, np)
     => (if ((Set.member[(Nat.nat,
                           Nat.nat)]((dest1, dest2),
@@ -3306,7 +3304,7 @@ def paths_of_length(m: Nat.nat,
                   = a;
                 FSet.fimage[List[List[Nat.nat]],
                              List[List[Nat.nat]]](((aa: List[List[Nat.nat]]) =>
-            id :: aa),
+            (id::aa)),
            paths_of_length(Nat.minus_nat(m, Nat.Nata((1))), uu, d))
               }),
              outgoing));
@@ -3353,9 +3351,9 @@ def choosePairs(e: FSet.fset[(List[Nat.nat],
                       ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])
                   = ab;
                 ({
-                   val (_, to): (Nat.nat, Nat.nat) = ac;
+                   val (from, _): (Nat.nat, Nat.nat) = ac;
                    ((_: Transition.transition_ext[Unit]) =>
-                     Nat.equal_nata(to, x))
+                     Nat.equal_nata(from, x))
                  })(b)
               }),
              e)
@@ -3377,9 +3375,9 @@ def choosePairs(e: FSet.fset[(List[Nat.nat],
                       ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])
                   = ab;
                 ({
-                   val (_, to): (Nat.nat, Nat.nat) = ac;
+                   val (from, _): (Nat.nat, Nat.nat) = ac;
                    ((_: Transition.transition_ext[Unit]) =>
-                     Nat.equal_nata(to, y))
+                     Nat.equal_nata(from, y))
                  })(b)
               }),
              e);
@@ -3608,17 +3606,17 @@ def max_uid_total(e: FSet.fset[(List[Nat.nat],
 def make_outputs(x0: List[Value.value]): List[AExp.aexp[VName.vname]] = x0 match
   {
   case Nil => Nil
-  case h :: t => AExp.L[VName.vname](h) :: make_outputs(t)
+  case (h::t) => ((AExp.L[VName.vname](h))::(make_outputs(t)))
 }
 
 def make_guard(x0: List[Value.value], uu: Nat.nat): List[GExp.gexp[VName.vname]]
   =
   (x0, uu) match {
   case (Nil, uu) => Nil
-  case (h :: t, n) =>
-    GExp.Eq[VName.vname](AExp.V[VName.vname](VName.I(n)),
-                          AExp.L[VName.vname](h)) ::
-      make_guard(t, Nat.plus_nata(n, Nat.Nata((1))))
+  case ((h::t), n) =>
+    ((GExp.Eq[VName.vname](AExp.V[VName.vname](VName.I(n)),
+                            AExp.L[VName.vname](h)))::(make_guard(t,
+                           Nat.plus_nata(n, Nat.Nata((1))))))
 }
 
 def add_transition(e: FSet.fset[(List[Nat.nat],
@@ -3631,8 +3629,8 @@ def add_transition(e: FSet.fset[(List[Nat.nat],
   =
   FSet.finsert[(List[Nat.nat],
                  ((Nat.nat, Nat.nat),
-                   Transition.transition_ext[Unit]))]((List(Nat.plus_nata(max_uid_total(e),
-                                   Nat.Nata((1)))),
+                   Transition.transition_ext[Unit]))]((((Nat.plus_nata(max_uid_total(e),
+                                Nat.Nata((1))))::Nil),
                 ((s, Nat.plus_nata(EFSM.maxS(tm(e)), Nat.Nata((1)))),
                   Transition.transition_exta[Unit](label,
             Nat.Nata(inputs.par.length), make_guard(inputs, Nat.zero_nata),
@@ -3649,7 +3647,7 @@ def make_branch(e: FSet.fset[(List[Nat.nat],
   =
   (e, uu, uv, x3) match {
   case (e, uu, uv, Nil) => e
-  case (e, s, r, (label, (inputs, outputs)) :: t) =>
+  case (e, s, r, ((label, (inputs, outputs))::t)) =>
     (EFSM.step(tm(e), s, r, label, inputs) match {
        case None =>
          make_branch(add_transition(e, s, label, inputs, outputs),
@@ -3772,7 +3770,7 @@ def test_trace(x0: List[(String, (List[Value.value], List[Value.value]))],
   =
   (x0, uu, uv, uw) match {
   case (Nil, uu, uv, uw) => (Nil, Nil)
-  case ((l, (i, expected)) :: es, e, s, r) =>
+  case (((l, (i, expected))::es), e, s, r) =>
     {
       val ps: FSet.fset[(List[Nat.nat],
                           (Nat.nat, Transition.transition_ext[Unit]))]
@@ -3812,9 +3810,9 @@ Transition.transition_ext[Unit]))](ps))
                                     List[Option[Value.value]])))))))],
                   List[(String, (List[Value.value], List[Value.value]))])
             = a;
-          ((l, (i, (s, (sa, (r, (id, (expected, actual))))))) :: est, aa)
+          (((l, (i, (s, (sa, (r, (id, (expected, actual)))))))::est), aa)
         }
-        else (Nil, (l, (i, expected)) :: es))
+        else (Nil, ((l, (i, expected))::es)))
     }
 }
 
@@ -4177,7 +4175,7 @@ def try_heuristics_check(uu: (FSet.fset[((Nat.nat, Nat.nat),
             Boolean)
         =>
       null_modifier(a, b, c, d, e, f, g))
-  case (check, h :: t) =>
+  case (check, (h::t)) =>
     ((a: List[Nat.nat]) => (b: List[Nat.nat]) => (c: Nat.nat) =>
       (d: FSet.fset[(List[Nat.nat],
                       ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))])
@@ -4621,7 +4619,7 @@ def accepts_trace_prim(uu: FSet.fset[((Nat.nat, Nat.nat),
   =
   (uu, uv, uw, x3) match {
   case (uu, uv, uw, Nil) => true
-  case (e, s, r, (l, (i, p)) :: t) =>
+  case (e, s, r, ((l, (i, p))::t)) =>
     {
       val poss_steps: FSet.fset[(Nat.nat, Transition.transition_ext[Unit])] =
         possible_steps(e, s, r, l, i);
@@ -4691,7 +4689,7 @@ def recognises_prim(e: FSet.fset[((Nat.nat, Nat.nat),
   =
   (e, s, r, x3) match {
   case (e, s, r, Nil) => true
-  case (e, s, r, (l, i) :: t) =>
+  case (e, s, r, ((l, i)::t)) =>
     {
       val poss_steps: FSet.fset[(Nat.nat, Transition.transition_ext[Unit])] =
         possible_steps(e, s, r, l, i);
@@ -4752,16 +4750,15 @@ def updates2dot_aux(l: List[(Nat.nat, AExp.aexp[VName.vname])]): List[String] =
 def updates2dot(x0: List[(Nat.nat, AExp.aexp[VName.vname])]): String = x0 match
   {
   case Nil => ""
-  case v :: va => "&#91;" + (updates2dot_aux(v :: va)).mkString(", ") + "&#93;"
+  case (v::va) => "&#91;" + (updates2dot_aux((v::va))).mkString(", ") + "&#93;"
 }
 
 def outputs2dot(x0: List[AExp.aexp[VName.vname]], uu: Nat.nat): List[String] =
   (x0, uu) match {
   case (Nil, uu) => Nil
-  case (h :: t, n) =>
-    "o<sub>" + Code_Numeral.integer_of_nat(n).toString() + "</sub> := " +
-      aexp2dot(h) ::
-      outputs2dot(t, Nat.plus_nata(n, Nat.Nata((1))))
+  case ((h::t), n) =>
+    (("o<sub>" + Code_Numeral.integer_of_nat(n).toString() + "</sub> := " +
+       aexp2dot(h))::(outputs2dot(t, Nat.plus_nata(n, Nat.Nata((1))))))
 }
 
 def latter2dot(t: Transition.transition_ext[Unit]): String =
@@ -4792,7 +4789,7 @@ def guards2dot_aux(l: List[GExp.gexp[VName.vname]]): List[String] =
 
 def guards2dot(x0: List[GExp.gexp[VName.vname]]): String = x0 match {
   case Nil => ""
-  case v :: va => "&#91;" + (guards2dot_aux(v :: va)).mkString(", ") + "&#93;"
+  case (v::va) => "&#91;" + (guards2dot_aux((v::va))).mkString(", ") + "&#93;"
 }
 
 def transition2dot(t: Transition.transition_ext[Unit]): String =
@@ -4990,127 +4987,15 @@ object Group_By {
 def group_by[A](f: A => A => Boolean, x1: List[A]): List[List[A]] = (f, x1)
   match {
   case (f, Nil) => Nil
-  case (f, h :: t) =>
+  case (f, (h::t)) =>
     {
       val group: List[A] = Lista.takeWhile[A](f(h), t)
       val dropped: List[A] = Lista.drop[A](Nat.Nata(group.par.length), t);
-      (h :: group) :: group_by[A](f, dropped)
+      (((h::group))::(group_by[A](f, dropped)))
     }
 }
 
 } /* object Group_By */
-
-object efsm2sal {
-
-def escape(s: String, replacements: List[(String, String)]): String =
-  Lista.fold[(String, String),
-              String](((a: (String, String)) =>
-                        {
-                          val (old, newa): (String, String) = a;
-                          ((sa: String) => sa.replaceAll(old, newa))
-                        }),
-                       replacements, s)
-
-def replacements: List[(String, String)] =
-  List(("/", "_SOL__"), ("\\" + "\\", "_BSOL__"), (" ", "_SPACE__"),
-        ("\\" + "(", "_LPAR__"), ("\\" + ")", "_RPAR__"),
-        ("\\" + ".", "_PERIOD__"), ("@", "_COMMAT__"))
-
-def aexp2sal(x0: AExp.aexp[VName.vname]): String = x0 match {
-  case AExp.L(Value.Numa(n)) =>
-    "Some(Num(" + Code_Numeral.integer_of_int(n).toString() + "))"
-  case AExp.L(Value.Str(n)) =>
-    "Some(Str(String__" +
-      (if (n == "") "_EMPTY__" else escape(n, replacements)) +
-      "))"
-  case AExp.V(VName.I(i)) =>
-    "Some(i(" + Code_Numeral.integer_of_nat(i).toString() + "))"
-  case AExp.V(VName.R(r)) => "r__" + Code_Numeral.integer_of_nat(r).toString()
-  case AExp.Plus(a1, a2) =>
-    "value_plus(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
-  case AExp.Minus(a1, a2) =>
-    "value_minus(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
-  case AExp.Times(a1, a2) =>
-    "value_times(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
-}
-
-def gexp2sal(x0: GExp.gexp[VName.vname]): String = x0 match {
-  case GExp.Bc(true) => "True"
-  case GExp.Bc(false) => "False"
-  case GExp.Eq(a1, a2) => "value_eq(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
-  case GExp.Gt(a1, a2) => "value_gt(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
-  case GExp.In(v, l) =>
-    (Lista.map[Value.value,
-                String](((la: Value.value) =>
-                          "gval(value_eq(" + aexp2sal(AExp.V[VName.vname](v)) +
-                            ", " +
-                            aexp2sal(AExp.L[VName.vname](la)) +
-                            "))"),
-                         l)).mkString(" OR ")
-  case GExp.Nor(g1, g2) =>
-    "NOT (gval(" + gexp2sal(g1) + ") OR gval( " + gexp2sal(g2) + "))"
-}
-
-def guards2sal(x0: List[GExp.gexp[VName.vname]]): String = x0 match {
-  case Nil => "TRUE"
-  case v :: va =>
-    (Lista.map[GExp.gexp[VName.vname],
-                String](((a: GExp.gexp[VName.vname]) => gexp2sal(a)),
-                         v :: va)).mkString(" AND ")
-}
-
-def aexp2sal_num(x0: AExp.aexp[VName.vname], uu: Nat.nat): String = (x0, uu)
-  match {
-  case (AExp.L(Value.Numa(n)), uu) =>
-    "Some(Num(" + Code_Numeral.integer_of_int(n).toString() + "))"
-  case (AExp.L(Value.Str(n)), uv) =>
-    "Some(Str(String__" +
-      (if (n == "") "_EMPTY__" else escape(n, replacements)) +
-      "))"
-  case (AExp.V(VName.I(i)), uw) =>
-    "Some(i(" + Code_Numeral.integer_of_nat(i).toString() + "))"
-  case (AExp.V(VName.R(i)), m) =>
-    "r__" + Code_Numeral.integer_of_nat(i).toString() + "." +
-      Code_Numeral.integer_of_nat(m).toString()
-  case (AExp.Plus(a1, a2), ux) =>
-    "value_plus(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
-  case (AExp.Minus(a1, a2), uy) =>
-    "value_minus(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
-  case (AExp.Times(a1, a2), uz) =>
-    "value_times(" + aexp2sal(a1) + ", " + aexp2sal(a2) + ")"
-}
-
-def gexp2sal_num(x0: GExp.gexp[VName.vname], uu: Nat.nat): String = (x0, uu)
-  match {
-  case (GExp.Bc(true), uu) => "True"
-  case (GExp.Bc(false), uv) => "False"
-  case (GExp.Eq(a1, a2), m) =>
-    "gval(value_eq(" + aexp2sal_num(a1, m) + ", " + aexp2sal_num(a2, m) + "))"
-  case (GExp.Gt(a1, a2), m) =>
-    "gval(value_gt(" + aexp2sal_num(a1, m) + ", " + aexp2sal_num(a2, m) + "))"
-  case (GExp.In(v, l), m) =>
-    (Lista.map[Value.value,
-                String](((la: Value.value) =>
-                          "gval(value_eq(" +
-                            aexp2sal_num(AExp.V[VName.vname](v), m) +
-                            ", " +
-                            aexp2sal_num(AExp.L[VName.vname](la), m) +
-                            "))"),
-                         l)).mkString(" OR ")
-  case (GExp.Nor(g1, g2), m) =>
-    "NOT (" + gexp2sal_num(g1, m) + " OR " + gexp2sal_num(g2, m) + ")"
-}
-
-def guards2sal_num(x0: List[GExp.gexp[VName.vname]], uu: Nat.nat): String =
-  (x0, uu) match {
-  case (Nil, uu) => "TRUE"
-  case (v :: va, m) =>
-    (Lista.map[GExp.gexp[VName.vname],
-                String](((g: GExp.gexp[VName.vname]) => gexp2sal_num(g, m)),
-                         v :: va)).mkString(" AND ")
-}
-
-} /* object efsm2sal */
 
 object Store_Reuse {
 
@@ -5136,7 +5021,7 @@ def less_eq_ioTag(x: ioTag, y: ioTag): Boolean =
 
 def count[A : HOL.equal](uu: A, x1: List[A]): Nat.nat = (uu, x1) match {
   case (uu, Nil) => Nat.zero_nata
-  case (a, h :: t) =>
+  case (a, (h::t)) =>
     (if (HOL.eq[A](a, h)) Nat.plus_nata(Nat.Nata((1)), count[A](a, t))
       else count[A](a, t))
 }
@@ -5146,7 +5031,7 @@ def index(x0: List[Value.value], uu: Nat.nat, uv: ioTag, uw: Nat.nat):
   =
   (x0, uu, uv, uw) match {
   case (Nil, uu, uv, uw) => FSet.bot_fset[(Nat.nat, (ioTag, Nat.nat))]
-  case (h :: t, actionNo, io, ind) =>
+  case ((h::t), actionNo, io, ind) =>
     FSet.finsert[(Nat.nat,
                    (ioTag,
                      Nat.nat))]((actionNo, (io, ind)),
@@ -5233,9 +5118,8 @@ def remove_guard_add_update(t: Transition.transition_ext[Unit], inputX: Nat.nat,
                                  AExp.V[VName.vname](VName.I(inputX))))),
                                   Transition.Guards[Unit](t)),
                                     Transition.Outputs[Unit](t),
-                                    (outputX,
-                                      AExp.V[VName.vname](VName.I(inputX))) ::
-                                      Transition.Updates[Unit](t),
+                                    ((outputX,
+                                       AExp.V[VName.vname](VName.I(inputX)))::(Transition.Updates[Unit](t))),
                                     ())
 
 def replaceAll(e: FSet.fset[(List[Nat.nat],
@@ -5289,7 +5173,7 @@ def generalise_transitions(x0: List[((((Transition.transition_ext[Unit],
   =
   (x0, e) match {
   case (Nil, e) => e
-  case (h :: t, e) =>
+  case ((h::t), e) =>
     {
       val a: ((((Transition.transition_ext[Unit], List[Nat.nat]),
                  (ioTag, Nat.nat)),
@@ -5704,9 +5588,8 @@ def remove_guards_add_update(t: Transition.transition_ext[Unit],
   Transition.transition_exta[Unit](Transition.Label[Unit](t),
                                     Transition.Arity[Unit](t), Nil,
                                     Transition.Outputs[Unit](t),
-                                    (outputX,
-                                      AExp.V[VName.vname](VName.I(inputX))) ::
-                                      Transition.Updates[Unit](t),
+                                    ((outputX,
+                                       AExp.V[VName.vname](VName.I(inputX)))::(Transition.Updates[Unit](t))),
                                     ())
 
 def structural_count(uu: ((Transition.transition_ext[Unit], (ioTag, Nat.nat)),
@@ -5719,7 +5602,7 @@ def structural_count(uu: ((Transition.transition_ext[Unit], (ioTag, Nat.nat)),
   =
   (uu, x1) match {
   case (uu, Nil) => Nat.zero_nata
-  case (a, ((t1, (io1, i1)), (t2, (io2, i2))) :: t) =>
+  case (a, (((t1, (io1, i1)), (t2, (io2, i2)))::t)) =>
     {
       val b: ((Transition.transition_ext[Unit], (ioTag, Nat.nat)),
                (Transition.transition_ext[Unit], (ioTag, Nat.nat)))
@@ -6010,7 +5893,7 @@ def walk_up_to(n: Nat.nat,
       (Transition.transition_ext[Unit], List[Nat.nat])
   =
   (n, e, s, r, x4) match {
-  case (n, e, s, r, h :: t) =>
+  case (n, e, s, r, (h::t)) =>
     {
       val (Some((transition, (sa, (uid, updated))))):
             Option[(Transition.transition_ext[Unit],
@@ -6257,7 +6140,7 @@ def merge_if_same(e: FSet.fset[(List[Nat.nat],
   =
   (e, uu, x2) match {
   case (e, uu, Nil) => e
-  case (e, check, (r1, r2) :: rs) =>
+  case (e, check, ((r1, r2)::rs)) =>
     {
       val transitions: FSet.fset[Transition.transition_ext[Unit]] =
         FSet.fimage[(List[Nat.nat],
@@ -6401,9 +6284,8 @@ def initialiseReg(t: Transition.transition_ext[Unit], newReg: Nat.nat):
                                     Transition.Arity[Unit](t),
                                     Transition.Guards[Unit](t),
                                     Transition.Outputs[Unit](t),
-                                    (newReg,
-                                      AExp.L[VName.vname](Value.Numa(Int.zero_int))) ::
-                                      Transition.Updates[Unit](t),
+                                    ((newReg,
+                                       AExp.L[VName.vname](Value.Numa(Int.zero_int)))::(Transition.Updates[Unit](t))),
                                     ())
 
 def struct_replace_all(e: FSet.fset[(List[Nat.nat],
@@ -6498,20 +6380,18 @@ def insert_increment_2(t1ID: List[Nat.nat], t2ID: List[Nat.nat], s: Nat.nat,
         val newT1: Transition.transition_ext[Unit] =
           Transition.transition_exta[Unit](Transition.Label[Unit](t1),
     Transition.Arity[Unit](t1), Nil,
-    List(AExp.Plus[VName.vname](AExp.V[VName.vname](newReg),
-                                 AExp.V[VName.vname](VName.I(Nat.zero_nata)))),
-    (r, AExp.Plus[VName.vname](AExp.V[VName.vname](newReg),
-                                AExp.V[VName.vname](VName.I(Nat.zero_nata)))) ::
-      Transition.Updates[Unit](t1),
+    ((AExp.Plus[VName.vname](AExp.V[VName.vname](newReg),
+                              AExp.V[VName.vname](VName.I(Nat.zero_nata))))::Nil),
+    ((r, AExp.Plus[VName.vname](AExp.V[VName.vname](newReg),
+                                 AExp.V[VName.vname](VName.I(Nat.zero_nata))))::(Transition.Updates[Unit](t1))),
     ())
         val newT2: Transition.transition_ext[Unit] =
           Transition.transition_exta[Unit](Transition.Label[Unit](t2),
     Transition.Arity[Unit](t2), Nil,
-    List(AExp.Plus[VName.vname](AExp.V[VName.vname](newReg),
-                                 AExp.V[VName.vname](VName.I(Nat.zero_nata)))),
-    (r, AExp.Plus[VName.vname](AExp.V[VName.vname](newReg),
-                                AExp.V[VName.vname](VName.I(Nat.zero_nata)))) ::
-      Transition.Updates[Unit](t2),
+    ((AExp.Plus[VName.vname](AExp.V[VName.vname](newReg),
+                              AExp.V[VName.vname](VName.I(Nat.zero_nata))))::Nil),
+    ((r, AExp.Plus[VName.vname](AExp.V[VName.vname](newReg),
+                                 AExp.V[VName.vname](VName.I(Nat.zero_nata))))::(Transition.Updates[Unit](t2))),
     ())
         val to_initialise:
               FSet.fset[(List[Nat.nat],
@@ -6650,7 +6530,7 @@ Transition.transition_ext[Unit]))],
               FSet.fset[(List[Nat.nat],
                           ((Nat.nat, Nat.nat),
                             Transition.transition_ext[Unit]))]
-          = Inference.replace_all(newa, List(t1ID, t2ID), maxT);
+          = Inference.replace_all(newa, (t1ID::((t2ID::Nil))), maxT);
         (if (check(Inference.tm(newEFSMmax)))
           Some[FSet.fset[(List[Nat.nat],
                            ((Nat.nat, Nat.nat),
@@ -6660,7 +6540,7 @@ Transition.transition_ext[Unit]))],
                        FSet.fset[(List[Nat.nat],
                                    ((Nat.nat, Nat.nat),
                                      Transition.transition_ext[Unit]))]
-                   = Inference.replace_all(newa, List(t1ID, t2ID), minT);
+                   = Inference.replace_all(newa, (t1ID::((t2ID::Nil))), minT);
                  (if (check(Inference.tm(newEFSMmin)))
                    Some[FSet.fset[(List[Nat.nat],
                                     ((Nat.nat, Nat.nat),
@@ -6701,45 +6581,47 @@ def merge_in_in(v: VName.vname, l: List[Value.value],
       List[GExp.gexp[VName.vname]]
   =
   (v, l, x2) match {
-  case (v, l, Nil) => List(GExp.In[VName.vname](v, l))
-  case (va, la, GExp.Eq(AExp.V(v), AExp.L(l)) :: t) =>
+  case (v, l, Nil) => ((GExp.In[VName.vname](v, l))::Nil)
+  case (va, la, ((GExp.Eq(AExp.V(v), AExp.L(l)))::t)) =>
     (if (VName.equal_vnamea(va, v))
-      GExp.In[VName.vname](va, Lista.insert[Value.value](l, la)) :: t
-      else GExp.Eq[VName.vname](AExp.V[VName.vname](v),
-                                 AExp.L[VName.vname](l)) ::
-             merge_in_in(va, la, t))
-  case (va, la, GExp.In(v, l) :: t) =>
+      ((GExp.In[VName.vname](va, Lista.insert[Value.value](l, la)))::t)
+      else ((GExp.Eq[VName.vname](AExp.V[VName.vname](v),
+                                   AExp.L[VName.vname](l)))::(merge_in_in(va,
+                                   la, t))))
+  case (va, la, ((GExp.In(v, l))::t)) =>
     (if (VName.equal_vnamea(va, v))
-      GExp.In[VName.vname](va, Lista.union[Value.value].apply(la).apply(l)) :: t
-      else GExp.In[VName.vname](v, l) :: merge_in_in(va, la, t))
-  case (v, l, GExp.Bc(va) :: t) =>
-    GExp.Bc[VName.vname](va) :: merge_in_in(v, l, t)
-  case (v, l, GExp.Eq(AExp.L(vc), vb) :: t) =>
-    GExp.Eq[VName.vname](AExp.L[VName.vname](vc), vb) :: merge_in_in(v, l, t)
-  case (v, l, GExp.Eq(AExp.Plus(vc, vd), vb) :: t) =>
-    GExp.Eq[VName.vname](AExp.Plus[VName.vname](vc, vd), vb) ::
-      merge_in_in(v, l, t)
-  case (v, l, GExp.Eq(AExp.Minus(vc, vd), vb) :: t) =>
-    GExp.Eq[VName.vname](AExp.Minus[VName.vname](vc, vd), vb) ::
-      merge_in_in(v, l, t)
-  case (v, l, GExp.Eq(AExp.Times(vc, vd), vb) :: t) =>
-    GExp.Eq[VName.vname](AExp.Times[VName.vname](vc, vd), vb) ::
-      merge_in_in(v, l, t)
-  case (v, l, GExp.Eq(va, AExp.V(vc)) :: t) =>
-    GExp.Eq[VName.vname](va, AExp.V[VName.vname](vc)) :: merge_in_in(v, l, t)
-  case (v, l, GExp.Eq(va, AExp.Plus(vc, vd)) :: t) =>
-    GExp.Eq[VName.vname](va, AExp.Plus[VName.vname](vc, vd)) ::
-      merge_in_in(v, l, t)
-  case (v, l, GExp.Eq(va, AExp.Minus(vc, vd)) :: t) =>
-    GExp.Eq[VName.vname](va, AExp.Minus[VName.vname](vc, vd)) ::
-      merge_in_in(v, l, t)
-  case (v, l, GExp.Eq(va, AExp.Times(vc, vd)) :: t) =>
-    GExp.Eq[VName.vname](va, AExp.Times[VName.vname](vc, vd)) ::
-      merge_in_in(v, l, t)
-  case (v, l, GExp.Gt(va, vb) :: t) =>
-    GExp.Gt[VName.vname](va, vb) :: merge_in_in(v, l, t)
-  case (v, l, GExp.Nor(va, vb) :: t) =>
-    GExp.Nor[VName.vname](va, vb) :: merge_in_in(v, l, t)
+      ((GExp.In[VName.vname](va, Lista.union[Value.value].apply(la).apply(l)))::t)
+      else ((GExp.In[VName.vname](v, l))::(merge_in_in(va, la, t))))
+  case (v, l, ((GExp.Bc(va))::t)) =>
+    ((GExp.Bc[VName.vname](va))::(merge_in_in(v, l, t)))
+  case (v, l, ((GExp.Eq(AExp.L(vc), vb))::t)) =>
+    ((GExp.Eq[VName.vname](AExp.L[VName.vname](vc),
+                            vb))::(merge_in_in(v, l, t)))
+  case (v, l, ((GExp.Eq(AExp.Plus(vc, vd), vb))::t)) =>
+    ((GExp.Eq[VName.vname](AExp.Plus[VName.vname](vc, vd),
+                            vb))::(merge_in_in(v, l, t)))
+  case (v, l, ((GExp.Eq(AExp.Minus(vc, vd), vb))::t)) =>
+    ((GExp.Eq[VName.vname](AExp.Minus[VName.vname](vc, vd),
+                            vb))::(merge_in_in(v, l, t)))
+  case (v, l, ((GExp.Eq(AExp.Times(vc, vd), vb))::t)) =>
+    ((GExp.Eq[VName.vname](AExp.Times[VName.vname](vc, vd),
+                            vb))::(merge_in_in(v, l, t)))
+  case (v, l, ((GExp.Eq(va, AExp.V(vc)))::t)) =>
+    ((GExp.Eq[VName.vname](va, AExp.V[VName.vname](vc)))::(merge_in_in(v, l,
+                                t)))
+  case (v, l, ((GExp.Eq(va, AExp.Plus(vc, vd)))::t)) =>
+    ((GExp.Eq[VName.vname](va, AExp.Plus[VName.vname](vc,
+               vd)))::(merge_in_in(v, l, t)))
+  case (v, l, ((GExp.Eq(va, AExp.Minus(vc, vd)))::t)) =>
+    ((GExp.Eq[VName.vname](va, AExp.Minus[VName.vname](vc,
+                vd)))::(merge_in_in(v, l, t)))
+  case (v, l, ((GExp.Eq(va, AExp.Times(vc, vd)))::t)) =>
+    ((GExp.Eq[VName.vname](va, AExp.Times[VName.vname](vc,
+                vd)))::(merge_in_in(v, l, t)))
+  case (v, l, ((GExp.Gt(va, vb))::t)) =>
+    ((GExp.Gt[VName.vname](va, vb))::(merge_in_in(v, l, t)))
+  case (v, l, ((GExp.Nor(va, vb))::t)) =>
+    ((GExp.Nor[VName.vname](va, vb))::(merge_in_in(v, l, t)))
 }
 
 def merge_in_eq(v: VName.vname, l: Value.value,
@@ -6748,45 +6630,48 @@ def merge_in_eq(v: VName.vname, l: Value.value,
   =
   (v, l, x2) match {
   case (v, l, Nil) =>
-    List(GExp.Eq[VName.vname](AExp.V[VName.vname](v), AExp.L[VName.vname](l)))
-  case (va, la, GExp.Eq(AExp.V(v), AExp.L(l)) :: t) =>
+    ((GExp.Eq[VName.vname](AExp.V[VName.vname](v),
+                            AExp.L[VName.vname](l)))::Nil)
+  case (va, la, ((GExp.Eq(AExp.V(v), AExp.L(l)))::t)) =>
     (if ((VName.equal_vnamea(va, v)) && (! (Value.equal_valuea(la, l))))
-      GExp.In[VName.vname](va, List(la, l)) :: t
-      else GExp.Eq[VName.vname](AExp.V[VName.vname](v),
-                                 AExp.L[VName.vname](l)) ::
-             merge_in_eq(va, la, t))
-  case (va, la, GExp.In(v, l) :: t) =>
+      ((GExp.In[VName.vname](va, (la::((l::Nil)))))::t)
+      else ((GExp.Eq[VName.vname](AExp.V[VName.vname](v),
+                                   AExp.L[VName.vname](l)))::(merge_in_eq(va,
+                                   la, t))))
+  case (va, la, ((GExp.In(v, l))::t)) =>
     (if (VName.equal_vnamea(va, v))
-      GExp.In[VName.vname](va, (la :: l).par.distinct.toList) :: t
-      else GExp.In[VName.vname](v, l) :: merge_in_eq(va, la, t))
-  case (v, l, GExp.Bc(va) :: t) =>
-    GExp.Bc[VName.vname](va) :: merge_in_eq(v, l, t)
-  case (v, l, GExp.Eq(AExp.L(vc), vb) :: t) =>
-    GExp.Eq[VName.vname](AExp.L[VName.vname](vc), vb) :: merge_in_eq(v, l, t)
-  case (v, l, GExp.Eq(AExp.Plus(vc, vd), vb) :: t) =>
-    GExp.Eq[VName.vname](AExp.Plus[VName.vname](vc, vd), vb) ::
-      merge_in_eq(v, l, t)
-  case (v, l, GExp.Eq(AExp.Minus(vc, vd), vb) :: t) =>
-    GExp.Eq[VName.vname](AExp.Minus[VName.vname](vc, vd), vb) ::
-      merge_in_eq(v, l, t)
-  case (v, l, GExp.Eq(AExp.Times(vc, vd), vb) :: t) =>
-    GExp.Eq[VName.vname](AExp.Times[VName.vname](vc, vd), vb) ::
-      merge_in_eq(v, l, t)
-  case (v, l, GExp.Eq(va, AExp.V(vc)) :: t) =>
-    GExp.Eq[VName.vname](va, AExp.V[VName.vname](vc)) :: merge_in_eq(v, l, t)
-  case (v, l, GExp.Eq(va, AExp.Plus(vc, vd)) :: t) =>
-    GExp.Eq[VName.vname](va, AExp.Plus[VName.vname](vc, vd)) ::
-      merge_in_eq(v, l, t)
-  case (v, l, GExp.Eq(va, AExp.Minus(vc, vd)) :: t) =>
-    GExp.Eq[VName.vname](va, AExp.Minus[VName.vname](vc, vd)) ::
-      merge_in_eq(v, l, t)
-  case (v, l, GExp.Eq(va, AExp.Times(vc, vd)) :: t) =>
-    GExp.Eq[VName.vname](va, AExp.Times[VName.vname](vc, vd)) ::
-      merge_in_eq(v, l, t)
-  case (v, l, GExp.Gt(va, vb) :: t) =>
-    GExp.Gt[VName.vname](va, vb) :: merge_in_eq(v, l, t)
-  case (v, l, GExp.Nor(va, vb) :: t) =>
-    GExp.Nor[VName.vname](va, vb) :: merge_in_eq(v, l, t)
+      ((GExp.In[VName.vname](va, ((la::l)).par.distinct.toList))::t)
+      else ((GExp.In[VName.vname](v, l))::(merge_in_eq(va, la, t))))
+  case (v, l, ((GExp.Bc(va))::t)) =>
+    ((GExp.Bc[VName.vname](va))::(merge_in_eq(v, l, t)))
+  case (v, l, ((GExp.Eq(AExp.L(vc), vb))::t)) =>
+    ((GExp.Eq[VName.vname](AExp.L[VName.vname](vc),
+                            vb))::(merge_in_eq(v, l, t)))
+  case (v, l, ((GExp.Eq(AExp.Plus(vc, vd), vb))::t)) =>
+    ((GExp.Eq[VName.vname](AExp.Plus[VName.vname](vc, vd),
+                            vb))::(merge_in_eq(v, l, t)))
+  case (v, l, ((GExp.Eq(AExp.Minus(vc, vd), vb))::t)) =>
+    ((GExp.Eq[VName.vname](AExp.Minus[VName.vname](vc, vd),
+                            vb))::(merge_in_eq(v, l, t)))
+  case (v, l, ((GExp.Eq(AExp.Times(vc, vd), vb))::t)) =>
+    ((GExp.Eq[VName.vname](AExp.Times[VName.vname](vc, vd),
+                            vb))::(merge_in_eq(v, l, t)))
+  case (v, l, ((GExp.Eq(va, AExp.V(vc)))::t)) =>
+    ((GExp.Eq[VName.vname](va, AExp.V[VName.vname](vc)))::(merge_in_eq(v, l,
+                                t)))
+  case (v, l, ((GExp.Eq(va, AExp.Plus(vc, vd)))::t)) =>
+    ((GExp.Eq[VName.vname](va, AExp.Plus[VName.vname](vc,
+               vd)))::(merge_in_eq(v, l, t)))
+  case (v, l, ((GExp.Eq(va, AExp.Minus(vc, vd)))::t)) =>
+    ((GExp.Eq[VName.vname](va, AExp.Minus[VName.vname](vc,
+                vd)))::(merge_in_eq(v, l, t)))
+  case (v, l, ((GExp.Eq(va, AExp.Times(vc, vd)))::t)) =>
+    ((GExp.Eq[VName.vname](va, AExp.Times[VName.vname](vc,
+                vd)))::(merge_in_eq(v, l, t)))
+  case (v, l, ((GExp.Gt(va, vb))::t)) =>
+    ((GExp.Gt[VName.vname](va, vb))::(merge_in_eq(v, l, t)))
+  case (v, l, ((GExp.Nor(va, vb))::t)) =>
+    ((GExp.Nor[VName.vname](va, vb))::(merge_in_eq(v, l, t)))
 }
 
 def merge_guards(x0: List[GExp.gexp[VName.vname]],
@@ -6795,36 +6680,37 @@ def merge_guards(x0: List[GExp.gexp[VName.vname]],
   =
   (x0, g2) match {
   case (Nil, g2) => g2
-  case (GExp.Eq(AExp.V(v), AExp.L(l)) :: t, g2) =>
+  case (((GExp.Eq(AExp.V(v), AExp.L(l)))::t), g2) =>
     merge_guards(t, merge_in_eq(v, l, g2))
-  case (GExp.In(v, l) :: t, g2) => merge_guards(t, merge_in_in(v, l, g2))
-  case (GExp.Bc(v) :: t, g2) => GExp.Bc[VName.vname](v) :: merge_guards(t, g2)
-  case (GExp.Eq(AExp.L(vb), va) :: t, g2) =>
-    GExp.Eq[VName.vname](AExp.L[VName.vname](vb), va) :: merge_guards(t, g2)
-  case (GExp.Eq(AExp.Plus(vb, vc), va) :: t, g2) =>
-    GExp.Eq[VName.vname](AExp.Plus[VName.vname](vb, vc), va) ::
-      merge_guards(t, g2)
-  case (GExp.Eq(AExp.Minus(vb, vc), va) :: t, g2) =>
-    GExp.Eq[VName.vname](AExp.Minus[VName.vname](vb, vc), va) ::
-      merge_guards(t, g2)
-  case (GExp.Eq(AExp.Times(vb, vc), va) :: t, g2) =>
-    GExp.Eq[VName.vname](AExp.Times[VName.vname](vb, vc), va) ::
-      merge_guards(t, g2)
-  case (GExp.Eq(v, AExp.V(vb)) :: t, g2) =>
-    GExp.Eq[VName.vname](v, AExp.V[VName.vname](vb)) :: merge_guards(t, g2)
-  case (GExp.Eq(v, AExp.Plus(vb, vc)) :: t, g2) =>
-    GExp.Eq[VName.vname](v, AExp.Plus[VName.vname](vb, vc)) ::
-      merge_guards(t, g2)
-  case (GExp.Eq(v, AExp.Minus(vb, vc)) :: t, g2) =>
-    GExp.Eq[VName.vname](v, AExp.Minus[VName.vname](vb, vc)) ::
-      merge_guards(t, g2)
-  case (GExp.Eq(v, AExp.Times(vb, vc)) :: t, g2) =>
-    GExp.Eq[VName.vname](v, AExp.Times[VName.vname](vb, vc)) ::
-      merge_guards(t, g2)
-  case (GExp.Gt(v, va) :: t, g2) =>
-    GExp.Gt[VName.vname](v, va) :: merge_guards(t, g2)
-  case (GExp.Nor(v, va) :: t, g2) =>
-    GExp.Nor[VName.vname](v, va) :: merge_guards(t, g2)
+  case (((GExp.In(v, l))::t), g2) => merge_guards(t, merge_in_in(v, l, g2))
+  case (((GExp.Bc(v))::t), g2) =>
+    ((GExp.Bc[VName.vname](v))::(merge_guards(t, g2)))
+  case (((GExp.Eq(AExp.L(vb), va))::t), g2) =>
+    ((GExp.Eq[VName.vname](AExp.L[VName.vname](vb), va))::(merge_guards(t, g2)))
+  case (((GExp.Eq(AExp.Plus(vb, vc), va))::t), g2) =>
+    ((GExp.Eq[VName.vname](AExp.Plus[VName.vname](vb, vc),
+                            va))::(merge_guards(t, g2)))
+  case (((GExp.Eq(AExp.Minus(vb, vc), va))::t), g2) =>
+    ((GExp.Eq[VName.vname](AExp.Minus[VName.vname](vb, vc),
+                            va))::(merge_guards(t, g2)))
+  case (((GExp.Eq(AExp.Times(vb, vc), va))::t), g2) =>
+    ((GExp.Eq[VName.vname](AExp.Times[VName.vname](vb, vc),
+                            va))::(merge_guards(t, g2)))
+  case (((GExp.Eq(v, AExp.V(vb)))::t), g2) =>
+    ((GExp.Eq[VName.vname](v, AExp.V[VName.vname](vb)))::(merge_guards(t, g2)))
+  case (((GExp.Eq(v, AExp.Plus(vb, vc)))::t), g2) =>
+    ((GExp.Eq[VName.vname](v, AExp.Plus[VName.vname](vb,
+              vc)))::(merge_guards(t, g2)))
+  case (((GExp.Eq(v, AExp.Minus(vb, vc)))::t), g2) =>
+    ((GExp.Eq[VName.vname](v, AExp.Minus[VName.vname](vb,
+               vc)))::(merge_guards(t, g2)))
+  case (((GExp.Eq(v, AExp.Times(vb, vc)))::t), g2) =>
+    ((GExp.Eq[VName.vname](v, AExp.Times[VName.vname](vb,
+               vc)))::(merge_guards(t, g2)))
+  case (((GExp.Gt(v, va))::t), g2) =>
+    ((GExp.Gt[VName.vname](v, va))::(merge_guards(t, g2)))
+  case (((GExp.Nor(v, va))::t), g2) =>
+    ((GExp.Nor[VName.vname](v, va))::(merge_guards(t, g2)))
 }
 
 def lob_aux(t1: Transition.transition_ext[Unit],
@@ -6869,7 +6755,7 @@ def lob(t1ID: List[Nat.nat], t2ID: List[Nat.nat], s: Nat.nat,
          Some[FSet.fset[(List[Nat.nat],
                           ((Nat.nat, Nat.nat),
                             Transition.transition_ext[Unit]))]](Inference.replace_transitions(newa,
-               List((t1ID, lob_t), (t2ID, lob_t))))
+               ((t1ID, lob_t)::(((t2ID, lob_t)::Nil)))))
      })
   }
 
@@ -6917,7 +6803,7 @@ def tag(uu: Option[(String, (Nat.nat, List[value_type]))],
   =
   (uu, x1) match {
   case (uu, Nil) => Nil
-  case (t, g :: gs) =>
+  case (t, (g::gs)) =>
     {
       val (_, (_, head)):
             (Nat.nat, (List[Nat.nat], Transition.transition_ext[Unit]))
@@ -6928,8 +6814,9 @@ def tag(uu: Option[(String, (Nat.nat, List[value_type]))],
             Lista.map[AExp.aexp[VName.vname],
                        value_type](((a: AExp.aexp[VName.vname]) => typeSig(a)),
                                     Transition.Outputs[Unit](head))));
-      (t, (struct, g)) ::
-        tag(Some[(String, (Nat.nat, List[value_type]))](struct), gs)
+      ((t, (struct,
+             g))::(tag(Some[(String, (Nat.nat, List[value_type]))](struct),
+                        gs)))
     }
 }
 
@@ -6959,7 +6846,7 @@ def target_fold[A : Orderings.linorder, B, C, D, E, F,
                                        (if ((regs.keySet.toList).isEmpty) tRegsa
  else regs);
                                      (acc ++
-List((tRegsa, (s, (oldregs, (regs, (inputs, (tid, ta))))))),
+((tRegsa, (s, (oldregs, (regs, (inputs, (tid, ta))))))::Nil),
                                        ab)
                                    })
                                }),
@@ -6990,8 +6877,8 @@ def unzip_3_tailrec_rev[A, B,
   =
   (x0, x1) match {
   case (Nil, (as, (bs, cs))) => (as, (bs, cs))
-  case ((a, (b, c)) :: t, (as, (bs, cs))) =>
-    unzip_3_tailrec_rev[A, B, C](t, (a :: as, (b :: bs, c :: cs)))
+  case (((a, (b, c))::t), (as, (bs, cs))) =>
+    unzip_3_tailrec_rev[A, B, C](t, ((a::as), ((b::bs), (c::cs))))
 }
 
 def unzip_3_tailrec[A, B, C](l: List[(A, (B, C))]):
@@ -7017,7 +6904,7 @@ def find_outputs(x0: List[List[AExp.aexp[VName.vname]]],
   =
   (x0, uu, uv, uw) match {
   case (Nil, uu, uv, uw) => None
-  case (h :: t, e, l, g) =>
+  case ((h::t), e, l, g) =>
     {
       val outputs:
             FSet.fset[(List[Nat.nat],
@@ -7065,7 +6952,7 @@ def find_updates_outputs(x0: List[List[(Nat.nat, AExp.aexp[VName.vname])]],
   =
   (x0, uu, uv, uw, ux) match {
   case (Nil, uu, uv, uw, ux) => None
-  case (h :: t, p, e, l, g) =>
+  case ((h::t), p, e, l, g) =>
     {
       val updates:
             FSet.fset[(List[Nat.nat],
@@ -7134,7 +7021,7 @@ def updates_for(u: List[(Nat.nat, AExp.aexp[VName.vname])]):
                             val (r, ua): (Nat.nat, AExp.aexp[VName.vname]) = a;
                             ((f: Map[Nat.nat, (List[AExp.aexp[VName.vname]])])
                                =>
-                              f + (r -> (ua :: f(r))))
+                              f + (r -> ((ua::(f(r))))))
                           }),
                          u, scala.collection.immutable.Map().withDefaultValue(Nil));
     Lista.map[Nat.nat,
@@ -7238,7 +7125,7 @@ def find_initialisation_of_trace(uu: Nat.nat,
   =
   (uu, x1, uv, uw, ux) match {
   case (uu, Nil, uv, uw, ux) => None
-  case (ra, (l, (i, uy)) :: es, e, s, r) =>
+  case (ra, ((l, (i, uy))::es), e, s, r) =>
     {
       val (tids, (sa, t)):
             (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))
@@ -7271,15 +7158,16 @@ def find_initialisation_of(uu: Nat.nat,
   =
   (uu, uv, x2) match {
   case (uu, uv, Nil) => Nil
-  case (r, e, h :: t) =>
+  case (r, e, (h::t)) =>
     (find_initialisation_of_trace(r, h, e, Nat.zero_nata,
                                    AExp.null_state[Nat.nat,
             Option[Value.value]])
        match {
        case None => find_initialisation_of(r, e, t)
        case Some(thing) =>
-         Some[(List[Nat.nat], Transition.transition_ext[Unit])](thing) ::
-           find_initialisation_of(r, e, t)
+         ((Some[(List[Nat.nat],
+                  Transition.transition_ext[Unit])](thing))::(find_initialisation_of(r,
+      e, t)))
      })
 }
 
@@ -7416,7 +7304,7 @@ Transition.transition_ext[Unit])],
   =
   (uu, uv, uw, ux, x4, train) match {
   case (uu, uv, uw, ux, Nil, train) => train
-  case (gp, e, s, r, (l, (i, p)) :: t, train) =>
+  case (gp, e, s, r, ((l, (i, p))::t), train) =>
     {
       val (id, (sa, transition)):
             (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))
@@ -7438,7 +7326,7 @@ Transition.transition_ext[Unit])],
         trace_group_training_set(gp, e, sa,
                                   (Transition.apply_updates(Transition.Updates[Unit](transition),
                      AExp.join_ir(i, r))).apply(r),
-                                  t, (i, (r, p)) :: train)
+                                  t, ((i, (r, p))::train))
         else trace_group_training_set(gp, e, sa,
                                        (Transition.apply_updates(Transition.Updates[Unit](transition),
                           AExp.join_ir(i, r))).apply(r),
@@ -7514,7 +7402,7 @@ def add_groupwise_updates_trace(x0: List[(String,
   =
   (x0, uu, e, uv, uw) match {
   case (Nil, uu, e, uv, uw) => e
-  case ((l, (i, ux)) :: trace, funs, e, s, r) =>
+  case (((l, (i, ux))::trace), funs, e, s, r) =>
     {
       val (id, (sa, t)):
             (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))
@@ -7865,7 +7753,7 @@ def groupwise_put_updates(x0: List[List[(List[Nat.nat],
   =
   (x0, uu, uv, uw, ux, e) match {
   case (Nil, uu, uv, uw, ux, e) => e
-  case (gp :: gps, log, values, walked, (o_inx, (op, types)), e) =>
+  case ((gp::gps), log, values, walked, (o_inx, (op, types)), e) =>
     {
       val targeted:
             List[List[(Map[Nat.nat, Option[Value.value]],
@@ -7978,7 +7866,7 @@ targeted, Nil);
          case Some(u) =>
            groupwise_put_updates(gps, log, values, walked, (o_inx, (op, types)),
                                   Inference.make_distinct(add_groupwise_updates(log,
- List(u), e)))
+ (u::Nil), e)))
        })
     }
 }
@@ -8000,7 +7888,7 @@ def everything_walk(uu: AExp.aexp[VName.vname], uv: Nat.nat,
   =
   (uu, uv, uw, x3, ux, uy, uz, va) match {
   case (uu, uv, uw, Nil, ux, uy, uz, va) => Nil
-  case (f, fi, types, (label, (inputs, outputs)) :: t, oPTA, s, regs, gp) =>
+  case (f, fi, types, ((label, (inputs, outputs))::t), oPTA, s, regs, gp) =>
     {
       val (tid, (sa, ta)):
             (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))
@@ -8019,22 +7907,24 @@ def everything_walk(uu: AExp.aexp[VName.vname], uv: Nat.nat,
                          Lista.equal_lista[Nat.nat](tid, tida)
                        }),
                       gp))
-        (s, (regs,
-              (Dirties.getRegs(types, inputs, f,
-                                outputs(Code_Numeral.integer_of_nat(fi).toInt)),
-                (inputs, (tid, ta))))) ::
-          everything_walk(f, fi, types, t, oPTA, sa,
-                           (Transition.apply_updates(Transition.Updates[Unit](ta),
-              AExp.join_ir(inputs, regs))).apply(regs),
-                           gp)
+        ((s, (regs,
+               (Dirties.getRegs(types, inputs, f,
+                                 outputs(Code_Numeral.integer_of_nat(fi).toInt)),
+                 (inputs,
+                   (tid, ta)))))::(everything_walk(f, fi, types, t, oPTA, sa,
+            (Transition.apply_updates(Transition.Updates[Unit](ta),
+                                       AExp.join_ir(inputs, regs))).apply(regs),
+            gp)))
         else {
                val empty: Map[Nat.nat, Option[Value.value]] =
                  AExp.null_state[Nat.nat, Option[Value.value]];
-               (s, (regs, (empty, (inputs, (tid, ta))))) ::
-                 everything_walk(f, fi, types, t, oPTA, sa,
-                                  (Transition.apply_updates(Transition.Updates[Unit](ta),
-                     AExp.join_ir(inputs, regs))).apply(regs),
-                                  gp)
+               ((s, (regs,
+                      (empty,
+                        (inputs,
+                          (tid, ta)))))::(everything_walk(f, fi, types, t, oPTA,
+                   sa, (Transition.apply_updates(Transition.Updates[Unit](ta),
+          AExp.join_ir(inputs, regs))).apply(regs),
+                   gp)))
              })
     }
 }
@@ -8089,7 +7979,7 @@ def observe_all(uu: FSet.fset[(List[Nat.nat],
   =
   (uu, uv, uw, x3) match {
   case (uu, uv, uw, Nil) => Nil
-  case (e, s, r, (l, (i, ux)) :: es) =>
+  case (e, s, r, ((l, (i, ux))::es)) =>
     (Dirties.randomMember[(List[Nat.nat],
                             (Nat.nat,
                               Transition.transition_ext[Unit]))](Inference.i_possible_steps(e,
@@ -8097,11 +7987,10 @@ def observe_all(uu: FSet.fset[(List[Nat.nat],
        match {
        case None => Nil
        case Some((ids, (sa, t))) =>
-         (ids, t) ::
-           observe_all(e, sa,
-                        (Transition.apply_updates(Transition.Updates[Unit](t),
-           AExp.join_ir(i, r))).apply(r),
-                        es)
+         ((ids, t)::(observe_all(e, sa,
+                                  (Transition.apply_updates(Transition.Updates[Unit](t),
+                     AExp.join_ir(i, r))).apply(r),
+                                  es)))
      })
 }
 
@@ -8374,9 +8263,9 @@ def put_updates(uu: List[List[(String,
   =
   (uu, uv, uw, x3, e) match {
   case (uu, uv, uw, Nil, e) => e
-  case (log, values, gp, (ux, None) :: ops, e) =>
+  case (log, values, gp, ((ux, None)::ops), e) =>
     put_updates(log, values, gp, ops, e)
-  case (log, values, gp, (o_inx, Some((op, types))) :: ops, e) =>
+  case (log, values, gp, ((o_inx, Some((op, types)))::ops), e) =>
     {
       val gpa: List[(List[Nat.nat], Transition.transition_ext[Unit])] =
         Lista.map[(List[Nat.nat], Transition.transition_ext[Unit]),
@@ -8490,7 +8379,7 @@ def find_first_use_of_trace(uu: Nat.nat,
   =
   (uu, x1, uv, uw, ux) match {
   case (uu, Nil, uv, uw, ux) => None
-  case (rr, (l, (i, uy)) :: es, e, s, r) =>
+  case (rr, ((l, (i, uy))::es), e, s, r) =>
     {
       val (id, (sa, t)):
             (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))
@@ -8522,7 +8411,7 @@ def find_first_uses_of(r: Nat.nat,
               List[Nat.nat]](((a: Option[List[Nat.nat]]) =>
                                (a match {
                                   case None => Nil
-                                  case Some(x) => List(x)
+                                  case Some(x) => (x::Nil)
                                 })),
                               Lista.map[List[(String,
        (List[Value.value], List[Value.value]))],
@@ -8578,7 +8467,7 @@ def groupwise_generalise_and_update(uu: List[List[(String,
   =
   (uu, e, x2) match {
   case (uu, e, Nil) => e
-  case (log, e, gp :: t) =>
+  case (log, e, (gp::t)) =>
     {
       val ea: FSet.fset[(List[Nat.nat],
                           ((Nat.nat, Nat.nat),
@@ -9047,7 +8936,7 @@ def trace_collect_training_sets(x0: List[(String,
   =
   (x0, uPTA, s, registers, t1, t2, g1, g2) match {
   case (Nil, uPTA, s, registers, t1, t2, g1, g2) => (g1, g2)
-  case ((label, (inputs, outputs)) :: t, uPTA, s, registers, t1, t2, g1, g2) =>
+  case (((label, (inputs, outputs))::t), uPTA, s, registers, t1, t2, g1, g2) =>
     {
       val (uids, (sa, tran)):
             (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))
@@ -9075,10 +8964,10 @@ Lista.map[Value.value,
          registers))).apply(registers);
       (if (t1.contains(uids.head))
         trace_collect_training_sets(t, uPTA, sa, updated, t1, t2,
-                                     (inputs, registers) :: g1, g2)
+                                     ((inputs, registers)::g1), g2)
         else (if (t2.contains(uids.head))
                trace_collect_training_sets(t, uPTA, sa, updated, t1, t2, g1,
-    (inputs, registers) :: g2)
+    ((inputs, registers)::g2))
                else trace_collect_training_sets(t, uPTA, sa, updated, t1, t2,
          g1, g2)))
     }
@@ -9098,7 +8987,7 @@ def collect_training_sets(x0: List[List[(String,
   =
   (x0, uPTA, t1, t2, g1, g2) match {
   case (Nil, uPTA, t1, t2, g1, g2) => (g1, g2)
-  case (h :: t, uPTA, t1, t2, g1, g2) =>
+  case ((h::t), uPTA, t1, t2, g1, g2) =>
     {
       val (g1a, g2a):
             (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])],
@@ -9137,7 +9026,7 @@ def put_updates(uids: List[Nat.nat],
                         (List[Nat.nat],
                           ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))
                     = a
-                  val List(u): List[Nat.nat] = uid;
+                  val ((u::Nil)): List[Nat.nat] = uid;
                   (if (uids.contains(u))
                     (uid, (fromTo,
                             Transition.transition_exta[Unit](Transition.Label[Unit](tran),
@@ -9234,7 +9123,7 @@ def distinguish(log: List[List[(String,
                                 ((Nat.nat, Nat.nat),
                                   Transition.transition_ext[Unit]))]
              = Inference.replace_transitions(preDestMerge,
-      List((t1ID, add_guard(t1, g1a)), (t2ID, add_guard(t2, g2a))));
+      ((t1ID, add_guard(t1, g1a))::(((t2ID, add_guard(t2, g2a))::Nil))));
            (if (check(Inference.tm(rep)))
              Some[FSet.fset[(List[Nat.nat],
                               ((Nat.nat, Nat.nat),

@@ -108,7 +108,7 @@ next
 qed
 
 code_printing
-  constant Cons \<rightharpoonup> (Scala) "_::_"
+  constant Cons \<rightharpoonup> (Scala) "(_::_)"
   | constant rev \<rightharpoonup> (Scala) "_.par.reverse.toList"
   | constant List.member \<rightharpoonup> (Scala) "_.contains((_))"
   | constant "List.remdups" \<rightharpoonup> (Scala) "_.par.distinct.toList"

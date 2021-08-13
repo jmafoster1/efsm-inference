@@ -2,10 +2,8 @@ import Dependencies._
 import sys.process._
 import java.io.File;
 
-val cleanSalfiles = taskKey[Int]("Deletes everything from the ./salfiles folder")
 val cleanDotfiles = taskKey[Int]("Deletes everything from the ./dotfiles folder")
-val mkdirs = taskKey[Unit]("Creates the ./salfiles and ./dotfiles directories for the program to put stuff in as it runs")
-val setEnv = taskKey[Int]("Adds the necessary SAL header files to the environment variable SALCONTEXTPATH")
+val mkdirs = taskKey[Unit]("Creates the ./dotfiles directories for the program to put stuff in as it runs")
 val buildDOT = taskKey[Unit]("Builds the dotfiles")
 
 ThisBuild / scalaVersion     := "2.12.8"
@@ -63,24 +61,14 @@ lazy val root = (project in file("."))
     libraryDependencies += "org.biojava" % "biojava-structure" % "5.3.0",
     libraryDependencies += "org.jgrapht" % "jgrapht-core" % "1.1.0",
 
-    cleanSalfiles := {
-      cleanDirectory("salfiles")
-    },
     cleanDotfiles := {
       cleanDirectory("dotfiles")
     },
-    clean := clean.dependsOn(cleanSalfiles, cleanDotfiles).value,
+    clean := clean.dependsOn(cleanDotfiles).value,
     mkdirs := {
-      mkdir("salfiles")
       mkdir("dotfiles")
     },
     (run in Compile) := (run in Compile).dependsOn(mkdirs).evaluated,
-    setEnv := {
-      println(System.getProperty("user.dir"));
-      System.setProperty("SALCONTEXTPATH", s"${System.getProperty("user.dir")}/lib/:.")
-      // s"export SALCONTEXTPATH=${System.getProperty("user.dir")}/lib/:.".!;
-      0
-    },
     buildDOT := {
       for (f <- getListOfFiles(new File("dotfiles"), List("dot"))) {
         val b = f.getName().replaceFirst("[.][^.]+$", "");

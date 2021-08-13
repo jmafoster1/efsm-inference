@@ -22,7 +22,6 @@ theories
   "heuristics/PTA_Generalisation"
 
   "EFSM_Dot"
-  "efsm2sal"
 
   "code-targets/Code_Target_List"
   "code-targets/Code_Target_Set"

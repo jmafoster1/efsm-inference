@@ -266,8 +266,8 @@ definition choosePairs :: "iEFSM \<Rightarrow> (cfstate \<times> cfstate) set \<
         (x, y) \<notin> failedMerges \<and>
         (y, x) \<notin> failedMerges \<and>
         (let
-          allOutgoingX = ffilter (\<lambda>(_, (_, to), _). (to = x)) e;
-          allOutgoingY = ffilter (\<lambda>(_, (_, to), _). (to = y)) e
+          allOutgoingX = ffilter (\<lambda>(_, (from, _), _). (from = x)) e;
+          allOutgoingY = ffilter (\<lambda>(_, (from, _), _). (from = y)) e
           in
           \<exists>(_, _, t) |\<in>| allOutgoingX.
             \<exists>(_, _, t') |\<in>| allOutgoingY.

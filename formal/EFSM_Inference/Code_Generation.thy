@@ -19,7 +19,6 @@ theory Code_Generation
    "code-targets/Code_Target_FSet"
    "code-targets/Code_Target_Set"
    "code-targets/Code_Target_List"
-efsm2sal
 begin
 
 declare One_nat_def [simp del]
@@ -435,8 +434,6 @@ export_code
   test_log
   iefsm2dot
   efsm2dot
-  guards2sal
-  guards2sal_num
   fold_In
   max_int
   enumerate_vars
