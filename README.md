@@ -42,10 +42,10 @@ Usage: java -jar target/scala-2.12/inference-tool-assembly-0.1.0-SNAPSHOT.jar [o
 The JSON training and test files should contain a list of lists of objects of the form `{"label": "label1", "inputs": ["i1", "i2",...],"outputs": ["o1", "o2",...]},`. Examples can be found within the `inference-tool/experimental-data` directory.
 
 ## References
-<a name="subsumptionPaper"></a> [Formalising extended finite state machine transition merging](https://doi.org/10.1007/978-3-030-30446-1_14)<br/>
+<a name="subsumptionPaper">[1]</a> [Formalising extended finite state machine transition merging](https://doi.org/10.1007/978-3-030-30446-1_14)<br/>
 Michael Foster, Achim D. Brucker, Ramsay G. Taylor, John Derrick<br/>
 In Proceedings of the 20th International Conference on Formal Engineering Methods, 2018
 
-<a name="inferencePaper"></a> [Incorporating data into efsm inference](https://doi.org/10.1007/978-3-030-30446-1_14)<br/>
+<a name="inferencePaper">[2]</a> [Incorporating data into efsm inference](https://doi.org/10.1007/978-3-030-30446-1_14)<br/>
 Michael Foster, Achim D. Brucker, Ramsay G. Taylor, Siobhán North, John Derrick<br/>
 In Software Engineering and Formal Methods, 2019
