@@ -15,7 +15,7 @@ object PrettyPrinter {
 
   def show(v: Value.value): String =
     v match {
-      case Value.Numa(Int.int_of_integer(n)) => n.toString
+      case Value.Inta(Int.int_of_integer(n)) => n.toString
       case Value.Str(s) => "\"" + s + "\""
     }
 
@@ -166,7 +166,7 @@ object PrettyPrinter {
       case (k: Nat.nat, v: Option[Value.value]) =>
         "r" + show(k) + ":=" + (v match {
           case None => throw new IllegalStateException("Got None from registers")
-          case Some(Value.Numa(Int.int_of_integer(n))) => n.toString
+          case Some(Value.Inta(Int.int_of_integer(n))) => n.toString
           case Some(Value.Str(s)) => s
         })
     }
@@ -199,7 +199,7 @@ object PrettyPrinter {
       case (k: Nat.nat, v: Option[Value.value]) =>
         s""""r${show(k)}":""" + (v match {
           case None => "null"
-          case Some(Value.Numa(Int.int_of_integer(n))) => n.toString
+          case Some(Value.Inta(Int.int_of_integer(n))) => n.toString
           case Some(Value.Str(s)) => s""""$s""""
         })
     }

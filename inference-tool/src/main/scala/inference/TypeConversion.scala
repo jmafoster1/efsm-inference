@@ -3,6 +3,7 @@ import java.io._
 import sys.process._
 import scala.io.Source
 import com.microsoft.z3._
+import org.apache.commons.math3.fraction.BigFraction;
 
 import mint.tracedata.types.VariableAssignment;
 import mint.tracedata.types.IntegerVariableAssignment;
@@ -48,7 +49,7 @@ object TypeConversion {
   }
 
   def typeString(v: Value.value): String = v match {
-    case Value.Numa(_) => "Int"
+    case Value.Inta(_) => "Int"
     case Value.Str(_) => "String"
   }
 
@@ -135,7 +136,7 @@ object TypeConversion {
       }
     }
 		if (e.isIntNum()) {
-      return AExp.L(Value.Numa(Int.int_of_integer(e.toString.toLong)))
+      return AExp.L(Value.Inta(Int.int_of_integer(e.toString.toLong)))
     }
 
     throw new IllegalArgumentException("Couldn't convert from z3 expression "+e)
@@ -198,12 +199,27 @@ object TypeConversion {
     }
   }
 
-  def toValue(n: BigInt): Value.value = Value.Numa(Int.int_of_integer(n))
-  def toValue(n: Long): Value.value = Value.Numa(Int.int_of_integer(n))
+  def rat_of_double(x: Double): Rat.rat = {
+    val frac = new BigFraction(x);
+    val (num, den) = (frac.getNumerator(), frac.getDenominator())
+
+      return Rat.Frct((Int.int_of_integer(num), Int.int_of_integer(den)))
+  }
+
+  def double_of_rat(x: Rat.rat): Double = x match {
+    case Rat.Frct((Int.int_of_integer(num),Int.int_of_integer(den))) => {
+      val frac = new BigFraction(new java.math.BigInteger(num.toString), new java.math.BigInteger(den.toString))
+      return frac.doubleValue()
+    }
+  }
+
+  def toValue(n: BigInt): Value.value = Value.Inta(Int.int_of_integer(n))
+  def toValue(n: Long): Value.value = Value.Inta(Int.int_of_integer(n))
   def toValue(s: String): Value.value = Value.Str(s)
+  def toValue(d: Double): Value.value = Value.Float(Real.Ratreal(rat_of_double(d)))
   def toValue(e: Expr): Value.value = {
     if (e.isIntNum())
-      return Value.Numa(Int.int_of_integer(e.toString.toInt))
+      return Value.Inta(Int.int_of_integer(e.toString.toInt))
     else if (e.isString()) {
       val str = e.toString.slice(1, e.toString.length-1)
       return Value.Str(str)
@@ -217,10 +233,12 @@ object TypeConversion {
       toValue(a.asInstanceOf[String])
     } else if (a.isInstanceOf[BigInt]) {
       toValue(a.asInstanceOf[BigInt])
+    } else if (a.isInstanceOf[Double]) {
+      toValue(a.asInstanceOf[Double])
     } else if (a.isInstanceOf[Expr]) {
       toValue(a.asInstanceOf[Expr])
     } else {
-      throw new IllegalArgumentException(s"Invalid type ${a.getClass}. Can only be String or BigInt");
+      throw new IllegalArgumentException(s"Invalid type ${a.getClass}. Can only be z3.Expr or a Value type (String, Float, or BigInt), not ${a.getClass().getName()}");
     }
   }
 

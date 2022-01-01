@@ -43,7 +43,7 @@ object Dirties {
   l.foldLeft(b)(((x, y) => (f(x))(y)))
 
   def toZ3(v: Value.value): String = v match {
-    case Value.Numa(n) => s"(Num ${Code_Numeral.integer_of_int(n).toString})"
+    case Value.Inta(n) => s"(Num ${Code_Numeral.integer_of_int(n).toString})"
     case Value.Str(s) => s"""(Str "${s}")"""
   }
 
@@ -61,7 +61,7 @@ object Dirties {
   }
 
   def toZ3Native(v: Value.value): String = v match {
-    case Value.Numa(n) => s"${Code_Numeral.integer_of_int(n).toString}"
+    case Value.Inta(n) => s"${Code_Numeral.integer_of_int(n).toString}"
     case Value.Str(s) => s""""${s}""""
   }
 
@@ -144,7 +144,7 @@ object Dirties {
   }
 
   def getTypes(i: List[Value.value]): List[String] = i.map {
-    case Value.Numa(_) => "Int"
+    case Value.Inta(_) => "Int"
     case Value.Str(_) => "Str"
   }
 
@@ -152,7 +152,7 @@ object Dirties {
     val keys = r.keySet.toList.map(x => Code_Numeral.integer_of_nat(x))
     keys.sorted
     keys.map(key => r(Nat.Nata(key)) match {
-      case Some(Value.Numa(_)) => "Int"
+      case Some(Value.Inta(_)) => "Int"
       case Some(Value.Str(_)) => "String"
       case None => throw new IllegalArgumentException("Got none from a map")
     })
@@ -162,7 +162,7 @@ object Dirties {
     val keys = r.keySet.toList.map(x => Code_Numeral.integer_of_nat(x))
     keys.sorted
     keys.map(key => r(Nat.Nata(key)) match {
-      case Some(Value.Numa(Int.int_of_integer(n))) => n.toString
+      case Some(Value.Inta(Int.int_of_integer(n))) => n.toString
       case Some(Value.Str(s)) => "\"" + s + "\""
       case None => throw new IllegalArgumentException("Got none from a map")
     })
@@ -176,7 +176,7 @@ object Dirties {
     if (vars.isDefinedAt((name, value)))
       return vars((name, value))
     value match {
-      case Value.Numa(n) => {
+      case Value.Inta(n) => {
         vars += ((name, value) -> new IntegerVariableAssignment(name, TypeConversion.toLong(n)))
       }
       case Value.Str(s) => {
@@ -229,10 +229,10 @@ object Dirties {
     for ((inputs, registers) <- g1) {
       var scenario = List[VariableAssignment[_]]()
       for ((ip, ix) <- inputs.zipWithIndex) ip match {
-        case Value.Numa(n) => {
+        case Value.Inta(n) => {
           intVarVals = TypeConversion.toLong(n) :: intVarVals
           intVarNames = s"i${ix}" :: intVarNames
-          scenario = (varOf((s"i${ix}", Value.Numa(n)))) :: scenario
+          scenario = (varOf((s"i${ix}", Value.Inta(n)))) :: scenario
         }
         case Value.Str(s) => {
           stringVarVals = s :: stringVarVals
@@ -242,10 +242,10 @@ object Dirties {
       }
       for ((r, v) <- registers) v match {
         case None => {}
-        case Some(Value.Numa(n)) => {
+        case Some(Value.Inta(n)) => {
           intVarVals = TypeConversion.toLong(n) :: intVarVals
           intVarNames = s"r${PrettyPrinter.show(r)}" :: intVarNames
-          scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Numa(n))) :: scenario
+          scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Inta(n))) :: scenario
         }
         case Some(Value.Str(s)) => {
           stringVarVals = s :: stringVarVals
@@ -261,10 +261,10 @@ object Dirties {
     for ((inputs, registers) <- g2) {
       var scenario = List[VariableAssignment[_]]()
       for ((ip, ix) <- inputs.zipWithIndex) ip match {
-        case Value.Numa(n) => {
+        case Value.Inta(n) => {
           intVarVals = TypeConversion.toLong(n) :: intVarVals
           intVarNames = s"i${ix}" :: intVarNames
-          scenario = (varOf((s"i${ix}", Value.Numa(n)))) :: scenario
+          scenario = (varOf((s"i${ix}", Value.Inta(n)))) :: scenario
         }
         case Value.Str(s) => {
           stringVarVals = s :: stringVarVals
@@ -274,10 +274,10 @@ object Dirties {
       }
       for ((r, v) <- registers) v match {
         case None => {}
-        case Some(Value.Numa(n)) => {
+        case Some(Value.Inta(n)) => {
           intVarVals = TypeConversion.toLong(n) :: intVarVals
           intVarNames = s"r${PrettyPrinter.show(r)}" :: intVarNames
-          scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Numa(n))) :: scenario
+          scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Inta(n))) :: scenario
         }
         case Some(Value.Str(s)) => {
           stringVarVals = s :: stringVarVals
@@ -374,7 +374,7 @@ object Dirties {
       case ((inputs, anteriorRegs), updatedReg) => {
         var scenario = List[VariableAssignment[_]]()
         for ((ip, ix) <- inputs.zipWithIndex) ip match {
-          case Value.Numa(n) => {
+          case Value.Inta(n) => {
             intVarNames = s"i${ix}" :: intVarNames
             scenario = (varOf(s"i${ix}", ip)) :: scenario
           }
@@ -385,9 +385,9 @@ object Dirties {
         }
         for ((k: Nat.nat, v: Option[Value.value]) <- anteriorRegs) v match {
           case None => throw new IllegalStateException("Got None from registers")
-          case Some(Value.Numa(n)) => {
+          case Some(Value.Inta(n)) => {
             intVarNames = s"r${TypeConversion.toInt(k)}" :: intVarNames
-            scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Numa(n))) :: scenario
+            scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Inta(n))) :: scenario
           }
           case Some(Value.Str(s)) => {
             stringVarNames = s"r${TypeConversion.toInt(k)}" :: stringVarNames
@@ -395,7 +395,7 @@ object Dirties {
           }
         }
         updatedReg match {
-          case Value.Numa(n) => {
+          case Value.Inta(n) => {
             intVarNames = s"r${r_index}" :: intVarNames
             trainingSet.put(scenario, varOf("r" + r_index, updatedReg))
           }
@@ -494,7 +494,7 @@ object Dirties {
         for ((ip, ix) <- inputs.zipWithIndex) {
           scenario = (varOf(s"i${ix}", ip)) :: scenario
           ip match {
-            case Value.Numa(n) => {
+            case Value.Inta(n) => {
               intVarNames = s"i${ix}" :: intVarNames
             }
             case Value.Str(s) => {
@@ -504,9 +504,9 @@ object Dirties {
         }
         for ((k: Nat.nat, v: Option[Value.value]) <- anteriorRegs) v match {
           case None => throw new IllegalStateException("Got None from registers")
-          case Some(Value.Numa(n)) => {
+          case Some(Value.Inta(n)) => {
             intVarNames = s"r${TypeConversion.toInt(k)}" :: intVarNames
-            scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Numa(n))) :: scenario
+            scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Inta(n))) :: scenario
           }
           case Some(Value.Str(s)) => {
             stringVarNames = s"r${TypeConversion.toInt(k)}" :: stringVarNames
@@ -517,7 +517,7 @@ object Dirties {
         trainingSet.put(scenario, varOf("o", output))
 
         output match {
-          case Value.Numa(n) => {
+          case Value.Inta(n) => {
             intVarNames = s"r${r_index}" :: intVarNames
           }
           case Value.Str(s) => {

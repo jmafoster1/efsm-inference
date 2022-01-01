@@ -44,8 +44,8 @@ object GP {
     var intTerms = List[VariableTerminal[_]]()
     var stringTerms = List[VariableTerminal[_]]()
 
-    for (v <- (Value.Numa(Int.int_of_integer(0)) :: Value.Numa(Int.int_of_integer(1)) :: Value.Numa(Int.int_of_integer(2)) :: values).distinct.reverse) v match {
-      case Value.Numa(n) => intTerms = (new IntegerVariableAssignmentTerminal(TypeConversion.toLong(n))) :: intTerms
+    for (v <- (Value.Inta(Int.int_of_integer(0)) :: Value.Inta(Int.int_of_integer(1)) :: Value.Inta(Int.int_of_integer(2)) :: values).distinct.reverse) v match {
+      case Value.Inta(n) => intTerms = (new IntegerVariableAssignmentTerminal(TypeConversion.toLong(n))) :: intTerms
       case Value.Str(s) => stringTerms = (new StringVariableAssignmentTerminal(s)) :: stringTerms
     }
 
