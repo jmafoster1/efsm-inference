@@ -167,6 +167,7 @@ def boxPlots(column, ps, fname, systems):
     # plt.tight_layout()
     plt.savefig(f"{homedir}/graphs/{fname}.pdf", bbox_inches='tight')
     plt.close()
+    print("Saving to", f"{homedir}/graphs/{fname}.pdf",)
     return boxes
 
 
@@ -184,6 +185,9 @@ ps = {p:configs(p) for p in data}
 
 ls, ss = boxPlots("sensitivity", ps, f"{fname}-sensitivity-plots", systems)
 lt, st = boxPlots("t1", ps, f"{fname}-t1-plots", systems)
+lt, st = boxPlots("states", ps, f"{fname}-states-plots", systems)
+lt, st = boxPlots("transitions", ps, f"{fname}-transitions-plots", systems)
+lt, st = boxPlots("runtime", ps, f"{fname}-runtime-plots", systems)
 
 
 cfgs = ["pta", "none", "gp", "MINT"]
@@ -232,4 +236,4 @@ for ax in fig.get_axes():
     ax.margins()
     axesColour(ax)
 
-plt.savefig("/home/michael/Documents/papers/gp-paper/figures/graphs/lisp-plots.pdf", bbox_inches='tight')
+# plt.savefig("/home/michael/Documents/papers/gp-paper/figures/graphs/lisp-plots.pdf", bbox_inches='tight')
