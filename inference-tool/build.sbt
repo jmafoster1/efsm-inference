@@ -60,6 +60,7 @@ lazy val root = (project in file("."))
     libraryDependencies += "com.googlecode.json-simple" % "json-simple" % "1.1",
     libraryDependencies += "org.biojava" % "biojava-structure" % "5.3.0",
     libraryDependencies += "org.jgrapht" % "jgrapht-core" % "1.1.0",
+    libraryDependencies += "org.hammerlab.math" % "tolerance_2.11" % "1.0.1",
 
     cleanDotfiles := {
       cleanDirectory("dotfiles")

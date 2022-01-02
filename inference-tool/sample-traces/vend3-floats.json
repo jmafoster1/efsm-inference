@@ -1,0 +1,51 @@
+[
+[
+    {"label":"select","inputs":["coke"],"outputs":[]}
+    ,{"label":"coin","inputs":[0.5],"outputs":[0.5]}
+    ,{"label":"coin","inputs":[0.5],"outputs":[1.0]}
+    ,{"label":"vend","inputs":[],"outputs":["coke"]}
+]
+,[
+    {"label":"select","inputs":["coke"],"outputs":[]}
+    ,{"label":"coin","inputs":[1.0],"outputs":[1.0]}
+    ,{"label":"vend","inputs":[],"outputs":["coke"]}
+],
+[
+    {"label":"select","inputs":["fanta"],"outputs":[]}
+    ,{"label":"coin","inputs":[0.5],"outputs":[0.5]}
+    ,{"label":"coin","inputs":[0.5],"outputs":[1.0]}
+    ,{"label":"vend","inputs":[],"outputs":["fanta"]}
+]
+,[
+    {"label":"select","inputs":["fanta"],"outputs":[]}
+    ,{"label":"coin","inputs":[1.0],"outputs":[1.0]}
+    ,{"label":"vend","inputs":[],"outputs":["fanta"]}
+],
+[
+    {"label":"select","inputs":["beer"],"outputs":[]}
+    ,{"label":"coin","inputs":[0.5],"outputs":[0.5]}
+    ,{"label":"coin","inputs":[0.5],"outputs":[1.0]}
+    ,{"label":"vend","inputs":[],"outputs":["beer"]}
+],
+[
+    {"label":"select","inputs":["beer"],"outputs":[]}
+    ,{"label":"coin","inputs":[0.4],"outputs":[0.4]}
+    ,{"label":"coin","inputs":[0.6],"outputs":[1.0]}
+    ,{"label":"vend","inputs":[],"outputs":["beer"]}
+]
+,[
+    {"label":"select","inputs":["beer"],"outputs":[]}
+    ,{"label":"coin","inputs":[1.0],"outputs":[1.0]}
+    ,{"label":"vend","inputs":[],"outputs":["beer"]}
+],
+[
+    {"label":"select","inputs":["pepsi"],"outputs":[]}
+    ,{"label":"coin","inputs":[0.20],"outputs":[0.20]}
+    ,{"label":"coin","inputs":[0.20],"outputs":[0.40]}
+    ,{"label":"coin","inputs":[0.20],"outputs":[0.60]}
+    ,{"label":"coin","inputs":[0.20],"outputs":[0.80]}
+    ,{"label":"coin","inputs":[0.20],"outputs":[1.0]}
+    ,{"label":"vend","inputs":[],"outputs":["pepsi"]}
+]
+
+]

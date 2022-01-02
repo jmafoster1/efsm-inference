@@ -44,6 +44,8 @@ object TypeConversion {
       return "String"
     else if (t == ":I")
       return "Int"
+    else if (t == ":D")
+      return "Real"
     else
       throw new IllegalArgumentException("Type string must be either :I or :S")
   }
@@ -51,6 +53,7 @@ object TypeConversion {
   def typeString(v: Value.value): String = v match {
     case Value.Inta(_) => "Int"
     case Value.Str(_) => "String"
+    case Value.Double(_) => "Real"
   }
 
   def vnameFromString(name: String):VName.vname = {
@@ -206,6 +209,10 @@ object TypeConversion {
       return Rat.Frct((Int.int_of_integer(num), Int.int_of_integer(den)))
   }
 
+  def to_real(x: Double): Real.real = {
+    return Real.Ratreal(rat_of_double(x))
+  }
+
   def double_of_rat(x: Rat.rat): Double = x match {
     case Rat.Frct((Int.int_of_integer(num),Int.int_of_integer(den))) => {
       val frac = new BigFraction(new java.math.BigInteger(num.toString), new java.math.BigInteger(den.toString))
@@ -213,19 +220,25 @@ object TypeConversion {
     }
   }
 
+  def double_of_real(x: Real.real): Double = x match {
+    case Real.Ratreal(rat) => double_of_rat(rat)
+  }
+
   def toValue(n: BigInt): Value.value = Value.Inta(Int.int_of_integer(n))
   def toValue(n: Long): Value.value = Value.Inta(Int.int_of_integer(n))
   def toValue(s: String): Value.value = Value.Str(s)
-  def toValue(d: Double): Value.value = Value.Float(Real.Ratreal(rat_of_double(d)))
+  def toValue(d: Double): Value.value = Value.Double(Real.Ratreal(rat_of_double(d)))
   def toValue(e: Expr): Value.value = {
     if (e.isIntNum())
       return Value.Inta(Int.int_of_integer(e.toString.toInt))
+    if (e.isRatNum())
+      return Value.Double(Real.Ratreal(Rat.Frct((Int.int_of_integer(e.asInstanceOf[RatNum].getNumerator.toString.toInt), Int.int_of_integer(e.asInstanceOf[RatNum].getDenominator.toString.toInt)))))
     else if (e.isString()) {
       val str = e.toString.slice(1, e.toString.length-1)
       return Value.Str(str)
     }
     else
-      throw new IllegalArgumentException("Expressions can only be String or IntNum");
+      throw new IllegalArgumentException(f"Expressions can only be String or IntNum, not ${e}:${e.getClass.getName}");
   }
 
   def toValue(a: Any): Value.value = {
@@ -238,7 +251,7 @@ object TypeConversion {
     } else if (a.isInstanceOf[Expr]) {
       toValue(a.asInstanceOf[Expr])
     } else {
-      throw new IllegalArgumentException(s"Invalid type ${a.getClass}. Can only be z3.Expr or a Value type (String, Float, or BigInt), not ${a.getClass().getName()}");
+      throw new IllegalArgumentException(s"Invalid type ${a.getClass}. Can only be z3.Expr or a Value type (String, Double, or BigInt), not ${a.getClass().getName()}");
     }
   }
 

@@ -16,6 +16,7 @@ object PrettyPrinter {
   def show(v: Value.value): String =
     v match {
       case Value.Inta(Int.int_of_integer(n)) => n.toString
+      case Value.Double(Real.Ratreal(rat)) => TypeConversion.double_of_rat(rat).toString
       case Value.Str(s) => "\"" + s + "\""
     }
 
@@ -200,6 +201,7 @@ object PrettyPrinter {
         s""""r${show(k)}":""" + (v match {
           case None => "null"
           case Some(Value.Inta(Int.int_of_integer(n))) => n.toString
+          case Some(Value.Double(d)) => TypeConversion.double_of_real(d).toString
           case Some(Value.Str(s)) => s""""$s""""
         })
     }

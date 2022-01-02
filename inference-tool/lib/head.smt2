@@ -1,5 +1,5 @@
 (declare-datatype Option (par (X) ((None) (Some (val X)))))
-(declare-datatype Value ((Num (num Int)) (Str (str String))))
+(declare-datatype Value ((Int (int Int)) (Double (double Real)) (Str (str String))))
 (declare-datatype Trilean ((true) (false) (invalid)))
 
 (define-fun Plus ((x (Option Value)) (y (Option Value))) (Option Value)
@@ -8,9 +8,14 @@
   (match y (
     ((Some v2)
     (match v1 (
-      ((Num n1)
+      ((Int n1)
       (match v2 (
-        ((Num n2) (Some (Num (+ n1 n2))))
+        ((Int n2) (Some (Int (+ n1 n2))))
+        (_ None))
+      ))
+      ((Double n1)
+      (match v2 (
+        ((Double n2) (Some (Double (+ n1 n2))))
         (_ None))
       ))
       (_ None))
@@ -23,39 +28,49 @@
 
 (define-fun Minus ((x (Option Value)) (y (Option Value))) (Option Value)
 (match x (
-((Some v1)
-(match y (
-  ((Some v2)
-  (match v1 (
-    ((Num n1)
-    (match v2 (
-      ((Num n2) (Some (Num (- n1 n2))))
+  ((Some v1)
+  (match y (
+    ((Some v2)
+    (match v1 (
+      ((Int n1)
+      (match v2 (
+        ((Int n2) (Some (Int (- n1 n2))))
+        (_ None))
+      ))
+      ((Double n1)
+      (match v2 (
+        ((Double n2) (Some (Double (- n1 n2))))
+        (_ None))
+      ))
       (_ None))
     ))
     (_ None))
   ))
   (_ None))
-))
-(_ None))
 )
 )
 
 (define-fun Times ((x (Option Value)) (y (Option Value))) (Option Value)
 (match x (
-((Some v1)
-(match y (
-((Some v2)
-(match v1 (
-  ((Num n1)
-  (match v2 (
-    ((Num n2) (Some (Num (* n1 n2))))
+  ((Some v1)
+  (match y (
+    ((Some v2)
+    (match v1 (
+      ((Int n1)
+      (match v2 (
+        ((Int n2) (Some (Int (* n1 n2))))
+        (_ None))
+      ))
+      ((Double n1)
+      (match v2 (
+        ((Double n2) (Some (Double (* n1 n2))))
+        (_ None))
+      ))
+      (_ None))
+    ))
     (_ None))
   ))
   (_ None))
-))
-(_ None))
-))
-(_ None))
 )
 )
 
@@ -81,9 +96,9 @@ invalid))))
 (match y (
 ((Some v2)
 (match v1 (
-  ((Num n1)
+  ((Int n1)
   (match v2 (
-      ((Num n2) (ite (> n1 n2) true false))
+      ((Int n2) (ite (> n1 n2) true false))
       (_ invalid)
     )
   ))

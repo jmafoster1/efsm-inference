@@ -79,9 +79,6 @@ object equal{
   implicit def `Nat.equal_nat`: equal[Nat.nat] = new equal[Nat.nat] {
     val `HOL.equal` = (a: Nat.nat, b: Nat.nat) => Nat.equal_nata(a, b)
   }
-  implicit def `Int.equal_int`: equal[Int.int] = new equal[Int.int] {
-    val `HOL.equal` = (a: Int.int, b: Int.int) => Int.equal_inta(a, b)
-  }
 }
 
 def eq[A : equal](a: A, b: A): Boolean = equal[A](a, b)
@@ -942,9 +939,6 @@ object Int {
 abstract sealed class int
 final case class int_of_integer(a: BigInt) extends int
 
-def equal_inta(k: int, l: int): Boolean =
-  Code_Numeral.integer_of_int(k) == Code_Numeral.integer_of_int(l)
-
 def less_eq_int(k: int, l: int): Boolean =
   Code_Numeral.integer_of_int(k) <= Code_Numeral.integer_of_int(l)
 
@@ -961,6 +955,9 @@ def plus_int(k: int, l: int): int =
                    Code_Numeral.integer_of_int(l))
 
 def zero_int: int = int_of_integer(BigInt(0))
+
+def equal_int(k: int, l: int): Boolean =
+  Code_Numeral.integer_of_int(k) == Code_Numeral.integer_of_int(l)
 
 def minus_int(k: int, l: int): int =
   int_of_integer(Code_Numeral.integer_of_int(k) -
@@ -1014,7 +1011,7 @@ def normalize(p: (Int.int, Int.int)): (Int.int, Int.int) =
       (Euclidean_Division.divide_int(p._1, a),
         Euclidean_Division.divide_int(p._2, a))
     }
-    else (if (Int.equal_inta(p._2, Int.zero_int)) (Int.zero_int, Int.one_int)
+    else (if (Int.equal_int(p._2, Int.zero_int)) (Int.zero_int, Int.one_int)
            else {
                   val a: Int.int = Int.uminus_int(GCD.gcd_int(p._1, p._2));
                   (Euclidean_Division.divide_int(p._1, a),
@@ -1034,10 +1031,17 @@ def less_rat(p: rat, q: rat): Boolean =
     Int.less_int(Int.times_int(aa, d), Int.times_int(c, ba))
   }
 
-def zero_rat: rat = Frct((Int.zero_int, Int.one_int))
+def plus_rat(p: rat, q: rat): rat =
+  Frct({
+         val a: (Int.int, Int.int) = quotient_of(p)
+         val (aa, c): (Int.int, Int.int) = a
+         val b: (Int.int, Int.int) = quotient_of(q)
+         val (ba, d): (Int.int, Int.int) = b;
+         normalize((Int.plus_int(Int.times_int(aa, d), Int.times_int(ba, c)),
+                     Int.times_int(c, d)))
+       })
 
-def equal_rat(a: rat, b: rat): Boolean =
-  Product_Type.equal_proda[Int.int, Int.int](quotient_of(a), quotient_of(b))
+def zero_rat: rat = Frct((Int.zero_int, Int.one_int))
 
 def minus_rat(p: rat, q: rat): rat =
   Frct({
@@ -1133,11 +1137,11 @@ def less_real(x0: real, x1: real): Boolean = (x0, x1) match {
   case (Ratreal(x), Ratreal(y)) => Rat.less_rat(x, y)
 }
 
-def zero_real: real = Ratreal(Rat.zero_rat)
-
-def equal_real(x0: real, x1: real): Boolean = (x0, x1) match {
-  case (Ratreal(x), Ratreal(y)) => Rat.equal_rat(x, y)
+def plus_real(x0: real, x1: real): real = (x0, x1) match {
+  case (Ratreal(x), Ratreal(y)) => Ratreal(Rat.plus_rat(x, y))
 }
+
+def zero_real: real = Ratreal(Rat.zero_rat)
 
 def minus_real(x0: real, x1: real): real = (x0, x1) match {
   case (Ratreal(x), Ratreal(y)) => Ratreal(Rat.minus_rat(x, y))
@@ -1157,19 +1161,19 @@ object Value {
 
 abstract sealed class value
 final case class Inta(a: Int.int) extends value
-final case class Float(a: Real.real) extends value
+final case class Double(a: Real.real) extends value
 final case class Str(a: String) extends value
 
 def equal_valuea(x0: value, x1: value): Boolean = (x0, x1) match {
-  case (Float(x2), Str(x3)) => false
-  case (Str(x3), Float(x2)) => false
+  case (Double(x2), Str(x3)) => false
+  case (Str(x3), Double(x2)) => false
   case (Inta(x1), Str(x3)) => false
   case (Str(x3), Inta(x1)) => false
-  case (Inta(x1), Float(x2)) => false
-  case (Float(x2), Inta(x1)) => false
+  case (Inta(x1), Double(x2)) => false
+  case (Double(x2), Inta(x1)) => false
   case (Str(x3), Str(y3)) => x3 == y3
-  case (Float(x2), Float(y2)) => Real.equal_real(x2, y2)
-  case (Inta(x1), Inta(y1)) => Int.equal_inta(x1, y1)
+  case (Double(x2), Double(y2)) => Dirties.doubleEquals(x2, y2)
+  case (Inta(x1), Inta(y1)) => Int.equal_int(x1, y1)
 }
 
 def value_eq(x0: Option[value], uu: Option[value]): Trilean.trilean = (x0, uu)
@@ -1188,15 +1192,29 @@ def MaybeBoolInt(f: Int.int => Int.int => Boolean, uv: Option[value],
   case (f, Some(Inta(a)), Some(Inta(b))) =>
     (if ((f(a))(b)) Trilean.truea() else Trilean.falsea())
   case (uu, None, uw) => Trilean.invalid()
-  case (uu, Some(Float(va)), uw) => Trilean.invalid()
+  case (uu, Some(Double(va)), uw) => Trilean.invalid()
   case (uu, Some(Str(va)), uw) => Trilean.invalid()
   case (uu, uv, None) => Trilean.invalid()
-  case (uu, uv, Some(Float(va))) => Trilean.invalid()
+  case (uu, uv, Some(Double(va))) => Trilean.invalid()
   case (uu, uv, Some(Str(va))) => Trilean.invalid()
 }
 
 def value_gt(a: Option[value], b: Option[value]): Trilean.trilean =
   MaybeBoolInt(((x: Int.int) => (y: Int.int) => Int.less_int(y, x)), a, b)
+
+def maybe_arith_real(f: Real.real => Real.real => Real.real, uv: Option[value],
+                      uw: Option[value]):
+      Option[value]
+  =
+  (f, uv, uw) match {
+  case (f, Some(Double(x)), Some(Double(y))) => Some[value](Double((f(x))(y)))
+  case (uu, None, uw) => None
+  case (uu, Some(Inta(va)), uw) => None
+  case (uu, Some(Str(va)), uw) => None
+  case (uu, uv, None) => None
+  case (uu, uv, Some(Inta(va))) => None
+  case (uu, uv, Some(Str(va))) => None
+}
 
 def maybe_arith_int(f: Int.int => Int.int => Int.int, uv: Option[value],
                      uw: Option[value]):
@@ -1205,17 +1223,29 @@ def maybe_arith_int(f: Int.int => Int.int => Int.int, uv: Option[value],
   (f, uv, uw) match {
   case (f, Some(Inta(x)), Some(Inta(y))) => Some[value](Inta((f(x))(y)))
   case (uu, None, uw) => None
-  case (uu, Some(Float(va)), uw) => None
+  case (uu, Some(Double(va)), uw) => None
   case (uu, Some(Str(va)), uw) => None
   case (uu, uv, None) => None
-  case (uu, uv, Some(Float(va))) => None
+  case (uu, uv, Some(Double(va))) => None
   case (uu, uv, Some(Str(va))) => None
 }
 
-def value_plus: Option[value] => Option[value] => Option[value] =
-  ((a: Option[value]) => (b: Option[value]) =>
-    maybe_arith_int(((aa: Int.int) => (ba: Int.int) => Int.plus_int(aa, ba)), a,
-                     b))
+def value_plus(a: Option[value], b: Option[value]): Option[value] =
+  (a match {
+     case None =>
+       maybe_arith_int(((aa: Int.int) => (ba: Int.int) => Int.plus_int(aa, ba)),
+                        a, b)
+     case Some(Inta(_)) =>
+       maybe_arith_int(((aa: Int.int) => (ba: Int.int) => Int.plus_int(aa, ba)),
+                        a, b)
+     case Some(Double(_)) =>
+       maybe_arith_real(((aa: Real.real) => (ba: Real.real) =>
+                          Real.plus_real(aa, ba)),
+                         a, b)
+     case Some(Str(_)) =>
+       maybe_arith_int(((aa: Int.int) => (ba: Int.int) => Int.plus_int(aa, ba)),
+                        a, b)
+   })
 
 def value_minus: Option[value] => Option[value] => Option[value] =
   ((a: Option[value]) => (b: Option[value]) =>
@@ -1299,8 +1329,7 @@ def aval[A](x0: aexp[A], s: A => Option[Value.value]): Option[Value.value] =
   (x0, s) match {
   case (L(x), s) => Some[Value.value](x)
   case (V(x), s) => s(x)
-  case (Plus(a1, a2), s) =>
-    Value.value_plus.apply(aval[A](a1, s)).apply(aval[A](a2, s))
+  case (Plus(a1, a2), s) => Value.value_plus(aval[A](a1, s), aval[A](a2, s))
   case (Minus(a1, a2), s) =>
     Value.value_minus.apply(aval[A](a1, s)).apply(aval[A](a2, s))
   case (Times(a1, a2), s) =>
@@ -1406,7 +1435,7 @@ def aexp_constrains[A : HOL.equal](x0: aexp[A], a: aexp[A]): Boolean = (x0, a)
 
 def enumerate_aexp_ints[A](x0: aexp[A]): Set.set[Int.int] = x0 match {
   case L(Value.Inta(s)) => Set.insert[Int.int](s, Set.bot_set[Int.int])
-  case L(Value.Float(v)) => Set.bot_set[Int.int]
+  case L(Value.Double(v)) => Set.bot_set[Int.int]
   case L(Value.Str(v)) => Set.bot_set[Int.int]
   case V(uv) => Set.bot_set[Int.int]
   case Plus(a1, a2) =>
@@ -1666,7 +1695,7 @@ def enumerate_gexp_ints[A](x0: gexp[A]): Set.set[Int.int] = x0 match {
                                     (x match {
                                        case Value.Inta(n) =>
  Set.insert[Int.int](n, acc)
-                                       case Value.Float(_) => acc
+                                       case Value.Double(_) => acc
                                        case Value.Str(_) => acc
                                      })),
                                    l, Set.bot_set[Int.int])
@@ -1932,14 +1961,14 @@ def less_list[A : HOL.equal : Orderings.order](xs: List[A], x1: List[A]):
 object Value_Lexorder {
 
 def less_value(x0: Value.value, x1: Value.value): Boolean = (x0, x1) match {
-  case (Value.Inta(i), Value.Float(f)) => true
+  case (Value.Inta(i), Value.Double(f)) => true
   case (Value.Inta(i), Value.Str(s)) => true
-  case (Value.Float(f), Value.Inta(i)) => false
-  case (Value.Float(f), Value.Str(n)) => true
+  case (Value.Double(f), Value.Inta(i)) => false
+  case (Value.Double(f), Value.Str(n)) => true
   case (Value.Str(s), Value.Inta(i)) => false
-  case (Value.Str(s), Value.Float(f)) => false
+  case (Value.Str(s), Value.Double(f)) => false
   case (Value.Str(s1), Value.Str(s2)) => s1 < s2
-  case (Value.Float(f1), Value.Float(f2)) => Real.less_real(f1, f2)
+  case (Value.Double(f1), Value.Double(f2)) => Real.less_real(f1, f2)
   case (Value.Inta(i1), Value.Inta(i2)) => Int.less_int(i1, i2)
 }
 
@@ -2474,7 +2503,7 @@ def guardMatch_code(uu: List[GExp.gexp[VName.vname]],
   case (((GExp.Eq(AExp.Plus(vd, ve), vc))::va), uv) => false
   case (((GExp.Eq(AExp.Minus(vd, ve), vc))::va), uv) => false
   case (((GExp.Eq(AExp.Times(vd, ve), vc))::va), uv) => false
-  case (((GExp.Eq(vb, AExp.L(Value.Float(ve))))::va), uv) => false
+  case (((GExp.Eq(vb, AExp.L(Value.Double(ve))))::va), uv) => false
   case (((GExp.Eq(vb, AExp.L(Value.Str(ve))))::va), uv) => false
   case (((GExp.Eq(vb, AExp.V(vd)))::va), uv) => false
   case (((GExp.Eq(vb, AExp.Plus(vd, ve)))::va), uv) => false
@@ -2491,7 +2520,7 @@ def guardMatch_code(uu: List[GExp.gexp[VName.vname]],
   case (uu, ((GExp.Eq(AExp.Plus(vd, ve), vc))::va)) => false
   case (uu, ((GExp.Eq(AExp.Minus(vd, ve), vc))::va)) => false
   case (uu, ((GExp.Eq(AExp.Times(vd, ve), vc))::va)) => false
-  case (uu, ((GExp.Eq(vb, AExp.L(Value.Float(ve))))::va)) => false
+  case (uu, ((GExp.Eq(vb, AExp.L(Value.Double(ve))))::va)) => false
   case (uu, ((GExp.Eq(vb, AExp.L(Value.Str(ve))))::va)) => false
   case (uu, ((GExp.Eq(vb, AExp.V(vd)))::va)) => false
   case (uu, ((GExp.Eq(vb, AExp.Plus(vd, ve)))::va)) => false
@@ -2510,7 +2539,7 @@ def outputMatch_code(uu: List[AExp.aexp[VName.vname]],
   (uu, uv) match {
   case (((AExp.L(Value.Inta(na)))::Nil), ((AExp.L(Value.Inta(n)))::Nil)) => true
   case (Nil, uv) => false
-  case (((AExp.L(Value.Float(vc)))::va), uv) => false
+  case (((AExp.L(Value.Double(vc)))::va), uv) => false
   case (((AExp.L(Value.Str(vc)))::va), uv) => false
   case (((AExp.V(vb))::va), uv) => false
   case (((AExp.Plus(vb, vc))::va), uv) => false
@@ -2518,7 +2547,7 @@ def outputMatch_code(uu: List[AExp.aexp[VName.vname]],
   case (((AExp.Times(vb, vc))::va), uv) => false
   case ((v::((vb::vc))), uv) => false
   case (uu, Nil) => false
-  case (uu, ((AExp.L(Value.Float(vc)))::va)) => false
+  case (uu, ((AExp.L(Value.Double(vc)))::va)) => false
   case (uu, ((AExp.L(Value.Str(vc)))::va)) => false
   case (uu, ((AExp.V(vb))::va)) => false
   case (uu, ((AExp.Plus(vb, vc))::va)) => false
@@ -4810,7 +4839,7 @@ def shows_string: String => String => String =
   ((a: String) => (b: String) => a + b)
 
 def showsp_decimal(p: String, n: Real.real, places: Nat.nat): String => String =
-  (if (Real.equal_real(n, Real.zero_real)) shows_string.apply(p)
+  (if (Dirties.doubleEquals(n, Real.zero_real)) shows_string.apply(p)
     else (if (Nat.equal_nata(places, Nat.zero_nata)) shows_string.apply("...")
            else Fun.comp[String, String,
                           String](showsp_decimal(p,
@@ -4865,7 +4894,7 @@ def show_real(r: Real.real, precision: Nat.nat): String =
 def value2dot(x0: Value.value): String = x0 match {
   case Value.Str(s) => "\"" + s.replace("\\", "\\\\") + "\""
   case Value.Inta(n) => Code_Numeral.integer_of_int(n).toString()
-  case Value.Float(n) => show_real(n, Code_Numeral.nat_of_integer(BigInt(3)))
+  case Value.Double(n) => show_real(n, Code_Numeral.nat_of_integer(BigInt(3)))
 }
 
 def aexp2dot(x0: AExp.aexp[VName.vname]): String = x0 match {
@@ -6925,7 +6954,7 @@ def less_eq_value_type(v1: value_type, v2: value_type): Boolean =
 def typeSig(x0: AExp.aexp[VName.vname]): value_type = x0 match {
   case AExp.L(Value.Str(uu)) => S()
   case AExp.L(Value.Inta(va)) => N()
-  case AExp.L(Value.Float(va)) => N()
+  case AExp.L(Value.Double(va)) => N()
   case AExp.V(v) => N()
   case AExp.Plus(v, va) => N()
   case AExp.Minus(v, va) => N()
