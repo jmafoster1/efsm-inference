@@ -53,7 +53,7 @@ object TypeConversion {
   def typeString(v: Value.value): String = v match {
     case Value.Inta(_) => "Int"
     case Value.Str(_) => "String"
-    case Value.Double(_) => "Real"
+    case Value.Reala(_) => "Real"
   }
 
   def vnameFromString(name: String):VName.vname = {
@@ -227,12 +227,12 @@ object TypeConversion {
   def toValue(n: BigInt): Value.value = Value.Inta(Int.int_of_integer(n))
   def toValue(n: Long): Value.value = Value.Inta(Int.int_of_integer(n))
   def toValue(s: String): Value.value = Value.Str(s)
-  def toValue(d: Double): Value.value = Value.Double(Real.Ratreal(rat_of_double(d)))
+  def toValue(d: Double): Value.value = Value.Reala(Real.Ratreal(rat_of_double(d)))
   def toValue(e: Expr): Value.value = {
     if (e.isIntNum())
       return Value.Inta(Int.int_of_integer(e.toString.toInt))
     if (e.isRatNum())
-      return Value.Double(Real.Ratreal(Rat.Frct((Int.int_of_integer(e.asInstanceOf[RatNum].getNumerator.toString.toInt), Int.int_of_integer(e.asInstanceOf[RatNum].getDenominator.toString.toInt)))))
+      return Value.Reala(Real.Ratreal(Rat.Frct((Int.int_of_integer(e.asInstanceOf[RatNum].getNumerator.toString.toInt), Int.int_of_integer(e.asInstanceOf[RatNum].getDenominator.toString.toInt)))))
     else if (e.isString()) {
       val str = e.toString.slice(1, e.toString.length-1)
       return Value.Str(str)

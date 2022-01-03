@@ -56,10 +56,10 @@ object GP {
     var stringTerms = List[VariableTerminal[_]]()
 
     for (v <- (Value.Inta(Int.int_of_integer(0)) :: Value.Inta(Int.int_of_integer(1)) :: Value.Inta(Int.int_of_integer(2)) ::
-               Value.Double(TypeConversion.to_real(0)) :: Value.Double(TypeConversion.to_real(1)) :: Value.Double(TypeConversion.to_real(2)) ::
+               Value.Reala(TypeConversion.to_real(0)) :: Value.Reala(TypeConversion.to_real(1)) :: Value.Reala(TypeConversion.to_real(2)) ::
                values).distinct.reverse) v match {
       case Value.Inta(n) => intTerms = (new IntegerVariableAssignmentTerminal(TypeConversion.toLong(n))) :: intTerms
-      case Value.Double(n) => doubleTerms = (new DoubleVariableAssignmentTerminal(TypeConversion.double_of_real(n))) :: doubleTerms
+      case Value.Reala(n) => doubleTerms = (new DoubleVariableAssignmentTerminal(TypeConversion.double_of_real(n))) :: doubleTerms
       case Value.Str(s) => stringTerms = (new StringVariableAssignmentTerminal(s)) :: stringTerms
     }
 

@@ -58,7 +58,7 @@ object Dirties {
   def toZ3(v: Value.value): String = v match {
     case Value.Inta(n) => s"(Int ${Code_Numeral.integer_of_int(n).toString})"
     case Value.Str(s) => s"""(Str "${s}")"""
-    case Value.Double(f) => s"""(Double ${TypeConversion.double_of_real(f)})"""
+    case Value.Reala(f) => s"""(Double ${TypeConversion.double_of_real(f)})"""
   }
 
   def toZ3(a: VName.vname): String = a match {
@@ -76,7 +76,7 @@ object Dirties {
 
   def toZ3Native(v: Value.value): String = v match {
     case Value.Inta(n) => s"${Code_Numeral.integer_of_int(n).toString}"
-    case Value.Double(r) => s"${TypeConversion.double_of_real(r).toString}"
+    case Value.Reala(r) => s"${TypeConversion.double_of_real(r).toString}"
     case Value.Str(s) => s""""${s}""""
   }
 
@@ -161,7 +161,7 @@ object Dirties {
   def getTypes(i: List[Value.value]): List[String] = i.map {
     case Value.Inta(_) => "Int"
     case Value.Str(_) => "Str"
-    case Value.Double(_) => "Double"
+    case Value.Reala(_) => "Double"
   }
 
   def getTypes(r: Map[Nat.nat, Option[Value.value]]): List[String] = {
@@ -170,7 +170,7 @@ object Dirties {
     keys.map(key => r(Nat.Nata(key)) match {
       case Some(Value.Inta(_)) => "Int"
       case Some(Value.Str(_)) => "String"
-      case Some(Value.Double(_)) => "Double"
+      case Some(Value.Reala(_)) => "Double"
       case None => throw new IllegalArgumentException("Got none from a map")
     })
   }
@@ -180,7 +180,7 @@ object Dirties {
     keys.sorted
     keys.map(key => r(Nat.Nata(key)) match {
       case Some(Value.Inta(Int.int_of_integer(n))) => n.toString
-      case Some(Value.Double(r)) => TypeConversion.double_of_real(r).toString
+      case Some(Value.Reala(r)) => TypeConversion.double_of_real(r).toString
       case Some(Value.Str(s)) => "\"" + s + "\""
       case None => throw new IllegalArgumentException("Got none from a map")
     })
@@ -197,7 +197,7 @@ object Dirties {
       case Value.Inta(n) => {
         vars += ((name, value) -> new IntegerVariableAssignment(name, TypeConversion.toLong(n)))
       }
-      case Value.Double(n) => {
+      case Value.Reala(n) => {
         vars += ((name, value) -> new DoubleVariableAssignment(name, TypeConversion.double_of_real(n)))
       }
       case Value.Str(s) => {
@@ -259,10 +259,10 @@ object Dirties {
           intVarNames = s"i${ix}" :: intVarNames
           scenario = (varOf((s"i${ix}", Value.Inta(n)))) :: scenario
         }
-        case Value.Double(n) => {
+        case Value.Reala(n) => {
           doubleVarVals = TypeConversion.double_of_real(n) :: doubleVarVals
           doubleVarNames = s"i${ix}" :: doubleVarNames
-          scenario = (varOf((s"i${ix}", Value.Double(n)))) :: scenario
+          scenario = (varOf((s"i${ix}", Value.Reala(n)))) :: scenario
         }
         case Value.Str(s) => {
           stringVarVals = s :: stringVarVals
@@ -277,10 +277,10 @@ object Dirties {
           intVarNames = s"r${PrettyPrinter.show(r)}" :: intVarNames
           scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Inta(n))) :: scenario
         }
-        case Some(Value.Double(n)) => {
+        case Some(Value.Reala(n)) => {
           doubleVarVals = TypeConversion.double_of_real(n) :: doubleVarVals
           doubleVarNames = s"r${PrettyPrinter.show(r)}" :: doubleVarNames
-          scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Double(n))) :: scenario
+          scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Reala(n))) :: scenario
         }
         case Some(Value.Str(s)) => {
           stringVarVals = s :: stringVarVals
@@ -301,10 +301,10 @@ object Dirties {
           intVarNames = s"i${ix}" :: intVarNames
           scenario = (varOf((s"i${ix}", Value.Inta(n)))) :: scenario
         }
-        case Value.Double(n) => {
+        case Value.Reala(n) => {
           doubleVarVals = TypeConversion.double_of_real(n) :: doubleVarVals
           doubleVarNames = s"i${ix}" :: doubleVarNames
-          scenario = (varOf((s"i${ix}", Value.Double(n)))) :: scenario
+          scenario = (varOf((s"i${ix}", Value.Reala(n)))) :: scenario
         }
         case Value.Str(s) => {
           stringVarVals = s :: stringVarVals
@@ -319,10 +319,10 @@ object Dirties {
           intVarNames = s"r${PrettyPrinter.show(r)}" :: intVarNames
           scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Inta(n))) :: scenario
         }
-        case Some(Value.Double(n)) => {
+        case Some(Value.Reala(n)) => {
           doubleVarVals = TypeConversion.double_of_real(n) :: doubleVarVals
           doubleVarNames = s"r${PrettyPrinter.show(r)}" :: doubleVarNames
-          scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Double(n))) :: scenario
+          scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Reala(n))) :: scenario
         }
         case Some(Value.Str(s)) => {
           stringVarVals = s :: stringVarVals
@@ -428,7 +428,7 @@ object Dirties {
             intVarNames = s"i${ix}" :: intVarNames
             scenario = (varOf(s"i${ix}", ip)) :: scenario
           }
-          case Value.Double(n) => {
+          case Value.Reala(n) => {
             doubleVarNames = s"i${ix}" :: doubleVarNames
             scenario = (varOf(s"i${ix}", ip)) :: scenario
           }
@@ -443,9 +443,9 @@ object Dirties {
             intVarNames = s"r${TypeConversion.toInt(k)}" :: intVarNames
             scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Inta(n))) :: scenario
           }
-          case Some(Value.Double(n)) => {
+          case Some(Value.Reala(n)) => {
             doubleVarNames = s"r${TypeConversion.toInt(k)}" :: doubleVarNames
-            scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Double(n))) :: scenario
+            scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Reala(n))) :: scenario
           }
           case Some(Value.Str(s)) => {
             stringVarNames = s"r${TypeConversion.toInt(k)}" :: stringVarNames
@@ -457,7 +457,7 @@ object Dirties {
             intVarNames = s"r${r_index}" :: intVarNames
             trainingSet.put(scenario, varOf("r" + r_index, updatedReg))
           }
-          case Value.Double(n) => {
+          case Value.Reala(n) => {
             doubleVarNames = s"r${r_index}" :: doubleVarNames
             trainingSet.put(scenario, varOf("r" + r_index, updatedReg))
           }
@@ -510,9 +510,9 @@ object Dirties {
     // sub.addChild(new IntegerVariableAssignmentTerminal("r1", false))
     // gp.addSeed(sub)
     //
-    val add = new AddDoublesOperator()
-    add.addChild(new DoubleVariableAssignmentTerminal("i0", false))
-    add.addChild(new DoubleVariableAssignmentTerminal("r1", true))
+    // val add = new AddDoublesOperator()
+    // add.addChild(new DoubleVariableAssignmentTerminal("i0", false))
+    // add.addChild(new DoubleVariableAssignmentTerminal("r1", true))
     // gp.addSeed(add)
     //
     // val add2 = new AddIntegersOperator()
@@ -521,7 +521,7 @@ object Dirties {
     // gp.addSeed(add2)
     // =========================================================================
 
-    gp.setSeeds((intTerms ++ stringTerms ++ List(add)))
+    gp.setSeeds((intTerms ++ stringTerms))
 
     val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]].simp
 
@@ -584,7 +584,7 @@ object Dirties {
             case Value.Inta(n) => {
               intVarNames = s"i${ix}" :: intVarNames
             }
-            case Value.Double(n) => {
+            case Value.Reala(n) => {
               doubleVarNames = s"i${ix}" :: doubleVarNames
             }
             case Value.Str(s) => {
@@ -598,9 +598,9 @@ object Dirties {
             intVarNames = s"r${TypeConversion.toInt(k)}" :: intVarNames
             scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Inta(n))) :: scenario
           }
-          case Some(Value.Double(n)) => {
+          case Some(Value.Reala(n)) => {
             doubleVarNames = s"r${TypeConversion.toInt(k)}" :: doubleVarNames
-            scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Double(n))) :: scenario
+            scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Reala(n))) :: scenario
           }
           case Some(Value.Str(s)) => {
             stringVarNames = s"r${TypeConversion.toInt(k)}" :: stringVarNames
@@ -615,7 +615,7 @@ object Dirties {
             intVarNames = s"r${r_index}" :: intVarNames
             latentType = "Int"
           }
-          case Value.Double(n) => {
+          case Value.Reala(n) => {
             doubleVarNames = s"r${r_index}" :: doubleVarNames
             latentType = "Double"
           }
@@ -705,11 +705,10 @@ object Dirties {
     // sub.addChild(new IntegerVariableAssignmentTerminal("r1", false))
     // gp.addSeed(sub)
     //
-    val add = new AddDoublesOperator()
-    add.addChild(new DoubleVariableAssignmentTerminal("i0", false))
-    add.addChild(new DoubleVariableAssignmentTerminal("r1", true))
-    gp.evaluatePopulation(List(add))
-    println("BEST SOLUTION FITNESS: "+add.getFitness)
+    // val add = new AddDoublesOperator()
+    // add.addChild(new DoubleVariableAssignmentTerminal("i0", false))
+    // add.addChild(new DoubleVariableAssignmentTerminal("r1", true))
+    // gp.evaluatePopulation(List(add))
     // gp.addSeed(add)
     //
     // val add2 = new AddIntegersOperator()

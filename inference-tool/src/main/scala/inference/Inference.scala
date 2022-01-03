@@ -1062,6 +1062,15 @@ def times_rat(p: rat, q: rat): rat =
          normalize((Int.times_int(aa, ba), Int.times_int(c, d)))
        })
 
+def divide_rat(p: rat, q: rat): rat =
+  Frct({
+         val a: (Int.int, Int.int) = quotient_of(p)
+         val (aa, c): (Int.int, Int.int) = a
+         val b: (Int.int, Int.int) = quotient_of(q)
+         val (ba, d): (Int.int, Int.int) = b;
+         normalize((Int.times_int(aa, d), Int.times_int(c, ba)))
+       })
+
 def floor_rat(p: rat): Int.int = {
                                    val a: (Int.int, Int.int) = quotient_of(p)
                                    val (aa, b): (Int.int, Int.int) = a;
@@ -1151,6 +1160,10 @@ def times_real(x0: real, x1: real): real = (x0, x1) match {
   case (Ratreal(x), Ratreal(y)) => Ratreal(Rat.times_rat(x, y))
 }
 
+def divide_real(x0: real, x1: real): real = (x0, x1) match {
+  case (Ratreal(x), Ratreal(y)) => Ratreal(Rat.divide_rat(x, y))
+}
+
 def floor_real(x0: real): Int.int = x0 match {
   case Ratreal(x) => Rat.floor_rat(x)
 }
@@ -1161,18 +1174,18 @@ object Value {
 
 abstract sealed class value
 final case class Inta(a: Int.int) extends value
-final case class Double(a: Real.real) extends value
+final case class Reala(a: Real.real) extends value
 final case class Str(a: String) extends value
 
 def equal_valuea(x0: value, x1: value): Boolean = (x0, x1) match {
-  case (Double(x2), Str(x3)) => false
-  case (Str(x3), Double(x2)) => false
+  case (Reala(x2), Str(x3)) => false
+  case (Str(x3), Reala(x2)) => false
   case (Inta(x1), Str(x3)) => false
   case (Str(x3), Inta(x1)) => false
-  case (Inta(x1), Double(x2)) => false
-  case (Double(x2), Inta(x1)) => false
+  case (Inta(x1), Reala(x2)) => false
+  case (Reala(x2), Inta(x1)) => false
   case (Str(x3), Str(y3)) => x3 == y3
-  case (Double(x2), Double(y2)) => Dirties.doubleEquals(x2, y2)
+  case (Reala(x2), Reala(y2)) => Dirties.doubleEquals(x2, y2)
   case (Inta(x1), Inta(y1)) => Int.equal_int(x1, y1)
 }
 
@@ -1192,70 +1205,53 @@ def MaybeBoolInt(f: Int.int => Int.int => Boolean, uv: Option[value],
   case (f, Some(Inta(a)), Some(Inta(b))) =>
     (if ((f(a))(b)) Trilean.truea() else Trilean.falsea())
   case (uu, None, uw) => Trilean.invalid()
-  case (uu, Some(Double(va)), uw) => Trilean.invalid()
+  case (uu, Some(Reala(va)), uw) => Trilean.invalid()
   case (uu, Some(Str(va)), uw) => Trilean.invalid()
   case (uu, uv, None) => Trilean.invalid()
-  case (uu, uv, Some(Double(va))) => Trilean.invalid()
+  case (uu, uv, Some(Reala(va))) => Trilean.invalid()
   case (uu, uv, Some(Str(va))) => Trilean.invalid()
 }
 
 def value_gt(a: Option[value], b: Option[value]): Trilean.trilean =
   MaybeBoolInt(((x: Int.int) => (y: Int.int) => Int.less_int(y, x)), a, b)
 
-def maybe_arith_real(f: Real.real => Real.real => Real.real, uv: Option[value],
-                      uw: Option[value]):
+def maybe_arith(f: Real.real => Real.real => Real.real, uv: Option[value],
+                 uw: Option[value]):
       Option[value]
   =
   (f, uv, uw) match {
-  case (f, Some(Double(x)), Some(Double(y))) => Some[value](Double((f(x))(y)))
+  case (f, Some(Inta(x)), Some(Inta(y))) =>
+    Some[value](Inta(Real.floor_real((f(Real.Ratreal(Rat.of_int(x))))(Real.Ratreal(Rat.of_int(y))))))
+  case (f, Some(Reala(x)), Some(Reala(y))) => Some[value](Reala((f(x))(y)))
   case (uu, None, uw) => None
-  case (uu, Some(Inta(va)), uw) => None
+  case (uu, Some(Reala(va)), None) => None
+  case (uu, Some(Reala(va)), Some(Inta(vb))) => None
+  case (uu, Some(Reala(va)), Some(Str(vb))) => None
   case (uu, Some(Str(va)), uw) => None
   case (uu, uv, None) => None
-  case (uu, uv, Some(Inta(va))) => None
-  case (uu, uv, Some(Str(va))) => None
-}
-
-def maybe_arith_int(f: Int.int => Int.int => Int.int, uv: Option[value],
-                     uw: Option[value]):
-      Option[value]
-  =
-  (f, uv, uw) match {
-  case (f, Some(Inta(x)), Some(Inta(y))) => Some[value](Inta((f(x))(y)))
-  case (uu, None, uw) => None
-  case (uu, Some(Double(va)), uw) => None
-  case (uu, Some(Str(va)), uw) => None
-  case (uu, uv, None) => None
-  case (uu, uv, Some(Double(va))) => None
+  case (uu, Some(Inta(vb)), Some(Reala(va))) => None
   case (uu, uv, Some(Str(va))) => None
 }
 
 def value_plus(a: Option[value], b: Option[value]): Option[value] =
-  (a match {
-     case None =>
-       maybe_arith_int(((aa: Int.int) => (ba: Int.int) => Int.plus_int(aa, ba)),
-                        a, b)
-     case Some(Inta(_)) =>
-       maybe_arith_int(((aa: Int.int) => (ba: Int.int) => Int.plus_int(aa, ba)),
-                        a, b)
-     case Some(Double(_)) =>
-       maybe_arith_real(((aa: Real.real) => (ba: Real.real) =>
-                          Real.plus_real(aa, ba)),
-                         a, b)
-     case Some(Str(_)) =>
-       maybe_arith_int(((aa: Int.int) => (ba: Int.int) => Int.plus_int(aa, ba)),
-                        a, b)
-   })
+  maybe_arith(((aa: Real.real) => (ba: Real.real) => Real.plus_real(aa, ba)), a,
+               b)
 
 def value_minus: Option[value] => Option[value] => Option[value] =
   ((a: Option[value]) => (b: Option[value]) =>
-    maybe_arith_int(((aa: Int.int) => (ba: Int.int) => Int.minus_int(aa, ba)),
-                     a, b))
+    maybe_arith(((aa: Real.real) => (ba: Real.real) => Real.minus_real(aa, ba)),
+                 a, b))
 
 def value_times: Option[value] => Option[value] => Option[value] =
   ((a: Option[value]) => (b: Option[value]) =>
-    maybe_arith_int(((aa: Int.int) => (ba: Int.int) => Int.times_int(aa, ba)),
-                     a, b))
+    maybe_arith(((aa: Real.real) => (ba: Real.real) => Real.times_real(aa, ba)),
+                 a, b))
+
+def value_divide: Option[value] => Option[value] => Option[value] =
+  ((a: Option[value]) => (b: Option[value]) =>
+    maybe_arith(((aa: Real.real) => (ba: Real.real) =>
+                  Real.divide_real(aa, ba)),
+                 a, b))
 
 } /* object Value */
 
@@ -1292,21 +1288,32 @@ final case class V[A](a: A) extends aexp[A]
 final case class Plus[A](a: aexp[A], b: aexp[A]) extends aexp[A]
 final case class Minus[A](a: aexp[A], b: aexp[A]) extends aexp[A]
 final case class Times[A](a: aexp[A], b: aexp[A]) extends aexp[A]
+final case class Divide[A](a: aexp[A], b: aexp[A]) extends aexp[A]
 
 def equal_aexpa[A : HOL.equal](x0: aexp[A], x1: aexp[A]): Boolean = (x0, x1)
   match {
+  case (Times(x51, x52), Divide(x61, x62)) => false
+  case (Divide(x61, x62), Times(x51, x52)) => false
+  case (Minus(x41, x42), Divide(x61, x62)) => false
+  case (Divide(x61, x62), Minus(x41, x42)) => false
   case (Minus(x41, x42), Times(x51, x52)) => false
   case (Times(x51, x52), Minus(x41, x42)) => false
+  case (Plus(x31, x32), Divide(x61, x62)) => false
+  case (Divide(x61, x62), Plus(x31, x32)) => false
   case (Plus(x31, x32), Times(x51, x52)) => false
   case (Times(x51, x52), Plus(x31, x32)) => false
   case (Plus(x31, x32), Minus(x41, x42)) => false
   case (Minus(x41, x42), Plus(x31, x32)) => false
+  case (V(x2), Divide(x61, x62)) => false
+  case (Divide(x61, x62), V(x2)) => false
   case (V(x2), Times(x51, x52)) => false
   case (Times(x51, x52), V(x2)) => false
   case (V(x2), Minus(x41, x42)) => false
   case (Minus(x41, x42), V(x2)) => false
   case (V(x2), Plus(x31, x32)) => false
   case (Plus(x31, x32), V(x2)) => false
+  case (L(x1), Divide(x61, x62)) => false
+  case (Divide(x61, x62), L(x1)) => false
   case (L(x1), Times(x51, x52)) => false
   case (Times(x51, x52), L(x1)) => false
   case (L(x1), Minus(x41, x42)) => false
@@ -1315,6 +1322,8 @@ def equal_aexpa[A : HOL.equal](x0: aexp[A], x1: aexp[A]): Boolean = (x0, x1)
   case (Plus(x31, x32), L(x1)) => false
   case (L(x1), V(x2)) => false
   case (V(x2), L(x1)) => false
+  case (Divide(x61, x62), Divide(y61, y62)) =>
+    (equal_aexpa[A](x61, y61)) && (equal_aexpa[A](x62, y62))
   case (Times(x51, x52), Times(y51, y52)) =>
     (equal_aexpa[A](x51, y51)) && (equal_aexpa[A](x52, y52))
   case (Minus(x41, x42), Minus(y41, y42)) =>
@@ -1334,6 +1343,8 @@ def aval[A](x0: aexp[A], s: A => Option[Value.value]): Option[Value.value] =
     Value.value_minus.apply(aval[A](a1, s)).apply(aval[A](a2, s))
   case (Times(a1, a2), s) =>
     Value.value_times.apply(aval[A](a1, s)).apply(aval[A](a2, s))
+  case (Divide(a1, a2), s) =>
+    Value.value_divide.apply(aval[A](a1, s)).apply(aval[A](a2, s))
 }
 
 def is_lit[A](x0: aexp[A]): Boolean = x0 match {
@@ -1342,6 +1353,7 @@ def is_lit[A](x0: aexp[A]): Boolean = x0 match {
   case Plus(v, va) => false
   case Minus(v, va) => false
   case Times(v, va) => false
+  case Divide(v, va) => false
 }
 
 def input2state(n: List[Value.value]): Map[Nat.nat, Option[Value.value]] =
@@ -1378,6 +1390,8 @@ def rename_regs(uu: Nat.nat => Nat.nat, x1: aexp[VName.vname]):
   case (f, Minus(a, b)) =>
     Minus[VName.vname](rename_regs(f, a), rename_regs(f, b))
   case (f, Times(a, b)) =>
+    Minus[VName.vname](rename_regs(f, a), rename_regs(f, b))
+  case (f, Divide(a, b)) =>
     Times[VName.vname](rename_regs(f, a), rename_regs(f, b))
 }
 
@@ -1391,6 +1405,8 @@ def enumerate_regs(x0: aexp[VName.vname]): Set.set[Nat.nat] = x0 match {
     Set.sup_set[Nat.nat](enumerate_regs(v), enumerate_regs(va))
   case Times(v, va) =>
     Set.sup_set[Nat.nat](enumerate_regs(v), enumerate_regs(va))
+  case Divide(v, va) =>
+    Set.sup_set[Nat.nat](enumerate_regs(v), enumerate_regs(va))
 }
 
 def enumerate_aexp_inputs(x0: aexp[VName.vname]): Set.set[Nat.nat] = x0 match {
@@ -1402,6 +1418,8 @@ def enumerate_aexp_inputs(x0: aexp[VName.vname]): Set.set[Nat.nat] = x0 match {
   case Minus(v, va) =>
     Set.sup_set[Nat.nat](enumerate_aexp_inputs(v), enumerate_aexp_inputs(va))
   case Times(v, va) =>
+    Set.sup_set[Nat.nat](enumerate_aexp_inputs(v), enumerate_aexp_inputs(va))
+  case Divide(v, va) =>
     Set.sup_set[Nat.nat](enumerate_aexp_inputs(v), enumerate_aexp_inputs(va))
 }
 
@@ -1431,11 +1449,15 @@ def aexp_constrains[A : HOL.equal](x0: aexp[A], a: aexp[A]): Boolean = (x0, a)
     (equal_aexpa[A](Times[A](a1, a2),
                      v)) || ((aexp_constrains[A](a1,
           v)) || (aexp_constrains[A](a2, v)))
+  case (Divide(a1, a2), v) =>
+    (equal_aexpa[A](Times[A](a1, a2),
+                     v)) || ((aexp_constrains[A](a1,
+          v)) || (aexp_constrains[A](a2, v)))
 }
 
 def enumerate_aexp_ints[A](x0: aexp[A]): Set.set[Int.int] = x0 match {
   case L(Value.Inta(s)) => Set.insert[Int.int](s, Set.bot_set[Int.int])
-  case L(Value.Double(v)) => Set.bot_set[Int.int]
+  case L(Value.Reala(v)) => Set.bot_set[Int.int]
   case L(Value.Str(v)) => Set.bot_set[Int.int]
   case V(uv) => Set.bot_set[Int.int]
   case Plus(a1, a2) =>
@@ -1443,6 +1465,8 @@ def enumerate_aexp_ints[A](x0: aexp[A]): Set.set[Int.int] = x0 match {
   case Minus(a1, a2) =>
     Set.sup_set[Int.int](enumerate_aexp_ints[A](a1), enumerate_aexp_ints[A](a2))
   case Times(a1, a2) =>
+    Set.sup_set[Int.int](enumerate_aexp_ints[A](a1), enumerate_aexp_ints[A](a2))
+  case Divide(a1, a2) =>
     Set.sup_set[Int.int](enumerate_aexp_ints[A](a1), enumerate_aexp_ints[A](a2))
 }
 
@@ -1695,7 +1719,7 @@ def enumerate_gexp_ints[A](x0: gexp[A]): Set.set[Int.int] = x0 match {
                                     (x match {
                                        case Value.Inta(n) =>
  Set.insert[Int.int](n, acc)
-                                       case Value.Double(_) => acc
+                                       case Value.Reala(_) => acc
                                        case Value.Str(_) => acc
                                      })),
                                    l, Set.bot_set[Int.int])
@@ -1961,14 +1985,14 @@ def less_list[A : HOL.equal : Orderings.order](xs: List[A], x1: List[A]):
 object Value_Lexorder {
 
 def less_value(x0: Value.value, x1: Value.value): Boolean = (x0, x1) match {
-  case (Value.Inta(i), Value.Double(f)) => true
+  case (Value.Inta(i), Value.Reala(f)) => true
   case (Value.Inta(i), Value.Str(s)) => true
-  case (Value.Double(f), Value.Inta(i)) => false
-  case (Value.Double(f), Value.Str(n)) => true
+  case (Value.Reala(f), Value.Inta(i)) => false
+  case (Value.Reala(f), Value.Str(n)) => true
   case (Value.Str(s), Value.Inta(i)) => false
-  case (Value.Str(s), Value.Double(f)) => false
+  case (Value.Str(s), Value.Reala(f)) => false
   case (Value.Str(s1), Value.Str(s2)) => s1 < s2
-  case (Value.Double(f1), Value.Double(f2)) => Real.less_real(f1, f2)
+  case (Value.Reala(f1), Value.Reala(f2)) => Real.less_real(f1, f2)
   case (Value.Inta(i1), Value.Inta(i2)) => Int.less_int(i1, i2)
 }
 
@@ -1989,11 +2013,13 @@ def less_aexp_aux[A : HOL.equal : Orderings.linorder](x0: AExp.aexp[A],
   case (AExp.L(l1), AExp.Plus(v, va)) => true
   case (AExp.L(l1), AExp.Minus(v, va)) => true
   case (AExp.L(l1), AExp.Times(v, va)) => true
+  case (AExp.L(l1), AExp.Divide(v, va)) => true
   case (AExp.V(v1), AExp.L(l1)) => false
   case (AExp.V(v1), AExp.V(v2)) => Orderings.less[A](v1, v2)
   case (AExp.V(v1), AExp.Plus(v, va)) => true
   case (AExp.V(v1), AExp.Minus(v, va)) => true
   case (AExp.V(v1), AExp.Times(v, va)) => true
+  case (AExp.V(v1), AExp.Divide(v, va)) => true
   case (AExp.Plus(e1, e2), AExp.L(l2)) => false
   case (AExp.Plus(e1, e2), AExp.V(v2)) => false
   case (AExp.Plus(e1a, e2a), AExp.Plus(e1, e2)) =>
@@ -2001,20 +2027,31 @@ def less_aexp_aux[A : HOL.equal : Orderings.linorder](x0: AExp.aexp[A],
                   e1)) && (less_aexp_aux[A](e2a, e2)))
   case (AExp.Plus(e1, e2), AExp.Minus(v, va)) => true
   case (AExp.Plus(e1, e2), AExp.Times(v, va)) => true
+  case (AExp.Plus(e1, e2), AExp.Divide(v, va)) => true
   case (AExp.Minus(e1a, e2a), AExp.Minus(e1, e2)) =>
     (less_aexp_aux[A](e1a, e1)) || ((AExp.equal_aexpa[A](e1a,
                   e1)) && (less_aexp_aux[A](e2a, e2)))
   case (AExp.Minus(e1a, e2a), AExp.Times(e1, e2)) => true
+  case (AExp.Minus(e1a, e2a), AExp.Divide(e1, e2)) => true
   case (AExp.Minus(e1, e2), AExp.L(v)) => false
   case (AExp.Minus(e1, e2), AExp.V(v)) => false
   case (AExp.Minus(e1, e2), AExp.Plus(v, va)) => false
   case (AExp.Times(e1a, e2a), AExp.Times(e1, e2)) =>
     (less_aexp_aux[A](e1a, e1)) || ((AExp.equal_aexpa[A](e1a,
                   e1)) && (less_aexp_aux[A](e2a, e2)))
+  case (AExp.Times(e1a, e2a), AExp.Divide(e1, e2)) => true
   case (AExp.Times(e1, e2), AExp.L(v)) => false
   case (AExp.Times(e1, e2), AExp.V(v)) => false
   case (AExp.Times(e1, e2), AExp.Plus(v, va)) => false
   case (AExp.Times(e1, e2), AExp.Minus(v, va)) => false
+  case (AExp.Divide(e1a, e2a), AExp.Divide(e1, e2)) =>
+    (less_aexp_aux[A](e1a, e1)) || ((AExp.equal_aexpa[A](e1a,
+                  e1)) && (less_aexp_aux[A](e2a, e2)))
+  case (AExp.Divide(e1, e2), AExp.L(v)) => false
+  case (AExp.Divide(e1, e2), AExp.V(v)) => false
+  case (AExp.Divide(e1, e2), AExp.Plus(v, va)) => false
+  case (AExp.Divide(e1, e2), AExp.Minus(v, va)) => false
+  case (AExp.Divide(e1, e2), AExp.Times(v, va)) => false
 }
 
 def height[A](x0: AExp.aexp[A]): Nat.nat = x0 match {
@@ -2027,6 +2064,9 @@ def height[A](x0: AExp.aexp[A]): Nat.nat = x0 match {
     Nat.plus_nata(Nat.Nata((1)),
                    Orderings.max[Nat.nat](height[A](e1), height[A](e2)))
   case AExp.Times(e1, e2) =>
+    Nat.plus_nata(Nat.Nata((1)),
+                   Orderings.max[Nat.nat](height[A](e1), height[A](e2)))
+  case AExp.Divide(e1, e2) =>
     Nat.plus_nata(Nat.Nata((1)),
                    Orderings.max[Nat.nat](height[A](e1), height[A](e2)))
 }
@@ -2362,20 +2402,24 @@ Set.seta[Value.value](l)),
   case (GExp.Eq(AExp.Plus(vb, vc), va), uv) => false
   case (GExp.Eq(AExp.Minus(vb, vc), va), uv) => false
   case (GExp.Eq(AExp.Times(vb, vc), va), uv) => false
+  case (GExp.Eq(AExp.Divide(vb, vc), va), uv) => false
   case (GExp.Eq(v, AExp.V(vb)), uv) => false
   case (GExp.Eq(v, AExp.Plus(vb, vc)), uv) => false
   case (GExp.Eq(v, AExp.Minus(vb, vc)), uv) => false
   case (GExp.Eq(v, AExp.Times(vb, vc)), uv) => false
+  case (GExp.Eq(v, AExp.Divide(vb, vc)), uv) => false
   case (GExp.Gt(v, va), uv) => false
   case (GExp.In(v, va), GExp.Bc(vb)) => false
   case (GExp.In(v, va), GExp.Eq(AExp.L(vd), vc)) => false
   case (GExp.In(v, va), GExp.Eq(AExp.Plus(vd, ve), vc)) => false
   case (GExp.In(v, va), GExp.Eq(AExp.Minus(vd, ve), vc)) => false
   case (GExp.In(v, va), GExp.Eq(AExp.Times(vd, ve), vc)) => false
+  case (GExp.In(v, va), GExp.Eq(AExp.Divide(vd, ve), vc)) => false
   case (GExp.In(v, va), GExp.Eq(vb, AExp.V(vd))) => false
   case (GExp.In(v, va), GExp.Eq(vb, AExp.Plus(vd, ve))) => false
   case (GExp.In(v, va), GExp.Eq(vb, AExp.Minus(vd, ve))) => false
   case (GExp.In(v, va), GExp.Eq(vb, AExp.Times(vd, ve))) => false
+  case (GExp.In(v, va), GExp.Eq(vb, AExp.Divide(vd, ve))) => false
   case (GExp.In(v, va), GExp.Gt(vb, vc)) => false
   case (GExp.In(v, va), GExp.Nor(vb, vc)) => false
   case (GExp.Nor(v, va), uv) => false
@@ -2384,10 +2428,12 @@ Set.seta[Value.value](l)),
   case (uu, GExp.Eq(AExp.Plus(vb, vc), va)) => false
   case (uu, GExp.Eq(AExp.Minus(vb, vc), va)) => false
   case (uu, GExp.Eq(AExp.Times(vb, vc), va)) => false
+  case (uu, GExp.Eq(AExp.Divide(vb, vc), va)) => false
   case (uu, GExp.Eq(v, AExp.V(vb))) => false
   case (uu, GExp.Eq(v, AExp.Plus(vb, vc))) => false
   case (uu, GExp.Eq(v, AExp.Minus(vb, vc))) => false
   case (uu, GExp.Eq(v, AExp.Times(vb, vc))) => false
+  case (uu, GExp.Eq(v, AExp.Divide(vb, vc))) => false
   case (uu, GExp.Gt(v, va)) => false
   case (uu, GExp.Nor(v, va)) => false
 }
@@ -2503,12 +2549,14 @@ def guardMatch_code(uu: List[GExp.gexp[VName.vname]],
   case (((GExp.Eq(AExp.Plus(vd, ve), vc))::va), uv) => false
   case (((GExp.Eq(AExp.Minus(vd, ve), vc))::va), uv) => false
   case (((GExp.Eq(AExp.Times(vd, ve), vc))::va), uv) => false
-  case (((GExp.Eq(vb, AExp.L(Value.Double(ve))))::va), uv) => false
+  case (((GExp.Eq(AExp.Divide(vd, ve), vc))::va), uv) => false
+  case (((GExp.Eq(vb, AExp.L(Value.Reala(ve))))::va), uv) => false
   case (((GExp.Eq(vb, AExp.L(Value.Str(ve))))::va), uv) => false
   case (((GExp.Eq(vb, AExp.V(vd)))::va), uv) => false
   case (((GExp.Eq(vb, AExp.Plus(vd, ve)))::va), uv) => false
   case (((GExp.Eq(vb, AExp.Minus(vd, ve)))::va), uv) => false
   case (((GExp.Eq(vb, AExp.Times(vd, ve)))::va), uv) => false
+  case (((GExp.Eq(vb, AExp.Divide(vd, ve)))::va), uv) => false
   case (((GExp.Gt(vb, vc))::va), uv) => false
   case (((GExp.In(vb, vc))::va), uv) => false
   case (((GExp.Nor(vb, vc))::va), uv) => false
@@ -2520,12 +2568,14 @@ def guardMatch_code(uu: List[GExp.gexp[VName.vname]],
   case (uu, ((GExp.Eq(AExp.Plus(vd, ve), vc))::va)) => false
   case (uu, ((GExp.Eq(AExp.Minus(vd, ve), vc))::va)) => false
   case (uu, ((GExp.Eq(AExp.Times(vd, ve), vc))::va)) => false
-  case (uu, ((GExp.Eq(vb, AExp.L(Value.Double(ve))))::va)) => false
+  case (uu, ((GExp.Eq(AExp.Divide(vd, ve), vc))::va)) => false
+  case (uu, ((GExp.Eq(vb, AExp.L(Value.Reala(ve))))::va)) => false
   case (uu, ((GExp.Eq(vb, AExp.L(Value.Str(ve))))::va)) => false
   case (uu, ((GExp.Eq(vb, AExp.V(vd)))::va)) => false
   case (uu, ((GExp.Eq(vb, AExp.Plus(vd, ve)))::va)) => false
   case (uu, ((GExp.Eq(vb, AExp.Minus(vd, ve)))::va)) => false
   case (uu, ((GExp.Eq(vb, AExp.Times(vd, ve)))::va)) => false
+  case (uu, ((GExp.Eq(vb, AExp.Divide(vd, ve)))::va)) => false
   case (uu, ((GExp.Gt(vb, vc))::va)) => false
   case (uu, ((GExp.In(vb, vc))::va)) => false
   case (uu, ((GExp.Nor(vb, vc))::va)) => false
@@ -2539,20 +2589,22 @@ def outputMatch_code(uu: List[AExp.aexp[VName.vname]],
   (uu, uv) match {
   case (((AExp.L(Value.Inta(na)))::Nil), ((AExp.L(Value.Inta(n)))::Nil)) => true
   case (Nil, uv) => false
-  case (((AExp.L(Value.Double(vc)))::va), uv) => false
+  case (((AExp.L(Value.Reala(vc)))::va), uv) => false
   case (((AExp.L(Value.Str(vc)))::va), uv) => false
   case (((AExp.V(vb))::va), uv) => false
   case (((AExp.Plus(vb, vc))::va), uv) => false
   case (((AExp.Minus(vb, vc))::va), uv) => false
   case (((AExp.Times(vb, vc))::va), uv) => false
+  case (((AExp.Divide(vb, vc))::va), uv) => false
   case ((v::((vb::vc))), uv) => false
   case (uu, Nil) => false
-  case (uu, ((AExp.L(Value.Double(vc)))::va)) => false
+  case (uu, ((AExp.L(Value.Reala(vc)))::va)) => false
   case (uu, ((AExp.L(Value.Str(vc)))::va)) => false
   case (uu, ((AExp.V(vb))::va)) => false
   case (uu, ((AExp.Plus(vb, vc))::va)) => false
   case (uu, ((AExp.Minus(vb, vc))::va)) => false
   case (uu, ((AExp.Times(vb, vc))::va)) => false
+  case (uu, ((AExp.Divide(vb, vc))::va)) => false
   case (uu, (v::((vb::vc)))) => false
 }
 
@@ -4894,7 +4946,7 @@ def show_real(r: Real.real, precision: Nat.nat): String =
 def value2dot(x0: Value.value): String = x0 match {
   case Value.Str(s) => "\"" + s.replace("\\", "\\\\") + "\""
   case Value.Inta(n) => Code_Numeral.integer_of_int(n).toString()
-  case Value.Double(n) => show_real(n, Code_Numeral.nat_of_integer(BigInt(3)))
+  case Value.Reala(n) => show_real(n, Code_Numeral.nat_of_integer(BigInt(3)))
 }
 
 def aexp2dot(x0: AExp.aexp[VName.vname]): String = x0 match {
@@ -5827,10 +5879,14 @@ def generalise_input(t: Transition.transition_ext[Unit], r: Nat.nat,
                                     case GExp.Eq(AExp.V(VName.I(_)),
           AExp.Times(_, _))
                                       => g
+                                    case GExp.Eq(AExp.V(VName.I(_)),
+          AExp.Divide(_, _))
+                                      => g
                                     case GExp.Eq(AExp.V(VName.R(_)), _) => g
                                     case GExp.Eq(AExp.Plus(_, _), _) => g
                                     case GExp.Eq(AExp.Minus(_, _), _) => g
                                     case GExp.Eq(AExp.Times(_, _), _) => g
+                                    case GExp.Eq(AExp.Divide(_, _), _) => g
                                     case GExp.Gt(_, _) => g
                                     case GExp.In(_, _) => g
                                     case GExp.Nor(_, _) => g
@@ -6730,10 +6786,12 @@ def literal_args[A](x0: GExp.gexp[A]): Boolean = x0 match {
   case GExp.Eq(AExp.Plus(v, va), uz) => false
   case GExp.Eq(AExp.Minus(v, va), uz) => false
   case GExp.Eq(AExp.Times(v, va), uz) => false
+  case GExp.Eq(AExp.Divide(v, va), uz) => false
   case GExp.Eq(uy, AExp.V(v)) => false
   case GExp.Eq(uy, AExp.Plus(v, va)) => false
   case GExp.Eq(uy, AExp.Minus(v, va)) => false
   case GExp.Eq(uy, AExp.Times(v, va)) => false
+  case GExp.Eq(uy, AExp.Divide(v, va)) => false
   case GExp.Gt(va, v) => false
   case GExp.Nor(v, va) => (literal_args[A](v)) && (literal_args[A](va))
 }
@@ -6773,6 +6831,9 @@ def merge_in_in(v: VName.vname, l: List[Value.value],
   case (v, l, ((GExp.Eq(AExp.Times(vc, vd), vb))::t)) =>
     ((GExp.Eq[VName.vname](AExp.Times[VName.vname](vc, vd),
                             vb))::(merge_in_in(v, l, t)))
+  case (v, l, ((GExp.Eq(AExp.Divide(vc, vd), vb))::t)) =>
+    ((GExp.Eq[VName.vname](AExp.Divide[VName.vname](vc, vd),
+                            vb))::(merge_in_in(v, l, t)))
   case (v, l, ((GExp.Eq(va, AExp.V(vc)))::t)) =>
     ((GExp.Eq[VName.vname](va, AExp.V[VName.vname](vc)))::(merge_in_in(v, l,
                                 t)))
@@ -6785,6 +6846,9 @@ def merge_in_in(v: VName.vname, l: List[Value.value],
   case (v, l, ((GExp.Eq(va, AExp.Times(vc, vd)))::t)) =>
     ((GExp.Eq[VName.vname](va, AExp.Times[VName.vname](vc,
                 vd)))::(merge_in_in(v, l, t)))
+  case (v, l, ((GExp.Eq(va, AExp.Divide(vc, vd)))::t)) =>
+    ((GExp.Eq[VName.vname](va, AExp.Divide[VName.vname](vc,
+                 vd)))::(merge_in_in(v, l, t)))
   case (v, l, ((GExp.Gt(va, vb))::t)) =>
     ((GExp.Gt[VName.vname](va, vb))::(merge_in_in(v, l, t)))
   case (v, l, ((GExp.Nor(va, vb))::t)) =>
@@ -6823,6 +6887,9 @@ def merge_in_eq(v: VName.vname, l: Value.value,
   case (v, l, ((GExp.Eq(AExp.Times(vc, vd), vb))::t)) =>
     ((GExp.Eq[VName.vname](AExp.Times[VName.vname](vc, vd),
                             vb))::(merge_in_eq(v, l, t)))
+  case (v, l, ((GExp.Eq(AExp.Divide(vc, vd), vb))::t)) =>
+    ((GExp.Eq[VName.vname](AExp.Divide[VName.vname](vc, vd),
+                            vb))::(merge_in_eq(v, l, t)))
   case (v, l, ((GExp.Eq(va, AExp.V(vc)))::t)) =>
     ((GExp.Eq[VName.vname](va, AExp.V[VName.vname](vc)))::(merge_in_eq(v, l,
                                 t)))
@@ -6835,6 +6902,9 @@ def merge_in_eq(v: VName.vname, l: Value.value,
   case (v, l, ((GExp.Eq(va, AExp.Times(vc, vd)))::t)) =>
     ((GExp.Eq[VName.vname](va, AExp.Times[VName.vname](vc,
                 vd)))::(merge_in_eq(v, l, t)))
+  case (v, l, ((GExp.Eq(va, AExp.Divide(vc, vd)))::t)) =>
+    ((GExp.Eq[VName.vname](va, AExp.Divide[VName.vname](vc,
+                 vd)))::(merge_in_eq(v, l, t)))
   case (v, l, ((GExp.Gt(va, vb))::t)) =>
     ((GExp.Gt[VName.vname](va, vb))::(merge_in_eq(v, l, t)))
   case (v, l, ((GExp.Nor(va, vb))::t)) =>
@@ -6863,6 +6933,9 @@ def merge_guards(x0: List[GExp.gexp[VName.vname]],
   case (((GExp.Eq(AExp.Times(vb, vc), va))::t), g2) =>
     ((GExp.Eq[VName.vname](AExp.Times[VName.vname](vb, vc),
                             va))::(merge_guards(t, g2)))
+  case (((GExp.Eq(AExp.Divide(vb, vc), va))::t), g2) =>
+    ((GExp.Eq[VName.vname](AExp.Divide[VName.vname](vb, vc),
+                            va))::(merge_guards(t, g2)))
   case (((GExp.Eq(v, AExp.V(vb)))::t), g2) =>
     ((GExp.Eq[VName.vname](v, AExp.V[VName.vname](vb)))::(merge_guards(t, g2)))
   case (((GExp.Eq(v, AExp.Plus(vb, vc)))::t), g2) =>
@@ -6874,6 +6947,9 @@ def merge_guards(x0: List[GExp.gexp[VName.vname]],
   case (((GExp.Eq(v, AExp.Times(vb, vc)))::t), g2) =>
     ((GExp.Eq[VName.vname](v, AExp.Times[VName.vname](vb,
                vc)))::(merge_guards(t, g2)))
+  case (((GExp.Eq(v, AExp.Divide(vb, vc)))::t), g2) =>
+    ((GExp.Eq[VName.vname](v, AExp.Divide[VName.vname](vb,
+                vc)))::(merge_guards(t, g2)))
   case (((GExp.Gt(v, va))::t), g2) =>
     ((GExp.Gt[VName.vname](v, va))::(merge_guards(t, g2)))
   case (((GExp.Nor(v, va))::t), g2) =>
@@ -6954,11 +7030,12 @@ def less_eq_value_type(v1: value_type, v2: value_type): Boolean =
 def typeSig(x0: AExp.aexp[VName.vname]): value_type = x0 match {
   case AExp.L(Value.Str(uu)) => S()
   case AExp.L(Value.Inta(va)) => N()
-  case AExp.L(Value.Double(va)) => N()
+  case AExp.L(Value.Reala(va)) => N()
   case AExp.V(v) => N()
   case AExp.Plus(v, va) => N()
   case AExp.Minus(v, va) => N()
   case AExp.Times(v, va) => N()
+  case AExp.Divide(v, va) => N()
 }
 
 def tag(uu: Option[(String, (Nat.nat, List[value_type]))],
