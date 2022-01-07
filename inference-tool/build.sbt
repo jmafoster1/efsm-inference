@@ -61,6 +61,8 @@ lazy val root = (project in file("."))
     libraryDependencies += "org.biojava" % "biojava-structure" % "5.3.0",
     libraryDependencies += "org.jgrapht" % "jgrapht-core" % "1.1.0",
     libraryDependencies += "org.hammerlab.math" % "tolerance_2.11" % "1.0.1",
+    libraryDependencies += "me.shadaj" %% "scalapy-core" % "0.5.1",
+    libraryDependencies += "jgraph" % "jgraph" % "5.13.0.0",
 
     cleanDotfiles := {
       cleanDirectory("dotfiles")
