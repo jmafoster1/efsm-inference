@@ -36,15 +36,14 @@ object TypeConversion {
       expGraph.addEdge(source, target)
     }
     println(expGraph)
+    return toAExpAux(expGraph, 0, labels)
     throw new IllegalStateException(f"Cannot convert to aexp")
   }
 
   def isLongNumber(s: String): Boolean = (allCatch opt s.toLong).isDefined
   def isDoubleNumber(s: String): Boolean = (allCatch opt s.toDouble).isDefined
 
-  def toAExpAux[N, E](graph: Graph[N, E], root: N, parent: N, labels: Map[N, String]): AExp.aexp[VName.vname] = {
-      // # Get the neighbors of `root` that are not the parent node. We
-      // # are guaranteed that `root` is always in `T` by construction.
+  def toAExpAux[N, E](graph: Graph[N, E], root: N, labels: Map[N, String]): AExp.aexp[VName.vname] = {
       val children = Graphs.successorListOf(graph, root)
       if (children.size == 0) {
         val name = labels(root)
@@ -64,7 +63,7 @@ object TypeConversion {
         }
       }
 
-      val nested = children.asScala.map(v => toAExpAux(graph, v, root, labels))
+      val nested = children.asScala.map(v => toAExpAux(graph, v, labels))
       assert(nested.length == 2, "We only support binary operators")
       val c1 = nested(0)
       val c2 = nested(1)

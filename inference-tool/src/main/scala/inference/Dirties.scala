@@ -26,6 +26,7 @@ import hammerlab.math.tolerance._
 
 import me.shadaj.scalapy.py
 import me.shadaj.scalapy.py.SeqConverters
+import py.PyQuote
 
 // let things be "equal" that are within 1% of one another
 
@@ -698,9 +699,12 @@ object Dirties {
 
     sys.path.append("./src/main/python")
     val deap_gp = py.module("deap_gp")
-    val latentVars = List(f"r$r_index")
-    val pset = deap_gp.setup_pset(training_set, latentVars.toPythonProxy)
-    val best = deap_gp.run_gp(training_set, latentVars.toPythonProxy, pset)
+    if (latentVariable)
+      training_set.insert(0, f"r$r_index", py"None")
+
+
+    val pset = deap_gp.setup_pset(training_set)
+    val best = deap_gp.run_gp(training_set, pset)
     println(best)
 
     // TODO: Make sure the configs match
@@ -713,16 +717,20 @@ object Dirties {
     // Log.root.debug("  Best output is: " + best)
 
     if (deap_gp.correct(best, training_set, pset).toString == "True") {
-      Log.root.debug("  Best output is correct")
+      Log.root.debug(f"  Best output $best is correct")
       val (nodes, edges, labels) = deap_gp.graph(best).as[(List[Int], List[(Int, Int)], Map[Int, String])]
       println(nodes)
       println(edges)
       println(labels)
 
       val aexp = TypeConversion.toAExp(nodes, edges, labels)
+      print(best, aexp)
       if (!AExp.is_lit(aexp))
         funMem = best :: funMem
-      return Some((aexp, getTypes(training_set.dtypes.as[List[String]])))
+      val stringTypes = deap_gp.get_types(training_set).as[Map[String, String]] - "expected"
+
+
+      return Some((aexp, stringTypes.map(x => (TypeConversion.vnameFromString(x._1), x._2)).toMap))
     } else if (!latentVariable) {
       Log.root.debug("Trying again with a latent variable")
       return getOutput(label, maxReg, values, ioPairs, true)
@@ -761,11 +769,11 @@ object Dirties {
 
     var inputs: String = ""
     for (v <- expVars) {
-      inputs += f"(${PrettyPrinter.vnameToString(v)} ${TypeConversion.expandTypeString(types(v))})"
+      inputs += f"(${PrettyPrinter.vnameToString(v)} ${types(v)})"
     }
     var z3String: String = f"(define-fun f (${inputs}) ${TypeConversion.typeString(v)} \n  ${toZ3Native(f)}\n)\n"
     for (v <- undefinedVars) {
-      z3String += f"(declare-const ${PrettyPrinter.vnameToString(v)} ${TypeConversion.expandTypeString(types(v))})\n"
+      z3String += f"(declare-const ${PrettyPrinter.vnameToString(v)} ${types(v)})\n"
     }
     val args = expVars.zipWithIndex.map {
       case (v: VName.vname, k: Int) =>
@@ -787,6 +795,7 @@ object Dirties {
     val ctx = new z3.Context()
     val solver = ctx.mkSimpleSolver()
 
+    println(z3String)
     solver.fromString(z3String)
     solver.check()
     val model: z3.Model = solver.getModel
