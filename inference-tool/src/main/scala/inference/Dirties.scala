@@ -640,19 +640,16 @@ object Dirties {
       .groupBy(_._1)
       .mapValues(_.map(_._2))
 
-    println(flatpoints)
-
-    val sys = py.module("sys")
-    println(sys.path)
-
-
     val pd = py.module("pandas")
     val training_set = pd.DataFrame()
 
     types("expected") match {
       case "Int" => training_set.insert(0, "expected", flatpoints("expected").asInstanceOf[List[Long]].toPythonProxy)
       case "Real" => training_set.insert(0, "expected", flatpoints("expected").asInstanceOf[List[Double]].toPythonProxy)
-      case "String" => training_set.insert(0, "expected", flatpoints("expected").asInstanceOf[List[String]].toPythonProxy)
+      case "String" => {
+        training_set.insert(0, "expected", flatpoints("expected").asInstanceOf[List[String]].toPythonProxy)
+        training_set.bracketUpdate("expected", training_set.bracketAccess("expected").astype("string"))
+      }
       case _ => throw new IllegalStateException(f"Type of expected value should be Int, Real, or String, not ${types("expected")}")
     }
 
@@ -697,8 +694,10 @@ object Dirties {
     //   }
     // }
 
+    val sys = py.module("sys")
     sys.path.append("./src/main/python")
     val deap_gp = py.module("deap_gp")
+
     if (latentVariable)
       training_set.insert(0, f"r$r_index", py"None")
 
@@ -724,10 +723,12 @@ object Dirties {
       println(labels)
 
       val aexp = TypeConversion.toAExp(nodes, edges, labels)
-      print(best, aexp)
+      println(best, aexp)
       if (!AExp.is_lit(aexp))
         funMem = best :: funMem
       val stringTypes = deap_gp.get_types(training_set).as[Map[String, String]] - "expected"
+      println(best, stringTypes)
+      println(training_set.dtypes)
 
 
       return Some((aexp, stringTypes.map(x => (TypeConversion.vnameFromString(x._1), x._2)).toMap))
@@ -736,22 +737,6 @@ object Dirties {
       return getOutput(label, maxReg, values, ioPairs, true)
     }
     else return None
-  }
-
-  // def getTypes(best: Node[VariableAssignment[_]]): scala.collection.immutable.Map[VName.vname, String] = {
-  //   var types = scala.collection.immutable.Map[VName.vname, String]()
-  //
-  //   for (v <- asScalaSet(best.varsInTree)) {
-  //     if (!v.isConstant)
-  //       types = types + (TypeConversion.vnameFromString(v.getName) -> v.typeString)
-  //   }
-  //   return types
-  // }
-
-  def getTypes(trainingSet: List[_]): scala.collection.immutable.Map[VName.vname, String] = {
-    print(trainingSet)
-    System.exit(0)
-    return Map()
   }
 
   def getRegs(
@@ -795,7 +780,6 @@ object Dirties {
     val ctx = new z3.Context()
     val solver = ctx.mkSimpleSolver()
 
-    println(z3String)
     solver.fromString(z3String)
     solver.check()
     val model: z3.Model = solver.getModel

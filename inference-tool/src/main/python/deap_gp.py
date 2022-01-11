@@ -38,7 +38,7 @@ def distance_between(expected, actual):
 def find_smallest_distance(individual, pset, args, consts, expected):
     func = gp.compile(expr=individual, pset=pset)
 
-    if type(individual) in {int, float, str}:
+    if not callable(func):
         return distance_between(expected, func)
 
     undefined_at = [i for i, x in args.items() if x is None]
@@ -50,7 +50,11 @@ def find_smallest_distance(individual, pset, args, consts, expected):
     min_distance = float("inf")
 
     if len(latent_vars) == 0:
-        return distance_between(expected, func(**args)) if None not in args else float("inf")
+        return (
+            distance_between(expected, func(**args))
+            if None not in args
+            else float("inf")
+        )
 
     for var in latent_vars:
         for value in consts:
@@ -91,15 +95,15 @@ def evaluate_candidate(
 
     distances = []
     for _, row in points.iterrows():
-        min_distance = find_smallest_distance(individual, pset, row.iloc[:-1].to_dict(), consts, row[-1])
+        min_distance = find_smallest_distance(
+            individual, pset, row.iloc[:-1].to_dict(), consts, row[-1]
+        )
         distances.append(min_distance)
 
     return sum(distances)
 
 
-def fitness(
-    individual, points: pd.DataFrame, pset: gp.PrimitiveSet
-) -> float:
+def fitness(individual, points: pd.DataFrame, pset: gp.PrimitiveSet) -> float:
     """
     Determine the fitness of an individual based on its ability to account for a set of expected function executions.
 
@@ -116,9 +120,7 @@ def fitness(
     return (evaluate_candidate(individual, points, pset),)
 
 
-def correct(
-    individual, points: pd.DataFrame, pset: gp.PrimitiveSet
-) -> bool:
+def correct(individual, points: pd.DataFrame, pset: gp.PrimitiveSet) -> bool:
     """
     Does the candidate function perfectly reproduce the expected executions, assuming any latent variables hold the
     correct values upon evaluation?
@@ -142,50 +144,63 @@ def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
 
     :param points: The sample function executions with expected outputs.
     N.B. The expected output MUST be the last column in the dataframe.
+    N.B. Strings will, by default, appear as objects, so will be indistinguishable from latent registers.
+    They MUST be converted explicitly using `.astype('string')` before calling this method.
     :type points: pd.DataFrame
     :param latentVars: A list of latent variable names.
     :type latentVars: [str]
     :return: The primitive set.
     :rtype: gp.PrimitiveSet
     """
+    generators = {
+        np.dtype("float64"): float,
+        np.dtype("int64"): int,
+        pd.StringDtype(): str,
+    }
+    output_type = generators[points.dtypes[points.columns[-1]]]
+    generators[np.dtype("O")] = output_type
+
     types = points.dtypes.iloc[:-1].to_dict()
     names = list(types)
-    generators = {np.dtype("float64"): float, np.dtype("int64"): int, pd.StringDtype(): str}
-    output_type = generators[points.dtypes[points.columns[-1]]]
-    generators[np.dtype('O')] = output_type
-
     datatypes = [generators[types[v]] for v in names]
 
     def protectedDiv(left, right):
         if right == 0:
             return float("inf")
         return left / right
-    
-    
+
     pset = gp.PrimitiveSetTyped("MAIN", datatypes, output_type)
 
     rename = {f"ARG{i}": col for i, col in enumerate(names)}
     pset.renameArguments(**rename)
 
-    pset.addTerminal(0, int)
-    pset.addTerminal(1, int)
-    pset.addTerminal(2, int)
-    pset.addTerminal(0, float)
-    pset.addTerminal(1, float)
-    pset.addTerminal(2, float)
-    pset.addTerminal("", str)
-    pset.addTerminal(True, bool)
-    pset.addTerminal(False, bool)
-
-    pset.addPrimitive(operator.add, [str,str], str)
-    pset.addPrimitive(operator.add, [float,float], float)
-    pset.addPrimitive(operator.sub, [float,float], float)
-    pset.addPrimitive(operator.mul, [float,float], float)
-    pset.addPrimitive(protectedDiv, [float,float], float)
-    pset.addPrimitive(operator.add, [int,int], int)
-    pset.addPrimitive(operator.sub, [int,int], int)
-    pset.addPrimitive(operator.mul, [int,int], int)
-    pset.addPrimitive(protectedDiv, [int,int], int)
+    if output_type == str:
+        pset.addTerminal("", str)
+        pset.addPrimitive(lambda x: x, [str], str, name="id")
+    elif output_type == float:
+        pset.addTerminal(0, float)
+        pset.addTerminal(1, float)
+        pset.addTerminal(2, float)
+        pset.addPrimitive(operator.add, [float, float], float)
+        pset.addPrimitive(operator.sub, [float, float], float)
+        pset.addPrimitive(operator.mul, [float, float], float)
+        pset.addPrimitive(protectedDiv, [float, float], float)
+    elif output_type == int:
+        pset.addTerminal(0, int)
+        pset.addTerminal(1, int)
+        pset.addTerminal(2, int)
+        pset.addPrimitive(operator.add, [int, int], int)
+        pset.addPrimitive(operator.sub, [int, int], int)
+        pset.addPrimitive(operator.mul, [int, int], int)
+        pset.addPrimitive(protectedDiv, [int, int], int)
+    elif output_type == bool:
+        pset.addTerminal(True, bool)
+        pset.addTerminal(False, bool)
+        pset.addPrimitive(operator.__and__, [bool, bool], bool)
+        pset.addPrimitive(operator.__or__, [bool, bool], bool)
+        pset.addPrimitive(operator.__not__, [bool, bool], bool)
+    else:
+        raise ValueError(f"Invalid output type {output_type}.")
     return pset
 
 
@@ -202,7 +217,11 @@ def run_gp(points: pd.DataFrame, pset, mu=100, lamb=10, random_seed=0):
 
     toolbox.register("evaluate", fitness, points=points, pset=pset)
 
-    generators = {np.dtype("float64"): z3.Real, np.dtype("int64"): z3.Int, pd.StringDtype(): z3.String}
+    generators = {
+        np.dtype("float64"): z3.Real,
+        np.dtype("int64"): z3.Int,
+        pd.StringDtype(): z3.String,
+    }
 
     types = {
         k: generators.get(
@@ -234,11 +253,18 @@ def run_gp(points: pd.DataFrame, pset, mu=100, lamb=10, random_seed=0):
     mstats.register("std", np.std)
     mstats.register("min", np.min)
     mstats.register("max", np.max)
-    
-
 
     pop, log = algorithms.eaMuPlusLambda(
-        pop, toolbox, mu, lamb, 0.5, 0.1, 40, stats=mstats, halloffame=hof, verbose=False
+        pop,
+        toolbox,
+        mu,
+        lamb,
+        0.5,
+        0.1,
+        40,
+        stats=mstats,
+        halloffame=hof,
+        verbose=False,
     )
     return hof[0]
 
@@ -248,7 +274,13 @@ def graph(best):
 
 
 def get_types(points: pd.DataFrame) -> {str: str}:
-    type_strings = {np.dtype("int64"): "Int", np.dtype("float64"): "Real", pd.StringDtype(): "String", np.dtype("O"): "String"}
+    type_strings = {
+        np.dtype("float64"): "Real",
+        np.dtype("int64"): "Int",
+        pd.StringDtype(): "String",
+    }
+    output_type = type_strings[points.dtypes[points.columns[-1]]]
+    type_strings[np.dtype("O")] = output_type
     return {v: type_strings[t] for v, t in points.dtypes.iteritems()}
 
 
@@ -279,6 +311,8 @@ def to_z3(T, root, labels, types):
                 return c1 / c2
             except ZeroDivisionError:
                 return float("inf")
+        elif labels[root] == "id":
+            return nested[0]
         else:
             raise ValueError(f"Invalid operator {root}")
 
@@ -289,6 +323,7 @@ def to_z3(T, root, labels, types):
         raise nx.NodeNotFound(f"Graph {T} contains no node {root}")
 
     return _make_tuple(T, root, None)
+
 
 def from_z3(exp, pset):
     return gp.PrimitiveTree.from_string(str(exp), pset)
@@ -307,8 +342,18 @@ def simplify(individual, pset, types):
     return from_z3(z3.simplify(z3_exp), pset)
 
 
-def eaMuPlusLambda(population, toolbox, mu, lambda_, cxpb, mutpb, ngen,
-                   stats=None, halloffame=None, verbose=__debug__):
+def eaMuPlusLambda(
+    population,
+    toolbox,
+    mu,
+    lambda_,
+    cxpb,
+    mutpb,
+    ngen,
+    stats=None,
+    halloffame=None,
+    verbose=__debug__,
+):
     r"""This is the :math:`(\mu + \lambda)` evolutionary algorithm.
     :param population: A list of individuals.
     :param toolbox: A :class:`~deap.base.Toolbox` that contains the evolution
@@ -351,7 +396,7 @@ def eaMuPlusLambda(population, toolbox, mu, lambda_, cxpb, mutpb, ngen,
     variation.
     """
     logbook = tools.Logbook()
-    logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
+    logbook.header = ["gen", "nevals"] + (stats.fields if stats else [])
 
     # Evaluate the individuals with an invalid fitness
     invalid_ind = [ind for ind in population if not ind.fitness.valid]
@@ -396,7 +441,7 @@ def eaMuPlusLambda(population, toolbox, mu, lambda_, cxpb, mutpb, ngen,
 
 
 if __name__ == "__main__":
-    points = pd.read_csv("../../../sample-traces/drinks_select_obfuscated.csv")
+    points = pd.read_csv("../../../sample-traces/drinks_coin_obfuscated.csv")
     for col in points:
         if points.dtypes[col] == object:
             points[col] = points[col].astype("string")
@@ -416,19 +461,20 @@ if __name__ == "__main__":
 
     print("exected type", points.dtypes[expected])
 
-    generators = {np.dtype("float64"): z3.Real, np.dtype("int64"): z3.Int, pd.StringDtype(): z3.String}
+    generators = {
+        np.dtype("float64"): z3.Real,
+        np.dtype("int64"): z3.Int,
+        pd.StringDtype(): z3.String,
+    }
     print(generators)
 
     types = {
-        k: generators.get(
-            points.dtypes[k], generators[points.dtypes[expected]]
-        )
+        k: generators.get(points.dtypes[k], generators[points.dtypes[expected]])
         for k in points
     }
 
     simplified = simplify(best, pset, types)
     print(simplified)
     print(correct(simplified, points, pset))
-
-    # print(get_types(points, np.float64))
+    print(get_types(points))
     # print(toZ3(g))
