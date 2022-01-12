@@ -16,6 +16,8 @@ from deap import creator
 from deap import tools
 from deap import gp
 
+from math import sqrt, isclose
+
 import pandas as pd
 import numpy as np
 
@@ -26,45 +28,64 @@ import networkx as nx
 
 
 def distance_between(expected, actual):
-    if actual is None or type(expected) != type(actual):
-        return float("inf")
-    elif isinstance(expected, Number):
+    if isinstance(expected, Number) and isinstance(actual, Number):
         return abs(expected - actual)
-    elif type(expected) == str:
+    elif type(expected) == str and type(actual) == str:
         return levenshtein(expected, actual)
+    elif actual is None or type(expected) != type(actual):
+        return float("inf")
     raise ValueError(f"Expected int, float, or string type, not {type(expected)}.")
 
 
-def find_smallest_distance(individual, pset, args, consts, expected):
+def rmsd(errors: [float]) -> float:
+    assert len(errors) > 0, "Cannot calculate RMSD of empty list."
+    total = sum([d ** 2 for d in errors])
+    mean = total / len(errors)
+    return sqrt(mean)
+
+
+def find_smallest_distance(individual, latent_vars, pset, args, expected):
+    consts = set()
+    type_ = individual[0].ret
+    consts = set([c.value for c in pset.terminals[type_] if type(c.value) == type_])
+
     func = gp.compile(expr=individual, pset=pset)
 
     if not callable(func):
         return distance_between(expected, func)
 
-    undefined_at = [i for i, x in args.items() if x is None]
-
-    _, _, labels = gp.graph(individual)
-    vars_in_tree = labels.values()
-    latent_vars = set(undefined_at).intersection(vars_in_tree)
-
     min_distance = float("inf")
 
     if len(latent_vars) == 0:
-        return (
-            distance_between(expected, func(**args))
-            if None not in args
-            else float("inf")
-        )
+        distance = distance_between(expected, func(**args))
+        if isclose(distance, 0, abs_tol=1e-15):
+            return 0
+        else:
+            return distance
 
     for var in latent_vars:
-        for value in consts:
+        for val in consts:
             new_args = args.copy()
-            new_args[var] = value
+            new_args[var] = val
             actual = func(**new_args)
             off_by = distance_between(expected, actual)
+            if off_by == 0:
+                return 0
             if off_by < min_distance:
                 min_distance = off_by
+    if isclose(min_distance, 0, abs_tol=1e-15):
+        return 0
     return min_distance
+
+
+def vars_in_tree(individual):
+    _, _, labels = gp.graph(individual)
+    return labels.values()
+
+
+def latent_variables(individual, points):
+    undefined_at = [c for c in points.columns if any([v is None for v in points[c]])]
+    return set(undefined_at).intersection(vars_in_tree(individual))
 
 
 def evaluate_candidate(
@@ -84,23 +105,26 @@ def evaluate_candidate(
     :return: The aggregated distance between expected and actual values.
     :rtype: float
     """
-    consts = set(
-        [
-            item
-            for sublist in [set(points[col]) for col in points.columns]
-            for item in sublist
-            if item is not None
-        ]
-    )
+    latent_vars = latent_variables(individual, points)
 
-    distances = []
-    for _, row in points.iterrows():
-        min_distance = find_smallest_distance(
-            individual, pset, row.iloc[:-1].to_dict(), consts, row[-1]
+    total_vars = list(points.columns)[:-1]
+    unused_vars = set(total_vars).difference(vars_in_tree(individual))
+
+    distances = [
+        find_smallest_distance(
+            individual, latent_vars, pset, row.iloc[:-1].to_dict(), row[-1]
         )
-        distances.append(min_distance)
+        for _, row in points.iterrows()
+    ]
 
-    return sum(distances)
+    mistakes = sum([x > 0 for x in distances])
+
+    fitness = rmsd(distances) + mistakes
+
+    if len(unused_vars) == 0:
+        return fitness
+    else:
+        return fitness + len(latent_vars)
 
 
 def fitness(individual, points: pd.DataFrame, pset: gp.PrimitiveSet) -> float:
@@ -135,7 +159,18 @@ def correct(individual, points: pd.DataFrame, pset: gp.PrimitiveSet) -> bool:
     :return: The fitness of the individnal.
     :rtype: bool
     """
-    return evaluate_candidate(individual, points, pset) == 0
+
+    latent_vars = latent_variables(individual, points)
+    if len(latent_vars) > 0:
+        return True
+
+    for _, row in points.iterrows():
+        min_distance = find_smallest_distance(
+            individual, latent_vars, pset, row.iloc[:-1].to_dict(), row[-1]
+        )
+        if min_distance > 0:
+            return False
+    return True
 
 
 def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
@@ -160,7 +195,7 @@ def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
     output_type = generators[points.dtypes[points.columns[-1]]]
     generators[np.dtype("O")] = output_type
 
-    types = points.dtypes.iloc[:-1].to_dict()
+    types = points.dtypes.to_dict()
     names = list(types)
     datatypes = [generators[types[v]] for v in names]
 
@@ -169,22 +204,30 @@ def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
             return float("inf")
         return left / right
 
-    pset = gp.PrimitiveSetTyped("MAIN", datatypes, output_type)
+    pset = gp.PrimitiveSetTyped("MAIN", datatypes[:-1], output_type)
 
     rename = {f"ARG{i}": col for i, col in enumerate(names)}
     pset.renameArguments(**rename)
+
+    # Add literal terminals
+    for v, typ in zip(names, datatypes):
+        if typ == output_type:
+            term_set = set(points[v])
+            for term in term_set:
+                if term is not None:
+                    pset.addTerminal(term, typ)
 
     if output_type == str:
         pset.addTerminal("", str)
         pset.addPrimitive(lambda x: x, [str], str, name="id")
     elif output_type == float:
-        pset.addTerminal(0, float)
-        pset.addTerminal(1, float)
-        pset.addTerminal(2, float)
+        pset.addTerminal(0.0, float)
+        pset.addTerminal(1.0, float)
+        pset.addTerminal(2.0, float)
         pset.addPrimitive(operator.add, [float, float], float)
         pset.addPrimitive(operator.sub, [float, float], float)
         pset.addPrimitive(operator.mul, [float, float], float)
-        pset.addPrimitive(protectedDiv, [float, float], float)
+        pset.addPrimitive(protectedDiv, [float, float], float, name="div")
     elif output_type == int:
         pset.addTerminal(0, int)
         pset.addTerminal(1, int)
@@ -192,7 +235,6 @@ def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
         pset.addPrimitive(operator.add, [int, int], int)
         pset.addPrimitive(operator.sub, [int, int], int)
         pset.addPrimitive(operator.mul, [int, int], int)
-        pset.addPrimitive(protectedDiv, [int, int], int)
     elif output_type == bool:
         pset.addTerminal(True, bool)
         pset.addTerminal(False, bool)
@@ -204,14 +246,99 @@ def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
     return pset
 
 
+def mutateByTerminal(individual, pset):
+    if len(individual) < 2:
+        return (individual,)
+
+    index = random.randrange(1, len(individual))
+    node = individual[index]
+    slice_ = individual.searchSubtree(index)
+
+    term = random.choice(pset.terminals[node.ret])
+    if gp.isclass(term):
+        term = term()
+    individual[slice_] = [term]
+
+    return (individual,)
+
+
+def mutateByCommute(individual, pset):
+    if len(individual) < 2:
+        return (individual,)
+
+    possible_nodes = [(i, node) for i, node in enumerate(individual) if node.arity > 1]
+    if len(possible_nodes) == 0:
+        return (individual,)
+    i, node = random.choice(possible_nodes)
+    individual[i].args.reverse()
+    return (individual,)
+
+
+def mutateByFuzz(individual, pset):
+    terminals = [(i, node) for i, node in enumerate(individual) if node.arity == 0]
+
+    index, node = random.choice(terminals)
+
+    term = random.choice(pset.terminals[node.ret])
+    if gp.isclass(term):
+        term = term()
+    individual[index] = term
+
+    return (individual,)
+
+
+def mutate(individual, pset, MAX_MUTATIONS=3):
+    mutations = 0
+    newNode = creator.Individual(gp.PrimitiveTree.from_string(str(individual), pset))
+    mutate = True
+    while mutate and mutations < MAX_MUTATIONS:
+        mutations += 1
+        mutate = random.choice([True, False])
+        if len(individual) < 2:
+            newNode = gp.mutInsert(newNode, pset)[0]
+            continue
+
+        op = random.choice(range(6))
+        if op == 0:
+            # HVL SUB
+            newNode = gp.mutNodeReplacement(newNode, pset)[0]
+            # print("Mutating", individual, "by substitution", newNode)
+        if op == 1:
+            # HLV DEL
+            newNode = gp.mutShrink(newNode)[0]
+            # print("Mutating", individual, "by deletion", newNode)
+        if op == 2:
+            # HVL INS
+            newNode = gp.mutInsert(newNode, pset)[0]
+            # print("Mutating", individual, "by insertion", newNode)
+        if op == 3:
+            # Reverse this.children if they have the same return type, e.g. (x - y) -> (y - x)
+            newNode = mutateByCommute(newNode, pset)[0]
+            # print("Mutating", individual, "by commutation", newNode)
+        if op == 4:
+            # mutate by replacing a random node with a terminal
+            newNode = mutateByTerminal(newNode, pset)[0]
+            # print("Mutating", individual, "by terminal swap", newNode)
+        if op == 5:
+            # fuzz a terminal
+            newNode = mutateByFuzz(newNode, pset)[0]
+            # print("Mutating", individual, "by fuzzing", newNode)
+    return (newNode,)
+
+
 def run_gp(points: pd.DataFrame, pset, mu=100, lamb=10, random_seed=0):
+    print("Searching for an expression...")
+    print(points)
+    for k, v in pset.mapping.items():
+        print(k, v.name)
+
     random.seed(random_seed)
 
     creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
     creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin)
 
     toolbox = base.Toolbox()
-    toolbox.register("expr", gp.genHalfAndHalf, pset=pset, min_=0, max_=2)
+    toolbox.register("expr", gp.genHalfAndHalf, pset=pset, min_=0, max_=4)
     toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
@@ -234,7 +361,7 @@ def run_gp(points: pd.DataFrame, pset, mu=100, lamb=10, random_seed=0):
     toolbox.register("select", tools.selTournament, tournsize=2)
     toolbox.register("mate", gp.cxOnePoint)
     toolbox.register("expr_mut", gp.genFull, min_=0, max_=2)
-    toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset)
+    toolbox.register("mutate", mutate, pset=pset)
 
     toolbox.decorate(
         "mate", gp.staticLimit(key=operator.attrgetter("height"), max_value=17)
@@ -244,6 +371,9 @@ def run_gp(points: pd.DataFrame, pset, mu=100, lamb=10, random_seed=0):
     )
 
     pop = toolbox.population(n=100)
+    for terms in pset.terminals.values():
+        pop += [creator.Individual([i]) for i in terms]
+
     hof = tools.HallOfFame(1)
 
     stats_fit = tools.Statistics(lambda ind: ind.fitness.values)
@@ -254,19 +384,20 @@ def run_gp(points: pd.DataFrame, pset, mu=100, lamb=10, random_seed=0):
     mstats.register("min", np.min)
     mstats.register("max", np.max)
 
-    pop, log = algorithms.eaMuPlusLambda(
+    pop, log = eaMuPlusLambda(
         pop,
         toolbox,
         mu,
         lamb,
         0.5,
         0.1,
-        40,
+        100,
         stats=mstats,
         halloffame=hof,
         verbose=False,
     )
-    return hof[0]
+
+    return simplify(hof[0], pset, types)
 
 
 def graph(best):
@@ -325,21 +456,72 @@ def to_z3(T, root, labels, types):
     return _make_tuple(T, root, None)
 
 
+def make_binary(fun, children):
+    if len(children) == 2:
+        c1 = to_exp_string(children[0])
+        c2 = to_exp_string(children[1])
+        return f"{fun}({c1}, {c2})"
+    else:
+        c1 = to_exp_string(children[0])
+        c2 = make_binary(fun, children[1:])
+        return f"{fun}({c1}, {c2})"
+
+
+def to_exp_string(exp):
+    if str(exp.decl()) == "+":
+        return make_binary("add", exp.children())
+    elif str(exp.decl()) == "-":
+        return make_binary("sub", exp.children())
+    elif str(exp.decl()) == "*":
+        return make_binary("mul", exp.children())
+    elif str(exp.decl()) == "/":
+        return make_binary("div", exp.children())
+    elif type(exp) == z3.RatNumRef:
+        x2 = exp.as_fraction()
+        return str(float(x2.numerator) / float(x2.denominator))
+    else:
+        return str(exp)
+
+
 def from_z3(exp, pset):
-    return gp.PrimitiveTree.from_string(str(exp), pset)
+    return gp.PrimitiveTree.from_string(to_exp_string(exp), pset)
 
 
 def simplify(individual, pset, types):
-    nodes, edges, labels = gp.graph(best)
+    # Duplicate the individual
+    individual = creator.Individual(gp.PrimitiveTree.from_string(str(individual), pset))
+    nodes, edges, labels = gp.graph(individual)
     g = nx.Graph()
     g.add_nodes_from(nodes)
     g.add_edges_from(edges)
 
-    assert nx.is_tree(g), "Expression must be a tree."
-    z3_exp = to_z3(g, 0, labels, types)
-    if type(z3_exp) in {int, float, str}:
-        return z3_exp
-    return from_z3(z3.simplify(z3_exp), pset)
+    assert nx.is_tree(
+        g
+    ), f"Expression {individual} must be a tree. {nodes} {edges} {labels}"
+    try:
+        z3_exp = to_z3(g, 0, labels, types)
+        if type(z3_exp) in {int, float, str}:
+            return creator.Individual(gp.PrimitiveTree([gp.Terminal(z3_exp)]))
+        return creator.Individual(from_z3(z3.simplify(z3_exp), pset))
+    except z3.Z3Exception:
+        return individual
+    except TypeError:
+        return individual
+
+
+def make_distinct(pop, mu, individual, TIMEOUT=3):
+    new_pop = []
+    for ind in pop:
+        if ind not in new_pop:
+            new_pop.append(ind)
+    return new_pop
+
+
+def fill_pop(more, individual, avoid=[], TIMEOUT=3):
+    fillers = []
+    for _ in range(more):
+        fillers.append(individual())
+    return fillers
 
 
 def eaMuPlusLambda(
@@ -398,11 +580,18 @@ def eaMuPlusLambda(
     logbook = tools.Logbook()
     logbook.header = ["gen", "nevals"] + (stats.fields if stats else [])
 
+    # population = make_distinct(population, mu, toolbox.individual)
+    # population += fill_pop(mu - len(population), toolbox.individual, population)
+    # assert (
+    #     len(population) == mu
+    # ), f"Population should contain {mu} individuals but contains {len(population)}."
+
     # Evaluate the individuals with an invalid fitness
     invalid_ind = [ind for ind in population if not ind.fitness.valid]
-    fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+    fitnesses = list(toolbox.map(toolbox.evaluate, invalid_ind))
     for ind, fit in zip(invalid_ind, fitnesses):
         ind.fitness.values = fit
+    population[:] = toolbox.select(population, mu)
 
     if halloffame is not None:
         halloffame.update(population)
@@ -414,8 +603,22 @@ def eaMuPlusLambda(
 
     # Begin the generational process
     for gen in range(1, ngen + 1):
+        if halloffame[0].fitness.values[0] == 0:
+            return population, logbook
+        assert (
+            len(population) == mu
+        ), f"Population should contain {mu} individuals but contains {len(population)}."
+
         # Vary the population
         offspring = algorithms.varOr(population, toolbox, lambda_, cxpb, mutpb)
+        offspring = [toolbox.simplify(individual) for individual in offspring]
+        offspring = make_distinct(offspring, mu, toolbox.individual, TIMEOUT=3)
+        offspring += fill_pop(
+            lambda_ - len(offspring), toolbox.individual, population + offspring
+        )
+        assert (
+            len(offspring) == lambda_
+        ), f"Population should contain {lambda_} individuals but contains {len(offspring)}."
 
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
@@ -429,7 +632,6 @@ def eaMuPlusLambda(
 
         # Select the next generation population
         population[:] = toolbox.select(population + offspring, mu)
-        population = [toolbox.simplify(individual) for individual in population]
 
         # Update the statistics with the new population
         record = stats.compile(population) if stats is not None else {}
@@ -440,19 +642,37 @@ def eaMuPlusLambda(
     return population, logbook
 
 
+def need_latent(points: pd.DataFrame) -> bool:
+    inputs = list(points.columns)[:-1]
+    return any([len(group) > 1 for _, group in points.groupby(inputs)])
+
+
+def shortcut_latent(points: pd.DataFrame) -> bool:
+    return len(points.columns[:-1]) == 0 and len(set(points[points.columns[-1]])) > 1
+
+
 if __name__ == "__main__":
-    points = pd.read_csv("../../../sample-traces/drinks_coin_obfuscated.csv")
+    points = pd.read_csv("../../../sample-traces/coin_update.csv")
+
     for col in points:
         if points.dtypes[col] == object:
             points[col] = points[col].astype("string")
 
-    latentVars = ["r1"]
+    # latentVars = ["r1"]
+    latentVars = []
     for var in latentVars:
         assert var not in points.columns, f"Latent variable {var} already defined"
         points.insert(0, var, None)
 
     pset = setup_pset(points)
-    best = run_gp(points, pset, random_seed=10)
+
+    # ind = gp.PrimitiveTree.from_string("add(i0, r1)", pset)
+    # print(fitness(ind, points, pset))
+    # assert False
+
+    for s in range(10):
+        best = run_gp(points, pset, random_seed=s)
+        print("Gen", s, "best", best)
     print(points)
     print("best is", best)
     print("correct?", correct(best, points, pset))
@@ -477,4 +697,3 @@ if __name__ == "__main__":
     print(simplified)
     print(correct(simplified, points, pset))
     print(get_types(points))
-    # print(toZ3(g))
