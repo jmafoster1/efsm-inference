@@ -39,7 +39,7 @@ def distance_between(expected, actual):
 
 def rmsd(errors: [float]) -> float:
     assert len(errors) > 0, "Cannot calculate RMSD of empty list."
-    total = sum([d ** 2 for d in errors])
+    total = sum([float(d) ** 2 for d in errors])
     mean = total / len(errors)
     return sqrt(mean)
 
@@ -384,6 +384,7 @@ def run_gp(points: pd.DataFrame, pset, mu=100, lamb=10, random_seed=0):
     mstats.register("min", np.min)
     mstats.register("max", np.max)
 
+    print("CALLING GP")
     pop, log = eaMuPlusLambda(
         pop,
         toolbox,
@@ -396,7 +397,7 @@ def run_gp(points: pd.DataFrame, pset, mu=100, lamb=10, random_seed=0):
         halloffame=hof,
         verbose=False,
     )
-
+    print("FINISHED!")
     return simplify(hof[0], pset, types)
 
 
@@ -652,11 +653,15 @@ def shortcut_latent(points: pd.DataFrame) -> bool:
 
 
 if __name__ == "__main__":
-    points = pd.read_csv("../../../sample-traces/coin_update.csv")
-
+    points = pd.read_csv("../../../sample-traces/scanette.csv")
+    
     for col in points:
         if points.dtypes[col] == object:
             points[col] = points[col].astype("string")
+        # if points.dtypes[col] == np.int64:
+        #     points[col] = points[col].astype("float")
+    print(points.dtypes)
+    # assert False
 
     # latentVars = ["r1"]
     latentVars = []

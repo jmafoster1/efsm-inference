@@ -387,7 +387,7 @@ object Dirties {
           val inx = s"i${ix}"
           ip match {
             case Value.Inta(n) => {
-              point = point + (inx -> TypeConversion.toLong(n).asInstanceOf[Integer])
+              point = point + (inx -> TypeConversion.toLong(n).asInstanceOf[java.lang.Long])
               types = types + (inx -> "Int")
             }
             case Value.Reala(n) => {
@@ -405,7 +405,7 @@ object Dirties {
           v match {
             case None => throw new IllegalStateException("Got None from registers")
             case Some(Value.Inta(n)) => {
-              point = point + (rx -> TypeConversion.toLong(n).asInstanceOf[Integer])
+              point = point + (rx -> TypeConversion.toLong(n).asInstanceOf[java.lang.Long])
               types = types + (rx -> "Int")
             }
             case Some(Value.Reala(n)) => {
@@ -421,7 +421,7 @@ object Dirties {
 
         output match {
           case Value.Inta(n) => {
-            point = point + ("expected" -> TypeConversion.toLong(n).asInstanceOf[Integer])
+            point = point + ("expected" -> TypeConversion.toLong(n).asInstanceOf[java.lang.Long])
             types = types + ("expected" -> "Int")
           }
           case Value.Reala(n) => {
@@ -456,7 +456,7 @@ object Dirties {
 
     for ((col, vals) <- flatpoints - "expected") {
       types(col) match {
-        case "Int" => training_set.insert(0, col, vals.asInstanceOf[List[Int]].toPythonProxy)
+        case "Int" => training_set.insert(0, col, vals.asInstanceOf[List[Long]].toPythonProxy)
         case "Real" => training_set.insert(0, col, vals.asInstanceOf[List[Double]].toPythonProxy)
         case "String" => {
           training_set.insert(0, col, vals.asInstanceOf[List[String]].toPythonProxy)
@@ -548,8 +548,10 @@ object Dirties {
     Log.root.debug("    Best update is: " + best)
 
     if (deap_gp.correct(best, training_set, pset).toString == "True") {
-      Log.root.debug(f"  Best output $best is correct")
+      Log.root.debug(f"  Best update $best is correct")
+      println("COnverting to graph")
       val (nodes, edges, labels) = deap_gp.graph(best).as[(List[Int], List[(Int, Int)], Map[Int, String])]
+      println("COnverting to aexp")
 
       val aexp = TypeConversion.toAExp(nodes, edges, labels)
       println(best, aexp)
