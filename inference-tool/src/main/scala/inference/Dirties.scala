@@ -549,9 +549,10 @@ object Dirties {
 
     if (deap_gp.correct(best, training_set, pset).toString == "True") {
       Log.root.debug(f"  Best update $best is correct")
-      println("COnverting to graph")
+      println("Converting to graph")
+      println(deap_gp.graph(best))
       val (nodes, edges, labels) = deap_gp.graph(best).as[(List[Int], List[(Int, Int)], Map[Int, String])]
-      println("COnverting to aexp")
+      println("Converting to aexp")
 
       val aexp = TypeConversion.toAExp(nodes, edges, labels)
       println(best, aexp)

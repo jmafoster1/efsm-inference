@@ -291,7 +291,7 @@ object TypeConversion {
     if (e.isIntNum())
       return Value.Inta(Int.int_of_integer(e.toString.toInt))
     if (e.isRatNum())
-      return Value.Reala(Real.Ratreal(Rat.Frct((Int.int_of_integer(e.asInstanceOf[RatNum].getNumerator.toString.toInt), Int.int_of_integer(e.asInstanceOf[RatNum].getDenominator.toString.toInt)))))
+      return Value.Reala(Real.Ratreal(Rat.Frct((Int.int_of_integer(e.asInstanceOf[RatNum].getNumerator.toString.toLong), Int.int_of_integer(e.asInstanceOf[RatNum].getDenominator.toString.toLong)))))
     else if (e.isString()) {
       val str = e.toString.slice(1, e.toString.length-1)
       return Value.Str(str)

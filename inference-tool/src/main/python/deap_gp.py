@@ -25,6 +25,12 @@ from enchant.utils import levenshtein
 from numbers import Number
 
 import networkx as nx
+import logging
+
+logging.basicConfig()
+
+logger = logging.getLogger("main")
+logger.setLevel(logging.DEBUG)
 
 
 def distance_between(expected, actual):
@@ -302,36 +308,31 @@ def mutate(individual, pset, MAX_MUTATIONS=3):
         if op == 0:
             # HVL SUB
             newNode = gp.mutNodeReplacement(newNode, pset)[0]
-            # print("Mutating", individual, "by substitution", newNode)
+            # logger.debug("Mutating", individual, "by substitution", newNode)
         if op == 1:
             # HLV DEL
             newNode = gp.mutShrink(newNode)[0]
-            # print("Mutating", individual, "by deletion", newNode)
+            # logger.debug("Mutating", individual, "by deletion", newNode)
         if op == 2:
             # HVL INS
             newNode = gp.mutInsert(newNode, pset)[0]
-            # print("Mutating", individual, "by insertion", newNode)
+            # logger.debug("Mutating", individual, "by insertion", newNode)
         if op == 3:
             # Reverse this.children if they have the same return type, e.g. (x - y) -> (y - x)
             newNode = mutateByCommute(newNode, pset)[0]
-            # print("Mutating", individual, "by commutation", newNode)
+            # logger.debug("Mutating", individual, "by commutation", newNode)
         if op == 4:
             # mutate by replacing a random node with a terminal
             newNode = mutateByTerminal(newNode, pset)[0]
-            # print("Mutating", individual, "by terminal swap", newNode)
+            # logger.debug("Mutating", individual, "by terminal swap", newNode)
         if op == 5:
             # fuzz a terminal
             newNode = mutateByFuzz(newNode, pset)[0]
-            # print("Mutating", individual, "by fuzzing", newNode)
+            # logger.debug("Mutating", individual, "by fuzzing", newNode)
     return (newNode,)
 
 
 def run_gp(points: pd.DataFrame, pset, mu=100, lamb=10, random_seed=0):
-    print("Searching for an expression...")
-    print(points)
-    for k, v in pset.mapping.items():
-        print(k, v.name)
-
     random.seed(random_seed)
 
     creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
@@ -384,7 +385,6 @@ def run_gp(points: pd.DataFrame, pset, mu=100, lamb=10, random_seed=0):
     mstats.register("min", np.min)
     mstats.register("max", np.max)
 
-    print("CALLING GP")
     pop, log = eaMuPlusLambda(
         pop,
         toolbox,
@@ -397,12 +397,12 @@ def run_gp(points: pd.DataFrame, pset, mu=100, lamb=10, random_seed=0):
         halloffame=hof,
         verbose=False,
     )
-    print("FINISHED!")
     return simplify(hof[0], pset, types)
 
 
-def graph(best):
-    return gp.graph(best)
+def graph(best) -> ([int], [(int, int)], {int: str}):
+    (nodes, edges, labels) = gp.graph(best)
+    return (nodes, edges, {k: str(v) for k, v in labels.items()})
 
 
 def get_types(points: pd.DataFrame) -> {str: str}:
@@ -600,7 +600,7 @@ def eaMuPlusLambda(
     record = stats.compile(population) if stats is not None else {}
     logbook.record(gen=0, nevals=len(invalid_ind), **record)
     if verbose:
-        print(logbook.stream)
+        logger.debug(logbook.stream)
 
     # Begin the generational process
     for gen in range(1, ngen + 1):
@@ -638,7 +638,7 @@ def eaMuPlusLambda(
         record = stats.compile(population) if stats is not None else {}
         logbook.record(gen=gen, nevals=len(invalid_ind), **record)
         if verbose:
-            print(logbook.stream)
+            logger.debug(logbook.stream)
 
     return population, logbook
 
@@ -660,7 +660,7 @@ if __name__ == "__main__":
             points[col] = points[col].astype("string")
         # if points.dtypes[col] == np.int64:
         #     points[col] = points[col].astype("float")
-    print(points.dtypes)
+    logger.info(points.dtypes)
     # assert False
 
     # latentVars = ["r1"]
@@ -672,26 +672,29 @@ if __name__ == "__main__":
     pset = setup_pset(points)
 
     # ind = gp.PrimitiveTree.from_string("add(i0, r1)", pset)
-    # print(fitness(ind, points, pset))
-    # assert False
+    # logger.info(fitness(ind, points, pset))
+
+    best = run_gp(points, pset, random_seed=7)
+    logger.info(f"best is {best}")
+    logger.info(graph(best))
 
     for s in range(10):
         best = run_gp(points, pset, random_seed=s)
-        print("Gen", s, "best", best)
-    print(points)
-    print("best is", best)
-    print("correct?", correct(best, points, pset))
+        logger.info(f"Gen {s} best {best}")
+    logger.info(points)
+    logger.info(f"best is {best}")
+    logger.info(f"correct? {correct(best, points, pset)}")
 
     expected = points.columns[-1]
 
-    print("exected type", points.dtypes[expected])
+    logger.info(f"exected type {points.dtypes[expected]}")
 
     generators = {
         np.dtype("float64"): z3.Real,
         np.dtype("int64"): z3.Int,
         pd.StringDtype(): z3.String,
     }
-    print(generators)
+    logger.info(generators)
 
     types = {
         k: generators.get(points.dtypes[k], generators[points.dtypes[expected]])
@@ -699,6 +702,6 @@ if __name__ == "__main__":
     }
 
     simplified = simplify(best, pset, types)
-    print(simplified)
-    print(correct(simplified, points, pset))
-    print(get_types(points))
+    logger.info(simplified)
+    logger.info(correct(simplified, points, pset))
+    logger.info(get_types(points))
