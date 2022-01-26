@@ -9,6 +9,8 @@ Created on Mon Jan  3 11:47:57 2022
 import operator
 import random
 import z3
+import sys
+import traceback
 
 from deap import algorithms
 from deap import base
@@ -64,7 +66,7 @@ def find_smallest_distance(individual, latent_vars, pset, args, expected):
 
     if len(latent_vars) == 0:
         distance = distance_between(expected, func(**args))
-        if isclose(distance, 0, abs_tol=1e-15):
+        if isclose(distance, 0, abs_tol=1e-10):
             return 0
         else:
             return distance
@@ -79,7 +81,7 @@ def find_smallest_distance(individual, latent_vars, pset, args, expected):
                 return 0
             if off_by < min_distance:
                 min_distance = off_by
-    if isclose(min_distance, 0, abs_tol=1e-15):
+    if isclose(min_distance, 0, abs_tol=1e-10):
         return 0
     return min_distance
 
@@ -91,7 +93,11 @@ def vars_in_tree(individual):
 
 def latent_variables(individual, points):
     undefined_at = [c for c in points.columns if any([v is None for v in points[c]])]
-    return set(undefined_at).intersection(vars_in_tree(individual))
+    return list(set(undefined_at).intersection(vars_in_tree(individual)))
+
+
+def all_vars_defined(individual, pset):
+    return all([v in pset.mapping for v in vars_in_tree(individual)])
 
 
 def evaluate_candidate(
@@ -111,8 +117,8 @@ def evaluate_candidate(
     :return: The aggregated distance between expected and actual values.
     :rtype: float
     """
-    latent_vars = latent_variables(individual, points)
 
+    latent_vars = latent_variables(individual, points)
     total_vars = list(points.columns)[:-1]
     unused_vars = set(total_vars).difference(vars_in_tree(individual))
 
@@ -122,6 +128,9 @@ def evaluate_candidate(
         )
         for _, row in points.iterrows()
     ]
+
+    copy = points.copy()
+    copy["distances"] = distances
 
     mistakes = sum([x > 0 for x in distances])
 
@@ -225,7 +234,7 @@ def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
 
     if output_type == str:
         pset.addTerminal("", str)
-        pset.addPrimitive(lambda x: x, [str], str, name="id")
+        # pset.addPrimitive(lambda x: x, [str], str, name="id")
     elif output_type == float:
         pset.addTerminal(0.0, float)
         pset.addTerminal(1.0, float)
@@ -252,6 +261,15 @@ def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
     return pset
 
 
+def choose_terminal(pset, type_, prob=0.7):
+    variables = [t for t in pset.terminals[type_] if t.name.startswith("ARG")]
+    constants = [t for t in pset.terminals[type_] if t not in variables]
+    if random.random() < prob and variables != []:
+        return random.choice(variables)
+    else:
+        return random.choice(constants)
+
+
 def mutateByTerminal(individual, pset):
     if len(individual) < 2:
         return (individual,)
@@ -259,8 +277,8 @@ def mutateByTerminal(individual, pset):
     index = random.randrange(1, len(individual))
     node = individual[index]
     slice_ = individual.searchSubtree(index)
+    term = choose_terminal(pset, node.ret)
 
-    term = random.choice(pset.terminals[node.ret])
     if gp.isclass(term):
         term = term()
     individual[slice_] = [term]
@@ -293,6 +311,46 @@ def mutateByFuzz(individual, pset):
     return (individual,)
 
 
+def mutInsert(individual, pset):
+    """Inserts a new branch at a random position in *individual*. The subtree
+    at the chosen position is used as child node of the created subtree, in
+    that way, it is really an insertion rather than a replacement. Note that
+    the original subtree will become one of the children of the new primitive
+    inserted, but not perforce the first (its position is randomly selected if
+    the new primitive has more than one child).
+
+    :param individual: The normal or typed tree to be mutated.
+    :returns: A tuple of one tree.
+    """
+    index = random.randrange(len(individual))
+    node = individual[index]
+    slice_ = individual.searchSubtree(index)
+    choice = random.choice
+
+    # As we want to keep the current node as children of the new one,
+    # it must accept the return value of the current node
+    primitives = [p for p in pset.primitives[node.ret] if node.ret in p.args]
+
+    if len(primitives) == 0:
+        return (individual,)
+
+    new_node = choice(primitives)
+    new_subtree = [None] * len(new_node.args)
+    position = choice([i for i, a in enumerate(new_node.args) if a == node.ret])
+
+    for i, arg_type in enumerate(new_node.args):
+        if i != position:
+            term = choose_terminal(pset, arg_type)
+            if gp.isclass(term):
+                term = term()
+            new_subtree[i] = term
+
+    new_subtree[position : position + 1] = individual[slice_]
+    new_subtree.insert(0, new_node)
+    individual[slice_] = new_subtree
+    return (individual,)
+
+
 def mutate(individual, pset, MAX_MUTATIONS=3):
     mutations = 0
     newNode = creator.Individual(gp.PrimitiveTree.from_string(str(individual), pset))
@@ -301,7 +359,7 @@ def mutate(individual, pset, MAX_MUTATIONS=3):
         mutations += 1
         mutate = random.choice([True, False])
         if len(individual) < 2:
-            newNode = gp.mutInsert(newNode, pset)[0]
+            newNode = mutInsert(newNode, pset)[0]
             continue
 
         op = random.choice(range(6))
@@ -315,7 +373,7 @@ def mutate(individual, pset, MAX_MUTATIONS=3):
             # logger.debug("Mutating", individual, "by deletion", newNode)
         if op == 2:
             # HVL INS
-            newNode = gp.mutInsert(newNode, pset)[0]
+            newNode = mutInsert(newNode, pset)[0]
             # logger.debug("Mutating", individual, "by insertion", newNode)
         if op == 3:
             # Reverse this.children if they have the same return type, e.g. (x - y) -> (y - x)
@@ -332,14 +390,119 @@ def mutate(individual, pset, MAX_MUTATIONS=3):
     return (newNode,)
 
 
-def run_gp(points: pd.DataFrame, pset, mu=100, lamb=10, random_seed=0):
+def gen_terminal(expr, pset, type_):
+    try:
+        term = choose_terminal(pset, type_)
+    except IndexError:
+        _, _, traceback = sys.exc_info()
+        raise IndexError(
+            "The gp.generate function tried to add "
+            "a terminal of type '%s', but there is "
+            "none available." % (type_,)
+        ).with_traceback(traceback)
+    if gp.isclass(term):
+        term = term()
+    expr.append(term)
+
+
+def gen_primitive(expr, pset, type_, stack, depth):
+    try:
+        prim = random.choice(pset.primitives[type_])
+        expr.append(prim)
+        for arg in reversed(prim.args):
+            stack.append((depth + 1, arg))
+    except IndexError:
+        gen_terminal(expr, pset, type_)
+
+
+def generate(pset, min_, max_, condition, type_=None):
+    """Generate a Tree as a list of list. The tree is build
+    from the root to the leaves, and it stop growing when the
+    condition is fulfilled.
+
+    :param pset: Primitive set from which primitives are selected.
+    :param min_: Minimum height of the produced trees.
+    :param max_: Maximum Height of the produced trees.
+    :param condition: The condition is a function that takes two arguments,
+                      the height of the tree to build and the current
+                      depth in the tree.
+    :param type_: The type that should return the tree when called, when
+                  :obj:`None` (default) the type of :pset: (pset.ret)
+                  is assumed.
+    :returns: A grown tree with leaves at possibly different depths
+              depending on the condition function.
+    """
+    if type_ is None:
+        type_ = pset.ret
+    expr = []
+    height = random.randint(min_, max_)
+    stack = [(0, type_)]
+    while len(stack) != 0:
+        depth, type_ = stack.pop()
+        if condition(height, depth):
+            gen_terminal(expr, pset, type_)
+        else:
+            gen_primitive(expr, pset, type_, stack, depth)
+    return expr
+
+
+def genHalfAndHalf(pset, min_, max_, type_=None):
+    """Generate an expression with a PrimitiveSet *pset*.
+    Half the time, the expression is generated with :func:`~deap.gp.genGrow`,
+    the other half, the expression is generated with :func:`~deap.gp.genFull`.
+
+    :param pset: Primitive set from which primitives are selected.
+    :param min_: Minimum height of the produced trees.
+    :param max_: Maximum Height of the produced trees.
+    :param type_: The type that should return the tree when called, when
+                  :obj:`None` (default) the type of :pset: (pset.ret)
+                  is assumed.
+    :returns: Either, a full or a grown tree.
+    """
+
+    def genGrow(height, depth):
+        """Expression generation stops when the depth is equal to height
+        or when it is randomly determined that a node should be a terminal.
+        """
+        return depth == height or (
+            depth >= min_ and random.random() < pset.terminalRatio
+        )
+
+    def genFull(height, depth):
+        """Expression generation stops when the depth is equal to height."""
+        return depth == height
+
+    return generate(
+        pset, min_, max_, condition=random.choice([genGrow, genFull]), type_=type_
+    )
+
+
+def is_distinct(pop):
+    seen = []
+    for p in pop:
+        if p in seen:
+            return False
+        else:
+            seen.append(p)
+    return True
+
+
+def parsimony_select(individuals, k):
+    return sorted(
+        individuals, key=operator.attrgetter("fitness", "height"), reverse=True
+    )[:k]
+
+
+def run_gp(
+    points: pd.DataFrame, pset, mu=100, lamb=10, ngen=100, random_seed=0, seeds=[]
+):
     random.seed(random_seed)
 
     creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
     creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin)
 
     toolbox = base.Toolbox()
-    toolbox.register("expr", gp.genHalfAndHalf, pset=pset, min_=0, max_=4)
+    toolbox.register("expr", genHalfAndHalf, pset=pset, min_=0, max_=4)
     toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
@@ -358,8 +521,7 @@ def run_gp(points: pd.DataFrame, pset, mu=100, lamb=10, random_seed=0):
         for k in points
     }
     toolbox.register("simplify", simplify, pset=pset, types=types)
-
-    toolbox.register("select", tools.selTournament, tournsize=2)
+    toolbox.register("select", parsimony_select)
     toolbox.register("mate", gp.cxOnePoint)
     toolbox.register("expr_mut", gp.genFull, min_=0, max_=2)
     toolbox.register("mutate", mutate, pset=pset)
@@ -371,9 +533,36 @@ def run_gp(points: pd.DataFrame, pset, mu=100, lamb=10, random_seed=0):
         "mutate", gp.staticLimit(key=operator.attrgetter("height"), max_value=17)
     )
 
-    pop = toolbox.population(n=100)
+    pop = toolbox.population(n=mu)
+    assert len(pop) == mu, f"Unexpected generated population size: {len(pop)} != {mu}."
+
+    if len(seeds) > 0:
+        print("SEEDS!")
+        for seed in seeds:
+            print("Trying to add", seed)
+            try:
+                individual = creator.Individual(
+                    gp.PrimitiveTree.from_string(seed, pset)
+                )
+                print(f"Fitness of {individual} is {fitness(individual, points, pset)}")
+                pop.append(individual)
+            except TypeError:
+                print(f"Failed to add seed {seed}")
+                # print("Type error.")
+                # print(traceback.format_exc())
+                # print(pset.mapping)
+                # assert False
+                pass
+
     for terms in pset.terminals.values():
-        pop += [creator.Individual([i]) for i in terms]
+        terms = [creator.Individual([i]) for i in terms]
+        for t in terms:
+            if t not in pop:
+                pop.append(t)
+    pop = make_distinct(pop)
+    assert is_distinct(pop), "Population contains duplicated individuals."
+    pop += toolbox.population(n=mu - len(pop))
+    pop = sorted(pop, key=lambda x: x.fitness.values)
 
     hof = tools.HallOfFame(1)
 
@@ -392,11 +581,12 @@ def run_gp(points: pd.DataFrame, pset, mu=100, lamb=10, random_seed=0):
         lamb,
         0.5,
         0.1,
-        100,
+        ngen,
         stats=mstats,
         halloffame=hof,
         verbose=False,
     )
+
     return simplify(hof[0], pset, types)
 
 
@@ -416,18 +606,18 @@ def get_types(points: pd.DataFrame) -> {str: str}:
     return {v: type_strings[t] for v, t in points.dtypes.iteritems()}
 
 
-def to_z3(T, root, labels, types):
-    def _make_tuple(T, root, _parent):
+def to_z3(tree, labels, types):
+    def _make_tuple(tree, root, _parent):
         # Get the neighbors of `root` that are not the parent node. We
-        # are guaranteed that `root` is always in `T` by construction.
-        children = set(T[root]) - {_parent}
+        # are guaranteed that `root` is always in `tree` by construction.
+        children = set(tree[root]) - {_parent}
         if len(children) == 0:
             if labels[root] in types:
                 return types[labels[root]](labels[root])
             else:
                 return labels[root]
 
-        nested = tuple(_make_tuple(T, v, root) for v in children)
+        nested = tuple(_make_tuple(tree, v, root) for v in children)
         if labels[root] == "add":
             c1, c2 = nested
             return c1 + c2
@@ -449,12 +639,13 @@ def to_z3(T, root, labels, types):
             raise ValueError(f"Invalid operator {root}")
 
     # Do some sanity checks on the input.
-    if not nx.is_tree(T):
+    root = 0  # By construction of GP individuals
+    if not nx.is_tree(tree):
         raise nx.NotATree("provided graph is not a tree")
-    if root not in T:
-        raise nx.NodeNotFound(f"Graph {T} contains no node {root}")
+    if root not in tree:
+        raise nx.NodeNotFound(f"Graph {tree} contains no node {root}")
 
-    return _make_tuple(T, root, None)
+    return _make_tuple(tree, root, None)
 
 
 def make_binary(fun, children):
@@ -496,9 +687,6 @@ def simplify(individual, pset, types):
     g.add_nodes_from(nodes)
     g.add_edges_from(edges)
 
-    assert nx.is_tree(
-        g
-    ), f"Expression {individual} must be a tree. {nodes} {edges} {labels}"
     try:
         z3_exp = to_z3(g, 0, labels, types)
         if type(z3_exp) in {int, float, str}:
@@ -510,19 +698,20 @@ def simplify(individual, pset, types):
         return individual
 
 
-def make_distinct(pop, mu, individual, TIMEOUT=3):
-    new_pop = []
-    for ind in pop:
-        if ind not in new_pop:
-            new_pop.append(ind)
-    return new_pop
-
-
 def fill_pop(more, individual, avoid=[], TIMEOUT=3):
     fillers = []
     for _ in range(more):
         fillers.append(individual())
     return fillers
+
+
+def make_distinct(pop):
+    new_pop = []
+    for ind in pop:
+        if ind not in new_pop:
+            new_pop.append(ind)
+    assert is_distinct(new_pop)
+    return new_pop
 
 
 def eaMuPlusLambda(
@@ -604,22 +793,24 @@ def eaMuPlusLambda(
 
     # Begin the generational process
     for gen in range(1, ngen + 1):
+        seen = {}
+        for p in population:
+            p = str(p)
+            if p not in seen:
+                seen[p] = 0
+            seen[p] += 1
+
         if halloffame[0].fitness.values[0] == 0:
             return population, logbook
-        assert (
-            len(population) == mu
-        ), f"Population should contain {mu} individuals but contains {len(population)}."
 
         # Vary the population
         offspring = algorithms.varOr(population, toolbox, lambda_, cxpb, mutpb)
-        offspring = [toolbox.simplify(individual) for individual in offspring]
-        offspring = make_distinct(offspring, mu, toolbox.individual, TIMEOUT=3)
-        offspring += fill_pop(
-            lambda_ - len(offspring), toolbox.individual, population + offspring
-        )
-        assert (
-            len(offspring) == lambda_
-        ), f"Population should contain {lambda_} individuals but contains {len(offspring)}."
+
+        population += offspring
+        population = [toolbox.simplify(i) for i in population]
+        population = make_distinct(population)
+        assert is_distinct(population), "Population contains duplicates"
+        population += toolbox.population(n=mu - len(population))
 
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
@@ -632,10 +823,12 @@ def eaMuPlusLambda(
             halloffame.update(offspring)
 
         # Select the next generation population
-        population[:] = toolbox.select(population + offspring, mu)
-
+        population = sorted(population, key=lambda i: i.fitness.values)[:mu]
+        assert (
+            len(population) == mu
+        ), f"Population should contain {mu} individuals but contains {len(population)}."
         # Update the statistics with the new population
-        record = stats.compile(population) if stats is not None else {}
+        # record = stats.compile(population) if stats is not None else {}
         logbook.record(gen=gen, nevals=len(invalid_ind), **record)
         if verbose:
             logger.debug(logbook.stream)
@@ -643,9 +836,28 @@ def eaMuPlusLambda(
     return population, logbook
 
 
+def from_string(string, pset):
+    return gp.PrimitiveTree.from_string(string, pset)
+
+
 def need_latent(points: pd.DataFrame) -> bool:
     inputs = list(points.columns)[:-1]
-    return any([len(group) > 1 for _, group in points.groupby(inputs)])
+    if len(set(points.iloc[:, -1])) <= 1:
+        return False
+    if inputs == [] and len(set(points.iloc[:, -1])) > 1:
+        return True
+    elif points.dtypes[list(points.columns)[-1]] == float:
+        for _, group in points.groupby(inputs):
+            outputs = group.iloc[:, -1]
+            for o1 in outputs:
+                for o2 in outputs:
+                    if not isclose(o1, o2, abs_tol=1e-10):
+                        return True
+        return False
+    else:
+        return any(
+            [len(set(group.iloc[:, -1])) > 1 for _, group in points.groupby(inputs)]
+        )
 
 
 def shortcut_latent(points: pd.DataFrame) -> bool:
@@ -654,33 +866,42 @@ def shortcut_latent(points: pd.DataFrame) -> bool:
 
 if __name__ == "__main__":
     points = pd.read_csv("../../../sample-traces/scanette.csv")
-    
+
     for col in points:
         if points.dtypes[col] == object:
             points[col] = points[col].astype("string")
         # if points.dtypes[col] == np.int64:
         #     points[col] = points[col].astype("float")
-    logger.info(points.dtypes)
+    # logger.info(f"\n{points}")
+    # points["perfect"] = points["i0"] - points["i1"]
+    # logger.info(f"\n{points}")
+    # logger.info(points.dtypes)
     # assert False
 
-    # latentVars = ["r1"]
     latentVars = []
+    # latentVars.append("r1")
     for var in latentVars:
         assert var not in points.columns, f"Latent variable {var} already defined"
         points.insert(0, var, None)
 
     pset = setup_pset(points)
 
-    # ind = gp.PrimitiveTree.from_string("add(i0, r1)", pset)
-    # logger.info(fitness(ind, points, pset))
+    # ind = gp.PrimitiveTree.from_string("sub(i0, i1)", pset)
+    # logger.info(f"Fitness of {ind} is {fitness(ind, points, pset)}")
+    # assert False
 
-    best = run_gp(points, pset, random_seed=7)
+    best = run_gp(points, pset, random_seed=7, seeds=["sub(i0, r1)"])
     logger.info(f"best is {best}")
     logger.info(graph(best))
 
-    for s in range(10):
-        best = run_gp(points, pset, random_seed=s)
-        logger.info(f"Gen {s} best {best}")
+    for s in range(20):
+        best = run_gp(points, pset, random_seed=s, ngen=200)
+        corr = correct(best, points, pset)
+        if corr:
+            logger.info(f"Gen {s} best {best}")
+        else:
+            logger.info(f"Gen {s} incorrect {best}: {fitness(best, points, pset)}")
+
     logger.info(points)
     logger.info(f"best is {best}")
     logger.info(f"correct? {correct(best, points, pset)}")

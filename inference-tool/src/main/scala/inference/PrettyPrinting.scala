@@ -9,6 +9,10 @@ object PrettyPrinter {
     }
   }
 
+  def show (r: Real.real): String = {
+    TypeConversion.toDouble(r).toString
+  }
+
   def nataPairToString(nn: (Nat.nat, Nat.nat)): String = {
     (show(nn._1), show(nn._2)).toString()
   }
