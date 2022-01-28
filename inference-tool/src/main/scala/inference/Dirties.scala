@@ -233,38 +233,26 @@ object Dirties {
       }
     }
 
-    val flatpoints = points.flatten
-      .groupBy(_._1)
-      .mapValues(_.map(_._2))
-
     val pd = py.module("pandas")
-    val training_set = pd.DataFrame()
+
+    points = points.map(row => row.filter(v => types(v._1) == types("expected")))
 
     types("expected") match {
-      case "Int" => training_set.insert(0, "expected", flatpoints("expected").asInstanceOf[List[Long]].toPythonProxy)
-      case "Real" => training_set.insert(0, "expected", flatpoints("expected").asInstanceOf[List[Double]].toPythonProxy)
+      case "Int" => {
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Int]]].toPythonProxy).dropna()
+        return (training_set.drop_duplicates(), types)
+      }
+      case "Real" => {
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Double]]].toPythonProxy).dropna()
+        return (training_set.drop_duplicates(), types)
+      }
       case "String" => {
-        training_set.insert(0, "expected", flatpoints("expected").asInstanceOf[List[String]].toPythonProxy)
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Double]]].toPythonProxy).dropna()
         training_set.bracketUpdate("expected", training_set.bracketAccess("expected").astype("string"))
+        return (training_set.drop_duplicates(), types)
       }
       case _ => throw new IllegalStateException(f"Type of expected value should be Int, Real, or String, not ${types("expected")}")
     }
-
-    for ((col, vals) <- flatpoints - "expected") {
-      types(col) match {
-        case "Int" => {
-          training_set.insert(0, col, vals.asInstanceOf[List[Long]].toPythonProxy)
-        }
-        case "Real" => training_set.insert(0, col, vals.asInstanceOf[List[Double]].toPythonProxy)
-        case "String" => {
-          training_set.insert(0, col, vals.asInstanceOf[List[String]].toPythonProxy)
-          training_set.bracketUpdate(col, training_set.bracketAccess(col).astype("string"))
-        }
-        case _ => throw new IllegalStateException(f"Type of $col should be Int, Real, or String, not ${types("expected")}")
-      }
-    }
-
-    return (training_set.drop_duplicates(), types)
   }
 
   def getUpdate(
@@ -375,7 +363,6 @@ object Dirties {
     }
 
     // TODO: Delete these seeds
-    println("Adding seeds")
     for (i <- 1 to r_index) {
       if (py"'r'+str($i) in $training_set".as[Boolean])
         seeds ++= List(f"sub(r$i, i0)", f"sub(i0, r$i)", f"add(r$i, i0)")

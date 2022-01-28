@@ -5647,6 +5647,7 @@ object PTA_Generalisation {
           else tran)))
         }),
         e)
+        PrettyPrinter.iEFSM2dot(derestricted, "derestricted")
       val nondeterministic_pairs: List[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))] = FSet.sorted_list_of_fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))](np(derestricted));
       (Inference.resolve_nondeterminism(Set.bot_set[(Nat.nat, Nat.nat)],
         nondeterministic_pairs, pta,

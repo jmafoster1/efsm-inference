@@ -92,7 +92,7 @@ def vars_in_tree(individual):
 
 
 def latent_variables(individual, points):
-    undefined_at = [c for c in points.columns if any([v is None for v in points[c]])]
+    undefined_at = [c for c in points.columns if all([v is None for v in points[c]])]
     return list(set(undefined_at).intersection(vars_in_tree(individual)))
 
 
