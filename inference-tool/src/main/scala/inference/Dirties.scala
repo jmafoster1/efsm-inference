@@ -279,7 +279,8 @@ object Dirties {
     val ioPairs = (train.map {
       case (inputs, (aregs, pregs)) => pregs(r) match {
         case None => throw new IllegalStateException("Got None from registers")
-        case Some(v) => (inputs, (aregs.filterKeys(_ == r), v))
+        case Some(v) => (inputs, (aregs, v))
+        // case Some(v) => (inputs, (aregs.filterKeys(_ == r), v))
       }
     }).distinct
 
@@ -306,8 +307,7 @@ object Dirties {
     funMem.find(f => funMemFind(f.asInstanceOf[me.shadaj.scalapy.py.Any], training_set, pset, false, f"")) match {
       case None => {}
       case Some(best) => {
-        Log.root.debug("    Best memoised update is: " + best)
-        Log.root.debug("    Best update is correct")
+        Log.root.debug(f"  Best memoised update $best is correct")
         val (nodes, edges, labels) = deap_gp.graph(best.asInstanceOf[me.shadaj.scalapy.py.Any]).as[(List[Int], List[(Int, Int)], Map[Int, String])]
         val aexp = TypeConversion.toAExp(nodes, edges, labels)
         val stringTypes = types - "expected"
@@ -316,9 +316,10 @@ object Dirties {
     }
 
     var seeds: List[String] = List()
-    var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy)
-    Log.root.debug("    Best output is: " + best)
+    if (py"'r'+str($r_index) in $training_set".as[Boolean])
+      seeds = List(f"sub(r$r_index, i0)", f"add(r$r_index, i0)")
 
+    var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy)
     if (deap_gp.correct(best, training_set, pset).as[Boolean]) {
       Log.root.debug(f"  Best update $best is correct")
       val (nodes, edges, labels) = deap_gp.graph(best).as[(List[Int], List[(Int, Int)], Map[Int, String])]
@@ -329,6 +330,7 @@ object Dirties {
       val stringTypes = types - "expected"
       return Some(aexp)
     } else {
+      Log.root.debug(f"  Best update $best is incorrect")
       return None
     }
   }
@@ -373,10 +375,10 @@ object Dirties {
     }
 
     // TODO: Delete these seeds
-    if (latentVariable || r_index > 1){
-      println("Adding seeds")
-      for (i <- 1 to r_index)
-        seeds ++= List(f"sub(i0, r$i)", f"add(r$i, i0)")
+    println("Adding seeds")
+    for (i <- 1 to r_index) {
+      if (py"'r'+str($i) in $training_set".as[Boolean])
+        seeds ++= List(f"sub(r$i, i0)", f"sub(i0, r$i)", f"add(r$i, i0)")
     }
 
     Log.root.debug("  Output training set:\n" + training_set)
@@ -393,8 +395,7 @@ object Dirties {
     funMem.find(f => funMemFind(f.asInstanceOf[me.shadaj.scalapy.py.Any], training_set, pset, latentVariable, f"r$r_index")) match {
       case None => {}
       case Some(best) => {
-        Log.root.debug("    Best memoised output is: " + best)
-        Log.root.debug("    Best output is correct")
+        Log.root.debug(f"  Best memoised output $best is correct")
         val (nodes, edges, labels) = deap_gp.graph(best.asInstanceOf[me.shadaj.scalapy.py.Any]).as[(List[Int], List[(Int, Int)], Map[Int, String])]
         val aexp = TypeConversion.toAExp(nodes, edges, labels)
         val stringTypes = types - "expected"
@@ -403,7 +404,6 @@ object Dirties {
     }
 
     var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy)
-    Log.root.debug("    Best output is: " + best)
 
     if (deap_gp.correct(best, training_set, pset).as[Boolean]) {
       Log.root.debug(f"  Best output $best is correct")
@@ -414,9 +414,12 @@ object Dirties {
       val stringTypes = types - "expected"
       return Some((aexp, stringTypes.map(x => (TypeConversion.vnameFromString(x._1), x._2)).toMap))
     } else if (!latentVariable) {
-      Log.root.debug("Trying again with a latent variable")
+      Log.root.debug("   Trying again with a latent variable")
       return getOutput(label, maxReg, values, ioPairs, true)
-    } else return None
+    } else {
+      Log.root.debug(f"  Best output $best is incorrect")
+      return None
+    }
   }
 
   def funMemFind(f: me.shadaj.scalapy.py.Any, training_set: me.shadaj.scalapy.py.Any, pset: me.shadaj.scalapy.py.Any, latentVariable: Boolean, reg: String): Boolean = {

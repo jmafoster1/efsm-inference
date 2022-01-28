@@ -549,7 +549,7 @@ def run_gp(
             except TypeError:
                 print(f"Failed to add seed {seed}")
                 # print("Type error.")
-                # print(traceback.format_exc())
+                print(traceback.format_exc())
                 # print(pset.mapping)
                 # assert False
                 pass

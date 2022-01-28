@@ -313,19 +313,24 @@ definition updates_for_output :: "log \<Rightarrow> value list \<Rightarrow> tra
 
 type_synonym output_types = "(vname aexp \<times> vname \<Rightarrow>f String.literal)"
 
-fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> transition_group \<Rightarrow> (nat \<times> output_types option) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "put_updates _ _ _ [] e = e" |
-  "put_updates log values gp ((_, None)#ops) e = put_updates log values gp ops e" |
-  "put_updates log values gp ((o_inx, Some (op, types))#ops) e = (
+fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> transition_group \<Rightarrow> nat \<Rightarrow> (nat \<times> output_types option) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "put_updates _ _ _ _ [] e = e" |
+  "put_updates log values gp mreg ((_, None)#ops) e = put_updates log values gp mreg ops e" |
+  "put_updates log values gp mreg ((o_inx, Some (op, types))#ops) e = (
     let
       gp' = map (\<lambda>(id, t). (id, t\<lparr>Outputs := list_update (Outputs t) o_inx op\<rparr>)) gp;
-      generalised_model = fold (\<lambda>(id, t) acc. replace_transition acc id t) gp' e;
+      generalised_model = fold (\<lambda>(id, t) acc. replace_transition acc id t) gp' e
+    in
+     if accepts_log (set log) (tm generalised_model) then
+     put_updates log values gp' mreg ops generalised_model
+    else
+    let
       e' = updates_for_output log values gp o_inx op types generalised_model
     in
     if accepts_log (set log) (tm e') then
-     put_updates log values gp' ops e'
+     put_updates log values gp' mreg ops e'
     else
-     put_updates log values gp ops e
+     put_updates log values gp mreg ops e
   )"
 
 fun unzip_3 :: "('a \<times> 'b \<times> 'c) list \<Rightarrow> ('a list \<times> 'b list \<times> 'c list)" where
@@ -381,14 +386,9 @@ definition replace_all_outputs_updates :: "iEFSM \<Rightarrow> tids list \<Right
 definition "search_for t gp e log= accepts_log (set log) (tm (replace_all e (map fst gp) t))"
 
 (*This is where the types stuff originates*)
-definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group \<Rightarrow> (transition \<times> output_types option list) list \<Rightarrow> (iEFSM \<times> (transition \<times> output_types option list) list)" where
-  "generalise_and_update log e gp closed = (
-    case find (\<lambda>(t, _). same_structure t (snd (hd gp))) closed of
-    Some (tran, types) \<Rightarrow> let
-      values = enumerate_log_values log
-    in
-      (put_updates log values gp (enumerate 0 types) e, closed) |
-    None \<Rightarrow> let
+definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group \<Rightarrow> transition_group list \<Rightarrow> iEFSM" where
+  "generalise_and_update log e gp gps = (
+    let
       label = Label (snd (hd gp));
       values = enumerate_log_values log;
       new_gp_ts = make_training_set e log gp;
@@ -397,7 +397,8 @@ definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> trans
       \<comment>\<open> TODO: We want to record output funs and types as we infer them! \<close>
       outputs = get_outputs label max_reg values I R P
     in
-      (put_updates log values gp (enumerate 0 outputs) e, ((snd (hd gp))\<lparr>Guards:=[]\<rparr>, outputs)#closed)
+      fold (\<lambda>gp e'. put_updates log values gp max_reg (enumerate 0 outputs) e') (gp#gps) e
+
   )"
 
 text \<open>Splitting structural groups up into subgroups by previous transition can cause different
@@ -518,8 +519,9 @@ fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> tr
   "groupwise_generalise_and_update _ e [] to_derestrict closed = (e, to_derestrict, closed)" |
   "groupwise_generalise_and_update log e (gp#t) to_derestrict closed = (
         let
-          (e', ts) = generalise_and_update log e gp closed;
           rep = snd (hd (gp));
+          structural_groups = filter (\<lambda>gp'. same_structure rep (snd (hd (gp')))) t; 
+          e' = generalise_and_update log e gp structural_groups;
           structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(_, _, t). same_structure rep t) e');
           delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs e')) e';
           (standardised, more_to_derestrict) = standardise_group delayed log (sorted_list_of_fset structural_group) standardise_group_outputs_updates;
@@ -528,9 +530,9 @@ fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> tr
         \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and
             updates for the other historical subgroups so can filter them out.\<close>
         if fis_singleton structural_group2 then
-          groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. set g \<inter> fset structural_group = {}) t) (to_derestrict @ more_to_derestrict) (ts)
+          groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. set g \<inter> fset structural_group = {}) t) (to_derestrict @ more_to_derestrict) []
         else
-          groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) t (to_derestrict @ more_to_derestrict) (ts)
+          groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) t (to_derestrict @ more_to_derestrict) []
   )"
 
 definition drop_all_guards :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
@@ -585,9 +587,9 @@ definition drop_selected_guards :: "iEFSM \<Rightarrow> (tids \<times> transitio
 definition derestrict :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "derestrict pta log m np = (
     let
-      groups = transition_groups pta log;
+      groups = transition_groups pta log;          
       (normalised, to_derestrict, closed) = groupwise_generalise_and_update log pta groups [] []
-    in
+    in                                             
       drop_selected_guards normalised to_derestrict pta log m np
   )"
 

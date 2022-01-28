@@ -98,7 +98,8 @@ fun aexp2dot :: "vname aexp \<Rightarrow> String.literal" where
   "aexp2dot (V v) = vname2dot v" |
   "aexp2dot (Plus a1 a2) = (aexp2dot a1)+STR '' + ''+(aexp2dot a2)" |
   "aexp2dot (Minus a1 a2) = (aexp2dot a1)+STR '' - ''+(aexp2dot a2)" |
-  "aexp2dot (Times a1 a2) = (aexp2dot a1)+STR '' &times; ''+(aexp2dot a2)"
+  "aexp2dot (Times a1 a2) = (aexp2dot a1)+STR '' &times; ''+(aexp2dot a2)" |
+  "aexp2dot (Divide  a1 a2) = (aexp2dot a1)+STR '' &divide; ''+(aexp2dot a2)"
 
 fun join :: "String.literal list \<Rightarrow> String.literal \<Rightarrow> String.literal" where
   "join [] _ = (STR '''')" |
