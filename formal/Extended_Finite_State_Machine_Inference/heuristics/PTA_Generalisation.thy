@@ -7,7 +7,7 @@ inference. Ideally, we would like something more generally applicable. This theo
 abstract \emph{metaheuristic} which can be implemented with genetic programming.\<close>
 
 theory PTA_Generalisation
-  imports "../Inference" Same_Register Group_By
+  imports "../Inference" Same_Register Group_By "HOL-Library.Sublist"
 begin
 
 hide_const I
@@ -34,13 +34,18 @@ instance
   by (metis (full_types) less_eq_value_type_def less_value_type.simps(2) less_value_type.simps(3) less_value_type.simps(4) value_type.exhaust)
 end
 
+fun type_signature :: "value \<Rightarrow> value_type" where
+  "type_signature (value.Str _) = S" |
+  "type_signature (value.Int _) = I" |
+  "type_signature (value.Real _) = R"
+
+
 \<comment> \<open>This is a very hacky way of making sure that things with differently typed outputs don't get
     lumped together.\<close>
 fun typeSig :: "output_function \<Rightarrow> value_type" where
-  "typeSig (L (value.Str _)) = S" |
-  "typeSig (L (value.Int _)) = I" |
-  "typeSig (L (value.Real _)) = R" |
+  "typeSig (L v) = type_signature v" |
   "typeSig _ = R"
+
 
 definition same_structure :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "same_structure t1 t2 = (
@@ -52,12 +57,66 @@ hide_const S
 hide_const I
 hide_const R
 
+type_synonym abstract_event = "(String.literal \<times> value_type list \<times> value_type list)"
+
+definition event_structure :: "event \<Rightarrow> abstract_event" where
+  "event_structure e = (let (l, i, p) = e in (l, map type_signature i, map type_signature p))"
+
+fun events_transitions :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (tids \<times> abstract_event) list \<Rightarrow> (tids \<times> abstract_event) list" where
+  "events_transitions _ _ _ [] tt = rev tt" |
+  "events_transitions e s r ((l, i, p)#trace) tt = (
+  let
+    (id, s', t) = fthe_elem (i_possible_steps e s r l i);
+    r' = evaluate_updates t i r
+  in
+    events_transitions e s' r' trace ((id, event_structure (l, i, p))#tt)
+  )"
+
+definition trace_history :: "(tids \<times> abstract_event) list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list" where
+  "trace_history l = (
+    let
+      transition_ids = map fst l;
+      abstract_events = map snd l;
+      distinct_prefixes = map remdups (prefixes abstract_events)
+    in
+      zip transition_ids (zip abstract_events distinct_prefixes)
+  )"
+
 lemma same_structure_equiv:
   "Outputs t1 = [L (value.Int m)] \<Longrightarrow> Outputs t2 = [L (value.Int n)] \<Longrightarrow>
    same_structure t1 t2 = Transition.same_structure t1 t2"
   by (simp add: same_structure_def Transition.same_structure_def)
 
 type_synonym transition_group = "(tids \<times> transition) list"
+
+fun place_in_group :: "(tids \<times> abstract_event \<times> abstract_event list) \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list" where
+  "place_in_group e closed [] = closed@[[e]]" |
+  "place_in_group e closed (gp#groups) = (
+    let
+      (ids, abs_event, history) = e;
+      (ids', abs_event', history') = hd gp
+    in
+    if abs_event = abs_event' \<and> history = history' then
+      ((e#gp)#groups)
+    else
+      place_in_group e (gp#closed) groups
+  )"
+
+fun group_transitions :: "(tids \<times> abstract_event \<times> abstract_event list) list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list" where
+  "group_transitions [] gs = gs" |
+  "group_transitions (h#t) gs = group_transitions t (place_in_group h [] gs)" 
+
+\<comment>\<open>TODO: Codegen this and test it\<close>
+definition historical_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group list" where
+  "historical_groups e log = (
+    let
+      observed = map (\<lambda>t. events_transitions e 0 <> t []) log;
+      histories = map trace_history observed;
+      groups = fold (\<lambda>history acc. group_transitions history acc) histories [];
+      ids = map (map fst) groups
+    in
+     map (map (\<lambda>id. (id, get_by_ids e id))) ids
+  )"
 
 fun observe_all :: "iEFSM \<Rightarrow>  cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> transition_group" where
   "observe_all _ _ _ [] = []" |
@@ -84,6 +143,16 @@ definition transition_groups_exec :: "iEFSM \<Rightarrow> trace \<Rightarrow> (n
   "transition_groups_exec e t = map (\<lambda>l. map snd l)
                                 (group_by (\<lambda>(e1, _, _, t1) (e2, _, _, t2). same_event_structure e1 e2)
                                 (zip t (enumerate 0 (observe_all e 0 <> t))))"
+
+fun remove_consecutive_duplicates :: "'a list \<Rightarrow> 'a list \<Rightarrow> 'a list" where
+  "remove_consecutive_duplicates [] acc = rev acc" |
+  "remove_consecutive_duplicates (h#t) [] = remove_consecutive_duplicates t [h]" |
+  "remove_consecutive_duplicates (h#t) (h'#t') = (
+    if h = h' then
+      remove_consecutive_duplicates t (h'#t')
+    else
+      remove_consecutive_duplicates t (h#h'#t')
+  )"
 
 type_synonym struct = "(label \<times> arity \<times> value_type list)"
 
@@ -322,7 +391,7 @@ fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> transition_group 
       generalised_model = fold (\<lambda>(id, t) acc. replace_transition acc id t) gp' e
     in
      if accepts_log (set log) (tm generalised_model) then
-     put_updates log values gp' mreg ops generalised_model
+      put_updates log values gp' mreg ops generalised_model
     else
     let
       e' = updates_for_output log values gp o_inx op types generalised_model
@@ -397,7 +466,8 @@ definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> trans
       \<comment>\<open> TODO: We want to record output funs and types as we infer them! \<close>
       outputs = get_outputs label max_reg values I R P
     in
-      fold (\<lambda>gp e'. put_updates log values gp max_reg (enumerate 0 outputs) e') (gp#gps) e
+      put_updates log values gp max_reg (enumerate 0 outputs) e
+      \<comment> \<open>fold (\<lambda>gp e'. put_updates log values gp max_reg (enumerate 0 outputs) e') (gp#gps) e\<close>
 
   )"
 
@@ -576,7 +646,8 @@ definition remove_spurious_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> iEF
 
 definition drop_selected_guards :: "iEFSM \<Rightarrow> (tids \<times> transition) list \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
 "drop_selected_guards e to_derestrict pta log m np = (let
-      derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, if (id, tran) \<in> set (to_derestrict) then tran\<lparr>Guards := []\<rparr> else tran)) e;
+      ids = map fst to_derestrict;
+      derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, if id \<in> set ids then tran\<lparr>Guards := []\<rparr> else tran)) e;
       nondeterministic_pairs = sorted_list_of_fset (np derestricted)
     in
     case resolve_nondeterminism {} nondeterministic_pairs pta derestricted m (accepts_log (set log)) np of

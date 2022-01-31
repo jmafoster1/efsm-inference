@@ -95,6 +95,24 @@
     {"label": "payer", "inputs": [70.0], "outputs": [6.939999999999998]}
   ],
   [
+    {"label": "debloquer", "inputs": [], "outputs": [0]},
+    {"label": "scanner", "inputs": [1.47], "outputs": [1.47]},
+    {"label": "supprimer", "inputs": [1.47], "outputs": [0.0]},
+    {"label": "scanner", "inputs": [54.99], "outputs": [54.99]},
+    {"label": "scanner", "inputs": [2.4], "outputs": [57.39]},
+    {"label": "scanner", "inputs": [0.58], "outputs": [57.97]},
+    {"label": "scanner", "inputs": [1.47], "outputs": [59.44]},
+    {"label": "scanner", "inputs": [4.65], "outputs": [64.09]},
+    {"label": "scanner", "inputs": [1.47], "outputs": [65.56]},
+    {"label": "scanner", "inputs": [1.47], "outputs": [67.03]},
+    {"label": "scanner", "inputs": [2.15], "outputs": [69.18]},
+    {"label": "abandon", "inputs": [], "outputs": []},
+    {"label": "ouvrirSession", "inputs": [], "outputs": [0]},
+    {"label": "ajouter", "inputs": [229.9], "outputs": [299.08000000000004]},
+    {"label": "fermerSession", "inputs": [], "outputs": [0]},
+    {"label": "payer", "inputs": [300.0], "outputs": [0.9200000000000159]}
+  ],
+  [
     {"label": "debloquer","inputs": [],"outputs": [0]},
     {"label": "scanner","inputs": [2.01],"outputs": [2.01]},
     {"label": "scanner","inputs": [2.4],"outputs": [4.41]},

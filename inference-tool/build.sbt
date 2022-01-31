@@ -1,6 +1,7 @@
 import Dependencies._
 import sys.process._
 import java.io.File;
+import ai.kien.python.Python
 
 val cleanDotfiles = taskKey[Int]("Deletes everything from the ./dotfiles folder")
 val mkdirs = taskKey[Unit]("Creates the ./dotfiles directories for the program to put stuff in as it runs")
@@ -79,6 +80,16 @@ lazy val root = (project in file("."))
     }
 
   )
+
+  fork := true
+
+  lazy val python = Python("/home/michael/anaconda3/bin/python")
+
+  lazy val javaOpts = python.scalapyProperties.get.map {
+    case (k, v) => s"""-D$k=$v"""
+  }.toSeq
+
+  javaOptions ++= javaOpts
 
 // Uncomment the following for publishing to Sonatype.
 // See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for more detail.
