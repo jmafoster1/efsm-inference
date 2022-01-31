@@ -47,8 +47,10 @@ object FrontEnd {
     if (Config.preprocessor != null) {
       val resolved_pta = Config.preprocessor(pta)(Config.config.train)(Config.heuristics)(Config.config.nondeterminismMetric)
       PrettyPrinter.iEFSM2dot(resolved_pta, "resolved")
-      if (FSet.equal_fseta(pta, resolved_pta))
+      if (FSet.equal_fseta(pta, resolved_pta)) {
         Log.root.info("Defaulting back to original PTA")
+        System.exit(1)
+      }
       else {
         pta = resolved_pta
         Log.root.info(s"Resolved PTA has ${Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(pta)))} states")

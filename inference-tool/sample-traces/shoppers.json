@@ -82,17 +82,17 @@
     {"label": "payer","inputs": [30.0],"outputs": [7.940000000000001]}
   ],
   [
-    {"label": "debloquer","inputs": [],"outputs": [0]},
-    {"label": "scanner","inputs": [2.01],"outputs": [2.01]},
-    {"label": "scanner","inputs": [2.15],"outputs": [4.16]},
-    {"label": "scanner","inputs": [1.86],"outputs": [6.0200000000000005]},
-    {"label": "scanner","inputs": [8.6],"outputs": [14.620000000000001]},
-    {"label": "scanner","inputs": [1.7],"outputs": [16.32]},
-    {"label": "scanner","inputs": [4.65],"outputs": [20.97]},
-    {"label": "scanner","inputs": [2.01],"outputs": [22.979999999999997]},
-    {"label": "scanner","inputs": [4.65],"outputs": [27.629999999999995]},
-    {"label": "abandon","inputs": [],"outputs": []},
-    {"label": "payer","inputs": [30.0],"outputs": [2.370000000000001]}
+    {"label": "debloquer", "inputs": [], "outputs": [0]},
+    {"label": "scanner", "inputs": [1.94], "outputs": [1.94]},
+    {"label": "scanner", "inputs": [0.58], "outputs": [2.52]},
+    {"label": "scanner", "inputs": [2.15], "outputs": [4.67]},
+    {"label": "scanner", "inputs": [1.7], "outputs": [6.37]},
+    {"label": "scanner", "inputs": [1.7], "outputs": [8.07]},
+    {"label": "scanner", "inputs": [2.01], "outputs": [10.08]},
+    {"label": "supprimer", "inputs": [2.01], "outputs": [8.07]},
+    {"label": "scanner", "inputs": [54.99], "outputs": [63.06]},
+    {"label": "abandon", "inputs": [], "outputs": []},
+    {"label": "payer", "inputs": [70.0], "outputs": [6.939999999999998]}
   ],
   [
     {"label": "debloquer","inputs": [],"outputs": [0]},
