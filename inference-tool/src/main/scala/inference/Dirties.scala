@@ -126,7 +126,6 @@ object Dirties {
   sys.path.append("./src/main/python")
   for (p <- site.getsitepackages().as[List[String]])
     sys.path.append(p)
-  println(sys.path)
   val deap_gp = py.module("deap_gp")
 
   def findDistinguishingGuards(

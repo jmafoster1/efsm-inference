@@ -72,6 +72,44 @@ fun events_transitions :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \
     events_transitions e s' r' trace ((id, event_structure (l, i, p))#tt)
   )"
 
+(*
+fun trace_history :: "(tids \<times> abstract_event) list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list" where
+  "trace_history [] acc = rev acc" |
+  "trace_history ((tids, structure)#t) [] = trace_history t [(tids, structure, [])]" |
+  "trace_history ((tids, structure)#t) ((tids', prev_structure, history)#t') = (
+    if structure = prev_structure then
+      trace_history t ((tids, structure, history)#(tids', prev_structure, history)#t')
+    else
+      trace_history t ((tids, structure, prev_structure#history)#(tids', structure, history)#t')
+  )"
+*)
+
+fun remove_consecutive_duplicates :: "'a list \<Rightarrow> 'a list \<Rightarrow> 'a list" where
+  "remove_consecutive_duplicates [] acc = rev acc" |
+  "remove_consecutive_duplicates (h#t) [] = remove_consecutive_duplicates t [h]" |
+  "remove_consecutive_duplicates (h#t) (h'#t') = (
+    if h = h' then
+      remove_consecutive_duplicates t (h'#t')
+    else
+      remove_consecutive_duplicates t (h#h'#t')
+  )"
+
+definition trace_history :: "(tids \<times> abstract_event) list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list" where
+  "trace_history l = (
+    let
+      transition_ids = map fst l;
+      abstract_events = map snd l;
+      groups = group_by (=) abstract_events;
+      group_histories = prefixes (remove_consecutive_duplicates abstract_events []);
+      group_lengths = map length groups;
+      repeats = foldr (@) (map (\<lambda>(x, y). repeat x y) (zip group_lengths group_histories)) [];
+      test = zip abstract_events repeats
+    in
+      zip transition_ids test
+  )"
+
+
+(*
 definition trace_history :: "(tids \<times> abstract_event) list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list" where
   "trace_history l = (
     let
@@ -81,13 +119,26 @@ definition trace_history :: "(tids \<times> abstract_event) list \<Rightarrow> (
     in
       zip transition_ids (zip abstract_events distinct_prefixes)
   )"
+*)
+
+type_synonym transition_group = "(tids \<times> transition) list"
+
+definition historical_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group list" where
+  "historical_groups e log = (
+    let
+      observed = map (\<lambda>t. events_transitions e 0 <> t []) log;
+      histories = map (\<lambda>t. trace_history t) observed;
+      flat = fold (@) histories [];
+      groups_fun = fold (\<lambda>(id, structure, history) gps. gps((structure, history) $:= id # (gps $ (structure, history)))) flat (K$ []);
+      groups = sort (map (\<lambda>k. let (structure, history) = k in (length history, history, groups_fun $ k)) (finfun_to_list groups_fun))
+    in
+    map (\<lambda>(_, history, tids). map (\<lambda>id. (id, get_by_ids e id)) tids) groups
+  )"
 
 lemma same_structure_equiv:
   "Outputs t1 = [L (value.Int m)] \<Longrightarrow> Outputs t2 = [L (value.Int n)] \<Longrightarrow>
    same_structure t1 t2 = Transition.same_structure t1 t2"
   by (simp add: same_structure_def Transition.same_structure_def)
-
-type_synonym transition_group = "(tids \<times> transition) list"
 
 fun place_in_group :: "(tids \<times> abstract_event \<times> abstract_event list) \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list" where
   "place_in_group e closed [] = closed@[[e]]" |
@@ -106,7 +157,7 @@ fun group_transitions :: "(tids \<times> abstract_event \<times> abstract_event 
   "group_transitions [] gs = gs" |
   "group_transitions (h#t) gs = group_transitions t (place_in_group h [] gs)" 
 
-\<comment>\<open>TODO: Codegen this and test it\<close>
+\<comment>\<open>TODO: Codegen this and test it
 definition historical_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group list" where
   "historical_groups e log = (
     let
@@ -117,7 +168,7 @@ definition historical_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> transitio
     in
      map (map (\<lambda>id. (id, get_by_ids e id))) ids
   )"
-
+\<close>
 fun observe_all :: "iEFSM \<Rightarrow>  cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> transition_group" where
   "observe_all _ _ _ [] = []" |
   "observe_all e s r ((l, i, _)#es)  =
@@ -143,16 +194,6 @@ definition transition_groups_exec :: "iEFSM \<Rightarrow> trace \<Rightarrow> (n
   "transition_groups_exec e t = map (\<lambda>l. map snd l)
                                 (group_by (\<lambda>(e1, _, _, t1) (e2, _, _, t2). same_event_structure e1 e2)
                                 (zip t (enumerate 0 (observe_all e 0 <> t))))"
-
-fun remove_consecutive_duplicates :: "'a list \<Rightarrow> 'a list \<Rightarrow> 'a list" where
-  "remove_consecutive_duplicates [] acc = rev acc" |
-  "remove_consecutive_duplicates (h#t) [] = remove_consecutive_duplicates t [h]" |
-  "remove_consecutive_duplicates (h#t) (h'#t') = (
-    if h = h' then
-      remove_consecutive_duplicates t (h'#t')
-    else
-      remove_consecutive_duplicates t (h#h'#t')
-  )"
 
 type_synonym struct = "(label \<times> arity \<times> value_type list)"
 
@@ -658,7 +699,7 @@ definition drop_selected_guards :: "iEFSM \<Rightarrow> (tids \<times> transitio
 definition derestrict :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "derestrict pta log m np = (
     let
-      groups = transition_groups pta log;          
+      groups = historical_groups pta log;          
       (normalised, to_derestrict, closed) = groupwise_generalise_and_update log pta groups [] []
     in                                             
       drop_selected_guards normalised to_derestrict pta log m np
