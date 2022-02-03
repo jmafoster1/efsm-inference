@@ -44,8 +44,17 @@ def getListOfFiles(dir: File, extensions: List[String]): List[File] = {
     }
 }
 
+
+lazy val python = Python()
+
+lazy val javaOpts = python.scalapyProperties.get.map {
+  case (k, v) => s"""-D$k=$v"""
+}.toSeq
+
 lazy val root = (project in file("."))
   .settings(
+    fork := true,
+    javaOptions ++= javaOpts,
     name := "inference-tool",
     libraryDependencies += scalaTest % Test,
     libraryDependencies += "net.liftweb" %% "lift-json" % "3.3.0",
@@ -80,16 +89,6 @@ lazy val root = (project in file("."))
     }
 
   )
-
-  fork := true
-
-  lazy val python = Python("/home/michael/anaconda3/bin/python")
-
-  lazy val javaOpts = python.scalapyProperties.get.map {
-    case (k, v) => s"""-D$k=$v"""
-  }.toSeq
-
-  javaOptions ++= javaOpts
 
 // Uncomment the following for publishing to Sonatype.
 // See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for more detail.

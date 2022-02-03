@@ -122,7 +122,13 @@ object Dirties {
   var guardMem: List[Any] = List()
 
   val sys = py.module("sys")
+  val site = py.module("site")
   sys.path.append("./src/main/python")
+  println(site.getsitepackages())
+  println(sys.executable)
+  for (p <- site.getsitepackages().as[List[String]])
+    sys.path.append(p)
+  println(sys.path)
   val deap_gp = py.module("deap_gp")
 
   def findDistinguishingGuards(
