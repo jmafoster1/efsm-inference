@@ -202,7 +202,7 @@ object Dirties {
         for ((r: Nat.nat, v: Option[Value.value]) <- anteriorRegs) {
           val rx = s"r${TypeConversion.toInt(r)}"
           v match {
-            case None => throw new IllegalStateException("Got None from registers")
+            case None => {} //throw new IllegalStateException("Got None from registers")
             case Some(Value.Inta(n)) => {
               point = point + (rx -> TypeConversion.toLong(n).asInstanceOf[java.lang.Long])
               types = types + (rx -> "Int")
@@ -238,21 +238,28 @@ object Dirties {
 
     val pd = py.module("pandas")
 
+    // Only keep data of the same type as the expected value
     points = points.map(row => row.filter(v => types(v._1) == types("expected")))
 
     types("expected") match {
       case "Int" => {
-        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Int]]].toPythonProxy).dropna()
-        return (training_set.drop_duplicates(), types)
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Int]]].toPythonProxy).dropna().drop_duplicates()
+        val cols = py"list($training_set.columns.values)"
+        py"$cols.pop($cols.index('expected'))"
+        return (py"$training_set[$cols+['expected']]", types)
       }
       case "Real" => {
-        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Double]]].toPythonProxy).dropna()
-        return (training_set.drop_duplicates(), types)
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Double]]].toPythonProxy).dropna().drop_duplicates()
+        val cols = py"list($training_set.columns.values)"
+        py"$cols.pop($cols.index('expected'))"
+        return (py"$training_set[$cols+['expected']]", types)
       }
       case "String" => {
-        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Double]]].toPythonProxy).dropna()
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Double]]].toPythonProxy).dropna().drop_duplicates()
         training_set.bracketUpdate("expected", training_set.bracketAccess("expected").astype("string"))
-        return (training_set.drop_duplicates(), types)
+        val cols = py"list($training_set.columns.values)"
+        py"$cols.pop($cols.index('expected'))"
+        return (py"$training_set[$cols+['expected']]", types)
       }
       case _ => throw new IllegalStateException(f"Type of expected value should be Int, Real, or String, not ${types("expected")}")
     }
@@ -269,7 +276,7 @@ object Dirties {
     val r_index = TypeConversion.toInt(r)
     val ioPairs = (train.map {
       case (inputs, (aregs, pregs)) => pregs(r) match {
-        case None => throw new IllegalStateException("Got None from registers")
+        case None => throw new IllegalStateException(f"Got None from registers\n$pregs")
         case Some(v) => (inputs, (aregs, v))
         // case Some(v) => (inputs, (aregs.filterKeys(_ == r), v))
       }
@@ -287,7 +294,11 @@ object Dirties {
       // System.exit(0)
       return None
     }
+    println("TRAINING SET")
+    println(training_set)
     val pset = deap_gp.setup_pset(training_set)
+    println("PSET")
+    println(pset.mapping)
 
     for (value <- values) value match {
       case Value.Inta(i) => pset.addTerminal(TypeConversion.toLong(i), py"int")
@@ -307,8 +318,11 @@ object Dirties {
     }
 
     var seeds: List[String] = List()
+
     if (py"'r'+str($r_index) in $training_set".as[Boolean])
       seeds = List(f"sub(r$r_index, i0)", f"add(r$r_index, i0)")
+    println("SEEDS")
+    println(seeds)
 
     var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy)
     if (deap_gp.correct(best, training_set, pset).as[Boolean]) {
@@ -359,17 +373,21 @@ object Dirties {
       return getOutput(label, maxReg, values, ioPairs, true)
     }
 
-    var seeds: List[String] = List()
     if (latentVariable) {
       training_set.insert(0, f"r$r_index", py"None")
       types = types + (f"r$r_index" -> types("expected"))
     }
 
     // TODO: Delete these seeds
+    var seeds: List[String] = List()
+    println(training_set)
     for (i <- 1 to r_index) {
       if (py"'r'+str($i) in $training_set".as[Boolean])
         seeds ++= List(f"sub(r$i, i0)", f"sub(i0, r$i)", f"add(r$i, i0)")
     }
+
+    println("seeds")
+    println(seeds)
 
     Log.root.debug("  Output training set:\n" + training_set)
 

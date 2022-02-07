@@ -345,7 +345,7 @@ def mutInsert(individual, pset):
                 term = term()
             new_subtree[i] = term
 
-    new_subtree[position : position + 1] = individual[slice_]
+    new_subtree[position: position + 1] = individual[slice_]
     new_subtree.insert(0, new_node)
     individual[slice_] = new_subtree
     return (individual,)
@@ -550,9 +550,10 @@ def run_gp(
                 print(f"Failed to add seed {seed}")
                 # print("Type error.")
                 print(traceback.format_exc())
+                sys.exit(1)
                 # print(pset.mapping)
                 # assert False
-                pass
+                # pass
 
     for terms in pset.terminals.values():
         terms = [creator.Individual([i]) for i in terms]

@@ -36,7 +36,7 @@ object FrontEnd {
     bw.write(eval_json)
     bw.close()
 
-    PrettyPrinter.iEFSM2dot(pta, s"pta_gen")
+    PrettyPrinter.EFSM2dot(Inference.tm(pta), s"pta_gen")
 
     Config.numStates = Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(pta)))
     Config.ptaNumStates = Config.numStates
@@ -46,7 +46,7 @@ object FrontEnd {
 
     if (Config.preprocessor != null) {
       val resolved_pta = Config.preprocessor(pta)(Config.config.train)(Config.heuristics)(Config.config.nondeterminismMetric)
-      PrettyPrinter.iEFSM2dot(resolved_pta, "resolved")
+      PrettyPrinter.EFSM2dot(Inference.tm(resolved_pta), "resolved")
       if (FSet.equal_fseta(pta, resolved_pta)) {
         Log.root.info("Defaulting back to original PTA")
         System.exit(1)
@@ -76,7 +76,7 @@ object FrontEnd {
 
       val basename = (if (Config.config.outputname == null) (FilenameUtils.getBaseName(Config.config.trainFile.getName()).replace("-", "_")) else Config.config.outputname.replace("-", "_"))
 
-      PrettyPrinter.iEFSM2dot(inferred, s"${basename}_gen")
+      PrettyPrinter.EFSM2dot(Inference.tm(inferred), s"${basename}_gen")
       val seconds = (System.nanoTime - t1) / 1e9d
       val minutes = (seconds / 60) % 60
       val hours = seconds / 3600
