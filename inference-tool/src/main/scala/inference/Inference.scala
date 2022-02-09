@@ -9215,11 +9215,8 @@ List[value_type]))]]) =>
                        AExp.repeat[List[(String,
   (List[value_type], List[value_type]))]](aa, b)
                      })),
-                group_lengths.par.zip(group_histories).toList, Nil)
-    val a: List[((String, (List[value_type], List[value_type])),
-                  List[(String, (List[value_type], List[value_type]))])]
-      = abstract_events.par.zip(repeats).toList;
-    transition_ids.par.zip(a).toList
+                group_lengths.par.zip(group_histories).toList, Nil);
+    transition_ids.par.zip(abstract_events.par.zip(repeats).toList).toList
   }
 
 def historical_groups(e: FSet.fset[(List[Nat.nat],

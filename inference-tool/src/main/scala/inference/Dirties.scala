@@ -484,7 +484,7 @@ object Dirties {
     var regs: Map[Nat.nat, Option[Value.value]] = scala.collection.immutable.Map()
     for (f <- model.getConstDecls) {
       val constInterp = model.getConstInterp(f)
-      regs = regs + (Nat.Nata(BigInt(f.getName.toString.substring(1).toInt)) -> Some(TypeConversion.toValue(model.getConstInterp(f))))
+      regs = regs + (Nat.Nata(BigInt(f.getName.toString.substring(1).toLong)) -> Some(TypeConversion.toValue(model.getConstInterp(f))))
     }
     ctx.close()
     regs

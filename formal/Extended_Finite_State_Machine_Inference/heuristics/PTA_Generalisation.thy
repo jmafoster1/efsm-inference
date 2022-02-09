@@ -102,10 +102,19 @@ definition trace_history :: "(tids \<times> abstract_event) list \<Rightarrow> (
       groups = group_by (=) abstract_events;
       group_histories = prefixes (remove_consecutive_duplicates abstract_events []);
       group_lengths = map length groups;
-      repeats = foldr (@) (map (\<lambda>(x, y). repeat x y) (zip group_lengths group_histories)) [];
-      test = zip abstract_events repeats
+      repeats = foldr (@) (map (\<lambda>(x, y). repeat x y) (zip group_lengths group_histories)) []
     in
-      zip transition_ids test
+      zip transition_ids (zip abstract_events repeats)
+  )"
+
+definition trace_history2 :: "(tids \<times> abstract_event) list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list" where
+  "trace_history2 l = (
+    let
+      transition_ids = map fst l;
+      abstract_events = map snd l;
+      group_histories = map (\<lambda>l. remove_consecutive_duplicates l []) (prefixes abstract_events)
+  in
+      zip transition_ids (zip abstract_events group_histories)
   )"
 
 
@@ -128,6 +137,18 @@ definition historical_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> transitio
     let
       observed = map (\<lambda>t. events_transitions e 0 <> t []) log;
       histories = map (\<lambda>t. trace_history t) observed;
+      flat = fold (@) histories [];
+      groups_fun = fold (\<lambda>(id, structure, history) gps. gps((structure, history) $:= id # (gps $ (structure, history)))) flat (K$ []);
+      groups = sort (map (\<lambda>k. let (structure, history) = k in (length history, history, groups_fun $ k)) (finfun_to_list groups_fun))
+    in
+    map (\<lambda>(_, history, tids). map (\<lambda>id. (id, get_by_ids e id)) tids) groups
+  )"
+
+definition historical_groups2 :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group list" where
+  "historical_groups2 e log = (
+    let
+      observed = map (\<lambda>t. events_transitions e 0 <> t []) log;
+      histories = map (\<lambda>t. trace_history2 t) observed;
       flat = fold (@) histories [];
       groups_fun = fold (\<lambda>(id, structure, history) gps. gps((structure, history) $:= id # (gps $ (structure, history)))) flat (K$ []);
       groups = sort (map (\<lambda>k. let (structure, history) = k in (length history, history, groups_fun $ k)) (finfun_to_list groups_fun))
