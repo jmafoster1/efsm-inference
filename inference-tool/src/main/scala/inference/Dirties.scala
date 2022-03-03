@@ -297,8 +297,6 @@ object Dirties {
     println("TRAINING SET")
     println(training_set)
     val pset = deap_gp.setup_pset(training_set)
-    println("PSET")
-    println(pset.mapping)
 
     for (value <- values) value match {
       case Value.Inta(i) => pset.addTerminal(TypeConversion.toLong(i), py"int")

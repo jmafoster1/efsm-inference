@@ -254,16 +254,29 @@ fun trace_group_training_set :: "transition_group \<Rightarrow> iEFSM \<Rightarr
   "trace_group_training_set _ _ _ _ [] train = train" |
   "trace_group_training_set gp e s r ((l, i, p)#t) train = (
     let
-      (id, s', transition) = fthe_elem (i_possible_steps e s r l i)
+      (ids, s', transition) = fthe_elem (i_possible_steps e s r l i)
     in
-    if \<exists>(id', _) \<in> set gp. id' = id then
-      trace_group_training_set gp e s' (evaluate_updates transition i r) t ((i, r, p)#train)
+    if \<exists>(ids', _) \<in> set gp. ids' = ids then
+      \<comment>\<open>If we've got consecutive transitions, these *might* be update a register without us knowing\<close>
+      if \<exists>(prev_ids, _) \<in> set gp. \<exists>id \<in> set ids. \<exists>id' \<in> set prev_ids. id' = id - 1 then
+        trace_group_training_set gp e s' (evaluate_updates transition i r) t ((i, <>, p)#train)
+      else
+        trace_group_training_set gp e s' (evaluate_updates transition i r) t ((i, r, p)#train)
     else
       trace_group_training_set gp e s' (evaluate_updates transition i r) t train
   )"
 
 definition make_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> (inputs \<times> registers \<times> value list) list" where
   "make_training_set e l gp = fold (\<lambda>h a. trace_group_training_set gp e 0 <> h a) l []"
+
+lemma trace_group_training_set_empty: "trace_group_training_set [] e s r l acc = acc"
+proof(induct l arbitrary: e s r)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a l)
+  then show ?case by (cases a, simp)
+qed
 
 primrec replace_groups :: "transition_group list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "replace_groups [] e = e" |

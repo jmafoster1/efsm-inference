@@ -7587,7 +7587,7 @@ Transition.transition_ext[Unit])],
   case (uu, uv, uw, ux, Nil, train) => train
   case (gp, e, s, r, ((l, (i, p))::t), train) =>
     {
-      val (id, (sa, transition)):
+      val (ids, (sa, transition)):
             (List[Nat.nat], (Nat.nat, Transition.transition_ext[Unit]))
         = FSet.fthe_elem[(List[Nat.nat],
                            (Nat.nat,
@@ -7598,16 +7598,38 @@ Transition.transition_ext[Unit])],
                          (List[Nat.nat], Transition.transition_ext[Unit]))
                         =>
                        {
-                         val (ida, _):
+                         val (idsa, _):
                                (List[Nat.nat], Transition.transition_ext[Unit])
                            = a;
-                         Lista.equal_lista[Nat.nat](ida, id)
+                         Lista.equal_lista[Nat.nat](idsa, ids)
                        }),
                       gp))
-        trace_group_training_set(gp, e, sa,
-                                  (Transition.apply_updates(Transition.Updates[Unit](transition),
-                     AExp.join_ir(i, r))).apply(r),
-                                  t, ((i, (r, p))::train))
+        (if (Lista.list_ex[(List[Nat.nat],
+                             Transition.transition_ext[Unit])](((a:
+                           (List[Nat.nat], Transition.transition_ext[Unit]))
+                          =>
+                         {
+                           val (prev_ids, _):
+                                 (List[Nat.nat],
+                                   Transition.transition_ext[Unit])
+                             = a;
+                           Lista.list_ex[Nat.nat](((id: Nat.nat) =>
+            Lista.list_ex[Nat.nat](((ida: Nat.nat) =>
+                                     Nat.equal_nata(ida,
+             Nat.minus_nat(id, Nat.Nata((1))))),
+                                    prev_ids)),
+           ids)
+                         }),
+                        gp))
+          trace_group_training_set(gp, e, sa,
+                                    (Transition.apply_updates(Transition.Updates[Unit](transition),
+                       AExp.join_ir(i, r))).apply(r),
+                                    t, ((i,
+  (AExp.null_state[Nat.nat, Option[Value.value]], p))::train))
+          else trace_group_training_set(gp, e, sa,
+ (Transition.apply_updates(Transition.Updates[Unit](transition),
+                            AExp.join_ir(i, r))).apply(r),
+ t, ((i, (r, p))::train)))
         else trace_group_training_set(gp, e, sa,
                                        (Transition.apply_updates(Transition.Updates[Unit](transition),
                           AExp.join_ir(i, r))).apply(r),

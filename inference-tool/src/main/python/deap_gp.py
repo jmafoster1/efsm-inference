@@ -52,10 +52,11 @@ def rmsd(errors: [float]) -> float:
     return sqrt(mean)
 
 
-def find_smallest_distance(individual, latent_vars, pset, args, expected):
+def find_smallest_distance(individual, pset, args, expected):
     consts = set()
     type_ = individual[0].ret
     consts = set([c.value for c in pset.terminals[type_] if type(c.value) == type_])
+    latent_vars = latent_variables(individual, args, criterion=lambda v: v is None)
 
     func = gp.compile(expr=individual, pset=pset)
 
@@ -91,8 +92,8 @@ def vars_in_tree(individual):
     return labels.values()
 
 
-def latent_variables(individual, points):
-    undefined_at = [c for c in points.columns if all([v is None for v in points[c]])]
+def latent_variables(individual, points, criterion=lambda points_c: all([v is None for v in points_c])):
+    undefined_at = [c for c in list(points) if criterion(points[c])]
     return list(set(undefined_at).intersection(vars_in_tree(individual)))
 
 
@@ -118,13 +119,12 @@ def evaluate_candidate(
     :rtype: float
     """
 
-    latent_vars = latent_variables(individual, points)
     total_vars = list(points.columns)[:-1]
     unused_vars = set(total_vars).difference(vars_in_tree(individual))
 
     distances = [
         find_smallest_distance(
-            individual, latent_vars, pset, row.iloc[:-1].to_dict(), row[-1]
+            individual, pset, row.iloc[:-1].to_dict(), row[-1]
         )
         for _, row in points.iterrows()
     ]
@@ -139,7 +139,7 @@ def evaluate_candidate(
     if len(unused_vars) == 0:
         return fitness
     else:
-        return fitness + len(latent_vars)
+        return fitness + len(latent_variables(individual, points))
 
 
 def fitness(individual, points: pd.DataFrame, pset: gp.PrimitiveSet) -> float:
@@ -181,7 +181,7 @@ def correct(individual, points: pd.DataFrame, pset: gp.PrimitiveSet) -> bool:
 
     for _, row in points.iterrows():
         min_distance = find_smallest_distance(
-            individual, latent_vars, pset, row.iloc[:-1].to_dict(), row[-1]
+            individual, pset, row.iloc[:-1].to_dict(), row[-1]
         )
         if min_distance > 0:
             return False
@@ -197,8 +197,6 @@ def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
     N.B. Strings will, by default, appear as objects, so will be indistinguishable from latent registers.
     They MUST be converted explicitly using `.astype('string')` before calling this method.
     :type points: pd.DataFrame
-    :param latentVars: A list of latent variable names.
-    :type latentVars: [str]
     :return: The primitive set.
     :rtype: gp.PrimitiveSet
     """
