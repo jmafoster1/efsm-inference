@@ -221,6 +221,7 @@ def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
 
     rename = {f"ARG{i}": col for i, col in enumerate(names)}
     pset.renameArguments(**rename)
+    print(pset.mapping)
 
     # Add literal terminals
     for v, typ in zip(names, datatypes):
@@ -543,6 +544,9 @@ def run_gp(
                     gp.PrimitiveTree.from_string(seed, pset)
                 )
                 print(f"Fitness of {individual} is {fitness(individual, points, pset)}")
+                if fitness(individual, points, pset):
+                    print("Found perfect individual!")
+                    return individual
                 pop.append(individual)
             except TypeError:
                 print(f"Failed to add seed {seed}")

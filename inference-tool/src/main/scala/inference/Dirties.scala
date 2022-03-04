@@ -243,7 +243,7 @@ object Dirties {
 
     types("expected") match {
       case "Int" => {
-        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Int]]].toPythonProxy).dropna().drop_duplicates()
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Long]]].toPythonProxy).dropna().drop_duplicates()
         val cols = py"list($training_set.columns.values)"
         py"$cols.pop($cols.index('expected'))"
         return (py"$training_set[$cols+['expected']]", types)
@@ -255,7 +255,7 @@ object Dirties {
         return (py"$training_set[$cols+['expected']]", types)
       }
       case "String" => {
-        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Double]]].toPythonProxy).dropna().drop_duplicates()
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, String]]].toPythonProxy).dropna().drop_duplicates()
         training_set.bracketUpdate("expected", training_set.bracketAccess("expected").astype("string"))
         val cols = py"list($training_set.columns.values)"
         py"$cols.pop($cols.index('expected'))"
@@ -317,8 +317,11 @@ object Dirties {
 
     var seeds: List[String] = List()
 
-    if (py"'r'+str($r_index) in $training_set".as[Boolean])
-      seeds = List(f"sub(r$r_index, i0)", f"add(r$r_index, i0)")
+    if (py"'r'+str($r_index) in $training_set".as[Boolean]) {
+      seeds ++= List(f"sub(r$r_index, 50)", f"add(r$r_index, 50)")
+      if (py"'i0' in $training_set".as[Boolean])
+        seeds ++= List(f"sub(r$r_index, i0)", f"add(r$r_index, i0)")
+    }
     println("SEEDS")
     println(seeds)
 
@@ -380,8 +383,11 @@ object Dirties {
     var seeds: List[String] = List()
     println(training_set)
     for (i <- 1 to r_index) {
-      if (py"'r'+str($i) in $training_set".as[Boolean])
-        seeds ++= List(f"sub(r$i, i0)", f"sub(i0, r$i)", f"add(r$i, i0)")
+      if (py"'r'+str($i) in $training_set".as[Boolean]) {
+        seeds ++= List(f"sub(r$i, 50)", f"add(r$i, 50)")
+        if (py"'i0' in $training_set".as[Boolean])
+          seeds ++= List(f"sub(r$i, i0)", f"sub(i0, r$i)", f"add(r$i, i0)")
+      }
     }
 
     println("seeds")
