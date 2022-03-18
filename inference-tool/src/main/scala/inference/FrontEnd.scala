@@ -36,7 +36,7 @@ object FrontEnd {
     bw.write(eval_json)
     bw.close()
 
-    PrettyPrinter.EFSM2dot(Inference.tm(pta), s"pta_gen")
+    PrettyPrinter.iEFSM2dot(pta, s"pta_gen")
 
     Config.numStates = Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(pta)))
     Config.ptaNumStates = Config.numStates
@@ -70,6 +70,23 @@ object FrontEnd {
         Config.config.strategy,
         Config.heuristics,
         Config.config.nondeterminismMetric)
+
+        if (Config.postprocessor != null) {
+          val postprocessed = Config.postprocessor(inferred)(Config.config.train)(Config.heuristics)(Config.config.nondeterminismMetric)
+          PrettyPrinter.EFSM2dot(Inference.tm(postprocessed), "postprocessed")
+          if (FSet.equal_fseta(inferred, postprocessed)) {
+            Log.root.info("Defaulting back to original")
+          }
+          else {
+            inferred = postprocessed
+            Log.root.info(s"Postprocessed has ${Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(postprocessed)))} states")
+            Log.root.info(s"Postprocessed PTA has ${Code_Numeral.integer_of_nat(FSet.size_fset(postprocessed))} transitions")
+          }
+          val sseconds = (System.nanoTime - t1) / 1e9d
+          val mminutes = (sseconds / 60) % 60
+          val hhours = sseconds / 3600
+          Log.root.info(s"Postprocessing completed in ${if (hhours > 0) s"${hhours.toInt}h " else ""}${if (mminutes > 0) s"${mminutes.toInt}m " else ""}${sseconds % 60}s")
+        }
 
       Log.root.info("The inferred machine is " +
         (if (Inference.nondeterministic(inferred, Inference.nondeterministic_pairs)) "non" else "") + "deterministic")

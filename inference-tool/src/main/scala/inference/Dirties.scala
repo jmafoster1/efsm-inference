@@ -179,8 +179,10 @@ object Dirties {
     var points: List[Map[String, Any]] = List()
     var types: Map[String, String] = Map()
 
+    Log.root.debug("Setting up training set")
     for (t <- ioPairs) t match {
       case (inputs, (anteriorRegs, output)) => {
+        Log.root.debug(f"  ${PrettyPrinter.show(inputs)}, ${PrettyPrinter.show(anteriorRegs)}, ${PrettyPrinter.show(output)}")
         var point: Map[String, Object] = Map()
         for ((ip, ix) <- inputs.zipWithIndex) {
           val inx = s"i${ix}"
@@ -243,19 +245,19 @@ object Dirties {
 
     types("expected") match {
       case "Int" => {
-        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Long]]].toPythonProxy).dropna().drop_duplicates()
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Long]]].toPythonProxy).drop_duplicates()
         val cols = py"list($training_set.columns.values)"
         py"$cols.pop($cols.index('expected'))"
         return (py"$training_set[$cols+['expected']]", types)
       }
       case "Real" => {
-        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Double]]].toPythonProxy).dropna().drop_duplicates()
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Double]]].toPythonProxy).drop_duplicates()
         val cols = py"list($training_set.columns.values)"
         py"$cols.pop($cols.index('expected'))"
         return (py"$training_set[$cols+['expected']]", types)
       }
       case "String" => {
-        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, String]]].toPythonProxy).dropna().drop_duplicates()
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, String]]].toPythonProxy).drop_duplicates()
         training_set.bracketUpdate("expected", training_set.bracketAccess("expected").astype("string"))
         val cols = py"list($training_set.columns.values)"
         py"$cols.pop($cols.index('expected'))"
@@ -294,9 +296,20 @@ object Dirties {
       // System.exit(0)
       return None
     }
-    println("TRAINING SET")
-    println(training_set)
+    Log.root.debug("TRAINING SET")
+    Log.root.debug(training_set.toString)
     val pset = deap_gp.setup_pset(training_set)
+    for (v <- values) v match {
+      case Value.Inta(n) => {
+        pset.addTerminal(TypeConversion.toLong(n), py"int")
+      }
+      case Value.Reala(n) => {
+        pset.addTerminal(TypeConversion.toDouble(n), py"float")
+      }
+      case Value.Str(s) => {
+        pset.addTerminal(s, py"str")
+      }
+    }
 
     for (value <- values) value match {
       case Value.Inta(i) => pset.addTerminal(TypeConversion.toLong(i), py"int")
@@ -322,8 +335,8 @@ object Dirties {
       if (py"'i0' in $training_set".as[Boolean])
         seeds ++= List(f"sub(r$r_index, i0)", f"add(r$r_index, i0)")
     }
-    println("SEEDS")
-    println(seeds)
+    Log.root.debug("SEEDS")
+    Log.root.debug(seeds.toString)
 
     var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy)
     if (deap_gp.correct(best, training_set, pset).as[Boolean]) {
@@ -348,6 +361,7 @@ object Dirties {
     ioPairs: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Value.value))],
     latentVariable: Boolean = false): Option[(AExp.aexp[VName.vname], Map[VName.vname, String])] = {
     Log.root.debug(f"Getting Output for $label")
+    Log.root.debug(f"ioPairs: ${ioPairs.map(ir => "(" + PrettyPrinter.show(ir._1) + ", " + PrettyPrinter.show(ir._2._1) + ", " + PrettyPrinter.show(ir._2._2)) + ")"}")
 
     val outputs = ioPairs.map(x => x._2._2)
     if (outputs.distinct.length == 1) {
@@ -362,14 +376,15 @@ object Dirties {
     training_set = training_set.select_dtypes(include=output_type)
 
     // If we have a key that's empty but returns more than one value then we need a latent variable
-    if (deap_gp.shortcut_latent(training_set).as[Boolean]) {
-      Log.root.debug(f"  No inputs = output latent variable r$r_index")
-      val reg = TypeConversion.vnameFromString(f"r$r_index")
-      return Some(AExp.V(reg), Map(reg -> types("expected")))
-    }
+    // if (deap_gp.shortcut_latent(training_set).as[Boolean]) {
+    //   Log.root.debug(f"  No inputs = output latent variable r$r_index")
+    //   val reg = TypeConversion.vnameFromString(f"r$r_index")
+    //   return Some(AExp.V(reg), Map(reg -> types("expected")))
+    // }
 
     // Cut straight to having a latent variable if there's more possible outputs than inputs
     if (!latentVariable && deap_gp.need_latent(training_set).as[Boolean]) {
+      Log.root.debug("  Output training set:\n" + training_set)
       Log.root.debug("  Nondeterminism = try with latent variable")
       return getOutput(label, maxReg, values, ioPairs, true)
     }
@@ -381,21 +396,42 @@ object Dirties {
 
     // TODO: Delete these seeds
     var seeds: List[String] = List()
-    println(training_set)
+    if (py"'i0' in $training_set".as[Boolean])
+      seeds ++= List(f"add(i0, 1)", f"sub(i0, 1)")
     for (i <- 1 to r_index) {
       if (py"'r'+str($i) in $training_set".as[Boolean]) {
-        seeds ++= List(f"sub(r$i, 50)", f"add(r$i, 50)")
+        seeds ++= List(f"sub(50, r$i)", f"sub(r$i, 50)", f"add(r$i, 50)")
         if (py"'i0' in $training_set".as[Boolean])
           seeds ++= List(f"sub(r$i, i0)", f"sub(i0, r$i)", f"add(r$i, i0)")
       }
     }
 
-    println("seeds")
-    println(seeds)
+    val pset = deap_gp.setup_pset(training_set)
+
+    for (v <- values) v match {
+      case Value.Inta(n) => {
+        pset.addTerminal(TypeConversion.toLong(n), py"int")
+      }
+      case Value.Reala(n) => {
+        pset.addTerminal(TypeConversion.toDouble(n), py"float")
+      }
+      case Value.Str(s) => {
+        pset.addTerminal(s, py"str")
+      }
+    }
 
     Log.root.debug("  Output training set:\n" + training_set)
+    Log.root.debug("  Consts:" + py"set([c.value for c in $pset.terminals[int] if type(c.value) == int])")
+    Log.root.debug(f"  Values: ${PrettyPrinter.show(values)}")
 
-    val pset = deap_gp.setup_pset(training_set)
+    // if (seeds.length > 0) {
+    //   Log.root.debug("seeds")
+    //   for (seed <- seeds) {
+    //     println(seed)
+    //     val score = deap_gp.evaluate_candidate(seed, training_set, pset)
+    //     Log.root.debug(f"$seed: ${score}")
+    //   }
+    // }
 
 
     for (value <- values) value match {

@@ -9,12 +9,16 @@ object PrettyPrinter {
     }
   }
 
-  def show (r: Real.real): String = {
+  def show(r: Real.real): String = {
     TypeConversion.toDouble(r).toString
   }
 
   def nataPairToString(nn: (Nat.nat, Nat.nat)): String = {
     (show(nn._1), show(nn._2)).toString()
+  }
+
+  def show(id: List[Nat.nat], t: Transition.transition_ext[Unit]): String = {
+    show(id)+show(t)
   }
 
   def show(v: Value.value): String =
@@ -170,9 +174,10 @@ object PrettyPrinter {
     val pairs = r.map {
       case (k: Nat.nat, v: Option[Value.value]) =>
         "r" + show(k) + ":=" + (v match {
-          case None => throw new IllegalStateException("Got None from registers")
+          case None => return "None"
           case Some(Value.Inta(Int.int_of_integer(n))) => n.toString
           case Some(Value.Str(s)) => s
+          case Some(Value.Reala(d)) => TypeConversion.toDouble(d).toString
         })
     }
     return s"<${pairs.mkString(", ")}>"

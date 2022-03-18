@@ -34,6 +34,9 @@ logging.basicConfig()
 logger = logging.getLogger("main")
 logger.setLevel(logging.DEBUG)
 
+creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin)
+
 
 def distance_between(expected, actual):
     if isinstance(expected, Number) and isinstance(actual, Number):
@@ -118,6 +121,10 @@ def evaluate_candidate(
     :return: The aggregated distance between expected and actual values.
     :rtype: float
     """
+    if isinstance(individual, str):
+        individual = creator.Individual(
+            gp.PrimitiveTree.from_string(individual, pset)
+        )
 
     total_vars = list(points.columns)[:-1]
     unused_vars = set(total_vars).difference(vars_in_tree(individual))
@@ -497,9 +504,6 @@ def run_gp(
 ):
     random.seed(random_seed)
 
-    creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-    creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin)
-
     toolbox = base.Toolbox()
     toolbox.register("expr", genHalfAndHalf, pset=pset, min_=0, max_=4)
     toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr)
@@ -544,7 +548,7 @@ def run_gp(
                     gp.PrimitiveTree.from_string(seed, pset)
                 )
                 print(f"Fitness of {individual} is {fitness(individual, points, pset)}")
-                if fitness(individual, points, pset):
+                if fitness(individual, points, pset) == (0,):
                     print("Found perfect individual!")
                     return individual
                 pop.append(individual)
@@ -552,7 +556,7 @@ def run_gp(
                 print(f"Failed to add seed {seed}")
                 # print("Type error.")
                 print(traceback.format_exc())
-                sys.exit(1)
+                # sys.exit(1)
                 # print(pset.mapping)
                 # assert False
                 # pass
