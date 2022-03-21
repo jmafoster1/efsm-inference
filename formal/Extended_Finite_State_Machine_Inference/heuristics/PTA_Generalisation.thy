@@ -291,7 +291,7 @@ definition insert_updates :: "transition \<Rightarrow> update_function list \<Ri
     let
       \<comment> \<open>Want to filter out null updates of the form rn := rn. It doesn't affect anything but it  \<close>
       \<comment> \<open>does make things look cleaner. We also don't want duplicate update functions.            \<close>
-      necessary_updates = filter (\<lambda>(r, u). u \<noteq> V (R r) \<and> (r, u) \<notin> set (Updates t)) u
+      necessary_updates = filter (\<lambda>(r, u). u \<noteq> V (R r)) u
     in
     t\<lparr>Updates := (filter (\<lambda>(r, _). r \<notin> set (map fst u)) (Updates t))@necessary_updates\<rparr>
   )"
