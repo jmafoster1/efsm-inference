@@ -292,8 +292,6 @@ object Dirties {
     // If number of inputs < possible outputs then we can't solve it
     if (deap_gp.need_latent(training_set).as[Boolean]) {
       Log.root.debug("    Too few inputs for possible updates")
-      // training_set.to_csv("dotfiles/nondeterministic.csv")
-      // System.exit(0)
       return None
     }
     Log.root.debug("TRAINING SET")
@@ -331,12 +329,16 @@ object Dirties {
     var seeds: List[String] = List()
 
     if (py"'r'+str($r_index) in $training_set".as[Boolean]) {
-      seeds ++= List(f"sub(r$r_index, 50)", f"add(r$r_index, 50)")
+      if (py"$output_type == int".as[Boolean])
+        seeds ++= List(f"sub(r$r_index, 50)", f"add(r$r_index, 50)")
       if (py"'i0' in $training_set".as[Boolean])
         seeds ++= List(f"sub(r$r_index, i0)", f"add(r$r_index, i0)")
     }
-    Log.root.debug("SEEDS")
-    Log.root.debug(seeds.toString)
+    Log.root.debug("Seeds")
+    for (seed <- seeds) {
+      val fitness = deap_gp.fitness(seed, training_set, pset)
+      Log.root.debug(f"  $seed: $fitness")
+    }
 
     var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy)
     if (deap_gp.correct(best, training_set, pset).as[Boolean]) {
@@ -395,14 +397,17 @@ object Dirties {
     }
 
     // TODO: Delete these seeds
+    // TODO: Delete these seeds
     var seeds: List[String] = List()
-    if (py"'i0' in $training_set".as[Boolean])
+    if (py"'i0' in $training_set".as[Boolean] && py"$output_type == int".as[Boolean])
       seeds ++= List(f"add(i0, 1)", f"sub(i0, 1)")
     for (i <- 1 to r_index) {
       if (py"'r'+str($i) in $training_set".as[Boolean]) {
-        seeds ++= List(f"sub(50, r$i)", f"sub(r$i, 50)", f"add(r$i, 50)")
         if (py"'i0' in $training_set".as[Boolean])
           seeds ++= List(f"sub(r$i, i0)", f"sub(i0, r$i)", f"add(r$i, i0)")
+        if (py"$output_type == int".as[Boolean]) {
+          seeds ++= List(f"sub(50, r$i)", f"sub(r$i, 50)", f"add(r$i, 50)")
+        }
       }
     }
 
@@ -423,6 +428,13 @@ object Dirties {
     Log.root.debug("  Output training set:\n" + training_set)
     Log.root.debug("  Consts:" + py"set([c.value for c in $pset.terminals[int] if type(c.value) == int])")
     Log.root.debug(f"  Values: ${PrettyPrinter.show(values)}")
+    Log.root.debug("Seeds:")
+    for (seed <- seeds) {
+      println(seed)
+      val fitness = deap_gp.fitness(seed, training_set, pset)
+      Log.root.debug(f"  $seed: $fitness")
+    }
+
 
     // if (seeds.length > 0) {
     //   Log.root.debug("seeds")
@@ -462,7 +474,7 @@ object Dirties {
       val stringTypes = types - "expected"
       return Some((aexp, stringTypes.map(x => (TypeConversion.vnameFromString(x._1), x._2)).toMap))
     } else if (!latentVariable) {
-      Log.root.debug("   Trying again with a latent variable")
+      Log.root.debug("   Failed - Trying again with a latent variable")
       return getOutput(label, maxReg, values, ioPairs, true)
     } else {
       Log.root.debug(f"  Best output $best is incorrect")

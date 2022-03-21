@@ -440,6 +440,6 @@ export_code
   enumerate_vars
   derestrict
 in Scala
-file "/home/michael/Documents/efsm-inference/inference-tool/src/main/scala/inference/Inference.scala"
+file "../../efsm-inference/inference-tool/src/main/scala/inference/Inference.scala"
 
 end

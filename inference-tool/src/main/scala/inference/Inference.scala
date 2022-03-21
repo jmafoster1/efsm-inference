@@ -7673,9 +7673,7 @@ def insert_updates(t: Transition.transition_ext[Unit],
          =>
         {
           val (r, ua): (Nat.nat, AExp.aexp[VName.vname]) = a;
-          (! (AExp.equal_aexpa[VName.vname](ua,
-     AExp.V[VName.vname](VName.R(r))))) && (! ((Transition.Updates[Unit](t)).contains((r,
-        ua))))
+          ! (AExp.equal_aexpa[VName.vname](ua, AExp.V[VName.vname](VName.R(r))))
         }),
        u);
     Transition.Updates_update[Unit](((_:
@@ -8797,7 +8795,7 @@ def standardise_group(e: FSet.fset[(List[Nat.nat],
                                        Transition.transition_ext[Unit])]):
       (FSet.fset[(List[Nat.nat],
                    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-        List[List[Nat.nat]])
+        List[(List[Nat.nat], Transition.transition_ext[Unit])])
   =
   {
     val standardised: List[(List[Nat.nat], Transition.transition_ext[Unit])] =
@@ -8808,22 +8806,11 @@ def standardise_group(e: FSet.fset[(List[Nat.nat],
     (if (FSet.equal_fseta[(List[Nat.nat],
                             ((Nat.nat, Nat.nat),
                               Transition.transition_ext[Unit]))](ea, e))
-      (e, Lista.map[(List[Nat.nat], Transition.transition_ext[Unit]),
-                     List[Nat.nat]](((a:
-(List[Nat.nat], Transition.transition_ext[Unit]))
-                                       =>
-                                      a._1),
-                                     standardised))
+      (e, standardised)
       else (if (EFSM.accepts_log(Set.seta[List[(String,
          (List[Value.value], List[Value.value]))]](l),
                                   Inference.tm(ea)))
-             (ea, Lista.map[(List[Nat.nat], Transition.transition_ext[Unit]),
-                             List[Nat.nat]](((a:
-        (List[Nat.nat], Transition.transition_ext[Unit]))
-       =>
-      a._1),
-     standardised))
-             else (e, Nil)))
+             (ea, standardised) else (e, Nil)))
   }
 
 def same_structure(t1: Transition.transition_ext[Unit],
@@ -8845,13 +8832,15 @@ def groupwise_generalise_and_update(uu: List[List[(String,
             ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
                                      x2: List[List[(List[Nat.nat],
              Transition.transition_ext[Unit])]],
-                                     to_derestrict: List[List[Nat.nat]],
+                                     to_derestrict:
+                                       List[(List[Nat.nat],
+      Transition.transition_ext[Unit])],
                                      closed:
                                        List[(Transition.transition_ext[Unit],
       List[Option[(AExp.aexp[VName.vname], Map[VName.vname, String])]])]):
       (FSet.fset[(List[Nat.nat],
                    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-        (List[List[Nat.nat]],
+        (List[(List[Nat.nat], Transition.transition_ext[Unit])],
           List[(Transition.transition_ext[Unit],
                  List[Option[(AExp.aexp[VName.vname],
                                Map[VName.vname, String])]])]))
@@ -8932,7 +8921,7 @@ Transition.transition_ext[Unit])))
             (FSet.fset[(List[Nat.nat],
                          ((Nat.nat, Nat.nat),
                            Transition.transition_ext[Unit]))],
-              List[List[Nat.nat]])
+              List[(List[Nat.nat], Transition.transition_ext[Unit])])
         = standardise_group(delayed, log,
                              FSet.sorted_list_of_fset[(List[Nat.nat],
                 Transition.transition_ext[Unit])](structural_group),
@@ -9022,7 +9011,9 @@ Transition.transition_ext[Unit])))
 
 def drop_selected_guards(e: FSet.fset[(List[Nat.nat],
 ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-                          ids: List[List[Nat.nat]],
+                          to_derestrict:
+                            List[(List[Nat.nat],
+                                   Transition.transition_ext[Unit])],
                           pta: FSet.fset[(List[Nat.nat],
    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
                           log: List[List[(String,
@@ -9050,6 +9041,13 @@ def drop_selected_guards(e: FSet.fset[(List[Nat.nat],
                   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
   =
   {
+    val ids: List[List[Nat.nat]] =
+      Lista.map[(List[Nat.nat], Transition.transition_ext[Unit]),
+                 List[Nat.nat]](((a: (List[Nat.nat],
+                                       Transition.transition_ext[Unit]))
+                                   =>
+                                  a._1),
+                                 to_derestrict)
     val derestricted:
           FSet.fset[(List[Nat.nat],
                       ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
@@ -9428,13 +9426,6 @@ List[(List[Nat.nat], Transition.transition_ext[Unit])])
                          groups))))
   }
 
-def tidy_updates[A, B](x0: List[(A, B)]): List[(A, B)] = x0 match {
-  case Nil => Nil
-  case ((a, b)::t) =>
-    (if ((Lista.map[(A, B), A](((aa: (A, B)) => aa._1), t)).contains(a))
-      tidy_updates[A, B](t) else ((a, b)::(tidy_updates[A, B](t))))
-}
-
 def derestrict(pta: FSet.fset[(List[Nat.nat],
                                 ((Nat.nat, Nat.nat),
                                   Transition.transition_ext[Unit]))],
@@ -9473,38 +9464,12 @@ List[Nat.nat]))))]):
     val (normalised, (to_derestrict, _)):
           (FSet.fset[(List[Nat.nat],
                        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-            (List[List[Nat.nat]],
+            (List[(List[Nat.nat], Transition.transition_ext[Unit])],
               List[(Transition.transition_ext[Unit],
                      List[Option[(AExp.aexp[VName.vname],
                                    Map[VName.vname, String])]])]))
-      = groupwise_generalise_and_update(log, pta, groups, Nil, Nil)
-    val tidied:
-          FSet.fset[(List[Nat.nat],
-                      ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
-      = FSet.fimage[(List[Nat.nat],
-                      ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])),
-                     (List[Nat.nat],
-                       ((Nat.nat, Nat.nat),
-                         Transition.transition_ext[Unit]))](((a:
-                        (List[Nat.nat],
-                          ((Nat.nat, Nat.nat),
-                            Transition.transition_ext[Unit])))
-                       =>
-                      {
-                        val (id, (tf, t)):
-                              (List[Nat.nat],
-                                ((Nat.nat, Nat.nat),
-                                  Transition.transition_ext[Unit]))
-                          = a;
-                        (id, (tf, Transition.Updates_update[Unit](((_:
-                              List[(Nat.nat, AExp.aexp[VName.vname])])
-                             =>
-                            tidy_updates[Nat.nat,
-  AExp.aexp[VName.vname]](Transition.Updates[Unit](t))),
-                           t)))
-                      }),
-                     normalised);
-    drop_selected_guards(tidied, to_derestrict, pta, log, m, np)
+      = groupwise_generalise_and_update(log, pta, groups, Nil, Nil);
+    drop_selected_guards(normalised, to_derestrict, pta, log, m, np)
   }
 
 def drop_all_guards(e: FSet.fset[(List[Nat.nat],

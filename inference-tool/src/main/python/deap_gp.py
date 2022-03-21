@@ -25,6 +25,7 @@ import numpy as np
 
 from enchant.utils import levenshtein
 from numbers import Number
+from itertools import product
 
 import networkx as nx
 import logging
@@ -39,18 +40,19 @@ creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin)
 
 
 def distance_between(expected, actual):
-    if isinstance(expected, Number) and isinstance(actual, Number):
+    if isinstance(expected, Number) and isinstance(actual, Number) and not np.isnan(actual):
         return abs(expected - actual)
     elif type(expected) == str and type(actual) == str:
         return levenshtein(expected, actual)
-    elif actual is None or type(expected) != type(actual):
+    elif actual is None or type(expected) != type(actual) or np.isnan(actual):
         return float("inf")
-    raise ValueError(f"Expected int, float, or string type, not {type(expected)}.")
+    raise ValueError(f"Expected int, float, or string type, not {actual}:{type(actual)}.")
 
 
 def rmsd(errors: [float]) -> float:
     assert len(errors) > 0, "Cannot calculate RMSD of empty list."
     total = sum([float(d) ** 2 for d in errors])
+    assert not np.isnan(total), f"sum of {errors} cannot be nan"
     mean = total / len(errors)
     return sqrt(mean)
 
@@ -58,35 +60,41 @@ def rmsd(errors: [float]) -> float:
 def find_smallest_distance(individual, pset, args, expected):
     consts = set()
     type_ = individual[0].ret
-    consts = set([c.value for c in pset.terminals[type_] if type(c.value) == type_])
-    latent_vars = latent_variables(individual, args, criterion=lambda v: v is None)
 
     func = gp.compile(expr=individual, pset=pset)
 
     if not callable(func):
         return distance_between(expected, func)
 
-    min_distance = float("inf")
 
+    latent_vars = latent_variables(individual, args, criterion=lambda v: v is None or np.isnan(v))
     if len(latent_vars) == 0:
-        distance = distance_between(expected, func(**args))
+        actual = func(**args)
+        distance = distance_between(expected, actual)
         if isclose(distance, 0, abs_tol=1e-10):
             return 0
         else:
             return distance
 
-    for var in latent_vars:
-        for val in consts:
-            new_args = args.copy()
-            new_args[var] = val
-            actual = func(**new_args)
-            off_by = distance_between(expected, actual)
-            if off_by == 0:
-                return 0
-            if off_by < min_distance:
-                min_distance = off_by
+    consts = set([c.value for c in pset.terminals[type_] if type(c.value) == type_])
+    assignments = [{k: v for k, v in zip(latent_vars, assignment)} for assignment in product(consts, repeat=len(latent_vars))]
+
+    min_distance = float("inf")
+    for assignment in assignments:
+        new_args = args.copy()
+        new_args.update(assignment)
+        actual = func(**new_args)
+        if np.isnan(actual):
+            continue
+        off_by = distance_between(expected, actual)
+        if off_by == 0:
+            return 0
+        if off_by < min_distance:
+            min_distance = off_by
+
     if isclose(min_distance, 0, abs_tol=1e-10):
         return 0
+    assert not np.isnan(min_distance), "min_distance cannot be nan"
     return min_distance
 
 
@@ -129,19 +137,36 @@ def evaluate_candidate(
     total_vars = list(points.columns)[:-1]
     unused_vars = set(total_vars).difference(vars_in_tree(individual))
 
-    distances = [
-        find_smallest_distance(
-            individual, pset, row.iloc[:-1].to_dict(), row[-1]
-        )
-        for _, row in points.iterrows()
-    ]
+    distances = []
+    for inx, row in points.iterrows():
+        try:
+            best = find_smallest_distance(
+                individual, pset, row.iloc[:-1].to_dict(), row[-1]
+            )
+            distances.append(best)
+        except:
+            print(f"Problem executing {individual} with arguments\n{row}")
+            sys.exit(0)
+
+
+    # distances = [
+    #     find_smallest_distance(
+    #         individual, pset, row.iloc[:-1].to_dict(), row[-1]
+    #     )
+    #     for _, row in points.iterrows()
+    # ]
+
+    assert not any([np.isnan(x) for x in distances]), "no distance can be nan"
 
     copy = points.copy()
     copy["distances"] = distances
 
     mistakes = sum([x > 0 for x in distances])
 
+    assert not np.isnan(rmsd(distances)), "rmsd(distances) cannot be nan (evaluate_candidate:145)"
     fitness = rmsd(distances) + mistakes
+
+    assert not np.isnan(fitness), "fitness cannot be nan (evaluate_candidate:148)"
 
     if len(unused_vars) == 0:
         return fitness
@@ -163,7 +188,15 @@ def fitness(individual, points: pd.DataFrame, pset: gp.PrimitiveSet) -> float:
     :return: The fitness of the individnal.
     :rtype: float
     """
-    return (evaluate_candidate(individual, points, pset),)
+    try:
+        score = evaluate_candidate(individual, points, pset)
+        newline = "\n  "
+        assert not np.isnan(score), f"Score cannot be nan\nPSET:\n  {newline.join(sorted(list(pset.mapping)))}"
+        return (score,)
+    except:
+        # print(f"Problem evaluating candidate {individual}")
+        print(traceback.format_exc())
+        sys.exit(1)
 
 
 def correct(individual, points: pd.DataFrame, pset: gp.PrimitiveSet) -> bool:
@@ -228,14 +261,13 @@ def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
 
     rename = {f"ARG{i}": col for i, col in enumerate(names)}
     pset.renameArguments(**rename)
-    print(pset.mapping)
 
     # Add literal terminals
     for v, typ in zip(names, datatypes):
         if typ == output_type:
             term_set = set(points[v])
             for term in term_set:
-                if term is not None:
+                if term is not None and not np.isnan(term):
                     pset.addTerminal(term, typ)
 
     if output_type == str:
@@ -502,6 +534,7 @@ def parsimony_select(individuals, k):
 def run_gp(
     points: pd.DataFrame, pset, mu=100, lamb=10, ngen=100, random_seed=0, seeds=[]
 ):
+    points = points.replace({np.nan: None, np.NaN: None})
     random.seed(random_seed)
 
     toolbox = base.Toolbox()
