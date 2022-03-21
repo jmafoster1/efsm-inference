@@ -291,7 +291,7 @@ definition insert_updates :: "transition \<Rightarrow> update_function list \<Ri
     let
       \<comment> \<open>Want to filter out null updates of the form rn := rn. It doesn't affect anything but it  \<close>
       \<comment> \<open>does make things look cleaner. We also don't want duplicate update functions.            \<close>
-      necessary_updates = filter (\<lambda>(r, u). u \<noteq> V (R r)) u
+      necessary_updates = filter (\<lambda>(r, u). u \<noteq> V (R r) \<and> (r, u) \<notin> set (Updates t)) u
     in
     t\<lparr>Updates := (filter (\<lambda>(r, _). r \<notin> set (map fst u)) (Updates t))@necessary_updates\<rparr>
   )"
@@ -549,14 +549,14 @@ definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> trans
 text \<open>Splitting structural groups up into subgroups by previous transition can cause different
 subgroups to get different updates. We ideally want structural groups to have the same output and
 update functions, as structural groups are likely to be instances of the same underlying behaviour.\<close>
-definition standardise_group :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> (iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> transition_group) \<Rightarrow> (iEFSM \<times> (tids \<times> transition) list)" where
+definition standardise_group :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> (iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> transition_group) \<Rightarrow> (iEFSM \<times> tids list)" where
   "standardise_group e l gp s = (
     let
       standardised = s e l gp;
       e' = replace_transitions e standardised
     in
-      if e' = e then (e, standardised) else
-      if accepts_log (set l) (tm e') then (e', standardised) else (e, [])
+      if e' = e then (e, map fst standardised) else
+      if accepts_log (set l) (tm e') then (e', map fst standardised) else (e, [])
 )"
 
 primrec find_outputs :: "output_function list list \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> output_function list option" where
@@ -660,12 +660,12 @@ definition delay_initialisation_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM
         e
   ) (find_initialisation_of r e l) e"
 
-fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> (tids \<times> transition) list \<Rightarrow> (transition \<times> output_types option list) list \<Rightarrow> (iEFSM \<times> (tids \<times> transition) list \<times> (transition \<times> output_types option list) list)" where
+fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> tids list \<Rightarrow> (transition \<times> output_types option list) list \<Rightarrow> (iEFSM \<times> tids list \<times> (transition \<times> output_types option list) list)" where
   "groupwise_generalise_and_update _ e [] to_derestrict closed = (e, to_derestrict, closed)" |
   "groupwise_generalise_and_update log e (gp#t) to_derestrict closed = (
         let
           rep = snd (hd (gp));
-          structural_groups = filter (\<lambda>gp'. same_structure rep (snd (hd (gp')))) t; 
+          structural_groups = filter (\<lambda>gp'. same_structure rep (snd (hd (gp')))) t;
           e' = generalise_and_update log e gp structural_groups;
           structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(_, _, t). same_structure rep t) e');
           delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs e')) e';
@@ -719,9 +719,8 @@ definition remove_spurious_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> iEF
       remove_spurious_updates_aux e (sorted_list_of_fset transitions) (fimage snd transitions) l
   )"
 
-definition drop_selected_guards :: "iEFSM \<Rightarrow> (tids \<times> transition) list \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
-"drop_selected_guards e to_derestrict pta log m np = (let
-      ids = map fst to_derestrict;
+definition drop_selected_guards :: "iEFSM \<Rightarrow> tids list \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
+"drop_selected_guards e ids pta log m np = (let
       derestricted = fimage (\<lambda>(id, tf, tran). (id, tf, if id \<in> set ids then tran\<lparr>Guards := []\<rparr> else tran)) e;
       nondeterministic_pairs = sorted_list_of_fset (np derestricted)
     in
@@ -730,13 +729,18 @@ definition drop_selected_guards :: "iEFSM \<Rightarrow> (tids \<times> transitio
       (Some resolved, _) \<Rightarrow> resolved
   )"
 
+fun tidy_updates :: "('a \<times> 'b) list \<Rightarrow> ('a \<times> 'b) list" where
+  "tidy_updates [] = []" |
+  "tidy_updates ((a, b)#t) = (if a \<in> set (map fst t) then tidy_updates t else (a, b)#(tidy_updates t))"
+
 definition derestrict :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "derestrict pta log m np = (
     let
-      groups = historical_groups pta log;          
-      (normalised, to_derestrict, closed) = groupwise_generalise_and_update log pta groups [] []
-    in                                             
-      drop_selected_guards normalised to_derestrict pta log m np
+      groups = historical_groups pta log;
+      (normalised, to_derestrict, _) = groupwise_generalise_and_update log pta groups [] [];
+      tidied = fimage (\<lambda>(id, tf, t). (id, tf, t\<lparr>Updates:= tidy_updates (Updates t)\<rparr>)) normalised
+    in
+      drop_selected_guards tidied to_derestrict pta log m np
   )"
 
 definition "drop_pta_guards pta log m np = drop_all_guards pta pta log m np"
