@@ -179,10 +179,8 @@ object Dirties {
     var points: List[Map[String, Any]] = List()
     var types: Map[String, String] = Map()
 
-    Log.root.debug("Setting up training set")
     for (t <- ioPairs) t match {
       case (inputs, (anteriorRegs, output)) => {
-        Log.root.debug(f"  ${PrettyPrinter.show(inputs)}, ${PrettyPrinter.show(anteriorRegs)}, ${PrettyPrinter.show(output)}")
         var point: Map[String, Object] = Map()
         for ((ip, ix) <- inputs.zipWithIndex) {
           val inx = s"i${ix}"
@@ -201,6 +199,7 @@ object Dirties {
             }
           }
         }
+        if (anteriorRegs.size > 0)
         for ((r: Nat.nat, v: Option[Value.value]) <- anteriorRegs) {
           val rx = s"r${TypeConversion.toInt(r)}"
           v match {
@@ -245,7 +244,7 @@ object Dirties {
 
     types("expected") match {
       case "Int" => {
-        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Long]]].toPythonProxy).drop_duplicates()
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Long]]].toPythonProxy, dtype = "Int64").drop_duplicates()
         val cols = py"list($training_set.columns.values)"
         py"$cols.pop($cols.index('expected'))"
         return (py"$training_set[$cols+['expected']]", types)
@@ -273,7 +272,7 @@ object Dirties {
     values: List[Value.value],
     train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Map[Nat.nat, Option[Value.value]]))]): Option[AExp.aexp[VName.vname]] = {
 
-    Log.root.debug(f"  Getting update for $l")
+    Log.root.debug(f"Getting update for $l")
 
     val r_index = TypeConversion.toInt(r)
     val ioPairs = (train.map {
@@ -297,18 +296,6 @@ object Dirties {
     Log.root.debug("TRAINING SET")
     Log.root.debug(training_set.toString)
     val pset = deap_gp.setup_pset(training_set)
-    for (v <- values) v match {
-      case Value.Inta(n) => {
-        pset.addTerminal(TypeConversion.toLong(n), py"int")
-      }
-      case Value.Reala(n) => {
-        pset.addTerminal(TypeConversion.toDouble(n), py"float")
-      }
-      case Value.Str(s) => {
-        pset.addTerminal(s, py"str")
-      }
-    }
-
     for (value <- values) value match {
       case Value.Inta(i) => pset.addTerminal(TypeConversion.toLong(i), py"int")
       case Value.Reala(r) => pset.addTerminal(TypeConversion.toDouble(r), py"float")
@@ -326,10 +313,16 @@ object Dirties {
       }
     }
 
+    val targets = ioPairs.map(x => x._2._2)
+    if (targets.distinct.length == 1) {
+      Log.root.debug("  Singleton literal update")
+      return Some(AExp.L(targets(0)))
+    }
+
     var seeds: List[String] = List()
 
     if (py"'r'+str($r_index) in $training_set".as[Boolean]) {
-      if (py"$output_type == int".as[Boolean])
+      if (output_type.toString == "Int64")
         seeds ++= List(f"sub(r$r_index, 50)", f"add(r$r_index, 50)")
       if (py"'i0' in $training_set".as[Boolean])
         seeds ++= List(f"sub(r$r_index, i0)", f"add(r$r_index, i0)")
@@ -363,19 +356,13 @@ object Dirties {
     ioPairs: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Value.value))],
     latentVariable: Boolean = false): Option[(AExp.aexp[VName.vname], Map[VName.vname, String])] = {
     Log.root.debug(f"Getting Output for $label")
-    Log.root.debug(f"ioPairs: ${ioPairs.map(ir => "(" + PrettyPrinter.show(ir._1) + ", " + PrettyPrinter.show(ir._2._1) + ", " + PrettyPrinter.show(ir._2._2)) + ")"}")
-
-    val outputs = ioPairs.map(x => x._2._2)
-    if (outputs.distinct.length == 1) {
-      Log.root.debug("  Singleton literal output")
-      return Some(AExp.L(outputs(0)), scala.collection.immutable.Map())
-    }
+    Log.root.debug(f"ioPairs: ${ioPairs.map(ir => "(" + PrettyPrinter.show(ir._1) + ", " + PrettyPrinter.show(ir._2._1) + ", " + PrettyPrinter.show(ir._2._2) + ")")}")
 
     val r_index = TypeConversion.toInt(maxReg) + 1
 
     var (training_set, types) = setupTrainingSet(ioPairs)
     val output_type = training_set.dtypes.bracketAccess("expected")
-    training_set = training_set.select_dtypes(include=output_type)
+    // training_set = training_set.select_dtypes(include=output_type)
 
     // If we have a key that's empty but returns more than one value then we need a latent variable
     // if (deap_gp.shortcut_latent(training_set).as[Boolean]) {
@@ -396,61 +383,18 @@ object Dirties {
       types = types + (f"r$r_index" -> types("expected"))
     }
 
-    // TODO: Delete these seeds
-    // TODO: Delete these seeds
-    var seeds: List[String] = List()
-    if (py"'i0' in $training_set".as[Boolean] && py"$output_type == int".as[Boolean])
-      seeds ++= List(f"add(i0, 1)", f"sub(i0, 1)")
-    for (i <- 1 to r_index) {
-      if (py"'r'+str($i) in $training_set".as[Boolean]) {
-        if (py"'i0' in $training_set".as[Boolean])
-          seeds ++= List(f"sub(r$i, i0)", f"sub(i0, r$i)", f"add(r$i, i0)")
-        if (py"$output_type == int".as[Boolean]) {
-          seeds ++= List(f"sub(50, r$i)", f"sub(r$i, 50)", f"add(r$i, 50)")
-        }
-      }
-    }
-
     val pset = deap_gp.setup_pset(training_set)
-
-    for (v <- values) v match {
-      case Value.Inta(n) => {
-        pset.addTerminal(TypeConversion.toLong(n), py"int")
-      }
-      case Value.Reala(n) => {
-        pset.addTerminal(TypeConversion.toDouble(n), py"float")
-      }
-      case Value.Str(s) => {
-        pset.addTerminal(s, py"str")
-      }
-    }
-
-    Log.root.debug("  Output training set:\n" + training_set)
-    Log.root.debug("  Consts:" + py"set([c.value for c in $pset.terminals[int] if type(c.value) == int])")
-    Log.root.debug(f"  Values: ${PrettyPrinter.show(values)}")
-    Log.root.debug("Seeds:")
-    for (seed <- seeds) {
-      println(seed)
-      val fitness = deap_gp.fitness(seed, training_set, pset)
-      Log.root.debug(f"  $seed: $fitness")
-    }
-
-
-    // if (seeds.length > 0) {
-    //   Log.root.debug("seeds")
-    //   for (seed <- seeds) {
-    //     println(seed)
-    //     val score = deap_gp.evaluate_candidate(seed, training_set, pset)
-    //     Log.root.debug(f"$seed: ${score}")
-    //   }
-    // }
-
 
     for (value <- values) value match {
       case Value.Inta(i) => pset.addTerminal(TypeConversion.toLong(i), py"int")
       case Value.Reala(r) => pset.addTerminal(TypeConversion.toDouble(r), py"float")
       case Value.Str(s) => pset.addTerminal(s, py"str")
     }
+
+    Log.root.debug("  Output training set:\n" + training_set)
+    Log.root.debug("  Consts:" + py"set([c.value for c in $pset.terminals[int] if type(c.value) == int])")
+    Log.root.debug(f"  Values: ${PrettyPrinter.show(values)}")
+    Log.root.debug(f"  r_index r$r_index in training_set " + py"'r'+str($r_index) in $training_set".as[Boolean])
 
     funMem.find(f => funMemFind(f.asInstanceOf[me.shadaj.scalapy.py.Any], training_set, pset, latentVariable, f"r$r_index")) match {
       case None => {}
@@ -461,6 +405,35 @@ object Dirties {
         val stringTypes = types - "expected"
         return Some((aexp, stringTypes.map(x => (TypeConversion.vnameFromString(x._1), x._2)).toMap))
       }
+    }
+
+    val outputs = ioPairs.map(x => x._2._2)
+    if (outputs.distinct.length == 1) {
+      Log.root.debug("  Singleton literal output")
+      return Some(AExp.L(outputs(0)), scala.collection.immutable.Map())
+    }
+
+    // TODO: Delete these seeds
+    // TODO: Delete these seeds
+    val pd = py.module("pandas")
+    var seeds: List[String] = List()
+    if (py"'i0' in $training_set".as[Boolean] && output_type.toString == "Int64")
+      seeds ++= List(f"add(i0, 1)", f"sub(i0, 1)")
+    for (i <- 1 to r_index) {
+      if (py"'r'+str($i) in $training_set".as[Boolean]) {
+        if (py"'i0' in $training_set".as[Boolean])
+          seeds ++= List(f"sub(r$i, i0)", f"sub(i0, r$i)", f"add(r$i, i0)")
+        if (output_type.toString == "Int64") {
+          seeds ++= List(f"sub(50, r$i)", f"sub(r$i, 50)", f"add(r$i, 50)")
+        }
+      }
+    }
+
+    Log.root.debug("Seeds:")
+    for (seed <- seeds) {
+      println(seed)
+      val fitness = deap_gp.fitness(seed, training_set, pset)
+      Log.root.debug(f"  $seed: $fitness")
     }
 
     var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy)
@@ -483,13 +456,21 @@ object Dirties {
   }
 
   def funMemFind(f: me.shadaj.scalapy.py.Any, training_set: me.shadaj.scalapy.py.Any, pset: me.shadaj.scalapy.py.Any, latentVariable: Boolean, reg: String): Boolean = {
-    if (!deap_gp.all_vars_defined(f, pset).as[Boolean])
-      return false
+    Log.root.debug(f"$f correct?")
 
-    val latent_vars = deap_gp.latent_variables(f, training_set).as[List[String]]
-    if (latent_vars.size == 0 || (latent_vars == List(reg) && latentVariable))
-      return deap_gp.correct(f, training_set, pset).as[Boolean]
-    return false
+    // Check if all the variables in the expression are defined in the pset
+    if (!deap_gp.all_vars_defined(f, pset).as[Boolean]) {
+      val psetMapping = py"$pset.mapping"
+      Log.root.debug(f"  false - undefined vars ${psetMapping}")
+      return false
+    }
+
+    // val latent_vars = deap_gp.latent_variables(f, training_set).as[List[String]]
+    // if (latent_vars.size == 0 || (latent_vars == List(reg) && latentVariable))
+    val correct = deap_gp.correct(f, training_set, pset).as[Boolean]
+    Log.root.debug(f"  $correct")
+    return correct
+    // return false
   }
 
   def getRegs(

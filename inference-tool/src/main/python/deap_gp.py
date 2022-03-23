@@ -40,21 +40,28 @@ creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin)
 
 
 def distance_between(expected, actual):
-    if isinstance(expected, Number) and isinstance(actual, Number) and not np.isnan(actual):
-        return abs(expected - actual)
-    elif type(expected) == str and type(actual) == str:
-        return levenshtein(expected, actual)
-    elif actual is None or type(expected) != type(actual) or np.isnan(actual):
+    try:
+        if isinstance(expected, Number) and isinstance(actual, Number) and not is_null(actual):
+            return abs(expected - actual)
+        elif type(expected) == str and type(actual) == str:
+            return levenshtein(expected, actual)
+        elif type(expected) != type(actual) or is_null(actual):
+            return float("inf")
+        raise ValueError(f"Expected int, float, or string type, not {actual}:{type(actual)}.")
+    except:
         return float("inf")
-    raise ValueError(f"Expected int, float, or string type, not {actual}:{type(actual)}.")
 
 
 def rmsd(errors: [float]) -> float:
     assert len(errors) > 0, "Cannot calculate RMSD of empty list."
     total = sum([float(d) ** 2 for d in errors])
-    assert not np.isnan(total), f"sum of {errors} cannot be nan"
+    assert not is_null(total), f"sum of {errors} cannot be nan"
     mean = total / len(errors)
     return sqrt(mean)
+
+
+def is_null(value):
+    return value is None or value is pd.NA or np.isnan(value)
 
 
 def find_smallest_distance(individual, pset, args, expected):
@@ -67,7 +74,7 @@ def find_smallest_distance(individual, pset, args, expected):
         return distance_between(expected, func)
 
 
-    latent_vars = latent_variables(individual, args, criterion=lambda v: v is None or np.isnan(v))
+    latent_vars = latent_variables(individual, args, criterion=lambda v: is_null(v))
     if len(latent_vars) == 0:
         actual = func(**args)
         distance = distance_between(expected, actual)
@@ -84,8 +91,6 @@ def find_smallest_distance(individual, pset, args, expected):
         new_args = args.copy()
         new_args.update(assignment)
         actual = func(**new_args)
-        if np.isnan(actual):
-            continue
         off_by = distance_between(expected, actual)
         if off_by == 0:
             return 0
@@ -94,7 +99,7 @@ def find_smallest_distance(individual, pset, args, expected):
 
     if isclose(min_distance, 0, abs_tol=1e-10):
         return 0
-    assert not np.isnan(min_distance), "min_distance cannot be nan"
+    assert not is_null(min_distance), "min_distance cannot be nan"
     return min_distance
 
 
@@ -103,13 +108,13 @@ def vars_in_tree(individual):
     return labels.values()
 
 
-def latent_variables(individual, points, criterion=lambda points_c: all([v is None for v in points_c])):
+def latent_variables(individual, points, criterion=lambda points_c: all([is_null(v) for v in points_c])):
     undefined_at = [c for c in list(points) if criterion(points[c])]
     return list(set(undefined_at).intersection(vars_in_tree(individual)))
 
 
 def all_vars_defined(individual, pset):
-    return all([v in pset.mapping for v in vars_in_tree(individual)])
+    return all([str(v) in pset.mapping for v in vars_in_tree(individual)])
 
 
 def evaluate_candidate(
@@ -156,17 +161,17 @@ def evaluate_candidate(
     #     for _, row in points.iterrows()
     # ]
 
-    assert not any([np.isnan(x) for x in distances]), "no distance can be nan"
+    assert not any([is_null(x) for x in distances]), "no distance can be nan"
 
     copy = points.copy()
     copy["distances"] = distances
 
     mistakes = sum([x > 0 for x in distances])
 
-    assert not np.isnan(rmsd(distances)), "rmsd(distances) cannot be nan (evaluate_candidate:145)"
+    assert not is_null(rmsd(distances)), "rmsd(distances) cannot be nan (evaluate_candidate:145)"
     fitness = rmsd(distances) + mistakes
 
-    assert not np.isnan(fitness), "fitness cannot be nan (evaluate_candidate:148)"
+    assert not is_null(fitness), "fitness cannot be nan (evaluate_candidate:148)"
 
     if len(unused_vars) == 0:
         return fitness
@@ -191,7 +196,7 @@ def fitness(individual, points: pd.DataFrame, pset: gp.PrimitiveSet) -> float:
     try:
         score = evaluate_candidate(individual, points, pset)
         newline = "\n  "
-        assert not np.isnan(score), f"Score cannot be nan\nPSET:\n  {newline.join(sorted(list(pset.mapping)))}"
+        assert not is_null(score), f"Score cannot be nan\nPSET:\n  {newline.join(sorted(list(pset.mapping)))}"
         return (score,)
     except:
         # print(f"Problem evaluating candidate {individual}")
@@ -215,20 +220,32 @@ def correct(individual, points: pd.DataFrame, pset: gp.PrimitiveSet) -> bool:
     :rtype: bool
     """
 
-    latent_vars = latent_variables(individual, points)
-    if len(latent_vars) > 0:
-        return True
+    try:
+        latent_vars = latent_variables(individual, points)
+        if len(latent_vars) > 0:
+            return True
 
-    for _, row in points.iterrows():
-        min_distance = find_smallest_distance(
-            individual, pset, row.iloc[:-1].to_dict(), row[-1]
-        )
-        if min_distance > 0:
-            return False
-    return True
+        for _, row in points.iterrows():
+            min_distance = find_smallest_distance(
+                individual, pset, row.iloc[:-1].to_dict(), row[-1]
+            )
+            if min_distance > 0:
+                return False
+        return True
+    except:
+        print(traceback.format_exc())
+        sys.exit(1)
 
 
 def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
+    try:
+        return setup_pset_aux(points)
+    except:
+        print(traceback.format_exc())
+        sys.exit(1)
+
+
+def setup_pset_aux(points: pd.DataFrame) -> gp.PrimitiveSet:
     """
     Set up and return the primitive set. Currently supported operators are +, -, *, and /.
 
@@ -243,6 +260,7 @@ def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
     generators = {
         np.dtype("float64"): float,
         np.dtype("int64"): int,
+        pd.Int64Dtype(): int,
         pd.StringDtype(): str,
     }
     output_type = generators[points.dtypes[points.columns[-1]]]
@@ -267,7 +285,7 @@ def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
         if typ == output_type:
             term_set = set(points[v])
             for term in term_set:
-                if term is not None and not np.isnan(term):
+                if not is_null(term):
                     pset.addTerminal(term, typ)
 
     if output_type == str:
@@ -547,6 +565,7 @@ def run_gp(
     generators = {
         np.dtype("float64"): z3.Real,
         np.dtype("int64"): z3.Int,
+        pd.Int64Dtype(): z3.Int,
         pd.StringDtype(): z3.String,
     }
 
@@ -583,7 +602,7 @@ def run_gp(
                 print(f"Fitness of {individual} is {fitness(individual, points, pset)}")
                 if fitness(individual, points, pset) == (0,):
                     print("Found perfect individual!")
-                    return individual
+                    return simplify(individual, pset, types)
                 pop.append(individual)
             except TypeError:
                 print(f"Failed to add seed {seed}")
@@ -639,6 +658,7 @@ def get_types(points: pd.DataFrame) -> {str: str}:
     type_strings = {
         np.dtype("float64"): "Real",
         np.dtype("int64"): "Int",
+        pd.Int64Dtype(): "Int",
         pd.StringDtype(): "String",
     }
     output_type = type_strings[points.dtypes[points.columns[-1]]]
@@ -953,6 +973,7 @@ if __name__ == "__main__":
     generators = {
         np.dtype("float64"): z3.Real,
         np.dtype("int64"): z3.Int,
+        pd.Int64Dtype(): Int,
         pd.StringDtype(): z3.String,
     }
     logger.info(generators)

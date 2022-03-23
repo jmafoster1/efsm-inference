@@ -16,6 +16,7 @@ theory Code_Generation
    "heuristics/Weak_Subsumption"
    "heuristics/Least_Upper_Bound"
    EFSM_Dot
+   Run_Info_DOT
    "code-targets/Code_Target_FSet"
    "code-targets/Code_Target_Set"
    "code-targets/Code_Target_List"
@@ -400,6 +401,7 @@ export_code
   nondeterministic
   make_pta
   AExp.enumerate_vars
+  AExp.is_lit
   (* Logical connectives *)
   gAnd
   gOr
@@ -435,6 +437,7 @@ export_code
   test_log
   iefsm2dot
   efsm2dot
+  runinfo2dot
   fold_In
   max_int
   enumerate_vars

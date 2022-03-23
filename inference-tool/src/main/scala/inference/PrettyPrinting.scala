@@ -135,6 +135,12 @@ object PrettyPrinter {
     pw.close
   }
 
+  def runinfo2dot(e: IEFSM, run_info: List[(Map[Nat.nat, Option[Value.value]], (Nat.nat, (Map[Nat.nat, Option[Value.value]], (Map[Nat.nat, Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit]))))))], f: String) = {
+    val pw = new PrintWriter(new File(f"${Config.config.dotfiles}/${f}.dot"))
+    pw.write(Run_Info_DOT.runinfo2dot(e, run_info))
+    pw.close
+  }
+
   def iEFSM2dot(e: IEFSM, f: Nat.nat) = {
     val pw = new PrintWriter(new File(f"${Config.config.dotfiles}/step_${Code_Numeral.integer_of_nat(f)}%03d.dot"))
     pw.write(EFSM_Dot.iefsm2dot(e))
@@ -181,6 +187,19 @@ object PrettyPrinter {
         })
     }
     return s"<${pairs.mkString(", ")}>"
+  }
+
+  def dot(r: Map[Nat.nat, Option[Value.value]]): String = {
+    val pairs = r.map {
+      case (k: Nat.nat, v: Option[Value.value]) =>
+        "r" + show(k) + ":=" + (v match {
+          case None => return "None"
+          case Some(Value.Inta(Int.int_of_integer(n))) => n.toString
+          case Some(Value.Str(s)) => s
+          case Some(Value.Reala(d)) => TypeConversion.toDouble(d).toString
+        })
+    }
+    return s"{${pairs.mkString(", ")}}"
   }
 
   def eventInfoToString(e: (Nat.nat, (Map[Nat.nat, Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit]))))): String = e match {

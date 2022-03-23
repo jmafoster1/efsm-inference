@@ -198,55 +198,6 @@ fun observe_all :: "iEFSM \<Rightarrow>  cfstate \<Rightarrow> registers \<Right
       _ \<Rightarrow> []
     )"
 
-fun same_types :: "value \<times> value \<Rightarrow> bool" where
-  "same_types (value.Int _, value.Int _) = True" |
-  "same_types (value.Str _, value.Str _) = True" |
-  "same_types (value.Real _, value.Real _) = True" |
-  "same_types _ = False"
-
-fun same_event_structure :: "event \<Rightarrow> event \<Rightarrow> bool" where
-  "same_event_structure (l1, i1, o1) (l2, i2, o2) = (
-    l1 = l2 \<comment>\<open>Same label\<close>
-    \<and> length i1 = length i2 \<and> (\<forall>ip \<in> set (zip i1 i2). same_types ip)  \<comment>\<open>Same number and types of inputs\<close>
-    \<and> length o1 = length o2 \<and> (\<forall>op \<in> set (zip o1 o2). same_types op)  \<comment>\<open>Same number and types of outputs\<close>
-  )"
-
-definition transition_groups_exec :: "iEFSM \<Rightarrow> trace \<Rightarrow> (nat \<times> tids \<times> transition) list list" where
-  "transition_groups_exec e t = map (\<lambda>l. map snd l)
-                                (group_by (\<lambda>(e1, _, _, t1) (e2, _, _, t2). same_event_structure e1 e2)
-                                (zip t (enumerate 0 (observe_all e 0 <> t))))"
-
-type_synonym struct = "(label \<times> arity \<times> value_type list)"
-
-text\<open>We need to take the list of transition groups and tag them with the last transition that was
-taken which had a different structure.\<close>
-fun tag :: "struct option \<Rightarrow> (nat \<times> tids \<times> transition) list list \<Rightarrow> (struct option \<times> struct \<times> (nat \<times> tids \<times> transition) list) list" where
-  "tag _ [] = []" |
-  "tag t (g#gs) = (
-    let
-      (_, _, head) = hd g;
-      struct = (Label head, Arity head, map typeSig (Outputs head))
-    in
-    (t, struct, g)#(tag (Some struct) gs)
-  )"
-
-text\<open>We need to group transitions not just by their structure but also by their history - i.e. the
-last transition which was taken which had a different structure. We need to order these groups by
-their relative positions within the traces such that output and update functions can be inferred in
-the correct order.\<close>
-definition transition_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group list" where
-  "transition_groups e l = (
-    let
-      trace_groups = map (transition_groups_exec e) l;
-      tagged = map (tag None) trace_groups;
-      flat =  sort (fold (@) tagged []);
-      group_fun = fold (\<lambda>(tag, s, gp) f. f((tag, s) $:= gp@(f$(tag, s)))) flat (K$ []);
-      grouped = map (\<lambda>x. group_fun $ x) (finfun_to_list group_fun);
-      inx_groups = map (\<lambda>gp. (Min (set (map fst gp)), map snd gp)) grouped
-    in
-      map snd (sort inx_groups)
-  )"
-
 text\<open>For a given trace group, log, and EFSM, we want to build the training set for that group. That
 is, the set of inputs, registers, and expected outputs from those transitions. To do this, we must
 walk the traces in the EFSM to obtain the register values.\<close>
@@ -435,6 +386,7 @@ definition group_update :: "value list \<Rightarrow> targeted_run_info \<Rightar
 fun groupwise_put_updates :: "transition_group list \<Rightarrow> log \<Rightarrow> value list \<Rightarrow> run_info list \<Rightarrow> (nat \<times> (vname aexp \<times> vname \<Rightarrow>f String.literal)) \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "groupwise_put_updates [] _ _ _ _  e = e" |
   "groupwise_put_updates (gp#gps) log values walked (o_inx, (op, types)) e = (
+    if accepts_log (set log) (tm e) then e else
     let
       targeted = map (\<lambda>x. filter (\<lambda>(_, _, _, _, _, id, tran). (id, tran) \<in> set gp) x) (map (\<lambda>w. rev (target <> (rev w))) walked);
       group = fold List.union targeted []
@@ -450,7 +402,7 @@ definition updates_for_output :: "log \<Rightarrow> value list \<Rightarrow> tra
   else
     let
       walked = everything_walk_log op o_inx types log e current;
-      groups = transition_groups e log
+      groups = historical_groups e log
     in
     groupwise_put_updates groups log values walked (o_inx, (op, types)) e
   )"
@@ -668,7 +620,8 @@ fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> tr
           structural_groups = filter (\<lambda>gp'. same_structure rep (snd (hd (gp')))) t;
           e' = generalise_and_update log e gp structural_groups;
           structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(_, _, t). same_structure rep t) e');
-          delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs e')) e';
+          delayed = e';
+          \<comment> \<open>delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs e')) e';\<close>
           (standardised, more_to_derestrict) = standardise_group delayed log (sorted_list_of_fset structural_group) standardise_group_outputs_updates;
           structural_group2 = fimage (\<lambda>(_, _, t). (Outputs t, Updates t)) (ffilter (\<lambda>(_, _, t).  Label rep = Label t \<and> Arity rep = Arity t \<and> length (Outputs rep) = length (Outputs t)) standardised)
         in
