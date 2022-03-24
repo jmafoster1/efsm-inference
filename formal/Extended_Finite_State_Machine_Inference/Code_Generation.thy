@@ -6,6 +6,7 @@ implementations. These can be found at \url{https://github.com/jmafoster1/efsm-i
 theory Code_Generation
   imports
    "HOL-Library.Code_Target_Numeral"
+   Blue_Fringe
    Inference
    SelectionStrategies
    "heuristics/Store_Reuse_Subsumption"
@@ -323,7 +324,7 @@ function infer_with_log :: "(cfstate \<times> cfstate) set \<Rightarrow> nat \<R
 function infer_with_log :: "(cfstate \<times> cfstate) set \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "infer_with_log failedMerges k e r m check np = (
     let scores = if k = 1 then score_1 e r else (k_score k e r) in
-    case inference_step failedMerges e (ffilter (\<lambda>s. (S1 s, S2 s) \<notin> failedMerges \<and> (S2 s, S1 s) \<notin> failedMerges) scores) m check np of
+    case Inference.inference_step failedMerges e (ffilter (\<lambda>s. (S1 s, S2 s) \<notin> failedMerges \<and> (S2 s, S1 s) \<notin> failedMerges) scores) m check np of
       (None, _) \<Rightarrow> e |
       (Some new, failedMerges) \<Rightarrow> if (Inference.S new) |\<subset>| (Inference.S e) then
       let temp2 = logStates new (size (Inference.S e)) in
@@ -335,7 +336,7 @@ termination
    apply simp
   by (metis (no_types, lifting) case_prod_conv measures_less size_fsubset)
 
-lemma infer_empty: "infer f k {||} r m check np = {||}"
+lemma infer_empty: "Inference.infer f k {||} r m check np = {||}"
   by (simp add: score_1_def S_def fprod_empty k_score_def)
 
 (*
@@ -356,7 +357,7 @@ declare initially_undefined_context_check_def [code del]
 declare can_still_take_ctx_def [code del]
 
 code_printing
-  constant infer \<rightharpoonup> (Scala) "Code'_Generation.infer'_with'_log" |
+  constant Inference.infer \<rightharpoonup> (Scala) "Code'_Generation.infer'_with'_log" |
   constant recognises_and_visits_both \<rightharpoonup> (Scala) "Dirties.recognisesAndGetsUsToBoth" |
   constant iEFSM2dot \<rightharpoonup> (Scala) "PrettyPrinter.iEFSM2dot(_, _)" |
   constant logStates \<rightharpoonup> (Scala) "Log.logStates(_, _)" |
@@ -396,12 +397,13 @@ lemma [code]:
 export_code
   (* Essentials *)
   try_heuristics_check
-  learn
-  infer_with_log
+  Inference.learn
+  Blue_Fringe.learn
   nondeterministic
   make_pta
   AExp.enumerate_vars
   AExp.is_lit
+  infer_with_log
   (* Logical connectives *)
   gAnd
   gOr

@@ -612,25 +612,31 @@ definition delay_initialisation_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM
         e
   ) (find_initialisation_of r e l) e"
 
-fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> tids list \<Rightarrow> (transition \<times> output_types option list) list \<Rightarrow> (iEFSM \<times> tids list \<times> (transition \<times> output_types option list) list)" where
-  "groupwise_generalise_and_update _ e [] to_derestrict closed = (e, to_derestrict, closed)" |
-  "groupwise_generalise_and_update log e (gp#t) to_derestrict closed = (
+fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> (tids \<Rightarrow> abstract_event) \<Rightarrow> (abstract_event \<Rightarrow>f (output_function list \<times> update_function list) option) \<Rightarrow> tids list \<Rightarrow> (transition \<times> output_types option list) list \<Rightarrow> (iEFSM \<times> tids list \<times> (transition \<times> output_types option list) list)" where
+  "groupwise_generalise_and_update _ e [] structure funs to_derestrict closed = (e, to_derestrict, closed)" |
+  "groupwise_generalise_and_update log e (gp#t) structure funs to_derestrict closed = (
         let
-          rep = snd (hd (gp));
+          (rep_id, rep) = (hd (gp));
           structural_groups = filter (\<lambda>gp'. same_structure rep (snd (hd (gp')))) t;
           e' = generalise_and_update log e gp structural_groups;
+          different = ffilter (\<lambda>(id, tf, t). t \<noteq> get_by_ids e id) e';
+          funs = fold (\<lambda>(id, _, t) acc. acc(structure id $:= Some ((Outputs t), (Updates t)))) (sorted_list_of_fset different) funs;
           structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(_, _, t). same_structure rep t) e');
           delayed = e';
           \<comment> \<open>delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs e')) e';\<close>
-          (standardised, more_to_derestrict) = standardise_group delayed log (sorted_list_of_fset structural_group) standardise_group_outputs_updates;
+          pre_standardised = fimage (\<lambda>(tid, tf, tr). case funs $ (structure tid) of None \<Rightarrow> (tid, tf, tr) | Some (outputs, updates) \<Rightarrow> (tid, tf, tr\<lparr>Outputs := outputs, Updates := updates\<rparr>)) e';
+          pre_standardised_good =  accepts_log (set log) (tm pre_standardised);
+          standardised = if pre_standardised_good then pre_standardised else e';
+          more_to_derestrict = sorted_list_of_fset (fimage fst (ffilter (\<lambda>(id, _, tran). tran \<noteq> get_by_ids e' id) standardised));
+          \<comment> \<open>(standardised, more_to_derestrict) = standardise_group delayed log (sorted_list_of_fset structural_group) standardise_group_outputs_updates;\<close>
           structural_group2 = fimage (\<lambda>(_, _, t). (Outputs t, Updates t)) (ffilter (\<lambda>(_, _, t).  Label rep = Label t \<and> Arity rep = Arity t \<and> length (Outputs rep) = length (Outputs t)) standardised)
         in
         \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and
             updates for the other historical subgroups so can filter them out.\<close>
-        if fis_singleton structural_group2 then
-          groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. set g \<inter> fset structural_group = {}) t) (to_derestrict @ more_to_derestrict) []
+        if pre_standardised_good then
+          groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. structure (fst (hd g)) \<notin> set (finfun_to_list funs)) t) structure funs (to_derestrict @ more_to_derestrict) []
         else
-          groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) t (to_derestrict @ more_to_derestrict) []
+          groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) t structure funs (to_derestrict @ more_to_derestrict) []
   )"
 
 definition drop_all_guards :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
@@ -686,11 +692,19 @@ fun tidy_updates :: "('a \<times> 'b) list \<Rightarrow> ('a \<times> 'b) list" 
   "tidy_updates [] = []" |
   "tidy_updates ((a, b)#t) = (if a \<in> set (map fst t) then tidy_updates t else (a, b)#(tidy_updates t))"
 
+definition get_structures :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<Rightarrow> abstract_event)" where
+  "get_structures e log = (
+    let
+      observed = fold (@) (map (\<lambda>t. events_transitions e 0 <> t []) log) []
+    in
+      fold (\<lambda>(tids, abs) acc. \<lambda>tt. if set tt \<subseteq> set tids \<or> set tids \<subseteq> set tt then abs else acc tt) observed (\<lambda>x. (STR '''', [], []))
+  )"
+
 definition derestrict :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "derestrict pta log m np = (
     let
       groups = historical_groups pta log;
-      (normalised, to_derestrict, _) = groupwise_generalise_and_update log pta groups [] [];
+      (normalised, to_derestrict, _) = groupwise_generalise_and_update log pta groups (get_structures pta log) (K$ None) [] [];
       tidied = fimage (\<lambda>(id, tf, t). (id, tf, t\<lparr>Updates:= tidy_updates (Updates t)\<rparr>)) normalised
     in
       drop_selected_guards tidied to_derestrict pta log m np

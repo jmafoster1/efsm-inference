@@ -47,7 +47,8 @@ case class Config(
   outputSeed: Int = 0,
   updateSeed: Int = 0,
   numTraces: Int = 30,
-  mkdir: Boolean=false
+  mkdir: Boolean=false,
+  blueFringe: Boolean=false
 )
 
 object Config {
@@ -138,6 +139,9 @@ object Config {
       opt[Unit]("skip")
         .action((_, c) => c.copy(skip = true))
         .text("Set this flag to skip some model checking tests which should be trivially true"),
+      opt[Unit]("blueFringe")
+        .action((_, c) => c.copy(blueFringe = true))
+        .text("Set this flag to use the blue fringe merging strategy"),
       opt[Unit]("mkdir")
         .action((_, c) => c.copy(mkdir = true))
         .text("Set this flag to skip all inference and just test the making of directories"),

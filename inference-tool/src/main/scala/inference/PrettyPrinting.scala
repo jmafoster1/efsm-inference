@@ -60,7 +60,7 @@ object PrettyPrinter {
   }
 
   def outputsToString(g: List[AExp.aexp[VName.vname]]): String = {
-    g.zipWithIndex.map(x => "o" + (x._2 + 1) + ":=" + show(x._1)).mkString(", ")
+    g.zipWithIndex.map(x => "o" + (x._2) + ":=" + show(x._1)).mkString(", ")
   }
 
   def updatesToString(g: List[(Nat.nat, AExp.aexp[VName.vname])]): String = {
@@ -118,6 +118,20 @@ object PrettyPrinter {
   def nondeterministicPairsToString(p: List[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], Nat.nat), (Transition.transition_ext[Unit], Nat.nat))))]): String = {
     val better = p.map(pairToString)
     return better.mkString(", \n")
+  }
+
+  def test_model(model: IEFSM, filename: String) = {
+    val eval = Inference.test_log(Config.config.test, model)
+    val eval_json = s"""[\n  ${
+      eval.map {
+        case (trace, rejected) => s"""{\n    "trace": [${if (trace.length > 0) "\n      " else ""}${trace.map(event => PrettyPrinter.to_JSON(event)).mkString(",\n      ")}${if (trace.length > 0) "\n    " else ""}],\n    "rejected": [${if (rejected.length > 0) "\n      " else ""}${rejected.map(event => PrettyPrinter.to_JSON(event)).mkString(",\n      ")}${if (rejected.length > 0) "\n    " else ""}]\n  }"""
+      }.mkString(",\n  ")
+    }\n]"""
+
+    val file = new File(f"${Config.config.dotfiles}/$filename.json")
+    val bw = new BufferedWriter(new FileWriter(file))
+    bw.write(eval_json)
+    bw.close()
   }
 
   def iEFSM2dot(eo: Option[IEFSM], f: String) = eo match {
