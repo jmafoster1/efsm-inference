@@ -5,46 +5,29 @@ import scala.io.Source
 import scala.util.Random
 import sys.process._
 import Types._
-import org.apache.commons.io.FileUtils
-
-import java.util.UUID.randomUUID
-import java.util.Collections
-import java.util.stream.Collectors;
 
 import scala.collection.JavaConversions._
 
-import mint.inference.gp.Generator;
-import mint.inference.gp.tree.Node;
-import mint.inference.gp.tree.terminals.IntegerVariableAssignmentTerminal;
-import mint.inference.gp.tree.terminals.StringVariableAssignmentTerminal;
-import mint.inference.gp.tree.terminals.VariableTerminal;
-import mint.tracedata.types.BooleanVariableAssignment;
-import mint.tracedata.types.IntegerVariableAssignment;
-import mint.tracedata.types.StringVariableAssignment;
-import mint.tracedata.types.VariableAssignment;
-import mint.inference.gp.LatentVariableGP;
-import mint.inference.evo.GPConfiguration;
+import org.apache.commons.math3.util.Precision
 
-import mint.inference.gp.tree.nonterminals.integers.SubtractIntegersOperator;
-import mint.inference.gp.tree.nonterminals.integers.AddIntegersOperator;
-
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-
-import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
-
-import java.util.ArrayList
+import me.shadaj.scalapy.py
+import me.shadaj.scalapy.py.SeqConverters
+import py.PyQuote
 
 object Dirties {
+  // let doubles be "equal" that are within 1% of one another
+  def doubleEquals(a: Real.real, b: Real.real, epsilon: Double = 0.0001): Boolean = {
+    return Precision.equals(TypeConversion.toDouble(a), TypeConversion.toDouble(b), epsilon)
+  }
+
   def foldl[A, B](f: A => B => A, b: A, l: List[B]): A =
     // l.par.foldLeft(b)(((x, y) => (f(x))(y)))
-  l.foldLeft(b)(((x, y) => (f(x))(y)))
+    l.foldLeft(b)(((x, y) => (f(x))(y)))
 
   def toZ3(v: Value.value): String = v match {
-    case Value.Numa(n) => s"(Num ${Code_Numeral.integer_of_int(n).toString})"
+    case Value.Inta(n) => s"(Int ${Code_Numeral.integer_of_int(n).toString})"
     case Value.Str(s) => s"""(Str "${s}")"""
+    case Value.Reala(f) => s"""(Double ${TypeConversion.toDouble(f)})"""
   }
 
   def toZ3(a: VName.vname): String = a match {
@@ -58,10 +41,12 @@ object Dirties {
     case AExp.Plus(a1, a2) => s"(Plus ${toZ3(a1)} ${toZ3(a2)})"
     case AExp.Minus(a1, a2) => s"(Minus ${toZ3(a1)} ${toZ3(a2)})"
     case AExp.Times(a1, a2) => s"(Times ${toZ3(a1)} ${toZ3(a2)})"
+    case AExp.Divide(a1, a2) => s"(Divide ${toZ3(a1)} ${toZ3(a2)})"
   }
 
   def toZ3Native(v: Value.value): String = v match {
-    case Value.Numa(n) => s"${Code_Numeral.integer_of_int(n).toString}"
+    case Value.Inta(n) => s"${Code_Numeral.integer_of_int(n).toString}"
+    case Value.Reala(r) => s"${TypeConversion.toDouble(r).toString}"
     case Value.Str(s) => s""""${s}""""
   }
 
@@ -71,6 +56,7 @@ object Dirties {
     case AExp.Plus(a1, a2) => s"(+ ${toZ3Native(a1)} ${toZ3Native(a2)})"
     case AExp.Minus(a1, a2) => s"(- ${toZ3Native(a1)} ${toZ3Native(a2)})"
     case AExp.Times(a1, a2) => s"(* ${toZ3Native(a1)} ${toZ3Native(a2)})"
+    case AExp.Divide(a1, a2) => s"(/ ${toZ3Native(a1)} ${toZ3Native(a2)})"
   }
 
   def toZ3(g: GExp.gexp[VName.vname]): String = g match {
@@ -119,17 +105,6 @@ object Dirties {
         Some(Random.shuffle(l).head)
   }
 
-  def addLTL(f: String, e: String) = {
-    val lines = Source.fromFile(f).getLines().toList.dropRight(1)
-    val pw = new PrintWriter(new File(f))
-    (lines :+ (e + "\nEND")).foreach(pw.println)
-    pw.close()
-  }
-
-  def maxNum(e1: IEFSM, e2: IEFSM = FSet.bot_fset): Int = {
-    TypeConversion.toInt(Code_Numeral.integer_of_int(Inference.max_int(FSet.sup_fset(e1, e2))) + 1)
-  }
-
   def scalaDirectlySubsumes(
     e1: TransitionMatrix,
     e2: TransitionMatrix,
@@ -143,200 +118,153 @@ object Dirties {
     // subsumes
   }
 
-  def getTypes(i: List[Value.value]): List[String] = i.map {
-    case Value.Numa(_) => "Int"
-    case Value.Str(_) => "Str"
-  }
+  var guardMap = scala.collection.immutable.Map[List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Value.Inta))], Option[GExp.gexp[VName.vname]]]()
+  var guardMem: List[Any] = List()
 
-  def getTypes(r: Map[Nat.nat, Option[Value.value]]): List[String] = {
-    val keys = r.keySet.toList.map(x => Code_Numeral.integer_of_nat(x))
-    keys.sorted
-    keys.map(key => r(Nat.Nata(key)) match {
-      case Some(Value.Numa(_)) => "Int"
-      case Some(Value.Str(_)) => "String"
-      case None => throw new IllegalArgumentException("Got none from a map")
-    })
-  }
-
-  def sortedValues(r: Map[Nat.nat, Option[Value.value]]): List[String] = {
-    val keys = r.keySet.toList.map(x => Code_Numeral.integer_of_nat(x))
-    keys.sorted
-    keys.map(key => r(Nat.Nata(key)) match {
-      case Some(Value.Numa(Int.int_of_integer(n))) => n.toString
-      case Some(Value.Str(s)) => "\"" + s + "\""
-      case None => throw new IllegalArgumentException("Got none from a map")
-    })
-  }
-
-  var guardMap = scala.collection.immutable.Map[List[((List[Value.value], scala.collection.immutable.Map[Nat.nat, Option[Value.value]]), Boolean)], Option[GExp.gexp[VName.vname]]]()
-  var guardMem: List[mint.inference.gp.tree.Node[mint.tracedata.types.VariableAssignment[_]]] = List()
-  var vars: scala.collection.immutable.Map[(String, Value.value), VariableAssignment[_]] = scala.collection.immutable.Map()
-
-  def varOf(name: String, value: Value.value): VariableAssignment[_] = {
-    if (vars.isDefinedAt((name, value)))
-      return vars((name, value))
-    value match {
-      case Value.Numa(n) => {
-        vars += ((name, value) -> new IntegerVariableAssignment(name, TypeConversion.toLong(n)))
-      }
-      case Value.Str(s) => {
-        vars += ((name, value) -> new StringVariableAssignment(name, s))
-      }
-    }
-    return vars((name, value))
-  }
-
-  def varOf(nv: (String, Value.value)): VariableAssignment[_] = varOf(nv._1, nv._2)
-
+  val sys = py.module("sys")
+  val site = py.module("site")
+  sys.path.append("./src/main/python")
+  for (p <- site.getsitepackages().as[List[String]])
+    sys.path.append(p)
+  val deap_gp = py.module("deap_gp")
 
   def findDistinguishingGuards(
     g1: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])]),
     g2: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])])): Option[(GExp.gexp[VName.vname], GExp.gexp[VName.vname])] = {
 
-    val ioPairs = (g1 zip List.fill(g1.length)(true)) ++ (g1 zip List.fill(g1.length)(false))
+    val ioPairs = g1.map(ir => (ir._1, (ir._2, Value.Inta(Int.int_of_integer(1))))) ++ g2.map(ir => (ir._1, (ir._2, Value.Inta(Int.int_of_integer(0)))))
 
-    if (guardMap isDefinedAt ioPairs) guardMap(ioPairs) match {
-      case None => return None
-      case Some(g) => return Some((g, GExp.gNot(g)))
-    }
-
-    BasicConfigurator.resetConfiguration();
-    BasicConfigurator.configure();
-    Logger.getRootLogger().setLevel(Level.OFF);
-
-    val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.guardSeed))
-
-    IntegerVariableAssignment.clearValues()
-    StringVariableAssignment.clearValues()
-
-    gpGenerator.addFunctions(GP.intNonTerms);
-    gpGenerator.addFunctions(GP.boolNonTerms)
-
-    var intVarVals = List(0l, 1l, 2l)
-    var stringVarVals = List[String]("")
-
-    var intTerms = List[VariableTerminal[_]]()
-
-    // No supported stringNonTerms
-    var stringTerms = List[VariableTerminal[_]]()
-
-    var stringVarNames = List[String]()
-    var intVarNames = List[String]()
-
-    val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
-
-    // g1 needs to be true
-    for ((inputs, registers) <- g1) {
-      var scenario = List[VariableAssignment[_]]()
-      for ((ip, ix) <- inputs.zipWithIndex) ip match {
-        case Value.Numa(n) => {
-          intVarVals = TypeConversion.toLong(n) :: intVarVals
-          intVarNames = s"i${ix}" :: intVarNames
-          scenario = (varOf((s"i${ix}", Value.Numa(n)))) :: scenario
-        }
-        case Value.Str(s) => {
-          stringVarVals = s :: stringVarVals
-          stringVarNames = s"i${ix}" :: stringVarNames
-          scenario = (varOf((s"i${ix}", Value.Str(s)))) :: scenario
-        }
-      }
-      for ((r, v) <- registers) v match {
-        case None => {}
-        case Some(Value.Numa(n)) => {
-          intVarVals = TypeConversion.toLong(n) :: intVarVals
-          intVarNames = s"r${PrettyPrinter.show(r)}" :: intVarNames
-          scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Numa(n))) :: scenario
-        }
-        case Some(Value.Str(s)) => {
-          stringVarVals = s :: stringVarVals
-          stringVarNames = s"r${PrettyPrinter.show(r)}" :: stringVarNames
-          scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Str(s))) :: scenario
-
-        }
-      }
-      trainingSet.put(scenario, new BooleanVariableAssignment("g1", true))
-    }
-
-    // g1 needs to be false if g2 is true
-    for ((inputs, registers) <- g2) {
-      var scenario = List[VariableAssignment[_]]()
-      for ((ip, ix) <- inputs.zipWithIndex) ip match {
-        case Value.Numa(n) => {
-          intVarVals = TypeConversion.toLong(n) :: intVarVals
-          intVarNames = s"i${ix}" :: intVarNames
-          scenario = (varOf((s"i${ix}", Value.Numa(n)))) :: scenario
-        }
-        case Value.Str(s) => {
-          stringVarVals = s :: stringVarVals
-          stringVarNames = s"i${ix}" :: stringVarNames
-          scenario = (varOf((s"i${ix}", Value.Str(s)))) :: scenario
-        }
-      }
-      for ((r, v) <- registers) v match {
-        case None => {}
-        case Some(Value.Numa(n)) => {
-          intVarVals = TypeConversion.toLong(n) :: intVarVals
-          intVarNames = s"r${PrettyPrinter.show(r)}" :: intVarNames
-          scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Numa(n))) :: scenario
-        }
-        case Some(Value.Str(s)) => {
-          stringVarVals = s :: stringVarVals
-          stringVarNames = s"r${PrettyPrinter.show(r)}" :: stringVarNames
-          scenario = varOf((s"r${PrettyPrinter.show(r)}", Value.Str(s))) :: scenario
-
-        }
-      }
-      trainingSet.put(scenario, new BooleanVariableAssignment("g1", false))
-    }
-
-    intTerms = intVarNames.distinct.map(intVarName => new IntegerVariableAssignmentTerminal(intVarName, false)) ++
-      intVarVals.distinct.map(intVarVal => new IntegerVariableAssignmentTerminal(intVarVal)) ++
-      intTerms
-    stringTerms = stringVarNames.distinct.map(stringVarName => new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) ++
-      stringVarVals.distinct.map(stringVarVal => new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarVal, stringVarVal), true, false)) ++
-      stringTerms
-
-    gpGenerator.setTerminals(GP.boolTerms++intTerms++stringTerms)
-
-    Log.root.debug("Guard training set: " + trainingSet)
+    // (g1 zip List.fill(g1.length)(Value.Inta(Int.int_of_integer(1)))) ++ (g1 zip List.fill(g1.length)(Value.Inta(Int.int_of_integer(0))))
+    val (training_set, types) = setupTrainingSet(ioPairs)
+    training_set.bracketAccess("expected").astype("bool")
+    Log.root.debug("  Update training set:\n" + training_set)
+    val pset = deap_gp.setup_pset(training_set)
 
     // If any of the guards need to simultaneously be true and false then stop
-    if (trainingSet.keys().stream().anyMatch(x => trainingSet.get(x).size() > 1)) {
+    if (deap_gp.need_latent(training_set).as[Boolean]) {
       Log.root.debug("    UNSATISFIABLE")
       guardMap = guardMap + (ioPairs -> None)
       return None
     }
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 10, 1f, 2));
-
-    guardMem.find(f => gp.isCorrect(f)  && f.varsInTree().stream().allMatch(v => !v.isLatent())) match {
+    guardMem.find(f => funMemFind(f.asInstanceOf[me.shadaj.scalapy.py.Any], training_set, pset, false, f"")) match {
       case None => {}
       case Some(best) => {
         Log.root.debug("    Best memoised guard is: " + best)
         Log.root.debug("    Best guard is correct")
-        val gexp = TypeConversion.toGExp(best)
+        val (nodes, edges, labels) = deap_gp.graph(best.asInstanceOf[me.shadaj.scalapy.py.Any]).as[(List[Int], List[(Int, Int)], Map[Int, String])]
+        val gexp = TypeConversion.toGExp(nodes, edges, labels)
         return Some((gexp, GExp.gNot(gexp)))
       }
     }
 
-    val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]].simp
+    var seeds: List[String] = List()
+    var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy)
+    Log.root.debug("    Best guard is: " + best)
 
-    Log.root.debug("  Best guard is: " + best)
-
-    val gexp = TypeConversion.toGExp(best)
-
-    if (gp.isCorrect(best)) {
-      Log.root.debug("  Best guard is correct")
-      guardMap = guardMap + (ioPairs -> Some(gexp))
+    if (deap_gp.correct(best, training_set, pset).as[Boolean]) {
+      Log.root.debug(f"  Best guard $best is correct")
       guardMem = best :: guardMem
+      val (nodes, edges, labels) = deap_gp.graph(best).as[(List[Int], List[(Int, Int)], Map[Int, String])]
+      val gexp = TypeConversion.toGExp(nodes, edges, labels)
       return Some((gexp, GExp.gNot(gexp)))
     } else {
-      guardMap = guardMap + (ioPairs -> None)
       return None
     }
   }
 
-  var funMem: List[mint.inference.gp.tree.Node[mint.tracedata.types.VariableAssignment[_]]] = List()
+  var funMem: List[Any] = List()
+
+  def setupTrainingSet(ioPairs: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Value.value))]): (py.Dynamic, Map[String, String]) = {
+    var points: List[Map[String, Any]] = List()
+    var types: Map[String, String] = Map()
+
+    for (t <- ioPairs) t match {
+      case (inputs, (anteriorRegs, output)) => {
+        var point: Map[String, Object] = Map()
+        for ((ip, ix) <- inputs.zipWithIndex) {
+          val inx = s"i${ix}"
+          ip match {
+            case Value.Inta(n) => {
+              point = point + (inx -> TypeConversion.toLong(n).asInstanceOf[java.lang.Long])
+              types = types + (inx -> "Int")
+            }
+            case Value.Reala(n) => {
+              point = point + (inx -> TypeConversion.toDouble(n).asInstanceOf[java.lang.Double])
+              types = types + (inx -> "Real")
+            }
+            case Value.Str(s) => {
+              point = point + (inx -> s)
+              types = types + (inx -> "String")
+            }
+          }
+        }
+        if (anteriorRegs.size > 0)
+        for ((r: Nat.nat, v: Option[Value.value]) <- anteriorRegs) {
+          val rx = s"r${TypeConversion.toInt(r)}"
+          v match {
+            case None => {} //throw new IllegalStateException("Got None from registers")
+            case Some(Value.Inta(n)) => {
+              point = point + (rx -> TypeConversion.toLong(n).asInstanceOf[java.lang.Long])
+              types = types + (rx -> "Int")
+            }
+            case Some(Value.Reala(n)) => {
+              point = point + (rx -> TypeConversion.toDouble(n).asInstanceOf[java.lang.Double])
+              types = types + (rx -> "Real")
+            }
+            case Some(Value.Str(s)) => {
+              point = point + (rx -> s)
+              types = types + (rx -> "String")
+            }
+          }
+        }
+
+        output match {
+          case Value.Inta(n) => {
+            point = point + ("expected" -> TypeConversion.toLong(n).asInstanceOf[java.lang.Long])
+            types = types + ("expected" -> "Int")
+          }
+          case Value.Reala(n) => {
+            point = point + ("expected" -> TypeConversion.toDouble(n).asInstanceOf[java.lang.Double])
+            types = types + ("expected" -> "Real")
+          }
+          case Value.Str(s) => {
+            point = point + ("expected" -> s)
+            types = types + ("expected" -> "String")
+          }
+        }
+        points = point :: points
+      }
+    }
+
+    val pd = py.module("pandas")
+
+    // Only keep data of the same type as the expected value
+    points = points.map(row => row.filter(v => types(v._1) == types("expected")))
+
+    types("expected") match {
+      case "Int" => {
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Long]]].toPythonProxy, dtype = "Int64").drop_duplicates()
+        val cols = py"list($training_set.columns.values)"
+        py"$cols.pop($cols.index('expected'))"
+        return (py"$training_set[$cols+['expected']]", types)
+      }
+      case "Real" => {
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Double]]].toPythonProxy).drop_duplicates()
+        val cols = py"list($training_set.columns.values)"
+        py"$cols.pop($cols.index('expected'))"
+        return (py"$training_set[$cols+['expected']]", types)
+      }
+      case "String" => {
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, String]]].toPythonProxy).drop_duplicates()
+        training_set.bracketUpdate("expected", training_set.bracketAccess("expected").astype("string"))
+        val cols = py"list($training_set.columns.values)"
+        py"$cols.pop($cols.index('expected'))"
+        return (py"$training_set[$cols+['expected']]", types)
+      }
+      case _ => throw new IllegalStateException(f"Type of expected value should be Int, Real, or String, not ${types("expected")}")
+    }
+  }
 
   def getUpdate(
     l: String,
@@ -344,111 +272,79 @@ object Dirties {
     values: List[Value.value],
     train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Map[Nat.nat, Option[Value.value]]))]): Option[AExp.aexp[VName.vname]] = {
 
-    Log.root.debug(f"  Getting update for $l")
+    Log.root.debug(f"Getting update for $l")
 
     val r_index = TypeConversion.toInt(r)
     val ioPairs = (train.map {
       case (inputs, (aregs, pregs)) => pregs(r) match {
-        case None => throw new IllegalStateException("Got None from registers")
-        case Some(v) => ((inputs, aregs.filterKeys(_ == r)), v)
+        case None => throw new IllegalStateException(f"Got None from registers\n$pregs")
+        case Some(v) => (inputs, (aregs, v))
+        // case Some(v) => (inputs, (aregs.filterKeys(_ == r), v))
       }
     }).distinct
 
-    BasicConfigurator.resetConfiguration();
-    BasicConfigurator.configure();
-    Logger.getRootLogger().setLevel(Level.OFF);
-
-    val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.updateSeed))
-    gpGenerator.addFunctions(GP.intNonTerms)
-
-    IntegerVariableAssignment.clearValues()
-    StringVariableAssignment.clearValues()
-
-    var (intTerms, stringTerms) = GP.getValueTerminals(values)
-
-    val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
-    var stringVarNames = List[String]()
-    var intVarNames = List[String]()
-
-    for (t <- ioPairs) t match {
-      case ((inputs, anteriorRegs), updatedReg) => {
-        var scenario = List[VariableAssignment[_]]()
-        for ((ip, ix) <- inputs.zipWithIndex) ip match {
-          case Value.Numa(n) => {
-            intVarNames = s"i${ix}" :: intVarNames
-            scenario = (varOf(s"i${ix}", ip)) :: scenario
-          }
-          case Value.Str(s) => {
-            stringVarNames = s"i${ix}" :: stringVarNames
-            scenario = (varOf(s"i${ix}", ip)) :: scenario
-          }
-        }
-        for ((k: Nat.nat, v: Option[Value.value]) <- anteriorRegs) v match {
-          case None => throw new IllegalStateException("Got None from registers")
-          case Some(Value.Numa(n)) => {
-            intVarNames = s"r${TypeConversion.toInt(k)}" :: intVarNames
-            scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Numa(n))) :: scenario
-          }
-          case Some(Value.Str(s)) => {
-            stringVarNames = s"r${TypeConversion.toInt(k)}" :: stringVarNames
-            scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Str(s))) :: scenario
-          }
-        }
-        updatedReg match {
-          case Value.Numa(n) => {
-            intVarNames = s"r${r_index}" :: intVarNames
-            trainingSet.put(scenario, varOf("r" + r_index, updatedReg))
-          }
-          case Value.Str(s) => {
-            stringVarNames = s"r${r_index}" :: stringVarNames
-            trainingSet.put(scenario, varOf("r" + r_index, updatedReg))
-          }
-        }
-      }
-    }
-
-    for (intVarName <- intVarNames.distinct) {
-      intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
-    }
-
-    for (stringVarName <- stringVarNames.distinct) {
-      stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
-    }
-
-    gpGenerator.setTerminals(intTerms++stringTerms)
-
-    Log.root.debug("    Update training set: " + trainingSet)
+    var (training_set, types) = setupTrainingSet(ioPairs)
+    val output_type = training_set.dtypes.bracketAccess("expected")
+    training_set = training_set.select_dtypes(include=output_type)
+    Log.root.debug("  Update training set:\n" + training_set)
 
     // If number of inputs < possible outputs then we can't solve it
-    if (trainingSet.keys().stream().anyMatch(x => trainingSet.get(x).size() > 1 && x.size() < trainingSet.get(x).size())) {
+    if (deap_gp.need_latent(training_set).as[Boolean]) {
       Log.root.debug("    Too few inputs for possible updates")
       return None
     }
+    Log.root.debug("TRAINING SET")
+    Log.root.debug(training_set.toString)
+    val pset = deap_gp.setup_pset(training_set)
+    for (value <- values) value match {
+      case Value.Inta(i) => pset.addTerminal(TypeConversion.toLong(i), py"int")
+      case Value.Reala(r) => pset.addTerminal(TypeConversion.toDouble(r), py"float")
+      case Value.Str(s) => pset.addTerminal(s, py"str")
+    }
 
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 10, 1f, 2));
-
-    funMem.find(f => gp.isCorrect(f) && f.varsInTree().stream().allMatch(v => !v.isLatent())) match {
+    funMem.find(f => funMemFind(f.asInstanceOf[me.shadaj.scalapy.py.Any], training_set, pset, false, f"")) match {
       case None => {}
       case Some(best) => {
-        Log.root.debug("    Best memoised update is: " + best)
-        Log.root.debug("    Best update is correct")
-
-        return Some(TypeConversion.toAExp(best))
+        Log.root.debug(f"  Best memoised update $best is correct")
+        val (nodes, edges, labels) = deap_gp.graph(best.asInstanceOf[me.shadaj.scalapy.py.Any]).as[(List[Int], List[(Int, Int)], Map[Int, String])]
+        val aexp = TypeConversion.toAExp(nodes, edges, labels)
+        val stringTypes = types - "expected"
+        return Some(aexp)
       }
     }
 
-    gp.setSeeds((intTerms ++ stringTerms))
-    val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]].simp
+    val targets = ioPairs.map(x => x._2._2)
+    if (targets.distinct.length == 1) {
+      Log.root.debug("  Singleton literal update")
+      return Some(AExp.L(targets(0)))
+    }
 
-    Log.root.debug("    Best update is: " + best)
+    var seeds: List[String] = List()
 
-    if (gp.isCorrect(best)) {
-      Log.root.debug("    Best update is correct")
-      val aexp = TypeConversion.toAExp(best)
+    if (py"'r'+str($r_index) in $training_set".as[Boolean]) {
+      if (output_type.toString == "Int64")
+        seeds ++= List(f"sub(r$r_index, 50)", f"add(r$r_index, 50)")
+      if (py"'i0' in $training_set".as[Boolean])
+        seeds ++= List(f"sub(r$r_index, i0)", f"add(r$r_index, i0)")
+    }
+    Log.root.debug("Seeds")
+    for (seed <- seeds) {
+      val fitness = deap_gp.fitness(seed, training_set, pset)
+      Log.root.debug(f"  $seed: $fitness")
+    }
+
+    var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy)
+    if (deap_gp.correct(best, training_set, pset).as[Boolean]) {
+      Log.root.debug(f"  Best update $best is correct")
+      val (nodes, edges, labels) = deap_gp.graph(best).as[(List[Int], List[(Int, Int)], Map[Int, String])]
+
+      val aexp = TypeConversion.toAExp(nodes, edges, labels)
       if (!AExp.is_lit(aexp))
         funMem = best :: funMem
+      val stringTypes = types - "expected"
       return Some(aexp)
     } else {
+      Log.root.debug(f"  Best update $best is incorrect")
       return None
     }
   }
@@ -460,175 +356,121 @@ object Dirties {
     ioPairs: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Value.value))],
     latentVariable: Boolean = false): Option[(AExp.aexp[VName.vname], Map[VName.vname, String])] = {
     Log.root.debug(f"Getting Output for $label")
+    Log.root.debug(f"ioPairs: ${ioPairs.map(ir => "(" + PrettyPrinter.show(ir._1) + ", " + PrettyPrinter.show(ir._2._1) + ", " + PrettyPrinter.show(ir._2._2) + ")")}")
+
+    val r_index = TypeConversion.toInt(maxReg) + 1
+
+    var (training_set, types) = setupTrainingSet(ioPairs)
+    val output_type = training_set.dtypes.bracketAccess("expected")
+    // training_set = training_set.select_dtypes(include=output_type)
+
+    // If we have a key that's empty but returns more than one value then we need a latent variable
+    // if (deap_gp.shortcut_latent(training_set).as[Boolean]) {
+    //   Log.root.debug(f"  No inputs = output latent variable r$r_index")
+    //   val reg = TypeConversion.vnameFromString(f"r$r_index")
+    //   return Some(AExp.V(reg), Map(reg -> types("expected")))
+    // }
+
+    // Cut straight to having a latent variable if there's more possible outputs than inputs
+    if (!latentVariable && deap_gp.need_latent(training_set).as[Boolean]) {
+      Log.root.debug("  Output training set:\n" + training_set)
+      Log.root.debug("  Nondeterminism = try with latent variable")
+      return getOutput(label, maxReg, values, ioPairs, true)
+    }
+
+    if (latentVariable) {
+      training_set.insert(0, f"r$r_index", py"None")
+      types = types + (f"r$r_index" -> types("expected"))
+    }
+
+    val pset = deap_gp.setup_pset(training_set)
+
+    for (value <- values) value match {
+      case Value.Inta(i) => pset.addTerminal(TypeConversion.toLong(i), py"int")
+      case Value.Reala(r) => pset.addTerminal(TypeConversion.toDouble(r), py"float")
+      case Value.Str(s) => pset.addTerminal(s, py"str")
+    }
+
+    Log.root.debug("  Output training set:\n" + training_set)
+    Log.root.debug("  Consts:" + py"set([c.value for c in $pset.terminals[int] if type(c.value) == int])")
+    Log.root.debug(f"  Values: ${PrettyPrinter.show(values)}")
+    Log.root.debug(f"  r_index r$r_index in training_set " + py"'r'+str($r_index) in $training_set".as[Boolean])
+
+    funMem.find(f => funMemFind(f.asInstanceOf[me.shadaj.scalapy.py.Any], training_set, pset, latentVariable, f"r$r_index")) match {
+      case None => {}
+      case Some(best) => {
+        Log.root.debug(f"  Best memoised output $best is correct")
+        val (nodes, edges, labels) = deap_gp.graph(best.asInstanceOf[me.shadaj.scalapy.py.Any]).as[(List[Int], List[(Int, Int)], Map[Int, String])]
+        val aexp = TypeConversion.toAExp(nodes, edges, labels)
+        val stringTypes = types - "expected"
+        return Some((aexp, stringTypes.map(x => (TypeConversion.vnameFromString(x._1), x._2)).toMap))
+      }
+    }
 
     val outputs = ioPairs.map(x => x._2._2)
-
     if (outputs.distinct.length == 1) {
       Log.root.debug("  Singleton literal output")
       return Some(AExp.L(outputs(0)), scala.collection.immutable.Map())
     }
 
-    val r_index = TypeConversion.toInt(maxReg) + 1
-
-    BasicConfigurator.resetConfiguration();
-    BasicConfigurator.configure();
-    Logger.getRootLogger().setLevel(Level.OFF);
-
-    val gpGenerator: Generator = new Generator(new java.util.Random(Config.config.outputSeed))
-
-    IntegerVariableAssignment.clearValues()
-    StringVariableAssignment.clearValues()
-
-    gpGenerator.addFunctions(GP.intNonTerms);
-
-    var (intTerms, stringTerms) = GP.getValueTerminals(values)
-
-    val trainingSet = new HashSetValuedHashMap[java.util.List[VariableAssignment[_]], VariableAssignment[_]]()
-    var stringVarNames = List[String]()
-    var intVarNames = List[String]()
-    var latentInt = true
-
-    for (t <- ioPairs) t match {
-      case (inputs, (anteriorRegs, output)) => {
-        var scenario = List[VariableAssignment[_]]()
-        for ((ip, ix) <- inputs.zipWithIndex) {
-          scenario = (varOf(s"i${ix}", ip)) :: scenario
-          ip match {
-            case Value.Numa(n) => {
-              intVarNames = s"i${ix}" :: intVarNames
-            }
-            case Value.Str(s) => {
-              stringVarNames = s"i${ix}" :: stringVarNames
-            }
-          }
-        }
-        for ((k: Nat.nat, v: Option[Value.value]) <- anteriorRegs) v match {
-          case None => throw new IllegalStateException("Got None from registers")
-          case Some(Value.Numa(n)) => {
-            intVarNames = s"r${TypeConversion.toInt(k)}" :: intVarNames
-            scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Numa(n))) :: scenario
-          }
-          case Some(Value.Str(s)) => {
-            stringVarNames = s"r${TypeConversion.toInt(k)}" :: stringVarNames
-            scenario = (varOf(s"r${TypeConversion.toInt(k)}", Value.Str(s))) :: scenario
-          }
-        }
-
-        trainingSet.put(scenario, varOf("o", output))
-
-        output match {
-          case Value.Numa(n) => {
-            intVarNames = s"r${r_index}" :: intVarNames
-          }
-          case Value.Str(s) => {
-            latentInt = false
-            stringVarNames = s"r${r_index}" :: stringVarNames
-          }
+    // TODO: Delete these seeds
+    // TODO: Delete these seeds
+    val pd = py.module("pandas")
+    var seeds: List[String] = List()
+    if (py"'i0' in $training_set".as[Boolean] && output_type.toString == "Int64")
+      seeds ++= List(f"add(i0, 1)", f"sub(i0, 1)")
+    for (i <- 1 to r_index) {
+      if (py"'r'+str($i) in $training_set".as[Boolean]) {
+        if (py"'i0' in $training_set".as[Boolean])
+          seeds ++= List(f"sub(r$i, i0)", f"sub(i0, r$i)", f"add(r$i, i0)")
+        if (output_type.toString == "Int64") {
+          seeds ++= List(f"sub(50, r$i)", f"sub(r$i, 50)", f"add(r$i, 50)")
         }
       }
     }
 
-    if (!latentVariable) {
-      Log.root.debug("  No latent variable")
-      intVarNames = intVarNames.filter(_ != s"r${r_index}")
-      stringVarNames = stringVarNames.filter(_ != s"r${r_index}")
-    } else {
-      Log.root.debug(s"  Latent variable: r$r_index")
-      intVarNames = intVarNames.filter(x => x.startsWith("i") || x == s"r${r_index}")
-      stringVarNames = stringVarNames.filter(x => x.startsWith("i") || x == s"r${r_index}")
+    Log.root.debug("Seeds:")
+    for (seed <- seeds) {
+      println(seed)
+      val fitness = deap_gp.fitness(seed, training_set, pset)
+      Log.root.debug(f"  $seed: $fitness")
     }
 
-    // If we have a key that's empty but returns more than one value then we need a latent variable
-    if ((!latentVariable) && trainingSet.keys().stream().anyMatch(x => x.size() == 0 && trainingSet.get(x).size() > 1)) {
-      if (latentInt) {
-        val best = new IntegerVariableAssignmentTerminal(f"r$r_index", true).asInstanceOf[Node[VariableAssignment[_]]]
-        Log.root.debug("  Output training set: " + trainingSet)
-        Log.root.debug("  Secret best output is: " + best)
-        return Some((TypeConversion.toAExp(best), getTypes(best)))
-      } else {
-        val best = new StringVariableAssignmentTerminal(new StringVariableAssignment(f"r$r_index"), false, true).asInstanceOf[Node[VariableAssignment[_]]]
-        Log.root.debug("  Output training set: " + trainingSet)
-        Log.root.debug("  Secret best output is: " + best)
-        return Some((TypeConversion.toAExp(best), getTypes(best)))
-      }
-    }
+    var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy)
 
-    // Cut straight to having a latent variable if there's more possible outputs than inputs
-    if ((!latentVariable) && trainingSet.keys().stream().anyMatch(x => x.size() < trainingSet.get(x).size())) {
-      return getOutput(label, maxReg, values, ioPairs, true)
-    }
-
-    for (intVarName <- intVarNames.distinct) {
-      if (intVarName == s"r${r_index}")
-        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, true)) :: intTerms
-      else
-        intTerms = (new IntegerVariableAssignmentTerminal(intVarName, false)) :: intTerms
-    }
-
-    for (stringVarName <- stringVarNames.distinct) {
-      if (stringVarName == s"r${r_index}")
-        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, true)) :: stringTerms
-      else
-        stringTerms = (new StringVariableAssignmentTerminal(new StringVariableAssignment(stringVarName), false, false)) :: stringTerms
-    }
-
-    Log.root.debug("  Output training set: " + trainingSet)
-
-    gpGenerator.setTerminals(intTerms++stringTerms)
-
-    var gp = new LatentVariableGP(gpGenerator, trainingSet, new GPConfiguration(100, 10, 1f, 2));
-
-    // =========================================================================
-    // Delete these seeds
-    // val sub = new SubtractIntegersOperator()
-    // sub.addChild(new IntegerVariableAssignmentTerminal(100))
-    // sub.addChild(new IntegerVariableAssignmentTerminal("r1", false))
-    // gp.addSeed(sub)
-    //
-    // val add = new AddIntegersOperator()
-    // add.addChild(new IntegerVariableAssignmentTerminal("i0", false))
-    // add.addChild(new IntegerVariableAssignmentTerminal("r1", true))
-    // gp.addSeed(add)
-    //
-    // val add2 = new AddIntegersOperator()
-    // add2.addChild(new IntegerVariableAssignmentTerminal("i0", false))
-    // add2.addChild(new IntegerVariableAssignmentTerminal("r2", true))
-    // gp.addSeed(add2)
-    // =========================================================================
-
-    funMem.find(f => gp.isCorrect(f) && f.varsInTree().stream().allMatch(v => if (v.isLatent()) v.getName() == f"r$r_index" else true )) match {
-      case None => {}
-      case Some(best) => {
-        Log.root.debug("    Best memoised output is: " + best)
-        Log.root.debug("    Best output is correct")
-        return Some((TypeConversion.toAExp(best), getTypes(best)))
-      }
-    }
-
-    gp.setSeeds((intTerms ++ stringTerms).filter(x => !x.isConstant()))
-    val best = gp.evolve(100).asInstanceOf[Node[VariableAssignment[_]]].simp
-
-    Log.root.debug("  Best output is: " + best)
-
-    if (gp.isCorrect(best)) {
-      Log.root.debug("  Best output is correct")
-      val aexp = TypeConversion.toAExp(best)
+    if (deap_gp.correct(best, training_set, pset).as[Boolean]) {
+      Log.root.debug(f"  Best output $best is correct")
+      val (nodes, edges, labels) = deap_gp.graph(best).as[(List[Int], List[(Int, Int)], Map[Int, String])]
+      val aexp = TypeConversion.toAExp(nodes, edges, labels)
       if (!AExp.is_lit(aexp))
         funMem = best :: funMem
-      return Some((aexp, getTypes(best)))
-    } else {
+      val stringTypes = types - "expected"
+      return Some((aexp, stringTypes.map(x => (TypeConversion.vnameFromString(x._1), x._2)).toMap))
+    } else if (!latentVariable) {
+      Log.root.debug("   Failed - Trying again with a latent variable")
       return getOutput(label, maxReg, values, ioPairs, true)
+    } else {
+      Log.root.debug(f"  Best output $best is incorrect")
+      return None
     }
   }
 
-  def getTypes(best: Node[VariableAssignment[_]]): scala.collection.immutable.Map[VName.vname, String] = {
-    var types = scala.collection.immutable.Map[VName.vname, String]()
+  def funMemFind(f: me.shadaj.scalapy.py.Any, training_set: me.shadaj.scalapy.py.Any, pset: me.shadaj.scalapy.py.Any, latentVariable: Boolean, reg: String): Boolean = {
+    Log.root.debug(f"$f correct?")
 
-    for (v <- asScalaSet(best.varsInTree)) {
-      if (!v.isConstant)
-        types = types + (TypeConversion.vnameFromString(v.getName) -> v.typeString)
+    // Check if all the variables in the expression are defined in the pset
+    if (!deap_gp.all_vars_defined(f, pset).as[Boolean]) {
+      val psetMapping = py"$pset.mapping"
+      Log.root.debug(f"  false - undefined vars ${psetMapping}")
+      return false
     }
-    return types
+
+    // val latent_vars = deap_gp.latent_variables(f, training_set).as[List[String]]
+    // if (latent_vars.size == 0 || (latent_vars == List(reg) && latentVariable))
+    val correct = deap_gp.correct(f, training_set, pset).as[Boolean]
+    Log.root.debug(f"  $correct")
+    return correct
+    // return false
   }
 
   def getRegs(
@@ -640,17 +482,13 @@ object Dirties {
     val definedVars = (0 to i.length).map(i => VName.I(Nat.Nata(i)))
     val undefinedVars = expVars.filter(v => !definedVars.contains(v))
 
-    // Log.root.debug("\noutputFun: " + PrettyPrinter.aexpToString(f, true) + " = " + PrettyPrinter.show(v))
-    // Log.root.debug("  expVars: " + expVars)
-    // Log.root.debug("  undefinedVars: " + undefinedVars)
-
     var inputs: String = ""
     for (v <- expVars) {
-      inputs += f"(${PrettyPrinter.vnameToString(v)} ${TypeConversion.expandTypeString(types(v))})"
+      inputs += f"(${PrettyPrinter.vnameToString(v)} ${types(v)})"
     }
     var z3String: String = f"(define-fun f (${inputs}) ${TypeConversion.typeString(v)} \n  ${toZ3Native(f)}\n)\n"
     for (v <- undefinedVars) {
-      z3String += f"(declare-const ${PrettyPrinter.vnameToString(v)} ${TypeConversion.expandTypeString(types(v))})\n"
+      z3String += f"(declare-const ${PrettyPrinter.vnameToString(v)} ${types(v)})\n"
     }
     val args = expVars.zipWithIndex.map {
       case (v: VName.vname, k: Int) =>
@@ -679,7 +517,7 @@ object Dirties {
     var regs: Map[Nat.nat, Option[Value.value]] = scala.collection.immutable.Map()
     for (f <- model.getConstDecls) {
       val constInterp = model.getConstInterp(f)
-      regs = regs + (Nat.Nata(BigInt(f.getName.toString.substring(1).toInt)) -> Some(TypeConversion.toValue(model.getConstInterp(f))))
+      regs = regs + (Nat.Nata(BigInt(f.getName.toString.substring(1).toLong)) -> Some(TypeConversion.toValue(model.getConstInterp(f))))
     }
     ctx.close()
     regs

@@ -2,21 +2,6 @@
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "alienHit", "inputs": [0], "outputs": [1]},
-    {"label": "shieldHit", "inputs": [3], "outputs": [2]},
-    {"label": "alienHit", "inputs": [1], "outputs": [2]},
-    {"label": "moveWest", "inputs": [], "outputs": [150]},
-    {"label": "moveWest", "inputs": [], "outputs": [100]},
-    {"label": "shieldHit", "inputs": [2], "outputs": [1]},
-    {"label": "alienHit", "inputs": [2], "outputs": [3]},
-    {"label": "moveEast", "inputs": [], "outputs": [150]},
-    {"label": "moveEast", "inputs": [], "outputs": [200]},
-    {"label": "moveEast", "inputs": [], "outputs": [250]},
-    {"label": "shieldHit", "inputs": [1], "outputs": [0]},
-    {"label": "lose", "inputs": [], "outputs": []}
-  ],  
-  [
-    {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
-    {"label": "alienHit", "inputs": [0], "outputs": [1]},
     {"label": "alienHit", "inputs": [1], "outputs": [2]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
     {"label": "moveWest", "inputs": [], "outputs": [100]},
@@ -24,13 +9,13 @@
     {"label": "moveWest", "inputs": [], "outputs": [0]},
     {"label": "alienHit", "inputs": [2], "outputs": [3]},
     {"label": "moveEast", "inputs": [], "outputs": [50]},
-    {"label": "alienHit", "inputs": [3], "outputs": [4]},
     {"label": "moveEast", "inputs": [], "outputs": [100]},
+    {"label": "alienHit", "inputs": [3], "outputs": [4]},
     {"label": "moveWest", "inputs": [], "outputs": [50]},
     {"label": "moveWest", "inputs": [], "outputs": [0]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
@@ -38,10 +23,11 @@
     {"label": "moveWest", "inputs": [], "outputs": [50]},
     {"label": "moveWest", "inputs": [], "outputs": [0]},
     {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+    {"label": "shieldHit", "inputs": [2], "outputs": [1]},
     {"label": "alienHit", "inputs": [0], "outputs": [1]},
+    {"label": "alienHit", "inputs": [1], "outputs": [2]},
     {"label": "moveEast", "inputs": [], "outputs": [50]},
     {"label": "moveEast", "inputs": [], "outputs": [100]},
-    {"label": "alienHit", "inputs": [1], "outputs": [2]},
     {"label": "moveEast", "inputs": [], "outputs": [150]},
     {"label": "moveEast", "inputs": [], "outputs": [200]},
     {"label": "moveEast", "inputs": [], "outputs": [250]},
@@ -49,7 +35,6 @@
     {"label": "moveWest", "inputs": [], "outputs": [250]},
     {"label": "moveWest", "inputs": [], "outputs": [200]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
-    {"label": "shieldHit", "inputs": [2], "outputs": [1]},
     {"label": "alienHit", "inputs": [2], "outputs": [3]},
     {"label": "moveEast", "inputs": [], "outputs": [200]},
     {"label": "moveEast", "inputs": [], "outputs": [250]},
@@ -64,7 +49,22 @@
     {"label": "moveWest", "inputs": [], "outputs": [50]},
     {"label": "shieldHit", "inputs": [1], "outputs": [0]},
     {"label": "lose", "inputs": [], "outputs": []}
-  ],  
+  ],
+  [
+    {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
+    {"label": "alienHit", "inputs": [0], "outputs": [1]},
+    {"label": "shieldHit", "inputs": [3], "outputs": [2]},
+    {"label": "alienHit", "inputs": [1], "outputs": [2]},
+    {"label": "moveWest", "inputs": [], "outputs": [150]},
+    {"label": "moveWest", "inputs": [], "outputs": [100]},
+    {"label": "shieldHit", "inputs": [2], "outputs": [1]},
+    {"label": "alienHit", "inputs": [2], "outputs": [3]},
+    {"label": "moveEast", "inputs": [], "outputs": [150]},
+    {"label": "moveEast", "inputs": [], "outputs": [200]},
+    {"label": "moveEast", "inputs": [], "outputs": [250]},
+    {"label": "shieldHit", "inputs": [1], "outputs": [0]},
+    {"label": "lose", "inputs": [], "outputs": []}
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveEast", "inputs": [], "outputs": [250]},
@@ -88,7 +88,7 @@
     {"label": "moveWest", "inputs": [], "outputs": [50]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
@@ -106,7 +106,7 @@
     {"label": "moveWest", "inputs": [], "outputs": [100]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
@@ -140,7 +140,7 @@
     {"label": "moveWest", "inputs": [], "outputs": [0]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "alienHit", "inputs": [0], "outputs": [1]},
@@ -191,7 +191,7 @@
     {"label": "moveWest", "inputs": [], "outputs": [250]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
@@ -221,7 +221,7 @@
     {"label": "moveEast", "inputs": [], "outputs": [300]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
@@ -260,7 +260,7 @@
     {"label": "moveWest", "inputs": [], "outputs": [100]},
     {"label": "shieldHit", "inputs": [1], "outputs": [0]},
     {"label": "lose", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "alienHit", "inputs": [0], "outputs": [1]},
@@ -280,7 +280,7 @@
     {"label": "moveWest", "inputs": [], "outputs": [100]},
     {"label": "shieldHit", "inputs": [1], "outputs": [0]},
     {"label": "lose", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
@@ -307,7 +307,7 @@
     {"label": "moveEast", "inputs": [], "outputs": [350]},
     {"label": "shieldHit", "inputs": [1], "outputs": [0]},
     {"label": "lose", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
@@ -339,7 +339,7 @@
     {"label": "alienHit", "inputs": [3], "outputs": [4]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
@@ -362,7 +362,7 @@
     {"label": "moveWest", "inputs": [], "outputs": [200]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
@@ -374,7 +374,7 @@
     {"label": "moveEast", "inputs": [], "outputs": [150]},
     {"label": "shieldHit", "inputs": [1], "outputs": [0]},
     {"label": "lose", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "alienHit", "inputs": [0], "outputs": [1]},
@@ -402,7 +402,7 @@
     {"label": "shieldHit", "inputs": [2], "outputs": [1]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "alienHit", "inputs": [0], "outputs": [1]},
@@ -425,7 +425,7 @@
     {"label": "moveWest", "inputs": [], "outputs": [0]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
@@ -457,7 +457,7 @@
     {"label": "moveWest", "inputs": [], "outputs": [150]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveEast", "inputs": [], "outputs": [250]},
@@ -501,7 +501,7 @@
     {"label": "moveEast", "inputs": [], "outputs": [150]},
     {"label": "shieldHit", "inputs": [1], "outputs": [0]},
     {"label": "lose", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
@@ -522,7 +522,7 @@
     {"label": "shieldHit", "inputs": [3], "outputs": [2]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
@@ -542,7 +542,7 @@
     {"label": "alienHit", "inputs": [2], "outputs": [3]},
     {"label": "shieldHit", "inputs": [1], "outputs": [0]},
     {"label": "lose", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
@@ -576,7 +576,7 @@
     {"label": "moveWest", "inputs": [], "outputs": [0]},
     {"label": "shieldHit", "inputs": [1], "outputs": [0]},
     {"label": "lose", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "alienHit", "inputs": [0], "outputs": [1]},
@@ -602,7 +602,7 @@
     {"label": "moveWest", "inputs": [], "outputs": [50]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "shieldHit", "inputs": [3], "outputs": [2]},
@@ -630,7 +630,7 @@
     {"label": "alienHit", "inputs": [3], "outputs": [4]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
@@ -655,7 +655,7 @@
     {"label": "moveWest", "inputs": [], "outputs": [300]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
@@ -682,7 +682,7 @@
     {"label": "alienHit", "inputs": [3], "outputs": [4]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
@@ -712,7 +712,7 @@
     {"label": "moveEast", "inputs": [], "outputs": [400]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "alienHit", "inputs": [0], "outputs": [1]},
@@ -744,7 +744,7 @@
     {"label": "shieldHit", "inputs": [2], "outputs": [1]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveEast", "inputs": [], "outputs": [250]},
@@ -777,7 +777,7 @@
     {"label": "moveEast", "inputs": [], "outputs": [400]},
     {"label": "alienHit", "inputs": [4], "outputs": [5]},
     {"label": "win", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "moveWest", "inputs": [], "outputs": [150]},
@@ -799,7 +799,7 @@
     {"label": "moveEast", "inputs": [], "outputs": [50]},
     {"label": "shieldHit", "inputs": [1], "outputs": [0]},
     {"label": "lose", "inputs": [], "outputs": []}
-  ],  
+  ],
   [
     {"label": "start", "inputs": [3, 0], "outputs": [200, 3, 0]},
     {"label": "alienHit", "inputs": [0], "outputs": [1]},

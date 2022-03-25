@@ -29,6 +29,7 @@ object Preprocessors extends Enumeration {
 case class Config(
   heuristics: Seq[Heuristics.Heuristic] = Seq(),
   prep: Preprocessors.Preprocessor = null,
+  post: Preprocessors.Preprocessor = null,
   outputname: String = null,
   dotfiles: String = "dotfiles",
   nondeterminismMetric: IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, List[Nat.nat]), (Types.Transition, List[Nat.nat]))))] = (Inference.nondeterministic_pairs _),
@@ -46,7 +47,8 @@ case class Config(
   outputSeed: Int = 0,
   updateSeed: Int = 0,
   numTraces: Int = 30,
-  mkdir: Boolean=false
+  mkdir: Boolean=false,
+  blueFringe: Boolean=false
 )
 
 object Config {
@@ -56,6 +58,7 @@ object Config {
   var numStates: BigInt = 0
   var ptaNumStates: BigInt = 0
   var preprocessor: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (List[List[(String, (List[Value.value], List[Value.value]))]] => ((List[Nat.nat] => (List[Nat.nat] => (Nat.nat => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => ((FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])] => Boolean) => Option[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]]))))))) => ((FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]) => FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]))) = null
+  var postprocessor: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (List[List[(String, (List[Value.value], List[Value.value]))]] => ((List[Nat.nat] => (List[Nat.nat] => (Nat.nat => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => ((FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])] => Boolean) => Option[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]]))))))) => ((FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]) => FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]))) = null
 
   implicit val heuristicsRead: scopt.Read[Heuristics.Value] = scopt.Read.reads(Heuristics withName _)
   implicit val proprocessorsRead: scopt.Read[Preprocessors.Value] = scopt.Read.reads(Preprocessors withName _)
@@ -136,6 +139,9 @@ object Config {
       opt[Unit]("skip")
         .action((_, c) => c.copy(skip = true))
         .text("Set this flag to skip some model checking tests which should be trivially true"),
+      opt[Unit]("blueFringe")
+        .action((_, c) => c.copy(blueFringe = true))
+        .text("Set this flag to use the blue fringe merging strategy"),
       opt[Unit]("mkdir")
         .action((_, c) => c.copy(mkdir = true))
         .text("Set this flag to skip all inference and just test the making of directories"),
@@ -143,6 +149,10 @@ object Config {
         .valueName("preprocessor")
         .action((x, c) => c.copy(prep = x))
         .text(s"Preprocessor to use before inference begins ${Preprocessors.values}"),
+      opt[Preprocessors.Preprocessor]('q', "postprocessor")
+        .valueName("postprocessor")
+        .action((x, c) => c.copy(post = x))
+        .text(s"Postprocessor to use after inference has finished ${Preprocessors.values}"),
       opt[Unit]("small")
         .action((_, c) => c.copy(skip = true))
         .text("Set this flag to map integers down to smaller values"),
@@ -211,11 +221,19 @@ object Config {
           Preprocessors.gp -> (PTA_Generalisation.derestrict _).curried,
           Preprocessors.dropGuards -> (PTA_Generalisation.drop_pta_guards _).curried
         )
+        // Set up the postprocessor
+        val postprocessors = scala.collection.immutable.Map(
+          Preprocessors.gp -> (PTA_Generalisation.derestrict _).curried,
+          Preprocessors.dropGuards -> (PTA_Generalisation.drop_pta_guards _).curried
+        )
 
         this.heuristics = Inference.try_heuristics_check((EFSM.accepts_log _).curried(Set.seta(config.train)), config.heuristics.map(x => heuristics(x)).toList)
         this.config = config
         if (config.prep != null && config.prep != Preprocessors.none)
           this.preprocessor = preprocessors(config.prep)
+        if (config.post != null && config.post != Preprocessors.none) {
+          this.postprocessor = postprocessors(config.post)
+        }
 
       }
       case _ =>

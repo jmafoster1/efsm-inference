@@ -1,0 +1,19 @@
+[
+[
+    {"label":"select","inputs":["coke"],"outputs":[]},
+    {"label":"coin","inputs":[0.5],"outputs":[0.5]},
+    {"label":"coin","inputs":[0.5],"outputs":[1.0]},
+    {"label":"vend","inputs":[],"outputs":["coke"]}
+],
+[
+    {"label":"select","inputs":["coke"],"outputs":[]},
+    {"label":"coin","inputs":[1.0],"outputs":[1.0]},
+    {"label":"vend","inputs":[],"outputs":["coke"]}
+],
+[
+    {"label":"select","inputs":["pepsi"],"outputs":[]},
+    {"label":"coin","inputs":[0.5],"outputs":[0.5]},
+    {"label":"coin","inputs":[0.5],"outputs":[1.0]},
+    {"label":"vend","inputs":[],"outputs":["pepsi"]}
+]
+]

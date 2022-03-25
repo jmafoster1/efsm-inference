@@ -9,13 +9,22 @@ object PrettyPrinter {
     }
   }
 
+  def show(r: Real.real): String = {
+    TypeConversion.toDouble(r).toString
+  }
+
   def nataPairToString(nn: (Nat.nat, Nat.nat)): String = {
     (show(nn._1), show(nn._2)).toString()
   }
 
+  def show(id: List[Nat.nat], t: Transition.transition_ext[Unit]): String = {
+    show(id)+show(t)
+  }
+
   def show(v: Value.value): String =
     v match {
-      case Value.Numa(Int.int_of_integer(n)) => n.toString
+      case Value.Inta(Int.int_of_integer(n)) => n.toString
+      case Value.Reala(Real.Ratreal(rat)) => TypeConversion.toDouble(rat).toString
       case Value.Str(s) => "\"" + s + "\""
     }
 
@@ -51,7 +60,7 @@ object PrettyPrinter {
   }
 
   def outputsToString(g: List[AExp.aexp[VName.vname]]): String = {
-    g.zipWithIndex.map(x => "o" + (x._2 + 1) + ":=" + show(x._1)).mkString(", ")
+    g.zipWithIndex.map(x => "o" + (x._2) + ":=" + show(x._1)).mkString(", ")
   }
 
   def updatesToString(g: List[(Nat.nat, AExp.aexp[VName.vname])]): String = {
@@ -111,6 +120,20 @@ object PrettyPrinter {
     return better.mkString(", \n")
   }
 
+  def test_model(model: IEFSM, filename: String) = {
+    val eval = Inference.test_log(Config.config.test, model)
+    val eval_json = s"""[\n  ${
+      eval.map {
+        case (trace, rejected) => s"""{\n    "trace": [${if (trace.length > 0) "\n      " else ""}${trace.map(event => PrettyPrinter.to_JSON(event)).mkString(",\n      ")}${if (trace.length > 0) "\n    " else ""}],\n    "rejected": [${if (rejected.length > 0) "\n      " else ""}${rejected.map(event => PrettyPrinter.to_JSON(event)).mkString(",\n      ")}${if (rejected.length > 0) "\n    " else ""}]\n  }"""
+      }.mkString(",\n  ")
+    }\n]"""
+
+    val file = new File(f"${Config.config.dotfiles}/$filename.json")
+    val bw = new BufferedWriter(new FileWriter(file))
+    bw.write(eval_json)
+    bw.close()
+  }
+
   def iEFSM2dot(eo: Option[IEFSM], f: String) = eo match {
     case Some(e) => {
       val pw = new PrintWriter(new File(f"${Config.config.dotfiles}/${f}.dot"))
@@ -123,6 +146,12 @@ object PrettyPrinter {
   def iEFSM2dot(e: IEFSM, f: String) = {
     val pw = new PrintWriter(new File(f"${Config.config.dotfiles}/${f}.dot"))
     pw.write(EFSM_Dot.iefsm2dot(e))
+    pw.close
+  }
+
+  def runinfo2dot(e: IEFSM, run_info: List[(Map[Nat.nat, Option[Value.value]], (Nat.nat, (Map[Nat.nat, Option[Value.value]], (Map[Nat.nat, Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit]))))))], f: String) = {
+    val pw = new PrintWriter(new File(f"${Config.config.dotfiles}/${f}.dot"))
+    pw.write(Run_Info_DOT.runinfo2dot(e, run_info))
     pw.close
   }
 
@@ -165,12 +194,26 @@ object PrettyPrinter {
     val pairs = r.map {
       case (k: Nat.nat, v: Option[Value.value]) =>
         "r" + show(k) + ":=" + (v match {
-          case None => throw new IllegalStateException("Got None from registers")
-          case Some(Value.Numa(Int.int_of_integer(n))) => n.toString
+          case None => return "None"
+          case Some(Value.Inta(Int.int_of_integer(n))) => n.toString
           case Some(Value.Str(s)) => s
+          case Some(Value.Reala(d)) => TypeConversion.toDouble(d).toString
         })
     }
     return s"<${pairs.mkString(", ")}>"
+  }
+
+  def dot(r: Map[Nat.nat, Option[Value.value]]): String = {
+    val pairs = r.map {
+      case (k: Nat.nat, v: Option[Value.value]) =>
+        "r" + show(k) + ":=" + (v match {
+          case None => return "None"
+          case Some(Value.Inta(Int.int_of_integer(n))) => n.toString
+          case Some(Value.Str(s)) => s
+          case Some(Value.Reala(d)) => TypeConversion.toDouble(d).toString
+        })
+    }
+    return s"{${pairs.mkString(", ")}}"
   }
 
   def eventInfoToString(e: (Nat.nat, (Map[Nat.nat, Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit]))))): String = e match {
@@ -199,7 +242,8 @@ object PrettyPrinter {
       case (k: Nat.nat, v: Option[Value.value]) =>
         s""""r${show(k)}":""" + (v match {
           case None => "null"
-          case Some(Value.Numa(Int.int_of_integer(n))) => n.toString
+          case Some(Value.Inta(Int.int_of_integer(n))) => n.toString
+          case Some(Value.Reala(d)) => TypeConversion.toDouble(d).toString
           case Some(Value.Str(s)) => s""""$s""""
         })
     }

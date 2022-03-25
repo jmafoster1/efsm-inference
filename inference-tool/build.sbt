@@ -1,6 +1,7 @@
 import Dependencies._
 import sys.process._
 import java.io.File;
+import ai.kien.python.Python
 
 val cleanDotfiles = taskKey[Int]("Deletes everything from the ./dotfiles folder")
 val mkdirs = taskKey[Unit]("Creates the ./dotfiles directories for the program to put stuff in as it runs")
@@ -43,8 +44,17 @@ def getListOfFiles(dir: File, extensions: List[String]): List[File] = {
     }
 }
 
+
+lazy val python = Python()
+
+lazy val javaOpts = python.scalapyProperties.get.map {
+  case (k, v) => s"""-D$k=$v"""
+}.toSeq
+
 lazy val root = (project in file("."))
   .settings(
+    fork := true,
+    javaOptions ++= javaOpts,
     name := "inference-tool",
     libraryDependencies += scalaTest % Test,
     libraryDependencies += "net.liftweb" %% "lift-json" % "3.3.0",
@@ -54,12 +64,14 @@ lazy val root = (project in file("."))
     libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
     libraryDependencies += "log4j" % "log4j" % "1.2.16",
     libraryDependencies += "nz.ac.waikato.cms.weka" % "weka-dev" % "3.7.13",
-    libraryDependencies += "org.apache.commons" % "commons-math3" % "3.5",
+    libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1",
     libraryDependencies += "org.apache.commons" % "commons-collections4" % "4.1",
     libraryDependencies += "commons-cli" % "commons-cli" % "1.2",
     libraryDependencies += "com.googlecode.json-simple" % "json-simple" % "1.1",
     libraryDependencies += "org.biojava" % "biojava-structure" % "5.3.0",
     libraryDependencies += "org.jgrapht" % "jgrapht-core" % "1.1.0",
+    libraryDependencies += "me.shadaj" %% "scalapy-core" % "0.5.1",
+    libraryDependencies += "jgraph" % "jgraph" % "5.13.0.0",
 
     cleanDotfiles := {
       cleanDirectory("dotfiles")
