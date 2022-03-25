@@ -627,8 +627,8 @@ fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> tr
           pre_standardised = fimage (\<lambda>(tid, tf, tr). case funs $ (structure tid) of None \<Rightarrow> (tid, tf, tr) | Some (outputs, updates) \<Rightarrow> (tid, tf, tr\<lparr>Outputs := outputs, Updates := updates\<rparr>)) e';
           pre_standardised_good =  accepts_log (set log) (tm pre_standardised);
           standardised = if pre_standardised_good then pre_standardised else e';
+          (standardised, more_to_derestrict) = standardise_group standardised log (sorted_list_of_fset structural_group) standardise_group_outputs_updates;
           more_to_derestrict = sorted_list_of_fset (fimage fst (ffilter (\<lambda>(id, _, tran). tran \<noteq> get_by_ids e' id) standardised))
-          \<comment> \<open>(standardised, more_to_derestrict) = standardise_group delayed log (sorted_list_of_fset structural_group) standardise_group_outputs_updates;\<close>
         in
         \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and
             updates for the other historical subgroups so can filter them out.\<close>
