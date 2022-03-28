@@ -409,24 +409,24 @@ definition updates_for_output :: "log \<Rightarrow> value list \<Rightarrow> tra
 
 type_synonym output_types = "(vname aexp \<times> vname \<Rightarrow>f String.literal)"
 
-fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> transition_group \<Rightarrow> nat \<Rightarrow> (nat \<times> output_types option) list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "put_updates _ _ _ _ [] e = e" |
-  "put_updates log values gp mreg ((_, None)#ops) e = put_updates log values gp mreg ops e" |
-  "put_updates log values gp mreg ((o_inx, Some (op, types))#ops) e = (
+fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> transition_group \<Rightarrow> tids list \<Rightarrow>  nat \<Rightarrow> (nat \<times> output_types option) list \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> tids list)" where
+  "put_updates _ _ _ to_derestrict _ [] e = (e, to_derestrict)" |
+  "put_updates log values gp to_derestrict mreg ((_, None)#ops) e = put_updates log values gp to_derestrict mreg ops e" |
+  "put_updates log values gp to_derestrict mreg ((o_inx, Some (op, types))#ops) e = (
     let
       gp' = map (\<lambda>(id, t). (id, t\<lparr>Outputs := list_update (Outputs t) o_inx op\<rparr>)) gp;
       generalised_model = fold (\<lambda>(id, t) acc. replace_transition acc id t) gp' e
     in
      if accepts_log (set log) (tm generalised_model) then
-      put_updates log values gp' mreg ops generalised_model
+      (put_updates log values gp' (List.union to_derestrict (map fst gp')) mreg ops generalised_model)
     else
     let
       e' = updates_for_output log values gp o_inx op types generalised_model
     in
     if accepts_log (set log) (tm e') then
-     put_updates log values gp' mreg ops e'
+     put_updates log values gp' (List.union to_derestrict (map fst gp')) mreg ops e'
     else
-     put_updates log values gp mreg ops e
+     put_updates log values gp  to_derestrict mreg ops e
   )"
 
 fun unzip_3 :: "('a \<times> 'b \<times> 'c) list \<Rightarrow> ('a list \<times> 'b list \<times> 'c list)" where
@@ -482,7 +482,7 @@ definition replace_all_outputs_updates :: "iEFSM \<Rightarrow> tids list \<Right
 definition "search_for t gp e log= accepts_log (set log) (tm (replace_all e (map fst gp) t))"
 
 (*This is where the types stuff originates*)
-definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group \<Rightarrow> transition_group list \<Rightarrow> iEFSM" where
+definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group \<Rightarrow> transition_group list \<Rightarrow> (iEFSM \<times> tids list)" where
   "generalise_and_update log e gp gps = (
     let
       label = Label (snd (hd gp));
@@ -493,9 +493,7 @@ definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> trans
       \<comment>\<open> TODO: We want to record output funs and types as we infer them! \<close>
       outputs = get_outputs label max_reg values I R P
     in
-      put_updates log values gp max_reg (enumerate 0 outputs) e
-      \<comment> \<open>fold (\<lambda>gp e'. put_updates log values gp max_reg (enumerate 0 outputs) e') (gp#gps) e\<close>
-
+      put_updates log values gp [] max_reg (enumerate 0 outputs) e
   )"
 
 text \<open>Splitting structural groups up into subgroups by previous transition can cause different
@@ -618,7 +616,7 @@ fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> tr
         let
           (rep_id, rep) = (hd (gp));
           structural_groups = filter (\<lambda>gp'. same_structure rep (snd (hd (gp')))) t;
-          e' = generalise_and_update log e gp structural_groups;
+          (e', more_to_derestrict) = generalise_and_update log e gp structural_groups;
           different = ffilter (\<lambda>(id, tf, t). t \<noteq> get_by_ids e id) e';
           funs = fold (\<lambda>(id, _, t) acc. acc(structure id $:= Some ((Outputs t), (Updates t)))) (sorted_list_of_fset different) funs;
           structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(_, _, t). same_structure rep t) e');
@@ -627,8 +625,9 @@ fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> tr
           pre_standardised = fimage (\<lambda>(tid, tf, tr). case funs $ (structure tid) of None \<Rightarrow> (tid, tf, tr) | Some (outputs, updates) \<Rightarrow> (tid, tf, tr\<lparr>Outputs := outputs, Updates := updates\<rparr>)) e';
           pre_standardised_good =  accepts_log (set log) (tm pre_standardised);
           standardised = if pre_standardised_good then pre_standardised else e';
-          (standardised, more_to_derestrict) = standardise_group standardised log (sorted_list_of_fset structural_group) standardise_group_outputs_updates;
-          more_to_derestrict = sorted_list_of_fset (fimage fst (ffilter (\<lambda>(id, _, tran). tran \<noteq> get_by_ids e' id) standardised))
+          (standardised, more_to_derestrict') = standardise_group standardised log (sorted_list_of_fset structural_group) standardise_group_outputs_updates;
+          more_to_derestrict = more_to_derestrict @ more_to_derestrict' @ (sorted_list_of_fset (fimage fst (ffilter (\<lambda>(id, _, tran). tran \<noteq> get_by_ids e id) standardised)));
+          more_to_derestrict = remdups (if e' \<noteq> e then more_to_derestrict @ (map fst gp) else more_to_derestrict)
         in
         \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and
             updates for the other historical subgroups so can filter them out.\<close>

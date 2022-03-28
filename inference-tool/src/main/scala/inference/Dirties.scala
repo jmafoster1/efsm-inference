@@ -424,7 +424,7 @@ object Dirties {
         if (py"'i0' in $training_set".as[Boolean])
           seeds ++= List(f"sub(r$i, i0)", f"sub(i0, r$i)", f"add(r$i, i0)")
         if (output_type.toString == "Int64") {
-          seeds ++= List(f"sub(50, r$i)", f"sub(r$i, 50)", f"add(r$i, 50)")
+          seeds ++= List(f"sub(50, r$i)", f"sub(r$i, 50)", f"add(r$i, 50)", f"sub(r$i, 1)", f"add(r$i, 1)")
         }
       }
     }

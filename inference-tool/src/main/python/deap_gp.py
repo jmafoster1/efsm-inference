@@ -140,7 +140,8 @@ def evaluate_candidate(
         )
 
     total_vars = list(points.columns)[:-1]
-    unused_vars = set(total_vars).difference(vars_in_tree(individual))
+    latent_vars = [col for col in points if any([is_null(v) for v in points[col]])]
+    unused_vars = set(total_vars).difference(vars_in_tree(individual)).difference(latent_vars)
 
     distances = []
     for inx, row in points.iterrows():
@@ -973,7 +974,7 @@ if __name__ == "__main__":
     generators = {
         np.dtype("float64"): z3.Real,
         np.dtype("int64"): z3.Int,
-        pd.Int64Dtype(): Int,
+        pd.Int64Dtype(): z3.Int,
         pd.StringDtype(): z3.String,
     }
     logger.info(generators)
