@@ -386,6 +386,9 @@ code_printing
   | constant "finfun_to_list" \<rightharpoonup> (Scala) "_.keySet.toList"
 declare finfun_to_list_const_code [code del]
 declare finfun_to_list_update_code [code del]
+declare finfun_update_def [code del]
+declare finfun_update_const_code [code del]
+declare finfun_to_list_def [code del]
 
 definition mismatched_updates :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "mismatched_updates t1 t2 = (\<exists>r \<in> set (map fst (Updates t1)). r \<notin> set (map fst (Updates t2)))"

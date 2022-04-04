@@ -64,7 +64,7 @@ def is_null(value):
     return value is None or value is pd.NA or np.isnan(value)
 
 
-def find_smallest_distance(individual, pset, args, expected):
+def find_smallest_distance(individual, latent_vars, pset, args, expected):
     consts = set()
     type_ = individual[0].ret
 
@@ -74,7 +74,6 @@ def find_smallest_distance(individual, pset, args, expected):
         return distance_between(expected, func)
 
 
-    latent_vars = latent_variables(individual, args, criterion=lambda v: is_null(v))
     if len(latent_vars) == 0:
         actual = func(**args)
         distance = distance_between(expected, actual)
@@ -108,7 +107,7 @@ def vars_in_tree(individual):
     return labels.values()
 
 
-def latent_variables(individual, points, criterion=lambda points_c: all([is_null(v) for v in points_c])):
+def latent_variables(individual, points, criterion=lambda points_c: any([is_null(v) for v in points_c])):
     undefined_at = [c for c in list(points) if criterion(points[c])]
     return list(set(undefined_at).intersection(vars_in_tree(individual)))
 
@@ -147,20 +146,13 @@ def evaluate_candidate(
     for inx, row in points.iterrows():
         try:
             best = find_smallest_distance(
-                individual, pset, row.iloc[:-1].to_dict(), row[-1]
+                individual, latent_vars, pset, row.iloc[:-1].to_dict(), row[-1]
             )
             distances.append(best)
         except:
             print(f"Problem executing {individual} with arguments\n{row}")
             sys.exit(0)
 
-
-    # distances = [
-    #     find_smallest_distance(
-    #         individual, pset, row.iloc[:-1].to_dict(), row[-1]
-    #     )
-    #     for _, row in points.iterrows()
-    # ]
 
     assert not any([is_null(x) for x in distances]), "no distance can be nan"
 
@@ -228,7 +220,7 @@ def correct(individual, points: pd.DataFrame, pset: gp.PrimitiveSet) -> bool:
 
         for _, row in points.iterrows():
             min_distance = find_smallest_distance(
-                individual, pset, row.iloc[:-1].to_dict(), row[-1]
+                individual, latent_vars, pset, row.iloc[:-1].to_dict(), row[-1]
             )
             if min_distance > 0:
                 return False

@@ -173,7 +173,7 @@ object Dirties {
     }
   }
 
-  var funMem: List[Any] = List()
+  var funMem: Map[String, List[Any]] = Map().withDefaultValue(List())
 
   def setupTrainingSet(ioPairs: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Value.value))]): (py.Dynamic, Map[String, String]) = {
     var points: List[Map[String, Any]] = List()
@@ -302,7 +302,7 @@ object Dirties {
       case Value.Str(s) => pset.addTerminal(s, py"str")
     }
 
-    funMem.find(f => funMemFind(f.asInstanceOf[me.shadaj.scalapy.py.Any], training_set, pset, false, f"")) match {
+    funMem(l).find(f => funMemFind(f.asInstanceOf[me.shadaj.scalapy.py.Any], training_set, pset, false, f"")) match {
       case None => {}
       case Some(best) => {
         Log.root.debug(f"  Best memoised update $best is correct")
@@ -323,7 +323,7 @@ object Dirties {
 
     if (py"'r'+str($r_index) in $training_set".as[Boolean]) {
       if (output_type.toString == "Int64")
-        seeds ++= List(f"sub(r$r_index, 50)", f"add(r$r_index, 50)")
+        seeds ++= List(f"sub(r$r_index, 50)", f"add(r$r_index, 50)", f"sub(r$r_index, 1)", f"add(r$r_index, 1)")
       if (py"'i0' in $training_set".as[Boolean])
         seeds ++= List(f"sub(r$r_index, i0)", f"add(r$r_index, i0)")
     }
@@ -340,7 +340,7 @@ object Dirties {
 
       val aexp = TypeConversion.toAExp(nodes, edges, labels)
       if (!AExp.is_lit(aexp))
-        funMem = best :: funMem
+        funMem = funMem + (l -> (best :: funMem(l)))
       val stringTypes = types - "expected"
       return Some(aexp)
     } else {
@@ -396,7 +396,7 @@ object Dirties {
     Log.root.debug(f"  Values: ${PrettyPrinter.show(values)}")
     Log.root.debug(f"  r_index r$r_index in training_set " + py"'r'+str($r_index) in $training_set".as[Boolean])
 
-    funMem.find(f => funMemFind(f.asInstanceOf[me.shadaj.scalapy.py.Any], training_set, pset, latentVariable, f"r$r_index")) match {
+    funMem(label).find(f => funMemFind(f.asInstanceOf[me.shadaj.scalapy.py.Any], training_set, pset, latentVariable, f"r$r_index")) match {
       case None => {}
       case Some(best) => {
         Log.root.debug(f"  Best memoised output $best is correct")
@@ -424,7 +424,7 @@ object Dirties {
         if (py"'i0' in $training_set".as[Boolean])
           seeds ++= List(f"sub(r$i, i0)", f"sub(i0, r$i)", f"add(r$i, i0)")
         if (output_type.toString == "Int64") {
-          seeds ++= List(f"sub(50, r$i)", f"sub(r$i, 50)", f"add(r$i, 50)", f"sub(r$i, 1)", f"add(r$i, 1)")
+          seeds ++= List(f"sub(50, r$i)", f"sub(r$i, 50)", f"add(r$i, 50)", f"sub(r$i, 1)", f"add(r$i, 1)", f"0")
         }
       }
     }
@@ -443,7 +443,7 @@ object Dirties {
       val (nodes, edges, labels) = deap_gp.graph(best).as[(List[Int], List[(Int, Int)], Map[Int, String])]
       val aexp = TypeConversion.toAExp(nodes, edges, labels)
       if (!AExp.is_lit(aexp))
-        funMem = best :: funMem
+        funMem = funMem + (label -> (best :: funMem(label)))
       val stringTypes = types - "expected"
       return Some((aexp, stringTypes.map(x => (TypeConversion.vnameFromString(x._1), x._2)).toMap))
     } else if (!latentVariable) {
@@ -479,6 +479,9 @@ object Dirties {
     f: AExp.aexp[VName.vname],
     v: Value.value): Map[Nat.nat, Option[Value.value]] = {
     val expVars: List[VName.vname] = Lista.sorted_list_of_set(AExp.enumerate_vars(f))
+    if (expVars.length == 0) {
+      return Map()
+    }
     val definedVars = (0 to i.length).map(i => VName.I(Nat.Nata(i)))
     val undefinedVars = expVars.filter(v => !definedVars.contains(v))
 

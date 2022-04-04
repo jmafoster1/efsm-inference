@@ -72,18 +72,6 @@ fun events_transitions :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \
     events_transitions e s' r' trace ((id, event_structure (l, i, p))#tt)
   )"
 
-(*
-fun trace_history :: "(tids \<times> abstract_event) list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list" where
-  "trace_history [] acc = rev acc" |
-  "trace_history ((tids, structure)#t) [] = trace_history t [(tids, structure, [])]" |
-  "trace_history ((tids, structure)#t) ((tids', prev_structure, history)#t') = (
-    if structure = prev_structure then
-      trace_history t ((tids, structure, history)#(tids', prev_structure, history)#t')
-    else
-      trace_history t ((tids, structure, prev_structure#history)#(tids', structure, history)#t')
-  )"
-*)
-
 fun remove_consecutive_duplicates :: "'a list \<Rightarrow> 'a list \<Rightarrow> 'a list" where
   "remove_consecutive_duplicates [] acc = rev acc" |
   "remove_consecutive_duplicates (h#t) [] = remove_consecutive_duplicates t [h]" |
@@ -107,29 +95,6 @@ definition trace_history :: "(tids \<times> abstract_event) list \<Rightarrow> (
       zip transition_ids (zip abstract_events repeats)
   )"
 
-definition trace_history2 :: "(tids \<times> abstract_event) list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list" where
-  "trace_history2 l = (
-    let
-      transition_ids = map fst l;
-      abstract_events = map snd l;
-      group_histories = map (\<lambda>l. remove_consecutive_duplicates l []) (prefixes abstract_events)
-  in
-      zip transition_ids (zip abstract_events group_histories)
-  )"
-
-
-(*
-definition trace_history :: "(tids \<times> abstract_event) list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list" where
-  "trace_history l = (
-    let
-      transition_ids = map fst l;
-      abstract_events = map snd l;
-      distinct_prefixes = map remdups (prefixes abstract_events)
-    in
-      zip transition_ids (zip abstract_events distinct_prefixes)
-  )"
-*)
-
 type_synonym transition_group = "(tids \<times> transition) list"
 
 definition historical_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group list" where
@@ -143,23 +108,6 @@ definition historical_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> transitio
     in
     sort (map sort (map remdups (map (\<lambda>(_, history, tids). map (\<lambda>id. (id, get_by_ids e id)) tids) groups)))
   )"
-
-definition historical_groups2 :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group list" where
-  "historical_groups2 e log = (
-    let
-      observed = map (\<lambda>t. events_transitions e 0 <> t []) log;
-      histories = map (\<lambda>t. trace_history2 t) observed;
-      flat = fold (@) histories [];
-      groups_fun = fold (\<lambda>(id, structure, history) gps. gps((structure, history) $:= id # (gps $ (structure, history)))) flat (K$ []);
-      groups = sort (map (\<lambda>k. let (structure, history) = k in (length history, history, groups_fun $ k)) (finfun_to_list groups_fun))
-    in
-    map (\<lambda>(_, history, tids). map (\<lambda>id. (id, get_by_ids e id)) tids) groups
-  )"
-
-lemma same_structure_equiv:
-  "Outputs t1 = [L (value.Int m)] \<Longrightarrow> Outputs t2 = [L (value.Int n)] \<Longrightarrow>
-   same_structure t1 t2 = Transition.same_structure t1 t2"
-  by (simp add: same_structure_def Transition.same_structure_def)
 
 fun place_in_group :: "(tids \<times> abstract_event \<times> abstract_event list) \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list" where
   "place_in_group e closed [] = closed@[[e]]" |
@@ -177,26 +125,6 @@ fun place_in_group :: "(tids \<times> abstract_event \<times> abstract_event lis
 fun group_transitions :: "(tids \<times> abstract_event \<times> abstract_event list) list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list" where
   "group_transitions [] gs = gs" |
   "group_transitions (h#t) gs = group_transitions t (place_in_group h [] gs)"
-
-\<comment>\<open>TODO: Codegen this and test it
-definition historical_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group list" where
-  "historical_groups e log = (
-    let
-      observed = map (\<lambda>t. events_transitions e 0 <> t []) log;
-      histories = map trace_history observed;
-      groups = fold (\<lambda>history acc. group_transitions history acc) histories [];
-      ids = map (map fst) groups
-    in
-     map (map (\<lambda>id. (id, get_by_ids e id))) ids
-  )"
-\<close>
-fun observe_all :: "iEFSM \<Rightarrow>  cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> transition_group" where
-  "observe_all _ _ _ [] = []" |
-  "observe_all e s r ((l, i, _)#es)  =
-    (case random_member (i_possible_steps e s r l i)  of
-      (Some (ids, s', t)) \<Rightarrow> (((ids, t)#(observe_all e s' (evaluate_updates t i r) es))) |
-      _ \<Rightarrow> []
-    )"
 
 text\<open>For a given trace group, log, and EFSM, we want to build the training set for that group. That
 is, the set of inputs, registers, and expected outputs from those transitions. To do this, we must
@@ -481,21 +409,6 @@ definition replace_all_outputs_updates :: "iEFSM \<Rightarrow> tids list \<Right
 
 definition "search_for t gp e log= accepts_log (set log) (tm (replace_all e (map fst gp) t))"
 
-(*This is where the types stuff originates*)
-definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group \<Rightarrow> transition_group list \<Rightarrow> (iEFSM \<times> tids list)" where
-  "generalise_and_update log e gp gps = (
-    let
-      label = Label (snd (hd gp));
-      values = enumerate_log_values log;
-      new_gp_ts = make_training_set e log gp;
-      (I, R, P) = unzip_3 new_gp_ts;
-      max_reg = max_reg_total e;
-      \<comment>\<open> TODO: We want to record output funs and types as we infer them! \<close>
-      outputs = get_outputs label max_reg values I R P
-    in
-      put_updates log values gp [] max_reg (enumerate 0 outputs) e
-  )"
-
 text \<open>Splitting structural groups up into subgroups by previous transition can cause different
 subgroups to get different updates. We ideally want structural groups to have the same output and
 update functions, as structural groups are likely to be instances of the same underlying behaviour.\<close>
@@ -550,78 +463,110 @@ definition standardise_group_outputs_updates :: "iEFSM \<Rightarrow> log \<Right
       Some (p, u) \<Rightarrow> map (\<lambda>(id, t). (id, t\<lparr>Outputs := p, Updates := u\<rparr>)) g
   )"
 
-fun find_first_use_of_trace :: "nat \<Rightarrow> trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> tids option" where
-  "find_first_use_of_trace _ [] _ _ _ = None" |
-  "find_first_use_of_trace rr ((l, i, _)#es) e s r = (
+fun target_registers :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (output_function \<Rightarrow>f (vname \<Rightarrow>f String.literal)) \<Rightarrow> run_info" where
+  "target_registers e s r [] types = []" |
+  "target_registers e s r ((l, i, p)#es) types = (
     let
-      (id, s', t) = fthe_elem (i_possible_steps e s r l i)
+      (tids, s', t) = fthe_elem (i_possible_steps e s r l i);
+      r' = evaluate_updates t i r;
+      necessary_regs = fold finfun_add (map (\<lambda>(p, f). if finfun_to_list (types $ f) = [] then <> else get_regs (types $ f) i f p) (zip p (Outputs t))) <>
     in
-      if (\<exists>p \<in> set (Outputs t). aexp_constrains p (V (R rr))) then
-        Some id
-      else
-        find_first_use_of_trace rr es e s' (evaluate_updates t i r)
+    (s, r, necessary_regs, i, tids, t)#(target_registers e s' r' es types)
   )"
 
-definition find_first_uses_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> tids list" where
-  "find_first_uses_of r l e = List.maps (\<lambda>x. case x of None \<Rightarrow> [] | Some x \<Rightarrow> [x]) (map (\<lambda>t. find_first_use_of_trace r t e 0 <>) l)"
-
-fun find_initialisation_of_trace :: "nat \<Rightarrow> trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> (tids \<times> transition) option" where
-  "find_initialisation_of_trace _ [] _ _ _ = None" |
-  "find_initialisation_of_trace r' ((l, i, _)#es) e s r = (
-    let
-      (tids, s', t) = fthe_elem (i_possible_steps e s r l i)
-    in
-    if (\<exists>(rr, u) \<in> set (Updates t). rr = r' \<and> is_lit u) then
-      Some (tids, t)
+fun back_propagate :: "run_info \<Rightarrow> registers \<Rightarrow> run_info \<Rightarrow> run_info" where
+  "back_propagate [] _ targeted = targeted" |
+  "back_propagate ((s, oldregs, regs, inputs, tid, ta)#t) tRegs targeted = (
+    if finfun_to_list regs = [] then
+      back_propagate t tRegs ((s, oldregs, tRegs, inputs, tid, ta)#targeted)
     else
-      find_initialisation_of_trace r' es e s' (evaluate_updates t i r)
+      back_propagate t regs ((s, oldregs, regs, inputs, tid, ta)#targeted)
   )"
 
-primrec find_initialisation_of :: "nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> (tids \<times> transition) option list" where
-  "find_initialisation_of _ _ [] = []" |
-  "find_initialisation_of r e (h#t) = (
-    case find_initialisation_of_trace r h e 0 <> of
-      None \<Rightarrow> find_initialisation_of r e t |
-      Some thing \<Rightarrow> Some thing#(find_initialisation_of r e t)
+(*
+fun infer_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> (output_function \<Rightarrow>f (vname \<Rightarrow>f String.literal)) \<Rightarrow> iEFSM" where
+  "infer_updates e l gp types = (
+    let
+      t = snd (hd gp);
+      values = enumerate_log_values l;
+      group_ids = set (map fst gp);
+      targeted = map (\<lambda>trace. back_propagate (rev (target_registers e 0 <> trace types)) <> []) l;
+      relevant = fold List.union (map (filter (\<lambda>(s, oldregs, necessary_regs, inputs, tids, tran). tids \<in> group_ids)) targeted ) [];
+      maybe_updates = get_updates_opt (Label t) values (map (\<lambda>(s, oldregs, necessary_regs, inputs, tids, t). (inputs, oldregs, necessary_regs)) relevant)
+    in                   
+     if \<exists>(_, f_opt) \<in> set maybe_updates. f_opt = None then
+      e
+    else
+      let updates = map (\<lambda>(r, u). (r, the u)) maybe_updates in
+      fimage (\<lambda>(tid, tf, t). if tid \<in> group_ids then (tid, tf, t\<lparr>Updates := updates\<rparr>) else (tid, tf, t)) e
+
   )"
 
-definition delay_initialisation_of :: "nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> tids list \<Rightarrow> iEFSM" where
-  "delay_initialisation_of r l e tids = fold (\<lambda>x e. case x of
+fun groupwise_put_updates :: "transition_group list \<Rightarrow> log \<Rightarrow> value list \<Rightarrow> run_info list \<Rightarrow> (nat \<times> (vname aexp \<times> vname \<Rightarrow>f String.literal)) \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "groupwise_put_updates [] _ _ _ _  e = e" |
+  "groupwise_put_updates (gp#gps) log values walked (o_inx, (op, types)) e = (
+    if accepts_log (set log) (tm e) then e else
+    let
+      targeted = map (\<lambda>x. filter (\<lambda>(_, _, _, _, _, id, tran). (id, tran) \<in> set gp) x) (map (\<lambda>w. rev (target <> (rev w))) walked);
+      group = fold List.union targeted []
+    in
+    case group_update values group of
+      None \<Rightarrow> groupwise_put_updates gps log values walked (o_inx, (op, types)) e |
+      Some u \<Rightarrow> groupwise_put_updates gps log values walked (o_inx, (op, types)) (make_distinct (add_groupwise_updates log [u] e))
+  )"
+*)
+
+fun infer_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> (output_function \<Rightarrow>f (vname \<Rightarrow>f String.literal)) \<Rightarrow> iEFSM" where
+  "infer_updates e l gp types = (
+    let
+      t = snd (hd gp);
+      values = enumerate_log_values l;
+      group_ids = set (map fst gp);
+      targeted = map (\<lambda>trace. rev (target <> (rev (target_registers e 0 <> trace types)))) l;
+      relevant = fold List.union (map (filter (\<lambda>(t_regs, s, oldregs, necessary_regs, inputs, tids, tran). tids \<in> group_ids)) targeted ) []
+    in                   
+    case group_update values relevant of
       None \<Rightarrow> e |
-    Some (i_tids, t) \<Rightarrow>
-      let
-        origins = map (\<lambda>id. origin id e) tids;
-        init_val = snd (hd (filter (\<lambda>(r', _). r = r') (Updates t)));
-        e' = fimage (\<lambda>(id, (origin', dest), tr).
-        \<comment> \<open>Add the initialisation update to incoming transitions\<close>
-        if dest \<in> set origins then
-          (id, (origin', dest), tr\<lparr>Updates := List.insert (r, init_val) (Updates tr)\<rparr>)
-        \<comment> \<open>Strip the initialisation update from the original initialising transition\<close>
-        else if id = i_tids then
-          (id, (origin', dest), tr\<lparr>Updates := filter (\<lambda>(r', _). r \<noteq> r') (Updates tr)\<rparr>)
-        else
-          (id, (origin', dest), tr)
-      ) e
-      in
-      \<comment> \<open>We don't want to update a register twice so just leave it\<close>
-      if accepts_log (set l) (tm e') then
-        e'
-      else
-        e
-  ) (find_initialisation_of r e l) e"
+      Some u \<Rightarrow> (make_distinct (add_groupwise_updates l [u] e))
+  )"
 
-fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> (tids \<Rightarrow> abstract_event) \<Rightarrow> (abstract_event \<Rightarrow>f (output_function list \<times> update_function list) option) \<Rightarrow> tids list \<Rightarrow> (transition \<times> output_types option list) list \<Rightarrow> (iEFSM \<times> tids list \<times> (transition \<times> output_types option list) list)" where
-  "groupwise_generalise_and_update _ e [] structure funs to_derestrict closed = (e, to_derestrict, closed)" |
-  "groupwise_generalise_and_update log e (gp#t) structure funs to_derestrict closed = (
+fun groupwise_infer_updates :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> (output_function \<Rightarrow>f (vname \<Rightarrow>f String.literal)) \<Rightarrow> iEFSM" where
+  "groupwise_infer_updates l e [] types = e" |
+  "groupwise_infer_updates l e (gp#gps) types = (  
+  if accepts_log (set l) (tm e) then e else groupwise_infer_updates l (infer_updates e l gp types) gps types
+  )"
+
+definition "the_outputs original new = map (\<lambda>(og, nn). case nn of None \<Rightarrow> og | Some (f, _) \<Rightarrow> f) (zip original new)"
+
+(*This is where the types stuff originates*)
+definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group \<Rightarrow> transition_group list \<Rightarrow> (iEFSM \<times> tids list)" where
+  "generalise_and_update log e gp gps = (
+    let
+      label = Label (snd (hd gp));
+      values = enumerate_log_values log;
+      new_gp_ts = make_training_set e log gp;
+      (I, R, P) = unzip_3 new_gp_ts;
+      max_reg = max_reg_total e;
+      \<comment>\<open> TODO: We want to record output funs and types as we infer them! \<close>
+      outputs = get_outputs label max_reg values I R P;
+      e' = fimage (\<lambda>(tids, tf, t). if tids \<in> set (map fst gp) then (tids, tf, t\<lparr>Outputs:=(the_outputs (Outputs t) outputs)\<rparr>) else (tids, tf, t)) e
+    in
+      \<comment>\<open>put_updates log values gp [] max_reg (enumerate 0 outputs) e\<close>
+      if accepts_log (set log) (tm e') then
+        (e', [])
+      else (groupwise_infer_updates log e' gps (fold (\<lambda>f types. case f of None \<Rightarrow> types | Some (p, ts) \<Rightarrow> types(p$:=ts)) outputs (K$ (K$ (STR ''UNKNOWN'')))), [])
+  )"
+
+fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> transition_group list \<Rightarrow> (tids \<Rightarrow> abstract_event) \<Rightarrow> (abstract_event \<Rightarrow>f (output_function list \<times> update_function list) option) \<Rightarrow> tids list \<Rightarrow> (transition \<times> output_types option list) list \<Rightarrow> (iEFSM \<times> tids list \<times> (transition \<times> output_types option list) list)" where
+  "groupwise_generalise_and_update _ e [] update_groups structure funs to_derestrict closed = (e, to_derestrict, closed)" |
+  "groupwise_generalise_and_update log e (gp#t) update_groups structure funs to_derestrict closed = (
         let
           (rep_id, rep) = (hd (gp));
-          structural_groups = filter (\<lambda>gp'. same_structure rep (snd (hd (gp')))) t;
-          (e', more_to_derestrict) = generalise_and_update log e gp structural_groups;
+          (e', more_to_derestrict) = generalise_and_update log e gp update_groups;
           different = ffilter (\<lambda>(id, tf, t). t \<noteq> get_by_ids e id) e';
           funs = fold (\<lambda>(id, _, t) acc. acc(structure id $:= Some ((Outputs t), (Updates t)))) (sorted_list_of_fset different) funs;
           structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(_, _, t). same_structure rep t) e');
           delayed = e';
-          \<comment> \<open>delayed = fold (\<lambda>r acc. delay_initialisation_of r log acc (find_first_uses_of r log acc)) (sorted_list_of_set (all_regs e')) e';\<close>
           pre_standardised = fimage (\<lambda>(tid, tf, tr). case funs $ (structure tid) of None \<Rightarrow> (tid, tf, tr) | Some (outputs, updates) \<Rightarrow> (tid, tf, tr\<lparr>Outputs := outputs, Updates := updates\<rparr>)) e';
           pre_standardised_good =  accepts_log (set log) (tm pre_standardised);
           standardised = if pre_standardised_good then pre_standardised else e';
@@ -632,9 +577,9 @@ fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> tr
         \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and
             updates for the other historical subgroups so can filter them out.\<close>
         if pre_standardised_good then
-          groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. structure (fst (hd g)) \<notin> set (finfun_to_list funs)) t) structure funs (to_derestrict @ more_to_derestrict) []
+          groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. structure (fst (hd g)) \<notin> set (finfun_to_list funs)) t) update_groups structure funs (to_derestrict @ more_to_derestrict) []
         else
-          groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) t structure funs (to_derestrict @ more_to_derestrict) []
+          groupwise_generalise_and_update log (merge_regs standardised (accepts_log (set log))) t update_groups structure funs (to_derestrict @ more_to_derestrict) []
   )"
 
 definition drop_all_guards :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
@@ -649,32 +594,6 @@ definition drop_all_guards :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> log \<Rig
 
 definition updated_regs :: "transition \<Rightarrow> nat set" where
   "updated_regs t = set (map fst (Updates t))"
-
-definition fewer_updates :: "transition \<Rightarrow> transition fset \<Rightarrow> transition option" where
-  "fewer_updates t tt = (
-    let p = ffilter (\<lambda>t'. same_structure t t' \<and> Outputs t = Outputs t' \<and> updated_regs t' \<subset> updated_regs t) tt in
-    if p = {||} then None else Some (snd (fMin (fimage (\<lambda>t. (length (Updates t), t)) p))))"
-
-fun remove_spurious_updates_aux :: "iEFSM \<Rightarrow> transition_group \<Rightarrow> transition fset \<Rightarrow> log \<Rightarrow> iEFSM" where
-  "remove_spurious_updates_aux e [] _ _ = e" |
-  "remove_spurious_updates_aux e ((tid, t)#ts) tt l = (
-    case fewer_updates t tt of
-      None \<Rightarrow> remove_spurious_updates_aux e ts tt l |
-      Some t' \<Rightarrow> (
-        let e' = replace_transition e tid t' in
-        if accepts_log (set l) (tm e') then
-          remove_spurious_updates_aux e' ts tt l
-        else
-          remove_spurious_updates_aux e ts tt l
-      )
-  )"
-
-(* This goes through and tries to remove spurious updates that get introduced during preprocessing *)
-definition remove_spurious_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> iEFSM" where
-  "remove_spurious_updates e l = (
-    let transitions = fimage (\<lambda>(tid, _, t). (tid, t)) e in
-      remove_spurious_updates_aux e (sorted_list_of_fset transitions) (fimage snd transitions) l
-  )"
 
 definition drop_selected_guards :: "iEFSM \<Rightarrow> tids list \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
 "drop_selected_guards e ids pta log m np = (let
@@ -695,14 +614,14 @@ definition get_structures :: "iEFSM \<Rightarrow> log \<Rightarrow> (tids \<Righ
     let
       observed = fold (@) (map (\<lambda>t. events_transitions e 0 <> t []) log) []
     in
-      fold (\<lambda>(tids, abs) acc. \<lambda>tt. if set tt \<subseteq> set tids \<or> set tids \<subseteq> set tt then abs else acc tt) observed (\<lambda>x. (STR '''', [], []))
+      fold (\<lambda>(tids, abs) acc. \<lambda>tt. if set tt \<subseteq> set tids \<or> set tids \<subseteq> set tt then abs else acc tt) observed (\<lambda>x. (STR ''UNKNOWN'', [], []))
   )"
 
 definition derestrict :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "derestrict pta log m np = (
     let
       groups = historical_groups pta log;
-      (normalised, to_derestrict, _) = groupwise_generalise_and_update log pta groups (get_structures pta log) (K$ None) [] [];
+      (normalised, to_derestrict, _) = groupwise_generalise_and_update log pta groups groups (get_structures pta log) (K$ None) [] [];
       tidied = fimage (\<lambda>(id, tf, t). (id, tf, t\<lparr>Updates:= tidy_updates (Updates t)\<rparr>)) normalised
     in
       drop_selected_guards tidied to_derestrict pta log m np
