@@ -39,20 +39,6 @@ fun type_signature :: "value \<Rightarrow> value_type" where
   "type_signature (value.Int _) = I" |
   "type_signature (value.Real _) = R"
 
-
-\<comment> \<open>This is a very hacky way of making sure that things with differently typed outputs don't get
-    lumped together.\<close>
-fun typeSig :: "output_function \<Rightarrow> value_type" where
-  "typeSig (L v) = type_signature v" |
-  "typeSig _ = R"
-
-
-definition same_structure :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
-  "same_structure t1 t2 = (
-    Label t1 = Label t2 \<and>
-    Arity t1 = Arity t2 \<and>
-    map typeSig (Outputs t1) = map typeSig (Outputs t2)
-  )"
 hide_const S
 hide_const I
 hide_const R
@@ -441,13 +427,11 @@ fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> tr
           (e', more_to_derestrict) = generalise_and_update log e gp update_groups;
           different = ffilter (\<lambda>(id, tf, t). t \<noteq> get_by_ids e id) e';
           funs = fold (\<lambda>(id, _, t) acc. acc(structure id $:= Some ((Outputs t), (Updates t)))) (sorted_list_of_fset different) funs;
-          structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(_, _, t). same_structure rep t) e');
-          delayed = e';
+          structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(i, _, _). structure i = structure rep_id) e');
           pre_standardised = fimage (\<lambda>(tid, tf, tr). case funs $ (structure tid) of None \<Rightarrow> (tid, tf, tr) | Some (outputs, updates) \<Rightarrow> (tid, tf, tr\<lparr>Outputs := outputs, Updates := updates\<rparr>)) e';
           pre_standardised_good =  accepts_log (set log) (tm pre_standardised);
           standardised = if pre_standardised_good then pre_standardised else e';
-          (standardised, more_to_derestrict') = standardise_group standardised log (sorted_list_of_fset structural_group) standardise_group_outputs_updates;
-          more_to_derestrict = more_to_derestrict @ more_to_derestrict' @ (sorted_list_of_fset (fimage fst (ffilter (\<lambda>(id, _, tran). tran \<noteq> get_by_ids e id) standardised)));
+          more_to_derestrict = more_to_derestrict @  (sorted_list_of_fset (fimage fst (ffilter (\<lambda>(id, _, tran). tran \<noteq> get_by_ids e id) standardised)));
           more_to_derestrict = remdups (if e' \<noteq> e then more_to_derestrict @ (map fst gp) else more_to_derestrict)
         in
         \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and
