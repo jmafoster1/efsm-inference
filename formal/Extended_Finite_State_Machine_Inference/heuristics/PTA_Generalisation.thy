@@ -109,23 +109,6 @@ definition historical_groups :: "iEFSM \<Rightarrow> log \<Rightarrow> transitio
     sort (map sort (map remdups (map (\<lambda>(_, history, tids). map (\<lambda>id. (id, get_by_ids e id)) tids) groups)))
   )"
 
-fun place_in_group :: "(tids \<times> abstract_event \<times> abstract_event list) \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list" where
-  "place_in_group e closed [] = closed@[[e]]" |
-  "place_in_group e closed (gp#groups) = (
-    let
-      (ids, abs_event, history) = e;
-      (ids', abs_event', history') = hd gp
-    in
-    if abs_event = abs_event' \<and> history = history' then
-      ((e#gp)#groups)
-    else
-      place_in_group e (gp#closed) groups
-  )"
-
-fun group_transitions :: "(tids \<times> abstract_event \<times> abstract_event list) list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list \<Rightarrow> (tids \<times> abstract_event \<times> abstract_event list) list list" where
-  "group_transitions [] gs = gs" |
-  "group_transitions (h#t) gs = group_transitions t (place_in_group h [] gs)"
-
 text\<open>For a given trace group, log, and EFSM, we want to build the training set for that group. That
 is, the set of inputs, registers, and expected outputs from those transitions. To do this, we must
 walk the traces in the EFSM to obtain the register values.\<close>
@@ -209,21 +192,6 @@ code_printing constant get_regs \<rightharpoonup> (Scala) "Dirties.getRegs"
 type_synonym action_info = "(cfstate \<times> registers \<times> registers \<times> inputs \<times> tids \<times> transition)"
 type_synonym run_info = "action_info list"
 type_synonym targeted_run_info = "(registers \<times> action_info) list"
-
-fun everything_walk :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> transition_group \<Rightarrow> run_info" where
-  "everything_walk _ _ _ [] _ _ _ _ = []" |
-  "everything_walk f fi types ((label, inputs, outputs)#t) oPTA s regs gp  = (
-    let (tid, s', ta) = fthe_elem (i_possible_steps oPTA s regs label inputs) in
-     \<comment> \<open>Possible steps with a transition we need to modify\<close>
-    if \<exists>(tid', _) \<in> set gp. tid = tid' then
-      (s, regs, get_regs types inputs f (outputs!fi), inputs, tid, ta)#(everything_walk f fi types t oPTA s' (evaluate_updates ta inputs regs) gp)
-    else
-      let empty = <> in
-      (s, regs, empty, inputs, tid, ta)#(everything_walk f fi types t oPTA s' (evaluate_updates ta inputs regs) gp)
-  )"
-
-definition everything_walk_log :: "output_function \<Rightarrow> nat \<Rightarrow> (vname \<Rightarrow>f String.literal) \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> transition_group \<Rightarrow> run_info list" where
-  "everything_walk_log f fi types log e gp = map (\<lambda>t. everything_walk f fi types t e 0 <> gp) log"
 
 fun target :: "registers \<Rightarrow> run_info \<Rightarrow> targeted_run_info" where
   "target _ [] = []" |
@@ -311,51 +279,7 @@ definition group_update :: "value list \<Rightarrow> targeted_run_info \<Rightar
       Some (fold List.union (map (\<lambda>(tRegs, s, oldRegs, regs, inputs, tid, ta). tid) l) [], map (\<lambda>(r, f_o). (r, the f_o)) maybe_updates)
   )"
 
-fun groupwise_put_updates :: "transition_group list \<Rightarrow> log \<Rightarrow> value list \<Rightarrow> run_info list \<Rightarrow> (nat \<times> (vname aexp \<times> vname \<Rightarrow>f String.literal)) \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "groupwise_put_updates [] _ _ _ _  e = e" |
-  "groupwise_put_updates (gp#gps) log values walked (o_inx, (op, types)) e = (
-    if accepts_log (set log) (tm e) then e else
-    let
-      targeted = map (\<lambda>x. filter (\<lambda>(_, _, _, _, _, id, tran). (id, tran) \<in> set gp) x) (map (\<lambda>w. rev (target <> (rev w))) walked);
-      group = fold List.union targeted []
-    in
-    case group_update values group of
-      None \<Rightarrow> groupwise_put_updates gps log values walked (o_inx, (op, types)) e |
-      Some u \<Rightarrow> groupwise_put_updates gps log values walked (o_inx, (op, types)) (make_distinct (add_groupwise_updates log [u] e))
-  )"
-
-definition updates_for_output :: "log \<Rightarrow> value list \<Rightarrow> transition_group \<Rightarrow> nat \<Rightarrow> vname aexp \<Rightarrow> vname \<Rightarrow>f String.literal \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-"updates_for_output log values current o_inx op types e = (
-  if AExp.enumerate_regs op = {} then e
-  else
-    let
-      walked = everything_walk_log op o_inx types log e current;
-      groups = historical_groups e log
-    in
-    groupwise_put_updates groups log values walked (o_inx, (op, types)) e
-  )"
-
 type_synonym output_types = "(vname aexp \<times> vname \<Rightarrow>f String.literal)"
-
-fun put_updates :: "log \<Rightarrow> value list \<Rightarrow> transition_group \<Rightarrow> tids list \<Rightarrow>  nat \<Rightarrow> (nat \<times> output_types option) list \<Rightarrow> iEFSM \<Rightarrow> (iEFSM \<times> tids list)" where
-  "put_updates _ _ _ to_derestrict _ [] e = (e, to_derestrict)" |
-  "put_updates log values gp to_derestrict mreg ((_, None)#ops) e = put_updates log values gp to_derestrict mreg ops e" |
-  "put_updates log values gp to_derestrict mreg ((o_inx, Some (op, types))#ops) e = (
-    let
-      gp' = map (\<lambda>(id, t). (id, t\<lparr>Outputs := list_update (Outputs t) o_inx op\<rparr>)) gp;
-      generalised_model = fold (\<lambda>(id, t) acc. replace_transition acc id t) gp' e
-    in
-     if accepts_log (set log) (tm generalised_model) then
-      (put_updates log values gp' (List.union to_derestrict (map fst gp')) mreg ops generalised_model)
-    else
-    let
-      e' = updates_for_output log values gp o_inx op types generalised_model
-    in
-    if accepts_log (set log) (tm e') then
-     put_updates log values gp' (List.union to_derestrict (map fst gp')) mreg ops e'
-    else
-     put_updates log values gp  to_derestrict mreg ops e
-  )"
 
 fun unzip_3 :: "('a \<times> 'b \<times> 'c) list \<Rightarrow> ('a list \<times> 'b list \<times> 'c list)" where
   "unzip_3 [] = ([], [], [])" |
@@ -400,12 +324,6 @@ definition enumerate_exec_values :: "trace \<Rightarrow> value list" where
 
 definition enumerate_log_values :: "log \<Rightarrow> value list" where
   "enumerate_log_values l = fold (\<lambda>e I. List.union (enumerate_exec_values e) I) l []"
-
-definition replace_transition_outputs_updates :: "iEFSM \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> iEFSM" where
-  "replace_transition_outputs_updates e uid new = (fimage (\<lambda>(uids, (from, to), t). if set uid \<subseteq> set uids then (uids, (from, to), t\<lparr>Outputs:=Outputs new, Updates:=Updates new\<rparr>) else (uids, (from, to), t)) e)"
-
-definition replace_all_outputs_updates :: "iEFSM \<Rightarrow> tids list \<Rightarrow> transition \<Rightarrow> iEFSM" where
-  "replace_all_outputs_updates e ids new = fold (\<lambda>id acc. replace_transition_outputs_updates acc id new) ids e"
 
 definition "search_for t gp e log= accepts_log (set log) (tm (replace_all e (map fst gp) t))"
 
@@ -473,48 +391,6 @@ fun target_registers :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<R
     in
     (s, r, necessary_regs, i, tids, t)#(target_registers e s' r' es types)
   )"
-
-fun back_propagate :: "run_info \<Rightarrow> registers \<Rightarrow> run_info \<Rightarrow> run_info" where
-  "back_propagate [] _ targeted = targeted" |
-  "back_propagate ((s, oldregs, regs, inputs, tid, ta)#t) tRegs targeted = (
-    if finfun_to_list regs = [] then
-      back_propagate t tRegs ((s, oldregs, tRegs, inputs, tid, ta)#targeted)
-    else
-      back_propagate t regs ((s, oldregs, regs, inputs, tid, ta)#targeted)
-  )"
-
-(*
-fun infer_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> (output_function \<Rightarrow>f (vname \<Rightarrow>f String.literal)) \<Rightarrow> iEFSM" where
-  "infer_updates e l gp types = (
-    let
-      t = snd (hd gp);
-      values = enumerate_log_values l;
-      group_ids = set (map fst gp);
-      targeted = map (\<lambda>trace. back_propagate (rev (target_registers e 0 <> trace types)) <> []) l;
-      relevant = fold List.union (map (filter (\<lambda>(s, oldregs, necessary_regs, inputs, tids, tran). tids \<in> group_ids)) targeted ) [];
-      maybe_updates = get_updates_opt (Label t) values (map (\<lambda>(s, oldregs, necessary_regs, inputs, tids, t). (inputs, oldregs, necessary_regs)) relevant)
-    in                   
-     if \<exists>(_, f_opt) \<in> set maybe_updates. f_opt = None then
-      e
-    else
-      let updates = map (\<lambda>(r, u). (r, the u)) maybe_updates in
-      fimage (\<lambda>(tid, tf, t). if tid \<in> group_ids then (tid, tf, t\<lparr>Updates := updates\<rparr>) else (tid, tf, t)) e
-
-  )"
-
-fun groupwise_put_updates :: "transition_group list \<Rightarrow> log \<Rightarrow> value list \<Rightarrow> run_info list \<Rightarrow> (nat \<times> (vname aexp \<times> vname \<Rightarrow>f String.literal)) \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "groupwise_put_updates [] _ _ _ _  e = e" |
-  "groupwise_put_updates (gp#gps) log values walked (o_inx, (op, types)) e = (
-    if accepts_log (set log) (tm e) then e else
-    let
-      targeted = map (\<lambda>x. filter (\<lambda>(_, _, _, _, _, id, tran). (id, tran) \<in> set gp) x) (map (\<lambda>w. rev (target <> (rev w))) walked);
-      group = fold List.union targeted []
-    in
-    case group_update values group of
-      None \<Rightarrow> groupwise_put_updates gps log values walked (o_inx, (op, types)) e |
-      Some u \<Rightarrow> groupwise_put_updates gps log values walked (o_inx, (op, types)) (make_distinct (add_groupwise_updates log [u] e))
-  )"
-*)
 
 fun infer_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> (output_function \<Rightarrow>f (vname \<Rightarrow>f String.literal)) \<Rightarrow> iEFSM" where
   "infer_updates e l gp types = (
@@ -591,9 +467,6 @@ definition drop_all_guards :: "iEFSM \<Rightarrow> iEFSM \<Rightarrow> log \<Rig
       (None, _) \<Rightarrow> pta |
       (Some resolved, _) \<Rightarrow> resolved
   )"
-
-definition updated_regs :: "transition \<Rightarrow> nat set" where
-  "updated_regs t = set (map fst (Updates t))"
 
 definition drop_selected_guards :: "iEFSM \<Rightarrow> tids list \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
 "drop_selected_guards e ids pta log m np = (let
