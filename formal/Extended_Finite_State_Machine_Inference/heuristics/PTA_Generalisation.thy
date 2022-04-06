@@ -242,8 +242,7 @@ definition get_updates_opt :: "label \<Rightarrow> value list \<Rightarrow> (inp
       if  (\<forall>(_, anteriorRegs, posteriorRegs) \<in> set train. anteriorRegs $ r = posteriorRegs $ r) then
         (r, Some (V (R r)))
       else if length targetValues = 1 \<and> (\<forall>(inputs, anteriorRegs, _) \<in> set train. finfun_to_list anteriorRegs = []) then
-        case hd targetValues of Some v \<Rightarrow>
-        (r, Some (L v))
+        case hd targetValues of Some v \<Rightarrow> (r, Some (L v))
       else
         (r, get_update l r values train)
     ) updated_regs
@@ -431,8 +430,8 @@ fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> tr
           pre_standardised = fimage (\<lambda>(tid, tf, tr). case funs $ (structure tid) of None \<Rightarrow> (tid, tf, tr) | Some (outputs, updates) \<Rightarrow> (tid, tf, tr\<lparr>Outputs := outputs, Updates := updates\<rparr>)) e';
           pre_standardised_good =  accepts_log (set log) (tm pre_standardised);
           standardised = if pre_standardised_good then pre_standardised else e';
-          more_to_derestrict = more_to_derestrict @  (sorted_list_of_fset (fimage fst (ffilter (\<lambda>(id, _, tran). tran \<noteq> get_by_ids e id) standardised)));
-          more_to_derestrict = remdups (if e' \<noteq> e then more_to_derestrict @ (map fst gp) else more_to_derestrict)
+          \<comment> \<open>This tackles transitions which have been changed\<close>
+          more_to_derestrict = more_to_derestrict @  (sorted_list_of_fset (fimage fst (ffilter (\<lambda>(id, _, tran). tran \<noteq> get_by_ids e id) standardised)))
         in
         \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and
             updates for the other historical subgroups so can filter them out.\<close>

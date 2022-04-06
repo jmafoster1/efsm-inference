@@ -8654,19 +8654,7 @@ def groupwise_generalise_and_update(uu: List[List[(String,
                   ! (Transition.equal_transition_exta[Unit](tran,
                      Inference.get_by_ids(e, id)))
                 }),
-               standardised)))
-         val more_to_derestrictb: List[List[Nat.nat]] =
-           (if (! (FSet.equal_fseta[(List[Nat.nat],
-                                      ((Nat.nat, Nat.nat),
-Transition.transition_ext[Unit]))](ea, e)))
-             more_to_derestricta ++
-               Lista.map[(List[Nat.nat], Transition.transition_ext[Unit]),
-                          List[Nat.nat]](((a:
-     (List[Nat.nat], Transition.transition_ext[Unit]))
-    =>
-   a._1),
-  gp)
-             else more_to_derestricta).par.distinct.toList;
+               standardised)));
          (if (pre_standardised_good)
            groupwise_generalise_and_update(log,
     Same_Register.merge_regs(standardised,
@@ -8682,7 +8670,7 @@ Transition.transition_ext[Unit]))](ea, e)))
                       =>
                      ! ((funsa.keySet.toList).contains(structure((g.head)._1)))),
                     t),
-    update_groups, structure, funsa, to_derestrict ++ more_to_derestrictb, Nil)
+    update_groups, structure, funsa, to_derestrict ++ more_to_derestricta, Nil)
            else groupwise_generalise_and_update(log,
          Same_Register.merge_regs(standardised,
                                    ((a: FSet.fset[((Nat.nat, Nat.nat),
@@ -8692,7 +8680,7 @@ Transition.transition_ext[Unit]))](ea, e)))
                               (List[Value.value], List[Value.value]))]](log),
                a))),
          t, update_groups, structure, funsa,
-         to_derestrict ++ more_to_derestrictb, Nil))
+         to_derestrict ++ more_to_derestricta, Nil))
        }
 }
 

@@ -1,0 +1,85 @@
+[
+[
+    {"label":"select","inputs":["coke"],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"vend","inputs":[],"outputs":["coke"]}
+]
+,[
+    {"label":"select","inputs":["coke"],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"vend","inputs":[],"outputs":["coke"]}
+]
+,[
+    {"label":"select","inputs":["pepsi"],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"vend","inputs":[],"outputs":["pepsi"]}
+]
+,[
+    {"label":"select","inputs":["pepsi"],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"vend","inputs":[],"outputs":["pepsi"]}
+]
+,[
+    {"label":"select","inputs":["pepsi"],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"vend","inputs":[],"outputs":["pepsi"]}
+]
+,[
+    {"label":"select","inputs":["pepsi"],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"vend","inputs":[],"outputs":["pepsi"]}
+]
+,[
+    {"label":"select","inputs":["pepsi"],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"vend","inputs":[],"outputs":["pepsi"]}
+]
+,[
+    {"label":"select","inputs":["pepsi"],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"vend","inputs":[],"outputs":["pepsi"]}
+]
+,[
+    {"label":"select","inputs":["fanta"],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"vend","inputs":[],"outputs":["fanta"]}
+]
+,[
+    {"label":"select","inputs":["beer"],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"vend","inputs":[],"outputs":["beer"]}
+]
+,[
+    {"label":"select","inputs":["beer"],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"coin","inputs":[],"outputs":[]}
+    ,{"label":"vend","inputs":[],"outputs":["beer"]}
+]
+]

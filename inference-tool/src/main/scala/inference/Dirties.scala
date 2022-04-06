@@ -276,8 +276,8 @@ object Dirties {
 
     val r_index = TypeConversion.toInt(r)
     val ioPairs = (train.map {
-      case (inputs, (aregs, pregs)) => pregs(r) match {
-        case None => throw new IllegalStateException(f"Got None from registers\n$pregs")
+      case (inputs, (aregs, pregs)) => pregs.getOrElse(r, None) match {
+        case None => return None //throw new IllegalStateException(f"Got None when trying to access r${PrettyPrinter.show(r)} from registers\n$pregs")
         case Some(v) => (inputs, (aregs, v))
         // case Some(v) => (inputs, (aregs.filterKeys(_ == r), v))
       }
@@ -514,10 +514,15 @@ object Dirties {
     val solver = ctx.mkSimpleSolver()
 
     solver.fromString(z3String)
-    solver.check()
+    // Return an empty map if unsatisfiable
+    // NB. unsatisfiable occurs if dividing by zero
+    if (solver.check() != z3.Status.SATISFIABLE) {
+      return Map().withDefaultValue(None)
+    }
+
     val model: z3.Model = solver.getModel
 
-    var regs: Map[Nat.nat, Option[Value.value]] = scala.collection.immutable.Map()
+    var regs: Map[Nat.nat, Option[Value.value]] = scala.collection.immutable.Map().withDefaultValue(None)
     for (f <- model.getConstDecls) {
       val constInterp = model.getConstInterp(f)
       regs = regs + (Nat.Nata(BigInt(f.getName.toString.substring(1).toLong)) -> Some(TypeConversion.toValue(model.getConstInterp(f))))

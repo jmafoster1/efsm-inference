@@ -61,6 +61,8 @@ def rmsd(errors: [float]) -> float:
 
 
 def is_null(value):
+    if isinstance(value, str):
+        return value is None
     return value is None or value is pd.NA or np.isnan(value)
 
 

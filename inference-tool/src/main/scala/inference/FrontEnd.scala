@@ -19,13 +19,17 @@ object FrontEnd {
     Log.root.info(s"Building PTA - ${Config.config.train.length} ${if (Config.config.train.length == 1) "trace" else "traces"}")
 
     var pta: IEFSM = Inference.make_pta(Config.config.train)
+    PrettyPrinter.iEFSM2dot(pta, s"pta_gen")
     if (!EFSM.accepts_log(Set.seta[List[(String, (List[Value.value], List[Value.value]))]](Config.config.train), Inference.tm(pta))) {
       Log.root.error("PTA must accept the log.")
       System.exit(1)
     }
-
-    PrettyPrinter.iEFSM2dot(pta, s"pta_gen")
+    if (Inference.nondeterministic(pta, Inference.nondeterministic_pairs)) {
+      Log.root.error("PTA must be deterministic.")
+      System.exit(1)
+    }
     PrettyPrinter.test_model(pta, "ptaLog")
+
 
     Config.numStates = Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(pta)))
     Config.ptaNumStates = Config.numStates
@@ -38,7 +42,6 @@ object FrontEnd {
       PrettyPrinter.EFSM2dot(Inference.tm(resolved_pta), "resolved")
       if (FSet.equal_fseta(pta, resolved_pta)) {
         Log.root.info("Defaulting back to original PTA")
-        System.exit(1)
       }
       else {
         pta = resolved_pta
