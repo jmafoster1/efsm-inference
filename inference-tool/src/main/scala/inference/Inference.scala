@@ -5215,6 +5215,148 @@ def group_by[A](f: A => A => Boolean, x1: List[A]): List[List[A]] = (f, x1)
 
 } /* object Group_By */
 
+object SelectionStrategies {
+
+def leaves(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
+            e: FSet.fset[(List[Nat.nat],
+                           ((Nat.nat, Nat.nat),
+                             Transition.transition_ext[Unit]))]):
+      Nat.nat
+  =
+  {
+    val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t1ID)
+    val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t2ID);
+    (if ((Transition.Label[Unit](t1) ==
+           Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
+                    Transition.Arity[Unit](t2))) && (Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](t1)).par.length),
+                             Nat.Nata((Transition.Outputs[Unit](t2)).par.length)))))
+      Nat.plus_nata(Inference.origin(t1ID, e), Inference.origin(t2ID, e))
+      else Nat.zero_nata)
+  }
+
+def naive_score(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
+                 e: FSet.fset[(List[Nat.nat],
+                                ((Nat.nat, Nat.nat),
+                                  Transition.transition_ext[Unit]))]):
+      Nat.nat
+  =
+  {
+    val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t1ID)
+    val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t2ID);
+    Inference.bool2nat((Transition.Label[Unit](t1) ==
+                         Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
+                                  Transition.Arity[Unit](t2))) && (Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](t1)).par.length),
+   Nat.Nata((Transition.Outputs[Unit](t2)).par.length)))))
+  }
+
+def exactly_equal(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
+                   e: FSet.fset[(List[Nat.nat],
+                                  ((Nat.nat, Nat.nat),
+                                    Transition.transition_ext[Unit]))]):
+      Nat.nat
+  =
+  Inference.bool2nat(Transition.equal_transition_exta[Unit](Inference.get_by_ids(e,
+  t1ID),
+                     Inference.get_by_ids(e, t2ID)))
+
+def naive_score_outputs(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
+                         e: FSet.fset[(List[Nat.nat],
+((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
+      Nat.nat
+  =
+  {
+    val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t1ID)
+    val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t2ID);
+    Nat.plus_nata(Nat.plus_nata(Inference.bool2nat(Transition.Label[Unit](t1) ==
+             Transition.Label[Unit](t2)),
+                                 Inference.bool2nat(Nat.equal_nata(Transition.Arity[Unit](t1),
+                            Transition.Arity[Unit](t2)))),
+                   Inference.bool2nat(Lista.equal_lista[AExp.aexp[VName.vname]](Transition.Outputs[Unit](t1),
+ Transition.Outputs[Unit](t2))))
+  }
+
+def naive_score_eq_bonus(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
+                          e: FSet.fset[(List[Nat.nat],
+ ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
+      Nat.nat
+  =
+  {
+    val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t1ID)
+    val a: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t2ID);
+    Inference.score_transitions(t1, a)
+  }
+
+def naive_score_comprehensive(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
+                               e: FSet.fset[(List[Nat.nat],
+      ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
+      Nat.nat
+  =
+  {
+    val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t1ID)
+    val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t2ID);
+    (if ((Transition.Label[Unit](t1) ==
+           Transition.Label[Unit](t2)) && (Nat.equal_nata(Transition.Arity[Unit](t1),
+                   Transition.Arity[Unit](t2))))
+      (if (Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](t1)).par.length),
+                           Nat.Nata((Transition.Outputs[Unit](t2)).par.length)))
+        Nat.plus_nata(Finite_Set.card[GExp.gexp[VName.vname]](Set.inf_set[GExp.gexp[VName.vname]](Set.seta[GExp.gexp[VName.vname]](Transition.Guards[Unit](t1)),
+                   Set.seta[GExp.gexp[VName.vname]](Transition.Guards[Unit](t2)))),
+                       Nat.Nata((Lista.filter[(AExp.aexp[VName.vname],
+        AExp.aexp[VName.vname])](((a: (AExp.aexp[VName.vname],
+AExp.aexp[VName.vname]))
+                                    =>
+                                   {
+                                     val (aa, b):
+   (AExp.aexp[VName.vname], AExp.aexp[VName.vname])
+                                       = a;
+                                     AExp.equal_aexpa[VName.vname](aa, b)
+                                   }),
+                                  (Transition.Outputs[Unit](t1)).par.zip(Transition.Outputs[Unit](t2)).toList)).par.length))
+        else Nat.zero_nata)
+      else Nat.zero_nata)
+  }
+
+def naive_score_comprehensive_eq_high(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
+                                       e:
+ FSet.fset[(List[Nat.nat],
+             ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
+      Nat.nat
+  =
+  {
+    val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t1ID)
+    val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t2ID);
+    (if (Transition.equal_transition_exta[Unit](t1, t2))
+      Code_Numeral.nat_of_integer(BigInt(100))
+      else (if ((Transition.Label[Unit](t1) ==
+                  Transition.Label[Unit](t2)) && (Nat.equal_nata(Transition.Arity[Unit](t1),
+                          Transition.Arity[Unit](t2))))
+             (if (Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](t1)).par.length),
+                                  Nat.Nata((Transition.Outputs[Unit](t2)).par.length)))
+               Nat.plus_nata(Finite_Set.card[GExp.gexp[VName.vname]](Set.inf_set[GExp.gexp[VName.vname]](Set.seta[GExp.gexp[VName.vname]](Transition.Guards[Unit](t1)),
+                          Set.seta[GExp.gexp[VName.vname]](Transition.Guards[Unit](t2)))),
+                              Nat.Nata((Lista.filter[(AExp.aexp[VName.vname],
+               AExp.aexp[VName.vname])](((a:
+    (AExp.aexp[VName.vname], AExp.aexp[VName.vname]))
+   =>
+  {
+    val (aa, b): (AExp.aexp[VName.vname], AExp.aexp[VName.vname]) = a;
+    AExp.equal_aexpa[VName.vname](aa, b)
+  }),
+ (Transition.Outputs[Unit](t1)).par.zip(Transition.Outputs[Unit](t2)).toList)).par.length))
+               else Nat.zero_nata)
+             else Nat.zero_nata))
+  }
+
+} /* object SelectionStrategies */
+
+object Basic_BNF_LFPs {
+
+def size_prod[A, B](x0: (A, B)): Nat.nat = x0 match {
+  case (x1, x2) => Nat.Suc(Nat.zero_nata)
+}
+
+} /* object Basic_BNF_LFPs */
+
 object Blue_Fringe {
 
 abstract sealed class colour
@@ -5484,7 +5626,7 @@ List[Nat.nat]))
       = FSet_Utils.fprod[(Nat.nat, FSet.fset[List[Nat.nat]]),
                           (Nat.nat, FSet.fset[List[Nat.nat]])](red, blue);
     FSet.ffilter[Inference.score_ext[Unit]](((s: Inference.score_ext[Unit]) =>
-      Nat.less_nat(Nat.zero_nata, Inference.Score[Unit](s))),
+      ! (Nat.equal_nata(Inference.Score[Unit](s), Nat.zero_nata))),
      FSet.fimage[((Nat.nat, FSet.fset[List[Nat.nat]]),
                    (Nat.nat, FSet.fset[List[Nat.nat]])),
                   Inference.score_ext[Unit]](((a:
@@ -5673,6 +5815,50 @@ Transition.transition_ext[Unit])]) =>
  (scala.collection.immutable.Map().withDefaultValue(White())) + (Nat.zero_nata -> (Red())));
     infer(colours, pta, r, m, check, np)
   }
+
+def score_merge_size(rt: List[Nat.nat], bt: List[Nat.nat],
+                      e: FSet.fset[(List[Nat.nat],
+                                     ((Nat.nat, Nat.nat),
+                                       Transition.transition_ext[Unit]))]):
+      Nat.nat
+  =
+  (if (Nat.equal_nata(SelectionStrategies.naive_score(rt, bt, e),
+                       Nat.zero_nata))
+    Nat.zero_nata
+    else Nat.minus_nat(FSet.size_fset[(List[Nat.nat],
+((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))](e),
+                        Basic_BNF_LFPs.size_prod[Option[FSet.fset[(List[Nat.nat],
+                            ((Nat.nat, Nat.nat),
+                              Transition.transition_ext[Unit]))]],
+          Set.set[(Nat.nat,
+                    Nat.nat)]](Inference.merge(Set.bot_set[(Nat.nat, Nat.nat)],
+        e, Inference.origin(rt, e), Inference.origin(bt, e),
+        ((_: List[Nat.nat]) => (_: List[Nat.nat]) => (_: Nat.nat) =>
+          (_: FSet.fset[(List[Nat.nat],
+                          ((Nat.nat, Nat.nat),
+                            Transition.transition_ext[Unit]))])
+            =>
+          (_: FSet.fset[(List[Nat.nat],
+                          ((Nat.nat, Nat.nat),
+                            Transition.transition_ext[Unit]))])
+            =>
+          (_: FSet.fset[(List[Nat.nat],
+                          ((Nat.nat, Nat.nat),
+                            Transition.transition_ext[Unit]))])
+            =>
+          (_: (FSet.fset[((Nat.nat, Nat.nat),
+                           Transition.transition_ext[Unit])]) =>
+                Boolean)
+            =>
+          None),
+        ((_: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])])
+           =>
+          true),
+        ((a: FSet.fset[(List[Nat.nat],
+                         ((Nat.nat, Nat.nat),
+                           Transition.transition_ext[Unit]))])
+           =>
+          Inference.nondeterministic_pairs(a))))))
 
 } /* object Blue_Fringe */
 
@@ -9446,140 +9632,6 @@ Transition.transition_ext[Unit]))]) =>
   drop_all_guards(pta, pta, log, m, np)
 
 } /* object PTA_Generalisation */
-
-object SelectionStrategies {
-
-def leaves(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
-            e: FSet.fset[(List[Nat.nat],
-                           ((Nat.nat, Nat.nat),
-                             Transition.transition_ext[Unit]))]):
-      Nat.nat
-  =
-  {
-    val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t1ID)
-    val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t2ID);
-    (if ((Transition.Label[Unit](t1) ==
-           Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
-                    Transition.Arity[Unit](t2))) && (Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](t1)).par.length),
-                             Nat.Nata((Transition.Outputs[Unit](t2)).par.length)))))
-      Nat.plus_nata(Inference.origin(t1ID, e), Inference.origin(t2ID, e))
-      else Nat.zero_nata)
-  }
-
-def naive_score(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
-                 e: FSet.fset[(List[Nat.nat],
-                                ((Nat.nat, Nat.nat),
-                                  Transition.transition_ext[Unit]))]):
-      Nat.nat
-  =
-  {
-    val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t1ID)
-    val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t2ID);
-    Inference.bool2nat((Transition.Label[Unit](t1) ==
-                         Transition.Label[Unit](t2)) && ((Nat.equal_nata(Transition.Arity[Unit](t1),
-                                  Transition.Arity[Unit](t2))) && (Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](t1)).par.length),
-   Nat.Nata((Transition.Outputs[Unit](t2)).par.length)))))
-  }
-
-def exactly_equal(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
-                   e: FSet.fset[(List[Nat.nat],
-                                  ((Nat.nat, Nat.nat),
-                                    Transition.transition_ext[Unit]))]):
-      Nat.nat
-  =
-  Inference.bool2nat(Transition.equal_transition_exta[Unit](Inference.get_by_ids(e,
-  t1ID),
-                     Inference.get_by_ids(e, t2ID)))
-
-def naive_score_outputs(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
-                         e: FSet.fset[(List[Nat.nat],
-((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
-      Nat.nat
-  =
-  {
-    val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t1ID)
-    val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t2ID);
-    Nat.plus_nata(Nat.plus_nata(Inference.bool2nat(Transition.Label[Unit](t1) ==
-             Transition.Label[Unit](t2)),
-                                 Inference.bool2nat(Nat.equal_nata(Transition.Arity[Unit](t1),
-                            Transition.Arity[Unit](t2)))),
-                   Inference.bool2nat(Lista.equal_lista[AExp.aexp[VName.vname]](Transition.Outputs[Unit](t1),
- Transition.Outputs[Unit](t2))))
-  }
-
-def naive_score_eq_bonus(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
-                          e: FSet.fset[(List[Nat.nat],
- ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
-      Nat.nat
-  =
-  {
-    val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t1ID)
-    val a: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t2ID);
-    Inference.score_transitions(t1, a)
-  }
-
-def naive_score_comprehensive(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
-                               e: FSet.fset[(List[Nat.nat],
-      ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
-      Nat.nat
-  =
-  {
-    val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t1ID)
-    val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t2ID);
-    (if ((Transition.Label[Unit](t1) ==
-           Transition.Label[Unit](t2)) && (Nat.equal_nata(Transition.Arity[Unit](t1),
-                   Transition.Arity[Unit](t2))))
-      (if (Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](t1)).par.length),
-                           Nat.Nata((Transition.Outputs[Unit](t2)).par.length)))
-        Nat.plus_nata(Finite_Set.card[GExp.gexp[VName.vname]](Set.inf_set[GExp.gexp[VName.vname]](Set.seta[GExp.gexp[VName.vname]](Transition.Guards[Unit](t1)),
-                   Set.seta[GExp.gexp[VName.vname]](Transition.Guards[Unit](t2)))),
-                       Nat.Nata((Lista.filter[(AExp.aexp[VName.vname],
-        AExp.aexp[VName.vname])](((a: (AExp.aexp[VName.vname],
-AExp.aexp[VName.vname]))
-                                    =>
-                                   {
-                                     val (aa, b):
-   (AExp.aexp[VName.vname], AExp.aexp[VName.vname])
-                                       = a;
-                                     AExp.equal_aexpa[VName.vname](aa, b)
-                                   }),
-                                  (Transition.Outputs[Unit](t1)).par.zip(Transition.Outputs[Unit](t2)).toList)).par.length))
-        else Nat.zero_nata)
-      else Nat.zero_nata)
-  }
-
-def naive_score_comprehensive_eq_high(t1ID: List[Nat.nat], t2ID: List[Nat.nat],
-                                       e:
- FSet.fset[(List[Nat.nat],
-             ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]):
-      Nat.nat
-  =
-  {
-    val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t1ID)
-    val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(e, t2ID);
-    (if (Transition.equal_transition_exta[Unit](t1, t2))
-      Code_Numeral.nat_of_integer(BigInt(100))
-      else (if ((Transition.Label[Unit](t1) ==
-                  Transition.Label[Unit](t2)) && (Nat.equal_nata(Transition.Arity[Unit](t1),
-                          Transition.Arity[Unit](t2))))
-             (if (Nat.equal_nata(Nat.Nata((Transition.Outputs[Unit](t1)).par.length),
-                                  Nat.Nata((Transition.Outputs[Unit](t2)).par.length)))
-               Nat.plus_nata(Finite_Set.card[GExp.gexp[VName.vname]](Set.inf_set[GExp.gexp[VName.vname]](Set.seta[GExp.gexp[VName.vname]](Transition.Guards[Unit](t1)),
-                          Set.seta[GExp.gexp[VName.vname]](Transition.Guards[Unit](t2)))),
-                              Nat.Nata((Lista.filter[(AExp.aexp[VName.vname],
-               AExp.aexp[VName.vname])](((a:
-    (AExp.aexp[VName.vname], AExp.aexp[VName.vname]))
-   =>
-  {
-    val (aa, b): (AExp.aexp[VName.vname], AExp.aexp[VName.vname]) = a;
-    AExp.equal_aexpa[VName.vname](aa, b)
-  }),
- (Transition.Outputs[Unit](t1)).par.zip(Transition.Outputs[Unit](t2)).toList)).par.length))
-               else Nat.zero_nata)
-             else Nat.zero_nata))
-  }
-
-} /* object SelectionStrategies */
 
 object Distinguishing_Guards {
 

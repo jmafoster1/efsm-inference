@@ -1,5 +1,5 @@
 theory Blue_Fringe
-imports Inference EFSM_Dot
+imports Inference EFSM_Dot SelectionStrategies
 begin
 
 datatype colour = Red | Blue | White
@@ -12,6 +12,10 @@ fun show_colour :: "colour \<Rightarrow> String.literal" where
 definition score_state_pair :: "tids fset \<Rightarrow> tids fset \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> nat" where
   "score_state_pair tids tids' e strat = fSum (fimage (\<lambda>(t, t'). strat t t' e) (tids |\<times>| tids'))"
 
+definition score_merge_size :: strategy where
+  "score_merge_size rt bt e = (if naive_score rt bt e = 0 then 0 else size e - (size (merge {} e (origin rt e) (origin bt e) (\<lambda> _ _ _ _ _ _ _. None) (\<lambda>_. True) nondeterministic_pairs)))"
+
+(*function resolve_nondeterminism :: "(cfstate \<times> cfstate) set \<Rightarrow> nondeterministic_pair list \<Rightarrow> iEFSM \<Rightarrow> iEFSM \<Rightarrow> update_modifier \<Rightarrow> (transition_matrix \<Rightarrow> bool) \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> (iEFSM option \<times> (cfstate \<times> cfstate) set)" where*)
 definition score :: "(cfstate \<Rightarrow>f colour) \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
   "score f e strat = (
     let
@@ -20,7 +24,7 @@ definition score :: "(cfstate \<Rightarrow>f colour) \<Rightarrow> iEFSM \<Right
       blue = ffilter (\<lambda>(s, _). f $ s = Blue) states_transitions;
       pairs = red |\<times>| blue
     in
-      ffilter (\<lambda>s. Score s > 0) (fimage (\<lambda>((rs, rt), (bs, bt)). \<lparr>Score=score_state_pair rt bt e strat, S1=rs, S2=bs\<rparr>) pairs)
+      ffilter (\<lambda>s. Score s \<noteq> 0) (fimage (\<lambda>((rs, rt), (bs, bt)). \<lparr>Score=score_state_pair rt bt e strat, S1=rs, S2=bs\<rparr>) pairs)
   )"
 
 definition update_red_blue :: "(cfstate \<times> cfstate) set \<Rightarrow> score fset \<Rightarrow> (cfstate \<Rightarrow>f colour) \<Rightarrow> (cfstate \<Rightarrow>f colour)" where

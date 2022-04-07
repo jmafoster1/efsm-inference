@@ -18,7 +18,7 @@ object Nondeterminisms extends Enumeration {
 
 object Strategies extends Enumeration {
   type Strategy = Value
-  val naive, naive_eq_bonus, rank, comprehensive, comprehensiveEQ, eq = Value
+  val naive, naive_eq_bonus, rank, comprehensive, comprehensiveEQ, eq, blueFringe = Value
 }
 
 object Preprocessors extends Enumeration {
@@ -67,13 +67,14 @@ object Config {
       _.toLowerCase match {
         case "eq" => (SelectionStrategies.exactly_equal _).curried
         case "naive" => (SelectionStrategies.naive_score _).curried
+        case "bluefringe" => (Blue_Fringe.score_merge_size _).curried
         case "naive_eq_bonus" => (SelectionStrategies.naive_score_eq_bonus _).curried
         case "rank" => (SelectionStrategies.naive_score_outputs _).curried
         case "comprehensive" => (SelectionStrategies.naive_score_comprehensive _).curried
         case "comprehensiveeq" => (SelectionStrategies.naive_score_comprehensive_eq_high _).curried
         case "leaves" => (SelectionStrategies.leaves _).curried
         case s =>
-          throw new IllegalArgumentException(s"'${s}' is not a valid strategy ${Nondeterminisms.values}")
+          throw new IllegalArgumentException(s"'${s}' is not a valid strategy ${Strategies.values}")
       }
     }
   implicit val levelRead: scopt.Read[Level] =
