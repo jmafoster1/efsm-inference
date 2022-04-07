@@ -21,6 +21,10 @@ object PrettyPrinter {
     show(id)+show(t)
   }
 
+  def show(s: Inference.score_ext[Unit]): String = {
+    f"(${Inference.S1(s)}, ${Inference.S2(s)}) -> ${Inference.Score(s)}"
+  }
+
   def show(v: Value.value): String =
     v match {
       case Value.Inta(Int.int_of_integer(n)) => n.toString
@@ -141,6 +145,14 @@ object PrettyPrinter {
       pw.close
     }
     case None => println("IEFSM was none!")
+  }
+
+  def show(c: Blue_Fringe.colour) = Blue_Fringe.show_colour(c)
+
+  def iefsm2dot_red_blue(e: IEFSM, fun: Map[Nat.nat, Blue_Fringe.colour], f: String) = {
+    val pw = new PrintWriter(new File(f"${Config.config.dotfiles}/${f}.dot"))
+    pw.write(Blue_Fringe.iefsm2dot_red_blue(e, fun))
+    pw.close
   }
 
   def iEFSM2dot(e: IEFSM, f: String) = {
