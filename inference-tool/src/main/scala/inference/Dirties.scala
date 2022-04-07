@@ -1,5 +1,4 @@
 import com.microsoft.z3
-import exceptions._
 import java.io._
 import scala.io.Source
 import scala.util.Random

@@ -5217,12 +5217,12 @@ def group_by[A](f: A => A => Boolean, x1: List[A]): List[List[A]] = (f, x1)
 
 object Blue_Fringe {
 
-abstract sealed class color
-final case class Red() extends color
-final case class Blue() extends color
-final case class White() extends color
+abstract sealed class colour
+final case class Red() extends colour
+final case class Blue() extends colour
+final case class White() extends colour
 
-def equal_color(x0: color, x1: color): Boolean = (x0, x1) match {
+def equal_colour(x0: colour, x1: colour): Boolean = (x0, x1) match {
   case (Blue(), White()) => false
   case (White(), Blue()) => false
   case (Red(), White()) => false
@@ -5234,29 +5234,112 @@ def equal_color(x0: color, x1: color): Boolean = (x0, x1) match {
   case (Red(), Red()) => true
 }
 
-def update_red_blue(failed_merges: Set.set[(Nat.nat, Nat.nat)],
-                     scores: FSet.fset[Inference.score_ext[Unit]],
-                     f: Map[Nat.nat, color]):
-      Map[Nat.nat, color]
-  =
-  Lista.fold[(Nat.nat, Nat.nat),
-              Map[Nat.nat, color]](((a: (Nat.nat, Nat.nat)) =>
-                                     {
-                                       val (_, blue): (Nat.nat, Nat.nat) = a;
-                                       ((acc: Map[Nat.nat, color]) =>
- (if (FSet.fBex[Inference.score_ext[Unit]](scores,
-    ((s: Inference.score_ext[Unit]) =>
-      (Nat.equal_nata(Inference.S2[Unit](s),
-                       blue)) && ((equal_color(acc(Inference.S1[Unit](s)),
-        Red())) && (equal_color(acc(Inference.S2[Unit](s)), Blue()))))))
-   acc else acc + (blue -> (Blue()))))
-                                     }),
-                                    Lista.sorted_list_of_set[(Nat.nat,
-                       Nat.nat)](failed_merges),
-                                    f)
+def show_colour(x0: colour): String = x0 match {
+  case Red() => "red"
+  case Blue() => "royalblue"
+  case White() => "white"
+}
 
-def inference_step(f: Map[Nat.nat, color],
-                    closed_merges: Set.set[(Nat.nat, Nat.nat)],
+def iefsm2dot_red_blue(e: FSet.fset[(List[Nat.nat],
+                                      ((Nat.nat, Nat.nat),
+Transition.transition_ext[Unit]))],
+                        f: Map[Nat.nat, colour]):
+      String
+  =
+  "digraph EFSM{" + "\u000A" + "  graph [rankdir=" + "\"" + "LR" + "\"" +
+    ", fontname=" +
+    "\"" +
+    "Latin Modern Math" +
+    "\"" +
+    "];" +
+    "\u000A" +
+    "  node [color=" +
+    "\"" +
+    "black" +
+    "\"" +
+    ", fillcolor=" +
+    "\"" +
+    "white" +
+    "\"" +
+    ", shape=" +
+    "\"" +
+    "circle" +
+    "\"" +
+    ", style=" +
+    "\"" +
+    "filled" +
+    "\"" +
+    ", fontname=" +
+    "\"" +
+    "Latin Modern Math" +
+    "\"" +
+    "];" +
+    "\u000A" +
+    "  edge [fontname=" +
+    "\"" +
+    "Latin Modern Math" +
+    "\"" +
+    "];" +
+    "\u000A" +
+    "\u000A" +
+    "  s0[fillcolor=" +
+    "\"" +
+    show_colour(f(Nat.zero_nata)) +
+    "\"" +
+    ", label=<s<sub>0</sub>>];" +
+    "\u000A" +
+    (Lista.map[Nat.nat,
+                String](((s: Nat.nat) =>
+                          "  s" + Code_Numeral.integer_of_nat(s).toString() +
+                            "[fillcolor=" +
+                            "\"" +
+                            show_colour(f(s)) +
+                            "\"" +
+                            "label=<s<sub>" +
+                            Code_Numeral.integer_of_nat(s).toString() +
+                            "</sub>>];"),
+                         FSet.sorted_list_of_fset[Nat.nat](FSet_Utils.fremove[Nat.nat](Nat.zero_nata,
+        Inference.S(e))))).mkString("\u000A") +
+    "\u000A" +
+    "\u000A" +
+    (Lista.map[(List[Nat.nat],
+                 ((Nat.nat, Nat.nat), Transition.transition_ext[Unit])),
+                String](((a: (List[Nat.nat],
+                               ((Nat.nat, Nat.nat),
+                                 Transition.transition_ext[Unit])))
+                           =>
+                          {
+                            val (uid, aa):
+                                  (List[Nat.nat],
+                                    ((Nat.nat, Nat.nat),
+                                      Transition.transition_ext[Unit]))
+                              = a
+                            val (ab, b):
+                                  ((Nat.nat, Nat.nat),
+                                    Transition.transition_ext[Unit])
+                              = aa;
+                            ({
+                               val (from, to): (Nat.nat, Nat.nat) = ab;
+                               ((t: Transition.transition_ext[Unit]) =>
+                                 "  s" +
+                                   Code_Numeral.integer_of_nat(from).toString() +
+                                   "->s" +
+                                   Code_Numeral.integer_of_nat(to).toString() +
+                                   "[label=<<i> [" +
+                                   EFSM_Dot.show_nats(Lista.sort_key[Nat.nat,
+                              Nat.nat](((x: Nat.nat) => x), uid)) +
+                                   "]" +
+                                   EFSM_Dot.transition2dot(t) +
+                                   "</i>>];")
+                             })(b)
+                          }),
+                         FSet.sorted_list_of_fset[(List[Nat.nat],
+            ((Nat.nat, Nat.nat),
+              Transition.transition_ext[Unit]))](e))).mkString("\u000A") +
+    "\u000A" +
+    "}"
+
+def inference_step(f: Map[Nat.nat, colour],
                     e: FSet.fset[(List[Nat.nat],
                                    ((Nat.nat, Nat.nat),
                                      Transition.transition_ext[Unit]))],
@@ -5286,34 +5369,38 @@ def inference_step(f: Map[Nat.nat, color],
                                       ((Nat.nat, Nat.nat),
 ((Transition.transition_ext[Unit], List[Nat.nat]),
   (Transition.transition_ext[Unit], List[Nat.nat]))))]):
-      (FSet.fset[(List[Nat.nat],
-                   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-        Map[Nat.nat, color])
+      FSet.fset[(List[Nat.nat],
+                  ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
   =
   (if (FSet.equal_fseta[Inference.score_ext[Unit]](scores,
             FSet.bot_fset[Inference.score_ext[Unit]]))
-    (e, update_red_blue(closed_merges, scores, f))
-    else {
-           val h: Inference.score_ext[Unit] =
-             FSet.fMin[Inference.score_ext[Unit]](scores)
-           val t: FSet.fset[Inference.score_ext[Unit]] =
-             FSet_Utils.fremove[Inference.score_ext[Unit]](h, scores);
-           (Inference.merge(Set.bot_set[(Nat.nat, Nat.nat)], e,
-                             Inference.S1[Unit](h), Inference.S2[Unit](h), m,
-                             check, np)
-              match {
-              case (None, _) =>
-                inference_step(update_red_blue(closed_merges, scores, f),
-                                Set.insert[(Nat.nat,
-     Nat.nat)]((Inference.S1[Unit](h), Inference.S2[Unit](h)), closed_merges),
-                                e, t, m, check, np)
-              case (Some(newa), _) =>
-                inference_step(update_red_blue(closed_merges, scores, f),
-                                Set.insert[(Nat.nat,
-     Nat.nat)]((Inference.S1[Unit](h), Inference.S2[Unit](h)), closed_merges),
-                                newa, t, m, check, np)
-            })
-         })
+    e else {
+             val scoresa: FSet.fset[Inference.score_ext[Unit]] =
+               FSet.ffilter[Inference.score_ext[Unit]](((s:
+                   Inference.score_ext[Unit])
+                  =>
+                 (FSet.fmember[Nat.nat](Inference.S1[Unit](s),
+ Inference.S(e))) && (FSet.fmember[Nat.nat](Inference.S2[Unit](s),
+     Inference.S(e)))),
+                scores);
+             (if (FSet.equal_fseta[Inference.score_ext[Unit]](scoresa,
+                       FSet.bot_fset[Inference.score_ext[Unit]]))
+               e else {
+                        val h: Inference.score_ext[Unit] =
+                          FSet.fMin[Inference.score_ext[Unit]](scoresa)
+                        val t: FSet.fset[Inference.score_ext[Unit]] =
+                          FSet_Utils.fremove[Inference.score_ext[Unit]](h,
+                                 scoresa);
+                        (Inference.merge(Set.bot_set[(Nat.nat, Nat.nat)], e,
+  Inference.S1[Unit](h), Inference.S2[Unit](h), m, check, np)
+                           match {
+                           case (None, _) =>
+                             inference_step(f, e, t, m, check, np)
+                           case (Some(newa), _) =>
+                             inference_step(f, newa, t, m, check, np)
+                         })
+                      })
+           })
 
 def score_state_pair(tidsa: FSet.fset[List[Nat.nat]],
                       tids: FSet.fset[List[Nat.nat]],
@@ -5336,7 +5423,7 @@ Nat.nat](((a: (List[Nat.nat], List[Nat.nat])) =>
            }),
           FSet_Utils.fprod[List[Nat.nat], List[Nat.nat]](tidsa, tids)))
 
-def score(f: Map[Nat.nat, color],
+def score(f: Map[Nat.nat, colour],
            e: FSet.fset[(List[Nat.nat],
                           ((Nat.nat, Nat.nat),
                             Transition.transition_ext[Unit]))],
@@ -5378,7 +5465,7 @@ List[Nat.nat]))
            =>
           {
             val (s, _): (Nat.nat, FSet.fset[List[Nat.nat]]) = a;
-            equal_color(f(s), Red())
+            equal_colour(f(s), Red())
           }),
          states_transitions)
     val blue: FSet.fset[(Nat.nat, FSet.fset[List[Nat.nat]])] =
@@ -5388,38 +5475,41 @@ List[Nat.nat]))
            =>
           {
             val (s, _): (Nat.nat, FSet.fset[List[Nat.nat]]) = a;
-            equal_color(f(s), Blue())
+            equal_colour(f(s), Blue())
           }),
          states_transitions)
-    val a: FSet.fset[((Nat.nat, FSet.fset[List[Nat.nat]]),
-                       (Nat.nat, FSet.fset[List[Nat.nat]]))]
+    val pairs:
+          FSet.fset[((Nat.nat, FSet.fset[List[Nat.nat]]),
+                      (Nat.nat, FSet.fset[List[Nat.nat]]))]
       = FSet_Utils.fprod[(Nat.nat, FSet.fset[List[Nat.nat]]),
                           (Nat.nat, FSet.fset[List[Nat.nat]])](red, blue);
-    FSet.fimage[((Nat.nat, FSet.fset[List[Nat.nat]]),
-                  (Nat.nat, FSet.fset[List[Nat.nat]])),
-                 Inference.score_ext[Unit]](((aa:
-        ((Nat.nat, FSet.fset[List[Nat.nat]]),
-          (Nat.nat, FSet.fset[List[Nat.nat]])))
-       =>
-      {
-        val (ab, b):
-              ((Nat.nat, FSet.fset[List[Nat.nat]]),
-                (Nat.nat, FSet.fset[List[Nat.nat]]))
-          = aa;
-        ({
-           val (rs, rt): (Nat.nat, FSet.fset[List[Nat.nat]]) = ab;
-           ((ac: (Nat.nat, FSet.fset[List[Nat.nat]])) =>
-             {
-               val (bs, bt): (Nat.nat, FSet.fset[List[Nat.nat]]) = ac;
-               Inference.score_exta[Unit](score_state_pair(rt, bt, e, strat),
-   rs, bs, ())
-             })
-         })(b)
-      }),
-     a)
+    FSet.ffilter[Inference.score_ext[Unit]](((s: Inference.score_ext[Unit]) =>
+      Nat.less_nat(Nat.zero_nata, Inference.Score[Unit](s))),
+     FSet.fimage[((Nat.nat, FSet.fset[List[Nat.nat]]),
+                   (Nat.nat, FSet.fset[List[Nat.nat]])),
+                  Inference.score_ext[Unit]](((a:
+         ((Nat.nat, FSet.fset[List[Nat.nat]]),
+           (Nat.nat, FSet.fset[List[Nat.nat]])))
+        =>
+       {
+         val (aa, b):
+               ((Nat.nat, FSet.fset[List[Nat.nat]]),
+                 (Nat.nat, FSet.fset[List[Nat.nat]]))
+           = a;
+         ({
+            val (rs, rt): (Nat.nat, FSet.fset[List[Nat.nat]]) = aa;
+            ((ab: (Nat.nat, FSet.fset[List[Nat.nat]])) =>
+              {
+                val (bs, bt): (Nat.nat, FSet.fset[List[Nat.nat]]) = ab;
+                Inference.score_exta[Unit](score_state_pair(rt, bt, e, strat),
+    rs, bs, ())
+              })
+          })(b)
+       }),
+      pairs))
   }
 
-def infer(f: Map[Nat.nat, color],
+def infer(f: Map[Nat.nat, colour],
            e: FSet.fset[(List[Nat.nat],
                           ((Nat.nat, Nat.nat),
                             Transition.transition_ext[Unit]))],
@@ -5463,13 +5553,17 @@ Transition.transition_ext[Unit])]) =>
                   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
   =
   {
+    iefsm2dot_red_blue(e, f)
     val scores: FSet.fset[Inference.score_ext[Unit]] = score(f, e, r)
-    val (newa, updated_colours):
-          (FSet.fset[(List[Nat.nat],
-                       ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
-            Map[Nat.nat, color])
-      = inference_step(f, Set.bot_set[(Nat.nat, Nat.nat)], e, scores, m, check,
-                        np)
+    val newa: FSet.fset[(List[Nat.nat],
+                          ((Nat.nat, Nat.nat),
+                            Transition.transition_ext[Unit]))]
+      = inference_step(f, e, scores, m, check, np)
+    val all_red: Map[Nat.nat, colour] =
+      Lista.fold[Nat.nat,
+                  Map[Nat.nat, colour]](((c: Nat.nat) =>
+  (acc: Map[Nat.nat, colour]) => acc + (c -> (Red()))),
+ f.keySet.toList, f)
     val new_blue_states: FSet.fset[Nat.nat] =
       FSet.fimage[(Nat.nat, (Transition.transition_ext[Unit], List[Nat.nat])),
                    Nat.nat](((a: (Nat.nat,
@@ -5494,29 +5588,24 @@ Transition.transition_ext[Unit])]) =>
               FSet.sup_fset[(Nat.nat,
                               (Transition.transition_ext[Unit],
                                 List[Nat.nat]))](a, b)),
-             ((s: Nat.nat) =>
-               (if (equal_color(updated_colours(s), Blue()))
-                 Inference.outgoing_transitions(s, e)
-                 else FSet.bot_fset[(Nat.nat,
-                                      (Transition.transition_ext[Unit],
-List[Nat.nat]))]))),
-                                  updated_colours.keySet.toList,
+             ((s: Nat.nat) => Inference.outgoing_transitions(s, e))),
+                                  all_red.keySet.toList,
                                   FSet.bot_fset[(Nat.nat,
           (Transition.transition_ext[Unit], List[Nat.nat]))]))
-    val redblue: List[Nat.nat] = updated_colours.keySet.toList
-    val all_red: Map[Nat.nat, color] =
+    val new_blue_children: Map[Nat.nat, colour] =
       Lista.fold[Nat.nat,
-                  Map[Nat.nat, color]](((c: Nat.nat) =>
- (acc: Map[Nat.nat, color]) => acc + (c -> (Red()))),
-redblue, updated_colours);
-    Lista.fold[Nat.nat,
-                Map[Nat.nat, color]](((s: Nat.nat) =>
-                                       (acc: Map[Nat.nat, color]) =>
-                                       acc + (s -> (Blue()))),
-                                      FSet.sorted_list_of_fset[Nat.nat](new_blue_states),
-                                      all_red);
-    (if (FSet.less_fset[Nat.nat](Inference.S(newa), Inference.S(e)))
-      infer(f, newa, r, m, check, np) else e)
+                  Map[Nat.nat, colour]](((s: Nat.nat) =>
+  (acc: Map[Nat.nat, colour]) =>
+  (if (equal_colour(acc(s), White())) acc + (s -> (Blue())) else acc)),
+ FSet.sorted_list_of_fset[Nat.nat](new_blue_states), all_red);
+    Log.logBFStates(newa, new_blue_children, (FSet.size_fset[Nat.nat](Inference.S(e))));
+    (if (FSet.less_fset[Nat.nat](FSet.ffilter[Nat.nat](((s: Nat.nat) =>
+                 equal_colour(new_blue_children(s), White())),
+                Inference.S(newa)),
+                                  FSet.ffilter[Nat.nat](((s: Nat.nat) =>
+                  equal_colour(f(s), White())),
+                 Inference.S(e))))
+      infer(new_blue_children, newa, r, m, check, np) else e)
   }
 
 def learn(n: Nat.nat,
@@ -5576,12 +5665,12 @@ Transition.transition_ext[Unit])]) =>
                                =>
                               a._1),
                              Inference.outgoing_transitions(Nat.zero_nata, pta))
-    val colours: Map[Nat.nat, color] =
+    val colours: Map[Nat.nat, colour] =
       Lista.fold[Nat.nat,
-                  Map[Nat.nat, color]](((s: Nat.nat) =>
- (acc: Map[Nat.nat, color]) => acc + (s -> (Blue()))),
-FSet.sorted_list_of_fset[Nat.nat](blue_states),
-(scala.collection.immutable.Map().withDefaultValue(White())) + (Nat.zero_nata -> (Red())));
+                  Map[Nat.nat, colour]](((s: Nat.nat) =>
+  (acc: Map[Nat.nat, colour]) => acc + (s -> (Blue()))),
+ FSet.sorted_list_of_fset[Nat.nat](blue_states),
+ (scala.collection.immutable.Map().withDefaultValue(White())) + (Nat.zero_nata -> (Red())));
     infer(colours, pta, r, m, check, np)
   }
 

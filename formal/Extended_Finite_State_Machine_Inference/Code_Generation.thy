@@ -361,6 +361,7 @@ code_printing
   constant recognises_and_visits_both \<rightharpoonup> (Scala) "Dirties.recognisesAndGetsUsToBoth" |
   constant iEFSM2dot \<rightharpoonup> (Scala) "PrettyPrinter.iEFSM2dot(_, _)" |
   constant logStates \<rightharpoonup> (Scala) "Log.logStates(_, _)" |
+  constant Blue_Fringe.logStates \<rightharpoonup> (Scala) "Log.logBFStates(_, _, _)" |
   constant "dirty_directly_subsumes" \<rightharpoonup> (Scala) "Dirties.scalaDirectlySubsumes" |
   constant "GExp.satisfiable" \<rightharpoonup> (Scala) "Dirties.satisfiable" |
   constant "initially_undefined_context_check_full" \<rightharpoonup> (Scala) "Dirties.initiallyUndefinedContextCheck" |
