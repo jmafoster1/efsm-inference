@@ -72,18 +72,6 @@ definition iefsm2dot_red_blue :: "iEFSM \<Rightarrow> (cfstate \<Rightarrow>f co
                   (join ((map (\<lambda>(uid, (from, to), t). STR ''  s''+(show_nat from)+STR ''->s''+(show_nat to)+STR ''[label=<<i> [''+show_nats (sort uid)+STR '']''+(transition2dot t)+STR ''</i>>];'') (sorted_list_of_fset e))) newline)+newline+
                 STR ''}''"
 
-lemma infer_termination:
-  assumes "x = iefsm2dot_red_blue e f"
-and "xa = score f e r"
-and "xb = Blue_Fringe.inference_step f e xa m check np"
-and "xc = fold (\<lambda>c acc. acc(c $:= Red)) (finfun_to_list f) f"
-and "xd = fst |`| fold (|\<union>|) (map (\<lambda>s. Inference.outgoing_transitions s e) (finfun_to_list xc)) {||}"
-and xe: "xe = fold (\<lambda>s acc. if acc $ s = White then acc(s $:= Blue) else acc) (sorted_list_of_fset xd) xc"
-and "ffilter (\<lambda>s. xe $ s = White) (Inference.S xb) |\<subset>| ffilter (\<lambda>s. f $ s = White) (Inference.S e)"
-shows "((xe, xb, r, m, check, np), f, e, r, m, check, np) \<in> measures [\<lambda>(f, e, uu). size (ffilter (\<lambda>s. f $ s = White) (Inference.S e))]"
-  apply simp
-  by (metis Abs_ffilter assms(7) filter_fset size_ffilter_card size_fsubset)
-
 definition logStates :: "iEFSM \<Rightarrow> (cfstate \<Rightarrow>f colour) \<Rightarrow> nat \<Rightarrow> unit" where
   "logStates _ _  _ = ()"
 
@@ -112,7 +100,14 @@ function infer :: "(cfstate \<Rightarrow>f colour) \<Rightarrow> iEFSM \<Rightar
 termination
   apply (relation "measures [\<lambda>( f, e, _). size (ffilter (\<lambda>s. f $ s = White) (S e))]")
    apply simp
-  by (simp only: infer_termination)
+  apply (thin_tac "x = iefsm2dot_red_blue e f")
+  apply (thin_tac "xa = score f e r")
+  apply (thin_tac "xb = Blue_Fringe.inference_step f e xa m check np")
+  apply (thin_tac "xc = fold (\<lambda>c acc. acc(c $:= Red)) (finfun_to_list f) f")
+  apply (thin_tac "xd = fst |`| fold (|\<union>|) (map (\<lambda>s. Inference.outgoing_transitions s e) (finfun_to_list xc)) {||}")
+  apply (thin_tac "xe = fold (\<lambda>s acc. if acc $ s = White then acc(s $:= Blue) else acc) (sorted_list_of_fset xd) xc")
+  apply (thin_tac "xf = logStates xb xe (size (Inference.S e))")
+  by (simp, metis Abs_ffilter filter_fset size_ffilter_card size_fsubset)
 
 definition learn :: "nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> strategy \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "learn n pta l r m np = (
