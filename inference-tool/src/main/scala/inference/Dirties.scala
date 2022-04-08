@@ -320,17 +320,17 @@ object Dirties {
 
     var seeds: List[String] = List()
 
-    if (py"'r'+str($r_index) in $training_set".as[Boolean]) {
-      if (output_type.toString == "Int64")
-        seeds ++= List(f"sub(r$r_index, 50)", f"add(r$r_index, 50)", f"sub(r$r_index, 1)", f"add(r$r_index, 1)")
-      if (py"'i0' in $training_set".as[Boolean])
-        seeds ++= List(f"sub(r$r_index, i0)", f"add(r$r_index, i0)")
-    }
-    Log.root.debug("Seeds")
-    for (seed <- seeds) {
-      val fitness = deap_gp.fitness(seed, training_set, pset)
-      Log.root.debug(f"  $seed: $fitness")
-    }
+    // if (py"'r'+str($r_index) in $training_set".as[Boolean]) {
+    //   if (output_type.toString == "Int64")
+    //     seeds ++= List(f"sub(r$r_index, 50)", f"add(r$r_index, 50)", f"sub(r$r_index, 1)", f"add(r$r_index, 1)")
+    //   if (py"'i0' in $training_set".as[Boolean])
+    //     seeds ++= List(f"sub(r$r_index, i0)", f"add(r$r_index, i0)")
+    // }
+    // Log.root.debug("Seeds")
+    // for (seed <- seeds) {
+    //   val fitness = deap_gp.fitness(seed, training_set, pset)
+    //   Log.root.debug(f"  $seed: $fitness")
+    // }
 
     var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy)
     if (deap_gp.correct(best, training_set, pset).as[Boolean]) {
@@ -416,24 +416,24 @@ object Dirties {
     // TODO: Delete these seeds
     val pd = py.module("pandas")
     var seeds: List[String] = List()
-    if (py"'i0' in $training_set".as[Boolean] && output_type.toString == "Int64")
-      seeds ++= List(f"add(i0, 1)", f"sub(i0, 1)")
-    for (i <- 1 to r_index) {
-      if (py"'r'+str($i) in $training_set".as[Boolean]) {
-        if (py"'i0' in $training_set".as[Boolean])
-          seeds ++= List(f"sub(r$i, i0)", f"sub(i0, r$i)", f"add(r$i, i0)")
-        if (output_type.toString == "Int64") {
-          seeds ++= List(f"sub(50, r$i)", f"sub(r$i, 50)", f"add(r$i, 50)", f"sub(r$i, 1)", f"add(r$i, 1)", f"0")
-        }
-      }
-    }
-
-    Log.root.debug("Seeds:")
-    for (seed <- seeds) {
-      println(seed)
-      val fitness = deap_gp.fitness(seed, training_set, pset)
-      Log.root.debug(f"  $seed: $fitness")
-    }
+    // if (py"'i0' in $training_set".as[Boolean] && output_type.toString == "Int64")
+    //   seeds ++= List(f"add(i0, 1)", f"sub(i0, 1)")
+    // for (i <- 1 to r_index) {
+    //   if (py"'r'+str($i) in $training_set".as[Boolean]) {
+    //     if (py"'i0' in $training_set".as[Boolean])
+    //       seeds ++= List(f"sub(r$i, i0)", f"sub(i0, r$i)", f"add(r$i, i0)")
+    //     if (output_type.toString == "Int64") {
+    //       seeds ++= List(f"sub(50, r$i)", f"sub(r$i, 50)", f"add(r$i, 50)", f"sub(r$i, 1)", f"add(r$i, 1)", f"0")
+    //     }
+    //   }
+    // }
+    //
+    // Log.root.debug("Seeds:")
+    // for (seed <- seeds) {
+    //   println(seed)
+    //   val fitness = deap_gp.fitness(seed, training_set, pset)
+    //   Log.root.debug(f"  $seed: $fitness")
+    // }
 
     var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy)
 
