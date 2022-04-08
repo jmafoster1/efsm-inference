@@ -126,14 +126,6 @@ next
   then show ?case by (cases a, simp)
 qed
 
-primrec replace_groups :: "transition_group list \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
-  "replace_groups [] e = e" |
-  "replace_groups (h#t) e = replace_groups t (fold (\<lambda>(id, t) acc. replace_transition acc id t) h e)"
-
-lemma replace_groups_fold [code]:
-  "replace_groups xs e = fold (\<lambda>h acc'. (fold (\<lambda>(id, t) acc. replace_transition acc id t) h acc')) xs e"
-  by (induct xs arbitrary: e,  auto)
-
 definition insert_updates :: "transition \<Rightarrow> update_function list \<Rightarrow> transition" where
   "insert_updates t u = (
     let
@@ -309,62 +301,6 @@ definition enumerate_exec_values :: "trace \<Rightarrow> value list" where
 
 definition enumerate_log_values :: "log \<Rightarrow> value list" where
   "enumerate_log_values l = fold (\<lambda>e I. List.union (enumerate_exec_values e) I) l []"
-
-definition "search_for t gp e log= accepts_log (set log) (tm (replace_all e (map fst gp) t))"
-
-text \<open>Splitting structural groups up into subgroups by previous transition can cause different
-subgroups to get different updates. We ideally want structural groups to have the same output and
-update functions, as structural groups are likely to be instances of the same underlying behaviour.\<close>
-definition standardise_group :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> (iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> transition_group) \<Rightarrow> (iEFSM \<times> tids list)" where
-  "standardise_group e l gp s = (
-    let
-      standardised = s e l gp;
-      e' = replace_transitions e standardised
-    in
-      if e' = e then (e, map fst standardised) else
-      if accepts_log (set l) (tm e') then (e', map fst standardised) else (e, [])
-)"
-
-primrec find_outputs :: "output_function list list \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> output_function list option" where
-  "find_outputs [] _ _ _ = None" |
-  "find_outputs (h#t) e l g = (
-    let
-      outputs = fold (\<lambda>(tids, t) acc. replace_transition acc tids (t\<lparr>Outputs := h\<rparr>)) g e
-    in
-      if accepts_log (set l) (tm outputs) then
-        Some h
-      else
-        find_outputs t e l g
-  )"
-
-primrec find_updates_outputs :: "update_function list list \<Rightarrow> output_function list list \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> (output_function list \<times> update_function list) option" where
-  "find_updates_outputs [] _ _ _ _ = None" |
-  "find_updates_outputs (h#t) p e l g = (
-    let
-      updates = fold (\<lambda>(tids, t) acc. replace_transition acc tids (t\<lparr>Updates := h\<rparr>)) g e
-    in
-      case find_outputs p updates l (map (\<lambda>(id, t). (id,t\<lparr>Updates := h\<rparr>))  g) of
-        Some pp \<Rightarrow> Some (pp, h) |
-        None \<Rightarrow> find_updates_outputs t p e l g
-  )"
-
-definition updates_for :: "update_function list \<Rightarrow> update_function list list" where
-  "updates_for U = (
-    let uf = fold (\<lambda>(r, u) f. f(r $:= u#(f $ r))) U (K$ []) in
-    map (\<lambda>r. map (\<lambda>u. (r, u)) (uf $ r)) (finfun_to_list uf)
-  )"
-
-definition standardise_group_outputs_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> transition_group" where
-  "standardise_group_outputs_updates e l g = (
-    let
-      update_groups = product_lists (updates_for (remdups (List.maps (Updates \<circ> snd) g)));
-      update_groups_subs = fold (List.union \<circ> subseqs) update_groups [];
-      output_groups = product_lists (transpose (remdups (map (Outputs \<circ> snd) g)))
-    in
-    case find_updates_outputs update_groups_subs output_groups e l g of
-      None \<Rightarrow> g |
-      Some (p, u) \<Rightarrow> map (\<lambda>(id, t). (id, t\<lparr>Outputs := p, Updates := u\<rparr>)) g
-  )"
 
 fun target_registers :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (output_function \<Rightarrow>f (vname \<Rightarrow>f String.literal)) \<Rightarrow> run_info" where
   "target_registers e s r [] types = []" |
