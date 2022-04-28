@@ -9,7 +9,7 @@ declare One_nat_def [simp del]
 
 lemma P_ltl_step_0:
   assumes invalid: "P (None, [], <>)"
-  assumes select: "l = STR ''select'' \<longrightarrow> P (Some 1, [], <1 $:= Some (hd i), 2 $:= Some (Num 0)>)"
+  assumes select: "l = STR ''select'' \<longrightarrow> P (Some 1, [], <1 $:= Some (hd i), 2 $:= Some (value.Int 0)>)"
   shows "P (ltl_step drinks (Some 0) <> (l, i))"
 proof-
   have length_i: "\<exists>d. (l, i) = (STR ''select'', [d]) \<Longrightarrow> length i = 1"
@@ -26,8 +26,8 @@ qed
 lemma P_ltl_step_1:
   assumes invalid: "P (None, [], r)"
   assumes coin: "l = STR ''coin'' \<longrightarrow> P (Some 1, [value_plus (r $ 2) (Some (hd i))], r(2 $:= value_plus (r $ 2) (Some (i ! 0))))"
-  assumes vend_fail: "value_gt (Some (Num 100)) (r $ 2) = trilean.true \<longrightarrow> P (Some 1, [],r)"
-  assumes vend: "\<not>? value_gt (Some (Num 100)) (r $ 2) = trilean.true \<longrightarrow> P (Some 2, [r$1], r)"
+  assumes vend_fail: "value_gt (Some (value.Int 100)) (r $ 2) = trilean.true \<longrightarrow> P (Some 1, [],r)"
+  assumes vend: "\<not>? value_gt (Some (value.Int 100)) (r $ 2) = trilean.true \<longrightarrow> P (Some 2, [r$1], r)"
   shows "P (ltl_step drinks (Some 1) r (l, i))"
 proof-
   have length_i: "\<And>s. \<exists>d. (l, i) = (s, [d]) \<Longrightarrow> length i = 1"
@@ -39,7 +39,7 @@ proof-
      apply (simp add: possible_steps_1_coin length_i coin_def apply_outputs_def apply_updates_def)
     using coin apply auto[1]
     apply (case_tac "(l, i) = (STR ''vend'', [])")
-     apply (case_tac "\<exists>n. r $ 2 = Some (Num n)")
+     apply (case_tac "\<exists>n. r $ 2 = Some (value.Int n)")
       apply clarsimp
     subgoal for n
       apply (case_tac "n \<ge> 100")
@@ -52,7 +52,7 @@ proof-
     by (simp add: drinks_no_possible_steps_1 length_i_2 invalid)
 qed
 
-lemma LTL_r2_not_always_gt_100: "not (alw (check_exp (Gt (V (Rg 2)) (L (Num 100))))) (watch drinks i)"
+lemma LTL_r2_not_always_gt_100: "not (alw (check_exp (Gt (V (Rg 2)) (L (value.Int 100))))) (watch drinks i)"
   using value_gt_def by auto
 
 lemma drinks_step_2_none: "ltl_step drinks (Some 2) r e = (None, [], r)"
@@ -107,7 +107,7 @@ qed
 
 lemma costsMoney_aux:
   assumes "\<exists>p r i. j = (nxt (make_full_observation drinks (Some 1) r p) i)"
-  shows "alw (\<lambda>xs. nxt (state_eq (Some 2)) xs \<longrightarrow> check_exp (Ge (V (Rg 2)) (L (Num 100))) xs) j"
+  shows "alw (\<lambda>xs. nxt (state_eq (Some 2)) xs \<longrightarrow> check_exp (Ge (V (Rg 2)) (L (value.Int 100))) xs) j"
   using assms apply coinduct
   apply clarsimp
   subgoal for r i
@@ -131,7 +131,7 @@ lemma costsMoney_aux:
 
 (* costsMoney: THEOREM drinks |- G(X(cfstate=State_2) => gval(value_ge(r_2, Some(NUM(100))))); *)
 lemma LTL_costsMoney:
-  "(alw (nxt (state_eq (Some 2)) impl (check_exp (Ge (V (Rg 2)) (L (Num 100)))))) (watch drinks i)"
+  "(alw (nxt (state_eq (Some 2)) impl (check_exp (Ge (V (Rg 2)) (L (value.Int 100)))))) (watch drinks i)"
 proof(coinduction)
   case alw
   then show ?case
@@ -152,7 +152,7 @@ proof(coinduction)
 qed
 
 lemma LTL_costsMoney_aux:
-  "(alw (not (check_exp (Ge (V (Rg 2)) (L (Num 100)))) impl (not (nxt (state_eq (Some 2)))))) (watch drinks i)"
+  "(alw (not (check_exp (Ge (V (Rg 2)) (L (value.Int 100)))) impl (not (nxt (state_eq (Some 2)))))) (watch drinks i)"
   by (metis (no_types, lifting) LTL_costsMoney alw_mono)
 
 lemma implode_select: "String.implode ''select'' = STR ''select''"
@@ -168,7 +168,7 @@ lemmas implode_labels = implode_select implode_coin implode_vend
 
 lemma LTL_neverReachS2:"(((((action_eq (''select'', [Str ''coke''])))
                     aand
-                    (nxt ((action_eq (''coin'', [Num 100])))))
+                    (nxt ((action_eq (''coin'', [value.Int 100])))))
                     aand
                     (nxt (nxt((label_eq ''vend'' aand (input_eq []))))))
                     impl
@@ -195,7 +195,7 @@ lemma ltl_step_not_select:
   done
 
 lemma ltl_step_select:
-  "ltl_step drinks (Some 0) <> (STR ''select'', [i]) = (Some 1, [], <1 $:= Some i, 2 $:= Some (Num 0)>)"
+  "ltl_step drinks (Some 0) <> (STR ''select'', [i]) = (Some 1, [], <1 $:= Some i, 2 $:= Some (value.Int 0)>)"
   apply (rule  ltl_step_some[of _ _ _ _ _ _ select])
     apply (simp add: possible_steps_0)
    apply (simp add: select_def)
@@ -225,7 +225,7 @@ lemma alw_tl:
   by auto
 
 lemma stop_at_none:
-  "alw (\<lambda>xs. output (shd (stl xs)) = [Some (EFSM.Str drink)] \<longrightarrow> check_exp (Ge (V (Rg 2)) (L (Num 100))) xs)
+  "alw (\<lambda>xs. output (shd (stl xs)) = [Some (EFSM.Str drink)] \<longrightarrow> check_exp (Ge (V (Rg 2)) (L (value.Int 100))) xs)
             (make_full_observation drinks None r p t)"
   apply (rule alw_mono[of "nxt (output_eq [])"])
    apply (simp add: no_output_none_nxt)
@@ -233,7 +233,7 @@ lemma stop_at_none:
 
 lemma drink_costs_money_aux:
   assumes "\<exists>p r t. j = make_full_observation drinks (Some 1) r p t"
-  shows "alw (\<lambda>xs. output (shd (stl xs)) = [Some (EFSM.Str drink)] \<longrightarrow> check_exp (Ge (V (Rg 2)) (L (Num 100))) xs) j"
+  shows "alw (\<lambda>xs. output (shd (stl xs)) = [Some (EFSM.Str drink)] \<longrightarrow> check_exp (Ge (V (Rg 2)) (L (value.Int 100))) xs) j"
   using assms apply coinduct
   apply clarsimp
   apply (case_tac "shd t")
@@ -255,7 +255,7 @@ lemma drink_costs_money_aux:
   by simp
 
 lemma LTL_drinks_cost_money:
-  "alw (nxt (output_eq [Some (Str drink)]) impl (check_exp (Ge (V (Rg 2)) (L (Num 100))))) (watch drinks t)"
+  "alw (nxt (output_eq [Some (Str drink)]) impl (check_exp (Ge (V (Rg 2)) (L (value.Int 100))))) (watch drinks t)"
 proof(coinduction)
   case alw
   then show ?case
@@ -282,7 +282,7 @@ lemma steps_1_invalid:
 
 lemma output_vend_aux:
   assumes "\<exists>p r t. j = make_full_observation drinks (Some 1) r p t"
-  shows "alw (\<lambda>xs. label_eq ''vend'' xs \<and> output (shd (stl xs)) = [Some d] \<longrightarrow> check_exp (Ge (V (Rg 2)) (L (Num 100))) xs) j"
+  shows "alw (\<lambda>xs. label_eq ''vend'' xs \<and> output (shd (stl xs)) = [Some d] \<longrightarrow> check_exp (Ge (V (Rg 2)) (L (value.Int 100))) xs) j"
   using assms apply coinduct
   apply clarsimp
   subgoal for r t
@@ -307,7 +307,7 @@ lemma output_vend_aux:
 text_raw\<open>\snip{outputVend}{1}{2}{%\<close>
 lemma LTL_output_vend:
   "alw (((label_eq ''vend'') aand (nxt (output_eq [Some d]))) impl
-         (check_exp (Ge (V (Rg 2)) (L (Num 100))))) (watch drinks t)"
+         (check_exp (Ge (V (Rg 2)) (L (value.Int 100))))) (watch drinks t)"
 text_raw\<open>}%endsnip\<close>
 proof(coinduction)
   case alw
@@ -324,7 +324,7 @@ proof(coinduction)
     apply simp
     subgoal for a b
       using output_vend_aux[of "(make_full_observation drinks (Some 1)
-              <1 $:= Some (hd b), 2 $:= Some (Num 0)> [] (stl t))" d]
+              <1 $:= Some (hd b), 2 $:= Some (value.Int 0)> [] (stl t))" d]
       using implode_vend by auto
     done
 qed
@@ -333,7 +333,7 @@ text_raw\<open>\snip{outputVendUnfolded}{1}{2}{%\<close>
 lemma LTL_output_vend_unfolded:
   "alw (\<lambda>xs. (label (shd xs) = STR ''vend'' \<and>
              nxt (\<lambda>s. output (shd s) = [Some d]) xs) \<longrightarrow>
-              \<not>? value_gt (Some (Num 100)) (datastate (shd xs) $ 2) = trilean.true)
+              \<not>? value_gt (Some (value.Int 100)) (datastate (shd xs) $ 2) = trilean.true)
      (watch drinks t)"
 text_raw\<open>}%endsnip\<close>
   apply (insert LTL_output_vend[of d t])
