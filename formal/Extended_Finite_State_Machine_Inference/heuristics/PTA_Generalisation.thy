@@ -7,7 +7,7 @@ inference. Ideally, we would like something more generally applicable. This theo
 abstract \emph{metaheuristic} which can be implemented with genetic programming.\<close>
 
 theory PTA_Generalisation
-  imports "../Inference" Same_Register Group_By "HOL-Library.Sublist"
+  imports "../Inference" Same_Register Group_By "HOL-Library.Sublist" "Extended_Finite_State_Machines.Drinks_Machine"
 begin
 
 hide_const I
@@ -284,17 +284,14 @@ lemma unzip_3_tailrec [code]: "unzip_3 l = unzip_3_tailrec l"
 text\<open>We want to return an aexp which, when evaluated in the correct context accounts for the literal
 input-output pairs within the training set. This will be replaced by symbolic regression in the
 executable\<close>
-definition get_output :: "label \<Rightarrow> nat \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> value) list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
-  "get_output _ maxReg values train = (let
-    possible_funs = {a. \<forall>(i, r, p) \<in> set train. aval a (join_ir i r) = Some p}
+definition get_output :: "label \<Rightarrow> nat \<Rightarrow> value list \<Rightarrow> vname aexp list \<Rightarrow> (inputs \<times> registers \<times> value) list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
+  "get_output _ maxReg values bad train = (let
+    possible_funs = {a. a \<notin> set bad \<and> (\<forall>(i, r, p) \<in> set train. aval a (join_ir i r) = Some p)}
     in
     if possible_funs = {} then None else Some (Eps (\<lambda>x. x \<in> possible_funs), (K$ STR ''int''))
   )"
 declare get_output_def [code del]
 code_printing constant get_output \<rightharpoonup> (Scala) "Dirties.getOutput"
-
-definition get_outputs :: "label \<Rightarrow> nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> value list list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option list" where
-  "get_outputs l maxReg values I r outputs = map_tailrec (\<lambda>(maxReg, ps). get_output l maxReg values (zip I (zip r ps))) (enumerate maxReg (transpose outputs))"
 
 definition enumerate_exec_values :: "trace \<Rightarrow> value list" where
   "enumerate_exec_values vs = fold (\<lambda>(_, i, p) I. List.union (List.union i p) I) vs []"
@@ -329,14 +326,123 @@ fun infer_updates :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<R
 
 fun groupwise_infer_updates :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> (output_function \<Rightarrow>f (vname \<Rightarrow>f String.literal)) \<Rightarrow> iEFSM" where
   "groupwise_infer_updates l e [] types = e" |
-  "groupwise_infer_updates l e (gp#gps) types = (  
-  if accepts_log (set l) (tm e) then e else groupwise_infer_updates l (infer_updates e l gp types) gps types
+  "groupwise_infer_updates l e (gp#gps) types = (
+    if accepts_log (set l) (tm e) then e else groupwise_infer_updates l (infer_updates e l gp types) gps types
   )"
 
-definition "the_outputs original new = map (\<lambda>(og, nn). case nn of None \<Rightarrow> og | Some (f, _) \<Rightarrow> f) (zip original new)"
+(* Waypoints *)
+definition nodes :: "iEFSM \<Rightarrow> cfstate fset" where
+  "nodes g = ((fimage (\<lambda>(_, (from, to), tran). from) g) |\<union>| (fimage (\<lambda>(_, (from, to), tran). to) g))"
+
+definition "fst_not v = (\<lambda>x. v \<noteq> x) \<circ> fst"
+
+definition out :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate fset" where
+  "out g v = fimage (\<lambda>(_, (from, to), tran). to) (ffilter (\<lambda>(_, (from, to), tran). from = v) g)"
+
+definition "transitions = fimage (\<lambda>(tids, (from, to), tran). (to, tids))"
+
+definition outgoing_transitions :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> (cfstate \<times> tids) fset" where
+  "outgoing_transitions g v = transitions (ffilter (\<lambda>(_, (from, to), tran). from = v) g)"
+
+definition "drinks_iEFSM = fset_of_list (map (\<lambda>(x, rest). ([x], rest)) (enumerate 1 (sorted_list_of_fset drinks)))"
+
+lemma bot_fset_eq: "x = {||} = (fset x = {})"
+  by (simp add: fset_equiv)
+
+lemma in_outgoing_transitions: "(s', tids) \<in> fset (PTA_Generalisation.outgoing_transitions g s) = (\<exists>t. (tids, (s, s'), t) |\<in>| g)"
+  apply (simp add: outgoing_transitions_def transitions_def fmember_def)
+  apply standard
+   apply auto[1]
+  by force
+
+function allRoutes :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> tids list \<Rightarrow> tids list fset" where
+  "allRoutes g v closed = (
+    if v |\<notin>| (nodes g) then {||} else
+    let options = ffilter (\<lambda>(s', t). t \<notin> set closed) (outgoing_transitions g v) in
+    if options = {||} then {|[]|} else
+    fimage (\<lambda>(s', t). [t]) options |\<union>| fUnion (fimage (\<lambda>(s', t). fimage (\<lambda>x. t#x) (allRoutes g s' (t#closed))) options)
+  )"
+  by auto
+termination
+  apply (relation "measures [\<lambda>(g, v, closed). size (fimage fst g - fset_of_list closed)]")
+   apply simp
+  apply (simp)
+  apply clarsimp
+  apply (simp add: FSet.fmember.rep_eq fset_of_list.rep_eq)
+  apply (rule Finite_Set.psubset_card_mono)
+   apply simp
+  apply (simp add: in_outgoing_transitions fmember_def)
+  apply clarsimp
+  apply (case_tac "b \<in> fst ` fset g")
+   apply auto[1]
+  by force
+
+fun remove :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> iEFSM" where
+  "remove g v = ffilter (\<lambda>(_, (from, to), tran). to \<noteq> v) g"
+
+function allPaths :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate list \<Rightarrow> cfstate list fset" where
+  "allPaths g v closed = (
+    if v \<in> set closed \<or> v |\<notin>| (nodes g) then {||} else
+    if out g v = {||} then {|[v]|} else
+    finsert [v] (fimage (\<lambda>x. v#x) (fUnion (fimage (\<lambda>s. allPaths g s (v#closed)) (out g v))))
+  )"
+  by auto
+termination
+  apply (relation "measures [\<lambda>(g, v, closed). size (nodes g - fset_of_list closed)]")
+   apply simp
+  apply (simp del: remove.simps)
+  apply clarsimp
+  apply (simp add: FSet.fmember.rep_eq fset_of_list.rep_eq)
+  by (metis Diff_iff card_gt_0_iff diff_Suc_less empty_iff finite_Diff finite_fset)
+
+definition satisfies :: "cfstate list \<Rightarrow> cfstate list \<Rightarrow> bool" where
+  "satisfies wps path = (
+    let
+      acc = \<lambda>x wp. case x of None \<Rightarrow> None | Some path' \<Rightarrow> (let new = dropWhile (\<lambda>e. wp \<noteq> e) path' in case new of [] \<Rightarrow> None | _ \<Rightarrow> Some (tl new));
+      fold_result = foldl acc (Some path) wps
+    in
+    fold_result = Some []
+  )"
+
+(* \ Waypoints *)
+
+function output_and_update :: "vname aexp list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> transition_group list \<Rightarrow> transition_group \<Rightarrow> label \<Rightarrow>  value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> (nat \<times> nat \<times> value list) list \<Rightarrow> iEFSM" where
+  "output_and_update _ _ _ e _ _ _ _ _ _ _ [] = e" |
+  "output_and_update bad max_attempts attempts e log gps gp label values I r ((inx, maxReg, ps)#pss) = (
+    case get_output label maxReg values bad (zip I (zip r ps)) of
+      None \<Rightarrow> output_and_update [] max_attempts attempts e log gps gp label values I r pss |
+      Some (fun, types) \<Rightarrow>
+        let
+          e' = fimage (\<lambda>(tids, tf, t). if tids \<in> set (map fst gp) then (tids, tf, t\<lparr>Outputs:=(Outputs t)[inx := fun]\<rparr>) else (tids, tf, t)) e;
+          unknown = (K$ (STR ''UNKNOWN''));
+          routes = allRoutes e 0 []
+        in
+        if accepts_log (set log) (tm e') then
+          output_and_update [] max_attempts attempts e' log gps gp label values I r pss
+        else
+          let
+            group_ids = \<lambda>g. set (map fst g);
+            gp_ids = (group_ids gp);
+            \<comment>\<open>It only makes sense to try and infer updates for groups with ids before the group we've inferred updates for
+               otherwise, the updates aren't executed before the registers are evaluated.\<close>
+            possible_gps = filter (\<lambda>g. \<exists>r |\<in>| routes. \<exists>id \<in> (group_ids g). \<exists>id' \<in> (gp_ids). id \<in> set r \<and> id' \<in> set r) gps;
+            e'' = groupwise_infer_updates log e' possible_gps ((K$ unknown)(fun$:=types))
+          in
+          if accepts_log (set log) (tm e'') then
+            output_and_update [] max_attempts attempts e'' log gps gp label values I r pss
+          else
+          if attempts > 0 then
+            output_and_update (fun#bad) max_attempts (attempts - 1) e log gps gp label values I r ((inx, maxReg, ps)#pss)
+          else
+            output_and_update [] max_attempts attempts e log gps gp label values I r pss
+  )"
+     apply (clarsimp, meson unzip_3.cases)
+  by auto
+termination
+  by (relation "measures [\<lambda>(bad, max_attempts, attempts, e, log, gps, gp, label, values, I, r, l). length l + attempts]", auto)
 
 (*This is where the types stuff originates*)
-definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group \<Rightarrow> transition_group list \<Rightarrow> (iEFSM \<times> tids list)" where
+definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group \<Rightarrow> transition_group list \<Rightarrow> iEFSM" where
   "generalise_and_update log e gp gps = (
     let
       label = Label (snd (hd gp));
@@ -345,13 +451,8 @@ definition generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> trans
       (I, R, P) = unzip_3 new_gp_ts;
       max_reg = max_reg_total e;
       \<comment>\<open> TODO: We want to record output funs and types as we infer them! \<close>
-      outputs = get_outputs label max_reg values I R P;
-      e' = fimage (\<lambda>(tids, tf, t). if tids \<in> set (map fst gp) then (tids, tf, t\<lparr>Outputs:=(the_outputs (Outputs t) outputs)\<rparr>) else (tids, tf, t)) e
-    in
-      \<comment>\<open>put_updates log values gp [] max_reg (enumerate 0 outputs) e\<close>
-      if accepts_log (set log) (tm e') then
-        (e', [])
-      else (groupwise_infer_updates log e' gps (fold (\<lambda>f types. case f of None \<Rightarrow> types | Some (p, ts) \<Rightarrow> types(p$:=ts)) outputs (K$ (K$ (STR ''UNKNOWN'')))), [])
+      outputs_to_infer = enumerate 0 (enumerate max_reg (transpose P))
+      in output_and_update [] 5 5 e log gps gp label values I R outputs_to_infer
   )"
 
 fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> transition_group list \<Rightarrow> (tids \<Rightarrow> abstract_event) \<Rightarrow> (abstract_event \<Rightarrow>f (output_function list \<times> update_function list) option) \<Rightarrow> tids list \<Rightarrow> (transition \<times> output_types option list) list \<Rightarrow> (iEFSM \<times> tids list \<times> (transition \<times> output_types option list) list)" where
@@ -359,7 +460,7 @@ fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> tr
   "groupwise_generalise_and_update log e (gp#t) update_groups structure funs to_derestrict closed = (
         let
           (rep_id, rep) = (hd (gp));
-          (e', more_to_derestrict) = generalise_and_update log e gp update_groups;
+          e' = generalise_and_update log e gp update_groups;
           different = ffilter (\<lambda>(id, tf, t). t \<noteq> get_by_ids e id) e';
           funs = fold (\<lambda>(id, _, t) acc. acc(structure id $:= Some ((Outputs t), (Updates t)))) (sorted_list_of_fset different) funs;
           structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(i, _, _). structure i = structure rep_id) e');
@@ -367,7 +468,7 @@ fun groupwise_generalise_and_update :: "log \<Rightarrow> iEFSM \<Rightarrow> tr
           pre_standardised_good =  accepts_log (set log) (tm pre_standardised);
           standardised = if pre_standardised_good then pre_standardised else e';
           \<comment> \<open>This tackles transitions which have been changed\<close>
-          more_to_derestrict = more_to_derestrict @  (sorted_list_of_fset (fimage fst (ffilter (\<lambda>(id, _, tran). tran \<noteq> get_by_ids e id) standardised)))
+          more_to_derestrict = sorted_list_of_fset (fimage fst (ffilter (\<lambda>(id, _, tran). tran \<noteq> get_by_ids e id) standardised))
         in
         \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and
             updates for the other historical subgroups so can filter them out.\<close>

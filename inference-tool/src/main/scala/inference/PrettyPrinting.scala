@@ -46,6 +46,7 @@ object PrettyPrinter {
       case AExp.Plus(a1, a2) => show(a1) + " + " + show(a2)
       case AExp.Minus(a1, a2) => show(a1) + " - " + show(a2)
       case AExp.Times(a1, a2) => show(a1) + " * " + show(a2)
+      case AExp.Divide(a1, a2) => show(a1) + " / " + show(a2)
     }
   }
 
