@@ -43,13 +43,19 @@ creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin)
 
 def distance_between(expected, actual):
     try:
-        if isinstance(expected, Number) and isinstance(actual, Number) and not is_null(actual):
+        if (
+            isinstance(expected, Number)
+            and isinstance(actual, Number)
+            and not is_null(actual)
+        ):
             return abs(expected - actual)
         elif type(expected) == str and type(actual) == str:
             return levenshtein(expected, actual)
         elif type(expected) != type(actual) or is_null(actual):
             return float("inf")
-        raise ValueError(f"Expected int, float, or string type, not {actual}:{type(actual)}.")
+        raise ValueError(
+            f"Expected int, float, or string type, not {actual}:{type(actual)}."
+        )
     except:
         return float("inf")
 
@@ -69,7 +75,7 @@ def is_null(value):
 
 
 def find_smallest_distance(individual, pset, args, expected):
-    latent_vars = [a for a in args if is_null(args[a])]
+    latent_vars = [x for x in args if is_null(args[x])]
 
     consts = set()
     type_ = individual[0].ret
@@ -88,7 +94,10 @@ def find_smallest_distance(individual, pset, args, expected):
             return distance
 
     consts = set([c.value for c in pset.terminals[type_] if type(c.value) == type_])
-    assignments = [{k: v for k, v in zip(latent_vars, assignment)} for assignment in product(consts, repeat=len(latent_vars))]
+    assignments = [
+        {k: v for k, v in zip(latent_vars, assignment)}
+        for assignment in product(consts, repeat=len(latent_vars))
+    ]
 
     min_distance = float("inf")
     for assignment in assignments:
@@ -112,7 +121,9 @@ def vars_in_tree(individual):
     return labels.values()
 
 
-def latent_variables(individual, points, criterion=lambda points_c: any([is_null(v) for v in points_c])):
+def latent_variables(
+    individual, points, criterion=lambda points_c: any([is_null(v) for v in points_c])
+):
     undefined_at = [c for c in list(points) if criterion(points[c])]
     return list(set(undefined_at).intersection(vars_in_tree(individual)))
 
@@ -134,7 +145,7 @@ def add_consts_to_pset(individual, pset):
 
 
 def evaluate_candidate(
-    individual, points: pd.DataFrame, pset: gp.PrimitiveSet, latent_registers
+    individual, points: pd.DataFrame, pset: gp.PrimitiveSet
 ) -> float:
     """
     Evaluate a candidate function for a set of function executions and aggregate the distances between the expected
@@ -150,28 +161,27 @@ def evaluate_candidate(
     :return: The aggregated distance between expected and actual values.
     :rtype: float
     """
-    if latent_registers is None:
-        latent_registers = [[] for _ in range(len(points))]
-
-    assert len(points) == len(latent_registers), f"Mismatched latent register info\n{latent_registers}\n{len(points)}"
     if isinstance(individual, str):
-        individual = creator.Individual(
-            gp.PrimitiveTree.from_string(individual, pset)
-        )
+        individual = creator.Individual(gp.PrimitiveTree.from_string(individual, pset))
 
     total_vars = list(points.columns)[:-1]
-    latent_vars = [item for sublist in latent_registers for item in sublist]
-    unused_vars = set(total_vars).difference(vars_in_tree(individual)).difference(latent_vars)
+
+    latent_vars = latent_variables(individual, points)
+    unused_vars = (
+        set(total_vars).difference(vars_in_tree(individual)).difference(latent_vars)
+    )
 
     distances = []
-    for latent, (inx, row) in zip(latent_registers, points.iterrows()):
+    for (inx, row) in points.iterrows():
         try:
             best = find_smallest_distance(
                 individual, pset, row.iloc[:-1].to_dict(), row[-1]
             )
             distances.append(best)
         except:
-            print(f"Problem executing {individual} with arguments\n{row}\nLatent: {latent}")
+            print(
+                f"Problem executing {individual} with arguments\n{row}"
+            )
             sys.exit(0)
 
     assert not any([is_null(x) for x in distances]), "no distance can be nan"
@@ -181,7 +191,9 @@ def evaluate_candidate(
 
     mistakes = sum([x > 0 for x in distances])
 
-    assert not is_null(rmsd(distances)), "rmsd(distances) cannot be nan (evaluate_candidate:145)"
+    assert not is_null(
+        rmsd(distances)
+    ), "rmsd(distances) cannot be nan (evaluate_candidate:145)"
     fitness = rmsd(distances) + mistakes
 
     assert not is_null(fitness), "fitness cannot be nan (evaluate_candidate:148)"
@@ -192,7 +204,9 @@ def evaluate_candidate(
         return fitness + len(latent_variables(individual, points))
 
 
-def fitness(individual, points: pd.DataFrame, pset: gp.PrimitiveSet, bad: list, latent_variables) -> float:
+def fitness(
+    individual, points: pd.DataFrame, pset: gp.PrimitiveSet, bad: list
+) -> float:
     """
     Determine the fitness of an individual based on its ability to account for a set of expected function executions.
 
@@ -207,11 +221,13 @@ def fitness(individual, points: pd.DataFrame, pset: gp.PrimitiveSet, bad: list, 
     :rtype: float
     """
     if individual in bad:
-        return (float('inf'),)
+        return (float("inf"),)
     try:
-        score = evaluate_candidate(individual, points, pset, latent_variables)
+        score = evaluate_candidate(individual, points, pset)
         newline = "\n  "
-        assert not is_null(score), f"Score cannot be nan\nPSET:\n  {newline.join(sorted(list(pset.mapping)))}"
+        assert not is_null(
+            score
+        ), f"Score cannot be nan\nPSET:\n  {newline.join(sorted(list(pset.mapping)))}"
         return (score,)
     except:
         # print(f"Problem evaluating candidate {individual}")
@@ -252,15 +268,6 @@ def correct(individual, points: pd.DataFrame, pset: gp.PrimitiveSet) -> bool:
         sys.exit(1)
 
 
-def setup_latent_vars(training_set, updated_regs):
-    assert len(training_set) == len(updated_regs), f"Updated registers different length to training set ({len(training_set)}, {len(updated_regs)})\n{training_set}"
-    latents = []
-    for (u, (_, row)) in zip(updated_regs, training_set.iterrows()):
-        latent = [k for k in row.index if k not in u and k.startswith("r")]
-        latents.append(latent)
-    return latents
-
-
 def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
     try:
         return setup_pset_aux(points)
@@ -295,7 +302,9 @@ def setup_pset_aux(points: pd.DataFrame) -> gp.PrimitiveSet:
     types = points.dtypes.to_dict()
     names = list(types)
     datatypes = [generators[types[v]] for v in names]
-    assert all([t in {int, float, str} for t in datatypes]), f"Bad datatype {output_type}"
+    assert all(
+        [t in {int, float, str} for t in datatypes]
+    ), f"Bad datatype {output_type}"
 
     def protectedDiv(left, right):
         if right == 0:
@@ -307,7 +316,13 @@ def setup_pset_aux(points: pd.DataFrame) -> gp.PrimitiveSet:
     rename = {f"ARG{i}": col for i, col in enumerate(names)}
     pset.renameArguments(**rename)
 
-    assert all([type(t.value) in {int, str, float} for t in pset.mapping.values() if hasattr(t, "value")]), "Bad type"
+    assert all(
+        [
+            type(t.value) in {int, str, float}
+            for t in pset.mapping.values()
+            if hasattr(t, "value")
+        ]
+    ), "Bad type"
 
     # Add literal terminals
     for v, typ in zip(names, datatypes):
@@ -318,8 +333,16 @@ def setup_pset_aux(points: pd.DataFrame) -> gp.PrimitiveSet:
                 if not is_null(term):
                     pset.addTerminal(typ(term), typ)
 
-    types = [(t.value, type(t.value)) for t in pset.mapping.values() if hasattr(t, "value")]
-    assert all([type(t.value) in {int, str, float} for t in pset.mapping.values() if hasattr(t, "value")]), f"Bad type: {types}"
+    types = [
+        (t.value, type(t.value)) for t in pset.mapping.values() if hasattr(t, "value")
+    ]
+    assert all(
+        [
+            type(t.value) in {int, str, float}
+            for t in pset.mapping.values()
+            if hasattr(t, "value")
+        ]
+    ), f"Bad type: {types}"
 
     if output_type == str:
         pset.addTerminal("", str)
@@ -348,7 +371,13 @@ def setup_pset_aux(points: pd.DataFrame) -> gp.PrimitiveSet:
     else:
         raise ValueError(f"Invalid output type {output_type}.")
 
-    assert all([type(t.value) in {int, str, float} for t in pset.mapping.values() if hasattr(t, "value")]), "Bad type"
+    assert all(
+        [
+            type(t.value) in {int, str, float}
+            for t in pset.mapping.values()
+            if hasattr(t, "value")
+        ]
+    ), "Bad type"
     return pset
 
 
@@ -436,7 +465,7 @@ def mutInsert(individual, pset):
                 term = term()
             new_subtree[i] = term
 
-    new_subtree[position: position + 1] = individual[slice_]
+    new_subtree[position : position + 1] = individual[slice_]
     new_subtree.insert(0, new_node)
     individual[slice_] = new_subtree
     return (individual,)
@@ -537,7 +566,9 @@ def generate(pset, min_, max_, condition, type_=None, simp=None):
     if simp is not None:
         nodes, edges, labels = gp.graph(expr)
         types = [type(v) for v in labels.values()]
-        assert all([t in {int, str, float} for t in types]), f"Bad type {[(v, type(v)) for v in labels.values()]} in {str(creator.Individual(expr))}\n Type was {type_}"
+        assert all(
+            [t in {int, str, float} for t in types]
+        ), f"Bad type {[(v, type(v)) for v in labels.values()]} in {str(creator.Individual(expr))}\n Type was {type_}"
         return simp(expr)
     return expr
 
@@ -569,7 +600,12 @@ def genHalfAndHalf(pset, min_, max_, type_=None, simp=None):
         return depth == height
 
     return generate(
-        pset, min_, max_, condition=random.choice([genGrow, genFull]), type_=type_, simp=simp
+        pset,
+        min_,
+        max_,
+        condition=random.choice([genGrow, genFull]),
+        type_=type_,
+        simp=simp,
     )
 
 
@@ -600,14 +636,28 @@ def parsimony_select(individuals, k):
 
 
 def run_gp(
-    points: pd.DataFrame, pset, mu=100, lamb=10, ngen=100, random_seed=0, seeds=[], bad=[], latent_variables = None
+    points: pd.DataFrame,
+    pset,
+    mu=100,
+    lamb=10,
+    ngen=100,
+    random_seed=0,
+    seeds=[],
+    bad=[],
 ):
+    print("BADS:", list(bad))
     points = points.replace({np.nan: None, np.NaN: None})
     random.seed(random_seed)
 
     toolbox = base.Toolbox()
 
-    toolbox.register("evaluate", fitness, points=points, pset=pset, bad=bad, latent_variables = latent_variables)
+    toolbox.register(
+        "evaluate",
+        fitness,
+        points=points,
+        pset=pset,
+        bad=bad,
+    )
 
     generators = {
         np.dtype("float64"): z3.Real,
@@ -623,14 +673,20 @@ def run_gp(
         for k in points
     }
     toolbox.register("simplify", simplify, pset=pset, types=types)
-    toolbox.register("expr", genHalfAndHalf, pset=pset, min_=0, max_=2, simp=lambda x: simplify(x, pset, types))
+    toolbox.register(
+        "expr",
+        genHalfAndHalf,
+        pset=pset,
+        min_=0,
+        max_=2,
+        simp=lambda x: simplify(x, pset, types),
+    )
     toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
     toolbox.register("select", parsimony_select)
     toolbox.register("mate", gp.cxOnePoint)
     toolbox.register("expr_mut", gp.genFull, min_=0, max_=2)
     toolbox.register("mutate", mutate, pset=pset)
-
 
     toolbox.decorate(
         "mate", gp.staticLimit(key=operator.attrgetter("height"), max_value=17)
@@ -686,20 +742,24 @@ def run_gp(
     mstats.register("min", np.min)
     mstats.register("max", np.max)
 
-    pop, log = eaMuPlusLambda(
-        pop,
-        toolbox,
-        mu,
-        lamb,
-        0.5,
-        0.1,
-        ngen,
-        stats=mstats,
-        halloffame=hof,
-        verbose=False
-    )
+    try:
+        pop, log = eaMuPlusLambda(
+            pop,
+            toolbox,
+            mu,
+            lamb,
+            0.5,
+            0.1,
+            ngen,
+            stats=mstats,
+            halloffame=hof,
+            verbose=False,
+        )
 
-    return hof[0]
+        return hof[0]
+    except:
+        print(traceback.format_exc())
+        sys.exit(1)
 
 
 def graph(best) -> ([int], [(int, int)], {int: str}):
@@ -804,14 +864,25 @@ def simplify(individual, pset, types):
     try:
         z3_exp = to_z3(g, labels, types)
         if type(z3_exp) in {int, float, str}:
-            return creator.Individual(gp.PrimitiveTree([gp.Terminal(z3_exp, z3_exp, type(z3_exp))]))
+            return creator.Individual(
+                gp.PrimitiveTree([gp.Terminal(z3_exp, z3_exp, type(z3_exp))])
+            )
         elif type(z3_exp) == np.dtype("int64"):
-            return creator.Individual(gp.PrimitiveTree([gp.Terminal(int(z3_exp), int(z3_exp), int)]))
+            return creator.Individual(
+                gp.PrimitiveTree([gp.Terminal(int(z3_exp), int(z3_exp), int)])
+            )
         return creator.Individual(from_z3(z3.simplify(z3_exp), pset))
     except:
         print("Problem when simplifying", individual, type(individual))
         # print("z3_exp", z3_exp, type(z3_exp))
-        print("PSET", [(v.value, type(v.value)) for v in pset.mapping.values() if hasattr(v, "value")])
+        print(
+            "PSET",
+            [
+                (v.value, type(v.value))
+                for v in pset.mapping.values()
+                if hasattr(v, "value")
+            ],
+        )
         print("types", types)
         print("labels", [(v, type(v)) for v in labels.values()])
         print(traceback.format_exc())
@@ -960,19 +1031,15 @@ def from_string(string, pset):
     return gp.PrimitiveTree.from_string(string, pset)
 
 
-def set_to_na(training_set, latent_registers):
-    dtypes = training_set.dtypes
-    to_update = [{k: "<NA>" for k in i} for i in latent_registers]
-    training_set.update(to_update)
-    training_set.replace("<NA>", pd.NA, inplace=True)
-    for k in training_set.dtypes.index:
-        training_set[k] = training_set[k].astype(dtypes[k])
+def need_latent(points: pd.DataFrame) -> bool:
+    try:
+        return need_latent_aux(points)
+    except:
+        print(traceback.format_exc())
+        sys.exit(0)
 
 
-def need_latent(points: pd.DataFrame, latent_registers=None) -> bool:
-    if latent_registers is None:
-        latent_registers = [[] for _ in range(len(points))]
-
+def need_latent_aux(points: pd.DataFrame) -> bool:
     inputs = list(points.columns)[:-1]
     if len(set(points.iloc[:, -1])) <= 1:
         return False
@@ -1022,11 +1089,10 @@ if __name__ == "__main__":
     expr = "add(sub(r1, 350), add(5, 250))"
     individual = creator.Individual(gp.PrimitiveTree.from_string(expr, pset))
     print(individual)
-    types = {'r1': z3.Int, 'expected': z3.Int}
+    types = {"r1": z3.Int, "expected": z3.Int}
     simplified = simplify(individual, pset, types)
     print(simplified)
     assert False
-
 
     # ind = gp.PrimitiveTree.from_string("sub(i0, i1)", pset)
     # logger.info(f"Fitness of {ind} is {fitness(ind, points, pset)}")

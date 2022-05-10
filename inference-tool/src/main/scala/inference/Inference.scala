@@ -7881,53 +7881,33 @@ def target(tRegs: Map[Nat.nat, Option[Value.value]],
 def correct(a: AExp.aexp[VName.vname],
              train:
                List[(List[Value.value],
-                      (Map[Nat.nat, Option[Value.value]],
-                        (Value.value, List[Nat.nat])))]):
+                      (Map[Nat.nat, Option[Value.value]], Value.value))]):
       Boolean
   =
   Lista.list_all[(List[Value.value],
                    (Map[Nat.nat, Option[Value.value]],
-                     (Value.value,
-                       List[Nat.nat])))](((b:
-     (List[Value.value],
-       (Map[Nat.nat, Option[Value.value]], (Value.value, List[Nat.nat]))))
-    =>
-   {
-     val (i, (r, (p, _))):
-           (List[Value.value],
-             (Map[Nat.nat, Option[Value.value]], (Value.value, List[Nat.nat])))
-       = b;
-     Optiona.equal_optiona[Value.value](AExp.aval[VName.vname](a,
-                        AExp.join_ir(i, r)),
- Some[Value.value](p))
-   }),
-  train)
+                     Value.value))](((b:
+(List[Value.value], (Map[Nat.nat, Option[Value.value]], Value.value)))
+                                       =>
+                                      {
+val (i, (r, p)):
+      (List[Value.value], (Map[Nat.nat, Option[Value.value]], Value.value))
+  = b;
+Optiona.equal_optiona[Value.value](AExp.aval[VName.vname](a,
+                   AExp.join_ir(i, r)),
+                                    Some[Value.value](p))
+                                      }),
+                                     train)
 
-def unzip_4[A, B, C, D](l: List[(A, (B, (C, D)))]):
-      (List[A], (List[B], (List[C], List[D])))
-  =
-  (Lista.map[(A, (B, (C, D))), A](((a: (A, (B, (C, D)))) => a._1), l),
-    (Lista.map[(A, (B, (C, D))),
-                B](Fun.comp[(B, (C, D)), B,
-                             (A, (B, (C, D)))](((a: (B, (C, D))) => a._1),
-        ((a: (A, (B, (C, D)))) => a._2)),
-                    l),
-      (Lista.map[(A, (B, (C, D))),
-                  C](Fun.comp[(B, (C, D)), C,
-                               (A, (B, (C,
- D)))](Fun.comp[(C, D), C,
-                 (B, (C, D))](((a: (C, D)) => a._1),
-                               ((a: (B, (C, D))) => a._2)),
-        ((a: (A, (B, (C, D)))) => a._2)),
-                      l),
-        Lista.map[(A, (B, (C, D))),
-                   D](Fun.comp[(B, (C, D)), D,
-                                (A, (B, (C,
-  D)))](Fun.comp[(C, D), D,
-                  (B, (C, D))](((a: (C, D)) => a._2),
-                                ((a: (B, (C, D))) => a._2)),
-         ((a: (A, (B, (C, D)))) => a._2)),
-                       l))))
+def unzip_3[A, B, C](x0: List[(A, (B, C))]): (List[A], (List[B], List[C])) = x0
+  match {
+  case Nil => (Nil, (Nil, Nil))
+  case ((a, (b, c))::l) =>
+    {
+      val (as, (bs, cs)): (List[A], (List[B], List[C])) = unzip_3[A, B, C](l);
+      ((a::as), ((b::bs), (c::cs)))
+    }
+}
 
 def transitions[A, B, C, D]: (FSet.fset[(A, ((B, C), D))]) => FSet.fset[(C, A)]
   =
@@ -8635,8 +8615,7 @@ def get_output(label: String, maxReg: Nat.nat, values: List[Value.value],
                 bad: List[AExp.aexp[VName.vname]],
                 train:
                   List[(List[Value.value],
-                         (Map[Nat.nat, Option[Value.value]],
-                           (Value.value, List[Nat.nat])))],
+                         (Map[Nat.nat, Option[Value.value]], Value.value))],
                 fun_mem:
                   Map[String, (List[(AExp.aexp[VName.vname],
                                       Map[VName.vname, String])])]):
@@ -8675,24 +8654,21 @@ Transition.transition_ext[Unit]))],
                        va: String, vb: List[Value.value],
                        vc: List[List[Value.value]],
                        vd: List[Map[Nat.nat, Option[Value.value]]],
-                       ve: List[List[Nat.nat]],
-                       x13: List[(Nat.nat, (Nat.nat, List[Value.value]))]):
+                       x12: List[(Nat.nat, (Nat.nat, List[Value.value]))]):
       (FSet.fset[(List[Nat.nat],
                    ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
         Map[String, (List[(AExp.aexp[VName.vname], Map[VName.vname, String])])])
   =
-  (uu, fun_mem, uv, uw, e, ux, uy, uz, va, vb, vc, vd, ve, x13) match {
-  case (uu, fun_mem, uv, uw, e, ux, uy, uz, va, vb, vc, vd, ve, Nil) =>
-    (e, fun_mem)
-  case (bad, fun_mem, max_attempts, attempts, e, log, gps, gp, label, values, i,
-         r, u, ((inx, (maxReg, ps))::pss))
+  (uu, fun_mem, uv, uw, e, ux, uy, uz, va, vb, vc, vd, x12) match {
+  case (uu, fun_mem, uv, uw, e, ux, uy, uz, va, vb, vc, vd, Nil) => (e, fun_mem)
+  case (bad, fun_mem, max_attempts, attempts, e, log, gps, gp, label, values,
+         is, r, ((inx, (maxReg, ps))::pss))
     => (get_output(label, maxReg, values, bad,
-                    i.par.zip(r.par.zip(ps.par.zip(u).toList).toList).toList,
-                    fun_mem)
+                    is.par.zip(r.par.zip(ps).toList).toList, fun_mem)
           match {
           case None =>
             output_and_update(Nil, fun_mem, max_attempts, attempts, e, log, gps,
-                               gp, label, values, i, r, u, pss)
+                               gp, label, values, is, r, pss)
           case Some((fun, types)) =>
             {
               val ea: FSet.fset[(List[Nat.nat],
@@ -8740,7 +8716,7 @@ Map[VName.vname, String])])]
             (List[Value.value], List[Value.value]))]](log),
                                      Inference.tm(ea)))
                 output_and_update(Nil, fun_mema, max_attempts, attempts, ea,
-                                   log, gps, gp, label, values, i, r, u, pss)
+                                   log, gps, gp, label, values, is, r, pss)
                 else {
                        val group_ids:
                              (List[(List[Nat.nat],
@@ -8779,13 +8755,13 @@ g)))
                      (List[Value.value], List[Value.value]))]](log),
       Inference.tm(eaa)))
                          output_and_update(Nil, fun_mema, max_attempts,
-    attempts, eaa, log, gps, gp, label, values, i, r, u, pss)
+    attempts, eaa, log, gps, gp, label, values, is, r, pss)
                          else (if (Nat.less_nat(Nat.zero_nata, attempts))
                                 output_and_update((fun::bad), fun_mem,
            max_attempts, Nat.minus_nat(attempts, Nat.Nata((1))), e, log, gps,
-           gp, label, values, i, r, u, ((inx, (maxReg, ps))::pss))
+           gp, label, values, is, r, ((inx, (maxReg, ps))::pss))
                                 else output_and_update(Nil, fun_mem,
-                max_attempts, attempts, e, log, gps, gp, label, values, i, r, u,
+                max_attempts, attempts, e, log, gps, gp, label, values, is, r,
                 pss)))
                      })
             }
@@ -8817,10 +8793,9 @@ Transition.transition_ext[Unit])],
                               train:
                                 List[(List[Value.value],
                                        (Map[Nat.nat, Option[Value.value]],
- (List[Value.value], List[Nat.nat])))]):
+ List[Value.value]))]):
       List[(List[Value.value],
-             (Map[Nat.nat, Option[Value.value]],
-               (List[Value.value], List[Nat.nat])))]
+             (Map[Nat.nat, Option[Value.value]], List[Value.value]))]
   =
   (uu, uv, uw, ux, uy, x5, train) match {
   case (uu, uv, uw, ux, uy, Nil, train) => train
@@ -8854,8 +8829,7 @@ Transition.transition_ext[Unit])],
         trace_group_training_set(gp, e, sa,
                                   (Transition.apply_updates(Transition.Updates[Unit](transition),
                      AExp.join_ir(i, r))).apply(r),
-                                  transition, t,
-                                  ((i, (known_regs, (p, last_updated)))::train))
+                                  transition, t, ((i, (known_regs, p))::train))
         else trace_group_training_set(gp, e, sa,
                                        (Transition.apply_updates(Transition.Updates[Unit](transition),
                           AExp.join_ir(i, r))).apply(r),
@@ -8871,26 +8845,23 @@ def make_training_set(e: FSet.fset[(List[Nat.nat],
                        gp: List[(List[Nat.nat],
                                   Transition.transition_ext[Unit])]):
       List[(List[Value.value],
-             (Map[Nat.nat, Option[Value.value]],
-               (List[Value.value], List[Nat.nat])))]
+             (Map[Nat.nat, Option[Value.value]], List[Value.value]))]
   =
   Lista.fold[List[(String, (List[Value.value], List[Value.value]))],
               List[(List[Value.value],
                      (Map[Nat.nat, Option[Value.value]],
-                       (List[Value.value],
-                         List[Nat.nat])))]](((a:
-        List[(String, (List[Value.value], List[Value.value]))])
-       =>
-      (b: List[(List[Value.value],
-                 (Map[Nat.nat, Option[Value.value]],
-                   (List[Value.value], List[Nat.nat])))])
+                       List[Value.value]))]](((a:
+         List[(String, (List[Value.value], List[Value.value]))])
         =>
-      trace_group_training_set(gp, e, Nat.zero_nata,
-                                AExp.null_state[Nat.nat, Option[Value.value]],
-                                Transition.transition_exta[Unit]("",
-                          Nat.zero_nata, Nil, Nil, Nil, ()),
-                                a, b)),
-     l, Nil)
+       (b: List[(List[Value.value],
+                  (Map[Nat.nat, Option[Value.value]], List[Value.value]))])
+         =>
+       trace_group_training_set(gp, e, Nat.zero_nata,
+                                 AExp.null_state[Nat.nat, Option[Value.value]],
+                                 Transition.transition_exta[Unit]("",
+                           Nat.zero_nata, Nil, Nil, Nil, ()),
+                                 a, b)),
+      l, Nil)
 
 def generalise_and_update(log: List[List[(String,
    (List[Value.value], List[Value.value]))]],
@@ -8912,15 +8883,13 @@ def generalise_and_update(log: List[List[(String,
     val values: List[Value.value] = enumerate_log_values(log)
     val new_gp_ts:
           List[(List[Value.value],
-                 (Map[Nat.nat, Option[Value.value]],
-                   (List[Value.value], List[Nat.nat])))]
+                 (Map[Nat.nat, Option[Value.value]], List[Value.value]))]
       = make_training_set(e, log, gp)
-    val (i, (r, (p, u))):
+    val (i, (r, p)):
           (List[List[Value.value]],
-            (List[Map[Nat.nat, Option[Value.value]]],
-              (List[List[Value.value]], List[List[Nat.nat]])))
-      = unzip_4[List[Value.value], Map[Nat.nat, Option[Value.value]],
-                 List[Value.value], List[Nat.nat]](new_gp_ts)
+            (List[Map[Nat.nat, Option[Value.value]]], List[List[Value.value]]))
+      = unzip_3[List[Value.value], Map[Nat.nat, Option[Value.value]],
+                 List[Value.value]](new_gp_ts)
     val max_reg: Nat.nat = Inference.max_reg_total(e)
     val a: List[(Nat.nat, (Nat.nat, List[Value.value]))] =
       Lista.enumerate[(Nat.nat,
@@ -8929,7 +8898,7 @@ def generalise_and_update(log: List[List[(String,
  Lista.transpose[Value.value](p)));
     output_and_update(Nil, fun_mem, Code_Numeral.nat_of_integer(BigInt(5)),
                        Code_Numeral.nat_of_integer(BigInt(5)), e, log, gps, gp,
-                       label, values, i, r, u, a)
+                       label, values, i, r, a)
   }
 
 def groupwise_generalise_and_update(uu: List[List[(String,

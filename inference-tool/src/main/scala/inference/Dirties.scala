@@ -248,19 +248,19 @@ object Dirties {
 
     types("expected") match {
       case "Int" => {
-        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Long]]].toPythonProxy, dtype = "Int64")//.drop_duplicates()
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Long]]].toPythonProxy, dtype = "Int64").drop_duplicates()
         val cols = py"list($training_set.columns.values)"
         py"$cols.pop($cols.index('expected'))"
         return (py"$training_set[$cols+['expected']]", types)
       }
       case "Real" => {
-        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Double]]].toPythonProxy, dtype = "float64")//.drop_duplicates()
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, Double]]].toPythonProxy, dtype = "float64").drop_duplicates()
         val cols = py"list($training_set.columns.values)"
         py"$cols.pop($cols.index('expected'))"
         return (py"$training_set[$cols+['expected']]", types)
       }
       case "String" => {
-        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, String]]].toPythonProxy, dtype = "string")//.drop_duplicates()
+        val training_set = pd.DataFrame(points.asInstanceOf[List[Map[String, String]]].toPythonProxy, dtype = "string").drop_duplicates()
         val cols = py"list($training_set.columns.values)"
         py"$cols.pop($cols.index('expected'))"
         return (py"$training_set[$cols+['expected']]", types)
@@ -361,7 +361,7 @@ object Dirties {
     }
 
   def valid_for_pset(a: AExp.aexp[VName.vname], pset: List[String]): Boolean = a match {
-      case AExp.L(v) => pset.contains(PrettyPrinter.show(v))
+      case AExp.L(v) => true
       case AExp.V(v) => pset.contains(PrettyPrinter.vnameToString(v))
       case AExp.Plus(a1, a2) => valid_for_pset(a1, pset) && valid_for_pset(a2, pset)
       case AExp.Minus(a1, a2) => valid_for_pset(a1, pset) && valid_for_pset(a2, pset)
@@ -374,7 +374,7 @@ object Dirties {
     maxReg: Nat.nat,
     values: List[Value.value],
     bad: List[AExp.aexp[VName.vname]] = List(),
-    train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], (Value.value, List[Nat.nat])))],
+    train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Value.value))],
     latentVariable: Boolean = false
     ): Option[(AExp.aexp[VName.vname], Map[VName.vname, String])] = {
     Log.root.debug(f"${"="*84}\nGetting Output for $label")
@@ -383,26 +383,11 @@ object Dirties {
 
     val r_index = TypeConversion.toInt(maxReg) + 1
 
-    val (i, rpu) = train.unzip
-    val (r, pu) = rpu.unzip
-    val (p, u) = pu.unzip
-    val updated_regs: List[List[String]] = u.map(nats => nats.map(r => f"r${PrettyPrinter.show(r)}"))
-    val ioPairs = i.zip(r.zip(p))
-
-    var (training_set, types) = setupTrainingSet(ioPairs)
+    var (training_set, types) = setupTrainingSet(train)
     val output_type = training_set.dtypes.bracketAccess("expected")
-    var latent_registers = deap_gp.setup_latent_vars(training_set, updated_regs.toPythonProxy)
-    deap_gp.set_to_na(training_set, latent_registers)
     Log.root.debug(f"Output type $output_type")
     Log.root.debug(f"types $types")
     // training_set = training_set.select_dtypes(include=output_type)
-
-    // If we have a key that's empty but returns more than one value then we need a latent variable
-    // if (deap_gp.shortcut_latent(training_set).as[Boolean]) {
-    //   Log.root.debug(f"  No inputs = output latent variable r$r_index")
-    //   val reg = TypeConversion.vnameFromString(f"r$r_index")
-    //   return Some(AExp.V(reg), Map(reg -> types("expected")))
-    // }
 
     // Cut straight to having a latent variable if there's more possible outputs than inputs
     if (!latentVariable && deap_gp.need_latent(training_set).as[Boolean]) {
@@ -415,15 +400,7 @@ object Dirties {
       val new_reg =  f"r$r_index"
       training_set.insert(0, new_reg, py"None")
       types = types + (new_reg -> types("expected"))
-      latent_registers = py"[[$new_reg]+l for l in $latent_registers]"
     }
-
-    val training_set_columns = training_set.columns
-    training_set.bracketUpdate("latent_registers", py"[tuple(x) for x in $latent_registers]")
-    training_set.drop_duplicates(inplace=true)
-    Log.root.debug(training_set.toString)
-    latent_registers = training_set.bracketAccess("latent_registers")
-    training_set = training_set.bracketAccess(training_set_columns)
 
     val pset = deap_gp.setup_pset(training_set)
 
@@ -451,7 +428,7 @@ object Dirties {
     //   }
     // }
 
-    val outputs = ioPairs.map(x => x._2._2)
+    val outputs = train.map(x => x._2._2)
     if (outputs.distinct.length == 1) {
       Log.root.debug("  Singleton literal output")
       return Some(AExp.L(outputs(0)), scala.collection.immutable.Map())
@@ -481,8 +458,9 @@ object Dirties {
     // }
 
     val deap_gp_bad = bad.filter(x => valid_for_pset(x, py"list($pset.mapping.keys())".as[List[String]])).map(x => deap_gp.gp.PrimitiveTree.from_string(to_gp_string(x), pset))
+    Log.root.debug(f"PSET KEYS: ${pset.mapping.keys()}")
 
-    var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy, bad=deap_gp_bad.toPythonProxy, latent_variables = latent_registers)
+    var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy, bad=deap_gp_bad.toPythonProxy)
 
     if (deap_gp.correct(best, training_set, pset).as[Boolean]) {
       Log.root.debug(f"  Best output $best is correct")
