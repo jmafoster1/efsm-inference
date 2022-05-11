@@ -296,8 +296,31 @@ lemma unzip_4_tailrec [code]: "unzip_4 l = unzip_3_tailrec l"
   by (simp add: Let_def map_tailrec_rev unzip_3 map_eq_map_tailrec)
 *)
 
-definition correct :: "vname aexp \<Rightarrow> (inputs \<times> registers \<times> value) list \<Rightarrow> bool" where
-  "correct a train = (\<forall>(i, r, p) \<in> set train. aval a (join_ir i r) = Some p)"
+fun registers :: "vname aexp \<Rightarrow> nat set" where
+  "registers (L _) = {}" |
+  "registers (V (R r)) = {r}" |
+  "registers (V (I r)) = {}" |
+  "registers (Plus a1 a2) = (registers a1) \<union> (registers a2)" |
+  "registers (Minus a1 a2) = (registers a1) \<union> (registers a2)" |
+  "registers (Times a1 a2) = (registers a1) \<union> (registers a2)" |
+  "registers (Divide a1 a2) = (registers a1) \<union> (registers a2)"
+
+fun cartProdN :: "'a list list \<Rightarrow> 'a list list" where
+"cartProdN as = foldr (\<lambda>xs as. [x # a. x <- xs , a <- as]) as [[]]"
+
+definition correct_row :: "vname aexp \<Rightarrow> value list \<Rightarrow> inputs \<Rightarrow> registers \<Rightarrow> value \<Rightarrow> bool" where
+  "correct_row a values i r expected = (
+    let
+      latent_vars = filter (\<lambda>x. r $ x = None) (finfun_to_list r);
+      valuations = cartProdN (repeat (length latent_vars) values);
+      assignments = map (zip latent_vars) valuations;
+      update = fold (\<lambda>(reg, val) acc. acc(reg $:= Some val))
+    in
+    \<exists>assignment \<in> set assignments. aval a (join_ir i (update assignment r)) = Some expected
+  )"
+
+definition correct :: "vname aexp \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> value) list \<Rightarrow> bool" where
+  "correct a values train = (\<forall>(i, r, p) \<in> set train. correct_row a values i r p)"
 
 type_synonym funMem = "(String.literal \<Rightarrow>f (vname aexp \<times> (vname \<Rightarrow>f String.literal)) list)"
 
@@ -306,7 +329,7 @@ input-output pairs within the training set. This will be replaced by symbolic re
 executable\<close>
 definition get_output_gp :: "label \<Rightarrow> nat \<Rightarrow> value list \<Rightarrow> vname aexp list \<Rightarrow> (inputs \<times> registers \<times> value) list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
   "get_output_gp _ maxReg values bad train = (let
-    possible_funs = {a. a \<notin> set bad \<and> correct a train}
+    possible_funs = {a. a \<notin> set bad \<and> correct a values train}
     in
     if possible_funs = {} then None else Some (Eps (\<lambda>x. x \<in> possible_funs), (K$ STR ''int''))
   )"
@@ -315,7 +338,7 @@ code_printing constant get_output_gp \<rightharpoonup> (Scala) "Dirties.getOutpu
 
 definition get_output :: "label \<Rightarrow> nat \<Rightarrow> value list \<Rightarrow> vname aexp list \<Rightarrow> (inputs \<times> registers \<times> value) list \<Rightarrow> funMem \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
   "get_output label maxReg values bad train fun_mem = (
-    case find (\<lambda>(fun, _). fun \<notin> set bad \<and> correct fun train) (fun_mem $ label) of
+    case find (\<lambda>(fun, _). fun \<notin> set bad \<and> correct fun values train) (fun_mem $ label) of
       None \<Rightarrow> get_output_gp label maxReg values bad train |
       Some (fun, types) \<Rightarrow> Some (fun, types)
   )"

@@ -7878,7 +7878,61 @@ def target(tRegs: Map[Nat.nat, Option[Value.value]],
                Map[Nat.nat, Option[Value.value]], List[Value.value],
                List[Nat.nat], Transition.transition_ext[Unit]](tRegs, ts, Nil)
 
-def correct(a: AExp.aexp[VName.vname],
+def cartProdN[A](as: List[List[A]]): List[List[A]] =
+  Lista.foldr[List[A],
+               List[List[A]]](((xs: List[A]) => (asa: List[List[A]]) =>
+                                Lista.maps[A,
+    List[A]](((x: A) =>
+               Lista.map[List[A], List[A]](((a: List[A]) => (x::a)), asa)),
+              xs)),
+                               as, (Nil::Nil))
+
+def correct_row(a: AExp.aexp[VName.vname], values: List[Value.value],
+                 i: List[Value.value], r: Map[Nat.nat, Option[Value.value]],
+                 expected: Value.value):
+      Boolean
+  =
+  {
+    val latent_vars: List[Nat.nat] =
+      Lista.filter[Nat.nat](((x: Nat.nat) =>
+                              Optiona.is_none[Value.value](r(x))),
+                             r.keySet.toList)
+    val valuations: List[List[Value.value]] =
+      cartProdN[Value.value](AExp.repeat[List[Value.value]](Nat.Nata(latent_vars.par.length),
+                     values))
+    val assignments: List[List[(Nat.nat, Value.value)]] =
+      Lista.map[List[Value.value],
+                 List[(Nat.nat,
+                        Value.value)]](((aa: List[Value.value]) =>
+ latent_vars.par.zip(aa).toList),
+valuations)
+    val update:
+          (List[(Nat.nat, Value.value)]) =>
+            (Map[Nat.nat, Option[Value.value]]) =>
+              Map[Nat.nat, Option[Value.value]]
+      = ((aa: List[(Nat.nat, Value.value)]) =>
+          (b: Map[Nat.nat, Option[Value.value]]) =>
+          Lista.fold[(Nat.nat, Value.value),
+                      Map[Nat.nat, Option[Value.value]]](((ab:
+                     (Nat.nat, Value.value))
+                    =>
+                   {
+                     val (reg, vala): (Nat.nat, Value.value) = ab;
+                     ((acc: Map[Nat.nat, Option[Value.value]]) =>
+                       (acc + ((reg -> (Some[Value.value](vala))))))
+                   }),
+                  aa, b));
+    Lista.list_ex[List[(Nat.nat,
+                         Value.value)]](((assignment:
+    List[(Nat.nat, Value.value)])
+   =>
+  Optiona.equal_optiona[Value.value](AExp.aval[VName.vname](a,
+                     AExp.join_ir(i, (update(assignment))(r))),
+                                      Some[Value.value](expected))),
+ assignments)
+  }
+
+def correct(a: AExp.aexp[VName.vname], values: List[Value.value],
              train:
                List[(List[Value.value],
                       (Map[Nat.nat, Option[Value.value]], Value.value))]):
@@ -7890,12 +7944,11 @@ def correct(a: AExp.aexp[VName.vname],
 (List[Value.value], (Map[Nat.nat, Option[Value.value]], Value.value)))
                                        =>
                                       {
-val (i, (r, p)):
+val (i, ba):
       (List[Value.value], (Map[Nat.nat, Option[Value.value]], Value.value))
-  = b;
-Optiona.equal_optiona[Value.value](AExp.aval[VName.vname](a,
-                   AExp.join_ir(i, r)),
-                                    Some[Value.value](p))
+  = b
+val (bb, c): (Map[Nat.nat, Option[Value.value]], Value.value) = ba;
+correct_row(a, values, i, bb, c)
                                       }),
                                      train)
 
@@ -8627,7 +8680,7 @@ def get_output(label: String, maxReg: Nat.nat, values: List[Value.value],
       =>
      {
        val (fun, _): (AExp.aexp[VName.vname], Map[VName.vname, String]) = a;
-       (! (bad.contains(fun))) && (correct(fun, train))
+       (! (bad.contains(fun))) && (correct(fun, values, train))
      }),
     fun_mem(label))
      match {
