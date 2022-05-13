@@ -161,4 +161,16 @@ lemma fis_singleton_code [code]: "fis_singleton s = (size s = 1)"
   apply (simp add: fis_singleton_def is_singleton_def)
   by (simp add: card_Suc_eq)
 
+lemma fUnion_fempty: "|\<Union>|{||} = {||}"
+  apply (simp add: fUnion_def)
+  by (simp add: bot_fset_def)
+
+lemma fUnion_finsert: "|\<Union>|(finsert a B) = a |\<union>| |\<Union>|B"
+  by (simp add: fUnion_def finsert_def sup_fset_def Abs_fset_inverse)
+
+lemma fUnion_code[code]: "|\<Union>| (fset_of_list ls) = foldr (|\<union>|) ls {||}"
+  apply (induct ls)
+   apply (simp add: fUnion_fempty)
+  by (simp add: fUnion_finsert)
+
 end

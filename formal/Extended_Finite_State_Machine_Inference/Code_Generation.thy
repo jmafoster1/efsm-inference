@@ -382,14 +382,16 @@ code_printing
 code_printing
   type_constructor finfun \<rightharpoonup> (Scala) "Map[_, _]"
   | constant "finfun_const" \<rightharpoonup> (Scala) "scala.collection.immutable.Map().withDefaultValue((_))"
-  | constant "finfun_update" \<rightharpoonup> (Scala) "_ + (_ -> _)"
+  | constant "finfun_update" \<rightharpoonup> (Scala) "(_ + ((_ -> _)))"
   | constant "finfun_apply" \<rightharpoonup> (Scala) "_((_))"
   | constant "finfun_to_list" \<rightharpoonup> (Scala) "_.keySet.toList"
+  | constant "finfun_default" \<rightharpoonup> (Scala) "Dirties.defaultValue"
 declare finfun_to_list_const_code [code del]
 declare finfun_to_list_update_code [code del]
 declare finfun_update_def [code del]
 declare finfun_update_const_code [code del]
 declare finfun_to_list_def [code del]
+declare finfun_default_const_code [code del]
 
 definition mismatched_updates :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "mismatched_updates t1 t2 = (\<exists>r \<in> set (map fst (Updates t1)). r \<notin> set (map fst (Updates t2)))"

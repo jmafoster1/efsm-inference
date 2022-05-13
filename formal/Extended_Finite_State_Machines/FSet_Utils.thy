@@ -224,6 +224,9 @@ context includes fset.lifting begin
     by simp
 
   lift_definition fis_singleton :: "'a fset \<Rightarrow> bool" is "\<lambda>A. is_singleton (fset A)".
+
+  lift_definition fUnion :: "'a fset fset \<Rightarrow> 'a fset" ("|\<Union>|") is "\<Union>"
+    by simp
 end
 
 lemma fprod_empty_l: "{||} |\<times>| a = {||}"
@@ -275,6 +278,18 @@ lemma not_singleton_empty [simp]: "\<not> fis_singleton {||}"
 lemma fis_singleton_fthe_elem:
   "fis_singleton A \<longleftrightarrow> A = {|fthe_elem A|}"
   by (metis fis_singleton_alt fthe_felem_eq)
+
+lemma length_ffilter_less:
+  "\<lbrakk> x |\<in>| xs; \<not> P x \<rbrakk> \<Longrightarrow> size (ffilter P xs) < size xs"
+proof (induct xs)
+  case empty
+  then show ?case
+    by simp
+next
+  case (insert x xs)
+  then show ?case
+    by (metis (no_types, hide_lams) ffmember_filter size_fsubset_elem)
+qed
 
 lemma fBall_ffilter:
   "\<forall>x |\<in>| X. f x \<Longrightarrow> ffilter f X = X"

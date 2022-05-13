@@ -87,15 +87,71 @@ primrec make_guard :: "value list \<Rightarrow> nat \<Rightarrow> vname gexp lis
 "make_guard [] _ = []" |
 "make_guard (h#t) n = (gexp.Eq (V (vname.I n)) (L h))#(make_guard t (n+1))"
 
+lemma [code]: "make_guard G n = map (\<lambda>(n, h). gexp.Eq (V (vname.I n)) (L h)) (enumerate n G)"
+proof(induct G arbitrary: n)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a G)
+  then show ?case
+    by (simp add: Suc_eq_plus1)
+qed
+
 primrec make_outputs :: "value list \<Rightarrow> output_function list" where
   "make_outputs [] = []" |
   "make_outputs (h#t) = (L h)#(make_outputs t)"
 
+lemma [code]: "make_outputs P = map L P"
+  by (induct P, auto)
+
+definition make_transition :: "label \<Rightarrow> value list \<Rightarrow> value list \<Rightarrow> transition" where
+  "make_transition label inputs outputs = \<lparr>Label=label, Arity=length inputs, Guards=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>"
+
+fun merge_branch :: "((cfstate \<times> cfstate) \<times> transition) list \<Rightarrow> cfstate \<Rightarrow> ((cfstate \<times> cfstate) \<times> transition) list \<Rightarrow> ((cfstate \<times> cfstate) \<times> transition) list" where
+  "merge_branch e s [] = e" |
+  "merge_branch e s (((from, to), t)#ts) = (
+    case find (\<lambda>((from, to), tran). from = s \<and> tran = t) e of
+      Some ((_, to), _) \<Rightarrow> merge_branch e to ts |
+      None \<Rightarrow> e @ (((s, to), t)#ts)
+  )"
+
+primrec enumerate_log :: "transition list list \<Rightarrow> nat \<Rightarrow> ((cfstate \<times> cfstate) \<times> transition) list list" where
+  "enumerate_log [] _ = []" |
+  "enumerate_log (h#t) n = (map (\<lambda>(s, t). ((s, s+1), t)) (enumerate n h))#(enumerate_log t (n+(length h)))"
+
+definition make_pta :: "log \<Rightarrow> iEFSM" where
+  "make_pta log = (
+    let
+      transitions = map (map (\<lambda>(l, i, p). make_transition l i p)) log;
+      enumerated = enumerate_log transitions 0
+    in
+    fset_of_list (map (\<lambda>(id, rest). ([id], rest)) (enumerate 0 (fold (\<lambda>branch acc. merge_branch acc 0 branch) enumerated [])))
+  )"
+
 definition max_uid_total :: "iEFSM \<Rightarrow> nat" where
   "max_uid_total e = (case max_uid e of None \<Rightarrow> 0 | Some u \<Rightarrow> u)"
 
+
 definition add_transition :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> label \<Rightarrow> value list \<Rightarrow> value list \<Rightarrow> iEFSM" where
-  "add_transition e s label inputs outputs = finsert ([max_uid_total e + 1], (s, (maxS (tm e))+1), \<lparr>Label=label, Arity=length inputs, Guards=(make_guard inputs 0), Outputs=(make_outputs outputs), Updates=[]\<rparr>) e"
+  "add_transition e s label inputs outputs = finsert ([max_uid_total e + 1], (s, (maxS (tm e))+1), make_transition label inputs outputs) e"
+
+fun make_branch_naive :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> iEFSM" where
+  "make_branch_naive e _ _ [] = e" |
+  "make_branch_naive e s r ((label, inputs, outputs)#t) = make_branch_naive (add_transition e s label inputs outputs) (s+1) r t"
+
+lemma "make_branch_naive e s r t = fold (\<lambda>(s, label, inputs, outputs) e. (add_transition e s label inputs outputs)) (enumerate s t) e"
+proof(induct t arbitrary: e s r)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a t)
+  then show ?case
+    apply (cases a)
+    apply simp
+    using Suc_eq_plus1 by presburger
+qed
 
 fun make_branch :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> iEFSM" where
   "make_branch e _ _ [] = e" |
@@ -107,14 +163,14 @@ fun make_branch :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Righta
         else
           make_branch (add_transition e s label inputs outputs) ((maxS (tm e))+1) r t  |
       None \<Rightarrow>
-          make_branch (add_transition e s label inputs outputs) ((maxS (tm e))+1) r t
+          make_branch_naive (add_transition e s label inputs outputs) ((maxS (tm e))+1) r t
     )"
 
 primrec make_pta_aux :: "log \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "make_pta_aux [] e = e" |
   "make_pta_aux (h#t) e = make_pta_aux t (make_branch e 0 <> h)"
 
-definition "make_pta log = make_pta_aux log {||}"
+definition "make_pta_old log = make_pta_aux log {||}"
 
 lemma make_pta_aux_fold [code]:
   "make_pta_aux l e = fold (\<lambda>h e. make_branch e 0 <> h) l e"
