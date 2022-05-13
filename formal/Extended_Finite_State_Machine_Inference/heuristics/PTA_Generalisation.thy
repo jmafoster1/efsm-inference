@@ -104,21 +104,20 @@ definition finfun_filter :: "(('a::linorder) \<Rightarrow>f 'b) \<Rightarrow> ('
 text\<open>For a given trace group, log, and EFSM, we want to build the training set for that group. That
 is, the set of inputs, registers, and expected outputs from those transitions. To do this, we must
 walk the traces in the EFSM to obtain the register values.\<close>
-fun trace_group_training_set :: "transition_group \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> transition \<Rightarrow> trace \<Rightarrow> (inputs \<times> registers \<times> value list) list \<Rightarrow> (inputs \<times> registers \<times> value list) list" where
+fun trace_group_training_set :: "transition_group \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> transition \<Rightarrow> trace \<Rightarrow> (inputs \<times> registers \<times> value list \<times> nat list) list \<Rightarrow> (inputs \<times> registers \<times> value list \<times> nat list) list" where
   "trace_group_training_set _ _ _ _ _ [] train = train" |
   "trace_group_training_set gp e s r last_tran ((l, i, p)#t) train = (
     let
       (ids, s', transition) = fthe_elem (i_possible_steps e s r l i);
-      last_updated = map fst (Updates last_tran);
-      known_regs = finfun_filter r (\<lambda>k. k \<in> set last_updated)
+      last_updated = map fst (Updates last_tran)
     in
     if \<exists>(ids', _) \<in> set gp. ids' = ids then
-        trace_group_training_set gp e s' (evaluate_updates transition i r) transition t ((i, known_regs, p)#train)
+        trace_group_training_set gp e s' (evaluate_updates transition i r) transition t ((i, r, p, last_updated)#train)
     else
       trace_group_training_set gp e s' (evaluate_updates transition i r) transition t train
   )"
 
-definition make_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> (inputs \<times> registers \<times> value list) list" where
+definition make_training_set :: "iEFSM \<Rightarrow> log \<Rightarrow> transition_group \<Rightarrow> (inputs \<times> registers \<times> value list \<times> nat list) list" where
   "make_training_set e l gp = fold (\<lambda>h a. trace_group_training_set gp e 0 <> \<lparr>Label=STR '''', Arity=0, Guards=[], Outputs=[], Updates=[]\<rparr> h a) l []"
 
 lemma trace_group_training_set_empty: "trace_group_training_set [] e s r u l acc = acc"
@@ -234,13 +233,13 @@ definition correct_row :: "vname aexp \<Rightarrow> value list \<Rightarrow> inp
     \<exists>assignment \<in> set assignments. aval a (join_ir i (update assignment r)) = Some expected
   )"
 
-definition correct :: "vname aexp \<Rightarrow> output_function set \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> value) list \<Rightarrow> bool" where
-  "correct a bad values train = (a \<notin> bad \<and> (\<forall>(i, r, p) \<in> set train. correct_row a values i r p))"
+definition correct :: "vname aexp \<Rightarrow> output_function set \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> value \<times> nat list) list \<Rightarrow> bool" where
+  "correct a bad values train = (a \<notin> bad \<and> (\<forall>(i, r, p, l) \<in> set train. correct_row a values i (fold (\<lambda>k acc. acc(k $:= None)) l r) p))"
 
 \<comment> \<open>This will be replaced by symbolic regression in the executable\<close>
-definition get_update_gp :: "label \<Rightarrow> nat \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> value) list \<Rightarrow> vname aexp option" where
+definition get_update_gp :: "label \<Rightarrow> nat \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> value \<times> nat list) list \<Rightarrow> vname aexp option" where
   "get_update_gp _ reg values train = (let
-    possible_funs = {a. \<forall>(i, r, r') \<in> set train. aval a (join_ir i r) = Some r'}
+    possible_funs = {a. \<forall>(i, r, r', l) \<in> set train. aval a (join_ir i r) = Some r'}
     in
     if possible_funs = {} then None else Some (Eps (\<lambda>x. x \<in> possible_funs))
   )"
@@ -253,7 +252,7 @@ definition get_update :: "funMem \<Rightarrow> label \<Rightarrow> nat \<Rightar
     if (\<exists>(inputs, (aregs, pregs)) \<in> set train. pregs $ reg = None)
     then None
     else
-      let ioPairs = remdups (map (\<lambda>(inputs, (aregs, pregs)). case pregs $ reg of Some v \<Rightarrow> (inputs, ((K$ None)(reg $:= aregs $ reg), v))) train) in
+      let ioPairs = remdups (map (\<lambda>(inputs, (aregs, pregs)). case pregs $ reg of Some v \<Rightarrow> (inputs, ((K$ None)(reg $:= aregs $ reg), v, []))) train) in
       case find (\<lambda>(a, _). correct a {} values ioPairs) (fun_mem $ label) of
         None \<Rightarrow> get_update_gp label reg values ioPairs |
         Some (u, _) \<Rightarrow> Some u
@@ -303,10 +302,17 @@ fun unzip_3 :: "('a \<times> 'b \<times> 'c) list \<Rightarrow> ('a list \<times
     (a#as, b#bs, c#cs)
   )"
 
+fun unzip_4 :: "('a \<times> 'b \<times> 'c \<times> 'd) list \<Rightarrow> ('a list \<times> 'b list \<times> 'c list \<times> 'd list)" where
+  "unzip_4 [] = ([], [], [], [])" |
+  "unzip_4 ((a, b, c, d)#l) = (
+    let (as, bs, cs, ds) = unzip_4 l in
+    (a#as, b#bs, c#cs, d#ds)
+  )"
+
 text\<open>We want to return an aexp which, when evaluated in the correct context accounts for the literal
 input-output pairs within the training set. This will be replaced by symbolic regression in the
 executable\<close>
-definition get_output_gp :: "label \<Rightarrow> tids \<Rightarrow> nat \<Rightarrow> value list \<Rightarrow> output_function set \<Rightarrow> (inputs \<times> registers \<times> value) list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
+definition get_output_gp :: "label \<Rightarrow> tids \<Rightarrow> nat \<Rightarrow> value list \<Rightarrow> output_function set \<Rightarrow> (inputs \<times> registers \<times> value \<times> nat list) list \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
   "get_output_gp label tids maxReg values bad train = (let
     possible_funs = {a. correct a bad values train}
     in
@@ -315,7 +321,7 @@ definition get_output_gp :: "label \<Rightarrow> tids \<Rightarrow> nat \<Righta
 declare get_output_gp_def [code del]
 code_printing constant get_output_gp \<rightharpoonup> (Scala) "Dirties.getOutput"
 
-definition get_output :: "label \<Rightarrow> tids \<Rightarrow> nat \<Rightarrow> value list \<Rightarrow> output_function set \<Rightarrow> (inputs \<times> registers \<times> value) list \<Rightarrow> funMem \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
+definition get_output :: "label \<Rightarrow> tids \<Rightarrow> nat \<Rightarrow> value list \<Rightarrow> output_function set \<Rightarrow> (inputs \<times> registers \<times> value \<times> nat list) list \<Rightarrow> funMem \<Rightarrow> (vname aexp \<times> (vname \<Rightarrow>f String.literal)) option" where
   "get_output label tids maxReg values bad train fun_mem = (
     case find (\<lambda>(fun, _). fun \<notin> bad \<and> correct fun bad values train) (fun_mem $ label) of
       None \<Rightarrow> get_output_gp label tids maxReg values bad train |
@@ -436,11 +442,11 @@ definition satisfies :: "cfstate list \<Rightarrow> cfstate list \<Rightarrow> b
 
 datatype output_generalisation = Success "(iEFSM \<times> funMem \<times> output_function list \<times> output_function set)" | Failure "output_function set"
 
-function output_and_update :: "output_function set \<Rightarrow> output_function list \<Rightarrow> funMem \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> transition_group list \<Rightarrow> transition_group \<Rightarrow>  value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> (nat \<times> nat \<times> value list) list \<Rightarrow> output_generalisation" where
-  "output_and_update bad good fun_mem _ _ e _ _ _ _ _ _ [] = Success (e, fun_mem, rev good, bad)" |
-  "output_and_update bad good fun_mem max_attempts attempts e log gps gp values is r ((inx, maxReg, ps)#pss) = (
+function output_and_update :: "output_function set \<Rightarrow> output_function list \<Rightarrow> funMem \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> transition_group list \<Rightarrow> transition_group \<Rightarrow>  value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> (nat \<times> nat \<times> value list) list \<Rightarrow> nat list list \<Rightarrow> output_generalisation" where
+  "output_and_update bad good fun_mem _ _ e _ _ _ _ _ _ [] _ = Success (e, fun_mem, rev good, bad)" |
+  "output_and_update bad good fun_mem max_attempts attempts e log gps gp values is r ((inx, maxReg, ps)#pss) latent = (
     let label = Label (snd (hd gp)) in
-    case get_output label (fst (hd gp)) maxReg values bad (zip is (zip r ps)) fun_mem of
+    case get_output label (fst (hd gp)) maxReg values bad (zip is (zip r (zip ps latent))) fun_mem of
       None \<Rightarrow> Failure (bad \<union> (set good)) |
       Some (fun, types) \<Rightarrow>
         let
@@ -450,7 +456,7 @@ function output_and_update :: "output_function set \<Rightarrow> output_function
           fun_mem' = fun_mem(label $:= (fun, types)#(fun_mem $ label))
         in
         if accepts_log (set log) (tm e') then
-          output_and_update {} (fun#good) fun_mem' max_attempts attempts e' log gps gp values is r pss
+          output_and_update {} (fun#good) fun_mem' max_attempts attempts e' log gps gp values is r pss latent
         else
           let
             group_ids = \<lambda>g. set (map fst g);
@@ -461,17 +467,17 @@ function output_and_update :: "output_function set \<Rightarrow> output_function
             e'' = groupwise_infer_updates fun_mem log e' possible_gps ((K$ unknown)(fun$:=types))
           in
           if accepts_log (set log) (tm e'') then
-            output_and_update {} (fun#good) fun_mem' max_attempts attempts e'' log gps gp values is r pss
+            output_and_update {} (fun#good) fun_mem' max_attempts attempts e'' log gps gp values is r pss latent
           else
           if attempts > 0 then
-            output_and_update (insert fun bad) good fun_mem max_attempts (attempts - 1) e log gps gp values is r ((inx, maxReg, ps)#pss)
+            output_and_update (insert fun bad) good fun_mem max_attempts (attempts - 1) e log gps gp values is r ((inx, maxReg, ps)#pss) latent
           else
             Failure (bad \<union> (set good))
   )"
      apply (clarsimp, meson unzip_3.cases)
   by auto
 termination
-  by (relation "measures [\<lambda>(bad, good, fun_mem, max_attempts, attempts, e, log, gps, gp, values, I, r, l). length l + attempts]", auto)
+  by (relation "measures [\<lambda>(bad, good, fun_mem, max_attempts, attempts, e, log, gps, gp, values, I, r, l, latent). length l + attempts]", auto)
 
 (*This is where the types stuff originates*)
 definition generalise_and_update :: "nat \<Rightarrow> output_function set \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> transition_group \<Rightarrow> transition_group list \<Rightarrow> funMem \<Rightarrow>  output_generalisation" where
@@ -479,14 +485,21 @@ definition generalise_and_update :: "nat \<Rightarrow> output_function set \<Rig
     let
       values = enumerate_log_values log;
       new_gp_ts = make_training_set e log gp;
-      (I, R, P) = unzip_3 new_gp_ts;
+      (I, R, P, L) = unzip_4 new_gp_ts;
       max_reg = max_reg_total e;
       \<comment>\<open> TODO: We want to record output funs and types as we infer them! \<close>
       outputs_to_infer = enumerate 0 (enumerate max_reg (transpose P))
-      in output_and_update bad [] fun_mem attempts attempts e log gps gp values I R outputs_to_infer
+      in output_and_update bad [] fun_mem attempts attempts e log gps gp values I R outputs_to_infer L
   )"
 
 datatype generalisation = Failed "output_function set" | Succeeded "(iEFSM \<times> tids list \<times> funMem \<times> (transition \<times> output_types option list) list)"
+
+fun take_maximum_updates :: "iEFSM \<Rightarrow> (tids \<times> transition) fset" where
+  "take_maximum_updates ts = fold (\<lambda>(tids, _, t) acc.
+    if \<exists>(_, h) |\<in>| acc. Label t = Label h \<and> Arity t = Arity h \<and> Outputs t = Outputs h \<and> set (Updates t) \<subset> set (Updates h) then
+      acc
+    else
+      finsert (tids, t) acc) (sorted_list_of_fset ts) {||}"
 
 fun groupwise_generalise_and_update :: "output_function set \<Rightarrow> output_function set \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> transition_group list \<Rightarrow> (tids \<Rightarrow> abstract_event) \<Rightarrow> (abstract_event \<Rightarrow>f (output_function list \<times> update_function list) option) \<Rightarrow> tids list \<Rightarrow> (transition \<times> output_types option list) list \<Rightarrow> funMem \<Rightarrow> generalisation" where
   "groupwise_generalise_and_update bad maybe_bad max_attempts attempts _ e [] update_groups structure funs to_derestrict closed fun_mem = Succeeded (e, to_derestrict, fun_mem, closed)" |
@@ -498,7 +511,7 @@ fun groupwise_generalise_and_update :: "output_function set \<Rightarrow> output
           reg_bad = set (filter (\<lambda>a. AExp.enumerate_regs a \<noteq> {}) output_funs);
           (rep_id, rep) = (hd (gp));
           different = ffilter (\<lambda>(id, tf, t). t \<noteq> get_by_ids e id) e';
-          funs = fold (\<lambda>(id, _, t) acc. acc(structure id $:= Some ((Outputs t), (Updates t)))) (sorted_list_of_fset different) funs;
+          funs = fold (\<lambda>(id, t) acc. acc(structure id $:= Some ((Outputs t), (Updates t)))) (sorted_list_of_fset (take_maximum_updates different)) funs;
           structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(i, _, _). structure i = structure rep_id) e');
           new_outputs = \<lambda>tid t. case funs $ (structure tid) of None \<Rightarrow> Outputs t | Some (outputs, updates) \<Rightarrow> outputs;
           new_updates = \<lambda>tid t. case funs $ (structure tid) of None \<Rightarrow> Updates t | Some (outputs, updates) \<Rightarrow> updates;

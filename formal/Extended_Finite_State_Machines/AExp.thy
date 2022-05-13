@@ -25,10 +25,10 @@ text_raw\<open>}%endsnip\<close>
 fun is_lit :: "'a aexp \<Rightarrow> bool" where
   "is_lit (L x) = True" |
   "is_lit (V x) = False" |
-  "is_lit (Plus a1 a2) = ((is_lit a1) \<or> (is_lit a2))" |
-  "is_lit (Minus a1 a2) = ((is_lit a1) \<or> (is_lit a2))" |
-  "is_lit (Times a1 a2) = ((is_lit a1) \<or> (is_lit a2))" |
-  "is_lit (Divide a1 a2) = ((is_lit a1) \<or> (is_lit a2))"
+  "is_lit (Plus a1 a2) = ((is_lit a1) \<and> (is_lit a2))" |
+  "is_lit (Minus a1 a2) = ((is_lit a1) \<and> (is_lit a2))" |
+  "is_lit (Times a1 a2) = ((is_lit a1) \<and> (is_lit a2))" |
+  "is_lit (Divide a1 a2) = ((is_lit a1) \<and> (is_lit a2))"
 
 lemma aexp_induct_separate_V_cases  [case_names L I R Plus Minus Times Divide]:
   "(\<And>x. P (L x)) \<Longrightarrow>

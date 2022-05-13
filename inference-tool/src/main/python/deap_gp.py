@@ -74,23 +74,21 @@ def is_null(value):
     return value is None or value is pd.NA or np.isnan(value)
 
 
-def find_smallest_distance(individual, pset, args, expected):
-    latent_vars = [x for x in args if is_null(args[x])]
-
+def find_smallest_distance(individual, pset, args, expected, latent_vars):
+    undefined_vars = [x for x in args if is_null(args[x])]
     consts = set()
     type_ = individual[0].ret
-
     func = gp.compile(expr=individual, pset=pset)
 
     if not callable(func):
         return distance_between(expected, func)
 
-    if len(latent_vars) == 0:
+    if len(undefined_vars) == 0:
         actual = func(**args)
         distance = distance_between(expected, actual)
         if isclose(distance, 0, abs_tol=1e-10):
             return 0
-        else:
+        if len(latent_vars) == 0:
             return distance
 
     consts = set([c.value for c in pset.terminals[type_] if type(c.value) == type_])
@@ -103,7 +101,12 @@ def find_smallest_distance(individual, pset, args, expected):
     for assignment in assignments:
         new_args = args.copy()
         new_args.update(assignment)
-        actual = func(**new_args)
+        try:
+            actual = func(**new_args)
+        except:
+            print(f"Problem executing {individual} with {new_args}")
+            print(traceback.format_exc())
+            sys.exit(1)
         off_by = distance_between(expected, actual)
         if off_by == 0:
             return 0
@@ -145,7 +148,7 @@ def add_consts_to_pset(individual, pset):
 
 
 def evaluate_candidate(
-    individual, points: pd.DataFrame, pset: gp.PrimitiveSet
+    individual, points: pd.DataFrame, pset: gp.PrimitiveSet, latent_vars_rows
 ) -> float:
     """
     Evaluate a candidate function for a set of function executions and aggregate the distances between the expected
@@ -161,28 +164,29 @@ def evaluate_candidate(
     :return: The aggregated distance between expected and actual values.
     :rtype: float
     """
+    assert len(points) == len(
+        latent_vars_rows
+    ), "Must have latent variable information for every row in the training set"
     if isinstance(individual, str):
         individual = creator.Individual(gp.PrimitiveTree.from_string(individual, pset))
 
     total_vars = list(points.columns)[:-1]
 
-    latent_vars = latent_variables(individual, points)
+    undefined_vars = latent_variables(individual, points)
     unused_vars = (
-        set(total_vars).difference(vars_in_tree(individual)).difference(latent_vars)
+        set(total_vars).difference(vars_in_tree(individual)).difference(undefined_vars)
     )
 
     distances = []
-    for (inx, row) in points.iterrows():
+    for (inx, row), latent_vars in zip(points.iterrows(), latent_vars_rows):
         try:
             best = find_smallest_distance(
-                individual, pset, row.iloc[:-1].to_dict(), row[-1]
+                individual, pset, row.iloc[:-1].to_dict(), row[-1], latent_vars
             )
             distances.append(best)
         except:
-            print(
-                f"Problem executing {individual} with arguments\n{row}"
-            )
-            sys.exit(0)
+            print(f"Problem executing {individual} with arguments\n{row}")
+            sys.exit(1)
 
     assert not any([is_null(x) for x in distances]), "no distance can be nan"
 
@@ -205,7 +209,11 @@ def evaluate_candidate(
 
 
 def fitness(
-    individual, points: pd.DataFrame, pset: gp.PrimitiveSet, bad: list
+    individual,
+    points: pd.DataFrame,
+    pset: gp.PrimitiveSet,
+    bad: list,
+    latent_vars_rows: list,
 ) -> float:
     """
     Determine the fitness of an individual based on its ability to account for a set of expected function executions.
@@ -223,7 +231,7 @@ def fitness(
     if individual in bad:
         return (float("inf"),)
     try:
-        score = evaluate_candidate(individual, points, pset)
+        score = evaluate_candidate(individual, points, pset, latent_vars_rows)
         newline = "\n  "
         assert not is_null(
             score
@@ -235,7 +243,9 @@ def fitness(
         sys.exit(1)
 
 
-def correct(individual, points: pd.DataFrame, pset: gp.PrimitiveSet) -> bool:
+def correct(
+    individual, points: pd.DataFrame, pset: gp.PrimitiveSet, latent_vars_rows: list
+) -> bool:
     """
     Does the candidate function perfectly reproduce the expected executions, assuming any latent variables hold the
     correct values upon evaluation?
@@ -251,21 +261,23 @@ def correct(individual, points: pd.DataFrame, pset: gp.PrimitiveSet) -> bool:
     :rtype: bool
     """
 
-    try:
-        latent_vars = latent_variables(individual, points)
-        # if len(latent_vars) > 0:
-        #     return True
+    assert len(points) == len(
+        latent_vars_rows
+    ), "Must have latent variable information for every row in the training set"
+    if isinstance(individual, str):
+        individual = creator.Individual(gp.PrimitiveTree.from_string(individual, pset))
 
-        for _, row in points.iterrows():
-            min_distance = find_smallest_distance(
-                individual, pset, row.iloc[:-1].to_dict(), row[-1]
+    for (inx, row), latent_vars in zip(points.iterrows(), latent_vars_rows):
+        try:
+            best = find_smallest_distance(
+                individual, pset, row.iloc[:-1].to_dict(), row[-1], latent_vars
             )
-            if min_distance > 0:
+            if best > 0:
                 return False
-        return True
-    except:
-        print(traceback.format_exc())
-        sys.exit(1)
+        except:
+            print(f"Problem executing {individual} with arguments\n{row}")
+            sys.exit(1)
+    return True
 
 
 def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
@@ -638,6 +650,7 @@ def parsimony_select(individuals, k):
 def run_gp(
     points: pd.DataFrame,
     pset,
+    latent_vars_rows=None,
     mu=100,
     lamb=10,
     ngen=100,
@@ -648,9 +661,16 @@ def run_gp(
     points = points.replace({np.nan: None, np.NaN: None})
     random.seed(random_seed)
 
-    seeds=["sub(r1, i0)", "add(r1, i0)"]
+    # seeds = ["add(r1, 50)", "sub(r1, 50)"]
+    # seeds = ["add(r1, i0)", "sub(i0, r1)"]
 
     toolbox = base.Toolbox()
+
+    if latent_vars_rows is None:
+        latent_vars_rows = [[] for _ in range(len(points))]
+    assert len(points) == len(
+        latent_vars_rows
+    ), f"Must have latent variable information for each row. {len(points)} vs. {len(latent_vars_rows)}"
 
     toolbox.register(
         "evaluate",
@@ -658,6 +678,7 @@ def run_gp(
         points=points,
         pset=pset,
         bad=bad,
+        latent_vars_rows=latent_vars_rows,
     )
 
     generators = {
@@ -708,8 +729,10 @@ def run_gp(
                 individual = creator.Individual(
                     gp.PrimitiveTree.from_string(seed, pset)
                 )
-                print(f"Fitness of {individual} is {fitness(individual, points, pset, bad)}")
-                if fitness(individual, points, pset, bad) == (0,):
+                print(
+                    f"Fitness of {individual} is {fitness(individual, points, pset, bad, latent_vars_rows)}"
+                )
+                if fitness(individual, points, pset, bad, latent_vars_rows) == (0,):
                     print("Found perfect individual!")
                     return individual
                 pop.append(individual)
@@ -1034,15 +1057,27 @@ def from_string(string, pset):
     return gp.PrimitiveTree.from_string(string, pset)
 
 
-def need_latent(points: pd.DataFrame) -> bool:
+def need_latent(points: pd.DataFrame, latent_vars_rows: list) -> bool:
     try:
-        return need_latent_aux(points)
+        return need_latent_aux(points, latent_vars_rows)
     except:
         print(traceback.format_exc())
         sys.exit(0)
 
 
-def need_latent_aux(points: pd.DataFrame) -> bool:
+def set_to_na(training_set, latent_registers):
+    dtypes = training_set.dtypes
+    to_update = [{k: "<NA>" for k in i} for i in latent_registers]
+    training_set.update(to_update)
+    training_set.replace("<NA>", None, inplace=True)
+    for k in training_set.dtypes.index:
+        training_set[k] = training_set[k].astype(dtypes[k])
+
+
+def need_latent_aux(points: pd.DataFrame, latent_vars_rows: list) -> bool:
+    points = points.copy()
+    set_to_na(points, latent_vars_rows)
+
     inputs = list(points.columns)[:-1]
     if len(set(points.iloc[:, -1])) <= 1:
         return False
