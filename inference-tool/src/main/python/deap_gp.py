@@ -385,9 +385,9 @@ def choose_terminal(pset, type_, prob=0.7):
     variables = [t for t in pset.terminals[type_] if t.name.startswith("ARG")]
     constants = [t for t in pset.terminals[type_] if t not in variables]
     if random.random() > prob and variables != []:
-        return random.choice(variables)
-    else:
         return random.choice(constants)
+    else:
+        return random.choice(variables)
 
 
 def mutateByTerminal(individual, pset):
@@ -645,9 +645,10 @@ def run_gp(
     seeds=[],
     bad=[],
 ):
-    print("BADS:", list(bad))
     points = points.replace({np.nan: None, np.NaN: None})
     random.seed(random_seed)
+
+    seeds=["sub(r1, i0)", "add(r1, i0)"]
 
     toolbox = base.Toolbox()
 
@@ -677,8 +678,8 @@ def run_gp(
         "expr",
         genHalfAndHalf,
         pset=pset,
-        min_=0,
-        max_=2,
+        min_=1,
+        max_=1,
         simp=lambda x: simplify(x, pset, types),
     )
     toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr)
@@ -707,10 +708,10 @@ def run_gp(
                 individual = creator.Individual(
                     gp.PrimitiveTree.from_string(seed, pset)
                 )
-                print(f"Fitness of {individual} is {fitness(individual, points, pset)}")
-                if fitness(individual, points, pset) == (0,):
+                print(f"Fitness of {individual} is {fitness(individual, points, pset, bad)}")
+                if fitness(individual, points, pset, bad) == (0,):
                     print("Found perfect individual!")
-                    return simplify(individual, pset, types)
+                    return individual
                 pop.append(individual)
             except TypeError:
                 print(f"Failed to add seed {seed}")
@@ -720,14 +721,17 @@ def run_gp(
                 # print(pset.mapping)
                 # assert False
                 # pass
-    print("seeds")
 
-    for terms in pset.terminals.values():
-        terms = [creator.Individual([i]) for i in terms]
-        for t in terms:
-            if t not in pop:
-                pop.append(t)
+    # for terms in pset.terminals.values():
+    #     terms = [creator.Individual([i]) for i in terms]
+    #     for t in terms:
+    #         if t not in pop:
+    #             print(str(t))
+    #             pop.append(t)
+    print("Initial population:", len(pop), [str(p) for p in pop])
     pop = make_distinct(pop)
+    print("\nDistinct Initial population:", len(pop), [str(p) for p in pop])
+
     assert is_distinct(pop), "Population contains duplicated individuals."
     pop += toolbox.population(n=mu - len(pop))
     pop = sorted(pop, key=lambda x: x.fitness.values)
@@ -899,6 +903,9 @@ def fill_pop(more, individual, avoid=[], TIMEOUT=3):
 def make_distinct(pop):
     new_pop = []
     for ind in pop:
+        # Skip constants
+        if len(ind) == 1 and isinstance(ind[0].value, ind[0].ret):
+            continue
         if ind not in new_pop:
             new_pop.append(ind)
     assert is_distinct(new_pop)
@@ -961,12 +968,6 @@ def eaMuPlusLambda(
     logbook = tools.Logbook()
     logbook.header = ["gen", "nevals"] + (stats.fields if stats else [])
 
-    # population = make_distinct(population, mu, toolbox.individual)
-    # population += fill_pop(mu - len(population), toolbox.individual, population)
-    # assert (
-    #     len(population) == mu
-    # ), f"Population should contain {mu} individuals but contains {len(population)}."
-
     # Evaluate the individuals with an invalid fitness
     invalid_ind = [ind for ind in population if not ind.fitness.valid]
     fitnesses = list(toolbox.map(toolbox.evaluate, invalid_ind))
@@ -984,6 +985,8 @@ def eaMuPlusLambda(
 
     # Begin the generational process
     for gen in range(0, ngen):
+        # print("\ngen", gen, "best", str(halloffame[0]))
+        # print([str(x) for x in population])
         seen = {}
         for p in population:
             p = str(p)
@@ -1064,7 +1067,7 @@ def shortcut_latent(points: pd.DataFrame) -> bool:
 
 
 if __name__ == "__main__":
-    points = pd.read_csv("/tmp/train.csv")
+    points = pd.read_csv("test2.csv")
 
     for col in points:
         if points.dtypes[col] == object:
@@ -1077,30 +1080,27 @@ if __name__ == "__main__":
     # logger.info(points.dtypes)
     # assert False
 
-    latentVars = []
-    latentVars.append("r1")
-    for var in latentVars:
-        assert var not in points.columns, f"Latent variable {var} already defined"
-        points.insert(0, var, None)
-
+    if "r1" not in points.columns:
+        points.insert(0, "r1", None)
     pset = setup_pset(points)
     pset.addTerminal(200, int)
 
-    expr = "add(sub(r1, 350), add(5, 250))"
-    individual = creator.Individual(gp.PrimitiveTree.from_string(expr, pset))
-    print(individual)
-    types = {"r1": z3.Int, "expected": z3.Int}
-    simplified = simplify(individual, pset, types)
-    print(simplified)
-    assert False
+    # expr = "add(sub(r1, 350), add(5, 250))"
+    # individual = creator.Individual(gp.PrimitiveTree.from_string(expr, pset))
+    # print(individual)
+    # types = {"r1": z3.Int, "expected": z3.Int}
+    # simplified = simplify(individual, pset, types)
+    # print(simplified)
+    # assert False
 
     # ind = gp.PrimitiveTree.from_string("sub(i0, i1)", pset)
     # logger.info(f"Fitness of {ind} is {fitness(ind, points, pset)}")
     # assert False
 
-    best = run_gp(points, pset, random_seed=2, seeds=[])
+    best = run_gp(points, pset, random_seed=34, seeds=[])
     logger.info(f"best is {best}")
     logger.info(graph(best))
+    assert False
 
     bad = []
     for s in range(10):

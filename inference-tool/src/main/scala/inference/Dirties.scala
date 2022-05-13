@@ -273,19 +273,19 @@ object Dirties {
     l: String,
     r: Nat.nat,
     values: List[Value.value],
-    train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Map[Nat.nat, Option[Value.value]]))],
+    ioPairs: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Value.value))],
     bads: List[AExp.aexp[VName.vname]] = List()): Option[AExp.aexp[VName.vname]] = {
 
     Log.root.debug(f"Getting update for $l")
 
     val r_index = TypeConversion.toInt(r)
-    val ioPairs = (train.map {
-      case (inputs, (aregs, pregs)) => pregs.getOrElse(r, None) match {
-        case None => return None //throw new IllegalStateException(f"Got None when trying to access r${PrettyPrinter.show(r)} from registers\n$pregs")
-        case Some(v) => (inputs, (aregs, v))
-        // case Some(v) => (inputs, (aregs.filterKeys(_ == r), v))
-      }
-    }).distinct
+    // val ioPairs = (train.map {
+    //   case (inputs, (aregs, pregs)) => pregs.getOrElse(r, None) match {
+    //     case None => return None //throw new IllegalStateException(f"Got None when trying to access r${PrettyPrinter.show(r)} from registers\n$pregs")
+    //     case Some(v) => (inputs, (aregs, v))
+    //     // case Some(v) => (inputs, (aregs.filterKeys(_ == r), v))
+    //   }
+    // }).distinct
 
     var (training_set, types) = setupTrainingSet(ioPairs)
     val output_type = training_set.dtypes.bracketAccess("expected")
@@ -371,15 +371,18 @@ object Dirties {
 
   def getOutput(
     label: String,
+    tids: List[Nat.nat],
     maxReg: Nat.nat,
     values: List[Value.value],
-    bad: List[AExp.aexp[VName.vname]] = List(),
+    bad_set: Set.set[AExp.aexp[VName.vname]],
     train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], Value.value))],
     latentVariable: Boolean = false
     ): Option[(AExp.aexp[VName.vname], Map[VName.vname, String])] = {
-    Log.root.debug(f"${"="*84}\nGetting Output for $label")
+    val Set.seta(bad) = bad_set
+
+    Log.root.debug(f"${"="*84}\nGetting Output for ${PrettyPrinter.show(tids)}$label")
     Log.root.debug(f"Bad: ${PrettyPrinter.outputsToString(bad)}")
-    // Log.root.debug(f"ioPairs: ${ioPairs.map(ir => "(" + PrettyPrinter.show(ir._1) + ", " + PrettyPrinter.show(ir._2._1) + ", " + PrettyPrinter.show(ir._2._2) + ")")}")
+    Log.root.debug(f"ioPairs: ${train.map(ir => "(" + PrettyPrinter.show(ir._1) + ", " + PrettyPrinter.show(ir._2._1) + ", " + PrettyPrinter.show(ir._2._2) + ")")}")
 
     val r_index = TypeConversion.toInt(maxReg) + 1
 
@@ -393,7 +396,7 @@ object Dirties {
     if (!latentVariable && deap_gp.need_latent(training_set).as[Boolean]) {
       Log.root.debug("  Output training set:\n" + training_set)
       Log.root.debug("  Nondeterminism = try with latent variable")
-      return getOutput(label, maxReg, values, bad, train, true)
+      return getOutput(label, tids, maxReg, values, bad_set, train, true)
     }
 
     if (latentVariable) {
@@ -461,6 +464,7 @@ object Dirties {
     Log.root.debug(f"PSET KEYS: ${pset.mapping.keys()}")
 
     var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy, bad=deap_gp_bad.toPythonProxy)
+    Log.root.debug(f"Best output is $best")
 
     if (deap_gp.correct(best, training_set, pset).as[Boolean]) {
       Log.root.debug(f"  Best output $best is correct")
@@ -471,8 +475,10 @@ object Dirties {
       val stringTypes = types - "expected"
       return Some((aexp, stringTypes.map(x => (TypeConversion.vnameFromString(x._1), x._2)).toMap))
     } else if (!latentVariable) {
-      Log.root.debug("   Failed - Trying again with a latent variable")
-      return getOutput(label, maxReg, values, bad, train, true)
+      Log.root.debug(f"  Best output $best is incorrect")
+      return None
+      // Log.root.debug("    Failed - Trying again with a latent variable")
+      // return getOutput(label, maxReg, values, bad, train, true)
     } else {
       Log.root.debug(f"  Best output $best is incorrect")
       return None
