@@ -9,7 +9,7 @@ module load Java/11
 module load Anaconda3/2019.07
 
 echo "sbatch bessemer-run.sh "$@
-export LD_LIBRARY_PATH=/home/acp17jmf/z3/build
+export LD_LIBRARY_PATH=~/.conda/envs/deapGP/lib:./lib
 export MALLOC_ARENA_MAX=1
 
 IFS='-' # hyphen (-) is set as delimiter
@@ -29,4 +29,4 @@ then conf="${conf:1}-"
 fi
 
 rm -r results/$top/$6/$conf$5/$4-$5-$1-$2-$3
-java -jar target/scala-2.12/inference-tool-assembly-0.1.0-SNAPSHOT.jar -s blueFringe -p $5 -g $1 -o $2 -u $3 -h ws -d results/$top/$6/$conf$5/$4-$5-$1-$2-$3 experimental-data/$top/$top-$6/$4-train.json experimental-data/$top/$top-$6/$4-test.json
+java -jar target/scala-2.12/inference-tool-assembly-0.1.0-SNAPSHOT.jar -s blueFringe --blueFringe -p $5 -g $1 -o $2 -u $3 -h ws -d results/$top/$6/$conf$5/$4-$5-$1-$2-$3 experimental-data/$top/$top-$6/$4-train.json experimental-data/$top/$top-$6/$4-test.json
