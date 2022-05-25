@@ -295,12 +295,14 @@ object Dirties {
     //   }
     // }).distinct
 
-    var (training_set, types, latent_vars_rows) = setupTrainingSet(ioPairs)
+    var (training_set, types, _) = setupTrainingSet(ioPairs)
+    // We don't want any latent variables in update inference
+    val latent_vars_rows=py"[() for i in range(len($training_set))]"
     val output_type = training_set.dtypes.bracketAccess("expected")
     training_set = training_set.select_dtypes(include = output_type)
 
     // If number of inputs < possible outputs then we can't solve it
-    if (deap_gp.need_latent(training_set, latent_vars_rows.toPythonProxy).as[Boolean]) {
+    if (deap_gp.need_latent(training_set, latent_vars_rows).as[Boolean]) {
       Log.root.debug("    Too few inputs for possible updates")
       return None
     }
@@ -343,7 +345,7 @@ object Dirties {
     // }
 
     var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy)
-    if (deap_gp.correct(best, training_set, pset, latent_vars_rows=latent_vars_rows.toPythonProxy).as[Boolean]) {
+    if (deap_gp.correct(best, training_set, pset, latent_vars_rows=latent_vars_rows).as[Boolean]) {
       Log.root.debug(f"  Best update $best is correct")
       val (nodes, edges, labels) = deap_gp.graph(best).as[(List[Int], List[(Int, Int)], Map[Int, String])]
 

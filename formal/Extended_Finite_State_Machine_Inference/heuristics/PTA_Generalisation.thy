@@ -440,14 +440,15 @@ definition satisfies :: "cfstate list \<Rightarrow> cfstate list \<Rightarrow> b
 
 (* \ Waypoints *)
 
-datatype output_generalisation = Success "(iEFSM \<times> funMem \<times> output_function list \<times> output_function set)" | Failure "output_function set"
+type_synonym bad_funs = "tids \<Rightarrow>f output_function set"
+datatype output_generalisation = Success "(iEFSM \<times> funMem \<times> output_function list \<times> bad_funs)" | Failure bad_funs
 
-function output_and_update :: "output_function set \<Rightarrow> output_function list \<Rightarrow> funMem \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> transition_group list \<Rightarrow> transition_group \<Rightarrow>  value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> (nat \<times> nat \<times> value list) list \<Rightarrow> nat list list \<Rightarrow> output_generalisation" where
+function output_and_update :: "bad_funs \<Rightarrow> output_function list \<Rightarrow> funMem \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> transition_group list \<Rightarrow> transition_group \<Rightarrow>  value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> (nat \<times> nat \<times> value list) list \<Rightarrow> nat list list \<Rightarrow> output_generalisation" where
   "output_and_update bad good fun_mem _ _ e _ _ _ _ _ _ [] _ = Success (e, fun_mem, rev good, bad)" |
   "output_and_update bad good fun_mem max_attempts attempts e log gps gp values is r ((inx, maxReg, ps)#pss) latent = (
-    let label = Label (snd (hd gp)) in
-    case get_output label (fst (hd gp)) maxReg values bad (zip is (zip r (zip ps latent))) fun_mem of
-      None \<Rightarrow> Failure (bad \<union> (set good)) |
+    let (rep_id, rep) = (hd gp); label = Label rep in
+    case get_output label (fst (hd gp)) maxReg values (bad $ rep_id) (zip is (zip r (zip ps latent))) fun_mem of
+      None \<Rightarrow> Failure (bad(rep_id $:= (set good) \<union> (bad $ rep_id))) |
       Some (fun, types) \<Rightarrow>
         let
           e' = fimage (\<lambda>(tids, tf, t). if tids \<in> set (map fst gp) then (tids, tf, t\<lparr>Outputs:=(Outputs t)[inx := fun]\<rparr>) else (tids, tf, t)) e;
@@ -456,7 +457,7 @@ function output_and_update :: "output_function set \<Rightarrow> output_function
           fun_mem' = fun_mem(label $:= (fun, types)#(fun_mem $ label))
         in
         if accepts_log (set log) (tm e') then
-          output_and_update {} (fun#good) fun_mem' max_attempts attempts e' log gps gp values is r pss latent
+          output_and_update bad (fun#good) fun_mem' max_attempts attempts e' log gps gp values is r pss latent
         else
           let
             group_ids = \<lambda>g. set (map fst g);
@@ -467,12 +468,12 @@ function output_and_update :: "output_function set \<Rightarrow> output_function
             e'' = groupwise_infer_updates fun_mem log e' possible_gps ((K$ unknown)(fun$:=types))
           in
           if accepts_log (set log) (tm e'') then
-            output_and_update {} (fun#good) fun_mem' max_attempts attempts e'' log gps gp values is r pss latent
+            output_and_update bad (fun#good) fun_mem' max_attempts attempts e'' log gps gp values is r pss latent
           else
           if attempts > 0 then
-            output_and_update (insert fun bad) good fun_mem max_attempts (attempts - 1) e log gps gp values is r ((inx, maxReg, ps)#pss) latent
+            output_and_update (bad(rep_id $:= insert fun (bad $ rep_id))) good fun_mem max_attempts (attempts - 1) e log gps gp values is r ((inx, maxReg, ps)#pss) latent
           else
-            Failure (bad \<union> (set good))
+            Failure (bad(rep_id $:= (set good) \<union> (bad $ rep_id)))
   )"
      apply (clarsimp, meson unzip_3.cases)
   by auto
@@ -480,8 +481,8 @@ termination
   by (relation "measures [\<lambda>(bad, good, fun_mem, max_attempts, attempts, e, log, gps, gp, values, I, r, l, latent). length l + attempts]", auto)
 
 (*This is where the types stuff originates*)
-definition generalise_and_update :: "nat \<Rightarrow> output_function set \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> transition_group \<Rightarrow> transition_group list \<Rightarrow> funMem \<Rightarrow>  output_generalisation" where
-  "generalise_and_update attempts bad log e gp gps fun_mem = (
+definition generalise_and_update :: "nat \<Rightarrow> nat \<Rightarrow> bad_funs \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> transition_group \<Rightarrow> transition_group list \<Rightarrow> funMem \<Rightarrow>  output_generalisation" where
+  "generalise_and_update level attempts bad log e gp gps fun_mem = (
     let
       values = enumerate_log_values log;
       new_gp_ts = make_training_set e log gp;
@@ -492,7 +493,7 @@ definition generalise_and_update :: "nat \<Rightarrow> output_function set \<Rig
       in output_and_update bad [] fun_mem attempts attempts e log gps gp values I R outputs_to_infer L
   )"
 
-datatype generalisation = Failed "output_function set" | Succeeded "(iEFSM \<times> tids list \<times> funMem \<times> (transition \<times> output_types option list) list)"
+datatype generalisation = Failed bad_funs | Succeeded "(iEFSM \<times> tids list \<times> funMem \<times> (transition \<times> output_types option list) list)"
 
 fun take_maximum_updates :: "iEFSM \<Rightarrow> (tids \<times> transition) fset" where
   "take_maximum_updates ts = fold (\<lambda>(tids, _, t) acc.
@@ -501,11 +502,17 @@ fun take_maximum_updates :: "iEFSM \<Rightarrow> (tids \<times> transition) fset
     else
       finsert (tids, t) acc) (sorted_list_of_fset ts) {||}"
 
-fun groupwise_generalise_and_update :: "output_function set \<Rightarrow> output_function set \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> transition_group list \<Rightarrow> (tids \<Rightarrow> abstract_event) \<Rightarrow> (abstract_event \<Rightarrow>f (output_function list \<times> update_function list) option) \<Rightarrow> tids list \<Rightarrow> (transition \<times> output_types option list) list \<Rightarrow> funMem \<Rightarrow> generalisation" where
+definition bad_union :: "bad_funs \<Rightarrow> bad_funs \<Rightarrow> bad_funs" where
+  "bad_union bad bad' = fold (\<lambda>k acc. acc(k $:= (acc $ k) \<union> (bad' $ k))) (finfun_to_list bad') bad"
+
+definition bad_add :: "bad_funs \<Rightarrow> tids \<Rightarrow> output_function set \<Rightarrow> bad_funs" where
+  "bad_add bad k v = bad(k $:= (bad $ k \<union> v))"
+
+fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> transition_group list \<Rightarrow> (tids \<Rightarrow> abstract_event) \<Rightarrow> (abstract_event \<Rightarrow>f (output_function list \<times> update_function list) option) \<Rightarrow> tids list \<Rightarrow> (transition \<times> output_types option list) list \<Rightarrow> funMem \<Rightarrow> generalisation" where
   "groupwise_generalise_and_update bad maybe_bad max_attempts attempts _ e [] update_groups structure funs to_derestrict closed fun_mem = Succeeded (e, to_derestrict, fun_mem, closed)" |
   "groupwise_generalise_and_update bad maybe_bad max_attempts attempts log e (gp#t) update_groups structure funs to_derestrict closed fun_mem_old = (
-        case generalise_and_update max_attempts bad log e gp update_groups fun_mem_old of
-        Failure bad' \<Rightarrow> Failed (bad \<union> bad') |
+        case generalise_and_update attempts max_attempts bad log e gp update_groups fun_mem_old of
+        Failure bad' \<Rightarrow> Failed (bad_union bad bad') |
         Success (e', fun_mem, output_funs, bad') \<Rightarrow>
         let
           reg_bad = set (filter (\<lambda>a. AExp.enumerate_regs a \<noteq> {}) output_funs);
@@ -522,17 +529,18 @@ fun groupwise_generalise_and_update :: "output_function set \<Rightarrow> output
           more_to_derestrict = sorted_list_of_fset (fimage fst (ffilter (\<lambda>(id, _, tran). tran \<noteq> get_by_ids e id) standardised));
         \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and
             updates for the other historical subgroups so can filter them out.\<close>
+        
         result = (if pre_standardised_good then
-          groupwise_generalise_and_update bad (reg_bad\<union>maybe_bad\<union>bad') max_attempts attempts log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. structure (fst (hd g)) \<notin> set (finfun_to_list funs)) t) update_groups structure funs (to_derestrict @ more_to_derestrict) [] fun_mem
+          groupwise_generalise_and_update bad (bad_add (bad_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. structure (fst (hd g)) \<notin> set (finfun_to_list funs)) t) update_groups structure funs (to_derestrict @ more_to_derestrict) [] fun_mem
         else
-          groupwise_generalise_and_update bad (reg_bad\<union>maybe_bad\<union>bad') max_attempts attempts log (merge_regs standardised (accepts_log (set log))) t update_groups structure funs (to_derestrict @ more_to_derestrict) [] fun_mem)
+          groupwise_generalise_and_update bad (bad_add (bad_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts log (merge_regs standardised (accepts_log (set log))) t update_groups structure funs (to_derestrict @ more_to_derestrict) [] fun_mem)
         in
         case result of
           Failed bad \<Rightarrow>  (
           if attempts > 0 then
-            groupwise_generalise_and_update (reg_bad\<union>bad\<union>maybe_bad) {} max_attempts (attempts - 1) log e (gp#t) update_groups structure funs to_derestrict closed fun_mem_old
+            groupwise_generalise_and_update (bad_add (bad_union maybe_bad bad) (rep_id) reg_bad) (K$ {}) max_attempts (attempts - 1) log e (gp#t) update_groups structure funs to_derestrict closed fun_mem_old
           else
-            groupwise_generalise_and_update (reg_bad\<union>bad) {} max_attempts max_attempts log e t update_groups structure funs to_derestrict closed fun_mem
+            groupwise_generalise_and_update (bad_add bad rep_id reg_bad) (K$ {}) max_attempts max_attempts log e t update_groups structure funs to_derestrict closed fun_mem
         ) |
         Succeeded res \<Rightarrow> Succeeded res
   )"
@@ -577,7 +585,7 @@ definition derestrict :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier 
     let
       groups = historical_groups pta log;
       output_groups = filter (\<lambda>g. (Outputs (snd (hd g))) \<noteq> []) groups;
-      (normalised, to_derestrict, _, _) = this (groupwise_generalise_and_update {} {} 2 2 log pta output_groups groups (get_structures pta log) (K$ None) [] [] (K$ []));
+      (normalised, to_derestrict, _, _) = this (groupwise_generalise_and_update (K${}) (K${}) 2 2 log pta output_groups groups (get_structures pta log) (K$ None) [] [] (K$ []));
       tidied = fimage (\<lambda>(id, tf, t). (id, tf, t\<lparr>Updates:= tidy_updates (Updates t)\<rparr>)) normalised
     in
       drop_selected_guards tidied to_derestrict pta log m np
