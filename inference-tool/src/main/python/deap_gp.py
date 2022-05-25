@@ -30,8 +30,6 @@ from itertools import product
 import networkx as nx
 import logging
 
-import multiprocessing
-
 logging.basicConfig()
 
 logger = logging.getLogger("main")
@@ -647,6 +645,16 @@ def parsimony_select(individuals, k):
 #         sys.exit(0)
 
 
+def sort_height(individual, training_set):
+    height = individual.height
+    if height > 0:
+        return height
+    latent_vars = latent_variables(individual, training_set)
+    if len(latent_vars) > 0:
+        return float("inf")
+    return height
+
+
 def run_gp(
     points: pd.DataFrame,
     pset,
@@ -680,6 +688,7 @@ def run_gp(
         bad=bad,
         latent_vars_rows=latent_vars_rows,
     )
+    toolbox.register("height", sort_height, training_set=points)
 
     generators = {
         np.dtype("float64"): z3.Real,
@@ -751,9 +760,9 @@ def run_gp(
     #         if t not in pop:
     #             print(str(t))
     #             pop.append(t)
-    print("Initial population:", len(pop), [str(p) for p in pop])
+    # print("Initial population:", len(pop), [str(p) for p in pop])
     pop = make_distinct(pop)
-    print("\nDistinct Initial population:", len(pop), [str(p) for p in pop])
+    # print("\nDistinct Initial population:", len(pop), [str(p) for p in pop])
 
     assert is_distinct(pop), "Population contains duplicated individuals."
     pop += toolbox.population(n=mu - len(pop))
@@ -776,14 +785,17 @@ def run_gp(
             mu,
             lamb,
             0.5,
-            0.1,
+            0.5,
             ngen,
             stats=mstats,
-            halloffame=hof,
+            halloffame=None,
             verbose=False,
         )
 
-        return hof[0]
+        # for p in pop:
+        #     print(str(p), p.fitness.values, toolbox.height(p))
+
+        return pop[0]
     except:
         print(traceback.format_exc())
         sys.exit(1)
@@ -997,6 +1009,9 @@ def eaMuPlusLambda(
     for ind, fit in zip(invalid_ind, fitnesses):
         ind.fitness.values = fit
     population[:] = toolbox.select(population, mu)
+    assert all(
+        [ind.fitness.valid for ind in population]
+    ), "Invalid fitnesses in population after setting fitnesses!"
 
     if halloffame is not None:
         halloffame.update(population)
@@ -1008,6 +1023,9 @@ def eaMuPlusLambda(
 
     # Begin the generational process
     for gen in range(0, ngen):
+        assert all(
+            [ind.fitness.valid for ind in population]
+        ), "Invalid fitnesses in population"
         # print("\ngen", gen, "best", str(halloffame[0]))
         # print([str(x) for x in population])
         seen = {}
@@ -1016,9 +1034,6 @@ def eaMuPlusLambda(
             if p not in seen:
                 seen[p] = 0
             seen[p] += 1
-
-        if halloffame[0].fitness.values[0] == 0:
-            return population, logbook
 
         # Vary the population
         offspring = algorithms.varOr(population, toolbox, lambda_, cxpb, mutpb)
@@ -1030,17 +1045,15 @@ def eaMuPlusLambda(
         population += toolbox.population(n=mu - len(population))
 
         # Evaluate the individuals with an invalid fitness
-        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+        invalid_ind = [ind for ind in population if not ind.fitness.valid]
         fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = fit
 
-        # Update the hall of fame with the generated individuals
-        if halloffame is not None:
-            halloffame.update(offspring)
-
         # Select the next generation population
-        population = sorted(population, key=lambda i: i.fitness.values)[:mu]
+        population = sorted(
+            population, key=lambda i: i.fitness.values + (toolbox.height(i),)
+        )[:mu]
         assert (
             len(population) == mu
         ), f"Population should contain {mu} individuals but contains {len(population)}."
@@ -1049,6 +1062,9 @@ def eaMuPlusLambda(
         logbook.record(gen=gen, nevals=len(invalid_ind), **record)
         if verbose:
             logger.debug(logbook.stream)
+        # Update the hall of fame with the generated individuals
+        if halloffame is not None:
+            halloffame.update(offspring)
 
     return population, logbook
 
@@ -1102,8 +1118,8 @@ def shortcut_latent(points: pd.DataFrame) -> bool:
 
 
 if __name__ == "__main__":
-    points = pd.read_csv("test2.csv")
-
+    points = pd.read_csv("test3.csv", index_col=0)
+    
     for col in points:
         if points.dtypes[col] == object:
             points[col] = points[col].astype("string")
@@ -1119,6 +1135,11 @@ if __name__ == "__main__":
         points.insert(0, "r1", None)
     pset = setup_pset(points)
     pset.addTerminal(200, int)
+    
+    ind = gp.PrimitiveTree.from_string("add(-100, r1)", pset)
+    logger.info(f"Fitness of {ind} is {fitness(ind, points, pset, [], [() for i in range(len(points))])}")
+    logger.info(f"{ind} is correct? {correct(ind, points, pset, [() for i in range(len(points))])}")
+    assert False
 
     # expr = "add(sub(r1, 350), add(5, 250))"
     # individual = creator.Individual(gp.PrimitiveTree.from_string(expr, pset))
@@ -1132,37 +1153,43 @@ if __name__ == "__main__":
     # logger.info(f"Fitness of {ind} is {fitness(ind, points, pset)}")
     # assert False
 
-    best = run_gp(points, pset, random_seed=34, seeds=[])
-    logger.info(f"best is {best}")
-    logger.info(graph(best))
-    assert False
+    best = run_gp(
+        points,
+        pset,
+        random_seed=3,
+        seeds=[],
+        latent_vars_rows=[() for i in range(len(points))],
+    )
+    print()
+    print(f"best is {best}")
+    print(best.height)
 
-    bad = []
-    for s in range(10):
-        print(f"=== {s} ===")
-        best = run_gp(points, pset, random_seed=1, ngen=200, bad=bad)
-        print(f"Gen {s} best {best}: {fitness(best, points, pset, bad)}")
-        if str(best) != "add(i1, r1)":
-            bad.append(best)
+    # bad = []
+    # for s in range(10):
+    #     print(f"=== {s} ===")
+    #     best = run_gp(points, pset, random_seed=1, ngen=200, bad=bad)
+    #     print(f"Gen {s} best {best}: {fitness(best, points, pset, bad)}")
+    #     if str(best) != "add(i1, r1)":
+    #         bad.append(best)
 
-    expected = points.columns[-1]
+    # expected = points.columns[-1]
 
-    logger.info(f"exected type {points.dtypes[expected]}")
+    # logger.info(f"exected type {points.dtypes[expected]}")
 
-    generators = {
-        np.dtype("float64"): z3.Real,
-        np.dtype("int64"): z3.Int,
-        pd.Int64Dtype(): z3.Int,
-        pd.StringDtype(): z3.String,
-    }
-    logger.info(generators)
+    # generators = {
+    #     np.dtype("float64"): z3.Real,
+    #     np.dtype("int64"): z3.Int,
+    #     pd.Int64Dtype(): z3.Int,
+    #     pd.StringDtype(): z3.String,
+    # }
+    # logger.info(generators)
 
-    types = {
-        k: generators.get(points.dtypes[k], generators[points.dtypes[expected]])
-        for k in points
-    }
+    # types = {
+    #     k: generators.get(points.dtypes[k], generators[points.dtypes[expected]])
+    #     for k in points
+    # }
 
-    simplified = simplify(best, pset, types)
-    logger.info(simplified)
-    logger.info(correct(simplified, points, pset))
-    logger.info(get_types(points))
+    # simplified = simplify(best, pset, types)
+    # logger.info(simplified)
+    # logger.info(correct(simplified, points, pset))
+    # logger.info(get_types(points))
