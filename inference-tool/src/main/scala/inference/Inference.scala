@@ -712,7 +712,7 @@ def inf_set[A](a: set[A], x1: set[A]): set[A] = (a, x1) match {
 }
 
 def sup_set[A](x0: set[A], a: set[A]): set[A] = (x0, a) match {
-  case (seta(x), seta(y)) => seta[A](x ++ y)
+  case (seta(x), seta(y)) => seta[A]((x ++ y).par.distinct.toList)
   case (seta(xs), a) =>
     Lista.fold[A, set[A]](((aa: A) => (b: set[A]) => insert[A](aa, b)), xs, a)
 }
@@ -9425,6 +9425,28 @@ Product_Type.equal_proda[String,
                         Inference.get_by_ids(e, id)))
                    }),
                   standardised)))
+              val structural_groups:
+                    List[(String, (List[value_type], List[value_type]))]
+                = Lista.filter[(String,
+                                 (List[value_type],
+                                   List[value_type]))](((a:
+                   (String, (List[value_type], List[value_type])))
+                  =>
+                 {
+                   val (_, (_, outputs)):
+                         (String, (List[value_type], List[value_type]))
+                     = a;
+                   Nat.less_nat(Nat.zero_nata, Nat.Nata(outputs.par.length))
+                 }),
+                Lista.map[List[(List[Nat.nat],
+                                 Transition.transition_ext[Unit])],
+                           (String,
+                             (List[value_type],
+                               List[value_type]))](((gg:
+               List[(List[Nat.nat], Transition.transition_ext[Unit])])
+              =>
+             structure((gg.head)._1)),
+            update_groups))
               val a: generalisation =
                 (if (pre_standardised_good)
                   groupwise_generalise_and_update(bad,
@@ -9446,17 +9468,26 @@ Product_Type.equal_proda[String,
                            t),
            update_groups, structure, funsa, to_derestrict ++ more_to_derestrict,
            Nil, fun_mem)
-                  else groupwise_generalise_and_update(bad,
-                bad_add(bad_union(maybe_bad, bada), rep_id, reg_bad),
-                max_attempts, attempts, log,
-                Same_Register.merge_regs(standardised,
-  ((a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]) =>
-    EFSM.accepts_log(Set.seta[List[(String,
-                                     (List[Value.value],
-                                       List[Value.value]))]](log),
-                      a))),
-                t, update_groups, structure, funsa,
-                to_derestrict ++ more_to_derestrict, Nil, fun_mem));
+                  else (if (Set.less_set[(String,
+   (List[value_type],
+     List[value_type]))](Set.seta[(String,
+                                    (List[value_type],
+                                      List[value_type]))](funsa.keySet.toList),
+                          Set.seta[(String,
+                                     (List[value_type],
+                                       List[value_type]))](structural_groups)))
+                         groupwise_generalise_and_update(bad,
+                  bad_add(bad_union(maybe_bad, bada), rep_id, reg_bad),
+                  max_attempts, attempts, log,
+                  Same_Register.merge_regs(standardised,
+    ((a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]) =>
+      EFSM.accepts_log(Set.seta[List[(String,
+                                       (List[Value.value],
+ List[Value.value]))]](log),
+                        a))),
+                  t, update_groups, structure, funsa,
+                  to_derestrict ++ more_to_derestrict, Nil, fun_mem)
+                         else Failed(bad_union(bad, bada))));
               (a match {
                  case Failed(badb) =>
                    (if (Nat.less_nat(Nat.zero_nata, attempts))

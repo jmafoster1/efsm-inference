@@ -527,13 +527,18 @@ fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Righta
           standardised = if pre_standardised_good then pre_standardised else e';
           \<comment> \<open>This tackles transitions which have been changed\<close>
           more_to_derestrict = sorted_list_of_fset (fimage fst (ffilter (\<lambda>(id, _, tran). tran \<noteq> get_by_ids e id) standardised));
+          \<comment> \<open>We want to do all the structural groups with an output to generalise. If we can't standardise after than the we've probably gone wrong...\<close>
+          structural_groups = filter (\<lambda>(_, _, outputs). length outputs > 0) (map (\<lambda>gg. structure (fst (hd gg))) update_groups);
         \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and
             updates for the other historical subgroups so can filter them out.\<close>
-        
-        result = (if pre_standardised_good then
-          groupwise_generalise_and_update bad (bad_add (bad_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. structure (fst (hd g)) \<notin> set (finfun_to_list funs)) t) update_groups structure funs (to_derestrict @ more_to_derestrict) [] fun_mem
-        else
-          groupwise_generalise_and_update bad (bad_add (bad_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts log (merge_regs standardised (accepts_log (set log))) t update_groups structure funs (to_derestrict @ more_to_derestrict) [] fun_mem)
+          result = (if pre_standardised_good then
+            groupwise_generalise_and_update bad (bad_add (bad_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. structure (fst (hd g)) \<notin> set (finfun_to_list funs)) t) update_groups structure funs (to_derestrict @ more_to_derestrict) [] fun_mem
+          else
+            if set (finfun_to_list funs) \<subset> set (structural_groups) then
+              groupwise_generalise_and_update bad (bad_add (bad_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts log (merge_regs standardised (accepts_log (set log))) t update_groups structure funs (to_derestrict @ more_to_derestrict) [] fun_mem
+            else
+              Failed (bad_union bad bad')
+          )
         in
         case result of
           Failed bad \<Rightarrow>  (
