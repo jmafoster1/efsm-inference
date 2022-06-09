@@ -4,6 +4,7 @@ import scala.io.Source
 import scala.util.Random
 import sys.process._
 import Types._
+import ShowImplicits._
 
 import scala.collection.JavaConversions._
 
@@ -277,12 +278,22 @@ object Dirties {
     }
   }
 
+  def toValueType(s: String): PTA_Generalisation.value_type = {
+    if (s == "Int")
+      return PTA_Generalisation.I()
+    if (s == "Real")
+      return PTA_Generalisation.S()
+    if (s == "String")
+      return PTA_Generalisation.R()
+    throw new IllegalArgumentException(f"Could not convert type '$s' to a value_type. Can only be 'Int', 'Real', or 'String'")
+  }
+
   def getUpdate(
     l: String,
     r: Nat.nat,
     values: List[Value.value],
     ioPairs: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], (Value.value, List[Nat.nat])))],
-    bads: List[AExp.aexp[VName.vname]] = List()): Option[AExp.aexp[VName.vname]] = {
+    bads: List[AExp.aexp[VName.vname]] = List()): Option[(AExp.aexp[VName.vname], Map[VName.vname,PTA_Generalisation.value_type])] = {
 
     Log.root.debug(f"Getting update for $l")
 
@@ -327,7 +338,7 @@ object Dirties {
     val targets = ioPairs.map(x => x._2._2._1)
     if (targets.distinct.length == 1) {
       Log.root.debug("  Singleton literal update")
-      return Some(AExp.L(targets(0)))
+      return Some((AExp.L(targets(0)), Map().withDefaultValue(PTA_Generalisation.type_signature(targets(0)))))
     }
 
     var seeds: List[String] = List()
@@ -353,7 +364,7 @@ object Dirties {
       // if (!AExp.is_lit(aexp))
       //   funMem = funMem + (l -> (best :: funMem(l)))
       val stringTypes = types - "expected"
-      return Some(aexp)
+      return Some((aexp, stringTypes.map(x => (TypeConversion.vnameFromString(x._1), toValueType(x._2)))))
     } else {
       Log.root.debug(f"  Best update $best is incorrect")
       return None
@@ -386,7 +397,7 @@ object Dirties {
     bad_set: Set.set[AExp.aexp[VName.vname]],
     train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], (Value.value, List[Nat.nat])))],
     latentVariable: Boolean = false
-    ): Option[(AExp.aexp[VName.vname], Map[VName.vname, String])] = {
+  ): Option[(AExp.aexp[VName.vname], Map[VName.vname, PTA_Generalisation.value_type])] = {
     Log.root.debug(f"${"="*84}\nGetting Output for ${PrettyPrinter.show(tids)}$label")
     // Log.root.debug(f"ioPairs: ${train.map(ir => "(" + PrettyPrinter.show(ir._1) + ", " + PrettyPrinter.show(ir._2._1) + ", " + PrettyPrinter.show(ir._2._2._1) + PrettyPrinter.show(ir._2._2._2) + ")")}")
 
@@ -464,7 +475,6 @@ object Dirties {
     //
     // Log.root.debug("Seeds:")
     // for (seed <- seeds) {
-    //   println(seed)
     //   val fitness = deap_gp.fitness(seed, training_set, pset)
     //   Log.root.debug(f"  $seed: $fitness")
     // }
@@ -484,7 +494,7 @@ object Dirties {
       // if (!AExp.is_lit(aexp))
       //   funMem = funMem + (label -> (best :: funMem(label)))
       val stringTypes = types - "expected"
-      return Some((aexp, stringTypes.map(x => (TypeConversion.vnameFromString(x._1), x._2)).toMap))
+      return Some((aexp, stringTypes.map(x => (TypeConversion.vnameFromString(x._1), toValueType(x._2)))))
     } else if (!latentVariable) {
       Log.root.debug(f"  Best output $best is incorrect")
       return None
@@ -517,7 +527,7 @@ object Dirties {
   // }
 
   def getRegs(
-    types: Map[VName.vname, String],
+    types: Map[VName.vname, PTA_Generalisation.value_type],
     i: List[Value.value],
     f: AExp.aexp[VName.vname],
     v: Value.value): Map[Nat.nat, Option[Value.value]] = {
@@ -530,11 +540,11 @@ object Dirties {
 
     var inputs: String = ""
     for (v <- expVars) {
-      inputs += f"(${PrettyPrinter.vnameToString(v)} ${types(v)})"
+      inputs += f"(${PrettyPrinter.vnameToString(v)} ${types(v).show})"
     }
     var z3String: String = f"(define-fun f (${inputs}) ${TypeConversion.typeString(v)} \n  ${toZ3Native(f)}\n)\n"
     for (v <- undefinedVars) {
-      z3String += f"(declare-const ${PrettyPrinter.vnameToString(v)} ${types(v)})\n"
+      z3String += f"(declare-const ${PrettyPrinter.vnameToString(v)} ${types(v).show})\n"
     }
     val args = expVars.zipWithIndex.map {
       case (v: VName.vname, k: Int) =>

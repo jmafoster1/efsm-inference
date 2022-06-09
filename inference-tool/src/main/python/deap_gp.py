@@ -102,8 +102,8 @@ def find_smallest_distance(individual, pset, args, expected, latent_vars):
         try:
             actual = func(**new_args)
         except:
-            print(f"Problem executing {individual} with {new_args}")
-            print(traceback.format_exc())
+            logger.debug(f"Problem executing {individual} with {new_args}")
+            logger.debug(traceback.format_exc())
             sys.exit(1)
         off_by = distance_between(expected, actual)
         if off_by == 0:
@@ -137,11 +137,11 @@ def add_consts_to_pset(individual, pset):
     try:
         for n in individual:
             if hasattr(n, "value") and str(creator.Individual([n])) not in pset.mapping:
-                print("Adding", str(creator.Individual([n])))
+                logger.debug("Adding", str(creator.Individual([n])))
                 pset.addTerminal(n.value, type(n.value))
     except:
-        print("Problem with", individual)
-        print(traceback.format_exc())
+        logger.debug("Problem with", individual)
+        logger.debug(traceback.format_exc())
         sys.exit(1)
 
 
@@ -183,7 +183,7 @@ def evaluate_candidate(
             )
             distances.append(best)
         except:
-            print(f"Problem executing {individual} with arguments\n{row}")
+            logger.debug(f"Problem executing {individual} with arguments\n{row}")
             sys.exit(1)
 
     assert not any([is_null(x) for x in distances]), "no distance can be nan"
@@ -236,8 +236,8 @@ def fitness(
         ), f"Score cannot be nan\nPSET:\n  {newline.join(sorted(list(pset.mapping)))}"
         return (score,)
     except:
-        # print(f"Problem evaluating candidate {individual}")
-        print(traceback.format_exc())
+        # logger.debug(f"Problem evaluating candidate {individual}")
+        logger.debug(traceback.format_exc())
         sys.exit(1)
 
 
@@ -273,7 +273,7 @@ def correct(
             if best > 0:
                 return False
         except:
-            print(f"Problem executing {individual} with arguments\n{row}")
+            logger.debug(f"Problem executing {individual} with arguments\n{row}")
             sys.exit(1)
     return True
 
@@ -282,7 +282,7 @@ def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
     try:
         return setup_pset_aux(points)
     except:
-        print(traceback.format_exc())
+        logger.debug(traceback.format_exc())
         sys.exit(1)
 
 
@@ -641,7 +641,7 @@ def parsimony_select(individuals, k):
 #     try:
 #         run_gp_aux(points=points, pset=pset, mu=mu, lamb=lamb, ngen=ngen, seeds=seeds, bad=bad)
 #     except:
-#         print(traceback.format_exc())
+#         logger.debug(traceback.format_exc())
 #         sys.exit(0)
 
 
@@ -731,26 +731,26 @@ def run_gp(
     assert len(pop) == mu, f"Unexpected generated population size: {len(pop)} != {mu}."
 
     if len(seeds) > 0:
-        print("SEEDS!")
+        logger.debug("SEEDS!")
         for seed in seeds:
-            print("Trying to add", seed)
+            logger.debug("Trying to add", seed)
             try:
                 individual = creator.Individual(
                     gp.PrimitiveTree.from_string(seed, pset)
                 )
-                print(
+                logger.debug(
                     f"Fitness of {individual} is {fitness(individual, points, pset, bad, latent_vars_rows)}"
                 )
                 if fitness(individual, points, pset, bad, latent_vars_rows) == (0,):
-                    print("Found perfect individual!")
+                    logger.debug("Found perfect individual!")
                     return individual
                 pop.append(individual)
             except TypeError:
-                print(f"Failed to add seed {seed}")
-                # print("Type error.")
-                print(traceback.format_exc())
+                logger.debug(f"Failed to add seed {seed}")
+                # logger.debug("Type error.")
+                logger.debug(traceback.format_exc())
                 # sys.exit(1)
-                # print(pset.mapping)
+                # logger.debug(pset.mapping)
                 # assert False
                 # pass
 
@@ -758,11 +758,11 @@ def run_gp(
     #     terms = [creator.Individual([i]) for i in terms]
     #     for t in terms:
     #         if t not in pop:
-    #             print(str(t))
+    #             logger.debug(str(t))
     #             pop.append(t)
-    # print("Initial population:", len(pop), [str(p) for p in pop])
+    # logger.debug("Initial population:", len(pop), [str(p) for p in pop])
     pop = make_distinct(pop)
-    # print("\nDistinct Initial population:", len(pop), [str(p) for p in pop])
+    # logger.debug("\nDistinct Initial population:", len(pop), [str(p) for p in pop])
 
     assert is_distinct(pop), "Population contains duplicated individuals."
     pop += toolbox.population(n=mu - len(pop))
@@ -793,11 +793,11 @@ def run_gp(
         )
 
         # for p in pop:
-        #     print(str(p), p.fitness.values, toolbox.height(p))
+        #     logger.debug(str(p), p.fitness.values, toolbox.height(p))
 
         return pop[0]
     except:
-        print(traceback.format_exc())
+        logger.debug(traceback.format_exc())
         sys.exit(1)
 
 
@@ -912,9 +912,9 @@ def simplify(individual, pset, types):
             )
         return creator.Individual(from_z3(z3.simplify(z3_exp), pset))
     except:
-        print("Problem when simplifying", individual, type(individual))
-        # print("z3_exp", z3_exp, type(z3_exp))
-        print(
+        logger.debug("Problem when simplifying", individual, type(individual))
+        # logger.debug("z3_exp", z3_exp, type(z3_exp))
+        logger.debug(
             "PSET",
             [
                 (v.value, type(v.value))
@@ -922,9 +922,9 @@ def simplify(individual, pset, types):
                 if hasattr(v, "value")
             ],
         )
-        print("types", types)
-        print("labels", [(v, type(v)) for v in labels.values()])
-        print(traceback.format_exc())
+        logger.debug("types", types)
+        logger.debug("labels", [(v, type(v)) for v in labels.values()])
+        logger.debug(traceback.format_exc())
         sys.exit(1)
 
 
@@ -1026,8 +1026,8 @@ def eaMuPlusLambda(
         assert all(
             [ind.fitness.valid for ind in population]
         ), "Invalid fitnesses in population"
-        # print("\ngen", gen, "best", str(halloffame[0]))
-        # print([str(x) for x in population])
+        # logger.debug("\ngen", gen, "best", str(halloffame[0]))
+        # logger.debug([str(x) for x in population])
         seen = {}
         for p in population:
             p = str(p)
@@ -1077,7 +1077,7 @@ def need_latent(points: pd.DataFrame, latent_vars_rows: list) -> bool:
     try:
         return need_latent_aux(points, latent_vars_rows)
     except:
-        print(traceback.format_exc())
+        logger.debug(traceback.format_exc())
         sys.exit(0)
 
 
@@ -1119,7 +1119,7 @@ def shortcut_latent(points: pd.DataFrame) -> bool:
 
 if __name__ == "__main__":
     points = pd.read_csv("test3.csv", index_col=0)
-    
+
     for col in points:
         if points.dtypes[col] == object:
             points[col] = points[col].astype("string")
@@ -1135,7 +1135,7 @@ if __name__ == "__main__":
         points.insert(0, "r1", None)
     pset = setup_pset(points)
     pset.addTerminal(200, int)
-    
+
     ind = gp.PrimitiveTree.from_string("add(-100, r1)", pset)
     logger.info(f"Fitness of {ind} is {fitness(ind, points, pset, [], [() for i in range(len(points))])}")
     logger.info(f"{ind} is correct? {correct(ind, points, pset, [() for i in range(len(points))])}")
@@ -1143,10 +1143,10 @@ if __name__ == "__main__":
 
     # expr = "add(sub(r1, 350), add(5, 250))"
     # individual = creator.Individual(gp.PrimitiveTree.from_string(expr, pset))
-    # print(individual)
+    # logger.debug(individual)
     # types = {"r1": z3.Int, "expected": z3.Int}
     # simplified = simplify(individual, pset, types)
-    # print(simplified)
+    # logger.debug(simplified)
     # assert False
 
     # ind = gp.PrimitiveTree.from_string("sub(i0, i1)", pset)
@@ -1160,15 +1160,15 @@ if __name__ == "__main__":
         seeds=[],
         latent_vars_rows=[() for i in range(len(points))],
     )
-    print()
-    print(f"best is {best}")
-    print(best.height)
+    logger.debug()
+    logger.debug(f"best is {best}")
+    logger.debug(best.height)
 
     # bad = []
     # for s in range(10):
-    #     print(f"=== {s} ===")
+    #     logger.debug(f"=== {s} ===")
     #     best = run_gp(points, pset, random_seed=1, ngen=200, bad=bad)
-    #     print(f"Gen {s} best {best}: {fitness(best, points, pset, bad)}")
+    #     logger.debug(f"Gen {s} best {best}: {fitness(best, points, pset, bad)}")
     #     if str(best) != "add(i1, r1)":
     #         bad.append(best)
 

@@ -25,6 +25,10 @@ object PrettyPrinter {
     f"(${Inference.S1(s)}, ${Inference.S2(s)}) -> ${Inference.Score(s)}"
   }
 
+  def show(s: Set.set[AExp.aexp[VName.vname]]): String = s match {
+    case Set.seta(l) => f"{${l.map(x => show(x)).mkString(", ")}}"
+  }
+
   def show(v: Value.value): String =
     v match {
       case Value.Inta(Int.int_of_integer(n)) => n.toString

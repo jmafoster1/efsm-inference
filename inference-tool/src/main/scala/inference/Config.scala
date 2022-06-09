@@ -48,7 +48,9 @@ case class Config(
   updateSeed: Int = 0,
   numTraces: Int = 30,
   mkdir: Boolean=false,
-  blueFringe: Boolean=false
+  blueFringe: Boolean=false,
+  treeRepeats: Int = 2,
+  transitionRepeats: Int = 2
 )
 
 object Config {
@@ -168,6 +170,12 @@ object Config {
       opt[Int]('g', "guardSeed")
         .valueName("Random seed for guard GP")
         .action((x, c) => c.copy(guardSeed = x)),
+      opt[Int]("treeRepeats")
+        .valueName("Maximum number of times to backtrack up the tree")
+        .action((x, c) => c.copy(treeRepeats = x)),
+      opt[Int]("transitionRepeats")
+        .valueName("Maximum number of times to retry inferring output and update functions for a given transition")
+        .action((x, c) => c.copy(transitionRepeats = x)),
       opt[Int]('o', "outputSeed")
         .valueName("Random seed for output GP")
         .action((x, c) => c.copy(outputSeed = x)),
@@ -219,12 +227,12 @@ object Config {
 
         // Set up the preprocessor
         val preprocessors = scala.collection.immutable.Map(
-          Preprocessors.gp -> (PTA_Generalisation.derestrict _).curried,
+          Preprocessors.gp -> (PTA_Generalisation.derestrict _).curried(Nat.Nata(config.treeRepeats))(Nat.Nata(config.transitionRepeats)),
           Preprocessors.dropGuards -> (PTA_Generalisation.drop_pta_guards _).curried
         )
         // Set up the postprocessor
         val postprocessors = scala.collection.immutable.Map(
-          Preprocessors.gp -> (PTA_Generalisation.derestrict _).curried,
+          Preprocessors.gp -> (PTA_Generalisation.derestrict _).curried(Nat.Nata(config.treeRepeats))(Nat.Nata(config.transitionRepeats)),
           Preprocessors.dropGuards -> (PTA_Generalisation.drop_pta_guards _).curried
         )
 
