@@ -19,6 +19,7 @@ object FrontEnd {
     Log.root.info(s"Building PTA - ${Config.config.train.length} ${if (Config.config.train.length == 1) "trace" else "traces"}")
 
     var pta: IEFSM = Inference.make_pta(Config.config.train)
+    pta = Inference.breadth_first_label(pta)
     PrettyPrinter.iEFSM2dot(pta, s"pta_gen")
     if (!EFSM.accepts_log(Set.seta[List[(String, (List[Value.value], List[Value.value]))]](Config.config.train), Inference.tm(pta))) {
       Log.root.error("PTA must accept the log.")

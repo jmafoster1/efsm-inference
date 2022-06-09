@@ -45,6 +45,9 @@ definition max_uid :: "iEFSM \<Rightarrow> nat option" where
 definition tm :: "iEFSM \<Rightarrow> transition_matrix" where
   "tm e = fimage snd e"
 
+definition breadth_first_label :: "iEFSM \<Rightarrow> iEFSM" where
+  "breadth_first_label e = fset_of_list (map (\<lambda>(i, t). ([i], t)) (enumerate 0 (sorted_list_of_fset (tm e))))"
+
 definition all_regs :: "iEFSM \<Rightarrow> nat set" where
   "all_regs e = EFSM.all_regs (tm e)"
 

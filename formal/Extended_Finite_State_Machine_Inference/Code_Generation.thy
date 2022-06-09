@@ -451,6 +451,7 @@ export_code
   max_int
   enumerate_vars
   derestrict
+  breadth_first_label
 in Scala
 file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
