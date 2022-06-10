@@ -163,7 +163,7 @@ object Dirties {
     // }
 
     var seeds: List[String] = List()
-    var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy)
+    var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy, ngen = Config.config.ngen)
     Log.root.debug("    Best guard is: " + best)
 
     if (deap_gp.correct(best, training_set, pset, latent_vars_rows=latent_vars_rows.toPythonProxy).as[Boolean]) {
@@ -282,9 +282,9 @@ object Dirties {
     if (s == "Int")
       return PTA_Generalisation.I()
     if (s == "Real")
-      return PTA_Generalisation.S()
-    if (s == "String")
       return PTA_Generalisation.R()
+    if (s == "String")
+      return PTA_Generalisation.S()
     throw new IllegalArgumentException(f"Could not convert type '$s' to a value_type. Can only be 'Int', 'Real', or 'String'")
   }
 
@@ -355,7 +355,7 @@ object Dirties {
     //   Log.root.debug(f"  $seed: $fitness")
     // }
 
-    var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy)
+    var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy, ngen = Config.config.ngen)
     if (deap_gp.correct(best, training_set, pset, latent_vars_rows=latent_vars_rows).as[Boolean]) {
       Log.root.debug(f"  Best update $best is correct")
       val (nodes, edges, labels) = deap_gp.graph(best).as[(List[Int], List[(Int, Int)], Map[Int, String])]

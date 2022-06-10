@@ -29,6 +29,7 @@ from itertools import product
 
 import networkx as nx
 import logging
+import multiprocessing
 
 logging.basicConfig()
 
@@ -145,6 +146,17 @@ def add_consts_to_pset(individual, pset):
         sys.exit(1)
 
 
+def process_row(args):
+    (individual, (pset, ((inx, row), latent_vars))) = args
+    try:
+        return find_smallest_distance(
+            individual, pset, row.iloc[:-1].to_dict(), row[-1], latent_vars
+        )
+    except:
+        logger.debug(f"Problem executing {individual} with arguments\n{row}")
+        sys.exit(1)
+
+
 def evaluate_candidate(
     individual, points: pd.DataFrame, pset: gp.PrimitiveSet, latent_vars_rows
 ) -> float:
@@ -168,6 +180,8 @@ def evaluate_candidate(
     if isinstance(individual, str):
         individual = creator.Individual(gp.PrimitiveTree.from_string(individual, pset))
 
+    latent_vars_rows = [list(r) for r in latent_vars_rows]
+
     total_vars = list(points.columns)[:-1]
 
     undefined_vars = latent_variables(individual, points)
@@ -175,16 +189,24 @@ def evaluate_candidate(
         set(total_vars).difference(vars_in_tree(individual)).difference(undefined_vars)
     )
 
-    distances = []
-    for (inx, row), latent_vars in zip(points.iterrows(), latent_vars_rows):
-        try:
-            best = find_smallest_distance(
-                individual, pset, row.iloc[:-1].to_dict(), row[-1], latent_vars
-            )
-            distances.append(best)
-        except:
-            logger.debug(f"Problem executing {individual} with arguments\n{row}")
-            sys.exit(1)
+    individual_rep = [individual for _ in range(len(points))]
+    pset_rep = np.repeat(pset, len(points))
+    data = zip(individual_rep, zip(pset_rep, zip(points.iterrows(), latent_vars_rows)))
+
+    # distances = [process_row(row) for row in data]
+    pool = multiprocessing.Pool()
+    distances = pool.map(process_row, data)
+
+    # distances = []
+    # for (inx, row), latent_vars in zip(points.iterrows(), latent_vars_rows):
+    #     try:
+    #         best = find_smallest_distance(
+    #             individual, pset, row.iloc[:-1].to_dict(), row[-1], latent_vars
+    #         )
+    #         distances.append(best)
+    #     except:
+    #         logger.debug(f"Problem executing {individual} with arguments\n{row}")
+    #         sys.exit(1)
 
     assert not any([is_null(x) for x in distances]), "no distance can be nan"
 
@@ -285,6 +307,10 @@ def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
         logger.debug(traceback.format_exc())
         sys.exit(1)
 
+def protectedDiv(left, right):
+    if right == 0:
+        return float("inf")
+    return left / right
 
 def setup_pset_aux(points: pd.DataFrame) -> gp.PrimitiveSet:
     """
@@ -315,11 +341,6 @@ def setup_pset_aux(points: pd.DataFrame) -> gp.PrimitiveSet:
     assert all(
         [t in {int, float, str} for t in datatypes]
     ), f"Bad datatype {output_type}"
-
-    def protectedDiv(left, right):
-        if right == 0:
-            return float("inf")
-        return left / right
 
     pset = gp.PrimitiveSetTyped("MAIN", datatypes[:-1], output_type)
 
@@ -666,6 +687,7 @@ def run_gp(
     seeds=[],
     bad=[],
 ):
+    print("Running GP")
     points = points.replace({np.nan: None, np.NaN: None})
     random.seed(random_seed)
 
@@ -733,7 +755,7 @@ def run_gp(
     if len(seeds) > 0:
         logger.debug("SEEDS!")
         for seed in seeds:
-            logger.debug("Trying to add", seed)
+            logger.debug(f"Trying to add {seed}")
             try:
                 individual = creator.Individual(
                     gp.PrimitiveTree.from_string(seed, pset)
@@ -791,6 +813,7 @@ def run_gp(
             halloffame=None,
             verbose=False,
         )
+        print("Finished GP")
 
         # for p in pop:
         #     logger.debug(str(p), p.fitness.values, toolbox.height(p))
@@ -1008,7 +1031,9 @@ def eaMuPlusLambda(
     fitnesses = list(toolbox.map(toolbox.evaluate, invalid_ind))
     for ind, fit in zip(invalid_ind, fitnesses):
         ind.fitness.values = fit
-    population[:] = toolbox.select(population, mu)
+    population = sorted(
+        population, key=lambda i: i.fitness.values + (toolbox.height(i),)
+    )[:mu]
     assert all(
         [ind.fitness.valid for ind in population]
     ), "Invalid fitnesses in population after setting fitnesses!"
@@ -1022,7 +1047,11 @@ def eaMuPlusLambda(
         logger.debug(logbook.stream)
 
     # Begin the generational process
+    print("Entering main loop")
     for gen in range(0, ngen):
+        print("gen", gen, "best", population[0], population[0].fitness.values)
+        if population[0].fitness.values == (0,):
+            return population, logbook
         assert all(
             [ind.fitness.valid for ind in population]
         ), "Invalid fitnesses in population"

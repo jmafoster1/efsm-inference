@@ -50,7 +50,8 @@ case class Config(
   mkdir: Boolean=false,
   blueFringe: Boolean=false,
   treeRepeats: Int = 2,
-  transitionRepeats: Int = 2
+  transitionRepeats: Int = 2,
+  ngen: Int = 100
 )
 
 object Config {
@@ -173,6 +174,9 @@ object Config {
       opt[Int]("treeRepeats")
         .valueName("Maximum number of times to backtrack up the tree")
         .action((x, c) => c.copy(treeRepeats = x)),
+      opt[Int]("ngen")
+        .valueName("Number of GP generations")
+        .action((x, c) => c.copy(ngen = x)),
       opt[Int]("transitionRepeats")
         .valueName("Maximum number of times to retry inferring output and update functions for a given transition")
         .action((x, c) => c.copy(transitionRepeats = x)),
