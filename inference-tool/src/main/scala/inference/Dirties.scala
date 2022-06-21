@@ -414,7 +414,8 @@ object Dirties {
     // training_set = training_set.select_dtypes(include=output_type)
 
     // Cut straight to having a latent variable if there's more possible outputs than inputs
-    if (!latentVariable && deap_gp.need_latent(training_set, latent_vars_rows.toPythonProxy).as[Boolean]) {
+    // if (!latentVariable && deap_gp.need_latent(training_set, latent_vars_rows.toPythonProxy).as[Boolean]) {
+    if (!latentVariable && PTA_Generalisation.needs_latent_code(train)) {
       Log.root.debug("  Nondeterminism = try with latent variable")
       return getOutput(label, tids, maxReg, values, bad_set, train, true)
     }
@@ -482,7 +483,7 @@ object Dirties {
     val deap_gp_bad = bad.filter(x => valid_for_pset(x, py"list($pset.mapping.keys())".as[List[String]])).map(x => deap_gp.gp.PrimitiveTree.from_string(to_gp_string(x), pset))
     // Log.root.debug(f"PSET KEYS: ${pset.mapping.keys()}")
 
-    var best = deap_gp.run_gp(training_set, pset, latent_vars_rows=latent_vars_rows.toPythonProxy, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy, bad=deap_gp_bad.toPythonProxy)
+    var best = deap_gp.run_gp(training_set, pset, latent_vars_rows=latent_vars_rows.toPythonProxy, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy, bad=deap_gp_bad.toPythonProxy, ngen=Config.config.ngen)
     Log.root.debug(f"Best output is $best")
 
     Log.root.debug("Checking correctness")

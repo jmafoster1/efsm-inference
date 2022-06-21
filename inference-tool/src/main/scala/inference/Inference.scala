@@ -47,6 +47,12 @@ object equal{
     val `HOL.equal` = (a: Option[A], b: Option[A]) =>
       Optiona.equal_optiona[A](a, b)
   }
+  implicit def
+    `FinFun.equal_finfun`[A : Cardinality.card_UNIV : equal, B : equal]:
+      equal[Map[A, B]]
+    = new equal[Map[A, B]] {
+    val `HOL.equal` = (a: Map[A, B], b: Map[A, B]) => a == b
+  }
   implicit def `Value.equal_value`: equal[Value.value] = new equal[Value.value]
     {
     val `HOL.equal` = (a: Value.value, b: Value.value) =>
@@ -704,6 +710,11 @@ def member[A](x: A, xa1: set[A]): Boolean = (x, xa1) match {
   case (x, seta(xs)) => xs.contains(x)
 }
 
+def remove[A : HOL.equal](a: A, x1: set[A]): set[A] = (a, x1) match {
+  case (a, seta(l)) =>
+    seta[A](Lista.filter[A](((x: A) => ! (HOL.eq[A](x, a))), l))
+}
+
 def bot_set[A]: set[A] = seta[A](Nil)
 
 def inf_set[A](a: set[A], x1: set[A]): set[A] = (a, x1) match {
@@ -725,6 +736,13 @@ def less_set[A](a: set[A], b: set[A]): Boolean =
 
 def equal_set[A : HOL.equal](a: set[A], b: set[A]): Boolean =
   (less_eq_set[A](a, b)) && (less_eq_set[A](b, a))
+
+def minus_set[A : HOL.equal](a: set[A], x1: set[A]): set[A] = (a, x1) match {
+  case (seta(x), seta(y)) =>
+    seta[A](Lista.filter[A](((xa: A) => ! (y.contains(xa))), x))
+  case (a, seta(xs)) =>
+    Lista.fold[A, set[A]](((aa: A) => (b: set[A]) => remove[A](aa, b)), xs, a)
+}
 
 } /* object Set */
 
@@ -9355,6 +9373,50 @@ def take_maximum_updates(ts: FSet.fset[(List[Nat.nat],
                       FSet.bot_fset[(List[Nat.nat],
                                       Transition.transition_ext[Unit])])
 
+def event_structure(e: (String, (List[Value.value], List[Value.value]))):
+      (String, (List[value_type], List[value_type]))
+  =
+  {
+    val (l, (i, p)): (String, (List[Value.value], List[Value.value])) = e;
+    (l, (Lista.map[Value.value,
+                    value_type](((a: Value.value) => type_signature(a)), i),
+          Lista.map[Value.value,
+                     value_type](((a: Value.value) => type_signature(a)), p)))
+  }
+
+def all_structures(log: List[List[(String,
+                                    (List[Value.value], List[Value.value]))]]):
+      Set.set[(String, (List[value_type], List[value_type]))]
+  =
+  Set.seta[(String,
+             (List[value_type],
+               List[value_type]))](Lista.fold[List[(String,
+             (List[Value.value], List[Value.value]))],
+       List[(String,
+              (List[value_type],
+                List[value_type]))]](Fun.comp[List[(String,
+             (List[value_type], List[value_type]))],
+       (List[(String, (List[value_type], List[value_type]))]) =>
+         List[(String, (List[value_type], List[value_type]))],
+       List[(String,
+              (List[Value.value],
+                List[Value.value]))]](((a:
+  List[(String, (List[value_type], List[value_type]))])
+ =>
+(b: List[(String, (List[value_type], List[value_type]))]) => a ++ b),
+                                       ((a:
+   List[(String, (List[Value.value], List[Value.value]))])
+  =>
+ Lista.map[(String, (List[Value.value], List[Value.value])),
+            (String,
+              (List[value_type],
+                List[value_type]))](((aa:
+(String, (List[Value.value], List[Value.value])))
+                                       =>
+                                      event_structure(aa)),
+                                     a))),
+                                      log, Nil))
+
 def wipe_futures(bad: Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])],
                   tids: List[Nat.nat]):
       Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])]
@@ -9646,33 +9708,72 @@ Product_Type.equal_proda[String,
                            t),
            update_groups, structure, funsa, to_derestrict ++ more_to_derestrict,
            Nil, fun_mema)
-                  else (if (Set.less_set[(String,
-   (List[value_type],
-     List[value_type]))](Set.seta[(String,
-                                    (List[value_type],
-                                      List[value_type]))](funsa.keySet.toList),
-                          Set.seta[(String,
+                  else (if (Set.Ball[(String,
+                                       (List[value_type],
+ List[value_type]))](Set.minus_set[(String,
                                      (List[value_type],
-                                       List[value_type]))](structural_groups)))
-                         groupwise_generalise_and_update(wipe_futures(bad,
-                               rep_id),
-                  funmem_add[List[Nat.nat],
-                              AExp.aexp[VName.vname]](funmem_union[List[Nat.nat],
-                            AExp.aexp[VName.vname]](maybe_bad, bada),
-               rep_id, reg_bad),
-                  max_attempts, attempts, transition_repeats, log,
-                  Same_Register.merge_regs(standardised,
-    ((a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]) =>
-      EFSM.accepts_log(Set.seta[List[(String,
-                                       (List[Value.value],
- List[Value.value]))]](log),
-                        a))),
-                  t, update_groups, structure, funsa,
-                  to_derestrict ++ more_to_derestrict, Nil, fun_mema)
-                         else Failed(funmem_add[List[Nat.nat],
-         AExp.aexp[VName.vname]](funmem_union[List[Nat.nat],
-       AExp.aexp[VName.vname]](bad, bada),
-                                  rep_id, reg_bad))));
+                                       List[value_type]))](all_structures(log),
+                    Set.seta[(String,
+                               (List[value_type],
+                                 List[value_type]))](funsa.keySet.toList)),
+                      ((struct: (String, (List[value_type], List[value_type])))
+                         =>
+                        Lista.list_all[List[(String,
+      (List[value_type],
+        List[value_type]))]](((ta: List[(String,
+  (List[value_type], List[value_type]))])
+                                =>
+                               ! (appears_in_order[(String,
+             (List[value_type],
+               List[value_type]))]((struct::(((structure(rep_id))::Nil))),
+                                    ta))),
+                              Lista.map[List[(String,
+       (List[Value.value], List[Value.value]))],
+ List[(String,
+        (List[value_type],
+          List[value_type]))]](((a: List[(String,
+   (List[Value.value], List[Value.value]))])
+                                  =>
+                                 Lista.map[(String,
+     (List[Value.value], List[Value.value])),
+    (String,
+      (List[value_type],
+        List[value_type]))](((aa: (String,
+                                    (List[Value.value], List[Value.value])))
+                               =>
+                              event_structure(aa)),
+                             a)),
+                                log)))))
+                         Failed(funmem_add[List[Nat.nat],
+    AExp.aexp[VName.vname]](funmem_union[List[Nat.nat],
+  AExp.aexp[VName.vname]](bad, bada),
+                             rep_id, reg_bad))
+                         else (if (Set.less_set[(String,
+          (List[value_type],
+            List[value_type]))](Set.seta[(String,
+   (List[value_type], List[value_type]))](funsa.keySet.toList),
+                                 Set.seta[(String,
+    (List[value_type], List[value_type]))](structural_groups)))
+                                groupwise_generalise_and_update(wipe_futures(bad,
+                                      rep_id),
+                         funmem_add[List[Nat.nat],
+                                     AExp.aexp[VName.vname]](funmem_union[List[Nat.nat],
+                                   AExp.aexp[VName.vname]](maybe_bad, bada),
+                      rep_id, reg_bad),
+                         max_attempts, attempts, transition_repeats, log,
+                         Same_Register.merge_regs(standardised,
+           ((a: FSet.fset[((Nat.nat, Nat.nat),
+                            Transition.transition_ext[Unit])])
+              =>
+             EFSM.accepts_log(Set.seta[List[(String,
+      (List[Value.value], List[Value.value]))]](log),
+                               a))),
+                         t, update_groups, structure, funsa,
+                         to_derestrict ++ more_to_derestrict, Nil, fun_mema)
+                                else Failed(funmem_add[List[Nat.nat],
+                AExp.aexp[VName.vname]](funmem_union[List[Nat.nat],
+              AExp.aexp[VName.vname]](bad, bada),
+ rep_id, reg_bad)))));
               (a match {
                  case Failed(badb) =>
                    (if (Nat.less_nat(Nat.zero_nata, attempts))
@@ -9783,17 +9884,6 @@ List[Nat.nat]),
        case (None, _) => pta
        case (Some(resolved), _) => resolved
      })
-  }
-
-def event_structure(e: (String, (List[Value.value], List[Value.value]))):
-      (String, (List[value_type], List[value_type]))
-  =
-  {
-    val (l, (i, p)): (String, (List[Value.value], List[Value.value])) = e;
-    (l, (Lista.map[Value.value,
-                    value_type](((a: Value.value) => type_signature(a)), i),
-          Lista.map[Value.value,
-                     value_type](((a: Value.value) => type_signature(a)), p)))
   }
 
 def events_transitions(uu: FSet.fset[(List[Nat.nat],
@@ -10264,6 +10354,19 @@ List[Nat.nat]))))]):
     drop_selected_guards(tidied, to_derestrict, pta, log, m, np)
   }
 
+def all_known_regs[A, B : Orderings.linorder, C,
+                    D](train: List[(A, (Map[B, C], D))]):
+      Set.set[B]
+  =
+  Complete_Lattices.Sup_set[B](Set.seta[Set.set[B]](Lista.map[(A,
+                        (Map[B, C], D)),
+                       Set.set[B]](((a: (A, (Map[B, C], D))) =>
+                                     {
+                                       val (_, (r, _)): (A, (Map[B, C], D)) = a;
+                                       Set.seta[B](r.keySet.toList)
+                                     }),
+                                    train)))
+
 def drop_all_guards(e: FSet.fset[(List[Nat.nat],
                                    ((Nat.nat, Nat.nat),
                                      Transition.transition_ext[Unit]))],
@@ -10380,6 +10483,57 @@ Transition.transition_ext[Unit]))]) =>
                   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
   =
   drop_all_guards(pta, pta, log, m, np)
+
+def needs_latent_code(train:
+                        List[(List[Value.value],
+                               (Map[Nat.nat, Option[Value.value]],
+                                 (Value.value, List[Nat.nat])))]):
+      Boolean
+  =
+  {
+    val regs: Set.set[Nat.nat] =
+      all_known_regs[List[Value.value], Nat.nat, Option[Value.value],
+                      (Value.value, List[Nat.nat])](train);
+    Lista.list_ex[(List[Value.value],
+                    (Map[Nat.nat, Option[Value.value]],
+                      (Value.value,
+                        List[Nat.nat])))](((a:
+      (List[Value.value],
+        (Map[Nat.nat, Option[Value.value]], (Value.value, List[Nat.nat]))))
+     =>
+    {
+      val (i, (r, (p, known))):
+            (List[Value.value],
+              (Map[Nat.nat, Option[Value.value]], (Value.value, List[Nat.nat])))
+        = a;
+      Set.Bex[(List[Value.value],
+                (Map[Nat.nat, Option[Value.value]],
+                  (Value.value,
+                    List[Nat.nat])))](Set.remove[(List[Value.value],
+           (Map[Nat.nat, Option[Value.value]],
+             (Value.value,
+               List[Nat.nat])))]((i, (r, (p, known))),
+                                  Set.seta[(List[Value.value],
+     (Map[Nat.nat, Option[Value.value]],
+       (Value.value, List[Nat.nat])))](train)),
+                                       ((aa:
+   (List[Value.value],
+     (Map[Nat.nat, Option[Value.value]], (Value.value, List[Nat.nat]))))
+  =>
+ {
+   val (ia, (ra, (pa, knowna))):
+         (List[Value.value],
+           (Map[Nat.nat, Option[Value.value]], (Value.value, List[Nat.nat])))
+     = aa;
+   (Lista.equal_lista[Value.value](i, ia)) && ((r ==
+         ra) && ((! (Value.equal_valuea(p,
+ pa))) && ((Cardinality.subset[Nat.nat](regs,
+ Set.seta[Nat.nat](known))) && (Cardinality.subset[Nat.nat](regs,
+                     Set.seta[Nat.nat](knowna))))))
+ }))
+    }),
+   train)
+  }
 
 } /* object PTA_Generalisation */
 

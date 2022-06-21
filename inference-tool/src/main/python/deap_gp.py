@@ -193,9 +193,12 @@ def evaluate_candidate(
     pset_rep = np.repeat(pset, len(points))
     data = zip(individual_rep, zip(pset_rep, zip(points.iterrows(), latent_vars_rows)))
 
-    # distances = [process_row(row) for row in data]
-    pool = multiprocessing.Pool()
-    distances = pool.map(process_row, data)
+    distances = [process_row(row) for row in data]
+    # if len(list(data)) > 100:
+    #     pool = multiprocessing.Pool()
+    #     distances = pool.map(process_row, data)
+    # else:
+    #     distances = list(map(process_row, data))
 
     # distances = []
     # for (inx, row), latent_vars in zip(points.iterrows(), latent_vars_rows):
@@ -415,10 +418,10 @@ def setup_pset_aux(points: pd.DataFrame) -> gp.PrimitiveSet:
 def choose_terminal(pset, type_, prob=0.7):
     variables = [t for t in pset.terminals[type_] if t.name.startswith("ARG")]
     constants = [t for t in pset.terminals[type_] if t not in variables]
-    if random.random() > prob and variables != []:
-        return random.choice(constants)
-    else:
+    if random.random() < prob and variables != []:
         return random.choice(variables)
+    else:
+        return random.choice(constants)
 
 
 def mutateByTerminal(individual, pset):
@@ -748,9 +751,10 @@ def run_gp(
         "mutate", gp.staticLimit(key=operator.attrgetter("height"), max_value=17)
     )
 
-    pop = toolbox.population(n=mu)
+    print("Generating initial population")
 
-    assert len(pop) == mu, f"Unexpected generated population size: {len(pop)} != {mu}."
+    pop = toolbox.population(n=mu)
+    print(f"Fitness of pop[0] {pop[0]} is {pop[0].fitness.values}")
 
     if len(seeds) > 0:
         logger.debug("SEEDS!")
@@ -801,6 +805,7 @@ def run_gp(
     mstats.register("max", np.max)
 
     try:
+        print("Calling eaMuPlusLambda")
         pop, log = eaMuPlusLambda(
             pop,
             toolbox,
@@ -1027,6 +1032,7 @@ def eaMuPlusLambda(
     logbook.header = ["gen", "nevals"] + (stats.fields if stats else [])
 
     # Evaluate the individuals with an invalid fitness
+    print("Evaluating fitness")
     invalid_ind = [ind for ind in population if not ind.fitness.valid]
     fitnesses = list(toolbox.map(toolbox.evaluate, invalid_ind))
     for ind, fit in zip(invalid_ind, fitnesses):
@@ -1037,6 +1043,7 @@ def eaMuPlusLambda(
     assert all(
         [ind.fitness.valid for ind in population]
     ), "Invalid fitnesses in population after setting fitnesses!"
+    print("Evaluated fitness")
 
     if halloffame is not None:
         halloffame.update(population)

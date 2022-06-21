@@ -311,6 +311,144 @@ fun unzip_4 :: "('a \<times> 'b \<times> 'c \<times> 'd) list \<Rightarrow> ('a 
     (a#as, b#bs, c#cs, d#ds)
   )"
 
+(*
+  A training set needs a latent variable if there exists a pair of rows in the table where
+  no aexp exists which can evaluate to both output values.
+  Further, this aexp can only contain registers in the training set, and known registers must keep their value.
+  All other registers may change their values.
+*)
+
+definition "all_known_regs train = (\<Union> (set (map (\<lambda>(i, r, _). set (finfun_to_list r)) train)))"
+
+definition needs_latent :: "(inputs \<times> registers \<times> value \<times> nat list) list \<Rightarrow> bool" where
+  "needs_latent train = (
+     \<exists>(i, r, p, known) \<in> set train.
+      \<exists>(i', r', p', known') \<in> (set train - {(i, r, p, known)}).
+        i = i' \<and> r = r' \<and> p \<noteq> p' \<and>
+        (\<nexists>a ra ra'.
+          (\<forall>k \<in> set known. r $ k = ra $ k) \<and> (\<forall>k' \<in> set known'. r' $ k' = ra' $ k') \<and> \<comment> \<open>Known variables keep their values\<close>
+          AExp.enumerate_regs a \<subseteq> all_known_regs train \<and> \<comment> \<open>We're only allowed registers in the training set\<close>
+          aval a (join_ir i ra) = Some p \<and> aval a (join_ir i' ra') = Some p')
+  )"
+
+definition needs_latent_code :: "(inputs \<times> registers \<times> value \<times> nat list) list \<Rightarrow> bool" where
+  "needs_latent_code train = (
+    let regs = all_known_regs train in
+    \<exists>(i, r, p, known) \<in> set train.
+      \<exists>(i', r', p', known') \<in> (set train - {(i, r, p, known)}).
+        i = i' \<and> r = r' \<and> p \<noteq> p' \<and> (regs \<subseteq> set known) \<and> (regs \<subseteq> set known')
+  )"
+
+lemma needs_latent_empty: "\<not>needs_latent []"
+  by (simp add: needs_latent_def)
+
+lemma needs_latent_code_empty: "\<not>needs_latent_code []"
+  by (simp add: needs_latent_code_def)
+
+lemma finfun_to_list_empty: "finfun_to_list (<>::registers) = []"
+proof-
+  have aux: "{x. Abs_finfun (\<lambda>a. False) $ x} = {}"
+    by (metis Collect_empty_eq_bot empty_def finfun_apply_inverse finfun_const_False_conv_bot)
+  show ?thesis
+    apply (simp add: finfun_to_list_def finfun_dom_def finfun_default_def finfun_default_aux_def)
+    apply (simp add: aux)
+    by auto
+qed
+
+lemma aval_no_regs: "AExp.enumerate_regs a = {} \<Longrightarrow> aval a (join_ir [] r) = aval a (\<lambda>x. None)"
+  apply (induct a rule: aexp_induct_separate_V_cases)
+        apply simp
+       apply (simp add: join_ir_def input2state_def)
+      apply (simp add: join_ir_def)
+  by auto
+
+lemma "a \<noteq> b \<Longrightarrow> needs_latent [
+([], <>, a, []),
+([], <>, b, [])]"
+  apply (simp add: needs_latent_def all_known_regs_def del: set_finfun_to_list)
+  apply (rule disjI1)
+  apply (rule allI)
+  apply (rule impI)+
+  apply (erule exE)
+  apply (rule allI)
+  by (simp add: finfun_to_list_empty aval_no_regs)
+
+lemma "a \<noteq> b \<Longrightarrow> needs_latent_code [
+([], <>, a, []),
+([], <>, b, [])]"
+  by (simp add: needs_latent_code_def finfun_to_list_empty all_known_regs_def del: set_finfun_to_list)
+
+lemma "\<not>needs_latent_code [
+([], <1 $:= Some (value.Int 3)>, value.Int 250, [1]),
+([], <1 $:= Some (value.Int 3)>, value.Int 300, []),
+([], <1 $:= Some (value.Int 3)>, value.Int 350, []),
+([], <1 $:= Some (value.Int 3)>, value.Int 400, [])]"
+proof-
+  have aux1: "finfun_dom (<>::registers) = (K$ False)"
+    by (simp add: finfun_dom_const null_state_def)
+  have aux: "set (finfun_to_list <1::nat $:= Some (value.Int 3)>) = {1}"
+    apply (simp add: finfun_to_list_update)
+    apply (simp add: finfun_default_def finfun_default_aux_def finfun_to_list_empty)
+    by (simp add: set_insort_insert)
+  show ?thesis
+    by (simp add: needs_latent_code_def all_known_regs_def aux del: set_finfun_to_list One_nat_def)
+qed
+
+lemma value_plus_join_ir_not_none: "value_plus (aval a1 (join_ir i ra')) (aval a2 (join_ir i ra')) = Some p' \<Longrightarrow>
+(aval a1 (join_ir i ra')) \<noteq> None \<and> (aval a2 (join_ir i ra')) \<noteq> None"
+  by (metis maybe_arith.simps(3) maybe_arith.simps(8) option.simps(3) value_plus_def)
+
+lemma aux:
+  assumes "aval a (join_ir i ra) = p"
+  and "AExp.enumerate_regs a \<subseteq> known"
+  and " \<nexists>x. x \<in> known \<and> r $ x \<noteq> ra $ x"
+shows "aval a (join_ir i r) = p"
+  using assms
+  apply (induct a arbitrary: p rule: aexp_induct_separate_V_cases)
+  using join_ir_def by auto
+
+lemma "needs_latent_code train \<Longrightarrow> needs_latent train"
+  apply (simp add: needs_latent_code_def needs_latent_def Let_def Bex_def)
+  apply clarsimp
+  subgoal for i r p known p' known'
+    apply (rule_tac x=i in exI)
+    apply (rule_tac x=r in exI)
+    apply (rule_tac x=p in exI)
+    apply (rule_tac x=known in exI)
+    apply simp
+    apply (rule_tac x=p' in exI)
+    apply (rule_tac x=known' in exI)
+    apply simp
+    apply (rule allI)+
+    apply (rule impI)+
+    subgoal for a ra
+      apply (case_tac "(\<exists>x. x \<in> set known \<and> r $ x \<noteq> ra $ x)")
+       apply simp
+      apply (rule disjI2)
+      apply (rule allI)
+      subgoal for ra'
+        apply (case_tac "(\<exists>x. x \<in> set known' \<and> r $ x \<noteq> ra' $ x)")
+         apply simp
+        apply (rule disjI2)
+        apply (case_tac "AExp.enumerate_regs a \<subseteq> set known")
+         prefer 2
+         apply auto[1]
+        apply (case_tac "AExp.enumerate_regs a \<subseteq> set known'")
+         prefer 2
+         apply auto[1]
+        apply simp
+        by (metis aux option.inject)
+      done
+    done
+  done
+
+lemma always_an_aexp: "\<exists>a ra. aval a (join_ir i ra) = Some p \<and> AExp.enumerate_regs a \<subseteq> all_known_regs train"
+  apply (rule_tac x="L p" in exI)
+  by simp
+
+lemma all_known_regs_known: "\<not> all_known_regs train \<subseteq> set known \<Longrightarrow> \<exists>r. r \<in> all_known_regs train \<and> r \<notin> set known"
+  by auto
+
 text\<open>We want to return an aexp which, when evaluated in the correct context accounts for the literal
 input-output pairs within the training set. This will be replaced by symbolic regression in the
 executable\<close>
@@ -542,6 +680,8 @@ fun take_maximum_updates :: "iEFSM \<Rightarrow> (tids \<times> transition) fset
 definition wipe_futures :: "bad_funs \<Rightarrow> tids \<Rightarrow> bad_funs" where
   "wipe_futures bad tids = fold (\<lambda>k acc. if Max (set k) > Max (set tids) then acc(k $:= []) else acc) (finfun_to_list bad) bad"
 
+definition "all_structures (log::log) = set (fold (@) (map (map event_structure) log) [])"
+
 fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> transition_group list \<Rightarrow> (tids \<Rightarrow> abstract_event) \<Rightarrow> (abstract_event \<Rightarrow>f (output_function list \<times> update_function list) option) \<Rightarrow> tids list \<Rightarrow> (transition \<times> typed_aexp option list) list \<Rightarrow> funMem \<Rightarrow> generalisation" where
   "groupwise_generalise_and_update bad maybe_bad max_attempts attempts transition_repeats _ e [] update_groups structure funs to_derestrict closed fun_mem = Succeeded (e, to_derestrict, fun_mem, closed)" |
   "groupwise_generalise_and_update bad maybe_bad max_attempts attempts transition_repeats log e (gp#t) update_groups structure funs to_derestrict closed fun_mem_old = (
@@ -569,6 +709,10 @@ fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Righta
           result = (if pre_standardised_good then
             groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_union maybe_bad bad') max_attempts attempts transition_repeats log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. structure (fst (hd g)) \<notin> set (finfun_to_list funs)) t) update_groups structure funs (to_derestrict @ more_to_derestrict) [] fun_mem
           else
+            if \<forall>struct \<in> ((all_structures log) - set (finfun_to_list funs)).
+              \<forall>t \<in> set (map (map event_structure) log). \<not> appears_in_order [struct, (structure rep_id)] t then
+               Failed (funmem_add (funmem_union bad bad') (rep_id) reg_bad)
+            else
             if set (finfun_to_list funs) \<subset> set (structural_groups) then
               groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_add (funmem_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts transition_repeats log (merge_regs standardised (accepts_log (set log))) t update_groups structure funs (to_derestrict @ more_to_derestrict) [] fun_mem
             else

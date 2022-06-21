@@ -23,8 +23,6 @@ theory Code_Generation
    "code-targets/Code_Target_List"
 begin
 
-declare One_nat_def [simp del]
-
 (*
   Let's use the native operators for booleans and pairs
 *)
@@ -294,7 +292,7 @@ qed
 lemma [code]:
   "Store_Reuse.is_generalisation_of x xa xb xc = is_generalisation_of x xa xb xc"
   apply (simp add: Store_Reuse.is_generalisation_of_def is_generalisation_of_def)
-  using tests_input_equality by blast
+  using tests_input_equality by auto
 
 definition iEFSM2dot :: "iEFSM \<Rightarrow> nat \<Rightarrow> unit" where
   "iEFSM2dot _ _ = ()"
@@ -386,6 +384,8 @@ code_printing
   | constant "finfun_apply" \<rightharpoonup> (Scala) "_((_))"
   | constant "finfun_to_list" \<rightharpoonup> (Scala) "_.keySet.toList"
   | constant "finfun_default" \<rightharpoonup> (Scala) "Dirties.defaultValue"
+  | constant "HOL.equal :: (('a::{card_UNIV,equal}) \<Rightarrow>f ('b::equal)) \<Rightarrow> ('a \<Rightarrow>f 'b) \<Rightarrow> bool" \<rightharpoonup> (Scala) infix 4 "=="
+
 declare finfun_to_list_const_code [code del]
 declare finfun_to_list_update_code [code del]
 declare finfun_update_def [code del]
@@ -399,6 +399,15 @@ definition mismatched_updates :: "transition \<Rightarrow> transition \<Rightarr
 lemma [code]:
   "directly_subsumes e1 e2 s1 s2 t1 t2  = (if t1 = t2 then True else dirty_directly_subsumes e1 e2 s1 s2 t1 t2)"
   by (simp add: directly_subsumes_reflexive dirty_directly_subsumes_def)
+
+declare List.minus_coset_filter [code del]
+declare Cardinality.card'_code(2) [code del]
+lemma [code]: "set x - set y = set (filter (\<lambda>x. x \<notin> set y) x)"
+  by (induct x, auto)
+lemma [code]: "Set.remove a (set l) = set (filter (\<lambda>x. x \<noteq> a) l)"
+  apply (induct l)
+   apply auto[1]
+  by force
 
 export_code
   (* Essentials *)
@@ -452,6 +461,7 @@ export_code
   enumerate_vars
   derestrict
   breadth_first_label
+  needs_latent_code
 in Scala
 file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
