@@ -7,13 +7,11 @@ concept.
 \<close>
 
 theory AExp
-  imports Value_Lexorder VName FinFun.FinFun "HOL-Library.Option_ord"
+  imports Value_Lexorder VName Registers "HOL-Library.Option_ord"
 begin
 
 declare One_nat_def [simp del]
-unbundle finfun_syntax
 
-type_synonym registers = "nat \<Rightarrow>f value option"
 type_synonym 'a datastate = "'a \<Rightarrow> value option"
 
 text_raw\<open>\snip{aexptype}{1}{2}{%\<close>
@@ -55,43 +53,15 @@ fun aval :: "'a aexp \<Rightarrow> 'a datastate \<Rightarrow> value option" wher
 lemma aval_plus_symmetry: "aval (Plus x y) s = aval (Plus y x) s"
   by (simp add: value_plus_symmetry)
 
-text \<open>A little syntax magic to write larger states compactly:\<close>
-definition null_state ("<>") where
-  "null_state \<equiv> (K$ bot)"
-
-no_notation finfun_update ("_'(_ $:= _')" [1000, 0, 0] 1000)
-nonterminal fupdbinds and fupdbind
-
-syntax
-  "_fupdbind" :: "'a \<Rightarrow> 'a \<Rightarrow> fupdbind"             ("(2_ $:=/ _)")
-  ""         :: "fupdbind \<Rightarrow> fupdbinds"             ("_")
-  "_fupdbinds":: "fupdbind \<Rightarrow> fupdbinds \<Rightarrow> fupdbinds" ("_,/ _")
-  "_fUpdate"  :: "'a \<Rightarrow> fupdbinds \<Rightarrow> 'a"            ("_/'((_)')" [1000, 0] 900)
-  "_State" :: "fupdbinds => 'a" ("<_>")
-
-translations
-  "_fUpdate f (_fupdbinds b bs)" \<rightleftharpoons> "_fUpdate (_fUpdate f b) bs"
-  "f(x$:=y)" \<rightleftharpoons> "CONST finfun_update f x y"
-  "_State ms" == "_fUpdate <> ms"
-  "_State (_updbinds b bs)" <= "_fUpdate (_State b) bs"
-
-lemma empty_None: "<> = (K$ None)"
-  by (simp add: null_state_def bot_option_def)
-
-lemma apply_empty_None [simp]: "<> $ x2 = None"
-  by (simp add: null_state_def bot_option_def)
-
 definition input2state :: "value list \<Rightarrow> registers" where
-  "input2state n = fold (\<lambda>(k, v) f. f(k $:= Some v)) (enumerate 0 n) (K$ None)"
+  "input2state n = fold (\<lambda>(k, v) f. f(k $:= Some v)) (enumerate 0 n) <>"
 
 primrec input2state_prim :: "value list \<Rightarrow> nat \<Rightarrow> registers" where
-  "input2state_prim [] _ = (K$ None)" |
+  "input2state_prim [] _ = <>" |
   "input2state_prim (v#t) k = (input2state_prim t (k+1))(k $:= Some v)"
 
 lemma input2state_append:
   "input2state (i @ [a]) = (input2state i)(length i $:= Some a)"
-  apply (simp add: eq_finfun_All_ext finfun_All_def finfun_All_except_def)
-  apply clarify
   by (simp add: input2state_def enumerate_eq_zip)
 
 lemma input2state_out_of_bounds:
@@ -103,7 +73,7 @@ proof(induct ia rule: rev_induct)
 next
   case (snoc a as)
   then show ?case
-    by (simp add: input2state_def enumerate_eq_zip)
+    by (simp add: input2state_append)
 qed
 
 lemma input2state_within_bounds:
@@ -122,8 +92,8 @@ proof(induct ia rule: rev_induct)
 next
   case (snoc a ia)
   then show ?case
-    apply (simp add: input2state_def enumerate_eq_zip)
-    by (simp add: finfun_upd_apply nth_append)
+    apply (simp add: input2state_append)
+    by (metis less_Suc_eq nth_append nth_append_length update_irrelevant update_value)
 qed
 
 lemma input2state_some:
@@ -170,20 +140,14 @@ proof(induct i rule: rev_induct)
 next
   case (snoc x xs)
   then show ?case
-    using input2state_within_bounds[of xs x1 a]
-    using input2state_cons[of "Suc x1" "xs @ [x]" b]
-    apply simp
-    apply (case_tac "x1 < length xs")
-     apply simp
-    by (metis finfun_upd_apply input2state_append input2state_nth length_Cons length_append_singleton lessI list.sel(3) nth_tl)
+    by (metis Suc_less_eq input2state_nth input2state_within_bounds length_Cons nth_Cons_Suc)
 qed
 
 lemma input2state_exists: "\<exists>i. input2state i $ x1 = Some a"
 proof(induct x1)
   case 0
   then show ?case
-    apply (rule_tac x="[a]" in exI)
-    by (simp add: input2state_def)
+    by (metis Ex_list_of_length input2state_some length_list_update nth_list_update_eq zero_less_Suc)
 next
   case (Suc x1)
   then show ?case
@@ -251,7 +215,7 @@ lemma join_ir_empty [simp]: "join_ir [] <> = (\<lambda>x. None)"
   apply (simp add: join_ir_def)
   apply (case_tac x)
    apply (simp add: input2state_def)
-  by (simp add: empty_None)
+  by simp
 
 lemma join_ir_R [simp]: "(join_ir i r) (R n) = r $ n"
   by (simp add: join_ir_def)
@@ -309,8 +273,7 @@ lemma exists_join_ir_ext: "\<exists>i r. join_ir i r v = s v"
    apply (simp add: input2state_exists)
   apply simp
   apply (rule_tac x="<x2 $:= Some a>" in exI)
-  apply simp
-  done
+  using update_value by auto
 
 lemma join_ir_nth [simp]:
   "i < length is \<Longrightarrow> join_ir is r (I i) = Some (is ! i)"

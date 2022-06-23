@@ -10,6 +10,9 @@ theory PTA_Generalisation
   imports "../Inference" Same_Register Group_By "HOL-Library.Sublist" "Extended_Finite_State_Machines.Drinks_Machine"
 begin
 
+unbundle finfun_syntax
+hide_const (open) regs
+
 datatype value_type = I | R | S
 
 instantiation value_type :: linorder begin
@@ -175,15 +178,15 @@ type_synonym targeted_run_info = "(registers \<times> action_info) list"
 
 fun target :: "registers \<Rightarrow> run_info \<Rightarrow> targeted_run_info" where
   "target _ [] = []" |
-  "target tRegs ((s, oldregs, regs, inputs, tid, ta)#t) = (
-    let newTarget = if finfun_to_list regs = [] then tRegs else regs in
-    (tRegs, s, oldregs, regs, inputs, tid, ta)#target newTarget t
+  "target tRegs ((s, oldregs, rr, inputs, tid, ta)#t) = (
+    let newTarget = if registers_to_list rr = [] then tRegs else rr in
+    (tRegs, s, oldregs, rr, inputs, tid, ta)#target newTarget t
   )"
 
 fun target_tail :: "registers \<Rightarrow> run_info \<Rightarrow> targeted_run_info \<Rightarrow> targeted_run_info" where
   "target_tail _ [] tt = rev tt" |
   "target_tail tRegs ((s, oldregs, regs, inputs, tid, ta)#t) tt = (
-    let newTarget = if finfun_to_list regs = [] then tRegs else regs in
+    let newTarget = if registers_to_list regs = [] then tRegs else regs in
     target_tail newTarget t ((tRegs, s, oldregs, regs, inputs, tid, ta)#tt)
   )"
 
@@ -198,7 +201,7 @@ proof(induct ts arbitrary: bs tRegs)
 qed simp
 
 definition "target_fold tRegs ts b = fst (fold (\<lambda>(s, oldregs, regs, inputs, tid, ta) (acc, tRegs).
-let newTarget = if finfun_to_list regs = [] then tRegs else regs in
+let newTarget = if registers_to_list regs = [] then tRegs else regs in
     (acc@[(tRegs, s, oldregs, regs, inputs, tid, ta)], newTarget)
 ) ts (rev b, tRegs))"
 
@@ -253,7 +256,7 @@ definition get_update :: "funMem \<Rightarrow> label \<Rightarrow> nat \<Rightar
     if (\<exists>(inputs, (aregs, pregs)) \<in> set train. pregs $ reg = None)
       then None
     else
-      let ioPairs = remdups (map (\<lambda>(inputs, (aregs, pregs)). case pregs $ reg of Some v \<Rightarrow> (inputs, ((K$ None)(reg $:= aregs $ reg), v, []))) train) in
+      let ioPairs = remdups (map (\<lambda>(inputs, (aregs, pregs)). case pregs $ reg of Some v \<Rightarrow> (inputs, (<>(reg $:= aregs $ reg), v, []))) train) in
       case find (\<lambda>(a, _). correct a {} values ioPairs False) (fun_mem $ label) of
         None \<Rightarrow> get_update_gp label reg values ioPairs |
         Some (u, t) \<Rightarrow> Some (u, t)
@@ -264,12 +267,12 @@ primrec (nonexhaustive) type_signature_opt :: "value option \<Rightarrow> value_
 
 definition get_updates_opt :: "funMem \<Rightarrow> label \<Rightarrow> value list \<Rightarrow> (inputs \<times> registers \<times> registers) list \<Rightarrow> (nat \<times> typed_aexp option) list" where
   "get_updates_opt fun_mem l values train = (let
-    updated_regs = fold List.union (map (finfun_to_list \<circ> snd \<circ> snd) train) [] in
+    updated_regs = fold List.union (map (registers_to_list \<circ> snd \<circ> snd) train) [] in
     map (\<lambda>r.
       let targetValues = remdups (map (\<lambda>(_, _, regs). regs $ r) train) in
       if  (\<forall>(_, anteriorRegs, posteriorRegs) \<in> set train. anteriorRegs $ r = posteriorRegs $ r) then
         (r, Some ((V (R r)), K$ type_signature_opt ((fst (snd (hd train))) $ r)))
-      else if length targetValues = 1 \<and> (\<forall>(inputs, anteriorRegs, _) \<in> set train. finfun_to_list anteriorRegs = []) then
+      else if length targetValues = 1 \<and> (\<forall>(inputs, anteriorRegs, _) \<in> set train. registers_to_list anteriorRegs = []) then
         case hd targetValues of Some v \<Rightarrow> (r, Some ((L v), K$ (type_signature v)))
       else
         (r, get_update fun_mem l r values train)
@@ -279,13 +282,29 @@ definition get_updates_opt :: "funMem \<Rightarrow> label \<Rightarrow> value li
 definition finfun_add :: "(('a::linorder) \<Rightarrow>f 'b) \<Rightarrow> ('a \<Rightarrow>f 'b) \<Rightarrow> ('a \<Rightarrow>f 'b)" where
   "finfun_add a b = fold (\<lambda>k f. f(k $:= b $ k)) (finfun_to_list b) a"
 
+lemma finfun_default_finfun_add: "finfun_default (finfun_add f1 f2) = finfun_default f1"
+  apply (simp add: finfun_add_def)
+  apply (case_tac "\<exists>l. finfun_to_list f2 = l")
+   prefer 2 apply simp
+  apply (erule exE)
+  subgoal for l
+    apply simp
+    apply (thin_tac "finfun_to_list f2 = l")
+    apply (induct l rule: rev_induct)
+     apply simp
+    by (simp add: finfun_default_update_const)
+  done
+
+lift_definition registers_add :: "registers \<Rightarrow> registers \<Rightarrow> registers" is finfun_add
+  by (simp add: finfun_default_finfun_add)
+
 (*We only want to update transitions that need it*)
 definition group_update :: "funMem \<Rightarrow> value list \<Rightarrow> targeted_run_info \<Rightarrow> (tids \<times> (nat \<times> typed_aexp) list) option" where
   "group_update fun_mem values l = (
     let
       (_, _, _, _, _, _, t) = hd l;
-      targeted = filter (\<lambda>(regs, _). finfun_to_list regs \<noteq> []) l;
-      maybe_updates = get_updates_opt fun_mem (Label t) values (map (\<lambda>(tRegs, s, oldRegs, regs, inputs, tid, ta). (inputs, finfun_add oldRegs regs, tRegs)) targeted)
+      targeted = filter (\<lambda>(regs, _). registers_to_list regs \<noteq> []) l;
+      maybe_updates = get_updates_opt fun_mem (Label t) values (map (\<lambda>(tRegs, s, oldRegs, regs, inputs, tid, ta). (inputs, registers_add oldRegs regs, tRegs)) targeted)
     in
     if \<exists>(_, f_opt) \<in> set maybe_updates. f_opt = None then
       None
@@ -318,13 +337,14 @@ fun unzip_4 :: "('a \<times> 'b \<times> 'c \<times> 'd) list \<Rightarrow> ('a 
   All other registers may change their values.
 *)
 
-definition "all_known_regs train = (\<Union> (set (map (\<lambda>(i, r, _). set (finfun_to_list r)) train)))"
+definition "all_known_regs train = (\<Union> (set (map (\<lambda>(i, r, _). set (registers_to_list r)) train)))"
 
 definition needs_latent :: "(inputs \<times> registers \<times> value \<times> nat list) list \<Rightarrow> bool" where
   "needs_latent train = (
      \<exists>(i, r, p, known) \<in> set train.
       \<exists>(i', r', p', known') \<in> (set train - {(i, r, p, known)}).
         i = i' \<and> r = r' \<and> p \<noteq> p' \<and>
+        (set known \<subseteq> set (registers_to_list r)) \<and> (set known' \<subseteq> set (registers_to_list r')) \<and> set known' = set known \<and>
         (\<nexists>a ra ra'.
           (\<forall>k \<in> set known. r $ k = ra $ k) \<and> (\<forall>k' \<in> set known'. r' $ k' = ra' $ k') \<and> \<comment> \<open>Known variables keep their values\<close>
           AExp.enumerate_regs a \<subseteq> all_known_regs train \<and> \<comment> \<open>We're only allowed registers in the training set\<close>
@@ -336,7 +356,8 @@ definition needs_latent_code :: "(inputs \<times> registers \<times> value \<tim
     let regs = all_known_regs train in
     \<exists>(i, r, p, known) \<in> set train.
       \<exists>(i', r', p', known') \<in> (set train - {(i, r, p, known)}).
-        i = i' \<and> r = r' \<and> p \<noteq> p' \<and> (regs \<subseteq> set known) \<and> (regs \<subseteq> set known')
+        i = i' \<and> r = r' \<and> p \<noteq> p' \<and> (regs \<subseteq> set known) \<and> (regs \<subseteq> set known') \<and>
+        (set known \<subseteq> set (registers_to_list r)) \<and> (set known' \<subseteq> set (registers_to_list r')) \<and> set known' = set known
   )"
 
 lemma needs_latent_empty: "\<not>needs_latent []"
@@ -345,14 +366,14 @@ lemma needs_latent_empty: "\<not>needs_latent []"
 lemma needs_latent_code_empty: "\<not>needs_latent_code []"
   by (simp add: needs_latent_code_def)
 
-lemma finfun_to_list_empty: "finfun_to_list (<>::registers) = []"
+lemma registers_to_list_empty: "registers_to_list (<>::registers) = []"
 proof-
   have aux: "{x. Abs_finfun (\<lambda>a. False) $ x} = {}"
     by (metis Collect_empty_eq_bot empty_def finfun_apply_inverse finfun_const_False_conv_bot)
   show ?thesis
-    apply (simp add: finfun_to_list_def finfun_dom_def finfun_default_def finfun_default_aux_def)
-    apply (simp add: aux)
-    by auto
+    apply (simp add: registers_to_list_def finfun_dom_def finfun_default_def finfun_default_aux_def)
+    apply (simp add: aux null_state.rep_eq)
+    by (simp add: finfun_to_list_const)
 qed
 
 lemma aval_no_regs: "AExp.enumerate_regs a = {} \<Longrightarrow> aval a (join_ir [] r) = aval a (\<lambda>x. None)"
@@ -365,34 +386,18 @@ lemma aval_no_regs: "AExp.enumerate_regs a = {} \<Longrightarrow> aval a (join_i
 lemma "a \<noteq> b \<Longrightarrow> needs_latent [
 ([], <>, a, []),
 ([], <>, b, [])]"
-  apply (simp add: needs_latent_def all_known_regs_def del: set_finfun_to_list)
+  apply (simp add: needs_latent_def all_known_regs_def)
   apply (rule disjI1)
   apply (rule allI)
   apply (rule impI)+
   apply (erule exE)
   apply (rule allI)
-  by (simp add: finfun_to_list_empty aval_no_regs)
+  by (simp add: registers_to_list_empty aval_no_regs)
 
 lemma "a \<noteq> b \<Longrightarrow> needs_latent_code [
 ([], <>, a, []),
 ([], <>, b, [])]"
-  by (simp add: needs_latent_code_def finfun_to_list_empty all_known_regs_def del: set_finfun_to_list)
-
-lemma "\<not>needs_latent_code [
-([], <1 $:= Some (value.Int 3)>, value.Int 250, [1]),
-([], <1 $:= Some (value.Int 3)>, value.Int 300, []),
-([], <1 $:= Some (value.Int 3)>, value.Int 350, []),
-([], <1 $:= Some (value.Int 3)>, value.Int 400, [])]"
-proof-
-  have aux1: "finfun_dom (<>::registers) = (K$ False)"
-    by (simp add: finfun_dom_const null_state_def)
-  have aux: "set (finfun_to_list <1::nat $:= Some (value.Int 3)>) = {1}"
-    apply (simp add: finfun_to_list_update)
-    apply (simp add: finfun_default_def finfun_default_aux_def finfun_to_list_empty)
-    by (simp add: set_insort_insert)
-  show ?thesis
-    by (simp add: needs_latent_code_def all_known_regs_def aux del: set_finfun_to_list One_nat_def)
-qed
+  by (simp add: needs_latent_code_def registers_to_list_empty all_known_regs_def)
 
 lemma value_plus_join_ir_not_none: "value_plus (aval a1 (join_ir i ra')) (aval a2 (join_ir i ra')) = Some p' \<Longrightarrow>
 (aval a1 (join_ir i ra')) \<noteq> None \<and> (aval a2 (join_ir i ra')) \<noteq> None"
@@ -401,13 +406,13 @@ lemma value_plus_join_ir_not_none: "value_plus (aval a1 (join_ir i ra')) (aval a
 lemma aux:
   assumes "aval a (join_ir i ra) = p"
   and "AExp.enumerate_regs a \<subseteq> known"
-  and " \<nexists>x. x \<in> known \<and> r $ x \<noteq> ra $ x"
+  and "\<nexists>x. x \<in> known \<and> registers_apply r x \<noteq> registers_apply ra x"
 shows "aval a (join_ir i r) = p"
   using assms
   apply (induct a arbitrary: p rule: aexp_induct_separate_V_cases)
   using join_ir_def by auto
 
-lemma "needs_latent_code train \<Longrightarrow> needs_latent train"
+lemma needs_latent: "needs_latent_code train \<Longrightarrow> needs_latent train"
   apply (simp add: needs_latent_code_def needs_latent_def Let_def Bex_def)
   apply clarsimp
   subgoal for i r p known p' known'
@@ -442,12 +447,56 @@ lemma "needs_latent_code train \<Longrightarrow> needs_latent train"
     done
   done
 
+lemma always_unknown_register: "finite known \<Longrightarrow> \<exists>n. n \<notin> known \<and> registers_apply r  n = None"
+  apply (case_tac "\<exists>a. a \<notin> {x. finfun_apply (finfun_dom (registers.regs r)) x \<or> x \<in> known}")
+   apply (erule_tac exE)
+   apply (rule_tac x=a in exI)
+  using finfun_dom_conv registers_apply.rep_eq regs apply fastforce
+  using ex_new_if_finite finite_finfun_dom by blast
+
+lemma ex_unknown_reg: "set known \<subseteq> set (registers_to_list r) \<Longrightarrow>
+       \<not> all_known_regs train \<subseteq> set known \<Longrightarrow>
+       \<exists>n. n \<in> all_known_regs train \<and> n \<notin> set known"
+  apply (simp add: all_known_regs_def)
+  by blast
+
+lemma needs_latent_code: "needs_latent train \<Longrightarrow> needs_latent_code train"
+  apply (simp add: needs_latent_code_def needs_latent_def Let_def Bex_def)
+  apply clarsimp
+  subgoal for i r p known p' known'
+    apply (rule_tac x=i in exI)
+    apply (rule_tac x=r in exI)
+    apply (rule_tac x=p in exI)
+    apply (rule_tac x=known in exI)
+    apply simp
+    apply (rule_tac x=p' in exI)
+    apply (rule_tac x=known' in exI)
+    apply simp
+    apply (case_tac "all_known_regs train \<subseteq> set known", simp)
+    apply (insert ex_unknown_reg[of known r train])
+    apply simp
+    apply (erule exE)
+    apply (erule_tac x="V (R n)" in allE)
+    apply simp
+    apply (erule_tac x="registers_update r n (Some p)" in allE)
+    apply simp
+    apply (erule disjE)
+     apply (metis update_irrelevant)
+    by (metis update_irrelevant update_value)
+  done
+
+lemma [code]: "needs_latent train = needs_latent_code train"
+  using needs_latent needs_latent_code by auto
+
 lemma always_an_aexp: "\<exists>a ra. aval a (join_ir i ra) = Some p \<and> AExp.enumerate_regs a \<subseteq> all_known_regs train"
   apply (rule_tac x="L p" in exI)
   by simp
 
 lemma all_known_regs_known: "\<not> all_known_regs train \<subseteq> set known \<Longrightarrow> \<exists>r. r \<in> all_known_regs train \<and> r \<notin> set known"
   by auto
+
+unbundle no_registers_syntax
+unbundle finfun_syntax
 
 text\<open>We want to return an aexp which, when evaluated in the correct context accounts for the literal
 input-output pairs within the training set. This will be replaced by symbolic regression in the
@@ -480,7 +529,7 @@ fun target_registers :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<R
     let
       (tids, s', t) = fthe_elem (i_possible_steps e s r l i);
       r' = evaluate_updates t i r;
-      necessary_regs = fold finfun_add (map (\<lambda>(p, f). if finfun_to_list (types $ f) = [] then <> else get_regs (types $ f) i f p) (zip p (Outputs t))) <>
+      necessary_regs = fold registers_add (map (\<lambda>(p, f). if finfun_to_list (types $ f) = [] then <> else get_regs (types $ f) i f p) (zip p (Outputs t))) <>
     in
     (s, r, necessary_regs, i, tids, t)#(target_registers e s' r' es types)
   )"
@@ -678,7 +727,11 @@ fun take_maximum_updates :: "iEFSM \<Rightarrow> (tids \<times> transition) fset
       finsert (tids, t) acc) (sorted_list_of_fset ts) {||}"
 
 definition wipe_futures :: "bad_funs \<Rightarrow> tids \<Rightarrow> bad_funs" where
-  "wipe_futures bad tids = fold (\<lambda>k acc. if Max (set k) > Max (set tids) then acc(k $:= []) else acc) (finfun_to_list bad) bad"
+  "wipe_futures bad tids = (
+    if \<exists>a \<in> set (bad $ tids). AExp.enumerate_regs a \<noteq> {} then
+      fold (\<lambda>k acc. if Max (set k) > Max (set tids) then acc(k $:= []) else acc) (finfun_to_list bad) bad
+    else bad
+  )"
 
 definition "all_structures (log::log) = set (fold (@) (map (map event_structure) log) [])"
 
@@ -704,16 +757,16 @@ fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Righta
           more_to_derestrict = sorted_list_of_fset (fimage fst (ffilter (\<lambda>(id, _, tran). tran \<noteq> get_by_ids e id) standardised));
           \<comment> \<open>We want to do all the structural groups with an output to generalise. If we can't standardise after than the we've probably gone wrong...\<close>
           structural_groups = filter (\<lambda>(_, _, outputs). length outputs > 0) (map (\<lambda>gg. structure (fst (hd gg))) update_groups);
-        \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and
-            updates for the other historical subgroups so can filter them out.\<close>
           result = (if pre_standardised_good then
+            \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and
+            updates for the other historical subgroups so can filter them out.\<close>
             groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_union maybe_bad bad') max_attempts attempts transition_repeats log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. structure (fst (hd g)) \<notin> set (finfun_to_list funs)) t) update_groups structure funs (to_derestrict @ more_to_derestrict) [] fun_mem
-          else
-            if \<forall>struct \<in> ((all_structures log) - set (finfun_to_list funs)).
-              \<forall>t \<in> set (map (map event_structure) log). \<not> appears_in_order [struct, (structure rep_id)] t then
-               Failed (funmem_add (funmem_union bad bad') (rep_id) reg_bad)
-            else
-            if set (finfun_to_list funs) \<subset> set (structural_groups) then
+          else if \<forall>struct \<in> ((all_structures log) - set (finfun_to_list funs)).
+            \<forall>t \<in> set (map (map event_structure) log). \<not> appears_in_order [struct, (structure rep_id)] t then
+             \<comment> \<open>If we don't have any more possible update options, then fail\<close>
+             Failed (funmem_add (funmem_union bad bad') (rep_id) reg_bad)
+          else if set (finfun_to_list funs) \<subset> set (structural_groups) then
+             \<comment> \<open>If we do have more possible update options, then cautiously proceed\<close>
               groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_add (funmem_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts transition_repeats log (merge_regs standardised (accepts_log (set log))) t update_groups structure funs (to_derestrict @ more_to_derestrict) [] fun_mem
             else
               Failed (funmem_add (funmem_union bad bad') (rep_id) reg_bad)

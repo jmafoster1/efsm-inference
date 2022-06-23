@@ -81,7 +81,8 @@ text_raw\<open>}%endsnip\<close>
 lemmas transitions = select_def coin_def vend_def vend_fail_def
 
 lemma apply_updates_vend: "apply_updates (Updates vend) (join_ir [] r) r = r"
-  by (simp add: vend_def apply_updates_def)
+  apply (simp add: vend_def apply_updates_def)
+  by (metis registers_ext update_irrelevant update_value)
 
 lemma drinks_states: "S drinks = {|0, 1, 2|}"
   apply (simp add: S_def drinks_def)
@@ -138,14 +139,14 @@ lemma recognises_from_1a:
   "recognises_execution drinks 1 <1 $:= d, 2 $:= Some (value.Int 50)> [(STR ''coin'', [value.Int 50]), (STR ''vend'', [])]"
   apply (rule recognises_execution.step)
   apply (rule_tac x="(1, coin)" in fBexI)
-   apply (simp add: apply_updates_def coin_def finfun_update_twist value_plus_def recognises_from_2)
+   apply (simp add: apply_updates_def coin_def registers_update_twist value_plus_def recognises_from_2)
   by (simp add: possible_steps_1_coin)
 
 lemma recognises_from_1: "recognises_execution drinks 1 <2 $:= Some (value.Int 0), 1 $:= Some d>
      [(STR ''coin'', [value.Int 50]), (STR ''coin'', [value.Int 50]), (STR ''vend'', [])]"
   apply (rule recognises_execution.step)
   apply (rule_tac x="(1, coin)" in fBexI)
-   apply (simp add: apply_updates_def coin_def value_plus_def finfun_update_twist recognises_from_1a)
+   apply (simp add: apply_updates_def coin_def value_plus_def registers_update_twist recognises_from_1a)
   by (simp add: possible_steps_1_coin)
 
 lemma purchase_coke:
