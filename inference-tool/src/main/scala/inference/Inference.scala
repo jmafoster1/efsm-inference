@@ -26,6 +26,14 @@ object equal{
     val `HOL.equal` = (a: Inference.score_ext[A], b: Inference.score_ext[A]) =>
       Inference.equal_score_exta[A](a, b)
   }
+  implicit def
+    `Registers.equal_registers`: equal[Map[Nat.nat, Option[Value.value]]] = new
+    equal[Map[Nat.nat, Option[Value.value]]] {
+    val `HOL.equal` =
+      (a: Map[Nat.nat, Option[Value.value]],
+        b: Map[Nat.nat, Option[Value.value]])
+      => a == b
+  }
   implicit def `Store_Reuse.equal_ioTag`: equal[Store_Reuse.ioTag] = new
     equal[Store_Reuse.ioTag] {
     val `HOL.equal` = (a: Store_Reuse.ioTag, b: Store_Reuse.ioTag) =>
@@ -46,12 +54,6 @@ object equal{
     equal[Option[A]] {
     val `HOL.equal` = (a: Option[A], b: Option[A]) =>
       Optiona.equal_optiona[A](a, b)
-  }
-  implicit def
-    `FinFun.equal_finfun`[A : Cardinality.card_UNIV : equal, B : equal]:
-      equal[Map[A, B]]
-    = new equal[Map[A, B]] {
-    val `HOL.equal` = (a: Map[A, B], b: Map[A, B]) => a == b
   }
   implicit def `Value.equal_value`: equal[Value.value] = new equal[Value.value]
     {
@@ -558,17 +560,6 @@ object linorder{
   implicit def `Int.linorder_int`: linorder[Int.int] = new linorder[Int.int] {
     val `Orderings.less_eq` = (a: Int.int, b: Int.int) => Int.less_eq_int(a, b)
     val `Orderings.less` = (a: Int.int, b: Int.int) => Int.less_int(a, b)
-  }
-}
-
-trait bot[A] {
-  val `Orderings.bot`: A
-}
-def bot[A](implicit A: bot[A]): A = A.`Orderings.bot`
-object bot{
-  implicit def `Option_ord.bot_option`[A : order]: bot[Option[A]] = new
-    bot[Option[A]] {
-    val `Orderings.bot` = Option_ord.bot_optiona[A]
   }
 }
 
@@ -1361,9 +1352,6 @@ def join_ir(i: List[Value.value], r: Map[Nat.nat, Option[Value.value]]):
                           case VName.R(aa) => r(aa)
                         }))
 
-def null_state[A, B : Orderings.bot]: Map[A, B] =
-  scala.collection.immutable.Map().withDefaultValue(Orderings.bot[B])
-
 def rename_regs(uu: Nat.nat => Nat.nat, x1: aexp[VName.vname]):
       aexp[VName.vname]
   =
@@ -1876,7 +1864,7 @@ def apply_outputs[A](p: List[AExp.aexp[A]], s: A => Option[Value.value]):
 
 def apply_updates(u: List[(Nat.nat, AExp.aexp[VName.vname])],
                    old: VName.vname => Option[Value.value]):
-      (Map[Nat.nat, Option[Value.value]]) => Map[Nat.nat, Option[Value.value]]
+      Map[Nat.nat, Option[Value.value]] => Map[Nat.nat, Option[Value.value]]
   =
   ((a: Map[Nat.nat, Option[Value.value]]) =>
     Lista.fold[(Nat.nat, AExp.aexp[VName.vname]),
@@ -2317,28 +2305,6 @@ def directly_subsumes(e1: FSet.fset[((Nat.nat, Nat.nat),
 
 } /* object Subsumption */
 
-object Option_ord {
-
-def bot_optiona[A : Orderings.order]: Option[A] = None
-
-def less_eq_option[A : Orderings.preorder](xa0: Option[A], x: Option[A]):
-      Boolean
-  =
-  (xa0, x) match {
-  case (Some(x), Some(y)) => Orderings.less_eq[A](x, y)
-  case (Some(x), None) => false
-  case (None, x) => true
-}
-
-def less_option[A : Orderings.preorder](x: Option[A], xa1: Option[A]): Boolean =
-  (x, xa1) match {
-  case (Some(x), Some(y)) => Orderings.less[A](x, y)
-  case (None, Some(x)) => true
-  case (x, None) => false
-}
-
-} /* object Option_ord */
-
 object Finite_Set {
 
 def card[A](x0: Set.set[A]): Nat.nat = x0 match {
@@ -2392,6 +2358,26 @@ def fis_singleton[A](s: FSet.fset[A]): Boolean =
   Nat.equal_nata(FSet.size_fset[A](s), Nat.Nata((1)))
 
 } /* object FSet_Utils */
+
+object Option_ord {
+
+def less_eq_option[A : Orderings.preorder](xa0: Option[A], x: Option[A]):
+      Boolean
+  =
+  (xa0, x) match {
+  case (Some(x), Some(y)) => Orderings.less_eq[A](x, y)
+  case (Some(x), None) => false
+  case (None, x) => true
+}
+
+def less_option[A : Orderings.preorder](x: Option[A], xa1: Option[A]): Boolean =
+  (x, xa1) match {
+  case (Some(x), Some(y)) => Orderings.less[A](x, y)
+  case (None, Some(x)) => true
+  case (x, None) => false
+}
+
+} /* object Option_ord */
 
 object Code_Generation {
 
@@ -4014,7 +4000,7 @@ def test_log(l: List[List[(String, (List[Value.value], List[Value.value]))]],
            List[(String, (List[Value.value], List[Value.value]))])
           =>
          test_trace(t, e, Nat.zero_nata,
-                     AExp.null_state[Nat.nat, Option[Value.value]])),
+                     scala.collection.immutable.Map().withDefaultValue(None))),
         l)
 
 def get_by_ids(e: FSet.fset[(List[Nat.nat],
@@ -4818,7 +4804,8 @@ def accepts_log(l: Set.set[List[(String,
                     List[Value.value]))]](l,
    ((a: List[(String, (List[Value.value], List[Value.value]))]) =>
      accepts_trace(e, Nat.zero_nata,
-                    AExp.null_state[Nat.nat, Option[Value.value]], a)))
+                    scala.collection.immutable.Map().withDefaultValue(None),
+                    a)))
 
 def recognises_prim(e: FSet.fset[((Nat.nat, Nat.nat),
                                    Transition.transition_ext[Unit])],
@@ -6821,10 +6808,10 @@ val (e1, (io1, inx1)): (Nat.nat, (ioTag, Nat.nat)) = aa;
   {
     val (e2, (io2, inx2)): (Nat.nat, (ioTag, Nat.nat)) = ab;
     ((walk_up_to(e1, e, Nat.zero_nata,
-                  AExp.null_state[Nat.nat, Option[Value.value]], t),
+                  scala.collection.immutable.Map().withDefaultValue(None), t),
        (io1, inx1)),
       (walk_up_to(e2, e, Nat.zero_nata,
-                   AExp.null_state[Nat.nat, Option[Value.value]], t),
+                   scala.collection.immutable.Map().withDefaultValue(None), t),
         (io2, inx2)))
   })
                                       })(b)
@@ -7919,37 +7906,49 @@ def nodes(g: FSet.fset[(List[Nat.nat],
           }),
          g))
 
-def target_fold[A : Orderings.linorder, B, C, D, E, F,
-                 G](tRegs: Map[A, B],
-                     ts: List[(C, (D, (Map[A, B], (E, (F, G)))))],
-                     b: List[(Map[A, B], (C, (D, (Map[A, B], (E, (F, G))))))]):
-      List[(Map[A, B], (C, (D, (Map[A, B], (E, (F, G))))))]
+def target_fold[A, B, C, D,
+                 E](tRegs: Map[Nat.nat, Option[Value.value]],
+                     ts: List[(A, (B, (Map[Nat.nat, Option[Value.value]],
+(C, (D, E)))))],
+                     b: List[(Map[Nat.nat, Option[Value.value]],
+                               (A, (B, (Map[Nat.nat, Option[Value.value]],
+ (C, (D, E))))))]):
+      List[(Map[Nat.nat, Option[Value.value]],
+             (A, (B, (Map[Nat.nat, Option[Value.value]], (C, (D, E))))))]
   =
-  (Lista.fold[(C, (D, (Map[A, B], (E, (F, G))))),
-               (List[(Map[A, B], (C, (D, (Map[A, B], (E, (F, G))))))],
-                 Map[A, B])](((a: (C, (D, (Map[A, B], (E, (F, G)))))) =>
-                               {
-                                 val (s, (oldregs,
-   (regs, (inputs, (tid, ta))))):
-                                       (C, (D, (Map[A, B], (E, (F, G)))))
-                                   = a;
-                                 ((aa: (List[(Map[A, B],
-       (C, (D, (Map[A, B], (E, (F, G))))))],
- Map[A, B]))
-                                    =>
-                                   {
-                                     val (acc, tRegsa):
-   (List[(Map[A, B], (C, (D, (Map[A, B], (E, (F, G))))))], Map[A, B])
-                                       = aa
-                                     val ab: Map[A, B] =
-                                       (if ((regs.keySet.toList).isEmpty) tRegsa
- else regs);
-                                     (acc ++
-((tRegsa, (s, (oldregs, (regs, (inputs, (tid, ta))))))::Nil),
-                                       ab)
-                                   })
-                               }),
-                              ts, (b.par.reverse.toList, tRegs)))._1
+  (Lista.fold[(A, (B, (Map[Nat.nat, Option[Value.value]], (C, (D, E))))),
+               (List[(Map[Nat.nat, Option[Value.value]],
+                       (A, (B, (Map[Nat.nat, Option[Value.value]],
+                                 (C, (D, E))))))],
+                 Map[Nat.nat, Option[Value.value]])](((a:
+                 (A, (B, (Map[Nat.nat, Option[Value.value]], (C, (D, E))))))
+                =>
+               {
+                 val (s, (oldregs, (regs, (inputs, (tid, ta))))):
+                       (A, (B, (Map[Nat.nat, Option[Value.value]],
+                                 (C, (D, E)))))
+                   = a;
+                 ((aa: (List[(Map[Nat.nat, Option[Value.value]],
+                               (A, (B, (Map[Nat.nat, Option[Value.value]],
+ (C, (D, E))))))],
+                         Map[Nat.nat, Option[Value.value]]))
+                    =>
+                   {
+                     val (acc, tRegsa):
+                           (List[(Map[Nat.nat, Option[Value.value]],
+                                   (A, (B,
+ (Map[Nat.nat, Option[Value.value]], (C, (D, E))))))],
+                             Map[Nat.nat, Option[Value.value]])
+                       = aa
+                     val ab: Map[Nat.nat, Option[Value.value]] =
+                       (if ((regs.keySet.toList).isEmpty) tRegsa else regs);
+                     (acc ++
+                        ((tRegsa,
+                           (s, (oldregs, (regs, (inputs, (tid, ta))))))::Nil),
+                       ab)
+                   })
+               }),
+              ts, (b.par.reverse.toList, tRegs)))._1
 
 def target(tRegs: Map[Nat.nat, Option[Value.value]],
             ts: List[(Nat.nat,
@@ -7965,8 +7964,7 @@ def target(tRegs: Map[Nat.nat, Option[Value.value]],
                    (List[Value.value],
                      (List[Nat.nat], Transition.transition_ext[Unit]))))))]
   =
-  target_fold[Nat.nat, Option[Value.value], Nat.nat,
-               Map[Nat.nat, Option[Value.value]], List[Value.value],
+  target_fold[Nat.nat, Map[Nat.nat, Option[Value.value]], List[Value.value],
                List[Nat.nat], Transition.transition_ext[Unit]](tRegs, ts, Nil)
 
 def cartProdN[A](as: List[List[A]]): List[List[A]] =
@@ -8000,7 +7998,7 @@ def correct_row(a: AExp.aexp[VName.vname], values: List[Value.value],
 valuations)
     val update:
           (List[(Nat.nat, Value.value)]) =>
-            (Map[Nat.nat, Option[Value.value]]) =>
+            Map[Nat.nat, Option[Value.value]] =>
               Map[Nat.nat, Option[Value.value]]
       = ((aa: List[(Nat.nat, Value.value)]) =>
           (b: Map[Nat.nat, Option[Value.value]]) =>
@@ -8305,15 +8303,18 @@ List[(Nat.nat, AExp.aexp[VName.vname])])],
     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))])
                             =>
                           add_groupwise_updates_trace(trace, funs, acc,
-               Nat.zero_nata, AExp.null_state[Nat.nat, Option[Value.value]])),
+               Nat.zero_nata,
+               scala.collection.immutable.Map().withDefaultValue(None))),
                          log, e)
 
-def finfun_add[A : HOL.equal : Orderings.linorder,
-                B](a: Map[A, B], b: Map[A, B]):
-      Map[A, B]
+def registers_add(a: Map[Nat.nat, Option[Value.value]],
+                   b: Map[Nat.nat, Option[Value.value]]):
+      Map[Nat.nat, Option[Value.value]]
   =
-  Lista.fold[A, Map[A, B]](((k: A) => (f: Map[A, B]) => (f + ((k -> (b(k)))))),
-                            b.keySet.toList, a)
+  Lista.fold[Nat.nat,
+              Map[Nat.nat, Option[Value.value]]](((k: Nat.nat) =>
+           (f: Map[Nat.nat, Option[Value.value]]) => (f + ((k -> (b(k)))))),
+          b.keySet.toList, a)
 
 def target_registers(e: FSet.fset[(List[Nat.nat],
                                     ((Nat.nat, Nat.nat),
@@ -8345,23 +8346,22 @@ def target_registers(e: FSet.fset[(List[Nat.nat],
       val necessary_regs: Map[Nat.nat, Option[Value.value]] =
         Lista.fold[(Value.value, AExp.aexp[VName.vname]),
                     Map[Nat.nat, Option[Value.value]]](Fun.comp[Map[Nat.nat, Option[Value.value]],
-                         (Map[Nat.nat, Option[Value.value]]) =>
+                         Map[Nat.nat, Option[Value.value]] =>
                            Map[Nat.nat, Option[Value.value]],
                          (Value.value,
                            AExp.aexp[VName.vname])](((a:
                 Map[Nat.nat, Option[Value.value]])
                =>
-              (b: Map[Nat.nat, Option[Value.value]]) =>
-              finfun_add[Nat.nat, Option[Value.value]](a, b)),
+              (b: Map[Nat.nat, Option[Value.value]]) => registers_add(a, b)),
              ((a: (Value.value, AExp.aexp[VName.vname])) =>
                {
                  val (pa, f): (Value.value, AExp.aexp[VName.vname]) = a;
                  (if (((types(f)).keySet.toList).isEmpty)
-                   AExp.null_state[Nat.nat, Option[Value.value]]
+                   scala.collection.immutable.Map().withDefaultValue(None)
                    else Dirties.getRegs(types(f), i, f, pa))
                })),
                 p.par.zip(Transition.Outputs[Unit](t)).toList,
-                AExp.null_state[Nat.nat, Option[Value.value]]);
+                scala.collection.immutable.Map().withDefaultValue(None));
       ((s, (r, (necessary_regs,
                  (i, (tids, t)))))::(target_registers(e, sa, ra, es, types)))
     }
@@ -8428,7 +8428,7 @@ def get_update(fun_mem:
                  = a
                val (Some(v)): Option[Value.value] = pregs(reg);
                (inputs,
-                 (((scala.collection.immutable.Map().withDefaultValue(None)) + ((reg -> (aregs(reg))))),
+                 ((scala.collection.immutable.Map().withDefaultValue(None) + ((reg -> (aregs(reg))))),
                    (v, Nil)))
              }),
             train)).par.distinct.toList;
@@ -8652,7 +8652,7 @@ Map[Nat.nat, Option[Value.value]]))](((a:
                (List[Value.value],
                  (List[Nat.nat], Transition.transition_ext[Unit]))))))
    = a;
- (inputs, (finfun_add[Nat.nat, Option[Value.value]](oldRegs, regs), tRegs))
+ (inputs, (registers_add(oldRegs, regs), tRegs))
                                        }),
                                       targeted));
     (if (Lista.list_ex[(Nat.nat,
@@ -8833,10 +8833,10 @@ Map[VName.vname, value_type])])],
                                     Transition.transition_ext[Unit]))))))]](((trace:
 List[(String, (List[Value.value], List[Value.value]))])
                                        =>
-                                      (target(AExp.null_state[Nat.nat,
-                       Option[Value.value]],
+                                      (target(scala.collection.immutable.Map().withDefaultValue(None),
        (target_registers(e, Nat.zero_nata,
-                          AExp.null_state[Nat.nat, Option[Value.value]], trace,
+                          scala.collection.immutable.Map().withDefaultValue(None),
+                          trace,
                           types)).par.reverse.toList)).par.reverse.toList),
                                      l)
     val relevant:
@@ -9283,7 +9283,7 @@ def make_training_set(e: FSet.fset[(List[Nat.nat],
                    (List[Value.value], List[Nat.nat])))])
         =>
       trace_group_training_set(gp, e, Nat.zero_nata,
-                                AExp.null_state[Nat.nat, Option[Value.value]],
+                                scala.collection.immutable.Map().withDefaultValue(None),
                                 Transition.transition_exta[Unit]("",
                           Nat.zero_nata, Nil, Nil, Nil, ()),
                                 a, b)),
@@ -9421,16 +9421,21 @@ def wipe_futures(bad: Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])],
                   tids: List[Nat.nat]):
       Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])]
   =
-  Lista.fold[List[Nat.nat],
-              Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])]](((k:
-                                List[Nat.nat])
-                               =>
-                              (acc: Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])])
-                                =>
-                              (if (Nat.less_nat(Lattices_Big.Max[Nat.nat](Set.seta[Nat.nat](tids)),
-         Lattices_Big.Max[Nat.nat](Set.seta[Nat.nat](k))))
-                                (acc + ((k -> Nil))) else acc)),
-                             bad.keySet.toList, bad)
+  (if (Lista.list_ex[AExp.aexp[VName.vname]](((a: AExp.aexp[VName.vname]) =>
+       ! (Cardinality.eq_set[Nat.nat](AExp.enumerate_regs(a),
+                                       Set.bot_set[Nat.nat]))),
+      bad(tids)))
+    Lista.fold[List[Nat.nat],
+                Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])]](((k:
+                                  List[Nat.nat])
+                                 =>
+                                (acc: Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])])
+                                  =>
+                                (if (Nat.less_nat(Lattices_Big.Max[Nat.nat](Set.seta[Nat.nat](tids)),
+           Lattices_Big.Max[Nat.nat](Set.seta[Nat.nat](k))))
+                                  (acc + ((k -> Nil))) else acc)),
+                               bad.keySet.toList, bad)
+    else bad)
 
 def funmem_add[A : HOL.equal, B](bad: Map[A, (List[B])], k: A, v: List[B]):
       Map[A, (List[B])]
@@ -10032,7 +10037,7 @@ def historical_groups(e: FSet.fset[(List[Nat.nat],
                 List[(String, (List[Value.value], List[Value.value]))])
                =>
               events_transitions(e, Nat.zero_nata,
-                                  AExp.null_state[Nat.nat, Option[Value.value]],
+                                  scala.collection.immutable.Map().withDefaultValue(None),
                                   t, Nil)),
              log)
     val histories:
@@ -10232,8 +10237,7 @@ def get_structures(e: FSet.fset[(List[Nat.nat],
                 a ++ b),
                ((t: List[(String, (List[Value.value], List[Value.value]))]) =>
                  events_transitions(e, Nat.zero_nata,
-                                     AExp.null_state[Nat.nat,
-              Option[Value.value]],
+                                     scala.collection.immutable.Map().withDefaultValue(None),
                                      t, Nil))),
               log, Nil);
     Lista.fold[(List[Nat.nat], (String, (List[value_type], List[value_type]))),
@@ -10354,18 +10358,21 @@ List[Nat.nat]))))]):
     drop_selected_guards(tidied, to_derestrict, pta, log, m, np)
   }
 
-def all_known_regs[A, B : Orderings.linorder, C,
-                    D](train: List[(A, (Map[B, C], D))]):
-      Set.set[B]
+def all_known_regs[A, B](train:
+                           List[(A, (Map[Nat.nat, Option[Value.value]], B))]):
+      Set.set[Nat.nat]
   =
-  Complete_Lattices.Sup_set[B](Set.seta[Set.set[B]](Lista.map[(A,
-                        (Map[B, C], D)),
-                       Set.set[B]](((a: (A, (Map[B, C], D))) =>
-                                     {
-                                       val (_, (r, _)): (A, (Map[B, C], D)) = a;
-                                       Set.seta[B](r.keySet.toList)
-                                     }),
-                                    train)))
+  Complete_Lattices.Sup_set[Nat.nat](Set.seta[Set.set[Nat.nat]](Lista.map[(A,
+                                    (Map[Nat.nat, Option[Value.value]], B)),
+                                   Set.set[Nat.nat]](((a:
+                 (A, (Map[Nat.nat, Option[Value.value]], B)))
+                =>
+               {
+                 val (_, (r, _)): (A, (Map[Nat.nat, Option[Value.value]], B)) =
+                   a;
+                 Set.seta[Nat.nat](r.keySet.toList)
+               }),
+              train)))
 
 def drop_all_guards(e: FSet.fset[(List[Nat.nat],
                                    ((Nat.nat, Nat.nat),
@@ -10492,8 +10499,7 @@ def needs_latent_code(train:
   =
   {
     val regs: Set.set[Nat.nat] =
-      all_known_regs[List[Value.value], Nat.nat, Option[Value.value],
-                      (Value.value, List[Nat.nat])](train);
+      all_known_regs[List[Value.value], (Value.value, List[Nat.nat])](train);
     Lista.list_ex[(List[Value.value],
                     (Map[Nat.nat, Option[Value.value]],
                       (Value.value,
@@ -10528,8 +10534,11 @@ def needs_latent_code(train:
    (Lista.equal_lista[Value.value](i, ia)) && ((r ==
          ra) && ((! (Value.equal_valuea(p,
  pa))) && ((Cardinality.subset[Nat.nat](regs,
- Set.seta[Nat.nat](known))) && (Cardinality.subset[Nat.nat](regs,
-                     Set.seta[Nat.nat](knowna))))))
+ Set.seta[Nat.nat](known))) && ((Cardinality.subset[Nat.nat](regs,
+                      Set.seta[Nat.nat](knowna))) && ((Cardinality.subset[Nat.nat](Set.seta[Nat.nat](known),
+    Set.seta[Nat.nat](r.keySet.toList))) && ((Cardinality.subset[Nat.nat](Set.seta[Nat.nat](knowna),
+                                   Set.seta[Nat.nat](ra.keySet.toList))) && (Cardinality.eq_set[Nat.nat](Set.seta[Nat.nat](knowna),
+                          Set.seta[Nat.nat](known)))))))))
  }))
     }),
    train)
@@ -10620,8 +10629,7 @@ def collect_training_sets(x0: List[List[(String,
             (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])],
               List[(List[Value.value], Map[Nat.nat, Option[Value.value]])])
         = trace_collect_training_sets(h, uPTA, Nat.zero_nata,
-                                       AExp.null_state[Nat.nat,
-                Option[Value.value]],
+                                       scala.collection.immutable.Map().withDefaultValue(None),
                                        t1, t2, Nil, Nil);
       collect_training_sets(t, uPTA, t1, t2,
                              Lista.union[(List[Value.value],

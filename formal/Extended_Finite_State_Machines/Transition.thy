@@ -156,7 +156,7 @@ next
 qed
 
 lemma update_twice:
-  "apply_updates [(r, a), (r, b)] s regs = regs (r $:= aval b s)"
+  "apply_updates [(r, a), (r, b)] s rr = rr (r $:= aval b s)"
   by (simp add: apply_updates_def)
 
 lemma r_not_updated_stays_the_same:
@@ -178,11 +178,8 @@ inductive eq_upto_rename :: "transition \<Rightarrow> transition \<Rightarrow> b
   "Label t1 = Label t2 \<Longrightarrow>
    Arity t2 = Arity t2 \<Longrightarrow>
    apply_guards (map (GExp.rename_regs f) (Guards t1)) = apply_guards (Guards t2) \<Longrightarrow>
-
    apply_outputs (map (AExp.rename_regs f) (Outputs t1)) = apply_outputs (Outputs t2) \<Longrightarrow>
-
    apply_updates (map (\<lambda>(r, u). (f r, AExp.rename_regs f u)) (Updates t1)) = apply_updates (Updates t2) \<Longrightarrow>
-
    eq_upto_rename t1 t2"
 
 end

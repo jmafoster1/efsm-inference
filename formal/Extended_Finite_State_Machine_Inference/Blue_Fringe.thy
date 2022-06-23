@@ -2,6 +2,8 @@ theory Blue_Fringe
 imports Inference EFSM_Dot SelectionStrategies
 begin
 
+unbundle finfun_syntax
+
 datatype colour = Red | Blue | White
 
 fun show_colour :: "colour \<Rightarrow> String.literal" where
@@ -118,5 +120,6 @@ definition learn :: "nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> str
      in
          (infer colours pta r m check np)
    )"
+unbundle no_finfun_syntax
 
 end

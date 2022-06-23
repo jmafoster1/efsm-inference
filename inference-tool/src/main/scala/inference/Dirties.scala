@@ -136,6 +136,8 @@ object Dirties {
   def findDistinguishingGuards(
     g1: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])]),
     g2: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])])): Option[(GExp.gexp[VName.vname], GExp.gexp[VName.vname])] = {
+      Config.config.guardSeed += 1
+
 
     val ioPairs = g1.map(ir => (ir._1, (ir._2, (Value.Inta(Int.int_of_integer(1)), List())))) ++ g2.map(ir => (ir._1, (ir._2, (Value.Inta(Int.int_of_integer(0)), List()))))
 
@@ -294,6 +296,7 @@ object Dirties {
     values: List[Value.value],
     ioPairs: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], (Value.value, List[Nat.nat])))],
     bads: List[AExp.aexp[VName.vname]] = List()): Option[(AExp.aexp[VName.vname], Map[VName.vname,PTA_Generalisation.value_type])] = {
+      Config.config.updateSeed += 1
 
     Log.root.debug(f"Getting update for $l")
 
@@ -398,6 +401,8 @@ object Dirties {
     train: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], (Value.value, List[Nat.nat])))],
     latentVariable: Boolean = false
   ): Option[(AExp.aexp[VName.vname], Map[VName.vname, PTA_Generalisation.value_type])] = {
+    Config.config.outputSeed += 1
+
     Log.root.debug(f"${"="*84}\nGetting Output for ${PrettyPrinter.show(tids)}$label")
     // Log.root.debug(f"ioPairs: ${train.map(ir => "(" + PrettyPrinter.show(ir._1) + ", " + PrettyPrinter.show(ir._2._1) + ", " + PrettyPrinter.show(ir._2._2._1) + PrettyPrinter.show(ir._2._2._2) + ")")}")
 

@@ -393,6 +393,17 @@ declare finfun_update_const_code [code del]
 declare finfun_to_list_def [code del]
 declare finfun_default_const_code [code del]
 
+(*
+  Mapping registers to Scala native Maps
+*)
+code_printing
+  type_constructor registers \<rightharpoonup> (Scala) "Map[Nat.nat, Option[Value.value]]"
+  | constant "null_state" \<rightharpoonup> (Scala) "scala.collection.immutable.Map().withDefaultValue(None)"
+  | constant "registers_update" \<rightharpoonup> (Scala) "(_ + ((_ -> _)))"
+  | constant "registers_apply" \<rightharpoonup> (Scala) "_((_))"
+  | constant "registers_to_list" \<rightharpoonup> (Scala) "_.keySet.toList"
+  | constant "HOL.equal :: registers \<Rightarrow> registers \<Rightarrow> bool" \<rightharpoonup> (Scala) infix 4 "=="
+
 definition mismatched_updates :: "transition \<Rightarrow> transition \<Rightarrow> bool" where
   "mismatched_updates t1 t2 = (\<exists>r \<in> set (map fst (Updates t1)). r \<notin> set (map fst (Updates t2)))"
 
@@ -408,6 +419,34 @@ lemma [code]: "Set.remove a (set l) = set (filter (\<lambda>x. x \<noteq> a) l)"
   apply (induct l)
    apply auto[1]
   by force
+
+lemma  Abs_regs_fold: "Abs_regs (regs (fold (\<lambda>k f. Abs_regs (regs f)(k $:= regs b $ k)) xs a))(x $:= regs b $ x) =
+ ((fold (\<lambda>k f. Abs_regs (regs f)(k $:= regs b $ k)) xs a))(x $:= regs b $ x)"
+    by (metis registers_update.rep_eq regs_inverse)
+
+lemma finfun_default_fold_f_updates: "finfun_default (fold (\<lambda>k f. f(k $:= regs b $ k)) xs a) = finfun_default a"
+    apply (induct xs rule: rev_induct)
+    by (simp_all add: finfun_default_update_const)
+
+lemma [code]: "registers_add a b = fold (\<lambda>k f. f(k $:= b $ k)) (registers_to_list b) a"
+  apply (simp only: registers_add_def map_fun_def comp_def registers_to_list_def id_def registers_apply_def registers_update_def)
+  apply (simp add: finfun_add_def)
+  apply (insert HOL.simp_thms(38)[of "(finfun_to_list (regs b))"])
+  apply (erule exE)
+  subgoal for l
+    apply simp
+    apply (thin_tac "finfun_to_list (regs b) = l")
+    apply (induct l rule: rev_induct)
+    apply (simp add: regs_inverse)
+    apply (simp add: Abs_regs_fold)
+    apply (rule Abs_regs_update)
+    prefer 2 apply simp
+    apply simp
+    subgoal for xs
+      apply (simp add: finfun_default_fold_f_updates[of b xs "regs a"])
+      using regs by auto
+    done
+  done
 
 export_code
   (* Essentials *)
