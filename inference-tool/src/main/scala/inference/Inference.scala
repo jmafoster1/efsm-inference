@@ -9419,10 +9419,10 @@ def wipe_futures(bad: Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])],
                   tids: List[Nat.nat]):
       Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])]
   =
-  (if (Lista.list_ex[AExp.aexp[VName.vname]](((a: AExp.aexp[VName.vname]) =>
-       ! (Cardinality.eq_set[Nat.nat](AExp.enumerate_regs(a),
-                                       Set.bot_set[Nat.nat]))),
-      bad(tids)))
+  // (if (Lista.list_ex[AExp.aexp[VName.vname]](((a: AExp.aexp[VName.vname]) =>
+  //      ! (Cardinality.eq_set[Nat.nat](AExp.enumerate_regs(a),
+  //                                      Set.bot_set[Nat.nat]))),
+  //     bad(tids)))
     Lista.fold[List[Nat.nat],
                 Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])]](((k:
                                   List[Nat.nat])
@@ -9433,7 +9433,7 @@ def wipe_futures(bad: Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])],
            Lattices_Big.Max[Nat.nat](Set.seta[Nat.nat](k))))
                                   (acc + ((k -> Nil))) else acc)),
                                bad.keySet.toList, bad)
-    else bad)
+    // else bad)
 
 def funmem_add[A : HOL.equal, B](bad: Map[A, (List[B])], k: A, v: List[B]):
       Map[A, (List[B])]
@@ -9667,29 +9667,26 @@ Product_Type.equal_proda[String,
                      ! (Transition.equal_transition_exta[Unit](tran,
                         Inference.get_by_ids(e, id)))
                    }),
-                  standardised)))
-              val structural_groups:
-                    List[(String, (List[value_type], List[value_type]))]
-                = Lista.filter[(String,
-                                 (List[value_type],
-                                   List[value_type]))](((a:
-                   (String, (List[value_type], List[value_type])))
-                  =>
-                 {
-                   val (_, (_, outputs)):
-                         (String, (List[value_type], List[value_type]))
-                     = a;
-                   Nat.less_nat(Nat.zero_nata, Nat.Nata(outputs.par.length))
-                 }),
-                Lista.map[List[(List[Nat.nat],
-                                 Transition.transition_ext[Unit])],
-                           (String,
+                  standardised)));
+              Lista.filter[(String,
                              (List[value_type],
-                               List[value_type]))](((gg:
-               List[(List[Nat.nat], Transition.transition_ext[Unit])])
+                               List[value_type]))](((a:
+               (String, (List[value_type], List[value_type])))
               =>
-             structure((gg.head)._1)),
-            update_groups))
+             {
+               val (_, (_, outputs)):
+                     (String, (List[value_type], List[value_type]))
+                 = a;
+               Nat.less_nat(Nat.zero_nata, Nat.Nata(outputs.par.length))
+             }),
+            Lista.map[List[(List[Nat.nat], Transition.transition_ext[Unit])],
+                       (String,
+                         (List[value_type],
+                           List[value_type]))](((gg:
+           List[(List[Nat.nat], Transition.transition_ext[Unit])])
+          =>
+         structure((gg.head)._1)),
+        update_groups))
               val a: generalisation =
                 (if (pre_standardised_good)
                   groupwise_generalise_and_update(wipe_futures(bad, rep_id),
@@ -9711,72 +9708,60 @@ Product_Type.equal_proda[String,
                            t),
            update_groups, structure, funsa, to_derestrict ++ more_to_derestrict,
            Nil, fun_mema)
-                  else (if (Set.Ball[(String,
-                                       (List[value_type],
- List[value_type]))](Set.minus_set[(String,
-                                     (List[value_type],
-                                       List[value_type]))](all_structures(log),
-                    Set.seta[(String,
-                               (List[value_type],
-                                 List[value_type]))](funsa.keySet.toList)),
-                      ((struct: (String, (List[value_type], List[value_type])))
-                         =>
-                        Lista.list_all[List[(String,
-      (List[value_type],
-        List[value_type]))]](((ta: List[(String,
-  (List[value_type], List[value_type]))])
-                                =>
-                               ! (appears_in_order[(String,
-             (List[value_type],
-               List[value_type]))]((struct::(((structure(rep_id))::Nil))),
-                                    ta))),
-                              Lista.map[List[(String,
-       (List[Value.value], List[Value.value]))],
- List[(String,
+                  else (if (Set.Bex[(String,
+                                      (List[value_type],
+List[value_type]))](Set.minus_set[(String,
+                                    (List[value_type],
+                                      List[value_type]))](all_structures(log),
+                   Set.seta[(String,
+                              (List[value_type],
+                                List[value_type]))](funsa.keySet.toList)),
+                     ((struct: (String, (List[value_type], List[value_type])))
+                        =>
+                       Lista.list_ex[List[(String,
+    (List[value_type],
+      List[value_type]))]](((a: List[(String,
+                                       (List[value_type], List[value_type]))])
+                              =>
+                             appears_in_order[(String,
         (List[value_type],
-          List[value_type]))]](((a: List[(String,
-   (List[Value.value], List[Value.value]))])
-                                  =>
-                                 Lista.map[(String,
-     (List[Value.value], List[Value.value])),
-    (String,
+          List[value_type]))]((struct::(((structure(rep_id))::Nil))), a)),
+                            Lista.map[List[(String,
+     (List[Value.value], List[Value.value]))],
+                                       List[(String,
       (List[value_type],
-        List[value_type]))](((aa: (String,
-                                    (List[Value.value], List[Value.value])))
-                               =>
-                              event_structure(aa)),
-                             a)),
-                                log)))))
-                         Failed(funmem_add[List[Nat.nat],
-    AExp.aexp[VName.vname]](funmem_union[List[Nat.nat],
-  AExp.aexp[VName.vname]](bad, bada),
-                             rep_id, reg_bad))
-                         else (if (Set.less_set[(String,
-          (List[value_type],
-            List[value_type]))](Set.seta[(String,
-   (List[value_type], List[value_type]))](funsa.keySet.toList),
-                                 Set.seta[(String,
-    (List[value_type], List[value_type]))](structural_groups)))
-                                groupwise_generalise_and_update(wipe_futures(bad,
-                                      rep_id),
-                         funmem_add[List[Nat.nat],
-                                     AExp.aexp[VName.vname]](funmem_union[List[Nat.nat],
-                                   AExp.aexp[VName.vname]](maybe_bad, bada),
-                      rep_id, reg_bad),
-                         max_attempts, attempts, transition_repeats, log,
-                         Same_Register.merge_regs(standardised,
-           ((a: FSet.fset[((Nat.nat, Nat.nat),
-                            Transition.transition_ext[Unit])])
-              =>
-             EFSM.accepts_log(Set.seta[List[(String,
-      (List[Value.value], List[Value.value]))]](log),
-                               a))),
-                         t, update_groups, structure, funsa,
-                         to_derestrict ++ more_to_derestrict, Nil, fun_mema)
-                                else Failed(funmem_add[List[Nat.nat],
-                AExp.aexp[VName.vname]](funmem_union[List[Nat.nat],
-              AExp.aexp[VName.vname]](bad, bada),
- rep_id, reg_bad)))));
+        List[value_type]))]](((a: List[(String,
+ (List[Value.value], List[Value.value]))])
+                                =>
+                               Lista.map[(String,
+   (List[Value.value], List[Value.value])),
+  (String,
+    (List[value_type],
+      List[value_type]))](((aa: (String,
+                                  (List[Value.value], List[Value.value])))
+                             =>
+                            event_structure(aa)),
+                           a)),
+                              log)))))
+                         groupwise_generalise_and_update(wipe_futures(bad,
+                               rep_id),
+                  funmem_add[List[Nat.nat],
+                              AExp.aexp[VName.vname]](funmem_union[List[Nat.nat],
+                            AExp.aexp[VName.vname]](maybe_bad, bada),
+               rep_id, reg_bad),
+                  max_attempts, attempts, transition_repeats, log,
+                  Same_Register.merge_regs(standardised,
+    ((a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]) =>
+      EFSM.accepts_log(Set.seta[List[(String,
+                                       (List[Value.value],
+ List[Value.value]))]](log),
+                        a))),
+                  t, update_groups, structure, funsa,
+                  to_derestrict ++ more_to_derestrict, Nil, fun_mema)
+                         else Failed(funmem_add[List[Nat.nat],
+         AExp.aexp[VName.vname]](funmem_union[List[Nat.nat],
+       AExp.aexp[VName.vname]](bad, bada),
+                                  rep_id, reg_bad))));
               (a match {
                  case Failed(badb) =>
                    (if (Nat.less_nat(Nat.zero_nata, attempts))

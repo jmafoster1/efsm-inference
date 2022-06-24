@@ -728,9 +728,9 @@ fun take_maximum_updates :: "iEFSM \<Rightarrow> (tids \<times> transition) fset
 
 definition wipe_futures :: "bad_funs \<Rightarrow> tids \<Rightarrow> bad_funs" where
   "wipe_futures bad tids = (
-    if \<exists>a \<in> set (bad $ tids). AExp.enumerate_regs a \<noteq> {} then
+    \<comment> \<open>if \<exists>a \<in> set (bad $ tids). AExp.enumerate_regs a \<noteq> {} then\<close>
       fold (\<lambda>k acc. if Max (set k) > Max (set tids) then acc(k $:= []) else acc) (finfun_to_list bad) bad
-    else bad
+     \<comment> \<open>else bad*\<close>
   )"
 
 definition "all_structures (log::log) = set (remdups (fold (@) (map (map event_structure) log) []))"
@@ -761,12 +761,9 @@ fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Righta
             \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and
             updates for the other historical subgroups so can filter them out.\<close>
             groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_union maybe_bad bad') max_attempts attempts transition_repeats log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. structure (fst (hd g)) \<notin> set (finfun_to_list funs)) t) update_groups structure funs (to_derestrict @ more_to_derestrict) [] fun_mem
-          else if \<forall>struct \<in> ((all_structures log) - set (finfun_to_list funs)).
-            \<forall>t \<in> set (map (map event_structure) log). \<not> appears_in_order [struct, (structure rep_id)] t then
-             \<comment> \<open>If we don't have any more possible update options, then fail\<close>
-             Failed (funmem_add (funmem_union bad bad') (rep_id) reg_bad)
-          else if set (finfun_to_list funs) \<subset> set (structural_groups) then
-             \<comment> \<open>If we do have more possible update options, then cautiously proceed\<close>
+          else if \<exists>struct \<in> ((all_structures log) - set (finfun_to_list funs)).
+            \<exists>t \<in> set (map (map event_structure) log). appears_in_order [struct, (structure rep_id)] t then
+             \<comment> \<open>If we have more possible update options, then cautiously proceed\<close>
               groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_add (funmem_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts transition_repeats log (merge_regs standardised (accepts_log (set log))) t update_groups structure funs (to_derestrict @ more_to_derestrict) [] fun_mem
             else
               Failed (funmem_add (funmem_union bad bad') (rep_id) reg_bad)
