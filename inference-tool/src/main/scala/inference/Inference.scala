@@ -9183,7 +9183,7 @@ Set.Bex[List[Nat.nat]](group_ids(g),
     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
                                  Map[String, (List[(AExp.aexp[VName.vname],
              Map[VName.vname, value_type])])])
-                           = groupwise_infer_updates(update_mem, fun_mem, log,
+                           = groupwise_infer_updates(update_mem, fun_mema, log,
               ea, possible_gps,
               ((scala.collection.immutable.Map().withDefaultValue(unknown)) + ((fun -> types))));
                          (if (EFSM.accepts_log(Set.seta[List[(String,
@@ -9390,32 +9390,30 @@ def all_structures(log: List[List[(String,
   =
   Set.seta[(String,
              (List[value_type],
-               List[value_type]))](Lista.fold[List[(String,
-             (List[Value.value], List[Value.value]))],
-       List[(String,
-              (List[value_type],
-                List[value_type]))]](Fun.comp[List[(String,
-             (List[value_type], List[value_type]))],
-       (List[(String, (List[value_type], List[value_type]))]) =>
-         List[(String, (List[value_type], List[value_type]))],
-       List[(String,
-              (List[Value.value],
-                List[Value.value]))]](((a:
-  List[(String, (List[value_type], List[value_type]))])
- =>
-(b: List[(String, (List[value_type], List[value_type]))]) => a ++ b),
-                                       ((a:
-   List[(String, (List[Value.value], List[Value.value]))])
+               List[value_type]))]((Lista.fold[List[(String,
+              (List[Value.value], List[Value.value]))],
+        List[(String,
+               (List[value_type],
+                 List[value_type]))]](Fun.comp[List[(String,
+              (List[value_type], List[value_type]))],
+        (List[(String, (List[value_type], List[value_type]))]) =>
+          List[(String, (List[value_type], List[value_type]))],
+        List[(String,
+               (List[Value.value],
+                 List[Value.value]))]](((a:
+   List[(String, (List[value_type], List[value_type]))])
   =>
- Lista.map[(String, (List[Value.value], List[Value.value])),
-            (String,
-              (List[value_type],
-                List[value_type]))](((aa:
-(String, (List[Value.value], List[Value.value])))
-                                       =>
-                                      event_structure(aa)),
-                                     a))),
-                                      log, Nil))
+ (b: List[(String, (List[value_type], List[value_type]))]) => a ++ b),
+((a: List[(String, (List[Value.value], List[Value.value]))]) =>
+  Lista.map[(String, (List[Value.value], List[Value.value])),
+             (String,
+               (List[value_type],
+                 List[value_type]))](((aa:
+ (String, (List[Value.value], List[Value.value])))
+=>
+                                       event_structure(aa)),
+                                      a))),
+                                       log, Nil)).par.distinct.toList)
 
 def wipe_futures(bad: Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])],
                   tids: List[Nat.nat]):

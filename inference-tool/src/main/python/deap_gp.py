@@ -157,6 +157,16 @@ def process_row(args):
         sys.exit(1)
 
 
+def get_unused_vars(individual, points, latent_vars_rows, verbose=False):
+    total_vars = list(points.columns)[:-1]
+    undefined_vars = [item for items in latent_vars_rows for item in items]
+    if verbose:
+        print("Total vars:", total_vars)
+        print("undefined_vars:", undefined_vars)
+        print("vars in tree:", vars_in_tree(individual))
+    return set(total_vars).difference(vars_in_tree(individual)).difference(undefined_vars)
+
+
 def evaluate_candidate(
     individual, points: pd.DataFrame, pset: gp.PrimitiveSet, latent_vars_rows
 ) -> float:
@@ -181,35 +191,13 @@ def evaluate_candidate(
         individual = creator.Individual(gp.PrimitiveTree.from_string(individual, pset))
 
     latent_vars_rows = [list(r) for r in latent_vars_rows]
-
-    total_vars = list(points.columns)[:-1]
-
-    undefined_vars = latent_variables(individual, points)
-    unused_vars = (
-        set(total_vars).difference(vars_in_tree(individual)).difference(undefined_vars)
-    )
+    unused_vars = get_unused_vars(individual, points, latent_vars_rows)
 
     individual_rep = [individual for _ in range(len(points))]
     pset_rep = np.repeat(pset, len(points))
     data = zip(individual_rep, zip(pset_rep, zip(points.iterrows(), latent_vars_rows)))
 
     distances = [process_row(row) for row in data]
-    # if len(list(data)) > 100:
-    #     pool = multiprocessing.Pool()
-    #     distances = pool.map(process_row, data)
-    # else:
-    #     distances = list(map(process_row, data))
-
-    # distances = []
-    # for (inx, row), latent_vars in zip(points.iterrows(), latent_vars_rows):
-    #     try:
-    #         best = find_smallest_distance(
-    #             individual, pset, row.iloc[:-1].to_dict(), row[-1], latent_vars
-    #         )
-    #         distances.append(best)
-    #     except:
-    #         logger.debug(f"Problem executing {individual} with arguments\n{row}")
-    #         sys.exit(1)
 
     assert not any([is_null(x) for x in distances]), "no distance can be nan"
 
@@ -225,10 +213,12 @@ def evaluate_candidate(
 
     assert not is_null(fitness), "fitness cannot be nan (evaluate_candidate:148)"
 
-    if len(unused_vars) == 0:
-        return fitness
-    else:
-        return fitness + len(latent_variables(individual, points))
+    return fitness + len(set(unused_vars).difference(latent_variables(individual, points)))
+
+    # if len(unused_vars) == 0:
+    #     return fitness
+    # else:
+    #     return fitness + len(latent_variables(individual, points))
 
 
 def fitness(

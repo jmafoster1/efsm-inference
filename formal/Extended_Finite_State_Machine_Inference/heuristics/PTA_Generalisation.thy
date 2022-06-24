@@ -689,7 +689,7 @@ function output_and_update :: "bad_funs \<Rightarrow> output_function list \<Rig
             \<comment>\<open>It only makes sense to try and infer updates for groups with ids before the group we've inferred updates for
                otherwise, the updates aren't executed before the registers are evaluated.\<close>
             possible_gps = filter (\<lambda>g. \<exists>r |\<in>| routes. \<exists>id \<in> (group_ids g). \<exists>id' \<in> (gp_ids). appears_in_order [id, id'] r) gps;
-            (e'', update_mem) = groupwise_infer_updates update_mem fun_mem log e' possible_gps ((K$ unknown)(fun$:=types))
+            (e'', update_mem) = groupwise_infer_updates update_mem fun_mem' log e' possible_gps ((K$ unknown)(fun$:=types))
           in
           if accepts_log (set log) (tm e'') then
             output_and_update bad (fun#good) fun_mem' update_mem max_attempts attempts e'' log gps gp values is r pss latent
@@ -733,7 +733,7 @@ definition wipe_futures :: "bad_funs \<Rightarrow> tids \<Rightarrow> bad_funs" 
     else bad
   )"
 
-definition "all_structures (log::log) = set (fold (@) (map (map event_structure) log) [])"
+definition "all_structures (log::log) = set (remdups (fold (@) (map (map event_structure) log) []))"
 
 fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> transition_group list \<Rightarrow> (tids \<Rightarrow> abstract_event) \<Rightarrow> (abstract_event \<Rightarrow>f (output_function list \<times> update_function list) option) \<Rightarrow> tids list \<Rightarrow> (transition \<times> typed_aexp option list) list \<Rightarrow> funMem \<Rightarrow> generalisation" where
   "groupwise_generalise_and_update bad maybe_bad max_attempts attempts transition_repeats _ e [] update_groups structure funs to_derestrict closed fun_mem = Succeeded (e, to_derestrict, fun_mem, closed)" |

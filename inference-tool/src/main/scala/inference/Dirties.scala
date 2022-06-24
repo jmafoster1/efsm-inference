@@ -298,7 +298,7 @@ object Dirties {
     bads: List[AExp.aexp[VName.vname]] = List()): Option[(AExp.aexp[VName.vname], Map[VName.vname,PTA_Generalisation.value_type])] = {
       Config.config.updateSeed += 1
 
-    Log.root.debug(f"Getting update for $l")
+    Log.root.debug(f"${"-"*84}\nGetting update for $l")
 
     val r_index = TypeConversion.toInt(r)
     // val ioPairs = (train.map {
@@ -317,7 +317,7 @@ object Dirties {
 
     // If number of inputs < possible outputs then we can't solve it
     if (deap_gp.need_latent(training_set, latent_vars_rows).as[Boolean]) {
-      Log.root.debug("    Too few inputs for possible updates")
+      Log.root.debug(f"    Too few inputs for possible updates\n${"-"*84}")
       return None
     }
     val pset = deap_gp.setup_pset(training_set)
@@ -339,8 +339,8 @@ object Dirties {
     // }
 
     val targets = ioPairs.map(x => x._2._2._1)
-    if (targets.distinct.length == 1) {
-      Log.root.debug("  Singleton literal update")
+    if (targets.distinct.length == 1 && targets.length > 1) {
+      Log.root.debug(f"  Singleton literal update\n${"-"*84}")
       return Some((AExp.L(targets(0)), Map().withDefaultValue(PTA_Generalisation.type_signature(targets(0)))))
     }
 
@@ -360,7 +360,8 @@ object Dirties {
 
     var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy, ngen = Config.config.ngen)
     if (deap_gp.correct(best, training_set, pset, latent_vars_rows=latent_vars_rows).as[Boolean]) {
-      Log.root.debug(f"  Best update $best is correct")
+      Log.root.debug(f"  Best update $best is correct\n${"-"*84}")
+      Log.root.debug(f"unused_vars: ${deap_gp.get_unused_vars(best, training_set, latent_vars_rows, verbose=true)}")
       val (nodes, edges, labels) = deap_gp.graph(best).as[(List[Int], List[(Int, Int)], Map[Int, String])]
 
       val aexp = TypeConversion.toAExp(nodes, edges, labels)
@@ -369,7 +370,7 @@ object Dirties {
       val stringTypes = types - "expected"
       return Some((aexp, stringTypes.map(x => (TypeConversion.vnameFromString(x._1), toValueType(x._2)))))
     } else {
-      Log.root.debug(f"  Best update $best is incorrect")
+      Log.root.debug(f"  Best update $best is incorrect\n${"-"*84}")
       return None
     }
   }
@@ -494,7 +495,7 @@ object Dirties {
     Log.root.debug("Checking correctness")
 
     if (deap_gp.correct(best, training_set, pset, latent_vars_rows=latent_vars_rows.toPythonProxy).as[Boolean]) {
-      Log.root.debug(f"  Best output $best is correct")
+      Log.root.debug(f"  Best output $best is correct\n${"="*84}")
       val (nodes, edges, labels) = deap_gp.graph(best).as[(List[Int], List[(Int, Int)], Map[Int, String])]
       val aexp = TypeConversion.toAExp(nodes, edges, labels)
       // if (!AExp.is_lit(aexp))
@@ -502,12 +503,12 @@ object Dirties {
       val stringTypes = types - "expected"
       return Some((aexp, stringTypes.map(x => (TypeConversion.vnameFromString(x._1), toValueType(x._2)))))
     } else if (!latentVariable) {
-      Log.root.debug(f"  Best output $best is incorrect")
+      Log.root.debug(f"  Best output $best is incorrect\n${"="*84}")
       return None
       // Log.root.debug("    Failed - Trying again with a latent variable")
       // return getOutput(label, maxReg, values, bad, train, true)
     } else {
-      Log.root.debug(f"  Best output $best is incorrect")
+      Log.root.debug(f"  Best output $best is incorrect\n${"="*84}")
       return None
     }
   }
