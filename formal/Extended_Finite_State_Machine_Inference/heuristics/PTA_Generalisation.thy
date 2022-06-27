@@ -742,6 +742,7 @@ fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Righta
         Failure bad' \<Rightarrow> Failed (funmem_union bad bad') |
         Success (e', fun_mem, update_mem, output_funs, bad') \<Rightarrow>
         let
+          checkpoint = finfun_to_list update_mem \<noteq> [];
           fun_mem = funmem_union fun_mem update_mem;
           reg_bad = filter (\<lambda>a. AExp.enumerate_regs a \<noteq> {}) output_funs;
           (rep_id, rep) = (hd (gp));
@@ -772,7 +773,10 @@ fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Righta
         case result of
           Failed bad \<Rightarrow>  (
           if attempts > 0 then
-            groupwise_generalise_and_update ((wipe_futures (funmem_add (funmem_union maybe_bad bad) rep_id reg_bad)) rep_id) (K$ []) max_attempts (attempts - 1) transition_repeats log e (gp#t) update_groups structure funs to_derestrict closed fun_mem
+            if checkpoint then
+              groupwise_generalise_and_update ((wipe_futures (funmem_add (funmem_union maybe_bad bad) rep_id reg_bad)) rep_id) (K$ []) max_attempts (attempts - 1) transition_repeats log e (gp#t) update_groups structure funs to_derestrict closed fun_mem
+            else
+              Failed bad
           else
             groupwise_generalise_and_update (funmem_add bad rep_id reg_bad) (K$ []) max_attempts max_attempts transition_repeats log e t update_groups structure funs to_derestrict closed fun_mem
         ) |

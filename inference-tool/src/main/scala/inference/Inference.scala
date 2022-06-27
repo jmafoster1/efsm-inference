@@ -9419,21 +9419,16 @@ def wipe_futures(bad: Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])],
                   tids: List[Nat.nat]):
       Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])]
   =
-  // (if (Lista.list_ex[AExp.aexp[VName.vname]](((a: AExp.aexp[VName.vname]) =>
-  //      ! (Cardinality.eq_set[Nat.nat](AExp.enumerate_regs(a),
-  //                                      Set.bot_set[Nat.nat]))),
-  //     bad(tids)))
-    Lista.fold[List[Nat.nat],
-                Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])]](((k:
-                                  List[Nat.nat])
-                                 =>
-                                (acc: Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])])
-                                  =>
-                                (if (Nat.less_nat(Lattices_Big.Max[Nat.nat](Set.seta[Nat.nat](tids)),
-           Lattices_Big.Max[Nat.nat](Set.seta[Nat.nat](k))))
-                                  (acc + ((k -> Nil))) else acc)),
-                               bad.keySet.toList, bad)
-    // else bad)
+  Lista.fold[List[Nat.nat],
+              Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])]](((k:
+                                List[Nat.nat])
+                               =>
+                              (acc: Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])])
+                                =>
+                              (if (Nat.less_nat(Lattices_Big.Max[Nat.nat](Set.seta[Nat.nat](tids)),
+         Lattices_Big.Max[Nat.nat](Set.seta[Nat.nat](k))))
+                                (acc + ((k -> Nil))) else acc)),
+                             bad.keySet.toList, bad)
 
 def funmem_add[A : HOL.equal, B](bad: Map[A, (List[B])], k: A, v: List[B]):
       Map[A, (List[B])]
@@ -9484,6 +9479,7 @@ def groupwise_generalise_and_update(bad: Map[(List[Nat.nat]), (List[AExp.aexp[VN
           match {
           case Success((ea, (fun_mem, (update_mem, (output_funs, bada))))) =>
             {
+              val checkpoint: Boolean = ! ((update_mem.keySet.toList).isEmpty)
               val fun_mema:
                     Map[String, (List[(AExp.aexp[VName.vname],
 Map[VName.vname, value_type])])]
@@ -9765,15 +9761,17 @@ List[value_type]))](Set.minus_set[(String,
               (a match {
                  case Failed(badb) =>
                    (if (Nat.less_nat(Nat.zero_nata, attempts))
-                     groupwise_generalise_and_update(wipe_futures(funmem_add[List[Nat.nat],
-                                      AExp.aexp[VName.vname]](funmem_union[List[Nat.nat],
-                                    AExp.aexp[VName.vname]](maybe_bad, badb),
-                       rep_id, reg_bad),
-                           rep_id),
-              scala.collection.immutable.Map().withDefaultValue(Nil),
-              max_attempts, Nat.minus_nat(attempts, Nat.Nata((1))),
-              transition_repeats, log, e, (gp::t), update_groups, structure,
-              funsa, to_derestrict, closed, fun_mema)
+                     (if (checkpoint)
+                       groupwise_generalise_and_update(wipe_futures(funmem_add[List[Nat.nat],
+AExp.aexp[VName.vname]](funmem_union[List[Nat.nat],
+                                      AExp.aexp[VName.vname]](maybe_bad, badb),
+                         rep_id, reg_bad),
+                             rep_id),
+                scala.collection.immutable.Map().withDefaultValue(Nil),
+                max_attempts, Nat.minus_nat(attempts, Nat.Nata((1))),
+                transition_repeats, log, e, (gp::t), update_groups, structure,
+                funsa, to_derestrict, closed, fun_mema)
+                       else Failed(badb))
                      else groupwise_generalise_and_update(funmem_add[List[Nat.nat],
                               AExp.aexp[VName.vname]](badb, rep_id, reg_bad),
                    scala.collection.immutable.Map().withDefaultValue(Nil),
