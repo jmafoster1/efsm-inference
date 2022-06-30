@@ -128,7 +128,7 @@ lemma apply_outputs_literal: assumes "P ! r = L v"
   by (simp add: assms apply_outputs_nth)
 
 lemma apply_outputs_register: assumes "r < length P"
-  shows "apply_outputs (list_update P r (V (R p))) (join_ir i c) ! r = c $ p"
+  shows "apply_outputs (list_update P r (V (R p))) (join_ir i c) ! r = c $r p"
   by (metis apply_outputs_nth assms aval.simps(2) join_ir_R length_list_update nth_list_update_eq)
 
 lemma apply_outputs_unupdated: assumes "ia \<noteq> r"
@@ -137,12 +137,12 @@ lemma apply_outputs_unupdated: assumes "ia \<noteq> r"
   by (metis apply_outputs_nth assms(1) assms(2) length_list_update nth_list_update_neq)
 
 definition apply_updates :: "update_function list \<Rightarrow> vname datastate \<Rightarrow> registers \<Rightarrow> registers" where
-  "apply_updates u old = fold (\<lambda>h r. r(fst h $:= aval (snd h) old)) u"
+  "apply_updates u old = fold (\<lambda>h r. r(fst h $r:= aval (snd h) old)) u"
 
 abbreviation "evaluate_updates t i r \<equiv> apply_updates (Updates t) (join_ir i r) r"
 
 lemma apply_updates_cons: "ra \<noteq> r \<Longrightarrow>
-       apply_updates u (join_ir ia c) c $ ra = apply_updates ((r, a) # u) (join_ir ia c) c $ ra"
+       apply_updates u (join_ir ia c) c $r ra = apply_updates ((r, a) # u) (join_ir ia c) c $r ra"
 proof(induct u rule: rev_induct)
   case Nil
   then show ?case
@@ -156,11 +156,11 @@ next
 qed
 
 lemma update_twice:
-  "apply_updates [(r, a), (r, b)] s rr = rr (r $:= aval b s)"
+  "apply_updates [(r, a), (r, b)] s rr = rr (r $r:= aval b s)"
   by (simp add: apply_updates_def)
 
 lemma r_not_updated_stays_the_same:
-  "r \<notin> fst ` set U \<Longrightarrow> apply_updates U c d $ r = d $ r"
+  "r \<notin> fst ` set U \<Longrightarrow> apply_updates U c d $r r = d $r r"
   using apply_updates_def
   by (induct U rule: rev_induct, auto)
 

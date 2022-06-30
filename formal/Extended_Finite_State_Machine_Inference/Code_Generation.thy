@@ -421,14 +421,14 @@ lemma [code]: "Set.remove a (set l) = set (filter (\<lambda>x. x \<noteq> a) l)"
   by force
 
 lemma  Abs_regs_fold: "Abs_regs (regs (fold (\<lambda>k f. Abs_regs (regs f)(k $:= regs b $ k)) xs a))(x $:= regs b $ x) =
- ((fold (\<lambda>k f. Abs_regs (regs f)(k $:= regs b $ k)) xs a))(x $:= regs b $ x)"
+ ((fold (\<lambda>k f. Abs_regs (regs f)(k $:= regs b $ k)) xs a))(x $r:= regs b $ x)"
     by (metis registers_update.rep_eq regs_inverse)
 
 lemma finfun_default_fold_f_updates: "finfun_default (fold (\<lambda>k f. f(k $:= regs b $ k)) xs a) = finfun_default a"
     apply (induct xs rule: rev_induct)
     by (simp_all add: finfun_default_update_const)
 
-lemma [code]: "registers_add a b = fold (\<lambda>k f. f(k $:= b $ k)) (registers_to_list b) a"
+lemma [code]: "registers_add a b = fold (\<lambda>k f. f(k $r:= b $r k)) (registers_to_list b) a"
   apply (simp only: registers_add_def map_fun_def comp_def registers_to_list_def id_def registers_apply_def registers_update_def)
   apply (simp add: finfun_add_def)
   apply (insert HOL.simp_thms(38)[of "(finfun_to_list (regs b))"])
@@ -500,6 +500,7 @@ export_code
   enumerate_vars
   derestrict
   breadth_first_label
+  depth_first_label
   needs_latent_code
 in Scala
 file "../../inference-tool/src/main/scala/inference/Inference.scala"

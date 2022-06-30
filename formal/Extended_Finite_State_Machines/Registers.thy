@@ -21,9 +21,9 @@ lift_definition registers_update :: "registers \<Rightarrow> nat \<Rightarrow> v
   by (simp add: finfun_default_update_const)
 
 lift_definition registers_apply :: "registers \<Rightarrow> nat \<Rightarrow> value option" is "finfun_apply" .
-notation registers_apply (infixl "$" 999)
+notation registers_apply (infixl "$r" 999)
 
-lemma registers_ext: "(\<And>a. f $ a = g $ a) \<Longrightarrow> f = g"
+lemma registers_ext: "(\<And>a. f $r a = g $r a) \<Longrightarrow> f = g"
   by (metis finfun_ext registers_apply.rep_eq regs_inject)
 
 lift_definition registers_to_list :: "registers \<Rightarrow> nat list" is finfun_to_list .
@@ -36,7 +36,7 @@ notation null_state ("<>")
 nonterminal fupdbinds and fupdbind
 
 syntax
-  "_fupdbind" :: "'a \<Rightarrow> 'a \<Rightarrow> fupdbind"             ("(2_ $:=/ _)")
+  "_fupdbind" :: "'a \<Rightarrow> 'a \<Rightarrow> fupdbind"             ("(2_ $r:=/ _)")
   ""         :: "fupdbind \<Rightarrow> fupdbinds"             ("_")
   "_fupdbinds":: "fupdbind \<Rightarrow> fupdbinds \<Rightarrow> fupdbinds" ("_,/ _")
   "_fUpdate"  :: "'a \<Rightarrow> fupdbinds \<Rightarrow> 'a"            ("_/'((_)')" [1000, 0] 900)
@@ -44,32 +44,32 @@ syntax
 
 translations
   "_fUpdate f (_fupdbinds b bs)" \<rightleftharpoons> "_fUpdate (_fUpdate f b) bs"
-  "f(x$:=y)" \<rightleftharpoons> "CONST registers_update f x y"
+  "f(x$r:=y)" \<rightleftharpoons> "CONST registers_update f x y"
   "_State ms" == "_fUpdate <> ms"
   "_State (_updbinds b bs)" <= "_fUpdate (_State b) bs"
 
-lemma apply_empty_None [simp]: "<> $ x2 = None"
+lemma apply_empty_None [simp]: "<> $r x2 = None"
   by (simp add: null_state.rsp null_state_def registers_apply.abs_eq)
 
-lemma update_None: "r $ i = None \<Longrightarrow> (r(i' $:= a)) $ i = <i' $:= a> $ i"
+lemma update_None: "r $r i = None \<Longrightarrow> (r(i' $r:= a)) $r i = <i' $r:= a> $r i"
   apply (case_tac "i = i'")
    apply (simp add: registers_apply.rep_eq registers_update.rep_eq)
   by (simp add: null_state.rep_eq registers_apply.rep_eq registers_update.rep_eq)
 
-lemma update_value [simp]: "(r(i $:= a)) $ i = a"
+lemma update_value [simp]: "(r(i $r:= a)) $r i = a"
   by (simp add: registers_apply.rep_eq registers_update.rep_eq)
 
-lemma update_irrelevant [simp]: "i \<noteq> i' \<Longrightarrow> (r(i' $:= a)) $ i = r $ i"
+lemma update_irrelevant [simp]: "i \<noteq> i' \<Longrightarrow> (r(i' $r:= a)) $r i = r $r i"
   by (simp add: registers_apply.rep_eq registers_update.rep_eq)
 
-lemma registers_update_twist: "a \<noteq> a' \<Longrightarrow> (f(a $:= b))(a' $:= b') = (f(a' $:= b'))(a $:= b)"
+lemma registers_update_twist: "a \<noteq> a' \<Longrightarrow> (f(a $r:= b))(a' $r:= b') = (f(a' $r:= b'))(a $r:= b)"
   by (metis finfun_update_twist registers_update.rep_eq regs_inject)
 
 lemma registers_update_twice [simp]:
-  "(f(a $:= b))(a $:= b') = f(a $:= b')"
+  "(f(a $r:= b))(a $r:= b') = f(a $r:= b')"
   by transfer simp
 
-lemma Abs_regs_update: "f \<in> {A. finfun_default A = None} \<Longrightarrow> Abs_regs f = f' \<Longrightarrow> Abs_regs (finfun_update f x a) = f'(x $:= a)"
+lemma Abs_regs_update: "f \<in> {A. finfun_default A = None} \<Longrightarrow> Abs_regs f = f' \<Longrightarrow> Abs_regs (finfun_update f x a) = f'(x $r:= a)"
   by (metis Abs_regs_inverse registers_update.rep_eq regs_inverse)
 
 lemma ex_default_if_finite: "infinite (UNIV::'a set) \<Longrightarrow> \<exists>n. finfun_apply (f::('a, 'b) finfun) n = finfun_default f"
@@ -96,14 +96,14 @@ subsubsection \<open>Bundles for concrete syntax\<close>
 
 bundle registers_syntax begin
 notation
-  registers_update ("_'(_ $:= _')" [1000, 0, 0] 1000) and
-  registers_apply (infixl "$" 999)
+  registers_update ("_'(_ $r:= _')" [1000, 0, 0] 1000) and
+  registers_apply (infixl "$r" 999)
 end
 
 bundle no_registers_syntax begin
 no_notation
-  registers_update ("_'(_ $:= _')" [1000, 0, 0] 1000) and
-  registers_apply (infixl "$" 999)
+  registers_update ("_'(_ $r:= _')" [1000, 0, 0] 1000) and
+  registers_apply (infixl "$r" 999)
 end
 
 end

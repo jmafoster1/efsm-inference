@@ -377,7 +377,7 @@ lemma test:
   using p1 p4
   apply (simp add: apply_guards_rearrange)
   apply (simp add: apply_guards_cons join_ir_def)
-  apply (case_tac "input2state (i[v := x]) $ v")
+  apply (case_tac "input2state (i[v := x]) $r v")
    apply simp
   apply simp
   by (metis input2state_nth input2state_within_bounds length_list_update nth_list_update_eq option.inject)
@@ -759,7 +759,7 @@ lemma opposite_gob_subsumption: "\<forall>g \<in> set (Guards t1). \<exists>i v 
     apply (simp add: apply_guards_def Bex_def)
     apply (rule_tac x="Eq (V (I i)) (L v)" in exI)
     apply (simp add: join_ir_def)
-    apply (case_tac "input2state (ia[i := SOME x'. x' \<noteq> v]) $ i")
+    apply (case_tac "input2state (ia[i := SOME x'. x' \<noteq> v]) $r i")
      apply simp
     apply simp
     apply (case_tac "i < length ia")
