@@ -226,7 +226,7 @@ proof-
     subgoal for _ _ i by (rule exI[of _ i], intro exI, simp)
      apply (metis gt_ex length_list_update length_repeat nth_list_update_eq)
     apply (rule_tac exI)
-    apply (case_tac "\<exists>r. r $ x2 = Some a")
+    apply (case_tac "\<exists>r. r $r x2 = Some a")
      apply clarsimp
     subgoal for _ _ _ r by (rule exI[of _ r], simp)
     by (metis join_ir_R join_ir_double_exists)
@@ -769,7 +769,7 @@ definition eq_upto_rename :: "vname gexp \<Rightarrow> vname gexp \<Rightarrow> 
   "eq_upto_rename g1 g2 = (\<exists>f. bij f \<and> rename_regs f g1 = g2)"
 
 lemma gval_reg_some_superset:
-"\<forall>a. (r $ a  \<noteq> None) \<longrightarrow> r $ a = r' $ a \<Longrightarrow>
+"\<forall>a. (r $r a  \<noteq> None) \<longrightarrow> r $r a = r' $r a \<Longrightarrow>
   x \<noteq> invalid \<Longrightarrow>
  gval a (join_ir i r) = x \<Longrightarrow>
  gval a (join_ir i r') = x"
@@ -825,7 +825,7 @@ next
 qed
 
 lemma apply_guards_reg_some_superset:
-  "\<forall>a. (r $ a  \<noteq> None) \<longrightarrow> r $ a = r' $ a \<Longrightarrow>
+  "\<forall>a. (r $r a  \<noteq> None) \<longrightarrow> r $r a = r' $r a \<Longrightarrow>
    apply_guards G (join_ir i r) \<Longrightarrow>
    apply_guards G (join_ir i r')"
   apply (induct G)

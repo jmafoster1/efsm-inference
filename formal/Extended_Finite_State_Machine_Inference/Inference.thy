@@ -7,6 +7,7 @@ text\<open>This theory sets out the key definitions for the inference of EFSMs f
 theory Inference
   imports
     Subsumption
+    "HOL-Library.Sublist"
     "Extended_Finite_State_Machines.Transition_Lexorder"
     "HOL-Library.Product_Lexorder"
 begin
@@ -44,9 +45,6 @@ definition max_uid :: "iEFSM \<Rightarrow> nat option" where
 
 definition tm :: "iEFSM \<Rightarrow> transition_matrix" where
   "tm e = fimage snd e"
-
-definition breadth_first_label :: "iEFSM \<Rightarrow> iEFSM" where
-  "breadth_first_label e = fset_of_list (map (\<lambda>(i, t). ([i], t)) (enumerate 0 (sorted_list_of_fset (tm e))))"
 
 definition all_regs :: "iEFSM \<Rightarrow> nat set" where
   "all_regs e = EFSM.all_regs (tm e)"
@@ -643,5 +641,112 @@ text\<open>The \texttt{test\_log} function executes the \texttt{test\_trace} fun
 traces known as the \emph{test set.}\<close>
 definition test_log :: "log \<Rightarrow> iEFSM \<Rightarrow> ((label \<times> inputs \<times> cfstate \<times> cfstate \<times> registers \<times> tids \<times> value list \<times> outputs) list \<times> trace) list" where
   "test_log l e = map (\<lambda>t. test_trace t e 0 <>) l"
+
+
+subsection\<open>Reindexing\<close>
+definition reindex_statewise :: "iEFSM \<Rightarrow> iEFSM" where
+  "reindex_statewise e = fset_of_list (map (\<lambda>(i, t). ([i], t)) (enumerate 0 (sorted_list_of_fset (tm e))))"
+
+definition nodes :: "iEFSM \<Rightarrow> cfstate fset" where
+  "nodes g = ((fimage (\<lambda>(_, (from, to), tran). from) g) |\<union>| (fimage (\<lambda>(_, (from, to), tran). to) g))"
+
+definition out :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate fset" where
+  "out g v = fimage (\<lambda>(_, (from, to), tran). to) (ffilter (\<lambda>(_, (from, to), tran). from = v) g)"
+
+definition out_trans :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> iEFSM" where
+  "out_trans g v = ffilter (\<lambda>(_, (from, to), tran). from = v) g"
+
+fun remove :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> iEFSM" where
+  "remove g v = ffilter (\<lambda>(_, (from, to), tran). to \<noteq> v) g"
+
+function all_paths :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate list \<Rightarrow> cfstate list fset" where
+  "all_paths g v closed = (
+    if v \<in> set closed \<or> v |\<notin>| (nodes g) then {||} else
+    if out g v = {||} then {|[v]|} else
+    finsert [v] (fimage (\<lambda>x. v#x) (fUnion (fimage (\<lambda>s. all_paths g s (v#closed)) (out g v))))
+  )"
+  by auto
+termination
+  apply (relation "measures [\<lambda>(g, v, closed). size (nodes g - fset_of_list closed)]")
+   apply simp
+  apply (simp del: remove.simps)
+  apply clarsimp
+  apply (simp add: FSet.fmember.rep_eq fset_of_list.rep_eq)
+  by (meson Diff_eq_empty_iff card_gt_0_iff diff_less finite_Diff finite_fset subset_eq zero_less_one)
+
+fun trace_rename :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> trace \<Rightarrow> (cfstate \<Rightarrow> cfstate) \<Rightarrow> nat \<Rightarrow> cfstate set \<Rightarrow> ((cfstate \<Rightarrow> cfstate) \<times> nat \<times> cfstate set)" where
+  "trace_rename e s r [] rename inx visited = (if s \<in> visited then rename else rename(s := inx), inx, visited)" |
+  "trace_rename e s r ((l, i, _)#t) rename inx visited = (
+    let (_, s', tr) = fthe_elem (i_possible_steps e s r l i) in
+    if s \<in> visited then trace_rename e s' (evaluate_updates tr i r) t rename inx visited else
+    trace_rename e s' (evaluate_updates tr i r) t rename (inx + 1) (insert s visited)
+  )"
+
+fun log_rename :: "iEFSM \<Rightarrow> log \<Rightarrow> (cfstate \<Rightarrow> cfstate) \<Rightarrow> nat \<Rightarrow> cfstate set \<Rightarrow> (cfstate \<Rightarrow> cfstate)" where
+  "log_rename e [] rename inx visited = rename" |
+  "log_rename e (h#t) rename inx visited = (
+    let
+      (rename', inx', visited') = trace_rename e 0 <> h rename inx visited
+    in
+      log_rename e t rename' inx' visited'
+    )"
+
+definition depth_first_label :: "iEFSM \<Rightarrow> iEFSM" where
+  "depth_first_label e = (
+    let
+      paths = all_paths e 0 [];
+      enumerated = fold (\<lambda>(len, l) acc. acc @ (enumerate (length acc) l)) (rev (sort (map (\<lambda>l. (length l, l)) (sorted_list_of_fset paths)))) [];
+      rename_opt = fold (\<lambda>(inx, state) acc. if acc state = None then acc(state:=Some inx) else acc) enumerated (\<lambda>x. None);
+      rename = fold (\<lambda>k acc. case rename_opt k of Some v \<Rightarrow> acc(k := v)) (sorted_list_of_fset (S e)) id;
+      new_states = fimage (\<lambda>(id, (from, to), t). (id, (rename from, rename to), t)) e
+    in
+    reindex_statewise new_states
+  )"
+
+fun rename_heads :: "(cfstate \<times> cfstate) list \<Rightarrow> cfstate list \<Rightarrow> nat \<Rightarrow> (cfstate \<times> cfstate) list" where
+  "rename_heads f [] _ = f" |
+  "rename_heads f (h#t) n = (if \<exists>(a, b) \<in> set f. a = h then rename_heads f t n else rename_heads ((h, n)#f) t (n+1))" 
+
+lemma breadth_first_rename_termination_aux: "\<exists>l' \<in> set l. l' \<noteq> [] \<Longrightarrow> foldr (+) (map (length \<circ> tl) (filter (\<lambda>x. x \<noteq> []) l)) 0 < foldr (+) (map length l) 0"
+proof(induct l)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a l)
+  then show ?case
+    apply clarsimp
+    by (metis (mono_tags, lifting) One_nat_def Suc_pred add.right_neutral add_strict_mono filter_False length_greater_0_conv lessI list.simps(8) sum_list.eq_foldr sum_list_simps(1) trans_less_add1)
+qed
+
+
+function breadth_first_rename :: "cfstate list list \<Rightarrow> (cfstate \<times> cfstate) list \<Rightarrow> (cfstate \<times> cfstate) list" where
+  "breadth_first_rename l f = (
+    let l = filter (\<lambda>x. length x > 0) l in
+      if l = [] then f else
+    let
+      heads = map hd l;
+      tails = map tl l;
+      f' = rename_heads f heads (length f)
+    in
+    breadth_first_rename tails f'
+  )"
+  by auto
+termination
+  apply (relation "measures [\<lambda>(l, f). foldr (+) (map length l) 0]")
+   apply simp
+  apply simp
+  apply (rule breadth_first_rename_termination_aux)
+  by (meson filter_False)
+
+definition breadth_first_label :: "iEFSM \<Rightarrow> iEFSM" where
+  "breadth_first_label e = (
+   let
+      paths = all_paths e 0 [];
+      rename_pairs = breadth_first_rename (sorted_list_of_fset paths) [];
+      rename = fold (\<lambda>(old, new) acc. acc(old := new)) rename_pairs id;
+      new_states = fimage (\<lambda>(id, (from, to), t). (id, (rename from, rename to), t)) e
+   in
+    reindex_statewise new_states
+  )"
 
 end

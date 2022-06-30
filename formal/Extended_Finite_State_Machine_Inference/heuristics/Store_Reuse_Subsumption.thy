@@ -27,17 +27,17 @@ lemma is_generalisation_of_medial:
 
 lemma is_generalisation_of_preserves_reg:
   "is_generalisation_of t' t i r \<Longrightarrow>
-   evaluate_updates t ia c $ r = c $ r"
+   evaluate_updates t ia c $r r = c $r r"
   by (simp add: is_generalisation_of_def r_not_updated_stays_the_same)
 
 lemma apply_updates_foldr:
-  "apply_updates u old = foldr (\<lambda>h r. r(fst h $:= aval (snd h) old)) (rev u)"
+  "apply_updates u old = foldr (\<lambda>h r. r(fst h $r:= aval (snd h) old)) (rev u)"
   by (simp add: apply_updates_def foldr_conv_fold)
 
 lemma is_generalisation_of_preserves_reg_2:
   assumes gen: "is_generalisation_of t' t i r"
   and dif: "ra \<noteq> r"
-shows "evaluate_updates t ia c $ ra = apply_updates (Updates t') (join_ir ia c) c $ ra"
+shows "evaluate_updates t ia c $r ra = apply_updates (Updates t') (join_ir ia c) c $r ra"
   using assms
   apply (simp add: apply_updates_def is_generalisation_of_def remove_guard_add_update_def del: fold.simps)
   by (simp add: apply_updates_def[symmetric] apply_updates_cons)
@@ -52,7 +52,7 @@ text \<open>If we drop the guard and add an update, and the updated register is 
 c, then the generalised transition subsumes the specific one.\<close>
 lemma is_generalisation_of_subsumes_original:
   "is_generalisation_of t' t i r \<Longrightarrow>
-   c $ r = None \<Longrightarrow>
+   c $r r = None \<Longrightarrow>
    subsumes t' c t"
   apply (simp add: subsumes_def generalisation_of_preserves can_take_transition_def can_take_def posterior_separate_def)
   by (metis is_generalisation_of_apply_guards is_generalisation_of_preserves_reg is_generalisation_of_preserves_reg_2)
@@ -62,7 +62,7 @@ lemma generalise_output_posterior:
   by (simp add: can_take_def generalise_output_preserves posterior_def)
 
 lemma generalise_output_eq: "(Outputs t) ! r = L v \<Longrightarrow>
-   c $ p = Some v \<Longrightarrow>
+   c $r p = Some v \<Longrightarrow>
    evaluate_outputs t i c = apply_outputs (list_update (Outputs t) r (V (R p))) (join_ir i c)"
   apply (rule nth_equalityI)
    apply (simp add: apply_outputs_preserves_length)
@@ -75,7 +75,7 @@ text\<open>This shows that if we can guarantee that the value of a particular re
 output then the generalised output subsumes the specific output.\<close>
 lemma generalise_output_subsumes_original:
   "Outputs t ! r = L v \<Longrightarrow>
-   c $ p = Some v \<Longrightarrow>
+   c $r p = Some v \<Longrightarrow>
    subsumes (generalise_output t p r) c t"
   by (simp add: can_take_transition_def generalise_output_def generalise_output_eq subsumes_def)
 
@@ -151,7 +151,7 @@ lemma stored_reused_is_generalised_output_of:
 lemma is_generalised_output_of_subsumes:
   "is_generalised_output_of t' t r p \<Longrightarrow>
    nth (Outputs t) p = L v \<Longrightarrow>
-   c $ r = Some v \<Longrightarrow>
+   c $r r = Some v \<Longrightarrow>
    subsumes t' c t"
   apply (simp add: subsumes_def generalise_output_preserves can_take_transition_def can_take_def posterior_separate_def)
   by (simp add: generalise_output_def generalise_output_eq is_generalised_output_of_def)
@@ -164,7 +164,7 @@ lemma is_generalised_output_of_does_not_subsume:
   "is_generalised_output_of t' t r p \<Longrightarrow>
    p < length (Outputs t) \<Longrightarrow>
    nth (Outputs t) p = L v \<Longrightarrow>
-   c $ r \<noteq> Some v \<Longrightarrow>
+   c $r r \<noteq> Some v \<Longrightarrow>
    \<exists>i. can_take_transition t i c \<Longrightarrow>
    \<not>subsumes t' c t"
   apply (rule bad_outputs)
@@ -182,14 +182,14 @@ correct value for direct subsumption.\<close>
 lemma generalise_output_directly_subsumes_original:
       "stored_reused t' t = Some (r, p) \<Longrightarrow>
        nth (Outputs t) p = L v \<Longrightarrow>
-      (\<forall>c1 c2 t. obtains s c1 e1 0 <> t \<and> obtains s' c2 e2 0 <> t \<longrightarrow> c2 $ r = Some v) \<Longrightarrow>
+      (\<forall>c1 c2 t. obtains s c1 e1 0 <> t \<and> obtains s' c2 e2 0 <> t \<longrightarrow> c2 $r r = Some v) \<Longrightarrow>
        directly_subsumes e1 e2 s s' t' t"
   apply (simp add: directly_subsumes_def)
   apply standard
   by (metis is_generalised_output_of_subsumes stored_reused_aux_is_generalised_output_of stored_reused_def)
 
 definition "generalise_output_context_check v r s1 s2 e1 e2 =
-(\<forall>c1 c2 t. obtains s1 c1 (tm e1) 0 <> t \<and> obtains s2 c2 (tm e2) 0 <> t \<longrightarrow> c2 $ r = Some v)"
+(\<forall>c1 c2 t. obtains s1 c1 (tm e1) 0 <> t \<and> obtains s2 c2 (tm e2) 0 <> t \<longrightarrow> c2 $r r = Some v)"
 
 lemma generalise_output_context_check_directly_subsumes_original:
       "stored_reused t' t = Some (r, p) \<Longrightarrow>
@@ -229,7 +229,7 @@ lemma original_does_not_subsume_generalised_output:
       "stored_reused t' t = Some (p, r) \<Longrightarrow>
        r < length (Outputs t) \<Longrightarrow>
        nth (Outputs t) r = L v \<Longrightarrow>
-       \<exists>a c1 tt. obtains s c1 e1 0 <> tt \<and> obtains s' a e 0 <> tt \<and> a $ p \<noteq> Some v \<and> (\<exists>i. can_take_transition t i a) \<Longrightarrow>
+       \<exists>a c1 tt. obtains s c1 e1 0 <> tt \<and> obtains s' a e 0 <> tt \<and> a $r p \<noteq> Some v \<and> (\<exists>i. can_take_transition t i a) \<Longrightarrow>
        \<not>directly_subsumes e1 e s s' t' t"
   apply (simp add: directly_subsumes_def)
   apply clarify
@@ -266,7 +266,7 @@ definition input_stored_in_reg :: "transition \<Rightarrow> transition \<Rightar
   )"
 
 definition initially_undefined_context_check :: "transition_matrix \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "initially_undefined_context_check e r s = (\<forall>t a. obtains s a e 0 <> t \<longrightarrow> a $ r = None)"
+  "initially_undefined_context_check e r s = (\<forall>t a. obtains s a e 0 <> t \<longrightarrow> a $r r = None)"
 
 lemma no_incoming_to_zero:
   "\<forall>((from, to), t)|\<in>|e. 0 < to \<Longrightarrow>
@@ -518,8 +518,8 @@ next
     by (metis (no_types, lifting) datastate(1) input2state_within_bounds join_ir_R join_ir_nth le_less_linear list_update_beyond nth_list_update option.inject vname.case(1) vname.exhaust)
 qed auto
 
-text\<open>If input $i$ is stored in register $r$ by transition $t$ then if we can take transition,
-$t^\prime$ then for some input $ia$ then transition $t$ does not subsume $t^\prime$.\<close>
+text\<open>If input $ri$r is stored in register $rr$r by transition $rt$r then if we can take transition,
+$rt^\prime$r then for some input $ria$r then transition $rt$r does not subsume $rt^\prime$r.\<close>
 lemma str_not_num: "Str x \<noteq> value.Int n \<and> Str x \<noteq> value.Real m \<and> value.Int n \<noteq> value.Real m"
   by (simp add: EFSM.Str_def)
 
@@ -574,7 +574,7 @@ lemma input_stored_in_reg_not_subsumed:
 lemma aval_updated:
   "(r, u) \<in> set U \<Longrightarrow>
    r \<notin> set (map fst (removeAll (r, u) U)) \<Longrightarrow>
-   apply_updates U s c $ r = aval u s"
+   apply_updates U s c $r r = aval u s"
 proof(induct U rule: rev_induct)
   case (snoc a U)
   then show ?case
@@ -587,15 +587,15 @@ lemma can_take_append_subset:
 can_take a (Guards t @ Guards t') ia c = can_take a (Guards t) ia c"
   by (metis apply_guards_append apply_guards_subset_append can_take_def dual_order.strict_implies_order)
 
-text\<open>Transitions of the form $t = \textit{select}:1[i_0=x]$ do not subsume transitions
-of the form $t^\prime = select:1/r_1:=i_1$.\<close>
+text\<open>Transitions of the form $rt = \textit{select}:1[i_0=x]$r do not subsume transitions
+of the form $rt^\prime = select:1/r_1:=i_1$r.\<close>
 lemma general_not_subsume_orig: "Arity t' = Arity t \<Longrightarrow>
    set (Guards t') \<subset> set (Guards t) \<Longrightarrow>
    (r, (V (I i))) \<in> set (Updates t') \<Longrightarrow>
    r \<notin> set (map fst (removeAll (r, V (I i)) (Updates t'))) \<Longrightarrow>
    r \<notin> set (map fst (Updates t)) \<Longrightarrow>
    \<exists>i. can_take_transition t i c \<Longrightarrow>
-   c $ r = None \<Longrightarrow>
+   c $r r = None \<Longrightarrow>
    i < Arity t \<Longrightarrow>
    \<not> subsumes t c t'"
   apply (rule inconsistent_updates)
@@ -644,10 +644,10 @@ definition not_updated :: "nat \<Rightarrow> transition \<Rightarrow> bool" wher
   "not_updated r t = (filter (\<lambda>(r', _). r' = r) (Updates t) = [])"
 
 lemma not_updated: assumes "not_updated r t2"
-  shows "apply_updates (Updates t2) s s' $ r = s' $ r"
+  shows "apply_updates (Updates t2) s s' $r r = s' $r r"
 proof-
   have not_updated_aux: "\<And>t2. filter (\<lambda>(r', _). r' = r) t2 = [] \<Longrightarrow>
-   apply_updates t2 s s' $ r = s' $ r"
+   apply_updates t2 s s' $r r = s' $r r"
     apply (rule r_not_updated_stays_the_same)
     by (metis (mono_tags, lifting) filter_empty_conv imageE prod.case_eq_if)
   show ?thesis
@@ -661,7 +661,7 @@ lemma one_extra_update_subsumes: "Label t1 = Label t2 \<Longrightarrow>
    Outputs t1 = Outputs t2 \<Longrightarrow>
    Updates t1 = (r, u) # Updates t2 \<Longrightarrow>
    not_updated r t2 \<Longrightarrow>
-   c $ r = None \<Longrightarrow>
+   c $r r = None \<Longrightarrow>
    subsumes t1 c t2"
   apply (simp add: subsumes_def posterior_separate_def can_take_transition_def can_take_def)
   by (metis apply_guards_subset apply_updates_cons not_updated)

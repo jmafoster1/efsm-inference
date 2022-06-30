@@ -54,18 +54,18 @@ lemma aval_plus_symmetry: "aval (Plus x y) s = aval (Plus y x) s"
   by (simp add: value_plus_symmetry)
 
 definition input2state :: "value list \<Rightarrow> registers" where
-  "input2state n = fold (\<lambda>(k, v) f. f(k $:= Some v)) (enumerate 0 n) <>"
+  "input2state n = fold (\<lambda>(k, v) f. f(k $r:= Some v)) (enumerate 0 n) <>"
 
 primrec input2state_prim :: "value list \<Rightarrow> nat \<Rightarrow> registers" where
   "input2state_prim [] _ = <>" |
-  "input2state_prim (v#t) k = (input2state_prim t (k+1))(k $:= Some v)"
+  "input2state_prim (v#t) k = (input2state_prim t (k+1))(k $r:= Some v)"
 
 lemma input2state_append:
-  "input2state (i @ [a]) = (input2state i)(length i $:= Some a)"
+  "input2state (i @ [a]) = (input2state i)(length i $r:= Some a)"
   by (simp add: input2state_def enumerate_eq_zip)
 
 lemma input2state_out_of_bounds:
-  "i \<ge> length ia \<Longrightarrow> input2state ia $ i = None"
+  "i \<ge> length ia \<Longrightarrow> input2state ia $r i = None"
 proof(induct ia rule: rev_induct)
   case Nil
   then show ?case
@@ -77,14 +77,14 @@ next
 qed
 
 lemma input2state_within_bounds:
-  "input2state i $ x = Some a \<Longrightarrow> x < length i"
+  "input2state i $r x = Some a \<Longrightarrow> x < length i"
   by (metis input2state_out_of_bounds not_le_imp_less option.distinct(1))
 
-lemma input2state_empty: "input2state [] $ x1 = None"
+lemma input2state_empty: "input2state [] $r x1 = None"
   by (simp add: input2state_out_of_bounds)
 
 lemma input2state_nth:
-  "i < length ia \<Longrightarrow> input2state ia $ i = Some (ia ! i)"
+  "i < length ia \<Longrightarrow> input2state ia $r i = Some (ia ! i)"
 proof(induct ia rule: rev_induct)
   case Nil
   then show ?case
@@ -99,13 +99,13 @@ qed
 lemma input2state_some:
   "i < length ia \<Longrightarrow>
    ia ! i = x \<Longrightarrow>
-   input2state ia $ i = Some x"
+   input2state ia $r i = Some x"
   by (simp add: input2state_nth)
 
 lemma input2state_take: "x1 < A \<Longrightarrow>
    A \<le> length i \<Longrightarrow>
    x = vname.I x1 \<Longrightarrow>
-   input2state i $ x1 = input2state (take A i) $ x1"
+   input2state i $r x1 = input2state (take A i) $r x1"
 proof(induct i)
   case Nil
   then show ?case
@@ -117,22 +117,22 @@ next
 qed
 
 lemma input2state_not_None:
-  "(input2state i $ x \<noteq> None) \<Longrightarrow> (x < length i)"
+  "(input2state i $r x \<noteq> None) \<Longrightarrow> (x < length i)"
   using input2state_within_bounds by blast
 
 lemma input2state_Some:
-  "(\<exists>v. input2state i $ x = Some v) = (x < length i)"
+  "(\<exists>v. input2state i $r x = Some v) = (x < length i)"
   apply standard
   using input2state_within_bounds apply blast
   by (simp add: input2state_nth)
 
 lemma input2state_cons: "x1 > 0 \<Longrightarrow>
    x1 < length ia \<Longrightarrow>
-   input2state (a # ia) $ x1 = input2state ia $ (x1-1)"
+   input2state (a # ia) $r x1 = input2state ia $r (x1-1)"
   by (simp add: input2state_nth)
 
 lemma input2state_cons_shift:
-  "input2state i $ x1 = Some a \<Longrightarrow> input2state (b # i) $ (Suc x1) = Some a"
+  "input2state i $r x1 = Some a \<Longrightarrow> input2state (b # i) $r (Suc x1) = Some a"
 proof(induct i rule: rev_induct)
   case Nil
   then show ?case
@@ -143,7 +143,7 @@ next
     by (metis Suc_less_eq input2state_nth input2state_within_bounds length_Cons nth_Cons_Suc)
 qed
 
-lemma input2state_exists: "\<exists>i. input2state i $ x1 = Some a"
+lemma input2state_exists: "\<exists>i. input2state i $r x1 = Some a"
 proof(induct x1)
   case 0
   then show ?case
@@ -175,11 +175,11 @@ lemma length_append_repeat: "length (i@(repeat a y)) \<ge> length i"
   by simp
 
 lemma length_input2state_repeat:
-  "input2state i $ x = Some a \<Longrightarrow> y < length (i @ repeat y a)"
+  "input2state i $r x = Some a \<Longrightarrow> y < length (i @ repeat y a)"
   by (metis append.simps(1) append_eq_append_conv input2state_within_bounds length_append length_repeat list.size(3) neqE not_add_less2 zero_order(3))
 
 lemma input2state_double_exists:
-  "\<exists>i. input2state i $ x = Some a \<and> input2state i $ y = Some a"
+  "\<exists>i. input2state i $r x = Some a \<and> input2state i $r y = Some a"
   apply (insert input2state_exists[of x a])
   apply clarify
   apply (case_tac "x \<ge> y")
@@ -190,7 +190,7 @@ lemma input2state_double_exists:
   by (metis length_input2state_repeat input2state_nth input2state_out_of_bounds le_trans length_append_repeat length_list_update not_le_imp_less nth_append nth_list_update_eq nth_list_update_neq option.distinct(1))
 
 lemma input2state_double_exists_2:
-  "x \<noteq> y \<Longrightarrow> \<exists>i. input2state i $ x = Some a \<and> input2state i $ y = Some a'"
+  "x \<noteq> y \<Longrightarrow> \<exists>i. input2state i $r x = Some a \<and> input2state i $r y = Some a'"
   apply (insert input2state_exists[of x a])
   apply clarify
   apply (case_tac "x \<ge> y")
@@ -204,8 +204,8 @@ lemma input2state_double_exists_2:
 
 definition join_ir :: "value list \<Rightarrow> registers \<Rightarrow> vname datastate" where
   "join_ir i r \<equiv> (\<lambda>x. case x of
-    R n \<Rightarrow> r $ n |
-    I n \<Rightarrow> (input2state i) $ n
+    R n \<Rightarrow> r $r n |
+    I n \<Rightarrow> (input2state i) $r n
   )"
 
 lemmas datastate = join_ir_def input2state_def
@@ -217,7 +217,7 @@ lemma join_ir_empty [simp]: "join_ir [] <> = (\<lambda>x. None)"
    apply (simp add: input2state_def)
   by simp
 
-lemma join_ir_R [simp]: "(join_ir i r) (R n) = r $ n"
+lemma join_ir_R [simp]: "(join_ir i r) (R n) = r $r n"
   by (simp add: join_ir_def)
 
 lemma join_ir_double_exists:
@@ -254,7 +254,7 @@ next
      apply simp
     using R input2state_exists apply auto[1]
     apply (simp add: R)
-    apply (rule_tac x="<x2 $:= Some a,x2a $:= Some a'>" in exI)
+    apply (rule_tac x="<x2 $r:= Some a,x2a $r:= Some a'>" in exI)
     by simp
 qed
 
@@ -272,7 +272,7 @@ lemma exists_join_ir_ext: "\<exists>i r. join_ir i r v = s v"
    apply simp
    apply (simp add: input2state_exists)
   apply simp
-  apply (rule_tac x="<x2 $:= Some a>" in exI)
+  apply (rule_tac x="<x2 $r:= Some a>" in exI)
   using update_value by auto
 
 lemma join_ir_nth [simp]:
@@ -476,7 +476,7 @@ next
 qed auto
 
 lemma aval_reg_some_superset:
-"\<forall>a. (r $ a  \<noteq> None) \<longrightarrow> r $ a = r' $ a \<Longrightarrow>
+"\<forall>a. (r $r a  \<noteq> None) \<longrightarrow> r $r a = r' $r a \<Longrightarrow>
  aval a (join_ir i r) = Some v \<Longrightarrow>
  aval a (join_ir i r') = Some v"
 proof(induct a arbitrary: v rule: aexp_induct_separate_V_cases)
@@ -511,7 +511,7 @@ next
 qed
 
 lemma aval_reg_none_superset:
-"\<forall>a. (r $ a  \<noteq> None) \<longrightarrow> r $ a = r' $ a \<Longrightarrow>
+"\<forall>a. (r $r a  \<noteq> None) \<longrightarrow> r $r a = r' $r a \<Longrightarrow>
  aval a (join_ir i r') = None \<Longrightarrow>
  aval a (join_ir i r) = None"
 proof(induct a)
