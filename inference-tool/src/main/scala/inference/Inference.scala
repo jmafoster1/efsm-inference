@@ -10050,7 +10050,11 @@ AExp.aexp[VName.vname]](funmem_union[List[Nat.nat],
                 max_attempts, Nat.minus_nat(attempts, Nat.Nata((1))),
                 transition_repeats, log, e, (gp::t), update_groups, structure,
                 funsa, to_derestrict, closed, output_mem, update_memb)
-                       else Failed(badb))
+                       else groupwise_generalise_and_update(badb,
+                     scala.collection.immutable.Map().withDefaultValue(Nil),
+                     max_attempts, max_attempts, transition_repeats, log, e, t,
+                     update_groups, structure, funsa, to_derestrict, closed,
+                     output_mem, update_memb))
                      else groupwise_generalise_and_update(funmem_add[List[Nat.nat],
                               AExp.aexp[VName.vname]](badb, rep_id, reg_bad),
                    scala.collection.immutable.Map().withDefaultValue(Nil),

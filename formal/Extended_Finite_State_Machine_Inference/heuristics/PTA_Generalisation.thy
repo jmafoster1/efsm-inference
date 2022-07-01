@@ -786,7 +786,7 @@ fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Righta
             if checkpoint then
               groupwise_generalise_and_update ((wipe_futures (funmem_add (funmem_union maybe_bad bad) rep_id reg_bad)) rep_id) (K$ []) max_attempts (attempts - 1) transition_repeats log e (gp#t) update_groups structure funs to_derestrict closed output_mem update_mem
             else
-              Failed bad
+              groupwise_generalise_and_update bad (K$ []) max_attempts max_attempts transition_repeats log e t update_groups structure funs to_derestrict closed output_mem update_mem
           else
             groupwise_generalise_and_update (funmem_add bad rep_id reg_bad) (K$ []) max_attempts max_attempts transition_repeats log e t update_groups structure funs to_derestrict closed output_mem update_mem
         ) |
