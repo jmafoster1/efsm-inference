@@ -825,7 +825,7 @@ definition derestrict :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow
     let
       groups = historical_groups pta log;
       output_groups = filter (\<lambda>(_, g). (Outputs (snd (hd g))) \<noteq> []) groups;
-      (normalised, to_derestrict, _, _) = this (groupwise_generalise_and_update (K$[]) (K$[]) tree_repeats tree_repeats false transition_repeats log pta output_groups groups (get_structures pta log) (K$ None) [] [] (K$ []) (K$ []));
+      (normalised, to_derestrict, _, _) = this (groupwise_generalise_and_update (K$[]) (K$[]) tree_repeats tree_repeats False transition_repeats log pta output_groups groups (get_structures pta log) (K$ None) [] [] (K$ []) (K$ []));
       tidied = fimage (\<lambda>(id, tf, t). (id, tf, t\<lparr>Updates:= tidy_updates (Updates t)\<rparr>)) normalised
     in
       drop_selected_guards tidied to_derestrict pta log m np
