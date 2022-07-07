@@ -6085,7 +6085,7 @@ object PTA_Generalisation {
 
   def groupwise_generalise_and_update(bad: Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])],
     maybe_bad: Map[(List[Nat.nat]), (List[AExp.aexp[VName.vname]])],
-    max_attempts: Nat.nat, attempts: Nat.nat,
+    max_attempts: Nat.nat, attempts: Nat.nat, can_fail: Boolean,
     transition_repeats: Nat.nat,
     uu: List[List[(String, (List[Value.value], List[Value.value]))]],
     e: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
@@ -6097,11 +6097,11 @@ object PTA_Generalisation {
     closed: List[(Transition.transition_ext[Unit], List[Option[(AExp.aexp[VName.vname], Map[VName.vname, value_type])]])],
     output_mem: Map[((String, (List[value_type], List[value_type]))), (List[(AExp.aexp[VName.vname], Map[VName.vname, value_type])])],
     update_mem: Map[((String, (List[value_type], List[value_type]))), (List[(AExp.aexp[VName.vname], Map[VName.vname, value_type])])]): generalisation =
-    (bad, maybe_bad, max_attempts, attempts, transition_repeats, uu, e, x7, update_groups, structure, funs, to_derestrict, closed, output_mem, update_mem) match {
-        case (bad, maybe_bad, max_attempts, attempts, transition_repeats, uu, e, Nil,
+    (bad, maybe_bad, max_attempts, attempts, can_fail, transition_repeats, uu, e, x7, update_groups, structure, funs, to_derestrict, closed, output_mem, update_mem) match {
+        case (bad, maybe_bad, max_attempts, attempts, can_fail, transition_repeats, uu, e, Nil,
           update_groups, structure, funs, to_derestrict, closed, output_mem,
           update_mem) => Succeeded((e, (to_derestrict, (output_mem, (update_mem, closed)))))
-        case (bad, maybe_bad, max_attempts, attempts, transition_repeats, log, e, (gp :: t), update_groups, structure, funs, to_derestrict, closed, output_mem, update_mem) => {
+        case (bad, maybe_bad, max_attempts, attempts, can_fail, transition_repeats, log, e, (gp :: t), update_groups, structure, funs, to_derestrict, closed, output_mem, update_mem) => {
             val (rep_id, rep): (List[Nat.nat], Transition.transition_ext[Unit]) = (gp._2).head
             Log.root.debug(f"groupwise_generalise_and_update f${PrettyPrinter.show(rep_id)}${Transition.Label(rep)}")
             Log.root.debug(f"Bad: $bad")
@@ -6192,7 +6192,7 @@ object PTA_Generalisation {
                   (if (pre_standardised_good)
                     groupwise_generalise_and_update(wipe_futures(bad, rep_id),
                     funmem_union[List[Nat.nat], AExp.aexp[VName.vname]](maybe_bad, bada),
-                    max_attempts, attempts, transition_repeats, log,
+                    max_attempts, attempts, true, transition_repeats, log,
                     Same_Register.merge_regs(standardised,
                       ((a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]) =>
                         EFSM.accepts_log(Set.seta[List[(String, (List[Value.value], List[Value.value]))]](log),
@@ -6206,7 +6206,7 @@ object PTA_Generalisation {
                     rep_id),
                     funmem_add[List[Nat.nat], AExp.aexp[VName.vname]](funmem_union[List[Nat.nat], AExp.aexp[VName.vname]](maybe_bad, bada),
                       rep_id, reg_bad),
-                    max_attempts, attempts, transition_repeats, log,
+                    max_attempts, attempts, true, transition_repeats, log,
                     Same_Register.merge_regs(standardised,
                       ((a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]) =>
                         EFSM.accepts_log(Set.seta[List[(String, (List[Value.value], List[Value.value]))]](log),
@@ -6224,14 +6224,14 @@ object PTA_Generalisation {
                       rep_id, reg_bad),
                       rep_id),
                       scala.collection.immutable.Map().withDefaultValue(Nil),
-                      max_attempts, Nat.minus_nat(attempts, Nat.Nata((1))),
+                      max_attempts, Nat.minus_nat(attempts, Nat.Nata((1))), true,
                       transition_repeats, log, e, (gp :: t), update_groups, structure,
                       funsa, to_derestrict, closed, output_mem, update_memb)}
                     else {
                       Log.root.debug(f"${PrettyPrinter.show(rep_id)}${Transition.Label(rep)} is NOT an update checkpoint. Going back up the tree.")
                       groupwise_generalise_and_update(badb,
                       scala.collection.immutable.Map().withDefaultValue(Nil),
-                      max_attempts, max_attempts, transition_repeats, log, e, t,
+                      max_attempts, max_attempts, true, transition_repeats, log, e, t,
                       update_groups, structure, funsa, to_derestrict, closed,
                       output_mem, update_memb)}
                     )
@@ -6239,7 +6239,7 @@ object PTA_Generalisation {
                       Log.root.debug("No more attempts left. Hobbling on.")
                       groupwise_generalise_and_update(funmem_add[List[Nat.nat], AExp.aexp[VName.vname]](badb, rep_id, reg_bad),
                       scala.collection.immutable.Map().withDefaultValue(Nil),
-                      max_attempts, max_attempts, transition_repeats, log, e, t,
+                      max_attempts, max_attempts, false, transition_repeats, log, e, t,
                       update_groups, structure, funsa, to_derestrict, closed,
                       output_mem, update_memb)}
                     )}
@@ -6251,16 +6251,16 @@ object PTA_Generalisation {
               }
             case Failure(bada) =>{
               Log.root.debug("Failed to infer good outputs/updates")
-              (if (Nat.less_nat(Nat.zero_nata, attempts))
+              (if (can_fail)
                 {
                   Log.root.debug("Attempts left. Failing gracefully.")
                   Failed(funmem_union[List[Nat.nat], AExp.aexp[VName.vname]](bad, bada))
                 }
               else {
-                Log.root.debug("No attempts left. Hobbling on.")
+                Log.root.debug("Not allowed to fail. Hobbling on.")
                 groupwise_generalise_and_update(bad,
                 scala.collection.immutable.Map().withDefaultValue(Nil),
-                max_attempts, max_attempts, transition_repeats, log, e, t,
+                max_attempts, max_attempts, false, transition_repeats, log, e, t,
                 update_groups, structure, funs, to_derestrict, closed, output_mem,
                 update_mem)}
               )}
@@ -6462,7 +6462,7 @@ object PTA_Generalisation {
         groups)
       val (normalised, (to_derestrict, (_, _))): (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))], (List[List[Nat.nat]], (Map[((String, (List[value_type], List[value_type]))), (List[(AExp.aexp[VName.vname], Map[VName.vname, value_type])])], (Map[((String, (List[value_type], List[value_type]))), (List[(AExp.aexp[VName.vname], Map[VName.vname, value_type])])], List[(Transition.transition_ext[Unit], List[Option[(AExp.aexp[VName.vname], Map[VName.vname, value_type])]])])))) = thisa(groupwise_generalise_and_update(scala.collection.immutable.Map().withDefaultValue(Nil),
         scala.collection.immutable.Map().withDefaultValue(Nil), tree_repeats,
-        tree_repeats, transition_repeats, log, pta, output_groups, groups,
+        tree_repeats, false, transition_repeats, log, pta, output_groups, groups,
         get_structures(pta, log),
         scala.collection.immutable.Map().withDefaultValue(None), Nil, Nil,
         scala.collection.immutable.Map().withDefaultValue(Nil),
