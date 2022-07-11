@@ -7,7 +7,7 @@ inference. Ideally, we would like something more generally applicable. This theo
 abstract \emph{metaheuristic} which can be implemented with genetic programming.\<close>
 
 theory PTA_Generalisation
-  imports "../Inference" Same_Register Group_By "HOL-Library.Sublist" "Extended_Finite_State_Machines.Drinks_Machine"
+  imports "../Inference" Same_Register Group_By "HOL-Library.Sublist"
 begin
 
 unbundle finfun_syntax
@@ -602,8 +602,6 @@ definition "transitions = fimage (\<lambda>(tids, (from, to), tran). (to, tids))
 definition outgoing_transitions :: "iEFSM \<Rightarrow> cfstate \<Rightarrow> (cfstate \<times> tids) fset" where
   "outgoing_transitions g v = transitions (ffilter (\<lambda>(_, (from, to), tran). from = v) g)"
 
-definition "drinks_iEFSM = fset_of_list (map (\<lambda>(x, rest). ([x], rest)) (enumerate 1 (sorted_list_of_fset drinks)))"
-
 lemma bot_fset_eq: "x = {||} = (fset x = {})"
   by (simp add: fset_equiv)
 
@@ -745,7 +743,7 @@ fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Righta
           if can_fail then
             Failed (funmem_union bad bad')
           else
-            groupwise_generalise_and_update (funmem_union bad bad') (K$ []) max_attempts max_attempts False transition_repeats log e t update_groups structure funs to_derestrict closed output_mem update_mem
+            groupwise_generalise_and_update (funmem_union bad bad') (K$ []) max_attempts max_attempts True transition_repeats log e t update_groups structure funs to_derestrict closed output_mem update_mem
         )|
         Success (e', output_mem', update_mem', output_funs, bad') \<Rightarrow>
         let
@@ -768,9 +766,9 @@ fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Righta
           result = (if pre_standardised_good then
             \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and
             updates for the other historical subgroups so can filter them out.\<close>
-            groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_union maybe_bad bad') max_attempts attempts True transition_repeats log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. fst g \<notin> set (finfun_to_list funs)) t) update_groups structure funs (to_derestrict @ more_to_derestrict) [] output_mem update_mem
+            groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_union maybe_bad bad') max_attempts attempts can_fail transition_repeats log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. fst g \<notin> set (finfun_to_list funs)) t) update_groups structure funs (to_derestrict @ more_to_derestrict) [] output_mem update_mem
           else
-            groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_add (funmem_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts True transition_repeats log (merge_regs standardised (accepts_log (set log))) t update_groups structure funs (to_derestrict @ more_to_derestrict) [] output_mem update_mem
+            groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_add (funmem_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts can_fail transition_repeats log (merge_regs standardised (accepts_log (set log))) t update_groups structure funs (to_derestrict @ more_to_derestrict) [] output_mem update_mem
             \<comment> \<open>if \<exists>struct \<in> ((all_structures log) - set (finfun_to_list funs)).
             \<exists>struct' \<in> insert (structure rep_id) (set (finfun_to_list funs)).
             \<exists>t \<in> set (map (map event_structure) log). appears_in_order [struct, struct'] t then

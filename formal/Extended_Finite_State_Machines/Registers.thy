@@ -2,10 +2,15 @@ theory Registers
 imports "FinFun.FinFun" Value
 begin
 
+definition "registers = {A :: (nat, value option) finfun. finfun_default A = None}"
 typedef registers = "{A :: (nat, value option) finfun. finfun_default A = None}"
   morphisms regs Abs_regs
   apply (rule_tac x="finfun_const None" in exI)
   by (simp add: finfun_default_const)
+
+subsection \<open>Correspondence Relation\<close>
+definition FR :: "(nat, value option) finfun \<Rightarrow> registers \<Rightarrow> bool" where
+  "FR = (\<lambda>f r. finfun_default f = None \<and> r = Abs_regs f)"
 
 setup_lifting type_definition_registers
 
@@ -108,5 +113,7 @@ no_notation
   registers_update ("_'(_ $r:= _')" [1000, 0, 0] 1000) and
   registers_apply (infixl "$r" 999)
 end
+
+hide_const registers
 
 end

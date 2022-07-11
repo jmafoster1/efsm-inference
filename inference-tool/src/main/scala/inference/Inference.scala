@@ -10002,7 +10002,7 @@ Product_Type.equal_proda[String,
                 (if (pre_standardised_good)
                   groupwise_generalise_and_update(wipe_futures(bad, rep_id),
            funmem_union[List[Nat.nat], AExp.aexp[VName.vname]](maybe_bad, bada),
-           max_attempts, attempts, true, transition_repeats, log,
+           max_attempts, attempts, can_fail, transition_repeats, log,
            Same_Register.merge_regs(standardised,
                                      ((a:
  FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])])
@@ -10028,7 +10028,7 @@ Product_Type.equal_proda[String,
                             AExp.aexp[VName.vname]](funmem_union[List[Nat.nat],
                           AExp.aexp[VName.vname]](maybe_bad, bada),
              rep_id, reg_bad),
-                max_attempts, attempts, true, transition_repeats, log,
+                max_attempts, attempts, can_fail, transition_repeats, log,
                 Same_Register.merge_regs(standardised,
   ((a: FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])]) =>
     EFSM.accepts_log(Set.seta[List[(String,
@@ -10072,7 +10072,7 @@ AExp.aexp[VName.vname]](funmem_union[List[Nat.nat],
               else groupwise_generalise_and_update(funmem_union[List[Nat.nat],
                          AExp.aexp[VName.vname]](bad, bada),
             scala.collection.immutable.Map().withDefaultValue(Nil),
-            max_attempts, max_attempts, false, transition_repeats, log, e, t,
+            max_attempts, max_attempts, true, transition_repeats, log, e, t,
             update_groups, structure, funs, to_derestrict, closed, output_mem,
             update_mem))
         })
