@@ -92,6 +92,9 @@ lemma ex_fresh_register_double: "\<exists>n. registers_apply r n = None \<and> r
   apply (rule_tac x=a in exI)
   using finfun_dom_conv regs by fastforce
 
+lemma registers_upd_triv [simp]: "f(x $r:= f $r x) = f"
+  by (metis finfun_upd_triv registers_apply.rep_eq registers_update.rep_eq regs_inject)
+
 subsubsection \<open>Bundles for concrete syntax\<close>
 
 bundle registers_syntax begin

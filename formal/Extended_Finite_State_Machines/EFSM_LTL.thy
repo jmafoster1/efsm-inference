@@ -121,6 +121,11 @@ primcorec make_full_observation :: "transition_matrix \<Rightarrow> cfstate opti
   )"
 text_raw\<open>}%endsnip\<close>
 
+lemma make_full_observation_step: "make_full_observation e s d p (h##t) = (
+    let (s', o', d') = ltl_step e s d h in
+    \<lparr>statename = s, datastate = d, action=h, output = p\<rparr>##(make_full_observation e s' d' o' t))"
+  by (simp add: make_full_observation.ctr[of e s d p "h##t"])
+
 text_raw\<open>\snip{watch}{1}{2}{%\<close>
 abbreviation watch :: "transition_matrix \<Rightarrow> action stream \<Rightarrow> whitebox_trace" where
   "watch e i \<equiv> (make_full_observation e (Some 0) <> [] i)"
@@ -184,12 +189,12 @@ type_synonym ltl_gexp = "ltl_vname gexp"
 
 definition join_iro :: "value list \<Rightarrow> registers \<Rightarrow> outputs \<Rightarrow> ltl_vname datastate" where
   "join_iro i r p = (\<lambda>x. case x of
-    Rg n \<Rightarrow> r $ n |
+    Rg n \<Rightarrow> r $r n |
     Ip n \<Rightarrow> Some (i ! n) |
     Op n \<Rightarrow> p ! n
   )"
 
-lemma join_iro_R [simp]: "join_iro i r p (Rg n) = r $ n"
+lemma join_iro_R [simp]: "join_iro i r p (Rg n) = r $r n"
   by (simp add: join_iro_def)
 
 abbreviation "check_exp g s \<equiv> (gval g (join_iro (snd (action (shd s))) (datastate (shd s)) (output (shd s))) = trilean.true)"

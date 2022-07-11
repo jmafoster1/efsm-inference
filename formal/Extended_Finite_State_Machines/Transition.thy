@@ -139,6 +139,9 @@ lemma apply_outputs_unupdated: assumes "ia \<noteq> r"
 definition apply_updates :: "update_function list \<Rightarrow> vname datastate \<Rightarrow> registers \<Rightarrow> registers" where
   "apply_updates u old = fold (\<lambda>h r. r(fst h $r:= aval (snd h) old)) u"
 
+lemma apply_updates_empty [simp]: "apply_updates [] old r = r"
+  by (simp add: apply_updates_def)
+
 abbreviation "evaluate_updates t i r \<equiv> apply_updates (Updates t) (join_ir i r) r"
 
 lemma apply_updates_cons: "ra \<noteq> r \<Longrightarrow>
