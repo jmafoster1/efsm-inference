@@ -41,22 +41,19 @@ creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin)
 
 
 def distance_between(expected, actual):
-    try:
-        if (
-            isinstance(expected, Number)
-            and isinstance(actual, Number)
-            and not is_null(actual)
-        ):
-            return abs(expected - actual)
-        elif type(expected) == str and type(actual) == str:
-            return levenshtein(expected, actual)
-        elif type(expected) != type(actual) or is_null(actual):
-            return float("inf")
-        raise ValueError(
-            f"Expected int, float, or string type, not {actual}:{type(actual)}."
-        )
-    except:
+    if (
+        isinstance(expected, Number)
+        and isinstance(actual, Number)
+        and not is_null(actual)
+    ):
+        return abs(expected - actual)
+    elif type(expected) == str and type(actual) == str:
+        return levenshtein(expected, actual)
+    elif type(expected) != type(actual) or is_null(actual):
         return float("inf")
+    raise ValueError(
+        f"Expected int, float, or string type, not {actual}:{type(actual)}."
+    )
 
 
 def rmsd(errors: [float]) -> float:
@@ -79,6 +76,8 @@ def find_smallest_distance(individual, pset, args, expected, latent_vars):
     type_ = individual[0].ret
     func = gp.compile(expr=individual, pset=pset)
 
+    if individual.height == 0:
+        return distance_between(expected, individual.root.value)
     if not callable(func):
         return distance_between(expected, func)
 

@@ -743,7 +743,7 @@ fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Righta
           if can_fail then
             Failed (funmem_union bad bad')
           else
-            groupwise_generalise_and_update (funmem_union bad bad') (K$ []) max_attempts max_attempts True transition_repeats log e t update_groups structure funs to_derestrict closed output_mem update_mem
+            groupwise_generalise_and_update (funmem_union bad bad') (K$ []) max_attempts max_attempts False transition_repeats log e t update_groups structure funs to_derestrict closed output_mem update_mem
         )|
         Success (e', output_mem', update_mem', output_funs, bad') \<Rightarrow>
         let
@@ -764,18 +764,10 @@ fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Righta
           \<comment> \<open>We want to do all the structural groups with an output to generalise. If we can't standardise after than the we've probably gone wrong...\<close>
           structural_groups = filter (\<lambda>(_, _, outputs). length outputs > 0) (map fst update_groups);
           result = (if pre_standardised_good then
-            \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and
-            updates for the other historical subgroups so can filter them out.\<close>
-            groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_union maybe_bad bad') max_attempts attempts can_fail transition_repeats log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. fst g \<notin> set (finfun_to_list funs)) t) update_groups structure funs (to_derestrict @ more_to_derestrict) [] output_mem update_mem
+            \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and updates for the other historical subgroups so can filter them out.\<close>
+            groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_union maybe_bad bad') max_attempts attempts True transition_repeats log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. fst g \<notin> set (finfun_to_list funs)) t) update_groups structure funs (to_derestrict @ more_to_derestrict) [] output_mem update_mem
           else
-            groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_add (funmem_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts can_fail transition_repeats log (merge_regs standardised (accepts_log (set log))) t update_groups structure funs (to_derestrict @ more_to_derestrict) [] output_mem update_mem
-            \<comment> \<open>if \<exists>struct \<in> ((all_structures log) - set (finfun_to_list funs)).
-            \<exists>struct' \<in> insert (structure rep_id) (set (finfun_to_list funs)).
-            \<exists>t \<in> set (map (map event_structure) log). appears_in_order [struct, struct'] t then
-             \<comment> \<open>If we have more possible update options, then cautiously proceed\<close>
-              groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_add (funmem_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts transition_repeats log (merge_regs standardised (accepts_log (set log))) t update_groups structure funs (to_derestrict @ more_to_derestrict) [] output_mem update_mem
-            else
-              Failed (funmem_add (funmem_union bad bad') (rep_id) reg_bad)\<close>
+            groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_add (funmem_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts True transition_repeats log (merge_regs standardised (accepts_log (set log))) t update_groups structure funs (to_derestrict @ more_to_derestrict) [] output_mem update_mem
           )
         in
         case result of
@@ -784,7 +776,7 @@ fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Righta
             if checkpoint then
               groupwise_generalise_and_update ((wipe_futures (funmem_add (funmem_union maybe_bad bad) rep_id reg_bad)) rep_id) (K$ []) max_attempts (attempts - 1) True transition_repeats log e (gp#t) update_groups structure funs to_derestrict closed output_mem update_mem
             else
-              groupwise_generalise_and_update bad (K$ []) max_attempts max_attempts True transition_repeats log e t update_groups structure funs to_derestrict closed output_mem update_mem
+              groupwise_generalise_and_update bad (K$ []) max_attempts max_attempts can_fail transition_repeats log e t update_groups structure funs to_derestrict closed output_mem update_mem
           else
             groupwise_generalise_and_update (funmem_add bad rep_id reg_bad) (K$ []) max_attempts max_attempts False transition_repeats log e t update_groups structure funs to_derestrict closed output_mem update_mem
         ) |
