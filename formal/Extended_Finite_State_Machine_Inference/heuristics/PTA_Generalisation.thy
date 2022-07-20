@@ -717,7 +717,7 @@ definition generalise_and_update :: "nat \<Rightarrow> nat \<Rightarrow> bad_fun
       in output_and_update bad [] output_mem (K$ []) attempts attempts e log gps gp values I R outputs_to_infer L
   )"
 
-datatype generalisation = Failed bad_funs | Succeeded "(iEFSM \<times> tids list \<times> outputMem \<times> updateMem \<times> (transition \<times> typed_aexp option list) list)"
+datatype generalisation = Failed bad_funs | Succeeded "(iEFSM \<times> tids list \<times> outputMem \<times> updateMem)"
 
 fun take_maximum_updates :: "iEFSM \<Rightarrow> (tids \<times> transition) fset" where
   "take_maximum_updates ts = fold (\<lambda>(tids, _, t) acc.
@@ -735,15 +735,15 @@ definition wipe_futures :: "bad_funs \<Rightarrow> tids \<Rightarrow> bad_funs" 
 
 definition "all_structures (log::log) = set (remdups (fold (@) (map (map event_structure) log) []))"
 
-fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool \<Rightarrow> nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> transition_group list \<Rightarrow> (tids \<Rightarrow> abstract_event) \<Rightarrow> (abstract_event \<Rightarrow>f (output_function list \<times> update_function list) option) \<Rightarrow> tids list \<Rightarrow> (transition \<times> typed_aexp option list) list \<Rightarrow> outputMem \<Rightarrow> updateMem \<Rightarrow> generalisation" where
-  "groupwise_generalise_and_update bad maybe_bad max_attempts attempts can_fail transition_repeats _ e [] update_groups structure funs to_derestrict closed output_mem update_mem = Succeeded (e, to_derestrict, output_mem, update_mem, closed)" |
-  "groupwise_generalise_and_update bad maybe_bad max_attempts attempts can_fail transition_repeats log e (gp#t) update_groups structure funs to_derestrict closed output_mem update_mem = (
+fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool \<Rightarrow> nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> transition_group list \<Rightarrow> transition_group list \<Rightarrow> (tids \<Rightarrow> abstract_event) \<Rightarrow> (abstract_event \<Rightarrow>f (output_function list \<times> update_function list) option) \<Rightarrow> tids list \<Rightarrow> outputMem \<Rightarrow> updateMem \<Rightarrow> generalisation" where
+  "groupwise_generalise_and_update bad maybe_bad max_attempts attempts can_fail transition_repeats _ e [] update_groups structure funs to_derestrict output_mem update_mem = Succeeded (e, to_derestrict, output_mem, update_mem)" |
+  "groupwise_generalise_and_update bad maybe_bad max_attempts attempts can_fail transition_repeats log e (gp#t) update_groups structure funsb to_derestrict output_mem update_mem = (
         case generalise_and_update transition_repeats transition_repeats bad log e gp update_groups output_mem of
         Failure bad' \<Rightarrow> (
           if can_fail then
             Failed (funmem_union bad bad')
           else
-            groupwise_generalise_and_update (funmem_union bad bad') (K$ []) max_attempts max_attempts False transition_repeats log e t update_groups structure funs to_derestrict closed output_mem update_mem
+            groupwise_generalise_and_update (funmem_union bad bad') (K$ []) max_attempts max_attempts False transition_repeats log e t update_groups structure funsb to_derestrict output_mem update_mem
         )|
         Success (e', output_mem', update_mem', output_funs, bad') \<Rightarrow>
         let
@@ -752,7 +752,7 @@ fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Righta
           reg_bad = filter (\<lambda>a. AExp.enumerate_regs a \<noteq> {}) output_funs;
           (rep_id, rep) = (hd (snd gp));
           different = ffilter (\<lambda>(id, tf, t). t \<noteq> get_by_ids e id) e';
-          funs = fold (\<lambda>(id, t) acc. acc(structure id $:= Some ((Outputs t), (Updates t)))) (sorted_list_of_fset (take_maximum_updates different)) funs;
+          funs = fold (\<lambda>(id, t) acc. acc(structure id $:= Some ((Outputs t), (Updates t)))) (sorted_list_of_fset (take_maximum_updates different)) funsb;
           structural_group = fimage (\<lambda>(i, _, t). (i, t)) (ffilter (\<lambda>(i, _, _). structure i = structure rep_id) e');
           new_outputs = \<lambda>tid t. case funs $ (structure tid) of None \<Rightarrow> Outputs t | Some (outputs, updates) \<Rightarrow> outputs;
           new_updates = \<lambda>tid t. case funs $ (structure tid) of None \<Rightarrow> Updates t | Some (outputs, updates) \<Rightarrow> updates;
@@ -761,24 +761,22 @@ fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Righta
           standardised = if pre_standardised_good then pre_standardised else e';
           \<comment> \<open>This tackles transitions which have been changed\<close>
           more_to_derestrict = sorted_list_of_fset (fimage fst (ffilter (\<lambda>(id, _, tran). tran \<noteq> get_by_ids e id) standardised));
-          \<comment> \<open>We want to do all the structural groups with an output to generalise. If we can't standardise after than the we've probably gone wrong...\<close>
-          structural_groups = filter (\<lambda>(_, _, outputs). length outputs > 0) (map fst update_groups);
           result = (if pre_standardised_good then
             \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and updates for the other historical subgroups so can filter them out.\<close>
-            groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_union maybe_bad bad') max_attempts attempts True transition_repeats log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. fst g \<notin> set (finfun_to_list funs)) t) update_groups structure funs (to_derestrict @ more_to_derestrict) [] output_mem update_mem
+            groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_union maybe_bad bad') max_attempts attempts True transition_repeats log (merge_regs standardised (accepts_log (set log))) (filter (\<lambda>g. fst g \<notin> set (finfun_to_list funs)) t) update_groups structure funs (to_derestrict @ more_to_derestrict) output_mem update_mem
           else
-            groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_add (funmem_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts True transition_repeats log (merge_regs standardised (accepts_log (set log))) t update_groups structure funs (to_derestrict @ more_to_derestrict) [] output_mem update_mem
+            groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_add (funmem_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts True transition_repeats log (merge_regs standardised (accepts_log (set log))) t update_groups structure funs (to_derestrict @ more_to_derestrict) output_mem update_mem
           )
         in
         case result of
           Failed bad \<Rightarrow>  (
           if attempts > 0 then
             if checkpoint then
-              groupwise_generalise_and_update ((wipe_futures (funmem_add (funmem_union maybe_bad bad) rep_id reg_bad)) rep_id) (K$ []) max_attempts (attempts - 1) True transition_repeats log e (gp#t) update_groups structure funs to_derestrict closed output_mem update_mem
+              groupwise_generalise_and_update ((wipe_futures (funmem_add (funmem_union maybe_bad bad) rep_id reg_bad)) rep_id) (K$ []) max_attempts (attempts - 1) True transition_repeats log e (gp#t) update_groups structure funsb to_derestrict output_mem update_mem
             else
-              groupwise_generalise_and_update bad (K$ []) max_attempts max_attempts can_fail transition_repeats log e t update_groups structure funs to_derestrict closed output_mem update_mem
+              groupwise_generalise_and_update bad (K$ []) max_attempts max_attempts can_fail transition_repeats log e t update_groups structure funsb to_derestrict output_mem update_mem
           else
-            groupwise_generalise_and_update (funmem_add bad rep_id reg_bad) (K$ []) max_attempts max_attempts False transition_repeats log e t update_groups structure funs to_derestrict closed output_mem update_mem
+            groupwise_generalise_and_update (funmem_add bad rep_id reg_bad) (K$ []) max_attempts max_attempts False transition_repeats log e t update_groups structure funsb to_derestrict output_mem update_mem
         ) |
         Succeeded res \<Rightarrow> Succeeded res
   )"
@@ -807,7 +805,7 @@ fun tidy_updates :: "('a \<times> 'b) list \<Rightarrow> ('a \<times> 'b) list" 
   "tidy_updates [] = []" |
   "tidy_updates ((a, b)#t) = (if a \<in> set (map fst t) then tidy_updates t else (a, b)#(tidy_updates t))"
 
-definition this :: "generalisation \<Rightarrow> (iEFSM \<times> tids list \<times> outputMem \<times> updateMem \<times> (transition \<times> typed_aexp option list) list)" where
+definition this :: "generalisation \<Rightarrow> (iEFSM \<times> tids list \<times> outputMem \<times> updateMem)" where
   "this x = (case x of Succeeded y \<Rightarrow> y)"
 
 definition derestrict :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
@@ -815,7 +813,7 @@ definition derestrict :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow
     let
       groups = historical_groups pta log;
       output_groups = filter (\<lambda>(_, g). (Outputs (snd (hd g))) \<noteq> []) groups;
-      (normalised, to_derestrict, _, _) = this (groupwise_generalise_and_update (K$[]) (K$[]) tree_repeats tree_repeats False transition_repeats log pta output_groups groups (get_structures pta log) (K$ None) [] [] (K$ []) (K$ []));
+      (normalised, to_derestrict, _, _) = this (groupwise_generalise_and_update (K$[]) (K$[]) tree_repeats tree_repeats False transition_repeats log pta output_groups groups (get_structures pta log) (K$ None) [] (K$ []) (K$ []));
       tidied = fimage (\<lambda>(id, tf, t). (id, tf, t\<lparr>Updates:= tidy_updates (Updates t)\<rparr>)) normalised
     in
       drop_selected_guards tidied to_derestrict pta log m np
