@@ -233,7 +233,7 @@ lemma once_none_nxt_always_none: "alw (nxt (state_eq None)) (make_full_observati
   by (simp add: alw_iff_sdrop del: sdrop.simps)
 
 lemma snth_sconst: "(\<forall>i. s !! i = h) = (s = sconst h)"
-  by (metis Nat.funpow_code_def id_funpow sdrop_simps(1) sdrop_siterate siterate.simps(1) smap_alt smap_sconst snth.simps(1) stream.map_id)
+  by (auto simp add: sconst_alt sset_range)
 
 lemma alw_sconst: "(alw (\<lambda>xs. shd xs = h) t) = (t = sconst h)"
   by (simp add: snth_sconst[symmetric] alw_iff_sdrop)
@@ -282,5 +282,23 @@ lemma no_updates_none: "alw (\<lambda>x. datastate (shd x) = r) (make_full_obser
 
 lemma action_components: "(label_eq l aand input_eq i) s = (action (shd s) = (String.implode l, i))"
   by (metis fst_conv prod.collapse snd_conv)
+
+coinductive valid_trace :: "transition_matrix \<Rightarrow> cfstate option \<Rightarrow> registers \<Rightarrow> whitebox_trace \<Rightarrow> bool" where
+step_some: "\<exists>(s', tr) |\<in>| possible_steps e s r l i. evaluate_outputs tr i r = (output (shd t)) \<and> valid_trace e (Some s') (evaluate_updates tr i r) t \<Longrightarrow>
+        valid_trace e (Some s) r (\<lparr>statename=Some s, datastate = r, action=(l, i), output = p\<rparr>##t)" |
+step_none: "possible_steps e s r l i = {||} \<Longrightarrow> [] = (output (shd t)) \<Longrightarrow> valid_trace e None r t \<Longrightarrow> valid_trace e (Some s) r (\<lparr>statename=Some s, datastate = r, action=(l, i), output = p\<rparr>##t)" |
+base [simp]: "valid_trace e None r (sconst \<lparr>statename=None, datastate = r, action=a, output = p\<rparr>)"
+
+
+inductive valid_prefix :: "transition_matrix \<Rightarrow> cfstate option \<Rightarrow> registers \<Rightarrow> state list \<Rightarrow> bool" where
+step_some: "\<exists>(s', tr) |\<in>| possible_steps e s r l i. (t = [] \<or> evaluate_outputs tr i r = (output (hd t))) \<and>
+                valid_prefix e (Some s') (evaluate_updates tr i r) t \<Longrightarrow>
+            valid_prefix e (Some s) r (\<lparr>statename=Some s, datastate = r, action=(l, i), output = p\<rparr>#t)" |
+step_none: "possible_steps e s r l i = {||} \<Longrightarrow>
+            t = [] \<or> [] = (output (hd t)) \<Longrightarrow>
+            valid_prefix e None r t \<Longrightarrow>
+            valid_prefix e (Some s) r (\<lparr>statename=Some s, datastate = r, action=(l, i), output = p\<rparr>#t)" |
+base [simp]: "valid_prefix e s r []"
+
 
 end
