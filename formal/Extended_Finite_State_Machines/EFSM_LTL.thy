@@ -300,5 +300,118 @@ step_none: "possible_steps e s r l i = {||} \<Longrightarrow>
             valid_prefix e (Some s) r (\<lparr>statename=Some s, datastate = r, action=(l, i), output = p\<rparr>#t)" |
 base [simp]: "valid_prefix e s r []"
 
+lemma shd_exI: "\<exists>h t. P (h##t) \<Longrightarrow> \<exists>t. P t"
+  by auto
 
+lemma state_exI: "\<exists>s r l i p. P \<lparr>statename=s, datastate = r, action=(l, i), output = p\<rparr> \<Longrightarrow> \<exists>h. P h"
+  by auto
+
+lemma fempty: "(X = {||}) = (\<nexists>x. x |\<in>| X)"
+  by simp
+
+lemma always_invalid_step: "\<exists>l. possible_steps e s r l i = {||}"
+  apply (simp add: possible_steps_def)
+  apply (simp only: fempty ffmember_filter)
+  apply simp
+  apply (insert ex_new_if_finite[of "fset (fimage (Label \<circ> snd) e)"])
+  apply (simp add: infinite_literal)
+  by (metis (mono_tags, lifting) fmember_implies_member image_iff snd_conv)
+
+lemma always_valid_trace: "\<exists>t. valid_trace e s r t"
+  apply (rule shd_exI)
+  apply (rule state_exI)
+  apply (rule_tac x=s in exI)
+  apply (rule_tac x=r in exI)
+  apply (case_tac s)
+   apply (metis siterate.code valid_trace.base)
+  subgoal for s
+    apply simp
+    apply (insert always_invalid_step[of e s r i])
+    apply (erule exE)
+    apply (rule_tac x=l in exI)
+    apply (rule_tac x=i in exI)
+    apply (rule_tac x="[]" in exI)
+    apply (rule_tac x="sconst \<lparr>statename=None, datastate = r, action=a, output = []\<rparr>" in exI)
+    apply (rule valid_trace.step_none)
+    by auto
+  done
+
+lemma always_valid_trace_output: "\<exists>t. evaluate_outputs b i r = output (shd t) \<and> valid_trace e a (evaluate_updates b i r) t"
+  apply (insert always_valid_trace[of e a "(evaluate_updates b i r)"])
+  apply clarify
+  apply (rule valid_trace.cases)
+  apply simp
+  apply (rule_tac x="(shd t)\<lparr>output := evaluate_outputs b i r\<rparr>##(stl t)" in exI, simp add: valid_trace.step_some)
+  apply (rule_tac x="(shd t)\<lparr>output := evaluate_outputs b i r\<rparr>##(stl t)" in exI, simp add: valid_trace.step_none)
+  by (metis valid_trace.base siterate.simps(1) state.select_convs(4))
+
+lemma fmember_not_fempty: "x |\<in>| X \<Longrightarrow> X \<noteq> {||}"
+  by auto
+
+lemma ex_comm: "\<exists>t a b. P t a b = (\<exists>a b t. P t a b)"
+  by blast
+
+lemma ex_comm_back: "\<exists>a b t. P t a b \<Longrightarrow> \<exists>t a b. P t a b"
+  by auto
+
+lemma valid_prefix_append: "valid_prefix e s r (xs @ [x]) \<Longrightarrow> valid_prefix e s r xs"
+  apply (induct xs arbitrary: s r)
+   apply simp
+  apply simp
+  apply (rule valid_prefix.cases)
+     apply simp
+    apply clarsimp
+    apply (rule valid_prefix.step_some)
+    apply (rule_tac x="(aa, b)" in fBexI)
+     apply (simp add: hd_append)
+    apply simp
+   apply (metis append_is_Nil_conv hd_append2 list.inject valid_prefix.step_none)
+  by force
+
+(*
+  This shows that if a finite trace represents a valid execution of the model, then there is an
+  infinite execution for which that finite trace is a prefix.
+*)
+lemma valid_prefix_ex_valid_trace: "valid_prefix e s r p \<Longrightarrow> \<exists>t. valid_trace e s r (shift p t)"
+proof(induction p arbitrary: s r)
+  case Nil
+  then show ?case
+    by (simp add: always_valid_trace)
+next
+  case (Cons a p)
+  then show ?case
+    apply (cases a)
+    apply clarsimp
+    apply (rule valid_prefix.cases)
+       apply simp
+      apply clarsimp
+    subgoal for l i pa sa s' t
+      apply (simp add: valid_trace.simps[of e "Some sa"])
+      using always_valid_trace_output by blast
+     apply clarsimp
+    subgoal for l i pa sa
+      apply (simp add: valid_trace.simps[of e "Some sa"])
+      by (metis siterate.simps(1) state.select_convs(4) valid_trace.base)
+    by simp
+qed
+
+lemma test:
+  assumes "\<exists>s r p t. j = (make_full_observation e s r p (smap action t))"
+  shows "valid_trace e s r j"
+  using assms apply (coinduct)
+  apply simp
+  oops
+
+
+(*
+  This shows that if there's a finite trace p which represents a valid execution of the model for
+  which there is no infinite trace with p as a prefix for which the property \<phi> holds, then \<phi> does
+  not hold true for all traces.
+*)
+lemma "valid_prefix e s r p \<Longrightarrow> \<forall>t. valid_trace e s r (shift p t) \<longrightarrow> \<not> \<phi> (shift p t) \<Longrightarrow> \<not>(\<forall>t. \<phi> (watch e t))"
+  apply (insert valid_prefix_ex_valid_trace[of e s r p])
+  apply simp
+  apply (erule exE)
+  apply (rule_tac x="smap action (p @- t)" in exI)
+  oops
 end
