@@ -435,66 +435,62 @@ lemma valid_trace_None: "valid_trace e None r (make_full_observation e None r []
   apply (coinduction arbitrary: xs)
   by auto
 
-lemma "(\<exists>ta.
-           (\<exists>pa. make_full_observation e (Some s) r p (smap action t) =
+lemma aux: "(\<exists>l i ta.
+           (\<exists>pa. make_full_observation e (Some s) r p t =
                  \<lparr>statename = Some s, datastate = r, action = (l, i), output = pa\<rparr> ## ta) \<and>
            (\<exists>(s', tr)|\<in>|possible_steps e s r l i.
                evaluate_outputs tr i r = output (shd ta) \<and>
-               ((\<exists>p t. ta = make_full_observation e (Some s') (evaluate_updates tr i r) p (smap action t)) \<or>
-                valid_trace e (Some s') (evaluate_updates tr i r) ta))) \<or>
-       (\<exists>ta.
-           (\<exists>pa. make_full_observation e (Some s) r p (smap action t) =
+               ((\<exists>p t. ta = make_full_observation e (Some s') (evaluate_updates tr i r) p t) \<or>
+                valid_trace e (Some s') (evaluate_updates tr i r) ta)) \<or>
+           (\<exists>pa. make_full_observation e (Some s) r p t =
                  \<lparr>statename = Some s, datastate = r, action = (l, i), output = pa\<rparr> ## ta) \<and>
            possible_steps e s r l i = {||} \<and> [] = output (shd ta) \<and> valid_trace e None r ta) \<Longrightarrow>
 (\<exists>l i ta.
-           (\<exists>pa. make_full_observation e (Some s) r p (smap action t) =
+           (\<exists>pa. make_full_observation e (Some s) r p t =
                  \<lparr>statename = Some s, datastate = r, action = (l, i), output = pa\<rparr> ## ta) \<and>
            (\<exists>(s', tr)|\<in>|possible_steps e s r l i.
                evaluate_outputs tr i r = output (shd ta) \<and>
-               ((\<exists>p t. ta = make_full_observation e (Some s') (evaluate_updates tr i r) p (smap action t)) \<or>
+               ((\<exists>p t. ta = make_full_observation e (Some s') (evaluate_updates tr i r) p t) \<or>
                 valid_trace e (Some s') (evaluate_updates tr i r) ta))) \<or>
        (\<exists>l i ta.
-           (\<exists>pa. make_full_observation e (Some s) r p (smap action t) =
+           (\<exists>pa. make_full_observation e (Some s) r p t =
                  \<lparr>statename = Some s, datastate = r, action = (l, i), output = pa\<rparr> ## ta) \<and>
            possible_steps e s r l i = {||} \<and> [] = output (shd ta) \<and> valid_trace e None r ta)"
-  apply (erule_tac disjE)
-   apply (rule_tac disjI1)
-   apply (rule_tac x=l in exI)
-   apply (rule_tac x=i in exI)
-   apply (erule_tac exE)
-   apply (rule_tac x=ta in exI)
-   apply simp
-   apply (erule conjE, erule exE)
-   apply (erule fBexE)
-   apply (case_tac x)
-   apply (rule_tac x="(a, b)" in fBexI)
-    apply simp
-    apply (erule conjE)
-    apply (erule disjE)
-     apply (rule disjI1)
-     apply (erule exE)+
-     apply (rule_tac x=pb in exI)
-     apply (rule_tac x=tt in exI)
+  by blast
 
-
-
-lemma valid_trace_make_full_observation:
-  shows "valid_trace e (Some s) r (make_full_observation e (Some s) r p (smap action t))"
-  apply (coinduction arbitrary: s r p t)
+lemma valid_trace_Some:
+  shows "valid_trace e (Some s) r (make_full_observation e (Some s) r p xs)"
+  apply (coinduction arbitrary: s r p xs)
   apply simp
+  subgoal for s r p xs
+    apply (rule aux)
+    apply (cases xs)
+    apply (cases "(shd xs)")
+    subgoal for x1 x2 l i
+      apply (rule_tac x=l in exI)
+      apply (rule_tac x=i in exI)
+      apply (case_tac "possible_steps e s r l i = {||}")
+       apply (simp add: make_full_observation_step)
+      using valid_trace_None apply presburger
+      apply (simp add: make_full_observation_step)
+      apply (cases "SOME x. x |\<in>| possible_steps e s r l i")
+      apply simp
+      apply (rule_tac x="(a, b)" in fBexI)
+       apply blast
+      by (metis ex_fin_conv someI)
+    done
+  done
 
-
-
+lemma valid_trace_make_full_observation: "valid_trace e s r (make_full_observation e s r [] (smap action (t::state stream)))"
+  by (metis (no_types, lifting) valid_trace_None valid_trace_Some ltl_step.elims)
 
 (*
   This shows that if there's a finite trace p which represents a valid execution of the model for
   which there is no infinite trace with p as a prefix for which the property \<phi> holds, then \<phi> does
   not hold true for all traces.
 *)
-lemma "valid_prefix e s r p \<Longrightarrow> \<forall>t. valid_trace e s r (shift p t) \<longrightarrow> \<not> \<phi> (shift p t) \<Longrightarrow> \<not>(\<forall>t. \<phi> (watch e t))"
-  apply (insert valid_prefix_ex_valid_trace[of e s r p])
-  apply simp
-  apply (erule exE)
-  apply (rule_tac x="smap action (p @- t)" in exI)
+lemma "\<exists>t. \<not> \<phi> (p@-t) \<Longrightarrow> \<not>(\<forall>t. \<phi> (p@-t))"
+  by simp
+
   oops
 end
