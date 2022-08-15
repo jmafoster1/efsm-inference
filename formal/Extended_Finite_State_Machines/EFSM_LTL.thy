@@ -129,9 +129,6 @@ lemma make_full_observation_step: "make_full_observation e s d p (h##t) = (
 lemma make_full_observation_none: "make_full_observation e None r p (x##xs) = \<lparr>statename=None, datastate=r, action=x, output = p\<rparr>##(make_full_observation e None r [] xs)"
   by (simp add: make_full_observation_step)
 
-lemma "make_full_observation e None r [] xs = \<lparr>statename = s, datastate = d, action=h, output = p\<rparr>##make_full_observation e None r [] xs"
-  oops
-
 text_raw\<open>\snip{watch}{1}{2}{%\<close>
 abbreviation watch :: "transition_matrix \<Rightarrow> action stream \<Rightarrow> whitebox_trace" where
   "watch e i \<equiv> (make_full_observation e (Some 0) <> [] i)"
@@ -214,6 +211,12 @@ lemma alw_state_eq_smap:
    apply (simp add: alw_iff_sdrop )
   by (simp add: alw_mono alw_smap )
 
+lemma alw_output_eq_smap:
+  "alw (output_eq s) ss = alw (\<lambda>ss. shd ss = s) (smap output ss)"
+  apply standard
+   apply (simp add: alw_iff_sdrop )
+  by (simp add: alw_mono alw_smap )
+
 subsection\<open>Sink State\<close>
 text\<open>Once the sink state is entered, it cannot be left and there are no outputs or updates
 henceforth.\<close>
@@ -277,6 +280,9 @@ lemma no_output_none_nxt: "alw (nxt (output_eq [])) (make_full_observation e Non
 lemma no_output_none_if_empty: "alw (output_eq []) (make_full_observation e None r [] t)"
   by (metis (mono_tags, lifting) alw_nxt make_full_observation.simps(1) no_output_none state.select_convs(4))
 
+lemma smap_output_None: "smap output (make_full_observation e None r [] i) = sconst []"
+  by (meson EFSM_LTL.alw_sconst alw_output_eq_smap no_output_none_if_empty)
+
 lemma no_updates_none_aux:
   assumes "\<exists> p i. j = (make_full_observation e None r p) i"
   shows "alw (\<lambda>x. datastate (shd x) = r) j"
@@ -285,6 +291,10 @@ lemma no_updates_none_aux:
 
 lemma no_updates_none: "alw (\<lambda>x. datastate (shd x) = r) (make_full_observation e None r p t)"
   using no_updates_none_aux by blast
+
+lemma smap_datastate_None: "smap datastate (make_full_observation e None r p i) = sconst r"
+  apply (simp add: alw_sconst[symmetric])
+  by (metis (mono_tags, lifting) alw_iff_sdrop no_updates_none sdrop_smap stream.map_sel(1))
 
 lemma action_components: "(label_eq l aand input_eq i) s = (action (shd s) = (String.implode l, i))"
   by (metis fst_conv prod.collapse snd_conv)
@@ -413,28 +423,67 @@ next
     by fastforce
 qed
 
-lemma "valid_trace e None r (make_full_observation e None r [] xs)"
+lemma scons_sconst: "xs = x##xs \<Longrightarrow> xs = sconst x"
+  by (coinduction, metis id_apply siterate.simps(1) siterate.simps(2) stream.sel(1) stream.sel(2))
+
+lemma smap_pair: "szip (smap f t) (smap g t) = smap (\<lambda>x. (f x, g x)) t"
+  apply (coinduction arbitrary: t)
+  by auto
+
+lemma valid_trace_None: "valid_trace e None r (make_full_observation e None r [] xs)"
   apply (rule valid_trace.base)
-  using make_full_observation_none
+  apply (coinduction arbitrary: xs)
+  by auto
 
-lemma test:
+lemma "(\<exists>ta.
+           (\<exists>pa. make_full_observation e (Some s) r p (smap action t) =
+                 \<lparr>statename = Some s, datastate = r, action = (l, i), output = pa\<rparr> ## ta) \<and>
+           (\<exists>(s', tr)|\<in>|possible_steps e s r l i.
+               evaluate_outputs tr i r = output (shd ta) \<and>
+               ((\<exists>p t. ta = make_full_observation e (Some s') (evaluate_updates tr i r) p (smap action t)) \<or>
+                valid_trace e (Some s') (evaluate_updates tr i r) ta))) \<or>
+       (\<exists>ta.
+           (\<exists>pa. make_full_observation e (Some s) r p (smap action t) =
+                 \<lparr>statename = Some s, datastate = r, action = (l, i), output = pa\<rparr> ## ta) \<and>
+           possible_steps e s r l i = {||} \<and> [] = output (shd ta) \<and> valid_trace e None r ta) \<Longrightarrow>
+(\<exists>l i ta.
+           (\<exists>pa. make_full_observation e (Some s) r p (smap action t) =
+                 \<lparr>statename = Some s, datastate = r, action = (l, i), output = pa\<rparr> ## ta) \<and>
+           (\<exists>(s', tr)|\<in>|possible_steps e s r l i.
+               evaluate_outputs tr i r = output (shd ta) \<and>
+               ((\<exists>p t. ta = make_full_observation e (Some s') (evaluate_updates tr i r) p (smap action t)) \<or>
+                valid_trace e (Some s') (evaluate_updates tr i r) ta))) \<or>
+       (\<exists>l i ta.
+           (\<exists>pa. make_full_observation e (Some s) r p (smap action t) =
+                 \<lparr>statename = Some s, datastate = r, action = (l, i), output = pa\<rparr> ## ta) \<and>
+           possible_steps e s r l i = {||} \<and> [] = output (shd ta) \<and> valid_trace e None r ta)"
+  apply (erule_tac disjE)
+   apply (rule_tac disjI1)
+   apply (rule_tac x=l in exI)
+   apply (rule_tac x=i in exI)
+   apply (erule_tac exE)
+   apply (rule_tac x=ta in exI)
+   apply simp
+   apply (erule conjE, erule exE)
+   apply (erule fBexE)
+   apply (case_tac x)
+   apply (rule_tac x="(a, b)" in fBexI)
+    apply simp
+    apply (erule conjE)
+    apply (erule disjE)
+     apply (rule disjI1)
+     apply (erule exE)+
+     apply (rule_tac x=pb in exI)
+     apply (rule_tac x=tt in exI)
+
+
+
+lemma valid_trace_make_full_observation:
   shows "valid_trace e (Some s) r (make_full_observation e (Some s) r p (smap action t))"
-  apply coinduction
-  apply (cases t)
-  apply clarsimp
-  subgoal for x xs
-    apply (thin_tac "t = x ## xs")
-    apply (case_tac "action x")
-    apply clarsimp
-    subgoal for l i
-      apply (thin_tac "action x = (l, i)")
-      apply (erule_tac x=l in allE)
-      apply (erule_tac x=i in allE)
-      apply (case_tac "possible_steps e s r l i = {||}")
-       apply (simp add: make_full_observation_step)
-      using make_full_observation_none
+  apply (coinduction arbitrary: s r p t)
+  apply simp
 
-  oops
+
 
 
 (*
