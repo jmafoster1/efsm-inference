@@ -300,13 +300,19 @@ lemma action_components: "(label_eq l aand input_eq i) s = (action (shd s) = (St
   by (metis fst_conv prod.collapse snd_conv)
 
 coinductive valid_trace :: "transition_matrix \<Rightarrow> cfstate option \<Rightarrow> registers \<Rightarrow> whitebox_trace \<Rightarrow> bool" where
-step_some: "\<exists>(s', tr) |\<in>| possible_steps e s r l i. evaluate_outputs tr i r = (output (shd t)) \<and> valid_trace e (Some s') (evaluate_updates tr i r) t \<Longrightarrow>
+step_some: "\<exists>(s', tr) |\<in>| possible_steps e s r l i.
+              evaluate_outputs tr i r = (output (shd t)) \<and>
+              Some s' = (statename (shd t)) \<and>
+              evaluate_updates tr i r = (datastate (shd t)) \<and>
+              valid_trace e (Some s') (evaluate_updates tr i r) t \<Longrightarrow>
         valid_trace e (Some s) r (\<lparr>statename=Some s, datastate = r, action=(l, i), output = p\<rparr>##t)" |
 step_none: "possible_steps e s r l i = {||} \<Longrightarrow> [] = (output (shd t)) \<Longrightarrow> valid_trace e None r t \<Longrightarrow> valid_trace e (Some s) r (\<lparr>statename=Some s, datastate = r, action=(l, i), output = p\<rparr>##t)" |
 base [simp]: "smap (\<lambda>x. (statename x, datastate x, output x)) t = sconst (None, r, []) \<Longrightarrow> valid_trace e None r t"
 
 inductive valid_prefix :: "transition_matrix \<Rightarrow> cfstate option \<Rightarrow> registers \<Rightarrow> state list \<Rightarrow> bool" where
-step_some: "\<exists>(s', tr) |\<in>| possible_steps e s r l i. (t = [] \<or> evaluate_outputs tr i r = (output (hd t))) \<and>
+step_some: "\<exists>(s', tr) |\<in>| possible_steps e s r l i. (t = [] \<or> evaluate_outputs tr i r = (output (hd t)) \<and>
+              Some s' = (statename (hd t)) \<and>
+              evaluate_updates tr i r = (datastate (hd t))) \<and>
                 valid_prefix e (Some s') (evaluate_updates tr i r) t \<Longrightarrow>
             valid_prefix e (Some s) r (\<lparr>statename=Some s, datastate = r, action=(l, i), output = p\<rparr>#t)" |
 step_none: "possible_steps e s r l i = {||} \<Longrightarrow>
@@ -360,7 +366,7 @@ lemma always_valid_trace: "\<exists>t. valid_trace e s r t"
     by (metis (no_types, lifting) smap_sconst state.select_convs(1) state.select_convs(2) state.select_convs(4))
   done
 
-lemma always_valid_trace_output: "\<exists>t. evaluate_outputs b i r = output (shd t) \<and> valid_trace e (Some s) (evaluate_updates b i r) t"
+lemma always_valid_trace_output: "\<exists>t. Some s = statename (shd t) \<and> evaluate_outputs b i r = output (shd t) \<and> evaluate_updates b i r = datastate (shd t) \<and> valid_trace e (Some s) (evaluate_updates b i r) t"
   apply (insert always_valid_trace[of e "Some s" "(evaluate_updates b i r)"])
   apply clarify
   apply (rule valid_trace.cases)
@@ -430,32 +436,36 @@ lemma smap_pair: "szip (smap f t) (smap g t) = smap (\<lambda>x. (f x, g x)) t"
   apply (coinduction arbitrary: t)
   by auto
 
-lemma valid_trace_None: "valid_trace e None r (make_full_observation e None r [] xs)"
+lemma valid_trace_make_full_observation_None: "valid_trace e None r (make_full_observation e None r [] xs)"
   apply (rule valid_trace.base)
   apply (coinduction arbitrary: xs)
   by auto
 
-lemma aux: "(\<exists>l i ta.
-           (\<exists>pa. make_full_observation e (Some s) r p t =
-                 \<lparr>statename = Some s, datastate = r, action = (l, i), output = pa\<rparr> ## ta) \<and>
+lemma aux: "(\<exists>l i t.
+           (\<exists>pa. make_full_observation e (Some s) r p xs =
+                 \<lparr>statename = Some s, datastate = r, action = (l, i), output = pa\<rparr> ## t) \<and>
            (\<exists>(s', tr)|\<in>|possible_steps e s r l i.
-               evaluate_outputs tr i r = output (shd ta) \<and>
-               ((\<exists>p t. ta = make_full_observation e (Some s') (evaluate_updates tr i r) p t) \<or>
-                valid_trace e (Some s') (evaluate_updates tr i r) ta)) \<or>
-           (\<exists>pa. make_full_observation e (Some s) r p t =
-                 \<lparr>statename = Some s, datastate = r, action = (l, i), output = pa\<rparr> ## ta) \<and>
-           possible_steps e s r l i = {||} \<and> [] = output (shd ta) \<and> valid_trace e None r ta) \<Longrightarrow>
-(\<exists>l i ta.
-           (\<exists>pa. make_full_observation e (Some s) r p t =
-                 \<lparr>statename = Some s, datastate = r, action = (l, i), output = pa\<rparr> ## ta) \<and>
+               evaluate_outputs tr i r = output (shd t) \<and>
+               Some s' = statename (shd t) \<and>
+               evaluate_updates tr i r = datastate (shd t) \<and>
+               ((\<exists>p xs. t = make_full_observation e (Some s') (evaluate_updates tr i r) p xs) \<or>
+                valid_trace e (Some s') (evaluate_updates tr i r) t)) \<or>
+           (\<exists>pa. make_full_observation e (Some s) r p xs =
+                 \<lparr>statename = Some s, datastate = r, action = (l, i), output = pa\<rparr> ## t) \<and>
+           possible_steps e s r l i = {||} \<and> [] = output (shd t) \<and> valid_trace e None r t) \<Longrightarrow>
+(\<exists>l i t.
+           (\<exists>pa. make_full_observation e (Some s) r p xs =
+                 \<lparr>statename = Some s, datastate = r, action = (l, i), output = pa\<rparr> ## t) \<and>
            (\<exists>(s', tr)|\<in>|possible_steps e s r l i.
-               evaluate_outputs tr i r = output (shd ta) \<and>
-               ((\<exists>p t. ta = make_full_observation e (Some s') (evaluate_updates tr i r) p t) \<or>
-                valid_trace e (Some s') (evaluate_updates tr i r) ta))) \<or>
-       (\<exists>l i ta.
-           (\<exists>pa. make_full_observation e (Some s) r p t =
-                 \<lparr>statename = Some s, datastate = r, action = (l, i), output = pa\<rparr> ## ta) \<and>
-           possible_steps e s r l i = {||} \<and> [] = output (shd ta) \<and> valid_trace e None r ta)"
+               evaluate_outputs tr i r = output (shd t) \<and>
+               Some s' = statename (shd t) \<and>
+               evaluate_updates tr i r = datastate (shd t) \<and>
+               ((\<exists>p xs. t = make_full_observation e (Some s') (evaluate_updates tr i r) p xs) \<or>
+                valid_trace e (Some s') (evaluate_updates tr i r) t))) \<or>
+       (\<exists>l i t.
+           (\<exists>pa. make_full_observation e (Some s) r p xs =
+                 \<lparr>statename = Some s, datastate = r, action = (l, i), output = pa\<rparr> ## t) \<and>
+           possible_steps e s r l i = {||} \<and> [] = output (shd t) \<and> valid_trace e None r t)"
   by blast
 
 lemma valid_trace_Some:
@@ -471,7 +481,7 @@ lemma valid_trace_Some:
       apply (rule_tac x=i in exI)
       apply (case_tac "possible_steps e s r l i = {||}")
        apply (simp add: make_full_observation_step)
-      using valid_trace_None apply presburger
+      using valid_trace_make_full_observation_None apply presburger
       apply (simp add: make_full_observation_step)
       apply (cases "SOME x. x |\<in>| possible_steps e s r l i")
       apply simp
@@ -482,15 +492,100 @@ lemma valid_trace_Some:
   done
 
 lemma valid_trace_make_full_observation: "valid_trace e s r (make_full_observation e s r [] (smap action (t::state stream)))"
-  by (metis (no_types, lifting) valid_trace_None valid_trace_Some ltl_step.elims)
+  by (metis (no_types, lifting) valid_trace_make_full_observation_None valid_trace_Some ltl_step.elims)
+
+lemma valid_trace_smap_action_None: "valid_trace e None r t \<Longrightarrow> make_full_observation e None r [] (smap action t) = t"
+  apply (coinduction arbitrary: t)
+  apply (rule valid_trace.cases)
+     apply simp
+    apply simp
+   apply simp
+  apply simp
+  by (metis (mono_tags, lifting) Pair_inject old.unit.exhaust siterate.simps(1) siterate.simps(2) state.surjective stream.map_id stream.map_sel(1) stream.map_sel(2) valid_trace.base)
+
+lemma valid_watch_1_None: "(\<forall>t. \<phi> (make_full_observation e None r [] t)) \<Longrightarrow> (\<forall>t. valid_trace e None r t \<longrightarrow> \<phi> t)"
+  apply standard
+  subgoal for t
+    apply (erule_tac x="smap action t" in allE)
+    apply (rule impI)
+    by (simp add: valid_trace_smap_action_None)
+  done
+
+lemma valid_trace_None:
+  assumes "valid_trace e None r t"
+    shows "smap statename t = sconst None"
+      and "smap output t = sconst []"
+      and "smap datastate t = sconst r"
+  using assms apply (rule valid_trace.cases)
+      apply simp
+     apply simp
+    apply (metis assms smap_statename_None valid_trace_smap_action_None)
+  using assms apply (rule valid_trace.cases)
+     apply simp
+    apply simp
+   apply (metis assms smap_output_None valid_trace_smap_action_None)
+  using assms apply (rule valid_trace.cases)
+    apply simp
+   apply simp
+  by (metis assms smap_datastate_None valid_trace_smap_action_None)
+
+lemma valid_trace_no_possible_steps:
+  "valid_trace e (Some s) r (\<lparr>statename = Some s, datastate = r, action = (l, i), output = p\<rparr> ## t) \<Longrightarrow>
+    possible_steps e s r l i = {||} \<Longrightarrow> smap output t = sconst []"
+  apply (rule valid_trace.cases)
+  using valid_trace_None(2) by auto
 
 (*
   This shows that if there's a finite trace p which represents a valid execution of the model for
   which there is no infinite trace with p as a prefix for which the property \<phi> holds, then \<phi> does
   not hold true for all traces.
 *)
-lemma "\<exists>t. \<not> \<phi> (p@-t) \<Longrightarrow> \<not>(\<forall>t. \<phi> (p@-t))"
+definition "ltl_apply \<phi> e = (\<forall>t \<in> {t. valid_trace e (Some 0) <> t}. \<phi> t)"
+
+lemma ltl_apply: "(\<And>t. valid_trace e (Some 0) <> t \<Longrightarrow> \<phi> t) \<Longrightarrow> (ltl_apply \<phi> e)"
+  by (simp add: ltl_apply_def)
+
+lemma ltl_apply_all_states_registers: "(\<And>s r t. valid_trace e s r t \<Longrightarrow> \<phi> t) \<Longrightarrow> ltl_apply \<phi> e"
+  by (simp add: ltl_apply_def)
+
+lemma ltl_apply_S:
+  assumes "(\<And>s r t. s |\<notin>| Some |`| (S e) \<Longrightarrow> valid_trace e s r t \<Longrightarrow> \<phi> t)"
+  assumes "(\<And>s r t. s |\<in>| Some |`| (S e) \<Longrightarrow> valid_trace e s r t \<Longrightarrow> \<phi> t)"
+    shows "ltl_apply \<phi> e"
+  apply (simp add: ltl_apply_def)
+  by (meson assms)
+
+lemma one_step_ltl_apply:
+  assumes "(\<And>s r t. s |\<notin>| Some |`| (S e) \<Longrightarrow> valid_trace e s r t \<Longrightarrow> \<phi> t)"
+  assumes "\<And>s r l i t p. s |\<in>| (S e) \<Longrightarrow>
+              possible_steps e s r l i = {||} \<or>
+              (\<exists>(s', tr) |\<in>| possible_steps e s r l i.
+              evaluate_outputs tr i r = (output (shd t)) \<and>
+              Some s' = (statename (shd t)) \<and>
+              evaluate_updates tr i r = (datastate (shd t))) \<Longrightarrow>
+              valid_trace e (Some s) r (\<lparr>statename=Some s, datastate=r, action=(l, i), output = p\<rparr>##t) \<Longrightarrow>
+              \<phi> (\<lparr>statename=Some s, datastate=r, action=(l, i), output = p\<rparr>##t)"
+  shows "ltl_apply \<phi> e"
+  apply (simp add: ltl_apply_def)
+  apply clarsimp
+  apply (rule valid_trace.cases)
+     apply simp
+    apply (erule fBexE)
+  subgoal for x ea s r l i t p xa
+    using assms(2)[of s r l i t]
+    apply clarsimp
+    apply (case_tac "0 |\<in>| S ea")
+     apply simp
+    apply (case_tac "\<exists>(s', tr)|\<in>|possible_steps ea 0 <> l i.
+                evaluate_outputs tr i <> = output (shd t) \<and>
+                Some s' = statename (shd t) \<and> evaluate_updates tr i <> = datastate (shd t)")
+      apply simp
+     apply auto[1]
+    using assms(1) by blast
+  subgoal for x ea s r l i t p
+    using assms(2)[of s r l i t "[]"]
+    apply clarsimp
+    using assms(1) assms(2) fimageE by blast
   by simp
 
-  oops
 end
