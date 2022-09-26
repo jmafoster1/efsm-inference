@@ -1456,15 +1456,6 @@ def Sup_set[A](x0: Set.set[Set.set[A]]): Set.set[A] = x0 match {
 
 } /* object Complete_Lattices */
 
-object Lattices_Big {
-
-def Max[A : Orderings.linorder](x0: Set.set[A]): A = x0 match {
-  case Set.seta((x::xs)) =>
-    Lista.fold[A, A](((a: A) => (b: A) => Orderings.max[A](a, b)), xs, x)
-}
-
-} /* object Lattices_Big */
-
 object Phantom_Type {
 
 abstract sealed class phantom[A, B]
@@ -1474,52 +1465,61 @@ final case class phantoma[B, A](a: B) extends phantom[A, B]
 
 object Cardinality {
 
-def finite_UNIV_nata: Phantom_Type.phantom[Nat.nat, Boolean] =
-  Phantom_Type.phantoma[Boolean, Nat.nat](false)
+  def finite_UNIV_nata: Phantom_Type.phantom[Nat.nat, Boolean] =
+    Phantom_Type.phantoma[Boolean, Nat.nat](false)
 
-def card_UNIV_nata: Phantom_Type.phantom[Nat.nat, Nat.nat] =
-  Phantom_Type.phantoma[Nat.nat, Nat.nat](Nat.zero_nata)
+  def card_UNIV_nata: Phantom_Type.phantom[Nat.nat, Nat.nat] =
+    Phantom_Type.phantoma[Nat.nat, Nat.nat](Nat.zero_nata)
 
-trait finite_UNIV[A] {
-  val `Cardinality.finite_UNIV`: Phantom_Type.phantom[A, Boolean]
-}
-def finite_UNIV[A](implicit A: finite_UNIV[A]): Phantom_Type.phantom[A, Boolean]
-  = A.`Cardinality.finite_UNIV`
-object finite_UNIV{
-  implicit def `Cardinality.finite_UNIV_nat`: finite_UNIV[Nat.nat] = new
-    finite_UNIV[Nat.nat] {
-    val `Cardinality.finite_UNIV` = finite_UNIV_nata
+  trait finite_UNIV[A] {
+    val `Cardinality.finite_UNIV`: Phantom_Type.phantom[A, Boolean]
   }
-}
-
-trait card_UNIV[A] extends finite_UNIV[A] {
-  val `Cardinality.card_UNIV`: Phantom_Type.phantom[A, Nat.nat]
-}
-def card_UNIV[A](implicit A: card_UNIV[A]): Phantom_Type.phantom[A, Nat.nat] =
-  A.`Cardinality.card_UNIV`
-object card_UNIV{
-  implicit def `Cardinality.card_UNIV_nat`: card_UNIV[Nat.nat] = new
-    card_UNIV[Nat.nat] {
-    val `Cardinality.card_UNIV` = card_UNIV_nata
-    val `Cardinality.finite_UNIV` = finite_UNIV_nata
+  def finite_UNIV[A](implicit A: finite_UNIV[A]): Phantom_Type.phantom[A, Boolean] = A.`Cardinality.finite_UNIV`
+  object finite_UNIV {
+    implicit def `Cardinality.finite_UNIV_nat`: finite_UNIV[Nat.nat] = new finite_UNIV[Nat.nat] {
+      val `Cardinality.finite_UNIV` = finite_UNIV_nata
+    }
   }
-}
 
-def eq_set[A : card_UNIV](x0: Set.set[A], x1: Set.set[A]): Boolean = (x0, x1)
-  match {
-  case (Set.seta(xs), Set.seta(ys)) =>
-    (Lista.list_all[A](((a: A) => ys.contains(a)),
-                        xs)) && (Lista.list_all[A](((a: A) => xs.contains(a)),
-            ys))
-}
+  trait card_UNIV[A] extends finite_UNIV[A] {
+    val `Cardinality.card_UNIV`: Phantom_Type.phantom[A, Nat.nat]
+  }
+  def card_UNIV[A](implicit A: card_UNIV[A]): Phantom_Type.phantom[A, Nat.nat] =
+    A.`Cardinality.card_UNIV`
+  object card_UNIV {
+    implicit def `Cardinality.card_UNIV_nat`: card_UNIV[Nat.nat] = new card_UNIV[Nat.nat] {
+      val `Cardinality.card_UNIV` = card_UNIV_nata
+      val `Cardinality.finite_UNIV` = finite_UNIV_nata
+    }
+  }
 
-def subset[A : card_UNIV](x0: Set.set[A], x1: Set.set[A]): Boolean = (x0, x1)
-  match {
-  case (Set.seta(l1), Set.seta(l2)) =>
-    Lista.list_all[A](((a: A) => l2.contains(a)), l1)
-}
+  def eq_set[A: card_UNIV](x0: Set.set[A], x1: Set.set[A]): Boolean = (x0, x1) match {
+    case (Set.seta(xs), Set.seta(ys)) =>
+      (Lista.list_all[A](((a: A) => ys.contains(a)),
+        xs)) && (Lista.list_all[A](((a: A) => xs.contains(a)),
+          ys))
+  }
+
+  def subset[A: card_UNIV](x0: Set.set[A], x1: Set.set[A]): Boolean = (x0, x1) match {
+    case (Set.seta(l1), Set.seta(l2)) =>
+      Lista.list_all[A](((a: A) => l2.contains(a)), l1)
+  }
 
 } /* object Cardinality */
+
+object Lattices_Big {
+
+def Max[A : Orderings.linorder](x0: Set.set[A]): A = x0 match {
+  case Set.seta((x::xs)) =>
+    Lista.fold[A, A](((a: A) => (b: A) => Orderings.max[A](a, b)), xs, x)
+  }
+
+def Min[A : Orderings.linorder](x0: Set.set[A]): A = x0 match {
+      case Set.seta((x::xs)) =>
+        Lista.fold[A, A](((a: A) => (b: A) => Orderings.min[A](a, b)), xs, x)
+}
+
+} /* object Lattices_Big */
 
 object Optiona {
 
@@ -1786,7 +1786,8 @@ def enumerate_regs(t: transition_ext[Unit]): Set.set[Nat.nat] =
                                     Updates[Unit](t)))))
 
 def max_reg(t: transition_ext[Unit]): Option[Nat.nat] =
-  (if (Cardinality.eq_set[Nat.nat](enumerate_regs(t), Set.bot_set[Nat.nat]))
+  (if (Cardinality.eq_set[Nat.nat](enumerate_regs(t),
+ Set.bot_set[Nat.nat]))
     None else Some[Nat.nat](Lattices_Big.Max[Nat.nat](enumerate_regs(t))))
 
 def Updates_update[A](updatesa:
@@ -2768,7 +2769,7 @@ def dest(uid: List[Nat.nat],
                                        Transition.transition_ext[Unit])))
                                   =>
                                  Cardinality.subset[Nat.nat](Set.seta[Nat.nat](uid),
-                      Set.seta[Nat.nat](x._1))),
+                           Set.seta[Nat.nat](x._1))),
                                 t)))._2)._1)._2
 
 def learn(n: Nat.nat,
@@ -3145,7 +3146,7 @@ def origin(uid: List[Nat.nat],
                                        Transition.transition_ext[Unit])))
                                   =>
                                  Cardinality.subset[Nat.nat](Set.seta[Nat.nat](uid),
-                      Set.seta[Nat.nat](x._1))),
+                           Set.seta[Nat.nat](x._1))),
                                 t)))._2)._1)._1
 
 def merge_transitions(failedMerges: Set.set[(Nat.nat, Nat.nat)],
@@ -4138,7 +4139,7 @@ def get_by_ids(e: FSet.fset[(List[Nat.nat],
                              Transition.transition_ext[Unit]))
                      = a;
                    Cardinality.subset[Nat.nat](Set.seta[Nat.nat](uid),
-        Set.seta[Nat.nat](tids))
+             Set.seta[Nat.nat](tids))
                  }),
                 e)))
 
@@ -4170,7 +4171,7 @@ Transition.transition_ext[Unit]))],
                      val (from, to): (Nat.nat, Nat.nat) = ab;
                      ((t: Transition.transition_ext[Unit]) =>
                        (if (Cardinality.subset[Nat.nat](Set.seta[Nat.nat](uid),
-                 Set.seta[Nat.nat](uids)))
+                      Set.seta[Nat.nat](uids)))
                          (uids, ((from, to), newa))
                          else (uids, ((from, to), t))))
                    })(b)
@@ -8497,7 +8498,7 @@ def add_groupwise_updates_trace(x0: List[(String,
                              List[(Nat.nat, AExp.aexp[VName.vname])])
                        = a;
                      Cardinality.subset[Nat.nat](Set.seta[Nat.nat](id),
-          Set.seta[Nat.nat](tids))
+               Set.seta[Nat.nat](tids))
                    }),
                   funs))
       val ta: Transition.transition_ext[Unit] = insert_updates(t, newUpdates)
@@ -9504,7 +9505,7 @@ Transition.transition_ext[Unit])))
                  appears_in_order[List[Nat.nat]]((id::((ida::Nil))), ra)))))))
          }),
         gps)
-                         val (eaa, update_mema):
+                         val (e2, update_mema):
                                (FSet.fset[(List[Nat.nat],
     ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
                                  Map[((String,
@@ -9516,9 +9517,9 @@ Transition.transition_ext[Unit])))
               ((scala.collection.immutable.Map().withDefaultValue(unknown)) + ((fun -> types))));
                          (if (EFSM.accepts_log(Set.seta[List[(String,
                        (List[Value.value], List[Value.value]))]](log),
-        Inference.tm(eaa)))
+        Inference.tm(e2)))
                            output_and_update(bad, (fun::good), output_mema,
-      update_mema, max_attempts, attempts, eaa, log, gps, (struct, gp), values,
+      update_mema, max_attempts, attempts, e2, log, gps, (struct, gp), values,
       is, r, pss, latent)
                            else (if (Nat.less_nat(Nat.zero_nata, attempts))
                                   output_and_update((bad + ((rep_id -> (Lista.insert[AExp.aexp[VName.vname]](fun,
@@ -9796,7 +9797,7 @@ def groupwise_generalise_and_update(bad: Map[(List[Nat.nat]), (List[AExp.aexp[VN
                  AExp.aexp[VName.vname])
                 =>
                ! (Cardinality.eq_set[Nat.nat](AExp.enumerate_regs(a),
-       Set.bot_set[Nat.nat]))),
+            Set.bot_set[Nat.nat]))),
               output_funs)
               val (rep_id, _): (List[Nat.nat], Transition.transition_ext[Unit])
                 = (gp._2).head
@@ -10223,8 +10224,8 @@ def get_structures(e: FSet.fset[(List[Nat.nat],
          =>
         (tt: List[Nat.nat]) =>
         (if ((Cardinality.subset[Nat.nat](Set.seta[Nat.nat](tt),
-   Set.seta[Nat.nat](tids))) || (Cardinality.subset[Nat.nat](Set.seta[Nat.nat](tids),
-                      Set.seta[Nat.nat](tt))))
+        Set.seta[Nat.nat](tids))) || (Cardinality.subset[Nat.nat](Set.seta[Nat.nat](tids),
+                                Set.seta[Nat.nat](tt))))
           abs else acc(tt)))
     }),
    observed, ((_: List[Nat.nat]) => ("UNKNOWN", (Nil, Nil))))
@@ -10525,7 +10526,15 @@ def tidy_updates[A, B](x0: List[(A, B)]): List[(A, B)] = x0 match {
       tidy_updates[A, B](t) else ((a, b)::(tidy_updates[A, B](t))))
 }
 
-def derestrict(tree_repeats: Nat.nat, transition_repeats: Nat.nat,
+def derestrict(groups:
+                 List[((String, (List[value_type], List[value_type])),
+                        List[(List[Nat.nat],
+                               Transition.transition_ext[Unit])])],
+                               update_groups:
+                                                List[((String, (List[value_type], List[value_type])),
+                                                       List[(List[Nat.nat],
+                                                              Transition.transition_ext[Unit])])],
+                tree_repeats: Nat.nat, transition_repeats: Nat.nat,
                 pta: FSet.fset[(List[Nat.nat],
                                  ((Nat.nat, Nat.nat),
                                    Transition.transition_ext[Unit]))],
@@ -10559,10 +10568,10 @@ List[Nat.nat]))))]):
                   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]
   =
   {
-    val groups:
+    val groupsa:
           List[((String, (List[value_type], List[value_type])),
                  List[(List[Nat.nat], Transition.transition_ext[Unit])])]
-      = historical_groups(pta, log)
+      = (if (groups.isEmpty) historical_groups(pta, log) else groups)
     val output_groups:
           List[((String, (List[value_type], List[value_type])),
                  List[(List[Nat.nat], Transition.transition_ext[Unit])])]
@@ -10582,7 +10591,75 @@ List[Nat.nat]))))]):
                                 = a;
                               ! ((Transition.Outputs[Unit]((g.head)._2)).isEmpty)
                             }),
-                           groups)
+                           groupsa)
+    val structures:
+          (List[Nat.nat]) => (String, (List[value_type], List[value_type]))
+      = Lista.fold[((String, (List[value_type], List[value_type])),
+                     List[Nat.nat]),
+                    (List[Nat.nat]) =>
+                      (String,
+                        (List[value_type],
+                          List[value_type]))](((a:
+          ((String, (List[value_type], List[value_type])), List[Nat.nat]))
+         =>
+        {
+          val (abs, tids):
+                ((String, (List[value_type], List[value_type])), List[Nat.nat])
+            = a;
+          ((acc: (List[Nat.nat]) =>
+                   (String, (List[value_type], List[value_type])))
+             =>
+            Fun.fun_upd[List[Nat.nat],
+                         (String,
+                           (List[value_type],
+                             List[value_type]))](acc, tids, abs))
+        }),
+       Lista.fold[((String, (List[value_type], List[value_type])),
+                    List[(List[Nat.nat], Transition.transition_ext[Unit])]),
+                   List[((String, (List[value_type], List[value_type])),
+                          List[Nat.nat])]](Fun.comp[List[((String,
+                    (List[value_type], List[value_type])),
+                   List[Nat.nat])],
+             (List[((String, (List[value_type], List[value_type])),
+                     List[Nat.nat])]) =>
+               List[((String, (List[value_type], List[value_type])),
+                      List[Nat.nat])],
+             ((String, (List[value_type], List[value_type])),
+               List[(List[Nat.nat],
+                      Transition.transition_ext[Unit])])](((a:
+                      List[((String, (List[value_type], List[value_type])),
+                             List[Nat.nat])])
+                     =>
+                    (b: List[((String, (List[value_type], List[value_type])),
+                               List[Nat.nat])])
+                      =>
+                    a ++ b),
+                   ((a: ((String, (List[value_type], List[value_type])),
+                          List[(List[Nat.nat],
+                                 Transition.transition_ext[Unit])]))
+                      =>
+                     {
+                       val (abs, aa):
+                             ((String, (List[value_type], List[value_type])),
+                               List[(List[Nat.nat],
+                                      Transition.transition_ext[Unit])])
+                         = a;
+                       Lista.map[(List[Nat.nat],
+                                   Transition.transition_ext[Unit]),
+                                  ((String,
+                                     (List[value_type], List[value_type])),
+                                    List[Nat.nat])](((ab:
+                (List[Nat.nat], Transition.transition_ext[Unit]))
+               =>
+              {
+                val (tids, _): (List[Nat.nat], Transition.transition_ext[Unit])
+                  = ab;
+                (abs, tids)
+              }),
+             aa)
+                     })),
+    groupsa, Nil),
+       ((_: List[Nat.nat]) => sys.error("undefined")))
     val (normalised, (to_derestrict, (_, _))):
           (FSet.fset[(List[Nat.nat],
                        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
@@ -10597,8 +10674,8 @@ List[Nat.nat]))))]):
              Map[VName.vname, value_type])])])))
       = thisa(groupwise_generalise_and_update(scala.collection.immutable.Map().withDefaultValue(Nil),
        scala.collection.immutable.Map().withDefaultValue(Nil), tree_repeats,
-       tree_repeats, false, transition_repeats, log, pta, output_groups, groups,
-       get_structures(pta, log),
+       tree_repeats, false, transition_repeats, log, pta, output_groups,
+       update_groups, structures,
        scala.collection.immutable.Map().withDefaultValue(None), Nil,
        scala.collection.immutable.Map().withDefaultValue(Nil),
        scala.collection.immutable.Map().withDefaultValue(Nil)))
@@ -10807,11 +10884,11 @@ def needs_latent_code(train:
    (Lista.equal_lista[Value.value](i, ia)) && ((r ==
          ra) && ((! (Value.equal_valuea(p,
  pa))) && ((Cardinality.subset[Nat.nat](regs,
- Set.seta[Nat.nat](known))) && ((Cardinality.subset[Nat.nat](regs,
-                      Set.seta[Nat.nat](knowna))) && ((Cardinality.subset[Nat.nat](Set.seta[Nat.nat](known),
-    Set.seta[Nat.nat](r.keySet.toList))) && ((Cardinality.subset[Nat.nat](Set.seta[Nat.nat](knowna),
-                                   Set.seta[Nat.nat](ra.keySet.toList))) && (Cardinality.eq_set[Nat.nat](Set.seta[Nat.nat](knowna),
-                          Set.seta[Nat.nat](known)))))))))
+      Set.seta[Nat.nat](known))) && ((Cardinality.subset[Nat.nat](regs,
+                                Set.seta[Nat.nat](knowna))) && ((Cardinality.subset[Nat.nat](Set.seta[Nat.nat](known),
+                   Set.seta[Nat.nat](r.keySet.toList))) && ((Cardinality.subset[Nat.nat](Set.seta[Nat.nat](knowna),
+               Set.seta[Nat.nat](ra.keySet.toList))) && (Cardinality.eq_set[Nat.nat](Set.seta[Nat.nat](knowna),
+           Set.seta[Nat.nat](known)))))))))
  }))
     }),
    train)

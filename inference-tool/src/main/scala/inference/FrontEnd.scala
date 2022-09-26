@@ -20,15 +20,23 @@ object FrontEnd {
 
     var pta: IEFSM = Inference.make_pta(Config.config.train)
     pta = Inference.breadth_first_label(pta)
+
+    if (Inference.nondeterministic(pta, Inference.nondeterministic_pairs)) {
+      Log.root.error("PTA must be deterministic.")
+      System.exit(1)
+    }
+
+    if (Config.startEFSM != null) {
+      pta = Config.startEFSM
+      print(EFSM_Dot.iefsm2dot(pta))
+    }
+
     PrettyPrinter.iEFSM2dot(pta, s"pta_gen")
     if (!EFSM.accepts_log(Set.seta[List[(String, (List[Value.value], List[Value.value]))]](Config.config.train), Inference.tm(pta))) {
       Log.root.error("PTA must accept the log.")
       System.exit(1)
     }
-    if (Inference.nondeterministic(pta, Inference.nondeterministic_pairs)) {
-      Log.root.error("PTA must be deterministic.")
-      System.exit(1)
-    }
+
     PrettyPrinter.test_model(pta, "ptaLog")
 
 

@@ -230,7 +230,7 @@ object TypeConversion {
 
   def toVName(vname: String): VName.vname = {
     if (vname.startsWith("i")) {
-      val index = Nat.Nata(BigInt(vname.substring(1).toInt - 1))
+      val index = Nat.Nata(BigInt(vname.substring(1).toInt))
       VName.I(index)
     } else {
       val index = Nat.Nata(BigInt(vname.substring(1).toInt))

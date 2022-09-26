@@ -5,6 +5,10 @@ import net.liftweb.json._
 import ch.qos.logback.classic.Level
 import Types._
 import java.nio.file.{ Paths, Files }
+import me.shadaj.scalapy.py
+import me.shadaj.scalapy.py.SeqConverters
+import scala.collection.JavaConverters._
+import scala.util.matching.Regex
 
 object Heuristics extends Enumeration {
   type Heuristic = Value
@@ -32,6 +36,7 @@ case class Config(
   post: Preprocessors.Preprocessor = null,
   outputname: String = null,
   dotfiles: String = "dotfiles",
+  startEFSM: String = null,
   nondeterminismMetric: IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, List[Nat.nat]), (Types.Transition, List[Nat.nat]))))] = (Inference.nondeterministic_pairs _),
   strategy: List[Nat.nat] => List[Nat.nat] => IEFSM => Nat.nat = (SelectionStrategies.naive_score _).curried,
   skip: Boolean = false,
@@ -58,6 +63,13 @@ object Config {
   val builder = OParser.builder[Config]
   var config: Config = null
   var heuristics = (Inference.null_modifier _).curried
+  var startEFSM: Types.IEFSM = null
+  var transitionGroups:
+        List[((String, (List[PTA_Generalisation.value_type], List[PTA_Generalisation.value_type])),
+               List[(List[Nat.nat], Transition.transition_ext[Unit])])] = null
+  var updateGroups:
+        List[((String, (List[PTA_Generalisation.value_type], List[PTA_Generalisation.value_type])),
+               List[(List[Nat.nat], Transition.transition_ext[Unit])])] = null
   var numStates: BigInt = 0
   var ptaNumStates: BigInt = 0
   var preprocessor: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (List[List[(String, (List[Value.value], List[Value.value]))]] => ((List[Nat.nat] => (List[Nat.nat] => (Nat.nat => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => ((FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])] => Boolean) => Option[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]]))))))) => ((FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]) => FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]))) = null
@@ -140,6 +152,10 @@ object Config {
         .valueName("dir")
         .action((x, c) => c.copy(dotfiles = x))
         .text("The directory in which to save dotfiles produced during the inference process - defaults to 'dotfiles'"),
+      opt[String]("startEFSM")
+        .valueName("startEFSM")
+        .action((x, c) => c.copy(startEFSM = x))
+        .text("A DOT file specifying the EFSM to start with, if not the PTA from the traces"),
       opt[Unit]("skip")
         .action((_, c) => c.copy(skip = true))
         .text("Set this flag to skip some model checking tests which should be trivially true"),
@@ -229,14 +245,81 @@ object Config {
           Heuristics.lob -> (Least_Upper_Bound.lob _).curried
         )
 
+        // Set up the initial EFSM
+        if (config.startEFSM != null) {
+          val pydot = py.module("pydot")
+          val graph = pydot.graph_from_dot_file(config.startEFSM).as[List[py.Dynamic]]
+          val edges: List[py.Dynamic] = graph(0).get_edges().as[List[py.Dynamic]]
+
+          val edgePattern: Regex = """^<<i>(\w+):(\d+)(&#91;.+&#93;)/(.*)</i>>$""".r
+          val edgePatternNoGuards: Regex = """^<<i>(\w+):(\d+)/(.*)</i>>$""".r
+          val guardPattern: Regex = """i<sub>(\d+)</sub> = (\w+)""".r
+          val outputPattern: Regex = """o<sub>\d+</sub> := (\w+)""".r
+
+          var startEFSM:Types.IEFSM = FSet.bot_fset
+          var tid: Nat.nat = Nat.Nata(0)
+          var groups: Map[String, List[(List[Nat.nat], Transition.transition_ext[Unit])]] = Map()
+          var subgroups: Map[String, List[(List[Nat.nat], Transition.transition_ext[Unit])]] = Map()
+
+          for (edge: py.Dynamic <- edges) {
+            tid = Nat.Suc(tid)
+            val label:String = edge.get_label().as[String]
+            val orig: Nat.nat = Nat.Nata(edge.get_source().toString.substring(1).toLong)
+            val dest: Nat.nat = Nat.Nata(edge.get_destination().toString.substring(1).toLong)
+            val group: String = edge.get("group").as[String].replace("\"", "")
+            if (!(groups isDefinedAt group)) {
+              groups = groups + (group -> List())
+            }
+            val subgroup: String = edge.get("historicalGroup").as[String].replace("\"", "")
+            if (!(subgroups isDefinedAt subgroup)) {
+              subgroups = subgroups + (subgroup -> List())
+            }
+
+            label match {
+              case edgePattern(l,a,g,o) => {
+                val guards: List[GExp.gexp[VName.vname]] = guardPattern.findAllMatchIn(g).map(g1 => GExp.Eq(AExp.V(TypeConversion.toVName(f"i${g1.group(1)}")), AExp.L[VName.vname](TypeConversion.toValue(g1.group(2).toLong)))).toList
+                val outputs: List[AExp.L[VName.vname]] = outputPattern.findAllMatchIn(o).map(p => AExp.L[VName.vname](TypeConversion.toValue(p.group(1).toLong))).toList
+                val transition: Types.Transition = Transition.transition_exta(l, Nat.Nata(a.toLong), guards, outputs, List(), ())
+                startEFSM = FSet.finsert((List(tid), ((orig, dest), transition)), startEFSM)
+                groups = groups + (group -> ((List(tid), transition) :: groups(group)))
+                subgroups = subgroups + (subgroup -> ((List(tid), transition) :: subgroups(subgroup)))
+              }
+              case edgePatternNoGuards(l,a,o) => {
+                val outputs: List[AExp.L[VName.vname]] = outputPattern.findAllMatchIn(o).map(p => AExp.L[VName.vname](TypeConversion.toValue(p.group(1).toLong))).toList
+                val transition: Types.Transition = Transition.transition_exta(l, Nat.Nata(a.toLong), List(), outputs, List(), ())
+                startEFSM = FSet.finsert((List(tid), ((orig, dest), transition)), startEFSM)
+                groups = groups + (group -> ((List(tid), transition) :: groups(group)))
+                subgroups = subgroups + (subgroup -> ((List(tid), transition) :: subgroups(subgroup)))
+              }
+              case _ => throw new IllegalArgumentException(f"Invalid transition $label")
+            }
+          }
+          this.startEFSM = startEFSM
+
+          val eventGroups = trainParsed.take(config.numTraces).map(run => run.map(x => (x("group").asInstanceOf[String], PTA_Generalisation.event_structure(TypeConversion.toEventTuple(x))))).flatten.distinct.groupBy(x => x._1).map(kv => (kv._1, kv._2.map(v => v._2))).toMap
+          assert(eventGroups.values.forall(abstracts => abstracts.length == 1), "Multiple abstract events for transition group")
+          assert(eventGroups.keySet == groups.keySet, f"Expected ${eventGroups.keySet} == ${groups.keySet}")
+          transitionGroups = eventGroups.keySet.map(k => (eventGroups(k)(0), groups(k))).toList.sortWith((a, b) => Orderings.less(Lattices_Big.Min(Set.seta(a._2.map(x => x._1))), Lattices_Big.Min(Set.seta(b._2.map(x => x._1)))))
+
+          val historicalGroups = trainParsed.take(config.numTraces).map(run => run.map(x => (x("historicalGroup").asInstanceOf[String], PTA_Generalisation.event_structure(TypeConversion.toEventTuple(x))))).flatten.distinct.groupBy(x => x._1).map(kv => (kv._1, kv._2.map(v => v._2))).toMap
+          assert(historicalGroups.values.forall(abstracts => abstracts.length == 1), "Multiple abstract events for transition group")
+          assert(historicalGroups.keySet == subgroups.keySet, f"Expected ${historicalGroups.keySet} == ${subgroups.keySet}")
+          updateGroups = historicalGroups.keySet.map(k => (historicalGroups(k)(0), subgroups(k))).toList.sortWith((a, b) =>Orderings.less(Lattices_Big.Min(Set.seta(a._2.map(x => x._1))), Lattices_Big.Min(Set.seta(b._2.map(x => x._1)))))
+        }
+        println("Transition Groups:")
+        for (group <- transitionGroups) {
+          println("Group" + Lattices_Big.Min(Set.seta(group._2.map(x => x._1))))
+          println(group)
+        }
+
         // Set up the preprocessor
         val preprocessors = scala.collection.immutable.Map(
-          Preprocessors.gp -> (PTA_Generalisation.derestrict _).curried(Nat.Nata(config.treeRepeats))(Nat.Nata(config.transitionRepeats)),
+          Preprocessors.gp -> (PTA_Generalisation.derestrict _).curried(transitionGroups)(updateGroups)(Nat.Nata(config.treeRepeats))(Nat.Nata(config.transitionRepeats)),
           Preprocessors.dropGuards -> (PTA_Generalisation.drop_pta_guards _).curried
         )
         // Set up the postprocessor
         val postprocessors = scala.collection.immutable.Map(
-          Preprocessors.gp -> (PTA_Generalisation.derestrict _).curried(Nat.Nata(config.treeRepeats))(Nat.Nata(config.transitionRepeats)),
+          Preprocessors.gp -> (PTA_Generalisation.derestrict _).curried(transitionGroups)(updateGroups)(Nat.Nata(config.treeRepeats))(Nat.Nata(config.transitionRepeats)),
           Preprocessors.dropGuards -> (PTA_Generalisation.drop_pta_guards _).curried
         )
 

@@ -88,7 +88,7 @@ next
   case (insert x e)
   then show ?case
     apply (case_tac x)
-    subgoal for a b 
+    subgoal for a b
       apply (case_tac a)
       subgoal for aa _
         apply (simp add: possible_steps_def)
@@ -375,7 +375,7 @@ lemma deterministic_if:
 
 lemma "\<forall>l i r.
   (\<forall>((s, s'), t) |\<in>| e. Label t = l \<and> can_take_transition t i r \<and>
-  (\<nexists>t' s''. ((s, s''), t') |\<in>| e \<and> (s' \<noteq> s'' \<or> t' \<noteq> t) \<and> Label t' = l \<and> can_take_transition t' i r))
+  (\<nexists>t' s2. ((s, s2), t') |\<in>| e \<and> (s' \<noteq> s2 \<or> t' \<noteq> t) \<and> Label t' = l \<and> can_take_transition t' i r))
  \<Longrightarrow> deterministic e"
   apply (simp add: deterministic_def del: size_fset_overloaded_simps)
   apply (rule allI)+
@@ -732,7 +732,7 @@ lemma recognises_must_be_step:
   "recognises_execution e s r (h#ts) \<Longrightarrow>
    \<exists>t s' p d'. step e s r (fst h) (snd h) = Some (t, s', p, d')"
   apply (cases h)
-  subgoal for a b 
+  subgoal for a b
     apply (simp add: recognises_step_equiv step_def)
     apply clarify
     apply (case_tac "(possible_steps e s r a b)")
@@ -1296,7 +1296,7 @@ definition "remove_state s e = ffilter (\<lambda>((from, to), t). from \<noteq> 
 text_raw\<open>\snip{obtainable}{1}{2}{%\<close>
 inductive "obtains" :: "cfstate \<Rightarrow> registers \<Rightarrow> transition_matrix \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> execution \<Rightarrow> bool" where
   base [simp]: "obtains s r e s r []" |
-  step: "\<exists>(s'', T) |\<in>| possible_steps e s' r' l i. obtains s r e s'' (evaluate_updates T i r') t \<Longrightarrow>
+  step: "\<exists>(s2, T) |\<in>| possible_steps e s' r' l i. obtains s r e s2 (evaluate_updates T i r') t \<Longrightarrow>
          obtains s r e s' r' ((l, i)#t)"
 
 definition "obtainable s r e = (\<exists>t. obtains s r e 0 <> t)"
@@ -1311,7 +1311,7 @@ lemma obtains_base: "obtains s r e s' r' [] = (s = s' \<and> r = r')"
   apply standard
   by (rule obtains.cases, auto)
 
-lemma obtains_step: "obtains s r e s' r' ((l, i)#t) = (\<exists>(s'', T) |\<in>| possible_steps e s' r' l i. obtains s r e s'' (evaluate_updates T i r') t)"
+lemma obtains_step: "obtains s r e s' r' ((l, i)#t) = (\<exists>(s2, T) |\<in>| possible_steps e s' r' l i. obtains s r e s2 (evaluate_updates T i r') t)"
   apply standard
   by (rule obtains.cases, auto simp add: obtains.step)
 
@@ -1359,7 +1359,7 @@ next
       apply (rule_tac x=ba in exI)
       apply (simp add: fmember_implies_member)
       by blast
-    done  
+    done
 qed
 
 lemma obtainable_empty_efsm:
@@ -1394,14 +1394,14 @@ lemma obtainable_if_unreachable: "\<not>reachable s e \<Longrightarrow> \<not>ob
 
 lemma obtains_step_append:
   "obtains s r e s' r' t \<Longrightarrow>
-  (s'', ta) |\<in>| possible_steps e s r l i \<Longrightarrow>
-  obtains s'' (evaluate_updates ta i r) e s' r' (t @ [(l, i)])"
+  (s2, ta) |\<in>| possible_steps e s r l i \<Longrightarrow>
+  obtains s2 (evaluate_updates ta i r) e s' r' (t @ [(l, i)])"
 proof(induct t arbitrary: s' r')
   case Nil
   then show ?case
     apply (simp add: obtains_base)
     apply (rule obtains.step)
-    apply (rule_tac x="(s'', ta)" in fBexI)
+    apply (rule_tac x="(s2, ta)" in fBexI)
     by auto
 next
   case (Cons a t)

@@ -553,7 +553,7 @@ fun infer_updates :: "outputMem \<Rightarrow> updateMem \<Rightarrow> iEFSM \<Ri
       group_ids = set (map fst gp);
       targeted = map (\<lambda>trace. rev (target <> (rev (target_registers e 0 <> trace types)))) l;
       relevant = fold List.union (map (filter (\<lambda>(t_regs, s, oldregs, necessary_regs, inputs, tids, tran). tids \<in> group_ids)) targeted ) []
-    in                   
+    in
     case group_update output_mem update_mem struct values relevant of
       None \<Rightarrow> (e, K$ []) |
       Some (tids, typed_updates) \<Rightarrow>
@@ -689,10 +689,10 @@ function output_and_update :: "bad_funs \<Rightarrow> output_function list \<Rig
             \<comment>\<open>It only makes sense to try and infer updates for groups with ids before the group we've inferred updates for
                otherwise, the updates aren't executed before the registers are evaluated.\<close>
             possible_gps = filter (\<lambda>(_, g). \<exists>r |\<in>| routes. \<exists>id \<in> (group_ids g). \<exists>id' \<in> (gp_ids). appears_in_order [id, id'] r) gps;
-            (e'', update_mem) = groupwise_infer_updates output_mem' update_mem log e' possible_gps ((K$ unknown)(fun$:=types))
+            (e2, update_mem) = groupwise_infer_updates output_mem' update_mem log e' possible_gps ((K$ unknown)(fun$:=types))
           in
-          if accepts_log (set log) (tm e'') then
-            output_and_update bad (fun#good) output_mem' update_mem max_attempts attempts e'' log gps (struct, gp) values is r pss latent
+          if accepts_log (set log) (tm e2) then
+            output_and_update bad (fun#good) output_mem' update_mem max_attempts attempts e2 log gps (struct, gp) values is r pss latent
           else
           if attempts > 0 then
             output_and_update (bad(rep_id $:= List.insert fun (bad $ rep_id))) good output_mem update_mem max_attempts (attempts - 1) e log gps (struct, gp) values is r ((inx, maxReg, ps)#pss) latent
@@ -808,12 +808,13 @@ fun tidy_updates :: "('a \<times> 'b) list \<Rightarrow> ('a \<times> 'b) list" 
 definition this :: "generalisation \<Rightarrow> (iEFSM \<times> tids list \<times> outputMem \<times> updateMem)" where
   "this x = (case x of Succeeded y \<Rightarrow> y)"
 
-definition derestrict :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
-  "derestrict tree_repeats transition_repeats pta log m np = (
+definition derestrict :: "transition_group list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
+  "derestrict groups tree_repeats transition_repeats pta log m np = (
     let
-      groups = historical_groups pta log;
+      groups = if groups = [] then historical_groups pta log else groups;
       output_groups = filter (\<lambda>(_, g). (Outputs (snd (hd g))) \<noteq> []) groups;
-      (normalised, to_derestrict, _, _) = this (groupwise_generalise_and_update (K$[]) (K$[]) tree_repeats tree_repeats False transition_repeats log pta output_groups groups (get_structures pta log) (K$ None) [] (K$ []) (K$ []));
+      structures = fold (\<lambda>(abs, tids) acc. acc(tids := abs)) (fold (@) (map (\<lambda>(abs, gp). (map (\<lambda>(tids, _). (abs, tids)) gp)) groups) []) (\<lambda>x. undefined);
+      (normalised, to_derestrict, _, _) = this (groupwise_generalise_and_update (K$[]) (K$[]) tree_repeats tree_repeats False transition_repeats log pta output_groups groups structures (K$ None) [] (K$ []) (K$ []));
       tidied = fimage (\<lambda>(id, tf, t). (id, tf, t\<lparr>Updates:= tidy_updates (Updates t)\<rparr>)) normalised
     in
       drop_selected_guards tidied to_derestrict pta log m np

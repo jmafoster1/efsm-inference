@@ -110,6 +110,14 @@ object Dirties {
         Some(Random.shuffle(l).head)
   }
 
+  def randomMemberTotal[A](f: FSet.fset[A]): A = f match {
+    case FSet.fset_of_list(l) =>
+      if (l.length == 1)
+        return (l.head)
+      else
+        (Random.shuffle(l).head)
+  }
+
   def scalaDirectlySubsumes(
     e1: TransitionMatrix,
     e2: TransitionMatrix,
@@ -420,14 +428,16 @@ object Dirties {
     // training_set = training_set.select_dtypes(include=output_type)
 
     // Cut straight to having a latent variable if there's more possible outputs than inputs
-    // if (!latentVariable && deap_gp.need_latent(training_set, latent_vars_rows.toPythonProxy).as[Boolean]) {
     if (!latentVariable && PTA_Generalisation.needs_latent_code(train)) {
       Log.root.debug("  Nondeterminism = try with latent variable")
       return getOutput(label, tids, maxReg, values, bad_set, train, true)
     }
 
+    var seeds: List[String] = List()
+
     if (latentVariable) {
       val new_reg =  f"r$r_index"
+      seeds = List(new_reg)
       training_set.insert(0, new_reg, py"None")
       types = types + (new_reg -> types("expected"))
       latent_vars_rows = latent_vars_rows.map(x => f"r$r_index" :: x)
@@ -467,18 +477,17 @@ object Dirties {
     // TODO: Delete these seeds
     // TODO: Delete these seeds
     val pd = py.module("pandas")
-    var seeds: List[String] = List()
-    // if (py"'i0' in $training_set".as[Boolean] && output_type.toString == "Int64")
-    //   seeds ++= List(f"add(i0, 1)", f"sub(i0, 1)")
-    // for (i <- 1 to r_index) {
-    //   if (py"'r'+str($i) in $training_set".as[Boolean]) {
-    //     if (py"'i0' in $training_set".as[Boolean])
-    //       seeds ++= List(f"sub(r$i, i0)", f"sub(i0, r$i)", f"add(r$i, i0)")
-    //     if (output_type.toString == "Int64") {
-    //       seeds ++= List(f"sub(50, r$i)", f"sub(r$i, 50)", f"add(r$i, 50)", f"sub(r$i, 1)", f"add(r$i, 1)", f"0")
-    //     }
-    //   }
-    // }
+    if (py"'i0' in $training_set".as[Boolean] && output_type.toString == "Int64")
+      seeds ++= List(f"sub(1, i0)")
+    for (i <- 1 to r_index) {
+      if (py"'r'+str($i) in $training_set".as[Boolean]) {
+        if (py"'i0' in $training_set".as[Boolean])
+          seeds ++= List(f"add(r$i, i0)", f"add(i0, r$i)", f"add(r$i, i0)")
+        if (output_type.toString == "Int64") {
+          seeds ++= List(f"r$i", f"add(2, r$i)", f"add(r$i, 2)", f"add(r$i, 2)", f"add(r$i, 1)", f"add(r$i, 1)", f"0")
+        }
+      }
+    }
 
     // Log.root.debug("Seeds:")
     // for (seed <- seeds) {
@@ -504,9 +513,9 @@ object Dirties {
       return Some((aexp, stringTypes.map(x => (TypeConversion.vnameFromString(x._1), toValueType(x._2)))))
     } else if (!latentVariable) {
       Log.root.debug(f"  Best output $best is incorrect\n${"="*84}")
-      return None
-      // Log.root.debug("    Failed - Trying again with a latent variable")
-      // return getOutput(label, maxReg, values, bad, train, true)
+      // return None
+      Log.root.debug("    Failed - Trying again with a latent variable")
+      return getOutput(label, tids, maxReg, values, bad_set, train, true)
     } else {
       Log.root.debug(f"  Best output $best is incorrect\n${"="*84}")
       return None

@@ -50,6 +50,7 @@ def distance_between(expected, actual):
     elif type(expected) == str and type(actual) == str:
         return levenshtein(expected, actual)
     elif type(expected) != type(actual) or is_null(actual):
+        raise ValueError("Type error", expected, type(expected), actual, type(actual))
         return float("inf")
     raise ValueError(
         f"Expected int, float, or string type, not {actual}:{type(actual)}."
@@ -76,8 +77,9 @@ def find_smallest_distance(individual, pset, args, expected, latent_vars):
     type_ = individual[0].ret
     func = gp.compile(expr=individual, pset=pset)
 
-    if individual.height == 0:
-        return distance_between(expected, individual.root.value)
+    # if individual.height == 0:
+    #     print("ROOT VALUE")
+    #     return distance_between(expected, individual.root.value)
     if not callable(func):
         return distance_between(expected, func)
 
@@ -754,7 +756,7 @@ def run_gp(
                     gp.PrimitiveTree.from_string(seed, pset)
                 )
                 logger.debug(
-                    f"Fitness of {individual} is {fitness(individual, points, pset, bad, latent_vars_rows)}"
+                    f"Fitness of {individual}: {type(individual)} is {fitness(individual, points, pset, bad, latent_vars_rows)}"
                 )
                 if fitness(individual, points, pset, bad, latent_vars_rows) == (0,):
                     logger.debug("Found perfect individual!")
@@ -1143,7 +1145,8 @@ def shortcut_latent(points: pd.DataFrame) -> bool:
 
 
 if __name__ == "__main__":
-    points = pd.read_csv("test3.csv", index_col=0)
+    points = pd.read_csv("csvs/gamma.csv")
+    print(points)
 
     for col in points:
         if points.dtypes[col] == object:
@@ -1156,15 +1159,16 @@ if __name__ == "__main__":
     # logger.info(points.dtypes)
     # assert False
 
-    if "r1" not in points.columns:
-        points.insert(0, "r1", None)
+    # if "r1" not in points.columns:
+    #     points.insert(0, "r1", None)
     pset = setup_pset(points)
-    pset.addTerminal(200, int)
+    print(pset.mapping)
+    
 
-    ind = gp.PrimitiveTree.from_string("add(-100, r1)", pset)
-    logger.info(f"Fitness of {ind} is {fitness(ind, points, pset, [], [() for i in range(len(points))])}")
-    logger.info(f"{ind} is correct? {correct(ind, points, pset, [() for i in range(len(points))])}")
-    assert False
+    # ind = gp.PrimitiveTree.from_string("add(-100, r1)", pset)
+    # logger.info(f"Fitness of {ind} is {fitness(ind, points, pset, [], [() for i in range(len(points))])}")
+    # logger.info(f"{ind} is correct? {correct(ind, points, pset, [() for i in range(len(points))])}")
+    # assert False
 
     # expr = "add(sub(r1, 350), add(5, 250))"
     # individual = creator.Individual(gp.PrimitiveTree.from_string(expr, pset))
@@ -1185,7 +1189,6 @@ if __name__ == "__main__":
         seeds=[],
         latent_vars_rows=[() for i in range(len(points))],
     )
-    logger.debug()
     logger.debug(f"best is {best}")
     logger.debug(best.height)
 
