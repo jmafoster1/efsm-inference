@@ -10005,15 +10005,13 @@ List[Nat.nat]))))]):
                     }),
                    aa, b))
                                }),
-                              structural_groups,
-                              ((_: List[Nat.nat]) => null[Nat.nat]))
+                              structural_groups, ((_: List[Nat.nat]) => null))
     val structural_group:
           Map[Nat.nat, (List[(List[Nat.nat], Transition.transition_ext[Unit])])]
       = finfun_of_list[Nat.nat,
                         List[(List[Nat.nat],
                                Transition.transition_ext[Unit])]](structural_groups,
-                           null[List[(List[Nat.nat],
-                                       Transition.transition_ext[Unit])]])
+                           sys.error("undefined"))
     val (normalised, (to_derestrict, (_, _))):
           (FSet.fset[(List[Nat.nat],
                        ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],

@@ -812,17 +812,21 @@ definition this :: "generalisation \<Rightarrow> (iEFSM \<times> tids list \<tim
 
 definition "finfun_of_list l base = fold (\<lambda>(a, b) acc. acc(a $:= b)) l (K$ base)"
 
-definition "null = undefined"
-code_printing constant null \<rightharpoonup> (Scala) "null"
-declare null_def [code del]
+definition "(null_nat :: nat) = undefined"
+code_printing constant null_nat \<rightharpoonup> (Scala) "null"
+declare null_nat_def [code del]
+
+definition "(null_tid_tran_lst :: (nat list \<times> transition) list) = undefined"
+code_printing constant null_tid_tran_lst \<rightharpoonup> (Scala) "null"
+declare null_tid_tran_lst_def [code del]
 
 definition derestrict :: "transition_group list \<Rightarrow> transition_group list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
   "derestrict structural_groups historical_subgroups tree_repeats transition_repeats pta log m np = (
     let
       \<comment> \<open>historical_subgroups = if historical_subgroups = [] then historical_groups pta log else groups;
       structural_groups = if structural_groups = [] then historical_groups pta log else structural_groups;\<close>
-      structures = fold (\<lambda>(inx, gp) acc. fold (\<lambda>(tid, _) acc. acc(tid := inx)) gp acc) structural_groups (\<lambda>x. null);
-      structural_group = finfun_of_list structural_groups (null);
+      structures = fold (\<lambda>(inx, gp) acc. fold (\<lambda>(tid, _) acc. acc(tid := inx)) gp acc) structural_groups (\<lambda>x. null_nat);
+      structural_group = finfun_of_list structural_groups undefined;
       (normalised, to_derestrict, _, _) = this (groupwise_generalise_and_update (K$[]) (K$[]) tree_repeats tree_repeats False transition_repeats log pta structural_group historical_subgroups historical_subgroups structures (K$ None) [] (K$ []) (K$ []));
       tidied = fimage (\<lambda>(id, tf, t). (id, tf, t\<lparr>Updates:= tidy_updates (Updates t)\<rparr>)) normalised
     in
