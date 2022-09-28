@@ -1442,6 +1442,11 @@ def Max[A : Orderings.linorder](x0: Set.set[A]): A = x0 match {
     Lista.fold[A, A](((a: A) => (b: A) => Orderings.max[A](a, b)), xs, x)
 }
 
+def Min[A : Orderings.linorder](x0: Set.set[A]): A = x0 match {
+  case Set.seta((x::xs)) =>
+    Lista.fold[A, A](((a: A) => (b: A) => Orderings.min[A](a, b)), xs, x)
+}
+
 } /* object Lattices_Big */
 
 object Optiona {

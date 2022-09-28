@@ -501,6 +501,7 @@ export_code
   breadth_first_label
   depth_first_label
   needs_latent_code
+  Min
 in Scala
 file "../../inference-tool/src/main/scala/inference/Inference.scala"
 
