@@ -9209,25 +9209,26 @@ Transition.transition_ext[Unit]))],
                        uy: (Nat.nat,
                              List[(List[Nat.nat],
                                     Transition.transition_ext[Unit])]),
-                       uz: List[Value.value], va: List[List[Value.value]],
-                       vb: List[Map[Nat.nat, Option[Value.value]]],
-                       x13: List[(Nat.nat, (Nat.nat, List[Value.value]))],
-                       vc: List[List[Nat.nat]]):
+                       uz: Nat.nat, va: List[Value.value],
+                       vb: List[List[Value.value]],
+                       vc: List[Map[Nat.nat, Option[Value.value]]],
+                       x14: List[(Nat.nat, (Nat.nat, List[Value.value]))],
+                       vd: List[List[Nat.nat]]):
       output_generalisation
   =
-  (bad, good, output_mem, update_mem, uu, uv, e, uw, ux, uy, uz, va, vb, x13,
-    vc)
+  (bad, good, output_mem, update_mem, uu, uv, e, uw, ux, uy, uz, va, vb, vc,
+    x14, vd)
   match {
   case (bad, good, output_mem, update_mem, uu, uv, e, uw, ux, uy, uz, va, vb,
-         Nil, vc)
+         vc, Nil, vd)
     => Success((e, (output_mem, (update_mem, (good.par.reverse.toList, bad)))))
   case (bad, good, output_mem, update_mem, max_attempts, attempts, e, log, gps,
-         (struct, gp), values, is, r, ((inx, (maxReg, ps))::pss), latent)
+         (struct, gp), struct_inx, values, is, r, ((inx, (maxReg, ps))::pss),
+         latent)
     => {
-         val (rep_id, rep): (List[Nat.nat], Transition.transition_ext[Unit]) =
+         val (rep_id, _): (List[Nat.nat], Transition.transition_ext[Unit]) =
            gp.head;
-         Transition.Label[Unit](rep);
-         (get_output(struct, (gp.head)._1, maxReg, values,
+         (get_output(struct_inx, (gp.head)._1, maxReg, values,
                       Set.seta[AExp.aexp[VName.vname]](bad(rep_id)),
                       is.par.zip(r.par.zip(ps.par.zip(latent).toList).toList).toList,
                       output_mem, update_mem)
@@ -9276,14 +9277,15 @@ Transition.transition_ext[Unit])))
                 val output_mema:
                       Map[Nat.nat, (List[(AExp.aexp[VName.vname],
    Map[VName.vname, value_type])])]
-                  = (output_mem + ((struct -> (((fun,
-          types)::(output_mem(struct)))))));
+                  = (output_mem + ((struct -> ((((fun,
+           types)::(output_mem(struct)))).par.distinct.toList))));
                 (if (EFSM.accepts_log(Set.seta[List[(String,
               (List[Value.value], List[Value.value]))]](log),
                                        Inference.tm(ea)))
                   output_and_update(bad, (fun::good), output_mema, update_mem,
                                      max_attempts, attempts, ea, log, gps,
-                                     (struct, gp), values, is, r, pss, latent)
+                                     (struct, gp), struct_inx, values, is, r,
+                                     pss, latent)
                   else {
                          val group_ids:
                                (List[(List[Nat.nat],
@@ -9335,14 +9337,14 @@ Transition.transition_ext[Unit])))
                        (List[Value.value], List[Value.value]))]](log),
         Inference.tm(e2)))
                            output_and_update(bad, (fun::good), output_mema,
-      update_mema, max_attempts, attempts, e2, log, gps, (struct, gp), values,
-      is, r, pss, latent)
+      update_mema, max_attempts, attempts, e2, log, gps, (struct, gp),
+      struct_inx, values, is, r, pss, latent)
                            else (if (Nat.less_nat(Nat.zero_nata, attempts))
                                   output_and_update((bad + ((rep_id -> (Lista.insert[AExp.aexp[VName.vname]](fun,
                               bad(rep_id)))))),
              good, output_mem, update_mema, max_attempts,
              Nat.minus_nat(attempts, Nat.Nata((1))), e, log, gps, (struct, gp),
-             values, is, r, ((inx, (maxReg, ps))::pss), latent)
+             struct_inx, values, is, r, ((inx, (maxReg, ps))::pss), latent)
                                   else Failure((bad + ((rep_id -> (((fun::(good ++
                                     bad(rep_id)))).par.distinct.toList)))))))
                        })
@@ -9442,6 +9444,7 @@ def generalise_and_update(level: Nat.nat, attempts: Nat.nat,
     (List[Value.value], List[Value.value]))]],
                            e: FSet.fset[(List[Nat.nat],
   ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))],
+                           struct_inx: Nat.nat,
                            gp: (Nat.nat,
                                  List[(List[Nat.nat],
 Transition.transition_ext[Unit])]),
@@ -9474,8 +9477,8 @@ Transition.transition_ext[Unit])]),
  Lista.transpose[Value.value](p)));
     output_and_update(bad, Nil, output_mem,
                        scala.collection.immutable.Map().withDefaultValue(Nil),
-                       attempts, attempts, e, log, gps, gp, values, i, r,
-                       outputs_to_infer, l)
+                       attempts, attempts, e, log, gps, gp, struct_inx, values,
+                       i, r, outputs_to_infer, l)
   }
 
 def take_maximum_updates(ts: FSet.fset[(List[Nat.nat],
@@ -9583,7 +9586,7 @@ def groupwise_generalise_and_update(bad: Map[(List[Nat.nat]), (List[AExp.aexp[VN
          log, e, structural_groups, (gp::t), historical_subgroups, structure,
          funsb, to_derestrict, output_mem, update_mem)
     => (generalise_and_update(transition_repeats, transition_repeats, bad, log,
-                               e, (structure(((gp._2).head)._1), gp._2),
+                               e, structure(((gp._2).head)._1), gp,
                                historical_subgroups, output_mem)
           match {
           case Success((ea, (output_mema, (update_mema, (output_funs, bada)))))

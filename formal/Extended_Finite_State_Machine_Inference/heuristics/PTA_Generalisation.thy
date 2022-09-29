@@ -669,21 +669,21 @@ fun appears_in_order :: "'a list \<Rightarrow> 'a list \<Rightarrow> bool" where
   "appears_in_order (a#_) [] = False" |
   "appears_in_order (h#t) (h'#t') = (if h = h' then appears_in_order t t' else appears_in_order (h#t) t')"
 
-function output_and_update :: "bad_funs \<Rightarrow> output_function list \<Rightarrow> outputMem \<Rightarrow> updateMem \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> transition_group list \<Rightarrow> transition_group \<Rightarrow>  value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> (nat \<times> nat \<times> value list) list \<Rightarrow> nat list list \<Rightarrow> output_generalisation" where
-  "output_and_update bad good output_mem update_mem _ _ e _ _ _ _ _ _ [] _ = Success (e, output_mem, update_mem, rev good, bad)" |
-  "output_and_update bad good output_mem update_mem max_attempts attempts e log gps (struct, gp) values is r ((inx, maxReg, ps)#pss) latent = (
-    let (rep_id, rep) = (hd gp); label = Label rep in
-    case get_output struct (fst (hd gp)) maxReg values (set (bad $ rep_id)) (zip is (zip r (zip ps latent))) output_mem update_mem of
+function output_and_update :: "bad_funs \<Rightarrow> output_function list \<Rightarrow> outputMem \<Rightarrow> updateMem \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> transition_group list \<Rightarrow> transition_group \<Rightarrow> nat \<Rightarrow> value list \<Rightarrow> inputs list \<Rightarrow> registers list \<Rightarrow> (nat \<times> nat \<times> value list) list \<Rightarrow> nat list list \<Rightarrow> output_generalisation" where
+  "output_and_update bad good output_mem update_mem _ _ e _ _ _ _ _ _ _ [] _ = Success (e, output_mem, update_mem, rev good, bad)" |
+  "output_and_update bad good output_mem update_mem max_attempts attempts e log gps (struct, gp) struct_inx values is r ((inx, maxReg, ps)#pss) latent = (
+    let (rep_id, rep) = (hd gp) in
+    case get_output struct_inx (fst (hd gp)) maxReg values (set (bad $ rep_id)) (zip is (zip r (zip ps latent))) output_mem update_mem of
       None \<Rightarrow> Failure (bad(rep_id $:= remdups ((good) @ (bad $ rep_id)))) |
       Some (fun, types) \<Rightarrow>
         let
           e' = fimage (\<lambda>(tids, tf, t). if tids \<in> set (map fst gp) then (tids, tf, t\<lparr>Outputs:=(Outputs t)[inx := fun]\<rparr>) else (tids, tf, t)) e;
           unknown = (K$ value_type.I);
           routes = allRoutes e 0 [];
-          output_mem' = output_mem(struct $:= (fun, types)#(output_mem $ struct))
+          output_mem' = output_mem(struct $:= remdups ((fun, types)#(output_mem $ struct)))
         in
         if accepts_log (set log) (tm e') then
-          output_and_update bad (fun#good) output_mem' update_mem max_attempts attempts e' log gps (struct, gp) values is r pss latent
+          output_and_update bad (fun#good) output_mem' update_mem max_attempts attempts e' log gps (struct, gp) struct_inx values is r pss latent
         else
           let
             group_ids = \<lambda>g. set (map fst g);
@@ -694,21 +694,21 @@ function output_and_update :: "bad_funs \<Rightarrow> output_function list \<Rig
             (e2, update_mem) = groupwise_infer_updates output_mem' update_mem log e' possible_gps ((K$ unknown)(fun$:=types))
           in
           if accepts_log (set log) (tm e2) then
-            output_and_update bad (fun#good) output_mem' update_mem max_attempts attempts e2 log gps (struct, gp) values is r pss latent
+            output_and_update bad (fun#good) output_mem' update_mem max_attempts attempts e2 log gps (struct, gp) struct_inx values is r pss latent
           else
           if attempts > 0 then
-            output_and_update (bad(rep_id $:= List.insert fun (bad $ rep_id))) good output_mem update_mem max_attempts (attempts - 1) e log gps (struct, gp) values is r ((inx, maxReg, ps)#pss) latent
+            output_and_update (bad(rep_id $:= List.insert fun (bad $ rep_id))) good output_mem update_mem max_attempts (attempts - 1) e log gps (struct, gp) struct_inx values is r ((inx, maxReg, ps)#pss) latent
           else
             Failure (bad(rep_id $:= remdups (fun#(good @ (bad $ rep_id)))))
   )"
      apply (clarsimp, meson unzip_3.cases)
   by auto
 termination
-  by (relation "measures [\<lambda>(bad, good, output_mem, update_mem, max_attempts, attempts, e, log, gps, gp, values, I, r, l, latent). length l + attempts]", auto)
+  by (relation "measures [\<lambda>(bad, good, output_mem, update_mem, max_attempts, attempts, e, log, gps, gp, struct_inx, values, I, r, l, latent). length l + attempts]", auto)
 
 (*This is where the types stuff originates*)
-definition generalise_and_update :: "nat \<Rightarrow> nat \<Rightarrow> bad_funs \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> transition_group \<Rightarrow> transition_group list \<Rightarrow> outputMem \<Rightarrow>  output_generalisation" where
-  "generalise_and_update level attempts bad log e gp gps output_mem = (
+definition generalise_and_update :: "nat \<Rightarrow> nat \<Rightarrow> bad_funs \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> nat \<Rightarrow> transition_group \<Rightarrow> transition_group list \<Rightarrow> outputMem \<Rightarrow>  output_generalisation" where
+  "generalise_and_update level attempts bad log e struct_inx gp gps output_mem = (
     let
       values = enumerate_log_values log;
       new_gp_ts = make_training_set e log gp;
@@ -716,7 +716,7 @@ definition generalise_and_update :: "nat \<Rightarrow> nat \<Rightarrow> bad_fun
       max_reg = max_reg_total e;
       \<comment>\<open> TODO: We want to record output funs and types as we infer them! \<close>
       outputs_to_infer = enumerate 0 (enumerate max_reg (transpose P))
-      in output_and_update bad [] output_mem (K$ []) attempts attempts e log gps gp values I R outputs_to_infer L
+      in output_and_update bad [] output_mem (K$ []) attempts attempts e log gps gp struct_inx values I R outputs_to_infer L
   )"
 
 datatype generalisation = Failed bad_funs | Succeeded "(iEFSM \<times> tids list \<times> outputMem \<times> updateMem)"
@@ -740,7 +740,7 @@ definition "all_structures (log::log) = set (remdups (fold (@) (map (map event_s
 fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool \<Rightarrow> nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> (nat \<Rightarrow>f (tids \<times> transition) list) \<Rightarrow> transition_group list \<Rightarrow> transition_group list \<Rightarrow> (tids \<Rightarrow> nat) \<Rightarrow> (nat \<Rightarrow>f (output_function list \<times> update_function list) option) \<Rightarrow> tids list \<Rightarrow> outputMem \<Rightarrow> updateMem \<Rightarrow> generalisation" where
   "groupwise_generalise_and_update bad maybe_bad max_attempts attempts can_fail transition_repeats _ e _ [] historical_subgroups structure funs to_derestrict output_mem update_mem = Succeeded (e, to_derestrict, output_mem, update_mem)" |
   "groupwise_generalise_and_update bad maybe_bad max_attempts attempts can_fail transition_repeats log e structural_groups (gp#t) historical_subgroups structure funsb to_derestrict output_mem update_mem = (
-        case generalise_and_update transition_repeats transition_repeats bad log e (structures (fst (hd (fst gp))), snd gp) historical_subgroups output_mem of
+        case generalise_and_update transition_repeats transition_repeats bad log e (structure (fst (hd (snd gp)))) gp historical_subgroups output_mem of
         Failure bad' \<Rightarrow> (
           if can_fail then
             Failed (funmem_union bad bad')
