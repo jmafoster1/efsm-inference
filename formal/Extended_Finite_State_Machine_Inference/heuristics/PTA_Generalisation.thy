@@ -740,7 +740,7 @@ definition "all_structures (log::log) = set (remdups (fold (@) (map (map event_s
 fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool \<Rightarrow> nat \<Rightarrow> log \<Rightarrow> iEFSM \<Rightarrow> (nat \<Rightarrow>f (tids \<times> transition) list) \<Rightarrow> transition_group list \<Rightarrow> transition_group list \<Rightarrow> (tids \<Rightarrow> nat) \<Rightarrow> (nat \<Rightarrow>f (output_function list \<times> update_function list) option) \<Rightarrow> tids list \<Rightarrow> outputMem \<Rightarrow> updateMem \<Rightarrow> generalisation" where
   "groupwise_generalise_and_update bad maybe_bad max_attempts attempts can_fail transition_repeats _ e _ [] historical_subgroups structure funs to_derestrict output_mem update_mem = Succeeded (e, to_derestrict, output_mem, update_mem)" |
   "groupwise_generalise_and_update bad maybe_bad max_attempts attempts can_fail transition_repeats log e structural_groups (gp#t) historical_subgroups structure funsb to_derestrict output_mem update_mem = (
-        case generalise_and_update transition_repeats transition_repeats bad log e gp historical_subgroups output_mem of
+        case generalise_and_update transition_repeats transition_repeats bad log e (structures (fst (hd (fst gp))), snd gp) historical_subgroups output_mem of
         Failure bad' \<Rightarrow> (
           if can_fail then
             Failed (funmem_union bad bad')
@@ -765,9 +765,9 @@ fun groupwise_generalise_and_update :: "bad_funs \<Rightarrow> bad_funs \<Righta
           more_to_derestrict = sorted_list_of_fset (fimage fst (ffilter (\<lambda>(id, _, tran). tran \<noteq> get_by_ids e id) standardised));
           result = (if pre_standardised_good then
             \<comment> \<open>If we manage to standardise a structural group, we do not need to evolve outputs and updates for the other historical subgroups so can filter them out.\<close>
-            groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_union maybe_bad bad') max_attempts attempts True transition_repeats log (merge_regs standardised (accepts_log (set log))) structural_groups (filter (\<lambda>g. fst g \<notin> set (finfun_to_list funs)) t) historical_subgroups structure funs (to_derestrict @ more_to_derestrict) output_mem update_mem
+            groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_union maybe_bad bad') max_attempts attempts True transition_repeats log (merge_regs standardised (accepts_log (set log))) structural_groups (filter (\<lambda>g. fst g \<notin> set (finfun_to_list funs)) t) historical_subgroups structure funs (to_derestrict @ more_to_derestrict) output_mem' update_mem'
           else
-            groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_add (funmem_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts True transition_repeats log (merge_regs standardised (accepts_log (set log))) structural_groups t historical_subgroups structure funs (to_derestrict @ more_to_derestrict) output_mem update_mem
+            groupwise_generalise_and_update (wipe_futures bad rep_id) (funmem_add (funmem_union maybe_bad bad') (rep_id) reg_bad) max_attempts attempts True transition_repeats log (merge_regs standardised (accepts_log (set log))) structural_groups t historical_subgroups structure funs (to_derestrict @ more_to_derestrict) output_mem' update_mem'
           )
         in
         case result of
@@ -826,7 +826,7 @@ definition derestrict :: "transition_group list \<Rightarrow> transition_group l
       \<comment> \<open>historical_subgroups = if historical_subgroups = [] then historical_groups pta log else groups;
       structural_groups = if structural_groups = [] then historical_groups pta log else structural_groups;\<close>
       structures = fold (\<lambda>(inx, gp) acc. fold (\<lambda>(tid, _) acc. acc(tid := inx)) gp acc) structural_groups (\<lambda>x. null_nat);
-      structural_group = finfun_of_list structural_groups undefined;
+      structural_group = finfun_of_list structural_groups null_tid_tran_lst;
       (normalised, to_derestrict, _, _) = this (groupwise_generalise_and_update (K$[]) (K$[]) tree_repeats tree_repeats False transition_repeats log pta structural_group historical_subgroups historical_subgroups structures (K$ None) [] (K$ []) (K$ []));
       tidied = fimage (\<lambda>(id, tf, t). (id, tf, t\<lparr>Updates:= tidy_updates (Updates t)\<rparr>)) normalised
     in

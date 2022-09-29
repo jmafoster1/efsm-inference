@@ -19,7 +19,8 @@ declare eq_set_code(2) [code del]
 declare eq_set_code(4) [code del]
 declare List.subset_code [code del]
 declare inter_coset_fold [code del]
-declare Code_Cardinality.subset'_code [code del]
+declare Code_Cardinality.subset'_code(1) [code del]
+declare Code_Cardinality.subset'_code(3) [code del]
 
 declare subset_eq [code]
 
@@ -36,5 +37,10 @@ declare product_concat_map [code]
 lemma [code]: "insert x (set s) = (if x \<in> set s then set s else set (x#s))"
   apply (simp)
   by auto
+
+lemma [code]: "(set X) \<subseteq> (set Y) = (List.list_all (\<lambda>x. List.member Y x) X)"
+  apply (induct X)
+   apply simp
+  by (simp add: in_set_member)
 
 end
