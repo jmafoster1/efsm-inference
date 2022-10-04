@@ -299,7 +299,7 @@ object Dirties {
   }
 
   def getUpdate(
-    l: String,
+    l: Nat.nat,
     r: Nat.nat,
     values: List[Value.value],
     ioPairs: List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], (Value.value, List[Nat.nat])))],
@@ -402,7 +402,7 @@ object Dirties {
     }
 
   def getOutput(
-    label: String,
+    label: Nat.nat,
     tids: List[Nat.nat],
     maxReg: Nat.nat,
     values: List[Value.value],
@@ -469,8 +469,9 @@ object Dirties {
     // }
 
     val outputs = train.map(x => x._2._2._1)
-    if (outputs.distinct.length == 1) {
+    if (outputs.distinct.length == 1 && !bad.contains(AExp.L(outputs(0)))) {
       Log.root.debug("  Singleton literal output")
+      Log.root.debug(f"${"="*84}")
       return Some((AExp.L(outputs(0)), scala.collection.immutable.Map()))
     }
 
@@ -510,6 +511,7 @@ object Dirties {
       // if (!AExp.is_lit(aexp))
       //   funMem = funMem + (label -> (best :: funMem(label)))
       val stringTypes = types - "expected"
+      Log.root.debug(f"${"="*84}")
       return Some((aexp, stringTypes.map(x => (TypeConversion.vnameFromString(x._1), toValueType(x._2)))))
     } else if (!latentVariable) {
       Log.root.debug(f"  Best output $best is incorrect\n${"="*84}")
@@ -518,6 +520,7 @@ object Dirties {
       return getOutput(label, tids, maxReg, values, bad_set, train, true)
     } else {
       Log.root.debug(f"  Best output $best is incorrect\n${"="*84}")
+      Log.root.debug(f"${"="*84}")
       return None
     }
   }

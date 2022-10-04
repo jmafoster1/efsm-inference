@@ -64,12 +64,8 @@ object Config {
   var config: Config = null
   var heuristics = (Inference.null_modifier _).curried
   var startEFSM: Types.IEFSM = null
-  var transitionGroups:
-        List[((String, (List[PTA_Generalisation.value_type], List[PTA_Generalisation.value_type])),
-               List[(List[Nat.nat], Transition.transition_ext[Unit])])] = null
-  var updateGroups:
-        List[((String, (List[PTA_Generalisation.value_type], List[PTA_Generalisation.value_type])),
-               List[(List[Nat.nat], Transition.transition_ext[Unit])])] = null
+  var transitionGroups:List[(Nat.Nata, List[(List[Nat.nat], Transition.transition_ext[Unit])])] = null
+  var updateGroups: List[(Nat.Nata, List[(List[Nat.nat], Transition.transition_ext[Unit])])] = null
   var numStates: BigInt = 0
   var ptaNumStates: BigInt = 0
   var preprocessor: FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (List[List[(String, (List[Value.value], List[Value.value]))]] => ((List[Nat.nat] => (List[Nat.nat] => (Nat.nat => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => (FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => ((FSet.fset[((Nat.nat, Nat.nat), Transition.transition_ext[Unit])] => Boolean) => Option[FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]]))))))) => ((FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))] => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Transition.transition_ext[Unit], List[Nat.nat]), (Transition.transition_ext[Unit], List[Nat.nat]))))]) => FSet.fset[(List[Nat.nat], ((Nat.nat, Nat.nat), Transition.transition_ext[Unit]))]))) = null
@@ -296,15 +292,15 @@ object Config {
           }
           this.startEFSM = startEFSM
 
-          val eventGroups = trainParsed.take(config.numTraces).map(run => run.map(x => (x("group").asInstanceOf[String], PTA_Generalisation.event_structure(TypeConversion.toEventTuple(x))))).flatten.distinct.groupBy(x => x._1).map(kv => (kv._1, kv._2.map(v => v._2))).toMap
-          assert(eventGroups.values.forall(abstracts => abstracts.length == 1), "Multiple abstract events for transition group")
-          assert(eventGroups.keySet == groups.keySet, f"Expected ${eventGroups.keySet} == ${groups.keySet}")
-          transitionGroups = eventGroups.keySet.map(k => (eventGroups(k)(0), groups(k))).toList.sortWith((a, b) => Orderings.less(Lattices_Big.Min(Set.seta(a._2.map(x => x._1))), Lattices_Big.Min(Set.seta(b._2.map(x => x._1)))))
+          val eventGroups = trainParsed.take(config.numTraces).map(run => run.map(x => (x("group").asInstanceOf[String]))).flatten.distinct
+          // assert(eventGroups.values.forall(abstracts => abstracts.length == 1), "Multiple abstract events for transition group")
+          assert(eventGroups.toSet == groups.keySet, f"Expected ${eventGroups.toSet} == ${groups.keySet}")
+          transitionGroups = eventGroups.zipWithIndex.map(k => (Nat.Nata(k._2), groups(k._1))).toList.sortWith((a, b) => Orderings.less(Lattices_Big.Min(Set.seta(a._2.map(x => x._1))), Lattices_Big.Min(Set.seta(b._2.map(x => x._1)))))
 
-          val historicalGroups = trainParsed.take(config.numTraces).map(run => run.map(x => (x("historicalGroup").asInstanceOf[String], PTA_Generalisation.event_structure(TypeConversion.toEventTuple(x))))).flatten.distinct.groupBy(x => x._1).map(kv => (kv._1, kv._2.map(v => v._2))).toMap
-          assert(historicalGroups.values.forall(abstracts => abstracts.length == 1), "Multiple abstract events for transition group")
-          assert(historicalGroups.keySet == subgroups.keySet, f"Expected ${historicalGroups.keySet} == ${subgroups.keySet}")
-          updateGroups = historicalGroups.keySet.map(k => (historicalGroups(k)(0), subgroups(k))).toList.sortWith((a, b) =>Orderings.less(Lattices_Big.Min(Set.seta(a._2.map(x => x._1))), Lattices_Big.Min(Set.seta(b._2.map(x => x._1)))))
+          val historicalGroups = trainParsed.take(config.numTraces).map(run => run.map(x => (x("historicalGroup").asInstanceOf[String]))).flatten.distinct
+          // assert(historicalGroups.values.forall(abstracts => abstracts.length == 1), "Multiple abstract events for transition group")
+          assert(historicalGroups.toSet == subgroups.keySet, f"Expected ${historicalGroups.toSet} == ${subgroups.keySet}")
+          updateGroups = historicalGroups.zipWithIndex.map(k => (Nat.Nata(k._2), subgroups(k._1))).toList.sortWith((a, b) =>Orderings.less(Lattices_Big.Min(Set.seta(a._2.map(x => x._1))), Lattices_Big.Min(Set.seta(b._2.map(x => x._1)))))
         }
         println("Transition Groups:")
         for (group <- transitionGroups) {

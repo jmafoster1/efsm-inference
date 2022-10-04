@@ -66,9 +66,11 @@ def rmsd(errors: [float]) -> float:
 
 
 def is_null(value):
-    if isinstance(value, str):
-        return value is None
-    return value is None or value is pd.NA or np.isnan(value)
+    return pd.isnull(value)
+    # if isinstance(value, str):
+    #     return value is None
+    # print("isnan", value)
+    # return value is None or value is pd.NA or np.isnan(value)
 
 
 def find_smallest_distance(individual, pset, args, expected, latent_vars):
@@ -78,7 +80,7 @@ def find_smallest_distance(individual, pset, args, expected, latent_vars):
     func = gp.compile(expr=individual, pset=pset)
 
     # if individual.height == 0:
-    #     print("ROOT VALUE")
+    #     logger.debug("ROOT VALUE")
     #     return distance_between(expected, individual.root.value)
     if not callable(func):
         return distance_between(expected, func)
@@ -158,13 +160,9 @@ def process_row(args):
         sys.exit(1)
 
 
-def get_unused_vars(individual, points, latent_vars_rows, verbose=False):
+def get_unused_vars(individual, points, latent_vars_rows):
     total_vars = list(points.columns)[:-1]
     undefined_vars = [item for items in latent_vars_rows for item in items]
-    if verbose:
-        print("Total vars:", total_vars)
-        print("undefined_vars:", undefined_vars)
-        print("vars in tree:", vars_in_tree(individual))
     return set(total_vars).difference(vars_in_tree(individual)).difference(undefined_vars)
 
 
@@ -321,19 +319,20 @@ def setup_pset_aux(points: pd.DataFrame) -> gp.PrimitiveSet:
     generators = {
         np.dtype("float64"): float,
         np.dtype("int64"): int,
+        np.dtype("bool"): bool,
         pd.Int64Dtype(): int,
         pd.StringDtype(): str,
     }
     output_type = generators[points.dtypes[points.columns[-1]]]
     generators[np.dtype("O")] = output_type
 
-    assert output_type in {int, float, str}, f"Bad output type {output_type}"
+    assert output_type in {int, float, str, bool}, f"Bad output type {output_type}"
 
     types = points.dtypes.to_dict()
     names = list(types)
     datatypes = [generators[types[v]] for v in names]
     assert all(
-        [t in {int, float, str} for t in datatypes]
+        [t in {int, float, str, bool} for t in datatypes]
     ), f"Bad datatype {output_type}"
 
     pset = gp.PrimitiveSetTyped("MAIN", datatypes[:-1], output_type)
@@ -351,19 +350,18 @@ def setup_pset_aux(points: pd.DataFrame) -> gp.PrimitiveSet:
 
     # Add literal terminals
     for v, typ in zip(names, datatypes):
-        assert typ in {int, str, float}, "Bad pset terminal type {typ}"
+        assert typ in {int, str, float, bool}, "Bad pset terminal type {typ}"
         if typ == output_type:
             term_set = set(points[v])
             for term in term_set:
-                if not is_null(term):
+                if not is_null(term) and not any([t.value == term for t in pset.terminals[typ]]):
                     pset.addTerminal(typ(term), typ)
-
     types = [
         (t.value, type(t.value)) for t in pset.mapping.values() if hasattr(t, "value")
     ]
     assert all(
         [
-            type(t.value) in {int, str, float}
+            type(t.value) in {int, str, float, bool}
             for t in pset.mapping.values()
             if hasattr(t, "value")
         ]
@@ -390,15 +388,20 @@ def setup_pset_aux(points: pd.DataFrame) -> gp.PrimitiveSet:
     elif output_type == bool:
         pset.addTerminal(True, bool)
         pset.addTerminal(False, bool)
+        pset.addPrimitive(operator.__le__, [int, int], bool)
+        pset.addPrimitive(operator.__ge__, [int, int], bool)
+        pset.addPrimitive(operator.__lt__, [int, int], bool)
+        pset.addPrimitive(operator.__gt__, [int, int], bool)
+        pset.addPrimitive(operator.__eq__, [int, int], bool)
         pset.addPrimitive(operator.__and__, [bool, bool], bool)
         pset.addPrimitive(operator.__or__, [bool, bool], bool)
-        pset.addPrimitive(operator.__not__, [bool, bool], bool)
+        pset.addPrimitive(operator.__not__, [bool], bool)
     else:
         raise ValueError(f"Invalid output type {output_type}.")
 
     assert all(
         [
-            type(t.value) in {int, str, float}
+            type(t.value) in {int, str, float, bool}
             for t in pset.mapping.values()
             if hasattr(t, "value")
         ]
@@ -439,16 +442,22 @@ def mutateByCommute(individual, pset):
     if len(possible_nodes) == 0:
         return (individual,)
     i, node = random.choice(possible_nodes)
-    individual[i].args.reverse()
+    args = node.args
+    logger.debug()
+    indices = np.roll([individual.index(a) for a in args])
+    for i, a in zip(indices, args):
+        individual[i] = a
+    
+    # assert str(individual) != "add(12, i0)", f"Found add(12, i0)\nNode: {node.arity}"
     return (individual,)
 
 
 def mutateByFuzz(individual, pset):
-    terminals = [(i, node) for i, node in enumerate(individual) if node.arity == 0]
+    terminals = [(i, node) for i, node in enumerate(individual) if node.arity == 0 and len(pset.terminals[node.ret]) > 1]
 
     index, node = random.choice(terminals)
 
-    term = random.choice(pset.terminals[node.ret])
+    term = random.choice([x for x in pset.terminals[node.ret] if x != node])
     if gp.isclass(term):
         term = term()
     individual[index] = term
@@ -496,7 +505,7 @@ def mutInsert(individual, pset):
     return (individual,)
 
 
-def mutate(individual, pset, MAX_MUTATIONS=3):
+def mutate(individual, pset, MAX_MUTATIONS=1):
     mutations = 0
     newNode = creator.Individual(gp.PrimitiveTree.from_string(str(individual), pset))
     mutate = True
@@ -507,31 +516,31 @@ def mutate(individual, pset, MAX_MUTATIONS=3):
             newNode = mutInsert(newNode, pset)[0]
             continue
 
-        op = random.choice(range(6))
+        op = random.choice(range(7))
         if op == 0:
             # HVL SUB
             newNode = gp.mutNodeReplacement(newNode, pset)[0]
-            # logger.debug("Mutating", individual, "by substitution", newNode)
-        if op == 1:
+            # logger.debug(f"Mutating {individual}, by substitution {newNode}")
+        if op == 1 and (len(individual) < 3 or individual.height <= 1):
             # HLV DEL
             newNode = gp.mutShrink(newNode)[0]
-            # logger.debug("Mutating", individual, "by deletion", newNode)
+            # logger.debug(f"Mutating {individual}, by deletion {newNode}")
         if op == 2:
-            # HVL INS
-            newNode = mutInsert(newNode, pset)[0]
-            # logger.debug("Mutating", individual, "by insertion", newNode)
-        if op == 3:
-            # Reverse this.children if they have the same return type, e.g. (x - y) -> (y - x)
-            newNode = mutateByCommute(newNode, pset)[0]
-            # logger.debug("Mutating", individual, "by commutation", newNode)
-        if op == 4:
             # mutate by replacing a random node with a terminal
             newNode = mutateByTerminal(newNode, pset)[0]
-            # logger.debug("Mutating", individual, "by terminal swap", newNode)
-        if op == 5:
+            # logger.debug(f"Mutating {individual}, by terminal swap {newNode}")
+        if op == 3:
             # fuzz a terminal
             newNode = mutateByFuzz(newNode, pset)[0]
-            # logger.debug("Mutating", individual, "by fuzzing", newNode)
+            # logger.debug(f"Mutating {individual}, by fuzzing {newNode}")
+        else:
+            # HVL INS
+            newNode = mutInsert(newNode, pset)[0]
+            # logger.debug(f"Mutating {individual}, by insertion {newNode}")
+        # if op == 3:
+        #     # Reverse this.children if they have the same return type, e.g. (x - y) -> (y - x)
+        #     newNode = mutateByCommute(newNode, pset)[0]
+        #     logger.debug(f"Mutating {individual}, by commutation {newNode}")
     return (newNode,)
 
 
@@ -592,7 +601,7 @@ def generate(pset, min_, max_, condition, type_=None, simp=None):
         nodes, edges, labels = gp.graph(expr)
         types = [type(v) for v in labels.values()]
         assert all(
-            [t in {int, str, float} for t in types]
+            [t in {int, str, float, bool} for t in types]
         ), f"Bad type {[(v, type(v)) for v in labels.values()]} in {str(creator.Individual(expr))}\n Type was {type_}"
         return simp(expr)
     return expr
@@ -650,16 +659,6 @@ def parsimony_select(individuals, k):
     )[:k]
 
 
-# def run_gp(
-#     points: pd.DataFrame, pset, mu=100, lamb=10, ngen=100, random_seed=0, seeds=[], bad=[]
-# ):
-#     try:
-#         run_gp_aux(points=points, pset=pset, mu=mu, lamb=lamb, ngen=ngen, seeds=seeds, bad=bad)
-#     except:
-#         logger.debug(traceback.format_exc())
-#         sys.exit(0)
-
-
 def sort_height(individual, training_set):
     height = individual.height
     if height > 0:
@@ -681,7 +680,8 @@ def run_gp(
     seeds=[],
     bad=[],
 ):
-    print("Running GP")
+    print("terminals", [t.value for t in pset.terminals[int]])
+    logger.debug("Running GP")
     points = points.replace({np.nan: None, np.NaN: None})
     random.seed(random_seed)
 
@@ -709,6 +709,7 @@ def run_gp(
     generators = {
         np.dtype("float64"): z3.Real,
         np.dtype("int64"): z3.Int,
+        np.dtype("bool"): z3.Bool,
         pd.Int64Dtype(): z3.Int,
         pd.StringDtype(): z3.String,
     }
@@ -725,8 +726,8 @@ def run_gp(
         genHalfAndHalf,
         pset=pset,
         min_=1,
-        max_=1,
-        simp=lambda x: simplify(x, pset, types),
+        max_=5,
+        simp=lambda x: x#simplify(x, pset, types),
     )
     toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
@@ -742,10 +743,10 @@ def run_gp(
         "mutate", gp.staticLimit(key=operator.attrgetter("height"), max_value=17)
     )
 
-    print("Generating initial population")
+    logger.debug("Generating initial population")
 
     pop = toolbox.population(n=mu)
-    print(f"Fitness of pop[0] {pop[0]} is {pop[0].fitness.values}")
+    logger.debug(f"Fitness of pop[0] {pop[0]} is {pop[0].fitness.values}")
 
     if len(seeds) > 0:
         logger.debug("SEEDS!")
@@ -784,6 +785,9 @@ def run_gp(
     assert is_distinct(pop), "Population contains duplicated individuals."
     pop += toolbox.population(n=mu - len(pop))
     pop = sorted(pop, key=lambda x: x.fitness.values)
+    
+    for p in pop:
+        logger.debug(p)
 
     hof = tools.HallOfFame(1)
 
@@ -796,20 +800,20 @@ def run_gp(
     mstats.register("max", np.max)
 
     try:
-        print("Calling eaMuPlusLambda")
+        logger.debug("Calling eaMuPlusLambda")
         pop, log = eaMuPlusLambda(
             pop,
             toolbox,
             mu,
             lamb,
-            0.5,
-            0.5,
+            0.2,
+            0.8,
             ngen,
             stats=mstats,
             halloffame=None,
             verbose=False,
         )
-        print("Finished GP")
+        logger.debug("Finished GP")
 
         # for p in pop:
         #     logger.debug(str(p), p.fitness.values, toolbox.height(p))
@@ -849,6 +853,31 @@ def to_z3(tree, labels, types):
                 return labels[root]
 
         nested = tuple(_make_tuple(tree, v, root) for v in children)
+        if labels[root] == "lt":
+            c1, c2 = nested
+            return c1 < c2
+        if labels[root] == "ge":
+            c1, c2 = nested
+            return c1 >= c2
+        if labels[root] == "gt":
+            c1, c2 = nested
+            return c1 > c2
+        if labels[root] == "le":
+            c1, c2 = nested
+            logger.debug(c1, type(c1), c2, type(c2))
+            return c1 <= c2
+        if labels[root] == "eq":
+            c1, c2 = nested
+            return c1 == c2
+        if labels[root] == "and_":
+            c1, c2 = nested
+            return z3.And(c1, c2)
+        if labels[root] == "or_":
+            c1, c2 = nested
+            return z3.Or(c1, c2)
+        if labels[root] == "not_":
+            c1, = nested
+            return z3.Not(c1)
         if labels[root] == "add":
             c1, c2 = nested
             return c1 + c2
@@ -867,7 +896,7 @@ def to_z3(tree, labels, types):
         elif labels[root] == "id":
             return nested[0]
         else:
-            raise ValueError(f"Invalid operator {root}")
+            raise ValueError(f"Invalid operator {labels[root]} with {len(children)} children.")
 
     # Do some sanity checks on the input.
     root = 0  # By construction of GP individuals
@@ -880,6 +909,9 @@ def to_z3(tree, labels, types):
 
 
 def make_binary(fun, children):
+    if len(children) == 1:
+        c1 = to_exp_string(children[0])
+        return f"{fun}({c1})"
     if len(children) == 2:
         c1 = to_exp_string(children[0])
         c2 = to_exp_string(children[1])
@@ -891,6 +923,18 @@ def make_binary(fun, children):
 
 
 def to_exp_string(exp):
+    if str(exp.decl()) == "Not":
+        return make_binary("not_", exp.children())
+    if str(exp.decl()) == ">=":
+        return make_binary("ge", exp.children())
+    if str(exp.decl()) == "<":
+        return make_binary("lt", exp.children())
+    if str(exp.decl()) == "<=":
+        return make_binary("le", exp.children())
+    if str(exp.decl()) == ">":
+        return make_binary("gt", exp.children())
+    if str(exp.decl()) == "==":
+        return make_binary("eq", exp.children())
     if str(exp.decl()) == "+":
         return make_binary("add", exp.children())
     elif str(exp.decl()) == "-":
@@ -911,17 +955,19 @@ def from_z3(exp, pset):
 
 
 def simplify(individual, pset, types):
+    if (individual[0].ret == bool):
+        return individual
     # Duplicate the individual
     individual = creator.Individual(individual.copy())
     nodes, edges, labels = gp.graph(individual)
-
+    
     g = nx.Graph()
     g.add_nodes_from(nodes)
     g.add_edges_from(edges)
 
     try:
         z3_exp = to_z3(g, labels, types)
-        if type(z3_exp) in {int, float, str}:
+        if type(z3_exp) in {int, float, str, bool}:
             return creator.Individual(
                 gp.PrimitiveTree([gp.Terminal(z3_exp, z3_exp, type(z3_exp))])
             )
@@ -1023,7 +1069,7 @@ def eaMuPlusLambda(
     logbook.header = ["gen", "nevals"] + (stats.fields if stats else [])
 
     # Evaluate the individuals with an invalid fitness
-    print("Evaluating fitness")
+    logger.debug("Evaluating fitness")
     invalid_ind = [ind for ind in population if not ind.fitness.valid]
     fitnesses = list(toolbox.map(toolbox.evaluate, invalid_ind))
     for ind, fit in zip(invalid_ind, fitnesses):
@@ -1034,7 +1080,7 @@ def eaMuPlusLambda(
     assert all(
         [ind.fitness.valid for ind in population]
     ), "Invalid fitnesses in population after setting fitnesses!"
-    print("Evaluated fitness")
+    logger.debug("Evaluated fitness")
 
     if halloffame is not None:
         halloffame.update(population)
@@ -1045,9 +1091,10 @@ def eaMuPlusLambda(
         logger.debug(logbook.stream)
 
     # Begin the generational process
-    print("Entering main loop")
+    logger.debug("Entering main loop")
     for gen in range(0, ngen):
-        print("gen", gen, "best", population[0], population[0].fitness.values)
+        logger.debug(f"gen {gen} best {population[0]} {population[0].fitness.values}")
+        logger.debug(f"  pop {len(population)}: {[str(i) for i in population]}")
         if population[0].fitness.values == (0,):
             return population, logbook
         assert all(
@@ -1145,8 +1192,8 @@ def shortcut_latent(points: pd.DataFrame) -> bool:
 
 
 if __name__ == "__main__":
-    points = pd.read_csv("csvs/gamma.csv")
-    print(points)
+    points = pd.read_csv("csvs/n1.csv")
+    logger.debug(points)
 
     for col in points:
         if points.dtypes[col] == object:
@@ -1158,11 +1205,15 @@ if __name__ == "__main__":
     # logger.info(f"\n{points}")
     # logger.info(points.dtypes)
     # assert False
+    
+    latent_vars_rows=[() for i in range(len(points))]
+
 
     # if "r1" not in points.columns:
+    # latent_vars_rows=[("r1",) for i in range(len(points))],
     #     points.insert(0, "r1", None)
     pset = setup_pset(points)
-    print(pset.mapping)
+    logger.debug(pset.mapping)
     
 
     # ind = gp.PrimitiveTree.from_string("add(-100, r1)", pset)
@@ -1187,7 +1238,9 @@ if __name__ == "__main__":
         pset,
         random_seed=3,
         seeds=[],
-        latent_vars_rows=[() for i in range(len(points))],
+        mu=100,
+        ngen=200,
+        latent_vars_rows=latent_vars_rows
     )
     logger.debug(f"best is {best}")
     logger.debug(best.height)
