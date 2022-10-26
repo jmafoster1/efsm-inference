@@ -27,7 +27,7 @@ RUN apt-get update \
     && apt-get install libenchant-2-2 -y \
     && apt-get install python3-pip -y \
     && apt-get install graphviz -y
-COPY inference-tool/requirements.txt /root
+COPY requirements.txt /root
 RUN pip install -r /root/requirements.txt
 
 # Install further dependencies for EFSM inference tool
@@ -42,4 +42,15 @@ RUN useradd sbtuser \
 
 # Setup user and working directory
 USER sbtuser:sbtuser
-WORKDIR /home/sbtuser
+WORKDIR /home/sbtuser/efsm-inference
+
+# Copy over code files
+COPY --chown=sbtuser:sbtuser src/ /home/sbtuser/efsm-inference/src
+COPY --chown=sbtuser:sbtuser project/ /home/sbtuser/efsm-inference/project
+COPY --chown=sbtuser:sbtuser build.sbt /home/sbtuser/efsm-inference
+COPY --chown=sbtuser:sbtuser lib/ /home/sbtuser/efsm-inference/lib
+
+RUN sbt assembly
+
+# I'm confused as to why this doesn't work
+ENTRYPOINT java -jar target/scala-2.12/inference-tool-assembly-0.1.0-SNAPSHOT.jar $@

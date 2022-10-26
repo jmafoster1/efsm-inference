@@ -76,7 +76,7 @@ def find_smallest_distance(individual, pset, args, expected, latent_vars):
     type_ = individual[0].ret
     func = gp.compile(expr=individual, pset=pset)
 
-    if individual.height == 0:
+    if individual.height == 0 and individual[0] not in pset.terminals[individual.root.ret]:
         return distance_between(expected, individual.root.value)
     if not callable(func):
         return distance_between(expected, func)
@@ -84,6 +84,7 @@ def find_smallest_distance(individual, pset, args, expected, latent_vars):
     if len(undefined_vars) == 0:
         actual = func(**args)
         distance = distance_between(expected, actual)
+        print(expected, actual, distance)
         if isclose(distance, 0, abs_tol=1e-10):
             return 0
         if len(latent_vars) == 0:
@@ -1042,6 +1043,9 @@ def eaMuPlusLambda(
     if verbose:
         logger.debug(logbook.stream)
 
+    print("INITIAL POPULATION")
+    print([(str(i), i.fitness.values[0]) for i in population])
+
     # Begin the generational process
     print("Entering main loop")
     for gen in range(0, ngen):
@@ -1091,6 +1095,8 @@ def eaMuPlusLambda(
         if halloffame is not None:
             halloffame.update(offspring)
 
+    print("FINAL POPULATION")
+    print([(str(i), i.fitness.values[0]) for i in population])
     return population, logbook
 
 
@@ -1143,7 +1149,7 @@ def shortcut_latent(points: pd.DataFrame) -> bool:
 
 
 if __name__ == "__main__":
-    points = pd.read_csv("test3.csv", index_col=0)
+    points = pd.read_csv("test4.csv", index_col=0)
 
     for col in points:
         if points.dtypes[col] == object:
@@ -1161,10 +1167,14 @@ if __name__ == "__main__":
     pset = setup_pset(points)
     pset.addTerminal(200, int)
 
-    ind = gp.PrimitiveTree.from_string("add(-100, r1)", pset)
-    logger.info(f"Fitness of {ind} is {fitness(ind, points, pset, [], [() for i in range(len(points))])}")
-    logger.info(f"{ind} is correct? {correct(ind, points, pset, [() for i in range(len(points))])}")
-    assert False
+    # ind = gp.PrimitiveTree.from_string("add(-100, r1)", pset)
+    # logger.info(f"Fitness of {ind} is {fitness(ind, points, pset, [], [() for i in range(len(points))])}")
+    # logger.info(f"{ind} is correct? {correct(ind, points, pset, [() for i in range(len(points))])}")
+    # assert False
+
+    ind = gp.PrimitiveTree.from_string("r1", pset)
+    logger.info(f"Fitness of {ind} is {fitness(ind, points, pset, [], [('r1',) for i in range(len(points))])}")
+    logger.info(f"{ind} is correct? {correct(ind, points, pset, [('r1',) for i in range(len(points))])}")
 
     # expr = "add(sub(r1, 350), add(5, 250))"
     # individual = creator.Individual(gp.PrimitiveTree.from_string(expr, pset))
@@ -1183,7 +1193,7 @@ if __name__ == "__main__":
         pset,
         random_seed=3,
         seeds=[],
-        latent_vars_rows=[() for i in range(len(points))],
+        latent_vars_rows=[("r1",) for i in range(len(points))],
     )
     logger.debug()
     logger.debug(f"best is {best}")
