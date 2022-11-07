@@ -5,11 +5,22 @@ EFSM inference tool which takes in system execution traces and returns an EFSM m
 ## Compile and run
 
 ### Docker
+The tool can be build and run using [Docker](https://www.docker.com) without the need to install any additional dependencies natively.
 ```
 cd inference
 docker build -t inference .
-docker run -v ~/Documents/efsm-inference/inference-tool/sample-traces:/home/sbtuser/efsm-inference/sample-traces -it inference
+docker run inference [<options>] trainfile testfile
 ```
+
+You may additionally need to pass in "volume mounts" to Docker to enable it to access files on the host, i.e. `trainfile` and `testfile`, or to write logs to the host. This can be done by passing the `-v` option to `docker`, the structure being `-v <path on host>:<path on container>`. Please note that all paths must be absolute.
+
+An example is as follows.
+```
+docker run -v ~/Documents/efsm-inference/inference-tool/sample-traces:/home/sbtuser/efsm-inference/sample-traces -v ~/Documents/efsm-inference/inference-tool/dotfiles:/home/sbtuser/efsm-inference/dotfiles inference -d dotfiles sample-traces/vend1.json sample-traces/vend2.json
+```
+Here, we run the container with `sample-traces` and `dotfiles` mounted as volumes. We then use `sample-traces/vend1.json` as our train file and `sample-traces/vend2.json` as our test file. We then use the `-d` option (full list below) to write all output to the `dotfiles` directory.
+
+**NOTE:** To make output files visible after inference has run, you _must_ pass in your intended output directory as a volume to the docker container, otherwise it will disappear when the volume exits.
 
 ### Native build from source
 In order to run the tool, certain requirements must be met:
@@ -51,10 +62,14 @@ The tool can be compiled by calling `sbt assembly` from within the `inference-to
 The JSON training and test files should contain a list of lists of objects of the form `{"label": "label1", "inputs": ["i1", "i2",...],"outputs": ["o1", "o2",...]},`. Examples can be found within the `inference-tool/experimental-data` directory.
 
 ## References
-<a name="subsumptionPaper">[1]</a> [Formalising extended finite state machine transition merging](https://doi.org/10.1007/978-3-030-30446-1_14)<br/>
+<a name="subsumptionPaper">[1]</a> [Formalising Extended Finite State Machine Transition Merging](https://doi.org/10.1007/978-3-030-30446-1_14)<br/>
 Michael Foster, Achim D. Brucker, Ramsay G. Taylor, John Derrick<br/>
 In Proceedings of the 20th International Conference on Formal Engineering Methods, 2018
 
-<a name="inferencePaper">[2]</a> [Incorporating data into efsm inference](https://doi.org/10.1007/978-3-030-30446-1_14)<br/>
+<a name="inferencePaper">[2]</a> [Incorporating Data into EFSM Inference](https://doi.org/10.1007/978-3-030-30446-1_14)<br/>
 Michael Foster, Achim D. Brucker, Ramsay G. Taylor, Siobhán North, John Derrick<br/>
 In Software Engineering and Formal Methods, 2019
+
+<a name="gpPaper">[2]</a> [Reverse-Engineering EFSMs with Data Dependencies](https://doi.org/10.1007/978-3-031-04673-5_3)<br/>
+Michael Foster, John Derrick, Neil Walkinshaw<br/>
+In Testing Software and Systems, 2021
