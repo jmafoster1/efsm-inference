@@ -44,12 +44,12 @@ def distance_between(expected, actual):
     if (
         isinstance(expected, Number)
         and isinstance(actual, Number)
-        and not is_null(actual)
+        and not pd.isnull(actual)
     ):
         return abs(expected - actual)
     elif type(expected) == str and type(actual) == str:
         return levenshtein(expected, actual)
-    elif type(expected) != type(actual) or is_null(actual):
+    elif type(expected) != type(actual) or pd.isnull(actual):
         return float("inf")
     raise ValueError(
         f"Expected int, float, or string type, not {actual}:{type(actual)}."
@@ -59,19 +59,13 @@ def distance_between(expected, actual):
 def rmsd(errors: [float]) -> float:
     assert len(errors) > 0, "Cannot calculate RMSD of empty list."
     total = sum([float(d) ** 2 for d in errors])
-    assert not is_null(total), f"sum of {errors} cannot be nan"
+    assert not pd.isnull(total), f"sum of {errors} cannot be nan"
     mean = total / len(errors)
     return sqrt(mean)
 
 
-def is_null(value):
-    if isinstance(value, str):
-        return value is None
-    return value is None or value is pd.NA or np.isnan(value)
-
-
 def find_smallest_distance(individual, pset, args, expected, latent_vars):
-    undefined_vars = [x for x in args if is_null(args[x])]
+    undefined_vars = [x for x in args if pd.isnull(args[x])]
     consts = set()
     type_ = individual[0].ret
     func = gp.compile(expr=individual, pset=pset)
@@ -113,7 +107,7 @@ def find_smallest_distance(individual, pset, args, expected, latent_vars):
 
     if isclose(min_distance, 0, abs_tol=1e-10):
         return 0
-    assert not is_null(min_distance), "min_distance cannot be nan"
+    assert not pd.isnull(min_distance), "min_distance cannot be nan"
     return min_distance
 
 
@@ -123,7 +117,7 @@ def vars_in_tree(individual):
 
 
 def latent_variables(
-    individual, points, criterion=lambda points_c: any([is_null(v) for v in points_c])
+    individual, points, criterion=lambda points_c: any([pd.isnull(v) for v in points_c])
 ):
     undefined_at = [c for c in list(points) if criterion(points[c])]
     return list(set(undefined_at).intersection(vars_in_tree(individual)))
@@ -198,19 +192,19 @@ def evaluate_candidate(
 
     distances = [process_row(row) for row in data]
 
-    assert not any([is_null(x) for x in distances]), "no distance can be nan"
+    assert not any([pd.isnull(x) for x in distances]), "no distance can be nan"
 
     copy = points.copy()
     copy["distances"] = distances
 
     mistakes = sum([x > 0 for x in distances])
 
-    assert not is_null(
+    assert not pd.isnull(
         rmsd(distances)
     ), "rmsd(distances) cannot be nan (evaluate_candidate:145)"
     fitness = rmsd(distances) + mistakes
 
-    assert not is_null(fitness), "fitness cannot be nan (evaluate_candidate:148)"
+    assert not pd.isnull(fitness), "fitness cannot be nan (evaluate_candidate:148)"
 
     return fitness + len(set(unused_vars).difference(latent_variables(individual, points)))
 
@@ -245,7 +239,7 @@ def fitness(
     try:
         score = evaluate_candidate(individual, points, pset, latent_vars_rows)
         newline = "\n  "
-        assert not is_null(
+        assert not pd.isnull(
             score
         ), f"Score cannot be nan\nPSET:\n  {newline.join(sorted(list(pset.mapping)))}"
         return (score,)
@@ -353,7 +347,7 @@ def setup_pset_aux(points: pd.DataFrame) -> gp.PrimitiveSet:
         if typ == output_type:
             term_set = set(points[v])
             for term in term_set:
-                if not is_null(term):
+                if not pd.isnull(term):
                     pset.addTerminal(typ(term), typ)
 
     types = [
