@@ -203,7 +203,8 @@ object Config {
         if (config.logFile == null)
           config = config.copy(logFile = config.dotfiles + "/log")
         if (!Files.exists(Paths.get(config.dotfiles)))
-          new java.io.File(config.dotfiles).mkdirs
+          if (!new java.io.File(config.dotfiles).mkdirs)
+            throw new IllegalStateException(s"Could not create directory ${config.dotfiles}")
         if (Files.list(Paths.get(config.dotfiles)).findAny().isPresent())
           throw new IllegalArgumentException(s"Dotfiles directory '${config.dotfiles}' is not empty")
         if (Files.exists(Paths.get(config.logFile)))
