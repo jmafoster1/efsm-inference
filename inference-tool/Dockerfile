@@ -53,4 +53,4 @@ COPY --chown=sbtuser:sbtuser lib/ /home/sbtuser/efsm-inference/lib
 RUN sbt assembly
 
 # I'm confused as to why this doesn't work
-ENTRYPOINT java -jar target/scala-2.12/inference-tool-assembly-0.1.0-SNAPSHOT.jar $@
+ENTRYPOINT ["java", "-jar", "target/scala-2.12/inference-tool-assembly-0.1.0-SNAPSHOT.jar"]

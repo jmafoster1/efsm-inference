@@ -84,7 +84,6 @@ def find_smallest_distance(individual, pset, args, expected, latent_vars):
     if len(undefined_vars) == 0:
         actual = func(**args)
         distance = distance_between(expected, actual)
-        print(expected, actual, distance)
         if isclose(distance, 0, abs_tol=1e-10):
             return 0
         if len(latent_vars) == 0:
