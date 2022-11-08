@@ -1,0 +1,47 @@
+Bootstrap: docker
+From: ubuntu:20.04
+
+%files
+requirements.txt efsm-inference/requirements.txt
+build.sbt efsm-inference/build.sbt
+src/ efsm-inference/src
+project/ efsm-inference/project
+lib/ efsm-inference/lib
+
+%post
+  cd efsm-inference
+
+  apt-get update \
+  && apt-get install openjdk-11-jdk-headless -y \
+  && export JAVA_HOME=/usr/lib/jvm/openjdk-11-jdk \
+  && export PATH=$PATH:$JAVA_HOME/bin
+
+  # Install dependencies for SBT install
+  apt-get update \
+  && apt-get install curl -y \
+  && apt-get install gnupg -y
+
+  # Setup repository to install SBT from
+  curl -sL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823" | gpg --dearmor > /usr/share/keyrings/scala-sbt.gpg \
+  && echo "deb [signed-by=/usr/share/keyrings/scala-sbt.gpg] https://repo.scala-sbt.org/scalasbt/debian all main" | tee /etc/apt/sources.list.d/sbt.list \
+  && echo "deb [signed-by=/usr/share/keyrings/scala-sbt.gpg] https://repo.scala-sbt.org/scalasbt/debian /" | tee /etc/apt/sources.list.d/sbt_old.list
+
+  # Install SBT
+  apt-get update \
+  && apt-get install sbt -y
+
+  # Install python dependencies for EFSM inference tool
+  apt-get update \
+  && apt-get install python3 -y \
+  && apt-get install libpython3.9 -y \
+  && apt-get install libenchant-2-2 -y \
+  && apt-get install python3-pip -y \
+  && apt-get install graphviz -y
+  pip install -r requirements.txt
+
+  # Install further dependencies for EFSM inference tool
+  apt-get update \
+  && apt-get install libz3-java -y
+
+  # Copy over code files
+  sbt assembly

@@ -3,3 +3,4 @@ slurm-*.out
 results/
 results-old
 *.zip
+*.sif
