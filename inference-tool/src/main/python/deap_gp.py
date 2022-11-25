@@ -70,7 +70,10 @@ def find_smallest_distance(individual, pset, args, expected, latent_vars):
     type_ = individual[0].ret
     func = gp.compile(expr=individual, pset=pset)
 
-    if individual.height == 0 and individual[0] not in pset.terminals[individual.root.ret]:
+    if (
+        individual.height == 0
+        and individual[0] not in pset.terminals[individual.root.ret]
+    ):
         return distance_between(expected, individual.root.value)
     if not callable(func):
         return distance_between(expected, func)
@@ -157,7 +160,9 @@ def get_unused_vars(individual, points, latent_vars_rows, verbose=False):
         print("Total vars:", total_vars)
         print("undefined_vars:", undefined_vars)
         print("vars in tree:", vars_in_tree(individual))
-    return set(total_vars).difference(vars_in_tree(individual)).difference(undefined_vars)
+    return (
+        set(total_vars).difference(vars_in_tree(individual)).difference(undefined_vars)
+    )
 
 
 def evaluate_candidate(
@@ -206,7 +211,9 @@ def evaluate_candidate(
 
     assert not pd.isnull(fitness), "fitness cannot be nan (evaluate_candidate:148)"
 
-    return fitness + len(set(unused_vars).difference(latent_variables(individual, points)))
+    return fitness + len(
+        set(unused_vars).difference(latent_variables(individual, points))
+    )
 
     # if len(unused_vars) == 0:
     #     return fitness
@@ -293,10 +300,12 @@ def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
         logger.debug(traceback.format_exc())
         sys.exit(1)
 
+
 def protectedDiv(left, right):
     if right == 0:
         return float("inf")
     return left / right
+
 
 def setup_pset_aux(points: pd.DataFrame) -> gp.PrimitiveSet:
     """
@@ -1142,7 +1151,8 @@ def shortcut_latent(points: pd.DataFrame) -> bool:
 
 
 if __name__ == "__main__":
-    points = pd.read_csv("test4.csv", index_col=0)
+    # points = pd.read_csv("test3.csv", index_col=0)
+    points = pd.read_csv("/home/michael/Documents/ACHAR/csvs/s1_vend_S.csv")
 
     for col in points:
         if points.dtypes[col] == object:
@@ -1155,19 +1165,11 @@ if __name__ == "__main__":
     # logger.info(points.dtypes)
     # assert False
 
+    latent_vars_rows = [() for i in range(len(points))]
     if "r1" not in points.columns:
         points.insert(0, "r1", None)
+        latent_vars_rows = [("r1",) for i in range(len(points))]
     pset = setup_pset(points)
-    pset.addTerminal(200, int)
-
-    # ind = gp.PrimitiveTree.from_string("add(-100, r1)", pset)
-    # logger.info(f"Fitness of {ind} is {fitness(ind, points, pset, [], [() for i in range(len(points))])}")
-    # logger.info(f"{ind} is correct? {correct(ind, points, pset, [() for i in range(len(points))])}")
-    # assert False
-
-    ind = gp.PrimitiveTree.from_string("r1", pset)
-    logger.info(f"Fitness of {ind} is {fitness(ind, points, pset, [], [('r1',) for i in range(len(points))])}")
-    logger.info(f"{ind} is correct? {correct(ind, points, pset, [('r1',) for i in range(len(points))])}")
 
     # expr = "add(sub(r1, 350), add(5, 250))"
     # individual = creator.Individual(gp.PrimitiveTree.from_string(expr, pset))
@@ -1182,14 +1184,9 @@ if __name__ == "__main__":
     # assert False
 
     best = run_gp(
-        points,
-        pset,
-        random_seed=3,
-        seeds=[],
-        latent_vars_rows=[("r1",) for i in range(len(points))],
+        points, pset, random_seed=3, seeds=[], latent_vars_rows=latent_vars_rows,
     )
-    logger.debug()
-    logger.debug(f"best is {best}")
+    logger.debug(f"\n\nbest is {best}")
     logger.debug(best.height)
 
     # bad = []
