@@ -10867,18 +10867,24 @@ Lista.map[Value.value,
                                       }),
                                      Inference.i_possible_steps(uPTA, s,
                          registers, label, inputs)))
+
       val updated: Map[Nat.nat, Option[Value.value]] =
         (Transition.apply_updates(Transition.Updates[Unit](tran),
                                    AExp.join_ir(inputs,
          registers))).apply(registers);
+         println(f"$label(${PrettyPrinter.show(inputs)} ${PrettyPrinter.show(registers)}) -> ${PrettyPrinter.show(tran)} -> ${PrettyPrinter.show(updated)}")
       (if (t1.contains(uids.head))
-        trace_collect_training_sets(t, uPTA, sa, updated, t1, t2,
-                                     ((inputs, registers)::g1), g2)
-        else (if (t2.contains(uids.head))
-               trace_collect_training_sets(t, uPTA, sa, updated, t1, t2, g1,
-    ((inputs, registers)::g2))
-               else trace_collect_training_sets(t, uPTA, sa, updated, t1, t2,
-         g1, g2)))
+        {
+          println("FOUND T1")
+          trace_collect_training_sets(t, uPTA, sa, updated, t1, t2, ((inputs, registers)::g1), g2)
+        }
+        else (if (t2.contains(uids.head)) {
+          println("FOUND T2")
+          trace_collect_training_sets(t, uPTA, sa, updated, t1, t2, g1, ((inputs, registers)::g2))
+        }
+               else trace_collect_training_sets(t, uPTA, sa, updated, t1, t2, g1, g2)
+             )
+           )
     }
 }
 
@@ -11011,18 +11017,21 @@ def distinguish(log: List[List[(String,
                            Transition.transition_ext[Unit]))]]
   =
   {
-    val t1: Transition.transition_ext[Unit] =
-      Inference.get_by_ids(destMerge, t1ID)
-    val t2: Transition.transition_ext[Unit] =
-      Inference.get_by_ids(destMerge, t2ID)
+    PrettyPrinter.iEFSM2dot(preDestMerge, "preDestMerge")
+    PrettyPrinter.iEFSM2dot(destMerge, "destMerge")
+    val t1: Transition.transition_ext[Unit] = Inference.get_by_ids(destMerge, t1ID)
+    val t2: Transition.transition_ext[Unit] = Inference.get_by_ids(destMerge, t2ID)
     val uPTA: FSet.fset[(List[Nat.nat],
                           ((Nat.nat, Nat.nat),
                             Transition.transition_ext[Unit]))]
-      = transfer_updates(destMerge, Inference.make_pta(log))
+      = transfer_updates(destMerge, Inference.breadth_first_label(Inference.make_pta(log)))
+    PrettyPrinter.iEFSM2dot(uPTA, "uPTA")
     val (g1, g2):
           (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])],
             List[(List[Value.value], Map[Nat.nat, Option[Value.value]])])
       = collect_training_sets(log, uPTA, t1ID, t2ID, Nil, Nil);
+    Log.root.debug(f"G1 $g1")
+    Log.root.debug(f"G2 $g2")
     (Dirties.findDistinguishingGuards(g1, g2) match {
        case None => None
        case Some((g1a, g2a)) =>

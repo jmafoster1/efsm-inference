@@ -55,7 +55,27 @@ object TypeConversion {
       case "not" => {
         return GExp.gNot(toGExpAux(graph, c1, labels))
       }
-      case _ => throw new IllegalArgumentException(f"Invalid operator ${root}")
+      case "le" => {
+        val c2 = children(1)
+        return GExp.Le(toAExpAux(graph, c1, labels), toAExpAux(graph, c2, labels))
+      }
+      case "lt" => {
+        val c2 = children(1)
+        return GExp.Lt(toAExpAux(graph, c1, labels), toAExpAux(graph, c2, labels))
+      }
+      case "ge" => {
+        val c2 = children(1)
+        return GExp.Gt(toAExpAux(graph, c1, labels), toAExpAux(graph, c2, labels))
+      }
+      case "gt" => {
+        val c2 = children(1)
+        return GExp.Ge(toAExpAux(graph, c1, labels), toAExpAux(graph, c2, labels))
+      }
+      case "eq" => {
+        val c2 = children(1)
+        return GExp.Eq(toAExpAux(graph, c1, labels), toAExpAux(graph, c2, labels))
+      }
+      case _ => throw new IllegalArgumentException(f"Invalid operator $root in $labels")
     }
   }
 

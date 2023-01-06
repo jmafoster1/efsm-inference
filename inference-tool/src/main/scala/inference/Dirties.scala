@@ -136,6 +136,9 @@ object Dirties {
   def findDistinguishingGuards(
     g1: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])]),
     g2: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])])): Option[(GExp.gexp[VName.vname], GExp.gexp[VName.vname])] = {
+      Log.root.debug(f"${"-"*84}\nGetting a distinguishing guard")
+      Log.root.debug(f"$g1")
+      Log.root.debug(f"$g2")
       Config.config.guardSeed += 1
 
 
@@ -143,7 +146,7 @@ object Dirties {
 
     // (g1 zip List.fill(g1.length)(Value.Inta(Int.int_of_integer(1)))) ++ (g1 zip List.fill(g1.length)(Value.Inta(Int.int_of_integer(0))))
     val (training_set, types, latent_vars_rows) = setupTrainingSet(ioPairs)
-    training_set.bracketAccess("expected").astype("bool")
+    training_set.bracketUpdate("expected", training_set.bracketAccess("expected").astype("bool"))
     val pset = deap_gp.setup_pset(training_set)
 
     // If any of the guards need to simultaneously be true and false then stop
