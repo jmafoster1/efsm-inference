@@ -24,9 +24,10 @@ definition score :: "(cfstate \<Rightarrow>f colour) \<Rightarrow> iEFSM \<Right
       states_transitions = fimage (\<lambda>s. (s, fimage (snd \<circ> snd) (outgoing_transitions s e))) (S e);
       red = ffilter (\<lambda>(s, _). f $ s = Red) states_transitions;
       blue = ffilter (\<lambda>(s, _). f $ s = Blue) states_transitions;
-      pairs = red |\<times>| blue
+      pairs = red |\<times>| blue;
+      bonus_scores = bonus_score e
     in
-      ffilter (\<lambda>s. Score s \<noteq> 0) (fimage (\<lambda>((rs, rt), (bs, bt)). \<lparr>Score=score_state_pair rt bt e strat, S1=rs, S2=bs\<rparr>) pairs)
+      ffilter (\<lambda>s. Score s > 0) (scoreboard_add bonus_scores (fimage (\<lambda>((rs, rt), (bs, bt)). \<lparr>Score=score_state_pair rt bt e strat, S1=rs, S2=bs\<rparr>) pairs))
   )"
 
 definition update_red_blue :: "(cfstate \<times> cfstate) set \<Rightarrow> score fset \<Rightarrow> (cfstate \<Rightarrow>f colour) \<Rightarrow> (cfstate \<Rightarrow>f colour)" where

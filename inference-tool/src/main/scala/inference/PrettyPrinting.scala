@@ -54,18 +54,21 @@ object PrettyPrinter {
     }
   }
 
-  def gexpToString(g: GExp.gexp[VName.vname]): String = g match {
+  def show(g: GExp.gexp[VName.vname]): String = g match {
     case GExp.Bc(v) => v.toString()
     case GExp.Eq(a, b) => s"(= ${show(a)} ${show(b)})"
     case GExp.Gt(a, b) => s"(> ${show(a)} ${show(b)})"
     case GExp.In(v, l) => s"${vnameToString(v)} E {${l.map(show).mkString(", ")}}"
     case GExp.Nor(g1, g2) => {
-      return s"(not (or ${gexpToString(g1)} ${gexpToString(g2)}))"
+      if (g1 == g2)
+        return s"(not ${show (g1)})"
+      else
+        return s"(not (or ${show(g1)} ${show(g2)}))"
     }
   }
 
   def guardsToString(g: List[GExp.gexp[VName.vname]]): String = {
-    "[" + g.map(x => gexpToString(x)).mkString(", ") + "]"
+    "[" + g.map(x => show(x)).mkString(", ") + "]"
   }
 
   def outputsToString(g: List[AExp.aexp[VName.vname]]): String = {

@@ -297,15 +297,41 @@ definition score_from_list :: "tids list fset \<Rightarrow> tids list fset \<Rig
     fSum scored_pairs
   )"
 
+fun bool2nat :: "bool \<Rightarrow> nat" where
+  "bool2nat True = 1" |
+  "bool2nat False = 0"
+
+definition "finfun_to_pairs f = map (\<lambda>k. (k, finfun_apply f k)) (finfun_to_list f)"
+
+definition scoreboard_add :: "scoreboard \<Rightarrow> scoreboard \<Rightarrow> scoreboard" where
+  "scoreboard_add a b = fset_of_list (map (\<lambda>((s1, s2), l). \<lparr>Score=l, S1=s1, S2=s2\<rparr>) (finfun_to_pairs (fold (\<lambda>s scores. finfun_update scores (S1 s, S2 s) ((finfun_apply scores (S1 s, S2 s)) + (Score s))) (sorted_list_of_fset a @ sorted_list_of_fset b) (finfun_const 0))))"
+
+definition bonus_score :: "iEFSM \<Rightarrow> scoreboard" where
+  "bonus_score e = (
+    let
+     states = S e;
+     pairs_to_score = (ffilter (\<lambda>(x, y). x < y) (states |\<times>| states));
+     state_transitions = fimage (\<lambda>s. (s, outgoing_transitions s e)) states;
+     state_pairs = fimage (\<lambda>(s, ts). (s, ts |\<times>| ts)) state_transitions;
+     states_bonuses = ffUnion (fimage (\<lambda>(s, tss). fimage (\<lambda>((d1, t1, id1), (d2, t2, id2)). (d1, d2, id1 \<noteq> id2 \<and> identical_except_guard t1 t2)) tss) state_pairs);
+     states_scoreboard = fold (\<lambda>(s1, s2, l) scores. finfun_update scores (s1, s2) ((finfun_apply scores (s1, s2)) + bool2nat l)) (sorted_list_of_fset states_bonuses) (finfun_const 0)
+    in fset_of_list (map (\<lambda>((s1, s2), l). \<lparr>Score=l, S1=s1, S2=s2\<rparr>) (finfun_to_pairs states_scoreboard))
+  )"
+
+lemma bonus_score_empty: "bonus_score {||} = {||}"
+  apply (simp add: bonus_score_def outgoing_transitions_def S_def finfun_to_pairs_def finfun_to_list_const)
+  using finite_prod by blast
+
 definition k_score :: "nat \<Rightarrow> iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" where
   "k_score k e strat = (
     let
       states = S e;
       pairs_to_score = (ffilter (\<lambda>(x, y). x < y) (states |\<times>| states));
       paths = fimage (\<lambda>(s1, s2). (s1, s2, paths_of_length k e s1, paths_of_length k e s2)) pairs_to_score;
-      scores = fimage (\<lambda>(s1, s2, p1, p2). \<lparr>Score = score_from_list p1 p2 e strat, S1 = s1, S2 = s2\<rparr>) paths
+      scores = fimage (\<lambda>(s1, s2, p1, p2). \<lparr>Score = score_from_list p1 p2 e strat, S1 = s1, S2 = s2\<rparr>) paths;
+      bonus_scores = bonus_score e
     in
-    ffilter (\<lambda>x. Score x > 0) scores
+    ffilter (\<lambda>x. Score x > 0) (scoreboard_add bonus_scores scores)
 )"
 
 definition score_state_pair :: "strategy \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> nat" where
@@ -322,9 +348,10 @@ definition score_1 :: "iEFSM \<Rightarrow> strategy \<Rightarrow> scoreboard" wh
     let
       states = S e;
       pairs_to_score = (ffilter (\<lambda>(x, y). x < y) (states |\<times>| states));
-      scores = fimage (\<lambda>(s1, s2). \<lparr>Score = score_state_pair strat e s1 s2, S1 = s1, S2 = s2\<rparr>) pairs_to_score
+      scores = fimage (\<lambda>(s1, s2). \<lparr>Score = score_state_pair strat e s1 s2, S1 = s1, S2 = s2\<rparr>) pairs_to_score;
+      bonus_scores = bonus_score e
     in
-      ffilter (\<lambda>x. Score x > 0) scores
+      ffilter (\<lambda>x. Score x > 0) (scoreboard_add bonus_scores scores)
   )"
 
 lemma score_1: "score_1 e s = k_score 1 e s"
@@ -337,6 +364,7 @@ proof-
   show ?thesis
     apply (simp add: score_1_def k_score_def Let_def comp_def)
     apply (rule arg_cong[of _ _ "ffilter (\<lambda>x. 0 < Score x)"])
+    apply (rule arg_cong[of _ _ "scoreboard_add (bonus_score e)"])
     apply (rule fun_cong[of _ _ "(Inference.S e |\<times>| Inference.S e)"])
     apply (rule ext)
     subgoal for x
@@ -360,10 +388,6 @@ proof-
       done
     done
 qed
-
-fun bool2nat :: "bool \<Rightarrow> nat" where
-  "bool2nat True = 1" |
-  "bool2nat False = 0"
 
 definition score_transitions :: "transition \<Rightarrow> transition \<Rightarrow> nat" where
   "score_transitions t1 t2 = (
@@ -432,14 +456,17 @@ definition deterministic :: "iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondetermi
 definition nondeterministic :: "iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> bool" where
   "nondeterministic t np = (\<not> deterministic t np)"
 
+definition lob :: "transition \<Rightarrow> transition \<Rightarrow> transition" where
+  "lob t1 t2 = t1\<lparr>Guards:=[gOr (fold gAnd (Guards t1) (Bc True)) (fold gAnd (Guards t2) (Bc True))]\<rparr>"
+
 definition insert_transition :: "tids \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "insert_transition uid from to t e = (
-    if \<nexists>(uid, (from', to'), t') |\<in>| e. from = from' \<and> to = to' \<and> t = t' then
+    if \<nexists>(uid, (from', to'), t') |\<in>| e. from = from' \<and> to = to' \<and> identical_except_guard t t' then
       finsert (uid, (from, to), t) e
     else
       fimage (\<lambda>(uid', (from', to'), t').
-        if from = from' \<and> to = to' \<and> t = t' then
-          (List.union uid' uid, (from', to'), t')
+        if from = from' \<and> to = to' \<and> identical_except_guard t t' then
+          (List.union uid' uid, (from', to'), lob t' t)
         else
           (uid', (from', to'), t')
       ) e

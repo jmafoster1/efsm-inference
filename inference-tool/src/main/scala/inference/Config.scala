@@ -33,7 +33,7 @@ case class Config(
   outputname: String = null,
   dotfiles: String = "dotfiles",
   nondeterminismMetric: IEFSM => FSet.fset[(Nat.nat, ((Nat.nat, Nat.nat), ((Types.Transition, List[Nat.nat]), (Types.Transition, List[Nat.nat]))))] = (Inference.nondeterministic_pairs _),
-  strategy: List[Nat.nat] => List[Nat.nat] => IEFSM => Nat.nat = (SelectionStrategies.naive_score _).curried,
+  strategy: List[Nat.nat] => List[Nat.nat] => IEFSM => Nat.nat = (Blue_Fringe.score_merge_size _).curried,
   skip: Boolean = false,
   logLevel: Level = Level.DEBUG,
   logFile: String = null,
@@ -51,7 +51,8 @@ case class Config(
   blueFringe: Boolean=false,
   treeRepeats: Int = 2,
   transitionRepeats: Int = 2,
-  ngen: Int = 100
+  ngen: Int = 100,
+  pta : IEFSM = null
 )
 
 object Config {
@@ -219,12 +220,15 @@ object Config {
         val testParsed = parse(Source.fromFile(config.testFile).getLines.mkString).values.asInstanceOf[List[List[Map[String, Any]]]]
         config = config.copy(test = testParsed.map(run => run.map(x => TypeConversion.toEventTuple(x))))
 
+        // MAKE SURE THIS HAPPENS WHEN WE BUILD THE PTA IN THE CODE TOO, SPECIFICALLY IN distinguish
+        config = config.copy(pta = Inference.breadth_first_label(Inference.make_pta(config.train)))
+
         // Set up the heuristics
         val heuristics = scala.collection.immutable.Map(
           Heuristics.store -> (Store_Reuse.heuristic_1 _).curried(config.train),
           Heuristics.inputgen -> (Store_Reuse.heuristic_2 _).curried(config.train),
           Heuristics.inc -> (Increment_Reset.insert_increment_2 _).curried,
-          Heuristics.distinguish -> (Distinguishing_Guards.distinguish _).curried(config.train),
+          Heuristics.distinguish -> (Distinguishing_Guards.distinguish _).curried(config.pta)(config.train),
           Heuristics.same -> (Same_Register.same_register _).curried,
           Heuristics.ws -> (Weak_Subsumption.weak_subsumption _).curried,
           Heuristics.lob -> (Least_Upper_Bound.lob _).curried

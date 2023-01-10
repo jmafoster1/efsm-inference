@@ -59,12 +59,12 @@ code_printing constant find_distinguishing_guards \<rightharpoonup> (Scala) "Dir
 definition add_guard :: "transition \<Rightarrow> vname gexp \<Rightarrow> transition" where
   "add_guard t g = t\<lparr>Guards := List.insert g (Guards t)\<rparr>"
 
-definition distinguish :: "log \<Rightarrow> update_modifier" where
-  "distinguish log t1ID t2ID s destMerge preDestMerge old check = (
+definition distinguish :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier" where
+  "distinguish pta log t1ID t2ID s destMerge preDestMerge old check = (
     let
       t1 = get_by_ids destMerge t1ID;
       t2 = get_by_ids destMerge t2ID;
-      uPTA = transfer_updates destMerge (make_pta log);
+      uPTA = transfer_updates destMerge pta;
       (G1, G2) = collect_training_sets log uPTA t1ID t2ID [] []
     in
       case find_distinguishing_guards G1 G2 of

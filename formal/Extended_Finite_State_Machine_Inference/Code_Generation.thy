@@ -335,7 +335,9 @@ termination
   by (metis (no_types, lifting) case_prod_conv measures_less size_fsubset)
 
 lemma infer_empty: "Inference.infer f k {||} r m check np = {||}"
-  by (simp add: score_1_def S_def fprod_empty k_score_def)
+  apply (simp add: score_1_def S_def fprod_empty bonus_score_empty k_score_def)
+  apply (simp add: scoreboard_add_def finfun_to_pairs_def finfun_to_list_const)
+  using finite_prod by blast
 
 (*
 lemma [code]: "infer f k e r m check np = infer_with_log f k e r m check np"
@@ -412,7 +414,6 @@ lemma [code]:
   by (simp add: directly_subsumes_reflexive dirty_directly_subsumes_def)
 
 declare List.minus_coset_filter [code del]
-declare Cardinality.card'_code(2) [code del]
 lemma [code]: "set x - set y = set (filter (\<lambda>x. x \<notin> set y) x)"
   by (induct x, auto)
 lemma [code]: "Set.remove a (set l) = set (filter (\<lambda>x. x \<noteq> a) l)"

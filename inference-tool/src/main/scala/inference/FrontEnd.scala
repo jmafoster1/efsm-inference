@@ -17,38 +17,35 @@ object FrontEnd {
 
     Log.root.info(args.mkString(" "))
     Log.root.info(s"Building PTA - ${Config.config.train.length} ${if (Config.config.train.length == 1) "trace" else "traces"}")
+    PrettyPrinter.iEFSM2dot(Config.config.pta, s"pta_gen")
 
-    var pta: IEFSM = Inference.make_pta(Config.config.train)
-    // MAKE SURE THIS HAPPENS WHEN WE BUILD THE PTA IN THE CODE TOO, SPECIFICALLY IN distinguish
-    pta = Inference.breadth_first_label(pta)
-    PrettyPrinter.iEFSM2dot(pta, s"pta_gen")
-    if (!EFSM.accepts_log(Set.seta[List[(String, (List[Value.value], List[Value.value]))]](Config.config.train), Inference.tm(pta))) {
+    if (!EFSM.accepts_log(Set.seta[List[(String, (List[Value.value], List[Value.value]))]](Config.config.train), Inference.tm(Config.config.pta))) {
       Log.root.error("PTA must accept the log.")
       System.exit(1)
     }
-    if (Inference.nondeterministic(pta, Inference.nondeterministic_pairs)) {
+    if (Inference.nondeterministic(Config.config.pta, Inference.nondeterministic_pairs)) {
       Log.root.error("PTA must be deterministic.")
       System.exit(1)
     }
-    PrettyPrinter.test_model(pta, "ptaLog")
+    PrettyPrinter.test_model(Config.config.pta, "ptaLog")
 
 
-    Config.numStates = Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(pta)))
+    Config.numStates = Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(Config.config.pta)))
     Config.ptaNumStates = Config.numStates
 
     Log.root.info(s"PTA has ${Config.numStates} states")
-    Log.root.info(s"PTA has ${Code_Numeral.integer_of_nat(FSet.size_fset(pta))} transitions")
+    Log.root.info(s"PTA has ${Code_Numeral.integer_of_nat(FSet.size_fset(Config.config.pta))} transitions")
 
     if (Config.preprocessor != null) {
-      val resolved_pta = Config.preprocessor(pta)(Config.config.train)(Config.heuristics)(Config.config.nondeterminismMetric)
+      val resolved_pta = Config.preprocessor(Config.config.pta)(Config.config.train)(Config.heuristics)(Config.config.nondeterminismMetric)
       PrettyPrinter.EFSM2dot(Inference.tm(resolved_pta), "resolved")
-      if (FSet.equal_fseta(pta, resolved_pta)) {
+      if (FSet.equal_fseta(Config.config.pta, resolved_pta)) {
         Log.root.info("Defaulting back to original PTA")
       }
       else {
-        pta = resolved_pta
-        Log.root.info(s"Resolved PTA has ${Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(pta)))} states")
-        Log.root.info(s"Resolved PTA has ${Code_Numeral.integer_of_nat(FSet.size_fset(pta))} transitions")
+        Config.config = Config.config.copy(pta = resolved_pta)
+        Log.root.info(s"Resolved PTA has ${Code_Numeral.integer_of_nat(FSet.size_fset(Inference.S(Config.config.pta)))} states")
+        Log.root.info(s"Resolved PTA has ${Code_Numeral.integer_of_nat(FSet.size_fset(Config.config.pta))} transitions")
       }
       val seconds = (System.nanoTime - t1) / 1e9d
       val minutes = (seconds / 60) % 60
@@ -63,7 +60,7 @@ object FrontEnd {
       }
       var inferred = learn(
         Nat.Nata(Config.config.k),
-        pta,
+        Config.config.pta,
         Config.config.train,
         Config.config.strategy,
         Config.heuristics,

@@ -185,4 +185,19 @@ inductive eq_upto_rename :: "transition \<Rightarrow> transition \<Rightarrow> b
    apply_updates (map (\<lambda>(r, u). (f r, AExp.rename_regs f u)) (Updates t1)) = apply_updates (Updates t2) \<Longrightarrow>
    eq_upto_rename t1 t2"
 
+inductive identical_except_guard  :: "transition => transition => bool" where
+  "Label t1 = Label t2 \<Longrightarrow>
+   Arity t2 = Arity t2 \<Longrightarrow>
+   Outputs t1 = Outputs t2 \<Longrightarrow>
+   Updates t1 = Updates t2 \<Longrightarrow>
+   identical_except_guard t1 t2"
+
+lemma [code]: "identical_except_guard t1 t2 = (
+Label t1 = Label t2 \<and>
+Arity t2 = Arity t2 \<and>
+Outputs t1 = Outputs t2 \<and>
+Updates t1 = Updates t2
+)"
+  by (meson identical_except_guard.cases identical_except_guard.intros)
+
 end

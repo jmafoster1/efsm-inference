@@ -109,20 +109,27 @@ fun join :: "String.literal list \<Rightarrow> String.literal \<Rightarrow> Stri
 definition show_nats :: "nat list \<Rightarrow> String.literal" where
   "show_nats l = join (map show_nat l) STR '', ''"
 
+fun get_Lt :: "'a gexp \<Rightarrow> ('a aexp \<times> 'a aexp) option" where
+  "get_Lt (Gt a1 a2) = Some (a1, a2)" |
+  "get_Lt _ = None"
+
+fun get_Ge :: "'a gexp \<Rightarrow> ('a aexp \<times> 'a aexp) option" where
+  "get_Ge (Nor g1 g2) = (if g1 = g2 then get_Lt g1 else None)" |
+  "get_Ge _ = None"
+
 fun gexp2dot :: "vname gexp \<Rightarrow> String.literal" where
   "gexp2dot (GExp.Bc True) = (STR ''True'')" |
   "gexp2dot (GExp.Bc False) = (STR ''False'')" |
   "gexp2dot (GExp.Eq a1 a2) = (aexp2dot a1)+STR '' = ''+(aexp2dot a2)" |
   "gexp2dot (GExp.Gt a1 a2) = (aexp2dot a1)+STR '' &gt; ''+(aexp2dot a2)" |
   "gexp2dot (GExp.In v l) = (vname2dot v)+STR ''&isin;{''+(join (map value2dot l) STR '', '')+STR ''}''" |
-  "gexp2dot (Nor g1 g2) = STR ''!(''+(gexp2dot g1)+STR ''&or;''+(gexp2dot g2)+STR '')''"
-
-primrec guards2dot_aux :: "vname gexp list \<Rightarrow> String.literal list" where
-  "guards2dot_aux [] = []" |
-  "guards2dot_aux (h#t) = (gexp2dot h)#(guards2dot_aux t)"
-
-lemma gexp2dot_aux_code [code]: "guards2dot_aux l = map gexp2dot l"
-  by (induct l, simp_all)
+  "gexp2dot (Nor g1 g2) = (
+    if g1 = g2 then
+      case g1 of Gt a1 a2 \<Rightarrow> (aexp2dot a1)+STR '' &le; ''+(aexp2dot a2) |
+                        _ \<Rightarrow> STR ''&not;(''+(gexp2dot g1)+STR '')''
+    else
+       STR ''!(''+(gexp2dot g1)+STR ''&or;''+(gexp2dot g2)+STR '')''
+  )"
 
 primrec updates2dot_aux :: "update_function list \<Rightarrow> String.literal list" where
   "updates2dot_aux [] = []" |
@@ -142,7 +149,7 @@ fun updates2dot :: "update_function list \<Rightarrow> String.literal" where
 
 fun guards2dot :: "vname gexp list \<Rightarrow> String.literal" where
   "guards2dot [] = (STR '''')" |
-  "guards2dot a = STR ''&#91;''+(join (guards2dot_aux a) STR '', '')+STR ''&#93;''"
+  "guards2dot a = STR ''&#91;''+(join (map gexp2dot a) STR '', '')+STR ''&#93;''"
 
 definition latter2dot :: "transition \<Rightarrow> String.literal" where
   "latter2dot t = (let l = (join (outputs2dot (Outputs t) 1) STR '', '')+(updates2dot (Updates t)) in (if l = (STR '''') then (STR '''') else STR ''/''+l))"
