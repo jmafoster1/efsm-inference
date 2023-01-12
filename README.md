@@ -7,7 +7,7 @@ EFSM inference tool which takes in system execution traces and returns an EFSM m
 ### Docker
 The tool can be build and run using [Docker](https://www.docker.com) without the need to install any additional dependencies natively.
 ```
-cd inference
+cd inference-tool
 docker build -t inference .
 docker run inference [<options>] trainfile testfile
 ```
