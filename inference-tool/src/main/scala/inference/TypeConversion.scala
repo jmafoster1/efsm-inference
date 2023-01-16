@@ -39,20 +39,26 @@ object TypeConversion {
     throw new IllegalStateException(f"Cannot convert to aexp")
   }
 
+  def value_type(s: String): PTA_Generalisation.value_type = s match {
+    case "I" => PTA_Generalisation.I()
+    case "R" => PTA_Generalisation.R()
+    case "S" => PTA_Generalisation.S()
+  }
+
   def toGExpAux[N, E](graph: Graph[N, E], root: N, labels: Map[N, String]): GExp.gexp[VName.vname] = {
     val children = Graphs.successorListOf(graph, root).asScala
-    assert(children.length == 2, "We only support binary operators")
+    assert(children.length <= 2, f"We only support binary operators, not ${children}")
     val c1 = children(0)
     labels(root) match {
-      case "and" => {
+      case "and_" => {
         val c2 = children(1)
         return mkAnd(toGExpAux(graph, c1, labels), toGExpAux(graph, c2, labels))
       }
-      case "or" => {
+      case "or_" => {
         val c2 = children(1)
         return mkOr(toGExpAux(graph, c1, labels), toGExpAux(graph, c2, labels))
       }
-      case "not" => {
+      case "not_" => {
         return GExp.gNot(toGExpAux(graph, c1, labels))
       }
       case "le" => {

@@ -499,7 +499,7 @@ export_code
   fold_In
   max_int
   enumerate_vars
-  derestrict
+  historical_derestrict
   breadth_first_label
   depth_first_label
   needs_latent_code

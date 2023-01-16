@@ -23,7 +23,7 @@ object Strategies extends Enumeration {
 
 object Preprocessors extends Enumeration {
   type Preprocessor = Value
-  val gp, dropGuards, none = Value
+  val gp, dropGuards, none, ehw = Value
 }
 
 case class Config(
@@ -38,6 +38,7 @@ case class Config(
   logLevel: Level = Level.DEBUG,
   logFile: String = null,
   trainFile: File = null,
+  groups: File = null,
   train: List[List[Types.Event]] = List(),
   testFile: File = null,
   test: List[List[Types.Event]] = List(),
@@ -187,6 +188,9 @@ object Config {
       opt[Int]('u', "updateSeed")
         .valueName("Random seed for update GP")
         .action((x, c) => c.copy(updateSeed = x)),
+      opt[File]("groups")
+        .action((x, c) => c.copy(groups = x))
+        .text("The json file listing the transition groups"),
       arg[File]("trainFile")
         .required()
         .action((x, c) => c.copy(trainFile = x))
@@ -212,6 +216,8 @@ object Config {
           throw new IllegalArgumentException(s"Log file '${config.logFile}' already exists")
         if (config.k < 0)
           throw new IllegalArgumentException(s"k must be greater than 0")
+        if (config.prep == Preprocessors.ehw && config.groups == null)
+          throw new IllegalArgumentException(s"Must provide a groups file to use ehw preprocessing")
 
         // Set up the logs
         val trainParsed = parse(Source.fromFile(config.trainFile).getLines.mkString).values.asInstanceOf[List[List[Map[String, Any]]]]
@@ -234,14 +240,39 @@ object Config {
           Heuristics.lob -> (Least_Upper_Bound.lob _).curried
         )
 
+        var transitionGroups: List[((String, (List[PTA_Generalisation.value_type], List[PTA_Generalisation.value_type])),
+               List[(List[Nat.nat], Transition.transition_ext[Unit])])] = null
+
+        if (config.groups != null) {
+          val parsedGroups = parse(Source.fromFile(config.groups).getLines.mkString).values.asInstanceOf[List[Map[String, Any]]]
+          transitionGroups = parsedGroups.map(x =>
+            (
+              (
+                x("label").asInstanceOf[String],
+                (
+                  x("inputs").asInstanceOf[List[String]].map(i => TypeConversion.value_type(i)),
+                  x("outputs").asInstanceOf[List[String]].map(i => TypeConversion.value_type(i)),
+                )
+              ),
+              x("transitions").asInstanceOf[List[List[BigInt]]].map(t =>
+                (
+                  t.map(n => Code_Numeral.nat_of_integer(n)),
+                  Inference.get_by_ids(config.pta, t.map(n => Code_Numeral.nat_of_integer(n)))
+                )
+              )
+            )
+          )
+         }
+
         // Set up the preprocessor
         val preprocessors = scala.collection.immutable.Map(
-          Preprocessors.gp -> (PTA_Generalisation.derestrict _).curried(Nat.Nata(config.treeRepeats))(Nat.Nata(config.transitionRepeats)),
+          Preprocessors.ehw -> (PTA_Generalisation.derestrict _).curried(transitionGroups)(Nat.Nata(config.treeRepeats))(Nat.Nata(config.transitionRepeats)),
+          Preprocessors.gp -> (PTA_Generalisation.historical_derestrict _).curried(Nat.Nata(config.treeRepeats))(Nat.Nata(config.transitionRepeats)),
           Preprocessors.dropGuards -> (PTA_Generalisation.drop_pta_guards _).curried
         )
         // Set up the postprocessor
         val postprocessors = scala.collection.immutable.Map(
-          Preprocessors.gp -> (PTA_Generalisation.derestrict _).curried(Nat.Nata(config.treeRepeats))(Nat.Nata(config.transitionRepeats)),
+          Preprocessors.gp -> (PTA_Generalisation.historical_derestrict _).curried(Nat.Nata(config.treeRepeats))(Nat.Nata(config.transitionRepeats)),
           Preprocessors.dropGuards -> (PTA_Generalisation.drop_pta_guards _).curried
         )
 

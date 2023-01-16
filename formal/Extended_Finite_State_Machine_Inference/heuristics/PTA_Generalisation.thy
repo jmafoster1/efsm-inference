@@ -808,16 +808,18 @@ fun tidy_updates :: "('a \<times> 'b) list \<Rightarrow> ('a \<times> 'b) list" 
 definition this :: "generalisation \<Rightarrow> (iEFSM \<times> tids list \<times> outputMem \<times> updateMem)" where
   "this x = (case x of Succeeded y \<Rightarrow> y)"
 
-definition derestrict :: "nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
-  "derestrict tree_repeats transition_repeats pta log m np = (
+definition derestrict :: "transition_group list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> iEFSM \<Rightarrow> log \<Rightarrow> update_modifier \<Rightarrow> (iEFSM \<Rightarrow> nondeterministic_pair fset) \<Rightarrow> iEFSM" where
+  "derestrict groups tree_repeats transition_repeats pta log m np = (
     let
-      groups = historical_groups pta log;
       output_groups = filter (\<lambda>(_, g). (Outputs (snd (hd g))) \<noteq> []) groups;
       (normalised, to_derestrict, _, _) = this (groupwise_generalise_and_update (K$[]) (K$[]) tree_repeats tree_repeats False transition_repeats log pta output_groups groups (get_structures pta log) (K$ None) [] (K$ []) (K$ []));
       tidied = fimage (\<lambda>(id, tf, t). (id, tf, t\<lparr>Updates:= tidy_updates (Updates t)\<rparr>)) normalised
     in
       drop_selected_guards tidied to_derestrict pta log m np
   )"
+
+definition "historical_derestrict tree_repeats transition_repeats pta log m np = derestrict (historical_groups pta log) tree_repeats transition_repeats pta log m np"
+
 
 definition "drop_pta_guards pta log m np = drop_all_guards pta pta log m np"
 
