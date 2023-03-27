@@ -23,6 +23,16 @@ definition naive_score :: strategy where
   bool2nat (Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2))
 )"
 
+text\<open>Merge everything we can!\<close>
+definition merge_everything :: strategy where
+  "merge_everything t1ID t2ID e = (
+  let
+    t1 = get_by_ids e t1ID;
+    t2 = get_by_ids e t2ID
+  in
+  bool2nat (Label t1 = Label t2 \<and> Arity t1 = Arity t2 \<and> length (Outputs t1) = length (Outputs t2)) + 1
+)"
+
 text\<open>Building off the above strategy, it makes sense to give transitions an extra ``bonus point'' if
 they are exactly equal.\<close>
 definition naive_score_eq_bonus :: strategy where

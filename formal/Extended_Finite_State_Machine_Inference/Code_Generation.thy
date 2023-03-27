@@ -476,6 +476,7 @@ export_code
   naive_score_comprehensive_eq_high
   leaves
   score_merge_size
+  merge_everything
   (* Heuristics *)
   same_register
   insert_increment_2

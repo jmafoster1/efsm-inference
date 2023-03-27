@@ -444,7 +444,8 @@ object Dirties {
       case Value.Str(s) => pset.addTerminal(s, py"str")
     }
 
-    Log.root.debug("  Consts:" + py"set([c.value for c in $pset.terminals[int] if type(c.value) == int])")
+    Log.root.debug("  Int Consts:" + py"set([c.value for c in $pset.terminals[int] if type(c.value) == int])")
+    Log.root.debug("  Str Consts:" + py"set([c.value for c in $pset.terminals[str] if type(c.value) == str])")
     // Log.root.debug(f"  Values: ${PrettyPrinter.show(values)}")
     Log.root.debug(f"  r_index r$r_index in training_set " + py"'r'+str($r_index) in $training_set".as[Boolean])
 

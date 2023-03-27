@@ -79,10 +79,11 @@ def find_smallest_distance(individual, pset, args, expected, latent_vars):
     undefined_vars = [x for x in args if is_null(args[x])]
     consts = set()
     type_ = individual[0].ret
-    func = gp.compile(expr=individual, pset=pset)
 
+    # print("INDIVIDUAL", individual, "ARGS:", pset.arguments, "HEIGHT:", individual.height)
     if individual.height == 0 and individual.root.value not in pset.arguments:
         return distance_between(pset.ret(expected), individual.root.value)
+    func = gp.compile(expr=individual, pset=pset)
     if not callable(func):
         return distance_between(pset.ret(expected), func)
 
@@ -753,7 +754,7 @@ def run_gp(
 
     toolbox = base.Toolbox()
 
-    if latent_vars_rows is None:
+    if latent_vars_rows is None or pset.ret == bool:
         latent_vars_rows = [[] for _ in range(len(points))]
     assert len(points) == len(
         latent_vars_rows

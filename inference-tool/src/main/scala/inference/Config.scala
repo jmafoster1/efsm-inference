@@ -18,7 +18,7 @@ object Nondeterminisms extends Enumeration {
 
 object Strategies extends Enumeration {
   type Strategy = Value
-  val naive, naive_eq_bonus, rank, comprehensive, comprehensiveEQ, eq, blueFringe = Value
+  val everything, naive, naive_eq_bonus, rank, comprehensive, comprehensiveEQ, eq, blueFringe = Value
 }
 
 object Preprocessors extends Enumeration {
@@ -74,6 +74,7 @@ object Config {
         case "naive" => (SelectionStrategies.naive_score _).curried
         case "bluefringe" => (Blue_Fringe.score_merge_size _).curried
         case "naive_eq_bonus" => (SelectionStrategies.naive_score_eq_bonus _).curried
+        case "everything" => (SelectionStrategies.merge_everything _).curried
         case "rank" => (SelectionStrategies.naive_score_outputs _).curried
         case "comprehensive" => (SelectionStrategies.naive_score_comprehensive _).curried
         case "comprehensiveeq" => (SelectionStrategies.naive_score_comprehensive_eq_high _).curried
