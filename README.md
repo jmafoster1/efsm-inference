@@ -33,6 +33,8 @@ The tool can be compiled by calling `sbt assembly` from within the `inference-to
 
 ## CLI Options
 ```
+Usage: inference-tool [options] trainFile testFile
+
   --help                   prints this usage text
   -h, --heuristics <heuristic1>,<heuristic2>...
                            heuristics to give the inference process Heuristics.ValueSet(store, inputgen, inc, distinguish, same, ws, lob)
@@ -41,21 +43,30 @@ The tool can be compiled by calling `sbt assembly` from within the `inference-to
                            The number of traces in the log to actually use
   -i, --gpIterations GP iterations
                            The number of iterations to run the symbolic regression heuristic for (defaults to 50)
-  -s, --strategy strategy  The preferred strategy to rank state merges Strategies.ValueSet(naive, naive_eq_bonus, rank, comprehensive, comprehensiveEQ, eq, everything)
+  -s, --strategy strategy  The preferred strategy to rank state merges Strategies.ValueSet(everything, naive, naive_eq_bonus, rank, comprehensive, comprehensiveEQ, eq, blueFringe)
   -n, --nondeterminism nondeterminism checker
                            The preferred definition of nondeterminism - defaults to label, arity, and guard check Nondeterminisms.ValueSet(basic, labar, labar_d)
   -d, --dotfiles dir       The directory in which to save dotfiles produced during the inference process - defaults to 'dotfiles'
   --skip                   Set this flag to skip some model checking tests which should be trivially true
+  --blueFringe             Set this flag to use the blue fringe merging strategy
   --mkdir                  Set this flag to skip all inference and just test the making of directories
-  -p, --preprocessor       Preprocessor to use before inference begins Preprocessors.ValueSet(gp, dropGuards, none, ehw)
+  -p, --preprocessor preprocessor
+                           Preprocessor to use before inference begins Preprocessors.ValueSet(gp, dropGuards, none, ehw)
+  -q, --postprocessor postprocessor
+                           Postprocessor to use after inference has finished Preprocessors.ValueSet(gp, dropGuards, none, ehw)
   --small                  Set this flag to map integers down to smaller values
   -l, --level level        The log level {info, debug, warn, error}
   -f, --logFile logFile    The name/location of the logFile
   -g, --guardSeed Random seed for guard GP
+  --treeRepeats Maximum number of times to backtrack up the tree
+  --ngen Number of GP generations
+  --transitionRepeats Maximum number of times to retry inferring output and update functions for a given transition
   -o, --outputSeed Random seed for output GP
   -u, --updateSeed Random seed for update GP
+  --groups <value>         The json file listing the transition groups
   trainFile                The json file listing the training traces
   testFile                 The json file listing the test traces
+
 ```
 
 The JSON training and test files should contain a list of lists of objects of the form `{"label": "label1", "inputs": ["i1", "i2",...],"outputs": ["o1", "o2",...]},`. Examples can be found within the `inference-tool/experimental-data` directory.
