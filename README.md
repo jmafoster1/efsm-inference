@@ -41,14 +41,13 @@ The tool can be compiled by calling `sbt assembly` from within the `inference-to
                            The number of traces in the log to actually use
   -i, --gpIterations GP iterations
                            The number of iterations to run the symbolic regression heuristic for (defaults to 50)
-  -s, --strategy strategy  The preferred strategy to rank state merges Strategies.ValueSet(naive, naive_eq_bonus, rank, comprehensive, comprehensiveEQ, eq)
+  -s, --strategy strategy  The preferred strategy to rank state merges Strategies.ValueSet(naive, naive_eq_bonus, rank, comprehensive, comprehensiveEQ, eq, everything)
   -n, --nondeterminism nondeterminism checker
                            The preferred definition of nondeterminism - defaults to label, arity, and guard check Nondeterminisms.ValueSet(basic, labar, labar_d)
   -d, --dotfiles dir       The directory in which to save dotfiles produced during the inference process - defaults to 'dotfiles'
   --skip                   Set this flag to skip some model checking tests which should be trivially true
   --mkdir                  Set this flag to skip all inference and just test the making of directories
-  -p, --preprocessor preprocessor
-                           Preprocessor to use before inference begins Preprocessors.ValueSet(gp, dropGuards, none)
+  -p, --preprocessor       Preprocessor to use before inference begins Preprocessors.ValueSet(gp, dropGuards, none, ehw)
   --small                  Set this flag to map integers down to smaller values
   -l, --level level        The log level {info, debug, warn, error}
   -f, --logFile logFile    The name/location of the logFile
