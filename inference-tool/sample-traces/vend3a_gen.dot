@@ -1,0 +1,38 @@
+digraph EFSM{
+  graph [rankdir="LR", fontname="Latin Modern Math"];
+  node [color="black", fillcolor="white", shape="circle", style="filled", fontname="Latin Modern Math"];
+  edge [fontname="Latin Modern Math"];
+
+  s0[fillcolor="gray", label=<s<sub>0</sub>>];
+  s1[label=<s<sub>1</sub>>];
+  s2[label=<s<sub>2</sub>>];
+  s3[label=<s<sub>3</sub>>];
+  s4[label=<s<sub>4</sub>>];
+  s5[label=<s<sub>5</sub>>];
+  s6[label=<s<sub>6</sub>>];
+  s7[label=<s<sub>7</sub>>];
+  s8[label=<s<sub>8</sub>>];
+  s9[label=<s<sub>9</sub>>];
+  s10[label=<s<sub>10</sub>>];
+  s13[label=<s<sub>13</sub>>];
+  s15[label=<s<sub>15</sub>>];
+  s17[label=<s<sub>17</sub>>];
+
+  s0->s1[label=<<i>select:1&#91;i<sub>0</sub> = "coke"&#93;</i>>];
+  s0->s2[label=<<i>select:1&#91;i<sub>0</sub> = "fanta"&#93;</i>>];
+  s0->s3[label=<<i>select:1&#91;i<sub>0</sub> = "beer"&#93;</i>>];
+  s1->s4[label=<<i>coin:1&#91;i<sub>0</sub> = 50&#93;/o<sub>1</sub> := 50</i>>];
+  s1->s5[label=<<i>coin:1&#91;i<sub>0</sub> = 100&#93;/o<sub>1</sub> := 100</i>>];
+  s1->s6[label=<<i>vend:0</i>>];
+  s2->s7[label=<<i>coin:1&#91;i<sub>0</sub> = 50&#93;/o<sub>1</sub> := 50</i>>];
+  s2->s8[label=<<i>coin:1&#91;i<sub>0</sub> = 100&#93;/o<sub>1</sub> := 100</i>>];
+  s3->s9[label=<<i>coin:1&#91;i<sub>0</sub> = 50&#93;/o<sub>1</sub> := 50</i>>];
+  s3->s10[label=<<i>coin:1&#91;i<sub>0</sub> = 100&#93;/o<sub>1</sub> := 100</i>>];
+  s4->s4[label=<<i>vend:0</i>>];
+  s4->s5[label=<<i>coin:1&#91;i<sub>0</sub> = 50&#93;/o<sub>1</sub> := 100</i>>];
+  s5->s13[label=<<i>vend:0/o<sub>1</sub> := "coke"</i>>];
+  s7->s8[label=<<i>coin:1&#91;i<sub>0</sub> = 50&#93;/o<sub>1</sub> := 100</i>>];
+  s8->s15[label=<<i>vend:0/o<sub>1</sub> := "fanta"</i>>];
+  s9->s10[label=<<i>coin:1&#91;i<sub>0</sub> = 50&#93;/o<sub>1</sub> := 100</i>>];
+  s10->s17[label=<<i>vend:0/o<sub>1</sub> := "beer"</i>>];
+}

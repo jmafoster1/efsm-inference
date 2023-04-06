@@ -72,7 +72,10 @@ lazy val root = (project in file("."))
     libraryDependencies += "org.jgrapht" % "jgrapht-core" % "1.1.0",
     libraryDependencies += "me.shadaj" %% "scalapy-core" % "0.5.1",
     libraryDependencies += "jgraph" % "jgraph" % "5.13.0.0",
-
+    libraryDependencies += "com.paypal.digraph" % "digraph-parser" % "1.0",
+    libraryDependencies += "org.antlr" % "antlr4-runtime" % "4.6",
+    libraryDependencies += "org.antlr" % "stringtemplate" % "3.2",
+    
     cleanDotfiles := {
       cleanDirectory("dotfiles")
     },

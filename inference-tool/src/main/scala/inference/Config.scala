@@ -5,6 +5,8 @@ import net.liftweb.json._
 import ch.qos.logback.classic.Level
 import Types._
 import java.nio.file.{ Paths, Files }
+import com.paypal.digraph.parser.{GraphParser, GraphNode, GraphEdge}
+import scala.collection.JavaConversions._
 
 object Heuristics extends Enumeration {
   type Heuristic = Value
@@ -38,6 +40,7 @@ case class Config(
   logLevel: Level = Level.DEBUG,
   logFile: String = null,
   trainFile: File = null,
+  ptaFile: File = null,
   groups: File = null,
   train: List[List[Types.Event]] = List(),
   testFile: File = null,
@@ -191,6 +194,9 @@ object Config {
       opt[File]("groups")
         .action((x, c) => c.copy(groups = x))
         .text("The json file listing the transition groups"),
+      opt[File]("ptaFile")
+        .action((x, c) => c.copy(ptaFile = x))
+        .text("The dot file listing the initial PTA"),
       arg[File]("trainFile")
         .required()
         .action((x, c) => c.copy(trainFile = x))
@@ -227,7 +233,25 @@ object Config {
         config = config.copy(test = testParsed.map(run => run.map(x => TypeConversion.toEventTuple(x))))
 
         // MAKE SURE THIS HAPPENS WHEN WE BUILD THE PTA IN THE CODE TOO, SPECIFICALLY IN distinguish
-        config = config.copy(pta = Inference.breadth_first_label(Inference.make_pta(config.train)))
+        if (config.ptaFile != null) {
+          val parser = new GraphParser(new FileInputStream(config.ptaFile));
+          val nodes = parser.getNodes();
+          val edges = parser.getEdges();	
+
+          println("--- nodes:");
+          for (node <- nodes.values()) {
+            println(node.getId() + " " + node.getAttributes());
+          }
+
+          println("--- edges:");
+          for (edge <- edges.values()) {
+            println(edge.getNode1().getId() + "->" + edge.getNode2().getId() + " " + edge.getAttributes());
+          }
+          config = config.copy(pta = Inference.breadth_first_label(Inference.make_pta(config.train)))
+        }
+        else {
+          config = config.copy(pta = Inference.breadth_first_label(Inference.make_pta(config.train)))
+        }
 
         // Set up the heuristics
         val heuristics = scala.collection.immutable.Map(
