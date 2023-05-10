@@ -21,7 +21,7 @@ definition subsumes :: "transition \<Rightarrow> registers \<Rightarrow> transit
                             evaluate_outputs t1 i r = evaluate_outputs t2 i r) \<and>
                        (\<forall>p1 p2 i. posterior_separate (Arity t1) (Guards t1) (Updates t2) i r = Some p2 \<longrightarrow>
                                   posterior_separate (Arity t1) (Guards t1) (Updates t1) i r = Some p1 \<longrightarrow>
-                                  (\<forall>P r'. (p1 $ r' = None) \<or> (P (p2 $ r') \<longrightarrow> P (p1 $ r'))))
+                                  (\<forall>P r'. (p1 $r r' = None) \<or> (P (p2 $r r') \<longrightarrow> P (p1 $r r'))))
                       )"
 
 lemma no_functionality_subsumed:
@@ -34,8 +34,8 @@ lemma no_functionality_subsumed:
 lemma subsumes_updates:
   "subsumes t2 r t1 \<Longrightarrow>
    can_take_transition t1 i r \<Longrightarrow>
-   evaluate_updates t1 i r $ a = Some x \<Longrightarrow>
-   evaluate_updates t2 i r $ a = Some x"
+   evaluate_updates t1 i r $r a = Some x \<Longrightarrow>
+   evaluate_updates t2 i r $r a = Some x"
   apply (simp add: subsumes_def posterior_separate_def can_take_transition_def[symmetric])
   apply clarsimp
   apply (erule_tac x=i in allE)+
@@ -44,7 +44,7 @@ lemma subsumes_updates:
   apply (erule_tac x=i in allE)
   apply simp
   apply (simp add: all_comm[of "\<lambda>P r'.
-            P (evaluate_updates t2 i r $ r') \<longrightarrow> evaluate_updates t1 i r $ r' = None \<or> P (evaluate_updates t1 i r $ r')"])
+            P (evaluate_updates t2 i r $r r') \<longrightarrow> evaluate_updates t1 i r $r r' = None \<or> P (evaluate_updates t1 i r $r r')"])
   apply (erule_tac x=a in allE)
   by auto
 
@@ -56,7 +56,7 @@ lemma subsumption:
 
    (\<forall>p1 p2 i. posterior_separate (Arity t1) (Guards t1) (Updates t2) i r = Some p2 \<longrightarrow>
               posterior_separate (Arity t1) (Guards t1) (Updates t1) i r = Some p1 \<longrightarrow>
-              (\<forall>P r'. (p1 $ r' = None) \<or> (P (p2 $ r') \<longrightarrow> P (p1 $ r')))) \<Longrightarrow>
+              (\<forall>P r'. (p1 $r r' = None) \<or> (P (p2 $r r') \<longrightarrow> P (p1 $r r')))) \<Longrightarrow>
    subsumes t2 r t1"
   by (simp add: subsumes_def)
 
@@ -68,7 +68,7 @@ lemma bad_guards:
 lemma inconsistent_updates:
   "\<exists>p2 p1. (\<exists>i. posterior_separate (Arity t1) (Guards t1) (Updates t2) i r = Some p2 \<and>
                 posterior_separate (Arity t1) (Guards t1) (Updates t1) i r = Some p1) \<and>
-           (\<exists>r' P. P (p2 $ r') \<and> (\<exists>y. p1 $ r' = Some y) \<and> \<not> P (p1 $ r')) \<Longrightarrow>
+           (\<exists>r' P. P (p2 $r r') \<and> (\<exists>y. p1 $r r' = Some y) \<and> \<not> P (p1 $r r')) \<Longrightarrow>
 
     \<not> subsumes t2 r t1"
   by (metis (no_types, opaque_lifting) option.simps(3) subsumes_def)
@@ -91,16 +91,16 @@ lemma subsumption_def_alt: "subsumes t1 c t2 = (Label t2 = Label t1 \<and>
     (\<forall>i. can_take_transition t2 i c \<longrightarrow> evaluate_outputs t2 i c = evaluate_outputs t1 i c) \<and>
     (\<forall>i. can_take_transition t2 i c \<longrightarrow>
          (\<forall>r' P.
-             P (evaluate_updates t1 i c $ r') \<longrightarrow>
-             evaluate_updates t2 i c $ r' = None \<or> P (evaluate_updates t2 i c $ r'))))"
+             P (evaluate_updates t1 i c $r r') \<longrightarrow>
+             evaluate_updates t2 i c $r r' = None \<or> P (evaluate_updates t2 i c $r r'))))"
   apply (simp add: subsumes_def posterior_separate_def can_take_transition_def[symmetric])
   by blast
 
 lemma subsumes_update_equality:
   "subsumes t1 c t2 \<Longrightarrow> (\<forall>i. can_take_transition t2 i c \<longrightarrow>
          (\<forall>r'.
-             ((evaluate_updates t1 i c $ r') = (evaluate_updates t2 i c $ r')) \<or>
-             evaluate_updates t2 i c $ r' = None))"
+             ((evaluate_updates t1 i c $r r') = (evaluate_updates t2 i c $r r')) \<or>
+             evaluate_updates t2 i c $r r' = None))"
   apply (simp add: subsumption_def_alt)
   apply clarify
   subgoal for i r' y
@@ -112,7 +112,7 @@ lemma subsumes_update_equality:
 
 text_raw\<open>\snip{subsumptionReflexive}{1}{2}{%\<close>
 lemma subsumes_reflexive: "subsumes t c t"
-text_raw\<open>$\langle\isa{proof}\rangle$}%endsnip\<close>
+text_raw\<open>$r\langle\isa{proof}\rangle$r}%endsnip\<close>
   by (simp add: subsumes_def)
 
 text_raw\<open>\snip{subsumptionTransitive}{1}{2}{%\<close>
@@ -147,8 +147,8 @@ qed
 subsection\<open>Direct Subsumption\<close>
 text\<open>When merging EFSM transitions, one must \emph{account for} the behaviour of the other. The
 \emph{subsumption in context} relation formalises the intuition that, in certain contexts, a
-transition $t_2$ reproduces the behaviour of, and updates the data state in a manner consistent
-with, another transition $t_1$, meaning that $t_2$ can be used in place of $t_1$ with no observable
+transition $rt_2$r reproduces the behaviour of, and updates the data state in a manner consistent
+with, another transition $rt_1$r, meaning that $rt_2$r can be used in place of $rt_1$r with no observable
 difference in behaviour.
 
 The subsumption in context relation requires us to supply a context in which to test subsumption,
