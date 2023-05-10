@@ -412,7 +412,6 @@ lemma [code]:
   by (simp add: directly_subsumes_reflexive dirty_directly_subsumes_def)
 
 declare List.minus_coset_filter [code del]
-declare Cardinality.card'_code(2) [code del]
 lemma [code]: "set x - set y = set (filter (\<lambda>x. x \<notin> set y) x)"
   by (induct x, auto)
 lemma [code]: "Set.remove a (set l) = set (filter (\<lambda>x. x \<noteq> a) l)"

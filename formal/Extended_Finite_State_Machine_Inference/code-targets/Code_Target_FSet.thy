@@ -139,7 +139,7 @@ proof(induct l)
 next
   case (Cons a l)
   then show ?case
-    by (metis sorted_Max_Cons Max_singleton hd_rev last.simps list.set(1) list.simps(15) sorted.simps(2))
+    by (metis sorted_Max_Cons Max_singleton hd_rev last.simps list.set(1) list.simps(15) sorted_simps(2))
 qed
 
 lemma [code]: "fMax (fset_of_list (h#t)) = last (nativeSort (h#t))"
@@ -161,16 +161,6 @@ lemma fis_singleton_code [code]: "fis_singleton s = (size s = 1)"
   apply (simp add: fis_singleton_def is_singleton_def)
   by (simp add: card_Suc_eq)
 
-lemma fUnion_fempty: "|\<Union>|{||} = {||}"
-  apply (simp add: fUnion_def)
-  by (simp add: bot_fset_def)
-
-lemma fUnion_finsert: "|\<Union>|(finsert a B) = a |\<union>| |\<Union>|B"
-  by (simp add: fUnion_def finsert_def sup_fset_def Abs_fset_inverse)
-
-lemma fUnion_code[code]: "|\<Union>| (fset_of_list ls) = foldr (|\<union>|) ls {||}"
-  apply (induct ls)
-   apply (simp add: fUnion_fempty)
-  by (simp add: fUnion_finsert)
-
+lemma fUnion_code [code]: "fUnion (fset_of_list l) = fold funion l {||}"
+  by (metis fUnion_def ffUnion_def fold_union_ffUnion)
 end

@@ -140,7 +140,7 @@ object TypeConversion {
 
   def typeString(v: Value.value): String = v match {
     case Value.Inta(_) => "Int"
-    case Value.Str(_) => "String"
+    case Value.Stra(_) => "String"
     case Value.Reala(_) => "Real"
   }
 
@@ -218,7 +218,7 @@ object TypeConversion {
       } else if (name.startsWith("r")) {
         return AExp.V(VName.R(Nat.Nata(name.drop(1).toLong)))
       } else {
-        return AExp.L(Value.Str(e.toString.replaceAll("^\"|\"$", "")))
+        return AExp.L(Value.Stra(e.toString.replaceAll("^\"|\"$", "")))
       }
     }
     if (e.isIntNum()) {
@@ -308,7 +308,7 @@ object TypeConversion {
 
   def toValue(n: BigInt): Value.value = Value.Inta(Int.int_of_integer(n))
   def toValue(n: Long): Value.value = Value.Inta(Int.int_of_integer(n))
-  def toValue(s: String): Value.value = Value.Str(s)
+  def toValue(s: String): Value.value = Value.Stra(s)
   def toValue(d: Double): Value.value = Value.Reala(Real.Ratreal(rat_of_double(d)))
   def toValue(e: Expr): Value.value = {
     if (e.isIntNum())
@@ -317,7 +317,7 @@ object TypeConversion {
       return Value.Reala(Real.Ratreal(Rat.Frct((Int.int_of_integer(e.asInstanceOf[RatNum].getNumerator.toString.toLong), Int.int_of_integer(e.asInstanceOf[RatNum].getDenominator.toString.toLong)))))
     else if (e.isString()) {
       val str = e.toString.slice(1, e.toString.length - 1)
-      return Value.Str(str)
+      return Value.Stra(str)
     } else if (e.isAlgebraicNumber()) {
       return Value.Reala(to_real(e.asInstanceOf[AlgebraicNum].toDecimal(16).replace("?", "").toDouble))
     } else

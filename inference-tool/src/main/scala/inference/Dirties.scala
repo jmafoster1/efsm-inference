@@ -31,7 +31,7 @@ object Dirties {
 
   def toZ3(v: Value.value): String = v match {
     case Value.Inta(n) => s"(Int ${Code_Numeral.integer_of_int(n).toString})"
-    case Value.Str(s) => s"""(Str "${s}")"""
+    case Value.Stra(s) => s"""(Str "${s}")"""
     case Value.Reala(f) => s"""(Double ${TypeConversion.toDouble(f)})"""
   }
 
@@ -52,7 +52,7 @@ object Dirties {
   def toZ3Native(v: Value.value): String = v match {
     case Value.Inta(n) => s"${Code_Numeral.integer_of_int(n).toString}"
     case Value.Reala(r) => s"${TypeConversion.toDouble(r).toString}"
-    case Value.Str(s) => s""""${s}""""
+    case Value.Stra(s) => s""""${s}""""
   }
 
   def toZ3Native(a: AExp.aexp[VName.vname]): String = a match {
@@ -211,7 +211,7 @@ object Dirties {
               point = point + (inx -> TypeConversion.toDouble(n).asInstanceOf[java.lang.Double])
               types = types + (inx -> "Real")
             }
-            case Value.Str(s) => {
+            case Value.Stra(s) => {
               point = point + (inx -> s)
               types = types + (inx -> "String")
             }
@@ -230,7 +230,7 @@ object Dirties {
                 point = point + (rx -> TypeConversion.toDouble(n).asInstanceOf[java.lang.Double])
                 types = types + (rx -> "Real")
               }
-              case Some(Value.Str(s)) => {
+              case Some(Value.Stra(s)) => {
                 point = point + (rx -> s)
                 types = types + (rx -> "String")
               }
@@ -245,7 +245,7 @@ object Dirties {
             point = point + ("expected" -> TypeConversion.toDouble(n).asInstanceOf[java.lang.Double])
             types = types + ("expected" -> "Real")
           }
-          case Value.Str(s) => {
+          case Value.Stra(s) => {
             point = point + ("expected" -> s)
             types = types + ("expected" -> "String")
           }
@@ -324,7 +324,7 @@ object Dirties {
     for (value <- values) value match {
       case Value.Inta(i) => pset.addTerminal(TypeConversion.toLong(i), py"int")
       case Value.Reala(r) => pset.addTerminal(TypeConversion.toDouble(r), py"float")
-      case Value.Str(s) => pset.addTerminal(s, py"str")
+      case Value.Stra(s) => pset.addTerminal(s, py"str")
     }
 
     // funMem(l).find(f => funMemFind(f.asInstanceOf[me.shadaj.scalapy.py.Any], training_set, pset, false, f"")) match {
@@ -438,7 +438,7 @@ object Dirties {
     for (value <- values) value match {
       case Value.Inta(i) => pset.addTerminal(TypeConversion.toLong(i), py"int")
       case Value.Reala(r) => pset.addTerminal(TypeConversion.toDouble(r), py"float")
-      case Value.Str(s) => pset.addTerminal(s, py"str")
+      case Value.Stra(s) => pset.addTerminal(s, py"str")
     }
 
     Log.root.debug("  Consts:" + py"set([c.value for c in $pset.terminals[int] if type(c.value) == int])")

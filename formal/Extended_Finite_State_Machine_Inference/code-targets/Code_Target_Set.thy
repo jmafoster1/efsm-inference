@@ -5,7 +5,7 @@ sets. All of the sets we need to use here are finite so we present an alternativ
 basic set operations which generates much cleaner code.\<close>
 
 theory Code_Target_Set
-  imports "HOL-Library.Cardinality"
+  imports "HOL-Library.Code_Cardinality"
 begin
 
 code_datatype set
@@ -19,7 +19,7 @@ declare eq_set_code(2) [code del]
 declare eq_set_code(4) [code del]
 declare List.subset_code [code del]
 declare inter_coset_fold [code del]
-declare Cardinality.subset'_code [code del]
+declare Code_Cardinality.subset'_code [code del]
 
 declare subset_eq [code]
 
@@ -28,7 +28,7 @@ lemma [code del]:
   "x \<in> List.coset xs \<longleftrightarrow> \<not> List.member xs x"
   by (simp add: member_def)
 
-lemma sup_set_append[code]: "(set x) \<union> (set y) = set (remdups (x @ y))"
+lemma sup_set_append[code]: "(set x) \<union> (set y) = set (x @ y)"
   by simp
 
 declare product_concat_map [code]
@@ -38,7 +38,7 @@ lemma [code]: "insert x (set s) = (if x \<in> set s then set s else set (x#s))"
   by auto
 
 lemma [code]:
-  "Cardinality.subset' (set l1) (set l2) = ((list_all (\<lambda>x. List.member l2 x)) l1)"
+  "Code_Cardinality.subset' (set l1) (set l2) = ((list_all (\<lambda>x. List.member l2 x)) l1)"
   by (meson in_set_member list.pred_set subset'_code(2))
 
 end

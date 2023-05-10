@@ -33,7 +33,7 @@ object PrettyPrinter {
     v match {
       case Value.Inta(Int.int_of_integer(n)) => n.toString
       case Value.Reala(Real.Ratreal(rat)) => TypeConversion.toDouble(rat).toString
-      case Value.Str(s) => "\"" + s + "\""
+      case Value.Stra(s) => "\"" + s + "\""
     }
 
   def vnameToString(v: VName.vname): String = {
@@ -213,7 +213,7 @@ object PrettyPrinter {
         "r" + show(k) + ":=" + (v match {
           case None => return "None"
           case Some(Value.Inta(Int.int_of_integer(n))) => n.toString
-          case Some(Value.Str(s)) => s
+          case Some(Value.Stra(s)) => s
           case Some(Value.Reala(d)) => TypeConversion.toDouble(d).toString
         })
     }
@@ -226,7 +226,7 @@ object PrettyPrinter {
         "r" + show(k) + ":=" + (v match {
           case None => return "None"
           case Some(Value.Inta(Int.int_of_integer(n))) => n.toString
-          case Some(Value.Str(s)) => s
+          case Some(Value.Stra(s)) => s
           case Some(Value.Reala(d)) => TypeConversion.toDouble(d).toString
         })
     }
@@ -261,7 +261,7 @@ object PrettyPrinter {
           case None => "null"
           case Some(Value.Inta(Int.int_of_integer(n))) => n.toString
           case Some(Value.Reala(d)) => TypeConversion.toDouble(d).toString
-          case Some(Value.Str(s)) => s""""$s""""
+          case Some(Value.Stra(s)) => s""""$s""""
         })
     }
     return s"{${pairs.mkString(", ")}}"
