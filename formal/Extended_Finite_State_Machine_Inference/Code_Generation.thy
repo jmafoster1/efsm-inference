@@ -15,7 +15,6 @@ theory Code_Generation
    "heuristics/Distinguishing_Guards"
    "heuristics/PTA_Generalisation"
    "heuristics/Weak_Subsumption"
-   "heuristics/Least_Upper_Bound"
    EFSM_Dot
    Run_Info_DOT
    "code-targets/Code_Target_FSet"
@@ -46,9 +45,6 @@ definition "initially_undefined_context_check_full = initially_undefined_context
 (* This gives us a speedup because we can check this before we have to call out to z3 *)
 fun mutex :: "'a gexp \<Rightarrow> 'a gexp \<Rightarrow> bool" where
   "mutex (Eq (V v) (L l)) (Eq (V v') (L l')) = (if v = v' then l \<noteq> l' else False)" |
-  "mutex (gexp.In v l) (Eq (V v') (L l')) = (v = v' \<and> l' \<notin> set l)" |
-  "mutex (Eq (V v') (L l')) (gexp.In v l) = (v = v' \<and> l' \<notin> set l)" |
-  "mutex (gexp.In v l) (gexp.In v' l') = (v = v' \<and> set l \<inter> set l' = {})" |
   "mutex _ _ = False"
 
 lemma mutex_not_gval:
@@ -56,26 +52,7 @@ lemma mutex_not_gval:
   unfolding gAnd_def
   apply (induct x y rule: mutex.induct)
                       apply simp_all
-     apply (case_tac "s v")
-      apply (case_tac "s v'")
-       apply simp
-      apply simp
-     apply (case_tac "s v")
-      apply (case_tac "s v'")
-       apply simp
-      apply simp
-     apply (metis maybe_negate_true maybe_or_false trilean.distinct(1) value_eq.simps(3))
-    apply (case_tac "s v")
-     apply (case_tac "s v'")
-      apply simp
-     apply simp
-    apply simp
-    apply (case_tac "s v'")
-     apply simp
-    apply simp
-   apply (case_tac "s v")
-     apply (case_tac "s v'")
-  by auto
+  by (metis de_morgans_2 maybe_and_true maybe_double_negation maybe_or_idempotent trilean.distinct(1) value_eq_false value_eq_true)
 
 (* (\<exists>(i, s1) \<in> set (get_ins (Guard t1)).
    \<exists>(i', s2) \<in> set (get_ins (Guard t2)).
@@ -481,7 +458,6 @@ export_code
   heuristic_2
   distinguish
   weak_subsumption
-  lob
   (* Nondeterminism metrics *)
   nondeterministic_pairs
   nondeterministic_pairs_labar
@@ -494,7 +470,6 @@ export_code
   iefsm2dot
   efsm2dot
   runinfo2dot
-  fold_In
   max_int
   enumerate_vars
   derestrict

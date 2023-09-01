@@ -9,7 +9,7 @@ declare One_nat_def [simp del]
 
 lemma P_ltl_step_0:
   assumes invalid: "P (None, [], <>)"
-  assumes select: "l = STR ''select'' \<longrightarrow> P (Some 1, [], <1 $:= Some (hd i), 2 $:= Some (value.Int 0)>)"
+  assumes select: "l = STR ''select'' \<longrightarrow> P (Some 1, [], <1 $r:= Some (hd i), 2 $r:= Some (value.Int 0)>)"
   shows "P (ltl_step drinks (Some 0) <> (l, i))"
 proof-
   have length_i: "\<exists>d. (l, i) = (STR ''select'', [d]) \<Longrightarrow> length i = 1"
@@ -25,9 +25,9 @@ qed
 
 lemma P_ltl_step_1:
   assumes invalid: "P (None, [], r)"
-  assumes coin: "l = STR ''coin'' \<longrightarrow> P (Some 1, [value_plus (r $ 2) (Some (hd i))], r(2 $:= value_plus (r $ 2) (Some (i ! 0))))"
-  assumes vend_fail: "value_gt (Some (value.Int 100)) (r $ 2) = trilean.true \<longrightarrow> P (Some 1, [],r)"
-  assumes vend: "\<not>? value_gt (Some (value.Int 100)) (r $ 2) = trilean.true \<longrightarrow> P (Some 2, [r$1], r)"
+  assumes coin: "l = STR ''coin'' \<longrightarrow> P (Some 1, [value_plus (r $r 2) (Some (hd i))], r(2 $r:= value_plus (r $r 2) (Some (i ! 0))))"
+  assumes vend_fail: "value_gt (Some (value.Int 100)) (r $r 2) = trilean.true \<longrightarrow> P (Some 1, [],r)"
+  assumes vend: "\<not>? value_gt (Some (value.Int 100)) (r $r 2) = trilean.true \<longrightarrow> P (Some 2, [r$r1], r)"
   shows "P (ltl_step drinks (Some 1) r (l, i))"
 proof-
   have length_i: "\<And>s. \<exists>d. (l, i) = (s, [d]) \<Longrightarrow> length i = 1"
@@ -39,14 +39,14 @@ proof-
      apply (simp add: possible_steps_1_coin length_i coin_def apply_outputs_def apply_updates_def)
     using coin apply auto[1]
     apply (case_tac "(l, i) = (STR ''vend'', [])")
-     apply (case_tac "\<exists>n. r $ 2 = Some (value.Int n)")
+     apply (case_tac "\<exists>n. r $r 2 = Some (value.Int n)")
       apply clarsimp
     subgoal for n
       apply (case_tac "n \<ge> 100")
        apply (simp add: drinks_vend_sufficient vend_def apply_updates_def apply_outputs_def)
-       apply (metis finfun_upd_triv possible_steps_2_vend vend vend_ge_100)
+       apply (metis registers_upd_triv possible_steps_2_vend vend vend_ge_100)
       apply (simp add: drinks_vend_insufficient vend_fail_def apply_updates_def apply_outputs_def)
-      apply (metis MaybeBoolInt.simps(1) finfun_upd_triv not_less value_gt_def vend_fail)
+      apply (metis MaybeBoolInt.simps(1) registers_upd_triv not_less value_gt_def vend_fail)
       done
      apply (simp add: drinks_vend_invalid invalid)
     by (simp add: drinks_no_possible_steps_1 length_i_2 invalid)
@@ -59,7 +59,7 @@ lemma drinks_step_2_none: "ltl_step drinks (Some 2) r e = (None, [], r)"
   by (simp add: drinks_end ltl_step_none_2)
 
 lemma one_before_two_2:
-  "alw (\<lambda>x. statename (shd (stl x)) = Some 2 \<longrightarrow> statename (shd x) = Some 1) (make_full_observation drinks (Some 2) r [r $ 1] x2a)"
+  "alw (\<lambda>x. statename (shd (stl x)) = Some 2 \<longrightarrow> statename (shd x) = Some 1) (make_full_observation drinks (Some 2) r [r $r 1] x2a)"
 proof(coinduction)
   case alw
   then show ?case
@@ -195,7 +195,7 @@ lemma ltl_step_not_select:
   done
 
 lemma ltl_step_select:
-  "ltl_step drinks (Some 0) <> (STR ''select'', [i]) = (Some 1, [], <1 $:= Some i, 2 $:= Some (value.Int 0)>)"
+  "ltl_step drinks (Some 0) <> (STR ''select'', [i]) = (Some 1, [], <1 $r:= Some i, 2 $r:= Some (value.Int 0)>)"
   apply (rule  ltl_step_some[of _ _ _ _ _ _ select])
     apply (simp add: possible_steps_0)
    apply (simp add: select_def)
@@ -324,7 +324,7 @@ proof(coinduction)
     apply simp
     subgoal for a b
       using output_vend_aux[of "(make_full_observation drinks (Some 1)
-              <1 $:= Some (hd b), 2 $:= Some (value.Int 0)> [] (stl t))" d]
+              <1 $r:= Some (hd b), 2 $r:= Some (value.Int 0)> [] (stl t))" d]
       using implode_vend by auto
     done
 qed
@@ -333,7 +333,7 @@ text_raw\<open>\snip{outputVendUnfolded}{1}{2}{%\<close>
 lemma LTL_output_vend_unfolded:
   "alw (\<lambda>xs. (label (shd xs) = STR ''vend'' \<and>
              nxt (\<lambda>s. output (shd s) = [Some d]) xs) \<longrightarrow>
-              \<not>? value_gt (Some (value.Int 100)) (datastate (shd xs) $ 2) = trilean.true)
+              \<not>? value_gt (Some (value.Int 100)) (datastate (shd xs) $r 2) = trilean.true)
      (watch drinks t)"
 text_raw\<open>}%endsnip\<close>
   apply (insert LTL_output_vend[of d t])

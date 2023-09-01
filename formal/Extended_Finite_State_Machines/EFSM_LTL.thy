@@ -283,4 +283,6 @@ lemma no_updates_none: "alw (\<lambda>x. datastate (shd x) = r) (make_full_obser
 lemma action_components: "(label_eq l aand input_eq i) s = (action (shd s) = (String.implode l, i))"
   by (metis fst_conv prod.collapse snd_conv)
 
+abbreviation "Num \<equiv> value.Int"
+
 end

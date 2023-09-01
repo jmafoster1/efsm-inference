@@ -75,6 +75,12 @@ lemma MaybeBoolInt_not_num_1:
 definition value_gt :: "value option \<Rightarrow> value option \<Rightarrow> trilean"  where
   "value_gt a b \<equiv> MaybeBoolInt (>) a b"
 
+definition value_ge :: "value option \<Rightarrow> value option \<Rightarrow> trilean"  where
+  "value_ge a b \<equiv> MaybeBoolInt (\<ge>) a b"
+
+definition value_le :: "value option \<Rightarrow> value option \<Rightarrow> trilean"  where
+  "value_le a b \<equiv> MaybeBoolInt (\<le>) a b"
+
 fun value_eq :: "value option \<Rightarrow> value option \<Rightarrow> trilean" where
   "value_eq None _ = invalid" |
   "value_eq _ None = invalid" |

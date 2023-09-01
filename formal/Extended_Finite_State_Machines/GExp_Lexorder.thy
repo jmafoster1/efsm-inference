@@ -16,7 +16,6 @@ fun height :: "'a gexp \<Rightarrow> nat" where
   "height (Bc _) = 1" |
   "height (Eq a1 a2) = 1 + max (AExp_Lexorder.height a1) (AExp_Lexorder.height a2)" |
   "height (Gt a1 a2) = 1 + max (AExp_Lexorder.height a1) (AExp_Lexorder.height a2)" |
-  "height (In v l) = 2 + size l" |
   "height (Nor g1 g2) = 1 + max (height g1) (height g2)"
 
 instantiation gexp :: (linorder) linorder begin
@@ -32,10 +31,6 @@ fun less_gexp_aux :: "'a gexp \<Rightarrow> 'a gexp \<Rightarrow> bool"  where
   "less_gexp_aux (Gt e1 e2) (Eq e1' e2') = False" |
   "less_gexp_aux (Gt e1 e2) (Gt e1' e2') = ((e1 < e1') \<or> ((e1 = e1') \<and> (e2 < e2')))" |
   "less_gexp_aux (Gt e1 e2) _ = True" |
-
-  "less_gexp_aux (In vb vc) (Nor v va) = True" |
-  "less_gexp_aux (In vb vc) (In v va) = (vb < v \<or> (vb = v \<and> vc < va))" |
-  "less_gexp_aux (In vb vc) _ = False" |
 
   "less_gexp_aux (Nor g1 g2) (Nor g1' g2') = ((less_gexp_aux g1 g1') \<or> ((g1 = g1') \<and> (less_gexp_aux g2 g2')))" |
   "less_gexp_aux (Nor g1 g2) _ = False"
@@ -58,84 +53,12 @@ definition less_eq_gexp :: "'a gexp \<Rightarrow> 'a gexp \<Rightarrow> bool" wh
   "less_eq_gexp e1 e2 \<equiv> (e1 < e2) \<or> (e1 = e2)"
 
 lemma less_gexp_aux_antisym: "less_gexp_aux x y = (\<not>(less_gexp_aux y x) \<and> (x \<noteq> y))"
-proof (induct x y rule: less_gexp_aux.induct)
-  case (1 b1 b2)
-  then show ?case by auto
-next
-  case ("2_1" b1 v va)
-  then show ?case by auto
-next
-  case ("2_2" b1 v va)
-  then show ?case by auto
-next
-  case ("2_3" b1 v va)
-  then show ?case by auto
-next
-  case ("2_4" b1 v va)
-  then show ?case by auto
-next
-  case (3 e1 e2 b2)
-  then show ?case by auto
-next
-  case (4 e1 e2 e1' e2')
-  then show ?case
-    by (metis less_gexp_aux.simps(7) less_imp_not_less less_linear)
-next
-  case ("5_1" e1 e2 v va)
-  then show ?case by auto
-next
-  case ("5_2" e1 e2 v va)
-  then show ?case by auto
-next
-  case ("5_3" e1 e2 v va)
-  then show ?case by auto
-next
-  case (6 e1 e2 b2)
-  then show ?case by auto
-next
-  case (7 e1 e2 e1' e2')
-  then show ?case by auto
-next
-  case (8 e1 e2 e1' e2')
-  then show ?case
-    by (metis less_gexp_aux.simps(13) less_imp_not_less less_linear)
-next
-  case ("9_1" e1 e2 v va)
-  then show ?case by auto
-next
-  case ("9_2" e1 e2 v va)
-  then show ?case by auto
-next
-  case (10 vb vc v va)
-  then show ?case by auto
-next
-  case (11 vb vc v va)
-  then show ?case by auto
-next
-  case ("12_1" vb vc v)
-  then show ?case by auto
-next
-  case ("12_2" vb vc v va)
-  then show ?case by auto
-next
-  case ("12_3" vb vc v va)
-  then show ?case by auto
-next
-  case (13 g1 g2 g1' g2')
-  then show ?case by auto
-next
-  case ("14_1" g1 g2 v)
-  then show ?case by auto
-next
-  case ("14_2" g1 g2 v va)
-  then show ?case by auto
-next
-  case ("14_3" g1 g2 v va)
-  then show ?case by auto
-next
-  case ("14_4" g1 g2 v va)
-  then show ?case by auto
-qed
+  apply (induct x y rule: less_gexp_aux.induct)
+                 prefer 6
+                 apply (metis GExp_Lexorder.less_gexp_aux.simps(6) linorder_neq_iff order_less_asym)
+                prefer 10
+                apply (metis GExp_Lexorder.less_gexp_aux.simps(11) linorder_neqE order_less_not_sym)
+  by auto
 
 lemma less_gexp_antisym: "(x::'a gexp) < y = (\<not>(y < x) \<and> (x \<noteq> y))"
   apply (simp add: Let_def)
@@ -145,8 +68,8 @@ lemma less_gexp_antisym: "(x::'a gexp) < y = (\<not>(y < x) \<and> (x \<noteq> y
   by (induct x, auto)
 
 lemma less_gexp_aux_trans: "less_gexp_aux x y \<Longrightarrow> less_gexp_aux y z \<Longrightarrow> less_gexp_aux x z"
-proof(induct x y arbitrary: z rule: less_gexp_aux.induct)
-case (1 b1 b2)
+proof (induct x y arbitrary: z rule: less_gexp_aux.induct)
+  case (1 b1 b2)
   then show ?case by (cases z, auto)
 next
   case ("2_1" b1 v va)
@@ -158,26 +81,20 @@ next
   case ("2_3" b1 v va)
   then show ?case by (cases z, auto)
 next
-  case ("2_4" b1 v va)
-  then show ?case by (cases z, auto)
-next
   case (3 e1 e2 b2)
   then show ?case by (cases z, auto)
 next
   case (4 e1 e2 e1' e2')
   then show ?case
     apply (cases z)
-        apply simp
-       apply (metis dual_order.strict_trans less_gexp_aux.simps(7))
+       apply auto[1]
+      apply (metis GExp_Lexorder.less_gexp_aux.simps(6) less_aexp_trans)
     by auto
 next
   case ("5_1" e1 e2 v va)
   then show ?case by (cases z, auto)
 next
   case ("5_2" e1 e2 v va)
-  then show ?case by (cases z, auto)
-next
-  case ("5_3" e1 e2 v va)
   then show ?case by (cases z, auto)
 next
   case (6 e1 e2 b2)
@@ -187,47 +104,25 @@ next
   then show ?case by (cases z, auto)
 next
   case (8 e1 e2 e1' e2')
-  then show ?case
-    apply (cases z)
-        apply simp
+  then show ?case apply (cases z)
        apply simp
-      apply (metis dual_order.strict_trans less_gexp_aux.simps(13))
-    by auto
+      apply simp
+     apply (metis GExp_Lexorder.less_gexp_aux.simps(11) order_less_trans)
+    by simp
 next
-  case ("9_1" e1 e2 v va)
+  case (9 e1 e2 v va)
   then show ?case by (cases z, auto)
 next
-  case ("9_2" e1 e2 v va)
+  case (10 g1 g2 g1' g2')
   then show ?case by (cases z, auto)
 next
-  case (10 vb vc v va)
+  case ("11_1" g1 g2 v)
   then show ?case by (cases z, auto)
 next
-  case (11 vb vc v va)
+  case ("11_2" g1 g2 v va)
   then show ?case by (cases z, auto)
 next
-  case ("12_1" vb vc v)
-  then show ?case by (cases z, auto)
-next
-  case ("12_2" vb vc v va)
-  then show ?case by (cases z, auto)
-next
-  case ("12_3" vb vc v va)
-  then show ?case by (cases z, auto)
-next
-  case (13 g1 g2 g1' g2')
-  then show ?case by (cases z, auto)
-next
-  case ("14_1" g1 g2 v)
-  then show ?case by (cases z, auto)
-next
-  case ("14_2" g1 g2 v va)
-  then show ?case by (cases z, auto)
-next
-  case ("14_3" g1 g2 v va)
-  then show ?case by (cases z, auto)
-next
-  case ("14_4" g1 g2 v va)
+  case ("11_3" g1 g2 v va)
   then show ?case by (cases z, auto)
 qed
 

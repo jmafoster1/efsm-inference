@@ -81,8 +81,7 @@ text_raw\<open>}%endsnip\<close>
 lemmas transitions = select_def coin_def vend_def vend_fail_def
 
 lemma apply_updates_vend: "apply_updates (Updates vend) (join_ir [] r) r = r"
-  apply (simp add: vend_def apply_updates_def)
-  by (metis registers_ext update_irrelevant update_value)
+  by (simp add: vend_def apply_updates_def)
 
 lemma drinks_states: "S drinks = {|0, 1, 2|}"
   apply (simp add: S_def drinks_def)

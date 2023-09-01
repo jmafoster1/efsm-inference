@@ -48,7 +48,7 @@ lemma possible_steps_2_coin:
   by force
 
 lemma possible_steps_2_vend:
-  "r $ 2 = Some (value.Int n) \<Longrightarrow>
+  "r $r 2 = Some (value.Int n) \<Longrightarrow>
    n \<ge> 100 \<Longrightarrow>
    possible_steps drinks2 2 r ((STR ''vend'')) [] = {|(3, vend)|}"
   apply (simp add: possible_steps_singleton drinks2_def)
@@ -68,14 +68,14 @@ lemma drinks2_vend_insufficient:
   by force
 
 lemma drinks2_vend_insufficient2:
-  "r $ 2 = Some (value.Int x1) \<Longrightarrow>
+  "r $r 2 = Some (value.Int x1) \<Longrightarrow>
    x1 < 100 \<Longrightarrow>
    possible_steps drinks2 2 r ((STR ''vend'')) [] = {|(2, vend_fail)|}"
   apply (simp add: possible_steps_singleton drinks2_def)
   apply safe
   by (simp_all add: transitions apply_guards_def value_gt_def join_ir_def connectives)
 
-lemma drinks2_vend_sufficient: "r $ 2 = Some (value.Int x1) \<Longrightarrow>
+lemma drinks2_vend_sufficient: "r $r 2 = Some (value.Int x1) \<Longrightarrow>
                 \<not> x1 < 100 \<Longrightarrow>
                 possible_steps drinks2 2 r ((STR ''vend'')) [] = {|(3, vend)|}"
   apply (simp add: possible_steps_singleton drinks2_def)
@@ -89,7 +89,7 @@ proof(induct t arbitrary: r)
     apply (cases a)
     apply (simp add: recognises_step_equiv)
     apply (case_tac "a=(STR ''vend'', [])")
-     apply (case_tac "\<exists>n. r$2 = Some (value.Int n)")
+     apply (case_tac "\<exists>n. r$r2 = Some (value.Int n)")
       apply clarify
       apply (case_tac "n < 100")
        apply (simp add: drinks_vend_insufficient drinks2_vend_insufficient2)
@@ -122,7 +122,7 @@ lemma drinks2_0_invalid:
   by force
 
 lemma drinks2_vend_r2_none:
-  "r $ 2 = None \<Longrightarrow> possible_steps drinks2 2 r ((STR ''vend'')) [] = {||}"
+  "r $r 2 = None \<Longrightarrow> possible_steps drinks2 2 r ((STR ''vend'')) [] = {||}"
   apply (simp add: possible_steps_empty drinks2_def can_take_transition_def can_take_def transitions)
   by (simp add: value_gt_def)
 
@@ -130,7 +130,7 @@ lemma drinks2_end: "possible_steps drinks2 3 r a b = {||}"
   apply (simp add: possible_steps_def drinks2_def transitions)
   by force
 
-lemma drinks2_vend_r2_String: "r $ 2 = Some (value.Str x2) \<Longrightarrow>
+lemma drinks2_vend_r2_String: "r $r 2 = Some (value.Str x2) \<Longrightarrow>
                 possible_steps drinks2 2 r ((STR ''vend'')) [] = {||}"
   apply (simp add: possible_steps_empty drinks2_def)
   apply safe
@@ -152,7 +152,7 @@ lemma drinks2_1_invalid:
   by (simp_all add: transitions can_take_transition_def can_take_def value_gt_def)
 
 lemma drinks2_vend_invalid:
-  "\<nexists>n. r $ 2 = Some (value.Int n) \<Longrightarrow>
+  "\<nexists>n. r $r 2 = Some (value.Int n) \<Longrightarrow>
    possible_steps drinks2 2 r (STR ''vend'') [] = {||}"
   apply (simp add: possible_steps_empty drinks2_def)
   apply safe
@@ -168,7 +168,7 @@ proof(induct x arbitrary: r)
      apply (simp add: Drinks_Machine.possible_steps_1_coin possible_steps_2_coin)
     apply (case_tac "a = (STR ''vend'', [])")
      defer using drinks2_2_invalid drinks_no_possible_steps_1 apply auto[1]
-    apply (case_tac "\<exists>n. r $ 2 = Some (value.Int n)")
+    apply (case_tac "\<exists>n. r $r 2 = Some (value.Int n)")
      defer using drinks_vend_invalid drinks2_vend_invalid apply simp
     apply clarify
     subgoal for aa b n
@@ -183,7 +183,7 @@ proof(induct x arbitrary: r)
     done
 qed auto
 
-lemma equiv_1_1: "r$2 = Some (value.Int 0) \<Longrightarrow> executionally_equivalent drinks 1 r drinks2 1 r x"
+lemma equiv_1_1: "r$r2 = Some (value.Int 0) \<Longrightarrow> executionally_equivalent drinks 1 r drinks2 1 r x"
 proof(induct x)
   case (Cons a t)
   then show ?case
@@ -196,7 +196,7 @@ proof(induct x)
        apply clarsimp
        apply (simp add: drinks_vend_insufficient drinks2_vend_insufficient)
        apply (simp add: vend_fail_def vend_nothing_def apply_updates_def)
-       apply (metis finfun_upd_triv)
+       apply (metis registers_upd_triv)
       by (simp add: drinks2_1_invalid drinks_no_possible_steps_1)
     done
 qed auto

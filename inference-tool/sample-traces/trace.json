@@ -1,0 +1,64 @@
+[
+  [
+    {"label":"select", "inputs":["tea"], "outputs":["Beverage", "tea", 0]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 100]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 200]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 300]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 400]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 500]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 600]},
+    {"label":"vend", "inputs":[], "outputs":["Serve", "tea"]}
+  ],
+  [
+    {"label":"select", "inputs":["tea"], "outputs":["Beverage", "tea", 0]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 100]},
+    {"label":"vend", "inputs":[], "outputs":["Serve", "tea"]}
+  ],
+  [
+    {"label":"select", "inputs":["coffee"], "outputs":["Beverage", "coffee", 0]},
+    {"label":"coin", "inputs":[50], "outputs":[50, "Display"]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 150]},
+    {"label":"coin", "inputs":[50], "outputs":["Paid", 200]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 300]},
+    {"label":"coin", "inputs":[50], "outputs":["Paid", 350]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 450]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 550]},
+    {"label":"coin", "inputs":[50], "outputs":["Paid", 600]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 700]},
+    {"label":"vend", "inputs":[], "outputs":["Serve", "coffee"]}
+  ],
+  [
+    {"label":"select", "inputs":["tea"], "outputs":["Beverage", "tea", 0]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 100]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 200]},
+    {"label":"vend", "inputs":[], "outputs":["Serve", "tea"]}
+  ],
+  [
+    {"label":"select", "inputs":["tea"], "outputs":["Beverage", "tea", 0]},
+    {"label":"coin", "inputs":[50], "outputs":[50, "Display"]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 150]},
+    {"label":"vend", "inputs":[], "outputs":["Serve", "tea"]}
+  ],
+  [
+    {"label":"select", "inputs":["tea"], "outputs":["Beverage", "tea", 0]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 100]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 200]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 300]},
+    {"label":"vend", "inputs":[], "outputs":["Serve", "tea"]}
+  ],
+  [
+    {"label":"select", "inputs":["tea"], "outputs":["Beverage", "tea", 0]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 100]},
+    {"label":"coin", "inputs":[50], "outputs":["Paid", 150]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 250]},
+    {"label":"vend", "inputs":[], "outputs":["Serve", "tea"]}
+  ],
+  [
+    {"label":"select", "inputs":["tea"], "outputs":["Beverage", "tea", 0]},
+    {"label":"coin", "inputs":[50], "outputs":[50, "Display"]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 150]},
+    {"label":"coin", "inputs":[100], "outputs":["Paid", 250]},
+    {"label":"coin", "inputs":[50], "outputs":["Paid", 300]},
+    {"label":"vend", "inputs":[], "outputs":["Serve", "tea"]}
+  ]
+]
