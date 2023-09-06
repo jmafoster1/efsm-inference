@@ -1192,7 +1192,7 @@ def shortcut_latent(points: pd.DataFrame) -> bool:
 
 
 if __name__ == "__main__":
-    points = pd.read_csv("csvs/n1.csv")
+    points = pd.read_csv("test4.csv")
     logger.debug(points)
 
     for col in points:
