@@ -1,4 +1,4 @@
-FROM debian:stable-20220912-slim
+FROM python:3.9.6
 
 # Install OpenJDK 11
 RUN apt-get update \
@@ -22,8 +22,6 @@ RUN apt-get update \
 
 # Install python dependencies for EFSM inference tool
 RUN apt-get update \
-    && apt-get install python3 -y \
-    && apt-get install libpython3.9 -y \
     && apt-get install libenchant-2-2 -y \
     && apt-get install python3-pip -y \
     && apt-get install graphviz -y
