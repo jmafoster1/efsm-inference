@@ -14,7 +14,7 @@ definition put_updates :: "tids \<Rightarrow> update_function list \<Rightarrow>
   "put_updates uids updates iefsm = fimage (\<lambda>(uid, fromTo, tran).
       case uid of [u] \<Rightarrow>
       if u \<in> set uids then
-        (uid, fromTo, \<lparr>Label = Label tran, Arity = Arity tran, Guards = Guards tran, Outputs = Outputs tran, Updates = (Updates tran)@updates\<rparr>)
+        (uid, fromTo, \<lparr>Label = Label tran, Arity = Arity tran, Guards = Guards tran, Outputs = Outputs tran, Updates = remdups ((Updates tran)@updates)\<rparr>)
       else
         (uid, fromTo, tran)
       ) iefsm"
@@ -58,6 +58,21 @@ code_printing constant find_distinguishing_guards \<rightharpoonup> (Scala) "Dir
 
 definition add_guard :: "transition \<Rightarrow> vname gexp \<Rightarrow> transition" where
   "add_guard t g = t\<lparr>Guards := List.insert g (Guards t)\<rparr>"
+
+definition ehw_distinguish :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier" where
+  "ehw_distinguish pta log t1ID t2ID s destMerge preDestMerge old check = (
+    let
+      t1 = get_by_ids destMerge t1ID;
+      t2 = get_by_ids destMerge t2ID;
+      (G1, G2) = collect_training_sets log pta t1ID t2ID [] []
+    in
+      case find_distinguishing_guards G1 G2 of
+        None \<Rightarrow> None |
+        Some (g1, g2) \<Rightarrow> (
+          let rep = replace_transitions preDestMerge [(t1ID, add_guard t1 g1), (t2ID, add_guard t2 g2)] in
+          if check (tm rep) then Some rep else None
+        )
+  )"
 
 definition distinguish :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier" where
   "distinguish pta log t1ID t2ID s destMerge preDestMerge old check = (
@@ -113,5 +128,8 @@ lemma can_still_take_direct_subsumption:
   apply (simp add: directly_subsumes_def can_still_take_def)
   apply standard
   by (meson distinguishing_guard_subsumption obtains_visits obtains_recognises recognises_and_visits_both_def)
+
+definition "drop_guards" :: "iEFSM \<Rightarrow> iEFSM" where
+  "drop_guards e = fimage (\<lambda>(tid, (od, t)). (tid, (od, t\<lparr>Guards:=[]\<rparr>))) e"
 
 end

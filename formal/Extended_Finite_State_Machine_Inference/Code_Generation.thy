@@ -483,6 +483,7 @@ export_code
   heuristic_1
   heuristic_2
   distinguish
+  ehw_distinguish
   weak_subsumption
   lob
   (* Nondeterminism metrics *)

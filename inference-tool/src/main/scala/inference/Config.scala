@@ -5,10 +5,12 @@ import net.liftweb.json._
 import ch.qos.logback.classic.Level
 import Types._
 import java.nio.file.{ Paths, Files }
+import me.shadaj.scalapy.py
+import me.shadaj.scalapy.py.SeqConverters
 
 object Heuristics extends Enumeration {
   type Heuristic = Value
-  val store, inputgen, inc, distinguish, same, ws, lob = Value
+  val store, inputgen, inc, distinguish, ehw_distinguish, same, ws, lob = Value
 }
 
 object Nondeterminisms extends Enumeration {
@@ -53,7 +55,9 @@ case class Config(
   treeRepeats: Int = 2,
   transitionRepeats: Int = 2,
   ngen: Int = 100,
-  pta : IEFSM = null
+  pta : IEFSM = null,
+  freePTA : IEFSM = null,
+  ptaFile : File = null
 )
 
 object Config {
@@ -192,6 +196,9 @@ object Config {
       opt[File]("groups")
         .action((x, c) => c.copy(groups = x))
         .text("The json file listing the transition groups"),
+      opt[File]("pta")
+        .action((x, c) => c.copy(ptaFile = x))
+        .text("JSON file specifying the PTA"),
       arg[File]("trainFile")
         .required()
         .action((x, c) => c.copy(trainFile = x))
@@ -227,19 +234,76 @@ object Config {
         val testParsed = parse(Source.fromFile(config.testFile).getLines.mkString).values.asInstanceOf[List[List[Map[String, Any]]]]
         config = config.copy(test = testParsed.map(run => run.map(x => TypeConversion.toEventTuple(x))))
 
-        // MAKE SURE THIS HAPPENS WHEN WE BUILD THE PTA IN THE CODE TOO, SPECIFICALLY IN distinguish
-        config = config.copy(pta = Inference.breadth_first_label(Inference.make_pta(config.train)))
-
-        // Set up the heuristics
-        val heuristics = scala.collection.immutable.Map(
-          Heuristics.store -> (Store_Reuse.heuristic_1 _).curried(config.train),
-          Heuristics.inputgen -> (Store_Reuse.heuristic_2 _).curried(config.train),
-          Heuristics.inc -> (Increment_Reset.insert_increment_2 _).curried,
-          Heuristics.distinguish -> (Distinguishing_Guards.distinguish _).curried(config.pta)(config.train),
-          Heuristics.same -> (Same_Register.same_register _).curried,
-          Heuristics.ws -> (Weak_Subsumption.weak_subsumption _).curried,
-          Heuristics.lob -> (Least_Upper_Bound.lob _).curried
-        )
+        if (config.ptaFile != null) {
+          val sys = py.module("sys")
+          val site = py.module("site")
+          sys.path.append("./src/main/python")
+          for (p <- site.getsitepackages().as[List[String]])
+            sys.path.append(p)
+          val deap_gp = py.module("deap_gp")
+          val ptaParsed = parse(Source.fromFile(config.ptaFile).getLines.mkString).values.asInstanceOf[List[Map[String, Any]]]
+          var pta: Types.IEFSM = FSet.bot_fset
+          var freePTA: Types.IEFSM = FSet.bot_fset
+          for (transition <- ptaParsed) {
+            val guards = transition("guards").asInstanceOf[List[List[Any]]].map(g =>
+              TypeConversion.toGExp(
+                g(0).asInstanceOf[List[Any]].map(x => x.asInstanceOf[BigInt].toInt),
+                g(1).asInstanceOf[List[List[Int]]].map(x => (x(0).asInstanceOf[BigInt].toInt, x(1).asInstanceOf[BigInt].toInt)),
+                g(2).asInstanceOf[Map[Any, Any]].map(x => (x._1.toString.toInt, x._2.toString))
+              )
+            )
+            val outputs = transition("outputs").asInstanceOf[List[List[Any]]].map(p =>
+              TypeConversion.toAExp(
+                p(0).asInstanceOf[List[Any]].map(x => x.asInstanceOf[BigInt].toInt),
+                p(1).asInstanceOf[List[List[Int]]].map(x => (x(0).asInstanceOf[BigInt].toInt, x(1).asInstanceOf[BigInt].toInt)),
+                p(2).asInstanceOf[Map[Any, Any]].map(x => (x._1.toString.toInt, x._2.toString))
+              )
+            )
+            val updates = transition("updates").asInstanceOf[List[List[Any]]].map(ru =>
+               (
+                 Nat.Nata(ru(0).toString.substring(1).toInt),
+                 TypeConversion.toAExp(
+                ru(1).asInstanceOf[List[Any]](0).asInstanceOf[List[Any]].map(x => x.asInstanceOf[BigInt].toInt),
+                ru(1).asInstanceOf[List[Any]](1).asInstanceOf[List[List[Int]]].map(x => (x(0).asInstanceOf[BigInt].toInt, x(1).asInstanceOf[BigInt].toInt)),
+                ru(1).asInstanceOf[List[Any]](2).asInstanceOf[Map[Any, Any]].map(x => (x._1.toString.toInt, x._2.toString))
+              ))
+            )
+            pta = Inference.insert_transition(
+              transition("tid").asInstanceOf[List[BigInt]].map(x => Nat.Nata(x)),
+              Nat.Nata(transition("origin").asInstanceOf[BigInt]),
+              Nat.Nata(transition("dest").asInstanceOf[BigInt]),
+              Transition.transition_exta[Unit](
+                transition("label").asInstanceOf[String],
+                Nat.Nata(transition("arity").asInstanceOf[BigInt]),
+                guards,
+                outputs,
+                updates,
+                ()
+              ),
+              pta
+            )
+            freePTA = Inference.insert_transition(
+              transition("tid").asInstanceOf[List[BigInt]].map(x => Nat.Nata(x)),
+              Nat.Nata(transition("origin").asInstanceOf[BigInt]),
+              Nat.Nata(transition("dest").asInstanceOf[BigInt]),
+              Transition.transition_exta[Unit](
+                transition("label").asInstanceOf[String],
+                Nat.Nata(transition("arity").asInstanceOf[BigInt]),
+                (if (transition("drop_guards").asInstanceOf[Boolean]) List() else guards),
+                outputs,
+                updates,
+                ()
+              ),
+              pta
+            )
+          }
+          config = config.copy(pta = pta)
+          config = config.copy(freePTA = freePTA)
+        }
+        else {
+          // MAKE SURE THIS HAPPENS WHEN WE BUILD THE PTA IN THE CODE TOO, SPECIFICALLY IN distinguish
+          config = config.copy(pta = Inference.breadth_first_label(Inference.make_pta(config.train)))
+        }
 
         var transitionGroups: List[((String, (List[PTA_Generalisation.value_type], List[PTA_Generalisation.value_type])),
                List[(List[Nat.nat], Transition.transition_ext[Unit])])] = null
@@ -277,7 +341,21 @@ object Config {
           Preprocessors.dropGuards -> (PTA_Generalisation.drop_pta_guards _).curried
         )
 
+        // Set up the heuristics
+        // DO NOT TRY TO MOVE THIS CODE UP!
+        // Some of it has dependencies above which could be broken
+        val heuristics = scala.collection.immutable.Map(
+          Heuristics.store -> (Store_Reuse.heuristic_1 _).curried(config.train),
+          Heuristics.inputgen -> (Store_Reuse.heuristic_2 _).curried(config.train),
+          Heuristics.inc -> (Increment_Reset.insert_increment_2 _).curried,
+          Heuristics.distinguish -> (Distinguishing_Guards.distinguish _).curried(config.pta)(config.train),
+          Heuristics.ehw_distinguish -> (Distinguishing_Guards.ehw_distinguish _).curried(config.pta)(config.train),
+          Heuristics.same -> (Same_Register.same_register _).curried,
+          Heuristics.ws -> (Weak_Subsumption.weak_subsumption _).curried,
+          Heuristics.lob -> (Least_Upper_Bound.lob _).curried
+        )
         this.heuristics = Inference.try_heuristics_check((EFSM.accepts_log _).curried(Set.seta(config.train)), config.heuristics.map(x => heuristics(x)).toList)
+
         this.config = config
         if (config.prep != null && config.prep != Preprocessors.none)
           this.preprocessor = preprocessors(config.prep)

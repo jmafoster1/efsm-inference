@@ -23,6 +23,41 @@ object FrontEnd {
       Log.root.error("PTA must accept the log.")
       System.exit(1)
     }
+    if (Config.config.ptaFile != null) {
+      // var pta = Distinguishing_Guards.drop_guards(Config.config.pta)
+      var pta = Config.config.freePTA
+      val nondeterministic_pairs = FSet.sorted_list_of_fset(Inference.nondeterministic_pairs(pta))
+      for (np <- nondeterministic_pairs) {
+        np match {
+          case (origin, ((d1, d2), ((t1, tid1), (t2, tid2)))) => {
+            println(
+              PrettyPrinter.show(origin),
+              PrettyPrinter.show(d1),
+              PrettyPrinter.show(d2)
+            )
+            println("  "+PrettyPrinter.show(tid1)+PrettyPrinter.show(t1))
+            println("  "+PrettyPrinter.show(tid2)+PrettyPrinter.show(t2))
+          }
+        }
+      }
+      // System.exit(0)
+      pta = Inference.resolve_nondeterminism(
+        Set.bot_set[(Nat.nat, Nat.nat)], // Failed merges
+        nondeterministic_pairs,
+        pta,
+        pta,
+        Config.heuristics,
+        (a => EFSM.accepts_log(Set.seta(Config.config.train), a)),
+        Inference.nondeterministic_pairs(_)) match {
+          case (None, _) => {
+              PrettyPrinter.iEFSM2dot(Config.config.pta, s"pta_gen_failed")
+              throw new IllegalStateException("Failed to resolve nondeterminism")
+          }
+          case (Some(pta2), _) => pta2
+        }
+        Config.config = Config.config.copy(pta = pta)
+        PrettyPrinter.iEFSM2dot(Config.config.pta, s"pta_gen_resolved")
+    }
     if (Inference.nondeterministic(Config.config.pta, Inference.nondeterministic_pairs)) {
       Log.root.error("PTA must be deterministic.")
       System.exit(1)

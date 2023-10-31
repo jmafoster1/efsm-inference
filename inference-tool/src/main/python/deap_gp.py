@@ -48,7 +48,7 @@ def distance_between(expected, actual):
     elif type(expected) == str and type(actual) == str:
         return levenshtein(expected, actual)
     elif type(expected) == bool and type(actual) == bool:
-        return expected == actual
+        return float(expected == actual)
     # elif type(expected) != type(actual) or is_null(actual):
     #     print(f"BAD TYPES {type(expected)} and {type(actual)}")
     #     return float("inf")
@@ -71,7 +71,9 @@ def is_null(value):
     return value is None or value is pd.NA or np.isnan(value)
 
 
-def find_smallest_distance(individual, pset, args, expected, latent_vars):
+def find_smallest_distance(individual, pset, args, expected, latent_vars, verbose=False):
+    if verbose:
+        print(f"Looking for smallest distance between {individual} and {expected}")
     undefined_vars = [x for x in args if is_null(args[x])]
     consts = set()
     type_ = individual[0].ret
@@ -163,7 +165,9 @@ def get_unused_vars(individual, points, latent_vars_rows, verbose=False):
     return set(total_vars).difference(vars_in_tree(individual)).difference(undefined_vars)
 
 
-def evaluate_candidate(individual, points: pd.DataFrame, pset: gp.PrimitiveSet, latent_vars_rows) -> float:
+def evaluate_candidate(
+    individual, points: pd.DataFrame, pset: gp.PrimitiveSet, latent_vars_rows, verbose=False
+) -> float:
     """
     Evaluate a candidate function for a set of function executions and aggregate the distances between the expected
     and actual values.
@@ -192,6 +196,10 @@ def evaluate_candidate(individual, points: pd.DataFrame, pset: gp.PrimitiveSet, 
     data = zip(individual_rep, zip(pset_rep, zip(points.iterrows(), latent_vars_rows)))
 
     distances = [process_row(row) for row in data]
+
+    if verbose:
+        print(f"Evaluating {individual}")
+        print("  distances", distances)
 
     assert not any([is_null(x) for x in distances]), "no distance can be nan"
 
@@ -277,6 +285,79 @@ def correct(individual, points: pd.DataFrame, pset: gp.PrimitiveSet, latent_vars
             logger.debug(f"Problem executing {individual} with arguments\n{row}")
             sys.exit(1)
     return True
+
+
+def setup_full_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
+    """
+    Set up and return the primitive set containing all operators.
+
+    :param points: The sample function executions with expected outputs.
+    N.B. The expected output MUST be the last column in the dataframe.
+    N.B. Strings will, by default, appear as objects, so will be indistinguishable from latent registers.
+    They MUST be converted explicitly using `.astype('string')` before calling this method.
+    :type points: pd.DataFrame
+    :return: The primitive set.
+    :rtype: gp.PrimitiveSet
+    """
+    generators = {
+        np.dtype("float64"): float,
+        np.dtype("int64"): int,
+        np.dtype("bool"): bool,
+        pd.Int64Dtype(): int,
+        pd.StringDtype(): str,
+    }
+    output_type = generators[points.dtypes[points.columns[-1]]]
+    generators[np.dtype("O")] = output_type
+
+    assert output_type in {int, float, str, bool}, f"Bad output type {output_type}"
+
+    types = points.dtypes.to_dict()
+    names = list(types)
+    datatypes = [generators[types[v]] for v in names]
+    assert all([t in {int, float, str, bool} for t in datatypes]), f"Bad datatype {output_type}"
+
+    pset = gp.PrimitiveSet("MAIN", len(names))
+
+    rename = {f"ARG{i}": col for i, col in enumerate(names)}
+    pset.renameArguments(**rename)
+
+    assert all([type(t.value) in {int, str, float} for t in pset.mapping.values() if hasattr(t, "value")]), "Bad type"
+
+    # Add literal terminals
+    for v, typ in zip(names, datatypes):
+        assert typ in {int, str, float, bool}, "Bad pset terminal type {typ}"
+        term_set = set(points[v])
+        for term in term_set:
+            if not is_null(term):
+                pset.addTerminal(typ(term))
+
+    types = [(t.value, type(t.value)) for t in pset.mapping.values() if hasattr(t, "value")]
+    assert all(
+        [type(t.value) in {int, str, float, bool} for t in pset.mapping.values() if hasattr(t, "value")]
+    ), f"Bad type: {types}"
+
+    pset.addTerminal("", str)
+    pset.addTerminal(0.0)
+    pset.addTerminal(1.0)
+    pset.addTerminal(2.0)
+    pset.addPrimitive(operator.add, 2)
+    pset.addPrimitive(operator.sub, 2)
+    pset.addPrimitive(operator.mul, 2)
+    pset.addPrimitive(protectedDiv, 2, name="div")
+    pset.addTerminal(0)
+    pset.addTerminal(1)
+    pset.addTerminal(2)
+    pset.addTerminal(True)
+    pset.addTerminal(False)
+    pset.addPrimitive(operator.__le__, 2)
+    pset.addPrimitive(operator.__ge__, 2)
+    pset.addPrimitive(operator.__lt__, 2)
+    pset.addPrimitive(operator.__gt__, 2)
+    pset.addPrimitive(operator.__eq__, 2)
+    pset.addPrimitive(operator.__and__, 2)
+    pset.addPrimitive(operator.__or__, 2)
+    pset.addPrimitive(operator.__not__, 2)
+    return pset
 
 
 def setup_pset(points: pd.DataFrame) -> gp.PrimitiveSet:
@@ -990,6 +1071,16 @@ def to_z3_string(individual, dtypes):
         return z3_exp.sexpr()
     except AttributeError:
         return str(z3_exp)
+
+
+def to_nodes_edges_labels(exp, pset, rename={}):
+    exp = creator.Individual(gp.PrimitiveTree.from_string(exp, pset))
+    rename = {k: gp.Terminal(v, None, object) for k, v in rename.items()}
+    for inx, element in enumerate(exp):
+        if isinstance(element, gp.Terminal) and element.format() in rename:
+            exp[inx] = rename[element.format()]
+    assert "r_b" not in str(exp), f"{exp}: {rename}"
+    return gp.graph(exp)
 
 
 def simplify(individual, pset, types):
