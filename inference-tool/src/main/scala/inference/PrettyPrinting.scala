@@ -58,7 +58,7 @@ object PrettyPrinter {
     case GExp.Bc(v) => v.toString()
     case GExp.Eq(a, b) => s"(= ${show(a)} ${show(b)})"
     case GExp.Gt(a, b) => s"(> ${show(a)} ${show(b)})"
-    case GExp.In(v, l) => s"${vnameToString(v)} E {${l.map(show).mkString(", ")}}"
+    // case GExp.In(v, l) => s"${vnameToString(v)} E {${l.map(show).mkString(", ")}}"
     case GExp.Nor(g1, g2) => {
       if (g1 == g2)
         return s"(not ${show (g1)})"

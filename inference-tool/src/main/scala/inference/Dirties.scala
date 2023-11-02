@@ -68,7 +68,7 @@ object Dirties {
     case GExp.Bc(a) => a.toString()
     case GExp.Eq(a1, a2) => s"(Eq ${toZ3(a1)} ${toZ3(a2)})"
     case GExp.Gt(a1, a2) => s"(Gt ${toZ3(a1)} ${toZ3(a2)})"
-    case GExp.In(v, l) => l.slice(0, 2).map(x => s"(Eq ${toZ3(v)} (Some ${toZ3(x)}))").fold("false")((x, y) => s"(Or ${x} ${y})")
+    // case GExp.In(v, l) => l.slice(0, 2).map(x => s"(Eq ${toZ3(v)} (Some ${toZ3(x)}))").fold("false")((x, y) => s"(Or ${x} ${y})")
     case GExp.Nor(g1, g2) => {
       s"(Nor ${toZ3(g1)} ${toZ3(g2)})"
     }
@@ -132,6 +132,12 @@ object Dirties {
   for (p <- site.getsitepackages().as[List[String]])
     sys.path.append(p)
   val deap_gp = py.module("deap_gp")
+  val exp_symp = py.module("exp_simp")
+
+  def simpGexpStr(guard: String): String = {
+    return exp_symp.simp(guard).toString
+  }
+
 
   def findDistinguishingGuards(
     g1: (List[(List[Value.value], Map[Nat.nat, Option[Value.value]])]),

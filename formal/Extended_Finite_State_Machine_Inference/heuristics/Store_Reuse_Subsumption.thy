@@ -499,23 +499,6 @@ next
   case (Gt x1a x2)
   then show ?case
     using input_not_constrained_aval_swap_inputs by auto
-next
-  case (In x1a x2)
-  then show ?case
-    apply simp
-    apply (case_tac "join_ir i c x1a")
-     apply simp
-     apply (case_tac "join_ir (i[v := x]) c x1a")
-      apply simp
-     apply simp
-     apply (metis aexp.inject(2) aexp_constrains.simps(2) aval.simps(2) input_not_constrained_aval_swap_inputs option.discI)
-    apply (case_tac "join_ir i c x1a")
-     apply simp
-     apply (case_tac "join_ir (i[v := x]) c x1a")
-     apply simp
-     apply (metis aexp.inject(2) aexp_constrains.simps(2) aval.simps(2) input_not_constrained_aval_swap_inputs option.discI)
-    apply simp
-    by (metis (no_types, lifting) datastate(1) input2state_within_bounds join_ir_R join_ir_nth le_less_linear list_update_beyond nth_list_update option.inject vname.case(1) vname.exhaust)
 qed auto
 
 text\<open>If input $ri$r is stored in register $rr$r by transition $rt$r then if we can take transition,

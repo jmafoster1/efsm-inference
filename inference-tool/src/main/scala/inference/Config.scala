@@ -10,7 +10,7 @@ import me.shadaj.scalapy.py.SeqConverters
 
 object Heuristics extends Enumeration {
   type Heuristic = Value
-  val store, inputgen, inc, distinguish, ehw_distinguish, same, ws, lob = Value
+  val store, inputgen, inc, distinguish, ehw_distinguish, same, ws = Value
 }
 
 object Nondeterminisms extends Enumeration {
@@ -352,7 +352,7 @@ object Config {
           Heuristics.ehw_distinguish -> (Distinguishing_Guards.ehw_distinguish _).curried(config.pta)(config.train),
           Heuristics.same -> (Same_Register.same_register _).curried,
           Heuristics.ws -> (Weak_Subsumption.weak_subsumption _).curried,
-          Heuristics.lob -> (Least_Upper_Bound.lob _).curried
+          // Heuristics.lob -> (Least_Upper_Bound.lob _).curried
         )
         this.heuristics = Inference.try_heuristics_check((EFSM.accepts_log _).curried(Set.seta(config.train)), config.heuristics.map(x => heuristics(x)).toList)
 

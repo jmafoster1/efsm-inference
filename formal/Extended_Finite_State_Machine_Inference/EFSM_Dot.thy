@@ -93,13 +93,17 @@ fun vname2dot :: "vname \<Rightarrow> String.literal" where
   "vname2dot (vname.I n) = STR ''i<sub>''+(show_nat (n))+STR ''</sub>''" |
   "vname2dot (R n) = STR ''r<sub>''+(show_nat n)+STR ''</sub>''"
 
-fun aexp2dot :: "vname aexp \<Rightarrow> String.literal" where
-  "aexp2dot (L v) = value2dot v" |
-  "aexp2dot (V v) = vname2dot v" |
-  "aexp2dot (Plus a1 a2) = (aexp2dot a1)+STR '' + ''+(aexp2dot a2)" |
-  "aexp2dot (Minus a1 a2) = (aexp2dot a1)+STR '' - ''+(aexp2dot a2)" |
-  "aexp2dot (Times a1 a2) = (aexp2dot a1)+STR '' &times; ''+(aexp2dot a2)" |
-  "aexp2dot (Divide  a1 a2) = (aexp2dot a1)+STR '' &divide; ''+(aexp2dot a2)"
+fun vname2py :: "vname \<Rightarrow> String.literal" where
+  "vname2py (vname.I n) = STR ''i''+(show_nat (n))" |
+  "vname2py (R n) = STR ''r''+(show_nat n)"
+
+fun aexp2dot :: "vname aexp \<Rightarrow> (vname \<Rightarrow> String.literal) \<Rightarrow> String.literal" where
+  "aexp2dot (L v) _  = value2dot v" |
+  "aexp2dot (V v) vdot = vdot v" |
+  "aexp2dot (Plus a1 a2) vdot = (aexp2dot a1 vdot)+STR '' + ''+(aexp2dot a2 vdot)" |
+  "aexp2dot (Minus a1 a2) vdot = (aexp2dot a1 vdot)+STR '' - ''+(aexp2dot a2 vdot)" |
+  "aexp2dot (Times a1 a2) vdot = (aexp2dot a1 vdot)+STR '' &times; ''+(aexp2dot a2 vdot)" |
+  "aexp2dot (Divide  a1 a2) vdot = (aexp2dot a1 vdot)+STR '' &divide; ''+(aexp2dot a2 vdot)"
 
 fun join :: "String.literal list \<Rightarrow> String.literal \<Rightarrow> String.literal" where
   "join [] _ = (STR '''')" |
@@ -117,31 +121,74 @@ fun get_Ge :: "'a gexp \<Rightarrow> ('a aexp \<times> 'a aexp) option" where
   "get_Ge (Nor g1 g2) = (if g1 = g2 then get_Lt g1 else None)" |
   "get_Ge _ = None"
 
+definition "is_gOr g1 g2 = (\<exists>g1' g2'. gOr g1' g2' = Nor g1 g2)"
+definition "is_gAnd g1 g2 = (\<exists>g1' g2'. gAnd g1' g2' = Nor g1 g2)"
+
+lemma [code]: "is_gOr g1 g2 = (case (g1, g2) of
+  ((Nor g1 g2), (Nor g1' g2')) \<Rightarrow> g1 = g1' \<and> g2 = g2' |
+  _ \<Rightarrow> False
+)"
+  apply (simp add: is_gOr_def gOr_def)
+  apply (cases g1)
+      apply simp+
+  apply (cases g2)
+  by auto
+
+lemma [code]: "is_gAnd g1 g2 = (case (g1, g2) of
+  ((Nor g1 g1'), (Nor g2 g2')) \<Rightarrow> g1 = g1' \<and> g2 = g2' |
+  _ \<Rightarrow> False
+)"
+  apply (simp add: is_gAnd_def gAnd_def)
+  apply (cases g1)
+      apply simp+
+  apply (cases g2)
+  by auto
+
 fun gexp2dot :: "vname gexp \<Rightarrow> String.literal" where
   "gexp2dot (GExp.Bc True) = (STR ''True'')" |
   "gexp2dot (GExp.Bc False) = (STR ''False'')" |
-  "gexp2dot (GExp.Eq a1 a2) = (aexp2dot a1)+STR '' = ''+(aexp2dot a2)" |
-  "gexp2dot (GExp.Gt a1 a2) = (aexp2dot a1)+STR '' &gt; ''+(aexp2dot a2)" |
-  "gexp2dot (GExp.In v l) = (vname2dot v)+STR ''&isin;{''+(join (map value2dot l) STR '', '')+STR ''}''" |
+  "gexp2dot (GExp.Eq a1 a2) = (aexp2dot a1 vname2dot)+STR '' = ''+(aexp2dot a2 vname2dot)" |
+  "gexp2dot (GExp.Gt a1 a2) = (aexp2dot a1 vname2dot)+STR '' &gt; ''+(aexp2dot a2 vname2dot)" |
   "gexp2dot (Nor g1 g2) = (
     if g1 = g2 then
-      case g1 of Gt a1 a2 \<Rightarrow> (aexp2dot a1)+STR '' &le; ''+(aexp2dot a2) |
+      case g1 of Gt a1 a2 \<Rightarrow> (aexp2dot a1 vname2dot)+STR '' &le; ''+(aexp2dot a2 vname2dot) |
+                 Eq a1 a2 \<Rightarrow> (aexp2dot a1 vname2dot)+STR '' &ne; ''+(aexp2dot a2 vname2dot) |
+                 Bc b \<Rightarrow> (gexp2dot (Bc (\<not>b))) |
                         _ \<Rightarrow> STR ''&not;(''+(gexp2dot g1)+STR '')''
+    else if is_gAnd g1 g2 then (gexp2dot g1)+STR '' &and; ''+(gexp2dot g2)
+    else if is_gOr g1 g2 then (gexp2dot g1)+STR '' &or; ''+(gexp2dot g2)
     else
-       STR ''!(''+(gexp2dot g1)+STR ''&or;''+(gexp2dot g2)+STR '')''
+       STR ''&not;(''+(gexp2dot g1)+STR ''&or;''+(gexp2dot g2)+STR '')''
   )"
+
+fun gexp2py :: "vname gexp \<Rightarrow> String.literal" where
+  "gexp2py (GExp.Bc True) = (STR ''True'')" |
+  "gexp2py (GExp.Bc False) = (STR ''False'')" |
+  "gexp2py (GExp.Eq a1 a2) = STR ''Eq(''+(aexp2dot a1 vname2py)+STR '', ''+(aexp2dot a2 vname2py)+STR '')''" |
+  "gexp2py (GExp.Gt a1 a2) = STR ''Gt(''+(aexp2dot a1 vname2py)+STR '', ''+(aexp2dot a2 vname2py)+STR '')''" |
+  "gexp2py (Nor g1 g2) = (
+       STR ''Not(Or(''+(gexp2py g1)+STR '', ''+(gexp2py g2)+STR ''))''
+  )"
+
+definition simp_gexp_str :: "String.literal \<Rightarrow> String.literal" where
+  "simp_gexp_str g = gexp2dot (Eps (\<lambda>g'.
+    \<exists>guard. gexp2dot guard = g
+  ))"
+
+declare simp_gexp_str_def [code del]
+code_printing constant simp_gexp_str \<rightharpoonup> (Scala) "Dirties.simpGexpStr"
 
 primrec updates2dot_aux :: "update_function list \<Rightarrow> String.literal list" where
   "updates2dot_aux [] = []" |
-  "updates2dot_aux (h#t) = ((vname2dot (R (fst h)))+STR '' := ''+(aexp2dot (snd h)))#(updates2dot_aux t)"
+  "updates2dot_aux (h#t) = ((vname2dot (R (fst h)))+STR '' := ''+(aexp2dot (snd h) vname2dot))#(updates2dot_aux t)"
 
 lemma updates2dot_aux_code [code]:
-  "updates2dot_aux l = map (\<lambda>(r, u). (vname2dot (R r))+STR '' := ''+(aexp2dot u)) l"
+  "updates2dot_aux l = map (\<lambda>(r, u). (vname2dot (R r))+STR '' := ''+(aexp2dot u vname2dot)) l"
   by (induct l, auto)
 
 primrec outputs2dot :: "output_function list \<Rightarrow> nat \<Rightarrow> String.literal list" where
   "outputs2dot [] _ = []" |
-  "outputs2dot (h#t) n = ((STR ''o<sub>''+(show_nat n))+STR ''</sub> := ''+(aexp2dot h))#(outputs2dot t (n+1))"
+  "outputs2dot (h#t) n = ((STR ''o<sub>''+(show_nat n))+STR ''</sub> := ''+(aexp2dot h vname2dot))#(outputs2dot t (n+1))"
 
 fun updates2dot :: "update_function list \<Rightarrow> String.literal" where
   "updates2dot [] = (STR '''')" |
@@ -149,7 +196,7 @@ fun updates2dot :: "update_function list \<Rightarrow> String.literal" where
 
 fun guards2dot :: "vname gexp list \<Rightarrow> String.literal" where
   "guards2dot [] = (STR '''')" |
-  "guards2dot a = STR ''&#91;''+(join (map gexp2dot a) STR '', '')+STR ''&#93;''"
+  "guards2dot a = STR ''&#91;''+(join (map (simp_gexp_str \<circ> gexp2py) a) STR '', '')+STR ''&#93;''"
 
 definition latter2dot :: "transition \<Rightarrow> String.literal" where
   "latter2dot t = (let l = (join (outputs2dot (Outputs t) 1) STR '', '')+(updates2dot (Updates t)) in (if l = (STR '''') then (STR '''') else STR ''/''+l))"
