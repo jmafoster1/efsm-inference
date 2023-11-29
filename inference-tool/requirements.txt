@@ -3,3 +3,4 @@ networkx==2.8.7
 pandas==1.4.0
 pyenchant==3.2.2
 z3-solver==4.8.17.0
+sympy==1.12

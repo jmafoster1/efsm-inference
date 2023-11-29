@@ -135,7 +135,10 @@ object Dirties {
   val exp_symp = py.module("exp_simp")
 
   def simpGexpStr(guard: String): String = {
-    return exp_symp.simp(guard).toString
+    try:
+      return exp_symp.simp(guard).toString
+    except sympy.core.sympify.SympifyError:
+      return guard
   }
 
 

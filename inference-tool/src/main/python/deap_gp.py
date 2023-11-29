@@ -149,7 +149,7 @@ def add_consts_to_pset(individual, pset):
 def process_row(args):
     (individual, (pset, ((inx, row), latent_vars))) = args
     try:
-        return find_smallest_distance(individual, pset, row.iloc[:-1].to_dict(), row[-1], latent_vars)
+        return find_smallest_distance(individual, pset, row.iloc[:-1].to_dict(), row.iloc[-1], latent_vars)
     except:
         logger.debug(f"Problem executing {individual} with arguments\n{row}")
         sys.exit(1)
