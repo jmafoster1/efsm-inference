@@ -199,31 +199,6 @@ object Dirties {
 
       var seeds: List[String] = List()
       var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy, ngen = Config.config.ngen)
-      Log.root.debug("    Best guard is: " + best)
-      if (u1 == List(Nat.Nata(73)) && u2 == List(Nat.Nata(75))) {
-        best = deap_gp.creator.Individual(deap_gp.gp.PrimitiveTree.from_string("ge(i0, r1)", pset))
-        Log.root.debug("    Correct guard is: " + best)
-      }
-      else if (u1 == List(Nat.Nata(25)) && u2 == List(Nat.Nata(28))) {
-        best = deap_gp.creator.Individual(deap_gp.gp.PrimitiveTree.from_string("ge(r1, r2)", pset))
-        Log.root.debug("    Correct guard is: " + best)
-      }
-      else if (u1 == List(Nat.Nata(89)) && u2 == List(Nat.Nata(86))) {
-        best = deap_gp.creator.Individual(deap_gp.gp.PrimitiveTree.from_string("lt(i0, r1)", pset))
-        Log.root.debug("    Correct guard is: " + best)
-      }
-      else if (u1 == List(Nat.Nata(82)) && u2 == List(Nat.Nata(80))) {
-        best = deap_gp.creator.Individual(deap_gp.gp.PrimitiveTree.from_string("lt(i0, r1)", pset))
-        Log.root.debug("    Correct guard is: " + best)
-      }
-      else if (u1 == List(Nat.Nata(39)) && u2 == List(Nat.Nata(35))) {
-        best = deap_gp.creator.Individual(deap_gp.gp.PrimitiveTree.from_string("lt(r1, r2)", pset))
-        Log.root.debug("    Correct guard is: " + best)
-      }
-      else if (u1 == List(Nat.Nata(95)) && u2 == List(Nat.Nata(94))) {
-        best = deap_gp.creator.Individual(deap_gp.gp.PrimitiveTree.from_string("lt(i0, r1)", pset))
-        Log.root.debug("    Correct guard is: " + best)
-      }
 
       if (deap_gp.correct(best, training_set, pset, latent_vars_rows = latent_vars_rows.toPythonProxy).as[Boolean]) {
         Log.root.debug(f"  Best guard $best is correct")
