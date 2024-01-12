@@ -67,8 +67,27 @@ object PrettyPrinter {
     }
   }
 
-  def guardsToString(g: List[GExp.gexp[VName.vname]]): String = {
-    "[" + g.map(x => show(x)).mkString(", ") + "]"
+  def dot2string(s: String): String = {
+    return s.replace("<sub>", "")
+            .replace("</sub>", "")
+            .replace("&#91;", "[")
+            .replace("&#93;", "]")
+            .replace("&or;", "∨")
+  }
+
+  // def guardsToString(g: List[GExp.gexp[VName.vname]]): String = {
+  //   // "[" + g.map(x => show(x)).mkString(", ") + "]"
+  // }
+
+  def guardsToString(x0: List[GExp.gexp[VName.vname]]): String = x0 match {
+    case Nil => ""
+    case (v :: va) =>
+      "[" +
+        (Lista.map[GExp.gexp[VName.vname], String](Fun.comp[String, String, GExp.gexp[VName.vname]](((a: String) =>
+          Dirties.sympify_gexp(a)),
+          ((a: GExp.gexp[VName.vname]) => EFSM_Dot.gexp2py(a))),
+          (v :: va))).mkString(", ") +
+          "]"
   }
 
   def outputsToString(g: List[AExp.aexp[VName.vname]]): String = {
@@ -79,13 +98,25 @@ object PrettyPrinter {
     "[" + g.map(a => (vnameToString(VName.R(a._1)) + ":=" + show(a._2))).mkString(", ") + "]"
   }
 
-  def show(t: Transition.transition_ext[Unit]): String = {
+  def show[A](t: Transition.transition_ext[A]): String = {
     Transition.Label(t) +
       ":" + show(Transition.Arity(t)) +
       guardsToString(Transition.Guards(t)) +
       "/" +
       outputsToString(Transition.Outputs(t)) +
       updatesToString(Transition.Updates(t))
+  }
+
+  def ishow(t: Transition.transition_ext[Inference.iTransition_ext[Unit]]): String = {
+    show(Inference.Origin(t)) + " -- " +
+    show(Inference.ID(t)) +
+    Transition.Label(t) +
+    ":" + show(Transition.Arity(t)) +
+    guardsToString(Transition.Guards(t)) +
+    "/" +
+    outputsToString(Transition.Outputs(t)) +
+    updatesToString(Transition.Updates(t)) +
+    " --> " + show(Inference.Destination(t))
   }
 
   def show(event: (Nat.nat, (Map[Nat.nat,Option[Value.value]], (Map[Nat.nat,Option[Value.value]], (List[Value.value], (List[Nat.nat], Transition.transition_ext[Unit])))))): String = event match {
@@ -109,7 +140,15 @@ object PrettyPrinter {
     case (label, (inputs, outputs)) :: t => s"        ${label}(${inputs.map(show)})/${outputs.map(show)}\n" + traceToString(t)
   }
 
-  def show(i: List[Value.value], join: String = ", "): String = s"[${i.map(show).mkString(join)}]"
+  def show(i: List[Value.value], join: String = ", ", bracket: Boolean = true, hw: Boolean = false): String = {
+    if (hw && i.length > 0) i(0) match {
+      case Value.Stra(s) => return s"$s(${i.slice(1,i.length).map(show).mkString(join)})"
+    }
+    else if (bracket)
+      return s"[${i.map(show).mkString(join)}]"
+    else
+        return i.map(show).mkString(join)
+  }
 
   def outputToString(o: Option[Value.value]): String = o match {
     case Some(p) => show(p)

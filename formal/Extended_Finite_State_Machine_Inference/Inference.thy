@@ -457,7 +457,11 @@ definition nondeterministic :: "iEFSM \<Rightarrow> (iEFSM \<Rightarrow> nondete
   "nondeterministic t np = (\<not> deterministic t np)"
 
 definition lob :: "transition \<Rightarrow> transition \<Rightarrow> transition" where
-  "lob t1 t2 = t1\<lparr>Guards:=[gOr (fold gAnd (Guards t1) (Bc True)) (fold gAnd (Guards t2) (Bc True))]\<rparr>"
+  "lob t1 t2 = (
+    if Guards t1 = [] then t1 else \<comment> \<open>If t1 has no guards, then the least upper bound is True\<close>
+    if Guards t2 = [] then t2 else \<comment> \<open>If t2 has no guards, then the least upper bound is True\<close>
+    t1\<lparr>Guards:=[gOr (fold gAnd (Guards t1) (Bc True)) (fold gAnd (Guards t2) (Bc True))]\<rparr>
+  )"
 
 definition insert_transition :: "tids \<Rightarrow> cfstate \<Rightarrow> cfstate \<Rightarrow> transition \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
   "insert_transition uid from to t e = (
@@ -471,6 +475,14 @@ definition insert_transition :: "tids \<Rightarrow> cfstate \<Rightarrow> cfstat
           (uid', (from', to'), t')
       ) e
   )"
+
+record iTransition = transition + 
+ID :: tids
+Origin :: nat
+Destination :: nat
+
+definition insert_iTransition :: "iTransition \<Rightarrow> iEFSM \<Rightarrow> iEFSM" where
+  "insert_iTransition t e = insert_transition (ID t) (Origin t) (Destination t) \<lparr>Label = Label t, Arity = Arity t, Guards = Guards t, Outputs = Outputs t, Updates = Updates t\<rparr> e"
 
 definition make_distinct :: "iEFSM \<Rightarrow> iEFSM" where
   "make_distinct e = ffold_ord (\<lambda>(uid, (from, to), t) acc. insert_transition uid from to t acc) e {||}"

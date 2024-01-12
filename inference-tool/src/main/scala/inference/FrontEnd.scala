@@ -16,17 +16,21 @@ object FrontEnd {
     }
 
     Log.root.info(args.mkString(" "))
-    Log.root.info(s"Building PTA - ${Config.config.train.length} ${if (Config.config.train.length == 1) "trace" else "traces"}")
     PrettyPrinter.iEFSM2dot(Config.config.pta, s"pta_gen")
 
-    if (!EFSM.accepts_log(Set.seta[List[(String, (List[Value.value], List[Value.value]))]](Config.config.train), Inference.tm(Config.config.pta))) {
-      Log.root.error("PTA must accept the log.")
-      System.exit(1)
-    }
     if (Config.config.ptaFile != null) {
       // var pta = Distinguishing_Guards.drop_guards(Config.config.pta)
       var pta = Config.config.freePTA
+      Log.root.error("Checking PTA accepts the log.")
+      println(Config.config.train.map(x => x.length))
+      if (!EFSM.accepts_log(Set.seta[List[(String, (List[Value.value], List[Value.value]))]](Config.config.train), Inference.tm(Config.config.pta))) {
+        Log.root.error(" -- PTA must accept the log.")
+        System.exit(1)
+      }
+      Log.root.error(" -- OK.")
+      println("Resolving nondeterminism")
       val nondeterministic_pairs = FSet.sorted_list_of_fset(Inference.nondeterministic_pairs(pta))
+      println(f"${nondeterministic_pairs.length} nondeterministic pairs")
       for (np <- nondeterministic_pairs) {
         np match {
           case (origin, ((d1, d2), ((t1, tid1), (t2, tid2)))) => {
@@ -49,15 +53,21 @@ object FrontEnd {
         Config.heuristics,
         (a => EFSM.accepts_log(Set.seta(Config.config.train), a)),
         Inference.nondeterministic_pairs(_)) match {
-          case (None, _) => {
+          case (None, failed) => {
               PrettyPrinter.iEFSM2dot(Config.config.pta, s"pta_gen_failed")
-              throw new IllegalStateException("Failed to resolve nondeterminism")
+              throw new IllegalStateException(f"Failed to merge nondeterministic states: ${failed}")
           }
           case (Some(pta2), _) => pta2
         }
         Config.config = Config.config.copy(pta = pta)
         PrettyPrinter.iEFSM2dot(Config.config.pta, s"pta_gen_resolved")
     }
+    Log.root.error("Checking PTA accepts the log.")
+    if (!EFSM.accepts_log(Set.seta[List[(String, (List[Value.value], List[Value.value]))]](Config.config.train), Inference.tm(Config.config.pta))) {
+      Log.root.error(" -- PTA must accept the log.")
+      System.exit(1)
+    }
+    Log.root.error(" -- OK.")
     if (Inference.nondeterministic(Config.config.pta, Inference.nondeterministic_pairs)) {
       Log.root.error("PTA must be deterministic.")
       System.exit(1)

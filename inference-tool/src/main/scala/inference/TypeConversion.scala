@@ -75,11 +75,11 @@ object TypeConversion {
       }
       case "ge" => {
         val c2 = children(1)
-        return GExp.Gt(toAExpAux(graph, c1, labels), toAExpAux(graph, c2, labels))
+        return GExp.Ge(toAExpAux(graph, c1, labels), toAExpAux(graph, c2, labels))
       }
       case "gt" => {
         val c2 = children(1)
-        return GExp.Ge(toAExpAux(graph, c1, labels), toAExpAux(graph, c2, labels))
+        return GExp.Gt(toAExpAux(graph, c1, labels), toAExpAux(graph, c2, labels))
       }
       case "eq" => {
         val c2 = children(1)

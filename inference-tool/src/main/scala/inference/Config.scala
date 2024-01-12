@@ -50,6 +50,7 @@ case class Config(
   var outputSeed: Int = 0,
   var updateSeed: Int = 0,
   numTraces: Int = 30,
+  traceLength: Int = -1,
   mkdir: Boolean=false,
   blueFringe: Boolean=false,
   treeRepeats: Int = 2,
@@ -131,6 +132,10 @@ object Config {
         .valueName("numTraces")
         .action((x, c) => c.copy(numTraces = x))
         .text("The number of traces in the log to actually use"),
+      opt[Int]('l', "traceLength")
+        .valueName("traceLength")
+        .action((x, c) => c.copy(traceLength = x))
+        .text("The maximum number of events in a trace to actually use"),
       opt[Int]('i', "gpIterations")
         .valueName("GP iterations")
         .action((x, c) => c.copy(gpIterations = x))
@@ -209,6 +214,59 @@ object Config {
         .text("The json file listing the test traces"))
   }
 
+  def build_transition(transition: Map[String, Any]): (Transition.transition_exta[Inference.iTransition_exta[Unit]], Transition.transition_exta[Inference.iTransition_exta[Unit]]) = {
+    val guards = transition("guards").asInstanceOf[List[List[Any]]].map(g =>
+      TypeConversion.toGExp(
+        g(0).asInstanceOf[List[Any]].map(x => x.asInstanceOf[BigInt].toInt),
+        g(1).asInstanceOf[List[List[Int]]].map(x => (x(0).asInstanceOf[BigInt].toInt, x(1).asInstanceOf[BigInt].toInt)),
+        g(2).asInstanceOf[Map[Any, Any]].map(x => (x._1.toString.toInt, x._2.toString))
+      )
+    )
+    val outputs = transition("outputs").asInstanceOf[List[List[Any]]].map(p =>
+      TypeConversion.toAExp(
+        p(0).asInstanceOf[List[Any]].map(x => x.asInstanceOf[BigInt].toInt),
+        p(1).asInstanceOf[List[List[Int]]].map(x => (x(0).asInstanceOf[BigInt].toInt, x(1).asInstanceOf[BigInt].toInt)),
+        p(2).asInstanceOf[Map[Any, Any]].map(x => (x._1.toString.toInt, x._2.toString))
+      )
+    )
+    val updates = transition("updates").asInstanceOf[List[List[Any]]].map(ru =>
+       (
+         Nat.Nata(ru(0).toString.substring(1).toInt),
+         TypeConversion.toAExp(
+        ru(1).asInstanceOf[List[Any]](0).asInstanceOf[List[Any]].map(x => x.asInstanceOf[BigInt].toInt),
+        ru(1).asInstanceOf[List[Any]](1).asInstanceOf[List[List[Int]]].map(x => (x(0).asInstanceOf[BigInt].toInt, x(1).asInstanceOf[BigInt].toInt)),
+        ru(1).asInstanceOf[List[Any]](2).asInstanceOf[Map[Any, Any]].map(x => (x._1.toString.toInt, x._2.toString))
+      ))
+    )
+    val t = Transition.transition_exta[Inference.iTransition_exta[Unit]](
+      transition("label").asInstanceOf[String],
+      Nat.Nata(transition("arity").asInstanceOf[BigInt]),
+      guards,
+      outputs,
+      updates,
+      Inference.iTransition_exta[Unit](
+        transition("tid").asInstanceOf[List[BigInt]].map(x => Nat.Nata(x)),
+        Nat.Nata(transition("origin").asInstanceOf[BigInt]),
+        Nat.Nata(transition("dest").asInstanceOf[BigInt]),
+        ()
+      )
+    )
+    val tf = Transition.transition_exta[Inference.iTransition_exta[Unit]](
+      transition("label").asInstanceOf[String],
+      Nat.Nata(transition("arity").asInstanceOf[BigInt]),
+      (if (transition("drop_guards").asInstanceOf[Boolean]) List() else guards),
+      outputs,
+      updates,
+      Inference.iTransition_exta[Unit](
+        transition("tid").asInstanceOf[List[BigInt]].map(x => Nat.Nata(x)),
+        Nat.Nata(transition("origin").asInstanceOf[BigInt]),
+        Nat.Nata(transition("dest").asInstanceOf[BigInt]),
+        ()
+      )
+    )
+    return (t, tf)
+  }
+
   def parseArgs(args: Array[String]) = {
     OParser.parse(parser1, args, Config()) match {
       case Some(configuration) => {
@@ -228,11 +286,16 @@ object Config {
           throw new IllegalArgumentException(s"Must provide a groups file to use ehw preprocessing")
 
         // Set up the logs
-        val trainParsed = parse(Source.fromFile(config.trainFile).getLines.mkString).values.asInstanceOf[List[List[Map[String, Any]]]]
+        var trainParsed = parse(Source.fromFile(config.trainFile).getLines.mkString).values.asInstanceOf[List[List[Map[String, Any]]]]
+        if (config.traceLength > 0) {
+          trainParsed = trainParsed.map(x => x.take(config.traceLength))
+        }
         config = config.copy(train = trainParsed.take(config.numTraces).map(run => run.map(x => TypeConversion.toEventTuple(x))))
 
         val testParsed = parse(Source.fromFile(config.testFile).getLines.mkString).values.asInstanceOf[List[List[Map[String, Any]]]]
         config = config.copy(test = testParsed.map(run => run.map(x => TypeConversion.toEventTuple(x))))
+
+
 
         if (config.ptaFile != null) {
           val sys = py.module("sys")
@@ -244,64 +307,19 @@ object Config {
           val ptaParsed = parse(Source.fromFile(config.ptaFile).getLines.mkString).values.asInstanceOf[List[Map[String, Any]]]
           var pta: Types.IEFSM = FSet.bot_fset
           var freePTA: Types.IEFSM = FSet.bot_fset
-          for (transition <- ptaParsed) {
-            val guards = transition("guards").asInstanceOf[List[List[Any]]].map(g =>
-              TypeConversion.toGExp(
-                g(0).asInstanceOf[List[Any]].map(x => x.asInstanceOf[BigInt].toInt),
-                g(1).asInstanceOf[List[List[Int]]].map(x => (x(0).asInstanceOf[BigInt].toInt, x(1).asInstanceOf[BigInt].toInt)),
-                g(2).asInstanceOf[Map[Any, Any]].map(x => (x._1.toString.toInt, x._2.toString))
-              )
-            )
-            val outputs = transition("outputs").asInstanceOf[List[List[Any]]].map(p =>
-              TypeConversion.toAExp(
-                p(0).asInstanceOf[List[Any]].map(x => x.asInstanceOf[BigInt].toInt),
-                p(1).asInstanceOf[List[List[Int]]].map(x => (x(0).asInstanceOf[BigInt].toInt, x(1).asInstanceOf[BigInt].toInt)),
-                p(2).asInstanceOf[Map[Any, Any]].map(x => (x._1.toString.toInt, x._2.toString))
-              )
-            )
-            val updates = transition("updates").asInstanceOf[List[List[Any]]].map(ru =>
-               (
-                 Nat.Nata(ru(0).toString.substring(1).toInt),
-                 TypeConversion.toAExp(
-                ru(1).asInstanceOf[List[Any]](0).asInstanceOf[List[Any]].map(x => x.asInstanceOf[BigInt].toInt),
-                ru(1).asInstanceOf[List[Any]](1).asInstanceOf[List[List[Int]]].map(x => (x(0).asInstanceOf[BigInt].toInt, x(1).asInstanceOf[BigInt].toInt)),
-                ru(1).asInstanceOf[List[Any]](2).asInstanceOf[Map[Any, Any]].map(x => (x._1.toString.toInt, x._2.toString))
-              ))
-            )
-            pta = Inference.insert_transition(
-              transition("tid").asInstanceOf[List[BigInt]].map(x => Nat.Nata(x)),
-              Nat.Nata(transition("origin").asInstanceOf[BigInt]),
-              Nat.Nata(transition("dest").asInstanceOf[BigInt]),
-              Transition.transition_exta[Unit](
-                transition("label").asInstanceOf[String],
-                Nat.Nata(transition("arity").asInstanceOf[BigInt]),
-                guards,
-                outputs,
-                updates,
-                ()
-              ),
-              pta
-            )
-            freePTA = Inference.insert_transition(
-              transition("tid").asInstanceOf[List[BigInt]].map(x => Nat.Nata(x)),
-              Nat.Nata(transition("origin").asInstanceOf[BigInt]),
-              Nat.Nata(transition("dest").asInstanceOf[BigInt]),
-              Transition.transition_exta[Unit](
-                transition("label").asInstanceOf[String],
-                Nat.Nata(transition("arity").asInstanceOf[BigInt]),
-                (if (transition("drop_guards").asInstanceOf[Boolean]) List() else guards),
-                outputs,
-                updates,
-                ()
-              ),
-              pta
-            )
+
+          val transitions = ptaParsed.par.map(t => build_transition(t)).toList.distinct
+          for ((t, tf) <- transitions) {
+            pta = Inference.insert_iTransition(t.asInstanceOf[Transition.transition_ext[Inference.iTransition_ext[Unit]]], pta)
+            freePTA = Inference.insert_iTransition(tf.asInstanceOf[Transition.transition_ext[Inference.iTransition_ext[Unit]]], freePTA)
           }
+
           config = config.copy(pta = pta)
           config = config.copy(freePTA = freePTA)
         }
         else {
           // MAKE SURE THIS HAPPENS WHEN WE BUILD THE PTA IN THE CODE TOO, SPECIFICALLY IN distinguish
+          println(s"Building PTA - ${config.train.length} ${if (config.train.length == 1) "trace" else "traces"}")
           config = config.copy(pta = Inference.breadth_first_label(Inference.make_pta(config.train)))
         }
 

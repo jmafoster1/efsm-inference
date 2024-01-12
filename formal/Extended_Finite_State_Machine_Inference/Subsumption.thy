@@ -201,4 +201,9 @@ lemma directly_subsumes_transitive:
   apply (simp add: directly_subsumes_def)
   using subsumes_transitive by blast
 
+lemma directly_subsumes_no_guards:
+  "directly_subsumes e1 e2 s1 s2 (t1\<lparr>Guards:=[]\<rparr>) t1"
+  apply (rule subsumes_in_all_contexts_directly_subsumes)
+  by (simp add: subsumes_def can_take_transition_def can_take_def apply_guards_def)
+
 end

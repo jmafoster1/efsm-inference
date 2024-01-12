@@ -44,8 +44,8 @@ primrec collect_training_sets :: "log \<Rightarrow> iEFSM \<Rightarrow> tids \<R
     collect_training_sets t uPTA T1 T2 (List.union G1 G1a) (List.union G2 G2a)
   )"
 
-definition find_distinguishing_guards :: "(inputs \<times> registers) list \<Rightarrow> (inputs \<times> registers) list \<Rightarrow> (vname gexp \<times> vname gexp) option" where
-  "find_distinguishing_guards G1 G2 = (
+definition find_distinguishing_guards :: "(inputs \<times> registers) list \<Rightarrow> (inputs \<times> registers) list \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> tids \<Rightarrow> transition \<Rightarrow> (vname gexp \<times> vname gexp) option" where
+  "find_distinguishing_guards G1 G2 u1 t1 u2 t2 = (
     let gs = {(g1, g2).
       (\<forall>(i, r) \<in> set G1. gval g1 (join_ir i r) = true) \<and>
       (\<forall>(i, r) \<in> set G2. gval g2 (join_ir i r) = true) \<and>
@@ -66,7 +66,7 @@ definition ehw_distinguish :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modi
       t2 = get_by_ids destMerge t2ID;
       (G1, G2) = collect_training_sets log pta t1ID t2ID [] []
     in
-      case find_distinguishing_guards G1 G2 of
+      case find_distinguishing_guards G1 G2 t1ID t1 t2ID t2 of
         None \<Rightarrow> None |
         Some (g1, g2) \<Rightarrow> (
           let rep = replace_transitions preDestMerge [(t1ID, add_guard t1 g1), (t2ID, add_guard t2 g2)] in
@@ -82,7 +82,7 @@ definition distinguish :: "iEFSM \<Rightarrow> log \<Rightarrow> update_modifier
       uPTA = transfer_updates destMerge pta;
       (G1, G2) = collect_training_sets log uPTA t1ID t2ID [] []
     in
-      case find_distinguishing_guards G1 G2 of
+      case find_distinguishing_guards G1 G2 t1ID t1 t2ID t2 of
         None \<Rightarrow> None |
         Some (g1, g2) \<Rightarrow> (
           let rep = replace_transitions preDestMerge [(t1ID, add_guard t1 g1), (t2ID, add_guard t2 g2)] in
@@ -131,5 +131,19 @@ lemma can_still_take_direct_subsumption:
 
 definition "drop_guards" :: "iEFSM \<Rightarrow> iEFSM" where
   "drop_guards e = fimage (\<lambda>(tid, (od, t)). (tid, (od, t\<lparr>Guards:=[]\<rparr>))) e"
+
+fun run_in_parallel :: "trace \<Rightarrow> iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow>  iEFSM \<Rightarrow> cfstate \<Rightarrow> registers \<Rightarrow> unit" where
+  "run_in_parallel [] _ _ _ _ _ _ = ()" |
+  "run_in_parallel ((label, inputs, outputs)#t) e1 s1 r1 e2 s2 r2 = (
+    let
+      possible_steps_e1 = (ffilter (\<lambda>(uid, (dest, t)). evaluate_outputs t inputs r1 = map Some outputs) (i_possible_steps e1 s1 r1 label inputs));
+      (u1, dest1, t1) = fthe_elem possible_steps_e1;
+      possible_steps_e2 = (ffilter (\<lambda>(uid, (dest, t)). uid = u1) (i_possible_steps e2 s2 r2 label inputs));
+      (u2, dest2, t2) = fthe_elem possible_steps_e2;
+      r1' = evaluate_updates t1 inputs r1;
+      r2' = evaluate_updates t2 inputs r2
+    in
+      run_in_parallel t e1 dest1 r1' e2 dest2 r2'
+  )"
 
 end

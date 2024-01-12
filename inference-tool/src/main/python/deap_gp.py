@@ -182,6 +182,8 @@ def evaluate_candidate(
     :return: The aggregated distance between expected and actual values.
     :rtype: float
     """
+    if str(individual) in ["True", "False"]:
+        return float("inf")
     assert len(points) == len(
         latent_vars_rows
     ), "Must have latent variable information for every row in the training set"

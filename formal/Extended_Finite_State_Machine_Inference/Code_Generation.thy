@@ -444,6 +444,7 @@ export_code
   AExp.enumerate_vars
   AExp.is_lit
   infer_with_log
+  insert_iTransition
   (* Logical connectives *)
   gAnd
   gOr
@@ -469,6 +470,7 @@ export_code
   heuristic_2
   distinguish
   ehw_distinguish
+  run_in_parallel
   weak_subsumption
   lob
   (* Nondeterminism metrics *)
