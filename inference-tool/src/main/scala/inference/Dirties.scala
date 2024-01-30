@@ -127,7 +127,7 @@ object Dirties {
   }
 
   var guardMap = scala.collection.immutable.Map[List[(List[Value.value], (Map[Nat.nat, Option[Value.value]], (Value.value, List[Nat.nat])))], Option[GExp.gexp[VName.vname]]]()
-  var guardMem: List[Any] = List()
+  var guardMem: List[String] = List()
 
   val sys = py.module("sys")
   val site = py.module("site")
@@ -170,8 +170,11 @@ object Dirties {
     Log.root.debug(f"$g2")
     Config.config.guardSeed += 1
 
-    val ioPairs = g1.map(ir => (ir._1, (ir._2, (Value.Inta(Int.int_of_integer(1)), ir._2.keys.toList)))) ++
+    var ioPairs = g1.map(ir => (ir._1, (ir._2, (Value.Inta(Int.int_of_integer(1)), ir._2.keys.toList)))) ++
                   g2.map(ir => (ir._1, (ir._2, (Value.Inta(Int.int_of_integer(0)), ir._2.keys.toList))))
+
+    // Filter out r3 because it is the output register
+    ioPairs = ioPairs.map(x => (x._1, (x._2._1.filter(y => y._1 != Nat.Nata(3)), (x._2._2._1, x._2._2._2.filter(y => y != Nat.Nata(3))))))
 
     // (g1 zip List.fill(g1.length)(Value.Inta(Int.int_of_integer(1)))) ++ (g1 zip List.fill(g1.length)(Value.Inta(Int.int_of_integer(0))))
     try {
@@ -197,12 +200,12 @@ object Dirties {
       //   }
       // }
 
-      var seeds: List[String] = List()
-      var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy, ngen = Config.config.ngen)
+      var seeds: List[String] = List() ++ guardMem
+      var best = deap_gp.run_gp(training_set, pset, random_seed = Config.config.outputSeed, seeds = seeds.toPythonProxy, ngen = Config.config.ngen, random_seed=Config.config.guardSeed)
 
       if (deap_gp.correct(best, training_set, pset, latent_vars_rows = latent_vars_rows.toPythonProxy).as[Boolean]) {
         Log.root.debug(f"  Best guard $best is correct")
-        guardMem = best :: guardMem
+        guardMem = best.toString :: guardMem
         val (nodes, edges, labels) = deap_gp.graph(best).as[(List[Int], List[(Int, Int)], Map[Int, String])]
         val gexp = TypeConversion.toGExp(nodes, edges, labels)
         return Some((gexp, GExp.gNot(gexp)))
