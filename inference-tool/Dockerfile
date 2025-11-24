@@ -1,10 +1,10 @@
-FROM debian:stable-20220912-slim
+FROM adoptopenjdk/openjdk11
 
 # Install OpenJDK 11
-RUN apt-get update \
-    && apt-get install openjdk-11-jdk-headless -y \
-    && export JAVA_HOME=/usr/lib/jvm/openjdk-11-jdk \
-    && export PATH=$PATH:$JAVA_HOME/bin
+# RUN apt-get update \
+#     && apt-get install openjdk-11-jdk-headless -y \
+#     && export JAVA_HOME=/usr/lib/jvm/openjdk-11-jdk \
+#     && export PATH=$PATH:$JAVA_HOME/bin
 
 # Install dependencies for SBT install
 RUN apt-get update \
@@ -49,6 +49,8 @@ COPY --chown=sbtuser:sbtuser src/ /home/sbtuser/efsm-inference/src
 COPY --chown=sbtuser:sbtuser project/ /home/sbtuser/efsm-inference/project
 COPY --chown=sbtuser:sbtuser build.sbt /home/sbtuser/efsm-inference
 COPY --chown=sbtuser:sbtuser lib/ /home/sbtuser/efsm-inference/lib
+
+ENV LD_LIBRARY_PATH=/home/sbtuser/efsm-inference/lib
 
 RUN sbt assembly
 
